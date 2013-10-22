@@ -103,7 +103,11 @@ classdef KeyframePlanner < handle
 
 
             obj.setHandType(true,true); % set sandia hands as default
-            obj.collision_check = 2;
+            % obj.collision_check            
+            % - 0, no validation, no optimizatoin with collision
+            % - 1, validation only, no optimization
+            % - 2, optimize without collision constraint first, then validate. 
+            obj.collision_check = 0;
             obj.atlas2robotFrameIndMap = zeros(atlas.getNumStates,1);
             obj.atlas_frame = atlas.getStateFrame;
             obj.lhand_frame = lhand_frame;

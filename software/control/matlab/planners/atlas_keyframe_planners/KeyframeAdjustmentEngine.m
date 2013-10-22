@@ -643,6 +643,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             q_seed = obj.plan_cache.qtraj.eval(iktraj_tbreaks(2:end));
             q_seed_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 q_seed]));
+            q_seed = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
             q0 = obj.plan_cache.qtraj.eval(0); % use start of cached trajectory instead of current
             
             %if((~isempty(pelvis_constraint))&&(obj.isBDIManipMode()))
@@ -653,7 +654,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             
             q_nom = obj.plan_cache.qtraj.eval(iktraj_tbreaks(2:end));
             q_nom_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 q_nom]));
-            
+            q_nom = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
+            collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[iktraj_tbreaks(1) 0.01*iktraj_tbreaks(1)+0.99*iktraj_tbreaks(end)]);
             %============================
             %if(length(iktraj_tbreaks)<=5)
             if(~obj.plan_cache.isPointWiseIK)
@@ -665,7 +667,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     lhand_constraint_cell{:},rhand_constraint_cell{:},...
                     lfoot_constraint_cell{:},rfoot_constraint_cell{:},...
                     pelvis_constraint_cell{:},com_constraint_cell{:},head_constraint_cell{:},...
-                    obj.joint_constraint,obj.plan_cache.qsc,iktraj_options);
+                    obj.joint_constraint,obj.plan_cache.qsc,collision_constraint,iktraj_options);
                 xtraj = xtraj.setOutputFrame(obj.r.getStateFrame());
                 x_breaks = xtraj.eval(iktraj_tbreaks);
                 

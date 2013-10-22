@@ -488,7 +488,7 @@ classdef ManipulationPlanner < KeyframePlanner
           keyframe_inds = unique(round(linspace(1,length(timeIndices),obj.plan_cache.num_breaks))); % no more than ${obj.num_breaks} keyframes
           xtraj_atlas(1,keyframe_inds) = 1.0;
           xtraj_atlas(2,:) = 0*timeIndices;
-          xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap,:);
+          xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
 
           s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
 
@@ -513,8 +513,8 @@ classdef ManipulationPlanner < KeyframePlanner
           for brk =1:length(s_breaks),
             q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
           end
-          q_breaks_atlas = q_breaks(obj.atlas2robotFrameIndMap,:);
-          Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks_atlas);
+          q_breaks_atlas = q_breaks(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
+          Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
           Tmax_joints=obj.getTMaxForMaxJointSpeed();
           ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
           obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
@@ -596,7 +596,7 @@ classdef ManipulationPlanner < KeyframePlanner
             obj.plan_cache.grasp_transition_breaks = grasp_transition_breaks;
             obj.plan_cache.num_grasp_transitions = size(G,2);%sum(xtraj(2,:));
             obj.plan_cache.grasp_transition_states = G;
-            obj.plan_pub.publish(xtraj,ts,utime,snopt_info_vector,G);
+            obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector,G);
           else
             obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
           end
