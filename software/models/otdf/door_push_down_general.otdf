@@ -99,4 +99,11 @@
     </grasp_seed>
     <plan_seed name="2013-09-20-22-56::rhnd_35deghandle_10degdoor" />
     <plan_seed name="2013-09-20-23-01::rhnd_45handle_10door" />
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="l_lever_0" />
+        <relative_pose rpy="1.77639 -1.5089 0.163197" xyz="-0.0415717 0.121426 0.0292625" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0143115 1.56404 1.47275 0.00495685 1.45332 1.22975 0.0144998 0.818442 1.4256 0.366444 0.862058 1.25209 " />
+    </grasp_seed>
 </object>
