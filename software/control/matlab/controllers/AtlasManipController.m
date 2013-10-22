@@ -63,8 +63,6 @@ classdef AtlasManipController < DRCController
         dupl = SignalDuplicator(AtlasCoordinates(r),2);
         ins(1).system = 1;
         ins(1).input = 1;
-        ins(2).system = 1;
-        ins(2).input = 2;
         outs(1).system = 2;
         outs(1).output = 1;
         outs(2).system = 2;
@@ -82,8 +80,6 @@ classdef AtlasManipController < DRCController
         pd = SimplePDBlock(r,ctrl_data,options);
         ins(1).system = 1;
         ins(1).input = 1;
-        ins(2).system = 1;
-        ins(2).input = 2;      
         outs(1).system = 1;
         outs(1).output = 1;
         outs(2).system = 2;
@@ -99,10 +95,8 @@ classdef AtlasManipController < DRCController
         invdyn = InverseDynamicsBlock(r);
         ins(1).system = 1;
         ins(1).input = 1;
-        ins(2).system = 1;
+        ins(2).system = 2;
         ins(2).input = 2;      
-        ins(3).system = 2;
-        ins(3).input = 2;      
         outs(1).system = 1;
         outs(1).output = 1;
         outs(2).system = 2;
@@ -118,8 +112,6 @@ classdef AtlasManipController < DRCController
         ins(1).input = 1;
         ins(2).system = 1;
         ins(2).input = 2;      
-        ins(3).system = 1;
-        ins(3).input = 3;      
         outs(1).system = 2;
         outs(1).output = 1;
         sys = mimoCascade(sys,q_tau_ref,[],ins,outs);

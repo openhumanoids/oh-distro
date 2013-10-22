@@ -76,17 +76,17 @@ ff_qd.r_leg_aky = 1.275; % 10-15-13, fc
 ff_qd.r_leg_akx = 1.25; % 10-03-13, fc  
 
 % ff_f_d.l_arm_usy = 0.0; % 9-17-13
-% ff_f_d.r_arm_usy = 0.0025; % 9-17-13
+ff_f_d.r_arm_usy = 0.0025; % 9-17-13
 % ff_f_d.l_arm_shx = 0.0; % 9-17-13
-% ff_f_d.r_arm_shx = 0.0; % 9-17-13
+ff_f_d.r_arm_shx = 0.0; % 9-17-13
 % ff_f_d.l_arm_elx = 0.0; % 9-17-13
-% ff_f_d.r_arm_elx = 0.0025; % 9-17-13
+ff_f_d.r_arm_elx = 0.005; % 9-17-13
 % ff_f_d.l_arm_ely = 0.0; % 9-17-13
-% ff_f_d.r_arm_ely = 0.001; % 9-18-13
+ff_f_d.r_arm_ely = 0.005; % 9-18-13
 % ff_f_d.l_arm_uwy = 0.005; % 9-17-13
-% ff_f_d.r_arm_uwy = 0.0075; % 9-17-13
+ff_f_d.r_arm_uwy = 0.0075; % 9-17-13
 % ff_f_d.l_arm_mwx = 0.0; % 9-17-13
-% ff_f_d.r_arm_mwx = 0.01; % 9-17-13
+ff_f_d.r_arm_mwx = 0.01; % 9-17-13
 
 k_f_p.back_bkz  = 0.012;
 k_f_p.back_bky  = 0.012;
