@@ -1233,6 +1233,9 @@ namespace renderer_affordances_gui_utils
     
     BotGtkParamWidget *ee_seeds_pw;
     ee_seeds_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+    
+    BotGtkParamWidget *ee_gaze_pw;
+    ee_gaze_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     if((self->marker_selection  == " ")) 
     {
       //bot_gtk_param_widget_add_separator (ee_seeds_pw,"Seed Management");
@@ -1257,7 +1260,7 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_SEED_RF, NULL);    
       bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_CLEAR_SEEDS, NULL);
       bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_HALT_ALL_OPT, NULL);
-      bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_SET_EE_CONSTRAINT, NULL);    
+      bot_gtk_param_widget_add_buttons(ee_gaze_pw,PARAM_SET_EE_CONSTRAINT, NULL);    
       
     }
      BotGtkParamWidget *set_des_state_pw;
@@ -1381,6 +1384,10 @@ namespace renderer_affordances_gui_utils
     GtkWidget * ee_seeds_pane =  gtk_expander_new("Seed Management");
     gtk_container_add (GTK_CONTAINER (ee_seeds_pane), GTK_WIDGET( ee_seeds_pw));
     gtk_expander_set_expanded(GTK_EXPANDER(ee_seeds_pane),(gboolean) FALSE);
+     
+    GtkWidget * ee_gaze_pane =  gtk_expander_new("Gaze Management");
+    gtk_container_add (GTK_CONTAINER (ee_gaze_pane), GTK_WIDGET(  ee_gaze_pw));
+    gtk_expander_set_expanded(GTK_EXPANDER(ee_gaze_pane),(gboolean) TRUE);   
     
     GtkWidget * set_des_state_pane =  gtk_expander_new("Set Desired State");
     gtk_container_add (GTK_CONTAINER (set_des_state_pane), GTK_WIDGET( set_des_state_pw));   
@@ -1402,6 +1409,7 @@ namespace renderer_affordances_gui_utils
     
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
     g_signal_connect(G_OBJECT(ee_seeds_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
+    g_signal_connect(G_OBJECT(ee_gaze_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
     g_signal_connect(G_OBJECT(set_des_state_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
     g_signal_connect(G_OBJECT(get_plan_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);  
     g_signal_connect(G_OBJECT(mating_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);      
@@ -1423,6 +1431,7 @@ namespace renderer_affordances_gui_utils
     gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(param_adjust_pane), FALSE, FALSE, 5);
     if((self->marker_selection  == " ")) 
       gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(ee_seeds_pane), FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(ee_gaze_pane), FALSE, FALSE, 5);  
     if(it!=self->affCollection->_objects.end())
     {
       //has_seeds = true;
