@@ -248,10 +248,6 @@ group "b.4.driving" {
 
 
 group "g.0.gazebo" {
-    cmd "gz_mit_ingress" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/mit_ingress.world";
-        host = "robot";
-    }
     cmd "gz_mit_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "robot";
@@ -264,10 +260,6 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
         host = "robot";
     }
-    cmd "gz_vrc_driving" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_1.world";
-        host = "robot";
-    }
     cmd "gz_vrc_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
         host = "robot";
@@ -276,20 +268,8 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
         host = "robot";
     }
-    cmd "gz_vrc_manip_mating_test" {
-      exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3_closer.world";
-      host = "robot";
-    }
-    cmd "gz_greg_aas_ingress" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/aas_ingress.world";
-        host = "robot";
-    }
-    cmd "gz_greg_aas_flat" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/aas_flat.world";
-        host = "robot";
-    }
-    cmd "gz_drc_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/drc_practice_task_2.world";
+    cmd "gz_drc_task" {
+        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/drc_practice_task_3.world";
         host = "robot";
     }
 }
@@ -520,14 +500,14 @@ script "dev.vrc_walking" {
     wait ms 5000;
 }
 
-script "dev.drc_walking" { 
+script "dev.drc_task" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.2.walking";
     start group "b.2.walking";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
-    start cmd "gz_drc_walking"; 
+    start cmd "gz_drc_task"; 
     wait ms 5000;
 }
 
