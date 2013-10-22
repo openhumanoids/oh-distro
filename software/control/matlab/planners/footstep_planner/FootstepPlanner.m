@@ -39,6 +39,9 @@ classdef FootstepPlanner < DRCPlanner
             if ~isfield(obj.options, x{1}) || obj.options.(x{1}) ~= info.(x{1});
               obj.options.(x{1}) = info.(x{1});
               if ~isempty(obj.goal_pos); obj.needs_plan = true; end
+              if strcmp(x{1}, 'right_foot_lead')
+                obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
+              end
             end
           elseif isfield(obj.defaults, x{1})
             obj.options.(x{1}) = obj.defaults.(x{1});
@@ -52,15 +55,18 @@ classdef FootstepPlanner < DRCPlanner
           obj.needs_plan = true;
         elseif changelist.goal
           if (data.goal.is_new_goal || isempty(obj.old_steps))
-            obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
-            msg ='Foot Plan : Received New Goal'; disp(msg); send_status(6,0,0,msg);
-            obj.goal_pos = FootstepPlanner.decodePosition3d(data.goal.goal_pos);
-            if data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_RIGHT_FOOT
-              obj.goal_pos = footCenter2StepCenter(obj.biped, obj.goal_pos, true, obj.options.nom_step_width);
-            elseif data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_LEFT_FOOT
-              obj.goal_pos = footCenter2StepCenter(obj.biped, obj.goal_pos, false, obj.options.nom_step_width);
+            goal_pos = FootstepPlanner.decodePosition3d(data.goal.goal_pos);
+            if ~any(isnan(goal_pos([1,2,6])))
+              obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
+              msg ='Foot Plan : Received New Goal'; disp(msg); send_status(6,0,0,msg);
+              obj.goal_pos = goal_pos;
+              if data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_RIGHT_FOOT
+                obj.goal_pos = footCenter2StepCenter(obj.biped, obj.goal_pos, true, obj.options.nom_step_width);
+              elseif data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_LEFT_FOOT
+                obj.goal_pos = footCenter2StepCenter(obj.biped, obj.goal_pos, false, obj.options.nom_step_width);
+              end
+              obj.needs_plan = true;
             end
-            obj.needs_plan = true;
           end
         elseif changelist.plan_commit
           obj.needs_plan = false;
