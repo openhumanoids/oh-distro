@@ -363,7 +363,7 @@ void set_default_params(RendererWalking* self, int mode) {
     std::cout << "Using preset mode: BDI Stepping\n"; bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10); bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);
     bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.10);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.25);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.15);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
@@ -399,6 +399,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   if (self->max_forward_step < bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_FORWARD_STEP)) {
     bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_FORWARD_STEP));
   }
+  if (self->min_num_steps > bot_gtk_param_widget_get_int(self->pw,PARAM_MAX_NUM_STEPS)) {
+    bot_gtk_param_widget_set_int(self->pw,PARAM_MIN_NUM_STEPS, bot_gtk_param_widget_get_int(self->pw,PARAM_MAX_NUM_STEPS));
+  }
+  if (self->max_num_steps < bot_gtk_param_widget_get_int(self->pw,PARAM_MIN_NUM_STEPS)) {
+    bot_gtk_param_widget_set_int(self->pw,PARAM_MAX_NUM_STEPS, bot_gtk_param_widget_get_int(self->pw,PARAM_MIN_NUM_STEPS));
+  }
 
   get_params_from_widget(self);
 
@@ -407,14 +413,11 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     set_default_params(self, mode);
   }  
   
-  publish_walking_goal(self, FALSE);
-  
-
-  if(!strcmp(name, PARAM_GOAL_UPDATE)) {
-    fprintf(stderr, "\nClicked Update Walking Goal\n");
-  }else if(!strcmp(name, PARAM_GOAL_SEND)) {
+  if(!strcmp(name, PARAM_GOAL_SEND)) {
     fprintf(stderr,"\nClicked WALKING_GOAL\n");
     activate(self);
+  } else {
+    publish_walking_goal(self, FALSE);
   }
 }
 
@@ -663,7 +666,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_enum(self->pw, PARAM_BEHAVIOR, BOT_GTK_PARAM_WIDGET_MENU, self->behavior, "Walking", BEHAVIOR_WALKING, "Crawling", BEHAVIOR_CRAWLING, "BDI Walking", BEHAVIOR_BDI_WALKING, "BDI Stepping", BEHAVIOR_BDI_STEPPING, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
   bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, self->goal_type, "Bot center", GOAL_TYPE_CENTER, "Right foot", GOAL_TYPE_RIGHT_FOOT, "Left foot", GOAL_TYPE_LEFT_FOOT, NULL);
-  bot_gtk_param_widget_add_int(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, self->max_num_steps);  
+  bot_gtk_param_widget_add_int(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 1, 30, 1, self->max_num_steps);  
   bot_gtk_param_widget_add_int(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, self->min_num_steps);  
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.2, 5.0, 0.1, self->step_speed);
   bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
