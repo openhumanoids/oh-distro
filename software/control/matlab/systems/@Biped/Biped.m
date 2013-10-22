@@ -31,7 +31,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       defaults = struct('nom_forward_step', 0.15,... %m
         'max_forward_step', 0.3,...%m
         'max_step_width', 0.35,...%m
-        'max_step_dz', 0.3,...%m
+        'max_step_dz', 0.4,...%m
         'min_step_width', 0.26,...%m
         'nom_step_width', 0.28,...%m (nominal step width)
         'nom_step_clearance', 0.04,...%m
