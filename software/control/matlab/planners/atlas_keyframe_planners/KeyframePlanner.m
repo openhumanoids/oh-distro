@@ -28,8 +28,8 @@ classdef KeyframePlanner < handle
         joint_constraint_args
         plan_arc_res
         
-        l_issandia
-        r_issandia         
+        l_hand_mode
+        r_hand_mode        
         T_palm_hand_l
         T_palm_hand_r
         T_hand_palm_l
@@ -141,19 +141,25 @@ classdef KeyframePlanner < handle
             obj.plan_cache.qdot_desired  = val;
         end       
      %-----------------------------------------------------------------------------------------------------------------        
-        function setHandType(obj,l_issandia,r_issandia)
-            obj.l_issandia = l_issandia;
-            obj.r_issandia = r_issandia;
+        function setHandType(obj,l_hand_mode,r_hand_mode)
+            obj.l_hand_mode = l_hand_mode;
+            obj.r_hand_mode = r_hand_mode;
             
-            if(obj.l_issandia)
+            if(obj.l_hand_mode == 1)
              obj.T_hand_palm_l = obj.T_hand_palm_l_sandia;
-            else
+            elseif(obj.l_hand_mode == 2)
              obj.T_hand_palm_l = obj.T_hand_palm_l_irobot;
+            elseif(obj.l_hand_mode == 0)
+              % I need to talk with Sisir about this palm-hand
+              % transformation
+              obj.T_hand_palm_l = obj.T_hand_palm_l_irobot; 
             end
             
-            if(obj.l_issandia)
+            if(obj.r_hand_mode == 1)
               obj.T_hand_palm_r = obj.T_hand_palm_r_sandia;
-            else
+            elseif(obj.r_hand_mode == 2)
+              obj.T_hand_palm_r = obj.T_hand_palm_r_irobot;
+            elseif(obj.r_hand_mode == 0)
               obj.T_hand_palm_r = obj.T_hand_palm_r_irobot;
             end
             
