@@ -70,6 +70,12 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
     BotRenderer *renderer = (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
     string name(renderer->name);
     bool always_enabled_renderers = ((name=="Advanced Grid")||(name=="BOT_FRAMES")||(name=="LCM GL")||(name=="System Status"));
+    if(renderer_name=="Affordances & StickyHands/Feet"){
+	always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
+    }else if(renderer_name=="FootStep Plans & Sticky Feet"){
+	always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
+    }
+
     if((name==renderer_name)||always_enabled_renderers){
       renderer->enabled = 1;
       gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
@@ -226,6 +232,8 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
       cout << "F8-DataControl\n";
     
       foviationSpecificRenderer(viewer,foviate_renderer);              
+      bot_viewer_set_status_bar_message(viewer, ("Foviating " + foviate_renderer ).c_str());
+      
     }
 
     return 1;
@@ -486,8 +494,8 @@ int main(int argc, char *argv[])
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  //bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  //bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   collections_add_renderer_to_viewer(viewer, 1, lcm);
   
