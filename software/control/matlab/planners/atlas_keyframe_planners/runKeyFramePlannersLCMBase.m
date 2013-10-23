@@ -24,31 +24,39 @@ end
 
 options.floating = true;
 options.dt = 0.001;
-robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
+hands = 'right';
+robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_right_sandia_hand.urdf'),options);
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+
+if(strcmp(hands,'right') || strcmp(hands,'both'))
 right_hand_links = [robot.findLinkInd('r_hand'),robot.findLinkInd('right_f0_0'),robot.findLinkInd('right_f0_1'),...
   robot.findLinkInd('right_f0_2'),robot.findLinkInd('right_f1_0'),robot.findLinkInd('right_f1_1'),...
   robot.findLinkInd('right_f1_2'),robot.findLinkInd('right_f2_0'),robot.findLinkInd('right_f2_1'),...
   robot.findLinkInd('right_f2_2'),robot.findLinkInd('right_f3_0'),robot.findLinkInd('right_f3_1'),robot.findLinkInd('right_f3_2')];
+robot.collision_filter_groups('right_hand') = CollisionFilterGroup();
+robot = robot.addLinksToCollisionFilterGroup(right_hand_links,'right_hand',1);
+robot = compile(robot);
+robot = robot.addToIgnoredListOfCollisionFilterGroup({'right_hand'},'right_hand');
+robot = compile(robot);
+end
+if(strcmp(hands,'left') || strcmp(hands,'both'))
 left_hand_links = [robot.findLinkInd('l_hand'),robot.findLinkInd('left_f0_0'),robot.findLinkInd('left_f0_1'),robot.findLinkInd('left_f0_2'),...
   robot.findLinkInd('left_f1_0'),robot.findLinkInd('left_f1_1'),robot.findLinkInd('left_f1_2'),...
   robot.findLinkInd('left_f2_0'),robot.findLinkInd('left_f2_1'),robot.findLinkInd('left_f2_2'),...
   robot.findLinkInd('left_f3_0'),robot.findLinkInd('left_f3_1'),robot.findLinkInd('left_f3_2')];
-robot.collision_filter_groups('right_hand') = CollisionFilterGroup();
 robot.collision_filter_groups('left_hand') = CollisionFilterGroup();
-robot = robot.addLinksToCollisionFilterGroup(right_hand_links,'right_hand',1);
-robot = compile(robot);
 robot = robot.addLinksToCollisionFilterGroup(left_hand_links,'left_hand',1);
 robot = compile(robot);
 robot = robot.addToIgnoredListOfCollisionFilterGroup({'left_hand'},'left_hand');
 robot = compile(robot);
-robot = robot.addToIgnoredListOfCollisionFilterGroup({'right_hand'},'right_hand');
-robot = compile(robot);
+end
+
+
 if(nargin<1)
     hardware_mode = 1;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
 end
 % sandia hands subscriber
-sandia_hands_listener = SandiaHandsListener('EST_ROBOT_STATE');
+sandia_hands_listener = SandiaHandsListener(hands,'EST_ROBOT_STATE');
 
 reaching_planner = ReachingPlanner(robot,atlas,sandia_hands_listener.left_hand_frame,...
   sandia_hands_listener.right_hand_frame,hardware_mode); % single or multiple/successively specified ee constraints

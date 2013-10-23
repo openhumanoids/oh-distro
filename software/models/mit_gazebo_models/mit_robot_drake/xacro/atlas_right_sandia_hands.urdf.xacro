@@ -1,0 +1,17 @@
+<robot xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="atlas" >
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_drake/xacro/atlas_skeleton_minimal_contact.urdf" />
+  <include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
+  
+  
+  <!-- adding an offset in the urdf to account for the ft sensor and the coupling plate, chaning origin form 0.1 to 0.145 for sandia, and 0.05 to 0.095 for irobot-->
+  <xacro:sandia_hand side="right" parent="r_hand" reflect="1" joint_type="revolute" thumb_angle="0">
+    <origin xyz="0 -0.145 0" rpy="0.0 0 -1.57079"/>
+  </xacro:sandia_hand>
+
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_drake/xacro/atlas.transmission" />
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_drake/xacro/multisense_sl_no_contact.urdf" />
+</robot>
+
+
+
+

@@ -41,12 +41,15 @@ classdef AffordanceStateListener<handle
         msg_otdf_type{i} = msg.affs(i).otdf_type;
         nq = msg.affs(i).nstates;
         msg_state_string{i} = msg.affs(i).state_names;
+%         msg_state_string{i} = regexprep(cell(msg_state_string{i}),'::','_');
         msg_state_frame_coords = cell(2*nq,1);
         for j = 1:nq
           msg_state_frame_coords{j} = char(msg.affs(i).state_names(j));
           msg_state_frame_coords{j+nq} = strcat(char(msg.affs(i).state_names(j)),'dot');
         end
-        msg_state_frame{i} = CoordinateFrame(char(msg_otdf_type{i}),2*nq,[],msg_state_frame_coords);
+%         msg_state_frame_coords = regexprep(msg_state_frame_coords,'::','_');
+        msg_otdf_type_rep = regexprep(char(msg_otdf_type{i}),'::','_');
+        msg_state_frame{i} = CoordinateFrame(msg_otdf_type_rep,2*nq,[],msg_state_frame_coords);
       end
       
       [~,new_uid_idx] = setdiff(msg_uid,obj.aff_uid,'stable');

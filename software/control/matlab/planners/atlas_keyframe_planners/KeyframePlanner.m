@@ -124,7 +124,7 @@ classdef KeyframePlanner < handle
             for i = 1:length(lhand_frame.coordinates)
               obj.lhand2robotFrameIndMap(i) = find(strcmp(lhand_frame.coordinates{i},obj.r.getStateFrame.coordinates));
             end
-            for i = 1:length(lhand_frame.coordinates)
+            for i = 1:length(rhand_frame.coordinates)
               obj.rhand2robotFrameIndMap(i) = find(strcmp(rhand_frame.coordinates{i},obj.r.getStateFrame.coordinates));
             end
         end
