@@ -34,7 +34,7 @@
    <joint name="l_hand_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="l_hand_point_mass"/>
-     <origin rpy="0 0 0" xyz="0.0037 0.1603 -0.0087"/>  <!--VRC value-->
+     <origin rpy="0 0 0" xyz="-0.0037 0.1603 0.0087"/>  <!--VRC value-->
   </joint>
 
 <!-- COM numbers are made up for now -->
