@@ -11,19 +11,24 @@
 using namespace std;
 namespace visualization_utils {
 
-
+    // Signals to robotplan renderer to store current plan/load stored plan  in/from affordance xml.
     typedef boost::signals2::signal<void(string,KDL::Frame)> AffTriggerPlanStoreSignal; 
     typedef boost::signals2::signal<void(string,KDL::Frame,string)> AffTriggerPlanLoadSignal; 
+    // Signal to robotstate renderer to store current footsteps or desired state  footsteps to be published for storage and spawning as sticky feet in affordance frame.
+    // sends affordance name, affordance pose
+    typedef boost::signals2::signal<void(string,KDL::Frame)> AffTriggerFootStepsRequestSignal; 
     struct AffTriggerSignals
     {
       AffTriggerPlanStoreSignal plan_store; // Signals  plan renderer to store current plan in the specified affordance's xml file. Stores the plan in affordance frame.
       AffTriggerPlanLoadSignal plan_load;
+      AffTriggerFootStepsRequestSignal current_footsteps_request;
+      AffTriggerFootStepsRequestSignal desired_footsteps_request;
     };
     typedef boost::shared_ptr<AffTriggerSignals> AffTriggerSignalsRef;
     
     enum aff_trigger_type
     {
-      PLAN_STORE=0,PLAN_LOAD, UNKNOWN
+      PLAN_STORE=0,PLAN_LOAD, CURRENT_FOOTSTEPS_REQUEST,DESIRED_FOOTSTEPS_REQUEST, UNKNOWN
     }; 
        
     class AffTriggerSignalsHandler 
@@ -33,11 +38,15 @@ namespace visualization_utils {
         {
           _connection1 =  signalCollectionRef->plan_store.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,PLAN_STORE,_1,_2," "));
           _connection2 =  signalCollectionRef->plan_load.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,PLAN_LOAD,_1,_2,_3));
+          _connection3 =  signalCollectionRef->current_footsteps_request.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,CURRENT_FOOTSTEPS_REQUEST,_1,_2," "));
+          _connection4 =  signalCollectionRef->desired_footsteps_request.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,DESIRED_FOOTSTEPS_REQUEST,_1,_2," "));
         };
         
         ~AffTriggerSignalsHandler(){
           _connection1.disconnect();
           _connection2.disconnect();
+          _connection3.disconnect();
+          _connection4.disconnect();
         }
 
         void callback(aff_trigger_type type,std::string otdf_id, KDL::Frame T_world_aff,std::string plan_id)
@@ -56,6 +65,8 @@ namespace visualization_utils {
         private:
         boost::signals2::connection _connection1; 
         boost::signals2::connection _connection2; 
+        boost::signals2::connection _connection3;
+        boost::signals2::connection _connection4;
         boost::function<void (aff_trigger_type,string,KDL::Frame,string)> _user_callback; 
     };
 

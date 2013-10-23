@@ -671,12 +671,12 @@ void StickyfootCollectionManager::seed_foot(OtdfInstanceStruc& obj,std::string &
     std::vector<double> joint_positions;
     
     if(foot_type==1){
-      joint_names.push_back("r_leg_uay");
-      joint_names.push_back("r_leg_lax");
+      joint_names.push_back("r_leg_aky");
+      joint_names.push_back("r_leg_akx");
     }
     else {
-      joint_names.push_back("l_leg_uay");
-      joint_names.push_back("l_leg_lax");    
+      joint_names.push_back("l_leg_aky");
+      joint_names.push_back("l_leg_akx");    
     }
     
     joint_positions.push_back(0);
