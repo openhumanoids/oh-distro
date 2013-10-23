@@ -9,8 +9,13 @@ classdef EndPosePlanner < KeyframePlanner
         hand_gaze_tol
         head_gaze_tol
         ee_torso_dist_lb
+        ee_lleg_dist_lb
         stance_lb
         stance_ub
+        l_hpx_ub
+        l_hpy_ub
+        l_hpx_lb
+        l_hpy_lb
     end
     
     methods
@@ -31,9 +36,14 @@ classdef EndPosePlanner < KeyframePlanner
             obj.plan_cache.isEndPose = true;
             obj.hand_gaze_tol = pi/18;
             obj.head_gaze_tol = pi/12;
-            obj.ee_torso_dist_lb = 0.5;
+            obj.ee_torso_dist_lb = 0.6;
+            obj.ee_lleg_dist_lb = 0.4;
             obj.stance_lb = 0.2;
             obj.stance_ub = 0.4;
+            obj.l_hpx_ub = 0.3;
+            obj.l_hpy_ub = -0.2;
+            obj.l_hpx_lb = 0.1;
+            obj.l_hpy_lb = -1.0;
         end
         %-----------------------------------------------------------------------------------------------------------------
         function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags) %#ok<INUSD>
@@ -257,9 +267,9 @@ classdef EndPosePlanner < KeyframePlanner
           joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumDOF)',obj.joint_constraint.lb,obj.joint_constraint.ub);
           coords = obj.r.getStateFrame.coordinates;
           % urf limits are lower="-0.523599" upper="0.523599" 
-          t = 0.3;
           l_leg_hpx_ind = find(strcmp(coords,'l_leg_hpx'));      r_leg_hpx_ind = find(strcmp(coords,'r_leg_hpx'));
-          joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind],[0;-t],[t;0]);
+          l_leg_hpy_ind = find(strcmp(coords,'l_leg_hpy'));      r_leg_hpy_ind = find(strcmp(coords,'r_leg_hpy'));
+          joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind;l_leg_hpy_ind;r_leg_hpy_ind],[obj.l_hpx_lb;-obj.l_hpx_ub;obj.l_hpy_lb;obj.l_hpy_lb],[obj.l_hpx_ub;-obj.l_hpx_lb;obj.l_hpy_ub;obj.l_hpy_ub]);
 
 
           %stance_constraint = Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,[0;0;0],[0;0;0],0.4,inf,[0 1]);
@@ -412,7 +422,8 @@ classdef EndPosePlanner < KeyframePlanner
                     tspan = [Indices(ind(k)) Indices(ind(k))];
                     lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose,1e-2,1e-4,tspan);
                     obj.plan_cache.lhand_constraint_cell = [obj.plan_cache.lhand_constraint_cell lhand_constraint];
-                    dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan)};
+                    dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),
+                                       Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.l_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan),};
                     ik_dist_constraint = [ik_dist_constraint,dist_constraint];   
                 elseif(strcmp('right_palm',ee_names{ind(k)}))
                     r_ee_goal = ee_loci(:,ind(k));
@@ -425,7 +436,8 @@ classdef EndPosePlanner < KeyframePlanner
                     tspan = [Indices(ind(k)) Indices(ind(k))];
                     rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-2,1e-4,tspan);
                     obj.plan_cache.rhand_constraint_cell = [obj.plan_cache.rhand_constraint_cell rhand_constraint];
-                    dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan)};
+                    dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),
+                                       Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.r_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan),};
                     ik_dist_constraint = [ik_dist_constraint,dist_constraint];  
                 elseif (strcmp('l_foot',ee_names{ind(k)}))
                     lfootT = ee_loci(:,ind(k));
@@ -471,7 +483,9 @@ classdef EndPosePlanner < KeyframePlanner
                 rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-4,sind(2).^2,tspan);
                 lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose,1e-4,sind(2).^2,tspan);
                 ik_dist_constraint = {};
-                dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan)};
+                dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),
+                                   Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.l_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan),
+                                   Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.r_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan)};
                 ik_dist_constraint = [ik_dist_constraint,dist_constraint];  
                 NSamples = 20;
                 yaw_samples_bnd = 60;
@@ -502,10 +516,11 @@ classdef EndPosePlanner < KeyframePlanner
                 joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumDOF)',obj.joint_constraint.lb,obj.joint_constraint.ub);
                 coords = obj.r.getStateFrame.coordinates;
                 % urf limits are lower="-0.523599" upper="0.523599" 
-                t = 0.3;
+
                 l_leg_hpx_ind = find(strcmp(coords,'l_leg_hpx'));      r_leg_hpx_ind = find(strcmp(coords,'r_leg_hpx'));
-                joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind],[0;-t],[t;0]);
-                
+                l_leg_hpy_ind = find(strcmp(coords,'l_leg_hpy'));      r_leg_hpy_ind = find(strcmp(coords,'r_leg_hpy'));
+                joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind;l_leg_hpy_ind;r_leg_hpy_ind],[obj.l_hpx_lb;-obj.l_hpx_ub;obj.l_hpy_lb;obj.l_hpy_lb],[obj.l_hpx_ub;-obj.l_hpx_lb;obj.l_hpy_ub;obj.l_hpy_ub]);
+
                 stance_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,l_foot_contact_pts,r_foot_contact_pts,obj.stance_lb*ones(1,size(r_foot_contact_pts,2)),obj.stance_ub*ones(1,size(r_foot_contact_pts,2)))};
     
                 if(~isempty(head_constraint))

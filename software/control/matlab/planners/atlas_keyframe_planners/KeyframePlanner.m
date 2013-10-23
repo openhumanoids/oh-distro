@@ -21,6 +21,8 @@ classdef KeyframePlanner < handle
         utorso_body
         l_uarm_body 
         r_uarm_body 
+        l_lleg_body
+        r_lleg_body
         
         joint_constraint
         joint_constraint_args
@@ -60,6 +62,8 @@ classdef KeyframePlanner < handle
             obj.utorso_body = findLinkInd(obj.r,'utorso');
             obj.l_uarm_body = findLinkInd(obj.r,'l_uarm');
             obj.r_uarm_body = findLinkInd(obj.r,'r_uarm');
+            obj.l_lleg_body= findLinkInd(obj.r,'l_lleg');
+            obj.r_lleg_body= findLinkInd(obj.r,'r_lleg');
 
            
             obj.joint_constraint = PostureConstraint(obj.r);
