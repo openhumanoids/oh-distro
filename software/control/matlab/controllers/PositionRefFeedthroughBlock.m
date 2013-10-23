@@ -33,7 +33,7 @@ classdef PositionRefFeedthroughBlock < DrakeSystem
         sizecheck(options.dt,[1 1]);
         dt = options.dt;
       else
-        dt = 0.005;
+        dt = 0.003;
       end
       
       obj.robot = r;

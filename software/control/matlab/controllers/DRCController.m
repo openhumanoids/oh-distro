@@ -42,9 +42,9 @@ classdef DRCController
       if ~(isa(sys,'DrakeSystem') || isa(sys,'SimulinkModel'))
         error('DRCController::Argument sys should be a DrakeSystem or SimulinkModel');
       end
-      if ~isDT(sys)
-        error('DRCController: only supports discrete time systems');
-      end
+%       if ~isDT(sys)
+%         error('DRCController: only supports discrete time systems');
+%       end
       typecheck(input_subframe_which_triggers_update,'CoordinateFrame');
         
       obj.name = name;
