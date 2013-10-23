@@ -141,7 +141,7 @@
       <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <origin rpy="0 3.14159 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_elbow_rx.wrl" scale="1 1 1"/>
       </geometry>
@@ -533,7 +533,7 @@
       <inertia ixx="0.00265" ixy="0" ixz="0" iyy="0.00446" iyz="0" izz="0.00446"/>
     </inertial>
     <visual>
-      <origin rpy="0 -0 0" xyz="0 0 0"/>
+      <origin rpy="0 3.14159 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_hand.wrl" scale="1 1 1"/>
       </geometry>
@@ -1104,7 +1104,7 @@
   <joint name="l_hand_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="l_hand_point_mass"/>
-    <origin rpy="0 0 0" xyz="0.0037 0.1603 -0.0087"/>
+    <origin rpy="0 0 0" xyz="-0.0037 0.1603 0.0087"/>
     <!--VRC value-->
   </joint>
   <joint name="r_hand_joint" type="fixed">
