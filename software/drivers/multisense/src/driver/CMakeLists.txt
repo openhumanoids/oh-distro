@@ -1,3 +1,5 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++0x -Wno-deprecated-declarations -Wreturn-type -Wuninitialized -Wunused-variable")
+
 add_library(multisense_lcm SHARED laser.cpp camera.cpp)
 
 pods_use_pkg_config_packages(multisense_lcm lcm 
@@ -9,7 +11,7 @@ pods_install_headers(camera.h laser.h DESTINATION multisense_lcm )
 
 pods_install_libraries(multisense_lcm)
 
-target_link_libraries(multisense_lcm  z)
+target_link_libraries(multisense_lcm z)
 pods_install_pkg_config_file(multisense_lcm
     LIBS -lmultisense_lcm -lz -lmultisense_lib
     REQUIRES lcmtypes_bot2-core

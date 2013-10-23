@@ -18,7 +18,7 @@ multisense_ros::Camera *camera ;
 
 void signal_handler(int s){
   printf("Caught signal, stopping driver\n");
-  camera->~Camera();
+  delete camera;
   Channel::Destroy(d);
   exit(1); 
 }

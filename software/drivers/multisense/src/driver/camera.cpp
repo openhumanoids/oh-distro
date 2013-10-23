@@ -23,9 +23,6 @@
 
 #include "camera.h"
 
-#include <MultiSenseChannel.hh>
-
-#include <opencv2/opencv.hpp>
 #include <arpa/inet.h>
 
 using namespace crl::multisense;
@@ -58,6 +55,49 @@ void colorCB(const image::Header& header, const void* imageDataP, void* userData
 
 }; // anonymous
 
+struct Camera::Publisher {
+  Camera* camera_;
+  bool running_;
+  std::thread thread_;
+
+  void operator()() {
+    running_ = (camera_->config_.output_mode_ == 0);
+    while (running_) {
+      // lock queues
+      std::unique_lock<std::mutex> lock(camera_->queue_mutex_);
+      camera_->queue_condition_.wait_for(lock, std::chrono::milliseconds(100));
+
+      // for each left image, find corresponding depth image and publish
+      bool any_published = false;
+      auto leftIter = camera_->left_img_queue_.begin();
+      for (; leftIter != camera_->left_img_queue_.end();) {
+        bool published = false;
+        auto rightIter = camera_->right_img_queue_.begin();
+        for (; rightIter != camera_->right_img_queue_.end(); ++rightIter) {
+          if ((*leftIter)->utime == (*rightIter)->utime) {
+            camera_->multisense_msg_out_.utime = (*leftIter)->utime;
+            camera_->multisense_msg_out_.n_images =2;
+            camera_->multisense_msg_out_.images[0]= **leftIter;
+            camera_->multisense_msg_out_.images[1]= **rightIter;
+            camera_->lcm_publish_.publish("CAMERA", &camera_->multisense_msg_out_);
+            published = true;
+            any_published = true;
+            printf("published left/disp pair at %ld\n", (*leftIter)->utime);
+            break;
+          }
+        }
+        if (published) {
+          leftIter = camera_->left_img_queue_.erase(leftIter);
+          camera_->right_img_queue_.erase(rightIter);
+        }
+        else {
+          ++leftIter;
+        }
+      }
+    }
+  }
+};
+
 Camera::Camera(Channel* driver, CameraConfig& config_) :
     driver_(driver),
     got_left_luma_(false),
@@ -65,6 +105,7 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     left_rect_frame_id_(0),
     calibration_map_left_1_(NULL),
     calibration_map_left_2_(NULL),
+    max_queue_len_(30),
     capture_fps_(0.0f),
     config_(config_)
 {
@@ -105,6 +146,11 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     // Get current sensor configuration
 
     queryConfig();
+
+    // start publish thread
+    publisher_.reset(new Publisher());
+    publisher_->camera_ = this;
+    publisher_->thread_ = std::thread(std::ref(*publisher_));
 
     //
     // Add driver-level callbacks.
@@ -234,7 +280,6 @@ void Camera::rectCallback(const image::Header& header,
         lcm_left_frame_id_ = header.frameId;
         multisense_msg_out_.image_types[0] = 0; // left
         //lcm_publish_.publish("CAMERALEFT", &lcm_left_);
-        
         break;
     case Source_Luma_Rectified_Right:
 
@@ -251,7 +296,6 @@ void Camera::rectCallback(const image::Header& header,
         lcm_right_frame_id_ = header.frameId;
         multisense_msg_out_.image_types[1] = 1; // right
         //lcm_publish_.publish("CAMERARIGHT", &lcm_right_);        
-
         break;
     }
    
@@ -315,6 +359,18 @@ void Camera::depthCallback(const image::Header& header,
         // printf("disp      frame id: %lld", header.frameId);
         lcm_disp_frame_id_ = header.frameId;
         //////////////////////////////////////////////// 
+
+        {
+          std::shared_ptr<bot_core::image_t> img;
+          img.reset(new bot_core::image_t(lcm_disp_));
+          std::unique_lock<std::mutex> lock(queue_mutex_);
+          right_img_queue_.push_back(img);
+          while (right_img_queue_.size() > max_queue_len_) {
+            right_img_queue_.pop_front();
+            printf("dropped disp image\n");
+          }
+          queue_condition_.notify_one();
+        }
           
     } else {
         printf("unsupported disparity bpp: %d\n", header.bitsPerPixel);
@@ -391,7 +447,7 @@ void Camera::colorImageCallback(const image::Header& header,
 
 
             if (1==1){//(0 != left_rgb_rect_cam_pub_.getNumSubscribers()) {
-                boost::mutex::scoped_lock lock(cal_lock_);
+                std::unique_lock<std::mutex> lock(cal_lock_);
 
                 if (width  != image_config_.width() ||
                     height != image_config_.height())
@@ -446,25 +502,23 @@ void Camera::colorImageCallback(const image::Header& header,
                     //printf("left luma frame id: %lld", left_luma_frame_id_);
                     //printf("leftchromaframe id: %lld", header.frameId);
                     lcm_left_frame_id_ = header.frameId;
+                    {
+                      std::shared_ptr<bot_core::image_t> img;
+                      img.reset(new bot_core::image_t(lcm_left_));
+                      std::unique_lock<std::mutex> lock(queue_mutex_);
+                      left_img_queue_.push_back(img);
+                      while (left_img_queue_.size() > max_queue_len_) {
+                        left_img_queue_.pop_front();
+                        printf("dropped left image\n");
+                      }
+                      queue_condition_.notify_one();
+                    }
                     
                     if (config_.output_mode_ ==2){
                       // publish left only
                       lcm_publish_.publish("CAMERA_LEFT", &lcm_left_);
                     }else if(config_.output_mode_ == 0){
-                      // publish left and disparity
-                      // Not currently working, mfallon sept 2013
-                      // Problem: compression takes variable time, thus depth,luma,chroma
-                      // messages aren't properly paired.                      
-                      if ( lcm_left_frame_id_ == lcm_disp_frame_id_ ){
-                        multisense_msg_out_.utime = data_utime;
-                        multisense_msg_out_.n_images =2;
-                        multisense_msg_out_.images[0]= lcm_left_;
-                        multisense_msg_out_.images[1]= lcm_disp_;
-                        //printf("Syncd frames. publish pair [id %lld]", header.frameId);
-                        lcm_publish_.publish("CAMERA", &multisense_msg_out_);
-                      }else{
-                        printf("Left [%ld] and Disparity [%ld]: Frame Ids dont match\n", lcm_left_frame_id_, lcm_disp_frame_id_);
-                      }
+                      // this case handled by publisher class
                     }
 
                     cvReleaseImageHeader(&sourceImageP);
@@ -480,7 +534,7 @@ void Camera::colorImageCallback(const image::Header& header,
 
 void Camera::queryConfig()
 {
-    boost::mutex::scoped_lock lock(cal_lock_);
+    std::unique_lock<std::mutex> lock(cal_lock_);
 
     // Get the camera config (TODO: clean this up to better handle multiple resolutions)
 
@@ -527,27 +581,37 @@ void Camera::queryConfig()
 
 void Camera::stop()
 {
-    boost::mutex::scoped_lock lock(stream_lock_);
+    if (publisher_ != NULL) {
+      publisher_->running_ = false;
+      if (publisher_->thread_.joinable()) publisher_->thread_.join();
+    }
 
-    Status status;
-    lighting::Config leds;
+    {
+      std::unique_lock<std::mutex> lock(stream_lock_);
+
+      Status status;
+      lighting::Config leds;
     
-    leds.setFlash(false);
-    leds.setDutyCycle( 0.00 * 100.0);
-    status = driver_->setLightingConfig(leds);
-    if (Status_Ok != status)
+      leds.setFlash(false);
+      leds.setDutyCycle( 0.00 * 100.0);
+      status = driver_->setLightingConfig(leds);
+      if (Status_Ok != status)
         printf("Failed to set lighting config. Error code %d\n", status);    
     
-    status = driver_->setMotorSpeed( 0);    
+      status = driver_->setMotorSpeed( 0);    
     
 
-    stream_map_.clear();
+      stream_map_.clear();
 
-    status = driver_->stopStreams(allImageSources);
-    if (Status_Ok != status)
+      status = driver_->stopStreams(allImageSources);
+      if (Status_Ok != status)
         printf("Failed to stop all streams: Error code %d\n",
-                  status);
+               status);
+    }
 
+    // wait for pending messages to shake out
+    // TODO: can probably wait for a condition instead
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void Camera::updateDiagnostics()
@@ -574,7 +638,7 @@ void Camera::updateDiagnostics()
 
 void Camera::connectStream(DataSource enableMask)
 {    
-    boost::mutex::scoped_lock lock(stream_lock_);
+    std::unique_lock<std::mutex> lock(stream_lock_);
 
     DataSource notStarted = 0;
 
@@ -595,7 +659,7 @@ void Camera::connectStream(DataSource enableMask)
 
 void Camera::disconnectStream(DataSource disableMask)
 {
-    boost::mutex::scoped_lock lock(stream_lock_);
+    std::unique_lock<std::mutex> lock(stream_lock_);
 
     DataSource notStopped = 0;
 

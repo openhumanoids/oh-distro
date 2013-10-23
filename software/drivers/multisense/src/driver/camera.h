@@ -24,13 +24,13 @@
 #ifndef MULTISENSE_ROS_CAMERA_H
 #define MULTISENSE_ROS_CAMERA_H
 
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
+#include <thread>
+#include <memory>
+#include <list>
 //#include <multisense_ros/state_publisher.h>
 
-#include <opencv2/opencv.hpp>
-
 #include <MultiSenseChannel.hh>
+#include <opencv2/opencv.hpp>
 
 //// LCM:
 #include <lcmtypes/bot_core.hpp>
@@ -140,15 +140,25 @@ private:
     //
     // For local rectification of color images
     
-    boost::mutex cal_lock_;
+    std::mutex cal_lock_;
     CvMat *calibration_map_left_1_;
     CvMat *calibration_map_left_2_;
+
+    //
+    // For queues and threads
+    struct Publisher;
+    std::shared_ptr<Publisher> publisher_;
+    int max_queue_len_;
+    std::list<std::shared_ptr<bot_core::image_t> > left_img_queue_;
+    std::list<std::shared_ptr<bot_core::image_t> > right_img_queue_;
+    std::mutex queue_mutex_;
+    std::condition_variable queue_condition_;
 
     //
     // Stream subscriptions
     
     typedef std::map<crl::multisense::DataSource, int32_t> StreamMapType;
-    boost::mutex stream_lock_;
+    std::mutex stream_lock_;
     StreamMapType stream_map_;
 
     //
