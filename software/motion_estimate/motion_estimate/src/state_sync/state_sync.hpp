@@ -39,7 +39,7 @@ class state_sync{
     state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
       bool standalone_head_, bool standalone_hand_,
       bool spoof_motion_estimation, bool simulation_mode_,
-      bool use_transmission_joint_sensors_);
+      bool use_encoder_joint_sensors_);
     
     ~state_sync(){
     }
@@ -50,7 +50,7 @@ class state_sync{
     bool standalone_head_, standalone_hand_;
     bool bdi_motion_estimate_;
     bool simulation_mode_;
-    bool use_transmission_joint_sensors_;
+    bool use_encoder_joint_sensors_;
 
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg);
     void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);

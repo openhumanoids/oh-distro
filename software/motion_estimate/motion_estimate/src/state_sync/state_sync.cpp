@@ -14,11 +14,11 @@ using namespace std;
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        bool standalone_head_, bool standalone_hand_,  
                        bool bdi_motion_estimate_, bool simulation_mode_,
-                       bool use_transmission_joint_sensors_):
+                       bool use_encoder_joint_sensors_):
    lcm_(lcm_), 
    standalone_head_(standalone_head_), standalone_hand_(standalone_hand_),
    bdi_motion_estimate_(bdi_motion_estimate_), simulation_mode_(simulation_mode_),
-   use_transmission_joint_sensors_(use_transmission_joint_sensors_){
+   use_encoder_joint_sensors_(use_encoder_joint_sensors_){
   lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);  
   lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::leftHandHandler,this);  
   lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::leftHandHandler,this);  
@@ -138,7 +138,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   // Overwrite the actuator joint positions and velocities with the after-transmission 
   // sensor values for the ARMS ONLY (first exposed in v2.7.0 of BDI's API)
   // NB: this assumes that they are provided at the same rate as ATLAS_STATE
-  if (use_transmission_joint_sensors_ ){
+  if (use_encoder_joint_sensors_ ){
     if (atlas_joints_.position.size() == atlas_joints_out_.position.size()   ){
       if (atlas_joints_.velocity.size() == atlas_joints_out_.velocity.size()   ){
         for (int i=0; i < atlas_joints_out_.position.size() ; i++ ) { 
@@ -273,24 +273,24 @@ main(int argc, char ** argv){
   bool standalone_hand = false;
   bool bdi_motion_estimate = false;
   bool simulation_mode = false;
-  bool use_transmission_joint_sensors = false;
+  bool use_encoder_joint_sensors = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(standalone_head, "l", "standalone_head","Standalone Head");
   opt.add(standalone_hand, "f", "standalone_hand","Standalone Hand");
   opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
   opt.add(simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
-  opt.add(use_transmission_joint_sensors, "t", "transmission","Use the transmission joint sensors (in the arms)");
+  opt.add(use_encoder_joint_sensors, "e", "encoder","Use the encoder joint sensors (in the arms)");
   opt.parse();
   
   std::cout << "standalone_head: " << standalone_head << "\n";
-  std::cout << "Use transmission joint sensors: " << use_transmission_joint_sensors << " (arms only)\n";
+  std::cout << "Use transmission joint sensors: " << use_encoder_joint_sensors << " (arms only)\n";
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   if(!lcm->good())
     return 1;  
   
   state_sync app(lcm, standalone_head,standalone_hand,bdi_motion_estimate, 
-                 simulation_mode, use_transmission_joint_sensors);
+                 simulation_mode, use_encoder_joint_sensors);
   while(0 == lcm->handle());
   return 0;
 }
