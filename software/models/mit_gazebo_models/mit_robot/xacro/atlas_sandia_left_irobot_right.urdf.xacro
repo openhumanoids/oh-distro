@@ -2,7 +2,7 @@
 
   <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
 
-  <include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
+  <xacro:include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
   
 
   <xacro:sandia_hand side="left" parent="l_hand" reflect="-1" joint_type="revolute" thumb_angle="0">
