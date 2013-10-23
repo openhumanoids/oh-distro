@@ -43,7 +43,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.0130;
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 0.0361;
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.0802;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.1244;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0104;
 
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.9736; // this encoder is broken
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -0.0201;
