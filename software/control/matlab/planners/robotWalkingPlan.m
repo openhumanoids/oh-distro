@@ -48,7 +48,7 @@ for i=1:length(ts)
           struct('use_mex',true))];
       end
     end
-    kc_com = constructPtrWorldCoMConstraintmex(biped.getMexModelPtr,[comtraj.eval(t);nan],[comtraj.eval(t);nan]);
+    kc_com = constructPtrWorldCoMConstraintmex(biped.getMexModelPtr,1,[comtraj.eval(t);nan],[comtraj.eval(t);nan]);
 %     [q(:,i),info] = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],approx_args{:},options);
     [q(:,i),info] = approximateIKmex(biped.getMexModelPtr,q(:,i-1),qstar,kc_com,approx_args{:},ikoptions);
     if info
