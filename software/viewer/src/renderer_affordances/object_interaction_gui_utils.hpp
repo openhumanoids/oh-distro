@@ -85,6 +85,9 @@
 #define PARAM_SEND_EE_GOAL_SEQUENCE "Get Whole Body Plan"
 #define PARAM_COMMIT_TO_FOOTSTEP_PLANNER "Commit to Footstep Planner"
 
+#define PARAM_REQUEST_STICKYFEET_FROM_CURRENT_ROBOT_STATE "Request StickyFeet From Cur Robot State"
+#define PARAM_REQUEST_STICKYFEET_FROM_DESIRED_ROBOT_STATE "Request StickyFeet From Des Robot State"
+
 #include "renderer_affordances.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
 #include "lcm_utils.hpp"
@@ -847,6 +850,14 @@ namespace renderer_affordances_gui_utils
         selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
         (*self->affTriggerSignalsRef).plan_load(it->second.otdf_type,it->second._gl_object->_T_world_body,selected_plan);
     }
+    else if (! strcmp(name, PARAM_REQUEST_STICKYFEET_FROM_CURRENT_ROBOT_STATE)) {
+        // Send aff trigger signal to state renderer 
+        (*self->affTriggerSignalsRef).current_footsteps_request(it->first,it->second._gl_object->_T_world_body);
+    }
+    else if (! strcmp(name, PARAM_REQUEST_STICKYFEET_FROM_DESIRED_ROBOT_STATE)) {
+        // Send aff trigger signal to state renderer 
+        (*self->affTriggerSignalsRef).desired_footsteps_request(it->first,it->second._gl_object->_T_world_body);
+    }    
     else if ((! strcmp(name,PARAM_REACH_STARTING_POSTURE))||(! strcmp(name,PARAM_REACH_STARTING_POSE)))
     {
       string selected_plan;
@@ -1260,7 +1271,11 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_SEED_RF, NULL);    
       bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_CLEAR_SEEDS, NULL);
       bot_gtk_param_widget_add_buttons(ee_seeds_pw,PARAM_HALT_ALL_OPT, NULL);
-      bot_gtk_param_widget_add_buttons(ee_gaze_pw,PARAM_SET_EE_CONSTRAINT, NULL);    
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,
+                                       PARAM_REQUEST_STICKYFEET_FROM_CURRENT_ROBOT_STATE, NULL); 
+      bot_gtk_param_widget_add_buttons(ee_seeds_pw,
+                                       PARAM_REQUEST_STICKYFEET_FROM_DESIRED_ROBOT_STATE, NULL); 
+      bot_gtk_param_widget_add_buttons(ee_gaze_pw,PARAM_SET_EE_CONSTRAINT, NULL);  
       
     }
      BotGtkParamWidget *set_des_state_pw;

@@ -25,6 +25,9 @@
 #include <Eigen/Dense>
 #include <visualization_utils/angles.hpp>
 #include <visualization_utils/eigen_kdl_conversions.hpp>
+#include <visualization_utils/keyboard_signal_utils.hpp>
+#include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
+#include <visualization_utils/foviation_signal_utils.hpp>
 #include "RobotStateListener.hpp"
 
 #define PARAM_SELECTION "Enable Selection"
@@ -43,7 +46,8 @@ using namespace visualization_utils;
 
 namespace renderer_robot_state 
 {
-
+  static void publish_candidate_sticky_feet(void *user, const string& channel,string &otdf_uid, KDL::Frame &T_world_aff, bool desired_state);
+   
   typedef struct _RobotStateRendererStruc 
   {
     BotRenderer renderer;
@@ -51,6 +55,10 @@ namespace renderer_robot_state
     BotGtkParamWidget *pw;
     boost::shared_ptr<renderer_robot_state::RobotStateListener> robotStateListener;
     boost::shared_ptr<lcm::LCM> lcm;
+    boost::shared_ptr<KeyboardSignalHandler> keyboardSignalHndlr;
+    boost::shared_ptr<AffTriggerSignalsHandler> affTriggerSignalsHndlr;
+    RendererFoviationSignalRef _rendererFoviationSignalRef;
+    bool _renderer_foviate;
     //BotEventHandler *key_handler;
     BotEventHandler ehandler;
     bool selection_enabled;
@@ -81,6 +89,38 @@ namespace renderer_robot_state
 
     // transparency of the model:
     float alpha;
+    
+   std::string* trigger_source_otdf_id;
+    KDL::Frame T_world_trigger_aff;
+    
+     void keyboardSignalCallback(int keyval, bool is_pressed)
+    {
+      //
+    }
+  
+    void affTriggerSignalsCallback(aff_trigger_type type,string otdf_uid,KDL::Frame T_world_aff,string plan_id)
+    {
+      if(type==CURRENT_FOOTSTEPS_REQUEST){
+          cout<< otdf_uid << " aff renderer is requesting current robot state footsteps to generate and store sticky feet"<< endl;
+          //(*this->trigger_source_otdf_id) = otdf_id;
+          //this->T_world_trigger_aff = T_world_aff;
+           //cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
+          string channel = "AFF_TRIGGERED_CANDIDATE_STICKY_FEET";
+          publish_candidate_sticky_feet(this,channel,otdf_uid,T_world_aff,false);
+      }
+      else if(type==DESIRED_FOOTSTEPS_REQUEST){
+        cout<< otdf_uid << " aff renderer is requesting desired robot state footsteps  to generate and store sticky feet: "<< endl;
+        //(*this->trigger_source_otdf_id) = otdf_id;
+         // this->T_world_trigger_aff = T_world_aff;
+          //cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
+          //std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+          //std::string otdf_filepath,plan_xml_dirpath;
+          //otdf_filepath =  otdf_models_path + (*this->trigger_source_otdf_id) +".otdf";
+          string channel = "AFF_TRIGGERED_CANDIDATE_STICKY_FEET";
+          publish_candidate_sticky_feet(this,channel,otdf_uid,T_world_aff,true);          
+      }
+    }
+    
   } RobotStateRendererStruc;
 
 inline static double get_shortest_distance_between_robot_links_and_jointdof_markers (void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)
@@ -384,8 +424,51 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
     cout << "Sending Desired Foot Step Sequence\n";
     self->lcm->publish(channel, &msg);
  } 
+ 
+  static void publish_candidate_sticky_feet(void *user, const string& channel,string &otdf_uid, KDL::Frame &T_world_aff, bool desired_state)
+  {
+    RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
+    
+    drc::traj_opt_constraint_t msg;    
+    msg.utime = bot_timestamp_now();
+    msg.robot_name = otdf_uid;//self->robotStateListener->_robot_name;
+    
+    KDL::Frame T_world_ee;
+    std::vector<std::string> ee_names;
+    ee_names.push_back("l_foot");
+    ee_names.push_back("r_foot");
+    for (size_t i=0; i<ee_names.size(); i++)
+    {
+      if(desired_state)
+        self->robotStateListener->_gl_robot->get_link_future_frame(ee_names[i],T_world_ee);
+      else
+        self->robotStateListener->_gl_robot->get_link_frame(ee_names[i],T_world_ee);
+        
+      KDL::Frame T_aff_ee;
+      T_aff_ee = T_world_aff.Inverse()*T_world_ee;
+      double x,y,z,w;
+      T_aff_ee.M.GetQuaternion(x,y,z,w);
+      drc::position_3d_t pose;
+      pose.translation.x = T_aff_ee.p[0];
+      pose.translation.y = T_aff_ee.p[1];
+      pose.translation.z = T_aff_ee.p[2];
+      pose.rotation.x = x;
+      pose.rotation.y = y;
+      pose.rotation.z = z;
+      pose.rotation.w = w; 
+      msg.link_name.push_back(ee_names[i]);
+      msg.link_origin_position.push_back(pose);  
+      int64_t time_stamp = (int64_t)0*1000000;
+      msg.link_timestamps.push_back(time_stamp);  
+    }
+    msg.num_links =  ee_names.size();
+    msg.num_joints = 0;
+
+    cout << "Sending Candidate StickyFeet\n";
+    self->lcm->publish(channel, &msg);
+ }  
 } // end namespace
   
   
-void setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode);
+void setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef);
 #endif //RENDERER_ROBOT_STATE_HPP

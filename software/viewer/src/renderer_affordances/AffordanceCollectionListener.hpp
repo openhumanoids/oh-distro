@@ -53,6 +53,9 @@ namespace renderer_affordances
    void handleAffordancePlusMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,  
                                 const  drc::affordance_plus_t* msg);   
                                 
+   void handleAffordanceTriggeredCandidateStickyFeetMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,  
+                                const  drc::traj_opt_constraint_t* msg);                              
+                                
    int64_t _last_affcoll_msg_system_timestamp; 
 
 }; //class AffordanceCollectionListener

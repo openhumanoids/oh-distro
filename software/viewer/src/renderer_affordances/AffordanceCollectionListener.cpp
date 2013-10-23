@@ -13,7 +13,7 @@
 
 #include <affordance/AffordanceUtils.hpp>
 #include <renderer_affordances/CandidateGraspSeedListener.hpp>
-
+#include <visualization_utils/stickyfoot_utils/sticky_foot_utils.hpp>
 
 using namespace std;
 using namespace boost;
@@ -47,6 +47,7 @@ namespace renderer_affordances
     _lcm->subscribe("AFFORDANCE", &AffordanceCollectionListener::handleAffordanceMsg, this); 
     _lcm->subscribe("AFFORDANCE_PLUS_COLLECTION", &AffordanceCollectionListener::handleAffordancePlusCollectionMsg, this); 
     _lcm->subscribe("AFFORDANCE_PLUS", &AffordanceCollectionListener::handleAffordancePlusMsg, this); 
+    _lcm->subscribe("AFF_TRIGGERED_CANDIDATE_STICKY_FEET",&AffordanceCollectionListener::handleAffordanceTriggeredCandidateStickyFeetMsg, this); 
 
   }
   
@@ -251,6 +252,72 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
     }
 
   }
+  
+  void AffordanceCollectionListener::handleAffordanceTriggeredCandidateStickyFeetMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel,  
+                                const  drc::traj_opt_constraint_t* msg)
+ {
+    for (size_t j=0;j<msg->num_links;j++)
+    {
+      int foot_type = 0;
+      if(msg->link_name[j]=="r_foot")
+      {
+       foot_type = 1;
+      }
+      std::string object_name =msg->robot_name;
+      typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator it= _parent_affordance_renderer->affCollection->_objects.find(object_name);
+
+      std::vector<LinkFrameStruct> link_geometry_tfs = it->second._gl_object->get_link_geometry_tfs();
+      std::string geometry_name =link_geometry_tfs[0].name;
+      KDL::Frame T_world_objectgeometry=link_geometry_tfs[0].frame;
+      KDL::Frame T_world_aff=it->second._gl_object->_T_world_body;
+      KDL::Frame T_objectgeometry_aff = T_world_objectgeometry.Inverse()*T_world_aff;
+      
+      KDL::Frame T_aff_foot,T_objectgeometry_foot;
+      T_aff_foot.p[0]=msg->link_origin_position[j].translation.x;
+      T_aff_foot.p[1]=msg->link_origin_position[j].translation.y;
+      T_aff_foot.p[2]=msg->link_origin_position[j].translation.z;
+      double x,y,z,w;
+      x = msg->link_origin_position[j].rotation.x;
+      y = msg->link_origin_position[j].rotation.y;
+      z = msg->link_origin_position[j].rotation.z;
+      w = msg->link_origin_position[j].rotation.w;
+      T_aff_foot.M = KDL::Rotation::Quaternion(x,y,z,w);
+      T_objectgeometry_foot=T_objectgeometry_aff*T_aff_foot;
+      
+      std::vector<std::string> joint_names;
+      std::vector<double> joint_positions;
+      if(foot_type==1){
+        joint_names.push_back("r_leg_aky");
+        joint_names.push_back("r_leg_akx");
+      }
+      else {
+        joint_names.push_back("l_leg_aky");
+        joint_names.push_back("l_leg_akx");    
+      }
+      
+      joint_positions.push_back(0);
+      joint_positions.push_back(0); 
+      _parent_affordance_renderer->stickyFootCollection->free_running_sticky_foot_cnt++;
+      int uid = _parent_affordance_renderer->stickyFootCollection->free_running_sticky_foot_cnt;
+      _parent_affordance_renderer->stickyFootCollection->add_or_update_sticky_foot(uid,foot_type,object_name,geometry_name,T_objectgeometry_foot,joint_names,joint_positions);   
+      
+      bool store=false;
+      if(store) // seed and autostore? or store manually?
+      {
+        string  unique_foot_name;
+        std::stringstream oss;
+        if(foot_type==0)
+            oss << object_name <<"_"<< geometry_name << "_lfootstep_" << uid;
+        else
+            oss << object_name <<"_"<< geometry_name << "_rfootstep_" << uid;
+        unique_foot_name = oss.str(); 
+        _parent_affordance_renderer->stickyFootCollection->store(unique_foot_name,false,_parent_affordance_renderer->affCollection); 
+      }
+
+    }
+ 
+ }
 
 // =======================================================================
 

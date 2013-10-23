@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
   
   // Block of Renderers:  
   setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
-  setup_renderer_robot_state(viewer, 0, lcm,0);
+  setup_renderer_robot_state(viewer, 0, lcm,0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   

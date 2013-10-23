@@ -100,6 +100,13 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
      bot_viewer_request_redraw(self->viewer);
      return 1;// consumed
   }
+  
+  if((event->button==3) &&(event->type==GDK_2BUTTON_PRESS)) // right dbl clk
+  {
+    string name(self->renderer.name);
+    self->_renderer_foviate=!self->_renderer_foviate;
+    (*self->_rendererFoviationSignalRef)((void*)self->viewer,name,self->_renderer_foviate); 
+  } 
 
     bot_viewer_request_redraw(self->viewer);
     return 0;
@@ -346,13 +353,16 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
 }
 
 void 
-setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode)
+setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef)
 {
     RobotStateRendererStruc *self = (RobotStateRendererStruc*) calloc (1, sizeof (RobotStateRendererStruc));
     self->lcm = boost::shared_ptr<lcm::LCM>(new lcm::LCM(lcm));
 
     self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self->lcm, 
               viewer, operation_mode));
+    self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RobotStateRendererStruc::keyboardSignalCallback,self,_1,_2)));
+    self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RobotStateRendererStruc::affTriggerSignalsCallback,self,_1,_2,_3,_4)));
+    self->_rendererFoviationSignalRef = rendererFoviationSignalRef;          
     
     BotRenderer *renderer = &self->renderer;
 
@@ -402,6 +412,8 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
   	self->teleop_error_entry =NULL;
     self->visualize_bbox = false;
     self->visualize_forces = false;
+    self->_renderer_foviate = false;
+    self->trigger_source_otdf_id = new std::string(" "); 
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);
 
 

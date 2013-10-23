@@ -166,8 +166,7 @@ namespace renderer_robot_plan
                                                       planSeed.graspframe_ids,
                                                       planSeed.graspframe_values);
       }
-      else
-          cerr<<  " unknown trigger "<< endl;
+
     }
     
   } RendererRobotPlan;
