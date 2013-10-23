@@ -1519,7 +1519,7 @@
       <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.0</updateRate>
-        <cameraName>sandia_hands/base/camera</cameraName>
+        <cameraName>sandia_hands/plane::xy::base/camera</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
         <frameName>left_palm_left_camera_optical_frame</frameName>
@@ -1559,11 +1559,11 @@
   <gazebo>
     <plugin filename="libContactModelPlugin.so" name="sandia_contact_plugin">
       <contact>
-        <collision>base::base_collision_left_palm</collision>
-        <collision>base::base_collision_left_palm_1</collision>
-        <collision>base::base_collision_left_palm_3</collision>
-        <collision>base::base_collision_left_palm_4</collision>
-        <collision>base::base_collision_left_palm_5</collision>
+        <collision>plane::xy::base::plane::xy::base_collision_left_palm</collision>
+        <collision>plane::xy::base::plane::xy::base_collision_left_palm_1</collision>
+        <collision>plane::xy::base::plane::xy::base_collision_left_palm_3</collision>
+        <collision>plane::xy::base::plane::xy::base_collision_left_palm_4</collision>
+        <collision>plane::xy::base::plane::xy::base_collision_left_palm_5</collision>
         <collision>left_f0_1::left_f0_1_collision</collision>
         <collision>left_f0_2::left_f0_2_collision</collision>
         <collision>left_f1_1::left_f1_1_collision</collision>

@@ -4,7 +4,7 @@
   <xacro:include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
 
   <xacro:sandia_hand side="right" parent="r_hand" reflect="1" joint_type="revolute" thumb_angle="0">
-    <origin xyz="-0.00179 -0.13516 0.01176" rpy="0 0 -1.57079"/>
+    <origin xyz="-0.00179 -0.13516 -0.01176" rpy="0 0 -1.57079"/>
   </xacro:sandia_hand>
   <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0"/>

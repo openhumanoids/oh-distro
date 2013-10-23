@@ -144,7 +144,7 @@
   <joint name="right_sandia_hand_joint" type="fixed">
     <parent link="r_hand"/>
     <child link="right_palm"/>
-    <origin rpy="0 0 -1.57079" xyz="-0.00179 -0.13516 0.01176"/>
+    <origin rpy="0 0 -1.57079" xyz="-0.00179 -0.13516 -0.01176"/>
   </joint>
   <link name="right_f0_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
