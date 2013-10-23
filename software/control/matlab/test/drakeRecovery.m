@@ -1,4 +1,5 @@
 function drakeRecovery(use_mex,use_bullet)
+  %notest
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -21,7 +22,7 @@ nq = getNumDOF(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 0*randn();
 xstar(2) = 0*randn();
-xstar(nq+2) = 0.2;
+xstar(nq+1) = 0.4;
 r = r.setInitialState(xstar);
 
 if use_bullet
