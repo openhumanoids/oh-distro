@@ -37,17 +37,18 @@ classdef PosTorqueRefFeedthroughBlock < MIMODrakeSystem
       gains.k_f_p(~arm_joints) = zeros(sum(~arm_joints),1);
       gains.ff_f_d(~arm_joints) = zeros(sum(~arm_joints),1);
       gains.ff_qd(~arm_joints) = zeros(sum(~arm_joints),1);
+
       if options.open_loop_torque
         gains.k_f_p(arm_joints) = zeros(sum(arm_joints),1);
         gains.ff_qd(arm_joints) = zeros(sum(arm_joints),1);
-
-        gains.ff_f_d(arm_joints) = ones(sum(arm_joints),1);
+        % scaling factor is made up here
+        gains.ff_f_d(arm_joints) = 0.01*ones(sum(arm_joints),1);
       end        
         
-%       % use relatively weak P gains for arms to pick up slack from model
-%       % errors
-%       gains.k_q_p(arm_joints) = 0*4*ones(sum(arm_joints),1);
-%       gains.k_qd_p(arm_joints) = 0*0.1*ones(sum(arm_joints),1);
+%        % use relatively weak P gains for arms to pick up slack from model
+%        % errors
+%        gains.k_q_p(arm_joints) = 0*4*ones(sum(arm_joints),1);
+       gains.k_qd_p(arm_joints) = 0*ones(sum(arm_joints),1);
  
       output_frame.updateGains(gains);
       

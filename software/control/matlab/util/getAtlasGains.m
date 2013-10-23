@@ -8,12 +8,11 @@ if atlas_input_frame.dim ~= nq
 end
 
 gains = struct();
-gains.k_q_i = zeros(nq,1);
-gains.ff_f_d = zeros(nq,1);
 gains.ff_qd_d = zeros(nq,1);
 
 k_f_p = Point(atlas_input_frame,0);
 k_q_p = Point(atlas_input_frame,0);
+k_q_i = Point(atlas_input_frame,0);
 k_qd_p = Point(atlas_input_frame,0);
 ff_qd = Point(atlas_input_frame,0);
 ff_f_d = Point(atlas_input_frame,0);
@@ -141,12 +140,12 @@ k_q_p.r_leg_hpy = k_q_p.l_leg_hpy;
 k_q_p.r_leg_kny = k_q_p.l_leg_kny;
 k_q_p.r_leg_aky = k_q_p.l_leg_aky;
 k_q_p.r_leg_akx = k_q_p.l_leg_akx;
-k_q_p.r_arm_usy = 10.5;
-k_q_p.r_arm_shx = 7.0; 
-k_q_p.r_arm_ely = 10.0;
+k_q_p.r_arm_usy = 14.0;
+k_q_p.r_arm_shx = 12.0; 
+k_q_p.r_arm_ely = 15.0;
 k_q_p.r_arm_elx = 16.0;
-k_q_p.r_arm_uwy = 17.0;
-k_q_p.r_arm_mwx = 13.75;
+k_q_p.r_arm_uwy = 17.0; % 10-23-13
+k_q_p.r_arm_mwx = 15.0; % 10-23-13
 
 k_qd_p.back_bkz  = 0.0;
 k_qd_p.back_bky  = 0.0;
@@ -173,12 +172,13 @@ k_qd_p.r_leg_akx = k_qd_p.l_leg_akx;
 k_qd_p.r_arm_usy = 0.5;
 k_qd_p.r_arm_shx = 0.9; 
 k_qd_p.r_arm_ely = 0.45;
-k_qd_p.r_arm_elx = 0.65;
-k_qd_p.r_arm_uwy = 0.1;
-k_qd_p.r_arm_mwx = 0.25; %note: seems to be sensitive--velocity noise
+k_qd_p.r_arm_elx = 0.5;
+k_qd_p.r_arm_uwy = 0.1; % 10-23-13
+k_qd_p.r_arm_mwx = 0.1; % 10-23-13
 
 gains.k_f_p = double(k_f_p);
 gains.k_q_p = double(k_q_p);
+gains.k_q_i = double(k_q_i);
 gains.k_qd_p = double(k_qd_p);
 gains.ff_f_d = double(ff_f_d);
 gains.ff_const = double(ff_const);

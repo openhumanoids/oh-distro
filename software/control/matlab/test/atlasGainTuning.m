@@ -22,7 +22,6 @@ function atlasGainTuning
 %  ff_const
 
 
-
 % load robot model
 options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
@@ -54,8 +53,8 @@ gains = getAtlasGains(input_frame);
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 joint = 'r_arm_mwx';% <---- 
-control_mode = 'force';% <----  force, position
-signal = 'foh';% <----  zoh, foh, chirp
+control_mode = 'position';% <----  force, position
+signal = 'chirp';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
 ff_const = gains.ff_const(act_idx==joint_index_map.(joint));% -0.16;% <----
@@ -75,12 +74,12 @@ end
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
-  zero_crossing = false;
+  zero_crossing = true;
   ts = linspace(0,40,800);% <----
-  amp = 0.0;% <----  Nm or radians
+  amp = 0.4;% <----  Nm or radians
   freq = linspace(0.1,0.5,800);% <----  cycles per second
 else
-  vals = [0 0 10 0 0];% <----  Nm or radians
+  vals = [0 0 0.2 0 0];% <----  Nm or radians
   ts = linspace(0,15,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,16 +117,12 @@ elseif strcmp(control_mode,'position')
   end
 end
 
-
-
-
 % set nonzero offsets
 joint_offset_map.l_arm_shx = -1.45;
 joint_offset_map.l_arm_ely = 1.57;
 joint_offset_map.r_arm_ely = 1.57;
 joint_offset_map.l_leg_kny = 1.57;
 joint_offset_map.r_leg_kny = 1.57;
-
 
 joint_offset_map.r_arm_uwy = 1.57;
 joint_offset_map.r_arm_elx = -1.57;
@@ -162,40 +157,6 @@ ref_frame.updateGains(gains);
 
 % setup desired pose based on joint being tuned
 qdes = zeros(nq,1);
-% if strcmp(joint,'l_arm_shx') || strcmp(joint,'r_arm_shx') || ...
-%     strcmp(joint,'l_arm_elx') || strcmp(joint,'r_arm_elx') || ...
-%     strcmp(joint,'neck_ay')
-% 
-%   qdes(joint_index_map.r_arm_shx) = 1.45;
-%   qdes(joint_index_map.l_arm_shx) = -1.45;
-%   
-% elseif strcmp(joint,'l_arm_usy') || strcmp(joint,'r_arm_usy') || ...
-%     strcmp(joint,'l_arm_uwy') || strcmp(joint,'r_arm_uwy') || ...
-%     strcmp(joint,'l_leg_hpy') || strcmp(joint,'r_arm_hpy') || ... 
-%     strcmp(joint,'l_leg_kny') || strcmp(joint,'r_arm_kny') || ...
-%     strcmp(joint,'l_arm_mwx') || strcmp(joint,'r_arm_mwx')
-%   
-%   qdes(joint_index_map.r_arm_shx) = 1.3;
-%   qdes(joint_index_map.l_arm_shx) = -1.3;
-% 
-% %  qdes(joint_index_map.l_leg_hpy) = -pi/2;
-% %  qdes(joint_index_map.l_leg_kny) = pi/2;
-% 
-% elseif strcmp(joint,'l_arm_ely')
-%   
-%   qdes(joint_index_map.r_arm_shx) = 1.45;
-%   qdes(joint_index_map.l_arm_elx) = 1.57;
-%   qdes(joint_index_map.l_arm_ely) = joint_offset_map.l_arm_ely;
-%   
-% elseif strcmp(joint,'r_arm_ely')
-%   
-%   qdes(joint_index_map.l_arm_shx) = -1.45;
-%   qdes(joint_index_map.r_arm_elx) = -1.57;
-%   qdes(joint_index_map.r_arm_ely) = joint_offset_map.r_arm_ely;
-% 
-% else
-%   error ('that joint isnt supported yet');
-% end
 
 if strcmp(joint,'l_leg_hpy') 
   

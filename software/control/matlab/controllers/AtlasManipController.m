@@ -49,8 +49,8 @@ classdef AtlasManipController < DRCController
         clear ins outs conn;
         
         % cascade pos/torque ref feedthrough block
-        options.open_loop_torque = true;
-        q_tau_ref = PosTorqueRefFeedthroughBlock(r);
+        options.open_loop_torque = false;
+        q_tau_ref = PosTorqueRefFeedthroughBlock(r,options);
         ins(1).system = 1;
         ins(1).input = 1;
         outs(1).system = 2;
@@ -74,7 +74,7 @@ classdef AtlasManipController < DRCController
         clear ins outs;
         
         % cascade PD block
-        options.Kp = 20.0*eye(getNumDOF(r));
+        options.Kp = 19.0*eye(getNumDOF(r));
         options.Kd =  5.0*eye(getNumDOF(r));
         options.use_qddtraj = true;
         options.use_kalman_est = true;
