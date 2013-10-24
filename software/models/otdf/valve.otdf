@@ -4,7 +4,7 @@
     <!-- World frame origin of the object -->
     <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="1.524" inc="0.001" min="-100" max="100" />
     <!--roll,pitch,yaw are about Body Frame-->
     <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="1.57" inc="0.01" min="-3.1416" max="3.1416" />
@@ -109,4 +109,25 @@
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.030652 1.5112 1.36858 -0.00156697 1.34831 1.17023 0.0308493 1.34372 1.10984 0.298116 0.999875 0.376832 " />
     </grasp_seed>
     <plan_seed name="2013-10-16-11-11::valve_3feet_60ddeg" />
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="RING_1_0" />
+        <relative_pose rpy="1.98995 -0.447303 1.60036" xyz="-0.114059 0.00400935 0.0820217" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0140036 1.55656 1.18635 -0.0175241 1.53421 1.06798 0.0142161 1.47831 1.49803 0.626677 1.23805 0.0570841 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="RING_0_0" />
+        <relative_pose rpy="-3.14159 -0.000499438 0.191073" xyz="-0.660479 -0.585463 1.44363" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="RING_0_0" />
+        <relative_pose rpy="-3.14159 -0.000499528 0.190144" xyz="-0.724292 -0.249843 1.44364" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
 </object>
