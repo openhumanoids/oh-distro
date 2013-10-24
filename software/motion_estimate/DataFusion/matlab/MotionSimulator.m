@@ -14,6 +14,7 @@ lc.subscribe('SE_INS_POSE_STATE', aggregator);
 %% Prepare IMU data
 
 
+
 RESULTS = setupUnitTest1Results(iterations);
 
 param.gravity = 9.81; % this is in the forward left up coordinate frame
@@ -25,13 +26,13 @@ param.dt = 1E-3;
 switch (trajtype) 
     case 'atlas'
         RESULTS.traj = gen_traj(iterations, param,0);
-    case 'yrate'
+    case 'rotate'
         RESULTS.traj = gen_specifc_traj(iterations, param, 0);
 end
 
 
 
-
+%%
 
 % This is what we have in the traj structure
 %
@@ -139,6 +140,8 @@ for n = 1:iterations
     RESULTS.trueINSPose.P_l(n,:) = trueINS.pose.P_l';
     RESULTS.trueINSPose.V_l(n,:) = trueINS.pose.V_l';
     RESULTS.trueINSPose.f_l(n,:) = trueINS.pose.f_l';
+    RESULTS.trueINSPose.a_l(n,:) = trueINS.pose.a_l';
+    
     
     RESULTS.trueINSPose.q(n,:) = trueINS.pose.q;
     

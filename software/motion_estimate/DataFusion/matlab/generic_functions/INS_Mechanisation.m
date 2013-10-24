@@ -20,7 +20,9 @@ dt = (pose.utime - pose__.utime)*1e-6;
 pose.P_l = pose__.P_l + (pose__.V_l) * dt; 
 
 pose.R = closed_form_DCM_farrell( 0.5*(pose__.da+imudata.da)*dt , pose__.R); % trapezoidal integration, before application through the exponential map
-pose.f_l = pose.R' * (imudata.ddp) - imudata.gravity;
+
+pose.a_l = pose.R' * (imudata.ddp);
+pose.f_l = pose.a_l - imudata.gravity; % we break this step up specifically for testing purposes
 
 % pose.f_l = q2R(imudata.q)' * (imudata.ddp);
 
