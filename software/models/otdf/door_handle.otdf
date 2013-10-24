@@ -53,7 +53,14 @@
         <relative_pose rpy="0.355123 -0.24444 1.48139" xyz="-0.0496232 0.0609449 -0.170533" />
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.014091 0 1.43936 0.000839124 0 1.05674 0.014126 -1.5 -1.0 0 0 0 " />
-    </grasp_seed> 
+    </grasp_seed>
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="HAND" />-->
+    <!--        <geometry name="door_handle_0" />-->
+    <!--        <relative_pose rpy="0.46515 -0.00477829 -1.57803" xyz="0.00332119 0.0365981 -0.120476" />-->
+    <!--        <grasp_type type="1" />-->
+    <!--        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="0 1.5 1.4 0 1.5 1.4 0 1.5 1.4 0 0 0 " />-->
+    <!--    </grasp_seed>-->
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="door_handle_0" />
@@ -68,5 +75,18 @@
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
-
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="door_handle_0" />
+        <relative_pose rpy="-1.57019 -0.882605 -0.000779849" xyz="-0.00994922 -0.832911 -0.679243" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="door_handle_0" />
+        <relative_pose rpy="-1.57017 -0.901032 -0.000798039" xyz="0.296911 -0.832897 -0.933441" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
 </object>
