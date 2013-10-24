@@ -90,14 +90,18 @@ classdef KeyframePlanner < handle
             % Goals are presented in palm frame, must be transformed to hand coordinate frame
             % Using notation similar to KDL.
             % fixed transform between hand and palm as specified in the urdf
-            ft_sensor_offset = 0.03516; 
-            
-            obj.T_hand_palm_l_sandia = HT([-0.00179;0.13516;0.01176],0,0,1.57079);
-            obj.T_hand_palm_r_sandia = HT([-0.00179;-0.13516;0.01176],0,0,-1.57079);
-            %rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0"
-            %rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0"
+            %ft_sensor_offset = 0.03516; 
+      
+  
+            % <origin xyz="0.00179  0.13516 0.01176" rpy="0 0  1.57079"/>          
+            obj.T_hand_palm_l_sandia = HT([0.00179;0.13516;0.01176],0,0,1.57079);
+            % <origin xyz="-0.00179 -0.13516 -0.01176" rpy="0 0 -1.57079"/>
+            obj.T_hand_palm_r_sandia = HT([-0.00179;-0.13516;-0.01176],0,0,-1.57079);
+
+            % <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0"/>
             obj.T_hand_palm_l_irobot = HT([0;0.11516;0],1.57079,3.14159,3.14159);
-            obj.T_hand_palm_r_irobot = HT([0;-0.11516;0],1.57079,3.14159,0);           
+            % <origin rpy="1.57079 0 0" xyz="0 -0.08516 0"/>
+            obj.T_hand_palm_r_irobot = HT([0;-0.08516;0],1.57079,0,0);           
             
             %ft_sensor_offset = 0.045; % approx 1.8 inches            
             %obj.T_hand_palm_l_sandia = HT([0;0.1+ft_sensor_offset;0],0,0,1.57079);
