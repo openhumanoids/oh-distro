@@ -254,7 +254,7 @@ namespace renderer_affordances_gui_utils
           publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_palm","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
         }
         else if(grasp_type== msg.IROBOT_LEFT) {
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_base_link","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag); // TODO: change channel name?
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_base_link","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag); // TODO: change channel name?
         }
         else if(grasp_type== msg.IROBOT_RIGHT) {
           publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_base_link","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
