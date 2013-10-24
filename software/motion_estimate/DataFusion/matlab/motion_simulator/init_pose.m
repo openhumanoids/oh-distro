@@ -6,3 +6,4 @@ pose.V_l = zeros(3,1);
 pose.R = eye(3);
 pose.f_l = zeros(3,1);
 pose.da = zeros(3,1);
+pose.q = [1;0;0;0];
