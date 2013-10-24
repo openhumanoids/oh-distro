@@ -1,4 +1,8 @@
-function RESULTS = MotionSimulator(iterations)
+function RESULTS = MotionSimulator(iterations, trajtype)
+
+if (nargin<2)
+    trajtype = 'atlas';
+end
 
 %% Setup lcm
 
@@ -9,12 +13,25 @@ lc.subscribe('SE_INS_POSE_STATE', aggregator);
 
 %% Prepare IMU data
 
-% iterations = 10000;
+
+RESULTS = setupUnitTest1Results(iterations);
 
 param.gravity = 9.81; % this is in the forward left up coordinate frame
 param.dt = 1E-3;
-    
-traj = gen_traj(iterations, param,0);
+
+
+
+
+switch (trajtype) 
+    case 'atlas'
+        RESULTS.traj = gen_traj(iterations, param,0);
+    case 'yrate'
+        RESULTS.traj = gen_specifc_traj(iterations, param, 0);
+end
+
+
+
+
 
 % This is what we have in the traj structure
 %
@@ -52,35 +69,36 @@ for n = 1:15
     imuMsgBatch = [imuMsgBatch, drc.atlas_raw_imu_t()];
 end
 
+% Setup the results data structure
+
 %% Send and IMU messages
 
 % Set initial pose states to zero
 pose = init_pose();
 storeCppINS.pose = init_pose();
 
-data.true.utime = traj.utime;
+data.true.utime = RESULTS.traj.utime;
 
-data.true.pose.utime = traj.utime;
-data.true.pose.P_l = traj.true.P_l;
-data.true.pose.V_l = traj.true.V_l;
-data.true.pose.f_l = traj.true.f_l;
+data.true.pose.utime = RESULTS.traj.utime;
+data.true.pose.P_l = RESULTS.traj.true.P_l;
+data.true.pose.V_l = RESULTS.traj.true.V_l;
+data.true.pose.f_l = RESULTS.traj.true.f_l;
 % for n=1:iterations
 % data.true.pose.R(n,:,:) = q2R(traj.true.q(n,:)');
 % end
     
 % Assume constant gravity for the test
-true.inertial.gravity = [0;0;traj.parameters.gravity];% using forward-left-up/xyz body frame
+true.inertial.gravity = [0;0;RESULTS.traj.parameters.gravity];% using forward-left-up/xyz body frame
 
-% Setup the results data structure
-RESUTLS = setupUnitTest1Results(iterations);
+
 
 disp('Starting the motion simulation loop')
 for n = 1:iterations
     
-    true.inertial.utime =  traj.utime(n);
-    true.inertial.ddp   =  traj.true.a_b(n,:)';
-    true.inertial.da    = -traj.true.w_b(n,:)';
-    true.inertial.q     =  traj.true.q(n,:)';
+    true.inertial.utime =  RESULTS.traj.utime(n);
+    true.inertial.ddp   =  RESULTS.traj.true.a_b(n,:)';
+    true.inertial.da    = -RESULTS.traj.true.w_b(n,:)';
+    true.inertial.q     =  RESULTS.traj.true.q(n,:)';
     
     % Compute the truth trajectory
     if (n==1)
@@ -92,11 +110,13 @@ for n = 1:iterations
        
     end
     
+    
+    
     % add earth bound effects, including gravity
-    measured.imu.utime =  traj.utime(n);
-    measured.imu.gyr   = -traj.true.w_b(n,:)';
-    measured.imu.acc   =  traj.true.a_b(n,:)';
-    measured.imu.q     =  traj.true.q(n,:)';
+    measured.imu.utime =  RESULTS.traj.utime(n);
+    measured.imu.gyr   =  RESULTS.traj.true.w_b(n,:)';
+    measured.imu.acc   =  RESULTS.traj.true.a_b(n,:)';
+    measured.imu.q     =  RESULTS.traj.true.q(n,:)';
     
     % Add sensor errors
 %     [measured.imu, noiseStates ] = addIMUNoise(measured.imu, noiseStates)
@@ -115,20 +135,33 @@ for n = 1:iterations
     end
     
     % ====== Here we evaluate the results of the data =====================
+    % store the MATLAB computed INS pose states
+    RESULTS.trueINSPose.P_l(n,:) = trueINS.pose.P_l';
+    RESULTS.trueINSPose.V_l(n,:) = trueINS.pose.V_l';
+    RESULTS.trueINSPose.f_l(n,:) = trueINS.pose.f_l';
+    
+    RESULTS.trueINSPose.q(n,:) = trueINS.pose.q;
+    
+    % store the cpp computed INS pose states
+    RESULTS.cppINSPose.P_l(n,:) = storeCppINS.pose.P_l';
+    RESULTS.cppINSPose.V_l(n,:) = storeCppINS.pose.V_l';
+    RESULTS.cppINSPose.f_l(n,:) = storeCppINS.pose.f_l';
+    
+    RESULTS.cppINSPose.q(n,:) = storeCppINS.pose.q;
     
     % These are the residuals from the control test INS here in MATLABland
-    RESULTS.trueINSPoseResiduals.P_l(n,:) = traj.true.P_l(n,:) - trueINS.pose.P_l';
-    RESULTS.trueINSPoseResiduals.V_l(n,:) = traj.true.V_l(n,:) - trueINS.pose.V_l';
-    RESULTS.trueINSPoseResiduals.f_l(n,:) = traj.true.P_l(n,:) - trueINS.pose.f_l';
+    RESULTS.trueINSPoseResiduals.P_l(n,:) = RESULTS.traj.true.P_l(n,:) - trueINS.pose.P_l';
+    RESULTS.trueINSPoseResiduals.V_l(n,:) = RESULTS.traj.true.V_l(n,:) - trueINS.pose.V_l';
+    RESULTS.trueINSPoseResiduals.f_l(n,:) = RESULTS.traj.true.P_l(n,:) - trueINS.pose.f_l';
     
-    RESULTS.trueINSPoseResiduals.q(n,:) = quaternionResidual(traj.true.q(n,:)', trueINS.pose.q')';
+    RESULTS.trueINSPoseResiduals.q(n,:) = quaternionResidual(RESULTS.traj.true.q(n,:)', trueINS.pose.q')';
     
     % These are the residuals from the state-estimate process
-    RESULTS.cppINSPoseResiduals.P_l(n,:) = traj.true.P_l(n,:) - storeCppINS.pose.P_l';
-    RESULTS.cppINSPoseResiduals.V_l(n,:) = traj.true.V_l(n,:) - storeCppINS.pose.V_l';
-    RESULTS.cppINSPoseResiduals.f_l(n,:) = traj.true.f_l(n,:) - storeCppINS.pose.f_l';
+    RESULTS.cppINSPoseResiduals.P_l(n,:) = RESULTS.traj.true.P_l(n,:) - storeCppINS.pose.P_l';
+    RESULTS.cppINSPoseResiduals.V_l(n,:) = RESULTS.traj.true.V_l(n,:) - storeCppINS.pose.V_l';
+    RESULTS.cppINSPoseResiduals.f_l(n,:) = RESULTS.traj.true.f_l(n,:) - storeCppINS.pose.f_l';
     
-    RESULTS.cppINSPoseResiduals.q(n,:) = quaternionResidual(traj.true.q(n,:), storeCppINS.pose.q')';
+    RESULTS.cppINSPoseResiduals.q(n,:) = quaternionResidual(RESULTS.traj.true.q(n,:), storeCppINS.pose.q')';
     
 end
 

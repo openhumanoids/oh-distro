@@ -2,17 +2,21 @@
 
 clear
 
+iterations = 5000;
 
-RESULTS = MotionSimulator(iterations)
+RESULTS = MotionSimulator(iterations);
 
 
 %% plot some stuff
 
 
 figure(1), clf;
-plot3(traj.true.P_l(:,1),traj.true.P_l(:,2),traj.true.P_l(:,3),'Linewidth',2)
-% title(['3D Position from ' num2str(t(1)) ' s to ' num2str(t(end)) ' s'])
+plot3(RESULTS.traj.true.P_l(:,1),RESULTS.traj.true.P_l(:,2),RESULTS.traj.true.P_l(:,3),'Linewidth',2)
+hold on
+plot3(RESULTS.trueINSPose.P_l(:,1),RESULTS.trueINSPose.P_l(:,2),RESULTS.trueINSPose.P_l(:,3),'g:','Linewidth',2.5)
+plot3(RESULTS.cppINSPose.P_l(:,1),RESULTS.cppINSPose.P_l(:,2),RESULTS.cppINSPose.P_l(:,3),'r','Linewidth',2)
 grid on
+% title(['3D Position from ' num2str(t(1)) ' s to ' num2str(t(end)) ' s'])
 axis equal
 
 %%
