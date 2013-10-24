@@ -577,9 +577,11 @@ classdef ReachingPlanner < KeyframePlanner
                 end % end if(~obj.isBDIManipMode())
                 
                 if(snopt_info >10)
+                    % this warning is at an intermediate point in the planning
+                    % it is not an indication that the final plan is in violation
                     warning('The IK fails at the end');
-                    send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.',snopt_info);
-                    send_status(4,0,0,send_msg);
+                    %send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.',snopt_info);
+                    %send_status(4,0,0,send_msg);
                     display(infeasibleConstraintMsg(infeasible_constraint));
                 end
             else
