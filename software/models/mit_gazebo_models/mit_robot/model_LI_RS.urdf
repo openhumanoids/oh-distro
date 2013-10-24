@@ -1598,7 +1598,7 @@
     <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
   </joint>
   <joint name="left_irobot_hand_joint" type="fixed">
-    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0"/>
+    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
     <parent link="l_hand"/>
     <child link="left_base_link"/>
   </joint>
