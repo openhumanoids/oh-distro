@@ -43,6 +43,7 @@ classdef HandListener
         hand_frame_str = {};
         display(sprintf('construct irobot hand listener for %s hand',prefix));
       end
+      obj.hand_mode = hand_mode;
       obj.hand_frame = CoordinateFrame(sprintf('irobot%sHand',prefix),obj.hand_dim*2,[],hand_frame_str);
       obj.hand_map = containers.Map();
     end

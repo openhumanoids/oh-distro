@@ -131,10 +131,10 @@ pose_goal_listener = TrajOptConstraintListener('POSE_GOAL');
 manip_plan_mode_listener = ManipPlanModeListener('MANIP_PLANNER_MODE_CONTROL');
 
 % WorkspaceURDF subscriber
-workspace_urdf_listener = WorkspaceURDFListener('COLLISION_AVOIDANCE_URDFS');
-urdf_names = {};
-aff_manager = AffordanceManager(atlas,robot,l_hand_listener.hand_frame,...
-  r_hand_listener.hand_frame,'AFFORDANCE_COLLECTION');
+% workspace_urdf_listener = WorkspaceURDFListener('COLLISION_AVOIDANCE_URDFS');
+% urdf_names = {};
+% aff_manager = AffordanceManager(atlas,robot,l_hand_listener.hand_frame,...
+%   r_hand_listener.hand_frame,'AFFORDANCE_COLLECTION');
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
 lh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
@@ -190,25 +190,25 @@ ee_goal_type_flags.lf = 0;
 ee_goal_type_flags.rf = 0;
  
 while(1)
-  aff_manager.updateWmessage(msg_timeout);
-  % update the aff_data
-  urdf_msg = workspace_urdf_listener.getNextMessage(msg_timeout);
-  if(~isempty(urdf_msg))
-    aff_idx = find(aff_manager.aff_uid == urdf_msg.uid);
-    robot = addAffordance2robot(robot,urdf_msg.urdf_file,aff_manager.aff_xyz(:,aff_idx),...
-      aff_manager.aff_rpy(:,aff_idx),struct('floating',false));
-    
-    aff_manager.updateWcollisionObject(robot.getStateFrame,urdf_msg.uid,atlas_state_frame,...
-      l_hand_listener.hand_frame,r_hand_listener.hand_frame);
-    reaching_planner.updateRobot(robot);
-    manip_planner.updateRobot(robot);
-    posture_planner.updateRobot(robot);
-    endpose_planner.updateRobot(robot);
-    wholebody_planner.updateRobot(robot);
-    keyframe_adjustment_engine.updateRobot(robot);
-    
-    urdf_names = [urdf_names,{urdf_msg.urdf_file}];
-  end
+%   aff_manager.updateWmessage(msg_timeout);
+%   % update the aff_data
+%   urdf_msg = workspace_urdf_listener.getNextMessage(msg_timeout);
+%   if(~isempty(urdf_msg))
+%     aff_idx = find(aff_manager.aff_uid == urdf_msg.uid);
+%     robot = addAffordance2robot(robot,urdf_msg.urdf_file,aff_manager.aff_xyz(:,aff_idx),...
+%       aff_manager.aff_rpy(:,aff_idx),struct('floating',false));
+%     
+%     aff_manager.updateWcollisionObject(robot.getStateFrame,urdf_msg.uid,atlas_state_frame,...
+%       l_hand_listener.hand_frame,r_hand_listener.hand_frame);
+%     reaching_planner.updateRobot(robot);
+%     manip_planner.updateRobot(robot);
+%     posture_planner.updateRobot(robot);
+%     endpose_planner.updateRobot(robot);
+%     wholebody_planner.updateRobot(robot);
+%     keyframe_adjustment_engine.updateRobot(robot);
+%     
+%     urdf_names = [urdf_names,{urdf_msg.urdf_file}];
+%   end
   
     modeset=manip_plan_mode_listener.getNextMessage(msg_timeout);
     if(~isempty(modeset))
@@ -344,23 +344,23 @@ while(1)
         % note: setting the desired to actual at
         % the start of the plan might cause an impulse from gravity sag
         x0 = zeros(robot.getNumStates,1);
-        x0(aff_manager.atlas2robotFrameMap) = x;
-        for i = 1:aff_manager.num_affs
-          if(aff_manager.isCollision(i))
-            x0(aff_manager.aff2robotFrameMap{i}) = aff_manager.aff_state{i};
-          end
-        end
+%         x0(aff_manager.atlas2robotFrameMap) = x;
+%         for i = 1:aff_manager.num_affs
+%           if(aff_manager.isCollision(i))
+%             x0(aff_manager.aff2robotFrameMap{i}) = aff_manager.aff_state{i};
+%           end
+%         end
         x0 = x;
     end
     
     data = getNextMessage(l_hand_listener,msg_timeout);
     if(~isempty(data))
-      x0(aff_manager.lhand2robotFrameMap) = data;
+%       x0(aff_manager.lhand2robotFrameMap) = data;
     end
     
     data = getNextMessage(r_hand_listener,msg_timeout);
     if(~isempty(data))
-      x0(aff_manager.rhand2robotFrameMap) = data;
+%       x0(aff_manager.rhand2robotFrameMap) = data;
     end
     x= constraint_listener.getNextMessage(msg_timeout); % not a frame
     if(~isempty(x))
