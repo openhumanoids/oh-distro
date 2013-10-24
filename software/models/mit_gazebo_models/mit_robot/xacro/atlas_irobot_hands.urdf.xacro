@@ -7,12 +7,11 @@
   <xacro:include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
 
   <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="1.57079 0 0" xyz="0 -0.08516 0"/>
+    <origin rpy="1.57079 0 0" xyz="0 -0.11516 0"/>
   </xacro:irobot_hand>
   <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0"/>
   </xacro:irobot_hand>
-
 
 <!-- 
 05 sept: Sisir added an offset of 0.045 in the urdf to account 
@@ -26,7 +25,8 @@ mfallon made this adjustment:
 
 27 sept: mfallon tested with the left irobot hand on the robot and found 
 significant errors in yaw and y. fixed them as best as I could (3-4cm)
-needs to be improved further
+needs to be improved further.
+New y seperation: 0 0.11516
 -->
 
 </robot>
