@@ -4,6 +4,8 @@ classdef QTrajEvalBlock < MIMODrakeSystem
   properties
     robot;
     controller_data;
+    dt;
+    use_error_integrator;
   end
   
   methods
@@ -19,6 +21,21 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       if nargin<3
         options = struct();
       end
+
+      if isfield(options,'use_error_integrator')
+        typecheck(options.use_error_integrator,'logical');
+        if options.use_error_integrator
+          if ~isfield(ctrl_data,'integral') || ~isfield(ctrl_data,'integral_gains')
+            error('controller_data must contain integral and integral_gains variables');
+          else
+            typecheck(ctrl_data.integral,'double');
+            typecheck(ctrl_data.integral_gains,'double');
+            sizecheck(ctrl_data.integral_gains,[getNumDOF(r) 1]);
+          end
+        end
+      else
+        options.use_error_integrator = false;
+      end
       
       atlas_state = getStateFrame(r);
       input_frame = atlas_state;
@@ -31,14 +48,15 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
-        dt = options.dt;
+        obj.dt = options.dt;
       else
-        dt = 0.003;
+        obj.dt = 0.003;
       end
-      obj = setSampleTime(obj,[dt;0]);
+      obj = setSampleTime(obj,[obj.dt;0]);
       
       obj.robot = r;
       obj.controller_data = controller_data;
+      obj.use_error_integrator = options.use_error_integrator;
     end
        
     function [qdes,x]=mimoOutput(obj,t,~,x)
@@ -49,6 +67,14 @@ classdef QTrajEvalBlock < MIMODrakeSystem
         % pp trajectory
         qdes = fasteval(qtraj,t);
       end
+      q = x(1:end/2);
+      
+      setField(obj.controller_data,'integral', ...
+        obj.controller_data.data.integral + obj.controller_data.data.integral_gains.*(qdes-q)*obj.dt);
+      
+      qdes = qdes + max(-0.1,min(0.1,obj.controller_data.data.integral));
+      [jlmin,jlmax] = getJointLimits(obj.robot);
+      qdes = max(jlmin,min(jlmax,qdes));
     end
   end
   

@@ -13,16 +13,29 @@ classdef AtlasManipController < DRCController
         options = struct();
       end
       
+      arm_joints = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'arm'));
+      back_joints = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'back'));
+  
+      integral_gains = zeros(getNumDOF(r),1);
+      if options.controller_type == 1 % use PD control
+        integral_gains(arm_joints) = 0.5;
+        integral_gains(back_joints) = 0.0;
+      end
+      
       ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
-                            'qddtraj',zeros(getNumDOF(r),1)));
+                            'qddtraj',zeros(getNumDOF(r),1),...
+                            'integral',zeros(getNumDOF(r),1),...
+                            'integral_gains',integral_gains)); 
 
-      qt = QTrajEvalBlock(r,ctrl_data);
+      options.use_error_integrator = true;
+      qt = QTrajEvalBlock(r,ctrl_data,options);
       
       if ~isfield(options,'controller_type')
         options.controller_type = 1;
       end
       
       if options.controller_type == 1 % use PD control
+        
         
         % instantiate position ref publisher
         qref = PositionRefFeedthroughBlock(r);
@@ -174,6 +187,7 @@ classdef AtlasManipController < DRCController
           end          
           obj.controller_data.setField('qtraj',qtraj);
           obj.controller_data.setField('qddtraj',fnder(qtraj,2));
+          %obj.controller_data.setField('integral',zeros(getNumDOF(obj.robot),1));
         catch err
           r = obj.robot;
           x0 = data.AtlasState; % should have an atlas state
