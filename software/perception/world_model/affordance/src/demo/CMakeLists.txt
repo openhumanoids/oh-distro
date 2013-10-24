@@ -44,6 +44,16 @@ pods_install_executables(ee-driver)
 
 
 
+##############################################
+add_executable (affordance_debris_util affordance_debris_util.cpp)
+target_link_libraries (affordance_debris_util curses boost_system   lcm)
+pods_use_pkg_config_packages(affordance_debris_util lcm model-client
+   lcmtypes_drc_lcmtypes  bot2-core glib-2.0
+   pointcloud_math
+   eigen3 ${REQUIRED_PACKAGES})
+pods_install_executables(affordance_debris_util)
+
+
 
 ############ Demo Apps: ###########################
 # send one poly:

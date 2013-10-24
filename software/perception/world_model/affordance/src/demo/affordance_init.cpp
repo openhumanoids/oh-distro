@@ -3,6 +3,9 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/assign/std/vector.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/foreach.hpp>
+
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
 
@@ -24,10 +27,21 @@
 
 using namespace pcl;
 using namespace pcl::io;
+using namespace boost::assign; // bring 'operator+()' into scope
+using namespace boost;
 
 char* pHome = getenv("HOME");  
 string home = string(pHome);
 
+
+// Raw details read from affordance text file
+class AffRaw { 
+public:
+  AffRaw(std::string friendly_name, std::vector<double> params):
+    friendly_name_ (friendly_name), params_(params){};
+  string friendly_name_;
+  std::vector<double> params_;
+};
 
 using namespace std;
 class Pass{
@@ -38,7 +52,7 @@ class Pass{
     }    
     
 
-    void doDemo(int which_publish, bool add_filename);
+    void doDemo(int which_publish, bool add_filename, int which_publish_single);
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     drc::affordance_plus_t getCarAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
@@ -47,7 +61,12 @@ class Pass{
     drc::affordance_plus_t getDynamicMeshSteeringCylAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid); 
     drc::affordance_plus_t getDynamicMeshTwoCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getAffordancePlusForFirehoseMatableStandpipe(std::string filename, std::vector<double> &xyzrpy, int uid);
+    
+    drc::affordance_plus_t getBoxAffordancePlus(int uid, std::string friendly_name, std::vector<double> &xyzrpy , std::vector<double> &lengths);
     AffordanceUtils affutils;
+    
+    //void readAffordanceFile(std::string filename);
+    std::vector<AffRaw> readAffordanceFile(std::string filename);
     
     bool set_param(drc::affordance_plus_t &a1,std::string param_name, double val){
       std::vector<std::string>::const_iterator found;
@@ -393,10 +412,78 @@ drc::affordance_plus_t Pass::getAffordancePlusForFirehoseMatableStandpipe(std::s
   return p;
 }
 
+drc::affordance_plus_t Pass::getBoxAffordancePlus(int uid, std::string friendly_name, std::vector<double> &xyzrpy , std::vector<double> &lengths){ 
+  drc::affordance_t a;
+  a.utime =0;
+  a.map_id =0;
+  a.uid =uid;
+  a.otdf_type ="box";
+  a.aff_store_control = drc::affordance_t::NEW;
+
+  a.param_names.push_back("lX");      a.params.push_back(lengths[0]);
+  a.param_names.push_back("lY");      a.params.push_back(lengths[1]);
+  a.param_names.push_back("lZ");      a.params.push_back(lengths[2]);
+  a.nparams = a.params.size();
+  a.nstates =0;
+  
+  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+  
+  drc::affordance_plus_t a1;
+  a1.aff = a;
+  a1.npoints=0; 
+  a1.ntriangles =0;
+
+  return a1;
+}
 
 
 
-void Pass::doDemo(int which_publish, bool add_filename){
+std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
+
+  std::vector<AffRaw> affraw_list;
+  
+  ifstream fileinput (filename);
+  if (fileinput.is_open()){
+    string message;
+    while ( getline (fileinput,message) ) { // for each line
+      //cout << message << endl;
+
+      vector<string> tokens;
+      boost::split(tokens, message, boost::is_any_of(","));
+      vector<double> values;
+      for (size_t i=1 ; i < tokens.size() ; i++){
+        //std::cout << tokens[i] << "\n";
+        values.push_back(lexical_cast<double>( tokens[i] ));
+      }
+
+      std::cout << "aff: " << tokens[0] << ": " ;
+      for (size_t i=0 ; i < values.size() ; i++){
+        std::cout << values[i] << ", " ; 
+      }
+      std::cout << "\n";
+      
+      AffRaw aff(tokens[0] , values );
+      affraw_list.push_back(aff);
+      /*int tag_id =lexical_cast<int>( values[0] );
+      Eigen::Isometry3d tag_pose;
+      tag_pose.setIdentity();
+      tag_pose.translation()  << values[1], values[2], values[3];
+      Eigen::Quaterniond quat = Eigen::Quaterniond(values[4], values[5], values[6], values[7] );
+      tag_pose.rotate(quat);
+      tags_.insert( make_pair( tag_id , TagDetails( tag_id , tag_pose ) ) ); 
+      */
+    }
+  }
+  fileinput.close();
+
+  return affraw_list;
+}
+
+
+
+
+void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single){
   
   if ((which_publish==1) || (which_publish==0)){
     int uid0 = 12;
@@ -578,6 +665,34 @@ void Pass::doDemo(int which_publish, bool add_filename){
   } 
 
   
+  if ((which_publish==9)){ 
+    std::vector<AffRaw> affraw_list = readAffordanceFile("/home/mfallon/drc/software/perception/world_model/affordance/scripts/debrisPositions.csv");
+    std:: cout << affraw_list.size() << "read\n";
+    for (size_t i=0 ; i < affraw_list.size() ; i++){
+      AffRaw affraw = affraw_list[i];
+      std::vector<double> xyzrpy = { affraw.params_[0], affraw.params_[1], affraw.params_[2], affraw.params_[3], affraw.params_[4], affraw.params_[5] };
+      std::vector<double> lengths = { affraw.params_[6], affraw.params_[7], affraw.params_[8]};
+      int uid = i+1;
+      string friendly_name = affraw.friendly_name_;
+      drc::affordance_plus_t a1 =getBoxAffordancePlus(uid,friendly_name, xyzrpy, lengths);
+      lcm_->publish("AFFORDANCE_FIT",&a1);
+    }
+  }  
+  
+  if ((which_publish==10)){ 
+    std::vector<AffRaw> affraw_list = readAffordanceFile("/home/mfallon/drc/software/perception/world_model/affordance/scripts/debrisPositions.csv");
+    std:: cout << affraw_list.size() << "read\n";
+    AffRaw affraw = affraw_list[ which_publish_single];
+    std::vector<double> xyzrpy = { affraw.params_[0], affraw.params_[1], affraw.params_[2], affraw.params_[3], affraw.params_[4], affraw.params_[5] };
+    std::vector<double> lengths = { affraw.params_[6], affraw.params_[7], affraw.params_[8]};
+    int uid = which_publish_single+1;
+    string friendly_name = affraw.friendly_name_;
+    std::cout << friendly_name << "\n";
+      
+    drc::affordance_plus_t a1 =getBoxAffordancePlus(uid,friendly_name, xyzrpy, lengths);
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+  }  
+  
 /*  
   drc::affordance_plus_collection_t aplus_coll;
   aplus_coll.affs_plus.push_back( a0 );
@@ -599,10 +714,13 @@ int main( int argc, char** argv ){
   std::cout << "manip valve is 6\n";      
 
   int which_publish=0;
+  int which_publish_single=0;
   bool add_filename=false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(add_filename, "f", "add_filename","add_filename [send only filename or send pts/mesh]");
   opt.add(which_publish, "e", "which_publish","which_publish [0 is all]");
+  
+  opt.add(which_publish_single, "s", "which_publish_single","which_publish_single");  
   opt.parse();
   std::cout << "which_publish: " << which_publish << "\n";    
   std::cout << "add_filename: " << add_filename << "\n";    
@@ -614,6 +732,6 @@ int main( int argc, char** argv ){
   
   Pass app(lcm);
   cout << "Demo Ready" << endl << "============================" << endl;
-  app.doDemo(which_publish, add_filename);
+  app.doDemo(which_publish, add_filename, which_publish_single);
   return 0;
 }
