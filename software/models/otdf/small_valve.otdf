@@ -2,13 +2,13 @@
 <object name="small_valve">
     <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
     <!-- World frame origin of the object -->
-    <param name="x" default_value="0.67" inc="0.001" min="-100" max="100" />
-    <param name="y" default_value="0.282" inc="0.001" min="-100" max="100" />
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="-0.61" inc="0.001" min="-100" max="100" />
     <param name="z" default_value="0.9144" inc="0.001" min="-100" max="100" />
     <!--roll,pitch,yaw are about Body Frame-->
     <param name="roll" default_value="1.5708" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="yaw" default_value="-1.10" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="-1.5708" inc="0.01" min="-3.1416" max="3.1416" />
     <!-- Size of the outer most bounding volume -->
     <param name="radius" default_value="0.05" inc="0.0025" min="0" max="100" />
     <param name="length" default_value="0.02" inc="0.0025" min="0" max="100" />
@@ -50,15 +50,15 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="cylinder_0" />
-        <relative_pose rpy="-1.57144 0.906836 -0.000815075" xyz="-0.891151 -0.833298 0.335802" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+        <relative_pose rpy="1.57324 1.36776 -3.1391" xyz="-0.4322 -0.833309 0.576684" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="cylinder_0" />
-        <relative_pose rpy="-1.5715 0.952601 -0.000866909" xyz="-0.566764 -0.833309 0.563182" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+        <relative_pose rpy="1.57414 1.42129 -3.13822" xyz="-0.825231 -0.833297 0.618487" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
 </object>

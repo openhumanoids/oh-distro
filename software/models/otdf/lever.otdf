@@ -3,7 +3,7 @@
     <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
     <!-- World frame origin of the object -->
     <param name="x" default_value="0" inc="0.001" min="-100" max="100" />
-    <param name="y" default_value="0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="-0.305" inc="0.001" min="-100" max="100" />
     <param name="z" default_value="1.2192" inc="0.001" min="-100" max="100" />
     <!-- 4feet default -->
     <!--roll,pitch,yaw are about Body Frame-->
@@ -46,6 +46,14 @@
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0143281 1.55755 1.48997 -0.0151104 1.4683 1.3814 0.0136141 1.53149 1.08154 0.0755219 1.43771 -0.482409 " />
     </grasp_seed>
+     <grasp_seed>
+            <appendage type="HAND" />
+            <geometry name="lever_0" />
+            <relative_pose rpy="0.355123 -0.24444 1.48139" xyz="-0.0496232 0.0609449 -0.123139" />
+            <grasp_type type="1" />
+            <!--        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.014091 1.55548 1.43936 0.000839124 1.5167 1.05674 0.014126 1.36024 1.05126 0.388699 0.936248 0.911409 " />-->
+            <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.014091 1.35548 0.00 0.000839124 1.3167 0.00 0.014126 -1.5 -1.0 0.0 0.0 0.0 " />
+        </grasp_seed>    
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="lever_0" />

@@ -8,7 +8,7 @@
     <!--roll,pitch,yaw are about Body Frame-->
     <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="1.57" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="-3.14" inc="0.01" min="-3.1416" max="3.1416" />
     <!-- Size of the outer most bounding volume -->
     <param name="tube_radius" default_value="0.02" inc="0.0025" min="0" max="100" />
     <param name="spoke_radius" default_value="0.012" inc="0.0025" min="0" max="100" />
