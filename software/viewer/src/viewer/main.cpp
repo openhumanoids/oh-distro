@@ -69,7 +69,7 @@ std::vector<std::string> input_enabled_rendererNames;
 
 static void foviationSpecificRenderer(void *user_data, string renderer_name)
 {
- cout <<"\n:: infoviation::"<< infoviation <<endl;
+ 
  bool store_renderer_state = false;
   if(!infoviation){
    infoviation= true;
@@ -77,8 +77,7 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
    input_enabled_rendererNames.clear();
    store_renderer_state = true;
   }
-  cout <<"\n:: infoviation::"<< infoviation <<endl;
-  
+
   BotViewer *viewer = (BotViewer*) user_data;
 
   for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
@@ -93,15 +92,20 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
     {
 	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
     }
+    else if(renderer_name=="Data Control")
+    {
+	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
+    }
     
-    if((renderer->enabled)&&(store_renderer_state))
+    if((renderer->enabled)&&(store_renderer_state)){
       enabled_rendererNames.push_back(name);
+      }
 
     if((name==renderer_name)||always_enabled_renderers){
       renderer->enabled = 1;
       gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
       if(name==renderer_name) {
-        renderer->expanded = TRUE;
+        renderer->expanded = 1;
         gtk_expander_set_expanded (GTK_EXPANDER (renderer->expander),
                                    renderer->expanded);
       }  
@@ -127,12 +131,12 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
      input_enabled_rendererNames.push_back(name);
     bool always_enabled_handlers = ((name=="Camera Control")||(name=="LogPlayer Remote"));
     if ((renderer_name == handler->name)||always_enabled_handlers) {
-        handler->enabled = TRUE;
+        handler->enabled = 1;
         gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(handler->cmi), handler->enabled);
     }
     else 
     {
-        handler->enabled = FALSE;
+        handler->enabled = 0;
         gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(handler->cmi), handler->enabled);
     }
   }  
@@ -155,6 +159,11 @@ static void unFoviateRenderers(void *user_data)
       renderer->enabled = 1;
       gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
     }
+    else
+    {
+      renderer->enabled = 0;
+      gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);  
+    }
    }   
   // enable all inputs
   for (unsigned int i = 0; i < viewer->event_handlers_sorted->len; ++i) {
@@ -165,7 +174,12 @@ static void unFoviateRenderers(void *user_data)
     std::vector<std::string>::const_iterator found;
     found = std::find (input_enabled_rendererNames.begin(),input_enabled_rendererNames.end(), name);
     if (found != input_enabled_rendererNames.end()) {
-      handler->enabled = TRUE;
+      handler->enabled = 1;
+      gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(handler->cmi), handler->enabled);
+    }
+    else
+    {
+      handler->enabled = 0;
       gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(handler->cmi), handler->enabled);
     }
   }   
@@ -268,14 +282,15 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
        foviate_renderer = "FootStep Plans & Sticky Feet";
        break; 
       case F6:
-       foviate_renderer = "Maps";
-       break;
-      case F7:
-       foviate_renderer = "Laser";
-       break;
-      case F8:
        foviate_renderer = "Data Control";
        break;
+      case F7:
+       foviate_renderer = "Maps";
+       break;
+      case F8:
+       foviate_renderer = "Laser";
+       break;
+     
     
       default:
           return 0;
@@ -291,9 +306,10 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
       cout << "F3-Robot State Display\n";  
       cout << "F4-Walking\n";
       cout << "F5-FootStep Plans & Sticky Feet\n";
-      cout << "F6-Maps\n";  
-      cout << "F7-Laser\n";
-      cout << "F8-DataControl\n";
+      cout << "F6-DataControl\n";
+      cout << "F7-Maps\n";  
+      cout << "F8-Laser\n";
+      
     
       foviationSpecificRenderer(viewer,foviate_renderer);              
       bot_viewer_set_status_bar_message(viewer, ("Foviating " + foviate_renderer ).c_str());
