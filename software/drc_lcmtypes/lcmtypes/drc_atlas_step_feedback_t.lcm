@@ -11,4 +11,5 @@ struct atlas_step_feedback_t
   int32_t status_flags;
 
   atlas_step_data_t desired_step_saturated;
+  atlas_behavior_step_spec_t desired_step_spec_saturated;
 }

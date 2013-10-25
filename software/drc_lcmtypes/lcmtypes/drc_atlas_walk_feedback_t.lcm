@@ -13,6 +13,7 @@ struct atlas_walk_feedback_t
   // this is actually encoded to be 4 in the API...
   int32_t num_required_walk_steps;
   atlas_step_data_t step_queue_saturated[num_required_walk_steps];
+  atlas_behavior_walk_spec_t walk_spec_queue_saturated[num_required_walk_steps];
 
   // TODO: add status enums  
 }

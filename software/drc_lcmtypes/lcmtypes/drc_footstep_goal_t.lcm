@@ -16,4 +16,10 @@ struct footstep_goal_t
 	boolean fixed_roll;
 	boolean fixed_pitch;
 	boolean fixed_yaw;
+	double fixed_step_duration;
+	float bdi_step_duration;
+	float bdi_sway_duration;
+	float bdi_lift_height;
+	int32_t bdi_toe_off;
+	float bdi_knee_nominal;
 }
