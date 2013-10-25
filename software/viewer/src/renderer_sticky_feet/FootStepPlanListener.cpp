@@ -33,8 +33,9 @@ namespace renderer_sticky_feet
     }
       in_motion_footstep_id=-1;
 
-     _last_plan_approved = false;
+     _last_plan_approved_or_executed = false;
      _waiting_for_new_plan = false;
+     _bdi_footstep_mode = false;
      _left_foot_name ="l_foot";
      _right_foot_name = "r_foot";
     if(!load_foot_urdfs())
@@ -101,10 +102,13 @@ namespace renderer_sticky_feet
 
     if (operation_mode==0){ // typical mode
       lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+      lcm->subscribe("CANDIDATE_BDI_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
     }else if (operation_mode == 1){ 
       lcm->subscribe("COMMITTED_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+      lcm->subscribe("CANDIDATE_BDI_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
     }else if (operation_mode == 2){
       lcm->subscribe("COMMITTED_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+      lcm->subscribe("CANDIDATE_BDI_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
     }
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
 
@@ -122,10 +126,15 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const drc::footstep_plan_t* msg)						 
   {
    cout << "\n handleFootStepPlanMsg: Footstep plan received" << endl;
-  
+   
+   if((chan=="CANDIDATE_BDI_FOOTSTEP_PLAN")||(chan=="CANDIDATE_BDI_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK"))
+    _bdi_footstep_mode = true;
+   else
+    _bdi_footstep_mode = false;
+    
    // 0. Make Local copy to later output
     revieved_plan_ = *msg;
-    _last_plan_approved = false;
+    _last_plan_approved_or_executed = false;
 
     _robot_name = msg->robot_name;
   	int num_steps = 0;
@@ -207,8 +216,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
     bot_viewer_request_redraw(_viewer);
   } // end handleMessage
-  
-  
+
 //------------------------------------------------------------------------------ 
 
   bool  FootStepPlanListener::load_foot_urdfs()
@@ -296,5 +304,25 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
    _lcm->publish(channel, &msg);
  
  }
+ 
+  void FootStepPlanListener::commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate,bool revert)
+  {
+  
+    drc::plan_control_t  msg;
+    msg.utime = utime;
+    if((pause)&&(!terminate)&&(!revert)){
+      msg.control = msg.PAUSE;
+    }
+    else if((!pause)&&(!terminate)&&(revert)){
+      msg.control = msg.REVERT;
+    }
+    else if((!pause)&&(!terminate)&&(!revert)){
+      msg.control = msg.UNPAUSE;
+    }
+    else{
+       msg.control = msg.TERMINATE; 
+    }
+    _lcm->publish(channel, &msg);
+  }  
 } //namespace renderer_sticky_feet
 

@@ -21,6 +21,7 @@ pods_install_libraries(renderer_sticky_feet)
 pods_install_headers(renderer_sticky_feet.hpp
   FootStepPlanListener.hpp
   plan_approval_gui_utils.hpp
+  plan_execution_gui_utils.hpp 
   DESTINATION renderer_sticky_feet )
 
 

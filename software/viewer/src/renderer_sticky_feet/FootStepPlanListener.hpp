@@ -60,8 +60,9 @@ namespace renderer_sticky_feet
      // Eigen::Vector3f _left_foot_offset;
      // Eigen::Vector3f _right_foot_offset;
      int64_t _last_plan_msg_timestamp;
-     bool _last_plan_approved;  
+     bool _last_plan_approved_or_executed;  
      bool _waiting_for_new_plan;
+     bool _bdi_footstep_mode;
       
      // KDL::Frame _T_bodyframe_meshframe_left;
      // KDL::Frame _T_bodyframe_meshframe_right;
@@ -91,6 +92,7 @@ namespace renderer_sticky_feet
 
     // methods
     void commit_footstep_plan(int64_t utime,string &channel);
+    void commit_plan_control(int64_t utime, std::string &channel,bool pause, bool terminate, bool revert);
     void create_sticky_foot_local_copy(int index){
       _gl_in_motion_copy.reset();
       _gl_in_motion_copy = boost::shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody(*_gl_planned_stickyfeet_list[index],_gl_planned_stickyfeet_list[index]->_unique_name));
@@ -126,6 +128,9 @@ namespace renderer_sticky_feet
     void handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 		        const std::string& chan, 
 		        const drc::footstep_plan_t* msg);
+		void handleBDIFootStepPlanMsg (const lcm::ReceiveBuffer* rbuf,
+		        const std::string& chan, 
+		        const drc::footstep_plan_t* msg);       
 
     bool load_foot_urdfs();
     int in_motion_footstep_id; // make markers for moving footsteps persistent across multiple plans

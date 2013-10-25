@@ -72,7 +72,8 @@ namespace renderer_sticky_feet{
     // Our only source of a free running clock:
     int64_t robot_utime;
     GtkWidget *plan_approval_dock;
-
+    GtkWidget *plan_execution_dock;
+    GtkWidget *plan_execute_button;
   } RendererStickyFeet;
 
   inline static bool get_support_surface_height_from_perception(void *user, Eigen::Vector3f &queryPt, double &height)

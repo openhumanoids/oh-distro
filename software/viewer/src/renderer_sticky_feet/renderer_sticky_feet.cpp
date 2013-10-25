@@ -1,6 +1,7 @@
 #include "renderer_sticky_feet.hpp"
 #include "FootStepPlanListener.hpp" // need parent renderer struct which contains a FootStepPlanListener... circular dependency.
 #include "plan_approval_gui_utils.hpp"
+#include "plan_execution_gui_utils.hpp"
 
 #define RENDERER_NAME "FootStep Plans & Sticky Feet"
 #define PARAM_AUTO_ADJUST_HT "Auto Adjust Height"
@@ -192,12 +193,23 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     
     draw_state(viewer,super,i);
   }
-    
-  if(!self->footStepPlanListener->_last_plan_approved)
+   
+  if(!self->footStepPlanListener->_bdi_footstep_mode) 
+  { 
+    if(!self->footStepPlanListener->_last_plan_approved_or_executed)
+    {
+      if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_approval_dock==NULL))
+          spawn_plan_approval_dock(self);
+    } 
+  }
+  else
   {
-    if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_approval_dock==NULL))
-        spawn_plan_approval_dock(self);
-  }    
+    if(!self->footStepPlanListener->_last_plan_approved_or_executed)
+    {
+      if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_execution_dock==NULL))
+          spawn_plan_execution_dock(self);
+    }
+  }   
 
 }
 
