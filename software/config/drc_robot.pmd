@@ -82,7 +82,7 @@ group "a.1.core" {
         host = "extra";
     }   
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
         host = "extra";
     }
     cmd "j2f" {
@@ -119,7 +119,7 @@ group "a.1.core" {
     }
 }
 
-group "a.2.manip" {
+group "a.2.p_and_c" {
     cmd "SandiaGraspController" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForSandiaHand;\"";
        host = "extra";
@@ -127,7 +127,15 @@ group "a.2.manip" {
     cmd "IrobotGraspController" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForIRobotHand;\"";
        host = "extra";
-    }     
+    }
+    cmd "BDIStepTranslator" {
+        exec = "drc-bdi-step-translator";
+        host = "robot";
+    }
+    cmd "AtlasManipController" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
+        host = "robot";
+    }
 }
 
 group "b.1.core" {
@@ -136,7 +144,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
+        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
         host = "base";
     }
     cmd "aff_server" {
@@ -166,18 +174,11 @@ group "b.1.core" {
 }
 
 
-group "b.2.walking" {
+group "b.2.p_and_c" {
     cmd "FootstepPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
        host = "base";
     }
-    cmd "BDIStepTranslator" {
-        exec = "drc-bdi-step-translator";
-        host = "base";
-    }
-}
-
-group "b.3.manip" {
     cmd "sticky_hands" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
        host = "base";
@@ -185,10 +186,6 @@ group "b.3.manip" {
     cmd "ReachingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
        host = "base";
-    }    
-    cmd "AtlasManipController" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
-        host = "base";
     }
 }
 
@@ -284,8 +281,8 @@ script "prep_no_hands" {
     start group "0.development";
     start cmd "logger-robot";
     start group "a.1.core";
-    start group "b.2.walking";
-    start group "b.3.manip";
+    start group "a.2.p_and_c";
+    start group "b.2.p_and_c";
     start cmd "atlas-off";
     start cmd "multisense";
     start cmd "sa-right";
