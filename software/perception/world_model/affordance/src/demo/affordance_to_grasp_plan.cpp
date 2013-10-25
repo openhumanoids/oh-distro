@@ -508,7 +508,9 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
   if (face_dim == 1 ) {
      face_rotation << 0,0, M_PI/2 ;
   }else if (face_dim == 2 ) {
-     face_rotation << M_PI, -M_PI/2 , 0 ;
+//     face_rotation << M_PI, -M_PI/2 , 0 ;
+     face_rotation << 0, -M_PI/2 , -M_PI/2 ;
+
   }
   
   if ( grasp_point( face_dim ) > 0){
@@ -519,11 +521,17 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
   
   
   
-  
   Eigen::Isometry3d aff_to_actualpalm = Eigen::Isometry3d::Identity();
   aff_to_actualpalm.rotate( euler_to_quat( face_rotation(0) , face_rotation(1),  face_rotation(2) ) );   
   aff_to_actualpalm.rotate( euler_to_quat( direction_rotation(0) , direction_rotation(1),  direction_rotation(2) ) );   
   aff_to_actualpalm.rotate( euler_to_quat( fingers_rotation(0) , fingers_rotation(1),  fingers_rotation(2) ) );   
+  
+  //if(face_dim==2){
+  //  std::cout << "awkward error case on dim 2 correction\n";
+  //  aff_to_actualpalm.rotate( euler_to_quat( -M_PI/2 , 0, 0 ) );   
+  //}
+  
+  
   aff_to_actualpalm.translation()  << grasp_point(0) , grasp_point(1) , grasp_point(2) ;   // + x + y + z
   // TODO support different params here
   

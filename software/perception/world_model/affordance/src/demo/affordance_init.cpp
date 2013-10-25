@@ -19,6 +19,7 @@
 #include <pcl/common/transforms.h>
 
 
+#include <pointcloud_tools/pointcloud_math.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds and write mesh
 #include <ConciseArgs>
 
@@ -30,8 +31,8 @@ using namespace pcl::io;
 using namespace boost::assign; // bring 'operator+()' into scope
 using namespace boost;
 
-char* pHome = getenv("HOME");  
-string home = string(pHome);
+char* pDRC_BASE = getenv("DRC_BASE");  
+string drc_base = string(pDRC_BASE);
 
 
 // Raw details read from affordance text file
@@ -55,6 +56,8 @@ class Pass{
     void doDemo(int which_publish, bool add_filename, int which_publish_single);
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
+    pointcloud_vis* pc_vis_;
+    
     drc::affordance_plus_t getCarAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid, bool add_filename);
     drc::affordance_plus_t getDynamicMeshCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
@@ -67,6 +70,7 @@ class Pass{
     
     //void readAffordanceFile(std::string filename);
     std::vector<AffRaw> readAffordanceFile(std::string filename);
+    void sendNameLabels(std::vector<AffRaw> &affraw_list);
     
     bool set_param(drc::affordance_plus_t &a1,std::string param_name, double val){
       std::vector<std::string>::const_iterator found;
@@ -82,22 +86,15 @@ class Pass{
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
+  
+  // Vis Config:
+  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  // obj: id name type reset
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(98001,"Debris",5,1) );
+  
   cout << "Finished setting up\n";
 }
 
-Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
-  double sy = sin(yaw*0.5);
-  double cy = cos(yaw*0.5);
-  double sp = sin(pitch*0.5);
-  double cp = cos(pitch*0.5);
-  double sr = sin(roll*0.5);
-  double cr = cos(roll*0.5);
-  double w = cr*cp*cy + sr*sp*sy;
-  double x = sr*cp*cy - cr*sp*sy;
-  double y = cr*sp*cy + sr*cp*sy;
-  double z = cr*cp*sy - sr*sp*cy;
-  return Eigen::Quaterniond(w,x,y,z);
-}
 
 void scaleCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_ptr){
   for (size_t i=0; i < cloud_ptr->points.size(); i++){ 
@@ -114,7 +111,7 @@ void moveCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_ptr){
     Eigen::Isometry3d local_to_lidar;
     local_to_lidar.setIdentity();
     local_to_lidar.translation()  << 34,0,-230;
-    Eigen::Quaterniond quat = euler_to_quat(-M_PI/2,0,0);
+    Eigen::Quaterniond quat = euler_to_quat(0,0,-M_PI/2);
     local_to_lidar.rotate(quat);
 
     pcl::transformPointCloud (*cloud_ptr, *cloud_ptr,
@@ -148,7 +145,7 @@ drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, 
     p.npoints=0; 
     p.ntriangles =0;
   }else{
-    string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+    string filename_full = string(drc_base + "/software/models/otdf/" + filename);
     std::vector< std::vector< float > > points;
     std::vector< std::vector< int > > triangles;
     affutils.getModelAsLists(filename_full, points, triangles);
@@ -194,7 +191,7 @@ drc::affordance_plus_t Pass::getDynamicMeshCylinderAffordancePlus(std::string fi
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -246,7 +243,7 @@ drc::affordance_plus_t Pass::getDynamicMeshTwoCylinderAffordancePlus(std::string
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -290,7 +287,7 @@ drc::affordance_plus_t Pass::getDynamicMeshSteeringCylAffordancePlus(std::string
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -327,7 +324,7 @@ drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vec
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -402,7 +399,7 @@ drc::affordance_plus_t Pass::getAffordancePlusForFirehoseMatableStandpipe(std::s
   std::vector< std::vector< int > > triangles;
 
 
-  string filename_full = string(home + "/drc/software/models/otdf/" + filename);
+  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -447,7 +444,12 @@ std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
   if (fileinput.is_open()){
     string message;
     while ( getline (fileinput,message) ) { // for each line
-      //cout << message << endl;
+      std::string letter1 = message.substr (0,1);   // "generalities"
+      if (letter1 == "#"){
+        cout << message << endl;
+        continue;
+      }
+      
 
       vector<string> tokens;
       boost::split(tokens, message, boost::is_any_of(","));
@@ -483,14 +485,68 @@ std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
 
 
 
+
+Eigen::Quaterniond euler_to_quat_test(double roll, double pitch, double yaw) {
+  double sy = sin(yaw*0.5);
+  double cy = cos(yaw*0.5);
+  double sp = sin(pitch*0.5);
+  double cp = cos(pitch*0.5);
+  double sr = sin(roll*0.5);
+  double cr = cos(roll*0.5);
+  double w = cr*cp*cy + sr*sp*sy;
+  double x = sr*cp*cy - cr*sp*sy;
+  double y = cr*sp*cy + sr*cp*sy;
+  double z = cr*cp*sy - sr*sp*cy;
+  return Eigen::Quaterniond(w,x,y,z);
+}
+
+void Pass::sendNameLabels(std::vector<AffRaw> &affraw_list){
+
+
+  int counter =0;  
+  std::vector<Isometry3dTime> world_to_jointsT;
+  std::vector< int64_t > world_to_joint_utimes;
+  std::vector< std::string > joint_names;
+  for( int i=0 ; i < affraw_list.size() ; i++ ){
+    
+    AffRaw affraw = affraw_list[ i];
+    
+    Eigen::Isometry3d world_to_body;
+    world_to_body.setIdentity();
+    world_to_body.translation() << affraw.params_[0], affraw.params_[1], affraw.params_[2];
+    
+    // NB: affordances use an extrinsic rpy, so the equivalent is intristinsic ypr - hence here I 've inverted the ordering
+    Eigen::Quaterniond quat = euler_to_quat_test( affraw.params_[5], affraw.params_[4], affraw.params_[3]);
+    world_to_body.rotate(quat);
+
+    Isometry3dTime world_to_jointT(counter, world_to_body);
+    world_to_jointsT.push_back(world_to_jointT);
+    
+    std::string this_name = affraw.friendly_name_  ;
+    joint_names.push_back(  this_name   );
+    world_to_joint_utimes.push_back( counter);
+    
+    counter++;
+  }
+  
+  pc_vis_->pose_collection_to_lcm_from_list(98001, world_to_jointsT); // all joints in world frame
+  pc_vis_->text_collection_to_lcm(98002, 98001, "Debris Labels", joint_names, world_to_joint_utimes );    
+  
+}
+
+
+
+
+
+
 void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single){
   
   if ((which_publish==1) || (which_publish==0)){
     int uid0 = 12;
     std::vector<double> xyzrpy0 = {1.27 , 1.30 , 1.16, 0. , 0 , 0};
-    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
-    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
-    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
+    //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
+    //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
+    //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
     string filename0 = "drill.ply";
     drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
     a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
@@ -500,10 +556,10 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
   if ((which_publish==2) || (which_publish==0)){
     int uid0 = 13;
     std::vector<double> xyzrpy0 = {0.51 , 0.23 , 1.16, 0. , 0 , -1.571};
-    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
-    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
-    //string filename = string(home+ "/drc/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
-    string filename0 = "drill.ply"; //string(home+ "/drc/software/models/otdf/drill.ply");
+    //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
+    //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
+    //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
+    string filename0 = "drill.ply"; //string(drc_base+ "/software/models/otdf/drill.ply");
     drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
     a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
     lcm_->publish("AFFORDANCE_FIT",&a0);
@@ -540,7 +596,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
 /*  if ((which_publish==5) || (which_publish==0)){
     int uid1 = 16;
     std::vector<double> xyzrpy1 = {-1.20 , 2.32 , 1.09 , 0 , 0 , M_PI/2};  
-    string filename1 = string(home+ "/drc/software/models/otdf/coupling.ply");
+    string filename1 = string(drc_base+ "/software/models/otdf/coupling.ply");
     drc::affordance_plus_t a1 = getDynamicMeshAffordancePlus(filename1, xyzrpy1, uid1 );
     a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
     lcm_->publish("AFFORDANCE_FIT",&a1);
@@ -664,10 +720,12 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     lcm_->publish("AFFORDANCE_FIT",&a1);
   } 
 
-  
+  string debris_filename_full = string(drc_base + "/software/config/task_config/debris/debrisPositions.csv");
+  std::cout << debris_filename_full << "\n";
+  std::vector<AffRaw> affraw_list = readAffordanceFile(debris_filename_full);
+  std:: cout << affraw_list.size() << " affordances read\n";
   if ((which_publish==9)){ 
-    std::vector<AffRaw> affraw_list = readAffordanceFile("/home/mfallon/drc/software/perception/world_model/affordance/scripts/debrisPositions.csv");
-    std:: cout << affraw_list.size() << "read\n";
+    
     for (size_t i=0 ; i < affraw_list.size() ; i++){
       AffRaw affraw = affraw_list[i];
       std::vector<double> xyzrpy = { affraw.params_[0], affraw.params_[1], affraw.params_[2], affraw.params_[3], affraw.params_[4], affraw.params_[5] };
@@ -676,12 +734,12 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
       string friendly_name = affraw.friendly_name_;
       drc::affordance_plus_t a1 =getBoxAffordancePlus(uid,friendly_name, xyzrpy, lengths);
       lcm_->publish("AFFORDANCE_FIT",&a1);
+      
+      sendNameLabels(affraw_list);      
     }
   }  
   
   if ((which_publish==10)){ 
-    std::vector<AffRaw> affraw_list = readAffordanceFile("/home/mfallon/drc/software/perception/world_model/affordance/scripts/debrisPositions.csv");
-    std:: cout << affraw_list.size() << "read\n";
     AffRaw affraw = affraw_list[ which_publish_single];
     std::vector<double> xyzrpy = { affraw.params_[0], affraw.params_[1], affraw.params_[2], affraw.params_[3], affraw.params_[4], affraw.params_[5] };
     std::vector<double> lengths = { affraw.params_[6], affraw.params_[7], affraw.params_[8]};
@@ -691,6 +749,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
       
     drc::affordance_plus_t a1 =getBoxAffordancePlus(uid,friendly_name, xyzrpy, lengths);
     lcm_->publish("AFFORDANCE_FIT",&a1);
+    sendNameLabels(affraw_list);      
   }  
   
 /*  

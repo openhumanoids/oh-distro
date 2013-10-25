@@ -6,11 +6,12 @@ import lcm
 import time
 from lcm import LCM
 import math
+from threading import Thread
 
-home_dir =os.getenv("HOME")
+home_dir =os.getenv("DRC_BASE")
 #print home_dir
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
+sys.path.append(home_dir + "/software/build/lib/python2.7/site-packages")
+sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
 from drc.robot_state_t import robot_state_t
 from drc.position_3d_t import position_3d_t
 from drc.vector_3d_t import vector_3d_t
@@ -152,7 +153,7 @@ def sendRobotStateMsg():
   global goal_pelvis_height, goal_pos
   msg = getRobotStateMsg()
   msg.pose = goal_pose
-  print goal_pelvis_height
+  print "Pelvis Height: " , goal_pelvis_height
   if (goal_pelvis_height >  0.83 ):
     msg = setStateAtHeight86(msg)
   elif (goal_pelvis_height >  0.775 ):
@@ -195,9 +196,21 @@ goal_pelvis_height = 0
 
 
 
-lc.subscribe("ATLAS_MANIPULATE_PARAMS", on_manip_params) 
-lc.subscribe("WALKING_GOAL", on_walking_goal) 
-while True:
-  ## Handle LCM if new messages have arrived.
-  lc.handle()
+def lcm_thread():
+  sub1 = lc.subscribe("ATLAS_MANIPULATE_PARAMS", on_manip_params) 
+  sub2 = lc.subscribe("WALKING_GOAL", on_walking_goal) 
+  while True:
+    ## Handle LCM if new messages have arrived.
+    lc.handle()
+
+  lc.unsubscribe(sub1)
+  lc.unsubscribe(sub2)
+
+t2 = Thread(target=lcm_thread)
+t2.start()
+
+sleep_timing=0.5 # time between updates of the plots - in wall time
+while (1==1):
+  time.sleep(sleep_timing)
+  sendRobotStateMsg()
 
