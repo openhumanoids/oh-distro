@@ -1,1 +1,0 @@
-avrdude -p x128a1 -P /dev/ttyS0 -b 115200 -c AVR109 -e -U flash:w:$1 -v -v

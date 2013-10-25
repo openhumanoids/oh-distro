@@ -1,6 +1,0 @@
-<!-- It is better to launch handle_ros in a launch script because roslaunch can kill it when it hangs. -->
-<launch>
-
-  <node pkg="handle_ros" type="handle_ros" name="handle_ros" output="screen" respawn="true"/>  
-
-</launch>
