@@ -54,6 +54,11 @@ classdef FootstepPlanPublisher
 			msg.fixed_yaw = X.pos_fixed(6);
 			msg.is_right_foot = X.is_right_foot;
 			msg.is_in_contact = X.is_in_contact;
+			msg.bdi_step_duration = X.bdi_step_duration;
+			msg.bdi_sway_duration = X.bdi_sway_duration;
+			msg.bdi_lift_height = X.bdi_lift_height;
+			msg.bdi_toe_off = X.bdi_toe_off;
+			msg.bdi_knee_nominal = X.bdi_knee_nominal;
     end
 
     function msg = encodeFootstepPlan(X, t, isnew, options)

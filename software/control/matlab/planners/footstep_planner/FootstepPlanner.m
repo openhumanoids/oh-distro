@@ -27,14 +27,14 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'step_seq', 'DESIRED_FOOT_STEP_SEQUENCE', drc.traj_opt_constraint_t(), false, true,true);
       obj.goal_pos = [];
       obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
-      obj.defaults = struct('max_num_steps', 10, 'min_num_steps', 0, 'timeout', inf, 'step_height', 0.05, 'step_speed', 1.5, 'nom_step_width', 0.26, 'max_forward_step', 0.5, 'nom_forward_step', 0.15, 'follow_spline', false, 'ignore_terrain', false, 'right_foot_lead', true, 'mu', 1, 'behavior', drc.walking_goal_t.BEHAVIOR_BDI_STEPPING); 
+      obj.defaults = struct('max_num_steps', 10, 'min_num_steps', 0, 'timeout', inf, 'step_height', 0.05, 'step_speed', 1.5, 'nom_step_width', 0.26, 'max_forward_step', 0.5, 'nom_forward_step', 0.15, 'follow_spline', false, 'ignore_terrain', false, 'right_foot_lead', true, 'mu', 1, 'behavior', drc.walking_goal_t.BEHAVIOR_BDI_STEPPING, 'bdi_step_duration', 0.6, 'bdi_sway_duration', 0, 'bdi_lift_height', 0, 'bdi_toe_off', 1, 'bdi_knee_nominal', 0); 
       obj.needs_plan = false;
     end
 
     function obj = updateGoal(obj, data, changed, changelist)
       if changed
         if isfield(data, 'goal'); info = struct(data.goal); else info = struct(); end
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior'}
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior', 'bdi_step_duration', 'bdi_sway_duration', 'bdi_lift_height', 'bdi_toe_off', 'bdi_knee_nominal'}
           if isfield(info, x{1}) && ~isnan(info.(x{1}))
             if ~isfield(obj.options, x{1}) || obj.options.(x{1}) ~= info.(x{1});
               obj.options.(x{1}) = info.(x{1});
@@ -69,10 +69,11 @@ classdef FootstepPlanner < DRCPlanner
             end
           end
         elseif changelist.plan_commit
-          obj.needs_plan = false;
-          obj.goal_pos = [];
+%           obj.needs_plan = false;
+%           obj.goal_pos = [];
           msg ='Foot Plan : Committed'; disp(msg); send_status(6,0,0,msg);
         elseif changelist.plan_reject
+          obj.steps = [];
           obj.goal_pos = [];
           obj.needs_plan = false;
           msg ='Foot Plan : Rejected'; disp(msg); send_status(6,0,0,msg);
@@ -171,6 +172,8 @@ classdef FootstepPlanner < DRCPlanner
         % Generate new footsteps, if needed
         if obj.needs_plan
           assert(~isempty(obj.goal_pos));
+          disp('creating steps')
+          obj.options.bdi_step_duration
           [obj.steps, ~] = obj.biped.createInitialSteps(data.x0, obj.goal_pos, obj.options);
         end
 
