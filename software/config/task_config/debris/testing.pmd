@@ -1,0 +1,78 @@
+group "0.development" {
+    cmd "robot_deputy" {
+        exec = "bot-procman-deputy -n robot";
+        host = "localhost";
+    }
+    cmd "extra_deputy" {
+        exec = "bot-procman-deputy -n extra";
+        host = "localhost";
+    }
+    cmd "base_deputy" {
+        exec = "bot-procman-deputy -n base";
+        host = "localhost";
+    }
+}
+
+
+group "a.1.core" {
+
+    cmd "viewer" {
+        exec = "drc-viewer";
+        host = "robot";
+    }
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
+        host = "extra";
+    }
+    cmd "modelpub" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
+        host = "extra";
+    }
+    cmd "affordance-gaze" {
+        exec = "affordance-gaze";
+        host = "extra";
+    }
+    cmd "affordance_server" {
+      exec = "affordance_server";
+      host = "extra";
+    }
+    cmd "state-pub" {
+       exec = "drc-fake-robot-state";
+        host = "extra";
+    }
+}
+
+
+group "b.2.planners" {
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2,2,2);\"";
+       host = "base";
+    }
+    cmd "fakepool" {
+       exec = "drc-fake-grasp-pool";
+       host = "base";
+    }
+    cmd "print_xyz_yaw" {
+       exec = "affordance_debris_util";
+       host = "base";
+    }
+    cmd "mfallon_grasp_planner" {
+       exec = "affordance_to_grasp_plan";
+       host = "base";
+    }
+}
+
+
+group "b.2.mfallon" {
+    cmd "populate_debris_affs" {
+       exec = "affordance_init -e 9";
+       host = "base";
+    }
+}
+
+script "start" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+}
+
