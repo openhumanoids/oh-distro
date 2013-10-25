@@ -148,7 +148,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "param_server" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg -l 'udpm://239.255.76.68:7668?ttl=0'";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg -l 'udpm://239.255.76.68:7668?ttl=1'";
         host = "base";
     }
     cmd "est_rsp_base" {
