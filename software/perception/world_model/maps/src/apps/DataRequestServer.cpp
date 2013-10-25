@@ -15,8 +15,9 @@
 #include <ConciseArgs>
 #include <drc_utils/Clock.hpp>
 #include <drc_utils/BotWrapper.hpp>
-#include <drc_utils/RobotState.hpp>
 #include <affordance/AffordanceUpWrapper.h>
+
+#include "RobotState.hpp"
 
 using namespace std;
 

@@ -5,7 +5,6 @@ add_library(drc-utils SHARED
     Clock.cpp
     LcmWrapper.cpp
     BotWrapper.cpp
-    RobotState.cpp
 )
 
 # make the header public
@@ -14,7 +13,6 @@ pods_install_headers(
   Clock.hpp
   LcmWrapper.hpp
   BotWrapper.hpp
-  RobotState.hpp
   PointerUtils.hpp
   PointConvert.h
   DESTINATION drc_utils)
@@ -23,7 +21,7 @@ pods_install_headers(
 pods_install_libraries(drc-utils)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES bot2-core lcm eigen3 bot2-frames kinematics_model_gfe)
+set(REQUIRED_PACKAGES bot2-core lcm eigen3 bot2-frames)
 pods_use_pkg_config_packages(drc-utils ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other
