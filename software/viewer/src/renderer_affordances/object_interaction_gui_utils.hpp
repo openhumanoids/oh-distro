@@ -1073,7 +1073,7 @@ namespace renderer_affordances_gui_utils
           it->second._gl_object->set_future_state_changing(true); 
         }
         it->second._gl_object->set_future_state(T_world_object,jointpos_in);
-  
+     
       // set dependent bodies desired motion state to mate state
       typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
@@ -1108,7 +1108,7 @@ namespace renderer_affordances_gui_utils
          {
             foot_it->second._gl_foot->clear_desired_body_motion_history();
             KDL::Frame T_world_geometry;
-            it->second._gl_object->get_link_geometry_future_frame(hand_it->second.geometry_name,T_world_geometry);
+            it->second._gl_object->get_link_geometry_future_frame(foot_it->second.geometry_name,T_world_geometry);
             //foot_it->second._gl_hand->log_motion_trail(true);
             KDL::Frame T_accumulationFrame_body;
             //T_accumulationFrame_body = T_accumulationFrame_currentWorldFrame*_T_world_body;
@@ -1120,9 +1120,8 @@ namespace renderer_affordances_gui_utils
          }
          foot_it++;
       }
+
       bot_viewer_request_redraw(self->viewer);
-        
-        
     }
     
     bot_viewer_request_redraw(self->viewer);
