@@ -464,8 +464,9 @@ classdef ReachingPlanner < KeyframePlanner
             
             
             if(obj.restrict_feet)
+                pelvis_quat_Tol=sind(0.01).^2;
                 pelvis_constraint = {WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0(1:3,:),pelvis_pose0(1:3,:),[s(1),s(end)]),...
-                    WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose0(4:7,1),quat_Tol,[s(1) s(end)])};
+                    WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose0(4:7,1),pelvis_quat_Tol,[s(1) s(end)])};
                 iktraj_pelvis_constraint = [iktraj_pelvis_constraint,pelvis_constraint];
             end
             
