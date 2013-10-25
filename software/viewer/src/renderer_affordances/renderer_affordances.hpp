@@ -89,6 +89,7 @@
 #define PARAM_SHOW_PROPOSED_MANIP_MAP "Show Proposed Manip Map"
 #define PARAM_LHAND_URDF_SELECT "LHand"
 #define PARAM_RHAND_URDF_SELECT "RHand"
+#define PARAM_REQUEST_PTCLD_FROM_MAPS "Request PtCld"
 
 #define DRAW_PERSIST_SEC 4
 #define VARIANCE_THETA (30.0 * 180.0 / M_PI);

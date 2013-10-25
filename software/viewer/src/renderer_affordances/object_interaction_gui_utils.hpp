@@ -535,6 +535,32 @@ namespace renderer_affordances_gui_utils
       bot_viewer_request_redraw(self->viewer);
       }// end if
     }
+    else if (! strcmp(name, PARAM_REQUEST_PTCLD_FROM_MAPS))
+    {
+      //PARAM_REQUEST_PTCLD_FROM_MAPS
+        if(it!=self->affCollection->_objects.end()){
+          Eigen::Vector3f whole_body_span,offset;
+          it->second._gl_object->get_whole_body_span_dims(whole_body_span,offset);  
+          Eigen::Vector3f origin;
+          origin[0] = it->second._gl_object->_T_world_body.p[0];
+          origin[1] = it->second._gl_object->_T_world_body.p[1];
+          origin[2] = it->second._gl_object->_T_world_body.p[2];
+          origin[0] += offset[0];
+          origin[1] += offset[1];
+          origin[2] += offset[2];
+          drc::world_box_t msg;    
+          msg.tag = it->first;      
+          msg.origin_x = (float)origin[0];
+          msg.origin_y = (float)origin[1];
+          msg.origin_z = (float)origin[2];
+          float padding = 0.1;
+          msg.span_x = (float)whole_body_span[0]+padding;
+          msg.span_y = (float)whole_body_span[1]+padding;
+          msg.span_z = (float)whole_body_span[2]+padding;   
+          string channel = "WORLD_BOX_PTCLD_REQUEST";
+          self->lcm->publish(channel, &msg);       
+        }
+    }
     else if (! strcmp(name, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT)) {
       bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT);
       if(val){
@@ -1216,12 +1242,14 @@ namespace renderer_affordances_gui_utils
     pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
     
     bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_DELETE, NULL);
+  
         
     if(((self->marker_selection  == " ")||self->selection_hold_on)) 
     {
       //bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");
       bot_gtk_param_widget_add_separator (pw,"(of params/currentstate)");
       bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
+      bot_gtk_param_widget_add_buttons(pw,PARAM_REQUEST_PTCLD_FROM_MAPS, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL); 
       bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_FLIP_DIM,

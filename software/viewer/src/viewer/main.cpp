@@ -66,6 +66,26 @@ boost::shared_ptr<RendererFoviationSignalHandler> foviationSignalHndlr;
 bool infoviation=false;  
 std::vector<std::string> enabled_rendererNames;
 std::vector<std::string> input_enabled_rendererNames;
+static void initRendererCache(void *user_data)
+{
+  BotViewer *viewer = (BotViewer*) user_data;
+  for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
+  BotRenderer *renderer = (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
+  string name(renderer->name);
+   if(renderer->enabled){
+    enabled_rendererNames.push_back(name);
+   }
+  }
+  for (unsigned int i = 0; i < viewer->event_handlers_sorted->len; ++i) {
+    BotEventHandler* handler =
+      (BotEventHandler*)g_ptr_array_index(viewer->event_handlers_sorted, i);
+
+    string name(handler->name);
+    if(handler->enabled)
+     input_enabled_rendererNames.push_back(name);
+  }    
+}
+
 
 static void foviationSpecificRenderer(void *user_data, string renderer_name)
 {
@@ -257,6 +277,9 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
     //cout << keyval << endl;
 
     string foviate_renderer = " "; // Focus view on renderers based on function keys
+    if(!infoviation){
+      initRendererCache(viewer);
+    }
     switch (keyval)
     {
       case SHIFT_L:
