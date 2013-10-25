@@ -151,6 +151,16 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
         self->otdf_instance_hold._gl_object->draw_body(c,0.3);
     }
     
+    // Dont Draw Seeds If the renderer is foviated. 
+    if(self->_renderer_foviate)
+    {
+      int64_t now = bot_timestamp_now();
+      if(now > (self->graspOptStatusListener->_last_statusmsg_stamp + 4000000)){
+          bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,false); 
+      }
+      return;
+    }   
+    
     // Draw all sticky hands
     float c_green[3] = {0.3,0.5,0.3}; 
     float c_yellow[3] = {0.5,0.5,0.3};
@@ -599,6 +609,8 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     if(now > (self->graspOptStatusListener->_last_statusmsg_stamp + 4000000)){
         bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,false); 
     }
+
+    
   
 
 }

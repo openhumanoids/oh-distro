@@ -63,18 +63,39 @@ AffTriggerSignalsRef _affTriggerSignalsRef = AffTriggerSignalsRef(new AffTrigger
 RendererFoviationSignalRef _rendererFoviationSignalRef  = RendererFoviationSignalRef(new RendererFoviationSignal()); 
 boost::shared_ptr<RendererFoviationSignalHandler> foviationSignalHndlr;
 
+bool infoviation=false;  
+std::vector<std::string> enabled_rendererNames;
+std::vector<std::string> input_enabled_rendererNames;
+
 static void foviationSpecificRenderer(void *user_data, string renderer_name)
 {
+ cout <<"\n:: infoviation::"<< infoviation <<endl;
+ bool store_renderer_state = false;
+  if(!infoviation){
+   infoviation= true;
+   enabled_rendererNames.clear();
+   input_enabled_rendererNames.clear();
+   store_renderer_state = true;
+  }
+  cout <<"\n:: infoviation::"<< infoviation <<endl;
+  
   BotViewer *viewer = (BotViewer*) user_data;
+
   for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
     BotRenderer *renderer = (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
     string name(renderer->name);
     bool always_enabled_renderers = ((name=="Advanced Grid")||(name=="BOT_FRAMES")||(name=="LCM GL")||(name=="System Status"));
-    if(renderer_name=="Affordances & StickyHands/Feet"){
-	always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
-    }else if(renderer_name=="FootStep Plans & Sticky Feet"){
-	always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
+    if(renderer_name=="Affordances & StickyHands/Feet")
+    {
+	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
     }
+    else if(renderer_name=="FootStep Plans & Sticky Feet")
+    {
+	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
+    }
+    
+    if((renderer->enabled)&&(store_renderer_state))
+      enabled_rendererNames.push_back(name);
 
     if((name==renderer_name)||always_enabled_renderers){
       renderer->enabled = 1;
@@ -95,16 +116,59 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
 //      }            
     }
    }  
+   
+  // enable and disable relevant inputs
+  for (unsigned int i = 0; i < viewer->event_handlers_sorted->len; ++i) {
+    BotEventHandler* handler =
+      (BotEventHandler*)g_ptr_array_index(viewer->event_handlers_sorted, i);
+
+    string name(handler->name);
+    if((handler->enabled)&&(store_renderer_state))
+     input_enabled_rendererNames.push_back(name);
+    bool always_enabled_handlers = ((name=="Camera Control")||(name=="LogPlayer Remote"));
+    if ((renderer_name == handler->name)||always_enabled_handlers) {
+        handler->enabled = TRUE;
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(handler->cmi), handler->enabled);
+    }
+    else 
+    {
+        handler->enabled = FALSE;
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(handler->cmi), handler->enabled);
+    }
+  }  
+  
 }
 
 static void unFoviateRenderers(void *user_data)
 {
   BotViewer *viewer = (BotViewer*) user_data;
+  infoviation = false;
+  
+  // enable all renderers
   for (unsigned int ridx = 0; ridx < viewer->renderers->len; ridx++) {
     BotRenderer *renderer = (BotRenderer*)g_ptr_array_index(viewer->renderers, ridx);
-    renderer->enabled = 1;
-   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
+    //if renderer name is in enabled_rendererNames, reenable it
+    string name(renderer->name);
+    std::vector<std::string>::const_iterator found;
+    found = std::find (enabled_rendererNames.begin(),enabled_rendererNames.end(), name);
+    if (found != enabled_rendererNames.end()) {
+      renderer->enabled = 1;
+      gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(renderer->cmi), renderer->enabled);
+    }
    }   
+  // enable all inputs
+  for (unsigned int i = 0; i < viewer->event_handlers_sorted->len; ++i) {
+    BotEventHandler* handler =
+    (BotEventHandler*)g_ptr_array_index(viewer->event_handlers_sorted, i);
+    //if handler name is in input_enabled_rendererNames, reenable it
+    string name(handler->name);
+    std::vector<std::string>::const_iterator found;
+    found = std::find (input_enabled_rendererNames.begin(),input_enabled_rendererNames.end(), name);
+    if (found != input_enabled_rendererNames.end()) {
+      handler->enabled = TRUE;
+      gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(handler->cmi), handler->enabled);
+    }
+  }   
 }
 
 static void foviationSignalCallback(void *user_data, string renderer_name, bool toggle)

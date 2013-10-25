@@ -1032,8 +1032,6 @@ struct RendererAffordances {
       KDL::Frame T_world_geometry;
        obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_geometry);
       KDL::Frame T_marker_world =  (hand_it->second._gl_hand->get_floatingbasemarker_frame()).Inverse(); // marker in world frame
-      cout <<"T_world_object: "<< T_world_object.p[0] << " " << T_world_object.p[1] << " " << T_world_object.p[2] << " " << endl;
-      cout <<"T_world_geometry: "<< T_world_geometry.p[0] << " " << T_world_geometry.p[1] << " " << T_world_geometry.p[2] << " " << endl;
       
       KDL::Frame T_marker_hand = T_marker_world*T_world_geometry*T_geometry_hand;
       
@@ -1381,7 +1379,13 @@ struct RendererAffordances {
       
    }// end if(!self->seedSelectionManager->is_shift_pressed()) // if shift is pressed ignore objects 
     
-
+    // Dont Draw Seeds If the renderer is foviated. 
+    if(self->_renderer_foviate)
+    {
+      self->prev_ray_hit_drag = self->ray_hit_drag;
+      return shortest_distance;
+    }
+    
    //loop through stick-feet list and check if ray intersect any of them.
     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
     for(sticky_feet_map_type_::iterator it = self->stickyFootCollection->_feet.begin(); it!=self->stickyFootCollection->_feet.end(); it++)
