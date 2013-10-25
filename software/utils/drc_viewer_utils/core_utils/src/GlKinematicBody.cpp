@@ -1660,6 +1660,9 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
       double radius = sphere->radius;
        glPushMatrix();
        glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
+      if(radius < 0.01)
+       glutSolidSphere(radius,6,6);
+      else
        glutSolidSphere(radius,36,36); 
 	    //drawSphere(6,  radius);
        glPopMatrix();
@@ -1856,7 +1859,10 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
       double radius = sphere->radius;
        glPushMatrix();
        glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
-       glutSolidSphere(radius,36,36);
+        if(radius < 0.01)
+         glutSolidSphere(radius,6,6);
+        else
+         glutSolidSphere(radius,36,36); 
 	     //drawSphere(6,  radius);
        glPopMatrix();
     
