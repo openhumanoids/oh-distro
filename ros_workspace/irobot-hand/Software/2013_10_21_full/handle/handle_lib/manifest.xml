@@ -1,0 +1,18 @@
+<package>
+  <description brief="handle_lib">
+
+     handle_lib
+
+  </description>
+  <author>Ben Axelrod</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/handle_lib</url>
+
+ <export>
+   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lhandle_lib"/>
+ </export>
+
+</package>
+
+

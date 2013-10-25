@@ -1,0 +1,11 @@
+# Palm
+
+# zero values, calibration scalars 
+# float32[48: palmTactile
+# calibration consists of a zero offset for each sensor
+Tactile: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# The dynamic PVDF sensors in the palm.
+# float32[4: palmPVDF
+PVDF:
+# not needed at moment, here as placeholder
