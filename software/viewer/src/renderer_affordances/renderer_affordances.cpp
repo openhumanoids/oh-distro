@@ -28,7 +28,6 @@ using namespace renderer_affordances_gui_utils;
 // =================================================================================
 // DRAWING
 
-// TODO: Super bloated need to break it up later.
 static void _draw (BotViewer *viewer, BotRenderer *renderer) 
 {
     RendererAffordances *self = (RendererAffordances*) renderer;
@@ -609,8 +608,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
 {
     RendererAffordances *self = (RendererAffordances*) ehandler->user;
-  
-    
+
     if(self->dblclk_popup){   
         fprintf(stderr, "Object DblClk Popup is Open. Closing \n");
         gtk_widget_destroy(self->dblclk_popup);
@@ -682,18 +680,12 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
     if(self->stickyhand_selection!=" "){
         typedef map<string, StickyHandStruc > sticky_hands_map_type_;
         sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
-        
-//============================================================================================================         
-// Under Test
-//============================================================================================================      
+   
       if(self->marker_selection!=" ") {
           hand_it->second._gl_hand->highlight_marker(self->marker_selection);
           cout << "intersected an sticky hands's marker: " << self->marker_selection << " at: " << self->ray_hit.transpose() << endl;
       } 
       else 
-//============================================================================================================         
-// Under Test
-//============================================================================================================  
       {  
         //hand_it->second._gl_hand->enable_whole_body_selection(true); 
         //hand_it->second._gl_hand->highlight_link(self->stickyhand_selection);
@@ -707,17 +699,12 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         
         typedef map<string, StickyFootStruc > sticky_feet_map_type_;
         sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
-//============================================================================================================         
-// Under Test
-//============================================================================================================      
+    
       if(self->marker_selection!=" ") {
           foot_it->second._gl_foot->highlight_marker(self->marker_selection);
           cout << "intersected an sticky hands's marker: " << self->marker_selection << " at: " << self->ray_hit.transpose() << endl;
       } 
       else 
-//============================================================================================================         
-// Under Test
-//============================================================================================================  
       {
         //foot_it->second._gl_foot->enable_whole_body_selection(true); 
         //foot_it->second._gl_foot->highlight_link(self->stickyfoot_selection);
@@ -762,17 +749,11 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         //spawn_object_geometry_dblclk_popup(self);
         // draw circle for angle specification around the axis.
         self->dragging = 1;
-//============================================================================================================         
-// Under Test
-//============================================================================================================   
         if((self->marker_selection  != " ")&&(self->stickyhand_selection != " "))
           spawn_sticky_hand_dblclk_popup(self);
         else if((self->marker_selection  != " ")&&(self->stickyfoot_selection != " "))
           spawn_sticky_foot_dblclk_popup(self);
         else
-//============================================================================================================         
-// Under Test
-//============================================================================================================             
         {
           self->show_popup_onrelease = 1;
         }
@@ -791,9 +772,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
         std::cout << "RendererAffordances: Event is consumed" <<  std::endl;
         return 1;// consumed if pop up comes up.
     }
-//============================================================================================================         
-// Under Test
-//============================================================================================================     
+
     else if((self->marker_selection  != " ")&&(self->stickyhand_selection != " "))
     {   
         self->dragging = 1;
@@ -829,10 +808,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
           self->marker_offset_on_press << self->ray_hit[0]-T_world_foot_current.p[0],self->ray_hit[1]-T_world_foot_current.p[1],self->ray_hit[2]-T_world_foot_current.p[2];    
         }
         return 1;// consumed
-     }      
-//============================================================================================================         
-// Under Test
-//============================================================================================================    
+     }   
     else if((self->marker_selection  != " ")&&(self->stickyhand_selection == " ")&&(self->stickyfoot_selection == " "))
     {   
         string token  = "markers::";
@@ -954,10 +930,10 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     
     int64_t now = bot_timestamp_now();
     double dt = (now - self->viewer->last_draw_utime) / 1000000.0;
-    if((dt>0.05))
+    if((dt<0.02))
     {
       return 1;
-    }
+    }     
     
     if((self->show_popup_onrelease)||(self->marker_selection  != " ")){
         double t = self->ray_hit_t;
@@ -974,11 +950,9 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
         }
         else if ((self->object_selection != " "))
         {
-            set_object_current_state_on_marker_motion(self,start,dir);
+           set_object_current_state_on_marker_motion(self,start,dir);
         }
-//============================================================================================================         
-// Under Test
-//============================================================================================================         
+      
       else if ((self->stickyhand_selection != " "))
         {
             //cout << "calls  set_stickyhand_current_state_on_marker_motion \n";
@@ -989,10 +963,7 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
             //cout << "calls  set_stickyfoot_current_state_on_marker_motion \n";
             set_stickyfoot_current_state_on_marker_motion(self,start,dir);
         }  
-
-//============================================================================================================         
-// Under Test
-//============================================================================================================               
+     
     }
     bot_viewer_request_redraw(self->viewer);
     return 1;

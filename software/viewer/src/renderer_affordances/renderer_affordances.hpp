@@ -1386,9 +1386,7 @@ struct RendererAffordances {
     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
     for(sticky_feet_map_type_::iterator it = self->stickyFootCollection->_feet.begin(); it!=self->stickyFootCollection->_feet.end(); it++)
     {
-//============================================================================================================         
-// Under Test
-//============================================================================================================   
+ 
           if(it->second._gl_foot->is_bodypose_adjustment_enabled())
           {
             it->second._gl_foot->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
@@ -1424,8 +1422,7 @@ struct RendererAffordances {
                  }
             }                
           }// end if(...is_bodypose_adjustment_enabled))
-//============================================================================================================    
-    
+
           KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
           object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(it->second.object_name);
@@ -1478,10 +1475,7 @@ struct RendererAffordances {
     typedef map<string, StickyHandStruc > sticky_hands_map_type_;
     for(sticky_hands_map_type_::iterator it = self->stickyHandCollection->_hands.begin(); it!=self->stickyHandCollection->_hands.end(); it++)
     {
-          
-//============================================================================================================         
-// Under Test
-//============================================================================================================   
+
           if(it->second._gl_hand->is_bodypose_adjustment_enabled())
           {
             it->second._gl_hand->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
@@ -1517,7 +1511,7 @@ struct RendererAffordances {
                  }
             }                
           }// end if(...is_bodypose_adjustment_enabled))
-//============================================================================================================                
+              
           KDL::Frame T_world_graspgeometry = KDL::Frame::Identity();       
           typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
           object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(it->second.object_name);
