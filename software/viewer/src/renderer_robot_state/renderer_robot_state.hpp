@@ -384,6 +384,14 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
     msg.ignore_terrain = true;
     msg.right_foot_lead = true;
 
+    msg.fixed_step_duration = NAN;
+    msg.bdi_step_duration = NAN;
+    msg.bdi_sway_duration = NAN;
+    msg.bdi_lift_height = NAN;
+    msg.bdi_toe_off = 1;
+    msg.bdi_knee_nominal = NAN;
+
+
     cout << "Sending WALKING_GOAL\n";
     self->lcm->publish(channel, &msg);
  } 
