@@ -72,21 +72,22 @@ bool AffordanceCollectionManager::add(std::string &filename, const drc::affordan
  
   std::string xml_string;
   if(!otdf::get_xml_string_from_file(filename, xml_string)){
-    return false; // file extraction failed
+     return false; // file extraction failed
   }
   
   instance_struc._otdf_instance = otdf::parseOTDF(xml_string);
   if (!instance_struc._otdf_instance){
     std::cerr << "ERROR: Model Parsing of " << filename << " the xml failed" << std::endl;
+     return false; // xml parsing failed
   }
   
   //instance_struc._otdf_instance->name_ = aff.name;
 
   // set non-standard params from affordance message
   for (size_t i=0; i < (size_t)aff.nparams; i++)
-    {   
-      instance_struc._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
-    }
+  {   
+    instance_struc._otdf_instance->setParam(aff.param_names[i],aff.params[i]);   
+  }
 
   
   // set standard params from affordance message
