@@ -51,6 +51,11 @@ classdef DRCTerrainMap < RigidBodyTerrain
         options.normal_radius = 1;
       end
 
+      if isfield(options, 'auto_request')
+        typecheck(options.auto_request, 'logical');
+      else
+        options.auto_request = false;
+      end
 
       if (private_channel)
           obj.map_handle = HeightMapHandle(@HeightMapWrapper,'true');
@@ -62,10 +67,17 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.map_handle.setNormalRadius(options.normal_radius);
 
       % wait for at least one map message to arrive before continuing
-      msg = [options.name,' : Waiting for terrain map'];
+      msg = [options.name,' : Waiting for terrain map...'];
       send_status(options.status_code, 0, 0, msg );
       fprintf(1,msg);
       obj.minval=[];
+      lc = lcm.lcm.LCM.getSingleton();
+      req_msg = drc.data_request_list_t();
+      req_msg.num_requests = 1;
+      req_msg.requests = javaArray('drc.data_request_t', 1);
+      req = drc.data_request_t();
+      req.type = drc.data_request_t.HEIGHT_MAP_SCENE;
+      req.period = 0;
       while isempty(obj.minval)
         ptcloud=[];
         while true
@@ -76,6 +88,11 @@ classdef DRCTerrainMap < RigidBodyTerrain
             end
             % end hack
             pause(1.0);
+            if options.auto_request
+              req_msg.utime = etime(clock,[1970 1 1 0 0 0])*1000000;
+              req_msg.requests(1) = req;
+              lc.publish('DATA_REQUEST', req_msg);
+            end
         end
         obj.minval = min(ptcloud(3,:));
       end
@@ -98,6 +115,67 @@ classdef DRCTerrainMap < RigidBodyTerrain
     function writeWRL(obj,fptr)
       error('not implemented yet, but could be done using the getAsMesh() interface'); 
     end
+
+    function feas_check = getStepFeasibilityChecker(obj, foot_radius, options)
+      % Return a function which can be called on a list of xy points and which returns a vector of length size(xy, 2) whose entries are 1 for each xy point which is OK for stepping and 0 for each point which is unsafe.
+      % Assumes a circular foot of radius foot_radius.
+
+      if nargin < 3; options = struct(); end
+      if ~isfield(options, 'resample'); options.resample = 2; end
+      if ~isfield(options, 'debug'); options.debug = false; end
+
+      [heights, px2world] = obj.map_handle.getRawHeights();
+      mag = 2^(options.resample-1);
+      heights = interp2(heights, (options.resample-1));
+      px2world = px2world * [1/mag 0 0 (1-1/mag); 0 1/mag 0 (1-1/mag ); 0 0 1 0; 0 0 0 1];
+      world2px = inv(px2world);
+      world2px_2x3 = world2px(1:2,[1,2,4]);
+
+      Q2 = zeros(size(heights));
+      Q2 = bsxfun(@max, Q2, abs(imfilter(heights, [1, -1])) - 0.03);
+      Q2 = bsxfun(@max, Q2, abs(imfilter(heights, [1; -1])) - 0.03);
+      Q2(isnan(heights)) = 1;
+      Q2(Q2 > 0) = 1;
+      Q2 = int8(Q2);
+      dworld = px2world * [0; 1; 0; 1] - px2world * [0; 0; 0; 1];
+      dworld = norm(dworld(1:2));
+      domain = zeros(ceil(2 * foot_radius / dworld), ceil(2 * foot_radius / dworld));
+      xy = [0;0];
+      for j = 1:size(domain, 1)
+        xy(2) = (j - (size(domain, 1) / 2 + 0.5)) * dworld;
+        for k = 1:size(domain, 2)
+          xy(1) = (k - (size(domain, 2) / 2 + 0.5)) * dworld;
+          dist_from_foot_center = sqrt(sum(xy.^2));
+          if  dist_from_foot_center < foot_radius
+      %       domain(j, k) = foot_radius - dist_from_foot_center;
+            domain(j, k) = 1;
+          end
+        end
+      end
+
+      F2 = double(ordfilt2(Q2, length(find(domain)), domain));
+      [px_X, px_Y] = meshgrid(1:size(heights, 2), 1:size(heights, 1));
+
+      function feas = feas_check_fcn(xy)
+        px = world2px_2x3 * [xy(1:2,:); ones(1,size(xy,2))];
+        feas = griddata(px_X, px_Y, F2, px(1,:), px(2,:), 'nearest') < 0.5;
+      end
+
+      feas_check = @feas_check_fcn;
+
+      if options.debug
+        px2world_2x3 = px2world(1:2, [1,2,4]);
+        world_xy = px2world_2x3 * [reshape(px_X, 1, []); reshape(px_Y, 1, []); ones(1, size(px_X, 1) * size(px_X, 2))];
+        
+        colors = zeros(length(reshape(F2,[],1)), 3);
+        colors(reshape(F2, [], 1) == 1, :) = repmat([1 0 0], length(find(reshape(F2, [], 1) == 1)), 1);
+        colors(reshape(Q2, [], 1) == 0, :) = repmat([1 1 0], length(find(reshape(Q2, [], 1) == 0)), 1);
+        colors(reshape(F2, [], 1) == 0, :) = repmat([0 1 0], length(find(reshape(F2, [], 1) == 0)), 1);
+        plot_lcm_points([world_xy', reshape(heights, [], 1)], colors, 71, 'Terrain Feasibility', 1, 1);
+      end
+    end
+
+
   end
   
   properties
