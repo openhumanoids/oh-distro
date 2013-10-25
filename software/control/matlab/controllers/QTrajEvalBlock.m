@@ -67,14 +67,14 @@ classdef QTrajEvalBlock < MIMODrakeSystem
         % pp trajectory
         qdes = fasteval(qtraj,t);
       end
-      q = x(1:end/2);
-      
-      setField(obj.controller_data,'integral', ...
-        obj.controller_data.data.integral + obj.controller_data.data.integral_gains.*(qdes-q)*obj.dt);
-      
-      qdes = qdes + max(-0.1,min(0.1,obj.controller_data.data.integral));
-      [jlmin,jlmax] = getJointLimits(obj.robot);
-      qdes = max(jlmin,min(jlmax,qdes));
+      if obj.use_error_integrator
+        q = x(1:end/2);
+        setField(obj.controller_data,'integral', ...
+          obj.controller_data.data.integral + obj.controller_data.data.integral_gains.*(qdes-q)*obj.dt);
+        qdes = qdes + max(-0.1,min(0.1,obj.controller_data.data.integral));
+        [jlmin,jlmax] = getJointLimits(obj.robot);
+        qdes = max(jlmin,min(jlmax,qdes));
+      end
     end
   end
   
