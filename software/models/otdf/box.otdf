@@ -60,4 +60,11 @@
         <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
     </joint>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="box_0" />
+        <relative_pose rpy="0 -1.5708 1.5708" xyz="-1.16338e-17 -0.222993 0.114" />
+        <grasp_type type="4" />
+        <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
 </object>
