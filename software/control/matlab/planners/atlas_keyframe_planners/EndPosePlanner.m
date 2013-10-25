@@ -39,7 +39,7 @@ classdef EndPosePlanner < KeyframePlanner
             obj.ee_torso_dist_lb = 0.6;
             obj.ee_lleg_dist_lb = 0.4;
             obj.stance_lb = 0.2;
-            obj.stance_ub = 0.4;
+            obj.stance_ub = 0.5;
             obj.l_hpx_ub = 0.3;
             obj.l_hpy_ub = -0.2;
             obj.l_hpx_lb = 0.1;
@@ -107,10 +107,11 @@ classdef EndPosePlanner < KeyframePlanner
             l_hand_pose = nan(7,1);
             
             % gaze constraints
+            tspan = [0 1];
             if(goal_type_flags.rh == 2)
-                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],rh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
+                iktraj_rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],rh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
             else
-                iktraj_head_constraint = {};
+                iktraj_rhand_constraint = {};
             end
             if(goal_type_flags.lh == 2)
                 iktraj_lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],lh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
@@ -118,7 +119,7 @@ classdef EndPosePlanner < KeyframePlanner
                 iktraj_lhand_constraint = {};
             end
             if(goal_type_flags.h == 2)
-                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],h_ee_goal(1:3),[0;0;0],obj.head_gaze_tol)};
+                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],h_ee_goal(1:3),[0;0;0],obj.head_gaze_tol,tspan)};
             else
                 iktraj_head_constraint = {};
             end
