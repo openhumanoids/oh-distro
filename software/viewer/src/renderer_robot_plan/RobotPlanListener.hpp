@@ -32,7 +32,8 @@ namespace renderer_robot_plan
    
    private:      
     std::string _urdf_xml_string;   
-    
+    bool _is_left_sandia;
+    bool _is_right_sandia;
    
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
 
@@ -109,16 +110,24 @@ namespace renderer_robot_plan
     void set_in_motion_hands_state(int index)
     {
  
-      KDL::Frame T_base_palm,T_world_palm_l,T_world_palm_r,T_world_base_l,T_world_base_r;
-     
-      T_base_palm = KDL::Frame::Identity();
-      T_base_palm.M = KDL::Rotation::RPY(0,-M_PI/2,0);
+      KDL::Frame T_base_palm_sandia,T_base_palm_irobot,T_world_palm_l,T_world_palm_r,T_world_base_l,T_world_base_r;
+    
+      T_base_palm_sandia = KDL::Frame::Identity();
+      T_base_palm_sandia.M = KDL::Rotation::RPY(0,-M_PI/2,0);
+      T_base_palm_irobot = KDL::Frame::Identity();
+      T_base_palm_irobot.M = KDL::Rotation::RPY(M_PI/2,0,-M_PI/2);
       
       _gl_robot_keyframe_list[index]->get_link_frame(_lhand_ee_name,T_world_palm_l);
       _gl_robot_keyframe_list[index]->get_link_frame(_rhand_ee_name,T_world_palm_r);
 
-      T_world_base_l = T_world_palm_l*(T_base_palm.Inverse());
-      T_world_base_r = T_world_palm_r*(T_base_palm.Inverse());
+      if(_is_left_sandia)		
+      	T_world_base_l = T_world_palm_l*(T_base_palm_sandia.Inverse());
+      else
+	T_world_base_l = T_world_palm_l*(T_base_palm_irobot.Inverse());
+      if(_is_right_sandia)	
+      	T_world_base_r = T_world_palm_r*(T_base_palm_sandia.Inverse());
+      else
+	T_world_base_r = T_world_palm_r*(T_base_palm_irobot.Inverse());
       
       // Flip marker direction to always point away from the body center.
       double normal, flipped;

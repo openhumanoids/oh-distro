@@ -27,7 +27,10 @@ namespace renderer_robot_plan
 		_active_breakpoint(0),
 		_num_breakpoints(0),
     _retractable_cycle_counter(0),
-		_plan_paused(false)
+		_plan_paused(false),
+		_is_left_sandia(true),
+		_is_right_sandia(true)
+
   {
      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
@@ -361,7 +364,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _base_gl_robot->disable_joint_limit_enforcement();
     cout<< "Number of Joints: " << _base_gl_robot->get_num_joints() <<endl;
     
-    bool _is_left_sandia,_is_right_sandia; // determine sandia hands or irobot hands by inspecting robot urdf.
+     // determine sandia hands or irobot hands by inspecting robot urdf.
     
     std::vector<std::string > robot_link_names;
     robot_link_names = _base_gl_robot->get_link_names();
