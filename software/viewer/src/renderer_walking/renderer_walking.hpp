@@ -43,6 +43,10 @@ typedef enum _walking_goal_type_t {
   GOAL_TYPE_CENTER, GOAL_TYPE_RIGHT_FOOT, GOAL_TYPE_LEFT_FOOT
 } walking_goal_type_t;
 
+typedef enum _bdi_toe_off_t {
+  BDI_TOE_OFF_DISABLE, BDI_TOE_OFF_ENABLE, BDI_TOE_OFF_FORCE_ENABLE
+} bdi_toe_off_t;
+
 // ===== 2 dimensional structure =====
 #ifndef _point2d_t_h
 typedef struct _point2d {
@@ -98,6 +102,11 @@ typedef struct _RendererWalking {
   double nom_step_width;
   double mu;
   int walking_settings;
+  float bdi_step_duration;
+  float bdi_sway_duration;
+  float bdi_lift_height;
+  bdi_toe_off_t bdi_toe_off;
+  float bdi_knee_nominal;
 
   int64_t max_draw_utime;
   double circle_color[3];
