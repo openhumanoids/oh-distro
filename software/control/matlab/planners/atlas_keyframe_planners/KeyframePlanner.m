@@ -38,6 +38,8 @@ classdef KeyframePlanner < handle
         T_hand_palm_r_sandia
         T_hand_palm_l_irobot
         T_hand_palm_r_irobot
+        lh_name
+        rh_name
         
         collision_check
         atlas_frame
@@ -129,7 +131,14 @@ classdef KeyframePlanner < handle
      %-----------------------------------------------------------------------------------------------------------------        
         function setVDesired(obj,val)
             obj.plan_cache.v_desired  = val;
-        end   
+        end
+     %-----------------------------------------------------------------------------------------------------------------        
+        function lh_name=get_lhname(obj)
+            lh_name=obj.lh_name;
+        end     
+        function rh_name=get_rhname(obj)
+            rh_name=obj.rh_name;
+        end       
      %-----------------------------------------------------------------------------------------------------------------
         function setQdotDesired(obj,val)
             obj.plan_cache.qdot_desired  = val;
@@ -156,6 +165,21 @@ classdef KeyframePlanner < handle
             elseif(obj.r_hand_mode == 0)
               obj.T_hand_palm_r = obj.T_hand_palm_r_irobot;
             end
+            
+                        
+            obj.lh_name='';
+            if(obj.l_hand_mode==2)
+                obj.lh_name='left_base_link';
+            else
+                obj.lh_name='left_palm';
+            end
+            obj.rh_name='';
+            if(obj.r_hand_mode==2)
+                obj.rh_name='right_base_link';
+            else
+                obj.rh_name='right_palm';
+            end
+            
             
             obj.T_palm_hand_l = inv_HT(obj.T_hand_palm_l);
             obj.T_palm_hand_r = inv_HT(obj.T_hand_palm_r);

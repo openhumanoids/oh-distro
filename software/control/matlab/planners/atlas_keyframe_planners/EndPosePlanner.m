@@ -145,22 +145,10 @@ classdef EndPosePlanner < KeyframePlanner
 
             % Solve IK
             timeIndices = unique(Indices);
+
             
-            
-            if(obj.l_hand_mode==2)
-                lh_name='left_base_link';
-            else
-                lh_name='left_palm';
-            end
-            
-            if(obj.r_hand_mode==2)
-                rh_name='right_base_link';
-            else
-                rh_name='right_palm';
-            end
-            
-            lh_indices = (~cellfun(@(x) isempty(strfind(char(x),lh_name)),ee_names));
-            rh_indices = (~cellfun(@(x) isempty(strfind(char(x),rh_name)),ee_names));
+            lh_indices = (~cellfun(@(x) isempty(strfind(char(x),obj.lh_name)),ee_names));
+            rh_indices = (~cellfun(@(x) isempty(strfind(char(x),obj.rh_name)),ee_names));
             lf_indices = (~cellfun(@(x) isempty(strfind(char(x),'l_foot')),ee_names));
             rf_indices = (~cellfun(@(x) isempty(strfind(char(x),'r_foot')),ee_names));
             lhand_constraints=convertEELociFromRPYToQuat(obj,ee_loci(:,lh_indices));
@@ -407,27 +395,14 @@ classdef EndPosePlanner < KeyframePlanner
             %        utorso_constraint = parse2PosQuatConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0,0,1e-2,[-inf inf]);
             
             ik_dist_constraint = {};
-            
-            lh_name='';
-            if(obj.l_hand_mode==2)
-                lh_name='left_base_link';
-            else
-                lh_name='left_palm';
-            end
-            rh_name='';
-            if(obj.r_hand_mode==2)
-                rh_name='right_base_link';
-            else
-                rh_name='right_palm';
-            end
-            
+
 
             ind=find(Indices==timeIndices(1));
             for k=1:length(ind),
                 if(strcmp('pelvis',ee_names{ind(k)}))
                     pelvisT = ee_loci(:,ind(k));
                     pelvis_constraint = {WorldQuatConstraint(obj.r,obj.pelvis_body,rpy2quat(pelvisT(4:6)),1e-2)};
-                elseif(strcmp(lh_name,ee_names{ind(k)}))
+                elseif(strcmp(obj.lh_name,ee_names{ind(k)}))
                     l_ee_goal = ee_loci(:,ind(k));
                     lhandT = zeros(6,1);
                     T_world_palm_l = HT(l_ee_goal(1:3),l_ee_goal(4),l_ee_goal(5),l_ee_goal(6));
@@ -441,7 +416,7 @@ classdef EndPosePlanner < KeyframePlanner
                     dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),
                                        Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.l_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan),};
                     ik_dist_constraint = [ik_dist_constraint,dist_constraint];   
-                elseif(strcmp(rh_name,ee_names{ind(k)}))
+                elseif(strcmp(obj.rh_name,ee_names{ind(k)}))
                     r_ee_goal = ee_loci(:,ind(k));
                     rhandT = zeros(6,1);
                     T_world_palm_r = HT(r_ee_goal(1:3),r_ee_goal(4),r_ee_goal(5),r_ee_goal(6));

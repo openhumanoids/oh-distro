@@ -365,10 +365,12 @@ while(1)
     x= constraint_listener.getNextMessage(msg_timeout); % not a frame
     if(~isempty(x))
         num_links = length(x.time);
-        if((num_links==1)&&(strcmp(x.name,'left_palm')))
+        lh_name=keyframe_adjustment_engine.get_lhname();
+        rh_name=keyframe_adjustment_engine.get_rhname();
+        if((num_links==1)&&(strcmp(x.name,lh_name))) 
             disp('received keyframe constraint for left hand');
             lh_ee_constraint = x;
-        elseif((num_links==1)&&(strcmp(x.name,'right_palm')))
+        elseif((num_links==1)&&(strcmp(x.name,rh_name)))
             disp('received keyframe constraint for right hand');
             rh_ee_constraint = x;
         elseif((num_links==1)&&(strcmp(x.name,'l_foot')))
