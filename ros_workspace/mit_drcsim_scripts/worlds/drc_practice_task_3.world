@@ -31,10 +31,11 @@
     </include>
 
     <!-- Base -->
+<!--
     <include>
       <uri>model://drc_practice_base_4x8</uri>
     </include>
-
+-->
     <include>
       <name>Doorway</name>
       <uri>model://drc_practice_door_4x8</uri>
@@ -44,91 +45,91 @@
     <include>
       <name>SideWall_1</name>
       <uri>model://drc_practice_block_wall</uri>
-      <pose>-0.54158 0.560356 0.33464 0 0 1.5707</pose>
+      <pose>-0.54158 0.560356 0.30 0 0 1.5707</pose>
     </include>
 
     <include>
       <name>SideWall_2</name>
       <uri>model://drc_practice_block_wall</uri>
-      <pose>0.54158 0.560356 0.33464 0 0 1.5707</pose>
+      <pose>0.54158 0.560356 0.30 0 0 1.5707</pose>
     </include>
 
     <include>
       <name>truss</name>
       <uri>model://drc_practice_truss</uri>
-      <pose>0 0.445855 0.16871 0 0 3.1415</pose>
+      <pose>0 0.445855 0.145 0 0 3.1415</pose>
     </include>
 
     <include>
       <name>2x4_1</name>
       <uri>model://drc_practice_2x4</uri>
-      <pose>0.071296 1.14241 0.55 0 0.95 0</pose>
+      <pose>0.071296 1.14241 0.48 0 0.95 0</pose>
     </include>
 
     <include>
       <name>2x4_2</name>
       <uri>model://drc_practice_2x4</uri>
-      <pose>-0.071296 1.14241 0.55 0 0.95 3.1415</pose>
+      <pose>-0.071296 1.14241 0.48 0 0.95 3.1415</pose>
     </include>
 
     <include>
       <name>2x4_3</name>
       <uri>model://drc_practice_2x4</uri>
-      <pose>0.0 0.76 0.63 1.57 0 0</pose>
+      <pose>0.0 0.76 0.59 1.57 0 0</pose>
     </include>
 
     <include>
       <name>2x4_4</name>
       <uri>model://drc_practice_2x4</uri>
-      <pose>0.0 0.35 0.63 1.57 0 0</pose>
+      <pose>0.0 0.35 0.59 1.57 0 0</pose>
     </include>
-
+<!-- done -->
     <include>
       <name>4x4x20_1</name>
       <uri>model://drc_practice_4x4x20</uri>
-      <pose>-0.017436 0.209403 0.279366 0 1.5707 0</pose>
+      <pose>-0.017436 0.209403 0.26 0 1.5707 0</pose>
     </include>
 
     <include>
       <name>4x4x20_2</name>
       <uri>model://drc_practice_4x4x20</uri>
-      <pose>0.031356 0.4436 0.279366 0 1.5707 0</pose>
+      <pose>0.031356 0.4436 0.26 0 1.5707 0</pose>
     </include>
 
     <include>
       <name>4x4x20_3</name>
       <uri>model://drc_practice_4x4x20</uri>
-      <pose>0.332 0.169429 0.47 0 0 0</pose>
+      <pose>0.332 0.169429 0.39 0 0 0</pose>
     </include>
 
     <include>
       <name>4x4x20_4</name>
       <uri>model://drc_practice_4x4x20</uri>
-      <pose>-0.331 0.169429 0.47 0 0 0</pose>
+      <pose>-0.331 0.169429 0.39 0 0 0</pose>
     </include>
-
+<!-- done -->
     <include>
       <name>4x4x40_1</name>
       <uri>model://drc_practice_4x4x40</uri>
-      <pose>-0.074179 0.66 0.445 0 -0.79 0</pose>
+      <pose>-0.074179 0.66 0.41 0 -0.79 0</pose>
     </include>
 
     <include>
       <name>4x4x40_2</name>
       <uri>model://drc_practice_4x4x40</uri>
-      <pose>0.074179 0.55 0.475 0 0.95 0</pose>
+      <pose>0.074179 0.55 0.42 0 0.95 0</pose>
     </include>
 
     <include>
       <name>4x4x40_3</name>
       <uri>model://drc_practice_4x4x40</uri>
-      <pose>0.2236 0.041327 0.5333 0 1.5707 0</pose>
+      <pose>0.2236 0.041327 0.51 0 1.5707 0</pose>
     </include>    
 
     <include>
       <name>4x4x40_4</name>
       <uri>model://drc_practice_4x4x40</uri>
-      <pose>-0.2236 0.041327 0.5333 0 1.5707 0</pose>
+      <pose>-0.2236 0.041327 0.51 0 1.5707 0</pose>
     </include>
 
     <include>
