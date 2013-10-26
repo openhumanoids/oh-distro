@@ -220,6 +220,8 @@ void App::publishSandiaRaw(int64_t utime_in,bool is_left){
   {
     sandia_hand_msgs::RawPalmState* msg = 
       (is_left ? &sandia_l_hand_palm_state_: &sandia_r_hand_palm_state_);
+
+    msg_out.palm.utime = utime_in;
     msg_out.palm.palm_time = msg->palm_time;
     copyvalue(msg_out.palm.palm_accel, msg->palm_accel,3);
     copyvalue(msg_out.palm.palm_gyro,  msg->palm_gyro, 3);
@@ -231,6 +233,8 @@ void App::publishSandiaRaw(int64_t utime_in,bool is_left){
   {
     sandia_hand_msgs::RawMoboState* msg = 
       (is_left ? &(this->sandia_l_hand_mobo_state_): &(this->sandia_r_hand_mobo_state_));
+    
+    msg_out.mobo.utime = utime_in;
     msg_out.mobo.mobo_time = msg->mobo_time;
     copyvalue(msg_out.mobo.finger_currents, msg->finger_currents,4);
     copyvalue(msg_out.mobo.logic_currents,  msg->logic_currents, 3);
@@ -244,6 +248,7 @@ void App::publishSandiaRaw(int64_t utime_in,bool is_left){
     sandia_hand_msgs::RawFingerState* msg = 
       (is_left ? sandia_l_hand_finger_state_[i]: sandia_r_hand_finger_state_[i]);
     
+    msg_out.fingers[i].utime = utime_in;
     msg_out.fingers[i].fmcb_time = msg->fmcb_time;
     msg_out.fingers[i].pp_time =   msg->pp_time;
     msg_out.fingers[i].dp_time =   msg->dp_time;

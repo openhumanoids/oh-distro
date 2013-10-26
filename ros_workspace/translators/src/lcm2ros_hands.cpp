@@ -10,6 +10,7 @@
 #include <osrf_msgs/JointCommands.h>
 #include <atlas_msgs/AtlasCommand.h>
 #include <sandia_hand_msgs/SimpleGrasp.h>
+#include <sandia_hand_msgs/RelativeJointCommands.h>
 #include <handle_msgs/HandleControl.h>
 #include <map>
 #include <ConciseArgs>
@@ -34,6 +35,9 @@ class LCM2ROS{
     void publishSandiaHandCommand(const drc::joint_command_t* msg, bool is_left);
     void publishIrobotHandCommand(const drc::joint_command_t* msg, bool is_left); 
     
+    ros::Publisher sandia_l_hand_relative_joint_cmd_pub_,sandia_r_hand_relative_joint_cmd_pub_;
+    void RelativeJointCommandsHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_relative_t* msg);
+    
     ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);  
   
@@ -53,6 +57,12 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   irobot_l_hand_joint_cmd_pub_ = nh_.advertise<handle_msgs::HandleControl>("/irobot_hands/l_hand/control",10);
   irobot_r_hand_joint_cmd_pub_ = nh_.advertise<handle_msgs::HandleControl>("/irobot_hands/r_hand/control",10); 
 
+  lcm_->subscribe("L_HAND_JOINT_COMMANDS_RELATIVE",&LCM2ROS::RelativeJointCommandsHandler,this); 
+  lcm_->subscribe("R_HAND_JOINT_COMMANDS_RELATIVE",&LCM2ROS::RelativeJointCommandsHandler,this); 
+  sandia_l_hand_relative_joint_cmd_pub_ = nh_.advertise<sandia_hand_msgs::RelativeJointCommands>("/sandia_hands/l_hand/relative_joint_commands",10);
+  sandia_r_hand_relative_joint_cmd_pub_ = nh_.advertise<sandia_hand_msgs::RelativeJointCommands>("/sandia_hands/r_hand/relative_joint_commands",10); 
+  
+  
   lcm_->subscribe("SIMPLE_GRASP_COMMAND",&LCM2ROS::simpleGraspCmdHandler,this);  
   simple_grasp_pub_left_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/l_hand/simple_grasp",10); 
   simple_grasp_pub_right_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/r_hand/simple_grasp",10); 
@@ -62,9 +72,31 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   rosnode = new ros::NodeHandle();
 }
 
+void LCM2ROS::RelativeJointCommandsHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_relative_t* msg) {
+
+  sandia_hand_msgs::RelativeJointCommands msgout;
+  
+  std::vector<uint8_t> max_effort(msg->max_effort.begin(), msg->max_effort.end());
+  
+  for (int i=0;i<12; i++){
+    msgout.max_effort[i] = msg->max_effort[i];
+    msgout.position[i] = msg->position[i];
+  }
+
+  if (channel == "L_HAND_JOINT_COMMANDS_RELATIVE"){
+    ROS_ERROR("LCM2ROS Sending got relative: %s", channel.c_str());
+    sandia_l_hand_relative_joint_cmd_pub_.publish(msgout);       
+  }else if (channel == "R_HAND_JOINT_COMMANDS_RELATIVE"){
+    ROS_ERROR("LCM2ROS Sending got relative: %s", channel.c_str());
+    sandia_r_hand_relative_joint_cmd_pub_.publish(msgout);       
+  }  
+  
+}
+  
+
 
 void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::simple_grasp_t* msg) {
-  ROS_ERROR("LCM2ROS Sending got simpele");
+  ROS_ERROR("LCM2ROS Sending got simple");
 
   if(ros::ok()) {
     sandia_hand_msgs::SimpleGrasp msgout;
