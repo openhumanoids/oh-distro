@@ -1,21 +1,30 @@
 Basic info to get set up:
-* IP: 192.168.40.47
-* download stuff from irobot.leapfile.com, (mit:DRCiRobotHand)
-* follow quick start guide in OwnersManual pdf from leapfile tarball. Don't worry about 'ERROR: cannot open annan device'; this is just a midi slider board that can be used to send commands to the hand
-* I changed /etc/network/interfaces according to the manual
-* I added the robot's IP to /etc/hosts so that you can use irobot47 instead of the IP address
+* the hands are not backdrivable
+* IPs: 192.168.40.47 / 192.168.40.49. Each hand has an identifying sticker on it (47 or 49).
+* download software and documentation from irobot.leapfile.com, (mit:DRCiRobotHand)
+* follow quick start guide in OwnersManual pdf from leapfile tarball. Don't worry about 'ERROR: cannot open annan device'; this is just a midi slider board that can be used to send commands to the hand.
+* Naming conventions can be found in the OwnersManual pdf as well
+* I changed /etc/network/interfaces according to the manual. Maybe I didn't set things up right, but I have to run 'sudo /etc/init.d/networking restart' every time I hook up the robot to the PC
+* I added the hands' IP addresses to /etc/hosts so that you can use irobot47 or irobot49 instead of the IP addresses
 * logging into the hand: ssh root@irobot47. Password awareroot.
-* updating hand: I followed instructions in email with subject "iRobot DRC hand urgent update" to the letter. It took 3 times to flash everything without errors (using ./iflash $MICRO_CONTROLLER_NUMBER)
-* looked at HandleSensors.msg and HandleControl.msg in handle/handle_msgs/msg
-* logged into the hand (note that handle_controller is hidden): ./handle_controller --help
-* on own computer, can use to move fingers: rosrun handle_launch key_control.sh 
+* updating hand firmware: I followed instructions in email with subject "iRobot DRC hand urgent update" to the letter. It took 3 times to flash everything without errors (using ./iflash $MICRO_CONTROLLER_NUMBER)
+* HandleSensors.msg and HandleControl.msg in handle/handle_msgs/msg show the different types of sensor information, including units, as well as control commands.
+* when logged into the hand (note that handle_controller is hidden): ./handle_controller --help
+* on own computer, can use to move fingers using short velocity control commands, allowing you to manually calibrate: 'rosrun handle_launch key_control.sh 47' to control hand 47
 * on hand: ./testscript.sh
-
-To run python script:
-roscore
-rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 49
-rosrun handle_launch power_grasp_keyboard_teleop.py 49
-
-Random:
 * this exists, but it's for the ARM-H model: https://github.com/robotics/handle_wrapper
-* visualize_simplified.launch
+* the automatic calibration routine has never worked for us up to this point.
+* The zero configuration of the hand has all of the fingers opened as far as possible and finger spread such that F1 and F2 are parallel
+
+Manual calibration
+The goal is to calibrate the incremental encoders measuring the excursion of the tendons. These are zeroed at hand startup.
+* run key_control script as described above
+* close finger 3 all the way with motor 3, then reel in motor 4 until the finger just starts to move back
+* open up all three fingers completely, but keep tension in the tendons
+* restart the hand.
+
+Running Sisir's power grasp python script:
+* roscore
+* rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 49
+* rosrun handle_launch power_grasp_keyboard_teleop.py 49
+
