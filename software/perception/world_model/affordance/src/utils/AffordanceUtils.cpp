@@ -343,3 +343,34 @@ bool AffordanceUtils::getCloudAsLists(std::string filename,
       
   cout << "Read a point cloud with " << points.size() << " points\n";
 }
+
+
+
+
+drc::affordance_plus_t AffordanceUtils::getBoxAffordancePlus(int uid, std::string friendly_name, Eigen::Isometry3d position , std::vector<double> &lengths){ 
+  drc::affordance_t a;
+  a.utime =0;
+  a.map_id =0;
+  a.uid =uid;
+  a.otdf_type ="box";
+  a.aff_store_control = drc::affordance_t::NEW;
+
+  a.param_names.push_back("lX");      a.params.push_back(lengths[0]);
+  a.param_names.push_back("lY");      a.params.push_back(lengths[1]);
+  a.param_names.push_back("lZ");      a.params.push_back(lengths[2]);
+  a.nparams = a.params.size();
+  a.nstates =0;
+  
+  a.origin_xyz[0]=position.translation().x(); a.origin_xyz[1]=position.translation().y(); a.origin_xyz[2]= position.translation().z(); 
+  
+  Eigen::Quaterniond quat(position.rotation());
+  quat_to_euler( quat, a.origin_rpy[0] , a.origin_rpy[1], a.origin_rpy[2] ) ;
+  
+  drc::affordance_plus_t a1;
+  a1.aff = a;
+  a1.npoints=0; 
+  a1.ntriangles =0;
+
+  return a1;
+}
+

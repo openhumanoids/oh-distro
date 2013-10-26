@@ -24,6 +24,7 @@
 #include <pcl/common/transforms.h>
 
 #include <rgbd_simulation/rgbd_primitives.hpp>
+#include <lcmtypes/drc_lcmtypes.hpp>
 
 
 class AffordanceUtils {
@@ -90,6 +91,10 @@ class AffordanceUtils {
       }
       return found_file;
     }
+    
+    
+    // Create an aff plus message:
+    drc::affordance_plus_t getBoxAffordancePlus(int uid, std::string friendly_name, Eigen::Isometry3d position , std::vector<double> &lengths);
     
     
   private:

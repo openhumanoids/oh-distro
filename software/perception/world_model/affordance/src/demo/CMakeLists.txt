@@ -22,6 +22,17 @@ model-client ${REQUIRED_PACKAGES} pointcloud_vis
    affordance-utils lcm)
 pods_install_executables(affordance_init_relative)
 
+
+# spoof an bunch of sticky hands around the robot
+add_executable (hand_cloud hand_cloud.cpp )
+target_link_libraries(hand_cloud boost_system)
+pods_use_pkg_config_packages(hand_cloud 
+model-client ${REQUIRED_PACKAGES} pointcloud_vis
+  bot2-param-client 
+  bot2-frames  bot2-frames_cpp
+   affordance-utils lcm)
+pods_install_executables(hand_cloud)
+
 # spoof ee goals near the shoulder
 add_executable (ee-test ee_test.cpp )
 target_link_libraries(ee-test boost_system)
@@ -34,6 +45,7 @@ pods_install_executables(ee-test)
 
 
 ##############################################
+# driver around the final position of the a plan or the current state:
 add_executable (ee-driver ee_driver.cpp)
 target_link_libraries (ee-driver curses boost_system   lcm)
 pods_use_pkg_config_packages(ee-driver lcm model-client
@@ -45,6 +57,7 @@ pods_install_executables(ee-driver)
 
 
 ##############################################
+# tiny util to give the xyz and yaw of the robot. probably can remove
 add_executable (affordance_debris_util affordance_debris_util.cpp)
 target_link_libraries (affordance_debris_util curses boost_system   lcm)
 pods_use_pkg_config_packages(affordance_debris_util lcm model-client

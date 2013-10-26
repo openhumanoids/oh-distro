@@ -38,10 +38,14 @@ string drc_base = string(pDRC_BASE);
 // Raw details read from affordance text file
 class AffRaw { 
 public:
-  AffRaw(std::string friendly_name, std::vector<double> params):
-    friendly_name_ (friendly_name), params_(params){};
+  AffRaw(std::string friendly_name, Eigen::Isometry3d position, std::vector<double> params):
+    friendly_name_ (friendly_name), position_(position), params_(params){};
   string friendly_name_;
   std::vector<double> params_;
+  
+  Eigen::Isometry3d position_ ; // position of the affordance
+  Eigen::Isometry3d standing_position_;
+  
 };
 
 using namespace std;
@@ -65,12 +69,15 @@ class Pass{
     drc::affordance_plus_t getDynamicMeshTwoCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getAffordancePlusForFirehoseMatableStandpipe(std::string filename, std::vector<double> &xyzrpy, int uid);
     
-    drc::affordance_plus_t getBoxAffordancePlus(int uid, std::string friendly_name, std::vector<double> &xyzrpy , std::vector<double> &lengths);
     AffordanceUtils affutils;
     
     //void readAffordanceFile(std::string filename);
     std::vector<AffRaw> readAffordanceFile(std::string filename);
+    
+    void readStandingPositionsFile(std::string filename, std::vector<AffRaw> &affraw_list);
+    
     void sendNameLabels(std::vector<AffRaw> &affraw_list);
+    void sendStandingLabels(std::vector<AffRaw> &affraw_list);
     
     bool set_param(drc::affordance_plus_t &a1,std::string param_name, double val){
       std::vector<std::string>::const_iterator found;
@@ -91,6 +98,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(98001,"Debris",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(98011,"Stand",5,1) );
   
   cout << "Finished setting up\n";
 }
@@ -409,31 +417,6 @@ drc::affordance_plus_t Pass::getAffordancePlusForFirehoseMatableStandpipe(std::s
   return p;
 }
 
-drc::affordance_plus_t Pass::getBoxAffordancePlus(int uid, std::string friendly_name, std::vector<double> &xyzrpy , std::vector<double> &lengths){ 
-  drc::affordance_t a;
-  a.utime =0;
-  a.map_id =0;
-  a.uid =uid;
-  a.otdf_type ="box";
-  a.aff_store_control = drc::affordance_t::NEW;
-
-  a.param_names.push_back("lX");      a.params.push_back(lengths[0]);
-  a.param_names.push_back("lY");      a.params.push_back(lengths[1]);
-  a.param_names.push_back("lZ");      a.params.push_back(lengths[2]);
-  a.nparams = a.params.size();
-  a.nstates =0;
-  
-  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
-  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
-  
-  drc::affordance_plus_t a1;
-  a1.aff = a;
-  a1.npoints=0; 
-  a1.ntriangles =0;
-
-  return a1;
-}
-
 
 
 std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
@@ -458,6 +441,14 @@ std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
         //std::cout << tokens[i] << "\n";
         values.push_back(lexical_cast<double>( tokens[i] ));
       }
+      
+      
+      Eigen::Isometry3d position = Eigen::Isometry3d::Identity();
+      position.translation() << values[0], values[1], values[2];
+      
+      // I think the text file as actually ypr not rpy
+      Eigen::Quaterniond quat = euler_to_quat( values[5], values[4], values[3]);
+      position.rotate(quat);
 
       std::cout << "aff: " << tokens[0] << ": " ;
       for (size_t i=0 ; i < values.size() ; i++){
@@ -465,16 +456,10 @@ std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
       }
       std::cout << "\n";
       
-      AffRaw aff(tokens[0] , values );
+      
+      
+      AffRaw aff(tokens[0] , position,  values );
       affraw_list.push_back(aff);
-      /*int tag_id =lexical_cast<int>( values[0] );
-      Eigen::Isometry3d tag_pose;
-      tag_pose.setIdentity();
-      tag_pose.translation()  << values[1], values[2], values[3];
-      Eigen::Quaterniond quat = Eigen::Quaterniond(values[4], values[5], values[6], values[7] );
-      tag_pose.rotate(quat);
-      tags_.insert( make_pair( tag_id , TagDetails( tag_id , tag_pose ) ) ); 
-      */
     }
   }
   fileinput.close();
@@ -486,40 +471,62 @@ std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
 
 
 
-Eigen::Quaterniond euler_to_quat_test(double roll, double pitch, double yaw) {
-  double sy = sin(yaw*0.5);
-  double cy = cos(yaw*0.5);
-  double sp = sin(pitch*0.5);
-  double cp = cos(pitch*0.5);
-  double sr = sin(roll*0.5);
-  double cr = cos(roll*0.5);
-  double w = cr*cp*cy + sr*sp*sy;
-  double x = sr*cp*cy - cr*sp*sy;
-  double y = cr*sp*cy + sr*cp*sy;
-  double z = cr*cp*sy - sr*sp*cy;
-  return Eigen::Quaterniond(w,x,y,z);
+void Pass::readStandingPositionsFile(std::string filename, std::vector<AffRaw> &affraw_list){
+
+  std::vector<Eigen::Isometry3d> standing_positions;
+  
+  ifstream fileinput (filename);
+  if (fileinput.is_open()){
+    string message;
+    while ( getline (fileinput,message) ) { // for each line
+      std::string letter1 = message.substr (0,1);   // "generalities"
+      if (letter1 == "#"){
+        cout << message << endl;
+        continue;
+      }
+      
+
+      vector<string> tokens;
+      boost::split(tokens, message, boost::is_any_of(","));
+      vector<double> values;
+      for (size_t i=1 ; i < tokens.size() ; i++){
+        //std::cout << tokens[i] << "\n";
+        values.push_back(lexical_cast<double>( tokens[i] ));
+      }
+      
+      
+      Eigen::Isometry3d standing_position = Eigen::Isometry3d::Identity();
+      standing_position.translation() << values[0], values[1], 0;
+      // put the feet on the ground
+      // values[2];
+      Eigen::Quaterniond quat = euler_to_quat( values[3],0, 0);
+      standing_position.rotate(quat);
+      standing_positions.push_back( standing_position );
+    }
+  }
+  fileinput.close();
+
+  
+  cout << standing_positions.size() << " standing positions and "
+       << affraw_list.size() << " affs\n";
+  if (standing_positions.size() == affraw_list.size() ){
+    for (size_t i=0 ; i < affraw_list.size() ; i ++){
+      affraw_list[i].standing_position_ = standing_positions[i];
+    }
+  }
 }
 
+
+
 void Pass::sendNameLabels(std::vector<AffRaw> &affraw_list){
-
-
   int counter =0;  
   std::vector<Isometry3dTime> world_to_jointsT;
   std::vector< int64_t > world_to_joint_utimes;
   std::vector< std::string > joint_names;
   for( int i=0 ; i < affraw_list.size() ; i++ ){
-    
     AffRaw affraw = affraw_list[ i];
-    
-    Eigen::Isometry3d world_to_body;
-    world_to_body.setIdentity();
-    world_to_body.translation() << affraw.params_[0], affraw.params_[1], affraw.params_[2];
-    
-    // NB: affordances use an extrinsic rpy, so the equivalent is intristinsic ypr - hence here I 've inverted the ordering
-    Eigen::Quaterniond quat = euler_to_quat_test( affraw.params_[5], affraw.params_[4], affraw.params_[3]);
-    world_to_body.rotate(quat);
 
-    Isometry3dTime world_to_jointT(counter, world_to_body);
+    Isometry3dTime world_to_jointT(counter, affraw.position_);
     world_to_jointsT.push_back(world_to_jointT);
     
     std::string this_name = affraw.friendly_name_  ;
@@ -531,11 +538,30 @@ void Pass::sendNameLabels(std::vector<AffRaw> &affraw_list){
   
   pc_vis_->pose_collection_to_lcm_from_list(98001, world_to_jointsT); // all joints in world frame
   pc_vis_->text_collection_to_lcm(98002, 98001, "Debris Labels", joint_names, world_to_joint_utimes );    
-  
 }
 
 
+void Pass::sendStandingLabels(std::vector<AffRaw> &affraw_list){
+  int counter =0;  
+  std::vector<Isometry3dTime> world_to_jointsT;
+  std::vector< int64_t > world_to_joint_utimes;
+  std::vector< std::string > joint_names;
+  for( int i=0 ; i < affraw_list.size() ; i++ ){
+    AffRaw affraw = affraw_list[ i];
 
+    Isometry3dTime world_to_jointT(counter, affraw.standing_position_);
+    world_to_jointsT.push_back(world_to_jointT);
+    
+    std::string this_name = affraw.friendly_name_  ;
+    joint_names.push_back(  this_name   );
+    world_to_joint_utimes.push_back( counter);
+    
+    counter++;
+  }
+  
+  pc_vis_->pose_collection_to_lcm_from_list(98011, world_to_jointsT); // all joints in world frame
+  pc_vis_->text_collection_to_lcm(98012, 98011, "Stand Labels", joint_names, world_to_joint_utimes );    
+}
 
 
 
@@ -721,9 +747,14 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
   } 
 
   string debris_filename_full = string(drc_base + "/software/config/task_config/debris/debrisPositions.csv");
+  string standing_filename_full = string(drc_base + "/software/config/task_config/debris/debrisStandXYZYaw.csv");
   std::cout << debris_filename_full << "\n";
   std::vector<AffRaw> affraw_list = readAffordanceFile(debris_filename_full);
   std:: cout << affraw_list.size() << " affordances read\n";
+  
+  readStandingPositionsFile( standing_filename_full , affraw_list);
+  
+  
   if ((which_publish==9)){ 
     
     for (size_t i=0 ; i < affraw_list.size() ; i++){
@@ -732,24 +763,26 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
       std::vector<double> lengths = { affraw.params_[6], affraw.params_[7], affraw.params_[8]};
       int uid = i+1;
       string friendly_name = affraw.friendly_name_;
-      drc::affordance_plus_t a1 =getBoxAffordancePlus(uid,friendly_name, xyzrpy, lengths);
+      drc::affordance_plus_t a1 = affutils.getBoxAffordancePlus(uid,friendly_name, affraw.position_ , lengths);
       lcm_->publish("AFFORDANCE_FIT",&a1);
       
-      sendNameLabels(affraw_list);      
+      sendNameLabels(affraw_list); 
+      sendStandingLabels(affraw_list);
     }
   }  
   
   if ((which_publish==10)){ 
-    AffRaw affraw = affraw_list[ which_publish_single];
+    AffRaw affraw = affraw_list[ which_publish_single-1];
     std::vector<double> xyzrpy = { affraw.params_[0], affraw.params_[1], affraw.params_[2], affraw.params_[3], affraw.params_[4], affraw.params_[5] };
     std::vector<double> lengths = { affraw.params_[6], affraw.params_[7], affraw.params_[8]};
-    int uid = which_publish_single+1;
+    int uid = which_publish_single;
     string friendly_name = affraw.friendly_name_;
     std::cout << friendly_name << "\n";
       
-    drc::affordance_plus_t a1 =getBoxAffordancePlus(uid,friendly_name, xyzrpy, lengths);
+    drc::affordance_plus_t a1 = affutils.getBoxAffordancePlus(uid,friendly_name, affraw.position_ , lengths);
     lcm_->publish("AFFORDANCE_FIT",&a1);
     sendNameLabels(affraw_list);      
+    sendStandingLabels(affraw_list);
   }  
   
 /*  

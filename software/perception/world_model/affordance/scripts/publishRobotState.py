@@ -130,7 +130,7 @@ def getTwistMsg():
 
 def getRobotStateMsg():
   msg = robot_state_t()
-  msg.utime = 0
+  msg.utime = timestamp_now ()
   
   ft = force_torque_t()
   msg.pose = getPoseMsg()
