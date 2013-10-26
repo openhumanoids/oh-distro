@@ -1,11 +1,12 @@
 import lcm
 import drc
+import time
 import numpy as np
 
 import py_drake_utils as ut
 import bdi_step.footsteps
 from bdi_step.plotting import draw_swing
-from bdi_step.utils import Behavior, gl
+from bdi_step.utils import Behavior, gl, now_utime
 
 NUM_REQUIRED_WALK_STEPS = 4
 
@@ -50,13 +51,6 @@ class BDIStepTranslator:
 
         if self.mode == Mode.plotting:
             self.draw(footsteps)
-
-            self.lc.publish('TRANSLATED_BDI_FOOTSTEP_PLAN', msg_data)
-
-            # this should be temporary. Once we have the correct plan execution GUI utils, we should just publish on TRANSLATED_BDI_FOOTSTEP_PLAN instead, and the GUI will re-send on COMMITTED_FOOTSTEP_PLAN
-            self.lc.publish('COMMITTED_FOOTSTEP_PLAN', msg_data)
-
-
         else:
             self.bdi_step_queue = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
 
@@ -66,6 +60,11 @@ class BDIStepTranslator:
 
             # self.send_walk_params(1)
             self.send_params(1)
+            m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEPPING" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALKING")
+            print m
+            ut.send_status(6,0,0,m)
+            time.sleep(1)
+            self.send_behavior()
 
     def handle_atlas_status(self, channel, msg_data):
         if self.delivered_index is None or self.mode != Mode.translating:
@@ -121,6 +120,17 @@ class BDIStepTranslator:
         else:
             raise ValueError("Bad behavior value: {:s}".format(self.behavior))
 
+    def send_behavior(self):
+        command_msg = drc.atlas_behavior_command_t()
+        command_msg.utime = now_utime()
+        if self.behavior == Behavior.BDI_STEPPING:
+            command_msg.command = "step"
+        elif self.behavior == Behavior.BDI_WALKING:
+            command_msg.command = "walk"
+        else:
+            raise ValueError("Tried to send invalid behavior to Atlas: {:s}".format(self.behavior))
+        self.lc.publish("ATLAS_BEHAVIOR_COMMAND", command_msg.encode())
+
     def handle_stop_walking(self, channel, msg_data):
         """
         Generate a set of footsteps with -1 step indices, which will cause the BDI controller to switch to standing instead of continuing to walk
@@ -157,7 +167,7 @@ class BDIStepTranslator:
             self.lc.subscribe('STOP_WALKING', self.handle_stop_walking)
         else:
             print "BDIStepTranslator running in base-side plotter mode"
-            self.lc.subscribe('APPROVED_FOOTSTEP_PLAN', self.handle_footstep_plan)
+            self.lc.subscribe('CANDIDATE_BDI_FOOTSTEP_PLAN', self.handle_footstep_plan)
         self.lc.subscribe('ATLAS_STATUS', self.handle_atlas_status)
         while True:
             self.lc.handle()
