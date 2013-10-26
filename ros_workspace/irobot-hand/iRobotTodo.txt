@@ -1,11 +1,11 @@
 TODO:
 * respond to email with title Modifications to Hands and Smart Fingers
 * ask for calibration jig
-* email: angle control
 * try visualize_simplified.launch
+* get angle control to work
+* figure out best control types to use for opening and closing hand, and holding an object
 
 BUSY:
-* documentation
 
 DONE:
 * ping hand
@@ -21,3 +21,5 @@ DONE:
 * get python script to run
 * calibrate absolute encoders
 * change python script to use radians instead of encoder ticks
+* improve documentation
+* email: angle control
