@@ -61,6 +61,7 @@ namespace renderer_sticky_feet_gui_utils
 
     self->plan_execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY); 
     stop_walking_button =  (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_STOP);
+    cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CANCEL);
 
     gtk_widget_set_tooltip_text (self->plan_execute_button, "Execute BDI FootStep Plan");
     gtk_widget_set_tooltip_text(stop_walking_button, "Stop walking NOW");
@@ -94,6 +95,8 @@ namespace renderer_sticky_feet_gui_utils
                   self);
                       
     gtk_widget_set_can_focus (self->plan_execute_button,false);
+    self->plan_execution_dock = GTK_WIDGET(toolitem);  
+      gtk_widget_show_all (self->plan_execution_dock);
   }
   
 

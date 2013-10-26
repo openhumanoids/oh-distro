@@ -105,10 +105,8 @@ namespace renderer_sticky_feet
       lcm->subscribe("CANDIDATE_BDI_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
     }else if (operation_mode == 1){ 
       lcm->subscribe("COMMITTED_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
-      lcm->subscribe("CANDIDATE_BDI_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
     }else if (operation_mode == 2){
       lcm->subscribe("COMMITTED_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
-      lcm->subscribe("CANDIDATE_BDI_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
     }
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
 
@@ -127,7 +125,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
   {
    cout << "\n handleFootStepPlanMsg: Footstep plan received" << endl;
    
-   if((chan=="CANDIDATE_BDI_FOOTSTEP_PLAN")||(chan=="CANDIDATE_BDI_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK"))
+   if(chan=="CANDIDATE_BDI_FOOTSTEP_PLAN")
     _bdi_footstep_mode = true;
    else
     _bdi_footstep_mode = false;
