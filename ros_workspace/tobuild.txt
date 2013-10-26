@@ -1,7 +1,0 @@
-osrf_msgs
-atlas_gazebo_msgs
-translators
-keyboard_teleop
-# keyboard_driving
-multisense_command
-# driving_interface

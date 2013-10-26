@@ -1,6 +1,4 @@
 
-SUBDIRS:=$(shell grep -v "^\#" tobuild.txt)
-
 SUBDIRS = osrf_msgs atlas_gazebo_msgs keyboard_teleop keyboard_driving multisense_command driving_interface sandia-hand/ros/sandia_hand_msgs/ sandia-hand/ros/sandia_hand_driver/ irobot-hand/Software/handle/handle_msgs irobot-hand/Software/handle/handle_lib irobot-hand/Software/handle/handle_ros translators
 
 all: $(SUBDIRS)
