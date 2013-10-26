@@ -30,4 +30,5 @@ pose.V_l = pose__.V_l + 0.5*(pose.f_l + pose__.f_l) * dt;
 
 pose.da = imudata.da;
 pose.q = R2q(pose.R);
+pose.E = q2e(pose.q);
 

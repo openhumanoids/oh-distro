@@ -132,6 +132,7 @@ for n = 1:iterations
     % data{n}.INS.pose = receivepose(aggregator);
     if (sentIMUBatch)
         [cppINS, dummy] = receiveInertialStatePos(aggregator);
+        cppINS.pose.E = q2e(cppINS.pose.q);
         storeCppINS = cppINS;
     end
     
@@ -142,15 +143,18 @@ for n = 1:iterations
     RESULTS.trueINSPose.f_l(n,:) = trueINS.pose.f_l';
     RESULTS.trueINSPose.a_l(n,:) = trueINS.pose.a_l';
     
-    
     RESULTS.trueINSPose.q(n,:) = trueINS.pose.q;
+    RESULTS.trueINSPose.E(n,:) = trueINS.pose.E';
     
     % store the cpp computed INS pose states
     RESULTS.cppINSPose.P_l(n,:) = storeCppINS.pose.P_l';
     RESULTS.cppINSPose.V_l(n,:) = storeCppINS.pose.V_l';
     RESULTS.cppINSPose.f_l(n,:) = storeCppINS.pose.f_l';
+    RESULTS.cppINSPose.a_l(n,:) = storeCppINS.pose.a_l';
     
     RESULTS.cppINSPose.q(n,:) = storeCppINS.pose.q;
+    RESULTS.cppINSPose.E(n,:) = storeCppINS.pose.E';
+    
     
     % These are the residuals from the control test INS here in MATLABland
     RESULTS.trueINSPoseResiduals.P_l(n,:) = RESULTS.traj.true.P_l(n,:) - trueINS.pose.P_l';

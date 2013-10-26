@@ -3,15 +3,18 @@ function DrawComponentsRow(rows, cols, subplotoffset, truevals, testunit, namest
 %   Detailed explanation goes here
 
  % Draw  components
-    subplot(rows,3, subplotoffset*3+1);
+    subplot(rows,3, (subplotoffset-1)*3+1);
     plot(truevals);
+    title('true')
     grid on
     ylabel(namestr)
-    subplot(rows,3, subplotoffset*3+2);
+    subplot(rows,3, (subplotoffset-1)*3+2);
     plot(testunit);
+    title('test unit')
     grid on
-    subplot(rows,3, subplotoffset*3+3);
+    subplot(rows,3, (subplotoffset-1)*3+3);
     plot(truevals - testunit);
+    title('residual')
     grid on
 
 

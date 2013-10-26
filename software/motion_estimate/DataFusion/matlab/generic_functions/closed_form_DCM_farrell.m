@@ -14,7 +14,7 @@ v = w_k0;
 Gam = vec2skew(v);
 v_norm = norm(v);
 
-if (v_norm>1E-7) % 1E-7 is chosen because double numerical LSB is around 1E-18 for nominal values [-pi..pi]
+if (v_norm>1E-6) % 1E-7 is chosen because double numerical LSB is around 1E-18 for nominal values [-pi..pi]
     % and (1E-7)^2 is at 1E-14, but 1E-7 rad/s is 0.02 deg/h
     coeff = eye(3) - sin(v_norm)/v_norm*Gam + (1-cos(v_norm))/(v_norm^2)*Gam^2;
 else
@@ -23,3 +23,4 @@ end
 
 
 R_a__b_k0 = coeff*R_a__b_k1;
+
