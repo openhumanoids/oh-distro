@@ -295,7 +295,7 @@ protected:
       // set some state
       GLint viewport[4];
       glGetIntegerv(GL_VIEWPORT, viewport);
-      float vpWidth = viewport[2]-viewport[0];
+      //float vpWidth = viewport[2]-viewport[0];
       float vpHeight = viewport[3]-viewport[1];
       glMatrixMode(GL_PROJECTION);
       glPushMatrix();

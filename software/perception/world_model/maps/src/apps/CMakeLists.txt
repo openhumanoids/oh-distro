@@ -8,14 +8,10 @@ add_executable(data-request-server DataRequestServer.cpp RobotState.cpp)
 pods_use_pkg_config_packages(data-request-server drc-utils affordance maps)
 pods_install_executables(data-request-server)
 
-#add_executable(maps-lidar-publisher LidarPublisher.cpp)
-#pods_use_pkg_config_packages(maps-lidar-publisher drc-utils maps)
-#pods_install_executables(maps-lidar-publisher)
-
 #add_executable(maps-test TestMain.cpp)
 #pods_use_pkg_config_packages(maps-test maps bot2-lcmgl-client)
 #pods_install_executables(maps-test)
 
-#add_executable(maps-test-collector TestCollector.cpp)
-#pods_use_pkg_config_packages(maps-test-collector maps bot2-lcmgl-client)
-#pods_install_executables(maps-test-collector)
+add_executable(maps-test-collector TestCollector.cpp)
+pods_use_pkg_config_packages(maps-test-collector maps bot2-lcmgl-client)
+pods_install_executables(maps-test-collector)

@@ -353,18 +353,30 @@ struct ViewWorker {
         int64_t timeMax = localMap->getPointData()->getTimeMax();
         if ((timeMax-timeMin) > 3000000) {
 
-          // get bounds
           LocalMap::SpaceTimeBounds bounds;
-          bounds.mTimeMin = spec.mTimeMin;
-          bounds.mTimeMax = spec.mTimeMax;
-          bounds.mPlanes = spec.mClipPlanes;
 
-          // transform bounds if necessary
+          // temporal bounds
           int64_t curTime = drc::Clock::instance()->getCurrentTime();
-          if (spec.mRelativeTime) {
+          const double kPi = acos(-1);
+          switch (spec.mTimeMode) {
+          case ViewBase::TimeModeRelative:
             bounds.mTimeMin += curTime;
             bounds.mTimeMax += curTime;
+            break;
+          case ViewBase::TimeModeRollAngle:
+            mCollector->getLatestSwath(spec.mTimeMin*kPi/180,
+                                       spec.mTimeMax*kPi/180,
+                                       bounds.mTimeMin, bounds.mTimeMax);
+            break;
+          case ViewBase::TimeModeAbsolute:
+          default:
+            bounds.mTimeMin = spec.mTimeMin;
+            bounds.mTimeMax = spec.mTimeMax;
+            break;
           }
+
+          // spatial bounds
+          bounds.mPlanes = spec.mClipPlanes;
           Eigen::Isometry3f headToLocal = Eigen::Isometry3f::Identity();
           if (spec.mRelativeLocation) {
             if (mBotWrapper->getTransform("head", "local",
@@ -726,11 +738,11 @@ int main(const int iArgc, const char** iArgv) {
   viewSpec.mResolution = defaultResolution;
   viewSpec.mFrequency = 1.0/publishPeriod;
   viewSpec.mTimeMin = viewSpec.mTimeMax = -1;
-  viewSpec.mRelativeTime = false;
+  viewSpec.mTimeMode = ViewBase::TimeModeAbsolute;
   if (timeWindowSeconds > 0) {
     viewSpec.mTimeMin = -timeWindowSeconds*1e6;
     viewSpec.mTimeMax = 0;
-    viewSpec.mRelativeTime = true;
+    viewSpec.mTimeMode = ViewBase::TimeModeRelative;
   }
   viewSpec.mClipPlanes = Utils::planesFromBox(Eigen::Vector3f(-5,-5,-5),
                                               Eigen::Vector3f(5,5,5));

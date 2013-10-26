@@ -9,7 +9,7 @@ namespace lcm {
   class LCM;
 }
 
-namespace drc {
+namespace maps {
 
 class RobotState {
 private:

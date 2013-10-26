@@ -17,6 +17,7 @@
 #include <lcmtypes/occ_map/pixel_map_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/map_request_bbox_t.hpp>
+#include <lcmtypes/drc/world_box_t.hpp>
 
 #include <bot_vis/viewer.h>
 
@@ -164,12 +165,31 @@ public:
     mViewClient.addViewChannel("MAP_CONTROL_HEIGHT");
     mViewClient.addViewChannel("MAP_DEBUG");
 
+    // set callback for bbox
+    getLcm()->subscribe("WORLD_BOX_PTCLD_REQUEST",
+                        &MapsRenderer::onBoxPointCloudRequest, this);
+
     // set callback for pixel maps
     // TODO: temporary channel
     getLcm()->subscribe("TERRAIN_DIST_MAP", &MapsRenderer::onPixelMap, this);
 
     // start listening for view data
     mViewClient.start();
+  }
+
+  void onBoxPointCloudRequest(const lcm::ReceiveBuffer* iBuf,
+                  const std::string& iChannel,
+                  const drc::world_box_t* iMessage) {
+    Eigen::Vector3f pos(iMessage->origin_x, iMessage->origin_y,
+                        iMessage->origin_z);
+    Eigen::Vector3f scale(iMessage->span_x, iMessage->span_y,
+                          iMessage->span_z);
+    Eigen::Quaternionf quat = Eigen::Quaternionf::Identity();
+    mInteractiveBox.setBoxParameters(pos, scale, quat);
+    mRequestBoxInit = true;
+    mShowRequestBoxToggle->set_active(true);
+    sendBoxRequest();
+    requestDraw();
   }
 
   void onPixelMap(const lcm::ReceiveBuffer* iBuf,
@@ -428,11 +448,11 @@ public:
     }
     spec.mResolution = mRequestResolution;
     spec.mFrequency = mRequestFrequency;
-    spec.mRelativeTime = false;
+    spec.mTimeMode = ViewBase::TimeModeAbsolute;
     if (mRequestTimeWindow > 0) {
       spec.mTimeMin = -mRequestTimeWindow*1e6;
       spec.mTimeMax = 0;
-      spec.mRelativeTime = true;
+      spec.mTimeMode = ViewBase::TimeModeRelative;
     }
     spec.mClipPlanes = mFrustum.mPlanes;
     spec.mRelativeLocation = mRequestRelativeLocation;
@@ -511,6 +531,10 @@ public:
       std::cout << "No box shown, so request not sent" << std::endl;
       return;
     }
+    sendBoxRequest();
+  }
+
+  void sendBoxRequest() {
     drc::map_request_bbox_t msg;
     Eigen::Vector3f position, scale;
     Eigen::Quaternionf orientation;

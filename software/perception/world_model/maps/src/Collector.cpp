@@ -19,7 +19,7 @@ struct Collector::Helper {
   std::set<DataListener*> mDataListeners;
   std::unordered_map<std::string,int64_t> mChannelToMapBindings;
 
-  static const float kPi;
+  static const double kPi;
 
   struct DataConsumer {
     Helper* mHelper;
@@ -46,15 +46,15 @@ struct Collector::Helper {
     }
   };
 
-  float computeAngleFromHorizontal(const Eigen::Quaternionf& iQuat) {
+  double computeAngleFromHorizontal(const Eigen::Quaternionf& iQuat) {
     Eigen::Matrix3f rot = iQuat.matrix();
-    float angle = kPi/2-atan2(rot(2,2), rot(2,1));
+    double angle = atan2(rot(2,1), rot(2,2));
     if (angle < 0) angle += 2*kPi;
     return angle;
   }
 };
 
-const float Collector::Helper::kPi = 4*atan(1);
+const double Collector::Helper::kPi = 4*atan(1);
 
 Collector::
 Collector() {
@@ -167,42 +167,60 @@ getLatestSwath(const float iMinAngle, const float iMaxAngle,
                int64_t& oStartTime, int64_t& oEndTime) const {
   PointDataBuffer::Ptr buf = mHelper->mMapManager->getPointData();
   std::vector<PointSet> pointSets = buf->getAll();
-  if (pointSets.size() < 5) return false;
+  if (pointSets.size() < 10) return false;
 
-  bool first = true;
-  bool insidePrev = true;
-  bool done = false;
-  bool started = false;
-  float anglePrev = 0;
-  int64_t timePrev = 0;
-  for (std::vector<PointSet>::const_reverse_iterator iter = pointSets.rbegin();
-       iter != pointSets.rend(); ++iter) {
-    float angle = mHelper->
+  // determine whether angle is increasing or decreasing
+  double initAngle = mHelper->computeAngleFromHorizontal
+    (pointSets.back().mCloud->sensor_orientation_);
+  int counter = 0;
+  bool increasing = false;
+  for (auto iter = pointSets.rbegin(); iter != pointSets.rend(); ++iter) {
+    double angle = mHelper->
       computeAngleFromHorizontal(iter->mCloud->sensor_orientation_);
-    if (angle > Helper::kPi) angle -= Helper::kPi;
+    increasing = angle-initAngle < 0;
+    ++counter;
+    if (counter > 10) break;
+  }
+  double signVal = (increasing ? 1 : -1);
 
-    if (first) {
-      anglePrev = angle;
-      timePrev = iter->mTimestamp;
-      first = false;
-    }
-
-    bool inside = (angle >= iMinAngle) && (angle <= iMaxAngle);
-    bool jumped = fabs(anglePrev-angle) > (iMaxAngle-iMinAngle)/2;
-
-    if (!started && inside && (jumped || !insidePrev)) {
-      oEndTime = iter->mTimestamp;
-      started = true;
-    } else if (started && ((inside && jumped) || (!inside && insidePrev))) {
-      oStartTime = timePrev;
-      done = true;
-      break;
-    }
-
-    anglePrev = angle;
-    timePrev = iter->mTimestamp;
-    insidePrev = inside;
+  double angleRange = (signVal)*(iMaxAngle - iMinAngle);
+  double maxAngle = increasing ? iMaxAngle : iMinAngle;
+  if (maxAngle >= Helper::kPi) {
+    maxAngle -= int(maxAngle/Helper::kPi)*Helper::kPi;
   }
 
-  return done;
+  // stage 0: not started; stage 1: pre-range; stage 2: in range
+  int stage = 0;
+  double prevAngle = 0;
+  double accumAngle = 0;
+  for (auto iter = pointSets.rbegin(); iter != pointSets.rend(); ++iter) {
+    double angle = mHelper->
+      computeAngleFromHorizontal(iter->mCloud->sensor_orientation_);
+    if (stage == 0) {
+      if (angle >= Helper::kPi) angle -= Helper::kPi;
+      if (angle*signVal > maxAngle*signVal) stage = 1;
+    }
+    else if (stage == 1) {
+      prevAngle = angle;
+      if (angle >= Helper::kPi) angle -= Helper::kPi;
+      if (angle*signVal <= maxAngle*signVal) {
+        oStartTime = oEndTime = iter->mTimestamp;
+        stage = 2;
+      }
+    }
+    else {
+      double deltaAngle = prevAngle-angle;
+      if (deltaAngle > Helper::kPi) deltaAngle -= 2*Helper::kPi;
+      else if (deltaAngle < -Helper::kPi) deltaAngle += 2*Helper::kPi;
+      accumAngle += deltaAngle;
+      if (accumAngle*signVal > angleRange*signVal) {
+        stage = 3;
+        break;
+      }
+      oStartTime = iter->mTimestamp;
+      prevAngle = angle;
+    }
+  }
+
+  return (stage == 3);
 }

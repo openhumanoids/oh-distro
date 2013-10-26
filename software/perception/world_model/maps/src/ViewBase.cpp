@@ -7,7 +7,7 @@ ViewBase::Spec::
 Spec() {
   mMapId = mViewId = -1;
   mActive = false;
-  mRelativeTime = false;
+  mTimeMode = TimeModeAbsolute;
   mRelativeLocation = false;
   mType = TypePointCloud;
   mResolution = 0;
@@ -23,7 +23,7 @@ operator==(const Spec& iSpec) const {
   bool eq = (mMapId == iSpec.mMapId) &&
     (mViewId == iSpec.mViewId) &&
     (mActive == iSpec.mActive) &&
-    (mRelativeTime == iSpec.mRelativeTime) &&
+    (mTimeMode == iSpec.mTimeMode) &&
     (mRelativeLocation == iSpec.mRelativeLocation) &&
     (mType == iSpec.mType) &&
     (mResolution == iSpec.mResolution) &&

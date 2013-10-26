@@ -16,11 +16,17 @@ public:
     TypeSurfels,
   };
 
+  enum TimeMode {
+    TimeModeAbsolute,
+    TimeModeRelative,
+    TimeModeRollAngle,
+  };
+
   struct Spec {
     int64_t mMapId;
     int64_t mViewId;
     bool mActive;
-    bool mRelativeTime;
+    TimeMode mTimeMode;
     bool mRelativeLocation;
     Type mType;
     float mResolution;

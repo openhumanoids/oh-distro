@@ -59,11 +59,14 @@ public:
     // find time range of desired swath (from 45 to 135 degrees)
     // note that 0 and 180 degrees are equivalent
     int64_t timeMin(0), timeMax(0);
-    if (!mState->mCollector->getLatestSwath(45*kDegToRad, 135*kDegToRad,
+    float angleMin = 90;
+    float angleMax = 270;
+    if (!mState->mCollector->getLatestSwath(angleMin*kDegToRad,
+                                            angleMax*kDegToRad,
                                             timeMin, timeMax)) return;
 
     // if this time range overlaps the previous one, ignore
-    if ((timeMin <= mTimeMax) && (timeMax >= mTimeMin)) return;
+    if ((timeMin == mTimeMin) && (timeMax == mTimeMax)) return;
     mTimeMin = timeMin;
     mTimeMax = timeMax;
     std::cout << "got time range " << timeMin << " " << timeMax << std::endl;
@@ -73,8 +76,8 @@ public:
     LocalMap::SpaceTimeBounds bounds;
     bounds.mTimeMin = timeMin;
     bounds.mTimeMax = timeMax;
-    bounds.mPlanes = Utils::planesFromBox(Eigen::Vector3f(-3,-3,-3),
-                                          Eigen::Vector3f(3,3,3));
+    bounds.mPlanes = Utils::planesFromBox(Eigen::Vector3f(-10,-10,-10),
+                                          Eigen::Vector3f(10,10,10));
 
     // get point cloud corresponding to this time range
     PointCloudView::Ptr cloudView = localMap->getAsPointCloud(0, bounds);

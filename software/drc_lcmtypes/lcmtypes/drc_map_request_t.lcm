@@ -15,7 +15,7 @@ struct map_request_t
   boolean active;
 
   // whether the time range is absolute or relative
-  boolean relative_time;
+  int8_t time_mode;
 
   // whether the clip planes are absolute or relative
   boolean relative_location;
@@ -55,4 +55,9 @@ struct map_request_t
   const int8_t POINT_CLOUD = 1;
   const int8_t OCTREE = 2;
   const int8_t DEPTH_IMAGE = 3;
+
+  // enum for time types
+  const int8_t ABSOLUTE = 0;
+  const int8_t RELATIVE = 1;
+  const int8_t ROLL_ANGLE = 2;
 }

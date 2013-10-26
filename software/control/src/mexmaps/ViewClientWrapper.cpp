@@ -135,7 +135,7 @@ requestHeightMap() {
   spec.mFrequency = 1 / 2.0;
   spec.mQuantizationMax = 0;
   spec.mTimeMax = 0;
-  spec.mRelativeTime = true;
+  spec.mTimeMode = maps::ViewBase::TimeModeRelative;
   spec.mRelativeLocation = true;
   spec.mActive = true;
   Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();

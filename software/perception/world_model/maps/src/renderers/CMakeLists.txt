@@ -3,7 +3,7 @@ add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
   -Wreturn-type -Wuninitialized -Wunused-variable
   -std=c++0x)
 
-#####################################################################
+# data control renderer ##############################
 add_library(renderer_data_control SHARED 
   DataControlRenderer.cpp)
   
@@ -25,16 +25,35 @@ pods_install_pkg_config_file(renderer_data_control
     VERSION 0.0.1)
 
 
-#####################################################################
-set(PACKAGE_NAME renderer_annotated_camera)
+# annotated camera renderer ###############################
+# set(PACKAGE_NAME renderer_annotated_camera)
 
-add_library(${PACKAGE_NAME} SHARED AnnotatedCameraRenderer.cpp)
+# add_library(${PACKAGE_NAME} SHARED AnnotatedCameraRenderer.cpp)
+# set_target_properties(${PACKAGE_NAME} PROPERTIES SOVERSION 1)
+
+# pods_use_pkg_config_packages(${PACKAGE_NAME} affordance
+#   drc-utils lcmtypes_drc_lcmtypes gtkmm-renderer gtkmm-2.4 bot2-lcmgl-client)
+
+# pods_install_headers(AnnotatedCameraRenderer.hpp DESTINATION ${PACKAGE_NAME})
+# pods_install_libraries(${PACKAGE_NAME})
+  
+# pods_install_pkg_config_file(${PACKAGE_NAME}
+#     LIBS -l${PACKAGE_NAME}
+#     REQUIRES lcmtypes_drc_lcmtypes drc-utils bot2-lcmgl-client gtkmm-renderer
+#     VERSION 0.0.1)
+
+
+
+# atlas camera renderer #####################################
+set(PACKAGE_NAME renderer_atlas_cameras)
+
+add_library(${PACKAGE_NAME} SHARED CameraRenderer.cpp)
 set_target_properties(${PACKAGE_NAME} PROPERTIES SOVERSION 1)
 
-pods_use_pkg_config_packages(${PACKAGE_NAME} affordance
-  drc-utils lcmtypes_drc_lcmtypes gtkmm-renderer gtkmm-2.4 bot2-lcmgl-client)
+pods_use_pkg_config_packages(${PACKAGE_NAME}
+  drc-utils lcmtypes_drc_lcmtypes gtkmm-renderer gtkmm-2.4)
 
-pods_install_headers(AnnotatedCameraRenderer.hpp DESTINATION ${PACKAGE_NAME})
+pods_install_headers(CameraRenderer.hpp DESTINATION ${PACKAGE_NAME})
 pods_install_libraries(${PACKAGE_NAME})
   
 pods_install_pkg_config_file(${PACKAGE_NAME}
@@ -43,7 +62,7 @@ pods_install_pkg_config_file(${PACKAGE_NAME}
     VERSION 0.0.1)
 
 
-#####################################################################
+# maps renderer ###############################################
 add_library(renderer_maps SHARED 
   MapsRenderer.cpp
   MeshRenderer.cpp
@@ -67,7 +86,7 @@ pods_install_pkg_config_file(renderer_maps
     VERSION 0.0.1)
 
 
-#####################################################################
+## lidar test renderer #########################################
 # add_library(renderer_lidartest SHARED 
 #   MeshRenderer.cpp
 #   LidarTestRenderer.cpp

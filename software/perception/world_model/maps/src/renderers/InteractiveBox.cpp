@@ -169,11 +169,8 @@ setColor(const float iR, const float iG, const float iB) {
 
 void InteractiveBox::
 createBox(const Eigen::Vector3f& iPosition, const float iSize) {
-  mBoxPosition = iPosition;
-  mBoxSize << iSize,iSize,iSize;
-  mBoxOrientation.setIdentity();
-  composeBoxToWorld();
-  mBoxValid = true;
+  Eigen::Quaternionf quat = Eigen::Quaternionf::Identity();
+  setBoxParameters(iPosition, Eigen::Vector3f(iSize,iSize,iSize), quat);
 }
 
 Eigen::Affine3f InteractiveBox::
@@ -189,6 +186,17 @@ getBoxParameters(Eigen::Vector3f& oPosition, Eigen::Vector3f& oSize,
   oSize = mBoxSize;
   oOrientation = mBoxOrientation;
   return true;
+}
+
+void InteractiveBox::
+setBoxParameters(const Eigen::Vector3f& iPosition,
+                 const Eigen::Vector3f& iSize,
+                 const Eigen::Quaternionf& iOrientation) {
+  mBoxPosition = iPosition;
+  mBoxSize = iSize;
+  mBoxOrientation = iOrientation;
+  composeBoxToWorld();
+  mBoxValid = true;
 }
 
 void InteractiveBox::

@@ -28,7 +28,7 @@ struct Worker {
   drc::data_request_t mRequest;
   std::shared_ptr<lcm::LCM> mLcm;
   std::shared_ptr<drc::BotWrapper> mBotWrapper;
-  std::shared_ptr<drc::RobotState> mRobotState;
+  std::shared_ptr<maps::RobotState> mRobotState;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
   std::thread mThread;
 
@@ -243,9 +243,7 @@ struct Worker {
   void sendDenseCloudRightHandRequest() {
     Eigen::Vector3f handPos(0,0,0);
     Eigen::Quaternionf dummy;
-    std::cout << "ABOUT TO TRY RIGHT HAND POS" << std::endl;
     if (!mRobotState->getPose("r_hand", dummy, handPos)) return;
-    std::cout << "RIGHT HAND POS " << handPos.transpose() << std::endl;
     drc::map_request_t msg = getDenseCloudBoxRequest(handPos, 0.25, 10);
     msg.map_id = 2;
     msg.view_id = drc::data_request_t::DENSE_CLOUD_RHAND;
@@ -267,7 +265,7 @@ struct Worker {
     msg.quantization_max = 0.01;
     msg.time_min = -iTimeWindow*1e6;
     msg.time_max = 0;
-    msg.relative_time = true;
+    msg.time_mode = drc::map_request_t::RELATIVE;
     msg.relative_location = false;
     msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, -boxMin[0]}));
     msg.clip_planes.push_back(std::vector<float>({-1, 0, 0,  boxMax[0]}));
@@ -361,7 +359,7 @@ struct Worker {
     msg.quantization_max = 0.01;
     msg.time_min = -20*1e6;
     msg.time_max = 0;
-    msg.relative_time = true;
+    msg.time_mode = drc::map_request_t::RELATIVE;
     msg.relative_location = true;
     msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, 5}));
     msg.clip_planes.push_back(std::vector<float>({-1, 0, 0, 5}));
@@ -380,7 +378,7 @@ struct Worker {
 struct State {
   std::shared_ptr<lcm::LCM> mLcm; 
   std::shared_ptr<drc::BotWrapper> mBotWrapper;
-  std::shared_ptr<drc::RobotState> mRobotState;
+  std::shared_ptr<maps::RobotState> mRobotState;
   typedef std::unordered_map<int,Worker::Ptr> WorkerMap;
   WorkerMap mWorkers;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
@@ -388,7 +386,7 @@ struct State {
   State() {
     mLcm.reset(new lcm::LCM());
     mBotWrapper.reset(new drc::BotWrapper(mLcm));
-    mRobotState.reset(new drc::RobotState(mLcm));
+    mRobotState.reset(new maps::RobotState(mLcm));
     drc::Clock::instance()->setLcm(mLcm->getUnderlyingLCM());
     drc::Clock::instance()->setVerbose(false);
 
@@ -463,11 +461,11 @@ struct State {
     if (iMessage->time_window > 0) {
       msg.time_min = -iMessage->time_window*1e6;
       msg.time_max = 0;
-      msg.relative_time = true;
+      msg.time_mode = drc::map_request_t::RELATIVE;
     }
     else {
       msg.time_min = msg.time_max = -1;
-      msg.relative_time = false;
+      msg.time_mode = drc::map_request_t::ABSOLUTE;
     }
     msg.relative_location = false;
     msg.active = true;

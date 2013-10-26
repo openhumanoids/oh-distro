@@ -34,6 +34,9 @@ public:
   void createBox(const Eigen::Vector3f& iPosition, const float iSize);
 
   Eigen::Affine3f getBoxToWorldTransform() const;
+  void setBoxParameters(const Eigen::Vector3f& iPosition,
+                        const Eigen::Vector3f& iSize,
+                        const Eigen::Quaternionf& iOrientation);
   bool getBoxParameters(Eigen::Vector3f& oPosition, Eigen::Vector3f& oSize,
                         Eigen::Quaternionf& oOrientation) const;
   bool getBoxValid() const;

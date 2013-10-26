@@ -4,7 +4,7 @@
 #include <lcmtypes/drc/robot_urdf_t.hpp>
 #include <kinematics/kinematics_model_gfe.h>
 
-using namespace drc;
+using namespace maps;
 
 struct RobotState::Helper {
   std::shared_ptr<lcm::LCM> mLcm;
