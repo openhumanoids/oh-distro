@@ -72,15 +72,20 @@ def keypress(c):
       pub = g_right_grasp_pub
     else:
       return # wtf
-    cmd_msg.type = [2] * 5;
+    position = 2;
+    angle = 5;
+    cmd_msg.type = [position] * 5;
+    max_range = 6000;
+    #cmd_msg.type = [angle] * 5;
+    #max_range = 256;
     cmd_msg.valid = [True] * 5;
     cmd_msg.value = [0] * 5;
     if g_key_map[c][1] == 'cylindrical':
-      cmd_msg.value = [g_key_map[c][2]*6000, g_key_map[c][2]*6000, g_key_map[c][2]*6000, 0, 0]
+      cmd_msg.value = [g_key_map[c][2]*max_range, g_key_map[c][2]*max_range, g_key_map[c][2]*max_range, 0, 0]
     elif g_key_map[c][1] == 'spherical':
-      cmd_msg.value = [g_key_map[c][2]*6000, g_key_map[c][2]*6000, g_key_map[c][2]*6000, 0, 512]
+      cmd_msg.value = [g_key_map[c][2]*max_range, g_key_map[c][2]*max_range, g_key_map[c][2]*max_range, 0, 512]
     elif g_key_map[c][1] == 'prismatic':
-      cmd_msg.value = [g_key_map[c][2]*6000, g_key_map[c][2]*6000, g_key_map[c][2]*6000, 0, 768]
+      cmd_msg.value = [g_key_map[c][2]*max_range, g_key_map[c][2]*max_range, g_key_map[c][2]*max_range, 0, 768]
     else:
       return # wtf
     pub.publish(cmd_msg)
