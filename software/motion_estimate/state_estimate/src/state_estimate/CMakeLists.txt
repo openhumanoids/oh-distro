@@ -15,7 +15,7 @@ set(srcs
 set(required_packages eigen3 drc-lcmtypes kalman-filter inertial-odometry leg-odometry bot2-frames_cpp bot2-frames
                       urdf orocos-kdl kdl-parser forward-kinematics model-client )
 
-#SET(CMAKE_BUILD_TYPE Release)
+#SET(CMAKE_BUILD_TYPE Debug)
 
 add_library(StateEstimate  SHARED ${srcs})
 target_link_libraries(StateEstimate ${Boost_LIBRARIES})

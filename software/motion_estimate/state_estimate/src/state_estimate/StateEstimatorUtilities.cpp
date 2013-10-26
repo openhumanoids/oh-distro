@@ -103,6 +103,8 @@ void StateEstimate::handle_inertial_data_temp_name(
 	
   // Using the BDI quaternion estimate for now
   Eigen::Quaterniond q(bdiPose.orientation[0],bdiPose.orientation[1],bdiPose.orientation[2],bdiPose.orientation[3]);
+  q.setIdentity();
+
   
   std::cout << "StateEstimate::handle_inertial_data_temp_name -- q = " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
   
@@ -129,10 +131,15 @@ void StateEstimate::handle_inertial_data_temp_name(
   _DFRequest.pose.rotation.y = InerOdoEst.q.y();
   _DFRequest.pose.rotation.z = InerOdoEst.q.z();
   
-  _DFRequest.local_linear_acceleration.x = InerOdoEst.f_l(0);
-  _DFRequest.local_linear_acceleration.y = InerOdoEst.f_l(1);
-  _DFRequest.local_linear_acceleration.z = InerOdoEst.f_l(2);
+  _DFRequest.local_linear_acceleration.x = InerOdoEst.a_l(0);
+  _DFRequest.local_linear_acceleration.y = InerOdoEst.a_l(1);
+  _DFRequest.local_linear_acceleration.z = InerOdoEst.a_l(2);
   
+  _DFRequest.local_linear_force.x = InerOdoEst.f_l(0);
+  _DFRequest.local_linear_force.y = InerOdoEst.f_l(1);
+  _DFRequest.local_linear_force.z = InerOdoEst.f_l(2);
+
+
   // remember that this will have to publish a LCM message 
   _ERSmsg.pose.translation.x = InerOdoEst.P(0);
   _ERSmsg.pose.translation.y = InerOdoEst.P(1);

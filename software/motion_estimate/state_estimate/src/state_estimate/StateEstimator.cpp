@@ -166,7 +166,6 @@ void StateEstimate::StateEstimator::run()
     	  mERSMsg.utime = imu.utime;
 	      mLCM->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg); // There is some silly problem here
 
-
 	      mDFRequestMsg.updateType = mDFRequestMsg.INS_POSE_ONLY;
 	      mLCM->publish("SE_INS_POSE_STATE", &mDFRequestMsg);
       }
