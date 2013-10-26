@@ -124,6 +124,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       if ~isfield(options, 'resample'); options.resample = 2; end
       if ~isfield(options, 'debug'); options.debug = false; end
 
+      %% Get the full heightmap from the map wrapper and a transform to world coordinate and then interpolate the heightmap and update the transform
       [heights, px2world] = obj.map_handle.getRawHeights();
       mag = 2^(options.resample-1);
       heights = interp2(heights, (options.resample-1));
@@ -131,12 +132,13 @@ classdef DRCTerrainMap < RigidBodyTerrain
       world2px = inv(px2world);
       world2px_2x3 = world2px(1:2,[1,2,4]);
 
-      Q2 = zeros(size(heights));
-      Q2 = bsxfun(@max, Q2, abs(imfilter(heights, [1, -1])) - 0.03);
-      Q2 = bsxfun(@max, Q2, abs(imfilter(heights, [1; -1])) - 0.03);
-      Q2(isnan(heights)) = 1;
-      Q2(Q2 > 0) = 1;
-      Q2 = int8(Q2);
+      %% Run a pair of simple edge detectors across the heightmap
+      Q = (abs(imfilter(heights, [1, -1])) - 0.03) > 0;
+      Q = Q + ((abs(imfilter(heights, [1; -1])) - 0.03) > 0);
+      Q(isnan(heights)) = 1;
+      Q(Q > 0) = 1;
+
+      %% Construct a circular domain corresponding to foot_radius
       dworld = px2world * [0; 1; 0; 1] - px2world * [0; 0; 0; 1];
       dworld = norm(dworld(1:2));
       domain = zeros(ceil(2 * foot_radius / dworld), ceil(2 * foot_radius / dworld));
@@ -153,13 +155,17 @@ classdef DRCTerrainMap < RigidBodyTerrain
         end
       end
 
-      F2 = double(ordfilt2(Q2, length(find(domain)), domain));
-      [px_X, px_Y] = meshgrid(1:size(heights, 2), 1:size(heights, 1));
+      %% A point is infeasible if any point within the domain centered on that point is infeasible (this is just configuration space planning)
+      Infeas = double(imfilter(Q, domain) > 0);
 
+      [px_X, px_Y] = meshgrid(1:size(heights, 2), 1:size(heights, 1));
       function feas = feas_check_fcn(xy)
         px = world2px_2x3 * [xy(1:2,:); ones(1,size(xy,2))];
-        feas = griddata(px_X, px_Y, F2, px(1,:), px(2,:), 'nearest') < 0.5;
+        % feas = griddata(px_X, px_Y, F2, px(1,:), px(2,:), 'nearest') < 0.5;
+        feas = interp2(px_X, px_Y, Infeas, px(1,:), px(2,:), 'nearest') < 0.5;
+        % valuecheck(feas, feas2);
       end
+
 
       feas_check = @feas_check_fcn;
 
