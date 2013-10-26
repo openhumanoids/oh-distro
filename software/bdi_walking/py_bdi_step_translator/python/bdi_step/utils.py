@@ -1,4 +1,5 @@
 import lcm
+import time
 from bot_lcmgl import lcmgl
 
 class Behavior:
@@ -9,3 +10,6 @@ class Behavior:
 
 lc = lcm.LCM()
 gl = lcmgl('BDI_Step_Translator', lc)
+
+def now_utime():
+    return int(time.time() * 1000000)
