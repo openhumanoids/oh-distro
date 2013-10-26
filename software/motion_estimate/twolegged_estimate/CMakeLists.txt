@@ -121,6 +121,10 @@ add_executable(drc-test-cppkf src/test_kalman_filter.cpp)
 ## Something is wrong here, we should not have to include the inertial-odoemtry pod for drc-test-cppkf ??
 pods_use_pkg_config_packages(drc-test-cppkf ${REQUIRED_PACKAGES} leg-odometry kalman-filter inertial-odometry)
 
+add_executable(OrientationComputerUnitTest src/OrientationComputerUnitTest.cpp)
+# This should not be depending on leg-odometry -- need to clear this up this issue
+pods_use_pkg_config_packages(OrientationComputerUnitTest ${REQUIRED_PACKAGES} inertial-odometry leg-odometry)
+
 #add_executable(testing_imu src/test_imu.cpp)
 #pods_use_pkg_config_packages(testing_imu ${REQUIRED_PACKAGES} leg-odometry)
 

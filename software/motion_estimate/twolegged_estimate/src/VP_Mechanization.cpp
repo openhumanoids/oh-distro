@@ -13,6 +13,7 @@ namespace InertialOdometry {
   void VP_Mechanization::SubtractGravity(IMU_dataframe* _imu) {
 
 	  _imu->force_ = _imu->accel_ - std_param.gravity;
+	  //	  std::cout << "VP_Mechanization::SubtractGravity -- std_param.gravity = " <<  std_param.gravity.transpose() << std::endl;
 	  _imu->gravity_subtracted = true;
 
   }
@@ -26,12 +27,10 @@ namespace InertialOdometry {
 	  std::cout << "VP_Mechanization::PropagateTranslation -- after subtracting gravity " << _imu->force_.transpose() << std::endl;
 	  	  
 
-	  Eigen::Vector3d test;
+	  //	  Eigen::Vector3d V_l;
+	  //	  V_l = ;
 
-	  test = a2v.integrate(_imu->uts,_imu->force_);
-
-	  state.first_pose_rel_vel = test;
-
+	  state.first_pose_rel_vel = a2v.integrate(_imu->uts,_imu->force_);
 	  state.first_pose_rel_pos = v2p.integrate(_imu->uts, state.first_pose_rel_vel);
 
 	  //std::cout << " state: " << _imu->force_.transpose() << " | " << state.first_pose_rel_pos.transpose() << std::endl;

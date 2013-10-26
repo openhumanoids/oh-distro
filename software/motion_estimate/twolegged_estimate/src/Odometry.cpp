@@ -13,10 +13,12 @@ namespace InertialOdometry {
   {
 	InertialOdomOutput ret; // populated at end of this member
 
-    orc.updateOrientation(_imu->uts,orient);
+	// We are going to now compute he quaternion ourselves
+    //orc.updateOrientation(_imu->uts,orient);
+
+    orc.updateOrientation(_imu->uts,_imu->gyr_b);
 
     _imu->accel_ = orc.ResolveBodyToRef( _imu->acc_comp);//??
-
     ret.first_pose_rel_acc = _imu->accel_;
     
     avp.PropagateTranslation(_imu);
@@ -42,7 +44,8 @@ namespace InertialOdometry {
     //    DynamicState ret;
     state.imu = *_imu;
     state.uts = _imu->uts;
-    state.f_l = out.first_pose_rel_acc;
+    state.a_l = _imu->accel_;
+    state.f_l = _imu->force_;
     state.w_l = C_bw()*_imu->gyro_; // TODO -- this may be a duplicated computation. Ensure this is done in only one place
     state.P = out.first_pose_rel_pos;
     state.V = out.first_pose_rel_vel;
