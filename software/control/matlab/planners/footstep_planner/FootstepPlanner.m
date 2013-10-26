@@ -174,7 +174,9 @@ classdef FootstepPlanner < DRCPlanner
           assert(~isempty(obj.goal_pos));
           disp('creating steps')
           obj.options.bdi_step_duration
+          % profile on
           [obj.steps, ~] = obj.biped.createInitialSteps(data.x0, obj.goal_pos, obj.options);
+          % profile viewer
         end
 
         obj = obj.getNewDraggedSteps(data, changed, changelist);
@@ -210,6 +212,11 @@ classdef FootstepPlanner < DRCPlanner
       % Convert from foot center to foot origin
       for j = 1:length(obj.steps)
         Xout(j).pos = obj.biped.footContact2Orig(obj.steps(j).pos, 'center', obj.steps(j).is_right_foot);
+      end
+      if obj.options.behavior == drc.walking_goal_t.BEHAVIOR_BDI_STEPPING || obj.options.behavior == drc.walking_goal_t.BEHAVIOR_BDI_WALKING
+        obj.options.channel = 'CANDIDATE_BDI_FOOTSTEP_PLAN';
+      else
+        obj.options.channel = 'CANDIDATE_FOOTSTEP_PLAN';
       end
       obj.biped.publish_footstep_plan(Xout, data.utime, isnew, obj.options);
       msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
