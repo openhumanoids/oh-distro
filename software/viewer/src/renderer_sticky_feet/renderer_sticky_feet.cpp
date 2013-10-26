@@ -206,8 +206,13 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   {
     if(!self->footStepPlanListener->_last_plan_approved_or_executed)
     {
-      if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_execution_dock==NULL))
-          spawn_plan_execution_dock(self);
+      if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_execute_button==NULL))
+        if(self->plan_approval_dock!=NULL)
+        {
+         gtk_widget_destroy (self->plan_execution_dock);
+         self->plan_execution_dock= NULL;
+        }
+        spawn_plan_execution_dock(self);
     }
   }   
 
