@@ -88,13 +88,13 @@ class BDIStepTranslator:
             self.send_params(1)
 
             if not self.safe:
-                m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEPPING" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALKING")
+                m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
                 print m
                 ut.send_status(6,0,0,m)
                 time.sleep(1)
                 self.send_behavior()
             else:
-                m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEPPING" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALKING")
+                m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
                 print m
                 ut.send_status(6,0,0,m)
 
