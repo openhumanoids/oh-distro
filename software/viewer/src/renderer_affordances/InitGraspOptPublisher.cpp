@@ -37,7 +37,9 @@ namespace renderer_affordances
 //std::string channel = "INIT_GRASP_OPT"+next_available_opt;
 //publishGraspOptControlMsg("INIT_GRASP_OPT",T_geom_approach,KDL::Frame::Identity(),0,0,0);
 
-  void InitGraspOptPublisher::publishGraspOptControlMsg(const std::string& channel, const KDL::Frame &T_geom_lhandpose,  const KDL::Frame &T_geom_rhandpose,const int grasp_type,const int contact_mask,const int drake_control, const int uid, double dilation)				 
+  void InitGraspOptPublisher::publishGraspOptControlMsg(const std::string& channel, const KDL::Frame &T_geom_lhandpose,  
+    const KDL::Frame &T_geom_rhandpose,const int grasp_type,const int contact_mask,
+    const int drake_control, const int uid, double dilation, Eigen::Vector3f &ray_hit)
   {
     
     drc::grasp_opt_control_t msg;
@@ -132,6 +134,10 @@ namespace renderer_affordances
     msg.l_hand_init_pose = lhandpose;
     msg.r_hand_init_pose = rhandpose;
     
+    // Also send the xyz location of where the ray intersected the affordance:
+    msg.ray_hit[0] = ray_hit(0);
+    msg.ray_hit[1] = ray_hit(1);
+    msg.ray_hit[2] = ray_hit(2);
     _lcm->publish(channel, &msg);
 
   } 

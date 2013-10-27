@@ -739,8 +739,9 @@ namespace renderer_affordances_gui_utils
         }
       }
       
-      /*
+      /*      
       // NBNBNB mfallon modification to publish xyz location of visual intersection instead of grasp hand pose
+      // No longer needed, ray_hit is pushed out in the lcm message now:
       T_geom_lhandpose.p[0] = self->ray_hit(0);
       T_geom_lhandpose.p[1] = self->ray_hit(1);
       T_geom_lhandpose.p[2] = self->ray_hit(2);      
@@ -762,7 +763,8 @@ namespace renderer_affordances_gui_utils
             channel = oss.str();
             std::cout << channel << "  id :" << id << std::endl;
             double dilation_factor = bot_gtk_param_widget_get_double(pw,PARAM_DIL_FACTOR);
-            self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid,dilation_factor);
+            self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,
+              grasp_type,contact_mask,drake_control,uid,dilation_factor, self->ray_hit);
            }             
        }
     }
@@ -965,7 +967,9 @@ namespace renderer_affordances_gui_utils
         oss << "INIT_GRASP_OPT_" << OptChannelIdList[i];
         channel = oss.str();
         uid = OptChannelHandUidList[i];
-        self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,grasp_type,contact_mask,drake_control,uid,1.0);
+        self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,
+                                            grasp_type,contact_mask,drake_control,uid,1.0,
+                                            self->ray_hit);
       }
 
     }

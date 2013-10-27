@@ -38,7 +38,10 @@ namespace renderer_affordances
     //InitGraspOptPublisher(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer);
     InitGraspOptPublisher(RendererAffordances* affordance_renderer);
     ~InitGraspOptPublisher();
-    void publishGraspOptControlMsg(const std::string& channel, const KDL::Frame &T_geom_lhandpose,  const KDL::Frame &T_geom_rhandpose,const int grasp_type,const int contact_mask,const int drake_control, const int uid, double dilation_factor);	
+    void publishGraspOptControlMsg(const std::string& channel, const KDL::Frame &T_geom_lhandpose,  
+               const KDL::Frame &T_geom_rhandpose,const int grasp_type,
+               const int contact_mask,const int drake_control, const int uid, 
+               double dilation_factor, Eigen::Vector3f &ray_hit);	
 
 			      
 		//-------------utils
