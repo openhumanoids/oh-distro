@@ -32,6 +32,9 @@ struct grasp_opt_control_t // Usually published on INIT_GRASP_SEED to start/rese
     // initial positions of left/right hands in object frame;
     position_3d_t l_hand_init_pose; 
     position_3d_t r_hand_init_pose; 
+
+    // the actual xyz location where the ray hit the affordance
+    float ray_hit[3];
 }
 
 
