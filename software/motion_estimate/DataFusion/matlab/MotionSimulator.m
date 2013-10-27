@@ -98,7 +98,7 @@ for n = 1:iterations
     
     true.inertial.utime =  RESULTS.traj.utime(n);
     true.inertial.ddp   =  RESULTS.traj.true.a_b(n,:)';
-    true.inertial.da    = -RESULTS.traj.true.w_b(n,:)';
+    true.inertial.da    =  RESULTS.traj.true.w_b(n,:)';
     true.inertial.q     =  RESULTS.traj.true.q(n,:)';
     
     % Compute the truth trajectory

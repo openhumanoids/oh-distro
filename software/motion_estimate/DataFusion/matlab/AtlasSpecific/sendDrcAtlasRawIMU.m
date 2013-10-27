@@ -13,10 +13,10 @@ function [imuMsgBatch, sentMsg] = sendDrcAtlasRawIMU(dt, n, data,imuMsgBatch, lc
 
 % We need to introduce the same misalignment of the KVH IMU here, is it is
 % mounted on the Atlas robot.
-iCb = eye(3);        % We use the trivial case for now
+sCb = eye(3);        % We use the trivial case for now -- sensor to body rotation
 Trans = zeros(3,1);
-deltaAng = iCb * data.imu.gyr*dt + Trans;
-linAcc = iCb * data.imu.acc + Trans;
+deltaAng = sCb * data.imu.gyr*dt + Trans;
+linAcc = sCb * data.imu.acc + Trans;
 
 imumsg = drc.atlas_raw_imu_t();
 

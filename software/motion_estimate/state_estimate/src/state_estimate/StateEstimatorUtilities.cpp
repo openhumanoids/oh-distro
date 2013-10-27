@@ -92,7 +92,7 @@ void StateEstimate::handle_inertial_data_temp_name(
 		drc::robot_state_t& _ERSmsg,
 		drc::ins_update_request_t& _DFRequest) {
   
-  // We want to take body fram einerial data an put it in the imu_data structure
+  // We want to take body frame inerial data an put it in the imu_data structure
   // For now we are going to use the orientation quaternion from BDI
   // We will do r best to subtract a constant gravity -- this happens in the inertia odometry process
   // THis is double integrated and we return the velocity and position estimates
@@ -110,8 +110,14 @@ void StateEstimate::handle_inertial_data_temp_name(
   
   imu_data.uts = imu.utime;
   
-  // TODO -- The translation of this lever arm offset hsa not yet been compensated! This must be corrected.
-  imu_data.gyr_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  // TODO -- The translation of this lever arm offset has not yet been compensated! This must be corrected.
+
+  // We expect to see some LCM pack loss -- this is how we choose to deal with it.
+  // We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
+  // We know that eh KVH will sample at every 1 ms, so that is also the rotation rate. We later assume the time for which the
+  // platform is maintaining that rotation rate.
+  imu_data.gyr_b = 1E3 * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.dang_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
   imu_data.acc_b = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
   
   std::cout << "StateEstimate::handle_inertial_data_temp_name -- acc before pelvis alignment " << Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]).transpose() << std::endl;
@@ -124,7 +130,7 @@ void StateEstimate::handle_inertial_data_temp_name(
 
   // For now we just patch this data directly through to the ERS message
   // TODO -- check that we want to keep doing with fusion from a MATLAB process. 
-  // Think it should be good, but this is a breadcrum for the future to make sure that we do this correctly
+  // Think it should be good, but this is a bread crum for the future to make sure that we do this correctly
   
   _DFRequest.pose.rotation.w = InerOdoEst.q.w();
   _DFRequest.pose.rotation.x = InerOdoEst.q.x();
@@ -175,6 +181,8 @@ void StateEstimate::handle_inertial_data_temp_name(
   _ERSmsg.twist.angular_velocity.x = rates_l(1);
   _ERSmsg.twist.angular_velocity.x = rates_l(2);
   
+
+
   return;
 }
 

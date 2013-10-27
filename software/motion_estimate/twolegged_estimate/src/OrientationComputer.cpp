@@ -30,7 +30,7 @@ namespace InertialOdometry {
 		latest_uts = uts;
 	}
 
-	void OrientationComputer::updateOrientation(const unsigned long long &uts, const Eigen::Vector3d &w_b) {
+	void OrientationComputer::updateOrientationWithAngle(const unsigned long long &uts, const Eigen::Vector3d &delta_ang) {
 
 		if (uts <= latest_uts) {
 			std::cout << "OrientationComputer::updateOrientation -- warning, you are requesting a quaternion update backwards in time, ignoring step." << std::endl;
@@ -41,13 +41,12 @@ namespace InertialOdometry {
 		R = q2C(q_state);
 
 		// we should be using an integration module for this
-		double dt;
-		dt = 1.E-6*((double)(uts - latest_uts));
+
 
 		// We now need to implement our own rotation computation. We shall use the exponential map to do this
 		std::cout << "OrientationComputer::updateOrientation -- q " << "before" << q_state.w() << ", " << q_state.z() << ", R is " << std::endl << R << std::endl;
 
-		exmap( 0.5*dt*(w_b + prevWb), R); // trapezoidal integration, before application through the exponential map
+		exmap(delta_ang, R); // trapezoidal integration, before application through the exponential map
 
 		// Convert back to quaternion world and store state data
 		Eigen::Quaterniond tempq;
@@ -60,22 +59,32 @@ namespace InertialOdometry {
 
 		q_state = tempq;
 		latest_uts = uts;
-		prevWb = w_b;
 
 		std::cout << "OrientationComputer::updateOrientation -- q " << "after" << tempq.w() << ", " << tempq.z() << ", R is " << std::endl << R << std::endl;
 
-
-		//		std::cout << "OrientationComputer::updateOrientation -- updating orientation estimate with rates: " << w_b.transpose() << std::endl;
+		// std::cout << "OrientationComputer::updateOrientation -- updating orientation estimate with rates: " << w_b.transpose() << std::endl;
 		std::cout << "OrientationComputer::updateOrientation -- quaternion now is " << C2q(R).w() << ", " << C2q(R).x() << ", " << C2q(R).y() << ", " << C2q(R).z() << std::endl;
+	}
+
+	// This member function implements a trapezoidal integration for converting rotation rates into delta angles
+	void OrientationComputer::updateOrientationWithRate(const unsigned long long &uts, const Eigen::Vector3d &w_b) {
+
+		double dt;
+		dt = 1.E-6*((double)(uts - latest_uts));
+
+		updateOrientationWithAngle(uts, 0.5*dt*(w_b + prevWb)); // We use trapeoidal integration to obtain a delta angle
+
+		std::cout << "OrientationComputer::updateOrientationWithRate -- dt " << dt << std::endl;
+
+		latest_uts = uts;
+		prevWb = w_b;
 	}
 
 
 	Eigen::Vector3d OrientationComputer::ResolveBodyToRef(const Eigen::Vector3d &vec_b) {
 
 		Eigen::Vector3d vec_ref;
-
 		vec_ref = q2C(q_state) * vec_b;
-
 		return vec_ref;
 	}
 

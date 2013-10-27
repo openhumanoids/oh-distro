@@ -13,6 +13,7 @@ namespace InertialOdometry {
 
     Eigen::Vector3d gyro_;
     Eigen::Vector3d gyr_b;
+    Eigen::Vector3d dang_b;
 
     Eigen::Vector3d force_;
     Eigen::Vector3d accel_;

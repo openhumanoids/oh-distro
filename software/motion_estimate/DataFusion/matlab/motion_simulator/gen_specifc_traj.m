@@ -20,6 +20,13 @@ traj.true.E = zeros(iterations,3);
 traj.true.q = [ones(iterations,1), zeros(iterations,3)];
 
 
+% Generate the speciic trajectory that we want
+data = genTrajBasicRotations(param.dt, iterations );
+
+% Pass through only the data we are interested in
+traj.true.w_b = data.w_b;
+traj.true.E = data.true.E;
+
 
 end
 

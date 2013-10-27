@@ -31,7 +31,8 @@ public:
 	void updateOrientation(const unsigned long long &uts, const Eigen::Quaterniond &set_to_q);
 
 	// We compute the quaternion ourselves
-	void updateOrientation(const unsigned long long &uts, const Eigen::Vector3d &w_b);
+	void updateOrientationWithAngle(const unsigned long long &uts, const Eigen::Vector3d &delta_ang);
+	void updateOrientationWithRate(const unsigned long long &uts, const Eigen::Vector3d &w_b);
 
 	Eigen::Vector3d ResolveBodyToRef(const Eigen::Vector3d &vec_b);
 	void updateOutput(InertialOdomOutput* _out);

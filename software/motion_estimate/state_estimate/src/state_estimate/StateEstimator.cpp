@@ -107,6 +107,7 @@ void StateEstimate::StateEstimator::run()
     // wait for at least one new atlas_state message
 	  // TODO -- Pat please make this pass on any event
     //this->mAtlasStateQueue.waitWhileEmpty();
+	  this->mIMUQueue.waitWhileEmpty();
 
 
     int nAtlasStates = mAtlasStateQueue.size();
@@ -143,6 +144,7 @@ void StateEstimate::StateEstimator::run()
 
     // This is the special case which will also publish the message
     int nIMU = mIMUQueue.size();
+    std::cout << "StateEstimator::run -- mIMUQueue.size() " << nIMU << std::endl;
     // printf("have %d new imu\n", nIMU);
     for (int i = 0; i < nIMU; ++i)
     {
@@ -155,7 +157,7 @@ void StateEstimate::StateEstimator::run()
       previous_imu_utime = imu.utime;
       handle_inertial_data_temp_name(dt, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg);
       
-      
+      std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
 
       // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
       // For now we are going to publish on the last element of this queue

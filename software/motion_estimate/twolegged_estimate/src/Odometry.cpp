@@ -16,7 +16,7 @@ namespace InertialOdometry {
 	// We are going to now compute he quaternion ourselves
     //orc.updateOrientation(_imu->uts,orient);
 
-    orc.updateOrientation(_imu->uts,_imu->gyr_b);
+    orc.updateOrientationWithRate(_imu->uts,_imu->gyr_b);
 
     _imu->accel_ = orc.ResolveBodyToRef( _imu->acc_comp);//??
     ret.first_pose_rel_acc = _imu->accel_;
@@ -63,29 +63,29 @@ namespace InertialOdometry {
   
   // This should be moved to the QuaternionLib library
   // TODO -- should be updated with trigonometric and near zero power expansion cases.
-  Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)
-  {
-	  Eigen::Matrix3d R;
-	  Eigen::Matrix3d temp;
-	  
-#ifdef USE_TRIGNOMETRIC_EXMAP
-	  R.setIdentity();
-	  double mag = w.norm();
-	  Eigen::Vector3d direction = 1/mag * w;
-	  skew(direction,temp);
-	  R += sin(mag) * temp + (1- cos(mag))*(temp*temp);
-	  //  TODO -- confirm that we do not have to divide by mag -- if then do the numerical fix to second order Taylor
-
-#endif
-	  
-	  /*
-	  mag = norm(w);
-      direction = w./mag;
-      R = eye(3) + sin(mag)*skew(direction) + (1-cos(mag))*(skew(direction)^2);
-      */
-	  
-	  return R;
-  }
+//  Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)
+//  {
+//	  Eigen::Matrix3d R;
+//	  Eigen::Matrix3d temp;
+//
+//#ifdef USE_TRIGNOMETRIC_EXMAP
+//	  R.setIdentity();
+//	  double mag = w.norm();
+//	  Eigen::Vector3d direction = 1/mag * w;
+//	  skew(direction,temp);
+//	  R += sin(mag) * temp + (1- cos(mag))*(temp*temp);
+//	  //  TODO -- confirm that we do not have to divide by mag -- if then do the numerical fix to second order Taylor
+//
+//#endif
+//
+//	  /*
+//	  mag = norm(w);
+//      direction = w./mag;
+//      R = eye(3) + sin(mag)*skew(direction) + (1-cos(mag))*(skew(direction)^2);
+//      */
+//
+//	  return R;
+//  }
 
 	void Odometry::setPositionState(const Eigen::Vector3d &P_set) {
 
