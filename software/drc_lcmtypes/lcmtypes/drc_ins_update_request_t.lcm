@@ -9,6 +9,7 @@ struct ins_update_request_t
   position_3d_t pose;
   twist_t twist;
   vector_3d_t local_linear_acceleration;
+  vector_3d_t local_linear_force;
 
   vector_3d_t referencePos_local;
   vector_3d_t referenceVel_local;
