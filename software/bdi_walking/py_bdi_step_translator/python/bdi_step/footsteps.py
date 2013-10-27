@@ -66,10 +66,10 @@ class FootGoal(BaseFootGoal):
         step_data.step_index = step_index
         step_data.foot_index = self.is_right_foot
         step_data.duration = self.bdi_step_duration
-        print "Footstep pos: ", self.pos
+        # print "Footstep pos: ", self.pos
         pos = self.to_atlas_frame(self.pos)
         step_data.position = pos[:3]
-        print "Transformed pos: ", step_data.position
+        # print "Transformed pos: ", step_data.position
         step_data.yaw = self.pos[5]
         step_data.normal = ut.rpy2rotmat(self.pos[3:6,0]) * np.matrix([[0],[0],[1]])
         step_data.swing_height = self.step_height

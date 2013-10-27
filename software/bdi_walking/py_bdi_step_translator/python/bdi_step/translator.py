@@ -10,13 +10,29 @@ from bdi_step.utils import Behavior, gl, now_utime
 
 NUM_REQUIRED_WALK_STEPS = 4
 
+def blank_step_spec():
+    msg = drc.atlas_behavior_step_spec_t()
+    msg.foot = drc.atlas_behavior_foot_data_t()
+    msg.action = drc.atlas_behavior_step_action_t()
+    return msg
+
+def blank_walk_spec():
+    msg = drc.atlas_behavior_walk_spec_t()
+    msg.foot = drc.atlas_behavior_foot_data_t()
+    msg.action = drc.atlas_behavior_walk_action_t()
+    return msg
+
 class Mode:
     translating = 0
     plotting = 1
 
 class BDIStepTranslator:
-    def __init__(self, mode=Mode.translating):
+    def __init__(self, mode=Mode.translating, use_spec=True, safe=True):
         self.mode = mode
+        self.safe = safe  # Don't send atlas behavior commands (to ensure that the robot never starts walking accidentally when running tests)
+        self.use_spec = use_spec  # Use update step specification format
+        if not self.use_spec:
+            print "Warning: Using deprecated step data interface. lift_height, knee_nominal, etc. are not supported in this mode."
         self.lc = lcm.LCM()
         if self.mode == Mode.plotting:
             self.gl = gl
@@ -46,7 +62,13 @@ class BDIStepTranslator:
             ut.send_status(6,0,0,m)
             return
 
-        footsteps = [f.to_bdi_spec(behavior, j-1) for j,f in enumerate(footsteps)]
+        if self.use_spec:
+            # Use the new step spec interface
+            footsteps = [f.to_bdi_spec(behavior, j-1) for j,f in enumerate(footsteps)]
+        else:
+            # use the older, deprecated interface
+            footsteps = [f.to_step_data(j-1) for j, f in enumerate(footsteps)]
+
         self.behavior = behavior
 
         if self.mode == Mode.plotting:
@@ -55,16 +77,26 @@ class BDIStepTranslator:
             self.bdi_step_queue = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
 
             # Relative step heights
-            for i in reversed(range(len(self.bdi_step_queue))):
-                self.bdi_step_queue[i].foot.position[2] -= footsteps[i+1].foot.position[2]
+            if self.use_spec:
+                for i in reversed(range(len(self.bdi_step_queue))):
+                    self.bdi_step_queue[i].foot.position[2] -= footsteps[i+1].foot.position[2]
+            else:
+                for i in reversed(range(len(self.bdi_step_queue))):
+                    self.bdi_step_queue[i].position[2] -= footsteps[i+1].position[2]
 
             # self.send_walk_params(1)
             self.send_params(1)
-            m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEPPING" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALKING")
-            print m
-            ut.send_status(6,0,0,m)
-            time.sleep(1)
-            self.send_behavior()
+
+            if not self.safe:
+                m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEPPING" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALKING")
+                print m
+                ut.send_status(6,0,0,m)
+                time.sleep(1)
+                self.send_behavior()
+            else:
+                m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEPPING" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALKING")
+                print m
+                ut.send_status(6,0,0,m)
 
     def handle_atlas_status(self, channel, msg_data):
         if self.delivered_index is None or self.mode != Mode.translating:
@@ -100,9 +132,13 @@ class BDIStepTranslator:
         if self.behavior == Behavior.BDI_WALKING:
             walk_param_msg = drc.atlas_behavior_walk_params_t()
             walk_param_msg.num_required_walk_steps = NUM_REQUIRED_WALK_STEPS
-            walk_param_msg.step_queue = [drc.atlas_step_data_t() for j in range(NUM_REQUIRED_WALK_STEPS)]  # Unused
-            walk_param_msg.walk_spec_queue = self.bdi_step_queue[step_index-1:step_index+3]
-            walk_param_msg.use_spec = True;
+            if self.use_spec:
+                walk_param_msg.walk_spec_queue = self.bdi_step_queue[step_index-1:step_index+3]
+                walk_param_msg.step_queue = [drc.atlas_step_data_t() for j in range(NUM_REQUIRED_WALK_STEPS)]  # Unused
+            else:
+                walk_param_msg.walk_spec_queue = [blank_walk_spec() for j in range(NUM_REQUIRED_WALK_STEPS)]  # Unused
+                walk_param_msg.step_queue = self.bdi_step_queue[step_index-1:step_index+3]
+            walk_param_msg.use_spec = self.use_spec;
             walk_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
             walk_param_msg.use_demo_walk = 0
             self.lc.publish('ATLAS_WALK_PARAMS', walk_param_msg.encode())
@@ -114,6 +150,14 @@ class BDIStepTranslator:
             step_param_msg.desired_step_spec = self.bdi_step_queue[step_index-1]
             step_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
             step_param_msg.use_demo_walk = 0
+            step_param_msg.use_spec = self.use_spec
+            if self.use_spec:
+                step_param_msg.desired_step = drc.atlas_step_data_t()  # Unused
+                step_param_msg.desired_step_spec = self.bdi_step_queue[step_index-1]
+            else:
+                step_param_msg.desired_step = self.bdi_step_queue[step_index-1]
+                step_param_msg.desired_step_spec = blank_step_spec()  # Unused
+
             self.lc.publish('ATLAS_STEP_PARAMS', step_param_msg.encode())
             self.delivered_index = step_param_msg.desired_step_spec.step_index
             print "Sent step params for step index {:d}".format(step_param_msg.desired_step_spec.step_index)

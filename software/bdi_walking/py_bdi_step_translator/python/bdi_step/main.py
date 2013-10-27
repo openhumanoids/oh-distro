@@ -3,11 +3,11 @@ from bdi_step.translator import BDIStepTranslator, Mode
 
 
 def run_translator():
-    t = BDIStepTranslator(mode=Mode.translating)
+    t = BDIStepTranslator(mode=Mode.translating, safe=False)
     t.run()
 
 def run_plotter():
-    t = BDIStepTranslator(mode=Mode.plotting)
+    t = BDIStepTranslator(mode=Mode.plotting, safe=False)
     t.run()
 
 
