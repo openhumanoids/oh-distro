@@ -16,5 +16,6 @@ while 1
     disp(exception.getReport())
     save(['footstep-planner-crash-',datestr(now(),'YYYY-mm-DDTHH-MM'),'.mat'], 'exception');
     msg ='Foot Plan : Crashed, restarting...'; disp(msg); send_status(6,0,0,msg);
+    clear all classes java imports mex
   end
 end
