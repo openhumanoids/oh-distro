@@ -40,9 +40,10 @@ x0 = xstar;
 q0 = x0(1:nq);
 
 % create footstep and ZMP trajectories
+footstep_planner = FootstepPlanner(r);
+step_options = footstep_planner.defaults;
 step_options.max_num_steps = 100;
 step_options.min_num_steps = 2;
-step_options.step_height = 0.05;
 step_options.step_speed = 0.75;
 step_options.follow_spline = true;
 step_options.right_foot_lead = true;
@@ -50,7 +51,6 @@ step_options.ignore_terrain = false;
 step_options.nom_step_width = r.nom_step_width;
 step_options.nom_forward_step = r.nom_forward_step;
 step_options.max_forward_step = r.max_forward_step;
-step_options.goal_type = drc.walking_goal_t.GOAL_TYPE_CENTER;
 step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
 
 footsteps = r.createInitialSteps(x0, navgoal, step_options);
