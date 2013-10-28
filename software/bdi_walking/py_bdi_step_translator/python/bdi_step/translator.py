@@ -107,12 +107,12 @@ class BDIStepTranslator:
             if index_needed > (self.delivered_index + 1) and len(self.bdi_step_queue) >= (index_needed + 2):
                 print "Handling request for next step: {:d}".format(index_needed)
                 # self.update_drift(msg.walk_feedback.step_queue_saturated)
-                self.send_walk_params(index_needed-1)
+                self.send_params(index_needed-1)
         else:
             index_needed = msg.step_feedback.next_step_index_needed
             if index_needed > self.delivered_index and len(self.bdi_step_queue) >= index_needed:
                 print "Handling request for next step: {:d}".format(index_needed)
-                self.send_walk_params(index_needed)
+                self.send_params(index_needed)
 
     # def update_drift(self,step_queue):
     #     print "Updating drift calculation"
