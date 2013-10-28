@@ -7,6 +7,7 @@ navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
 
 % construct robot model
 options.floating = true;
+options.ignore_friction = true;
 options.dt = 0.002;
 if (nargin>0); options.use_mex = use_mex;
 else options.use_mex = true; end

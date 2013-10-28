@@ -10,6 +10,7 @@ navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
 % construct robot model---one for simulation, one for control (to test
 % model discrepencies)
 options.floating = true;
+options.ignore_friction = true;
 options.dt = 0.002;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 v = r.constructVisualizer;
@@ -35,20 +36,20 @@ x0 = xstar;
 q0 = x0(1:nq);
 
 % create footstep and ZMP trajectories
+footstep_planner = FootstepPlanner(r);
+step_options = footstep_planner.defaults;
 step_options.max_num_steps = 100;
 step_options.min_num_steps = 2;
-step_options.step_height = 0.05;
 step_options.step_speed = 0.75;
 step_options.follow_spline = true;
 step_options.right_foot_lead = true;
 step_options.ignore_terrain = false;
-step_options.nom_step_width = rctrl.nom_step_width;
-step_options.nom_forward_step = rctrl.nom_forward_step;
-step_options.max_forward_step = rctrl.max_forward_step;
-step_options.goal_type = drc.walking_goal_t.GOAL_TYPE_CENTER;
+step_options.nom_step_width = r.nom_step_width;
+step_options.nom_forward_step = r.nom_forward_step;
+step_options.max_forward_step = r.max_forward_step;
 step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
 
-footsteps = rctrl.createInitialSteps(x0, navgoal, step_options);
+footsteps = r.createInitialSteps(x0, navgoal, step_options);
 for j = 1:length(footsteps)
   footsteps(j).pos = r.footContact2Orig(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
 end

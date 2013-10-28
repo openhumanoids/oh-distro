@@ -1,5 +1,5 @@
 function drakeRecovery(use_mex,use_bullet)
-  %notest
+%NOTEST
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
