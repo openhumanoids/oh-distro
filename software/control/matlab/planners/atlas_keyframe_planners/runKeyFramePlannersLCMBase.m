@@ -622,12 +622,12 @@ while(1)
     posture_goal =posture_goal_listener.getNextMessage(msg_timeout);
     if(~isempty(posture_goal))
         disp('Posture goal received .');
-        q0 = x0(1:getNumDOF(r));
+        q0 = x0(1:getNumDOF(robot));
         q_desired =q0;
         joint_names = {posture_goal.joint_name};
         joint_positions = [posture_goal.joint_position];
         for i=1:length(joint_names),
-            dofnum = strcmp(r.getStateFrame.coordinates,joint_names{i});
+            dofnum = strcmp(robot.getStateFrame.coordinates,joint_names{i});
             q_desired(dofnum) = joint_positions(i);
         end
         q_desired([1,2,6]) = x0([1,2,6]); % fix pelvis pose to current % THIS IS WRONG, this prevents the robot from squating.
