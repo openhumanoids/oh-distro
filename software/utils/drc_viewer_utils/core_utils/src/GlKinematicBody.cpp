@@ -1636,7 +1636,7 @@ bool GlKinematicBody::get_mesh_struct(const std::string &link_geometry_name, Mes
 //===============================================================================================
 // DRAWING METHODS
 //
-void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::string &nextTfname, const KDL::Frame &nextTfframe)
+void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::string &nextTfname, const KDL::Frame &nextTfframe,float (&c)[3], float alpha)
 {
 
   //--get rotation in angle/axis form
@@ -1687,6 +1687,9 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
      glScalef(xDim,yDim,zDim);
      bot_gl_draw_cube();
         //cube();
+     //glColor4f(1.0,1.0,1.0,alpha);
+     //bot_gl_draw_cube_frame();
+     //glColor4f(c[0],c[1],c[2],alpha);
     glPopMatrix();
   
 
@@ -1832,7 +1835,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
 }
 // ======================================================================================================
 // overloaded draw_link method for otdf geometries
-void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe)
+void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe,float (&c)[3], float alpha)
 {
 
   //--get rotation in angle/axis form
@@ -1885,8 +1888,9 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
        	 axis[0], axis[1], axis[2]); 
     glScalef(xDim,yDim,zDim);
     bot_gl_draw_cube();
-
+    glColor4f(0.0,0.0,0.0,alpha);
     bot_gl_draw_cube_frame();
+    glColor4f(c[0],c[1],c[2],alpha);
     //cube();
     glPopMatrix();
 

@@ -185,30 +185,30 @@ class GlKinematicBody
     void set_future_state(const drc::robot_state_t &msg);
     void set_future_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in);// ability to visualize in space and time, should work for both otdf and urdf.
 
-    void draw_link(boost::shared_ptr<urdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe);
-    void draw_link(boost::shared_ptr<otdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe);
+    void draw_link(boost::shared_ptr<urdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe,float (&c)[3], float alpha);
+    void draw_link(boost::shared_ptr<otdf::Geometry> link,const std::string &nextTfname, const KDL::Frame &nextTfframe,float (&c)[3], float alpha);
     void draw_link_current_and_future(float (&c)[3], float alpha,int link_shape_index, const LinkFrameStruct &nextTf)
     {    
     
       if(is_otdf_instance)
       {
         boost::shared_ptr<otdf::Geometry> nextLink = _otdf_link_shapes[link_shape_index];
-        draw_link(nextLink,nextTf.name, nextTf.frame);
+        draw_link(nextLink,nextTf.name, nextTf.frame,c,alpha);
         //displays desired end state.
         if(future_display_active) {
-            glColor4f(0.5,0.5,0,0.35);
-            draw_link(nextLink,nextTf.name,nextTf.future_frame);
+            glColor4f(0.5,0.5,0,0.35); // yellow
+            draw_link(nextLink,nextTf.name,nextTf.future_frame,c,alpha);
             glColor4f(c[0],c[1],c[2],alpha);
         }
       }
       else
       {
         boost::shared_ptr<urdf::Geometry> nextLink = _link_shapes[link_shape_index];
-        draw_link(nextLink,nextTf.name, nextTf.frame);
+        draw_link(nextLink,nextTf.name, nextTf.frame,c,alpha);
         if(future_display_active) {
            //displays desired end state.
-            glColor4f(0.5,0.5,0,0.35);
-            draw_link(nextLink,nextTf.name,nextTf.future_frame);
+            glColor4f(0.5,0.5,0,0.35); // yello
+            draw_link(nextLink,nextTf.name,nextTf.future_frame,c,alpha);
             glColor4f(c[0],c[1],c[2],alpha);
         }
       }    
