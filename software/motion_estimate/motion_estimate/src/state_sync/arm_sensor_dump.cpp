@@ -56,6 +56,7 @@ void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   
   
   if (msg->utime == as.utime){
+    /*
     if (!init_){
       std::stringstream ss;
       ss << "utime, ";
@@ -67,7 +68,7 @@ void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::st
       }      
       std::cout << ss.str() << "\n";
       init_ = true;
-    }
+    } */
     
     /*
     if (counter_<30){
