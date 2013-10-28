@@ -33,7 +33,7 @@ for i = 1:length(varargin)
 %       [joint_lb,joint_ub] = testPostureConstraintmex(varargin{i},t_breaks);
 %       joint_min = reshape(max([joint_min(:) joint_lb(:)],[],2),nq,[]);
 %       joint_max = reshape(min([joint_max(:) joint_ub(:)],[],2),nq,[]);
-%     end
+    end
   else
     other_constraint_cell = [other_constraint_cell,varargin(i)];
 %     if(isa(varargin{i},'PostureConstraint'))
@@ -47,12 +47,17 @@ end
 
 x_sol = xtraj.eval(t_breaks);
 q_sol = x_sol(1:nq,:);
-joint_limit_flag = abs(q_sol-joint_max)<1e-5 || abs(q_sol_joint_min)<1e-5;
-coords = obj.gestStateFrame.coordinates;
-for i = 1:length(t_breaks)
+joint_limit_flag = abs(q_sol-joint_max)<1e-5 | abs(q_sol-joint_min)<1e-5;
+coords = obj.getStateFrame.coordinates;
+if(ikoptions.fixInitialState)
+  t_start_idx = 2;
+else
+  t_start_idx = 1;
+end
+for i = t_start_idx:length(t_breaks)
   for j = 1:nq
     if(joint_limit_flag(j,i))
-      display(sprintf('%s is at joint limit at time %4.2f',coords{joint_limit_flag(j,i)},t));
+      display(sprintf('%s is at joint limit at time %4.2f',coords{j},t_breaks(i)));
     end
   end
 end
