@@ -110,6 +110,11 @@ public:
     // create affordance update timer
     Glib::signal_timeout().connect
       (sigc::mem_fun(*this, &DataControlRenderer::checkAffordances), 500);
+
+    // create height map mode timer
+    // TODO: requires upload of message to robot; maybe not the most efficient
+    Glib::signal_timeout().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::sendHeightMode), 5000);    
   }
 
   ~DataControlRenderer() {
@@ -142,6 +147,13 @@ public:
 	}
       }
     }
+    return true;
+  }
+
+  bool sendHeightMode() {
+    drc::map_controller_command_t msg;
+    msg.command = mControllerHeightMapMode;
+    getLcm()->publish("MAP_CONTROLLER_COMMAND", &msg);
     return true;
   }
 
@@ -598,9 +610,7 @@ public:
   }
 
   void onControllerHeightMapMode() {
-    drc::map_controller_command_t msg;
-    msg.command = mControllerHeightMapMode;
-    getLcm()->publish("MAP_CONTROLLER_COMMAND", &msg);
+    sendHeightMode();
   }
 
   void onGraspButton() {
