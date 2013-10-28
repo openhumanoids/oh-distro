@@ -33,6 +33,15 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   pose_BDI_.utime =0; // use this to signify un-initalised
   
 
+  // Note: ordering here MUST match that in AtlasControlTypes.h ***********************
+  atlas_joint_names_ = {"back_bkz", "back_bky", "back_bkx", 
+         "neck_ay", "l_leg_hpz", "l_leg_hpx", "l_leg_hpy", 
+         "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", 
+         "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", 
+         "r_leg_akx", "l_arm_usy", "l_arm_shx", "l_arm_ely", 
+         "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "r_arm_usy", 
+         "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx"};  
+  
   // pot offsets if pots are used, currently uncalibrated
   pot_joint_offsets_.assign(28,0.0);
 
@@ -125,7 +134,8 @@ void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   //std::cout << "got atlasHandler\n";
-  atlas_joints_.name = msg->joint_name;
+  
+  atlas_joints_.name = atlas_joint_names_;
   
   std::vector <float> mod_positions;
   mod_positions.assign(28,0.0);

@@ -60,6 +60,9 @@ class state_sync{
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg);
     void potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     
+    // Joint names are hard coded to be stored in state sync to avoid traffic:
+    std::vector<std::string> atlas_joint_names_;    
+    
     Joints head_joints_;
     Joints atlas_joints_;
     Joints left_hand_joints_;
