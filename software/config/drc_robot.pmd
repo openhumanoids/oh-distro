@@ -208,7 +208,7 @@ group "m.state_est" {
 }
 
 group "m.trajectory_simulator" {
-    cmd "DataFusion_MATLAB" {
+    cmd "ReferenceINS_MATLAB" {
         exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; receiveimu;\"";
         host = "extra";
     }
