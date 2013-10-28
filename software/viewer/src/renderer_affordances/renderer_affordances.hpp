@@ -1257,8 +1257,8 @@ struct RendererAffordances {
             self->otdf_instance_hold._gl_object->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
           
           if(intersected_object != NULL ){
-              self->ray_hit = hit_pt;
-              self->ray_hit_t = (hit_pt - self->ray_start).norm();
+              //self->ray_hit = hit_pt;
+              //self->ray_hit_t = (hit_pt - self->ray_start).norm();
               Eigen::Vector3f diff = (from-hit_pt);
               double distance = diff.norm();
               if(shortest_distance>0) {
@@ -1308,8 +1308,8 @@ struct RendererAffordances {
               it->second._gl_object->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
             
             if(intersected_object != NULL ){
-                self->ray_hit = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                //self->ray_hit = hit_pt;
+                //self->ray_hit_t = (hit_pt - self->ray_start).norm();
                 Eigen::Vector3f diff = (from-hit_pt);
                 double distance = diff.norm();
                 if(shortest_distance>0) {
@@ -1342,8 +1342,8 @@ struct RendererAffordances {
            it->second._gl_object->_collision_detector->ray_test( from, to, intersected_object,hit_pt,hit_normal);
           // Highlight all objects that intersect with ray
           if(intersected_object != NULL ){
-                self->ray_hit = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                //self->ray_hit = hit_pt;
+                //self->ray_hit_t = (hit_pt - self->ray_start).norm();
                 Eigen::Vector3f diff = (from-hit_pt);
                 double distance = diff.norm();
                 if(shortest_distance>0) {
@@ -1396,8 +1396,8 @@ struct RendererAffordances {
           {
             it->second._gl_foot->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
             if(intersected_object != NULL ){
-                self->ray_hit = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                //self->ray_hit = hit_pt;
+                //self->ray_hit_t = (hit_pt - self->ray_start).norm();
                 Eigen::Vector3f diff = (from-hit_pt);
                 double distance = diff.norm();
                 if(shortest_distance>0) {
@@ -1485,8 +1485,8 @@ struct RendererAffordances {
           {
             it->second._gl_hand->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
             if(intersected_object != NULL ){
-                self->ray_hit = hit_pt;
-                self->ray_hit_t = (hit_pt - self->ray_start).norm();
+                //self->ray_hit = hit_pt;
+                //self->ray_hit_t = (hit_pt - self->ray_start).norm();
                 Eigen::Vector3f diff = (from-hit_pt);
                 double distance = diff.norm();
                 if(shortest_distance>0) {
