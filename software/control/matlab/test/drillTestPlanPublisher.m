@@ -25,18 +25,18 @@ classdef drillTestPlanPublisher
   end
   
   methods
-    function obj = drillTestPlanPublisher(drill_pt_on_hand, drill_axis_on_hand, drilling_world_axis, doVisualization, doPublish)
-      obj.atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
-      obj.r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
+    function obj = drillTestPlanPublisher(r,atlas,drill_pt_on_hand, drill_axis_on_hand, drilling_world_axis, doVisualization, doPublish)
+      obj.atlas = atlas;
+      obj.r = r;
       if obj.doVisualization
         obj.v = obj.r.constructVisualizer;
       end
-      if nargin < 4
-        obj.doVisualizaiton = true; % default
+      if nargin < 6
+        obj.doVisualization = true; % default
       else
         obj.doVisualization = doVisualization;
       end
-      if nargin < 5
+      if nargin < 7
         obj.doPublish = false; % default
       else
         obj.doPublish = doPublish;
@@ -69,7 +69,6 @@ classdef drillTestPlanPublisher
     function [xtraj,snopt_info,infeasible_constraint] = createInitialReachPlan(obj, q0, x_drill, T)
       N = 5;
       t_vec = linspace(0,T,N);
-      qtraj_guess = PPTrajectory(foh([0 1],[q0, q0]));
       
       % create posture constraint
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices');
@@ -82,6 +81,19 @@ classdef drillTestPlanPublisher
       
       % create drill position constraint
       drill_pos_constraint = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill,x_drill,[t_vec(end) t_vec(end)]);
+      
+      % Find nominal trajectory
+      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
+        drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
+      
+      if(snopt_info_ik > 10)
+        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info_ik);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint_ik));
+        warning(send_msg);
+      end
+      qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
+
       
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,0,...
         t_vec,qtraj_guess,qtraj_guess,...
