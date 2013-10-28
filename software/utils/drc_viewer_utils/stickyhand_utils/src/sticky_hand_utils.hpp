@@ -450,8 +450,8 @@ namespace visualization_utils
             name = side+"f2_j1"; set_joint_position(hand_struc,name, 1.5);   
             name = side+"f2_j2"; set_joint_position(hand_struc,name, 1.7);   
             name = side+"f3_j0"; set_joint_position(hand_struc,name, 0.2);
-            name = side+"f3_j1"; set_joint_position(hand_struc,name, 0.8);   
-            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.2);                                               
+            name = side+"f3_j1"; set_joint_position(hand_struc,name, 1.3);   
+            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.5);                                               
           }
           else
           {
