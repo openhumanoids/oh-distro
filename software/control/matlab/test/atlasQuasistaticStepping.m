@@ -1,4 +1,5 @@
 function atlasQuasistaticStepping
+%NOTEST
 
 % simple quasistatic stepping test for atlas. uses the footstep planner
 % with very slow step speeds to generate a quasistatic stepping plan. for
@@ -6,6 +7,7 @@ function atlasQuasistaticStepping
 % robot
 
 navgoal = [1;0;0;0;0;0];
+addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 % load robot model
 r = Atlas();
