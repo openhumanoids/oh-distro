@@ -52,20 +52,6 @@ const bool PARAM_STATUS_7_DEFAULT = false;
 const bool PARAM_STATUS_8_DEFAULT = false;
 const bool PARAM_IMPORTANT_DEFAULT = false;
 
-const char* PARAM_TOTAL_KB = "Total Up";
-
-#define PARAM_RESET_SHAPER_STATS "Reset Network Stats"
-
-
-// bit values divided by (1024*8)
-int total_KB_up[5]={14.0625, 56.25, 225, 900.1220703125, 3600};
-int total_KB_down[5]={7200, 14400, 28800, 57600, 115200}; 
-
-typedef enum _rate_t {
-    TOTAL_KB_0, TOTAL_KB_1, TOTAL_KB_2, TOTAL_KB_3, TOTAL_KB_4
-} rate_t;
-
-  
 float safe_colors[NUMBER_OF_SYSTEMS][3] = {
     { 0.2000, 0.6274, 0.1725 },    // darker green
     { 0.6509, 0.8078, 0.8901 }, // light blue
@@ -82,8 +68,8 @@ float safe_colors[NUMBER_OF_SYSTEMS][3] = {
 
 const char* PARAM_SHADING = "Shading";
 const bool PARAM_SHADING_DEFAULT = true;
-const char* PARAM_SCORE_AND_RATES = "Score & Rates";
-const bool PARAM_SCORE_AND_RATES_DEFAULT= true;
+const char* PARAM_RATES = "Message Frequency";
+const bool PARAM_RATES_DEFAULT= true;
 
 #define ERR(fmt, ...) do { \
     fprintf(stderr, "["__FILE__":%d Error: ", __LINE__); \
@@ -299,77 +285,7 @@ static void
 on_atlas_status(const lcm_recv_buf_t * buf, const char *channel, const drc_atlas_status_t *msg, void *user_data){
   RendererSystemStatus *self = (RendererSystemStatus*) user_data;
   self->atlas_state = msg->behavior;
-  self->atlas_utime = msg->utime;
-  
-}
-
-
-static void format_time_str (int64_t lutime, char *line)
-{
-  int usecs = lutime % (int)1E3; lutime /= (int)1E3;
-  int msecs = lutime % (int)1E3; lutime /= (int)1E3;
-  int  secs = lutime % (int)60; lutime /= (int)60;
-  int  mins = lutime % (int)60; lutime /= (int)60;
-  int hours = lutime % (int)24; lutime /= (int)24;
-  int  days = lutime;
-
-//  snprintf (line,70, "SIM TIME: %1dd %2dh %2dm %2ds %3dms %3dus\n",
-//          days, hours, mins, secs, msecs, usecs );
-  //snprintf (line,70, "%2dm %2ds %3dms\n",mins, secs, msecs);
-  
-  snprintf(line, 70,  "%.4f SIM %2dm %2ds", ((double)lutime/1E6), mins, secs );
-  
-} 
-
-
-//function msg=
-// all figures in KB: (bits/1204/8)
-void get_ttl(BotViewer *viewer, BotRenderer *r, int total_remaining_bytes, int elapsed_sec , 
-	     double &percent_left , int &expected_ttl_min, int &expected_ttl_sec, bool down_link){
-  //total_used,total_budget , current_time_sec, band_id){
-    RendererSystemStatus *self = (RendererSystemStatus*)r;
-  rate_t total_kb_val  = (rate_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_TOTAL_KB);
-  int total_kb_key =0;
-  if ( total_kb_val == TOTAL_KB_0 ){ total_kb_key=0;
-  }else if( total_kb_val == TOTAL_KB_1 ){ total_kb_key=1;
-  }else if( total_kb_val == TOTAL_KB_2 ){ total_kb_key=2;
-  }else if( total_kb_val == TOTAL_KB_3 ){ total_kb_key=3;
-  }else if( total_kb_val == TOTAL_KB_4 ){ total_kb_key=4; }
-
-    
-  
-  int total_budget_bytes = 115200*1024;
-  if (down_link){
-    total_budget_bytes = total_KB_down[total_kb_key]*1024;
-  }else{
-    total_budget_bytes = total_KB_up[total_kb_key]*1024;
-  }
-  
-//  int total_budget_bytes 
-  int total_used_bytes = total_budget_bytes - total_remaining_bytes;
-  
-  double rate = (double) total_used_bytes/elapsed_sec; // KB/sec
-  double expected_duration = (double) elapsed_sec * total_budget_bytes  / total_used_bytes;
-  double expected_ttl = expected_duration - elapsed_sec;
-  percent_left = (double) 100.0* (1.0 - (double) total_used_bytes/ (double) total_budget_bytes );
-  expected_ttl_min = floor( expected_ttl / 60 );
-  expected_ttl_sec = floor( expected_ttl - expected_ttl_min*60);
-  
-  /*
-  std::cout << "total_kb_key: " << total_kb_key << "\n";
-  std::cout << "downlink? " << (int) down_link << "\n";
-  std::cout << total_budget_bytes << " total_budget_bytes\n";
-  std::cout << total_used_bytes << " total_used_bytes\n";
-  std::cout << total_remaining_bytes << " remaining bytes\n";
-  std::cout << expected_duration << " expected_duration\n";
-  std::cout << elapsed_sec << " elapsed_sec\n";
-  std::cout << percent_left << " percent_left\n";
-  std::cout << expected_ttl << " expected_ttl\n";
-  std::cout << expected_ttl_min << " expected_ttl_min\n";
-  std::cout << expected_ttl_sec << " expected_ttl_sec\n";
-  std::cout << "=====================================\n";
-  */
-  
+  self->atlas_utime = msg->utime; 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -405,7 +321,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     int line_height = 14;
     
     // Printf the frequency_list:
-    if (bot_gtk_param_widget_get_bool(self->pw, PARAM_SCORE_AND_RATES)){
+    if (bot_gtk_param_widget_get_bool(self->pw, PARAM_RATES)){
       if (self->frequency_list.size()>0){
 	double x=0;
 	double y=0;
@@ -447,67 +363,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
 	glColor3f(  1.0, 0.0, 0.0 );
 	glRasterPos2f(x, y);
 	glutBitmapString(font, (unsigned char*) lineY);
-	
       }
-      
-      if (self->score != NULL){
-	char line[80];
-	snprintf(line, 70,  "TASK %d|SCORE %d|FALLS %d", 
-            self->score->task_type, self->score->completion_score, self->score->falls );
-	double x = 0 ; // hind * 150 + 120;
-	double y = gl_height + ( - self->frequency_list.size() - 11) * line_height;
-    if ( self->score->falls <= 0 ){
-   	  glColor3f(  0.0, 0.0, 1.0 );} // blue
-    else if ( self->score->falls == 1 ){
-   	  glColor3f(  1.0, 0.5, 0.0 );} // orange
-    else { // ( self->score->falls >= 2 )
-   	  glColor3f(  1.0, 0.0, 0.0 );} // red
-	glRasterPos2f(x, y);
-	glutBitmapString(font, (unsigned char*) line);
-
-	//
-	// NB: sim_time is the number of useconds elapsed in the 30mins
-	// NB: sim_time_elapsed is the number of useconds since the data bank was started
-	// 	
-	float elapsed_sec_30min = (float) (self->score->sim_time/1E6) ;
-	float elapsed_sec_bwclock = (float) (self->score->sim_time_elapsed/1E6) ;
-	float total_sec = 30.0*60.0;
-	int total_remaining_sec = floor(total_sec - elapsed_sec_30min);
-	int remaining_min = floor(total_remaining_sec/60.0);
-        int remaining_sec = floor(total_remaining_sec - remaining_min*60);
-	float percent_remaining = 100*total_remaining_sec / total_sec;
-	
-	snprintf(line, 70,  "%2.2f TIME %2d:%02d",percent_remaining, remaining_min,remaining_sec);
-	y = gl_height + (-1 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
-	
-	double percent_left;
-	int expected_ttl_min, expected_ttl_sec;
-	if (self->score->bytes_downlink_remaining !=0){
-	  get_ttl(viewer, r, self->score->bytes_downlink_remaining, elapsed_sec_bwclock , percent_left , expected_ttl_min, expected_ttl_sec, true);
-          snprintf(line, 70,  "%2.2f DOWN %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
-	}else{
-          snprintf(line, 70,  "No Downlink Info");
-	}
-	y = gl_height + (-2 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
-
-	if (self->score->bytes_uplink_remaining !=0){
-  	  get_ttl(viewer, r, self->score->bytes_uplink_remaining, elapsed_sec_bwclock , percent_left , expected_ttl_min, expected_ttl_sec, false);
-  	  snprintf(line, 70,  "%2.2f  UP  %d:%d",percent_left,expected_ttl_min, expected_ttl_sec);
-	}else{
-          snprintf(line, 70,  "No Uplink Info");
-	}
-	y = gl_height + (-3 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
-	
-	snprintf(line, 70,  " %% REM  ==  TTL ");
-	y = gl_height + (-4 - self->frequency_list.size() - 11) * line_height;
-	glRasterPos2f(x, y);	glutBitmapString(font, (unsigned char*) line);	
-	
-	
-      }
-    
     }
     
     // Status Block:    
@@ -794,13 +650,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *param, vo
   self->shading = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHADING);
   self->visability = bot_gtk_param_widget_get_enum (self->pw, PARAM_MODE);
   
-  if (! strcmp(param, PARAM_RESET_SHAPER_STATS)) {
-    drc_utime_t msg;
-    msg.utime = self->last_utime;
-    drc_utime_t_publish(self->lcm, "RESET_SHAPER_STATS", &msg);
-    
-  }
-  
   bot_viewer_request_redraw (self->viewer);
 }
 
@@ -930,12 +779,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
                                       PARAM_SHADING, PARAM_SHADING_DEFAULT, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, (BotGtkParamWidgetUIHint)0,
-                                      PARAM_SCORE_AND_RATES, PARAM_SCORE_AND_RATES_DEFAULT, NULL);
-    bot_gtk_param_widget_add_enum (self->pw, PARAM_TOTAL_KB, (BotGtkParamWidgetUIHint)0, TOTAL_KB_0, 
-	      "5 | 14KB/sec", TOTAL_KB_0 , "4 | 56B/sec", TOTAL_KB_1, 
-	      "3 | 225KB/sec", TOTAL_KB_2, "2 | 900KB/sec", TOTAL_KB_3, 	      
-	      "1 | 3600KB/sec", TOTAL_KB_4, NULL);    
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_RESET_SHAPER_STATS, NULL);
+                                      PARAM_RATES, PARAM_RATES_DEFAULT, NULL);  
     
     
     gtk_widget_show (GTK_WIDGET (self->pw));
