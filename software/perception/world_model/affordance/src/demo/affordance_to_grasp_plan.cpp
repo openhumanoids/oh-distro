@@ -309,12 +309,11 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   
   std::vector<Isometry3dTime> init_grasp_poseT;
   Eigen::Isometry3d init_grasp_pose = Eigen::Isometry3d::Identity();
-  init_grasp_pose.translation() << msg->l_hand_init_pose.translation.x, msg->l_hand_init_pose.translation.y, msg->l_hand_init_pose.translation.z;
+  init_grasp_pose.translation() << msg->ray_hit[0], msg->ray_hit[1], msg->ray_hit[2];
   init_grasp_poseT.push_back( Isometry3dTime(msg->utime, init_grasp_pose) );
   pc_vis_->pose_collection_to_lcm_from_list(60011, init_grasp_poseT); 
   
   grasp_opt_msg_ = *msg; // need this to creat output
-  
   
   
   map< string , drc::affordance_t >::iterator it = affs_.find( grasp_opt_msg_.object_name );
@@ -324,7 +323,10 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   }else{
     aff_ = it->second;
   }
-    
+
+  std::cout << "Find grasp to " <<  grasp_opt_msg_.object_name << "\n";
+  
+
   std::cout << aff_.otdf_type << "\n";
   if ( aff_.otdf_type == "box" ){
     planGraspBox(init_grasp_pose);  
@@ -387,10 +389,16 @@ void Pass::planGraspCylinder(Eigen::Isometry3d init_grasp_pose){
     aff_to_palmgeometry.rotate( euler_to_quat(75*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
     
 //    aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
-    
-  }else{ // sandia right
+  }else if (grasp_opt_msg_.grasp_type ==1){ // sandia right
     aff_to_palmgeometry.translation()  << 0.05 + radius ,-(0.06 + 0.4*radius),0.0;
     aff_to_palmgeometry.rotate( euler_to_quat( -75*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+  }else if (grasp_opt_msg_.grasp_type ==3){ // irobot left
+    aff_to_palmgeometry.translation()  << 0.095 + radius ,0,0;
+    aff_to_palmgeometry.rotate( euler_to_quat(90*M_PI/180, 0,0  ) );   
+  }else if (grasp_opt_msg_.grasp_type ==4){ // irobot right
+    aff_to_palmgeometry.translation()  << 0.095 + radius ,0,0;
+    aff_to_palmgeometry.rotate( euler_to_quat(90*M_PI/180, 0,0  ) );   
+    std::cout << "irobot right\n";
   }
   
   // Offset up and down the cylinder:

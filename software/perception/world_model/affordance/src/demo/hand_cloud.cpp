@@ -156,7 +156,7 @@ drc::position_3d_t EigenToDRC(Eigen::Isometry3d &pose){
 
 void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   if (world_affordance_uid_==-1){
-    std::cout << "no world aff yet\n";
+    std::cout << "no utorso_irobot aff yet\n";
     return;
   }
   if (msg->utime - last_update_utime_ < 1E6){
@@ -301,7 +301,7 @@ drc::affordance_plus_t Pass::getWorldAffordance(Eigen::Isometry3d pose){
     a.utime =0;
     a.map_id =0;
     a.uid =1;
-    a.otdf_type ="world";
+    a.otdf_type ="utorso_irobot";
     a.aff_store_control = drc::affordance_t::NEW;
 
     a.param_names.push_back("lX");    a.params.push_back(0.01000);
@@ -332,18 +332,22 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     drc::affordance_t aff = msg->affs_plus[i].aff;
     
     // if its at zero and has a 1cm bounding box, then assume its the world affordance
-    if (aff.otdf_type == "world" ){
-      std::cout << aff.uid << " was found - the world aff\n";
+    if (aff.otdf_type == "utorso_irobot" ){
+      std::cout << aff.uid << " was found - the utorso_irobot aff\n";
       found_world_affordance=true;
       world_affordance_uid_ = aff.uid;
     }
   }    
   
+  // disabled auto fit
+  /*
+   * 
   if(!found_world_affordance){
     std::cout << "will make a new aff\n";
     drc::affordance_plus_t a1 = getWorldAffordance( Eigen::Isometry3d::Identity() );
     lcm_->publish("AFFORDANCE_FIT",&a1);
   }
+  */
 }
 
 

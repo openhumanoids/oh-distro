@@ -96,6 +96,7 @@ class App{
     bool cartpos_ready_;
     bool plan_from_robot_state_;
     bool use_left_hand_;
+    bool use_sandia_;
 };   
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_):
@@ -106,6 +107,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
   cartpos_ready_ = false;
   plan_from_robot_state_ = true;
   use_left_hand_ = true;
+  use_sandia_ = true;
   
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   KDL::Tree tree;
@@ -220,9 +222,15 @@ void App::publish_reset(){
    return; 
   }
   
-  std::string palm_link = "right_palm";
-  if (use_left_hand_){
+  std::string palm_link = "left_palm";
+  if (use_left_hand_ && use_sandia_){
     palm_link = "left_palm";
+  }else if (!use_left_hand_ && use_sandia_){
+    palm_link = "right_palm";
+  }else if (use_left_hand_ && !use_sandia_){
+    palm_link = "left_base_link";
+  }else if (!use_left_hand_ && !use_sandia_){
+    palm_link = "right_base_link";
   }
   Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( palm_link )->second);
   Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
@@ -262,6 +270,8 @@ int App::repaint (int64_t now){
   wprintw(w, "[m] Operation mode: %d (use EST_ROBOT_STATE, else last plan)",  (int)plan_from_robot_state_);
   wmove(w, 12, 0);
   wprintw(w, "[n]  Use left hand: %d (otherwise right hand)",  (int) use_left_hand_);
+  wmove(w, 13, 0);
+  wprintw(w, "[b]  Use sandia hand: %d (otherwise irobot)",  (int) use_sandia_);
 
   color_set(COLOR_TITLE, NULL);
   
@@ -350,6 +360,10 @@ bool App::on_input(){
       use_left_hand_= !use_left_hand_;
       publish_reset();
       break;
+    case 'b': // switch modes: hand and end of plan
+      use_sandia_= !use_sandia_;
+      publish_reset();
+      break;      
   }
 
   repaint ( now);	

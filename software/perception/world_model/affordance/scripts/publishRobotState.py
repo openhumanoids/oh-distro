@@ -85,6 +85,45 @@ def setStateAtHeight66(msg):
                         0.446678996086, 0.0600606650114, -0.0167930833995, 0.30805721879, 1.37700617313, 2.04546928406, -0.389811128378, 0.00673353672028, -1.03239548206]
   return msg
 
+def appendSandiaJoints(msg):
+  msg.num_joints = msg.num_joints + 24
+  msg.joint_position.extend ( [0]*24 )
+  msg.joint_velocity.extend ( [0]*24 )
+  msg.joint_effort.extend ( [0]*24 )
+
+  msg.joint_name.extend( ["left_f0_j0","left_f0_j1","left_f0_j2",   "left_f1_j0","left_f1_j1","left_f1_j2",\
+    "left_f2_j0","left_f2_j1","left_f2_j2",   "left_f3_j0","left_f3_j1","left_f3_j2" ] )
+  msg.joint_name.extend( ["right_f0_j0","right_f0_j1","right_f0_j2",  "right_f1_j0","right_f1_j1","right_f1_j2", \
+    "right_f2_j0","right_f2_j1","right_f2_j2",  "right_f3_j0","right_f3_j1","right_f3_j2" ] )
+  return msg
+
+def appendIrobotJoints(msg):
+  msg.num_joints = msg.num_joints + 16
+  msg.joint_position.extend ( [0]*16 )
+  msg.joint_velocity.extend ( [0]*16 )
+  msg.joint_effort.extend ( [0]*16 )
+
+  msg.joint_name.extend( ["left_finger[0]/joint_base_rotation", "left_finger[0]/joint_base", "left_finger[0]/joint_flex", \
+      "left_finger[1]/joint_base_rotation", "left_finger[1]/joint_base", "left_finger[1]/joint_flex", \
+      "left_finger[2]/joint_base", "left_finger[2]/joint_flex" ] )
+  msg.joint_name.extend( ["right_finger[0]/joint_base_rotation", "right_finger[0]/joint_base", "right_finger[0]/joint_flex",\
+      "right_finger[1]/joint_base_rotation", "right_finger[1]/joint_base", "right_finger[1]/joint_flex",\
+      "right_finger[2]/joint_base", "right_finger[2]/joint_flex" ] )
+  return msg
+
+def appendHeadJoints(msg):
+  msg.num_joints = msg.num_joints + 13
+  msg.joint_position.extend ( [0]*13 )
+  msg.joint_velocity.extend ( [0]*13 )
+  msg.joint_effort.extend ( [0]*13 )
+
+  msg.joint_name.extend( ["pre_spindle_cal_x_joint", "pre_spindle_cal_y_joint", "pre_spindle_cal_z_joint", \
+      "pre_spindle_cal_roll_joint", "pre_spindle_cal_pitch_joint", "pre_spindle_cal_yaw_joint", \
+      "hokuyo_joint", \
+      "post_spindle_cal_x_joint", "post_spindle_cal_y_joint", "post_spindle_cal_z_joint", \
+      "post_spindle_cal_roll_joint", "post_spindle_cal_pitch_joint", "post_spindle_cal_yaw_joint" ])
+  return msg
+
 def quat_to_euler(q) :
   
   roll_a = 2.0 * (q[0]*q[1] + q[2]*q[3]);
@@ -165,6 +204,9 @@ def sendRobotStateMsg():
   else:
     msg = setStateAtHeight66(msg)
 
+  #msg = appendSandiaJoints(msg)
+  msg = appendIrobotJoints(msg)
+  msg = appendHeadJoints(msg)
   lc.publish("EST_ROBOT_STATE", msg.encode())
 
 
