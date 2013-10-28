@@ -502,7 +502,11 @@ void Camera::colorImageCallback(const image::Header& header,
                     //printf("left luma frame id: %lld", left_luma_frame_id_);
                     //printf("leftchromaframe id: %lld", header.frameId);
                     lcm_left_frame_id_ = header.frameId;
-                    {
+
+                    if (config_.output_mode_ ==2){ // publish left only
+                      lcm_publish_.publish("CAMERA_LEFT", &lcm_left_);
+                      
+                    }else if(config_.output_mode_ == 0){
                       std::shared_ptr<bot_core::image_t> img;
                       img.reset(new bot_core::image_t(lcm_left_));
                       std::unique_lock<std::mutex> lock(queue_mutex_);
@@ -511,14 +515,9 @@ void Camera::colorImageCallback(const image::Header& header,
                         left_img_queue_.pop_front();
                         printf("dropped left image\n");
                       }
-                      queue_condition_.notify_one();
-                    }
-                    
-                    if (config_.output_mode_ ==2){
-                      // publish left only
-                      lcm_publish_.publish("CAMERA_LEFT", &lcm_left_);
-                    }else if(config_.output_mode_ == 0){
-                      // this case handled by publisher class
+                      queue_condition_.notify_one();                      
+                      
+                      // publish is handled by publisher class
                     }
 
                     cvReleaseImageHeader(&sourceImageP);
