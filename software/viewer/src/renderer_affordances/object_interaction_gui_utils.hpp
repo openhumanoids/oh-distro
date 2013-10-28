@@ -4,6 +4,8 @@
 #define PARAM_DIL_FACTOR "Obj Dilation"
 #define PARAM_SEED_LH "Seed LHand"
 #define PARAM_SEED_RH "Seed RHand"
+#define PARAM_EIGEN_GRASP_TYPE "EigenGrasp Presets"
+#define PARAM_SET_EIGEN_GRASP "Set Eigen Grasp"
 #define PARAM_SEED_LF "Seed LFoot"
 #define PARAM_SEED_RF "Seed RFoot"
 #define PARAM_CLEAR_SEEDS "Clear Seeds"

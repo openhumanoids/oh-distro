@@ -162,6 +162,10 @@ struct RendererAffordances {
     frames = NULL;
     otdf_names = NULL;
     otdf_nums = NULL;
+    num_eigen_grasps = 0;
+    eigen_grasp_names= NULL;
+    eigen_grasp_nums= NULL;    
+    
     dblclk_popup= NULL;
     second_stage_popup= NULL;
     
@@ -253,6 +257,10 @@ struct RendererAffordances {
   int num_otdfs;
   char ** otdf_names;
   int * otdf_nums;
+  
+  int num_eigen_grasps;
+  char ** eigen_grasp_names;
+  int * eigen_grasp_nums;
   
   int lhand_urdf_id;
   int rhand_urdf_id;

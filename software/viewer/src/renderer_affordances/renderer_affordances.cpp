@@ -495,12 +495,14 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
         }
     
         double alpha2 =  0.3;
-        if(obj_it->second._gl_object->get_link_geometry_future_frame(foot_it->second.geometry_name,T_world_geometry)) { // if future frame exists draw 
+        if(obj_it->second._gl_object->get_link_geometry_future_frame(foot_it->second.geometry_name,T_world_geometry)&&(!foot_it->second.is_static)) { // if future frame exists draw 
             double r,p,y;
             T_world_geometry.M.GetRPY(r,p,y);
         
             if((obj_it->second._gl_object->is_future_state_changing())&&(self->motion_trail_log_enabled)) // logging is not enabled when setting range goals or manual motion goals 
+            {
                 foot_it->second._gl_foot->log_motion_trail(true); //  enables motion trail logging and motion trail display too
+            }
             else{
                 foot_it->second._gl_foot->log_motion_trail(false);
             }

@@ -28,8 +28,13 @@ namespace renderer_affordances_gui_utils
       self->stickyhand_selection = " ";
       bot_viewer_request_redraw(self->viewer);
     }
-    else if (! strcmp(name, PARAM_RESEED)) {
-      cout << "TODO" << endl;
+    else if (! strcmp(name, PARAM_SET_EIGEN_GRASP)) {
+      int eiggrasp_type = bot_gtk_param_widget_get_enum(pw, PARAM_EIGEN_GRASP_TYPE);
+       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+      cout << eiggrasp_type << endl;
+      // modify optimized_joint_position and joint_position
+      set_eigen_grasp(hand_it->second,eiggrasp_type);
     }
     else if(! strcmp(name, PARAM_MOVE_EE)) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
@@ -373,7 +378,8 @@ namespace renderer_affordances_gui_utils
        && strcmp(name, PARAM_POWER_GRASP)
        && strcmp(name, PARAM_GRASP_UNGRASP)
        && strcmp(name, PARAM_GRASP)
-       && strcmp(name, PARAM_UNGRASP))
+       && strcmp(name, PARAM_UNGRASP)
+       && strcmp(name,PARAM_EIGEN_GRASP_TYPE))
       gtk_widget_destroy(self->dblclk_popup);
     
    }
@@ -425,6 +431,31 @@ namespace renderer_affordances_gui_utils
     bot_gtk_param_widget_add_buttons(pw,PARAM_STORE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_UNSTORE, NULL);
     //bot_gtk_param_widget_add_buttons(pw,PARAM_HALT_OPT, NULL);
+    
+    bot_gtk_param_widget_add_separator(pw, "Preset EigenGrasps/Graspfilters");
+    int eg_val = 0;
+
+
+
+
+    std::vector<std::string> _names;
+    get_eigen_grasp_types(_names);
+    self->num_eigen_grasps = _names.size();
+    self->eigen_grasp_names =(char **) calloc(self->num_eigen_grasps, sizeof(char *));
+    self->eigen_grasp_nums = (int *)calloc(self->num_eigen_grasps, sizeof(int));
+      
+    for(size_t i=0;i<_names.size();i++){
+          self->eigen_grasp_names[i]=(char *) _names[i].c_str();
+          self->eigen_grasp_nums[i] =i;
+     }   
+
+    bot_gtk_param_widget_add_enumv (pw, PARAM_EIGEN_GRASP_TYPE, BOT_GTK_PARAM_WIDGET_MENU, 
+                                    0,
+                                    self->num_eigen_grasps,
+                                    (const char **)  self->eigen_grasp_names,
+                                    self->eigen_grasp_nums);
+                                                                       
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SET_EIGEN_GRASP, NULL);
 
     bot_gtk_param_widget_add_separator(pw, "Partial Grasp");
     bot_gtk_param_widget_add_enum(pw, PARAM_PARTIAL_GRASP_UNGRASP, BOT_GTK_PARAM_WIDGET_MENU, p_val, "Ungrasped", 0, "Partial Grasp", 1, "Full Grasp", 2, "Grasp w/o Thumb", 3, NULL);
@@ -463,6 +494,9 @@ namespace renderer_affordances_gui_utils
     gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
     gtk_container_add (GTK_CONTAINER (window), vbox);
     gtk_widget_show_all(window); 
+    
+    free(self->eigen_grasp_names);
+    free(self->eigen_grasp_nums);
 
   }
  //=======================================================================================  

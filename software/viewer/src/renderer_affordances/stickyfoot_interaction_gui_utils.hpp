@@ -1,6 +1,10 @@
 #ifndef STICKYFOOT_INTERACTION_GUI_UTILS_HPP
 #define STICKYFOOT_INTERACTION_GUI_UTILS_HPP
 
+#define PARAM_FOOT_STATIC_TOGGLE "Static"
+
+
+
 #include "object_interaction_gui_utils.hpp"
 
 using namespace renderer_affordances;
@@ -163,6 +167,12 @@ namespace renderer_affordances_gui_utils
     else if ((!strcmp(name, PARAM_UNSTORE))) {
       self->stickyFootCollection->store(self->stickyfoot_selection,true,self->affCollection);  
     }
+    else if (! strcmp(name, PARAM_FOOT_STATIC_TOGGLE)) {
+     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+     sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+     foot_it->second.is_static = !foot_it->second.is_static;
+        
+    }
     else if (! strcmp(name, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT)) {
         typedef map<string, StickyFootStruc > sticky_feet_map_type_;
         sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
@@ -228,6 +238,10 @@ namespace renderer_affordances_gui_utils
     
     val =  foot_it->second._gl_foot->is_bodypose_adjustment_enabled();
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT, val, NULL);
+    
+    
+    val = foot_it->second.is_static;
+    bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_FOOT_STATIC_TOGGLE, val, NULL);
     
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_foot_dblclk_popup_param_widget_changed), self);
     self->dblclk_popup  = window;
