@@ -55,6 +55,7 @@ namespace visualization_utils
         if(fn.substr(fn.find_last_of(".") + 1) == "otdf") 
           files.push_back(fn.substr(0,fn.find_last_of(".")));
       }
+      std::sort( files.begin(), files.end() ); // sort file names alphabetically
       closedir(dp);
       return 0;
   }
@@ -74,6 +75,7 @@ namespace visualization_utils
         if((fn.substr(fn.find_last_of(".") + 1) == "urdf")||(fn.substr(fn.find_last_of(".") + 1) == "sdf")) 
           files.push_back(fn.substr(0,fn.find_last_of(".")));
       }
+      std::sort( files.begin(), files.end() ); // sort file names alphabetically
       closedir(dp);
       return 0;
   }
@@ -92,6 +94,7 @@ namespace visualization_utils
         if(fn.substr(fn.find_last_of(".") + 1) == "urdf") 
           files.push_back(fn.substr(0,fn.find_last_of(".")));
       }
+      std::sort( files.begin(), files.end() ); // sort file names alphabetically
       closedir(dp);
       return 0;
   } 
