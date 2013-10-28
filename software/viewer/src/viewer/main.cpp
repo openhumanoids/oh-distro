@@ -15,11 +15,12 @@
 //imported renderers
 #include <bot_lcmgl_render/lcmgl_bot_renderer.h>
 #include <laser_utils/renderer_laser.h>
-#include <image_utils/renderer_cam_thumb.h>
+#include <renderer_cam_thumb_drc/renderer_cam_thumb_drc.h>
 #include <visualization/collections_renderer.hpp>
 #include <octomap_utils/renderer_octomap.h>
 #include <renderer_maps/MapsRenderer.hpp>
 #include <renderer_data_control/DataControlRenderer.hpp>
+//#include <renderer_atlas_cameras/CameraRenderer.hpp>
 // #include <renderer_annotated_camera/AnnotatedCameraRenderer.hpp>
 #include <multisense/multisense_renderer.h>
 #include <occ_map/occ_map_renderers.h>
@@ -613,13 +614,14 @@ int main(int argc, char *argv[])
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  //camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 //  annotated_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 //  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
 
-  add_cam_thumb_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
+  add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
 
   bdi_add_renderer_to_viewer(viewer, 0, lcm);

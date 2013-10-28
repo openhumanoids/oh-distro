@@ -3,7 +3,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 set(RENDERERS bot2-vis bot2-lcmgl-renderer
         bot2-frames-renderers  
         laser-util-renderer
-        image-util-renderer
         renderer_walking
         multisense-renderer
         octomap-renderer
@@ -25,6 +24,8 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         renderer_drcgrid
         tracker-renderer
         renderer_bdi
+        renderer_cam_thumb_drc
+        #renderer_atlas_cameras
         renderer_recovery)
 
 ###
