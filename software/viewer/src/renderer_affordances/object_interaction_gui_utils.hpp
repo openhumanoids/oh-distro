@@ -77,7 +77,8 @@
 
 #define PARAM_EE_SPECIFY_GOAL "Select EE goal"
 #define PARAM_CURRENT_ORIENTATION "Maintain EE orientation"
-#define PARAM_GAZE_AFFORDANCE "Look at affordance"
+#define PARAM_GAZE_AFFORDANCE "Look at aff"
+#define PARAM_GAZE_AFFORDANCE_WEAK "Look at aff weakly"
 //#define PARAM_GAZE_SELECTION" "Look at selected point (NOT SUPPORTED)"
 #define PARAM_CURRENT_POSE "Maintain pose"
 #define PARAM_CLEAR_CURRENT_GOAL "Clear EE goal"
@@ -108,7 +109,7 @@ typedef enum _ee_type_t {
 } ee_type_t;
 
 typedef enum _ee_goal_type_t {
-    CURRENT_POSE,CURRENT_ORIENTATION,GAZE,CLEAR_CURRENT_GOAL 
+    CURRENT_POSE,CURRENT_ORIENTATION,GAZE,GAZE_WEAK,CLEAR_CURRENT_GOAL,
 } ee_goal_type_t;
 
 namespace renderer_affordances_gui_utils
@@ -195,7 +196,7 @@ namespace renderer_affordances_gui_utils
               publish_ee_goal_to_gaze(self->lcm, "left_palm", "LEFT_PALM_ORIENTATION_GOAL", temp); 
             }
         }
-        else if (ee_goal_type == GAZE) {
+        else if ( (ee_goal_type == GAZE)  ||  (ee_goal_type == GAZE_WEAK)  ) {
             BotTrans temp;
             temp.rot_quat[0] = 1; temp.rot_quat[1] = 0; temp.rot_quat[2] = 0; temp.rot_quat[3] = 0; 
             temp.trans_vec[0] = 0; temp.trans_vec[1] = 0; temp.trans_vec[2] = 0;
@@ -209,14 +210,19 @@ namespace renderer_affordances_gui_utils
             T_world_object.M.GetQuaternion(x,y,z,w);
             temp.rot_quat[0] = w; temp.rot_quat[1] = x; temp.rot_quat[2] = y; temp.rot_quat[3] = z;  
             
+            string goal_type_string = "";
+            if ( (ee_goal_type == GAZE_WEAK) ){
+                goal_type_string = "WEAK_";
+            }
+
             if (ee_type == EE_HEAD) {
-              publish_ee_goal_to_gaze(self->lcm, "head", "HEAD_GAZE_GOAL", temp);
+              publish_ee_goal_to_gaze(self->lcm, "head", std::string( std::string("HEAD_") + goal_type_string  + "GAZE_GOAL"), temp);
             }
             else if(ee_type == EE_RIGHT_HAND)  {
-              publish_ee_goal_to_gaze(self->lcm, "right_palm", "RIGHT_PALM_GAZE_GOAL", temp);  
+              publish_ee_goal_to_gaze(self->lcm, "right_palm", std::string( std::string("RIGHT_PALM_") + goal_type_string + "GAZE_GOAL"), temp);  
             }
             else if(ee_type == EE_LEFT_HAND) {
-              publish_ee_goal_to_gaze(self->lcm, "left_palm", "LEFT_PALM_GAZE_GOAL", temp);  
+              publish_ee_goal_to_gaze(self->lcm, "left_palm", std::string( std::string("LEFT_PALM_") + goal_type_string + "GAZE_GOAL"), temp);  
             }
         }
         else if (ee_goal_type == CLEAR_CURRENT_GOAL) {
@@ -269,6 +275,7 @@ namespace renderer_affordances_gui_utils
     
         bot_gtk_param_widget_add_enum(pw, PARAM_EE_SPECIFY_GOAL, BOT_GTK_PARAM_WIDGET_MENU, GAZE, 
                                       PARAM_GAZE_AFFORDANCE, GAZE,
+                                      PARAM_GAZE_AFFORDANCE_WEAK, GAZE_WEAK,  
                                       PARAM_CURRENT_ORIENTATION, CURRENT_ORIENTATION, 
                                       PARAM_CURRENT_POSE, CURRENT_POSE, 
                                       PARAM_CLEAR_CURRENT_GOAL, CLEAR_CURRENT_GOAL,
