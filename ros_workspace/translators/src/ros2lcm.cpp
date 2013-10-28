@@ -30,6 +30,16 @@
 
 using namespace std;
 
+
+class BDIJointOrder { 
+public:
+  BDIJointOrder() {}
+  BDIJointOrder(int index, std::string name):
+    index(index), name(name){};
+  int index;
+  string name;
+};
+
 class App{
 public:
   App(ros::NodeHandle node_, bool send_ground_truth_);
@@ -40,7 +50,7 @@ private:
   lcm::LCM lcm_publish_ ;
   ros::NodeHandle node_;
   
-	std::map<std::string,std::string> jointNameMap;
+	std::map<std::string,BDIJointOrder> jointNameMap;
 
   bool received_head_joint_states_;
   bool received_l_hand_joint_states_;
@@ -61,9 +71,6 @@ private:
   void l_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg);  
   void r_hand_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg); 
   void head_joint_states_cb(const sensor_msgs::JointStateConstPtr& msg); 
-  void appendJointStates(drc::robot_state_t& msg_out, sensor_msgs::JointState msg_in, bool wrap_safe); 
-  // VRC version:
-  void appendLimbSensor_VRC(drc::robot_state_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in);
   // Newer version for DRC: (july 2013):
   void appendLimbSensor(drc::force_torque_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in);
   
@@ -163,9 +170,11 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
   rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 100, &App::rotating_scan_cb,this);
 
 	// maps joint names from sim/VRC format to BDI format
+/*
 	jointNameMap["back_ubx"] = "back_bkx";
 	jointNameMap["back_mby"] = "back_bky";
 	jointNameMap["back_lbz"] = "back_bkz";
+        jointNameMap["neck_ay"] = "neck_ay";        
 	jointNameMap["l_leg_lax"] = "l_leg_akx";
 	jointNameMap["l_leg_uay"] = "l_leg_aky";
 	jointNameMap["l_leg_kny"] = "l_leg_kny";
@@ -190,6 +199,38 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
 	jointNameMap["r_arm_ely"] = "r_arm_ely";
 	jointNameMap["r_arm_shx"] = "r_arm_shx";
 	jointNameMap["r_arm_usy"] = "r_arm_usy";
+        */
+        
+  // Mapping between OSRF joints and BDI's { index and joint_names }:
+  jointNameMap["back_ubx"] = { 2, "back_bkx"};
+  jointNameMap["back_mby"] = { 1, "back_bky"};
+  jointNameMap["back_lbz"] = { 0, "back_bkz"};
+  jointNameMap["neck_ay"] = { 3, "neck_ay"};
+  jointNameMap["l_leg_lax"] = { 9, "l_leg_akx"};
+  jointNameMap["l_leg_uay"] = { 8, "l_leg_aky"};
+  jointNameMap["l_leg_kny"] = { 7, "l_leg_kny"};
+  jointNameMap["l_leg_mhx"] = { 5, "l_leg_hpx"};
+  jointNameMap["l_leg_lhy"] = { 6, "l_leg_hpy"};
+  jointNameMap["l_leg_uhz"] = { 4, "l_leg_hpz"};
+  jointNameMap["r_leg_lax"] = { 15, "r_leg_akx"};
+  jointNameMap["r_leg_uay"] = { 14, "r_leg_aky"};
+  jointNameMap["r_leg_kny"] = { 13, "r_leg_kny"};
+  jointNameMap["r_leg_mhx"] = { 11, "r_leg_hpx"};
+  jointNameMap["r_leg_lhy"] = { 12, "r_leg_hpy"};
+  jointNameMap["r_leg_uhz"] = { 10, "r_leg_hpz"};
+  jointNameMap["l_arm_mwx"] = { 21, "l_arm_mwx"};
+  jointNameMap["l_arm_uwy"] = { 20, "l_arm_uwy"};
+  jointNameMap["l_arm_elx"] = { 19, "l_arm_elx"};
+  jointNameMap["l_arm_ely"] = { 18, "l_arm_ely"};
+  jointNameMap["l_arm_shx"] = { 17, "l_arm_shx"};
+  jointNameMap["l_arm_usy"] = { 16, "l_arm_usy"};
+  jointNameMap["r_arm_mwx"] = { 27, "r_arm_mwx"};
+  jointNameMap["r_arm_uwy"] = { 26, "r_arm_uwy"};
+  jointNameMap["r_arm_elx"] = { 25, "r_arm_elx"};
+  jointNameMap["r_arm_ely"] = { 24, "r_arm_ely"};
+  jointNameMap["r_arm_shx"] = { 23, "r_arm_shx"};
+  jointNameMap["r_arm_usy"] = { 22, "r_arm_usy"};        
+
   
 };
 
@@ -380,14 +421,21 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   
   drc::atlas_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec  
+  
+  
+  msg_out.joint_position.assign(msg->name.size() , std::numeric_limits<int>::min()  );
+  msg_out.joint_velocity.assign(msg->name.size() , std::numeric_limits<int>::min()  );
+  msg_out.joint_effort.assign(msg->name.size() , std::numeric_limits<int>::min()  );
   for (std::vector<int>::size_type i = 0; i < msg->name.size(); i++)  {
-		if (jointNameMap.find(msg->name[i]) != jointNameMap.end())  	
-			msg_out.joint_name.push_back(jointNameMap[msg->name[i]]);          
-  	else
-			msg_out.joint_name.push_back(msg->name[i]);          
-    msg_out.joint_position.push_back(msg->position[i]);      
-    msg_out.joint_velocity.push_back(msg->velocity[i]);
-    msg_out.joint_effort.push_back( msg->effort[i] );
+    if (jointNameMap.find(msg->name[i]) != jointNameMap.end()){
+      // if the OSRF joint name is in the map then take the index and use it for the out going joints
+      int index= jointNameMap[msg->name[i]].index;
+      msg_out.joint_position [ index ] = msg->position[i];
+      msg_out.joint_velocity [ index ] = msg->velocity[i];
+      msg_out.joint_effort [ index ] = msg->effort[i];      
+    }else{
+      ROS_ERROR("OSRF-BDI Joint Matching Failed: Could not find %s", msg->name[i].c_str() );
+    }
   }  
   msg_out.num_joints = msg->name.size();
   
@@ -412,27 +460,6 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
   
 }
 
-void App::appendJointStates(drc::robot_state_t& msg_out , sensor_msgs::JointState msg_in,bool wrap_safe){
-  for (std::vector<int>::size_type i = 0; i < msg_in.name.size(); i++)  {
-		if (jointNameMap.find(msg_in.name[i]) != jointNameMap.end())  	
-			msg_out.joint_name.push_back(jointNameMap[msg_in.name[i]]);          
-  	else
-			msg_out.joint_name.push_back(msg_in.name[i]);          
-    if (wrap_safe){ // this should only happend for the head angle
-      double angle = msg_in.position[i];
-      double angle_fixed =  angle -   floor( angle/ (2*M_PI) ) *(2*M_PI);
-      if (angle_fixed > M_PI)
-        angle_fixed = angle_fixed -2*M_PI;
-      
-      // std::cout << angle << " with " << angle_fixed << "\n";
-      msg_out.joint_position.push_back(angle_fixed);
-    }else{
-      msg_out.joint_position.push_back(msg_in.position[i]);      
-    }
-    msg_out.joint_velocity.push_back(msg_in.velocity[i]);
-    msg_out.joint_effort.push_back( msg_in.effort[i] );
-  }
-}
 
 void App::appendLimbSensor(drc::force_torque_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in){
 
@@ -463,96 +490,6 @@ void App::appendLimbSensor(drc::force_torque_t& msg_out , atlas_msgs::ForceTorqu
 }
 
 
-
-/*
-void App::appendLimbSensor_VRC(drc::robot_state_t& msg_out , atlas_msgs::ForceTorqueSensors msg_in){
-  {
-    drc::vector_3d_t l_foot_force;
-    l_foot_force.x = msg_in.l_foot.force.x; l_foot_force.y = msg_in.l_foot.force.y; l_foot_force.z = msg_in.l_foot.force.z;
-    drc::vector_3d_t l_foot_torque;
-    l_foot_torque.x = msg_in.l_foot.torque.x; l_foot_torque.y = msg_in.l_foot.torque.y; l_foot_torque.z = msg_in.l_foot.torque.z;
-    msg_out.contacts.id.push_back("l_foot");
-    msg_out.contacts.contact_force.push_back(l_foot_force);
-    msg_out.contacts.contact_torque.push_back(l_foot_torque);  
-  }
-  
-  {
-    drc::vector_3d_t r_foot_force;
-    r_foot_force.x = msg_in.r_foot.force.x; r_foot_force.y = msg_in.r_foot.force.y; r_foot_force.z = msg_in.r_foot.force.z;
-    drc::vector_3d_t r_foot_torque;
-    r_foot_torque.x = msg_in.r_foot.torque.x; r_foot_torque.y = msg_in.r_foot.torque.y; r_foot_torque.z = msg_in.r_foot.torque.z;
-    msg_out.contacts.id.push_back("r_foot");
-    msg_out.contacts.contact_force.push_back(r_foot_force);
-    msg_out.contacts.contact_torque.push_back(r_foot_torque);  
-  }
-  
-  {
-    drc::vector_3d_t l_hand_force;
-    l_hand_force.x = msg_in.l_hand.force.x; l_hand_force.y = msg_in.l_hand.force.y; l_hand_force.z = msg_in.l_hand.force.z;
-    drc::vector_3d_t l_hand_torque;
-    l_hand_torque.x = msg_in.l_hand.torque.x; l_hand_torque.y = msg_in.l_hand.torque.y; l_hand_torque.z = msg_in.l_hand.torque.z;
-    msg_out.contacts.id.push_back("l_hand");
-    msg_out.contacts.contact_force.push_back(l_hand_force);
-    msg_out.contacts.contact_torque.push_back(l_hand_torque);  
-  }
-    
-  {
-    drc::vector_3d_t r_hand_force;
-    r_hand_force.x = msg_in.r_hand.force.x; r_hand_force.y = msg_in.r_hand.force.y; r_hand_force.z = msg_in.r_hand.force.z;
-    drc::vector_3d_t r_hand_torque;
-    r_hand_torque.x = msg_in.r_hand.torque.x; r_hand_torque.y = msg_in.r_hand.torque.y; r_hand_torque.z = msg_in.r_hand.torque.z;
-    msg_out.contacts.id.push_back("r_hand");
-    msg_out.contacts.contact_force.push_back(r_hand_force);
-    msg_out.contacts.contact_torque.push_back(r_hand_torque);  
-  }      
-}
-
-
-void App::publishRobotState(int64_t utime_in){
-  // If haven't got a ground_truth_odom_ or joint states, exit:
-  if(!init_recd_[0])
-    return;
-  if(!init_recd_[1])
-    return;
-  
-  drc::robot_state_t robot_state_msg;
-  robot_state_msg.utime = utime_in;
-  
-  // Pelvis Pose:
-  robot_state_msg.pose.translation.x = ground_truth_odom_.pose.pose.position.x;
-  robot_state_msg.pose.translation.y = ground_truth_odom_.pose.pose.position.y;
-  robot_state_msg.pose.translation.z = ground_truth_odom_.pose.pose.position.z;
-  robot_state_msg.pose.rotation.w = ground_truth_odom_.pose.pose.orientation.w;
-  robot_state_msg.pose.rotation.x = ground_truth_odom_.pose.pose.orientation.x;
-  robot_state_msg.pose.rotation.y = ground_truth_odom_.pose.pose.orientation.y;
-  robot_state_msg.pose.rotation.z = ground_truth_odom_.pose.pose.orientation.z;
-
-  robot_state_msg.twist.linear_velocity.x =ground_truth_odom_.twist.twist.linear.x;
-  robot_state_msg.twist.linear_velocity.y =ground_truth_odom_.twist.twist.linear.y;
-  robot_state_msg.twist.linear_velocity.z =ground_truth_odom_.twist.twist.linear.z;
-  robot_state_msg.twist.angular_velocity.x =ground_truth_odom_.twist.twist.angular.x;
-  robot_state_msg.twist.angular_velocity.y =ground_truth_odom_.twist.twist.angular.y;
-  robot_state_msg.twist.angular_velocity.z =ground_truth_odom_.twist.twist.angular.z;
-
-  // Joint States:
-  appendJointStates(robot_state_msg, robot_joint_states_,false);
-  appendJointStates(robot_state_msg, head_joint_states_,true);
-  appendJointStates(robot_state_msg, l_hand_joint_states_,false);
-  appendJointStates(robot_state_msg, r_hand_joint_states_,false);
-  robot_state_msg.num_joints = robot_state_msg.joint_name.size();
-  
-  // Limb Sensor states
-  //appendLimbSensor_VRC(robot_state_msg, end_effector_sensors_);
-  //robot_state_msg.contacts.num_contacts = robot_state_msg.contacts.contact_torque.size();
-    
-  // ensure that all the data has been received -- this is to force the number of joints in the TRUE_ROBOT_STATE message to be consistent at startup
-  if (received_robot_joint_states_ && received_head_joint_states_ && received_l_hand_joint_states_ && received_r_hand_joint_states_) {
-    lcm_publish_.publish("TRUE_ROBOT_STATE", &robot_state_msg);    
-  } else {
-    std::cerr << "Publish of TRUE_ROBOT_STATE suppressed, because all ROS messages have not yet been received: " << received_robot_joint_states_ << received_head_joint_states_ << received_l_hand_joint_states_ << received_r_hand_joint_states_ << std::endl;
-  }
-}
-*/
 
 int main(int argc, char **argv){
   bool control_output = true;// by default
