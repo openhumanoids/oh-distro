@@ -202,15 +202,18 @@ group "m.control" {
 
 group "m.state_est" {
     cmd "StateEstimate" {
-        exec = "state-estimate";
+        exec = "state-estimate -x -M";
         host = "robot";
     }
+}
+
+group "m.trajectory_simulator" {
     cmd "DataFusion_MATLAB" {
         exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; receiveimu;\"";
-        host = "robot";
+        host = "extra";
     }
     cmd "MotionSimulator_MATLAB" {
-        exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; publish_IMU_data;\"";
+        exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; simulateStateEstimateProcess; exit\"";
         host = "extra";
     }
 }
