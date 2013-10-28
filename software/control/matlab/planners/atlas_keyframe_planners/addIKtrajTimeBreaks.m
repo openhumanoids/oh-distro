@@ -17,5 +17,12 @@ function t_breaks = addIKtrajTimeBreaks(iktraj_tbreaks,constraint_cell)
     tspan = tspan(tspan<=tmax & tspan >=tmin);
     t_breaks = [t_breaks tspan];
   end
-  t_breaks = unique(t_breaks);
+  t_breaks_tmp = sort(t_breaks);
+  t_breaks  = t_breaks_tmp(1);
+  for i = 2:length(t_breaks_tmp)
+    if(t_breaks_tmp(i)-t_breaks_tmp(i-1)>1e-3)
+      t_breaks = [t_breaks t_breaks_tmp(i)];
+    end
+  end
+  
 end

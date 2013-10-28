@@ -621,8 +621,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
            
             
             
-            %iktraj_tbreaks = linspace(0,1,obj.plan_cache.num_breaks);
-            iktraj_tbreaks = [0 1];
+            iktraj_tbreaks = linspace(0,1,obj.plan_cache.num_breaks);
+%             iktraj_tbreaks = [0 1];
             iktraj_tbreaks = addIKtrajTimeBreaks(iktraj_tbreaks,lhand_constraint_cell);
             iktraj_tbreaks = addIKtrajTimeBreaks(iktraj_tbreaks,rhand_constraint_cell);
             iktraj_tbreaks = addIKtrajTimeBreaks(iktraj_tbreaks,lfoot_constraint_cell);
@@ -662,7 +662,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setShrinkFactor(0.85);
                 
 
-                [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,obj.collision_check,...
+                iktraj_t_verify = linspace(iktraj_tbreaks(1),iktraj_tbreaks(end),20);
+                [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,obj.collision_check,iktraj_t_verify,...
                     iktraj_tbreaks,q_seed_traj,q_nom_traj,...
                     lhand_constraint_cell{:},rhand_constraint_cell{:},...
                     lfoot_constraint_cell{:},rfoot_constraint_cell{:},...
