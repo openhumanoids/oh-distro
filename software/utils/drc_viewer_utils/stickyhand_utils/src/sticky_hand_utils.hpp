@@ -418,6 +418,7 @@ namespace visualization_utils
     _names.push_back("ZeroThumb");
     _names.push_back("FlipPinky");
     _names.push_back("ZeroThumbBase");
+    _names.push_back("Cyl-NoThumb");
   };  
   
   inline static void set_eigen_grasp(StickyHandStruc &hand_struc,int eig_grasp_type)
@@ -456,13 +457,13 @@ namespace visualization_utils
           else
           {
             name = side+"finger[0]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[0]/joint_base"; set_joint_position(hand_struc,name, 2.5);   
+            name = side+"finger[0]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
             name = side+"finger[0]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
             name = side+"finger[1]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[1]/joint_base"; set_joint_position(hand_struc,name, 2.5);   
+            name = side+"finger[1]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
             name = side+"finger[1]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
             name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 2.5);   
+            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
             name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.5);                                  
           }
       }
@@ -568,7 +569,33 @@ namespace visualization_utils
             name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 0.0);   
           }  
       }
-
+      else if(eig_grasp_type == 6)
+      {
+          if(is_sandia)
+          {
+            name = side+"f0_j0"; set_joint_position(hand_struc,name, 0);
+            name = side+"f0_j1"; set_joint_position(hand_struc,name, 1.5);   
+            name = side+"f0_j2"; set_joint_position(hand_struc,name, 1.7);
+            name = side+"f1_j0"; set_joint_position(hand_struc,name, 0);
+            name = side+"f1_j1"; set_joint_position(hand_struc,name, 1.5);   
+            name = side+"f1_j2"; set_joint_position(hand_struc,name, 1.7); 
+            name = side+"f2_j0"; set_joint_position(hand_struc,name, 0);
+            name = side+"f2_j1"; set_joint_position(hand_struc,name, 1.5);   
+            name = side+"f2_j2"; set_joint_position(hand_struc,name, 1.7);   
+          }
+          else
+          {
+            name = side+"finger[0]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
+            name = side+"finger[0]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
+            name = side+"finger[0]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
+            name = side+"finger[1]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
+            name = side+"finger[1]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
+            name = side+"finger[1]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
+            name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
+            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 0.0);   
+            name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.0);   
+          }  
+      }
      drc::joint_angles_t posture_msg;
      posture_msg.num_joints= hand_struc.joint_name.size();
      posture_msg.joint_name = hand_struc.joint_name;
