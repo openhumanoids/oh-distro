@@ -360,8 +360,8 @@ struct ViewWorker {
           const double kPi = acos(-1);
           switch (spec.mTimeMode) {
           case ViewBase::TimeModeRelative:
-            bounds.mTimeMin += curTime;
-            bounds.mTimeMax += curTime;
+            bounds.mTimeMin = spec.mTimeMin+curTime;
+            bounds.mTimeMax = spec.mTimeMax+curTime;
             break;
           case ViewBase::TimeModeRollAngle:
             mCollector->getLatestSwath(spec.mTimeMin*kPi/180,
