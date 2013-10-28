@@ -2,10 +2,10 @@
 clc
 clear
 
-iterations = 1000;
+iterations = 5000;
 
 % Run the full test
-RESULTS = MotionSimulator(iterations,'rotate');
+RESULTS = MotionSimulator(iterations,'atlas');
 
 
 %% Plot Results
@@ -15,3 +15,5 @@ motionSimulatorPlotTrajComponents(2,RESULTS.traj.true,RESULTS.trueINSPose,RESULT
 
 
 return
+
+

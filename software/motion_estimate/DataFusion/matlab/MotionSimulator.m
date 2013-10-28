@@ -91,7 +91,7 @@ data.true.pose.f_l = RESULTS.traj.true.f_l;
 % Assume constant gravity for the test
 true.inertial.gravity = [0;0;RESULTS.traj.parameters.gravity];% using forward-left-up/xyz body frame
 
-
+receivedMsgs = 0;
 
 disp('Starting the motion simulation loop')
 for n = 1:iterations
@@ -131,6 +131,7 @@ for n = 1:iterations
     
     % data{n}.INS.pose = receivepose(aggregator);
     if (sentIMUBatch)
+        receivedMsgs =  receivedMsgs + 1;
         [cppINS, dummy] = receiveInertialStatePos(aggregator);
         cppINS.pose.E = q2e(cppINS.pose.q);
         storeCppINS = cppINS;
@@ -173,7 +174,7 @@ for n = 1:iterations
 end
 
 disp('Out of loop')
-
+receivedMsgs
 
 % We exit early because we are not ready to plot the result yet
 % return

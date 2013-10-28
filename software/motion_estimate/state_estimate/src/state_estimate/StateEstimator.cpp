@@ -150,6 +150,8 @@ void StateEstimate::StateEstimator::run()
     {
       this->mIMUQueue.dequeue(imu);
 
+      std::cout << "StateEstimator::run -- dequeued IMU utime " << imu.utime << std::endl;
+
       // do something with new imu...
       // The inertial odometry object is currently passed down to the handler function, where the INS is propagated and the 12 states are inserted inthe ERS message
       double dt;
@@ -164,7 +166,7 @@ void StateEstimate::StateEstimator::run()
       //      std::cout << "StateEstimator::run -- nIMU = " << nIMU << std::endl;
       if (i==(nIMU-1)) { 
 	      //publish ERS message
-    	  std::cout << "Going to publish ERS" << std::endl;
+    	  std::cout << std::endl << std::endl << "Going to publish ERS" << std::endl;
     	  mERSMsg.utime = imu.utime;
 	      mLCM->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg); // There is some silly problem here
 

@@ -11,7 +11,7 @@ namespace StateEstimate
 class IMUBatchProcessor
 {
 private:
-	unsigned long last_utime;
+	unsigned long long last_utime;
 	
 public:
 
@@ -27,13 +27,17 @@ public:
 
 	//std::cout << "handleIMUBatchMessage -- is happening " << (msg->raw_imu[0].utime > last_utime) << std::endl;
 	  
-    // for now, just copy the first 3 packets...
-    // for (int i = 0; i < 3; ++i)
-	for (int i = 0; msg->raw_imu[i].utime > last_utime; i++) 
+
+	// First we need to find how far back we need to go in the imu message batch
+	int i;
+	//for (i = 0; msg->raw_imu[i].utime >= last_utime; i++) {;}
+	for (i = msg->num_packets-1; i>=0; i--)
     {
-	  std::cout << "handleIMUBatchMessage -- new IMU message at utime " << msg->raw_imu[i].utime << std::endl;
-      last_utime = msg->raw_imu[i].utime;
-      imuPackets.push_back(msg->raw_imu[i]);
+	  if (msg->raw_imu[i].utime > last_utime) {
+		  std::cout << "handleIMUBatchMessage -- new IMU message at utime " << msg->raw_imu[i].utime << std::endl;
+		  last_utime = msg->raw_imu[i].utime;
+		  imuPackets.push_back(msg->raw_imu[i]);
+	  }
     }
   }
 

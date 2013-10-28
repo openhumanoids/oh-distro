@@ -60,10 +60,10 @@ namespace InertialOdometry {
 		q_state = tempq;
 		latest_uts = uts;
 
-		std::cout << "OrientationComputer::updateOrientation -- q " << "after" << tempq.w() << ", " << tempq.z() << ", R is " << std::endl << R << std::endl;
+		std::cout << "OrientationComputer::updateOrientation -- q " << "after" << tempq.w() << ", "  << tempq.x() << ", " << tempq.y() << ", "  << tempq.z() << ", R is " << std::endl << R << std::endl;
 
 		// std::cout << "OrientationComputer::updateOrientation -- updating orientation estimate with rates: " << w_b.transpose() << std::endl;
-		std::cout << "OrientationComputer::updateOrientation -- quaternion now is " << C2q(R).w() << ", " << C2q(R).x() << ", " << C2q(R).y() << ", " << C2q(R).z() << std::endl;
+		//std::cout << "OrientationComputer::updateOrientation -- quaternion now is " << C2q(R).w() << ", " << C2q(R).x() << ", " << C2q(R).y() << ", " << C2q(R).z() << std::endl;
 	}
 
 	// This member function implements a trapezoidal integration for converting rotation rates into delta angles
@@ -72,7 +72,10 @@ namespace InertialOdometry {
 		double dt;
 		dt = 1.E-6*((double)(uts - latest_uts));
 
-		updateOrientationWithAngle(uts, 0.5*dt*(w_b + prevWb)); // We use trapeoidal integration to obtain a delta angle
+		Eigen::Vector3d temp;
+		temp = 0.5*dt*(w_b + prevWb);
+
+		updateOrientationWithAngle(uts, temp); // We use trapeoidal integration to obtain a delta angle
 
 		std::cout << "OrientationComputer::updateOrientationWithRate -- dt " << dt << std::endl;
 
@@ -108,6 +111,7 @@ namespace InertialOdometry {
 		//		std::cout << "OrientationComputer::exmap -- R" << std::endl << R << std::endl;
 
 		Gam = vec2skew(w_k0);
+		std::cout << "OrientationComputer::exmap -- Gam " << std::endl << Gam << std::endl;
 		double wNorm;
 		wNorm = w_k0.norm();
 

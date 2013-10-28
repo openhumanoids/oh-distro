@@ -44,6 +44,7 @@ protected:
 
     for (size_t i = 0; i < imuPackets.size(); ++i)
     {
+      std::cout << "IMUMessageProducer::messageHandler -- enqueue" << std::endl;
       mQueue.enqueue(imuPackets[i]);
     }
 
