@@ -293,7 +293,7 @@ void StickyfootCollectionManager:: get_motion_history_bnds_of_seeds(string objec
   for(sticky_feet_map_type_::const_iterator foot_it = _feet.begin(); foot_it!=_feet.end(); foot_it++)
   {
     string host_name = foot_it->second.object_name;
-    if (host_name == (object_name))
+    if ((host_name == (object_name))&&(!foot_it->second.is_static))
     {
       int num_frames =  foot_it->second._gl_foot->_desired_body_motion_history.size();
       max_motion_history_size = std::max(max_motion_history_size,num_frames);
@@ -315,7 +315,7 @@ void StickyfootCollectionManager::get_motion_constraints(string object_name, Otd
   for(sticky_feet_map_type_::const_iterator foot_it = _feet.begin(); foot_it!=_feet.end(); foot_it++)
   {
       string host_name = foot_it->second.object_name;
-      if (host_name == (object_name))
+      if ((host_name == (object_name))&&(!foot_it->second.is_static))
       {
 
           string ee_name;

@@ -36,6 +36,7 @@ namespace visualization_utils
       {
        motion_trail_log_enabled = true;
        is_melded= false;
+       is_static=true; // wont log motion
       };
       
        ~StickyFootStruc()
@@ -55,6 +56,7 @@ namespace visualization_utils
       std::vector<double> optimized_joint_position; // store as backup when melded. Retains the ability to unmeld.
       int uid;
       bool motion_trail_log_enabled;
+      bool is_static;
      // int opt_status;
   }; 
 
