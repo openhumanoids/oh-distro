@@ -113,6 +113,8 @@ classdef ReachingPlanner < KeyframePlanner
             kinsol_meas = doKinematics(obj.r,qcur);
             % get measured ee positions
             
+            
+            
             if(mode==drc.plan_adjust_mode_t.LEFT_HAND)
                 lh_meas = forwardKin(obj.r,kinsol_meas,obj.l_hand_body,[0;0;0],1);
                 lh_ee_goal=pose_shift(lh_des,lh_cmd,lh_meas,true);
@@ -221,6 +223,20 @@ classdef ReachingPlanner < KeyframePlanner
             
             q0 = x0(1:getNumDOF(obj.r));
             T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
+            
+            if(obj.isBDIManipMode())
+              % Add the joint constraints on the lower bodies in the BDI manip mode, to guarantee
+              % that lower joints are fixed
+              coords = obj.r.getStateFrame.coordinates();
+              coords = coords(1:obj.r.getNumDOF());
+              joint_idx = (1:obj.r.getNumDOF())';
+              lower_fixed_joint_idx = joint_idx(cellfun(@(s) ~isempty(strfind(s,'leg')) | ~isempty(strfind(s,'base')),coords));
+              lower_fixed_posture_constraint = PostureConstraint(obj.r);
+              lower_fixed_posture_constraint = lower_fixed_posture_constraint.setJointLimits(lower_fixed_joint_idx,...
+                q0(lower_fixed_joint_idx),q0(lower_fixed_joint_idx));
+            else
+              lower_fixed_posture_constraint = PostureConstraint(obj.r);
+            end
             
             % get foot positions
             kinsol = doKinematics(obj.r,q0);
@@ -571,7 +587,7 @@ classdef ReachingPlanner < KeyframePlanner
                     end
                 else
                     [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
-                        pelvis_constraint{:},...
+                        lower_fixed_posture_constraint,...
                         rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                         rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
                         obj.joint_constraint,ikoptions);
@@ -599,7 +615,7 @@ classdef ReachingPlanner < KeyframePlanner
             collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
             iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
             if(obj.planning_mode == 1)
-                % PERFORM IKSEQUENCE OPT
+                % PERFORM inverseKinTraj OPT
                 iktraj_options = IKoptions(obj.r);
                 iktraj_options = iktraj_options.setDebug(true);
                 iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
@@ -621,6 +637,7 @@ classdef ReachingPlanner < KeyframePlanner
                     iktraj_rhand_constraint{:},iktraj_lhand_constraint{:},...
                     iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
                     iktraj_pelvis_constraint{:},obj.joint_constraint,qsc,...
+                    lower_fixed_posture_constraint,...
                     collision_constraint,...
                     iktraj_options);
                 if(snopt_info > 10)
