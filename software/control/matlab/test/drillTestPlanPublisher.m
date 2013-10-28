@@ -1,5 +1,12 @@
 classdef drillTestPlanPublisher
   %NOTEST
+  % A testing class for generating and publishing (by LCM) plans
+  % to attempt the drill
+  % General sequence:
+  %   -Costruct a drillTestPlanPublisher
+  %   -createInitialReachPlan (reach to pre-drill pose)
+  %   -createDrillingPlan (drill in)
+  %   -createCircleCutPlan (cut a circle)
   properties
     r
     atlas
@@ -18,11 +25,21 @@ classdef drillTestPlanPublisher
   end
   
   methods
-    function obj = drillTestPlanPublisher(drill_pt_on_hand, drill_axis_on_hand, drilling_world_axis)
+    function obj = drillTestPlanPublisher(drill_pt_on_hand, drill_axis_on_hand, drilling_world_axis, doVisualization, doPublish)
       obj.atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
       obj.r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
       if obj.doVisualization
         obj.v = obj.r.constructVisualizer;
+      end
+      if nargin < 4
+        obj.doVisualizaiton = true; % default
+      else
+        obj.doVisualization = doVisualization;
+      end
+      if nargin < 5
+        obj.doPublish = false; % default
+      else
+        obj.doPublish = doPublish;
       end
       joint_names = obj.atlas.getStateFrame.coordinates(1:getNumDOF(obj.atlas));
       joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
