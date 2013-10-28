@@ -70,7 +70,7 @@ struct CameraConfig{
   float gain_;
   
   CameraConfig () {
-        fps_ = 10;
+        fps_ = 5;
         spindle_rpm_ = 0;
         do_jpeg_compress_ = true;
         do_zlib_compress_ = true;
