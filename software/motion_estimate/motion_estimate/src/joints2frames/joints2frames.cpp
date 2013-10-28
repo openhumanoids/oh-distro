@@ -34,8 +34,10 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
   pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );
   lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
 
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(6003,"BDI Feet",5,1) );
-  lcm_->subscribe("ATLAS_FOOT_POS_EST",&joints2frames::foot_pos_est_handler,this);  
+  // Draw the Foot positions, as understood by BDI (Disabled)
+  // these points are just below the footpad, in the middle of the foot 
+  //pc_vis_->obj_cfg_list.push_back( obj_cfg(6003,"BDI Feet",5,1) );
+  //lcm_->subscribe("ATLAS_FOOT_POS_EST",&joints2frames::foot_pos_est_handler,this);  
   
   last_ground_publish_utime_ =0;
 }

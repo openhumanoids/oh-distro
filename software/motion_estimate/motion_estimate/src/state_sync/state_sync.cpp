@@ -52,6 +52,8 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114;
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290;
 
+  encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 1.6;
+
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
   max_encoder_wrap_angle_.assign(28,100000000);
   // max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_ELY] = 3;
@@ -64,7 +66,8 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
   use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
   use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
- 
+
+  use_encoder_[Atlas::JOINT_NECK_AY] = false;
 }
 
 
