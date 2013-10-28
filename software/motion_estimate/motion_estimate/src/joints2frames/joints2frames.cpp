@@ -170,13 +170,17 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     Eigen::Isometry3d world_to_r_sole = world_to_body * body_to_r_foot * foot_to_sole;
 
     // Publish lower of the soles at the ground occasionally
-    if (msg->utime - last_ground_publish_utime_  > 5E5){ // every 0.5sec
+    if (msg->utime - last_ground_publish_utime_  > 1E5){ // every 0.1sec
       last_ground_publish_utime_ =msg->utime;
+      publishPose(world_to_l_sole, msg->utime,"POSE_LEFT_FOOT");
+      publishPose(world_to_r_sole, msg->utime,"POSE_RIGHT_FOOT");
       if ( world_to_l_sole.translation().z() < world_to_r_sole.translation().z() ){
         publishPose(world_to_l_sole, msg->utime,"POSE_GROUND");
       }else{
         publishPose(world_to_r_sole, msg->utime,"POSE_GROUND");
       }
+
+
     }
   }
   
