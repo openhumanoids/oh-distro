@@ -49,33 +49,35 @@ void FillMethods::
 onCommand(const lcm::ReceiveBuffer* iBuf,
           const std::string& iChannel,
           const drc::map_controller_command_t* iMessage) {
-  mMapMode = iMessage->command;
-  drc::system_status_t msg;
-  msg.utime = 0;
-  msg.system = drc::system_status_t::CONTROL;
-  msg.importance = drc::system_status_t::VERY_IMPORTANT;
-  msg.frequency = drc::system_status_t::LOW_FREQUENCY;
+  if (mMapMode != iMessage->command) {
+    drc::system_status_t msg;
+    msg.utime = 0;
+    msg.system = drc::system_status_t::CONTROL;
+    msg.importance = drc::system_status_t::VERY_IMPORTANT;
+    msg.frequency = drc::system_status_t::LOW_FREQUENCY;
 
-  switch (mMapMode) {
-  case drc::map_controller_command_t::FULL_HEIGHTMAP:
-    fprintf(stderr,"maps: switched to using full heightmap\n");
-    msg.value = "controller: switched to using full heightmap";
-    break;
-  case drc::map_controller_command_t::FLAT_GROUND:
-    fprintf(stderr,"maps: switched to using flat ground\n");
-    msg.value = "controller: switched to using flat ground";
-    break;
-  case drc::map_controller_command_t::Z_NORMALS:
-    fprintf(stderr,"maps: switched to using full heights and z normals\n");
-    msg.value = "controller: switched to using full heights and z normals";
-    break;
-  default:
-    fprintf(stderr,"maps: warning: received invalid heightmap mode\n");
-    msg.value = "controller: received invalid heightmap mode";
-    break;
+    switch (iMessage->command) {
+    case drc::map_controller_command_t::FULL_HEIGHTMAP:
+      fprintf(stderr,"maps: switched to using full heightmap\n");
+      msg.value = "controller: switched to using full heightmap";
+      break;
+    case drc::map_controller_command_t::FLAT_GROUND:
+      fprintf(stderr,"maps: switched to using flat ground\n");
+      msg.value = "controller: switched to using flat ground";
+      break;
+    case drc::map_controller_command_t::Z_NORMALS:
+      fprintf(stderr,"maps: switched to using full heights and z normals\n");
+      msg.value = "controller: switched to using full heights and z normals";
+      break;
+    default:
+      fprintf(stderr,"maps: warning: received invalid heightmap mode\n");
+      msg.value = "controller: received invalid heightmap mode";
+      break;
+    }
+
+    mBotWrapper->getLcm()->publish("SYSTEM_STATUS", &msg);
   }
-
-  mBotWrapper->getLcm()->publish("SYSTEM_STATUS", &msg);
+  mMapMode = iMessage->command;
 }
 
 int FillMethods::
