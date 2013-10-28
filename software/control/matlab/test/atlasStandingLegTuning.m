@@ -166,7 +166,7 @@ v = r.constructVisualizer;
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
-    kc_com = constructPtrWorldCoMConstraintmex(r.getMexModelPtr,1,comtraj.eval(t),comtraj.eval(t));
+    kc_com = constructPtrWorldCoMConstraintmex(r.getMexModelPtr,comtraj.eval(t),comtraj.eval(t));
     rfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,rfoot_body,[0;0;0],rfoot0,rfoot0),...
       constructPtrWorldEulerConstraintmex(r.getMexModelPtr,rfoot_body,[0;0;0],[0;0;0])};
     lfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,lfoot_body,[0;0;0],lfoot0,lfoot0),...

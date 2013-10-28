@@ -243,7 +243,7 @@ classdef EndPosePlanner < KeyframePlanner
           iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));
           iktraj_options = iktraj_options.setFixInitialState(false);
           
-          qsc = QuasiStaticConstraint(obj.r,1);
+          qsc = QuasiStaticConstraint(obj.r);
           qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);  
           qsc = qsc.setActive(true);
           qsc = qsc.setShrinkFactor(0.1); % search for a conservative pose
@@ -452,7 +452,7 @@ classdef EndPosePlanner < KeyframePlanner
             ikoptions = ikoptions.setDebug(true);
             %ik_qnom = q0;
             ikoptions = ikoptions.setMajorIterationsLimit(1000);
-            qsc = QuasiStaticConstraint(obj.r,1);
+            qsc = QuasiStaticConstraint(obj.r);
             qsc = qsc.setActive(true);
             qsc = qsc.setShrinkFactor(0.3);
             qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);        

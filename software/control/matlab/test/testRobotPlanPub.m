@@ -69,7 +69,7 @@ ts = 0:0.1:T;
 rhand_traj = PPTrajectory(spline([0 T],[rhand_pos rhand_goal]));
 lhand_traj = PPTrajectory(spline([0 T],[lhand_pos lhand_goal]));
 
-kc_com = WorldCoMConstraint(r,1,[com(1:2);nan],[com(1:2);nan]);
+kc_com = WorldCoMConstraint(r,[com(1:2);nan],[com(1:2);nan]);
 kc_rfoot1 = WorldPositionConstraint(r,rfoot_body,[0;0;0],rfoot_pos(1:3),rfoot_pos(1:3));
 kc_rfoot2 = WorldQuatConstraint(r,rfoot_body,rpy2quat(rfoot_pos(4:end)),0);
 kc_lfoot1 = WorldPositionConstraint(r,lfoot_body,[0;0;0],lfoot_pos(1:3),lfoot_pos(1:3));

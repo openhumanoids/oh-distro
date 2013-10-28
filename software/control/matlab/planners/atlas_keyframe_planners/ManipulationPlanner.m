@@ -129,7 +129,7 @@ classdef ManipulationPlanner < KeyframePlanner
         ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
         ik_qnom = q0;
         ikoptions = ikoptions.setMajorIterationsLimit(100);
-        qsc = QuasiStaticConstraint(obj.r,1);
+        qsc = QuasiStaticConstraint(obj.r);
         qsc = qsc.setShrinkFactor(0.8);
 
 

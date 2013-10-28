@@ -374,7 +374,7 @@ classdef ReachingPlanner < KeyframePlanner
             ikoptions = IKoptions(obj.r);
             ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
             ik_qnom = q0;
-            qsc = QuasiStaticConstraint(obj.r,1);
+            qsc = QuasiStaticConstraint(obj.r);
             qsc = qsc.setActive(true);
             qsc = qsc.setShrinkFactor(0.85);
             ikoptions = ikoptions.setMajorIterationsLimit(500);
