@@ -23,6 +23,10 @@ class ModelClient
     std::string getURDFString(){ return urdf_xml_string_; }
 //    boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> getSolver(){ return fksolver_; }
 
+    std::vector<std::string> getJointNames(){
+      return joint_names_;
+    };
+
   private:
     lcm_t* lcm_;
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
