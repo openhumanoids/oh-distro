@@ -24,3 +24,4 @@ DONE:
 * improve documentation
 * email: angle control
 * write makefile
+* measure motor coil resistances for 49
