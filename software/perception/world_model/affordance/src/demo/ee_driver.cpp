@@ -290,7 +290,7 @@ bool App::on_input(){
 
   int c = getch();
     
-  double delta_trans[]={0.03,0.03,0.03};
+  double delta_trans[]={0.01,0.01,0.01};
   double delta_rpy[]={5,5,5}; // degrees
 
   wmove(w, 5, 0);
