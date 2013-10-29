@@ -61,7 +61,7 @@ class Tags{
 Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
     lcm_(lcm_), cl_cfg_(cl_cfg_){
  
-  if ((cl_cfg_.camera_chan == "CAMERA") ||  (cl_cfg_.camera_chan == "CAMERA_LEFT") ){
+  if ((cl_cfg_.camera_chan == "CAMERA")){// ||  (cl_cfg_.camera_chan == "CAMERA_LEFT") ){
     lcm_->subscribe( cl_cfg_.camera_chan ,&Tags::multisenseHandler,this);
   }else{
     lcm_->subscribe( cl_cfg_.camera_chan ,&Tags::imageHandler,this); 
