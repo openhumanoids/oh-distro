@@ -232,8 +232,18 @@ classdef ReachingPlanner < KeyframePlanner
               joint_idx = (1:obj.r.getNumDOF())';
               lower_fixed_joint_idx = joint_idx(cellfun(@(s) ~isempty(strfind(s,'leg')) | ~isempty(strfind(s,'base')),coords));
               lower_fixed_posture_constraint = PostureConstraint(obj.r);
+              [joint_lb_tmp,joint_ub_tmp] = obj.r.getJointLimits();
+              q0_bound = min([q0 joint_ub_tmp],[],2);
+              q0_bound = max([q0_bound joint_lb_tmp],[],2);
               lower_fixed_posture_constraint = lower_fixed_posture_constraint.setJointLimits(lower_fixed_joint_idx,...
-                q0(lower_fixed_joint_idx),q0(lower_fixed_joint_idx));
+              q0_bound(lower_fixed_joint_idx),q0_bound(lower_fixed_joint_idx));
+              if(any(q0_bound<joint_lb_tmp) || any(q0_bound>joint_ub_tmp))
+                 coords = obj.r.getStateFrame.coordinates;
+                 joint_idx_tmp = (1:obj.r.getNumDOF())';
+                 (coords(q0_bound<joint_lb_tmp || q0_bound>joint_ub_tmp))
+                 error('Joint limit not satisfied');
+              end
+
             else
               lower_fixed_posture_constraint = PostureConstraint(obj.r);
             end
@@ -568,8 +578,11 @@ classdef ReachingPlanner < KeyframePlanner
                 hand_joint_idx = [obj.lhand2robotFrameIndMap(obj.lhand2robotFrameIndMap <= obj.r.getNumDOF);...
                   obj.rhand2robotFrameIndMap(obj.rhand2robotFrameIndMap <= obj.r.getNumDOF)];
                 obj.joint_constraint = obj.joint_constraint.setJointLimits(hand_joint_idx,...
-                  q0(hand_joint_idx),...
-                  q0(hand_joint_idx));
+                  q0_bound(hand_joint_idx),...
+                  q0_bound(hand_joint_idx));
+                if(obj.isBDIManipMode())
+                  obj.joint_constraint = obj.joint_constraint.setJointLimits(lower_fixed_joint_idx,q0_bound(lower_fixed_joint_idx),q0_bound(lower_fixed_joint_idx));
+                end
                 if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                     if(obj.restrict_feet)
                         %obj.pelvis_body,[0;0;0],pelvis_pose0,...
@@ -587,7 +600,6 @@ classdef ReachingPlanner < KeyframePlanner
                     end
                 else
                     [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
-                        lower_fixed_posture_constraint,...
                         rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                         rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
                         obj.joint_constraint,ikoptions);
