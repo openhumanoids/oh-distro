@@ -43,9 +43,10 @@ class BDIStepTranslator:
         self.drift_from_plan = np.zeros((3,1))
         self.behavior = Behavior.BDI_STEPPING
 
-    def handle_footstep_plan(self, channel, msg_data):
+    def handle_footstep_plan(self, channel, msg):
         print "Starting new footstep plan"
-        msg = drc.footstep_plan_t.decode(msg_data)
+        if isinstance(msg, str):
+            msg = drc.footstep_plan_t.decode(msg)
         footsteps, opts = bdi_step.footsteps.decode_footstep_plan(msg)
 
         behavior = opts['behavior']
@@ -98,10 +99,11 @@ class BDIStepTranslator:
                 print m
                 ut.send_status(6,0,0,m)
 
-    def handle_atlas_status(self, channel, msg_data):
+    def handle_atlas_status(self, channel, msg):
         if self.delivered_index is None or self.mode != Mode.translating:
             return
-        msg = drc.atlas_status_t.decode(msg_data)
+        if isinstance(msg, str):
+            msg = drc.atlas_status_t.decode(msg)
         if self.behavior == Behavior.BDI_WALKING:
             index_needed = msg.walk_feedback.next_step_index_needed
             if index_needed > (self.delivered_index + 1) and len(self.bdi_step_queue) >= (index_needed + 2):

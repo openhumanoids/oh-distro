@@ -191,3 +191,19 @@ class TestStepTranslation(unittest.TestCase):
         translator.handle_stop_walking('STOP_WALKING', None)
         self.assertEqual(translator.bdi_step_queue[0].step_index, -1)
 
+    def test_atlas_status(self):
+        plan = self.generate_plan(drc.footstep_opts_t.BEHAVIOR_BDI_STEPPING)
+        lc = lcm.LCM()
+        lc.publish('CANDIDATE_FOOTSTEP_PLAN', plan.encode())
+
+        translator = BDIStepTranslator()
+        translator.handle_footstep_plan('COMMITTED_FOOTSTEP_PLAN', plan.encode())
+        self.assertEqual(translator.delivered_index, 1)
+
+        status = drc.atlas_status_t()
+        status.step_feedback = drc.atlas_step_feedback_t()
+        status.step_feedback.next_step_index_needed = 2
+        translator.handle_atlas_status('ATLAS_STATUS', status)
+        self.assertEqual(translator.delivered_index, 2)
+
+
