@@ -1,6 +1,7 @@
 function [zmptraj, foottraj, support_times, supports] = planZMPTraj(biped, q0, X, options)
 
 if ~isfield(options, 'ignore_terrain') options.ignore_terrain = false; end
+if ~isfield(options, 'full_foot_pose_constraint') options.full_foot_pose_constraint = false; end
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
 sizecheck(q0,[biped.getNumDOF,1]);
@@ -82,7 +83,7 @@ while 1
     step_knots(end).(sw_foot).orig = biped.footContact2Orig(swing_poses.center(:,j), 'center', is_right_foot);
     step_knots(end).(st_foot).orig = steps.(st_foot)(istep.(st_foot)).pos;
     
-    if j >= 3 && j <= (length(swing_ts) - 4)
+    if ~options.full_foot_pose_constraint && j >= 3 && j <= (length(swing_ts) - 4)
       % Release orientation constraints on the foot during the middle of the swing
       step_knots(end).(sw_foot).orig(4:5) = nan;
     end
