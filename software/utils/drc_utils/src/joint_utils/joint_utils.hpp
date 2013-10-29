@@ -17,7 +17,7 @@ public:
         "pre_spindle_cal_z_joint", "pre_spindle_cal_roll_joint", "pre_spindle_cal_pitch_joint", 
         "pre_spindle_cal_yaw_joint", "post_spindle_cal_x_joint", "post_spindle_cal_y_joint", 
         "post_spindle_cal_z_joint", "post_spindle_cal_roll_joint", "post_spindle_cal_pitch_joint", "post_spindle_cal_yaw_joint" };  
-    simple_head_joint_names =  {"hokuyo_joint"}; // use ins simulation
+    simple_head_joint_names =  {"hokuyo_joint"}; // used in simulation
         
     
     sandia_l_joint_names = {"left_f0_j0","left_f0_j1","left_f0_j2",   "left_f1_j0","left_f1_j1","left_f1_j2",
