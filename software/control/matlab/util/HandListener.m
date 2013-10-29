@@ -1,4 +1,4 @@
-classdef HandListener
+classdef HandListener < handle
   % @param left_hand_frame    -- A coordinate frame of the left hand
   % @param hand_frame   -- A coordinate frame of the right hand
   % @param hand_map      -- hand_map(i) is the index of
@@ -14,6 +14,7 @@ classdef HandListener
     hand_map 
     hand_dim
     hand_mode
+    setMapFlag;
   end
   methods
     function obj = HandListener(hand_mode,prefix,channel)
@@ -64,6 +65,7 @@ classdef HandListener
       end
       obj.hand_mode = hand_mode;
       obj.hand_map = containers.Map();
+      obj.setMapFlag = false;
     end
     
     function data = getNextMessage(obj,t_ms)
@@ -76,7 +78,7 @@ classdef HandListener
     end
     
     function data = decode(obj,msg)
-      if(obj.hand_map.length()==0 )
+      if(obj.setMapFlag == false)
         joint_names = cell(msg.num_joints,1);
         for i = 1:msg.num_joints
           joint_names{i} = char(msg.joint_name(i));
@@ -86,6 +88,7 @@ classdef HandListener
             obj.hand_map(obj.hand_frame.coordinates{i}) = find(strcmp(joint_names,obj.hand_frame.coordinates{i}));
           end
         end
+        obj.setMapFlag = true;
       end
       hand_val = zeros(obj.hand_dim*2,1);
       for i = 1:obj.hand_dim
