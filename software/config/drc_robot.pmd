@@ -80,17 +80,9 @@ group "a.1.core" {
     cmd "aff_server" {
         exec = "affordance_server  -r robot";
         host = "extra";
-    }   
-    cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
-        host = "extra";
     }
     cmd "j2f" {
         exec = "drc-joints2frames -g -b";
-        host = "extra";
-    }
-    cmd "ms2image" {
-        exec = "drc-multisense-image-tool -oi";
         host = "extra";
     }
     cmd "maps-server" {
@@ -128,7 +120,7 @@ group "a.2.p_and_c" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForIRobotHand;\"";
        host = "extra";
     }
-    cmd "BDIStepTranslator" {
+    cmd "BotBDIStepTranslator" {
         exec = "drc-bdi-step-translator";
         host = "robot";
     }
@@ -138,13 +130,48 @@ group "a.2.p_and_c" {
     }
 }
 
+group "a.3.models" {   
+    cmd "model_LN_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+        host = "extra";
+    }
+    cmd "model_LN_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RI.urdf";
+        host = "extra";
+    }
+    cmd "model_LN_RS" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
+        host = "extra";
+    }
+    cmd "model_LS_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RN.urdf";
+        host = "extra";
+    }
+    cmd "model_LS_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RI.urdf";
+        host = "extra";
+    }
+    cmd "model_LS_RS" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
+        host = "extra";
+    }
+    cmd "model_LI_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RN.urdf";
+        host = "extra";
+    }
+    cmd "model_LI_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
+        host = "extra";
+    }
+    cmd "model_LI_RS" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
+        host = "extra";
+    }
+}
+
 group "b.1.core" {
     cmd "base_viewer" {
         exec = "drc-viewer  -r base -c drc_robot_02.cfg"; 
-        host = "base";
-    }
-    cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_stumps.urdf";
         host = "base";
     }
     cmd "aff_server" {
@@ -179,6 +206,10 @@ group "b.2.p_and_c" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
        host = "base";
     }
+    cmd "BaseBDIStepTranslator" {
+        exec = "drc-bdi-step-translator -b";
+        host = "base";
+    }
     cmd "sticky_hands" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
        host = "base";
@@ -186,6 +217,45 @@ group "b.2.p_and_c" {
     cmd "ReachingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
        host = "base";
+    }
+}
+
+group "b.3.models" {   
+    cmd "base_model_LN_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+        host = "base";
+    }
+    cmd "base_model_LN_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RI.urdf";
+        host = "base";
+    }
+    cmd "base_model_LN_RS" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
+        host = "base";
+    }
+    cmd "base_model_LS_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RN.urdf";
+        host = "base";
+    }
+    cmd "base_model_LS_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RI.urdf";
+        host = "base";
+    }
+    cmd "base_model_LS_RS" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
+        host = "base";
+    }
+    cmd "base_model_LI_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RN.urdf";
+        host = "base";
+    }
+    cmd "base_model_LI_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
+        host = "base";
+    }
+    cmd "base_model_LI_RS" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
+        host = "base";
     }
 }
 
@@ -280,7 +350,7 @@ group "m.simple_grasping" {
 
 #################################################################
 
-script "prep_no_hands" { 
+script "prep_core" { 
     start group "0.development";
     start cmd "logger-robot";
     start group "a.1.core";
@@ -292,21 +362,91 @@ script "prep_no_hands" {
     start cmd "sa-left";
 }
 
+script "prep_LN_RN" { 
+    start cmd "model_LN_RN";
+    start cmd "base_model_LN_RN";
+    run_script "prep_core";
+}
+
+script "prep_LN_RS" {
+    start cmd "model_LN_RS";
+    start cmd "base_model_LN_RS";
+    run_script "prep_core";
+    start cmd "SandiaGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "sandia-right";
+}
+
+script "prep_LN_RI" {
+    start cmd "model_LN_RI";
+    start cmd "base_model_LN_RI";
+    run_script "prep_core";
+    start cmd "IrobotGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "irobot-right";
+}
+
+script "prep_LS_RN" {
+    start cmd "model_LS_RN";
+    start cmd "base_model_LS_RN";
+    run_script "prep_core";
+    start cmd "SandiaGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "sandia-left";
+}
+
 script "prep_LS_RS" {
-    run_script "prep_no_hands";
+    start cmd "model_LS_RS";
+    start cmd "base_model_LS_RS";
+    run_script "prep_core";
     start cmd "SandiaGraspController";
     start cmd "aa-ros2lcm-hands";
     start cmd "sandia-left";
     start cmd "sandia-right";
 }
 
-script "prep_LI_RS" {
-    run_script "prep_no_hands";
+script "prep_LS_RI" {
+    start cmd "model_LS_RI";
+    start cmd "base_model_LS_RI";
+    run_script "prep_core";
     start cmd "SandiaGraspController";
+    start cmd "IrobotGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "sandia-left";
+    start cmd "irobot-right";
+}
+
+script "prep_LI_RN" {
+    start cmd "model_LI_RN";
+    start cmd "base_model_LI_RN";
+    run_script "prep_core";
+    start cmd "IrobotGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "irobot-left";
+}
+
+script "prep_LI_RS" {
+    start cmd "model_LI_RS";
+    start cmd "base_model_LI_RS";
+    run_script "prep_core";
+    start cmd "SandiaGraspController";
+    start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
     start cmd "irobot-left";
     start cmd "sandia-right";
 }
+
+script "prep_LI_RI" {
+    start cmd "model_LI_RI";
+    start cmd "base_model_LI_RI";
+    run_script "prep_core";
+    start cmd "IrobotGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "irobot-left";
+    start cmd "irobot-right";
+}
+
+
 
 script "simple_grasp" {
     stop cmd "sticky_hands";
