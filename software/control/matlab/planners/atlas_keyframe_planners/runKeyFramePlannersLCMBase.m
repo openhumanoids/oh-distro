@@ -37,6 +37,8 @@ if(l_hand_mode == 0 && r_hand_mode == 1)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_right_sandia_hand.urdf'),options);
 elseif(l_hand_mode == 1 && r_hand_mode == 1)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
+% elseif(l_hand_mode == 2 && r_hand_mode == 2)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_irobot_hands.urdf'),options);
 else
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 end

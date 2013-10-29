@@ -40,23 +40,25 @@ classdef HandListener
         display(sprintf('construct sandia hand listener for %s hand',prefix));
         obj.hand_frame = CoordinateFrame(sprintf('sandia%sHand',prefix),obj.hand_dim*2,[],hand_frame_str);
       elseif(hand_mode == 2)
-        obj.hand_dim = 8;
-        hand_frame_str = cell(obj.hand_dim*2,1);
-        for i = 0:1
-          ind = i*3+1;
-          hand_frame_str{ind} = sprintf('%s_finger[%d]/joint_base_rotation',prefix,i);
-          hand_frame_str{ind+obj.hand_dim} = sprintf('%s_finger[%d]/joint_base_rotationdot',prefix,i);
-          ind = i*3+2;
-          hand_frame_str{ind} = sprintf('%s_finger[%d]/joint_base',prefix,i);
-          hand_frame_str{ind+obj.hand_dim} = sprintf('%s_finger[%d]/joint_basedot',prefix,i);
-          ind = i*3+3;
-          hand_frame_str{ind} = sprintf('%s_finger[%d]/joint_flex',prefix,i);
-          hand_frame_str{ind+obj.hand_dim} = sprintf('%s_finger[%d]/joint_flexdot',prefix,i);
-        end
-        hand_frame_str{7} = sprintf('%s_finger[2]/joint_base',prefix);
-        hand_frame_str{7+obj.hand_dim} = sprintf('%s_finger[2]/joint_basedot',prefix);
-        hand_frame_str{8} = sprintf('%s_finger[2]/joint_flex',prefix);
-        hand_frame_str{8+obj.hand_dim} = sprintf('%s_finger[2]/joint_flexdot',prefix);
+        obj.hand_dim = 0;
+        hand_frame_str = {};
+%         obj.hand_dim = 8;
+%         hand_frame_str = cell(obj.hand_dim*2,1);
+%         for i = 0:1
+%           ind = i*3+1;
+%           hand_frame_str{ind} = sprintf('%s_finger[%d]/joint_base_rotation',prefix,i);
+%           hand_frame_str{ind+obj.hand_dim} = sprintf('%s_finger[%d]/joint_base_rotationdot',prefix,i);
+%           ind = i*3+2;
+%           hand_frame_str{ind} = sprintf('%s_finger[%d]/joint_base',prefix,i);
+%           hand_frame_str{ind+obj.hand_dim} = sprintf('%s_finger[%d]/joint_basedot',prefix,i);
+%           ind = i*3+3;
+%           hand_frame_str{ind} = sprintf('%s_finger[%d]/joint_flex',prefix,i);
+%           hand_frame_str{ind+obj.hand_dim} = sprintf('%s_finger[%d]/joint_flexdot',prefix,i);
+%         end
+%         hand_frame_str{7} = sprintf('%s_finger[2]/joint_base',prefix);
+%         hand_frame_str{7+obj.hand_dim} = sprintf('%s_finger[2]/joint_basedot',prefix);
+%         hand_frame_str{8} = sprintf('%s_finger[2]/joint_flex',prefix);
+%         hand_frame_str{8+obj.hand_dim} = sprintf('%s_finger[2]/joint_flexdot',prefix);
         display(sprintf('construct irobot hand listener for %s hand',prefix));
         obj.hand_frame = CoordinateFrame(sprintf('irobot%sHand',prefix),obj.hand_dim*2,[],hand_frame_str);
       end
