@@ -14,9 +14,5 @@ struct atlas_state_t
   float joint_velocity [num_joints];
   float joint_effort[num_joints];
 
-  // actuator pressures
-  float psi_pos[num_joints];
-  float psi_neg[num_joints];
-
   force_torque_t force_torque;
 }
