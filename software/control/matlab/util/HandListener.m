@@ -28,6 +28,7 @@ classdef HandListener < handle
         obj.hand_dim = 0;
         hand_frame_str = {};
         display(sprintf('No hand listener for %s hand',prefix));
+        obj.hand_frame = CoordinateFrame(sprintf('no%sHand',prefix),obj.hand_dim*2,[],hand_frame_str);
       elseif(hand_mode == 1)
         obj.hand_dim = 12;
         hand_frame_str = cell(obj.hand_dim*2,1);
