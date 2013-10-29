@@ -6,6 +6,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include <map>
+#include <model-client/model-client.hpp>
+#include <drc_utils/joint_utils.hpp>
 
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/drc_lcmtypes.hpp"
@@ -47,6 +49,9 @@ class state_sync{
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
+    boost::shared_ptr<ModelClient> model_;
+    JointUtils joint_utils_;
+    
     bool standalone_head_, standalone_hand_;
     bool bdi_motion_estimate_;
     bool simulation_mode_;
@@ -59,9 +64,6 @@ class state_sync{
     void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg);
     void potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
-    
-    // Joint names are hard coded to be stored in state sync to avoid traffic:
-    std::vector<std::string> atlas_joint_names_;    
     
     Joints head_joints_;
     Joints atlas_joints_;

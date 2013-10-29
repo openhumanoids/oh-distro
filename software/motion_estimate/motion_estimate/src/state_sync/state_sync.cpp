@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <iostream>
 #include <limits>
+#include <vector>
 
 #include "state_sync.hpp"
 #include <ConciseArgs>
@@ -11,6 +12,14 @@ using namespace std;
 
 /////////////////////////////////////
 
+void assignJointsStruct( Joints &joints ){
+  joints.velocity.assign( joints.name.size(), 0);
+  joints.position.assign( joints.name.size(), 0);
+  joints.effort.assign( joints.name.size(), 0);
+  
+}
+
+
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        bool standalone_head_, bool standalone_hand_,  
                        bool bdi_motion_estimate_, bool simulation_mode_,
@@ -19,29 +28,69 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
    standalone_head_(standalone_head_), standalone_hand_(standalone_hand_),
    bdi_motion_estimate_(bdi_motion_estimate_), simulation_mode_(simulation_mode_),
    use_encoder_joint_sensors_(use_encoder_joint_sensors_){
-  lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);  
-  lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::leftHandHandler,this);  
-  lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::leftHandHandler,this);  
-  lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::rightHandHandler,this);  
-  lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::rightHandHandler,this);  
+  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
+
+  // Get the Joint names and determine the correct configuration:
+  std::vector<std::string> joint_names = model_->getJointNames();
+  
+  if(find(joint_names.begin(), joint_names.end(), "left_f0_j0" ) != joint_names.end()){
+    std::cout << "Robot fitted with left Sandia hand\n";
+    lcm_->subscribe("SANDIA_LEFT_STATE",&state_sync::leftHandHandler,this);  
+    left_hand_joints_.name = joint_utils_.sandia_l_joint_names;
+  }else if(find(joint_names.begin(), joint_names.end(), "left_finger[0]/joint_base" ) != joint_names.end()){
+    std::cout << "Robot fitted with left iRobot hand\n";
+    lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::leftHandHandler,this);  
+    left_hand_joints_.name = joint_utils_.irobot_l_joint_names;
+  }else{
+    std::cout << "Robot has no left hand\n"; 
+  }
+
+  if(find(joint_names.begin(), joint_names.end(), "right_f0_j0" ) != joint_names.end()){
+    std::cout << "Robot fitted with right Sandia hand\n";
+    lcm_->subscribe("SANDIA_RIGHT_STATE",&state_sync::rightHandHandler,this);
+    right_hand_joints_.name = joint_utils_.sandia_r_joint_names;
+  }else if(find(joint_names.begin(), joint_names.end(), "right_finger[0]/joint_base" ) != joint_names.end()){
+    std::cout << "Robot fitted with right iRobot hand\n";
+    lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::rightHandHandler,this);
+    right_hand_joints_.name = joint_utils_.irobot_r_joint_names;
+  }else{
+    std::cout << "Robot has no right hand\n"; 
+  }
+  
+  atlas_joints_.name = joint_utils_.atlas_joint_names; 
+  
+  if(find(joint_names.begin(), joint_names.end(), "pre_spindle_cal_x_joint" ) != joint_names.end()){
+    std::cout << "Robot fitted with dummy head joints\n";
+    head_joints_.name = joint_utils_.head_joint_names;
+  }else{
+    std::cout << "Robot fitted with a single head joint\n";
+    head_joints_.name = joint_utils_.simple_head_joint_names;
+  }
+  lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);
+  
+  
+  assignJointsStruct( atlas_joints_ );
+  assignJointsStruct( head_joints_ );
+  assignJointsStruct( left_hand_joints_ );
+  assignJointsStruct( right_hand_joints_ );
+  
+  std::cout << "No. of Joints: "
+      << atlas_joints_.position.size() << " atlas, "
+      << head_joints_.position.size() << " head, "
+      << left_hand_joints_.position.size() << " left, "
+      << right_hand_joints_.position.size() << " right\n";
+  
   lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);  
 
+  ///////////////////////////////////////////////////////////////
   lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);  
   lcm_->subscribe("ATLAS_POT_OFFSETS",&state_sync::potOffsetHandler,this);  
   
   lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
   pose_BDI_.utime =0; // use this to signify un-initalised
   
-
-  // Note: ordering here MUST match that in AtlasControlTypes.h ***********************
-  atlas_joint_names_ = {"back_bkz", "back_bky", "back_bkx", 
-         "neck_ay", "l_leg_hpz", "l_leg_hpx", "l_leg_hpy", 
-         "l_leg_kny", "l_leg_aky", "l_leg_akx", "r_leg_hpz", 
-         "r_leg_hpx", "r_leg_hpy", "r_leg_kny", "r_leg_aky", 
-         "r_leg_akx", "l_arm_usy", "l_arm_shx", "l_arm_ely", 
-         "l_arm_elx", "l_arm_uwy", "l_arm_mwx", "r_arm_usy", 
-         "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx"};  
   
+  /// Pots and Encoders:
   // pot offsets if pots are used, currently uncalibrated
   pot_joint_offsets_.assign(28,0.0);
 
@@ -90,8 +139,20 @@ void state_sync::potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   std::cout << "\n";
 }
 
+// Quick check that the incoming and previous joint sets are the same size
+// TODO: perhaps make this more careful with more checks?
+void checkJointLengths(size_t previous_size , size_t incoming_size, std::string channel){
+  if ( incoming_size != previous_size ){
+    std::cout << "ERROR: Number of joints in " << channel << "[" << incoming_size 
+              << "] does not match previous [" << previous_size << "]\n"; 
+    exit(-1);
+  }  
+}
+
 
 void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg){
+  checkJointLengths( head_joints_.position.size(),  msg->joint_position.size(), channel);
+  
   //std::cout << "got multisense\n";
   head_joints_.name = msg->joint_name;
   head_joints_.position = msg->joint_position;
@@ -106,7 +167,9 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
 }
 
 void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
+  checkJointLengths( left_hand_joints_.position.size(),  msg->joint_position.size(), channel);
   //std::cout << "got "<< channel <<"\n";
+  
   left_hand_joints_.name = msg->joint_name;
   left_hand_joints_.position = msg->joint_position;
   left_hand_joints_.velocity = msg->joint_velocity;
@@ -119,7 +182,9 @@ void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
 }
 
 void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg){
+  checkJointLengths( right_hand_joints_.position.size(),  msg->joint_position.size(), channel);
   //std::cout << "got "<< channel <<"\n";
+  
   right_hand_joints_.name = msg->joint_name;
   right_hand_joints_.position = msg->joint_position;
   right_hand_joints_.velocity = msg->joint_velocity;
@@ -133,10 +198,9 @@ void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 
 
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
-  //std::cout << "got atlasHandler\n";
+  checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
   
-  atlas_joints_.name = atlas_joint_names_;
-  
+
   std::vector <float> mod_positions;
   mod_positions.assign(28,0.0);
   for (size_t i=0; i < pot_joint_offsets_.size(); i++){
@@ -146,6 +210,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   atlas_joints_.position = mod_positions;
   atlas_joints_.velocity = msg->joint_velocity;
   atlas_joints_.effort = msg->joint_effort;
+  // atlas_joints_.name = atlas_joint_names_;
   
   
   // Overwrite the actuator joint positions and velocities with the after-transmission 
@@ -183,7 +248,6 @@ void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::st
 }
 
 
-
 void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
   pose_BDI_.utime = msg->utime;
   pose_BDI_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
@@ -193,15 +257,12 @@ void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
 }
 
-
-
 bool state_sync::insertPoseBDI(drc::robot_state_t& msg){
   // TODO: add comparison of msg->utime and pose_BDI_'s utime  
   if (pose_BDI_.utime ==0){
     std::cout << "haven't received POSE_BDI, refusing to publish ERS\n";
     return false;
   }
-    
   
   msg.pose.translation.x = pose_BDI_.pos[0];
   msg.pose.translation.y = pose_BDI_.pos[1];
@@ -258,6 +319,8 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   // Limb Sensor states
   robot_state_msg.force_torque = force_torque_msg;
   
+  // std::cout << "sending " << robot_state_msg.num_joints << " joints\n";
+
   if (simulation_mode_){ // to be deprecated..
     lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
   }
