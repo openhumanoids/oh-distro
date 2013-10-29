@@ -64,8 +64,13 @@ protected:
   int mHandCameraFrameRate;
   int mCameraCompression;
   int mHeadPitchAngle;
+  
   int mLeftGraspState;
+  int mLeftGraspNameEnum;
   int mRightGraspState;
+  int mRightGraspNameEnum;
+  std::vector <std::string>  mGraspNames;
+  
   bool mMinimalAffordances;
   int mControllerHeightMapMode;
 
@@ -91,6 +96,8 @@ public:
                       const BotParam* iParam, const BotFrames* iFrames)
     : gtkmm::RendererBase("Data Control", iViewer, iPriority, iLcm,
                           iParam, iFrames, 0) {
+      
+    mGraspNames = { "cylindrical", "spherical", "prismatic" };
 
     // set up robot time clock
     drc::Clock::instance()->setLcm(getLcm());
@@ -373,56 +380,79 @@ public:
     
     //
     // grasp
-    //
-    labels = { "Leave", "Closed", "Open" };
-    ids = { drc::simple_grasp_t::UNCHANGED, drc::simple_grasp_t::CLOSED,
-            drc::simple_grasp_t::OPEN };
+    // left
+    ids = { 0, 1, 2 };
     Glib::RefPtr<Gtk::ListStore> treeModel = Gtk::ListStore::create(columns);
     for (size_t i = 0; i < ids.size(); ++i) {
       const Gtk::TreeModel::Row& row = *(treeModel->append());
       row[columns.mId] = ids[i];
-      row[columns.mLabel] = labels[i];
+      row[columns.mLabel] = mGraspNames[i];
     }
-
-    // left
     Gtk::HBox* hbox = Gtk::manage(new Gtk::HBox());
     Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
     Gtk::ComboBox* combo = Gtk::manage(new Gtk::ComboBox());
     combo->set_model(treeModel);
     combo->pack_start(columns.mLabel);
-    mLeftGraspState = drc::simple_grasp_t::UNCHANGED;
-    bind(combo, "LeftGrasp", mLeftGraspState);
-    combo->set_active(mLeftGraspState);
-    label = Gtk::manage(new Gtk::Label("left"));
+    mLeftGraspNameEnum = 0;
+    bind(combo, "Type", mLeftGraspNameEnum);
+    combo->set_active(mLeftGraspNameEnum);
+    label = Gtk::manage(new Gtk::Label("Left"));
     box->pack_start(*label,false,false);
     box->pack_start(*combo,false,false);
-    hbox->add(*box);
-
-    // right
+    hbox->add(*box); 
+    // Closed Amount
     box = Gtk::manage(new Gtk::HBox());
-    combo = Gtk::manage(new Gtk::ComboBox());
-    combo->set_model(treeModel);
-    combo->pack_start(columns.mLabel);
-    mRightGraspState = drc::simple_grasp_t::UNCHANGED;
-    bind(combo, "RightGrasp", mRightGraspState);
-    combo->set_active(mRightGraspState);
-    label = Gtk::manage(new Gtk::Label("right"));
-    box->pack_start(*label,false,false);
-    box->pack_start(*combo,false,false);
+    mLeftGraspState =0;
+    addSpin("Closed %", mLeftGraspState, 0, 100, 10, box); 
+    label = Gtk::manage(new Gtk::Label("blah2"));
     hbox->add(*box);
-
     // send button
     button = Gtk::manage(new Gtk::Button("Grasp"));
     button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onGraspButton));
+      (sigc::mem_fun(*this, &DataControlRenderer::onLeftGraspButton));
     hbox->add(*button);
     sensorControlBox->pack_start(*hbox, false, false);
     
-    notebook->append_page(*sensorControlBox, "Sensors");
+    // right
+    ids = { 0, 1, 2 };
+    Glib::RefPtr<Gtk::ListStore> treeModelR = Gtk::ListStore::create(columns);
+    for (size_t i = 0; i < ids.size(); ++i) {
+      const Gtk::TreeModel::Row& row = *(treeModelR->append());
+      row[columns.mId] = ids[i];
+      row[columns.mLabel] = mGraspNames[i];
+    }
+    Gtk::HBox* hboxR = Gtk::manage(new Gtk::HBox());
+    Gtk::HBox* boxR = Gtk::manage(new Gtk::HBox());
+    Gtk::ComboBox* comboR = Gtk::manage(new Gtk::ComboBox());
+    comboR->set_model(treeModelR);
+    comboR->pack_start(columns.mLabel);
+    mRightGraspNameEnum = 0;
+    bind(comboR, "Type", mRightGraspNameEnum);
+    comboR->set_active(mRightGraspNameEnum);
+    label = Gtk::manage(new Gtk::Label("Right"));
+    boxR->pack_start(*label,false,false);
+    boxR->pack_start(*comboR,false,false);
+    hboxR->add(*boxR); 
+    // Closed Amount
+    boxR = Gtk::manage(new Gtk::HBox());
+    mRightGraspState = 0;
+    addSpin("Closed %", mRightGraspState, 0, 100, 10, boxR); 
+    label = Gtk::manage(new Gtk::Label("blah2"));
+    hboxR->add(*boxR);
+    // send button
+    button = Gtk::manage(new Gtk::Button("Grasp"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onRightGraspButton));
+    hboxR->add(*button);
+    sensorControlBox->pack_start(*hboxR, false, false);    
     
+    
+    ///////////////////////////////////////////////////////////
+    notebook->append_page(*sensorControlBox, "Sensors");    
     Gtk::VBox* headControlBox = Gtk::manage(new Gtk::VBox());
-    mHeadCameraFrameRate = 5;
-    addSpin("Head Cam fps", mHeadCameraFrameRate, 0, 30, 1, headControlBox);
+     mHeadCameraFrameRate = 5;
+    // Artificial limit added here - to limit LCM traffic
+    addSpin("Head Cam fps", mHeadCameraFrameRate, 0, 10, 1, headControlBox);
     mGain = 1.0;
     addSpin("Gain", mGain, 1.0, 8.0, 0.1, headControlBox); 
     
@@ -613,15 +643,23 @@ public:
     sendHeightMode();
   }
 
-  void onGraspButton() {
-    drc::simple_grasp_t msg;
-    msg.left_state = mLeftGraspState;
-    msg.right_state = mRightGraspState;
-    if ((mLeftGraspState != drc::simple_grasp_t::UNCHANGED) ||
-        (mRightGraspState != drc::simple_grasp_t::UNCHANGED)) {
-      getLcm()->publish("SIMPLE_GRASP_COMMAND", &msg);
-    }
+  void onLeftGraspButton() {
+    drc::sandia_simple_grasp_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.name = mGraspNames[ mLeftGraspNameEnum ];
+    msg.closed_amount = (float) mLeftGraspState/100;
+    getLcm()->publish("IROBOT_LEFT_SIMPLE_GRASP", &msg);
+    getLcm()->publish("SANDIA_LEFT_SIMPLE_GRASP", &msg);
   }
+  
+  void onRightGraspButton() {
+    drc::sandia_simple_grasp_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.name = mGraspNames[ mRightGraspNameEnum ];
+    msg.closed_amount = (float) mRightGraspState/100;
+    getLcm()->publish("IROBOT_RIGHT_SIMPLE_GRASP", &msg);
+    getLcm()->publish("SANDIA_RIGHT_SIMPLE_GRASP", &msg);    
+  }  
 
   void onSendHeadButton() {
     multisense::command_t msg;
