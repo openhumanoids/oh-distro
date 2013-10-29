@@ -17,8 +17,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import roslib; roslib.load_manifest('sandia_hand_teleop')
-import rospy
 import sys,os
 #from sandia_hand_msgs.srv import SimpleGraspSrv, SimpleGraspSrvResponse
 #from sandia_hand_msgs.msg import SimpleGrasp
