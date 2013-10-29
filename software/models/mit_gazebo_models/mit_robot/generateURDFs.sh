@@ -1,26 +1,30 @@
 #!/bin/bash
 
-# 5 common (real) robot configurations:
-echo "Generating: 1/9 stumps"
-rosrun xacro xacro.py xacro/atlas_stumps.urdf.xacro > model_stumps.urdf
-echo "Generating: 2/9 Left Sandia Right Stump"
-rosrun xacro xacro.py xacro/atlas_sandia_left_stump_right.urdf.xacro > model_LS_RN.urdf
-echo "Generating: 3/9 Left Stump  Right Sandia"
-rosrun xacro xacro.py xacro/atlas_stump_left_sandia_right.urdf.xacro > model_LN_RS.urdf
+echo "Generate Robot Model Configurations:"
+# 9 real robot configurations:
+echo "1/11 LI RI"
+rosrun xacro xacro.py xacro/atlas_LI_RI.urdf.xacro > model_LI_RI.urdf
+echo "2/11 LI RN"
+rosrun xacro xacro.py xacro/atlas_LI_RN.urdf.xacro > model_LI_RN.urdf
+echo "3/11 LI RS"
+rosrun xacro xacro.py xacro/atlas_LI_RS.urdf.xacro > model_LI_RS.urdf
 
-echo "Generating: 4/9 Left Sandia Right Sandia"
-rosrun xacro xacro.py xacro/atlas_sandia_hands.urdf.xacro > model_LS_RS.urdf
-echo "Generating: 5/9 Left iRobot Right iRobot"
-rosrun xacro xacro.py xacro/atlas_irobot_hands.urdf.xacro > model_LI_RI.urdf
+echo "4/11 LN RI"
+rosrun xacro xacro.py xacro/atlas_LN_RI.urdf.xacro > model_LN_RI.urdf
+echo "5/11 LN RN"
+rosrun xacro xacro.py xacro/atlas_LN_RN.urdf.xacro > model_LN_RN.urdf
+echo "6/11 LN RS"
+rosrun xacro xacro.py xacro/atlas_LN_RS.urdf.xacro > model_LN_RS.urdf
 
-
-echo "Generating: 6/9 Left iRobot Right Sandia"
-rosrun xacro xacro.py xacro/atlas_irobot_left_sandia_right.urdf.xacro > model_LI_RS.urdf
-echo "Generating: 7/9 Left Sandia Right iRobot"
-rosrun xacro xacro.py xacro/atlas_sandia_left_irobot_right.urdf.xacro > model_LS_RI.urdf
+echo "7/11 LS RI"
+rosrun xacro xacro.py xacro/atlas_LS_RI.urdf.xacro > model_LS_RI.urdf
+echo "8/11 LS RN"
+rosrun xacro xacro.py xacro/atlas_LS_RN.urdf.xacro > model_LS_RN.urdf
+echo "9/11 LS RS"
+rosrun xacro xacro.py xacro/atlas_LS_RS.urdf.xacro > model_LS_RS.urdf
 
 # the simulated robot configuration - LCM facing and ROS/gazbo facing versions
-echo "Generating: 8/9 sim"
+echo "10/11 sim - MIT Facing"
 rosrun xacro xacro.py xacro/atlas_sandia_hands_sim.urdf.xacro > model_sim.urdf
-echo "Generating: 9/9 gazebo"
+echo "11/11 sim - Gazebo Facing"
 ./renameSimGazeboURDF.sh
