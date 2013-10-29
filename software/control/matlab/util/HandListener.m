@@ -29,6 +29,7 @@ classdef HandListener < handle
         hand_frame_str = {};
         display(sprintf('No hand listener for %s hand',prefix));
         obj.hand_frame = CoordinateFrame(sprintf('no%sHand',prefix),obj.hand_dim*2,[],hand_frame_str);
+        obj.setMapFlag = true;
       elseif(hand_mode == 1)
         obj.hand_dim = 12;
         hand_frame_str = cell(obj.hand_dim*2,1);
@@ -41,6 +42,7 @@ classdef HandListener < handle
         end
         display(sprintf('construct sandia hand listener for %s hand',prefix));
         obj.hand_frame = CoordinateFrame(sprintf('sandia%sHand',prefix),obj.hand_dim*2,[],hand_frame_str);
+        obj.setMapFlag = false;
       elseif(hand_mode == 2)
         obj.hand_dim = 0;
         hand_frame_str = {};
@@ -63,10 +65,11 @@ classdef HandListener < handle
 %         hand_frame_str{8+obj.hand_dim} = sprintf('%s_finger[2]/joint_flexdot',prefix);
         display(sprintf('construct irobot hand listener for %s hand',prefix));
         obj.hand_frame = CoordinateFrame(sprintf('irobot%sHand',prefix),obj.hand_dim*2,[],hand_frame_str);
+        obj.setMapFlag = false;
       end
       obj.hand_mode = hand_mode;
       obj.hand_map = containers.Map();
-      obj.setMapFlag = false;
+      
     end
     
     function data = getNextMessage(obj,t_ms)
