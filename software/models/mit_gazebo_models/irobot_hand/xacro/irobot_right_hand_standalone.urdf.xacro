@@ -1,0 +1,11 @@
+<robot xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="atlas" >
+  
+  <xacro:include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
+
+  <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
+    <origin rpy="1.57079 0 0" xyz="0 -0.11516 -0.015"/>
+  </xacro:irobot_hand>
+
+
+
+</robot>
