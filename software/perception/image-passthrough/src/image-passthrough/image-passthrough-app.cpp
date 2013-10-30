@@ -271,7 +271,7 @@ void Pass::prepareModel(){
 }
 
 
-bool Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){ 
+void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){ 
     std::map<string,double> am;
     for (size_t j=0; j< affplus.aff.nparams; j++){
       am[ affplus.aff.param_names[j] ] = affplus.aff.params[j];

@@ -63,7 +63,6 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
   cloud->points.resize (num_points);
   cloud->is_dense = false;//msg->is_dense;
   uint8_t* cloud_data = reinterpret_cast<uint8_t*>(&cloud->points[0]);
-  uint32_t cloud_row_step = static_cast<uint32_t> (sizeof (pcl::PointXYZRGB) * cloud->width);
   const uint8_t* msg_data = &msg->data[0];
   memcpy (cloud_data, msg_data, msg->data_nbytes );
 
@@ -76,19 +75,6 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
   pcl::toROSMsg(*cloud, msg_cld);
   msg_cld.fields[3].offset = 12;
   pcl::fromROSMsg (msg_cld, *cloud);
-
-  // Transform cloud to that its in robotic frame:
-  // Could also apply the cv->robotic transform directly
-  /*
-   * Removed in Sept 2012:
-   * double x_temp;
-  for(int j=0; j<cloud->points.size(); j++) {
-    x_temp = cloud->points[j].x;
-    cloud->points[j].x = cloud->points[j].z;
-    cloud->points[j].z = - cloud->points[j].y;
-    cloud->points[j].y = - x_temp;
-  }
-  */
 }
 
 
@@ -102,8 +88,7 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools::pointcloud2_t *msg,
   cloud->points.resize (num_points);
   cloud->is_dense = false;//msg->is_dense;
   uint8_t* cloud_data = reinterpret_cast<uint8_t*>(&cloud->points[0]);
-  uint32_t cloud_row_step = static_cast<uint32_t> (sizeof (pcl::PointXYZRGB) * cloud->width);
-  const uint8_t* msg_data = &msg->data[0];
+ const uint8_t* msg_data = &msg->data[0];
   memcpy (cloud_data, msg_data, msg->data_nbytes );
 
   // 2. HACK/Workaround
@@ -115,19 +100,6 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools::pointcloud2_t *msg,
   pcl::toROSMsg(*cloud, msg_cld);
   msg_cld.fields[3].offset = 16; // was 12 // 16 works for PCL Streaming
   pcl::fromROSMsg (msg_cld, *cloud);
-
-  // Transform cloud to that its in robotic frame:
-  // Could also apply the cv->robotic transform directly
-  /*
-   * Removed in Sept 2012:
-   * double x_temp;
-  for(int j=0; j<cloud->points.size(); j++) {
-    x_temp = cloud->points[j].x;
-    cloud->points[j].x = cloud->points[j].z;
-    cloud->points[j].z = - cloud->points[j].y;
-    cloud->points[j].y = - x_temp;
-  }
-  */
 }
 
 
@@ -149,8 +121,8 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 
   /////////////////////////////////////////////////////////////////////
   /// 1.2. DEPTH:
-  uint8_t* uncompress_buffer;
-  int uncompress_buffer_size;
+  uint8_t* uncompress_buffer = NULL;
+  int uncompress_buffer_size = 0;
   const uint8_t* depth_data =NULL; //= msg->depth.depth_data;
   // 1.2.1 De-compress if necessary:
   if(msg->depth.compression != KINECT_DEPTH_MSG_T_COMPRESSION_NONE) {
@@ -234,7 +206,6 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
         cloud->points[j2].y = -xyzw2[0]/xyzw2[3];//y right+ (check)
         cloud->points[j2].z = -xyzw2[1]/xyzw2[3];//z up+
         cloud->points[j2].x = xyzw2[2]/xyzw2[3]; //x forward+
-        unsigned char* rgba_ptr = (unsigned char*)&cloud->points[j2].rgba;
         // was bgr...
         cloud->points[j2].b =b;
         cloud->points[j2].r =r;
@@ -250,15 +221,12 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
     // 1.2.2 unpack raw byte data into float values in mm
 
     // NB: no depth return is given 0 range - and becomes 0,0,0 here
-    int npixels = msg->depth.width * msg->depth.height;
     const uint16_t* val = reinterpret_cast<const uint16_t*>( depth_data );
 
     cloud->width    =(int) (msg->depth.width/ (double) decimate_) ;
     cloud->height   =(int) (msg->depth.height/ (double) decimate_); 
     cloud->is_dense = false;
     cloud->points.resize (cloud->width * cloud->height);
-    double xyzw[4];
-    int j=0;
     int j2=0;
     for(int v=0; v<msg->depth.height; v=v+ decimate_) { // t2b self->height 480
       for(int u=0; u<msg->depth.width; u=u+decimate_ ) {  //l2r self->width 640

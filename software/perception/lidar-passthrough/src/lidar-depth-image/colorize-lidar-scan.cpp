@@ -244,7 +244,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   pc_vis_->pose_to_lcm_from_list(60010, null_T);
   
   for (int i = 0; i < scan_local->points.size() ; i++) {
-    float z = scan_local->points[i].z*10;
+    float z = scan_local->points[i].z*10 ;
     float rgb[3];
     jet_rgb(z,rgb);
     scan_local->points[i].r = rgb[0]*255;

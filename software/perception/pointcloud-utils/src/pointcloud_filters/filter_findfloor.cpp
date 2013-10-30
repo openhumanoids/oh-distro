@@ -224,4 +224,6 @@ bool FilterFindfloor::getHeightPitchRoll(double height_pitch_roll[]){
   height_pitch_roll[0] = height;
   height_pitch_roll[1] = pitch;
   height_pitch_roll[2] = roll;
+  
+  return 1;
 }

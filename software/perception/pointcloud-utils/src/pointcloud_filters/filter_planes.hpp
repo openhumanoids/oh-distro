@@ -72,7 +72,7 @@ class FilterPlanes {
     // Version 2 of the algorithm: after extracting major planes:
     // - statistical outlyier removal of plane points
     // - sequentially grow a plane from points using nearest neaighbour ocktrees
-    bool filterPlanes(vector<BasicPlane> &plane_stack);
+    void filterPlanes(vector<BasicPlane> &plane_stack);
 
   protected:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;    

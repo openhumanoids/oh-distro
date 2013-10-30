@@ -176,7 +176,7 @@ bool PolygonMesh_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PolygonMesh::Ptr 
 
 // Push an un-coloured PointCloud to LCM as a points collection
 // assumes that you want to connect it to the collection specified in Ptcoll_cfg
-bool pcdXYZ_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZ> &cloud);
+void pcdXYZ_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZ> &cloud);
 
 
 void display_tic_toc(std::vector<int64_t> &tic_toc,const std::string &fun_name);

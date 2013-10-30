@@ -252,7 +252,7 @@ void Pass::sendSweepDepthImage(){
     cout << "Publishing Raw Range Image Points\n";
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud4 (new pcl::PointCloud<pcl::PointXYZRGB> ());
     int decimate=4;
-    uint8_t* mask_buf;
+    uint8_t* mask_buf = NULL;
     if (mask_init_){
       mask_buf = imgutils_->unzipImage( &last_mask_ );
     }

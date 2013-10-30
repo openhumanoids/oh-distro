@@ -342,6 +342,7 @@ bool AffordanceUtils::getCloudAsLists(std::string filename,
   }
       
   cout << "Read a point cloud with " << points.size() << " points\n";
+  return true;
 }
 
 

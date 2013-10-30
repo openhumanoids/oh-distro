@@ -126,8 +126,7 @@ class Pass{
     
     void prepareModel();
     
-    bool affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out);
-    
+    void affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out);
     
 };
 

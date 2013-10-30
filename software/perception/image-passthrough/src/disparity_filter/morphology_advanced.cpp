@@ -15,7 +15,7 @@ int const max_operator = 4;
 int const max_elem = 2;
 int const max_kernel_size = 21;
 
-char* window_name = "Morphology Transformations Demo";
+char* window_name = (char*)"Morphology Transformations Demo";
 
 /** Function Headers */
 void Morphology_Operations( int, void* );

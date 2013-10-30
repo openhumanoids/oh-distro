@@ -44,7 +44,7 @@ FilterPlanes::FilterPlanes () {
 }
 
 
-bool FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
+void FilterPlanes::filterPlanes(vector<BasicPlane> &plane_stack){
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>), cloud_p (new pcl::PointCloud<pcl::PointXYZRGB>);
   
   if (verbose_text>0){

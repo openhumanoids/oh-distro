@@ -391,7 +391,6 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
 
   std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d> > poses;
   std::vector<float> scores;
-  int n = 1;
   poses.push_back (pose_in);
   // additional views:
   //poses.push_back (pose_in);
@@ -417,16 +416,6 @@ uint8_t*
 SimExample::getDepthBufferAsColor()
 {
   const float* depth_buffer =  rl_->getDepthBuffer ();
-  int npixels = rl_->getWidth() * rl_->getHeight();
-
-  //this loop isn't used - why is it here???
-  //float min_depth = depth_buffer[0];
-  //float max_depth = depth_buffer[0];
-  //for (int i=1; i<npixels; i++) // 
-  //{
-  //  if (depth_buffer[i] < min_depth) min_depth = depth_buffer[i];
-  //  if (depth_buffer[i] > max_depth) max_depth = depth_buffer[i];
-  //}
 
   for (int y = 0; y <  rl_->getHeight(); ++y)
   {
@@ -491,7 +480,6 @@ SimExample::getDepthBufferAsColor()
 uint8_t*
 SimExample::getColorBuffer(int n_colors_)
 {
-  int npixels = rl_->getWidth() * rl_->getHeight();
   const uint8_t* rgb_buffer =  rl_->getColorBuffer ();
 
   if (n_colors_==3){
@@ -600,8 +588,6 @@ SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname,
       if (kd < 0) kd = 0;
       else if (kd>2047) kd = 2047;
 
-      int pval = t_gamma[kd];
-      int lb = pval & 0xff;
       depth_img[i] = z_new;
     }
   }

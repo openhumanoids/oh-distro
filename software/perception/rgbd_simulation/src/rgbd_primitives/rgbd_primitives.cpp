@@ -166,8 +166,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinder(double base, double top, doub
   std::vector <pcl::Vertices> verts;
   
   double delta = (2*M_PI/slices);
-  int i_int=0;
-  for (double i=0,  i_int=0;i< 2*M_PI; i=i+ delta, i_int++){
+  for (double i=0, i_int=0;i< 2*M_PI; i=i+ delta, i_int++){
     pcl::PointXYZRGB pt1, pt2, pt3, pt4, pt5, pt6;
     pt1.x = base*cos(i);       pt1.y = base*sin(i);       pt1.z = base_height;  
     pt2.x =  top*cos(i);       pt2.y =  top*sin(i);       pt2.z = top_height; 

@@ -41,7 +41,7 @@ int main(int argc, char*argv[]){
 
   float incr=0.01;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-  for(int i=0;i<triangles.size();i++){
+  for(size_t i=0;i<triangles.size();i++){
     for(int j=0;j<3;j++){
       vector<float>& p1v = points[triangles[i][j]]; 
       vector<float>& p2v = points[triangles[i][(j+1)%3]]; 

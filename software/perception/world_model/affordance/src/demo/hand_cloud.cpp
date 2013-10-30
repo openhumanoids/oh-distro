@@ -325,29 +325,16 @@ drc::affordance_plus_t Pass::getWorldAffordance(Eigen::Isometry3d pose){
 void Pass::affHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   std::cout << "got "<< msg->naffs << " affs\n";
-  
-  bool found_world_affordance=false;
-  
+    
   for (int i=0 ; i < msg->naffs ; i++){
     drc::affordance_t aff = msg->affs_plus[i].aff;
     
     // if its at zero and has a 1cm bounding box, then assume its the world affordance
     if (aff.otdf_type == "utorso_irobot" ){
       std::cout << aff.uid << " was found - the utorso_irobot aff\n";
-      found_world_affordance=true;
       world_affordance_uid_ = aff.uid;
     }
   }    
-  
-  // disabled auto fit
-  /*
-   * 
-  if(!found_world_affordance){
-    std::cout << "will make a new aff\n";
-    drc::affordance_plus_t a1 = getWorldAffordance( Eigen::Isometry3d::Identity() );
-    lcm_->publish("AFFORDANCE_FIT",&a1);
-  }
-  */
 }
 
 

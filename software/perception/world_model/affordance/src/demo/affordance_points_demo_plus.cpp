@@ -129,7 +129,7 @@ bool getMeshAsLists(std::string filename,
 }    
     
     
-bool getCloudAsLists(std::string filename,
+void getCloudAsLists(std::string filename,
                   std::vector< std::vector< float > > &points, 
                   std::vector< std::vector< int > > &triangles){    
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());

@@ -110,7 +110,6 @@ SimExample::doSim (Eigen::Isometry3d pose_in)
 
   std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d> > poses;
   std::vector<float> scores;
-  int n = 1;
   poses.push_back (pose_in);
   rl_->computeLikelihoods (reference, poses, scores);
   std::cout << "camera: " << camera_->getX ()
@@ -287,8 +286,6 @@ SimExample::write_depth_image_uint(const float* depth_buffer, std::string fname)
       if (kd < 0) kd = 0;
       else if (kd>2047) kd = 2047;
 
-      int pval = t_gamma[kd];
-      int lb = pval & 0xff;
       depth_img[i] = z_new;
     }
   }

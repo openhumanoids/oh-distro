@@ -38,12 +38,12 @@ string drc_base = string(pDRC_BASE);
 // Raw details read from affordance text file
 class AffRaw { 
 public:
-  AffRaw(std::string friendly_name, Eigen::Isometry3d position, std::vector<double> params):
-    friendly_name_ (friendly_name), position_(position), params_(params){};
+  AffRaw(std::string friendly_name_, Eigen::Isometry3d position_, std::vector<double> params_):
+    friendly_name_ (friendly_name_), position_(position_), params_(params_){};
   string friendly_name_;
+  Eigen::Isometry3d position_ ; // position of the affordance
   std::vector<double> params_;
   
-  Eigen::Isometry3d position_ ; // position of the affordance
   Eigen::Isometry3d standing_position_;
   
 };
@@ -523,7 +523,7 @@ void Pass::sendNameLabels(std::vector<AffRaw> &affraw_list){
   std::vector<Isometry3dTime> world_to_jointsT;
   std::vector< int64_t > world_to_joint_utimes;
   std::vector< std::string > joint_names;
-  for( int i=0 ; i < affraw_list.size() ; i++ ){
+  for( size_t i=0 ; i < affraw_list.size() ; i++ ){
     AffRaw affraw = affraw_list[ i];
 
     Isometry3dTime world_to_jointT(counter, affraw.position_);
@@ -546,7 +546,7 @@ void Pass::sendStandingLabels(std::vector<AffRaw> &affraw_list){
   std::vector<Isometry3dTime> world_to_jointsT;
   std::vector< int64_t > world_to_joint_utimes;
   std::vector< std::string > joint_names;
-  for( int i=0 ; i < affraw_list.size() ; i++ ){
+  for( size_t i=0 ; i < affraw_list.size() ; i++ ){
     AffRaw affraw = affraw_list[ i];
 
     Isometry3dTime world_to_jointT(counter, affraw.standing_position_);
@@ -674,8 +674,6 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
   }
 
   if ((which_publish==7)){ // only send on its own
-    int uid1 = 15;
-    
     drc::affordance_t a;
     a.utime =0;
     a.map_id =0;
@@ -711,8 +709,6 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
   }  
 
   if ((which_publish==8)){ // only send on its own
-    int uid1 = 15;
-    
     drc::affordance_t a;
     a.utime =0;
     a.map_id =0;

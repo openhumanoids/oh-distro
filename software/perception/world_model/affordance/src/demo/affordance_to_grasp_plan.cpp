@@ -266,7 +266,7 @@ void Pass::planHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
   }
   std::cout << "got a plan\n";
   
-  if (eeloci_poses_.size() != msg->num_states ){
+  if ( (int) eeloci_poses_.size()  != msg->num_states ){
     std::cout << eeloci_poses_.size() <<" n. loci is not number of plan states ["<<msg->num_states<<"]. will need to solve FK\n"; 
   }
 
@@ -274,7 +274,7 @@ void Pass::planHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
   cloud->width   = msg->num_states;
   cloud->height   = 1;
   cloud->points.resize (msg->num_states);
-  for (size_t i = 0; i < msg->num_states; i++) {
+  for (int i = 0; i < msg->num_states; i++) {
     cloud->points[i].x = eeloci_poses_[i].pose.translation().x();
     cloud->points[i].y = eeloci_poses_[i].pose.translation().y();
     cloud->points[i].z = eeloci_poses_[i].pose.translation().z();
@@ -367,7 +367,7 @@ void Pass::planGraspCylinder(Eigen::Isometry3d init_grasp_pose){
   double rel_angle = atan2(pt(1), pt(0)  );
   
   std::map<string,double> am;
-  for (size_t j=0; j< aff_.nparams; j++){
+  for (int j=0; j< aff_.nparams; j++){
     am[ aff_.param_names[j] ] = aff_.params[j];
   }
   double radius = am.find("radius")->second;
@@ -424,7 +424,7 @@ void Pass::planGraspBox(Eigen::Isometry3d init_grasp_pose){
 void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){  
 
   std::map<string,double> am;
-  for (size_t j=0; j< aff_.nparams; j++){
+  for (int j=0; j< aff_.nparams; j++){
     am[ aff_.param_names[j] ] = aff_.params[j];
   }
   Eigen::Vector3d aff_len( am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second );
@@ -444,8 +444,6 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
   double distance_to_x_face = fabs( fabs (grasp_point(0)) - aff_len(0)/2 );
   double distance_to_y_face = fabs( fabs (grasp_point(1)) - aff_len(1)/2 );  
   double distance_to_z_face = fabs( fabs (grasp_point(2)) - aff_len(2)/2 );
-  
-  bool verbose =false;
   
   int face_dim = 0; // the dimension that the hand is facing
   double distance_to_face_smallest = distance_to_x_face;
@@ -568,7 +566,7 @@ void Pass::planGraspBoxSandia(Eigen::Isometry3d init_grasp_pose){
   std::cout << "Find Box Grasp Sandia\n";
 
   std::map<string,double> am;
-  for (size_t j=0; j< aff_.nparams; j++){
+  for (int j=0; j< aff_.nparams; j++){
     am[ aff_.param_names[j] ] = aff_.params[j];
   }
   Eigen::Vector3d aff_len( am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second );
@@ -588,8 +586,6 @@ void Pass::planGraspBoxSandia(Eigen::Isometry3d init_grasp_pose){
   double segment_pitch=0;
   double direction_yaw=0;
   double direction_roll=0;
-  double xoffset = - aff_len(0)/2;
-  double zoffset = - aff_len(2)/2;
   Eigen::Vector3d aff_size_offset(0,0,0);
 
   double distance_to_x_face = fabs( fabs (grasp_point(0)) - aff_len(0)/2 );
@@ -692,9 +688,6 @@ void Pass::planGraspBoxSandia(Eigen::Isometry3d init_grasp_pose){
   
   pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
   
-//  aff_to_palmgeometry.translation()  << -0.06 + xoffset,-0.055 + yoffset,0.0 + grasp_point(2);   // + x + y + z
-//  aff_to_palmgeometry.rotate( euler_to_quat(75*M_PI/180, 180*M_PI/180, 90*M_PI/180  ) );
-  
   sendCandidateGrasp(aff_to_palmgeometry, 0);
 }
 
@@ -712,7 +705,7 @@ void Pass::planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose){
   double rel_angle = atan2(pt(1), pt(0)  );
   
   std::map<string,double> am;
-  for (size_t j=0; j< aff_.nparams; j++){
+  for (int j=0; j< aff_.nparams; j++){
     am[ aff_.param_names[j] ] = aff_.params[j];
   }
   double radius = am.find("radius")->second;
