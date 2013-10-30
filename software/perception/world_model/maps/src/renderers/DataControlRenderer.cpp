@@ -382,29 +382,15 @@ public:
     // grasp
     // left
     ids = { 0, 1, 2 };
-    Glib::RefPtr<Gtk::ListStore> treeModel = Gtk::ListStore::create(columns);
-    for (size_t i = 0; i < ids.size(); ++i) {
-      const Gtk::TreeModel::Row& row = *(treeModel->append());
-      row[columns.mId] = ids[i];
-      row[columns.mLabel] = mGraspNames[i];
-    }
     Gtk::HBox* hbox = Gtk::manage(new Gtk::HBox());
     Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
-    Gtk::ComboBox* combo = Gtk::manage(new Gtk::ComboBox());
-    combo->set_model(treeModel);
-    combo->pack_start(columns.mLabel);
     mLeftGraspNameEnum = 0;
-    bind(combo, "Type", mLeftGraspNameEnum);
-    combo->set_active(mLeftGraspNameEnum);
-    label = Gtk::manage(new Gtk::Label("Left"));
-    box->pack_start(*label,false,false);
-    box->pack_start(*combo,false,false);
+    addCombo("Left", mLeftGraspNameEnum, mGraspNames, ids, box);
     hbox->add(*box); 
     // Closed Amount
     box = Gtk::manage(new Gtk::HBox());
     mLeftGraspState =0;
-    addSpin("Closed %", mLeftGraspState, 0, 100, 10, box); 
-    label = Gtk::manage(new Gtk::Label("blah2"));
+    addSpin("Closed % L", mLeftGraspState, 0, 100, 10, box); 
     hbox->add(*box);
     // send button
     button = Gtk::manage(new Gtk::Button("Grasp"));
@@ -415,29 +401,16 @@ public:
     
     // right
     ids = { 0, 1, 2 };
-    Glib::RefPtr<Gtk::ListStore> treeModelR = Gtk::ListStore::create(columns);
-    for (size_t i = 0; i < ids.size(); ++i) {
-      const Gtk::TreeModel::Row& row = *(treeModelR->append());
-      row[columns.mId] = ids[i];
-      row[columns.mLabel] = mGraspNames[i];
-    }
     Gtk::HBox* hboxR = Gtk::manage(new Gtk::HBox());
     Gtk::HBox* boxR = Gtk::manage(new Gtk::HBox());
     Gtk::ComboBox* comboR = Gtk::manage(new Gtk::ComboBox());
-    comboR->set_model(treeModelR);
-    comboR->pack_start(columns.mLabel);
     mRightGraspNameEnum = 0;
-    bind(comboR, "Type", mRightGraspNameEnum);
-    comboR->set_active(mRightGraspNameEnum);
-    label = Gtk::manage(new Gtk::Label("Right"));
-    boxR->pack_start(*label,false,false);
-    boxR->pack_start(*comboR,false,false);
+    addCombo("Right", mRightGraspNameEnum, mGraspNames, ids, boxR);
     hboxR->add(*boxR); 
     // Closed Amount
     boxR = Gtk::manage(new Gtk::HBox());
     mRightGraspState = 0;
-    addSpin("Closed %", mRightGraspState, 0, 100, 10, boxR); 
-    label = Gtk::manage(new Gtk::Label("blah2"));
+    addSpin("Closed % R", mRightGraspState, 0, 100, 10, boxR); 
     hboxR->add(*boxR);
     // send button
     button = Gtk::manage(new Gtk::Button("Grasp"));
