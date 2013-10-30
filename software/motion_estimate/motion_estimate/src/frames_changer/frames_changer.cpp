@@ -204,18 +204,7 @@ int main(int argc, char *argv[])
   double    translation[] = { 0.0350, -0.0777, -0.0033};
   double rpy[] ={ -0.3002, -1.8998, 89.6263 };
   
-  /*
-  double    quat[] = { 0.714312, -0.000002, 0.000000, 0.699827 };
-  double rpy[3];
-  bot_quat_to_roll_pitch_yaw(quat, rpy);
-  rpy[0] = rpy[0]*180/M_PI;
-  rpy[1] = rpy[1]*180/M_PI;
-  rpy[2] = rpy[2]*180/M_PI;
-  */
-
-
-
-  double zilch[] = {0,0,0}; 
+  
   memcpy (state->trans, translation, 3*sizeof(double) );
   memcpy (state->rpy, rpy, 3*sizeof(double) );
 
