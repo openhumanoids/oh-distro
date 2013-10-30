@@ -13,5 +13,5 @@ struct atlas_state_t
   float joint_velocity [num_joints];
   float joint_effort[num_joints];
 
-  force_torque_t force_torque;
+  drc.force_torque_t force_torque;
 }
