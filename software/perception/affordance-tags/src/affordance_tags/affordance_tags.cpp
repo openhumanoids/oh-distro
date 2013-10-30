@@ -188,7 +188,8 @@ void draw_detection(cv::Mat& image, const AprilTags::TagDetection& detection) {
 
 
 void Tags::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg){
-  //processTag(msg);
+  imgutils_->decodeImageToRGB((msg),  img_buf_ );
+  processTag();
 }
 
 

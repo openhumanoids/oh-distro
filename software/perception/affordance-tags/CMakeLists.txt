@@ -11,3 +11,5 @@ lcmtypes_build()
 
 add_subdirectory(src/affordance_tags)
 add_subdirectory(src/laptop_demo)
+add_subdirectory(src/effector_tags)
+
