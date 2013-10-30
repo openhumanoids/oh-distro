@@ -20,7 +20,7 @@
 #include <octomap_utils/renderer_octomap.h>
 #include <renderer_maps/MapsRenderer.hpp>
 #include <renderer_data_control/DataControlRenderer.hpp>
-//#include <renderer_atlas_cameras/CameraRenderer.hpp>
+#include <renderer_atlas_cameras/CameraRenderer.hpp>
 // #include <renderer_annotated_camera/AnnotatedCameraRenderer.hpp>
 #include <multisense/multisense_renderer.h>
 #include <occ_map/occ_map_renderers.h>
@@ -614,7 +614,7 @@ int main(int argc, char *argv[])
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  //camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 //  annotated_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 //  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);

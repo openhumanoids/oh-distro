@@ -25,7 +25,7 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         tracker-renderer
         renderer_bdi
         renderer_cam_thumb_drc
-        #renderer_atlas_cameras
+        renderer_atlas_cameras
         renderer_recovery)
 
 ###
