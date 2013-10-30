@@ -54,6 +54,10 @@ setup_drc()
 
   # python path
   export PYTHONPATH=$PYTHONPATH:$DRC_BASE/software/build/lib/python2.7/site-packages:$DRC_BASE/software/build/lib/python2.7/dist-packages
+
+  # enable some warnings by default
+  export CXXFLAGS="$CXXFLAGS -Wreturn-type -Wuninitialized"
+  export CFLAGS="$CFLAGS -Wreturn-type -Wuninitialized"
 }
 
 
