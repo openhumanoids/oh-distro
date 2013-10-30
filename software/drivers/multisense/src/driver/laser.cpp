@@ -375,7 +375,7 @@ void Laser::scanCallback(const lidar::Header&        header,
     lcm_state_.utime = utime_start;
     lcm_state_.joint_position[0]= angle_start;
     lcm_state_.joint_velocity[0]= velocity;
-    lcm_publish_.publish("STATE_MULTISENSE", &lcm_state_);    
+    lcm_publish_.publish("MULTISENSE_STATE", &lcm_state_);    
     publishLCMTransforms(utime_start, header.spindleAngleStart);
     
     //
