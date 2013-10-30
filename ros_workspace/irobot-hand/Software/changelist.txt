@@ -1,3 +1,38 @@
+2013_10_28
+-------------------
+Overview:
+ * Bug fix finger angle control in handle_controller
+ * change scp scripts to use 10.66.171.* address for hand
+ * increment handle_controller version to 202
+ * comment HandleSensors.msg with new motor error codes
+
+Changed files:
+ * The handle_controller for the Overo changed.
+ * Only scripts on the PC side have changed.  
+ * Comments changed in the ROS topic definition for HandleSensors.msg, but that
+   should not require a recompile.
+ * No need to flash the microctontrollers.
+
+To update:
+Loginto the hand:
+    ./killhandle.sh
+    ./stopall
+    makerw
+
+On the PC:
+    cd extracted directory
+    ./scpall.sh <hand#>
+    (Make sure handle_controller succeeds.  It will fail if it is still 
+     running on the hand.)
+
+Back on the hand:
+    makero
+    exit
+
+Then you should power-cycle the hand.
+    
+
+
 
 2013_10_21
 -------------------

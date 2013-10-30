@@ -38,7 +38,7 @@
 
 #define DO_THERMAL
 
-#define ANGLE_P_CONTROL 201
+#define ANGLE_P_CONTROL 200
 
 #define MOTOR_MIN_RPM  500 // in units of RPM
 #define MOTOR_MAX_RPM  12000 // in units of RPM
@@ -65,7 +65,7 @@
 #define DEFAULT_TIMEOUT 0.0 //seconds, 0 = no timeout
 #define DEFAULT_SENSOR_MASK DATA_COLLECTION_ALL_BITMASK & (~DATA_COLLECTION_EXTERNALSUPPLY_BITMASK)
 
-#define VERSION 201
+#define VERSION 202
 
 #ifdef DO_THERMAL
 struct override_t
@@ -1259,6 +1259,7 @@ void* serial_thread(void*)
                 {
                     set = motorControlFingerAngle(command_index, command.value); // does P control
                     command.type = MOTOR_VELOCITY;
+                    control.motorCommand[command_index].valid = true; // command must stay valid
                 }
                 else
                     set = command.value;

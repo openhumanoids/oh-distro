@@ -2,10 +2,17 @@ TODO:
 * respond to email with title Modifications to Hands and Smart Fingers
 * ask for calibration jig
 * try visualize_simplified.launch
-* get angle control to work
 * figure out best control types to use for opening and closing hand, and holding an object
+* check if translator needs to be updated
+* send smart fingers to iRobot
+* new M1 tendon for 49
+* write software that interfaces with the rest of the DRC software
+* update 47 firmware to latest
+* experiment with current control
+* improve helios_scripts/launch_hand_driver.sh 
 
 BUSY:
+* get set up with PyDev
 
 DONE:
 * ping hand
@@ -25,3 +32,7 @@ DONE:
 * email: angle control
 * write makefile
 * measure motor coil resistances for 49
+* update firmware
+* get angle control to work
+* send email to iRobot: angle control, motor coil resistances
+* update 49 firmware to latest

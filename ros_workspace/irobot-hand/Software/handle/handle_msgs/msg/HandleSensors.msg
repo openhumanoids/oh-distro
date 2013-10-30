@@ -149,4 +149,6 @@ int8[12] responseHistory
 # 128 = Thermal Protection Delay
 # 129 = Mandatory Cool Down 
 # 130 = Request out of range
+# 131 = No thermistor 
+# 153 = Unknown error
 int16[5] motorError
