@@ -2,7 +2,7 @@ package retired;
 
 // Additional Signals Exposed by BDI in 2.7.0 API:
 // Same joint names and ordering as ATLAS_STATE
-struct atlas_state_extra_t
+struct atlas_state_extra_29oct2013_t
 {
   int64_t utime;
 

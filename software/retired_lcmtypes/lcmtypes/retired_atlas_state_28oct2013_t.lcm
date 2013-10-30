@@ -3,7 +3,7 @@ package retired;
 // The part of the Robot State
 // that origins from BDI's library
 
-struct atlas_state_t
+struct atlas_state_28oct2013_t
 {
   int64_t utime;
 
