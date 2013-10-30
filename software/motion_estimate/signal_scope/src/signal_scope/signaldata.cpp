@@ -145,7 +145,9 @@ void SignalData::updateValues()
     d_data->boundingRect.setLeft(xvalues.front());
     d_data->boundingRect.setRight(xvalues.back());
 
-    double minY, maxY = yvalues.front();
+    double minY = yvalues.front();
+    double maxY = minY;
+
     for (int i = 0; i < yvalues.size(); ++i)
     {
       double sampleY = yvalues[idx];
