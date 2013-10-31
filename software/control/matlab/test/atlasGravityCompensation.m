@@ -150,7 +150,7 @@ while 1
     f_grav = u(arm_joints_act_fixed);
        
     % send torque command
-    udes(arm_joints_act) = 0.5*tf_act(arm_joints_act) + f_grav;
+    udes(arm_joints_act) = tf_act(arm_joints_act) + f_grav;
     ref_frame.publish(t,[qdes(act_idx);udes],'ATLAS_COMMAND');
     tlast =tt;
   end
