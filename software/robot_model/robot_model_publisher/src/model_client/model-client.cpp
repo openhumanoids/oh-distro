@@ -1,6 +1,8 @@
-// file: robot_model_listener.cpp
-// test code for a robot model subscriber.
-
+// NBNBNBNBNBNBNBNBNBNBNBNBNBNBNBNB
+// Any subscriptions/construction with Model Client must
+// be before typical user subscriptions - if the same LCM object
+// is used. Otherwise it won't be received before handling them
+// NBNBNBNBNBNBNBNBNBNBNBNBNBNBNBNB
 #include <stdio.h>
 #include <sys/time.h>
 #include <iostream>
@@ -55,7 +57,7 @@ void ModelClient::doModelClient(){
   //TODO: is there a way to be sure nothing else is subscribed???
   int64_t utime_start = _timestamp_now();
   int64_t last_print_utime = -1;
-  while ((_timestamp_now() - utime_start) < 1.5e6) {
+  while ((_timestamp_now() - utime_start) < 2.5e6) {
     //bot_param_request_t req;
     //req.utime = _timestamp_now();
     //bot_param_request_t_publish(lcm, request_channel, &req);
@@ -94,12 +96,6 @@ void ModelClient::doModelClient(){
   }
 }
 
-
-// NBNBNBNBNBNBNBNBNBNBNBNBNBNBNBNB
-// Any subscriptions/construction with Model Client must
-// be before typical user subscriptions - if the same LCM object
-// is used. Otherwise it won't be received before handling them
-// NBNBNBNBNBNBNBNBNBNBNBNBNBNBNBNB
 ModelClient::ModelClient(lcm_t* lcm_, int keep_updated_):
     urdf_parsed_(false),lcm_(lcm_), keep_updated_(keep_updated_){
   model_channel_ = "ROBOT_MODEL";

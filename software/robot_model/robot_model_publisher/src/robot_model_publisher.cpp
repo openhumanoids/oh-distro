@@ -14,35 +14,43 @@
 
 using namespace std;
 
+void getHandConfiguration( std::vector<std::string> joint_names, int8_t &left_hand, int8_t &right_hand){
+
+  if(find(joint_names.begin(), joint_names.end(), "left_f0_j0" ) != joint_names.end()){
+    std::cout << "Robot fitted with left Sandia hand\n";
+    left_hand = drc::robot_urdf_t::LEFT_SANDIA;
+  }else if(find(joint_names.begin(), joint_names.end(), "left_finger[0]/joint_base" ) != joint_names.end()){
+    std::cout << "Robot fitted with left iRobot hand\n";
+    left_hand = drc::robot_urdf_t::LEFT_IROBOT;
+  }else{
+    std::cout << "Robot has no left hand\n"; 
+    left_hand = drc::robot_urdf_t::LEFT_NONE;
+  }
+
+  if(find(joint_names.begin(), joint_names.end(), "right_f0_j0" ) != joint_names.end()){
+    std::cout << "Robot fitted with right Sandia hand\n";
+    right_hand = drc::robot_urdf_t::RIGHT_SANDIA;
+  }else if(find(joint_names.begin(), joint_names.end(), "right_finger[0]/joint_base" ) != joint_names.end()){
+    std::cout << "Robot fitted with right iRobot hand\n";
+    right_hand = drc::robot_urdf_t::RIGHT_IROBOT;
+  }else{
+    std::cout << "Robot has no right hand\n"; 
+    right_hand = drc::robot_urdf_t::RIGHT_NONE;
+  }
+  
+}
+
+
+
+
 int main(int argc, char ** argv)
 {
   string urdf_file = "path_to_your.urdf";
-  string role = "robot";
   ConciseArgs opt(argc, (char**)argv);
   opt.add(urdf_file, "u", "urdf_file","Robot URDF file");
-  opt.add(role, "r", "role","Role - robot or base");
   opt.parse();
   std::cout << "urdf_file: " << urdf_file << "\n";
-  std::cout << "role: " << role << "\n";
 
-  string lcm_url="";
-  if((role.compare("robot") == 0) || (role.compare("base") == 0) ){
-    for(short i = 0; i < role.size(); ++i)
-       role[i] = (std::toupper(role[i]));
-    string env_variable_name = string("LCM_URL_DRC_" + role); 
-    char* env_variable;
-    env_variable = getenv (env_variable_name.c_str());
-    if (env_variable!=NULL){
-      //printf ("The env_variable is: %s\n",env_variable);      
-      lcm_url = string(env_variable);
-    }else{
-      std::cout << env_variable_name << " environment variable has not been set ["<< lcm_url <<"]\n";     
-      exit(-1);
-    }
-  }else{
-    std::cout << "Role not understood, choose: robot or base\n";
-    return 1;
-  }
 
   // get the entire file
   std::string xml_string;
@@ -64,30 +72,40 @@ int main(int argc, char ** argv)
     return false;
   }
   
-  
-  urdf::Model robot;
-  if (!robot.initFile(urdf_file)){
+  // Get a urdf Model from the xml string and get all the joint names.
+  urdf::Model robot_model; 
+  if (!robot_model.initString( xml_string ))
+  {
     std::cerr << "ERROR: Model Parsing the xml failed" << std::endl;
-    return -1;
   }
 
-    lcm::LCM lcm(lcm_url);
-    if(!lcm.good())
-        return 1;
+  typedef std::map<std::string, boost::shared_ptr<urdf::Joint> > joints_mapType;
+  std::vector<std::string> joint_names; 
+  for( joints_mapType::const_iterator it = robot_model.joints_.begin(); it!=robot_model.joints_.end(); it++)
+  {
+    if(it->second->type!=6) // All joints that not of the type FIXED.
+      joint_names.push_back(it->first);
+  }
+  std::cout<< "Number of Joints: " << joint_names.size() <<std::endl;    
+  
+  lcm::LCM lcm("");
+  if(!lcm.good())
+      return 1;
     
-
     
-    drc::robot_urdf_t message;
-    message.robot_name =robot.getName();
-    message.urdf_xml_string = xml_string;
-    std::cout << "Broadcasting urdf of robot [" << robot.getName() << "] as a string at 1Hz\n";
-   struct timeval tv;
+  drc::robot_urdf_t message;
+  message.robot_name =robot_model.getName();
+  message.urdf_xml_string = xml_string;
+  getHandConfiguration(joint_names, message.left_hand, message.right_hand);
+  
+  std::cout << "Broadcasting urdf of robot [" << robot_model.getName() << "] as a string at 1Hz\n";
+  struct timeval tv;
   while(true)
   {
     gettimeofday (&tv, NULL);
     message.utime = (int64_t) tv.tv_sec * 1000000 + tv.tv_usec; // TODO: replace with bot_timestamp_now() from bot_core
     lcm.publish("ROBOT_MODEL", &message);
-    usleep(1000000);
+    usleep(2000000); // used to publish at 1Hz, now publish at 0.5Hz
   }
     
 
