@@ -345,6 +345,10 @@ group "m.simple_grasping" {
         exec = "drc-fake-grasp-pool";
         host = "base";
     }
+    cmd "hand_cloud" {
+        exec = "hand_cloud";
+        host = "base";
+    }
 }
 
 
