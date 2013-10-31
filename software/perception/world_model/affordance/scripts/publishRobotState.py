@@ -204,9 +204,11 @@ def sendRobotStateMsg():
   else:
     msg = setStateAtHeight66(msg)
 
-  #msg = appendSandiaJoints(msg)
-  msg = appendIrobotJoints(msg)
   msg = appendHeadJoints(msg)
+  if (hand_type == "sandia"):
+    msg = appendSandiaJoints(msg)
+  else:
+    msg = appendIrobotJoints(msg)
   lc.publish("EST_ROBOT_STATE", msg.encode())
 
 
@@ -226,6 +228,19 @@ def on_walking_goal(channel, data):
   
 
 #################################################################################
+
+print 'drc-fake-robot-state [irobot|sandia]'
+#print 'Number of arguments:', len(sys.argv), 'arguments.'
+#print 'Argument List:', str(sys.argv)
+
+hand_type = "sandia"
+
+if (len(sys.argv)>=2):
+  hand_type = sys.argv[1]
+  print "hand_type:", hand_type
+else:
+  print "hand_type defaulting to ", hand_type
+
 
 lc = lcm.LCM()
 print "started"

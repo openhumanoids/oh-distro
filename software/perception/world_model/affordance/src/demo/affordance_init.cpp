@@ -446,8 +446,7 @@ std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
       Eigen::Isometry3d position = Eigen::Isometry3d::Identity();
       position.translation() << values[0], values[1], values[2];
       
-      // I think the text file as actually ypr not rpy
-      Eigen::Quaterniond quat = euler_to_quat( values[5], values[4], values[3]);
+      Eigen::Quaterniond quat = euler_to_quat( values[3], values[4], values[5]);
       position.rotate(quat);
 
       std::cout << "aff: " << tokens[0] << ": " ;
@@ -499,7 +498,7 @@ void Pass::readStandingPositionsFile(std::string filename, std::vector<AffRaw> &
       standing_position.translation() << values[0], values[1], 0;
       // put the feet on the ground
       // values[2];
-      Eigen::Quaterniond quat = euler_to_quat( values[3],0, 0);
+      Eigen::Quaterniond quat = euler_to_quat( 0,0, values[3]);
       standing_position.rotate(quat);
       standing_positions.push_back( standing_position );
     }

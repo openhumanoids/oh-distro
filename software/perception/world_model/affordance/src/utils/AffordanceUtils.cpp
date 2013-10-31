@@ -203,7 +203,7 @@ Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
 
 
 /// This function replicates one in pointcloud_math. But does a function exist in Eigen?
-void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& roll) {
+void quat_to_euler(Eigen::Quaterniond q, double& roll, double& pitch, double& yaw) {
   const double q0 = q.w();
   const double q1 = q.x();
   const double q2 = q.y();
@@ -212,7 +212,6 @@ void quat_to_euler(Eigen::Quaterniond q, double& yaw, double& pitch, double& rol
   pitch = asin(2*(q0*q2-q3*q1));
   yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
 }
-
 
 
 void AffordanceUtils::setXYZRPYFromIsometry3d(double xyz[3], double rpy[3], 
