@@ -60,6 +60,10 @@ group "b.2.planners" {
        exec = "affordance_to_grasp_plan";
        host = "base";
     }
+    cmd "hand_cloud" {
+        exec = "hand_cloud";
+        host = "base";
+    }
 }
 
 
