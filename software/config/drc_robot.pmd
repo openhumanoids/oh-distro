@@ -175,7 +175,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "aff_server" {
-        exec = "affordance_server";
+        exec = "affordance_server -r base";
         host = "base";
     }
     cmd "j2f" {
