@@ -21,3 +21,4 @@ pods_install_python_script(sandia-simple-grasp-keyboard scripts/simple_grasp_key
 pods_install_python_script(irobot-simple-grasp scripts/simple_grasp_irobot.py)
 
 
+pods_install_python_script(drc-fake-hand-state scripts/publish_fake_hand_state.py)
