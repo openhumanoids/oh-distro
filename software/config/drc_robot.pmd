@@ -171,19 +171,19 @@ group "a.3.models" {
 
 group "b.1.core" {
     cmd "base_viewer" {
-        exec = "drc-viewer  -r base -c drc_robot_02.cfg"; 
+        exec = "drc-viewer -c drc_robot_02.cfg"; 
         host = "base";
     }
     cmd "aff_server" {
-        exec = "affordance_server  -r base";
+        exec = "affordance_server";
         host = "base";
     }
     cmd "j2f" {
-        exec = "drc-joints2frames -r base -g";
+        exec = "drc-joints2frames -g";
         host = "base";
     }
     cmd "param_server" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg -l 'udpm://239.255.76.68:7668?ttl=1'";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
         host = "base";
     }
     cmd "est_rsp_base" {
