@@ -4,7 +4,7 @@
 
 drc_lcmtypes
 # retired types from drc_lcmtypes
-retired_lcmtypes
+retired_lcmtypes # live in florida
 
 
 models
