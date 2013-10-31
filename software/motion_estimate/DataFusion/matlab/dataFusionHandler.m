@@ -21,25 +21,33 @@ posterior.P = 999*eye(15);
 % complimentary filtering practices from the Aerospace community.
 while (true)
     % wait for message
-    [Measurement.INS.Pose, Measurement.LegOdo.Pose] = receiveInertialStatePos(aggregator);
+    [Measurement.INS, Measurement.LegOdo] = receiveInertialStatePos(aggregator);
     
     % Now ew can start computation
     tic;
+%     disp('Received data fusion request')
     % Ensure that we are not exceeding our allotted computation time
     if (computationTime > 0.045)
         disp(['WARNING -- dataFusionHandler is taking longer than 40ms, time taken was' num2str(computationTime)]) 
     end
 
-    Sys.T = 0.001;% this should be taken from the utime stamps when ported to real data
+    Sys.T = 0.02;% this should be taken from the utime stamps when ported to real data
     Sys.posterior = posterior;
 
-    Measurement.positionResidual = Measurement.LegOdo.Pose.P_l - Measurement.INS.Pose.P_l;
+    Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
+    Measurement.quaternionLinearDiff = Measurement.LegOdo.pose.q - Measurement.INS.pose.q; % We do not intend to use the linear difference between the quaternions, just a sanity check
     
-    [Result, data{n}.df] = iterate([], Sys, Measurement);
+    disp(['Position residual ' num2str(Measurement.positionResidual')])
+    disp(['Linear difference in quaternions ' num2str(Measurement.quaternionLinearDiff')])
+    
+    [Result, dfSys] = iterate([], Sys, Measurement);
 
-    posterior = data{n}.df.posterior;
+    posterior = dfSys.posterior;
 
     computationTime = toc;
+    if (Measurement.INS.pose.utime == 5000000)
+        break;
+    end
 end
 
 

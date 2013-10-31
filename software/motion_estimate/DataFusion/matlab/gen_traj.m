@@ -61,7 +61,7 @@ a_l = f_l + [zeros(size(f_l,1),2) param.gravity*ones(size(f_l,1),1)];
 R = eye(3);
 w_l_ = zeros(1,3);
 for n = 1:size(w_l,1)
-    R = closed_form_DCM_farrell( -0.5*(w_l_ + w_l(n,:))'*dt , R);
+    R = closed_form_DCM_farrell( 0.5*(w_l_ + w_l(n,:))'*dt , R);
     w_l_ = w_l(n,:);
     E_interm(n,:) = q2e(R2q(R))';
 end

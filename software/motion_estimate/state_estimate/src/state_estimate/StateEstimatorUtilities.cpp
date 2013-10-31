@@ -122,7 +122,8 @@ void StateEstimate::handle_inertial_data_temp_name(
   
   std::cout << "StateEstimate::handle_inertial_data_temp_name -- acc before pelvis alignment " << Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]).transpose() << std::endl;
   
-  InerOdoEst = inert_odo.PropagatePrediction(&imu_data, q);
+  // Estimate our own orientation estimate
+  InerOdoEst = inert_odo.PropagatePrediction(&imu_data);
   
 
   // This is the unit test block for the INS POSE state estimate -- used in conjunction with ground truth

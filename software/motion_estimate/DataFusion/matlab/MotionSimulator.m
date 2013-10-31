@@ -128,7 +128,7 @@ for n = 1:iterations
     [imuMsgBatch,sentIMUBatch] = sendDrcAtlasRawIMU(param.dt,n, measured,imuMsgBatch,lc);
     % here we listen back for an INS state message from the state estimate
     % processThis is the new way of working.
-    
+%     pause
     % data{n}.INS.pose = receivepose(aggregator);
     if (sentIMUBatch)
         receivedMsgs =  receivedMsgs + 1;
@@ -170,6 +170,7 @@ for n = 1:iterations
     RESULTS.cppINSPoseResiduals.f_l(n,:) = RESULTS.traj.true.f_l(n,:) - storeCppINS.pose.f_l';
     
     RESULTS.cppINSPoseResiduals.q(n,:) = quaternionResidual(RESULTS.traj.true.q(n,:), storeCppINS.pose.q')';
+    
     
 end
 

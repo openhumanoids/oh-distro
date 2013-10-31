@@ -87,7 +87,7 @@ namespace InertialOdometry {
 	Eigen::Vector3d OrientationComputer::ResolveBodyToRef(const Eigen::Vector3d &vec_b) {
 
 		Eigen::Vector3d vec_ref;
-		vec_ref = q2C(q_state) * vec_b;
+		vec_ref = q2C(q_state).transpose() * vec_b;
 		return vec_ref;
 	}
 
