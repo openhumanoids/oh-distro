@@ -589,10 +589,8 @@ int main(int argc, char *argv[])
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+//  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-//  annotated_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-//  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
 
@@ -603,6 +601,8 @@ int main(int argc, char *argv[])
 
   /*
   // Various Renderers - disabled since VRC
+//  annotated_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+//  scrollingplots_add_renderer_to_viewer(viewer, 0, lcm);
   // bot_viewer_add_stock_renderer(viewer, BOT_VIEWER_STOCK_RENDERER_GRID, 1);
   // Renderers for Testing Loopback Quality:
   if (network_debug == 1){    
