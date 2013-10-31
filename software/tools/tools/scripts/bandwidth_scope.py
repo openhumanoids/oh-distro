@@ -11,10 +11,10 @@ import datetime
 
 from threading import Thread
 
-home_dir =os.getenv("HOME")
+home_dir =os.getenv("DRC_BASE")
 #print home_dir
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/site-packages")
-sys.path.append(home_dir + "/drc/software/build/lib/python2.7/dist-packages")
+sys.path.append(home_dir + "/software/build/lib/python2.7/site-packages")
+sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
 
 from drc.bandwidth_stats_t import bandwidth_stats_t
 ########################################################################################
