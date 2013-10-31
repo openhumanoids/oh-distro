@@ -1,36 +1,54 @@
 function runKeyFramePlannersLCMBase(varargin)
 % Usage:
 % ===============================================================
-% runKeyFramePlannersLCMBase(hardware_mode,l_hand_mode,r_hand_mode)
+% runKeyFramePlannersLCMBase(hardware_mode)
 % or
 % runKeyFramePlannersLCMBase(hardware_mode) assumes sandia hands by default
 % @param hardware_mode   -- -1 for sim mode
 %                           -2 BDI_Manip_Mode(upper body only)
 %                           -3 for BDI_User
-% @param l_hand_mode          - 0 no left hand
-%                            - 1 sandia left hand
-%                            - 2 irobot left hand
-% @param r_hand_mode         - 0 no right hand
-%                            - 1 sandia right hand
-%                            - 2 irobot right hand
 
 switch nargin
     case 1
         hardware_mode = varargin{1}; % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
         l_hand_mode = 1;
         r_hand_mode = 1;
-    case 3
-        hardware_mode = varargin{1};% 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-        l_hand_mode = varargin{2};
-        r_hand_mode = varargin{3};
-        if(~isempty(setdiff([l_hand_mode r_hand_mode],[0 1 2])))
-          error('Unacceptable left_hand_mode or right_hand_mode value');
-        end
     otherwise
         error('Incorrect usage of runKeyFramePlannersLCMBase. Undefined number of varargin. (hardware_mode,l_hand_mode,r_hand_mode)')
 end
 
-
+% get the robot model first
+% @param l_hand_mode          - 0 no left hand
+%                            - 1 sandia left hand
+%                            - 2 irobot left hand
+% @param r_hand_mode         - 0 no right hand
+%                            - 1 sandia right hand
+%                            - 2 irobot right hand
+getModelFlag = false;
+model_listener = RobotModelListener('ROBOT_MODEL');
+while(~getModelFlag)
+  data = model_listener.getNextMessage(5);
+  if(~isempty(data))
+    getModelFlag = true;
+    l_hand_mode = data.left_hand_mode;
+    r_hand_mode = data.right_hand_mode;
+    if(l_hand_mode == 0)
+      l_hand_str = 'no hand';
+    elseif(l_hand_mode == 1)
+      l_hand_str = 'sandia hand';
+    elseif(l_hand_mode == 2)
+      l_hand_str = 'irobot hand';
+    end
+    if(r_hand_mode == 0)
+      r_hand_str = 'no hand';
+    elseif(r_hand_mode == 1)
+      r_hand_str = 'sandia hand';
+    elseif(r_hand_mode == 2)
+      r_hand_str = 'irobot hand';
+    end
+    send_status(4,0,0,sprintf('receive model with left %s, right %s\n',l_hand_str,r_hand_str));
+  end
+end
 options.floating = true;
 options.dt = 0.001;
 if(l_hand_mode == 0 && r_hand_mode == 1)
@@ -39,8 +57,10 @@ elseif(l_hand_mode == 1 && r_hand_mode == 1)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
 % elseif(l_hand_mode == 2 && r_hand_mode == 2)
 %   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_irobot_hands.urdf'),options);
-else
+elseif(l_hand_mode == 0 && r_hand_mode == 0)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
+else
+  error('The urdf for the model does not exist');
 end
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
