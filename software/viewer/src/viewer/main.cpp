@@ -518,48 +518,23 @@ int main(int argc, char *argv[])
   setlinebuf(stdout);
   
   string config_file = "";
-  string role = "robot";
   int network_debug = 0; 
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config_file, "c", "config_file","Robot cfg file");
-  opt.add(role, "r", "role","Role - robot or base");
   opt.add(network_debug, "n", "network_debug","Network Debug [0 nothing, 1 feet, 2 plan, 3 state]");
   opt.parse();
   std::cout << "config_file: " << config_file << "\n";
-  std::cout << "role: " << role << "\n";
   std::cout << "network_debug: " << (int) network_debug << "\n";
-  string viewer_title = "(" + role + ") MIT DRC Viewer";
-  string vis_config_file = ".bot-plugin-"+ role +"-drc-viewer";
+  string viewer_title = "MIT DRC Viewer";
+  string vis_config_file = ".bot-plugin-robot-drc-viewer";
   
   //todo: comment this section
   gtk_init(&argc, &argv);
   glutInit(&argc, argv);
   g_thread_init(NULL);
   
-  string lcm_url="";
-  std::string role_upper;
-  for(short i = 0; i < role.size(); ++i)
-     role_upper+= (std::toupper(role[i]));
-  if((role.compare("robot") == 0) || (role.compare("base") == 0) ){
-    for(short i = 0; i < role_upper.size(); ++i)
-       role_upper[i] = (std::toupper(role_upper[i]));
-    string env_variable_name = string("LCM_URL_DRC_" + role_upper); 
-    char* env_variable;
-    env_variable = getenv (env_variable_name.c_str());
-    if (env_variable!=NULL){
-      //printf ("The env_variable is: %s\n",env_variable);      
-      lcm_url = string(env_variable);
-    }else{
-      std::cout << env_variable_name << " environment variable has not been set ["<< lcm_url <<"]\n";     
-      exit(-1);
-    }
-  }else{
-    std::cout << "Role not understood, choose: robot or base\n";
-    return 1;
-  }   
-  
   lcm_t * lcm;
-  lcm= lcm_create(lcm_url.c_str());// bot_lcm_get_global(lcm_url.c_str());
+  lcm= lcm_create("");// bot_lcm_get_global(lcm_url.c_str());
   
   bot_glib_mainloop_attach_lcm(lcm);
   BotParam * bot_param;

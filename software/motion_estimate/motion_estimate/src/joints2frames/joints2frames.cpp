@@ -314,14 +314,12 @@ void joints2frames::foot_pos_est_handler(const lcm::ReceiveBuffer* rbuf, const s
 
 int
 main(int argc, char ** argv){
-  string role = "robot";
   bool labels = false;
   bool triads = false;
   bool standalone_head = false;
   bool ground_height = false;
   bool bdi_motion_estimate = false;
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(role, "r", "role","Role - robot or base");
   opt.add(triads, "t", "triads","Frame Triads - show no not");
   opt.add(labels, "l", "labels","Frame Labels - show no not");
   opt.add(ground_height, "g", "ground", "Publish the grounded foot pose");
@@ -334,31 +332,9 @@ main(int argc, char ** argv){
   
   std::cout << "triads: " << triads << "\n";
   std::cout << "labels: " << labels << "\n";
-  std::cout << "role: " << role << "\n";
 
-  string lcm_url="";
-  std::string role_upper;
-  for(short i = 0; i < role.size(); ++i)
-     role_upper+= (std::toupper(role[i]));
-  if((role.compare("robot") == 0) || (role.compare("base") == 0) ){
-    for(short i = 0; i < role_upper.size(); ++i)
-       role_upper[i] = (std::toupper(role_upper[i]));
-    string env_variable_name = string("LCM_URL_DRC_" + role_upper); 
-    char* env_variable;
-    env_variable = getenv (env_variable_name.c_str());
-    if (env_variable!=NULL){
-      //printf ("The env_variable is: %s\n",env_variable);      
-      lcm_url = string(env_variable);
-    }else{
-      std::cout << env_variable_name << " environment variable has not been set ["<< lcm_url <<"]\n";     
-      exit(-1);
-    }
-  }else{
-    std::cout << "Role not understood, choose: robot or base\n";
-    return 1;
-  }
   
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM(lcm_url) );
+  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM("") );
   if(!lcm->good())
     return 1;  
   
