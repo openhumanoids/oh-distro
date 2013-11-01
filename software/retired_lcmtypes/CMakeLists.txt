@@ -15,3 +15,5 @@ pods_install_pkg_config_file(retired-lcmtypes
     LIBS -l${LCMTYPES_LIBS}
     REQUIRES lcm
     VERSION 0.0.1)
+
+add_subdirectory(src)
