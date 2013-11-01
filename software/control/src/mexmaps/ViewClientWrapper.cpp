@@ -83,6 +83,11 @@ setHeightMapChannel(const std::string& iChannel, const int iViewId) {
   mHeightMapViewId = iViewId;
 }
 
+void ViewClientWrapper::
+setMapMode(const int iMode) {
+  mFillMethods->setMapMode(iMode);
+}
+
 bool ViewClientWrapper::
 start() {
   mViewClient->start();

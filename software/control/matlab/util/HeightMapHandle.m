@@ -41,6 +41,10 @@ classdef HeightMapHandle < handle
         function setNormalRadius(this,radius)
             this.mMexFunc('property',this.mHandle,'normalradius',sprintf('%f',radius));
         end
+
+        function setMapMode(this,mode)
+            this.mMexFunc('property',this.mHandle,'mapmode',sprintf('%d',mode));
+        end
         
         function ptr = getPointerForMex(this)
             ptr = this.mMexFunc('wrapper',this.mHandle);

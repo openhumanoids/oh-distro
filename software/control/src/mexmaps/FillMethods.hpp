@@ -34,6 +34,7 @@ public:
 public:
   FillMethods(const std::shared_ptr<maps::BotWrapper>& iWrapper);
 
+  void setMapMode(const int iMode);
   int getMapMode() const;
 
   float computeMedian(const Eigen::VectorXf& iData);

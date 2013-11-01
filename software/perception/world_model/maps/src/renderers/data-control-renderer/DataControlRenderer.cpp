@@ -117,11 +117,6 @@ public:
     // create affordance update timer
     Glib::signal_timeout().connect
       (sigc::mem_fun(*this, &DataControlRenderer::checkAffordances), 500);
-
-    // create height map mode timer
-    // TODO: requires upload of message to robot; maybe not the most efficient
-    Glib::signal_timeout().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::sendHeightMode), 5000);    
   }
 
   ~DataControlRenderer() {
@@ -157,12 +152,14 @@ public:
     return true;
   }
 
+  /* TODO: no longer needed
   bool sendHeightMode() {
     drc::map_controller_command_t msg;
     msg.command = mControllerHeightMapMode;
     getLcm()->publish("MAP_CONTROLLER_COMMAND", &msg);
     return true;
   }
+  */
 
   std::vector<int> getSelectedAffordanceIds() {
     struct Functor {
@@ -263,12 +260,10 @@ public:
     typedef drc::data_request_t dr;
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD, "Camera Head",
                "CAMERA_LEFT", ChannelTypeAnonymous);
-    /* TODO: temporarily disabled until we decide to use hand cameras
     addControl(drc::data_request_t::CAMERA_IMAGE_LHAND, "Camera L.Hand",
                "CAMERA_LHANDLEFT", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_RHAND, "Camera R.Hand",
                "CAMERA_RHANDLEFT", ChannelTypeAnonymous);
-    */
     addControl(drc::data_request_t::CAMERA_IMAGE_LCHEST, "Camera L.Chest",
                "CAMERA_LCHEST", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_RCHEST, "Camera R.Chest",
@@ -365,7 +360,7 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
     sensorControlBox->pack_start(*button, false, false);
 
-
+    /* TODO: no longer needed
     mControllerHeightMapMode = drc::map_controller_command_t::FLAT_GROUND;
     labels = {"Flat Ground", "Full Heights", "Z Normals"};
     ids = {drc::map_controller_command_t::FLAT_GROUND,
@@ -377,6 +372,7 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onControllerHeightMapMode));
     sensorControlBox->pack_start(*button, false, false);
+    */
     
     //
     // grasp
@@ -611,9 +607,11 @@ public:
     getLcm()->publish("DESIRED_NECK_PITCH", &msg);
   }
 
+  /* TODO: no longer needed
   void onControllerHeightMapMode() {
     sendHeightMode();
   }
+  */
 
   void onLeftGraspButton() {
     drc::sandia_simple_grasp_t msg;

@@ -43,6 +43,7 @@ struct ViewClientWrapper {
   ~ViewClientWrapper();
 
   void setHeightMapChannel(const std::string& iChannel, const int iViewId);
+  void setMapMode(const int iMode);
 
   bool start();
   bool stop();

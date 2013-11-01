@@ -106,6 +106,7 @@ struct Utils {
     else {
       mexErrMsgTxt("MapWrapper: value must be true or false");
     }
+    return false;
   }
 };
 
@@ -356,6 +357,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
     else if (key == "fill") {
       wrapper->mShouldFill = Utils::getBool(value);
+    }
+    else if (key == "mapmode") {
+      int mode;
+      std::istringstream(value) >> mode;
+      wrapper->setMapMode(mode);
     }
     else {
       mexErrMsgTxt("MapWrapper: invalid property");
