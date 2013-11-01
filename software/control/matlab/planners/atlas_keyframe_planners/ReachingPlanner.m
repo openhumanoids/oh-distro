@@ -595,7 +595,6 @@ classdef ReachingPlanner < KeyframePlanner
                 end
                 findFinalPostureFlag = false;
                 ik_attempt_count = 0;
-                tic
                 while(~findFinalPostureFlag && ik_attempt_count<30)
                   if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                       if(obj.restrict_feet)
@@ -622,7 +621,7 @@ classdef ReachingPlanner < KeyframePlanner
                   q_start = q_final_guess+5e-2*randn(size(q_final_guess));
                   findFinalPostureFlag = snopt_info<=10;
                 end
-                toc
+
                 if(snopt_info >10)
                     % this warning is at an intermediate point in the planning
                     % it is not an indication that the final plan is in violation
