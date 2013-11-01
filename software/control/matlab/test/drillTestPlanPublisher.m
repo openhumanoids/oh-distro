@@ -23,7 +23,7 @@ classdef drillTestPlanPublisher
     drilling_world_axis
     doVisualization = true;
     doPublish = false;
-    default_axis_threshold = .2*pi/180;
+    default_axis_threshold = .1*pi/180;
     atlas2robotFrameIndMap
   end
   
@@ -87,7 +87,7 @@ classdef drillTestPlanPublisher
       drill_pos_constraint = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill,x_drill,[t_vec(end) t_vec(end)]);
       
       % Find nominal pose
-      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0 + .0*randn(obj.r.num_q,1),q0,...
+      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0 + .1*randn(obj.r.num_q,1),q0,...
         drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
       
       if(snopt_info_ik > 10)
