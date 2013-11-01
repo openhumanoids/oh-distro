@@ -51,7 +51,7 @@ group "a.0.hand_drivers" {
         host = "robot";
     }
     cmd "irobot-right" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 49";
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 45";
         host = "robot";
     }
     cmd "irobot-left" {
