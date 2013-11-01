@@ -1,7 +1,7 @@
 // Working Grasps:
 // Box: both irobot and sandia - no edge cases. click on top and bottom of face to orientate the fingers
 // Cylinder: both - assumes that z-axis of cylinder is upwards
-// Steering Cyl: only sandia. works for both directions
+// Steering Cyl: both. works for both directions. irobot has addition feature of making a flat face if you click at the center.
 
 #include <iostream>
 #include <stdio.h>
@@ -39,15 +39,13 @@ using namespace std;
 
 class Pass{
   public:
-    Pass(boost::shared_ptr<lcm::LCM> &lcm_, 
-         bool use_irobot_);
+    Pass(boost::shared_ptr<lcm::LCM> &lcm_);
     
     ~Pass(){
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    pointcloud_vis* pc_vis_;     
-    bool use_irobot_;
+    pointcloud_vis* pc_vis_;  
     bool cartpos_ready_;
     
     void affHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -104,8 +102,8 @@ class Pass{
 
 };
 
-Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  bool use_irobot_):
-    lcm_(lcm_),  use_irobot_(use_irobot_){
+Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
+    lcm_(lcm_){
   cartpos_ready_ = false;
       
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
@@ -787,6 +785,8 @@ void Pass::planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose){
                                        init_grasp_pose.translation().z());
   pt = Aff * pt;
   double rel_angle = atan2(pt(1), pt(0)  );
+  double grasp_radius = sqrt(pow( pt(1),2) + pow( pt(0), 2)); // the distance of the hit point from the center of the str cyl
+  std::cout << "grasp_radius: " << grasp_radius << "\n";
   
   std::map<string,double> am;
   for (int j=0; j< aff_.nparams; j++){
@@ -813,27 +813,49 @@ void Pass::planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose){
   // 2. Create a reasonable afforance to hand pose 
   Eigen::Isometry3d aff_to_palmgeometry = Eigen::Isometry3d::Identity();
   // translation: outwards, upwards, forwards  
-  if (use_irobot_){ // iRobot
-    if (grasp_opt_msg_.grasp_type ==0){ // iRobot left
-      aff_to_palmgeometry.translation()  << 0.01 + radius ,0,direction_offset*-0.09;
-      aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
-    }else{ // iRobot right
-      aff_to_palmgeometry.translation()  << 0.01 + radius ,0,direction_offset*-0.09;
-      aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
-    }
-  }else{ // Sandia
+  if (grasp_opt_msg_.grasp_type ==0){ // sandia left
+    // Sandia
     // was: 0.05 + radius ,0,-0.12;
     // 0.03 was too little
-    if (grasp_opt_msg_.grasp_type ==0){ // sandia left
-      aff_to_palmgeometry.rotate( euler_to_quat(direction_yaw*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
-      aff_to_palmgeometry.translation()  << 0.05 + radius ,0,direction_offset*-0.10;
-      aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
-    }else{ // sandia right
-      aff_to_palmgeometry.rotate( euler_to_quat(direction_yaw*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
-      aff_to_palmgeometry.translation()  << 0.05 + radius ,0,direction_offset*-0.10;
-      aff_to_palmgeometry.rotate( euler_to_quat( 15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+    aff_to_palmgeometry.rotate( euler_to_quat(direction_yaw*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+    aff_to_palmgeometry.translation()  << 0.05 + radius ,0,direction_offset*-0.10;
+    aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+  }else if(grasp_opt_msg_.grasp_type ==1){ // sandia right
+    aff_to_palmgeometry.rotate( euler_to_quat(direction_yaw*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+    aff_to_palmgeometry.translation()  << 0.05 + radius ,0,direction_offset*-0.10;
+    aff_to_palmgeometry.rotate( euler_to_quat( 15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+  }else if(grasp_opt_msg_.grasp_type ==3){ // iRobot left
+    aff_to_palmgeometry.translation()  << 0.10 + radius ,0,0;
+    aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
+    if (direction_offset==-1){
+      aff_to_palmgeometry.rotate( euler_to_quat(180 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) ); 
+    }
+    
+  }else if(grasp_opt_msg_.grasp_type ==4){ // iRobot right
+    aff_to_palmgeometry.translation()  << 0.10 + radius ,0,0;
+    aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) );   
+    
+    if (direction_offset==1){
+      aff_to_palmgeometry.rotate( euler_to_quat(180 *M_PI/180  , 0*M_PI/180 , 0*M_PI/180  ) ); 
+    }
+
+  }
+  
+  if ( grasp_radius < 0.05 ){
+    if ((grasp_opt_msg_.grasp_type ==3) || (grasp_opt_msg_.grasp_type ==4)) { 
+      aff_to_palmgeometry.setIdentity();
+      if (direction_offset==-1){
+        aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , -90*M_PI/180 , 0*M_PI/180  ) ); 
+        aff_to_palmgeometry.translation()  << 0,0,0.135;
+        rel_angle =0;
+      }else{
+        aff_to_palmgeometry.rotate( euler_to_quat(0 *M_PI/180  , 90*M_PI/180 , 0*M_PI/180  ) ); 
+        aff_to_palmgeometry.translation()  << 0,0,-0.135;
+        rel_angle =0;
+      }
     }
   }
+    
   
 
   sendCandidateGrasp(aff_to_palmgeometry, rel_angle);
@@ -920,18 +942,13 @@ void Pass::sendCandidateGrasp(Eigen::Isometry3d aff_to_palmgeometry, double rel_
 
 
 int main(int argc, char ** argv) {
-  bool use_irobot = false;
-  ConciseArgs opt(argc, (char**)argv);
-  opt.add(use_irobot, "i", "use_irobot","iRobot hand (otherwise Sandia)");
-  opt.parse();
-  std::cout << "use_irobot: " << use_irobot << "\n";  
-
+  
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Pass app(lcm,use_irobot);
+  Pass app(lcm);
   cout << "Tool ready" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
