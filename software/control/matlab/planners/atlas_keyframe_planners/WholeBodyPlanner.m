@@ -282,7 +282,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           keyframe_inds = unique(round(linspace(1,length(timeIndices),obj.plan_cache.num_breaks))); % no more than ${obj.plan_cache.num_breaks} keyframes
           xtraj_atlas(1,keyframe_inds) = 1.0;
           xtraj_atlas(2,:) = 0*timeIndices;
-          xtraj_atlas((1:nq_atlas)+2,:) = q(obj.atlas2robotFrameIndMap,:);
+          xtraj_atlas((1:nq_atlas)+2,:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
 
           s = (timeIndices-min(timeIndices))/(max(timeIndices)-min(timeIndices));
 
@@ -305,9 +305,9 @@ classdef WholeBodyPlanner < KeyframePlanner
           for brk =1:length(s_breaks),
              q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
           end
-          q_atlas_breaks = q_breaks(obj.atlas2robotFrameIndMap,:);
+          q_atlas_breaks = q_breaks(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
           
-          Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_atlas_breaks);
+          Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
           Tmax_joints=obj.getTMaxForMaxJointSpeed();
           ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
           obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
