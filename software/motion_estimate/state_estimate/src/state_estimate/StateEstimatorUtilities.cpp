@@ -222,7 +222,6 @@ void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_s
     _leg_odo.ResetWithLeftFootStates(left,right,init_state);
   }
 
-
   // This must be broken into separate position and velocity states
   //  legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
   _leg_odo.UpdateStates(atlasState.utime, left, right, atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
@@ -230,12 +229,10 @@ void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_s
 }
 
 
-void StateEstimate::packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg) {
+//void StateEstimate::packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg) {
+void StateEstimate::stampInertialPoseUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, drc::ins_update_request_t &msg) {
   
   // For ease of reading we collect local copies of variables
-  Eigen::Isometry3d LegOdoPelvis;
-  LegOdoPelvis.setIdentity();
-  LegOdoPelvis = _leg_odo.getPelvisState();
   //std::cout << "StateEstimate::packDFUpdateRequestMsg -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
   
   InertialOdometry::DynamicState _insState;
@@ -259,27 +256,58 @@ void StateEstimate::packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo
   msg.twist.angular_velocity.y = _insState.w_l(1);
   msg.twist.angular_velocity.z = _insState.w_l(2);
   
-  msg.updateType = msg.POSITION_LOCAL;
-  
-  msg.referencePos_local.x = LegOdoPelvis.translation().x();
-  msg.referencePos_local.y = LegOdoPelvis.translation().y();
-  msg.referencePos_local.z = LegOdoPelvis.translation().z();
-  
-  // These are unused, but initialized as a precaution
-  msg.referenceVel_local.x = 0.;
-  msg.referenceVel_local.y = 0.;
-  msg.referenceVel_local.z = 0.;
-  
-  msg.referenceVel_body.x = 0.;
-  msg.referenceVel_body.y = 0.;
-  msg.referenceVel_body.z = 0.;
-  
-  msg.referenceQ_local.x = 1.;
-  msg.referenceQ_local.x = 0.;
-  msg.referenceQ_local.x = 0.;
-  msg.referenceQ_local.x = 0.;
-  
   return;
+}
+
+void StateEstimate::stampPositionReferencePoseUpdateRequest(const Eigen::Vector3d &_refPos, drc::ins_update_request_t &msg) {
+	  msg.updateType =  drc::ins_update_request_t::POSITION_LOCAL;
+
+	  //  msg.referencePos_local.x = LegOdoPelvis.translation().x();
+	  //  msg.referencePos_local.y = LegOdoPelvis.translation().y();
+	  //  msg.referencePos_local.z = LegOdoPelvis.translation().z();
+	  copyDrcVec3D(_refPos, msg.referencePos_local);
+
+
+	  // These are unused, but initialized as a precaution
+	  copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_local);
+
+	  msg.referenceVel_body.x = 0.;
+	  msg.referenceVel_body.y = 0.;
+	  msg.referenceVel_body.z = 0.;
+
+	  msg.referenceQ_local.w = 1.;
+	  msg.referenceQ_local.x = 0.;
+	  msg.referenceQ_local.y = 0.;
+	  msg.referenceQ_local.z = 0.;
+
+}
+
+void StateEstimate::copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to) {
+  to.x = from(0);
+  to.y = from(1);
+  to.z = from(2);
+}
+
+void StateEstimate::stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg) {
+
+	msg.updateType = drc::ins_update_request_t::MATLAB_TRAJ_ALL;
+
+	msg.referencePos_local.x = matlabPose.pose.translation.x;
+	msg.referencePos_local.y = matlabPose.pose.translation.y;
+	msg.referencePos_local.z = matlabPose.pose.translation.z;
+
+	msg.referenceVel_local.x = matlabPose.twist.linear_velocity.x;
+	msg.referenceVel_local.y = matlabPose.twist.linear_velocity.y;
+	msg.referenceVel_local.z = matlabPose.twist.linear_velocity.z;
+
+	msg.referenceVel_body.x = 0.;
+	msg.referenceVel_body.y = 0.;
+	msg.referenceVel_body.z = 0.;
+
+	msg.referenceQ_local.w = matlabPose.pose.rotation.w;
+	msg.referenceQ_local.x = matlabPose.pose.rotation.x;
+	msg.referenceQ_local.y = matlabPose.pose.rotation.y;
+	msg.referenceQ_local.z = matlabPose.pose.rotation.z;
 }
 
 

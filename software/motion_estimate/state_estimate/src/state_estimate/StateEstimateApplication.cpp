@@ -42,12 +42,14 @@ int StateEstimate::StateEstimateApplication::exec()
   IMUMessageProducer imuProducer("ATLAS_IMU_BATCH" + mMotionSimulatorSuffix);
   PoseMessageProducer bdiPoseProducer("POSE_BDI");
   PoseMessageProducer viconPoseProducer("ATLAS_VICON");
+  NavStateMessageProducer matlabTruthPoseProducer("TRUTH_TRAJ_MATLAB");
 
   // connect message producers to lcm
   atlasStateProducer.subscribe(lcmThread.lcmHandle());
   imuProducer.subscribe(lcmThread.lcmHandle());
   bdiPoseProducer.subscribe(lcmThread.lcmHandle());
   viconPoseProducer.subscribe(lcmThread.lcmHandle());
+  matlabTruthPoseProducer.subscribe(lcmThread.lcmHandle());
 
   StateEstimator estimator(
     _switches,
@@ -55,7 +57,8 @@ int StateEstimate::StateEstimateApplication::exec()
     atlasStateProducer.messageQueue(),
     imuProducer.messageQueue(),
     bdiPoseProducer.messageQueue(),
-    viconPoseProducer.messageQueue() );
+    viconPoseProducer.messageQueue(),
+    matlabTruthPoseProducer.messageQueue());
 
   // start comm thread
   lcmThread.start();

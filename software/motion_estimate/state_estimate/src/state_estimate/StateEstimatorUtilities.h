@@ -78,7 +78,12 @@ void handle_inertial_data_temp_name(
 
 // DATA FUSION UTILITIES ==============================================================
 
-void packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg);
+//void packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg);
+void stampInertialPoseUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, drc::ins_update_request_t &msg);
+void stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg);
+
+void stampPositionReferencePoseUpdateRequest(const Eigen::Vector3d &_refPos, drc::ins_update_request_t &msg);
+void copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to);
 
 
 

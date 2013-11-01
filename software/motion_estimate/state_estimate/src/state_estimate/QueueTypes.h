@@ -6,6 +6,7 @@
 #include <lcmtypes/drc/atlas_state_t.hpp>
 #include <lcmtypes/drc/atlas_raw_imu_batch_t.hpp>
 #include <lcmtypes/drc/robot_state_t.hpp>
+#include <lcmtypes/drc/nav_state_t.hpp>
 #include <lcmtypes/bot_core/pose_t.hpp>
 
 namespace StateEstimate
@@ -15,8 +16,10 @@ namespace StateEstimate
   typedef SynchronizedQueue<drc::atlas_state_t> AtlasStateQueue;
   typedef SynchronizedQueue<drc::atlas_raw_imu_t> IMUQueue;
   typedef SynchronizedQueue<drc::atlas_raw_imu_batch_t> IMUBatchQueue;
+  typedef SynchronizedQueue<drc::nav_state_t> NavQueue;
 
   typedef SynchronizedQueue<bot_core::pose_t> PoseQueue;
+
 
   
   class messageQueues {  
@@ -42,6 +45,7 @@ namespace StateEstimate
     IMUQueue imuQueue;
     PoseQueue bdiPoseQueue;
     PoseQueue viconQueue;
+    PoseQueue matlabTruthQueue;
   };
   
   

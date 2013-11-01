@@ -53,16 +53,6 @@ end
 
 %%
 
-data{iterations} = [];
-
-% for n = 1:iterations
-%     data{n}.true.utime = traj.utime(n);
-%     data{n}.true.inertial.ddp = GM_accels(n,:)';
-%     data{n}.true.inertial.da = GM_rates(n,:)';
-%     data{n}.true.environment.gravity = [0;0;9.81];% using forward-left-up/xyz body frame
-    % add earth rate here
-    % add magnetics here
-% end
     
 
 imuMsgBatch = [];
@@ -74,12 +64,25 @@ end
 
 %% Send and IMU messages
 
+% prepare LCM messages
+
+trueMatlabPoseMsg = drc.nav_state_t();
+
+trueMatlabPoseMsg.pose = drc.position_3d_t();
+trueMatlabPoseMsg.pose.translation = drc.vector_3d_t();
+trueMatlabPoseMsg.pose.rotation = drc.quaternion_t();
+trueMatlabPoseMsg.twist = drc.twist_t();
+trueMatlabPoseMsg.twist.linear_velocity = drc.vector_3d_t();
+trueMatlabPoseMsg.twist.angular_velocity = drc.vector_3d_t();
+trueMatlabPoseMsg.local_linear_acceleration = drc.vector_3d_t();
+
+
 % Set initial pose states to zero
 pose = init_pose();
 storeCppINS.pose = init_pose();
 
+% This should be removed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 data.true.utime = RESULTS.traj.utime;
-
 data.true.pose.utime = RESULTS.traj.utime;
 data.true.pose.P_l = RESULTS.traj.true.P_l;
 data.true.pose.V_l = RESULTS.traj.true.V_l;
@@ -92,6 +95,8 @@ data.true.pose.f_l = RESULTS.traj.true.f_l;
 true.inertial.gravity = [0;0;RESULTS.traj.parameters.gravity];% using forward-left-up/xyz body frame
 
 receivedMsgs = 0;
+
+
 
 disp('Starting the motion simulation loop')
 for n = 1:iterations
@@ -111,6 +116,16 @@ for n = 1:iterations
        
     end
     
+    % We also publish the truth data to whoever wants to listen -- this was
+    % added for the state-estimate process data fusion testing
+    truthpose.utime = RESULTS.traj.utime(n);
+    truthpose.P_l = RESULTS.traj.true.P_l(n,:)';
+    truthpose.q = RESULTS.traj.true.q(n,:)';
+    truthpose.V_l = RESULTS.traj.true.V_l(n,:)';
+    truthpose.w_l = RESULTS.traj.true.w_l(n,:)';
+    truthpose.f_l = RESULTS.traj.true.f_l(n,:)';
+    
+    sendLCMMatlabTruthPose(truthpose, trueMatlabPoseMsg, lc);
     
     
     % add earth bound effects, including gravity
@@ -129,7 +144,6 @@ for n = 1:iterations
     % here we listen back for an INS state message from the state estimate
     % processThis is the new way of working.
 %     pause
-    % data{n}.INS.pose = receivepose(aggregator);
     if (sentIMUBatch)
         receivedMsgs =  receivedMsgs + 1;
         [cppINS, dummy] = receiveInertialStatePos(aggregator);

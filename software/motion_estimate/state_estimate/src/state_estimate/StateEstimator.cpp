@@ -7,13 +7,15 @@ StateEstimate::StateEstimator::StateEstimator(
     AtlasStateQueue& atlasStateQueue,
     IMUQueue& imuQueue,
     PoseQueue& bdiPoseQueue,
-    PoseQueue& viconPoseQueue ) :
+    PoseQueue& viconPoseQueue,
+    NavQueue& viconMatlabtruthQueue ) :
 
   mLCM(lcmHandle),
   mAtlasStateQueue(atlasStateQueue),
   mIMUQueue(imuQueue),
   mBDIPoseQueue(bdiPoseQueue),
-  mViconQueue(viconPoseQueue)
+  mViconQueue(viconPoseQueue),
+  mMatlabTruthQueue(viconMatlabtruthQueue)
 {
 
   _mSwitches = _switches;
@@ -98,8 +100,10 @@ void StateEstimate::StateEstimator::run()
 {
   drc::atlas_state_t atlasState;
   drc::atlas_raw_imu_t imu;
+  drc::nav_state_t matlabPose;
   bot_core::pose_t bdiPose;
   bot_core::pose_t viconPose;
+
 
   while (!this->ShouldStop)
   {
@@ -178,17 +182,25 @@ void StateEstimate::StateEstimator::run()
 	    std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
 
 	    // populate the INS state information and the measurement aiding information
-	    packDFUpdateRequestMsg(inert_odo, *_leg_odo, mDFRequestMsg);
+
+	    // Insert the required inertial data in the data fusion update request message
+	    stampInertialPoseUpdateRequestMsg(inert_odo, mDFRequestMsg);
+
+	    if (_mSwitches->MATLAB_MotionSimulator) {
+	    	stampMatlabReferencePoseUpdateRequest(matlabPose, mDFRequestMsg);
+	    } else {
+	    	stampPositionReferencePoseUpdateRequest(_leg_odo->getPelvisState().translation(), mDFRequestMsg);
+	    }
+
+	    // This message will contain reference measurement information from various sources -- for now it is LegOdo, Fovis, MatlabtrajectorMotionSimulation
 	    mLCM->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
 	  }
-
     }
 
     const int nPoses = mBDIPoseQueue.size();
     for (int i = 0; i < nPoses; ++i)
     {
       mBDIPoseQueue.dequeue(bdiPose);
-      
       // push bdiPose info into ERS
       convertBDIPose_ERS(&bdiPose, mERSMsg);
     }
@@ -197,11 +209,19 @@ void StateEstimate::StateEstimator::run()
     for (int i = 0; i < nViconPoses; ++i)
     {
       mViconQueue.dequeue(viconPose);
-
       // do something with new vicon pose...
-      
-      
     }
+
+    const int nMatlabTruth = mMatlabTruthQueue.size();
+	for (int i = 0; i < nMatlabTruth; ++i)
+	{
+		mMatlabTruthQueue.dequeue(matlabPose);
+
+	  // do something with new MatlabTruthPose...
+	  std::cout << "StateEstimator::run -- Processing new matlabTruthPose message" << std::endl;
+
+
+	}
 
     // add artificial delay
     //boost::this_thread::sleep(boost::posix_time::milliseconds(500));

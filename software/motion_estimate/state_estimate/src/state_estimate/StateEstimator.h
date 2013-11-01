@@ -40,7 +40,8 @@ public:
     AtlasStateQueue& atlasStateQueue,
     IMUQueue& imuQueue,
     PoseQueue& bdiPoseQueue,
-    PoseQueue& viconQueue );
+    PoseQueue& viconQueue,
+    NavQueue& matlabTruthQueue);
   
   StateEstimator(
       boost::shared_ptr<lcm::LCM> lcmHandle,
@@ -58,6 +59,7 @@ protected:
   IMUQueue& mIMUQueue;
   PoseQueue& mBDIPoseQueue;
   PoseQueue& mViconQueue;
+  NavQueue& mMatlabTruthQueue;
   
   // This class is not up and running yet
   messageQueues mMSGQueues;
