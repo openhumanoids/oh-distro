@@ -403,7 +403,6 @@ public:
     ids = { 0, 1, 2 };
     Gtk::HBox* hboxR = Gtk::manage(new Gtk::HBox());
     Gtk::HBox* boxR = Gtk::manage(new Gtk::HBox());
-    Gtk::ComboBox* comboR = Gtk::manage(new Gtk::ComboBox());
     mRightGraspNameEnum = 0;
     addCombo("Right", mRightGraspNameEnum, mGraspNames, ids, boxR);
     hboxR->add(*boxR); 

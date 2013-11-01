@@ -11,8 +11,6 @@
 #include <drc_utils/Clock.hpp>
 #include <gtkmm-renderer/RendererBase.hpp>
 
-#include <lcmtypes/drc/map_command_t.hpp>
-#include <lcmtypes/drc/map_macro_t.hpp>
 #include <lcmtypes/drc/data_request_t.hpp>
 #include <lcmtypes/occ_map/pixel_map_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
@@ -365,22 +363,6 @@ public:
       requestBox->add(*requestButton);
     }
 
-    // macro command box
-    if (false) {
-      Gtk::VBox* commandBox = Gtk::manage(new Gtk::VBox());
-      notebook->append_page(*commandBox, "Command");
-
-      ids = { MacroCommandClearMap, MacroCommandHighResScan };
-      labels = { "Clear Map", "High-Res Scan" };
-      mMacroCommand = MacroCommandClearMap;
-      addCombo("Command", mMacroCommand, labels, ids, commandBox);
-
-      Gtk::Button* commandButton = Gtk::manage(new Gtk::Button("Send Command"));
-      commandButton->signal_clicked().connect
-        (sigc::mem_fun(*this, &MapsRenderer::onCommandButton));
-      commandBox->add(*commandButton);
-    }
-
     notebook->show_all();
 
     // handler for updating ui widgets when views are added
@@ -495,22 +477,6 @@ public:
     }
     mViewClient.request(spec);
     mInputModeComboBox->set_active(InputModeCamera);
-  }
-
-  void onCommandButton() {
-    if (mMacroCommand == MacroCommandClearMap) {
-      drc::map_command_t command;
-      command.utime = drc::Clock::instance()->getCurrentTime();
-      command.map_id = -1;
-      command.command = drc::map_command_t::CLEAR;
-      getLcm()->publish("MAP_COMMAND", &command);
-    }
-    else if (mMacroCommand == MacroCommandHighResScan) {
-      drc::map_macro_t macro;
-      macro.utime = drc::Clock::instance()->getCurrentTime();
-      macro.command = drc::map_macro_t::CREATE_DENSE_MAP;
-      getLcm()->publish("MAP_MACRO", &macro);
-    }
   }
 
   void onCreateBoxButton() {

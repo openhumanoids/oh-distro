@@ -7,7 +7,9 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         multisense-renderer
         octomap-renderer
         occ-map-renderers
-        renderer_maps
+        maps-renderer
+        atlas-camera-renderer
+        data-control-renderer
         lcmtypes_drc_lcmtypes
         renderer_robot_state
         renderer_robot_plan
@@ -20,12 +22,10 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         renderer_driving
         renderer_scrollingplots
         renderer_status
-        renderer_data_control
         renderer_drcgrid
         tracker-renderer
         renderer_bdi
         renderer_cam_thumb_drc
-        renderer_atlas_cameras
         renderer_recovery)
 
 ###

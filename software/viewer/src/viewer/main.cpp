@@ -18,9 +18,9 @@
 #include <renderer_cam_thumb_drc/renderer_cam_thumb_drc.h>
 #include <visualization/collections_renderer.hpp>
 #include <octomap_utils/renderer_octomap.h>
-#include <renderer_maps/MapsRenderer.hpp>
-#include <renderer_data_control/DataControlRenderer.hpp>
-#include <renderer_atlas_cameras/CameraRenderer.hpp>
+#include <maps-renderer/MapsRenderer.hpp>
+#include <data-control-renderer/DataControlRenderer.hpp>
+#include <atlas-camera-renderer/CameraRenderer.hpp>
 // #include <renderer_annotated_camera/AnnotatedCameraRenderer.hpp>
 #include <multisense/multisense_renderer.h>
 #include <occ_map/occ_map_renderers.h>

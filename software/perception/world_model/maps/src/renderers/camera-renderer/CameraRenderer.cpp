@@ -527,7 +527,7 @@ public:
     if (iEvent->type == GDK_3BUTTON_PRESS) {
       double cx = bot_camtrans_get_principal_x(cam->mCamTrans);
       double cy = bot_camtrans_get_principal_y(cam->mCamTrans);
-      Eigen::Vector2f pt;
+      Eigen::Vector2f pt(0,0);
       if (cam->getImageCoords(mDragPoint1, pt)) {
         cam->mImageCenter << cx-pt[0],cy-pt[1];
       }
@@ -587,7 +587,7 @@ public:
     auto cam = mCameraStates[mActiveCamera];
     int viewPortSize = abs(cam->mViewportGl[3]-cam->mViewportGl[2]);
     if (button1) {
-      Eigen::Vector2f p1, p2;
+      Eigen::Vector2f p1(0,0), p2(0,0);
       if (!cam->getImageCoords(mDragPoint1, p1)) return false;
       if (!cam->getImageCoords(mDragPoint2, p2)) return false;
       Eigen::Vector2f offset = p2-p1;
@@ -600,7 +600,7 @@ public:
     }
     if (button3) {
       double dist = mDragPoint2[1] - mDragPoint1[1];
-      double scale = pow(2,4*dist/viewPortSize);
+      double scale = pow(2,dist/viewPortSize);
       cam->mZoomFactor = std::min(std::max(mZoomBase*scale, 0.1),10.0);
     }
     if (button1 || button2 || button3) cam->mTexCoordsValid = false;

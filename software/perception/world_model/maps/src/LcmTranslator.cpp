@@ -259,7 +259,10 @@ toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage,
   if (bits <= 8) dataType = DataBlob::DataTypeUint8;
   else if (bits <= 16) dataType = DataBlob::DataTypeUint16;
   else dataType = DataBlob::DataTypeFloat32;
-  blob.convertTo(compressionType, dataType);
+  if (!blob.convertTo(compressionType, dataType)) {
+    std::cout << "LcmTranslator: cannot compress data" << std::endl;
+    return false;
+  }
 
   // pack blob into message
   if (!toLcm(blob, oMessage.blob)) return false;
@@ -295,7 +298,11 @@ fromLcm(const drc::map_cloud_t& iMessage, PointCloudView& oView) {
   if (!fromLcm(iMessage.blob, blob)) return false;
 
   // convert to point cloud
-  blob.convertTo(DataBlob::CompressionTypeNone, DataBlob::DataTypeFloat32);
+  if (!blob.convertTo(DataBlob::CompressionTypeNone,
+                      DataBlob::DataTypeFloat32)) {
+    std::cout << "LcmTranslator: could not decompress data" << std::endl;
+    return false;
+  }
   float* raw = (float*)(&blob.getBytes()[0]);
   maps::PointCloud& cloud = *(oView.getPointCloud());
   cloud.resize(blob.getSpec().mDimensions[1]);
