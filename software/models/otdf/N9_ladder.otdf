@@ -13,13 +13,14 @@
     <param name="platform_length" default_value="0.254" inc="0.001" min="0" max="100" />
     <param name="radius" default_value="0.0254" inc="0.001" min="0" max="100" />
     <param name="handrail_xoffset" default_value="0.46" inc="0.01" min="0" max="10" />
+    <param name="handrail_yoffset" default_value="0.04" inc="0.001" min="-1" max="1" />
     <param name="handrail_zoffset" default_value="0.75" inc="0.01" min="0" max="10" />
     <param name="handrail_length" default_value="1.53" inc="0.01" min="0" max="10" />
     <param name="upper_platform_handrail_zoffset" default_value="0.75" inc="0.01" min="0" max="10" />
     <!-- Size of the outer bounding volume of the steps -->
     <param name="lX" default_value="0.21" inc="0.01" min="0" max="100" />
-    <param name="lY" default_value="0.75" inc="0.01" min="0" max="100" />
-    <param name="lZ" default_value="1.53" inc="0.01" min="0" max="100" />
+    <param name="lY" default_value="0.56" inc="0.01" min="0" max="100" />
+    <param name="lZ" default_value="1.77" inc="0.01" min="0" max="100" />
     <!-- ladder height -->
     <param name="step_thickness" default_value="0.025" inc="0.001" min="0" max="100" />
     <param name="step_width" default_value="0.610" inc="0.001" min="0" max="100" />
@@ -261,12 +262,12 @@
     <joint name="lhandrail_joint" type="fixed">
         <parent link="lrail_lower" type="link" />
         <child link="lhandrail" type="link" />
-        <origin rpy="0 0 0" xyz="${handrail_xoffset} 0 ${handrail_zoffset}" />
+        <origin rpy="0 0 0" xyz="${handrail_xoffset} -${handrail_yoffset} ${handrail_zoffset}" />
     </joint>
     <joint name="rhandrail_joint" type="fixed">
         <parent link="rrail_lower" type="link" />
         <child link="rhandrail" type="link" />
-        <origin rpy="0 0 0" xyz="${handrail_xoffset} 0 ${handrail_zoffset}" />
+        <origin rpy="0 0 0" xyz="${handrail_xoffset} ${handrail_yoffset} ${handrail_zoffset}" />
     </joint>
     <!-- A set of joints -->
     <joint_pattern name="STEP_joints" noofrepetitions="${no_of_steps}" type="fixed" arrangement="parallel">
@@ -278,7 +279,7 @@
         <child link="STEPS" type="link_pattern" />
     </joint_pattern>
     <!-- PERSISTENT SEEDS -->
-    <grasp_seed>
+<!--     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="lower_platform_0" />
         <relative_pose rpy="-1.08294e-06 -1.0715e-06 -3.13628" xyz="-0.194347 0.201567 0.0843518" />
@@ -293,20 +294,6 @@
         <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="upper_platform_0" />
-        <relative_pose rpy="-1.35477e-06 -3.518e-08 3.11563" xyz="0.25412 -0.129594 0.0845336" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="upper_platform_0" />
-        <relative_pose rpy="-3.11477e-07 7.13733e-09 -3.11868" xyz="0.264247 0.206948 0.0843504" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
         <appendage type="HAND" />
         <geometry name="lhandrail_0" />
         <relative_pose rpy="0.876559 0.0213616 -1.62675" xyz="0.0894524 -0.056375 -0.711487" />
@@ -319,8 +306,8 @@
         <relative_pose rpy="0.93001 -0.37584 -1.68533" xyz="0.0860426 -0.0703853 -0.372941" />
         <grasp_type type="0" />
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0143041 1.5291 1.064 0.018599 1.4983 0.746214 0.0103712 1.46419 0.561235 -0.0954767 0.982315 0.117702 " />
-    </grasp_seed>
-    <grasp_seed>
+    </grasp_seed> -->
+<!--     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="lhandrail_0" />
         <relative_pose rpy="0.937368 -0.299239 -1.64131" xyz="0.0887216 -0.0626751 -0.0496517" />
@@ -438,7 +425,7 @@
         <relative_pose rpy="-0.8866 0.0163445 1.47314" xyz="0.0974361 0.0421666 1.01783" />
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.014156 1.40877 0.814552 -0.00299744 1.41619 0.821223 0.0140008 1.42393 0.827831 0.448352 1.30694 0.74392 " />
-    </grasp_seed>
+    </grasp_seed> 
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="STEPS_0_0" />
@@ -466,5 +453,5 @@
         <relative_pose rpy="0.00848406 -0.112471 3.08122" xyz="0.07484 0.169095 0.0824068" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
-    </grasp_seed>
+    </grasp_seed> -->
 </object>
