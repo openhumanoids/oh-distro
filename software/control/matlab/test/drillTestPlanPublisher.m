@@ -7,6 +7,8 @@ classdef drillTestPlanPublisher
   %   -createInitialReachPlan (reach to pre-drill pose)
   %   -createDrillingPlan (drill in)
   %   -createCircleCutPlan (cut a circle)
+  % todo: zero velocity constraints?
+  % todo: look into the fixed initial state option
   properties
     r
     atlas
@@ -17,6 +19,7 @@ classdef drillTestPlanPublisher
     hand_body = 29;
     joint_indices = [22:26 33];
     ik_options
+    free_ik_options
     drilling_world_axis
     doVisualization = true;
     doPublish = false;
@@ -56,6 +59,7 @@ classdef drillTestPlanPublisher
       iktraj_options = iktraj_options.setMex(true);
       
       obj.ik_options = iktraj_options;
+      obj.free_ik_options = iktraj_options.setFixInitialState(false);
       
       obj.drill_pt_on_hand = drill_pt_on_hand;
       obj.drill_axis_on_hand = drill_axis_on_hand/norm(drill_axis_on_hand);
@@ -83,11 +87,11 @@ classdef drillTestPlanPublisher
       drill_pos_constraint = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill,x_drill,[t_vec(end) t_vec(end)]);
       
       % Find nominal pose
-      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
+      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0 + .0*randn(obj.r.num_q,1),q0,...
         drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
       
       if(snopt_info_ik > 10)
-        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info_ik);
+        send_msg = sprintf('snopt_info = %d. The IK fails.',snopt_info_ik);
         send_status(4,0,0,send_msg);
         display(infeasibleConstraintMsg(infeasible_constraint_ik));
         warning(send_msg);
@@ -95,7 +99,7 @@ classdef drillTestPlanPublisher
       qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
 
       
-      [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,0,...
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
         drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
       
@@ -106,11 +110,11 @@ classdef drillTestPlanPublisher
         warning(send_msg);
       end
       
-      if obj.doVisualization && snopt_info == 1
+      if obj.doVisualization && snopt_info <= 10
         obj.v.playback(xtraj);
       end
       
-      if obj.doPublish && snopt_info == 1
+      if obj.doPublish && snopt_info <= 10
         obj.publishTraj(xtraj,snopt_info);
       end
     end
@@ -140,7 +144,7 @@ classdef drillTestPlanPublisher
         drill_pos_constraint{i-1} = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill(:,i),x_drill(:,i),[t_vec(i) t_vec(i)]);
       end
       
-      [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,0,...
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
         drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.ik_options);
       
@@ -151,11 +155,11 @@ classdef drillTestPlanPublisher
         warning(send_msg);
       end
       
-      if obj.doVisualization && snopt_info == 1
+      if obj.doVisualization && snopt_info <= 10
         obj.v.playback(xtraj);
       end
       
-      if obj.doPublish && snopt_info == 1
+      if obj.doPublish && snopt_info <= 10
         obj.publishTraj(xtraj,snopt_info);
       end
     end
@@ -194,7 +198,7 @@ classdef drillTestPlanPublisher
         drill_pos_constraint{i-1} = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill(:,i),x_drill(:,i),[t_vec(i) t_vec(i)]);
       end
       
-      [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,0,...
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
         drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.ik_options);
       
@@ -205,16 +209,16 @@ classdef drillTestPlanPublisher
         warning(send_msg);
       end
       
-      if obj.doVisualization && snopt_info == 1
+      if obj.doVisualization && snopt_info <= 10
         obj.v.playback(xtraj);
       end
       
-      if obj.doPublish && snopt_info == 1
+      if obj.doPublish && snopt_info <= 10
         obj.publishTraj(xtraj,snopt_info);
       end
     end
     
-     function [xtraj,snopt_info,infeasible_constraint] = createLinePlan(obj, q0, x_drill_init, x_drill_final, T)
+    function [xtraj,snopt_info,infeasible_constraint] = createLinePlan(obj, q0, x_drill_init, x_drill_final, T)
       N = 10;
       t_vec = linspace(0,T,N);
       
@@ -229,9 +233,9 @@ classdef drillTestPlanPublisher
       
       % create drill position constraints
       x_drill = repmat(x_drill_init,1,N) + (x_drill_final - x_drill_init)*linspace(0,1,N);
-      drill_pos_constraint = cell(1,N-1);
-      for i=2:N,
-        drill_pos_constraint{i-1} = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill(:,i),x_drill(:,i),[t_vec(i) t_vec(i)]);
+      drill_pos_constraint = cell(1,N);
+      for i=1:N,
+        drill_pos_constraint{i} = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill(:,i),x_drill(:,i),[t_vec(i) t_vec(i)]);
       end
       
       % Find nominal poses
@@ -239,18 +243,18 @@ classdef drillTestPlanPublisher
         drill_pos_constraint{1},drill_dir_constraint,posture_constraint,obj.ik_options);
       
       if(snopt_info_ik > 10)
-        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info_ik);
+        send_msg = sprintf('snopt_info = %d. The IK (init) fails.',snopt_info_ik);
         send_status(4,0,0,send_msg);
         display(infeasibleConstraintMsg(infeasible_constraint_ik));
         warning(send_msg);
       end
       
       % Find nominal poses
-      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
+      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q_start_nom,q_start_nom,...
         drill_pos_constraint{end},drill_dir_constraint,posture_constraint,obj.ik_options);
       
       if(snopt_info_ik > 10)
-        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info_ik);
+        send_msg = sprintf('snopt_info = %d. The IK (end) fails.',snopt_info_ik);
         send_status(4,0,0,send_msg);
         display(infeasibleConstraintMsg(infeasible_constraint_ik));
         warning(send_msg);
@@ -259,9 +263,9 @@ classdef drillTestPlanPublisher
       
       qtraj_guess = PPTrajectory(foh([0 T],[q_start_nom, q_end_nom]));
       
-      [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,0,...
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
-        drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.ik_options);
+        drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.free_ik_options);
       
       if(snopt_info > 10)
         send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
@@ -270,11 +274,89 @@ classdef drillTestPlanPublisher
         warning(send_msg);
       end
       
-      if obj.doVisualization && snopt_info == 1
+      if obj.doVisualization && snopt_info <= 10
         obj.v.playback(xtraj);
       end
       
-      if obj.doPublish && snopt_info == 1
+      if obj.doPublish && snopt_info <= 10
+        obj.publishTraj(xtraj,snopt_info);
+      end
+    end
+    
+    function [xtraj,snopt_info,infeasible_constraint] = createConstrainedLinePlan(obj, q0, x_drill_init, x_drill_final, quat_des, threshold, T)
+      N = 10;
+      t_vec = linspace(0,T,N);
+      
+      
+      % create posture constraint
+      posture_index = setdiff((1:obj.r.num_q)',[1 2 3 6 obj.joint_indices]');
+      posture_constraint_free_base = PostureConstraint(obj.r);
+      posture_constraint_free_base = posture_constraint_free_base.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
+      
+      % create drill direction constraint
+%       WorldGazeOrientConstraint(obj.r,obj.hand_body,axis,quat_des,conethreshold,threshold,tspan)
+      drill_dir_constraint = WorldGazeOrientConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
+        quat_des, obj.default_axis_threshold,threshold);
+%         obj.drilling_world_axis,obj.default_axis_threshold);
+
+      body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,2); % fix the pelvis
+      
+      % create drill position constraints
+      x_drill = repmat(x_drill_init,1,N) + (x_drill_final - x_drill_init)*linspace(0,1,N);
+      drill_pos_constraint = cell(1,N);
+      for i=1:N,
+        drill_pos_constraint{i} = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill(:,i),x_drill(:,i),[t_vec(i) t_vec(i)]);
+      end
+      
+      % Find nominal poses
+      [q_start_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
+        drill_pos_constraint{1},drill_dir_constraint,posture_constraint_free_base,obj.ik_options);
+      
+      if(snopt_info_ik > 10)
+        send_msg = sprintf('snopt_info = %d. The IK (start) fails.',snopt_info_ik);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint_ik));
+        warning(send_msg);
+      end
+      
+      
+      % create posture constraint
+      posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices');
+      posture_constraint = PostureConstraint(obj.r);
+      posture_constraint = posture_constraint.setJointLimits(posture_index,q_start_nom(posture_index),q_start_nom(posture_index));
+      
+%       posture_constraint = posture_constraint_free_base;
+      
+      % Find nominal poses
+      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
+        drill_pos_constraint{end},drill_dir_constraint,posture_constraint,obj.ik_options);
+      
+      if(snopt_info_ik > 10)
+        send_msg = sprintf('snopt_info = %d. The IK (end) fails.',snopt_info_ik);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint_ik));
+        warning(send_msg);
+      end
+      
+      
+      qtraj_guess = PPTrajectory(foh([0 T],[q_start_nom, q_end_nom]));
+      
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+        t_vec,qtraj_guess,qtraj_guess,body_pose_constraint,...
+        drill_pos_constraint{:},drill_dir_constraint,posture_constraint_free_base,obj.free_ik_options);
+      
+      if(snopt_info > 10)
+        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint));
+        warning(send_msg);
+      end
+      
+      if obj.doVisualization && snopt_info <= 10
+        obj.v.playback(xtraj);
+      end
+      
+      if obj.doPublish && snopt_info <= 10
         obj.publishTraj(xtraj,snopt_info);
       end
     end
