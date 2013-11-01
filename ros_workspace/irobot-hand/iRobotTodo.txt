@@ -1,10 +1,7 @@
 TODO:
-* respond to email with title Modifications to Hands and Smart Fingers
-* ask for calibration jig
 * figure out best control types to use for opening and closing hand, and holding an object
 * check if translator needs to be updated
-* write software that interfaces with the rest of the DRC software
-* experiment with current control
+* email iRobot about #44 (keeps rebooting?)
 
 BUSY:
 
@@ -34,3 +31,7 @@ DONE:
 * try visualize_simplified.launch
 * get set up with PyDev
 * improve helios_scripts/launch_hand_driver.sh 
+* experiment with current control
+* email: current control binary?
+* get calibration jig
+* email iRobot about current control
