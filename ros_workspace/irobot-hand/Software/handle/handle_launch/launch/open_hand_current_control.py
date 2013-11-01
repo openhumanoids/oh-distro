@@ -51,11 +51,11 @@ if __name__ == '__main__':
                 print("Closing")
                 close_started = True
             do_control(command_message, motor_indices, HandleControl.CURRENT, finger_close_current)
-#         elif time < open_time:
-#             if not open_started:
-#                 print("Opening")
-#                 open_started = True
-#             do_control(command_message, motor_indices, HandleControl.ANGLE, open_angle)
+#        elif time < open_time:
+#            if not open_started:
+#                print("Opening")
+#                open_started = True
+#            do_control(command_message, motor_indices, HandleControl.ANGLE, open_angle)
         else:
             done = True
 
@@ -65,6 +65,6 @@ if __name__ == '__main__':
     
     print("sending command: no current")
     no_current_message = HandleControl()
-    do_control(command_message, motor_indices, HandleControl.CURRENT, 0)
+    do_control(no_current_message, motor_indices, HandleControl.CURRENT, 0)
     publisher.publish(no_current_message)
     rospy.spin()
