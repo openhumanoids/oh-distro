@@ -570,6 +570,7 @@ public:
                     const double iRayStart[3], const double iRayDir[3]) {
     mDragging = false;
     mActiveCamera = -1;
+    getBotEventHandler()->picking = 0;
     requestDraw();
     return true;
   }
