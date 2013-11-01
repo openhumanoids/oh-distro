@@ -249,7 +249,6 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
   //std::cout << "got "<< msg->naffs << " affs\n";
   
   
-  
   affs_.clear();
   for (int i=0 ; i < msg->naffs ; i++){
     drc::affordance_t aff = msg->affs_plus[i].aff;

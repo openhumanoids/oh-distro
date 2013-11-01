@@ -110,6 +110,16 @@ Eigen::Quaterniond euler_to_quat(double yaw, double pitch, double roll) {
   return Eigen::Quaterniond(w,x,y,z);
 }
 
+void quat_to_euler(Eigen::Quaterniond q, double& roll, double& pitch, double& yaw) {
+  const double q0 = q.w();
+  const double q1 = q.x();
+  const double q2 = q.y();
+  const double q3 = q.z();
+  roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2));
+  pitch = asin(2*(q0*q2-q3*q1));
+  yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
+}
+
 void RateSetPlugin::QueueThread(){
     lcm::LCM lcm_subscribe_ ;
     if(!lcm_subscribe_.good()){
@@ -248,6 +258,30 @@ void RateSetPlugin::on_rate_set(const lcm::ReceiveBuffer* buf,
     gzerr << "New rate. Will now aim for "<< 
         1/( msg->pos[0] +1)  << " times realtime\n";
     fraction_sleep_ = msg->pos[0]/this->update_rate_;
+
+  /*
+  gzerr << "dump poses to screen\n"; 
+  std::vector<physics::ModelPtr> all_models = this->world->GetModels();
+  BOOST_FOREACH( physics::ModelPtr model, all_models ){
+    if (model){
+      gzerr << "got: "<< model->GetName() <<"\n"; 
+      physics::Link_V all_links = model->GetLinks();
+      BOOST_FOREACH( physics::LinkPtr link, all_links ){
+
+          math::Pose pose;
+          pose=link->GetWorldPose();
+
+          Eigen::Quaterniond quat = Eigen::Quaterniond( pose.rot.w, pose.rot.x , pose.rot.y , pose.rot.z);
+          double rpy[3];
+          quat_to_euler(quat, rpy[0], rpy[1], rpy[2]);
+
+          gzerr <<model->GetName() << ", "<< link->GetName() <<", "
+                << pose.pos.x << ", " << pose.pos.y << ", " << pose.pos.z << ", "
+                << rpy[0] << ", " << rpy[1] << ", " << rpy[2] << "\n";
+      }
+    }
+  }
+  */
 
 } 
 

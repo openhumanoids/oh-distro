@@ -14,7 +14,7 @@ switch nargin
         l_hand_mode = 1;
         r_hand_mode = 1;
     otherwise
-        error('Incorrect usage of runKeyFramePlannersLCMBase. Undefined number of varargin. (hardware_mode,l_hand_mode,r_hand_mode)')
+        error('Incorrect usage of runKeyFramePlannersLCMBase. Undefined number of varargin. (hardware_mode)')
 end
 
 % get the robot model first
@@ -57,10 +57,10 @@ elseif(l_hand_mode == 1 && r_hand_mode == 1)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
 % elseif(l_hand_mode == 2 && r_hand_mode == 2)
 %   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_irobot_hands.urdf'),options);
-elseif(l_hand_mode == 0 && r_hand_mode == 0)
+else%(l_hand_mode == 0 && r_hand_mode == 0)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
-else
-  error('The urdf for the model does not exist');
+%else
+%  error('The urdf for the model does not exist');
 end
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
