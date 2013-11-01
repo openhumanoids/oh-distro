@@ -1,3 +1,8 @@
+// Working Grasps:
+// Box: both irobot and sandia - no edge cases. click on top and bottom of face to orientate the fingers
+// Cylinder: both - assumes that z-axis of cylinder is upwards
+// Steering Cyl: only sandia. works for both directions
+
 #include <iostream>
 #include <stdio.h>
 #include <signal.h>
@@ -124,7 +129,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  bool use_irobot_):
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60011,"Grasp Seed",5,1) );
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(60001,"Grasp Frames",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60001,"Grasp Frame",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60002,"Palm Frame",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(60003,"Corner Frame",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60012,"Grasp Pose Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60013,"Grasp Feasibility" ,1,1, 60012,0, { 0.0, 1.0, 0.0} ));
   //
@@ -622,21 +629,10 @@ void Pass::planGraspBoxSandia(Eigen::Isometry3d init_grasp_pose){
     }
   }
   
-  Eigen::Vector3d fingers_rotation (0,0,0); 
-  if ( grasp_point ( short_dim ) < 0 ){
-    std::cout << "fingers down\n";
-    fingers_rotation << M_PI,0,0; 
-  }else{
-    std::cout << "fingers up\n"; 
-    fingers_rotation << 0,0,0; 
-  }
-  
-  grasp_point(short_dim) =0;
-  grasp_point(face_dim) = copysign(1, grasp_point(face_dim) ) * aff_len(face_dim)/2; // snap onto face exactly
-      
-  std::cout << "face dim: " << face_dim << " | " << distance_to_face_smallest << "\n";
-  std::cout << "long_dim: " << long_dim << "\n";
+  // fine to here
 
+  std::cout << "face dim: " << face_dim << " | " << distance_to_face_smallest << "\n";
+  std::cout << "long_dim: " << long_dim << "\n";  
   
   Eigen::Vector3d face_rotation (0,0,0); 
   Eigen::Vector3d direction_rotation (0,0,0); 
@@ -647,173 +643,138 @@ void Pass::planGraspBoxSandia(Eigen::Isometry3d init_grasp_pose){
      face_rotation << 0, -M_PI/2 , -M_PI/2 ;
   }
   
+  if (face_dim == 1 ) {
+     face_rotation << 0,0, M_PI/2 ;
+  }else if (face_dim == 2 ) {
+//     face_rotation << M_PI, -M_PI/2 , 0 ;
+     face_rotation << 0, -M_PI/2 ,0 ;
+  }
+  
   if ( grasp_point( face_dim ) > 0){
     std::cout << "positive, need flip\n";
-    direction_rotation << 0 , 0, M_PI;
+    direction_rotation << M_PI , 0, M_PI;
+  } else{
+    direction_rotation << 0 , 0, 0;
   }
+  
+  
+  
+  // palm always faces into box, fingers always point towards the short side
+  
+  
+  
+  Eigen::Isometry3d aff_to_actualpalm = Eigen::Isometry3d::Identity();
+  aff_to_actualpalm.rotate( euler_to_quat( face_rotation(0) , face_rotation(1),  face_rotation(2) ) );   
+  aff_to_actualpalm.rotate( euler_to_quat( direction_rotation(0) , direction_rotation(1),  direction_rotation(2) ) );   
+  
+  
+  /*
+  Eigen::Vector3d fingers_rotation (0,0,0); 
+  if ( grasp_point ( short_dim ) < 0 ){
+    std::cout << "fingers down\n";
+    fingers_rotation << 0,0,0; 
+  }else{
+    std::cout << "fingers up\n"; 
+    fingers_rotation << M_PI,0,0; 
+  }
+  
+      
+  
+  Eigen::Vector3d face_rotation (0,0,0); 
+
   
   Eigen::Isometry3d aff_to_actualpalm = Eigen::Isometry3d::Identity();
   aff_to_actualpalm.rotate( euler_to_quat( face_rotation(0) , face_rotation(1),  face_rotation(2) ) );   
   aff_to_actualpalm.rotate( euler_to_quat( direction_rotation(0) , direction_rotation(1),  direction_rotation(2) ) );   
   aff_to_actualpalm.rotate( euler_to_quat( fingers_rotation(0) , fingers_rotation(1),  fingers_rotation(2) ) );   
   
-  //if(face_dim==2){
-  //  std::cout << "awkward error case on dim 2 correction\n";
-  //  aff_to_actualpalm.rotate( euler_to_quat( -M_PI/2 , 0, 0 ) );   
-  //}
+  */
+  
+  bool do_bottom_transform = 0;
+  if (grasp_point(short_dim) > 0){
+    std::cout << "top side of face\n";
+    do_bottom_transform=0;
+  }else{
+    std::cout << "bottom side of face\n";
+    do_bottom_transform=1;
+  }
+  
+  //
+  if ( (grasp_point(face_dim) < 0) && (face_dim==2) ) {
+    do_bottom_transform = !do_bottom_transform;
+  }
+  if ( (grasp_point(face_dim) > 0) && (face_dim==1) ) {
+    do_bottom_transform = !do_bottom_transform;
+  }
+  if ( (grasp_point(face_dim) > 0) && (face_dim==0) ) {
+    do_bottom_transform = !do_bottom_transform;
+  }
+  
+  
+  grasp_point(short_dim) =0;
+  grasp_point(face_dim) = copysign(1, grasp_point(face_dim) ) * aff_len(face_dim)/2; // snap onto face exactly
+  
   
   aff_to_actualpalm.translation()  << grasp_point(0) , grasp_point(1) , grasp_point(2) ;   // + x + y + z
   // TODO support different params here
   
   eeloci_poses_.clear();
   eeloci_poses_.push_back( Isometry3dTime(0, world_to_aff_* aff_to_actualpalm));
+  pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
 
+  
+  // at this stage aff_to_actualpalm is a frame:
+  // - position in the middle of the board 
+  // - x-axis pointing into the face (and long the finger)
+  // - y-axis pointing towards knuckle on thump
+  // - z-axis pointing along the 3 fingers axis
+  
+  // palm facing in positive direction of face_dim
+  Eigen::Isometry3d aff_to_corner = Eigen::Isometry3d::Identity();
+  // -0.055, 0 , - 0.06
+  
+  if (do_bottom_transform){
+    aff_to_corner.translation() = Eigen::Vector3d( 0 , 0 ,  -aff_len(short_dim)/2  );
+    std::cout << "this tf is fine\n";
+  }else{
+    aff_to_corner.translation() = Eigen::Vector3d( 0 , 0 ,  aff_len(short_dim)/2  );
+    aff_to_corner.rotate( euler_to_quat( 180*M_PI/180, 0, 0*M_PI/180 ) );
+    std::cout << "need other tf\n";
+  }
+  aff_to_actualpalm = aff_to_actualpalm*aff_to_corner;
+  Isometry3dTime world_to_actualpalmT(0, world_to_aff_* aff_to_actualpalm);
+  pc_vis_->pose_to_lcm_from_list(60003, world_to_actualpalmT );   
+  
+  
+  // at this stage aff_to_actualpalm is a frame:
+  // - position on the edge we want to grasp 
+  // - (z-axis) the fingers face in the direction we want to face (including flip in each direction)
+  // - (y-axis) is pointing towards knuckle on thump
+  // - x-axis pointing into the face (and long the finger)
+  // This is the reference point. All thats needed next is a transform back from this point for the
+  // palm frame for each hand
+  
   // Add on the transform from the "actual palm" to the palm link
   Eigen::Isometry3d actualplam_to_palmgeometry = Eigen::Isometry3d::Identity();
   
-  actualplam_to_palmgeometry.rotate( euler_to_quat( 0*M_PI/180, 0*M_PI/180, 180*M_PI/180 ) );
-  actualplam_to_palmgeometry.translation()  <<  -0.095 , 0 , 0.0  ;   // + x + y + z
+  // hand specific:
+  if (grasp_opt_msg_.grasp_type ==0){ // Sandia left
+    actualplam_to_palmgeometry.translation()  <<  -0.053 , 0.02 , -0.05  ;   // + x + y + z
+    actualplam_to_palmgeometry.rotate( euler_to_quat( -20*M_PI/180, 0*M_PI/180, 180*M_PI/180 ) );
+  }else{
+    actualplam_to_palmgeometry.translation()  <<  -0.053 , -0.02 , -0.05  ;   // + x + y + z
+    actualplam_to_palmgeometry.rotate( euler_to_quat( 20*M_PI/180, 0*M_PI/180, 180*M_PI/180 ) );
+  }
   
   Eigen::Isometry3d aff_to_palmgeometry = aff_to_actualpalm*actualplam_to_palmgeometry;
   
-  pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
+  
+  std::vector <Isometry3dTime> world_to_palmT;
+  world_to_palmT.push_back( Isometry3dTime(0, world_to_aff_* aff_to_palmgeometry));
+  pc_vis_->pose_collection_to_lcm_from_list(60002, world_to_palmT);   
   
   sendCandidateGrasp(aff_to_palmgeometry, 0);  
 }
-
-/*
-
-// Compute pre-calculated grasp for hand around 2x4, where 
-// the long axis is the Y axis
-void Pass::planGraspBoxSandiaOriginal(Eigen::Isometry3d init_grasp_pose){  
-  std::cout << "Find Box Grasp Sandia\n";
-
-  std::map<string,double> am;
-  for (int j=0; j< aff_.nparams; j++){
-    am[ aff_.param_names[j] ] = aff_.params[j];
-  }
-  Eigen::Vector3d aff_len( am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second );
-  
-  
-  // 1. Determine the Parameters:
-  world_to_aff_ = affutils_.getPose(aff_.origin_xyz, aff_.origin_rpy);
-  Eigen::Affine3d Aff = Eigen::Affine3d(world_to_aff_.inverse() );
-  Eigen::Vector3d grasp_point = Eigen::Vector3d(init_grasp_pose.translation().x(), 
-                                       init_grasp_pose.translation().y(),
-                                       init_grasp_pose.translation().z());
-  grasp_point = Aff * grasp_point; // relative grasp point
-  
-  std::cout << "grasp_point: " << grasp_point.transpose() << "\n";
-  std::cout << "aff_len: " << aff_len.transpose() << "\n";
-  
-  double segment_pitch=0;
-  double direction_yaw=0;
-  double direction_roll=0;
-  Eigen::Vector3d aff_size_offset(0,0,0);
-
-  double distance_to_x_face = fabs( fabs (grasp_point(0)) - aff_len(0)/2 );
-  double distance_to_z_face = fabs( fabs (grasp_point(2)) - aff_len(2)/2 );
-  
-  bool verbose =false;
-  
-  if (distance_to_x_face  < distance_to_z_face){
-  // if ( fabs( fabs (grasp_point(0)) - aff_len(0)/2 ) < 0.005){
-    if( grasp_point(0) > 0){
-      if (verbose) std::cout << "x far\n";
-      if( grasp_point(2) < 0){
-        if (verbose) std::cout << "front\n";
-        segment_pitch=90;
-        aff_size_offset(0) = aff_len(0)/2; 
-        aff_size_offset(2) = -aff_len(2)/2;         
-        direction_yaw=180;
-      }else{
-        if (verbose) std::cout << "back\n";
-        segment_pitch=90;
-        aff_size_offset(0) = aff_len(0)/2; 
-        aff_size_offset(2) = aff_len(2)/2;         
-        direction_roll=0;
-      }      
-    }else{
-      if (verbose) std::cout << "x near\n";
-      if( grasp_point(2) < 0){
-        if (verbose) std::cout << "back\n";
-        segment_pitch=-90;
-        aff_size_offset(0) = -aff_len(0)/2; 
-        aff_size_offset(2) = -aff_len(2)/2; 
-        direction_roll=0;
-      }else{
-        if (verbose) std::cout << "front\n";
-        segment_pitch=-90;
-        aff_size_offset(0) = -aff_len(0)/2; 
-        aff_size_offset(2) = aff_len(2)/2; 
-        direction_yaw=180;
-      }         
-    }
-  }else{
-  //if( fabs( fabs (grasp_point(2)) - aff_len(2)/2 ) < 0.005){
-    if( grasp_point(2) > 0){
-      if (verbose) std::cout << "z top\n";
-      if( grasp_point(0) > 0){
-        if (verbose) std::cout << "front\n";
-        segment_pitch=0;
-        aff_size_offset(0) = aff_len(0)/2; 
-        aff_size_offset(2) =  aff_len(2)/2;
-        direction_yaw=180;
-      }else{
-        if (verbose) std::cout << "back\n";
-        segment_pitch=0;
-        aff_size_offset(0) = -aff_len(0)/2; 
-        aff_size_offset(2) =  aff_len(2)/2;
-        direction_yaw=0;
-      }
-    }else{
-      if (verbose) std::cout << "z bottom\n";
-      if( grasp_point(0) < 0){
-        if (verbose) std::cout << "back\n";
-        segment_pitch=180;
-        aff_size_offset(0) = -aff_len(0)/2; 
-        aff_size_offset(2) = -aff_len(2)/2; 
-        direction_yaw=180;
-      }else{
-        if (verbose) std::cout << "back\n";
-        segment_pitch=180;
-        aff_size_offset(0) = aff_len(0)/2; 
-        aff_size_offset(2) = -aff_len(2)/2; 
-        direction_yaw=0;
-      }
-    }
-  }
-  
-  
-  Eigen::Isometry3d aff_to_actualpalm = Eigen::Isometry3d::Identity();
-  aff_to_actualpalm.rotate( euler_to_quat( direction_roll*M_PI/180 , segment_pitch*M_PI/180, 0 ) );   
-  aff_to_actualpalm.rotate( euler_to_quat( 0 , 0, direction_yaw*M_PI/180 ) );   
-  aff_to_actualpalm.translation()  << 0 , grasp_point(1) ,0.0 ;   // + x + y + z
-  // TODO support different params here
-  
-  aff_to_actualpalm.translation() += aff_size_offset   ;   // + x + y + z
-  // .... now contains where I want the actual palm to be ...
-  
-  eeloci_poses_.clear();
-  eeloci_poses_.push_back( Isometry3dTime(0, world_to_aff_* aff_to_actualpalm));
-
-  // Add on the transform from the "actual palm" to the palm link
-  Eigen::Isometry3d actualplam_to_palmgeometry = Eigen::Isometry3d::Identity();
-  if (grasp_opt_msg_.grasp_type ==0){ // sandia left
-    actualplam_to_palmgeometry.translation()  << -0.06 , 0 , 0.055  ;   // + x + y + z
-    actualplam_to_palmgeometry.rotate( euler_to_quat( 80*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   // roll here specifies the wrist DOF 
-  }else if (grasp_opt_msg_.grasp_type ==1){ // sandia right
-    actualplam_to_palmgeometry.translation()  << -0.06 , 0 , 0.055  ;   // + x + y + z
-    actualplam_to_palmgeometry.rotate( euler_to_quat( 100*M_PI/180, -90*M_PI/180, 90*M_PI/180 ) );   // roll here specifies the wrist DOF 
-  }
-  
-  Eigen::Isometry3d aff_to_palmgeometry = aff_to_actualpalm*actualplam_to_palmgeometry;
-  
-  pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
-  
-  sendCandidateGrasp(aff_to_palmgeometry, 0);
-}
-*/
   
 void Pass::planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose){  
   
