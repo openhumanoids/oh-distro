@@ -348,7 +348,11 @@ classdef ReachingPlanner < KeyframePlanner
             if(isempty(h_ee_goal))
                 h_ee_goal = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
                 headT  = h_ee_goal(1:6);
+                headT = nan(6,1);
             else
+              if(goal_type_flags.h ~= 2)
+                error('Currently we only set head ee goal when when there is a head gaze constraint');
+              end
                 headT = zeros(6,1);
                 % Desired position of head in world frame
                 T_world_head = HT(h_ee_goal(1:3),h_ee_goal(4),h_ee_goal(5),h_ee_goal(6));
@@ -385,13 +389,18 @@ classdef ReachingPlanner < KeyframePlanner
             else
                 l_hand_poseT = nan(7,1);
             end
+            if(goal_type_flags.h ~= 2)
+              head_poseT = [headT(1:3);rpy2quat(headT(4:6))];
+            else
+              head_poseT = nan(7,1);
+            end
             lhand_poseT_isnan = all(isnan(l_hand_poseT));
             rhand_poseT_isnan = all(isnan(r_hand_poseT));
+            head_poseT_isnan = all(isnan(head_poseT));
             r_foot_poseT = [rfootT(1:3,:); repmat(rpy2quat(rfootT(4:6,1)),1,num_r_foot_pts)];
             l_foot_poseT = [lfootT(1:3,:); repmat(rpy2quat(lfootT(4:6,1)),1,num_l_foot_pts)];
-            headT(1:3)=nan(3,1); % only orientation constraint for the head.
-            head_poseT = [headT(1:3); rpy2quat(headT(4:6))];
-            head_poseT_isnan = all(isnan(head_poseT));
+
+
             %======================================================================================================
             
             
@@ -403,6 +412,7 @@ classdef ReachingPlanner < KeyframePlanner
             qsc = QuasiStaticConstraint(obj.r);
             qsc = qsc.setActive(true);
             qsc = qsc.setShrinkFactor(0.85);
+            ikoptions = ikoptions.setDebug(true);
             ikoptions = ikoptions.setMajorIterationsLimit(500);
             
             comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
@@ -542,7 +552,7 @@ classdef ReachingPlanner < KeyframePlanner
             
             %============================
             %       0,comgoal,...
-            q_final_quess= q0;
+            q_final_guess= q0;
             
             if(isempty(q_desired))
                 q_start=q0;
@@ -583,28 +593,36 @@ classdef ReachingPlanner < KeyframePlanner
                 if(obj.isBDIManipMode())
                   obj.joint_constraint = obj.joint_constraint.setJointLimits(lower_fixed_joint_idx,q0_bound(lower_fixed_joint_idx),q0_bound(lower_fixed_joint_idx));
                 end
-                if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
-                    if(obj.restrict_feet)
-                        %obj.pelvis_body,[0;0;0],pelvis_pose0,...
-                        [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
-                            rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
-                            rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                            obj.joint_constraint,qsc,ikoptions);
-                    else
-                        % if feet are not restricted then you need to add back pelvis constraint
-                        [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
-                            pelvis_constraint{:},...
-                            rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
-                            rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                            obj.joint_constraint,qsc,ikoptions);
-                    end
-                else
-                    [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
-                        rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
-                        rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                        obj.joint_constraint,ikoptions);
-                end % end if(~obj.isBDIManipMode())
-                
+                findFinalPostureFlag = false;
+                ik_attempt_count = 0;
+                tic
+                while(~findFinalPostureFlag && ik_attempt_count<30)
+                  if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
+                      if(obj.restrict_feet)
+                          %obj.pelvis_body,[0;0;0],pelvis_pose0,...
+                          [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
+                              rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
+                              rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
+                              obj.joint_constraint,qsc,ikoptions);
+                      else
+                          % if feet are not restricted then you need to add back pelvis constraint
+                          [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
+                              pelvis_constraint{:},...
+                              rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
+                              rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
+                              obj.joint_constraint,qsc,ikoptions);
+                      end
+                  else
+                      [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
+                          rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
+                          rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
+                          obj.joint_constraint,ikoptions);
+                  end % end if(~obj.isBDIManipMode())
+                  ik_attempt_count = ik_attempt_count+1;
+                  q_start = q_final_guess+5e-2*randn(size(q_final_guess));
+                  findFinalPostureFlag = snopt_info<=10;
+                end
+                toc
                 if(snopt_info >10)
                     % this warning is at an intermediate point in the planning
                     % it is not an indication that the final plan is in violation
