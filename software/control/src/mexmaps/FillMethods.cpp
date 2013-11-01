@@ -24,16 +24,13 @@ using namespace mexmaps;
 FillMethods::
 FillMethods(const std::shared_ptr<maps::BotWrapper>& iWrapper) {
   mBotWrapper = iWrapper;
-  mDebug = true;
+  mDebug = false;
   mLatestGroundPlane << 0,0,0,0;
   mMapMode = drc::map_controller_command_t::FLAT_GROUND;
   mLatestFeetPosition << 0,0,0;
   mBotWrapper->getLcm()->subscribe("POSE_GROUND", &FillMethods::onGround, this);
-
-  /* no longer need this; gets set explicitly
   mBotWrapper->getLcm()->subscribe("MAP_CONTROLLER_COMMAND",
                                    &FillMethods::onCommand, this);
-  */
 }
 
 void FillMethods::
@@ -48,7 +45,6 @@ onGround(const lcm::ReceiveBuffer* iBuf,
   mLatestFeetPosition = pos;
 }
 
-/* no longer need this; gets set explicitly
 void FillMethods::
 onCommand(const lcm::ReceiveBuffer* iBuf,
           const std::string& iChannel,
@@ -83,7 +79,6 @@ onCommand(const lcm::ReceiveBuffer* iBuf,
   }
   mMapMode = iMessage->command;
 }
-*/
 
 int FillMethods::
 getMapMode() const {

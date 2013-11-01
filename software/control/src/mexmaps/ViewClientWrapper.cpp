@@ -5,6 +5,7 @@
 #include <maps/BotWrapper.hpp>
 #include <maps/ViewClient.hpp>
 #include <maps/DepthImageView.hpp>
+#include <maps/DepthImage.hpp>
 
 #include <drc_utils/Clock.hpp>
 
@@ -15,15 +16,28 @@ using namespace mexmaps;
 
 struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
   ViewClientWrapper* mWrapper;
+  std::vector<float> mPreviousData;
 
   Listener(ViewClientWrapper* iWrapper) : mWrapper(iWrapper) {}
 
   void notifyData(const int64_t iViewId) {
     if (iViewId != mWrapper->mHeightMapViewId) return;
     auto view = std::dynamic_pointer_cast<maps::DepthImageView>
-      (mWrapper->mViewClient->getView(iViewId));
+      (mWrapper->mViewClient->getView(mWrapper->mHeightMapViewId));
+    if (view != NULL) {
+      maps::DepthImage::Type type = maps::DepthImage::TypeDisparity;
+      mPreviousData = view->getDepthImage()->getData(type);
+    }
+    computeNewDepths();
+  }
+
+  void computeNewDepths() {
+    auto view = std::dynamic_pointer_cast<maps::DepthImageView>
+      (mWrapper->mViewClient->getView(mWrapper->mHeightMapViewId));
     if (view != NULL) {
       mWrapper->mLastReceiptTime = drc::Clock::instance()->getCurrentWallTime();
+      view->getDepthImage()->setData(mPreviousData,
+                                     maps::DepthImage::TypeDisparity);
       view->setNormalMethod(maps::DepthImageView::NormalMethodLeastSquares);
       view->setNormalRadius(0);
       switch (mWrapper->mFillMethods->getMapMode()) {
@@ -86,6 +100,7 @@ setHeightMapChannel(const std::string& iChannel, const int iViewId) {
 void ViewClientWrapper::
 setMapMode(const int iMode) {
   mFillMethods->setMapMode(iMode);
+  mListener->computeNewDepths();
 }
 
 bool ViewClientWrapper::
