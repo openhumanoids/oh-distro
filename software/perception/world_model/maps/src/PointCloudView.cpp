@@ -56,7 +56,7 @@ getAsPointCloud(const bool iTransform) const {
   maps::PointCloud::Ptr cloud(new maps::PointCloud(*mCloud));
   if (iTransform) {
     pcl::transformPointCloud(*cloud, *cloud,
-                             Eigen::Affine3f(mTransform.matrix()));
+                             Eigen::Affine3f(mTransform.matrix()).inverse());
   }
   /* NOTE: for projective transformation
   for (int i = 0; i < cloud->size(); ++i) {
