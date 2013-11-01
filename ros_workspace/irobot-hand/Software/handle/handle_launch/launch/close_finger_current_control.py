@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
 
     finger_close_current = 1 # milliamps?
-    motor_indices = range(1) #range(3)
+    motor_indices = range(3) #range(3)
 
 
     done = False
@@ -51,11 +51,11 @@ if __name__ == '__main__':
                 print("Closing")
                 close_started = True
             do_control(command_message, motor_indices, HandleControl.CURRENT, finger_close_current)
-        elif time < open_time:
-            if not open_started:
-                print("Opening")
-                open_started = True
-            do_control(command_message, motor_indices, HandleControl.ANGLE, open_angle)
+#         elif time < open_time:
+#             if not open_started:
+#                 print("Opening")
+#                 open_started = True
+#             do_control(command_message, motor_indices, HandleControl.ANGLE, open_angle)
         else:
             done = True
 
