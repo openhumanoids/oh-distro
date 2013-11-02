@@ -37,13 +37,14 @@ public class HandStateListener implements LCMSubscriber
           m_joint_names[ind]= String.format("%s_f%d_j%d",prefix,i,j);
         }
       }
-      System.out.println("construct sandia hand listner for "+prefix+" hand");
+      System.out.println("construct sandia hand listener for "+prefix+" hand");
       setMapFlag = false;
     }
     else if(hand_mode == 2)
     {
       hand_dim = 0;
-      setMapFlag = false;
+      System.out.println("construct irobot hand listener for "+prefix+" hand");
+      setMapFlag = true;
       // This needs to be changed when irobot hand can be parsed
     }
   }
