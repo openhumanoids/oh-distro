@@ -28,6 +28,7 @@ add_subdirectory(src/renderer_status)
 add_subdirectory(src/renderer_drcgrid)
 add_subdirectory(src/renderer_recovery)
 add_subdirectory(src/renderer_cam_thumb_drc)
+add_subdirectory(src/renderer_controller_options)
 add_subdirectory(src/viewer)
 
 file(COPY scripts/lcmviewer-ppms2avi DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
