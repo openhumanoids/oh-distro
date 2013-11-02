@@ -53,6 +53,7 @@
 #define PARAM_BDI_TOE_OFF "BDI toe off enable"
 #define PARAM_BDI_KNEE_NOMINAL "BDI knee nominal"
 #define PARAM_STOP_WALKING "Stop Walking Now!"
+#define PARAM_MAP_MODE "Map mode to use"
 
 #define WALKING_MODE "Preset"
 
@@ -328,6 +329,7 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
     bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
   }else if (mode == WALKING_MUD){
     std::cout << "Using preset mode: Mud\n";
     bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 6);  
@@ -344,6 +346,7 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
     bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
   }else if (mode == WALKING_CRAWLING){
     std::cout << "Using preset mode: Crawling\n";      
     bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
@@ -360,6 +363,7 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
     bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
   }else if (mode == WALKING_TURN_CRAWLING){
     std::cout << "Using preset mode: Turn Crawling\n";            
     bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
@@ -376,6 +380,7 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
     bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
   }else if (mode == WALKING_BDI){
     std::cout << "Using preset mode: BDI Walking\n"; bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10); bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);
     bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
@@ -390,6 +395,7 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
     bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
   } else if (mode == STEPPING_BDI) {
     std::cout << "Using preset mode: BDI Stepping\n"; bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10); bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);
     bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
@@ -401,9 +407,10 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_STEPPING);
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_STEP_DURATION, 2.0);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_SWAY_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
+    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0.05);  
     bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
+    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
   }
   get_params_from_widget(self);
 }
@@ -427,6 +434,7 @@ void get_params_from_widget(RendererWalking* self) {
   self->bdi_lift_height = bot_gtk_param_widget_get_double(self->pw, PARAM_BDI_LIFT_HEIGHT);
   self->bdi_toe_off = (bdi_toe_off_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_BDI_TOE_OFF);
   self->bdi_knee_nominal = bot_gtk_param_widget_get_double(self->pw, PARAM_BDI_KNEE_NOMINAL);
+  self->map_command = bot_gtk_param_widget_get_enum(self->pw, PARAM_MAP_MODE);
 }
 
 
@@ -471,10 +479,9 @@ void publish_simple_nav(RendererWalking* self, double x, double y, double yaw) {
   bot_roll_pitch_yaw_to_quat(rpy, quat);
   self->goal_pos.x = self->robot_pos[0] + x * cos(rpy[2]) - y * sin(rpy[2]);
   self->goal_pos.y = self->robot_pos[1] + x * sin(rpy[2]) + y * cos(rpy[2]);
-  bool old_follow_spline = self->follow_spline;
   self->follow_spline = FALSE;
+  bot_gtk_param_widget_set_bool(self->pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
   publish_walking_goal(self, TRUE);
-  self->follow_spline = old_follow_spline;
 }
 
 void publish_walking_goal(RendererWalking* self, bool is_new) {
@@ -525,6 +532,7 @@ void publish_walking_goal(RendererWalking* self, bool is_new) {
   walking_goal_msg.bdi_lift_height = self->bdi_lift_height;
   walking_goal_msg.bdi_toe_off = self->bdi_toe_off;
   walking_goal_msg.bdi_knee_nominal = self->bdi_knee_nominal;
+  walking_goal_msg.map_command = self->map_command;
 
   std::string channel = (self->behavior == BEHAVIOR_CRAWLING) ? "CRAWLING_GOAL" : "WALKING_GOAL";
   fprintf(stderr, "Sending %s \n", channel.c_str());
@@ -735,6 +743,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_double(self->pw, PARAM_MU, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.5, 0.05, self->mu);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
   bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_IGNORE_TERRAIN, 0, NULL);
+  bot_gtk_param_widget_add_enum(self->pw, PARAM_MAP_MODE, BOT_GTK_PARAM_WIDGET_MENU, self->map_command, "Full Heightmap", DRC_MAP_CONTROLLER_COMMAND_T_FULL_HEIGHTMAP, "Flat Ground", DRC_MAP_CONTROLLER_COMMAND_T_FLAT_GROUND, "Z Normals", DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS, NULL);
   bot_gtk_param_widget_add_double(self->pw, PARAM_BDI_STEP_DURATION, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.1, self->bdi_step_duration);
   bot_gtk_param_widget_add_double(self->pw, PARAM_BDI_SWAY_DURATION, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.1, self->bdi_sway_duration);
   bot_gtk_param_widget_add_double(self->pw, PARAM_BDI_LIFT_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.0, 0.05, self->bdi_lift_height);

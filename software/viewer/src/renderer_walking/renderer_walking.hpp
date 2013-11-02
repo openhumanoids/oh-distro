@@ -108,6 +108,8 @@ typedef struct _RendererWalking {
   bdi_toe_off_t bdi_toe_off;
   float bdi_knee_nominal;
 
+  int8_t map_command;
+
   int64_t max_draw_utime;
   double circle_color[3];
   
