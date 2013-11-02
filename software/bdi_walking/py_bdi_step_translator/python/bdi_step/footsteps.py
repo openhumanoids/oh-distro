@@ -91,6 +91,9 @@ class FootGoal(BaseFootGoal):
                         goal_msg.pos.rotation.x,
                         goal_msg.pos.rotation.y,
                         goal_msg.pos.rotation.z])
+        if goal_msg.bdi_lift_height == 0:
+            # A lift height of 0 is ignored by the API, so we'll replace it with a very small but nonzero value (1cm).
+            goal_msg.bdi_lift_height = 0.01
         goal = FootGoal(pos=pl.vstack([goal_msg.pos.translation.x,
                                        goal_msg.pos.translation.y,
                                        goal_msg.pos.translation.z,
