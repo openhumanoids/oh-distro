@@ -595,7 +595,8 @@ classdef ReachingPlanner < KeyframePlanner
                 end
                 findFinalPostureFlag = false;
                 ik_attempt_count = 0;
-                while(~findFinalPostureFlag && ik_attempt_count<30)
+                total_ik_attempt = 30;
+                while(~findFinalPostureFlag && ik_attempt_count<total_ik_attempt)
                   if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                       if(obj.restrict_feet)
                           %obj.pelvis_body,[0;0;0],pelvis_pose0,...
@@ -625,7 +626,7 @@ classdef ReachingPlanner < KeyframePlanner
                 if(snopt_info >10)
                     % this warning is at an intermediate point in the planning
                     % it is not an indication that the final plan is in violation
-                    warning('The IK fails at the end');
+                    warning('The IK fails at the end after %d trials',total_ik_attempt);
                     send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.',snopt_info);
                     if(obj.planning_mode == 3)
                       send_status(4,0,0,send_msg);
