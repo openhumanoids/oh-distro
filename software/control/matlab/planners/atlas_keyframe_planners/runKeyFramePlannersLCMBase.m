@@ -92,21 +92,23 @@ if(nargin<1)
     hardware_mode = 1;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
 end
 % sandia hands subscriber
-l_hand_listener = HandListener(l_hand_mode,'left','EST_ROBOT_STATE');
-r_hand_listener = HandListener(r_hand_mode,'right','EST_ROBOT_STATE');
+l_hand_listener = drc.control.HandStateListener(l_hand_mode,'left','EST_ROBOT_STATE');
+r_hand_listener = drc.control.HandStateListener(r_hand_mode,'right','EST_ROBOT_STATE');
+l_hand_frame = handFrame(l_hand_mode,'left');
+r_hand_frame = handFrame(r_hand_mode,'right');
 
-reaching_planner = ReachingPlanner(robot,atlas,l_hand_listener.hand_frame,...
-  r_hand_listener.hand_frame,hardware_mode); % single or multiple/successively specified ee constraints
-manip_planner = ManipulationPlanner(robot,atlas,l_hand_listener.hand_frame,...
-  r_hand_listener.hand_frame,hardware_mode); % ee motion constraints and point wise IK for manip plans and maps
-posture_planner = PosturePlanner(robot,atlas,l_hand_listener.hand_frame,...
-  r_hand_listener.hand_frame,hardware_mode); %posture and posture preset plans
-endpose_planner = EndPosePlanner(robot,atlas,l_hand_listener.hand_frame,...
-  r_hand_listener.hand_frame,hardware_mode); %search for pose given ee constraints
-wholebody_planner = WholeBodyPlanner(robot,atlas,l_hand_listener.hand_frame,...
-  r_hand_listener.hand_frame,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
-keyframe_adjustment_engine = KeyframeAdjustmentEngine(robot,atlas,l_hand_listener.hand_frame,...
-  r_hand_listener.hand_frame,hardware_mode); % Common keyframe adjustment for all the above planners
+reaching_planner = ReachingPlanner(robot,atlas,l_hand_frame,...
+  r_hand_frame,hardware_mode); % single or multiple/successively specified ee constraints
+manip_planner = ManipulationPlanner(robot,atlas,l_hand_frame,...
+  r_hand_frame,hardware_mode); % ee motion constraints and point wise IK for manip plans and maps
+posture_planner = PosturePlanner(robot,atlas,l_hand_frame,...
+  r_hand_frame,hardware_mode); %posture and posture preset plans
+endpose_planner = EndPosePlanner(robot,atlas,l_hand_frame,...
+  r_hand_frame,hardware_mode); %search for pose given ee constraints
+wholebody_planner = WholeBodyPlanner(robot,atlas,l_hand_frame,...
+  r_hand_frame,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
+keyframe_adjustment_engine = KeyframeAdjustmentEngine(robot,atlas,l_hand_frame,...
+  r_hand_frame,hardware_mode); % Common keyframe adjustment for all the above planners
 
 reaching_planner.setHandType(l_hand_mode,r_hand_mode);
 manip_planner.setHandType(l_hand_mode,r_hand_mode);
@@ -155,8 +157,8 @@ manip_plan_mode_listener = ManipPlanModeListener('MANIP_PLANNER_MODE_CONTROL');
 % WorkspaceURDF subscriber
 % workspace_urdf_listener = WorkspaceURDFListener('COLLISION_AVOIDANCE_URDFS');
 % urdf_names = {};
-% aff_manager = AffordanceManager(atlas,robot,l_hand_listener.hand_frame,...
-%   r_hand_listener.hand_frame,'AFFORDANCE_COLLECTION');
+% aff_manager = AffordanceManager(atlas,robot,l_hand_frame,...
+%   r_hand_frame,'AFFORDANCE_COLLECTION');
 % individual end effector subscribers
 rh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_RIGHT_PALM_MOTION');
 lh_ee_motion_command_listener = TrajOptConstraintListener('DESIRED_LEFT_PALM_MOTION');
@@ -221,7 +223,7 @@ while(1)
 %       aff_manager.aff_rpy(:,aff_idx),struct('floating',false));
 %     
 %     aff_manager.updateWcollisionObject(robot.getStateFrame,urdf_msg.uid,atlas_state_frame,...
-%       l_hand_listener.hand_frame,r_hand_listener.hand_frame);
+%       l_hand_frame,r_hand_frame);
 %     reaching_planner.updateRobot(robot);
 %     manip_planner.updateRobot(robot);
 %     posture_planner.updateRobot(robot);

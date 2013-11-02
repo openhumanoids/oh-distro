@@ -74,6 +74,7 @@ set(java_src_files
   IrobotJointCommandCoder.java
   SandiaJointCommandCoder.java
   ViconBodyPointCoder.java
+  HandStateListener.java
   )
 
 add_jar(drc_control ${java_src_files})
