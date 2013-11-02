@@ -83,6 +83,7 @@ while true
 
 
       if (~isempty(footsteps))
+        r.setTerrain(r.getTerrain().setMapMode(footstep_opts.map_command));
         % Align the first two steps to the current feet poses
         feet_pos = feetPosition(r, x0(1:nq));
         if footsteps(1).is_right_foot
