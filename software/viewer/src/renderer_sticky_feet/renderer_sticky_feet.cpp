@@ -35,59 +35,59 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
  
  
  // update stickyfeet z offsets to the support surfaceace if points exist below it. 
- double x,y,z;
- x = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0];
- y = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1];
- z = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2];
- Eigen::Vector3f queryPt(x,y,z);
-  //std::cout << "query" << queryPt.transpose()<<" " << z << std::endl;
-  double z_surface;
-  bool insupport= get_support_surface_height_from_perception(self, queryPt, z_surface);
+ // double x,y,z;
+ // x = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0];
+ // y = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1];
+ // z = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2];
+ // Eigen::Vector3f queryPt(x,y,z);
+ //  //std::cout << "query" << queryPt.transpose()<<" " << z << std::endl;
+ //  double z_surface;
+ //  bool insupport= get_support_surface_height_from_perception(self, queryPt, z_surface);
   
-  /*if(insupport && (!isnan(z_surface)))
-  { 
-     double offset=0;
-    if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)
-      offset = self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
-    else
-      offset = self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
+ //  /*if(insupport && (!isnan(z_surface)))
+ //  { 
+ //     double offset=0;
+ //    if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)
+ //      offset = self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
+ //    else
+ //      offset = self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
 
-    // std::cout <<  "footstep height: " << i <<" "<<  z_surface << " " << offset<< std::endl;
+ //    // std::cout <<  "footstep height: " << i <<" "<<  z_surface << " " << offset<< std::endl;
  
-     KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body;
-     T_worldframe_footframe.p[2] = offset+z_surface; // stick to support surface. TODO:: account for offset
-     std::map<std::string, double> jointpos_in; 
-     jointpos_in =  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_current_jointpos;
-     self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);          
-  }  */
+ //     KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body;
+ //     T_worldframe_footframe.p[2] = offset+z_surface; // stick to support surface. TODO:: account for offset
+ //     std::map<std::string, double> jointpos_in; 
+ //     jointpos_in =  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_current_jointpos;
+ //     self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);          
+ //  }  */
        
     
-  if(self->footStepPlanListener->is_motion_copy(i))
-  {
-    x = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[0];
-    y = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[1];
-    z = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[2];
-    Eigen::Vector3f queryPt(x,y,z);
-    bool insupport= get_support_surface_height_from_perception(self, queryPt, z_surface);
+ //  if(self->footStepPlanListener->is_motion_copy(i))
+ //  {
+ //    x = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[0];
+ //    y = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[1];
+ //    z = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[2];
+ //    Eigen::Vector3f queryPt(x,y,z);
+ //    bool insupport= get_support_surface_height_from_perception(self, queryPt, z_surface);
 
-    if(insupport && (!std::isnan(z_surface)))
-    {
-     double offset = 0;
-     if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)
-       offset = -self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
-     else
-       offset = -self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
-      KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_in_motion_copy->_T_world_body;
-      //std::cout <<  "motion copy height: " << i <<" "<<T_worldframe_footframe.p[2] <<" "<<  z_surface << " " << offset<< std::endl;
+ //    if(insupport && (!std::isnan(z_surface)))
+ //    {
+ //     double offset = 0;
+ //     if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)
+ //       offset = -self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
+ //     else
+ //       offset = -self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
+ //      KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_in_motion_copy->_T_world_body;
+ //      //std::cout <<  "motion copy height: " << i <<" "<<T_worldframe_footframe.p[2] <<" "<<  z_surface << " " << offset<< std::endl;
 
-      if (self->footStepPlanListener->_planned_stickyfeet_info_list[i].is_in_contact) {
-        T_worldframe_footframe.p[2] = z_surface+offset;
-      }
-      std::map<std::string, double> jointpos_in; 
-      jointpos_in =  self->footStepPlanListener->_gl_in_motion_copy->_current_jointpos;  
-      self->footStepPlanListener->_gl_in_motion_copy->set_state(T_worldframe_footframe,jointpos_in); 
-    }
-  }     
+ //      if (self->footStepPlanListener->_planned_stickyfeet_info_list[i].is_in_contact) {
+ //        T_worldframe_footframe.p[2] = z_surface+offset;
+ //      }
+ //      std::map<std::string, double> jointpos_in; 
+ //      jointpos_in =  self->footStepPlanListener->_gl_in_motion_copy->_current_jointpos;  
+ //      self->footStepPlanListener->_gl_in_motion_copy->set_state(T_worldframe_footframe,jointpos_in); 
+ //    }
+ //  }     
 
   
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->show_bbox(self->visualize_bbox);
