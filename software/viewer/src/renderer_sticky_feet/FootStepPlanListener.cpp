@@ -201,7 +201,11 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
          info.foot_type = FootStepPlanListener::RIGHT;
        }
-      _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true); 
+      if (i >= 2) {
+        _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true); 
+      } else {
+        _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(false); 
+      }
        std::map<std::string, double> jointpos_in; 
        jointpos_in =  _gl_planned_stickyfeet_list[i]->_current_jointpos;
       
