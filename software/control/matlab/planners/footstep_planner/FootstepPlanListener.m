@@ -29,7 +29,8 @@ classdef FootstepPlanListener
 		  end
 		  options = struct('ignore_terrain', plan_msg.footstep_opts.ignore_terrain,...
 		  	               'mu', plan_msg.footstep_opts.mu,...
-		  	               'behavior', plan_msg.footstep_opts.behavior);
+		  	               'behavior', plan_msg.footstep_opts.behavior,...
+		  	               'map_command', plan_msg.map_command);
 		end
 
 		function X = decodeFootstepGoal(goal_msg)
