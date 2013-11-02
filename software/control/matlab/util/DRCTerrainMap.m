@@ -111,6 +111,11 @@ classdef DRCTerrainMap < RigidBodyTerrain
         end     
       end
     end
+
+    function obj = setMapMode(obj,mode)
+      fprintf(1, 'setting mode: %d\n', mode);
+      obj.map_handle.setMapMode(mode);
+    end
     
     function writeWRL(obj,fptr)
       error('not implemented yet, but could be done using the getAsMesh() interface'); 
@@ -136,27 +141,13 @@ classdef DRCTerrainMap < RigidBodyTerrain
       Q = (abs(imfilter(heights, [1, -1])) - 0.03) > 0;
       Q = Q + ((abs(imfilter(heights, [1; -1])) - 0.03) > 0);
       Q(isnan(heights)) = 1;
-      Q(Q > 0) = 1;
 
-      %% Construct a circular domain corresponding to foot_radius
       dworld = px2world * [0; 1; 0; 1] - px2world * [0; 0; 0; 1];
       dworld = norm(dworld(1:2));
-      domain = zeros(ceil(2 * foot_radius / dworld), ceil(2 * foot_radius / dworld));
-      xy = [0;0];
-      for j = 1:size(domain, 1)
-        xy(2) = (j - (size(domain, 1) / 2 + 0.5)) * dworld;
-        for k = 1:size(domain, 2)
-          xy(1) = (k - (size(domain, 2) / 2 + 0.5)) * dworld;
-          dist_from_foot_center = sqrt(sum(xy.^2));
-          if  dist_from_foot_center < foot_radius
-      %       domain(j, k) = foot_radius - dist_from_foot_center;
-            domain(j, k) = 1;
-          end
-        end
-      end
+      foot_radius_px = foot_radius / dworld;
 
-      %% A point is infeasible if any point within the domain centered on that point is infeasible (this is just configuration space planning)
-      Infeas = double(imfilter(Q, domain) > 0);
+      Infeas = DRCTerrainMap.expandInfeasibility(Q, foot_radius_px);
+      Infeas = double(Infeas > 0);
 
       [px_X, px_Y] = meshgrid(1:size(heights, 2), 1:size(heights, 1));
       function feas = feas_check_fcn(xy)
@@ -182,6 +173,28 @@ classdef DRCTerrainMap < RigidBodyTerrain
     end
 
 
+
+  end
+
+  methods (Static=true)
+    function [Expanded, dx, dy] = expandInfeasibility(Infeas, foot_radius_px)
+      % Configuration-space expansion of infeasible region
+      % @retval Expanded a matrix of the same size as Infeas. A point for which Expanded(j,k) > 0 is unsafe for stepping.
+      % @retval dx gradient of infeasibility in x direction. Moving downhill means moving towards a safe step
+
+      Infeas(Infeas > 0) = 1;
+
+      %% Construct a circular domain corresponding to foot_radius
+      domain = zeros(ceil(2 * foot_radius_px), ceil(2 * foot_radius_px));
+      x = (1:size(domain, 2)) - (size(domain, 2)/2 + 0.5);
+      y = (1:size(domain, 1)) - (size(domain, 1)/2 + 0.5);
+      [X, Y] = meshgrid(x,y);
+      d = sqrt(X.^2 + Y.^2);
+      domain(d < foot_radius_px) = 1 - d(d < foot_radius_px) / foot_radius_px;
+
+      %% A point is infeasible if any point within the domain centered on that point is infeasible (this is just configuration space planning)
+      Expanded = imfilter(Infeas, domain);
+    end
   end
   
   properties
