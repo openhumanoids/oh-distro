@@ -181,7 +181,8 @@ namespace renderer_sticky_feet{
     if(shortest_distance == -1)
     {
     
-      for(uint i = 0; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++) 
+      // start with i=2 so that the first two sticky feet (which show the current robot feet poses) aren't selectable
+      for(uint i = 2; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++) 
       { 
 
        self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_collision_detector->ray_test( from, to, intersected_object,hit_pt );
