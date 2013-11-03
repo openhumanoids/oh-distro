@@ -1,7 +1,9 @@
 TODO:
 * figure out best control types to use for opening and closing hand, and holding an object
 * check if translator needs to be updated
-* email iRobot about #44 (keeps rebooting?)
+* visualize hand configuration using proximal joint angle encoders See line 597 ofdrc/ros_workspace/translators/src/ros2lcm_hands.cpp
+* explore contact sensing
+* drc-viewer interface for opening and closing hands
 
 BUSY:
 
@@ -34,4 +36,6 @@ DONE:
 * experiment with current control
 * email: current control binary?
 * get calibration jig
+* do current control test from command line, send email
 * email iRobot about current control
+* figure out what's wrong with #44
