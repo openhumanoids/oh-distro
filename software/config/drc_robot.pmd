@@ -34,7 +34,7 @@ group "a.0.drivers" {
         host = "robot";
     }
     cmd "logger-robot" {
-        exec = "drc-lcm-logger.sh";
+        exec = "drc-lcm-logger.sh robot";
         host = "robot";
     }
 }
@@ -194,8 +194,8 @@ group "b.1.core" {
         exec = "drc-image-receive";
         host = "base";
     }
-    cmd "lcm-logger-base" {
-        exec = "lcm-logger  -f $DRC_BASE/data/latest_base_log.lcm";
+    cmd "logger-base" {
+        exec = "drc-lcm-logger.sh base";
         host = "base";
     }
 }
