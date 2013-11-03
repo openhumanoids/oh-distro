@@ -25,13 +25,13 @@ def loop_control(rospy, publisher, rate, max_time, control):
     while rospy.get_time() - start_time < max_time and not rospy.is_shutdown():
         command_message = HandleControl()
         control(command_message)
-#         publisher.publish(command_message)
+        publisher.publish(command_message)
         rate.sleep()
 
 def zero_current(publisher):
     no_current_message = HandleControl()
     set_command_message(no_current_message, motor_indices, HandleControl.CURRENT, 0)
-#     publisher.publish(no_current_message)
+    publisher.publish(no_current_message)
 
 def close_hand_current_control(rospy, publisher, rate):
     grasp_time = 5
@@ -52,7 +52,7 @@ def open_hand(rospy, publisher, rate):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Script for interacting with iRobot hand')
-    parser.add_argument('commands', nargs='+')
+    parser.add_argument('commands', nargs='+', help='a list of commands, each one being CLOSE or OPEN')
     args = parser.parse_args()
     commands = args.commands
     print "Commands: " + ", ".join(commands)
@@ -72,7 +72,7 @@ if __name__ == '__main__':
         elif command == 'OPEN':
             open_hand(rospy, publisher, rate)
         else:
-            raise RuntimeError("Command not recognized: " + command)
+            raise RuntimeError("Command not recognized: " + command + "\n")
 
     print "Sending zero current message"
     zero_current(publisher)
