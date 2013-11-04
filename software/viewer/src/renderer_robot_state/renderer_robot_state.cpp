@@ -21,7 +21,7 @@
 
 
 
-#define RENDERER_NAME "Robot State Display"
+#define RENDERER_NAME "State"
 
 
 using namespace std;
@@ -318,9 +318,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->alpha = (float) bot_gtk_param_widget_get_double(pw, PARAM_COLOR_ALPHA);
     bot_viewer_request_redraw(self->viewer);
   }
-  else if(! strcmp(name, PARAM_SEND_POSTURE_GOAL)) {
-    string channel = "POSTURE_GOAL";
-    publish_posture_goal(self,channel);
+  else if(! strcmp(name, PARAM_SEND_POSTURE_GOAL_BACK_ZEROED)) {
+    cout << "publishing posture goal with zeroed back joints\n";
+    publish_posture_goal_back_zeroed(self,"POSTURE_GOAL");
   }
   else if(! strcmp(name, PARAM_RESET_POSTURE)) {
    if(self->robotStateListener->_gl_robot->is_future_state_changing())
@@ -391,7 +391,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
       val = self->robotStateListener->_gl_robot->is_jointdof_adjustment_enabled();
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_POSTURE_ADJUSTMENT, val, NULL);
     bot_gtk_param_widget_add_buttons(self->pw,PARAM_RESET_POSTURE, NULL);
-    //bot_gtk_param_widget_add_buttons(self->pw,PARAM_SEND_POSTURE_GOAL, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw,PARAM_SEND_POSTURE_GOAL_BACK_ZEROED, NULL);
     
 
     bot_gtk_param_widget_add_buttons(self->pw,PARAM_ENABLE_EE_TELEOP,NULL);

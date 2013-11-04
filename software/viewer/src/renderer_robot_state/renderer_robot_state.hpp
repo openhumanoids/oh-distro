@@ -34,7 +34,7 @@
 #define PARAM_WIRE "Show BBoxs For Meshes"  
 #define PARAM_COLOR_ALPHA "Alpha"
 #define PARAM_ENABLE_POSTURE_ADJUSTMENT "Set Desired Posture"
-#define PARAM_SEND_POSTURE_GOAL "Send Posture Goal"
+#define PARAM_SEND_POSTURE_GOAL_BACK_ZEROED "Zero All Back Joints"
 #define PARAM_RESET_POSTURE "Reset"
 #define PARAM_SHOW_FORCES "Show EE Forces (0.05*(f_meas/g))"
 #define PARAM_ENABLE_EE_TELEOP "FineGrained EE Teleop"
@@ -347,6 +347,25 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
         msg.num_joints =  num_joints; 
         self->lcm->publish(channel, &msg);
    }
+
+
+  // Backwardly compatiable:
+  inline static void publish_posture_goal_back_zeroed(void *user, const string& channel)
+  {
+        RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
+        drc::joint_angles_t msg;
+        msg.utime = self->robotStateListener->_last_state_msg_sim_timestamp;
+        msg.robot_name = self->robotStateListener->_robot_name;
+        // Hard coded zeroing of joints:
+        msg.joint_name.push_back("back_bkx");
+        msg.joint_position.push_back(0);
+        msg.joint_name.push_back("back_bky");
+        msg.joint_position.push_back(0);
+        msg.joint_name.push_back("back_bkz");
+        msg.joint_position.push_back(0);
+        msg.num_joints =  msg.joint_name.size(); 
+        self->lcm->publish(channel, &msg);
+  }
    
   inline static void publish_walking_goal(void *user, const string& channel)
   {

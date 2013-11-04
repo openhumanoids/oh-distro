@@ -371,12 +371,12 @@ static void on_top_view_clicked(GtkToggleToolButton *tb, void *user_data)
   self->view_handler->get_eye_look(self->view_handler, eye, look, up);
   eye[0] = 0;
   eye[1] = 0;
-  eye[2] = 10;
+  eye[2] = 4;
   look[0] = 0;
   look[1] = 0;
   look[2] = 0;
   up[0] = 0;
-  up[1] = 10;
+  up[1] = 4;
   up[2] = 0;
   self->view_handler->set_look_at(self->view_handler, eye, look, up);
 
@@ -597,7 +597,8 @@ int main(int argc, char *argv[])
   setup_renderer_controller_options(viewer, 0, lcm, bot_param, bot_frames);
 
   add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+  // Please don't commit this renderer enabled as it is very heavyweight:
+  // multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
 
   bdi_add_renderer_to_viewer(viewer, 0, lcm);
 

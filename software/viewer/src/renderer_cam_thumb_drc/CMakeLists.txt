@@ -6,7 +6,7 @@ add_library(${PACKAGE_NAME} SHARED
 
 target_link_libraries(${PACKAGE_NAME} ${OPENGL_LIBRARIES})
 
-set(REQUIRED_LIBS image-utils bot2-vis bot2-param-client bot2-frames)
+set(REQUIRED_LIBS image-utils bot2-vis bot2-param-client bot2-frames lcmtypes_multisense)
 
 pods_use_pkg_config_packages(${PACKAGE_NAME} ${REQUIRED_LIBS})
 

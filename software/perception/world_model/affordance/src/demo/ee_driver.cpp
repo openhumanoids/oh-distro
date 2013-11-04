@@ -77,6 +77,7 @@ class App{
     
     void solveFK(drc::robot_state_t state);
     
+    // Values are in the body frame - but finally published in the world frame
     vector<double> trans_;
     vector<double> rpy_;
     
@@ -172,15 +173,22 @@ void App::solveFK(drc::robot_state_t state){
 
 
 void App::publish_palm_goal(){
-
+  // palm goal is published in world frame
+  
+  Eigen::Isometry3d body_to_palm;
+  body_to_palm.setIdentity();
+  body_to_palm.translation()<< trans_[0] , trans_[1] , trans_[2];
+  body_to_palm.rotate( euler_to_quat ( rpy_[0], rpy_[1], rpy_[2] ) );
+  Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
+  
   drc::ee_goal_t msg;
   msg.utime = bot_timestamp_now();
 
-  msg.ee_goal_pos.translation.x = trans_[0];
-  msg.ee_goal_pos.translation.y = trans_[1];
-  msg.ee_goal_pos.translation.z = trans_[2];
+  msg.ee_goal_pos.translation.x = world_to_palm.translation().x();
+  msg.ee_goal_pos.translation.y = world_to_palm.translation().y();
+  msg.ee_goal_pos.translation.z = world_to_palm.translation().z();
   
-  Eigen::Quaterniond q = euler_to_quat( rpy_[0], rpy_[1], rpy_[2] );
+  Eigen::Quaterniond q = Eigen::Quaterniond (world_to_palm.rotation());
   msg.ee_goal_pos.rotation.w = q.w();
   msg.ee_goal_pos.rotation.x = q.x();
   msg.ee_goal_pos.rotation.y = q.y();
@@ -233,11 +241,18 @@ void App::publish_reset(){
     palm_link = "right_base_link";
   }
   Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( palm_link )->second);
+  trans_[0] = body_to_palm.translation().x();
+  trans_[1] = body_to_palm.translation().y();
+  trans_[2] = body_to_palm.translation().z();
+  quat_to_euler(  Eigen::Quaterniond(body_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
+  
+  /*
   Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
   trans_[0] = world_to_palm.translation().x();
   trans_[1] = world_to_palm.translation().y();
   trans_[2] = world_to_palm.translation().z();
   quat_to_euler(  Eigen::Quaterniond(world_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
+  */
   publish_palm_goal();
 }
 
@@ -264,14 +279,26 @@ int App::repaint (int64_t now){
   wmove(w, 7, 0);
   wprintw(w, "  rpy: %.4f %.4f %.4f",180*rpy_[0]/M_PI ,180*rpy_[1]/M_PI ,180*rpy_[2]/M_PI );
   wmove(w, 8, 0);
-  wprintw(w, "last %d", last_input_);
+  wprintw(w, "last: %d", last_input_);
   
+  std::string mode_string = "Current State";
+  if (!plan_from_robot_state_)
+    mode_string = "Last Plan";  
+  
+  std::string hand_side_string = "Left ";
+  if (!use_left_hand_)
+    hand_side_string = "Right";
+  
+  std::string hand_type_string = "Sandia";
+  if (!use_sandia_)
+    hand_type_string = "iRobot";
+  
+  wmove(w, 10, 0);
+  wprintw(w, "conf: %s %s with %s", hand_side_string.c_str() , hand_type_string.c_str(), mode_string.c_str() );
   wmove(w, 11, 0);
-  wprintw(w, "[m] Operation mode: %d (use EST_ROBOT_STATE, else last plan)",  (int)plan_from_robot_state_);
-  wmove(w, 12, 0);
-  wprintw(w, "[n]  Use left hand: %d (otherwise right hand)",  (int) use_left_hand_);
-  wmove(w, 13, 0);
-  wprintw(w, "[b]  Use sandia hand: %d (otherwise irobot)",  (int) use_sandia_);
+  wprintw(w, "      [z]   [x]         [c] ",  (int) use_sandia_);
+  //wmove(w, 12, 0);
+  //wprintw(w, "      L/R   S/iR        Current/Plan",  (int) use_sandia_);
 
   color_set(COLOR_TITLE, NULL);
   
@@ -353,14 +380,14 @@ bool App::on_input(){
       rpy_[2] -= delta_rpy[2]*M_PI/180 ;
       publish_palm_goal();
       break;
-    case 'm': // switch modes: hand and end of plan
+    case 'c': // switch modes: hand and end of plan
       plan_from_robot_state_= !plan_from_robot_state_;
       break;
-    case 'n': // switch modes: hand and end of plan
+    case 'z': // switch modes: hand and end of plan
       use_left_hand_= !use_left_hand_;
       publish_reset();
       break;
-    case 'b': // switch modes: hand and end of plan
+    case 'x': // switch modes: hand and end of plan
       use_sandia_= !use_sandia_;
       publish_reset();
       break;      

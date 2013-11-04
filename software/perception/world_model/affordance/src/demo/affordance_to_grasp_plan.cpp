@@ -441,7 +441,8 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
                                        init_grasp_pose.translation().y(),
                                        init_grasp_pose.translation().z());
   grasp_point = Aff * grasp_point; // relative grasp point
-  
+  Eigen::Vector3d hit_point = grasp_point;
+
   std::cout << "grasp_point: " << grasp_point.transpose() << "\n";
   std::cout << "aff_len: " << aff_len.transpose() << "\n";
   
@@ -464,6 +465,7 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
   std::cout << "0: " << " | " << distance_to_x_face << "\n";
   std::cout << "1: " << " | " << distance_to_y_face << "\n";
   std::cout << "2: " << " | " << distance_to_z_face << "\n";
+  Eigen::Vector3d distances_to_face(distance_to_x_face,distance_to_y_face,distance_to_z_face);
   
   int long_dim=-1;
   int short_dim=-1;
@@ -495,6 +497,9 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
     }
   }
   
+  
+  
+  
   Eigen::Vector3d fingers_rotation (0,0,0); 
   if ( grasp_point ( short_dim ) < 0 ){
     std::cout << "fingers down\n";
@@ -503,6 +508,21 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
     std::cout << "fingers up\n"; 
     fingers_rotation << 0,0,0; 
   }
+  
+  // added nov 3, not sure why needed
+  // but hands didn't work properly with pat's box affordances
+  if(long_dim ==2){ 
+    std::cout << "extra rotation bit\n";
+    fingers_rotation(0) += M_PI/2; 
+    if (face_dim ==0){
+      if ( grasp_point( face_dim ) < 0){
+        fingers_rotation(0) -= M_PI; 
+      }else{
+        //fingers_rotation(0) += 0; 
+      }
+    }
+  }
+  
   
   grasp_point(short_dim) =0;
   grasp_point(face_dim) = copysign(1, grasp_point(face_dim) ) * aff_len(face_dim)/2; // snap onto face exactly
@@ -535,8 +555,17 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
   //  aff_to_actualpalm.rotate( euler_to_quat( -M_PI/2 , 0, 0 ) );   
   //}
   
-  aff_to_actualpalm.translation()  << grasp_point(0) , grasp_point(1) , grasp_point(2) ;   // + x + y + z
-  // TODO support different params here
+  aff_to_actualpalm.translation()  << grasp_point(0) , grasp_point(1) , grasp_point(2) ;
+  
+  
+  if ( fabs(aff_len(face_dim)-aff_len(short_dim)) < 0.02){
+    if ( (fabs(distances_to_face(face_dim ))< 0.02)&& 
+         (fabs(distances_to_face(short_dim))< 0.02)   ){
+      std::cout << "diamond of a square block\n";
+    // TODO: fix rotation and translation
+    }
+  }
+  
   
   eeloci_poses_.clear();
   eeloci_poses_.push_back( Isometry3dTime(0, world_to_aff_* aff_to_actualpalm));
@@ -655,6 +684,27 @@ void Pass::planGraspBoxSandia(Eigen::Isometry3d init_grasp_pose){
   }
   
   
+  Eigen::Vector3d fingers_rotation (0,0,0); 
+  // added nov 3, not sure why needed
+  // but hands didn't work properly with pat's box affordances
+  if(long_dim ==2){ 
+    std::cout << "extra rotation bit\n";
+    fingers_rotation(0) += M_PI/2; 
+    if (face_dim ==0){
+      if ( grasp_point( face_dim ) < 0){
+        fingers_rotation(0) -= M_PI; 
+      }else{
+        //fingers_rotation(0) += 0; 
+      }
+    }
+  }  
+  if(face_dim ==2){ 
+    std::cout << "extra rotation bit\n";
+    if (long_dim ==0){
+      fingers_rotation(0) = M_PI/2; 
+    }
+  }  
+  
   
   // palm always faces into box, fingers always point towards the short side
   
@@ -663,6 +713,7 @@ void Pass::planGraspBoxSandia(Eigen::Isometry3d init_grasp_pose){
   Eigen::Isometry3d aff_to_actualpalm = Eigen::Isometry3d::Identity();
   aff_to_actualpalm.rotate( euler_to_quat( face_rotation(0) , face_rotation(1),  face_rotation(2) ) );   
   aff_to_actualpalm.rotate( euler_to_quat( direction_rotation(0) , direction_rotation(1),  direction_rotation(2) ) );   
+  aff_to_actualpalm.rotate( euler_to_quat( fingers_rotation(0) , fingers_rotation(1),  fingers_rotation(2) ) );   
   
   
   /*

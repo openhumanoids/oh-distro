@@ -37,7 +37,7 @@ group "a.1.core" {
       host = "extra";
     }
     cmd "state-pub" {
-       exec = "drc-fake-robot-state";
+       exec = "drc-fake-robot-state irobot";
         host = "extra";
     }
 }
@@ -67,7 +67,7 @@ group "b.2.planners" {
 }
 
 
-group "b.2.mfallon" {
+group "b.3.populate_affs" {
     cmd "populate_debris_affs" {
        exec = "affordance_init -e 9";
        host = "base";
