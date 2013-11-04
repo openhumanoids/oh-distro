@@ -16,6 +16,8 @@ classdef drillTestPlanPublisher
     v
     drill_pt_on_hand
     drill_axis_on_hand
+    drill_dir_des
+    drill_dir_threshold
     hand_body = 29;
     joint_indices = [22:26 33];
     ik_options
@@ -23,12 +25,13 @@ classdef drillTestPlanPublisher
     drilling_world_axis
     doVisualization = true;
     doPublish = false;
-    default_axis_threshold = .1*pi/180;
+    default_axis_threshold = 2*pi/180;
     atlas2robotFrameIndMap
   end
   
   methods
-    function obj = drillTestPlanPublisher(r,atlas,drill_pt_on_hand, drill_axis_on_hand, drilling_world_axis, doVisualization, doPublish)
+    function obj = drillTestPlanPublisher(r,atlas,drill_pt_on_hand, drill_axis_on_hand, ...
+      drilling_world_axis, drill_dir_des, drill_dir_threshold, doVisualization, doPublish)
       obj.atlas = atlas;
       obj.r = r;
       if obj.doVisualization
@@ -64,24 +67,40 @@ classdef drillTestPlanPublisher
       obj.drill_pt_on_hand = drill_pt_on_hand;
       obj.drill_axis_on_hand = drill_axis_on_hand/norm(drill_axis_on_hand);
       obj.drilling_world_axis = drilling_world_axis/norm(drilling_world_axis);
+      obj.drill_dir_des = drill_dir_des/norm(drill_dir_des);
+      obj.drill_dir_threshold = drill_dir_threshold;
+      
+      valuecheck(obj.drill_dir_des'*obj.drill_axis_on_hand,0);
       
       for i = 1:obj.atlas.getNumStates
         obj.atlas2robotFrameIndMap(i) = find(strcmp(obj.atlas.getStateFrame.coordinates{i},obj.r.getStateFrame.coordinates));
       end
     end
     
-    function [xtraj,snopt_info,infeasible_constraint] = createInitialReachPlan(obj, q0, x_drill, T)
+    function [xtraj,snopt_info,infeasible_constraint] = createInitialReachPlan(obj, q0, x_drill, first_cut_dir, T)
       N = 5;
       t_vec = linspace(0,T,N);
       
+      if ~isempty(first_cut_dir)
+        % generate desired quaternion
+        R_hand = [obj.drill_axis_on_hand obj.drill_dir_des cross(obj.drill_axis_on_hand, obj.drill_dir_des)];
+        R_world = [obj.drilling_world_axis first_cut_dir cross(obj.drilling_world_axis, first_cut_dir)];
+        R_rel = R_hand*R_world;
+        
+        quat_des = rotmat2quat(R_rel');
+        
+        % create drill direction constraint
+        drill_dir_constraint = WorldGazeOrientConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
+          quat_des, obj.default_axis_threshold,obj.drill_dir_threshold,[t_vec(end) t_vec(end)]);
+      else
+        % create drill direction constraint
+        drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
+          obj.drilling_world_axis,obj.default_axis_threshold,[t_vec(end) t_vec(end)]);
+      end
       % create posture constraint
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices');
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      
-      % create drill direction constraint
-      drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
-        obj.drilling_world_axis,obj.default_axis_threshold,[t_vec(end) t_vec(end)]);
       
       % create drill position constraint
       drill_pos_constraint = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill,x_drill,[t_vec(end) t_vec(end)]);
@@ -119,7 +138,7 @@ classdef drillTestPlanPublisher
       end
     end
     
-    function [xtraj,snopt_info,infeasible_constraint] = createDrillingPlan(obj, q0, x_drill_final, T)
+    function [xtraj,snopt_info,infeasible_constraint] = createDrillingPlan(obj, q0, x_drill_final, first_cut_dir, T)
       N = 10;
       %evaluate current drill location
       kinsol = obj.r.doKinematics(q0);
@@ -132,10 +151,22 @@ classdef drillTestPlanPublisher
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices');
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      
-      % create drill direction constraint
-      drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
-        obj.drilling_world_axis,obj.default_axis_threshold);
+
+      if ~isempty(first_cut_dir)
+        % generate desired quaternion
+        R_hand = [obj.drill_axis_on_hand obj.drill_dir_des cross(obj.drill_axis_on_hand, obj.drill_dir_des)];
+        R_world = [obj.drilling_world_axis first_cut_dir cross(obj.drilling_world_axis, first_cut_dir)];
+        R_rel = R_hand*R_world;
+        quat_des = rotmat2quat(R_rel');
+        
+        % create drill direction constraint
+        drill_dir_constraint = WorldGazeOrientConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
+          quat_des, obj.default_axis_threshold,obj.drill_dir_threshold);
+      else
+        % create drill direction constraint
+        drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
+          obj.drilling_world_axis,obj.default_axis_threshold);
+      end
       
       % create drill position constraints
       x_drill = repmat(x_drill_init,1,N) + (x_drill_final - x_drill_init)*linspace(0,1,N);
@@ -266,6 +297,75 @@ classdef drillTestPlanPublisher
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
         drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.free_ik_options);
+      
+      if(snopt_info > 10)
+        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint));
+        warning(send_msg);
+      end
+      
+      if obj.doVisualization && snopt_info <= 10
+        obj.v.playback(xtraj);
+      end
+      
+      if obj.doPublish && snopt_info <= 10
+        obj.publishTraj(xtraj,snopt_info);
+      end
+    end
+    
+    
+    function [xtraj,snopt_info,infeasible_constraint] = createDirectedLinePlan(obj, q0, x_drill_final, T)
+      N = 10;
+      t_vec = linspace(0,T,N);
+      
+      kinsol = obj.r.doKinematics(q0);
+      x_drill_init = obj.r.forwardKin(kinsol,obj.hand_body,obj.drill_pt_on_hand);
+      
+      % find direction of drill motion
+      drill_motion_dir = (x_drill_final - x_drill_init);
+      drill_motion_dir = drill_motion_dir/norm(drill_motion_dir);
+      valuecheck(drill_motion_dir'*obj.drilling_world_axis,0,1e-4);
+      
+      
+      % generate desired quaternion
+      R_hand = [obj.drill_axis_on_hand obj.drill_dir_des cross(obj.drill_axis_on_hand, obj.drill_dir_des)];
+      R_world = [obj.drilling_world_axis drill_motion_dir cross(obj.drilling_world_axis, drill_motion_dir)];
+      R_rel = R_hand*R_world;
+      quat_des = rotmat2quat(R_rel');
+      
+      % create posture constraint
+      posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]');
+      posture_constraint = PostureConstraint(obj.r);
+      posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
+      
+      % create drill direction constraint
+      drill_dir_constraint = WorldGazeOrientConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
+        quat_des, obj.default_axis_threshold,obj.drill_dir_threshold);
+      
+      % create drill position constraints
+      x_drill = repmat(x_drill_init,1,N) + (x_drill_final - x_drill_init)*linspace(0,1,N);
+      drill_pos_constraint = cell(1,N-1);
+      for i=2:N,
+        drill_pos_constraint{i-1} = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill(:,i),x_drill(:,i),[t_vec(i) t_vec(i)]);
+      end
+      
+      % Find nominal poses
+      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
+        drill_pos_constraint{end},drill_dir_constraint,posture_constraint,obj.ik_options);
+      
+      if(snopt_info_ik > 10)
+        send_msg = sprintf('snopt_info = %d. The IK (end) fails.',snopt_info_ik);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint_ik));
+        warning(send_msg);
+      end
+      
+      qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
+      
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+        t_vec,qtraj_guess,qtraj_guess,...
+        drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.ik_options);
       
       if(snopt_info > 10)
         send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
