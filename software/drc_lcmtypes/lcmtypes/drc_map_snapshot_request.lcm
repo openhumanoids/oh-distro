@@ -1,0 +1,25 @@
+package drc;
+
+struct map_snapshot_request_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // view to operate on
+  int64_t view_id;
+
+  // new id to assign (for STORE requests)
+  int64_t new_view_id;
+
+  // transform reference to view (for UPDATE_TRANSFORM requests)
+  float transform[4][4];
+
+  // command to apply to map
+  int8_t command;
+
+  // command types
+  const int8_t STORE            = 1;
+  const int8_t DELETE           = 2;
+  const int8_t PUBLISH          = 3;
+  const int8_t UPDATE_TRANSFORM = 4;
+}

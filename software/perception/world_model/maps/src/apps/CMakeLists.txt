@@ -15,3 +15,7 @@ pods_install_executables(data-request-server)
 add_executable(maps-test-collector TestCollector.cpp)
 pods_use_pkg_config_packages(maps-test-collector maps bot2-lcmgl-client)
 pods_install_executables(maps-test-collector)
+
+add_executable(maps-snapshot-server SnapshotServer.cpp)
+pods_use_pkg_config_packages(maps-snapshot-server maps)
+pods_install_executables(maps-snapshot-server)

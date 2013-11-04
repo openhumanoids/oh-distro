@@ -4,7 +4,10 @@
 #include "MeshRenderer.hpp"
 
 #include <lcmtypes/drc/data_request_t.hpp>
+#include <lcmtypes/drc/map_snapshot_request_t.hpp>
 #include <gtkmm-renderer/RendererBase.hpp>
+
+#include <drc_utils/Clock.hpp>
 
 #include <maps/ViewBase.hpp>
 #include <maps/ViewClient.hpp>
@@ -308,7 +311,12 @@ struct ViewMetaData::Helper {
   }
 
   void onSaveButton() {
-    // TODO
+    drc::map_snapshot_request_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.view_id = mViewId;
+    msg.new_view_id = mViewId + 10000;
+    msg.command = drc::map_snapshot_request_t::STORE;
+    mRenderer->getLcm()->publish("MAP_SNAPSHOT_REQUEST", &msg);
   }
 
   void onToggleButton() {
