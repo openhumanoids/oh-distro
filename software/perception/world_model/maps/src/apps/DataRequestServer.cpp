@@ -264,7 +264,7 @@ struct Worker {
 
   void sendDepthMapWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
-    msg.map_id = 2;
+    msg.map_id = 1;
     msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE;
     msg.resolution = 0.01;
     msg.width = msg.height = 400;
