@@ -9,6 +9,9 @@ classdef ReachingPlanner < KeyframePlanner
         restrict_feet
         planning_mode % 1 if ik sequence is on, 2 if use IK only, 3 if use teleop
         num_breaks
+        hand_space; % A HandWorkspace object, used to retrieve a seed for IK.
+        l_arm_joints;
+        r_arm_joints;
     end
     
     methods
@@ -22,6 +25,11 @@ classdef ReachingPlanner < KeyframePlanner
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
             obj.restrict_feet=true;
             obj.planning_mode = 1;
+            obj.hand_space = HandWorkspace([getenv('DRC_PATH'),'/control/matlab/data/HandWorkSpace.mat']);
+            coords = obj.r.getStateFrame.coordinates;
+            coords = coords(1:obj.r.getNumDOF);
+            obj.l_arm_joints = cellfun(@(s) ~isempty(strfind(s,'l_arm')),coords);
+            obj.r_arm_joints = cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords);
         end
         
         function setPlanningMode(obj,val)
@@ -258,6 +266,7 @@ classdef ReachingPlanner < KeyframePlanner
             num_l_foot_pts = size(l_foot_pts,2);
             r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_pts,2);
             l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_pts,2);
+            
             
             % compute fixed COM goal
             gc = contactPositions(obj.r,q0);
@@ -596,6 +605,7 @@ classdef ReachingPlanner < KeyframePlanner
                 findFinalPostureFlag = false;
                 ik_attempt_count = 0;
                 total_ik_attempt = 30;
+                usedHandWorkspace = false;
                 while(~findFinalPostureFlag && ik_attempt_count<total_ik_attempt)
                   if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                       if(obj.restrict_feet)
@@ -621,6 +631,20 @@ classdef ReachingPlanner < KeyframePlanner
                   ik_attempt_count = ik_attempt_count+1;
                   q_start = q_final_guess+5e-2*randn(size(q_final_guess));
                   findFinalPostureFlag = snopt_info<=10;
+                  % If IK trials fails, use HandWorkspace to get an IK seed
+                  if(ik_attempt_count == total_ik_attempt&&~findFinalPostureFlag&&~usedHandWorkspace)
+                    if(~rhand_poseT_isnan)
+                      r_arm_guess = obj.hand_space.closestSample(utorso_pose0,r_hand_poseT,false);
+                      q_start(obj.r_arm_joints) = r_arm_guess;
+                    end
+                    if(~lhand_poseT_isnan)
+                      l_arm_guess = obj.hand_space.closestSample(utorso_pose0,l_hand_poseT,true);
+                      q_start(obj.l_arm_joints) = l_arm_guess;
+                    end
+                    ik_attempt_count = ik_attempt_count-1;
+                    usedHandWorkspace = true;
+                  end
+                  
                 end
 
                 if(snopt_info >10)
