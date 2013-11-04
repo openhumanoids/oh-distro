@@ -54,7 +54,7 @@ classdef HandWorkspace
       l_arm_ub = joint_ub(l_arm_joints);
       r_arm_lb = joint_lb(r_arm_joints);
       r_arm_ub = joint_ub(r_arm_joints);
-      obj.n_samples = 20;
+      obj.n_samples = 10;
       obj.l_arm_samples = repmat(l_arm_lb,1,obj.n_samples)+(l_arm_ub-l_arm_lb)/(obj.n_samples+2)*(1:obj.n_samples);
       obj.r_arm_samples = repmat(r_arm_lb,1,obj.n_samples)+(r_arm_ub-r_arm_lb)/(obj.n_samples+2)*(1:obj.n_samples);
       obj.l_hand_pos = zeros(7,obj.n_samples^num_l_arm_joints);

@@ -13,10 +13,11 @@ r_arm_joints = cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords);
 l_hand = robot.findLinkInd('l_hand');
 r_hand = robot.findLinkInd('r_hand');
 utorso = robot.findLinkInd('utorso');
-hand_space = HandWorkspace([getenv('DRC_PATH'),'/control/matlab/data/HandWorkSpace.mat']);
-
 tic
-for i = 1:100
+hand_space = HandWorkspace([getenv('DRC_PATH'),'/control/matlab/data/HandWorkSpace.mat']);
+toc
+tic
+for i = 1:10
 arm_sample_ind = ceil(hand_space.n_samples*rand(6,1));
 q_samples = qstar;
 q_samples(l_arm_joints) = [hand_space.l_arm_samples(1,arm_sample_ind(1));...
