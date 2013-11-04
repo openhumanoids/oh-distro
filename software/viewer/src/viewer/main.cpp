@@ -590,7 +590,7 @@ int main(int argc, char *argv[])
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+//  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);

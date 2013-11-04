@@ -4,8 +4,8 @@ r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mi
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 
 %%
-use_simulated_state = true;
-useVisualization = true;
+use_simulated_state = false;
+useVisualization = false;
 publishPlans = true;
 use_irobot = true;
 state_frame = getStateFrame(atlas);
@@ -14,9 +14,9 @@ state_frame.subscribe('EST_ROBOT_STATE');
 if use_irobot % irobot?
   drill_pt_on_hand = [0;0;0];
   drill_axis_on_hand = [0;-1;0];
-  drill_dir_des = [-1;0;-1];
+  drill_dir_des = [1;0;0];
   drill_dir_des = drill_dir_des/norm(drill_dir_des);
-  drill_dir_threshold = pi/3;
+  drill_dir_threshold = pi/4;
 else
   drill_pt_on_hand = [0;-.15;0];
   drill_axis_on_hand = [.4;-1;1]; %visual fit from hand
@@ -32,12 +32,13 @@ if ~use_simulated_state
     [x,~] = getNextMessage(state_frame,10);
   end
   q0 = x(1:34);
-  
+
   kinsol = r.doKinematics(q0);
   
-  drillpt = [.5;-.7;.4];
+  drillpt = [.2;-.7;.5];
   x_drill_reach = r.forwardKin(kinsol,2,drillpt);
   drilling_world_axis = r.forwardKin(kinsol,2,drillpt + [1;0;0]) - x_drill_reach;
+  drilling_world_axis(3) = 0;
   drilling_world_axis = drilling_world_axis/norm(drilling_world_axis);
   
   x_drill_in = x_drill_reach + .1*drilling_world_axis;  %drilling into the wall
@@ -46,6 +47,7 @@ if ~use_simulated_state
 
   drill_pub = drillTestPlanPublisher(r,atlas,drill_pt_on_hand, drill_axis_on_hand,...
     drilling_world_axis, drill_dir_des, drill_dir_threshold, useVisualization, publishPlans);
+
 else
   drilling_world_axis = [1;0;0];
 %   x_drill_reach = [.2;-.7;.7]; %works for drilling .4 down, irobot hand
@@ -54,7 +56,7 @@ else
 %     x_drill_reach = [.6;-.3;.3];            %% works for drilling .3 right sandia hand
 %     x_drill_reach = [.4;-.5;.4];            %% works for drilling .3 left sandia hand
 
-    x_drill_reach = [.2;-.7;.7];            %% world position of drill reach
+    x_drill_reach = [.2;-.7;.5];            %% world position of drill reach
 %   x_drill_reach = [.5;-.5;.4];            %% world position of drill reach
 
   x_drill_in = x_drill_reach + [.1;0;0];  %drilling into the wall
@@ -63,7 +65,7 @@ else
     drilling_world_axis, drill_dir_des, drill_dir_threshold, useVisualization, publishPlans);
   
   q0 = zeros(34,1); % get this from robot
-%   q0(drill_pub.joint_indices) = .1*randn(6,1) + [    0.1795
+  q0(drill_pub.joint_indices) = .1*randn(6,1);% + [    0.1795
 %     0.4623
 %     0.1828
 %    -0.3834
@@ -81,7 +83,7 @@ first_cut_dir = first_cut/norm(first_cut);
 % Create reaching plan
 % x_drill_reach = [.4;-.5;.4];          %% world position of drill reach
 % x_drill_reach = [.3;-.6;.3]; 
-[xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = createInitialReachPlan(drill_pub, q0, x_drill_reach,first_cut_dir, 2);
+[xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = createInitialReachPlan(drill_pub, q0, x_drill_reach,first_cut_dir, 10);
 
 %% Create drilling in plan
 if use_simulated_state
@@ -96,7 +98,7 @@ else
   end
   q_reach_end = x(1:34);
 end
-[xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = createDrillingPlan(drill_pub,q_reach_end, x_drill_in,first_cut_dir, 2);
+[xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = createDrillingPlan(drill_pub,q_reach_end, x_drill_in,first_cut_dir, 5);
 
 %% circle drill!
 if use_simulated_state  
@@ -113,8 +115,9 @@ end
 [xtraj_circle,snopt_info_circle,infeasible_constraint_circle] = createCircleCutPlan(drill_pub,q_drill_end, x_drill_center, 2);
 
 %% line drill
-x_drill_line = x_drill_in + 3*first_cut;
-if use_simulated_state  
+if use_simulated_state 
+  x_drill_line = x_drill_in + first_cut;
+
   q_drill_end = xtraj_drill.eval(xtraj_drill.tspan(end));
   q_drill_end = q_drill_end(1:r.num_q);
   q_drill_end = max(min(q_drill_end,ub),lb);
@@ -124,10 +127,14 @@ else
     [x,~] = getNextMessage(state_frame,10);
   end
   q_drill_end = x(1:34);
+  kinsol = r.doKinematics(q_drill_end);
+  x_drill0 = r.forwardKin(kinsol, drill_pub.hand_body, drill_pub.drill_pt_on_hand);
+  x_drill_line = x_drill0 + first_cut;
+
 end
 % [xtraj_line,snopt_info_line,infeasible_constraint_line]createDirectedLinePlan(obj, q0, x_drill_init, x_drill_final, T)
 % [xtraj_line,snopt_info_line,infeasible_constraint_line] = createDrillingPlan(drill_pub,q_drill_end, x_drill_line, 10);
-[xtraj_line,snopt_info_line,infeasible_constraint_line] = createDirectedLinePlan(drill_pub,q_drill_end, x_drill_line, 2);
+[xtraj_line,snopt_info_line,infeasible_constraint_line] = createDirectedLinePlan(drill_pub,q_drill_end, x_drill_line, 20);
 
 %%
 if use_simulated_state  

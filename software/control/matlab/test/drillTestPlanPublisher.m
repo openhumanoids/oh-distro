@@ -85,9 +85,10 @@ classdef drillTestPlanPublisher
         % generate desired quaternion
         R_hand = [obj.drill_axis_on_hand obj.drill_dir_des cross(obj.drill_axis_on_hand, obj.drill_dir_des)];
         R_world = [obj.drilling_world_axis first_cut_dir cross(obj.drilling_world_axis, first_cut_dir)];
-        R_rel = R_hand*R_world;
+%         R_rel = R_hand*R_world;
+        R_rel = R_world*R_hand';
         
-        quat_des = rotmat2quat(R_rel');
+        quat_des = rotmat2quat(R_rel);
         
         % create drill direction constraint
         drill_dir_constraint = WorldGazeOrientConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
@@ -156,8 +157,8 @@ classdef drillTestPlanPublisher
         % generate desired quaternion
         R_hand = [obj.drill_axis_on_hand obj.drill_dir_des cross(obj.drill_axis_on_hand, obj.drill_dir_des)];
         R_world = [obj.drilling_world_axis first_cut_dir cross(obj.drilling_world_axis, first_cut_dir)];
-        R_rel = R_hand*R_world;
-        quat_des = rotmat2quat(R_rel');
+        R_rel = R_world*R_hand';
+        quat_des = rotmat2quat(R_rel);
         
         % create drill direction constraint
         drill_dir_constraint = WorldGazeOrientConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
@@ -331,8 +332,8 @@ classdef drillTestPlanPublisher
       % generate desired quaternion
       R_hand = [obj.drill_axis_on_hand obj.drill_dir_des cross(obj.drill_axis_on_hand, obj.drill_dir_des)];
       R_world = [obj.drilling_world_axis drill_motion_dir cross(obj.drilling_world_axis, drill_motion_dir)];
-      R_rel = R_hand*R_world;
-      quat_des = rotmat2quat(R_rel');
+      R_rel = R_world*R_hand';
+      quat_des = rotmat2quat(R_rel);
       
       % create posture constraint
       posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]');
