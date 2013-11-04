@@ -15,7 +15,7 @@ function LadderPlanner
   addpath(fullfile(getDrakePath,'examples','ZMP'));
 
   % load robot model
-  urdf_filename = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf');
+  urdf_filename = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_no_hands.urdf');
   r_collision = Atlas(urdf_filename);
   r = Atlas();
   load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
