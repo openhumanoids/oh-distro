@@ -63,6 +63,7 @@ struct State {
         viewData.mPublishChannel = "MAP_DEPTH"; break;
       }
       viewData.mView = view->clone();
+      viewData.mView->setId(viewData.mViewId);
       mViewDataSet[viewData.mViewId] = viewData;
       std::cout << "stored new view " << viewData.mViewIdOrig << " -> " <<
         viewData.mViewId << std::endl;
