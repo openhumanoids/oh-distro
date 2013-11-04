@@ -181,30 +181,25 @@ class BDIStepTranslator:
         """
         Generate a set of footsteps with -1 step indices, which will cause the BDI controller to switch to standing instead of continuing to walk
         """
-        old_behavior = self.behavior
-        for behavior in [Behavior.BDI_STEPPING, Behavior.BDI_WALKING]:
-            # Make sure we send stopping commands for both behaviors just in case
-            self.behavior = behavior
-            if self.behavior == Behavior.BDI_WALKING:
-                n_steps = 4
-            else:
-                n_steps = 1
-            footsteps = [bdi_step.footsteps.FootGoal(pos=np.zeros((6,1)),
-                                  step_speed=0,
-                                  step_height=0,
-                                  step_id=0,
-                                  pos_fixed=np.zeros((6,1)),
-                                  is_right_foot=0,
-                                  is_in_contact=0,
-                                  bdi_step_duration=0,
-                                  bdi_sway_duration=0,
-                                  bdi_lift_height=0,
-                                  bdi_toe_off=0,
-                                  bdi_knee_nominal=0)] * n_steps
+        if self.behavior == Behavior.BDI_WALKING:
+            n_steps = 4
+        else:
+            n_steps = 1
+        footsteps = [bdi_step.footsteps.FootGoal(pos=np.zeros((6,1)),
+                              step_speed=0,
+                              step_height=0,
+                              step_id=0,
+                              pos_fixed=np.zeros((6,1)),
+                              is_right_foot=0,
+                              is_in_contact=0,
+                              bdi_step_duration=0,
+                              bdi_sway_duration=0,
+                              bdi_lift_height=0,
+                              bdi_toe_off=0,
+                              bdi_knee_nominal=0)] * n_steps
 
-            self.bdi_step_queue = [f.to_bdi_spec(behavior, -1) for f in footsteps]
-            self.send_params(1)
-        self.behavior = old_behavior
+        self.bdi_step_queue = [f.to_bdi_spec(self.behavior, -1) for f in footsteps]
+        self.send_params(1)
 
     def run(self):
         if self.mode == Mode.translating:
