@@ -59,7 +59,7 @@ protected:
 
 protected:
   Gtk::VBox* mRequestControlBox;
-  Gtk::VBox* mPushControlBox;
+  Gtk::VBox* mAffControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mHandCameraFrameRate;
   int mCameraCompression;
@@ -73,15 +73,6 @@ protected:
   
   bool mMinimalAffordances;
   int mControllerHeightMapMode;
-
-  // Multisense Commands:
-  int mSpinRate;
-  int mHeadCameraFrameRate;
-  double mGain;
-  bool mUseSpinRate;
-  bool mUseGain;
-  bool mUseHeadCameraFrameRate;
-  
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
   Gtk::TreeView* mAffordanceListBox;
@@ -276,10 +267,8 @@ public:
     /*
     addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State",
                "EST_ROBOT_STATE", ChannelTypeAnonymous);
-    */
-    addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
-               "AFFORDANCE_LIST", ChannelTypeAnonymous);
     mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    */
     /*
     addControl(drc::data_request_t::MAP_CATALOG, "Map Catalog",
                "MAP_CATALOG", ChannelTypeAnonymous);
@@ -291,21 +280,25 @@ public:
                "MAP_OCTREE", ChannelTypeAnonymous);
     */
 
+    /*
     addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height",
                "MAP_DEPTH", ChannelTypeDepthImage);
+    */
+
     /*
     addControl(drc::data_request_t::HEIGHT_MAP_CORRIDOR, "Corridor Height",
                "MAP_DEPTH", ChannelTypeDepthImage);
     */
+    /*
     addControl(drc::data_request_t::HEIGHT_MAP_COARSE, "Coarse Height",
                "MAP_DEPTH", ChannelTypeDepthImage);
-
+    */
     /*
     addControl(drc::data_request_t::DEPTH_MAP_SCENE, "Scene Depth",
                "MAP_DEPTH", ChannelTypeDepthImage);
-    */
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Points",
                "MAP_OCTREE", ChannelTypeAnonymous);
+    */
     addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth",
                "MAP_DEPTH", ChannelTypeDepthImage);
 
@@ -327,10 +320,10 @@ public:
     notebook->append_page(*mRequestControlBox, "Pull");
 
     // for pushing data (e.g., affordances)
-    mPushControlBox = Gtk::manage(new Gtk::VBox());
+    mAffControlBox = Gtk::manage(new Gtk::VBox());
     Gtk::VBox* vbox = Gtk::manage(new Gtk::VBox());
     Gtk::Label* label =
-      Gtk::manage(new Gtk::Label("Affordances", Gtk::ALIGN_LEFT));
+      Gtk::manage(new Gtk::Label("Aff", Gtk::ALIGN_LEFT));
     vbox->pack_start(*label, false, false);
     mMinimalAffordances = false;
     addCheck("Minimal", mMinimalAffordances, vbox);
@@ -345,12 +338,19 @@ public:
     mAffordanceListBox->get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
     scroll->add(*mAffordanceListBox);
     vbox->pack_start(*scroll, false, false);
-    mPushControlBox->pack_start(*vbox, false, false);
+    mAffControlBox->pack_start(*vbox, false, false);
     button = Gtk::manage(new Gtk::Button("Push"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataPushButton));
-    mPushControlBox->pack_start(*button, false, false);
-    notebook->append_page(*mPushControlBox, "Push");
+    mAffControlBox->pack_start(*button, false, false);
+    mAffControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
+               "AFFORDANCE_LIST", ChannelTypeAnonymous, mAffControlBox);
+    button = Gtk::manage(new Gtk::Button("Pull"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
+    mAffControlBox->pack_start(*button,false,false);
+    notebook->append_page(*mAffControlBox, "Affordances");
 
     // for sensor control
     Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
@@ -432,62 +432,52 @@ public:
     Gtk::VBox* headControlBox = Gtk::manage(new Gtk::VBox());
     hbox = Gtk::manage(new Gtk::HBox());
     label = Gtk::manage(new Gtk::Label("Head Cam fps"));
-    Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
-    mUseHeadCameraFrameRate = false;
-    check->signal_toggled().connect
-      ([this,check]{this->mUseHeadCameraFrameRate=check->get_active();});
     Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
     spin->set_range(0, 10);
     spin->set_increments(1, 1);
     spin->set_digits(0);
-    mHeadCameraFrameRate = 5;
-    hbox->pack_start(*check, false, false);
+    spin->set_value(5);
+    button = Gtk::manage(new Gtk::Button("send"));
+    button->signal_clicked().connect
+      ([this,spin]{this->publishMultisense(-1000,spin->get_value(),-1);});
     hbox->pack_start(*label, false, false);
     hbox->pack_start(*spin, false, false);
-    bind(spin, "Head Cam fps", mHeadCameraFrameRate);
+    hbox->pack_start(*button, false, false);
     headControlBox->pack_start(*hbox, false, false);
     // Artificial limit added here - to limit LCM traffic
     
-    mGain = 1.0;
     hbox = Gtk::manage(new Gtk::HBox());
-    check = Gtk::manage(new Gtk::CheckButton());
-    mUseGain = false;
-    check->signal_toggled().connect
-      ([this,check]{this->mUseGain=check->get_active();});
     label = Gtk::manage(new Gtk::Label("Head Cam Gain"));
     spin = Gtk::manage(new Gtk::SpinButton());
     spin->set_range(1.0, 8.0);
     spin->set_increments(0.1, 0.1);
     spin->set_digits(1);
-    hbox->pack_start(*check, false, false);
+    spin->set_value(1.0);
+    button = Gtk::manage(new Gtk::Button("send"));
+    button->signal_clicked().connect
+      ([this,spin]{this->publishMultisense(-1000,-1,spin->get_value());});
     hbox->pack_start(*label, false, false);
     hbox->pack_start(*spin, false, false);
-    bind(spin, "Head Cam Gain", mGain);
+    hbox->pack_start(*button, false, false);
     headControlBox->pack_start(*hbox, false, false);
     
     // DRCSIM max: 60rpm | Real Sensor: 49rpm | Temporary Safety: 25
-    mSpinRate = 7;
     hbox = Gtk::manage(new Gtk::HBox());
-    check = Gtk::manage(new Gtk::CheckButton());
-    mUseSpinRate = false;
-    check->signal_toggled().connect
-      ([this,check]{this->mUseSpinRate=check->get_active();});
     label = Gtk::manage(new Gtk::Label("Spin Rate (rpm)"));
     spin = Gtk::manage(new Gtk::SpinButton());
     spin->set_range(-25, 25);
     spin->set_increments(1, 1);
     spin->set_digits(0);
-    hbox->pack_start(*check, false, false);
+    spin->set_value(5);
+    button = Gtk::manage(new Gtk::Button("send"));
+    button->signal_clicked().connect
+      ([this,spin]{this->publishMultisense(spin->get_value(),-1,-1);});
     hbox->pack_start(*label, false, false);
     hbox->pack_start(*spin, false, false);
-    bind(spin, "Spin Rate (rpm)", mSpinRate);
+    hbox->pack_start(*button, false, false);
     headControlBox->pack_start(*hbox, false, false);
     
-    button = Gtk::manage(new Gtk::Button("Submit Head Config"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onSendHeadButton));
-    headControlBox->pack_start(*button, false, false);
-    
+
     mHeadPitchAngle = 45;
     addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, headControlBox);
     button = Gtk::manage(new Gtk::Button("Submit Head Pitch"));
@@ -503,7 +493,8 @@ public:
   }
 
   void addControl(const int iId, const std::string& iLabel,
-                  const std::string& iChannel, const ChannelType iChannelType) {
+                  const std::string& iChannel, const ChannelType iChannelType,
+                  Gtk::Box* iContainer=NULL) {
     Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
     Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
     Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel));
@@ -521,7 +512,8 @@ public:
     group->mPeriod = 0;
     bind(check, iLabel + " enable", group->mEnabled);
     bind(spin, iLabel + " period", group->mPeriod);
-    mRequestControlBox->pack_start(*box,false,false);
+    if (iContainer == NULL)  mRequestControlBox->pack_start(*box,false,false);
+    else iContainer->pack_start(*box,false,false);
     mRequestControls[iId] = group;
 
     std::string key = iChannel;
@@ -645,8 +637,8 @@ public:
   void onSendRatesControlButton() {
     drc::sensor_request_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.spindle_rpm = mSpinRate; // mSpinRate;
-    msg.head_fps = mHeadCameraFrameRate; // mHeadCameraFrameRate;
+    msg.spindle_rpm = -1;
+    msg.head_fps = -1;
     msg.hand_fps = mHandCameraFrameRate;
     msg.camera_compression = mCameraCompression;
     getLcm()->publish("SENSOR_REQUEST", &msg);
@@ -686,17 +678,15 @@ public:
     getLcm()->publish("SANDIA_RIGHT_SIMPLE_GRASP", &msg);    
   }  
 
-  void onSendHeadButton() {
-    if (!mUseSpinRate && !mUseGain && !mUseHeadCameraFrameRate) return;
+  void publishMultisense(const double iSpinRate, const double iFrameRate,
+                         const double iGain) {
     multisense::command_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.rpm = mUseSpinRate ? (float) mSpinRate : -100;
-    msg.fps = mUseHeadCameraFrameRate ? (float) mHeadCameraFrameRate : -1;
-    msg.gain = mUseGain ? (float) mGain : -1;
+    msg.rpm = iSpinRate;
+    msg.fps = iFrameRate;
+    msg.gain = iGain;
     getLcm()->publish("MULTISENSE_COMMAND", &msg);
   }
-  
-  
   
   void draw() {
     // intentionally left blank

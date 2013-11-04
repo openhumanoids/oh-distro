@@ -18,6 +18,7 @@ typedef struct _GdkEventScroll GdkEventScroll;
 namespace Gtk {
   class Widget;
   class Container;
+  class Box;
   class Toolbar;
   class DrawingArea;
   class ToggleButton;
@@ -42,6 +43,22 @@ public:
                const int iWhichSide=1);
   virtual ~RendererBase();
 
+  // convenience methods to create and bind common types anonymously
+  static Gtk::ComboBox* createCombo(int& iData,
+                                    const std::vector<std::string>& iLabels,
+                                    const std::vector<int>& iIndices);
+  static Gtk::SpinButton* createSpin(double& iData,
+                                     const double iMin, const double iMax,
+                                     const double iStep);
+  static Gtk::SpinButton* createSpin(int& iData, const int iMin, const int iMax,
+                                     const int iStep);
+  static Gtk::HScale* createSlider(double& iData,
+                                   const double iMin, const double iMax,
+                                   const double iStep);
+  static Gtk::HScale* createSlider(int& iData, const int iMin, const int iMax,
+                                   const int iStep);
+
+
 protected:
   // convenience methods for data access to subclasses
   std::string getName() const;
@@ -64,31 +81,31 @@ protected:
 
   // convenience methods to create, add, bind, and register common widgets
   Gtk::ToggleButton* addToggle(const std::string& iName, bool& iData,
-                               Gtk::Container* iContainer=NULL);
+                               Gtk::Box* iContainer=NULL);
   Gtk::CheckButton* addCheck(const std::string& iName, bool& iData,
-                             Gtk::Container* iContainer=NULL);
+                             Gtk::Box* iContainer=NULL);
   Gtk::SpinButton* addSpin(const std::string& iName, double& iData,
                            const double iMin, const double iMax,
                            const double iStep,
-                           Gtk::Container* iContainer=NULL);
+                           Gtk::Box* iContainer=NULL);
   Gtk::SpinButton* addSpin(const std::string& iName, int& iData,
                            const int iMin, const int iMax,
                            const int iStep,
-                           Gtk::Container* iContainer=NULL);
+                           Gtk::Box* iContainer=NULL);
   Gtk::HScale* addSlider(const std::string& iName, double& iData,
                          const double iMin, const double iMax,
                          const double iStep,
-                         Gtk::Container* iContainer=NULL);
+                         Gtk::Box* iContainer=NULL);
   Gtk::HScale* addSlider(const std::string& iName, int& iData,
                          const int iMin, const int iMax, const int iStep,
-                         Gtk::Container* iContainer=NULL);
+                         Gtk::Box* iContainer=NULL);
   Gtk::ComboBox* addCombo(const std::string& iName, int& iData,
                           const std::vector<std::string>& iLabels,
-                          Gtk::Container* iContainer=NULL);
+                          Gtk::Box* iContainer=NULL);
   Gtk::ComboBox* addCombo(const std::string& iName, int& iData,
                           const std::vector<std::string>& iLabels,
                           const std::vector<int>& iIndices,
-                          Gtk::Container* iContainer=NULL);
+                          Gtk::Box* iContainer=NULL);
 
   // event handling methods (can be overridden by subclasses)
   virtual double pickQuery(const double iRayStart[3],

@@ -1,652 +1,346 @@
-#include <iostream>
-#include <sstream>
-#include <unordered_map>
+#include "MapsRenderer.hpp"
 
-#include <gtkmm.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-
-#include <lcm/lcm-cpp.hpp>
-
-#include <drc_utils/Clock.hpp>
-#include <gtkmm-renderer/RendererBase.hpp>
-
-#include <lcmtypes/drc/data_request_t.hpp>
-#include <lcmtypes/bot_core/image_t.hpp>
-#include <lcmtypes/drc/map_request_bbox_t.hpp>
-#include <lcmtypes/drc/world_box_t.hpp>
+#include "MeshRenderer.hpp"
 
 #include <bot_vis/viewer.h>
 
-#include <maps/ViewClient.hpp>
-#include <maps/Utils.hpp>
-#include <maps/BotWrapper.hpp>
-#include "MeshRenderer.hpp"
-#include "InteractiveBox.hpp"
+#include <lcmtypes/drc/map_request_bbox_t.hpp>
 
-namespace maps {
+#include <drc_utils/Clock.hpp>
 
-class MapsRenderer : public gtkmm::RendererBase, ViewClient::Listener {
-protected:
-  struct Frustum {
-    std::vector<Eigen::Vector4f> mPlanes;
-    float mNear;
-    float mFar;
-    Eigen::Vector3f mPos;
-    Eigen::Vector3f mDir;
-  };
+using namespace maps;
 
-  struct ViewMetaData {
-    typedef std::shared_ptr<ViewMetaData> Ptr;
-    MapsRenderer* mRenderer;
-    int64_t mId;
-    bool mVisible;
-    Eigen::Vector3f mColor;
-    std::string mLabel;
-    std::shared_ptr<Gtk::HBox> mBox;
-    Gtk::ToggleButton* mToggleButton;
-    Eigen::Isometry3f mLatestTransform;
+MapsRenderer::
+MapsRenderer(BotViewer* iViewer, const int iPriority,
+             const lcm_t* iLcm,
+             const BotParam* iParam, const BotFrames* iFrames)
+  : gtkmm::RendererBase("Maps", iViewer, iPriority, iLcm, iParam, iFrames) {
 
-    void onCancelButton() {
-      maps::ViewBase::Spec spec;
-      spec.mMapId = 0;
-      spec.mViewId = mId;
-      spec.mResolution = spec.mFrequency = 0;
-      spec.mTimeMin = spec.mTimeMax = 0;
-      spec.mActive = false;
-      spec.mType = maps::ViewBase::TypePointCloud;
-      mRenderer->mViewClient.request(spec);
-      mRenderer->requestDraw();
-    }
-    void onToggleButton() {
-      mVisible = mToggleButton->get_active();
-      mRenderer->requestDraw();
-    }
-  };
+  // set up robot time clock
+  drc::Clock::instance()->setLcm(getLcm());
+  drc::Clock::instance()->setVerbose(false);
 
-protected:
-  // view control parameters
-  double mMinZ;
-  double mMaxZ;
-  double mPointSize;
-  int mColorMode;
-  int mMeshMode;
+  // create and show ui widgets
+  setupWidgets();
 
-  // view list parameters
-  Gtk::VBox* mViewListBox;
-  typedef std::unordered_map<int64_t,ViewMetaData::Ptr > DataMap;
-  DataMap mViewData;
-  Glib::Dispatcher mViewDataDispatcher;
+  // set up internal variables
+  mBotWrapper.reset(new BotWrapper(getLcm(), getBotParam(), getBotFrames()));
+  mMeshRenderer.reset(new MeshRenderer());
+  mMeshRenderer->setBotObjects(getLcm(), getBotParam(), getBotFrames());
+  mMeshRenderer->addCameraChannel("CAMERACHEST_LEFT");
+  mMeshRenderer->addCameraChannel("CAMERACHEST_RIGHT");
+  mMeshRenderer->addCameraChannel("CAMERA_LEFT");
+  //mMeshRenderer->setActiveCameraChannel("CAMERA_LEFT");
+  mViewClient.setBotWrapper(mBotWrapper);
+  mViewClient.addListener(this);
+  mViewClient.addViewChannel("MAP_CONTROL_HEIGHT");
+  mViewClient.addViewChannel("MAP_DEBUG");
 
-  // request parameters
-  int mRequestTimeWindow;
-  bool mRequestRawScan;
-  GLdouble mModelViewGl[16];
-  GLdouble mProjectionGl[16];
-  GLint mViewportGl[4];
-  Eigen::Isometry3f mModelViewMatrix;
-  Eigen::Matrix4f mProjectionMatrix;
-  std::vector<int> mViewport;
-  Gtk::ToggleButton* mAdjustRequestBoxToggle;
-  Gtk::ToggleButton* mShowRequestBoxToggle;
-  bool mShowRequestBox;
-  bool mRequestBoxInit;
-  int mRequestBoxDataSource;
-  InteractiveBox mInteractiveBox;
+  // set callback for bbox
+  getLcm()->subscribe("WORLD_BOX_PTCLD_REQUEST",
+                      &MapsRenderer::onBoxPointCloudRequest, this);
 
-  // command parameters
-  int mMacroCommand;
+  // start listening for view data
+  mViewClient.start();
+}
 
-  MeshRenderer mMeshRenderer;
-  ViewClient mViewClient;
-  BotWrapper::Ptr mBotWrapper;
-  
-public:
+MapsRenderer::
+~MapsRenderer() {
+}
 
-  MapsRenderer(BotViewer* iViewer, const int iPriority,
-               const lcm_t* iLcm,
-               const BotParam* iParam, const BotFrames* iFrames)
-    : gtkmm::RendererBase("Maps", iViewer, iPriority, iLcm, iParam, iFrames) {
 
-    // set up robot time clock
-    drc::Clock::instance()->setLcm(getLcm());
-    drc::Clock::instance()->setVerbose(false);
+void MapsRenderer::
+onBoxPointCloudRequest(const lcm::ReceiveBuffer* iBuf,
+                       const std::string& iChannel,
+                       const drc::world_box_t* iMessage) {
+  Eigen::Vector3f pos(iMessage->origin_x, iMessage->origin_y,
+                      iMessage->origin_z);
+  Eigen::Vector3f scale(iMessage->span_x, iMessage->span_y,
+                        iMessage->span_z);
+  Eigen::Quaternionf quat = Eigen::Quaternionf::Identity();
+  mInteractiveBox.setBoxParameters(pos, scale, quat);
+  mRequestBoxInit = true;
+  mShowRequestBoxToggle->set_active(true);
+  sendBoxRequest();
+  requestDraw();
+}
 
-    // create and show ui widgets
-    setupWidgets();
+void MapsRenderer::
+onAdjustBoxToggleChanged() {
+  getBotEventHandler()->picking = mAdjustRequestBoxToggle->get_active();
+}
 
-    // set up internal variables
-    mBotWrapper.reset(new BotWrapper(getLcm(), getBotParam(), getBotFrames()));
-    mMeshRenderer.setBotObjects(getLcm(), getBotParam(), getBotFrames());
-    mMeshRenderer.addCameraChannel("CAMERACHEST_LEFT");
-    mMeshRenderer.addCameraChannel("CAMERACHEST_RIGHT");
-    mMeshRenderer.addCameraChannel("CAMERA_LEFT");
-    //mMeshRenderer.setActiveCameraChannel("CAMERA_LEFT");
-    mViewClient.setBotWrapper(mBotWrapper);
-    mViewClient.addListener(this);
-    mViewClient.addViewChannel("MAP_CONTROL_HEIGHT");
-    mViewClient.addViewChannel("MAP_DEBUG");
+void MapsRenderer::
+setupWidgets() {
+  Gtk::Container* container = getGtkContainer();
+  Gtk::Notebook* notebook = Gtk::manage(new Gtk::Notebook());
+  container->add(*notebook);
+  std::vector<int> ids;
+  std::vector<std::string> labels;
 
-    // set callback for bbox
-    getLcm()->subscribe("WORLD_BOX_PTCLD_REQUEST",
-                        &MapsRenderer::onBoxPointCloudRequest, this);
-
-    // start listening for view data
-    mViewClient.start();
+  // view list box (will fill in dynamically)
+  {
+    mViewListBox = Gtk::manage(new Gtk::VBox());
+    Gtk::Button* clearButton = Gtk::manage(new Gtk::Button("Clear All"));
+    clearButton->signal_clicked().connect
+      (sigc::mem_fun(*this, &MapsRenderer::onClearViewsButton));
+    mViewListBox->pack_start(*clearButton, false, false);
+    notebook->append_page(*mViewListBox, "Views");
   }
 
-  void onBoxPointCloudRequest(const lcm::ReceiveBuffer* iBuf,
-                  const std::string& iChannel,
-                  const drc::world_box_t* iMessage) {
-    Eigen::Vector3f pos(iMessage->origin_x, iMessage->origin_y,
-                        iMessage->origin_z);
-    Eigen::Vector3f scale(iMessage->span_x, iMessage->span_y,
-                          iMessage->span_z);
-    Eigen::Quaternionf quat = Eigen::Quaternionf::Identity();
-    mInteractiveBox.setBoxParameters(pos, scale, quat);
-    mRequestBoxInit = true;
-    mShowRequestBoxToggle->set_active(true);
-    sendBoxRequest();
-    requestDraw();
+  // simple request tab
+  {
+    Gtk::VBox* requestBox = Gtk::manage(new Gtk::VBox());
+    notebook->append_page(*requestBox, "Request");
+
+    Gdk::Color color;
+    color.set_rgb_p(0.8,1.0,0.8);
+    Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
+    Gtk::Button* button = Gtk::manage(new Gtk::Button("Create Box"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &MapsRenderer::onCreateBoxButton));
+    box->pack_start(*button, false, false);
+    mAdjustRequestBoxToggle = Gtk::manage(new Gtk::ToggleButton());
+    mAdjustRequestBoxToggle->set_label("Adjust Box");
+    mAdjustRequestBoxToggle->modify_bg(Gtk::STATE_ACTIVE, color);
+    mAdjustRequestBoxToggle->modify_bg(Gtk::STATE_PRELIGHT, color);
+    mAdjustRequestBoxToggle->signal_toggled().connect
+      (sigc::mem_fun(*this, &MapsRenderer::onAdjustBoxToggleChanged));
+    box->pack_start(*mAdjustRequestBoxToggle, false, false);
+    mShowRequestBoxToggle = Gtk::manage(new Gtk::ToggleButton());
+    mShowRequestBoxToggle->set_label("Show Box");
+    mShowRequestBoxToggle->modify_bg(Gtk::STATE_ACTIVE, color);
+    mShowRequestBoxToggle->modify_bg(Gtk::STATE_PRELIGHT, color);
+    mShowRequestBox = false;
+    bind(mShowRequestBoxToggle, "Show Request Box", mShowRequestBox);
+    box->pack_start(*mShowRequestBoxToggle, false, false);
+    requestBox->pack_start(*box, false, false);
+
+    mRequestTimeWindow = 0;
+    labels = { "Laser", "Stereo Head", "Stereo L.Hand", "Stereo R.Hand" };
+    ids = { drc::map_request_bbox_t::LASER,
+            drc::map_request_bbox_t::STEREO_HEAD,
+            drc::map_request_bbox_t::STEREO_LHAND,
+            drc::map_request_bbox_t::STEREO_RHAND };
+    mRequestBoxDataSource = drc::map_request_bbox_t::LASER;
+    addCombo("Data Source", mRequestBoxDataSource, labels, ids, requestBox);
+    addSpin("Time Window (s)", mRequestTimeWindow, 0, 30, 1, requestBox);
+    mRequestRawScan = false;
+    addCheck("Unfiltered Scan?", mRequestRawScan, requestBox);
+    button = Gtk::manage(new Gtk::Button("Send Request"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &MapsRenderer::onSendBoxRequestButton));
+    requestBox->pack_start(*button, false, false);
+    mRequestBoxInit = false;
   }
 
-  void onAdjustBoxToggleChanged() {
-    getBotEventHandler()->picking = mAdjustRequestBoxToggle->get_active();
-  }
+  notebook->show_all();
 
-  void setupWidgets() {
-    Gtk::Container* container = getGtkContainer();
-    Gtk::Notebook* notebook = Gtk::manage(new Gtk::Notebook());
-    container->add(*notebook);
-    std::vector<int> ids;
-    std::vector<std::string> labels;
+  // handler for updating ui widgets when views are added
+  mViewDataDispatcher.connect
+    (sigc::mem_fun(*this, &MapsRenderer::addViewWidgets));
+}
 
-    // view controls
-    {
-      Gtk::VBox* appearanceBox = Gtk::manage(new Gtk::VBox());
-      notebook->append_page(*appearanceBox, "Appearance");
-
-      ids = { MeshRenderer::ColorModeFlat, MeshRenderer::ColorModeHeight,
-              MeshRenderer::ColorModeRange, MeshRenderer::ColorModeNormal,
-              MeshRenderer::ColorModeCamera };
-      labels = { "Flat", "Height", "Range", "Normal", "Camera" };
-      mColorMode = MeshRenderer::ColorModeHeight;
-      addCombo("Color Mode", mColorMode, labels, ids, appearanceBox);
-
-      ids = { MeshRenderer::MeshModePoints, MeshRenderer::MeshModeWireframe,
-              MeshRenderer::MeshModeFilled };
-      labels = { "Points", "Wireframe", "Filled" };
-      mMeshMode = MeshRenderer::MeshModePoints;
-      addCombo("Draw Mode", mMeshMode, labels, ids, appearanceBox);
-
-      mPointSize = 3;
-      addSlider("Point Size", mPointSize, 0.1, 10, 0.1, appearanceBox);
-
-      mMinZ = 0;
-      addSlider("Z Scale Min", mMinZ, -1, 2, 0.01, appearanceBox);
-
-      mMaxZ = 1;
-      addSlider("Z Scale Max", mMaxZ, -1, 2, 0.01, appearanceBox);
-    }
-
-    // view list box (will fill in dynamically)
-    {
-      mViewListBox = Gtk::manage(new Gtk::VBox());
-      Gtk::Button* clearButton = Gtk::manage(new Gtk::Button("Clear All"));
-      clearButton->signal_clicked().connect
-        (sigc::mem_fun(*this, &MapsRenderer::onClearViewsButton));
-      mViewListBox->pack_start(*clearButton, false, false);
-      notebook->append_page(*mViewListBox, "Views");
-    }
-
-    // simple request tab
-    {
-      Gtk::VBox* requestBox = Gtk::manage(new Gtk::VBox());
-      notebook->append_page(*requestBox, "Request");
-
-      Gdk::Color color;
-      color.set_rgb_p(0.8,1.0,0.8);
-      Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
-      Gtk::Button* button = Gtk::manage(new Gtk::Button("Create Box"));
-      button->signal_clicked().connect
-        (sigc::mem_fun(*this, &MapsRenderer::onCreateBoxButton));
-      box->pack_start(*button, false, false);
-      mAdjustRequestBoxToggle = Gtk::manage(new Gtk::ToggleButton());
-      mAdjustRequestBoxToggle->set_label("Adjust Box");
-      mAdjustRequestBoxToggle->modify_bg(Gtk::STATE_ACTIVE, color);
-      mAdjustRequestBoxToggle->modify_bg(Gtk::STATE_PRELIGHT, color);
-      mAdjustRequestBoxToggle->signal_toggled().connect
-        (sigc::mem_fun(*this, &MapsRenderer::onAdjustBoxToggleChanged));
-      box->pack_start(*mAdjustRequestBoxToggle, false, false);
-      mShowRequestBoxToggle = Gtk::manage(new Gtk::ToggleButton());
-      mShowRequestBoxToggle->set_label("Show Box");
-      mShowRequestBoxToggle->modify_bg(Gtk::STATE_ACTIVE, color);
-      mShowRequestBoxToggle->modify_bg(Gtk::STATE_PRELIGHT, color);
-      mShowRequestBox = false;
-      bind(mShowRequestBoxToggle, "Show Request Box", mShowRequestBox);
-      box->pack_start(*mShowRequestBoxToggle, false, false);
-      requestBox->pack_start(*box, false, false);
-
-      mRequestTimeWindow = 0;
-      labels = { "Laser", "Stereo Head", "Stereo L.Hand", "Stereo R.Hand" };
-      ids = { drc::map_request_bbox_t::LASER,
-              drc::map_request_bbox_t::STEREO_HEAD,
-              drc::map_request_bbox_t::STEREO_LHAND,
-              drc::map_request_bbox_t::STEREO_RHAND };
-      mRequestBoxDataSource = drc::map_request_bbox_t::LASER;
-      addCombo("Data Source", mRequestBoxDataSource, labels, ids, requestBox);
-      addSpin("Time Window (s)", mRequestTimeWindow, 0, 30, 1, requestBox);
-      mRequestRawScan = false;
-      addCheck("Unfiltered Scan?", mRequestRawScan, requestBox);
-      button = Gtk::manage(new Gtk::Button("Send Request"));
-      button->signal_clicked().connect
-        (sigc::mem_fun(*this, &MapsRenderer::onSendBoxRequestButton));
-      requestBox->pack_start(*button, false, false);
-      mRequestBoxInit = false;
-    }
-
-    notebook->show_all();
-
-    // handler for updating ui widgets when views are added
-    mViewDataDispatcher.connect
-      (sigc::mem_fun(*this, &MapsRenderer::addViewWidgets));
-  }
-
-  ~MapsRenderer() {
-  }
-
-  // view client callbacks
-  void notifyData(const int64_t iViewId) {
-    addViewMetaData(iViewId);
-    DataMap::const_iterator item = mViewData.find(iViewId);
-    ViewClient::ViewPtr view = mViewClient.getView(iViewId);
-    if ((item != mViewData.end()) && (view != NULL)) {
-      Eigen::Isometry3f headToLocal;
-      if (mBotWrapper->getTransform("head", "local", headToLocal,
-                                    view->getUpdateTime())) {
-        Eigen::Matrix3f rotMatx = headToLocal.linear();
-        float theta = atan2(rotMatx(1,0), rotMatx(0,0));
-        Eigen::Matrix3f rotation;
-        rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
-        headToLocal.linear() = rotation;
-        item->second->mLatestTransform = headToLocal;
-      }
-    }
-    requestDraw();
-  }
-  void notifyCatalog(const bool iChanged) {
-    if (!iChanged) return;
-    std::vector<ViewClient::ViewPtr> views = mViewClient.getAllViews();
-    DataMap::const_iterator iter;
-    for (iter = mViewData.begin(); iter != mViewData.end(); ) {
-      bool found = false;
-      for (size_t i = 0; i < views.size(); ++i) {
-        if (views[i]->getId() == iter->first) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) mViewData.erase(iter++);
-      else ++iter;
-    }
-    requestDraw();
-  }
-
-  void onCreateBoxButton() {
+void MapsRenderer::
+notifyData(const int64_t iViewId) {
+  addViewMetaData(iViewId);
+  DataMap::const_iterator item = mViewData.find(iViewId);
+  ViewClient::ViewPtr view = mViewClient.getView(iViewId);
+  if ((item != mViewData.end()) && (view != NULL)) {
     Eigen::Isometry3f headToLocal;
-    Eigen::Vector3f position(0,0,0);
-    if (mBotWrapper->getTransform("head", "local", headToLocal)) {
-      position = headToLocal.translation();
-      position[0] += 0.5;
-    }
-    mInteractiveBox.createBox(position, 0.5);
-    mRequestBoxInit = true;
-    mShowRequestBoxToggle->set_active(true);
-    requestDraw();
-  }
-
-  void onSendBoxRequestButton() {
-    if (!mShowRequestBox) {
-      std::cout << "No box shown, so request not sent" << std::endl;
-      return;
-    }
-    sendBoxRequest();
-  }
-
-  void sendBoxRequest() {
-    drc::map_request_bbox_t msg;
-    Eigen::Vector3f position, scale;
-    Eigen::Quaternionf orientation;
-    mInteractiveBox.getBoxParameters(position, scale, orientation);
-    msg.center[0] = (int16_t)(position[0]*128 + 0.5f);
-    msg.center[1] = (int16_t)(position[1]*128 + 0.5f);
-    msg.center[2] = (int16_t)(position[2]*128 + 0.5f);
-    msg.size[0] = (uint8_t)(scale[0]*64 + 0.5f);
-    msg.size[1] = (uint8_t)(scale[1]*64 + 0.5f);
-    msg.size[2] = (uint8_t)(scale[2]*64 + 0.5f);
-    msg.time_window = mRequestTimeWindow;
-    Eigen::Vector3f rpy = orientation.matrix().eulerAngles(2,1,0);
-    for (int i = 0; i < 3; ++i) msg.rpy[i] = rpy[i]*1800/acos(-1);
-    msg.params = mRequestBoxDataSource;
-    if (mRequestRawScan) msg.params |= drc::map_request_bbox_t::RAW_MASK;
-    getLcm()->publish("MAP_REQUEST_BBOX", &msg);
-    mAdjustRequestBoxToggle->set_active(false);
-  }
-
-  void onClearViewsButton() {
-    mViewClient.clearAll();
-  }
-
-  double pickQuery(const double iRayStart[3], const double iRayDir[3]) {
-    if (!mAdjustRequestBoxToggle->get_active()) {
-      getBotEventHandler()->picking = 0;
-      return -1;
-    }
-    else {
-      return 0;
+    if (mBotWrapper->getTransform("head", "local", headToLocal,
+                                  view->getUpdateTime())) {
+      Eigen::Matrix3f rotMatx = headToLocal.linear();
+      float theta = atan2(rotMatx(1,0), rotMatx(0,0));
+      Eigen::Matrix3f rotation;
+      rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
+      headToLocal.linear() = rotation;
+      item->second->setLatestTransform(headToLocal);
     }
   }
+  requestDraw();
+}
 
-  bool mousePress(const GdkEventButton* iEvent,
-                  const double iRayStart[3], const double iRayDir[3]) {
-    if (mAdjustRequestBoxToggle->get_active()) {
-      Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
-      Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
-      Eigen::Vector2f clickPt(iEvent->x, iEvent->y);
-      return mInteractiveBox.mousePress(clickPt, iEvent->button, origin, dir);
-    }
-    return false;
-  }
-
-  bool mouseRelease(const GdkEventButton* iEvent,
-                    const double iRayStart[3], const double iRayDir[3]) {
-    if (mAdjustRequestBoxToggle->get_active()) {
-      Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
-      Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
-      Eigen::Vector2f curPt(iEvent->x, iEvent->y);
-      return mInteractiveBox.mouseRelease(curPt, iEvent->button, origin, dir);
-    }
-    return false;
-  }
-
-  bool mouseMotion(const GdkEventMotion* iEvent,
-                   const double iRayStart[3], const double iRayDir[3]) {
-    bool button1 = (iEvent->state & GDK_BUTTON1_MASK) != 0;
-    bool button2 = (iEvent->state & GDK_BUTTON2_MASK) != 0;
-    bool button3 = (iEvent->state & GDK_BUTTON3_MASK) != 0;
-
-    if (mAdjustRequestBoxToggle->get_active()) {
-      Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
-      Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
-      Eigen::Vector2f curPt(iEvent->x, iEvent->y);
-      int buttonMask = (button3 << 2) | (button2 << 1) | button1;
-      bool handled = mInteractiveBox.mouseMotion(curPt, buttonMask,
-                                                 origin, dir);
-      if (handled) requestDraw();
-      return handled;
-    }
-    return false;
-  }
-
-  void getViewInfo() {
-    glGetDoublev(GL_MODELVIEW_MATRIX, mModelViewGl);
-    glGetDoublev(GL_PROJECTION_MATRIX, mProjectionGl);
-    glGetIntegerv(GL_VIEWPORT, mViewportGl);
-    mViewport.resize(4);
-    for (int i = 0; i < 4; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        mModelViewMatrix(i,j) = mModelViewGl[4*j+i];
-        mProjectionMatrix(i,j) = mProjectionGl[4*j+i];
+void MapsRenderer::
+notifyCatalog(const bool iChanged) {
+  if (!iChanged) return;
+  std::vector<ViewClient::ViewPtr> views = mViewClient.getAllViews();
+  DataMap::const_iterator iter;
+  for (iter = mViewData.begin(); iter != mViewData.end(); ) {
+    bool found = false;
+    for (size_t i = 0; i < views.size(); ++i) {
+      if (views[i]->getId() == iter->first) {
+        found = true;
+        break;
       }
-      mViewport[i] = mViewportGl[i];
     }
+    if (!found) mViewData.erase(iter++);
+    else ++iter;
   }
+  requestDraw();
+}
 
-  void draw() {
-    // draw each view
-    std::vector<ViewClient::ViewPtr> views = mViewClient.getAllViews();
-    for (size_t v = 0; v < views.size(); ++v) {
-      drawView(views[v]);
-    }
-
-    if (mRequestBoxInit) {
-      getViewInfo();
-      mInteractiveBox.setBoxValid(mShowRequestBox);
-      mInteractiveBox.drawBox();
-    }
+void MapsRenderer::
+onCreateBoxButton() {
+  Eigen::Isometry3f headToLocal;
+  Eigen::Vector3f position(0,0,0);
+  if (mBotWrapper->getTransform("head", "local", headToLocal)) {
+    position = headToLocal.translation();
+    position[0] += 0.5;
   }
+  mInteractiveBox.createBox(position, 0.5);
+  mRequestBoxInit = true;
+  mShowRequestBoxToggle->set_active(true);
+  requestDraw();
+}
 
-  void drawFrustum(const Frustum& iFrustum, const Eigen::Vector3f& iColor) {
-    std::vector<Eigen::Vector3f> vertices;
-    std::vector<std::vector<int> > faces;
-    maps::Utils::polyhedronFromPlanes(iFrustum.mPlanes, vertices, faces);
-    glColor3f(iColor[0], iColor[1], iColor[2]);
-    glLineWidth(3);
-    for (size_t i = 0; i < faces.size(); ++i) {
-      glBegin(GL_LINE_LOOP);
-      for (size_t j = 0; j < faces[i].size(); ++j) {
-        Eigen::Vector3f pt = vertices[faces[i][j]];
-        glVertex3f(pt[0], pt[1], pt[2]);
-      }
-      glEnd();
-    }
+void MapsRenderer::
+onSendBoxRequestButton() {
+  if (!mShowRequestBox) {
+    std::cout << "No box shown, so request not sent" << std::endl;
+    return;
   }
+  sendBoxRequest();
+}
 
-  void drawView(const ViewClient::ViewPtr& iView) {
-    // try to find ancillary data for this view; add if it doesn't exist
-    int64_t id = iView->getId();
+void MapsRenderer::sendBoxRequest() {
+  drc::map_request_bbox_t msg;
+  Eigen::Vector3f position, scale;
+  Eigen::Quaternionf orientation;
+  mInteractiveBox.getBoxParameters(position, scale, orientation);
+  msg.center[0] = (int16_t)(position[0]*128 + 0.5f);
+  msg.center[1] = (int16_t)(position[1]*128 + 0.5f);
+  msg.center[2] = (int16_t)(position[2]*128 + 0.5f);
+  msg.size[0] = (uint8_t)(scale[0]*64 + 0.5f);
+  msg.size[1] = (uint8_t)(scale[1]*64 + 0.5f);
+  msg.size[2] = (uint8_t)(scale[2]*64 + 0.5f);
+  msg.time_window = mRequestTimeWindow;
+  Eigen::Vector3f rpy = orientation.matrix().eulerAngles(2,1,0);
+  for (int i = 0; i < 3; ++i) msg.rpy[i] = rpy[i]*1800/acos(-1);
+  msg.params = mRequestBoxDataSource;
+  if (mRequestRawScan) msg.params |= drc::map_request_bbox_t::RAW_MASK;
+  getLcm()->publish("MAP_REQUEST_BBOX", &msg);
+  mAdjustRequestBoxToggle->set_active(false);
+}
+
+void MapsRenderer::onClearViewsButton() {
+  mViewClient.clearAll();
+}
+
+double MapsRenderer::
+pickQuery(const double iRayStart[3], const double iRayDir[3]) {
+  if (!mAdjustRequestBoxToggle->get_active()) {
+    getBotEventHandler()->picking = 0;
+    return -1;
+  }
+  else {
+    return 0;
+  }
+}
+
+bool MapsRenderer::
+mousePress(const GdkEventButton* iEvent,
+           const double iRayStart[3], const double iRayDir[3]) {
+  if (mAdjustRequestBoxToggle->get_active()) {
+    Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
+    Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
+    Eigen::Vector2f clickPt(iEvent->x, iEvent->y);
+    return mInteractiveBox.mousePress(clickPt, iEvent->button, origin, dir);
+  }
+  return false;
+}
+
+bool MapsRenderer::
+mouseRelease(const GdkEventButton* iEvent,
+             const double iRayStart[3], const double iRayDir[3]) {
+  if (mAdjustRequestBoxToggle->get_active()) {
+    Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
+    Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
+    Eigen::Vector2f curPt(iEvent->x, iEvent->y);
+    return mInteractiveBox.mouseRelease(curPt, iEvent->button, origin, dir);
+  }
+  return false;
+}
+
+bool MapsRenderer::
+mouseMotion(const GdkEventMotion* iEvent,
+            const double iRayStart[3], const double iRayDir[3]) {
+  bool button1 = (iEvent->state & GDK_BUTTON1_MASK) != 0;
+  bool button2 = (iEvent->state & GDK_BUTTON2_MASK) != 0;
+  bool button3 = (iEvent->state & GDK_BUTTON3_MASK) != 0;
+
+  if (mAdjustRequestBoxToggle->get_active()) {
+    Eigen::Vector3f origin(iRayStart[0], iRayStart[1], iRayStart[2]);
+    Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
+    Eigen::Vector2f curPt(iEvent->x, iEvent->y);
+    int buttonMask = (button3 << 2) | (button2 << 1) | button1;
+    bool handled = mInteractiveBox.mouseMotion(curPt, buttonMask,
+                                               origin, dir);
+    if (handled) requestDraw();
+    return handled;
+  }
+  return false;
+}
+
+void MapsRenderer::
+getViewInfo() {
+  glGetDoublev(GL_MODELVIEW_MATRIX, mModelViewGl);
+  glGetDoublev(GL_PROJECTION_MATRIX, mProjectionGl);
+  glGetIntegerv(GL_VIEWPORT, mViewportGl);
+  mViewport.resize(4);
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      mModelViewMatrix(i,j) = mModelViewGl[4*j+i];
+      mProjectionMatrix(i,j) = mProjectionGl[4*j+i];
+    }
+    mViewport[i] = mViewportGl[i];
+  }
+}
+
+void MapsRenderer::
+draw() {
+  // draw each view
+  std::vector<ViewClient::ViewPtr> views = mViewClient.getAllViews();
+  for (size_t v = 0; v < views.size(); ++v) {
+    int64_t id = views[v]->getId();
     addViewMetaData(id);
     ViewMetaData::Ptr data = mViewData[id];
-    if (!data->mVisible) return;
-
-    // set mesh properties
-    mMeshRenderer.setRangeOrigin(data->mLatestTransform.translation());
-    mMeshRenderer.setScaleRange(mMinZ, mMaxZ);
-    mMeshRenderer.setPointSize(mPointSize);
-    Eigen::Projective3f worldToMap = iView->getTransform();
-    Eigen::Projective3f mapToWorld = worldToMap.inverse();
-    Eigen::Matrix3f calib;
-    Eigen::Isometry3f pose;
-    bool ortho;
-    maps::Utils::factorViewMatrix(worldToMap, calib, pose, ortho);
-    mMeshRenderer.setNormalZero(-pose.linear().col(2));
-
-    // draw frustum
-    ViewBase::Spec viewSpec;
-    if (mViewClient.getSpec(id, viewSpec)) {
-      if (viewSpec.mClipPlanes.size() > 0) {
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        if (viewSpec.mRelativeLocation) {
-          glMultMatrixf(data->mLatestTransform.data());
-        }
-        Frustum frustum;
-        frustum.mPlanes = viewSpec.mClipPlanes;
-        drawFrustum(frustum, data->mColor);
-        glPopMatrix();
-      }
-    }
-
-    // see whether we need to (and can) get a mesh representation
-    bool usePoints = false;
-    maps::TriangleMesh::Ptr mesh;
-    if (mMeshMode == MeshRenderer::MeshModePoints) {
-      usePoints = true;
-    }
-    else {
-      mesh = iView->getAsMesh(false);
-      if (mesh == NULL) usePoints = true;
-    }
-
-    // just a point cloud
-    if (usePoints) {
-      mesh.reset(new maps::TriangleMesh());
-      maps::PointCloud::Ptr cloud = iView->getAsPointCloud(false);
-      mesh->mVertices.reserve(cloud->size());
-      for (size_t i = 0; i < cloud->size(); ++i) {
-        mesh->mVertices.push_back((*cloud)[i].getVector3fMap());
-      }
-    }
-
-    // set up mesh renderer
-    mMeshRenderer.setColor(data->mColor[0], data->mColor[1], data->mColor[2]);
-    mMeshRenderer.setColorMode((MeshRenderer::ColorMode)mColorMode);
-    mMeshRenderer.setMeshMode((MeshRenderer::MeshMode)mMeshMode);
-    if (usePoints) mMeshRenderer.setMeshMode(MeshRenderer::MeshModePoints);
-    mMeshRenderer.setData(mesh->mVertices, mesh->mNormals,
-                          mesh->mFaces, mapToWorld);
-
-    // draw this view's data
-    mMeshRenderer.draw();
+    data->draw(views[v], mMeshRenderer);
   }
 
-  Eigen::Vector4f computePlane(const double p1x, const double p1y,
-                               const double p2x, const double p2y) {
-    double x,y,z;
-    gluUnProject(p1x,p1y,0,mModelViewGl,mProjectionGl,mViewportGl, &x,&y,&z);
-    Eigen::Vector3f p1(x,y,z);
-    gluUnProject(p1x,p1y,1,mModelViewGl,mProjectionGl,mViewportGl, &x,&y,&z);
-    Eigen::Vector3f p2(x,y,z);
-    gluUnProject(p2x,p2y,1,mModelViewGl,mProjectionGl,mViewportGl, &x,&y,&z);
-    Eigen::Vector3f p3(x,y,z);
-    Eigen::Vector4f plane;
-    Eigen::Vector3f d1(p2-p1), d2(p3-p1);
-    Eigen::Vector3f normal = d1.cross(d2);
-    normal.normalize();
-    plane.head<3>() = normal;
-    plane[3] = -normal.dot(p1);
-    return plane;
+  // draw request box
+  if (mRequestBoxInit) {
+    getViewInfo();
+    mInteractiveBox.setBoxValid(mShowRequestBox);
+    mInteractiveBox.drawBox();
   }
-
-  void addViewMetaData(const int64_t iId) {
-    // add new metadata if none exists for this id
-    DataMap::const_iterator item = mViewData.find(iId);
-    if (item != mViewData.end()) return;
-
-    ViewMetaData::Ptr data(new ViewMetaData());
-    data->mRenderer = this;
-    data->mId = iId;
-    data->mVisible = true;
-    data->mLatestTransform = Eigen::Isometry3f::Identity();
-    if (data->mId != 1) {
-      switch(iId) {
-      case drc::data_request_t::OCTREE_SCENE:
-        data->mLabel = "Octree Scene";
-        data->mColor = Eigen::Vector3f(0,0,0);
-        break;
-      case drc::data_request_t::HEIGHT_MAP_SCENE:
-        data->mLabel = "Heightmap Scene";
-        data->mColor = Eigen::Vector3f(1,0,0);
-        break;
-      case drc::data_request_t::HEIGHT_MAP_CORRIDOR:
-        data->mLabel = "Heightmap Corridor";
-        data->mColor = Eigen::Vector3f(1,0,0);
-        break;
-      case drc::data_request_t::HEIGHT_MAP_COARSE:
-        data->mLabel = "Heightmap Coarse";
-        data->mColor = Eigen::Vector3f(1,0.5,0);
-        break;
-      case drc::data_request_t::HEIGHT_MAP_DENSE:
-        data->mLabel = "Heightmap Dense";
-        data->mColor = Eigen::Vector3f(1,0.5,0);
-        break;
-      case drc::data_request_t::DEPTH_MAP_SCENE:
-        data->mLabel = "Depthmap Scene";
-        data->mColor = Eigen::Vector3f(0.5,0,0.5);
-        break;
-      case drc::data_request_t::DEPTH_MAP_WORKSPACE:
-        data->mLabel = "Depthmap Workspace";
-        data->mColor = Eigen::Vector3f(0,0,1);
-        break;
-      case drc::data_request_t::STEREO_MAP_HEAD:
-        data->mLabel = "Stereo Head";
-        data->mColor = Eigen::Vector3f(0.1,1,0.1);
-        break;
-      case drc::data_request_t::STEREO_MAP_LHAND:
-        data->mLabel = "Stereo Left Hand";
-        data->mColor = Eigen::Vector3f(0.1,0.7,0.1);
-        break;
-      case drc::data_request_t::STEREO_MAP_RHAND:
-        data->mLabel = "Stereo Right Hand";
-        data->mColor = Eigen::Vector3f(0.1,0.4,0.1);
-        break;
-      case drc::data_request_t::DENSE_CLOUD_BOX:
-        data->mLabel = "Dense Cloud Box";
-        data->mColor = Eigen::Vector3f(1,0,1);
-        break;
-      case drc::data_request_t::DENSE_CLOUD_LHAND:
-        data->mLabel = "Dense Cloud L.Hand";
-        data->mColor = Eigen::Vector3f(1.0,0.5,0.3);
-        break;
-      case drc::data_request_t::DENSE_CLOUD_RHAND:
-        data->mLabel = "Dense Cloud R.Hand";
-        data->mColor = Eigen::Vector3f(1.0,0.5,0.3);
-        break;
-      case 1000:
-        data->mLabel = "Heightmap Controller";
-        data->mColor = Eigen::Vector3f(0.5,0,0);
-        break;
-      case 9999:
-        data->mLabel = "Debug";
-        data->mColor = Eigen::Vector3f(0,0,0);
-        break;
-      default:
-        data->mLabel = static_cast<std::ostringstream*>
-          (&(std::ostringstream() << data->mId) )->str();
-        data->mColor = Eigen::Vector3f((double)rand()/RAND_MAX,
-                                       (double)rand()/RAND_MAX,
-                                       (double)rand()/RAND_MAX);
-        break;
-      }
-    }
-    else {
-      data->mColor = Eigen::Vector3f(1,0,0);
-      data->mLabel = "Server Map";
-    }
-
-    // create widget and add to list
-    mViewDataDispatcher();
-
-    // add to data list
-    mViewData[iId] = data;
-  }
-
-  void addViewWidgets() {
-    DataMap::const_iterator iter;
-    for (iter = mViewData.begin(); iter != mViewData.end(); ++iter) {
-      ViewMetaData::Ptr data = iter->second;
-      if (data->mBox != NULL) continue;
-
-      data->mBox.reset(new Gtk::HBox());
-      data->mToggleButton =
-        Gtk::manage(new Gtk::ToggleButton("                    "));
-      Gdk::Color color;
-      color.set_rgb_p(data->mColor[0], data->mColor[1], data->mColor[2]);
-      data->mToggleButton->modify_bg(Gtk::STATE_ACTIVE, color);
-      color.set_rgb_p((data->mColor[0]+1)/2, (data->mColor[1]+1)/2,
-                      (data->mColor[2]+1)/2);
-      data->mToggleButton->modify_bg(Gtk::STATE_PRELIGHT, color); 
-      color.set_rgb_p(0.8, 0.8, 0.8);
-      data->mToggleButton->modify_bg(Gtk::STATE_NORMAL, color);
-      data->mToggleButton->signal_toggled().connect
-        (sigc::mem_fun(*data, &ViewMetaData::onToggleButton));
-      data->mToggleButton->set_active(true);
-      data->mBox->pack_start(*(data->mToggleButton), false, false);
-      Gtk::Label* label = Gtk::manage(new Gtk::Label(data->mLabel));
-      data->mBox->pack_start(*label, false, false);
-      if (iter->first != 1) {
-        Gtk::Button* cancelButton = Gtk::manage(new Gtk::Button("X"));
-        data->mBox->pack_start(*cancelButton, false, false);
-        cancelButton->signal_clicked().connect
-          (sigc::mem_fun(*data, &ViewMetaData::onCancelButton));
-      }
-      mViewListBox->pack_start(*(data->mBox), false, false);
-      data->mBox->show_all();
-    }
-  }
-};
-
 }
+
+void MapsRenderer::addViewMetaData(const int64_t iId) {
+  // add new metadata if none exists for this id
+  DataMap::const_iterator item = mViewData.find(iId);
+  if (item != mViewData.end()) return;
+
+  ViewMetaData::Ptr data(new ViewMetaData(this, iId));
+
+  // create widget and add to list
+  mViewDataDispatcher();
+
+  // add to data list
+  mViewData[iId] = data;
+}
+
+void MapsRenderer::addViewWidgets() {
+  DataMap::const_iterator iter;
+  for (iter = mViewData.begin(); iter != mViewData.end(); ++iter) {
+    ViewMetaData::Ptr data = iter->second;
+    if (data->addWidgets(mViewListBox)) {
+      mViewListBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    }
+  }
+  mViewListBox->show_all();
+}
+
 
 
 // this is the single setup method exposed for integration with the viewer

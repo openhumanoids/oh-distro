@@ -549,11 +549,15 @@ draw() {
       (mState->mNormalBuffer.size() > 0);
     if (mState->mColorMode == ColorModeRange) {
       values.resize(numVertices);
+      Eigen::Vector4f originHomog(0,0,0,1);
+      originHomog.head<3>() = mState->mRangeOrigin;
+      originHomog = mState->mTransform.inverse()*originHomog;
+      Eigen::Vector3f origin = originHomog.head<3>()/originHomog[3];
       for (int i = 0; i < numVertices; ++i) {
         Eigen::Vector3f pt(mState->mVertexBuffer[3*i+0],
                            mState->mVertexBuffer[3*i+1],
                            mState->mVertexBuffer[3*i+2]);
-        float range = (pt - mState->mRangeOrigin).norm();
+        float range = (pt - origin).norm();
         if (range > 1e10) continue;
         valueMin = std::min(valueMin, range);
         valueMax = std::max(valueMax, range);

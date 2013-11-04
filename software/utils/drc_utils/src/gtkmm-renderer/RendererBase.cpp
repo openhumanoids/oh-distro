@@ -407,8 +407,78 @@ bind(W* iWidget, const std::string& iName, T& iData) {
 }
 
 
+Gtk::ComboBox* RendererBase::
+createCombo(int& iData, const std::vector<std::string>& iLabels,
+            const std::vector<int>& iIndices) {
+  if (iIndices.size() != iLabels.size()) return NULL;
+  ComboColumns columns;
+  Glib::RefPtr<Gtk::ListStore> treeModel = Gtk::ListStore::create(columns);
+  for (size_t i = 0; i < iIndices.size(); ++i) {
+    const Gtk::TreeModel::Row& row = *(treeModel->append());
+    row[columns.mId] = iIndices[i];
+    row[columns.mLabel] = iLabels[i];
+  }
+  Gtk::ComboBox* combo = Gtk::manage(new Gtk::ComboBox());
+  combo->set_model(treeModel);
+  combo->pack_start(columns.mLabel);
+  combo->signal_changed().connect([combo,&iData]{
+    Gtk::TreeModel::iterator iter = combo->get_active();
+    if (iter) iData = (int)((*iter)[ComboColumns().mId]);
+    });
+  combo->set_active(iData);
+  return combo;
+}
+
+Gtk::SpinButton* RendererBase::
+createSpin(double& iData, const double iMin, const double iMax,
+           const double iStep) {
+  Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
+  spin->set_range(iMin, iMax);
+  spin->set_increments(iStep, 10*iStep);
+  spin->set_digits(2);
+  spin->signal_value_changed().connect([spin,&iData]{
+      iData = (double)spin->get_value();});
+  spin->set_value(iData);
+  return spin;
+}
+
+Gtk::SpinButton* RendererBase::
+createSpin(int& iData, const int iMin, const int iMax, const int iStep) {
+  Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
+  spin->set_range(iMin, iMax);
+  spin->set_increments(iStep, 10*iStep);
+  spin->signal_value_changed().connect([spin,&iData]{
+      iData = (int)spin->get_value();});
+  spin->set_value(iData);
+  return spin;
+}
+
+Gtk::HScale* RendererBase::
+createSlider(double& iData, const double iMin, const double iMax,
+             const double iStep) {
+  Gtk::HScale* slider = Gtk::manage(new Gtk::HScale(iMin, iMax, iStep));
+  slider->set_digits(2);
+  slider->set_value_pos(Gtk::POS_LEFT);
+  slider->signal_value_changed().connect([slider,&iData]{
+      iData = (double)slider->get_value();});
+  slider->set_value(iData);
+  return slider;
+}
+
+Gtk::HScale* RendererBase::
+createSlider(int& iData, const int iMin, const int iMax, const int iStep) {
+  Gtk::HScale* slider = Gtk::manage(new Gtk::HScale(iMin, iMax, iStep));
+  slider->set_value_pos(Gtk::POS_LEFT);
+  slider->set_value(iData);
+  slider->signal_value_changed().connect([slider,&iData]{
+      iData = (int)slider->get_value();});
+  return slider;  
+}
+
+
+
 Gtk::ToggleButton* RendererBase::
-addToggle(const std::string& iName, bool& iData, Gtk::Container* iContainer) {
+addToggle(const std::string& iName, bool& iData, Gtk::Box* iContainer) {
   Gtk::ToggleButton* button = Gtk::manage(new Gtk::ToggleButton(iName));
   bind(button, iName, iData);
   button->set_active(iData);
@@ -420,7 +490,7 @@ addToggle(const std::string& iName, bool& iData, Gtk::Container* iContainer) {
 }
 
 Gtk::CheckButton* RendererBase::
-addCheck(const std::string& iName, bool& iData, Gtk::Container* iContainer) {
+addCheck(const std::string& iName, bool& iData, Gtk::Box* iContainer) {
   Gtk::CheckButton* button = Gtk::manage(new Gtk::CheckButton(iName));
   bind(button, iName, iData);
   button->set_active(iData);
@@ -434,7 +504,7 @@ addCheck(const std::string& iName, bool& iData, Gtk::Container* iContainer) {
 Gtk::SpinButton* RendererBase::
 addSpin(const std::string& iName, double& iData,
         const double iMin, const double iMax, const double iStep,
-        Gtk::Container* iContainer) {
+        Gtk::Box* iContainer) {
   Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
   Gtk::Label* label = Gtk::manage(new Gtk::Label(iName, Gtk::ALIGN_LEFT));
   box->add(*label);
@@ -455,7 +525,7 @@ addSpin(const std::string& iName, double& iData,
 Gtk::SpinButton* RendererBase::
 addSpin(const std::string& iName, int& iData,
         const int iMin, const int iMax, const int iStep,
-        Gtk::Container* iContainer) {
+        Gtk::Box* iContainer) {
   Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
   Gtk::Label* label = Gtk::manage(new Gtk::Label(iName, Gtk::ALIGN_LEFT));
   box->add(*label);
@@ -475,7 +545,7 @@ addSpin(const std::string& iName, int& iData,
 Gtk::HScale* RendererBase::
 addSlider(const std::string& iName, double& iData,
           const double iMin, const double iMax, const double iStep,
-          Gtk::Container* iContainer) {
+          Gtk::Box* iContainer) {
   Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
   Gtk::Label* label = Gtk::manage(new Gtk::Label(iName, Gtk::ALIGN_LEFT));
   box->add(*label);
@@ -495,7 +565,7 @@ addSlider(const std::string& iName, double& iData,
 Gtk::HScale* RendererBase::
 addSlider(const std::string& iName, int& iData,
           const int iMin, const int iMax, const int iStep,
-          Gtk::Container* iContainer) {
+          Gtk::Box* iContainer) {
   Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
   Gtk::Label* label = Gtk::manage(new Gtk::Label(iName, Gtk::ALIGN_LEFT));
   box->add(*label);
@@ -513,7 +583,7 @@ addSlider(const std::string& iName, int& iData,
 
 Gtk::ComboBox* RendererBase::
 addCombo(const std::string& iName, int& iData,
-         const std::vector<std::string>& iLabels, Gtk::Container* iContainer) {
+         const std::vector<std::string>& iLabels, Gtk::Box* iContainer) {
   std::vector<int> ids(iLabels.size());
   for (size_t i = 0; i < iLabels.size(); ++i) { ids[i] = i; }
   return addCombo(iName, iData, iLabels, ids);
@@ -522,7 +592,7 @@ addCombo(const std::string& iName, int& iData,
 Gtk::ComboBox* RendererBase::
 addCombo(const std::string& iName, int& iData,
          const std::vector<std::string>& iLabels,
-         const std::vector<int>& iIndices, Gtk::Container* iContainer) {
+         const std::vector<int>& iIndices, Gtk::Box* iContainer) {
   if (iIndices.size() != iLabels.size()) {
     return NULL;
   }
@@ -543,9 +613,9 @@ addCombo(const std::string& iName, int& iData,
   bind(combo, iName, iData);
   combo->set_active(iData);
   box->add(*combo);
-  Gtk::Container* container = iContainer;
-  if (container == NULL) container = mHelper->mGtkContainer;
-  container->add(*box);
+  Gtk::Box* container = iContainer;
+  if (container == NULL) container = (Gtk::Box*)mHelper->mGtkContainer;
+  container->pack_start(*box,false,false);
   box->show_all();
   return combo;
 }
