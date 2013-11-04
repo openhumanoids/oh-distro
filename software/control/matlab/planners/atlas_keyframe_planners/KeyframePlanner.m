@@ -38,9 +38,16 @@ classdef KeyframePlanner < handle
         T_hand_palm_r_sandia
         T_hand_palm_l_irobot
         T_hand_palm_r_irobot
+        sandia_gaze_axis
+        irobot_gaze_axis
         lh_name
         rh_name
+        lh_gaze_axis
+        rh_gaze_axis
+        hand_gaze_tol
+        head_gaze_tol
         
+        head_gaze_axis
         collision_check
         atlas_frame
         lhand_frame
@@ -100,7 +107,13 @@ classdef KeyframePlanner < handle
             obj.T_hand_palm_l_irobot = HT([0;0.11516;0.015],1.57079,3.14159,3.14159);
             obj.T_hand_palm_r_irobot = HT([0;-0.11516;-0.015],1.57079,0,0);
             
-
+            obj.sandia_gaze_axis = [0;0;1];
+            obj.irobot_gaze_axis = [0;1;0];
+            obj.head_gaze_axis = [1;0;0];
+            obj.lh_gaze_axis = obj.sandia_gaze_axis;
+            obj.rh_gaze_axis = obj.sandia_gaze_axis;
+            obj.hand_gaze_tol = pi/18;
+            obj.head_gaze_tol = pi/12;
 
             obj.setHandType(true,true); % set sandia hands as default
             % obj.collision_check            
@@ -150,20 +163,26 @@ classdef KeyframePlanner < handle
             
             if(obj.l_hand_mode == 1)
              obj.T_hand_palm_l = obj.T_hand_palm_l_sandia;
+             obj.lh_gaze_axis = obj.sandia_gaze_axis;
             elseif(obj.l_hand_mode == 2)
              obj.T_hand_palm_l = obj.T_hand_palm_l_irobot;
+              obj.lh_gaze_axis = obj.irobot_gaze_axis;
             elseif(obj.l_hand_mode == 0)
               % I need to talk with Sisir about this palm-hand
               % transformation
               obj.T_hand_palm_l = obj.T_hand_palm_l_irobot; 
+               obj.lh_gaze_axis = obj.irobot_gaze_axis;
             end
             
             if(obj.r_hand_mode == 1)
               obj.T_hand_palm_r = obj.T_hand_palm_r_sandia;
+              obj.rh_gaze_axis = obj.sandia_gaze_axis;
             elseif(obj.r_hand_mode == 2)
               obj.T_hand_palm_r = obj.T_hand_palm_r_irobot;
+              obj.rh_gaze_axis = obj.irobot_gaze_axis;
             elseif(obj.r_hand_mode == 0)
               obj.T_hand_palm_r = obj.T_hand_palm_r_irobot;
+              obj.rh_gaze_axis = obj.irobot_gaze_axis;
             end
             
                         

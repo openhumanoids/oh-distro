@@ -455,6 +455,7 @@ classdef ReachingPlanner < KeyframePlanner
             iktraj_lfoot_constraint = {};
             iktraj_rfoot_constraint = {};
             iktraj_pelvis_constraint = {};
+            iktraj_head_constraint = {};
             if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                 if(obj.restrict_feet)
                     rfoot_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose0,0,0,[s(1),s(end)]);
@@ -551,13 +552,16 @@ classdef ReachingPlanner < KeyframePlanner
             
             
             if(~isempty(head_gaze_target))
-                head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],head_gaze_target,[0;0;0],pi/12)}];
+                head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,head_gaze_target,[0;0;0],obj.head_gaze_tol)}];
+                iktraj_head_constraint = [iktraj_head_constraint,head_constraint];
             end
             if(~isempty(rhand_gaze_target))
-                rhand_constraint = [rhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],rhand_gaze_target,[0;0;0],pi/18)}];
+                rhand_constraint = [rhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rhand_gaze_target,[0;0;0],obj.hand_gaze_tol)}];
+                iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraint];
             end
             if(~isempty(lhand_gaze_target))
-                lhand_constraint = [lhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],lhand_gaze_target,[0;0;0],pi/18)}];
+                lhand_constraint = [lhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lhand_gaze_target,[0;0;0],obj.hand_gaze_tol)}];
+                iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint];
             end
             
             %============================
@@ -700,6 +704,7 @@ classdef ReachingPlanner < KeyframePlanner
                 iktraj_t_verify = linspace(iktraj_tbreaks(1),iktraj_tbreaks(end),20);
                 [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,obj.collision_check,iktraj_t_verify,...
                     iktraj_tbreaks,qtraj_guess,qtraj_guess,...
+                    iktraj_head_constraint{:},...
                     iktraj_rhand_constraint{:},iktraj_lhand_constraint{:},...
                     iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
                     iktraj_pelvis_constraint{:},obj.joint_constraint,qsc,...
