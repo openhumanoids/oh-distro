@@ -4,7 +4,7 @@
     <!-- World frame origin of the object -->
     <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z" default_value="0.95" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.91" inc="0.001" min="-100" max="100" />
     <!--roll,pitch,yaw are about Body Frame-->
     <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
@@ -126,5 +126,19 @@
         <relative_pose rpy="1.77639 -1.5089 0.163197" xyz="-0.0415717 0.121426 0.0292625" />
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="0 1.35 0 0 1.35 0 0 1.35 0 0 0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="door_base_0" />
+        <relative_pose rpy="6.96034e-09 0.0004993 -0.966669" xyz="0.63295 1.06833 -0.828904" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="door_base_0" />
+        <relative_pose rpy="1.66227e-09 0.000499353 -1.08239" xyz="0.226607 0.864747 -0.828916" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
 </object>
