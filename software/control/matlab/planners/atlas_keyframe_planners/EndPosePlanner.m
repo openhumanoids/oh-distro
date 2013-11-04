@@ -14,6 +14,7 @@ classdef EndPosePlanner < KeyframePlanner
         l_hpy_ub
         l_hpx_lb
         l_hpy_lb
+        shrinkfactor
     end
     
     methods
@@ -24,7 +25,7 @@ classdef EndPosePlanner < KeyframePlanner
             joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
-            
+            obj.shrinkfactor = 0.4;
             obj.plan_cache.num_breaks = 1;
             
             % Caches a Redundant two element plan.
@@ -32,8 +33,8 @@ classdef EndPosePlanner < KeyframePlanner
             % publish an single keyframe endpose instead
             % of a keyframe plan by resolving at time T.
             obj.plan_cache.isEndPose = true;
-            obj.ee_torso_dist_lb = 0.6;
-            obj.ee_lleg_dist_lb = 0.4;
+            obj.ee_torso_dist_lb = 0.4;
+            obj.ee_lleg_dist_lb = 0.3;
             obj.stance_lb = 0.2;
             obj.stance_ub = 0.5;
             obj.l_hpx_ub = 0.3;
@@ -242,7 +243,7 @@ classdef EndPosePlanner < KeyframePlanner
           qsc = QuasiStaticConstraint(obj.r);
           qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);  
           qsc = qsc.setActive(true);
-          qsc = qsc.setShrinkFactor(0.1); % search for a conservative pose
+          qsc = qsc.setShrinkFactor(obj.shrinkfactor); % search for a conservative pose
           iktraj_options = iktraj_options.setMajorIterationsLimit(1000);
           nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
           qstar = nomdata.xstar(1:obj.r.getNumDOF());
@@ -450,7 +451,7 @@ classdef EndPosePlanner < KeyframePlanner
             ikoptions = ikoptions.setMajorIterationsLimit(1000);
             qsc = QuasiStaticConstraint(obj.r);
             qsc = qsc.setActive(true);
-            qsc = qsc.setShrinkFactor(0.3);
+            qsc = qsc.setShrinkFactor(obj.shrinkfactor);
             qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);        
             
             ikoptions = ikoptions.setQ( diag(cost(1:getNumDOF(obj.r))));
