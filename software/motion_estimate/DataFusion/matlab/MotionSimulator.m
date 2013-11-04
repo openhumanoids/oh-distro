@@ -27,7 +27,9 @@ switch (trajtype)
     case 'atlas'
         RESULTS.traj = gen_traj(iterations, param,0);
     case 'rotate'
-        RESULTS.traj = gen_specifc_traj(iterations, param, 0);
+        RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
+    case 'gyro_bias'
+        RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
 end
 
 

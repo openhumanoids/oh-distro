@@ -35,11 +35,13 @@ while (true)
     Sys.posterior = posterior;
 
     Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
-    Measurement.quaternionLinearDiff = Measurement.LegOdo.pose.q - Measurement.INS.pose.q; % We do not intend to use the linear difference between the quaternions, just a sanity check
+    Measurement.quaternionLinearResidual = Measurement.LegOdo.pose.q - Measurement.INS.pose.q; % We do not intend to use the linear difference between the quaternions, just a sanity check
+    Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.q)' * q2R(Measurement.LegOdo.pose.q));
     
     disp(['Position residual ' num2str(Measurement.positionResidual')])
-    disp(['Linear difference in quaternions ' num2str(Measurement.quaternionLinearDiff')])
-    
+    disp(['Linear difference in quaternion ' num2str(Measurement.quaternionLinearResidual')])
+    disp(['Manifold residual in quaternion norm: ' num2str(norm(Measurement.quaternionManifoldResidual)) ', q = ' num2str(Measurement.quaternionManifoldResidual)])
+   
     [Result, dfSys] = iterate([], Sys, Measurement);
 
     posterior = dfSys.posterior;

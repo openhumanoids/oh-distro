@@ -5,7 +5,7 @@ clear
 iterations = 5000;
 
 % Run the full test
-RESULTS = MotionSimulator(iterations,'atlas');
+RESULTS = MotionSimulator(iterations,'gyro_bias');
 
 
 %% Plot Results

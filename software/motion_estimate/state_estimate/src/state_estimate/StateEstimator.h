@@ -60,14 +60,13 @@ protected:
   PoseQueue& mBDIPoseQueue;
   PoseQueue& mViconQueue;
   NavQueue& mMatlabTruthQueue;
+  //INSUpdateQueue& mINSUpdateQueue;
   
   // This class is not up and running yet
   messageQueues mMSGQueues;
   
-  
   JointFilters mJointFilters;
   //  vector<float> mJointVelocities;
-  
   
   
 private:
@@ -80,7 +79,7 @@ private:
 	
   InertialOdometry::Odometry inert_odo;
   unsigned long long previous_imu_utime;
-	
+
   BotParam* _botparam;
   BotFrames* _botframes;
   
