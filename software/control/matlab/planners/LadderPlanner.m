@@ -14,7 +14,8 @@ function LadderPlanner
   addpath(fullfile(getDrakePath,'examples','ZMP'));
 
   % load robot model
-  r = Atlas();
+  urdf_filename = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf');
+  r = Atlas(urdf_filename);
   load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
   r = removeCollisionGroupsExcept(r,{'toe','heel'});
   r = compile(r);
@@ -35,7 +36,8 @@ function LadderPlanner
   nq = getNumDOF(r);
 
   x0 = xstar;
-  q0 = x0(1:nq);
+  qstar = xstar(1:nq);
+  q0 = qstar;
 
   % create footstep and ZMP trajectories
   footstep_planner = FootstepPlanner(r);
@@ -102,68 +104,13 @@ function LadderPlanner
 
     end
 
-    [~, ~, comtraj, foottraj, ~, zmptraj] = walkingPlanFromSteps(r, x0, footsteps,step_options);
+    [~, ~, comtraj, foottraj, ~, ~] = walkingPlanFromSteps(r, x0, footsteps,step_options);
     link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
 
-    [xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, q0, zmptraj, comtraj, link_constraints);
+    [x_data,ts] = robotLadderPlan(r, q0, qstar, comtraj, link_constraints);
 
-    plan_pub.publish(ts,xtraj);
+    plan_pub.publish(ts,x_data);
 
     waiting = true;
   end
 end
-    %T = ts(end);
-
-    %qtraj = PPTrajectory(spline(ts,xtraj(1:nq,:)));
-
-    %ctrl_data = SharedDataHandle(struct(...
-    %'comtraj',comtraj,...
-    %'qtraj',qtraj,...
-    %'link_constraints',link_constraints, ...
-    %'ignore_terrain',false));
-
-    %qt = QTrajEvalBlock(r,ctrl_data);
-    %sys = qt;
-    % aik = ApproximateIKBlock(r,ctrl_data);
-    % qref = PositionRefFeedthroughBlock(r);
-
-    % cascade qtraj eval block with approximate IK
-    % ins(1).system = 1;
-    % ins(1).input = 1;
-    % outs(1).system = 2;
-    % outs(1).output = 1;
-    % sys = mimoCascade(qt,aik,[],ins,outs);
-
-    % % cascade position ref pub
-    % ins(1).system = 1;
-    % ins(1).input = 1;
-    % outs(1).system = 2;
-    % outs(1).output = 1;
-    % sys = mimoCascade(sys,qref,[],ins,outs);
-
-    % v=r.constructVisualizer();
-    % v.display_dt = 0.025;
-    % xtraj = PPTrajectory(spline(ts,xtraj));
-    % xtraj = xtraj.setOutputFrame(state_frame);
-    % playback(v,xtraj,struct('slider',true));
-    % playback(v,xtraj);
-
-    %xy_offset = [0;0];
-    %toffset = -1;
-    %tt=-1;
-    %while tt<T+1
-    %[x,t] = getNextMessage(state_frame,1);
-    %if ~isempty(x)
-    %if toffset==-1
-    %toffset=t;
-    %xy_offset = x(1:2); % because state estimate will not be 0,0 to start
-    %end
-    %tt=t-toffset;
-
-    %x(1:2) = x(1:2)-xy_offset;
-    %qdes = sys.output(tt,[],x);
-
-    %ref_frame.publish(t,qdes(act_idx),'ATLAS_COMMAND');
-    %end
-    %end
-
