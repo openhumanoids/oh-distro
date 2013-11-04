@@ -5,9 +5,6 @@
 execute_process(COMMAND rosrun xacro xacro.py atlas.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact.urdf)
 
-execute_process(COMMAND rosrun xacro xacro.py atlas_param.urdf.xacro
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact_param.urdf)
-
 execute_process(COMMAND rosrun xacro xacro.py atlas_full_contact.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model.urdf)
 
