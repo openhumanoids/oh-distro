@@ -7,10 +7,10 @@ utorso_threshold = 10*pi/180;
 hand_threshold = 10*pi/180;
 
 % time spacing of samples for IK
-dt = 0.1;
+dt = 0.02;
 ts = 0:dt:tf;
-if length(ts)>300 % limit number of IK samples to something reasonable
-  ts = linspace(0,tf,300);
+if length(ts)>3000 % limit number of IK samples to something reasonable
+  ts = linspace(0,tf,3000);
   dt = ts(2)-ts(1);
 end
 nt = length(ts);
@@ -52,14 +52,17 @@ for i = 1:(length(support)-1)
     body_idx = support{i}.bodies(j);
     qsc = qsc.addContact(body_idx, ...
       r_minimal.getBody(body_idx).contact_pts(:,support{i}.contact_pts{j}));
-%     ts_idx = find(support_times{i} < ts && ts < support_times{i+1},1);
-%     pos_min = link_constraints(j).min_traj.eval(t);
-    basic_constraints = [ ...
-      basic_constraints, ...
-      {WorldQuatConstraint(r,body_idx, ...
-        [1;0;0;0], ...
-        0, ...
+    ts_idx = find(support_times(i) < ts & ts < support_times(i+1),1);
+    link_idx = [link_constraints.link_ndx];
+    pos = link_constraints(link_idx==body_idx).traj.eval(ts(ts_idx));
+    if ~isempty(pos)
+      basic_constraints = [ ...
+        basic_constraints, ...
+        {WorldEulerConstraint(r,body_idx, ...
+        pos(4:6), ...
+        pos(4:6), ...
         [support_times(i),support_times(i+1)])}];
+    end
   end
   basic_constraints = [basic_constraints, {qsc}];
 end
@@ -88,6 +91,8 @@ for i=2:nt
   q(:,i) = inverseKin(r,q(:,i-1),qstar,constraints{:},ikoptions);
 end
 % [q(:,2:end),info] = inverseKinPointwise(r,ts(2:end),repmat(q0,1,nt-1),repmat(qstar,1,nt-1),constraints{:},ikoptions);
-x_data = zeros(2*nq,nt);
+q = q(:,1:5:end);
+x_data = zeros(2*nq,size(q,2));
 x_data(1:getNumDOF(r),:) = q;
+ts = ts(1:5:end)
 

@@ -44,7 +44,9 @@ end
 
 next_pos = last_pos + angleDiff(last_pos, next_pos);
 apex_pos = interp1([0, 1], [last_pos, next_pos]', apex_fracs)';
-apex_pos(3,:) = apex_fracs * (next_pos(3) - last_pos(3)) + last_pos(3) + options.step_height + max([next_pos(3) - last_pos(3), 0]);
+% apex_pos(3,:) = apex_fracs * (next_pos(3) - last_pos(3)) + last_pos(3) + options.step_height + max([next_pos(3) - last_pos(3), 0]);
+apex_pos(3,:) = last_pos(3) + options.step_height + max([next_pos(3) - last_pos(3), 0]);
+
 apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
 
 if (step_dist_xy > 0.01 && ~options.ignore_terrain)

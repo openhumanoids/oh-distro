@@ -49,12 +49,13 @@ function LadderPlanner
   step_options.step_speed = 0.005;
   step_options.follow_spline = true;
   step_options.right_foot_lead = true;
-  step_options.ignore_terrain = false;
+  step_options.ignore_terrain = true;
   step_options.nom_step_width = r.nom_step_width;
   step_options.nom_forward_step = r.nom_forward_step;
   step_options.max_forward_step = r.max_forward_step;
   step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
   step_options.full_foot_pose_constraint = true;
+  step_options.step_height = 0.05;
   
   msg =['QS Stepping Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
 
@@ -85,16 +86,17 @@ function LadderPlanner
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
           qnom_state = 'current';
         end
+        tol = 0.01;
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX)
-          fixed_links = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          fixed_links = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',tol);
           % with fixed joint hands, the link name is huge.
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('l_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX)
-          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',tol);
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('r_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
-          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
-          fixed_links(2) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',tol);
+          fixed_links(2) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',tol);
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('r_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
           %fixed_links(2) = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('l_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         else
