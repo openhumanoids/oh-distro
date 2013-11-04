@@ -161,7 +161,6 @@ toLcm(const maps::DataBlob& iBlob, drc::map_blob_t& oMessage) {
   }
   oMessage.num_bytes = iBlob.getBytes().size();
   oMessage.data = iBlob.getBytes();
-
   return true;
 }
 
@@ -195,7 +194,6 @@ fromLcm(const drc::map_blob_t& iMessage, maps::DataBlob& oBlob) {
     return false;
   }
   oBlob.setData(iMessage.data, spec);
-
   return true;
 }
 

@@ -197,8 +197,9 @@ void Camera::applyConfig(CameraConfig& config){
   
   
   const float radiansPerSecondToRpm = 9.54929659643;
-  driver_->setMotorSpeed(config.spindle_rpm_);
-  
+  if (fabs(config.spindle_rpm_) <= 25) {
+    driver_->setMotorSpeed(config.spindle_rpm_);
+  }
   
   image::Config cfg;
 
@@ -206,9 +207,9 @@ void Camera::applyConfig(CameraConfig& config){
   if (Status_Ok != status) {
       printf("Failed to query image config. Error code %d", status);
       return;
-  }  
-  cfg.setFps(config.fps_);
-  cfg.setGain(config.gain_);
+  }
+  if (config.fps_ >= 0) cfg.setFps(config.fps_);
+  if (config.gain_ >= 0) cfg.setGain(config.gain_);
     
   status = driver_->setImageConfig(cfg);
   if (Status_Ok != status)

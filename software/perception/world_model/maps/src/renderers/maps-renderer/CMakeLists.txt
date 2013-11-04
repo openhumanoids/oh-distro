@@ -11,7 +11,7 @@ add_library(${LIBRARY_NAME} SHARED
 set_target_properties(${LIBRARY_NAME} PROPERTIES SOVERSION 1)
 
 pods_use_pkg_config_packages(${LIBRARY_NAME}
-  maps jpeg-utils occ-map gtkmm-renderer gtkmm-2.4)
+  maps jpeg-utils gtkmm-renderer gtkmm-2.4)
 
 pods_install_headers(MapsRenderer.hpp
   DESTINATION ${LIBRARY_NAME})

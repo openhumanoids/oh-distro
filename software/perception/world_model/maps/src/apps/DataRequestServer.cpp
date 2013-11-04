@@ -67,6 +67,12 @@ struct Worker {
         sendMapViewCatalogRequest(); break;
       case drc::data_request_t::OCTREE_SCENE:
         sendOctreeSceneRequest(); break;
+      case drc::data_request_t::OCTREE_WORKSPACE:
+        sendOctreeWorkspaceRequest(); break;
+      case drc::data_request_t::CLOUD_SCENE:
+        sendCloudSceneRequest(); break;
+      case drc::data_request_t::CLOUD_WORKSPACE:
+        sendCloudWorkspaceRequest(); break;
       case drc::data_request_t::HEIGHT_MAP_SCENE:
         sendHeightMapSceneRequest(); break;
       case drc::data_request_t::HEIGHT_MAP_CORRIDOR:
@@ -143,6 +149,49 @@ struct Worker {
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
+  void sendOctreeWorkspaceRequest() {
+    drc::map_request_t msg = prepareRequestMessage();
+    msg.map_id = 2;
+    msg.view_id = drc::data_request_t::OCTREE_WORKSPACE;
+    msg.resolution = 0.01;
+    msg.time_min = 0;
+    msg.time_max = 180;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE;
+    msg.clip_planes[0][3] = 0.25;
+    msg.clip_planes[1][3] = 2;
+    msg.clip_planes[2][3] = 1;
+    msg.clip_planes[3][3] = 1;
+    msg.clip_planes[4][3] = 3;
+    msg.clip_planes[5][3] = 0.3;
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendCloudSceneRequest() {
+    drc::map_request_t msg = prepareRequestMessage();
+    msg.type = drc::map_request_t::POINT_CLOUD;
+    msg.view_id = drc::data_request_t::CLOUD_SCENE;
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendCloudWorkspaceRequest() {
+    drc::map_request_t msg = prepareRequestMessage();
+    msg.type = drc::map_request_t::POINT_CLOUD;
+    msg.map_id = 2;
+    msg.view_id = drc::data_request_t::CLOUD_WORKSPACE;
+    msg.resolution = 0.01;
+    msg.quantization_max = 0.01;
+    msg.time_min = 0;
+    msg.time_max = 180;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE;
+    msg.clip_planes[0][3] = 0.25;
+    msg.clip_planes[1][3] = 2;
+    msg.clip_planes[2][3] = 1;
+    msg.clip_planes[3][3] = 1;
+    msg.clip_planes[4][3] = 3;
+    msg.clip_planes[5][3] = 0.3;
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
   void sendHeightMapSceneRequest() {
     const Eigen::Vector3f minPt(-2, -5, -3);
     const Eigen::Vector3f maxPt(5, 5, 0.3);
@@ -215,6 +264,7 @@ struct Worker {
 
   void sendDepthMapWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
+    msg.map_id = 2;
     msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE;
     msg.resolution = 0.01;
     msg.width = msg.height = 400;
@@ -225,7 +275,8 @@ struct Worker {
     msg.clip_planes[0][3] = 0;
     msg.clip_planes[5][3] = 1;
     Eigen::Projective3f projector =
-        createProjector(100, 90, msg.width, msg.height);
+      createProjector(100, 90, msg.width, msg.height,
+                      Eigen::Vector3f(-0.5,0,0));
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }
@@ -290,6 +341,14 @@ struct Worker {
   Eigen::Projective3f createProjector(const float iHorzFovDegrees,
                                       const float iVertFovDegrees,
                                       const int iWidth, const int iHeight) {
+    return createProjector(iHorzFovDegrees, iVertFovDegrees,
+                           iWidth, iHeight, Eigen::Vector3f(0,0,0));
+  }
+
+  Eigen::Projective3f createProjector(const float iHorzFovDegrees,
+                                      const float iVertFovDegrees,
+                                      const int iWidth, const int iHeight,
+                                      const Eigen::Vector3f& iPosition) {
     const float degToRad = 4*atan(1)/180;
     const float hFov = iHorzFovDegrees*degToRad;
     const float vFov = iVertFovDegrees*degToRad;
@@ -300,6 +359,7 @@ struct Worker {
     pose.linear().row(0) = x;
     pose.linear().row(1) = y;
     pose.linear().row(2) = z;
+    pose.translation() = -pose.linear()*iPosition;
     //pose.linear() << 0,-1,0, 0,0,-1, 1,0,0;
     Eigen::Projective3f calib = Eigen::Projective3f::Identity();
     calib.matrix().row(2).swap(calib.matrix().row(3));

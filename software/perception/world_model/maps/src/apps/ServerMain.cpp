@@ -182,7 +182,7 @@ struct StereoHandler {
       if (mLatestImages.image_types[dispIndex] ==
           multisense::images_t::DISPARITY_ZIPPED) {
         std::vector<uint8_t> buf(w*h*2);
-        unsigned long len;
+        unsigned long len = buf.size();
         uncompress(buf.data(), &len, dispMsg.data.data(), dispMsg.data.size());
         cv::Mat(h, w, CV_16UC1, buf.data()).
           convertTo(disparityMat, CV_32F, 1.0/16);

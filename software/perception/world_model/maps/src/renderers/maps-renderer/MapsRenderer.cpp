@@ -12,17 +12,11 @@
 #include <gtkmm-renderer/RendererBase.hpp>
 
 #include <lcmtypes/drc/data_request_t.hpp>
-#include <lcmtypes/occ_map/pixel_map_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/map_request_bbox_t.hpp>
 #include <lcmtypes/drc/world_box_t.hpp>
 
 #include <bot_vis/viewer.h>
-
-// TODO: should use c++ version
-#include <lcmtypes/occ_map_pixel_map_t.h>
-
-#include <occ_map/PixelMap.hpp>
 
 #include <maps/ViewClient.hpp>
 #include <maps/Utils.hpp>
@@ -34,17 +28,6 @@ namespace maps {
 
 class MapsRenderer : public gtkmm::RendererBase, ViewClient::Listener {
 protected:
-  enum InputMode {
-    InputModeCamera=0,
-    InputModeRect,
-    InputModeDepth
-  };
-
-  enum MacroCommand {
-    MacroCommandClearMap,
-    MacroCommandHighResScan
-  };
-
   struct Frustum {
     std::vector<Eigen::Vector4f> mPlanes;
     float mNear;
@@ -96,28 +79,14 @@ protected:
   Glib::Dispatcher mViewDataDispatcher;
 
   // request parameters
-  int mInputMode;
-  Gtk::ComboBox* mInputModeComboBox;
-  int mRequestType;
-  double mRequestFrequency;
-  double mRequestResolution;
   int mRequestTimeWindow;
-  bool mRequestRelativeLocation;
   bool mRequestRawScan;
-  bool mDragging;
-  Eigen::Vector2f mDragPoint1;
-  Eigen::Vector2f mDragPoint2;  
-  Eigen::Vector2f mBoxCorner1;
-  Eigen::Vector2f mBoxCorner2;
   GLdouble mModelViewGl[16];
   GLdouble mProjectionGl[16];
   GLint mViewportGl[4];
   Eigen::Isometry3f mModelViewMatrix;
   Eigen::Matrix4f mProjectionMatrix;
   std::vector<int> mViewport;
-  float mBaseValue;
-  bool mBoxValid;
-  Frustum mFrustum;
   Gtk::ToggleButton* mAdjustRequestBoxToggle;
   Gtk::ToggleButton* mShowRequestBoxToggle;
   bool mShowRequestBox;
@@ -127,9 +96,6 @@ protected:
 
   // command parameters
   int mMacroCommand;
-
-  // for pixel map rendering
-  std::shared_ptr<occ_map::PixelMap<float> > mPixelMap;
 
   MeshRenderer mMeshRenderer;
   ViewClient mViewClient;
@@ -150,8 +116,6 @@ public:
     setupWidgets();
 
     // set up internal variables
-    mBoxValid = false;
-    mDragging = false;
     mBotWrapper.reset(new BotWrapper(getLcm(), getBotParam(), getBotFrames()));
     mMeshRenderer.setBotObjects(getLcm(), getBotParam(), getBotFrames());
     mMeshRenderer.addCameraChannel("CAMERACHEST_LEFT");
@@ -166,10 +130,6 @@ public:
     // set callback for bbox
     getLcm()->subscribe("WORLD_BOX_PTCLD_REQUEST",
                         &MapsRenderer::onBoxPointCloudRequest, this);
-
-    // set callback for pixel maps
-    // TODO: temporary channel
-    getLcm()->subscribe("TERRAIN_DIST_MAP", &MapsRenderer::onPixelMap, this);
 
     // start listening for view data
     mViewClient.start();
@@ -190,38 +150,6 @@ public:
     requestDraw();
   }
 
-  void onPixelMap(const lcm::ReceiveBuffer* iBuf,
-                  const std::string& iChannel,
-                  const occ_map::pixel_map_t* iMessage) {
-    // TODO: this assumes float type
-    // TODO: pixel map should support c++ lcm type
-    // for now transcode to c type
-    int encodedSize = iMessage->getEncodedSize();
-    std::vector<uint8_t> bytes(encodedSize);
-    iMessage->encode(&bytes[0], 0, encodedSize);
-    occ_map_pixel_map_t msg;
-    occ_map_pixel_map_t_decode(&bytes[0], 0, encodedSize, &msg);
-
-    // form convenience wrapper object and set mesh texture
-    mPixelMap.reset(new occ_map::PixelMap<float>(&msg));
-    Eigen::Projective3f xform = Eigen::Projective3f::Identity();
-    xform(0,0) = xform(1,1) = 1/mPixelMap->metersPerPixel;
-    xform(0,3) = -mPixelMap->xy0[0]/mPixelMap->metersPerPixel;
-    xform(1,3) = -mPixelMap->xy0[1]/mPixelMap->metersPerPixel;
-    mMeshRenderer.setTexture(mPixelMap->dimensions[0],
-                             mPixelMap->dimensions[1],
-                             sizeof(float)*mPixelMap->dimensions[0],
-                             bot_core::image_t::PIXEL_FORMAT_FLOAT_GRAY32,
-                             (uint8_t*)mPixelMap->data, xform);
-    requestDraw();
-  }
-
-  void onInputModeChanged() {
-    if (mInputMode == InputModeCamera) {
-      getBotEventHandler()->picking = 0;
-    }
-  }
-
   void onAdjustBoxToggleChanged() {
     getBotEventHandler()->picking = mAdjustRequestBoxToggle->get_active();
   }
@@ -240,14 +168,14 @@ public:
 
       ids = { MeshRenderer::ColorModeFlat, MeshRenderer::ColorModeHeight,
               MeshRenderer::ColorModeRange, MeshRenderer::ColorModeNormal,
-              MeshRenderer::ColorModeCamera, MeshRenderer::ColorModeMap };
-      labels = { "Flat", "Height", "Range", "Normal", "Camera", "Pixelmap"};
+              MeshRenderer::ColorModeCamera };
+      labels = { "Flat", "Height", "Range", "Normal", "Camera" };
       mColorMode = MeshRenderer::ColorModeHeight;
       addCombo("Color Mode", mColorMode, labels, ids, appearanceBox);
 
       ids = { MeshRenderer::MeshModePoints, MeshRenderer::MeshModeWireframe,
               MeshRenderer::MeshModeFilled };
-      labels = { "Points", "Wireframe", "Filled"};
+      labels = { "Points", "Wireframe", "Filled" };
       mMeshMode = MeshRenderer::MeshModePoints;
       addCombo("Draw Mode", mMeshMode, labels, ids, appearanceBox);
 
@@ -317,52 +245,6 @@ public:
       mRequestBoxInit = false;
     }
 
-    // request controls box
-    mInputMode = InputModeCamera;
-    if (false) {
-      Gtk::VBox* requestBox = Gtk::manage(new Gtk::VBox());
-      notebook->append_page(*requestBox, "Request");
-
-      Gtk::Button* clearButton = Gtk::manage(new Gtk::Button("Clear"));
-      clearButton->signal_clicked().connect
-        (sigc::mem_fun(*this, &MapsRenderer::onClearRequestButton));
-      requestBox->add(*clearButton);
-
-      ids = { InputModeCamera, InputModeRect, InputModeDepth };
-      labels = { "Move View", "Drag Rect", "Adjust Depth" };
-      mInputMode = InputModeCamera;
-      mInputModeComboBox =
-        addCombo("Input Mode", mInputMode, labels, ids, requestBox);
-      mInputModeComboBox->signal_changed().connect
-        (sigc::mem_fun(*this, &MapsRenderer::onInputModeChanged));
-
-      ids = { ViewBase::TypeOctree, ViewBase::TypePointCloud,
-              ViewBase::TypeDepthImage, ViewBase::TypeDepthImage+1 };
-      labels = { "Octree", "Cloud", "Depth", "Stereo" };
-      mRequestType = ViewBase::TypeOctree;
-      addCombo("Request Type", mRequestType, labels, ids, requestBox);
-
-      mRequestFrequency = 0.1;
-      addSpin("Frequency (Hz)", mRequestFrequency, 0, 10, 0.1, requestBox);
-
-      mRequestResolution = 0.1;
-      addSpin("Resolution (m)", mRequestResolution, 0.01, 1, 0.01, requestBox);
-
-      mRequestTimeWindow = 0;
-      addSpin("Time Window (s)", mRequestTimeWindow, 0, 30, 1, requestBox);
-
-      mRequestRelativeLocation = false;
-      addCheck("Relative Position?", mRequestRelativeLocation, requestBox);
-
-      mRequestRawScan = false;
-      addCheck("Unfiltered Scan?", mRequestRawScan, requestBox);
-
-      Gtk::Button* requestButton = Gtk::manage(new Gtk::Button("Send Request"));
-      requestButton->signal_clicked().connect
-        (sigc::mem_fun(*this, &MapsRenderer::onRequestButton));
-      requestBox->add(*requestButton);
-    }
-
     notebook->show_all();
 
     // handler for updating ui widgets when views are added
@@ -408,75 +290,6 @@ public:
       else ++iter;
     }
     requestDraw();
-  }
-
-  void onClearRequestButton() {
-    mBoxValid = false;
-    mInputModeComboBox->set_active(InputModeCamera);
-    requestDraw();
-  }
-
-  void onRequestButton() {
-    if (!mBoxValid) return;
-    ViewBase::Spec spec;
-    spec.mActive = true;
-    // TODO: HACK for stereo depth
-    if (mRequestType == ViewBase::TypeDepthImage+1) {
-      spec.mType = ViewBase::TypeDepthImage;
-      spec.mViewId = drc::data_request_t::STEREO_MAP_HEAD;
-    }
-    else {
-      spec.mType = ViewBase::Type(mRequestType);
-    }
-    spec.mResolution = mRequestResolution;
-    spec.mFrequency = mRequestFrequency;
-    spec.mTimeMode = ViewBase::TimeModeAbsolute;
-    if (mRequestTimeWindow > 0) {
-      spec.mTimeMin = -mRequestTimeWindow*1e6;
-      spec.mTimeMax = 0;
-      spec.mTimeMode = ViewBase::TimeModeRelative;
-    }
-    spec.mClipPlanes = mFrustum.mPlanes;
-    spec.mRelativeLocation = mRequestRelativeLocation;
-    spec.mMapId = mRequestRawScan ? 2 : 1;
-
-    // compute depth image transform from gl view parameters
-    if (spec.mType == ViewBase::TypeDepthImage) {
-      bool orthographic = Utils::isOrthographic(mProjectionMatrix.matrix());
-      int idx = (orthographic ? 2 : 3);
-      mProjectionMatrix(2, idx) = 1;
-      mProjectionMatrix(2, 5-idx) = 0;
-      mProjectionMatrix(3,2) = fabs(mProjectionMatrix(3,2));
-      Eigen::Projective3f view = Eigen::Projective3f::Identity();
-      view(0,0) = mViewport[2]/2;  view(0,3) = mViewport[2]/2 + mViewport[0];
-      view(1,1) = mViewport[3]/2;  view(1,3) = mViewport[3]/2 + mViewport[1];
-      Eigen::Translation3f subView(-mBoxCorner1[0], -mBoxCorner1[1], 0);
-      Eigen::Affine3f rotation = Eigen::Affine3f::Identity();
-      rotation(1,1) = rotation(2,2) = -1;
-      spec.mTransform =
-        subView*view*mProjectionMatrix*rotation*mModelViewMatrix;
-      spec.mWidth = ceil(mBoxCorner2[0]-mBoxCorner1[0]);
-      spec.mHeight = ceil(mBoxCorner2[1]-mBoxCorner1[1]);
-    }
-
-    // recast bound planes and transform with respect to sensor head
-    if (spec.mRelativeLocation) {
-      Eigen::Isometry3f headToLocal;
-      if (mBotWrapper->getTransform("head", "local", headToLocal)) {
-        Eigen::Matrix3f rotMatx = headToLocal.linear();
-        float theta = atan2(rotMatx(1,0), rotMatx(0,0));
-        Eigen::Matrix3f rotation;
-        rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
-        headToLocal.linear() = rotation;
-        Eigen::Matrix4f planeTransform = headToLocal.matrix().transpose();
-        for (size_t i = 0; i < spec.mClipPlanes.size(); ++i) {
-          spec.mClipPlanes[i] = planeTransform*spec.mClipPlanes[i];
-        }
-        spec.mTransform = spec.mTransform*headToLocal;
-      }
-    }
-    mViewClient.request(spec);
-    mInputModeComboBox->set_active(InputModeCamera);
   }
 
   void onCreateBoxButton() {
@@ -525,11 +338,7 @@ public:
   }
 
   double pickQuery(const double iRayStart[3], const double iRayDir[3]) {
-    if (mInputMode == InputModeCamera) {
-      getBotEventHandler()->picking = 0;
-      return -1;
-    }
-    else if (!mAdjustRequestBoxToggle->get_active()) {
+    if (!mAdjustRequestBoxToggle->get_active()) {
       getBotEventHandler()->picking = 0;
       return -1;
     }
@@ -546,29 +355,6 @@ public:
       Eigen::Vector2f clickPt(iEvent->x, iEvent->y);
       return mInteractiveBox.mousePress(clickPt, iEvent->button, origin, dir);
     }
-
-    if (mInputMode == InputModeRect) {
-      if (iEvent->button == 1) {
-        mDragging = true;
-        mBoxValid = false;
-        mDragPoint1 = Eigen::Vector2f(iEvent->x, iEvent->y);
-        mDragPoint2 = mDragPoint1;
-        requestDraw();
-        return true;
-      }
-    }
-    else if (mInputMode == InputModeDepth) {
-      if (mBoxValid) {
-        if ((iEvent->button == 1) || (iEvent->button == 3)) {
-          mDragging = true;
-          mDragPoint1 = Eigen::Vector2f(iEvent->x, iEvent->y);
-          mDragPoint2 = mDragPoint1;
-          mBaseValue = (iEvent->button == 1) ? mFrustum.mNear : mFrustum.mFar;
-          requestDraw();
-          return true;
-        }
-      }
-    }
     return false;
   }
 
@@ -579,61 +365,6 @@ public:
       Eigen::Vector3f dir(iRayDir[0], iRayDir[1], iRayDir[2]);
       Eigen::Vector2f curPt(iEvent->x, iEvent->y);
       return mInteractiveBox.mouseRelease(curPt, iEvent->button, origin, dir);
-    }
-
-    if (mInputMode == InputModeRect) {
-      if (iEvent->button == 1) {
-        mDragging = false;
-
-        if ((mDragPoint2 - mDragPoint1).norm() < 1) {
-          requestDraw();
-          return false;
-        }
-
-        // compute min and max extents of drag
-        Eigen::Vector2f dragPoint1, dragPoint2;
-        mBoxCorner1[0] = std::min(mDragPoint1[0], mDragPoint2[0]);
-        mBoxCorner1[1] = std::min(mDragPoint1[1], mDragPoint2[1]);
-        mBoxCorner2[0] = std::max(mDragPoint1[0], mDragPoint2[0]);
-        mBoxCorner2[1] = std::max(mDragPoint1[1], mDragPoint2[1]);
-        
-        // get view info
-        getViewInfo();
-
-        // eye position and look direction
-        Eigen::Vector3f pos =
-          -mModelViewMatrix.linear().inverse()*mModelViewMatrix.translation();
-        Eigen::Vector3f dir = -mModelViewMatrix.linear().block<1,3>(2,0);
-        dir.normalize();
-        mFrustum.mPos = pos;
-        mFrustum.mDir = dir;
-
-        // compute four corner rays
-        int height = getGlDrawingArea()->get_allocation().get_height();
-        double u1(mBoxCorner1[0]), v1(height - mBoxCorner1[1]);
-        double u2(mBoxCorner2[0]), v2(height - mBoxCorner2[1]);
-        mFrustum.mNear = 5;
-        mFrustum.mFar = 10;
-
-        // first four planes
-        mFrustum.mPlanes.resize(6);
-        mFrustum.mPlanes[0] = computePlane(u1,v1, u2,v1);
-        mFrustum.mPlanes[1] = computePlane(u2,v1, u2,v2);
-        mFrustum.mPlanes[2] = computePlane(u2,v2, u1,v2);
-        mFrustum.mPlanes[3] = computePlane(u1,v2, u1,v1);
-
-        // front and back
-        updateFrontAndBackPlanes(mFrustum);
-
-        mBoxValid = true;
-        mInputModeComboBox->set_active(InputModeCamera);
-
-        requestDraw();
-        return true;
-      }
-    }
-    else if (mInputMode == InputModeDepth) {
-      mDragging = false;
     }
     return false;
   }
@@ -653,31 +384,6 @@ public:
                                                  origin, dir);
       if (handled) requestDraw();
       return handled;
-    }
-
-    if (mInputMode == InputModeRect) {
-      if (button1 && mDragging) {
-        mDragPoint2 = Eigen::Vector2f(iEvent->x, iEvent->y);
-        requestDraw();
-        return true;
-      }
-    }
-    else if (mInputMode == InputModeDepth) {
-      if (mBoxValid && mDragging) {
-        mDragPoint2 = Eigen::Vector2f(iEvent->x, iEvent->y);
-        float dist = mDragPoint2[1] - mDragPoint1[1];
-        float scaledDist = dist/100;
-        if (button1) {
-          mFrustum.mNear = std::max(0.0f, mBaseValue+scaledDist);
-          requestDraw();
-          return true;
-        }
-        else if (button3) {
-          mFrustum.mFar = std::max(0.0f, mBaseValue+scaledDist);
-          requestDraw();
-          return true;
-        }
-      }
     }
     return false;
   }
@@ -707,43 +413,6 @@ public:
       getViewInfo();
       mInteractiveBox.setBoxValid(mShowRequestBox);
       mInteractiveBox.drawBox();
-    }
-
-    // draw user selection for view box
-    drawViewSelection();
-  }
-
-  void drawViewSelection() {
-    if (mDragging && (mInputMode == InputModeRect)) {
-      int width = getGlDrawingArea()->get_allocation().get_width();
-      int height = getGlDrawingArea()->get_allocation().get_height();
-      glMatrixMode(GL_PROJECTION);
-      glPushMatrix();
-      glLoadIdentity();
-      glOrtho(0, width, height, 0, -1, 1);
-      glMatrixMode(GL_MODELVIEW);
-      glPushMatrix();
-      glLoadIdentity();
-      glDisable(GL_DEPTH_TEST);
-
-      glColor3f(0,0,1);
-      glBegin(GL_LINE_LOOP);
-      glVertex2f(mDragPoint1[0], mDragPoint1[1]);
-      glVertex2f(mDragPoint2[0], mDragPoint1[1]);
-      glVertex2f(mDragPoint2[0], mDragPoint2[1]);
-      glVertex2f(mDragPoint1[0], mDragPoint2[1]);
-      glEnd();
-
-      glEnable(GL_DEPTH_TEST);
-      glMatrixMode(GL_PROJECTION);
-      glPopMatrix();
-      glMatrixMode(GL_MODELVIEW);
-      glPopMatrix();
-    }
-
-    if (mBoxValid) {
-      updateFrontAndBackPlanes(mFrustum);
-      drawFrustum(mFrustum, Eigen::Vector3f(0,0,1));
     }
   }
 
@@ -819,25 +488,6 @@ public:
       }
     }
 
-    // add ground polygon if using pixelmap
-    if ((mPixelMap != NULL) && (mColorMode == MeshRenderer::ColorModeMap)) {
-      float z = 0;  // TODO: for future user-selected height shift
-      std::vector<Eigen::Vector4f> pts(4);
-      pts[0] = Eigen::Vector4f(mPixelMap->xy0[0], mPixelMap->xy0[1], z, 1);
-      pts[1] = Eigen::Vector4f(mPixelMap->xy0[0], mPixelMap->xy1[1], z, 1);
-      pts[2] = Eigen::Vector4f(mPixelMap->xy1[0], mPixelMap->xy1[1], z, 1);
-      pts[3] = Eigen::Vector4f(mPixelMap->xy1[0], mPixelMap->xy0[1], z, 1);
-      Eigen::Projective3f transform = worldToMap;
-      for (int k = 0; k < 4; ++k) {
-        pts[k] = transform*pts[k];
-        pts[k] /= pts[k][3];
-        mesh->mVertices.push_back(pts[k].head<3>());
-      }
-      int index = (int)mesh->mVertices.size() - 4;
-      mesh->mFaces.push_back(Eigen::Vector3i(index, index+1, index+2));
-      mesh->mFaces.push_back(Eigen::Vector3i(index, index+2, index+3));
-    }
-
     // set up mesh renderer
     mMeshRenderer.setColor(data->mColor[0], data->mColor[1], data->mColor[2]);
     mMeshRenderer.setColorMode((MeshRenderer::ColorMode)mColorMode);
@@ -866,19 +516,6 @@ public:
     plane.head<3>() = normal;
     plane[3] = -normal.dot(p1);
     return plane;
-  }
-
-  void updateFrontAndBackPlanes(Frustum& ioFrustum) {
-    Eigen::Vector4f plane;
-    Eigen::Vector3f pt;
-    plane.head<3>() = ioFrustum.mDir;
-    plane[3] = -ioFrustum.mDir.dot(ioFrustum.mPos +
-                                   ioFrustum.mDir*ioFrustum.mNear);
-    ioFrustum.mPlanes[4] = plane;
-    plane = -plane;
-    plane[3] = ioFrustum.mDir.dot(ioFrustum.mPos +
-                                  ioFrustum.mDir*ioFrustum.mFar);
-    ioFrustum.mPlanes[5] = plane;
   }
 
   void addViewMetaData(const int64_t iId) {

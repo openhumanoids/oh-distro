@@ -519,6 +519,8 @@ public:
 
   bool mousePress(const GdkEventButton* iEvent,
                   const double iRayStart[3], const double iRayDir[3]) {
+    if (getBotEventHandler()->picking == 0) return false;
+
     int whichImage = whichImageHit(Eigen::Vector2f(iEvent->x, iEvent->y));
     if (whichImage < 0) return false;
     auto cam = mCameraStates[whichImage];
@@ -568,6 +570,7 @@ public:
 
   bool mouseRelease(const GdkEventButton* iEvent,
                     const double iRayStart[3], const double iRayDir[3]) {
+    if (getBotEventHandler()->picking == 0) return false;
     mDragging = false;
     mActiveCamera = -1;
     getBotEventHandler()->picking = 0;
@@ -577,9 +580,8 @@ public:
 
   bool mouseMotion(const GdkEventMotion* iEvent,
                    const double iRayStart[3], const double iRayDir[3]) {
-    if (mActiveCamera < 0) {
-      return false;
-    }
+    if (getBotEventHandler()->picking == 0) return false;
+    if (mActiveCamera < 0) return false;
     bool button1 = (iEvent->state & GDK_BUTTON1_MASK) != 0;
     bool button2 = (iEvent->state & GDK_BUTTON2_MASK) != 0;
     bool button3 = (iEvent->state & GDK_BUTTON3_MASK) != 0;
