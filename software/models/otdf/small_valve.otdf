@@ -14,7 +14,7 @@
     <param name="length" default_value="0.02" inc="0.0025" min="0" max="100" />
     <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
     <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
-    <link name="plane::xy::base_link" />
+    <link name="plane::xz::base_link" />
     <link name="cylinder">
         <inertial>
             <mass value="${mass}" />
@@ -34,7 +34,7 @@
         </collision>
     </link>
     <joint name="base_joint" type="revolute">
-        <parent link="plane::xy::base_link" type="link" />
+        <parent link="plane::xz::base_link" type="link" />
         <child link="cylinder" type="link" />
         <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
