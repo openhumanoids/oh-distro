@@ -5,11 +5,17 @@
 execute_process(COMMAND rosrun xacro xacro.py atlas.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact.urdf)
 
+execute_process(COMMAND rosrun xacro xacro.py atlas_param.urdf.xacro
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact_param.urdf)
+
 execute_process(COMMAND rosrun xacro xacro.py atlas_full_contact.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model.urdf)
 
 execute_process(COMMAND rosrun xacro xacro.py atlas_full_contact_irobot_hands.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_irobot_hands.urdf)
+
+execute_process(COMMAND rosrun xacro xacro.py atlas_full_contact_no_hands.urdf.xacro
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_no_hands.urdf)
 
 execute_process(COMMAND rosrun xacro xacro.py atlas_fixedjoint_hands.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_minimal_contact_fixedjoint_hands.urdf)
