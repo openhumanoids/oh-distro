@@ -1,5 +1,7 @@
 function LadderPlanner
   %NOTEST
+  location = 'base';
+  status_code = 6;
 
   % simple quasistatic stepping test for atlas. uses the footstep planner
   % with very slow step speeds to generate a quasistatic stepping plan. for
@@ -8,14 +10,14 @@ function LadderPlanner
 
   approved_footstep_plan_listener = FootstepPlanListener('APPROVED_FOOTSTEP_PLAN');
 
-  msg =['QS Stepping Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
   waiting = true;
 
   addpath(fullfile(getDrakePath,'examples','ZMP'));
 
   % load robot model
   urdf_filename = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf');
-  r = Atlas(urdf_filename);
+  r_collision = Atlas(urdf_filename);
+  r = Atlas();
   load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
   r = removeCollisionGroupsExcept(r,{'toe','heel'});
   r = compile(r);
@@ -53,12 +55,15 @@ function LadderPlanner
   step_options.max_forward_step = r.max_forward_step;
   step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
   step_options.full_foot_pose_constraint = true;
+  
+  msg =['QS Stepping Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
 
   while true
     while waiting
       [x,~] = getNextMessage(state_frame,10);
       if (~isempty(x))
         x0=x;
+        q0 = x0(1:nq);
       end
 
       [footsteps, ~] = approved_footstep_plan_listener.getNextMessage(10);
@@ -104,10 +109,10 @@ function LadderPlanner
 
     end
 
-    [~, ~, comtraj, foottraj, ~, ~] = walkingPlanFromSteps(r, x0, footsteps,step_options);
+    [support_times,support, comtraj, foottraj, ~, ~] = walkingPlanFromSteps(r, x0, footsteps,step_options);
     link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
 
-    [x_data,ts] = robotLadderPlan(r, q0, qstar, comtraj, link_constraints);
+    [x_data,ts] = robotLadderPlan(r,r_collision, q0, qstar, comtraj.tspan(end), link_constraints,support_times,support);
 
     plan_pub.publish(ts,x_data);
 
