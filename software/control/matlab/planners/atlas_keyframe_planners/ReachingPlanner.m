@@ -230,6 +230,7 @@ classdef ReachingPlanner < KeyframePlanner
             send_status(3,0,0,'Generating  plan...');
             
             q0 = x0(1:getNumDOF(obj.r));
+            obj.checkPosture(q0);
             T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
             
             if(obj.isBDIManipMode())
@@ -646,11 +647,22 @@ classdef ReachingPlanner < KeyframePlanner
                   end
                   
                 end
-
+                if(findFinalPostureFlag)
+                  display(sprintf('The IK succeeds at the end after %d trials',total_ik_attempt));
+                  if(usedHandWorkspace)
+                    display(sprintf('The IK succeeds after using hand workspace file'));
+                  end
+                else
+                  display(sprintf('The IK fails at the end after %d trials',total_ik_attempt));
+                  if(usedHandWorkspace)
+                    display(sprintf('The IK fails after using hand workspace file'));
+                  end
+                end
+                
                 if(snopt_info >10)
                     % this warning is at an intermediate point in the planning
                     % it is not an indication that the final plan is in violation
-                    warning('The IK fails at the end after %d trials',total_ik_attempt);
+                    
                     send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.',snopt_info);
                     if(obj.planning_mode == 3)
                       send_status(4,0,0,send_msg);

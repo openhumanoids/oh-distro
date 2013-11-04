@@ -370,6 +370,28 @@ classdef KeyframePlanner < handle
             obj.rhand2robotFrameIndMap(i) = find(strcmp(obj.rhand_frame.coordinates{i},obj.r.getStateFrame.coordinates));
           end
         end
+        
+        function checkPosture(obj,q)
+          % Check if q is outside of the robot default joint limits
+          [lb,ub] = obj.r.getJointLimits();
+          coords = obj.r.getStateFrame.coordinates;
+          coords = coords(1:obj.r.getNumDOF);
+          joint_idx = (1:obj.r.getNumDOF)';
+          lb_err = lb-q;
+          ub_err = q-ub;
+          lb_err_idx = joint_idx(lb_err>0);
+          ub_err_idx = joint_idx(ub_err>0);
+          if(~isempty(lb_err_idx))
+            for i = 1:length(lb_err_idx)
+              warning('Joint %s is below lower bound by %5.3f',coords{lb_err_idx(i)},lb_err(lb_err_idx(i)));
+            end
+          end
+          if(~isempty(ub_err_idx))
+            for i = 1:length(ub_err_idx)
+              warning('Joint %s is above upper bound by %5.3f',coords{ub_err_idx(i)},ub_err(ub_err_idx(i)));
+            end
+          end
+        end
     end
      %-----------------------------------------------------------------------------------------------------------------
 end
