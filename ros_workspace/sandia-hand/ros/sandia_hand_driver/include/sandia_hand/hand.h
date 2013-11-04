@@ -79,6 +79,7 @@ public:
   bool setMoboCurrentLimit(const float limit);
   bool getHwVersion(uint32_t &version);
   Side getSide(); 
+  bool sendKeepAlivePacket();
 private:
   Side side_;
   static const int NUM_SOCKS = 4;

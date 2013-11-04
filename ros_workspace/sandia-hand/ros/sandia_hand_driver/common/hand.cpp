@@ -780,3 +780,22 @@ Hand::Side Hand::getSide()
   return Hand::UNKNOWN;
 }
 
+bool Hand::sendKeepAlivePacket()
+{
+  // send a packet to the wrong port on the hand. the hand will silently
+  // drop it, and hopefully it will fix whatever routing table or switching
+  // issues are causing problems periodically.
+  sockaddr_in sa;
+  bzero(&sa, sizeof(sa));
+  sa.sin_family = AF_INET;
+  sa.sin_addr = control_saddr.sin_addr;
+  sa.sin_port = htons(DEFAULT_HAND_BASE_PORT - 1); // this will be dropped
+  uint8_t pkt[8] = {0};
+  if (-1 == sendto(control_sock, pkt, sizeof(pkt), 0, 
+                   (sockaddr *)&sa, sizeof(sa)))
+  {
+    perror("couldn't send keepalive packet");
+    return false;
+  }
+  return true;
+}

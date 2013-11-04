@@ -16,6 +16,7 @@
 #include <sandia_hand_msgs/RelativeJointCommands.h>
 #include <sandia_hand_msgs/GetParameters.h>
 #include <sandia_hand_msgs/SetParameters.h>
+#include <sandia_hand_msgs/CameraStreaming.h>
 using namespace sandia_hand;
 using std::string;
 using std::vector;
@@ -29,6 +30,7 @@ ros::Publisher *g_raw_mobo_state_pub = NULL;
 ros::Publisher *g_raw_palm_state_pub = NULL;
 bool g_done = false;
 bool g_use_finger[4] = { true, true, true, true };
+bool g_camera_streaming = false;
 static int32_t g_last_fmcb_hall_pos[Hand::NUM_FINGERS][3]; // hack
 
 // set the joint limits for each finger
@@ -216,6 +218,25 @@ bool setJointLimitPolicySrv(Hand *hand,
   return setJointLimitPolicy(hand, req.policy);
 }
 
+void cameraStreamingCallback(Hand *hand, const sandia_hand_msgs::CameraStreamingConstPtr &msg)
+{
+  switch (msg->mode) {
+  case 0:
+    g_camera_streaming = false;
+    hand->setCameraStreaming(false, false);
+    break;
+  case 1:
+    g_camera_streaming = true;
+    hand->setCameraStreaming(true, false);
+    break;
+  case 2:
+    g_camera_streaming = false;
+    hand->setCameraStreaming(true, false);
+    break;
+  default:
+    break;
+  }
+}
 
 void fingerJointCommandsCallback(Hand *hand, const uint8_t finger_idx,
                                  const osrf_msgs::JointCommandsConstPtr &msg)
@@ -384,9 +405,12 @@ boost::shared_ptr<camera_info_manager::CameraInfoManager> g_cinfo[NUM_CAMS];
 image_transport::CameraPublisher *g_image_pub[NUM_CAMS] = {0};
 sensor_msgs::Image g_img_msg[NUM_CAMS];
 
-void image_cb(const uint8_t cam_idx, const uint32_t frame_count, 
+void image_cb(Hand *hand,
+              const uint8_t cam_idx, const uint32_t frame_count, 
               const uint8_t *img_data)
 {
+  if (!g_camera_streaming) hand->setCameraStreaming(false,false);
+
   if (cam_idx > 1)
     return; // woah
   fillImage(g_img_msg[cam_idx], "mono8",
@@ -402,6 +426,7 @@ void image_cb(const uint8_t cam_idx, const uint32_t frame_count,
   ci->header.frame_id = "stereo_cam";
   if (g_image_pub[cam_idx])
     g_image_pub[cam_idx]->publish(g_img_msg[cam_idx], *ci);
+  
 }
 
 int main(int argc, char **argv)
@@ -453,6 +478,8 @@ int main(int argc, char **argv)
     ROS_INFO("not using fingers");
   if (!use_phalanges)
     ROS_INFO("not using phalanges");
+  double keepalive_interval;
+  nh_private.param<double>("keepalive_interval", keepalive_interval, 1.0);
 
   // be sure we can ping it
   if (!hand.pingMoboMCU())
@@ -483,7 +510,7 @@ int main(int argc, char **argv)
   image_pub[1] = it.advertiseCamera("right/image_raw", 1);
   g_image_pub[0] = &image_pub[0];
   g_image_pub[1] = &image_pub[1];
-  hand.setImageCallback(&image_cb); 
+  hand.setImageCallback(boost::bind(image_cb, &hand, _1, _2, _3));
   // abomination
   ros::Publisher raw_finger_state_pubs[Hand::NUM_FINGERS];
   if (use_fingers)
@@ -606,6 +633,10 @@ int main(int argc, char **argv)
        ("relative_joint_commands", 1, 
         boost::bind(relativeJointCommandsCallback, &hand, _1));
 
+  ros::Subscriber camera_streaming_sub = 
+    nh.subscribe<sandia_hand_msgs::CameraStreaming>("camera_streaming", 1, 
+        boost::bind(cameraStreamingCallback, &hand, _1));
+
   ros::Subscriber finger_joint_commands_subs[Hand::NUM_FINGERS];
   ros::ServiceServer get_param_srvs[Hand::NUM_FINGERS];
   ros::ServiceServer set_param_srvs[Hand::NUM_FINGERS];
@@ -656,6 +687,7 @@ int main(int argc, char **argv)
     hand.setCameraStreaming(true, true);
   ros::spinOnce();
   ros::Time t_prev_spin = ros::Time::now();
+  ros::Time t_prev_keepalive = ros::Time::now();
   for (int i = 0; !g_done; i++)
   {
     hand.listen(0.01);
@@ -665,6 +697,11 @@ int main(int argc, char **argv)
         break;
       ros::spinOnce();
       t_prev_spin = ros::Time::now();
+    }
+    if ((ros::Time::now() - t_prev_keepalive).toSec() > keepalive_interval)
+    {
+      hand.sendKeepAlivePacket();
+      t_prev_keepalive = ros::Time::now();
     }
   }
   shutdownHand(&hand);
