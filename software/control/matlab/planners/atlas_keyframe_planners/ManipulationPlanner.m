@@ -213,7 +213,7 @@ classdef ManipulationPlanner < KeyframePlanner
 
             for k=1:length(ind),
 
-              if(strcmp('left_palm',ee_names{ind(k)}))
+              if(strcmp(obj.lh_name,ee_names{ind(k)}))
                 l_ee_goal = ee_loci(:,ind(k));
                 lhandT = zeros(6,1);
                 T_world_palm_l = HT(l_ee_goal(1:3),l_ee_goal(4),l_ee_goal(5),l_ee_goal(6));
@@ -243,7 +243,7 @@ classdef ManipulationPlanner < KeyframePlanner
                 end
               end
 
-              if(strcmp('right_palm',ee_names{ind(k)}))
+              if(strcmp(obj.rh_name,ee_names{ind(k)}))
                 r_ee_goal = ee_loci(:,ind(k));
                 rhandT = zeros(6,1);
                 T_world_palm_r = HT(r_ee_goal(1:3),r_ee_goal(4),r_ee_goal(5),r_ee_goal(6));

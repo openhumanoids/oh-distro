@@ -244,6 +244,8 @@ classdef EndPosePlanner < KeyframePlanner
           iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
           iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));
           iktraj_options = iktraj_options.setFixInitialState(false);
+          iktraj_options = iktraj_options.setMajorIterationsLimit(1000);
+          iktraj_options = iktraj_options.setIterationsLimit(10000);
           
           qsc = QuasiStaticConstraint(obj.r);
           qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);  

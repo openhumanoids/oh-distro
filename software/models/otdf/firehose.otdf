@@ -201,7 +201,7 @@
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141726 1.5044 1.11495 -0.00331834 1.5057 0.9843 0.0139852 1.49783 0.88404 0.369259 1.38261 0.653276 " />
     </grasp_seed>
-   <!--set 1 -->
+    <!--set 1 -->
     <!--   <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_2_2_0" />
@@ -216,7 +216,6 @@
         <grasp_type type="0" />
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0142743 1.52039 0.976293 -0.00429892 1.50099 0.983862 0.0140799 1.47222 1.0036 0.909973 1.25818 0.718043 " />
     </grasp_seed> -->
-
     <!--set 2 -->
     <!-- <grasp_seed>
         <appendage type="HAND" />
@@ -232,5 +231,11 @@
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="0.141 1.201 0.968 0.002 1.307 0.813 0.018 1.284 0.856 0.261 0.516 0.613 " />
     </grasp_seed> -->
-
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_2_1_0" />
+        <relative_pose rpy="0.779919 1.41859 -2.29138" xyz="-0.0163478 -0.0171454 -0.18196" />
+        <grasp_type type="4" />
+        <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 1.5 0 0 1.5 0 1.5 0 " />
+    </grasp_seed>
 </object>
