@@ -561,8 +561,21 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
   if ( fabs(aff_len(face_dim)-aff_len(short_dim)) < 0.02){
     if ( (fabs(distances_to_face(face_dim ))< 0.02)&& 
          (fabs(distances_to_face(short_dim))< 0.02)   ){
-      std::cout << "diamond of a square block\n";
-    // TODO: fix rotation and translation
+      std::cout << "diamond grasp of a square block\n";
+      Eigen::Isometry3d tf_to_corner = Eigen::Isometry3d::Identity();
+      if ((face_dim==1)&& (long_dim==2)) {
+        if (grasp_point( face_dim ) >0 ){
+          tf_to_corner.translation().z() = -aff_len(face_dim)/2;
+          tf_to_corner.rotate( euler_to_quat( 0 , -M_PI/4,0  ) );   
+        }else{
+          tf_to_corner.translation().z() = aff_len(face_dim)/2;
+          tf_to_corner.rotate( euler_to_quat( M_PI , M_PI/4,  0 ) );   
+        }
+      }else{
+        tf_to_corner.translation().z() = aff_len(face_dim)/2;
+        tf_to_corner.rotate( euler_to_quat( M_PI , M_PI/4,  0 ) );   
+      }
+      aff_to_actualpalm =aff_to_actualpalm*tf_to_corner;    
     }
   }
   
