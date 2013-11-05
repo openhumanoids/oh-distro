@@ -23,7 +23,10 @@ classdef EndPosePlanner < KeyframePlanner
             addpath spherical_interp/;
             obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-            joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+            
+            
+            joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
+            %joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
             obj.shrinkfactor = 0.4;
@@ -593,7 +596,7 @@ classdef EndPosePlanner < KeyframePlanner
             cost.back_bkz = 10;
             cost.back_bky = 100000;
             cost.back_bkx = 100000;
-            cost.neck_ay =  100;
+            cost.neck_ay =  0;
             cost.l_arm_usy = 1;
             cost.l_arm_shx = 1;
             cost.l_arm_ely = 0.5; % encourage elbows and wrist

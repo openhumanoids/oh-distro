@@ -9,6 +9,9 @@ function t_breaks = addIKtrajTimeBreaks(iktraj_tbreaks,constraint_cell)
   %                           moments being the boundary of time
   %                           spans of each constraint, together with
   %                           the original iktraj_tbreaks
+  if(isempty(iktraj_tbreaks))
+      iktraj_tbreaks = [0 1];
+  end
   tmax = max(iktraj_tbreaks);
   tmin = min(iktraj_tbreaks);
   t_breaks = iktraj_tbreaks;
@@ -18,6 +21,7 @@ function t_breaks = addIKtrajTimeBreaks(iktraj_tbreaks,constraint_cell)
     t_breaks = [t_breaks tspan];
   end
   t_breaks_tmp = sort(t_breaks);
+ 
   t_breaks  = t_breaks_tmp(1);
   for i = 2:length(t_breaks_tmp)
     if(t_breaks_tmp(i)-t_breaks_tmp(i-1)>1e-3)

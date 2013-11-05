@@ -154,6 +154,7 @@ posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
 pose_goal_listener = TrajOptConstraintListener('POSE_GOAL');
 manip_plan_mode_listener = ManipPlanModeListener('MANIP_PLANNER_MODE_CONTROL');
 
+
 % WorkspaceURDF subscriber
 % workspace_urdf_listener = WorkspaceURDFListener('COLLISION_AVOIDANCE_URDFS');
 % urdf_names = {};
@@ -170,6 +171,8 @@ constraint_listener = TrajOptConstraintListener('MANIP_PLAN_CONSTRAINT');
 plan_pelvis_adjust_listener = PlanAdjustModeListener('ADJUST_PLAN_TO_CURRENT_PELVIS_POSE');
 sse_compensation_listener = PlanAdjustModeListener('MOVE_TO_COMPENSATE_SSE');
 plan_adjust_and_reach_listener= PlanAdjustModeListener('ADJUST_PLAN_AND_REACH'); 
+manip_plan_initseed_toggle_listener= PlanAdjustModeListener('MANIP_PLAN_FROM_CURRENT_STATE'); % Turn off when debugging
+
 
 % The following support multiple ee's at the same time
 trajoptconstraint_listener = TrajOptConstraintListener('DESIRED_MANIP_PLAN_EE_LOCI');
@@ -250,6 +253,12 @@ while(1)
             manip_planner.setPlanningMode(3);
             send_status(3,0,0,'KeyframePlanners:TELEOP MODE');
         end
+    end
+    
+    x=manip_plan_initseed_toggle_listener.getNextMessage(msg_timeout);
+    if(~isempty(x))
+        disp('Manip Planner init seed toggle msg received .');
+        manip_planner.toggleInitSeed(x.mode);
     end
     
     % Pose Goals
