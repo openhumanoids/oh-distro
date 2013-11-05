@@ -16,7 +16,7 @@
     <param name="lever_thick" default_value="0.015" inc="0.0025" min="0" max="100" />
     <param name="lever_offset_from_door" default_value="0.05" inc="0.0025" min="-10" max="10" />
     <param name="lever_offset_x" default_value="0.000" inc="0.0025" min="-10" max="10" />
-    <param name="lever_offset_z" default_value="0.000" inc="0.0025" min="-10" max="10" />
+    <param name="lever_offset_z" default_value="0.040" inc="0.0025" min="-10" max="10" />
     <!-- Size of door -->
     <param name="door_start_theta" default_value="0.00" inc="0.0025" min="-3.146" max="3.146" />
     <param name="lX" default_value="0.915" inc="0.01" min="0" max="100" />
@@ -130,14 +130,14 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="door_base_0" />
-        <relative_pose rpy="6.96034e-09 0.0004993 -0.966669" xyz="0.63295 1.06833 -0.828904" />
+        <relative_pose rpy="3.41266e-09 0.000499269 -1.14696" xyz="0.575261 1.06736 -0.828899" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="door_base_0" />
-        <relative_pose rpy="1.66227e-09 0.000499353 -1.08239" xyz="0.226607 0.864747 -0.828916" />
+        <relative_pose rpy="1.45298e-08 0.00049947 -1.08709" xyz="0.145525 0.859109 -0.828911" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
