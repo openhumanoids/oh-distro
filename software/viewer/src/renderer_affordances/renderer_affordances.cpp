@@ -921,7 +921,14 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
         self->dragging = 0;
         if(self->selection_hold_on && !self->show_popup_onrelease && !self->dblclk_popup){
             if((self->otdf_instance_hold._gl_object->is_bodypose_adjustment_enabled())||(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled()))
+            {
                self->affCollection->publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance); 
+               // reset desired state
+                std::stringstream oss;
+                oss << (self->otdf_instance_hold.otdf_type)<< "_"<< self->otdf_instance_hold.uid; 
+                string name = oss.str();
+                reset_desired_state_of_selected_object(self,name);
+            }
         }
     }
     if (ehandler->picking==1)
@@ -964,7 +971,10 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
         }
         else if ((self->object_selection != " "))
         {
+           //int64_t tic = bot_timestamp_now();
            set_object_current_state_on_marker_motion(self,start,dir);
+           //int64_t toc = bot_timestamp_now();
+           //cout << "mouse motion: " << (toc - tic) / 1000000.0 << endl;
         }
       
       else if ((self->stickyhand_selection != " "))

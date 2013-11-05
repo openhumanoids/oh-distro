@@ -206,10 +206,23 @@ namespace renderer_affordances_gui_utils
             //Get affordance origin
             typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
             object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(self->object_selection));
-            KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
-            temp.trans_vec[0] = T_world_object.p[0]; temp.trans_vec[1] = T_world_object.p[1]; temp.trans_vec[2] = T_world_object.p[2];
+            
             double x,y,z,w;
-            T_world_object.M.GetQuaternion(x,y,z,w);
+            //KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
+            //temp.trans_vec[0] = T_world_object.p[0]; temp.trans_vec[1] = T_world_object.p[1]; temp.trans_vec[2] = T_world_object.p[2];
+            //T_world_object.M.GetQuaternion(x,y,z,w);
+             
+            std::string object_name = self->object_selection;
+            std::string object_geometry_name = self->link_selection;
+            std::string object_name_token  = object_name + "_";
+            size_t found = object_geometry_name.find(object_name_token);  
+            std::string geometry_name =object_geometry_name.substr(found+object_name_token.size());
+            
+            KDL::Frame T_world_objectgeom;
+            bool success =obj_it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_objectgeom);
+            temp.trans_vec[0] = T_world_objectgeom.p[0]; temp.trans_vec[1] = T_world_objectgeom.p[1]; temp.trans_vec[2] = T_world_objectgeom.p[2];
+            T_world_objectgeom.M.GetQuaternion(x,y,z,w);
+            
             temp.rot_quat[0] = w; temp.rot_quat[1] = x; temp.rot_quat[2] = y; temp.rot_quat[3] = z;  
             
             string goal_type_string = "";
@@ -686,33 +699,7 @@ namespace renderer_affordances_gui_utils
 
     } 
     else if(! strcmp(name, PARAM_RESET_DESIRED_STATE)) {
-       it->second._gl_object->set_future_state(it->second._gl_object->_T_world_body,it->second._gl_object->_current_jointpos);   
-       it->second._gl_object->disable_future_display(); 
-      // clear previously accumulated motion states for all dependent bodies
-      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
-      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
-      while (hand_it!=self->stickyHandCollection->_hands.end()) 
-      {
-         std::string hand_name = std::string(hand_it->second.object_name);
-         if (hand_name == (it->first))
-         {
-            hand_it->second._gl_hand->clear_desired_body_motion_history();
-         }
-         hand_it++;
-      }
-
-      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
-      sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
-      while (foot_it!=self->stickyFootCollection->_feet.end()) 
-      {
-         std::string foot_name = std::string(foot_it->second.object_name);
-         if (foot_name == (it->first))
-         {
-            foot_it->second._gl_foot->clear_desired_body_motion_history();
-         }
-         foot_it++;
-      }
-       
+       reset_desired_state_of_selected_object(self,self->object_selection);
        bot_viewer_request_redraw(self->viewer);
     } 
     else if ((!strcmp(name, PARAM_SEED_LH))||(!strcmp(name, PARAM_SEED_RH))) {

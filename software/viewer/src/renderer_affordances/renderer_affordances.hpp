@@ -827,8 +827,9 @@ struct RendererAffordances {
         self->otdf_instance_hold._otdf_instance->setParam("z",T_world_object.p[2]);
         self->otdf_instance_hold._otdf_instance->setParam("roll",roll);
         self->otdf_instance_hold._otdf_instance->setParam("pitch",pitch);
-        self->otdf_instance_hold._otdf_instance->setParam("yaw",yaw);
-        self->otdf_instance_hold._otdf_instance->update(); 
+        self->otdf_instance_hold._otdf_instance->setParam("yaw",yaw);   
+        self->otdf_instance_hold._otdf_instance->update();  // TODO: Something is wrong here with joint and link patterns, occasionally it takes 3 times as long
+                                                            // for link patterns greate than 12.
         self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
 
       }
@@ -1573,6 +1574,41 @@ struct RendererAffordances {
     self->prev_ray_hit_drag = self->ray_hit_drag;
     return shortest_distance;
   }
+  //-------------------------------------------------------------------------------
+ inline static void reset_desired_state_of_selected_object(void *user, std::string object_name)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator it= self->affCollection->_objects.find(object_name);
+  
+    it->second._gl_object->set_future_state(it->second._gl_object->_T_world_body,it->second._gl_object->_current_jointpos);   
+      it->second._gl_object->disable_future_display(); 
+      // clear previously accumulated motion states for all dependent bodies
+      typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+      sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.begin();
+      while (hand_it!=self->stickyHandCollection->_hands.end()) 
+      {
+         std::string hand_name = std::string(hand_it->second.object_name);
+         if (hand_name == (it->first))
+         {
+            hand_it->second._gl_hand->clear_desired_body_motion_history();
+         }
+         hand_it++;
+      }
+
+      typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+      sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.begin();
+      while (foot_it!=self->stickyFootCollection->_feet.end()) 
+      {
+         std::string foot_name = std::string(foot_it->second.object_name);
+         if (foot_name == (it->first))
+         {
+            foot_it->second._gl_foot->clear_desired_body_motion_history();
+         }
+         foot_it++;
+      }
+      
+ }  
   
 }//end_namespace
 

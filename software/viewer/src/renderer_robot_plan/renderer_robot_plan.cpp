@@ -35,7 +35,9 @@
 #define PARAM_MANIP_PLAN_MODE "ManipPlnr Mode"
 #define PARAM_EXEC_SPEED "EE Speed Limit(cm/s)"
 #define PARAM_EXEC_ANG_SPEED "Joint Speed Limit(deg/s)"
+#define PARAM_UPDATE_PLANNER_PARAMS "Update Params"
 #define PARAM_PLAN_ADJUST_MODE "Plan Adjustment Filter"
+#define PARAM_MANIP_PLAN_INITSEED_MODE "ManipPlanFromCurrentState"
 
 #define PARAM_ADJUST_PLAN_TO_CURRENT_POSE "Adjust Plan To Current Pose"
 #define PARAM_ADJUST_PLAN_AND_REACH "Achieve First Posture"
@@ -641,7 +643,38 @@ static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel,
   RendererRobotPlan *self = (RendererRobotPlan*) user;
   self->robot_utime = msg->utime;
 }
-
+static void update_planar_params( void *user)
+{
+    RendererRobotPlan *self = (RendererRobotPlan*) user;  
+                            
+     {                                    
+       drc::plan_execution_speed_t msg;
+       msg.utime = bot_timestamp_now();
+       msg.speed = (M_PI/180)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_ANG_SPEED); //pub in rads/s; converting from deg/s
+       self->lcm->publish("DESIRED_JOINT_SPEED", &msg);
+       msg.speed = (0.01)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_SPEED);//pub in m/s; converting from cm/s
+       self->lcm->publish("DESIRED_EE_ARC_SPEED", &msg);
+     }
+     
+     {
+       drc::manip_plan_control_t msg;
+       msg.utime= bot_timestamp_now();
+       msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_MANIP_PLAN_MODE);
+        if(msg.mode!=1)
+        {
+          self->adjust_endstate = true;
+          bot_gtk_param_widget_set_bool(self->pw, PARAM_ADJUST_ENDSTATE,self->adjust_endstate);
+        }
+       self->lcm->publish("MANIP_PLANNER_MODE_CONTROL", &msg);
+     }
+     {  
+       drc::plan_adjust_mode_t msg;
+       msg.utime = bot_timestamp_now();
+       msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_MANIP_PLAN_INITSEED_MODE);
+       self->lcm->publish("MANIP_PLAN_FROM_CURRENT_STATE", &msg);
+     }
+              
+}
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) user;
@@ -675,6 +708,10 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.utime = bot_timestamp_now();
     msg.speed = (M_PI/180)*bot_gtk_param_widget_get_double(self->pw, PARAM_EXEC_ANG_SPEED); //pub in rads/s; converting from deg/s
     self->lcm->publish("DESIRED_JOINT_SPEED", &msg);
+  }
+  else if(!strcmp(name,PARAM_UPDATE_PLANNER_PARAMS))
+  {
+     update_planar_params(self);
   }
   else if(!strcmp(name,PARAM_SSE_KP_LEFT)){
     double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_LEFT);
@@ -726,10 +763,16 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_PLAN_ADJUST_MODE);
     self->lcm->publish("ADJUST_PLAN_AND_REACH", &msg);
   }
+  else if(! strcmp(name, PARAM_MANIP_PLAN_INITSEED_MODE)){
+    drc::plan_adjust_mode_t msg;
+    msg.utime = self->robot_utime;
+    msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_MANIP_PLAN_INITSEED_MODE);
+    self->lcm->publish("MANIP_PLAN_FROM_CURRENT_STATE", &msg);
+  }
   else if(! strcmp(name, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE)){
     drc::plan_adjust_mode_t msg;
     msg.utime = self->robot_utime;
-    msg.mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_PLAN_ADJUST_MODE);
+    msg.mode = (int) bot_gtk_param_widget_get_bool(self->pw,PARAM_PLAN_ADJUST_MODE);
     self->lcm->publish("MOVE_TO_COMPENSATE_SSE", &msg);
   }  
   bot_viewer_request_redraw(self->viewer);
@@ -787,6 +830,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FULLPLAN, 1, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_KEYFRAMES, 1, NULL);
+ 
     
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
@@ -808,14 +852,21 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                        
     bot_gtk_param_widget_add_separator (self->pw,"Planner Params"); 
     bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                1, 20, 0.5, 10);                                     
+                                                1, 20, 0.5, 20);                                     
     bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_ANG_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                1,50, 1, 15);         
+                                                1,50, 1, 30); 
+
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_MANIP_PLAN_INITSEED_MODE, 1, NULL);
+
+                                                     
     bot_gtk_param_widget_add_enum(self->pw, PARAM_MANIP_PLAN_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::manip_plan_control_t::IKSEQUENCE_ON, 
                                        "IkSequenceOn", drc::manip_plan_control_t::IKSEQUENCE_ON,
                                        "IkSequenceOff", drc::manip_plan_control_t::IKSEQUENCE_OFF,
                                         "Teleop", drc::manip_plan_control_t::TELEOP, NULL);
     
+    bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_PLANNER_PARAMS, NULL);
+    update_planar_params(self);
+        
    	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
   	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
@@ -864,7 +915,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     ehandler->mouse_release = mouse_release;
     ehandler->mouse_motion = mouse_motion;
     ehandler->user = self;
-
+    
     bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
    
 }
