@@ -15,6 +15,7 @@ classdef EndPosePlanner < KeyframePlanner
         l_hpx_lb
         l_hpy_lb
         shrinkfactor
+        pelvis_upright_gaze_tol
     end
     
     methods
@@ -41,6 +42,7 @@ classdef EndPosePlanner < KeyframePlanner
             obj.l_hpy_ub = -0.2;
             obj.l_hpx_lb = 0.1;
             obj.l_hpy_lb = -1.0;
+            obj.pelvis_upright_gaze_tol = pi/30;
         end
         %-----------------------------------------------------------------------------------------------------------------
         function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags) %#ok<INUSD>
@@ -139,7 +141,7 @@ classdef EndPosePlanner < KeyframePlanner
             rfoot_constraint = {WorldFixedBodyPoseConstraint(obj.r,obj.r_foot_body,[0 1])};
             iktraj_lfoot_constraint = [iktraj_lfoot_constraint,lfoot_constraint];     
             iktraj_rfoot_constraint = [iktraj_rfoot_constraint,rfoot_constraint];
-            iktraj_pelvis_constraint = {WorldFixedBodyPoseConstraint(obj.r,obj.pelvis_body,[0 1])};
+            iktraj_pelvis_constraint = {WorldFixedBodyPoseConstraint(obj.r,obj.pelvis_body,[0 1]),WorldGazeDirConstraint(obj.r,obj.pelvis_body,[0;0;1],[0;0;1],obj.pelvis_upright_gaze_tol,[0 1])};
 
             % Solve IK
             timeIndices = unique(Indices);
@@ -393,8 +395,8 @@ classdef EndPosePlanner < KeyframePlanner
             %        utorso_constraint = parse2PosQuatConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0,0,1e-2,[-inf inf]);
             
             ik_dist_constraint = {};
-
-
+            
+            pelvis_constraint = {WorldGazeDirConstraint(obj.r,obj.pelvis_body,[0;0;1],[0;0;1],obj.pelvis_upright_gaze_tol)};
             ind=find(Indices==timeIndices(1));
             for k=1:length(ind),
                 if(strcmp('pelvis',ee_names{ind(k)}))
@@ -514,11 +516,11 @@ classdef EndPosePlanner < KeyframePlanner
     
                 if(~isempty(head_constraint))
                     [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
-                        rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},head_constraint{:},...
+                        rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},head_constraint{:},pelvis_constraint{:},...
                         ik_dist_constraint{:},stance_constraint{:},joint_constraint,qsc,ikoptions);
                 else
                     [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
-                        rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},...
+                        rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},pelvis_constraint{:},...
                         ik_dist_constraint{:},stance_constraint{:},joint_constraint,qsc,ikoptions);
                 end
                 % end
@@ -584,7 +586,7 @@ classdef EndPosePlanner < KeyframePlanner
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 1;
             cost.base_y = 1;
-            cost.base_z = 1;
+            cost.base_z = 0;
             cost.base_roll = 1000;
             cost.base_pitch = 1000;
             cost.base_yaw = 1;
@@ -601,7 +603,7 @@ classdef EndPosePlanner < KeyframePlanner
             cost.l_leg_hpz = 1;
             cost.l_leg_hpx = 1;
             cost.l_leg_hpy = 1;
-            cost.l_leg_kny = 1;
+            cost.l_leg_kny = 0.5;
             cost.l_leg_aky = 1;
             cost.l_leg_akx = 1;
             cost.r_arm_usy = cost.l_arm_usy;
