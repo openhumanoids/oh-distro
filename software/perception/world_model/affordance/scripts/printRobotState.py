@@ -17,7 +17,6 @@ def timestamp_now (): return int (time.time () * 1000000)
 
 
 def quat_to_euler(q) :
-  
   roll_a = 2.0 * (q[0]*q[1] + q[2]*q[3]);
   roll_b = 1.0 - 2.0 * (q[1]*q[1] + q[2]*q[2]);
   roll = math.atan2 (roll_a, roll_b);
@@ -28,35 +27,35 @@ def quat_to_euler(q) :
   yaw_a = 2.0 * (q[0]*q[3] + q[1]*q[2]);
   yaw_b = 1.0 - 2.0 * (q[2]*q[2] + q[3]*q[3]);  
   yaw = math.atan2 (yaw_a, yaw_b);
-  
-  #a = q[0]
-  #b = q[1]
-  #c = q[2]  
-  #d = q[3]  
-  #roll = math.atan2(2.0*(c*d + b*a),a*a-b*b-c*c+d*d);
-  #pitch = math.asin(-2.0*(b*d - a*c));
-  #yaw = math.atan2(2.0*(b*c + d*a),a*a+b*b-c*c-d*d);
-
-  
-  
-  
-  #roll = math.atan2( 2*(q[0]*q[1]+q[2]*q[3]), 1-2*(q[1]*q[1]+q[2]*q[2]));
-  #pitch = math.asin(2*(q[0]*q[2]-q[3]*q[1]));
-  #yaw = math.atan2(2*(q[0]*q[3]+q[1]*q[2]), 1-2*(q[2]*q[2]+q[3]*q[3]));
   return [roll,pitch,yaw]
 
-  
+def euler_to_quat(roll, pitch, yaw):
+  double sy = math.sin(yaw*0.5);
+  double cy = math.cos(yaw*0.5);
+  double sp = math.sin(pitch*0.5);
+  double cp = math.cos(pitch*0.5);
+  double sr = math.sin(roll*0.5);
+  double cr = math.cos(roll*0.5);
+  double w = cr*cp*cy + sr*sp*sy;
+  double x = sr*cp*cy - cr*sp*sy;
+  double y = cr*sp*cy + sr*cp*sy;
+  double z = cr*cp*sy - sr*sp*cy;
+  return [w,x,y,z]
   
   
 def on_est_robot_state(channel, data):
   m = robot_state_t.decode(data)
-  pos = [m.pose.translation.x, m.pose.translation.y, m.pose.translation.z ]
-  rpy = quat_to_euler([m.pose.rotation.w, m.pose.rotation.x, m.pose.rotation.y, m.pose.rotation.z] )
-  scale = 180.0/math.pi
-  pos.extend(rpy)
+  pos=[]
+  # = [m.pose.translation.x, m.pose.translation.y, m.pose.translation.z ]
+  quat = [m.pose.rotation.w, m.pose.rotation.x, m.pose.rotation.y, m.pose.rotation.z]
+  print "Quat wxyz",str(len(quat))
+  qstrout = ""
+  for x in quat:
+    qstrout += str(x) + ", "
+  print qstrout[:-2] # skip last ", "
+
   pos.extend( m.joint_position[0:28] )
-  #print pos
-  print len(pos)
+  print "Joints",str(len(pos))
   strout = ""
   for x in pos:
     strout += str(x) + ", "
