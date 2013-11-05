@@ -1,0 +1,89 @@
+<?xml version="1.0" ?>
+<object name="firehose_simple">
+    <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <!--roll,pitch,yaw are about Body Frame-->
+    <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
+    <link name="plane::xy::base_link" />
+    <!--<link name="cylinder">-->
+    <!--<inertial>-->
+    <!--   <mass value="${(Density*(3.141^2)*(length)*(radius^2))}" />-->
+    <!--   <inertia ixx="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"-->
+    <!--            iyy="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}" iyz="0.0"-->
+    <!--            izz="${((Density*(3.141^2)*(length)*(radius^2))/2)*(radius^2)}" />-->
+    <!--</inertial>-->
+    <!--	<visual>-->
+    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--		<geometry>-->
+    <!--			<cylinder radius="${radius}" length="${length}"/> -->
+    <!--		</geometry>-->
+    <!--	</visual>-->
+    <!--	<collision>-->
+    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--		<geometry>-->
+    <!--			<cylinder radius="${radius}" length="${length}"/> -->
+    <!--		</geometry>-->
+    <!--	</collision>-->
+    <!--</link>-->
+    <link name="cylinder_0">
+        <inertial>
+            <mass value="${mass}" />
+            <inertia ixx="1" ixy="0.0" ixz="0.0" iyy="1" iyz="0.0" izz="1" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="0.0266" length="0.042" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="0.0266" length="0.042" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="cylinder_1">
+        <inertial>
+            <mass value="${mass}" />
+            <inertia ixx="1" ixy="0.0" ixz="0.0" iyy="1" iyz="0.0" izz="1" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0.033" />
+            <geometry>
+                <cylinder radius="0.031" length="0.024" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0.033" />
+            <geometry>
+                <cylinder radius="0.031" length="0.024" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="base_joint_0" type="fixed">
+        <parent link="plane::xy::base_link" type="link" />
+        <child link="cylinder_0" type="link" />
+        <origin rpy="0 0 0" xyz="0 0 0" />
+        <axis xyz="0 0 1" />
+    </joint>
+    <joint name="base_joint_1" type="fixed">
+        <parent link="plane::xy::base_link" type="link" />
+        <child link="cylinder_1" type="link" />
+        <origin rpy="0 0 0" xyz="0 0 0" />
+        <axis xyz="0 0 1" />
+    </joint>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="1.571 0.0 1.571" xyz="0 0.12 0.0" />
+        <grasp_type type="4" />
+        <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
+</object>
