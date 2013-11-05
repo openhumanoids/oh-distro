@@ -138,4 +138,5 @@
     </grasp_seed>
     <plan_seed name="2013-11-04-21-48::right_60deg" />
     <plan_seed name="2013-11-04-21-53::right_100deg" />
+    <plan_seed name="2013-11-05-16-01::right_reach_top" />
 </object>
