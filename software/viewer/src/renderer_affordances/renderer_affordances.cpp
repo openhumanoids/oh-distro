@@ -924,10 +924,10 @@ static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const dou
             {
                self->affCollection->publish_otdf_instance_to_affstore("AFFORDANCE_TRACK",(self->otdf_instance_hold.otdf_type),self->otdf_instance_hold.uid,self->otdf_instance_hold._otdf_instance); 
                // reset desired state
-                std::stringstream oss;
-                oss << (self->otdf_instance_hold.otdf_type)<< "_"<< self->otdf_instance_hold.uid; 
-                string name = oss.str();
-                reset_desired_state_of_selected_object(self,name);
+                //std::stringstream oss;
+                //oss << (self->otdf_instance_hold.otdf_type)<< "_"<< self->otdf_instance_hold.uid; 
+                //string name = oss.str();
+                //reset_desired_state_of_selected_object(self,name);
             }
         }
     }

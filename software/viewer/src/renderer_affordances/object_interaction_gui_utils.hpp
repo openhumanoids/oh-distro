@@ -34,6 +34,13 @@
 #define PARAM_SEND_POSE_GOAL6  "Get Robot Pose 4DesEEMotion"
 
 #define PARAM_MELD_HAND_TO_CURRENT  "Meld::2::CurHndState"
+#define PARAM_MELD_AND_MANIP  "Meld & Manip"
+#define PARAM_MELD_AND_RETRACT  "Meld & Retract"
+#define PARAM_MELD_AND_MANIP_RETRACT_CYCLE "Meld & Manip & Retract"
+#define PARAM_MANIP  "Manip"
+#define PARAM_RETRACT  "Retract"
+#define PARAM_MANIP_RETRACT_CYCLE "Manip & Retract"
+
 #define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
 #define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstRobotState"
 #define PARAM_MATE     "Mate"

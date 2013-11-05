@@ -174,10 +174,11 @@ namespace renderer_affordances_lcm_utils
         self->stickyFootCollection->get_motion_history_bnds_of_seeds(it->first,max_motion_history_size,min_motion_history_size);
         
         int max_num_frames = min_motion_history_size;
+        double retracting_offset = 0.1; //10cm  for sandia its in the x axis.  
          // Publish time indexed ee motion constraints from associated sticky hands 
-        self->stickyHandCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames);
+        self->stickyHandCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames,retracting_offset);
          // Publish time indexed ee motion constraints from associated sticky feet 
-        self->stickyFootCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames);
+        self->stickyFootCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames,retracting_offset);
 
         
         
@@ -247,9 +248,10 @@ namespace renderer_affordances_lcm_utils
       
       int max_num_frames = min_motion_history_size;
        // Publish time indexed ee motion constraints from associated sticky hands 
-      self->stickyHandCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames);
+      double retracting_offset = 0.1; //10cm  for sandia its in the x axis.  
+      self->stickyHandCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames,retracting_offset);
        // Publish time indexed ee motion constraints from associated sticky feet 
-      self->stickyFootCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames);    
+      self->stickyFootCollection->get_motion_constraints(it->first,it->second,is_retractable,ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,max_num_frames,retracting_offset);    
   
       //body pose constraint  (current pelvis orientation may be considered during pose optimization as a loose constraint)
      /* vector<KDL::Frame> T_world_ee_frames;
@@ -264,6 +266,8 @@ namespace renderer_affordances_lcm_utils
                                  ee_frames_map,ee_frame_timestamps_map,
                                  joint_pos_map,joint_pos_timestamps_map,self);  
   }
+
+  
   //----------------------------------------------------------------------------------------------------   
   
   static void publish_EE_goal_sequence_and_get_whole_body_plan (void *user, string channel, bool to_future_state, bool supress_hands)
@@ -342,7 +346,7 @@ namespace renderer_affordances_lcm_utils
   
   
   //----------------------------------------------------------------------------------------------------   
-   // Publish time indexed ee motion constraints from the selected sticky hand
+  // Publish time indexed ee motion constraints from the selected sticky hand for end pose search
   static void publish_pose_goal_to_sticky_hand (void *user,string channel, StickyHandStruc &handstruc, KDL::Frame& T_world_body_desired, bool to_future_state,bool end_state_only)
   {
       RendererAffordances *self = (RendererAffordances*) user;
@@ -363,10 +367,37 @@ namespace renderer_affordances_lcm_utils
      publish_traj_opt_constraint(channel,unique_ee_occurances,
                                  ee_frames_map,ee_frame_timestamps_map,
                                  joint_pos_map,joint_pos_timestamps_map,self);
-  }  
+  } 
   
   //----------------------------------------------------------------------------------------------------   
-   // Publish time indexed ee motion constraints from the selected sticky hand
+  // Publish time indexed ee motion constraints from the selected sticky hand   
+  static void publish_EE_locii_for_manip_plan_from_sticky_hand(void *user,string channel, StickyHandStruc &handstruc, bool is_retracting, bool is_cyclic)
+  {
+     RendererAffordances *self = (RendererAffordances*) user;
+
+      map<string, vector<KDL::Frame> > ee_frames_map;
+      map<string, vector<int64_t> > ee_frame_timestamps_map;
+      map<string, vector<double> > joint_pos_map;
+      map<string, vector<int64_t> > joint_pos_timestamps_map;  
+     
+      string host_name = handstruc.object_name;
+      typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+      object_instance_map_type_::iterator it = self->affCollection->_objects.find(host_name);  
+          
+      double retracting_offset = 0.1; //10cm  for sandia its in the x axis.  
+      get_motion_constraints_from_sticky_hand(handstruc,it->second, 
+                                              is_retracting,is_cyclic,
+                                              ee_frames_map,ee_frame_timestamps_map,joint_pos_map,joint_pos_timestamps_map,retracting_offset);
+                                              
+      bool unique_ee_occurances=true;
+      publish_traj_opt_constraint(channel,unique_ee_occurances,
+                                 ee_frames_map,ee_frame_timestamps_map,
+                                 joint_pos_map,joint_pos_timestamps_map,self);
+  
+  }
+  
+  //----------------------------------------------------------------------------------------------------   
+   // Publish time indexed ee motion constraints from the selected sticky foot
   static void publish_pose_goal_to_sticky_foot (void *user,string channel, StickyFootStruc &footstruc, KDL::Frame& T_world_body_desired, bool to_future_state,bool end_state_only)
   {
       RendererAffordances *self = (RendererAffordances*) user;

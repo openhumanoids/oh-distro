@@ -12,7 +12,82 @@ namespace renderer_affordances_gui_utils
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
   //
-
+  
+   static void meld_sticky_hand(void *user, map<string, StickyHandStruc >::iterator &hand_it)
+  {
+      RendererAffordances *self = (RendererAffordances*) user;
+      if(!hand_it->second.is_melded)
+      {
+        //change joint_position to current hand state and 
+        //T_geometry_hand to T_geometry_world*T_world_palm(from FK)*T_palm_stickyhandbase;   
+      
+        hand_it->second.optimized_joint_position = hand_it->second.joint_position;  
+        hand_it->second.optimized_T_geometry_hand = hand_it->second.T_geometry_hand;
+        
+        if(self->robotStateListener->_urdf_parsed) 
+        {
+          for (size_t k=0;k<hand_it->second.joint_name.size();k++)
+          {
+            double pos;
+            bool val= self->robotStateListener->_gl_robot->get_current_joint_pos(hand_it->second.joint_name[k],pos);
+            hand_it->second.joint_position[k] = pos;
+            cout << hand_it->second.joint_name[k] << " pos:" << pos << " flag:"<< val << endl;
+          }// end for
+          drc::joint_angles_t posture_msg;
+          posture_msg.num_joints= hand_it->second.joint_name.size();
+          posture_msg.joint_name = hand_it->second.joint_name;
+          posture_msg.joint_position = hand_it->second.joint_position; 
+          
+          typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+          object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
+          KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
+          if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_geometry))
+            cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;           
+          
+          KDL::Frame T_world_palm, T_geometry_stickyhandbase,T_geometry_palm,T_palm_stickyhandbase; 
+          std::string ee_name;
+          if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
+             ee_name = "left_palm";
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)
+             ee_name = "right_palm";
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
+             ee_name = "left_base_link";
+          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)
+             ee_name = "right_base_link";
+             
+          T_geometry_stickyhandbase = hand_it->second._gl_hand->_T_world_body;
+          hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_palm);         
+          T_palm_stickyhandbase = T_geometry_palm.Inverse()*T_geometry_stickyhandbase;
+          
+          self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_world_palm);
+          KDL::Frame T_geometry_palm_new = T_world_geometry.Inverse()*T_world_palm;
+          KDL::Frame T_geometry_stickyhandbase_new = T_geometry_palm_new*T_palm_stickyhandbase;
+          cout << "setting sticky hand state to current hand pose and posture " << endl;
+          hand_it->second._gl_hand->set_state(T_geometry_stickyhandbase_new, posture_msg);
+          hand_it->second.T_geometry_hand = T_geometry_stickyhandbase_new;
+          
+        } // end if
+     }
+  }
+  //--------------------------------------------------------------------------
+  static void unmeld_sticky_hand(void *user,map<string, StickyHandStruc >::iterator &hand_it)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    
+    if(hand_it->second.is_melded)
+    {
+      cout << "resetting  sticky hand state to optimized hand pose and posture " << endl;
+      hand_it->second.T_geometry_hand = hand_it->second.optimized_T_geometry_hand;
+      hand_it->second.joint_position = hand_it->second.optimized_joint_position; // reset;
+      drc::joint_angles_t posture_msg;
+      posture_msg.num_joints= hand_it->second.joint_name.size();
+      posture_msg.joint_name = hand_it->second.joint_name;
+      posture_msg.joint_position = hand_it->second.joint_position;   
+      KDL::Frame T_geometry_stickyhandbase = hand_it->second.T_geometry_hand;
+      hand_it->second._gl_hand->set_state(T_geometry_stickyhandbase, posture_msg); 
+    }     
+  }
+  //--------------------------------------------------------------------------
   static void on_sticky_hand_dblclk_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
   {
     RendererAffordances *self = (RendererAffordances*) user;
@@ -276,76 +351,78 @@ namespace renderer_affordances_gui_utils
     else if ((!strcmp(name, PARAM_UNSTORE))) {
       self->stickyHandCollection->store(self->stickyhand_selection,true,self->affCollection);
     }
-    else if (!strcmp(name, PARAM_MELD_HAND_TO_CURRENT))
+      else if ((!strcmp(name, PARAM_MANIP))||(!strcmp(name, PARAM_RETRACT))||(!strcmp(name, PARAM_MANIP_RETRACT_CYCLE)))
+    {  
+       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+
+
+       if ((!strcmp(name, PARAM_MANIP))) {
+         string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
+         bool is_retracting = false;
+         bool is_cyclic = false;
+         publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
+       }
+       else if((!strcmp(name, PARAM_RETRACT))) {
+         string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
+         bool is_retracting = true;
+         bool is_cyclic = false;
+         publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
+       }
+       else if((!strcmp(name, PARAM_MANIP_RETRACT_CYCLE))) {
+         string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
+         bool is_retracting = true;
+         bool is_cyclic = true;
+         publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
+       }
+    }     
+    else if ((!strcmp(name, PARAM_MELD_AND_MANIP))||(!strcmp(name, PARAM_MELD_AND_RETRACT))||(!strcmp(name, PARAM_MELD_AND_MANIP_RETRACT_CYCLE)))
+    {  
+       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+       
+       if(hand_it->second.is_melded) 
+       {
+          //if melded currently, unmeld first
+          unmeld_sticky_hand(self,hand_it);
+          hand_it->second.is_melded= false;
+       }
+
+       // meld
+       meld_sticky_hand(self,hand_it);
+       hand_it->second.is_melded = true;
+
+       if ((!strcmp(name, PARAM_MELD_AND_MANIP))) {
+         string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
+         bool is_retracting = false;
+         bool is_cyclic = false;
+         publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
+       }
+       else if((!strcmp(name, PARAM_MELD_AND_RETRACT))) {
+         string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
+         bool is_retracting = true;
+         bool is_cyclic = false;
+         publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
+       }
+       else if((!strcmp(name, PARAM_MELD_AND_MANIP_RETRACT_CYCLE))) {
+         string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
+         bool is_retracting = true;
+         bool is_cyclic = true;
+         publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
+       }
+    } 
+    
+    else if ((!strcmp(name, PARAM_MELD_HAND_TO_CURRENT)))
     {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       if(!hand_it->second.is_melded)
-      {
-        //change joint_position to current hand state and 
-        //T_geometry_hand to T_geometry_world*T_world_palm(from FK)*T_palm_stickyhandbase;   
-      
-        hand_it->second.optimized_joint_position = hand_it->second.joint_position;  
-        hand_it->second.optimized_T_geometry_hand = hand_it->second.T_geometry_hand;
-        
-        if(self->robotStateListener->_urdf_parsed) 
-        {
-          for (size_t k=0;k<hand_it->second.joint_name.size();k++)
-          {
-            double pos;
-            bool val= self->robotStateListener->_gl_robot->get_current_joint_pos(hand_it->second.joint_name[k],pos);
-            hand_it->second.joint_position[k] = pos;
-            cout << hand_it->second.joint_name[k] << " pos:" << pos << " flag:"<< val << endl;
-          }// end for
-          drc::joint_angles_t posture_msg;
-          posture_msg.num_joints= hand_it->second.joint_name.size();
-          posture_msg.joint_name = hand_it->second.joint_name;
-          posture_msg.joint_position = hand_it->second.joint_position; 
-          
-          typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
-          object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
-          KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
-          if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_geometry))
-            cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;           
-          
-          KDL::Frame T_world_palm, T_geometry_stickyhandbase,T_geometry_palm,T_palm_stickyhandbase; 
-          std::string ee_name;
-          if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
-             ee_name = "left_palm";
-          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)
-             ee_name = "right_palm";
-          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
-             ee_name = "left_base_link";
-          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)
-             ee_name = "right_base_link";
-             
-          T_geometry_stickyhandbase = hand_it->second._gl_hand->_T_world_body;
-          hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_palm);         
-          T_palm_stickyhandbase = T_geometry_palm.Inverse()*T_geometry_stickyhandbase;
-          
-          self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_world_palm);
-          KDL::Frame T_geometry_palm_new = T_world_geometry.Inverse()*T_world_palm;
-          KDL::Frame T_geometry_stickyhandbase_new = T_geometry_palm_new*T_palm_stickyhandbase;
-          cout << "setting sticky hand state to current hand pose and posture " << endl;
-          hand_it->second._gl_hand->set_state(T_geometry_stickyhandbase_new, posture_msg);
-          hand_it->second.T_geometry_hand = T_geometry_stickyhandbase_new;
-          
-        } // end if
-           // 
-      } 
-      else {
-        cout << "resetting  sticky hand state to optimized hand pose and posture " << endl;
-        hand_it->second.T_geometry_hand = hand_it->second.optimized_T_geometry_hand;
-        hand_it->second.joint_position = hand_it->second.optimized_joint_position; // reset;
-        drc::joint_angles_t posture_msg;
-        posture_msg.num_joints= hand_it->second.joint_name.size();
-        posture_msg.joint_name = hand_it->second.joint_name;
-        posture_msg.joint_position = hand_it->second.joint_position;   
-        KDL::Frame T_geometry_stickyhandbase = hand_it->second.T_geometry_hand;
-        hand_it->second._gl_hand->set_state(T_geometry_stickyhandbase, posture_msg); 
-      } 
+         meld_sticky_hand(self,hand_it);
+      else
+         unmeld_sticky_hand(self,hand_it); 
   	  // toggle  flag
       hand_it->second.is_melded = !hand_it->second.is_melded; 
+      
     } // end if else
     else if ((!strcmp(name,  PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE))) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
@@ -379,7 +456,10 @@ namespace renderer_affordances_gui_utils
        && strcmp(name, PARAM_GRASP_UNGRASP)
        && strcmp(name, PARAM_GRASP)
        && strcmp(name, PARAM_UNGRASP)
-       && strcmp(name,PARAM_EIGEN_GRASP_TYPE))
+       && strcmp(name,PARAM_EIGEN_GRASP_TYPE)       
+       )
+       //&& strcmp(name,PARAM_MELD_AND_MANIP)
+       //&& strcmp(name,PARAM_MELD_AND_RETRACT)
       gtk_widget_destroy(self->dblclk_popup);
     
    }
@@ -474,6 +554,13 @@ namespace renderer_affordances_gui_utils
     val  = ((hand_it->second.is_melded)&&(obj_it->second.is_melded));
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON,  PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE, val, NULL);
     
+   /* bot_gtk_param_widget_add_buttons(pw,PARAM_MANIP, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_RETRACT, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_MANIP_RETRACT_CYCLE, NULL); */ 
+    
+    bot_gtk_param_widget_add_buttons(pw,PARAM_MELD_AND_MANIP, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_MELD_AND_RETRACT, NULL);
+    //bot_gtk_param_widget_add_buttons(pw,PARAM_MELD_AND_MANIP_RETRACT_CYCLE, NULL);
     val=false;
     val =  hand_it->second._gl_hand->is_bodypose_adjustment_enabled();
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT, val, NULL);
