@@ -82,7 +82,14 @@
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_0_0" />
-        <relative_pose rpy="1.571 0.0 1.571" xyz="0 0.125 0.0" />
+        <relative_pose rpy="-1.88203 -0.00403169 1.55578" xyz="0.146033 0.057093 -0.00496434" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="0 0 0 0 0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="-1.60874 0.0439389 3.11379" xyz="-0.12002 0.00207438 -0.0289947" />
         <grasp_type type="4" />
         <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 1.5 1.5 0 1.5 1.5 1.5 1.5 " />
     </grasp_seed>
