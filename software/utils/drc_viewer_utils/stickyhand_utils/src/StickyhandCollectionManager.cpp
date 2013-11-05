@@ -396,10 +396,10 @@ void StickyhandCollectionManager::get_motion_constraints(string object_name, Otd
                                                   map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                                   map<string, vector<double> > &joint_pos_map,
                                                   map<string, vector<int64_t> > &joint_pos_timestamps_map,
-                                                  int max_num_frames)
+                                                  int max_num_frames,double retracting_offset)
                                                   
 {
-    // Publish time indexed ee motion constraints from associated sticky hands 
+    // get time indexed ee motion constraints from associated sticky hands 
     for(sticky_hands_map_type_::const_iterator hand_it = _hands.begin(); hand_it!=_hands.end(); hand_it++)
     {
       string host_name = hand_it->second.object_name;
@@ -453,7 +453,7 @@ void StickyhandCollectionManager::get_motion_constraints(string object_name, Otd
                   KDL::Frame T_world_ee = T_world_hand*T_hand_palm;//T_world_palm ; TODO: Eventually will be in object frame                             
                   KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
                   KDL::Vector handframe_offset;
-                  handframe_offset[0]=0.05;handframe_offset[1]=0;handframe_offset[2]=0;
+                  handframe_offset[0]=retracting_offset;handframe_offset[1]=0;handframe_offset[2]=0;
                   KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
                   KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
                   T_world_ee.p += worldframe_offset;   

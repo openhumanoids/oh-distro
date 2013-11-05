@@ -298,6 +298,18 @@ class GlKinematicBody
       }// end if    
     };
     
+    void update_future_state(KDL::Frame &T_world_body_old,const KDL::Frame &T_world_body_new)
+    {
+     if(is_future_display_active())
+     {
+       KDL::Frame T_world_body_future_old = _T_world_body_future;
+       KDL::Frame T_current_future_old = (T_world_body_old.Inverse())*T_world_body_future_old;    //RelativeTransform to be preserved
+       KDL::Frame T_current_future_new = T_current_future_old;    //RelativeTransform to be preserved
+       KDL::Frame T_world_body_future_new =T_world_body_new*T_current_future_new; // T_w_fn = T_w_n*T_n_fn;
+       _T_world_body_future = T_world_body_future_new;
+     }
+    };
+    
     void draw_motion_trail(float (&c)[3], double alpha, const KDL::Frame &T_drawFrame_accumulationFrame)
     {
         glColor4f(c[0],c[1],c[2],alpha);

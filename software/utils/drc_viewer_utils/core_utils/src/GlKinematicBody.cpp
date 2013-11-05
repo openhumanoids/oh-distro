@@ -517,7 +517,9 @@ void GlKinematicBody::set_state(boost::shared_ptr<otdf::ModelInterface> otdf_ins
                                          otdf_instance->getParam("pitch"),
                                          otdf_instance->getParam("yaw"));
    
+  
    update_motion_trail(_T_world_body,T_world_body); // update motion trail if it exists       
+   update_future_state(_T_world_body,T_world_body); //if(future_display_active) update future state to maintain relative offset
                                    
    _T_world_body  = T_world_body; 
                     

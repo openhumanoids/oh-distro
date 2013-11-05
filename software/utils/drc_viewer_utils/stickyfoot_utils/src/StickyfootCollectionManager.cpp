@@ -289,7 +289,7 @@ void StickyfootCollectionManager::load_stored(OtdfInstanceStruc& instance_struc)
 //-------------------------------------------------------------------------------------------
 void StickyfootCollectionManager:: get_motion_history_bnds_of_seeds(string object_name, int &max_motion_history_size,int &min_motion_history_size)
 {
-  // Publish time indexed ee motion constraints from associated sticky feet 
+  // get time indexed ee motion constraints from associated sticky feet 
   for(sticky_feet_map_type_::const_iterator foot_it = _feet.begin(); foot_it!=_feet.end(); foot_it++)
   {
     string host_name = foot_it->second.object_name;
@@ -308,7 +308,7 @@ void StickyfootCollectionManager::get_motion_constraints(string object_name, Otd
                                                   map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                                   map<string, vector<double> > &joint_pos_map,
                                                   map<string, vector<int64_t> > &joint_pos_timestamps_map,
-                                                  int max_num_frames)
+                                                  int max_num_frames,double retracting_offset)
                                                   
 {
 
@@ -354,6 +354,7 @@ void StickyfootCollectionManager::get_motion_constraints(string object_name, Otd
               frame_timestamps.push_back(timestamp);   
           }
           //=================== 
+          // TODO: retracting plans is not implemented properly
 
           ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
           ee_frame_timestamps_map.insert(make_pair(ee_name, frame_timestamps));    
@@ -373,7 +374,7 @@ void StickyfootCollectionManager::get_pose_constraints(string object_name, OtdfI
                                                   
 {
 
-// Publish time indexed ee motion constraints from associated sticky feet 
+// get time indexed ee motion constraints from associated sticky feet 
       typedef map<string, StickyFootStruc > sticky_feet_map_type_;
       for(sticky_feet_map_type_::const_iterator foot_it = _feet.begin(); foot_it!=_feet.end(); foot_it++)
       {

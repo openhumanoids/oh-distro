@@ -508,7 +508,129 @@ inline static void get_endpose_search_constraints_from_sticky_hand(StickyHandStr
       ee_frame_timestamps_map.insert(make_pair("pelvis", frame_timestamps_root)); 
            
 } // end get_endpose_search_constraints_from_sticky_hand  
-//----------------------------------------------------------------------------------------------------------    
+//---------------------------------------------------------------------------------------------------------- 
+inline static void get_motion_constraints_from_sticky_hand(StickyHandStruc &handstruc,OtdfInstanceStruc& obj, 
+                                                  bool is_retracting, bool is_cyclic,
+                                                  map<string, vector<KDL::Frame> > &ee_frames_map, 
+                                                  map<string, vector<int64_t> > &ee_frame_timestamps_map,
+                                                  map<string, vector<double> > &joint_pos_map,
+                                                  map<string, vector<int64_t> > &joint_pos_timestamps_map,
+                                                  double retracting_offset)
+{
+
+
+      string ee_name;
+      if(handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
+          ee_name ="left_palm";    
+      else if(handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)   
+          ee_name ="right_palm";    
+      else if(handstruc.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
+          ee_name ="left_base_link";    
+      else if(handstruc.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)   
+          ee_name ="right_base_link";    
+      else
+          cout << "unknown hand_type in on_otdf_dof_range_widget_popup_close\n";   
+
+      // if ee_name already exists in ee_frames_map, redundant ee_frames
+      // e.g two right sticky hands on the same object.
+      map<string, vector<KDL::Frame> >::const_iterator ee_it = ee_frames_map.find(ee_name);
+      if(ee_it!=ee_frames_map.end()){
+          cerr<<" ERROR: Cannot of two seeds of the same ee. Please consider deleting redundant seeds\n";
+          return;   
+      }
+
+      //======================     
+      KDL::Frame  T_geometry_hand = handstruc.T_geometry_hand;
+      KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+      if(!handstruc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
+          cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+      KDL::Frame T_hand_palm = T_geometry_hand.Inverse()*T_geometry_palm; // offset
+
+      KDL::Frame T_world_object = obj._gl_object->_T_world_body;
+
+     
+      int num_frames =  (int)handstruc._gl_hand->_desired_body_motion_history.size();
+      vector<KDL::Frame> T_world_ee_frames;
+      vector<int64_t> frame_timestamps;
+     
+    
+      for(uint i = 0; i < (uint) num_frames; i++) {
+          KDL::Frame T_object_hand = handstruc._gl_hand->_desired_body_motion_history[i];
+          KDL::Frame T_world_hand = T_world_object*T_object_hand;
+          KDL::Frame T_world_ee = T_world_hand*T_hand_palm;//T_world_palm ; TODO: Eventually will be in object frame
+          T_world_ee_frames.push_back(T_world_ee);
+          int64_t timestamp=(int64_t)i*1000000;
+          frame_timestamps.push_back(timestamp);   
+      }
+     
+      // append or replace with reverse motion with a small back up palm offset
+      if(is_retracting){
+          if(!is_cyclic){
+            T_world_ee_frames.clear();
+            frame_timestamps.clear();
+          }
+      
+          for(uint i = 0; i < (uint) num_frames; i++) {
+              KDL::Frame T_object_hand = handstruc._gl_hand->_desired_body_motion_history[num_frames-1-i];                   
+              KDL::Frame T_world_hand = T_world_object*T_object_hand;
+              KDL::Frame T_world_ee = T_world_hand*T_hand_palm;//T_world_palm ; TODO: Eventually will be in object frame                             
+              KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
+              KDL::Vector handframe_offset;
+              if((handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)||(handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT))
+              {
+                handframe_offset[0]=retracting_offset;handframe_offset[1]=0;handframe_offset[2]=0;
+              }
+              else{
+                handframe_offset[0]=retracting_offset;handframe_offset[1]=0;handframe_offset[2]=0;
+              }
+                  
+              KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+              KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
+              T_world_ee.p += worldframe_offset;   
+              T_world_ee_frames.push_back(T_world_ee);
+              int64_t timestamp=(int64_t)(num_frames+i)*1000000;
+              frame_timestamps.push_back(timestamp);   
+          } 
+      }
+      //===================         
+
+      ee_frames_map.insert(make_pair(ee_name, T_world_ee_frames));
+      ee_frame_timestamps_map.insert(make_pair(ee_name, frame_timestamps));   
+      // handstruc.joint_name;  
+      // handstruc.joint_position; 
+
+        for(uint k = 0; k< (uint) handstruc.joint_name.size(); k++) 
+        {
+          std::string joint_name = handstruc.joint_name[k];
+          vector<double> joint_pos;
+          vector<int64_t> joint_pos_timestamps;
+          uint i=0;
+
+          if((!is_retracting)||(is_cyclic)){
+            double squeeze_factor = handstruc.squeeze_factor;
+            joint_pos.push_back(squeeze_factor*handstruc.joint_position[k]);
+            int64_t timestamp=(int64_t)i*1000000;
+            joint_pos_timestamps.push_back(timestamp);
+          }
+
+          // add reverse motion with a small back up palm offset
+          if(is_retracting)
+          {
+            joint_pos.push_back(0.0);
+            uint ind=0;
+            if(is_cyclic)
+              ind=num_frames+i;
+            int64_t timestamp=(int64_t)(ind)*1000000;
+            joint_pos_timestamps.push_back(timestamp); 
+           }
+           
+           joint_pos_map.insert(make_pair(joint_name,joint_pos));
+           joint_pos_timestamps_map.insert(make_pair(joint_name, joint_pos_timestamps));  
+        }
+
+} // end get_motion_constraints_from_sticky_hand  
+//---------------------------------------------------------------------------------------------------------- 
+  
            
 }// end namespace
 

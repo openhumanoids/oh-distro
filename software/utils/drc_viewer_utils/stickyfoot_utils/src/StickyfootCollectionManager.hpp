@@ -48,7 +48,7 @@ namespace visualization_utils
                               map<string, vector<int64_t> > &ee_frame_timestamps_map,
                               map<string, vector<double> > &joint_pos_map,
                               map<string, vector<int64_t> > &joint_pos_timestamps_map,
-                              int max_num_frames);    
+                              int max_num_frames,double retracting_offset);    
                                
                                 
     // Used to generate desired ee constraints for pose goals. 
