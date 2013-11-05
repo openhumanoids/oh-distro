@@ -247,9 +247,6 @@ classdef ReachingPlanner < KeyframePlanner
               lower_fixed_posture_constraint = lower_fixed_posture_constraint.setJointLimits(lower_fixed_joint_idx,...
               q0_bound(lower_fixed_joint_idx),q0_bound(lower_fixed_joint_idx));
               if(any(q0_bound<joint_lb_tmp) || any(q0_bound>joint_ub_tmp))
-                 coords = obj.r.getStateFrame.coordinates;
-                 joint_idx_tmp = (1:obj.r.getNumDOF())';
-                 (coords(q0_bound<joint_lb_tmp || q0_bound>joint_ub_tmp))
                  error('Joint limit not satisfied');
               end
 
@@ -629,7 +626,6 @@ classdef ReachingPlanner < KeyframePlanner
                       end
                   else
                       [q_final_guess,snopt_info,infeasible_constraint] = inverseKinWcollision(obj.r,obj.collision_check,q_start,ik_qnom,...
-                          rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
                           rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
                           obj.joint_constraint,ikoptions);
                   end % end if(~obj.isBDIManipMode())
@@ -652,12 +648,12 @@ classdef ReachingPlanner < KeyframePlanner
                   
                 end
                 if(findFinalPostureFlag)
-                  display(sprintf('The IK succeeds at the end after %d trials',total_ik_attempt));
+                  display(sprintf('The IK succeeds after %d trials',ik_attempt_count));
                   if(usedHandWorkspace)
                     display(sprintf('The IK succeeds after using hand workspace file'));
                   end
                 else
-                  display(sprintf('The IK fails at the end after %d trials',total_ik_attempt));
+                  display(sprintf('The IK fails at the end after %d trials',ik_attempt_count));
                   if(usedHandWorkspace)
                     display(sprintf('The IK fails after using hand workspace file'));
                   end
