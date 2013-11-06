@@ -135,7 +135,7 @@ else
  end
 
 [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = createDrillingPlan(drill_pub, q_reach_end, x_drill_in, 2);
-snopt_info_in
+snopt_info_drill
  %%
 %% line drill
 if use_simulated_state 
