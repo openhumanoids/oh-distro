@@ -77,6 +77,46 @@ classdef bimanualDrillPlanPublisher
       end
     end
     
+    function [xtraj,snopt_info,infeasible_constraint] = createGotoPosePlan(obj, q0, qf)
+      N = 5;
+      t_vec = linspace(0,T,N);
+
+      % create posture constraint
+      posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices');
+      posture_constraint = PostureConstraint(obj.r);
+      posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
+      
+      % create final posture constraint
+      final_posture_index = obj.joint_indices;
+      final_posture_constraint = PostureConstraint(obj.r);
+      final_posture_constraint = final_posture_constraint.setJointLimits(posture_index,qf(final_posture_index),...
+        qf(final_posture_index),[t_vec(end) t_vec(end)]);
+  
+      qtraj_guess = PPTrajectory(foh([0 T],[q0, qf]));
+      
+      
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+        t_vec,qtraj_guess,qtraj_guess,...
+        posture_constraint,final_posture_constraint,obj.ik_options);
+      
+      if(snopt_info > 10)
+        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint));
+        warning(send_msg);
+      end
+      
+      if obj.doVisualization && snopt_info <= 10
+        obj.v.playback(xtraj);
+      end
+      
+      if obj.doPublish && snopt_info <= 10
+        obj.publishTraj(xtraj,snopt_info);
+      end
+    end
+      
+    end
+    
     function [xtraj,snopt_info,infeasible_constraint] = createInitialReachPlan(obj, q0, x_drill, first_cut_dir, T)
       N = 5;
       t_vec = linspace(0,T,N);
