@@ -155,10 +155,10 @@ namespace renderer_robot_plan_gui_utils
       return TRUE;
     }
 
-		if(!self->robotPlanListener->is_walking_plan())
-		{
+		// if(!self->robotPlanListener->is_walking_plan())
+		// {
 		  string channel;
-		  if(self->robotPlanListener->is_manip_plan()){
+		  if(self->robotPlanListener->is_manip_plan() || self->robotPlanListener->is_walking_plan()){
 			  cout <<"Publishing on COMMITTED_ROBOT_PLAN" << endl;
 			  channel = "COMMITTED_ROBOT_PLAN";
 			  self->robotPlanListener->commit_manip_plan(self->robot_utime,channel);
@@ -170,13 +170,13 @@ namespace renderer_robot_plan_gui_utils
 			  self->robotPlanListener->commit_robot_plan(self->robot_utime,channel);
 		  }*/
 		  
-		}
-		else 
-		{			
-			cout <<"Publishing on COMMITTED_FOOTSTEP_PLAN" << endl;
-			string channel = "COMMITTED_FOOTSTEP_PLAN";
-			self->robotPlanListener->commit_footstep_plan(self->robot_utime,channel);
-		}
+		// }
+		// else 
+		// {			
+		// 	cout <<"Publishing on COMMITTED_FOOTSTEP_PLAN" << endl;
+		// 	string channel = "COMMITTED_FOOTSTEP_PLAN";
+		// 	self->robotPlanListener->commit_footstep_plan(self->robot_utime,channel);
+		// }
 		
 		if(self->robotPlanListener->is_multi_approval_plan())
 		{
