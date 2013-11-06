@@ -35,7 +35,8 @@
 
 #define PARAM_MELD_HAND_TO_CURRENT  "Meld::2::CurHndState"
 #define PARAM_MELD_AND_MANIP  "Meld & Manip"
-#define PARAM_MELD_AND_RETRACT  "Meld & Retract"
+#define PARAM_MELD_AND_REACH  "Meld & Reach"
+#define PARAM_UNMELD_AND_RETRACT  "UnMeld & Retract"
 #define PARAM_MELD_AND_MANIP_RETRACT_CYCLE "Meld & Manip & Retract"
 #define PARAM_MANIP  "Manip"
 #define PARAM_RETRACT  "Retract"

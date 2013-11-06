@@ -376,7 +376,7 @@ namespace renderer_affordances_gui_utils
          publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
        }
     }     
-    else if ((!strcmp(name, PARAM_MELD_AND_MANIP))||(!strcmp(name, PARAM_MELD_AND_RETRACT))||(!strcmp(name, PARAM_MELD_AND_MANIP_RETRACT_CYCLE)))
+    else if ((!strcmp(name, PARAM_MELD_AND_MANIP))||(!strcmp(name, PARAM_MELD_AND_REACH))||(!strcmp(name, PARAM_UNMELD_AND_RETRACT))||(!strcmp(name, PARAM_MELD_AND_MANIP_RETRACT_CYCLE)))
     {  
        typedef map<string, StickyHandStruc > sticky_hands_map_type_;
        sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
@@ -388,23 +388,58 @@ namespace renderer_affordances_gui_utils
           hand_it->second.is_melded= false;
        }
 
-       // meld
-       meld_sticky_hand(self,hand_it);
-       hand_it->second.is_melded = true;
+     
 
        if ((!strcmp(name, PARAM_MELD_AND_MANIP))) {
+         // meld
+         meld_sticky_hand(self,hand_it);
+         hand_it->second.is_melded = true;
          string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
          bool is_retracting = false;
          bool is_cyclic = false;
          publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
        }
-       else if((!strcmp(name, PARAM_MELD_AND_RETRACT))) {
+       else if ((!strcmp(name, PARAM_MELD_AND_REACH))) {
+         // meld
+        meld_sticky_hand(self,hand_it);
+        hand_it->second.is_melded = true;
+        bool reach_flag = true;
+        typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+        object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
+        KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
+
+        if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
+        cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
+        else { 
+          drc::grasp_opt_control_t msg; // just to access types
+          int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+
+          //publish ee goal msg.
+          if(grasp_type == msg.SANDIA_LEFT) {
+             publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_palm","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag);
+          }
+          else if(grasp_type== msg.SANDIA_RIGHT) {
+            publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_palm","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
+          }
+          else if(grasp_type== msg.IROBOT_LEFT) {
+            publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_base_link","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag); // TODO: change channel name?
+          }
+          else if(grasp_type== msg.IROBOT_RIGHT) {
+            publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_base_link","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
+          }
+        }      
+       }
+       else if((!strcmp(name, PARAM_UNMELD_AND_RETRACT))) {
+         // Do not meld, as that makes the motion history relative from current location.
          string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
          bool is_retracting = true;
          bool is_cyclic = false;
          publish_EE_locii_for_manip_plan_from_sticky_hand(self,channel,hand_it->second,is_retracting,is_cyclic);       
        }
        else if((!strcmp(name, PARAM_MELD_AND_MANIP_RETRACT_CYCLE))) {
+          // meld
+         meld_sticky_hand(self,hand_it);
+         hand_it->second.is_melded = true;
          string channel  ="DESIRED_MANIP_PLAN_EE_LOCI"; 
          bool is_retracting = true;
          bool is_cyclic = true;
@@ -459,7 +494,7 @@ namespace renderer_affordances_gui_utils
        && strcmp(name,PARAM_EIGEN_GRASP_TYPE)       
        )
        //&& strcmp(name,PARAM_MELD_AND_MANIP)
-       //&& strcmp(name,PARAM_MELD_AND_RETRACT)
+       //&& strcmp(name,PARAM_UNMELD_AND_RETRACT)
       gtk_widget_destroy(self->dblclk_popup);
     
    }
@@ -554,12 +589,13 @@ namespace renderer_affordances_gui_utils
     val  = ((hand_it->second.is_melded)&&(obj_it->second.is_melded));
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON,  PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE, val, NULL);
     
-   /* bot_gtk_param_widget_add_buttons(pw,PARAM_MANIP, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_MANIP, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_RETRACT, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_MANIP_RETRACT_CYCLE, NULL); */ 
+    //bot_gtk_param_widget_add_buttons(pw,PARAM_MANIP_RETRACT_CYCLE, NULL); 
     
     bot_gtk_param_widget_add_buttons(pw,PARAM_MELD_AND_MANIP, NULL);
-    bot_gtk_param_widget_add_buttons(pw,PARAM_MELD_AND_RETRACT, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_MELD_AND_REACH, NULL);
+    bot_gtk_param_widget_add_buttons(pw,PARAM_UNMELD_AND_RETRACT, NULL);
     //bot_gtk_param_widget_add_buttons(pw,PARAM_MELD_AND_MANIP_RETRACT_CYCLE, NULL);
     val=false;
     val =  hand_it->second._gl_hand->is_bodypose_adjustment_enabled();
