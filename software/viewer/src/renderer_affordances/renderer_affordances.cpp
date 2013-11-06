@@ -80,9 +80,10 @@ struct RendererAffordances::SpaceMouseHelper : drc::SpaceMouse::Listener {
       KDL::Rotation::RPY(deltaAngles[0], deltaAngles[1], deltaAngles[2]);
 
     // apply offset to current pose
-    KDL::Frame worldToObjectCurrent =
-      mRenderer->otdf_instance_hold._gl_object->_T_world_body;
-    KDL::Frame worldToObject = adjustment*worldToObjectCurrent;
+    KDL::Frame objectToWorldCurrent =
+      mRenderer->otdf_instance_hold._gl_object->_T_world_body.Inverse();
+    KDL::Frame objectToWorld = adjustment.Inverse()*objectToWorldCurrent;
+    KDL::Frame worldToObject = objectToWorld.Inverse();
 
     // apply new pose to held (ghosted) affordance
     auto& instance = mRenderer->otdf_instance_hold._otdf_instance;
