@@ -54,8 +54,8 @@ classdef simpleBimanualDrillPlanPublisher
       iktraj_options = IKoptions(obj.r);
       iktraj_options = iktraj_options.setDebug(true);
       iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-      iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-      iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
+      iktraj_options = iktraj_options.setQa(0.00005*eye(getNumDOF(obj.r)));
+      iktraj_options = iktraj_options.setQv(0.00005*eye(getNumDOF(obj.r)));
       iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1)); % upper and lower bnd on velocity.
       iktraj_options = iktraj_options.setMajorIterationsLimit(200);
       iktraj_options = iktraj_options.setMex(false);
@@ -81,7 +81,7 @@ classdef simpleBimanualDrillPlanPublisher
     end
     
     function [xtraj,snopt_info,infeasible_constraint] = createGotoPosePlan(obj, q0, qf, T)
-      N = 5;
+      N = 2;
       t_vec = linspace(0,T,N);
 
       % create posture constraint
@@ -120,7 +120,7 @@ classdef simpleBimanualDrillPlanPublisher
     end
     
     function [xtraj,snopt_info,infeasible_constraint] = createInitialReachPlan(obj, q0, x_drill, T)
-      N = 5;
+      N = 3;
       t_vec = linspace(0,T,N);
       
       % create drill direction constraint
@@ -439,17 +439,17 @@ classdef simpleBimanualDrillPlanPublisher
 %       end
 %     end
 %     
-%     function publishTraj(obj,xtraj,snopt_info)
-%       utime = now() * 24 * 60 * 60;   
-%       nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
-%       ts = xtraj.pp.breaks;
-%       q = xtraj.eval(ts);
-%       xtraj_atlas = zeros(2+2*nq_atlas,length(ts));
-%       xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
-%       snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
-%       
-%       obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
-%     end
+    function publishTraj(obj,xtraj,snopt_info)
+      utime = now() * 24 * 60 * 60;   
+      nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
+      ts = xtraj.pp.breaks;
+      q = xtraj.eval(ts);
+      xtraj_atlas = zeros(2+2*nq_atlas,length(ts));
+      xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
+      snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
+      
+      obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
+    end
 %     
   end
 end

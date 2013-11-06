@@ -326,7 +326,7 @@ classdef drillTestPlanPublisher
       % find direction of drill motion
       drill_motion_dir = (x_drill_final - x_drill_init);
       drill_motion_dir = drill_motion_dir/norm(drill_motion_dir);
-      valuecheck(drill_motion_dir'*obj.drilling_world_axis,0,1e-4);
+      valuecheck(drill_motion_dir'*obj.drilling_world_axis,0,1e-3);
       
       
       % generate desired quaternion

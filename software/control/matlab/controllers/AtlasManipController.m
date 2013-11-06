@@ -176,7 +176,7 @@ classdef AtlasManipController < DRCController
           if isa(qtraj_prev,'PPTrajectory') 
             % smooth transition from end of previous trajectory
             qprev_end = fasteval(qtraj_prev,qtraj_prev.tspan(end));
-            if max(abs(q0-qprev_end)) < 0.1
+            if max(abs(q0-qprev_end)) < 0.2
               qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
             else
               qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
