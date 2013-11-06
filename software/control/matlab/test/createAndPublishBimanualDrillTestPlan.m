@@ -9,9 +9,9 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 % (2) goto pose
 % (3) close hands
 % (4) goto pre-drill, drill, line, all constrained appropriately
-use_simulated_state = false;
+use_simulated_state = true;
 useVisualization = true;
-publishPlans = true;
+publishPlans = false;
 use_irobot = false;
 state_frame = getStateFrame(atlas);
 state_frame.subscribe('EST_ROBOT_STATE');
@@ -22,8 +22,8 @@ if use_irobot % irobot?
   drill_axis_on_hand = drill_axis_on_hand/norm(drill_axis_on_hand);
 else
   drill_pt_on_hand = [0;-.15;0];
-  drill_axis_on_hand = [.4;-1;1]; %visual fit from hand
-  drill_axis_on_hand = [0;-1;0];
+%   drill_axis_on_hand = [.4;-1;1]; %visual fit from hand
+  drill_axis_on_hand = [0.15;-.95;.3];
   drill_axis_on_hand = drill_axis_on_hand/norm(drill_axis_on_hand);
 end
 
@@ -38,7 +38,7 @@ if ~use_simulated_state
 
   kinsol = r.doKinematics(q0);
   
-  drillpt = [.4; 0; .2];
+  drillpt = [.5; 0; .2];
   x_drill_reach = r.forwardKin(kinsol,2,drillpt);
   drilling_world_axis = r.forwardKin(kinsol,2,drillpt + [1;0;0]) - x_drill_reach;
   drilling_world_axis(3) = 0;
@@ -54,7 +54,7 @@ if ~use_simulated_state
 
 else
   drilling_world_axis = [1;0;0];
-  x_drill_reach = [.4;0;.4];            %% world position of drill reach
+  x_drill_reach = [.5;-.1;.1];            %% world position of drill reach
   horiz_cut_dir = [0;1;0];
   vert_cut_dir = [0;0;1];
   x_drill_in = x_drill_reach + [.1;0;0];  %drilling into the wall
@@ -68,40 +68,39 @@ end
 % [xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = createInitialReachPlan(drill_pub, q0, x_drill_reach,first_cut_dir, 10);
 
 %%
-qgrasp=[  -0.0033
-   -0.0536
-    0.8906
-    0.0103
-    0.0296
-   -1.7595
-    0.0116
-    0.0914
-   -0.0013
-   -0.7153
-   -0.2432
-    1.9372
-    1.5427
-    1.9290
-   -0.0009
-    0.0488
-   -0.3764
-    0.7594
-   -0.3872
-   -0.0521
-   -0.4819
-   -1.0210
-    1.3206
-    1.9855
-   -1.3892
-    1.3208
-    0.0003
-   -0.0488
-   -0.3751
-    0.7596
-   -0.3835
-    0.0522
-    1.1833 - .0053;
-    0.0140];
+if ~use_irobot
+qgrasp=[    0;0;0;0;0;0;
+    0.0039
+    0.0905
+    0.0001
+   -1.2333
+   -1.4165
+    0.7721
+    1.4958
+    3.0849
+   -0.0005
+    0.0486
+   -0.3753
+    0.7614
+   -0.3866
+   -0.0474
+    0.7272
+   -0.7834
+    1.3931
+    1.7990
+   -1.1217
+    1.6871
+    0.0007
+   -0.0496
+   -0.3743
+    0.7604
+   -0.3838
+    0.0521
+    1.0941
+    0.0359];
+else
+  qgrasp = zeros(34,1);
+end
        
  [xtraj_init,snopt_info_init,infeasible_constraint_init] = createGotoPosePlan(drill_pub, q0, qgrasp, 5);
  
@@ -140,12 +139,10 @@ snopt_info_drill
  %%
 %% line drill
 if use_simulated_state 
-  x_drill_line = x_drill_in + horiz_cut_dir*.1;
-
   q_drill_end = xtraj_drill.eval(xtraj_drill.tspan(end));
   q_drill_end = q_drill_end(1:r.num_q);
   q_drill_end = max(min(q_drill_end,ub),lb);
-  x_line = x_in + [0;-.4;0];
+  x_line = x_drill_in + horiz_cut_dir * -.1;
 
 else
   [x,~] = getNextMessage(state_frame,10);
