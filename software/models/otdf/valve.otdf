@@ -15,7 +15,7 @@
     <param name="center_radius" default_value="0.02" inc="0.0025" min="0" max="100" />
     <param name="ring_radius" default_value="0.2" inc="0.0025" min="0" max="100" />
     <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
-    <param name="no_of_cyls" default_value="12" inc="1" min="1" max="20" />
+    <param name="no_of_cyls" default_value="9" inc="1" min="1" max="20" />
     <param name="no_of_spokes" default_value="3" inc="1" min="1" max="8" />
     <!-- ================== -->
     <!-- = Links          = -->
@@ -131,7 +131,7 @@
     </grasp_seed>
     <grasp_seed>
         <appendage type="HAND" />
-        <geometry name="RING_2_0" />
+        <geometry name="RING_1_0" />
         <relative_pose rpy="1.99882 -0.146102 1.59774" xyz="-0.114059 0.0278767 0.0152847" />
         <grasp_type type="1" />
         <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0140036 1.55656 1.18635 -0.0175241 1.53421 1.06798 0.0142161 1.47831 1.49803 0.626677 1.23805 0.0570841 " />
@@ -139,4 +139,18 @@
     <plan_seed name="2013-11-04-21-48::right_60deg" />
     <plan_seed name="2013-11-04-21-53::right_100deg" />
     <plan_seed name="2013-11-05-16-01::right_reach_top" />
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="RING_0_0" />
+        <relative_pose rpy="3.14047 0.00134807 0.00102157" xyz="-0.718238 -0.489529 1.44363" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="RING_0_0" />
+        <relative_pose rpy="3.14047 0.00134818 0.0012717" xyz="-0.718549 -0.230583 1.44336" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
 </object>
