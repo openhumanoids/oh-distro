@@ -280,10 +280,10 @@ public:
                "MAP_OCTREE", ChannelTypeAnonymous);
     */
 
-    /*
+    
     addControl(drc::data_request_t::HEIGHT_MAP_SCENE, "Scene Height",
                "MAP_DEPTH", ChannelTypeDepthImage);
-    */
+    
 
     /*
     addControl(drc::data_request_t::HEIGHT_MAP_CORRIDOR, "Corridor Height",
