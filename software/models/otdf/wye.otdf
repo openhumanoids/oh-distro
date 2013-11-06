@@ -20,7 +20,7 @@
     <!--<param name="filename" default_value="1.0" inc="0.01" min="0" max="100"/>-->
     <!-- Size of the grasping cylinder -->
     <param name="radius_cyl_1" default_value="0.046" inc="0.001" min="0" max="100" />
-    <param name="length_cyl_1" default_value="0.037" inc="0.001" min="0" max="100" />
+    <param name="length_cyl_1" default_value="0.092" inc="0.001" min="0" max="100" />
     <param name="x_offset_cyl_1" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="y_offset_cyl_1" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="z_offset_cyl_1" default_value="0.0" inc="0.001" min="-100" max="100" />
@@ -32,7 +32,7 @@
     <param name="length_cyl_2_1" default_value="0.115" inc="0.001" min="0" max="100" />
     <param name="x_offset_cyl_2_1" default_value="0.03" inc="0.001" min="-100" max="100" />
     <param name="y_offset_cyl_2_1" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z_offset_cyl_2_1" default_value="0.032" inc="0.001" min="-100" max="100" />
+    <param name="z_offset_cyl_2_1" default_value="0.056" inc="0.001" min="-100" max="100" />
     <param name="roll_offset_cyl_2_1" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch_offset_cyl_2_1" default_value="0.52" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="yaw_offset_cyl_2_1" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
@@ -41,7 +41,7 @@
     <param name="length_cyl_2_2" default_value="0.115" inc="0.001" min="0" max="100" />
     <param name="x_offset_cyl_2_2" default_value="-0.03" inc="0.001" min="-100" max="100" />
     <param name="y_offset_cyl_2_2" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z_offset_cyl_2_2" default_value="0.032" inc="0.001" min="-100" max="100" />
+    <param name="z_offset_cyl_2_2" default_value="0.056" inc="0.001" min="-100" max="100" />
     <param name="roll_offset_cyl_2_2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch_offset_cyl_2_2" default_value="-0.52" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="yaw_offset_cyl_2_2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
