@@ -58,6 +58,8 @@ elseif(l_hand_mode == 1 && r_hand_mode == 1)
 % elseif(l_hand_mode == 2 && r_hand_mode == 2)
 %   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_irobot_hands.urdf'),options);
 else%if(l_hand_mode == 0 && r_hand_mode == 0)
+  l_hand_mode=0;
+  r_hand_mode=0;
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 % else
 %   error('The urdf for the model does not exist');
