@@ -113,7 +113,7 @@ classdef KeyframePlanner < handle
             obj.lh_gaze_axis = obj.sandia_gaze_axis;
             obj.rh_gaze_axis = obj.sandia_gaze_axis;
             obj.hand_gaze_tol = pi/18;
-            obj.head_gaze_tol = pi/12;
+            obj.head_gaze_tol = pi/6;
 
             obj.setHandType(true,true); % set sandia hands as default
             % obj.collision_check            
