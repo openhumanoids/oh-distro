@@ -326,8 +326,10 @@ struct RendererAffordances {
   bool visualize_bbox;
   bool motion_trail_log_enabled;
   bool doBatchFK;
-  
-  
+
+  struct SpaceMouseHelper;
+  boost::shared_ptr<SpaceMouseHelper> space_mouse_helper;
+
   AffTriggerSignalsRef affTriggerSignalsRef;
   void keyboardSignalCallback(int keyval, bool is_pressed)
   {

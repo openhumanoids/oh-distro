@@ -64,6 +64,10 @@ void SpaceMouse::
 operator()() {
   while (mIsRunning) {
     spnav_event event;
+    if (!mIsGood) {
+      mIsGood = (spnav_open() != -1);
+      std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    }
     if (0 == spnav_poll_event(&event)) {
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
       continue;
@@ -83,8 +87,8 @@ operator()() {
       else if (event.type == SPNAV_EVENT_MOTION) {
         MotionEvent motionEvent;
         motionEvent.mButtonMask = mButtonMask;
-        motionEvent.mVelX = event.motion.z/MAX_MOTION_VALUE;
-        motionEvent.mVelY = -event.motion.x/MAX_MOTION_VALUE;
+        motionEvent.mVelX = event.motion.x/MAX_MOTION_VALUE;
+        motionEvent.mVelY = event.motion.z/MAX_MOTION_VALUE;
         motionEvent.mVelZ = event.motion.y/MAX_MOTION_VALUE;
         motionEvent.mRateRoll = event.motion.rz/MAX_MOTION_VALUE;
         motionEvent.mRatePitch = -event.motion.rx/MAX_MOTION_VALUE;

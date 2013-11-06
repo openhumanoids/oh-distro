@@ -13,6 +13,8 @@
 #include "mixedseed_interaction_gui_utils.hpp"
 #include "lcm_utils.hpp"
 
+#include <3d-mouse/SpaceMouse.hpp>
+
 #define GEOM_EPSILON 1e-9
 #define PARAM_COLOR_ALPHA "Alpha"
 #define PARAM_DEBUG_MODE "Local Aff Store (Debug Only)"
@@ -24,6 +26,80 @@ using namespace visualization_utils;
 using namespace collision;
 using namespace renderer_affordances;
 using namespace renderer_affordances_gui_utils;
+
+
+// space mouse helper
+struct RendererAffordances::SpaceMouseHelper : drc::SpaceMouse::Listener {
+  drc::SpaceMouse mMouse;
+  RendererAffordances* mRenderer;
+  bool mRotating;
+
+  SpaceMouseHelper(RendererAffordances* iRenderer) {
+    mRenderer = iRenderer;
+    mRotating = false;
+    mMouse.addListener(*this);
+    mMouse.start();
+  }
+
+  void notify(const drc::SpaceMouse::ButtonEvent& iEvent) {
+    if (!mRenderer->selection_hold_on) return;
+    if (mRenderer->otdf_instance_hold._gl_object == NULL) return;
+    if (!mRenderer->otdf_instance_hold._gl_object->
+        is_bodypose_adjustment_enabled()) return;
+    if (iEvent.mPressed) return;
+    if (iEvent.mButtonId == 1) {
+      mRotating = !mRotating;
+      std::cout << "SpaceMouse Rotation Mode is " <<
+        (mRotating ? "on" : "off") << std::endl;
+    }
+    else if (iEvent.mButtonId == 2) {
+      mRenderer->affCollection->publish_otdf_instance_to_affstore
+        ("AFFORDANCE_TRACK",mRenderer->otdf_instance_hold.otdf_type,
+         mRenderer->otdf_instance_hold.uid,
+         mRenderer->otdf_instance_hold._otdf_instance);
+    }
+  }
+
+  void notify(const drc::SpaceMouse::MotionEvent& iEvent) {
+    if (!mRenderer->selection_hold_on) return;
+    if (mRenderer->otdf_instance_hold._gl_object == NULL) return;
+    if (!mRenderer->otdf_instance_hold._gl_object->
+        is_bodypose_adjustment_enabled()) return;
+
+    // convert event velocities into 6dof motion
+    Eigen::Vector3d deltaPos(iEvent.mVelX, iEvent.mVelY, iEvent.mVelZ);
+    deltaPos /= 10;
+    Eigen::Vector3d deltaAngles(iEvent.mRateRoll, iEvent.mRatePitch,
+                                iEvent.mRateYaw);
+    deltaAngles /= 30;
+    if (!mRotating) deltaAngles << 0,0,0;
+    else deltaPos << 0,0,0;
+    KDL::Frame adjustment = KDL::Frame::Identity();
+    for (int k = 0; k < 3; ++k) adjustment.p[k] = deltaPos[k];
+    adjustment.M =
+      KDL::Rotation::RPY(deltaAngles[0], deltaAngles[1], deltaAngles[2]);
+
+    // apply offset to current pose
+    KDL::Frame worldToObjectCurrent =
+      mRenderer->otdf_instance_hold._gl_object->_T_world_body;
+    KDL::Frame worldToObject = adjustment*worldToObjectCurrent;
+
+    // apply new pose to held (ghosted) affordance
+    auto& instance = mRenderer->otdf_instance_hold._otdf_instance;
+    double roll, pitch, yaw;
+    worldToObject.M.GetRPY(roll, pitch, yaw);
+    instance->setParam("x", worldToObject.p[0]);
+    instance->setParam("y", worldToObject.p[1]);
+    instance->setParam("z", worldToObject.p[2]);
+    instance->setParam("roll", roll);
+    instance->setParam("pitch", pitch);
+    instance->setParam("yaw", yaw);   
+    instance->update();
+    mRenderer->otdf_instance_hold._gl_object->set_state(instance); 
+  }
+};
+
+
 
 // =================================================================================
 // DRAWING
@@ -1308,6 +1384,8 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 	bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,optpoolready);
 	bot_gtk_param_widget_set_bool(self->pw,PARAM_REACHABILITY_FILTER,self->enableReachabilityFilter);     
 	bot_gtk_param_widget_set_bool(self->pw,PARAM_DEBUG_MODE,self->debugMode);
+
+        self->space_mouse_helper.reset(new RendererAffordances::SpaceMouseHelper(self));
   
    return &self->renderer;
 }
@@ -1321,3 +1399,4 @@ void setup_renderer_affordances(BotViewer *viewer, int render_priority, lcm_t *l
 {
     bot_viewer_add_renderer_on_side(viewer, renderer_affordances_new(viewer, render_priority, lcm, NULL,signalRef,affTriggerSignalsRef,rendererFoviationSignalRef), render_priority, 0); // 0= add on left hand side
 }
+
