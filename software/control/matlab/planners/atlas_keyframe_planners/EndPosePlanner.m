@@ -37,14 +37,15 @@ classdef EndPosePlanner < KeyframePlanner
             % publish an single keyframe endpose instead
             % of a keyframe plan by resolving at time T.
             obj.plan_cache.isEndPose = true;
-            obj.ee_torso_dist_lb = 0.4;
+            obj.ee_torso_dist_lb = 0.65;
             obj.ee_lleg_dist_lb = 0.3;
             obj.stance_lb = 0.2;
-            obj.stance_ub = 0.5;
+            obj.stance_ub = 0.3;
             obj.l_hpx_ub = 0.3;
             obj.l_hpy_ub = -0.2;
-            obj.l_hpx_lb = 0.1;
+            obj.l_hpx_lb = 0.0;
             obj.l_hpy_lb = -1.0;
+            
             obj.pelvis_upright_gaze_tol = pi/30;
         end
         %-----------------------------------------------------------------------------------------------------------------
