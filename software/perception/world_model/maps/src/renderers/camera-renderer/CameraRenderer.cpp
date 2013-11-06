@@ -507,14 +507,8 @@ public:
                mViewportMainGl, &x, &y, &z);
     y = mViewportMainGl[3]-y;
     int whichImage = whichImageHit(Eigen::Vector2f(x, y));
-    if (whichImage>=0) {
-      getBotEventHandler()->picking = 1;
-      return 0;
-    }
-    else {
-      getBotEventHandler()->picking = 0;
-      return -1;
-    }
+    if (whichImage>=0) return 0;
+    else return -1;
   }
 
   bool mousePress(const GdkEventButton* iEvent,
@@ -565,7 +559,7 @@ public:
     } 
     cam->mTexCoordsValid = false;
     requestDraw();
-    return true;
+    return true;  // consume event
   }
 
   bool mouseRelease(const GdkEventButton* iEvent,
@@ -575,7 +569,7 @@ public:
     mActiveCamera = -1;
     getBotEventHandler()->picking = 0;
     requestDraw();
-    return true;
+    return false;  // do not consume event
   }
 
   bool mouseMotion(const GdkEventMotion* iEvent,
@@ -607,7 +601,7 @@ public:
     }
     if (button1 || button2 || button3) cam->mTexCoordsValid = false;
     requestDraw();
-    return true;
+    return true;  // consume event
   }
 
   void draw() {
