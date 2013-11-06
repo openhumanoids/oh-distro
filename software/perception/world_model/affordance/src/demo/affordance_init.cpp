@@ -694,9 +694,6 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
     a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
    
-    a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
-    a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
-    
     drc::affordance_plus_t a1;
     a1.aff = a;
     a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
@@ -728,9 +725,6 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
     a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
    
-    a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
-    a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
-    
     drc::affordance_plus_t a1;
     a1.aff = a;
     a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
@@ -740,6 +734,70 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     a1.ntriangles =0;
     lcm_->publish("AFFORDANCE_FIT",&a1);
   } 
+  
+  
+  if ((which_publish==11) || (which_publish==13) ){ // only send on its own
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =18;
+    a.otdf_type ="firehose_simple";
+    a.aff_store_control = drc::affordance_t::NEW;
+
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
+    a.nstates =0;
+    
+    std::vector<double> xyzrpy ;
+    if (which_publish==11){ // left side of wye
+      xyzrpy = {0.595 , -0.01, 1.0 , -M_PI/2 , 0.0 , -1.99};  
+    }else if (which_publish==13){ // right side of wye
+      xyzrpy = {0.613 , -0.168, 1.0 , -M_PI/2 , 0.0 , -0.93};  
+    }
+    a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+    a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+   
+    drc::affordance_plus_t a1;
+    a1.aff = a;
+    a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.0; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
+    a1.npoints=0; 
+    a1.ntriangles =0;
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+    exit(-1);
+  }   
+  
+  if ((which_publish==12)){ // only send on its own
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =18;
+    a.otdf_type ="wye";
+    a.aff_store_control = drc::affordance_t::NEW;
+
+    a.param_names.push_back("mass");
+    a.params.push_back(1.0); // unknown
+    a.nparams = a.params.size();
+    a.nstates =0;
+    
+    std::vector<double> xyzrpy = {0.746 , -0.075 , 1.0 , -M_PI/2 , 0.0 , 1.67};  
+    a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+    a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+   
+    drc::affordance_plus_t a1;
+    a1.aff = a;
+    a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.0; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
+    a1.npoints=0; 
+    a1.ntriangles =0;
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+    exit(-1);
+  }     
+  
+  
 
   string debris_filename_full = string(drc_base + "/software/config/task_config/debris/debrisPositions.csv");
   string standing_filename_full = string(drc_base + "/software/config/task_config/debris/debrisStandXYZYaw.csv");

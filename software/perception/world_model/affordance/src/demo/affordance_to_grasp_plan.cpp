@@ -68,7 +68,8 @@ class Pass{
     
     
     void sendCandidateGrasp(Eigen::Isometry3d aff_to_palmgeometry, double rel_angle);
-    void sendStandingPosition(drc::affordance_t steering_cyl);
+    void sendStandingPositionValve(drc::affordance_t steering_cyl);
+    void sendStandingPositionWye(drc::affordance_t steering_cyl);
     
     boost::shared_ptr<ModelClient> model_;
     KDL::TreeFkSolverPosFull_recursive* fksolver_;
@@ -195,7 +196,7 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
 
 
 // Draw the standing position for the valve task:
-void Pass::sendStandingPosition(drc::affordance_t steering_cyl){ 
+void Pass::sendStandingPositionValve(drc::affordance_t steering_cyl){ 
   
   
   // cylinder aff main axis is z-axis, determine yaw in world frame of that axis:
@@ -244,6 +245,52 @@ void Pass::sendStandingPosition(drc::affordance_t steering_cyl){
 }
 
 
+
+void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){ 
+  
+  
+  // cylinder aff main axis is z-axis, determine yaw in world frame of that axis:
+  Eigen::Quaterniond q1=  euler_to_quat( steering_cyl.origin_rpy[0] ,  steering_cyl.origin_rpy[1] , steering_cyl.origin_rpy[2]  ); 
+  Eigen::Quaterniond q2=  euler_to_quat( 0 ,  -90*M_PI/180 , 0  ); 
+  q1= q1*q2;  
+  double look_rpy[3];
+  quat_to_euler ( q1, look_rpy[0], look_rpy[1], look_rpy[2] );
+  ///////////////////////////////////////
+
+  int counter = 0;
+  std::vector<Isometry3dTime>  feet_positionsT;
+
+    Eigen::Isometry3d valve_pose(Eigen::Isometry3d::Identity());
+    valve_pose.translation()  << steering_cyl.origin_xyz[0], steering_cyl.origin_xyz[1], ground_height_;
+    valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  look_rpy[2] + M_PI )  ) );
+    feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose) );
+
+    for (int left_reach = 0; left_reach<2 ; left_reach++){
+      Eigen::Isometry3d valve2com(Eigen::Isometry3d::Identity());
+      if (left_reach){
+        valve2com.translation()  << -0.74, 0.15, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-5*M_PI/180))  );   
+      }else{
+        valve2com.translation()  << -0.74, -0.15, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,5*M_PI/180 ))  );   
+      }
+      feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com) );
+
+      Eigen::Isometry3d com2left(Eigen::Isometry3d::Identity());
+      com2left.translation()  << 0.0, 0.13, 0;
+      feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com*com2left) );
+      Eigen::Isometry3d com2right(Eigen::Isometry3d::Identity());
+      com2right.translation()  << 0.0, -0.13, 0;
+      feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com*com2right) );
+
+    }
+
+  pc_vis_->pose_collection_to_lcm_from_list(60014, feet_positionsT); 
+}
+
+
+
+
 void Pass::affHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::affordance_plus_collection_t* msg){
   //std::cout << "got "<< msg->naffs << " affs\n";
@@ -259,7 +306,9 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     affs_[ ss.str() ]=  aff;
     
     if (aff.otdf_type == "steering_cyl"){
-      sendStandingPosition( aff );
+      sendStandingPositionValve( aff );
+    }else if (aff.otdf_type == "wye"){
+      sendStandingPositionWye( aff );
     }
   }    
 }

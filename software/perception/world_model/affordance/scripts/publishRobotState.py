@@ -20,7 +20,26 @@ from drc.twist_t import twist_t
 from drc.force_torque_t import force_torque_t
 from drc.walking_goal_t import walking_goal_t
 from drc.atlas_behavior_manipulate_params_t import atlas_behavior_manipulate_params_t
+from drc.robot_urdf_t import robot_urdf_t
 ########################################################################################
+
+class JointNames:
+    def __init__(self):
+        self.left_sandia =( ["left_f0_0","left_f0_1","left_f0_2",   "left_f1_0","left_f1_1","left_f1_2",\
+                            "left_f2_0","left_f2_1","left_f2_2",   "left_f3_0","left_f3_1","left_f3_2" ] )
+        self.right_sandia=( ["right_f0_0","right_f0_1","right_f0_2",  "right_f1_0","right_f1_1","right_f1_2", \
+                            "right_f2_0","right_f2_1","right_f2_2",  "right_f3_0","right_f3_1","right_f3_2" ] )
+        self.left_irobot =( ["left_finger[0]/joint_base_rotation", "left_finger[0]/joint_base", "left_finger[0]/joint_flex", \
+                            "left_finger[1]/joint_base_rotation", "left_finger[1]/joint_base", "left_finger[1]/joint_flex", \
+                            "left_finger[2]/joint_base", "left_finger[2]/joint_flex" ] )
+        self.right_irobot=( ["right_finger[0]/joint_base_rotation", "right_finger[0]/joint_base", "right_finger[0]/joint_flex",\
+                            "right_finger[1]/joint_base_rotation", "right_finger[1]/joint_base", "right_finger[1]/joint_flex",\
+                            "right_finger[2]/joint_base", "right_finger[2]/joint_flex" ] )
+        self.head = ( ["pre_spindle_cal_x_joint", "pre_spindle_cal_y_joint", "pre_spindle_cal_z_joint", \
+                            "pre_spindle_cal_roll_joint", "pre_spindle_cal_pitch_joint", "pre_spindle_cal_yaw_joint", \
+                            "hokuyo_joint", \
+                            "post_spindle_cal_x_joint", "post_spindle_cal_y_joint", "post_spindle_cal_z_joint", \
+                            "post_spindle_cal_roll_joint", "post_spindle_cal_pitch_joint", "post_spindle_cal_yaw_joint" ])
 
 def timestamp_now (): return int (time.time () * 1000000)
 
@@ -150,45 +169,12 @@ def setStateAtHeight66(msg):
                         0.446678996086, 0.0600606650114, -0.0167930833995, 0.30805721879, 1.37700617313, 2.04546928406, -0.38981112, 0.006733536, -1.032395]
   return msg
 
-
-
-def appendSandiaJoints(msg):
-  msg.num_joints = msg.num_joints + 24
-  msg.joint_position.extend ( [0]*24 )
-  msg.joint_velocity.extend ( [0]*24 )
-  msg.joint_effort.extend ( [0]*24 )
-
-  msg.joint_name.extend( ["left_f0_j0","left_f0_j1","left_f0_j2",   "left_f1_j0","left_f1_j1","left_f1_j2",\
-    "left_f2_j0","left_f2_j1","left_f2_j2",   "left_f3_j0","left_f3_j1","left_f3_j2" ] )
-  msg.joint_name.extend( ["right_f0_j0","right_f0_j1","right_f0_j2",  "right_f1_j0","right_f1_j1","right_f1_j2", \
-    "right_f2_j0","right_f2_j1","right_f2_j2",  "right_f3_j0","right_f3_j1","right_f3_j2" ] )
-  return msg
-
-def appendIrobotJoints(msg):
-  msg.num_joints = msg.num_joints + 16
-  msg.joint_position.extend ( [0]*16 )
-  msg.joint_velocity.extend ( [0]*16 )
-  msg.joint_effort.extend ( [0]*16 )
-
-  msg.joint_name.extend( ["left_finger[0]/joint_base_rotation", "left_finger[0]/joint_base", "left_finger[0]/joint_flex", \
-      "left_finger[1]/joint_base_rotation", "left_finger[1]/joint_base", "left_finger[1]/joint_flex", \
-      "left_finger[2]/joint_base", "left_finger[2]/joint_flex" ] )
-  msg.joint_name.extend( ["right_finger[0]/joint_base_rotation", "right_finger[0]/joint_base", "right_finger[0]/joint_flex",\
-      "right_finger[1]/joint_base_rotation", "right_finger[1]/joint_base", "right_finger[1]/joint_flex",\
-      "right_finger[2]/joint_base", "right_finger[2]/joint_flex" ] )
-  return msg
-
-def appendHeadJoints(msg):
-  msg.num_joints = msg.num_joints + 13
-  msg.joint_position.extend ( [0]*13 )
-  msg.joint_velocity.extend ( [0]*13 )
-  msg.joint_effort.extend ( [0]*13 )
-
-  msg.joint_name.extend( ["pre_spindle_cal_x_joint", "pre_spindle_cal_y_joint", "pre_spindle_cal_z_joint", \
-      "pre_spindle_cal_roll_joint", "pre_spindle_cal_pitch_joint", "pre_spindle_cal_yaw_joint", \
-      "hokuyo_joint", \
-      "post_spindle_cal_x_joint", "post_spindle_cal_y_joint", "post_spindle_cal_z_joint", \
-      "post_spindle_cal_roll_joint", "post_spindle_cal_pitch_joint", "post_spindle_cal_yaw_joint" ])
+def appendJoints(msg,joint_names):
+  msg.num_joints = msg.num_joints + len(joint_names)
+  msg.joint_position.extend ( [0]*len(joint_names) )
+  msg.joint_velocity.extend ( [0]*len(joint_names) )
+  msg.joint_effort.extend ( [0]*len(joint_names) )
+  msg.joint_name.extend(joint_names)
   return msg
 
 def quat_to_euler(q) :
@@ -256,7 +242,11 @@ def getRobotStateMsg():
   return msg  
   
 def sendRobotStateMsg():
-  global goal_pelvis_height, goal_pelvis_pitch, goal_pelvis_roll, goal_pos, goal_xy
+  global goal_pelvis_height, goal_pelvis_pitch, goal_pelvis_roll, goal_pos, goal_xy, goal_hand_config, jnames
+  if (goal_hand_config[0] == -1):
+    print "no hand config, not publishing ERS"
+    return
+
   msg = getRobotStateMsg()
   quat_out = euler_to_quat(0,0, goal_yaw)
   msg.pose.rotation.w = quat_out[0]
@@ -266,7 +256,6 @@ def sendRobotStateMsg():
   msg.pose.translation.x = goal_xy[0]
   msg.pose.translation.y = goal_xy[1]
   print "Pelvis Height: " , goal_pelvis_height
-  print goal_pelvis_roll
   if (goal_pelvis_roll > 0.1):
     print "Using Leaning Pitch and Reach"
     msg = setStateAtHeight65BackAndPelvisPitchedAndArmExtended(msg)
@@ -287,11 +276,21 @@ def sendRobotStateMsg():
   else:
     msg = setStateAtHeight66(msg)
 
-  msg = appendHeadJoints(msg)
-  if (hand_type == "sandia"):
-    msg = appendSandiaJoints(msg)
-  else:
-    msg = appendIrobotJoints(msg)
+  msg = appendJoints(msg, jnames.head)
+  if (goal_hand_config[0] == 2):
+    #print "use left sandia"
+    appendJoints(msg,jnames.left_sandia)
+  elif (goal_hand_config[0] == 4):
+    #print "use left irobot"
+    appendJoints(msg,jnames.left_irobot)
+
+  if (goal_hand_config[1] == 3):
+    #print "use right sandia"
+    msg = appendJoints(msg,jnames.right_sandia)
+  elif (goal_hand_config[1] == 5):
+    #print "use right irobot"
+    msg = appendJoints(msg,jnames.right_irobot)
+
   lc.publish("EST_ROBOT_STATE", msg.encode())
 
 
@@ -313,20 +312,18 @@ def on_walking_goal(channel, data):
   sendRobotStateMsg()
 
   
+def on_robot_model(channel, data):
+  global goal_hand_config
+  m = robot_urdf_t.decode(data)
+  goal_hand_config[0] =  m.left_hand
+  goal_hand_config[1] =  m.right_hand
+  #print "got hands",str(goal_hand_config)
 
 #################################################################################
 
-print 'drc-fake-robot-state [irobot|sandia]'
+print 'drc-fake-robot-state'
 #print 'Number of arguments:', len(sys.argv), 'arguments.'
 #print 'Argument List:', str(sys.argv)
-
-hand_type = "sandia"
-
-if (len(sys.argv)>=2):
-  hand_type = sys.argv[1]
-  print "hand_type:", hand_type
-else:
-  print "hand_type defaulting to ", hand_type
 
 
 lc = lcm.LCM()
@@ -337,16 +334,18 @@ goal_yaw = 0
 goal_pelvis_height = 0
 goal_pelvis_pitch = 0
 goal_pelvis_roll = 0
-
-
+goal_hand_config = [-1]*2
+jnames = JointNames()
 
 def lcm_thread():
+  sub0 = lc.subscribe("ROBOT_MODEL", on_robot_model) 
   sub1 = lc.subscribe("ATLAS_MANIPULATE_PARAMS", on_manip_params) 
   sub2 = lc.subscribe("WALKING_GOAL", on_walking_goal) 
   while True:
     ## Handle LCM if new messages have arrived.
     lc.handle()
 
+  lc.unsubscribe(sub0)
   lc.unsubscribe(sub1)
   lc.unsubscribe(sub2)
 
