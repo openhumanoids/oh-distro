@@ -62,10 +62,46 @@ def setStateAtHeight85BackAndPelvisPitched(msg):
   msg.pose.rotation.x = quat_out[1]
   msg.pose.rotation.y = quat_out[2]
   msg.pose.rotation.z = quat_out[3]
-  msg.joint_position = [0.0255525112152, 0.441202163696, 0.00035834312439, 0.0319782495499, 0.0157958865166, 0.0383446216583, -0.91215968132,\
-                        0.951368033886, -0.315932631493, -0.0551896877587, -0.0183086395264, -0.0554901361465, -0.92648422718, 0.953379929066,\
+  msg.joint_position = [0.0255525112152, 0.441202163696, 0.00035834312439, 0.0319782495499, 0.0157958865166, 0.0383446216583, -0.91215968132, \
+                        0.951368033886, -0.315932631493, -0.0551896877587, -0.0183086395264, -0.0554901361465, -0.92648422718, 0.953379929066, \
                         -0.280878514051, 0.0627506822348, 0.27154108882, -1.361130476, 2.00148749352, 0.515956759453, 0.0401229038835, \
                         0.000248298572842, 0.269899457693, 1.37451326847, 2.04671573639, -0.454142481089, 0.00692522525787, 0.00274819415063]
+  return msg
+
+
+def setStateAtHeight65BackAndPelvisPitched(msg):
+  msg.pose.translation.z = 0.66
+  # convert input rotation to euler
+  quat_in= [msg.pose.rotation.w, msg.pose.rotation.x, msg.pose.rotation.y, msg.pose.rotation.z]
+  [roll,pitch,yaw]=quat_to_euler(quat_in)
+  nominal_rpy = [0.0, 0.263, yaw] # combine yaw with nominal leaning of robot:
+  quat_out = euler_to_quat(nominal_rpy[0], nominal_rpy[1], nominal_rpy[2])
+  msg.pose.rotation.w = quat_out[0]
+  msg.pose.rotation.x = quat_out[1]
+  msg.pose.rotation.y = quat_out[2]
+  msg.pose.rotation.z = quat_out[3]
+  msg.joint_position = [0.0102956295013, 0.447079539299, -0.00384950637817, 0.596411466599, 0.012946665287, 0.0286318063736, \
+                        -1.47610342503, 1.81983685493, -0.648966550827, -0.0258723720908, -0.0262627601624, -0.0393126010895,\
+                        -1.45850729942, 1.81290996075, -0.61605745554, 0.063511967659, 0.253438413143, -1.32485473156, 2.00952410698, \
+                        0.458183526993, 0.0392559692264, -0.003483354114, 0.326177358627, 1.38256680965, 2.02945828438, -0.434584200382, 0.0155538320541, 0.0141570083797]
+  return msg
+
+# ... arm also extended
+def setStateAtHeight65BackAndPelvisPitchedAndArmExtended(msg):
+  msg.pose.translation.z = 0.67
+  # convert input rotation to euler
+  quat_in= [msg.pose.rotation.w, msg.pose.rotation.x, msg.pose.rotation.y, msg.pose.rotation.z]
+  [roll,pitch,yaw]=quat_to_euler(quat_in)
+  nominal_rpy = [0.0, 0.278, yaw] # combine yaw with nominal leaning of robot:
+  quat_out = euler_to_quat(nominal_rpy[0], nominal_rpy[1], nominal_rpy[2])
+  msg.pose.rotation.w = quat_out[0]
+  msg.pose.rotation.x = quat_out[1]
+  msg.pose.rotation.y = quat_out[2]
+  msg.pose.rotation.z = quat_out[3]
+  msg.joint_position = [0.0150854587555, 0.481599569321, -0.00544047355652, 0.596459150314, 0.0206943154335, 0.00824320316315, -1.51817989349, \
+                        1.72192263603, -0.49567347765, -0.00896684732288, -0.0317978858948, -0.0276851654053, -1.50690329075, 1.71808087826, \
+                        -0.464701503515, 0.050920818001, 0.25139734149, -1.3262168169, 2.01269006729, 0.464060992002, 0.0487913787365, -0.00783698540181, \
+                        -1.36388576031, 0.381931900978, 2.0297460556, -0.429119378328, 0.0155538320541, 0.0141570083797]
   return msg
 
 def setStateAtHeight86(msg):
@@ -220,7 +256,7 @@ def getRobotStateMsg():
   return msg  
   
 def sendRobotStateMsg():
-  global goal_pelvis_height, goal_pelvis_pitch, goal_pos, goal_xy
+  global goal_pelvis_height, goal_pelvis_pitch, goal_pelvis_roll, goal_pos, goal_xy
   msg = getRobotStateMsg()
   quat_out = euler_to_quat(0,0, goal_yaw)
   msg.pose.rotation.w = quat_out[0]
@@ -230,9 +266,16 @@ def sendRobotStateMsg():
   msg.pose.translation.x = goal_xy[0]
   msg.pose.translation.y = goal_xy[1]
   print "Pelvis Height: " , goal_pelvis_height
-  if (goal_pelvis_pitch > 0.1):
+  print goal_pelvis_roll
+  if (goal_pelvis_roll > 0.1):
+    print "Using Leaning Pitch and Reach"
+    msg = setStateAtHeight65BackAndPelvisPitchedAndArmExtended(msg)
+  elif (goal_pelvis_pitch > 0.1):
     print "Using Leaning Pitch"
-    msg = setStateAtHeight85BackAndPelvisPitched(msg)
+    if (goal_pelvis_height >  0.75 ):
+      msg = setStateAtHeight85BackAndPelvisPitched(msg)
+    else:
+      msg = setStateAtHeight65BackAndPelvisPitched(msg)
   elif (goal_pelvis_height >  0.83 ):
     msg = setStateAtHeight86(msg)
   elif (goal_pelvis_height >  0.775 ):
@@ -253,10 +296,11 @@ def sendRobotStateMsg():
 
 
 def on_manip_params(channel, data):
-  global goal_pelvis_height,goal_pelvis_pitch, goal_yaw, goal_xy
+  global goal_pelvis_height,goal_pelvis_pitch,goal_pelvis_roll, goal_yaw, goal_xy
   m = atlas_behavior_manipulate_params_t.decode(data)
   goal_pelvis_height = m.desired.pelvis_height
   goal_pelvis_pitch = m.desired.pelvis_pitch
+  goal_pelvis_roll = m.desired.pelvis_roll # use roll to signify arm reach
   print "Changing height and pitch"
   sendRobotStateMsg()
   
@@ -292,7 +336,7 @@ goal_xy = [0,0]
 goal_yaw = 0
 goal_pelvis_height = 0
 goal_pelvis_pitch = 0
-
+goal_pelvis_roll = 0
 
 
 
