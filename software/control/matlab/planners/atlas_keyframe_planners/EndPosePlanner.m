@@ -186,7 +186,7 @@ classdef EndPosePlanner < KeyframePlanner
                     iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint];   
                     
                     if(j==1)
-                        dist_constraint = Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,[0 1]);
+                        dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,[0 1])};
                         iktraj_dist_constraint = [iktraj_dist_constraint,dist_constraint];       
                     end
                 end    
@@ -207,7 +207,7 @@ classdef EndPosePlanner < KeyframePlanner
                     rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-2,sind(2).^2,tspan);    
                     iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraint];  
                     if(j==1)
-                        dist_constraint = Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,[0 1]);
+                        dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,[0 1])};
                         iktraj_dist_constraint = [iktraj_dist_constraint,dist_constraint];       
                     end
                 end  
@@ -277,7 +277,7 @@ classdef EndPosePlanner < KeyframePlanner
             iktraj_rhand_constraint{:},iktraj_lhand_constraint{:},...
             iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
             iktraj_pelvis_constraint{:},iktraj_head_constraint{:},...
-            joint_constraint,stance_constraint,iktraj_dist_constraint,qsc,...
+            joint_constraint,stance_constraint,iktraj_dist_constraint{:},qsc,...
             iktraj_options);
           if(snopt_info > 10)
               warning('The IK traj fails');
