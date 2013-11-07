@@ -153,4 +153,18 @@
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="RING_0_0" />
+        <relative_pose rpy="3.09532 0.0172766 0.334388" xyz="-0.532211 -0.668926 1.45499" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="RING_0_0" />
+        <relative_pose rpy="3.09538 0.0174272 0.337643" xyz="-0.59843 -0.378785 1.44072" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
 </object>
