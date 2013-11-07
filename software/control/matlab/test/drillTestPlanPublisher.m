@@ -51,7 +51,7 @@ classdef drillTestPlanPublisher
       joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
       obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
       cost = ones(34,1);
-      cost(7:9) = [10;1000;10];
+      cost(7:9) = [100;1000;100];
  
       vel_cost = cost*.05;
       accel_cost = cost*.05;
