@@ -59,11 +59,14 @@ public class HandStateListener implements LCMSubscriber
         java.util.TreeMap<String,Integer> msg_joint_map = new java.util.TreeMap<String,Integer>();
         for(int i = 0;i<msg.num_joints;i++)
         {
-          msg_joint_map.put(msg.joint_name[i],i);
+          Integer joint_idx = new Integer(i);
+          msg_joint_map.put(msg.joint_name[i],joint_idx);
+          System.out.format("%s %d\n",msg.joint_name[i],i);
         }
         m_joint_map = new java.util.TreeMap<String,Integer>();
         for(int i = 0;i<hand_dim;i++)
         {
+          System.out.format("%s\n",m_joint_names[i]);
           if(msg_joint_map.get(m_joint_names[i])==null)
           {
             System.out.format("%s is not in the map during construction\n",m_joint_names[i]);

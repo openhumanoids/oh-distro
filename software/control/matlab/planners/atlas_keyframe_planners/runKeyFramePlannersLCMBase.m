@@ -390,12 +390,12 @@ while(1)
     
 %    data = getNextMessage(l_hand_listener,msg_timeout);
 %    if(~isempty(data))
-%%       x0(aff_manager.lhand2robotFrameMap) = data;
+% %       x0(aff_manager.lhand2robotFrameMap) = data;
 %    end
 %    
 %    data = getNextMessage(r_hand_listener,msg_timeout);
 %    if(~isempty(data))
-%%       x0(aff_manager.rhand2robotFrameMap) = data;
+% %       x0(aff_manager.rhand2robotFrameMap) = data;
 %    end
     x= constraint_listener.getNextMessage(msg_timeout); % not a frame
     if(~isempty(x))

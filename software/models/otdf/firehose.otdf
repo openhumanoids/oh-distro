@@ -5,7 +5,7 @@
    (or)
      dyn_mesh+cyl::mate::dyn_mesh+cyl+cyl 
  -->
-<object name="standpipe::mate::firehose">
+<object name="firehose">
     <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
     <!-- World frame origin of the object -->
     <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
@@ -45,7 +45,7 @@
     <param name="roll_offset_cyl_2_2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch_offset_cyl_2_2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="yaw_offset_cyl_2_2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <link name="base_link" />
+    <link name="base_link" /
     <!-- parent affordance::standpipe (dynamic_mesh_with 1 cylinder) -->
     <link name="dynamic_mesh_1">
         <inertial>
