@@ -6,8 +6,6 @@ function [lambdas, feasibility2, foot_centers] = scanWalkingTerrain(biped, traj,
 % @retval feasibility a struct with 'right' and 'left' fields. If feasibility.right(n) == 1, then the right foot can be safely placed at the location along the trajectory given by lambdas(n)
 % @retval foot_centers the center position of each foot at each lambda 
 
-debug = false;
-
 if nargin < 4
   nom_step_width = biped.nom_step_width;
 end
@@ -22,10 +20,11 @@ end
 foot_centers = struct('right', biped.stepCenter2FootCenter(traj_poses, 1, nom_step_width),...
                       'left', biped.stepCenter2FootCenter(traj_poses, 0, nom_step_width));
 
-feas_check = biped.getTerrain().getStepFeasibilityChecker(foot_radius, struct('debug', false));
+contacts = biped.getBody(biped.foot_bodies_idx(1)).contact_pts; % just use r foot for now
+feas_check = biped.getTerrain().getStepFeasibilityChecker(contacts, struct('debug', false));
 for f = {'left', 'right'}
   ft = f{1};
-  feasibility2.(ft) = feas_check(foot_centers.(ft)(1:2,:));
+  feasibility2.(ft) = feas_check(foot_centers.(ft)([1:2,6],:));
 end
 
 end
