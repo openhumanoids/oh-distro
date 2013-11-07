@@ -21,6 +21,7 @@ from drc.force_torque_t import force_torque_t
 from drc.walking_goal_t import walking_goal_t
 from drc.atlas_behavior_manipulate_params_t import atlas_behavior_manipulate_params_t
 from drc.robot_urdf_t import robot_urdf_t
+from drc.robot_plan_t import robot_plan_t
 ########################################################################################
 
 class JointNames:
@@ -242,9 +243,17 @@ def getRobotStateMsg():
   return msg  
   
 def sendRobotStateMsg():
-  global goal_pelvis_height, goal_pelvis_pitch, goal_pelvis_roll, goal_pos, goal_xy, goal_hand_config, jnames
+  global goal_pelvis_height, goal_pelvis_pitch, goal_pelvis_roll, goal_pos, goal_xy, goal_hand_config, jnames, \
+         goal_committed_use, goal_committed
   if (goal_hand_config[0] == -1):
     print "no hand config, not publishing ERS"
+    return
+
+  if (goal_committed_use==True):
+    print "publishing committed as ERS"
+    msg = goal_committed
+    msg.utime = timestamp_now ()
+    lc.publish("EST_ROBOT_STATE", msg.encode())
     return
 
   msg = getRobotStateMsg()
@@ -319,6 +328,15 @@ def on_robot_model(channel, data):
   goal_hand_config[1] =  m.right_hand
   #print "got hands",str(goal_hand_config)
 
+
+def on_committed_robot_plan(channel, data):
+  global goal_committed_use, goal_committed
+  m = robot_plan_t.decode(data)  
+  print  "num of states ",m.num_states
+  msg = m.plan[m.num_states-1]
+  lc.publish("EST_ROBOT_STATE", msg.encode())
+  goal_committed = msg
+  goal_committed_use = True
 #################################################################################
 
 print 'drc-fake-robot-state'
@@ -335,12 +353,16 @@ goal_pelvis_height = 0
 goal_pelvis_pitch = 0
 goal_pelvis_roll = 0
 goal_hand_config = [-1]*2
+
+goal_committed = []
+goal_committed_use = False
 jnames = JointNames()
 
 def lcm_thread():
   sub0 = lc.subscribe("ROBOT_MODEL", on_robot_model) 
   sub1 = lc.subscribe("ATLAS_MANIPULATE_PARAMS", on_manip_params) 
   sub2 = lc.subscribe("WALKING_GOAL", on_walking_goal) 
+  sub3 = lc.subscribe("COMMITTED_ROBOT_PLAN", on_committed_robot_plan) 
   while True:
     ## Handle LCM if new messages have arrived.
     lc.handle()
@@ -348,11 +370,12 @@ def lcm_thread():
   lc.unsubscribe(sub0)
   lc.unsubscribe(sub1)
   lc.unsubscribe(sub2)
+  lc.unsubscribe(sub3)
 
 t2 = Thread(target=lcm_thread)
 t2.start()
 
-sleep_timing=0.5 # time between updates of the plots - in wall time
+sleep_timing=0.01 # time between updates of the plots - in wall time
 while (1==1):
   time.sleep(sleep_timing)
   sendRobotStateMsg()
