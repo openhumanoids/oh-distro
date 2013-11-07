@@ -51,18 +51,26 @@ while(~getModelFlag)
 end
 options.floating = true;
 options.dt = 0.001;
-if(l_hand_mode == 0 && r_hand_mode == 1)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_right_sandia_hand.urdf'),options);
+if(l_hand_mode == 0 && r_hand_mode == 0)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
+elseif(l_hand_mode == 0 && r_hand_mode == 1)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RS.urdf'),options);
+elseif(l_hand_mode == 0 && r_hand_mode == 2)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RI.urdf'),options);
+elseif(l_hand_mode == 1 && r_hand_mode == 0)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LS_RN.urdf'),options);
 elseif(l_hand_mode == 1 && r_hand_mode == 1)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
-% elseif(l_hand_mode == 2 && r_hand_mode == 2)
-%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_irobot_hands.urdf'),options);
-else%if(l_hand_mode == 0 && r_hand_mode == 0)
-  l_hand_mode=0;
-  r_hand_mode=0;
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
-% else
-%   error('The urdf for the model does not exist');
+elseif(l_hand_mode == 1 && r_hand_mode == 2)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LS_RI.urdf'),options);
+elseif(l_hand_mode == 2 && r_hand_mode == 0)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RN.urdf'),options);
+elseif(l_hand_mode == 2 && r_hand_mode == 1)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RS.urdf'),options);
+elseif(l_hand_mode == 2 && r_hand_mode == 2)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RI.urdf'),options);
+else
+  error('The urdf for the model does not exist');
 end
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
@@ -111,13 +119,6 @@ wholebody_planner = WholeBodyPlanner(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
 keyframe_adjustment_engine = KeyframeAdjustmentEngine(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode); % Common keyframe adjustment for all the above planners
-
-reaching_planner.setHandType(l_hand_mode,r_hand_mode);
-manip_planner.setHandType(l_hand_mode,r_hand_mode);
-posture_planner.setHandType(l_hand_mode,r_hand_mode);
-endpose_planner.setHandType(l_hand_mode,r_hand_mode);
-wholebody_planner.setHandType(l_hand_mode,r_hand_mode);
-keyframe_adjustment_engine.setHandType(l_hand_mode,r_hand_mode);
 
 % atlas state subscriber
 atlas_state_frame = atlas.getStateFrame();

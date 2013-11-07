@@ -115,7 +115,7 @@ classdef KeyframePlanner < handle
             obj.hand_gaze_tol = pi/18;
             obj.head_gaze_tol = pi/8;% FOV for multisense is 80x45, so 45/2 should be the max tolerance
 
-            obj.setHandType(true,true); % set sandia hands as default
+            obj.setHandType(lhand_frame,rhand_frame);
             % obj.collision_check            
             % - 0, no validation, no optimizatoin with collision
             % - 1, validation only, no optimization
@@ -157,9 +157,27 @@ classdef KeyframePlanner < handle
             obj.plan_cache.qdot_desired  = val;
         end       
      %-----------------------------------------------------------------------------------------------------------------        
-        function setHandType(obj,l_hand_mode,r_hand_mode)
-            obj.l_hand_mode = l_hand_mode;
-            obj.r_hand_mode = r_hand_mode;
+        function setHandType(obj,lhand_frame,rhand_frame)
+          if(~isempty(strfind(lhand_frame.name,'no')))
+            obj.l_hand_mode = 0;
+            display('No left hand');
+          elseif(~isempty(strfind(lhand_frame.name,'sandia')))
+            obj.l_hand_mode = 1;
+            display('Sandia left hand');
+          elseif(~isempty(strfind(lhand_frame.name,'irobot')))
+            obj.l_hand_mode = 2;
+            display('iRobot left hand');
+          end
+          if(~isempty(strfind(rhand_frame.name,'no')))
+            obj.r_hand_mode = 0;
+            display('No right hand');
+          elseif(~isempty(strfind(rhand_frame.name,'sandia')))
+            obj.r_hand_mode = 1;
+            display('Sandia right hand');
+          elseif(~isempty(strfind(rhand_frame.name,'irobot')))
+            obj.r_hand_mode = 2;
+            display('iRobot right hand');
+          end
             
             if(obj.l_hand_mode == 1)
              obj.T_hand_palm_l = obj.T_hand_palm_l_sandia;
