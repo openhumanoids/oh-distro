@@ -132,7 +132,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
   // use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
 
-  use_encoder_[Atlas::JOINT_NECK_AY] = true;
+  //use_encoder_[Atlas::JOINT_NECK_AY] = true;
 }
 
 
