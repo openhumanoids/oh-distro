@@ -19,7 +19,7 @@ classdef drillTestPlanPublisher
     drill_dir_des
     drill_dir_threshold
     hand_body = 29;
-    joint_indices = [22:26 33];
+    joint_indices;
     ik_options
     free_ik_options
     drilling_world_axis
@@ -51,15 +51,20 @@ classdef drillTestPlanPublisher
       joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
       obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
       cost = ones(34,1);
+      cost(7:9) = [10;1000;10];
+ 
+      vel_cost = cost*.05;
+      accel_cost = cost*.05;
       
       iktraj_options = IKoptions(obj.r);
       iktraj_options = iktraj_options.setDebug(true);
       iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-      iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-      iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
+      iktraj_options = iktraj_options.setQa(diag(vel_cost));
+      iktraj_options = iktraj_options.setQv(diag(accel_cost));
       iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1)); % upper and lower bnd on velocity.
-      iktraj_options = iktraj_options.setMajorIterationsLimit(300);
+      iktraj_options = iktraj_options.setMajorIterationsLimit(3000);
       iktraj_options = iktraj_options.setMex(true);
+      iktraj_options = iktraj_options.setMajorOptimalityTolerance(1e-5);
       
       obj.ik_options = iktraj_options;
       obj.free_ik_options = iktraj_options.setFixInitialState(false);
@@ -69,6 +74,8 @@ classdef drillTestPlanPublisher
       obj.drilling_world_axis = drilling_world_axis/norm(drilling_world_axis);
       obj.drill_dir_des = drill_dir_des/norm(drill_dir_des);
       obj.drill_dir_threshold = drill_dir_threshold;
+      
+      obj.joint_indices = [7:9 22:26 33];
       
       valuecheck(obj.drill_dir_des'*obj.drill_axis_on_hand,0);
       
@@ -107,10 +114,20 @@ classdef drillTestPlanPublisher
       drill_pos_constraint = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill,x_drill,[t_vec(end) t_vec(end)]);
       
       % Find nominal pose
-      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0 + .1*randn(obj.r.num_q,1),q0,...
-        drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
+      diff_opt = inf;
+      q_end_nom = q0;
+      for i=1:50,
+        [q_tmp,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0 + .1*randn(obj.r.num_q,1),q0,...
+          drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
+        
+        c_tmp = (q_tmp - q0)'*obj.ik_options.Q*(q_tmp - q0);
+        if snopt_info_ik == 1 && c_tmp < diff_opt
+          q_end_nom = q_tmp;
+          diff_opt = c_tmp;
+        end
+      end
       
-      if(snopt_info_ik > 10)
+      if(diff_opt == inf)
         send_msg = sprintf('snopt_info = %d. The IK fails.',snopt_info_ik);
         send_status(4,0,0,send_msg);
         display(infeasibleConstraintMsg(infeasible_constraint_ik));
@@ -146,7 +163,6 @@ classdef drillTestPlanPublisher
       x_drill_init = obj.r.forwardKin(kinsol,obj.hand_body,obj.drill_pt_on_hand);
       
       t_vec = linspace(0,T,N);
-      qtraj_guess = PPTrajectory(foh([0 1],[q0, q0+.1*randn(length(q0),1)]));
       
       % create posture constraint
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices');
@@ -176,6 +192,18 @@ classdef drillTestPlanPublisher
         drill_pos_constraint{i-1} = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill(:,i),x_drill(:,i),[t_vec(i) t_vec(i)]);
       end
       
+      % Find nominal pose
+      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
+        drill_pos_constraint{end},drill_dir_constraint,posture_constraint,obj.ik_options);
+      if(snopt_info_ik > 10)
+        send_msg = sprintf('snopt_info = %d. The IK fails.',snopt_info_ik);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint_ik));
+        warning(send_msg);
+      end
+      qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
+
+      
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
         drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.ik_options);
@@ -203,7 +231,7 @@ classdef drillTestPlanPublisher
       x_drill_init = obj.r.forwardKin(kinsol,obj.hand_body,obj.drill_pt_on_hand);
       
       t_vec = linspace(0,T,N);
-      qtraj_guess = PPTrajectory(foh([0 1],[q0, q0+.1*randn(length(q0),1)]));
+      qtraj_guess = PPTrajectory(foh([0 Ts],[q0, q0+.1*randn(length(q0),1)]));
       
       % create posture constraint
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices');
@@ -281,7 +309,6 @@ classdef drillTestPlanPublisher
         warning(send_msg);
       end
       
-      % Find nominal poses
       [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q_start_nom,q_start_nom,...
         drill_pos_constraint{end},drill_dir_constraint,posture_constraint,obj.ik_options);
       
