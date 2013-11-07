@@ -5,9 +5,10 @@ ON HOLD:
 * drc-viewer interface for opening and closing hands
 
 TODO:
+* mapping from motor tendon excursion to proximal joint angle
+* make it possible to calibrate spread, thumb antagonistic
 
 FOCUS FOR TODAY:
-* send 45 back
 * find good iRobot hand travel bag
 
 BUSY:
@@ -53,3 +54,5 @@ DONE:
 * online calibration routine for dumb fingers
 * record configuration when in calibration jig
 * test repeatability of calibration routine
+* update usage
+* send 45 back

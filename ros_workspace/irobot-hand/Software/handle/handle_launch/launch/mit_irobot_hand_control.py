@@ -22,7 +22,7 @@ motor_indices = range(3)
 jig_pose = {0: 8170.8000000000002, 1: 7925.8000000000002, 2: 8406.5}
 
 # standard deviations: {0: 59.872865306414063, 1: 110.36235771312609, 2: 80.058728443561989}
-closed_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
+no_jig_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
 
 def set_command_message_same_value(command_message, control_type, motor_indices, value):
     values = dict((motor_index, value) for motor_index in motor_indices)
@@ -127,7 +127,7 @@ class IRobotHandController(object):
 def parseArguments():
     parser = argparse.ArgumentParser(description='Script for interacting with iRobot hand')
     parser.add_argument('side', help='hand side, l or r')
-    parser.add_argument('commands', nargs='+', help='a list of commands, each one being CLOSE or OPEN')
+    parser.add_argument('commands', nargs='+', help='a list of commands, each one being CLOSE, OPEN, CALIBRATE_JIG, or CALIBRATE_NO_JIG')
     args = parser.parse_args()
     print "Commands: " + ", ".join(args.commands)
     return (args.side, args.commands)
@@ -139,14 +139,14 @@ if __name__ == '__main__':
     for command in commands:
         print "Executing command: " + command
         if command == 'CLOSE':
-            controller.close_hand_current_control(500)
+            controller.close_hand_current_control(800)
         elif command == 'OPEN':
 #             controller.open_hand_angle_control()
             controller.open_hand_motor_excursion_control()
-        elif command == 'CLEAR_CONFIG':
-            controller.clear_config()
         elif command == 'CALIBRATE_JIG':
             controller.calibrate_motor_encoder_offsets(jig_pose)
+        elif command == 'CALIBRATE_NO_JIG':
+            controller.calibrate_motor_encoder_offsets(no_jig_pose)
         else:
             raise RuntimeError("Command not recognized: " + command + "\n")
 
