@@ -7,10 +7,8 @@ ON HOLD:
 TODO:
 
 FOCUS FOR TODAY:
-* test repeatability of calibration routine
 * send 45 back
-* good iRobot hand travel bag
-* online calibration routine for dumb fingers
+* find good iRobot hand travel bag
 
 BUSY:
 
@@ -51,3 +49,7 @@ DONE:
 * put dumb fingers on 44
 * iRobot weekly report
 * contact iRobot: spectra gauge, other options for tendons, tendon abrasion on smart fingers
+* add date to config file
+* online calibration routine for dumb fingers
+* record configuration when in calibration jig
+* test repeatability of calibration routine
