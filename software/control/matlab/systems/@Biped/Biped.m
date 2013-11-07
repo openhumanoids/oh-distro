@@ -137,23 +137,13 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
     end
 
-    function [A, b] = getFootstepLinearCons(obj, p0_is_right_foot, options)
-      % Get the linear inequality constraints for Ax - b <= 0, where x is a column of relative step positions, as given by Biped.relativeSteps(). Automatically flips the y direction for left steps to make them equivalent to right steps. 
+    function [A, b] = getFootstepDiamondCons(obj, p0_is_right_foot, options)
+      % Alternative (experimental) formulation of footstep linear constraints, in which the reachable region is defined by a diamond which extends out to the max forward and backward distances only at the nominal step width, rather than a rectangle defined by the max forward/back step and the max/min step width.
 
       if nargin < 3
         options = struct();
       end
-      A = [1 0 0 0 0 0;
-           -1 0 0 0 0 0;
-           0 1 0 0 0 0;
-           0 -1 0 0 0 0;
-           0 0 1 0 0 0;
-           0 0 -1 0 0 0;
-           0 0 0 0 0 1;
-           0 0 0 0 0 -1];
-      if ~p0_is_right_foot
-        A(:,2) = -A(:,2);
-      end
+
       if ~isfield(options, 'forward_step')
         options.forward_step = obj.max_forward_step;
       end
@@ -170,10 +160,76 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.backward_step = options.forward_step;
       end
       if ~isfield(options, 'max_step_rot')
-        options.max_step_rot = obj.max_step_rot;
+        options.max_outward_step_rot = obj.max_step_rot;
+      end
+      if ~isfield(options, 'max_inward_step_rot')
+        options.max_inward_step_rot = 0; % BDI walker doesn't allow toe to rotate inward at all
+      end
+
+      if ~isfield(options, 'max_step_dz')
+        options.max_step_dz = obj.max_step_dz;
+      end
+
+      [Axy, bxy] = poly2lincon([0, options.forward_step, 0, -options.backward_step], [options.min_step_width, options.nom_step_width, options.max_step_width, options.nom_step_width]);
+      A = [Axy, zeros(4, 4);
+           0 0 1 0 0 0;
+           0 0 -1 0 0 0;
+           0 0 0 0 0 1;
+           0 0 0 0 0 -1];
+      if ~p0_is_right_foot
+        A(:,2) = -A(:,2);
+        A(:,6) = -A(:,6);
+      end
+      b = [bxy;
+           options.max_step_dz;
+           options.max_step_dz;
+           options.max_inward_step_rot;
+           options.max_outward_step_rot];
+   end
+
+    function [A, b] = getFootstepLinearCons(obj, p0_is_right_foot, options)
+      % Get the linear inequality constraints for Ax - b <= 0, where x is a column of relative step positions, as given by Biped.relativeSteps(). Automatically flips the y direction for left steps to make them equivalent to right steps. 
+
+      if nargin < 3
+        options = struct();
+      end
+
+      if ~isfield(options, 'forward_step')
+        options.forward_step = obj.max_forward_step;
+      end
+      if ~isfield(options, 'nom_step_width')
+        options.nom_step_width = obj.nom_step_width;
+      end
+      if ~isfield(options, 'max_step_width')
+        options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.01]);
+      end
+      if ~isfield(options, 'min_step_width')
+        options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
+      end
+      if ~isfield(options, 'backward_step')
+        options.backward_step = options.forward_step;
+      end
+      if ~isfield(options, 'max_step_rot')
+        options.max_outward_step_rot = obj.max_step_rot;
+      end
+      if ~isfield(options, 'max_inward_step_rot')
+        options.max_inward_step_rot = 0; % BDI walker doesn't allow toe to rotate inward at all
       end
       if ~isfield(options, 'max_step_dz')
         options.max_step_dz = obj.max_step_dz;
+      end
+
+      A = [1 0 0 0 0 0;
+           -1 0 0 0 0 0;
+           0 1 0 0 0 0;
+           0 -1 0 0 0 0;
+           0 0 1 0 0 0;
+           0 0 -1 0 0 0;
+           0 0 0 0 0 1;
+           0 0 0 0 0 -1];
+      if ~p0_is_right_foot
+        A(:,2) = -A(:,2);
+        A(:,6) = -A(:,6);
       end
       b = [options.forward_step;
            options.backward_step;
@@ -181,8 +237,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
            -options.min_step_width;
            options.max_step_dz;
            options.max_step_dz;
-           options.max_step_rot;
-           options.max_step_rot];
+           options.max_inward_step_rot;
+           options.max_outward_step_rot];
     end
 
     function [A, b] = getXYFootstepLinearCons(obj, p0_is_right_foot, options)
