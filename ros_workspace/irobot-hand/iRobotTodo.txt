@@ -1,9 +1,16 @@
-TODO:
-* figure out best control types to use for opening and closing hand, and holding an object
+ON HOLD:
 * check if translator needs to be updated
 * visualize hand configuration using proximal joint angle encoders See line 597 ofdrc/ros_workspace/translators/src/ros2lcm_hands.cpp
 * explore contact sensing
 * drc-viewer interface for opening and closing hands
+
+TODO:
+
+FOCUS FOR TODAY:
+* test repeatability of calibration routine
+* send 45 back
+* good iRobot hand travel bag
+* online calibration routine for dumb fingers
 
 BUSY:
 
@@ -39,3 +46,8 @@ DONE:
 * do current control test from command line, send email
 * email iRobot about current control
 * figure out what's wrong with #44
+* update firmware on 44
+* figure out what's broken on 45
+* put dumb fingers on 44
+* iRobot weekly report
+* contact iRobot: spectra gauge, other options for tendons, tendon abrasion on smart fingers
