@@ -32,7 +32,7 @@ typedef enum _leading_foot_t {
 } leading_foot_t;
 
 typedef enum _walking_mode_t {
-  WALKING_TYPICAL, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI, STEPPING_BDI
+  WALKING_TYPICAL, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI, STEPPING_BDI, STEPPING_BDI_FINE
 } walking_mode_t;
 
 typedef enum _behavior_t {
@@ -70,9 +70,16 @@ typedef struct _RendererWalking {
   BotViewer *viewer;
   lcm_t *lc;
 
-  BotGtkParamWidget *pw;
+  // BotGtkParamWidget *pw;
+  BotGtkParamWidget *main_pw;
+  BotGtkParamWidget *bdi_pw;
+  BotGtkParamWidget *drake_pw;
+  BotGtkParamWidget *lead_foot_pw;
+  BotGtkParamWidget *map_mode_pw;
+  BotGtkParamWidget *ignore_terrain_pw;
+  BotGtkParamWidget *follow_spline_pw;
   
-  PerceptionData *perceptionData;
+  // PerceptionData *perceptionData;
 
   bool follow_spline;
   bool ignore_terrain;
@@ -117,6 +124,8 @@ typedef struct _RendererWalking {
   int64_t robot_utime;
   double robot_pos[3];
   double robot_rot[4]; // quaternion in xywz
+
+  double height_ground;
   
 }RendererWalking;
 
@@ -125,6 +134,7 @@ void setup_renderer_walking(BotViewer *viewer, int render_priority, lcm_t* lcm, 
 
 void publish_simple_nav(RendererWalking* self, double x, double y, double yaw);
 void set_default_params(RendererWalking* self, int mode);
+// void set_view_params(RendererWalking* self);
 void get_params_from_widget(RendererWalking* self);
 void publish_walking_goal(RendererWalking* self, bool is_new);
 void publish_walking_opts(RendererWalking* self);

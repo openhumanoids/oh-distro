@@ -31,14 +31,14 @@
 #include <string>
 #include "renderer_walking.hpp"
 #define RENDERER_NAME "Walking"
-#define PARAM_GOAL_SEND "Place New Walking Goal"
+#define PARAM_GOAL_SEND "Place a Goal"
 #define PARAM_GO_FORWARD "Go Forward"
 #define PARAM_GOAL_UPDATE "Update Params"
-#define PARAM_FOLLOW_SPLINE "Footsteps follow spline"
-#define PARAM_IGNORE_TERRAIN "Footsteps ignore terrain"
+#define PARAM_FOLLOW_SPLINE "Follow spline"
+#define PARAM_IGNORE_TERRAIN "Ignore terrain"
 #define PARAM_BEHAVIOR "Behavior"
 #define PARAM_GOAL_TYPE "Goal sets pose of: "
-#define PARAM_LEADING_FOOT "Leading foot"
+#define PARAM_LEADING_FOOT "Leading foot "
 #define PARAM_STEP_SPEED "Foot speed (m/s)"
 #define PARAM_STEP_HEIGHT "Step clearance (m)"
 #define PARAM_MU "Coeff. of friction"
@@ -49,13 +49,14 @@
 #define PARAM_NOM_STEP_WIDTH "Nominal step width (m)"
 #define PARAM_BDI_STEP_DURATION "BDI step duration (s)"
 #define PARAM_BDI_SWAY_DURATION "BDI sway duration (s)"
+#define PARAM_BDI_SWING_HEIGHT "BDI swing height (m)"
 #define PARAM_BDI_LIFT_HEIGHT "BDI lift height (m)"
 #define PARAM_BDI_TOE_OFF "BDI toe off enable"
 #define PARAM_BDI_KNEE_NOMINAL "BDI knee nominal"
 #define PARAM_STOP_WALKING "Stop Walking Now!"
-#define PARAM_MAP_MODE "Map mode to use"
+#define PARAM_MAP_MODE "Map mode "
 
-#define WALKING_MODE "Preset"
+#define WALKING_MODE "Preset "
 
 
 #define DRAW_PERSIST_SEC 4
@@ -193,39 +194,39 @@ mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_star
   }
 
   point2d_t click_pt_local;
-  float zMean = 0;
+  // float zMean = 0;
   
-  int iViewId = DRC_DATA_REQUEST_T_HEIGHT_MAP_SCENE;
-  maps::ViewClient::ViewPtr view = self->perceptionData->mViewClient.getView(iViewId);
-  if (view != NULL) {
-    maps::PointCloud::Ptr cloud = view->getAsPointCloud();
-    for (int i = 0; i < cloud->size(); ++i) {
-      zMean += cloud->points[i].z;
-    }
-    if (cloud->size() > 0) {
-      zMean /= cloud->size();
-    }
-  }
+  // int iViewId = DRC_DATA_REQUEST_T_HEIGHT_MAP_SCENE;
+  // maps::ViewClient::ViewPtr view = self->perceptionData->mViewClient.getView(iViewId);
+  // if (view != NULL) {
+  //   maps::PointCloud::Ptr cloud = view->getAsPointCloud();
+  //   for (int i = 0; i < cloud->size(); ++i) {
+  //     zMean += cloud->points[i].z;
+  //   }
+  //   if (cloud->size() > 0) {
+  //     zMean /= cloud->size();
+  //   }
+  // }
       
   if (0 != geom_ray_z_plane_intersect_3d(POINT3D(ray_start),
-      POINT3D(ray_dir), zMean, &click_pt_local)) {
+      POINT3D(ray_dir), self->height_ground, &click_pt_local)) {
     bot_viewer_request_redraw(self->viewer);
     self->active = false;
     return 0;
   }
 
-  Eigen::Vector3f intersectionPt(click_pt_local.x,click_pt_local.y,zMean);
-  Eigen::Vector3f dummyNormal(0,0,1);
+  Eigen::Vector3f intersectionPt(click_pt_local.x,click_pt_local.y,self->height_ground);
+  // Eigen::Vector3f dummyNormal(0,0,1);
     
-  if (view != NULL) {
-    Eigen::Vector3f origin(ray_start[0], ray_start[1], ray_start[2]);
-    Eigen::Vector3f direction(ray_dir[0], ray_dir[1], ray_dir[2]);
-    if(!view->intersectRay(origin, direction, intersectionPt, dummyNormal))
-    {
-      intersectionPt<< click_pt_local.x,click_pt_local.y,zMean;
-      dummyNormal<< 0,0,1;
-    }
-  }
+  // if (view != NULL) {
+  //   Eigen::Vector3f origin(ray_start[0], ray_start[1], ray_start[2]);
+  //   Eigen::Vector3f direction(ray_dir[0], ray_dir[1], ray_dir[2]);
+  //   if(!view->intersectRay(origin, direction, intersectionPt, dummyNormal))
+  //   {
+  //     intersectionPt<< click_pt_local.x,click_pt_local.y,zMean;
+  //     dummyNormal<< 0,0,1;
+  //   }
+  // }
   std::cout << "Closest " << intersectionPt.transpose() << std::endl;
   
   self->dragging = 1;
@@ -307,167 +308,158 @@ static int key_press (BotViewer *viewer, BotEventHandler *ehandler,
     const GdkEventKey *event)
 {
   RendererWalking *self = (RendererWalking*) ehandler->user;
-  self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
-  self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
+  // self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
+  // self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
   return 0;
 }
 
 void set_default_params(RendererWalking* self, int mode) {
   if (mode == WALKING_TYPICAL){
     std::cout << "Using preset mode: Walking\n";
-    bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
-    bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.1);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.2);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_STEP_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_SWAY_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 30);  
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 0);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_SPEED, 1.0);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_HEIGHT, 0.1);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.2);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.5);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_MU, 1.0);  
+    bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
   }else if (mode == WALKING_MUD){
     std::cout << "Using preset mode: Mud\n";
-    bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 6);  
-    bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.5);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.05);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.05);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.15);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_STEP_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_SWAY_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
-  }else if (mode == WALKING_CRAWLING){
-    std::cout << "Using preset mode: Crawling\n";      
-    bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
-    bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.8);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.3);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.3);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 0.2);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_CRAWLING);
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_STEP_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_SWAY_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
-  }else if (mode == WALKING_TURN_CRAWLING){
-    std::cout << "Using preset mode: Turn Crawling\n";            
-    bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 30);  
-    bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 0.8);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.1);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.3);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 0.2);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_CRAWLING);
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_STEP_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_SWAY_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 6);  
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 0);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_SPEED, 0.5);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.05);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.15);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_MU, 1.0);  
+    bot_gtk_param_widget_set_bool(self->main_pw,PARAM_IGNORE_TERRAIN, TRUE);
+    bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
   }else if (mode == WALKING_BDI){
-    std::cout << "Using preset mode: BDI Walking\n"; bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10); bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.05);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.1);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_WALKING);
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_STEP_DURATION, 0.6);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_SWAY_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
+    std::cout << "Using preset mode: BDI Walking\n"; 
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 10); 
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 0);
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.1);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.5);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_WALKING);
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_DURATION, 0.6);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_DURATION, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWING_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, 0);  
+    bot_gtk_param_widget_set_enum(self->bdi_pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
   } else if (mode == STEPPING_BDI) {
-    std::cout << "Using preset mode: BDI Stepping\n"; bot_gtk_param_widget_set_int(self->pw, PARAM_MAX_NUM_STEPS, 10); bot_gtk_param_widget_set_int(self->pw, PARAM_MIN_NUM_STEPS, 0);
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_SPEED, 1.0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_STEP_HEIGHT, 0.10);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, 0.15);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, 0.5);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_STEP_WIDTH, 0.26);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MU, 1.0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_STEPPING);
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_STEP_DURATION, 2.0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_SWAY_DURATION, 0);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_LIFT_HEIGHT, 0.05);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
-    bot_gtk_param_widget_set_double(self->pw, PARAM_BDI_KNEE_NOMINAL, 0);  
-    bot_gtk_param_widget_set_enum(self->pw, PARAM_MAP_MODE, DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS);
+    std::cout << "Using preset mode: BDI Stepping\n"; 
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 10); 
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 0);
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.15);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.45);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_STEPPING);
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_DURATION, 2.0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_DURATION, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWING_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_enum(self->bdi_pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
+  } else if (mode == STEPPING_BDI_FINE) {
+    std::cout << "Using preset mode: BDI Fine Stepping\n"; 
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 6); 
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 4);
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.10);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.45);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_STEPPING);
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_DURATION, 2.0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_DURATION, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWING_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_enum(self->bdi_pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
   }
   get_params_from_widget(self);
 }
 
 void get_params_from_widget(RendererWalking* self) {
-  self->max_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MAX_NUM_STEPS);
-  self->min_num_steps = bot_gtk_param_widget_get_int(self->pw, PARAM_MIN_NUM_STEPS);
-  self->step_speed = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_SPEED);
-  self->nom_step_width = bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_STEP_WIDTH);
-  self->nom_forward_step = bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_FORWARD_STEP);
-  self->max_forward_step = bot_gtk_param_widget_get_double(self->pw, PARAM_MAX_FORWARD_STEP);
-  self->step_height = bot_gtk_param_widget_get_double(self->pw, PARAM_STEP_HEIGHT);
-  self->mu = bot_gtk_param_widget_get_double(self->pw, PARAM_MU);
-  self->follow_spline = bot_gtk_param_widget_get_bool(self->pw, PARAM_FOLLOW_SPLINE);
-  self->ignore_terrain = bot_gtk_param_widget_get_bool(self->pw, PARAM_IGNORE_TERRAIN);
-  self->behavior = (behavior_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_BEHAVIOR);
-  self->goal_type = (walking_goal_type_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_GOAL_TYPE);
-  self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_LEADING_FOOT);
-  self->bdi_step_duration = bot_gtk_param_widget_get_double(self->pw, PARAM_BDI_STEP_DURATION);
-  self->bdi_sway_duration = bot_gtk_param_widget_get_double(self->pw, PARAM_BDI_SWAY_DURATION);
-  self->bdi_lift_height = bot_gtk_param_widget_get_double(self->pw, PARAM_BDI_LIFT_HEIGHT);
-  self->bdi_toe_off = (bdi_toe_off_t) bot_gtk_param_widget_get_enum(self->pw, PARAM_BDI_TOE_OFF);
-  self->bdi_knee_nominal = bot_gtk_param_widget_get_double(self->pw, PARAM_BDI_KNEE_NOMINAL);
-  self->map_command = bot_gtk_param_widget_get_enum(self->pw, PARAM_MAP_MODE);
+  self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->lead_foot_pw, PARAM_LEADING_FOOT);
+  self->map_command = bot_gtk_param_widget_get_enum(self->map_mode_pw, PARAM_MAP_MODE);
+  self->ignore_terrain = bot_gtk_param_widget_get_bool(self->ignore_terrain_pw, PARAM_IGNORE_TERRAIN);
+  self->follow_spline = bot_gtk_param_widget_get_bool(self->follow_spline_pw, PARAM_FOLLOW_SPLINE);
+
+  self->max_num_steps = bot_gtk_param_widget_get_int(self->main_pw, PARAM_MAX_NUM_STEPS);
+  self->min_num_steps = bot_gtk_param_widget_get_int(self->main_pw, PARAM_MIN_NUM_STEPS);
+  self->nom_step_width = bot_gtk_param_widget_get_double(self->main_pw, PARAM_NOM_STEP_WIDTH);
+  self->nom_forward_step = bot_gtk_param_widget_get_double(self->main_pw, PARAM_NOM_FORWARD_STEP);
+  self->max_forward_step = bot_gtk_param_widget_get_double(self->main_pw, PARAM_MAX_FORWARD_STEP);
+  self->mu = bot_gtk_param_widget_get_double(self->drake_pw, PARAM_MU);
+  self->step_speed = bot_gtk_param_widget_get_double(self->drake_pw, PARAM_STEP_SPEED);
+  self->behavior = (behavior_t) bot_gtk_param_widget_get_enum(self->main_pw, PARAM_BEHAVIOR);
+  if (self->behavior == BEHAVIOR_BDI_STEPPING || self->behavior == BEHAVIOR_BDI_WALKING) {
+    self->step_height = bot_gtk_param_widget_get_double(self->bdi_pw, PARAM_BDI_SWING_HEIGHT);
+  } else {
+    self->step_height = bot_gtk_param_widget_get_double(self->drake_pw, PARAM_STEP_HEIGHT);
+  }
+  self->goal_type = (walking_goal_type_t) bot_gtk_param_widget_get_enum(self->main_pw, PARAM_GOAL_TYPE);
+  self->bdi_step_duration = bot_gtk_param_widget_get_double(self->bdi_pw, PARAM_BDI_STEP_DURATION);
+  self->bdi_sway_duration = bot_gtk_param_widget_get_double(self->bdi_pw, PARAM_BDI_SWAY_DURATION);
+  self->bdi_lift_height = bot_gtk_param_widget_get_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT);
+  self->bdi_toe_off = (bdi_toe_off_t) bot_gtk_param_widget_get_enum(self->bdi_pw, PARAM_BDI_TOE_OFF);
+  self->bdi_knee_nominal = bot_gtk_param_widget_get_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL);
 }
 
-
-static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
-{
+static void on_pw_changed(BotGtkParamWidget *pw, const char *name, void *user) {
   RendererWalking *self = (RendererWalking*) user;
-  
-  if (self->nom_forward_step > bot_gtk_param_widget_get_double(self->pw, PARAM_MAX_FORWARD_STEP)) {
-    bot_gtk_param_widget_set_double(self->pw, PARAM_NOM_FORWARD_STEP, bot_gtk_param_widget_get_double(self->pw, PARAM_MAX_FORWARD_STEP));
-  }
-  if (self->max_forward_step < bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_FORWARD_STEP)) {
-    bot_gtk_param_widget_set_double(self->pw, PARAM_MAX_FORWARD_STEP, bot_gtk_param_widget_get_double(self->pw, PARAM_NOM_FORWARD_STEP));
-  }
-  if (self->min_num_steps > bot_gtk_param_widget_get_int(self->pw,PARAM_MAX_NUM_STEPS)) {
-    bot_gtk_param_widget_set_int(self->pw,PARAM_MIN_NUM_STEPS, bot_gtk_param_widget_get_int(self->pw,PARAM_MAX_NUM_STEPS));
-  }
-  if (self->max_num_steps < bot_gtk_param_widget_get_int(self->pw,PARAM_MIN_NUM_STEPS)) {
-    bot_gtk_param_widget_set_int(self->pw,PARAM_MAX_NUM_STEPS, bot_gtk_param_widget_get_int(self->pw,PARAM_MIN_NUM_STEPS));
-  }
-
-  get_params_from_widget(self);
-
   if(!strcmp(name, WALKING_MODE)) {
-    int mode = (walking_mode_t) bot_gtk_param_widget_get_enum(self->pw, WALKING_MODE);
+    int mode = (walking_mode_t) bot_gtk_param_widget_get_enum(pw, WALKING_MODE);
     set_default_params(self, mode);
-  }  
-  
-  if(!strcmp(name, PARAM_GOAL_SEND)) {
-    fprintf(stderr,"\nClicked WALKING_GOAL\n");
-    activate(self);
-  } else {
-    publish_walking_goal(self, FALSE);
+  } 
+  if (self->nom_forward_step > bot_gtk_param_widget_get_double(self->main_pw, PARAM_MAX_FORWARD_STEP)) {
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, bot_gtk_param_widget_get_double(self->main_pw, PARAM_MAX_FORWARD_STEP));
   }
+  if (self->max_forward_step < bot_gtk_param_widget_get_double(self->main_pw, PARAM_NOM_FORWARD_STEP)) {
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, bot_gtk_param_widget_get_double(self->main_pw, PARAM_NOM_FORWARD_STEP));
+  }
+  if (self->min_num_steps > bot_gtk_param_widget_get_int(self->main_pw,PARAM_MAX_NUM_STEPS)) {
+    bot_gtk_param_widget_set_int(self->main_pw,PARAM_MIN_NUM_STEPS, bot_gtk_param_widget_get_int(self->main_pw,PARAM_MAX_NUM_STEPS));
+  }
+  if (self->max_num_steps < bot_gtk_param_widget_get_int(self->main_pw,PARAM_MIN_NUM_STEPS)) {
+    bot_gtk_param_widget_set_int(self->main_pw,PARAM_MAX_NUM_STEPS, bot_gtk_param_widget_get_int(self->main_pw,PARAM_MIN_NUM_STEPS));
+  }
+  get_params_from_widget(self);
+  switch (self->behavior) {
+    case BEHAVIOR_WALKING:
+      gtk_widget_show(GTK_WIDGET(self->drake_pw));
+      gtk_widget_hide(GTK_WIDGET(self->bdi_pw));
+      break;
+    case BEHAVIOR_CRAWLING:
+      gtk_widget_show(GTK_WIDGET(self->drake_pw));
+      gtk_widget_hide(GTK_WIDGET(self->bdi_pw));
+      break;
+    case BEHAVIOR_BDI_WALKING:
+      gtk_widget_show(GTK_WIDGET(self->bdi_pw));
+      gtk_widget_hide(GTK_WIDGET(self->drake_pw));
+      break;
+    case BEHAVIOR_BDI_STEPPING:
+      gtk_widget_show(GTK_WIDGET(self->bdi_pw));
+      gtk_widget_hide(GTK_WIDGET(self->drake_pw));
+      break;
+    default:
+      break;
+  }
+  publish_walking_goal(self, FALSE);
+}
+
+static void on_place_goal_clicked(GtkButton *button, void *user) {
+  RendererWalking *self = (RendererWalking*) user;
+  activate(self);
+}
+
+static void on_update_params_clicked(GtkButton *button, void *user) {
+  RendererWalking *self = (RendererWalking*) user;
+  publish_walking_goal(self, FALSE);
 }
 
 void publish_simple_nav(RendererWalking* self, double x, double y, double yaw) {
@@ -480,7 +472,7 @@ void publish_simple_nav(RendererWalking* self, double x, double y, double yaw) {
   self->goal_pos.x = self->robot_pos[0] + x * cos(rpy[2]) - y * sin(rpy[2]);
   self->goal_pos.y = self->robot_pos[1] + x * sin(rpy[2]) + y * cos(rpy[2]);
   self->follow_spline = FALSE;
-  bot_gtk_param_widget_set_bool(self->pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
+  bot_gtk_param_widget_set_bool(self->follow_spline_pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
   publish_walking_goal(self, TRUE);
 }
 
@@ -579,6 +571,11 @@ static gboolean on_go_right_clicked(GtkButton* button, void *user) {
   publish_simple_nav(self, 0, -1.25 * self->max_forward_step * self->max_num_steps, 0);
 }
 
+static void on_pose_ground (const lcm_recv_buf_t *buf, const char *channel, const bot_core_pose_t *msg, void *user) {
+  RendererWalking *self = (RendererWalking*) user;
+  self->height_ground = msg->pos[2];
+}
+
 static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel, 
                                const drc_robot_state_t *msg, void *user){
   RendererWalking *self = (RendererWalking*) user;
@@ -597,7 +594,7 @@ static void
 _free (BotRenderer *renderer)
 {
   RendererWalking *self = (RendererWalking*) renderer;
-  delete self->perceptionData;
+  // delete self->perceptionData;
   free (renderer);
 }
 
@@ -649,32 +646,33 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->robot_rot[1] = 0;
   self->robot_rot[2] = 0;
   self->robot_rot[3] = 0;
+  self->map_command = DRC_MAP_CONTROLLER_COMMAND_T_FULL_HEIGHTMAP;
+
+  self->height_ground = 0.0;
   
-  self->perceptionData = new PerceptionData();
-  self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
-  self->perceptionData->mViewClient.setBotWrapper(self->perceptionData->mBotWrapper);
-  self->perceptionData->mViewClient.start();
+  // self->perceptionData = new PerceptionData();
+  // self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
+  // self->perceptionData->mViewClient.setBotWrapper(self->perceptionData->mBotWrapper);
+  // self->perceptionData->mViewClient.start();
+
+  bot_core_pose_t_subscribe(self->lc, "POSE_GROUND", on_pose_ground, self);
   
   drc_robot_state_t_subscribe(self->lc,"EST_ROBOT_STATE",on_est_robot_state,self); 
 
   self->renderer.widget = gtk_alignment_new(0,0.5,1.0,0);
 
-  GtkWidget *box;
-  GtkWidget *arrow_table;
-  // go_forward_button = gtk_button_new_with_label(PARAM_GO_FORWARD);
+  GtkWidget *outer_box = gtk_vbox_new(FALSE, 0);
+  GtkWidget *nav_table = gtk_table_new(1,5,FALSE);
 
-  box = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(self->renderer.widget), box);
-  gtk_widget_show(box);
+  gtk_container_add(GTK_CONTAINER(self->renderer.widget), outer_box);
 
   GtkWidget *stop_walking_button = (GtkWidget *) gtk_button_new_with_label(PARAM_STOP_WALKING);
-  gtk_box_pack_start(GTK_BOX(box), stop_walking_button, FALSE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(outer_box), stop_walking_button, FALSE, TRUE, 0);
   gtk_widget_show(stop_walking_button);
-  g_signal_connect(G_OBJECT(stop_walking_button), "clicked", G_CALLBACK(on_stop_walking_clicked), self);
+  gtk_box_pack_start(GTK_BOX(outer_box), nav_table, FALSE, TRUE, 0);
+  gtk_widget_show(nav_table);
 
-  arrow_table = gtk_table_new(1, 4, FALSE);
-  gtk_box_pack_start(GTK_BOX(box), arrow_table, FALSE, TRUE, 0);
-  gtk_widget_show(arrow_table);
+  gtk_widget_show(outer_box);
 
   GtkWidget *go_forward_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_UP);
   GtkWidget *turn_left_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_UNDO);
@@ -682,92 +680,102 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   GtkWidget *go_left_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
   GtkWidget *go_backward_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_DOWN);
   GtkWidget *go_right_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
-  GtkWidget *nav_label = gtk_label_new("Quick Navigation:");
+  GtkWidget *place_goal_button = (GtkWidget *) gtk_button_new_with_label(PARAM_GOAL_SEND);
+  GtkWidget *update_params_button = (GtkWidget *) gtk_button_new_with_label(PARAM_GOAL_UPDATE);
 
-  gtk_table_attach(GTK_TABLE(arrow_table), nav_label, 0,1,0,2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(nav_label);
-  gtk_table_attach(GTK_TABLE(arrow_table), turn_left_button, 1, 2, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  self->lead_foot_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  bot_gtk_param_widget_add_enum(self->lead_foot_pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
+
+  self->map_mode_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  bot_gtk_param_widget_add_enum(self->map_mode_pw, PARAM_MAP_MODE, BOT_GTK_PARAM_WIDGET_MENU, self->map_command, "Full Heightmap", DRC_MAP_CONTROLLER_COMMAND_T_FULL_HEIGHTMAP, "Flat Ground", DRC_MAP_CONTROLLER_COMMAND_T_FLAT_GROUND, "Z Normals", DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS, NULL);
+
+  self->ignore_terrain_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  bot_gtk_param_widget_add_booleans(self->ignore_terrain_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_IGNORE_TERRAIN, 0, NULL);
+
+  self->follow_spline_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  bot_gtk_param_widget_add_booleans(self->follow_spline_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
+
+
+  gtk_table_attach(GTK_TABLE(nav_table), place_goal_button, 0,1,0,2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(place_goal_button);
+  gtk_table_attach(GTK_TABLE(nav_table), turn_left_button, 1, 2, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(turn_left_button);
-  gtk_table_attach(GTK_TABLE(arrow_table), go_forward_button, 2, 3, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_table_attach(GTK_TABLE(nav_table), go_forward_button, 2, 3, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(go_forward_button);
-  gtk_table_attach(GTK_TABLE(arrow_table), turn_right_button, 3, 4, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_table_attach(GTK_TABLE(nav_table), turn_right_button, 3, 4, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(turn_right_button);
-  gtk_table_attach(GTK_TABLE(arrow_table), go_left_button, 1, 2, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_table_attach(GTK_TABLE(nav_table), go_left_button, 1, 2, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(go_left_button);
-  gtk_table_attach(GTK_TABLE(arrow_table), go_backward_button, 2, 3, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_table_attach(GTK_TABLE(nav_table), go_backward_button, 2, 3, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(go_backward_button);
-  gtk_table_attach(GTK_TABLE(arrow_table), go_right_button, 3, 4, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_table_attach(GTK_TABLE(nav_table), go_right_button, 3, 4, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(go_right_button);
+  gtk_table_attach(GTK_TABLE(nav_table), update_params_button, 4,5,0,2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(update_params_button);
 
-  g_signal_connect(G_OBJECT(turn_left_button),
-                   "clicked",
-                   G_CALLBACK(on_turn_left_clicked),
-                   self);
-  g_signal_connect(G_OBJECT(go_forward_button),
-                   "clicked",
-                   G_CALLBACK(on_go_forward_clicked),
-                   self);
-  g_signal_connect(G_OBJECT(turn_right_button),
-                   "clicked",
-                   G_CALLBACK(on_turn_right_clicked),
-                   self);
-  g_signal_connect(G_OBJECT(go_left_button),
-                   "clicked",
-                   G_CALLBACK(on_go_left_clicked),
-                   self);
-  g_signal_connect(G_OBJECT(go_backward_button),
-                   "clicked",
-                   G_CALLBACK(on_go_backward_clicked),
-                   self);
-  g_signal_connect(G_OBJECT(go_right_button),
-                   "clicked",
-                   G_CALLBACK(on_go_right_clicked),
-                   self);
+  gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->lead_foot_pw), 0,4,2,3, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(GTK_WIDGET(self->lead_foot_pw));
+  gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->follow_spline_pw), 4,5,2,3, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(GTK_WIDGET(self->follow_spline_pw));
 
-  self->pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-  gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(self->pw), FALSE, TRUE, 0);
-  gtk_widget_show(GTK_WIDGET(self->pw));
+  gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->map_mode_pw), 0,4,3,4, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(GTK_WIDGET(self->map_mode_pw));
+  gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->ignore_terrain_pw), 4,5,3,4, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(GTK_WIDGET(self->ignore_terrain_pw));
 
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_SEND, NULL);
-  bot_gtk_param_widget_add_buttons(self->pw, PARAM_GOAL_UPDATE, NULL);
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_BEHAVIOR, BOT_GTK_PARAM_WIDGET_MENU, self->behavior, "Walking", BEHAVIOR_WALKING, "Crawling", BEHAVIOR_CRAWLING, "BDI Walking", BEHAVIOR_BDI_WALKING, "BDI Stepping", BEHAVIOR_BDI_STEPPING, NULL);
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_LEADING_FOOT, BOT_GTK_PARAM_WIDGET_MENU, self->leading_foot, "Right", LEADING_FOOT_RIGHT, "Left", LEADING_FOOT_LEFT, NULL);
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, self->goal_type, "Bot center", GOAL_TYPE_CENTER, "Right foot", GOAL_TYPE_RIGHT_FOOT, "Left foot", GOAL_TYPE_LEFT_FOOT, NULL);
-  bot_gtk_param_widget_add_int(self->pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 1, 30, 1, self->max_num_steps);  
-  bot_gtk_param_widget_add_int(self->pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, self->min_num_steps);  
-  bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.2, 5.0, 0.1, self->step_speed);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_STEP_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.00, 1.0, 0.05, self->nom_forward_step);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_MAX_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->max_forward_step);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_NOM_STEP_WIDTH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.22, 0.4, 0.01, self->nom_step_width);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_MU, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.5, 0.05, self->mu);
-  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
-  bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_IGNORE_TERRAIN, 0, NULL);
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_MAP_MODE, BOT_GTK_PARAM_WIDGET_MENU, self->map_command, "Full Heightmap", DRC_MAP_CONTROLLER_COMMAND_T_FULL_HEIGHTMAP, "Flat Ground", DRC_MAP_CONTROLLER_COMMAND_T_FLAT_GROUND, "Z Normals", DRC_MAP_CONTROLLER_COMMAND_T_Z_NORMALS, NULL);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_BDI_STEP_DURATION, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.1, self->bdi_step_duration);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_BDI_SWAY_DURATION, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.1, self->bdi_sway_duration);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_BDI_LIFT_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.0, 0.05, self->bdi_lift_height);
-  bot_gtk_param_widget_add_enum(self->pw, PARAM_BDI_TOE_OFF, BOT_GTK_PARAM_WIDGET_MENU, self->bdi_toe_off, "Enable", BDI_TOE_OFF_ENABLE, "Disable", BDI_TOE_OFF_DISABLE, "Force enable", BDI_TOE_OFF_FORCE_ENABLE, NULL);
-  bot_gtk_param_widget_add_double(self->pw, PARAM_BDI_KNEE_NOMINAL, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 2.0, 0.1, self->bdi_knee_nominal);
-
-  bot_gtk_param_widget_set_bool(self->pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
-  bot_gtk_param_widget_set_bool(self->pw, PARAM_IGNORE_TERRAIN, self->ignore_terrain);
-  
-  bot_gtk_param_widget_add_enum(self->pw, WALKING_MODE, BOT_GTK_PARAM_WIDGET_MENU, self->walking_settings, 
+  self->main_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  gtk_box_pack_start(GTK_BOX(outer_box), GTK_WIDGET(self->main_pw), FALSE, TRUE, 0);
+  gtk_widget_show(GTK_WIDGET(self->main_pw));
+  bot_gtk_param_widget_add_enum(self->main_pw, PARAM_GOAL_TYPE, BOT_GTK_PARAM_WIDGET_MENU, self->goal_type, "Bot center", GOAL_TYPE_CENTER, "Right foot", GOAL_TYPE_RIGHT_FOOT, "Left foot", GOAL_TYPE_LEFT_FOOT, NULL);
+  bot_gtk_param_widget_add_enum(self->main_pw, WALKING_MODE, BOT_GTK_PARAM_WIDGET_MENU, self->walking_settings, 
                                 "BDI Walking", WALKING_BDI,
                                 "BDI Stepping", STEPPING_BDI,
+                                "BDI Fine Stepping", STEPPING_BDI_FINE,
                                 "Typical, VRC", WALKING_TYPICAL,
                                 "Mud, VRC", WALKING_MUD,
-                                "Crawling", WALKING_CRAWLING,
-                                "Turn Crawl", WALKING_TURN_CRAWLING ,
                                 NULL);
+  bot_gtk_param_widget_add_enum(self->main_pw, PARAM_BEHAVIOR, BOT_GTK_PARAM_WIDGET_MENU, self->behavior, "Walking", BEHAVIOR_WALKING, "BDI Walking", BEHAVIOR_BDI_WALKING, "BDI Stepping", BEHAVIOR_BDI_STEPPING, NULL);
+  bot_gtk_param_widget_add_int(self->main_pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 1, 30, 1, self->max_num_steps);  
+  bot_gtk_param_widget_add_int(self->main_pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, self->min_num_steps);  
+  bot_gtk_param_widget_add_double(self->main_pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.00, 1.0, 0.05, self->nom_forward_step);
+  bot_gtk_param_widget_add_double(self->main_pw, PARAM_MAX_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->max_forward_step);
+  bot_gtk_param_widget_add_double(self->main_pw, PARAM_NOM_STEP_WIDTH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.22, 0.4, 0.01, self->nom_step_width);
 
+  self->drake_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  gtk_box_pack_start(GTK_BOX(outer_box), GTK_WIDGET(self->drake_pw), FALSE, TRUE, 0);
+  gtk_widget_hide(GTK_WIDGET(self->drake_pw));
+  bot_gtk_param_widget_add_separator (self->drake_pw,"Drake Params"); 
+  bot_gtk_param_widget_add_double(self->drake_pw, PARAM_STEP_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
+  bot_gtk_param_widget_add_double(self->drake_pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.2, 5.0, 0.1, self->step_speed);
+  bot_gtk_param_widget_add_double(self->drake_pw, PARAM_MU, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.5, 0.05, self->mu);
 
+  self->bdi_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  gtk_box_pack_start(GTK_BOX(outer_box), GTK_WIDGET(self->bdi_pw), FALSE, TRUE, 0);
+  gtk_widget_show(GTK_WIDGET(self->bdi_pw));
+  bot_gtk_param_widget_add_separator (self->bdi_pw,"BDI Params"); 
+  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_STEP_DURATION, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.1, self->bdi_step_duration);
+  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_SWAY_DURATION, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.1, self->bdi_sway_duration);
+  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_SWING_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
+  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.0, 0.05, self->bdi_lift_height);
+  bot_gtk_param_widget_add_enum(self->bdi_pw, PARAM_BDI_TOE_OFF, BOT_GTK_PARAM_WIDGET_MENU, self->bdi_toe_off, "Enable", BDI_TOE_OFF_ENABLE, "Disable", BDI_TOE_OFF_DISABLE, "Force enable", BDI_TOE_OFF_FORCE_ENABLE, NULL);
+  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 2.0, 0.1, self->bdi_knee_nominal);
+
+  g_signal_connect(G_OBJECT(place_goal_button), "clicked", G_CALLBACK(on_place_goal_clicked), self);
+  g_signal_connect(G_OBJECT(turn_left_button), "clicked", G_CALLBACK(on_turn_left_clicked), self);
+  g_signal_connect(G_OBJECT(go_forward_button), "clicked", G_CALLBACK(on_go_forward_clicked), self);
+  g_signal_connect(G_OBJECT(turn_right_button), "clicked", G_CALLBACK(on_turn_right_clicked), self);
+  g_signal_connect(G_OBJECT(go_left_button), "clicked", G_CALLBACK(on_go_left_clicked), self);
+  g_signal_connect(G_OBJECT(go_backward_button), "clicked", G_CALLBACK(on_go_backward_clicked), self);
+  g_signal_connect(G_OBJECT(go_right_button), "clicked", G_CALLBACK(on_go_right_clicked), self);
+  g_signal_connect(G_OBJECT(stop_walking_button), "clicked", G_CALLBACK(on_stop_walking_clicked), self);
+
+  g_signal_connect(G_OBJECT(self->bdi_pw), "changed", G_CALLBACK(on_pw_changed), self);
+  g_signal_connect(G_OBJECT(self->main_pw), "changed", G_CALLBACK(on_pw_changed), self);
+  g_signal_connect(G_OBJECT(self->lead_foot_pw), "changed", G_CALLBACK(on_pw_changed), self);
+  g_signal_connect(G_OBJECT(self->follow_spline_pw), "changed", G_CALLBACK(on_pw_changed), self);
+  g_signal_connect(G_OBJECT(self->map_mode_pw), "changed", G_CALLBACK(on_pw_changed), self);
+  g_signal_connect(G_OBJECT(self->ignore_terrain_pw), "changed", G_CALLBACK(on_pw_changed), self);
   set_default_params(self, self->walking_settings);
-  // bot_gtk_param_widget_add_buttons(self->pw, PARAM_GO_FORWARD, NULL);
-
-  g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-  // self->renderer.widget = GTK_WIDGET(self->pw);
 
   self->active = false;
 
