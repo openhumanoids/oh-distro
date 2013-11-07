@@ -1,3 +1,32 @@
+2013_11_04
+-------------------
+Overview:
+ * Bugfix current and voltage control in handle_controller
+ * increment handle_controller version to 203
+
+Changed Files:
+ * handle_controller for the Overo
+
+To update:
+Loginto the hand:
+    ./killhandle.sh
+    makerw
+
+On the PC:
+    cd into the extracted directory
+    ./scpall.sh <hand#>
+    (Make sure handle_controller succeeds.  It will fail if it is still 
+    running on the hand.)
+
+Back on the hand:
+    makero
+    exit
+
+Then you should power-cycle the hand.
+
+
+
+
 2013_10_28
 -------------------
 Overview:

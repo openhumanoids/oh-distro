@@ -65,7 +65,7 @@
 #define DEFAULT_TIMEOUT 0.0 //seconds, 0 = no timeout
 #define DEFAULT_SENSOR_MASK DATA_COLLECTION_ALL_BITMASK & (~DATA_COLLECTION_EXTERNALSUPPLY_BITMASK)
 
-#define VERSION 202
+#define VERSION 203
 
 #ifdef DO_THERMAL
 struct override_t
@@ -387,9 +387,7 @@ int writeMotor(int fd, int motor, int value, CommandType type = MOTOR_VELOCITY)
     else
         buff[COMMAND_OFFSET] |= MOTOR_COMMAND_REVERSE;
     
-    if (type == MOTOR_VELOCITY ||
-        type == MOTOR_CURRENT ||
-        type == MOTOR_VOLTAGE)
+    if (type == MOTOR_VELOCITY)
     {
         if (value < 0)
             value = -value; // make positive
@@ -408,6 +406,20 @@ int writeMotor(int fd, int motor, int value, CommandType type = MOTOR_VELOCITY)
             if (value > 0 && value < MOTOR_MIN_RPM)
                 value = MOTOR_MIN_RPM;
         }
+    }
+    else if (type == MOTOR_CURRENT)
+    {
+        if (value < 0)
+            value = -value; // make positive
+        if (value > 65535)
+            value = 65535; // cap
+    }
+    else if (type == MOTOR_VOLTAGE)
+    {
+        if (value < 0)
+            value = -value; // make positive
+        if (value > 65535)
+            value = 65535; // cap
     }
     else if (type == MOTOR_POSITION)
     {
