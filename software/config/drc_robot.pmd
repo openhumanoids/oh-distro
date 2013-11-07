@@ -364,6 +364,7 @@ script "prep_core" {
     start cmd "multisense";
     start cmd "sa-right";
     start cmd "sa-left";
+    start cmd "sandia_hand_eigen_grasps";
 }
 
 script "prep_LN_RN" { 
