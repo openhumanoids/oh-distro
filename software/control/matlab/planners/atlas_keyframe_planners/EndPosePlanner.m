@@ -40,11 +40,12 @@ classdef EndPosePlanner < KeyframePlanner
             obj.ee_torso_dist_lb = 0.65;
             obj.ee_lleg_dist_lb = 0.3;
             obj.stance_lb = 0.2;
-            obj.stance_ub = 0.3;
-            obj.l_hpx_ub = 0.3;
+            obj.stance_ub = 0.35;
+            obj.l_hpx_ub = inf;
             obj.l_hpy_ub = -0.2;
             obj.l_hpx_lb = 0.0;
             obj.l_hpy_lb = -1.0;
+;
             
             obj.pelvis_upright_gaze_tol = pi/30;
         end
@@ -246,7 +247,7 @@ classdef EndPosePlanner < KeyframePlanner
           iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));
           iktraj_options = iktraj_options.setFixInitialState(false);
           iktraj_options = iktraj_options.setMajorIterationsLimit(1000);
-          iktraj_options = iktraj_options.setIterationsLimit(10000);
+          iktraj_options = iktraj_options.setIterationsLimit(50000);
           
           qsc = QuasiStaticConstraint(obj.r);
           qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);  
@@ -265,8 +266,8 @@ classdef EndPosePlanner < KeyframePlanner
           % urf limits are lower="-0.523599" upper="0.523599" 
           l_leg_hpx_ind = find(strcmp(coords,'l_leg_hpx'));      r_leg_hpx_ind = find(strcmp(coords,'r_leg_hpx'));
           l_leg_hpy_ind = find(strcmp(coords,'l_leg_hpy'));      r_leg_hpy_ind = find(strcmp(coords,'r_leg_hpy'));
-          joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind;l_leg_hpy_ind;r_leg_hpy_ind],[obj.l_hpx_lb;-obj.l_hpx_ub;obj.l_hpy_lb;obj.l_hpy_lb],[obj.l_hpx_ub;-obj.l_hpx_lb;obj.l_hpy_ub;obj.l_hpy_ub]);
-
+          %joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind;l_leg_hpy_ind;r_leg_hpy_ind],[obj.l_hpx_lb;-obj.l_hpx_ub;obj.l_hpy_lb;obj.l_hpy_lb],[obj.l_hpx_ub;-obj.l_hpx_lb;obj.l_hpy_ub;obj.l_hpy_ub]);
+          joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind],[obj.l_hpx_lb;-obj.l_hpx_ub],[obj.l_hpx_ub;-obj.l_hpx_lb]);
 
           %stance_constraint = Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,[0;0;0],[0;0;0],0.4,inf,[0 1]);
           stance_constraint = Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,l_foot_contact_pts,r_foot_contact_pts,obj.stance_lb*ones(1,size(r_foot_contact_pts,2)),obj.stance_ub*ones(1,size(r_foot_contact_pts,2)),[0 1]);
@@ -277,7 +278,7 @@ classdef EndPosePlanner < KeyframePlanner
             iktraj_rhand_constraint{:},iktraj_lhand_constraint{:},...
             iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
             iktraj_pelvis_constraint{:},iktraj_head_constraint{:},...
-            stance_constraint,iktraj_dist_constraint{:},qsc,...
+            joint_constraint,stance_constraint,iktraj_dist_constraint{:},qsc,...
             iktraj_options);
           if(snopt_info > 10)
               warning('The IK traj fails');
@@ -516,12 +517,13 @@ classdef EndPosePlanner < KeyframePlanner
 
                 l_leg_hpx_ind = find(strcmp(coords,'l_leg_hpx'));      r_leg_hpx_ind = find(strcmp(coords,'r_leg_hpx'));
                 l_leg_hpy_ind = find(strcmp(coords,'l_leg_hpy'));      r_leg_hpy_ind = find(strcmp(coords,'r_leg_hpy'));
-                joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind;l_leg_hpy_ind;r_leg_hpy_ind],[obj.l_hpx_lb;-obj.l_hpx_ub;obj.l_hpy_lb;obj.l_hpy_lb],[obj.l_hpx_ub;-obj.l_hpx_lb;obj.l_hpy_ub;obj.l_hpy_ub]);
+                %joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind;l_leg_hpy_ind;r_leg_hpy_ind],[obj.l_hpx_lb;-obj.l_hpx_ub;obj.l_hpy_lb;obj.l_hpy_lb],[obj.l_hpx_ub;-obj.l_hpx_lb;obj.l_hpy_ub;obj.l_hpy_ub]);
+                joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind],[obj.l_hpx_lb;-obj.l_hpx_ub],[obj.l_hpx_ub;-obj.l_hpx_lb]);
 
                 stance_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,l_foot_contact_pts,r_foot_contact_pts,obj.stance_lb*ones(1,size(r_foot_contact_pts,2)),obj.stance_ub*ones(1,size(r_foot_contact_pts,2)))};
                 total_ik_trials = 30;
                 if(~isempty(head_constraint))
-                    [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKinRepeatSearch(obj.r,q_guess,total_ik_trials,ik_qnom,...
+                    [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKinRepeatSearch(obj.r,total_ik_trials,q_guess,ik_qnom,...
                         rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},head_constraint{:},pelvis_constraint{:},...
                         ik_dist_constraint{:},stance_constraint{:},joint_constraint,qsc,ikoptions);
                 else
