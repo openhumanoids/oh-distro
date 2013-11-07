@@ -64,6 +64,10 @@ public class HandStateListener implements LCMSubscriber
         m_joint_map = new java.util.TreeMap<String,Integer>();
         for(int i = 0;i<hand_dim;i++)
         {
+          if(msg_joint_map.get(m_joint_names[i])==null)
+          {
+            System.out.format("%s is not in the map during construction\n",m_joint_names[i]);
+          }
           m_joint_map.put(m_joint_names[i],msg_joint_map.get(m_joint_names[i]));
         }
         setMapFlag = true;
@@ -71,6 +75,10 @@ public class HandStateListener implements LCMSubscriber
       hand_state = new double[hand_dim*2];
       for(int i = 0;i<hand_dim;i++)
       {
+        if(m_joint_map.get(m_joint_names[i])== null)
+        {
+          System.out.format("%s is not in the map\n",m_joint_names[i]);
+        }
         int hand_joint_idx = m_joint_map.get(m_joint_names[i]);
         hand_state[i] = msg.joint_position[hand_joint_idx];
         hand_state[i+hand_dim] = msg.joint_velocity[hand_joint_idx];
