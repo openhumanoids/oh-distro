@@ -26,10 +26,10 @@ from drc.robot_plan_t import robot_plan_t
 
 class JointNames:
     def __init__(self):
-        self.left_sandia =( ["left_f0_0","left_f0_1","left_f0_2",   "left_f1_0","left_f1_1","left_f1_2",\
-                            "left_f2_0","left_f2_1","left_f2_2",   "left_f3_0","left_f3_1","left_f3_2" ] )
-        self.right_sandia=( ["right_f0_0","right_f0_1","right_f0_2",  "right_f1_0","right_f1_1","right_f1_2", \
-                            "right_f2_0","right_f2_1","right_f2_2",  "right_f3_0","right_f3_1","right_f3_2" ] )
+        self.left_sandia =( ["left_f0_j0","left_f0_j1","left_f0_j2",   "left_f1_j0","left_f1_j1","left_f1_j2",\
+                            "left_f2_j0","left_f2_j1","left_f2_j2",   "left_f3_j0","left_f3_j1","left_f3_j2" ] )
+        self.right_sandia=( ["right_f0_j0","right_f0_j1","right_f0_j2",  "right_f1_j0","right_f1_j1","right_f1_j2", \
+                            "right_f2_j0","right_f2_j1","right_f2_j2",  "right_f3_j0","right_f3_j1","right_f3_j2" ] )
         self.left_irobot =( ["left_finger[0]/joint_base_rotation", "left_finger[0]/joint_base", "left_finger[0]/joint_flex", \
                             "left_finger[1]/joint_base_rotation", "left_finger[1]/joint_base", "left_finger[1]/joint_flex", \
                             "left_finger[2]/joint_base", "left_finger[2]/joint_flex" ] )
@@ -172,9 +172,9 @@ def setStateAtHeight66(msg):
 
 def appendJoints(msg,joint_names):
   msg.num_joints = msg.num_joints + len(joint_names)
-  msg.joint_position.extend ( [0]*len(joint_names) )
-  msg.joint_velocity.extend ( [0]*len(joint_names) )
-  msg.joint_effort.extend ( [0]*len(joint_names) )
+  msg.joint_position.extend( [0]*len(joint_names) )
+  msg.joint_velocity.extend( [0]*len(joint_names) )
+  msg.joint_effort.extend( [0]*len(joint_names) )
   msg.joint_name.extend(joint_names)
   return msg
 
@@ -251,65 +251,65 @@ def sendRobotStateMsg():
 
   if (goal_committed_use==True):
     print "publishing committed as ERS"
-    msg = goal_committed
+    msg = goal_committed # will always contain 28 joints
+    msg.joint_position = list(msg.joint_position[0:28])
+    msg.joint_velocity = list(msg.joint_velocity[0:28])
+    msg.joint_effort = list(msg.joint_effort[0:28])
+    msg.joint_name = list(msg.joint_name[0:28])
+    msg.num_joints = 28
     msg.utime = timestamp_now ()
-    lc.publish("EST_ROBOT_STATE", msg.encode())
-    return
-
-  msg = getRobotStateMsg()
-  quat_out = euler_to_quat(0,0, goal_yaw)
-  msg.pose.rotation.w = quat_out[0]
-  msg.pose.rotation.x = quat_out[1]
-  msg.pose.rotation.y = quat_out[2]
-  msg.pose.rotation.z = quat_out[3]
-  msg.pose.translation.x = goal_xy[0]
-  msg.pose.translation.y = goal_xy[1]
-  print "Pelvis Height: " , goal_pelvis_height
-  if (goal_pelvis_roll > 0.1):
-    print "Using Leaning Pitch and Reach"
-    msg = setStateAtHeight65BackAndPelvisPitchedAndArmExtended(msg)
-  elif (goal_pelvis_pitch > 0.1):
-    print "Using Leaning Pitch"
-    if (goal_pelvis_height >  0.75 ):
-      msg = setStateAtHeight85BackAndPelvisPitched(msg)
-    else:
-      msg = setStateAtHeight65BackAndPelvisPitched(msg)
-  elif (goal_pelvis_height >  0.83 ):
-    msg = setStateAtHeight86(msg)
-  elif (goal_pelvis_height >  0.775 ):
-    msg = setStateAtHeight80(msg)
-  elif (goal_pelvis_height >  0.725 ):
-    msg = setStateAtHeight75(msg)
-  elif (goal_pelvis_height >  0.68 ):
-    msg = setStateAtHeight70(msg)
   else:
-    msg = setStateAtHeight66(msg)
+    msg = getRobotStateMsg()
+    quat_out = euler_to_quat(0,0, goal_yaw)
+    msg.pose.rotation.w = quat_out[0]
+    msg.pose.rotation.x = quat_out[1]
+    msg.pose.rotation.y = quat_out[2]
+    msg.pose.rotation.z = quat_out[3]
+    msg.pose.translation.x = goal_xy[0]
+    msg.pose.translation.y = goal_xy[1]
+    print "Pelvis Height: " , goal_pelvis_height
+    if (goal_pelvis_roll > 0.1):
+      print "Using Leaning Pitch and Reach"
+      msg = setStateAtHeight65BackAndPelvisPitchedAndArmExtended(msg)
+    elif (goal_pelvis_pitch > 0.1):
+      print "Using Leaning Pitch"
+      if (goal_pelvis_height >  0.75 ):
+        msg = setStateAtHeight85BackAndPelvisPitched(msg)
+      else:
+        msg = setStateAtHeight65BackAndPelvisPitched(msg)
+    elif (goal_pelvis_height >  0.83 ):
+      msg = setStateAtHeight86(msg)
+    elif (goal_pelvis_height >  0.775 ):
+      msg = setStateAtHeight80(msg)
+    elif (goal_pelvis_height >  0.725 ):
+      msg = setStateAtHeight75(msg)
+    elif (goal_pelvis_height >  0.68 ):
+      msg = setStateAtHeight70(msg)
+    else:
+      msg = setStateAtHeight66(msg)
 
+  # Add the required joints:
   msg = appendJoints(msg, jnames.head)
   if (goal_hand_config[0] == 2):
-    #print "use left sandia"
     appendJoints(msg,jnames.left_sandia)
   elif (goal_hand_config[0] == 4):
-    #print "use left irobot"
     appendJoints(msg,jnames.left_irobot)
-
   if (goal_hand_config[1] == 3):
-    #print "use right sandia"
     msg = appendJoints(msg,jnames.right_sandia)
   elif (goal_hand_config[1] == 5):
-    #print "use right irobot"
     msg = appendJoints(msg,jnames.right_irobot)
 
   lc.publish("EST_ROBOT_STATE", msg.encode())
 
 
 def on_manip_params(channel, data):
-  global goal_pelvis_height,goal_pelvis_pitch,goal_pelvis_roll, goal_yaw, goal_xy
+  global goal_pelvis_height,goal_pelvis_pitch,goal_pelvis_roll, goal_yaw, goal_xy, goal_committed_use
   m = atlas_behavior_manipulate_params_t.decode(data)
   goal_pelvis_height = m.desired.pelvis_height
   goal_pelvis_pitch = m.desired.pelvis_pitch
   goal_pelvis_roll = m.desired.pelvis_roll # use roll to signify arm reach
   print "Changing height and pitch"
+  goal_committed_use = False
   sendRobotStateMsg()
   
 def on_walking_goal(channel, data):

@@ -90,3 +90,4 @@ target_link_libraries(lcm_io_test affordance ${REQUIRED_PACKAGES})
 
 pods_install_python_script(drc-fake-grasp-pool scripts/fake_grasp_pool.py)
 pods_install_python_script(drc-fake-robot-state scripts/publishRobotState.py)
+pods_install_python_script(drc-posture-goal-pub scripts/publishPostureGoal.py)

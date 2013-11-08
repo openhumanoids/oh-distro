@@ -18,16 +18,18 @@ def timestamp_now (): return int (time.time () * 1000000)
 def on_posture_goal(channel, data):
   m = joint_angles_t.decode(data)
   print "Joint Position",str(len(m.joint_position))
-  strout = ""
-  for x in m.joint_position:
-    strout += str(x) + ", "
-  print strout[:-2] # skip last ", "
-  
   print "Joint Name",str(len(m.joint_name))
-  strout = ""
+  strout = "position=["
+  for x in m.joint_position:
+    strout += str(x) +", "
+  strout = strout[:-2] + "]" # skip last ", "
+  print strout
+  
+  strout = "name=["
   for x in m.joint_name:
-    strout += str(x) + ", "
-  print strout[:-2] # skip last ", "
+    strout += "\"" + str(x) + "\", "
+  strout = strout[:-2] + "]" # skip last ", "
+  print strout 
 
 #################################################################################
 
