@@ -153,18 +153,18 @@ public:
   {
 //       std::cout << "flags:" <<expression_flags[0]<<expression_flags[1]<<expression_flags[2]<<std::endl;
 //        std::cout << "xyz:" <<x<<y<<z<<std::endl;  
-      std::vector<float> xyz;
-       xyz.push_back(this->x);
-       xyz.push_back(this->y);
-       xyz.push_back(this->z);
+    std::vector<float> xyz;
+    xyz.push_back(this->x);
+    xyz.push_back(this->y);
+    xyz.push_back(this->z);
 
-     for (unsigned int i = 0; i < xyz.size(); ++i)
+    for (unsigned int i = 0; i < xyz.size(); ++i)
+    {
+      if(expression_flags[i])
       {
-	if(expression_flags[i])
-	{
-	  xyz[i] = local_expressions[i].value();
-	}
-      }  
+        xyz[i] = local_expressions[i].value();
+      }
+    }  
 
     this->x = xyz[0];
     this->y = xyz[1];

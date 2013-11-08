@@ -16,7 +16,7 @@ pods_install_headers(include/otdf_parser/otdf_lcm_utils.h DESTINATION otdf_lcm_u
 pods_install_libraries(otdf_dom)
 
 # uncomment these lines to link against another library via pkg-config
-set(REQUIRED_PACKAGES tinyxml path-util)
+set(REQUIRED_PACKAGES tinyxml path-util bot2-core)
 pods_use_pkg_config_packages(otdf_dom  lcm lcmtypes_drc_lcmtypes ${REQUIRED_PACKAGES})
 
 # create a pkg-config file for the library, to make it easier for other

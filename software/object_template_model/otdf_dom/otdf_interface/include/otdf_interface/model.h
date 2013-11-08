@@ -47,6 +47,7 @@
 #include "PlanSeed.h"
 #include "expression_parsing.h"
 #include "otdf_addendum.h"
+#include <bot_core/bot_core.h>
 
 namespace otdf {
  
@@ -493,15 +494,17 @@ public:
     // Update patterns (Can grow and shrink)
     // loop through all joints in joint patterns
     // update all in child link patterns
+
     for (std::map<std::string,boost::shared_ptr<Joint_pattern> >::iterator joint_pattern = this->joint_patterns_.begin();joint_pattern != this->joint_patterns_.end(); joint_pattern++)
-    {
+    { 
       joint_pattern->second->update();
       std::string child_link_pattern_name = joint_pattern->second->child_link_pattern_name;
       std::map<std::string,boost::shared_ptr<Link_pattern> >::iterator it;
       it = this->link_patterns_.find(child_link_pattern_name);
       it->second->update();
     }
-
+   
+    
 
     if(this->root_link_->getEntityType()=="Link"){
       boost::shared_ptr<Link> downcasted_entity(boost::shared_dynamic_cast<Link>(this->root_link_)); 
@@ -533,6 +536,7 @@ public:
         child_entity->update();
       }
     }
+   
     clearTreeStructure();
     std::map<std::string, std::string> parent_entity_tree;
     parent_entity_tree.clear();
@@ -542,7 +546,6 @@ public:
     {
       std::cerr<< "ERROR: failed to build tree from otdf file."<< std::endl;
     }
-
   }; // end update
   
   //------------------------------------------

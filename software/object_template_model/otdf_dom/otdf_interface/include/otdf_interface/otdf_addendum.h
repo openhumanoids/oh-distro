@@ -6,13 +6,16 @@
 #include <vector>
 #include <map>
 
+
 #include <tinyxml.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include "expression_parsing.h"
 #include "joint.h"
 #include "link.h"
 #include "color.h"
+#include <bot_core/bot_core.h>
 
 namespace otdf
 {
@@ -255,14 +258,32 @@ namespace otdf
 	        this->noofrepetitions = this->local_expressions[0].value();
 	    }   
 	    this->joint_set.clear();
+	    
+	    
+	    //Need to optimize this loop
+	    //int64_t tic,toc;
+      //tic = bot_timestamp_now();
+      //double tmp_delta_t=0;
+      //double tmp_delta_t2=0;
+       
 	    //Update all joints in joint_set
-	    for  (unsigned int i=0; i < (unsigned int)noofrepetitions; i++){
+	    for  (unsigned int i=0; i < (unsigned int)noofrepetitions; i++)
+	    {
+          //int64_t tic2,toc2;
+          //tic2 = bot_timestamp_now();
+          
 	        boost::shared_ptr<Joint> temp; 
-	        temp.reset(new Joint(*joint_template));
+	        //temp.reset(new Joint(*joint_template));        // This operation takes 90% of the loop run time.
+	        temp = boost::make_shared<Joint>((*joint_template));  	  // This operation also takes 90% of the loop run time.
+	               	      
+	        //toc2 = bot_timestamp_now();
+	        //tmp_delta_t += ((toc2 - tic2) / 1000000.0);   
+	              
 	        std::ostringstream stm;   
 	        stm << name << "_" << i; // append ID to pattern name
 	        temp->name =stm.str();
 
+	
           if(this->is_serial_pattern)
           {
            //temp->child_type="link";
@@ -279,24 +300,71 @@ namespace otdf
           stm.clear();
           stm.str("");
           stm << temp->child_link_name << "_" << i; // append ID to pattern name
-          temp->child_link_name= stm.str();	       
-	        
+          temp->child_link_name= stm.str();	    
+          
 	        if(i==0)
 	          temp->parent_to_joint_origin_transform = origin;     
 	        else{
 	          if(this->is_serial_pattern)
             {
-       	      temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position;
-	            temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation;     
+             // These operations take 65% of the loop run time. Doing them explicitly instead.
+       	     //temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position;
+	           //temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation; 
+	           temp->parent_to_joint_origin_transform.position.x =  this->pattern_offset.position.x + this->joint_set[i-1]->parent_to_joint_origin_transform.position.x;
+	           temp->parent_to_joint_origin_transform.position.y =  this->pattern_offset.position.y + this->joint_set[i-1]->parent_to_joint_origin_transform.position.y;
+	           temp->parent_to_joint_origin_transform.position.z =  this->pattern_offset.position.z + this->joint_set[i-1]->parent_to_joint_origin_transform.position.z;
+             
+             double quat_x,quat_y,quat_z,quat_w;
+             quat_x = this->pattern_offset.rotation.x;
+             quat_y = this->pattern_offset.rotation.y;
+             quat_z = this->pattern_offset.rotation.z;
+             quat_w = this->pattern_offset.rotation.w;
+             temp->parent_to_joint_origin_transform.rotation.setFromQuaternion(quat_x,quat_y,quat_z,quat_w);    
             }
             else
             {
-	            temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
-	            temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+             // These operations take 65% of the loop run time. Doing them explicitly instead.
+	           // temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
+	           // temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+	            
+	           // int64_t tic3,toc3;
+             // tic3 = bot_timestamp_now();
+             // temp->parent_to_joint_origin_transform.position =  this->pattern_offset.position + this->joint_set[i-1]->parent_to_joint_origin_transform.position;
+	            temp->parent_to_joint_origin_transform.position.x =  this->pattern_offset.position.x + this->joint_set[i-1]->parent_to_joint_origin_transform.position.x;
+	            temp->parent_to_joint_origin_transform.position.y =  this->pattern_offset.position.y + this->joint_set[i-1]->parent_to_joint_origin_transform.position.y;
+	            temp->parent_to_joint_origin_transform.position.z =  this->pattern_offset.position.z + this->joint_set[i-1]->parent_to_joint_origin_transform.position.z;
+	            
+	             //temp->parent_to_joint_origin_transform.rotation =  this->pattern_offset.rotation*(this->joint_set[i-1]->parent_to_joint_origin_transform.rotation);
+	            double quat_x,quat_y,quat_z,quat_w;
+	            quat_x = this->pattern_offset.rotation.w * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.x  
+	                   + this->pattern_offset.rotation.x * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.w 
+	                   + this->pattern_offset.rotation.y * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.z 
+	                   - this->pattern_offset.rotation.z * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.y;
+              quat_y = this->pattern_offset.rotation.w * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.y 
+                     - this->pattern_offset.rotation.x * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.z 
+                     + this->pattern_offset.rotation.y * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.w 
+                     + this->pattern_offset.rotation.z * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.x;
+              quat_z = this->pattern_offset.rotation.w * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.z
+                     + this->pattern_offset.rotation.x * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.y 
+                     - this->pattern_offset.rotation.y * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.x 
+                     + this->pattern_offset.rotation.z * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.w;
+              quat_w = this->pattern_offset.rotation.w * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.w 
+                     - this->pattern_offset.rotation.x * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.x 
+                     - this->pattern_offset.rotation.y * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.y 
+                     - this->pattern_offset.rotation.z * this->joint_set[i-1]->parent_to_joint_origin_transform.rotation.z;
+	            temp->parent_to_joint_origin_transform.rotation.setFromQuaternion(quat_x,quat_y,quat_z,quat_w);
+	            
+	            //toc3 = bot_timestamp_now();
+	            //tmp_delta_t2 += ((toc3 - tic3) / 1000000.0);  
 	          }
 	        }   
 	        this->joint_set.push_back(temp);
 	      }
+	   
+	    //toc = bot_timestamp_now();
+      //std::cout << "joint pattern update: " <<noofrepetitions << " :: "<< (toc - tic) / 1000000.0 << std::endl;
+      //std::cout << "1 %: "<< 100*(tmp_delta_t/((toc - tic) / 1000000.0 ))<< std::endl;
+      //std::cout << "2 %: "<< 100*(tmp_delta_t2/((toc - tic) / 1000000.0 ))<< std::endl;
     };
   };
 
