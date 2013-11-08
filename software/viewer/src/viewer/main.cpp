@@ -676,7 +676,7 @@ int main(int argc, char *argv[])
   GtkWidget * hbox = gtk_hbox_new (FALSE, 5);
   GtkWidget* vseparator = gtk_vseparator_new ();
   GtkWidget* posture_presets_combo_box=gtk_combo_box_new_text();
-  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Fix Current" );
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Current" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Fix Left" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Fix Right" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Fix Both" );
