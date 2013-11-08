@@ -77,6 +77,7 @@ classdef FootstepPlanner < DRCPlanner
           obj.steps = [];
           obj.goal_pos = [];
           obj.needs_plan = false;
+          obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
           msg ='Foot Plan : Rejected'; disp(msg); send_status(6,0,0,msg);
         else
           obj.needs_plan = false;
