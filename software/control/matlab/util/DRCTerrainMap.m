@@ -67,7 +67,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.map_handle.setNormalRadius(options.normal_radius);
 
       % wait for at least one map message to arrive before continuing
-      msg = [options.name,' : Waiting for terrain map...'];
+      msg = [options.name,' : Requesting terrain map...'];
       send_status(options.status_code, 0, 0, msg );
       fprintf(1,msg);
       obj.minval=[];
@@ -81,22 +81,25 @@ classdef DRCTerrainMap < RigidBodyTerrain
       while isempty(obj.minval)
         ptcloud=[];
         while true
-            % temporary hack because the robot is initialized without knowing the ground under it's feet
-            ptcloud = obj.map_handle.getPointCloud();
-            if (~isempty(ptcloud))
-                break;
-            end
-            % end hack
-            pause(1.0);
             if options.auto_request
               req_msg.utime = etime(clock,[1970 1 1 0 0 0])*1000000;
               req_msg.requests(1) = req;
               lc.publish('DATA_REQUEST', req_msg);
             end
+            pause(0.25);
+            ptcloud = obj.map_handle.getPointCloud();
+            if (~isempty(ptcloud))
+                break;
+            else
+              pause(5.0);
+            end
         end
         obj.minval = min(ptcloud(3,:));
       end
       fprintf(1,'Received terrain map!\n');
+      msg = [options.name,' : ...got terrain map'];
+      send_status(options.status_code, 0, 0, msg );
+      fprintf(1,msg);
     end
     
     function [z,normal] = getHeight(obj,xy)
@@ -113,7 +116,6 @@ classdef DRCTerrainMap < RigidBodyTerrain
     end
 
     function obj = setMapMode(obj,mode)
-      fprintf(1, 'setting mode: %d\n', mode);
       obj.map_handle.setMapMode(mode);
     end
     
