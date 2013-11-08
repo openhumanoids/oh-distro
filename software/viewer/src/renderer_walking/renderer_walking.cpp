@@ -379,6 +379,18 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, 0.05);  
     bot_gtk_param_widget_set_enum(self->bdi_pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);
+  }else if (mode == WALKING_LADDER){
+    std::cout << "Using preset mode: Ladder\n";
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 2);  
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 1);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_SPEED, 0.005);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.25);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.45);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_MU, 1.0);  
+    bot_gtk_param_widget_set_bool(self->main_pw,PARAM_IGNORE_TERRAIN, TRUE);
+    bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
   }
   get_params_from_widget(self);
 }
@@ -731,8 +743,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
                                 "BDI Walking", WALKING_BDI,
                                 "BDI Stepping", STEPPING_BDI,
                                 "BDI Fine Stepping", STEPPING_BDI_FINE,
-                                "Typical, VRC", WALKING_TYPICAL,
-                                "Mud, VRC", WALKING_MUD,
+                                "Ladder", WALKING_LADDER,
                                 NULL);
   bot_gtk_param_widget_add_enum(self->main_pw, PARAM_BEHAVIOR, BOT_GTK_PARAM_WIDGET_MENU, self->behavior, "Walking", BEHAVIOR_WALKING, "BDI Walking", BEHAVIOR_BDI_WALKING, "BDI Stepping", BEHAVIOR_BDI_STEPPING, NULL);
   bot_gtk_param_widget_add_int(self->main_pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 1, 30, 1, self->max_num_steps);  
@@ -746,7 +757,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   gtk_widget_hide(GTK_WIDGET(self->drake_pw));
   bot_gtk_param_widget_add_separator (self->drake_pw,"Drake Params"); 
   bot_gtk_param_widget_add_double(self->drake_pw, PARAM_STEP_HEIGHT, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 0.5, 0.05, self->step_height);
-  bot_gtk_param_widget_add_double(self->drake_pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.2, 5.0, 0.1, self->step_speed);
+  bot_gtk_param_widget_add_double(self->drake_pw, PARAM_STEP_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.005, self->step_speed);
   bot_gtk_param_widget_add_double(self->drake_pw, PARAM_MU, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 1.5, 0.05, self->mu);
 
   self->bdi_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
@@ -771,6 +782,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   g_signal_connect(G_OBJECT(self->bdi_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->main_pw), "changed", G_CALLBACK(on_pw_changed), self);
+  g_signal_connect(G_OBJECT(self->drake_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->lead_foot_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->follow_spline_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->map_mode_pw), "changed", G_CALLBACK(on_pw_changed), self);
