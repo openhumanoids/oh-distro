@@ -101,9 +101,8 @@ end
 if(nargin<1)
     hardware_mode = 1;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
 end
-% sandia hands subscriber
-% l_hand_listener = drc.control.HandStateListener(l_hand_mode,'left','EST_ROBOT_STATE');
-% r_hand_listener = drc.control.HandStateListener(r_hand_mode,'right','EST_ROBOT_STATE');
+l_hand_listener = drc.control.HandStateListener(l_hand_mode,'left','EST_ROBOT_STATE');
+r_hand_listener = drc.control.HandStateListener(r_hand_mode,'right','EST_ROBOT_STATE');
 l_hand_frame = handFrame(l_hand_mode,'left');
 r_hand_frame = handFrame(r_hand_mode,'right');
 
@@ -151,6 +150,11 @@ rh_ee_gaze = EndEffectorListener('RIGHT_PALM_GAZE_GOAL');
 
 lh_ee_clear = EndEffectorListener('LEFT_PALM_GOAL_CLEAR');
 rh_ee_clear = EndEffectorListener('RIGHT_PALM_GOAL_CLEAR');
+
+% These fixed pose constraints are used in End pose search.
+h_fixed_pose = EndEffectorListener('HEAD_FIXED_POSE');
+lh_fixed_pose = EndEffectorListener('LEFT_PALM_FIXED_POSE');
+rh_fixed_pose = EndEffectorListener('RIGHT_PALM_FIXED_POSE');
 
 preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
 posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
@@ -389,15 +393,15 @@ while(1)
         x0 = x;
     end
     
-%    data = getNextMessage(l_hand_listener,msg_timeout);
-%    if(~isempty(data))
-% %       x0(aff_manager.lhand2robotFrameMap) = data;
-%    end
-%    
-%    data = getNextMessage(r_hand_listener,msg_timeout);
-%    if(~isempty(data))
-% %       x0(aff_manager.rhand2robotFrameMap) = data;
-%    end
+   data = getNextMessage(l_hand_listener,msg_timeout);
+   if(~isempty(data))
+%       x0(aff_manager.lhand2robotFrameMap) = data;
+   end
+   
+   data = getNextMessage(r_hand_listener,msg_timeout);
+   if(~isempty(data))
+%       x0(aff_manager.rhand2robotFrameMap) = data;
+   end
     x= constraint_listener.getNextMessage(msg_timeout); % not a frame
     if(~isempty(x))
         num_links = length(x.time);
@@ -673,6 +677,24 @@ while(1)
         keyframe_adjustment_engine.setPlanCache(cache);
     end
     
+    p = getNextMessage(h_fixed_pose,msg_timeout);
+    if(~isempty(p))
+      display('Fix head pose'); 
+      ee_goal_type_flags.h_fixed_pose = true;
+    end
+    
+    p = getNextMessage(lh_fixed_pose,msg_timeout);
+    if(~isempty(p))
+      display('Fix left hand pose');
+      ee_goal_type_flags.lh_fixed_pose = true; 
+    end
+    
+    p = getNextMessage(rh_fixed_pose,msg_timeout);
+    if(~isempty(p))
+      display('Fix left hand pose');
+      ee_goal_type_flags.rh_fixed_pose = true;
+    end
+    
     [posegoal,postureconstraint]= pose_goal_listener.getNextMessage(msg_timeout);
     if(~isempty(posegoal))
         disp('pose goal received .');
@@ -770,11 +792,14 @@ while(1)
         wholebody_planner.setQdotDesired(X.speed);
     end
     
+    
+    
     p = getNextMessage (h_ee_clear, msg_timeout);
     if (~isempty(p))
         disp ('Clearing head goal pose');
         h_ee_goal = [];
         ee_goal_type_flags.h = -1;
+        ee_goal_type_flags.h_fixed_pose = false;
     end
     
     p = getNextMessage (lh_ee_clear, msg_timeout);
@@ -782,6 +807,7 @@ while(1)
         disp ('Clearing left hand goal pose');
         lh_ee_goal = [];
         ee_goal_type_flags.lh = -1;
+        ee_goal_type_flags.lh_fixed_pose = false;
     end
     
     p = getNextMessage (rh_ee_clear, msg_timeout);
@@ -789,6 +815,7 @@ while(1)
         disp ('Clearing right hand  goal pose');
         rh_ee_goal = [];
         ee_goal_type_flags.rh = -1;
+        ee_goal_type_flags.rh_fixed_pose = false;
     end
     
 end

@@ -93,7 +93,8 @@
 #define PARAM_GAZE_AFFORDANCE "Look at aff"
 #define PARAM_GAZE_AFFORDANCE_WEAK "Look at aff weakly"
 //#define PARAM_GAZE_SELECTION" "Look at selected point (NOT SUPPORTED)"
-#define PARAM_CURRENT_POSE "Maintain pose"
+#define PARAM_CURRENT_POSE "Maintain Current pose"// The robot end effector would maintian the current pose
+#define PARAM_FIXED_POSE "Maintain Fixed pose" // The robot end effector would fix to an unknown pose
 #define PARAM_CLEAR_CURRENT_GOAL "Clear EE goal"
 
 #define PARAM_SEND_EE_GOAL_SEQUENCE "Get Whole Body Plan"
@@ -122,7 +123,7 @@ typedef enum _ee_type_t {
 } ee_type_t;
 
 typedef enum _ee_goal_type_t {
-    CURRENT_POSE,CURRENT_ORIENTATION,GAZE,GAZE_WEAK,CLEAR_CURRENT_GOAL,
+    CURRENT_POSE,CURRENT_ORIENTATION,GAZE,GAZE_WEAK,FIXED_POSE,CLEAR_CURRENT_GOAL,
 } ee_goal_type_t;
 
 namespace renderer_affordances_gui_utils
@@ -251,6 +252,21 @@ namespace renderer_affordances_gui_utils
               publish_ee_goal_to_gaze(self->lcm, "left_palm", std::string( std::string("LEFT_PALM_") + goal_type_string + "GAZE_GOAL"), temp);  
             }
         }
+        else if(ee_goal_type == FIXED_POSE) {
+          BotTrans temp;
+          temp.rot_quat[0] = 0; temp.rot_quat[1] = 0; temp.rot_quat[2] = 0; temp.rot_quat[3] = 0; 
+          temp.trans_vec[0] = 0; temp.trans_vec[1] = 0; temp.trans_vec[2] = 0;
+          if(ee_type == EE_HEAD){
+            publish_ee_goal_to_gaze(self->lcm,"head","HEAD_FIXED_POSE",temp);
+          }
+          else if(ee_type == EE_RIGHT_HAND){
+            publish_ee_goal_to_gaze(self->lcm,"right_palm","RIGHT_PALM_FIXED_POSE",temp);
+          }
+          else if(ee_type == EE_LEFT_HAND){
+            publish_ee_goal_to_gaze(self->lcm,"left_palm","LEFT_PALM_FIXED_POSE",temp);
+          }
+            
+        }
         else if (ee_goal_type == CLEAR_CURRENT_GOAL) {
             BotTrans temp;
             temp.rot_quat[0] = 0; temp.rot_quat[1] = 0; temp.rot_quat[2] = 0; temp.rot_quat[3] = 0; 
@@ -304,6 +320,7 @@ namespace renderer_affordances_gui_utils
                                       PARAM_GAZE_AFFORDANCE_WEAK, GAZE_WEAK,  
                                       PARAM_CURRENT_ORIENTATION, CURRENT_ORIENTATION, 
                                       PARAM_CURRENT_POSE, CURRENT_POSE, 
+                                      PARAM_FIXED_POSE, FIXED_POSE,
                                       PARAM_CLEAR_CURRENT_GOAL, CLEAR_CURRENT_GOAL,
                                       NULL);
 
