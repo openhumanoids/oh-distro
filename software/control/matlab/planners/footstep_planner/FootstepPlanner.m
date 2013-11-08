@@ -220,7 +220,9 @@ classdef FootstepPlanner < DRCPlanner
         obj.options.channel = 'CANDIDATE_FOOTSTEP_PLAN';
       end
       obj.biped.publish_footstep_plan(Xout, data.utime, isnew, obj.options);
-      msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
+      if isnew 
+        msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
+      end
     end
   end
 
