@@ -126,11 +126,14 @@ class IRobotHandController(object):
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='Script for interacting with iRobot hand')
-    parser.add_argument('side', help='hand side, l or r')
+    parser.add_argument('side', help='hand side, l/L or r/R')
     parser.add_argument('commands', nargs='+', help='a list of commands, each one being CLOSE, OPEN, CALIBRATE_JIG, or CALIBRATE_NO_JIG')
     args = parser.parse_args()
+    side = args.side.lower()
+    if side not in ['r', 'l']:
+        raise RuntimeError("Side not recognized: " + side)
     print "Commands: " + ", ".join(args.commands)
-    return (args.side, args.commands)
+    return (side, args.commands)
 
 if __name__ == '__main__':
     side, commands = parseArguments()

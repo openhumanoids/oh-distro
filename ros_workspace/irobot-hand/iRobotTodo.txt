@@ -11,10 +11,8 @@ TODO:
 * closing safety (wear prevention)
 
 FOCUS FOR TODAY:
-* make stuff work from bot-procman-sheriff
 
 BUSY:
-* update drc software, package manager
 
 DONE:
 * ping hand
@@ -60,3 +58,6 @@ DONE:
 * update usage
 * send 45 back
 * find good iRobot hand travel bag
+* update drc software, package manager
+* make stuff work from bot-procman-sheriff
+* python script r/l case insensitive
