@@ -862,7 +862,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     bot_gtk_param_widget_add_enum(self->pw, PARAM_MANIP_PLAN_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::manip_plan_control_t::IKSEQUENCE_ON, 
                                        "IkSequenceOn", drc::manip_plan_control_t::IKSEQUENCE_ON,
                                        "IkSequenceOff", drc::manip_plan_control_t::IKSEQUENCE_OFF,
-                                        "Teleop", drc::manip_plan_control_t::TELEOP, NULL);
+                                       "Teleop", drc::manip_plan_control_t::TELEOP,
+                                       "Fixed Joints", drc::manip_plan_control_t::FIXEDJOINTS,
+                                       NULL);
     
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_PLANNER_PARAMS, NULL);
     update_planar_params(self);
