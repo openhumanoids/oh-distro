@@ -1026,10 +1026,22 @@ namespace renderer_affordances_gui_utils
     }
     else if(!strcmp(name,PARAM_OTDF_ADJUST_PARAM)) {
       self->instance_selection  = std::string(self->object_selection);
+      if(self->selection_hold_on)     {
+        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT,false); 
+        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT,false); 
+        std::cout << "disabling bodypose and jointdof adjustment for object " <<self->object_selection << std::endl;
+        self->selection_hold_on=false;
+      }
       spawn_adjust_params_popup(self);
     }
     else if(!strcmp(name,PARAM_OTDF_ADJUST_DOF)) {
       self->instance_selection  = std::string(self->object_selection);  
+      if(self->selection_hold_on)    {
+        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_CURRENT_JOINTDOF_ADJUSTMENT,false); 
+        bot_gtk_param_widget_set_bool(pw, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT,false); 
+        std::cout << "disabling bodypose and jointdof adjustment for object " <<self->object_selection << std::endl;
+        self->selection_hold_on=false;
+      }
       spawn_adjust_dofs_popup(self);
     }
     else if(!strcmp(name,PARAM_GET_MANIP_PLAN)) {
@@ -1306,8 +1318,11 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_REQUEST_PTCLD_FROM_MAPS, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_REQUEST_LINKGEOM_PTCLD_FROM_MAPS, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
-      bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL); 
+      if((self->marker_selection  == " "))
+      {
+        bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
+        bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL); 
+      }
       bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_FLIP_DIM,
                                      BOT_GTK_PARAM_WIDGET_MENU,2,
                                      "X",0,

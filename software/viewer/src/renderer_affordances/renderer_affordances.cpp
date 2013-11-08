@@ -1039,11 +1039,14 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     }
     
     int64_t now = bot_timestamp_now();
-    double dt = (now - self->viewer->last_draw_utime) / 1000000.0;
+   // double dt = (now - self->viewer->last_draw_utime) / 1000000.0;
+    double dt = (now - self->last_mouse_motion_time) / 1000000.0;
+    
     if((dt<0.02))
     {
       return 1;
-    }     
+    }  
+    self->last_mouse_motion_time = now;
     
     if((self->show_popup_onrelease)||(self->marker_selection  != " ")){
         double t = self->ray_hit_t;

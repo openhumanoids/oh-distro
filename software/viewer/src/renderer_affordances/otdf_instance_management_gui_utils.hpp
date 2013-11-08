@@ -281,7 +281,6 @@ namespace renderer_affordances_gui_utils
                 bot_gtk_param_widget_add_double(pw, (*it2).c_str(), BOT_GTK_PARAM_WIDGET_SPINBOX,
                                                 min, max, inc, value); 
             }
-    
 
         // create a temp copy of the selected otdf instance to make modifications to.    
         if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
@@ -299,6 +298,7 @@ namespace renderer_affordances_gui_utils
             self->otdf_instance_hold._gl_object->isShowMeshSelected = it->second._gl_object->isShowMeshSelected;
             self->selection_hold_on=true;
         }
+        
 
         g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_adjust_param_widget_changed), self);
 
@@ -396,8 +396,8 @@ namespace renderer_affordances_gui_utils
                 } // end if         
             } // end for all joints in jp
         }// for all joint patterns
-        
-        
+
+                
         // create a temp copy of the selected otdf instance to make modifications to.    
         if(!self->selection_hold_on) { // Assuming only one object instance is changed at any given time
             self->otdf_instance_hold.uid=it->second.uid;

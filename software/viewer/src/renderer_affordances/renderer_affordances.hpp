@@ -197,6 +197,8 @@ struct RendererAffordances {
     active_mate_axis = 2; //MATE_X=0,MATE_Y=1,MATE_Z=2;
     active_ee= drc::ee_teleop_transform_t::RIGHT_HAND; //RIGHT by default
     
+    last_mouse_motion_time = bot_timestamp_now();
+    
     _renderer_foviate = false;
   }
   
@@ -310,6 +312,7 @@ struct RendererAffordances {
   double joint_marker_pos_on_press;
   double coupled_joint_marker_pos_on_press; // used for plane markers
   double ray_hit_t;
+  int64_t last_mouse_motion_time;
   
   
   // boolean flags
@@ -829,13 +832,15 @@ struct RendererAffordances {
         self->otdf_instance_hold._otdf_instance->setParam("z",T_world_object.p[2]);
         self->otdf_instance_hold._otdf_instance->setParam("roll",roll);
         self->otdf_instance_hold._otdf_instance->setParam("pitch",pitch);
-        self->otdf_instance_hold._otdf_instance->setParam("yaw",yaw);   
-        self->otdf_instance_hold._otdf_instance->update();  // TODO: Something is wrong here with joint and link patterns, occasionally it takes 3 times as long
-                                                            // for link patterns greate than 12.
+        self->otdf_instance_hold._otdf_instance->setParam("yaw",yaw); 
+        // TODO: Something is wrong _otdf_instance->update() with joint and 
+        // link patterns. It takes 3 times as long for link patterns greater
+        // than 12 elements.  
+        self->otdf_instance_hold._otdf_instance->update();  
         self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
 
       }
-     else if(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
+      else if(self->otdf_instance_hold._gl_object->is_jointdof_adjustment_enabled())
       {
 
         // set joint dof
