@@ -5,13 +5,16 @@ ON HOLD:
 * drc-viewer interface for opening and closing hands
 
 TODO:
+* chase iRobot
 * mapping from motor tendon excursion to proximal joint angle
 * make it possible to calibrate spread, thumb antagonistic
+* closing safety (wear prevention)
 
 FOCUS FOR TODAY:
-* find good iRobot hand travel bag
+* make stuff work from bot-procman-sheriff
 
 BUSY:
+* update drc software, package manager
 
 DONE:
 * ping hand
@@ -56,3 +59,4 @@ DONE:
 * test repeatability of calibration routine
 * update usage
 * send 45 back
+* find good iRobot hand travel bag
