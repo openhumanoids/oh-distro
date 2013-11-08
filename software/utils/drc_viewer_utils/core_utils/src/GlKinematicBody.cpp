@@ -2073,9 +2073,7 @@ void GlKinematicBody::draw_whole_body_bbox()
 {
  
   Eigen::Vector3f whole_body_span_dims,offset;
-  cout << "ok\n";
   get_whole_body_span_dims(whole_body_span_dims,offset); //bounding box for entire body
-  cout << "ok\n";
   glPushMatrix();
   glTranslatef(_T_world_body.p[0],_T_world_body.p[1],_T_world_body.p[2]);// world frame to body frame
   //glTranslatef(xc,yc,zc);
@@ -2083,8 +2081,6 @@ void GlKinematicBody::draw_whole_body_bbox()
   glScalef(whole_body_span_dims[0],whole_body_span_dims[1],whole_body_span_dims[2]);
   bot_gl_draw_cube_frame();
   glPopMatrix();/**/
-  cout << "ok\n";
-
 }
 
  void GlKinematicBody::draw_link_geometry_bbox(std::string &link_geometry_name) 
