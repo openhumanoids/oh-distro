@@ -694,7 +694,9 @@ classdef ReachingPlanner < KeyframePlanner
                 s_breaks = iktraj_tbreaks;
                 x_breaks = xtraj.eval(s_breaks);
                 q_breaks = x_breaks(1:obj.r.getNumDOF,:);
-                qtraj_guess = PPTrajectory(spline(s_breaks,q_breaks));
+                qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
+                qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
+                qtraj_guess = PPTrajectory(spline(s_breaks,[qdot0 q_breaks qdotf]));
             end
             
             

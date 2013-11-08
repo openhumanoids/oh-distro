@@ -296,8 +296,10 @@ classdef EndPosePlanner < KeyframePlanner
           xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
           s_breaks = iktraj_tbreaks;
           x_breaks = xtraj.eval(s_breaks);
-          q_breaks = x_breaks(1:obj.r.getNumDOF,:);          
-          qtraj = PPTrajectory(spline(s_breaks,q_breaks));
+          q_breaks = x_breaks(1:obj.r.getNumDOF,:);    
+          qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
+          qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
+          qtraj = PPTrajectory(spline(s_breaks,[qdot0 q_breaks qdotf]));
 
           s = linspace(0,1,10);
           nq_atlas = length(obj.atlas2robotFrameIndMap)/2;

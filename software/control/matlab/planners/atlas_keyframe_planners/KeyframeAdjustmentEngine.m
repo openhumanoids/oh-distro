@@ -713,7 +713,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.s_breaks = linspace(0,1,obj.plan_cache.num_breaks);
             s = unique([s(:);obj.plan_cache.s_breaks(:);grasp_transition_breaks(:)]);
             obj.plan_cache.s = s;
-            qtraj_guess = PPTrajectory(spline(iktraj_tbreaks,q_breaks));
+            qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
+            qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
+            qtraj_guess = PPTrajectory(spline(iktraj_tbreaks,[qdot0 q_breaks qdotf]));
             % fine grained sampling of plan.
             q = zeros(obj.r.getNumDOF,length(s));
             q(:,1) = q_breaks(:,1);
