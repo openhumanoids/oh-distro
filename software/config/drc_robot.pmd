@@ -14,11 +14,11 @@ group "0.development" {
 }
 group "a.0.drivers" {
     cmd "sa-left" {
-        exec = "ptgrey-gige -f 2 -q 50 -c CAMERACHEST_LEFT -s 12502221 -r 270";
+        exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_LEFT -s 12502221 -r 270";
         host = "extra";
     }
     cmd "sa-right" {
-        exec = "ptgrey-gige -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90";
+        exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90";
         host = "extra";
     }
     cmd "rearcam" {
