@@ -24,7 +24,7 @@ traj.true.w_b(801:850,3) = 5*pi;
 
 traj.true.w_b(901:1000,1) = -5*pi;
 
-R = eye(3);
+lRb = eye(3);
 traj.true.E = zeros(iterations,3);
 traj.true.G = zeros(iterations,3);
 Rnorms = zeros(iterations,3);
@@ -32,14 +32,14 @@ Rnorms = zeros(iterations,3);
 
 for k = 1:iterations
     % This generates the local to body rotation matrix
-    R = closed_form_DCM_farrell(traj.true.w_b(k,:)'*dt,R);
+    lRb = closed_form_DCM_farrell(traj.true.w_b(k,:)'*dt,lRb);
     
     % we also rotate the gravity vector to check how the rotation matrix is
     % formed
-    traj.true.a_b(k,:) = (R * g)';
+    traj.true.a_b(k,:) = (lRb * g)';
     
     % This is the body to world Euler angle measurement
-    traj.true.E(k,:) = q2e(R2q(R))';
+    traj.true.E(k,:) = q2e(R2q(lRb'));
 end
 
 end

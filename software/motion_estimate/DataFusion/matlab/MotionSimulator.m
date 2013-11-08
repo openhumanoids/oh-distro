@@ -151,7 +151,11 @@ for n = 1:iterations
     if (sentIMUBatch)
         receivedMsgs =  receivedMsgs + 1;
         [cppINS, dummy] = receiveInertialStatePos(aggregator);
-        cppINS.pose.E = q2e(cppINS.pose.q);
+        lqb = cppINS.pose.q;
+        bql = lqb;
+        bql(2:4) = -bql(2:4);
+        
+        cppINS.pose.E = q2e(bql);
         storeCppINS = cppINS;
     end
     

@@ -19,6 +19,7 @@ dt = (pose.utime - pose__.utime)*1e-6;
 % Newton 2 mechanisation
 pose.P_l = pose__.P_l + (pose__.V_l) * dt; 
 
+% this propagation gives us the local to body quaternion
 pose.R = closed_form_DCM_farrell( 0.5*(pose__.da+imudata.da)*dt , pose__.R); % trapezoidal integration, before application through the exponential map
 
 pose.a_l = pose.R' * (imudata.ddp);
@@ -29,6 +30,6 @@ pose.f_l = pose.a_l - imudata.gravity; % we break this step up specifically for 
 pose.V_l = pose__.V_l + 0.5*(pose.f_l + pose__.f_l) * dt;
 
 pose.da = imudata.da;
-pose.q = R2q(pose.R);
+pose.q = R2q(pose.R');
 pose.E = q2e(pose.q);
 

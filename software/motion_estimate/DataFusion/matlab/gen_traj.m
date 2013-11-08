@@ -66,6 +66,7 @@ for n = 1:size(w_l,1)
     E_interm(n,:) = q2e(R2q(R))';
 end
 
+% wrap the Euler angels
 E = mod(E_interm + pi , 2*pi) - pi;
 
 % Body frame accels and rates

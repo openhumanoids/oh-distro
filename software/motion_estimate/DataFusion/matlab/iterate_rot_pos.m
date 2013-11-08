@@ -1,4 +1,4 @@
-function [Result, Sys] = iterate(Param, Sys, Measurement)
+function [Result, Sys] = iterate_rot_pos(Param, Sys, Measurement)
 % This function must be able to be called as part of a separate process, given Param, Sys and a Measurement
 %
 % Requires:
@@ -56,13 +56,13 @@ dE = q2e(dq);
 dP = Measurement.positionResidual;
 
 
-disp(['iterate dE ' num2str(dE')]);
+disp(['iterate_rot_pos dE ' num2str(dE')]);
 Sys.posterior = KF_measupdate(Sys.priori, Sys.Disc, [dE; dP]);
 
-disp(['iterate gyro bias est ' num2str(Sys.posterior.x(4:6)')])
-disp(['iterate acc bias est ' num2str(Sys.posterior.x(13:15)')])
+disp(['iterate_rot_pos gyro bias est ' num2str(Sys.posterior.x(4:6)')])
+disp(['iterate_rot_pos acc bias est ' num2str(Sys.posterior.x(13:15)')])
 
-disp(['iterate pos err est ' num2str(Sys.posterior.x(7:9)')])
+disp(['iterate_rot_pos pos err est ' num2str(Sys.posterior.x(7:9)')])
 
 % Some results to look at later=====================================================================
 
