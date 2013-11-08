@@ -688,9 +688,21 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     if(now > (self->graspOptStatusListener->_last_statusmsg_stamp + 4000000)){
         bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,false); 
     }
-
     
-  
+    // debug selection
+    // ==================================================================================      
+    //    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    //    object_instance_map_type_::iterator it= self->affCollection->_objects.find(self->object_selection);
+    //    if(it!=self->affCollection->_objects.end())
+    //    {
+    //      std::string object_name = self->object_selection;
+    //      std::string object_geometry_name = self->link_selection;
+    //      std::string object_name_token  = object_name + "_";
+    //      size_t found = object_geometry_name.find(object_name_token);  
+    //      std::string geometry_name =object_geometry_name.substr(found+object_name_token.size());
+    //      it->second._gl_object->draw_link_geometry_bbox(geometry_name);  
+    //      it->second._gl_object->draw_whole_body_bbox();
+    //    }
 
 }
 // =================================================================================

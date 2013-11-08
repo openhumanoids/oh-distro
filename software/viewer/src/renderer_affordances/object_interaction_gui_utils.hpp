@@ -1,6 +1,9 @@
 #ifndef OBJECT_INTERACTION_GUI_UTILS_HPP
 #define OBJECT_INTERACTION_GUI_UTILS_HPP
 
+#define PARAM_REQUEST_PTCLD_FROM_MAPS "Req PtCld 4 Aff"
+#define PARAM_REQUEST_LINKGEOM_PTCLD_FROM_MAPS "Req PtCld 4 Aff Geom"
+
 #define PARAM_DIL_FACTOR "Obj Dilation"
 #define PARAM_SEED_LH "Seed LHand"
 #define PARAM_SEED_RH "Seed RHand"
@@ -569,8 +572,10 @@ namespace renderer_affordances_gui_utils
     {
       //PARAM_REQUEST_PTCLD_FROM_MAPS
         if(it!=self->affCollection->_objects.end()){
+        
           Eigen::Vector3f whole_body_span,offset;
-          it->second._gl_object->get_whole_body_span_dims(whole_body_span,offset);  
+          it->second._gl_object->get_whole_body_span_dims(whole_body_span,offset); 
+           
           Eigen::Vector3f origin;
           origin[0] = it->second._gl_object->_T_world_body.p[0];
           origin[1] = it->second._gl_object->_T_world_body.p[1];
@@ -589,6 +594,48 @@ namespace renderer_affordances_gui_utils
           msg.span_z = (float)whole_body_span[2]+padding;   
           string channel = "WORLD_BOX_PTCLD_REQUEST";
           self->lcm->publish(channel, &msg);       
+        }
+    }
+    else if (! strcmp(name, PARAM_REQUEST_LINKGEOM_PTCLD_FROM_MAPS))
+    {
+      //PARAM_REQUEST_LINKGEOM_PTCLD_FROM_MAPS
+        if(it!=self->affCollection->_objects.end()){
+        
+          std::string object_name = self->object_selection;
+          std::string object_geometry_name = self->link_selection;
+          std::string object_name_token  = object_name + "_";
+          size_t found = object_geometry_name.find(object_name_token);  
+          std::string geometry_name =object_geometry_name.substr(found+object_name_token.size());
+
+          Eigen::Vector3f link_geometry_span,offset;
+          bool success = it->second._gl_object->get_link_geometry_span_dims(geometry_name,link_geometry_span,offset);             
+          if(!success)
+          {          
+           std::cout <<"ERROR: link_geometry not found" << endl;
+          } 
+          else
+          {
+            KDL::Frame T_world_link_geometry;
+            it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_link_geometry);   
+            Eigen::Vector3f origin;
+            origin[0] = T_world_link_geometry.p[0];
+            origin[1] = T_world_link_geometry.p[1];
+            origin[2] = T_world_link_geometry.p[2];
+            origin[0] += offset[0];
+            origin[1] += offset[1];
+            origin[2] += offset[2];
+            drc::world_box_t msg;    
+            msg.tag = it->first;      
+            msg.origin_x = (float)origin[0];
+            msg.origin_y = (float)origin[1];
+            msg.origin_z = (float)origin[2];
+            float padding = 0.1;
+            msg.span_x = (float)link_geometry_span[0]+padding;
+            msg.span_y = (float)link_geometry_span[1]+padding;
+            msg.span_z = (float)link_geometry_span[2]+padding;   
+            string channel = "WORLD_BOX_PTCLD_REQUEST";
+            self->lcm->publish(channel, &msg);       
+          }// end if(!success)
         }
     }
     else if (! strcmp(name, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT)) {
@@ -1258,6 +1305,7 @@ namespace renderer_affordances_gui_utils
       bot_gtk_param_widget_add_separator (pw,"(of params/currentstate)");
       bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_REQUEST_PTCLD_FROM_MAPS, NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_REQUEST_LINKGEOM_PTCLD_FROM_MAPS, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_DOF, NULL); 
       bot_gtk_param_widget_add_enum(pw, PARAM_SELECT_FLIP_DIM,
