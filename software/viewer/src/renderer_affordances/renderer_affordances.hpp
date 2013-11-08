@@ -833,9 +833,6 @@ struct RendererAffordances {
         self->otdf_instance_hold._otdf_instance->setParam("roll",roll);
         self->otdf_instance_hold._otdf_instance->setParam("pitch",pitch);
         self->otdf_instance_hold._otdf_instance->setParam("yaw",yaw); 
-        // TODO: Something is wrong _otdf_instance->update() with joint and 
-        // link patterns. It takes 3 times as long for link patterns greater
-        // than 12 elements.  
         self->otdf_instance_hold._otdf_instance->update();  
         self->otdf_instance_hold._gl_object->set_state(self->otdf_instance_hold._otdf_instance); 
 
