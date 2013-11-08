@@ -31,6 +31,10 @@ function LadderPlanner
   qnom_state = '';
   fixed_links = [];
 
+  joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+  robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateCoder(joint_names)));
+  robot_state_coder.subscribe('EST_ROBOT_STATE');
+  
   % setup frames
   state_frame = getStateFrame(r);
   state_frame.subscribe('EST_ROBOT_STATE');
@@ -61,7 +65,7 @@ function LadderPlanner
 
   while true
     while waiting
-      [x,~] = getNextMessage(state_frame,10);
+      [x,~] = getNextMessage(robot_state_coder,10);
       if (~isempty(x))
         x0=x;
         q0 = x0(1:nq);
