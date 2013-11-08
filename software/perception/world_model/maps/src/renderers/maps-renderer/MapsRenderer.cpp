@@ -60,7 +60,7 @@ onBoxPointCloudRequest(const lcm::ReceiveBuffer* iBuf,
   Eigen::Quaternionf quat = Eigen::Quaternionf::Identity();
   mInteractiveBox.setBoxParameters(pos, scale, quat);
   mRequestBoxInit = true;
-  mShowRequestBoxToggle->set_active(true);
+  mShowRequestBoxToggle->set_active(false);
   sendBoxRequest();
   requestDraw();
 }
