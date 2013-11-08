@@ -51,7 +51,7 @@ group "a.0.hand_drivers" {
         host = "robot";
     }
     cmd "irobot-right" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 45";
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 44";
         host = "robot";
     }
     cmd "irobot-left" {
@@ -324,15 +324,31 @@ group "m.perception" {
 group "m.hands" {
     cmd "sandia_hand_eigen_grasps" {
         exec = "sandia-simple-grasp";
-        host = "base";
+        host = "robot";
     }
     cmd "sandia_keyboard" {
         exec = "sandia-simple-grasp-keyboard";
-        host = "base";
+        host = "robot";
     }
     cmd "irobot_hand_eigen_grasps" {
         exec = "rosrun handle_launch power_grasp_keyboard_teleop.py";
-        host = "base";
+        host = "robot";
+    }
+    cmd "irobot_hand_close_right" {
+        exec = "rosrun handle_launch mit_irobot_hand_control.py r CLOSE";
+        host = "robot";
+    }
+    cmd "irobot_hand_open_right" {
+        exec = "rosrun handle_launch mit_irobot_hand_control.py r OPEN";
+        host = "robot";
+    }
+    cmd "irobot_hand_calibrate_jig_right" {
+        exec = "rosrun handle_launch mit_irobot_hand_control.py r CALIBRATE_JIG";
+        host = "robot";
+    }
+    cmd "irobot_hand_calibrate_no_jig_right" {
+        exec = "rosrun handle_launch mit_irobot_hand_control.py r CALIBRATE_NO_JIG";
+        host = "robot";
     }
 }
 
