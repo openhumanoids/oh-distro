@@ -127,11 +127,6 @@ classdef EndPosePlanner < KeyframePlanner
             else
                 iktraj_head_constraint = {};
             end
-            if(isfield(goal_type_flags,'h_fixed_pose'))
-              if(goal_type_flags.h_fixed_pose)
-                iktraj_head_constraint = [iktraj_head_constraint,{WorldFixedBodyPoseConstraint(obj.r,obj.head_body,tspan)}];
-              end
-            end
             
             % Feet z constraints
             l_foot_pose = l_foot_pose0;

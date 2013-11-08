@@ -151,11 +151,6 @@ rh_ee_gaze = EndEffectorListener('RIGHT_PALM_GAZE_GOAL');
 lh_ee_clear = EndEffectorListener('LEFT_PALM_GOAL_CLEAR');
 rh_ee_clear = EndEffectorListener('RIGHT_PALM_GOAL_CLEAR');
 
-% These fixed pose constraints are used in End pose search.
-h_fixed_pose = EndEffectorListener('HEAD_FIXED_POSE');
-lh_fixed_pose = EndEffectorListener('LEFT_PALM_FIXED_POSE');
-rh_fixed_pose = EndEffectorListener('RIGHT_PALM_FIXED_POSE');
-
 preset_posture_goal_listener = PresetPostureGoalListener('PRESET_POSTURE_GOAL');
 posture_goal_listener = PostureGoalListener('POSTURE_GOAL');
 pose_goal_listener = TrajOptConstraintListener('POSE_GOAL');
@@ -677,24 +672,6 @@ while(1)
         keyframe_adjustment_engine.setPlanCache(cache);
     end
     
-    p = getNextMessage(h_fixed_pose,msg_timeout);
-    if(~isempty(p))
-      display('Fix head pose'); 
-      ee_goal_type_flags.h_fixed_pose = true;
-    end
-    
-    p = getNextMessage(lh_fixed_pose,msg_timeout);
-    if(~isempty(p))
-      display('Fix left hand pose');
-      ee_goal_type_flags.lh_fixed_pose = true; 
-    end
-    
-    p = getNextMessage(rh_fixed_pose,msg_timeout);
-    if(~isempty(p))
-      display('Fix left hand pose');
-      ee_goal_type_flags.rh_fixed_pose = true;
-    end
-    
     [posegoal,postureconstraint]= pose_goal_listener.getNextMessage(msg_timeout);
     if(~isempty(posegoal))
         disp('pose goal received .');
@@ -792,14 +769,11 @@ while(1)
         wholebody_planner.setQdotDesired(X.speed);
     end
     
-    
-    
     p = getNextMessage (h_ee_clear, msg_timeout);
     if (~isempty(p))
         disp ('Clearing head goal pose');
         h_ee_goal = [];
         ee_goal_type_flags.h = -1;
-        ee_goal_type_flags.h_fixed_pose = false;
     end
     
     p = getNextMessage (lh_ee_clear, msg_timeout);
@@ -807,7 +781,6 @@ while(1)
         disp ('Clearing left hand goal pose');
         lh_ee_goal = [];
         ee_goal_type_flags.lh = -1;
-        ee_goal_type_flags.lh_fixed_pose = false;
     end
     
     p = getNextMessage (rh_ee_clear, msg_timeout);
@@ -815,7 +788,6 @@ while(1)
         disp ('Clearing right hand  goal pose');
         rh_ee_goal = [];
         ee_goal_type_flags.rh = -1;
-        ee_goal_type_flags.rh_fixed_pose = false;
     end
     
 end
