@@ -90,6 +90,8 @@ class Pass{
     
     image_io_utils*  imgutils_;    
     std::vector< CamData* > cams_;
+    
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr combined_cloud_;  
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
@@ -129,6 +131,10 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   
   printf_counter_ =0;  
   verbose_=false;
+  
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  combined_cloud_ = cloud_ptr;    
+  
 }
 
 // Receive and Decompress the Images:
@@ -222,7 +228,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     if (cams_[cam_id]->img_received_){
       colorizeLidar(msg->utime, scan_laser, cam_id);
     }else{
-      cout << "No "<< cams_[cam_id]->channel_ <<" image yet\n"; 
+      // cout << "No "<< cams_[cam_id]->channel_ <<" image yet\n"; 
     }
   }
   
@@ -243,6 +249,11 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   Isometry3dTime null_T = Isometry3dTime(printf_counter_, Eigen::Isometry3d::Identity()  );
   pc_vis_->pose_to_lcm_from_list(60010, null_T);
   
+  
+  *combined_cloud_ += *scan_local;
+  
+  
+  // Colorize relative to z=0;
   for (int i = 0; i < scan_local->points.size() ; i++) {
     float z = scan_local->points[i].z*10 ;
     float rgb[3];
@@ -254,7 +265,17 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   
   pc_vis_->ptcld_to_lcm_from_list(60011, *scan_local, printf_counter_, printf_counter_);    
   
+  
   if (printf_counter_% cl_cfg_.batch_size ==0){
+    
+    
+    pcl::PCDWriter writer;
+    stringstream ss2;
+    ss2 << "/tmp/sweep_cloud_"  << msg->utime << ".pcd";
+    writer.write (ss2.str(), *combined_cloud_, true); // binary =true
+    cout << "finished writing "<< combined_cloud_->points.size() <<" points to:\n" << ss2.str() <<"\n";
+    combined_cloud_->points.empty();
+    
     cout << "Filtering: " <<  " "  << msg->utime << "\n";
     //  vs::reset_collections_t reset;
     //  lcm_->publish("RESET_COLLECTIONS", &reset);    

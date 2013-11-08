@@ -131,12 +131,12 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_),
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
   camera_params_ = CameraParams();
 
-  lcm_->subscribe( "CAMERA" ,&Pass::multisenseHandler,this);
-  camera_params_.setParams(botparam_, "cameras.CAMERA_LEFT");
+  //lcm_->subscribe( "CAMERA" ,&Pass::multisenseHandler,this);
+  //camera_params_.setParams(botparam_, "cameras.CAMERA_LEFT");
 
   // Previous:
-  //lcm_->subscribe( "CAMERALEFT" ,&Pass::imageHandler,this);
-  //camera_params_.setParams(botparam_, "cameras.CAMERALEFT");
+  lcm_->subscribe( "CAMERA_LEFT" ,&Pass::imageHandler,this);
+  camera_params_.setParams(botparam_, "cameras.CAMERA_LEFT");
   
   string mask_channel="CAMERALEFT_MASKZIPPED";
   lcm_->subscribe( mask_channel ,&Pass::maskHandler,this);
@@ -400,7 +400,7 @@ void Pass::queryNewSweep(){
 
   LocalMap::SpaceTimeBounds bounds;
   if (getSweep(bounds, head_to_local.cast<float>().translation() ,  Eigen::Vector3f( 1.3, 1.3, 1.3)) ){ 
-
+    std::cout << "getSweep\n";
     // use the time and space bounds to get a new cloud
     getSweepCloud(bounds);
     sendSweepCloud();
