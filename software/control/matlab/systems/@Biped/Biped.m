@@ -163,7 +163,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.max_outward_step_rot = obj.max_step_rot;
       end
       if ~isfield(options, 'max_inward_step_rot')
-        options.max_inward_step_rot = 0; % BDI walker doesn't allow toe to rotate inward at all
+        options.max_inward_step_rot = 0.05; % BDI walker doesn't allow toe to rotate inward at all
       end
 
       if ~isfield(options, 'max_step_dz')
@@ -213,7 +213,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.max_outward_step_rot = obj.max_step_rot;
       end
       if ~isfield(options, 'max_inward_step_rot')
-        options.max_inward_step_rot = 0; % BDI walker doesn't allow toe to rotate inward at all
+        options.max_inward_step_rot = 0.05; % BDI walker doesn't allow toe to rotate inward at all
       end
       if ~isfield(options, 'max_step_dz')
         options.max_step_dz = obj.max_step_dz;
