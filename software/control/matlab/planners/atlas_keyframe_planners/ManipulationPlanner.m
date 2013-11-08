@@ -169,17 +169,17 @@ classdef ManipulationPlanner < KeyframePlanner
             else
               % Figure out the gaze origin later. Use [0;0;0] for the
               % moment
-              lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],ee_loci(1:3,i),[0;0;0],pi/18)};
+              lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],ee_loci(1:3,i),obj.lh_camera_origin,pi/18)};
             end
             %r_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
             if(goal_type_flags.rh ~=2)
               rhand_constraint = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0(1:3)-1e-2,r_hand_pose0(1:3)+1e-2),...
                 WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose0(4:7),1e-4)};
             else
-              rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],ee_loci(1:3,i),[0;0;0],pi/18)};
+              rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],ee_loci(1:3,i),obj.rh_camera_origin,pi/18)};
             end
             if(goal_type_flags.h ==2)
-              head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],ee_loci(1:3,i),[0;0;0],pi/12)}];
+              head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,[1;0;0],ee_loci(1:3,i),obj.h_camera_origin,pi/12)}];
             end
             %l_foot_pose0= [nan;nan;nan;nan;nan;nan;nan];
             %                 lfoot_const.min = l_foot_pose0-1e-2*[ones(3,1);ones(4,1)];

@@ -55,6 +55,14 @@ classdef KeyframePlanner < handle
         atlas2robotFrameIndMap % atlas2robotFrameMap(i) is the index of atlas.frame.coordinate{i} in the robot frame
         lhand2robotFrameIndMap
         rhand2robotFrameIndMap
+        
+        h_camera_origin;
+        lh_camera_origin;
+        rh_camera_origin;
+        r_sandia_camera_origin;
+        l_sandia_camera_origin;
+        r_irobot_camera_origin;
+        l_irobot_camera_origin;
     end
     
     methods
@@ -110,10 +118,13 @@ classdef KeyframePlanner < handle
             obj.sandia_gaze_axis = [0;0;1];
             obj.irobot_gaze_axis = [0;1;0];
             obj.head_gaze_axis = [1;0;0];
-            obj.lh_gaze_axis = obj.sandia_gaze_axis;
-            obj.rh_gaze_axis = obj.sandia_gaze_axis;
+            obj.l_sandia_camera_origin = [0;0.2;0];
+            obj.r_sandia_camera_origin = [0;-0.2;0];
+            obj.l_irobot_camera_origin = [0;0;0];
+            obj.r_irobot_camera_origin = [0;0;0];
             obj.hand_gaze_tol = pi/18;
             obj.head_gaze_tol = pi/8;% FOV for multisense is 80x45, so 45/2 should be the max tolerance
+            obj.h_camera_origin = [0;0;0];
 
             obj.setHandType(lhand_frame,rhand_frame);
             % obj.collision_check            
@@ -182,25 +193,31 @@ classdef KeyframePlanner < handle
             if(obj.l_hand_mode == 1)
              obj.T_hand_palm_l = obj.T_hand_palm_l_sandia;
              obj.lh_gaze_axis = obj.sandia_gaze_axis;
+             obj.lh_camera_origin = obj.l_sandia_camera_origin;
             elseif(obj.l_hand_mode == 2)
              obj.T_hand_palm_l = obj.T_hand_palm_l_irobot;
               obj.lh_gaze_axis = obj.irobot_gaze_axis;
+              obj.lh_camera_origin = obj.l_irobot_camera_origin;
             elseif(obj.l_hand_mode == 0)
               % I need to talk with Sisir about this palm-hand
               % transformation
               obj.T_hand_palm_l = obj.T_hand_palm_l_irobot; 
                obj.lh_gaze_axis = obj.irobot_gaze_axis;
+               obj.lh_camera_origin = obj.l_irobot_camera_origin;
             end
             
             if(obj.r_hand_mode == 1)
               obj.T_hand_palm_r = obj.T_hand_palm_r_sandia;
               obj.rh_gaze_axis = obj.sandia_gaze_axis;
+              obj.rh_camera_origin = obj.r_sandia_camera_origin;
             elseif(obj.r_hand_mode == 2)
               obj.T_hand_palm_r = obj.T_hand_palm_r_irobot;
               obj.rh_gaze_axis = obj.irobot_gaze_axis;
+              obj.rh_camera_origin = obj.r_irobot_camera_origin;
             elseif(obj.r_hand_mode == 0)
               obj.T_hand_palm_r = obj.T_hand_palm_r_irobot;
               obj.rh_gaze_axis = obj.irobot_gaze_axis;
+              obj.rh_camera_origin = obj.r_irobot_camera_origin;
             end
             
                         

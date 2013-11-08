@@ -131,18 +131,18 @@ classdef WholeBodyPlanner < KeyframePlanner
               lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0,1e-2,1e-4,[0,0]);
               lhand_camera_constraint = {};
             else
-              lhand_camera_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],ee_loci(1:3,i),[0;0;0],pi/18,[i/N,i/N])};
+              lhand_camera_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],ee_loci(1:3,i),obj.lh_camera_origin,pi/18,[i/N,i/N])};
             end
             %r_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
             if(goal_type_flags.rh ~=2)
               rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0,1e-2,1e-4,[0 0]);
               rhand_camera_constraint = {};
             else
-              rhand_camera_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],ee_loci(1:3,i),[0;0;0],pi/18,[0;0])};
+              rhand_camera_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],ee_loci(1:3,i),obj.rh_camera_origin,pi/18,[0;0])};
             
             end
             if(goal_type_flags.h ==2)
-              head_camera_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],ee_loci(1:3,i),[0;0;0],pi/12)};
+              head_camera_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],ee_loci(1:3,i),obj.h_camera_origin,pi/12)};
             else
               head_camera_const = {};
             end

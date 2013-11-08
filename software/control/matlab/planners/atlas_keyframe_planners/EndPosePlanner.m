@@ -113,17 +113,17 @@ classdef EndPosePlanner < KeyframePlanner
             % gaze constraints
             tspan = [0 1];
             if(goal_type_flags.rh == 2)
-                iktraj_rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
+                iktraj_rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rh_ee_goal(1:3),obj.rh_camera_origin,obj.hand_gaze_tol)};
             else
                 iktraj_rhand_constraint = {};
             end
             if(goal_type_flags.lh == 2)
-                iktraj_lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
+                iktraj_lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lh_ee_goal(1:3),obj.lh_camera_origin,obj.hand_gaze_tol)};
             else
                 iktraj_lhand_constraint = {};
             end
             if(goal_type_flags.h == 2)
-                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,h_ee_goal(1:3),[0;0;0],obj.head_gaze_tol,tspan)};
+                iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,h_ee_goal(1:3),obj.h_camera_origin,obj.head_gaze_tol,tspan)};
             else
                 iktraj_head_constraint = {};
             end
@@ -370,17 +370,17 @@ classdef EndPosePlanner < KeyframePlanner
             r_hand_pose = nan(7,1);
             l_hand_pose = nan(7,1);
             if(goal_type_flags.rh == 2)
-                rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
+                rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rh_ee_goal(1:3),obj.rh_camera_origin,obj.hand_gaze_tol)};
             else
                 rhand_constraint = {};
             end
             if(goal_type_flags.lh == 2)
-                lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lh_ee_goal(1:3),[0;0;0],obj.hand_gaze_tol)};
+                lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lh_ee_goal(1:3),obj.lh_camera_origin,obj.hand_gaze_tol)};
             else
                 lhand_constraint = {};
             end
             if(goal_type_flags.h == 2)
-                head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,h_ee_goal(1:3),[0;0;0],obj.head_gaze_tol)};
+                head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,h_ee_goal(1:3),obj.h_camera_origin,obj.head_gaze_tol)};
             else
                 head_constraint = {};
             end

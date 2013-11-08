@@ -549,15 +549,15 @@ classdef ReachingPlanner < KeyframePlanner
             
             
             if(~isempty(head_gaze_target))
-                head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,head_gaze_target,[0;0;0],obj.head_gaze_tol)}];
+                head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,head_gaze_target,obj.h_camera_origin,obj.head_gaze_tol)}];
                 iktraj_head_constraint = [iktraj_head_constraint,head_constraint];
             end
             if(~isempty(rhand_gaze_target))
-                rhand_constraint = [rhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rhand_gaze_target,[0;0;0],obj.hand_gaze_tol)}];
+                rhand_constraint = [rhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rhand_gaze_target,obj.rh_camera_origin,obj.hand_gaze_tol)}];
                 iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraint];
             end
             if(~isempty(lhand_gaze_target))
-                lhand_constraint = [lhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lhand_gaze_target,[0;0;0],obj.hand_gaze_tol)}];
+                lhand_constraint = [lhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lhand_gaze_target,obj.lh_camera_origin,obj.hand_gaze_tol)}];
                 iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint];
             end
             

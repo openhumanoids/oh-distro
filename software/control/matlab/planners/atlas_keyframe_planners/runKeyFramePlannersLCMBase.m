@@ -101,8 +101,8 @@ end
 if(nargin<1)
     hardware_mode = 1;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
 end
-l_hand_listener = drc.control.HandStateListener(l_hand_mode,'left','EST_ROBOT_STATE');
-r_hand_listener = drc.control.HandStateListener(r_hand_mode,'right','EST_ROBOT_STATE');
+% l_hand_listener = drc.control.HandStateListener(l_hand_mode,'left','EST_ROBOT_STATE');
+% r_hand_listener = drc.control.HandStateListener(r_hand_mode,'right','EST_ROBOT_STATE');
 l_hand_frame = handFrame(l_hand_mode,'left');
 r_hand_frame = handFrame(r_hand_mode,'right');
 
@@ -393,15 +393,15 @@ while(1)
         x0 = x;
     end
     
-   data = getNextMessage(l_hand_listener,msg_timeout);
-   if(~isempty(data))
-%       x0(aff_manager.lhand2robotFrameMap) = data;
-   end
-   
-   data = getNextMessage(r_hand_listener,msg_timeout);
-   if(~isempty(data))
-%       x0(aff_manager.rhand2robotFrameMap) = data;
-   end
+%    data = getNextMessage(l_hand_listener,msg_timeout);
+%    if(~isempty(data))
+% %       x0(aff_manager.lhand2robotFrameMap) = data;
+%    end
+%    
+%    data = getNextMessage(r_hand_listener,msg_timeout);
+%    if(~isempty(data))
+% %       x0(aff_manager.rhand2robotFrameMap) = data;
+%    end
     x= constraint_listener.getNextMessage(msg_timeout); % not a frame
     if(~isempty(x))
         num_links = length(x.time);
