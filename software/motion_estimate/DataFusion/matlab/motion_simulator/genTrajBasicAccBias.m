@@ -1,4 +1,4 @@
-function [ traj ] = genTrajBasicGyroBias(dt, iterations, traj )
+function [ traj ] = genTrajBasicAccBias(dt, iterations, traj )
 %GENTRAJBASICROTATIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -8,9 +8,7 @@ g = [0;0;9.81]; % We assume the forward left up frame for this mechanization
 
 
 % constant positive bias on the roll gyro
-traj.true.w_b(:,1) = -0.01;
-traj.true.w_b(:,2) = 0.0037;
-traj.true.w_b(:,3) = -0.007;
+acc_bias = [0.001;0;0];
 
 
 R = eye(3);
@@ -25,7 +23,7 @@ for k = 1:iterations
     
     % we also rotate the gravity vector to check how the rotation matrix is
     % formed
-    traj.true.a_b(k,:) = (R * g)' + [0.001;-0.01;-0.004]';
+    traj.true.a_b(k,:) = (R * g)' + acc_bias';% we also introduce a bias term here
     
     % This is the body to world Euler angle measurement
     traj.true.E(k,:) = q2e(R2q(R))';

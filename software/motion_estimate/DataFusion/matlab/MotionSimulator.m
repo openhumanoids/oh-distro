@@ -30,6 +30,8 @@ switch (trajtype)
         RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
     case 'gyro_bias'
         RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
+    case 'acc_bias'
+        RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
 end
 
 

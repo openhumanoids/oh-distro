@@ -29,5 +29,8 @@ switch (trajtype)
     case 'gyro_bias'
         traj = genTrajBasicGyroBias(param.dt, iterations, traj );
         
+    case 'acc_bias'
+        traj = genTrajBasicAccBias(param.dt, iterations, traj ); 
+        
 end
 

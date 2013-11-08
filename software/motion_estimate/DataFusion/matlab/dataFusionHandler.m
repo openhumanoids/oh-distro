@@ -14,8 +14,8 @@ lc.subscribe('SE_MATLAB_DATAFUSION_REQ', aggregator);
 % initialize the Kalman Filter
 
 % States are misalignment and gyro bias
-posterior.x = zeros(6,1);
-posterior.P = 999*eye(6);
+posterior.x = zeros(15,1);
+posterior.P = 999*eye(15);
 
 % We assume that this loop will be run at no more than 50 Hz -- although we
 % still need to test and validate this. The assumption is based on normal
@@ -36,6 +36,7 @@ while (true)
     Sys.posterior = posterior;
 
     Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
+    
     Measurement.quaternionLinearResidual = Measurement.LegOdo.pose.q - Measurement.INS.pose.q; % We do not intend to use the linear difference between the quaternions, just a sanity check
     Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.q)' * q2R(Measurement.LegOdo.pose.q));
     
@@ -43,7 +44,7 @@ while (true)
 %     disp(['Linear difference in quaternion ' num2str(Measurement.quaternionLinearResidual')])
     disp(['dataFusionHandler -- Manifold residual in quaternion norm: ' num2str(norm(Measurement.quaternionManifoldResidual)) ', q = ' num2str(Measurement.quaternionManifoldResidual)])
    
-    [Result, dfSys] = iterate_rot_only([], Sys, Measurement);
+    [Result, dfSys] = iterate_rot_pos([], Sys, Measurement);
 
     posterior = dfSys.posterior;
 
