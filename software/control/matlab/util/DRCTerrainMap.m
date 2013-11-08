@@ -164,10 +164,6 @@ classdef DRCTerrainMap < RigidBodyTerrain
 
       for j = 1:n_bins
         expansions{j} = filter2(obj.makeDomain(contact_pts_px, findTheta(j), dtheta), Q) > 0;
-        d = obj.makeDomain(contact_pts_px, findTheta(j), dtheta);
-        i1 = filter2(d, Q);
-        i2 = conv2(double(Q), double(d(end:-1:1,end:-1:1)), 'same');
-        valuecheck(i1, i2);
       end
 
       [px_X, px_Y] = meshgrid(1:size(heights, 2), 1:size(heights, 1));
@@ -188,12 +184,26 @@ classdef DRCTerrainMap < RigidBodyTerrain
       if options.debug
         px2world_2x3 = px2world(1:2, [1,2,4]);
         world_xy = px2world_2x3 * [reshape(px_X, 1, []); reshape(px_Y, 1, []); ones(1, size(px_X, 1) * size(px_X, 2))];
-        Infeas = expansions{findBin(-pi/2)};
+        Infeas = expansions{findBin(-pi/8)};
         colors = zeros(length(reshape(Infeas,[],1)), 3);
         colors(reshape(Infeas, [], 1) == 1, :) = repmat([1 0 0], length(find(reshape(Infeas, [], 1) == 1)), 1);
         colors(reshape(Q, [], 1) == 0, :) = repmat([1 1 0], length(find(reshape(Q, [], 1) == 0)), 1);
         colors(reshape(Infeas, [], 1) == 0, :) = repmat([0 1 0], length(find(reshape(Infeas, [], 1) == 0)), 1);
-        plot_lcm_points([world_xy', reshape(heights, [], 1)], colors, 71, 'Terrain Feasibility', 1, 1);
+        lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'terrain_safety');
+        lcmgl.glPointSize(5);
+        ht = reshape(heights, [], 1);
+        possible_colors = {[1,0,0], [1,1,0], [0,1,0]};
+        for j = 1:3
+          lcmgl.glColor3f(possible_colors{j}(1),possible_colors{j}(2),possible_colors{j}(3));
+          lcmgl.glBegin(lcmgl.LCMGL_POINTS);
+          for k = 1:size(colors,1)
+            if all(colors(k,:) == possible_colors{j});
+              lcmgl.glVertex3f(world_xy(1,k), world_xy(2,k), ht(k));
+            end
+          end
+          lcmgl.glEnd();
+        end
+        lcmgl.switchBuffers();
       end
     end
 
@@ -215,7 +225,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       mi = min(expanded_contacts_px, [], 2);
       domain = false(ceil(ma(2) - mi(2)), ceil(ma(1) - mi(1)));
       x = (1:size(domain, 2)) - (size(domain, 2)/2 + 0.5);
-      y = ((1:size(domain, 1)) - (size(domain, 1)/2 + 0.5));
+      y = -((1:size(domain, 1)) - (size(domain, 1)/2 + 0.5));
       [X, Y] = meshgrid(x,y);
       inpoly = all(bsxfun(@minus, A * [reshape(X,1,[]); reshape(Y,1,[])], b) <= 0);
       domain(inpoly) = 1;
