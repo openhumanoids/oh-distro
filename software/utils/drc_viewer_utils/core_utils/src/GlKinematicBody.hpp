@@ -445,6 +445,7 @@ class GlKinematicBody
     bool get_current_joint_pos(const std::string &joint_name, double &pos);
     bool get_future_joint_pos(const std::string &joint_name, double &pos);
     void get_whole_body_span_dims(Eigen::Vector3f &whole_body_span,Eigen::Vector3f &offset);
+    bool get_link_geometry_span_dims(std::string &link_geometry_name, Eigen::Vector3f &whole_body_span_dims,Eigen::Vector3f &offset);
     
     bool get_associated_link_name(std::string &link_geometry_name,std::string &link_name)
     {
@@ -470,6 +471,7 @@ class GlKinematicBody
       return false;
     };
     void draw_whole_body_bbox(); 
+    void draw_link_geometry_bbox(std::string &link_geometry_name); 
     void blink(bool value){
       enable_blinking=value;
     }

@@ -2073,7 +2073,9 @@ void GlKinematicBody::draw_whole_body_bbox()
 {
  
   Eigen::Vector3f whole_body_span_dims,offset;
+  cout << "ok\n";
   get_whole_body_span_dims(whole_body_span_dims,offset); //bounding box for entire body
+  cout << "ok\n";
   glPushMatrix();
   glTranslatef(_T_world_body.p[0],_T_world_body.p[1],_T_world_body.p[2]);// world frame to body frame
   //glTranslatef(xc,yc,zc);
@@ -2081,9 +2083,31 @@ void GlKinematicBody::draw_whole_body_bbox()
   glScalef(whole_body_span_dims[0],whole_body_span_dims[1],whole_body_span_dims[2]);
   bot_gl_draw_cube_frame();
   glPopMatrix();/**/
+  cout << "ok\n";
 
 }
 
+ void GlKinematicBody::draw_link_geometry_bbox(std::string &link_geometry_name) 
+ {
+  Eigen::Vector3f link_geometry_span_dims,offset;
+  bool success = get_link_geometry_span_dims(link_geometry_name,link_geometry_span_dims,offset); //bounding box for entire body
+  if(success)
+  {
+    std::vector<std::string>::const_iterator found;
+    found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
+    unsigned int index = found - _link_geometry_names.begin();
+    KDL::Frame T_world_link_geometry = _link_geometry_tfs[index].frame; // in world frame  
+  
+    glPushMatrix();
+    glTranslatef(T_world_link_geometry.p[0],T_world_link_geometry.p[1],T_world_link_geometry.p[2]);// world frame to body frame
+    //glTranslatef(xc,yc,zc);
+    glTranslatef(offset[0],offset[1],offset[2]);
+    glScalef(link_geometry_span_dims[0],link_geometry_span_dims[1],link_geometry_span_dims[2]);
+    bot_gl_draw_cube_frame();
+    glPopMatrix();/**/
+  }
+ 
+}
 
 //===============================================================================================
 // MISC. UTILITIES 
@@ -2310,4 +2334,173 @@ void GlKinematicBody::get_whole_body_span_dims(Eigen::Vector3f &whole_body_span_
   offset[2] = 0.5*(global_max_z + global_min_z);
   
 }
+
+//-------------------------------------------------------------------------------------  
+
+bool GlKinematicBody::get_link_geometry_span_dims(std::string &link_geometry_name, Eigen::Vector3f &link_geometry_span_dims,Eigen::Vector3f &offset)
+{
+
+ float global_min_x,global_max_x,global_min_y,global_max_y,global_min_z,global_max_z;
+ global_min_x=0;  global_max_x=0;  global_min_y=0;  global_max_y=0;  global_min_z=0;  global_max_z=0;  
+ link_geometry_span_dims<<1,1,1;
+ offset<<0,0,0;
+ 
+ double xc = 0;   double yc = 0;   double zc = 0;
+ 
+ std::vector<std::string>::const_iterator found;
+ found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
+ if (found != _link_geometry_names.end()) 
+ {
+  unsigned int i= found - _link_geometry_names.begin();
+  KDL::Frame link_tf = _link_geometry_tfs[i].frame; // in world frame
+  
+  float min_x,max_x,min_y,max_y,min_z,max_z; // get span in link frame
+  min_x=0;  max_x=0;  min_y=0;  max_y=0;  min_z=0;  max_z=0;      
+
+  if(!is_otdf_instance)
+  {
+    int type = _link_shapes[i]->type ;
+
+    if (type == urdf::Geometry::SPHERE)
+    {
+      boost::shared_ptr<urdf::Sphere> sphere(boost::shared_dynamic_cast<urdf::Sphere>(_link_shapes[i]));	
+      double radius = sphere->radius;
+      min_x = -radius; min_y = -radius; min_z = -radius;
+      max_x =  radius; max_y =  radius; max_z =  radius;
+    }
+    else if  (type == urdf::Geometry::BOX)
+    {
+      boost::shared_ptr<urdf::Box> box(boost::shared_dynamic_cast<urdf::Box>(_link_shapes[i]));
+      min_x = -0.5*box->dim.x; min_y = -0.5*box->dim.y; min_z = -0.5*box->dim.z;
+      max_x =  0.5*box->dim.x; max_y =  0.5*box->dim.y; max_z =  0.5*box->dim.z;
+    }
+    else if  (type == urdf::Geometry::CYLINDER)
+    {
+      boost::shared_ptr<urdf::Cylinder> cyl(boost::shared_dynamic_cast<urdf::Cylinder>(_link_shapes[i]));
+      min_x = -cyl->radius; min_y = -cyl->radius; min_z = -0.5*cyl->length;
+      max_x =  cyl->radius; max_y =  cyl->radius; max_z =  0.5*cyl->length;
+    }
+    else if  (type == urdf::Geometry::MESH)
+    {
+      //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+      std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
+      mesh_map_it=_mesh_map.find(_link_geometry_tfs[i].name);
+      if(mesh_map_it!=_mesh_map.end()) // exists in cache
+      { 
+        // get the vertices for mesh_map_it->second
+        /*double xDim = mesh_map_it->second.span_x;
+        double yDim = mesh_map_it->second.span_y;
+        double zDim = mesh_map_it->second.span_z;
+         xc = mesh_map_it->second.offset_x;
+         yc = mesh_map_it->second.offset_y;
+         zc = mesh_map_it->second.offset_z;*/
+
+        double xDim = mesh_map_it->second->span_x;
+        double yDim = mesh_map_it->second->span_y;
+        double zDim = mesh_map_it->second->span_z;
+         xc = mesh_map_it->second->offset_x;
+         yc = mesh_map_it->second->offset_y;
+         zc = mesh_map_it->second->offset_z;
+        min_x = -0.5*xDim+xc; min_y = -0.5*yDim+yc; min_z = -0.5*zDim+zc;
+        max_x =  0.5*xDim+xc; max_y =  0.5*yDim+yc; max_z =  0.5*zDim+zc;
+      }
+    }
+  }
+  else {
+    int type = _otdf_link_shapes[i]->type ;
+    
+    if (type == otdf::Geometry::SPHERE)
+    {
+      boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(_otdf_link_shapes[i]));	
+      double radius = sphere->radius;
+      min_x = -radius; min_y = -radius; min_z = -radius;
+      max_x =  radius; max_y =  radius; max_z =  radius;
+    }
+    else if  (type == otdf::Geometry::BOX)
+    {
+      boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(_otdf_link_shapes[i]));
+      min_x = -0.5*box->dim.x; min_y = -0.5*box->dim.y; min_z = -0.5*box->dim.z;
+      max_x =  0.5*box->dim.x; max_y =  0.5*box->dim.y; max_z =  0.5*box->dim.z;
+    }
+    else if  (type == otdf::Geometry::CYLINDER)
+    {
+      boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(_otdf_link_shapes[i]));
+      min_x = -cyl->radius; min_y = -cyl->radius; min_z = -0.5*cyl->length;
+      max_x =  cyl->radius; max_y =  cyl->radius; max_z =  0.5*cyl->length;
+    }
+    else if  (type == otdf::Geometry::MESH)
+    {
+      //std::map<std::string, MeshStruct>::const_iterator mesh_map_it;
+  std::map<std::string, shared_ptr<MeshStruct> >::const_iterator mesh_map_it;
+      mesh_map_it=_mesh_map.find(_link_geometry_tfs[i].name);
+      if(mesh_map_it!=_mesh_map.end()) // exists in cache
+      { 
+        // get the vertices for mesh_map_it->second
+        /*double xDim = mesh_map_it->second.span_x;
+        double yDim = mesh_map_it->second.span_y;
+        double zDim = mesh_map_it->second.span_z;
+         xc = mesh_map_it->second.offset_x;
+         yc = mesh_map_it->second.offset_y;
+         zc = mesh_map_it->second.offset_z;*/
+        double xDim = mesh_map_it->second->span_x;
+        double yDim = mesh_map_it->second->span_y;
+        double zDim = mesh_map_it->second->span_z;
+         xc = mesh_map_it->second->offset_x;
+         yc = mesh_map_it->second->offset_y;
+         zc = mesh_map_it->second->offset_z;
+        min_x = -0.5*xDim+xc; min_y = -0.5*yDim+yc; min_z = -0.5*zDim+zc;
+        max_x =  0.5*xDim+xc; max_y =  0.5*yDim+yc; max_z =  0.5*zDim+zc;
+      }
+    }
+    else if  (type == otdf::Geometry::TORUS)
+    {
+      boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(_otdf_link_shapes[i]));
+      min_x = -torus->radius; min_y = -torus->radius; min_z = -torus->tube_radius;
+      max_x =  torus->radius; max_y =  torus->radius; max_z =  torus->tube_radius;
+    }
+
+  }// end if(!is_otdf_instance)  
+
+  // corners in link frame
+  Eigen::Matrix<float, 3, 8> corners;
+  corners << min_x,min_x,min_x,min_x,max_x,max_x,max_x,max_x,
+           min_y,min_y,max_y,max_y,min_y,min_y,max_y,max_y,
+           min_z,max_z,min_z,max_z,min_z,max_z,min_z,max_z;
+
+  // transform eight corners to body frame
+  KDL::Vector corner, rotated_corner;
+  for(uint k=0;k<8;k++){
+   corner[0]=corners(0,k);corner[1]=corners(1,k);corner[2]=corners(2,k);
+   rotated_corner=(link_tf*corner)-link_tf.p; //T_world_link*T_link_corner - T_world_body
+   if(rotated_corner[0]<=global_min_x)
+      global_min_x = rotated_corner[0];
+   if(rotated_corner[1]<=global_min_y)
+      global_min_y = rotated_corner[1];
+   if(rotated_corner[2]<=global_min_z)
+      global_min_z = rotated_corner[2];   
+   if(rotated_corner[0]>=global_max_x)
+      global_max_x = rotated_corner[0];
+   if(rotated_corner[1]>=global_max_y)
+      global_max_y = rotated_corner[1];
+   if(rotated_corner[2]>=global_max_z)
+      global_max_z = rotated_corner[2]; 
+  }
+
+  link_geometry_span_dims[0]= global_max_x - global_min_x;
+  link_geometry_span_dims[1]= global_max_y - global_min_y;
+  link_geometry_span_dims[2]= global_max_z - global_min_z;
+
+  offset[0] = 0.5*(global_max_x + global_min_x);
+  offset[1] = 0.5*(global_max_y + global_min_y);
+  offset[2] = 0.5*(global_max_z + global_min_z);
+
+  return true;
+ }
+ else
+ {
+  return false;
+ }
+  
+}
+
  
