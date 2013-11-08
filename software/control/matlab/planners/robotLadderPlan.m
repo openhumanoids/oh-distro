@@ -5,16 +5,16 @@ nq = r.getNumDOF();
 pelvis = r.findLinkInd('pelvis');
 utorso = r.findLinkInd('utorso');
 utorso_threshold = 10*pi/180;
-hand_threshold = sin(0*pi/180);
+hand_threshold = sin(5*pi/180);
 pelvis_threshold = 0.05;
 com_tol = 0.05;
 
 
 % time spacing of samples for IK
-dt = 0.02;
+dt = 0.1;
 ts = 0:dt:tf;
-if length(ts)>3000 % limit number of IK samples to something reasonable
-  ts = linspace(0,tf,3000);
+if length(ts)>300 % limit number of IK samples to something reasonable
+  ts = linspace(0,tf,300);
   dt = ts(2)-ts(1);
 end
 nt = length(ts);

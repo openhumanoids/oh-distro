@@ -9,9 +9,13 @@ function LadderPlanner
   % robot
 
   approved_footstep_plan_listener = FootstepPlanListener('APPROVED_FOOTSTEP_PLAN');
-
+  
   waiting = true;
-
+  
+  hand_tol = 0.01;
+  r_hand_offset = [0.025;-0.25;0.04];
+  l_hand_offset = [0.025;0.25;0.04];
+  
   addpath(fullfile(getDrakePath,'examples','ZMP'));
 
   % load robot model
@@ -50,7 +54,7 @@ function LadderPlanner
   step_options = footstep_planner.defaults;
   step_options.max_num_steps = 2;
   step_options.min_num_steps = 1;
-  step_options.step_speed = 0.005;
+  step_options.step_speed = 0.05;
   step_options.follow_spline = true;
   step_options.right_foot_lead = true;
   step_options.ignore_terrain = true;
@@ -90,17 +94,16 @@ function LadderPlanner
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
           qnom_state = 'current';
         end
-        tol = 0.01;
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX)
-          fixed_links = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;-0.1;0],'tolerance',tol);
+          fixed_links = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
           % with fixed joint hands, the link name is huge.
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('l_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX)
-          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',[0;-0.1;0],'tolerance',tol);
+          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('r_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
-          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',[0;-0.1;0],'tolerance',tol);
-          fixed_links(2) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;-0.1;0],'tolerance',tol);
+          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
+          fixed_links(2) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('r_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
           %fixed_links(2) = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('l_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         else
@@ -115,6 +118,9 @@ function LadderPlanner
 
     end
 
+    for i = 1:length(footsteps)
+      footsteps(i).step_speed = step_options.step_speed;
+    end
     [support_times,support, comtraj, foottraj, ~, ~] = walkingPlanFromSteps(r, x0, footsteps,step_options);
     link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
 
