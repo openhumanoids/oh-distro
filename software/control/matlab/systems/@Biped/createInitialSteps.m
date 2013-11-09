@@ -2,6 +2,8 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, params)
 
   debug = false;
 
+  if ~isfield(params, 'check_feasibility'); params.check_feasibility = false; end
+
   q0 = x0(1:end/2);
   foot_orig = biped.feetPosition(q0);
   sizecheck(goal_pos, [6,1]);
@@ -27,7 +29,25 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, params)
     traj = DirectTraj([p0, goal_pos]);
   end
 
-  [~, feasibility, foot_centers] = scanWalkingTerrain(biped, traj, p0, params.nom_step_width);
+
+  lambdas = linspace(0, 1, 200);
+  traj_poses = traj.eval(lambdas);
+  if any(any(isnan(traj_poses)))
+    error(['Got bad footstep trajectory data (NaN) at time: ', datestr(now())]);
+  end
+  foot_centers = struct('right', biped.stepCenter2FootCenter(traj_poses, 1, params.nom_step_width),...
+                        'left', biped.stepCenter2FootCenter(traj_poses, 0, params.nom_step_width));
+  if params.check_feasibility
+    contacts = biped.getBody(biped.foot_bodies_idx(1)).contact_pts; % just use r foot for now
+    % feas_check is a function which we can call on a list of poses and which returns 1 for safe terrain and 0 for unsafe terrain
+    feas_check = biped.getTerrain().getStepFeasibilityChecker(contacts, struct('debug', false));
+  else
+    feas_check = @(xyzrpy) ones(1, size(xyzrpy, 2));
+  end
+  for f = {'left', 'right'}
+    ft = f{1};
+    feasibility.(ft) = feas_check(foot_centers.(ft)([1:2,6],:));
+  end
   if params.ignore_terrain
     % use position of the right foot to set the height and orientation of the steps
     normal = rpy2rotmat(p0(4:6)) * [0;0;1];
