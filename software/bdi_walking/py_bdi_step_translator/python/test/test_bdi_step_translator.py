@@ -184,12 +184,22 @@ class TestStepTranslation(unittest.TestCase):
         plan = self.generate_plan(drc.footstep_opts_t.BEHAVIOR_BDI_STEPPING)
         translator = BDIStepTranslator()
         translator.handle_footstep_plan('COMMITTED_FOOTSTEP_PLAN', plan.encode())
-        translator.handle_stop_walking('STOP_WALKING', None)
-        self.assertEqual(translator.bdi_step_queue[0].step_index, -1)
 
-        translator = BDIStepTranslator()
+        def handle_steps(channel, msg_data):
+            msg = drc.atlas_behavior_step_params_t.decode(msg_data)
+            self.assertEqual(msg.step_queue[0].step_index, -1)
+        lc = lcm.LCM()
+        lc.subscribe('ATLAS_STEP_PARAMS', handle_steps)
         translator.handle_stop_walking('STOP_WALKING', None)
-        self.assertEqual(translator.bdi_step_queue[0].step_index, -1)
+
+    def test_stop_walking_no_queue(self):
+        translator = BDIStepTranslator()
+        def handle_steps(channel, msg_data):
+            msg = drc.atlas_behavior_step_params_t.decode(msg_data)
+            self.assertEqual(msg.step_queue[0].step_index, -1)
+        lc = lcm.LCM()
+        lc.subscribe('ATLAS_STEP_PARAMS', handle_steps)
+        translator.handle_stop_walking('STOP_WALKING', None)
 
     def test_atlas_status(self):
         plan = self.generate_plan(drc.footstep_opts_t.BEHAVIOR_BDI_STEPPING)

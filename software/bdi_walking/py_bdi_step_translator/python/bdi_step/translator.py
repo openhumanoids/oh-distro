@@ -201,6 +201,9 @@ class BDIStepTranslator:
         self.bdi_step_queue = [f.to_bdi_spec(self.behavior, -1) for f in footsteps]
         self.send_params(1)
 
+        self.bdi_step_queue = []  # to prevent infinite spewing of -1 step indices
+        self.delivered_index = None
+
     def run(self):
         if self.mode == Mode.translating:
             print "BDIStepTranslator running in robot-side translator mode"
