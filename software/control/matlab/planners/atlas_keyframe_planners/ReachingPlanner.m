@@ -255,7 +255,7 @@ classdef ReachingPlanner < KeyframePlanner
             end
             
             % get foot positions
-            kinsol = doKinematics(obj.r,q0);
+            kinsol = doKinematics(obj.r,q0_bound);
             r_foot_contact_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
             l_foot_contact_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
             l_foot_pts = [0;0;0];
@@ -267,9 +267,9 @@ classdef ReachingPlanner < KeyframePlanner
             
             
             % compute fixed COM goal
-            gc = contactPositions(obj.r,q0);
+            gc = contactPositions(obj.r,q0_bound);
             k = convhull(gc(1:2,:)');
-            com0 = getCOM(obj.r,q0);
+            com0 = getCOM(obj.r,kinsol);
             %   comgoal = [mean(gc(1:2,k),2);com0(3)];
             %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
             
@@ -415,7 +415,7 @@ classdef ReachingPlanner < KeyframePlanner
             
             ikoptions = IKoptions(obj.r);
             ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
-            ik_qnom = q0;
+            ik_qnom = q0_bound;
             qsc = QuasiStaticConstraint(obj.r);
             qsc = qsc.setActive(true);
             qsc = qsc.setShrinkFactor(0.85);
@@ -563,10 +563,10 @@ classdef ReachingPlanner < KeyframePlanner
             
             %============================
             %       0,comgoal,...
-            q_final_guess= q0;
+            q_final_guess= q0_bound;
             
             if(isempty(q_desired))
-                q_start=q0;
+                q_start=q0_bound;
                 rfoot_pose0_constraint = {WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose0(1:3,:),r_foot_pose0(1:3,:),tspan),...
                     WorldQuatConstraint(obj.r,obj.r_foot_body,r_foot_pose0(4:7,1),0,tspan)};
                 lfoot_pose0_constraint = {WorldPositionConstraint(obj.r,obj.l_foot_body,r_foot_pts,l_foot_pose0(1:3,:),l_foot_pose0(1:3,:),tspan),...
@@ -574,7 +574,7 @@ classdef ReachingPlanner < KeyframePlanner
                 qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
                 
                 if(obj.planning_mode == 3)% teleop mode
-                    kinsol = doKinematics(obj.r,q0);
+                    kinsol = doKinematics(obj.r,q0_bound);
                     rhand_pose = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
                     lhand_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
                     head_pose = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],2);
@@ -650,8 +650,8 @@ classdef ReachingPlanner < KeyframePlanner
             %============================
             
             s_breaks=[s(1) s(end)];
-            q_breaks=[q0 q_final_guess];
-            qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_final_guess]));
+            q_breaks=[q0_bound q_final_guess];
+            qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0_bound q_final_guess]));
             collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
             iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
             if(obj.planning_mode == 1)
