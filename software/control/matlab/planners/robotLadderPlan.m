@@ -1,12 +1,14 @@
 function [x_data, ts] = robotLadderPlan(r_minimal,r, q0, qstar, tf, link_constraints,support_times,support)
 
+%DEBUG
+%END_DEBUG
 nq = r.getNumDOF();
 
 pelvis = r.findLinkInd('pelvis');
 utorso = r.findLinkInd('utorso');
 utorso_threshold = 10*pi/180;
-hand_threshold = sin(5*pi/180);
-pelvis_threshold = 0.05;
+hand_threshold = sin(0*pi/180);
+pelvis_threshold = 0.5;
 com_tol = 0.05;
 
 
@@ -53,12 +55,12 @@ constraints = {};
 %   {WorldGazeDirConstraint(r,utorso,[0;0;1],[0;0;1],utorso_threshold)}];
 kinsol = doKinematics(r,q0);
 pelvis_xyzrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
-o_T_pelvis = HT(pelvis_xyzrpy(1:3),pelvis_xyzrpy(4),pelvis_xyzrpy(5),pelvis_xyzrpy(6));
-constraints = [ ...
-        constraints, ...
-        {WorldPositionInFrameConstraint(r,pelvis, ...
-            [0;0;0], o_T_pelvis, [NaN;-pelvis_threshold;NaN], ...
-            [NaN;pelvis_threshold;NaN],[ts(1),ts(end)])}];
+% o_T_pelvis = HT(pelvis_xyzrpy(1:3),pelvis_xyzrpy(4),pelvis_xyzrpy(5),pelvis_xyzrpy(6));
+% constraints = [ ...
+%         constraints, ...
+%         {WorldPositionInFrameConstraint(r,pelvis, ...
+%             [0;0;0], o_T_pelvis, [NaN;-pelvis_threshold;NaN], ...
+%             [NaN;pelvis_threshold;NaN],[ts(1),ts(end)])}];
 for i=2:nt
   t = ts(i);
   for j = 1:length(link_constraints)
@@ -95,7 +97,7 @@ kinsol = doKinematics(r,q0);
 com_support_times(:,1) = r.getCOM(kinsol);
 for i = 1:(nt_support-1)
   qsc = QuasiStaticConstraint(r.getManipulator(),[support_times(i),support_times(i+1)]);
-  qsc = qsc.setShrinkFactor(0.5);
+  qsc = qsc.setShrinkFactor(0.8);
   qsc = qsc.setActive(true);
   for j = 1:length(support{i}.bodies)
     body_idx = support{i}.bodies(j);
@@ -117,10 +119,12 @@ for i = 1:(nt_support-1)
     kinsol = doKinematics(r,q_prev);
     if qsc.checkConstraint(kinsol)
       com_support_times(:,i) = r.getCOM(kinsol);
+      q_support_times(:,i) = q_prev;
     else
       kinsol = doKinematics(r,q_this);
       if qsc_cell{i-1}.checkConstraint(kinsol)
         com_support_times(:,i) = r.getCOM(kinsol);
+        q_support_times(:,i) = q_this;
       else
         error('robotLadderPlan:badSupportSequence','Invalid sequence of supports');
       end
@@ -130,12 +134,15 @@ for i = 1:(nt_support-1)
 end
 com_support_times(:,end) = com_support_times(:,end-1);
 com_traj = PPTrajectory(foh(support_times(1:end-1),com_support_times));
+q_support_times_traj = PPTrajectory(foh(support_times(1:end-1),q_support_times));
 for i=2:nt
   com = eval(com_traj,ts(i));
+%   q_nom = eval(q_support_times_traj,ts(i));
+  q_nom = q(:,i-1);
   com(3) = NaN;
   com_constraint = WorldCoMConstraint(r,com-com_tol,com+com_tol);
-  [q(:,i),info] = inverseKinPointwise(r,ts(i),q(:,i-1),q(:,i-1),constraints{:},com_constraint,ikoptions);
-  if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;
+  [q(:,i),info] = inverseKinPointwise(r,ts(i),q(:,i-1),q_nom,constraints{:},com_constraint,ikoptions);
+  if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d at time %4.2f',info,ts(i)); end;
   %   disp(info);
 end
 % [q(:,2:end),info] = inverseKinPointwise(r,ts(2:end),repmat(q0,1,nt-1),repmat(qstar,1,nt-1),constraints{:},ikoptions);

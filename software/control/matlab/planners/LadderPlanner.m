@@ -50,20 +50,20 @@ function LadderPlanner
   q0 = qstar;
 
   % create footstep and ZMP trajectories
-  footstep_planner = FootstepPlanner(r);
-  step_options = footstep_planner.defaults;
-  step_options.max_num_steps = 2;
-  step_options.min_num_steps = 1;
-  step_options.step_speed = 0.05;
-  step_options.follow_spline = true;
-  step_options.right_foot_lead = true;
-  step_options.ignore_terrain = true;
-  step_options.nom_step_width = r.nom_step_width;
-  step_options.nom_forward_step = r.nom_forward_step;
-  step_options.max_forward_step = r.max_forward_step;
-  step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
-  step_options.full_foot_pose_constraint = false;
-  step_options.step_height = 0.05;
+%   footstep_planner = FootstepPlanner(r);
+%   step_options = footstep_planner.defaults;
+%   step_options.max_num_steps = 2;
+%   step_options.min_num_steps = 1;
+%   step_options.step_speed = 0.05;
+%   step_options.follow_spline = true;
+%   step_options.right_foot_lead = true;
+%   step_options.ignore_terrain = true;
+%   step_options.nom_step_width = r.nom_step_width;
+%   step_options.nom_forward_step = r.nom_forward_step;
+%   step_options.max_forward_step = r.max_forward_step;
+%   step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
+%   step_options.full_foot_pose_constraint = false;
+%   step_options.step_height = 0.05;
   
   msg =['QS Stepping Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
 
@@ -75,7 +75,7 @@ function LadderPlanner
         q0 = x0(1:nq);
       end
 
-      [footsteps, ~] = approved_footstep_plan_listener.getNextMessage(10);
+      [footsteps, step_options] = approved_footstep_plan_listener.getNextMessage(10);
       if (~isempty(footsteps))
         %footsteps = r.createInitialSteps(x0, navgoal, step_options);
         %for j = 1:length(footsteps)
@@ -118,9 +118,9 @@ function LadderPlanner
 
     end
 
-    for i = 1:length(footsteps)
-      footsteps(i).step_speed = step_options.step_speed;
-    end
+%     for i = 1:length(footsteps)
+%       footsteps(i).step_speed = step_options.step_speed;
+%     end
     [support_times,support, comtraj, foottraj, ~, ~] = walkingPlanFromSteps(r, x0, footsteps,step_options);
     link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
 
