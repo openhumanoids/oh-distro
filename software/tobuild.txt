@@ -19,7 +19,7 @@ utils
 gfe
 perception
 motion_estimate
-authoring
+#authoring
 viewer
 network
 gazebo_plugins
