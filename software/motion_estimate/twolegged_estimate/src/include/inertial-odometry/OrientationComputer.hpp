@@ -34,6 +34,9 @@ public:
 	void updateOrientationWithAngle(const unsigned long long &uts, const Eigen::Vector3d &delta_ang);
 	void updateOrientationWithRate(const unsigned long long &uts, const Eigen::Vector3d &w_b);
 
+	// Adjust the orientation estimate with a know rotational quantity
+	void rotateOrientationUpdate(const Eigen::Quaterniond &dq);
+
 	Eigen::Vector3d ResolveBodyToRef(const Eigen::Vector3d &vec_b);
 	void updateOutput(InertialOdomOutput* _out);
 	Eigen::Quaterniond q();

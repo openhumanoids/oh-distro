@@ -8,14 +8,16 @@ StateEstimate::StateEstimator::StateEstimator(
     IMUQueue& imuQueue,
     PoseQueue& bdiPoseQueue,
     PoseQueue& viconPoseQueue,
-    NavQueue& viconMatlabtruthQueue ) :
+    NavQueue& viconMatlabtruthQueue,
+    INSUpdateQueue& INSUpdateQueue) :
 
   mLCM(lcmHandle),
   mAtlasStateQueue(atlasStateQueue),
   mIMUQueue(imuQueue),
   mBDIPoseQueue(bdiPoseQueue),
   mViconQueue(viconPoseQueue),
-  mMatlabTruthQueue(viconMatlabtruthQueue)
+  mMatlabTruthQueue(viconMatlabtruthQueue),
+  mINSUpdateQueue(INSUpdateQueue)
 {
 
   _mSwitches = _switches;
@@ -101,6 +103,7 @@ void StateEstimate::StateEstimator::run()
   drc::atlas_state_t atlasState;
   drc::atlas_raw_imu_t imu;
   drc::nav_state_t matlabPose;
+  drc::ins_update_packet_t INSUpdate;
   bot_core::pose_t bdiPose;
   bot_core::pose_t viconPose;
 
@@ -112,6 +115,59 @@ void StateEstimate::StateEstimator::run()
 	  // TODO -- Pat please make this pass on any event
     //this->mAtlasStateQueue.waitWhileEmpty();
 	  this->mIMUQueue.waitWhileEmpty();
+
+
+	  // This is the special case which will also publish the message
+	  int nIMU = mIMUQueue.size();
+	  std::cout << "StateEstimator::run -- mIMUQueue.size() " << nIMU << std::endl;
+	  // printf("have %d new imu\n", nIMU);
+	  for (int i = 0; i < nIMU; ++i)
+	  {
+		  this->mIMUQueue.dequeue(imu);
+
+		  std::cout << "StateEstimator::run -- dequeued IMU utime " << imu.utime << std::endl;
+
+		  // do something with new imu...
+		  // The inertial odometry object is currently passed down to the handler function, where the INS is propagated and the 12 states are inserted inthe ERS message
+		  double dt;
+		  dt = (imu.utime - previous_imu_utime)*1.E-6;
+		  previous_imu_utime = imu.utime;
+		  handle_inertial_data_temp_name(dt, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg);
+
+		  std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
+
+		  // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
+		  // For now we are going to publish on the last element of this queue
+		  //      std::cout << "StateEstimator::run -- nIMU = " << nIMU << std::endl;
+		  if (i==(nIMU-1)) {
+			  //publish ERS message
+			  std::cout << std::endl << std::endl << "Going to publish ERS" << std::endl;
+			  mERSMsg.utime = imu.utime;
+			  mLCM->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg); // There is some silly problem here
+
+			  mDFRequestMsg.updateType = mDFRequestMsg.INS_POSE_ONLY;
+			  mLCM->publish("SE_INS_POSE_STATE", &mDFRequestMsg);
+		  }
+
+		  if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
+			  std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
+
+			  // populate the INS state information and the measurement aiding information
+
+			  // Insert the required inertial data in the data fusion update request message
+			  stampInertialPoseUpdateRequestMsg(inert_odo, mDFRequestMsg);
+
+			  if (_mSwitches->MATLAB_MotionSimulator) {
+				  stampMatlabReferencePoseUpdateRequest(matlabPose, mDFRequestMsg);
+			  } else {
+				  stampPositionReferencePoseUpdateRequest(_leg_odo->getPelvisState().translation(), mDFRequestMsg);
+			  }
+
+			  // This message will contain reference measurement information from various sources -- for now it is LegOdo, Fovis, MatlabtrajectorMotionSimulation
+			  mLCM->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
+		  }
+	  }
+
 
 
     int nAtlasStates = mAtlasStateQueue.size();
@@ -146,57 +202,6 @@ void StateEstimate::StateEstimator::run()
         firstpass--;
     }
 
-    // This is the special case which will also publish the message
-    int nIMU = mIMUQueue.size();
-    std::cout << "StateEstimator::run -- mIMUQueue.size() " << nIMU << std::endl;
-    // printf("have %d new imu\n", nIMU);
-    for (int i = 0; i < nIMU; ++i)
-    {
-      this->mIMUQueue.dequeue(imu);
-
-      std::cout << "StateEstimator::run -- dequeued IMU utime " << imu.utime << std::endl;
-
-      // do something with new imu...
-      // The inertial odometry object is currently passed down to the handler function, where the INS is propagated and the 12 states are inserted inthe ERS message
-      double dt;
-      dt = (imu.utime - previous_imu_utime)*1.E-6;
-      previous_imu_utime = imu.utime;
-      handle_inertial_data_temp_name(dt, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg);
-      
-      std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
-
-      // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
-      // For now we are going to publish on the last element of this queue
-      //      std::cout << "StateEstimator::run -- nIMU = " << nIMU << std::endl;
-      if (i==(nIMU-1)) { 
-	      //publish ERS message
-    	  std::cout << std::endl << std::endl << "Going to publish ERS" << std::endl;
-    	  mERSMsg.utime = imu.utime;
-	      mLCM->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg); // There is some silly problem here
-
-	      mDFRequestMsg.updateType = mDFRequestMsg.INS_POSE_ONLY;
-	      mLCM->publish("SE_INS_POSE_STATE", &mDFRequestMsg);
-      }
-
-      if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
-	    std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
-
-	    // populate the INS state information and the measurement aiding information
-
-	    // Insert the required inertial data in the data fusion update request message
-	    stampInertialPoseUpdateRequestMsg(inert_odo, mDFRequestMsg);
-
-	    if (_mSwitches->MATLAB_MotionSimulator) {
-	    	stampMatlabReferencePoseUpdateRequest(matlabPose, mDFRequestMsg);
-	    } else {
-	    	stampPositionReferencePoseUpdateRequest(_leg_odo->getPelvisState().translation(), mDFRequestMsg);
-	    }
-
-	    // This message will contain reference measurement information from various sources -- for now it is LegOdo, Fovis, MatlabtrajectorMotionSimulation
-	    mLCM->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
-	  }
-    }
-
     const int nPoses = mBDIPoseQueue.size();
     for (int i = 0; i < nPoses; ++i)
     {
@@ -220,6 +225,29 @@ void StateEstimate::StateEstimator::run()
 	  // do something with new MatlabTruthPose...
 	  std::cout << "StateEstimator::run -- Processing new matlabTruthPose message" << std::endl;
 
+	}
+
+	const int nINSUpdates = mINSUpdateQueue.size();
+	for (int i = 0; i < nINSUpdates; ++i)
+	{
+		mINSUpdateQueue.dequeue(INSUpdate);
+
+	  // do something with new MatlabTruthPose...
+	  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
+	  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket dbg " << INSUpdate.dbiasGyro_b.x << ", " << INSUpdate.dbiasGyro_b.y << ", " << INSUpdate.dbiasGyro_b.z << std::endl;
+
+	  InertialOdometry::INSUpdatePacket insUpdatePacket;
+	  insUpdatePacket.dbiasGyro_b << INSUpdate.dbiasGyro_b.x, INSUpdate.dbiasGyro_b.y, INSUpdate.dbiasGyro_b.z;
+
+	  insUpdatePacket.dQ.w() = INSUpdate.dQ.w;
+	  insUpdatePacket.dQ.x() = INSUpdate.dQ.x;
+	  insUpdatePacket.dQ.y() = INSUpdate.dQ.y;
+	  insUpdatePacket.dQ.z() = INSUpdate.dQ.z;
+
+	  insUpdatePacket.dQ.setIdentity();
+
+	  // And here we finally roll in the updates to the InertialOdometry INS prediction
+	  inert_odo.incorporateERRUpdate(insUpdatePacket);
 
 	}
 

@@ -12,7 +12,7 @@ namespace InertialOdometry {
 	unsigned long long uts;
 
     Eigen::Vector3d gyro_;
-    Eigen::Vector3d gyr_b;
+    Eigen::Vector3d gyr_b; // This is after compensation
     Eigen::Vector3d dang_b;
 
     Eigen::Vector3d force_;
@@ -55,7 +55,7 @@ namespace InertialOdometry {
 
   struct CalibrationState
   {
-	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	 Eigen::Matrix<double, 3, 3> gyro_errors;
      Eigen::Matrix<double, 3, 3> accel_errors;
@@ -63,6 +63,17 @@ namespace InertialOdometry {
      Eigen::Vector3d accel_biases; 
   };
   
+  struct INSUpdatePacket {
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	  Eigen::Vector3d dbiasGyro_b;
+	  Eigen::Vector3d dbiasAcc_b;
+
+	  Eigen::Quaterniond dQ;
+	  Eigen::Vector3d dVel_l;
+	  Eigen::Vector3d dPos_l;
+  };
+
 
   struct InertialOdomOutput
   {

@@ -43,6 +43,7 @@ int StateEstimate::StateEstimateApplication::exec()
   PoseMessageProducer bdiPoseProducer("POSE_BDI");
   PoseMessageProducer viconPoseProducer("ATLAS_VICON");
   NavStateMessageProducer matlabTruthPoseProducer("TRUTH_TRAJ_MATLAB");
+  INSUpdateMessageProducer INSUpdateProducer("INS_ERR_UPDATE"); //  This listens to update messages destined for the INS
 
   // connect message producers to lcm
   atlasStateProducer.subscribe(lcmThread.lcmHandle());
@@ -50,6 +51,7 @@ int StateEstimate::StateEstimateApplication::exec()
   bdiPoseProducer.subscribe(lcmThread.lcmHandle());
   viconPoseProducer.subscribe(lcmThread.lcmHandle());
   matlabTruthPoseProducer.subscribe(lcmThread.lcmHandle());
+  INSUpdateProducer.subscribe(lcmThread.lcmHandle());
 
   StateEstimator estimator(
     _switches,
@@ -58,7 +60,8 @@ int StateEstimate::StateEstimateApplication::exec()
     imuProducer.messageQueue(),
     bdiPoseProducer.messageQueue(),
     viconPoseProducer.messageQueue(),
-    matlabTruthPoseProducer.messageQueue());
+    matlabTruthPoseProducer.messageQueue(),
+    INSUpdateProducer.messageQueue());
 
   // start comm thread
   lcmThread.start();

@@ -47,6 +47,8 @@ namespace InertialOdometry {
 		void setVelocityState(const Eigen::Vector3d &V_set);
 
 		Eigen::Matrix3d C_bw();
+
+		void incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData);
   };
 
 }

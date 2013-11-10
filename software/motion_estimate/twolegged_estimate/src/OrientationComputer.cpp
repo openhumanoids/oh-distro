@@ -83,6 +83,14 @@ namespace InertialOdometry {
 		prevWb = w_b;
 	}
 
+	void OrientationComputer::rotateOrientationUpdate(const Eigen::Quaterniond &dq) {
+		Eigen::Matrix3d R;
+
+		R = q2C(dq) * q2C(q_state);
+		q_state = C2q(R);
+
+	}
+
 
 	Eigen::Vector3d OrientationComputer::ResolveBodyToRef(const Eigen::Vector3d &vec_b) {
 

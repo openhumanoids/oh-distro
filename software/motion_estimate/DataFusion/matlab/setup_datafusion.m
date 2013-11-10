@@ -18,3 +18,4 @@ addpath('generic_functions');
 addpath('generic_functions/kf');
 addpath('motion_simulator');
 addpath('AtlasSpecific')
+addpath('INS')

@@ -116,7 +116,7 @@ void StateEstimate::handle_inertial_data_temp_name(
   // We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
   // We know that eh KVH will sample at every 1 ms, so that is also the rotation rate. We later assume the time for which the
   // platform is maintaining that rotation rate.
-  imu_data.gyr_b = 1E3 * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.gyro_ = 1E3 * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
   imu_data.dang_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
   imu_data.acc_b = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
   
@@ -137,7 +137,7 @@ void StateEstimate::handle_inertial_data_temp_name(
   _DFRequest.pose.rotation.x = InerOdoEst.q.x();
   _DFRequest.pose.rotation.y = InerOdoEst.q.y();
   _DFRequest.pose.rotation.z = InerOdoEst.q.z();
-  
+
   _DFRequest.local_linear_acceleration.x = InerOdoEst.a_l(0);
   _DFRequest.local_linear_acceleration.y = InerOdoEst.a_l(1);
   _DFRequest.local_linear_acceleration.z = InerOdoEst.a_l(2);

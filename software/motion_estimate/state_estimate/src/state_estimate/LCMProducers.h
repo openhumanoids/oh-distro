@@ -54,8 +54,10 @@ protected:
 typedef MessageQueueProducer<drc::atlas_state_t> AtlasStateMessageProducer;
 typedef MessageQueueProducer<drc::robot_state_t> RobotStateMessageProducer;
 typedef MessageQueueProducer<drc::atlas_raw_imu_batch_t> IMUBatchMessageProducer;
-typedef MessageQueueProducer<bot_core::pose_t> PoseMessageProducer;
 typedef MessageQueueProducer<drc::nav_state_t> NavStateMessageProducer;
+typedef MessageQueueProducer<drc::ins_update_packet_t> INSUpdateMessageProducer;
+
+typedef MessageQueueProducer<bot_core::pose_t> PoseMessageProducer;
 
 
 

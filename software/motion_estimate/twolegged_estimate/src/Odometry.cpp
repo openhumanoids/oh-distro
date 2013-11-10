@@ -92,7 +92,7 @@ namespace InertialOdometry {
       state.uts = _imu->uts;
       state.a_l = _imu->accel_;
       state.f_l = _imu->force_;
-      state.w_l = C_bw()*_imu->gyro_; // TODO -- this may be a duplicated computation. Ensure this is done in only one place
+      state.w_l = C_bw()*_imu->gyr_b; // TODO -- this may be a duplicated computation. Ensure this is done in only one place
       state.P = out.first_pose_rel_pos;
       state.V = out.first_pose_rel_vel;
       state.E.setZero();
@@ -107,6 +107,21 @@ namespace InertialOdometry {
 	  return state;
   }
   
+  void Odometry::incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData) {
+
+	  // Add a delta estimate to the biases in the IMU compensator block
+	  double delta_biases[3];
+	  delta_biases[0] = updateData.dbiasGyro_b(0);
+	  delta_biases[1] = updateData.dbiasGyro_b(1);
+	  delta_biases[2] = updateData.dbiasGyro_b(2);
+	  imu_compensator.AccumulateGyroBiases(delta_biases);
+
+	  // update integrated states
+	  // Orientation first
+	  orc.rotateOrientationUpdate(updateData.dQ);
+
+  }
+
   // This should be moved to the QuaternionLib library
   // TODO -- should be updated with trigonometric and near zero power expansion cases.
 //  Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)

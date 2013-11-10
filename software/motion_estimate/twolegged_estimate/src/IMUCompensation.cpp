@@ -10,10 +10,20 @@ namespace InertialOdometry {
       gyro_biases(i) = biases[i];
     //std::cout << "The gyro biases were updated" << std::endl;
   }
+
+  void IMUCompensation::AccumulateGyroBiases(const double delta_biases[3]) {
+
+	  std::cout << "IMUCompensation::AccumulateGyroBiases -- deltaGyrobias " << delta_biases[0] << ", " << delta_biases[1] << ", " <<  delta_biases[2] << ", " << std::endl;
+	  for (int i=0;i<3;i++) {
+       gyro_biases(i) = gyro_biases(i) + delta_biases[i];
+	}
+
+	std::cout << "IMUCompensation::AccumulateGyroBiases -- gyro bias now is " << gyro_biases.transpose() << std::endl;
+  }
                                                                          
   void IMUCompensation::UpdateAccelBiases(const double biases[3])
   {
-	  std::cout << "Accel biases being updated: " << biases[0] << ", " << biases[1] << ", " << biases[2] << std::endl;
+	std::cout << "Accel biases being updated: " << biases[0] << ", " << biases[1] << ", " << biases[2] << std::endl;
     for (int i=0;i<3;i++)
       accel_biases(i) = biases[i];
   }
@@ -65,7 +75,7 @@ namespace InertialOdometry {
   //Compensation subtracts biases FIRST, then scales according to the scale factors given
   void IMUCompensation::Gyro_Compensation(IMU_dataframe *_imu_pre)
   {    
-    _imu_pre->gyro_ = gyro_errors * (_imu_pre->gyro_ - gyro_biases);
+    _imu_pre->gyr_b = gyro_errors * (_imu_pre->gyro_ - gyro_biases);
     _imu_pre->gyro_compensated_flag = true;
     return;
   }

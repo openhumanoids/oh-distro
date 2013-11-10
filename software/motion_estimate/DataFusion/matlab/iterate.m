@@ -48,6 +48,7 @@ Sys.covariances.R = diag([0.03*ones(3,1); 0.03*ones(3,1)]); % Assume LegOdo posi
 % TIME UPDATE, PRIORI STATE=========================================================================
 
 Sys.priori = KF_timeupdate(Sys.posterior, 0, Sys.Disc, Sys.covariances);
+Sys.priori.utime = Measurement.INS.pose.utime;
 
 % MEASUREMENT UPDATE, POSTERIOR STATE===============================================================
 
@@ -57,7 +58,9 @@ dP = Measurement.positionResidual;
 
 
 disp(['iterate dE ' num2str(dE')]);
+
 Sys.posterior = KF_measupdate(Sys.priori, Sys.Disc, [dE; dP]);
+Sys.posterior.utime = Sys.priori.utime;
 
 disp(['iterate gyro bias est ' num2str(Sys.posterior.x(4:6)')])
 disp(['iterate acc bias est ' num2str(Sys.posterior.x(13:15)')])
