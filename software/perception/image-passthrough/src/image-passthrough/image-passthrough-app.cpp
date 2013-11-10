@@ -141,6 +141,8 @@ int64_t _timestamp_now(){
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
+
+
 pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
   pcl::PolygonMesh mesh;
   pcl::io::loadPolygonFile(  filename    ,mesh);
@@ -301,6 +303,36 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
     }else if(otdf_type == "plane"){
       //cout  << aff_uid << " is a plane ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
       mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
+    }else if(otdf_type == "firehose_simple"){ // the simple two cylinder model maurice used in dec 2013
+      cout  << aff_uid << " is a firehose_simple\n";
+      mesh_out = prim_->getCylinderWithTransform(transform, 0.0266, 0.0266, 0.042 );
+      Eigen::Isometry3d trans_2nd = Eigen::Isometry3d::Identity();
+      trans_2nd.translation()  << 0,0, 0.033;      
+      trans_2nd = transform * trans_2nd;
+      simexample->mergePolygonMesh(mesh_out, prim_->getCylinderWithTransform(trans_2nd, 0.031, 0.031, 0.024 ) );
+    }else if(otdf_type == "firehose_simple"){ 
+      // the simple two cylinder model maurice used in dec 2013
+      // NB: I don't support otdf - so this is hard coded here for now
+      // cout  << aff_uid << " is a firehose_simple\n";
+      mesh_out = prim_->getCylinderWithTransform(transform, 0.0266, 0.0266, 0.042 );
+      Eigen::Isometry3d trans_2nd = Eigen::Isometry3d::Identity();
+      trans_2nd.translation()  << 0,0, 0.033;      
+      trans_2nd = transform * trans_2nd;
+      simexample->mergePolygonMesh(mesh_out, prim_->getCylinderWithTransform(trans_2nd, 0.031, 0.031, 0.024 ) );
+    }else if(otdf_type == "wye_mesh"){ 
+      //cout  << aff_uid << " is a wye_mesh\n";
+      std::string fname = string(getenv( "DRC_BASE" )) + string( "/software/models/mit_gazebo_models/otdf/wye.obj");
+      mesh_out = getPolygonMesh(fname);
+      
+      // Apply transform to polymesh:
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+      pcl::fromROSMsg(mesh_out->cloud, *cloud);  
+      Eigen::Isometry3f pose_f = transform.cast<float>();
+      Eigen::Quaternionf quat_f(pose_f.rotation());
+      pcl::transformPointCloud (*cloud, *cloud,
+      pose_f.translation(), quat_f); // !! modifies cloud
+      pcl::toROSMsg(*cloud, mesh_out->cloud);       
+      
     }else{
       cout  << aff_uid << " is a not recognised ["<< otdf_type <<"] not supported yet\n";
     }
@@ -339,7 +371,7 @@ void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   for (size_t i=0; i < msg->affs_plus.size(); i++){
     pcl::PolygonMesh::Ptr new_aff_mesh(new pcl::PolygonMesh());
     affordancePlusInterpret(msg->affs_plus[i], msg->affs_plus[i].aff.uid, new_aff_mesh );
-    simexample->mergePolygonMesh(combined_aff_mesh_, new_aff_mesh); 
+    simexample->mergePolygonMesh(combined_aff_mesh_, new_aff_mesh);
   }
   aff_mesh_filled_=true;
 }
@@ -545,8 +577,8 @@ void Pass::sendOutput(int64_t utime){
 // Blend the simulated output with the input image:
 void Pass::sendOutputOverlay(int64_t utime, uint8_t* img_buf){ 
 
-  float blend = 0.7;
-  if (1==0){
+  float blend = 0.5;
+  if (1==1){
     uint8_t* mask_buf = simexample->getColorBuffer(1);
     for (size_t i=0; i < camera_params_.width * camera_params_.height; i++){
       img_buf[i*3] = int( blend*img_buf[i*3] + (1.0-blend)*mask_buf[i] );
