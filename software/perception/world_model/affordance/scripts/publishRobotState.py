@@ -207,8 +207,12 @@ def quat_to_euler(q) :
 def getPoseMsg():
   pose = position_3d_t()
   translation = vector_3d_t()
+  translation.x =2
   rotation = quaternion_t()
   rotation.w = 1
+  rotation.x = 0
+  rotation.y = 0
+  rotation.z = 0
   pose.translation = translation
   pose.rotation = rotation
   return pose
@@ -243,7 +247,7 @@ def getRobotStateMsg():
   return msg  
   
 def sendRobotStateMsg():
-  global goal_pelvis_height, goal_pelvis_pitch, goal_pelvis_roll, goal_pos, goal_xy, goal_hand_config, jnames, \
+  global goal_yaw, goal_pelvis_height, goal_pelvis_pitch, goal_pelvis_roll, goal_pos, goal_xy, goal_hand_config, jnames, \
          goal_committed_use, goal_committed
   if (goal_hand_config[0] == -1):
     print "no hand config, not publishing ERS"
@@ -260,7 +264,9 @@ def sendRobotStateMsg():
     msg.utime = timestamp_now ()
   else:
     msg = getRobotStateMsg()
-    quat_out = euler_to_quat(0,0, goal_yaw)
+    #print goal_yaw
+    quat_out = euler_to_quat(0.0001,0, goal_yaw)
+    #print quat_out
     msg.pose.rotation.w = quat_out[0]
     msg.pose.rotation.x = quat_out[1]
     msg.pose.rotation.y = quat_out[2]
@@ -288,6 +294,7 @@ def sendRobotStateMsg():
     else:
       msg = setStateAtHeight66(msg)
 
+  msg.pose.rotation.w =1
   # Add the required joints:
   msg = appendJoints(msg, jnames.head)
   if (goal_hand_config[0] == 2):
@@ -348,7 +355,7 @@ lc = lcm.LCM()
 print "started"
 
 goal_xy = [0,0]
-goal_yaw = 0
+goal_yaw = 0.0
 goal_pelvis_height = 0
 goal_pelvis_pitch = 0
 goal_pelvis_roll = 0

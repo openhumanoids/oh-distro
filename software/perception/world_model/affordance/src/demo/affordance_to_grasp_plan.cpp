@@ -65,7 +65,7 @@ class Pass{
     
     void planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose);
     void planGraspCylinder(Eigen::Isometry3d init_grasp_pose);
-    
+    void planGraspFirehose(Eigen::Isometry3d init_grasp_pose);
     
     void sendCandidateGrasp(Eigen::Isometry3d aff_to_palmgeometry, double rel_angle);
     void sendStandingPositionValve(drc::affordance_t steering_cyl);
@@ -387,6 +387,8 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
     planGraspSteeringCylinder(init_grasp_pose);
   }else if( aff_.otdf_type == "cylinder"  ){
     planGraspCylinder(init_grasp_pose);
+  }else if( aff_.otdf_type == "firehose_simple"  ){
+    planGraspFirehose(init_grasp_pose);
   }else{
     std::cout << "no grasping method for a ["<<  aff_.otdf_type << "\n";
   }
@@ -404,6 +406,60 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   lcm_->publish("GRASP_OPT_STATUS",&msg_g );  
 }
 
+
+
+void Pass::planGraspFirehose(Eigen::Isometry3d init_grasp_pose){  
+  
+  // 1. Determine the Parameters of the Cylinder we need:
+  // Radius and Relative Angle  
+  world_to_aff_ = affutils_.getPose(aff_.origin_xyz, aff_.origin_rpy);
+  Eigen::Affine3d Aff = Eigen::Affine3d(world_to_aff_.inverse() );
+  Eigen::Vector3d pt = Eigen::Vector3d(init_grasp_pose.translation().x(), 
+                                       init_grasp_pose.translation().y(),
+                                       init_grasp_pose.translation().z());
+  pt = Aff * pt;
+  double rel_angle = atan2(pt(1), pt(0)  );
+  
+  std::map<string,double> am;
+  for (int j=0; j< aff_.nparams; j++){
+    am[ aff_.param_names[j] ] = aff_.params[j];
+  }
+  double radius =0.0266;
+  
+  std::cout << rel_angle*180/M_PI << " Relative Angle around Cylinder\n";
+  std::cout <<  radius << " Radius\n";
+  
+  
+  // 2. Create a reasonable afforance to hand pose 
+  Eigen::Isometry3d aff_to_palmgeometry = Eigen::Isometry3d::Identity();
+  // translation on cylinder:
+  // outwards, backward, updown 
+
+  // Sandia
+  // was: 0.05 + radius ,0,-0.12;
+  // 0.03 was too little
+  if (grasp_opt_msg_.grasp_type ==0){ // sandia left
+    aff_to_palmgeometry.translation()  << 0.05 + radius ,0.06 + 0.4*radius,0;
+    aff_to_palmgeometry.rotate( euler_to_quat(75*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+    
+//    aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+  }else if (grasp_opt_msg_.grasp_type ==1){ // sandia right
+    aff_to_palmgeometry.translation()  << 0.05 + radius ,-(0.06 + 0.4*radius),0.0;
+    aff_to_palmgeometry.rotate( euler_to_quat( -75*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
+  }else if (grasp_opt_msg_.grasp_type ==3){ // irobot left
+    aff_to_palmgeometry.translation()  << 0.095 + radius ,0,0;
+    aff_to_palmgeometry.rotate( euler_to_quat(90*M_PI/180, 0,0  ) );   
+  }else if (grasp_opt_msg_.grasp_type ==4){ // irobot right
+    aff_to_palmgeometry.translation()  << 0.095 + radius ,0,0;
+    aff_to_palmgeometry.rotate( euler_to_quat(90*M_PI/180, 0,0  ) );   
+    std::cout << "irobot right\n";
+  }
+  
+  // Offset up and down the cylinder:
+  aff_to_palmgeometry.translation() += Eigen::Vector3d(0,0, pt(2) );
+  
+  sendCandidateGrasp(aff_to_palmgeometry, rel_angle);
+}
 
 
 
