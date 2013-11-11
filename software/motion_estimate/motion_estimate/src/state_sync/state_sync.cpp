@@ -96,42 +96,51 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
   // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(28,0.0);
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 0.0182;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 0.0052;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.0130;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 0.0361;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.0802;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0104;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 3.14; // robot software v1.9
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = -0.02; // robot software v1.9
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.018; // robot software v1.9
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 0.02; // robot software v1.9
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = 2.055; // robot software v1.9
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0; // robot software v1.9
+  
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 0.0182; // robot software v1.8
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 0.0052; // robot software v1.8
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.0130; // robot software v1.8
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 0.0361; // robot software v1.8
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.0802; // robot software v1.8
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0104; // robot software v1.8
 
   // encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = 0.0; // this encoder is broken
-  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -0.0201;
-  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -3.1918;
-  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -0.0202;
-  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114;
-  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -0.0201; // robot software v1.8
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = 3.13; // robot software v1.8
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -0.0202; // robot software v1.8
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114; // robot software v1.8
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290; // robot software v1.8
 
-  //encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 1.1125;
-  encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.235;
+  //encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 1.1125; // robot software v1.8
+  encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.235;  // robot software v1.9
 
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
+  // if q < min_angle, use q + 2*pi
   max_encoder_wrap_angle_.assign(28,100000000);
-  // max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_ELY] = 3;
-  // max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3;
+  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_UWY] = 4; // robot software v1.9
+  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_USY] = 2; // robot software v1.9
+  max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
-  // use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
 
   // use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
 
   use_encoder_[Atlas::JOINT_NECK_AY] = true;
 }
@@ -231,9 +240,8 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
 
           if (use_encoder_[i]) {
             atlas_joints_.position[i] = atlas_joints_out_.position[i];
-            // if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
-            //   atlas_joints_.position[i] -= 2*M_PI;
-
+            if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
+              atlas_joints_.position[i] -= 2*M_PI;
             atlas_joints_.position[i] += encoder_joint_offsets_[i];
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
 
