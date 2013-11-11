@@ -54,9 +54,12 @@ class TestStepTranslation(unittest.TestCase):
             goal.fixed_yaw = True
             goal.bdi_step_duration = 2.0
             goal.bdi_sway_duration = 0
-            goal.bdi_lift_height = random.random() * 0.25
+            goal.bdi_lift_height = random.random() * 0.15
             goal.bdi_toe_off = 0
             goal.bdi_knee_nominal = 0
+            goal.num_terrain_pts = 3
+            goal.terrain_path_dist = [0, 0.1, 0.2]
+            goal.terrain_height = [0, random.random() * 0.15, 0]
 
             plan.footstep_goals.append(goal)
         return plan
@@ -187,19 +190,21 @@ class TestStepTranslation(unittest.TestCase):
 
         def handle_steps(channel, msg_data):
             msg = drc.atlas_behavior_step_params_t.decode(msg_data)
-            self.assertEqual(msg.step_queue[0].step_index, -1)
+            self.assertEqual(msg.desired_step_spec.step_index, -1)
         lc = lcm.LCM()
         lc.subscribe('ATLAS_STEP_PARAMS', handle_steps)
         translator.handle_stop_walking('STOP_WALKING', None)
+        lc.handle()
 
     def test_stop_walking_no_queue(self):
         translator = BDIStepTranslator()
         def handle_steps(channel, msg_data):
             msg = drc.atlas_behavior_step_params_t.decode(msg_data)
-            self.assertEqual(msg.step_queue[0].step_index, -1)
+            self.assertEqual(msg.desired_step_spec.step_index, -1)
         lc = lcm.LCM()
         lc.subscribe('ATLAS_STEP_PARAMS', handle_steps)
         translator.handle_stop_walking('STOP_WALKING', None)
+        lc.handle()
 
     def test_atlas_status(self):
         plan = self.generate_plan(drc.footstep_opts_t.BEHAVIOR_BDI_STEPPING)
@@ -215,5 +220,22 @@ class TestStepTranslation(unittest.TestCase):
         status.step_feedback.next_step_index_needed = 2
         translator.handle_atlas_status('ATLAS_STATUS', status)
         self.assertEqual(translator.delivered_index, 2)
+
+    def test_terrain_clearance(self):
+        plan = self.generate_plan(drc.footstep_opts_t.BEHAVIOR_BDI_STEPPING)
+        translator = BDIStepTranslator()
+
+        def handle_steps(channel, msg_data):
+            msg = drc.atlas_behavior_step_params_t.decode(msg_data)
+            self.assertAlmostEqual(msg.desired_step_spec.action.lift_height, plan.footstep_goals[2].bdi_lift_height + plan.footstep_goals[2].terrain_height[1])
+
+        lc = lcm.LCM()
+        lc.subscribe('ATLAS_STEP_PARAMS', handle_steps)
+        translator.handle_footstep_plan('COMMITTED_FOOTSTEP_PLAN', plan.encode())
+        lc.handle()
+
+
+
+
 
 
