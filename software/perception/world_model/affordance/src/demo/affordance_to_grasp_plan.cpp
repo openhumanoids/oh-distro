@@ -251,8 +251,8 @@ void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){
   
   // cylinder aff main axis is z-axis, determine yaw in world frame of that axis:
   Eigen::Quaterniond q1=  euler_to_quat( steering_cyl.origin_rpy[0] ,  steering_cyl.origin_rpy[1] , steering_cyl.origin_rpy[2]  ); 
-  Eigen::Quaterniond q2=  euler_to_quat( 0 ,  -90*M_PI/180 , 0  ); 
-  q1= q1*q2;  
+  //Eigen::Quaterniond q2=  euler_to_quat( 0 ,  -90*M_PI/180 , 0  ); 
+  //q1= q1*q2;  
   double look_rpy[3];
   quat_to_euler ( q1, look_rpy[0], look_rpy[1], look_rpy[2] );
   ///////////////////////////////////////
@@ -268,11 +268,11 @@ void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){
     for (int left_reach = 0; left_reach<2 ; left_reach++){
       Eigen::Isometry3d valve2com(Eigen::Isometry3d::Identity());
       if (left_reach){
-        valve2com.translation()  << -0.74, 0.15, 0;
-        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-5*M_PI/180))  );   
+        valve2com.translation()  << 0.74, 0.15, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,185*M_PI/180))  );   
       }else{
-        valve2com.translation()  << -0.74, -0.15, 0;
-        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,5*M_PI/180 ))  );   
+        valve2com.translation()  << 0.74, -0.15, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,175*M_PI/180 ))  );   
       }
       feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com) );
 
@@ -435,16 +435,23 @@ void Pass::planGraspFirehose(Eigen::Isometry3d init_grasp_pose){
   // translation on cylinder:
   // outwards, backward, updown 
 
+  
+  int flip_sign = 1;
+  if (pt(2) < 0 ){
+    std::cout << "Flip hand\n";
+    aff_to_palmgeometry.rotate( euler_to_quat(180*M_PI/180, 0,0  ) );   
+    flip_sign=-1;
+  }
+  
+  
   // Sandia
   // was: 0.05 + radius ,0,-0.12;
   // 0.03 was too little
   if (grasp_opt_msg_.grasp_type ==0){ // sandia left
-    aff_to_palmgeometry.translation()  << 0.05 + radius ,0.06 + 0.4*radius,0;
+    aff_to_palmgeometry.translation()  << 0.05 + radius , flip_sign*(0.06 + 0.4*radius),0;
     aff_to_palmgeometry.rotate( euler_to_quat(75*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
-    
-//    aff_to_palmgeometry.rotate( euler_to_quat(-15*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
   }else if (grasp_opt_msg_.grasp_type ==1){ // sandia right
-    aff_to_palmgeometry.translation()  << 0.05 + radius ,-(0.06 + 0.4*radius),0.0;
+    aff_to_palmgeometry.translation()  << (0.05 + radius) ,-flip_sign* (0.06 + 0.4*radius),0.0;
     aff_to_palmgeometry.rotate( euler_to_quat( -75*M_PI/180, 0*M_PI/180, 0*M_PI/180  ) );   
   }else if (grasp_opt_msg_.grasp_type ==3){ // irobot left
     aff_to_palmgeometry.translation()  << 0.095 + radius ,0,0;
@@ -452,11 +459,11 @@ void Pass::planGraspFirehose(Eigen::Isometry3d init_grasp_pose){
   }else if (grasp_opt_msg_.grasp_type ==4){ // irobot right
     aff_to_palmgeometry.translation()  << 0.095 + radius ,0,0;
     aff_to_palmgeometry.rotate( euler_to_quat(90*M_PI/180, 0,0  ) );   
-    std::cout << "irobot right\n";
   }
   
-  // Offset up and down the cylinder:
-  aff_to_palmgeometry.translation() += Eigen::Vector3d(0,0, pt(2) );
+  
+  // Offset up and down the cylinder - not used for firehose
+//  aff_to_palmgeometry.translation() += Eigen::Vector3d(0,0, pt(2) );
   
   sendCandidateGrasp(aff_to_palmgeometry, rel_angle);
 }

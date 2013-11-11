@@ -312,6 +312,7 @@ int main(int argc, char ** argv) {
   std::cout << "1 - Steering Cylinder at right shoulder\n";
   std::cout << "2 - 2x4 low\n";
   std::cout << "3 - cylinder pipe\n";
+  std::cout << "4 - firehose_simple\n";
   
   
   string mode = "both";

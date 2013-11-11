@@ -77,6 +77,8 @@ class App{
     
     void solveFK(drc::robot_state_t state);
     
+    std::string getPalmLink();
+    
     // Values are in the body frame - but finally published in the world frame
     vector<double> trans_;
     vector<double> rpy_;
@@ -183,6 +185,9 @@ void App::publish_palm_goal(){
   
   drc::ee_goal_t msg;
   msg.utime = bot_timestamp_now();
+  msg.root_name = "pelvis";
+  msg.robot_name = "atlas";
+  msg.ee_name = getPalmLink();
 
   msg.ee_goal_pos.translation.x = world_to_palm.translation().x();
   msg.ee_goal_pos.translation.y = world_to_palm.translation().y();
@@ -214,6 +219,20 @@ Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
   return tf_out;
 }
 
+std::string App::getPalmLink(){
+  std::string palm_link = "left_palm";
+  if (use_left_hand_ && use_sandia_){
+    palm_link = "left_palm";
+  }else if (!use_left_hand_ && use_sandia_){
+    palm_link = "right_palm";
+  }else if (use_left_hand_ && !use_sandia_){
+    palm_link = "left_base_link";
+  }else if (!use_left_hand_ && !use_sandia_){
+    palm_link = "right_base_link";
+  }  
+  return palm_link;
+}
+
 
 void App::publish_reset(){
   if (plan_from_robot_state_){
@@ -230,17 +249,9 @@ void App::publish_reset(){
    return; 
   }
   
-  std::string palm_link = "left_palm";
-  if (use_left_hand_ && use_sandia_){
-    palm_link = "left_palm";
-  }else if (!use_left_hand_ && use_sandia_){
-    palm_link = "right_palm";
-  }else if (use_left_hand_ && !use_sandia_){
-    palm_link = "left_base_link";
-  }else if (!use_left_hand_ && !use_sandia_){
-    palm_link = "right_base_link";
-  }
-  Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( palm_link )->second);
+  
+
+  Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
   trans_[0] = body_to_palm.translation().x();
   trans_[1] = body_to_palm.translation().y();
   trans_[2] = body_to_palm.translation().z();

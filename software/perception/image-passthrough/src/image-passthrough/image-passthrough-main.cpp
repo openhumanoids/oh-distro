@@ -48,9 +48,11 @@ Main::Main(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_,
                               use_convex_hulls, camera_frame, 
                               camera_params_, verbose));
   if (use_mono){
-    lcm_->subscribe("CAMERA_LEFT",&Main::cameraHandler,this);  
+    lcm::Subscription* sub = lcm_->subscribe("CAMERA_LEFT",&Main::cameraHandler,this);  
+    sub->setQueueCapacity(1);
   }else{
-    lcm_->subscribe("CAMERA",&Main::multisenseHandler,this);
+    lcm::Subscription* sub = lcm_->subscribe("CAMERA",&Main::multisenseHandler,this);
+    sub->setQueueCapacity(1);
   }
   
   img_buf_= (uint8_t*) malloc(3* camera_params_.width  * camera_params_.height);

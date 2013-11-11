@@ -68,23 +68,43 @@ def getHandDown():
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
+
+def usage():
+  print "exe-name positions [l|r]"
+  print "cradle   - close to robot, hand upside down"
+  print "hang     - hand just about cradle. thumb in"
+  print "farhang  - above, further away"
+  print "shooter  - hand up and finger away"
+  print "pulldown - lower config below the current"
+  print "handdown - handdown"
+
+
+######################################
 #print 'Number of arguments:', len(sys.argv), 'arguments.'
 #print 'Argument List:', str(sys.argv)
-print "exe-name positions [left|right]"
-print "cradle - close to robot, hand upside down"
-print "hang - hand just about cradle. thumb in"
-print "farhang - above, further away"
-print "shooter - hand up and finger away"
-print "pulldown - lower config below the current"
-print "handdown - handdown"
+if (len(sys.argv) <3):
+  print "##### Specify a hand ########"
+  usage()
+  exit()
 
 posture_side = sys.argv[2]
 posture_name = sys.argv[1]
+if (posture_side == "right"):
+  posture_side = "r"
+if (posture_side == "RIGHT"):
+  posture_side = "r"
+if (posture_side == "R"):
+  posture_side = "r"
+
+if (posture_side == "left"):
+  posture_side = "l"
+if (posture_side == "LEFT"):
+  posture_side = "l"
+if (posture_side == "L"):
+  posture_side = "l"
+usage()
 
 lc = lcm.LCM()
-
-
-
 msg = joint_angles_t()
 msg.utime = timestamp_now ()
 
@@ -106,3 +126,5 @@ if (posture_side == "l"):
 
 msg.num_joints = len(msg.joint_name)
 lc.publish("POSTURE_GOAL", msg.encode())
+print "\nPOSTURE_GOAL message sent"
+

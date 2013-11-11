@@ -303,13 +303,6 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
     }else if(otdf_type == "plane"){
       //cout  << aff_uid << " is a plane ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
       mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
-    }else if(otdf_type == "firehose_simple"){ // the simple two cylinder model maurice used in dec 2013
-      cout  << aff_uid << " is a firehose_simple\n";
-      mesh_out = prim_->getCylinderWithTransform(transform, 0.0266, 0.0266, 0.042 );
-      Eigen::Isometry3d trans_2nd = Eigen::Isometry3d::Identity();
-      trans_2nd.translation()  << 0,0, 0.033;      
-      trans_2nd = transform * trans_2nd;
-      simexample->mergePolygonMesh(mesh_out, prim_->getCylinderWithTransform(trans_2nd, 0.031, 0.031, 0.024 ) );
     }else if(otdf_type == "firehose_simple"){ 
       // the simple two cylinder model maurice used in dec 2013
       // NB: I don't support otdf - so this is hard coded here for now

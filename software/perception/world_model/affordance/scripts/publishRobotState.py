@@ -264,9 +264,7 @@ def sendRobotStateMsg():
     msg.utime = timestamp_now ()
   else:
     msg = getRobotStateMsg()
-    #print goal_yaw
-    quat_out = euler_to_quat(0.0001,0, goal_yaw)
-    #print quat_out
+    quat_out = euler_to_quat(0.0,0.0, goal_yaw)
     msg.pose.rotation.w = quat_out[0]
     msg.pose.rotation.x = quat_out[1]
     msg.pose.rotation.y = quat_out[2]
@@ -310,7 +308,7 @@ def sendRobotStateMsg():
 
 
 def on_manip_params(channel, data):
-  global goal_pelvis_height,goal_pelvis_pitch,goal_pelvis_roll, goal_yaw, goal_xy, goal_committed_use
+  global goal_pelvis_height,goal_pelvis_pitch,goal_pelvis_roll, goal_xy, goal_committed_use
   m = atlas_behavior_manipulate_params_t.decode(data)
   goal_pelvis_height = m.desired.pelvis_height
   goal_pelvis_pitch = m.desired.pelvis_pitch
@@ -364,6 +362,10 @@ goal_hand_config = [-1]*2
 goal_committed = []
 goal_committed_use = False
 jnames = JointNames()
+
+# needed due to viewer NaN bug:
+time.sleep(3)
+
 
 def lcm_thread():
   sub0 = lc.subscribe("ROBOT_MODEL", on_robot_model) 
