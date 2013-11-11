@@ -400,6 +400,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
   }else if (self->atlas_state == 5){ atlas_status ="STEP"; 
   }else if (self->atlas_state == 6){ atlas_status ="MANIP"; 
   }else if (self->atlas_state == 7){ atlas_status ="USER"; 
+  }else if (self->atlas_state == 8){ atlas_status ="CALIB"; 
   }else{ atlas_status ="UNKNOWN";
   }
   if (fabs(elapsed_atlas_time) >= 100){
