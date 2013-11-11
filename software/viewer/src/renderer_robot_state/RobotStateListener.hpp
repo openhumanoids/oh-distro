@@ -10,6 +10,9 @@
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
+#include <visualization_utils/file_access_utils.hpp>
+#include <visualization_utils/eigen_kdl_conversions.hpp>
+#include <visualization_utils/affordance_utils/affordance_seed_utils.hpp>
 #include "lcmtypes/bot_core.hpp"
 #include <bot_vis/bot_vis.h>
 #include <bot_core/bot_core.h>
@@ -53,6 +56,7 @@ namespace renderer_robot_state
     int64_t _last_state_msg_sim_timestamp; 
     int64_t _last_state_msg_system_timestamp; 
     bool _end_pose_received;
+    drc::robot_state_t _received_endpose;
 
     std::map<std::string,Eigen::Vector3f> ee_forces_map;
     std::map<std::string,Eigen::Vector3f> ee_torques_map;
@@ -78,6 +82,34 @@ namespace renderer_robot_state
     void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
 			    const  drc::robot_urdf_t* msg); 
     void updateForceAndTorqueCache(const drc::force_torque_t &msg);
+    
+    
+   public:
+   
+   //-------------------------------
+  /*void prepareDesiredStateForEndPoseStorage(KDL::Frame &T_world_aff, 
+                                   std::vector<std::string> &stateframe_ids,
+                                   std::vector< std::vector<double> > &stateframe_values)
+  {
+    visualization_utils::prepareEndPoseForStorage(T_world_aff,_received_endpose,stateframe_ids,stateframe_values);
+ 
+  }; // end method*/
+  
+  
+  void setDesiredStateFromStorage(KDL::Frame &T_world_aff, 
+                                   std::vector<std::string> &stateframe_ids,
+                                   std::vector< std::vector<double> > &stateframe_values)
+  {
+  
+    drc::robot_state_t msg;     
+    visualization_utils::decodeEndPoseFromStorage(T_world_aff,stateframe_ids,stateframe_values,msg);
+    handleCandidateRobotEndPoseMsg(NULL," ",&msg);
+    //std::string channel = "STORED_ROBOT_ENDPOSE";
+    //_lcm->publish(channel, &msg);  // Msg used to update plan cache in KEYFRAME ADJUSTMENT ENGINE. 
+ 
+  };
+    
+
 
   }; //class RobotStateListener
 

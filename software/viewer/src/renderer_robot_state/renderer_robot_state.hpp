@@ -43,7 +43,9 @@ using namespace std;
 using namespace boost;
 using namespace Eigen;
 using namespace visualization_utils;
-
+namespace renderer_robot_state_gui_utils{
+ static void spawn_endpose_storage_addition_popup(void* user);
+}
 namespace renderer_robot_state 
 {
   static void publish_candidate_sticky_feet(void *user, const string& channel,string &otdf_uid, KDL::Frame &T_world_aff, bool desired_state);
@@ -89,8 +91,8 @@ namespace renderer_robot_state
 
     // transparency of the model:
     float alpha;
-    
-   std::string* trigger_source_otdf_id;
+    GtkWidget *afftriggered_popup;
+    std::string* trigger_source_otdf_id;
     KDL::Frame T_world_trigger_aff;
     
      void keyboardSignalCallback(int keyval, bool is_pressed)
@@ -98,11 +100,11 @@ namespace renderer_robot_state
       //
     }
   
-    void affTriggerSignalsCallback(aff_trigger_type type,string otdf_uid,KDL::Frame T_world_aff,string plan_id)
+    void affTriggerSignalsCallback(aff_trigger_type type,string otdf_uid,KDL::Frame T_world_aff,string pose_id)
     {
       if(type==CURRENT_FOOTSTEPS_REQUEST){
           cout<< otdf_uid << " aff renderer is requesting current robot state footsteps to generate and store sticky feet"<< endl;
-          //(*this->trigger_source_otdf_id) = otdf_id;
+          //(*this->trigger_source_otdf_id) = otdf_uid;
           //this->T_world_trigger_aff = T_world_aff;
            //cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
           string channel = "AFF_TRIGGERED_CANDIDATE_STICKY_FEET";
@@ -110,7 +112,7 @@ namespace renderer_robot_state
       }
       else if(type==DESIRED_FOOTSTEPS_REQUEST){
         cout<< otdf_uid << " aff renderer is requesting desired robot state footsteps  to generate and store sticky feet: "<< endl;
-        //(*this->trigger_source_otdf_id) = otdf_id;
+        //(*this->trigger_source_otdf_id) = otdf_uid;
          // this->T_world_trigger_aff = T_world_aff;
           //cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
           //std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
@@ -118,6 +120,28 @@ namespace renderer_robot_state
           //otdf_filepath =  otdf_models_path + (*this->trigger_source_otdf_id) +".otdf";
           string channel = "AFF_TRIGGERED_CANDIDATE_STICKY_FEET";
           publish_candidate_sticky_feet(this,channel,otdf_uid,T_world_aff,true);          
+      }
+      else if(type==POSE_STORE){
+          cout<< otdf_uid << " got triggered to store currently active pose"<< endl;
+          (*this->trigger_source_otdf_id) = otdf_uid;
+          this->T_world_trigger_aff = T_world_aff;
+          //cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
+          renderer_robot_state_gui_utils::spawn_endpose_storage_addition_popup(this);
+      }
+      else if(type==POSE_LOAD){
+        cout<< otdf_uid << " got triggered to load stored endpose : "<< pose_id << endl;
+        (*this->trigger_source_otdf_id) = otdf_uid;
+          this->T_world_trigger_aff = T_world_aff;
+          //cout << "T_world_aff.p: "<< T_world_aff.p[0] << " " << T_world_aff.p[1] <<" "<< T_world_aff.p[2] << endl;
+          std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+          std::string otdf_filepath,pose_xml_dirpath;
+          otdf_filepath =  otdf_models_path + (*this->trigger_source_otdf_id) +".otdf";
+          pose_xml_dirpath =  otdf_models_path + "stored_poses/";
+          PoseSeed poseSeed;
+          poseSeed.loadFromOTDF(otdf_filepath,pose_xml_dirpath,pose_id);
+          this->robotStateListener->setDesiredStateFromStorage(this->T_world_trigger_aff,
+                                                               poseSeed.stateframe_ids,
+                                                               poseSeed.stateframe_values);
       }
     }
     

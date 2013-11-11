@@ -18,7 +18,7 @@
 #include "pose_approval_gui_utils.hpp"
 #include "popup_gui_utils.hpp"
 #include "renderer_robot_state.hpp"
-
+#include "pose_store_gui_utils.hpp"
 
 
 #define RENDERER_NAME "State"
@@ -410,6 +410,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
   	self->pose_approval_dock= NULL; 
   	self->teleop_popup = NULL;
   	self->teleop_error_entry =NULL;
+  	self->afftriggered_popup = NULL;
     self->visualize_bbox = false;
     self->visualize_forces = false;
     self->_renderer_foviate = false;

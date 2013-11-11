@@ -151,6 +151,7 @@ namespace renderer_robot_state
     }
 
      _gl_robot->set_future_state(*msg);
+     _received_endpose = *msg;
      _end_pose_received =true;
      // spawn_pose_approval_dock();
      bot_viewer_request_redraw(_viewer);     
