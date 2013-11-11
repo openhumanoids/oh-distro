@@ -92,6 +92,7 @@ namespace {
 }
 
 struct ViewMetaData::Helper {
+  /*
   struct Frustum {
     std::vector<Eigen::Vector4f> mPlanes;
     float mNear;
@@ -99,6 +100,7 @@ struct ViewMetaData::Helper {
     Eigen::Vector3f mPos;
     Eigen::Vector3f mDir;
   };
+  */
 
   MapsRenderer* mRenderer;
   int64_t mViewId;
@@ -127,6 +129,12 @@ struct ViewMetaData::Helper {
     }
     mVisible = true;
     mLatestTransform = Eigen::Isometry3f::Identity();
+  }
+
+  ~Helper() {
+    if (mBox != NULL) {
+      mBox->get_parent()->remove(*mBox);
+    }
   }
 
   /*
@@ -292,6 +300,8 @@ struct ViewMetaData::Helper {
     box->pack_start(*slider, true, true);
 
     mBox->pack_start(*box, false, false);
+
+    mBox->pack_start(*Gtk::manage(new Gtk::HSeparator()));
 
     mBox->show_all();
     iBox->pack_start(*mBox, false, false);

@@ -225,6 +225,7 @@ void MapsRenderer::sendBoxRequest() {
 
 void MapsRenderer::onClearViewsButton() {
   mViewClient.clearAll();
+  mViewData.clear();
 }
 
 double MapsRenderer::
@@ -333,10 +334,7 @@ void MapsRenderer::addViewMetaData(const int64_t iId) {
 void MapsRenderer::addViewWidgets() {
   DataMap::const_iterator iter;
   for (iter = mViewData.begin(); iter != mViewData.end(); ++iter) {
-    ViewMetaData::Ptr data = iter->second;
-    if (data->addWidgets(mViewListBox)) {
-      mViewListBox->add(*Gtk::manage(new Gtk::HSeparator()));
-    }
+    iter->second->addWidgets(mViewListBox);
   }
   mViewListBox->show_all();
 }
