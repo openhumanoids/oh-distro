@@ -63,7 +63,6 @@ protected:
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mHandCameraFrameRate;
   int mCameraCompression;
-  int mHeadPitchAngle;
   
   int mLeftGraspState;
   int mLeftGraspNameEnum;
@@ -353,25 +352,11 @@ public:
     notebook->append_page(*mAffControlBox, "Affordances");
 
     // for sensor control
-    Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
+    Gtk::VBox* handControlBox = Gtk::manage(new Gtk::VBox());
 
-    // maxing out at 5hz for safety
-    mHandCameraFrameRate = -1;
-    //addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, sensorControlBox); 
-    mCameraCompression = 0;
-    std::vector<std::string> labels = { "-", "Low", "Med", "High" };
-    std::vector<int> ids =
-      { -1, drc::sensor_request_t::QUALITY_LOW,
-        drc::sensor_request_t::QUALITY_MED,
-        drc::sensor_request_t::QUALITY_HIGH};
-    addCombo("Camera Quality", mCameraCompression, labels,
-             ids, sensorControlBox);
 
-    button = Gtk::manage(new Gtk::Button("Submit Sensor Config"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
-    sensorControlBox->pack_start(*button, false, false);
-
+    
+    
     /* TODO: no longer needed
     mControllerHeightMapMode = drc::map_controller_command_t::FLAT_GROUND;
     labels = {"Flat Ground", "Full Heights", "Z Normals"};
@@ -379,17 +364,17 @@ public:
            drc::map_controller_command_t::FULL_HEIGHTMAP,
            drc::map_controller_command_t::Z_NORMALS};
     addCombo("Controller Height Mode", mControllerHeightMapMode,
-             labels, ids, sensorControlBox);
+             labels, ids, handControlBox);
     button = Gtk::manage(new Gtk::Button("Submit Height Mode"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onControllerHeightMapMode));
-    sensorControlBox->pack_start(*button, false, false);
+    handControlBox->pack_start(*button, false, false);
     */
     
     //
     // grasp
     // left
-    ids = { 0, 1, 2 };
+    std::vector<int> ids = { 0, 1, 2 };
     Gtk::HBox* hbox = Gtk::manage(new Gtk::HBox());
     Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
     mLeftGraspNameEnum = 0;
@@ -405,7 +390,7 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onLeftGraspButton));
     hbox->add(*button);
-    sensorControlBox->pack_start(*hbox, false, false);
+    handControlBox->pack_start(*hbox, false, false);
     
     // right
     ids = { 0, 1, 2 };
@@ -424,12 +409,34 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onRightGraspButton));
     hboxR->add(*button);
-    sensorControlBox->pack_start(*hboxR, false, false);    
+    handControlBox->pack_start(*hboxR, false, false);    
+    notebook->append_page(*handControlBox, "Hands");    
     
     
     ///////////////////////////////////////////////////////////
-    notebook->append_page(*sensorControlBox, "Sensors");    
-    Gtk::VBox* headControlBox = Gtk::manage(new Gtk::VBox());
+    Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
+    
+    // maxing out at 5hz for safety
+    mHandCameraFrameRate = -1;
+    //addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, handControlBox); 
+    mCameraCompression = 0;
+    std::vector<std::string> labels = { "-", "Low", "Med", "High" };
+    ids =
+      { -1, drc::sensor_request_t::QUALITY_LOW,
+        drc::sensor_request_t::QUALITY_MED,
+        drc::sensor_request_t::QUALITY_HIGH};
+    hbox = Gtk::manage(new Gtk::HBox());
+    box = Gtk::manage(new Gtk::HBox());
+    mLeftGraspNameEnum = 0;
+    addCombo("Camera Quality", mCameraCompression, labels, ids, box);
+    hbox->add(*box); 
+    button = Gtk::manage(new Gtk::Button("Send"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
+    hbox->add(*button);
+    sensorControlBox->pack_start(*hbox, false, false);        
+    
+    
     hbox = Gtk::manage(new Gtk::HBox());
     label = Gtk::manage(new Gtk::Label("Head Cam fps"));
     Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
@@ -443,7 +450,7 @@ public:
     hbox->pack_start(*label, false, false);
     hbox->pack_start(*spin, false, false);
     hbox->pack_start(*button, false, false);
-    headControlBox->pack_start(*hbox, false, false);
+    sensorControlBox->pack_start(*hbox, false, false);
     // Artificial limit added here - to limit LCM traffic
     
     hbox = Gtk::manage(new Gtk::HBox());
@@ -459,7 +466,7 @@ public:
     hbox->pack_start(*label, false, false);
     hbox->pack_start(*spin, false, false);
     hbox->pack_start(*button, false, false);
-    headControlBox->pack_start(*hbox, false, false);
+    sensorControlBox->pack_start(*hbox, false, false);
     
     // DRCSIM max: 60rpm | Real Sensor: 49rpm | Temporary Safety: 25
     hbox = Gtk::manage(new Gtk::HBox());
@@ -475,18 +482,32 @@ public:
     hbox->pack_start(*label, false, false);
     hbox->pack_start(*spin, false, false);
     hbox->pack_start(*button, false, false);
-    headControlBox->pack_start(*hbox, false, false);
+    sensorControlBox->pack_start(*hbox, false, false);
     
-
-    mHeadPitchAngle = 45;
-    addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, headControlBox);
+    hbox = Gtk::manage(new Gtk::HBox());
+    label = Gtk::manage(new Gtk::Label("Pitch (deg)"));
+    spin = Gtk::manage(new Gtk::SpinButton());
+    spin->set_range(-90, 90);
+    spin->set_increments(5, 5);
+    spin->set_digits(0);
+    spin->set_value(45);
+    button = Gtk::manage(new Gtk::Button("send"));
+    button->signal_clicked().connect
+      ([this,spin]{this->onHeadPitchControlButton(spin->get_value());});
+    hbox->pack_start(*label, false, false);
+    hbox->pack_start(*spin, false, false);
+    hbox->pack_start(*button, false, false);
+    sensorControlBox->pack_start(*hbox, false, false);    
+    
+    
+    /*
+    addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, sensorControlBox);
     button = Gtk::manage(new Gtk::Button("Submit Head Pitch"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
-    headControlBox->pack_start(*button, false, false);
-    
-    
-    notebook->append_page(*headControlBox, "Head");
+    sensorControlBox->pack_start(*button, false, false);
+    */
+    notebook->append_page(*sensorControlBox, "Sensors");
 
     container->add(*notebook);
     container->show_all();
@@ -645,12 +666,12 @@ public:
     // TODO: set all to -1
   }
     
-  void onHeadPitchControlButton() {
+  void onHeadPitchControlButton(const double iHeadPitchAngle ) {
     const double kPi = 4*atan(1);
     double degreesToRadians = kPi/180;
     drc::neck_pitch_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.pitch = mHeadPitchAngle*degreesToRadians;
+    msg.pitch = iHeadPitchAngle*degreesToRadians;
     getLcm()->publish("DESIRED_NECK_PITCH", &msg);
   }
 
