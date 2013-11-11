@@ -58,6 +58,9 @@ protected:
   };
 
 protected:
+  int mDummyIntValue;
+  double mDummyDoubleValue;
+
   Gtk::VBox* mRequestControlBox;
   Gtk::VBox* mAffControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
@@ -414,7 +417,9 @@ public:
     
     
     ///////////////////////////////////////////////////////////
-    Gtk::VBox* sensorControlBox = Gtk::manage(new Gtk::VBox());
+    Gtk::Table* sensorControlTable = Gtk::manage(new Gtk::Table(5,3,false));
+    Gtk::AttachOptions xOptions = Gtk::FILL | Gtk::EXPAND;
+    Gtk::AttachOptions yOptions = Gtk::SHRINK;
     
     // maxing out at 5hz for safety
     mHandCameraFrameRate = -1;
@@ -425,79 +430,58 @@ public:
       { -1, drc::sensor_request_t::QUALITY_LOW,
         drc::sensor_request_t::QUALITY_MED,
         drc::sensor_request_t::QUALITY_HIGH};
-    hbox = Gtk::manage(new Gtk::HBox());
-    box = Gtk::manage(new Gtk::HBox());
     mLeftGraspNameEnum = 0;
-    addCombo("Camera Quality", mCameraCompression, labels, ids, box);
-    hbox->add(*box); 
-    button = Gtk::manage(new Gtk::Button("Send"));
+    label = Gtk::manage(new Gtk::Label("Camera Quality", Gtk::ALIGN_RIGHT));
+    Gtk::ComboBox* combo =
+      gtkmm::RendererBase::createCombo(mCameraCompression, labels, ids);
+    button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
-    hbox->add(*button);
-    sensorControlBox->pack_start(*hbox, false, false);        
+    sensorControlTable->attach(*label, 0, 1, 0, 1, xOptions, yOptions);
+    sensorControlTable->attach(*combo, 1, 2, 0, 1, xOptions, yOptions);
+    sensorControlTable->attach(*button, 2, 3, 0, 1, xOptions, yOptions);
     
-    
-    hbox = Gtk::manage(new Gtk::HBox());
-    label = Gtk::manage(new Gtk::Label("Head Cam fps"));
-    Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
-    spin->set_range(0, 10);
-    spin->set_increments(1, 1);
-    spin->set_digits(0);
-    spin->set_value(5);
+    label = Gtk::manage(new Gtk::Label("Head Cam fps", Gtk::ALIGN_RIGHT));
+    mDummyIntValue = 5;
+    Gtk::SpinButton* spin = gtkmm::RendererBase::createSpin(mDummyIntValue, 0, 10, 1);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->publishMultisense(-1000,spin->get_value(),-1);});
-    hbox->pack_start(*label, false, false);
-    hbox->pack_start(*spin, false, false);
-    hbox->pack_start(*button, false, false);
-    sensorControlBox->pack_start(*hbox, false, false);
+    sensorControlTable->attach(*label, 0, 1, 1, 2, xOptions, yOptions);
+    sensorControlTable->attach(*spin, 1, 2, 1, 2, xOptions, yOptions);
+    sensorControlTable->attach(*button, 2, 3, 1, 2, xOptions, yOptions);
     // Artificial limit added here - to limit LCM traffic
     
-    hbox = Gtk::manage(new Gtk::HBox());
-    label = Gtk::manage(new Gtk::Label("Head Cam Gain"));
-    spin = Gtk::manage(new Gtk::SpinButton());
-    spin->set_range(1.0, 8.0);
-    spin->set_increments(0.1, 0.1);
-    spin->set_digits(1);
-    spin->set_value(1.0);
+    label = Gtk::manage(new Gtk::Label("Head Cam Gain", Gtk::ALIGN_RIGHT));
+    mDummyDoubleValue = 1.0;
+    spin = gtkmm::RendererBase::createSpin(mDummyDoubleValue, 1.0, 8.0, 0.1);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->publishMultisense(-1000,-1,spin->get_value());});
-    hbox->pack_start(*label, false, false);
-    hbox->pack_start(*spin, false, false);
-    hbox->pack_start(*button, false, false);
-    sensorControlBox->pack_start(*hbox, false, false);
+    sensorControlTable->attach(*label, 0, 1, 2, 3, xOptions, yOptions);
+    sensorControlTable->attach(*spin, 1, 2, 2, 3, xOptions, yOptions);
+    sensorControlTable->attach(*button, 2, 3, 2, 3, xOptions, yOptions);
     
     // DRCSIM max: 60rpm | Real Sensor: 49rpm | Temporary Safety: 25
-    hbox = Gtk::manage(new Gtk::HBox());
-    label = Gtk::manage(new Gtk::Label("Spin Rate (rpm)"));
-    spin = Gtk::manage(new Gtk::SpinButton());
-    spin->set_range(-25, 25);
-    spin->set_increments(1, 1);
-    spin->set_digits(0);
-    spin->set_value(5);
+    label = Gtk::manage(new Gtk::Label("Spin Rate (rpm)", Gtk::ALIGN_RIGHT));
+    mDummyIntValue = 5;
+    spin = gtkmm::RendererBase::createSpin(mDummyIntValue, -25, 25, 1);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->publishMultisense(spin->get_value(),-1,-1);});
-    hbox->pack_start(*label, false, false);
-    hbox->pack_start(*spin, false, false);
-    hbox->pack_start(*button, false, false);
-    sensorControlBox->pack_start(*hbox, false, false);
+    sensorControlTable->attach(*label, 0, 1, 3, 4, xOptions, yOptions);
+    sensorControlTable->attach(*spin, 1, 2, 3, 4, xOptions, yOptions);
+    sensorControlTable->attach(*button, 2, 3, 3, 4, xOptions, yOptions);
     
-    hbox = Gtk::manage(new Gtk::HBox());
-    label = Gtk::manage(new Gtk::Label("Pitch (deg)"));
-    spin = Gtk::manage(new Gtk::SpinButton());
-    spin->set_range(-90, 90);
-    spin->set_increments(5, 5);
-    spin->set_digits(0);
-    spin->set_value(45);
+    label = Gtk::manage(new Gtk::Label("Pitch (deg)", Gtk::ALIGN_RIGHT));
+    mDummyIntValue = 45;
+    spin = gtkmm::RendererBase::createSpin(mDummyIntValue, -90, 90, 5);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->onHeadPitchControlButton(spin->get_value());});
-    hbox->pack_start(*label, false, false);
-    hbox->pack_start(*spin, false, false);
-    hbox->pack_start(*button, false, false);
-    sensorControlBox->pack_start(*hbox, false, false);    
+    sensorControlTable->attach(*label, 0, 1, 4, 5, xOptions, yOptions);
+    sensorControlTable->attach(*spin, 1, 2, 4, 5, xOptions, yOptions);
+    sensorControlTable->attach(*button, 2, 3, 4, 5, xOptions, yOptions);
     
     
     /*
@@ -507,7 +491,7 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
     */
-    notebook->append_page(*sensorControlBox, "Sensors");
+    notebook->append_page(*sensorControlTable, "Sensors");
 
     container->add(*notebook);
     container->show_all();
