@@ -24,8 +24,11 @@
 //#include <visualization/renderer_localize.h>
 #include <vector>
 
-#include <lcmtypes/drc_lcmtypes.h>
-//#include <lcmtypes/drc_lcmtypes.hpp>
+#include <lcmtypes/drc_walking_goal_t.h>
+#include <lcmtypes/drc_map_controller_command_t.h>
+#include <lcmtypes/drc_robot_state_t.h>
+#include <lcmtypes/drc_plan_control_t.h>
+
 #include <lcmtypes/bot_core.h>
 
 #include <string>
@@ -490,6 +493,7 @@ void publish_simple_nav(RendererWalking* self, double x, double y, double yaw) {
 
 void publish_walking_goal(RendererWalking* self, bool is_new) {
   drc_walking_goal_t walking_goal_msg;
+  get_params_from_widget(self);
   double rpy[] = {0,0,self->goal_yaw};
   double quat_out[4];
   bot_roll_pitch_yaw_to_quat(rpy, quat_out); // its in w,x,y,z format
@@ -780,6 +784,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   g_signal_connect(G_OBJECT(go_right_button), "clicked", G_CALLBACK(on_go_right_clicked), self);
   g_signal_connect(G_OBJECT(stop_walking_button), "clicked", G_CALLBACK(on_stop_walking_clicked), self);
 
+  set_default_params(self, self->walking_settings);
   g_signal_connect(G_OBJECT(self->bdi_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->main_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->drake_pw), "changed", G_CALLBACK(on_pw_changed), self);
@@ -787,7 +792,6 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   g_signal_connect(G_OBJECT(self->follow_spline_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->map_mode_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->ignore_terrain_pw), "changed", G_CALLBACK(on_pw_changed), self);
-  set_default_params(self, self->walking_settings);
 
   self->active = false;
 
