@@ -270,6 +270,11 @@ define_field_field_handler(RobotStateForceTorqueRFootForceZHandler, drc::robot_s
 define_field_field_handler(RobotStateForceTorqueRFootTorqueXHandler, drc::robot_state_t, force_torque, r_foot_torque_x);
 define_field_field_handler(RobotStateForceTorqueRFootTorqueYHandler, drc::robot_state_t, force_torque, r_foot_torque_y);
 
+define_field_array_handler(RobotStateForceTorqueLHandForceHandler, drc::robot_state_t, force_torque, l_hand_force, createIndexList(3));
+define_field_array_handler(RobotStateForceTorqueLHandTorqueHandler, drc::robot_state_t, force_torque, l_hand_torque, createIndexList(3));
+define_field_array_handler(RobotStateForceTorqueRHandForceHandler, drc::robot_state_t, force_torque, r_hand_force, createIndexList(3));
+define_field_array_handler(RobotStateForceTorqueRHandTorqueHandler, drc::robot_state_t, force_torque, r_hand_torque, createIndexList(3));
+
 
 
 // atlas_state_t
@@ -425,6 +430,10 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<RobotStateForceTorqueRFootForceZHandler>();
     factory.registerClass<RobotStateForceTorqueRFootTorqueXHandler>();
     factory.registerClass<RobotStateForceTorqueRFootTorqueYHandler>();
+    factory.registerClass<RobotStateForceTorqueLHandForceHandler>();
+    factory.registerClass<RobotStateForceTorqueLHandTorqueHandler>();
+    factory.registerClass<RobotStateForceTorqueRHandForceHandler>();
+    factory.registerClass<RobotStateForceTorqueRHandTorqueHandler>();
     factory.registerClass<AtlasStateJointPositionHandler>();
     factory.registerClass<AtlasStateJointVelocityHandler>();
     factory.registerClass<AtlasStateJointEffortHandler>();
