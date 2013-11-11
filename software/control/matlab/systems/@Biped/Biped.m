@@ -35,7 +35,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         'min_step_width', 0.26,...%m
         'nom_step_width', 0.28,...%m (nominal step width)
         'nom_step_clearance', 0.04,...%m
-        'max_step_rot', pi/10,... % rad
+        'max_step_rot', pi/8,... % rad
         'r_foot_name', 'r_foot',...
         'terrain_step_threshold', 0.03,...%m
         'l_foot_name', 'l_foot');
@@ -163,7 +163,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.max_outward_step_rot = obj.max_step_rot;
       end
       if ~isfield(options, 'max_inward_step_rot')
-        options.max_inward_step_rot = 0.05; % BDI walker doesn't allow toe to rotate inward at all
+        options.max_inward_step_rot = 0.1; % BDI walker doesn't allow toe to rotate inward at all
       end
 
       if ~isfield(options, 'max_step_dz')
@@ -213,7 +213,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.max_outward_step_rot = obj.max_step_rot;
       end
       if ~isfield(options, 'max_inward_step_rot')
-        options.max_inward_step_rot = 0.05; % BDI walker doesn't allow toe to rotate inward at all
+        options.max_inward_step_rot = 0.1; % BDI walker doesn't allow toe to rotate inward at all
       end
       if ~isfield(options, 'max_step_dz')
         options.max_step_dz = obj.max_step_dz;

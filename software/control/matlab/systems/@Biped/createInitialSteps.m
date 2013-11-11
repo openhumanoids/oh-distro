@@ -77,7 +77,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, params)
     
   stall = struct('right', 0, 'left', 0);
   aborted = false;
-  min_progress = [0.05;0.05;1;0.2;0.2;0.2];
+  min_progress = [0.05;0.05;1;0.2;0.2;0.1];
   % n = 0;
     
   while (1)
