@@ -352,6 +352,13 @@ define_array_handler(AtlasControlJointsFFConstHandler, drc::atlas_command_t, ff_
 define_array_handler(AtlasControlJointsKEffortHandler, drc::atlas_command_t, k_effort, JointNames::jointNames());
 define_field_handler(AtlasControlJointsDesiredControllerPeriodHandler, drc::atlas_command_t, desired_controller_period_ms);
 
+// ins_update_request_t
+define_field_field_handler(INSUpdateRequestGyroBiasEstX, drc::ins_update_request_t, gyroBiasEst, x);
+define_field_field_handler(INSUpdateRequestGyroBiasEstY, drc::ins_update_request_t, gyroBiasEst, y);
+define_field_field_handler(INSUpdateRequestGyroBiasEstZ, drc::ins_update_request_t, gyroBiasEst, z);
+
+
+
 
 
 SignalHandler::SignalHandler(SignalDescription* signalDescription)
@@ -473,6 +480,11 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasControlJointsFFConstHandler>();
     factory.registerClass<AtlasControlJointsKEffortHandler>();
     factory.registerClass<AtlasControlJointsDesiredControllerPeriodHandler>();
+
+    factory.registerClass<INSUpdateRequestGyroBiasEstX>();
+    factory.registerClass<INSUpdateRequestGyroBiasEstY>();
+    factory.registerClass<INSUpdateRequestGyroBiasEstZ>();
+
 
   }
 
