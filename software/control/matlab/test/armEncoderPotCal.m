@@ -4,8 +4,8 @@ if ~exist('r')
 end
 % logfile = strcat(getenv('DRC_PATH'),'/../logs/lcmlog-2013-10-11.00_arm_massage');
 % logfile = strcat(getenv('DRC_PATH'),'/../logs/lcmlog-2013-10-16.02');
-logfile = strcat(getenv('DRC_PATH'),'/../logs/left_arm_cal/lcmlog-2013-10-31.00_left_arm_enc_to_pot_cal_data');
-
+% logfile = strcat(getenv('DRC_PATH'),'/../logs/left_arm_cal/lcmlog-2013-10-31.00_left_arm_enc_to_pot_cal_data');
+logfile = '/home/drc/enc_to_pot_logs/lcmlog-2013-11-11.01';
 [t_x,x_data,t_u,u_data,t_vicon,vicon_data,state_frame,input_frame,t_extra,extra_data,vicon_data_struct] = parseAtlasViconLog(r,logfile);
 t_extra = t_extra(1:length(t_x));
 extra_data = extra_data(:,1:length(t_x));
@@ -55,9 +55,11 @@ for i=1:12,
   while theta <= enc_max
     I = find(extra_data(extra_joint_indicies(i),:) >= theta & extra_data(extra_joint_indicies(i),:) < theta + res);
     theta = theta + res;
-%     pot_i = [pot_i;mean(x_data(est_state_joint_indices(i),I))];
-    pot_i = [pot_i;(min(x_data(est_state_joint_indices(i),I)) + max(x_data(est_state_joint_indices(i),I)))/2];
-    enc_i = [enc_i;theta];
+    if ~isempty(I),
+      %     pot_i = [pot_i;mean(x_data(est_state_joint_indices(i),I))];
+      pot_i = [pot_i;(min(x_data(est_state_joint_indices(i),I)) + max(x_data(est_state_joint_indices(i),I)))/2];
+      enc_i = [enc_i;theta];
+    end
   end
   linear_fit(i,:) = polyfit(enc_i, pot_i, 1);
 end
