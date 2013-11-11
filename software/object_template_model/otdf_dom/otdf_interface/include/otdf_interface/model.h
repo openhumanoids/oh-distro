@@ -45,6 +45,7 @@
 #include "joint.h"
 #include "GraspSeed.h"
 #include "PlanSeed.h"
+#include "PoseSeed.h"
 #include "expression_parsing.h"
 #include "otdf_addendum.h"
 #include <bot_core/bot_core.h>
