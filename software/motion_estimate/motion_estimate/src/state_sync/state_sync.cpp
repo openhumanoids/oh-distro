@@ -118,13 +118,13 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290; // robot software v1.8
 
   //encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 1.1125; // robot software v1.8
-  encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.235;  // robot software v1.9
+  encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.235 - 2*M_PI;  // robot software v1.9
 
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
   // if q < min_angle, use q + 2*pi
   max_encoder_wrap_angle_.assign(28,100000000);
   max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_UWY] = 4; // robot software v1.9
-  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_USY] = 2; // robot software v1.9
+  max_encoder_wrap_angle_[Atlas::JOINT_R_ARM_USY] = 0; // robot software v1.9
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
