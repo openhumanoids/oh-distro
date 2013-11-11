@@ -10,7 +10,9 @@ from py_drake_utils import quat2rpy
 # Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot. It is the same to within 10^-4 for both feet.
 ATLAS_FRAME_OFFSET = np.matrix([[0.0600], [0.000], [-0.0850]])
 
-BaseFootGoal = namedtuple('FootGoal', 'pos step_speed step_height step_id pos_fixed is_right_foot is_in_contact bdi_step_duration bdi_sway_duration bdi_lift_height bdi_toe_off bdi_knee_nominal')
+MAX_LIFT_HEIGHT = 0.40;
+
+BaseFootGoal = namedtuple('FootGoal', 'pos step_speed step_height step_id pos_fixed is_right_foot is_in_contact bdi_step_duration bdi_sway_duration bdi_lift_height bdi_toe_off bdi_knee_nominal terrain_pts')
 
 class FootGoal(BaseFootGoal):
     def to_bdi_spec(self, behavior, step_index):
@@ -47,7 +49,13 @@ class FootGoal(BaseFootGoal):
         action.swing_height = self.step_height
         action.step_duration = self.bdi_step_duration
         action.sway_duration = self.bdi_sway_duration
-        action.lift_height = self.bdi_lift_height
+        if self.terrain_pts.shape[1] >= 2:
+            max_step_height = max(self.terrain_pts[1,0], self.terrain_pts[1,-1])
+            action.lift_height = max(self.terrain_pts[1,:]) - max_step_height + self.bdi_lift_height
+            action.lift_height = min(action.lift_height, MAX_LIFT_HEIGHT);
+        else:
+            action.lift_height = self.bdi_lift_height
+        action.lift_height = max(action.lift_height, 0.01)  # A lift height of 0 is ignored by the API, so we'll replace it with a very small but nonzero value (1cm).
         action.toe_off = self.bdi_toe_off
         action.knee_nominal = self.bdi_knee_nominal
         return action
@@ -91,9 +99,6 @@ class FootGoal(BaseFootGoal):
                         goal_msg.pos.rotation.x,
                         goal_msg.pos.rotation.y,
                         goal_msg.pos.rotation.z])
-        if goal_msg.bdi_lift_height == 0:
-            # A lift height of 0 is ignored by the API, so we'll replace it with a very small but nonzero value (1cm).
-            goal_msg.bdi_lift_height = 0.01
         goal = FootGoal(pos=pl.vstack([goal_msg.pos.translation.x,
                                        goal_msg.pos.translation.y,
                                        goal_msg.pos.translation.z,
@@ -113,7 +118,8 @@ class FootGoal(BaseFootGoal):
                         bdi_sway_duration=goal_msg.bdi_sway_duration,
                         bdi_lift_height=goal_msg.bdi_lift_height,
                         bdi_toe_off=goal_msg.bdi_toe_off,
-                        bdi_knee_nominal=goal_msg.bdi_knee_nominal)
+                        bdi_knee_nominal=goal_msg.bdi_knee_nominal,
+                        terrain_pts=pl.vstack([goal_msg.terrain_path_dist, goal_msg.terrain_height]))
         if any(pl.isnan(goal.pos[[0,1,5]])):
             raise ValueError("I don't know how to handle NaN in x, y, or yaw")
         else:

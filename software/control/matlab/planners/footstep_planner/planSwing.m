@@ -21,17 +21,11 @@ end
 
 debug = false;
 
-planar_clearance = 0.05;
 ignore_height = 0.5; % m, height above which we'll assume that our heightmap is giving us bad data (e.g. returns from an object the robot is carrying)
-nom_z_clearance = options.step_height;
 hold_frac = 0.2; % fraction of leg swing time spent shifting weight to stance leg
 min_hold_time = 0.1; % s
 pre_contact_height = 0.005; % height above the ground to aim for when foot is landing
 foot_yaw_rate = 0.75; % rad/s
-
-next_pos(6) = last_pos(6) + angleDiff(last_pos(6), next_pos(6));
-
-swing_angle = atan2(next_pos(2) - last_pos(2), next_pos(1) - last_pos(1));
 
 step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 
@@ -41,34 +35,17 @@ else
   apex_fracs = [0.15, 0.85];
 end
 
-
-next_pos = last_pos + angleDiff(last_pos, next_pos);
+next_pos(4:6) = last_pos(4:6) + angleDiff(last_pos(4:6), next_pos(4:6));
 apex_pos = interp1([0, 1], [last_pos, next_pos]', apex_fracs)';
-% apex_pos(3,:) = apex_fracs * (next_pos(3) - last_pos(3)) + last_pos(3) + options.step_height + max([next_pos(3) - last_pos(3), 0]);
 apex_pos(3,:) = last_pos(3) + options.step_height + max([next_pos(3) - last_pos(3), 0]);
 
 apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
 
 if (step_dist_xy > 0.01 && ~options.ignore_terrain)
-  phi.last = last_pos(6) - swing_angle;
-  phi.next = next_pos(6) - swing_angle;
-  contact_pts.last = quat2rotmat(axis2quat([0;0;1;phi.last])) * biped.foot_bodies.right.contact_pts;
-  contact_pts.next = quat2rotmat(axis2quat([0;0;1;phi.next])) * biped.foot_bodies.right.contact_pts; 
-  effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),...
-                         max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
-  effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
-                          max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
-  effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame
-
-  % % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
-  contact_length = effective_length / 2 + planar_clearance;
-  contact_width = effective_width / 2 + planar_clearance;
-  contact_height = effective_height + nom_z_clearance;
+  [contact_length, contact_width, contact_height] = contactVolume(biped, last_pos, next_pos, struct('nom_z_clearance', options.step_height, 'planar_clearance', 0.05));
 
   %% Grab the max height of the terrain across the width of the foot from last_pos to next_pos
-  terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, max([ceil(step_dist_xy / 0.02),3]), 10);
-  terrain_pts(2,1) = max([terrain_pts(2,1), last_pos(3)]);
-  terrain_pts(2,end) = max([terrain_pts(2,end), next_pos(3)]);
+  terrain_pts = sampleSwingTerrain(biped, last_pos, next_pos, contact_width, struct('nrho', 10, 'nlambda', max([ceil(step_dist_xy / 0.02),3])));
   if any(terrain_pts(2,:) > (max([last_pos(3), next_pos(3)]) + ignore_height))
     % If we're getting extremely high terrain heights, then assume it's bad lidar data
     terrain_pts(2,:) = max([last_pos(3), next_pos(3)]);
@@ -146,19 +123,19 @@ end
 
 end
 
-function terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, nlambda, nrho)
-  step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
-  lambda_hat = (next_pos(1:2) - last_pos(1:2)) / step_dist_xy;
+% function terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, nlambda, nrho)
+%   step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
+%   lambda_hat = (next_pos(1:2) - last_pos(1:2)) / step_dist_xy;
 
-  rho_hat = [0, -1; 1, 0] * lambda_hat;
+%   rho_hat = [0, -1; 1, 0] * lambda_hat;
 
-  terrain_pts = zeros(2, nlambda);
-  lambdas = linspace(0, step_dist_xy, nlambda);
-  rhos = linspace(-contact_width, contact_width, nrho);
-  [R, L] = meshgrid(rhos, lambdas);
-  xy = bsxfun(@plus, last_pos(1:2), bsxfun(@times, reshape(R, 1, []), rho_hat) + bsxfun(@times, reshape(L, 1, []), lambda_hat));
-  z = medfilt2(reshape(biped.getTerrainHeight(xy), size(R)), 'symmetric');
-%   plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
-  terrain_pts(2, :) = max(z, [], 2);
-  terrain_pts(1,:) = lambdas;
-end
+%   terrain_pts = zeros(2, nlambda);
+%   lambdas = linspace(0, step_dist_xy, nlambda);
+%   rhos = linspace(-contact_width, contact_width, nrho);
+%   [R, L] = meshgrid(rhos, lambdas);
+%   xy = bsxfun(@plus, last_pos(1:2), bsxfun(@times, reshape(R, 1, []), rho_hat) + bsxfun(@times, reshape(L, 1, []), lambda_hat));
+%   z = medfilt2(reshape(biped.getTerrainHeight(xy), size(R)), 'symmetric');
+% %   plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
+%   terrain_pts(2, :) = max(z, [], 2);
+%   terrain_pts(1,:) = lambdas;
+% end

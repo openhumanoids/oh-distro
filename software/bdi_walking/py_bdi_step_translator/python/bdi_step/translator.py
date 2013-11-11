@@ -225,13 +225,13 @@ class BDIStepTranslator:
             st1 = footsteps[j+2]
             is_stepping = self.behavior==Behavior.BDI_STEPPING
             if is_stepping:
-                lift_height = st0.action.lift_height
+                lift_height = st1.action.lift_height
             else:
                 lift_height = None
             draw_swing(self.gl,
                        st0.foot.position,
                        st1.foot.position,
-                       st0.action.swing_height,
+                       st1.action.swing_height,
                        is_stepping=is_stepping,
                        lift_height=lift_height)
         self.gl.switch_buffer()

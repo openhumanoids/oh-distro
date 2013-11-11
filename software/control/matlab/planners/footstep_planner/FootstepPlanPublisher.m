@@ -59,6 +59,14 @@ classdef FootstepPlanPublisher
 			msg.bdi_lift_height = X.bdi_lift_height;
 			msg.bdi_toe_off = X.bdi_toe_off;
 			msg.bdi_knee_nominal = X.bdi_knee_nominal;
+
+			if ~isfield(X, 'terrain_pts') || isempty(X.terrain_pts)
+				msg.num_terrain_pts = 0;
+			else
+				msg.num_terrain_pts = size(X.terrain_pts, 2);
+				msg.terrain_path_dist = X.terrain_pts(1,:);
+				msg.terrain_height = X.terrain_pts(2,:);
+			end
     end
 
     function msg = encodeFootstepPlan(X, t, isnew, options)

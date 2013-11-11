@@ -88,7 +88,7 @@ classdef FootstepPlanner < DRCPlanner
     end
 
     function obj = getNewDraggedSteps(obj, data, ~, changelist)
-      if changelist.plan_con
+      if changelist.plan_con && ~isempty(obj.steps)
         % apply changes from user adjustment of footsteps in viewer
         new_X = FootstepPlanListener.decodeFootstepPlan(data.plan_con);
         new_X = new_X(1);
@@ -191,6 +191,18 @@ classdef FootstepPlanner < DRCPlanner
       end
     end
 
+    function steps = applySwingTerrain(obj, steps)
+      % For every step (excluding the initial foot positions) scan the terrain map from the previous foot position to determine the maximal terrain profile over the width of the foot.
+      if isempty(steps) || length(steps) <= 2
+        return
+      end
+      for j = 3:length(steps)
+        [contact_width, ~, ~] = contactVolume(obj.biped, steps(j-2).pos, steps(j).pos, struct('nom_z_clearance', steps(j).step_height));
+        steps(j).terrain_pts = sampleSwingTerrain(obj.biped, steps(j-2).pos, steps(j).pos, contact_width);
+      end
+    end
+
+
     function [obj, published] = doOutput(obj, data, changed, changelist)
       if isempty(obj.steps)
         modified = false;
@@ -211,6 +223,7 @@ classdef FootstepPlanner < DRCPlanner
     function publishFoosteps(obj, data, ~, changelist)
       isnew = changelist.goal || changelist.step_seq || isempty(obj.old_steps);
       Xout = obj.steps;
+      Xout = applySwingTerrain(obj, Xout);
       % Convert from foot center to foot origin
       for j = 1:length(obj.steps)
         Xout(j).pos = obj.biped.footContact2Orig(obj.steps(j).pos, 'center', obj.steps(j).is_right_foot);

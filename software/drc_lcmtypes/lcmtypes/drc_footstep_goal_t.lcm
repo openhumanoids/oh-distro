@@ -22,4 +22,8 @@ struct footstep_goal_t
 	float bdi_lift_height;
 	int32_t bdi_toe_off;
 	float bdi_knee_nominal;
+
+	int32_t num_terrain_pts;
+	float terrain_path_dist[num_terrain_pts];
+	float terrain_height[num_terrain_pts];
 }

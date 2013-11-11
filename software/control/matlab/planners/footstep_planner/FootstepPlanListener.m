@@ -38,13 +38,6 @@ classdef FootstepPlanListener
 		                        goal_msg.pos.rotation.x,...
 		                        goal_msg.pos.rotation.y,...
 		                        goal_msg.pos.rotation.z]);
-% 		  [r, p, y] = quat2angle([goal_msg.pos.rotation.w,...
-% 		                        goal_msg.pos.rotation.x,...
-% 		                        goal_msg.pos.rotation.y,...
-% 		                        goal_msg.pos.rotation.z], 'XYZ');
-      % rpy = [r p y];
-		  % disp('r p y:')
-		  % [r p y]
 		  X.pos = [goal_msg.pos.translation.x;...
 		         goal_msg.pos.translation.y;...
 		         goal_msg.pos.translation.z;...
@@ -57,7 +50,6 @@ classdef FootstepPlanListener
 		  	X.pos(isnan(X.pos)) = 0;
 		  end
 
-		  % X.time = goal_msg.step_time / 1000000;
 		  X.step_speed = goal_msg.step_speed;
 		  X.step_height = goal_msg.step_height;
 		  X.id = goal_msg.id;
@@ -69,9 +61,7 @@ classdef FootstepPlanListener
 					           goal_msg.fixed_yaw];
 		  X.is_right_foot = goal_msg.is_right_foot;
 		  X.is_in_contact = goal_msg.is_in_contact;
-		  %%%% HACK for DRC Qual 1 %%%%%
-		  % X.pos(3) = X.pos(3) - 1;
-		  %%%% end
+		  X.terrain_pts = [reshape(goal_msg.terrain_path_dist,1,[]); reshape(goal_msg.terrain_height,1,[])];
 		end
 	end
 end

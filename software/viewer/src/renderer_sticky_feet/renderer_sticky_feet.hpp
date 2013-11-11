@@ -280,6 +280,7 @@ namespace renderer_sticky_feet{
      goal_msg.fixed_roll = 1;
      goal_msg.fixed_pitch = 1;
      goal_msg.fixed_yaw = 1;
+     goal_msg.num_terrain_pts = 0;
      msg.footstep_goals.push_back(goal_msg);
 
      self->lcm->publish(channel, &msg);
