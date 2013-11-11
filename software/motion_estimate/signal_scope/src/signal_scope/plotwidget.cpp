@@ -40,8 +40,8 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
           << Qt::darkMagenta
           << Qt::black;
 
-  QDoubleSpinBox* timeWindowSpin = new QDoubleSpinBox;
-  timeWindowSpin->setSingleStep(0.1);
+  mTimeWindowSpin = new QDoubleSpinBox;
+  mTimeWindowSpin->setSingleStep(0.1);
 
   QDoubleSpinBox* yScaleSpin = new QDoubleSpinBox;
   yScaleSpin->setSingleStep(0.1);
@@ -57,7 +57,7 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   QHBoxLayout* frameLayout = new QHBoxLayout(frameWidget);
   frameWidget->setContentsMargins(0, 0, 0, 0);
   frameLayout->addWidget(new QLabel("Time Window [s]:"));
-  frameLayout->addWidget(timeWindowSpin);
+  frameLayout->addWidget(mTimeWindowSpin);
   vLayout1->addWidget(frameWidget);
 
 
@@ -73,13 +73,13 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   layout->addWidget(d_plot, 10);
   layout->addLayout(vLayout1);
 
-  connect(timeWindowSpin, SIGNAL(valueChanged(double)),
+  mTimeWindowSpin->setValue(d_plot->timeWindow());
+
+  connect(mTimeWindowSpin, SIGNAL(valueChanged(double)),
           d_plot, SLOT(setTimeWindow(double)));
 
   connect(d_plot, SIGNAL(syncXAxisScale(double, double)),
           this, SIGNAL(syncXAxisScale(double, double)));
-
-  timeWindowSpin->setValue(10.0);
 
   //connect(yScaleSpin, SIGNAL(valueChanged(double)),
   //        d_plot, SLOT(setYScale(double)));
@@ -413,7 +413,7 @@ void PlotWidget::loadSettings(const QMap<QString, QVariant>& plotSettings)
   double ymin = plotSettings.value("ymin", QVariant(-10.0)).toDouble();
   double ymax = plotSettings.value("ymax", QVariant(10.0)).toDouble();
   d_plot->setAxisScale(QwtPlot::yLeft, ymin, ymax);
-  d_plot->setTimeWindow(timeWindow);
+  mTimeWindowSpin->setValue(timeWindow);
 }
 
 QMap<QString, QVariant> PlotWidget::saveSettings()

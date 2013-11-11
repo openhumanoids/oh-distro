@@ -12,6 +12,7 @@ class LCMThread;
 class QListWidget;
 class QListWidgetItem;
 class QLabel;
+class QDoubleSpinBox;
 
 class PlotWidget : public QWidget
 {
@@ -72,6 +73,7 @@ private:
 
   QListWidget* mSignalListWidget;
   QLabel* mSignalInfoLabel;
+  QDoubleSpinBox* mTimeWindowSpin;
 };
 
 #endif
