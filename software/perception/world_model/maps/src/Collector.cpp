@@ -181,39 +181,53 @@ getLatestSwath(const float iMinAngle, const float iMaxAngle,
     ++counter;
     if (counter > 10) break;
   }
-  double signVal = (increasing ? 1 : -1);
 
-  double angleRange = (signVal)*(iMaxAngle - iMinAngle);
-  double maxAngle = increasing ? iMaxAngle : iMinAngle;
+  double angleRange = iMaxAngle - iMinAngle;
+  double maxAngle = iMaxAngle;
   if (maxAngle >= Helper::kPi) {
     maxAngle -= int(maxAngle/Helper::kPi)*Helper::kPi;
   }
 
-  // stage 0: not started; stage 1: pre-range; stage 2: in range
+  // force angle range from -pi/2 to +pi/2
+  // look for zero crossings of angle wrt max angle
+  // stage 0: not started (<0)
+  // stage 1: started (>0)
+  // stage 2: in range (<0)
+  // stage 3: done (travel >= delta angle)
   int stage = 0;
   double prevAngle = 0;
   double accumAngle = 0;
   for (auto iter = pointSets.rbegin(); iter != pointSets.rend(); ++iter) {
     double angle = mHelper->
       computeAngleFromHorizontal(iter->mCloud->sensor_orientation_);
+    if (!increasing) angle = -angle;
+    angle -= maxAngle;
+    if (angle < 0) angle += 2*Helper::kPi;
+    if (angle >= Helper::kPi) angle -= Helper::kPi;
+    if (angle >= Helper::kPi/2) angle -= Helper::kPi;
+
     if (stage == 0) {
-      if (angle >= Helper::kPi) angle -= Helper::kPi;
-      if (angle*signVal > maxAngle*signVal) stage = 1;
-    }
-    else if (stage == 1) {
-      prevAngle = angle;
-      if (angle >= Helper::kPi) angle -= Helper::kPi;
-      if (angle*signVal <= maxAngle*signVal) {
-        oStartTime = oEndTime = iter->mTimestamp;
-        stage = 2;
+      if (angle >= 0) {
+        stage = 1;
       }
     }
-    else {
+    else if (stage == 1) {
+      if (angle < 0) {
+        stage = 2;
+        oStartTime = oEndTime = iter->mTimestamp;
+        prevAngle = angle;
+      }
+    }
+    else if (stage == 2) {
       double deltaAngle = prevAngle-angle;
-      if (deltaAngle > Helper::kPi) deltaAngle -= 2*Helper::kPi;
-      else if (deltaAngle < -Helper::kPi) deltaAngle += 2*Helper::kPi;
+      if ((deltaAngle>0) && (deltaAngle > (Helper::kPi - deltaAngle))) {
+        deltaAngle -= Helper::kPi;
+      }
+      else if ((deltaAngle < 0) && (-deltaAngle > (deltaAngle + Helper::kPi))) {
+        deltaAngle += Helper::kPi;
+      }
       accumAngle += deltaAngle;
-      if (accumAngle*signVal > angleRange*signVal) {
+      if (accumAngle > angleRange) {
         stage = 3;
         break;
       }
