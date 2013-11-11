@@ -164,6 +164,14 @@ void StateEstimate::handle_inertial_data_temp_name(
   _DFRequest.twist.linear_velocity.y = InerOdoEst.V(1);
   _DFRequest.twist.linear_velocity.z = InerOdoEst.V(2);
   
+  Eigen::Vector3d temp;
+  temp = inert_odo.imu_compensator.getGyroBiases();
+
+  _DFRequest.gyroBiasEst.x = temp(0);
+  _DFRequest.gyroBiasEst.y = temp(1);
+  _DFRequest.gyroBiasEst.z = temp(2);
+
+
   // Rotate the body measured rotation rates with the current best known quaternion -- for now we use the BDIPOose orientation estimate
   
   _ERSmsg.pose.rotation.w = bdiPose.orientation[0];

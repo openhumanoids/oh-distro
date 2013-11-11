@@ -8,7 +8,7 @@ g = [0;0;9.81]; % We assume the forward left up frame for this mechanization
 
 
 % constant positive bias on the roll gyro
-traj.true.w_b(:,1) = -0.01;
+traj.true.w_b(:,1) = -0.005;
 traj.true.w_b(:,2) = 0.00;
 traj.true.w_b(:,3) = -0.00;
 

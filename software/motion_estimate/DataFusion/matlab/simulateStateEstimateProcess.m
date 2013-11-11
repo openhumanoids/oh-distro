@@ -2,7 +2,7 @@
 clc
 clear
 
-iterations = 5000;
+iterations = 20000;
 
 % Run the full test
 RESULTS = MotionSimulator(iterations,'gyro_bias');

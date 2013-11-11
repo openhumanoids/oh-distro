@@ -34,7 +34,8 @@ Sys.Cont.F(10:12,13:15) = q2R(Measurement.INS.pose.q); % here again we need to k
 % Sys.Cont.F(4:6,13:15) = -q2R(Measurement.INS.Pose.q);
 % Sys.Cont.F(7:9,10:12) = q2R(Measurement.INS.Pose.q);
 
-Sys.Cont.Q = diag([1E-8*ones(1,6), 1E-8*ones(1,3), 1E-8*ones(1,6)]);
+% We add no process uncertainty to position -- according to Groves p. 387
+Sys.Cont.Q = diag([1E-6*ones(1,3), 1E-9*ones(1,3), 0*ones(1,3), 1E-8*ones(1,6)]);
 
 [Sys.Disc.A,Sys.covariances.Qd] = lti_disc(Sys.Cont.F, [], Sys.Cont.Q, T);
 
@@ -43,7 +44,7 @@ Sys.Disc.B = zeros(15,1);
 Sys.Disc.C = [eye(3), zeros(3,12);...
               zeros(3,6), eye(3), zeros(3,6)];
 
-Sys.covariances.R = diag([0.03*ones(3,1); 0.03*ones(3,1)]); % Assume LegOdo position measurement update      
+Sys.covariances.R = diag([0.001*ones(3,1); 0.03*ones(3,1)]); % Assume LegOdo position measurement update      
       
 % TIME UPDATE, PRIORI STATE=========================================================================
 

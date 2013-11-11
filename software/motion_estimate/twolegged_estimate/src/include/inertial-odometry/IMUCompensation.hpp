@@ -33,8 +33,11 @@ namespace InertialOdometry
        void Gyro_Compensation(IMU_dataframe *imu_pre);
        void Accel_Compensation(IMU_dataframe *imu_pre);
 
-       void cout_current_values();
+       Eigen::Vector3d getGyroBiases();
+       Eigen::Vector3d getAccelBiases();
        Eigen::Vector3d get_accel_biases();
+
+       void cout_current_values();
   };
 
 }
