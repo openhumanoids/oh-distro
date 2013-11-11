@@ -14,6 +14,8 @@ namespace visualization_utils {
     // Signals to robotplan renderer to store current plan/load stored plan  in/from affordance xml.
     typedef boost::signals2::signal<void(string,KDL::Frame)> AffTriggerPlanStoreSignal; 
     typedef boost::signals2::signal<void(string,KDL::Frame,string)> AffTriggerPlanLoadSignal; 
+    typedef boost::signals2::signal<void(string,KDL::Frame)> AffTriggerPoseStoreSignal; 
+    typedef boost::signals2::signal<void(string,KDL::Frame,string)> AffTriggerPoseLoadSignal; 
     // Signal to robotstate renderer to store current footsteps or desired state  footsteps to be published for storage and spawning as sticky feet in affordance frame.
     // sends affordance name, affordance pose
     typedef boost::signals2::signal<void(string,KDL::Frame)> AffTriggerFootStepsRequestSignal; 
@@ -23,12 +25,14 @@ namespace visualization_utils {
       AffTriggerPlanLoadSignal plan_load;
       AffTriggerFootStepsRequestSignal current_footsteps_request;
       AffTriggerFootStepsRequestSignal desired_footsteps_request;
+      AffTriggerPoseStoreSignal pose_store; 
+      AffTriggerPoseLoadSignal pose_load;
     };
     typedef boost::shared_ptr<AffTriggerSignals> AffTriggerSignalsRef;
     
     enum aff_trigger_type
     {
-      PLAN_STORE=0,PLAN_LOAD, CURRENT_FOOTSTEPS_REQUEST,DESIRED_FOOTSTEPS_REQUEST, UNKNOWN
+      PLAN_STORE=0,PLAN_LOAD, CURRENT_FOOTSTEPS_REQUEST,DESIRED_FOOTSTEPS_REQUEST,POSE_STORE,POSE_LOAD, UNKNOWN
     }; 
        
     class AffTriggerSignalsHandler 
@@ -40,6 +44,8 @@ namespace visualization_utils {
           _connection2 =  signalCollectionRef->plan_load.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,PLAN_LOAD,_1,_2,_3));
           _connection3 =  signalCollectionRef->current_footsteps_request.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,CURRENT_FOOTSTEPS_REQUEST,_1,_2," "));
           _connection4 =  signalCollectionRef->desired_footsteps_request.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,DESIRED_FOOTSTEPS_REQUEST,_1,_2," "));
+          _connection5 =  signalCollectionRef->pose_store.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,POSE_STORE,_1,_2," "));
+          _connection6 =  signalCollectionRef->pose_load.connect(boost::bind(&AffTriggerSignalsHandler::callback,this,POSE_LOAD,_1,_2,_3));
         };
         
         ~AffTriggerSignalsHandler(){
@@ -47,9 +53,11 @@ namespace visualization_utils {
           _connection2.disconnect();
           _connection3.disconnect();
           _connection4.disconnect();
+          _connection5.disconnect();
+          _connection6.disconnect();
         }
 
-        void callback(aff_trigger_type type,std::string otdf_id, KDL::Frame T_world_aff,std::string plan_id)
+        void callback(aff_trigger_type type,std::string otdf_id, KDL::Frame T_world_aff,std::string plan_or_pose_id)
         {
           /*if(type==PLAN_STORE)
             cout<< otdf_id << " got triggered to store currently active plan"<< endl;
@@ -57,7 +65,7 @@ namespace visualization_utils {
             cerr<<  " unknown trigger "<< endl;*/
           
           if(!_user_callback.empty())
-             _user_callback(type,otdf_id,T_world_aff,plan_id); 
+             _user_callback(type,otdf_id,T_world_aff,plan_or_pose_id); 
           else
              cerr << "ERROR in visualization_utils::AffTriggerSignalsHandler:  user callback function reference is empty!" << endl;
         }
@@ -67,6 +75,8 @@ namespace visualization_utils {
         boost::signals2::connection _connection2; 
         boost::signals2::connection _connection3;
         boost::signals2::connection _connection4;
+        boost::signals2::connection _connection5;
+        boost::signals2::connection _connection6;
         boost::function<void (aff_trigger_type,string,KDL::Frame,string)> _user_callback; 
     };
 

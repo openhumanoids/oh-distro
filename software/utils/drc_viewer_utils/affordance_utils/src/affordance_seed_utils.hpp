@@ -11,6 +11,8 @@ using namespace boost;
 
 namespace visualization_utils
 {
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 //// Preparation Function Before Encoding To XML.
 inline static void prepareKeyframePlanForStorage(KDL::Frame &T_world_aff,
                                      drc::robot_plan_w_keyframes_t &msg_in,
@@ -111,6 +113,51 @@ inline static void prepareKeyframePlanForStorage(KDL::Frame &T_world_aff,
       graspframe_values.push_back(temp); 
     }// end for  
 
+ }
+ 
+ 
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+ //// Preparation Function Before Encoding To XML.
+inline static void prepareEndPoseForStorage(KDL::Frame &T_world_aff,
+                                     drc::robot_state_t &msg_in,
+                                     std::vector<std::string> &stateframe_ids,
+                                     std::vector< std::vector<double> > &stateframe_values)
+{ 
+
+    stateframe_ids.clear();
+    stateframe_values.clear();
+
+    stateframe_ids.push_back("utime");
+    stateframe_ids.push_back("pelvis_x");  
+    stateframe_ids.push_back("pelvis_y");
+    stateframe_ids.push_back("pelvis_z");
+    stateframe_ids.push_back("pelvis_qw");
+    stateframe_ids.push_back("pelvis_qx");
+    stateframe_ids.push_back("pelvis_qy");
+    stateframe_ids.push_back("pelvis_qz");
+      
+    std::vector<double> temp;
+    temp.push_back(msg_in.utime);
+    //convert pose from world frame to affordance frame here.
+    KDL::Frame T_world_oldpose, T_aff_newpose;
+    drc::position_3d_t newpose;
+    visualization_utils::transformLCMToKDL(msg_in.pose,T_world_oldpose);
+    T_aff_newpose =(T_world_aff.Inverse())*T_world_oldpose;
+    visualization_utils::transformKDLToLCM(T_aff_newpose,newpose);
+
+    temp.push_back(newpose.translation.x);
+    temp.push_back(newpose.translation.y);
+    temp.push_back(newpose.translation.z);
+    temp.push_back(newpose.rotation.w);
+    temp.push_back(newpose.rotation.x);
+    temp.push_back(newpose.rotation.y);
+    temp.push_back(newpose.rotation.z);     
+    for (uint k = 0; k <(uint)msg_in.num_joints; k++)
+    {  
+      stateframe_ids.push_back(msg_in.joint_name[k]);
+      temp.push_back(msg_in.joint_position[k]);
+    }
+    stateframe_values.push_back(temp);
  }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -400,7 +447,7 @@ inline static void prepareKeyframePlanForStorage(KDL::Frame &T_world_aff,
   } //end function
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
-  //// Decode first pose given PlanSeed and publish as a posture goal       
+  //// Decode first pose given PlanSeed and output as a posture goal msg.       
   inline static void getFirstFrameInPlanAsPostureGoal(KDL::Frame &T_world_aff,
                                    std::vector<std::string> &stateframe_ids,
                                    std::vector< std::vector<double> > &stateframe_values,
@@ -420,7 +467,81 @@ inline static void prepareKeyframePlanForStorage(KDL::Frame &T_world_aff,
        posture_goal_msg.joint_name.push_back(msg.joint_name[k]);
        posture_goal_msg.joint_position.push_back((double)msg.joint_position[k]);
       }
-  }      
+  }  
+  
+ ////////////////////////////////////////////////////////////////////////////////////////////////
+ //// Decode first pose to robot_state_t  given PlanSeed (To be used as a posture goal)
+  inline static void decodeEndPoseFromStorage(KDL::Frame &T_world_aff,
+                                   std::vector<std::string> &stateframe_ids,
+                                   std::vector< std::vector<double> > &stateframe_values,
+                                   drc::robot_state_t &msg_out)
+  {
+      msg_out.utime = bot_timestamp_now();
+
+      uint i = 0;//(uint)stateframe_values.size()-1;
+
+      std::string field;
+      unsigned int index;
+      
+      drc::robot_state_t state_msg;
+      
+      double value;
+        
+      drc::position_3d_t storedpose;
+
+      if(getField(stateframe_ids,stateframe_values[i],"pelvis_x",value))
+        storedpose.translation.x = value;
+      else
+        return;
+
+      if(getField(stateframe_ids,stateframe_values[i],"pelvis_y",value))
+        storedpose.translation.y = value;   
+      else
+        return; 
+             
+      if(getField(stateframe_ids,stateframe_values[i],"pelvis_z",value))
+        storedpose.translation.z = value;   
+      else
+        return;    
+      
+      if(getField(stateframe_ids,stateframe_values[i],"pelvis_qw",value))
+        storedpose.rotation.w = value;
+      else
+        return;
+
+      if(getField(stateframe_ids,stateframe_values[i],"pelvis_qx",value))
+        storedpose.rotation.x = value;   
+      else
+        return; 
+             
+      if(getField(stateframe_ids,stateframe_values[i],"pelvis_qy",value))
+        storedpose.rotation.y = value;   
+      else
+        return; 
+         
+      if(getField(stateframe_ids,stateframe_values[i],"pelvis_qz",value))
+        storedpose.rotation.z = value;   
+      else
+        return; 
+        
+      KDL::Frame T_aff_oldpose, T_world_newpose;
+      drc::position_3d_t newpose;
+      visualization_utils::transformLCMToKDL(storedpose,T_aff_oldpose);
+      T_world_newpose = T_world_aff*T_aff_oldpose;
+      visualization_utils::transformKDLToLCM(T_world_newpose,newpose); 
+      msg_out.pose=newpose;
+     
+      msg_out.num_joints = stateframe_ids.size()-8;          
+      for (uint k = 8; k <(uint)stateframe_ids.size(); k++)
+      {  
+        msg_out.joint_name.push_back(stateframe_ids[k]);
+        msg_out.joint_position.push_back(stateframe_values[i][k]);
+        msg_out.joint_velocity.push_back(0);
+        msg_out.joint_effort.push_back(0);
+      }
+      msg_out.force_torque = drc::force_torque_t();
+     
+  } //end function      
 
 }// end namespace
 
