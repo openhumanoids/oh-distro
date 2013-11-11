@@ -249,7 +249,12 @@ void App::publish_reset(){
    return; 
   }
   
-  
+
+  drc::ee_goal_t msg;
+  msg.num_chain_joints = 0;
+  lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
+  lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
+//  sleep(1);
 
   Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
   trans_[0] = body_to_palm.translation().x();
@@ -265,6 +270,8 @@ void App::publish_reset(){
   quat_to_euler(  Eigen::Quaterniond(world_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
   */
   publish_palm_goal();
+
+
 }
 
 
