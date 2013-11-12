@@ -3,14 +3,14 @@ group "drivers" {
         exec = "roslaunch translators hands_notsim.launch";
         host = "localhost";
     }
-    cmd "sandia-left" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 49";
+    cmd "irobot-right" {
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 44";
         host = "localhost";
     }
 }
 group "model-pubs" {
     cmd "irobot-left-model-pub" {
-        exec = "robot_model_publisher  -u $DRC_BASE/software/models/mit_gazebo_models/irobot_hand/model_LI_standalone.urdf";
+        exec = "robot_model_publisher  -u $DRC_BASE/software/models/mit_gazebo_models/irobot_hand/model_RI_standalone.urdf";
         host = "localhost";
     }
 }
@@ -19,12 +19,12 @@ group "processes" {
         exec = "drc-state-sync -f";
         host = "localhost";
     }
-    cmd "simple-grasp" {
-        exec = "irobot-simple-grasp";
-        host = "localhost";
-    }
     cmd "drc-viewer" {
         exec = "drc-viewer -c drc_robot_02.cfg";
+        host = "localhost";
+    }
+    cmd "control_interface" {
+        exec = "rosrun handle_launch mit_irobot_hand_control.py R";
         host = "localhost";
     }
 }
