@@ -294,6 +294,8 @@ define_field_field_handler(AtlasStateForceTorqueRFootTorqueYHandler, drc::atlas_
 
 define_array_handler(AtlasStateExtraJointPositionOutHandler, drc::atlas_state_extra_t, joint_position_out, JointNames::jointNames());
 define_array_handler(AtlasStateExtraJointVelocityOutHandler, drc::atlas_state_extra_t, joint_velocity_out, JointNames::jointNames());
+define_array_handler(AtlasStateExtraJointPressurePosHandler, drc::atlas_state_extra_t, psi_pos, JointNames::jointNames());
+define_array_handler(AtlasStateExtraJointPressureNegHandler, drc::atlas_state_extra_t, psi_neg, JointNames::jointNames());
 
 // atlas_raw_imu_batch_t
 
@@ -453,6 +455,8 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
 
     factory.registerClass<AtlasStateExtraJointPositionOutHandler>();
     factory.registerClass<AtlasStateExtraJointVelocityOutHandler>();
+    factory.registerClass<AtlasStateExtraJointPressurePosHandler>();
+    factory.registerClass<AtlasStateExtraJointPressureNegHandler>();
 
     factory.registerClass<AtlasRawIMUBatchIMUDeltaRotation>();
     factory.registerClass<AtlasRawIMUBatchIMULinearAcceleration>();
