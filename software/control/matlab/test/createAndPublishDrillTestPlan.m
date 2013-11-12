@@ -4,7 +4,7 @@ r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mi
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 
 %%
-use_simulated_state = false;
+use_simulated_state = true;
 useVisualization = true;
 publishPlans = true;
 use_irobot = true;
@@ -77,6 +77,7 @@ if ~use_simulated_state
   vert_cut_dir = r.forwardKin(kinsol,2,[0;0;1]) - r.forwardKin(kinsol,2,[0;0;0]);
 else
   drilling_world_axis = [1;0;0];
+%   drilling_world_axis = [-1;.0;0];
 %   x_drill_reach = [.2;-.7;.7]; %works for drilling .4 down, irobot hand
 % %   x_drill_reach = [.4;-.1;.4];            %% works for drilling .5 right, irobot hand
 % x_drill_reach = [.5;-.6;.7];            %% works for drilling .4 down sandia hand
@@ -225,3 +226,14 @@ q_drill_end(I) = q_drill_end(I) + randn(length(I),1);
   drill_pub,q_drill_end, x_line_0_horiz,x_line_horiz,quat_horiz, .3, 2);
 
 snopt_info_line
+
+
+%% find initial posture
+q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
+triangle = [[0;0;.9] [0;0;1.5] [0;.6;.9]];
+% triangle = [[0;0;.9] [0;0;1.5] [.6;0;.9]];
+drill_points = [triangle triangle(:,1)];
+tri_centroid = mean(triangle,2);
+q0_init(1:3) = tri_centroid - drilling_world_axis*.5 - [0;0;.5];
+q0_init(6) = atan2(drilling_world_axis(2), drilling_world_axis(1));
+[xtraj,snopt_info,infeasible_constraint] = drill_pub.findDrillingMotion(q0_init, drill_points, true);
