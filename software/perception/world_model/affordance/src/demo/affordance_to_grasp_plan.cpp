@@ -247,7 +247,7 @@ void Pass::sendStandingPositionValve(drc::affordance_t steering_cyl){
 
 
 void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){ 
-  
+  // this is junk....
   
   // cylinder aff main axis is z-axis, determine yaw in world frame of that axis:
   Eigen::Quaterniond q1=  euler_to_quat( steering_cyl.origin_rpy[0] ,  steering_cyl.origin_rpy[1] , steering_cyl.origin_rpy[2]  ); 

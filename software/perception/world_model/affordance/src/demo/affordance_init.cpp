@@ -62,6 +62,8 @@ class Pass{
     boost::shared_ptr<lcm::LCM> lcm_;
     pointcloud_vis* pc_vis_;
     
+    drc::affordance_plus_t getPlaneAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
+
     drc::affordance_plus_t getCarAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
     drc::affordance_plus_t getDynamicMeshAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid, bool add_filename);
     drc::affordance_plus_t getDynamicMeshCylinderAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
@@ -308,6 +310,42 @@ drc::affordance_plus_t Pass::getDynamicMeshSteeringCylAffordancePlus(std::string
 
     
 drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid){ 
+  drc::affordance_plus_t p;
+  
+  drc::affordance_t a;
+  a.utime =0;
+  a.map_id =0;
+  a.uid =uid;
+  a.otdf_type ="car";
+  a.aff_store_control = drc::affordance_t::NEW;
+
+  a.nparams =0;
+  a.nstates =0;
+
+  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+  
+  a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=1.0; 
+  a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0; 
+  //a.bounding_rpy = { xyzrpy[3], xyzrpy[4], xyzrpy[5]};
+  // a.bounding_lwh = { 0.3, 0.36, 0.4};
+  
+  p.aff = a;
+  
+  std::vector< std::vector< float > > points;
+  std::vector< std::vector< int > > triangles;
+  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
+  affutils.getModelAsLists(filename_full, points, triangles);
+  p.points =points;
+  p.npoints=points.size(); 
+  p.triangles = triangles;
+  p.ntriangles =p.triangles.size();
+  
+  return p;
+}
+
+
+drc::affordance_plus_t Pass::getPlaneAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid){ 
   drc::affordance_plus_t p;
   
   drc::affordance_t a;
@@ -797,7 +835,46 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     exit(-1);
   }     
   
-  
+  if ((which_publish==14)){ // only send on its own
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =18;
+    a.otdf_type ="plane";
+    a.aff_store_control = drc::affordance_t::NEW;
+
+    a.nparams = a.params.size();
+    a.nstates =0;
+    
+    std::vector<double> xyzrpy = {0 , 0 , 0.0 , 0 , 0.0 , 0};  
+    a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+    a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+   
+    drc::affordance_plus_t a1;
+    a1.aff = a;
+    a1.aff.bounding_lwh[0]=0.24;       a1.aff.bounding_lwh[1]=0.24;      a1.aff.bounding_lwh[2]=0.45;//1.7;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.0; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
+    
+    std::vector< std::vector<float> > points;
+    points.push_back(  std::vector<float>({0.0,0.0,0.0}) );
+    points.push_back(  std::vector<float>({0.0,0.0,1.0}) );
+    points.push_back(  std::vector<float>({0.0,1.0,0.0}) );
+    points.push_back(  std::vector<float>({0.0,2.0,2.0}) );
+
+    std::vector< std::vector<int> > triangles;
+    triangles.push_back(  std::vector<int>({0,1,2}) );
+    triangles.push_back(  std::vector<int>({1,3,2}) );
+    
+    
+    a1.points = points;
+    a1.npoints= a1.points.size(); 
+    a1.triangles = triangles;
+    a1.ntriangles =a1.triangles.size();
+    lcm_->publish("AFFORDANCE_FIT",&a1);
+    exit(-1);
+  }     
+    
 
   string debris_filename_full = string(drc_base + "/software/config/task_config/debris/debrisPositions.csv");
   string standing_filename_full = string(drc_base + "/software/config/task_config/debris/debrisStandXYZYaw.csv");
