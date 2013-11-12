@@ -73,6 +73,8 @@ protected:
   int mRightGraspNameEnum;
   std::vector <std::string>  mGraspNames;
   
+  int mIrobotCalibrate;
+  
   bool mMinimalAffordances;
   int mControllerHeightMapMode;
 
@@ -413,6 +415,23 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::onRightGraspButton));
     hboxR->add(*button);
     handControlBox->pack_start(*hboxR, false, false);    
+    
+    
+    ids = { 0, 1, 2, 3 };
+    hbox = Gtk::manage(new Gtk::HBox());
+    box = Gtk::manage(new Gtk::HBox());
+    mIrobotCalibrate = 0;    
+    std::vector<std::string> labels = { "Left No Jig", "Left Jig", "Right No Jig", "Right Jig" };
+    addCombo("iRobot Calibrate", mIrobotCalibrate, labels, ids, box);
+    hbox->add(*box); 
+    // send button
+    button = Gtk::manage(new Gtk::Button("Send"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotCalibrateButton));
+    hbox->add(*button);
+    handControlBox->pack_start(*hbox, false, false);       
+    
+    
     notebook->append_page(*handControlBox, "Hands");    
     
     
@@ -425,7 +444,7 @@ public:
     mHandCameraFrameRate = -1;
     //addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, handControlBox); 
     mCameraCompression = 0;
-    std::vector<std::string> labels = { "-", "Low", "Med", "High" };
+    labels = { "-", "Low", "Med", "High" };
     ids =
       { -1, drc::sensor_request_t::QUALITY_LOW,
         drc::sensor_request_t::QUALITY_MED,
@@ -681,6 +700,24 @@ public:
     msg.closed_amount = (float) mRightGraspState/100;
     getLcm()->publish("IROBOT_RIGHT_SIMPLE_GRASP", &msg);
     getLcm()->publish("SANDIA_RIGHT_SIMPLE_GRASP", &msg);    
+  }  
+
+  void onIrobotCalibrateButton() {
+    drc::sandia_simple_grasp_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    if ( (mIrobotCalibrate==0) || (mIrobotCalibrate==2) ){
+      msg.name = "calibrate_no_jig";
+    }else if( (mIrobotCalibrate==1) || (mIrobotCalibrate==3) ){
+      msg.name = "calibrate_jig";      
+    }else{
+      return; // not understood
+    }
+    std::string channel = "IROBOT_LEFT_SIMPLE_GRASP";
+    if( (mIrobotCalibrate==2) || (mIrobotCalibrate==3) ){
+      channel= "IROBOT_RIGHT_SIMPLE_GRASP";      
+    }
+    msg.closed_amount = 0; // not interpreted
+    getLcm()->publish( channel , &msg);
   }  
 
   void publishMultisense(const double iSpinRate, const double iFrameRate,

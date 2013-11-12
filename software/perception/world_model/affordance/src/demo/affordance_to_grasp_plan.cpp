@@ -251,8 +251,6 @@ void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){
   
   // cylinder aff main axis is z-axis, determine yaw in world frame of that axis:
   Eigen::Quaterniond q1=  euler_to_quat( steering_cyl.origin_rpy[0] ,  steering_cyl.origin_rpy[1] , steering_cyl.origin_rpy[2]  ); 
-  //Eigen::Quaterniond q2=  euler_to_quat( 0 ,  -90*M_PI/180 , 0  ); 
-  //q1= q1*q2;  
   double look_rpy[3];
   quat_to_euler ( q1, look_rpy[0], look_rpy[1], look_rpy[2] );
   ///////////////////////////////////////
@@ -262,17 +260,17 @@ void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){
 
     Eigen::Isometry3d valve_pose(Eigen::Isometry3d::Identity());
     valve_pose.translation()  << steering_cyl.origin_xyz[0], steering_cyl.origin_xyz[1], ground_height_;
-    valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  look_rpy[2] + M_PI )  ) );
+    valve_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  0 ,  look_rpy[2] )  ) );
     feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose) );
 
     for (int left_reach = 0; left_reach<2 ; left_reach++){
       Eigen::Isometry3d valve2com(Eigen::Isometry3d::Identity());
       if (left_reach){
-        valve2com.translation()  << 0.74, 0.15, 0;
-        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,185*M_PI/180))  );   
+        valve2com.translation()  << -0.74, 0.15, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-5*M_PI/180))  );   
       }else{
-        valve2com.translation()  << 0.74, -0.15, 0;
-        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,175*M_PI/180 ))  );   
+        valve2com.translation()  << -0.74, -0.15, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,5*M_PI/180 ))  );   
       }
       feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com) );
 

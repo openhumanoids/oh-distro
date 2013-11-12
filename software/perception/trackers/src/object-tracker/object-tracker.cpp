@@ -81,7 +81,7 @@ class Pass{
     int verbose_;
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    void imageStereoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
+    void imageStereoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
     void trackerCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::tracker_command_t* msg);    
@@ -175,11 +175,11 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 
-  lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
+  //lcm_->subscribe( image_channel_ ,&Pass::imageHandler,this);
   lcm_->subscribe( "CAMERA" ,&Pass::imageStereoHandler,this);
   
   
-  mask_channel_="CAMERALEFT_MASKZIPPED";
+  mask_channel_="CAMERA_LEFT_MASKZIPPED";
   lcm_->subscribe( mask_channel_ ,&Pass::maskHandler,this);
   lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this); 
   lcm_->subscribe("TRACKER_COMMAND",&Pass::trackerCommandHandler,this);   
@@ -200,13 +200,17 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   
   
   
-  std::string key_prefix_str = "cameras."+ image_channel_ +".intrinsic_cal";
+  //std::string key_prefix_str = "cameras."+ image_channel_ +".intrinsic_cal";
+  std::string key_prefix_str = "cameras."+string("CAMERA")+"_LEFT.intrinsic_cal";
   width_ = bot_param_get_int_or_fail(botparam_, (key_prefix_str+".width").c_str());
   height_ = bot_param_get_int_or_fail(botparam_,(key_prefix_str+".height").c_str());
-  fx_ = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fx").c_str());
-  fy_ = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".fy").c_str());
-  cx_ = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cx").c_str());
-  cy_ = bot_param_get_double_or_fail(botparam_, (key_prefix_str+".cy").c_str());    
+  double vals[10];
+  bot_param_get_double_array_or_fail(botparam_, (key_prefix_str+".pinhole").c_str(), vals, 5);
+  fx_ = vals[0];
+  fy_ = vals[1];
+  cx_ = vals[3];
+  cy_ = vals[4];  
+  
 
   // Initialize Particle Filter:
   int rng_seed = 1;
@@ -407,7 +411,7 @@ void Pass::updatePF(){
 // TODO: combine masking and unpacking into one function, should make processing neglibible
 int ish_counter=0;
 void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  bot_core::image_t* msg){
+                        const std::string& channel, const  multisense::images_t* msg){
   if (!tracker_initiated_){ // haven't been initated, quit ...
     return;
   }  
@@ -433,19 +437,20 @@ void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf,
   #endif
   
   int64_t update_time = msg->utime;
-  int w = msg->width;
-  int h = msg->height/2;
+  int w = msg->images[0].width;
+  int h = msg->images[0].height;
   Eigen::Isometry3d camera_to_local;
   frames_cpp_->get_trans_with_utime( botframes_ , "CAMERA","local", update_time, camera_to_local);
 
+  
+  
   if (left_img_.empty() || left_img_.rows != h || left_img_.cols != w)
-      left_img_.create(h, w, CV_8UC1);
+        left_img_.create(h, w, CV_8UC1);
   if (right_img_.empty() || right_img_.rows != h || right_img_.cols != w)
-      right_img_.create(h, w, CV_8UC1);
+        right_img_.create(h, w, CV_8UC1);
 
-  imgutils_->decodeStereoImageToGray(msg, left_img_.data, right_img_.data);
-  //memcpy(left_img_.data,  msg->data.data() , msg->size/2);
-  //memcpy(right_img_.data,  msg->data.data() + msg->size/2 , msg->size/2);
+  imgutils_->decodeImageToGray( &msg->images[0], left_img_.data);
+  imgutils_->decodeImageToGray( &msg->images[1], right_img_.data);  
 
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
@@ -888,7 +893,7 @@ void Pass::trackerCommandHandler(const lcm::ReceiveBuffer* rbuf,
 
 
 int main(int argc, char ** argv) {
-  string image_channel = "CAMERALEFT";
+  string image_channel = "CAMERA_LEFT";
   int num_particles = 300;
   int affordance_id = -1;
   bool use_color_tracker =false;
