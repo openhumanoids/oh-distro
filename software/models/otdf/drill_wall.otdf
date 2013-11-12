@@ -1,0 +1,101 @@
+<?xml version="1.0" ?>
+<object name="box">
+    <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <!--roll,pitch,yaw are about Body Frame-->
+    <param name="roll" default_value="0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="pitch" default_value="0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="0" inc="0.01" min="-3.1416" max="3.1416" />
+    <!-- Size of the outer most bounding volume -->
+    <param name="lX" default_value="0.0005" inc="0.005" min="0" max="100" />
+    <param name="lY" default_value="1.5" inc="0.005" min="0" max="100" />
+    <param name="lZ" default_value="1.5" inc="0.005" min="0" max="100" />
+    <param name="p1y" default_value="0.0" inc="0.005" min="-100" max="100" />
+    <param name="p1z" default_value="0.0" inc="0.005" min="-100" max="100" />
+    <param name="p2y" default_value="0.0" inc="0.005" min="-100" max="100" />
+    <param name="p2z" default_value="0.609" inc="0.005" min="-100" max="100" />
+    <param name="p3y" default_value="-0.609" inc="0.005" min="-100" max="100" />
+    <param name="p3z" default_value="0.0" inc="0.005" min="-100" max="100" />
+
+    <link name="base_link" />
+
+
+    <link name="wall">
+        <inertial>
+            <mass value="0" />
+            <inertia ixx="0" ixy="0.0" ixz="0.0" iyy="0" iyz="0.0" izz="0" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${lY} ${lZ}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <box size="${lX} ${lY} ${lZ}" />
+            </geometry>
+        </collision>
+    </link>
+
+
+    <link name="pt1">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <sphere radius="0.01" />
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="pt2">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <sphere radius="0.01" />
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="pt3">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <sphere radius="0.01" />
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="wall_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="wall" type="link" />
+        <origin rpy="0 0 0" xyz="0 0 0" />
+        <axis xyz="0 0 1" />
+    </joint>
+
+    <joint name="pt1_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="pt1" type="link" />
+        <origin rpy="0 0 0" xyz="0 ${p1y} ${p1z}" />
+        <axis xyz="0 0 1" />
+    </joint>
+
+    <joint name="pt2_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="pt2" type="link" />
+        <origin rpy="0 0 0" xyz="0 ${p2y} ${p2z}" />
+        <axis xyz="0 0 1" />
+    </joint>
+
+    <joint name="pt3_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="pt3" type="link" />
+        <origin rpy="0 0 0" xyz="0 ${p3y} ${p3z}" />
+        <axis xyz="0 0 1" />
+    </joint>
+
+</object>
