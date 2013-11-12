@@ -68,17 +68,18 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
   
    int64_t now =bot_timestamp_now();
    double dt = (now- _last_affcoll_msg_system_timestamp )/1000000.0;// timestamps are in usec
-    if(dt< 2) // 1Hz Sync
+    if(dt< 2) // 2Hz Sync
       return;
   
     //cout << "Ok!: " << oss.str() << endl;
+   std::vector<std::string> active_object_names;
     for (size_t i=0; i< (size_t)msg->naffs; i++)
     {
       const drc::affordance_t aff = msg->affs[i];
       
       std::stringstream oss;
       oss << aff.otdf_type << "_"<< aff.uid; 
-        
+      active_object_names.push_back(oss.str());  
       typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
       object_instance_map_type_::iterator it = _parent_affordance_renderer->affCollection->_objects.find(oss.str());
        
@@ -100,6 +101,11 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
           }
        }
     }
+
+    //cycle through object in affCollection,
+    // and remove all affordances that are not in affCollection but exist in the renderer.
+     removeRedundantObjectsFromCache(active_object_names);
+    
     _last_affcoll_msg_system_timestamp = now;
 
   } // end handleMessage
@@ -111,46 +117,19 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
 
     // call handleAffordancePlusMsg for each affordance in collection
     set<pair<string,int> > currentAffs;
+    std::vector<std::string> active_object_names;
     for (size_t i=0; i< (size_t)msg->naffs; i++) {
       const drc::affordance_plus_t& aff = msg->affs_plus[i];
       handleAffordancePlusMsg(rbuf, chan, &aff);
       currentAffs.insert(make_pair(aff.aff.otdf_type, aff.aff.uid));
+       std::stringstream oss;
+      oss << aff.aff.otdf_type << "_"<< aff.aff.uid; 
+      active_object_names.push_back(oss.str());  
     }
 
-    /* TODO: put back in after solving sticky hands crash issue. 
-    // delete any affordance not in message
-    if(!_parent_affordance_renderer->debugMode){
-      std::map<std::string, OtdfInstanceStruc>::iterator it;
-      std::map<std::string, OtdfInstanceStruc>& objs = _parent_affordance_renderer->affCollection->_objects;
-      for(it = objs.begin(); it!=objs.end(); ){
-        // if not in collection, erase
-        if(currentAffs.find(make_pair(it->second.otdf_type, it->second.uid)) == currentAffs.end()) {
-          // clear selection if selected
-          const char *instance_name;
-          instance_name = bot_gtk_param_widget_get_enum_str( _parent_affordance_renderer->pw, PARAM_OTDF_INSTANCE_SELECT );
-          if(instance_name && _parent_affordance_renderer->object_selection==string(instance_name)){
-            _parent_affordance_renderer->link_selection = " ";
-            _parent_affordance_renderer->object_selection = " ";
-          }  
-          // clear sticky hands if selected  
-          typedef map<string, StickyHandStruc > sticky_hands_map_type_;
-          sticky_hands_map_type_::iterator hand_it = _parent_affordance_renderer->sticky_hands.begin();
-          while (hand_it!=_parent_affordance_renderer->sticky_hands.end()) {
-            string hand_name = string(hand_it->second.object_name);
-            if (instance_name && hand_name == string(instance_name)) {
-              if(_parent_affordance_renderer->stickyhand_selection==hand_it->first)
-                 _parent_affordance_renderer->stickyhand_selection = " ";
-              _parent_affordance_renderer->sticky_hands.erase(hand_it++);
-            } else hand_it++;
-          } 
-          // erase object
-          objs.erase(it++);
-          // trigger redraw
-          bot_viewer_request_redraw(_parent_affordance_renderer->viewer);
-        } else ++it;   // otherwise go to next object
-      }
-    }*/
-
+    //cycle through object in affCollection,
+    // and remove all affordances that are not in affCollection but exist in the renderer.
+     removeRedundantObjectsFromCache(active_object_names);
   }
 
    // =======================================================================  
@@ -318,7 +297,59 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
     }
  
  }
+ // =======================================================================
+ void AffordanceCollectionListener::removeRedundantObjectsFromCache(std::vector<std::string> &active_object_names)
+ {  
 
+    typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator it = _parent_affordance_renderer->affCollection->_objects.begin();
+    while (it!=_parent_affordance_renderer->affCollection->_objects.end())
+    {
+     std::vector<std::string>::const_iterator found;
+     std::string instance_name = it->first;
+     found = std::find (active_object_names.begin(), active_object_names.end(), instance_name);
+     if (found == active_object_names.end())  // remove if not active
+     {
+       _parent_affordance_renderer->affCollection->_objects.erase(it++);     
+       //remove dependants
+       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
+        sticky_hands_map_type_::iterator hand_it = _parent_affordance_renderer->stickyHandCollection->_hands.begin();
+        while (hand_it!=_parent_affordance_renderer->stickyHandCollection->_hands.end()) 
+        {
+          string hand_name = string(hand_it->second.object_name);
+          if (hand_name == string(instance_name))
+          {
+            if(_parent_affordance_renderer->stickyhand_selection==hand_it->first){
+              _parent_affordance_renderer->seedSelectionManager->remove(_parent_affordance_renderer->stickyhand_selection);
+              _parent_affordance_renderer->stickyhand_selection = " ";
+            }
+            _parent_affordance_renderer->stickyHandCollection->_hands.erase(hand_it++);
+          }
+          else
+            hand_it++;
+        } // end while
+        typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+        sticky_feet_map_type_::iterator foot_it = _parent_affordance_renderer->stickyFootCollection->_feet.begin();
+        while (foot_it!=_parent_affordance_renderer->stickyFootCollection->_feet.end()) 
+        {
+          string foot_name = string(foot_it->second.object_name);
+          if (foot_name == string(instance_name))
+          {
+            if(_parent_affordance_renderer->stickyfoot_selection==foot_it->first)
+            {
+              _parent_affordance_renderer->seedSelectionManager->remove(_parent_affordance_renderer->stickyfoot_selection);                            
+              _parent_affordance_renderer->stickyfoot_selection = " ";
+             }
+            _parent_affordance_renderer->stickyFootCollection->_feet.erase(foot_it++);
+          }
+          else
+            foot_it++;
+         } // end while 
+     } // end if (found == active_object_names.end())
+     else
+      it++;
+    } // end while   
+ }
 // =======================================================================
 
 

@@ -57,6 +57,9 @@ namespace renderer_affordances
                                 const  drc::traj_opt_constraint_t* msg);                              
                                 
    int64_t _last_affcoll_msg_system_timestamp; 
+   
+   void removeRedundantObjectsFromCache(std::vector<std::string> &active_object_names);
+   
 
 }; //class AffordanceCollectionListener
 
