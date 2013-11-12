@@ -41,9 +41,11 @@ class LCM2ROS{
 
     void handCameraTriggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::data_request_t* msg);
     
-    ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
     ros::Publisher camera_streaming_pub_right_, camera_streaming_pub_left_;
-    void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);  
+    
+    // Ignore "sandia" - this message is used by both hands
+    void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sandia_simple_grasp_t* msg);  
+    ros::Publisher irobot_l_hand_simple_cmd_pub_, irobot_r_hand_simple_cmd_pub_;
   
     ros::NodeHandle* rosnode;
 };
@@ -66,11 +68,11 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   lcm_->subscribe("R_HAND_JOINT_COMMANDS_RELATIVE",&LCM2ROS::RelativeJointCommandsHandler,this); 
   sandia_l_hand_relative_joint_cmd_pub_ = nh_.advertise<sandia_hand_msgs::RelativeJointCommands>("/sandia_hands/l_hand/relative_joint_commands",10);
   sandia_r_hand_relative_joint_cmd_pub_ = nh_.advertise<sandia_hand_msgs::RelativeJointCommands>("/sandia_hands/r_hand/relative_joint_commands",10); 
-    
-  lcm_->subscribe("SIMPLE_GRASP_COMMAND",&LCM2ROS::simpleGraspCmdHandler,this);  
-  simple_grasp_pub_left_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/l_hand/simple_grasp",10); 
-  simple_grasp_pub_right_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/r_hand/simple_grasp",10); 
-//drc_robot.pmd:        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+   
+  lcm_->subscribe("IROBOT_LEFT_SIMPLE_GRASP",&LCM2ROS::simpleGraspCmdHandler,this);
+  lcm_->subscribe("IROBOT_RIGHT_SIMPLE_GRASP",&LCM2ROS::simpleGraspCmdHandler,this);
+  irobot_l_hand_simple_cmd_pub_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/irobot_hands/l_hand/simple_command",10);
+  irobot_r_hand_simple_cmd_pub_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/irobot_hands/r_hand/simple_command",10); 
 
   camera_streaming_pub_left_ = nh_.advertise<sandia_hand_msgs::CameraStreaming>("/sandia_hands/l_hand/camera_streaming",10);
   camera_streaming_pub_right_ = nh_.advertise<sandia_hand_msgs::CameraStreaming>("/sandia_hands/r_hand/camera_streaming",10);
@@ -111,31 +113,23 @@ void LCM2ROS::RelativeJointCommandsHandler(const lcm::ReceiveBuffer* rbuf, const
 }
   
 
+void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sandia_simple_grasp_t* msg){
+  //std::cout << "got: " << channel << "\n"; 
+  ROS_ERROR("got %s", channel.c_str());
+  
+  sandia_hand_msgs::SimpleGrasp msgout;
+  msgout.name = msg->name;
+  msgout.closed_amount = msg->closed_amount;
 
-void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::simple_grasp_t* msg) {
-  ROS_ERROR("LCM2ROS Sending got simple");
-
-  if(ros::ok()) {
-    sandia_hand_msgs::SimpleGrasp msgout;
-    msgout.name = "cylindrical";
-    if (msg->left_state != drc::simple_grasp_t::UNCHANGED) {
-      if (msg->left_state == drc::simple_grasp_t::CLOSED) {
-        msgout.closed_amount = 100;
-      }
-      else msgout.closed_amount = 0;
-      ROS_ERROR("LCM2ROS Sending simple grasp command (left)");
-      simple_grasp_pub_left_.publish(msgout);
-    }
-    if (msg->right_state != drc::simple_grasp_t::UNCHANGED) {
-      if (msg->right_state == drc::simple_grasp_t::CLOSED) {
-        msgout.closed_amount = 100;
-      }
-      else msgout.closed_amount = 0;
-      ROS_ERROR("LCM2ROS Sending simple grasp command (right)");
-      simple_grasp_pub_right_.publish(msgout);    
-    }
-  }   
+  ROS_ERROR("LCM2ROS Sending simple command message: %s", channel.c_str());
+  if (channel == "IROBOT_LEFT_SIMPLE_GRASP"){
+    irobot_l_hand_simple_cmd_pub_.publish(msgout);     
+  }else if (channel == "IROBOT_RIGHT_SIMPLE_GRASP"){
+    irobot_r_hand_simple_cmd_pub_.publish(msgout);
+  } 
+  
 }
+  
   
 // Sandia Hands joint command handlers
 void LCM2ROS::LHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
