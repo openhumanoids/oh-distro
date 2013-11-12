@@ -11,6 +11,23 @@
     <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <!-- Size of the outer most bounding volume -->
     <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
+
+    <param name="button_x" default_value="0.035" inc="0.005" min="-100" max="100" />
+    <param name="button_y" default_value="0.007" inc="0.005" min="-100" max="100" />
+    <param name="button_z" default_value="-0.06" inc="0.005" min="-100" max="100" />
+
+    <param name="guard_x" default_value="0.0" inc="0.005" min="-100" max="100" />
+    <param name="guard_y" default_value="-0.01" inc="0.005" min="-100" max="100" />
+    <param name="guard_z" default_value="0.15" inc="0.005" min="-100" max="100" />
+
+    <param name="guard_nx" default_value="0.0" inc="0.01" min="0" max="1" />
+    <param name="guard_ny" default_value="0.0" inc="0.01" min="0" max="1" />
+    <param name="guard_nz" default_value="1.0" inc="0.01" min="0" max="1" />
+
+    <param name="button_nx" default_value="1.0" inc="0.01" min="0" max="1" />
+    <param name="button_ny" default_value="0.0" inc="0.01" min="0" max="1" />
+    <param name="button_nz" default_value="0.0" inc="0.01" min="0" max="1" />
+
     <!--<param name="filename" default_value="1.0" inc="0.01" min="0" max="100"/>-->
     <link name="base_link" />
     <link name="mesh">
@@ -31,12 +48,50 @@
             </geometry>
         </collision>
     </link>
+
+
+    <link name="button">
+        <visual>
+            <origin rpy="0 1.57079 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="0.005" length="0.015" />
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="guard">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="0.0025" length="0.02" />
+            </geometry>
+        </visual>
+    </link>
+
+
+
     <joint name="base_joint" type="fixed">
         <parent link="base_link" type="link" />
         <child link="mesh" type="link" />
         <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
     </joint>
+
+
+    <joint name="button_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="button" type="link" />
+        <origin rpy="0 0 0" xyz="${button_x} ${button_y} ${button_z}" />
+        <axis xyz="0 0 1" />
+    </joint>
+
+    <joint name="guard_joint" type="fixed">
+        <parent link="base_link" type="link" />
+        <child link="guard" type="link" />
+        <origin rpy="0 0 0" xyz="${guard_x} ${guard_y} ${guard_z}" />
+        <axis xyz="0 0 1" />
+    </joint>
+
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="mesh_0" />
