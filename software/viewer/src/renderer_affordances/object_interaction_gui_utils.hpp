@@ -86,6 +86,13 @@
 #define PARAM_REACH_STARTING_POSTURE "Reach Starting Posture"
 #define PARAM_REACH_STARTING_POSE "Reach Starting Pose"
 #define PARAM_UNSTORE_PLAN "Unstore  PlanSeed"
+
+#define PARAM_STORE_POSE "Store EndPose" 
+#define PARAM_POSE_SEED_LIST "EndPose Select" 
+#define PARAM_REACH_ENDPOSE_POSTURE "Reach EndPose Posture"
+#define PARAM_SEND_PELVIS_GOAL "Send Pelvis Goal"
+#define PARAM_LOAD_POSE "Load PoseSeed"
+#define PARAM_UNSTORE_POSE "Unstore  EndPose"
 #define PARAM_COMMIT_TO_COLLISION_SERVER "Commit to collision-server"
 
 #define PARAM_EE_SPECIFY_GOAL "Select EE goal"
@@ -981,6 +988,89 @@ namespace renderer_affordances_gui_utils
       cout << "Unstoring Plan : " <<selected_plan << endl;
       PlanSeed::unstoreFromOtdf(otdf_filepath,plan_xml_dirpath,selected_plan);
     }
+    
+    else if (! strcmp(name, PARAM_STORE_POSE)) {
+        // Send aff trigger signal to plan renderer to store current active plan to otdf associated xml file
+        (*self->affTriggerSignalsRef).pose_store(it->second.otdf_type,it->second._gl_object->_T_world_body);
+    }
+    else if (! strcmp(name, PARAM_LOAD_POSE)) {
+        // Send aff trigger signal to plan renderer to load a plan from plan storage 
+        string selected_pose;
+        selected_pose = self->_poseseeds[bot_gtk_param_widget_get_enum(pw, PARAM_POSE_SEED_LIST)];
+        (*self->affTriggerSignalsRef).pose_load(it->second.otdf_type,it->second._gl_object->_T_world_body,selected_pose);
+    }  
+     else if (! strcmp(name, PARAM_UNSTORE_POSE)) {
+      string selected_pose;
+      selected_pose = self->_poseseeds[bot_gtk_param_widget_get_enum(pw, PARAM_POSE_SEED_LIST)];
+      string otdf_models_path = string(getModelsPath()) + "/otdf/"; 
+      string otdf_filepath,pose_xml_dirpath;
+      otdf_filepath =  otdf_models_path + (it->second.otdf_type) +".otdf";
+      pose_xml_dirpath=  otdf_models_path + "stored_poses/"; 
+      cout << "Unstoring Endpose : " <<selected_pose << endl;
+      PoseSeed::unstoreFromOtdf(otdf_filepath,pose_xml_dirpath,selected_pose);
+    }
+    else if (! strcmp(name,PARAM_REACH_ENDPOSE_POSTURE ))
+    {
+      string selected_pose;
+      selected_pose = self->_poseseeds[bot_gtk_param_widget_get_enum(pw, PARAM_POSE_SEED_LIST)];
+      KDL::Frame T_world_aff;
+      T_world_aff = it->second._gl_object->_T_world_body;
+      std::string otdf_id = it->second.otdf_type;
+      std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+      std::string otdf_filepath,pose_xml_dirpath;
+      otdf_filepath =  otdf_models_path + otdf_id +".otdf";
+      pose_xml_dirpath =  otdf_models_path + "stored_poses/";
+      PoseSeed poseSeed;
+      poseSeed.loadFromOTDF(otdf_filepath,pose_xml_dirpath,selected_pose);
+      
+      drc::joint_angles_t posture_goal_msg;
+      visualization_utils::getEndPoseAsPostureGoal(T_world_aff, poseSeed.stateframe_ids,
+                                                            poseSeed.stateframe_values,
+                                                            posture_goal_msg);
+      string channel = "POSTURE_GOAL";
+      self->lcm->publish(channel, &posture_goal_msg);
+    } 
+    else if (! strcmp(name,PARAM_SEND_PELVIS_GOAL ))
+    {
+     
+      string selected_pose;
+      selected_pose = self->_poseseeds[bot_gtk_param_widget_get_enum(pw, PARAM_POSE_SEED_LIST)];
+      KDL::Frame T_world_aff;
+      T_world_aff = it->second._gl_object->_T_world_body;
+      std::string otdf_id = it->second.otdf_type;
+      std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+      std::string otdf_filepath,pose_xml_dirpath;
+      otdf_filepath =  otdf_models_path + otdf_id +".otdf";
+      pose_xml_dirpath =  otdf_models_path + "stored_poses/";
+      PoseSeed poseSeed;
+      poseSeed.loadFromOTDF(otdf_filepath,pose_xml_dirpath,selected_pose);
+      drc::robot_state_t msg;
+      visualization_utils::decodeEndPoseFromStorage(T_world_aff, poseSeed.stateframe_ids,
+                                                            poseSeed.stateframe_values,
+                                                            msg);
+                                                            
+      
+      drc::atlas_behavior_manipulate_params_t  pelvisgoal_msg;
+      double curr_roll,curr_pitch,curr_yaw;
+      double des_roll,des_pitch,des_yaw;
+      KDL::Frame T_world_pelvis_des;
+      T_world_pelvis_des.p[0] =msg.pose.translation.x;
+      T_world_pelvis_des.p[1] =msg.pose.translation.y;
+      T_world_pelvis_des.p[2] =msg.pose.translation.z;     
+      T_world_pelvis_des.M = KDL::Rotation::Quaternion(msg.pose.rotation.x,msg.pose.rotation.y,msg.pose.rotation.z,msg.pose.rotation.w);
+      T_world_pelvis_des.M.GetRPY(des_roll,des_pitch,des_yaw);
+      self->robotStateListener->_gl_robot->_T_world_body.M.GetRPY(curr_roll,curr_pitch,curr_yaw);
+      pelvisgoal_msg.use_desired=1;
+      pelvisgoal_msg.desired.pelvis_height = std::min(std::max(T_world_pelvis_des.p[2],0.64),0.92);
+      pelvisgoal_msg.desired.pelvis_yaw = std::min(std::max(des_yaw,-13*(M_PI/180)),13*(M_PI/180));
+      pelvisgoal_msg.desired.pelvis_pitch = curr_pitch;
+      pelvisgoal_msg.desired.pelvis_roll = curr_roll;
+      pelvisgoal_msg.desired.com_v0 = self->robotStateListener->_gl_robot->_T_world_com.p[1];//x
+      pelvisgoal_msg.desired.com_v1 = self->robotStateListener->_gl_robot->_T_world_com.p[2];//y
+      pelvisgoal_msg.use_demo_mode=0;
+      string channel = "ATLAS_MANIPULATE_PARAMS";
+      self->lcm->publish(channel, &pelvisgoal_msg);
+    }
     else if(!strcmp(name, PARAM_COMMIT_TO_COLLISION_SERVER) )
     {
       drc::workspace_object_urdf_t msg;
@@ -1225,6 +1315,7 @@ namespace renderer_affordances_gui_utils
         && strcmp(name,PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP)
         && strcmp(name,PARAM_SELECT_EE_TYPE)
         && strcmp(name,PARAM_PLAN_SEED_LIST)
+        && strcmp(name,PARAM_POSE_SEED_LIST)
         && strcmp(name,PARAM_SELECT_FLIP_DIM)
         && strcmp(name, PARAM_RESET_DESIRED_STATE)
         && strcmp(name, PARAM_FLIP_GEOMETRY)
@@ -1482,6 +1573,43 @@ namespace renderer_affordances_gui_utils
       }
     }
     
+    BotGtkParamWidget *poseseed_pw;
+    poseseed_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+ 
+    //bot_gtk_param_widget_add_separator (poseseed_pw,"EndPose Seed Management");
+    bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_STORE_POSE, NULL); 
+   
+    if((self->marker_selection  == " ")&&(it!=self->affCollection->_objects.end())) 
+    {
+      self->_poseseeds = vector<string>();
+      std::string otdf_models_path = std::string(getModelsPath()) + "/otdf/"; 
+      std::string otdf_filepath;
+      otdf_filepath =  otdf_models_path + (it->second.otdf_type) +".otdf";
+      PoseSeed::getList(otdf_filepath,self->_poseseeds);
+      if(self->_poseseeds.size()>0)
+      {
+        vector<string> _names;
+        vector<const char*> seed_names;
+        vector<int> seed_nums;
+        for(int i = 0; i < self->_poseseeds.size(); ++i)
+        {
+           string token  = "::";
+           size_t found = self->_poseseeds[i].find(token);  
+           _names.push_back(self->_poseseeds[i].substr(found+token.size()));
+           seed_names.push_back(_names[i].c_str());
+           seed_nums.push_back(i);
+        }
+        bot_gtk_param_widget_add_enumv (poseseed_pw, PARAM_POSE_SEED_LIST, BOT_GTK_PARAM_WIDGET_MENU, 
+                                        0,
+                                        self->_poseseeds.size(),
+                                        &seed_names[0],
+                                        &seed_nums[0]);
+        bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_LOAD_POSE, NULL);
+        bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_UNSTORE_POSE, NULL);
+        //bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_SEND_PELVIS_GOAL, NULL); 
+        bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_REACH_ENDPOSE_POSTURE, NULL); 
+      }
+    }
    
     
     BotGtkParamWidget *col_server_pw;
@@ -1516,6 +1644,10 @@ namespace renderer_affordances_gui_utils
     gtk_container_add (GTK_CONTAINER (planseed_pane), GTK_WIDGET( planseed_pw));
     gtk_expander_set_expanded(GTK_EXPANDER(planseed_pane),(gboolean) FALSE);
     
+    GtkWidget * poseseed_pane =  gtk_expander_new("EndPose Seed Management");
+    gtk_container_add (GTK_CONTAINER (poseseed_pane), GTK_WIDGET(poseseed_pw));
+    gtk_expander_set_expanded(GTK_EXPANDER(poseseed_pane),(gboolean) FALSE);
+    
     GtkWidget *col_server_pane =  gtk_expander_new("collision_server_comms");
     gtk_container_add (GTK_CONTAINER (col_server_pane), GTK_WIDGET(col_server_pw));
     gtk_expander_set_expanded(GTK_EXPANDER(col_server_pane),(gboolean) FALSE);
@@ -1527,6 +1659,7 @@ namespace renderer_affordances_gui_utils
     g_signal_connect(G_OBJECT(get_plan_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);  
     g_signal_connect(G_OBJECT(mating_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);      
     g_signal_connect(G_OBJECT(planseed_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
+    g_signal_connect(G_OBJECT(poseseed_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
     g_signal_connect(G_OBJECT(col_server_pw), "changed", G_CALLBACK(on_object_geometry_dblclk_popup_param_widget_changed), self);
     
     self->dblclk_popup  = window;
@@ -1556,6 +1689,7 @@ namespace renderer_affordances_gui_utils
       gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(mating_pane), FALSE, FALSE, 5);
     }
     gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(planseed_pane), FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(poseseed_pane), FALSE, FALSE, 5);
     gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(col_server_pane), FALSE, FALSE, 5);
 
     gtk_widget_show_all(window); 
