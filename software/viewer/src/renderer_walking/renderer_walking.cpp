@@ -340,6 +340,17 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->drake_pw, PARAM_MU, 1.0);  
     bot_gtk_param_widget_set_bool(self->main_pw,PARAM_IGNORE_TERRAIN, TRUE);
     bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
+  }else if (mode == WALKING_DRAKE_FAST) {
+    std::cout << "Using preset mode: Walking Drake Fast\n";
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 30);  
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 0);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_SPEED, 4.0);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_HEIGHT, 0.1);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.2);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.5);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_MU, 1.0);  
+    bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
   }else if (mode == WALKING_BDI){
     std::cout << "Using preset mode: BDI Walking\n"; 
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 10); 
@@ -748,6 +759,8 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
                                 "BDI Stepping", STEPPING_BDI,
                                 "BDI Fine Stepping", STEPPING_BDI_FINE,
                                 "Ladder", WALKING_LADDER,
+                                "Drake Walking", WALKING_TYPICAL,
+                                "Drake Fast Walking", WALKING_DRAKE_FAST,
                                 NULL);
   bot_gtk_param_widget_add_enum(self->main_pw, PARAM_BEHAVIOR, BOT_GTK_PARAM_WIDGET_MENU, self->behavior, "Walking", BEHAVIOR_WALKING, "BDI Walking", BEHAVIOR_BDI_WALKING, "BDI Stepping", BEHAVIOR_BDI_STEPPING, NULL);
   bot_gtk_param_widget_add_int(self->main_pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 1, 30, 1, self->max_num_steps);  
