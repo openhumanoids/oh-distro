@@ -12,6 +12,7 @@
   <depend package="joint_publisher"/>
   <depend package="handle_sensors"/>
   <depend package="handle_collisions"/>
+  <depend package="sandia_hand_msgs"/>
 
 </package>
 

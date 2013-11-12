@@ -2,17 +2,20 @@
 
 # Created on Oct 30, 2013
 # 
-# @author: Twan
+# @author: Twan, Maurice
 
 
 
-import roslib; roslib.load_manifest('handle_launch')
+import roslib; roslib.load_manifest('mit_helios_scripts')
 import rospy
 import argparse
-import time
+import time, sys
 
 from handle_msgs.msg import HandleControl
 from handle_msgs.msg import HandleSensors
+
+from sandia_hand_msgs.msg import SimpleGrasp
+
 from IRobotHandConfigParser import IRobotHandConfigParser
 
 motor_indices = range(3)
@@ -60,7 +63,36 @@ class IRobotHandController(object):
         self.rate = rospy.Rate(ros_rate)
         self.publisher = rospy.Publisher(publisher_name, HandleControl)
         self.subscriber = rospy.Subscriber(subscriber_name, HandleSensors, self.sensor_data_callback)
+
+        subscriber_simple_name = message_base_name + "simple_command"
+        self.subscriber_simple = rospy.Subscriber(subscriber_simple_name, SimpleGrasp, self.simple_cmd_callback)
+
     
+    def simple_cmd_callback(self, data):
+        command = data.name
+        if (data.name in ['cylindrical','prismatic','spherical'] ) :
+            if (data.closed_amount == 0):
+              print "Open"
+              self.open_hand_motor_excursion_control()
+            else:
+              print "Close"
+              self.close_hand_current_control(800)
+        elif data.name == 'calibrate_jig':
+            print "Jig"
+            controller.calibrate_motor_encoder_offsets(jig_pose)
+        elif data.name == 'calibrate_no_jig':
+            print "No Jig"
+            controller.calibrate_motor_encoder_offsets(no_jig_pose)
+        else:
+            print "Message not understood "+data.name
+            return
+
+        #print "Sending zero current message"
+        self.zero_current()
+        self.exit()
+        #print "Finished"
+
+
     def sensor_data_callback(self, data):
         self.sensors = data
 
@@ -108,13 +140,13 @@ class IRobotHandController(object):
         return motor_indices
 
     def calibrate_motor_encoder_offsets(self, calibration_pose):
-        print "closing hand"
+        print "Calibrating: closing hand"
         self.close_hand_current_control(300)
 
         wait_time = 2
         time.sleep(wait_time)
 
-        print "setting offsets"
+        print "Calibrating: setting offsets"
         for motor_index in motor_indices:
             current_value = self.sensors.motorHallEncoder[motor_index]
             offset = current_value - calibration_pose[motor_index]
@@ -127,32 +159,14 @@ class IRobotHandController(object):
 def parseArguments():
     parser = argparse.ArgumentParser(description='Script for interacting with iRobot hand')
     parser.add_argument('side', help='hand side, l/L or r/R')
-    parser.add_argument('commands', nargs='+', help='a list of commands, each one being CLOSE, OPEN, CALIBRATE_JIG, or CALIBRATE_NO_JIG')
     args = parser.parse_args()
     side = args.side.lower()
     if side not in ['r', 'l']:
         raise RuntimeError("Side not recognized: " + side)
-    print "Commands: " + ", ".join(args.commands)
-    return (side, args.commands)
+    return (side)
 
 if __name__ == '__main__':
-    side, commands = parseArguments()
+    side = parseArguments()
     controller = IRobotHandController(side)
 
-    for command in commands:
-        print "Executing command: " + command
-        if command == 'CLOSE':
-            controller.close_hand_current_control(800)
-        elif command == 'OPEN':
-#             controller.open_hand_angle_control()
-            controller.open_hand_motor_excursion_control()
-        elif command == 'CALIBRATE_JIG':
-            controller.calibrate_motor_encoder_offsets(jig_pose)
-        elif command == 'CALIBRATE_NO_JIG':
-            controller.calibrate_motor_encoder_offsets(no_jig_pose)
-        else:
-            raise RuntimeError("Command not recognized: " + command + "\n")
-
-    print "Sending zero current message"
-    controller.zero_current()
-    controller.exit()
+    rospy.spin()

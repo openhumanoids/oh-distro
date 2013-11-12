@@ -29,3 +29,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_executable(keyboard_control src/keyboard_control.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 target_link_libraries(keyboard_control ncurses)
+
+
+
+# added by mfallon:
+rosbuild_add_executable(mit_keyboard_control src/mit_keyboard_control.cpp)
+target_link_libraries(mit_keyboard_control ncurses)
