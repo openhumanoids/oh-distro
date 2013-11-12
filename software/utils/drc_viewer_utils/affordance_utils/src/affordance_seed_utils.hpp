@@ -468,6 +468,7 @@ inline static void prepareEndPoseForStorage(KDL::Frame &T_world_aff,
        posture_goal_msg.joint_position.push_back((double)msg.joint_position[k]);
       }
   }  
+
   
  ////////////////////////////////////////////////////////////////////////////////////////////////
  //// Decode first pose to robot_state_t  given PlanSeed (To be used as a posture goal)
@@ -542,6 +543,28 @@ inline static void prepareEndPoseForStorage(KDL::Frame &T_world_aff,
       msg_out.force_torque = drc::force_torque_t();
      
   } //end function      
+  
+  
+   ////////////////////////////////////////////////////////////////////////////////////////////////
+  //// Decode first pose given PoseSeed and output as a posture goal msg.       
+  inline static void getEndPoseAsPostureGoal(KDL::Frame &T_world_aff,
+                                   std::vector<std::string> &stateframe_ids,
+                                   std::vector< std::vector<double> > &stateframe_values,
+                                  drc::joint_angles_t &posture_goal_msg)
+  {
+      drc::robot_state_t msg;      
+                       
+      decodeEndPoseFromStorage(T_world_aff,stateframe_ids,stateframe_values,msg);
+      
+      posture_goal_msg.utime=msg.utime;
+      posture_goal_msg.robot_name=" ";
+      posture_goal_msg.num_joints=msg.num_joints;
+      for (uint k = 0; k <(uint)msg.num_joints; k++)
+      {  
+       posture_goal_msg.joint_name.push_back(msg.joint_name[k]);
+       posture_goal_msg.joint_position.push_back((double)msg.joint_position[k]);
+      }
+  }    
 
 }// end namespace
 
