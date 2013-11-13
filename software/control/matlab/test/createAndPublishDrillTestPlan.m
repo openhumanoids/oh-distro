@@ -14,7 +14,7 @@ state_frame.subscribe('EST_ROBOT_STATE');
 
 if use_irobot % irobot?
   if use_alt_drill
-    drill_pt_on_hand = [.1;-.15;0];
+    drill_pt_on_hand = [.25;-.25;0];
     drill_axis_on_hand = [1;0;0];
     drill_dir_des = [0;1;0];
     drill_dir_threshold = pi;
@@ -86,7 +86,7 @@ else
 %     x_drill_reach = [.3;-.3;.4];            %% 45 deg irobot hand, .3
 %     drill right
 
-    x_drill_reach = [.5;0;.3];            %% works well for alt drill,
+    x_drill_reach = [.7;.6;.9];            %% works well for alt drill,
 %     both hands
 
 
@@ -150,7 +150,7 @@ end
 
 %% line drill
 if use_simulated_state 
-  x_drill_line = x_drill_in + .2*horiz_cut_dir + 0.3*vert_cut_dir;
+  x_drill_line = x_drill_in + -.6*horiz_cut_dir + -0.0*vert_cut_dir;
 
   q_drill_end = xtraj_drill.eval(xtraj_drill.tspan(end));
   q_drill_end = q_drill_end(1:r.num_q);

@@ -40,6 +40,7 @@ classdef drillTestPlanPublisher
       obj.r = r;
       if obj.doVisualization
         obj.v = obj.r.constructVisualizer;
+        obj.v.playback_speed = 5;
       end
       if nargin < 6
         obj.doVisualization = true; % default
@@ -126,8 +127,8 @@ classdef drillTestPlanPublisher
       n_points = size(drill_points,2);
       sizecheck(drill_points, [3 n_points]);
       
-      T = 10;
-      N = 3*n_points;
+      T = 1;
+      N = 2*n_points;
       
       t_vec = linspace(0,T,N);
       t_drill = linspace(0,T,n_points);
@@ -141,12 +142,12 @@ classdef drillTestPlanPublisher
         % create posture constraint.  allow moving x, y, z, yaw
         posture_index = setdiff((1:obj.r.num_q)',[1 2 3 6 obj.joint_indices]');
         posture_constraint = posture_constraint.setJointLimits(3, .5, .8);
-        posture_constraint = posture_constraint.setJointLimits(6, q0(6) - .2, q0(6) + .2);
+        posture_constraint = posture_constraint.setJointLimits(6, q0(6) - .5, q0(6) + .5);
       else
         posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]');
       end
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      posture_constraint = posture_constraint.setJointLimits([7:9]', [-.2 -.2 -.2]', [.2 .2 .2]');
+      posture_constraint = posture_constraint.setJointLimits(9,-inf,.25);
             
       % create drill position constraints
       x_drill_traj = PPTrajectory(foh(t_drill,drill_points));
@@ -159,25 +160,47 @@ classdef drillTestPlanPublisher
       % fix body pose for all t
       body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,2); % fix the pelvis
       
-      q_init = q0 + .1*randn(obj.r.num_q,1);
       q_nom = zeros(obj.r.num_q,N);
-      for i=1:N,
-        [q_nom(:,i), snopt_info_ik(i),infeasible_constraint_ik] = inverseKin(obj.r,q_init,q_init,...
-          drill_pos_constraint{i}, drill_dir_constraint, posture_constraint, obj.ik_options);
+      
+      
+      % Find nominal pose
+      diff_opt = inf;
+      q_end_nom = q0;
+      for i=1:50,
+        [q_tmp,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0 + .2*randn(obj.r.num_q,1),q0,...
+          drill_pos_constraint{1},drill_dir_constraint,posture_constraint,obj.ik_options);
         
+        c_tmp = (q_tmp - q0)'*obj.ik_options.Q*(q_tmp - q0);
+        if snopt_info_ik <= 3 && c_tmp < diff_opt
+          q_end_nom = q_tmp;
+          diff_opt = c_tmp;
+        end
+      end
+      
+      q_nom(:,1) = q_end_nom;
+%       q_init = q_end_nom;
+      
+      for i=2:N,
+        j = 1;
+        snopt_info_ik(i) = inf;
+        while j<10 && snopt_info_ik(i) > 3
+          [q_nom(:,i), snopt_info_ik(i),infeasible_constraint_ik] = inverseKin(obj.r,q_nom(:,i-1),q_nom(:,i-1) + .1*randn(obj.r.num_q,1),...
+            drill_pos_constraint{i}, drill_dir_constraint, posture_constraint, obj.ik_options);
+          j = j+1;
+        end
         if(snopt_info_ik(i) > 10)
           send_msg = sprintf('snopt_info = %d. The IK fails for t=%f\n', snopt_info_ik(i), t_vec(i));
           send_status(4,0,0,send_msg);
           display(infeasibleConstraintMsg(infeasible_constraint_ik));
           warning(send_msg);
         end
-        q_nom(:,i) = q_nom(:,i) +  + .1*randn(obj.r.num_q,1);
-        q_init = q_nom(:,i);
+        q_nom(:,i) = q_nom(:,i);
+%         q_init = q_nom(:,i);
       end
       qtraj_guess = PPTrajectory(foh(t_vec,q_nom));
       
       obj.free_ik_options.setMajorOptimalityTolerance(1e-4);
-      obj.free_ik_options = obj.free_ik_options.setMajorIterationsLimit(2000);
+      obj.free_ik_options = obj.free_ik_options.setMajorIterationsLimit(1000);
       
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,body_pose_constraint,...

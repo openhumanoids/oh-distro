@@ -23,15 +23,31 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 lcm_mon = DrillTaskLCMMonitor(atlas);
 
 %% get affordance fits
-% [wall,drill] = lcm_mon.getWallAndDrillAffordances();
-% while isempty(wall) || isempty(drill)
-%   [wall,drill] = lcm_mon.getWallAndDrillAffordances();
-% end
+[wall,drill] = lcm_mon.getWallAndDrillAffordances();
+while isempty(wall) || isempty(drill)
+  [wall,drill] = lcm_mon.getWallAndDrillAffordances();
+end
 
-[wall,~] = lcm_mon.getWallAndDrillAffordances();
-wall.targets = wall.targets(:,1:2);
+if 0
+% [wall,~] = lcm_mon.getWallAndDrillAffordances();
+% wall.targets = wall.targets(:,1:2);
+wall.normal = [1;0;0];
+x = .8;
+z = 0;
+wall_z = .6;
+wall_y = .6;
+wall_center = [x; .1; .3   + z]; % -7,3,2 works for backwards hand
+wall.targets = [wall_center + [0;wall_y/2;wall_z/2]]; 
+wall.targets = [wall.targets wall_center + [0;-wall_y/2;wall_z/2]];
+wall.targets = [wall.targets wall_center + [0;-wall_y/2;-wall_z/2]];
+wall.targets = [wall.targets wall_center + [0;wall_y/2;-wall_z/2]];
 drill.drill_axis = [1;0;0];
-use_simulated_state = false;
+drill.guard_pos = [.25;-.25;0];  
+drill.drill_axis = [0;0;-1];
+drill.guard_pos = [0;-.25;-.25];
+nbd
+
+use_simulated_state = true;
 useVisualization = true;
 publishPlans = true;
 
@@ -42,6 +58,11 @@ drill_pub = drillTestPlanPublisher(r,atlas,drill.guard_pos, drill.drill_axis,...
   wall.normal, dummy_dir, 0, useVisualization, publishPlans);
 triangle = wall.targets;
 drill_points = [triangle triangle(:,1)];
+
+q_check = zeros(34,1);
+q_check(drill_pub.joint_indices) = .1*randn(9,1);
+
+% [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q_check, drill_points, false);
 
 %% get nominal posture and publish walking plan
 q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
@@ -75,6 +96,8 @@ drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
 if use_simulated_state
   q_check = xtraj_arm_init.eval(0);
   q_check = q_check(1:34);
+%   q_check = zeros(34,1);
+%   q_check(drill_pub.joint_indices) = .1*randn(9,1);
 else
   q_check = lcm_mon.getStateEstimate();
 end
