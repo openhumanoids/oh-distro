@@ -243,6 +243,13 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
               atlas_joints_.position[i] -= 2*M_PI;
             atlas_joints_.position[i] += encoder_joint_offsets_[i];
+
+            // check for wonky encoder initialization :(
+            while (atlas_joints_.position[i] - mod_positions[i] > 0.5)
+              atlas_joints_.position[i] -= 2*M_PI/3;
+            while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
+              atlas_joints_.position[i] += 2*M_PI/3;
+
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
 
             // copy pot positions back into _out so we have them in the lcm log
