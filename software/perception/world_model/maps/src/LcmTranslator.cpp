@@ -236,9 +236,9 @@ toLcm(const PointCloudView& iView, drc::map_cloud_t& oMessage,
   float* ptr = (float*)(&data[0]);
   for (int i = 0; i < cloud.size(); ++i) {
     maps::PointCloud::PointType pt = cloud.points[i];
-    ptr[i*3+0] = pt.x;
-    ptr[i*3+1] = pt.y;
-    ptr[i*3+2] = pt.z;
+    ptr[i*3+0] = pt.x + 0.5f;  // add 0.5 for better rounding
+    ptr[i*3+1] = pt.y + 0.5f;
+    ptr[i*3+2] = pt.z + 0.5f;
   }
   DataBlob::Spec spec;
   spec.mDimensions.push_back(3);
@@ -393,7 +393,7 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
   for (int i = 0; i < numDepths; ++i) {
     float val = outDepths[i];
     if (val == invalidValue) continue;
-    outDepths[i] = (outDepths[i]-zOffset)/zScale;
+    outDepths[i] = (outDepths[i]-zOffset)/zScale + 0.5f;  // 0.5 for rounding
   }
 
   // store to blob
