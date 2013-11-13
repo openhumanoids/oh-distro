@@ -257,7 +257,11 @@ classdef EndPosePlanner < KeyframePlanner
           nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
           qstar = nomdata.xstar(1:obj.r.getNumDOF());
           iktraj_tbreaks = s_breaks;
-          iktraj_qseed_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 repmat(qstar,1,NBreaks-1)]));
+          %iktraj_qseed_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 repmat(qstar,1,NBreaks-1)]));
+          
+          qstar(1:6) = q0(1:6);
+          
+          iktraj_qseed_traj = PPTrajectory(foh(iktraj_tbreaks,repmat(qstar,1,NBreaks)));
           iktraj_qnom_traj = PPTrajectory(foh(iktraj_tbreaks,repmat(qstar,1,NBreaks)));           
           
           joint_constraint = PostureConstraint(obj.r);
@@ -336,17 +340,10 @@ classdef EndPosePlanner < KeyframePlanner
             num_r_foot_pts = size(r_foot_pts,2);
             num_l_foot_pts = size(l_foot_pts,2);
             
-            r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_pts,2);
+            %r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_pts,2);
             r_foot_contact_pos = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_contact_pts,0);
-            l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_pts,2);
-            l_foot_contact_pos = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_contact_pts,0);
-            head_pose0 = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],2);
-            pelvis_pose0 = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
-            utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
-            r_hand_pose0 = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
-            l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
-            
-                
+            %l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_pts,2);
+            l_foot_contact_pos = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_contact_pts,0);                
             
             % Solve IK
             timeIndices = unique(Indices);
@@ -358,12 +355,12 @@ classdef EndPosePlanner < KeyframePlanner
             end
             
             q_guess =q0;
+            
             %l_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
-            l_foot_pose0(1:2,:)=nan(2,num_l_foot_pts);
-            r_foot_pose0(1:2,:)=nan(2,num_r_foot_pts);
-            head_pose0(1:3)=nan(3,1); % only set head orientation not position
-            pelvis_pose0(1:2)=nan(2,1); % The problem is to find the pelvis pose
-            utorso_pose0(1:2)=nan(2,1);
+            %l_foot_pose0(1:2,:)=nan(2,num_l_foot_pts);
+            %r_foot_pose0(1:2,:)=nan(2,num_r_foot_pts);
+
+
             r_hand_pose = nan(7,1);
             l_hand_pose = nan(7,1);
             if(goal_type_flags.rh == 2)
@@ -381,15 +378,17 @@ classdef EndPosePlanner < KeyframePlanner
             else
                 head_constraint = {};
             end
-            l_foot_pose = l_foot_pose0;
-            r_foot_pose = r_foot_pose0;
+            %l_foot_pose = l_foot_pose0;
+            %r_foot_pose = r_foot_pose0;
   
+            % giving foot z height constraint.
             lfoot_constraint ={WorldPositionConstraint(obj.r,obj.l_foot_body,l_foot_contact_pts,...
                 [nan(2,size(l_foot_contact_pts,2));l_foot_contact_pos(3,:)],...
                 [nan(2,size(l_foot_contact_pts,2));l_foot_contact_pos(3,:)])};
             rfoot_constraint = {WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_contact_pts,...
                 [nan(2,size(r_foot_contact_pts,2));r_foot_contact_pos(3,:)],...
                 [nan(2,size(r_foot_contact_pts,2));r_foot_contact_pos(3,:)])};
+
             
             %         foot_origins =[[0;0;0] [0;0;0]]
             %         rel_feet_constraint ={RelativePositionConstraint(obj.r,foot_origins,...
@@ -398,19 +397,16 @@ classdef EndPosePlanner < KeyframePlanner
             %             obj.l_foot_body, obj.r_foot_body)};
             
 
-            %head_constraint = [head_constraint,{WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7),1e-4)}];
-            %       pelvis_constraint = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,0,1e-2,[-inf inf]);
             pelvis_constraint = {};
-            %        utorso_constraint = parse2PosQuatConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0,0,1e-2,[-inf inf]);
-            
             ik_dist_constraint = {};
             
             pelvis_constraint = {WorldGazeDirConstraint(obj.r,obj.pelvis_body,[0;0;1],[0;0;1],obj.pelvis_upright_gaze_tol)};
             ind=find(Indices==timeIndices(1));
+           
             for k=1:length(ind),
                 if(strcmp('pelvis',ee_names{ind(k)}))
-                    pelvisT = ee_loci(:,ind(k));
-                    pelvis_constraint = {WorldQuatConstraint(obj.r,obj.pelvis_body,rpy2quat(pelvisT(4:6)),1e-2)};
+                    %pelvisT = ee_loci(:,ind(k));
+                    %pelvis_constraint = {WorldQuatConstraint(obj.r,obj.pelvis_body,rpy2quat(pelvisT(4:6)),1e-2)};
                 elseif(strcmp(obj.lh_name,ee_names{ind(k)}))
                     l_ee_goal = ee_loci(:,ind(k));
                     lhandT = zeros(6,1);
@@ -471,8 +467,9 @@ classdef EndPosePlanner < KeyframePlanner
             ik_qnom = qstar;            
             %  			ikoptions.q_nom = qstar;
             
-            NSamples = 10;
-            yaw_angles_bnd = 25;
+            NSamples = 20;
+            %yaw_angles_bnd = 25;
+            yaw_angles_bnd = 180;
             arm_loci_flag = ~cellfun(@(x) isempty(strfind(char(x),'palm')),ee_names);
             %arm_loci_flag=(arm_loci_flag)&(Indices==Indices(ind(k)));
             if(sum(arm_loci_flag) == 2)
@@ -493,8 +490,10 @@ classdef EndPosePlanner < KeyframePlanner
             q_sample = zeros(obj.r.getNumDOF,NSamples);
             sample_cost = zeros(1,NSamples);
             z_bnd = 0.5;
+           
+            
             for k=1:NSamples,
-                %q_guess = qstar;
+                q_guess = qstar;
                 q_guess(3) = q_guess(3)+2*(rand(1,1)-0.5)*(z_bnd);
                 q_guess(6)=q_guess(6)+2*(rand(1,1)-0.5)*(yaw_angles_bnd*pi/180);%+-10degrees from current pose
 
@@ -523,7 +522,7 @@ classdef EndPosePlanner < KeyframePlanner
                 joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind],[obj.l_hpx_lb;-obj.l_hpx_ub],[obj.l_hpx_ub;-obj.l_hpx_lb]);
 
                 stance_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,l_foot_contact_pts,r_foot_contact_pts,obj.stance_lb*ones(1,size(r_foot_contact_pts,2)),obj.stance_ub*ones(1,size(r_foot_contact_pts,2)))};
-                total_ik_trials = 30;
+                total_ik_trials = 10;
                 if(~isempty(head_constraint))
                     [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKinRepeatSearch(obj.r,total_ik_trials,q_guess,ik_qnom,...
                         rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},head_constraint{:},pelvis_constraint{:},...
