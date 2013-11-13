@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>drc</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+	</buildSpec>
+	<natures>
+	</natures>
+	<linkedResources>
+    <link>
+        <name>software/control/cmake</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/software/control/cmake</locationURI>
+    </link>
+    <link>
+        <name>software/models/mit_gazebo_models/handle_description</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/software/models/mit_gazebo_models/handle_description</locationURI>
+    </link>
+    <link>
+        <name>software/models/mit_gazebo_models/otdf</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/software/models/mit_gazebo_models/otdf</locationURI>
+    </link>
+    <link>
+        <name>software/network/network_sim/src/network_bridge/ldpc</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/software/network/network_sim/src/network_bridge/ldpc</locationURI>
+    </link>
+</linkedResources>
+</projectDescription>
