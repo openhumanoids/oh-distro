@@ -36,7 +36,7 @@ fi
 side=$2
 
 
-if [ -z "$3"] && [ "$hand_type" = "IROBOT" ] #if param 3 is empty
+if [ -z "$3" ] && [ "$hand_type" = "IROBOT" ] #if param 3 is empty
 then
    echo " "
    echo "INPUT ERROR - third argument is missing"
