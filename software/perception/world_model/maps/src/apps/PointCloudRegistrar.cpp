@@ -42,7 +42,7 @@ struct State : public maps::Collector::DataListener {
     mCollector.reset(new maps::Collector());
     mCollector->setBotWrapper(mBotWrapper);
     mLaserChannel = "SCAN_FREE";
-    mUpdateChannel = "HEAD_TO_LOCAL_CORRECTED";
+    mUpdateChannel = "MAPS_LOCAL_CORRECTION";
     mActiveMapId = 1;
     mTimeMin = mTimeMax = 0;
     mLcmGl = bot_lcmgl_init(mBotWrapper->getLcm()->getUnderlyingLCM(),
@@ -116,7 +116,7 @@ struct State : public maps::Collector::DataListener {
     if (registerToReference(mCurCloud, curToRef)) {
       std::cout << "SUCCESS" << std::endl;
       mCurToRef = curToRef;
-      publishMessage(curToRef*headToLocal, timeMax);
+      publishMessage(mCurToRef, timeMax);
     }
   }
 
@@ -189,7 +189,7 @@ int main(const int iArgc, const char** iArgv) {
   // parse arguments
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(state.mUpdateChannel, "u", "update_channel",
-          "channel on which to publish head pose updates");
+          "channel on which to publish pose updates");
   opt.parse();
 
   state.start();
