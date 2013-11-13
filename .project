@@ -29,5 +29,35 @@
         <type>2</type>
         <locationURI>PROJECT_LOC/software/network/network_sim/src/network_bridge/ldpc</locationURI>
     </link>
+    <link>
+        <name>ros_workspace/mit_drcsim_scripts/models/irobot_hand</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/ros_workspace/mit_drcsim_scripts/models/irobot_hand</locationURI>
+    </link>
+    <link>
+        <name>ros_workspace/mit_drcsim_scripts/models/mit_robot</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/ros_workspace/mit_drcsim_scripts/models/mit_robot</locationURI>
+    </link>
+    <link>
+        <name>ros_workspace/mit_drcsim_scripts/models/mit_robot_drake</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/ros_workspace/mit_drcsim_scripts/models/mit_robot_drake</locationURI>
+    </link>
+    <link>
+        <name>ros_workspace/mit_drcsim_scripts/models/mit_robot_hands</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/ros_workspace/mit_drcsim_scripts/models/mit_robot_hands</locationURI>
+    </link>
+    <link>
+        <name>ros_workspace/mit_drcsim_scripts/models/multisense_sl</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/ros_workspace/mit_drcsim_scripts/models/multisense_sl</locationURI>
+    </link>
+    <link>
+        <name>ros_workspace/mit_drcsim_scripts/models/sandia_hand</name>
+        <type>2</type>
+        <locationURI>PROJECT_LOC/ros_workspace/mit_drcsim_scripts/models/sandia_hand</locationURI>
+    </link>
 </linkedResources>
 </projectDescription>
