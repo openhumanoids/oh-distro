@@ -161,11 +161,11 @@ else
     [x,~] = getNextMessage(state_frame,10);
   end
   q_drill_end = x(1:34);
-      q_drill_end = max(min(q_drill_end,ub),lb);
+%       q_drill_end = max(min(q_drill_end,ub),lb);
 
   kinsol = r.doKinematics(q_drill_end);
   x_drill0 = r.forwardKin(kinsol, drill_pub.hand_body, drill_pub.drill_pt_on_hand);
-  x_drill_line = x_drill0 + .0*horiz_cut_dir + .1*vert_cut_dir;
+  x_drill_line = x_drill0 + -.1*horiz_cut_dir + -.1*vert_cut_dir + .0*drilling_world_axis;
 
 end
 % [xtraj_line,snopt_info_line,infeasible_constraint_line]createDirectedLinePlan(obj, q0, x_drill_init, x_drill_final, T)

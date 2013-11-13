@@ -52,7 +52,7 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_arm_mwx';% <---- 
+joint = 'r_arm_elx';% <---- 
 control_mode = 'position';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
@@ -76,11 +76,11 @@ end
 if strcmp( signal, 'chirp' )
   zero_crossing = true;
   ts = linspace(0,40,800);% <----
-  amp = 0.4;% <----  Nm or radians
-  freq = linspace(0.1,0.5,800);% <----  cycles per second
+  amp = 0.3;% <----  Nm or radians
+  freq = linspace(0.04,0.2,800);% <----  cycles per second
 else
-  vals = [0 0 0.2 0 0];% <----  Nm or radians
-  ts = linspace(0,15,length(vals));% <----
+  vals = [0 0 0.3 0 0];% <----  Nm or radians
+  ts = linspace(0,10,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -125,6 +125,7 @@ joint_offset_map.l_leg_kny = 1.57;
 joint_offset_map.r_leg_kny = 1.57;
 
 joint_offset_map.r_arm_uwy = 1.57;
+joint_offset_map.l_arm_elx = 1.57;
 joint_offset_map.r_arm_elx = -1.57;
 joint_offset_map.r_arm_shx = 1.45;
 
