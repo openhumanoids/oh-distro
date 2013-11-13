@@ -49,7 +49,7 @@ namespace renderer_sticky_feet{
     boost::shared_ptr<lcm::LCM> lcm;
     int64_t max_draw_utime;
     BotEventHandler ehandler;
-    bool ht_auto_adjust_enabled;
+    bool show_detailed_info;
     bool clicked;
     bool dragging;
     

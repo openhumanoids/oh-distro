@@ -2,15 +2,17 @@
 #include "FootStepPlanListener.hpp" // need parent renderer struct which contains a FootStepPlanListener... circular dependency.
 #include "plan_approval_gui_utils.hpp"
 #include "plan_execution_gui_utils.hpp"
+#include <glib.h>
+#include <bot_vis/gl_util.h>
+#include <bot_core/fasttrig.h>
 
 #define RENDERER_NAME "FootStep Plans & Sticky Feet"
-#define PARAM_AUTO_ADJUST_HT "Auto Adjust Height"
+#define PARAM_SHOW_DETAILS "Show Step Details"
 #define PARAM_CLEAR_FOOTSTEP_PLAN "Clear FootSteps"
 using namespace std;
 using namespace boost;
 using namespace renderer_sticky_feet;
 using namespace renderer_sticky_feet_gui_utils;
-
 
 static void
 _renderer_free (BotRenderer *super)
@@ -20,7 +22,6 @@ _renderer_free (BotRenderer *super)
   free(self);
 }
 //================================= Drawing
-
 
 static void 
 draw_state(BotViewer *viewer, BotRenderer *super, uint i){
@@ -32,63 +33,6 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i){
   float alpha_contact = 0.4;
   float alpha_apex = 0.15;
   RendererStickyFeet *self = (RendererStickyFeet*) super->user;
- 
- 
- // update stickyfeet z offsets to the support surfaceace if points exist below it. 
- // double x,y,z;
- // x = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0];
- // y = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1];
- // z = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2];
- // Eigen::Vector3f queryPt(x,y,z);
- //  //std::cout << "query" << queryPt.transpose()<<" " << z << std::endl;
- //  double z_surface;
- //  bool insupport= get_support_surface_height_from_perception(self, queryPt, z_surface);
-  
- //  /*if(insupport && (!isnan(z_surface)))
- //  { 
- //     double offset=0;
- //    if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)
- //      offset = self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
- //    else
- //      offset = self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
-
- //    // std::cout <<  "footstep height: " << i <<" "<<  z_surface << " " << offset<< std::endl;
- 
- //     KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body;
- //     T_worldframe_footframe.p[2] = offset+z_surface; // stick to support surface. TODO:: account for offset
- //     std::map<std::string, double> jointpos_in; 
- //     jointpos_in =  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_current_jointpos;
- //     self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->set_state(T_worldframe_footframe,jointpos_in);          
- //  }  */
-       
-    
- //  if(self->footStepPlanListener->is_motion_copy(i))
- //  {
- //    x = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[0];
- //    y = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[1];
- //    z = self->footStepPlanListener->_gl_in_motion_copy->_T_world_body.p[2];
- //    Eigen::Vector3f queryPt(x,y,z);
- //    bool insupport= get_support_surface_height_from_perception(self, queryPt, z_surface);
-
- //    if(insupport && (!std::isnan(z_surface)))
- //    {
- //     double offset = 0;
- //     if(self->footStepPlanListener->_planned_stickyfeet_info_list[i].foot_type==0)
- //       offset = -self->footStepPlanListener->_T_bodyframe_groundframe_left.p[2];
- //     else
- //       offset = -self->footStepPlanListener->_T_bodyframe_groundframe_right.p[2];
- //      KDL::Frame T_worldframe_footframe =  self->footStepPlanListener->_gl_in_motion_copy->_T_world_body;
- //      //std::cout <<  "motion copy height: " << i <<" "<<T_worldframe_footframe.p[2] <<" "<<  z_surface << " " << offset<< std::endl;
-
- //      if (self->footStepPlanListener->_planned_stickyfeet_info_list[i].is_in_contact) {
- //        T_worldframe_footframe.p[2] = z_surface+offset;
- //      }
- //      std::map<std::string, double> jointpos_in; 
- //      jointpos_in =  self->footStepPlanListener->_gl_in_motion_copy->_current_jointpos;  
- //      self->footStepPlanListener->_gl_in_motion_copy->set_state(T_worldframe_footframe,jointpos_in); 
- //    }
- //  }     
-
   
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->show_bbox(self->visualize_bbox);
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->enable_link_selection(self->ht_auto_adjust_enabled);
@@ -152,15 +96,15 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   glEnable(GL_BLEND);
   glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-  if((self->ht_auto_adjust_enabled)&&(self->clicked)){
-    glLineWidth (3.0);
-    glPushMatrix();
-    glBegin(GL_LINES);
-    glVertex3f(self->ray_start[0], self->ray_start[1],self->ray_start[2]); // object coord
-    glVertex3f(self->ray_end[0], self->ray_end[1],self->ray_end[2]);
-    glEnd();
-    glPopMatrix();
-  }
+  // if((self->ht_auto_adjust_enabled)&&(self->clicked)){
+  //   glLineWidth (3.0);
+  //   glPushMatrix();
+  //   glBegin(GL_LINES);
+  //   glVertex3f(self->ray_start[0], self->ray_start[1],self->ray_start[2]); // object coord
+  //   glVertex3f(self->ray_end[0], self->ray_end[1],self->ray_end[2]);
+  //   glEnd();
+  //   glPopMatrix();
+  // }
 
   float label_num = 0;
   bool has_apex = false;
@@ -170,7 +114,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     double pos[3];
     pos[0] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0]; 
     pos[1] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[1]; 
-    pos[2] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2]+0.0;  
+    pos[2] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[2]+0.03;  
 
     if (i > 1) { // don't label the two steps where the robot's feet already are
       std::stringstream oss;
@@ -186,9 +130,22 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
         has_apex = false;
       }
       // float label_num = (i - 1.0) / 2.0;
-      oss << label_num; 
-      glColor4f(0,0,0,1);
-      bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, (oss.str()).c_str(),0);
+      KDL::Frame T_worldframe_prev_foot = self->footStepPlanListener->_gl_planned_stickyfeet_list[i-1]->_T_world_body;
+      KDL::Frame T_worldframe_curr_foot = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body;
+      KDL::Frame T_prev_to_curr = T_worldframe_prev_foot.Inverse() * T_worldframe_curr_foot;
+
+      double camera_dist_sq = pow(T_worldframe_curr_foot.p[0] - self->ray_start[0], 2) + pow(T_worldframe_curr_foot.p[1] - self->ray_start[1], 2) + pow(T_worldframe_curr_foot.p[2] - self->ray_start[2], 2);
+
+      char buff[100];
+      if (self->show_detailed_info && camera_dist_sq < 8) {
+        snprintf(buff, 100, "%.0f \ndx %+.2f\ndy %+.2f\ndz %+.2f", label_num, T_prev_to_curr.p[0], T_prev_to_curr.p[1], T_prev_to_curr.p[2]);
+        glColor4f(0,.2,0.2,1);
+        bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_12, buff,BOT_GL_DRAW_TEXT_JUSTIFY_LEFT | BOT_GL_DRAW_TEXT_ANCHOR_BOTTOM);
+      } else {
+        snprintf(buff, 100, "%.0f", label_num);
+        glColor4f(0,0,0,1);
+        bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_12, buff,BOT_GL_DRAW_TEXT_JUSTIFY_LEFT);
+      }
     }
     
     draw_state(viewer,super,i);
@@ -344,11 +301,24 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
   return 0;
 }
 
-
 // ----------------------------------------------------------------------------
+static int mouse_scroll (BotViewer *viewer, BotEventHandler *ehandler,  const double ray_start[3], const double ray_dir[3],   const GdkEventScroll *event)
+{
+  RendererStickyFeet *self = (RendererStickyFeet*) ehandler->user;
+
+  Eigen::Vector3f from;
+  from << ray_start[0], ray_start[1], ray_start[2];
+  self->ray_start = from;
+  return 0;
+}
+
 static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const double ray_start[3], const double ray_dir[3],   const GdkEventMotion *event)
 {
   RendererStickyFeet *self = (RendererStickyFeet*) ehandler->user;
+
+  Eigen::Vector3f from;
+  from << ray_start[0], ray_start[1], ray_start[2];
+  self->ray_start = from;
   
   if((!self->dragging)||(ehandler->picking==0)){
     return 0;
@@ -373,14 +343,8 @@ static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel,
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererStickyFeet *self = (RendererStickyFeet*) user;
-  if (! strcmp(name, PARAM_AUTO_ADJUST_HT)) {
-    if (bot_gtk_param_widget_get_bool(pw, PARAM_AUTO_ADJUST_HT)) {
-      self->ht_auto_adjust_enabled = 1;
-      // cout << "TO BE IMPLEMENTED" << endl;
-    }
-    else{
-      self->ht_auto_adjust_enabled = 0;
-    }
+  if (!strcmp(name, PARAM_SHOW_DETAILS)) {
+    self->show_detailed_info = bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_DETAILS);
   }
   else if(!strcmp(name, PARAM_CLEAR_FOOTSTEP_PLAN))
   {
@@ -430,12 +394,12 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_CLEAR_FOOTSTEP_PLAN, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_AUTO_ADJUST_HT, 0, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DETAILS, 0, NULL);
 //    bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_PLAN, NULL);
 //    bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_COMMITTED_PLAN, NULL);
 
-    self->ht_auto_adjust_enabled = 1;
-  	bot_gtk_param_widget_set_bool(self->pw, PARAM_AUTO_ADJUST_HT,self->ht_auto_adjust_enabled);
+    self->show_detailed_info = 0;
+    bot_gtk_param_widget_set_bool(self->pw, PARAM_SHOW_DETAILS, self->show_detailed_info);
   	
   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->clicked = 0;	
@@ -454,6 +418,7 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     ehandler->mouse_press = mouse_press;
     ehandler->mouse_release = mouse_release;
     ehandler->mouse_motion = mouse_motion;
+    ehandler->mouse_scroll = mouse_scroll;
     ehandler->user = self;
     
     if (operation_mode ==1){
