@@ -226,7 +226,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.grasp_transition_breaks = grasp_transition_breaks;
             obj.plan_cache.num_grasp_transitions = size(grasptransitions,2);%sum(logictraj(2,:));
             obj.plan_cache.grasp_transition_states = grasptransitions;
-            obj.plan_cache.qtraj = PPTrajectory(spline(s,[xtraj(obj.r.getNumDOF()+(1:obj.r.getNumDOF),1) xtraj(1:getNumDOF(obj.r),:) xtraj(obj.r.getNumDOF()+(1:obj.r.getNumDOF),end)]));
+            obj.plan_cache.qtraj = PPTrajectory(spline(s,[zeros(obj.r.getNumDOF,1) xtraj(1:getNumDOF(obj.r),:) zeros(obj.r.getNumDOF,1)]));
             if(~obj.isBDIManipMode()) 
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(true);
             else
