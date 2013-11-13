@@ -5,13 +5,14 @@ ON HOLD:
 * drc-viewer interface for opening and closing hands
 
 TODO:
-* move mit_irobot_hand_control.py and mit_keyboard_control out of handle and into mit_helio_scripts
+* move mit_irobot_hand_control.py and mit_keyboard_control out of handle and into mit_helios_scripts
 * put mit_irobot_hand_control.py into a script file or into the PMD
 * make it run for both left and right if necessary
 * write a ros script that launches everything properly
 * correctly visualise the joint angles in the viewer
 * make it possible to calibrate spread, thumb antagonistic
 * closing safety (wear prevention)
+* add spread control to iRobot hand control
 
 FOCUS FOR TODAY:
 
