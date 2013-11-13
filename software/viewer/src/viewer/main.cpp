@@ -298,7 +298,7 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
        foviate_renderer = "Robot Plan Display";
        break;
       case F3:
-       foviate_renderer = "Robot State Display"; 
+       foviate_renderer = "State"; 
        break;
       case F4:
        foviate_renderer = "Walking";
