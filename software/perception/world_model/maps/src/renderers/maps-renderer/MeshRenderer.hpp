@@ -41,7 +41,7 @@ public:
   void setBotObjects(const std::shared_ptr<lcm::LCM> iLcm,
                      const BotParam* iParam, const BotFrames* iFrames);
   void addCameraChannel(const std::string& iChannel,
-                        const bool iImagesWrapper=false);
+                        const bool iMultipleImages=false);
   void setActiveCameraChannel(const std::string& iChannel);
   void setColorMode(const ColorMode& iMode);
   void setMeshMode(const MeshMode& iMode);

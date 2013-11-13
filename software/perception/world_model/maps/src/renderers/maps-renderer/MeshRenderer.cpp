@@ -11,6 +11,7 @@
 #include <bot_param/param_util.h>
 #include <image_utils/jpeg.h>
 #include <lcmtypes/bot_core/image_t.hpp>
+#include <lcmtypes/multisense/images_t.hpp>
 
 #include <maps/BotWrapper.hpp>
 
@@ -29,7 +30,8 @@ struct MeshRenderer::InternalState {
 
     std::string mChannel;
     lcm::Subscription* mSubscription;
-    bool mImagesWrapper;
+    lcm::Subscription* mSubscriptionMultiple;
+    bool mUseMultipleImages;
     std::string mCoordFrame;
     Eigen::Isometry3f mLocalToCamera;
     bot_core::image_t mImage; 
@@ -43,17 +45,23 @@ struct MeshRenderer::InternalState {
 
     CameraSubscription(InternalState* iState) {
       mSubscription = NULL;
+      mSubscriptionMultiple = NULL;
+      mUseMultipleImages = false;
       mCamTrans = NULL;
       mImage.size = 0;
-      mImagesWrapper = false;
       mTextureId = 0;
       mIdealPinhole = true;
       mState = iState;
     }
 
     ~CameraSubscription() {
-      if ((mSubscription != NULL) && (mState->mBotWrapper->getLcm() != NULL)) {
-        mState->mBotWrapper->getLcm()->unsubscribe(mSubscription);
+      if (mState->mBotWrapper->getLcm() != NULL) {
+        if (mSubscription != NULL) {
+          mState->mBotWrapper->getLcm()->unsubscribe(mSubscription);
+        }
+        if (mSubscriptionMultiple != NULL) {
+          mState->mBotWrapper->getLcm()->unsubscribe(mSubscriptionMultiple);
+        }
       }
       if (mCamTrans != NULL) {
         bot_camtrans_destroy(mCamTrans);
@@ -122,20 +130,24 @@ struct MeshRenderer::InternalState {
   std::mutex mMutex;
 
 
+  void onCameraImages(const lcm::ReceiveBuffer* iBuf,
+                      const std::string& iChannel,
+                      const multisense::images_t* iMessage) {
+    for (int i = 0; i < iMessage->n_images; ++i) {
+      if (iMessage->image_types[i] == multisense::images_t::LEFT) {
+        return onCameraImage(iBuf, iChannel, &(iMessage->images[i]));
+      }
+    }
+  }
+
   void onCameraImage(const lcm::ReceiveBuffer* iBuf,
-                     const std::string& iChannel) {
+                     const std::string& iChannel,
+                     const bot_core::image_t* iMessage) {
     auto item = mCameraSubscriptions.find(iChannel);
     if (item == mCameraSubscriptions.end()) return;
     CameraSubscription::Ptr sub = item->second;
 
-    bot_core::image_t img;
-    if (sub->mImagesWrapper) {
-      // TODO: handle images_t
-    }
-    else {
-      img.decode(iBuf->data, 0, 100000000);
-    }
-
+    const bot_core::image_t& img = *iMessage;
     sub->mImage = img;
     if (img.pixelformat == bot_core::image_t::PIXEL_FORMAT_MJPEG) {
       int stride = img.width * 3;
@@ -234,20 +246,28 @@ setBotObjects(const std::shared_ptr<lcm::LCM> iLcm,
               const BotParam* iParam, const BotFrames* iFrames) {
   mState->mBotWrapper.reset(new BotWrapper(iLcm, iParam, iFrames));
   for (auto item : mState->mCameraSubscriptions) {
-    addCameraChannel(item.second->mChannel, item.second->mImagesWrapper);
+    addCameraChannel(item.second->mChannel, item.second->mUseMultipleImages);
   }
 }
 
 void MeshRenderer::
-addCameraChannel(const std::string& iChannel, const bool iImagesWrapper) {
+addCameraChannel(const std::string& iChannel, const bool iMultipleImages) {
   auto sub = InternalState::CameraSubscription::Ptr
     (new InternalState::CameraSubscription(mState.get()));
   sub->mChannel = iChannel;
-  sub->mImagesWrapper = iImagesWrapper;
+  sub->mUseMultipleImages = iMultipleImages;
+  if (iMultipleImages) {
+    sub->mChannel += "_LEFT";
+  }
   if (mState->mBotWrapper->getLcm() != NULL) {
     sub->mSubscription =
       mState->mBotWrapper->getLcm()->subscribe
       (sub->mChannel, &InternalState::onCameraImage, mState.get());
+    if (iMultipleImages) {
+      sub->mSubscriptionMultiple =
+        mState->mBotWrapper->getLcm()->subscribe
+        (iChannel, &InternalState::onCameraImages, mState.get());
+    }
   }
 
   BotParam* botParam = mState->mBotWrapper->getBotParam();
