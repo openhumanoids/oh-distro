@@ -291,6 +291,7 @@ define_field_field_handler(AtlasStateForceTorqueRFootForceZHandler, drc::atlas_s
 define_field_field_handler(AtlasStateForceTorqueRFootTorqueXHandler, drc::atlas_state_t, force_torque, r_foot_torque_x);
 define_field_field_handler(AtlasStateForceTorqueRFootTorqueYHandler, drc::atlas_state_t, force_torque, r_foot_torque_y);
 
+// atlas_state_extra_t
 
 define_array_handler(AtlasStateExtraJointPositionOutHandler, drc::atlas_state_extra_t, joint_position_out, JointNames::jointNames());
 define_array_handler(AtlasStateExtraJointVelocityOutHandler, drc::atlas_state_extra_t, joint_velocity_out, JointNames::jointNames());
@@ -320,6 +321,7 @@ define_field_handler(AtlasStatusPumpInletPressure, drc::atlas_status_t, pump_inl
 define_field_handler(AtlasStatusPumpSupplyPressure, drc::atlas_status_t, pump_supply_pressure);
 define_field_handler(AtlasStatusPumpReturnPressure, drc::atlas_status_t, pump_return_pressure);
 define_field_handler(AtlasStatusAirSumpPressure, drc::atlas_status_t, air_sump_pressure);
+define_field_handler(AtlasStatusPumpRPM, drc::atlas_status_t, current_pump_rpm);
 define_field_handler(AtlasStatusBehavior, drc::atlas_status_t, behavior);
 
 /*
@@ -470,6 +472,7 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasStatusPumpSupplyPressure>();
     factory.registerClass<AtlasStatusPumpReturnPressure>();
     factory.registerClass<AtlasStatusAirSumpPressure>();
+    factory.registerClass<AtlasStatusPumpRPM>();
     factory.registerClass<AtlasStatusBehavior>();
     factory.registerClass<AtlasControlJointsPositionHandler>();
     factory.registerClass<AtlasControlJointsVelocityHandler>();
