@@ -34,8 +34,8 @@ struct State : public maps::Collector::DataListener {
   int64_t mTimeMax;
   maps::PointCloud::Ptr mRefCloud;
   maps::PointCloud::Ptr mCurCloud;
-  Eigen::Isometry3f mCurToRef;
-  Eigen::Isometry3f mRefToOrig;
+  Eigen::Isometry3d mCurToRef;
+  Eigen::Isometry3d mRefToOrig;
   std::vector<int> mRefInliers;
   bool mResetReference;
   std::thread mThread;
@@ -58,8 +58,8 @@ struct State : public maps::Collector::DataListener {
     mTimeMin = mTimeMax = 0;
     mLcmGl = bot_lcmgl_init(mBotWrapper->getLcm()->getUnderlyingLCM(),
                             "maps-registrar");
-    mCurToRef = Eigen::Isometry3f::Identity();
-    mRefToOrig = Eigen::Isometry3f::Identity();
+    mCurToRef = Eigen::Isometry3d::Identity();
+    mRefToOrig = Eigen::Isometry3d::Identity();
 
     mLcm->subscribe("MAP_REGISTRATION_COMMAND", &State::onCommand, this);
     mResetReference = false;
@@ -75,7 +75,7 @@ struct State : public maps::Collector::DataListener {
   void onCommand(const lcm::ReceiveBuffer* iBuf,
                  const std::string& iChannel,
                  const drc::map_registration_command_t* iMessage) {
-    if (iMessage->command == drc::map_registration_command_t::RESET_REFERENCE) {
+    if (iMessage->command == drc::map_registration_command_t::RESET) {
       std::unique_lock<std::mutex> lock(mCommandMutex);
       mResetReference = true;
       mCondition.notify_one();
@@ -85,8 +85,8 @@ struct State : public maps::Collector::DataListener {
   void reset() {
     std::unique_lock<std::mutex> lock(mCommandMutex);
     mRefCloud.reset();
-    mCurToRef = Eigen::Isometry3f::Identity();
-    mRefToOrig = Eigen::Isometry3f::Identity();
+    mCurToRef = Eigen::Isometry3d::Identity();
+    mRefToOrig = Eigen::Isometry3d::Identity();
     mResetReference = false;
   }
 
@@ -125,13 +125,13 @@ struct State : public maps::Collector::DataListener {
       double inlierFraction;
       if (registerToReference(mCurCloud, curToRef, inlierFraction)) {
         std::cout << "SUCCESS" << std::endl;
-        mCurToRef = curToRef;
+        mCurToRef = curToRef.cast<double>();
 
         // update reference if necessary
         if (inlierFraction < 0.3) {
           mRefCloud = mCurCloud;
           mRefToOrig = mRefToOrig*mCurToRef;
-          mCurToRef = Eigen::Isometry3f::Identity();
+          mCurToRef = Eigen::Isometry3d::Identity();
           std::cout << "*** inlier fraction " << inlierFraction << 
             "; updating reference frame ***" << std::endl;
         }
@@ -196,12 +196,12 @@ struct State : public maps::Collector::DataListener {
     mCondition.notify_one();
   }
 
-  void publishMessage(const Eigen::Isometry3f& iTransform,
+  void publishMessage(const Eigen::Isometry3d& iTransform,
                       const int64_t iTime) {
     bot_core::rigid_transform_t msg;
     msg.utime = iTime;
     for (int k = 0; k < 3; ++k) msg.trans[k] = iTransform(k,3);
-    Eigen::Quaternionf q(iTransform.linear());
+    Eigen::Quaterniond q(iTransform.linear());
     msg.quat[0] = q.w();
     msg.quat[1] = q.x();
     msg.quat[2] = q.y();
@@ -235,7 +235,7 @@ struct State : public maps::Collector::DataListener {
     pcl::PointCloud<PointType> finalCloud;
 
     // align clouds
-    icp.align(finalCloud, mCurToRef.matrix());
+    icp.align(finalCloud, mCurToRef.matrix().cast<float>());
     std::unordered_set<int> uniqueIndices;
     for (auto ind : mRefInliers) uniqueIndices.insert(ind);
     oCurToRef.matrix() = icp.getFinalTransformation();

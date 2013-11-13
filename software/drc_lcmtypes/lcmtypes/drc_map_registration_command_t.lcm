@@ -9,5 +9,8 @@ struct map_registration_command_t
   int8_t command;
 
   // command types
-  const int8_t RESET_REFERENCE = 1;  // re-initializes the registration module
+  const int8_t RESET = 1;               // reset the registration module
+  const int8_t AFF_UPDATE_START = 2;    // start updating affordances
+  const int8_t AFF_UPDATE_PAUSE = 3;    // stop updating affordances
+  const int8_t AFF_UPDATE_FORCE = 4;    // force one-time affordance update
 }
