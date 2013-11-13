@@ -1,0 +1,13 @@
+package drc;
+
+struct map_registration_command_t
+{
+  // timestamp of this message
+  int64_t utime;
+
+  // command to apply
+  int8_t command;
+
+  // command types
+  const int8_t RESET_REFERENCE = 1;  // re-initializes the registration module
+}
