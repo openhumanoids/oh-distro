@@ -272,7 +272,7 @@ struct Worker {
     for (int i = 0; i < 6; ++i) {
       msg.clip_planes[i][3] = 2;
     }
-    msg.clip_planes[0][3] = 0;
+    msg.clip_planes[0][3] = 0.5;
     msg.clip_planes[5][3] = 1;
     Eigen::Projective3f projector =
       createProjector(100, 90, msg.width, msg.height,
