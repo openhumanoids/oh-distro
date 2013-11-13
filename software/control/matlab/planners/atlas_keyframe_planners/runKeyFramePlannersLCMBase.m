@@ -702,7 +702,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
-        endpose_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,ee_goal_type_flags);
+        endpose_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
         cache = endpose_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
     end

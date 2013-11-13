@@ -25,7 +25,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       
     end
     
-    function runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags)
+    function runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
       disp('Generating candidate endpose via IKtraj Given EE loci...')
       send_status(3,0,0,'Generating candidate endpose given EE Loci...');
       q0 = x0(1:getNumDOF(obj.r));

@@ -50,18 +50,18 @@ classdef EndPosePlanner < KeyframePlanner
             obj.pelvis_upright_gaze_tol = pi/30;
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags) %#ok<INUSD>
+        function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags) %#ok<INUSD>
             N = length(unique(timeIndices));
             if(N>1)
                 %performs IKtraj 
-                 runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags);
+                 runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
             else
                 % performs IK
-                runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags);
+                runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
             end
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags)
+        function runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
             disp('Generating candidate endpose via IKTraj Given EE Loci...');
             send_status(3,0,0,'Generating candidate endpose given EE Loci...');
             
@@ -114,20 +114,18 @@ classdef EndPosePlanner < KeyframePlanner
             tspan = [0 1];
             if(goal_type_flags.rh == 2)
                 iktraj_rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rh_ee_goal(1:3),obj.rh_camera_origin,obj.hand_gaze_tol)};
-            else
-                iktraj_rhand_constraint = {};
             end
             if(goal_type_flags.lh == 2)
                 iktraj_lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lh_ee_goal(1:3),obj.lh_camera_origin,obj.hand_gaze_tol)};
-            else
-                iktraj_lhand_constraint = {};
             end
             if(goal_type_flags.h == 2)
                 iktraj_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,h_ee_goal(1:3),obj.h_camera_origin,obj.head_gaze_tol,tspan)};
-            else
-                iktraj_head_constraint = {};
             end
             
+            if(goal_type_flags.lidar == 2)
+              iktraj_head_constraint = [iktraj_head_constraint,...
+                {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,lidar_ee_goal(1:3),obj.h_camera_origin,obj.lidar_gaze_tol,tspan)}];
+            end
             % Feet z constraints
             l_foot_pose = l_foot_pose0;
             r_foot_pose = r_foot_pose0;
@@ -319,7 +317,7 @@ classdef EndPosePlanner < KeyframePlanner
           
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,goal_type_flags)
+        function runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
             
             disp('Generating candidate endpose...');
             send_status(3,0,0,'Generating candidate endpose via IK...');
@@ -378,6 +376,10 @@ classdef EndPosePlanner < KeyframePlanner
             else
                 head_constraint = {};
             end
+            if(goal_type_flags.lidar == 2)
+              head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,lidar_ee_goal(1:3),obj.h_camera_origin,obj.lidar_gaze_tol)}];
+            end
+            
             %l_foot_pose = l_foot_pose0;
             %r_foot_pose = r_foot_pose0;
   
