@@ -162,7 +162,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 %============================
                 % have to adjust the q at time 0 with a IK manually to the desired pelvis pose.
                 % Ik Sequence by design does not modify the first posture at time zero.
-                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,q_samples));
+                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,[zeros(obj.r.getNumDOF,1) q_samples zeros(obj.r.getNumDOF,1)]));
             end
             
             % delete old and add new
@@ -226,7 +226,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.grasp_transition_breaks = grasp_transition_breaks;
             obj.plan_cache.num_grasp_transitions = size(grasptransitions,2);%sum(logictraj(2,:));
             obj.plan_cache.grasp_transition_states = grasptransitions;
-            obj.plan_cache.qtraj = PPTrajectory(spline(s,xtraj(1:getNumDOF(obj.r),:)));
+            obj.plan_cache.qtraj = PPTrajectory(spline(s,[xtraj(obj.r.getNumDOF()+(1:obj.r.getNumDOF),1) xtraj(1:getNumDOF(obj.r),:) xtraj(obj.r.getNumDOF()+(1:obj.r.getNumDOF),end)]));
             if(~obj.isBDIManipMode()) 
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(true);
             else
@@ -309,7 +309,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 q_samples(:,1) =  q0; % use current pose
                 %============================
                 % have to adjust the q at time 0 IK manually
-                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,q_samples));            
+                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,[zeros(obj.r.getNumDOF,1) q_samples zeros(obj.r.getNumDOF,1)]));            
             end
             
             
@@ -725,7 +725,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             end
             
             % update cache (will be overwritten when setPlanCache is called)
-            obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
+            obj.plan_cache.qtraj = PPTrajectory(spline(s, [qdot0 q qdotf]));
             obj.plan_cache.lhand_constraint_cell = lhand_constraint_cell;
             obj.plan_cache.rhand_constraint_cell = rhand_constraint_cell;
             obj.plan_cache.lfoot_constraint_cell = lfoot_constraint_cell;

@@ -7,7 +7,7 @@ findFinalPostureFlag = false;
 while(~findFinalPostureFlag && ik_attempt_count< total_ik_attempt)
   [q,info,infeasible_constraint] = inverseKin(obj,q_seed,q_nom,varargin{:});
   ik_attempt_count = ik_attempt_count+1;
-  q_seed = q+1e-1*randn(size(q));
+  q_seed = q+5e-1*randn(size(q));
   findFinalPostureFlag = info<=10;
 end
 if(findFinalPostureFlag)

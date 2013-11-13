@@ -133,17 +133,10 @@
     </grasp_seed>
 -->
     <grasp_seed>
-        <appendage type="FOOT" />
+        <appendage type="HAND" />
         <geometry name="cylinder_0_0" />
-        <relative_pose rpy="-1.55887 -0.87162 -2.90678" xyz="0.419867 0.878108 -0.488303" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="cylinder_0_0" />
-        <relative_pose rpy="-1.5579 -0.894522 -2.90738" xyz="0.663607 0.940515 -0.257832" />
+        <relative_pose rpy="-1.15725 -0.0545143 -1.99236" xyz="-0.110544 -0.00795287 -0.03368" />
         <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0143452 1.52361 1.06133 -0.012103 1.39996 0.975446 0.0138127 1.28838 0.914088 0.392222 0.627423 0.173832 " />
     </grasp_seed>
 </object>

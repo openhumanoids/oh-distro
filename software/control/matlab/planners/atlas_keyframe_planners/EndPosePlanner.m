@@ -480,8 +480,8 @@ classdef EndPosePlanner < KeyframePlanner
                 rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-4,sind(2).^2,tspan);
                 lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose,1e-4,sind(2).^2,tspan);
                 ik_dist_constraint = {};
-                dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),
-                                   Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.l_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan),
+                dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),...
+                                   Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.l_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan),...
                                    Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.r_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan)};
                 ik_dist_constraint = [ik_dist_constraint,dist_constraint];  
                 NSamples = 20;
