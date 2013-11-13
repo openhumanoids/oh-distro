@@ -1,5 +1,6 @@
 #include <iostream>
 #include <unordered_map>
+#include <thread>
 
 #include <drc_utils/LcmWrapper.hpp>
 #include <ConciseArgs>
@@ -15,6 +16,7 @@
 #include <maps/PointCloudView.hpp>
 
 #include <lcmtypes/bot_core/rigid_transform_t.hpp>
+#include <lcmtypes/drc/map_registration_command_t.hpp>
 
 #include <pcl/registration/icp.h>
 
@@ -33,6 +35,7 @@ struct State : public maps::Collector::DataListener {
   maps::PointCloud::Ptr mRefCloud;
   maps::PointCloud::Ptr mCurCloud;
   Eigen::Isometry3f mCurToRef;
+  std::mutex mMutex;
 
   State() {
     // initialize some variables
@@ -42,16 +45,28 @@ struct State : public maps::Collector::DataListener {
     mCollector.reset(new maps::Collector());
     mCollector->setBotWrapper(mBotWrapper);
     mLaserChannel = "SCAN_FREE";
-    mUpdateChannel = "MAPS_LOCAL_CORRECTION";
+    mUpdateChannel = "MAP_LOCAL_CORRECTION";
     mActiveMapId = 1;
     mTimeMin = mTimeMax = 0;
     mLcmGl = bot_lcmgl_init(mBotWrapper->getLcm()->getUnderlyingLCM(),
                             "maps-registrar");
     mCurToRef = Eigen::Isometry3f::Identity();
+
+    mLcm->subscribe("MAP_REGISTRATION_COMMAND", &State::onCommand, this);
   }
 
   ~State() {
     bot_lcmgl_destroy(mLcmGl);
+  }
+
+  void onCommand(const lcm::ReceiveBuffer* iBuf,
+                 const std::string& iChannel,
+                 const drc::map_registration_command_t* iMessage) {
+    if (iMessage->command == drc::map_registration_command_t::RESET_REFERENCE) {
+      std::unique_lock<std::mutex> lock(mMutex);
+      mRefCloud.reset();
+      mCurToRef = Eigen::Isometry3f::Identity();
+    }
   }
 
   void start() {
@@ -108,15 +123,20 @@ struct State : public maps::Collector::DataListener {
       localMap->getAsPointCloud(0.01, bounds);
     mCurCloud = cloudView->getAsPointCloud();
 
-    if (mRefCloud == NULL) {
-      mRefCloud = mCurCloud;
-    }
+    {
+      // align clouds
+      std::unique_lock<std::mutex> lock(mMutex);
 
-    Eigen::Isometry3f curToRef;
-    if (registerToReference(mCurCloud, curToRef)) {
-      std::cout << "SUCCESS" << std::endl;
-      mCurToRef = curToRef;
-      publishMessage(mCurToRef, timeMax);
+      if (mRefCloud == NULL) {
+        mRefCloud = mCurCloud;
+      }
+
+      Eigen::Isometry3f curToRef;
+      if (registerToReference(mCurCloud, curToRef)) {
+        std::cout << "SUCCESS" << std::endl;
+        mCurToRef = curToRef;
+        publishMessage(mCurToRef, timeMax);
+      }
     }
   }
 
@@ -143,7 +163,7 @@ struct State : public maps::Collector::DataListener {
     icp.setMaxCorrespondenceDistance(0.05);
     pcl::PointCloud<PointType> finalCloud;
     icp.align(finalCloud, mCurToRef.matrix());
-    std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+    std::cout << "converged?:" << icp.hasConverged() << " score: " <<
       icp.getFitnessScore() << std::endl;
     std::cout << "matching points:" << finalCloud.size() << std::endl;
     std::cout << icp.getFinalTransformation() << std::endl;
