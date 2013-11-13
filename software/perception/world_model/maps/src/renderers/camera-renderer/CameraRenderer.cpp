@@ -16,6 +16,7 @@
 #include <bot_param/param_util.h>
 #include <image_utils/jpeg.h>
 #include <lcmtypes/bot_core/image_t.hpp>
+#include <lcmtypes/multisense/images_t.hpp>
 #include <bot_vis/viewer.h>
 
 #include <drc_utils/Clock.hpp>
@@ -42,6 +43,7 @@ protected:
     BotCamTrans* mCamTrans;
     BotCamTrans* mVirtualCamTrans;
     lcm::Subscription* mSubscription;
+    lcm::Subscription* mSubscriptionMultiple;
     Eigen::Isometry3f mPose;
     bot_core::image_t mImage;
     int mImageWidth;
@@ -76,9 +78,10 @@ protected:
 
 
     CameraState(const std::string& iChannel,
-                CameraRenderer* iRenderer) {
+                CameraRenderer* iRenderer, const bool iUseMultiple=false) {
       mRenderer = iRenderer;
       mChannel = iChannel;
+      if (iUseMultiple) mChannel += "_LEFT";
       mBotWrapper = mRenderer->mBotWrapper;
       BotParam* param = mBotWrapper->getBotParam();
       char* name =
@@ -91,6 +94,11 @@ protected:
       mCamTrans = bot_param_get_new_camtrans(param, mName.c_str());
       mSubscription =
         mBotWrapper->getLcm()->subscribe(mChannel, &CameraState::onImage, this);
+      mSubscriptionMultiple = NULL;
+      if (iUseMultiple) {
+        mSubscriptionMultiple = mBotWrapper->getLcm()->subscribe
+          (iChannel, &CameraState::onImages, this);
+      }
       mTextureValid = false;
       mTextureInit = false;
       mImage.size = 0;
@@ -108,6 +116,9 @@ protected:
     ~CameraState() {
       if (mSubscription != NULL) {
         mBotWrapper->getLcm()->unsubscribe(mSubscription);
+      }
+      if (mSubscriptionMultiple != NULL) {
+        mBotWrapper->getLcm()->unsubscribe(mSubscriptionMultiple);
       }
       if (mCamTrans != NULL) {
         bot_camtrans_destroy(mCamTrans);
@@ -145,6 +156,16 @@ protected:
       mTextureValid = false;
 
       mRenderer->requestDraw();
+    }
+
+    void onImages(const lcm::ReceiveBuffer* iBuf,
+                  const std::string& iChannel,
+                  const multisense::images_t* iMessage) {
+      for (int i = 0; i < iMessage->n_images; ++i) {
+        if (iMessage->image_types[i] == multisense::images_t::LEFT) {
+          return onImage(iBuf, iChannel, &(iMessage->images[i]));
+        }
+      }
     }
 
     bool getImageBoxCoords(const Eigen::Vector2f& iClick,
@@ -441,7 +462,7 @@ public:
     Gtk::Container* container = getGtkContainer();
 
     CameraState::Ptr cam;
-    cam.reset(new CameraState("CAMERA_LEFT", this));
+    cam.reset(new CameraState("CAMERA", this, true));
     cam->mPlacement = ImagePlacementTopCenter;
     mCameraStates.push_back(cam);
 
