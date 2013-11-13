@@ -183,10 +183,10 @@ classdef DrillTaskLCMMonitor
       end
       q = x(1:34);
       
-      if max(q - ub) < 1e-3,
+      if max(q - ub) > -1e-3,
         q = min(q,ub);
       end
-      if max(lb - q) < 1e-3,
+      if max(lb - q) > -1e-3,
         q = max(q,lb);
       end
     end

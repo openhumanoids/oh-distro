@@ -23,12 +23,15 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 lcm_mon = DrillTaskLCMMonitor(atlas);
 
 %% get affordance fits
-[wall,drill] = lcm_mon.getWallAndDrillAffordances();
-while isempty(wall) || isempty(drill)
-  [wall,drill] = lcm_mon.getWallAndDrillAffordances();
-end
+% [wall,drill] = lcm_mon.getWallAndDrillAffordances();
+% while isempty(wall) || isempty(drill)
+%   [wall,drill] = lcm_mon.getWallAndDrillAffordances();
+% end
 
-use_simulated_state = true;
+[wall,~] = lcm_mon.getWallAndDrillAffordances();
+wall.targets = wall.targets(:,1:2);
+drill.drill_axis = [1;0;0];
+use_simulated_state = false;
 useVisualization = true;
 publishPlans = true;
 
@@ -37,12 +40,12 @@ dummy_dir = dummy_dir - dummy_dir'*drill.drill_axis*drill.drill_axis;
 
 drill_pub = drillTestPlanPublisher(r,atlas,drill.guard_pos, drill.drill_axis,...
   wall.normal, dummy_dir, 0, useVisualization, publishPlans);
-
+triangle = wall.targets;
+drill_points = [triangle triangle(:,1)];
 
 %% get nominal posture and publish walking plan
 q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
-triangle = wall.targets;
-drill_points = [triangle triangle(:,1)];
+
 tri_centroid = mean(triangle,2);
 q0_init(1:3) = tri_centroid - wall.normal*.5 - [0;0;.5];
 q0_init(6) = atan2(wall.normal(2), wall.normal(1));
@@ -61,12 +64,12 @@ end
 qf = xtraj_nominal.eval(0);
 qf = qf(1:34);
 posture_index = setdiff((1:r.num_q)',[drill_pub.joint_indices]');
-qf(posture_index) = q0(posture_index);
+qf(posture_index) = q_wall(posture_index);
 kinsol = r.doKinematics(qf);
 drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
 
 % [xtraj_arm_init, snopt_info_arm_init, infeasible_constraint_arm_init] = drill_pub.createGotoPlan(q_wall,qf,3);
-[xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q0, drill_f - .1*wall.normal,[], 5);
+[xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q_wall, drill_f - .1*wall.normal,[], 5);
 
 %% now we've walked up, lets double check
 if use_simulated_state
@@ -149,4 +152,4 @@ else
   drill_target = nearest_point;
 end
 
-[xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target,[], 1);
+[xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target,[], 5);

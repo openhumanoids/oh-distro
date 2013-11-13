@@ -53,16 +53,16 @@ gains = getAtlasGains(input_frame);
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 joint = 'r_arm_elx';% <---- 
-control_mode = 'position';% <----  force, position
-signal = 'chirp';% <----  zoh, foh, chirp
+control_mode = 'force';% <----  force, position
+signal = 'foh';% <----  zoh, foh, chirp
 
 % GAINS %%%%%%%%%%%%%%%%%%%%%
-ff_const = gains.ff_const(act_idx==joint_index_map.(joint));% -0.16;% <----
+ff_const = 0*gains.ff_const(act_idx==joint_index_map.(joint));% -0.16;% <----
 if strcmp(control_mode,'force')
   % force gains: only have an effect if control_mode==force
-  k_f_p = gains.k_f_p(act_idx==joint_index_map.(joint));%0.125;% <----
-  ff_f_d = gains.ff_f_d(act_idx==joint_index_map.(joint));%0.01;% <----
-  ff_qd = gains.ff_qd(act_idx==joint_index_map.(joint));% <----
+  k_f_p = 0*gains.k_f_p(act_idx==joint_index_map.(joint));%0.125;% <----
+  ff_f_d = 1+0*gains.ff_f_d(act_idx==joint_index_map.(joint));%0.01;% <----
+  ff_qd = 0*gains.ff_qd(act_idx==joint_index_map.(joint));% <----
 elseif strcmp(control_mode,'position')  
   % position gains: only have an effect if control_mode==position
   k_q_p = gains.k_q_p(act_idx==joint_index_map.(joint));%0.125;% <----
@@ -79,8 +79,8 @@ if strcmp( signal, 'chirp' )
   amp = 0.3;% <----  Nm or radians
   freq = linspace(0.04,0.2,800);% <----  cycles per second
 else
-  vals = [0 0 0.3 0 0];% <----  Nm or radians
-  ts = linspace(0,10,length(vals));% <----
+  vals = -[0 10 10 0];% <----  Nm or radians
+  ts = linspace(0,60,length(vals));% <----
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,10 +228,11 @@ elseif strcmp(joint,'l_arm_ely') || strcmp(joint,'l_arm_mwx') || strcmp(joint,'l
 
 elseif strcmp(joint,'r_arm_ely') || strcmp(joint,'r_arm_mwx') || strcmp(joint,'r_arm_elx')
   
+  qdes(joint_index_map.r_arm_shx) = 1.45;
   qdes(joint_index_map.l_arm_shx) = -1.45;
   qdes(joint_index_map.r_arm_elx) = -1.57;
   qdes(joint_index_map.r_arm_uwy) = 1.57;
-  qdes(joint_index_map.r_arm_ely) = 3.14;
+%   qdes(joint_index_map.r_arm_ely) = 3.14;
 
 elseif strcmp(joint,'r_arm_uwy')
   

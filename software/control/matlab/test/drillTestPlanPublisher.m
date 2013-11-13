@@ -26,7 +26,7 @@ classdef drillTestPlanPublisher
     drilling_world_axis
     doVisualization = true;
     doPublish = false;
-    default_axis_threshold = 2*pi/180;
+    default_axis_threshold = 5*pi/180;
     atlas2robotFrameIndMap
     footstep_msg
     lc
@@ -126,7 +126,7 @@ classdef drillTestPlanPublisher
       n_points = size(drill_points,2);
       sizecheck(drill_points, [3 n_points]);
       
-      T = 1;
+      T = 10;
       N = 3*n_points;
       
       t_vec = linspace(0,T,N);
@@ -202,7 +202,7 @@ classdef drillTestPlanPublisher
           % also publish a walking plan
           x_end = xtraj.eval(T);
           pose = [x_end(1:3); rpy2quat(x_end(4:6))];
-          obj.publishWalkingGoal(pose);
+%           obj.publishWalkingGoal(pose);
         end
       
       
