@@ -6,6 +6,7 @@ classdef FootstepPlanner < DRCPlanner
     options
     goal_pos
     adjusted_footsteps
+    target_footsteps
     defaults
     needs_plan
     steps
@@ -27,6 +28,8 @@ classdef FootstepPlanner < DRCPlanner
       obj = addInput(obj, 'step_seq', 'DESIRED_FOOT_STEP_SEQUENCE', drc.traj_opt_constraint_t(), false, true,true);
       obj.goal_pos = [];
       obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
+      obj.target_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
+
       obj.defaults = struct('max_num_steps', 10, 'min_num_steps', 0, 'timeout', inf, 'step_height', 0.05, 'step_speed', 1.5, 'nom_step_width', 0.26, 'max_forward_step', 0.5, 'nom_forward_step', 0.15, 'follow_spline', false, 'ignore_terrain', false, 'right_foot_lead', true, 'mu', 1, 'behavior', drc.walking_goal_t.BEHAVIOR_BDI_STEPPING, 'bdi_step_duration', 0.6, 'bdi_sway_duration', 0, 'bdi_lift_height', 0, 'bdi_toe_off', 1, 'bdi_knee_nominal', 0, 'map_command', drc.map_controller_command_t.FULL_HEIGHTMAP); 
       obj.needs_plan = false;
     end
@@ -41,6 +44,7 @@ classdef FootstepPlanner < DRCPlanner
               if ~isempty(obj.goal_pos); obj.needs_plan = true; end
               if strcmp(x{1}, 'right_foot_lead')
                 obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
+                obj.target_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
               end
             end
           elseif isfield(obj.defaults, x{1})
@@ -51,14 +55,16 @@ classdef FootstepPlanner < DRCPlanner
         end
         obj.biped.setTerrain(obj.biped.getTerrain().setMapMode(obj.options.map_command));
         if (changelist.step_seq) 
-          [obj.goal_pos, adj] = FootstepPlanner.stepSeq2GoalPos(data.step_seq);
-          obj.adjusted_footsteps = adj;
+          [obj.goal_pos, adj] = obj.stepSeq2GoalPos(data.step_seq);
+          obj.target_footsteps = adj;
+          obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
           obj.needs_plan = true;
         elseif changelist.goal
           if (data.goal.is_new_goal || isempty(obj.old_steps))
             goal_pos = FootstepPlanner.decodePosition3d(data.goal.goal_pos);
             if ~any(isnan(goal_pos([1,2,6])))
               obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
+              obj.target_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
               msg ='Foot Plan : Received New Goal'; disp(msg); send_status(6,0,0,msg);
               obj.goal_pos = goal_pos;
               if data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_RIGHT_FOOT
@@ -78,6 +84,7 @@ classdef FootstepPlanner < DRCPlanner
           obj.goal_pos = [];
           obj.needs_plan = false;
           obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
+          obj.target_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
           msg ='Foot Plan : Rejected'; disp(msg); send_status(6,0,0,msg);
         else
           obj.needs_plan = false;
@@ -110,18 +117,18 @@ classdef FootstepPlanner < DRCPlanner
         ndx(ndx > 0) = ndx(ndx > 0) - n_steps - 1;
       end
 
-      if ~isempty(obj.adjusted_footsteps)
-        for j = obj.adjusted_footsteps.keys()
+      if ~isempty(obj.target_footsteps) || ~isempty(obj.adjusted_footsteps)
+        for j = obj.target_footsteps.keys()
           ndx = j{1};
           if n2p(ndx) == n_steps
             % Handle the edge case when the desired foot step sequence gives
             % the wrong step order for the final two steps
-            if obj.adjusted_footsteps(ndx).is_right_foot ~= obj.steps(end).is_right_foot
+            if obj.target_footsteps(ndx).is_right_foot ~= obj.steps(end).is_right_foot
               for k = [p2n(n_steps-1), n_steps-1]
-                if obj.adjusted_footsteps.isKey(k)
-                  swap = obj.adjusted_footsteps(ndx);
-                  obj.adjusted_footsteps(ndx) = obj.adjusted_footsteps(k);
-                  obj.adjusted_footsteps(k) = swap;
+                if obj.target_footsteps.isKey(k)
+                  swap = obj.target_footsteps(ndx);
+                  obj.target_footsteps(ndx) = obj.target_footsteps(k);
+                  obj.target_footsteps(k) = swap;
                   break;
                 end
               end
@@ -140,6 +147,24 @@ classdef FootstepPlanner < DRCPlanner
             obj.steps(n2p(ndx)).pos = new_pos;
             if ~obj.options.ignore_terrain || isnan(obj.adjusted_footsteps(ndx).pos(3))
               obj.steps(n2p(ndx)).pos = fitStepToTerrain(obj.biped, obj.steps(n2p(ndx)).pos, 'center');
+            end
+          end
+        end
+        k = cell2mat(obj.target_footsteps.keys());
+        for ndx = k
+          if ndx <= n_steps
+            if obj.steps(n2p(ndx)).is_right_foot ~= obj.target_footsteps(ndx).is_right_foot
+              msg ='Foot Plan : Error: Mismatched foot'; disp(msg); send_status(6,0,0,msg);
+              break;
+            end
+            old_X = obj.steps(n2p(ndx));
+%             new_pos = obj.biped.footOrig2Contact(obj.target_footsteps(ndx).pos, 'center', old_X.is_right_foot);
+            new_pos = obj.target_footsteps(ndx).pos;
+            if ~obj.options.ignore_terrain || isnan(obj.target_footsteps(ndx).pos(3))
+              new_pos = fitStepToTerrain(obj.biped, new_pos, 'center');
+            end
+            if all(obj.biped.checkStepReach(obj.steps(n2p(ndx)-1).pos, new_pos, obj.steps(n2p(ndx)-1).is_right_foot, obj.options) <= 0)
+              obj.steps(n2p(ndx)).pos = new_pos;
             end
           end
         end
@@ -238,21 +263,24 @@ classdef FootstepPlanner < DRCPlanner
         msg ='Foot Plan : Published'; disp(msg); send_status(6,0,0,msg);
       end
     end
+    
+    function [goal_pos, target_footsteps] = stepSeq2GoalPos(obj, step_seq)
+      [~, sort_ndx] = sort(step_seq.link_timestamps);
+      target_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
+      for j = 1:step_seq.num_links
+        ndx = -step_seq.num_links+j-1;
+        pos = FootstepPlanner.decodePosition3d(step_seq.link_origin_position(sort_ndx(j)));
+        is_right_foot = strcmp(step_seq.link_name(sort_ndx(j)), 'r_foot');
+        pos = obj.biped.footOrig2Contact(pos, 'center', is_right_foot);
+        target_footsteps(ndx) = struct('pos', pos, 'is_right_foot', is_right_foot);
+      end
+      goal_pos = zeros(6,1);
+      goal_pos(1:3) = mean([target_footsteps(-2).pos(1:3), target_footsteps(-1).pos(1:3)], 2);
+      goal_pos(4:6) = target_footsteps(-2).pos(4:6) + 0.5 * angleDiff(target_footsteps(-2).pos(4:6), target_footsteps(-1).pos(4:6));
+    end
   end
 
   methods (Static=true)
-    function [goal_pos, adjusted_footsteps] = stepSeq2GoalPos(step_seq)
-      [~, sort_ndx] = sort(step_seq.link_timestamps);
-      adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
-      for j = 1:step_seq.num_links
-        ndx = -step_seq.num_links+j-1;
-        adjusted_footsteps(ndx) = struct('pos', FootstepPlanner.decodePosition3d(step_seq.link_origin_position(sort_ndx(j))), 'is_right_foot', strcmp(step_seq.link_name(sort_ndx(j)), 'r_foot'));
-      end
-      goal_pos = zeros(6,1);
-      goal_pos(1:3) = mean([adjusted_footsteps(-2).pos(1:3), adjusted_footsteps(-1).pos(1:3)], 2);
-      goal_pos(4:6) = adjusted_footsteps(-2).pos(4:6) + 0.5 * angleDiff(adjusted_footsteps(-2).pos(4:6), adjusted_footsteps(-1).pos(4:6));
-    end
-
     function pose = decodePosition3d(position_3d)
       pose = zeros(6,1);
       pose(1:3) = [position_3d.translation.x; position_3d.translation.y; position_3d.translation.z];

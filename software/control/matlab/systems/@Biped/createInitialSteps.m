@@ -89,8 +89,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, params)
       m_foot = 'left';
       s_foot = 'right';
     end
-    goal = foot_goals.(m_foot);
-    if isempty(goal)
+    if isempty(foot_goals.(m_foot))
       break
     end
 
@@ -157,7 +156,7 @@ function [X, foot_goals] = createInitialSteps(biped, x0, goal_pos, params)
 
     X(end+1) = struct('pos', pos_n, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
 
-    if ((all(abs(X(end).pos - goal) < 0.05) && all(abs(X(end-1).pos - foot_goals.(s_foot)) < 0.05)) || (length(X) - 2) >= params.max_num_steps) && ((length(X) - 2) >= params.min_num_steps)
+    if ((all(abs(X(end).pos - foot_goals.(m_foot)) < 0.05) && all(abs(X(end-1).pos - foot_goals.(s_foot)) < 0.05)) || (length(X) - 2) >= params.max_num_steps) && ((length(X) - 2) >= params.min_num_steps)
       break
     end
   end
