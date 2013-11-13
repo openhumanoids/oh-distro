@@ -4,7 +4,7 @@ group "drivers" {
         host = "localhost";
     }
     cmd "irobot-right" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 44";
+        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 41";
         host = "localhost";
     }
 }
@@ -24,7 +24,7 @@ group "processes" {
         host = "localhost";
     }
     cmd "control_interface" {
-        exec = "rosrun handle_launch mit_irobot_hand_control.py R";
+        exec = "rosrun mit_helios_scripts mit_irobot_hand_control.py R";
         host = "localhost";
     }
 }
