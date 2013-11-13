@@ -54,44 +54,15 @@ class IRobotHandController(object):
         self.config_parser.load()
     
         node_name = "mit_irobot_hand_control"
-        message_base_name = "irobot_hands/" + side + "_hand/"
-        publisher_name = message_base_name + "control"
-        subscriber_name = message_base_name + "sensors/raw"
+        self.message_base_name = "irobot_hands/" + side + "_hand/"
+        publisher_name = self.message_base_name + "control"
+        subscriber_name = self.message_base_name + "sensors/raw"
         ros_rate = 100.0  # todo: something smarter
         
         rospy.init_node(node_name)
         self.rate = rospy.Rate(ros_rate)
         self.publisher = rospy.Publisher(publisher_name, HandleControl)
         self.subscriber = rospy.Subscriber(subscriber_name, HandleSensors, self.sensor_data_callback)
-
-        subscriber_simple_name = message_base_name + "simple_command"
-        self.subscriber_simple = rospy.Subscriber(subscriber_simple_name, SimpleGrasp, self.simple_cmd_callback)
-
-    
-    def simple_cmd_callback(self, data):
-        command = data.name
-        if command in ['cylindrical','prismatic','spherical'] :
-            if (data.closed_amount == 0):
-                print "Open"
-                self.open_hand_motor_excursion_control()
-            else:
-                print "Close"
-                self.close_hand_current_control(800)
-        elif data.name == 'calibrate_jig':
-            print "Jig"
-            controller.calibrate_motor_encoder_offsets(jig_pose)
-        elif data.name == 'calibrate_no_jig':
-            print "No Jig"
-            controller.calibrate_motor_encoder_offsets(no_jig_pose)
-        else:
-            print "Message not understood "+data.name
-            return
-
-        #print "Sending zero current message"
-        self.zero_current()
-        self.exit()
-        #print "Finished"
-
 
     def sensor_data_callback(self, data):
         self.sensors = data
@@ -168,5 +139,34 @@ def parseArguments():
 if __name__ == '__main__':
     side = parseArguments()
     controller = IRobotHandController(side)
+    
+    subscriber_simple_name = controller.message_base_name + "simple_command"
+    
+    
+    def simple_cmd_callback(data):
+        command = data.name
+        if command in ['cylindrical','prismatic','spherical'] :
+            if (data.closed_amount == 0):
+                print "Open"
+                controller.open_hand_motor_excursion_control()
+            else:
+                print "Close"
+                controller.close_hand_current_control(800)
+        elif data.name == 'calibrate_jig':
+            print "Jig"
+            controller.calibrate_motor_encoder_offsets(jig_pose)
+        elif data.name == 'calibrate_no_jig':
+            print "No Jig"
+            controller.calibrate_motor_encoder_offsets(no_jig_pose)
+        else:
+            print "Message not understood "+data.name
+            return
+        
+        #print "Sending zero current message"
+        controller.zero_current()
+        controller.exit()
+        #print "Finished"
+
+    subscriber_simple = rospy.Subscriber(subscriber_simple_name, SimpleGrasp, simple_cmd_callback)
 
     rospy.spin()
