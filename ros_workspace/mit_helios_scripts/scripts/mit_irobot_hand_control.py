@@ -9,7 +9,7 @@
 import roslib; roslib.load_manifest('mit_helios_scripts')
 import rospy
 import argparse
-import time, sys
+import time
 
 from handle_msgs.msg import HandleControl
 from handle_msgs.msg import HandleSensors
@@ -70,13 +70,13 @@ class IRobotHandController(object):
     
     def simple_cmd_callback(self, data):
         command = data.name
-        if (data.name in ['cylindrical','prismatic','spherical'] ) :
+        if command in ['cylindrical','prismatic','spherical'] :
             if (data.closed_amount == 0):
-              print "Open"
-              self.open_hand_motor_excursion_control()
+                print "Open"
+                self.open_hand_motor_excursion_control()
             else:
-              print "Close"
-              self.close_hand_current_control(800)
+                print "Close"
+                self.close_hand_current_control(800)
         elif data.name == 'calibrate_jig':
             print "Jig"
             controller.calibrate_motor_encoder_offsets(jig_pose)
