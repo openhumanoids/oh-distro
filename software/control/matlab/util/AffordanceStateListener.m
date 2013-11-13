@@ -1,30 +1,37 @@
 classdef AffordanceStateListener<handle
   properties
-    lc
-    aggregator
-    aff_coders
+    monitor;
+    channel;
+    aff_coders;
     aff_uid
     naffs;
+    otdf_type;
   end
   methods
     function obj = AffordanceStateListener(channel)
-      obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.aggregator = lcm.lcm.MessageAggregator();
-      obj.lc.subscribe(channel,obj.aggregator);
+      obj.channel = channel;
+      obj.monitor = drake.util.MessageMonitor(drc.affordance_collection_t,'utime');
+      lc = lcm.lcm.LCM.getSingleton();
+      lc.subscribe(channel,obj.monitor);
       obj.aff_coders = {};
       obj.aff_uid = [];
+      obj.naffs = 0;
+      obj.otdf_type = {};
     end
     
-    function data = getNextMessage(obj,t_ms)
-      msg = obj.aggregator.getNextMessage(t_ms);
-      if(isempty(msg))
-        data = [];
+    function [x,t] = getNextMessage(obj,t_ms)
+      data = obj.monitor.getNextMessage(t_ms);
+      if(isempty(data))
+        x = [];
+        t = -1;
       else
-        data = obj.decode(drc.affordance_collection_t(msg.data));
+        msg = drc.affordance_collection_t(data);
+        t = obj.monitor.getLastTimestamp();
+        x = obj.decode(msg);
       end
     end
-  
-    function data = decode(obj,msg)
+
+    function aff_data = decode(obj,msg)
       % @param uid     -- a 1 x naffs array, uid(i) is the uid for
       %                   affordance(i) 
       % @param state_frame -- a 1 x naffs cell, state_frame{i} is the state frame for
@@ -62,21 +69,22 @@ classdef AffordanceStateListener<handle
           java.lang.Integer(msg_uid(new_uid_idx(i))),msg_state_string{new_uid_idx(i)})}];
       end
       
-      data.state = cell(1,obj.naffs);
-      data.uid = obj.aff_uid;
-      data.rpy = zeros(3,obj.naffs);
-      data.xyz = zeros(3,obj.naffs);
+      aff_data.state = cell(1,obj.naffs);
+      aff_data.uid = obj.aff_uid;
+      aff_data.otdf_type = msg_otdf_type;
+      aff_data.rpy = zeros(3,obj.naffs);
+      aff_data.xyz = zeros(3,obj.naffs);
       for i = 1:length(obj.aff_uid)
         fdata = obj.aff_coders{i}.decode(msg);
-        data.rpy(:,i) = [fdata.val(4);fdata.val(5);fdata.val(6)];
-        data.xyz(:,i) = [fdata.val(1);fdata.val(2);fdata.val(3)];
+        aff_data.rpy(:,i) = [fdata.val(4);fdata.val(5);fdata.val(6)];
+        aff_data.xyz(:,i) = [fdata.val(1);fdata.val(2);fdata.val(3)];
         nq = msg.affs(i).nstates;
         state_val = zeros(2*nq,1);
         for j = 1:nq
           state_val(j) = fdata.val(j+6);
           state_val(j+nq) = fdata.val(j+nq+12);
         end
-        data.state{i} = Point(msg_state_frame{i},state_val);
+        aff_data.state{i} = Point(msg_state_frame{i},state_val);
       end
     end
   end
