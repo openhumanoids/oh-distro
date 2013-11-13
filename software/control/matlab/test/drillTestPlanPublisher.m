@@ -30,6 +30,7 @@ classdef drillTestPlanPublisher
     atlas2robotFrameIndMap
     footstep_msg
     lc
+    lcmgl
   end
   
   methods
@@ -89,9 +90,8 @@ classdef drillTestPlanPublisher
       obj.footstep_msg.goal_pos.rotation = drc.quaternion_t();
 
       obj.lc = lcm.lcm.LCM.getSingleton();
+      obj.lcmgl = drake.util.BotLCMGLClient(obj.lc,'drill_planned_path');
 
-
-      
       iktraj_options = IKoptions(obj.r);
       iktraj_options = iktraj_options.setDebug(true);
       iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
@@ -658,6 +658,24 @@ classdef drillTestPlanPublisher
       snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
       
       obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
+      
+      ts_line = linspace(xtraj.tspan(1),xtraj.tspan(2),200);
+      x_line = xtraj.eval(ts_line);
+      obj.lcmgl.glColor3f(1,0,0); 
+      obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+      for i=1:length(ts_line),
+        q_line = x_line(1:nq_atlas,i);
+        kinsol = obj.r.doKinematics(q_line);
+%         drill_pts = obj.r.forwardKin(kinsol,obj.hand_body,...
+%           [obj.drill_pt_on_hand, obj.drill_pt_on_hand + .0254*obj.drill_axis_on_hand]);
+%         obj.lcmgl.line3(drill_pts(1,1),drill_pts(2,1),drill_pts(3,1),...
+%           drill_pts(1,2),drill_pts(2,2),drill_pts(3,2));
+        
+        drill_pt = obj.r.forwardKin(kinsol,obj.hand_body,obj.drill_pt_on_hand);
+        obj.lcmgl.glVertex3d(drill_pt(1),drill_pt(2),drill_pt(3));
+      end
+      obj.lcmgl.glEnd();
+      obj.lcmgl.switchBuffers();
     end
     
     function publishPoseTraj(obj,xtraj)

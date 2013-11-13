@@ -60,8 +60,13 @@ end
 
 qf = xtraj_nominal.eval(0);
 qf = qf(1:34);
+posture_index = setdiff((1:r.num_q)',[drill_pub.joint_indices]');
+qf(posture_index) = q0(posture_index);
+kinsol = r.doKinematics(qf);
+drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
 
-[xtraj_arm_init, snopt_info_arm_init, infeasible_constraint_arm_init] = drill_pub.createGotoPlan(q_wall,qf,3);
+% [xtraj_arm_init, snopt_info_arm_init, infeasible_constraint_arm_init] = drill_pub.createGotoPlan(q_wall,qf,3);
+[xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q0, drill_f - .1*wall.normal,[], 5);
 
 %% now we've walked up, lets double check
 if use_simulated_state
@@ -75,7 +80,7 @@ end
 
 %% pre-drill movement
 if use_simulated_state
-  q0 = xtraj_nominal.eval(0);
+  q0 = xtraj_arm_init.eval(xtraj_arm_init.tspan(2));
   q0 = q0(1:34);
 else
   q0 = lcm_mon.getStateEstimate();
