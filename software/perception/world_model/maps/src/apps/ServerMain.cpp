@@ -378,10 +378,13 @@ struct ViewWorker {
           // spatial bounds
           bounds.mPlanes = spec.mClipPlanes;
           Eigen::Isometry3f headToLocal = Eigen::Isometry3f::Identity();
+          Eigen::Isometry3f torsoToLocal = Eigen::Isometry3f::Identity();
           if (spec.mRelativeLocation) {
-            if (mBotWrapper->getTransform("head", "local",
+            if (mBotWrapper->getTransform("utorso", "local",
+                                          torsoToLocal, curTime) &&
+                mBotWrapper->getTransform("head", "local",
                                           headToLocal, curTime)) {
-              float theta = atan2(headToLocal(1,0), headToLocal(0,0));
+              float theta = atan2(torsoToLocal(1,0), torsoToLocal(0,0));
               Eigen::Matrix3f rotation;
               rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
               headToLocal.linear() = rotation;

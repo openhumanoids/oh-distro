@@ -208,6 +208,8 @@ int main(const int iArgc, const char** iArgv) {
 
   // parse arguments
   ConciseArgs opt(iArgc, (char**)iArgv);
+  opt.add(state.mLaserChannel, "l", "laser_channel",
+          "channel to use for incoming lidar data");
   opt.add(state.mUpdateChannel, "u", "update_channel",
           "channel on which to publish pose updates");
   opt.parse();
