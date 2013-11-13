@@ -46,6 +46,7 @@ classdef KeyframePlanner < handle
         rh_gaze_axis
         hand_gaze_tol
         head_gaze_tol
+        lidar_gaze_tol
         
         head_gaze_axis
         collision_check
@@ -124,6 +125,7 @@ classdef KeyframePlanner < handle
             obj.r_irobot_camera_origin = [0;0;0];
             obj.hand_gaze_tol = pi/18;
             obj.head_gaze_tol = pi/8;% FOV for multisense is 80x45, so 45/2 should be the max tolerance
+            obj.lidar_gaze_tol = pi/2.5;
             obj.h_camera_origin = [0;0;0];
 
             obj.setHandType(lhand_frame,rhand_frame);

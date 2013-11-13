@@ -118,8 +118,6 @@ wholebody_planner = WholeBodyPlanner(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
 keyframe_adjustment_engine = KeyframeAdjustmentEngine(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode); % Common keyframe adjustment for all the above planners
-hoseendpose_planner = HoseMatingEndPosePlanner(robot,atlas,l_hand_frame,...
-  r_hand_frame,hardware_mode); %search for pose given ee constraints
 
 % atlas state subscriber
 atlas_state_frame = atlas.getStateFrame();
@@ -147,6 +145,7 @@ rh_ee_orientation = EndEffectorListener('RIGHT_PALM_ORIENTATION_GOAL');
 
 
 h_ee_gaze = EndEffectorListener('HEAD_GAZE_GOAL');
+lidar_ee_gaze = EndEffectorListener('HEAD_WEAK_GAZE_GOAL');
 lh_ee_gaze = EndEffectorListener('LEFT_PALM_GAZE_GOAL');
 rh_ee_gaze = EndEffectorListener('RIGHT_PALM_GAZE_GOAL');
 
@@ -199,6 +198,7 @@ lh_ee_goal = [];
 rf_ee_goal = [];
 lf_ee_goal = [];
 h_ee_goal = [];
+lidar_ee_goal = [];
 
 lh_ee_constraint = [];
 rh_ee_constraint = [];
@@ -219,6 +219,7 @@ ee_goal_type_flags.rh = 0;
 ee_goal_type_flags.h  = 0;
 ee_goal_type_flags.lf = 0;
 ee_goal_type_flags.rf = 0;
+ee_goal_type_flags.lidar = 0;
  
 while(1)
 %   aff_manager.updateWmessage(msg_timeout);
@@ -354,6 +355,15 @@ while(1)
         rpy = nan(3,1);
         h_ee_goal = [p(:); rpy(:)];
         ee_goal_type_flags.h = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
+    end
+    
+    hep_lidar_gaze = getNextMessage(lidar_ee_gaze,msg_timeout);
+    if (~isempty(hep_lidar_gaze))
+        disp('head lidar gaze goal received.');
+        p = hep_lidar_gaze(2:4);
+        rpy = nan(3,1);
+        lidar_ee_goal = [p(:); rpy(:)];
+        ee_goal_type_flags.lidar = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
     end
     
     lep_gaze = getNextMessage(lh_ee_gaze,msg_timeout);
@@ -527,7 +537,7 @@ while(1)
             (~isempty(rep_gaze))|| (~isempty(lep_gaze))||...
             (~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))||...
             (~isempty(rf_ee_traj))||(~isempty(lf_ee_traj)))
-        reaching_planner.generateAndPublishReachingPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,ee_goal_type_flags);
+        reaching_planner.generateAndPublishReachingPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
         cache = reaching_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
     end
@@ -773,9 +783,11 @@ while(1)
     
     p = getNextMessage (h_ee_clear, msg_timeout);
     if (~isempty(p))
-        disp ('Clearing head goal pose');
+        disp ('Clearing head goal pose for both camera and lidar');
         h_ee_goal = [];
+        lidar_ee_goal = [];
         ee_goal_type_flags.h = -1;
+        ee_goal_type_flags.lidar = -1;
     end
     
     p = getNextMessage (lh_ee_clear, msg_timeout);

@@ -160,4 +160,18 @@
         <limit lower="-6.2832" upper="6.2832" effort="1" velocity="1" />
         <origin xyz="0 0 0" rpy="0 0 0" />
     </joint>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="cylinder_2_1_0" />
+        <relative_pose rpy="-1.57005 0.117087 -0.000409133" xyz="-0.581372 -0.936427 -0.592888" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="cylinder_2_1_0" />
+        <relative_pose rpy="-1.57005 0.108218 -0.000415841" xyz="-0.538053 -0.936675 -0.295851" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
 </object>

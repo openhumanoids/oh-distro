@@ -44,15 +44,6 @@ classdef ReachingPlanner < KeyframePlanner
         function generateAndPublishReachingPlan(obj,varargin)
             
             switch nargin
-                case 8
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    goal_type_flags =varargin{7};
-                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags);
                 case 9
                     x0 = varargin{1};
                     rh_ee_goal= varargin{2};
@@ -60,9 +51,20 @@ classdef ReachingPlanner < KeyframePlanner
                     rf_ee_goal= varargin{4};
                     lf_ee_goal= varargin{5};
                     h_ee_goal = varargin{6};
-                    goal_type_flags =varargin{7};
-                    q_desired = varargin{8};
-                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags,q_desired);
+                    lidar_ee_goal = varargin{7};
+                    goal_type_flags =varargin{8};
+                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
+                case 10
+                    x0 = varargin{1};
+                    rh_ee_goal= varargin{2};
+                    lh_ee_goal= varargin{3};
+                    rf_ee_goal= varargin{4};
+                    lf_ee_goal= varargin{5};
+                    h_ee_goal = varargin{6};
+                    lidar_ee_goal = varargin{7};
+                    goal_type_flags =varargin{8};
+                    q_desired = varargin{9};
+                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags,q_desired);
                 otherwise
                     error('Incorrect usage of generateAndPublishReachingPlan in Reaching Planner. Undefined number of inputs.')
             end
@@ -198,20 +200,23 @@ classdef ReachingPlanner < KeyframePlanner
             rf_ee_goal= [];
             lf_ee_goal= [];
             h_ee_goal = [];
+            lidar_ee_goal = [];
             goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
             goal_type_flags.rh = 0;
             goal_type_flags.h  = 0;
             goal_type_flags.lf = 0;
             goal_type_flags.rf = 0;
+            goal_type_flags.lidar = 0;
             switch nargin
-                case 8
+                case 9
                     x0 = varargin{1};
                     rh_ee_goal= varargin{2};
                     lh_ee_goal= varargin{3};
                     rf_ee_goal= varargin{4};
                     lf_ee_goal= varargin{5};
                     h_ee_goal = varargin{6};
-                    goal_type_flags= varargin{7};
+                    lidar_ee_goal = varargin{7};
+                    goal_type_flags= varargin{8};
                 case 10
                     x0 = varargin{1};
                     rh_ee_goal= varargin{2};
@@ -219,8 +224,9 @@ classdef ReachingPlanner < KeyframePlanner
                     rf_ee_goal= varargin{4};
                     lf_ee_goal= varargin{5};
                     h_ee_goal = varargin{6};
-                    goal_type_flags= varargin{7};
-                    q_desired = varargin{8};
+                    lidar_ee_goal = varargin{7};
+                    goal_type_flags= varargin{8};
+                    q_desired = varargin{9};
                 otherwise
                     error('Incorrect usage of runOptimization in Manip Planner. Undefined number of vargin.')
             end
@@ -367,11 +373,14 @@ classdef ReachingPlanner < KeyframePlanner
                 headT(4:6) =rotmat2rpy(T_world_head(1:3,1:3));
             end
             
+            
+            
             %===========================================================================
             % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
             head_gaze_target = [];
             lhand_gaze_target = [];
             rhand_gaze_target = [];
+            lidar_gaze_target = [];
             if(goal_type_flags.h == 2)
                 % headT(1:3) is actually object pos
                 head_gaze_target = headT(1:3);
@@ -383,6 +392,9 @@ classdef ReachingPlanner < KeyframePlanner
             if(goal_type_flags.rh == 2)
                 % rhandT(1:3) is actually object pos
                 rhand_gaze_target = rhandT(1:3);
+            end
+            if(goal_type_flags.lidar == 2)
+              lidar_gaze_target = lidar_ee_goal(1:3);
             end
             %===========================================================================
             
@@ -561,6 +573,12 @@ classdef ReachingPlanner < KeyframePlanner
                 iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint];
             end
             
+            if(~isempty(lidar_gaze_target))
+              new_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,lidar_gaze_target,obj.h_camera_origin,obj.lidar_gaze_tol)};
+              head_constraint = [head_constraint,new_head_constraint];
+              iktraj_head_constraint = [iktraj_head_constraint,new_head_constraint];
+            end
+            
             %============================
             %       0,comgoal,...
             q_final_guess= q0_bound;
@@ -652,7 +670,7 @@ classdef ReachingPlanner < KeyframePlanner
             s_breaks=[s(1) s(end)];
             q_breaks=[q0_bound q_final_guess];
             qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0_bound q_final_guess]));
-            collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
+%             collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
             iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
             if(obj.planning_mode == 1)
                 % PERFORM inverseKinTraj OPT
@@ -679,7 +697,6 @@ classdef ReachingPlanner < KeyframePlanner
                     iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
                     iktraj_pelvis_constraint{:},obj.joint_constraint,qsc,...
                     lower_fixed_posture_constraint,...
-                    collision_constraint,...
                     iktraj_options);
                 if(snopt_info > 10)
                     warning('The IK traj fails');
