@@ -4,7 +4,7 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 
 lcm_mon = DrillTaskLCMMonitor(atlas);
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'drill_path_history');
-
+line_buffer = drc.control.LCMGLLineBuffer(lcmgl,0,1,0);
 %% get affordance fits
 [wall,drill] = lcm_mon.getWallAndDrillAffordances();
 while isempty(wall) || isempty(drill)
@@ -23,36 +23,10 @@ while(true)
   kinsol = r.doKinematics(q);
   drill_pts = r.forwardKin(kinsol,hand_body,drill.guard_pos);
   
-  if norm(drill_pts(:,1) - point_last) > .002;
-    points(:,buffer_ind) = drill_pts(:);
-    
-    if buffer_length < buffer_size
-      buffer_length = buffer_length + 1;
-    end
-    
-    if buffer_ind == buffer_size
-      buffer_ind = 1;
-    else
-      buffer_ind = buffer_ind + 1;
-    end
-    
-    
-    lcmgl.glColor3f(0,1,0); %green
-    lcmgl.glBegin(lcmgl.LCMGL_LINES);
-    %redraw buffer
-    for i=1:buffer_length,
-      j = buffer_ind - i;
-      if j <= 0
-        j = j + buffer_size;
-      end
-      if i~=1
-        lcmgl.glVertex3d(points(1,j),points(2,j),points(3,j));
-      end
-      lcmgl.glVertex3d(points(1,j),points(2,j),points(3,j));
-    end
-    lcmgl.glEnd();
-    lcmgl.switchBuffers();
+  if norm(drill_pts(:,1) - point_last) > .002
+    line_buffer.addPointAndDisplay(drill_pts(1), drill_pts(2), drill_pts(3));
+    point_last = drill_pts(:,1);
   end
-  point_last = drill_pts(:,1);
+  
   pause(.05);
 end

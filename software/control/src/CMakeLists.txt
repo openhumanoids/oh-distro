@@ -75,6 +75,7 @@ set(java_src_files
   SandiaJointCommandCoder.java
   ViconBodyPointCoder.java
   HandStateListener.java
+ 	LCMGLLineBuffer.java
   )
 
 add_jar(drc_control ${java_src_files})
