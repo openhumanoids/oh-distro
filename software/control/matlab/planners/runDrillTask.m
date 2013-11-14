@@ -14,7 +14,6 @@
 %     next plan, xyz specified
 %     affordance manager
 
-
 %NOTEST
 %%
 r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
@@ -51,9 +50,10 @@ use_simulated_state = false;
 useVisualization = true;
 publishPlans = true;
 useRightHand = true;
+allowPelvisHeight = true;
 
 drill_pub = drillPlanner(r,atlas,drill.guard_pos, drill.drill_axis,...
-  wall.normal, useRightHand, useVisualization, publishPlans);
+  wall.normal, useRightHand, useVisualization, publishPlans, allowPelvisHeight);
 triangle = wall.targets;
 drill_points = [triangle triangle(:,1)];
 

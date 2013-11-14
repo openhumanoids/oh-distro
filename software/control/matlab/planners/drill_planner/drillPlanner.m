@@ -29,11 +29,12 @@ classdef drillPlanner
     footstep_msg
     lc
     lcmgl
+    allowPelvisHeight
   end
   
   methods    
     function obj = drillPlanner(r,atlas,drill_pt_on_hand, drill_axis_on_hand, ...
-        drilling_world_axis, useRightHand, doVisualization, doPublish)
+        drilling_world_axis, useRightHand, doVisualization, doPublish, allowPelvisHeight)
       obj.atlas = atlas;
       obj.r = r;
       obj.doVisualization = doVisualization;
@@ -44,10 +45,8 @@ classdef drillPlanner
       
       obj.doPublish = doPublish;
       
-      if obj.doPublish
-        
-      end
-
+      obj.allowPelvisHeight = allowPelvisHeight;
+      
       joint_names = obj.atlas.getStateFrame.coordinates(1:getNumDOF(obj.atlas));
       joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
       
@@ -70,7 +69,8 @@ classdef drillPlanner
       
 
       cost = ones(34,1);
-      cost(1:6) = 10*ones(6,1);
+      cost([1 2 6]) = 10*ones(3,1);
+      cost(3) = 100;
       cost(back_joint_indices) = [100;1000;100];
       
       vel_cost = cost*.05;
@@ -171,8 +171,13 @@ classdef drillPlanner
       end
       
       % fix body pose for all t
-      body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,2); % fix the pelvis
-      
+      if obj.allowPelvisHeight
+        pelvis_body = regexpIndex('pelvis',{r.getBody(:).linkname});
+        body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,pelvis_body); % fix the pelvis
+      else
+        pelvis_body = regexpIndex('pelvis',{r.getBody(:).linkname});
+        body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,pelvis_body); % fix the pelvis
+      end
       q_nom = zeros(obj.r.num_q,N);
        
       % Find nominal pose
@@ -257,7 +262,11 @@ classdef drillPlanner
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
-
+      
+      if obj.allowPelvisHeight
+        [z_min, z_max] = obj.atlas.getPelvisHeightLimits(q0);
+        posture_constraint = posture_constraint.setJointLimits(3,z_min, z_max);
+      end
       % create drill position constraint
       drill_pos_constraint = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill,x_drill,[t_vec(end) t_vec(end)]);
       
@@ -319,7 +328,12 @@ classdef drillPlanner
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
-
+      
+      if obj.allowPelvisHeight
+        [z_min, z_max] = obj.atlas.getPelvisHeightLimits(q0);
+        posture_constraint = posture_constraint.setJointLimits(3,z_min, z_max);
+      end
+      
       % create drill direction constraint
       drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
         obj.drilling_world_axis,obj.default_axis_threshold);
@@ -383,6 +397,11 @@ classdef drillPlanner
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
+      
+      if obj.allowPelvisHeight
+        [z_min, z_max] = obj.atlas.getPelvisHeightLimits(q0);
+        posture_constraint = posture_constraint.setJointLimits(3,z_min, z_max);
+      end
       
       % create drill direction constraint
       drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
