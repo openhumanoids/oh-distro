@@ -3,7 +3,6 @@ ON HOLD:
 * explore contact sensing
 
 TODO:
-* do a better job of visualizing joint angles in the viewer
 * calibrate spread DoF
 * add options for different grasps (i.e. different spread values)
 * add option for positon control close using a percentage
@@ -13,9 +12,9 @@ TODO:
 * closing safety (wear prevention)
 
 FOCUS FOR TODAY:
-* weekly status update
 
 BUSY:
+* do a better job of visualizing joint angles in the viewer
 
 DONE:
 * ping hand
@@ -73,3 +72,4 @@ DONE:
 * order of launching translator and iRobot driver
 * drc-viewer interface for opening and closing hands
 * check if translator needs to be updated
+* weekly status update

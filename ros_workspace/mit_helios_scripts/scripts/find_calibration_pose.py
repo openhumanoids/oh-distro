@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from mit_irobot_hand_control import IRobotHandController
+from IRobotHandController import IRobotHandController
 import numpy
 
 def get_motor_encoder_offsets(controller):

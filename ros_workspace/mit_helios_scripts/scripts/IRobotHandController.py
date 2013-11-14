@@ -57,9 +57,18 @@ class IRobotHandController(object):
         self.rate = rospy.Rate(ros_rate)
         self.publisher = rospy.Publisher(publisher_name, HandleControl)
         self.subscriber = rospy.Subscriber(subscriber_name, HandleSensors, self.sensor_data_callback)
+        self.sensor_data_listeners = []
+
+    def add_sensor_data_listener(self, listener):
+        self.sensor_data_listeners.append(listener)
+
+    def remove_sensor_data_listener(self, listener):
+        self.sensor_data_listeners.remove(listener)
 
     def sensor_data_callback(self, data):
         self.sensors = data
+        for listener in self.sensor_data_listeners:
+            listener.notify(data, rospy.get_time())
 
     def zero_current(self):
         no_current_message = HandleControl()
@@ -101,7 +110,8 @@ class IRobotHandController(object):
     def clear_config(self):
         self.config_parser.clear()
 
-    def get_motor_indices(self):
+    @staticmethod
+    def get_motor_indices():
         return motor_indices
 
     def calibrate_motor_encoder_offsets(self, in_jig):

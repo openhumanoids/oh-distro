@@ -2,7 +2,7 @@
 <launch>
   
   <arg name="hand_id" />
-  <arg name="side" />
+  <arg name="side" value="r"/>
   <arg name="namespace" value = "irobot_hands/$(arg side)_hand" />
   
   <group ns="$(arg namespace)">
@@ -12,7 +12,7 @@
       <arg name="side" value="$(arg side)"/>
     </include>
     
-    <node pkg="mit_helios_scripts" type="mit_irobot_hand_control.py" name="mit_irobot_hand_control" args="$(arg side)" output="screen" respawn="false">
+    <node pkg="mit_helios_scripts" type="joint_angle_estimation_data_collection.py" name="data_collection" output="screen" respawn="false">
     </node>
   </group>
   
