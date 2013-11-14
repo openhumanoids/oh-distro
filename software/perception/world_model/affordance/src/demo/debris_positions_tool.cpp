@@ -58,10 +58,12 @@ struct Config{
   
   int server_id;
   int library_id;
+  bool send_walking_goals;
   
   Config () {
         server_id = 1;
-        library_id = 1;
+        library_id = -1;
+        send_walking_goals = false;
   }
 };
 
@@ -278,11 +280,12 @@ void Pass::getPriorStandingPositionAsRelative(Eigen::Vector3d min_pt, Eigen::Iso
   pc_vis_->pose_to_lcm_from_list(600003, world_to_walking_goalT);   
 
   
-  
-  drc::position_3d_t wg_pos = EigenToDRC(world_to_walking_goal);
-  drc::walking_goal_t wg;
-  wg.goal_pos = wg_pos;
-  lcm_->publish("WALKING_GOAL", &wg);
+  if (config_.send_walking_goals){
+    drc::position_3d_t wg_pos = EigenToDRC(world_to_walking_goal);
+    drc::walking_goal_t wg;
+    wg.goal_pos = wg_pos;
+    lcm_->publish("WALKING_GOAL", &wg);
+  }
   
   
   
@@ -434,6 +437,7 @@ int main(int argc, char ** argv) {
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config.server_id, "s", "server_id","Aff Server Id");
   opt.add(config.library_id, "l", "library_id","Lib Id");
+  opt.add(config.send_walking_goals, "w", "walking_goals","Send a walking goal as well as the marker");
   opt.parse();
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
