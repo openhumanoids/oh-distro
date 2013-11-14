@@ -8,7 +8,7 @@ using namespace renderer_affordances_lcm_utils;
 
 namespace renderer_affordances_gui_utils
 {
-
+  void spawn_sticky_hand_set_condition_popup (RendererAffordances *self);
   //--------------------------------------------------------------------------
   // Sticky Hand Interaction
   //
@@ -484,6 +484,10 @@ namespace renderer_affordances_gui_utils
         hand_it->second._gl_hand->enable_jointdof_adjustment(false);    
       }
     }
+    else if (! strcmp(name, PARAM_SET_SEED_CONDITION)) {
+       spawn_sticky_hand_set_condition_popup(self);
+    }
+    
   
     bot_viewer_request_redraw(self->viewer);
     if(   strcmp(name,PARAM_SQUEEZE)
@@ -600,7 +604,7 @@ namespace renderer_affordances_gui_utils
     val=false;
     val =  hand_it->second._gl_hand->is_bodypose_adjustment_enabled();
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_CURRENT_BODYPOSE_ADJUSTMENT, val, NULL);
-
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SET_SEED_CONDITION, NULL);
  
     //cout <<self->selection << endl; // otdf_type::geom_name
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_hand_dblclk_popup_param_widget_changed), self);
@@ -624,6 +628,52 @@ namespace renderer_affordances_gui_utils
   }
  //=======================================================================================  
   
+  void spawn_sticky_hand_set_condition_popup (RendererAffordances *self)
+  {
+  
+    typedef std::map<std::string, StickyHandStruc > sticky_hands_map_type_;
+    sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
+  
+    GtkWidget *window, *close_button, *vbox;
+    BotGtkParamWidget *pw;
 
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
+    gtk_window_set_modal(GTK_WINDOW(window), FALSE);
+    gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
+    gtk_window_stick(GTK_WINDOW(window));
+    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
+    gtk_window_set_default_size(GTK_WINDOW(window), 150, 250);
+    gint pos_x, pos_y;
+    gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
+    pos_x+=125;    pos_y-=75;
+   // gint gdk_screen_height  (void);//Returns the height of the default screen in pixels.
+    gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
+    //gtk_widget_set_size_request (window, 300, 250);
+    //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+    gtk_window_set_title(GTK_WINDOW(window), "dblclk");
+    gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+
+    //bot_gtk_param_widget_add_buttons(pw,PARAM_DELETE, NULL);
+ 
+    //cout <<self->selection << endl; // otdf_type::geom_name
+    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_hand_dblclk_popup_param_widget_changed), self);
+
+    self->dblclk_popup  = window;
+
+    close_button = gtk_button_new_with_label ("Close");
+    g_signal_connect (G_OBJECT (close_button),"clicked",G_CALLBACK (on_popup_close),(gpointer) window);
+    g_signal_connect(G_OBJECT(pw), "destroy", G_CALLBACK(on_dblclk_popup_close), self); 
+
+
+    vbox = gtk_vbox_new (FALSE, 3);
+    gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+    gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_widget_show_all(window); 
+
+  }
+  //=======================================================================================  
 }
 #endif

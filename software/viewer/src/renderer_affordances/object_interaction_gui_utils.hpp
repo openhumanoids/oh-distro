@@ -14,7 +14,7 @@
 #define PARAM_CLEAR_SEEDS "Clear Seeds"
 #define PARAM_STORE "Store to otdf file" 
 #define PARAM_UNSTORE "Unstore from otdf file" 
-
+#define PARAM_SET_SEED_CONDITION "Set condition" 
 
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
