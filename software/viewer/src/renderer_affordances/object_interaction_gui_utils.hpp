@@ -1405,10 +1405,10 @@ namespace renderer_affordances_gui_utils
     if(((self->marker_selection  == " ")||self->selection_hold_on)) 
     {
       //bot_gtk_param_widget_add_separator (pw,"Post-fitting adjust");
-      bot_gtk_param_widget_add_separator (pw,"(of params/currentstate)");
-      bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
       bot_gtk_param_widget_add_buttons(pw,PARAM_REQUEST_PTCLD_FROM_MAPS, NULL);
       bot_gtk_param_widget_add_buttons(pw,PARAM_REQUEST_LINKGEOM_PTCLD_FROM_MAPS, NULL);
+      //bot_gtk_param_widget_add_separator (pw,"(of params/currentstate)");
+      //bot_gtk_param_widget_add_separator (pw,"(via markers/sliders)");
       if((self->marker_selection  == " "))
       {
         bot_gtk_param_widget_add_buttons(pw,PARAM_OTDF_ADJUST_PARAM, NULL);
@@ -1492,7 +1492,7 @@ namespace renderer_affordances_gui_utils
             }   
             
             //bot_gtk_param_widget_add_separator (set_des_state_pw,"Set desired state");
-            bot_gtk_param_widget_add_separator (set_des_state_pw,"(via markers/sliders)");
+            //bot_gtk_param_widget_add_separator (set_des_state_pw,"(via markers/sliders)");
 
            
             bot_gtk_param_widget_add_booleans(set_des_state_pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_DESIRED_BODYPOSE_ADJUSTMENT, val, NULL);
@@ -1538,7 +1538,7 @@ namespace renderer_affordances_gui_utils
     BotGtkParamWidget *planseed_pw;
     planseed_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
  
-    //bot_gtk_param_widget_add_separator (planseed_pw,"Plan Seed Management");
+    bot_gtk_param_widget_add_separator (planseed_pw,"::Plan Seeds::");
     bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_STORE_PLAN, NULL); 
    
     if((self->marker_selection  == " ")&&(it!=self->affCollection->_objects.end())) 
@@ -1576,7 +1576,7 @@ namespace renderer_affordances_gui_utils
     BotGtkParamWidget *poseseed_pw;
     poseseed_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
  
-    //bot_gtk_param_widget_add_separator (poseseed_pw,"EndPose Seed Management");
+    bot_gtk_param_widget_add_separator (poseseed_pw,"::EndPose Seeds::");
     bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_STORE_POSE, NULL); 
    
     if((self->marker_selection  == " ")&&(it!=self->affCollection->_objects.end())) 
@@ -1618,7 +1618,7 @@ namespace renderer_affordances_gui_utils
     
 
     //cout <<self->selection << endl; // otdf_type::geom_name
-    GtkWidget * param_adjust_pane =  gtk_expander_new("Post-fitting adjust");
+    GtkWidget * param_adjust_pane =  gtk_expander_new("Manual Fitting");
     gtk_container_add (GTK_CONTAINER (param_adjust_pane), GTK_WIDGET( pw));    
     gtk_expander_set_expanded(GTK_EXPANDER(param_adjust_pane),(gboolean) TRUE);
     
@@ -1636,18 +1636,19 @@ namespace renderer_affordances_gui_utils
     
     GtkWidget * get_plan_pane =  gtk_expander_new("Get Manip Plan/Map");
     gtk_container_add (GTK_CONTAINER (get_plan_pane), GTK_WIDGET( get_plan_pw));
-    gtk_expander_set_expanded(GTK_EXPANDER(get_plan_pane),(gboolean) TRUE);
+    gtk_expander_set_expanded(GTK_EXPANDER(get_plan_pane),(gboolean) FALSE);
     
     GtkWidget * mating_pane =  gtk_expander_new("Mating");
     gtk_container_add (GTK_CONTAINER (mating_pane), GTK_WIDGET( mating_pw));
-    GtkWidget * planseed_pane =  gtk_expander_new("Plan Seed Management");
-    gtk_container_add (GTK_CONTAINER (planseed_pane), GTK_WIDGET( planseed_pw));
-    gtk_expander_set_expanded(GTK_EXPANDER(planseed_pane),(gboolean) FALSE);
     
-    GtkWidget * poseseed_pane =  gtk_expander_new("EndPose Seed Management");
-    gtk_container_add (GTK_CONTAINER (poseseed_pane), GTK_WIDGET(poseseed_pw));
-    gtk_expander_set_expanded(GTK_EXPANDER(poseseed_pane),(gboolean) FALSE);
-    
+    GtkWidget * planandposeseed_pane =  gtk_expander_new("Plan & EndPose Seed Management");
+    GtkWidget *planandposeseed_vbox;
+    planandposeseed_vbox = gtk_vbox_new (FALSE, 3);
+    gtk_box_pack_end (GTK_BOX (planandposeseed_vbox), GTK_WIDGET(poseseed_pw), FALSE, FALSE, 5);
+     gtk_box_pack_start (GTK_BOX (planandposeseed_vbox), GTK_WIDGET(planseed_pw), FALSE, FALSE, 5); 
+    gtk_container_add (GTK_CONTAINER (planandposeseed_pane),GTK_WIDGET(planandposeseed_vbox));
+    gtk_expander_set_expanded(GTK_EXPANDER(planandposeseed_pane),(gboolean) FALSE);
+
     GtkWidget *col_server_pane =  gtk_expander_new("collision_server_comms");
     gtk_container_add (GTK_CONTAINER (col_server_pane), GTK_WIDGET(col_server_pw));
     gtk_expander_set_expanded(GTK_EXPANDER(col_server_pane),(gboolean) FALSE);
@@ -1688,8 +1689,7 @@ namespace renderer_affordances_gui_utils
       }
       gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(mating_pane), FALSE, FALSE, 5);
     }
-    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(planseed_pane), FALSE, FALSE, 5);
-    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(poseseed_pane), FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(planandposeseed_pane), FALSE, FALSE, 5);
     gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(col_server_pane), FALSE, FALSE, 5);
 
     gtk_widget_show_all(window); 

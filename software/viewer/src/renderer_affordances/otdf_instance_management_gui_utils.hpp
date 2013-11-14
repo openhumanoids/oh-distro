@@ -323,8 +323,8 @@ namespace renderer_affordances_gui_utils
     static void spawn_adjust_dofs_popup (RendererAffordances *self)
     {
 
-        GtkWidget *window, *close_button, *vbox;
-        BotGtkParamWidget *pw;
+        GtkWidget *window, *close_button, *vbox,*hbox;
+        BotGtkParamWidget *pw_L, *pw_R;
 
         window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
         gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
@@ -332,7 +332,7 @@ namespace renderer_affordances_gui_utils
         gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
         gtk_window_stick(GTK_WINDOW(window));
         gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
-        gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
+        gtk_window_set_default_size(GTK_WINDOW(window), 500, 250);
         gint pos_x, pos_y;
         gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
         pos_x+=125;    pos_y-=75;
@@ -341,7 +341,8 @@ namespace renderer_affordances_gui_utils
         //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
         gtk_window_set_title(GTK_WINDOW(window), "Adjust Current DOFs");
         gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-        pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+        pw_L = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+        pw_R = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
 
         string instance_name=  self->instance_selection;
 
@@ -356,20 +357,31 @@ namespace renderer_affordances_gui_utils
                 !joint->first.compare("front_right_steering_joint") || !joint->first.compare("front_right_wheel_joint") ||
                 !joint->first.compare("rear_left_wheel_joint") || !joint->first.compare("rear_right_wheel_joint"))
                 continue;
-            
-            double current_dof_position = 0;// TODO: dof pos tracking
+            string blank = " ";
+            double current_dof_velocity = 0;
+            double current_dof_position = 0;
+            it->second._otdf_instance->getJointState(joint->first,current_dof_position,current_dof_velocity);
             if(joint->second->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
-                if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {
-                    bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, 
-                                                    -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                if(joint->second->type==(int) otdf::Joint::CONTINUOUS) {//BOT_GTK_PARAM_WIDGET_SPINBOX,BOT_GTK_PARAM_WIDGET_SLIDER
+                    bot_gtk_param_widget_add_double(pw_L, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER, 
+                                                    -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .1, current_dof_position*(180/M_PI)); 
+                    bot_gtk_param_widget_add_double(pw_R, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SPINBOX, 
+                                                    -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .1, current_dof_position*(180/M_PI)); 
                 }
-                else if (joint->second->type == (int) otdf::Joint::REVOLUTE) 
-                    bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                else if (joint->second->type == (int) otdf::Joint::REVOLUTE)  {
+                    bot_gtk_param_widget_add_double(pw_L, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                    joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), 
+                                                    .1, current_dof_position*(180/M_PI));
+                    bot_gtk_param_widget_add_double(pw_R, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SPINBOX,
                                                     joint->second->limits->lower*(180/M_PI), joint->second->limits->upper*(180/M_PI), 
-                                                    .01, current_dof_position*(180/M_PI));
-                else 
-                    bot_gtk_param_widget_add_double(pw, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                    joint->second->limits->lower, joint->second->limits->upper, .01, current_dof_position);       
+                                                    .1, current_dof_position*(180/M_PI));
+                }
+                else {
+                    bot_gtk_param_widget_add_double(pw_L, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                    joint->second->limits->lower, joint->second->limits->upper, .1, current_dof_position); 
+                    bot_gtk_param_widget_add_double(pw_R, joint->first.c_str(), BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                    joint->second->limits->lower, joint->second->limits->upper, .1, current_dof_position);  
+               }     
             }
         }
         //Have to handle joint_patterns separately   
@@ -378,21 +390,33 @@ namespace renderer_affordances_gui_utils
         for (jp_mapType::iterator jp_it = it->second._otdf_instance->joint_patterns_.begin();jp_it != it->second._otdf_instance->joint_patterns_.end(); jp_it++) {
             // for all joints in joint pattern.
             for (unsigned int i=0; i < jp_it->second->joint_set.size(); i++) {
-                double current_dof_position = 0;// TODO: dof pos tracking
+                double current_dof_velocity = 0;
+                double current_dof_position = 0;
+                it->second._otdf_instance->getJointState(jp_it->second->joint_set[i]->name,current_dof_position,current_dof_velocity);
                 if(jp_it->second->joint_set[i]->type!=(int) otdf::Joint::FIXED) { // All joints that not of the type FIXED.
                     if(jp_it->second->joint_set[i]->type==(int) otdf::Joint::CONTINUOUS) {
-                        bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
-                                                        -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .01, current_dof_position*(180/M_PI)); 
+                        bot_gtk_param_widget_add_double(pw_L, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                                                        -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .1, current_dof_position*(180/M_PI)); 
+                        bot_gtk_param_widget_add_double(pw_R, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                        -2*M_PI*(180/M_PI), 2*M_PI*(180/M_PI), .1, current_dof_position*(180/M_PI)); 
                     }
+                    
                     else if (jp_it->second->joint_set[i]->type == (int) otdf::Joint::REVOLUTE) {
-                        bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                        bot_gtk_param_widget_add_double(pw_L, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
                                                         jp_it->second->joint_set[i]->limits->lower*(180/M_PI), 
-                                                        jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .01, current_dof_position*(180/M_PI));
+                                                        jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .1, current_dof_position*(180/M_PI));
+                        bot_gtk_param_widget_add_double(pw_R, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                        jp_it->second->joint_set[i]->limits->lower*(180/M_PI), 
+                                                        jp_it->second->joint_set[i]->limits->upper*(180/M_PI), .1, current_dof_position*(180/M_PI));
                     }   
-                    else
-                        bot_gtk_param_widget_add_double(pw, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
+                    else {
+                        bot_gtk_param_widget_add_double(pw_L, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SLIDER,
                                                         jp_it->second->joint_set[i]->limits->lower, 
-                                                        jp_it->second->joint_set[i]->limits->upper, .01, current_dof_position);
+                                                        jp_it->second->joint_set[i]->limits->upper, .1, current_dof_position);
+                        bot_gtk_param_widget_add_double(pw_R, jp_it->second->joint_set[i]->name.c_str(), BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                                        jp_it->second->joint_set[i]->limits->lower, 
+                                                        jp_it->second->joint_set[i]->limits->upper, .1, current_dof_position);
+                    } 
                 } // end if         
             } // end for all joints in jp
         }// for all joint patterns
@@ -417,21 +441,26 @@ namespace renderer_affordances_gui_utils
         }
         
 
-        g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_otdf_adjust_dofs_widget_changed), self);
-        
+        g_signal_connect(G_OBJECT(pw_L), "changed", G_CALLBACK(on_otdf_adjust_dofs_widget_changed), self);
+        g_signal_connect(G_OBJECT(pw_R), "changed", G_CALLBACK(on_otdf_adjust_dofs_widget_changed), self);
         
         close_button = gtk_button_new_with_label ("Close");
         g_signal_connect (G_OBJECT (close_button),
                           "clicked",
                           G_CALLBACK (on_popup_close),
                           (gpointer) window);
-        g_signal_connect(G_OBJECT(pw), "destroy",
+        g_signal_connect(G_OBJECT(pw_L), "destroy",
                          G_CALLBACK(on_adjust_dofs_popup_close), self); 
-
-
+        g_signal_connect(G_OBJECT(pw_R), "destroy",
+                         G_CALLBACK(on_adjust_dofs_popup_close), self);   
+                         
+        hbox= gtk_hbox_new (FALSE, 3);
+        gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET(pw_L), TRUE, TRUE, 5);
+        gtk_box_pack_end (GTK_BOX (hbox), GTK_WIDGET(pw_R), FALSE, FALSE, 5);
+        
         vbox = gtk_vbox_new (FALSE, 3);
         gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
-        gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+        gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(hbox), FALSE, FALSE, 5);
         gtk_container_add (GTK_CONTAINER (window), vbox);
         gtk_widget_show_all(window); 
     }
