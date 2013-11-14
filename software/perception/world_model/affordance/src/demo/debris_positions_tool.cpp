@@ -143,9 +143,21 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600001,"Current walking goal",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600002,"Robot to Corner",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600003,"Next Walking Goal",5,1) );
-
-  
 }
+
+drc::position_3d_t EigenToDRC(Eigen::Isometry3d &pose){
+  drc::position_3d_t hand_pose;
+  hand_pose.translation.x = pose.translation().x();
+  hand_pose.translation.y = pose.translation().y();
+  hand_pose.translation.z = pose.translation().z();
+  Quaterniond q = Quaterniond( pose.rotation() );
+  hand_pose.rotation.w = q.w();
+  hand_pose.rotation.x = q.x();
+  hand_pose.rotation.y = q.y();
+  hand_pose.rotation.z = q.z();
+  return hand_pose;
+}
+
 
 void Pass::poseGroundHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
   ground_height_ = msg->pos[2];
@@ -265,6 +277,14 @@ void Pass::getPriorStandingPositionAsRelative(Eigen::Vector3d min_pt, Eigen::Iso
   Isometry3dTime world_to_walking_goalT = Isometry3dTime(current_utime_,  world_to_walking_goal  );
   pc_vis_->pose_to_lcm_from_list(600003, world_to_walking_goalT);   
 
+  
+  
+  drc::position_3d_t wg_pos = EigenToDRC(world_to_walking_goal);
+  drc::walking_goal_t wg;
+  wg.goal_pos = wg_pos;
+  lcm_->publish("WALKING_GOAL", &wg);
+  
+  
   
   exit(-1);
 }
