@@ -34,14 +34,14 @@ while true
       current_robot_state.pose.rotation.z = robot_plan.plan(i).pose.rotation.z;
       current_robot_state.joint_position = robot_plan.plan(i).joint_position;
       
-      current_robot_state.utime = now() * 24 * 60 * 60;
+      current_robot_state.utime = get_timestamp_now();
       lc.publish('EST_ROBOT_STATE',current_robot_state)
     end
     current_robot_state = robot_plan.plan(end);
     display('Listening for committed plans ...');
   else
     pause(1/Fs);
-    current_robot_state.utime = now() * 24 * 60 * 60;
+    current_robot_state.utime = get_timestamp_now();
     lc.publish('EST_ROBOT_STATE',current_robot_state)
   end
 end
