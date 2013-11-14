@@ -292,7 +292,6 @@ def sendRobotStateMsg():
     else:
       msg = setStateAtHeight66(msg)
 
-  msg.pose.rotation.w =1
   # Add the required joints:
   msg = appendJoints(msg, jnames.head)
   if (goal_hand_config[0] == 2):
@@ -318,11 +317,13 @@ def on_manip_params(channel, data):
   sendRobotStateMsg()
   
 def on_walking_goal(channel, data):
-  global goal_pelvis_height, goal_yaw, goal_xy
+  global goal_pelvis_height, goal_yaw, goal_xy, goal_committed_use
   m = walking_goal_t.decode(data)
   quat_in= [m.goal_pos.rotation.w, m.goal_pos.rotation.x, m.goal_pos.rotation.y, m.goal_pos.rotation.z]
   [roll,pitch,goal_yaw]=quat_to_euler(quat_in)
   goal_xy = [m.goal_pos.translation.x, m.goal_pos.translation.y]
+  print "New walking goal"
+  goal_committed_use = False
   sendRobotStateMsg()
 
   
@@ -384,7 +385,7 @@ def lcm_thread():
 t2 = Thread(target=lcm_thread)
 t2.start()
 
-sleep_timing=0.01 # time between updates of the plots - in wall time
+sleep_timing=0.1 # time between updates of the plots - in wall time
 while (1==1):
   time.sleep(sleep_timing)
   sendRobotStateMsg()

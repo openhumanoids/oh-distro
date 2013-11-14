@@ -56,6 +56,14 @@ pods_use_pkg_config_packages(ee-driver lcm model-client
 pods_install_executables(ee-driver)
 
 
+add_executable (debris_positions_tool debris_positions_tool.cpp)
+target_link_libraries (debris_positions_tool curses boost_system   lcm)
+pods_use_pkg_config_packages(debris_positions_tool lcm model-client
+   lcmtypes_drc_lcmtypes  bot2-core glib-2.0
+   pointcloud_math pointcloud_vis affordance-utils
+   eigen3 ${REQUIRED_PACKAGES})
+pods_install_executables(debris_positions_tool)
+
 
 ##############################################
 # tiny util to give the xyz and yaw of the robot. probably can remove

@@ -882,7 +882,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
   std::vector<AffRaw> affraw_list = readAffordanceFile(debris_filename_full);
   std:: cout << affraw_list.size() << " affordances read\n";
   
-  readStandingPositionsFile( standing_filename_full , affraw_list);
+  //readStandingPositionsFile( standing_filename_full , affraw_list);
   
   
   if ((which_publish==9)){ 
@@ -897,7 +897,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
       lcm_->publish("AFFORDANCE_FIT",&a1);
       
       sendNameLabels(affraw_list); 
-      sendStandingLabels(affraw_list);
+      //sendStandingLabels(affraw_list);
     }
   }  
   
@@ -912,7 +912,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     drc::affordance_plus_t a1 = affutils.getBoxAffordancePlus(uid,friendly_name, affraw.position_ , lengths);
     lcm_->publish("AFFORDANCE_FIT",&a1);
     sendNameLabels(affraw_list);      
-    sendStandingLabels(affraw_list);
+    //sendStandingLabels(affraw_list);
   }  
   
 /*  

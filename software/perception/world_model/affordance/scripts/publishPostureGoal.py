@@ -69,14 +69,21 @@ def getHandDown():
   return [position,name]
 
 
+def getCrane():
+  position=[-1.61829870194, 2.56434223056, -1.10402787743, -0.796537280083, -0.773799479008, 0.727126836777]
+  name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position,name]
+
+
 def usage():
   print "exe-name positions [l|r]"
   print "cradle   - close to robot, hand upside down"
-  print "hang     - hand just about cradle. thumb in"
+  print "crane    - hand pointing down from in front"
   print "farhang  - above, further away"
-  print "shooter  - hand up and finger away"
-  print "pulldown - lower config below the current"
+  print "hang     - hand just about cradle. thumb in"
   print "handdown - handdown"
+  print "pulldown - lower config below the current"
+  print "shooter  - hand up and finger away"
 
 
 ######################################
@@ -120,6 +127,8 @@ elif (posture_name == "pulldown"):
   [msg.joint_position, msg.joint_name] = getPullDown()
 elif (posture_name == "handdown"):
   [msg.joint_position, msg.joint_name] = getHandDown()
+elif (posture_name == "crane"):
+  [msg.joint_position, msg.joint_name] = getCrane()
 
 if (posture_side == "l"):
   [msg.joint_name,msg.joint_position] = flipArms(msg.joint_name,msg.joint_position)
