@@ -25,10 +25,10 @@ classdef DrivingAffordanceStatusPublisher
     methods(Static)
         function msg = encodeDrivingAffordanceStatus(aff_type, aff_uid, dof_name, ee_name,  have_manip_map, dof_value_0, dof_value_1)
             if nargin < 2
-                t = now() * 24 * 60 * 60;
+                t = get_timestamp_now();
             end
             
-            t = now() * 24 * 60 * 60;
+            t = get_timestamp_now();
             msg = drc.driving_affordance_status_t();
             msg.utime = t * 1000000;
             msg.aff_type = aff_type;

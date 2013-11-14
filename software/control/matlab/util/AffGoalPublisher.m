@@ -13,7 +13,7 @@ classdef AffGoalPublisher
         
         function publish(obj, X)
             if nargin < 3
-                utime = now() * 24 * 60 * 60;
+                utime = get_timestamp_now();
             end
             obj.lc.publish(obj.channel, AffGoalPublisher.encodeRobotPlan(X));
         end
@@ -24,7 +24,7 @@ classdef AffGoalPublisher
     methods(Static)
         function msg = encodeRobotPlan(X)
             if nargin < 2
-                t = now() * 24 * 60 * 60;
+                t = get_timestamp_now();
             end
             
             msg = drc.affordance_goal_t();
