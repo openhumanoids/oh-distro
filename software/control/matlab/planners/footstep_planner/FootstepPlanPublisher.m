@@ -12,7 +12,7 @@ classdef FootstepPlanPublisher
 
 		function publish(obj, X, utime)
 			if nargin < 3
-				utime = now() * 24 * 60 * 60;
+				utime = get_timestamp_now()*1e-6;
 			end
 			obj.lc.publish(obj.channel, FootstepPlanPublisher.encodeFootstepPlan(X, utime));
 		end
@@ -22,7 +22,7 @@ classdef FootstepPlanPublisher
 	methods(Static)
 		function msg = encodeFootstepGoal(X, t)
 			if nargin < 2
-				t = now() * 24 * 60 * 60;
+				t = get_timestamp_now()*1e-6;
 			end
 
 			msg = drc.footstep_goal_t();
@@ -74,7 +74,7 @@ classdef FootstepPlanPublisher
 				isnew = true;
 			end
 			if nargin < 2
-				t = now() * 24 * 60 * 60;
+				t = get_timestamp_now()*1e-6;% get_timestamp already returns in usec, so converting to sec as we multiply by 1e6 later
 			end
 		    robot_name = 'atlas';
 		    msg = drc.footstep_plan_t();
