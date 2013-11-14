@@ -1,14 +1,18 @@
 group "drivers" {
+    cmd "roscore" {
+        exec = "roscore";
+        host = "localhost";
+    }
     cmd "aa-ros2-lcm-hands" {
-        exec = "roslaunch translators hands_notsim.launch";
+        exec = "roslaunch --wait translators hands_notsim.launch";
         host = "localhost";
     }
     cmd "irobot-right" {
-        exec = "roslaunch mit_helios_scripts irobot_hand.launch side:=r hand_id:=41";
+        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=r hand_id:=41";
         host = "localhost";
     }
     cmd "irobot-left" {
-        exec = "roslaunch mit_helios_scripts irobot_hand.launch side:=l hand_id:=41";
+        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=l hand_id:=41";
         host = "localhost";
     }
 }
@@ -37,19 +41,14 @@ group "fake-hand-state" {
 
 ######################################################
 
-script "launch_translator" {
-    start cmd "aa-ros2-lcm-hands";
-    wait ms 500;
-}
-
 script "launch_right_hand" { 
-    run_script "launch_translator";
+    start cmd "roscore";
+    start cmd "aa-ros2-lcm-hands";
     start cmd "irobot-right";
 }
-
-
 script "launch_left_hand" { 
-    run_script "launch_translator";
+    start cmd "roscore";
+    start cmd "aa-ros2-lcm-hands";
     start cmd "irobot-left";
 }
 

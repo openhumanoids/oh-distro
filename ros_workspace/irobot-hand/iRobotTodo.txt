@@ -1,21 +1,19 @@
 ON HOLD:
-* check if translator needs to be updated
 * visualize hand configuration using proximal joint angle encoders See line 597 ofdrc/ros_workspace/translators/src/ros2lcm_hands.cpp
 * explore contact sensing
-* drc-viewer interface for opening and closing hands
-* command line tool to open, close, calibrate, etc
 
 TODO:
-* correctly visualise the joint angles in the viewer
-* make it possible to calibrate spread, thumb antagonistic
-* closing safety (wear prevention)
-* add spread control
-* close a single finger
+* do a better job of visualizing joint angles in the viewer
+* calibrate spread DoF
+* add options for different grasps (i.e. different spread values)
+* add option for positon control close using a percentage
+* add option to close a single finger
 * check that everything works with 2 hands connected
+* command line tool to send high level ros commands for hand
+* closing safety (wear prevention)
 
 FOCUS FOR TODAY:
 * weekly status update
-* order of launching translator and iRobot driver
 
 BUSY:
 
@@ -72,3 +70,6 @@ DONE:
 * put mit_irobot_hand_control.py into a script file or into the PMD
 * make it run for both left and right if necessary
 * write a ros script that launches everything properly
+* order of launching translator and iRobot driver
+* drc-viewer interface for opening and closing hands
+* check if translator needs to be updated
