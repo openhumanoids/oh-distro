@@ -1,19 +1,3 @@
-
-% tx:
-%   ghost states
-%                 obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
-%   walking goal (walking_goal_t, nav_goal_timed_t?)
-%   trajectories (see RobotPlanPublisherWKeyFrames)
-%
-% rx:
-%   state
-%   drill_ctrl message
-%     request walking plan/ghosts
-%     request ghosts only
-%     next plan
-%     next plan, xyz specified
-%     affordance manager
-
 %NOTEST
 %%
 r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));

@@ -180,7 +180,7 @@ classdef Atlas < Biped
 
     function z = getPelvisHeightAboveFeet(obj,q)
       kinsol = doKinematics(obj,q);
-      foot_z = getFootHeight(obj,kinsol);
+      foot_z = getFootHeight(obj,q);
       pelvis = forwardKin(obj,kinsol,findLinkInd(obj,'pelvis'),[0;0;0]);
       z = pelvis(3) - foot_z;
     end

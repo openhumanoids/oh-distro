@@ -39,11 +39,11 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
       obj.params_pub = AtlasManipParamsPublisher('ATLAS_MANIPULATE_PARAMS');
     end
    
-    function y=MIMOoutput(obj,t,~,varargin)
+    function y=mimoOutput(obj,t,~,varargin)
       q_des=varargin{1};
       x=varargin{2};
 
-      foot_z = getFootHeight(obj.robot,x(1:getNumDOF(r)));
+      foot_z = getFootHeight(obj.robot,x(1:getNumDOF(obj.robot)));
       params.pelvis_height = max(obj.robot.pelvis_min_height, ...
         min(obj.robot.pelvis_max_height,q_des(3)-foot_z));
       params.pelvis_yaw = 0;
@@ -51,7 +51,7 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
       params.pelvis_roll = 0;
       params.com_v0 = 0;
       params.com_v1 = 0;
-      obj.param_pub.publish(params);
+      obj.params_pub.publish(params);
       
       y = q_des;
     end

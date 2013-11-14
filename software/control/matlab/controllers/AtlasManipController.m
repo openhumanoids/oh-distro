@@ -58,7 +58,7 @@ classdef AtlasManipController < DRCController
         sys = mimoCascade(qt,manip_cmd,[],ins,outs);
         sys = mimoCascade(sys,qref,[],ins,outs);
 
-      elseif options.controller_type == 2 % use PD + gravity compensation
+      elseif options.controller_type == 3 % use PD + gravity compensation
 
         % cascade gravity compensation block
         gc = GravityCompensationBlock(r);
@@ -83,7 +83,7 @@ classdef AtlasManipController < DRCController
         sys = mimoCascade(sys,q_tau_ref,[],ins,outs);
         clear ins outs;
         
-      elseif options.controller_type == 3 % use inverse dynamics
+      elseif options.controller_type == 4 % use inverse dynamics
 
         % cascade eval block with signal duplicator
         dupl = SignalDuplicator(AtlasCoordinates(r),2);
@@ -176,7 +176,7 @@ classdef AtlasManipController < DRCController
         try
           msg = data.COMMITTED_ROBOT_PLAN;
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
-          [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,false,joint_names); 
+          [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
           % TODO: REMOVE THIS ********************************************
           % try using the desired position of the last plan as the first
           % point in the plan as using the current position causes a "jump"
