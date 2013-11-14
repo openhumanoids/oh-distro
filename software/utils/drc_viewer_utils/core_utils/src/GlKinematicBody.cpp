@@ -273,7 +273,9 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
   _fksolver.reset();
   _otdf_links_map.clear();
   _mesh_map.clear(); 
-  
+  _joint_names_.clear();
+  _jointlimit_min.clear();
+  _jointlimit_max.clear();
   
  //enum  {UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED};
   typedef map<string, shared_ptr<otdf::Joint> > joints_mapType;
