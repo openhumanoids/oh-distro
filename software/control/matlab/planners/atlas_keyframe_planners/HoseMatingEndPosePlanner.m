@@ -217,7 +217,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
 
       for j = 1:length(s),
 
-        utime = now() * 24 * 60 * 60;
+        utime = get_timestamp_now();
         q_tmp = qtraj.eval(s(j));
         xtraj_atlas(1:nq_atlas) = q_tmp(obj.atlas2robotFrameIndMap(1:nq_atlas));
         obj.pose_pub.publish(xtraj_atlas,utime);
