@@ -4,7 +4,11 @@ group "drivers" {
         host = "localhost";
     }
     cmd "irobot-right" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 41";
+        exec = "roslaunch mit_helios_scripts irobot_hand.launch side:=r hand_id:=41";
+        host = "localhost";
+    }
+    cmd "irobot-left" {
+        exec = "roslaunch mit_helios_scripts irobot_hand.launch side:=l hand_id:=41";
         host = "localhost";
     }
 }
@@ -21,10 +25,6 @@ group "processes" {
     }
     cmd "drc-viewer" {
         exec = "drc-viewer -c drc_robot_02.cfg";
-        host = "localhost";
-    }
-    cmd "control_interface" {
-        exec = "rosrun mit_helios_scripts mit_irobot_hand_control.py R";
         host = "localhost";
     }
 }

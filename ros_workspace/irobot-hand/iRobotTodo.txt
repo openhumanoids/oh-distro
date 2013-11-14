@@ -3,17 +3,17 @@ ON HOLD:
 * visualize hand configuration using proximal joint angle encoders See line 597 ofdrc/ros_workspace/translators/src/ros2lcm_hands.cpp
 * explore contact sensing
 * drc-viewer interface for opening and closing hands
+* command line tool to open, close, calibrate, etc
 
 TODO:
 * correctly visualise the joint angles in the viewer
 * make it possible to calibrate spread, thumb antagonistic
 * closing safety (wear prevention)
-* add spread control to iRobot hand control
+* add spread control
+* close a single finger
+* check that everything works with 2 hands connected
 
 FOCUS FOR TODAY:
-* put mit_irobot_hand_control.py into a script file or into the PMD
-* make it run for both left and right if necessary
-* write a ros script that launches everything properly
 
 BUSY:
 
@@ -67,3 +67,6 @@ DONE:
 * svn:ignore
 * fix network setup
 * move mit_irobot_hand_control.py and mit_keyboard_control out of handle and into mit_helios_scripts
+* put mit_irobot_hand_control.py into a script file or into the PMD
+* make it run for both left and right if necessary
+* write a ros script that launches everything properly
