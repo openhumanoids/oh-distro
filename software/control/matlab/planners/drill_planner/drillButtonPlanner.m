@@ -103,7 +103,7 @@ classdef drillButtonPlanner
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
+%       posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
       
       % create drill position constraint
       finger_pos_constraint = WorldPositionConstraint(obj.r,obj.finger_hand_body,...
@@ -177,7 +177,6 @@ classdef drillButtonPlanner
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
       
       % create drill position constraint
       finger_pos_constraint = WorldPositionConstraint(obj.r,obj.finger_hand_body,...
@@ -209,6 +208,43 @@ classdef drillButtonPlanner
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
         finger_pos_constraint,finger_dir_constraint,posture_constraint,obj.ik_options);
+      
+      if(snopt_info > 10)
+        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint));
+        warning(send_msg);
+      end
+      
+      if obj.doVisualization && snopt_info <= 10
+        obj.v.playback(xtraj);
+      end
+      
+      if obj.doPublish && snopt_info <= 10
+        obj.publishTraj(xtraj,snopt_info);
+      end
+    end
+    
+    % Simple joint plan from q0 to qf
+    % no idea why i'm using IK for this.  probably shouldn't
+    function [xtraj, snopt_info, infeasible_constraint] = createGotoPlan(obj,q0,qf,T)
+      N = 3;
+      t_vec = linspace(0,T,N);
+              arm_joint_indices = regexpIndex('^r_arm_[a-z]*[x-z]$',obj.r.getStateFrame.coordinates);
+
+      % create posture constraint
+      posture_index = setdiff((1:obj.r.num_q)',arm_joint_indices);
+      posture_constraint = PostureConstraint(obj.r);
+      posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
+      
+      final_posture_constraint = PostureConstraint(obj.r, [T T]);
+      final_posture_constraint = final_posture_constraint.setJointLimits(arm_joint_indices, qf(arm_joint_indices), qf(arm_joint_indices));
+      
+      qtraj_guess = PPTrajectory(foh([0 T],[q0, qf]));
+      
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+        t_vec,qtraj_guess,qtraj_guess,...
+        posture_constraint,final_posture_constraint,obj.ik_options);
       
       if(snopt_info > 10)
         send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);

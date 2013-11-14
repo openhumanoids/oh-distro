@@ -3,13 +3,8 @@
 r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 
-lcm_mon = drillTaskLCMMonitor(atlas);
-
 %% get affordance fits
-[wall,drill] = lcm_mon.getWallAndDrillAffordances();
-while isempty(wall) || isempty(drill)
-  [wall,drill] = lcm_mon.getWallAndDrillAffordances();
-end
+
 
 if 0
 % [wall,~] = lcm_mon.getWallAndDrillAffordances();
@@ -33,8 +28,14 @@ end
 use_simulated_state = false;
 useVisualization = true;
 publishPlans = true;
-useRightHand = true;
+useRightHand = false;
 allowPelvisHeight = true;
+lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
+
+[wall,drill] = lcm_mon.getWallAndDrillAffordances();
+while isempty(wall) || isempty(drill)
+  [wall,drill] = lcm_mon.getWallAndDrillAffordances();
+end
 
 drill_pub = drillPlanner(r,atlas,drill.guard_pos, drill.drill_axis,...
   wall.normal, useRightHand, useVisualization, publishPlans, allowPelvisHeight);
@@ -168,10 +169,16 @@ end
 
 [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 5);
 
+%%
+wall_z = [0;0;1];
+wall_z = wall_z - wall_z'*wall.normal*wall.normal;
+wall_z = wall_z/norm(wall_z);
+wall_y = cross(wall_z, wall.normal);
 
 %% drill delta
 % delta = [0;-.02;0];
-delta = wall.normal*.02;
+% delta = wall.normal*.02;
+delta = -.1*wall.normal + .0*wall_y - 0.0*wall_z;
 if use_simulated_state
   q0 = xtraj_drill.eval(xtraj_drill.tspan(2));
   q0 = q0(1:34);

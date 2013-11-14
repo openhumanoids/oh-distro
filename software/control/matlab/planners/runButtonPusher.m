@@ -3,20 +3,20 @@
 r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 
-lcm_mon = drillTaskLCMMonitor(atlas);
+lcm_mon = drillTaskLCMMonitor(atlas, true);
 
 %% get affordance fits
-drill = lcm_mon.getDrillAffordance();
-while isempty(drill)
-  drill = lcm_mon.getDrillAffordance();
-end
+% drill = lcm_mon.getDrillAffordance();
+% while isempty(drill)
+%   drill = lcm_mon.getDrillAffordance();
+% end
 
-use_simulated_state = true;
+use_simulated_state = false;
 useVisualization = true;
 publishPlans = true;
 buttonInRightHand = true;
 
-finger_pt_on_hand = [0;.2;0];
+finger_pt_on_hand = [0;.3;0];
 finger_axis_on_hand = [0;1;0];
 
 
@@ -24,7 +24,7 @@ drill_button_pub = drillButtonPlanner(r,atlas,drill.button_pos, drill.button_nor
  finger_pt_on_hand, finger_axis_on_hand, buttonInRightHand, useVisualization, publishPlans);
 
 %%
-while snopt_info_pre > 10
+% while snopt_info_pre > 10
 if use_simulated_state
   [lb ub] = atlas.getJointLimits;
   r_arm_joint_indices = regexpIndex('^r_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
@@ -42,9 +42,9 @@ q0(r_arm_joint_indices) =   [   -0.6410
 else
   q0 = lcm_mon.getStateEstimate();
 end
-v.draw(0,q0);
+% v.draw(0,q0);
 [xtraj_pre,snopt_info_pre,infeasible_constraint_pre] = drill_button_pub.createPrePokePlan(q0, 5);
-end
+% end
 %%
 if use_simulated_state
   q0 = xtraj_pre.eval(xtraj_pre.tspan(2));
@@ -52,5 +52,5 @@ if use_simulated_state
 else
   q0 = lcm_mon.getStateEstimate();
 end
-offset = [0;0;0];
+offset = [-.1;-.08;.06];
 [xtraj,snopt_info,infeasible_constraint] = drill_button_pub.createPokePlan(q0, offset, 5);

@@ -11,7 +11,7 @@ classdef drillTaskLCMMonitor
     affordance_monitor
     atlas
     state_frame
-    hand_body = 29;
+    hand_body;
   end
   
   methods (Access = private)
@@ -106,7 +106,7 @@ classdef drillTaskLCMMonitor
   end
   
   methods
-    function obj = drillTaskLCMMonitor(atlas)
+    function obj = drillTaskLCMMonitor(atlas, useRightHand)
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.affordance_monitor = drake.util.MessageMonitor(drc.affordance_collection_t(), 'utime');
       obj.lc.subscribe('AFFORDANCE_COLLECTION',obj.affordance_monitor);
@@ -114,6 +114,13 @@ classdef drillTaskLCMMonitor
       obj.atlas = atlas;
       obj.state_frame = atlas.getStateFrame;
       obj.state_frame.subscribe('EST_ROBOT_STATE');
+      
+      
+      if useRightHand
+        obj.hand_body = regexpIndex('r_hand',{atlas.getBody(:).linkname});
+      else
+        obj.hand_body = regexpIndex('l_hand',{atlas.getBody(:).linkname});
+      end
     end
     
     function [wall_data, drill_data] = getWallAndDrillAffordances(obj)
