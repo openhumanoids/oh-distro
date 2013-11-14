@@ -180,11 +180,16 @@ classdef Atlas < Biped
 
     function z = getPelvisHeightAboveFeet(obj,q)
       kinsol = doKinematics(obj,q);
+      foot_z = getFootHeight(obj,kinsol);
+      pelvis = forwardKin(obj,kinsol,findLinkInd(obj,'pelvis'),[0;0;0]);
+      z = pelvis(3) - foot_z;
+    end
+
+    function foot_z = getFootHeight(obj,q)
+      kinsol = doKinematics(obj,q);
       rfoot_cpos = contactPositions(obj,kinsol,findLinkInd(obj,'r_foot'));
       lfoot_cpos = contactPositions(obj,kinsol,findLinkInd(obj,'l_foot'));
       foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
-      pelvis = forwardKin(obj,kinsol,findLinkInd(obj,'pelvis'),[0;0;0]);
-      z = pelvis(3) - foot_z;
     end
 
     function [zmin,zmax] = getPelvisHeightLimits(obj,q) % for BDI manip mode
