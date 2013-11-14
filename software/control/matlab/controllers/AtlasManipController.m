@@ -34,8 +34,7 @@ classdef AtlasManipController < DRCController
         options.controller_type = 1;
       end
       
-      if options.controller_type == 1 % use PD control
-        
+      if options.controller_type == 1 % PID control
         
         % instantiate position ref publisher
         qref = PositionRefFeedthroughBlock(r);
@@ -45,7 +44,20 @@ classdef AtlasManipController < DRCController
         outs(1).system = 2;
         outs(1).output = 1;
         sys = mimoCascade(qt,qref,[],ins,outs);
-     
+
+      elseif options.controller_type == 2 % PID control w/pelvis adjustment
+        
+        % instantiate position ref publisher
+        qref = PositionRefFeedthroughBlock(r);
+        manip_cmd = BDIManipCommandBlock(r);
+        
+        ins(1).system = 1;
+        ins(1).input = 1;
+        outs(1).system = 2;
+        outs(1).output = 1;
+        sys = mimoCascade(qt,manip_cmd,[],ins,outs);
+        sys = mimoCascade(sys,qref,[],ins,outs);
+
       elseif options.controller_type == 2 % use PD + gravity compensation
 
         % cascade gravity compensation block
