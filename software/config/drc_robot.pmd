@@ -46,6 +46,10 @@ group "a.0.drivers" {
 
 # must be individually launched as per hardware setup
 group "a.0.hand_drivers" {
+    cmd "aa-ros2lcm-hands" {
+        exec = "roslaunch --wait translators hands_notsim.launch";
+        host = "robot";
+    }
     cmd "sandia-right" {
         exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA R";
         host = "robot";
@@ -55,20 +59,20 @@ group "a.0.hand_drivers" {
         host = "robot";
     }
     cmd "irobot-right" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT R 44";
-        host = "robot";
+        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=r hand_id:=44";
+        host = "localhost";
     }
     cmd "irobot-left" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh IROBOT L 47";
-        host = "robot";
+        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=l hand_id:=44";
+        host = "localhost";
     }   
-    cmd "aa-ros2lcm-hands" {
-        exec = "roslaunch translators hands_notsim.launch";
-        host = "robot";
-    }
 }
 
 group "a.1.core" {
+    cmd "roscore" {
+        exec = "roscore";
+        host = "localhost";
+    }
     cmd "aa-sync" {
         exec = "drc-state-sync -b -e";
         host = "robot";
@@ -113,6 +117,7 @@ group "a.1.core" {
         exec = "drc-frequency";
         host = "extra";
     }
+
 }
 
 group "a.2.p_and_c" {
@@ -327,20 +332,8 @@ group "m.hands" {
         exec = "rosrun handle_launch power_grasp_keyboard_teleop.py";
         host = "robot";
     }
-    cmd "irobot_hand_close_right" {
-        exec = "rosrun handle_launch mit_irobot_hand_control.py r CLOSE";
-        host = "robot";
-    }
-    cmd "irobot_hand_open_right" {
-        exec = "rosrun handle_launch mit_irobot_hand_control.py r OPEN";
-        host = "robot";
-    }
-    cmd "irobot_hand_calibrate_jig_right" {
-        exec = "rosrun handle_launch mit_irobot_hand_control.py r CALIBRATE_JIG";
-        host = "robot";
-    }
-    cmd "irobot_hand_calibrate_no_jig_right" {
-        exec = "rosrun handle_launch mit_irobot_hand_control.py r CALIBRATE_NO_JIG";
+    cmd "irobot_highlevel_control_r" {
+        exec = "rosrun handle_launch mit_irobot_hand_control.py R";
         host = "robot";
     }
 }
