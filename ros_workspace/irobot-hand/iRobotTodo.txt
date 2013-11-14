@@ -14,6 +14,8 @@ TODO:
 * check that everything works with 2 hands connected
 
 FOCUS FOR TODAY:
+* weekly status update
+* order of launching translator and iRobot driver
 
 BUSY:
 

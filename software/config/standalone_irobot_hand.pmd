@@ -34,3 +34,22 @@ group "fake-hand-state" {
         host = "localhost";
     }
 }
+
+######################################################
+
+script "launch_translator" {
+    start cmd "aa-ros2-lcm-hands";
+    wait ms 500;
+}
+
+script "launch_right_hand" { 
+    run_script "launch_translator";
+    start cmd "irobot-right";
+}
+
+
+script "launch_left_hand" { 
+    run_script "launch_translator";
+    start cmd "irobot-left";
+}
+
