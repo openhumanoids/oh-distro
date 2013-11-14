@@ -18,7 +18,7 @@ classdef AtlasManipController < DRCController
   
       integral_gains = zeros(getNumDOF(r),1);
       if options.controller_type == 1 % use PD control
-        integral_gains(arm_joints) = 0.5;
+        integral_gains(arm_joints) = 0.35;
         integral_gains(back_joints) = 0.0;
       end
       
