@@ -20,7 +20,8 @@ options.dt = 0.001;
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe','inner'});
-r = setTerrain(r,DRCTerrainMap(false,struct('name',['Walk Plan (', location, ')'],'status_code',status_code,'fill',true)));
+%r = setTerrain(r,DRCTerrainMap(false,struct('name',['Walk Plan (', location, ')'],'status_code',status_code,'fill',true)));
+r = setTerrain(r,RigidBodyTerrain());
 r = compile(r);
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
@@ -83,7 +84,9 @@ while true
 
 
       if (~isempty(footsteps))
-        r.setTerrain(r.getTerrain().setMapMode(footstep_opts.map_command));
+        %r.setTerrain(r.getTerrain().setMapMode(footstep_opts.map_command));
+        r = setTerrain(r,RigidBodyTerrain());
+        
         % Align the first two steps to the current feet poses
         feet_pos = feetPosition(r, x0(1:nq));
         if footsteps(1).is_right_foot
@@ -122,15 +125,15 @@ while true
           qnom_state = 'current';
         end
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX)
-          fixed_links = struct('link',r.findLink('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          fixed_links = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
           % with fixed joint hands, the link name is huge.
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('l_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX)
-          fixed_links = struct('link',r.findLink('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('r_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         elseif (qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
-          fixed_links = struct('link',r.findLink('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
-          fixed_links(2) = struct('link',r.findLink('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
+          fixed_links(2) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
           %fixed_links = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('r_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
           %fixed_links(2) = struct('link',r.findLink(r.getLinkNames{r.findLinkInd('l_foot')+1}),'pt',[0;0.1;0],'tolerance',0.05);
         else
