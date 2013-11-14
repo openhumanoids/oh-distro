@@ -1,8 +1,8 @@
-# relative to the near most point. X faces along the board. ,,,,,
+# relative to the near most point. X faces along the board. Dx, Dy, Z, Dyaw,,
 # order: LA: 2; 4;  LB: 3 LC: 9; 10; 12. LD: 14,,,,,
 01_2x6_4,-1,-1,-1,-1,-1
 02_2x6_1,-0.323615,-0.334221,0.66,1.54697,helps to roll/lean into the pile. Get the shoulder over
-03_2x6_3,-0.0348461,0.471638,0.7,0.0720657,about half way up the block. Facing in same orientation. Lots of heights work
+03_2x6_3,-0.391746,-0.428448,0.7,1.55852,about half way up the block. Facing in same orientation. Lots of heights work
 04_4x4x40_4,-0.65425,-0.527123,0.66,1.60356,same location as block 2
 05_4x4x40_3,-1,-1,-1,-1,-1
 06_2x6_2,-1,-1,-1,-1,-1
@@ -11,7 +11,7 @@
 09_2x4_4,-0.353197,-0.450592,0.79,1.54697,could instead grasp from same spot as 10.
 10_4x4x40_2,-0.581364,-0.0076541,0.82,1.58029,stand perfectly flat with post and reach blindly onto post with right. Fit perception before you grasp
 11_4x4x40_1,-1,-1,-1,-1,-1
-12_2x4_3,-0.353395,-0.860537,0.79,1.54649,could instead grasp from same spot as 10.
+12_2x4_3,-0.353395,-0.450592,0.79,1.54649,could instead grasp from same spot as 10.
 13_2x4_2,-1,-1,-1,-1,-1
 14_2x4_1,-0.598935,-0.498268,0.66,1.56923,awkward. Depends on lie of pipe. Need to grasp obliquely or with prismatic grasp
 15_4x4x20_1,-1,-1,-1,-1,-1
