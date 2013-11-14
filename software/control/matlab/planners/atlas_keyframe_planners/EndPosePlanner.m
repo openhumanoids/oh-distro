@@ -306,7 +306,7 @@ classdef EndPosePlanner < KeyframePlanner
             
           for j = 1:length(s),
             
-            utime = now() * 24 * 60 * 60;
+            utime = get_timestamp_now();% equivalent to bot_timestamp_now();
             q_tmp = qtraj.eval(s(j));
             xtraj_atlas(1:nq_atlas) = q_tmp(obj.atlas2robotFrameIndMap(1:nq_atlas));
             obj.pose_pub.publish(xtraj_atlas,utime);
@@ -563,7 +563,7 @@ classdef EndPosePlanner < KeyframePlanner
             %            [~,J_rh] = forwardKin(obj.r,kinsol_out,obj.r_hand_body,[0;0;0],1);
             %            fprintf('The condition number of Jacobian matrix of the right hand is %10.4f\n',cond(J_rh));
             send_status(3,0,0,'Publishing candidate endpose...');
-            utime = now() * 24 * 60 * 60;
+            utime = get_timestamp_now();% equivalent to bot_timestamp_now();
             nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
             xtraj_atlas = zeros(2*nq_atlas,1);
             xtraj_atlas(1:nq_atlas,:) = q_out(obj.atlas2robotFrameIndMap(1:nq_atlas),:);

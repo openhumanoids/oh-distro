@@ -274,7 +274,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           % publish robot map
           disp('Publishing manip plan...');
 
-          utime = now() * 24 * 60 * 60;
+          utime = get_timestamp_now();% equivalent to bot_timestamp_now();
           nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
           xtraj_atlas = zeros(nq_atlas*2+2,length(timeIndices));
           xtraj_atlas(1,:) = 0*timeIndices;

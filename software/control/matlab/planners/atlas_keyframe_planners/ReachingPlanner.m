@@ -784,7 +784,7 @@ classdef ReachingPlanner < KeyframePlanner
             ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
             
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
-            utime = now() * 24 * 60 * 60;
+            utime = get_timestamp_now();% equivalent to bot_timestamp_now();
             
             obj.plan_pub.publish(xtraj_atlas,ts,utime, snopt_info_vector);
         end

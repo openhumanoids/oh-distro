@@ -387,7 +387,7 @@ classdef ManipulationPlanner < KeyframePlanner
             %q_d(:,i) = q(ind,i);
         end
 
-        utime = now() * 24 * 60 * 60;
+        utime = get_timestamp_now();% equivalent to bot_timestamp_now();
         if(is_manip_map)
 
           % Keep the largest consecutive pAdjustedortion of the plan for each

@@ -760,7 +760,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
             
             snopt_info_vector = max(snopt_info)*ones(1, size(xtraj_atlas,2));
-            utime = now() * 24 * 60 * 60;
+            utime = get_timestamp_now();% equivalent to bot_timestamp_now();
             if(~obj.plan_cache.isEndPose)
                 if(obj.plan_cache.num_grasp_transitions>0)
                     G = obj.plan_cache.grasp_transition_states;
@@ -893,7 +893,7 @@ end% end classdef
 %    ts_prepend = s.*max(Tmax_joints,Tmax_ee); % plan timesteps   
 %    
 %    % for debug
-%    utime = now() * 24 * 60 * 60;              
+%    utime = get_timestamp_now();% equivalent to bot_timestamp_now();             
 %    obj.plan_pub.publish(xtraj_prepend,ts_prepend,utime);
 %  end
 %  
@@ -916,7 +916,7 @@ end% end classdef
 %      end
 %      % update cache and publish
 %      pause(0.1);
-%      utime = now() * 24 * 60 * 60; 
+%      utime = get_timestamp_now();% equivalent to bot_timestamp_now();
 %      obj.plan_pub.publish(xtraj,ts,utime);
 
 %end    
