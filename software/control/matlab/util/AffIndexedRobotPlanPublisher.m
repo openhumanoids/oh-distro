@@ -22,7 +22,7 @@ classdef AffIndexedRobotPlanPublisher
         
         function publish(obj, X, I, utime)
             if nargin < 3
-                utime = now() * 24 * 60 * 60;
+                utime = get_timestamp_now();% equivalent to bot_timestamp_now();
             end
             msg=AffIndexedRobotPlanPublisher.encodeAffIndexedRobotPlan(obj,X,I,utime);
             %msg=AffIndexedRobotPlanPublisher.testrobotstate(); % WORKS
@@ -110,12 +110,12 @@ classdef AffIndexedRobotPlanPublisher
                 snopt_info_vector = zeros(1,size(X,2));
             end          
             if nargin < 3
-                t = now() * 24 * 60 * 60;
+                t = get_timestamp_now();% equivalent to bot_timestamp_now();
             end
             
             
             msg = drc.aff_indexed_robot_plan_t();
-            msg.utime = t * 1000000;
+            msg.utime = t;
             msg.robot_name = 'atlas';
             msg.num_states = size(X,2);
             num_dofs = size(X,1)/2;

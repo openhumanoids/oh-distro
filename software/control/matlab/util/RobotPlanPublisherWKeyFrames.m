@@ -21,7 +21,7 @@ classdef RobotPlanPublisherWKeyFrames
 
         function publish(obj,varargin)
             if nargin < 4
-               utime = now() * 24 * 60 * 60;
+               utime = get_timestamp_now();% equivalent to bot_timestamp_now();
             end
             switch nargin
                 case 4
@@ -57,13 +57,13 @@ classdef RobotPlanPublisherWKeyFrames
                 snopt_info_vector = zeros(1,size(X,2));
             end
             if nargin < 4
-                t = now() * 24 * 60 * 60;
+                t = get_timestamp_now();% equivalent to bot_timestamp_now();
             end
             
             
             
             msg = drc.robot_plan_w_keyframes_t();
-            msg.utime = t * 1000000;
+            msg.utime = t;
             msg.robot_name = 'atlas';
             msg.num_states = size(X,2);
             msg.num_keyframes = sum(X(1,:));
@@ -80,7 +80,7 @@ classdef RobotPlanPublisherWKeyFrames
                 is_keyframe(i) = (X(1,i)==1.0);
                 is_breakpoint(i) = (X(2,i)==1.0);
                 plan(i) = drc.robot_state_t();
-                plan(i).utime = (T(i)*1000000);% use relative time //+msg.utime
+                plan(i).utime = (T(i)*1000000);% use relative time //
                 if obj.floating
                     plan(i).pose = drc.position_3d_t();
                     plan(i).pose.translation = drc.vector_3d_t();

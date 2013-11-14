@@ -21,7 +21,7 @@ classdef CandidateRobotPosePublisher
 
         function publish(obj,varargin)
             if nargin < 3
-                utime = now() * 24 * 60 * 60;
+                utime = get_timestamp_now();% equivalent to bot_timestamp_now();
             end                  
             switch nargin
                 case 3
@@ -37,13 +37,13 @@ classdef CandidateRobotPosePublisher
 
         function msg = encodeRobotPose(obj,X,t)
             if nargin < 4
-                t = now() * 24 * 60 * 60;
+                t = get_timestamp_now();% equivalent to bot_timestamp_now();
             end
             offset = 0;
             num_dofs = (size(X,1)-offset)/2;
             
             msg = drc.robot_state_t();
-            msg.utime = t * 1000000;
+            msg.utime = t;
                         i=1;
             msg.pose = drc.position_3d_t();
             msg.pose.translation = drc.vector_3d_t();
