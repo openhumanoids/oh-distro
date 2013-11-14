@@ -47,8 +47,9 @@ class LoggingListener(object):
     def write_csv(self):
         currentfile = inspect.getfile(inspect.currentframe())
         currentdir = os.path.dirname(os.path.abspath(currentfile))
+        datadir = currentdir + '/../data/'
 
-        with open(currentdir + '/joint_angle_estimation_data.csv', 'wb') as csvfile:
+        with open(datadir + 'joint_angle_estimation_data.csv', 'wb') as csvfile:
             writer = csv.DictWriter(csvfile, self.fieldnames,  dialect='excel')
             writer.writeheader()
             for i in range(len(self.data)):
