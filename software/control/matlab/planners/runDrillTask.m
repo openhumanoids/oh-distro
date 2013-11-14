@@ -186,7 +186,8 @@ end
 
 
 %% drill delta
-delta = [0;0;0];
+% delta = [0;-.02;0];
+delta = wall.normal*.02;
 if use_simulated_state
   q0 = xtraj_drill.eval(xtraj_drill.tspan(2));
   q0 = q0(1:34);

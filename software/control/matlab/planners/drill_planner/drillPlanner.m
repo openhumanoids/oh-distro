@@ -71,7 +71,7 @@ classdef drillPlanner
 
       cost = ones(34,1);
       cost(1:6) = 10*ones(6,1);
-      cost(back_joint_indices) = [100;100;100];
+      cost(back_joint_indices) = [100;1000;100];
       
       vel_cost = cost*.05;
       accel_cost = cost*.05;
@@ -160,7 +160,7 @@ classdef drillPlanner
         posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]);
       end
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      posture_constraint = posture_constraint.setJointLimits(9,-inf,.25);
+      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
             
       % create drill position constraints
       x_drill_traj = PPTrajectory(foh(t_drill,drill_points));
@@ -256,7 +256,8 @@ classdef drillPlanner
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      
+      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
+
       % create drill position constraint
       drill_pos_constraint = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill,x_drill,[t_vec(end) t_vec(end)]);
       
@@ -317,7 +318,8 @@ classdef drillPlanner
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      
+      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
+
       % create drill direction constraint
       drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
         obj.drilling_world_axis,obj.default_axis_threshold);
