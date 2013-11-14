@@ -656,7 +656,7 @@ classdef ReachingPlanner < KeyframePlanner
                     % it is not an indication that the final plan is in violation
                     
                     send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.',snopt_info);
-                    if(obj.planning_mode == 3)
+                    if(obj.planning_mode >1)
                       send_status(4,0,0,send_msg);
                     end
                     display(infeasibleConstraintMsg(infeasible_constraint));
@@ -667,9 +667,8 @@ classdef ReachingPlanner < KeyframePlanner
             end
             %============================
             
-            s_breaks=[s(1) s(end)];
-            q_breaks=[q0_bound q_final_guess];
-            qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0_bound q_final_guess]));
+
+            qtraj_guess = PPTrajectory(spline([s(1) s(end)],[zeros(obj.r.getNumDOF,1) q0_bound q_final_guess zeros(obj.r.getNumDOF,1)]));
 %             collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
             iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
             if(obj.planning_mode == 1)
@@ -714,6 +713,11 @@ classdef ReachingPlanner < KeyframePlanner
                 qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
                 qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
                 qtraj_guess = PPTrajectory(spline(s_breaks,[qdot0 q_breaks qdotf]));
+            elseif(obj.planning_mode == 2 || obj.planning_mode == 3)
+              s_breaks = iktraj_tbreaks;
+              q_breaks = qtraj_guess.eval(s_breaks);
+              qdot0 = zeros(obj.r.getNumDOF,1);
+              qdotf = zeros(obj.r.getNumDOF,1);
             end
             
             
@@ -750,7 +754,7 @@ classdef ReachingPlanner < KeyframePlanner
             end
             obj.plan_cache.s = s;
             obj.plan_cache.s_breaks = s_breaks;
-            obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
+            obj.plan_cache.qtraj = PPTrajectory(spline(s, [qdot0 q qdotf]));
             if(obj.planning_mode==1)
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(qsc.active);
             else
@@ -787,6 +791,7 @@ classdef ReachingPlanner < KeyframePlanner
             utime = get_timestamp_now();% equivalent to bot_timestamp_now();
             
             obj.plan_pub.publish(xtraj_atlas,ts,utime, snopt_info_vector);
+            display(sprintf('Reaching planner ts %5.3f\n',ts(end)));
         end
         %-----------------------------------------------------------------------------------------------------------------
         function cost = getCostVector(obj)

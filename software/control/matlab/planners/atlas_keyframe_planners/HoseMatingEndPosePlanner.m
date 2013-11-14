@@ -16,7 +16,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
   methods
     function obj = HoseMatingEndPosePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
       obj = obj@EndPosePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode);
-      obj.pelvis_upright_gaze_tol = pi/30;
+      obj.pelvis_upright_gaze_tol = pi/20;
       obj.ee_torso_dist_lb = 0.5;
       obj.nozzle_hand = obj.r_hand_body;
       obj.hose_hand = obj.l_hand_body;
@@ -120,7 +120,9 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         hose_hand_constraints = [];
       end
       
-      
+      obj.updateWyePose();
+      T_world_wye = HT(obj.wye_pose(1:3),obj.wye_pose(4),obj.wye_pose(5),obj.wye_pose(6));
+      iktraj_pelvis_constraint = [iktraj_pelvis_constraint,{WorldPositionInFrameConstraint(obj.r,obj.pelvis_body,[0;0;0],T_world_wye,[-0.8;-0.3;-0.7],[-0.2;0.3;0.5],[0,1])}];
       N = length(timeIndices);
       NBreaks = min(N,5);% No more than 5 breaks for IKTraj.
       s_breaks = linspace(0,1,NBreaks);
@@ -128,14 +130,13 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       
       iktraj_nozzle_hand_constraint = {};
       iktraj_hose_hand_constraint = {};
-      obj.updateWyePose();
-      T_world_wye = HT(obj.wye_pose(1:3),obj.wye_pose(4),obj.wye_pose(5),obj.wye_pose(6));
+      
       if(obj.nozzle_hand == obj.r_hand_body)
         T_world_hose_mate = T_world_wye*[rpy2rotmat([0;0;-pi/3]) [0;0;0];0 0 0 1]; 
       elseif(obj.nozzle_hand == obj.l_hand_body)
         T_world_hose_mate = T_world_wye*[rpy2rotmat([0;0;pi/3]) [0;0;0];0 0 0 1]; 
       end
-      iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_hose_mate,[-0.5;-0.2;-0.2],[-0.2;0.2;0.1],tspan)}];
+      iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_wye,[-0.5;-0.4;-0.4],[-0.2;0.4;0.2],tspan)}];
 %       iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldFixedBodyPoseConstraint(obj.r,obj.hose_hand,tspan)}];
         
       for j = 2:NBreaks
@@ -147,10 +148,10 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         iktraj_nozzle_hand_constraint = [iktraj_nozzle_hand_constraint,parse2PosQuatConstraint(obj.r,obj.nozzle_hand,[0;0;0],nozzle_hand_pose,2e-2,sind(4)^2,[si,si])];
       end
       
-      dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,[0 1])};
+      dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.nozzle_hand,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,[0 1])};
       iktraj_dist_constraint = [iktraj_dist_constraint,dist_constraint];       
                         
-      dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,[0 1])};
+      dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.hose_hand,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb/2,inf,[0 1])};
       iktraj_dist_constraint = [iktraj_dist_constraint,dist_constraint];   
       
       dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,[0;0;0],[0;0;0],0.3,inf,[0 1])};

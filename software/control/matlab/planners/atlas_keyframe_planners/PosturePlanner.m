@@ -226,7 +226,9 @@ classdef PosturePlanner < KeyframePlanner
             q_desired([1 2 6]) = q0([1 2 6]);
           end
           
-          qtraj_guess = PPTrajectory(foh([s(1) s(end)],[q0 q_desired]));
+          qdot0 = zeros(obj.r.getNumDOF,1);
+          qdotf = zeros(obj.r.getNumDOF,1);
+          qtraj_guess = PPTrajectory(spline([s(1) s(end)],[qdot0 q0 q_desired qdotf]));
      
           s_breaks = linspace(0,1,obj.plan_cache.num_breaks);
           % calculate and cache end effectors breaks via FK.
@@ -273,7 +275,7 @@ classdef PosturePlanner < KeyframePlanner
 
           obj.plan_cache.s = s;    
           obj.plan_cache.s_breaks = s_breaks;
-          obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
+          obj.plan_cache.qtraj = PPTrajectory(spline(s, [qdot0 q qdotf]));
           obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
           disp('Publishing posture plan...');
           nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
@@ -291,6 +293,7 @@ classdef PosturePlanner < KeyframePlanner
           utime = get_timestamp_now();% equivalent to bot_timestamp_now();
 
           obj.plan_pub.publish(xtraj_atlas,ts,utime);
+          display(sprintf('PosturePlanner ts %5.3f\n',ts(end)));
         end
     %-----------------------------------------------------------------------------------------------------------------      
          
