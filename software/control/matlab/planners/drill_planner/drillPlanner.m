@@ -32,7 +32,7 @@ classdef drillPlanner
   end
   
   methods    
-    function obj = drillTestPlanPublisher(r,atlas,drill_pt_on_hand, drill_axis_on_hand, ...
+    function obj = drillPlanner(r,atlas,drill_pt_on_hand, drill_axis_on_hand, ...
         drilling_world_axis, useRightHand, doVisualization, doPublish)
       obj.atlas = atlas;
       obj.r = r;

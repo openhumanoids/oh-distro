@@ -43,11 +43,11 @@ wall.targets = [wall.targets wall_center + [0;-wall_y/2;-wall_z/2]];
 wall.targets = [wall.targets wall_center + [0;wall_y/2;-wall_z/2]];
 drill.drill_axis = [1;0;0];
 drill.guard_pos = [.25;-.25;0];  
-drill.drill_axis = [0;0;-1];
-drill.guard_pos = [0;-.25;-.25];
+% drill.drill_axis = [0;0;-1];
+% drill.guard_pos = [0;-.25;-.25];
 end
 
-use_simulated_state = true;
+use_simulated_state = false;
 useVisualization = true;
 publishPlans = true;
 useRightHand = true;
@@ -63,10 +63,13 @@ q_check(drill_pub.joint_indices) = .1*randn(9,1);
 %% update drill
 drill = lcm_mon.getDrillAffordance();
 drill_pub = drill_pub.updateDrill(drill.guard_pos, drill.drill_axis);
-
+drill.drill_axis
 %% update wall
 wall = lcm_mon.getWallAffordance();
 drill_pub = drill_pub.updateWallNormal(wall.normal);
+wall.targets
+triangle = wall.targets;
+drill_points = [triangle triangle(:,1)];
 
 %% get nominal posture and publish walking plan
 q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
@@ -99,7 +102,7 @@ drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
 %% now we've walked up, lets double check
 if use_simulated_state
   q_check = xtraj_arm_init.eval(0);
-  q_check = q_check(1:34);
+  q_check = q_check(1:34);f
 %   q_check = zeros(34,1);
 %   q_check(drill_pub.joint_indices) = .1*randn(9,1);
 else
