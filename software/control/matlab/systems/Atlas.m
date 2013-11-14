@@ -9,7 +9,6 @@ classdef Atlas < Biped
       else
         typecheck(urdf,'char');
       end
-      
 
       if nargin < 2
         options = struct();
@@ -25,7 +24,6 @@ classdef Atlas < Biped
   
 %       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped(urdf,options.dt,options);
-
       
       if options.floating
         % could also do fixed point search here
@@ -180,11 +178,26 @@ classdef Atlas < Biped
       u = obj.inverse_dyn_qp_controller.mimoOutput(0,[],qddot_des,zeros(12,1),[q;qdot]);
     end
 
-    
+    function z = getPelvisHeightAboveFeet(obj,q)
+      kinsol = doKinematics(obj,q);
+      rfoot_cpos = contactPositions(obj,kinsol,findLinkInd(obj,'r_foot'));
+      lfoot_cpos = contactPositions(obj,kinsol,findLinkInd(obj,'l_foot'));
+      foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
+      pelvis = forwardKin(obj,kinsol,findLinkInd(obj,'pelvis'),[0;0;0]);
+      z = pelvis(3) - foot_z;
+    end
+
+    function [zmin,zmax] = getPelvisHeightLimits(obj,q) % for BDI manip mode
+      z_above_feet = getPelvisHeightAboveFeet(obj,q);
+      zmin = q(3) - (z_above_feet-obj.pelvis_min_height);
+      zmax = q(3) + (obj.pelvis_max_height-z_above_feet);
+    end
+
   end
-  
   properties (SetAccess = protected, GetAccess = public)
     x0
     inverse_dyn_qp_controller;
+    pelvis_min_height = 0.65; % [m] above feet, for hardware
+    pelvis_max_height = 0.92; % [m] above feet, for hardware
   end
 end
