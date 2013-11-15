@@ -20,8 +20,8 @@ classdef palmGazeLCMMonitor
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.left_palm_monitor = drake.util.MessageMonitor(drc.ee_goal_t(), 'utime');
       obj.right_palm_monitor = drake.util.MessageMonitor(drc.ee_goal_t(), 'utime');
-      obj.lc.subscribe('RIGHT_PALM_GAZE_GOAL',obj.right_palm_monitor);
-      obj.lc.subscribe('LEFT_PALM_GAZE_GOAL',obj.left_palm_monitor);
+      obj.lc.subscribe('RIGHT_PALM_SIMPLE_GAZE_GOAL',obj.right_palm_monitor);
+      obj.lc.subscribe('LEFT_PALM_SIMPLE_GAZE_GOAL',obj.left_palm_monitor);
       
       obj.atlas = atlas;
       obj.state_frame = atlas.getStateFrame;

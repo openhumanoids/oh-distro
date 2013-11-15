@@ -4,9 +4,9 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 %%
 lcm_mon = palmGazeLCMMonitor(atlas);
 
-doVisualization = true;
+doVisualization = false;
 doPublish = true;
-allowPelvisHeight = true;
+allowPelvisHeight = false;
 
 planner = palmGazePlanner(r,atlas, doVisualization, doPublish, allowPelvisHeight);
 
@@ -25,4 +25,6 @@ while(true)
   if ~isempty(right_palm_pose)
     [xtraj,snopt_info,infeasible_constraint] = planner.createGazePlan(q0, right_palm_pose, speed, true);
   end
+
+  pause(.01);
 end
