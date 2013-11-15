@@ -10,11 +10,11 @@ TODO:
 * check that everything works with 2 hands connected
 * command line tool to send high level ros commands for hand
 * closing safety (wear prevention)
+* calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
 
 FOCUS FOR TODAY:
 
 BUSY:
-* do a better job of visualizing joint angles in the viewer
 
 DONE:
 * ping hand
@@ -73,3 +73,4 @@ DONE:
 * drc-viewer interface for opening and closing hands
 * check if translator needs to be updated
 * weekly status update
+* do a better job of visualizing joint angles in the viewer

@@ -88,10 +88,10 @@ class IRobotHandController(object):
     def estimate_proximal_joint_angle(motor_encoder_ticks):
         if motor_encoder_ticks < 0:
             estimated_ticks = 0
-        elif motor_encoder_ticks < 3084.7:
-            estimated_ticks = 0.0774 * motor_encoder_ticks + 17.9094
+        elif motor_encoder_ticks < 5713.3:
+            estimated_ticks = 0.0770 * motor_encoder_ticks -11.9223
         else:
-            estimated_ticks = 0.0033 * motor_encoder_ticks + 246.6151
+            estimated_ticks = 0.0018 * motor_encoder_ticks + 418.1068
 
         return IRobotHandController.compute_proximal_joint_angle(estimated_ticks)
 
