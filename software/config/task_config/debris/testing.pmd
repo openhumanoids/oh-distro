@@ -47,6 +47,10 @@ group "b.2.planners" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
        host = "base";
     }
+    cmd "GazePlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runPalmGazePlanner();\"";
+       host = "base";
+    }
     cmd "fakepool" {
        exec = "drc-fake-grasp-pool";
        host = "base";
