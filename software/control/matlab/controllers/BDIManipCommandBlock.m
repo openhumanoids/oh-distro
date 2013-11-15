@@ -6,13 +6,20 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
   properties
     robot;
     params_pub;
+    controller_data;
   end
   
   methods
-    function obj = BDIManipCommandBlock(r,options)
+    function obj = BDIManipCommandBlock(r,controller_data,options)
       typecheck(r,'Atlas');
+      typecheck(controller_data,'SharedDataHandle');
   
-      if nargin<2
+      ctrl_data = getData(controller_data);
+      if ~isfield(ctrl_data,'qtraj')
+        error('QTrajEvalBlock: controller_data must contain qtraj field');
+      end
+      
+      if nargin<3
         options = struct();
       else
         typecheck(options,'struct');
@@ -35,7 +42,7 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
       
       obj.robot = r;
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
-
+      obj.controller_data = controller_data;
       obj.params_pub = AtlasManipParamsPublisher('ATLAS_MANIPULATE_PARAMS');
     end
    
@@ -43,15 +50,18 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
       q_des=varargin{1};
       x=varargin{2};
 
-      foot_z = getFootHeight(obj.robot,x(1:getNumDOF(obj.robot)));
-      params.pelvis_height = max(obj.robot.pelvis_min_height, ...
-        min(obj.robot.pelvis_max_height,q_des(3)-foot_z));
-      params.pelvis_yaw = 0;
-      params.pelvis_pitch = 0;
-      params.pelvis_roll = 0;
-      params.com_v0 = 0;
-      params.com_v1 = 0;
-      obj.params_pub.publish(params);
+      if t<=obj.controller_data.data.qtraj.tspan(end)
+        % only support pelvis height for the time being
+        foot_z = getFootHeight(obj.robot,x(1:getNumDOF(obj.robot)));
+        params.pelvis_height = max(obj.robot.pelvis_min_height, ...
+          min(obj.robot.pelvis_max_height,q_des(3)-foot_z));
+        params.pelvis_yaw = 0;
+        params.pelvis_pitch = 0;
+        params.pelvis_roll = 0;
+        params.com_v0 = 0;
+        params.com_v1 = 0;
+        obj.params_pub.publish(params);
+      end
       
       y = q_des;
     end

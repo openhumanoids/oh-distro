@@ -24,7 +24,8 @@ classdef Atlas < Biped
   
 %       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped(urdf,options.dt,options);
-      
+
+      obj.floating =options.floating;
       if options.floating
         % could also do fixed point search here
         obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
@@ -200,9 +201,10 @@ classdef Atlas < Biped
 
   end
   properties (SetAccess = protected, GetAccess = public)
-    x0
+    x0;
     inverse_dyn_qp_controller;
     pelvis_min_height = 0.65; % [m] above feet, for hardware
     pelvis_max_height = 0.92; % [m] above feet, for hardware
+    floating = true;
   end
 end

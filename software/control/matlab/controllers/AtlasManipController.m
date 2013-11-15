@@ -13,27 +13,27 @@ classdef AtlasManipController < DRCController
         options = struct();
       end
       
+      if ~isfield(options,'controller_type')
+        options.controller_type = 1;
+      end
+      
       arm_joints = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'arm'));
       back_joints = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'back'));
   
       integral_gains = zeros(getNumDOF(r),1);
-      if options.controller_type == 1 % use PD control
+      if options.controller_type == 1 % use PID control
         integral_gains(arm_joints) = 0.35;
         integral_gains(back_joints) = 0.0;
       end
       
       ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
-                            'qddtraj',zeros(getNumDOF(r),1),...
-                            'integral',zeros(getNumDOF(r),1),...
-                            'integral_gains',integral_gains)); 
+                        'qddtraj',zeros(getNumDOF(r),1),...
+                        'integral',zeros(getNumDOF(r),1),...
+                        'integral_gains',integral_gains)); 
 
       options.use_error_integrator = true;
       qt = QTrajEvalBlock(r,ctrl_data,options);
-      
-      if ~isfield(options,'controller_type')
-        options.controller_type = 1;
-      end
-      
+
       if options.controller_type == 1 % PID control
         
         % instantiate position ref publisher
@@ -49,7 +49,7 @@ classdef AtlasManipController < DRCController
         
         % instantiate position ref publisher
         qref = PositionRefFeedthroughBlock(r);
-        manip_cmd = BDIManipCommandBlock(r);
+        manip_cmd = BDIManipCommandBlock(r,ctrl_data);
         
         ins(1).system = 1;
         ins(1).input = 1;
@@ -176,7 +176,7 @@ classdef AtlasManipController < DRCController
         try
           msg = data.COMMITTED_ROBOT_PLAN;
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
-          [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
+          [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,obj.robot.floating,joint_names); 
           % TODO: REMOVE THIS ********************************************
           % try using the desired position of the last plan as the first
           % point in the plan as using the current position causes a "jump"
@@ -188,6 +188,10 @@ classdef AtlasManipController < DRCController
           if isa(qtraj_prev,'PPTrajectory') 
             % smooth transition from end of previous trajectory
             qprev_end = fasteval(qtraj_prev,qtraj_prev.tspan(end));
+            if obj.robot.floating
+              % always use current desired body pose
+              qprev_end(1:6) = q0(1:6);
+            end
             if max(abs(q0-qprev_end)) < 0.2
               qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
             else
