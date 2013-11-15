@@ -24,6 +24,7 @@
 #include <sandia_hand_msgs/RawPalmState.h>
 #include <sandia_hand_msgs/RawMoboState.h>
 #include <handle_msgs/HandleSensors.h>
+#include <mit_helios_scripts/MITIRobotState.h>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
@@ -63,8 +64,7 @@ private:
   ros::Subscriber  sandia_l_hand_finger_0_state_sub_, sandia_l_hand_finger_1_state_sub_, sandia_l_hand_finger_2_state_sub_, sandia_l_hand_finger_3_state_sub_,sandia_l_hand_palm_state_sub_, sandia_l_hand_mobo_state_sub_;
   ros::Subscriber  sandia_r_hand_finger_0_state_sub_, sandia_r_hand_finger_1_state_sub_, sandia_r_hand_finger_2_state_sub_, sandia_r_hand_finger_3_state_sub_,sandia_r_hand_palm_state_sub_, sandia_r_hand_mobo_state_sub_;  
  
-  //Irobot hand subcribers and cache
-  handle_msgs::HandleSensors irobot_l_hand_state_,irobot_r_hand_state_;
+  //Irobot hand subcribers
   ros::Subscriber  irobot_l_hand_joint_states_sub_, irobot_r_hand_joint_states_sub_; 
   
   //Sandia callback functions
@@ -519,7 +519,6 @@ void App::irobot_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg, RobotSi
  std::string hand_name_upper = boost::to_upper_copy(hand_name_lower);
 
 
-  irobot_r_hand_state_ = *msg;
   drc::hand_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   msg_out.num_joints = irobotJointNames.size();
