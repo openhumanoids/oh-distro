@@ -330,7 +330,7 @@ int App::repaint (int64_t now){
   wmove(w, 10, 0);
   wprintw(w, "conf: %s %s with %s to %s", hand_side_string.c_str() , hand_type_string.c_str(), mode_string.c_str(), controller_string.c_str() );
   wmove(w, 11, 0);
-  wprintw(w, "      [z]   [x]         [c]            [v]",  (int) use_sandia_);
+  wprintw(w, "      [z]   [x]         [c]              [v]",  (int) use_sandia_);
   //wmove(w, 12, 0);
   //wprintw(w, "      L/R   S/iR        Current/Plan",  (int) use_sandia_);
 
