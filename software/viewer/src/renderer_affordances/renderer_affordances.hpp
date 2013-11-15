@@ -1405,7 +1405,11 @@ struct RendererAffordances {
     typedef map<string, StickyFootStruc > sticky_feet_map_type_;
     for(sticky_feet_map_type_::iterator it = self->stickyFootCollection->_feet.begin(); it!=self->stickyFootCollection->_feet.end(); it++)
     {
- 
+        bool active = true;
+        if(it->second.is_conditional)
+          active=is_sticky_foot_condition_active(it->second,self->affCollection);
+        if(active)
+        { 
           if(it->second._gl_foot->is_bodypose_adjustment_enabled())
           {
             it->second._gl_foot->_collision_detector_floatingbase_markers->ray_test( from, to, intersected_object,hit_pt);
@@ -1486,7 +1490,7 @@ struct RendererAffordances {
               }
           
          }// end if
-    
+      }//end if active   
     }// end for   
     
 
@@ -1494,6 +1498,12 @@ struct RendererAffordances {
     typedef map<string, StickyHandStruc > sticky_hands_map_type_;
     for(sticky_hands_map_type_::iterator it = self->stickyHandCollection->_hands.begin(); it!=self->stickyHandCollection->_hands.end(); it++)
     {
+
+        bool active = true;
+        if(it->second.is_conditional)
+          active=is_sticky_hand_condition_active(it->second,self->affCollection);
+        if(active)
+        {
 
           if(it->second._gl_hand->is_bodypose_adjustment_enabled())
           {
@@ -1573,7 +1583,7 @@ struct RendererAffordances {
               }
         
          }// end if
-    
+      }//end if active
     }// end for
     
     self->prev_ray_hit_drag = self->ray_hit_drag;

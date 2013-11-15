@@ -14,7 +14,14 @@
 #define PARAM_CLEAR_SEEDS "Clear Seeds"
 #define PARAM_STORE "Store to otdf file" 
 #define PARAM_UNSTORE "Unstore from otdf file" 
-#define PARAM_SET_SEED_CONDITION "Set condition" 
+#define PARAM_UPDATE_SEED_CONDITION "Update Seed Condition" 
+#define PARAM_MAKE_SEED_CONDITIONAL "Make Seed Conditional" 
+#define  PARAM_SET_SEED_COND "Set Seed Cond"
+#define PARAM_REMOVE_SEED_COND "Remove Seed Cond"
+#define PARAM_SEED_COND "Condition" 
+#define PARAM_SEED_COND_JOINT_NAME "Name"
+#define PARAM_SEED_COND_JOINT_VAL "Val"
+
 
 #define PARAM_HALT_ALL_OPT "Halt All Opts"
 
@@ -1338,6 +1345,12 @@ namespace renderer_affordances_gui_utils
     RendererAffordances *self = (RendererAffordances*) user;
     self->dblclk_popup = NULL;
   }
+  
+  static void on_second_stage_popup_close (BotGtkParamWidget *pw, void *user)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    self->second_stage_popup = NULL;
+  }  
   
   //--------------------------------------------------------------------------
 

@@ -250,6 +250,11 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
         object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(hand_it->second.object_name));
         KDL::Frame T_world_graspgeometry = KDL::Frame::Identity(); // the object might have moved.
         
+        bool active = true;
+        if(hand_it->second.is_conditional)
+          active=is_sticky_hand_condition_active(hand_it->second,self->affCollection);
+  
+        
         if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
             cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
         else {  
@@ -357,7 +362,9 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                     ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
                 }
             }   
-            hand_it->second._gl_hand->draw_body_in_frame (ch,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
+            if(active)
+              hand_it->second._gl_hand->draw_body_in_frame (ch,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
+              
             string hand_name = hand_it->first;
             int order = self->seedSelectionManager->get_selection_order(hand_name);
             if((order>0)&&(self->seedSelectionManager->get_selection_cnt()>1))
@@ -485,8 +492,8 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                     ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
                 }
             }   
-              
-            hand_it->second._gl_hand->draw_body_in_frame (ch,alpha2,T_world_graspgeometry);
+            if(active)  
+             hand_it->second._gl_hand->draw_body_in_frame (ch,alpha2,T_world_graspgeometry);
         
             KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
             KDL::Frame T_object_graspgeometry = T_world_object.Inverse()*T_world_graspgeometry;
@@ -505,6 +512,12 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
         foot_it->second._gl_foot->enable_link_selection(self->selection_enabled);
         typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
         object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(foot_it->second.object_name));
+        
+        bool active = true;
+        if(foot_it->second.is_conditional)
+          active=is_sticky_foot_condition_active(foot_it->second,self->affCollection);
+          
+        
         KDL::Frame T_world_geometry = KDL::Frame::Identity(); // the object might have moved.
         if(!obj_it->second._gl_object->get_link_geometry_frame(string(foot_it->second.geometry_name),T_world_geometry)){
             cerr << " failed to retrieve " << string(foot_it->second.geometry_name)<<" in object " << string(foot_it->second.object_name) <<endl;
@@ -552,8 +565,8 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                     ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
                 }
             }   
-        
-            foot_it->second._gl_foot->draw_body_in_frame (ch,alpha,T_world_geometry);//draws in geometry frame
+            if(active) 
+              foot_it->second._gl_foot->draw_body_in_frame (ch,alpha,T_world_geometry);//draws in geometry frame
             string foot_name = foot_it->first;
             int order = self->seedSelectionManager->get_selection_order(foot_name);
             if((order>0)&&(self->seedSelectionManager->get_selection_cnt()>1))
@@ -625,7 +638,8 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
                 }
             
             }  
-            foot_it->second._gl_foot->draw_body_in_frame (ch,alpha2,T_world_geometry);
+            if(active)
+              foot_it->second._gl_foot->draw_body_in_frame (ch,alpha2,T_world_geometry);
         
             KDL::Frame T_world_object = obj_it->second._gl_object->_T_world_body;
             KDL::Frame T_object_geometry = T_world_object.Inverse()*T_world_geometry;

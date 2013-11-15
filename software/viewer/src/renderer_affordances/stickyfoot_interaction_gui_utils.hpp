@@ -12,6 +12,8 @@ using namespace renderer_affordances_lcm_utils;
 
 namespace renderer_affordances_gui_utils
 {
+
+   static void spawn_sticky_foot_set_condition_popup (RendererAffordances *self);
   //--------------------------------------------------------------------------
   // Sticky Foot Interaction
   //
@@ -188,10 +190,161 @@ namespace renderer_affordances_gui_utils
         foot_it->second._gl_foot->enable_jointdof_adjustment(false);    
       }
     }
-
+    else if ((! strcmp(name, PARAM_UPDATE_SEED_CONDITION))||(! strcmp(name, PARAM_MAKE_SEED_CONDITIONAL))) {
+       spawn_sticky_foot_set_condition_popup(self);
+    }
+    else if ((!strcmp(name, PARAM_REMOVE_SEED_COND))){
+        typedef map<string, StickyFootStruc > sticky_feet_map_type_;
+        sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+        foot_it->second.is_conditional = false;
+        foot_it->second.conditioned_parent_joint_name = " ";
+        foot_it->second.conditioned_parent_joint_val = 0;
+    }
+        
+      if(strcmp(name, PARAM_UPDATE_SEED_CONDITION)
+       && strcmp(name, PARAM_MAKE_SEED_CONDITIONAL)      
+       )
       bot_viewer_request_redraw(self->viewer);
       gtk_widget_destroy(self->dblclk_popup);
     
+  }
+   //-------------------------------------------------------------------------
+  static void on_sticky_foot_set_condition_popup_param_widget_changed(BotGtkParamWidget *pw, const char *name,void *user)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    
+    if(self->stickyfoot_selection==" "){
+      return;
+    }
+    typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+    sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(foot_it->second.object_name));
+    
+    if ((!strcmp(name, PARAM_SEED_COND)))
+    {
+      int cond_type = bot_gtk_param_widget_get_enum(pw, PARAM_SEED_COND);
+      cout << "selected cond type:" << cond_type << endl;
+    }
+    else if ((!strcmp(name, PARAM_SEED_COND_JOINT_NAME)))
+    {
+      int joint_ind = bot_gtk_param_widget_get_enum(pw, PARAM_SEED_COND_JOINT_NAME);
+      std::vector<std::string > jnt_names;
+      jnt_names = obj_it->second._gl_object->get_joint_names();
+      cout << "selected joint name:" << jnt_names[(size_t)joint_ind]  << endl;   
+    }
+    else if ((!strcmp(name, PARAM_SEED_COND_JOINT_VAL)))
+    {
+      double joint_val = bot_gtk_param_widget_get_double(pw, PARAM_SEED_COND_JOINT_VAL);
+      cout << "setting seed condition val:" << joint_val << endl;
+    }
+    else if ((!strcmp(name, PARAM_SET_SEED_COND)))
+    {
+    
+     int joint_ind = bot_gtk_param_widget_get_enum(pw, PARAM_SEED_COND_JOINT_NAME);
+      std::vector<std::string > jnt_names;
+      jnt_names = obj_it->second._gl_object->get_joint_names();
+      double joint_val = bot_gtk_param_widget_get_double(pw, PARAM_SEED_COND_JOINT_VAL);
+      foot_it->second.is_conditional = true;
+      int cond_type = bot_gtk_param_widget_get_enum(pw, PARAM_SEED_COND);
+      foot_it->second.cond_type = cond_type;
+      foot_it->second.conditioned_parent_joint_name = jnt_names[(size_t)joint_ind];
+      foot_it->second.conditioned_parent_joint_val = joint_val*(M_PI/180);// TODO: handle prismatic and revolute differently
+    }
+    else if (!strcmp(name, PARAM_REMOVE_SEED_COND))
+    {
+      foot_it->second.is_conditional = false;
+      foot_it->second.conditioned_parent_joint_name = " ";
+      foot_it->second.conditioned_parent_joint_val = 0;
+    }
+    
+   
+    if(   strcmp(name,PARAM_SEED_COND)
+       && strcmp(name, PARAM_SEED_COND_JOINT_NAME)
+       && strcmp(name, PARAM_SEED_COND_JOINT_VAL)
+       )  
+    {
+        gtk_widget_destroy(self->second_stage_popup);
+        gtk_widget_destroy(self->dblclk_popup);  
+    }
+  }    
+  //--------------------------------------------------------------------------
+  
+  static void spawn_sticky_foot_set_condition_popup (RendererAffordances *self)
+  {
+
+    typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
+    sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
+  
+    GtkWidget *window, *close_button, *vbox, *hbox;
+    
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->viewer->window));
+    gtk_window_set_modal(GTK_WINDOW(window), FALSE);
+    gtk_window_set_decorated  (GTK_WINDOW(window),FALSE);
+    gtk_window_stick(GTK_WINDOW(window));
+    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
+    gtk_window_set_default_size(GTK_WINDOW(window), 150, 250);
+    gint pos_x, pos_y;
+    gtk_window_get_position(GTK_WINDOW(window),&pos_x,&pos_y);
+    pos_x+=125;    pos_y-=75;
+   // gint gdk_screen_height  (void);//Returns the height of the default screen in pixels.
+    gtk_window_move(GTK_WINDOW(window),pos_x,pos_y);
+    //gtk_widget_set_size_request (window, 300, 250);
+    //gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+    gtk_window_set_title(GTK_WINDOW(window), "setcondition");
+    gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+    
+    
+    BotGtkParamWidget *pw;
+    pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+
+    bot_gtk_param_widget_add_enum(pw, PARAM_SEED_COND, BOT_GTK_PARAM_WIDGET_MENU, 0, 
+                              "GT", foot_it->second.GT, 
+                              "LT", foot_it->second.LT, 
+                               NULL);
+    // get list of joint names from parent object
+    typedef map<string, OtdfInstanceStruc > object_instance_map_type_;
+    object_instance_map_type_::iterator obj_it = self->affCollection->_objects.find(string(foot_it->second.object_name));
+    std::vector<std::string > jnt_names;
+    jnt_names = obj_it->second._gl_object->get_joint_names();
+
+     
+    vector<const char*> cjnt_names;
+    vector<int> cjnt_nums;
+    for(int i = 0; i < jnt_names.size(); ++i)
+    {
+       cjnt_names.push_back(jnt_names[i].c_str());
+       cjnt_nums.push_back(i);
+    }
+    bot_gtk_param_widget_add_enumv (pw,PARAM_SEED_COND_JOINT_NAME, BOT_GTK_PARAM_WIDGET_MENU, 
+                                  0,
+                                  jnt_names.size(),
+                                  &cjnt_names[0],
+                                  &cjnt_nums[0]);  
+    bot_gtk_param_widget_add_double(pw, PARAM_SEED_COND_JOINT_VAL, BOT_GTK_PARAM_WIDGET_SPINBOX,
+                                      -360, 360, .1, 0);
+                                      
+    bot_gtk_param_widget_add_buttons(pw,PARAM_SET_SEED_COND, NULL);  
+    bot_gtk_param_widget_add_buttons(pw,PARAM_REMOVE_SEED_COND, NULL);                          
+                                      
+ 
+    //cout <<self->selection << endl; // otdf_type::geom_name
+    g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_foot_set_condition_popup_param_widget_changed), self);
+
+    self->second_stage_popup  = window;
+     
+    close_button = gtk_button_new_with_label ("Close");
+    g_signal_connect (G_OBJECT (close_button),"clicked",G_CALLBACK (on_popup_close),(gpointer) window);
+    g_signal_connect(G_OBJECT(pw), "destroy", G_CALLBACK(on_second_stage_popup_close), self); 
+
+    vbox = gtk_vbox_new (FALSE, 3);
+    gtk_box_pack_end (GTK_BOX (vbox), close_button, FALSE, FALSE, 5);
+    gtk_box_pack_start (GTK_BOX (vbox), GTK_WIDGET(pw), FALSE, FALSE, 5);
+    gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_widget_show_all(window); 
+
   }
   //--------------------------------------------------------------------------
   static void spawn_sticky_foot_dblclk_popup (RendererAffordances *self)
@@ -200,6 +353,11 @@ namespace renderer_affordances_gui_utils
     typedef std::map<std::string, StickyFootStruc > sticky_feet_map_type_;
     sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
   
+     if(self->stickyfoot_selection==" "){
+      gtk_widget_destroy(self->dblclk_popup);
+      return;
+    } 
+    
     GtkWidget *window, *close_button, *vbox;
     BotGtkParamWidget *pw;
 
@@ -242,6 +400,15 @@ namespace renderer_affordances_gui_utils
     
     val = foot_it->second.is_static;
     bot_gtk_param_widget_add_booleans(pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_FOOT_STATIC_TOGGLE, val, NULL);
+    
+        
+    /*if(foot_it->second.is_conditional)
+    {
+      bot_gtk_param_widget_add_buttons(pw,PARAM_UPDATE_SEED_CONDITION, NULL);
+      bot_gtk_param_widget_add_buttons(pw,PARAM_REMOVE_SEED_COND, NULL);
+    }
+    else 
+      bot_gtk_param_widget_add_buttons(pw,PARAM_MAKE_SEED_CONDITIONAL , NULL);*/
     
     g_signal_connect(G_OBJECT(pw), "changed", G_CALLBACK(on_sticky_foot_dblclk_popup_param_widget_changed), self);
     self->dblclk_popup  = window;
