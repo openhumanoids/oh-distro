@@ -374,15 +374,17 @@ inline static void prepareEndPoseForStorage(KDL::Frame &T_world_aff,
   
   ////////////////////////////////////////////////////////////////////////////////////////////////
   //// Decode first pose to robot_state_t  given PlanSeed (To be used as a posture goal)
-  inline static void decodeAndExtractFirstFrameInKeyframePlanFromStorage(KDL::Frame &T_world_aff,
+  inline static void decodeAndExtractFirstOrLastFrameInKeyframePlanFromStorage(KDL::Frame &T_world_aff,
                                    std::vector<std::string> &stateframe_ids,
                                    std::vector< std::vector<double> > &stateframe_values,
-                                   drc::robot_state_t &msg_out)
+                                   drc::robot_state_t &msg_out,bool last_frame)
   {
       msg_out.utime = bot_timestamp_now();
 
-      uint i = 0;//(uint)stateframe_values.size()-1;
-
+  
+      uint i = 0;//
+      if(last_frame) 
+        i =(uint)stateframe_values.size()-1; 
       std::string field;
       unsigned int index;
       
@@ -455,10 +457,31 @@ inline static void prepareEndPoseForStorage(KDL::Frame &T_world_aff,
   {
       drc::robot_state_t msg;      
                        
-      decodeAndExtractFirstFrameInKeyframePlanFromStorage(T_world_aff,
+      decodeAndExtractFirstOrLastFrameInKeyframePlanFromStorage(T_world_aff,
                                                           stateframe_ids,
                                                           stateframe_values,
-                                                            msg);
+                                                            msg,false);
+      posture_goal_msg.utime=msg.utime;
+      posture_goal_msg.robot_name=" ";
+      posture_goal_msg.num_joints=msg.num_joints;
+      for (uint k = 0; k <(uint)msg.num_joints; k++)
+      {  
+       posture_goal_msg.joint_name.push_back(msg.joint_name[k]);
+       posture_goal_msg.joint_position.push_back((double)msg.joint_position[k]);
+      }
+  }  
+  
+  inline static void getLastFrameInPlanAsPostureGoal(KDL::Frame &T_world_aff,
+                                   std::vector<std::string> &stateframe_ids,
+                                   std::vector< std::vector<double> > &stateframe_values,
+                                  drc::joint_angles_t &posture_goal_msg)
+  {
+      drc::robot_state_t msg;      
+                       
+      decodeAndExtractFirstOrLastFrameInKeyframePlanFromStorage(T_world_aff,
+                                                          stateframe_ids,
+                                                          stateframe_values,
+                                                            msg,true);
       posture_goal_msg.utime=msg.utime;
       posture_goal_msg.robot_name=" ";
       posture_goal_msg.num_joints=msg.num_joints;
