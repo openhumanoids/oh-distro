@@ -17,17 +17,18 @@ from IRobotHandController import IRobotHandController
 def simple_cmd_callback(controller, data):
     command = data.name
     if command in ['cylindrical','prismatic','spherical'] :
-        if (data.closed_amount == 0):
-            print "Open"
-            controller.open_hand_motor_excursion_control()
-        else:
-            print "Close"
+        closed_amount = data.closed_amount
+        if epsilonEquals(closed_amount, 1):
+            print("Close (current control)")
             controller.close_hand_current_control(800)
+        else:
+            print("Close (motor tendon excursion control; fraction: %s)" % closed_amount)
+            controller.motor_excursion_control_close_fraction(closed_amount)
     elif data.name == 'calibrate_jig':
-        print "Jig"
+        print("Jig")
         controller.calibrate_motor_encoder_offsets(True)
     elif data.name == 'calibrate_no_jig':
-        print "No Jig"
+        print("No Jig")
         controller.calibrate_motor_encoder_offsets(False)
     else:
         print "Message not understood "+data.name
@@ -37,6 +38,8 @@ def simple_cmd_callback(controller, data):
     controller.zero_current()
     #print "Finished"
 
+def epsilonEquals(a, b):
+    return abs(a - b) < 1e-3
 
 def parseArguments():
     sys.argv = rospy.myargv(sys.argv) # get rid of additional roslaunch arguments

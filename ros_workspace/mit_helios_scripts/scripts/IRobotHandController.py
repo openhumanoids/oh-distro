@@ -22,7 +22,9 @@ motor_indices = range(3)
 jig_pose = {0: 8170.8000000000002, 1: 7925.8000000000002, 2: 8406.5}
 
 # standard deviations: {0: 59.872865306414063, 1: 110.36235771312609, 2: 80.058728443561989}
-no_jig_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
+hand_closed_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
+
+hand_open_desired_pose = {0: 2000, 1: 2000, 2: 2000}
 
 def set_command_message_same_value(command_message, control_type, motor_indices, value):
     values = dict((motor_index, value) for motor_index in motor_indices)
@@ -59,7 +61,7 @@ class IRobotHandController(object):
         self.subscriber = rospy.Subscriber("sensors/raw", HandleSensors, self.sensor_data_callback)
         self.sensor_data_listeners = []
         
-        rospy.on_shutdown(lambda self : self.exit())
+#         rospy.on_shutdown(lambda self : self.exit())
 
     def add_sensor_data_listener(self, listener):
         self.sensor_data_listeners.append(listener)
@@ -127,10 +129,8 @@ class IRobotHandController(object):
         loop_control(self.command_publisher, self.rate, open_time, control)
     
     def open_hand_motor_excursion_control(self):
-        open_hand_desired = 2000
         open_time = 5
-        open_hand_desireds = dict((motor_index, open_hand_desired) for motor_index in motor_indices)
-        self.motor_excursion_control_loop(open_hand_desireds, open_time)
+        self.motor_excursion_control_loop(hand_open_desired_pose, open_time)
 
     def motor_excursion_control_loop(self, open_hand_desireds, duration):
         def control(command_message):
@@ -141,6 +141,16 @@ class IRobotHandController(object):
         motor_indices = open_hand_desireds.keys()
         desireds_with_offset = dict((i, self.add_offset(open_hand_desireds[i], i)) for i in motor_indices)
         set_command_message(command_message, HandleControl.POSITION, desireds_with_offset)
+
+    def motor_excursion_control_close_fraction(self, fraction):
+        if not (0 <= fraction <= 1):
+            raise RuntimeError("Fraction not between 0 and 1: %s" % fraction)
+        
+        def compute_desired_angle(i):
+            return hand_open_desired_pose[i] + fraction * (hand_closed_pose[i] - hand_open_desired_pose[i])
+        
+        desireds = dict((i, compute_desired_angle(i)) for i in motor_indices)
+        self.motor_excursion_control_loop(desireds, 2)
 
     def add_offset(self, motor_encoder_count, motor_index):
         return self.config_parser.get_motor_encoder_offset(motor_index) + motor_encoder_count
@@ -157,7 +167,7 @@ class IRobotHandController(object):
         if in_jig:
             calibration_pose = jig_pose
         else:
-            calibration_pose = no_jig_pose
+            calibration_pose = hand_closed_pose
 
         print "Calibrating: closing hand"
         self.close_hand_current_control(300)
