@@ -75,6 +75,12 @@ def getCrane():
   return [position,name]
 
 
+# 0.71cm - 5foot
+def getHighValve():
+  position=[-1.36646643681, 2.5302273035, 0.003712019324, -0.867207699585, -0.961804687977, 3.14159]
+  name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position,name]
+
 def usage():
   print "exe-name positions [l|r]"
   print "cradle   - close to robot, hand upside down"
@@ -129,6 +135,9 @@ elif (posture_name == "handdown"):
   [msg.joint_position, msg.joint_name] = getHandDown()
 elif (posture_name == "crane"):
   [msg.joint_position, msg.joint_name] = getCrane()
+elif (posture_name == "highvalve"):
+  [msg.joint_position, msg.joint_name] = getHighValve()
+
 
 if (posture_side == "l"):
   [msg.joint_name,msg.joint_position] = flipArms(msg.joint_name,msg.joint_position)
