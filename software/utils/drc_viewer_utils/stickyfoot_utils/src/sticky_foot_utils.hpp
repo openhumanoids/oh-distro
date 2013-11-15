@@ -17,7 +17,7 @@
 #include <Eigen/Dense>
 #include <path_util/path_util.h>
 #include <visualization_utils/affordance_utils/affordance_utils.hpp>
-
+#include <visualization_utils/affordance_utils/AffordanceCollectionManager.hpp>
 using namespace std;
 
 
@@ -37,6 +37,8 @@ namespace visualization_utils
        motion_trail_log_enabled = true;
        is_melded= false;
        is_static=true; // wont log motion
+       is_conditional=false;
+       cond_type = 0;
       };
       
        ~StickyFootStruc()
@@ -58,8 +60,35 @@ namespace visualization_utils
       bool motion_trail_log_enabled;
       bool is_static;
      // int opt_status;
+      bool is_conditional;
+      enum {
+       GT=0, LT
+      };
+      int cond_type; // GT,LT
+      std::string conditioned_parent_joint_name;
+      double conditioned_parent_joint_val;
   }; 
-
+   //-------------------------------------------------------------------------------  
+  inline static bool is_sticky_foot_condition_active(const StickyFootStruc &foot_struc,boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager)
+  
+  { 
+    if(foot_struc.is_conditional)
+    {
+      object_instance_map_type_::iterator obj_it = affCollectionManager->_objects.find(string(foot_struc.object_name));
+      double current_dof_pos, current_dof_vel;
+      obj_it->second._otdf_instance->getJointState (foot_struc.conditioned_parent_joint_name, current_dof_pos, current_dof_vel);
+      bool cond=false;
+      if(foot_struc.cond_type==foot_struc.GT)
+         cond =  (current_dof_pos >= foot_struc.conditioned_parent_joint_val);
+      else if (foot_struc.cond_type==foot_struc.LT)
+         cond =  (current_dof_pos <= foot_struc.conditioned_parent_joint_val);
+        
+      return cond;
+    }
+    else {
+      return true;
+    }
+  }
 }//end_namespace
 
 

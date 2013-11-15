@@ -431,6 +431,16 @@ class GlKinematicBody
     
     std::string get_root_link_name(void) { return _root_name; };
     
+    bool get_root_link_geometry_name(std::string &link_geometry_name) { 
+      link_geometry_name = _root_name + "_0";
+      std::vector<std::string>::const_iterator found;
+      found = std::find (_link_geometry_names.begin(), _link_geometry_names.end(), link_geometry_name);
+      if (found != _link_geometry_names.end()) { 
+        return true;
+      }
+      return false;
+    };
+    
     void get_body_mass(double &mass);
     void get_com_frame(KDL::Frame &T_world_com);
     void get_com_future_frame(KDL::Frame &T_world_com);

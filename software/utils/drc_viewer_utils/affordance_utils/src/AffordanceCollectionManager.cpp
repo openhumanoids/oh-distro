@@ -201,7 +201,7 @@ void AffordanceCollectionManager::delete_otdf_from_affstore(string channel, stri
      cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
    }
 
-   msg.utime = 0;
+   msg.utime = bot_timestamp_now();
    msg.map_id = 0;
    
    
@@ -338,7 +338,7 @@ void AffordanceCollectionManager::delete_otdf_from_affstore(string channel, stri
      cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
    }
 
-   msg.utime = 0;
+   msg.utime = bot_timestamp_now();
    msg.map_id = 0;
    
    
@@ -425,7 +425,7 @@ void AffordanceCollectionManager::delete_otdf_from_affstore(string channel, stri
      cout << "***** ERROR: " << nameSS.str() << " not found in instantiated_objects\n";
    }
 
-   msg.utime = 0;
+   msg.utime = bot_timestamp_now();
    msg.map_id = 0;
    
    

@@ -17,7 +17,7 @@
 #include <Eigen/Dense>
 #include <path_util/path_util.h>
 #include <visualization_utils/affordance_utils/affordance_utils.hpp>
-
+#include <visualization_utils/affordance_utils/AffordanceCollectionManager.hpp>
 
 using namespace std;
 
@@ -32,6 +32,8 @@ namespace visualization_utils
        motion_trail_log_enabled = true;
        is_melded= false;
        squeeze_factor = 1.0;
+       is_conditional=false;
+       cond_type = 0;
       };
       
        ~StickyHandStruc()
@@ -60,7 +62,36 @@ namespace visualization_utils
       int grasp_status;//CANDIDATE=0,COMMITTED=1;
       int partial_grasp_status; 
       bool motion_trail_log_enabled;
+      bool is_conditional;
+      enum {
+       GT=0, LT
+      };
+      int cond_type; // GT,LT TODO: Support for ranges? A list of conditions?
+      std::string conditioned_parent_joint_name;
+      double conditioned_parent_joint_val;
   };   
+   //-------------------------------------------------------------------------------  
+  inline static bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::shared_ptr<visualization_utils::AffordanceCollectionManager>  &affCollectionManager)
+  
+  { 
+    if(hand_struc.is_conditional)
+    {
+      object_instance_map_type_::iterator obj_it = affCollectionManager->_objects.find(string(hand_struc.object_name));
+      double current_dof_pos, current_dof_vel;
+      obj_it->second._otdf_instance->getJointState(hand_struc.conditioned_parent_joint_name, current_dof_pos, current_dof_vel);
+      bool cond=false;
+      if(hand_struc.cond_type==hand_struc.GT){
+        cond =  (current_dof_pos >= hand_struc.conditioned_parent_joint_val);
+      }
+      else if (hand_struc.cond_type==hand_struc.LT){
+        cond =  (current_dof_pos <= hand_struc.conditioned_parent_joint_val);
+      }
+      return cond;
+    }
+    else {
+      return true;
+    }
+  }
    
 //===============================================================================
 //  UTILS for Seeding hands
