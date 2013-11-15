@@ -114,6 +114,18 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
     {
 	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
     }
+    else if(renderer_name=="State")
+    {
+	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
+    }    
+    else if(renderer_name=="Robot Plan Display")
+    {
+	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
+    } 
+    else if(renderer_name=="Walking")
+    {
+	    always_enabled_renderers = (always_enabled_renderers||(name=="FootStep Plans & Sticky Feet"));
+    }
     else if(renderer_name=="Data Control")
     {
 	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
@@ -263,7 +275,7 @@ logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
           //std::cout << "shift pressed\n";
           break;
       default:
-          return 0;
+          break;
     }
 
     return 1;
