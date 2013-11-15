@@ -9,7 +9,7 @@ import time, math
 import rospy
 from handle_msgs.msg import HandleControl
 from handle_msgs.msg import HandleSensors
-from mit_helios_scripts.msg import MITIRobotState
+from mit_helios_scripts.msg import MITIRobotHandState
 
 
 from IRobotHandConfigParser import IRobotHandConfigParser
@@ -55,7 +55,7 @@ class IRobotHandController(object):
         rospy.init_node("mit_irobot_hand_control")
         self.rate = rospy.Rate(ros_rate)
         self.command_publisher = rospy.Publisher("control", HandleControl)
-        self.state_publisher = rospy.Publisher("sensors/mit_state", MITIRobotState)
+        self.state_publisher = rospy.Publisher("sensors/mit_state", MITIRobotHandState)
         self.subscriber = rospy.Subscriber("sensors/raw", HandleSensors, self.sensor_data_callback)
         self.sensor_data_listeners = []
         
@@ -69,29 +69,42 @@ class IRobotHandController(object):
 
     def sensor_data_callback(self, data):
         self.sensors = data
-        self.publish_estimated_proximal_joint_angles()
+        self.publish_hand_state()
         for listener in self.sensor_data_listeners:
             listener.notify(data, rospy.get_time())
 
-    def publish_estimated_proximal_joint_angles(self):
+    def publish_hand_state(self):
         motor_encoders_with_offset = [self.add_offset(self.sensors.motorHallEncoder[i], i) for i in motor_indices]
         
-        state_message = MITIRobotState()
-        state_message.estimatedProximalJointAngle = [self.estimate_proximal_joint_angle(motor_encoders_with_offset[i]) for i in motor_indices]
+        state_message = MITIRobotHandState()
+        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(motor_encoders_with_offset[i]) for i in motor_indices]
+        state_message.fingerSpread = IRobotHandController.compute_finger_spread_angle(self.sensors.fingerSpread)
         self.state_publisher.publish(state_message)
 
     """
     mapping found using mit_helios_scripts/matlab/irobot_hand_joint_angle_estimation.m
     """
-    def estimate_proximal_joint_angle(self, motor_encoder_value):
-        if motor_encoder_value < 0:
-            ticks = 0
-        elif motor_encoder_value < 3084.7:
-            ticks = 0.0774 * motor_encoder_value + 17.9094
+    @staticmethod
+    def estimate_proximal_joint_angle(motor_encoder_ticks):
+        if motor_encoder_ticks < 0:
+            estimated_ticks = 0
+        elif motor_encoder_ticks < 3084.7:
+            estimated_ticks = 0.0774 * motor_encoder_ticks + 17.9094
         else:
-            ticks = 0.0033 * motor_encoder_value + 246.6151
+            estimated_ticks = 0.0033 * motor_encoder_ticks + 246.6151
 
-        return ticks * 2 * math.pi / 1024;
+        return IRobotHandController.compute_proximal_joint_angle(estimated_ticks)
+
+    @staticmethod
+    def compute_proximal_joint_angle(proximal_joint_angle_ticks):
+        ticks_to_radians = 2.0 * math.pi / 1024.0
+        ret = proximal_joint_angle_ticks * ticks_to_radians
+        return ret
+
+    @staticmethod
+    def compute_finger_spread_angle(finger_spread_ticks):
+        tick_to_radians = math.pi / 3072
+        return finger_spread_ticks * tick_to_radians
 
     def zero_current(self):
         no_current_message = HandleControl()
