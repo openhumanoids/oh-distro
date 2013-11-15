@@ -98,8 +98,7 @@ class App{
     bool rstate_init_;
     bool cartpos_ready_;
     bool plan_from_robot_state_;
-    bool use_left_hand_;
-    bool use_sandia_;
+    bool use_left_hand_, use_sandia_, use_reach_;
 };   
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_):
@@ -111,6 +110,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
   plan_from_robot_state_ = true;
   use_left_hand_ = true;
   use_sandia_ = true;
+  use_reach_ = true;
   
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   KDL::Tree tree;
@@ -200,12 +200,20 @@ void App::publish_palm_goal(){
   msg.ee_goal_pos.rotation.z = q.z();
   msg.num_chain_joints = 0;
 
-  if (!use_left_hand_){
-    lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
-    lcm_->publish("RIGHT_PALM_GOAL", &msg);
-  }else {
-    lcm_->publish("LEFT_PALM_GOAL", &msg);
-    lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
+  if (use_reach_){
+    if (!use_left_hand_){
+      lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
+      lcm_->publish("RIGHT_PALM_GOAL", &msg);
+    }else {
+      lcm_->publish("LEFT_PALM_GOAL", &msg);
+      lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
+    }
+  }else{
+    if (!use_left_hand_){
+      lcm_->publish("RIGHT_PALM_SIMPLE_GAZE_GOAL", &msg);
+    }else {
+      lcm_->publish("LEFT_PALM_SIMPLE_GAZE_GOAL", &msg);
+    }
   }
 }
 
@@ -252,8 +260,10 @@ void App::publish_reset(){
 
   drc::ee_goal_t msg;
   msg.num_chain_joints = 0;
-  lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
-  lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
+  if (use_reach_){
+    lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
+    lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
+  }
 //  sleep(1);
 
   Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
@@ -261,6 +271,7 @@ void App::publish_reset(){
   trans_[1] = body_to_palm.translation().y();
   trans_[2] = body_to_palm.translation().z();
   quat_to_euler(  Eigen::Quaterniond(body_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
+  trans_[2] += 0.0005; // slight motion required to avoid error from mike posa's planner
   
   /*
   Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
@@ -301,7 +312,7 @@ int App::repaint (int64_t now){
   
   std::string mode_string = "Current State";
   if (!plan_from_robot_state_)
-    mode_string = "Last Plan";  
+    mode_string = "Last Plan    ";  
   
   std::string hand_side_string = "Left ";
   if (!use_left_hand_)
@@ -311,10 +322,15 @@ int App::repaint (int64_t now){
   if (!use_sandia_)
     hand_type_string = "iRobot";
   
+  
+  std::string controller_string = "Reach";
+  if (!use_reach_)
+    controller_string = "Gaze";
+
   wmove(w, 10, 0);
-  wprintw(w, "conf: %s %s with %s", hand_side_string.c_str() , hand_type_string.c_str(), mode_string.c_str() );
+  wprintw(w, "conf: %s %s with %s to %s", hand_side_string.c_str() , hand_type_string.c_str(), mode_string.c_str(), controller_string.c_str() );
   wmove(w, 11, 0);
-  wprintw(w, "      [z]   [x]         [c] ",  (int) use_sandia_);
+  wprintw(w, "      [z]   [x]         [c]            [v]",  (int) use_sandia_);
   //wmove(w, 12, 0);
   //wprintw(w, "      L/R   S/iR        Current/Plan",  (int) use_sandia_);
 
@@ -408,6 +424,15 @@ bool App::on_input(){
     case 'x': // switch modes: hand and end of plan
       use_sandia_= !use_sandia_;
       publish_reset();
+      break;      
+    case 'v': // switch controllers: reaching or gaze
+      use_reach_= !use_reach_;
+      // dont reset to allow hot switching
+      drc::ee_goal_t msg;
+      msg.num_chain_joints = 0;
+      lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
+      lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
+      publish_palm_goal();
       break;      
   }
 
