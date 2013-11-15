@@ -2029,8 +2029,15 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
     {
       glColor4f(0.7,0.1,0.1,alpha);         
     }
-    else
-       glColor4f(c[0],c[1],c[2],alpha);
+    else {
+      boost::shared_ptr<otdf::Material> material = _otdf_link_materials[i];
+        if ((NULL != material) && !material->name.empty()) {
+            glColor4f(material->color.r, material->color.g, material->color.b, alpha);
+        }
+        else {
+            glColor4f(c[0],c[1],c[2],alpha);
+        }
+    }
 
     if((_whole_body_selection_enabled)&&(selected_link == _unique_name)){
       glColor4f(0.7,0.1,0.1,alpha); // whole body is selected instead of an individual link

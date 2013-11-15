@@ -86,7 +86,7 @@ class GlKinematicBody
     // adding support for multiple visual geometries for a given link 
     std::vector<std::string > _link_geometry_names; //_link name + id;
     std::vector<LinkFrameStruct> _link_geometry_tfs;
-    
+    std::vector<boost::shared_ptr<otdf::Material> > _otdf_link_materials;
     
     std::vector<std::string > _joint_names; 
     std::vector<JointFrameStruct > _joint_tfs;

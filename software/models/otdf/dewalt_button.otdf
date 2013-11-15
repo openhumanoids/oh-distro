@@ -56,6 +56,9 @@
             <geometry>
                 <cylinder radius="0.005" length="0.015" />
             </geometry>
+            <material name="orange">
+                <color rgba="1 0.5 0 1" />
+            </material>
         </visual>
     </link>
 

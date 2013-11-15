@@ -1224,6 +1224,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
               _link_geometry_names.push_back(unique_geometry_name);   
               _otdf_link_shapes.push_back(geom);
               _link_geometry_tfs.push_back(geometry_state);
+              _otdf_link_materials.push_back(visuals[iv]->material);
             }
             else{
               std::vector<std::string>::const_iterator found;
@@ -1272,6 +1273,7 @@ void GlKinematicBody::run_fk_and_update_otdf_link_shapes_and_tfs(std::map<std::s
                 //}
                 _link_geometry_names.push_back(unique_geometry_name);
                 _otdf_link_shapes.push_back(geom);
+                _otdf_link_materials.push_back(visuals[iv]->material);
                
                 _link_geometry_tfs.push_back(geometry_state);
               }
