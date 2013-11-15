@@ -26,7 +26,7 @@
 #
 # ----
 # File: pods.cmake
-# Distributed with pods version: 12.11.14
+# Distributed with pods version: 12.09.21
 
 # pods_install_headers(<header1.h> ... DESTINATION <subdir_name>)
 # 
@@ -223,14 +223,12 @@ function(_pods_install_python_package py_src_dir py_module_name)
 
     if(EXISTS "${py_src_dir}/__init__.py")
         #install the single module
-        file(GLOB_RECURSE module_files   ${py_src_dir}/*)
-        foreach(file ${module_files})
-            if(NOT file MATCHES ".*\\.svn.*|.*\\.pyc|.*[~#]")
-                file(RELATIVE_PATH __tmp_path ${py_src_dir} ${file})
-                get_filename_component(__tmp_dir ${__tmp_path} PATH)
-                install(FILES ${file}
-                    DESTINATION "${python_install_dir}/${py_module_name}/${__tmp_dir}")
-            endif()
+        file(GLOB_RECURSE py_files   ${py_src_dir}/*.py)
+        foreach(py_file ${py_files})
+            file(RELATIVE_PATH __tmp_path ${py_src_dir} ${py_file})
+            get_filename_component(__tmp_dir ${__tmp_path} PATH)
+            install(FILES ${py_file}
+                DESTINATION "${python_install_dir}/${py_module_name}/${__tmp_dir}")
         endforeach()
     else()
         message(FATAL_ERROR "${py_src_dir} is not a python package!\n")
@@ -307,9 +305,10 @@ macro(pods_use_pkg_config_packages target)
         ${PKG_CONFIG_EXECUTABLE} --libs ${ARGN}
         OUTPUT_VARIABLE _pods_pkg_ldflags)
     string(STRIP ${_pods_pkg_ldflags} _pods_pkg_ldflags)
-    #    message("ldflags: ${_pods_pkg_ldflags}")
+    # message("ldflags: ${_pods_pkg_ldflags}")
     include_directories(${_pods_pkg_include_flags})
-    target_link_libraries(${target} ${_pods_pkg_ldflags})
+    string(REPLACE " " ";" TMP ${_pods_pkg_ldflags}) #covert to a list
+    target_link_libraries(${target} ${TMP})
     
     # make the target depend on libraries that are cmake targets
     if (_pods_pkg_ldflags)
@@ -318,7 +317,7 @@ macro(pods_use_pkg_config_packages target)
                 string(REGEX REPLACE "^-l" "" __depend_target_name ${__ldflag})
                 get_target_property(IS_TARGET ${__depend_target_name} LOCATION)
                 if (NOT IS_TARGET STREQUAL "IS_TARGET-NOTFOUND")
-                    #message("---- ${target} depends on  ${libname}")
+                    #message("---- ${target} depends on  ${__depend_target_name}")
                     add_dependencies(${target} ${__depend_target_name})
                 endif() 
         endforeach()
