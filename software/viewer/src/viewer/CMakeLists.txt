@@ -34,3 +34,13 @@ add_executable(drc-viewer main.cpp udp_util.c RendererGroupUtil.cpp)
 pods_use_pkg_config_packages(drc-viewer ${RENDERERS})
 # depreciated for now: renderer_annotated_camera
 pods_install_executables(drc-viewer)
+
+
+
+
+
+
+add_executable(camera-viewer main_camera.cpp udp_util.c)
+pods_use_pkg_config_packages(camera-viewer renderer_cam_thumb_drc)
+# depreciated for now: renderer_annotated_camera
+pods_install_executables(camera-viewer)
