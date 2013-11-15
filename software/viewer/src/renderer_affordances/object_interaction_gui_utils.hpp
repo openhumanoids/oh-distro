@@ -91,6 +91,7 @@
 #define PARAM_PLAN_SEED_LIST "Plan Select" 
 #define PARAM_LOAD_PLAN "Load PlanSeed" 
 #define PARAM_REACH_STARTING_POSTURE "Reach Starting Posture"
+#define PARAM_REACH_ENDING_POSTURE "Reach Ending Posture"
 #define PARAM_REACH_STARTING_POSE "Reach Starting Pose"
 #define PARAM_UNSTORE_PLAN "Unstore  PlanSeed"
 
@@ -951,7 +952,7 @@ namespace renderer_affordances_gui_utils
         // Send aff trigger signal to state renderer 
         (*self->affTriggerSignalsRef).desired_footsteps_request(it->first,it->second._gl_object->_T_world_body);
     }    
-    else if ((! strcmp(name,PARAM_REACH_STARTING_POSTURE))||(! strcmp(name,PARAM_REACH_STARTING_POSE)))
+    else if ((! strcmp(name,PARAM_REACH_STARTING_POSTURE))||(! strcmp(name,PARAM_REACH_STARTING_POSE))||(!strcmp(name,PARAM_REACH_ENDING_POSTURE)))
     {
       string selected_plan;
       selected_plan = self->_planseeds[bot_gtk_param_widget_get_enum(pw, PARAM_PLAN_SEED_LIST)];
@@ -974,15 +975,25 @@ namespace renderer_affordances_gui_utils
       string channel = "POSTURE_GOAL";
       self->lcm->publish(channel, &posture_goal_msg);
       }
-      else if(! strcmp(name,PARAM_REACH_STARTING_POSE)){
-      drc::robot_state_t pose_goal_msg;
-      visualization_utils::decodeAndExtractFirstFrameInKeyframePlanFromStorage(T_world_aff,
+      else if(! strcmp(name,PARAM_REACH_ENDING_POSTURE)){
+      drc::joint_angles_t posture_goal_msg;
+      visualization_utils::getLastFrameInPlanAsPostureGoal(T_world_aff,
                                                             planSeed.stateframe_ids,
                                                             planSeed.stateframe_values,
-                                                           pose_goal_msg);
+                                                            posture_goal_msg);
+      string channel = "POSTURE_GOAL";
+      self->lcm->publish(channel, &posture_goal_msg);
+      }
+      else if(! strcmp(name,PARAM_REACH_STARTING_POSE)){
+      drc::robot_state_t pose_goal_msg;
+      visualization_utils::decodeAndExtractFirstOrLastFrameInKeyframePlanFromStorage(T_world_aff,
+                                                            planSeed.stateframe_ids,
+                                                            planSeed.stateframe_values,
+                                                           pose_goal_msg,false);
       string channel = "CANDIDATE_ROBOT_ENDPOSE";
       self->lcm->publish(channel, &pose_goal_msg);
       }
+
 
     }
     else if (! strcmp(name, PARAM_UNSTORE_PLAN)) {
@@ -1580,6 +1591,7 @@ namespace renderer_affordances_gui_utils
                                         &seed_names[0],
                                         &seed_nums[0]);
         bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_REACH_STARTING_POSTURE, NULL);
+        bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_REACH_ENDING_POSTURE, NULL);
         bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_REACH_STARTING_POSE, NULL);
         bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_LOAD_PLAN, NULL);
         bot_gtk_param_widget_add_buttons(planseed_pw,PARAM_UNSTORE_PLAN, NULL); 
