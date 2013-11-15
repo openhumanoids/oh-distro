@@ -584,7 +584,7 @@ static BotRenderer *_new(BotViewer *viewer, lcm_t * lcm, BotParam * param, BotFr
   self->ground_height = 0.0;
   
   self->pw = BOT_GTK_PARAM_WIDGET(self->renderer.widget);
-  bot_gtk_param_widget_add_double (self->pw, PARAM_AT_GROUND_SCALE, BOT_GTK_PARAM_WIDGET_SLIDER, 0.1, 2, 0.1, 1);
+  bot_gtk_param_widget_add_double (self->pw, PARAM_AT_GROUND_SCALE, BOT_GTK_PARAM_WIDGET_SLIDER, 0.1, 10, 0.1, 1);
   bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
 
   g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
