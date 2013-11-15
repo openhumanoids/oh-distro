@@ -69,6 +69,10 @@ group "a.0.hand_drivers" {
 }
 
 group "a.1.core" {
+    cmd "spin-lidar" {
+        exec = "spin-lidar-command";
+        host = "localhost";
+    }
     cmd "roscore" {
         exec = "roscore";
         host = "localhost";
