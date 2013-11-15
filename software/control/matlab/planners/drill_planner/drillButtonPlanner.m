@@ -16,7 +16,10 @@ classdef drillButtonPlanner
     finger_axis_on_hand
     finger_hand_body
     
-    joint_indices
+    finger_joint_indices
+    button_joint_indices
+    back_joint_indices
+    
     ik_options
     doVisualization;
     doPublish;
@@ -51,14 +54,16 @@ classdef drillButtonPlanner
       if buttonInRightHand
         obj.button_hand_body = regexpIndex('r_hand',{r.getBody(:).linkname});
         obj.finger_hand_body = regexpIndex('l_hand',{r.getBody(:).linkname});
-        arm_joint_indices = regexpIndex('^l_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
+        obj.finger_joint_indices = regexpIndex('^l_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
+        obj.button_joint_indices = regexpIndex('^r_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
       else
         obj.button_hand_body = regexpIndex('l_hand',{r.getBody(:).linkname});
         obj.finger_hand_body = regexpIndex('l_hand',{r.getBody(:).linkname});
-        arm_joint_indices = regexpIndex('^r_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
+        obj.finger_joint_indices = regexpIndex('^r_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
+        obj.button_joint_indices = regexpIndex('^l_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
       end
       
-      obj.joint_indices = arm_joint_indices;
+      obj.back_joint_indices = regexpIndex('^back_bk[x-z]$',r.getStateFrame.coordinates);
       
       cost = ones(34,1);
       cost([1 2 6]) = 10*ones(3,1);
@@ -100,7 +105,7 @@ classdef drillButtonPlanner
         button_axis_world, obj.default_axis_threshold,[t_vec(end) t_vec(end)]);
       
       % create posture constraint
-      posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
+      posture_index = setdiff((1:obj.r.num_q)',[obj.finger_joint_indices; obj.button_joint_indices]);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
 %       posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
@@ -174,7 +179,7 @@ classdef drillButtonPlanner
         button_axis_world, obj.default_axis_threshold);
       
       % create posture constraint
-      posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
+      posture_index = setdiff((1:obj.r.num_q)',obj.finger_joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       

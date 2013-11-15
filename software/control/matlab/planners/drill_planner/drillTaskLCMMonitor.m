@@ -9,10 +9,138 @@ classdef drillTaskLCMMonitor
   properties
     lc
     affordance_monitor
+    drill_control_monitor
     atlas
     state_frame
     hand_body;
   end
+  
+  properties (Constant)
+    REFIT_DRILL = 1;            %Tell the planner to refit the drill affordance
+    RQ_NOMINAL_PLAN = 2;        %Find and transmit a trajectory for full drill task (and search for pose)
+    RQ_WALKING_GOAL = 3;        %Request the walking plan for the pose found in the step above
+    RQ_ARM_PREPOSE_PLAN = 4;    %Request a plan for moving the arm to a rough pre-drilling pose, before walking
+    RQ_NOMINAL_FIXED_PLAN = 5;  %Similar to nominal plan, but with fixed body pose
+    RQ_PREDRILL_PLAN = 6;       %Move the drill to a pre-drilling posture
+    RQ_DRILL_IN_PLAN = 7;       %Drill inward from the pre-drill posture
+    RQ_NEXT_DRILL_PLAN = 8;     %Get the next cut
+    RQ_DRILL_TARGET_PLAN = 9;   %Get a cut to [x,y,z] = data[1-3] in world frame
+    RQ_DRILL_DELTA_PLAN = 10;   %Get a cut to from current to offset by [x,y,z] = data[1-3] in wall frame (x-into, y-left, z-up)
+    
+    RQ_BUTTON_PREPOSE_PLAN = 11; %Get a plan for left and right arms to a good pre-button pose
+    RQ_BUTTON_DELTA_PLAN = 12;   %Get a plan for right arm+back to previous plan, and offset left finger by delta = data[1-3] in (TBD) frame
+  end
+  
+  methods
+    function obj = drillTaskLCMMonitor(atlas, useRightHand)
+      obj.lc = lcm.lcm.LCM.getSingleton();
+      obj.affordance_monitor = drake.util.MessageMonitor(drc.affordance_collection_t(), 'utime');
+      obj.lc.subscribe('AFFORDANCE_COLLECTION',obj.affordance_monitor);
+      
+      obj.drill_control_monitor = drake.util.MessageMonitor(drc.drill_control_t(),'utime');
+      obj.lc.subscribe('DRILL_CONTROL',obj.drill_control_monitor);
+      
+      obj.atlas = atlas;
+      obj.state_frame = atlas.getStateFrame;
+      obj.state_frame.subscribe('EST_ROBOT_STATE');
+      
+      
+      if useRightHand
+        obj.hand_body = regexpIndex('r_hand',{atlas.getBody(:).linkname});
+      else
+        obj.hand_body = regexpIndex('l_hand',{atlas.getBody(:).linkname});
+      end
+    end
+    
+    function [type, data] = getDrillControlMsg(obj)
+      lcm_data = obj.drill_control_monitor.getNextMessage(0);
+      data = [];
+      if isempty(lcm_data)
+        type = -1;
+        return;
+      end
+      
+      msg = drc.drill_control_t(lcm_data);
+      type = msg.control_type;
+      data = msg.data;
+    end
+    
+    function [wall_data, drill_data] = getWallAndDrillAffordances(obj)
+      data = obj.affordance_monitor.getNextMessage(0); % default timeout
+      if isempty(data)
+        wall_data = [];
+        drill_data = [];
+        return
+      end
+      
+      aff_collection = drc.affordance_collection_t(data);
+      
+      wall_aff = obj.getAffordanceByOTDFType(aff_collection, 'drill_wall');
+      if isempty(wall_aff)
+        wall_data = [];
+      else
+        wall_data = obj.parseWallData(wall_aff);
+      end
+      
+      drill_aff = obj.getAffordanceByOTDFType(aff_collection, 'dewalt_button');
+      if isempty(drill_aff)
+        drill_data = [];
+      else
+        drill_data = obj.parseDrillData(drill_aff);
+      end
+    end
+    
+    function drill_data = getDrillAffordance(obj)
+      data = obj.affordance_monitor.getNextMessage(0); % default timeout
+      if isempty(data)
+        drill_data = [];
+        return
+      end
+      
+      aff_collection = drc.affordance_collection_t(data);
+      
+      drill_aff = obj.getAffordanceByOTDFType(aff_collection, 'dewalt_button');
+      if isempty(drill_aff)
+        drill_data = [];
+      else
+        drill_data = obj.parseDrillData(drill_aff);
+      end
+    end
+    
+    function wall_data = getWallAffordance(obj)
+      data = obj.affordance_monitor.getNextMessage(0); % default timeout
+      if isempty(data)
+        wall_data = [];
+        return
+      end
+      
+      aff_collection = drc.affordance_collection_t(data);
+      
+      wall_aff = obj.getAffordanceByOTDFType(aff_collection, 'drill_wall');
+      if isempty(wall_aff)
+        wall_data = [];
+      else
+        wall_data = obj.parseWallData(wall_aff);
+      end
+    end
+    
+    function q = getStateEstimate(obj)
+      [lb, ub] = obj.atlas.getJointLimits;
+      [x,~] = getNextMessage(obj.state_frame,10);
+      while (isempty(x))
+        [x,~] = getNextMessage(obj.state_frame,10);
+      end
+      q = x(1:34);
+      
+      if max(q - ub) > -1e-3,
+        q = min(q,ub);
+      end
+      if max(lb - q) > -1e-3,
+        q = max(q,lb);
+      end
+    end
+  end
+  
   
   methods (Access = private)
     
@@ -67,12 +195,12 @@ classdef drillTaskLCMMonitor
     function wall_data = parseWallData(obj, wall_aff)
       R = rpy2rotmat(wall_aff.origin_rpy);
       wall_data.normal = R(:,1);
-%       n_targets = (wall_aff.nparams - 3)/2;
+      %       n_targets = (wall_aff.nparams - 3)/2;
       
-%       valuecheck(n_targets, floor(n_targets));  % check to see divisible by two
+      %       valuecheck(n_targets, floor(n_targets));  % check to see divisible by two
       n_values = 0; % for double checking
       
-%       points_on_wall = zeros(3,n_targets);
+      %       points_on_wall = zeros(3,n_targets);
       
       for i=1:wall_aff.nparams,
         pname = char(wall_aff.param_names(i));
@@ -101,100 +229,6 @@ classdef drillTaskLCMMonitor
           aff = collection.affs(i);
           return
         end
-      end
-    end
-  end
-  
-  methods
-    function obj = drillTaskLCMMonitor(atlas, useRightHand)
-      obj.lc = lcm.lcm.LCM.getSingleton();
-      obj.affordance_monitor = drake.util.MessageMonitor(drc.affordance_collection_t(), 'utime');
-      obj.lc.subscribe('AFFORDANCE_COLLECTION',obj.affordance_monitor);
-      
-      obj.atlas = atlas;
-      obj.state_frame = atlas.getStateFrame;
-      obj.state_frame.subscribe('EST_ROBOT_STATE');
-      
-      
-      if useRightHand
-        obj.hand_body = regexpIndex('r_hand',{atlas.getBody(:).linkname});
-      else
-        obj.hand_body = regexpIndex('l_hand',{atlas.getBody(:).linkname});
-      end
-    end
-    
-    function [wall_data, drill_data] = getWallAndDrillAffordances(obj)
-      data = obj.affordance_monitor.getNextMessage(2000); % default timeout
-      if isempty(data)
-        wall_data = [];
-        drill_data = [];
-        return
-      end
-      
-      aff_collection = drc.affordance_collection_t(data);
-      
-      wall_aff = obj.getAffordanceByOTDFType(aff_collection, 'drill_wall');
-      if isempty(wall_aff)
-        wall_data = [];
-      else
-        wall_data = obj.parseWallData(wall_aff);
-      end
-      
-      drill_aff = obj.getAffordanceByOTDFType(aff_collection, 'dewalt_button');
-      if isempty(drill_aff)
-        drill_data = [];
-      else
-        drill_data = obj.parseDrillData(drill_aff);
-      end
-    end
-    
-    function drill_data = getDrillAffordance(obj)
-      data = obj.affordance_monitor.getNextMessage(2000); % default timeout
-      if isempty(data)
-        drill_data = [];
-        return
-      end
-      
-      aff_collection = drc.affordance_collection_t(data);
-      
-      drill_aff = obj.getAffordanceByOTDFType(aff_collection, 'dewalt_button');
-      if isempty(drill_aff)
-        drill_data = [];
-      else
-        drill_data = obj.parseDrillData(drill_aff);
-      end
-    end
-    
-    function wall_data = getWallAffordance(obj)
-      data = obj.affordance_monitor.getNextMessage(2000); % default timeout
-      if isempty(data)
-        wall_data = [];
-        return
-      end
-      
-      aff_collection = drc.affordance_collection_t(data);
-      
-      wall_aff = obj.getAffordanceByOTDFType(aff_collection, 'drill_wall');
-      if isempty(wall_aff)
-        wall_data = [];
-      else
-        wall_data = obj.parseWallData(wall_aff);
-      end
-    end
-
-    function q = getStateEstimate(obj)
-      [lb, ub] = obj.atlas.getJointLimits;
-      [x,~] = getNextMessage(obj.state_frame,10);
-      while (isempty(x))
-        [x,~] = getNextMessage(obj.state_frame,10);
-      end
-      q = x(1:34);
-      
-      if max(q - ub) > -1e-3,
-        q = min(q,ub);
-      end
-      if max(lb - q) > -1e-3,
-        q = max(q,lb);
       end
     end
   end
