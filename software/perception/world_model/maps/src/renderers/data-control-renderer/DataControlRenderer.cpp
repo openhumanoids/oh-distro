@@ -66,6 +66,7 @@ protected:
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mHandCameraFrameRate;
   int mCameraCompression;
+  bool mCameraAutoGain;
   
   int mLeftGraspState;
   int mLeftGraspNameEnum;
@@ -436,13 +437,15 @@ public:
     
     
     ///////////////////////////////////////////////////////////
+    Gtk::Box* sensorControlBox = Gtk::manage(new Gtk::VBox());
     Gtk::Table* sensorControlTable = Gtk::manage(new Gtk::Table(5,3,false));
-    Gtk::AttachOptions xOptions = Gtk::FILL | Gtk::EXPAND;
-    Gtk::AttachOptions yOptions = Gtk::SHRINK;
+    Gtk::AttachOptions xOpts = Gtk::FILL | Gtk::EXPAND;
+    Gtk::AttachOptions yOpts = Gtk::SHRINK;
     
     // maxing out at 5hz for safety
     mHandCameraFrameRate = -1;
     //addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, handControlBox); 
+    int yCur = 0;
     mCameraCompression = 0;
     labels = { "-", "Low", "Med", "High" };
     ids =
@@ -456,9 +459,10 @@ public:
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
-    sensorControlTable->attach(*label, 0, 1, 0, 1, xOptions, yOptions);
-    sensorControlTable->attach(*combo, 1, 2, 0, 1, xOptions, yOptions);
-    sensorControlTable->attach(*button, 2, 3, 0, 1, xOptions, yOptions);
+    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*combo, 1, 2, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
+    ++yCur;
     
     label = Gtk::manage(new Gtk::Label("Head Cam fps", Gtk::ALIGN_RIGHT));
     mDummyIntValue = 5;
@@ -466,20 +470,37 @@ public:
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->publishMultisense(-1000,spin->get_value(),-1);});
-    sensorControlTable->attach(*label, 0, 1, 1, 2, xOptions, yOptions);
-    sensorControlTable->attach(*spin, 1, 2, 1, 2, xOptions, yOptions);
-    sensorControlTable->attach(*button, 2, 3, 1, 2, xOptions, yOptions);
+    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*spin, 1, 2, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
     // Artificial limit added here - to limit LCM traffic
+    ++yCur;
     
     label = Gtk::manage(new Gtk::Label("Head Cam Gain", Gtk::ALIGN_RIGHT));
     mDummyDoubleValue = 1.0;
+    Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
+    check->set_active(true);
     spin = gtkmm::RendererBase::createSpin(mDummyDoubleValue, 1.0, 8.0, 0.1);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
-      ([this,spin]{this->publishMultisense(-1000,-1,spin->get_value());});
-    sensorControlTable->attach(*label, 0, 1, 2, 3, xOptions, yOptions);
-    sensorControlTable->attach(*spin, 1, 2, 2, 3, xOptions, yOptions);
-    sensorControlTable->attach(*button, 2, 3, 2, 3, xOptions, yOptions);
+      ([this,spin,check]{
+        this->publishMultisense(-1000,-1,spin->get_value(),false);
+        check->set_active(false);
+      });
+    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*spin, 1, 2, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
+    ++yCur;
+
+    label = Gtk::manage(new Gtk::Label("Head Auto Gain", Gtk::ALIGN_RIGHT));
+    mDummyIntValue = 45;
+    button = Gtk::manage(new Gtk::Button("send"));
+    button->signal_clicked().connect
+      ([this,check]{this->publishMultisense(-1000,-1,-1,check->get_active());});
+    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*check, 1, 2, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
+    ++yCur;
     
     // DRCSIM max: 60rpm | Real Sensor: 49rpm | Temporary Safety: 25
     label = Gtk::manage(new Gtk::Label("Spin Rate (rpm)", Gtk::ALIGN_RIGHT));
@@ -488,9 +509,10 @@ public:
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->publishMultisense(spin->get_value(),-1,-1);});
-    sensorControlTable->attach(*label, 0, 1, 3, 4, xOptions, yOptions);
-    sensorControlTable->attach(*spin, 1, 2, 3, 4, xOptions, yOptions);
-    sensorControlTable->attach(*button, 2, 3, 3, 4, xOptions, yOptions);
+    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*spin, 1, 2, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
+    ++yCur;
     
     label = Gtk::manage(new Gtk::Label("Pitch (deg)", Gtk::ALIGN_RIGHT));
     mDummyIntValue = 45;
@@ -498,10 +520,12 @@ public:
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->onHeadPitchControlButton(spin->get_value());});
-    sensorControlTable->attach(*label, 0, 1, 4, 5, xOptions, yOptions);
-    sensorControlTable->attach(*spin, 1, 2, 4, 5, xOptions, yOptions);
-    sensorControlTable->attach(*button, 2, 3, 4, 5, xOptions, yOptions);
-    
+    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*spin, 1, 2, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
+    ++yCur;
+
+    sensorControlBox->pack_start(*sensorControlTable,false,false);
     
     /*
     addSpin("Pitch (deg)", mHeadPitchAngle, -90, 90, 5, sensorControlBox);
@@ -510,7 +534,7 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::onHeadPitchControlButton));
     sensorControlBox->pack_start(*button, false, false);
     */
-    notebook->append_page(*sensorControlTable, "Sensors");
+    notebook->append_page(*sensorControlBox, "Sensors");
 
     container->add(*notebook);
     container->show_all();
@@ -718,15 +742,17 @@ public:
     }
     msg.closed_amount = 0; // not interpreted
     getLcm()->publish( channel , &msg);
-  }  
+  }
 
-  void publishMultisense(const double iSpinRate, const double iFrameRate,
-                         const double iGain) {
+  void publishMultisense(const double iSpinRate=-1000,
+                         const double iFrameRate=-1,
+                         const double iGain=-1, const int iAgc=-1) {
     multisense::command_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.rpm = iSpinRate;
     msg.fps = iFrameRate;
     msg.gain = iGain;
+    msg.agc = iAgc;
     getLcm()->publish("MULTISENSE_COMMAND", &msg);
   }
   

@@ -68,6 +68,7 @@ struct CameraConfig{
   int output_mode_;
   
   float gain_;
+  int agc_;
   
   CameraConfig () {
         fps_ = 5;
@@ -77,6 +78,7 @@ struct CameraConfig{
         jpeg_quality_ = 94;
         output_mode_ = 0;
         gain_ = 3.0;
+        agc_ = 1;
   }
 };
 

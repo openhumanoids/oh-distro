@@ -63,6 +63,7 @@ void Pass::commandHandler(const lcm::ReceiveBuffer* rbuf,
    config.spindle_rpm_ = (float) msg->rpm;
    config.fps_ = (float) msg->fps;
    config.gain_ = (float) msg->gain;
+   config.agc_ = msg->agc;
    camera->applyConfig(config);
 }
 

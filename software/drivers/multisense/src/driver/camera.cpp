@@ -193,8 +193,8 @@ Camera::~Camera( )
 void Camera::applyConfig(CameraConfig& config){
   std::cout << "Applying new config:\n";  
   std::cout << "do_jpeg_compress_ " << config.do_jpeg_compress_ << "\n"; 
-  std::cout << "do_zlib_compress_ " << config.do_zlib_compress_ << "\n"; 
-  
+  std::cout << "do_zlib_compress_ " << config.do_zlib_compress_ << "\n";
+  std::cout << "agc_ " << config.agc_ << "\n";
   
   const float radiansPerSecondToRpm = 9.54929659643;
   if (fabs(config.spindle_rpm_) <= 25) {
@@ -210,6 +210,11 @@ void Camera::applyConfig(CameraConfig& config){
   }
   if (config.fps_ >= 0) cfg.setFps(config.fps_);
   if (config.gain_ >= 0) cfg.setGain(config.gain_);
+  if (config.agc_ >= 0) {
+    bool automatic = config.agc_ > 0;
+    cfg.setAutoExposure(automatic);
+    cfg.setAutoWhiteBalance(automatic);
+  }
     
   status = driver_->setImageConfig(cfg);
   if (Status_Ok != status)
