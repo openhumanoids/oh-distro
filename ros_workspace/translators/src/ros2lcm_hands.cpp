@@ -6,6 +6,7 @@
  
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -497,7 +498,6 @@ void App::irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 void App::irobot_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg, RobotSide robotSide)
 {
  std::string hand_name_lower;
- std::string hand_name_upper;
  if (robotSide == RIGHT)
  {
   if(!init_recd_irobot_r_){
@@ -506,7 +506,6 @@ void App::irobot_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg, RobotSi
     publishHandStateOnSystemStatus(false, false);
   }
   hand_name_lower = "right";
-  hand_name_upper = "RIGHT";
  }
  else if (robotSide == LEFT)
  {
@@ -516,8 +515,8 @@ void App::irobot_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg, RobotSi
     publishHandStateOnSystemStatus(false, true);
   }
   hand_name_lower = "left";
-  hand_name_upper = "LEFT";
  }
+ std::string hand_name_upper = boost::to_upper_copy(hand_name_lower);
 
 
   irobot_r_hand_state_ = *msg;
@@ -593,6 +592,7 @@ void App::publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
   lcm_publish_.publish("SYSTEM_STATUS", &msg); 
 
 }
+
 //----------------------------------------------------------------------------
 int main(int argc, char **argv){
 
@@ -602,5 +602,6 @@ int main(int argc, char **argv){
   App *app = new App(nh,dumb_fingers);
   std::cout << "ros2lcm_hands translator ready\n";
   ros::spin();
+  delete app;
   return 0;
 }
