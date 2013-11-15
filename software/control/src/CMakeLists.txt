@@ -48,7 +48,7 @@ include(UseJava)
 execute_process(COMMAND pkg-config --variable=classpath lcm-java OUTPUT_VARIABLE LCM_JAR_FILE)
 string(STRIP ${LCM_JAR_FILE} LCM_JAR_FILE)
 set( cmake_jar_dir ${CMAKE_INSTALL_PREFIX}/share/java )
-set( CMAKE_JAVA_INCLUDE_PATH ${LCM_JAR_FILE}:${cmake_jar_dir}/drake.jar:${cmake_jar_dir}/lcmtypes_drake.jar:${cmake_jar_dir}/lcmtypes_drc_lcmtypes.jar:${cmake_jar_dir}/lcmtypes_bot2-core.jar:${cmake_jar_dir}/lcmtypes_vicon-drc.jar:${CMAKE_CURRENT_SOURCE_DIR} )
+set( CMAKE_JAVA_INCLUDE_PATH ${LCM_JAR_FILE}:${cmake_jar_dir}/drake.jar:${cmake_jar_dir}/lcmtypes_drake.jar:${cmake_jar_dir}/lcmtypes_drc_lcmtypes.jar:${cmake_jar_dir}/lcmtypes_bot2-core.jar:${CMAKE_CURRENT_SOURCE_DIR} )
 
 set(java_src_files
   LCMLogParser.java
@@ -73,10 +73,17 @@ set(java_src_files
   AtlasStateExtraCoder.java
   IrobotJointCommandCoder.java
   SandiaJointCommandCoder.java
-  ViconBodyPointCoder.java
   HandStateListener.java
- 	LCMGLLineBuffer.java
+  LCMGLLineBuffer.java
   )
+
+pods_find_pkg_config(lcmtypes_vicon-drc)
+if (lcmtypes_vicon-drc_FOUND)
+   set( CMAKE_JAVA_INCLUDE_PATH
+   "${CMAKE_JAVA_INCLUDE_PATH}:${cmake_jar_dir}/lcmtypes_vicon-drc.jar"
+   )
+   set( java_src_files ${java_src_files} ViconBodyPointCoder.java)
+endif()
 
 add_jar(drc_control ${java_src_files})
 
