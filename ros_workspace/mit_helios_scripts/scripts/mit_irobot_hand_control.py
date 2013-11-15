@@ -35,7 +35,6 @@ def simple_cmd_callback(controller, data):
     
     #print "Sending zero current message"
     controller.zero_current()
-    controller.exit()
     #print "Finished"
 
 
@@ -54,10 +53,7 @@ if __name__ == '__main__':
     controller = IRobotHandController(side)
     
     subscriber_simple_name = "simple_command"
-    
-    
-
-
-    subscriber_simple = rospy.Subscriber(subscriber_simple_name, SimpleGrasp, lambda data : simple_cmd_callback(controller, data))
+    callback = lambda data : simple_cmd_callback(controller, data)
+    subscriber_simple = rospy.Subscriber(subscriber_simple_name, SimpleGrasp, callback)
 
     rospy.spin()

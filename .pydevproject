@@ -8,5 +8,6 @@
 <path>/${PROJECT_DIR_NAME}/ros_workspace/mit_helios_scripts/scripts</path>
 <path>/${PROJECT_DIR_NAME}/ros_workspace/irobot-hand/Software/handle/handle_msgs/src</path>
 <path>/${PROJECT_DIR_NAME}/ros_workspace/sandia-hand/ros/sandia_hand_msgs/src</path>
+<path>/${PROJECT_DIR_NAME}/ros_workspace/mit_helios_scripts/src</path>
 </pydev_pathproperty>
 </pydev_project>

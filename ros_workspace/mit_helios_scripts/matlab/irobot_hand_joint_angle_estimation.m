@@ -19,7 +19,7 @@ param = lsqcurvefit(@piecewiseLinear, param0, xData, yData, lb, ub);
 xKnotSol = [xKnot1; param(1 : nKnotPoints - 2); xKnotFinal];
 yKnotSol = param(nKnotPoints - 1 : end);
 slopes = diff(yKnotSol) ./ diff(xKnotSol);
-intercepts = yKnotSol(2 : end) - slopes .* xKnotSol(2 : end);
+yAxisIntercepts = yKnotSol(2 : end) - slopes .* xKnotSol(2 : end);
 
 fprintf('xKnotSol:\n');
 disp(xKnotSol);
@@ -30,8 +30,9 @@ disp(yKnotSol);
 fprintf('slopes:\n')
 disp(slopes);
 
-fprintf('intercepts:\n')
-disp(intercepts);
+fprintf('y axis intercepts:\n')
+disp(yAxisIntercepts);
+
 
 hold on;
 plot(data.motorHallEncoder0, data.proximalJointAngle0, 'b');

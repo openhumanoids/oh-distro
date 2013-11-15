@@ -4,11 +4,13 @@ Created on Nov 13, 2013
 @author: Twan, Maurice
 '''
 
-import time
+import time, math
 
 import rospy
 from handle_msgs.msg import HandleControl
 from handle_msgs.msg import HandleSensors
+from mit_helios_scripts.msg import MITIRobotState
+
 
 from IRobotHandConfigParser import IRobotHandConfigParser
 
@@ -47,17 +49,17 @@ class IRobotHandController(object):
         self.sensors = HandleSensors()
         self.config_parser = IRobotHandConfigParser(side)
         self.config_parser.load()
-    
-        node_name = "mit_irobot_hand_control"
-        publisher_name = "control"
-        subscriber_name = "sensors/raw"
+        
         ros_rate = 100.0  # todo: something smarter
         
-        rospy.init_node(node_name)
+        rospy.init_node("mit_irobot_hand_control")
         self.rate = rospy.Rate(ros_rate)
-        self.publisher = rospy.Publisher(publisher_name, HandleControl)
-        self.subscriber = rospy.Subscriber(subscriber_name, HandleSensors, self.sensor_data_callback)
+        self.command_publisher = rospy.Publisher("control", HandleControl)
+        self.state_publisher = rospy.Publisher("sensors/mit_state", MITIRobotState)
+        self.subscriber = rospy.Subscriber("sensors/raw", HandleSensors, self.sensor_data_callback)
         self.sensor_data_listeners = []
+        
+        rospy.on_shutdown(lambda self : self.exit())
 
     def add_sensor_data_listener(self, listener):
         self.sensor_data_listeners.append(listener)
@@ -67,20 +69,41 @@ class IRobotHandController(object):
 
     def sensor_data_callback(self, data):
         self.sensors = data
+        self.publish_estimated_proximal_joint_angles()
         for listener in self.sensor_data_listeners:
             listener.notify(data, rospy.get_time())
+
+    def publish_estimated_proximal_joint_angles(self):
+        motor_encoders_with_offset = [self.add_offset(self.sensors.motorHallEncoder[i], i) for i in motor_indices]
+        
+        state_message = MITIRobotState()
+        state_message.estimatedProximalJointAngle = [self.estimate_proximal_joint_angle(motor_encoders_with_offset[i]) for i in motor_indices]
+        self.state_publisher.publish(state_message)
+
+    """
+    mapping found using mit_helios_scripts/matlab/irobot_hand_joint_angle_estimation.m
+    """
+    def estimate_proximal_joint_angle(self, motor_encoder_value):
+        if motor_encoder_value < 0:
+            ticks = 0
+        elif motor_encoder_value < 3084.7:
+            ticks = 0.0774 * motor_encoder_value + 17.9094
+        else:
+            ticks = 0.0033 * motor_encoder_value + 246.6151
+
+        return ticks * 2 * math.pi / 1024;
 
     def zero_current(self):
         no_current_message = HandleControl()
         set_command_message_same_value(no_current_message, HandleControl.CURRENT, motor_indices, 0)
-        self.publisher.publish(no_current_message)
+        self.command_publisher.publish(no_current_message)
 
     def close_hand_current_control(self, finger_close_current):
         grasp_time = 5
         def control(command_message):
             set_command_message_same_value(command_message, HandleControl.CURRENT, motor_indices, finger_close_current)
     
-        loop_control(self.publisher, self.rate, grasp_time, control)
+        loop_control(self.command_publisher, self.rate, grasp_time, control)
     
     def open_hand_angle_control(self):
         open_time = 5
@@ -88,7 +111,7 @@ class IRobotHandController(object):
         def control(command_message):
             set_command_message_same_value(command_message, HandleControl.ANGLE, motor_indices, open_angle)
             
-        loop_control(self.publisher, self.rate, open_time, control)
+        loop_control(self.command_publisher, self.rate, open_time, control)
     
     def open_hand_motor_excursion_control(self):
         open_hand_desired = 2000
@@ -99,13 +122,15 @@ class IRobotHandController(object):
     def motor_excursion_control_loop(self, open_hand_desireds, duration):
         def control(command_message):
             self.motor_excursion_control(command_message, open_hand_desireds)
-        loop_control(self.publisher, self.rate, duration, control)
+        loop_control(self.command_publisher, self.rate, duration, control)
 
     def motor_excursion_control(self, command_message, open_hand_desireds):
         motor_indices = open_hand_desireds.keys()
-        offsets = dict((i, self.config_parser.get_motor_encoder_offset(i)) for i in motor_indices)
-        desireds_with_offset = dict((i, open_hand_desireds[i] + offsets[i]) for i in motor_indices)
+        desireds_with_offset = dict((i, self.add_offset(open_hand_desireds[i], i)) for i in motor_indices)
         set_command_message(command_message, HandleControl.POSITION, desireds_with_offset)
+
+    def add_offset(self, motor_encoder_count, motor_index):
+        return self.config_parser.get_motor_encoder_offset(motor_index) + motor_encoder_count
 
     def clear_config(self):
         self.config_parser.clear()
@@ -135,4 +160,5 @@ class IRobotHandController(object):
         self.zero_current()
 
     def exit(self):
+        self.zero_current()
         self.config_parser.save()
