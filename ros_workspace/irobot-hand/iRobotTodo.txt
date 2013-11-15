@@ -1,16 +1,16 @@
 ON HOLD:
 * visualize hand configuration using proximal joint angle encoders See line 597 ofdrc/ros_workspace/translators/src/ros2lcm_hands.cpp
 * explore contact sensing
+* add option to close a single finger
 
 TODO:
 * calibrate spread DoF
 * add options for different grasps (i.e. different spread values)
-* add option for positon control close using a percentage
-* add option to close a single finger
 * check that everything works with 2 hands connected
 * command line tool to send high level ros commands for hand
 * closing safety (wear prevention)
 * calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
+* investigate 'getting stuck' in position control mode
 
 FOCUS FOR TODAY:
 
@@ -74,3 +74,4 @@ DONE:
 * check if translator needs to be updated
 * weekly status update
 * do a better job of visualizing joint angles in the viewer
+* add option for positon control close using a percentage
