@@ -267,8 +267,9 @@ struct State {
       error = mCamera.RetrieveBuffer(&rawImage);
       curTime = bot_timestamp_now();
       if (error == FlyCapture2::PGRERROR_OK) ++numCaptured;
-      else good = false;
+      //else good = false;
     }
+    if (numCaptured == 0) good = false;
     std::cout << (good ? "done" : "failed") << std::endl;
     std::cout << "streamed " << numCaptured << " frames" << std::endl;
     return good;
