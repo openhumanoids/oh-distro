@@ -25,6 +25,8 @@ classdef drillButtonPlanner
     doPublish;
     default_axis_threshold = 20*pi/180;
     atlas2robotFrameIndMap
+    lc
+    lcmgl
   end
   
   methods
@@ -46,6 +48,9 @@ classdef drillButtonPlanner
       
       joint_names = obj.atlas.getStateFrame.coordinates(1:getNumDOF(obj.atlas));
       joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
+      
+      obj.lc = lcm.lcm.LCM.getSingleton();
+      obj.lcmgl = drake.util.BotLCMGLClient(obj.lc,'button_planned_path');
       
       if obj.doPublish
         obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
@@ -280,23 +285,19 @@ classdef drillButtonPlanner
       
       obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
       
-%       ts_line = linspace(xtraj.tspan(1),xtraj.tspan(2),200);
-%       x_line = xtraj.eval(ts_line);
-%       obj.lcmgl.glColor3f(1,0,0);
-%       obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-%       for i=1:length(ts_line),
-%         q_line = x_line(1:nq_atlas,i);
-%         kinsol = obj.r.doKinematics(q_line);
-%         %         drill_pts = obj.r.forwardKin(kinsol,obj.hand_body,...
-%         %           [obj.drill_pt_on_hand, obj.drill_pt_on_hand + .0254*obj.drill_axis_on_hand]);
-%         %         obj.lcmgl.line3(drill_pts(1,1),drill_pts(2,1),drill_pts(3,1),...
-%         %           drill_pts(1,2),drill_pts(2,2),drill_pts(3,2));
-%         
-%         drill_pt = obj.r.forwardKin(kinsol,obj.hand_body,obj.drill_pt_on_hand);
-%         obj.lcmgl.glVertex3d(drill_pt(1),drill_pt(2),drill_pt(3));
-%       end
-%       obj.lcmgl.glEnd();
-%       obj.lcmgl.switchBuffers();
+      ts_line = linspace(xtraj.tspan(1),xtraj.tspan(2),200);
+      x_line = xtraj.eval(ts_line);
+      obj.lcmgl.glColor3f(1,0,0);
+      obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
+      for i=1:length(ts_line),
+        q_line = x_line(1:nq_atlas,i);
+        kinsol = obj.r.doKinematics(q_line);
+        
+        drill_pt = obj.r.forwardKin(kinsol,obj.finger_hand_body,obj.finger_pt_on_hand);
+        obj.lcmgl.glVertex3d(drill_pt(1),drill_pt(2),drill_pt(3));
+      end
+      obj.lcmgl.glEnd();
+      obj.lcmgl.switchBuffers();
     end
     
   end
