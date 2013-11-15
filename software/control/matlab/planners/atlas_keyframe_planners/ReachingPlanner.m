@@ -238,6 +238,9 @@ classdef ReachingPlanner < KeyframePlanner
             q0 = x0(1:getNumDOF(obj.r));
             obj.checkPosture(q0);
             T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
+            [joint_lb_tmp,joint_ub_tmp] = obj.r.getJointLimits();
+            q0_bound = min([q0 joint_ub_tmp],[],2);
+            q0_bound = max([q0_bound joint_lb_tmp],[],2);
             
             if(obj.isBDIManipMode())
               % Add the joint constraints on the lower bodies in the BDI manip mode, to guarantee
@@ -247,15 +250,11 @@ classdef ReachingPlanner < KeyframePlanner
               joint_idx = (1:obj.r.getNumDOF())';
               lower_fixed_joint_idx = joint_idx(cellfun(@(s) ~isempty(strfind(s,'leg')) | ~isempty(strfind(s,'base')),coords));
               lower_fixed_posture_constraint = PostureConstraint(obj.r);
-              [joint_lb_tmp,joint_ub_tmp] = obj.r.getJointLimits();
-              q0_bound = min([q0 joint_ub_tmp],[],2);
-              q0_bound = max([q0_bound joint_lb_tmp],[],2);
               lower_fixed_posture_constraint = lower_fixed_posture_constraint.setJointLimits(lower_fixed_joint_idx,...
               q0_bound(lower_fixed_joint_idx),q0_bound(lower_fixed_joint_idx));
               if(any(q0_bound<joint_lb_tmp) || any(q0_bound>joint_ub_tmp))
                  error('Joint limit not satisfied');
               end
-
             else
               lower_fixed_posture_constraint = PostureConstraint(obj.r);
             end
