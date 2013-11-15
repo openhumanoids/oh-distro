@@ -38,3 +38,6 @@ add_subdirectory(src/multisense-glview)
 add_subdirectory(src/multisense-renderer)
 
 add_subdirectory(src/project-lidar)
+
+
+pods_install_python_script(spin-lidar-command scripts/spin-lidar-command.py)
