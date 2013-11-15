@@ -29,6 +29,8 @@
 
 using namespace std;
 
+enum RobotSide {LEFT, RIGHT};
+
 class App{
 public:
   App(ros::NodeHandle node_,bool dumb_fingers);
@@ -90,6 +92,7 @@ private:
 
 
   void publishSandiaRaw(int64_t utime_in,bool is_left);
+  void irobot_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg, RobotSide robotSide);
   void irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   void irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg);
   
@@ -480,86 +483,50 @@ void App::appendSandiaFingerState(drc::hand_state_t& msg_out, sandia_hand_msgs::
     msg_out.joint_effort[2+finger_id*3] = 0;//msg_in.fmcb_effort[2];
 }
 
-//----------------------------------------------------------------------------
-// CALLBACKS FOR IROBOT HAND STATE
-//----------------------------------------------------------------------------
 void App::irobot_l_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 {
- if(!init_recd_irobot_l_){
-   init_recd_irobot_l_=true;
-   //publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
-   publishHandStateOnSystemStatus(false, true);
-  }
-   
-  irobot_l_hand_state_ = *msg;
-  drc::hand_state_t msg_out;
-  msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
-  msg_out.num_joints = irobotJointNames.size();
-  for (std::vector<int>::size_type i = 0; i < irobotJointNames.size(); i++)  {
-    std::string name;
-    name ="left_"+irobotJointNames[i];
-    msg_out.joint_name.push_back(name);      
-    msg_out.joint_position.push_back(0);      
-    msg_out.joint_velocity.push_back(0);
-    msg_out.joint_effort.push_back(0);
-  }  
-  /*
-  finger[0]/joint_base_rotation and finger[1]/joint_base_rotation
-  ==============================================================
-  # The encoder on the F1 / F2 base rotation. 8.533 ticks per degree.
-  # 768 ticks to rotate the fingers 90 degrees for a "T" grasp.
-  # 512 ticks to rotate the fingers 60 degrees for a spherical grasp.
-  */
-  {
-    double tick_to_radians = ((0.5*M_PI)/768);
-    msg_out.joint_position[0]=tick_to_radians*msg->fingerSpread;
-    msg_out.joint_position[3]=tick_to_radians*msg->fingerSpread;
-  }
-  
- // very inaccurate estimate of flexion via hall effect sensor for dumb fingers
-  
-  /*finger[0]/joint_base,finger[1]/joint_base and finger[2]/joint_base
-  ==============================================================
-  # The hall effect sensor on the finger motors.  
-  # 24 counts per motor revolution x 300 motor revolutions for one full spindle
-  # rotation.  
-  # 3500 to put finger at approx. 90 degrees
-  # 6000 to close finger gently
-  # 7000 to close finger tightly
-  #
-  # [F1, F2, F3, F3 Ant.]
-  int32[4] motorHallEncoder
-  */
- if(dumb_fingers_)
- {
-    double tick_to_radians = ((0.5*M_PI)/3500); 
-    msg_out.joint_position[1]=tick_to_radians*msg->motorHallEncoder[0];
-    msg_out.joint_position[4]=tick_to_radians*msg->motorHallEncoder[1]; 
-    msg_out.joint_position[6]=tick_to_radians*msg->motorHallEncoder[2];
- }
- else
- {
- //TODO: USE PROXIMAL JOINT ENCODERS
- }
-  lcm_publish_.publish("IROBOT_LEFT_STATE", &msg_out);  
+  irobot_hand_state_cb(msg, LEFT);
+}
+
+void App::irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
+{
+  irobot_hand_state_cb(msg, RIGHT);
 }
 
 //----------------------------------------------------------------------------
-void App::irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
+void App::irobot_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg, RobotSide robotSide)
 {
- if(!init_recd_irobot_r_){
-   init_recd_irobot_r_=true;
-   //publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
-   publishHandStateOnSystemStatus(false, false);
+ std::string hand_name_lower;
+ std::string hand_name_upper;
+ if (robotSide == RIGHT)
+ {
+  if(!init_recd_irobot_r_){
+    init_recd_irobot_r_=true;
+    //publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
+    publishHandStateOnSystemStatus(false, false);
   }
-  
+  hand_name_lower = "right";
+  hand_name_upper = "RIGHT";
+ }
+ else if (robotSide == LEFT)
+ {
+   if(!init_recd_irobot_l_){
+    init_recd_irobot_l_=true;
+    //publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
+    publishHandStateOnSystemStatus(false, true);
+  }
+  hand_name_lower = "left";
+  hand_name_upper = "LEFT";
+ }
+
+
   irobot_r_hand_state_ = *msg;
   drc::hand_state_t msg_out;
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   msg_out.num_joints = irobotJointNames.size();
   for (std::vector<int>::size_type i = 0; i < irobotJointNames.size(); i++)  {
     std::string name;
-    name ="right_"+irobotJointNames[i];
+    name = hand_name_lower + "_" +irobotJointNames[i];
     msg_out.joint_name.push_back(name);      
     msg_out.joint_position.push_back(0);      
     msg_out.joint_velocity.push_back(0);
@@ -603,7 +570,7 @@ void App::irobot_r_hand_state_cb(const handle_msgs::HandleSensorsPtr& msg)
  {
  //TODO: USE PROXIMAL JOINT ENCODERS
  }
-  lcm_publish_.publish("IROBOT_RIGHT_STATE", &msg_out);  
+  lcm_publish_.publish("IROBOT_" + hand_name_upper + "_STATE", &msg_out);
 }
 //----------------------------------------------------------------------------
 void App::publishHandStateOnSystemStatus(bool is_sandia, bool is_left)
