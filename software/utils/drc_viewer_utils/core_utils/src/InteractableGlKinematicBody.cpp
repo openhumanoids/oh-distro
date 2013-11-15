@@ -2030,12 +2030,12 @@ void InteractableGlKinematicBody::draw_body (float (&c)[3], float alpha)
       glColor4f(0.7,0.1,0.1,alpha);         
     }
     else {
-      boost::shared_ptr<otdf::Material> material = _otdf_link_materials[i];
-        if ((NULL != material) && !material->name.empty()) {
-            glColor4f(material->color.r, material->color.g, material->color.b, alpha);
-        }
-        else {
-            glColor4f(c[0],c[1],c[2],alpha);
+        glColor4f(c[0],c[1],c[2],alpha);
+        if(is_otdf_instance){
+          boost::shared_ptr<otdf::Material> material = _otdf_link_materials[i];
+          if ((NULL != material) && !material->name.empty()) {
+              glColor4f(material->color.r, material->color.g, material->color.b, alpha);
+          }
         }
     }
 
