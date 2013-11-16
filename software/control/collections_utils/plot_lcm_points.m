@@ -11,6 +11,12 @@ function plot_lcm_points(values,colors_in, id, name, type, reset)
 % QUADS=9,
 % POLYGON=10;
 
+% fail quietly if the dependency is not met.
+% note: i added this because the visualization pod has gross dependencies,
+% crawling into isam, etc.  that's a lot if you just want to print some
+% points. - Russ
+if ~exist('vs','class'), return; end  
+
 % Use a base null pose
 msg = vs.obj_t();
 msg.id= 1;
