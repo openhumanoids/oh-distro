@@ -70,12 +70,14 @@ class App{
     GMainLoop * mainloop;
     
   private:
+    pointcloud_vis* pc_vis_;  
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::robot_state_t* msg);    
     void manipPlanHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg);    
     
-    void solveFK(drc::robot_state_t state);
+    void solveFK(drc::robot_state_t state, Eigen::Isometry3d &world_to_body, 
+                 map<string, KDL::Frame > &cartpos, bool &cartpos_ready  );
     
     std::string getPalmLink();
     
@@ -98,7 +100,7 @@ class App{
     bool rstate_init_;
     bool cartpos_ready_;
     bool plan_from_robot_state_;
-    bool use_left_hand_, use_sandia_, use_reach_;
+    bool use_left_hand_, use_sandia_, use_reach_, show_palm_triads_;
 };   
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_):
@@ -111,6 +113,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
   use_left_hand_ = true;
   use_sandia_ = true;
   use_reach_ = true;
+  show_palm_triads_ = false;
   
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   KDL::Tree tree;
@@ -127,10 +130,41 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
     
   trans_ = {0.0, 0.0, 0.0};    
   rpy_ =  {0,0,0};
+  
+  // Vis Config:
+  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  // obj: id name type reset
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(800124,"Palm Plan Positions",5,1) );
+  
+}
+
+Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
+  Eigen::Isometry3d tf_out;
+  tf_out.setIdentity();
+  tf_out.translation()  << tf.p[0], tf.p[1], tf.p[2];
+  Eigen::Quaterniond q;
+  tf.M.GetQuaternion( q.x() , q.y(), q.z(), q.w());
+  tf_out.rotate(q);    
+  return tf_out;
 }
 
 
 void App::manipPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg){
+
+  if (show_palm_triads_){
+    std::vector <Isometry3dTime> world_to_palmT;
+    for (size_t i=0; i < msg->plan.size() ; i++){
+      Eigen::Isometry3d world_to_body = Eigen::Isometry3d::Identity();
+      map<string, KDL::Frame > cartpos;
+      bool cartpos_ready; // not used
+      solveFK(msg->plan[i] ,world_to_body, cartpos, cartpos_ready);
+      Eigen::Isometry3d world_to_palm =  world_to_body* KDLToEigen(cartpos.find( getPalmLink() )->second);
+      world_to_palmT.push_back( Isometry3dTime(i, world_to_palm ));
+    
+    }
+    pc_vis_->pose_collection_to_lcm_from_list(800124, world_to_palmT);     
+  }
+  
   planstate_= msg->plan[ msg->num_states-1];
   planstate_init_ = true;
 }
@@ -142,25 +176,25 @@ void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
 }
   
  
-void App::solveFK(drc::robot_state_t state){
+void App::solveFK(drc::robot_state_t state, Eigen::Isometry3d &world_to_body, map<string, KDL::Frame > &cartpos, bool &cartpos_ready  ){
   // 0. Extract World Pose of body:
-  world_to_body_.setIdentity();
-  world_to_body_.translation()  << state.pose.translation.x, state.pose.translation.y, state.pose.translation.z;
+  world_to_body.setIdentity();
+  world_to_body.translation()  << state.pose.translation.x, state.pose.translation.y, state.pose.translation.z;
   Eigen::Quaterniond quat = Eigen::Quaterniond(state.pose.rotation.w, state.pose.rotation.x, 
                                                state.pose.rotation.y, state.pose.rotation.z);
-  world_to_body_.rotate(quat);    
+  world_to_body.rotate(quat);    
     
   // 1. Solve for Forward Kinematics:
   // call a routine that calculates the transforms the joint_state_t* msg.
   map<string, double> jointpos_in;
-  cartpos_.clear();
+  cartpos.clear();
   for (uint i=0; i< (uint) state.num_joints; i++) //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(state.joint_name[i], state.joint_position[i]));
   
   // Calculate forward position kinematics
   bool kinematics_status;
   bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
-  kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_,flatten_tree);
+  kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos,flatten_tree);
   if(kinematics_status>=0){
     // cout << "Success!" <<endl;
   }else{
@@ -168,7 +202,7 @@ void App::solveFK(drc::robot_state_t state){
     return;
   }
   
-  cartpos_ready_=true;  
+  cartpos_ready=true;  
 }
 
 
@@ -217,16 +251,6 @@ void App::publish_palm_goal(){
   }
 }
 
-Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
-  Eigen::Isometry3d tf_out;
-  tf_out.setIdentity();
-  tf_out.translation()  << tf.p[0], tf.p[1], tf.p[2];
-  Eigen::Quaterniond q;
-  tf.M.GetQuaternion( q.x() , q.y(), q.z(), q.w());
-  tf_out.rotate(q);    
-  return tf_out;
-}
-
 std::string App::getPalmLink(){
   std::string palm_link = "left_palm";
   if (use_left_hand_ && use_sandia_){
@@ -245,11 +269,11 @@ std::string App::getPalmLink(){
 void App::publish_reset(){
   if (plan_from_robot_state_){
     if(rstate_init_){
-      solveFK(rstate_);
+      solveFK(rstate_,world_to_body_, cartpos_, cartpos_ready_);
     }
   }else{
     if (planstate_init_){
-      solveFK(planstate_);
+      solveFK(planstate_,world_to_body_, cartpos_, cartpos_ready_);
     }
   }
     
@@ -326,13 +350,18 @@ int App::repaint (int64_t now){
   std::string controller_string = "Reach";
   if (!use_reach_)
     controller_string = "Gaze";
+  
+  std::string show_palm_triads_string = "Showing Triads";
+  if (!show_palm_triads_)
+    show_palm_triads_string = "Hiding Triads";
+  
 
   wmove(w, 10, 0);
   wprintw(w, "conf: %s %s with %s to %s", hand_side_string.c_str() , hand_type_string.c_str(), mode_string.c_str(), controller_string.c_str() );
   wmove(w, 11, 0);
   wprintw(w, "      [z]   [x]         [c]              [v]",  (int) use_sandia_);
-  //wmove(w, 12, 0);
-  //wprintw(w, "      L/R   S/iR        Current/Plan",  (int) use_sandia_);
+  wmove(w, 13, 0);
+  wprintw(w, "[b] %s",  show_palm_triads_string.c_str() );
 
   color_set(COLOR_TITLE, NULL);
   
@@ -358,6 +387,10 @@ bool App::on_input(){
   wprintw(w,"%i  ",c);
 
   last_input_ = c;
+  
+  drc::ee_goal_t goal_msg;
+  goal_msg.num_chain_joints = 0;
+  
 
   // 65 up, 66 down,
   switch (c)
@@ -428,11 +461,12 @@ bool App::on_input(){
     case 'v': // switch controllers: reaching or gaze
       use_reach_= !use_reach_;
       // dont reset to allow hot switching
-      drc::ee_goal_t msg;
-      msg.num_chain_joints = 0;
-      lcm_->publish("LEFT_PALM_GOAL_CLEAR", &msg);
-      lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &msg);
+      lcm_->publish("LEFT_PALM_GOAL_CLEAR", &goal_msg);
+      lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &goal_msg);
       publish_palm_goal();
+      break;      
+    case 'b': // draw triads of the ee or not
+      show_palm_triads_= !show_palm_triads_;
       break;      
   }
 

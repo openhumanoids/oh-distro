@@ -51,7 +51,7 @@ add_executable (ee-driver ee_driver.cpp)
 target_link_libraries (ee-driver curses boost_system   lcm)
 pods_use_pkg_config_packages(ee-driver lcm model-client
    lcmtypes_drc_lcmtypes  bot2-core glib-2.0
-   pointcloud_math
+   pointcloud_math pointcloud_vis
    eigen3 ${REQUIRED_PACKAGES})
 pods_install_executables(ee-driver)
 
