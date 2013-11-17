@@ -595,7 +595,6 @@ int main(int argc, char *argv[])
   foviationSignalHndlr = boost::shared_ptr<RendererFoviationSignalHandler>(new RendererFoviationSignalHandler(_rendererFoviationSignalRef,foviationSignalCallback));
   
   // Block of Renderers:  
-  setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_state(viewer, 0, lcm,0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
@@ -607,6 +606,7 @@ int main(int argc, char *argv[])
   status_add_renderer_to_viewer(viewer, 0, lcm);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
   setup_renderer_controller_options(viewer, 0, lcm, bot_param, bot_frames);
+  setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
 
   add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   // Please don't commit this renderer enabled as it is very heavyweight:
