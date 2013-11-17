@@ -63,8 +63,13 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     pub_frequency_["HEAD_TO_HOKUYO_LINK"] = FrequencyLimit(0, 1E6/getMaxFrequency( "hokuyo_link") ); 
 
     pub_frequency_["BODY_TO_UTORSO"] = FrequencyLimit(0, 1E6/getMaxFrequency( "utorso") ); 
+    
+    // Sandia L/R hands:
     pub_frequency_["BODY_TO_CAMERARHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERARHAND_LEFT") ); 
-    pub_frequency_["BODY_TO_CAMERALHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND_LEFT")   );
+    pub_frequency_["BODY_TO_CAMERALHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND_LEFT") );
+    pub_frequency_["BODY_TO_IROBOTLPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "IROBOTLPALM") ); 
+    pub_frequency_["BODY_TO_IROBOTRPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "IROBOTRPALM") );
+
     pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
     pub_frequency_["POSE_LEFT_FOOT"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "left_foot") );
     pub_frequency_["POSE_RIGHT_FOOT"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "right_foot") );    
@@ -208,7 +213,16 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
     }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
+    }else if(  (*ii).first.compare( "left_base_link" ) == 0 ){
+      Eigen::Isometry3d base_link_to_palm_skin = Eigen::Isometry3d::Identity();
+      base_link_to_palm_skin.translation()  << 0,0,0.09;
+      publishRigidTransform( KDLToEigen( (*ii).second )*base_link_to_palm_skin , msg->utime, "BODY_TO_IROBOTLPALM" );
+    }else if(  (*ii).first.compare( "right_base_link" ) == 0 ){
+      Eigen::Isometry3d base_link_to_palm_skin = Eigen::Isometry3d::Identity();
+      base_link_to_palm_skin.translation()  << 0,0,0.09;
+      publishRigidTransform( KDLToEigen( (*ii).second )*base_link_to_palm_skin   , msg->utime, "BODY_TO_IROBOTRPALM" );
     }
+    
   }
 
 
