@@ -596,17 +596,18 @@ int main(int argc, char *argv[])
   
   // Block of Renderers:  
   setup_renderer_robot_state(viewer, 0, lcm,0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
-  setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
-  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 //  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   status_add_renderer_to_viewer(viewer, 0, lcm);
-  setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
-  setup_renderer_controller_options(viewer, 0, lcm, bot_param, bot_frames);
+
   setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+  setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
+  setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
+  setup_renderer_controller_options(viewer, 0, lcm, bot_param, bot_frames);
 
   add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   // Please don't commit this renderer enabled as it is very heavyweight:
