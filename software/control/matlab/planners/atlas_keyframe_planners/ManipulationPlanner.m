@@ -29,7 +29,7 @@ classdef ManipulationPlanner < KeyframePlanner
    %-----------------------------------------------------------------------------------------------------------------             
       function setPlanningMode(obj,val)
           obj.planning_mode  = val;
-          if(val == 1)
+          if(val ~= 4)
             obj.setDefaultJointConstraint();
           end
       end

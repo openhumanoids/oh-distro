@@ -35,7 +35,7 @@ classdef ReachingPlanner < KeyframePlanner
             else
                 obj.plan_cache.inTeleopMode = false; 
             end
-            if(val == 1) % reset the joint limits
+            if(val ~= 4) % reset the joint limits
               obj.setDefaultJointConstraint();
             end
         end
