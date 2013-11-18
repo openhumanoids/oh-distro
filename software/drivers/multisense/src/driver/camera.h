@@ -64,7 +64,7 @@ struct CameraConfig{
   bool do_zlib_compress_;
   int jpeg_quality_;
   
-  // 0 leftgrey,rightgrey | 1 leftcolor,disp | 2 leftcolor
+  // 0 leftgrey,rightgrey | 1 leftcolor,disp | 2 leftcolor | 3 leftcolor,disp,rightcolor
   int output_mode_;
   
   float gain_;
@@ -94,6 +94,8 @@ public:
 
     void depthCallback(const crl::multisense::image::Header& header,
                        const void *imageDataP);
+    void rightRectCallback(const crl::multisense::image::Header& header,
+                           const void *imageDataP);
     void colorImageCallback(const crl::multisense::image::Header& header,
                             const void *imageDataP);
 
@@ -123,16 +125,13 @@ private:
 
     crl::multisense::Channel* driver_;
 
+    struct ColorData;
+
     //
     // Store outgoing messages for efficiency
 
-    uint8_t       *rgbP;
-    uint8_t       *lumaP;
-    uint8_t       *rgbP_rect; 
-
-    bool                       got_left_luma_;
-    int64_t                    left_luma_frame_id_;
-    int64_t                    left_rect_frame_id_;
+    std::shared_ptr<ColorData> left_data_;
+    std::shared_ptr<ColorData> right_data_;
 
     // Calibration from sensor
 
@@ -143,16 +142,14 @@ private:
     // For local rectification of color images
     
     std::mutex cal_lock_;
-    CvMat *calibration_map_left_1_;
-    CvMat *calibration_map_left_2_;
 
     //
     // For queues and threads
     struct Publisher;
     std::shared_ptr<Publisher> publisher_;
     int max_queue_len_;
-    std::list<std::shared_ptr<bot_core::image_t> > left_img_queue_;
-    std::list<std::shared_ptr<bot_core::image_t> > right_img_queue_;
+    bool warn_queue_;
+    std::list<std::shared_ptr<bot_core::image_t> > disp_img_queue_;
     std::mutex queue_mutex_;
     std::condition_variable queue_condition_;
 
@@ -173,11 +170,8 @@ private:
     // this message bundles both together:    
     multisense::images_t multisense_msg_out_;
     bot_core::image_t lcm_disp_;
-    bot_core::image_t lcm_left_;
-    bot_core::image_t lcm_right_;
     int64_t lcm_disp_frame_id_;
-    int64_t lcm_left_frame_id_;
-    int64_t lcm_right_frame_id_;
+    int lcm_disp_type_;
     
     int depth_compress_buf_size_;
     uint8_t* depth_compress_buf_;

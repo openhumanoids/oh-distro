@@ -42,6 +42,8 @@ const DataSource allImageSources = (Source_Luma_Left            |
                                     Source_Luma_Rectified_Left  |
                                     Source_Luma_Rectified_Right |
                                     Source_Chroma_Left          |
+                                    Source_Chroma_Right         |
+                                    Source_Raw_Right            |
                                     Source_Disparity);
 //
 // Shims for C-style driver callbacks 
@@ -51,9 +53,188 @@ void depthCB(const image::Header& header, const void* imageDataP, void* userData
 { reinterpret_cast<Camera*>(userDataP)->depthCallback(header, imageDataP); }
 void colorCB(const image::Header& header, const void* imageDataP, void* userDataP)
 { reinterpret_cast<Camera*>(userDataP)->colorImageCallback(header, imageDataP); }
-
+void rightRectCB(const image::Header& header, const void* imageDataP, void* userDataP)
+{ reinterpret_cast<Camera*>(userDataP)->rightRectCallback(header, imageDataP); }
 
 }; // anonymous
+
+struct Camera::ColorData {
+  Camera *cam_;
+  uint8_t *rgbP_;
+  uint8_t *lumaP_;
+  uint8_t *rgbP_rect_;
+  bool got_luma_;
+  int64_t luma_frame_id_;
+  CvMat *calibration_map_1_;
+  CvMat *calibration_map_2_;
+  IplImage *destImageP_;
+  bot_core::image_t msg_;
+  int64_t lcm_frame_id_;
+  std::list<std::shared_ptr<bot_core::image_t> > img_queue_;
+  std::string name_;
+
+  static const int width_ = 1024;
+  static const int height_ = 544;
+
+  ColorData(Camera* cam, const int npixels, const std::string& name) {
+    cam_ = cam;
+    name_ = name;
+    rgbP_ = (uint8_t*) malloc(npixels*3);
+    lumaP_ = (uint8_t*) malloc(npixels*3);
+    rgbP_rect_ = (uint8_t*) malloc(npixels*3);
+    got_luma_ = false;
+    luma_frame_id_ = 0;
+    calibration_map_1_ = calibration_map_2_ = NULL;
+    destImageP_ = NULL;
+  }
+
+  void createCalibMaps(crl::multisense::image::Calibration::Data& in_cal_data) {
+    calibration_map_1_ = cvCreateMat(cam_->image_config_.height(),
+                                     cam_->image_config_.width(), CV_32F);
+    calibration_map_2_ = cvCreateMat(cam_->image_config_.height(),
+                                     cam_->image_config_.width(), CV_32F);
+
+    // Calibration from sensor is for 2 Mpix, must adjust here (TODO: fix on firmware side, this
+    // will get messy when we support arbitrary resolutions.)
+    
+    auto cal_data = in_cal_data;
+    if (width_ == cam_->image_config_.width()) {
+      cal_data.M[0][0] /= 2.0;
+      cal_data.M[0][2] /= 2.0;
+      cal_data.M[1][1] /= 2.0;
+      cal_data.M[1][2] /= 2.0;
+      cal_data.P[0][0] /= 2.0;
+      cal_data.P[0][2] /= 2.0;
+      cal_data.P[0][3] /= 2.0;
+      cal_data.P[1][1] /= 2.0;
+      cal_data.P[1][2] /= 2.0;
+    }
+
+    CvMat M1 = cvMat(3, 3, CV_32F, &cal_data.M);
+    CvMat D1 = cvMat(1, 8, CV_32F, &cal_data.D);
+    CvMat R1 = cvMat(3, 3, CV_32F, &cal_data.R);
+    CvMat P1 = cvMat(3, 4, CV_32F, &cal_data.P);
+    
+    cvInitUndistortRectifyMap(&M1, &D1, &R1, &P1,
+                              calibration_map_1_, calibration_map_2_);
+  }
+
+  //
+  // Convert YCbCr 4:2:0 to RGB
+  // TODO: speed this up
+  void yuvToRgb(const void* imageDataP) {
+
+    const uint8_t *chromaP = reinterpret_cast<const uint8_t*>(imageDataP);
+    const uint32_t rgbStride = width_ * 3;
+
+    for(uint32_t y=0; y<height_; y++) {
+      for(uint32_t x=0; x<width_; x++) {
+
+        const uint32_t lumaOffset   = (y * width_) + x;
+        const uint32_t chromaOffset = 2 * (((y/2) * (width_/2)) + (x/2));
+                    
+        const float px_y  = static_cast<float>(lumaP_[lumaOffset]);
+        const float px_cb = static_cast<float>(chromaP[chromaOffset+0]) - 128.0f;
+        const float px_cr = static_cast<float>(chromaP[chromaOffset+1]) - 128.0f;
+
+        float px_r  = px_y +                    1.402f   * px_cr;
+        float px_g  = px_y - 0.34414f * px_cb - 0.71414f * px_cr;
+        float px_b  = px_y + 1.772f   * px_cb;
+
+        if (px_r < 0.0f)        px_r = 0.0f;
+        else if (px_r > 255.0f) px_r = 255.0f;
+        if (px_g < 0.0f)        px_g = 0.0f;
+        else if (px_g > 255.0f) px_g = 255.0f;
+        if (px_b < 0.0f)        px_b = 0.0f;
+        else if (px_b > 255.0f) px_b = 255.0f;
+
+        const uint32_t rgbOffset = (y * rgbStride) + (3 * x);
+
+        rgbP_[rgbOffset + 0] = static_cast<uint8_t>(px_r);
+        rgbP_[rgbOffset + 1] = static_cast<uint8_t>(px_g);
+        rgbP_[rgbOffset + 2] = static_cast<uint8_t>(px_b);
+      }
+    }
+  }
+
+  void rectify() {
+    std::unique_lock<std::mutex> lock(cam_->cal_lock_);
+    if (width_  != cam_->image_config_.width() ||
+        height_ != cam_->image_config_.height())
+      printf("calibration/image size mismatch: image=%dx%d, calibration=%dx%d\n",
+             width_, height_, cam_->image_config_.width(), cam_->image_config_.height());
+    else if (NULL == calibration_map_1_ || NULL == calibration_map_2_)
+      printf("undistort maps not initialized\n");
+    else {
+
+      const CvScalar outlierColor = {{0.0}};
+      IplImage *sourceImageP  = cvCreateImageHeader(cvSize(width_, height_), IPL_DEPTH_8U, 3);
+      sourceImageP->imageData = reinterpret_cast<char*>( rgbP_ );
+      destImageP_ = cvCreateImageHeader(cvSize(width_, height_), IPL_DEPTH_8U, 3);
+      destImageP_->imageData   = reinterpret_cast<char*>( rgbP_rect_ );
+      
+      cvRemap(sourceImageP, destImageP_, calibration_map_1_, calibration_map_2_,
+              CV_INTER_LINEAR, outlierColor);
+      cvReleaseImageHeader(&sourceImageP);
+    }
+  }
+
+  void setRectImage(const image::Header header,
+                    const void* imageDataP) {
+    destImageP_ = cvCreateImageHeader(cvSize(header.width, header.height), IPL_DEPTH_8U, 1);
+    destImageP_->imageData   = (char*)imageDataP;
+  }
+
+  void pushMessage(const int64_t data_utime, const int64_t frame_id) {
+    if (cam_->config_.do_jpeg_compress_){
+      std::vector<int> params;
+      params.push_back(cv::IMWRITE_JPEG_QUALITY);
+      params.push_back(cam_->config_.jpeg_quality_);
+      if (destImageP_->nChannels > 1) {
+        cvCvtColor( destImageP_, destImageP_, CV_BGR2RGB);
+      }
+      cv::Mat img = cv::cvarrToMat(destImageP_);
+      if (!cv::imencode(".jpg", img, msg_.data, params)) {
+        printf("Error encoding jpeg image\n");
+      }
+      msg_.size = msg_.data.size();
+      msg_.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG; 
+    }else{
+      int isize = width_*height_*destImageP_->nChannels;
+      msg_.data.resize(isize);
+      memcpy(&msg_.data[0], destImageP_->imageData, isize);
+      // destImageP->imageData   = reinterpret_cast<char*>(&(msg.data[0]));
+      msg_.size = isize;
+      msg_.pixelformat = destImageP_->nChannels==1 ?
+        bot_core::image_t::PIXEL_FORMAT_RGB : bot_core::image_t::PIXEL_FORMAT_GRAY;
+    }
+    
+    msg_.utime = data_utime;
+    msg_.width = width_;
+    msg_.height = height_;
+    msg_.nmetadata = 0;
+    msg_.row_stride= destImageP_->nChannels*width_;
+    //printf("left luma frame id: %lld", left_luma_frame_id_);
+    //printf("leftchromaframe id: %lld", header.frameId);
+    lcm_frame_id_ = frame_id;
+
+    // enqueue and notify; publish is handled by publisher class
+    std::shared_ptr<bot_core::image_t> img;
+    img.reset(new bot_core::image_t(msg_));
+    std::unique_lock<std::mutex> lock(cam_->queue_mutex_);
+    img_queue_.push_back(img);
+    while (img_queue_.size() > cam_->max_queue_len_) {
+      img_queue_.pop_front();
+      if (cam_->warn_queue_) {
+        printf("exceeded buffer size; dropped %s image\n", name_.c_str());
+      }
+    }
+    cam_->queue_condition_.notify_one();
+    
+    cvReleaseImageHeader(&destImageP_);
+  }
+
+};
 
 struct Camera::Publisher {
   Camera* camera_;
@@ -61,34 +242,63 @@ struct Camera::Publisher {
   std::thread thread_;
 
   void operator()() {
-    running_ = (camera_->config_.output_mode_ == 0);
+    running_ = true;
+    bool use_left(false), use_right(false), use_disp(false);
+    int mode = camera_->config_.output_mode_;
+    switch(mode) {
+    case 0:   use_left = use_disp = true;              break;
+    case 3:   use_left = use_right = use_disp = true;  break;
+    default:  running_ = false;                        break;
+    }
+
+    auto& msg = camera_->multisense_msg_out_;
+    msg.n_images = use_left + use_right + use_disp;
+    msg.images.resize(msg.n_images);
+    msg.image_types.clear();
+    if (use_left) msg.image_types.push_back((int)multisense::images_t::LEFT);
+    if (use_disp) msg.image_types.push_back(camera_->lcm_disp_type_);
+    if (use_right) msg.image_types.push_back((int)multisense::images_t::RIGHT);
+
     while (running_) {
       // lock queues
       std::unique_lock<std::mutex> lock(camera_->queue_mutex_);
       camera_->queue_condition_.wait_for(lock, std::chrono::milliseconds(100));
 
       // for each left image, find corresponding depth image and publish
-      bool any_published = false;
-      auto leftIter = camera_->left_img_queue_.begin();
-      for (; leftIter != camera_->left_img_queue_.end();) {
+      auto leftIter = camera_->left_data_->img_queue_.begin();
+      for (; leftIter != camera_->left_data_->img_queue_.end();) {
         bool published = false;
-        auto rightIter = camera_->right_img_queue_.begin();
-        for (; rightIter != camera_->right_img_queue_.end(); ++rightIter) {
-          if ((*leftIter)->utime == (*rightIter)->utime) {
-            camera_->multisense_msg_out_.utime = (*leftIter)->utime;
-            camera_->multisense_msg_out_.n_images =2;
-            camera_->multisense_msg_out_.images[0]= **leftIter;
-            camera_->multisense_msg_out_.images[1]= **rightIter;
-            camera_->lcm_publish_.publish("CAMERA", &camera_->multisense_msg_out_);
-            published = true;
-            any_published = true;
-            printf("published left/disp pair at %ld\n", (*leftIter)->utime);
-            break;
+        auto dispIter = camera_->disp_img_queue_.begin();
+        for (; dispIter != camera_->disp_img_queue_.end(); ++dispIter) {
+          if ((*leftIter)->utime == (*dispIter)->utime) {
+            msg.utime = (*leftIter)->utime;
+            msg.images[0] = **leftIter;
+            msg.images[1] = **dispIter;
+            bool found = true;
+            if (mode == 3) {
+              found = false;
+              auto rightIter = camera_->right_data_->img_queue_.begin();
+              for (; rightIter != camera_->right_data_->img_queue_.end();
+                   ++rightIter) {
+                if ((*rightIter)->utime == (*leftIter)->utime) {
+                  msg.images[2] = **rightIter;
+                  camera_->right_data_->img_queue_.erase(rightIter);
+                  found = true;
+                  break;
+                }
+              }
+            }
+            if (found) {
+              camera_->lcm_publish_.publish("CAMERA", &msg);
+              camera_->disp_img_queue_.erase(dispIter);
+              published = true;
+              printf("published %d images at %ld\n", msg.n_images, (*leftIter)->utime);
+              break;
+            }
           }
         }
         if (published) {
-          leftIter = camera_->left_img_queue_.erase(leftIter);
-          camera_->right_img_queue_.erase(rightIter);
+          leftIter = camera_->left_data_->img_queue_.erase(leftIter);
         }
         else {
           ++leftIter;
@@ -100,35 +310,27 @@ struct Camera::Publisher {
 
 Camera::Camera(Channel* driver, CameraConfig& config_) :
     driver_(driver),
-    got_left_luma_(false),
-    left_luma_frame_id_(0),
-    left_rect_frame_id_(0),
-    calibration_map_left_1_(NULL),
-    calibration_map_left_2_(NULL),
     max_queue_len_(30),
+    warn_queue_(false),
     capture_fps_(0.0f),
+    lcm_disp_type_(multisense::images_t::DISPARITY),
     config_(config_)
 {
 
     if(!lcm_publish_.good()){
       std::cerr <<"ERROR: lcm is not good()" <<std::endl;
     }
-    lcm_disp_frame_id_ = -1;
-    lcm_left_frame_id_ = -2;
-    lcm_right_frame_id_ = -3;
-    multisense_msg_out_.image_types.push_back(0);// multisense::images_t::LEFT );
-    multisense_msg_out_.image_types.push_back(2);// multisense::images_t::DISPARITY );
-    multisense_msg_out_.images.push_back(lcm_left_);
-    multisense_msg_out_.images.push_back(lcm_disp_);
     // allocate space for zlib compressing depth data
     depth_compress_buf_size_ = 1024 * 544 * sizeof(int16_t) * 4;
     depth_compress_buf_ = (uint8_t*) malloc(depth_compress_buf_size_);
     
     int npixels = 1024*544;
-    rgbP = (uint8_t*) malloc(npixels*3);
-    lumaP = (uint8_t*) malloc(npixels*3);
-    rgbP_rect = (uint8_t*) malloc(npixels*3);
 
+    left_data_.reset(new ColorData(this, npixels, "LEFT"));
+    right_data_.reset(new ColorData(this, npixels, "RIGHT"));
+    lcm_disp_frame_id_ = -1;
+    left_data_->lcm_frame_id_ = -2;
+    right_data_->lcm_frame_id_ = -3;
     
     //
     // All image streams off
@@ -145,7 +347,19 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     //
     // Get current sensor configuration
 
-    queryConfig();
+    {
+        std::unique_lock<std::mutex> lock(cal_lock_);
+        
+        // Get the camera config (TODO: clean this up to better handle multiple resolutions)
+        if (Status_Ok != driver_->getImageConfig(image_config_)) {
+            printf("failed to query sensor configuration\n");
+            return;
+        }
+
+        // For local rectification of color images
+        left_data_->createCalibMaps(image_calibration_.left);
+        right_data_->createCalibMaps(image_calibration_.right);
+    }
 
     // start publish thread
     publisher_.reset(new Publisher());
@@ -161,18 +375,27 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     driver_->addIsolatedCallback(rectCB,  Source_Luma_Rectified_Left | Source_Luma_Rectified_Right, this);
     driver_->addIsolatedCallback(depthCB, Source_Disparity, this);
     driver_->addIsolatedCallback(colorCB, Source_Luma_Left | Source_Chroma_Left, this);
+    driver_->addIsolatedCallback(colorCB, Source_Luma_Right | Source_Chroma_Right, this);
+    driver_->addIsolatedCallback(rightRectCB, Source_Luma_Rectified_Right, this);
     
 
     if ( config_.output_mode_ ==0){
       connectStream(Source_Disparity);
       connectStream(Source_Luma_Left);
       connectStream(Source_Chroma_Left);
+      warn_queue_ = true;
     } else if ( config_.output_mode_ ==1){
       connectStream(Source_Luma_Rectified_Left);
       connectStream(Source_Luma_Rectified_Right);
     } else if ( config_.output_mode_ ==2){
       connectStream(Source_Luma_Left);
       connectStream(Source_Chroma_Left);
+    } else if ( config_.output_mode_ ==3){
+      connectStream(Source_Disparity);
+      connectStream(Source_Luma_Left);
+      connectStream(Source_Chroma_Left);
+      connectStream(Source_Luma_Rectified_Right);
+      warn_queue_ = true;
     }
 
     // Apply input config:
@@ -196,7 +419,7 @@ void Camera::applyConfig(CameraConfig& config){
   std::cout << "do_zlib_compress_ " << config.do_zlib_compress_ << "\n";
   std::cout << "agc_ " << config.agc_ << "\n";
   
-  const float radiansPerSecondToRpm = 9.54929659643;
+  //const float radiansPerSecondToRpm = 9.54929659643;
   if (fabs(config.spindle_rpm_) <= 25) {
     driver_->setMotorSpeed(config.spindle_rpm_);
   }
@@ -264,8 +487,6 @@ void Camera::rectCallback(const image::Header& header,
     }
 
     int64_t data_utime = header.timeSeconds*1E6 + header.timeMicroSeconds;
-    
-    
     const uint32_t imageSize = header.width * header.height;
     
     // TODO: add compression to left/right camera images
@@ -274,48 +495,50 @@ void Camera::rectCallback(const image::Header& header,
     case Source_Luma_Rectified_Left:
 
         // LCM Left:        
-        lcm_left_.data.resize( imageSize);
-        memcpy(&lcm_left_.data[0], imageDataP, imageSize);
-        lcm_left_.size =imageSize;
-        lcm_left_.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY; 
-        lcm_left_.utime = data_utime;
-        lcm_left_.width = header.width;
-        lcm_left_.height = header.height;
-        lcm_left_.nmetadata =0;
-        lcm_left_.row_stride=header.width;
-        lcm_left_frame_id_ = header.frameId;
-        multisense_msg_out_.image_types[0] = 0; // left
-        //lcm_publish_.publish("CAMERALEFT", &lcm_left_);
+        left_data_->msg_.data.resize( imageSize);
+        memcpy(&left_data_->msg_.data[0], imageDataP, imageSize);
+        left_data_->msg_.size =imageSize;
+        left_data_->msg_.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY; 
+        left_data_->msg_.utime = data_utime;
+        left_data_->msg_.width = header.width;
+        left_data_->msg_.height = header.height;
+        left_data_->msg_.nmetadata =0;
+        left_data_->msg_.row_stride=header.width;
+        left_data_->lcm_frame_id_ = header.frameId;
+        //lcm_publish_.publish("CAMERALEFT", &left_data_->msg_);
         break;
     case Source_Luma_Rectified_Right:
 
         // LCM Right:        
-        lcm_right_.data.resize( imageSize);
-        memcpy(&lcm_right_.data[0], imageDataP, imageSize);
-        lcm_right_.size =imageSize;
-        lcm_right_.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY; 
-        lcm_right_.utime = data_utime;
-        lcm_right_.width = header.width;
-        lcm_right_.height = header.height;
-        lcm_right_.nmetadata =0;
-        lcm_right_.row_stride=header.width;
-        lcm_right_frame_id_ = header.frameId;
-        multisense_msg_out_.image_types[1] = 1; // right
-        //lcm_publish_.publish("CAMERARIGHT", &lcm_right_);        
+        right_data_->msg_.data.resize( imageSize);
+        memcpy(&right_data_->msg_.data[0], imageDataP, imageSize);
+        right_data_->msg_.size =imageSize;
+        right_data_->msg_.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY; 
+        right_data_->msg_.utime = data_utime;
+        right_data_->msg_.width = header.width;
+        right_data_->msg_.height = header.height;
+        right_data_->msg_.nmetadata =0;
+        right_data_->msg_.row_stride=header.width;
+        right_data_->lcm_frame_id_ = header.frameId;
+        //lcm_publish_.publish("CAMERARIGHT", &right_data_->msg_);        
         break;
     }
    
-    if ( lcm_left_frame_id_ == lcm_right_frame_id_ ){
+    if ( left_data_->lcm_frame_id_ == right_data_->lcm_frame_id_ ){
         // publish sync'ed left/right images:
         multisense_msg_out_.utime = data_utime;
         multisense_msg_out_.n_images =2;
-        multisense_msg_out_.images[0]= lcm_left_;
-        multisense_msg_out_.images[1]= lcm_right_;
+        multisense_msg_out_.image_types.resize(2);
+        multisense_msg_out_.image_types[0] = multisense::images_t::LEFT;
+        multisense_msg_out_.image_types[1] = multisense::images_t::RIGHT;
+        multisense_msg_out_.images.resize(2);
+        multisense_msg_out_.images[0]= left_data_->msg_;
+        multisense_msg_out_.images[1]= right_data_->msg_;
         //printf("Syncd frames. publish pair [id %lld]", header.frameId);
         lcm_publish_.publish("CAMERA", &multisense_msg_out_);
     }else{
       // This error will happen for about 50% of frames
-      //printf("Left [%lld] and Right [%lld]: Frame Ids dont match", lcm_left_frame_id_, lcm_right_frame_id_);
+      //printf("Left [%lld] and Right [%lld]: Frame Ids dont match", left_data_->msg_frame_id_, right_data_->msg_frame_id_);
     }
     
 }
@@ -331,10 +554,12 @@ void Camera::depthCallback(const image::Header& header,
         printf("Unexpected image source: 0x%x\n", header.source);
         return;
     }
-    
+
+    /*    
     const float    bad_point = std::numeric_limits<float>::quiet_NaN();
     const uint32_t depthSize = header.height * header.width * sizeof(float);
     const uint32_t imageSize = header.width * header.height;
+    */
 
     if (16 == header.bitsPerPixel) {
         // LCM Disparity:
@@ -355,12 +580,12 @@ void Camera::depthCallback(const image::Header& header,
           lcm_disp_.data.resize(compressed_size);
           memcpy(&lcm_disp_.data[ 0 ], depth_compress_buf_, compressed_size ); 
           lcm_disp_.size = compressed_size;
-          multisense_msg_out_.image_types[1] = multisense_msg_out_.DISPARITY_ZIPPED;
+          lcm_disp_type_ = multisense::images_t::DISPARITY_ZIPPED;;
         }else{
           lcm_disp_.data.resize(isize);
           memcpy(&lcm_disp_.data[ 0 ], imageDataP, isize);
           lcm_disp_.size = isize;
-          multisense_msg_out_.image_types[1] = multisense_msg_out_.DISPARITY;
+          lcm_disp_type_ = multisense::images_t::DISPARITY;
         }
         // printf("disp      frame id: %lld", header.frameId);
         lcm_disp_frame_id_ = header.frameId;
@@ -370,9 +595,9 @@ void Camera::depthCallback(const image::Header& header,
           std::shared_ptr<bot_core::image_t> img;
           img.reset(new bot_core::image_t(lcm_disp_));
           std::unique_lock<std::mutex> lock(queue_mutex_);
-          right_img_queue_.push_back(img);
-          while (right_img_queue_.size() > max_queue_len_) {
-            right_img_queue_.pop_front();
+          disp_img_queue_.push_back(img);
+          while (disp_img_queue_.size() > max_queue_len_) {
+            disp_img_queue_.pop_front();
             printf("dropped disp image\n");
           }
           queue_condition_.notify_one();
@@ -387,201 +612,59 @@ void Camera::depthCallback(const image::Header& header,
 
 
 
+void Camera::rightRectCallback(const image::Header& header,
+                               const void* imageDataP)
+{
+  if (header.source != Source_Luma_Rectified_Right) return;
+  right_data_->setRectImage(header, imageDataP);
+  int64_t data_utime = header.timeSeconds*1E6 + header.timeMicroSeconds;
+  right_data_->pushMessage(data_utime, header.frameId);
+}
+
 
 void Camera::colorImageCallback(const image::Header& header,
                                 const void*          imageDataP)
 {
     if (verbose_) printf("colorImageCallback\n");
 
-    // The left-luma image is currently published before
+    // The luma image is currently published before
     // the matching chroma image. 
 
-    if (false == got_left_luma_) {
-
-        if (Source_Luma_Left == header.source) {
+    int64_t data_utime = header.timeSeconds*1E6 + header.timeMicroSeconds;
+    if (Source_Luma_Left == header.source) {
+        if (false == left_data_->got_luma_) {
             const uint32_t imageSize = header.width * header.height;
-            memcpy(lumaP, imageDataP, imageSize);
-            left_luma_frame_id_ = header.frameId;
-            got_left_luma_      = true;
+            memcpy(left_data_->lumaP_, imageDataP, imageSize);
+            left_data_->luma_frame_id_ = header.frameId;
+            left_data_->got_luma_      = true;
         }
-        
-    } else if (Source_Chroma_Left == header.source) {
+    } else if (Source_Luma_Right == header.source) {
+        if (false == right_data_->got_luma_) {
+            const uint32_t imageSize = header.width * header.height;
+            memcpy(right_data_->lumaP_, imageDataP, imageSize);
+            right_data_->luma_frame_id_ = header.frameId;
+            right_data_->got_luma_      = true;
+        }
+    }
 
-        if (header.frameId == left_luma_frame_id_) {
-
-            const uint32_t height    = 544;//left_luma_image_.height;
-            const uint32_t width     = 1024;//left_luma_image_.width;
-            const uint32_t imageSize = 3 * height * width;
-
-            //
-            // Convert YCbCr 4:2:0 to RGB
-            // TODO: speed this up
-
-            //const uint8_t *lumaP     = reinterpret_cast<const uint8_t*>(&(left_luma_image_.data[0]));
-            const uint8_t *chromaP   = reinterpret_cast<const uint8_t*>(imageDataP);
-            //uint8_t       *rgbP      = reinterpret_cast<uint8_t*>(&(left_rgb_image_.data[0]));
-            const uint32_t rgbStride = width * 3;
-
-            for(uint32_t y=0; y<height; y++) {
-                for(uint32_t x=0; x<width; x++) {
-
-                    const uint32_t lumaOffset   = (y * width) + x;
-                    const uint32_t chromaOffset = 2 * (((y/2) * (width/2)) + (x/2));
-                    
-                    const float px_y  = static_cast<float>(lumaP[lumaOffset]);
-                    const float px_cb = static_cast<float>(chromaP[chromaOffset+0]) - 128.0f;
-                    const float px_cr = static_cast<float>(chromaP[chromaOffset+1]) - 128.0f;
-
-                    float px_r  = px_y +                    1.402f   * px_cr;
-                    float px_g  = px_y - 0.34414f * px_cb - 0.71414f * px_cr;
-                    float px_b  = px_y + 1.772f   * px_cb;
-
-                    if (px_r < 0.0f)        px_r = 0.0f;
-                    else if (px_r > 255.0f) px_r = 255.0f;
-                    if (px_g < 0.0f)        px_g = 0.0f;
-                    else if (px_g > 255.0f) px_g = 255.0f;
-                    if (px_b < 0.0f)        px_b = 0.0f;
-                    else if (px_b > 255.0f) px_b = 255.0f;
-
-                    const uint32_t rgbOffset = (y * rgbStride) + (3 * x);
-
-                    rgbP[rgbOffset + 0] = static_cast<uint8_t>(px_r);
-                    rgbP[rgbOffset + 1] = static_cast<uint8_t>(px_g);
-                    rgbP[rgbOffset + 2] = static_cast<uint8_t>(px_b);
-                }
-            }
-
-
-            if (1==1){//(0 != left_rgb_rect_cam_pub_.getNumSubscribers()) {
-                std::unique_lock<std::mutex> lock(cal_lock_);
-
-                if (width  != image_config_.width() ||
-                    height != image_config_.height())
-                    printf("calibration/image size mismatch: image=%dx%d, calibration=%dx%d\n",
-                              width, height, image_config_.width(), image_config_.height());
-                else if (NULL == calibration_map_left_1_ || NULL == calibration_map_left_2_)
-                    printf("undistort maps not initialized\n");
-                else {
-
-                    const CvScalar outlierColor = {{0.0}};
-
-                    IplImage *sourceImageP  = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 3);
-                    sourceImageP->imageData = reinterpret_cast<char*>( rgbP );
-                    IplImage *destImageP    = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 3);
-                    destImageP->imageData   = reinterpret_cast<char*>( rgbP_rect );
-                    
-                    cvRemap(sourceImageP, destImageP, 
-                            calibration_map_left_1_, 
-                            calibration_map_left_2_,
-                            CV_INTER_LINEAR, outlierColor);
-                    
-                  
-                    ///////////////////////////////////////////////////////////////////////////////
-                    // LCM:
-                    if (config_.do_jpeg_compress_){
-                      std::vector<int> params;
-                      params.push_back(cv::IMWRITE_JPEG_QUALITY);
-                      params.push_back( config_.jpeg_quality_);
-                      
-                      cvCvtColor( destImageP, destImageP, CV_BGR2RGB);
-                      cv::Mat img = cv::cvarrToMat(destImageP);
-                      if (!cv::imencode(".jpg", img, lcm_left_.data, params)) {
-                        printf("Error encoding jpeg image\n");
-                      }
-                      lcm_left_.size = lcm_left_.data.size();
-                      lcm_left_.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG; 
-                    }else{
-                      int left_isize = 3*width*height;
-                      lcm_left_.data.resize( left_isize);
-                      memcpy(&lcm_left_.data[0], destImageP->imageData, left_isize);
-                      // destImageP->imageData   = reinterpret_cast<char*>(&(lcm_left_.data[0]));
-                      lcm_left_.size =left_isize;
-                      lcm_left_.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB; 
-                    }
-
-                    int64_t data_utime = header.timeSeconds*1E6 + header.timeMicroSeconds;
-                    lcm_left_.utime = data_utime;
-                    lcm_left_.width = width;
-                    lcm_left_.height = height;
-                    lcm_left_.nmetadata =0;
-                    lcm_left_.row_stride=3*width;
-                    //printf("left luma frame id: %lld", left_luma_frame_id_);
-                    //printf("leftchromaframe id: %lld", header.frameId);
-                    lcm_left_frame_id_ = header.frameId;
-
-                    if (config_.output_mode_ ==2){ // publish left only
-                      lcm_publish_.publish("CAMERA_LEFT", &lcm_left_);
-                      
-                    }else if(config_.output_mode_ == 0){
-                      std::shared_ptr<bot_core::image_t> img;
-                      img.reset(new bot_core::image_t(lcm_left_));
-                      std::unique_lock<std::mutex> lock(queue_mutex_);
-                      left_img_queue_.push_back(img);
-                      while (left_img_queue_.size() > max_queue_len_) {
-                        left_img_queue_.pop_front();
-                        printf("dropped left image\n");
-                      }
-                      queue_condition_.notify_one();                      
-                      
-                      // publish is handled by publisher class
-                    }
-
-                    cvReleaseImageHeader(&sourceImageP);
-                    cvReleaseImageHeader(&destImageP);
-                    
-                }
+    else if (Source_Chroma_Left == header.source) {
+        if (header.frameId == left_data_->luma_frame_id_) {
+            left_data_->yuvToRgb(imageDataP);
+            left_data_->rectify();
+            left_data_->pushMessage(data_utime, header.frameId);
+            if (config_.output_mode_ == 2){
+                lcm_publish_.publish("CAMERA_LEFT", &left_data_->msg_);
             }
         }
-        got_left_luma_ = false;
+        left_data_->got_luma_ = false;
+    } else if (Source_Chroma_Right == header.source) {
+        if (header.frameId == right_data_->luma_frame_id_) {
+            right_data_->yuvToRgb(imageDataP);
+            right_data_->rectify();
+            right_data_->pushMessage(data_utime, header.frameId);
+        }
+        right_data_->got_luma_ = false;
     }
-}
-
-
-void Camera::queryConfig()
-{
-    std::unique_lock<std::mutex> lock(cal_lock_);
-
-    // Get the camera config (TODO: clean this up to better handle multiple resolutions)
-
-    if (Status_Ok != driver_->getImageConfig(image_config_)) {
-        printf("failed to query sensor configuration\n");
-        return;
-    }
-
-    // For local rectification of color images
-    
-    if (calibration_map_left_1_)
-        cvReleaseMat(&calibration_map_left_1_);
-    if (calibration_map_left_2_)
-        cvReleaseMat(&calibration_map_left_2_);
-
-    calibration_map_left_1_ = cvCreateMat(image_config_.height(), image_config_.width(), CV_32F);
-    calibration_map_left_2_ = cvCreateMat(image_config_.height(), image_config_.width(), CV_32F);
-
-    // Calibration from sensor is for 2 Mpix, must adjust here (TODO: fix on firmware side, this
-    // will get messy when we support arbitrary resolutions.)
-    
-    image::Calibration cal = image_calibration_;
-
-    if (1024 == image_config_.width()) {
-        cal.left.M[0][0] /= 2.0;
-        cal.left.M[0][2] /= 2.0;
-        cal.left.M[1][1] /= 2.0;
-        cal.left.M[1][2] /= 2.0;
-        cal.left.P[0][0] /= 2.0;
-        cal.left.P[0][2] /= 2.0;
-        cal.left.P[0][3] /= 2.0;
-        cal.left.P[1][1] /= 2.0;
-        cal.left.P[1][2] /= 2.0;
-    }
-
-    CvMat M1 = cvMat(3, 3, CV_32F, &cal.left.M);
-    CvMat D1 = cvMat(1, 8, CV_32F, &cal.left.D);
-    CvMat R1 = cvMat(3, 3, CV_32F, &cal.left.R);
-    CvMat P1 = cvMat(3, 4, CV_32F, &cal.left.P);
-    
-    cvInitUndistortRectifyMap(&M1, &D1, &R1, &P1, calibration_map_left_1_, calibration_map_left_2_);
-    
 }
 
 void Camera::stop()
@@ -638,7 +721,6 @@ void Camera::updateDiagnostics()
     for(uint32_t i=0; i<32; i++) 
         if ((1<<i) & streamsEnabled)
             aggregateImageRate += capture_fps_;
-    
 }
 
 void Camera::connectStream(DataSource enableMask)
@@ -652,7 +734,6 @@ void Camera::connectStream(DataSource enableMask)
             notStarted |= (1<<i);
 
     if (0 != notStarted) {
-
         Status status = driver_->startStreams(notStarted);
         if (Status_Ok != status)
             printf("Failed to start streams 0x%x. Error code %d\n", 
