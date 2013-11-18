@@ -291,7 +291,7 @@ protected:
       double cx = bot_camtrans_get_principal_x(mCamTrans);
       double cy = bot_camtrans_get_principal_y(mCamTrans);
       mImageCenter << cx-pix[0],cy-pix[1];
-      std::cout << "CENTER " << mImageCenter.transpose() << std::endl;
+      mTexCoordsValid = false;
     }
 
 
