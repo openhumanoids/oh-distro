@@ -836,9 +836,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                        
     bot_gtk_param_widget_add_separator (self->pw,"Planner Params"); 
     bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                1, 20, 0.5, 20);                                     
+                                                1, 20, 0.5, 10);                                     
     bot_gtk_param_widget_add_double(self->pw, PARAM_EXEC_ANG_SPEED, BOT_GTK_PARAM_WIDGET_SPINBOX,
-                                                1,50, 1, 30); 
+                                                1,50, 1, 15); 
 
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_MANIP_PLAN_INITSEED_MODE, 1, NULL);
 
