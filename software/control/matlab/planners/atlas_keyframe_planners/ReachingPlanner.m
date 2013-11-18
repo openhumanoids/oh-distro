@@ -10,8 +10,6 @@ classdef ReachingPlanner < KeyframePlanner
         planning_mode % 1 if ik sequence is on, 2 if use IK only, 3 if use teleop
         num_breaks
         hand_space; % A HandWorkspace object, used to retrieve a seed for IK.
-        l_arm_joints;
-        r_arm_joints;
     end
     
     methods
@@ -28,8 +26,6 @@ classdef ReachingPlanner < KeyframePlanner
             obj.hand_space = HandWorkspace([getenv('DRC_PATH'),'/control/matlab/data/HandWorkSpace.mat']);
             coords = obj.r.getStateFrame.coordinates;
             coords = coords(1:obj.r.getNumDOF);
-            obj.l_arm_joints = cellfun(@(s) ~isempty(strfind(s,'l_arm')),coords);
-            obj.r_arm_joints = cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords);
         end
         
         function setPlanningMode(obj,val)
@@ -38,6 +34,9 @@ classdef ReachingPlanner < KeyframePlanner
                 obj.plan_cache.inTeleopMode = true; 
             else
                 obj.plan_cache.inTeleopMode = false; 
+            end
+            if(val == 1) % reset the joint limits
+              obj.setDefaultJointConstraint();
             end
         end
         %-----------------------------------------------------------------------------------------------------------------
@@ -618,6 +617,18 @@ classdef ReachingPlanner < KeyframePlanner
                 obj.joint_constraint = obj.joint_constraint.setJointLimits(hand_joint_idx,...
                   q0_bound(hand_joint_idx),...
                   q0_bound(hand_joint_idx));
+                if(obj.planning_mode == 4)
+                  if(isempty(rhand_constraint))
+                    obj.joint_constraint = obj.joint_constraint.setJointLimits(obj.r_arm_joint_ind,...
+                      q0_bound(obj.r_arm_joint_ind),...
+                      q0_bound(obj.r_arm_joint_ind));
+                  end
+                  if(isempty(lhand_constraint))
+                    obj.joint_constraint = obj.joint_constraint.setJointLimits(obj.l_arm_joint_ind,...
+                      q0_bound(obj.l_arm_joint_ind),...
+                      q0_bound(obj.l_arm_joint_ind));
+                  end
+                end
                 if(obj.isBDIManipMode())
                   obj.joint_constraint = obj.joint_constraint.setJointLimits(lower_fixed_joint_idx,q0_bound(lower_fixed_joint_idx),q0_bound(lower_fixed_joint_idx));
                 end
@@ -670,7 +681,7 @@ classdef ReachingPlanner < KeyframePlanner
             qtraj_guess = PPTrajectory(spline([s(1) s(end)],[zeros(obj.r.getNumDOF,1) q0_bound q_final_guess zeros(obj.r.getNumDOF,1)]));
 %             collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
             iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
-            if(obj.planning_mode == 1)
+            if(obj.planning_mode == 1 || obj.planning_mode == 4)
                 % PERFORM inverseKinTraj OPT
                 iktraj_options = IKoptions(obj.r);
                 iktraj_options = iktraj_options.setDebug(true);
@@ -734,7 +745,7 @@ classdef ReachingPlanner < KeyframePlanner
             end
             
             % update plan cache for keyframe adjustment engine
-            if(obj.planning_mode == 1)
+            if(obj.planning_mode == 1 || obj.planning_mode == 4)
                 obj.plan_cache.lfoot_constraint_cell = iktraj_lfoot_constraint;
                 obj.plan_cache.rfoot_constraint_cell = iktraj_rfoot_constraint;
                 obj.plan_cache.lhand_constraint_cell = iktraj_lhand_constraint;

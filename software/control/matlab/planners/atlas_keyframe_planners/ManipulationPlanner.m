@@ -29,6 +29,9 @@ classdef ManipulationPlanner < KeyframePlanner
    %-----------------------------------------------------------------------------------------------------------------             
       function setPlanningMode(obj,val)
           obj.planning_mode  = val;
+          if(val == 1)
+            obj.setDefaultJointConstraint();
+          end
       end
       
       function toggleInitSeed(obj,val)
@@ -319,6 +322,18 @@ classdef ManipulationPlanner < KeyframePlanner
 
             ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
             ik_qnom = q_guess;
+            if(obj.planning_mode == 4)
+              if(isempty(rhand_constraint))
+                obj.joint_constraint = obj.joint_constraint.setJointLimits(obj.r_arm_joint_ind,...
+                  q0_bound(obj.r_arm_joint_ind),...
+                  q0_bound(obj.r_arm_joint_ind));
+              end
+              if(isempty(lhand_constraint))
+                obj.joint_constraint = obj.joint_constraint.setJointLimits(obj.l_arm_joint_ind,...
+                  q0_bound(obj.l_arm_joint_ind),...
+                  q0_bound(obj.l_arm_joint_ind));
+              end
+            end
             if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
               if(is_manip_map)
                 % dont use r_foot_pts here (this is for driving), no quasi static flag

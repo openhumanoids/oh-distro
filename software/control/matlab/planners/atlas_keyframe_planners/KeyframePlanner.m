@@ -64,6 +64,8 @@ classdef KeyframePlanner < handle
         l_sandia_camera_origin;
         r_irobot_camera_origin;
         l_irobot_camera_origin;
+        l_arm_joint_ind;
+        r_arm_joint_ind;
     end
     
     methods
@@ -84,23 +86,8 @@ classdef KeyframePlanner < handle
             obj.r_lleg_body= findLinkInd(obj.r,'r_lleg');
 
            
-            obj.joint_constraint = PostureConstraint(obj.r);
-            [joint_min,joint_max] = obj.joint_constraint.bounds([]);
-            coords = obj.r.getStateFrame.coordinates;
-            back_bky_ind = find(strcmp(coords,'back_bky'));
-            back_bkx_ind = find(strcmp(coords,'back_bkx'));
-            l_leg_kny_ind = find(strcmp(coords,'l_leg_kny'));
-            r_leg_kny_ind = find(strcmp(coords,'r_leg_kny'));
-            buffer=0.05;
-            obj.joint_constraint = obj.joint_constraint.setJointLimits(...
-              [back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
-              [-0.1;-0.1;0.2;0.2],...
-              [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]);
-          
-            obj.joint_constraint_args ={[back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
-                                          [-0.1;-0.1;0.2;0.2],...
-                                          [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]};
-                                      
+           
+            obj.setDefaultJointConstraint();
             % used to determine the length of posture and reaching plans as 
             % a function of arclength.                           
             obj.plan_arc_res = 0.05; % 5cm res                         
@@ -149,6 +136,10 @@ classdef KeyframePlanner < handle
             for i = 1:length(rhand_frame.coordinates)
               obj.rhand2robotFrameIndMap(i) = find(strcmp(rhand_frame.coordinates{i},obj.r.getStateFrame.coordinates));
             end
+            joint_ind = (1:obj.r.getNumDOF)';
+            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+            obj.l_arm_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'l_arm')),coords));
+            obj.r_arm_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords));
         end
      %-----------------------------------------------------------------------------------------------------------------        
         function [cache] = getPlanCache(obj)
@@ -447,6 +438,25 @@ classdef KeyframePlanner < handle
               warning('Joint %s is above upper bound by %5.3f',coords{ub_err_idx(i)},ub_err(ub_err_idx(i)));
             end
           end
+        end
+        
+        function setDefaultJointConstraint(obj)
+          obj.joint_constraint = PostureConstraint(obj.r);
+          [joint_min,joint_max] = obj.joint_constraint.bounds([]);
+          coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+          back_bky_ind = find(strcmp(coords,'back_bky'));
+          back_bkx_ind = find(strcmp(coords,'back_bkx'));
+          l_leg_kny_ind = find(strcmp(coords,'l_leg_kny'));
+          r_leg_kny_ind = find(strcmp(coords,'r_leg_kny'));
+          buffer=0.05;
+          obj.joint_constraint = obj.joint_constraint.setJointLimits(...
+            [back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
+            [-0.1;-0.1;0.2;0.2],...
+            [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]);
+
+          obj.joint_constraint_args ={[back_bky_ind;back_bkx_ind;l_leg_kny_ind;r_leg_kny_ind],...
+                                        [-0.1;-0.1;0.2;0.2],...
+                                        [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]};
         end
     end
      %-----------------------------------------------------------------------------------------------------------------

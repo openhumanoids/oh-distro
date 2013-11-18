@@ -257,6 +257,10 @@ while(1)
             reaching_planner.setPlanningMode(3);
             manip_planner.setPlanningMode(3);
             send_status(3,0,0,'KeyframePlanners:TELEOP MODE');
+        elseif(modeset.mode==drc.manip_plan_control_t.FIXEDJOINTS)
+          reaching_planner.setPlanningMode(4);
+          manip_planner.setPlanningMode(4);
+          send_status(3,0,0,'KeyframePlanners:FIXEDJOINTS MODE');
         end
     end
     
