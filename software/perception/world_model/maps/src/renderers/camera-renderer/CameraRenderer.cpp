@@ -34,10 +34,37 @@ protected:
     ImagePlacementTopRight,
   };
 
+  enum ViewTarget {
+    ViewTargetNone,
+    ViewTargetLeftHand,
+    ViewTargetRightHand,
+  };
+
+  class DrawPlugin {
+  private:
+    typedef void (*DrawMethod)(BotViewer*, BotRenderer*);
+    DrawMethod mMethod;
+    BotRenderer* mRenderer;
+  public:
+    DrawPlugin() {
+      mMethod = NULL;
+      mRenderer = NULL;
+    }
+    DrawPlugin(DrawMethod iMethod, BotRenderer* iRenderer) {
+      mMethod = iMethod;
+      mRenderer = iRenderer;
+    }
+    void draw() {
+      mMethod(NULL, mRenderer);  // TODO
+    }
+  };
+
+
   struct CameraState {
     CameraRenderer* mRenderer;
     std::string mChannel;
     std::string mName;
+    std::string mLabel;
     std::string mCoordFrame;
     BotWrapper::Ptr mBotWrapper;
     BotCamTrans* mCamTrans;
@@ -70,6 +97,9 @@ protected:
     GLdouble mProjectionGl[16];
     GLint mViewportGl[4];
 
+    int mViewTarget;
+    Gtk::ComboBox* mViewTargetCombo;
+
     static constexpr int kVirtualImageWidth = 200;
     static constexpr int kVirtualImageHeight = 200;
     static constexpr double kNominalFocalLengthFactor = 1.0;
@@ -77,10 +107,11 @@ protected:
     typedef std::shared_ptr<CameraState> Ptr;
 
 
-    CameraState(const std::string& iChannel,
+    CameraState(const std::string& iChannel, const std::string& iLabel,
                 CameraRenderer* iRenderer, const bool iUseMultiple=false) {
       mRenderer = iRenderer;
       mChannel = iChannel;
+      mLabel = iLabel;
       if (iUseMultiple) mChannel += "_LEFT";
       mBotWrapper = mRenderer->mBotWrapper;
       BotParam* param = mBotWrapper->getBotParam();
@@ -111,6 +142,22 @@ protected:
       mRotation = Eigen::Matrix3d::Identity();
       mTexCoordsValid = false;
       mVirtualCamTrans = NULL;
+
+      // widgets
+      std::vector<std::string> labels = { "<none>", "left hand", "right hand" };
+      std::vector<int> ids =
+        { ViewTargetNone, ViewTargetLeftHand, ViewTargetRightHand };
+      Gtk::ComboBox* combo =
+        gtkmm::RendererBase::createCombo(mViewTarget, labels, ids);
+      combo->signal_changed().connect([mRenderer]{mRenderer->requestDraw();});
+      Gtk::Label* label = Gtk::manage(new Gtk::Label(mLabel,Gtk::ALIGN_RIGHT));
+      unsigned int xCur, yCur;
+      mRenderer->mViewTargetTable->get_size(yCur,xCur);
+      mRenderer->mViewTargetTable->attach
+        (*label,0,1,yCur,yCur+1,Gtk::FILL|Gtk::EXPAND,Gtk::SHRINK);
+      mRenderer->mViewTargetTable->attach
+        (*combo,1,2,yCur,yCur+1,Gtk::FILL|Gtk::EXPAND,Gtk::SHRINK);
+      mViewTargetCombo = combo;
     }
 
     ~CameraState() {
@@ -227,10 +274,32 @@ protected:
       mRotation.col(2) = rz.normalized();
     }
 
+    void centerOnTarget() {
+      if (mViewTarget == ViewTargetNone) return;
+      Eigen::Isometry3d xform;
+      std::string frame;
+      switch (mViewTarget) {
+      case ViewTargetLeftHand:  frame = "IROBOTLPALM"; break;
+      case ViewTargetRightHand: frame = "IROBOTRPALM"; break;
+      default: break;
+      }
+      if (!mBotWrapper->getTransform(frame, mName, xform)) return;
+      Eigen::Vector3d pos = xform.translation();
+      Eigen::Vector3d pix;
+      if (0 != bot_camtrans_project_point
+          (mCamTrans, pos.data(), pix.data())) return;
+      double cx = bot_camtrans_get_principal_x(mCamTrans);
+      double cy = bot_camtrans_get_principal_y(mCamTrans);
+      mImageCenter << cx-pix[0],cy-pix[1];
+      std::cout << "CENTER " << mImageCenter.transpose() << std::endl;
+    }
+
 
     void draw() {
       if (mImage.size == 0) return;
       if (mPlacement == ImagePlacementHide) return;
+
+      centerOnTarget();
 
       if (!mTextureInit) {
         glGenTextures(1, &mTextureId);
@@ -314,14 +383,10 @@ protected:
         glTranslatef(-0.5,-0.5,0);
         glEnable(GL_TEXTURE_2D);
         glBegin(GL_QUADS);
-        glTexCoord2i(0,0);
-        glVertex2i(0,0);
-        glTexCoord2i(0,1);
-        glVertex2i(0,1);
-        glTexCoord2i(1,1);
-        glVertex2i(1,1);
-        glTexCoord2i(1,0);
-        glVertex2i(1,0);
+        glTexCoord2i(0,0);  glVertex2i(0,0);
+        glTexCoord2i(0,1);  glVertex2i(0,1);
+        glTexCoord2i(1,1);  glVertex2i(1,1);
+        glTexCoord2i(1,0);  glVertex2i(1,0);
         glEnd();
       }
       else {
@@ -332,6 +397,8 @@ protected:
 
       glMatrixMode(GL_MODELVIEW);
       glPopMatrix();
+
+      drawOverlays();
 
       // restore state
       glMatrixMode(GL_TEXTURE);
@@ -418,6 +485,26 @@ protected:
       glPopAttrib();
     }
 
+    void drawOverlays() {
+      glMatrixMode(GL_MODELVIEW);
+      glPushMatrix();
+      // TODO glLoadMatrixd(xxx);
+      glMatrixMode(GL_PROJECTION);
+      glPushMatrix();
+      Eigen::Matrix4d proj;
+      // TODO glLoadMatrixd(proj.data());
+      glPushAttrib(GL_VIEWPORT_BIT);
+      // TODO glViewport(xxx);
+      for (auto item : mRenderer->mDrawPlugins) {
+        item.second.draw();
+      }
+      glPopAttrib();
+      glMatrixMode(GL_PROJECTION);
+      glPopMatrix();
+      glMatrixMode(GL_MODELVIEW);
+      glPopMatrix();
+    }
+
   };
 
 protected:
@@ -434,6 +521,10 @@ protected:
   GLdouble mModelViewMainGl[16];
   GLdouble mProjectionMainGl[16];
   GLint mViewportMainGl[4];
+
+  std::map<BotRenderer*,DrawPlugin> mDrawPlugins;
+
+  Gtk::Table* mViewTargetTable;
 
 public:
 
@@ -459,44 +550,33 @@ public:
   }
 
   void setupWidgets() {
-    Gtk::Container* container = getGtkContainer();
+    Gtk::Box* container = (Gtk::Box*)getGtkContainer();
+
+    mViewTargetTable = Gtk::manage(new Gtk::Table());
+    Gtk::Label* label =
+      Gtk::manage(new Gtk::Label("view following",Gtk::ALIGN_LEFT));
+    container->pack_start(*label,false,false);
+    container->pack_start(*mViewTargetTable,false,false);
 
     CameraState::Ptr cam;
-    cam.reset(new CameraState("CAMERA", this, true));
+    cam.reset(new CameraState("CAMERA", "head", this, true));
     cam->mPlacement = ImagePlacementTopCenter;
+    cam->mNativeImage = false;
     mCameraStates.push_back(cam);
 
-    cam.reset(new CameraState("CAMERACHEST_LEFT", this));
+    cam.reset(new CameraState("CAMERACHEST_LEFT", "sa L", this));
     cam->mPlacement = ImagePlacementTopLeft;
     cam->mNativeImage = false;
+    cam->mScale = 1.0/6;
     mCameraStates.push_back(cam);
 
-    cam.reset(new CameraState("CAMERACHEST_RIGHT", this));
+    cam.reset(new CameraState("CAMERACHEST_RIGHT", "sa R", this));
     cam->mPlacement = ImagePlacementTopRight;
     cam->mNativeImage = false;
+    cam->mScale = 1.0/6;
     mCameraStates.push_back(cam);
 
     container->show_all();
-  }
-
-  Gtk::ComboBox* createCombo(std::vector<std::string>& iLabels,
-                             std::vector<int>& iIndices) {
-    struct ComboColumns : public Gtk::TreeModel::ColumnRecord {
-      Gtk::TreeModelColumn<int> mId;
-      Gtk::TreeModelColumn<Glib::ustring> mLabel;
-      ComboColumns() { add(mId); add(mLabel); }
-    };
-    ComboColumns columns;
-    Glib::RefPtr<Gtk::ListStore> treeModel = Gtk::ListStore::create(columns);
-    for (size_t i = 0; i < iIndices.size(); ++i) {
-      const Gtk::TreeModel::Row& row = *(treeModel->append());
-      row[columns.mId] = iIndices[i];
-      row[columns.mLabel] = iLabels[i];
-    }
-    Gtk::ComboBox* combo = Gtk::manage(new Gtk::ComboBox());
-    combo->set_model(treeModel);
-    combo->pack_start(columns.mLabel);
-    return combo;
   }
 
   int whichImageHit(const Eigen::Vector2f& iPt) {
@@ -539,6 +619,8 @@ public:
     int whichImage = whichImageHit(Eigen::Vector2f(iEvent->x, iEvent->y));
     if (whichImage < 0) return false;
     auto cam = mCameraStates[whichImage];
+
+    cam->mViewTargetCombo->set_active(ViewTargetNone);
 
     // triple click (TODO: ignore double click)
     if (iEvent->type == GDK_3BUTTON_PRESS) {
@@ -645,6 +727,16 @@ public:
 
   }
 
+  void addDrawPlugin(void (*iDraw)(BotViewer*, BotRenderer*),
+                     BotRenderer* iRenderer) {
+    DrawPlugin plugin(iDraw, iRenderer);
+    mDrawPlugins[iRenderer] = plugin;
+  }
+
+  void removeDrawPlugin(BotRenderer* iRenderer) {
+    mDrawPlugins.erase(iRenderer);
+  }
+
 };
 
 }
@@ -656,4 +748,20 @@ void atlas_camera_renderer_setup(BotViewer* iViewer, const int iPriority,
                                  const BotParam* iParam,
                                  const BotFrames* iFrames) {
   new drc::CameraRenderer(iViewer, iPriority, iLcm, iParam, iFrames);
+}
+
+void atlas_camera_renderer_add_overlay(BotRenderer* iCamRenderer,
+                                       BotRenderer* iOverlayRenderer) {
+  drc::CameraRenderer* renderer = (drc::CameraRenderer*)iCamRenderer->user;
+  if (renderer != NULL) {
+    renderer->addDrawPlugin(iOverlayRenderer->draw, iOverlayRenderer);
+  }
+}
+
+void atlas_camera_renderer_remove_overlay(BotRenderer* iCamRenderer,
+                                          BotRenderer* iOverlayRenderer) {
+  drc::CameraRenderer* renderer = (drc::CameraRenderer*)iCamRenderer->user;
+  if (renderer != NULL) {
+    renderer->removeDrawPlugin(iOverlayRenderer);
+  }
 }
