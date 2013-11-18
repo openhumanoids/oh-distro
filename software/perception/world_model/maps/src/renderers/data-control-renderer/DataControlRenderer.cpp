@@ -327,8 +327,7 @@ public:
     // for pushing data (e.g., affordances)
     mAffControlBox = Gtk::manage(new Gtk::VBox());
     Gtk::VBox* vbox = Gtk::manage(new Gtk::VBox());
-    Gtk::Label* label =
-      Gtk::manage(new Gtk::Label("Aff", Gtk::ALIGN_LEFT));
+    Gtk::Label* label = Gtk::manage(new Gtk::Label("Aff", Gtk::ALIGN_LEFT));
     vbox->pack_start(*label, false, false);
     mMinimalAffordances = false;
     addCheck("Minimal", mMinimalAffordances, vbox);
@@ -355,7 +354,26 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
     mAffControlBox->pack_start(*button,false,false);
-    notebook->append_page(*mAffControlBox, "Affordances");
+    {
+      Gtk::Box* box = Gtk::manage(new Gtk::HBox());
+      label = Gtk::manage(new Gtk::Label("AutoCorrect",Gtk::ALIGN_RIGHT));
+      Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
+      check->set_active(false);
+      button = Gtk::manage(new Gtk::Button("send"));
+      button->signal_clicked().connect([this,check]{
+          drc::map_registration_command_t msg;
+          msg.utime = now();
+          msg.command = check->get_active() ?
+            drc::map_registration_command_t::AFF_UPDATE_START :
+            drc::map_registration_command_t::AFF_UPDATE_PAUSE;
+          getLcm()->publish("MAP_REGISTRATION_COMMAND", &msg);
+        });
+      box->pack_start(*label,false,false);
+      box->pack_start(*check,false,false);
+      box->pack_start(*button,false,false);
+      mAffControlBox->pack_start(*box,false,false);
+    }
+    notebook->append_page(*mAffControlBox, "Affs");
 
     // for sensor control
     Gtk::VBox* handControlBox = Gtk::manage(new Gtk::VBox());

@@ -12,12 +12,17 @@
 #include <lcmtypes/bot_core/rigid_transform_t.hpp>
 #include <lcmtypes/drc/affordance_t.hpp>
 
+struct AffordanceMetadata {
+  int64_t mUpdateTime;
+  bool mUserUpdateReceived;
+};
+
 struct State {
   std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
   std::shared_ptr<lcm::LCM> mLcm;
   std::shared_ptr<drc::BotWrapper> mBotWrapper;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
-  std::unordered_map<int32_t,int64_t> mLastUpdateTimes;
+  std::unordered_map<int32_t,AffordanceMetadata> mAffordanceMetadata;
 
   bool mIsRunning;
   std::thread mThread;
@@ -43,10 +48,28 @@ struct State {
 
     mLcm->subscribe("MAP_LOCAL_CORRECTION", &State::onCorrection, this);
     mLcm->subscribe("MAP_REGISTRATION_COMMAND", &State::onCommand, this);
+    mLcm->subscribe(affordance::AffordanceServer::AFFORDANCE_TRACK_CHANNEL,
+                    &State::onAffordanceTrack, this);
   }
 
   ~State() {
     stop();
+  }
+
+  void onAffordanceTrack(const lcm::ReceiveBuffer* iBuf,
+                         const std::string& iChannel,
+                         const drc::affordance_t* iMessage) {
+    AffordanceMetadata meta;
+    meta.mUserUpdateReceived = true;
+    meta.mUpdateTime = iMessage->utime;
+    if (mAffordanceMetadata.find(iMessage->uid)==mAffordanceMetadata.end()) {
+      mAffordanceMetadata[iMessage->uid] = meta;
+      return;
+    }
+    if (mAffordanceMetadata[iMessage->uid].mUpdateTime == iMessage->utime) {
+      return;
+    }
+    mAffordanceMetadata[iMessage->uid] = meta;
   }
 
   void onCorrection(const lcm::ReceiveBuffer* iBuf,
@@ -88,15 +111,28 @@ struct State {
 
           // if we haven't seen this affordance before, do not update
           // but keep track of the time when we first saw it
-          if (mLastUpdateTimes.find(aff->_uid) == mLastUpdateTimes.end()) {
-            mLastUpdateTimes[aff->_uid] = mUpdateTime;
+          if (mAffordanceMetadata.find(aff->_uid)==mAffordanceMetadata.end()) {
+            AffordanceMetadata meta;
+            meta.mUpdateTime = mUpdateTime;
+            meta.mUserUpdateReceived = false;
+            mAffordanceMetadata[aff->_uid] = meta;
             continue;
           }
           
           if (!mShouldUpdate) continue;
 
+          // check to see if the user updated this affordance
+          AffordanceMetadata& meta = mAffordanceMetadata[aff->_uid];
+          if (meta.mUserUpdateReceived) {
+            if (mUpdateTime >= meta.mUpdateTime) {
+              meta.mUpdateTime = mUpdateTime;
+              meta.mUserUpdateReceived = false;
+            }
+            continue;
+          }
+
           // get transform at time of last affordance update
-          int64_t affUpdateTime = mLastUpdateTimes[aff->_uid];
+          int64_t affUpdateTime = meta.mUpdateTime;
           Eigen::Isometry3d xformAff;
           if (!mBotWrapper->getTransform("corrected_local", "local",
                                          xformAff, affUpdateTime)) continue;
@@ -125,9 +161,10 @@ struct State {
 
           // publish update message
           msg.aff_store_control = drc::affordance_t::UPDATE;
+          msg.utime = mUpdateTime;
           mLcm->publish(affordance::AffordanceServer::AFFORDANCE_TRACK_CHANNEL,
                         &msg);
-          mLastUpdateTimes[aff->_uid] = mUpdateTime;
+          meta.mUpdateTime = mUpdateTime;
           std::cout << "updated affordance " << aff->_uid << std::endl;
         }
 
@@ -149,7 +186,7 @@ struct State {
     mIsRunning = false;
     mLcmWrapper->stopHandleThread();
     if (mThread.joinable()) mThread.join();
-    mLastUpdateTimes.clear();
+    mAffordanceMetadata.clear();
     mUpdateTime = mPrevUpdateTime = 0;
   }
 };
