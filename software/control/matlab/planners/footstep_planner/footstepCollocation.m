@@ -1,8 +1,12 @@
 function [X, foot_goals] = footstepCollocation(biped, x0, goal_pos, params)
 
+debug = false;
 use_snopt = 1;
 
 params.right_foot_lead = logical(params.right_foot_lead);
+
+if ~isfield(params, 'nom_step_width'); params.nom_step_width = 0.26; end
+if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
 
 q0 = x0(1:end/2);
 foot_orig = biped.feetPosition(q0);
@@ -94,7 +98,7 @@ function [c, ceq, dc, dceq] = constraints(x)
   bl = al' * c0(1:2);
   for j = 1:nsteps
     g = (al' * steps(1:2,j) - bl);
-    c(j) = g^2 - 0.20^2;
+    c(j) = g^2 - params.max_line_deviation^2;
     x1_ndx = (j-1)*12+(1:6);
     dc(x1_ndx(1:2),j) = 2*g*al;
   end
@@ -211,7 +215,12 @@ for nsteps = min_steps:params.max_num_steps
 
   if use_snopt
     snseti ('Major Iteration limit', 250);
-    snseti ('Verify level', 3);
+    if debug
+      snseti ('Verify level', 3);
+    else
+      snseti ('Verify level', 0);
+    end
+
     snseti ('Superbasics limit', 2000);
     iG = boolean(zeros(nv, 1+2*nsteps+nsteps));
     iA = boolean(zeros(size(iG,2)+size(A,1)+size(Aeq,1),nv));
