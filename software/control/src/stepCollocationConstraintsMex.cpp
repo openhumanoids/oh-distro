@@ -70,10 +70,6 @@ void constraints(mxArray* c_out, mxArray* ceq_out, mxArray* dc_out, mxArray* dce
   return;
 }
 
-void printit(double x[]){
-  mexPrintf("%f\n", x[0]);
-}
-
 void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[] )
 {
@@ -86,13 +82,13 @@ void mexFunction( int nlhs, mxArray *plhs[],
   Eigen::Vector3d c0 = Eigen::Map<Eigen::Vector3d>(mxGetPr(prhs[1]));
   Eigen::Vector3d cf = Eigen::Map<Eigen::Vector3d>(mxGetPr(prhs[2]));
 
-  /* Create matrix for the return argument. */
+  /* Create matrices for the return arguments. */
   plhs[0] = mxCreateDoubleMatrix((mwSize) nsteps, (mwSize)1, mxREAL); // c
   plhs[1] = mxCreateDoubleMatrix((mwSize)2*nsteps, (mwSize)1, mxREAL); // ceq
   plhs[2] = mxCreateDoubleMatrix((mwSize)nv, (mwSize)nsteps, mxREAL); // dc
   plhs[3] = mxCreateDoubleMatrix((mwSize)nv, (mwSize)nceq, mxREAL); // dceq
 
-  /* Assign pointers to each input and output. */
+  /* Assign pointers to each output. */
   mxArray* c = plhs[0];
   mxArray* ceq = plhs[1];
   mxArray* dc = plhs[2];
