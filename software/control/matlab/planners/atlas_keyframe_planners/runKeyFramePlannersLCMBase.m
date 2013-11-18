@@ -568,8 +568,7 @@ while(1)
         cache = manip_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
     end
-    
-    
+ 
     indexed_trajoptconstraint= indexed_trajoptconstraint_listener.getNextMessage(msg_timeout);
     if(~isempty(indexed_trajoptconstraint))
         disp('Aff indexed traj opt constraint for manip map received .');

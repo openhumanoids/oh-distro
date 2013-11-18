@@ -37,6 +37,7 @@ classdef ManipulationPlanner < KeyframePlanner
       function toggleInitSeed(obj,val)
           obj.firststate_is_q0  = (val==1);
       end
+
   %-----------------------------------------------------------------------------------------------------------------              
       function generateAndPublishManipulationPlan(obj,varargin)
 
@@ -534,7 +535,11 @@ classdef ManipulationPlanner < KeyframePlanner
           % update plan cache
           obj.plan_cache.s = s;
           obj.plan_cache.s_breaks = s_breaks;
-          obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
+            qdot0=zeros(obj.r.getNumDOF,1);
+            qdotf=zeros(obj.r.getNumDOF,1);
+         
+           %obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
+          obj.plan_cache.qtraj = PPTrajectory(spline(s,[qdot0 q qdotf]));
           obj.cachePelvisPose([0 1],pelvis_pose0);
           obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
 
@@ -631,7 +636,7 @@ classdef ManipulationPlanner < KeyframePlanner
           else
             obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
           end
-          send_status(3,0,0,'Published manip plan...');
+          send_status(3,0,0,['Published manip plan of ' num2str(max(Tmax_joints,Tmax_ee)) ' sec']);
         end
 
       end
