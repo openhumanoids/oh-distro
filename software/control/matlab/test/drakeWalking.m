@@ -47,6 +47,7 @@ step_options.max_num_steps = 100;
 step_options.min_num_steps = 2;
 step_options.step_speed = 0.75;
 step_options.follow_spline = true;
+step_options.allow_optimization = true;
 step_options.right_foot_lead = true;
 step_options.ignore_terrain = false;
 step_options.nom_step_width = r.nom_step_width;
