@@ -588,7 +588,7 @@ inline static void get_motion_constraints_from_sticky_hand(StickyHandStruc &hand
               KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
               T_world_ee.p += worldframe_offset;   
               T_world_ee_frames.push_back(T_world_ee);
-              int64_t timestamp=(int64_t)(num_frames+i)*1000000;
+              int64_t timestamp=(int64_t)(i)*1000000;
               frame_timestamps.push_back(timestamp);   
           } 
       }
