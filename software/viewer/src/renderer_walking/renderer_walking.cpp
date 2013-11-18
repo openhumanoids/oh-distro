@@ -380,6 +380,20 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, 0.05);  
     bot_gtk_param_widget_set_enum(self->bdi_pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
+  } else if (mode == STEPPING_BDI_OBSTACLES) {
+    std::cout << "Using preset mode: BDI Obstacle Stepping\n"; 
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 4); 
+    bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 0);
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.25);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.45);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.3);  
+    bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_STEPPING);
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_DURATION, 2.0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_DURATION, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWING_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, 0.1);  
+    bot_gtk_param_widget_set_enum(self->bdi_pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
   } else if (mode == STEPPING_BDI_FINE) {
     std::cout << "Using preset mode: BDI Fine Stepping\n"; 
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 6); 
@@ -572,7 +586,7 @@ void publish_walking_goal(RendererWalking* self, bool is_new) {
   bot_viewer_set_status_bar_message(self->viewer, ("Sent " + channel).c_str());
 }
 
-static gboolean on_stop_walking_clicked(GtkButton* button, void *user) {
+static void on_stop_walking_clicked(GtkButton* button, void *user) {
   std::cout << "stop walking" << std::endl;
   drc_plan_control_t msg;
   RendererWalking *self = (RendererWalking*) user;
@@ -580,32 +594,32 @@ static gboolean on_stop_walking_clicked(GtkButton* button, void *user) {
   drc_plan_control_t_publish(self->lc,"STOP_WALKING", &(msg));
 }
 
-static gboolean on_turn_left_clicked(GtkButton* button, void *user) {
+static void on_turn_left_clicked(GtkButton* button, void *user) {
   std::cout << "turn left" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
   publish_simple_nav(self, 0, 0, M_PI / 2);
 }
-static gboolean on_go_forward_clicked(GtkButton* button, void *user) {
+static void on_go_forward_clicked(GtkButton* button, void *user) {
   std::cout << "go forward" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
   publish_simple_nav(self, 1.25 * self->max_forward_step * self->max_num_steps, 0, 0);
 }
-static gboolean on_turn_right_clicked(GtkButton* button, void *user) {
+static void on_turn_right_clicked(GtkButton* button, void *user) {
   std::cout << "turn right" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
   publish_simple_nav(self, 0, 0, -M_PI / 2);
 }
-static gboolean on_go_left_clicked(GtkButton* button, void *user) {
+static void on_go_left_clicked(GtkButton* button, void *user) {
   std::cout << "go left" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
   publish_simple_nav(self, 0, 1.25 * self->max_forward_step * self->max_num_steps, 0);
 }
-static gboolean on_go_backward_clicked(GtkButton* button, void *user) {
+static void on_go_backward_clicked(GtkButton* button, void *user) {
   std::cout << "go backward" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
   publish_simple_nav(self, -1.25 * self->max_forward_step * self->max_num_steps, 0, 0);
 }
-static gboolean on_go_right_clicked(GtkButton* button, void *user) {
+static void on_go_right_clicked(GtkButton* button, void *user) {
   std::cout << "go right" << std::endl;
   RendererWalking *self = (RendererWalking*) user;
   publish_simple_nav(self, 0, -1.25 * self->max_forward_step * self->max_num_steps, 0);
@@ -633,8 +647,6 @@ static void on_est_robot_state (const lcm_recv_buf_t * buf, const char *channel,
 static void
 _free (BotRenderer *renderer)
 {
-  RendererWalking *self = (RendererWalking*) renderer;
-  // delete self->perceptionData;
   free (renderer);
 }
 
@@ -773,6 +785,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
                                 "BDI Walking", WALKING_BDI,
                                 "BDI Stepping", STEPPING_BDI,
                                 "BDI Fine Stepping", STEPPING_BDI_FINE,
+                                "BDI Obstacle Step", STEPPING_BDI_OBSTACLES,
                                 "Ladder", WALKING_LADDER,
                                 "Drake Walking", WALKING_TYPICAL,
                                 "Drake Fast Walking", WALKING_DRAKE_FAST,
