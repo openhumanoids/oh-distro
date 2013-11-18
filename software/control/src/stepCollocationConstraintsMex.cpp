@@ -4,27 +4,6 @@
 
 using namespace std;
 
-void rotmat(double R[], double theta)
-{
-	double c = cos(theta);
-	double s = sin(theta);
-	R[0] = c;
-	R[1] = s;
-	R[2] = -s;
-	R[3] = c;
-	return;
-}
-
-// helper function for shuffling debugging data back into matlab
-template <int Rows, int Cols>
-mxArray* eigenToMatlab(Eigen::Matrix<double,Rows,Cols> &m)
-{
-  mxArray* pm = mxCreateDoubleMatrix(m.rows(),m.cols(),mxREAL);
-  if (m.rows()*m.cols()>0)
-    memcpy(mxGetPr(pm),m.data(),sizeof(double)*m.rows()*m.cols());
-  return pm;
-}
-
 void constraints(mxArray* c_out, mxArray* ceq_out, mxArray* dc_out, mxArray* dceq_out, const Eigen::MatrixXd& x, const Eigen::Vector3d& c0, const Eigen::Vector3d& cf, float max_line_deviation, size_t nceq, size_t nv, size_t nsteps)
 {
   Eigen::MatrixXd steps = x.block(0, 0, 6, nsteps);
