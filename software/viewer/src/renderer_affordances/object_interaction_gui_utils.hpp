@@ -98,7 +98,7 @@
 #define PARAM_STORE_POSE "Store EndPose" 
 #define PARAM_POSE_SEED_LIST "EndPose Select" 
 #define PARAM_REACH_ENDPOSE_POSTURE "Reach EndPose Posture"
-#define PARAM_SEND_PELVIS_GOAL "Send Pelvis Goal"
+#define PARAM_SEND_PELVIS_GOAL "Send Pelvis Ht Goal"
 #define PARAM_LOAD_POSE "Load PoseSeed"
 #define PARAM_UNSTORE_POSE "Unstore  EndPose"
 #define PARAM_COMMIT_TO_COLLISION_SERVER "Commit to collision-server"
@@ -1080,7 +1080,7 @@ namespace renderer_affordances_gui_utils
       self->robotStateListener->_gl_robot->_T_world_body.M.GetRPY(curr_roll,curr_pitch,curr_yaw);
       pelvisgoal_msg.use_desired=1;
       pelvisgoal_msg.desired.pelvis_height = std::min(std::max(T_world_pelvis_des.p[2],0.64),0.92);
-      pelvisgoal_msg.desired.pelvis_yaw = std::min(std::max(des_yaw,-13*(M_PI/180)),13*(M_PI/180));
+      pelvisgoal_msg.desired.pelvis_yaw = curr_yaw;//std::min(std::max(des_yaw,-13*(M_PI/180)),13*(M_PI/180));
       pelvisgoal_msg.desired.pelvis_pitch = curr_pitch;
       pelvisgoal_msg.desired.pelvis_roll = curr_roll;
       pelvisgoal_msg.desired.com_v0 = self->robotStateListener->_gl_robot->_T_world_com.p[1];//x
@@ -1631,7 +1631,7 @@ namespace renderer_affordances_gui_utils
                                         &seed_nums[0]);
         bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_LOAD_POSE, NULL);
         bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_UNSTORE_POSE, NULL);
-        //bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_SEND_PELVIS_GOAL, NULL); 
+        bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_SEND_PELVIS_GOAL, NULL); 
         bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_REACH_ENDPOSE_POSTURE, NULL); 
       }
     }

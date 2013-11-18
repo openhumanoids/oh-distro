@@ -164,6 +164,15 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
     if((handler->enabled)&&(store_renderer_state))
      input_enabled_rendererNames.push_back(name);
     bool always_enabled_handlers = ((name=="Camera Control")||(name=="LogPlayer Remote"));
+    if(renderer_name=="Walking")
+    {
+	    always_enabled_handlers = (always_enabled_handlers||(name=="Footstep Plans"));
+    }
+    else if(renderer_name=="Data Control")
+    {
+	    always_enabled_handlers = (always_enabled_handlers||(name=="Maps"));
+    }
+    
     if ((renderer_name == handler->name)||always_enabled_handlers) {
         handler->enabled = 1;
         gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(handler->cmi), handler->enabled);
@@ -277,8 +286,11 @@ logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
       default:
           break;
     }
-
+ 
+  if((keyval>=F1)&&(keyval<=F12)) // Disabling viewer's inherent modification of viewpoint on F4 by consuming the event here.
     return 1;
+  else
+    return 0;
 }
 
 static int
