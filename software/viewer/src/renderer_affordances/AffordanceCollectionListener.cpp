@@ -253,12 +253,8 @@ void AffordanceCollectionListener::handleAffordanceCollectionMsg(const lcm::Rece
       if(!it->second._gl_object->get_root_link_geometry_name(geometry_name))// get the root geometry if it exists
       {
           geometry_name =link_geometry_tfs[0].name; // else take the first one in the list. note:: link_geometry_tfs is alphabetized.
-          T_world_objectgeometry=link_geometry_tfs[0].frame;
       }
-      else
-      {
-          T_world_objectgeometry=it->second._gl_object->_T_world_body; // root link
-      }
+      it->second._gl_object->get_link_geometry_frame(geometry_name,T_world_objectgeometry);
       KDL::Frame T_world_aff=it->second._gl_object->_T_world_body;
       KDL::Frame T_objectgeometry_aff = T_world_objectgeometry.Inverse()*T_world_aff;
       
