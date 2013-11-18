@@ -26,7 +26,6 @@
     <param name="Frame_lY" default_value="0.24892" inc="0.01" min="0" max="100" />
     <param name="Frame_lZ" default_value="2.1336" inc="0.01" min="0" max="100" />
     <param name="Frame_Offset" default_value="0.09946" inc="0.01" min="-100" max="100" />
-  
     <!-- Base Link Description -->
     <link name="plane::xy::base_link">
         <visual>
@@ -37,33 +36,33 @@
         </visual>
     </link>
     <link name="door_frame_R">
-      <visual>
-          <origin rpy="0 0 0" xyz="${-Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />
-          <geometry>
-              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />
-          </geometry>
-      </visual>
-      <collision>
-          <origin rpy="0 0 0" xyz="${-Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />
-          <geometry>
-              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />
-          </geometry>
-      </collision>
-    </link> 
-<!--    <link name="door_frame_L">-->
-<!--      <visual>-->
-<!--          <origin rpy="0 0 0" xyz="${lX+Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />-->
-<!--          <geometry>-->
-<!--              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />-->
-<!--          </geometry>-->
-<!--      </visual>-->
-<!--      <collision>-->
-<!--          <origin rpy="0 0 0" xyz="${lX+Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />-->
-<!--          <geometry>-->
-<!--              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />-->
-<!--          </geometry>-->
-<!--      </collision>-->
-<!--    </link> -->
+        <visual>
+            <origin rpy="0 0 0" xyz="${-Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />
+            <geometry>
+                <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="${-Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />
+            <geometry>
+                <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />
+            </geometry>
+        </collision>
+    </link>
+    <!--    <link name="door_frame_L">-->
+    <!--      <visual>-->
+    <!--          <origin rpy="0 0 0" xyz="${lX+Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />-->
+    <!--          <geometry>-->
+    <!--              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />-->
+    <!--          </geometry>-->
+    <!--      </visual>-->
+    <!--      <collision>-->
+    <!--          <origin rpy="0 0 0" xyz="${lX+Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />-->
+    <!--          <geometry>-->
+    <!--              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />-->
+    <!--          </geometry>-->
+    <!--      </collision>-->
+    <!--    </link> -->
     <link name="door_base">
         <visual>
             <origin rpy="0 0 0" xyz="${lX/2} 0 0" />
@@ -113,10 +112,10 @@
         <parent link="plane::xy::base_link" type="link" />
         <child link="door_frame_R" type="link" />
     </joint>
-<!--     <joint name="frame_jointL" type="fixed">-->
-<!--        <parent link="plane::xy::base_link" type="link" />-->
-<!--        <child link="door_frame_L" type="link" />-->
-<!--    </joint>   -->
+    <!--     <joint name="frame_jointL" type="fixed">-->
+    <!--        <parent link="plane::xy::base_link" type="link" />-->
+    <!--        <child link="door_frame_L" type="link" />-->
+    <!--    </joint>   -->
     <joint name="base_joint" type="revolute">
         <parent link="plane::xy::base_link" type="link" />
         <child link="door_base" type="link" />
@@ -124,8 +123,6 @@
         <axis xyz="0 0 1" />
         <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
-    
-    
     <joint name="r_lever_joint" type="revolute">
         <parent link="door_base" type="link" />
         <child link="r_lever" type="link" />
@@ -246,4 +243,36 @@
     <plan_seed name="2013-11-12-18-38::push_door_walkthrough_posture" />
     <plan_seed name="2013-11-12-18-31::pull_door_walkthrough_posture" />
     <plan_seed name="2013-11-14-13-12::left_hand_jam_plan" />
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="4.82153e-10 5.71464e-09 -3.12093" xyz="0.0902068 -0.0940938 -0.934909" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="-1.11124e-09 -1.88766e-08 -3.12093" xyz="0.085042 0.155853 -0.934909" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <plan_seed name="2013-11-18-13-42::reach_to_handle2" />
+    <pose_seed name="2013-11-18-14-27::Rhnd_Push_1" />
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="-1.44413e-08 -1.0694e-07 -1.3545" xyz="0.639418 0.889717 -0.934881" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="1.84772e-09 -2.12984e-08 -1.35499" xyz="0.295595 0.82496 -0.934881" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <plan_seed name="2013-11-18-14-48::nom_pose" />
+    <pose_seed name="2013-11-18-14-48::nom_pose" />
 </object>
