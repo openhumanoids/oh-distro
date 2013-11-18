@@ -4,7 +4,7 @@
     <!-- World frame origin of the object -->
     <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z" default_value="0.91" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="1.016" inc="0.001" min="-100" max="100" />
     <!--roll,pitch,yaw are about Body Frame-->
     <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
@@ -16,12 +16,17 @@
     <param name="lever_thick" default_value="0.015" inc="0.0025" min="0" max="100" />
     <param name="lever_offset_from_door" default_value="0.05" inc="0.0025" min="-10" max="10" />
     <param name="lever_offset_x" default_value="0.060" inc="0.0025" min="-10" max="10" />
-    <param name="lever_offset_z" default_value="0.040" inc="0.0025" min="-10" max="10" />
+    <param name="lever_offset_z" default_value="-0.1016" inc="0.0025" min="-10" max="10" />
     <!-- Size of door -->
     <param name="door_start_theta" default_value="0.00" inc="0.0025" min="-3.146" max="3.146" />
     <param name="lX" default_value="0.91" inc="0.01" min="0" max="100" />
     <param name="lY" default_value="0.05" inc="0.01" min="0" max="100" />
-    <param name="lZ" default_value="1.82" inc="0.01" min="0" max="100" />
+    <param name="lZ" default_value="2.032" inc="0.01" min="0" max="100" />
+    <param name="Frame_lX" default_value="0.127" inc="0.01" min="0" max="100" />
+    <param name="Frame_lY" default_value="0.24892" inc="0.01" min="0" max="100" />
+    <param name="Frame_lZ" default_value="2.1336" inc="0.01" min="0" max="100" />
+    <param name="Frame_Offset" default_value="0.09946" inc="0.01" min="-100" max="100" />
+  
     <!-- Base Link Description -->
     <link name="plane::xy::base_link">
         <visual>
@@ -31,6 +36,34 @@
             </geometry>
         </visual>
     </link>
+    <link name="door_frame_R">
+      <visual>
+          <origin rpy="0 0 0" xyz="${-Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />
+          <geometry>
+              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />
+          </geometry>
+      </visual>
+      <collision>
+          <origin rpy="0 0 0" xyz="${-Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />
+          <geometry>
+              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />
+          </geometry>
+      </collision>
+    </link> 
+<!--    <link name="door_frame_L">-->
+<!--      <visual>-->
+<!--          <origin rpy="0 0 0" xyz="${lX+Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />-->
+<!--          <geometry>-->
+<!--              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />-->
+<!--          </geometry>-->
+<!--      </visual>-->
+<!--      <collision>-->
+<!--          <origin rpy="0 0 0" xyz="${lX+Frame_lX/2} ${Frame_Offset} ${(Frame_lZ-lZ)/2}" />-->
+<!--          <geometry>-->
+<!--              <box size="${Frame_lX} ${Frame_lY} ${Frame_lZ}" />-->
+<!--          </geometry>-->
+<!--      </collision>-->
+<!--    </link> -->
     <link name="door_base">
         <visual>
             <origin rpy="0 0 0" xyz="${lX/2} 0 0" />
@@ -39,7 +72,7 @@
             </geometry>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0" />
+            <origin rpy="0 0 0" xyz="${lX/2} 0 0" />
             <geometry>
                 <box size="${lX} ${lY} ${lZ}" />
             </geometry>
@@ -54,7 +87,7 @@
             </geometry>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0" />
+            <origin rpy="0 0 0" xyz="${-lever_length/2} 0 0" />
             <geometry>
                 <box size="${lever_length} ${lever_width} ${lever_thick}" />
             </geometry>
@@ -69,13 +102,21 @@
             </geometry>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0" />
+            <origin rpy="0 0 0" xyz="${-lever_length/2} 0 0" />
             <geometry>
                 <box size="${lever_length} ${lever_width} ${lever_thick}" />
             </geometry>
         </collision>
     </link>
     <!-- Join Descriptions -->
+    <joint name="frame_jointR" type="fixed">
+        <parent link="plane::xy::base_link" type="link" />
+        <child link="door_frame_R" type="link" />
+    </joint>
+<!--     <joint name="frame_jointL" type="fixed">-->
+<!--        <parent link="plane::xy::base_link" type="link" />-->
+<!--        <child link="door_frame_L" type="link" />-->
+<!--    </joint>   -->
     <joint name="base_joint" type="revolute">
         <parent link="plane::xy::base_link" type="link" />
         <child link="door_base" type="link" />
@@ -83,6 +124,8 @@
         <axis xyz="0 0 1" />
         <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
     </joint>
+    
+    
     <joint name="r_lever_joint" type="revolute">
         <parent link="door_base" type="link" />
         <child link="r_lever" type="link" />
@@ -107,28 +150,28 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-0.000197362 0.00918207 -1.61406" xyz="0.750867 0.766711 -0.828737" />
+        <relative_pose rpy="-0.000197362 0.00918207 -1.61406" xyz="0.750867 0.766711 -0.934894" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="9.72936e-05 0.00928166 -1.49324" xyz="0.411162 0.769522 -0.828724" />
+        <relative_pose rpy="9.72936e-05 0.00928166 -1.49324" xyz="0.411162 0.769522 -0.934894" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="9.72935e-05 0.00928157 -2.17774" xyz="0.70745 0.912581 -0.82872" />
+        <relative_pose rpy="9.72935e-05 0.00928157 -2.17774" xyz="0.70745 0.912581 -0.934894" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-0.000197358 0.00918212 -2.18483" xyz="0.99546 0.715888 -0.828733" />
+        <relative_pose rpy="-0.000197358 0.00918212 -2.18483" xyz="0.99546 0.715888 -0.934894" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
@@ -163,28 +206,28 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="1.33414e-09 4.35435e-08 3.13652" xyz="0.0731691 0.954337 -0.828894" />
+        <relative_pose rpy="1.33414e-09 4.35435e-08 3.13652" xyz="0.0731691 0.954337 -0.934894" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-2.06453e-09 2.64875e-08 -3.13236" xyz="0.0756288 0.700128 -0.828894" />
+        <relative_pose rpy="-2.06453e-09 2.64875e-08 -3.13236" xyz="0.0756288 0.700128 -0.934894" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="1.7208e-10 4.38984e-08 3.13812" xyz="0.0786524 -0.848163 -0.828895" />
+        <relative_pose rpy="1.7208e-10 4.38984e-08 3.13812" xyz="0.0786524 -0.848163 -0.934894" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-1.40108e-09 7.24871e-08 3.13686" xyz="0.078158 -1.09626 -0.828895" />
+        <relative_pose rpy="-1.40108e-09 7.24871e-08 3.13686" xyz="0.078158 -1.09626 -0.934894" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
