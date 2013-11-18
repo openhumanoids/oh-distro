@@ -25,16 +25,16 @@ function atlasStandingLegTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint_str = {'leg'};% <---- 
+joint_str = {};% <---- 
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
+dim = 2; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
-  zero_crossing = false;
+  zero_crossing = true;
   ts = linspace(0,40,500);% <----
-  amp = -0.13;% <---- meters, COM DELTA
-  freq = linspace(0.02,0.05,500);% <----  cycles per second
+  amp = -0.05;% <---- meters, COM DELTA
+  freq = linspace(0.02,0.1,500);% <----  cycles per second
 else
   vals = -0.02*[0 0 1 0 0];% <---- meters, COM DELTA
   ts = linspace(0,30,length(vals));% <----
