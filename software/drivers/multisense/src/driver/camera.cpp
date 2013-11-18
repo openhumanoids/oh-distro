@@ -63,6 +63,7 @@ struct Camera::ColorData {
   uint8_t *rgbP_;
   uint8_t *lumaP_;
   uint8_t *rgbP_rect_;
+  uint8_t *grayP_;
   bool got_luma_;
   int64_t luma_frame_id_;
   CvMat *calibration_map_1_;
@@ -81,6 +82,7 @@ struct Camera::ColorData {
     name_ = name;
     rgbP_ = (uint8_t*) malloc(npixels*3);
     lumaP_ = (uint8_t*) malloc(npixels*3);
+    grayP_ = (uint8_t*) malloc(npixels);
     rgbP_rect_ = (uint8_t*) malloc(npixels*3);
     got_luma_ = false;
     luma_frame_id_ = 0;
@@ -182,7 +184,8 @@ struct Camera::ColorData {
   void setRectImage(const image::Header header,
                     const void* imageDataP) {
     destImageP_ = cvCreateImageHeader(cvSize(header.width, header.height), IPL_DEPTH_8U, 1);
-    destImageP_->imageData   = (char*)imageDataP;
+    memcpy(grayP_, imageDataP, header.width*header.height);
+    destImageP_->imageData = (char*)grayP_;
   }
 
   void pushMessage(const int64_t data_utime, const int64_t frame_id) {
