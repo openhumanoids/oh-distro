@@ -14,7 +14,7 @@ pods_find_pkg_config(opencv)
 if (NOT maps_FOUND OR NOT opencv_FOUND)
   add_mex(QPControllermex QPControllermex.cpp)
   pods_use_pkg_config_packages(QPControllermex eigen3 gurobi drake-qp drake-rbm)
-  set_target_properties(QPControllermex PROPERTIES COMPILE_FLAGS "-std=c++0x")
+  set_target_properties(QPControllermex PROPERTIES COMPILE_FLAGS "-std=c++0x -stdlib=libc++")
   install(TARGETS QPControllermex DESTINATION matlab)
 
 else()

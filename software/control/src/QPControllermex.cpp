@@ -212,7 +212,7 @@ int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, Vector
 
 int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportStateElement>& supp, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot,double terrain_height)
 {
-  int i, j, k=0, nq = pdata->r->num_dof;
+  int j, k=0, nq = pdata->r->num_dof;
 
   n.resize(nc,nq);
   D.resize(nq,nc*2*m_surface_tangents);
@@ -278,7 +278,7 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
 
 int contactConstraintsBV(struct QPControllerData* pdata, int nc, double mu, vector<SupportStateElement>& supp, MatrixXd &B, MatrixXd &JB, MatrixXd &Jp, MatrixXd &Jpdot,double terrain_height)
 {
-  int i, j, k=0, nq = pdata->r->num_dof;
+  int j, k=0, nq = pdata->r->num_dof;
 
   B.resize(3,nc*2*m_surface_tangents);
   JB.resize(nq,nc*2*m_surface_tangents);

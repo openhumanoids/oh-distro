@@ -113,7 +113,7 @@ private:
   atomic_long m_last_timestamp; // us
   long m_time_of_last_message; // ms
   const static long m_reset_time=1000; // ms
-  atomic_bool m_has_new_message;
+  atomic_long m_has_new_message;  // atomic_bool was not available on mac clang
 
   int m_num_x;
 	double* m_x;
