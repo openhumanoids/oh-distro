@@ -4,12 +4,13 @@
 r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 
-lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 %% Wait for drill and wall affordance and create planner
 publishPlans = true;
 useRightHand = true;
 useVisualization = false;
 allowPelvisHeight = true;
+
+lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 
 [wall,drill] = lcm_mon.getWallAndDrillAffordances();
 while isempty(wall) || isempty(drill)
@@ -53,7 +54,7 @@ while(true)
   [ctrl_type, ctrl_data] = lcm_mon.getDrillControlMsg();
   
   switch ctrl_type
-    case lcm_mon.REFIT_DRILL
+    case drc.drill_control_t.REFIT_DRILL
       new_drill = lcm_mon.getDrillAffordance();
       if ~isempty(new_drill)
         drill = new_drill;
@@ -62,7 +63,7 @@ while(true)
         send_status(4,0,0,'Cannot update drill, no affordance found');
       end
       
-    case lcm_mon.RQ_NOMINAL_PLAN
+    case drc.drill_control_t.RQ_NOMINAL_PLAN
       %hand picked joints that make for a decent guess
       q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
       
@@ -71,7 +72,7 @@ while(true)
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
       [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true);
       
-    case lcm_mon.RQ_WALKING_GOAL
+    case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)
         x_end = xtraj_nominal.eval(0);
         pose = [x_end(1:3); rpy2quat(x_end(4:6))];
@@ -80,7 +81,7 @@ while(true)
         send_status(4,0,0,'Nominal trajectory not instantiated yet, cannot create a walking goal');
       end
       
-    case lcm_mon.RQ_ARM_PREPOSE_PLAN
+    case drc.drill_control_t.RQ_ARM_PREPOSE_PLAN
       if ~isempty(xtraj_nominal)
         q0 = lcm_mon.getStateEstimate();
      
@@ -96,21 +97,21 @@ while(true)
         send_status(4,0,0,'Nominal trajectory not instantiated yet, cannot create a walking goal');
       end
       
-    case lcm_mon.RQ_NOMINAL_FIXED_PLAN
+    case drc.drill_control_t.RQ_NOMINAL_FIXED_PLAN
       q0 = lcm_mon.getStateEstimate();
       [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0, drill_points, false);
       
-    case lcm_mon.RQ_PREDRILL_PLAN
+    case drc.drill_control_t.RQ_PREDRILL_PLAN
       segment_index = 1; % RESETS THE SEGMENT INDEX!
       q0 = lcm_mon.getStateEstimate();
       x_drill_reach = wall.targets(:,1) - .1*wall.normal;
       
       [xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = drill_pub.createInitialReachPlan(q0, x_drill_reach, 5);
-    case lcm_mon.RQ_DRILL_IN_PLAN
+    case drc.drill_control_t.RQ_DRILL_IN_PLAN
       q0 = lcm_mon.getStateEstimate();
       [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, wall.targets(:,1), 5);
       
-    case lcm_mon.RQ_NEXT_DRILL_PLAN
+    case drc.drill_control_t.RQ_NEXT_DRILL_PLAN
       q0 = lcm_mon.getStateEstimate();
         
       kinsol = r.doKinematics(q0);
@@ -147,14 +148,14 @@ while(true)
       end
       
       [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 5);
-    case lcm_mon.RQ_DRILL_TARGET_PLAN
+    case drc.drill_control_t.RQ_DRILL_TARGET_PLAN
       % create wall coordinate frame
       wall_z = [0;0;1];
       wall_z = wall_z - wall_z'*wall.normal*wall.normal;
       wall_z = wall_z/norm(wall_z);
       wall_y = cross(wall_z, wall.normal);
       
-    case lcm_mon.RQ_DRILL_DELTA_PLAN
+    case drc.drill_control_t.RQ_DRILL_DELTA_PLAN
       if sizecheck(ctrl_data, [3 1])
         delta = ctrl_data(1:3);
         q0 = lcm_mon.getStateEstimate();
@@ -166,11 +167,11 @@ while(true)
       else
         send_status(4,0,0,'Invalid size of control data. Expected 3x1');
       end
-    case lcm_mon.RQ_BUTTON_PREPOSE_PLAN
+    case drc.drill_control_t.RQ_BUTTON_PREPOSE_PLAN
       q0 = lcm_mon.getStateEstimate();
       last_button_offset = [-.1;0;0];
       [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPrePokePlan(q0, 5);
-    case lcm_mon.RQ_BUTTON_DELTA_PLAN
+    case drc.drill_control_t.RQ_BUTTON_DELTA_PLAN
       if sizecheck(ctrl_data, [3 1])
         
         if ~isempty(xtraj_button)
