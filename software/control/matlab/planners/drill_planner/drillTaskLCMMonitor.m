@@ -107,6 +107,23 @@ classdef drillTaskLCMMonitor
       end
     end
     
+    function valve_data = getValveAffordance(obj)
+      data = obj.affordance_monitor.getNextMessage(0); % default timeout
+      if isempty(data)
+        valve_data = [];
+        return
+      end
+      
+      aff_collection = drc.affordance_collection_t(data);
+      
+      valve_aff = obj.getAffordanceByOTDFType(aff_collection, 'steering_cyl');
+      if isempty(valve_aff)
+        valve_data = [];
+      else
+        valve_data = obj.parseValveData(valve_aff);
+      end
+    end
+    
     function wall_data = getWallAffordance(obj)
       data = obj.affordance_monitor.getNextMessage(0); % default timeout
       if isempty(data)
@@ -220,6 +237,16 @@ classdef drillTaskLCMMonitor
       
       % Transform wall points into world frame
       wall_data.targets = R*points_on_wall + repmat(wall_aff.origin_xyz,1,n_targets);
+    end
+    
+    function valve_data = parseValvedata(obj, valve_aff)
+      R = rpy2rotmat(valve_aff.origin_rpy);
+      valve_data.normal = -R(:,3);
+      valve_data.radius = valve_aff.radius - .07; 
+      valve_z = [0;0;1] - [0;0;1]'*valve_data.normal*valve_data.normal;
+      valve_z = valve_z/norm(valve_z);
+      valve_data.center = valve_aff.origin_xyz  + .03*valve_data.normal;
+      valve_data.init_pt = valve_data.center + valve_z*valve_data.radius;
     end
     
     function aff = getAffordanceByOTDFType(obj, collection, type)

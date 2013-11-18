@@ -20,7 +20,7 @@ while isempty(wall) || isempty(drill)
 end
 
 
-finger_pt_on_hand = [0;.3;0];
+finger_pt_on_hand = [0; 0.2702; 0.015];
 finger_axis_on_hand = [0;1;0];
 
 button_pub = drillButtonPlanner(r,atlas,drill.button_pos, drill.button_normal, drill.drill_axis,...
