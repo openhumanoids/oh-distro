@@ -14,7 +14,7 @@ if (NOT ROS_MODEL_PKG)
 endif()
 set(ROS_MODEL_PKG "${ROS_MODEL_PKG}" CACHE STRING "${ROS_MODEL_PKG}" )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wreturn-type -Wuninitialized -Wunused-variable")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wreturn-type -Wuninitialized -Wunused-variable")
 
 if (CMAKE_COMPILER_IS_GNUCC)
    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
