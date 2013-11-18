@@ -16,9 +16,11 @@ from drc.joint_angles_t import joint_angles_t
 def flipArms(name,position):
   #print name
   #print position
-  lname = ["l_arm_usy", "l_arm_shx", "l_arm_ely", "l_arm_elx", "l_arm_uwy", "l_arm_mwx"]
-  rname = ["r_arm_usy", "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx"]
-  flip  = [1          , -1         , 1          , -1         , 1          , -1]
+  # nb: l back rotation and r back rotation are a simple sign change
+  # "back_bkx", "back_bky" shouldn't be used as non-zeros
+  lname = ["l_arm_usy", "l_arm_shx", "l_arm_ely", "l_arm_elx", "l_arm_uwy", "l_arm_mwx","back_bkz","back_bkx", "back_bky"]
+  rname = ["r_arm_usy", "r_arm_shx", "r_arm_ely", "r_arm_elx", "r_arm_uwy", "r_arm_mwx","back_bkz","back_bkx", "back_bky"]
+  flip  = [1          , -1         , 1          , -1         , 1          , -1         ,-1        ,1         ,1          ]
   
   for i in range(len(name)):
     #print i
@@ -54,9 +56,10 @@ def getFarHang():
   return [position,name]
 
 def getShooter():
-  position=[-2.35619, 1.59046280384, 0.0874569192529, 0.270734280348, 0.6641523242, 0.286707222462]
+  position=[-2.35619, 1.35674083233, 0.0874569192529, 0.270734280348, 0.785398, 0.286707222462]
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
+
 
 def getPullDown():
   position=[-1.40425169468, 1.94562590122, -0.584710803126, 0.789787143469, -0.927295863628, 0.546333581209]
@@ -74,12 +77,26 @@ def getCrane():
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
+def getTurnBack():
+  position=[-0.663225]
+  name=["back_bkz"]
+  return [position,name]
+
+def getZeroBack():
+  position=[0.0, 0.0, 0.0]
+  name=["back_bkx", "back_bky", "back_bkz"]
+  return [position,name]
+
+def getRetract():
+  position=[-0.663225, -0.0359195768833, 1.35790967941, 0.734279990196, 0.168820291758, 0.767885386944, 0.0597184896469]
+  name=["back_bkz", "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position,name]
 
 # 0.71cm - 5foot
-def getHighValve():
-  position=[-1.36646643681, 2.5302273035, 0.003712019324, -0.867207699585, -0.961804687977, 3.14159]
-  name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
-  return [position,name]
+#def getHighValve():
+#  position=[-1.36646643681, 2.5302273035, 0.003712019324, -0.867207699585, -0.961804687977, 3.14159]
+#  name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+#  return [position,name]
 
 def usage():
   print "exe-name positions [l|r]"
@@ -90,7 +107,9 @@ def usage():
   print "handdown - handdown"
   print "pulldown - lower config below the current"
   print "shooter  - hand up and finger away"
-
+  print "turnback - turn the back z joint"
+  print "zero     - zero the back joint"
+  print "retract  - turn back and retract hand"
 
 ######################################
 #print 'Number of arguments:', len(sys.argv), 'arguments.'
@@ -135,9 +154,17 @@ elif (posture_name == "handdown"):
   [msg.joint_position, msg.joint_name] = getHandDown()
 elif (posture_name == "crane"):
   [msg.joint_position, msg.joint_name] = getCrane()
-elif (posture_name == "highvalve"):
-  [msg.joint_position, msg.joint_name] = getHighValve()
-
+#elif (posture_name == "highvalve"):
+#  [msg.joint_position, msg.joint_name] = getHighValve()
+elif (posture_name == "turnback"):
+  [msg.joint_position, msg.joint_name] = getTurnBack()
+elif (posture_name == "zeroback"):
+  [msg.joint_position, msg.joint_name] = getZeroBack()
+elif (posture_name == "retract"):
+  [msg.joint_position, msg.joint_name] = getRetract()
+else:
+  print "posture goal not found"
+  sys.exit(-1)
 
 if (posture_side == "l"):
   [msg.joint_name,msg.joint_position] = flipArms(msg.joint_name,msg.joint_position)

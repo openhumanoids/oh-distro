@@ -88,6 +88,7 @@ class App{
     int last_input_;
 
     Eigen::Isometry3d world_to_body_;
+    Eigen::Quaterniond starting_gaze_quat_; // quaternion of the palm when we switched to gaze mode - retain this gaze not any other
     
     boost::shared_ptr<ModelClient> model_;
     KDL::TreeFkSolverPosFull_recursive* fksolver_;
@@ -228,6 +229,12 @@ void App::publish_palm_goal(){
   msg.ee_goal_pos.translation.z = world_to_palm.translation().z();
   
   Eigen::Quaterniond q = Eigen::Quaterniond (world_to_palm.rotation());
+  if (!use_reach_){ // if using a gaze constraint, then don't update the starting gaze
+     // this will continously drive the gaze planner back to this look direction
+     q = starting_gaze_quat_; 
+  }
+  
+  
   msg.ee_goal_pos.rotation.w = q.w();
   msg.ee_goal_pos.rotation.x = q.x();
   msg.ee_goal_pos.rotation.y = q.y();
@@ -460,6 +467,13 @@ bool App::on_input(){
       break;      
     case 'v': // switch controllers: reaching or gaze
       use_reach_= !use_reach_;
+      
+      if (!use_reach_){ 
+        Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
+        Eigen::Isometry3d current_world_to_palm =  world_to_body_* body_to_palm;           
+        starting_gaze_quat_ = Eigen::Quaterniond (current_world_to_palm.rotation());
+      }
+      
       // dont reset to allow hot switching
       lcm_->publish("LEFT_PALM_GOAL_CLEAR", &goal_msg);
       lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &goal_msg);

@@ -71,6 +71,10 @@ group "b.2.planners" {
 
 
 group "b.3.models" {
+    cmd "base_model_LH_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
+        host = "base";
+    }
     cmd "base_model_LN_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
         host = "base";
@@ -133,5 +137,12 @@ script "start_LI_RI" {
     start group "a.1.core";
     start group "b.2.planners";
     start cmd "base_model_LI_RI";
+}
+
+script "start_LH_RI" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "base_model_LH_RI";
 }
 

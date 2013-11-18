@@ -272,13 +272,13 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
   
   if (which_affordance_ ==0){
     Eigen::Isometry3d utorso_to_aff(Eigen::Isometry3d::Identity());
-    utorso_to_aff.translation()  << 0.45, 0.1, 0.3;
-    utorso_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(90*M_PI/180,0*M_PI/180,70*M_PI/180)) );    
+    utorso_to_aff.translation()  << 0.65, 0.45, 0.3;
+    utorso_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(90*M_PI/180,0*M_PI/180,90*M_PI/180)) );    
     aff = getSteeringCylinderAffordancePlus("notused", utorso_to_aff, 0);
   }else if (which_affordance_ ==1){
     Eigen::Isometry3d utorso_to_aff(Eigen::Isometry3d::Identity());
-    utorso_to_aff.translation()  << 0.45, -0.1, 0.3;
-    utorso_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(90*M_PI/180,0*M_PI/180,-70*M_PI/180)) );    
+    utorso_to_aff.translation()  << 0.65, 0.45, 0.3;
+    utorso_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(90*M_PI/180,0*M_PI/180,90*M_PI/180)) );    
     aff = getSteeringCylinderAffordancePlus("notused", utorso_to_aff, 0);
   }else if (which_affordance_ ==2){
     Eigen::Isometry3d utorso_to_aff(Eigen::Isometry3d::Identity());
