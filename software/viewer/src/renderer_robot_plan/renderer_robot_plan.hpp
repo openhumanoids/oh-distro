@@ -88,11 +88,6 @@ namespace renderer_robot_plan
     std::string* trigger_source_otdf_id;
     KDL::Frame T_world_trigger_aff;
     
-    // Vicon seed planning collection settings:
-    int vicon_n_plan_samples;
-    double vicon_sample_period;
-    int8_t vicon_type;
-    
     void keyboardSignalCallback(int keyval, bool is_pressed)
     {
     

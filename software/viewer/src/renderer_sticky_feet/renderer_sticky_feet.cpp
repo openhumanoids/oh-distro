@@ -6,9 +6,9 @@
 #include <bot_vis/gl_util.h>
 #include <bot_core/fasttrig.h>
 
-#define RENDERER_NAME "FootStep Plans & Sticky Feet"
+#define RENDERER_NAME "Footstep Plans"
 #define PARAM_SHOW_DETAILS "Show Step Details"
-#define PARAM_CLEAR_FOOTSTEP_PLAN "Clear FootSteps"
+#define PARAM_CLEAR_FOOTSTEP_PLAN "Clear Footsteps"
 using namespace std;
 using namespace boost;
 using namespace renderer_sticky_feet;

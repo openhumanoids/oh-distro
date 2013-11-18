@@ -14,17 +14,16 @@
 #define PARAM_KP_INC 1
 #define PARAM_KD_INC 1
 
-#define RENDERER_NAME "Robot Plan Display"
+#define RENDERER_NAME "Planning"
 #define PARAM_SELECTION "Enable Selection"
 #define PARAM_WIRE "Show BBoxs For Meshes"  
 #define PARAM_HIDE "Hide Plan"  
-#define PARAM_USE_COLORMAP "Use Colormap"
+//#define PARAM_USE_COLORMAP "Use Colormap"
 #define PARAM_PLAN_PART "Part of Plan"  
 #define PARAM_SHOW_DURING_CONTROL "During Control"  
 #define DRAW_PERSIST_SEC 4
 #define PARAM_START_PLAN "Start Planning"
 #define PARAM_SEND_COMMITTED_PLAN "Send Plan"
-#define PARAM_NEW_VICON_PLAN "Get Vicon Plan"
 #define PARAM_ADJUST_ENDSTATE "Adjust end keyframe"
 #define PARAM_SHOW_FULLPLAN "Show Full Plan"	
 #define PARAM_SHOW_KEYFRAMES "Show Keyframes"
@@ -682,10 +681,8 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     self->selection_enabled = bot_gtk_param_widget_get_bool(pw, PARAM_SELECTION);
   }  else if(! strcmp(name, PARAM_WIRE)) {
     self->visualize_bbox = bot_gtk_param_widget_get_bool(pw, PARAM_WIRE);
-  }  else if(! strcmp(name,PARAM_USE_COLORMAP)) {
-    self->use_colormap	= bot_gtk_param_widget_get_bool(pw, PARAM_USE_COLORMAP);
-  }  else if(! strcmp(name,PARAM_USE_COLORMAP)) {
-    self->use_colormap= bot_gtk_param_widget_get_bool(pw, PARAM_USE_COLORMAP);
+  //}  else if(! strcmp(name,PARAM_USE_COLORMAP)) {
+  //  self->use_colormap	= bot_gtk_param_widget_get_bool(pw, PARAM_USE_COLORMAP);
   }  else if(! strcmp(name,PARAM_ADJUST_ENDSTATE)) {
     self->adjust_endstate = bot_gtk_param_widget_get_bool(pw, PARAM_ADJUST_ENDSTATE);
   }  else if(! strcmp(name,PARAM_SHOW_FULLPLAN)) {
@@ -730,15 +727,6 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     double kp = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KP_RIGHT);
     double kd = bot_gtk_param_widget_get_double(self->pw, PARAM_SSE_KD_RIGHT); 
     publish_manip_gain(self->lcm,"COMMITTED_MANIP_GAIN",self->robot_utime,kp,kd,1);
-  }    
-  else if(! strcmp(name, PARAM_NEW_VICON_PLAN)) {
-    drc::plan_collect_t msg;
-    msg.utime = self->robot_utime;//bot_timestamp_now();
-    msg.type = self->vicon_type;
-    msg.n_plan_samples = self->vicon_n_plan_samples;
-    msg.sample_period = self->vicon_sample_period;
-    self->lcm->publish("VICON_GET_PLAN", &msg);
-    bot_viewer_set_status_bar_message(self->viewer, "Sent VICON_GET_PLAN [nsamples: %d, period %fsec] @ %lld",msg.n_plan_samples, msg.sample_period, msg.utime);    
   }
   else if(! strcmp(name, PARAM_MANIP_PLAN_MODE)){
     drc::manip_plan_control_t msg;
@@ -808,10 +796,6 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
 
     self->viewer = viewer;
     
-    // default Vicon plan sample values:
-    self->vicon_n_plan_samples = 20;
-    self->vicon_sample_period = 0.5;
-
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
     
     // C-style subscribe:
@@ -821,11 +805,11 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
 
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_NEW_VICON_PLAN, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_PLAN, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_COMMITTED_PLAN, NULL);
+    // commented out unused buttons:
+    // bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_PLAN, NULL);
+    // bot_gtk_param_widget_add_buttons(self->pw, PARAM_SEND_COMMITTED_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_HIDE, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
+    // bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_USE_COLORMAP, 0, NULL);
     self->adjust_endstate = false;
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_ADJUST_ENDSTATE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FULLPLAN, 1, NULL);
@@ -871,9 +855,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
         
    	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
-  	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
-  	self->use_colormap = 1;
-  	bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);
+    bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
+    self->use_colormap = 1; // default - never changed now
+    //bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);
     self->clicked = 0;	
     self->dragging = 0;    
   	self->selection = new std::string(" ");
