@@ -31,6 +31,10 @@ typedef enum _leading_foot_t {
   LEADING_FOOT_RIGHT, LEADING_FOOT_LEFT
 } leading_foot_t;
 
+typedef enum _path_t {
+  PATH_SPLINE, PATH_NO_SPLINE, PATH_AUTO
+} path_t;
+
 typedef enum _walking_mode_t {
   WALKING_TYPICAL, WALKING_DRAKE_FAST, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI, STEPPING_BDI, STEPPING_BDI_FINE, WALKING_LADDER
 } walking_mode_t;
@@ -77,11 +81,11 @@ typedef struct _RendererWalking {
   BotGtkParamWidget *lead_foot_pw;
   BotGtkParamWidget *map_mode_pw;
   BotGtkParamWidget *ignore_terrain_pw;
-  BotGtkParamWidget *follow_spline_pw;
+  BotGtkParamWidget *path_pw;
   
   // PerceptionData *perceptionData;
 
-  bool follow_spline;
+  path_t path;
   bool ignore_terrain;
   behavior_t behavior;
   walking_goal_type_t goal_type;

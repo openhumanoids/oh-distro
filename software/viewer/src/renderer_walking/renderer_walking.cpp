@@ -37,7 +37,8 @@
 #define PARAM_GOAL_SEND "Place a Goal"
 #define PARAM_GO_FORWARD "Go Forward"
 #define PARAM_GOAL_UPDATE "Update Params"
-#define PARAM_FOLLOW_SPLINE "Follow spline"
+// #define PARAM_FOLLOW_SPLINE "Follow spline"
+#define PARAM_PATH "Path: "
 #define PARAM_IGNORE_TERRAIN "Ignore terrain"
 #define PARAM_BEHAVIOR "Behavior"
 #define PARAM_GOAL_TYPE "Goal sets pose of: "
@@ -413,8 +414,8 @@ void get_params_from_widget(RendererWalking* self) {
   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->lead_foot_pw, PARAM_LEADING_FOOT);
   self->map_command = bot_gtk_param_widget_get_enum(self->map_mode_pw, PARAM_MAP_MODE);
   self->ignore_terrain = bot_gtk_param_widget_get_bool(self->ignore_terrain_pw, PARAM_IGNORE_TERRAIN);
-  self->follow_spline = bot_gtk_param_widget_get_bool(self->follow_spline_pw, PARAM_FOLLOW_SPLINE);
-
+  // self->follow_spline = bot_gtk_param_widget_get_bool(self->follow_spline_pw, PARAM_FOLLOW_SPLINE);
+  self->path = (path_t) bot_gtk_param_widget_get_enum(self->path_pw, PARAM_PATH);
   self->max_num_steps = bot_gtk_param_widget_get_int(self->main_pw, PARAM_MAX_NUM_STEPS);
   self->min_num_steps = bot_gtk_param_widget_get_int(self->main_pw, PARAM_MIN_NUM_STEPS);
   self->nom_step_width = bot_gtk_param_widget_get_double(self->main_pw, PARAM_NOM_STEP_WIDTH);
@@ -497,8 +498,10 @@ void publish_simple_nav(RendererWalking* self, double x, double y, double yaw) {
   bot_roll_pitch_yaw_to_quat(rpy, quat);
   self->goal_pos.x = self->robot_pos[0] + x * cos(rpy[2]) - y * sin(rpy[2]);
   self->goal_pos.y = self->robot_pos[1] + x * sin(rpy[2]) + y * cos(rpy[2]);
-  self->follow_spline = FALSE;
-  bot_gtk_param_widget_set_bool(self->follow_spline_pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
+  // self->follow_spline = FALSE;
+  // bot_gtk_param_widget_set_bool(self->follow_spline_pw, PARAM_FOLLOW_SPLINE, self->follow_spline);
+  self->path = PATH_NO_SPLINE;
+  bot_gtk_param_widget_set_enum(self->path_pw, PARAM_PATH, PATH_NO_SPLINE);
   publish_walking_goal(self, TRUE);
 }
 
@@ -530,14 +533,24 @@ void publish_walking_goal(RendererWalking* self, bool is_new) {
   }
   walking_goal_msg.is_new_goal = is_new;
   walking_goal_msg.utime = self->robot_utime; //bot_timestamp_now();
-  walking_goal_msg.allow_optimization = self->allow_optimization;
   walking_goal_msg.step_speed = self->step_speed;
   walking_goal_msg.nom_step_width = self->nom_step_width;
   walking_goal_msg.nom_forward_step = self->nom_forward_step;
   walking_goal_msg.max_forward_step = self->max_forward_step;
   walking_goal_msg.step_height = self->step_height;
   walking_goal_msg.mu = self->mu;
-  walking_goal_msg.follow_spline = self->follow_spline;
+
+  if (self->path == PATH_SPLINE) {
+    walking_goal_msg.follow_spline = true;
+    walking_goal_msg.allow_optimization = false;
+  } else if (self->path == PATH_NO_SPLINE) {
+    walking_goal_msg.follow_spline = false;
+    walking_goal_msg.allow_optimization = false;
+  } else if (self->path == PATH_AUTO) {
+    walking_goal_msg.follow_spline = false;
+    walking_goal_msg.allow_optimization = true;
+  }
+
   walking_goal_msg.ignore_terrain = self->ignore_terrain;
   walking_goal_msg.behavior = self->behavior;
   walking_goal_msg.goal_type = self->goal_type;
@@ -663,10 +676,10 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->nom_step_width = 0.26; // m
   self->behavior = BEHAVIOR_BDI_STEPPING;
   self->walking_settings = STEPPING_BDI;
-  self->follow_spline = true;
+  self->path = PATH_SPLINE;
   self->ignore_terrain = false;
   self->goal_type = GOAL_TYPE_CENTER;
-  self->allow_optimization = false;
+  self->allow_optimization = true;
   self->mu = 1.0;
   self->leading_foot = LEADING_FOOT_RIGHT;
   self->robot_rot[0] = 1;
@@ -719,8 +732,10 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->ignore_terrain_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
   bot_gtk_param_widget_add_booleans(self->ignore_terrain_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_IGNORE_TERRAIN, 0, NULL);
 
-  self->follow_spline_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
-  bot_gtk_param_widget_add_booleans(self->follow_spline_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
+  self->path_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  bot_gtk_param_widget_add_enum(self->path_pw, PARAM_PATH, BOT_GTK_PARAM_WIDGET_MENU, self->path, "Spline", PATH_SPLINE, "No Spline", PATH_NO_SPLINE, "Auto", PATH_AUTO, NULL);
+  // self->follow_spline_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
+  // bot_gtk_param_widget_add_booleans(self->follow_spline_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
 
 
   gtk_table_attach(GTK_TABLE(nav_table), place_goal_button, 0,1,0,2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
@@ -742,8 +757,8 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->lead_foot_pw), 0,4,2,3, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(GTK_WIDGET(self->lead_foot_pw));
-  gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->follow_spline_pw), 4,5,2,3, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(GTK_WIDGET(self->follow_spline_pw));
+  gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->path_pw), 4,5,2,3, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(GTK_WIDGET(self->path_pw));
 
   gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->map_mode_pw), 0,4,3,4, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(GTK_WIDGET(self->map_mode_pw));
@@ -802,7 +817,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   g_signal_connect(G_OBJECT(self->main_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->drake_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->lead_foot_pw), "changed", G_CALLBACK(on_pw_changed), self);
-  g_signal_connect(G_OBJECT(self->follow_spline_pw), "changed", G_CALLBACK(on_pw_changed), self);
+  g_signal_connect(G_OBJECT(self->path_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->map_mode_pw), "changed", G_CALLBACK(on_pw_changed), self);
   g_signal_connect(G_OBJECT(self->ignore_terrain_pw), "changed", G_CALLBACK(on_pw_changed), self);
 
