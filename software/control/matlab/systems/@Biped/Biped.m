@@ -151,7 +151,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.nom_step_width = obj.nom_step_width;
       end
       if ~isfield(options, 'max_step_width')
-        options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.01]);
+        options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.05]);
       end
       if ~isfield(options, 'min_step_width')
         options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
@@ -163,7 +163,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.max_outward_step_rot = obj.max_step_rot;
       end
       if ~isfield(options, 'max_inward_step_rot')
-        options.max_inward_step_rot = 0.1; % BDI walker doesn't allow toe to rotate inward at all
+        options.max_inward_step_rot = 0.00; % BDI walker doesn't allow toe to rotate inward at all
       end
 
       if ~isfield(options, 'max_step_dz')
@@ -174,8 +174,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       A = [Axy, zeros(4, 4);
            0 0 1 0 0 0;
            0 0 -1 0 0 0;
-           0 0 0 0 0 1;
-           0 0 0 0 0 -1];
+           0 0 0 0 0 -1;
+           0 0 0 0 0 1];
       if ~p0_is_right_foot
         A(:,2) = -A(:,2);
         A(:,6) = -A(:,6);
@@ -201,7 +201,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.nom_step_width = obj.nom_step_width;
       end
       if ~isfield(options, 'max_step_width')
-        options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.01]);
+        options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.05]);
       end
       if ~isfield(options, 'min_step_width')
         options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
@@ -225,8 +225,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
            0 -1 0 0 0 0;
            0 0 1 0 0 0;
            0 0 -1 0 0 0;
-           0 0 0 0 0 1;
-           0 0 0 0 0 -1];
+           0 0 0 0 0 -1;
+           0 0 0 0 0 1];
       if ~p0_is_right_foot
         A(:,2) = -A(:,2);
         A(:,6) = -A(:,6);
