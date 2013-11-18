@@ -664,7 +664,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   ehandler->name = (char*) RENDERER_NAME;
   ehandler->enabled = 1;
   ehandler->pick_query = NULL;
-  ehandler->key_press = key_press;
+  ehandler->key_press = NULL; // Dont use key_press events this way. Pass in a global keyboard signal as an argument. See robot state renderer for example. (Sisir)
   ehandler->hover_query = NULL;
   ehandler->mouse_press = mouse_press;
   ehandler->mouse_release = mouse_release;
