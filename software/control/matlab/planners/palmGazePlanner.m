@@ -15,7 +15,7 @@ classdef palmGazePlanner
     free_ik_options
     doVisualization;
     doPublish;
-    default_axis_threshold = 5*pi/180;
+    default_axis_threshold = 2.5*pi/180;
     atlas2robotFrameIndMap
     allowPelvisHeight
     T_palm_hand_l = inv(HT([0;0.11516;0.015],1.57079,3.14159,3.14159));
