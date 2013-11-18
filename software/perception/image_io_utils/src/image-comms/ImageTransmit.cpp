@@ -21,6 +21,7 @@ struct ChannelData {
   std::string mChannelTransmit;
   bot_core::image_t mLatestImage;
   int mRequestType;
+  int mMultisenseType;
   std::mutex mMutex;
 
   ChannelData() {
@@ -36,7 +37,7 @@ struct ChannelData {
   void onImages(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
                 const multisense::images_t* iMessage) {
     for (int i = 0; i < iMessage->n_images; ++i) {
-      if (iMessage->image_types[i] == multisense::images_t::LEFT) {
+      if (iMessage->image_types[i] == mMultisenseType) {
         std::lock_guard<std::mutex> lock(mMutex);
         mLatestImage = iMessage->images[i];
         break;
@@ -72,11 +73,18 @@ struct ImageTransmit {
   }
 
   void addMultiChannel(const int iRequestType, const std::string& iChannel, 
-                       const std::string& iSuffix) {
+                       const int iMultisenseType) {
     ChannelData::Ptr data(new ChannelData());
     data->mChannelBase = iChannel;
     data->mRequestType = iRequestType;
-    data->mChannelTransmit = data->mChannelBase + iSuffix + "_TX";
+    std::string suffix;
+    switch (iMultisenseType) {
+    case multisense::images_t::LEFT: suffix = "_LEFT"; break;
+    case multisense::images_t::RIGHT: suffix = "_RIGHT"; break;
+    default: break;
+    }
+    data->mChannelTransmit = data->mChannelBase + suffix + "_TX";
+    data->mMultisenseType = iMultisenseType;
     mLcm->subscribe(data->mChannelBase, &ChannelData::onImages, data.get());
     mChannels[iRequestType] = data;
   }
@@ -198,8 +206,8 @@ int main(const int iArgc, const char** iArgv) {
   opt.parse();
 
   ImageTransmit obj;
-  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT, "CAMERA", "_LEFT");
-  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT, "CAMERA", "_RIGHT");
+  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT, "CAMERA", multisense::images_t::LEFT);
+  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT, "CAMERA", multisense::images_t::RIGHT);
   obj.addChannel(drc::data_request_t::CAMERA_IMAGE_LCHEST, "CAMERACHEST_LEFT");
   obj.addChannel(drc::data_request_t::CAMERA_IMAGE_RCHEST, "CAMERACHEST_RIGHT");
   obj.start();
