@@ -10,7 +10,10 @@ useRightHand = true;
 useVisualization = false;
 allowPelvisHeight = true;
 
+
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
+
+disp('waiting for drill and wall affordances...');
 
 [wall,drill] = lcm_mon.getWallAndDrillAffordances();
 while isempty(wall) || isempty(drill)
@@ -27,6 +30,7 @@ button_pub = drillButtonPlanner(r,atlas,drill.button_pos, drill.button_normal, d
 drill_pub = drillPlanner(r,atlas,drill.guard_pos, drill.drill_axis,...
   wall.normal, useRightHand, useVisualization, publishPlans, allowPelvisHeight);
 drill_points = [wall.targets wall.targets(:,1)];
+
 
 % drilling state machine initialization
 segment_index = 1;
@@ -45,16 +49,25 @@ while(true)
   if ~isempty(new_wall)
     if ~isequal(new_wall.normal, wall.normal) || ~isequal(new_wall.targets, wall.targets)
       wall = new_wall;
+      
+      disp('updating drill wall targets from new wall affordance');
+
     end
-    
+        
     drill_pub = drill_pub.updateWallNormal(wall.normal);
     drill_points = [wall.targets wall.targets(:,1)];
   end
   
+  disp('waiting for control message...');
+  
   [ctrl_type, ctrl_data] = lcm_mon.getDrillControlMsg();
+
   
   switch ctrl_type
     case drc.drill_control_t.REFIT_DRILL
+        
+      disp('updating drill affordance');
+
       new_drill = lcm_mon.getDrillAffordance();
       if ~isempty(new_drill)
         drill = new_drill;
@@ -88,7 +101,7 @@ while(true)
         qf = xtraj_nominal.eval(0);
         qf = qf(1:34);
         posture_index = setdiff((1:r.num_q)',[drill_pub.joint_indices]');
-        qf(posture_index) = q_wall(posture_index);
+        qf(posture_index) = q0(posture_index);
         kinsol = r.doKinematics(qf);
         drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
         
@@ -191,5 +204,5 @@ while(true)
         send_status(4,0,0,'Invalid size of control data. Expected 3x1');
       end
   end
-  pause(.05);
+%   pause();
 end

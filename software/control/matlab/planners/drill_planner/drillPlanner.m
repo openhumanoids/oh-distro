@@ -172,10 +172,10 @@ classdef drillPlanner
       
       % fix body pose for all t
       if obj.allowPelvisHeight
-        pelvis_body = regexpIndex('pelvis',{r.getBody(:).linkname});
+        pelvis_body = regexpIndex('pelvis',{obj.r.getBody(:).linkname});
         body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,pelvis_body); % fix the pelvis
       else
-        pelvis_body = regexpIndex('pelvis',{r.getBody(:).linkname});
+        pelvis_body = regexpIndex('pelvis',{obj.r.getBody(:).linkname});
         body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,pelvis_body); % fix the pelvis
       end
       q_nom = zeros(obj.r.num_q,N);

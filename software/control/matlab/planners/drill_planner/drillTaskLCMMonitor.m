@@ -53,7 +53,7 @@ classdef drillTaskLCMMonitor
     end
     
     function [type, data] = getDrillControlMsg(obj)
-      lcm_data = obj.drill_control_monitor.getNextMessage(0);
+      lcm_data = obj.drill_control_monitor.getNextMessage(2000);
       data = [];
       if isempty(lcm_data)
         type = -1;
