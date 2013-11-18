@@ -6,7 +6,7 @@ v = r.constructVisualizer;
 %% get affordance fits
 
 
-use_simulated_state = true;
+use_simulated_state = false;
 useVisualization = false;
 publishPlans = false;
 useRightHand = false;
@@ -23,7 +23,7 @@ if ~use_simulated_state
   x_drill_in = valve.init_pt;
   x_drill_center = valve.center;
 else
-  wall.normal = [1;0;0];
+  valve.normal = [1;0;0];
   x_drill_reach = [.5;.5;.4];
   x_drill_in = x_drill_reach + [.2;0;0];
   x_drill_center = x_drill_in + [0;-.15;0];
@@ -33,7 +33,7 @@ finger_axis_on_hand = [0;1;0];
 
 
 drill_pub = drillPlanner(r,atlas,finger_pt_on_hand, finger_axis_on_hand,...
-  wall.normal, useRightHand, useVisualization, publishPlans, allowPelvisHeight);
+  valve.normal, useRightHand, useVisualization, publishPlans, allowPelvisHeight);
 
 %% pre-drill movement
 
@@ -54,7 +54,7 @@ q0 = q0(1:34);
 %% make a circle
 q0 = xtraj_drill.eval(xtraj_drill.tspan(2));
 q0 = q0(1:34);
-[xtraj_circ,snopt_info_circ,infeasible_constraint_circ] = drill_pub.createCircularPlan(q0, x_drill_center, 2*pi,.1);
+[xtraj_circ,snopt_info_circ,infeasible_constraint_circ] = drill_pub.createCircularPlan(q0, x_drill_center, 2.4*pi,.05);
 
 %% publish and display
 t_reach = xtraj_reach.pp.breaks;
@@ -70,6 +70,7 @@ t_all = [t_reach, t_in(2:end) + t_reach(end), t_circ(2:end) + t_reach(end) + t_i
 x_all = [x_reach x_in(:,2:end) x_circ(:,2:end)];
 xtraj_all = PPTrajectory(foh(t_all,x_all));
 xtraj_all = xtraj_all.setOutputFrame(r.getStateFrame);
+v.playback_speed = 5;
 v.playback(xtraj_all);
 
 drill_pub.publishTraj(xtraj_all,snopt_info_circ);

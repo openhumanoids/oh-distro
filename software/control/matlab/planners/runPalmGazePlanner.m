@@ -10,7 +10,7 @@ allowPelvisHeight = false;
 
 planner = palmGazePlanner(r,atlas, doVisualization, doPublish, allowPelvisHeight);
 
-speed = .1;
+speed = .05;
 
 
 while(true)
