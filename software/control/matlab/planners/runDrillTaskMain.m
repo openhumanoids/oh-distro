@@ -10,7 +10,6 @@ useRightHand = true;
 useVisualization = false;
 allowPelvisHeight = true;
 
-
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 
 disp('waiting for drill and wall affordances...');
@@ -39,6 +38,8 @@ cut_lengths = sum((drill_points(:,2:end) - drill_points(:,1:end-1)).*(drill_poin
 
 short_cut = .03;
 long_cut = .1;
+target_radius = .05;
+predrill_distance = .1;
 
 xtraj_nominal = []; %to know if we've got a plan
 xtraj_button = []; %to know if we've got a plan
@@ -105,7 +106,7 @@ while(true)
         kinsol = r.doKinematics(qf);
         drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
         
-        [xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q0, drill_f - .1*wall.normal, 5);
+        [xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q0, drill_f - predrill_distance*wall.normal, 5);
       else
         send_status(4,0,0,'Nominal trajectory not instantiated yet, cannot create a walking goal');
       end
@@ -117,7 +118,7 @@ while(true)
     case drc.drill_control_t.RQ_PREDRILL_PLAN
       segment_index = 1; % RESETS THE SEGMENT INDEX!
       q0 = lcm_mon.getStateEstimate();
-      x_drill_reach = wall.targets(:,1) - .1*wall.normal;
+      x_drill_reach = wall.targets(:,1) - predrill_distance*wall.normal;
       
       [xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = drill_pub.createInitialReachPlan(q0, x_drill_reach, 5);
     case drc.drill_control_t.RQ_DRILL_IN_PLAN
@@ -130,7 +131,7 @@ while(true)
       kinsol = r.doKinematics(q0);
       drill0 = r.forwardKin(kinsol, drill_pub.hand_body, drill.guard_pos);
       
-      in_goal = norm(drill0 - drill_points(:,segment_index+1)) < .05;
+      in_goal = norm(drill0 - drill_points(:,segment_index+1)) < target_radius;
       
       if in_goal
         segment_index = segment_index + 1;
