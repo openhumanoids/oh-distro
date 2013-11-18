@@ -1004,6 +1004,43 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
   
 }
 
+static void
+on_robot_model(const lcm_recv_buf_t * buf, const char *channel, const drc_robot_urdf_t *msg, void *user_data){
+  RendererAffordances *self = (RendererAffordances*) user_data;
+
+  // Configure the hand selector when the viewer launches:
+  if (msg->left_hand == DRC_ROBOT_URDF_T_LEFT_SANDIA ){
+    std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "sandia_hand_left"); 
+    if (found != self->urdf_filenames.end()) {
+      self->lhand_urdf_id= found - self->urdf_filenames.begin();
+      bot_gtk_param_widget_set_enum(self->pw,PARAM_LHAND_URDF_SELECT,self->lhand_urdf_id);
+    }
+  }else if(msg->left_hand == DRC_ROBOT_URDF_T_LEFT_IROBOT){
+    std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "irobot_hand_left"); 
+    if (found != self->urdf_filenames.end()) {
+      self->lhand_urdf_id= found - self->urdf_filenames.begin();
+      bot_gtk_param_widget_set_enum(self->pw,PARAM_LHAND_URDF_SELECT,self->lhand_urdf_id);
+    }
+  }
+
+  if (msg->right_hand == DRC_ROBOT_URDF_T_RIGHT_SANDIA ){
+    std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "sandia_hand_right"); 
+    if (found != self->urdf_filenames.end()) {
+      self->rhand_urdf_id= found - self->urdf_filenames.begin();
+      bot_gtk_param_widget_set_enum(self->pw,PARAM_RHAND_URDF_SELECT,self->rhand_urdf_id);
+    }
+  }else if(msg->right_hand == DRC_ROBOT_URDF_T_RIGHT_IROBOT){
+    std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "irobot_hand_right"); 
+    if (found != self->urdf_filenames.end()) {
+      self->rhand_urdf_id= found - self->urdf_filenames.begin();
+      bot_gtk_param_widget_set_enum(self->pw,PARAM_RHAND_URDF_SELECT,self->rhand_urdf_id);
+    }
+  }
+
+  //std::cout << "Unsubscribing from Robot Model\n";
+  drc_robot_urdf_t_unsubscribe(self->lcm->getUnderlyingLCM(), self->urdf_sub);
+}
+
 
 // ----------------------------------------------------------------------------
 static int mouse_release(BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3],  const GdkEventButton *event)
@@ -1303,6 +1340,9 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
     self->candidateGraspSeedListener = boost::shared_ptr<CandidateGraspSeedListener>(new CandidateGraspSeedListener(self));
     self->initGraspOptPublisher  = boost::shared_ptr<InitGraspOptPublisher>(new InitGraspOptPublisher(self));
     self->graspOptStatusListener= boost::shared_ptr<GraspOptStatusListener>(new GraspOptStatusListener(self));
+
+    self->urdf_sub = drc_robot_urdf_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_MODEL",on_robot_model,self);
+
 
     self->reachabilityVerifier=boost::shared_ptr<ReachabilityVerifier>(new ReachabilityVerifier(self));
     //self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,RendererAffordances::keyboardSignalCallback));

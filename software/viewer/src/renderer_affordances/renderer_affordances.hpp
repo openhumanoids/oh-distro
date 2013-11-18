@@ -39,6 +39,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
+#include <lcmtypes/drc_robot_urdf_t.h>
 
 #include <path_util/path_util.h>
 
@@ -219,6 +220,7 @@ struct RendererAffordances {
     
   BotFrames *frames;
   
+  drc_robot_urdf_t_subscription_t * urdf_sub;
   
   //Member Variables 
   // -----------------
