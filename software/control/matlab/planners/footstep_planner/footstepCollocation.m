@@ -2,6 +2,7 @@ function [X, foot_goals] = footstepCollocation(biped, x0, goal_pos, params)
 
 debug = false;
 use_snopt = 1;
+use_mex = 1;
 
 params.right_foot_lead = logical(params.right_foot_lead);
 
@@ -57,55 +58,26 @@ function [steps, rel_steps] = decodeSteps(x)
 end
 
 function [c, ceq, dc, dceq] = constraints(x)
-  [steps, rel_steps] = decodeSteps(x);
-  nsteps = size(steps, 2);
-  nv = length(x);
-  nc = 2 * nsteps;
-  ceq = zeros(2, nsteps);
-  dceq = zeros(nv, nc);
-
-  ceq(1:2,1) = steps(1:2,1) - rel_steps(1:2,1);
-  dceq(1:2,1:2) = diag(ones(2,1));
-  dceq(7:8,1:2) = diag(-ones(2,1));
-
-  for j = 2:nsteps
-    con_ndx = (j-1)*2+1:j*2;
-    R = rotmat(steps(6,j-1));
-    ct = R(1,1);
-    st = -R(1,2);
-    dxy = R * rel_steps(1:2,j);
-    proj = steps(1:2,j-1) + dxy;
-    ceq(:,j) = steps(1:2,j) - proj;
-    x1_ndx = (j-2)*12+(1:6);
-    dx_ndx = (j-1)*12+(7:12);
-    x2_ndx = (j-1)*12+(1:6);
-    dceq(x2_ndx(1:2),con_ndx) = diag(ones(2,1));
-    dceq(x1_ndx(1:2),con_ndx) = -diag(ones(2,1));
-    dx = rel_steps(1,j);
-    dy = rel_steps(2,j);
-    
-    dceq(x1_ndx(6),con_ndx) = -[-dx*st - dy*ct, dx*ct - dy*st];
-    
-    dceq(dx_ndx(1),con_ndx) = -[ct,st];
-    dceq(dx_ndx(2),con_ndx) = -[-st,ct];
+  cf = goal_pos.center;
+  if use_mex == 0 || use_mex == 2
+    [c, ceq, dc, dceq] = stepCollocationConstraints(x, c0, cf, params.max_line_deviation);
   end
-  
-  c = zeros(nsteps,1);
-  dc = zeros(nv, nsteps);
-  u = goal_pos.center(1:2)-c0(1:2);
-  u = u / norm(u);
-  al = [-u(2); u(1)];
-  bl = al' * c0(1:2);
-  for j = 1:nsteps
-    g = (al' * steps(1:2,j) - bl);
-    c(j) = g^2 - params.max_line_deviation^2;
-    x1_ndx = (j-1)*12+(1:6);
-    dc(x1_ndx(1:2),j) = 2*g*al;
+  if use_mex
+    [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x, c0, cf, params.max_line_deviation);
+    if use_mex == 2
+      valuecheck(c, c_mex, 1e-8);
+      valuecheck(ceq, ceq_mex, 1e-8);
+      valuecheck(dc, dc_mex, 1e-8);
+      valuecheck(dceq, dceq_mex, 1e-8);
+    else
+      c = c_mex;
+      dc = dc_mex;
+      ceq = ceq_mex;
+      dceq = dceq_mex;
+    end
   end
-  
-  ceq = reshape(ceq, nc, 1);
-  dceq = sparse(dceq);
 end
+
 
 w_goal = [1;1;1;1;1;100];
 w_rot = 10;
@@ -124,9 +96,7 @@ function [c, dc] = objfun(x)
   end
   
   c = c + w_rot * sum(steps_rel(6,:));
-  for j = 1:nsteps
-    dc(12,j) = w_rot;
-  end
+  dc(12,1:nsteps) = w_rot;
   
   dc = reshape(dc, [], 1);
 end
@@ -156,6 +126,8 @@ params.forward_step = params.nom_forward_step;
 [A_reach_0, b_reach] = biped.getFootstepDiamondCons(true, params);
 min_steps = max([params.min_num_steps,2]);
 
+steps = [];
+
 for nsteps = min_steps:params.max_num_steps
   A_reach = A_reach_0;
   nc = length(b_reach);
@@ -166,8 +138,12 @@ for nsteps = min_steps:params.max_num_steps
     r_ndx = 2:2:nsteps;
     l_ndx = 1:2:nsteps;
   end
-  steps = repmat(st0, 1, nsteps);
-  steps(:,2:2:end) = repmat(biped.stepCenter2FootCenter(biped.footCenter2StepCenter(st0,~params.right_foot_lead,params.nom_step_width), params.right_foot_lead, params.nom_step_width),1,floor(nsteps/2));
+  if isempty(steps)
+    steps = repmat(st0, 1, nsteps);
+    steps(:,2:2:end) = repmat(biped.stepCenter2FootCenter(biped.footCenter2StepCenter(st0,~params.right_foot_lead,params.nom_step_width), params.right_foot_lead, params.nom_step_width),1,floor(nsteps/2));
+  else
+    steps(:,end+1) = steps(:,end-1);
+  end
   nv = 12 * nsteps;
 
   A = zeros(nc*(nsteps-1), nv);
@@ -211,7 +187,6 @@ for nsteps = min_steps:params.max_num_steps
   ub(7,end) = 0.03;
 
   x0 = encodeSteps(steps);
-  [steps0, steps_rel0] = decodeSteps(x0);
 
   if use_snopt
     snseti ('Major Iteration limit', 250);
@@ -276,7 +251,7 @@ for nsteps = min_steps:params.max_num_steps
                  Flow,Fupp,Fmul,Fstate,      ...
                  ObjAdd,ObjRow,A_sn(iAndx),iAfun,jAvar,...
                  iGfun,jGvar,'snoptUserfun');
-    toc;
+    toc
     exitflag
   else
     tic

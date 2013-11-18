@@ -8,6 +8,11 @@ pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
 install(TARGETS RobotStateMonitor AtlasCommandPublisher DESTINATION matlab)
 
+add_mex(stepCollocationConstraintsMex stepCollocationConstraintsMex.cpp)
+set_target_properties(stepCollocationConstraintsMex PROPERTIES COMPILE_FLAGS "-std=c++0x")
+pods_use_pkg_config_packages(stepCollocationConstraintsMex eigen3)
+install(TARGETS stepCollocationConstraintsMex DESTINATION matlab)
+
 pods_find_pkg_config(maps)
 pods_find_pkg_config(opencv)
 if (NOT maps_FOUND OR NOT opencv_FOUND)
