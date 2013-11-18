@@ -1,0 +1,32 @@
+package drc;
+
+struct drill_control_t {
+/* control_type is an enum which identifies the type of message
+   and how to interpret the data.  Most messages do not use 
+   the data field.
+
+   Most message types involve requesting plans from the drill planner,
+   thus the RQ prefix
+*/
+
+   const int8_t REFIT_DRILL = 1;            //Tell the planner to refit the drill affordance
+   const int8_t RQ_NOMINAL_PLAN = 2;        //Find and transmit a trajectory for full drill task (and search for pose)
+   const int8_t RQ_WALKING_GOAL = 3;        //Request the walking plan for the pose found in the step above
+   const int8_t RQ_ARM_PREPOSE_PLAN = 4;    //Request a plan for moving the arm to a rough pre-drilling pose, before walking 
+   const int8_t RQ_NOMINAL_FIXED_PLAN = 5;  //Similar to nominal plan, but with fixed body pose
+   const int8_t RQ_PREDRILL_PLAN = 6;       //Move the drill to a pre-drilling posture
+   const int8_t RQ_DRILL_IN_PLAN = 7;       //Drill inward from the pre-drill posture
+   const int8_t RQ_NEXT_DRILL_PLAN = 8;     //Get the next cut
+   const int8_t RQ_DRILL_TARGET_PLAN = 9;   //Get a cut to [x,y,z] = data[1-3] in world frame
+   const int8_t RQ_DRILL_DELTA_PLAN = 10;   //Get a cut to from current to offset by [x,y,z] = data[1-3] in wall frame (x-into, y-left, z-up)
+
+   const int8_t RQ_BUTTON_PREPOSE_PLAN = 11; //Get a plan for left and right arms to a good pre-button pose
+   const int8_t RQ_BUTTON_DELTA_PLAN = 12;   //Get a plan for right arm+back to previous plan, and offset left finger by delta = data[1-3] in (TBD) frame
+
+  int64_t utime; 
+
+  int8_t control_type;
+
+  int32_t data_length;
+  double data[data_length];
+}
