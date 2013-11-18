@@ -1,0 +1,14 @@
+<package>
+  <description brief="hook_description">
+
+     urdf description of the hook hand
+
+  </description>
+  <author>KGENA</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hook_description</url>
+
+</package>
+
+
