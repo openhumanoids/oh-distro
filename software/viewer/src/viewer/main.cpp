@@ -110,7 +110,7 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
     {
 	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
     }
-    else if(renderer_name=="FootStep Plans & Sticky Feet")
+    else if(renderer_name=="Footstep Plans")
     {
 	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
     }
@@ -124,7 +124,7 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
     } 
     else if(renderer_name=="Walking")
     {
-	    always_enabled_renderers = (always_enabled_renderers||(name=="FootStep Plans & Sticky Feet"));
+	    always_enabled_renderers = (always_enabled_renderers||(name=="Footstep Plans"));
     }
     else if(renderer_name=="Data Control")
     {
@@ -316,7 +316,7 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
        foviate_renderer = "Walking";
        break; 
       case F5:
-       foviate_renderer = "FootStep Plans & Sticky Feet";
+       foviate_renderer = "Footstep Plans";
        break; 
       case F6:
        foviate_renderer = "Data Control";
@@ -340,9 +340,9 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
       cout << "ESC-All\n";
       cout << "F1-Affordances & StickyHands/Feet\n";
       cout << "F2-Robot Plan Display\n";
-      cout << "F3-Robot State Display\n";  
+      cout << "F3-State\n";  
       cout << "F4-Walking\n";
-      cout << "F5-FootStep Plans & Sticky Feet\n";
+      cout << "F5-Footstep Plans\n";
       cout << "F6-DataControl\n";
       cout << "F7-Maps\n";  
       cout << "F8-Laser\n";
