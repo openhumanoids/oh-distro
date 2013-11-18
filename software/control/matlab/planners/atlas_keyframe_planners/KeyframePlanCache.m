@@ -27,8 +27,8 @@ classdef KeyframePlanCache < handle
         function obj = KeyframePlanCache(r)
             obj.num_breaks = 0;% corresponds to keyframes
             obj.time_2_index_scale = 1;
-            obj.v_desired = 0.2;%20cm/s
-            obj.qdot_desired = 30*pi/180; %10deg/s
+            obj.v_desired = 0.1;%20cm/s
+            obj.qdot_desired = 15*pi/180; %10deg/s
             obj.lhand_constraint_cell = {}; % Plan Boundary Conditions
             obj.rhand_constraint_cell = {};
             obj.lfoot_constraint_cell = {};
