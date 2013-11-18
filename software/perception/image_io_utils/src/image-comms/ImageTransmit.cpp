@@ -62,22 +62,22 @@ struct ImageTransmit {
     setQuality(drc::sensor_request_t::QUALITY_LOW);
   }
 
-  void addChannel(const std::string& iChannel, const int iRequestType,
-                  const bool iMultipleImages=false) {
+  void addChannel(const int iRequestType, const std::string& iChannel) {
     ChannelData::Ptr data(new ChannelData());
     data->mChannelBase = iChannel;
     data->mRequestType = iRequestType;
+    data->mChannelTransmit = data->mChannelBase + "_TX";
+    mLcm->subscribe(data->mChannelBase, &ChannelData::onImage, data.get());
+    mChannels[iRequestType] = data;
+  }
 
-    std::string subscriptionChannel = data->mChannelBase;
-    if (iMultipleImages) {
-      data->mChannelTransmit = data->mChannelBase + "_LEFT_TX";
-      mLcm->subscribe(subscriptionChannel, &ChannelData::onImages, data.get());
-    }
-    else {
-      data->mChannelTransmit = data->mChannelBase + "_TX";
-      mLcm->subscribe(subscriptionChannel, &ChannelData::onImage, data.get());
-    }
-
+  void addMultiChannel(const int iRequestType, const std::string& iChannel, 
+                       const std::string& iSuffix) {
+    ChannelData::Ptr data(new ChannelData());
+    data->mChannelBase = iChannel;
+    data->mRequestType = iRequestType;
+    data->mChannelTransmit = data->mChannelBase + iSuffix + "_TX";
+    mLcm->subscribe(data->mChannelBase, &ChannelData::onImages, data.get());
     mChannels[iRequestType] = data;
   }
 
@@ -198,10 +198,9 @@ int main(const int iArgc, const char** iArgv) {
   opt.parse();
 
   ImageTransmit obj;
-  obj.addChannel("CAMERA", drc::data_request_t::CAMERA_IMAGE_HEAD, true);
-  //obj.addChannel("CAMERA_LHAND", drc::data_request_t::CAMERA_IMAGE_LHAND);
-  //obj.addChannel("CAMERA_RHAND", drc::data_request_t::CAMERA_IMAGE_RHAND);
-  obj.addChannel("CAMERACHEST_LEFT", drc::data_request_t::CAMERA_IMAGE_LCHEST);
-  obj.addChannel("CAMERACHEST_RIGHT", drc::data_request_t::CAMERA_IMAGE_RCHEST);
+  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT, "CAMERA", "_LEFT");
+  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT, "CAMERA", "_RIGHT");
+  obj.addChannel(drc::data_request_t::CAMERA_IMAGE_LCHEST, "CAMERACHEST_LEFT");
+  obj.addChannel(drc::data_request_t::CAMERA_IMAGE_RCHEST, "CAMERACHEST_RIGHT");
   obj.start();
 }

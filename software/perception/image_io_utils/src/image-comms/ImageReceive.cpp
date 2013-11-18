@@ -99,8 +99,7 @@ int main() {
   ImageReceive obj;
 
   obj.addChannel("CAMERA_LEFT");
-  //obj.addChannel("CAMERA_LHAND", 752, 480);
-  //obj.addChannel("CAMERA_RHAND", 752, 480);
+  obj.addChannel("CAMERA_RIGHT");
   obj.addChannel("CAMERACHEST_LEFT");
   obj.addChannel("CAMERACHEST_RIGHT");
   obj.start();

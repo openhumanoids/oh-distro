@@ -561,7 +561,7 @@ public:
     CameraState::Ptr cam;
     cam.reset(new CameraState("CAMERA", "head", this, true));
     cam->mPlacement = ImagePlacementTopCenter;
-    cam->mNativeImage = false;
+    cam->mNativeImage = true;
     mCameraStates.push_back(cam);
 
     cam.reset(new CameraState("CAMERACHEST_LEFT", "sa L", this));

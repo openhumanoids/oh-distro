@@ -53,7 +53,8 @@ struct Worker {
     while (mActive) {
 
       switch(mRequest.type) {
-      case drc::data_request_t::CAMERA_IMAGE_HEAD:
+      case drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT:
+      case drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT:
       case drc::data_request_t::CAMERA_IMAGE_LHAND:
       case drc::data_request_t::CAMERA_IMAGE_RHAND:
       case drc::data_request_t::CAMERA_IMAGE_LCHEST:
