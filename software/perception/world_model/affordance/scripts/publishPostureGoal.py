@@ -168,7 +168,7 @@ elif (posture_name == "zeroback"):
   [msg.joint_position, msg.joint_name] = getZeroBack()
 elif (posture_name == "retract"):
   [msg.joint_position, msg.joint_name] = getRetract()
-elif (posture_name == "hose_mate"):
+elif (posture_name == "hosemate"):
   [msg.joint_position, msg.joint_name] = getHoseMate()
 else:
   print "posture goal not found"
