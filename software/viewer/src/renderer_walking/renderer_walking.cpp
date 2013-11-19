@@ -795,8 +795,8 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_enum(self->main_pw, PARAM_BEHAVIOR, BOT_GTK_PARAM_WIDGET_MENU, self->behavior, "Walking", BEHAVIOR_WALKING, "BDI Walking", BEHAVIOR_BDI_WALKING, "BDI Stepping", BEHAVIOR_BDI_STEPPING, NULL);
   bot_gtk_param_widget_add_int(self->main_pw, PARAM_MAX_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 1, 30, 1, self->max_num_steps);  
   bot_gtk_param_widget_add_int(self->main_pw, PARAM_MIN_NUM_STEPS, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 30, 1, self->min_num_steps);  
-  bot_gtk_param_widget_add_double(self->main_pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.00, 1.0, 0.05, self->nom_forward_step);
-  bot_gtk_param_widget_add_double(self->main_pw, PARAM_MAX_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->max_forward_step);
+  bot_gtk_param_widget_add_double(self->main_pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.00, 1.0, 0.01, self->nom_forward_step);
+  bot_gtk_param_widget_add_double(self->main_pw, PARAM_MAX_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.01, self->max_forward_step);
   bot_gtk_param_widget_add_double(self->main_pw, PARAM_NOM_STEP_WIDTH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.22, 0.4, 0.01, self->nom_step_width);
   bot_gtk_param_widget_add_booleans(self->main_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FORCE_STICKY_FEET, self->force_to_sticky_feet, NULL);
 
