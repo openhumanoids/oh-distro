@@ -24,12 +24,28 @@ def simple_cmd_callback(controller, data):
         else:
             print("Close (motor tendon excursion control; fraction: %s)" % closed_amount)
             controller.motor_excursion_control_close_fraction(closed_amount)
+    elif command in ['twofinger_cylindrical','twofinger_prismatic','twofinger_spherical'] :
+        if epsilonEquals(closed_amount, 1):
+            print "Close two finger"
+            # ... Close the two fingers only
+        else:
+            print "open two finger"
+            # ... open the two fingers only
     elif data.name == 'calibrate_jig':
         print("Jig")
         controller.calibrate_motor_encoder_offsets(True)
     elif data.name == 'calibrate_no_jig':
         print("No Jig")
         controller.calibrate_motor_encoder_offsets(False)
+    elif data.name == 'prismatic_spread':
+        # 90 degrees
+        print "Move to prismatic_spread"
+    elif data.name == 'cylinderical_spread':
+        # 60 degrees
+        print "Move to cylinderical_spread"
+    elif data.name == 'spherical_spread':
+        # 0 degrees turn
+        print "Move to spherical_spread"        
     else:
         print "Message not understood "+data.name
         return
