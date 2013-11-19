@@ -38,6 +38,7 @@ struct walking_goal_t
 	boolean follow_spline;
 
 	boolean ignore_terrain;
+	boolean force_to_sticky_feet;
 
     int8_t behavior;
     const int8_t BEHAVIOR_WALKING = 0;

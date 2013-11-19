@@ -90,6 +90,7 @@ typedef struct _RendererWalking {
   behavior_t behavior;
   walking_goal_type_t goal_type;
   bool allow_optimization;
+  bool force_to_sticky_feet;
   
   int dragging;
   bool active;

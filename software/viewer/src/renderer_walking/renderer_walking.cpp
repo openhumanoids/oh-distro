@@ -59,6 +59,7 @@
 #define PARAM_BDI_KNEE_NOMINAL "BDI knee nominal"
 #define PARAM_STOP_WALKING "Stop Walking Now!"
 #define PARAM_MAP_MODE "Map mode "
+#define PARAM_FORCE_STICKY_FEET "Force final poses to sticky feet"
 
 #define WALKING_MODE "Preset "
 
@@ -428,7 +429,6 @@ void get_params_from_widget(RendererWalking* self) {
   self->leading_foot = (leading_foot_t) bot_gtk_param_widget_get_enum(self->lead_foot_pw, PARAM_LEADING_FOOT);
   self->map_command = bot_gtk_param_widget_get_enum(self->map_mode_pw, PARAM_MAP_MODE);
   self->ignore_terrain = bot_gtk_param_widget_get_bool(self->ignore_terrain_pw, PARAM_IGNORE_TERRAIN);
-  // self->follow_spline = bot_gtk_param_widget_get_bool(self->follow_spline_pw, PARAM_FOLLOW_SPLINE);
   self->path = (path_t) bot_gtk_param_widget_get_enum(self->path_pw, PARAM_PATH);
   self->max_num_steps = bot_gtk_param_widget_get_int(self->main_pw, PARAM_MAX_NUM_STEPS);
   self->min_num_steps = bot_gtk_param_widget_get_int(self->main_pw, PARAM_MIN_NUM_STEPS);
@@ -449,6 +449,7 @@ void get_params_from_widget(RendererWalking* self) {
   self->bdi_lift_height = bot_gtk_param_widget_get_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT);
   self->bdi_toe_off = (bdi_toe_off_t) bot_gtk_param_widget_get_enum(self->bdi_pw, PARAM_BDI_TOE_OFF);
   self->bdi_knee_nominal = bot_gtk_param_widget_get_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL);
+  self->force_to_sticky_feet = bot_gtk_param_widget_get_bool(self->main_pw, PARAM_FORCE_STICKY_FEET);
 }
 
 static void on_pw_changed(BotGtkParamWidget *pw, const char *name, void *user) {
@@ -566,6 +567,7 @@ void publish_walking_goal(RendererWalking* self, bool is_new) {
   }
 
   walking_goal_msg.ignore_terrain = self->ignore_terrain;
+  walking_goal_msg.force_to_sticky_feet = self->force_to_sticky_feet;
   walking_goal_msg.behavior = self->behavior;
   walking_goal_msg.goal_type = self->goal_type;
   if (self->leading_foot == LEADING_FOOT_RIGHT) {
@@ -796,6 +798,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_double(self->main_pw, PARAM_NOM_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.00, 1.0, 0.05, self->nom_forward_step);
   bot_gtk_param_widget_add_double(self->main_pw, PARAM_MAX_FORWARD_STEP, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.05, 1.0, 0.05, self->max_forward_step);
   bot_gtk_param_widget_add_double(self->main_pw, PARAM_NOM_STEP_WIDTH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.22, 0.4, 0.01, self->nom_step_width);
+  bot_gtk_param_widget_add_booleans(self->main_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FORCE_STICKY_FEET, self->force_to_sticky_feet, NULL);
 
   self->drake_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
   gtk_box_pack_start(GTK_BOX(outer_box), GTK_WIDGET(self->drake_pw), FALSE, TRUE, 0);
