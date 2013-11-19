@@ -128,19 +128,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
-  // use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
 
-  // // use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
+  // use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
 
   use_encoder_[Atlas::JOINT_NECK_AY] = true;
 }
