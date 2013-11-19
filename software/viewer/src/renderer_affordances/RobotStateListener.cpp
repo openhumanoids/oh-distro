@@ -18,7 +18,7 @@ namespace renderer_affordances
     _lcm(lcm),
     _viewer(viewer)*/
   RobotStateListener::RobotStateListener(RendererAffordances* parent_renderer):
-   _parent_renderer(parent_renderer),_robot_state_received(false),_urdf_parsed(false),object_update_counter(0)
+   _parent_renderer(parent_renderer),_robot_state_received(false),_urdf_parsed(false),object_update_counter(0),currentPelvisState_received(false)
   {
 
     _lcm = _parent_renderer->lcm; 
@@ -43,6 +43,7 @@ namespace renderer_affordances
 
     // Subscribe to Robot_state. 
     _lcm->subscribe("EST_ROBOT_STATE", &RobotStateListener::handleRobotStateMsg, this); 
+    _lcm->subscribe("ATLAS_STATUS", &RobotStateListener::handleAtlasStatus, this); 
   }
   
   RobotStateListener::~RobotStateListener() {}
@@ -114,6 +115,7 @@ void RobotStateListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
       << msg->robot_name << "], storing it internally as a param" << endl;
     
       _gl_robot = boost::shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(_urdf_xml_string));
+      _gl_robot_tmp = boost::shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(_urdf_xml_string));
 
       //remember that we've parsed the urdf already
       _urdf_parsed = true;

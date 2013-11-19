@@ -1067,27 +1067,33 @@ namespace renderer_affordances_gui_utils
                                                             poseSeed.stateframe_values,
                                                             msg);
                                                             
-      
-      drc::atlas_behavior_manipulate_params_t  pelvisgoal_msg;
-      double curr_roll,curr_pitch,curr_yaw;
-      double des_roll,des_pitch,des_yaw;
-      KDL::Frame T_world_pelvis_des;
-      T_world_pelvis_des.p[0] =msg.pose.translation.x;
-      T_world_pelvis_des.p[1] =msg.pose.translation.y;
-      T_world_pelvis_des.p[2] =msg.pose.translation.z;     
-      T_world_pelvis_des.M = KDL::Rotation::Quaternion(msg.pose.rotation.x,msg.pose.rotation.y,msg.pose.rotation.z,msg.pose.rotation.w);
-      T_world_pelvis_des.M.GetRPY(des_roll,des_pitch,des_yaw);
-      self->robotStateListener->_gl_robot->_T_world_body.M.GetRPY(curr_roll,curr_pitch,curr_yaw);
-      pelvisgoal_msg.use_desired=1;
-      pelvisgoal_msg.desired.pelvis_height = std::min(std::max(T_world_pelvis_des.p[2],0.64),0.92);
-      pelvisgoal_msg.desired.pelvis_yaw = curr_yaw;//std::min(std::max(des_yaw,-13*(M_PI/180)),13*(M_PI/180));
-      pelvisgoal_msg.desired.pelvis_pitch = curr_pitch;
-      pelvisgoal_msg.desired.pelvis_roll = curr_roll;
-      pelvisgoal_msg.desired.com_v0 = self->robotStateListener->_gl_robot->_T_world_com.p[1];//x
-      pelvisgoal_msg.desired.com_v1 = self->robotStateListener->_gl_robot->_T_world_com.p[2];//y
-      pelvisgoal_msg.use_demo_mode=0;
-      string channel = "ATLAS_MANIPULATE_PARAMS";
-      self->lcm->publish(channel, &pelvisgoal_msg);
+      if((self->robotStateListener->_urdf_parsed)&&(self->robotStateListener->currentPelvisState_received))
+      {
+        self->robotStateListener->_gl_robot_tmp->set_state(msg);    
+        KDL::Frame T_world_pelvis_des,T_world_lfoot_des,T_world_rfoot_des;
+        T_world_pelvis_des = self->robotStateListener->_gl_robot_tmp->_T_world_body;
+        self->robotStateListener->_gl_robot_tmp->get_link_frame("l_foot",T_world_lfoot_des);
+        self->robotStateListener->_gl_robot_tmp->get_link_frame("r_foot",T_world_rfoot_des);
+        
+       // pelvis goal is in body frame. Must listen to ATLAS_STATUS_T, and set the other vals to that not current RPY.
+        // Height is actual the relative offset between feet and pelvis.
+        double desired_rel_pelvis_foot_height = T_world_pelvis_des.p[2] - 0.5*(T_world_lfoot_des.p[2]+T_world_rfoot_des.p[2])+0.081119; //0.081119 foot to ground z offset
+        cout << "sending a pelvis goal with desired_rel_pelvis_foot_height : " << desired_rel_pelvis_foot_height << endl;
+       
+        drc::atlas_behavior_manipulate_params_t  pelvisgoal_msg;
+        pelvisgoal_msg.desired.pelvis_height = self->robotStateListener->currentPelvisState.pelvis_height; 
+        pelvisgoal_msg.desired.pelvis_yaw  = self->robotStateListener->currentPelvisState.pelvis_yaw;
+        pelvisgoal_msg.desired.pelvis_pitch = self->robotStateListener->currentPelvisState.pelvis_pitch;
+        pelvisgoal_msg.desired.pelvis_roll  = self->robotStateListener->currentPelvisState.pelvis_roll;
+        pelvisgoal_msg.desired.com_v0 = self->robotStateListener->currentPelvisState.com_v0;
+        pelvisgoal_msg.desired.com_v1 = self->robotStateListener->currentPelvisState.com_v1;//y
+        pelvisgoal_msg.desired.pelvis_height = std::min(std::max(desired_rel_pelvis_foot_height,0.66),0.92);
+        pelvisgoal_msg.use_desired=1;
+        pelvisgoal_msg.use_demo_mode=0;
+
+        string channel = "ATLAS_MANIPULATE_PARAMS";
+        self->lcm->publish(channel, &pelvisgoal_msg);
+      }
     }
     else if(!strcmp(name, PARAM_COMMIT_TO_COLLISION_SERVER) )
     {
@@ -1631,7 +1637,7 @@ namespace renderer_affordances_gui_utils
                                         &seed_nums[0]);
         bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_LOAD_POSE, NULL);
         bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_UNSTORE_POSE, NULL);
-        //bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_SEND_PELVIS_GOAL, NULL); 
+        bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_SEND_PELVIS_GOAL, NULL); 
         bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_REACH_ENDPOSE_POSTURE, NULL); 
       }
     }
