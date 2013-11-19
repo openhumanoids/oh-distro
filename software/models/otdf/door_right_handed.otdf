@@ -275,4 +275,47 @@
     </grasp_seed>
     <plan_seed name="2013-11-18-14-48::nom_pose" />
     <pose_seed name="2013-11-18-14-48::nom_pose" />
+    <pose_seed name="2013-11-19-15-38::rhnd_push_3" />
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="-0.000548399 0.000171891 -3.13059" xyz="0.121293 0.698684 -0.934977" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="-0.000555277 0.000148676 3.11017" xyz="0.121209 0.955885 -0.934836" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="1.102e-09 -2.71546e-08 3.11125" xyz="0.119046 0.148043 -0.934884" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="-3.40905e-09 2.39246e-08 3.11126" xyz="0.120276 -0.146891 -0.934884" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="3.3802e-09 -2.13942e-08 3.11093" xyz="0.123802 -0.784846 -0.934884" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="-1.10888e-09 -9.2071e-10 3.11093" xyz="0.119712 -1.07969 -0.934884" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
 </object>
