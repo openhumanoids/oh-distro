@@ -92,6 +92,11 @@ def getRetract():
   name=["back_bkz", "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
+def getHoseMate():
+  position=[-0.899628996849, 3.14159, -0.848963201046, -0.0953866541386, -0.739547431469, 0.199334427714]
+  name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position,name]
+
 # 0.71cm - 5foot
 #def getHighValve():
 #  position=[-1.36646643681, 2.5302273035, 0.003712019324, -0.867207699585, -0.961804687977, 3.14159]
@@ -110,6 +115,7 @@ def usage():
   print "turnback - turn the back z joint"
   print "zero     - zero the back joint"
   print "retract  - turn back and retract hand"
+  print "hosemate - config mate"
 
 ######################################
 #print 'Number of arguments:', len(sys.argv), 'arguments.'
@@ -162,6 +168,8 @@ elif (posture_name == "zeroback"):
   [msg.joint_position, msg.joint_name] = getZeroBack()
 elif (posture_name == "retract"):
   [msg.joint_position, msg.joint_name] = getRetract()
+elif (posture_name == "hose_mate"):
+  [msg.joint_position, msg.joint_name] = getHoseMate()
 else:
   print "posture goal not found"
   sys.exit(-1)
