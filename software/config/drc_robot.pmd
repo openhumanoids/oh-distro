@@ -176,12 +176,12 @@ group "a.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
         host = "extra";
     }
-    cmd "model_LI_RH" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RH.urdf";
-        host = "extra";
-    }
     cmd "model_LI_RS" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
+        host = "extra";
+    }
+    cmd "model_LH_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
         host = "extra";
     }
 }
@@ -274,12 +274,12 @@ group "b.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
         host = "base";
     }
-    cmd "base_model_LI_RH" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RH.urdf";
-        host = "base";
-    }
     cmd "base_model_LI_RS" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
+        host = "base";
+    }
+    cmd "base_model_LH_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
         host = "base";
     }
 }
@@ -469,13 +469,13 @@ script "prep_LI_RI" {
     start cmd "irobot-right";
 }
 
-script "prep_LI_RH" {
-    start cmd "model_LI_RH";
-    start cmd "base_model_LI_RH";
+script "prep_LH_RI" {
+    start cmd "model_LH_RI";
+    start cmd "base_model_LH_RI";
     run_script "prep_core";
     start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
-    start cmd "irobot-left";
+    start cmd "irobot-right";
 }
 
 

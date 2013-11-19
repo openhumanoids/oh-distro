@@ -19,7 +19,6 @@ utils
 gfe
 perception
 motion_estimate
-#authoring
 viewer
 network
 gazebo_plugins
@@ -31,15 +30,9 @@ drake
 control
 bdi_walking
 
-# leap-frog into control pods (just until we clean the control folder)
-#control/fall_detector
-#control/gaze_control  
-#control/pd_chain_control
-#control/reactive_navigation_2d
-#control/drc_controller_manager
-
 # disabled for now:
 #teleop
 #driving
 #action_authoring
 #segmentation
+#authoring
