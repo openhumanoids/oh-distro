@@ -51,6 +51,7 @@ public:
   
   Eigen::Isometry3d standing_position_;
   
+  // NB: these are typically in a frame relative to the the corner point on the aff nearest the robot
   vector<double> hand_rpy_;
   vector<double> hand_xyz_;
   int hand_type_; // 3 or 4 for irobot
@@ -102,9 +103,9 @@ class Pass{
     map<string, KDL::Frame > cartpos_;
     
     
-    void getCurrentStandingPositionAsRelative(Eigen::Vector3d min_pt);
-    void getPriorStandingPositionAsRelative(Eigen::Vector3d min_pt, Eigen::Isometry3d corner_to_walking_goa);
-    
+    void getCurrentStandingPositionAsRelative(Eigen::Isometry3d min_pt);
+    void getPriorStandingPositionAsRelative(Eigen::Isometry3d min_pt, Eigen::Isometry3d corner_to_walking_goa);
+    void publishCandidateGrasp(Eigen::Isometry3d aff_to_hand, string object_name, int hand_type);
     
     void readStandingPositionsFile(std::string filename, std::vector<AffRaw> &affraw_list);
     void readHandPositionsFile(std::string filename, std::vector<AffRaw> &affraw_list);
@@ -155,10 +156,12 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(600000,"Near Corner",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(600004,"Near Corner [on Aff]",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(600000,"Near Corner [Ground]",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600001,"Current walking goal",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600002,"Robot to Corner",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600003,"Next Walking Goal",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(600005,"Rel Near Corner to Hand",5,1) );
   
   
   sandia_l_joint_name_ = {"left_f0_j0","left_f0_j1","left_f0_j2",   "left_f1_j0","left_f1_j1","left_f1_j2",
@@ -182,7 +185,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
   irobot_r_joint_position_ = { 0, 0, 0,         0, 0, 0,         0, 0};  
 }
 
-drc::position_3d_t EigenToDRC(Eigen::Isometry3d &pose){
+drc::position_3d_t EigenToDRC(Eigen::Isometry3d pose){
   drc::position_3d_t hand_pose;
   hand_pose.translation.x = pose.translation().x();
   hand_pose.translation.y = pose.translation().y();
@@ -258,10 +261,13 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
 
 // given a point under the nearmost corner and a look direciton
 // what is the current relative standing position?
-void Pass::getCurrentStandingPositionAsRelative(Eigen::Vector3d min_pt){
+void Pass::getCurrentStandingPositionAsRelative(Eigen::Isometry3d min_pt){
+  Isometry3dTime min_pt_poseT = Isometry3dTime(current_utime_, min_pt );
+  pc_vis_->pose_to_lcm_from_list(600004, min_pt_poseT);   
+  
   // A point on the ground under the nearest corner facing along the plank
   Eigen::Isometry3d world_to_corner(Eigen::Isometry3d::Identity());
-  world_to_corner.translation() << min_pt(0), min_pt(1), 0 ; // point on the ground
+  world_to_corner.translation() << min_pt.translation().x(), min_pt.translation().y(), 0 ; // point on the ground
   world_to_corner.rotate( euler_to_quat(0,0, aff_.origin_rpy[2]) );
   Isometry3dTime pt_poseT = Isometry3dTime(current_utime_, world_to_corner );
   pc_vis_->pose_to_lcm_from_list(600000, pt_poseT);   
@@ -286,14 +292,13 @@ void Pass::getCurrentStandingPositionAsRelative(Eigen::Vector3d min_pt){
        << robot_to_corner.translation().transpose().y() << ", "
        << rpy[2] << "\n";
 
-  exit(-1);
 }
 
 
-void Pass::getPriorStandingPositionAsRelative(Eigen::Vector3d min_pt, Eigen::Isometry3d corner_to_walking_goal){
+void Pass::getPriorStandingPositionAsRelative(Eigen::Isometry3d min_pt, Eigen::Isometry3d corner_to_walking_goal){
   // A point on the ground under the nearest corner facing along the plank
   Eigen::Isometry3d world_to_corner(Eigen::Isometry3d::Identity());
-  world_to_corner.translation() << min_pt(0), min_pt(1), 0 ; // point on the ground
+  world_to_corner.translation() << min_pt.translation().x(), min_pt.translation().y(), 0 ; // point on the ground
   world_to_corner.rotate( euler_to_quat(0,0, aff_.origin_rpy[2]) );
   Isometry3dTime pt_poseT = Isometry3dTime(current_utime_, world_to_corner );
   pc_vis_->pose_to_lcm_from_list(600000, pt_poseT);   
@@ -371,8 +376,6 @@ void Pass::readHandPositionsFile(std::string filename, std::vector<AffRaw> &affr
       }
       cout << message << endl;
       
-      
-
       vector<string> tokens;
       boost::split(tokens, message, boost::is_any_of(","));
       vector<int> ints;
@@ -382,7 +385,6 @@ void Pass::readHandPositionsFile(std::string filename, std::vector<AffRaw> &affr
       int aff_id = ints[0];
       int hand_type = ints[1];
       
-      
       vector<double> values;
       for (size_t i=2 ; i < 8 ; i++){
         values.push_back(lexical_cast<double>( tokens[i] ));
@@ -390,16 +392,39 @@ void Pass::readHandPositionsFile(std::string filename, std::vector<AffRaw> &affr
       vector<double> rpy = { values[0], values[1], values[2]};
       vector<double> xyz  = { values[3], values[4], values[5]};
       
-      
       affraw_list[ aff_id ].hand_type_ = hand_type;
       affraw_list[ aff_id ].hand_rpy_ = rpy;
       affraw_list[ aff_id ].hand_xyz_ = xyz;
-      
-      
-      
     }
   }
   fileinput.close();
+}
+
+
+void Pass::publishCandidateGrasp(Eigen::Isometry3d aff_to_hand, string object_name, int hand_type){
+  drc::position_3d_t hand_position = EigenToDRC(aff_to_hand);
+  drc::desired_grasp_state_t cg;
+  cg.robot_name = "atlas";
+  cg.object_name = object_name ;
+  cg.geometry_name = "box_0";
+  cg.unique_id = 22;
+  cg.grasp_type = hand_type;
+  cg.power_grasp =false;
+
+  if (hand_type ==3){
+    cg.l_hand_pose = hand_position;
+    cg.r_hand_pose = EigenToDRC(Eigen::Isometry3d::Identity());
+  }else {
+    cg.l_hand_pose = EigenToDRC(Eigen::Isometry3d::Identity());
+    cg.r_hand_pose = hand_position;
+  }
+  cg.l_joint_name = irobot_l_joint_name_;
+  cg.l_joint_position = irobot_l_joint_position_;
+  cg.r_joint_name = irobot_r_joint_name_;
+  cg.r_joint_position = irobot_r_joint_position_;
+  cg.num_l_joints =cg.l_joint_position.size();
+  cg.num_r_joints =cg.r_joint_position.size();
+  lcm_->publish("CANDIDATE_GRASP", &cg);    
 }
 
 
@@ -445,19 +470,22 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     am[ aff_.param_names[j] ] = aff_.params[j];
   }
   Eigen::Vector3d aff_len( am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second );
-  Eigen::Affine3d world_to_aff_affine = Eigen::Affine3d( affutils_.getPose(aff_.origin_xyz, aff_.origin_rpy) );
+  Eigen::Isometry3d world_to_aff(affutils_.getPose(aff_.origin_xyz, aff_.origin_rpy) );
+  Eigen::Affine3d world_to_aff_affine = Eigen::Affine3d( world_to_aff );
   
   // Find the point nearest to the robot:
   double min_dist =99999.9;
-  Eigen::Vector3d min_pt(99999.9, 99999.9, 99999.9);
+  Eigen::Isometry3d min_pt;//(99999.9, 99999.9, 99999.9);
   for (int ix=-1; ix<=1; ix=ix+2){
     for (int iy=-1; iy<=1; iy=iy+2){
       for (int iz=-1; iz<=1; iz=iz+2){      
         //std::cout << ix << " " << iy << " " << iz << "\n";
         
-        Eigen::Vector3d pt = Eigen::Vector3d(ix*aff_len(0)/2, iy*aff_len(1)/2, iz*aff_len(2)/2 );
-        pt = world_to_aff_affine * pt;  
-        double distance = (world_to_body_high_.translation() - pt) .norm();
+        Eigen::Isometry3d pt(Eigen::Isometry3d::Identity());
+        pt.translation() = Eigen::Vector3d(ix*aff_len(0)/2, iy*aff_len(1)/2, iz*aff_len(2)/2 );
+        pt = world_to_aff * pt;
+        
+        double distance = (world_to_body_high_.translation() - pt.translation()  ) .norm();
         //cout << world_to_body_high_.translation().transpose() << " w\n";
         //cout << pt.transpose() << " p\n";
         //cout << distance << " distance\n";
@@ -472,50 +500,70 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
   //cout << min_dist << " min dist\n";
   //cout << min_pt.transpose() << " the p\n";
   
-  
-  if ( config_.library_id  == -1){
-    getCurrentStandingPositionAsRelative(min_pt);
-  }else{
     string standing_filename_full = string(drc_base + "/software/config/task_config/debris/debrisStandXYZYaw.csv");
     string grasp_filename = string(drc_base + "/software/config/task_config/debris/debrisGraspPositions.csv");
     std::vector<AffRaw> affraw_list;// = readAffordanceFile(debris_filename_full);
     std:: cout << affraw_list.size() << " affordances read\n";
-
     readStandingPositionsFile( standing_filename_full , affraw_list);
-    
     readHandPositionsFile( grasp_filename, affraw_list);
+  
     
-    getPriorStandingPositionAsRelative(min_pt, affraw_list[config_.library_id].standing_position_ );
+  
+  
+  if ( config_.library_id  == -1){
+    getCurrentStandingPositionAsRelative(min_pt);
+    int id = config_.server_id; // was lib id
     
-
     // Publish an affordance relative hand position:
-    Eigen::Isometry3d pose(Eigen::Isometry3d::Identity());
-    int id = config_.library_id;
-    pose.translation() = Eigen::Vector3d(  affraw_list[id].hand_xyz_[0], affraw_list[id].hand_xyz_[1], affraw_list[id].hand_xyz_[2]) ;
+    // Assumes an aff relative hand position:
+    Eigen::Isometry3d aff_to_hand(Eigen::Isometry3d::Identity());
+    aff_to_hand.translation() = Eigen::Vector3d(  affraw_list[id].hand_xyz_[0], affraw_list[id].hand_xyz_[1], affraw_list[id].hand_xyz_[2]) ;
     Eigen::Quaterniond quat=  euler_to_quat( affraw_list[id].hand_rpy_[0], affraw_list[id].hand_rpy_[1], affraw_list[id].hand_rpy_[2]); 
-    pose.rotate(quat);      
-    drc::position_3d_t hand_pose = EigenToDRC(pose);
+    aff_to_hand.rotate(quat);      
+    Eigen::Isometry3d min_pt_to_hand =  min_pt.inverse() * world_to_aff * aff_to_hand ;
     
-    drc::desired_grasp_state_t cg;
-    cg.robot_name = "atlas";
-    cg.object_name = object_name ;
-    cg.geometry_name = "box_0";
-    cg.unique_id = 22;
-    cg.grasp_type = affraw_list[id].hand_type_;
-    cg.power_grasp =false;
+    Eigen::Quaterniond mh_quat = Eigen::Quaterniond( min_pt_to_hand.rotation() );
+    double rpy[3];
+    quat_to_euler ( mh_quat , rpy[0], rpy[1], rpy[2] );
+    std::cout << "min_pt_to_hand:\n";
+    std::cout << rpy[0] << ", " << rpy[1] << ", " << rpy[2] << ", "
+              << min_pt_to_hand.translation().x() << ", " << min_pt_to_hand.translation().y() << ", " << min_pt_to_hand.translation().z() << "\n";
+    
+    Isometry3dTime min_pt_to_handT = Isometry3dTime(current_utime_,  min_pt_to_hand  );
+    pc_vis_->pose_to_lcm_from_list(600005, min_pt_to_handT);   
+    publishCandidateGrasp(aff_to_hand, object_name, affraw_list[id].hand_type_);
 
-    if (affraw_list[id].hand_type_ ==3){
-      cg.l_hand_pose = hand_pose;
-    }else {
-      cg.r_hand_pose = hand_pose;
-    }
-    cg.l_joint_name = irobot_l_joint_name_;
-    cg.l_joint_position = irobot_l_joint_position_;
-    cg.r_joint_name = irobot_r_joint_name_;
-    cg.r_joint_position = irobot_r_joint_position_;
-    cg.num_l_joints =cg.l_joint_position.size();
-    cg.num_r_joints =cg.r_joint_position.size();
-    lcm_->publish("CANDIDATE_GRASP", &cg);  
+    
+    
+    
+    exit(-1);
+  }else{
+//     string standing_filename_full = string(drc_base + "/software/config/task_config/debris/debrisStandXYZYaw.csv");
+//     string grasp_filename = string(drc_base + "/software/config/task_config/debris/debrisGraspPositions.csv");
+//     std::vector<AffRaw> affraw_list;// = readAffordanceFile(debris_filename_full);
+//     std:: cout << affraw_list.size() << " affordances read\n";
+//     readStandingPositionsFile( standing_filename_full , affraw_list);
+    
+    
+    int id = config_.library_id; // was lib id
+    getPriorStandingPositionAsRelative(min_pt, affraw_list[id].standing_position_ );
+    
+
+    
+
+    
+    // Publish an affordance relative hand position:
+    // assumes a corner-to-hand position transform:
+    Eigen::Isometry3d corner_to_hand(Eigen::Isometry3d::Identity());
+    corner_to_hand.translation() = Eigen::Vector3d(  affraw_list[id].hand_xyz_[0], affraw_list[id].hand_xyz_[1], affraw_list[id].hand_xyz_[2]) ;
+    Eigen::Quaterniond quat=  euler_to_quat( affraw_list[id].hand_rpy_[0], affraw_list[id].hand_rpy_[1], affraw_list[id].hand_rpy_[2]); 
+    corner_to_hand.rotate(quat);      
+    Eigen::Isometry3d aff_to_hand = world_to_aff.inverse() * min_pt * corner_to_hand;
+    
+    publishCandidateGrasp(aff_to_hand, object_name, affraw_list[id].hand_type_);    
+    
+    
+    
     
 
     exit(-1);    
