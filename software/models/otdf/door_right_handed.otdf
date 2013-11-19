@@ -14,13 +14,13 @@
     <param name="lever_length" default_value="0.15" inc="0.0025" min="0" max="100" />
     <param name="lever_width" default_value="0.025" inc="0.0025" min="0" max="100" />
     <param name="lever_thick" default_value="0.015" inc="0.0025" min="0" max="100" />
-    <param name="lever_offset_from_door" default_value="0.05" inc="0.0025" min="-10" max="10" />
-    <param name="lever_offset_x" default_value="0.060" inc="0.0025" min="-10" max="10" />
-    <param name="lever_offset_z" default_value="-0.1016" inc="0.0025" min="-10" max="10" />
+    <param name="lever_offset_from_door" default_value="0.025" inc="0.0025" min="-10" max="10" />
+    <param name="lever_offset_x" default_value="0.040" inc="0.0025" min="-10" max="10" />
+    <param name="lever_offset_z" default_value="-0.068" inc="0.0025" min="-10" max="10" />
     <!-- Size of door -->
     <param name="door_start_theta" default_value="0.00" inc="0.0025" min="-3.146" max="3.146" />
-    <param name="lX" default_value="0.91" inc="0.01" min="0" max="100" />
-    <param name="lY" default_value="0.05" inc="0.01" min="0" max="100" />
+    <param name="lX" default_value="0.88" inc="0.01" min="0" max="100" />
+    <param name="lY" default_value="0.02" inc="0.01" min="0" max="100" />
     <param name="lZ" default_value="2.032" inc="0.01" min="0" max="100" />
     <param name="Frame_lX" default_value="0.127" inc="0.01" min="0" max="100" />
     <param name="Frame_lY" default_value="0.24892" inc="0.01" min="0" max="100" />
