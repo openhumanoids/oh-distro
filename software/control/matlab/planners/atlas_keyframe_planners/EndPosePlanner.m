@@ -8,6 +8,8 @@ classdef EndPosePlanner < KeyframePlanner
         pose_pub
         ee_torso_dist_lb
         ee_lleg_dist_lb
+        pelvis_foot_dist_lb
+        pelvis_foot_dist_ub
         stance_lb
         stance_ub
         l_hpx_ub
@@ -39,6 +41,8 @@ classdef EndPosePlanner < KeyframePlanner
             obj.plan_cache.isEndPose = true;
             obj.ee_torso_dist_lb = 0.65;
             obj.ee_lleg_dist_lb = 0.3;
+            obj.pelvis_foot_dist_lb = 0.64;
+            obj.pelvis_foot_dist_ub = 0.91;
             obj.stance_lb = 0.2;
             obj.stance_ub = 0.35;
             obj.l_hpx_ub = inf;
@@ -144,8 +148,15 @@ classdef EndPosePlanner < KeyframePlanner
             rfoot_constraint = {WorldFixedBodyPoseConstraint(obj.r,obj.r_foot_body,[0 1])};
             iktraj_lfoot_constraint = [iktraj_lfoot_constraint,lfoot_constraint];     
             iktraj_rfoot_constraint = [iktraj_rfoot_constraint,rfoot_constraint];
-            iktraj_pelvis_constraint = {WorldFixedBodyPoseConstraint(obj.r,obj.pelvis_body,[0 1]),WorldGazeDirConstraint(obj.r,obj.pelvis_body,[0;0;1],[0;0;1],obj.pelvis_upright_gaze_tol,[0 1])};
+            iktraj_pelvis_constraint = {WorldFixedBodyPoseConstraint(obj.r,obj.pelvis_body,[0 1]),...
+                                        WorldGazeDirConstraint(obj.r,obj.pelvis_body,[0;0;1],[0;0;1],obj.pelvis_upright_gaze_tol,[0 1])};
 
+            if(obj.isBDIManipMode())
+                pelvis_z_constraint =  {WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],...
+                    [nan(2,1);min(r_foot_pose0(3),l_foot_pose0(3))+obj.pelvis_foot_dist_lb],...
+                    [nan(2,1);min(r_foot_pose0(3),l_foot_pose0(3))+obj.pelvis_foot_dist_ub])};
+                iktraj_pelvis_constraint = [iktraj_pelvis_constraint,pelvis_z_constraint];
+            end
             % Solve IK
             timeIndices = unique(Indices);
 
@@ -244,7 +255,7 @@ classdef EndPosePlanner < KeyframePlanner
           iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
           iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));
           iktraj_options = iktraj_options.setFixInitialState(false);
-          iktraj_options = iktraj_options.setMajorIterationsLimit(1000);
+          iktraj_options = iktraj_options.setMajorIterationsLimit(10000);
           iktraj_options = iktraj_options.setIterationsLimit(50000);
           
           qsc = QuasiStaticConstraint(obj.r);
@@ -273,6 +284,10 @@ classdef EndPosePlanner < KeyframePlanner
 
           %stance_constraint = Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,[0;0;0],[0;0;0],0.4,inf,[0 1]);
           stance_constraint = Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,l_foot_contact_pts,r_foot_contact_pts,obj.stance_lb*ones(1,size(r_foot_contact_pts,2)),obj.stance_ub*ones(1,size(r_foot_contact_pts,2)),[0 1]);
+          
+          %ft_pelvis_ht_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.pelvis_body,[0;0;0],[0;0;0],obj.pelvis_foot_dist_lb,obj.pelvis_foot_dist_ub,[0 1]),...
+          %                          Point2PointDistanceConstraint(obj.r,obj.r_foot_body,obj.pelvis_body,[0;0;0],[0;0;0],obj.pelvis_foot_dist_lb,obj.pelvis_foot_dist_ub,[0 1])};
+          %iktraj_dist_constraint = [iktraj_dist_constraint,ft_pelvis_ht_constraint];       
                
           %============================
           [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
@@ -338,9 +353,9 @@ classdef EndPosePlanner < KeyframePlanner
             num_r_foot_pts = size(r_foot_pts,2);
             num_l_foot_pts = size(l_foot_pts,2);
             
-            %r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_pts,2);
+            r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_pts,2);
             r_foot_contact_pos = forwardKin(obj.r,kinsol,obj.r_foot_body,r_foot_contact_pts,0);
-            %l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_pts,2);
+            l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_pts,2);
             l_foot_contact_pos = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_contact_pts,0);                
             
             % Solve IK
@@ -403,6 +418,15 @@ classdef EndPosePlanner < KeyframePlanner
             ik_dist_constraint = {};
             
             pelvis_constraint = {WorldGazeDirConstraint(obj.r,obj.pelvis_body,[0;0;1],[0;0;1],obj.pelvis_upright_gaze_tol)};
+            
+            
+            if(obj.isBDIManipMode())
+                pelvis_z_constraint =  {WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],...
+                    [nan(2,1);min(r_foot_pose0(3),l_foot_pose0(3))+obj.pelvis_foot_dist_lb],...
+                    [nan(2,1);min(r_foot_pose0(3),l_foot_pose0(3))+obj.pelvis_foot_dist_ub])};
+                pelvis_constraint = [pelvis_constraint,pelvis_z_constraint];
+            end
+            
             ind=find(Indices==timeIndices(1));
            
             for k=1:length(ind),
@@ -420,8 +444,8 @@ classdef EndPosePlanner < KeyframePlanner
                     tspan = [Indices(ind(k)) Indices(ind(k))];
                     lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose,1e-2,1e-4,tspan);
                     obj.plan_cache.lhand_constraint_cell = [obj.plan_cache.lhand_constraint_cell lhand_constraint];
-                    dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),
-                                       Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.l_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan),};
+                    dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),...
+                                       Point2PointDistanceConstraint(obj.r,obj.l_hand_body,obj.l_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan)};
                     ik_dist_constraint = [ik_dist_constraint,dist_constraint];   
                 elseif(strcmp(obj.rh_name,ee_names{ind(k)}))
                     r_ee_goal = ee_loci(:,ind(k));
@@ -434,8 +458,8 @@ classdef EndPosePlanner < KeyframePlanner
                     tspan = [Indices(ind(k)) Indices(ind(k))];
                     rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-2,1e-4,tspan);
                     obj.plan_cache.rhand_constraint_cell = [obj.plan_cache.rhand_constraint_cell rhand_constraint];
-                    dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),
-                                       Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.r_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan),};
+                    dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf,tspan),...
+                                       Point2PointDistanceConstraint(obj.r,obj.r_hand_body,obj.r_lleg_body,[0;0;0],[0;0;0],obj.ee_lleg_dist_lb,inf,tspan)};
                     ik_dist_constraint = [ik_dist_constraint,dist_constraint];  
                 elseif (strcmp('l_foot',ee_names{ind(k)}))
                     lfootT = ee_loci(:,ind(k));
@@ -524,6 +548,11 @@ classdef EndPosePlanner < KeyframePlanner
                 joint_constraint = joint_constraint.setJointLimits([l_leg_hpx_ind;r_leg_hpx_ind],[obj.l_hpx_lb;-obj.l_hpx_ub],[obj.l_hpx_ub;-obj.l_hpx_lb]);
 
                 stance_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,l_foot_contact_pts,r_foot_contact_pts,obj.stance_lb*ones(1,size(r_foot_contact_pts,2)),obj.stance_ub*ones(1,size(r_foot_contact_pts,2)))};
+                
+                %ft_pelvis_ht_constraint = {Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.pelvis_body,[0;0;0],[0;0;0],obj.pelvis_foot_dist_lb,obj.pelvis_foot_dist_ub,[0 1]),...
+                %                           Point2PointDistanceConstraint(obj.r,obj.r_foot_body,obj.pelvis_body,[0;0;0],[0;0;0],obj.pelvis_foot_dist_lb,obj.pelvis_foot_dist_ub,[0 1])};
+                %ik_dist_constraint = [ik_dist_constraint,ft_pelvis_ht_constraint];     
+                          
                 total_ik_trials = 10;
                 if(~isempty(head_constraint))
                     [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKinRepeatSearch(obj.r,total_ik_trials,q_guess,ik_qnom,...
