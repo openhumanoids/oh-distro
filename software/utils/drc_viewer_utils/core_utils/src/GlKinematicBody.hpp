@@ -169,6 +169,65 @@ class GlKinematicBody
     void set_state(const KDL::Frame &T_world_body, const drc::joint_angles_t &msg); 
     void set_state(const KDL::Frame &T_world_body, std::map<std::string, double> &jointpos_in);
     void run_fk_and_update_urdf_link_shapes_and_tfs(std::map<std::string, double> &jointpos_in,const KDL::Frame &T_world_body, bool update_future_frame);
+    
+    bool get_state_as_lcm_msg(drc::robot_state_t &msg_in)
+    {
+      drc::position_3d_t pose;
+      msg_in.utime = bot_timestamp_now();
+      visualization_utils::transformKDLToLCM(_T_world_body,pose);
+      msg_in.pose = pose;
+      
+      drc::twist_t twist;
+      msg_in.twist =twist;
+
+      drc::force_torque_t force_torque;   
+      msg_in.force_torque =force_torque;
+      
+      msg_in.num_joints = 0;
+      typedef std::map<std::string, double > jointpos_mapType;      
+      for( jointpos_mapType::iterator it =  _current_jointpos.begin(); it!=_current_jointpos.end(); it++)
+      { 
+        msg_in.joint_name.push_back(it->first);
+        msg_in.joint_position.push_back(it->second);
+        msg_in.joint_velocity.push_back(0.0);
+        msg_in.joint_effort.push_back(0.0);
+        msg_in.num_joints++; 
+      }
+      return true;
+    };
+    
+    bool get_future_state_as_lcm_msg(drc::robot_state_t &msg_in)
+    {
+      if(future_display_active)
+      {
+        drc::position_3d_t pose;
+        msg_in.utime = bot_timestamp_now();
+        visualization_utils::transformKDLToLCM(_T_world_body_future,pose);
+        msg_in.pose = pose;
+        
+        drc::twist_t twist;
+        msg_in.twist =twist;
+
+        drc::force_torque_t force_torque;   
+        msg_in.force_torque =force_torque;
+        
+        msg_in.num_joints = 0;
+        typedef std::map<std::string, double > jointpos_mapType;
+        for( jointpos_mapType::iterator it =  _future_jointpos.begin(); it!=_future_jointpos.end(); it++)
+        { 
+          msg_in.joint_name.push_back(it->first);
+          msg_in.joint_position.push_back(it->second);
+          msg_in.joint_velocity.push_back(0.0);
+          msg_in.joint_effort.push_back(0.0);
+          msg_in.num_joints++; 
+        }
+        return true;
+      }
+      else
+       return false;
+    
+    };
+    
 
     // void set_state(const drc::affordance_t &msg);    
     // NOTE: PROBLEMS with set_state(const drc::affordance_t &msg)
