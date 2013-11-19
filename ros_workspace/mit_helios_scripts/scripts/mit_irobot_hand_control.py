@@ -10,49 +10,34 @@ import roslib; roslib.load_manifest('mit_helios_scripts')
 import argparse, sys
 import rospy
 
-from sandia_hand_msgs.msg import SimpleGrasp
+from mit_helios_scripts.msg import MITIRobotHandCalibrate
+from mit_helios_scripts.msg import MITIRobotHandCurrentControlClose
+from mit_helios_scripts.msg import MITIRobotHandPositionControlClose
+from mit_helios_scripts.msg import MITIRobotHandSpread
+
 from IRobotHandController import IRobotHandController
 
+def validIndices(validArray):
+    return [i for i, valid in enumerate(validArray) if valid]
 
-def simple_cmd_callback(controller, data):
-    command = data.name
-    if command in ['cylindrical','prismatic','spherical'] :
-        closed_amount = data.closed_amount
-        if epsilonEquals(closed_amount, 1):
-            print("Close (current control)")
-            controller.close_hand_current_control(800)
-        else:
-            print("Close (motor tendon excursion control; fraction: %s)" % closed_amount)
-            controller.motor_excursion_control_close_fraction(closed_amount)
-    elif command in ['twofinger_cylindrical','twofinger_prismatic','twofinger_spherical'] :
-        if epsilonEquals(closed_amount, 1):
-            print "Close two finger"
-            # ... Close the two fingers only
-        else:
-            print "open two finger"
-            # ... open the two fingers only
-    elif data.name == 'calibrate_jig':
-        print("Jig")
-        controller.calibrate_motor_encoder_offsets(True)
-    elif data.name == 'calibrate_no_jig':
-        print("No Jig")
-        controller.calibrate_motor_encoder_offsets(False)
-    elif data.name == 'prismatic_spread':
-        # 90 degrees
-        print "Move to prismatic_spread"
-    elif data.name == 'cylinderical_spread':
-        # 60 degrees
-        print "Move to cylinderical_spread"
-    elif data.name == 'spherical_spread':
-        # 0 degrees turn
-        print "Move to spherical_spread"        
-    else:
-        print "Message not understood "+data.name
-        return
-    
-    #print "Sending zero current message"
+def calibrate_callback(controller, message):
+    print("Calibrate: in jig: %s" % message.in_jig)
+    controller.calibrate_motor_encoder_offsets(message.in_jig)
     controller.zero_current()
-    #print "Finished"
+
+def current_control_close_callback(controller, message):
+    indices = validIndices(message.valid)
+    controller.close_hand_current_control(message.current_milliamps, indices)
+    controller.zero_current()
+
+def position_control_close_callback(controller, message):
+    indices = validIndices(message.valid)
+    controller.motor_excursion_control_close_fraction(message.close_fraction, indices)
+    controller.zero_current()
+
+def spread_callback(controller, message):
+    controller.spread_angle_control(message.angle_radians)
+    controller.zero_current()
 
 def epsilonEquals(a, b):
     return abs(a - b) < 1e-3
@@ -71,8 +56,9 @@ if __name__ == '__main__':
     side = parseArguments()
     controller = IRobotHandController(side)
     
-    subscriber_simple_name = "simple_command"
-    callback = lambda data : simple_cmd_callback(controller, data)
-    subscriber_simple = rospy.Subscriber(subscriber_simple_name, SimpleGrasp, callback)
-
+    rospy.Subscriber("mit_calibrate", MITIRobotHandCalibrate, lambda message : calibrate_callback(controller, message))
+    rospy.Subscriber("mit_current_control_close", MITIRobotHandCurrentControlClose, lambda message : current_control_close_callback(controller, message))
+    rospy.Subscriber("mit_position_control_close", MITIRobotHandPositionControlClose, lambda message : position_control_close_callback(controller, message))
+    rospy.Subscriber("mit_spread", MITIRobotHandSpread, lambda message : spread_callback(controller, message))
+    
     rospy.spin()

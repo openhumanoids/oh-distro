@@ -15,7 +15,12 @@ from mit_helios_scripts.msg import MITIRobotHandState
 from IRobotHandConfigParser import IRobotHandConfigParser
 
 
-motor_indices = range(3)
+close_hand_motor_indices = range(3)
+non_spread_motor_indices = range(4)
+spread_motor_index = 4
+finger_spread_ticks_to_radians = 2 * math.pi / 3072
+
+
 
 # found using find_calibration_pose.
 # standard deviations: {0: 48.75612781999817, 1: 36.558993421591907, 2: 27.37243138634199}
@@ -26,8 +31,8 @@ hand_closed_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
 
 hand_open_desired_pose = {0: 2000, 1: 2000, 2: 2000}
 
-def set_command_message_same_value(command_message, control_type, motor_indices, value):
-    values = dict((motor_index, value) for motor_index in motor_indices)
+def set_command_message_same_value(command_message, control_type, indices, value):
+    values = dict((motor_index, value) for motor_index in indices)
     set_command_message(command_message, control_type, values)
 
 def set_command_message(command_message, control_type, values):
@@ -76,11 +81,11 @@ class IRobotHandController(object):
             listener.notify(data, rospy.get_time())
 
     def publish_hand_state(self):
-        motor_encoders_with_offset = [self.add_offset(self.sensors.motorHallEncoder[i], i) for i in motor_indices]
+        motor_encoders_with_offset = [self.add_offset(self.sensors.motorHallEncoder[i], i) for i in close_hand_motor_indices]
         
         state_message = MITIRobotHandState()
-        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(motor_encoders_with_offset[i]) for i in motor_indices]
-        state_message.fingerSpread = IRobotHandController.compute_finger_spread_angle(self.sensors.fingerSpread)
+        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(motor_encoders_with_offset[i]) for i in close_hand_motor_indices]
+        state_message.fingerSpread = finger_spread_ticks_to_radians * self.sensors.fingerSpread
         self.state_publisher.publish(state_message)
 
     """
@@ -103,20 +108,15 @@ class IRobotHandController(object):
         ret = proximal_joint_angle_ticks * ticks_to_radians
         return ret
 
-    @staticmethod
-    def compute_finger_spread_angle(finger_spread_ticks):
-        tick_to_radians = math.pi / 3072
-        return finger_spread_ticks * tick_to_radians
-
     def zero_current(self):
         no_current_message = HandleControl()
-        set_command_message_same_value(no_current_message, HandleControl.CURRENT, motor_indices, 0)
+        set_command_message_same_value(no_current_message, HandleControl.CURRENT, non_spread_motor_indices, 0)
         self.command_publisher.publish(no_current_message)
 
-    def close_hand_current_control(self, finger_close_current):
+    def close_hand_current_control(self, finger_close_current, indices):
         grasp_time = 5
         def control(command_message):
-            set_command_message_same_value(command_message, HandleControl.CURRENT, motor_indices, finger_close_current)
+            set_command_message_same_value(command_message, HandleControl.CURRENT, indices, finger_close_current)
     
         loop_control(self.command_publisher, self.rate, grasp_time, control)
     
@@ -124,7 +124,7 @@ class IRobotHandController(object):
         open_time = 5
         open_angle = 10
         def control(command_message):
-            set_command_message_same_value(command_message, HandleControl.ANGLE, motor_indices, open_angle)
+            set_command_message_same_value(command_message, HandleControl.ANGLE, close_hand_motor_indices, open_angle)
             
         loop_control(self.command_publisher, self.rate, open_time, control)
     
@@ -138,29 +138,34 @@ class IRobotHandController(object):
         loop_control(self.command_publisher, self.rate, duration, control)
 
     def motor_excursion_control(self, command_message, open_hand_desireds):
-        motor_indices = open_hand_desireds.keys()
-        desireds_with_offset = dict((i, self.add_offset(open_hand_desireds[i], i)) for i in motor_indices)
+        desireds_with_offset = dict((i, self.add_offset(open_hand_desireds[i], i)) for i in open_hand_desireds.keys())
         set_command_message(command_message, HandleControl.POSITION, desireds_with_offset)
 
-    def motor_excursion_control_close_fraction(self, fraction):
+    def motor_excursion_control_close_fraction(self, fraction, indices):
         if not (0 <= fraction <= 1):
             raise RuntimeError("Fraction not between 0 and 1: %s" % fraction)
         
         def compute_desired_angle(i):
             return hand_open_desired_pose[i] + fraction * (hand_closed_pose[i] - hand_open_desired_pose[i])
         
-        desireds = dict((i, compute_desired_angle(i)) for i in motor_indices)
+        desireds = dict((i, compute_desired_angle(i)) for i in indices)
         self.motor_excursion_control_loop(desireds, 2)
 
     def add_offset(self, motor_encoder_count, motor_index):
         return self.config_parser.get_motor_encoder_offset(motor_index) + motor_encoder_count
 
+    def spread_angle_control(self, angle_rad):
+        ticks = angle_rad / finger_spread_ticks_to_radians
+        print(ticks)
+        pose = {spread_motor_index : ticks}
+        self.motor_excursion_control_loop(pose, 2)
+
     def clear_config(self):
         self.config_parser.clear()
 
     @staticmethod
-    def get_motor_indices():
-        return motor_indices
+    def get_close_hand_motor_indices():
+        return close_hand_motor_indices
 
     def calibrate_motor_encoder_offsets(self, in_jig):
         
@@ -170,13 +175,13 @@ class IRobotHandController(object):
             calibration_pose = hand_closed_pose
 
         print "Calibrating: closing hand"
-        self.close_hand_current_control(300)
+        self.close_hand_current_control(300, close_hand_motor_indices)
 
         wait_time = 2
         time.sleep(wait_time)
 
         print "Calibrating: setting offsets"
-        for motor_index in motor_indices:
+        for motor_index in close_hand_motor_indices:
             current_value = self.sensors.motorHallEncoder[motor_index]
             offset = current_value - calibration_pose[motor_index]
             self.config_parser.set_motor_encoder_offset(motor_index, offset)
