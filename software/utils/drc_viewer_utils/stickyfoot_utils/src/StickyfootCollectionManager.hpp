@@ -66,7 +66,7 @@ namespace visualization_utils
                           map<string, vector<int64_t> > &ee_frame_timestamps_map,
                           map<string, vector<double> > &joint_pos_map,
                           map<string, vector<int64_t> > &joint_pos_timestamps_map,
-                          bool is_time_ordered);                                
+                          bool is_time_ordered,bool use_nan_for_z);                                
                               
     // Used to generate desired ee constraints for manip maps. 
     // Generates and returns ee constraints for all associated seeds of a given parent object that are indexed with

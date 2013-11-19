@@ -444,7 +444,7 @@ void StickyfootCollectionManager::get_selected_pose_constraints(boost::shared_pt
                                                   map<string, vector<int64_t> > &ee_frame_timestamps_map,
                                                   map<string, vector<double> > &joint_pos_map,
                                                   map<string, vector<int64_t> > &joint_pos_timestamps_map,
-                                                  bool is_time_ordered)
+                                                  bool is_time_ordered,bool use_nan_for_z)
                                                   
 {
 
@@ -493,7 +493,8 @@ void StickyfootCollectionManager::get_selected_pose_constraints(boost::shared_pt
           for(uint i = 0; i < (uint) num_frames; i++)
           {
               KDL::Frame  T_world_ee = T_world_geometry*T_geometry_foot;  
-              T_world_ee.p[2] = NAN;
+              if(use_nan_for_z)
+                T_world_ee.p[2] = NAN;
               T_world_ee_frames.push_back(T_world_ee);
               double nmr = (selectionManager->get_selection_order(id)-1);
               double dmr = (selectionManager->get_selection_cnt()-1);
