@@ -110,12 +110,12 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.0802; // robot software v1.8
   // encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0104; // robot software v1.8
 
-  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = 0.0; // this encoder is broken
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -0.0201; // robot software v1.8
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = 3.13; // robot software v1.8
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -0.0202; // robot software v1.8
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114; // robot software v1.8
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290; // robot software v1.8
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -0.027; // robot software v1.8/9
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -0.0201; // robot software v1.8/9
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = 3.13; // robot software v1.8/9
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -0.0202; // robot software v1.8/9
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114; // robot software v1.8/9
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290; // robot software v1.8/9
 
   //encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 1.1125; // robot software v1.8
   encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.235 - 2*M_PI;  // robot software v1.9
@@ -135,7 +135,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
   use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
 
-  // use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
   use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
   use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
   use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
