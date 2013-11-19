@@ -1,0 +1,8 @@
+package irobothand;
+
+struct current_control_close_t
+{
+  int64_t utime;
+  float current_milliamps; // max is 800 milliamps
+  boolean valid[4];
+}

@@ -1,0 +1,7 @@
+package irobothand;
+
+struct spread_t
+{
+  int64_t utime;
+  float angle_radians;
+}

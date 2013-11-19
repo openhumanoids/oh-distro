@@ -1,0 +1,9 @@
+package irobothand;
+
+struct state_t
+{
+  int64_t utime;
+  float proximal_joint_angle[3];
+  float distal_joint_angle[3];
+  float finger_spread;
+}

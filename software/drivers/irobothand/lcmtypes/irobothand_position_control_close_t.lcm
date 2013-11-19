@@ -1,0 +1,8 @@
+package irobothand;
+
+struct position_control_close_t
+{
+  int64_t utime;
+  float close_fraction;
+  boolean valid[4];
+}
