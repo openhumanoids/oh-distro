@@ -88,6 +88,7 @@ while(true)
       
     case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)
+        disp('sending walking goal');
         x_end = xtraj_nominal.eval(0);
         pose = [x_end(1:3); rpy2quat(x_end(4:6))];
         drill_pub.publishWalkingGoal(pose);
@@ -112,7 +113,10 @@ while(true)
       end
       
     case drc.drill_control_t.RQ_NOMINAL_FIXED_PLAN
+              disp('getting state estimate');
       q0 = lcm_mon.getStateEstimate();
+            disp('computing fixed nominal plan');
+
       [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0, drill_points, false);
       
     case drc.drill_control_t.RQ_PREDRILL_PLAN

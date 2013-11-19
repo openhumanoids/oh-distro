@@ -91,7 +91,7 @@ classdef drillTaskLCMMonitor
     end
     
     function drill_data = getDrillAffordance(obj)
-      data = obj.affordance_monitor.getNextMessage(0); % default timeout
+      data = obj.affordance_monitor.getNextMessage(4000); % default timeout
       if isempty(data)
         drill_data = [];
         return
@@ -143,7 +143,7 @@ classdef drillTaskLCMMonitor
     
     function q = getStateEstimate(obj)
       [lb, ub] = obj.atlas.getJointLimits;
-      [x,~] = getNextMessage(obj.state_frame,10);
+      [x,~] = getMessage(obj.state_frame);
       while (isempty(x))
         [x,~] = getNextMessage(obj.state_frame,10);
       end
