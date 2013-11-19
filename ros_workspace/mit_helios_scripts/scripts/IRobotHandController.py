@@ -156,7 +156,6 @@ class IRobotHandController(object):
 
     def spread_angle_control(self, angle_rad):
         ticks = angle_rad / finger_spread_ticks_to_radians
-        print(ticks)
         pose = {spread_motor_index : ticks}
         self.motor_excursion_control_loop(pose, 2)
 

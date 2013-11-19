@@ -4,6 +4,7 @@ import roslib; roslib.load_manifest('mit_helios_scripts')
 import argparse, sys
 import rospy
 import math
+import numpy
 
 from mit_helios_scripts.msg import MITIRobotHandCalibrate
 from mit_helios_scripts.msg import MITIRobotHandCurrentControlClose
@@ -23,18 +24,28 @@ def parseArguments():
     parser = argparse.ArgumentParser(description='Script for interacting with iRobot hand')
 
     # TODO: add help per argument
+    
+    defaultIndices = range(0, 3)
+    
     parser.add_argument('side', help='side')
     parser.add_argument('--calibrate', metavar='IN_JIG', type=bool)
     parser.add_argument('--current', type=float)
     parser.add_argument('--position', type=float)
-    parser.add_argument('--indices', nargs='*', metavar='INDEX', type=int, default=range(0, 3)) # TODO: get default indices from somewhere
+    parser.add_argument('--indices', nargs='*', metavar='INDEX', type=int, default=defaultIndices) # TODO: get default indices from somewhere
     parser.add_argument('--spread', metavar='SPREAD_ANGLE_DEG', type=float)
+    parser.add_argument('--open', action='store_true')
+    parser.add_argument('--close', action='store_true')
 
     args = parser.parse_args()
     side = args.side.lower()
     if side not in ['r', 'l']:
         raise RuntimeError("Side not recognized: " + side)
     
+    if args.open:
+        args.position = 0
+    
+    if args.close:
+        args.current = 800
     
     if args.calibrate is not None:
         message = MITIRobotHandCalibrate()
@@ -55,18 +66,16 @@ def parseArguments():
     
     if args.spread is not None:
         message = MITIRobotHandSpread()
-        message.angle_radians = deg2rad(args.spread)
+        message.angle_radians = numpy.deg2rad(args.spread)
         publish(side, 'mit_spread', message)
 
 def publish(side, topic, message):
-    print(message)
     fulltopic = '/irobot_hands/' + side + '_hand/' + topic
-    print(fulltopic)
-    print('\n')
     publisher = rospy.Publisher(fulltopic, type(message))
     rospy.init_node('mit_irobot_hand_command_line')
+    rospy.sleep(0.5)
     publisher.publish(message)
-    rospy.sleep(1)
+    rospy.sleep(0.5)
 
 def indicesToValid(indices):
     ret = [False]*4
@@ -74,9 +83,6 @@ def indicesToValid(indices):
         ret[index] = True
     
     return ret
-
-def deg2rad(deg):
-    return deg * math.pi / 180
 
 if __name__ == '__main__':
     parseArguments()
