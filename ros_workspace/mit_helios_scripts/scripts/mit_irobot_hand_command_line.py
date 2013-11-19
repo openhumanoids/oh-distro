@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-import rospy
 
 import roslib; roslib.load_manifest('mit_helios_scripts')
 import argparse, sys
 import rospy
 
-from std_msgs.msg import String
 from sandia_hand_msgs.msg import SimpleGrasp
 
 
@@ -27,13 +25,13 @@ if __name__ == '__main__':
     side,name,closed_amount = parseArguments()
 
     if (side == 'r'):
-      pub = rospy.Publisher('/irobot_hands/r_hand/simple_command', SimpleGrasp)
+        pub = rospy.Publisher('/irobot_hands/r_hand/simple_command', SimpleGrasp)
     else:
-      pub = rospy.Publisher('/irobot_hands/l_hand/simple_command', SimpleGrasp)
+        pub = rospy.Publisher('/irobot_hands/l_hand/simple_command', SimpleGrasp)
       
     rospy.init_node('mit_irobot_hand_command_line')
-    str = "hello world"
-    rospy.loginfo(str)
+    logString = "hello world"
+    rospy.loginfo(logString)
 
     sg = SimpleGrasp()
     sg.name = name
