@@ -37,20 +37,24 @@ namespace renderer_affordances_gui_utils
     else if(!strcmp(name,PARAM_SEND_EE_GOAL_SEQUENCE)){
       string channel = "DESIRED_WHOLE_BODY_PLAN_EE_GOAL_SEQUENCE";
       cout << "publishing EE goal sequence on " << channel << endl;
-      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,false);  
+      bool use_nan_for_z = false;
+      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,false,use_nan_for_z);  
     }
     else if(!strcmp(name,PARAM_COMMIT_TO_FOOTSTEP_PLANNER)){
       string channel = "DESIRED_FOOT_STEP_SEQUENCE";
       cout << "publishing EE goal sequence on " << channel << endl;
-      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,true);  
+      bool use_nan_for_z = true;
+      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,true,use_nan_for_z);  
     }
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL4)){
       string channel = "POSE_GOAL";    
-      publish_EE_goal_sequence_as_poal_goal(self,channel,false,false);
+      bool use_nan_for_z = false;
+      publish_EE_goal_sequence_as_poal_goal(self,channel,false,false,use_nan_for_z);
     }
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL5)){
       string channel = "POSE_GOAL";
-      publish_EE_goal_sequence_as_poal_goal(self,channel,true,false);
+      bool use_nan_for_z = false;
+      publish_EE_goal_sequence_as_poal_goal(self,channel,true,false,use_nan_for_z);
     }
       bot_viewer_request_redraw(self->viewer);
       gtk_widget_destroy(self->dblclk_popup);

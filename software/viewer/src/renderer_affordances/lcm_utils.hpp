@@ -270,7 +270,7 @@ namespace renderer_affordances_lcm_utils
   
   //----------------------------------------------------------------------------------------------------   
   
-  static void publish_EE_goal_sequence_and_get_whole_body_plan (void *user, string channel, bool to_future_state, bool supress_hands)
+  static void publish_EE_goal_sequence_and_get_whole_body_plan (void *user, string channel, bool to_future_state, bool supress_hands,bool use_nan_for_z)
   {
       RendererAffordances *self = (RendererAffordances*) user;
 
@@ -297,7 +297,7 @@ namespace renderer_affordances_lcm_utils
                                                                    self->seedSelectionManager,
                                                                    ee_frames_map,ee_frame_timestamps_map,
                                                                    joint_pos_map,joint_pos_timestamps_map,
-                                                                   is_time_ordered);
+                                                                   is_time_ordered,use_nan_for_z);
                                                                    
      // shift selection append a selection order id to ee names in get_time_ordered_pose_constraints                                                               
      // setting unique_ee_occurances to false, accounts for that          
@@ -308,7 +308,7 @@ namespace renderer_affordances_lcm_utils
   } 
   
   //----------------------------------------------------------------------------------------------------   
-  static void publish_EE_goal_sequence_as_poal_goal (void *user, string channel, bool to_future_state, bool supress_hands)
+  static void publish_EE_goal_sequence_as_poal_goal (void *user, string channel, bool to_future_state, bool supress_hands,bool use_nan_for_z)
   {
       RendererAffordances *self = (RendererAffordances*) user;
 
@@ -335,7 +335,7 @@ namespace renderer_affordances_lcm_utils
                                                                    self->seedSelectionManager,
                                                                    ee_frames_map,ee_frame_timestamps_map,
                                                                    joint_pos_map,joint_pos_timestamps_map,
-                                                                   is_time_ordered);
+                                                                   is_time_ordered,use_nan_for_z);
      // shift selection append a selection order id to ee names in get_time_ordered_pose_constraints                                                               
      // setting unique_ee_occurances to false, accounts for that          
      bool unique_ee_occurances=false; 
