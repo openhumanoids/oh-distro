@@ -2,6 +2,8 @@ classdef AtlasManipController < DRCController
   
   properties (SetAccess=protected,GetAccess=protected)
     robot;
+    arm_joints;
+    back_joints;
   end
   
   methods
@@ -149,6 +151,8 @@ classdef AtlasManipController < DRCController
  
       obj.robot = r;
       obj.controller_data = ctrl_data;
+      obj.arm_joints = arm_joints;
+      obj.back_joints = back_joints;
       
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
@@ -186,6 +190,8 @@ classdef AtlasManipController < DRCController
           % sending exactly what we want to be executed.
           qtraj_prev = obj.controller_data.data.qtraj;
           q0=xtraj(1:getNumDOF(obj.robot),1);
+          
+          torso = (obj.arm_joints | obj.back_joints);
           if isa(qtraj_prev,'PPTrajectory') 
             % smooth transition from end of previous trajectory
             qprev_end = fasteval(qtraj_prev,qtraj_prev.tspan(end));
@@ -193,7 +199,7 @@ classdef AtlasManipController < DRCController
               % always use current desired body pose
               qprev_end(1:6) = q0(1:6);
             end
-            if max(abs(q0-qprev_end)) < 0.2
+            if max(abs(q0(torso)-qprev_end(torso))) < 0.15
               qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
             else
               qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
