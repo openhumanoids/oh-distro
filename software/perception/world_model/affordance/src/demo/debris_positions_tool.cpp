@@ -51,6 +51,10 @@ public:
   
   Eigen::Isometry3d standing_position_;
   
+  vector<double> hand_rpy_;
+  vector<double> hand_xyz_;
+  int hand_type_; // 3 or 4 for irobot
+  
 };
 
 
@@ -103,6 +107,7 @@ class Pass{
     
     
     void readStandingPositionsFile(std::string filename, std::vector<AffRaw> &affraw_list);
+    void readHandPositionsFile(std::string filename, std::vector<AffRaw> &affraw_list);
     
     // Affordances stored using the object_name that Sisir seems to be sending with INIT_GRASP_OPT_* messages
     // [otdf_type]_[uid]
@@ -115,6 +120,15 @@ class Pass{
     
     AffordanceUtils affutils_;
     
+    vector<string> sandia_l_joint_name_;
+    vector<string> sandia_r_joint_name_;
+    vector<double> sandia_l_joint_position_;    
+    vector<double> sandia_r_joint_position_;
+    
+    vector<string> irobot_l_joint_name_;
+    vector<string> irobot_r_joint_name_;
+    vector<double> irobot_l_joint_position_;    
+    vector<double> irobot_r_joint_position_;      
     
 };
 
@@ -145,6 +159,27 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600001,"Current walking goal",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600002,"Robot to Corner",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600003,"Next Walking Goal",5,1) );
+  
+  
+  sandia_l_joint_name_ = {"left_f0_j0","left_f0_j1","left_f0_j2",   "left_f1_j0","left_f1_j1","left_f1_j2",
+    "left_f2_j0","left_f2_j1","left_f2_j2",   "left_f3_j0","left_f3_j1","left_f3_j2" };
+  sandia_l_joint_position_ = {0,0,0,  0,0,0,                        0,0,0,  0,0,0};
+  sandia_r_joint_name_ = {"right_f0_j0","right_f0_j1","right_f0_j2",  "right_f1_j0","right_f1_j1","right_f1_j2",
+    "right_f2_j0","right_f2_j1","right_f2_j2",  "right_f3_j0","right_f3_j1","right_f3_j2" };
+  // fore, middle, little, thumb | lower mid upper
+  sandia_r_joint_position_ = {0,0,0,  0,0,0, 0,0,0,  0,0,0};
+
+
+  irobot_l_joint_name_ = {"left_finger[0]/joint_base_rotation", "left_finger[0]/joint_base", "left_finger[0]/joint_flex",
+      "left_finger[1]/joint_base_rotation", "left_finger[1]/joint_base", "left_finger[1]/joint_flex",
+      "left_finger[2]/joint_base", "left_finger[2]/joint_flex" };
+  irobot_l_joint_position_ = { 0, 0, 0,         0, 0, 0,         0, 0};
+  
+  
+  irobot_r_joint_name_ = {"right_finger[0]/joint_base_rotation", "right_finger[0]/joint_base", "right_finger[0]/joint_flex",
+      "right_finger[1]/joint_base_rotation", "right_finger[1]/joint_base", "right_finger[1]/joint_flex",
+      "right_finger[2]/joint_base", "right_finger[2]/joint_flex" };
+  irobot_r_joint_position_ = { 0, 0, 0,         0, 0, 0,         0, 0};  
 }
 
 drc::position_3d_t EigenToDRC(Eigen::Isometry3d &pose){
@@ -197,6 +232,8 @@ void Pass::poseRightFootHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
 
 void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   
+  /*
+  // used until very recently
   
   // 0. Extract World Pose of body:
   world_to_body_high_.setIdentity();
@@ -206,26 +243,14 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
                                                msg->pose.rotation.y, msg->pose.rotation.z);
   world_to_body_high_.rotate(quat);    
   
-  /*
-    
-  // 1. Solve for Forward Kinematics:
-  // call a routine that calculates the transforms the joint_state_t* msg.
-  map<string, double> jointpos_in;
-  cartpos_.clear();
-  for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
-    jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+*/
   
-  // Calculate forward position kinematics
-  bool kinematics_status;
-  bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
-  kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_,flatten_tree);
-  if(kinematics_status>=0){
-    // cout << "Success!" <<endl;
-  }else{
-    cerr << "Error: could not calculate forward kinematics!" <<endl;
-    return;
-  }
-  */
+  // 0. a pose back and to the left of the sim world
+  world_to_body_high_.setIdentity();
+  world_to_body_high_.translation()  << -1, -1, 1000; // far back corner of sim world
+  Eigen::Quaterniond quat = Eigen::Quaterniond(1,0,0,0);
+  world_to_body_high_.rotate(quat);    
+  
   cartpos_ready_=true;
   
 }
@@ -287,13 +312,7 @@ void Pass::getPriorStandingPositionAsRelative(Eigen::Vector3d min_pt, Eigen::Iso
     lcm_->publish("WALKING_GOAL", &wg);
   }
   
-  
-  
-  exit(-1);
 }
-
-
-
 
 
 void Pass::readStandingPositionsFile(std::string filename, std::vector<AffRaw> &affraw_list){
@@ -335,11 +354,53 @@ void Pass::readStandingPositionsFile(std::string filename, std::vector<AffRaw> &
     }
   }
   fileinput.close();
-
-       
-    
 }
 
+
+
+void Pass::readHandPositionsFile(std::string filename, std::vector<AffRaw> &affraw_list){
+
+  
+  ifstream fileinput (filename);
+  if (fileinput.is_open()){
+    string message;
+    while ( getline (fileinput,message) ) { // for each line
+      std::string letter1 = message.substr (0,1);  
+      if (letter1 == "#"){
+        continue;
+      }
+      cout << message << endl;
+      
+      
+
+      vector<string> tokens;
+      boost::split(tokens, message, boost::is_any_of(","));
+      vector<int> ints;
+      for (size_t i=0 ; i < 2 ; i++){
+        ints.push_back(lexical_cast<double>( tokens[i] ));
+      }
+      int aff_id = ints[0];
+      int hand_type = ints[1];
+      
+      
+      vector<double> values;
+      for (size_t i=2 ; i < 8 ; i++){
+        values.push_back(lexical_cast<double>( tokens[i] ));
+      }
+      vector<double> rpy = { values[0], values[1], values[2]};
+      vector<double> xyz  = { values[3], values[4], values[5]};
+      
+      
+      affraw_list[ aff_id ].hand_type_ = hand_type;
+      affraw_list[ aff_id ].hand_rpy_ = rpy;
+      affraw_list[ aff_id ].hand_xyz_ = xyz;
+      
+      
+      
+    }
+  }
+  fileinput.close();
+}
 
 
 
@@ -416,13 +477,48 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     getCurrentStandingPositionAsRelative(min_pt);
   }else{
     string standing_filename_full = string(drc_base + "/software/config/task_config/debris/debrisStandXYZYaw.csv");
+    string grasp_filename = string(drc_base + "/software/config/task_config/debris/debrisGraspPositions.csv");
     std::vector<AffRaw> affraw_list;// = readAffordanceFile(debris_filename_full);
     std:: cout << affraw_list.size() << " affordances read\n";
 
     readStandingPositionsFile( standing_filename_full , affraw_list);
+    
+    readHandPositionsFile( grasp_filename, affraw_list);
+    
     getPriorStandingPositionAsRelative(min_pt, affraw_list[config_.library_id].standing_position_ );
     
+
+    // Publish an affordance relative hand position:
+    Eigen::Isometry3d pose(Eigen::Isometry3d::Identity());
+    int id = config_.library_id;
+    pose.translation() = Eigen::Vector3d(  affraw_list[id].hand_xyz_[0], affraw_list[id].hand_xyz_[1], affraw_list[id].hand_xyz_[2]) ;
+    Eigen::Quaterniond quat=  euler_to_quat( affraw_list[id].hand_rpy_[0], affraw_list[id].hand_rpy_[1], affraw_list[id].hand_rpy_[2]); 
+    pose.rotate(quat);      
+    drc::position_3d_t hand_pose = EigenToDRC(pose);
     
+    drc::desired_grasp_state_t cg;
+    cg.robot_name = "atlas";
+    cg.object_name = object_name ;
+    cg.geometry_name = "box_0";
+    cg.unique_id = 22;
+    cg.grasp_type = affraw_list[id].hand_type_;
+    cg.power_grasp =false;
+
+    if (affraw_list[id].hand_type_ ==3){
+      cg.l_hand_pose = hand_pose;
+    }else {
+      cg.r_hand_pose = hand_pose;
+    }
+    cg.l_joint_name = irobot_l_joint_name_;
+    cg.l_joint_position = irobot_l_joint_position_;
+    cg.r_joint_name = irobot_r_joint_name_;
+    cg.r_joint_position = irobot_r_joint_position_;
+    cg.num_l_joints =cg.l_joint_position.size();
+    cg.num_r_joints =cg.r_joint_position.size();
+    lcm_->publish("CANDIDATE_GRASP", &cg);  
+    
+
+    exit(-1);    
   }
 
     
