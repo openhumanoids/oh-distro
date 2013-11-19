@@ -1631,7 +1631,7 @@ namespace renderer_affordances_gui_utils
                                         &seed_nums[0]);
         bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_LOAD_POSE, NULL);
         bot_gtk_param_widget_add_buttons(poseseed_pw,PARAM_UNSTORE_POSE, NULL);
-        bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_SEND_PELVIS_GOAL, NULL); 
+        //bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_SEND_PELVIS_GOAL, NULL); 
         bot_gtk_param_widget_add_buttons(poseseed_pw, PARAM_REACH_ENDPOSE_POSTURE, NULL); 
       }
     }
