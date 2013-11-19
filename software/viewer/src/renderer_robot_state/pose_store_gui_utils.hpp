@@ -43,25 +43,32 @@ namespace renderer_robot_state_gui_utils
 
         if(self->robotStateListener->_gl_robot->is_future_display_active())   
         {
-        
           //type = "endpose";
+          drc::robot_state_t endpose_msg;
+          self->robotStateListener->_gl_robot->get_future_state_as_lcm_msg(endpose_msg);
+          //endpose_msg = self->robotStateListener->_received_endpose;
           visualization_utils::prepareEndPoseForStorage(self->T_world_trigger_aff,
-                                                        self->robotStateListener->_received_endpose,
+                                                        endpose_msg,
                                                         poseSeed.stateframe_ids,
                                                         poseSeed.stateframe_values);
-        /* self->robotStateListener->prepareDesiredRobotStateForEndPoseStorage(self->T_world_trigger_aff, 
-                                  poseSeed.pose_type,
-                                  poseSeed.stateframe_ids,
-                                  poseSeed.stateframe_values,
-                                  poseSeed.graspframe_ids,
-                                  poseSeed.graspframe_values);*/
           std::cout << poseSeed.pose_ref << std::endl;
           poseSeed.writePoseToXMLFile((*self->trigger_source_otdf_id),pose_xml_dirpath);
           // cross ref in OTDF
           poseSeed.writeToOtdf(otdf_filepath);
         }
-        else
-           cout <<"No Active Plan To Store \n";
+        else {
+           cout <<"No Active endpose To Store, storing current robot state \n";
+          drc::robot_state_t endpose_msg;
+          self->robotStateListener->_gl_robot->get_state_as_lcm_msg(endpose_msg);
+          visualization_utils::prepareEndPoseForStorage(self->T_world_trigger_aff,
+                                                        endpose_msg,
+                                                        poseSeed.stateframe_ids,
+                                                        poseSeed.stateframe_values);
+          std::cout << poseSeed.pose_ref << std::endl;
+          poseSeed.writePoseToXMLFile((*self->trigger_source_otdf_id),pose_xml_dirpath);
+          // cross ref in OTDF
+          poseSeed.writeToOtdf(otdf_filepath);  
+        }
 
     }
     /*
