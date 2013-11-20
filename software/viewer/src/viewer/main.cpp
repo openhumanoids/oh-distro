@@ -611,7 +611,7 @@ int main(int argc, char *argv[])
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-//  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 
   setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
