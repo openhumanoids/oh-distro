@@ -339,7 +339,7 @@ struct State {
     good &= setProperty(FlyCapture2::AUTO_EXPOSURE, true, false, true, 0);
     good &= setProperty(FlyCapture2::SHUTTER, true, true, false, 0);
     good &= setProperty(FlyCapture2::GAIN, true, true, false, 0);
-    good &= setProperty(FlyCapture2::WHITE_BALANCE, false, true, false, 0);
+    good &= setProperty(FlyCapture2::WHITE_BALANCE, false, true, true, 0);
     if (good) {
       FlyCapture2::Error error;
       uint32_t regVal = 0;
