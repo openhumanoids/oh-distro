@@ -65,6 +65,8 @@ class Pass{
     drc::affordance_plus_t getCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
     drc::affordance_plus_t getBoxAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
     drc::affordance_plus_t getFireHoseAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);   
+    drc::affordance_plus_t getDoorAffordancePlus(std::string filename, Eigen::Isometry3d ground_to_aff, int uid);
+    
     BotParam* botparam_;
     bot::frames* frames_cpp_;
     
@@ -74,6 +76,7 @@ class Pass{
     map<string, KDL::Frame > cartpos_;
     
     Eigen::Isometry3d world_to_utorso_;
+    Eigen::Isometry3d world_to_ground_;
     AffordanceUtils affutils_;
     
     // place the affordance relative to left shoulder
@@ -255,9 +258,64 @@ drc::affordance_plus_t Pass::getFireHoseAffordancePlus(std::string filename, Eig
   return p;
 }
 
+
+drc::affordance_plus_t Pass::getDoorAffordancePlus(std::string filename, Eigen::Isometry3d ground_to_aff, int uid){ 
+  Eigen::Isometry3d world_to_aff = world_to_ground_*ground_to_aff; 
+  std::vector<double> xyzrpy = {.0 , .0 , .0, 0. , 0 , 0};
+  xyzrpy[0] = world_to_aff.translation().x();
+  xyzrpy[1] = world_to_aff.translation().y();
+  xyzrpy[2] = world_to_aff.translation().z();
+  quat_to_euler ( Eigen::Quaterniond(world_to_aff.rotation() ), xyzrpy[3], xyzrpy[4], xyzrpy[5] );  
+  
+  drc::affordance_plus_t p;
+  drc::affordance_t a;
+  a.utime =0;
+  a.map_id =0;
+  a.uid =uid;
+  a.otdf_type ="door_right_handed";
+  a.aff_store_control = drc::affordance_t::NEW;
+  
+  a.params.push_back(0.09946  ); a.param_names.push_back("Frame_Offset");
+  a.params.push_back(0.127 ); a.param_names.push_back("Frame_lX");
+  a.params.push_back(0.24892 ); a.param_names.push_back("Frame_lY");
+  a.params.push_back(2.13336   ); a.param_names.push_back("Frame_lZ");
+  a.params.push_back(0.0  ); a.param_names.push_back("door_start_theta");
+  a.params.push_back(0.88  ); a.param_names.push_back("lX");
+  a.params.push_back(0.02   ); a.param_names.push_back("lY");
+  a.params.push_back(2.032 ); a.param_names.push_back("lZ");
+  a.params.push_back(0.15  ); a.param_names.push_back("lever_length");
+  a.params.push_back(0.025  ); a.param_names.push_back("lever_offset_from_door");
+  a.params.push_back(0.04  ); a.param_names.push_back("lever_offset_x");
+  a.params.push_back(-0.068 ); a.param_names.push_back("lever_offset_z");
+  a.params.push_back(0.0  ); a.param_names.push_back("lever_start_theta");
+  a.params.push_back(0.015  ); a.param_names.push_back("lever_thick");
+  a.params.push_back(0.025  ); a.param_names.push_back("lever_width");
+  a.nparams =a.params.size();
+  
+  a.states.push_back(0.0); a.state_names.push_back("base_joint");
+  a.states.push_back(0.0); a.state_names.push_back("l_lever_joint");
+  a.states.push_back(0.0); a.state_names.push_back("r_lever_joint");
+  a.nstates =a.states.size();
+
+  a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+  a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+  a.bounding_xyz[0]=0.0; a.bounding_xyz[1]=0; a.bounding_xyz[2]=0; 
+  a.bounding_rpy[0]=0.0; a.bounding_rpy[1]=0.0; a.bounding_rpy[2]=0.0;   
+ 
+  p.aff = a;
+  std::vector< std::vector< float > > points;
+  std::vector< std::vector< int > > triangles;
+  p.npoints=0; 
+  p.ntriangles =0;
+  
+  p.aff.bounding_lwh[0]=0.0;       p.aff.bounding_lwh[1]=0.00;        p.aff.bounding_lwh[2]=0.0;   
+  return p;
+}
+
 void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   
   frames_cpp_->get_trans_with_utime( "utorso" , "local", msg->utime, world_to_utorso_);
+  frames_cpp_->get_trans_with_utime( "ground", "local", msg->utime, world_to_ground_);
   
   /*
   // 0. Extract World Pose of body:
@@ -304,7 +362,16 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
     aff.aff.origin_rpy[0] = 0;
     aff.aff.origin_rpy[2] = 0;
     aff.aff.otdf_type = "wye";
-  }else{
+  }else if (which_affordance_ ==6){
+    Eigen::Isometry3d ground_to_aff(Eigen::Isometry3d::Identity());
+    ground_to_aff.translation()  << 2.0, -0.5, 1.016;
+    ground_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(0,0,90*M_PI/180)) );
+    aff = getDoorAffordancePlus("notused", ground_to_aff, 0);
+    aff.aff.otdf_type = "door_right_handed";
+  }
+  
+  
+  else{
     std::cout << "Affordance not recognised\n";
     exit(-1); 
   }
@@ -322,7 +389,8 @@ int main(int argc, char ** argv) {
   std::cout << "2 - 2x4 low\n";
   std::cout << "3 - cylinder pipe\n";
   std::cout << "4 - firehose_simple\n";
-  
+  std::cout << "5 - wye\n";
+  std::cout << "6 - door_right_handed\n";
   
   string mode = "both";
   int which_affordance = 0;
