@@ -74,7 +74,7 @@ protected:
   int mRightGraspNameEnum;
   std::vector <std::string>  mGraspNames;
   
-  bool mControlIrobotRightHand;
+  int mControlIrobotRightHand; // 0 left/ 1 right
   int mIrobotCalibrate;
   int mIrobotCloseFraction;
   int mIrobotSpreadDegree;
@@ -436,9 +436,14 @@ public:
     box->add(*label);
     handControlBox->pack_start(*box, false, false);     
     
-    mControlIrobotRightHand= false;
-    addCheck("Control Right Hand (Otherwise Left)", mControlIrobotRightHand, handControlBox);        
 
+    ids = { 0, 1 };
+    std::vector<std::string> label_names = { "iRobot Left", "iRobot Right" };    
+    hbox = Gtk::manage(new Gtk::HBox());
+    mControlIrobotRightHand = 0;
+    addCombo("Controlling ... ", mControlIrobotRightHand, label_names, ids, hbox);
+    handControlBox->pack_start(*hbox, false, false);    
+    
     hbox = Gtk::manage(new Gtk::HBox());
     box = Gtk::manage(new Gtk::HBox());
     button = Gtk::manage(new Gtk::Button("Open"));
@@ -470,6 +475,14 @@ public:
     hbox->add(*button);
     handControlBox->pack_start(*hbox, false, false);
     
+    mIrobotFingerEnabled[0] = true;
+    mIrobotFingerEnabled[1] = true;
+    mIrobotFingerEnabled[2] = true;
+    addCheck("0 Finger", mIrobotFingerEnabled[0], handControlBox);
+    addCheck("                2 Thumb", mIrobotFingerEnabled[2], handControlBox);    
+    addCheck("1 Finger", mIrobotFingerEnabled[1], handControlBox);
+
+    
     hbox = Gtk::manage(new Gtk::HBox());
     box = Gtk::manage(new Gtk::HBox());
     hbox->add(*box); 
@@ -483,15 +496,7 @@ public:
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onIrobotSpreadDegreeButton));
     hbox->add(*button);
-    handControlBox->pack_start(*hbox, false, false);    
-    
-
-    mIrobotFingerEnabled[0] = true;
-    mIrobotFingerEnabled[1] = true;
-    mIrobotFingerEnabled[2] = true;
-    addCheck("0 Finger", mIrobotFingerEnabled[0], handControlBox);    
-    addCheck("1 Finger", mIrobotFingerEnabled[1], handControlBox);    
-    addCheck("2 Thumb", mIrobotFingerEnabled[2], handControlBox);    
+    handControlBox->pack_start(*hbox, false, false); 
     
     
     ids = { 0, 1, 2, 3 };
