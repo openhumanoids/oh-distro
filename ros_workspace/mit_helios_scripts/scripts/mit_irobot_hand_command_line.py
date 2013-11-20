@@ -2,14 +2,16 @@
 
 import roslib; roslib.load_manifest('mit_helios_scripts')
 import argparse, sys
-import rospy
 import numpy
+import lcm
 
-from mit_helios_scripts.msg import MITIRobotHandCalibrate
-from mit_helios_scripts.msg import MITIRobotHandCurrentControlClose
-from mit_helios_scripts.msg import MITIRobotHandPositionControlClose
-from mit_helios_scripts.msg import MITIRobotHandSpread
+from irobothand.calibrate_t import calibrate_t
+from irobothand.current_control_close_t import current_control_close_t
+from irobothand.position_control_close_t import position_control_close_t
+from irobothand.spread_t import spread_t
+
 from IRobotHandController import IRobotHandController
+import mit_irobot_hand_control
 
 default_open_fraction = 0
 default_close_current = 800
@@ -37,7 +39,7 @@ def createParser():
                                      epilog=examples, formatter_class=argparse.RawDescriptionHelpFormatter)
 
     defaultIndices = IRobotHandController.get_close_hand_motor_indices()
-    indicesChoice = IRobotHandController.get_nonspread_motor_indices()
+    indicesChoice = IRobotHandController.get_non_spread_motor_indices()
 
     parser.add_argument('side', 
                         help='Side of hand to which command will be sent.',
@@ -74,22 +76,19 @@ def createParser():
 
 
 def publish(side, topic, message):
-    fulltopic = '/irobot_hands/' + side + '_hand/' + topic
-    publisher = rospy.Publisher(fulltopic, type(message))
-    rospy.init_node('mit_irobot_hand_command_line')
-    rospy.sleep(0.5)
-    publisher.publish(message)
-    rospy.sleep(0.5)
+    fulltopic = mit_irobot_hand_control.get_lcm_channel(side, topic)
+    lc = lcm.LCM()
+    lc.publish(fulltopic, message.encode())
 
 def indicesToBooleans(indices):
-    ret = [False]*4
+    ret = [False]* len(IRobotHandController.get_non_spread_motor_indices())
     for index in indices:
         ret[index] = True
     
     return ret
 
 if __name__ == '__main__':
-    sys.argv = rospy.myargv(sys.argv) # get rid of additional roslaunch arguments
+#     sys.argv = rospy.myargv(sys.argv) # get rid of additional roslaunch arguments
     parser = createParser()
     args = parser.parse_args()
     side = args.side.lower()
@@ -101,23 +100,23 @@ if __name__ == '__main__':
         args.current = default_close_current
     
     if args.calibrate is not None:
-        message = MITIRobotHandCalibrate()
+        message = calibrate_t()
         message.in_jig = args.calibrate
-        publish(side, 'mit_calibrate', message)
+        publish(side, mit_irobot_hand_control.calibrate_channel, message)
     
     if args.current is not None:
-        message = MITIRobotHandCurrentControlClose()
+        message = current_control_close_t()
         message.current_milliamps = args.current
         message.valid = indicesToBooleans(args.indices)
-        publish(side, 'mit_current_control_close', message)
+        publish(side, mit_irobot_hand_control.current_control_channel, message)
     
     if args.position is not None:
-        message = MITIRobotHandPositionControlClose()
+        message = position_control_close_t()
         message.close_fraction = args.position
         message.valid = indicesToBooleans(args.indices)
-        publish(side, 'mit_position_control_close', message)
+        publish(side, mit_irobot_hand_control.position_control_channel, message)
     
     if args.spread is not None:
-        message = MITIRobotHandSpread()
+        message = spread_t()
         message.angle_radians = numpy.deg2rad(args.spread)
-        publish(side, 'mit_spread', message)
+        publish(side, mit_irobot_hand_control.spread_channel, message)

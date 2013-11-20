@@ -10,9 +10,12 @@ TODO:
 FOCUS FOR TODAY:
 * calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
 * improve visualization
-* update wiki page
+* weekly status update
+* message queue
+* get rid of unused methods in IRobotHandController, add optional arguments
 
 BUSY:
+* skip translation from LCM to ROS
 
 DONE:
 * ping hand
@@ -77,3 +80,4 @@ DONE:
 * command line tool to send high level ros commands for hand
 * add option to close a single finger
 * improve command line tool help
+* update wiki page

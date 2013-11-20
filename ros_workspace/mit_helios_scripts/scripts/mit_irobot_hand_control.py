@@ -9,38 +9,49 @@
 import roslib; roslib.load_manifest('mit_helios_scripts')
 import argparse, sys
 import rospy
+import lcm
+import threading
 
-from mit_helios_scripts.msg import MITIRobotHandCalibrate
-from mit_helios_scripts.msg import MITIRobotHandCurrentControlClose
-from mit_helios_scripts.msg import MITIRobotHandPositionControlClose
-from mit_helios_scripts.msg import MITIRobotHandSpread
+from irobothand.calibrate_t import calibrate_t
+from irobothand.current_control_close_t import current_control_close_t
+from irobothand.position_control_close_t import position_control_close_t
+from irobothand.spread_t import spread_t
+
+calibrate_channel = 'CALIBRATE'
+current_control_channel = 'CURRENT_CONTROL_CLOSE'
+position_control_channel = 'POSITION_CONTROL_CLOSE'
+spread_channel = 'SPREAD'
 
 from IRobotHandController import IRobotHandController
 
 def validIndices(validArray):
     return [i for i, valid in enumerate(validArray) if valid]
 
-def calibrate_callback(controller, message):
-    print("Calibrate: in jig: %s" % message.in_jig)
+def calibrate_callback(controller, channel, message):
+    if isinstance(message, str):
+        message = calibrate_t.decode(message)
     controller.calibrate_motor_encoder_offsets(message.in_jig)
     controller.zero_current()
 
-def current_control_close_callback(controller, message):
+def current_control_close_callback(controller, channel, message):
+    if isinstance(message, str):
+        message = current_control_close_t.decode(message)
     indices = validIndices(message.valid)
     controller.close_hand_current_control(message.current_milliamps, indices)
     controller.zero_current()
 
-def position_control_close_callback(controller, message):
+def position_control_close_callback(controller, channel, message):
+    if isinstance(message, str):
+        message = position_control_close_t.decode(message)
     indices = validIndices(message.valid)
     controller.motor_excursion_control_close_fraction(message.close_fraction, indices)
     controller.zero_current()
 
-def spread_callback(controller, message):
+def spread_callback(controller, channel, message):
+    if isinstance(message, str):
+        message = spread_t.decode(message)
     controller.spread_angle_control(message.angle_radians)
     controller.zero_current()
-
-def epsilonEquals(a, b):
-    return abs(a - b) < 1e-3
 
 def parseArguments():
     sys.argv = rospy.myargv(sys.argv) # get rid of additional roslaunch arguments
@@ -52,13 +63,26 @@ def parseArguments():
         raise RuntimeError("Side not recognized: " + side)
     return (side)
 
+def get_lcm_channel(side, topic):
+    fulltopic = 'IROBOT_' + side + '_' + topic
+    return fulltopic
+
 if __name__ == '__main__':
     side = parseArguments()
     controller = IRobotHandController(side)
+    lock = threading.Lock()
     
-    rospy.Subscriber("mit_calibrate", MITIRobotHandCalibrate, lambda message : calibrate_callback(controller, message))
-    rospy.Subscriber("mit_current_control_close", MITIRobotHandCurrentControlClose, lambda message : current_control_close_callback(controller, message))
-    rospy.Subscriber("mit_position_control_close", MITIRobotHandPositionControlClose, lambda message : position_control_close_callback(controller, message))
-    rospy.Subscriber("mit_spread", MITIRobotHandSpread, lambda message : spread_callback(controller, message))
+    def create_callback(callback):
+        def ret(channel, message):
+            with lock:
+                callback(controller, channel, message)
+        return ret
     
-    rospy.spin()
+    lc = lcm.LCM()
+    lc.subscribe(get_lcm_channel(side, calibrate_channel), create_callback(calibrate_callback))
+    lc.subscribe(get_lcm_channel(side, current_control_channel), create_callback(current_control_close_callback))
+    lc.subscribe(get_lcm_channel(side, position_control_channel), create_callback(position_control_close_callback))
+    lc.subscribe(get_lcm_channel(side, spread_channel), create_callback(spread_callback))
+    
+    while True:
+        lc.handle()

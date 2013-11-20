@@ -18,7 +18,7 @@ from IRobotHandConfigParser import IRobotHandConfigParser
 close_hand_motor_indices = range(3)
 non_spread_motor_indices = range(4)
 spread_motor_index = 4
-finger_spread_ticks_to_radians = 2 * math.pi / 3072
+finger_spread_ticks_to_radians = 2 * math.pi / 3072 # 3072 per 180 degrees as stated in HandleSensors.msg is wrong
 
 
 
@@ -31,15 +31,15 @@ hand_closed_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
 
 hand_open_desired_pose = {0: 2000, 1: 2000, 2: 2000}
 
-def set_command_message_same_value(command_message, control_type, indices, value):
+def set_command_message_same_value(message, control_type, indices, value):
     values = dict((motor_index, value) for motor_index in indices)
-    set_command_message(command_message, control_type, values)
+    set_command_message(message, control_type, values)
 
-def set_command_message(command_message, control_type, values):
+def set_command_message(message, control_type, values):
     for motor_index in values.keys():
-        command_message.valid[motor_index] = True
-        command_message.type[motor_index] = control_type
-        command_message.value[motor_index] = values[motor_index]
+        message.valid[motor_index] = True
+        message.type[motor_index] = control_type
+        message.value[motor_index] = values[motor_index]
 
 def loop_control(publisher, rate, max_time, control):
     start_time = rospy.get_time()
@@ -117,7 +117,7 @@ class IRobotHandController(object):
         grasp_time = 5
         def control(command_message):
             set_command_message_same_value(command_message, HandleControl.CURRENT, indices, finger_close_current)
-    
+        
         loop_control(self.command_publisher, self.rate, grasp_time, control)
     
     def open_hand_angle_control(self):
@@ -125,21 +125,19 @@ class IRobotHandController(object):
         open_angle = 10
         def control(command_message):
             set_command_message_same_value(command_message, HandleControl.ANGLE, close_hand_motor_indices, open_angle)
-            
+        
         loop_control(self.command_publisher, self.rate, open_time, control)
     
     def open_hand_motor_excursion_control(self):
         open_time = 5
         self.motor_excursion_control_loop(hand_open_desired_pose, open_time)
 
-    def motor_excursion_control_loop(self, open_hand_desireds, duration):
-        def control(command_message):
-            self.motor_excursion_control(command_message, open_hand_desireds)
-        loop_control(self.command_publisher, self.rate, duration, control)
+    def motor_excursion_control_loop(self, desireds, duration):
+        loop_control(self.command_publisher, self.rate, duration, lambda message : self.motor_excursion_control(message, desireds))
 
-    def motor_excursion_control(self, command_message, open_hand_desireds):
+    def motor_excursion_control(self, message, open_hand_desireds):
         desireds_with_offset = dict((i, self.add_offset(open_hand_desireds[i], i)) for i in open_hand_desireds.keys())
-        set_command_message(command_message, HandleControl.POSITION, desireds_with_offset)
+        set_command_message(message, HandleControl.POSITION, desireds_with_offset)
 
     def motor_excursion_control_close_fraction(self, fraction, indices):
         if not (0 <= fraction <= 1):
@@ -167,7 +165,7 @@ class IRobotHandController(object):
         return close_hand_motor_indices
     
     @staticmethod
-    def get_nonspread_motor_indices():
+    def get_non_spread_motor_indices():
         return non_spread_motor_indices
 
     def calibrate_motor_encoder_offsets(self, in_jig):
@@ -188,8 +186,5 @@ class IRobotHandController(object):
             current_value = self.sensors.motorHallEncoder[motor_index]
             offset = current_value - calibration_pose[motor_index]
             self.config_parser.set_motor_encoder_offset(motor_index, offset)
-        self.zero_current()
-
-    def exit(self):
         self.zero_current()
         self.config_parser.save()
