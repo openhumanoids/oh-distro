@@ -529,4 +529,6 @@
         <state num_joints="8" joint_names="left_finger[0]/joint_base_rotation left_finger[0]/joint_base left_finger[0]/joint_flex left_finger[1]/joint_base_rotation left_finger[1]/joint_base left_finger[1]/joint_flex left_finger[2]/joint_base left_finger[2]/joint_flex " joint_positions="0.0138229 1.44478 1.50519 0.0138229 1.56243 1.54961 1.56064 1.52955 " />
     </grasp_seed>
     <pose_seed name="2013-11-19-21-52::pre_step" />
+    <pose_seed name="2013-11-20-07-57::pre_step" />
+    <pose_seed name="2013-11-20-07-58::pre_step" />
 </object>
