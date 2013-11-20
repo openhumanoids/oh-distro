@@ -176,7 +176,15 @@ while(true)
       
       [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 5);
     case drc.drill_control_t.RQ_DRILL_TARGET_PLAN
-
+      if sizecheck(ctrl_data, [3 1])
+        drill_target = ctrl_data(1:3);
+        q0 = lcm_mon.getStateEstimate();
+        kinsol = r.doKinematics(q0);
+        drill0 = r.forwardKin(kinsol, drill_pub.hand_body, drill.guard_pos);
+        [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 5);
+      else
+        send_status(4,0,0,'Invalid size of control data. Expected 3x1');
+      end
       
     case drc.drill_control_t.RQ_DRILL_DELTA_PLAN
       % create wall coordinate frame

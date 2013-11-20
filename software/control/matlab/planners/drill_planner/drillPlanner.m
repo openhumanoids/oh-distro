@@ -133,7 +133,11 @@ classdef drillPlanner
     % if free_body_pose is true, also searches for (x,y,z,yaw) within some
     % limits (looking for a place to stand). If it is false, does not allow
     % the pelvis to move
-    function [xtraj,snopt_info,infeasible_constraint] = findDrillingMotion(obj, q0, drill_points, free_body_pose)
+    function [xtraj,snopt_info,infeasible_constraint] = findDrillingMotion(obj, q0, drill_points, free_body_pose, max_delta_x)
+      if nargin < 5
+        max_delta_x = inf;
+      end
+      
       n_points = size(drill_points,2);
       sizecheck(drill_points, [3 n_points]);
       
@@ -142,6 +146,14 @@ classdef drillPlanner
       
       t_vec = linspace(0,T,N);
       t_drill = linspace(0,T,n_points);
+      
+      pelvis_body = regexpIndex('pelvis',{obj.r.getBody(:).linkname});
+      
+      % x-position constraint in wall frame
+      yaw = atan2(obj.drilling_world_axis(2), obj.drilling_world_axis(1));
+      HT_wall = [rpy2rotmat([0;0;yaw]) q0(1:3); 0 0 0 1];
+      
+      world_pos_x_constraint = WorldPositionInFrameConstraint(obj.r,pelvis_body,zeros(3,1),HT_wall,[-inf;-inf;-inf],[max_delta_x;inf;inf],[-inf inf]);
       
       % gaze constraint for drill
       drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
@@ -153,12 +165,21 @@ classdef drillPlanner
         posture_index = setdiff((1:obj.r.num_q)',[1; 2; 3; 6; obj.joint_indices]);
         posture_constraint = posture_constraint.setJointLimits(3, .65, .9); % pelvis height limits from scott
         posture_constraint = posture_constraint.setJointLimits(6, q0(6) - .5, q0(6) + .5);  %arbitrary yaw limit to not turn too much
+        
+        body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,pelvis_body); % fix the pelvis pose for all t.  TODO: allow this to move in z
       else
         posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]);
       end
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
+%       posture_constraint = posture_constraint.setJointLimits(9,-.2,.2);
             
+      
+      if obj.allowPelvisHeight
+        [z_min, z_max] = obj.atlas.getPelvisHeightLimits(q0);
+        posture_constraint = posture_constraint.setJointLimits(3,z_min, z_max);
+      end
+      
       % create drill position constraints
       x_drill_traj = PPTrajectory(foh(t_drill,drill_points));
       drill_pos_constraint = cell(1,N);
@@ -167,14 +188,6 @@ classdef drillPlanner
           x_drill_traj.eval(t_vec(i)),x_drill_traj.eval(t_vec(i)),[t_vec(i) t_vec(i)]);
       end
       
-      % fix body pose for all t
-      if obj.allowPelvisHeight
-        pelvis_body = regexpIndex('pelvis',{obj.r.getBody(:).linkname});
-        body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,pelvis_body); % fix the pelvis
-      else
-        pelvis_body = regexpIndex('pelvis',{obj.r.getBody(:).linkname});
-        body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,pelvis_body); % fix the pelvis
-      end
       q_nom = zeros(obj.r.num_q,N);
        
       % Find nominal pose
@@ -182,7 +195,7 @@ classdef drillPlanner
       q_end_nom = q0;
       for i=1:50,
         [q_tmp,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0 + .2*randn(obj.r.num_q,1),q0,...
-          drill_pos_constraint{1},drill_dir_constraint,posture_constraint,obj.ik_options);
+          drill_pos_constraint{1},drill_dir_constraint,posture_constraint,world_pos_x_constraint,obj.ik_options);
         
         c_tmp = (q_tmp - q0)'*obj.ik_options.Q*(q_tmp - q0);
         if snopt_info_ik <= 3 && c_tmp < diff_opt
@@ -199,7 +212,7 @@ classdef drillPlanner
         snopt_info_ik(i) = inf;
         while j<10 && snopt_info_ik(i) > 3
           [q_nom(:,i), snopt_info_ik(i),infeasible_constraint_ik] = inverseKin(obj.r,q_nom(:,i-1),q_nom(:,i-1) + .1*randn(obj.r.num_q,1),...
-            drill_pos_constraint{i}, drill_dir_constraint, posture_constraint, obj.ik_options);
+            drill_pos_constraint{i}, drill_dir_constraint, posture_constraint,world_pos_x_constraint, obj.ik_options);
           j = j+1;
         end
         if(snopt_info_ik(i) > 10)
@@ -214,12 +227,17 @@ classdef drillPlanner
       qtraj_guess = PPTrajectory(foh(t_vec,q_nom));
       
       obj.free_ik_options.setMajorOptimalityTolerance(1e-4);
-      obj.free_ik_options = obj.free_ik_options.setMajorIterationsLimit(1000);
+      obj.free_ik_options = obj.free_ik_options.setMajorIterationsLimit(2000);
       
-      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-        t_vec,qtraj_guess,qtraj_guess,body_pose_constraint,...
-        drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.free_ik_options);
-      
+      if free_body_pose
+        [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+          t_vec,qtraj_guess,qtraj_guess,body_pose_constraint,world_pos_x_constraint,...
+          drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.free_ik_options);
+      else
+        [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+          t_vec,qtraj_guess,qtraj_guess,world_pos_x_constraint,...
+          drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.free_ik_options);
+      end
       if(snopt_info > 10)
         send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
         send_status(4,0,0,send_msg);
