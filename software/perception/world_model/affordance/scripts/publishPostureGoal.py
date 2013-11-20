@@ -60,6 +60,10 @@ def getShooter():
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
+def getShooterBack():
+  position=[0,0,0,-2.35619, 1.35674083233, 0.0874569192529, 0.270734280348, 0.785398, 0.286707222462]
+  name=["back_bkx", "back_bky", "back_bkz","r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position,name]
 
 def getPullDown():
   position=[-1.40425169468, 1.94562590122, -0.584710803126, 0.789787143469, -0.927295863628, 0.546333581209]
@@ -105,18 +109,18 @@ def getHoseMate():
 
 def usage():
   print "exe-name positions [l|r]"
-  print "cradle   - close to robot, hand upside down"
-  print "crane    - hand pointing down from in front"
-  print "farhang  - above, further away"
-  print "hang     - hand just about cradle. thumb in"
-  print "handdown - handdown"
-  print "pulldown - lower config below the current"
-  print "shooter  - hand up and finger away"
-  print "turnback - turn the back z joint"
-  print "zero     - zero the back joint"
-  print "retract  - turn back and retract hand"
-  print "hosemate - config mate"
-
+  print "cradle      - close to robot, hand upside down"
+  print "crane       - hand pointing down from in front"
+  print "farhang     - above, further away"
+  print "hang        - hand just about cradle. thumb in"
+  print "handdown    - handdown"
+  print "pulldown    - lower config below the current"
+  print "shooter     - hand up and finger away"
+  print "turnback    - turn the back z joint"
+  print "zero        - zero the back joint"
+  print "retract     - turn back and retract hand"
+  print "hosemate    - config mate"
+  print "shooterback - hand up and finger away, back straight"
 ######################################
 #print 'Number of arguments:', len(sys.argv), 'arguments.'
 #print 'Argument List:', str(sys.argv)
@@ -154,14 +158,14 @@ elif (posture_name == "farhang"):
   [msg.joint_position, msg.joint_name] = getFarHang()
 elif (posture_name == "shooter"):
   [msg.joint_position, msg.joint_name] = getShooter()
+elif (posture_name == "shooterback"):
+  [msg.joint_position, msg.joint_name] = getShooterBack()
 elif (posture_name == "pulldown"):
   [msg.joint_position, msg.joint_name] = getPullDown()
 elif (posture_name == "handdown"):
   [msg.joint_position, msg.joint_name] = getHandDown()
 elif (posture_name == "crane"):
   [msg.joint_position, msg.joint_name] = getCrane()
-#elif (posture_name == "highvalve"):
-#  [msg.joint_position, msg.joint_name] = getHighValve()
 elif (posture_name == "turnback"):
   [msg.joint_position, msg.joint_name] = getTurnBack()
 elif (posture_name == "zeroback"):
