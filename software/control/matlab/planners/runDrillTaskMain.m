@@ -99,7 +99,7 @@ while(true)
       wall_z = wall_z/norm(wall_z);
       wall_y = cross(wall_z, wall.normal);
       
-      q0_init(1:3) = target_centroid - wall.normal*.7 - .5*wall_z + .3*wall_y;
+      q0_init(1:3) = target_centroid - wall.normal*.5 - .5*wall_z + .3*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
       [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, 0);
       
