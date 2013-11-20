@@ -24,7 +24,7 @@ classdef AtlasManipController < DRCController
   
       integral_gains = zeros(getNumDOF(r),1);
       if options.controller_type == 1 % use PID control
-        integral_gains(arm_joints) = 0.4;
+        integral_gains(arm_joints) = 0.5;
         integral_gains(back_joints) = 0.0;
       end
       
@@ -199,7 +199,7 @@ classdef AtlasManipController < DRCController
               % always use current desired body pose
               qprev_end(1:6) = q0(1:6);
             end
-            if max(abs(q0(torso)-qprev_end(torso))) < 0.25
+            if max(abs(q0(torso)-qprev_end(torso))) < 0.75
               qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
             else
               qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
