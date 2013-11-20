@@ -165,6 +165,10 @@ class IRobotHandController(object):
     @staticmethod
     def get_close_hand_motor_indices():
         return close_hand_motor_indices
+    
+    @staticmethod
+    def get_nonspread_motor_indices():
+        return non_spread_motor_indices
 
     def calibrate_motor_encoder_offsets(self, in_jig):
         
