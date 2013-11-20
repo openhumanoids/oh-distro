@@ -258,8 +258,8 @@ Plot::Plot(QWidget *parent):
   QwtPlotZoomer* zoomer = new MyZoomer(this);
   zoomer->setMousePattern(QwtEventPattern::QwtEventPattern::MouseSelect1,
       Qt::LeftButton, Qt::ShiftModifier);
-  // zoomer->setMousePattern(QwtEventPattern::MouseSelect3,
-  //     Qt::RightButton);
+  // disable MouseSelect3 action of the zoomer
+  zoomer->setMousePattern(QwtEventPattern::MouseSelect3, 0);
 
   MyPanner *panner = new MyPanner(this);
 
