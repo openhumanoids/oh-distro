@@ -102,7 +102,7 @@ protected:
 
     static constexpr int kVirtualImageWidth = 200;
     static constexpr int kVirtualImageHeight = 200;
-    static constexpr double kNominalFocalLengthFactor = 1.0;
+    static constexpr double kNominalFocalLengthFactor = 0.5;
 
     typedef std::shared_ptr<CameraState> Ptr;
 
@@ -568,12 +568,14 @@ public:
     cam->mPlacement = ImagePlacementTopLeft;
     cam->mNativeImage = false;
     cam->mScale = 1.0/6;
+    cam->mViewTargetCombo->set_active(ViewTargetLeftHand);
     mCameraStates.push_back(cam);
 
     cam.reset(new CameraState("CAMERACHEST_RIGHT", "sa R", this));
     cam->mPlacement = ImagePlacementTopRight;
     cam->mNativeImage = false;
     cam->mScale = 1.0/6;
+    cam->mViewTargetCombo->set_active(ViewTargetRightHand);
     mCameraStates.push_back(cam);
 
     container->show_all();
@@ -620,7 +622,9 @@ public:
     if (whichImage < 0) return false;
     auto cam = mCameraStates[whichImage];
 
-    cam->mViewTargetCombo->set_active(ViewTargetNone);
+    if (iEvent->button == 1) {
+      cam->mViewTargetCombo->set_active(ViewTargetNone);
+    }
 
     // triple click (TODO: ignore double click)
     if (iEvent->type == GDK_3BUTTON_PRESS) {
