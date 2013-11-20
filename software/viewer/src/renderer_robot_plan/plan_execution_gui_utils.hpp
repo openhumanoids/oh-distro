@@ -148,10 +148,11 @@ namespace renderer_robot_plan_gui_utils
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     cout <<"Robot plan approved" << endl;
     
-    if(!self->robotPlanListener->is_multi_approval_plan())
-	{
+   if(!self->robotPlanListener->is_multi_approval_plan())
+	 {
       gtk_widget_destroy (self->plan_execute_button);
       self->plan_execute_button= NULL;
+      self->robotPlanListener->_current_plan_committed = true;
     }
         
     if(self->robotPlanListener->is_plan_paused()){

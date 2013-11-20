@@ -311,8 +311,18 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
   }
   else
   {
-   if((self->plan_execution_dock==NULL)&&(!self->robotPlanListener->_is_manip_map))
+   if(!self->robotPlanListener->_is_manip_map)
+   {
+    if(self->plan_execution_dock==NULL)
       spawn_plan_execution_dock(self);
+    else if ((self->plan_execute_button==NULL)&&(!self->robotPlanListener->_current_plan_committed))
+    {
+      gtk_widget_destroy(self->plan_execution_dock);
+      self->plan_execution_dock= NULL;
+      spawn_plan_execution_dock(self);
+    }
+      
+   }
   }
 
    if((self->plan_approval_dock==NULL)&&(self->robotPlanListener->_is_manip_map))

@@ -49,6 +49,7 @@ namespace renderer_robot_plan
     bool _is_multi_approve_plan;
     bool _plan_paused; // a manip plan is paused on pressing the pause button, unpaused on pressing play again.
     
+    
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_robot;
     //boost::shared_ptr<visualization_utils::InteractableGlKinematicBody> _base_gl_robot;
     //----------------constructor/destructor
@@ -59,6 +60,7 @@ namespace renderer_robot_plan
   public:
     bool _is_manip_plan;
     bool _is_manip_map;
+    bool _current_plan_committed; // is set to true when a plan is committed but is still retained in the viewer for visualization.
     int64_t _last_plan_msg_timestamp; 
     RobotPlanListener(boost::shared_ptr<lcm::LCM> &lcm,
 		       BotViewer *viewer, int operation_mode);
@@ -423,12 +425,14 @@ namespace renderer_robot_plan
         _is_manip_plan = false;
         }
         _is_manip_map = false;
+        _current_plan_committed = false;
 		};	
 		
 		void activate_walking_plan()
     {
 		  _is_manip_plan =false;
       _is_manip_map =false; 
+      _current_plan_committed = false;
       deactivate_multi_approval();  
 		};
 		
@@ -436,6 +440,7 @@ namespace renderer_robot_plan
     {
       _is_manip_plan =true;
       _is_manip_map =false;
+      _current_plan_committed = false;
       if(_aprvd_footstep_plan_in_cache){
        _aprvd_footstep_plan_in_cache=false;
       }
@@ -445,6 +450,7 @@ namespace renderer_robot_plan
     {
       _is_manip_plan =false;
       _is_manip_map =true;
+      _current_plan_committed = false;
       if(_aprvd_footstep_plan_in_cache)
        _aprvd_footstep_plan_in_cache=false;
       deactivate_multi_approval(); 
@@ -453,8 +459,9 @@ namespace renderer_robot_plan
 		bool activate_multi_approval()
     {
       _is_multi_approve_plan =true;
+      _current_plan_committed = false;
       _active_breakpoint=0;
-      _retractable_cycle_counter = 0;
+      _retractable_cycle_counter = 0;     
 		};
 		
 		bool deactivate_multi_approval()
@@ -463,7 +470,7 @@ namespace renderer_robot_plan
       _active_breakpoint=0;
       _retractable_cycle_counter = 0;
 		};
-    
+
     
     int64_t get_keyframe_timestamp(int index) {
         return _keyframe_timestamps[index];

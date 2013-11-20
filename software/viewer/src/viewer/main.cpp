@@ -118,7 +118,7 @@ static void foviationSpecificRenderer(void *user_data, string renderer_name)
     {
 	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
     }    
-    else if(renderer_name=="Robot Plan Display")
+    else if(renderer_name=="Planning")
     {
 	    always_enabled_renderers = (always_enabled_renderers||(name=="Maps"));
     } 
@@ -319,7 +319,7 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
        foviate_renderer = "Affordances & StickyHands/Feet";
        break;
       case F2:
-       foviate_renderer = "Robot Plan Display";
+       foviate_renderer = "Planning";
        break;
       case F3:
        foviate_renderer = "State"; 
@@ -351,7 +351,7 @@ on_key_release(BotViewer *viewer, BotEventHandler *ehandler,
       cout << "------------------------------------------\n";
       cout << "ESC-All\n";
       cout << "F1-Affordances & StickyHands/Feet\n";
-      cout << "F2-Robot Plan Display\n";
+      cout << "F2-Planning\n";
       cout << "F3-State\n";  
       cout << "F4-Walking\n";
       cout << "F5-Footstep Plans\n";

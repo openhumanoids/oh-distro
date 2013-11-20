@@ -29,7 +29,8 @@ namespace renderer_robot_plan
     _retractable_cycle_counter(0),
 		_plan_paused(false),
 		_is_left_sandia(true),
-		_is_right_sandia(true)
+		_is_right_sandia(true),
+		_current_plan_committed(false)
 
   {
      //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
