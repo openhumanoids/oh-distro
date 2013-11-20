@@ -55,6 +55,14 @@ StateEstimate::StateEstimator::StateEstimator(
   }
   std::cout << "StateEstimator::StateEstimator -- IMU_to_body: " << IMU_to_body.linear() << std::endl << IMU_to_body.translation() << std::endl;
   
+  // Go get the joint names for FK
+    robot = new RobotModel;
+	lcm::Subscription* robot_model_subcription_;
+	robot_model_subcription_ = robot->lcm.subscribeFunction("ROBOT_MODEL", StateEstimate::onMessage, robot);
+	while(robot->lcm.handle()==-1);// wait for one message, wait until you get a success.
+	robot->lcm.unsubscribe(robot_model_subcription_);
+
+
   std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;
   // using this constructor as a bit of legacy -- but in reality we should probably inprove on this situation
   _leg_odo = new TwoLegs::TwoLegOdometry(false, false, 1400.f);
@@ -95,6 +103,7 @@ StateEstimate::StateEstimator::StateEstimator(
 StateEstimate::StateEstimator::~StateEstimator()
 {
   delete _leg_odo;
+  delete robot;
 }
 
 //-----------------------------------------------------------------------------
@@ -182,13 +191,13 @@ void StateEstimate::StateEstimator::run()
       //float joint_velocities[atlasState.num_joints];
       // Joint velocity states in the atlasState message are overwriten by this process
       mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
-      insertAtlasState_ERS(atlasState, mERSMsg);
+      insertAtlasState_ERS(atlasState, mERSMsg, *robot);
       // std::cout << "Handled Atlas state" << std::endl;
       
       // here we compute the leg odometry position solution
       // TODO -- we are using the BDI orientation estimate to 
       
-      doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass);
+      doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, *robot);
 
       // TODO -- remove this, only a temporary display object
       // Tihs is where leg odometry thinks the pelvis is at

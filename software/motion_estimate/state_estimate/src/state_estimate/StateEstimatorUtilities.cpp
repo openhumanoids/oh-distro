@@ -47,12 +47,12 @@ bool StateEstimate::insertPoseBDI(const PoseT &pose_BDI_, drc::robot_state_t& ms
 
 
 
-bool StateEstimate::insertAtlasState_ERS(const drc::atlas_state_t &atlasState, drc::robot_state_t &mERSMsg){
+bool StateEstimate::insertAtlasState_ERS(const drc::atlas_state_t &atlasState, drc::robot_state_t &mERSMsg, RobotModel robot){
 
 	Joints jointsContainer;
 	
 	// This is called form state_sync
-	insertAtlasJoints(&atlasState, jointsContainer);
+	insertAtlasJoints(&atlasState, jointsContainer, robot);
 	appendJoints(mERSMsg, jointsContainer);
 	
 	return false;
@@ -71,9 +71,9 @@ void StateEstimate::appendJoints(drc::robot_state_t& msg_out, const StateEstimat
 }
 
 
-void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstimate::Joints &jointContainer) {
+void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstimate::Joints &jointContainer, RobotModel robot) {
 
-  jointContainer.name = msg->joint_name;
+  jointContainer.name = robot.joint_names_;
   jointContainer.position = msg->joint_position;
   jointContainer.velocity = msg->joint_velocity;
   jointContainer.effort = msg->joint_effort;
@@ -196,12 +196,16 @@ void StateEstimate::handle_inertial_data_temp_name(
 }
 
 
-void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass) {
+void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel robot) {
 	
   // Keep joint positions in local memory -- prepare data structure for use with FK
   std::map<std::string, double> jointpos_in;
   for (uint i=0; i< (uint) atlasState.num_joints; i++) {
-	jointpos_in.insert(make_pair(atlasState.joint_name[i], atlasState.joint_position[i]));
+	//jointpos_in.insert(make_pair(atlasState.joint_name[i], atlasState.joint_position[i]));
+
+	// Changing name types to AtlasControlTypes definition
+	jointpos_in.insert(make_pair(robot.joint_names_[i], atlasState.joint_position[i]));
+
   }
   
   Eigen::Isometry3d current_pelvis;
@@ -267,6 +271,21 @@ void StateEstimate::stampInertialPoseUpdateRequestMsg(InertialOdometry::Odometry
   return;
 }
 
+void StateEstimate::stampLegOdoPoseUpdateRequestMsg(TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg) {
+
+  // For ease of reading we collect local copies of variables
+  //std::cout << "StateEstimate::packDFUpdateRequestMsg -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
+
+  Eigen::Isometry3d pelvis;
+
+  pelvis = _leg_odo.getPelvisState();
+
+  msg.pose.translation.x = pelvis.translation().x();
+  msg.pose.translation.y = pelvis.translation().y();
+  msg.pose.translation.z = pelvis.translation().z();
+
+}
+
 void StateEstimate::stampPositionReferencePoseUpdateRequest(const Eigen::Vector3d &_refPos, drc::ins_update_request_t &msg) {
 	  msg.updateType =  drc::ins_update_request_t::POSITION_LOCAL;
 
@@ -318,6 +337,25 @@ void StateEstimate::stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t
 	msg.referenceQ_local.z = matlabPose.pose.rotation.z;
 }
 
+
+void StateEstimate::onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot) {
+  // Received robot urdf string. Store it internally and get all available joints.
+
+   robot->robot_name      = msg->robot_name;
+   robot->urdf_xml_string = msg->urdf_xml_string;
+  std::cout<<"Received urdf_xml_string of robot ["<<msg->robot_name <<"], storing it internally as a param"<<std::endl;
+
+  urdf::Model robot_model;
+  if (!robot_model.initString( msg->urdf_xml_string))
+  {std::cerr << "ERROR: Could not generate robot model" << std::endl;}
+
+  typedef std::map<std::string, boost::shared_ptr<urdf::Joint> > joints_mapType;
+  for( joints_mapType::const_iterator it = robot_model.joints_.begin(); it!=robot_model.joints_.end(); it++)
+  {
+	  if(it->second->type!=6) // All joints that not of the type FIXED.
+               robot->joint_names_.push_back(it->first);//Joint names are sorted in alphabetical order within the urdf::Model structure.
+  }
+ }//end onMessage
 
 //int StateEstimate::getIMUBodyAlignment(const unsigned long &utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_) : lcm_(lcm_) {
 //

@@ -26,6 +26,7 @@
 
 #include "SharedTypes.h"
 
+
 namespace StateEstimate
 {
 
@@ -69,6 +70,8 @@ protected:
   JointFilters mJointFilters;
   //  vector<float> mJointVelocities;
   
+  RobotModel* robot;
+
   
 private:
   const StateEstimate::command_switches* _mSwitches;
