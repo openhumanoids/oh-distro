@@ -3,6 +3,8 @@
 #include <ros/ros.h>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
+#include <lcmtypes/irobothand.hpp>
+
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
@@ -13,6 +15,13 @@
 #include <sandia_hand_msgs/RelativeJointCommands.h>
 #include <sandia_hand_msgs/CameraStreaming.h>
 #include <handle_msgs/HandleControl.h>
+
+#include <mit_helios_scripts/MITIRobotHandSpread.h>
+#include <mit_helios_scripts/MITIRobotHandCalibrate.h>
+#include <mit_helios_scripts/MITIRobotHandCurrentControlClose.h>
+#include <mit_helios_scripts/MITIRobotHandPositionControlClose.h>
+
+
 #include <map>
 #include <ConciseArgs>
 
@@ -46,7 +55,21 @@ class LCM2ROS{
     // Ignore "sandia" - this message is used by both hands
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sandia_simple_grasp_t* msg);  
     ros::Publisher irobot_l_hand_simple_cmd_pub_, irobot_r_hand_simple_cmd_pub_;
-  
+    
+    
+    ///
+    void IrobotSpreadHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const irobothand::spread_t* msg);  
+    ros::Publisher irobot_left_spread_pub_, irobot_right_spread_pub_;
+    ///
+    void IrobotCalibrateHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const irobothand::calibrate_t* msg);  
+    ros::Publisher irobot_left_calibrate_pub_, irobot_right_calibrate_pub_;
+    //
+    void IrobotCurrentControlCloseHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const irobothand::current_control_close_t* msg);  
+    ros::Publisher irobot_left_current_control_close_pub_, irobot_right_current_control_close_pub_;    
+    //
+    void IrobotPositionControlCloseHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const irobothand::position_control_close_t* msg);  
+    ros::Publisher irobot_left_position_control_close_pub_, irobot_right_position_control_close_pub_;    
+    
     ros::NodeHandle* rosnode;
 };
 
@@ -76,6 +99,29 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 
   camera_streaming_pub_left_ = nh_.advertise<sandia_hand_msgs::CameraStreaming>("/sandia_hands/l_hand/camera_streaming",10);
   camera_streaming_pub_right_ = nh_.advertise<sandia_hand_msgs::CameraStreaming>("/sandia_hands/r_hand/camera_streaming",10);
+  
+  
+  /// iRobot Messages - keep this clean!
+  lcm_->subscribe("IROBOT_LEFT_SPREAD",&LCM2ROS::IrobotSpreadHandler,this);  
+  lcm_->subscribe("IROBOT_RIGHT_SPREAD",&LCM2ROS::IrobotSpreadHandler,this);  
+  irobot_left_spread_pub_ = nh_.advertise<mit_helios_scripts::MITIRobotHandSpread>("/irobot_hands/l_hand/mit_spread",10);
+  irobot_right_spread_pub_ = nh_.advertise<mit_helios_scripts::MITIRobotHandSpread>("/irobot_hands/r_hand/mit_spread",10);
+
+  lcm_->subscribe("IROBOT_LEFT_CALIBRATE",&LCM2ROS::IrobotCalibrateHandler,this);  
+  lcm_->subscribe("IROBOT_RIGHT_CALIBRATE",&LCM2ROS::IrobotCalibrateHandler,this);  
+  irobot_left_calibrate_pub_ = nh_.advertise<mit_helios_scripts::MITIRobotHandCalibrate>("/irobot_hands/l_hand/mit_calibrate",10);
+  irobot_right_calibrate_pub_ = nh_.advertise<mit_helios_scripts::MITIRobotHandCalibrate>("/irobot_hands/r_hand/mit_calibrate",10);
+  
+  lcm_->subscribe("IROBOT_LEFT_CURRENT_CONTROL_CLOSE",&LCM2ROS::IrobotCurrentControlCloseHandler,this);  
+  lcm_->subscribe("IROBOT_RIGHT_CURRENT_CONTROL_CLOSE",&LCM2ROS::IrobotCurrentControlCloseHandler,this);  
+  irobot_left_current_control_close_pub_ = nh_.advertise<mit_helios_scripts::MITIRobotHandCurrentControlClose>("/irobot_hands/l_hand/mit_current_control_close",10);
+  irobot_right_current_control_close_pub_ = nh_.advertise<mit_helios_scripts::MITIRobotHandCurrentControlClose>("/irobot_hands/r_hand/mit_current_control_close",10);
+  
+  lcm_->subscribe("IROBOT_LEFT_POSITION_CONTROL_CLOSE",&LCM2ROS::IrobotPositionControlCloseHandler,this);  
+  lcm_->subscribe("IROBOT_RIGHT_POSITION_CONTROL_CLOSE",&LCM2ROS::IrobotPositionControlCloseHandler,this);  
+  irobot_left_position_control_close_pub_ = nh_.advertise<mit_helios_scripts::MITIRobotHandPositionControlClose>("/irobot_hands/l_hand/mit_position_control_close",10);
+  irobot_right_position_control_close_pub_ = nh_.advertise<mit_helios_scripts::MITIRobotHandPositionControlClose>("/irobot_hands/r_hand/mit_position_control_close",10);
+  
 
   rosnode = new ros::NodeHandle();
 }
@@ -268,6 +314,55 @@ void LCM2ROS::publishIrobotHandCommand(const drc::joint_command_t* msg, bool is_
   } 
  
 }
+
+/// iRobot-only Messages
+void LCM2ROS::IrobotSpreadHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const irobothand::spread_t* msg) {
+  mit_helios_scripts::MITIRobotHandSpread msgout;
+  msgout.angle_radians= msg->angle_radians;
+  if (channel == "IROBOT_LEFT_SPREAD") {
+    irobot_left_spread_pub_.publish(msgout);
+  }else{
+    irobot_right_spread_pub_.publish(msgout);  
+  }
+}
+
+void LCM2ROS::IrobotCalibrateHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const irobothand::calibrate_t* msg) {
+  mit_helios_scripts::MITIRobotHandCalibrate msgout;
+  msgout.in_jig= msg->in_jig;
+  if (channel == "IROBOT_LEFT_CALIBRATE") {
+    irobot_left_calibrate_pub_.publish(msgout);
+  }else{
+    irobot_right_calibrate_pub_.publish(msgout);  
+  }
+}
+
+void LCM2ROS::IrobotCurrentControlCloseHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const irobothand::current_control_close_t* msg){
+  mit_helios_scripts::MITIRobotHandCurrentControlClose msgout;
+  msgout.current_milliamps= msg->current_milliamps;
+  for (int i=0; i < 4; i++)
+    msgout.valid[i]= msg->valid[i]; 
+  
+  if (channel == "IROBOT_LEFT_CURRENT_CONTROL_CLOSE") {
+    irobot_left_current_control_close_pub_.publish(msgout);
+  }else{
+    irobot_right_current_control_close_pub_.publish(msgout);  
+  }  
+}
+
+void LCM2ROS::IrobotPositionControlCloseHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const irobothand::position_control_close_t* msg){
+  mit_helios_scripts::MITIRobotHandPositionControlClose msgout;
+  msgout.close_fraction= msg->close_fraction;
+  for (int i=0; i < 4; i++)
+    msgout.valid[i]= msg->valid[i]; 
+  
+  if (channel == "IROBOT_LEFT_POSITION_CONTROL_CLOSE") {
+    irobot_left_position_control_close_pub_.publish(msgout);
+  }else{
+    irobot_right_position_control_close_pub_.publish(msgout);  
+  }  
+}
+
+
 
 int main(int argc,char** argv) {
 
