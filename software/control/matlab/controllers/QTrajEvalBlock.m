@@ -68,7 +68,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
         qdes = fasteval(qtraj,t);
       end
       if obj.use_error_integrator
-        delt = 0.15;
+        delt = 0.2;
         q = x(1:end/2);
         setField(obj.controller_data,'integral', ...
           obj.controller_data.data.integral + obj.controller_data.data.integral_gains.*(qdes-q)*obj.dt);

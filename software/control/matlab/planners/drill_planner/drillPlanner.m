@@ -74,9 +74,9 @@ classdef drillPlanner
       accel_cost = cost*.05;
       
       obj.footstep_msg = drc.walking_goal_t();
-      obj.footstep_msg.max_num_steps = NaN;
-      obj.footstep_msg.min_num_steps = NaN;
-      obj.footstep_msg.timeout = NaN;
+      obj.footstep_msg.max_num_steps = 10;
+      obj.footstep_msg.min_num_steps = 0;
+      obj.footstep_msg.timeout = 0;
       obj.footstep_msg.step_speed = NaN;
       obj.footstep_msg.nom_step_width = NaN;
       obj.footstep_msg.nom_forward_step = NaN;
@@ -86,7 +86,7 @@ classdef drillPlanner
       obj.footstep_msg.bdi_step_duration = NaN;
       obj.footstep_msg.bdi_sway_duration = NaN;
       obj.footstep_msg.bdi_lift_height = NaN;
-      obj.footstep_msg.bdi_toe_off = NaN;
+      obj.footstep_msg.bdi_toe_off = 1;
       obj.footstep_msg.bdi_knee_nominal = NaN;
       obj.footstep_msg.follow_spline = false;
       obj.footstep_msg.ignore_terrain = false;

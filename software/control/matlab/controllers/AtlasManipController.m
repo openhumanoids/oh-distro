@@ -182,7 +182,7 @@ classdef AtlasManipController < DRCController
           msg = data.COMMITTED_ROBOT_PLAN;
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
           [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,obj.robot.floating,joint_names); 
-          % TODO: REMOVE THIS ********************************************
+          % TODO: REMOVE THIS ********************************************d
           % try using the desired position of the last plan as the first
           % point in the plan as using the current position causes a "jump"
           % in robot position due to steady state error of the controller.
@@ -199,7 +199,7 @@ classdef AtlasManipController < DRCController
               % always use current desired body pose
               qprev_end(1:6) = q0(1:6);
             end
-            if max(abs(q0(torso)-qprev_end(torso))) < 0.15
+            if max(abs(q0(torso)-qprev_end(torso))) < 0.25
               qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
             else
               qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));

@@ -19,7 +19,10 @@ while isempty(wall) || isempty(drill)
   [wall,drill] = lcm_mon.getWallAndDrillAffordances();
 end
 
-
+drill.guard_pos = [    0.25
+   -0.2602
+    0.0306];
+  drill.drill_axis = [1;0;0];
 finger_pt_on_hand = [0; 0.2702; 0.015];
 finger_axis_on_hand = [0;1;0];
 
@@ -141,18 +144,24 @@ while(true)
         segment_index = segment_index + 1;
         if segment_index == diagonal_index,
           cut_length = short_cut;
-        elseif segment_index > size(drill_points,2)
+        elseif segment_index == size(drill_points,2)
           segment_index = 1; % reset to the beginning, may not be a great idea
         else
           cut_length = long_cut;
         end
-      else
+      elsese drc.drill_control_t.RQ_DRILL_DELTA_PLAN
+      % create wall coordinate frame
+      wall_z = [0;0;1];
+      wall_z = wall_z - wall_z'*wall.normal*wall.normal;
+      wall_z = wall_z/norm(wall_z);
+      wall_y = cross(wall_z, wall.normal);
+      
         cut_length = long_cut;
       end
       
       segment_dir = (drill_points(:,segment_index+1) -drill_points(:,segment_index));
       segment_dir = segment_dir/norm(segment_dir);
-      
+      delta
       line_param = -(drill_points(:,segment_index) - drill0)'*(drill_points(:,segment_index+1) - drill_points(:,segment_index))/norm(drill_points(:,segment_index+1)-drill_points(:,segment_index))^2;
       
       nearest_point = drill_points(:,segment_index) + line_param*(drill_points(:,segment_index+1) -drill_points(:,segment_index));
@@ -167,20 +176,22 @@ while(true)
       
       [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 5);
     case drc.drill_control_t.RQ_DRILL_TARGET_PLAN
+
+      
+    case drc.drill_control_t.RQ_DRILL_DELTA_PLAN
       % create wall coordinate frame
       wall_z = [0;0;1];
       wall_z = wall_z - wall_z'*wall.normal*wall.normal;
       wall_z = wall_z/norm(wall_z);
       wall_y = cross(wall_z, wall.normal);
       
-    case drc.drill_control_t.RQ_DRILL_DELTA_PLAN
       if sizecheck(ctrl_data, [3 1])
         delta = ctrl_data(1:3);
         q0 = lcm_mon.getStateEstimate();
-        
+        world_delta = delta(1)*wall.normal + delta(2)*wall_y + delta(3)*wall_z;
         kinsol = r.doKinematics(q0);
         drill0 = r.forwardKin(kinsol, drill_pub.hand_body, drill.guard_pos);
-        drill_target = drill0 + delta;
+        drill_target = drill0 + world_delta;
         [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 5);
       else
         send_status(4,0,0,'Invalid size of control data. Expected 3x1');
