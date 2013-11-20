@@ -413,14 +413,15 @@ void set_default_params(RendererWalking* self, int mode) {
     std::cout << "Using preset mode: Ladder\n";
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 2);  
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 1);  
-    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_SPEED, 0.005);  
-    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_HEIGHT, 0.05);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_SPEED, 0.01);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_HEIGHT, 0.1);  
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.25);  
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.45);  
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
     bot_gtk_param_widget_set_double(self->drake_pw, PARAM_MU, 1.0);  
     bot_gtk_param_widget_set_bool(self->main_pw,PARAM_IGNORE_TERRAIN, TRUE);
     bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
+    bot_gtk_param_widget_set_bool(self->main_pw,PARAM_FORCE_STICKY_FEET, TRUE);
   }
   get_params_from_widget(self);
 }
