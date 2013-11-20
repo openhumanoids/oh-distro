@@ -90,7 +90,7 @@ classdef drillPlanner
       obj.footstep_msg.bdi_knee_nominal = NaN;
       obj.footstep_msg.follow_spline = false;
       obj.footstep_msg.ignore_terrain = false;
-      obj.footstep_msg.behavior = NaN;
+      obj.footstep_msg.behavior = drc.walking_goal_t.BEHAVIOR_BDI_STEPPING;
       obj.footstep_msg.mu = NaN;
       obj.footstep_msg.allow_optimization = true;
       obj.footstep_msg.is_new_goal = true;
@@ -587,7 +587,7 @@ classdef drillPlanner
     % publish trajectory as a plan
     % also draw the drill tip with LCMGL
     function publishTraj(obj,xtraj,snopt_info)
-      utime = now() * 24 * 60 * 60;
+      utime = etime(clock,[1970 1 1 0 0 0])*1e6;
       nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
       ts = xtraj.pp.breaks;
       q = xtraj.eval(ts);
@@ -620,7 +620,7 @@ classdef drillPlanner
     % publish a trajectory as a pose sequence, but it isn't interpreted as
     % expected by the viewer
     function publishPoseTraj(obj,xtraj)
-      utime = now() * 24 * 60 * 60;
+      utime = etime(clock,[1970 1 1 0 0 0])*1e6;
       nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
       ts = xtraj.pp.breaks;
       q = xtraj.eval(ts);
@@ -634,7 +634,7 @@ classdef drillPlanner
     % publish a walking goal
     % pose is [x;y;z;quat]
     function publishWalkingGoal(obj,pose)
-      obj.footstep_msg.utime = now() * 24 * 60 * 60;
+      obj.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
       obj.footstep_msg.goal_pos.translation.x = pose(1);
       obj.footstep_msg.goal_pos.translation.y = pose(2);
       obj.footstep_msg.goal_pos.translation.z = pose(3);
