@@ -139,12 +139,12 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
       char buff[100];
       if (self->show_detailed_info && camera_dist_sq < 8) {
         snprintf(buff, 100, "%.0f \ndx %+.2f\ndy %+.2f\ndz %+.2f", label_num, T_prev_to_curr.p[0], T_prev_to_curr.p[1], T_prev_to_curr.p[2]);
-        glColor4f(0,.2,0.2,1);
-        bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_12, buff,BOT_GL_DRAW_TEXT_JUSTIFY_LEFT | BOT_GL_DRAW_TEXT_ANCHOR_BOTTOM);
+        glColor4f(1,1,1,1);
+        bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_12, buff,BOT_GL_DRAW_TEXT_JUSTIFY_LEFT | BOT_GL_DRAW_TEXT_ANCHOR_BOTTOM | BOT_GL_DRAW_TEXT_DROP_SHADOW);
       } else {
         snprintf(buff, 100, "%.0f", label_num);
         glColor4f(0,0,0,1);
-        bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_12, buff,BOT_GL_DRAW_TEXT_JUSTIFY_LEFT);
+        bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, buff,BOT_GL_DRAW_TEXT_JUSTIFY_LEFT);
       }
     }
     
