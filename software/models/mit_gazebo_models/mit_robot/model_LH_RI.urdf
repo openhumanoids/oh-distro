@@ -1626,36 +1626,37 @@
     <!-- MIT's own extension plate -->
     <collision>
       <geometry>
-        <cylinder length="0.02" radius="0.045"/>
+        <cylinder length="0.01" radius="0.045"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.03"/>
+      <origin rpy="0 0 0" xyz="0 0 0.025"/>
     </collision>
     <visual>
       <geometry>
-        <cylinder length="0.02" radius="0.045"/>
+        <cylinder length="0.01" radius="0.045"/>
       </geometry>
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0 0.03"/>
+      <origin rpy="0 0 0" xyz="0 0 0.025"/>
     </visual>
     <!-- MIT's pointer rod -->
     <collision>
       <geometry>
-        <cylinder length="0.12" radius="0.006"/>
+        <cylinder length="0.15" radius="0.006"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.10"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </collision>
     <visual>
       <geometry>
-        <cylinder length="0.12" radius="0.006"/>
+        <cylinder length="0.15" radius="0.006"/>
       </geometry>
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0 0.10"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </visual>
     <!-- MIT's hook -->
+    <!--
     <collision>
       <geometry>
         <cylinder length="0.04" radius="0.006"/>
@@ -1671,6 +1672,7 @@
       </material>
       <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.16"/>
     </visual>
+-->
   </link>
 </robot>
 
