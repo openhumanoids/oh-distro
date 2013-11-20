@@ -119,6 +119,7 @@ namespace renderer_robot_plan_gui_utils
   {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     self->robotPlanListener->purge_current_plan();
+    self->plan_execute_button = NULL;
     //self->marker_choice_state = HANDS; // if you want to reset markers
     if(self->robotPlanListener->is_multi_approval_plan()){
       gtk_widget_destroy(self->multiapprove_plan_execution_dock);
@@ -147,6 +148,11 @@ namespace renderer_robot_plan_gui_utils
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     cout <<"Robot plan approved" << endl;
     
+    if(!self->robotPlanListener->is_multi_approval_plan())
+	{
+      gtk_widget_destroy (self->plan_execute_button);
+      self->plan_execute_button= NULL;
+    }
         
     if(self->robotPlanListener->is_plan_paused()){
       cout <<"Unpausing manip plan" << endl;
@@ -217,7 +223,8 @@ namespace renderer_robot_plan_gui_utils
     RendererRobotPlan *self = (RendererRobotPlan*) user;
 
     
-    GtkWidget  *execute_button,*compliant_execute_button, *pause_button, *cancel_button, *stop_walking_button, *rewind_button;
+    GtkWidget  *execute_button, *pause_button, *cancel_button, *stop_walking_button;
+    //GtkWidget  *compliant_execute_button, *rewind_button;
 
     if(self->robotPlanListener->is_multi_approval_plan())
      {
@@ -229,14 +236,16 @@ namespace renderer_robot_plan_gui_utils
       gtk_entry_set_width_chars(GTK_ENTRY(self->breakpoint_entry),(gint)7);  
      }
 
-    execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY); 
-    compliant_execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CONNECT);
+    execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY);
+    self->plan_execute_button  =  execute_button;
+    
+    //compliant_execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CONNECT);
     if(self->robotPlanListener->is_manip_plan())
     {
       pause_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
       gtk_widget_set_tooltip_text (pause_button, "Pause");
-      rewind_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_REWIND);
-      gtk_widget_set_tooltip_text (rewind_button, "Revert (Do Prev QuasiStatic Plan In Reverse)");
+      //rewind_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_REWIND);
+      //gtk_widget_set_tooltip_text (rewind_button, "Revert (Do Prev QuasiStatic Plan In Reverse)");
     }
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
 
@@ -244,7 +253,7 @@ namespace renderer_robot_plan_gui_utils
     //stop_walking_button = (GtkWidget *) gtk_button_new_with_label(PARAM_STOP_WALKING);
 
     gtk_widget_set_tooltip_text (execute_button, "Execute Plan");
-    gtk_widget_set_tooltip_text (compliant_execute_button, "Execute Plan With Soft Cartesian Compliance");
+    //gtk_widget_set_tooltip_text (compliant_execute_button, "Execute Plan With Soft Cartesian Compliance");
     gtk_widget_set_tooltip_text (cancel_button, "Cancel Plan");
     gtk_widget_set_tooltip_text(stop_walking_button, "Stop walking NOW");
 
@@ -258,10 +267,10 @@ namespace renderer_robot_plan_gui_utils
     gtk_box_pack_start (GTK_BOX (hbox), execute_button, FALSE, FALSE, 3);
     if(self->robotPlanListener->is_multi_approval_plan())
       gtk_box_pack_start (GTK_BOX (hbox), self->breakpoint_entry, FALSE, FALSE,3);
-    gtk_box_pack_start (GTK_BOX (hbox), compliant_execute_button, FALSE, FALSE, 3);
+    //gtk_box_pack_start (GTK_BOX (hbox), compliant_execute_button, FALSE, FALSE, 3);
     if(self->robotPlanListener->is_manip_plan())   {
       gtk_box_pack_start (GTK_BOX (hbox), pause_button, FALSE, FALSE, 3);
-      gtk_box_pack_start (GTK_BOX (hbox), rewind_button, FALSE, FALSE, 3);     
+      //gtk_box_pack_start (GTK_BOX (hbox), rewind_button, FALSE, FALSE, 3);     
     }   
     if(self->robotPlanListener->is_walking_plan()) {
       gtk_box_pack_start (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
@@ -299,19 +308,19 @@ namespace renderer_robot_plan_gui_utils
                   "clicked",
                   G_CALLBACK (on_execute_button_clicked),
                   self);
-   g_signal_connect (G_OBJECT (compliant_execute_button),
+   /*g_signal_connect (G_OBJECT (compliant_execute_button),
                   "clicked",
                   G_CALLBACK (on_compliant_execute_button_clicked),
-                  self);
+                  self);*/
    if(self->robotPlanListener->is_manip_plan())   {
      g_signal_connect (G_OBJECT (pause_button),
                   "clicked",
                   G_CALLBACK (on_pause_button_clicked),
                   self);  
-     g_signal_connect (G_OBJECT (rewind_button),
+     /*g_signal_connect (G_OBJECT (rewind_button),
               "clicked",
               G_CALLBACK (on_rewind_button_clicked),
-              self);                
+              self); */               
     } 
     if (self->robotPlanListener->is_walking_plan()) {
       g_signal_connect (G_OBJECT (stop_walking_button),

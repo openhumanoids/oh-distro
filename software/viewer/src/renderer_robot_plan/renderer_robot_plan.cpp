@@ -869,6 +869,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     self->multiapprove_plan_execution_dock= NULL; 
     self->plan_execution_dock= NULL; 
     self->plan_approval_dock= NULL; 
+    self->plan_execute_button= NULL; 
     self->afftriggered_popup = NULL;
     self->selected_plan_index= -1;
     self->selected_keyframe_index = -1;
