@@ -108,7 +108,7 @@ classdef drillTaskLCMMonitor
     end
     
     function valve_data = getValveAffordance(obj)
-      data = obj.affordance_monitor.getNextMessage(0); % default timeout
+      data = obj.affordance_monitor.getNextMessage(2000); % default timeout
       if isempty(data)
         valve_data = [];
         return
@@ -242,10 +242,10 @@ classdef drillTaskLCMMonitor
     function valve_data = parseValveData(obj, valve_aff)
       R = rpy2rotmat(valve_aff.origin_rpy);
       valve_data.normal = -R(:,3);
-      valve_data.radius = valve_aff.params(3) - .07; 
+      valve_data.radius = valve_aff.params(3);% - .07; 
       valve_z = [0;0;1] - [0;0;1]'*valve_data.normal*valve_data.normal;
       valve_z = valve_z/norm(valve_z);
-      valve_data.center = valve_aff.origin_xyz  + .10*valve_data.normal;
+      valve_data.center = valve_aff.origin_xyz;%  + .10*valve_data.normal;
       valve_data.init_pt = valve_data.center + valve_z*valve_data.radius;
     end
     

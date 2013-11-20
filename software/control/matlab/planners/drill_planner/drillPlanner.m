@@ -160,13 +160,15 @@ classdef drillPlanner
         obj.drilling_world_axis,obj.default_axis_threshold);
 
       posture_constraint = PostureConstraint(obj.r);
+      
+      % fix change in x-y-yaw to 0
+      body_pose_constraint = PostureChangeConstraint(obj.r,[1; 2; 6], zeros(3,1), zeros(3,1));
+      
       if free_body_pose
         % create posture constraint.  allow moving x, y, z, yaw
         posture_index = setdiff((1:obj.r.num_q)',[1; 2; 3; 6; obj.joint_indices]);
-        posture_constraint = posture_constraint.setJointLimits(3, .65, .9); % pelvis height limits from scott
         posture_constraint = posture_constraint.setJointLimits(6, q0(6) - .5, q0(6) + .5);  %arbitrary yaw limit to not turn too much
         
-        body_pose_constraint = WorldFixedBodyPoseConstraint(obj.r,pelvis_body); % fix the pelvis pose for all t.  TODO: allow this to move in z
       else
         posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]);
       end
@@ -229,15 +231,10 @@ classdef drillPlanner
       obj.free_ik_options.setMajorOptimalityTolerance(1e-4);
       obj.free_ik_options = obj.free_ik_options.setMajorIterationsLimit(2000);
       
-      if free_body_pose
-        [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-          t_vec,qtraj_guess,qtraj_guess,body_pose_constraint,world_pos_x_constraint,...
-          drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.free_ik_options);
-      else
-        [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-          t_vec,qtraj_guess,qtraj_guess,world_pos_x_constraint,...
-          drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.free_ik_options);
-      end
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+        t_vec,qtraj_guess,qtraj_guess,body_pose_constraint,world_pos_x_constraint,...
+        drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.free_ik_options);
+      
       if(snopt_info > 10)
         send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
         send_status(4,0,0,send_msg);
@@ -253,12 +250,6 @@ classdef drillPlanner
       if obj.doPublish && (snopt_info <= 10 || snopt_info == 32)
 %         obj.publishPoseTraj(xtraj);
         obj.publishTraj(xtraj,snopt_info);
-        if free_body_pose
-          % also publish a walking plan
-          x_end = xtraj.eval(T);
-          pose = [x_end(1:3); rpy2quat(x_end(4:6))];
-%           obj.publishWalkingGoal(pose);
-        end
       end
     end
     
@@ -391,8 +382,6 @@ classdef drillPlanner
       end
     end
     
-    % Create a plan from q0 to get the drill to x_drill_final
-    % satisfies the drill gaze constraint for all T
     function [xtraj,snopt_info,infeasible_constraint] = createCircularPlan(obj, q0, x_drill_center, arc, speed)
       %evaluate current drill location
       kinsol = obj.r.doKinematics(q0);
@@ -401,6 +390,9 @@ classdef drillPlanner
       radius_vec = -x_drill_center + x_drill_init;
       radius_vec = radius_vec - radius_vec'*obj.drilling_world_axis*obj.drilling_world_axis;
       radius = norm(radius_vec);
+      
+      %move x_drill_center to align with normal
+      x_drill_center = x_drill_init - radius_vec;
       
       T = arc*radius/speed;
       
@@ -427,7 +419,7 @@ classdef drillPlanner
       wall_z = [0;0;1] - [0;0;1]'*obj.drilling_world_axis*obj.drilling_world_axis;
       wall_z = wall_z/norm(wall_z);
       wall_y = cross(wall_z,obj.drilling_world_axis);
-      theta = linspace(0,-arc,N) + atan2(radius_vec'*wall_z,radius_vec'*wall_y);
+      theta = linspace(0,arc,N) + atan2(radius_vec'*wall_z,radius_vec'*wall_y);
       x_drill = repmat(x_drill_center,1,N) + radius*wall_z*sin(theta) + radius*wall_y*cos(theta);
       
       drill_pos_constraint = cell(1,N-1);
@@ -446,6 +438,7 @@ classdef drillPlanner
       end
       qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
       
+      obj.ik_options = obj.ik_options.setMajorIterationsLimit(200);
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
         drill_pos_constraint{:},drill_dir_constraint,posture_constraint,obj.ik_options);
