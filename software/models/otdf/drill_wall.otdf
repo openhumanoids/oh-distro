@@ -47,8 +47,11 @@
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
-                <sphere radius="0.01" />
+                <sphere radius="0.02" />
             </geometry>
+            <material name="orange">
+                <color rgba="1 0.5 0 1" />
+            </material>
         </visual>
     </link>
 
@@ -56,8 +59,11 @@
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
-                <sphere radius="0.01" />
+                <sphere radius="0.02" />
             </geometry>
+            <material name="orange">
+                <color rgba="1 0.5 0 1" />
+            </material>
         </visual>
     </link>
 
@@ -65,8 +71,11 @@
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
-                <sphere radius="0.01" />
+                <sphere radius="0.02" />
             </geometry>
+            <material name="orange">
+                <color rgba="1 0.5 0 1" />
+            </material>
         </visual>
     </link>
 
