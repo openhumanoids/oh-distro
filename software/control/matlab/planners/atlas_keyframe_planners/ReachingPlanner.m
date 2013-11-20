@@ -664,7 +664,7 @@ classdef ReachingPlanner < KeyframePlanner
                     % it is not an indication that the final plan is in violation
                     
                     send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.',snopt_info);
-                    if(obj.planning_mode >1)
+                    if(obj.planning_mode == 2 || obj.planning_mode == 3)
                       send_status(4,0,0,send_msg);
                     end
                     display(infeasibleConstraintMsg(infeasible_constraint));
