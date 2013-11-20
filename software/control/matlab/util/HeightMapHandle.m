@@ -42,6 +42,18 @@ classdef HeightMapHandle < handle
             this.mMexFunc('property',this.mHandle,'normalradius',sprintf('%f',radius));
         end
 
+        function setNormalMethod(this,method)
+            if (strcmpi(method,'leastsquares'))
+                this.mMexFunc('property',this.mHandle,'normalmethod','0');
+            elseif (strcmpi(method,'robust'))
+                this.mMexFunc('property',this.mHandle,'normalmethod','1');
+            elseif (strcmpi(method,'ransac'))
+                this.mMexFunc('property',this.mHandle,'normalmethod','2');
+            else
+                error('invalid normal method');
+            end
+        end
+
         function setMapMode(this,mode)
             this.mMexFunc('property',this.mHandle,'mapmode',sprintf('%d',mode));
         end

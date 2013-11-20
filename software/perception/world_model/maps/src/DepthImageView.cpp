@@ -2,6 +2,7 @@
 
 #include "DepthImage.hpp"
 #include "Utils.hpp"
+#include "RansacGeneric.hpp"
 
 using namespace maps;
 
@@ -423,10 +424,57 @@ intersectRay(const Eigen::Vector3f& iOrigin,
   return unproject(oPoint, oPoint, oNormal);
 }
 
+namespace {
+  struct HorizontalPlaneFitProblem {
+    typedef Eigen::Vector3f Solution;
+    Eigen::MatrixX3f* mPoints;
+
+    int getNumDataPoints() const { return mPoints->rows(); }
+    int getSampleSize() const { return 3; }
+
+    Solution estimate(const std::vector<int> iIndices) const {
+      int n = iIndices.size();
+      Eigen::VectorXf rhs(n);
+      Eigen::MatrixXf lhs(n,3);
+      for (int i = 0; i < n; ++i) {
+        const Eigen::Vector3f& p = mPoints->row(iIndices[i]);
+        rhs[i] = -p[2];
+        lhs(i,0) = p[0];
+        lhs(i,1) = p[1];
+        lhs(i,2) = 1;
+      }
+      Eigen::Vector3f sol =
+        lhs.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeFullV).solve(rhs);
+      return sol;
+    }
+
+    std::vector<double>
+    computeSquaredErrors(const Solution& iPlane) const {
+      size_t n = mPoints->rows();
+      std::vector<double> e2(n);
+      for (size_t i = 0; i < n; ++i) {
+        const Eigen::Vector3f& p = mPoints->row(i);
+        double e = p[0]*iPlane[0] + p[1]*iPlane[1] + p[2] + iPlane[2];
+        e2[i] = e*e;
+      }
+      return e2;
+    }
+  };
+}
+
 bool DepthImageView::
 fitPlaneSac(const Eigen::MatrixX3f& iPoints, Eigen::Vector4f& oPlane) {
-  // TODO: implement
-  return false;
+  HorizontalPlaneFitProblem problem;
+  problem.mPoints = const_cast<Eigen::MatrixX3f*>(&iPoints);
+  RansacGeneric<HorizontalPlaneFitProblem> ransacObj;
+  ransacObj.setMaximumError(0.01);
+  ransacObj.setRefineUsingInliers(true);
+  ransacObj.setMaximumIterations(100);
+  RansacGeneric<HorizontalPlaneFitProblem>::Result result =
+    ransacObj.solve(problem);
+  oPlane << result.mSolution[0],result.mSolution[1],1,result.mSolution[2];
+  oPlane /= oPlane.head<3>().norm();
+  return result.mSuccess;
 }
 
 bool DepthImageView::

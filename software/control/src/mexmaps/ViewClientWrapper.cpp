@@ -43,6 +43,8 @@ struct ViewClientWrapper::Listener : public maps::ViewClient::Listener {
       switch (mWrapper->mFillMethods->getMapMode()) {
       case drc::map_controller_command_t::FULL_HEIGHTMAP:
         view->setNormalRadius(mWrapper->mNormalRadius);
+        view->setNormalMethod
+          ((maps::DepthImageView::NormalMethod)mWrapper->mNormalMethod);
         break;
       case drc::map_controller_command_t::Z_NORMALS:
         view->setNormalMethod(maps::DepthImageView::NormalMethodZ);
@@ -75,6 +77,7 @@ ViewClientWrapper(const int iId, const std::shared_ptr<lcm::LCM>& iLcm) {
   mBotWrapper.reset(new maps::BotWrapper(mLcm, NULL, NULL));
   mFillMethods.reset(new FillMethods(mBotWrapper));
   mNormalRadius = 0;
+  mNormalMethod = maps::DepthImageView::NormalMethodLeastSquares;
   mShouldFill = false;
   mViewClient.reset(new maps::ViewClient());
   mViewClient->setBotWrapper(mBotWrapper);
@@ -137,7 +140,7 @@ requestHeightMap() {
   const float timeWindowSeconds = 5;
 
   maps::ViewBase::Spec spec;
-  spec.mResolution = 0.05;
+  spec.mResolution = 0.03;
   spec.mWidth = int((maxPt[0] - minPt[0]) / spec.mResolution);
   spec.mHeight = int((maxPt[1] - minPt[1]) / spec.mResolution);
   spec.mTimeMin = -5*1e6;

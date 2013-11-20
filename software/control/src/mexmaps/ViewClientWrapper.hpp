@@ -37,6 +37,7 @@ struct ViewClientWrapper {
   std::shared_ptr<maps::DepthImageView> mCurrentView;
 
   int mNormalRadius;
+  int mNormalMethod;
   bool mShouldFill;
 
   ViewClientWrapper(const int iId, const std::shared_ptr<lcm::LCM>& iLcm);

@@ -358,6 +358,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     else if (key == "fill") {
       wrapper->mShouldFill = Utils::getBool(value);
     }
+    else if (key == "normalmethod") {
+      int method;
+      std::istringstream(value) >> method;
+      wrapper->mNormalMethod = method;
+    }
     else if (key == "mapmode") {
       int mode;
       std::istringstream(value) >> mode;
