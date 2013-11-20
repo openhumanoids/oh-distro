@@ -19,11 +19,14 @@ while isempty(wall) || isempty(drill)
   [wall,drill] = lcm_mon.getWallAndDrillAffordances();
 end
 
-drill.guard_pos = [    0.25
+drill.guard_pos = [    0.15
    -0.2602
+
+
+
     0.0306];
   drill.drill_axis = [1;0;0];
-finger_pt_on_hand = [0; 0.2702; 0.015];
+finger_pt_on_hand = [0; 0.2752; 0.015];
 finger_axis_on_hand = [0;1;0];
 
 button_pub = drillButtonPlanner(r,atlas,drill.button_pos, drill.button_normal, drill.drill_axis,...
@@ -76,6 +79,7 @@ while(true)
       if ~isempty(new_drill)
         drill = new_drill;
         drill_pub = drill_pub.updateDrill(drill.guard_pos, drill.drill_axis);
+        button_pub = button_pub.updateDrill(drill.button_pos, drill.button_normal, drill.drill_axis);
       else
         send_status(4,0,0,'Cannot update drill, no affordance found');
       end
@@ -88,7 +92,14 @@ while(true)
       q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]));
       
       target_centroid = mean(wall.targets,2);
-      q0_init(1:3) = target_centroid - wall.normal*.7 - [0;0;.5];
+      
+      % create wall coordinate frame
+      wall_z = [0;0;1];
+      wall_z = wall_z - wall_z'*wall.normal*wall.normal;
+      wall_z = wall_z/norm(wall_z);
+      wall_y = cross(wall_z, wall.normal);
+      
+      q0_init(1:3) = target_centroid - wall.normal*.7 - .5*wall_z + .3*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
       [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, 0);
       
@@ -152,7 +163,7 @@ while(true)
         else
           cut_length = long_cut;
         end
-      elsese drc.drill_control_t.RQ_DRILL_DELTA_PLAN
+      else
       % create wall coordinate frame
       wall_z = [0;0;1];
       wall_z = wall_z - wall_z'*wall.normal*wall.normal;
@@ -164,7 +175,7 @@ while(true)
       
       segment_dir = (drill_points(:,segment_index+1) -drill_points(:,segment_index));
       segment_dir = segment_dir/norm(segment_dir);
-      delta
+      
       line_param = -(drill_points(:,segment_index) - drill0)'*(drill_points(:,segment_index+1) - drill_points(:,segment_index))/norm(drill_points(:,segment_index+1)-drill_points(:,segment_index))^2;
       
       nearest_point = drill_points(:,segment_index) + line_param*(drill_points(:,segment_index+1) -drill_points(:,segment_index));
@@ -216,11 +227,11 @@ while(true)
         
         if ~isempty(xtraj_button)
           xlast = xtraj_button.eval(xtraj_button.tspan(2));
-          %         q0 = lcm_mon.getStateEstimate();
-          q0 = xlast(1:r.getNumDOF);
+          q0 = lcm_mon.getStateEstimate();
+          q0(setdiff(1:34',button_pub.button_joint_indices)) = xlast(setdiff(1:34',button_pub.button_joint_indices));
           button_offset = last_button_offset + ctrl_data(1:3);
-          last_button_offset = button_offset;
-          [xtraj,snopt_info,infeasible_constraint] = button_pub.createPokePlan(q0, button_offset, 5);
+%           last_button_offset = button_offset;
+          [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPokePlan(q0, button_offset, 5);
           %         % use back and off-hand joints from last plan
           %         q0(button_pub.button_joint_indices) = xlast(button_pub.button_joint_indices);
           %         q0(button_pub.back_joint_indices) = xlast(button_pub.back_joint_indices);

@@ -35,6 +35,10 @@ classdef drillButtonPlanner
       obj.atlas = atlas;
       obj.r = r;
       obj.doVisualization = doVisualization;
+    function obj = updateDrill(obj, drill_pt_on_hand, drill_axis_on_hand)
+      obj.drill_pt_on_hand = drill_pt_on_hand;
+      obj.drill_axis_on_hand = drill_axis_on_hand/norm(drill_axis_on_hand);
+    end
       if obj.doVisualization
         obj.v = obj.r.constructVisualizer;
         obj.v.playback_speed = 5;
@@ -91,6 +95,12 @@ classdef drillButtonPlanner
       for i = 1:obj.atlas.getNumStates
         obj.atlas2robotFrameIndMap(i) = find(strcmp(obj.atlas.getStateFrame.coordinates{i},obj.r.getStateFrame.coordinates));
       end
+    end
+    
+    function obj = updateDrill(obj, button_pt_on_hand, button_axis_on_hand, drill_axis_on_hand)
+      obj.button_pt_on_hand = button_pt_on_hand;
+      obj.button_axis_on_hand = button_axis_on_hand;
+      obj.drill_axis_on_hand = drill_axis_on_hand/norm(drill_axis_on_hand);
     end
     
     function [xtraj,snopt_info,infeasible_constraint] = createPrePokePlan(obj, q0, T)

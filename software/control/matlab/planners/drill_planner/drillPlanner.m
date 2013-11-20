@@ -173,8 +173,8 @@ classdef drillPlanner
         posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]);
       end
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
-%       posture_constraint = posture_constraint.setJointLimits(9,-.2,.2);
+      posture_constraint = posture_constraint.setJointLimits(8,-inf,.1);
+      posture_constraint = posture_constraint.setJointLimits(9,-.2,.2);
             
       
       if obj.allowPelvisHeight
@@ -267,7 +267,9 @@ classdef drillPlanner
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
+      posture_constraint = posture_constraint.setJointLimits(8,-inf,.1);
+      posture_constraint = posture_constraint.setJointLimits(9,-.2,.2);
+
       
       if obj.allowPelvisHeight
         [z_min, z_max] = obj.atlas.getPelvisHeightLimits(q0);
@@ -333,7 +335,8 @@ classdef drillPlanner
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
+      posture_constraint = posture_constraint.setJointLimits(8,-inf,.1);
+      posture_constraint = posture_constraint.setJointLimits(9,-.2,.2);
       
       if obj.allowPelvisHeight
         [z_min, z_max] = obj.atlas.getPelvisHeightLimits(q0);
@@ -404,7 +407,8 @@ classdef drillPlanner
       posture_index = setdiff((1:obj.r.num_q)',obj.joint_indices);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
-      posture_constraint = posture_constraint.setJointLimits(8,-inf,.25);
+      posture_constraint = posture_constraint.setJointLimits(8,-inf,.1);
+      posture_constraint = posture_constraint.setJointLimits(9,-.2,.2);
       
       if obj.allowPelvisHeight
         [z_min, z_max] = obj.atlas.getPelvisHeightLimits(q0);
@@ -627,7 +631,7 @@ classdef drillPlanner
     % publish a walking goal
     % pose is [x;y;z;quat]
     function publishWalkingGoal(obj,pose)
-      obj.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
+      obj.footstep_msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
       obj.footstep_msg.goal_pos.translation.x = pose(1);
       obj.footstep_msg.goal_pos.translation.y = pose(2);
       obj.footstep_msg.goal_pos.translation.z = pose(3);
