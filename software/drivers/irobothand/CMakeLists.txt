@@ -9,3 +9,5 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+
+pods_install_python_script(irobot-hand scripts/lcm_irobot_hand_command_line.py)

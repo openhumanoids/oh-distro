@@ -41,9 +41,15 @@ def parseArguments():
     parser.add_argument('--close', action='store_true')
 
     args = parser.parse_args()
-    side = args.side.upper()
-    if side not in ['RIGHT', 'LEFT']:
+    side = args.side.lower()
+    if side not in ['r', 'l']:
         raise RuntimeError("Side not recognized: " + side)
+      
+    if (side == 'r'):
+      side = "RIGHT"
+    elif (side == 'l'):
+      side = "LEFT"
+      
     
     if args.open:
         args.position = 0
