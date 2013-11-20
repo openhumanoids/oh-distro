@@ -28,7 +28,7 @@ end
 use_simulated_state = false;
 useVisualization = true;
 publishPlans = true;
-useRightHand = false;
+useRightHand = true;
 allowPelvisHeight = true;
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 
@@ -60,9 +60,15 @@ drill_points = [triangle triangle(:,1)];
 q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
 
 tri_centroid = mean(triangle,2);
-q0_init(1:3) = tri_centroid - wall.normal*.5 - [0;0;.5];
+q0_init(1:3) = tri_centroid - wall.normal*.7 - [0;0;.5];
 q0_init(6) = atan2(wall.normal(2), wall.normal(1));
-[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true);
+
+
+if ~use_simulated_state
+  q0 = lcm_mon.getStateEstimate();
+  q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]))
+end
+[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, 0);
 
 
 %% move the arm before walking

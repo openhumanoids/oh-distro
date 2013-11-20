@@ -84,10 +84,13 @@ while(true)
       %hand picked joints that make for a decent guess
       q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
       
+      q0 = lcm_mon.getStateEstimate();
+      q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]));
+      
       target_centroid = mean(wall.targets,2);
-      q0_init(1:3) = target_centroid - wall.normal*.5 - [0;0;.5];
+      q0_init(1:3) = target_centroid - wall.normal*.7 - [0;0;.5];
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
-      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true);
+      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, 0);
       
     case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)
