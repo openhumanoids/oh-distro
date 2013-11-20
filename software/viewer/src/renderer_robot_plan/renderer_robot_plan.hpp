@@ -132,8 +132,15 @@ namespace renderer_robot_plan
             this->marker_choice_state = last_marker_choice;
          //cout << "Down Arrow " << this->marker_choice_state << endl;
         }  
+        else if((!is_pressed)&&(keyval == GDK_KEY_h))
+        {
+          this->setPlanVisibility(!this->getPlanVisibility());
+        }
       }    
     }
+
+    void setPlanVisibility(const bool vis);
+    bool getPlanVisibility() const;
   
     void affTriggerSignalsCallback(aff_trigger_type type,string otdf_id,KDL::Frame T_world_aff,string plan_id)
     {

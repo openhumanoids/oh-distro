@@ -917,3 +917,10 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
    
 }
 
+void RendererRobotPlan::setPlanVisibility(const bool vis) {
+    bot_gtk_param_widget_set_bool(this->pw, PARAM_HIDE, vis ? FALSE : TRUE);
+}
+
+bool RendererRobotPlan::getPlanVisibility() const {
+    return (bot_gtk_param_widget_get_bool(this->pw, PARAM_HIDE) == 0);
+}
