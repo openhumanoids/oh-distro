@@ -199,6 +199,7 @@ classdef DRCController
 %       ttprev = [];
 %       persistent count;  if isempty(count), count=0; end
       t_offset = -1;
+      tt = 0;
       lcm_check_tic = tic;
       status_tic = tic;
       num_x = getNumStates(obj.controller);
@@ -218,6 +219,7 @@ classdef DRCController
               tmpstruct.(obj.controller_input_frames{i}.name) = input_frame_data{i};
             end
             data.(fn{1}) = tmpstruct;
+            data.t=tt;
             break;
           end
         end

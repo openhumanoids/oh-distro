@@ -56,6 +56,7 @@ classdef DRCStateMachine
         
         obj = setActiveController(obj,transition_to);
         data = transition_data.(obj.active_controller);
+        data.t = transition_data.t;
       end
     end
     

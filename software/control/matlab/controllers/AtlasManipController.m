@@ -157,11 +157,15 @@ classdef AtlasManipController < DRCController
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
-      obj.controller_data.setField('qtraj',q0(7:end));
+      if obj.robot.floating
+        obj.controller_data.setField('qtraj',q0);
+      else
+        obj.controller_data.setField('qtraj',q0(7:end));
+      end
       obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(r),1)));
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
-      obj = addLCMTransition(obj,'COMMITTED_PLAN_PAUSE',drc.plan_control_t(),'init'); % stop plan execution
+      obj = addLCMTransition(obj,'COMMITTED_PLAN_PAUSE',drc.plan_control_t(),name); % stop plan execution
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
     end
     
@@ -191,33 +195,50 @@ classdef AtlasManipController < DRCController
           qtraj_prev = obj.controller_data.data.qtraj;
           q0=xtraj(1:getNumDOF(obj.robot),1);
           
-          torso = (obj.arm_joints | obj.back_joints);
           if isa(qtraj_prev,'PPTrajectory') 
-            % smooth transition from end of previous trajectory
             qprev_end = fasteval(qtraj_prev,qtraj_prev.tspan(end));
-            if obj.robot.floating
-              % always use current desired body pose
-              qprev_end(1:6) = q0(1:6);
-            end
-            if max(abs(q0(torso)-qprev_end(torso))) < 0.75
-              qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
-            else
-              qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-            end
           else
-            % first plan
+            qprev_end = qtraj_prev;
+          end
+          
+          % smooth transition from end of previous trajectory
+          if obj.robot.floating
+            % always use current desired body pose
+            qprev_end(1:6) = q0(1:6);
+          end
+          
+          torso = (obj.arm_joints | obj.back_joints);
+          if max(abs(q0(torso)-qprev_end(torso))) < 0.175
+            qtraj = PPTrajectory(spline(ts,[qprev_end xtraj(1:getNumDOF(obj.robot),2:end)]));
+          else
             qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
-          end          
+          end
+          
           obj.controller_data.setField('qtraj',qtraj);
           obj.controller_data.setField('qddtraj',fnder(qtraj,2));
           %obj.controller_data.setField('integral',zeros(getNumDOF(obj.robot),1));
+
         catch err
           r = obj.robot;
           x0 = data.AtlasState; % should have an atlas state
           q0 = x0(1:getNumDOF(r));
-          obj.controller_data.setField('qtraj',q0(7:end));
+          if obj.robot.floating
+            obj.controller_data.setField('qtraj',q0);
+          else
+            obj.controller_data.setField('qtraj',q0(7:end));
+          end
           obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(r),1)));
         end
+      elseif isfield(data,'COMMITTED_PLAN_PAUSE')
+        % set plan to current desired state
+        qtraj = obj.controller_data.data.qtraj;
+
+        if isa(qtraj,'PPTrajectory') 
+          qtraj = fasteval(qtraj,data.t);
+        end
+        
+        obj.controller_data.setField('qtraj',qtraj);
+        obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
       end
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
