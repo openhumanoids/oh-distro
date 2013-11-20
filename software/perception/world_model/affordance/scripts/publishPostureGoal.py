@@ -101,6 +101,13 @@ def getHoseMate():
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
+def getPoolQueue():
+  position=[-0.6583873,-0.493037, 3.08459508499, 1.1543736, 0.276259120, 0.785398000, 2.769477100]
+  name=["back_bkz", "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position, name]
+
+
+
 # 0.71cm - 5foot
 #def getHighValve():
 #  position=[-1.36646643681, 2.5302273035, 0.003712019324, -0.867207699585, -0.961804687977, 3.14159]
@@ -121,6 +128,7 @@ def usage():
   print "retract     - turn back and retract hand"
   print "hosemate    - config mate"
   print "shooterback - hand up and finger away, back straight"
+  print "poolqueue   - draw hand back with face down"
 ######################################
 #print 'Number of arguments:', len(sys.argv), 'arguments.'
 #print 'Argument List:', str(sys.argv)
@@ -174,6 +182,8 @@ elif (posture_name == "retract"):
   [msg.joint_position, msg.joint_name] = getRetract()
 elif (posture_name == "hosemate"):
   [msg.joint_position, msg.joint_name] = getHoseMate()
+elif (posture_name == "poolqueue"):
+  [msg.joint_position, msg.joint_name] = getPoolQueue()
 else:
   print "posture goal not found"
   sys.exit(-1)
