@@ -28,6 +28,7 @@ classdef drillPlanner
     atlas2robotFrameIndMap
     footstep_msg
     lc
+    state_monitor
     lcmgl
     allowPelvisHeight
   end
@@ -102,6 +103,8 @@ classdef drillPlanner
 
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.lcmgl = drake.util.BotLCMGLClient(obj.lc,'drill_planned_path');
+      obj.state_monitor = drake.util.MessageMonitor(drc.robot_state_t, 'utime');
+      obj.lc.subscribe('EST_ROBOT_STATE', obj.state_monitor);
 
       iktraj_options = IKoptions(obj.r);
       iktraj_options = iktraj_options.setDebug(true);
@@ -631,7 +634,8 @@ classdef drillPlanner
     % publish a walking goal
     % pose is [x;y;z;quat]
     function publishWalkingGoal(obj,pose)
-      obj.footstep_msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
+      utime = obj.state_monitor.getLastTimestamp();
+      obj.footstep_msg.utime = utime;
       obj.footstep_msg.goal_pos.translation.x = pose(1);
       obj.footstep_msg.goal_pos.translation.y = pose(2);
       obj.footstep_msg.goal_pos.translation.z = pose(3);
