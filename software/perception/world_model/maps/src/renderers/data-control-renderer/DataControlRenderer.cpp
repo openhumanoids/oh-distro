@@ -23,7 +23,7 @@
 #include <lcmtypes/drc/motionest_request_t.hpp>
 
 #include <lcmtypes/multisense.hpp>
-
+#include <lcmtypes/irobothand.hpp>
 
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
@@ -74,7 +74,11 @@ protected:
   int mRightGraspNameEnum;
   std::vector <std::string>  mGraspNames;
   
+  bool mControlIrobotRightHand;
   int mIrobotCalibrate;
+  int mIrobotCloseFraction;
+  int mIrobotSpreadDegree;
+  bool mIrobotFingerEnabled[3];
   
   bool mMinimalAffordances;
   int mControllerHeightMapMode;
@@ -377,34 +381,21 @@ public:
     }
     notebook->append_page(*mAffControlBox, "Affs");
 
-    // for sensor control
-    Gtk::VBox* handControlBox = Gtk::manage(new Gtk::VBox());
-
-
-    
-    
-    /* TODO: no longer needed
-    mControllerHeightMapMode = drc::map_controller_command_t::FLAT_GROUND;
-    labels = {"Flat Ground", "Full Heights", "Z Normals"};
-    ids = {drc::map_controller_command_t::FLAT_GROUND,
-           drc::map_controller_command_t::FULL_HEIGHTMAP,
-           drc::map_controller_command_t::Z_NORMALS};
-    addCombo("Controller Height Mode", mControllerHeightMapMode,
-             labels, ids, handControlBox);
-    button = Gtk::manage(new Gtk::Button("Submit Height Mode"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onControllerHeightMapMode));
-    handControlBox->pack_start(*button, false, false);
-    */
     
     //
-    // grasp
-    // left
+    Gtk::VBox* handControlBox = Gtk::manage(new Gtk::VBox());
+
+    Gtk::Box* box = Gtk::manage(new Gtk::HBox());
+    label = Gtk::manage(new Gtk::Label("Sandia Hand", Gtk::ALIGN_CENTER));
+    box->add(*label);
+    handControlBox->pack_start(*box, false, false);     
+    
+    // left grasp
     std::vector<int> ids = { 0, 1, 2 };
     Gtk::HBox* hbox = Gtk::manage(new Gtk::HBox());
-    Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
+    box = Gtk::manage(new Gtk::HBox());
     mLeftGraspNameEnum = 0;
-    addCombo("Left", mLeftGraspNameEnum, mGraspNames, ids, box);
+    addCombo("Sandia Left", mLeftGraspNameEnum, mGraspNames, ids, box);
     hbox->add(*box); 
     // Closed Amount
     box = Gtk::manage(new Gtk::HBox());
@@ -414,7 +405,7 @@ public:
     // send button
     button = Gtk::manage(new Gtk::Button("Grasp"));
     button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onLeftGraspButton));
+      (sigc::mem_fun(*this, &DataControlRenderer::onSandiaLeftGraspButton));
     hbox->add(*button);
     handControlBox->pack_start(*hbox, false, false);
     
@@ -423,7 +414,7 @@ public:
     Gtk::HBox* hboxR = Gtk::manage(new Gtk::HBox());
     Gtk::HBox* boxR = Gtk::manage(new Gtk::HBox());
     mRightGraspNameEnum = 0;
-    addCombo("Right", mRightGraspNameEnum, mGraspNames, ids, boxR);
+    addCombo("Sandia Right", mRightGraspNameEnum, mGraspNames, ids, boxR);
     hboxR->add(*boxR); 
     // Closed Amount
     boxR = Gtk::manage(new Gtk::HBox());
@@ -433,9 +424,74 @@ public:
     // send button
     button = Gtk::manage(new Gtk::Button("Grasp"));
     button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onRightGraspButton));
+      (sigc::mem_fun(*this, &DataControlRenderer::onSandiaRightGraspButton));
     hboxR->add(*button);
     handControlBox->pack_start(*hboxR, false, false);    
+    
+    // iRobot
+    handControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+
+    box = Gtk::manage(new Gtk::HBox());
+    label = Gtk::manage(new Gtk::Label("iRobot Hand", Gtk::ALIGN_CENTER));
+    box->add(*label);
+    handControlBox->pack_start(*box, false, false);     
+    
+    mControlIrobotRightHand= false;
+    addCheck("Control Right Hand (Otherwise Left)", mControlIrobotRightHand, handControlBox);        
+
+    hbox = Gtk::manage(new Gtk::HBox());
+    box = Gtk::manage(new Gtk::HBox());
+    button = Gtk::manage(new Gtk::Button("Open"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotOpenButton));
+    box->add(*button);
+    hbox->add(*box); 
+    box = Gtk::manage(new Gtk::HBox());
+    button = Gtk::manage(new Gtk::Button("Close"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotCloseButton));
+    box->add(*button);
+    hbox->add(*box); 
+    handControlBox->pack_start(*hbox, false, false);     
+    
+    
+    hbox = Gtk::manage(new Gtk::HBox());
+    box = Gtk::manage(new Gtk::HBox());
+    hbox->add(*box); 
+    // Closed Amount
+    box = Gtk::manage(new Gtk::HBox());
+    mIrobotCloseFraction =0;
+    addSpin("Partial Closed % L", mIrobotCloseFraction, 0, 100, 10, box); 
+    hbox->add(*box);
+    // send button
+    button = Gtk::manage(new Gtk::Button("Grasp"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotPartialGraspButton));
+    hbox->add(*button);
+    handControlBox->pack_start(*hbox, false, false);
+    
+    hbox = Gtk::manage(new Gtk::HBox());
+    box = Gtk::manage(new Gtk::HBox());
+    hbox->add(*box); 
+    // Closed Amount
+    box = Gtk::manage(new Gtk::HBox());
+    mIrobotSpreadDegree =0;
+    addSpin("Spread [Deg]", mIrobotSpreadDegree, 0, 90, 10, box); 
+    hbox->add(*box);
+    // send button
+    button = Gtk::manage(new Gtk::Button("Spread"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotSpreadDegreeButton));
+    hbox->add(*button);
+    handControlBox->pack_start(*hbox, false, false);    
+    
+
+    mIrobotFingerEnabled[0] = true;
+    mIrobotFingerEnabled[1] = true;
+    mIrobotFingerEnabled[2] = true;
+    addCheck("0 Finger", mIrobotFingerEnabled[0], handControlBox);    
+    addCheck("1 Finger", mIrobotFingerEnabled[1], handControlBox);    
+    addCheck("2 Thumb", mIrobotFingerEnabled[2], handControlBox);    
     
     
     ids = { 0, 1, 2, 3 };
@@ -443,15 +499,16 @@ public:
     box = Gtk::manage(new Gtk::HBox());
     mIrobotCalibrate = 0;    
     std::vector<std::string> labels = { "Left No Jig", "Left Jig", "Right No Jig", "Right Jig" };
-    addCombo("iRobot Calibrate", mIrobotCalibrate, labels, ids, box);
+    addCombo("Calibrate", mIrobotCalibrate, labels, ids, box);
     hbox->add(*box); 
     // send button
+    boxR = Gtk::manage(new Gtk::HBox());
     button = Gtk::manage(new Gtk::Button("Send"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onIrobotCalibrateButton));
-    hbox->add(*button);
-    handControlBox->pack_start(*hbox, false, false);       
-    
+    boxR->add(*button);
+    hbox->add(*boxR); 
+    handControlBox->pack_start(*hbox, false, false);           
     
     notebook->append_page(*handControlBox, "Hands");    
     
@@ -728,39 +785,82 @@ public:
   }
   */
 
-  void onLeftGraspButton() {
+  void onSandiaLeftGraspButton() {
     drc::sandia_simple_grasp_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.name = mGraspNames[ mLeftGraspNameEnum ];
     msg.closed_amount = (float) mLeftGraspState/100;
-    getLcm()->publish("IROBOT_LEFT_SIMPLE_GRASP", &msg);
     getLcm()->publish("SANDIA_LEFT_SIMPLE_GRASP", &msg);
   }
   
-  void onRightGraspButton() {
+  void onSandiaRightGraspButton() {
     drc::sandia_simple_grasp_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.name = mGraspNames[ mRightGraspNameEnum ];
     msg.closed_amount = (float) mRightGraspState/100;
-    getLcm()->publish("IROBOT_RIGHT_SIMPLE_GRASP", &msg);
     getLcm()->publish("SANDIA_RIGHT_SIMPLE_GRASP", &msg);    
+  }
+  
+  void onIrobotPartialGraspButton() {
+    irobothand::position_control_close_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.close_fraction = (float) mIrobotCloseFraction/100;
+    int8_t valid[] = {mIrobotFingerEnabled[0], mIrobotFingerEnabled[1], mIrobotFingerEnabled[2], false};
+    memcpy(msg.valid,valid, 4*sizeof(int8_t));
+    if (mControlIrobotRightHand)
+      getLcm()->publish("IROBOT_RIGHT_POSITION_CONTROL_CLOSE", &msg);
+    else
+      getLcm()->publish("IROBOT_LEFT_POSITION_CONTROL_CLOSE", &msg);
   }  
-
+  
+  void onIrobotSpreadDegreeButton() {
+    irobothand::spread_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.angle_radians = (float) mIrobotSpreadDegree*M_PI/180 ;
+    if (mControlIrobotRightHand)
+      getLcm()->publish("IROBOT_RIGHT_SPREAD", &msg);
+    else
+      getLcm()->publish("IROBOT_LEFT_SPREAD", &msg);
+  }
+  
+  void onIrobotOpenButton() {
+    irobothand::position_control_close_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.close_fraction = 0.0;
+    int8_t valid[] = {mIrobotFingerEnabled[0], mIrobotFingerEnabled[1], mIrobotFingerEnabled[2], false};
+    memcpy(msg.valid,valid, 4*sizeof(int8_t));
+    if (mControlIrobotRightHand)
+      getLcm()->publish("IROBOT_RIGHT_POSITION_CONTROL_CLOSE", &msg);
+    else
+      getLcm()->publish("IROBOT_LEFT_POSITION_CONTROL_CLOSE", &msg);
+  }  
+  
+  void onIrobotCloseButton() {
+    irobothand::current_control_close_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.current_milliamps = 800.0;
+    int8_t valid[] = {mIrobotFingerEnabled[0], mIrobotFingerEnabled[1], mIrobotFingerEnabled[2], false};
+    memcpy(msg.valid,valid, 4*sizeof(int8_t));
+    if (mControlIrobotRightHand)
+      getLcm()->publish("IROBOT_RIGHT_CURRENT_CONTROL_CLOSE", &msg);
+    else
+      getLcm()->publish("IROBOT_LEFT_CURRENT_CONTROL_CLOSE", &msg);    
+  }
+  
   void onIrobotCalibrateButton() {
-    drc::sandia_simple_grasp_t msg;
+    irobothand::calibrate_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     if ( (mIrobotCalibrate==0) || (mIrobotCalibrate==2) ){
-      msg.name = "calibrate_no_jig";
+      msg.in_jig = false;
     }else if( (mIrobotCalibrate==1) || (mIrobotCalibrate==3) ){
-      msg.name = "calibrate_jig";      
+      msg.in_jig = true;      
     }else{
       return; // not understood
     }
-    std::string channel = "IROBOT_LEFT_SIMPLE_GRASP";
+    std::string channel = "IROBOT_RIGHT_CALIBRATE";
     if( (mIrobotCalibrate==2) || (mIrobotCalibrate==3) ){
-      channel= "IROBOT_RIGHT_SIMPLE_GRASP";      
+      channel= "IROBOT_RIGHT_CALIBRATE";      
     }
-    msg.closed_amount = 0; // not interpreted
     getLcm()->publish( channel , &msg);
   }
 
