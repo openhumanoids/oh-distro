@@ -7,4 +7,4 @@ multisense
 ipwebcam
 ptgrey
 3dmouse
-irobot-hand
+irobothand
