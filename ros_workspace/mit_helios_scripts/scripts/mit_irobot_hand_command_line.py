@@ -16,14 +16,6 @@ import mit_irobot_hand_control
 default_open_fraction = 0
 default_close_current = 800
 
-def lower_case_side_string(side):
-    if side == 'r':
-        return 'right'
-    elif side == 'l':
-        return 'left'
-    else:
-        raise RuntimeError("Side not recognized: " + side)
-
 def createParser():
     progname = sys.argv[0]
     examples = 'To open right hand, set spread to zero, calibrate in jig, close thumb 50%, close hand fully, and open again:\n'

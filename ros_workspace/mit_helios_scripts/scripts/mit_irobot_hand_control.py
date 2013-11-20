@@ -24,6 +24,14 @@ spread_channel = 'SPREAD'
 
 from IRobotHandController import IRobotHandController
 
+def lower_case_side_string(side):
+    if side == 'r':
+        return 'right'
+    elif side == 'l':
+        return 'left'
+    else:
+        raise RuntimeError("Side not recognized: " + side)
+
 def validIndices(validArray):
     return [i for i, valid in enumerate(validArray) if valid]
 
@@ -64,7 +72,8 @@ def parseArguments():
     return (side)
 
 def get_lcm_channel(side, topic):
-    fulltopic = 'IROBOT_' + side + '_' + topic
+    side_uppercase = lower_case_side_string(side).upper()
+    fulltopic = 'IROBOT_' + side_uppercase + '_' + topic
     return fulltopic
 
 if __name__ == '__main__':
