@@ -51,6 +51,12 @@ classdef DRCTerrainMap < RigidBodyTerrain
         options.normal_radius = 1;
       end
 
+      if isfield(options,'normal_method')
+        typecheck(options.normal_method, 'char');
+      else
+        options.normal_method = 'leastsquares';
+      end
+
       if isfield(options, 'auto_request')
         typecheck(options.auto_request, 'logical');
       else
@@ -65,6 +71,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       
       obj.map_handle.setFillMissing(options.fill);
       obj.map_handle.setNormalRadius(options.normal_radius);
+      obj.map_handle.setNormalMethod(options.normal_method);
 
       % wait for at least one map message to arrive before continuing
       msg = [options.name,' : Waiting for terrain map...'];
