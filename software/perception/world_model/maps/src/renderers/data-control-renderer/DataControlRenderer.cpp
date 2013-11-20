@@ -324,7 +324,21 @@ public:
     addControl(drc::data_request_t::DENSE_CLOUD_RHAND, "Dense Box R.Hand",
                "MAP_CLOUD", ChannelTypeDepthImage);
 
-    Gtk::Button* button = Gtk::manage(new Gtk::Button("Submit Request"));
+    // some widgets and variables
+    Gtk::Button* button;
+    Gtk::SpinButton* spin;
+    Gtk::ComboBox* combo;
+    Gtk::Label* label;
+    Gtk::VBox* vbox;
+    Gtk::HBox* hbox;
+    Gtk::Box* box;
+    Gtk::Table* table;
+    Gtk::CheckButton* check;
+    Gtk::AttachOptions xOpts = Gtk::FILL | Gtk::EXPAND;
+    Gtk::AttachOptions yOpts = Gtk::SHRINK;
+    int xCur(0), yCur(0);
+
+    button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
     mRequestControlBox->add(*button);
@@ -332,8 +346,8 @@ public:
 
     // for pushing data (e.g., affordances)
     mAffControlBox = Gtk::manage(new Gtk::VBox());
-    Gtk::VBox* vbox = Gtk::manage(new Gtk::VBox());
-    Gtk::Label* label = Gtk::manage(new Gtk::Label("Aff", Gtk::ALIGN_LEFT));
+    vbox = Gtk::manage(new Gtk::VBox());
+    label = Gtk::manage(new Gtk::Label("Aff", Gtk::ALIGN_LEFT));
     vbox->pack_start(*label, false, false);
     mMinimalAffordances = false;
     addCheck("Minimal", mMinimalAffordances, vbox);
@@ -361,9 +375,9 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
     mAffControlBox->pack_start(*button,false,false);
     {
-      Gtk::Box* box = Gtk::manage(new Gtk::HBox());
+      box = Gtk::manage(new Gtk::HBox());
       label = Gtk::manage(new Gtk::Label("AutoCorrect",Gtk::ALIGN_RIGHT));
-      Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
+      check = Gtk::manage(new Gtk::CheckButton());
       check->set_active(false);
       button = Gtk::manage(new Gtk::Button("send"));
       button->signal_clicked().connect([this,check]{
@@ -385,135 +399,131 @@ public:
     //
     Gtk::VBox* handControlBox = Gtk::manage(new Gtk::VBox());
 
-    Gtk::Box* box = Gtk::manage(new Gtk::HBox());
+    /////////////////////////////////
+    // sandia hands
+    //
+
     label = Gtk::manage(new Gtk::Label("Sandia Hand", Gtk::ALIGN_CENTER));
-    box->add(*label);
-    handControlBox->pack_start(*box, false, false);     
+    handControlBox->pack_start(*label,false,false);
+    table = Gtk::manage(new Gtk::Table());
+    handControlBox->pack_start(*table,false,false);
     
     // left grasp
+    xCur = yCur = 0;
     std::vector<int> ids = { 0, 1, 2 };
-    Gtk::HBox* hbox = Gtk::manage(new Gtk::HBox());
-    box = Gtk::manage(new Gtk::HBox());
     mLeftGraspNameEnum = 0;
-    addCombo("Sandia Left", mLeftGraspNameEnum, mGraspNames, ids, box);
-    hbox->add(*box); 
-    // Closed Amount
-    box = Gtk::manage(new Gtk::HBox());
-    mLeftGraspState =0;
-    addSpin("Closed % L", mLeftGraspState, 0, 100, 10, box); 
-    hbox->add(*box);
-    // send button
+    mLeftGraspState = 0;
+    Gtk::Label* label1 = Gtk::manage(new Gtk::Label("Sandia Left"));
+    Gtk::Label* label2 = Gtk::manage(new Gtk::Label("Closed % L"));
+    spin = createSpin(mLeftGraspState, 0, 100, 10);
+    combo = createCombo(mLeftGraspNameEnum, mGraspNames, ids);
     button = Gtk::manage(new Gtk::Button("Grasp"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onSandiaLeftGraspButton));
-    hbox->add(*button);
-    handControlBox->pack_start(*hbox, false, false);
+    table->attach(*label1, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    table->attach(*combo, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    table->attach(*label2, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    table->attach(*spin, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    table->attach(*button, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    ++yCur;
     
-    // right
-    ids = { 0, 1, 2 };
-    Gtk::HBox* hboxR = Gtk::manage(new Gtk::HBox());
-    Gtk::HBox* boxR = Gtk::manage(new Gtk::HBox());
+    // right grasp
+    xCur = 0;
     mRightGraspNameEnum = 0;
-    addCombo("Sandia Right", mRightGraspNameEnum, mGraspNames, ids, boxR);
-    hboxR->add(*boxR); 
-    // Closed Amount
-    boxR = Gtk::manage(new Gtk::HBox());
     mRightGraspState = 0;
-    addSpin("Closed % R", mRightGraspState, 0, 100, 10, boxR); 
-    hboxR->add(*boxR);
-    // send button
+    label1 = Gtk::manage(new Gtk::Label("Sandia Right"));
+    label2 = Gtk::manage(new Gtk::Label("Closed % R"));
+    spin = createSpin(mRightGraspState, 0, 100, 10);
+    combo = createCombo(mRightGraspNameEnum, mGraspNames, ids);
     button = Gtk::manage(new Gtk::Button("Grasp"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onSandiaRightGraspButton));
-    hboxR->add(*button);
-    handControlBox->pack_start(*hboxR, false, false);    
+    table->attach(*label1, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    table->attach(*combo, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    table->attach(*label2, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    table->attach(*spin, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    table->attach(*button, xCur, xCur+1, yCur, yCur+1, xOpts, yOpts); ++xCur;
+    ++yCur;
     
-    // iRobot
-    handControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    /////////////////////////////////
+    // irobot hands
+    //
 
-    box = Gtk::manage(new Gtk::HBox());
+    handControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
     label = Gtk::manage(new Gtk::Label("iRobot Hand", Gtk::ALIGN_CENTER));
-    box->add(*label);
-    handControlBox->pack_start(*box, false, false);     
-    
+    handControlBox->pack_start(*label, false, false);
 
     ids = { 0, 1 };
-    std::vector<std::string> label_names = { "iRobot Left", "iRobot Right" };    
+    std::vector<std::string> labels = { "iRobot Left", "iRobot Right" };  
     hbox = Gtk::manage(new Gtk::HBox());
+    label = Gtk::manage(new Gtk::Label("Controlling:"));
     mControlIrobotRightHand = 0;
-    addCombo("Controlling ... ", mControlIrobotRightHand, label_names, ids, hbox);
-    handControlBox->pack_start(*hbox, false, false);    
-    
-    hbox = Gtk::manage(new Gtk::HBox());
-    box = Gtk::manage(new Gtk::HBox());
-    button = Gtk::manage(new Gtk::Button("Open"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotOpenButton));
-    box->add(*button);
-    hbox->add(*box); 
-    box = Gtk::manage(new Gtk::HBox());
-    button = Gtk::manage(new Gtk::Button("Close"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotCloseButton));
-    box->add(*button);
-    hbox->add(*box); 
-    handControlBox->pack_start(*hbox, false, false);     
-    
-    
-    hbox = Gtk::manage(new Gtk::HBox());
-    box = Gtk::manage(new Gtk::HBox());
-    hbox->add(*box); 
-    // Closed Amount
-    box = Gtk::manage(new Gtk::HBox());
-    mIrobotCloseFraction =0;
-    addSpin("Partial Closed % L", mIrobotCloseFraction, 0, 100, 10, box); 
-    hbox->add(*box);
-    // send button
-    button = Gtk::manage(new Gtk::Button("Grasp"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotPartialGraspButton));
-    hbox->add(*button);
-    handControlBox->pack_start(*hbox, false, false);
-    
+    combo = createCombo(mControlIrobotRightHand, labels, ids);
     mIrobotFingerEnabled[0] = true;
     mIrobotFingerEnabled[1] = true;
     mIrobotFingerEnabled[2] = true;
-    addCheck("0 Finger", mIrobotFingerEnabled[0], handControlBox);
-    addCheck("                2 Thumb", mIrobotFingerEnabled[2], handControlBox);    
-    addCheck("1 Finger", mIrobotFingerEnabled[1], handControlBox);
-
+    hbox->pack_start(*label,false,false);
+    hbox->pack_start(*combo,false,false);
+    box = Gtk::manage(new Gtk::VBox());
+    addCheck("0 Finger", mIrobotFingerEnabled[0], box);
+    addCheck("1 Finger", mIrobotFingerEnabled[1], box);
+    hbox->pack_start(*box,false,false);
+    box = Gtk::manage(new Gtk::VBox());
+    addCheck("2 Thumb", mIrobotFingerEnabled[2], box);
+    hbox->pack_start(*box,false,false);
+    handControlBox->pack_start(*hbox, false, false);
     
+
     hbox = Gtk::manage(new Gtk::HBox());
-    box = Gtk::manage(new Gtk::HBox());
-    hbox->add(*box); 
-    // Closed Amount
-    box = Gtk::manage(new Gtk::HBox());
-    mIrobotSpreadDegree =0;
-    addSpin("Spread [Deg]", mIrobotSpreadDegree, 0, 90, 10, box); 
-    hbox->add(*box);
-    // send button
+    button = Gtk::manage(new Gtk::Button("Open"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotOpenButton));
+    hbox->add(*button);
+    button = Gtk::manage(new Gtk::Button("Close"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotCloseButton));
+    hbox->add(*button);
+    handControlBox->pack_start(*hbox, false, false);
+
+    table = Gtk::manage(new Gtk::Table());
+    handControlBox->pack_start(*table, false, false);
+    xCur = yCur = 0;
+    label = Gtk::manage(new Gtk::Label("Partial Closed %"));
+    mIrobotCloseFraction = 0;
+    spin = createSpin(mIrobotCloseFraction, 0, 100, 10);
+    button = Gtk::manage(new Gtk::Button("Grasp"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onIrobotPartialGraspButton));
+    table->attach(*label,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*spin,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*button,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    ++yCur;
+
+    xCur = 0;
+    label = Gtk::manage(new Gtk::Label("Spread [deg]"));
+    mIrobotSpreadDegree = 0;
+    spin = createSpin(mIrobotSpreadDegree, 0, 90, 10);
     button = Gtk::manage(new Gtk::Button("Spread"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onIrobotSpreadDegreeButton));
-    hbox->add(*button);
-    handControlBox->pack_start(*hbox, false, false); 
-    
-    
-    ids = { 0, 1, 2, 3 };
-    hbox = Gtk::manage(new Gtk::HBox());
-    box = Gtk::manage(new Gtk::HBox());
-    mIrobotCalibrate = 0;    
-    std::vector<std::string> labels = { "Left No Jig", "Left Jig", "Right No Jig", "Right Jig" };
-    addCombo("Calibrate", mIrobotCalibrate, labels, ids, box);
-    hbox->add(*box); 
-    // send button
-    boxR = Gtk::manage(new Gtk::HBox());
+    table->attach(*label,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*spin,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*button,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    ++yCur;
+
+    xCur = 0;
+    ids = { 0, 1 };
+    labels = { "No Jig", "Jig" };
+    label = Gtk::manage(new Gtk::Label("Calibrate"));
+    mIrobotCalibrate = 0;
+    combo = createCombo(mIrobotCalibrate, labels, ids);
     button = Gtk::manage(new Gtk::Button("Send"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onIrobotCalibrateButton));
-    boxR->add(*button);
-    hbox->add(*boxR); 
-    handControlBox->pack_start(*hbox, false, false);           
+    table->attach(*label,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*combo,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*button,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    
     
     notebook->append_page(*handControlBox, "Hands");    
     
@@ -521,13 +531,11 @@ public:
     ///////////////////////////////////////////////////////////
     Gtk::Box* sensorControlBox = Gtk::manage(new Gtk::VBox());
     Gtk::Table* sensorControlTable = Gtk::manage(new Gtk::Table(5,3,false));
-    Gtk::AttachOptions xOpts = Gtk::FILL | Gtk::EXPAND;
-    Gtk::AttachOptions yOpts = Gtk::SHRINK;
     
     // maxing out at 5hz for safety
     mHandCameraFrameRate = -1;
     //addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, handControlBox); 
-    int yCur = 0;
+    yCur = 0;
     mCameraCompression = 0;
     labels = { "-", "Low", "Med", "High" };
     ids =
@@ -536,8 +544,7 @@ public:
         drc::sensor_request_t::QUALITY_HIGH};
     mLeftGraspNameEnum = 0;
     label = Gtk::manage(new Gtk::Label("Camera Quality", Gtk::ALIGN_RIGHT));
-    Gtk::ComboBox* combo =
-      gtkmm::RendererBase::createCombo(mCameraCompression, labels, ids);
+    combo = gtkmm::RendererBase::createCombo(mCameraCompression, labels, ids);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
@@ -548,7 +555,7 @@ public:
     
     label = Gtk::manage(new Gtk::Label("Head Cam fps", Gtk::ALIGN_RIGHT));
     mDummyIntValue = 5;
-    Gtk::SpinButton* spin = gtkmm::RendererBase::createSpin(mDummyIntValue, 0, 10, 1);
+    spin = gtkmm::RendererBase::createSpin(mDummyIntValue, 0, 10, 1);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->publishMultisense(-1000,spin->get_value(),-1);});
@@ -560,7 +567,7 @@ public:
     
     label = Gtk::manage(new Gtk::Label("Head Cam Gain", Gtk::ALIGN_RIGHT));
     mDummyDoubleValue = 1.0;
-    Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
+    check = Gtk::manage(new Gtk::CheckButton());
     check->set_active(true);
     spin = gtkmm::RendererBase::createSpin(mDummyDoubleValue, 1.0, 8.0, 0.1);
     button = Gtk::manage(new Gtk::Button("send"));
@@ -855,18 +862,10 @@ public:
   void onIrobotCalibrateButton() {
     irobothand::calibrate_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    if ( (mIrobotCalibrate==0) || (mIrobotCalibrate==2) ){
-      msg.in_jig = false;
-    }else if( (mIrobotCalibrate==1) || (mIrobotCalibrate==3) ){
-      msg.in_jig = true;      
-    }else{
-      return; // not understood
-    }
-    std::string channel = "IROBOT_RIGHT_CALIBRATE";
-    if( (mIrobotCalibrate==2) || (mIrobotCalibrate==3) ){
-      channel= "IROBOT_RIGHT_CALIBRATE";      
-    }
-    getLcm()->publish( channel , &msg);
+    msg.in_jig = mIrobotCalibrate != 0;
+    std::string channel = (mControlIrobotRightHand==0) ?
+      "IROBOT_LEFT_CALIBRATE" : "IROBOT_RIGHT_CALIBRATE";
+    getLcm()->publish(channel , &msg);
   }
 
   void publishMultisense(const double iSpinRate=-1000,
