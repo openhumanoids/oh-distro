@@ -531,4 +531,8 @@
     <pose_seed name="2013-11-19-21-52::pre_step" />
     <pose_seed name="2013-11-20-07-57::pre_step" />
     <pose_seed name="2013-11-20-07-58::pre_step" />
+    <pose_seed name="2013-11-20-09-37::jumpy" />
+    <pose_seed name="2013-11-20-09-40::jumpy_left" />
+    <pose_seed name="2013-11-20-09-41::jumpy_left_down" />
+    <pose_seed name="2013-11-20-09-44::pre_step_wrist_down" />
 </object>
