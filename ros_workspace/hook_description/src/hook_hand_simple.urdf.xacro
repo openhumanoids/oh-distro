@@ -94,7 +94,7 @@
       <geometry>
         <cylinder length="0.01" radius="0.045"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0.025"/>
     </collision>
     <visual>
       <geometry>
@@ -103,7 +103,7 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+      <origin rpy="0 0 0" xyz="0 0 0.025"/>
     </visual>
 
 <!-- MIT's pointer rod -->
@@ -111,7 +111,7 @@
       <geometry>
         <cylinder length="0.15" radius="0.006"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.08"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </collision>
     <visual>
       <geometry>
@@ -120,16 +120,17 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0 0.08"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </visual>
 
 
-<!-- MIT's pointer rod -->
+<!-- MIT's hook -->
+<!--
     <collision>
       <geometry>
         <cylinder length="0.04" radius="0.006"/>
       </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.15"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.16"/>
     </collision>
     <visual>
       <geometry>
@@ -138,9 +139,9 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.15"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.16"/>
     </visual>
-
+-->
   </link>
 
 
