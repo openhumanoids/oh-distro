@@ -40,10 +40,16 @@ namespace renderer_affordances_gui_utils
       bool use_nan_for_z = false;
       publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,false,use_nan_for_z);  
     }
-    else if(!strcmp(name,PARAM_COMMIT_TO_FOOTSTEP_PLANNER)){
+    else if(!strcmp(name,PARAM_COMMIT_TO_FOOTSTEP_PLANNER_WITHOUT_Z)){
       string channel = "DESIRED_FOOT_STEP_SEQUENCE";
       cout << "publishing EE goal sequence on " << channel << endl;
       bool use_nan_for_z = true;
+      publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,true,use_nan_for_z);  
+    }
+    else if(!strcmp(name,PARAM_COMMIT_TO_FOOTSTEP_PLANNER)){
+      string channel = "DESIRED_FOOT_STEP_SEQUENCE";
+      cout << "publishing EE goal sequence on " << channel << endl;
+      bool use_nan_for_z = false;
       publish_EE_goal_sequence_and_get_whole_body_plan(self,channel,false,true,use_nan_for_z);  
     }
     else if(!strcmp(name,PARAM_SEND_POSE_GOAL4)){
@@ -84,8 +90,8 @@ namespace renderer_affordances_gui_utils
 
     bot_gtk_param_widget_add_buttons(pw,PARAM_DELETE, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_EE_GOAL_SEQUENCE, NULL); 
+    bot_gtk_param_widget_add_buttons(pw,PARAM_COMMIT_TO_FOOTSTEP_PLANNER_WITHOUT_Z,NULL); 
     bot_gtk_param_widget_add_buttons(pw,PARAM_COMMIT_TO_FOOTSTEP_PLANNER, NULL); 
-    
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL4, NULL);
     bot_gtk_param_widget_add_buttons(pw,PARAM_SEND_POSE_GOAL5, NULL);
 

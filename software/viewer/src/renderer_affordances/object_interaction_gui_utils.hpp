@@ -113,6 +113,7 @@
 
 #define PARAM_SEND_EE_GOAL_SEQUENCE "Get Whole Body Plan"
 #define PARAM_COMMIT_TO_FOOTSTEP_PLANNER "Commit to Footstep Planner"
+#define PARAM_COMMIT_TO_FOOTSTEP_PLANNER_WITHOUT_Z "Commit to Footstep Planner w/o Z"
 
 #define PARAM_REQUEST_STICKYFEET_FROM_CURRENT_ROBOT_STATE "Request StickyFeet From Cur Robot State"
 #define PARAM_REQUEST_STICKYFEET_FROM_DESIRED_ROBOT_STATE "Request StickyFeet From Des Robot State"
