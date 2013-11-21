@@ -246,8 +246,8 @@ struct State : public maps::Collector::DataListener {
     std::cout << "inlier fraction: " << oInlierFrac << std::endl;
 
     // debug
-    bot_lcmgl_t* lcmgl = mLcmGl;
     /*
+    bot_lcmgl_t* lcmgl = mLcmGl;
     bot_lcmgl_color4f(lcmgl, 0.5, 0, 0, 0.3);
     bot_lcmgl_point_size(lcmgl, 3);
     for (int i = 0; i < iCurCloud->size(); i += 1) {
@@ -256,7 +256,6 @@ struct State : public maps::Collector::DataListener {
       bot_lcmgl_vertex3f(lcmgl, point.x, point.y, point.z);
       bot_lcmgl_end(lcmgl);
     }
-    */
     bot_lcmgl_color4f(lcmgl, 0, 0.5, 0, 0.3);
     bot_lcmgl_point_size(lcmgl, 3);
     for (int i = 0; i < mRefCloud->size(); i += 1) {
@@ -274,6 +273,7 @@ struct State : public maps::Collector::DataListener {
       bot_lcmgl_end(lcmgl);
     }
     bot_lcmgl_switch_buffer(lcmgl);
+*/
 
     return icp.hasConverged();
   }
