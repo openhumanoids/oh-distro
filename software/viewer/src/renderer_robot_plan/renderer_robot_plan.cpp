@@ -279,7 +279,8 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
       draw_state(viewer,super,w_plan,c);
   }
   
-  
+
+  /* disabled_for_cleanup
   if(bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_DURING_CONTROL) ){
     if(self->robotPlanListener->_controller_status == drc::controller_status_t::WALKING){ // walking 
       int rx_plan_size = self->robotPlanListener->_received_plan.num_states;
@@ -302,7 +303,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
       }
     }
   }
-
+  */
 
   if(self->robotPlanListener->is_multi_approval_plan())
   {
@@ -813,7 +814,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
 
     
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
 
     // commented out unused buttons:
     // bot_gtk_param_widget_add_buttons(self->pw, PARAM_START_PLAN, NULL);
@@ -828,7 +829,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     
     bot_gtk_param_widget_add_double (self->pw, PARAM_PLAN_PART,
                                    BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.005, 1);    
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DURING_CONTROL, 1, NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DURING_CONTROL, 1, NULL);
                                                     
     bot_gtk_param_widget_add_separator (self->pw,"Replanning");
     bot_gtk_param_widget_add_enum(self->pw, PARAM_PLAN_ADJUST_MODE, BOT_GTK_PARAM_WIDGET_MENU,drc::plan_adjust_mode_t::LEFT_HAND, 

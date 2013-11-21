@@ -231,12 +231,14 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     // Dont Draw Seeds If the renderer is foviated. 
     if(self->_renderer_foviate)
     {
+      /* disabled_for_cleanup
       int64_t now = bot_timestamp_now();
       if(now > (self->graspOptStatusListener->_last_statusmsg_stamp + 4000000)){
           bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,false); 
       }
+      */
       return;
-    }   
+    }
     
     // Draw all sticky hands
     float c_green[3] = {0.3,0.5,0.3}; 
@@ -655,6 +657,7 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
     }
   
     // Draw the manip map end effector pose
+    /* disabled_for_cleanup
     if (bot_gtk_param_widget_get_bool (self->pw, PARAM_SHOW_PROPOSED_MANIP_MAP) && 
         !self->ee_frames_map.empty()) {
       
@@ -696,12 +699,15 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
             } // end for frames
         }
     }
+    */
 
     // Maintain heartbeat with Drake
+    /* disabled_for_cleanup
     int64_t now = bot_timestamp_now();
     if(now > (self->graspOptStatusListener->_last_statusmsg_stamp + 4000000)){
         bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,false); 
     }
+    */
     
     // debug selection
     // ==================================================================================      
@@ -1185,12 +1191,13 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
         spawn_instance_management_popup(self);
 
     }
+    
     else if (! strcmp (name, PARAM_OTDF_SELECT)) {
         self->otdf_id = bot_gtk_param_widget_get_enum (self->pw, PARAM_OTDF_SELECT);
     }
     else if(!strcmp(name, PARAM_INSTANTIATE)) {
         cout << "\nInstantiating Selected Otdf:  " << self->otdf_filenames[self->otdf_id] << endl;
-        self->debugMode = bot_gtk_param_widget_get_bool(pw, PARAM_DEBUG_MODE);
+        // disabled_for_cleanup self->debugMode = bot_gtk_param_widget_get_bool(pw, PARAM_DEBUG_MODE);
         self->affCollection->create(self->otdf_filenames[self->otdf_id],self->debugMode);
     }
     else if(!strcmp(name, PARAM_CLEAR)) {
@@ -1414,18 +1421,16 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
                                     self->otdf_nums);
 
     bot_gtk_param_widget_add_buttons(self->pw,PARAM_INSTANTIATE, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw, PARAM_MANAGE_INSTANCES, NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_buttons(self->pw, PARAM_MANAGE_INSTANCES, NULL);
     bot_gtk_param_widget_add_buttons(self->pw,PARAM_CLEAR, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_OPT_POOL_READY, 0, NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_OPT_POOL_READY, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_MESH, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_BOUNDING_BOX, 0, NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_BOUNDING_BOX, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_TRIAD, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX,
-                                      PARAM_REACHABILITY_FILTER, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX,
-                                      PARAM_DEBUG_MODE, 1, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_PROPOSED_MANIP_MAP, 0, NULL);  
+    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_REACHABILITY_FILTER, 0, NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_DEBUG_MODE, 1, NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_PROPOSED_MANIP_MAP, 0, NULL);  
 
     bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA,
                                      BOT_GTK_PARAM_WIDGET_SLIDER,
@@ -1451,9 +1456,9 @@ BotRenderer *renderer_affordances_new (BotViewer *viewer, int render_priority, l
 
 	bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
 	bool optpoolready = self->graspOptStatusListener->isOptPoolReady();
-	bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,optpoolready);
-	bot_gtk_param_widget_set_bool(self->pw,PARAM_REACHABILITY_FILTER,self->enableReachabilityFilter);     
-	bot_gtk_param_widget_set_bool(self->pw,PARAM_DEBUG_MODE,self->debugMode);
+	// disabled_for_cleanup bot_gtk_param_widget_set_bool(self->pw,PARAM_OPT_POOL_READY,optpoolready);
+	// disabled_for_cleanup bot_gtk_param_widget_set_bool(self->pw,PARAM_REACHABILITY_FILTER,self->enableReachabilityFilter);     
+	// disabled_for_cleanup bot_gtk_param_widget_set_bool(self->pw,PARAM_DEBUG_MODE,self->debugMode);
 
         self->space_mouse_helper.reset(new RendererAffordances::SpaceMouseHelper(self));
   

@@ -383,7 +383,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
 
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FORCES, 0, NULL);
     
     bool val=false;
@@ -394,7 +394,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     bot_gtk_param_widget_add_buttons(self->pw,PARAM_SEND_POSTURE_GOAL_BACK_ZEROED, NULL);
     
 
-    bot_gtk_param_widget_add_buttons(self->pw,PARAM_ENABLE_EE_TELEOP,NULL);
+    // disabled_for_cleanup bot_gtk_param_widget_add_buttons(self->pw,PARAM_ENABLE_EE_TELEOP,NULL);
     
     
     bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
