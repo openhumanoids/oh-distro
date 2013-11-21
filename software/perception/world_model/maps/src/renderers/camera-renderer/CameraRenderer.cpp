@@ -279,8 +279,8 @@ protected:
       Eigen::Isometry3d xform;
       std::string frame;
       switch (mViewTarget) {
-      case ViewTargetLeftHand:  frame = "IROBOTLPALM"; break;
-      case ViewTargetRightHand: frame = "IROBOTRPALM"; break;
+      case ViewTargetLeftHand:  frame = "LPALM"; break;
+      case ViewTargetRightHand: frame = "RPALM"; break;
       default: break;
       }
       if (!mBotWrapper->getTransform(frame, mName, xform)) return;
