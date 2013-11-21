@@ -215,6 +215,7 @@ struct Worker {
       plane /= plane.head<3>().norm();
       for (int k = 0; k < 4; ++k) msg.clip_planes[5][k] = plane[k];
     }
+    msg.resolution = 0.03;
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
     msg.time_min = -8*1e6;
     mLcm->publish("MAP_REQUEST", &msg);
