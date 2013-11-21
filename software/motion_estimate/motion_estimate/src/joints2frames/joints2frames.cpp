@@ -67,8 +67,8 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     // Sandia L/R hands:
     pub_frequency_["BODY_TO_CAMERARHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERARHAND_LEFT") ); 
     pub_frequency_["BODY_TO_CAMERALHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND_LEFT") );
-    pub_frequency_["BODY_TO_IROBOTLPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "IROBOTLPALM") ); 
-    pub_frequency_["BODY_TO_IROBOTRPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "IROBOTRPALM") );
+    pub_frequency_["BODY_TO_LPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "LPALM") ); 
+    pub_frequency_["BODY_TO_RPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "RPALM") );
 
     pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
     pub_frequency_["POSE_LEFT_FOOT"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "left_foot") );
