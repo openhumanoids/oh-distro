@@ -90,7 +90,7 @@ def getPullDown():
   return [position,name]
 
 def getHandDown():
-  position=[-1.01134300232, 1.96587055922, 0.0517824155395, 1.38765757637, 0.239791974425, 0.009811]
+  position=[-0.4582, 1.8040870559, 0.051782415, 1.297657576, 0.239791974, 0.009811000]
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
@@ -210,7 +210,7 @@ if __name__ == '__main__':
   draw_string(screen, font, 10, 190, "q handdown    - handdown")
   draw_string(screen, font, 10, 210, "w zero back   - zero the back joint")
 
-  draw_string(screen, font, 10, 250,  "a shooter     - hand up and finger away")
+  draw_string(screen, font, 10, 250, "a shooter     - hand up and finger away")
   draw_string(screen, font, 10, 270, "s shooterback - hand up and finger away, back straight")
   draw_string(screen, font, 10, 290, "d crane       - hand pointing down from in front")
 
