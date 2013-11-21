@@ -217,7 +217,9 @@ struct Worker {
     }
     msg.resolution = 0.03;
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
-    msg.time_min = -8*1e6;
+    msg.time_min = 0;
+    msg.time_max = 185;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE;
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
