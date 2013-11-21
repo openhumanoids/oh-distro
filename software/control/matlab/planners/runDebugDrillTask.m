@@ -75,7 +75,7 @@ wall_z = wall_z - wall_z'*wall.normal*wall.normal;
 wall_z = wall_z/norm(wall_z);
 wall_y = cross(wall_z, wall.normal);
 
-q0_init(1:3) = tri_centroid - wall.normal*.8 - .3*wall_z + .3*wall_y;
+q0_init(1:3) = tri_centroid - wall.normal*.8 - .2*wall_z + .4*wall_y;
 q0_init(6) = atan2(wall.normal(2), wall.normal(1));
 
 
@@ -83,7 +83,7 @@ if ~use_simulated_state
   q0 = lcm_mon.getStateEstimate();
   q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]))
 end
-[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, 0);
+[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, .2);
 
 
 %% move the arm before walking
@@ -106,6 +106,12 @@ drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
 [xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q_wall, drill_f - .1*wall.normal, 5);
 
 %% now we've walked up, lets double check
+wall = lcm_mon.getWallAffordance();
+drill_pub = drill_pub.updateWallNormal(wall.normal);
+wall.targets
+triangle = wall.targets;
+drill_points = [triangle triangle(:,1)];
+
 if use_simulated_state
   q_check = xtraj_arm_init.eval(0);
   q_check = q_check(1:34);f

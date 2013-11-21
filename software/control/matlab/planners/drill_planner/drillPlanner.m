@@ -68,7 +68,7 @@ classdef drillPlanner
 
       cost = ones(34,1);
       cost([1 2 6]) = 5000*ones(3,1);
-      cost(3) = 5000;
+      cost(3) = 200;
       cost(back_joint_indices) = [100;1000;100];
       
       vel_cost = cost*.05;
@@ -169,7 +169,7 @@ classdef drillPlanner
       
       if free_body_pose
         % create posture constraint.  allow moving x, y, z, yaw
-        posture_index = setdiff((1:obj.r.num_q)',[1; 2; 3; 6; obj.joint_indices]);
+        posture_index = setdiff((1:obj.r.num_q)',[1; 2; 6; obj.joint_indices]);
         posture_constraint = posture_constraint.setJointLimits(6, q0(6) - .15, q0(6) + .15);  %arbitrary yaw limit to not turn too much
         
       else
