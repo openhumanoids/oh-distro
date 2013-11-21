@@ -406,7 +406,7 @@ classdef drillPlanner
       
       T = arc*radius/speed;
       
-      N = ceil(2*T);
+      N = min(4,ceil(2*T));
       
       t_vec = linspace(0,T,N);
       

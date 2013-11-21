@@ -5,14 +5,14 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 %% get affordance fits
 
 
-useVisualization = true;
+useVisualization = false;
 publishPlans = true;
 useRightHand = false;
 allowPelvisHeight = false;
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 
 finger_pt_on_hand = zeros(3,1);
-finger_axis_on_hand = [1; 0; 0];
+finger_axis_on_hand = [0; 1; 0];
 
 %%
 while true 

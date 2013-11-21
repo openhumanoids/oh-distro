@@ -80,6 +80,42 @@ while(true)
       q0 = lcm_mon.getStateEstimate();
       disp('generating plan to preset position');
       % get the pose somehow, todo
+%       load poke_pose_0;
+      button_preset = [ -0.3112
+   -1.5089
+    0.8768
+   -0.0114
+    0.0148
+   -1.4788
+    0.0595
+    0.0293
+   -0.0071
+    0.0043
+   -0.0261
+    1.5633
+    1.4976
+    0.0196
+   -0.0073
+    0.0775
+   -0.5662
+    0.9945
+   -0.4712
+   -0.0790
+   -0.0205
+   -0.9346
+    0.2673
+    1.8375
+   -1.5831
+    0.0002
+   -0.0014
+   -0.0259
+   -0.5396
+    1.0068
+   -0.4437
+    0.0578
+   -0.2694
+    0.4094];
+  button_preset(1:6) = q0(1:6);
       posture_pub.generateAndPublishPosturePlan(q0,button_preset,0)
 
     case drc.drill_control_t.REFIT_DRILL
@@ -98,7 +134,7 @@ while(true)
     case drc.drill_control_t.RQ_NOMINAL_PLAN
       %hand picked joints that make for a decent guess
       q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
-      
+%       q0_init(drill_pub.joint_indices) = randn(9,1);
       q0 = lcm_mon.getStateEstimate();
       q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]));
       
@@ -252,7 +288,7 @@ while(true)
         if ~isempty(xtraj_button)
           xlast = xtraj_button.eval(xtraj_button.tspan(2));
           q0 = lcm_mon.getStateEstimate();
-          q0(setdiff(1:34',button_pub.button_joint_indices)) = xlast(setdiff(1:34',button_pub.button_joint_indices));
+          q0(setdiff(1:34',[1;2;3;4;5;6;button_pub.button_joint_indices])) = xlast(setdiff(1:34',[1;2;3;4;5;6;button_pub.button_joint_indices]));
           button_offset = last_button_offset + ctrl_data(1:3);
 %           last_button_offset = button_offset;
           [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPokePlan(q0, button_offset, 5);
