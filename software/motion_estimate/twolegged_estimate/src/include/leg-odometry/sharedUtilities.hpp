@@ -37,6 +37,14 @@ struct FK_Data {
 	BotTransforms bottransforms;
 };
 
+class RobotModel {
+ public:
+   lcm::LCM lcm;
+   std::string robot_name;
+   std::string urdf_xml_string;
+   std::vector<std::string> joint_names_;
+ };
+
 // updates left, right and body_to_head Isometry3d tranforms
 void getFKTransforms(TwoLegs::FK_Data &_fk_data, Eigen::Isometry3d &left, Eigen::Isometry3d &right, Eigen::Isometry3d &body_to_head);
   

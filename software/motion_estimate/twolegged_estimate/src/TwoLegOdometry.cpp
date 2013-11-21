@@ -134,10 +134,13 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
 	Eigen::Isometry3d old_pelvis;
 	old_pelvis = getPelvisFromStep();
 
-	
+	std::cout << "TwoLegOdometry::UpdateStates -- midway" << std::endl;
+
 	setLegTransforms(left, right);
+
 	foot_transition = FootLogic(utime, left_force, right_force);
 	
+
 	// the local_to_pelvis transform will include the new footstep location
 	Eigen::Isometry3d pelvis;
 	pelvis = getPelvisFromStep();
@@ -315,6 +318,7 @@ footstep TwoLegOdometry::DetectFootTransistion(int64_t utime, float leftz, float
 bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   footstep newstep;
 
+  std::cout << "TwoLegOdometry::FootLogic -- before detect" << std::endl;
   newstep = DetectFootTransistion(utime, leftz, rightz);
   
   //std::cout << "Foot at this point is: " << newstep.foot << std::endl;
@@ -368,10 +372,14 @@ float TwoLegOdometry::getSecondaryFootZforce() {
 }
 
 void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right) {
+
 	pelvis_to_left = left;
 	pelvis_to_right = right;
+	std::cout << "TwoLegOdometry::setLegTransforms -- " << left.translation().transpose() << std::endl << left.linear() << std::endl;
 	left_to_pelvis = left.inverse();
 	right_to_pelvis = right.inverse();
+
+	std::cout << "TwoLegOdometry::setLegTransforms -- after" << std::endl;
 }
 
 void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation, const Eigen::Vector3d &body_rates) {

@@ -7,7 +7,7 @@ function [R_a__b_k0] = closed_form_DCM_farrell(w_k0,R_a__b_k1)
 % 
 % Version 1.0: 14/06/2012 - Copied from p56 of the book.
 %
-% d Fourie
+% D Fourie
 
 
 v = w_k0;

@@ -47,12 +47,12 @@ bool StateEstimate::insertPoseBDI(const PoseT &pose_BDI_, drc::robot_state_t& ms
 
 
 
-bool StateEstimate::insertAtlasState_ERS(const drc::atlas_state_t &atlasState, drc::robot_state_t &mERSMsg, RobotModel robot){
+bool StateEstimate::insertAtlasState_ERS(const drc::atlas_state_t &atlasState, drc::robot_state_t &mERSMsg, RobotModel* _robot){
 
 	Joints jointsContainer;
 	
 	// This is called form state_sync
-	insertAtlasJoints(&atlasState, jointsContainer, robot);
+	insertAtlasJoints(&atlasState, jointsContainer, _robot);
 	appendJoints(mERSMsg, jointsContainer);
 	
 	return false;
@@ -71,9 +71,9 @@ void StateEstimate::appendJoints(drc::robot_state_t& msg_out, const StateEstimat
 }
 
 
-void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstimate::Joints &jointContainer, RobotModel robot) {
+void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstimate::Joints &jointContainer, RobotModel* _robot) {
 
-  jointContainer.name = robot.joint_names_;
+  jointContainer.name = _robot->joint_names_;
   jointContainer.position = msg->joint_position;
   jointContainer.velocity = msg->joint_velocity;
   jointContainer.effort = msg->joint_effort;
@@ -196,7 +196,7 @@ void StateEstimate::handle_inertial_data_temp_name(
 }
 
 
-void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel robot) {
+void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot) {
 	
   // Keep joint positions in local memory -- prepare data structure for use with FK
   std::map<std::string, double> jointpos_in;
@@ -204,8 +204,8 @@ void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_s
 	//jointpos_in.insert(make_pair(atlasState.joint_name[i], atlasState.joint_position[i]));
 
 	// Changing name types to AtlasControlTypes definition
-	jointpos_in.insert(make_pair(robot.joint_names_[i], atlasState.joint_position[i]));
-
+	jointpos_in.insert(make_pair(_robot->joint_names_[i], atlasState.joint_position[i]));
+	//std::cout << "StateEstimate::doLegOdometry -- inserting joint " << robot.joint_names_[i] << ", " << atlasState.joint_position[i] << std::endl;
   }
   
   Eigen::Isometry3d current_pelvis;
@@ -233,11 +233,7 @@ void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_s
     init_state.setIdentity();
     _leg_odo.ResetWithLeftFootStates(left,right,init_state);
   }
-
-  // This must be broken into separate position and velocity states
-  //  legchangeflag = _leg_odo->UpdateStates(_msg->utime, left, right, left_force, right_force); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
   _leg_odo.UpdateStates(atlasState.utime, left, right, atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
-  
 }
 
 

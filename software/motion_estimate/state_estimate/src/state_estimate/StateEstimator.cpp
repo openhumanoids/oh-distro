@@ -191,13 +191,13 @@ void StateEstimate::StateEstimator::run()
       //float joint_velocities[atlasState.num_joints];
       // Joint velocity states in the atlasState message are overwriten by this process
       mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
-      insertAtlasState_ERS(atlasState, mERSMsg, *robot);
+      insertAtlasState_ERS(atlasState, mERSMsg, robot);
       // std::cout << "Handled Atlas state" << std::endl;
       
       // here we compute the leg odometry position solution
       // TODO -- we are using the BDI orientation estimate to 
       
-      doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, *robot);
+      doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, robot);
 
       // TODO -- remove this, only a temporary display object
       // Tihs is where leg odometry thinks the pelvis is at

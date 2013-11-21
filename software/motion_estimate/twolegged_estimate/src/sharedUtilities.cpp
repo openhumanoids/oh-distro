@@ -58,9 +58,13 @@ void TwoLegs::getFKTransforms(TwoLegs::FK_Data &_fk_data, Eigen::Isometry3d &lef
 	  }
 
 
+
 	  // Get lower leg quaternions
 	  Eigen::Quaterniond q_ll_l(transform_it_ll_l->second.rotation.w, transform_it_ll_l->second.rotation.x,transform_it_ll_l->second.rotation.y,transform_it_ll_l->second.rotation.z);
 	  Eigen::Quaterniond q_ll_r(transform_it_ll_r->second.rotation.w, transform_it_ll_r->second.rotation.x,transform_it_ll_r->second.rotation.y,transform_it_ll_r->second.rotation.z);
+
+	  //std::cout << "TwoLegs::getFKTransforms -- q is " << q_ll_l.w() << ", " << q_ll_l.x() << ", " << q_ll_l.y() << ", " << q_ll_l.z() << std::endl;
+
 
 	  Eigen::Isometry3d left_lleg;
 	  Eigen::Isometry3d right_lleg;
@@ -68,8 +72,8 @@ void TwoLegs::getFKTransforms(TwoLegs::FK_Data &_fk_data, Eigen::Isometry3d &lef
 	  left_lleg.translation() << transform_it_ll_l->second.translation.x, transform_it_ll_l->second.translation.y, transform_it_ll_l->second.translation.z;
 	  right_lleg.translation() << transform_it_ll_r->second.translation.x, transform_it_ll_r->second.translation.y, transform_it_ll_r->second.translation.z;
 
-	  left_lleg.rotate(q_ll_l);// DO NOT TRUST THIS IN THE DRC CONTEXT
-	  right_lleg.rotate(q_ll_r);// DO NOT TRUST THIS IN THE DRC CONTEXT
+	  //left_lleg.rotate(q_ll_l);// DO NOT TRUST THIS IN THE DRC CONTEXT
+	  //right_lleg.rotate(q_ll_r);// DO NOT TRUST THIS IN THE DRC CONTEXT
 
 	  left_lleg.linear() = q2C(q_ll_l);
 	  right_lleg.linear() = q2C(q_ll_r);
