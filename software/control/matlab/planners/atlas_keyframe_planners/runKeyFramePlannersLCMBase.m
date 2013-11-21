@@ -80,28 +80,28 @@ else
 end
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
-if(r_hand_mode == 1)
-right_hand_links = [robot.findLinkInd('r_hand'),robot.findLinkInd('right_f0_0'),robot.findLinkInd('right_f0_1'),...
-  robot.findLinkInd('right_f0_2'),robot.findLinkInd('right_f1_0'),robot.findLinkInd('right_f1_1'),...
-  robot.findLinkInd('right_f1_2'),robot.findLinkInd('right_f2_0'),robot.findLinkInd('right_f2_1'),...
-  robot.findLinkInd('right_f2_2'),robot.findLinkInd('right_f3_0'),robot.findLinkInd('right_f3_1'),robot.findLinkInd('right_f3_2')];
-robot.collision_filter_groups('right_hand') = CollisionFilterGroup();
-robot = robot.addLinksToCollisionFilterGroup(right_hand_links,'right_hand',1);
-robot = compile(robot);
-robot = robot.addToIgnoredListOfCollisionFilterGroup({'right_hand'},'right_hand');
-robot = compile(robot);
-end
-if(l_hand_mode == 1)
-left_hand_links = [robot.findLinkInd('l_hand'),robot.findLinkInd('left_f0_0'),robot.findLinkInd('left_f0_1'),robot.findLinkInd('left_f0_2'),...
-  robot.findLinkInd('left_f1_0'),robot.findLinkInd('left_f1_1'),robot.findLinkInd('left_f1_2'),...
-  robot.findLinkInd('left_f2_0'),robot.findLinkInd('left_f2_1'),robot.findLinkInd('left_f2_2'),...
-  robot.findLinkInd('left_f3_0'),robot.findLinkInd('left_f3_1'),robot.findLinkInd('left_f3_2')];
-robot.collision_filter_groups('left_hand') = CollisionFilterGroup();
-robot = robot.addLinksToCollisionFilterGroup(left_hand_links,'left_hand',1);
-robot = compile(robot);
-robot = robot.addToIgnoredListOfCollisionFilterGroup({'left_hand'},'left_hand');
-robot = compile(robot);
-end
+% if(r_hand_mode == 1)
+% right_hand_links = [robot.findLinkInd('r_hand'),robot.findLinkInd('right_f0_0'),robot.findLinkInd('right_f0_1'),...
+%   robot.findLinkInd('right_f0_2'),robot.findLinkInd('right_f1_0'),robot.findLinkInd('right_f1_1'),...
+%   robot.findLinkInd('right_f1_2'),robot.findLinkInd('right_f2_0'),robot.findLinkInd('right_f2_1'),...
+%   robot.findLinkInd('right_f2_2'),robot.findLinkInd('right_f3_0'),robot.findLinkInd('right_f3_1'),robot.findLinkInd('right_f3_2')];
+% robot.collision_filter_groups('right_hand') = CollisionFilterGroup();
+% robot = robot.addLinksToCollisionFilterGroup(right_hand_links,'right_hand',1);
+% robot = compile(robot);
+% robot = robot.addToIgnoredListOfCollisionFilterGroup({'right_hand'},'right_hand');
+% robot = compile(robot);
+% end
+% if(l_hand_mode == 1)
+% left_hand_links = [robot.findLinkInd('l_hand'),robot.findLinkInd('left_f0_0'),robot.findLinkInd('left_f0_1'),robot.findLinkInd('left_f0_2'),...
+%   robot.findLinkInd('left_f1_0'),robot.findLinkInd('left_f1_1'),robot.findLinkInd('left_f1_2'),...
+%   robot.findLinkInd('left_f2_0'),robot.findLinkInd('left_f2_1'),robot.findLinkInd('left_f2_2'),...
+%   robot.findLinkInd('left_f3_0'),robot.findLinkInd('left_f3_1'),robot.findLinkInd('left_f3_2')];
+% robot.collision_filter_groups('left_hand') = CollisionFilterGroup();
+% robot = robot.addLinksToCollisionFilterGroup(left_hand_links,'left_hand',1);
+% robot = compile(robot);
+% robot = robot.addToIgnoredListOfCollisionFilterGroup({'left_hand'},'left_hand');
+% robot = compile(robot);
+% end
 
 
 if(nargin<1)
