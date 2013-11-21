@@ -1,10 +1,4 @@
 <?xml version="1.0" ?>
-<!-- Handcoding this compound affordance for VRC-->
-<!-- Eventually this xml will be generated via xml merging 
-<!-- dyn_mesh_w_1_cylinder::mate::dyn_mesh_w_2_cylinders
-   (or)
-     dyn_mesh+cyl::mate::dyn_mesh+cyl+cyl 
- -->
 <object name="firehose">
     <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
     <!-- World frame origin of the object -->
@@ -15,227 +9,142 @@
     <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <!-- Size of the outer most bounding volume -->
-    <param name="mass" default_value="0.3" inc="0.01" min="0" max="100" />
-    <!--<param name="filename" default_value="1.0" inc="0.01" min="0" max="100"/>-->
-    <!-- Size of the grasping cylinder -->
-    <param name="radius_cyl_1" default_value="0.0266" inc="0.0025" min="0" max="100" />
-    <param name="length_cyl_1" default_value="0.042" inc="0.0025" min="0" max="100" />
-    <param name="radius_cyl_2_1" default_value="0.031" inc="0.0025" min="0" max="100" />
-    <param name="length_cyl_2_1" default_value="0.024" inc="0.0025" min="0" max="100" />
-    <param name="radius_cyl_2_2" default_value="0.025" inc="0.0025" min="0" max="100" />
-    <param name="length_cyl_2_2" default_value="0.024" inc="0.0025" min="0" max="100" />
-    <!-- cyl_offset w.r.t. base link for standpipe -->
-    <param name="x_offset_cyl_1" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="y_offset_cyl_1" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z_offset_cyl_1" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="roll_offset_cyl_1" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="pitch_offset_cyl_1" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="yaw_offset_cyl_1" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <!-- two_cyl_offsets w.r.t. base link for firehose -->
-    <param name="x_offset_cyl_2_1" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="y_offset_cyl_2_1" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z_offset_cyl_2_1" default_value="0.033" inc="0.001" min="-100" max="100" />
-    <param name="roll_offset_cyl_2_1" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="pitch_offset_cyl_2_1" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="yaw_offset_cyl_2_1" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="x_offset_cyl_2_2" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="y_offset_cyl_2_2" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z_offset_cyl_2_2" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="roll_offset_cyl_2_2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="pitch_offset_cyl_2_2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <param name="yaw_offset_cyl_2_2" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
-    <link name="base_link" /
-    <!-- parent affordance::standpipe (dynamic_mesh_with 1 cylinder) -->
-    <link name="dynamic_mesh_1">
+    <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
+    <link name="plane::xy::base_link" />
+    <!--<link name="cylinder">-->
+    <!--<inertial>-->
+    <!--   <mass value="${(Density*(3.141^2)*(length)*(radius^2))}" />-->
+    <!--   <inertia ixx="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"-->
+    <!--            iyy="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}" iyz="0.0"-->
+    <!--            izz="${((Density*(3.141^2)*(length)*(radius^2))/2)*(radius^2)}" />-->
+    <!--</inertial>-->
+    <!--	<visual>-->
+    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--		<geometry>-->
+    <!--			<cylinder radius="${radius}" length="${length}"/> -->
+    <!--		</geometry>-->
+    <!--	</visual>-->
+    <!--	<collision>-->
+    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--		<geometry>-->
+    <!--			<cylinder radius="${radius}" length="${length}"/> -->
+    <!--		</geometry>-->
+    <!--	</collision>-->
+    <!--</link>-->
+    <link name="cylinder_0">
         <inertial>
             <mass value="${mass}" />
-            <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1" />
+            <inertia ixx="1" ixy="0.0" ixz="0.0" iyy="1" iyz="0.0" izz="1" />
         </inertial>
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
-                <dynamic_mesh />
+                <cylinder radius="0.0266" length="0.042" />
             </geometry>
         </visual>
         <collision>
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
-                <dynamic_mesh />
+                <cylinder radius="0.0266" length="0.042" />
             </geometry>
         </collision>
     </link>
     <link name="cylinder_1">
         <inertial>
             <mass value="${mass}" />
-            <inertia ixx="${(mass/12)*(3*(radius_cyl_1^2)+(length_cyl_1^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/12)*(3*(radius_cyl_1^2)+(length_cyl_1^2))}" iyz="0.0" izz="${(mass/2)*(radius_cyl_1^2)}" />
+            <inertia ixx="1" ixy="0.0" ixz="0.0" iyy="1" iyz="0.0" izz="1" />
         </inertial>
         <visual>
-            <origin rpy="0 0 0" xyz="0 0 0" />
+            <origin rpy="0 0 0" xyz="0 0 0.033" />
             <geometry>
-                <cylinder radius="${radius_cyl_1}" length="${length_cyl_1}" />
+                <cylinder radius="0.031" length="0.024" />
             </geometry>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0" />
+            <origin rpy="0 0 0" xyz="0 0 0.033" />
             <geometry>
-                <cylinder radius="${radius_cyl_1}" length="${length_cyl_1}" />
+                <cylinder radius="0.031" length="0.024" />
             </geometry>
         </collision>
     </link>
-    <!-- matable affordance::firehose coupling (dynamic_mesh_with 2 cylinders) -->
-    <link name="cylinder_2_1">
-        <inertial>
-            <mass value="${mass}" />
-            <inertia ixx="${(mass/12)*(3*(radius_cyl_2_1^2)+(length_cyl_2_1^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/12)*(3*(radius_cyl_2_1^2)+(length_cyl_2_1^2))}" iyz="0.0" izz="${(mass/2)*(radius_cyl_2_1^2)}" />
-        </inertial>
-        <visual>
-            <origin rpy="0 0 0" xyz="0 0 0" />
-            <geometry>
-                <cylinder radius="${radius_cyl_2_1}" length="${length_cyl_2_1}" />
-            </geometry>
-        </visual>
-        <collision>
-            <origin rpy="0 0 0" xyz="0 0 0" />
-            <geometry>
-                <cylinder radius="${radius_cyl_2_1}" length="${length_cyl_2_1}" />
-            </geometry>
-        </collision>
-    </link>
-    <link name="cylinder_2_2">
-        <inertial>
-            <mass value="${mass}" />
-            <inertia ixx="${(mass/12)*(3*(radius_cyl_2_2^2)+(length_cyl_2_2^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/12)*(3*(radius_cyl_2_2^2)+(length_cyl_2_2^2))}" iyz="0.0" izz="${(mass/2)*(radius_cyl_2_2^2)}" />
-        </inertial>
-        <visual>
-            <origin rpy="0 0 0" xyz="0 0 0" />
-            <geometry>
-                <cylinder radius="${radius_cyl_2_2}" length="${length_cyl_2_2}" />
-            </geometry>
-        </visual>
-        <collision>
-            <origin rpy="0 0 0" xyz="0 0 0" />
-            <geometry>
-                <cylinder radius="${radius_cyl_2_2}" length="${length_cyl_2_2}" />
-            </geometry>
-        </collision>
-    </link>
-    <joint name="base_joint" type="fixed">
-        <parent link="base_link" type="link" />
-        <child link="dynamic_mesh_1" type="link" />
+    <joint name="base_joint_0" type="fixed">
+        <parent link="plane::xy::base_link" type="link" />
+        <child link="cylinder_0" type="link" />
         <origin rpy="0 0 0" xyz="0 0 0" />
+        <axis xyz="0 0 1" />
     </joint>
-    <joint name="cylinder_1_joint" type="fixed">
-        <parent link="base_link" type="link" />
+    <joint name="base_joint_1" type="fixed">
+        <parent link="plane::xy::base_link" type="link" />
         <child link="cylinder_1" type="link" />
-        <origin rpy="${roll_offset_cyl_1} ${pitch_offset_cyl_1} ${yaw_offset_cyl_1}" xyz="${x_offset_cyl_1} ${y_offset_cyl_1} ${z_offset_cyl_1}" />
-    </joint>
-    <joint name="mate::start" type="fixed">
-        <parent link="cylinder_1" />
-        <child link="mate::start" />
-    </joint>
-    <joint name="mate::end" type="fixed">
-        <parent link="mate::yaw" type="link" />
-        <child link="cylinder_2_1" type="link" />
-        <origin rpy="${roll_offset_cyl_2_1} ${pitch_offset_cyl_2_1} ${yaw_offset_cyl_2_1}" xyz="${x_offset_cyl_2_1} ${y_offset_cyl_2_1} ${z_offset_cyl_2_1}" />
-    </joint>
-    <joint name="cylinder_2_2_joint" type="fixed">
-        <parent link="cylinder_2_1" type="link" />
-        <child link="cylinder_2_2" type="link" />
-        <origin rpy="${roll_offset_cyl_2_2} ${pitch_offset_cyl_2_2} ${yaw_offset_cyl_2_2}" xyz="${x_offset_cyl_2_2} ${y_offset_cyl_2_2} ${z_offset_cyl_2_2}" />
-    </joint>
-    <link name="mate::start" />
-    <!-- dummy link for start and end -->
-    <link name="mate::x" />
-    <link name="mate::y" />
-    <link name="mate::z" />
-    <link name="mate::roll" />
-    <link name="mate::pitch" />
-    <link name="mate::yaw" />
-    <joint name="mate::x" type="prismatic">
-        <axis xyz="1 0 0" />
-        <parent link="mate::start" />
-        <child link="mate::x" />
-        <limit lower="-10" upper="10" effort="1" velocity="1" />
-        <origin xyz="0 0 0.0" rpy="0 0 0" />
-    </joint>
-    <joint name="mate::y" type="prismatic">
-        <axis xyz="0 1 0" />
-        <parent link="mate::x" />
-        <child link="mate::y" />
-        <limit lower="-10" upper="10" effort="1" velocity="1" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-    </joint>
-    <joint name="mate::z" type="prismatic">
+        <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
-        <parent link="mate::y" />
-        <child link="mate::z" />
-        <limit lower="-10" upper="10" effort="1" velocity="1" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
     </joint>
-    <joint name="mate::roll" type="revolute">
-        <axis xyz="1 0 0" />
-        <parent link="mate::z" />
-        <child link="mate::roll" />
-        <limit lower="-6.2832" upper="6.2832" effort="1" velocity="1" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-    </joint>
-    <joint name="mate::pitch" type="revolute">
-        <axis xyz="0 1 0" />
-        <parent link="mate::roll" />
-        <child link="mate::pitch" />
-        <limit lower="-6.2832" upper="6.2832" effort="1" velocity="1" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-    </joint>
-    <joint name="mate::yaw" type="revolute">
-        <axis xyz="0 0 1" />
-        <parent link="mate::pitch" />
-        <child link="mate::yaw" />
-        <limit lower="-6.2832" upper="6.2832" effort="1" velocity="1" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-    </joint>
+    <!-- two handed grasp
     <grasp_seed>
         <appendage type="HAND" />
-        <geometry name="cylinder_2_2_0" />
-        <relative_pose rpy="-0.903867 -0.133601 1.7444" xyz="0.0823459 0.0662497 -0.0627814" />
-        <grasp_type type="1" />
-        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0141726 1.5044 1.11495 -0.00331834 1.5057 0.9843 0.0139852 1.49783 0.88404 0.369259 1.38261 0.653276 " />
-    </grasp_seed>
-    <!--set 1 -->
-    <!--   <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="cylinder_2_2_0" />
-        <relative_pose rpy="-0.659067 0.234071 0.622277" xyz="0.0732532 -0.0480741 -0.106876" />
-        <grasp_type type="1" />
-        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0140676 1.37466 0.524554 -0.010184 1.38144 1.04001 0.0138604 1.53229 1.14213 -0.985937 1.00382 -0.216271 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="cylinder_2_2_0" />
-        <relative_pose rpy="0.938695 -0.0100399 2.31197" xyz="-0.10087 -0.0291841 -0.00524906" />
-        <grasp_type type="0" />
-        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0142743 1.52039 0.976293 -0.00429892 1.50099 0.983862 0.0140799 1.47222 1.0036 0.909973 1.25818 0.718043 " />
-    </grasp_seed> -->
-    <!--set 2 -->
-    <!-- <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="cylinder_2_2_0" />
-        <relative_pose rpy="-2.22591 0.0748622 1.62701" xyz="0.0902251 0.0539233 0.00285792" />
-        <grasp_type type="0" />
-        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0141801 1.50659 1.06229 -0.00396339 1.49599 1.00469 0.013987 1.49256 0.932477 0.558976 1.36373 0.653343 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="cylinder_2_2_0" />
-        <relative_pose rpy="-1.0164 0.0545954 1.77118" xyz="0.0845489 0.0883184 -0.0104183" />
-        <grasp_type type="1" />
-        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="0.141 1.201 0.968 0.002 1.307 0.813 0.018 1.284 0.856 0.261 0.516 0.613 " />
-    </grasp_seed> -->
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="cylinder_2_1_0" />
-        <relative_pose rpy="0.779919 1.41859 -2.29138" xyz="-0.0163478 -0.0171454 -0.18196" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="-1.60874 0.0439389 0.0049292" xyz="0.114367 0.00207438 -0.0289947" />
         <grasp_type type="4" />
-        <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 1.5 0 0 1.5 0 1.5 0 " />
+        <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 1.5 1.5 0 1.5 1.5 1.5 1.5 " />
     </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="-0.0581452 0.547389 3.06224" xyz="-0.192485 0.00735068 -0.10774" />
+        <grasp_type type="3" />
+        <state num_joints="8" joint_names="left_finger[0]/joint_base_rotation left_finger[0]/joint_base left_finger[0]/joint_flex left_finger[1]/joint_base_rotation left_finger[1]/joint_base left_finger[1]/joint_flex left_finger[2]/joint_base left_finger[2]/joint_flex " joint_positions="0 1.5 1.5 0 1.5 1.5 1.5 1.5 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="-1.57058 -0.00277286 3.11931" xyz="-0.121432 0.00735068 -0.0323142" />
+        <grasp_type type="3" />
+        <state num_joints="8" joint_names="left_finger[0]/joint_base_rotation left_finger[0]/joint_base left_finger[0]/joint_flex left_finger[1]/joint_base_rotation left_finger[1]/joint_base left_finger[1]/joint_flex left_finger[2]/joint_base left_finger[2]/joint_flex " joint_positions="0 1.5 1.5 0 1.5 1.5 1.5 1.5 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="-1.57058 -0.00277286 3.11931" xyz="-0.121432 0.00735068 -0.0323142" />
+        <grasp_type type="3" />
+        <state num_joints="8" joint_names="left_finger[0]/joint_base_rotation left_finger[0]/joint_base left_finger[0]/joint_flex left_finger[1]/joint_base_rotation left_finger[1]/joint_base left_finger[1]/joint_flex left_finger[2]/joint_base left_finger[2]/joint_flex " joint_positions="0 1.5 1.5 0 1.5 1.5 1.5 1.5 " />
+    </grasp_seed>  
+-->
+    <!--
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="-1.15725 -0.0545143 -1.99236" xyz="-0.110544 -0.00795287 -0.03368" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0143452 1.52361 1.06133 -0.012103 1.39996 0.975446 0.0138127 1.28838 0.914088 0.392222 0.627423 0.173832 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="1.16105 0.024989 2.71643" xyz="-0.0936611 -0.0603338 -0.0225243" />
+        <grasp_type type="0" />
+        <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0143096 1.53678 1.24015 -0.0133445 1.43154 1.11269 0.0138065 1.32104 1.06616 0.0547879 0.686075 -0.0117729 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="1.66263 -0.0429325 -0.0105724" xyz="0.114367 0.00207438 0.0069941" />
+        <grasp_type type="4" />
+        <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 1.5 1.5 0 1.5 1.5 1.5 1.5 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0_0" />
+        <relative_pose rpy="-1.15725 -0.0545143 -1.99236" xyz="-0.110544 -0.00795287 -0.03368" />
+        <grasp_type type="1" />
+        <state num_joints="12" joint_names="right_f0_j0 right_f0_j1 right_f0_j2 right_f1_j0 right_f1_j1 right_f1_j2 right_f2_j0 right_f2_j1 right_f2_j2 right_f3_j0 right_f3_j1 right_f3_j2 " joint_positions="-0.0143452 1.52361 1.06133 -0.012103 1.39996 0.975446 0.0138127 1.28838 0.914088 0.392222 0.627423 0.173832 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_1_0" />
+        <relative_pose rpy="1.60569 -0.00508457 -1.5517" xyz="0.00495011 -0.13175 -0.026957" />
+        <grasp_type type="4" />
+        <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0.0156512 1.45939 1.54581 0.0156512 1.55471 1.53626 1.55562 1.53096 " />
+    </grasp_seed>
+-->
+    <pose_seed name="2013-11-13-11-40::hose_mate" />
 </object>
