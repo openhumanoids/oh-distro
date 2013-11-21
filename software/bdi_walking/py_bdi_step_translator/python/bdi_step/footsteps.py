@@ -10,6 +10,9 @@ from py_drake_utils import quat2rpy
 # Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot. It is the same to within 10^-4 for both feet.
 ATLAS_FRAME_OFFSET = np.matrix([[0.0600], [0.000], [-0.0850]])
 
+# fudge factor because we always seem to end up forward of our target steps
+ATLAS_FRAME_OFFSET[0,0] -= 0.03
+
 MAX_LIFT_HEIGHT = 0.40;
 
 BaseFootGoal = namedtuple('FootGoal', 'pos step_speed step_height step_id pos_fixed is_right_foot is_in_contact bdi_step_duration bdi_sway_duration bdi_lift_height bdi_toe_off bdi_knee_nominal terrain_pts')
