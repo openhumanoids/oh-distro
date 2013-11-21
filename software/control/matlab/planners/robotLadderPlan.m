@@ -45,7 +45,7 @@ hand_pos_tol = 0.0;
 pelvis_threshold = 0.05;
 com_tol = 0.01;
 com_incr_tol = 0.02;
-com_tol_max = 0.2;
+com_tol_max = 0.01;
 arm_tol = 6*pi/180/n;
 arm_tol_total = 30*pi/180;
 %comtraj = comtraj + 0.05;
@@ -58,7 +58,7 @@ smoothing_tol = 1*pi/180;
 tf = comtraj.tspan(2);
 dt = 0.001;
 ts = 0:dt:tf;
-if length(ts)>1000 % limit number of IK samples to something reasonable
+if length(ts)>1000 % limit numtrueber of IK samples to something reasonable
   ts = linspace(0,tf,1000);
   dt = ts(2)-ts(1);
 end
