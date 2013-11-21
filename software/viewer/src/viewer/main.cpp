@@ -482,6 +482,9 @@ static void on_posture_presets_clicked(GtkToggleToolButton *tb, void *user_data)
         msg.preset = DRC_ROBOT_POSTURE_PRESET_T_RGTHND_INHEADVIEW;
         drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
         break;       
+      case 10:
+        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_HOSE_MATING;
+        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL",&msg);
    /* case 10:
        msg.preset = DRC_ROBOT_POSTURE_PRESET_T_SITTING_HNDS_DWN;
        drc_robot_posture_preset_t_publish(lcm, "PRESET_POSTURE_GOAL", &msg);
@@ -712,6 +715,7 @@ int main(int argc, char *argv[])
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Right Down" );
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Left In Camera");
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Right In Camera");
+  gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "Hose Mating");
   /* Disabled, not safe on real robot
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsDn" );//
   gtk_combo_box_append_text( GTK_COMBO_BOX( posture_presets_combo_box ), "SitHndsUp" );//

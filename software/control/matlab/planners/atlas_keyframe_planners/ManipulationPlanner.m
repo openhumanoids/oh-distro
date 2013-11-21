@@ -80,6 +80,7 @@ classdef ManipulationPlanner < KeyframePlanner
             send_status(3,0,0,'Generating manip plan...');
         end
         q0 = x0(1:getNumDOF(obj.r));
+        q0 = obj.checkPosture(q0);
 
         T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
 
@@ -146,37 +147,27 @@ classdef ManipulationPlanner < KeyframePlanner
         %rf_indices = Indices(~cellfun(@(x) isempty(strfind(char(x),'r_foot')),ee_names));
         
         % Solve IK for each element i n EE LOCII
-        timeIndices=[];
         if(is_manip_map)
             timeIndices = unique([Indices.time]);
         else
             timeIndices = unique(Indices);
         end
-        N = length(timeIndices);
         plan_Indices=[];
         q_guess =q0;
-        %plan_
-        lhand_const_plan = [];
-        rhand_const_plan = [];
-        rhand_const_plan = [];
-        rhand_const_plan = [];
+
+        lhand_constraint = {};
+        rhand_constraint = {};
         q = zeros(obj.r.getNumDOF,length(timeIndices));
         snopt_info_vector = zeros(1,length(timeIndices));
         for i=1:length(timeIndices),
             %l_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
-            if(goal_type_flags.lh ~=2)
-              lhand_constraint = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0(1:3)-1e-2,l_hand_pose0(1:3)+1e-2),...
-                WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose0(4:7),1e-4)};
-            else
+            if(goal_type_flags.lh ==2)
               % Figure out the gaze origin later. Use [0;0;0] for the
               % moment
               lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,[1;0;0],ee_loci(1:3,i),obj.lh_camera_origin,pi/18)};
             end
             %r_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
-            if(goal_type_flags.rh ~=2)
-              rhand_constraint = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0(1:3)-1e-2,r_hand_pose0(1:3)+1e-2),...
-                WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose0(4:7),1e-4)};
-            else
+            if(goal_type_flags.rh ==2)
               rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,[1;0;0],ee_loci(1:3,i),obj.rh_camera_origin,pi/18)};
             end
             if(goal_type_flags.h ==2)
@@ -317,19 +308,33 @@ classdef ManipulationPlanner < KeyframePlanner
               end
             end
 
-            manip_joint_cnst = obj.joint_cnst;
+            manip_joint_cnst = obj.joint_constraint;
+            if(obj.isBDIManipMode())
+              fixed_base_ind = [1;2;4;5;6];
+              manip_joint_cnst = manip_joint_cnst.setJointLimits(fixed_base_ind,q0(fixed_base_ind),q0(fixed_base_ind));
+            end
             ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
             ik_qnom = q_guess;
             if(obj.planning_mode == 4)
               if(isempty(rhand_constraint))
                 manip_joint_cnst = manip_joint_cnst.setJointLimits(obj.r_arm_joint_ind,...
-                  q0_bound(obj.r_arm_joint_ind),...
-                  q0_bound(obj.r_arm_joint_ind));
+                  q0(obj.r_arm_joint_ind),...
+                  q0(obj.r_arm_joint_ind));
               end
               if(isempty(lhand_constraint))
                 manip_joint_cnst = manip_joint_cnst.setJointLimits(obj.l_arm_joint_ind,...
-                  q0_bound(obj.l_arm_joint_ind),...
-                  q0_bound(obj.l_arm_joint_ind));
+                  q0(obj.l_arm_joint_ind),...
+                  q0(obj.l_arm_joint_ind));
+              end
+            end
+            if(obj.planning_mode ==3) % TELEOP MODE
+              if(isempty(lhand_constraint))
+                lhand_constraint = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0(1:3)-1e-2,l_hand_pose0(1:3)+1e-2),...
+                  WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose0(4:7),1e-4)};
+              end
+              if(isempty(rhand_constraint))
+                lhand_constraint = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0(1:3)-1e-2,r_hand_pose0(1:3)+1e-2),...
+                  WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose0(4:7),1e-4)};
               end
             end
             if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
@@ -362,14 +367,16 @@ classdef ManipulationPlanner < KeyframePlanner
                   end
               end
             else
+              
               if(is_manip_map)
                 % dont use r_foot_pts here (this is for driving), no quasi static flag
                 qsc = qsc.setActive(false);
                 [q(:,i),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
-                    pelvis_constraint{:},...
                     head_constraint{:},...
                     rhand_constraint{:},...
                     lhand_constraint{:},...
+                    lfoot_constraint{:},...
+                    rfoot_constraint{:},...
                     manip_joint_cnst,qsc,...
                     ikoptions);
               else
@@ -378,12 +385,13 @@ classdef ManipulationPlanner < KeyframePlanner
                     q(:,1) = q0;
                     snopt_info=1;
                 else
-                    [q(:,i),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
-                        pelvis_constraint{:},...
-                        rhand_constraint{:},...
-                        lhand_constraint{:},...
-                        manip_joint_cnst,qsc,...
-                        ikoptions);
+                  [q(:,i),snopt_info,infeasible_constraint] = inverseKin(obj.r,q_guess,ik_qnom,...
+                    lfoot_constraint{:},...
+                    rfoot_constraint{:},...
+                    rhand_constraint{:},...
+                    lhand_constraint{:},...
+                    manip_joint_cnst,qsc,...
+                    ikoptions);
                 end
               end
 

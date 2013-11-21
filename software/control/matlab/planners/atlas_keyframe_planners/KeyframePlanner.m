@@ -67,6 +67,7 @@ classdef KeyframePlanner < handle
         l_irobot_camera_origin;
         l_arm_joint_ind;
         r_arm_joint_ind;
+        lower_joint_ind; %leg joints and floating base;
     end
     
     methods
@@ -103,7 +104,8 @@ classdef KeyframePlanner < handle
 
             obj.T_hand_palm_l_irobot = HT([0;0.11516;0.015],1.57079,3.14159,3.14159);
             obj.T_hand_palm_r_irobot = HT([0;-0.11516;-0.015],1.57079,0,0);
-            obj.T_hand_palm_r_hose_irobot = HT([0;-0.11516;-0.015],0,0,0);
+            
+            obj.T_hand_palm_r_hose_irobot = HT([0;-0.11516;-0.015],1.57079,1.57079,0);
             
             obj.sandia_gaze_axis = [0;0;1];
             obj.irobot_gaze_axis = [0;1;0];
@@ -142,6 +144,7 @@ classdef KeyframePlanner < handle
             coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
             obj.l_arm_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'l_arm')),coords));
             obj.r_arm_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords));
+            obj.lower_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'leg')) | ~isempty(strfind(s,'base')),coords));
         end
      %-----------------------------------------------------------------------------------------------------------------        
         function [cache] = getPlanCache(obj)
@@ -181,11 +184,13 @@ classdef KeyframePlanner < handle
             obj.r_hand_mode = 1;
             display('Sandia right hand');
           elseif(~isempty(strfind(rhand_frame.name,'irobot')))
-            obj.r_hand_mode = 2;
-            display('iRobot right hand');
-          elseif(~isempty(strfind(rhand_frame.name,'irobotHose')))
-            obj.r_hand_mode = 3;
-            display('iRobot right hand for hose');
+            if(~isempty(strfind(rhand_frame.name,'Hose')))
+              obj.r_hand_mode = 3;
+              display('irobot right hand for hose');
+            else
+              obj.r_hand_mode = 2;
+              display('iRobot right hand');
+            end
           end
             
             if(obj.l_hand_mode == 1)
@@ -217,7 +222,7 @@ classdef KeyframePlanner < handle
               obj.rh_gaze_axis = obj.irobot_gaze_axis;
               obj.rh_camera_origin = obj.r_irobot_camera_origin;
             elseif(obj.r_hand_mode == 3)
-              obj.T_hand_palm_r = obj.T_hand_plam_r_hose_irobot;
+              obj.T_hand_palm_r = obj.T_hand_palm_r_hose_irobot;
               obj.rh_gaze_axis = obj.irobot_gaze_axis;
               obj.rh_camera_origin = obj.r_irobot_camera_origin;
             end
@@ -230,7 +235,7 @@ classdef KeyframePlanner < handle
                 obj.lh_name='left_palm';
             end
             obj.rh_name='';
-            if(obj.r_hand_mode==2)
+            if(obj.r_hand_mode==2 || obj.r_hand_mode == 3)
                 obj.rh_name='right_base_link';
             else
                 obj.rh_name='right_palm';
@@ -427,7 +432,7 @@ classdef KeyframePlanner < handle
           end
         end
         
-        function checkPosture(obj,q)
+        function q_bound = checkPosture(obj,q)
           % Check if q is outside of the robot default joint limits
           [lb,ub] = obj.r.getJointLimits();
           coords = obj.r.getStateFrame.coordinates;
@@ -447,6 +452,8 @@ classdef KeyframePlanner < handle
               warning('Joint %s is above upper bound by %5.3f',coords{ub_err_idx(i)},ub_err(ub_err_idx(i)));
             end
           end
+          q_bound = max([q lb],[],2);
+          q_bound = min([q_bound ub],[],2);
         end
         
         function setDefaultJointConstraint(obj)
@@ -467,6 +474,17 @@ classdef KeyframePlanner < handle
                                         [-0.1;-0.1;0.2;0.2],...
                                         [0.1;0.1;joint_max(l_leg_kny_ind)-buffer;joint_max(r_leg_kny_ind)-buffer]};
         end
+        
+        function BDI_joint_constraint = setBDIJointLimits(obj,joint_constraint,q0)
+          % Fix the floating base and lower body joints to q0
+          coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+          joint_idx = (1:obj.r.getNumDOF)';
+          lower_joint_idx = joint_idx(cellfun(@(s) ~isempty(strfind(s,'leg')),coords));
+          fixed_joint_idx = [(1:6)';lower_joint_idx];
+          BDI_joint_constraint = joint_constraint;
+          BDI_joint_constraint = BDI_joint_constraint.setJointLimits(fixed_joint_idx,q0(fixed_joint_idx),q0(fixed_joint_idx));
+        end
+        
     end
      %-----------------------------------------------------------------------------------------------------------------
 end

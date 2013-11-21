@@ -655,6 +655,11 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             q_nom = obj.plan_cache.qtraj.eval(iktraj_tbreaks(2:end));
             q_nom_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 q_nom]));
             q_nom = obj.plan_cache.qtraj.eval(iktraj_tbreaks);
+            if(~obj.isBDIManipMode())
+              joint_constraint = obj.joint_constraint;
+            else
+              joint_constraint = obj.setBDIJointLimits(obj.joint_constraint,q0);
+            end
             %============================
             %if(length(iktraj_tbreaks)<=5)
             if(~obj.plan_cache.isPointWiseIK)
@@ -667,7 +672,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     lhand_constraint_cell{:},rhand_constraint_cell{:},...
                     lfoot_constraint_cell{:},rfoot_constraint_cell{:},...
                     pelvis_constraint_cell{:},com_constraint_cell{:},head_constraint_cell{:},...
-                    obj.joint_constraint,obj.plan_cache.qsc,iktraj_options);
+                    joint_constraint,obj.plan_cache.qsc,iktraj_options);
                 xtraj = xtraj.setOutputFrame(obj.r.getStateFrame());
                 x_breaks = xtraj.eval(iktraj_tbreaks);
                 
@@ -685,7 +690,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     lhand_constraint_cell{:},rhand_constraint_cell{:},...
                     lfoot_constraint_cell{:},rfoot_constraint_cell{:},...
                     pelvis_constraint_cell{:},com_constraint_cell{:},head_constraint_cell{:},...
-                    obj.joint_constraint,obj.plan_cache.qsc,iktraj_options);
+                    joint_constraint,obj.plan_cache.qsc,iktraj_options);
                 x_breaks = xtraj;
                 %snopt_info
                 display(infeasibleConstraintMsg(infeasible_constraint));

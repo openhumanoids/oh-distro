@@ -16,6 +16,5 @@ struct robot_urdf_t
   const int8_t RIGHT_IROBOT  = 5;
   const int8_t LEFT_UNKNOWN  = 6;
   const int8_t RIGHT_UNKNOWN = 7;
-  const int8_t RIGHT_IROBOT_HOSE = 8;
 }
 

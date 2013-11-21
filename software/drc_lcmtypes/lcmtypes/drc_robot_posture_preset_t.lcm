@@ -27,4 +27,5 @@ struct robot_posture_preset_t
   const int16_t RGTHND_INHEADVIEW = 15;
   const int16_t PRE_INGRESS = 16;
   const int16_t LEFT_HAND_EXTENDED = 17;
+  const int16_t HOSE_MATING = 18;
 }

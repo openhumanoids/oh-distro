@@ -167,7 +167,7 @@ classdef PosturePlanner < KeyframePlanner
               send_status(4,0,0,send_msg);
             end
 
-          elseif(useIK_state == 4) % copy the right arm joint angles from the at file
+          elseif(useIK_state == 4) % copy the right arm joint angles from the mat file
             coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
             joint_ind = (1:obj.r.getNumDOF)';
             l_arm_ind = joint_ind(~cellfun(@isempty,strfind(coords,'l_arm')));
@@ -224,6 +224,15 @@ classdef PosturePlanner < KeyframePlanner
             pelvis_desired_height = pelvis_height+rfoot_curr_height;
             q_desired(3) = pelvis_desired_height;
             q_desired([1 2 6]) = q0([1 2 6]);
+            
+          elseif(useIK_state == 6)
+            % change both hands, the pelvis and the torso to q_desired, and keep the lower
+            % body joints and base to q0;
+            coords = obj.r.getStateFrame.coordinates();
+            coords = coords(1:obj.r.getNumDOF());
+            upper_joint_ind = cellfun(@(s) isempty(strfind(s,'leg')) & isempty(strfind(s,'base')),coords);
+            lower_joint_ind = ~upper_joint_ind;
+            q_desired(lower_joint_ind) = q0(lower_joint_ind);
           end
           
           qdot0 = zeros(obj.r.getNumDOF,1);

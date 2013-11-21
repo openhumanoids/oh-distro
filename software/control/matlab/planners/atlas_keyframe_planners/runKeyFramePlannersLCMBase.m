@@ -32,6 +32,10 @@ while(~getModelFlag)
     getModelFlag = true;
     l_hand_mode = data.left_hand_mode;
     r_hand_mode = data.right_hand_mode;
+    if(~isempty(strfind(data.robot_name,'Hose')) && r_hand_mode == 2)
+      r_hand_mode = 3;
+      send_status(4,0,0,'irobot hand for hose task');
+    end
     if(l_hand_mode == 0)
       l_hand_str = 'no hand';
     elseif(l_hand_mode == 1)
@@ -43,7 +47,7 @@ while(~getModelFlag)
       r_hand_str = 'no hand';
     elseif(r_hand_mode == 1)
       r_hand_str = 'sandia hand';
-    elseif(r_hand_mode == 2)
+    elseif(r_hand_mode == 2 || r_hand_mode == 3)
       r_hand_str = 'irobot hand';
     end
     send_status(4,0,0,sprintf('receive model with left %s, right %s\n',l_hand_str,r_hand_str));
@@ -69,6 +73,8 @@ elseif(l_hand_mode == 2 && r_hand_mode == 1)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RS.urdf'),options);
 elseif(l_hand_mode == 2 && r_hand_mode == 2)
   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RI.urdf'),options);
+elseif(l_hand_mode == 2 && r_hand_mode == 3)
+  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RI_Hose.urdf'),options);
 else
   error('The urdf for the model does not exist');
 end
@@ -656,6 +662,9 @@ while(1)
         elseif(posture_goal.preset==drc.robot_posture_preset_t.LEFT_HAND_EXTENDED)
             d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_arms_extended.mat'));
             useIK_state = 1;
+        elseif(posture_goal.preset==drc.robot_posture_preset_t.HOSE_MATING)
+          d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'));
+          useIK_state = 6;
         end
         q_desired = d.xstar(1:getNumDOF(robot));
         if(useIK_state ==1||useIK_state == 3|| useIK_state == 4) % correct pelvis

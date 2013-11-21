@@ -4,7 +4,6 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
     nozzle_collar_radius
     nozzle_hand 
     hose_hand 
-    T_hand_nozzle
     nozzle_axis
     nozzle_pose
     wye_pose
@@ -16,14 +15,13 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
   methods
     function obj = HoseMatingEndPosePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
       obj = obj@EndPosePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode);
-      obj.pelvis_upright_gaze_tol = pi/20;
+      obj.pelvis_upright_gaze_tol = pi/18;
       obj.ee_torso_dist_lb = 0.5;
       obj.nozzle_hand = obj.r_hand_body;
       obj.hose_hand = obj.l_hand_body;
       obj.nozzle_axis = [0;0;1];
       obj.affordance_listener = AffordanceStateListener('AFFORDANCE_COLLECTION');
-      saved_data = load('HoseMating.mat');
-      obj.T_hand_nozzle = saved_data.T_hand_nozzle;
+      obj.head_gaze_tol = pi/4;
     end
     
     function [lfoot_constraint,rfoot_constraint,pelvis_constraint,head_constraint,dist_constraint,qsc,joint_constraint] ...
@@ -56,6 +54,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
 
       obj.updateNozzlePose();
       head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,obj.nozzle_pose(1:3),obj.h_camera_origin,obj.head_gaze_tol)};
+%       head_constraint = {};
       
       l_foot_pose = l_foot_pose0;
       r_foot_pose = r_foot_pose0;
@@ -76,13 +75,13 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       obj.updateWyePose();
       T_world_wye = HT(obj.wye_pose(1:3),obj.wye_pose(4),obj.wye_pose(5),obj.wye_pose(6));
       % pelvis facing the wye
-      pelvis_constraint = [pelvis_constraint,{WorldPositionInFrameConstraint(obj.r,obj.pelvis_body,[0;0;0],T_world_wye,[-0.9;-0.4;-0.7],[-0.4;0.4;0.5])}];
+      pelvis_constraint = [pelvis_constraint,{WorldPositionInFrameConstraint(obj.r,obj.pelvis_body,[0;0;0],T_world_wye,[-0.9;-0.3;-0.7],[-0.35;0.3;0.5])}];
 
       % distance between two feed
       % distance between hand and torso
       dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.nozzle_hand,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf),...
         Point2PointDistanceConstraint(obj.r,obj.hose_hand,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb/2,inf),...
-        Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,[0;0;0],[0;0;0],0.3,inf)};
+        Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,[0;0;0],[0;0;0],0.2,inf)};
       
      
       qsc = QuasiStaticConstraint(obj.r);
@@ -98,10 +97,14 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       joint_ind = (1:obj.r.getNumDOF)';
       l_leg_kny = joint_ind(strcmp(coords,'l_leg_kny'));
       r_leg_kny = joint_ind(strcmp(coords,'r_leg_kny'));
-      joint_constraint = joint_constraint.setJointLimits(joint_ind(back_z_ind),-pi/6,pi/6);
+      joint_constraint = joint_constraint.setJointLimits(joint_ind(back_z_ind),-pi/18,pi/18);
       neck_idx = joint_ind(strcmp(coords,'neck_ay'));
+      l_leg_hpz = joint_ind(strcmp(coords,'l_leg_hpz'));
+      r_leg_hpz = joint_ind(strcmp(coords,'r_leg_hpz'));
       joint_constraint = joint_constraint.setJointLimits(neck_idx,0,0.3*pi);
       joint_constraint = joint_constraint.setJointLimits([l_leg_kny;r_leg_kny],[0.2*pi;0.2*pi],[inf;inf]);
+      joint_constraint = joint_constraint.setJointLimits([l_leg_hpz;r_leg_hpz],[-0.2;-0.2],[0.2;0.2]);
+      joint_constraint = joint_constraint.setJointLimits(3,0.5,0.92);
     end
     
     function runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
@@ -150,7 +153,8 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       elseif(obj.nozzle_hand == obj.l_hand_body)
         T_world_hose_mate = T_world_wye*[rpy2rotmat([0;0;pi/3]) [0;0;0];0 0 0 1]; 
       end
-      iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_wye,[-0.5;-0.4;-0.4],[-0.2;0.4;0.2],tspan)}];
+%       iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_wye,[-0.5;-0.4;-0.4],[-0.2;0.4;0.2],tspan)}];
+      iktraj_hose_hand_constraint = {};
 %       iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldFixedBodyPoseConstraint(obj.r,obj.hose_hand,tspan)}];
         
       for j = 1:NBreaks
@@ -187,15 +191,26 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
      
       joint_ind = (1:obj.r.getNumDOF)';
       lower_joint_idx = joint_ind(cellfun(@(s) ~isempty(strfind(s,'leg')),coords));
-      pc_fixed = PostureChangeConstraint(obj.r,[(1:6)';lower_joint_idx],zeros(6+length(lower_joint_idx),1),zeros(6+length(lower_joint_idx),1));
+      pc_fixed = PostureChangeConstraint(obj.r,(1:6)',[0;0;-0.1;0;0;0],[0;0;0.1;0;0;0]);
           
+      fix_feet_constraint = {WorldFixedBodyPoseConstraint(obj.r,obj.l_foot_body),WorldFixedBodyPoseConstraint(obj.r,obj.r_foot_body)};
+      display('Fix feet');
+      [joint_lb,joint_ub] = obj.r.getJointLimits();
+      if(obj.nozzle_hand == obj.r_hand_body)
+        nozzle_arm_joint_ind = obj.r_arm_joint_ind;
+      else
+        nozzle_arm_joint_ind = obj.l_arm_joint_ind;
+      end
+      joint_constraint = joint_constraint.setJointLimits(nozzle_arm_joint_ind,0.9*joint_lb(nozzle_arm_joint_ind)+0.1*joint_ub(nozzle_arm_joint_ind),...
+        0.1*joint_lb(nozzle_arm_joint_ind)+0.9*joint_ub(nozzle_arm_joint_ind));
+      display('Add slack to nozzle arm joint constraint');
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         iktraj_tbreaks,iktraj_qseed_traj,iktraj_qnom_traj,...
-        iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
+        iktraj_lfoot_constraint{:},iktraj_rfoot_constraint{:},...
         iktraj_pelvis_constraint{:},iktraj_head_constraint{:},...
         joint_constraint,iktraj_hose_hand_constraint{:},iktraj_nozzle_hand_constraint{:},...
         qsc,iktraj_dist_constraint{:},...
-        pc_fixed,...
+        pc_fixed,fix_feet_constraint{:},...
         iktraj_options);
       if(snopt_info > 10)
           warning('The IK traj fails');
@@ -227,7 +242,11 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         obj.pose_pub.publish(xtraj_atlas,utime);
         pause(0.1);
       end
-          
+         
+      x_start = xtraj.eval(s_breaks(1));
+      q_start = obj.checkPosture(x_start(1:obj.r.getNumDOF));
+      xstar = [q_start;zeros(size(q_start))];
+      save([getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'],'xstar');
     end
     
     
@@ -344,7 +363,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       T_world_nozzle = HT(obj.nozzle_pose(1:3),obj.nozzle_pose(4),obj.nozzle_pose(5),obj.nozzle_pose(6));
       nozzle_hand_pose = forwardKin(obj.r,kinsol,obj.nozzle_hand,[0;0;0],2);
       T_world_hand = [quat2rotmat(nozzle_hand_pose(4:7)) nozzle_hand_pose(1:3);0 0 0 1];
-      obj.T_hand_nozzle = inv_HT(T_world_hand)*T_world_nozzle;
+%       obj.T_hand_nozzle = inv_HT(T_world_hand)*T_world_nozzle;
     end
     
     function updateNozzleHand(obj,nozzle_hand)
