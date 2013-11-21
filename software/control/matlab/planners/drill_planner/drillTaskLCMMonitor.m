@@ -52,8 +52,11 @@ classdef drillTaskLCMMonitor
       end
     end
     
-    function [type, data] = getDrillControlMsg(obj)
-      lcm_data = obj.drill_control_monitor.getNextMessage(2000);
+    function [type, data] = getDrillControlMsg(obj, timeout)
+      if nargin < 2
+        timeout = 2000; % default
+      end
+      lcm_data = obj.drill_control_monitor.getNextMessage(timeout);
       data = [];
       if isempty(lcm_data)
         type = -1;

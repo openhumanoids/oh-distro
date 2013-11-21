@@ -4,6 +4,8 @@
 r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 
+drill_depth = 0;
+
 %% Wait for drill and wall affordance and create planner
 publishPlans = true;
 useRightHand = true;
@@ -11,6 +13,10 @@ useVisualization = false;
 allowPelvisHeight = true;
 
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
+
+l_hand_frame = handFrame(2,'left');
+r_hand_frame = handFrame(2,'right');
+posture_pub = PosturePlanner(r,atlas,l_hand_frame,r_hand_frame,2);
 
 disp('waiting for drill and wall affordances...');
 
@@ -21,9 +27,6 @@ end
 
 drill.guard_pos = [    0.15
    -0.2602
-
-
-
     0.0306];
   drill.drill_axis = [1;0;0];
 finger_pt_on_hand = [0; 0.2752; 0.015];
@@ -35,6 +38,7 @@ button_pub = drillButtonPlanner(r,atlas,drill.button_pos, drill.button_normal, d
 drill_pub = drillPlanner(r,atlas,drill.guard_pos, drill.drill_axis,...
   wall.normal, useRightHand, useVisualization, publishPlans, allowPelvisHeight);
 drill_points = [wall.targets wall.targets(:,1)];
+drill_points = drill_points + repmat(drill_depth*wall.normal,1,size(drill_points,2));
 
 
 % drilling state machine initialization
@@ -63,6 +67,7 @@ while(true)
         
     drill_pub = drill_pub.updateWallNormal(wall.normal);
     drill_points = [wall.targets wall.targets(:,1)];
+    drill_points = drill_points + repmat(drill_depth*wall.normal,1,size(drill_points,2));
   end
   
   disp('waiting for control message...');
@@ -71,6 +76,12 @@ while(true)
 
   
   switch ctrl_type
+    case drc.drill_control_t.RQ_GOTO_BUTTON_PRESET
+      q0 = lcm_mon.getStateEstimate();
+      disp('generating plan to preset position');
+      % get the pose somehow, todo
+      posture_pub.generateAndPublishPosturePlan(q0,button_preset,0)
+
     case drc.drill_control_t.REFIT_DRILL
         
       disp('updating drill affordance');
@@ -91,7 +102,7 @@ while(true)
       q0 = lcm_mon.getStateEstimate();
       q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]));
       
-      target_centroid = mean(wall.targets,2);
+      target_centroid = mean(drill_points(:,1:end-1),2);
       
       % create wall coordinate frame
       wall_z = [0;0;1];
@@ -99,9 +110,9 @@ while(true)
       wall_z = wall_z/norm(wall_z);
       wall_y = cross(wall_z, wall.normal);
       
-      q0_init(1:3) = target_centroid - wall.normal*.5 - .5*wall_z + .3*wall_y;
+      q0_init(1:3) = target_centroid - wall.normal*.8 - .5*wall_z + .3*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
-      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, 0);
+      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, .15);
       
     case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)
@@ -139,12 +150,18 @@ while(true)
     case drc.drill_control_t.RQ_PREDRILL_PLAN
       segment_index = 1; % RESETS THE SEGMENT INDEX!
       q0 = lcm_mon.getStateEstimate();
-      x_drill_reach = wall.targets(:,1) - predrill_distance*wall.normal;
+      x_drill_reach = drill_points(:,1) - predrill_distance*wall.normal;
       
-      [xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = drill_pub.createInitialReachPlan(q0, x_drill_reach, 5);
+      qseed = q0;
+      if ~isempty(xtraj_nominal)
+        x_nom_end = xtraj_nominal.eval(xtraj_nominal.tspan(2));
+        qseed(drill_pub.joint_indices) =  x_nom_end(drill_pub.joint_indices);
+      end
+      
+      [xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = drill_pub.createInitialReachPlan(q0, x_drill_reach, 5, qseed);
     case drc.drill_control_t.RQ_DRILL_IN_PLAN
       q0 = lcm_mon.getStateEstimate();
-      [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, wall.targets(:,1), 5);
+      [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_points(:,1), 5);
       
     case drc.drill_control_t.RQ_NEXT_DRILL_PLAN
       q0 = lcm_mon.getStateEstimate();
@@ -218,6 +235,13 @@ while(true)
       else
         send_status(4,0,0,'Invalid size of control data. Expected 3x1');
       end
+    case drc.drill_control_t.SET_DRILL_DEPTH
+      if sizecheck(ctrl_data, [1 1])
+        drill_depth = ctrl_data(1);
+        display(sprintf('Setting drill depth to %f',drill_depth));
+      else
+        send_status(4,0,0,'Invalid size of control data. Expected 1x1');
+      end
     case drc.drill_control_t.RQ_BUTTON_PREPOSE_PLAN
       q0 = lcm_mon.getStateEstimate();
       last_button_offset = [-.1;0;0];
@@ -241,6 +265,7 @@ while(true)
       else
         send_status(4,0,0,'Invalid size of control data. Expected 3x1');
       end
+      
   end
 %   pause();
 end

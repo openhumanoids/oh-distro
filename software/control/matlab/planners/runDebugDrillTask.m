@@ -33,8 +33,16 @@ allowPelvisHeight = true;
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 
 [wall,drill] = lcm_mon.getWallAndDrillAffordances();
+
+
 while isempty(wall) || isempty(drill)
   [wall,drill] = lcm_mon.getWallAndDrillAffordances();
+  
+drill.guard_pos = [    0.15
+   -0.2602
+    0.0306];
+  drill.drill_axis = [1;0;0];
+  
 end
 
 drill_pub = drillPlanner(r,atlas,drill.guard_pos, drill.drill_axis,...
@@ -60,7 +68,14 @@ drill_points = [triangle triangle(:,1)];
 q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
 
 tri_centroid = mean(triangle,2);
-q0_init(1:3) = tri_centroid - wall.normal*.7 - [0;0;.5];
+
+% create wall coordinate frame
+wall_z = [0;0;1];
+wall_z = wall_z - wall_z'*wall.normal*wall.normal;
+wall_z = wall_z/norm(wall_z);
+wall_y = cross(wall_z, wall.normal);
+
+q0_init(1:3) = tri_centroid - wall.normal*.8 - .3*wall_z + .3*wall_y;
 q0_init(6) = atan2(wall.normal(2), wall.normal(1));
 
 
@@ -110,9 +125,16 @@ else
   q0 = lcm_mon.getStateEstimate();
 end
 
+
+qseed = q0;
+if ~isempty(xtraj_nominal)
+  x_nom_end = xtraj_nominal.eval(xtraj_nominal.tspan(2));
+  qseed(drill_pub.joint_indices) =  x_nom_end(drill_pub.joint_indices);
+end
+
 x_drill_reach = wall.targets(:,1) - .1*wall.normal;
 
-[xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = drill_pub.createInitialReachPlan(q0, x_drill_reach, 5);
+[xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = drill_pub.createInitialReachPlan(q0, x_drill_reach, 5, qseed);
 
 %% drill in
 if use_simulated_state

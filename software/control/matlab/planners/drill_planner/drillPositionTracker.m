@@ -9,14 +9,11 @@ line_buffer = drc.control.LCMGLLineBuffer(lcmgl,0,1,0);
 [wall,drill] = lcm_mon.getWallAndDrillAffordances();
 while isempty(wall) || isempty(drill)
   [wall,drill] = lcm_mon.getWallAndDrillAffordances();
-end
-drill.guard_pos = [    0.25
+  drill.guard_pos = [    0.25
    -0.2602
-
-
-
     0.0306];
   drill.drill_axis = [1;0;0];
+end
 
 %%
 hand_body = 29;
@@ -26,6 +23,21 @@ buffer_length = 0;
 points = zeros(3,buffer_size);
 point_last = inf(3,1);
 while(true)
+  [type, data] = getDrillControlMsg(obj, timeout)
+  
+  switch type
+    case drc.drill_control_t.REFIT_DRILL
+      disp('updating drill affordance');
+      
+      new_drill = lcm_mon.getDrillAffordance();
+      if ~isempty(new_drill)
+        drill = new_drill;
+        line_buffer = drc.control.LCMGLLineBuffer(lcmgl,0,1,0);
+      else
+        display('Cannot update drill, no affordance found');
+      end
+      
+  end
   q = lcm_mon.getStateEstimate();
   kinsol = r.doKinematics(q);
   drill_pts = r.forwardKin(kinsol,hand_body,drill.guard_pos);

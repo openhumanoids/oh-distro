@@ -67,8 +67,8 @@ classdef drillPlanner
       
 
       cost = ones(34,1);
-      cost([1 2 6]) = 10*ones(3,1);
-      cost(3) = 100;
+      cost([1 2 6]) = 5000*ones(3,1);
+      cost(3) = 5000;
       cost(back_joint_indices) = [100;1000;100];
       
       vel_cost = cost*.05;
@@ -170,7 +170,7 @@ classdef drillPlanner
       if free_body_pose
         % create posture constraint.  allow moving x, y, z, yaw
         posture_index = setdiff((1:obj.r.num_q)',[1; 2; 3; 6; obj.joint_indices]);
-        posture_constraint = posture_constraint.setJointLimits(6, q0(6) - .5, q0(6) + .5);  %arbitrary yaw limit to not turn too much
+        posture_constraint = posture_constraint.setJointLimits(6, q0(6) - .15, q0(6) + .15);  %arbitrary yaw limit to not turn too much
         
       else
         posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]);
@@ -258,9 +258,13 @@ classdef drillPlanner
     
     % Create a plan starting from q0 to get the drill to x_drill
     % satisfies the drill gaze constraint only for t=T
-    function [xtraj,snopt_info,infeasible_constraint] = createInitialReachPlan(obj, q0, x_drill, T)
+    function [xtraj,snopt_info,infeasible_constraint] = createInitialReachPlan(obj, q0, x_drill, T, qseed)
       N = 5;
       t_vec = linspace(0,T,N);
+      
+      if nargin < 5
+        qseed = q0;
+      end
       
       % create drill direction constraint
       drill_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.drill_axis_on_hand,...
@@ -285,7 +289,7 @@ classdef drillPlanner
       diff_opt = inf;
       q_end_nom = q0;
       for i=1:50,
-        [q_tmp,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0 + .1*randn(obj.r.num_q,1),q0,...
+        [q_tmp,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,qseed + .1*randn(obj.r.num_q,1),q0,...
           drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
         
         c_tmp = (q_tmp - q0)'*obj.ik_options.Q*(q_tmp - q0);
@@ -592,6 +596,7 @@ classdef drillPlanner
       ts = xtraj.pp.breaks;
       q = xtraj.eval(ts);
       xtraj_atlas = zeros(2+2*nq_atlas,length(ts));
+%       xtraj_atlas(1,:) = ones(1,length(ts)); % make everything a keyframe
       xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
       snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
       
