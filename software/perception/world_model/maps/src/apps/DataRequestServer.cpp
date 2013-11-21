@@ -197,7 +197,7 @@ struct Worker {
     const Eigen::Vector3f minPt(-2, -5, -3);
     const Eigen::Vector3f maxPt(5, 5, 0.3);
     drc::map_request_t msg =
-      prepareHeightRequestMessage(minPt, maxPt, 0.05, 0.05);
+      prepareHeightRequestMessage(minPt, maxPt, 0.03, 0.03);
     Eigen::Isometry3f pelvisPose;
     bool isProne = true;
     if (mBotWrapper->getTransform("body","local",pelvisPose)) {
@@ -215,7 +215,6 @@ struct Worker {
       plane /= plane.head<3>().norm();
       for (int k = 0; k < 4; ++k) msg.clip_planes[5][k] = plane[k];
     }
-    msg.resolution = 0.03;
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
     msg.time_min = 0;
     msg.time_max = 185;
