@@ -237,7 +237,7 @@ drc::affordance_plus_t Pass::getFireHoseAffordancePlus(std::string filename, Eig
   a.utime =0;
   a.map_id =0;
   a.uid =uid;
-  a.otdf_type ="firehose_simple";
+  a.otdf_type ="firehose";
   a.aff_store_control = drc::affordance_t::NEW;
   
   a.nparams =a.params.size();
@@ -388,7 +388,8 @@ int main(int argc, char ** argv) {
   std::cout << "1 - Steering Cylinder at right shoulder\n";
   std::cout << "2 - 2x4 low\n";
   std::cout << "3 - cylinder pipe\n";
-  std::cout << "4 - firehose_simple\n";
+  std::cout << "4 - firehose\n";
+  std::cout << "5 - wye (at 1m)\n";  
   std::cout << "5 - wye\n";
   std::cout << "6 - door_right_handed\n";
   

@@ -102,8 +102,8 @@ def getHoseMate():
   return [position,name]
 
 def getPoolQueue():
-  position=[-0.6583873,-0.493037, 3.08459508499, 1.1543736, 0.276259120, 0.785398000, 2.769477100]
-  name=["back_bkz", "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  position=[0.6583873,-0.493037, 3.08459508499, 1.0143736, 0.276259120, 0.785398000, 2.769477100]
+  name=["back_bkz", "r_arm_elx", "r_arm_ely", "l_arm_mwx", "l_arm_shx", "l_arm_usy", "l_arm_uwy"]
   return [position, name]
 
 

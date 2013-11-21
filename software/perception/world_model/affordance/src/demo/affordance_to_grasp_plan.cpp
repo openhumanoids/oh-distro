@@ -255,7 +255,6 @@ void Pass::sendStandingPositionValve(drc::affordance_t steering_cyl){
 
 
 void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){ 
-  // this is junk....
   
   // cylinder aff main axis is z-axis, determine yaw in world frame of that axis:
   Eigen::Quaterniond q1=  euler_to_quat( steering_cyl.origin_rpy[0] ,  steering_cyl.origin_rpy[1] , steering_cyl.origin_rpy[2]  ); 
@@ -274,20 +273,22 @@ void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){
     for (int left_reach = 0; left_reach<2 ; left_reach++){
       Eigen::Isometry3d valve2com(Eigen::Isometry3d::Identity());
       if (left_reach){
-        valve2com.translation()  << -0.74, 0.15, 0;
-        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-5*M_PI/180))  );   
+        valve2com.translation()  << -0.53, 0.53, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-18*M_PI/180))  );   
       }else{
-        valve2com.translation()  << -0.74, -0.15, 0;
-        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,5*M_PI/180 ))  );   
+        valve2com.translation()  << -0.53, -0.53, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,18*M_PI/180 ))  );   
       }
       feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com) );
 
+      /*
       Eigen::Isometry3d com2left(Eigen::Isometry3d::Identity());
       com2left.translation()  << 0.0, 0.13, 0;
       feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com*com2left) );
       Eigen::Isometry3d com2right(Eigen::Isometry3d::Identity());
       com2right.translation()  << 0.0, -0.13, 0;
       feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com*com2right) );
+      */
 
     }
 
@@ -393,7 +394,7 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
     planGraspSteeringCylinder(init_grasp_pose);
   }else if( aff_.otdf_type == "cylinder"  ){
     planGraspCylinder(init_grasp_pose);
-  }else if( aff_.otdf_type == "firehose_simple"  ){
+  }else if( aff_.otdf_type == "firehose"  ){
     planGraspFirehose(init_grasp_pose);
   }else{
     std::cout << "no grasping method for a ["<<  aff_.otdf_type << "\n";

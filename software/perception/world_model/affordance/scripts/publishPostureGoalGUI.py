@@ -80,8 +80,13 @@ def getShooterBack():
   return [position,name]
 
 def getPullDown():
-  position=[-1.40425169468, 1.94562590122, -0.584710803126, 0.789787143469, -0.927295863628, 0.546333581209]
+  # right one finger close to chest
+  position=[-1.66505864662, 2.12239654256, 0.423257291317, 0.664812326431, -0.596253812313, 3.14159]
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+
+  # right two fingers close to chest
+  #position=[-1.40425169468, 1.94562590122, -0.584710803126, 0.789787143469, -0.927295863628, 0.546333581209]
+  #name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
 def getHandDown():
@@ -120,11 +125,16 @@ def getPoolQueue():
   name=["back_bkz", "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position, name]
 
+def getHoseMateSuckerPunch():
+  position=[0.100242577493, -0.0315173082054, 0.322634994984, -1.70546746254, 1.28341770172, -0.111346885562, 1.54854994373, 0.487143397331, 0.0]
+  name=["back_bkx", "back_bky", "back_bkz", "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position, name]
 
 
-
-
-
+def getHosePsycho():
+  position=[-1.74607777596, 0.65927785635, 0.224538683891, 0.808890104294, -0.590336024761, 1.1200705735]
+  name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position, name]
 
 def keypress(input_char):
   global posture_side
@@ -151,6 +161,10 @@ def keypress(input_char):
     [msg.joint_position, msg.joint_name] = getPullDown()
   elif (input_char == "5"):
     [msg.joint_position, msg.joint_name] = getHoseMate()
+  elif (input_char == "6"):
+    [msg.joint_position, msg.joint_name] = getHoseMateSuckerPunch()
+  elif (input_char == "7"):
+    [msg.joint_position, msg.joint_name] = getHosePsycho()
   elif (input_char == "q"):
     [msg.joint_position, msg.joint_name] = getHandDown()
   elif (input_char == "w"):
@@ -190,17 +204,19 @@ if __name__ == '__main__':
   draw_string(screen, font, 10, 70,  "3 farhang     - above, further away")
   draw_string(screen, font, 10, 90,  "4 pulldown    - lower config below the current")
   draw_string(screen, font, 10, 110, "5 hosemate    - config mate")
+  draw_string(screen, font, 10, 130, "6 hosemate    - sucker punch")
+  draw_string(screen, font, 10, 150, "7 hose pyscho - raise arm up after pulldown")
 
-  draw_string(screen, font, 10, 150, "q handdown    - handdown")
-  draw_string(screen, font, 10, 170, "w zero back   - zero the back joint")
+  draw_string(screen, font, 10, 190, "q handdown    - handdown")
+  draw_string(screen, font, 10, 210, "w zero back   - zero the back joint")
 
-  draw_string(screen, font, 10, 210,  "a shooter     - hand up and finger away")
-  draw_string(screen, font, 10, 230, "s shooterback - hand up and finger away, back straight")
-  draw_string(screen, font, 10, 250, "d crane       - hand pointing down from in front")
+  draw_string(screen, font, 10, 250,  "a shooter     - hand up and finger away")
+  draw_string(screen, font, 10, 270, "s shooterback - hand up and finger away, back straight")
+  draw_string(screen, font, 10, 290, "d crane       - hand pointing down from in front")
 
-  draw_string(screen, font, 10, 290, "z poolqueue   - draw hand back with face down")
-  draw_string(screen, font, 10, 310, "x turn back   - turn the back z joint")
-  draw_string(screen, font, 10, 330, "c retract     - turn back and retract hand")
+  draw_string(screen, font, 10, 330, "z poolqueue   - draw hand back with face down")
+  draw_string(screen, font, 10, 350, "x turn back   - turn the back z joint")
+  draw_string(screen, font, 10, 370, "c retract     - turn back and retract hand")
 
 
 
