@@ -26,6 +26,7 @@ struct drill_control_t {
   const int8_t RQ_VALVE_CIRCLE_PLAN = 13;   //Get a plan for moving the end effector in a circle to turn a valve; data_length=1 and data=arc length in radians
  
   const int8_t SET_DRILL_DEPTH = 14;        //Set the desired drill depth in m.  data = depth
+  const int8_t RQ_GOTO_BUTTON_PRESET = 15;  //Goto a hardcoded button pose
 
   int64_t utime; 
 
