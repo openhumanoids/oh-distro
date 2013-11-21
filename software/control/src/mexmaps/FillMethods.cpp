@@ -24,7 +24,7 @@ using namespace mexmaps;
 FillMethods::
 FillMethods(const std::shared_ptr<maps::BotWrapper>& iWrapper) {
   mBotWrapper = iWrapper;
-  mDebug = false;
+  mDebug = true;
   mLatestGroundPlane << 0,0,0,0;
   mMapMode = drc::map_controller_command_t::FLAT_GROUND;
   mLatestFeetPosition << 0,0,0;

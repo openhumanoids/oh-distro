@@ -26,6 +26,7 @@ namespace {
     double mPointSize;
     int mColorMode;
     int mMeshMode;
+    bool mVisible;
 
     Attributes() {
       mColor << 0,0,0;
@@ -34,6 +35,7 @@ namespace {
       mPointSize = 3;
       mColorMode = MeshRenderer::ColorModeHeight;
       mMeshMode = MeshRenderer::MeshModePoints;
+      mVisible = true;
     }
   };
 
@@ -42,40 +44,40 @@ namespace {
 
     Globals() {
       add(data_request_t::OCTREE_SCENE, "Octree Scene", 0,0,0, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::HEIGHT_MAP_SCENE, "Height Scene", 1,0,0, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::HEIGHT_MAP_COARSE, "Height Coarse", 1,0.5,0, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::HEIGHT_MAP_DENSE, "Height Dense", 1,0.5,0, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DEPTH_MAP_SCENE, "Depth Scene", 0.5,0,0.5, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DEPTH_MAP_WORKSPACE, "Depth Workspace", 0,0,1, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::STEREO_MAP_HEAD, "Stereo Head", 0.1,1,0.1, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::STEREO_MAP_LHAND, "Stereo L.Hand", 0.1,0.7,0.1, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::STEREO_MAP_RHAND, "Stereo R.Hand", 0.1,0.4,0.1, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DENSE_CLOUD_BOX, "Cloud Box", 1,0,1, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DENSE_CLOUD_LHAND, "Cloud L.Hand", 1.0,0.5,0.3, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DENSE_CLOUD_RHAND, "Cloud R.Hand", 1.0,0.5,0.3, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(1000, "Heightmap Controller", 0.5,0,0, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,false);
       add(9999,"Debug", 0,0,0, 0,1,3,
-          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints);
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,false);
     }
 
     void add(const int64_t iId, const std::string& iLabel,
              const double iR, const double iG, const double iB,
              const double iMinZ, const double iMaxZ,
              const double iPointSize, const int iColorMode,
-             const int iMeshMode) {
+             const int iMeshMode, const bool iVisible) {
       Attributes attributes;
       attributes.mLabel = iLabel;
       attributes.mColor << iR,iG,iB;
@@ -84,6 +86,7 @@ namespace {
       attributes.mPointSize = iPointSize;
       attributes.mColorMode = iColorMode;
       attributes.mMeshMode = iMeshMode;
+      attributes.mVisible = iVisible;
       mAttributesMap[iId] = attributes;
     }
   };
@@ -127,7 +130,7 @@ struct ViewMetaData::Helper {
       mAttributes.mColor << (double)rand()/RAND_MAX,
         (double)rand()/RAND_MAX, (double)rand()/RAND_MAX;
     }
-    mVisible = true;
+    mVisible = mAttributes.mVisible;
     mLatestTransform = Eigen::Isometry3f::Identity();
   }
 
