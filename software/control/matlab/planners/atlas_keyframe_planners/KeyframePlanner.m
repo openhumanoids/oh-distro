@@ -38,6 +38,7 @@ classdef KeyframePlanner < handle
         T_hand_palm_r_sandia
         T_hand_palm_l_irobot
         T_hand_palm_r_irobot
+        T_hand_palm_r_hose_irobot
         sandia_gaze_axis
         irobot_gaze_axis
         lh_name
@@ -102,6 +103,7 @@ classdef KeyframePlanner < handle
 
             obj.T_hand_palm_l_irobot = HT([0;0.11516;0.015],1.57079,3.14159,3.14159);
             obj.T_hand_palm_r_irobot = HT([0;-0.11516;-0.015],1.57079,0,0);
+            obj.T_hand_palm_r_hose_irobot = HT([0;-0.11516;-0.015],0,0,0);
             
             obj.sandia_gaze_axis = [0;0;1];
             obj.irobot_gaze_axis = [0;1;0];
@@ -181,6 +183,9 @@ classdef KeyframePlanner < handle
           elseif(~isempty(strfind(rhand_frame.name,'irobot')))
             obj.r_hand_mode = 2;
             display('iRobot right hand');
+          elseif(~isempty(strfind(rhand_frame.name,'irobotHose')))
+            obj.r_hand_mode = 3;
+            display('iRobot right hand for hose');
           end
             
             if(obj.l_hand_mode == 1)
@@ -209,6 +214,10 @@ classdef KeyframePlanner < handle
               obj.rh_camera_origin = obj.r_irobot_camera_origin;
             elseif(obj.r_hand_mode == 0)
               obj.T_hand_palm_r = obj.T_hand_palm_r_irobot;
+              obj.rh_gaze_axis = obj.irobot_gaze_axis;
+              obj.rh_camera_origin = obj.r_irobot_camera_origin;
+            elseif(obj.r_hand_mode == 3)
+              obj.T_hand_palm_r = obj.T_hand_plam_r_hose_irobot;
               obj.rh_gaze_axis = obj.irobot_gaze_axis;
               obj.rh_camera_origin = obj.r_irobot_camera_origin;
             end

@@ -14,7 +14,7 @@
 
 using namespace std;
 
-void getHandConfiguration( std::vector<std::string> joint_names, int8_t &left_hand, int8_t &right_hand){
+void getHandConfiguration( std::string robot_name, std::vector<std::string> joint_names, int8_t &left_hand, int8_t &right_hand){
 
   if(find(joint_names.begin(), joint_names.end(), "left_f0_j0" ) != joint_names.end()){
     std::cout << "Robot fitted with left Sandia hand\n";
@@ -31,8 +31,14 @@ void getHandConfiguration( std::vector<std::string> joint_names, int8_t &left_ha
     std::cout << "Robot fitted with right Sandia hand\n";
     right_hand = drc::robot_urdf_t::RIGHT_SANDIA;
   }else if(find(joint_names.begin(), joint_names.end(), "right_finger[0]/joint_base" ) != joint_names.end()){
-    std::cout << "Robot fitted with right iRobot hand\n";
-    right_hand = drc::robot_urdf_t::RIGHT_IROBOT;
+    if(robot_name.find("Hose") == std::string::npos){
+      std::cout << "Robot fitted with right iRobot hand\n";
+      right_hand = drc::robot_urdf_t::RIGHT_IROBOT;
+    }
+    else{
+      std::cout<<"Robot fitted with right iRobot Hose hand\n";
+      right_hand = drc::robot_urdf_t::RIGHT_IROBOT_HOSE;
+    }
   }else{
     std::cout << "Robot has no right hand\n"; 
     right_hand = drc::robot_urdf_t::RIGHT_NONE;
@@ -96,7 +102,7 @@ int main(int argc, char ** argv)
   drc::robot_urdf_t message;
   message.robot_name =robot_model.getName();
   message.urdf_xml_string = xml_string;
-  getHandConfiguration(joint_names, message.left_hand, message.right_hand);
+  getHandConfiguration(message.robot_name, joint_names, message.left_hand, message.right_hand);
   
   std::cout << "Broadcasting urdf of robot [" << robot_model.getName() << "] as a string at 1Hz\n";
   struct timeval tv;

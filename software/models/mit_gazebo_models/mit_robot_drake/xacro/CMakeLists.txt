@@ -44,6 +44,9 @@ execute_process(COMMAND rosrun xacro xacro.py atlas_LN_RI.urdf.xacro
 execute_process(COMMAND rosrun xacro xacro.py atlas_LI_RI.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_LI_RI.urdf)
 
+execute_process(COMMAND rosrun xacro xacro.py atlas_LI_RI_Hose.urdf.xacro
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_LI_RI_Hose.urdf)
+
 execute_process(COMMAND rosrun xacro xacro.py atlas_LN_RN.urdf.xacro
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/xacro OUTPUT_FILE ../model_LN_RN.urdf)
 message(STATUS "Generated \n model_minimal_contact.urdf \n model.urdf \n model_minimal_contact_fixedjoint_hands.urdf \n model_minimal_contact_point_hands.urdf \n model_minimal_contact_point_stumps.urdf")
