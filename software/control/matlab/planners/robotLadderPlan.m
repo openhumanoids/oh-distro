@@ -3,11 +3,13 @@ function [x_data, t] = robotLadderPlan(r_minimal,r, q0, qstar, comtraj, link_con
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'robotLadderPlan');
 nq = r.getNumDOF();
 
+use_quasistatic_constraint =  true;
 use_com_constraint =          true;
+use_incr_com_constraint =     true;
 use_final_com_constraint =    true;
 use_arm_constraints =         true;
 use_total_arm_constraints =   true;
-use_pelvis_gaze_constraint =       true;
+use_pelvis_gaze_constraint =  true;
 use_pelvis_constraint =       true;
 use_utorso_constraint =       true;
 use_knee_constraint =         true;
@@ -18,6 +20,8 @@ use_smoothing_constraint =    false;
 
 pelvis = r.findLinkInd('pelvis');
 utorso = r.findLinkInd('utorso');
+r_foot = r.findLinkInd('r_foot');
+l_foot = r.findLinkInd('l_foot');
 neck_joint = findJointIndices(r,'neck');
 %ankle_joints = [findJointIndices(r,'r_leg_aky')];
  ankle_joints = [findJointIndices(r,'l_leg_aky'); ...
@@ -27,23 +31,26 @@ neck_joint = findJointIndices(r,'neck');
 knee_joints = findJointIndices(r,'l_leg_kny');
 arm_joints = findJointIndices(r,'arm');
 
-n = 10;
+n = 5;
+shrink_factor = 0.9;
 utorso_threshold = 25*pi/180;
-pelvis_gaze_threshold = 15*pi/180;
+pelvis_gaze_threshold = 20*pi/180;
 ankle_limit = 20*pi/180*ones(size(ankle_joints));
 knee_lb = 30*pi/180*ones(size(knee_joints));
 knee_ub = inf*pi/180*ones(size(knee_joints));
 hand_threshold = sin(15*pi/180);
 hand_cone_threshold = sin(30*pi/180);
-hand_pos_tol = 0.01;
+hand_pos_tol = 0.0;
 %pelvis_threshold = 0.08;
-pelvis_threshold = 0.10;
+pelvis_threshold = 0.05;
 com_tol = 0.01;
-com_tol_max = 0.1;
-arm_tol = 7*pi/180/n;
+com_incr_tol = 0.02;
+com_tol_max = 0.2;
+arm_tol = 6*pi/180/n;
 arm_tol_total = 30*pi/180;
 %comtraj = comtraj + 0.05;
 com_tol_vec = [com_tol;com_tol;NaN];
+com_incr_tol_vec = [com_incr_tol;com_incr_tol;NaN];
 smoothing_tol = 1*pi/180;
 
 
@@ -83,6 +90,8 @@ fprintf('\n');
 fprintf('Constraint Summary\n');
 fprintf('==================================\n');
 fprintf('Name                      Status    Tolerance\n');
+fprintf('QS Constraint             %s        %4.2f\n', logical2str(use_quasistatic_constraint),shrink_factor);
+fprintf('Incr. COM Constraint:     %s        %4.2f m\n', logical2str(use_incr_com_constraint), com_incr_tol);
 fprintf('COM Constraint:           %s        %4.2f m\n', logical2str(use_com_constraint), com_tol);
 fprintf('Final COM Constraint:     %s\n', logical2str(use_final_com_constraint));
 fprintf('Pelvis Constraint:        %s        %4.2f m\n', logical2str(use_pelvis_constraint), pelvis_threshold);
@@ -92,12 +101,22 @@ fprintf('Knee Constraint:          %s        [%4.2f deg, %4.2f deg]\n', logical2
 fprintf('Neck Constraint:          %s\n', logical2str(use_neck_constraint));
 fprintf('Ankle Constraint:         %s\n', logical2str(use_ankle_constraint));
 fprintf('Arm Constraints (incr):   %s        %4.2f deg\n', logical2str(use_arm_constraints),arm_tol*180/pi);
-fprintf('Arm Constraints (total):  %s        %4.2f deg\n', logical2str(use_arm_constraints),arm_tol_total*180/pi);
+fprintf('Arm Constraints (total):  %s        %4.2f deg\n', logical2str(use_total_arm_constraints),arm_tol_total*180/pi);
 
 % v = r.constructVisualizer;
 % v.display_dt = 0.05;
 q = zeros(nq,nt);
 q(:,1) = q0;
+
+r_foot_support_data = zeros(size(support_times));
+r_foot_support_data(1:end-1) = cellfun(@(supp) double(any(supp.bodies==r_foot)),support); 
+r_foot_support_data(end) = r_foot_support_data(end-1);
+r_foot_support_traj = PPTrajectory(zoh(support_times,r_foot_support_data));
+
+l_foot_support_data = zeros(size(support_times));
+l_foot_support_data(1:end-1) = cellfun(@(supp) double(any(supp.bodies==l_foot)),support); 
+l_foot_support_data(end) = l_foot_support_data(end-1);
+l_foot_support_traj = PPTrajectory(zoh(support_times,l_foot_support_data));
 basic_constraints = {};
 
 if use_ankle_constraint
@@ -187,6 +206,21 @@ err_segments = [];
 for i=1:nt
   t = ts(i);
   constraints = basic_constraints;
+  
+  r_foot_supported = eval(r_foot_support_traj,t);
+  l_foot_supported = eval(l_foot_support_traj,t);
+  if use_quasistatic_constraint && (r_foot_supported || l_foot_supported)
+    qsc = QuasiStaticConstraint(r);
+    if r_foot_supported
+      qsc = qsc.addContact(r_foot,r.getBodyContacts(r_foot));
+    end
+    if l_foot_supported
+      qsc = qsc.addContact(l_foot,r.getBodyContacts(l_foot));
+    end
+    qsc = qsc.setShrinkFactor(shrink_factor);
+    qsc = qsc.setActive(true);
+    constraints = [constraints, {qsc}];
+  end
   if use_arm_constraints
     arm_constraint = PostureConstraint(r);
     if i==1
@@ -246,6 +280,12 @@ for i=1:nt
     end
   end
 %   com = eval(com_fade_traj,t)*mean(com_array,2) + (1-eval(com_fade_traj,t))*com;
+
+  if i > 1 && use_incr_com_constraint
+    constraints = [ ...
+      constraints, ...
+      {WorldCoMConstraint(r,com_prev-com_incr_tol_vec,com_prev+com_incr_tol_vec)}];
+  end  
   if use_com_constraint
     constraints = [ ...
       constraints, ...
@@ -291,7 +331,10 @@ for i=1:nt
                                         constraints{:},ikoptions);
   end
   q_seed = q(:,i);
-  %q_nom = q(:,i);
+  kinsol = doKinematics(r,q_seed);
+  com_prev = r.getCOM(kinsol);
+  com_prev(3) = NaN;
+%   q_nom = q(:,i);
   %   disp(info);
 end
 fprintf('\n');
