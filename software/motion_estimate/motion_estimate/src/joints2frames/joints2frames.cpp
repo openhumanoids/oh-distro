@@ -211,16 +211,18 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       body_to_hokuyo_link_found=true;
     }else if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RPALM" );
     }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LPALM" );
     }else if(  (*ii).first.compare( "left_base_link" ) == 0 ){
       Eigen::Isometry3d base_link_to_palm_skin = Eigen::Isometry3d::Identity();
       base_link_to_palm_skin.translation()  << 0,0,0.09;
-      publishRigidTransform( KDLToEigen( (*ii).second )*base_link_to_palm_skin , msg->utime, "BODY_TO_IROBOTLPALM" );
+      publishRigidTransform( KDLToEigen( (*ii).second )*base_link_to_palm_skin , msg->utime, "BODY_TO_LPALM" );
     }else if(  (*ii).first.compare( "right_base_link" ) == 0 ){
       Eigen::Isometry3d base_link_to_palm_skin = Eigen::Isometry3d::Identity();
       base_link_to_palm_skin.translation()  << 0,0,0.09;
-      publishRigidTransform( KDLToEigen( (*ii).second )*base_link_to_palm_skin   , msg->utime, "BODY_TO_IROBOTRPALM" );
+      publishRigidTransform( KDLToEigen( (*ii).second )*base_link_to_palm_skin   , msg->utime, "BODY_TO_RPALM" );
     }
     
   }
