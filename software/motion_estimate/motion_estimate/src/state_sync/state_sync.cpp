@@ -98,7 +98,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   encoder_joint_offsets_.assign(28,0.0);
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 3.14; // robot software v1.9
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = -0.02; // robot software v1.9
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.018; // robot software v1.9
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.15; // robot software v1.9
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 0.02; // robot software v1.9
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = 2.055; // robot software v1.9
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0; // robot software v1.9
