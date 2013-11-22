@@ -113,6 +113,8 @@ private:
   
   bool dumb_fingers_;
   
+  static const int SLOWFACTOR = 10;
+  
 };
 
 App::App(ros::NodeHandle node_, bool dumb_fingers) :
@@ -211,6 +213,10 @@ void App::sandia_l_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
   int64_t utime = _timestamp_now();
   sandia_l_hand_palm_state_ = *msg;
 
+  static int counter = 0;
+  counter = (counter+1) % SLOWFACTOR; // publish at slower rates (10 times)
+  if(counter!=0) return;
+  
   // Publish Raw Hand Signals
   publishSandiaRaw(utime, true);
 }
@@ -221,6 +227,10 @@ void App::sandia_r_hand_palm_state_cb(const sandia_hand_msgs::RawPalmStatePtr& m
   int64_t utime = _timestamp_now();
   sandia_r_hand_palm_state_ = *msg;
 
+  static int counter = 0;
+  counter = (counter+1) % SLOWFACTOR; // publish at slower rates (10 times)
+  if(counter!=0) return;
+  
   // Publish Raw Hand Signals
   publishSandiaRaw(utime, false);
 }
@@ -235,6 +245,7 @@ void copyvalue(T* a, D b, int n){
 }
 
 void App::publishSandiaRaw(int64_t utime_in,bool is_left){
+ 
   drc:: raw_sandia_hand_t msg_out;
   msg_out.utime = utime_in;
 
@@ -513,11 +524,19 @@ void App::irobot_r_hand_state_cb(const mit_helios_scripts::MITIRobotHandStatePtr
 
 void App::irobot_l_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 {
+  static int counter = 0;
+  counter = (counter+1) % SLOWFACTOR; // publish at slower rates (10 times)
+  if(counter!=0) return;
+  
   irobot_hand_raw_state_cb(msg, LEFT);
 }
 
 void App::irobot_r_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 {
+  static int counter = 0;
+  counter = (counter+1) % SLOWFACTOR; // publish at slower rates (10 times)
+  if(counter!=0) return;
+  
   irobot_hand_raw_state_cb(msg, RIGHT);
 }
 
