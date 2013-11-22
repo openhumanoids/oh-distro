@@ -8,21 +8,32 @@
 #include <deque>
 using namespace std;
 
+enum HandType {SANDIA, IROBOT};
 
 class App{
   public:
-    App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_);
+    App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_, HandType ht);
     
-    ~App(){
-    }
+    ~App(){}
+    
+  protected:
+    boost::shared_ptr<lcm::LCM> lcm_;
+    bool is_left;
+    string strHandLR;  // Put RIGHT / LEFT
+    string strHandName;  // Put IROBOT / SANDIA
+    bool use_gnuplot_;
+    
+    float logit(float x, float b0=0, float b1=1);
+};  
+
+class AppSandia: public App{
+  public:
+    AppSandia(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_);
+    
+    ~AppSandia(){}
     
     
   private:
-    boost::shared_ptr<lcm::LCM> lcm_;
-    bool is_left;
-    string handtext;  // Put RIGHT / LEFT
-    bool use_gnuplot_;
-    
     // For calibration of tactile sensor
     unsigned int init_sandia_cnt;
     static const unsigned int SANDIA_CALIB_NUM = 200;
@@ -49,38 +60,75 @@ class App{
                              const std::string& channel, const  drc::joint_command_t* msg);    
     void stateHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::hand_state_t* msg); 
-    
-    //////////////////////////////////////
-    float logit(float x, float b0=0, float b1=1);
-};   
+};  
 
-App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_):
+class AppIRobot: public App{
+  public:
+    AppIRobot(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_);
+    
+    ~AppIRobot(){}
+    
+    
+  private:
+    static const unsigned int NTACTILE = 48;
+    static const int TACTILE_THRESHOLD = 100;
+    float sandia_tactile_processed[NTACTILE];
+    float prob_sandia_tactile_processed[NTACTILE];
+    //////////////////////////////////////
+    void irobotHandler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  drc::raw_irobot_hand_t* msg);    
+    
+    void publishIRobotTactile(int64_t utime);
+    
+    
+    ////// todo: For finger analysis 
+    //static const unsigned int NFINGER = 4;
+    //float finger_tactile[NFINGER];
+    //float prob_finger_tactile[NFINGER];
+    /////////////////////////////////////////
+};  
+
+App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_, HandType ht):
    lcm_(lcm_), is_left(is_left), use_gnuplot_(use_gnuplot_){
   
+  strHandLR = is_left? "LEFT": "RIGHT";
+  strHandName = ht==SANDIA? "SANDIA": "IROBOT";
+  printf("Start processing %s %s hand.\n", strHandName.c_str(), strHandLR.c_str());
+}
+
+AppSandia::AppSandia(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_):
+   App(lcm_, is_left, use_gnuplot_, SANDIA) {
+  
   init_sandia_cnt = 0;
-  handtext = is_left? "LEFT": "RIGHT";
   
   for(size_t i=0; i<NTACTILE; i++)
     sandia_tactile_offset[i] = 0;
-  printf("Start processing %s hand.\n", handtext.c_str());
   
   // for fingers
   lcm_->subscribe(is_left ? "L_HAND_JOINT_COMMANDS":"R_HAND_JOINT_COMMANDS", 
-                                        &App::commandHandler, this);  
-
+                                        &AppSandia::commandHandler, this);  
   lcm_->subscribe(is_left ? "SANDIA_LEFT_STATE":"SANDIA_RIGHT_STATE", 
-                                        &App::stateHandler, this); 
+                                        &AppSandia::stateHandler, this); 
   // for palm
   lcm_->subscribe(is_left ? "SANDIA_LEFT_RAW":"SANDIA_RIGHT_RAW", 
-                                        &App::sandiaRawHandler, this);  
-                                        
-                                        
+                                        &AppSandia::sandiaRawHandler, this);  
 }
+
+AppIRobot::AppIRobot(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left, bool use_gnuplot_):
+   App(lcm_, is_left, use_gnuplot_, IROBOT) {
+     
+  // for palm
+  lcm_->subscribe(is_left ? "IROBOT_LEFT_RAW":"IROBOT_RIGHT_RAW", 
+                                        &AppIRobot::irobotHandler, this);  
+}
+
+
 // logistic function F(x)=1/(1+e^{-b_1 (x-b_0)})
 float App::logit(float x, float b0, float b1){
   return 1.0/(1.0+exp(-(b1*(x-b0))));
 }
-void App::sandiaRawHandler(const lcm::ReceiveBuffer* rbuf, 
+
+void AppSandia::sandiaRawHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  drc::raw_sandia_hand_t* msg){
   
   // tactile calibration
@@ -88,7 +136,7 @@ void App::sandiaRawHandler(const lcm::ReceiveBuffer* rbuf,
     for(size_t i=0; i < NTACTILE; i++)
       sandia_tactile_offset[i] += msg->palm.palm_tactile[i] / (float)SANDIA_CALIB_NUM;
     if(init_sandia_cnt == SANDIA_CALIB_NUM-1)
-      printf("Sandia %s hand palm tactile calibration done.\n", handtext.c_str());
+      printf("Sandia %s hand palm tactile calibration done.\n", strHandLR.c_str());
 
     init_sandia_cnt++;
   }
@@ -107,15 +155,26 @@ void App::sandiaRawHandler(const lcm::ReceiveBuffer* rbuf,
     publishSandiaTactile(msg->utime);
   }
   ///////////////////////
-  
 }
- 
-void App::publishSandiaTactile(int64_t utime){
+
+void AppIRobot::irobotHandler(const lcm::ReceiveBuffer* rbuf, 
+     const std::string& channel, const  drc::raw_irobot_hand_t* msg){
+  
+  // no tactile calibration needed
+  for(size_t i=0;i<NTACTILE;i++)
+    sandia_tactile_processed[i] = msg->palmTactile[i];
+      
+  // map 0-200 to 0-1 using logistic function
+  for(size_t i=0; i<NTACTILE; i++){
+    prob_sandia_tactile_processed[i] = logit(sandia_tactile_processed[i], 100, 0.1);
+  }
+  publishIRobotTactile(msg->utime);
+}
+
+void AppSandia::publishSandiaTactile(int64_t utime){
   drc::hand_tactile_state_t msg_out;
   msg_out.utime = utime; 
 
-  
-  // offset the raw signals
   msg_out.n_palm = NTACTILE;
   msg_out.palm.resize(NTACTILE);
   for(size_t i=0; i<NTACTILE; i++){
@@ -125,13 +184,13 @@ void App::publishSandiaTactile(int64_t utime){
   
   // summarize signals
   float vmax = sandia_tactile_processed[0], vmin = sandia_tactile_processed[0];
-  float vavg = 0;
+  float vsum = 0;
   for(size_t i = 1; i < NTACTILE; i++){
     float v = sandia_tactile_processed[i];
     vmax = std::max(vmax,v);
     vmin = std::min(vmin,v);
     
-    vavg += v;
+    vsum += v;
   }
   
   ////fingers
@@ -145,12 +204,9 @@ void App::publishSandiaTactile(int64_t utime){
   msg_out.f3.push_back(prob_finger_tactile[3]);
   
   
-  msg_out.signal = vavg; //(float)fabs(vmax-vmin); 
-  msg_out.touched =  msg_out.signal > TACTILE_THRESHOLD;
-  lcm_->publish("SANDIA_"+handtext+"_TACTILE_STATE", &msg_out); 
-  
-  
-  
+  msg_out.signal = logit(vsum, TACTILE_THRESHOLD, 0.1); //(float)fabs(vmax-vmin); 
+  msg_out.touched =  vsum > TACTILE_THRESHOLD;
+  lcm_->publish(strHandName+"_"+strHandLR+"_TACTILE_STATE", &msg_out);   
   
   
   if (use_gnuplot_){// for gnuplot
@@ -159,7 +215,7 @@ void App::publishSandiaTactile(int64_t utime){
     if(dq.size()>500)
       dq.pop_front();
     printf("plot \"-\" with lines\n");
-    for(int i=0;i<dq.size();i++)
+    for(size_t i=0;i<dq.size();i++)
       printf("%f\n", dq[i]);
     printf("e\n");
     printf("set yrange [-10000:30000]\n");
@@ -170,8 +226,61 @@ void App::publishSandiaTactile(int64_t utime){
   
   
 }
+void AppIRobot::publishIRobotTactile(int64_t utime){
+  drc::hand_tactile_state_t msg_out;
+  msg_out.utime = utime; 
 
-void App::commandHandler(const lcm::ReceiveBuffer* rbuf, 
+  msg_out.n_palm = NTACTILE;
+  msg_out.palm.resize(NTACTILE);
+  for(size_t i=0; i<NTACTILE; i++){
+    //msg_out.palm[i] = (float)sandia_tactile_processed[i];
+    msg_out.palm[i] = (float)prob_sandia_tactile_processed[i];
+  }
+  
+  // summarize signals
+  float vmax = sandia_tactile_processed[0], vmin = sandia_tactile_processed[0];
+  float vsum = 0;
+  for(size_t i = 1; i < NTACTILE; i++){
+    float v = sandia_tactile_processed[i];
+    vmax = std::max(vmax,v);
+    vmin = std::min(vmin,v);
+    
+    vsum += v;
+  }
+  
+  ////fingers
+  msg_out.n_f0 = 0;
+  msg_out.n_f1 = 0;
+  msg_out.n_f2 = 0;
+  msg_out.n_f3 = 0;
+  //msg_out.f0.push_back(prob_finger_tactile[0]);
+  //msg_out.f1.push_back(prob_finger_tactile[1]);
+  //msg_out.f2.push_back(prob_finger_tactile[2]);
+  //msg_out.f3.push_back(prob_finger_tactile[3]);
+  
+  
+  msg_out.signal = logit(vsum, TACTILE_THRESHOLD, 0.1); //(float)fabs(vmax-vmin); 
+  msg_out.touched =  vsum > TACTILE_THRESHOLD;
+  lcm_->publish(strHandName+"_"+strHandLR+"_TACTILE_STATE", &msg_out); 
+  
+  
+  if (use_gnuplot_){// for gnuplot
+    static deque<float> dq;
+    dq.push_back(msg_out.signal);
+    if(dq.size()>100)
+      dq.pop_front();
+    printf("plot \"-\" with lines\n");
+    for(size_t i=0;i<dq.size();i++)
+      printf("%f\n", dq[i]);
+    printf("e\n");
+    printf("set yrange [-5000:5000]\n");
+    printf("set xrange [0:600]\n");
+    /////////////////////////////
+  }
+  
+}
+
+void AppSandia::commandHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  drc::joint_command_t* msg){
   
   //std::cout << "got command\n";
@@ -179,7 +288,7 @@ void App::commandHandler(const lcm::ReceiveBuffer* rbuf,
   command_pos_ = v_float;  
 }
 
-void App::stateHandler(const lcm::ReceiveBuffer* rbuf, 
+void AppSandia::stateHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  drc::hand_state_t* msg){
   
   sensed_pos_ = msg->joint_position;
@@ -213,34 +322,26 @@ void App::stateHandler(const lcm::ReceiveBuffer* rbuf,
   for(size_t i=0; i<NFINGER; i++){
     finger_tactile[i] = finger_diffs[i];
     prob_finger_tactile[i] = logit(finger_diffs[i],0.1,60);
-    std::cout << "logit(finger_diffs["<<i<<"])=" << logit(finger_diffs[0],0.1,60) << endl;
+    //std::cout << "logit(finger_diffs["<<i<<"])=" << logit(finger_diffs[0],0.1,60) << endl;
   }
 }
 
 
 int main(int argc, char *argv[]){
-  bool lhand=false, rhand=false, use_gnuplot;
+  bool use_gnuplot=false;
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(rhand, "r", "right","Process right hand message");
-  opt.add(lhand, "l", "left","Process left hand message");
   opt.add(use_gnuplot, "g", "use_gnuplot","Verbose printf, to pipe to gnuplot append '| gnuplot'");
- 
-  
   opt.parse();
-  if(rhand && lhand){
-    printf("Only one hand at a time.\n");
-    return 1;
-  }
-  if(!rhand && !lhand){
-    printf("Please specify a hand. Type -h for usage.\n");
-    return 1;
-  }
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   if(!lcm->good())
     return 1;  
   
-  App app(lcm, lhand, use_gnuplot);
+  AppSandia app_sandia_l(lcm, 1, 0);
+  AppSandia app_sandia_r(lcm, 0, 0);
+  AppIRobot app_irobot_l(lcm, 1, 0);
+  AppIRobot app_irobot_r(lcm, 0, 0);
+  
   while(0 == lcm->handle());
   return 0;
 }

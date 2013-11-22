@@ -4,11 +4,10 @@ add_definitions(-Wall )
 
 
 ##############################################
-add_executable (sandia-process sandia_hand_process.cpp)
-target_link_libraries (sandia-process )
-pods_use_pkg_config_packages(sandia-process
-   lcm )
-pods_install_executables(sandia-process)
+add_executable (hand-tactile-process hand_tactile_process.cpp)
+target_link_libraries (hand-tactile-process )
+pods_use_pkg_config_packages(hand-tactile-process lcm )
+pods_install_executables(hand-tactile-process)
 
 
 
