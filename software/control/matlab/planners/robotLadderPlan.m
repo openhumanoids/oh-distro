@@ -45,7 +45,7 @@ hand_pos_tol = 0.0;
 pelvis_threshold = 0.05;
 com_tol = 0.01;
 com_incr_tol = 0.02;
-com_tol_max = 0.01;
+com_tol_max = 0.1;
 arm_tol = 6*pi/180/n;
 arm_tol_total = 30*pi/180;
 %comtraj = comtraj + 0.05;
@@ -153,10 +153,12 @@ if use_collision_constraint
     {AllBodiesClosestDistanceConstraint(r,0.05,1e3)}];
 end
 
+kinsol = doKinematics(r,q0);
 if use_utorso_constraint
+  utorso_posquat = forwardKin(r,kinsol,utorso,[0;0;0],2);
   basic_constraints = [ ...
     basic_constraints, ...
-    {WorldGazeOrientConstraint(r,utorso,[0;0;1],[1;0;0;0],utorso_threshold,90*pi/180)}];
+    {WorldGazeOrientConstraint(r,utorso,[0;0;1],utorso_posquat(4:7),utorso_threshold,90*pi/180)}];
 end
 
 if use_pelvis_gaze_constraint
@@ -165,7 +167,6 @@ if use_pelvis_gaze_constraint
     {WorldGazeOrientConstraint(r,pelvis,[0;0;1],[1;0;0;0],pelvis_gaze_threshold,90*pi/180)}];
 end
 
-kinsol = doKinematics(r,q0);
 pelvis_xyzrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
 o_T_pelvis = HT(pelvis_xyzrpy(1:3),pelvis_xyzrpy(4),pelvis_xyzrpy(5),pelvis_xyzrpy(6));
 o_T_pelvis(1:3,1:3) = eye(3);
