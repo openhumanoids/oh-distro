@@ -1,0 +1,14 @@
+package drc;
+
+// The parameters currently used by the planner
+
+struct planner_config_t
+{
+  int64_t utime;
+  double desired_ee_arc_speed;
+  double desired_joint_speed;
+  int16_t planning_mode;
+  double plan_execution_time;
+  double orientation_tol;
+  double position_tol;
+}
