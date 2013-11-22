@@ -108,7 +108,9 @@ typedef struct _RendererWalking {
   double step_height;
   double nom_forward_step;
   double max_forward_step;
+  double min_step_width;
   double nom_step_width;
+  double max_step_width;
   double mu;
   int walking_settings;
   float bdi_step_duration;

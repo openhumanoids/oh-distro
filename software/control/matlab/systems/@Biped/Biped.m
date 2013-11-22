@@ -172,13 +172,19 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
 
       options = getReachabilityOptions(obj, options);
+      options.forward_step = max([options.forward_step, 0.005]);
+      options.backward_step = max([options.backward_step, 0.005]);
+      options.max_step_width = max([options.max_step_width, options.nom_step_width + 0.005]);
+      options.min_step_width = min([options.min_step_width, options.nom_step_width - 0.005]);
 
       [Axy, bxy] = poly2lincon([0, options.forward_step, 0, -options.backward_step], [options.min_step_width, options.nom_step_width, options.max_step_width, options.nom_step_width]);
       A = [Axy, zeros(4, 4);
            0 0 1 0 0 0;
            0 0 -1 0 0 0;
            0 0 0 0 0 -1;
-           0 0 0 0 0 1];
+           0 0 0 0 0 1;
+           0, 1/(options.max_step_width-options.nom_step_width), 0, 0, 0, 1/options.max_outward_step_rot;
+           0, 1/(options.min_step_width-options.nom_step_width), 0, 0, 0, 1/options.max_outward_step_rot];
       if ~p0_is_right_foot
         A(:,2) = -A(:,2);
         A(:,6) = -A(:,6);
@@ -187,7 +193,10 @@ classdef Biped < TimeSteppingRigidBodyManipulator
            options.max_step_dz;
            options.max_step_dz;
            options.max_inward_step_rot;
-           options.max_outward_step_rot];
+           options.max_outward_step_rot;
+           1 + options.nom_step_width/(options.max_step_width-options.nom_step_width);
+           1 + options.nom_step_width/(options.min_step_width-options.nom_step_width)
+           ];
    end
 
     function [A, b] = getFootstepLinearCons(obj, p0_is_right_foot, options)

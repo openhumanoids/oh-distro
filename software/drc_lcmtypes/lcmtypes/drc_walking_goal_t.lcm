@@ -22,7 +22,9 @@ struct walking_goal_t
 	// speed at which the foot should move while swinging (m/s)
 	float step_speed; 
 
+	float min_step_width;
 	float nom_step_width;
+	float max_step_width;
 	float nom_forward_step;
 	float max_forward_step;
 

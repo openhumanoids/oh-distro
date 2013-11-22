@@ -37,7 +37,7 @@ classdef FootstepPlanner < DRCPlanner
     function obj = updateGoal(obj, data, changed, changelist)
       if changed
         if isfield(data, 'goal'); info = struct(data.goal); else info = struct(); end
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'nom_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior', 'bdi_step_duration', 'bdi_sway_duration', 'bdi_lift_height', 'bdi_toe_off', 'bdi_knee_nominal', 'map_command','allow_optimization','force_to_sticky_feet', 'velocity_based_steps'}
+        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'min_step_width', 'nom_step_width', 'max_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior', 'bdi_step_duration', 'bdi_sway_duration', 'bdi_lift_height', 'bdi_toe_off', 'bdi_knee_nominal', 'map_command','allow_optimization','force_to_sticky_feet', 'velocity_based_steps'}
           if isfield(info, x{1}) && ~isnan(info.(x{1}))
             if ~isfield(obj.options, x{1}) || obj.options.(x{1}) ~= info.(x{1});
               obj.options.(x{1}) = info.(x{1});

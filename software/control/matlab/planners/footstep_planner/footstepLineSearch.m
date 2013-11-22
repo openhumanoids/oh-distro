@@ -82,8 +82,10 @@ while (1)
   end
 
   potential_poses = foot_centers.(m_foot)(:, last_ndx.(m_foot):end);
-  feas_opts = struct('forward_step', params.nom_forward_step,...
-                     'nom_step_width', params.nom_step_width);
+  % feas_opts = struct('forward_step', params.nom_forward_step,...
+  %                    'nom_step_width', params.nom_step_width);
+  feas_opts = params;
+  feas_opts.forward_step = params.nom_forward_step;
   reach = biped.checkStepReach(X(end).pos, potential_poses, ~is_right_foot, feas_opts);
   valid_pose_ndx = find(max(reach, [], 1) <= 0 & feasibility.(m_foot)(last_ndx.(m_foot):end)) + (last_ndx.(m_foot) - 1);
   if isempty(valid_pose_ndx)
