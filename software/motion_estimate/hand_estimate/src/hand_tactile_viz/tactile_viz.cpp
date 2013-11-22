@@ -25,7 +25,6 @@ class App{
     boost::shared_ptr<lcm::LCM> lcm_;
     bool is_left;
     string handtext;  // Put RIGHT / LEFT
-    static const int TACTILE_THRESHOLD = 3000;
     static const int NTACTILE = 32;
     void sandiaTactileStateHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::hand_tactile_state_t* msg);    
@@ -58,7 +57,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, bool is_left):
   
   // draw signal index
   char buff[5];
-  unsigned char gray[3]={200,200,200};
+  unsigned char gray[3]={50,50,50};
   for(size_t i=0;i<NTACTILE;i++){
     sprintf(buff, "%lu", i);
     orig_img.draw_text(img_x[i]+5, img_y[i]+5, buff, gray, NULL, /*opacity*/ 1,/*font height*/57);
