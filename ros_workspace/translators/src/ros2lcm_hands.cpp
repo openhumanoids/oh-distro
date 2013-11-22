@@ -66,6 +66,7 @@ private:
  
   //Irobot hand subscribers
   ros::Subscriber  irobot_l_hand_joint_states_sub_, irobot_r_hand_joint_states_sub_;
+  ros::Subscriber  irobot_l_hand_raw_states_sub_, irobot_r_hand_raw_states_sub_;
   //ros::Publisher   irobot_l_hand_joint_states_pub_, irobot_r_hand_joint_states_pub_; 
   
   //Sandia callback functions
@@ -141,8 +142,8 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
  
   irobot_l_hand_joint_states_sub_ = node_.subscribe(string("/irobot_hands/l_hand/sensors/mit_state"), 100, &App::irobot_l_hand_state_cb,this);
   irobot_r_hand_joint_states_sub_ = node_.subscribe(string("/irobot_hands/r_hand/sensors/mit_state"), 100, &App::irobot_r_hand_state_cb,this);
-  irobot_l_hand_joint_states_sub_ = node_.subscribe(string("/irobot_hands/l_hand/sensors/raw"), 100, &App::irobot_l_hand_raw_state_cb,this);
-  irobot_r_hand_joint_states_sub_ = node_.subscribe(string("/irobot_hands/r_hand/sensors/raw"), 100, &App::irobot_r_hand_raw_state_cb,this);
+  irobot_l_hand_raw_states_sub_ = node_.subscribe(string("/irobot_hands/l_hand/sensors/raw"), 100, &App::irobot_l_hand_raw_state_cb,this);
+  irobot_r_hand_raw_states_sub_ = node_.subscribe(string("/irobot_hands/r_hand/sensors/raw"), 100, &App::irobot_r_hand_raw_state_cb,this);
   
   //irobot_l_hand_joint_states_pub_ = node_.advertise<std_msgs::Empty>("/irobot_hands/l_hand/calibrate", 100);
   //irobot_r_hand_joint_states_pub_ = node_.advertise<std_msgs::Empty>("/irobot_hands/r_hand/calibrate", 100);
