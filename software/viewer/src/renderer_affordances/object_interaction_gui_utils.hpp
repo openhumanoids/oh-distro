@@ -1067,9 +1067,6 @@ namespace renderer_affordances_gui_utils
       visualization_utils::decodeEndPoseFromStorage(T_world_aff, poseSeed.stateframe_ids,
                                                             poseSeed.stateframe_values,
                                                             msg);
-                                                            
-      if((self->robotStateListener->_urdf_parsed)&&(self->robotStateListener->currentPelvisState_received))
-      {
         self->robotStateListener->_gl_robot_tmp->set_state(msg);    
         KDL::Frame T_world_pelvis_des,T_world_lfoot_des,T_world_rfoot_des;
         T_world_pelvis_des = self->robotStateListener->_gl_robot_tmp->_T_world_body;
@@ -1079,6 +1076,10 @@ namespace renderer_affordances_gui_utils
        // pelvis goal is in body frame. Must listen to ATLAS_STATUS_T, and set the other vals to that not current RPY.
         // Height is actual the relative offset between feet and pelvis.
         double desired_rel_pelvis_foot_height = T_world_pelvis_des.p[2] - 0.5*(T_world_lfoot_des.p[2]+T_world_rfoot_des.p[2])+0.081119; //0.081119 foot to ground z offset
+        
+                                                                    
+      if((self->robotStateListener->_urdf_parsed)&&(self->robotStateListener->currentPelvisState_received))
+      {
         cout << "sending a pelvis goal with desired_rel_pelvis_foot_height : " << desired_rel_pelvis_foot_height << endl;
        
         drc::atlas_behavior_manipulate_params_t  pelvisgoal_msg;
@@ -1094,6 +1095,9 @@ namespace renderer_affordances_gui_utils
 
         string channel = "ATLAS_MANIPULATE_PARAMS";
         self->lcm->publish(channel, &pelvisgoal_msg);
+      }
+      else {
+      cout << "not sending a pelvis goal with desired_rel_pelvis_foot_height as current pelvis state was not received: " << desired_rel_pelvis_foot_height << endl;
       }
     }
     else if(!strcmp(name, PARAM_COMMIT_TO_COLLISION_SERVER) )
