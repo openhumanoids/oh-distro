@@ -9,6 +9,7 @@ from irobothand.calibrate_t import calibrate_t
 from irobothand.current_control_close_t import current_control_close_t
 from irobothand.position_control_close_t import position_control_close_t
 from irobothand.spread_t import spread_t
+from irobothand.calibrate_tactile_t import calibrate_tactile_t
 
 from IRobotHandController import IRobotHandController
 import mit_irobot_hand_control
@@ -64,6 +65,11 @@ def createParser():
     parser.add_argument('--close', 
                         help='Current control close fingers. Shortcut for --current %s' % default_close_current, 
                         action='store_true')
+    
+    parser.add_argument('--calibrate_tactile', 
+                    help='Current control close fingers. Shortcut for --current %s' % default_close_current, 
+                    action='store_true')
+    
     return parser
 
 
@@ -90,6 +96,10 @@ if __name__ == '__main__':
     
     if args.close:
         args.current = default_close_current
+    
+    if args.calibrate_tactile:
+        message = calibrate_tactile_t()
+        publish(side, mit_irobot_hand_control.calibrate_tactile_channel, message)
     
     if args.calibrate is not None:
         message = calibrate_t()

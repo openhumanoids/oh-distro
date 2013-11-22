@@ -10,6 +10,7 @@ import rospy
 from handle_msgs.msg import HandleControl
 from handle_msgs.msg import HandleSensors
 from mit_helios_scripts.msg import MITIRobotHandState
+from std_msgs.msg import Empty
 
 
 from IRobotHandConfigParser import IRobotHandConfigParser
@@ -61,6 +62,7 @@ class IRobotHandController(object):
         self.rate = rospy.Rate(ros_rate)
         self.command_publisher = rospy.Publisher("control", HandleControl)
         self.state_publisher = rospy.Publisher("sensors/mit_state", MITIRobotHandState)
+        self.calibrate_publisher = rospy.Publisher("events/sensors/calibrate", Empty)
         self.subscriber = rospy.Subscriber("sensors/raw", HandleSensors, self.sensor_data_callback)
         self.sensor_data_listeners = []
         
@@ -186,5 +188,9 @@ class IRobotHandController(object):
             calibration_pose = jig_pose
         else:
             calibration_pose = hand_closed_pose
-
+        
         self.calibrate_motor_encoder_offsets_given_pose(calibration_pose)
+
+    def calibrate_tactile(self):
+        print("Calibrating tactile sensors")
+        self.calibrate_publisher.publish(Empty())

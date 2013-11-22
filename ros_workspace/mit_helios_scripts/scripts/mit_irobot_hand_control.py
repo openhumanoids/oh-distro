@@ -16,11 +16,14 @@ from irobothand.calibrate_t import calibrate_t
 from irobothand.current_control_close_t import current_control_close_t
 from irobothand.position_control_close_t import position_control_close_t
 from irobothand.spread_t import spread_t
+from irobothand.calibrate_tactile_t import calibrate_tactile_t
+
 
 calibrate_channel = 'CALIBRATE'
 current_control_channel = 'CURRENT_CONTROL_CLOSE'
 position_control_channel = 'POSITION_CONTROL_CLOSE'
 spread_channel = 'SPREAD'
+calibrate_tactile_channel = 'CALIBRATE_TACTILE'
 
 from IRobotHandController import IRobotHandController
 
@@ -61,6 +64,11 @@ def spread_callback(controller, channel, message):
     controller.spread_angle_control(message.angle_radians)
     controller.zero_current()
 
+def calibrate_tactile_callback(controller, channel, message):
+    if isinstance(message, str):
+        message = calibrate_tactile_t.decode(message)
+    controller.calibrate_tactile()
+
 def parseArguments():
     sys.argv = rospy.myargv(sys.argv) # get rid of additional roslaunch arguments
     parser = argparse.ArgumentParser(description='Script for interacting with iRobot hand')
@@ -92,6 +100,7 @@ if __name__ == '__main__':
     lc.subscribe(get_lcm_channel(side, current_control_channel), create_callback(current_control_close_callback))
     lc.subscribe(get_lcm_channel(side, position_control_channel), create_callback(position_control_close_callback))
     lc.subscribe(get_lcm_channel(side, spread_channel), create_callback(spread_callback))
+    lc.subscribe(get_lcm_channel(side, calibrate_tactile_channel), create_callback(calibrate_tactile_callback))
     
     while True:
         lc.handle()
