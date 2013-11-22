@@ -1,7 +1,7 @@
 function runAtlasStateMachine(controller_type)
 
 if nargin < 1
-  controller_type = 1; % 1: PID, 2: PID+manip params, 3: PD+gravity comp, 4: inverse dynamics
+  controller_type = 2; % 1: PID, 2: PID+manip params, 3: PD+gravity comp, 4: inverse dynamics
 end
 
 options.floating = true;
