@@ -117,11 +117,16 @@ typedef struct
   std::vector< int8_t> channel_list;
   int8_t real_time_percent;
   
-  float left_contact; // foot contact
-  float right_contact;
+  float left_foot_contact; // foot contact
+  float right_foot_contact;
   float foot_left[3];
   float foot_right[3];
   float foot_spacing;
+  
+  
+  float left_hand_contact;
+  float right_hand_contact;
+  
   
   float estimated_biases[3];
   bool estimated_biases_converged;
@@ -272,8 +277,8 @@ on_frequency(const lcm_recv_buf_t * buf, const char *channel, const drc_frequenc
 static void
 on_foot_contact(const lcm_recv_buf_t * buf, const char *channel, const drc_foot_contact_estimate_t *msg, void *user_data){
   RendererSystemStatus *self = (RendererSystemStatus*) user_data;
-  self->left_contact = msg->left_contact;
-  self->right_contact = msg->right_contact;
+  self->left_foot_contact = msg->left_contact;
+  self->right_foot_contact = msg->right_contact;
 }
 
 static void
@@ -288,6 +293,18 @@ on_grasp_opt_status(const lcm_recv_buf_t * buf, const char *channel, const drc_g
   RendererSystemStatus *self = (RendererSystemStatus*) user_data; 
   self->last_grasp_opt_status_utime = bot_timestamp_now();//msg->utime; use system time hear to maintain heart beat from drake  
 }
+
+static void
+on_tactile_state(const lcm_recv_buf_t * buf, const char *channel, const drc_hand_tactile_state_t *msg, void *user_data){
+  RendererSystemStatus *self = (RendererSystemStatus*) user_data; 
+  
+  if ( ( channel == "IROBOT_L_HAND_TACTILE_STATE") || ( channel == "SANDIA_L_HAND_TACTILE_STATE") ){
+    self->left_hand_contact = msg->signal;
+  }else if( ( channel == "IROBOT_R_HAND_TACTILE_STATE") || ( channel == "SANDIA_R_HAND_TACTILE_STATE") ){
+    self->right_hand_contact = msg->signal;
+  }
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -348,7 +365,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       }
       
 	  x = 0 ;// hind * 150 + 120;
-   	  y = gl_height + (-i - 7) * line_height;
+   	  y = gl_height + (-i - 9) * line_height;
       if ( self->frequency_list[i] > happy_freq_thres ){
   	  glColor3f(  0.0, 0.8, 0.0 );
       }else{
@@ -364,44 +381,46 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
   char line[80];
   snprintf(line, 70,  "ee speed 00.0 ms/s");
   glColor3f(  0.0, 0.0, 0.8 );
-  glRasterPos2f(0, gl_height + (0 - self->frequency_list.size()  - 7) * line_height );
+  glRasterPos2f(0, gl_height + (0 - self->frequency_list.size()  - 9) * line_height );
   glutBitmapString(font, (unsigned char*) line);  
  
   snprintf(line, 70,  "joint speed 00 deg/s");
   glColor3f(  0.0, 0.0, 0.8 );
-  glRasterPos2f(0, gl_height + (-1 - self->frequency_list.size()  - 7) * line_height);
+  glRasterPos2f(0, gl_height + (-1 - self->frequency_list.size()  - 9) * line_height);
   glutBitmapString(font, (unsigned char*) line);  
   
   snprintf(line, 70,  "ik sequence on/off");
   glColor3f(  0.0, 0.0, 0.8 );
-  glRasterPos2f(0, gl_height + (-2 - self->frequency_list.size()  - 7) * line_height);
+  glRasterPos2f(0, gl_height + (-2 - self->frequency_list.size()  - 9) * line_height);
   glutBitmapString(font, (unsigned char*) line);  
 
   snprintf(line, 70,  "manip plan from current");
   glColor3f(  0.0, 0.0, 0.8 );
-  glRasterPos2f(0, gl_height + (-3 - self->frequency_list.size()  - 7) * line_height);
+  glRasterPos2f(0, gl_height + (-3 - self->frequency_list.size()  - 9) * line_height);
   glutBitmapString(font, (unsigned char*) line);  
   
   
   /// Status Block:  
   char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
   
-  // disabled_for_cleanup
+  snprintf(line1,70, "hand contact");
+  snprintf(line2,70, "L %2.2f  R %2.2f", self->left_hand_contact, self->right_hand_contact  ); // add logic and coloring here
+  
   int64_t now = bot_timestamp_now();
   if(now > (self->last_grasp_opt_status_utime + 4*1E6)){
-    snprintf(line1,70, "%d affs. pool missing",self->naffs);
+    snprintf(line3,70, "%d affs. pool missing",self->naffs);
   }else{
-    snprintf(line1,70, "%d affs. pool ready",self->naffs);
+    snprintf(line3,70, "%d affs. pool ready",self->naffs);
   }
   
   snprintf(line4,70, " pitch%5.2f hd%5.2f",self->pitch,self->head_pitch);
   snprintf(line5,70, "  roll%5.2f hd%5.2f",self->roll,self->head_roll); 
   snprintf(line6,70, "height%5.2f hd%5.2f",self->height,self->head_height); 
-  if ((self->left_contact==1)&& (self->right_contact==1) ){
+  if ((self->left_foot_contact==1)&& (self->right_foot_contact==1) ){
     snprintf(line7,70, "  feet LR %5.2f", self->foot_spacing);
-  }else if(self->left_contact==1){
+  }else if(self->left_foot_contact==1){
     snprintf(line7,70, "  feet L* %5.2f", self->foot_spacing);
-  }else if(self->right_contact==1){
+  }else if(self->right_foot_contact==1){
     snprintf(line7,70, "  feet *R %5.2f", self->foot_spacing);
   }else{
     snprintf(line7,70, "  feet ** %5.2f", self->foot_spacing);
@@ -447,7 +466,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
   
     
   int x = 0;
-  int y = gl_height - 6 * line_height;
+  int y = gl_height - 8 * line_height;
 
   int x_pos = 189; // text lines x_position
   if (self->shading){
@@ -469,28 +488,36 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
     glEnd();  
   }
 
-  glColor3fv(safe_colors[2]);
+  glColor3fv(safe_colors[0]);
   glRasterPos2f(x, y );
   glutBitmapString(font, (unsigned char*) line1);
+
+  glColor3fv(safe_colors[1]);
+  glRasterPos2f(x, y + 1 * line_height );
+  glutBitmapString(font, (unsigned char*) line2);
+  
+  glColor3fv(safe_colors[2]);
+  glRasterPos2f(x, y + 2 * line_height );
+  glutBitmapString(font, (unsigned char*) line3);
   
   glColor3fv(safe_colors[0]);
-  glRasterPos2f(x, y + 1 * line_height);
+  glRasterPos2f(x, y + 3 * line_height);
   glutBitmapString(font, (unsigned char*) line4);
   glColor3fv(safe_colors[1]);
-  glRasterPos2f(x, y + 2 * line_height);
+  glRasterPos2f(x, y + 4 * line_height);
   glutBitmapString(font, (unsigned char*) line5);
   glColor3fv(safe_colors[2]);
-  glRasterPos2f(x, y + 3 * line_height);
+  glRasterPos2f(x, y + 5 * line_height);
   glutBitmapString(font, (unsigned char*) line6);
 
   glColor3fv(safe_colors[0]);
-  glRasterPos2f(x, y + 4 * line_height);
+  glRasterPos2f(x, y + 6 * line_height);
   glutBitmapString(font, (unsigned char*) line7);
   glColor3fv(safe_colors[1]);
-  glRasterPos2f(x, y + 5 * line_height);
+  glRasterPos2f(x, y + 7 * line_height);
   glutBitmapString(font, (unsigned char*) line8);
   glColor3fv(safe_colors[2]);
-  glRasterPos2f(x, y + 6 * line_height);
+  glRasterPos2f(x, y + 8 * line_height);
   glutBitmapString(font, (unsigned char*) line9);
   
   
@@ -715,8 +742,8 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   self->pitch = self->head_pitch = self->roll = self->head_roll = 0;
   self->height = self->head_height = self->speed = self->cmd_speed = 0;
 
-  self->left_contact = 0.0;
-  self->right_contact = 0.0;
+  self->left_foot_contact = 0.0;
+  self->right_foot_contact = 0.0;
   self->estimated_biases_converged=0.0;
   self->controller_state= DRC_CONTROLLER_STATUS_T_UNKNOWN;
   self->controller_utime= 0;
@@ -726,6 +753,8 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   self->last_grasp_opt_status_utime = 0;
   self->foot_spacing = 0;
   
+  self->right_hand_contact = 0;
+  self->left_hand_contact = 0;
   
   std::string channel_name ="SAM";
   self->msgchannels.push_back(channel_name);
@@ -750,6 +779,9 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   drc_controller_status_t_subscribe(self->lcm,"CONTROLLER_STATUS",on_controller_status,self);
   drc_estimated_biases_t_subscribe(self->lcm,"ESTIMATED_ACCEL_BIASES",on_estimated_bias,self);
   drc_grasp_opt_status_t_subscribe(self->lcm,"GRASP_OPT_STATUS",on_grasp_opt_status, self);
+
+  drc_hand_tactile_state_t_subscribe(self->lcm,"*_TACTILE_STATE",on_tactile_state, self);
+  
   
   self->param_status[0] = PARAM_STATUS_0_DEFAULT;  
   self->param_status[1] = PARAM_STATUS_1_DEFAULT;  
