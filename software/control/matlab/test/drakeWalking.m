@@ -44,11 +44,11 @@ q0 = x0(1:nq);
 % create footstep and ZMP trajectories
 footstep_planner = FootstepPlanner(r);
 step_options = footstep_planner.defaults;
-for follow_spline = [0, 1]
+for follow_spline = (randperm(2)-1)
   step_options.follow_spline = follow_spline;
-  for allow_optimization = [0, 1]
+  for allow_optimization = (randperm(2)-1)
     step_options.allow_optimization = allow_optimization;
-    for right_foot_lead = [-1, 0, 1]
+    for right_foot_lead = (randperm(3)-2)
       step_options.right_foot_lead = right_foot_lead;
       step_options.max_num_steps = 100;
       step_options.min_num_steps = 2;
