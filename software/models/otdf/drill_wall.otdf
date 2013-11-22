@@ -4,7 +4,7 @@
     <!-- World frame origin of the object -->
     <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
     <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
-    <param name="z" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="0.9144" inc="0.001" min="-100" max="100" />
     <!--roll,pitch,yaw are about Body Frame-->
     <param name="roll" default_value="0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="0" inc="0.01" min="-3.1416" max="3.1416" />
@@ -16,7 +16,7 @@
     <param name="p1y" default_value="0.0" inc="0.005" min="-100" max="100" />
     <param name="p1z" default_value="0.0" inc="0.005" min="-100" max="100" />
     <param name="p2y" default_value="0.0" inc="0.005" min="-100" max="100" />
-    <param name="p2z" default_value="0.609" inc="0.005" min="-100" max="100" />
+    <param name="p2z" default_value="0.305" inc="0.005" min="-100" max="100" />
     <param name="p3y" default_value="-0.609" inc="0.005" min="-100" max="100" />
     <param name="p3z" default_value="0.0" inc="0.005" min="-100" max="100" />
 
