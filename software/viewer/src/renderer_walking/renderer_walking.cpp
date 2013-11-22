@@ -435,7 +435,7 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.45);  
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
     bot_gtk_param_widget_set_double(self->drake_pw, PARAM_MU, 1.0);  
-    bot_gtk_param_widget_set_bool(self->main_pw,PARAM_IGNORE_TERRAIN, TRUE);
+    bot_gtk_param_widget_set_bool(self->ignore_terrain_pw,PARAM_IGNORE_TERRAIN, TRUE);
     bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_WALKING);
     bot_gtk_param_widget_set_bool(self->main_pw,PARAM_FORCE_STICKY_FEET, TRUE);
   }
