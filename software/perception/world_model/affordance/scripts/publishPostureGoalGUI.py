@@ -120,6 +120,12 @@ def getHoseMate():
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
+def getPoolQueueMini():
+  position=[0.11807117, 0,-2.10062, 2.4081,    -1.11795,  0.951634, 0.785398,          2.97983]
+  name=["back_bkx", "back_bkz", "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position, name]
+
+
 def getPoolQueue():
   position=[-0.6583873,-0.493037, 3.08459508499, 1.1543736, 0.276259120, 0.785398000, 2.769477100]
   name=["back_bkz", "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
@@ -176,10 +182,12 @@ def keypress(input_char):
   elif (input_char == "d"):
     [msg.joint_position, msg.joint_name] = getCrane()
   elif (input_char == "z"):
-    [msg.joint_position, msg.joint_name] = getPoolQueue()
+    [msg.joint_position, msg.joint_name] = getPoolQueueMini()
   elif (input_char == "x"):
-    [msg.joint_position, msg.joint_name] = getTurnBack()
+    [msg.joint_position, msg.joint_name] = getPoolQueue()
   elif (input_char == "c"):
+    [msg.joint_position, msg.joint_name] = getTurnBack()
+  elif (input_char == "v"):
     [msg.joint_position, msg.joint_name] = getRetract()
 
   if (posture_side == "l"):
@@ -197,7 +205,7 @@ def draw_string(screen, font, x, y, string):
 if __name__ == '__main__':
   pygame.init()
   screen = pygame.display.set_mode((800, 640))
-  pygame.display.set_caption('Minimal Dual-Hand Keyboard Teleop')
+  pygame.display.set_caption('Posture Library')
   font = pygame.font.SysFont("monospace", 20)
   draw_string(screen, font, 10, 30,  "1 cradle      - close to robot, hand upside down")
   draw_string(screen, font, 10, 50,  "2 hang        - hand just about cradle. thumb in")
@@ -214,9 +222,10 @@ if __name__ == '__main__':
   draw_string(screen, font, 10, 270, "s shooterback - hand up and finger away, back straight")
   draw_string(screen, font, 10, 290, "d crane       - hand pointing down from in front")
 
-  draw_string(screen, font, 10, 330, "z poolqueue   - draw hand back with face down")
-  draw_string(screen, font, 10, 350, "x turn back   - turn the back z joint")
-  draw_string(screen, font, 10, 370, "c retract     - turn back and retract hand")
+  draw_string(screen, font, 10, 330, "z minipoolque - lean back away and pull arm back")
+  draw_string(screen, font, 10, 350, "x poolqueue   - draw hand back with face down")
+  draw_string(screen, font, 10, 370, "c turn back   - turn the back z joint")
+  draw_string(screen, font, 10, 390, "v retract     - turn back and retract hand")
 
 
 
