@@ -60,7 +60,7 @@ namespace renderer_affordances
  	   if(msg->worker_available==false)
  	    _worker_reservation[msg->worker_id-1] =false; // unreserve as it is engaged
 
-	  bot_gtk_param_widget_set_bool(_parent_renderer->pw,PARAM_OPT_POOL_READY,_worker_pool_ready); // TODO: need a time-out
+	// disabled in clear up  bot_gtk_param_widget_set_bool(_parent_renderer->pw,PARAM_OPT_POOL_READY,_worker_pool_ready); // TODO: need a time-out
 
   } // end handleMessage
 
