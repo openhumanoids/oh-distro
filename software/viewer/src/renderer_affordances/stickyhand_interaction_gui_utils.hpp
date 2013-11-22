@@ -48,14 +48,7 @@ namespace renderer_affordances_gui_utils
           
           KDL::Frame T_world_palm, T_geometry_stickyhandbase,T_geometry_palm,T_palm_stickyhandbase; 
           std::string ee_name;
-          if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)
-             ee_name = "left_palm";
-          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)
-             ee_name = "right_palm";
-          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)
-             ee_name = "left_base_link";
-          else if(hand_it->second.hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)
-             ee_name = "right_base_link";
+          visualization_utils::get_hand_palm_link_name(hand_it->second.hand_type,ee_name);
              
           T_geometry_stickyhandbase = hand_it->second._gl_hand->_T_world_body;
           hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_palm);         
@@ -117,20 +110,18 @@ namespace renderer_affordances_gui_utils
       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
 
       drc::grasp_opt_control_t msg; // just to access types
-      int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+      int grasp_type = hand_it->second.hand_type;
+      std::string ee_name;
+      visualization_utils::get_hand_palm_link_name(grasp_type,ee_name);
+           
         //publish ee goal msg.
-        if(grasp_type == msg.SANDIA_LEFT){
-          publish_desired_hand_motion(hand_it->second,"left_palm","DESIRED_LEFT_PALM_MOTION",self);
-         }
-        else if(grasp_type== msg.SANDIA_RIGHT){
-          publish_desired_hand_motion( hand_it->second,"right_palm","DESIRED_RIGHT_PALM_MOTION",self);
+        if((grasp_type == msg.SANDIA_LEFT)||(grasp_type== msg.IROBOT_LEFT)||(grasp_type== msg.ROBOTIQ_LEFT)||(grasp_type== msg.INERT_LEFT)){
+          publish_desired_hand_motion(hand_it->second,ee_name,"DESIRED_LEFT_PALM_MOTION",self);
         }
-        else if(grasp_type== msg.IROBOT_LEFT){
-          publish_desired_hand_motion( hand_it->second,"left_base_link","DESIRED_LEFT_PALM_MOTION",self);
+        else if((grasp_type == msg.SANDIA_RIGHT)||(grasp_type== msg.IROBOT_RIGHT)||(grasp_type== msg.ROBOTIQ_RIGHT)||(grasp_type== msg.INERT_RIGHT)){
+          publish_desired_hand_motion( hand_it->second,ee_name,"DESIRED_RIGHT_PALM_MOTION",self);
         }
-        else if(grasp_type== msg.IROBOT_RIGHT){
-          publish_desired_hand_motion( hand_it->second,"right_base_link","DESIRED_RIGHT_PALM_MOTION",self);
-        }                
+                  
     }
     
     else if ((!strcmp(name, PARAM_GRASP_UNGRASP))||(!strcmp(name, PARAM_POWER_GRASP))) {
@@ -155,22 +146,16 @@ namespace renderer_affordances_gui_utils
         
         bool squeeze_flag = false;
         int squeeze_amount = 1.0;
-
-        //publish desired_grasp_state_t on COMMITED_GRASP msg.
-            //publish ee goal msg.
-        if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.IROBOT_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.IROBOT_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);            
+        
+        std::string ee_name,hand_name;
+        visualization_utils::get_hand_palm_link_name(grasp_type,ee_name);
+        visualization_utils::get_hand_name(grasp_type,hand_name);
+        publish_grasp_state_for_execution(hand_it->second,ee_name,hand_name,"COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
         hand_it->second.grasp_status = !hand_it->second.grasp_status;  
       }
      
     }
-     else if ((!strcmp(name, PARAM_SQUEEZE))) {
+    else if ((!strcmp(name, PARAM_SQUEEZE))) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
       
@@ -197,20 +182,13 @@ namespace renderer_affordances_gui_utils
 
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
             //publish ee goal msg.
-        if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.IROBOT_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.IROBOT_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);            
+        std::string ee_name,hand_name;
+        visualization_utils::get_hand_palm_link_name(grasp_type,ee_name);
+        visualization_utils::get_hand_name(grasp_type,hand_name);    
+        publish_grasp_state_for_execution(hand_it->second,ee_name,hand_name,"COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self); 
         hand_it->second.grasp_status = !hand_it->second.grasp_status;  
-      }
-     
-    }   
-    
-    
+      }     
+    } 
     else if ((!strcmp(name, PARAM_GRASP))||(!strcmp(name, PARAM_UNGRASP))||(!strcmp(name, PARAM_POWER_GRASP))) {
       typedef map<string, StickyHandStruc > sticky_hands_map_type_;
       sticky_hands_map_type_::iterator hand_it = self->stickyHandCollection->_hands.find(self->stickyhand_selection);
@@ -225,28 +203,19 @@ namespace renderer_affordances_gui_utils
       if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
         cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
       else { 
-        drc::desired_grasp_state_t msg; // just to access types
-        int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
-        
+        int grasp_type = hand_it->second.hand_type;
         bool power_flag = !strcmp(name, PARAM_POWER_GRASP);
         bool squeeze_flag = false;
         int squeeze_amount = 1.0;
-        
         if(power_flag)
          val=true;
-        
 
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
-            //publish ee goal msg.
-        if(grasp_type == msg.SANDIA_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.IROBOT_LEFT)
-          publish_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);
-        else if(grasp_type== msg.IROBOT_RIGHT)
-          publish_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self);            
-        //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
+        std::string ee_name,hand_name;
+        visualization_utils::get_hand_palm_link_name(grasp_type,ee_name);
+        visualization_utils::get_hand_name(grasp_type,hand_name);    
+        publish_grasp_state_for_execution(hand_it->second,ee_name,hand_name,"COMMITTED_GRASP",T_world_graspgeometry,val,power_flag,squeeze_flag,squeeze_amount,self); 
+        
         hand_it->second.grasp_status = val;
       }
      
@@ -264,22 +233,15 @@ namespace renderer_affordances_gui_utils
       
       if(!obj_it->second._gl_object->get_link_geometry_frame(string(hand_it->second.geometry_name),T_world_graspgeometry))
         cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
-      else { 
-        drc::desired_grasp_state_t msg; // just to access types
+      else {
         //publish desired_grasp_state_t on COMMITED_GRASP msg.
-            //publish ee goal msg.
-    
+        std::string ee_name,hand_name;
         int grasp_type = hand_it->second.hand_type;
-        if(grasp_type == msg.SANDIA_LEFT)
-          publish_partial_grasp_state_for_execution(hand_it->second,"left_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
-        else if(grasp_type== msg.SANDIA_RIGHT)
-          publish_partial_grasp_state_for_execution(hand_it->second,"right_palm","sandia","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
-        else if(grasp_type== msg.IROBOT_LEFT)
-          publish_partial_grasp_state_for_execution(hand_it->second,"left_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
-        else if(grasp_type== msg.IROBOT_RIGHT)
-          publish_partial_grasp_state_for_execution(hand_it->second,"right_base_link","irobot","COMMITTED_GRASP",T_world_graspgeometry, g_status, self);
-    
-            //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
+        visualization_utils::get_hand_palm_link_name(grasp_type,ee_name);
+        visualization_utils::get_hand_name(grasp_type,hand_name);    
+        publish_partial_grasp_state_for_execution(hand_it->second,ee_name,hand_name,"COMMITTED_GRASP",T_world_graspgeometry, g_status, self); 
+       
+        //hand_it->second.grasp_status = !hand_it->second.grasp_status;  
         hand_it->second.partial_grasp_status = g_status; 
       }
       
@@ -326,19 +288,17 @@ namespace renderer_affordances_gui_utils
         int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
 
         bool reach_flag = !strcmp(name, PARAM_REACH);
-
+        
+        std::string ee_name,hand_name;
+        visualization_utils::get_hand_palm_link_name(grasp_type,ee_name);
+        visualization_utils::get_hand_name(grasp_type,hand_name);    
+        
         //publish ee goal msg.
-        if(grasp_type == msg.SANDIA_LEFT) {
-           publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_palm","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag);
+         if((grasp_type == msg.SANDIA_LEFT)||(grasp_type== msg.IROBOT_LEFT)||(grasp_type== msg.ROBOTIQ_LEFT)||(grasp_type== msg.INERT_LEFT)) {
+           publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,ee_name,"LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag);
         }
-        else if(grasp_type== msg.SANDIA_RIGHT) {
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_palm","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
-        }
-        else if(grasp_type== msg.IROBOT_LEFT) {
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_base_link","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag); // TODO: change channel name?
-        }
-        else if(grasp_type== msg.IROBOT_RIGHT) {
-          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_base_link","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
+        else if((grasp_type == msg.SANDIA_RIGHT)||(grasp_type== msg.IROBOT_RIGHT)||(grasp_type== msg.ROBOTIQ_RIGHT)||(grasp_type== msg.INERT_RIGHT)) {
+          publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,ee_name,"RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
         }
       }
  
@@ -411,21 +371,18 @@ namespace renderer_affordances_gui_utils
         cerr << " failed to retrieve " << hand_it->second.geometry_name<<" in object " << hand_it->second.object_name <<endl;
         else { 
           drc::grasp_opt_control_t msg; // just to access types
-          int grasp_type = hand_it->second.hand_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
-
+          int grasp_type = hand_it->second.hand_type;
+          std::string ee_name,hand_name;
+          visualization_utils::get_hand_palm_link_name(grasp_type,ee_name);
+          visualization_utils::get_hand_name(grasp_type,hand_name);    
           //publish ee goal msg.
-          if(grasp_type == msg.SANDIA_LEFT) {
-             publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_palm","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag);
+           if((grasp_type == msg.SANDIA_LEFT)||(grasp_type== msg.IROBOT_LEFT)||(grasp_type== msg.ROBOTIQ_LEFT)||(grasp_type== msg.INERT_LEFT)) {
+             publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,ee_name,"LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag);
           }
-          else if(grasp_type== msg.SANDIA_RIGHT) {
-            publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_palm","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
+          else if((grasp_type == msg.SANDIA_RIGHT)||(grasp_type== msg.IROBOT_RIGHT)||(grasp_type== msg.ROBOTIQ_RIGHT)||(grasp_type== msg.INERT_RIGHT)) {
+            publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,ee_name,"RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
           }
-          else if(grasp_type== msg.IROBOT_LEFT) {
-            publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"left_base_link","LEFT_PALM_GOAL",T_world_graspgeometry,reach_flag); // TODO: change channel name?
-          }
-          else if(grasp_type== msg.IROBOT_RIGHT) {
-            publish_eegoal_to_sticky_hand(self->lcm, hand_it->second,"right_base_link","RIGHT_PALM_GOAL",T_world_graspgeometry,reach_flag);
-          }
+       
         }      
        }
        else if((!strcmp(name, PARAM_UNMELD_AND_RETRACT))) {

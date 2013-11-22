@@ -776,7 +776,13 @@ namespace renderer_affordances_gui_utils
     else if ((!strcmp(name, PARAM_SEED_LH))||(!strcmp(name, PARAM_SEED_RH))) {
       bool is_sandia_left = (self->urdf_filenames[self->lhand_urdf_id]=="sandia_hand_left");
       bool is_sandia_right = (self->urdf_filenames[self->rhand_urdf_id]=="sandia_hand_right");
-
+      bool is_irobot_left = (self->urdf_filenames[self->lhand_urdf_id]=="irobot_hand_left");
+      bool is_irobot_right = (self->urdf_filenames[self->rhand_urdf_id]=="irobot_hand_right");
+      bool is_robotiq_left = (self->urdf_filenames[self->lhand_urdf_id]=="robotiq_hand_left");
+      bool is_robotiq_right = (self->urdf_filenames[self->rhand_urdf_id]=="robotiq_hand_right");
+      bool is_inert_left = (self->urdf_filenames[self->lhand_urdf_id]=="inert_hand_left");
+      bool is_inert_right = (self->urdf_filenames[self->rhand_urdf_id]=="inert_hand_right");
+      
       drc::grasp_opt_control_t msg;
       int grasp_type;
       KDL::Frame T_geom_lhandpose = KDL::Frame::Identity();
@@ -785,11 +791,19 @@ namespace renderer_affordances_gui_utils
       if(!strcmp(name, PARAM_SEED_LH))
       {
         if(is_sandia_left){
-          grasp_type = msg.SANDIA_LEFT;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+          grasp_type = msg.SANDIA_LEFT;
           T_geom_lhandpose = self->T_graspgeometry_lhandinitpos_sandia;
         }
-        else {
+        else if(is_irobot_left){
           grasp_type = msg.IROBOT_LEFT;
+          T_geom_lhandpose = self->T_graspgeometry_lhandinitpos_irobot;
+        }
+         else if(is_robotiq_left){
+          grasp_type = msg.ROBOTIQ_LEFT;
+          T_geom_lhandpose = self->T_graspgeometry_lhandinitpos_irobot;
+        }
+        else if(is_inert_left){
+          grasp_type = msg.INERT_LEFT;
           T_geom_lhandpose = self->T_graspgeometry_lhandinitpos_irobot;
         }
         
@@ -797,13 +811,21 @@ namespace renderer_affordances_gui_utils
       else if(!strcmp(name, PARAM_SEED_RH))
       {
         if(is_sandia_right){
-         grasp_type = msg.SANDIA_RIGHT;//or SANDIA_LEFT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+         grasp_type = msg.SANDIA_RIGHT;
            T_geom_rhandpose = self->T_graspgeometry_rhandinitpos_sandia;
         }
-        else{
+        else if(is_irobot_right){
           grasp_type = msg.IROBOT_RIGHT; 
           T_geom_rhandpose = self->T_graspgeometry_rhandinitpos_irobot;
         }
+        else if(is_robotiq_right){
+          grasp_type = msg.ROBOTIQ_RIGHT; 
+          T_geom_rhandpose = self->T_graspgeometry_rhandinitpos_irobot;
+        }
+        else if(is_inert_right){
+          grasp_type = msg.INERT_RIGHT; 
+          T_geom_rhandpose = self->T_graspgeometry_rhandinitpos_irobot;
+        }                
       }
       
       /*      

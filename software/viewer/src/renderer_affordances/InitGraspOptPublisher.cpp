@@ -56,7 +56,7 @@ namespace renderer_affordances
     msg.unique_id = uid; 
     msg.drake_control = drake_control;
     //grasp_type and contact_mask are set by the rightclk pop up event manager
-    msg.grasp_type = grasp_type;//msg.SANDIA_LEFT; // how to set this? 
+    msg.grasp_type = grasp_type;//msg.SANDIA_LEFT etc... defined in drc::grasp_opt_control_t and desired_grasp_state_t
     msg.contact_mask = contact_mask;//msg.ALL;
     
     typedef std::map<std::string, OtdfInstanceStruc > object_instance_map_type_;
@@ -144,42 +144,5 @@ namespace renderer_affordances
 
 //-------------------------------------------------------------------------------------        
 
-
-
 } //end namespace 
-
-//struct grasp_opt_control_t 
-//{
-//    int64_t utime;    
-//    string robot_name; // parent robot name
-//    
-//    // unique way to associate a grasp with a object geometry in the scene
-//    // object_name + geometry name + "_grasp_" + unique_hand_id;
-//    // e.g. steering_wheel_1_torus_grasp_1 where {object:"steering_wheel_1"} {geometry: "torus"}
-//    string object_name; 
-//    string geometry_name; 
-//    int32_t  unique_id;
-//    
-//    int16_t drake_control;
-//    const int16_t NEW=0, RESET=1, HALT=2; // is interruption for reset or halting even possible in drake?
-//        
-//    //The type of hand (left, right or both) to be used 
-//    int16_t grasp_type; // see constants below 
-//    const int16_t SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
-//    
-//    // power grasp or precision grasp, for small objects a finger grasp is required.
-//    int16_t contact_mask;// see constants below 
-//    const int16_t ALL=0, FINGERS_ONLY=1; 
-//    
-//    //The type of object to be grasped
-//    int16_t geometry_type; // see constants below 
-//    const int16_t SPHERE=0, CYLINDER=1, BOX=2, TORUS=4; 
-//    int32_t num_dims;
-//    double dims[num_dims]; // sphere: dims = [radius]; cylinder: dims = [radius,length];box: dims = [span_x,span_y,span_z]; torus: dims = [radius,tube_radius];
-//    
-//    // initial positions of left/right hands in object frame;
-//    position_3d_t l_hand_init_pose; 
-//    position_3d_t r_hand_init_pose; 
-//}
-
 

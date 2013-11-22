@@ -38,11 +38,11 @@ namespace renderer_affordances_gui_utils
           sticky_feet_map_type_::iterator foot_it = self->stickyFootCollection->_feet.find(self->stickyfoot_selection);
           
           drc::grasp_opt_control_t msg; // just to access types
-          int grasp_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH; 
+          int grasp_type = foot_it->second.foot_type;// 0 for left and 1 for right
           //publish ee goal msg.
-          if(grasp_type == msg.SANDIA_LEFT)
+          if(grasp_type == 0)
               publish_desired_foot_motion(foot_it->second,"l_foot","DESIRED_L_FOOT_MOTION",self);
-          else if(grasp_type== msg.SANDIA_RIGHT)
+          else if(grasp_type== 1)
               publish_desired_foot_motion( foot_it->second,"r_foot","DESIRED_R_FOOT_MOTION",self);
       }
       else if ((!strcmp(name, PARAM_TOUCH))||(!strcmp(name, PARAM_REACH))) {
@@ -58,7 +58,7 @@ namespace renderer_affordances_gui_utils
               cerr << " failed to retrieve " << foot_it->second.geometry_name<<" in object " << foot_it->second.object_name <<endl;
           else { 
               // just to access types
-              int foot_type = foot_it->second.foot_type;//or SANDIA_RIGHT,SANDIA_BOTH,IROBOT_LEFT,IROBOT_RIGHT,IROBOT_BOTH;
+              int foot_type = foot_it->second.foot_type;// 0 for left and 1 for right
               bool touch_flag = !strcmp(name, PARAM_TOUCH);
               bool reach_flag = !strcmp(name, PARAM_REACH);
               

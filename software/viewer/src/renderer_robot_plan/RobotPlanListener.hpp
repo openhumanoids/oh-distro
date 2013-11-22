@@ -436,7 +436,7 @@ namespace renderer_robot_plan
       deactivate_multi_approval();  
 		};
 		
-		bool activate_manip_plan()
+		void activate_manip_plan()
     {
       _is_manip_plan =true;
       _is_manip_map =false;
@@ -446,7 +446,7 @@ namespace renderer_robot_plan
       }
 		};
 		
-		bool activate_manip_map()
+		void activate_manip_map()
     {
       _is_manip_plan =false;
       _is_manip_map =true;
@@ -456,7 +456,7 @@ namespace renderer_robot_plan
       deactivate_multi_approval(); 
 		};
 		
-		bool activate_multi_approval()
+		void activate_multi_approval()
     {
       _is_multi_approve_plan =true;
       _current_plan_committed = false;
@@ -464,7 +464,7 @@ namespace renderer_robot_plan
       _retractable_cycle_counter = 0;     
 		};
 		
-		bool deactivate_multi_approval()
+		void deactivate_multi_approval()
     {
       _is_multi_approve_plan =false;
       _active_breakpoint=0;
