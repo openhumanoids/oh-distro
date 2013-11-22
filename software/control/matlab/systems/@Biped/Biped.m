@@ -32,7 +32,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         'max_forward_step', 0.3,...%m
         'max_step_width', 0.35,...%m
         'max_step_dz', 0.4,...%m
-        'min_step_width', 0.26,...%m
+        'min_step_width', 0.21,...%m
         'nom_step_width', 0.28,...%m (nominal step width)
         'nom_step_clearance', 0.04,...%m
         'max_step_rot', pi/8,... % rad
@@ -137,13 +137,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       end
     end
 
-    function [A, b] = getFootstepDiamondCons(obj, p0_is_right_foot, options)
-      % Alternative (experimental) formulation of footstep linear constraints, in which the reachable region is defined by a diamond which extends out to the max forward and backward distances only at the nominal step width, rather than a rectangle defined by the max forward/back step and the max/min step width.
-
-      if nargin < 3
-        options = struct();
-      end
-
+    function options = getReachabilityOptions(obj, options)
       if ~isfield(options, 'forward_step')
         options.forward_step = obj.max_forward_step;
       end
@@ -154,7 +148,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.05]);
       end
       if ~isfield(options, 'min_step_width')
-        options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
+        options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.05]);
       end
       if ~isfield(options, 'backward_step')
         options.backward_step = options.forward_step;
@@ -165,10 +159,19 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       if ~isfield(options, 'max_inward_step_rot')
         options.max_inward_step_rot = 0.00; % BDI walker doesn't allow toe to rotate inward at all
       end
-
       if ~isfield(options, 'max_step_dz')
         options.max_step_dz = obj.max_step_dz;
       end
+    end
+
+    function [A, b] = getFootstepDiamondCons(obj, p0_is_right_foot, options)
+      % Alternative (experimental) formulation of footstep linear constraints, in which the reachable region is defined by a diamond which extends out to the max forward and backward distances only at the nominal step width, rather than a rectangle defined by the max forward/back step and the max/min step width.
+
+      if nargin < 3
+        options = struct();
+      end
+
+      options = getReachabilityOptions(obj, options);
 
       [Axy, bxy] = poly2lincon([0, options.forward_step, 0, -options.backward_step], [options.min_step_width, options.nom_step_width, options.max_step_width, options.nom_step_width]);
       A = [Axy, zeros(4, 4);
@@ -193,31 +196,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       if nargin < 3
         options = struct();
       end
-
-      if ~isfield(options, 'forward_step')
-        options.forward_step = obj.max_forward_step;
-      end
-      if ~isfield(options, 'nom_step_width')
-        options.nom_step_width = obj.nom_step_width;
-      end
-      if ~isfield(options, 'max_step_width')
-        options.max_step_width = max([obj.max_step_width, options.nom_step_width + 0.05]);
-      end
-      if ~isfield(options, 'min_step_width')
-        options.min_step_width = min([obj.min_step_width, options.nom_step_width - 0.01]);
-      end
-      if ~isfield(options, 'backward_step')
-        options.backward_step = options.forward_step;
-      end
-      if ~isfield(options, 'max_step_rot')
-        options.max_outward_step_rot = obj.max_step_rot;
-      end
-      if ~isfield(options, 'max_inward_step_rot')
-        options.max_inward_step_rot = 0.1; % BDI walker doesn't allow toe to rotate inward at all
-      end
-      if ~isfield(options, 'max_step_dz')
-        options.max_step_dz = obj.max_step_dz;
-      end
+      options = getReachabilityOptions(obj, options);
+      options.max_inward_step_rot = 0.1;
 
       A = [1 0 0 0 0 0;
            -1 0 0 0 0 0;
