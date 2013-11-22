@@ -6,6 +6,7 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
   properties
     robot;
     params_pub;
+    params_listener;
     controller_data;
   end
   
@@ -44,6 +45,7 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
       obj.controller_data = controller_data;
       obj.params_pub = AtlasManipParamsPublisher('ATLAS_MANIPULATE_PARAMS');
+      obj.params_listener = AtlasManipParamsListener('ATLAS_STATUS');
     end
    
     function y=mimoOutput(obj,t,~,varargin)
@@ -52,15 +54,17 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
       qtraj = obj.controller_data.data.qtraj;
       
       if isa(qtraj,'PPTrajectory') && t<=qtraj.tspan(end)
+        cur_params = obj.params_listener.getMessage();
+        
         % only support pelvis height for the time being
         foot_z = getFootHeight(obj.robot,x(1:getNumDOF(obj.robot)));
         params.pelvis_height = max(obj.robot.pelvis_min_height, ...
           min(obj.robot.pelvis_max_height,q_des(3)-foot_z));
-        params.pelvis_yaw = 0;
-        params.pelvis_pitch = 0;
-        params.pelvis_roll = 0;
-        params.com_v0 = 0;
-        params.com_v1 = 0;
+        params.pelvis_yaw = cur_params.pelvis_yaw;
+        params.pelvis_pitch = cur_params.pelvis_pitch;
+        params.pelvis_roll = cur_params.pelvis_roll;
+        params.com_v0 = cur_params.com_v0;
+        params.com_v1 = cur_params.com_v1;
         obj.params_pub.publish(params);
       end
       
