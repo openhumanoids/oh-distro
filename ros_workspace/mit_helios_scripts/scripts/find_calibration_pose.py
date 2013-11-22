@@ -4,23 +4,25 @@ from IRobotHandController import IRobotHandController
 import numpy
 
 def get_motor_encoder_offsets(controller):
-    return dict((i, controller.config_parser.get_motor_encoder_offset(i)) for i in controller.get_motor_indices())
+    return dict((i, controller.config_parser.get_motor_encoder_offset(i)) for i in controller.get_close_hand_motor_indices())
 
 if __name__ == '__main__':
     controller = IRobotHandController('r')
-    motor_indices = controller.get_motor_indices()
+    motor_indices = controller.get_close_hand_motor_indices()
     zero_pose = dict((i, 0) for i in motor_indices)
     
-    repetitions = 1
+    repetitions = 10
     open_hand_time = 5 # to settle down and also to let the motors cool down
     open_hand_amount = 4000
     open_hand_desireds = dict((i, -open_hand_amount) for i in motor_indices)
     
     calibration_poses = dict((i, []) for i in motor_indices)
     for i in range(repetitions):
+        print('Repetition %s of %s' % (i + 1, repetitions))
         # calibrate with zero offset
-        controller.calibrate_motor_encoder_offsets(zero_pose)
+        controller.calibrate_motor_encoder_offsets_given_pose(zero_pose)
         offsets = get_motor_encoder_offsets(controller)
+        controller.clear_config()
         
         # save calibration pose
         [calibration_poses[motor_index].append(offsets[motor_index]) for motor_index in motor_indices]

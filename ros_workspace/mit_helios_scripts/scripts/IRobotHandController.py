@@ -23,6 +23,9 @@ finger_spread_ticks_to_radians = 2 * math.pi / 3072 # 3072 per 180 degrees as st
 
 
 # found using find_calibration_pose.
+# standard deviations: {0: 17.373543104387203, 1: 39.097442371592543, 2: 27.349588662354687}
+#jig_pose = {0: 7234.6000000000004, 1: 7348.3000000000002, 2: 6930.0}
+
 # standard deviations: {0: 48.75612781999817, 1: 36.558993421591907, 2: 27.37243138634199}
 jig_pose = {0: 8170.8000000000002, 1: 7925.8000000000002, 2: 8406.5}
 
@@ -30,6 +33,7 @@ jig_pose = {0: 8170.8000000000002, 1: 7925.8000000000002, 2: 8406.5}
 hand_closed_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
 
 hand_open_desired_pose = {0: 2000, 1: 2000, 2: 2000}
+#hand_open_desired_pose = {0: 500, 1: 500, 2: 500}
 
 def set_command_message_same_value(message, control_type, indices, value):
     values = dict((motor_index, value) for motor_index in indices)
@@ -168,23 +172,25 @@ class IRobotHandController(object):
     def get_non_spread_motor_indices():
         return non_spread_motor_indices
 
-    def calibrate_motor_encoder_offsets(self, in_jig):
-        
-        if in_jig:
-            calibration_pose = jig_pose
-        else:
-            calibration_pose = hand_closed_pose
 
+    def calibrate_motor_encoder_offsets_given_pose(self, calibration_pose):
         print "Calibrating: closing hand"
         self.close_hand_current_control(300, close_hand_motor_indices)
-
         wait_time = 2
         time.sleep(wait_time)
-
         print "Calibrating: setting offsets"
         for motor_index in close_hand_motor_indices:
             current_value = self.sensors.motorHallEncoder[motor_index]
             offset = current_value - calibration_pose[motor_index]
             self.config_parser.set_motor_encoder_offset(motor_index, offset)
+        
         self.zero_current()
         self.config_parser.save()
+
+    def calibrate_motor_encoder_offsets(self, in_jig):
+        if in_jig:
+            calibration_pose = jig_pose
+        else:
+            calibration_pose = hand_closed_pose
+
+        self.calibrate_motor_encoder_offsets_given_pose(calibration_pose)
