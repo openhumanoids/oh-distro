@@ -17,7 +17,7 @@ struct grasp_opt_control_t // Usually published on INIT_GRASP_SEED to start/rese
         
     //The type of hand (left, right or both) to be used 
     int16_t grasp_type; // see constants below 
-    const int16_t SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
+    const int16_t SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5, ROBOTIQ_LEFT=6, ROBOTIQ_RIGHT=7, ROBOTIQ_BOTH=8, INERT_LEFT=9,INERT_RIGHT=10,INERT_BOTH=11; // INERT for hook end effectors and stuff.
     
     // power grasp or precision grasp, for small objects a finger grasp is required.
     int16_t contact_mask;// see constants below 

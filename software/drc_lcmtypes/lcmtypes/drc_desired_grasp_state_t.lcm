@@ -13,7 +13,7 @@ struct desired_grasp_state_t  // usually published on CANDIDATE_GRASP channel to
     int32_t unique_id;
     
     int16_t grasp_type; // see constants below 
-    const int16_t SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
+    const int16_t SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5,ROBOTIQ_LEFT=6, ROBOTIQ_RIGHT=7, ROBOTIQ_BOTH=8,INERT_LEFT=9,INERT_RIGHT=10,INERT_BOTH=11;
     boolean power_grasp; // boolean to manually indicate to the controller that torque needs to set to maximum.
     
     // end effector position that realizes the grasp. 
