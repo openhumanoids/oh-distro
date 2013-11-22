@@ -20,20 +20,14 @@ non_spread_motor_indices = range(4)
 spread_motor_index = 4
 finger_spread_ticks_to_radians = 2 * math.pi / 3072 # 3072 per 180 degrees as stated in HandleSensors.msg is wrong
 
-
-
 # found using find_calibration_pose.
-# standard deviations: {0: 17.373543104387203, 1: 39.097442371592543, 2: 27.349588662354687}
-#jig_pose = {0: 7234.6000000000004, 1: 7348.3000000000002, 2: 6930.0}
-
-# standard deviations: {0: 48.75612781999817, 1: 36.558993421591907, 2: 27.37243138634199}
-jig_pose = {0: 8170.8000000000002, 1: 7925.8000000000002, 2: 8406.5}
+# standard deviations: standard deviations: {0: 71.037736450424717, 1: 15.74166446091391, 2: 47.291013945568984}
+jig_pose = {0: 6308.8000000000002, 1: 6281.0, 2: 6555.3999999999996}
 
 # standard deviations: {0: 59.872865306414063, 1: 110.36235771312609, 2: 80.058728443561989}
 hand_closed_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
 
-hand_open_desired_pose = {0: 2000, 1: 2000, 2: 2000}
-#hand_open_desired_pose = {0: 500, 1: 500, 2: 500}
+hand_open_desired_pose = {0: 500, 1: 500, 2: 500}
 
 def set_command_message_same_value(message, control_type, indices, value):
     values = dict((motor_index, value) for motor_index in indices)

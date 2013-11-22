@@ -8,14 +8,11 @@ TODO:
 * investigate 'getting stuck' in position control mode
 
 FOCUS FOR TODAY:
-* calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
 * improve visualization
-* weekly status update
-* message queue
+* calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
 * get rid of unused methods in IRobotHandController, add optional arguments
 
 BUSY:
-* skip translation from LCM to ROS
 
 DONE:
 * ping hand
@@ -81,3 +78,8 @@ DONE:
 * add option to close a single finger
 * improve command line tool help
 * update wiki page
+* skip translation from LCM to ROS
+* weekly status update
+* make 10 spare tendons
+* fix find_calibration_pose script
+* better calibration pose
