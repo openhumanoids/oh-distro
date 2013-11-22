@@ -12,4 +12,9 @@
     <remap from="/handle/control" to="/$(arg namespace)/control"/>
     <remap from="/handle/calibrate" to="/$(arg namespace)/calibrate"/> -->
   </node>
+
+  <node pkg="handle_sensors" type="sensors_publisher.py" name="sensors_publisher" output="screen" respawn="true">
+    <remap from="/handle/sensors/raw" to="/$(arg namespace)/sensors/raw"/>
+    <remap from="/handle/sensors/calibrated" to="/$(arg namespace)/sensors/calibrated"/>
+  </node>
 </launch>
