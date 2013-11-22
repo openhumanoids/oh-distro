@@ -311,6 +311,11 @@ define_array_handler(PoseTypeRotationRateHandler, bot_core::pose_t, rotation_rat
 define_array_handler(PoseTypeAcceleration, bot_core::pose_t, accel, createIndexList(3));
 
 
+// atlas_foot_pos_est_t
+define_array_handler(AtlasFootPosEstLeftPositionHandler, drc::atlas_foot_pos_est_t, left_position, createIndexList(3));
+define_array_handler(AtlasFootPosEstRightPositionHandler, drc::atlas_foot_pos_est_t, right_position, createIndexList(3));
+
+
 // vicon body_t
 define_array_handler(ViconBodyTransHandler, vicon::body_t, trans, createIndexList(3));
 define_array_handler(ViconBodyQuatHandler, vicon::body_t, quat, createIndexList(4));
@@ -454,12 +459,12 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasStateForceTorqueRFootForceZHandler>();
     factory.registerClass<AtlasStateForceTorqueRFootTorqueXHandler>();
     factory.registerClass<AtlasStateForceTorqueRFootTorqueYHandler>();
-
     factory.registerClass<AtlasStateExtraJointPositionOutHandler>();
     factory.registerClass<AtlasStateExtraJointVelocityOutHandler>();
     factory.registerClass<AtlasStateExtraJointPressurePosHandler>();
     factory.registerClass<AtlasStateExtraJointPressureNegHandler>();
-
+    factory.registerClass<AtlasFootPosEstLeftPositionHandler>();
+    factory.registerClass<AtlasFootPosEstRightPositionHandler>();
     factory.registerClass<AtlasRawIMUBatchIMUDeltaRotation>();
     factory.registerClass<AtlasRawIMUBatchIMULinearAcceleration>();
     factory.registerClass<PoseTypeVelocityHandler>();
