@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <iostream>
+#include <thread>
 #include <Eigen/Dense>
 #include <boost/shared_ptr.hpp>
 #include <boost/assign/std/vector.hpp>
@@ -66,6 +67,10 @@ class Pass{
     
     ~Pass(){
     }    
+
+    // thread function for doing actual work
+    void operator()();
+    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
@@ -75,17 +80,26 @@ class Pass{
     
     double collision_threshold_;
     double delta_threshold_;
+
+    bool running_;
+    std::thread worker_thread_;
+    std::condition_variable worker_condition_;
+    std::mutex worker_mutex_;
+    std::list<std::shared_ptr<bot_core::planar_lidar_t> > data_queue_;
+    std::mutex data_mutex_;
+    std::mutex robot_state_mutex_;
     
     void urdfHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg);   
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
-    
+
     Collision_Object_GFE* collision_object_gfe_;
     Collision_Object_Point_Cloud* collision_object_point_cloud_;
     Collision_Detector* collision_detector_;
     int n_collision_points_;
     
-    void DoCollisionCheck(int64_t current_utime);
+  void DoCollisionCheck(const pcl::PointCloud<PointXYZRGB>::Ptr& scan_cloud_s2l,
+                        std::shared_ptr<bot_core::planar_lidar_t>& msg);
     
     BotParam* botparam_;
     BotFrames* botframes_;
@@ -103,11 +117,6 @@ class Pass{
     // Last robot state: this is used as the collision gfe/robot
     drc::robot_state_t last_rstate_;
     bool init_rstate_;
-    // Scan as pointcloud in local frame: this is used as the collision points
-    pcl::PointCloud<PointXYZRGB>::Ptr scan_cloud_s2l_;    
-    
-    // Output filter lidar:
-    bot_core::planar_lidar_t lidar_msgout_;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
@@ -132,6 +141,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   collision_detector_->add_collision_object( collision_object_gfe_, COLLISION_DETECTOR_GROUP_1, COLLISION_DETECTOR_GROUP_2 );
   collision_detector_->add_collision_object( collision_object_point_cloud_, COLLISION_DETECTOR_GROUP_2, COLLISION_DETECTOR_GROUP_1 );   
   
+  worker_thread_ = std::thread(std::ref(*this));
   
   lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
   lcm_->subscribe( lidar_channel_ ,&Pass::lidarHandler,this);
@@ -150,8 +160,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   
   init_rstate_ =false;
   
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud_s2l_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  scan_cloud_s2l_ = scan_cloud_s2l_ptr;  
   cout << "Finished setting up\n";
 }
 
@@ -164,30 +172,38 @@ int64_t _timestamp_now(){
 }
 
 
-void Pass::DoCollisionCheck(int64_t current_utime ){
+void Pass::DoCollisionCheck(const pcl::PointCloud<PointXYZRGB>::Ptr& scan_cloud_s2l,
+                            std::shared_ptr<bot_core::planar_lidar_t>& msg){
   
   #if DO_TIMING_PROFILE
     std::vector<int64_t> tic_toc;
     tic_toc.push_back(_timestamp_now());
   #endif  
+
+  // 0. copy robot state
+  drc::robot_state_t rstate;
+  {
+    std::unique_lock<std::mutex> lock(robot_state_mutex_);
+    rstate = last_rstate_;
+  }
   
   // 1. create the list of points to be considered:
   vector< Vector3f > points;
   std::vector<unsigned int> possible_indices; // the indices of points that could possibly be in intersection: not to near and not too far
   int which=0; // 0 actual lidar returns | Test modes: 1 random points in a box, 2 a line [for testing], 3 a 2d grid
   if (which==0){
-    for( unsigned int i = 0; i < scan_cloud_s2l_->points.size() ; i++ ){
-      if ( (lidar_msgout_.ranges[i] > ASSUMED_HEAD  ) &&(lidar_msgout_.ranges[i] < ASSUMED_FAR )){
-        Vector3f point(scan_cloud_s2l_->points[i].x, scan_cloud_s2l_->points[i].y, scan_cloud_s2l_->points[i].z );
+    for( unsigned int i = 0; i < scan_cloud_s2l->points.size() ; i++ ){
+      if ( (msg->ranges[i] > ASSUMED_HEAD  ) &&(msg->ranges[i] < ASSUMED_FAR )){
+        Vector3f point(scan_cloud_s2l->points[i].x, scan_cloud_s2l->points[i].y, scan_cloud_s2l->points[i].z );
         points.push_back( point );
         possible_indices.push_back(i);
       }
     }
   }else if (which ==1){
     for( unsigned int i = 0; i < 500; i++ ){
-      Vector3f point(last_rstate_.pose.translation.x +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
-                    last_rstate_.pose.translation.y + -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
-                    last_rstate_.pose.translation.z +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0 );
+      Vector3f point(rstate.pose.translation.x +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
+                    rstate.pose.translation.y + -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0,
+                    rstate.pose.translation.z +  -1.0 + 2.0 * ( double )( rand() % 1000 ) / 1000.0 );
       points.push_back( point );
       possible_indices.push_back( points.size() - 1 );
     }
@@ -198,7 +214,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
       possible_indices.push_back( points.size() - 1 );
     }
   }else if(which==3){
-    Vector3f bot_root(last_rstate_.pose.translation.x,last_rstate_.pose.translation.y,last_rstate_.pose.translation.z);
+    Vector3f bot_root(rstate.pose.translation.x,rstate.pose.translation.y,rstate.pose.translation.z);
     Vector3f offset( 0.,0.,0.45);
     for( float i = -0.3; i < 0.3; i=i+0.02 ){
       for( float j = -0.3; j < 0.3; j=j+0.02 ){
@@ -218,17 +234,17 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
   
   // 2. Do the filtering:
   // set the state of the collision objects
-  collision_object_gfe_->set( last_rstate_ );
+  collision_object_gfe_->set(rstate);
   //cout << "gfe obj size: " << collision_object_gfe_->bt_collision_objects().size() << "\n";
   collision_object_point_cloud_->set( points );
   // get the vector of collisions by running collision detection
   //int64_t tic = _timestamp_now();
   vector< Collision > collisions = collision_detector_->get_collisions();
-  //cout << lidar_msgout_.ranges.size() << " and " << points.size() << " and " << scan_cloud_s2l_->points.size() << " " <<  (_timestamp_now() - tic)*1e-6 << " dt\n";;
+  //cout << msg->ranges.size() << " and " << points.size() << " and " << scan_cloud_s2l->points.size() << " " <<  (_timestamp_now() - tic)*1e-6 << " dt\n";;
   
   
   // 3. Extract the indices of the points in collision and modify the outgoing ranges as a result:
-  std::vector<float> original_ranges =  lidar_msgout_.ranges;
+  std::vector<float> original_ranges =  msg->ranges;
   
   
   vector< Vector3f > free_points;
@@ -240,31 +256,31 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
   for( unsigned int j = 0; j < points.size(); j++ ){
     for( unsigned int k = 0; k < filtered_point_indices.size(); k++ ){
       if( j == filtered_point_indices[ k ] ){
-        lidar_msgout_.ranges[  possible_indices[j] ] = COLLISION_RANGE;// 15.0; // Set filtered returns to max range
+        msg->ranges[  possible_indices[j] ] = COLLISION_RANGE;// 15.0; // Set filtered returns to max range
       }
     }
   }
-  for( unsigned int j = 0; j < lidar_msgout_.ranges.size(); j++ ){
+  for( unsigned int j = 0; j < msg->ranges.size(); j++ ){
     if (original_ranges[j] < ASSUMED_HEAD ){
-        lidar_msgout_.ranges[j] = COLLISION_RANGE;//20.0; // Set filtered returns to max range
+        msg->ranges[j] = COLLISION_RANGE;//20.0; // Set filtered returns to max range
     }  
     
     // For Real Data: apply an addition set of filters
     // NB: These filters are not compatiable with Gazebo Simulation output NBNBNB
     if (!simulated_data_){
       // heuristic filtering of the weak intensity lidar returns
-      if (( lidar_msgout_.intensities[j] < INTENSITY_FILTER_MIN_VALUE ) && ( original_ranges[j] < INTENSITY_FILTER_MIN_RANGE) ){
-        lidar_msgout_.ranges[j] = MAX_RANGE;
+      if (( msg->intensities[j] < INTENSITY_FILTER_MIN_VALUE ) && ( original_ranges[j] < INTENSITY_FILTER_MIN_RANGE) ){
+        msg->ranges[j] = MAX_RANGE;
       }
       
       // Edge effect filter
-      if ( (j>0) && (j<lidar_msgout_.ranges.size()) ){
+      if ( (j>0) && (j<msg->ranges.size()) ){
         float right_diff = fabs(original_ranges[j] - original_ranges[j-1]);
         float left_diff = fabs(original_ranges[j] - original_ranges[j+1]);
         if (( right_diff > delta_threshold_) || (left_diff > delta_threshold_ )){
           // cout << i<< ": " << right_diff << " and " << left_diff <<"\n";
           if (original_ranges[j] < EDGE_FILTER_MIN_RANGE){
-            lidar_msgout_.ranges[j] = MAX_RANGE;
+            msg->ranges[j] = MAX_RANGE;
           }
         }
       }      
@@ -274,7 +290,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
   }
   
   // 4. Output channel is incoming channel appended with FREE
-  lcm_->publish( (lidar_channel_ + "_FREE") , &lidar_msgout_);        
+  lcm_->publish( (lidar_channel_ + "_FREE") , msg.get());        
 
   ///////////////////////////////////////////////////////////////////////////
   if (verbose_){
@@ -292,7 +308,7 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
       }
     }    
     
-    cout << current_utime << " | total returns "<< scan_cloud_s2l_->points.size()  
+    cout << msg->utime << " | total returns "<< scan_cloud_s2l->points.size()  
         << " | colliding " << colliding_points.size() << " | free " << free_points.size() << endl;
     bot_lcmgl_point_size(lcmgl_, 4.5f);
     bot_lcmgl_color3f(lcmgl_, 0, 1, 0);
@@ -317,12 +333,95 @@ void Pass::DoCollisionCheck(int64_t current_utime ){
     double dt =  ((tic_toc[1] - tic_toc[0])*1E-6);
     
     std::cout << dt << " | " << 1/dt  << " | "
-              << current_utime << " | total returns "<< scan_cloud_s2l_->points.size()  
+              << msg->utime << " | total returns "<< scan_cloud_s2l->points.size()  
               << " | collisions " << collisions.size() << " | indices " << filtered_point_indices.size() << endl;    
   #endif    
   
 }
 
+
+void Pass::operator()() {
+  running_ = true;
+  while (running_) {
+    std::unique_lock<std::mutex> lock(worker_mutex_);
+    worker_condition_.wait_for(lock, std::chrono::milliseconds(1000));
+
+    // copy current workload from data queue to work queue
+    std::vector<std::shared_ptr<bot_core::planar_lidar_t> > work_queue;
+    {
+      std::unique_lock<std::mutex> lock(data_mutex_);
+      while (!data_queue_.empty()) {
+        work_queue.push_back(data_queue_.front());
+        data_queue_.pop_front();
+      }
+    }
+
+    // process workload
+    for (auto msg : work_queue) {
+  
+      // 1. Convert scan into simple XY point cloud:  
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+      // consider everything - don't remove any points
+      double minRange =-100.0;
+      double maxRange = 100.0;
+      double validBeamAngles[] ={-10,10}; 
+      convertLidar(msg->ranges, msg->nranges, msg->rad0,
+                   msg->radstep, scan_cloud, minRange, maxRange,
+                   validBeamAngles[0], validBeamAngles[1]);  
+  
+      if (scan_cloud->points.size() !=  msg->nranges ){
+        std::cout << "npoints and nranges are not equal\n";
+        std::cout << scan_cloud->points.size() << "\n";
+        std::cout << msg->nranges << "\n";
+        exit(-1); 
+      }  
+  
+      // 2. Project the scan into local frame:
+      Eigen::Isometry3d scan_to_local;
+      frames_cpp_->get_trans_with_utime( botframes_ ,  lidar_channel_.c_str() , "local", msg->utime, scan_to_local);
+      Eigen::Isometry3f pose_f = scan_to_local.cast<float>();
+      Eigen::Quaternionf pose_quat(pose_f.rotation());
+      pcl::PointCloud<PointXYZRGB>::Ptr scan_cloud_s2l(new pcl::PointCloud<pcl::PointXYZRGB> ());
+      pcl::transformPointCloud (*scan_cloud, *scan_cloud_s2l,
+                                pose_f.translation(), pose_quat);  
+
+      // A counter for visualization:
+      vis_counter_++;
+      if (vis_counter_ >=1){ // set this to 1 to only see the last return
+        vis_counter_=0;
+      }
+      int64_t pose_id=vis_counter_;
+      // int64_t pose_id=msg->utime;
+
+      if (verbose_){  
+        // Plot original scan in sensor frame:
+        Isometry3dTime scan_to_localT = Isometry3dTime(pose_id, scan_to_local);
+        pc_vis_->pose_to_lcm_from_list(60000, scan_to_localT);
+        pc_vis_->ptcld_to_lcm_from_list(60001, *scan_cloud, pose_id, pose_id);  
+  
+        // Plot scan in local frame:
+        Eigen::Isometry3d null_pose;
+        null_pose.setIdentity();
+        Isometry3dTime null_poseT = Isometry3dTime(pose_id, null_pose);
+        pc_vis_->pose_to_lcm_from_list(1000, null_poseT);  
+        pc_vis_->ptcld_to_lcm_from_list(1001, *scan_cloud_s2l, pose_id, pose_id);
+      }
+  
+      if (printf_counter_%80 ==0){
+        cout << "Filtering: " << lidar_channel_ << " "  << msg->utime << "\n";
+      }
+      printf_counter_++;
+
+      if (scan_cloud_s2l->points.size() > n_collision_points_){
+        std::cout << "more points in scan ("<<scan_cloud_s2l->points.size() <<") than reserved in collision detector ("<< n_collision_points_ << ")"
+                  << "\nincrease detector size to match\n";
+        exit(-1);
+      }
+
+      DoCollisionCheck(scan_cloud_s2l,msg);
+    }
+  }
+}
 
 void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::planar_lidar_t* msg){
   if (!init_rstate_){
@@ -331,72 +430,28 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   }
   // TODO: check if the rstate is stale
 
-  // A counter for visualization:
-  vis_counter_++;
-  if (vis_counter_ >=1){ // set this to 1 to only see the last return
-    vis_counter_=0;
+  // push this scan onto the work queue
+  // TODO: can increase max size if necessary
+  const int max_queue_size = 100;
+  {
+    std::unique_lock<std::mutex> lock(data_mutex_);
+    std::shared_ptr<bot_core::planar_lidar_t> data
+      (new bot_core::planar_lidar_t(*msg));
+    data_queue_.push_back(data);
+    if (data_queue_.size() > max_queue_size) {
+      std::cout << "WARNING: dropping " << 
+        (data_queue_.size()-max_queue_size) << " scans" << std::endl;
+    }
+    while (data_queue_.size() > max_queue_size) {
+      data_queue_.pop_front();
+    }
   }
-  int64_t pose_id=vis_counter_;
-  // int64_t pose_id=msg->utime;
-
-  // 0. Make Local copy to later output
-  lidar_msgout_ = *msg;
-  
-  // 1. Convert scan into simple XY point cloud:  
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  // consider everything - don't remove any points
-  double minRange =-100.0;
-  double maxRange = 100.0;
-  double validBeamAngles[] ={-10,10}; 
-  convertLidar(msg->ranges, msg->nranges, msg->rad0,
-      msg->radstep, scan_cloud, minRange, maxRange,
-      validBeamAngles[0], validBeamAngles[1]);  
-  
-  if (scan_cloud->points.size() !=  msg->nranges ){
-    std::cout << "npoints and nranges are not equal\n";
-    std::cout << scan_cloud->points.size() << "\n";
-    std::cout << msg->nranges << "\n";
-    exit(-1); 
-  }  
-  
-  // 2. Project the scan into local frame:
-  Eigen::Isometry3d scan_to_local;
-  frames_cpp_->get_trans_with_utime( botframes_ ,  lidar_channel_.c_str() , "local", msg->utime, scan_to_local);
-  Eigen::Isometry3f pose_f = scan_to_local.cast<float>();
-  Eigen::Quaternionf pose_quat(pose_f.rotation());
-  pcl::transformPointCloud (*scan_cloud, *scan_cloud_s2l_,
-      pose_f.translation(), pose_quat);  
-
-  if (verbose_){  
-    // Plot original scan in sensor frame:
-    Isometry3dTime scan_to_localT = Isometry3dTime(pose_id, scan_to_local);
-    pc_vis_->pose_to_lcm_from_list(60000, scan_to_localT);
-    pc_vis_->ptcld_to_lcm_from_list(60001, *scan_cloud, pose_id, pose_id);  
-  
-    // Plot scan in local frame:
-    Eigen::Isometry3d null_pose;
-    null_pose.setIdentity();
-    Isometry3dTime null_poseT = Isometry3dTime(pose_id, null_pose);
-    pc_vis_->pose_to_lcm_from_list(1000, null_poseT);  
-    pc_vis_->ptcld_to_lcm_from_list(1001, *scan_cloud_s2l_, pose_id, pose_id);
-  }
-  
-  if (scan_cloud_s2l_->points.size() > n_collision_points_){
-    std::cout << "more points in scan ("<<scan_cloud_s2l_->points.size() <<") than reserved in collision detector ("<< n_collision_points_ << ")"
-              << "\nincrease detector size to match\n";
-    exit(-1);
-  }
-
-  DoCollisionCheck(msg->utime);
-  
-  if (printf_counter_%80 ==0){
-    cout << "Filtering: " << lidar_channel_ << " "  << msg->utime << "\n";
-  }
-  printf_counter_++;
+  worker_condition_.notify_one();
 }
 
 
 void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+  std::unique_lock<std::mutex> lock(robot_state_mutex_);
   last_rstate_= *msg;  
   init_rstate_=true;
 }
