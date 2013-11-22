@@ -23,7 +23,7 @@ buffer_length = 0;
 points = zeros(3,buffer_size);
 point_last = inf(3,1);
 while(true)
-  [type, data] = getDrillControlMsg(lcm_mon, 0)
+  [type, data] = getDrillControlMsg(lcm_mon, 0);
   
   switch type
     case drc.drill_control_t.REFIT_DRILL

@@ -49,8 +49,9 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
     function y=mimoOutput(obj,t,~,varargin)
       q_des=varargin{1};
       x=varargin{2};
-
-      if t<=obj.controller_data.data.qtraj.tspan(end)
+      qtraj = obj.controller_data.data.qtraj;
+      
+      if isa(qtraj,'PPTrajectory') && t<=qtraj.tspan(end)
         % only support pelvis height for the time being
         foot_z = getFootHeight(obj.robot,x(1:getNumDOF(obj.robot)));
         params.pelvis_height = max(obj.robot.pelvis_min_height, ...
