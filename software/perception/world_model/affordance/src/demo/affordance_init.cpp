@@ -915,6 +915,39 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     //sendStandingLabels(affraw_list);
   }  
   
+  
+  if ((which_publish==9)|| (which_publish==10) ){ 
+    drc::affordance_t a;
+    a.utime =0;
+    a.map_id =0;
+    a.uid =0;
+    a.otdf_type ="debris_edge";
+    a.aff_store_control = drc::affordance_t::NEW;
+
+    a.params.push_back(1.0); a.param_names.push_back("mass");
+    a.params.push_back(0.02); a.param_names.push_back("lX");    
+    a.params.push_back(1.5); a.param_names.push_back("lY");
+    a.params.push_back(0.02); a.param_names.push_back("lZ");   
+    a.nparams = a.params.size();
+    a.nstates =0;
+    
+    std::vector<double> xyzrpy = { -0.595  ,  -0.2 ,   0 ,      0  ,     0  ,     0  };
+    a.origin_xyz[0]=xyzrpy[0]; a.origin_xyz[1]=xyzrpy[1]; a.origin_xyz[2]=xyzrpy[2]; 
+    a.origin_rpy[0]=xyzrpy[3]; a.origin_rpy[1]=xyzrpy[4]; a.origin_rpy[2]=xyzrpy[5]; 
+   
+    drc::affordance_plus_t a1;
+    a1.aff = a;
+    a1.aff.bounding_lwh[0]=0.0;       a1.aff.bounding_lwh[1]=0.0;      a1.aff.bounding_lwh[2]=0.0;
+    a1.aff.bounding_xyz[0]=0.0; a1.aff.bounding_xyz[1]=0.0; a1.aff.bounding_xyz[2]=0.0; 
+    a1.aff.bounding_rpy[0]=0.0; a1.aff.bounding_rpy[1]=0.0; a1.aff.bounding_rpy[2]=0.0;   
+    
+    a1.npoints= 0; 
+    a1.ntriangles = 0;
+    lcm_->publish("AFFORDANCE_FIT",&a1);      
+  }
+  
+  
+  
 /*  
   drc::affordance_plus_collection_t aplus_coll;
   aplus_coll.affs_plus.push_back( a0 );

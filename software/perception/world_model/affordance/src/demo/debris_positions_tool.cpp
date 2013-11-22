@@ -84,13 +84,11 @@ class Pass{
     Config config_;
     
     pointcloud_vis* pc_vis_;  
-    bool cartpos_ready_, leftfoot_ready_, walkinggoal_ready_;
+    bool leftfoot_ready_, walkinggoal_ready_;
     int64_t current_utime_;
     
     void affHandler(const lcm::ReceiveBuffer* rbuf, 
                     const std::string& channel, const  drc::affordance_plus_collection_t* msg);     
-    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, 
-                             const std::string& channel, const  drc::robot_state_t* msg);
     void poseGroundHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  bot_core::pose_t* msg);
     void poseLeftFootHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -98,9 +96,6 @@ class Pass{
     void poseRightFootHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  bot_core::pose_t* msg);
     
-    boost::shared_ptr<ModelClient> model_;
-    KDL::TreeFkSolverPosFull_recursive* fksolver_;
-    map<string, KDL::Frame > cartpos_;
     
     
     void getCurrentStandingPositionAsRelative(Eigen::Isometry3d min_pt);
@@ -112,10 +107,11 @@ class Pass{
     
     // Affordances stored using the object_name that Sisir seems to be sending with INIT_GRASP_OPT_* messages
     // [otdf_type]_[uid]
-    Eigen::Isometry3d world_to_body_high_;
+    Eigen::Isometry3d world_to_birds_eye_;
     Eigen::Isometry3d world_to_leftfoot_,world_to_rightfoot_, world_to_standing_;
     drc::affordance_t aff_;
     map<string, drc::affordance_t > affs_;
+    Eigen::Isometry3d world_to_debris_edge_ ;
     
     double ground_height_;
     
@@ -135,20 +131,10 @@ class Pass{
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
     lcm_(lcm_),config_(config_){
-  cartpos_ready_ = false;
   leftfoot_ready_ = false;
   walkinggoal_ready_ = false;
       
-  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
-  KDL::Tree tree;
-  if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
-    cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
-    exit(-1);
-  }
-  fksolver_ = new KDL::TreeFkSolverPosFull_recursive(tree);
-      
   lcm_->subscribe( "AFFORDANCE_PLUS_COLLECTION" ,&Pass::affHandler,this);
-  lcm_->subscribe("EST_ROBOT_STATE",&Pass::robot_state_handler,this);  
   lcm_->subscribe( "POSE_GROUND" ,&Pass::poseGroundHandler,this);
   lcm_->subscribe( "POSE_LEFT_FOOT" ,&Pass::poseLeftFootHandler,this);  
   lcm_->subscribe( "POSE_RIGHT_FOOT" ,&Pass::poseRightFootHandler,this);  
@@ -162,6 +148,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600002,"Robot to Corner",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600003,"Next Walking Goal",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600005,"Rel Near Corner to Hand",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(600006,"Debris Edge",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(600007,"Hip Clearance",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(600008,"Kneecap Clearance",5,1) );
   
   
   sandia_l_joint_name_ = {"left_f0_j0","left_f0_j1","left_f0_j2",   "left_f1_j0","left_f1_j1","left_f1_j2",
@@ -233,30 +222,6 @@ void Pass::poseRightFootHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   walkinggoal_ready_ = true;
 }
 
-void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
-  
-  /*
-  // used until very recently
-  
-  // 0. Extract World Pose of body:
-  world_to_body_high_.setIdentity();
-  // edit: use a point thats very high to force the choice of high points
-  world_to_body_high_.translation()  << msg->pose.translation.x, msg->pose.translation.y, 1000 ;//, msg->pose.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
-                                               msg->pose.rotation.y, msg->pose.rotation.z);
-  world_to_body_high_.rotate(quat);    
-  
-*/
-  
-  // 0. a pose back and to the left of the sim world
-  world_to_body_high_.setIdentity();
-  world_to_body_high_.translation()  << -1, -1, 1000; // far back corner of sim world
-  Eigen::Quaterniond quat = Eigen::Quaterniond(1,0,0,0);
-  world_to_body_high_.rotate(quat);    
-  
-  cartpos_ready_=true;
-  
-}
 
 
 // given a point under the nearmost corner and a look direciton
@@ -431,15 +396,13 @@ void Pass::publishCandidateGrasp(Eigen::Isometry3d aff_to_hand, string object_na
 
 void Pass::affHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::affordance_plus_collection_t* msg){
-  if (!cartpos_ready_){
-    return;
-  }
   if (!walkinggoal_ready_){
     return;
   }
   current_utime_ = msg->utime;
   std::cout << "got "<< msg->naffs << " affs\n";
   
+  bool found_debris_edge=false;
   for (int i=0 ; i < msg->naffs ; i++){
     drc::affordance_t aff = msg->affs_plus[i].aff;
     std::stringstream ss;
@@ -447,7 +410,46 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     // std::cout << ss.str() << "\n";
     affs_[ ss.str() ]=  aff;
     
+    
+    if (aff.otdf_type == "debris_edge"){
+      std::cout << "Found Debris Edge Affordance\n"; 
+      
+      // 1 get the debris edge:
+      world_to_debris_edge_  = affutils_.getPose(aff.origin_xyz, aff.origin_rpy) ;
+      Isometry3dTime world_to_debris_edgeT = Isometry3dTime(current_utime_,  world_to_debris_edge_  );
+      pc_vis_->pose_to_lcm_from_list(600006, world_to_debris_edgeT);   
+      
+      // 2 create a pose back and to the left of the sim world
+      Eigen::Isometry3d debris_edge_to_birds_eye(Eigen::Isometry3d::Identity());
+      debris_edge_to_birds_eye.translation()  << -1, -1, 1000; // far back corner of sim world
+      world_to_birds_eye_ = world_to_debris_edge_* debris_edge_to_birds_eye;
+
+      // 3 clearance line for the hip
+      Eigen::Isometry3d debris_edge_to_hipclearance(Eigen::Isometry3d::Identity());
+      debris_edge_to_hipclearance.translation()  << -0.39, 0, 0; 
+      Eigen::Isometry3d world_to_hipclearance = world_to_debris_edge_* debris_edge_to_hipclearance;
+      Isometry3dTime world_to_hipclearanceT = Isometry3dTime(current_utime_,  world_to_hipclearance  );
+      pc_vis_->pose_to_lcm_from_list(600007, world_to_hipclearanceT);   
+      
+      // 4 clearance line for the knee caps
+      Eigen::Isometry3d debris_edge_to_kneecapclearance(Eigen::Isometry3d::Identity());
+      debris_edge_to_kneecapclearance.translation()  << -0.39, 0, 0; // far back corner of sim world
+      Eigen::Isometry3d world_to_kneecapclearance = world_to_debris_edge_* debris_edge_to_kneecapclearance;
+      Isometry3dTime world_to_kneecapclearanceT = Isometry3dTime(current_utime_,  world_to_kneecapclearance  );
+      pc_vis_->pose_to_lcm_from_list(600008, world_to_kneecapclearanceT);   
+      
+      
+      
+      found_debris_edge = true;
+    }
   }     
+  
+  
+  if (!found_debris_edge){
+    std::cout << "Did not find Debris Edge Affordance ... returning\n"; 
+    return;
+  }
+  
   
   std::stringstream object_name_ss;
   object_name_ss << "box_" << config_.server_id;
@@ -485,8 +487,8 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
         pt.translation() = Eigen::Vector3d(ix*aff_len(0)/2, iy*aff_len(1)/2, iz*aff_len(2)/2 );
         pt = world_to_aff * pt;
         
-        double distance = (world_to_body_high_.translation() - pt.translation()  ) .norm();
-        //cout << world_to_body_high_.translation().transpose() << " w\n";
+        double distance = (world_to_birds_eye_.translation() - pt.translation()  ) .norm();
+        //cout << world_to_birds_eye_.translation().transpose() << " w\n";
         //cout << pt.transpose() << " p\n";
         //cout << distance << " distance\n";
         if(distance < min_dist){
@@ -549,9 +551,6 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     getPriorStandingPositionAsRelative(min_pt, affraw_list[id].standing_position_ );
     
 
-    
-
-    
     // Publish an affordance relative hand position:
     // assumes a corner-to-hand position transform:
     Eigen::Isometry3d corner_to_hand(Eigen::Isometry3d::Identity());
@@ -562,16 +561,9 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     
     publishCandidateGrasp(aff_to_hand, object_name, affraw_list[id].hand_type_);    
     
-    
-    
-    
-
     exit(-1);    
   }
 
-    
-
-  
   
 }
 
