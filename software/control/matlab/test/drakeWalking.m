@@ -40,22 +40,32 @@ nq = getNumDOF(r);
 x0 = xstar;
 q0 = x0(1:nq);
 
+
 % create footstep and ZMP trajectories
 footstep_planner = FootstepPlanner(r);
 step_options = footstep_planner.defaults;
-step_options.max_num_steps = 100;
-step_options.min_num_steps = 2;
-step_options.step_speed = 0.75;
-step_options.follow_spline = true;
-step_options.allow_optimization = true;
-step_options.right_foot_lead = true;
-step_options.ignore_terrain = false;
-step_options.nom_step_width = r.nom_step_width;
-step_options.nom_forward_step = r.nom_forward_step;
-step_options.max_forward_step = r.max_forward_step;
-step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
+for follow_spline = [0, 1]
+  step_options.follow_spline = follow_spline;
+  for allow_optimization = [0, 1]
+    step_options.allow_optimization = allow_optimization;
+    for right_foot_lead = [-1, 0, 1]
+      step_options.right_foot_lead = right_foot_lead;
+      step_options.max_num_steps = 100;
+      step_options.min_num_steps = 2;
+      step_options.step_speed = 0.75;
+      % step_options.follow_spline = logical(randi([0,1],1));
+      % step_options.allow_optimization = true; % logical(randi([0,1],1));
+      step_options.right_foot_lead = -1; %logical(randi([0,1],1));
+      step_options.ignore_terrain = false;
+      step_options.nom_step_width = r.nom_step_width;
+      step_options.nom_forward_step = r.nom_forward_step;
+      step_options.max_forward_step = r.max_forward_step;
+      step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
 
-footsteps = r.createInitialSteps(x0, navgoal, step_options);
+      footsteps = r.createInitialSteps(x0, navgoal, step_options);
+    end
+  end
+end
 for j = 1:length(footsteps)
   footsteps(j).pos = r.footContact2Orig(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
 end
