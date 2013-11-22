@@ -1,17 +1,8 @@
-function [X, foot_goals] = footstepLineSearch(biped, x0, goal_pos, params)
+function [X, foot_goals] = footstepLineSearch(biped, foot_orig, goal_pos, params)
 
 debug = false;
 
-q0 = x0(1:end/2);
-foot_orig = biped.feetPosition(q0);
-
-if params.right_foot_lead
-  X(1) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
-  X(2) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 0), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
-else
-  X(1) = struct('pos', biped.footOrig2Contact(foot_orig.left, 'center', 1), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', false, 'is_in_contact', true);
-  X(2) = struct('pos', biped.footOrig2Contact(foot_orig.right, 'center', 0), 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', ones(6,1), 'is_right_foot', true, 'is_in_contact', true);
-end
+X = createOriginSteps(biped, foot_orig, params.right_foot_lead);
 
 p0 = footCenter2StepCenter(biped, X(2).pos, X(2).is_right_foot, params.nom_step_width);
 goal_pos(6) = p0(6) + angleDiff(p0(6), goal_pos(6));
@@ -151,7 +142,7 @@ while (1)
   pos_n = foot_centers.(m_foot)(:, next_ndx);
   last_ndx.(m_foot) = next_ndx;
 
-  X(end+1) = struct('pos', pos_n, 'step_speed', 0, 'step_height', 0, 'id', 0, 'pos_fixed', zeros(6, 1), 'is_right_foot', is_right_foot, 'is_in_contact', true);
+  X(end+1) = struct('pos', pos_n, 'is_right_foot', is_right_foot);
 
   if ((all(abs(X(end).pos - foot_goals.(m_foot)) < 0.05) && all(abs(X(end-1).pos - foot_goals.(s_foot)) < 0.05)) || (length(X) - 2) >= params.max_num_steps) && ((length(X) - 2) >= params.min_num_steps)
     break
@@ -161,15 +152,6 @@ end
 if aborted && length(X) > 3
   % If we had to give up, then lose the last (unproductive) step
   X = X(1:end-1);
-end
-
-biped.getNextStepID(true); % reset the counter
-for j = 1:length(X)
-  X(j).id = biped.getNextStepID();
-  for var = {'step_speed', 'step_height', 'bdi_step_duration', 'bdi_sway_duration', 'bdi_lift_height', 'bdi_toe_off', 'bdi_knee_nominal'}
-    v = var{1};
-    X(j).(v) = params.(v);
-  end
 end
 
 end

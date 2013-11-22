@@ -94,6 +94,7 @@ classdef FootstepPlanPublisher
 		    msg.footstep_opts.mu = options.mu;
 		    msg.footstep_opts.behavior = options.behavior;
 		    msg.footstep_opts.map_command = options.map_command;
+		    msg.footstep_opts.velocity_based_steps = options.velocity_based_steps;
 		end
 	end
 end

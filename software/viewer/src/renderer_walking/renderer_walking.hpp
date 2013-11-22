@@ -27,16 +27,12 @@ struct PerceptionData {
   maps::BotWrapper::Ptr mBotWrapper;
 };
 
-typedef enum _leading_foot_t {
-  LEADING_FOOT_RIGHT, LEADING_FOOT_LEFT
-} leading_foot_t;
-
 typedef enum _path_t {
   PATH_SPLINE, PATH_NO_SPLINE, PATH_AUTO
 } path_t;
 
 typedef enum _walking_mode_t {
-  WALKING_TYPICAL, WALKING_DRAKE_FAST, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI, STEPPING_BDI, STEPPING_BDI_FINE, WALKING_LADDER, STEPPING_BDI_OBSTACLES
+  WALKING_TYPICAL, WALKING_DRAKE_FAST, WALKING_MUD, WALKING_CRAWLING, WALKING_TURN_CRAWLING, WALKING_BDI, STEPPING_BDI, STEPPING_BDI_FINE, WALKING_LADDER, STEPPING_BDI_OBSTACLES, WALKING_BDI_INFINITE
 } walking_mode_t;
 
 typedef enum _behavior_t {
@@ -91,6 +87,7 @@ typedef struct _RendererWalking {
   walking_goal_type_t goal_type;
   bool allow_optimization;
   bool force_to_sticky_feet;
+  bool velocity_based_steps;
   
   int dragging;
   bool active;
@@ -106,7 +103,7 @@ typedef struct _RendererWalking {
 
   int max_num_steps;
   int min_num_steps;
-  leading_foot_t leading_foot;
+  int leading_foot;
   double step_speed;
   double step_height;
   double nom_forward_step;
