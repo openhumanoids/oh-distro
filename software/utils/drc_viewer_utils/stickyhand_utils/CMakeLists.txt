@@ -8,7 +8,7 @@ FILE(GLOB STICKYHAND_UTIL_HDRS src/[^.]*.hpp)
 pods_install_headers(${STICKYHAND_UTIL_HDRS} DESTINATION visualization_utils/stickyhand_utils)
                
 # create an executable, and make it public
-add_library(stickyhand-viz-utils SHARED  src/StickyhandCollectionManager.cpp) # 
+add_library(stickyhand-viz-utils SHARED  src/sticky_hand_utils.cpp src/sticky_hand_lcm_utils.cpp src/StickyhandCollectionManager.cpp ) # 
 
 # make the library public
 pods_install_libraries(stickyhand-viz-utils)

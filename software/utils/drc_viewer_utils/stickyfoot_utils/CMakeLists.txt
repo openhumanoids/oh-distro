@@ -8,7 +8,7 @@ FILE(GLOB STICKYFOOT_UTIL_HDRS src/[^.]*.hpp)
 pods_install_headers(${STICKYFOOT_UTIL_HDRS} DESTINATION visualization_utils/stickyfoot_utils)
                
 # create an executable, and make it public
-add_library(stickyfoot-viz-utils SHARED  src/StickyfootCollectionManager.cpp) # 
+add_library(stickyfoot-viz-utils SHARED  src/sticky_foot_utils.cpp src/sticky_foot_lcm_utils.cpp src/StickyfootCollectionManager.cpp) # 
   
 # make the library public
 pods_install_libraries(stickyfoot-viz-utils)
