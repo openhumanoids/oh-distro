@@ -24,7 +24,7 @@
 #include <sandia_hand_msgs/RawPalmState.h>
 #include <sandia_hand_msgs/RawMoboState.h>
 #include <mit_helios_scripts/MITIRobotHandState.h>
-#include <handle_msgs/HandleSensors.h>
+#include <handle_msgs/HandleSensorsCalibrated.h>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
@@ -97,9 +97,9 @@ private:
   void irobot_l_hand_state_cb(const mit_helios_scripts::MITIRobotHandStatePtr& msg);
   void irobot_r_hand_state_cb(const mit_helios_scripts::MITIRobotHandStatePtr& msg);
   
-  void irobot_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg, RobotSide robotSide);
-  void irobot_l_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg);
-  void irobot_r_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg);
+  void irobot_hand_raw_state_cb(const handle_msgs::HandleSensorsCalibratedPtr& msg, RobotSide robotSide);
+  void irobot_l_hand_raw_state_cb(const handle_msgs::HandleSensorsCalibratedPtr& msg);
+  void irobot_r_hand_raw_state_cb(const handle_msgs::HandleSensorsCalibratedPtr& msg);
 
   
   void publishIRobotRaw(int64_t utime_in, RobotSide robotSide);
@@ -142,8 +142,8 @@ App::App(ros::NodeHandle node_, bool dumb_fingers) :
  
   irobot_l_hand_joint_states_sub_ = node_.subscribe(string("/irobot_hands/l_hand/sensors/mit_state"), 100, &App::irobot_l_hand_state_cb,this);
   irobot_r_hand_joint_states_sub_ = node_.subscribe(string("/irobot_hands/r_hand/sensors/mit_state"), 100, &App::irobot_r_hand_state_cb,this);
-  irobot_l_hand_raw_states_sub_ = node_.subscribe(string("/irobot_hands/l_hand/sensors/raw"), 100, &App::irobot_l_hand_raw_state_cb,this);
-  irobot_r_hand_raw_states_sub_ = node_.subscribe(string("/irobot_hands/r_hand/sensors/raw"), 100, &App::irobot_r_hand_raw_state_cb,this);
+  irobot_l_hand_raw_states_sub_ = node_.subscribe(string("/irobot_hands/l_hand/sensors/calibrated"), 100, &App::irobot_l_hand_raw_state_cb,this);
+  irobot_r_hand_raw_states_sub_ = node_.subscribe(string("/irobot_hands/r_hand/sensors/calibrated"), 100, &App::irobot_r_hand_raw_state_cb,this);
   
   //irobot_l_hand_joint_states_pub_ = node_.advertise<std_msgs::Empty>("/irobot_hands/l_hand/calibrate", 100);
   //irobot_r_hand_joint_states_pub_ = node_.advertise<std_msgs::Empty>("/irobot_hands/r_hand/calibrate", 100);
@@ -523,7 +523,7 @@ void App::irobot_r_hand_state_cb(const mit_helios_scripts::MITIRobotHandStatePtr
   irobot_hand_state_cb(msg, RIGHT);
 }
 
-void App::irobot_l_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg)
+void App::irobot_l_hand_raw_state_cb(const handle_msgs::HandleSensorsCalibratedPtr& msg)
 {
   static int counter = 0;
   counter = (counter+1) % SLOWFACTOR; // publish at slower rates (10 times)
@@ -532,7 +532,7 @@ void App::irobot_l_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg)
   irobot_hand_raw_state_cb(msg, LEFT);
 }
 
-void App::irobot_r_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg)
+void App::irobot_r_hand_raw_state_cb(const handle_msgs::HandleSensorsCalibratedPtr& msg)
 {
   static int counter = 0;
   counter = (counter+1) % SLOWFACTOR; // publish at slower rates (10 times)
@@ -542,7 +542,7 @@ void App::irobot_r_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg)
 }
 
 //----------------------------------------------------------------------------
-void App::irobot_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg, RobotSide robotSide)
+void App::irobot_hand_raw_state_cb(const handle_msgs::HandleSensorsCalibratedPtr& msg, RobotSide robotSide)
 {
   std::string hand_name_lower;
   if (robotSide == RIGHT)
@@ -569,7 +569,7 @@ void App::irobot_hand_raw_state_cb(const handle_msgs::HandleSensorsPtr& msg, Rob
   msg_out.utime = (int64_t) msg->header.stamp.toNSec()/1000; // from nsec to usec
   
   copyvalue(msg_out.palmTactile, msg->palmTactile, 48);
-  copyvalue(msg_out.palmTactileTemp, msg->palmTactileTemp, 48);
+  //copyvalue(msg_out.palmTactileTemp, msg->palmTactileTemp, 48);
 
   lcm_publish_.publish("IROBOT_" + hand_name_upper + "_RAW", &msg_out);
 }
