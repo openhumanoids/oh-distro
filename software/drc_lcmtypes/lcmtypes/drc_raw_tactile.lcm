@@ -1,6 +1,6 @@
 package drc;
 
-struct hand_tactile_state_t
+struct raw_tactile_t
 {
   int64_t utime;
 
