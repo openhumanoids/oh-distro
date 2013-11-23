@@ -56,6 +56,7 @@ classdef FootstepPlanner < DRCPlanner
                             'allow_optimization',false,...
                             'force_to_sticky_feet',false,...
                             'velocity_based_steps', false); 
+      obj.options = obj.defaults;
 
       obj.needs_plan = false;
     end
