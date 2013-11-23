@@ -7,15 +7,13 @@ import py_drake_utils as ut
 from bdi_step.utils import Behavior
 from py_drake_utils import quat2rpy
 
-# Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot. It is the same to within 10^-4 for both feet.
-ATLAS_FRAME_OFFSET = np.matrix([[0.0600], [0.000], [-0.0850]])
+# Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot.
+ATLAS_FRAME_OFFSET = np.matrix([[0.0400], [0.000], [-0.0850]])
 
-# fudge factor because we always seem to end up forward of our target steps
-ATLAS_FRAME_OFFSET[0,0] -= 0.03
 
 MAX_LIFT_HEIGHT = 0.40;
 
-BaseFootGoal = namedtuple('FootGoal', 'pos step_speed step_height step_id pos_fixed is_right_foot is_in_contact bdi_step_duration bdi_sway_duration bdi_lift_height bdi_toe_off bdi_knee_nominal terrain_pts')
+BaseFootGoal = namedtuple('FootGoal', 'pos step_speed step_height step_id pos_fixed is_right_foot is_in_contact bdi_step_duration bdi_sway_duration bdi_lift_height bdi_toe_off bdi_knee_nominal bdi_max_body_accel bdi_max_foot_vel bdi_sway_end_dist bdi_step_end_dist terrain_pts')
 
 class FootGoal(BaseFootGoal):
     def to_bdi_spec(self, behavior, step_index):
@@ -61,6 +59,10 @@ class FootGoal(BaseFootGoal):
         action.lift_height = max(action.lift_height, 0.01)  # A lift height of 0 is ignored by the API, so we'll replace it with a very small but nonzero value (1cm).
         action.toe_off = self.bdi_toe_off
         action.knee_nominal = self.bdi_knee_nominal
+        action.max_body_accel = self.bdi_max_body_accel
+        action.max_foot_vel = self.bdi_max_foot_vel
+        action.sway_end_dist = self.bdi_sway_end_dist
+        action.step_end_dist = self.bdi_step_end_dist
         return action
 
     def to_walk_action(self):
@@ -122,6 +124,10 @@ class FootGoal(BaseFootGoal):
                         bdi_lift_height=goal_msg.bdi_lift_height,
                         bdi_toe_off=goal_msg.bdi_toe_off,
                         bdi_knee_nominal=goal_msg.bdi_knee_nominal,
+                        bdi_max_body_accel=goal_msg.bdi_max_body_accel,
+                        bdi_max_foot_vel=goal_msg.bdi_max_foot_vel,
+                        bdi_sway_end_dist=goal_msg.bdi_sway_end_dist,
+                        bdi_step_end_dist=goal_msg.bdi_step_end_dist,
                         terrain_pts=pl.vstack([goal_msg.terrain_path_dist, goal_msg.terrain_height]))
         if any(pl.isnan(goal.pos[[0,1,5]])):
             raise ValueError("I don't know how to handle NaN in x, y, or yaw")
