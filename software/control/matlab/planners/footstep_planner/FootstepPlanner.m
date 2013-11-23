@@ -30,14 +30,40 @@ classdef FootstepPlanner < DRCPlanner
       obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
       obj.target_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
 
-      obj.defaults = struct('max_num_steps', 10, 'min_num_steps', 0, 'timeout', inf, 'step_height', 0.05, 'step_speed', 1.5, 'nom_step_width', 0.26, 'max_forward_step', 0.5, 'nom_forward_step', 0.15, 'follow_spline', false, 'ignore_terrain', false, 'right_foot_lead', true, 'mu', 1, 'behavior', drc.walking_goal_t.BEHAVIOR_BDI_STEPPING, 'bdi_step_duration', 0.6, 'bdi_sway_duration', 0, 'bdi_lift_height', 0, 'bdi_toe_off', 1, 'bdi_knee_nominal', 0, 'map_command', drc.map_controller_command_t.FULL_HEIGHTMAP,'allow_optimization',false,'force_to_sticky_feet',false, 'velocity_based_steps', false); 
+      obj.defaults = struct('max_num_steps', 10,...
+                            'min_num_steps', 0,...
+                            'timeout', inf,...
+                            'step_height', 0.05,...
+                            'step_speed', 1.5,...
+                            'nom_step_width', 0.26,...
+                            'max_forward_step', 0.5,...
+                            'nom_forward_step', 0.15,...
+                            'follow_spline', false,...
+                            'ignore_terrain', false,...
+                            'right_foot_lead', true,...
+                            'mu', 1,...
+                            'behavior', drc.walking_goal_t.BEHAVIOR_BDI_STEPPING,...
+                            'bdi_step_duration', 0.6,...
+                            'bdi_sway_duration', 0,...
+                            'bdi_lift_height', 0,...
+                            'bdi_toe_off', 1,...
+                            'bdi_knee_nominal', 0,...
+                            'bdi_max_body_accel', 0,...
+                            'bdi_max_foot_vel',0,...
+                            'bdi_sway_end_dist',-1,...
+                            'bdi_step_end_dist',-1,...
+                            'map_command', drc.map_controller_command_t.FULL_HEIGHTMAP,...
+                            'allow_optimization',false,...
+                            'force_to_sticky_feet',false,...
+                            'velocity_based_steps', false); 
+
       obj.needs_plan = false;
     end
 
     function obj = updateGoal(obj, data, changed, changelist)
       if changed
         if isfield(data, 'goal'); info = struct(data.goal); else info = struct(); end
-        for x = {'max_num_steps', 'min_num_steps', 'timeout', 'step_height', 'step_speed', 'min_step_width', 'nom_step_width', 'max_step_width', 'nom_forward_step', 'max_forward_step','follow_spline', 'ignore_terrain', 'right_foot_lead', 'mu', 'behavior', 'bdi_step_duration', 'bdi_sway_duration', 'bdi_lift_height', 'bdi_toe_off', 'bdi_knee_nominal', 'map_command','allow_optimization','force_to_sticky_feet', 'velocity_based_steps'}
+        for x = fieldnames(obj.defaults)
           if isfield(info, x{1}) && ~isnan(info.(x{1}))
             if ~isfield(obj.options, x{1}) || obj.options.(x{1}) ~= info.(x{1});
               obj.options.(x{1}) = info.(x{1});
@@ -61,12 +87,11 @@ classdef FootstepPlanner < DRCPlanner
           obj.needs_plan = true;
         elseif changelist.goal
           if (data.goal.is_new_goal || isempty(obj.old_steps))
-            goal_pos.center = FootstepPlanner.decodePosition3d(data.goal.goal_pos);
-            if ~any(isnan(goal_pos.center([1,2,6])))
+            obj.goal_pos = struct('center', FootstepPlanner.decodePosition3d(data.goal.goal_pos));
+            if ~any(isnan(obj.goal_pos.center([1,2,6])))
               obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
               obj.target_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
               msg ='Foot Plan : Received New Goal'; disp(msg); send_status(6,0,0,msg);
-              obj.goal_pos = goal_pos;
               if data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_RIGHT_FOOT
                 obj.goal_pos.center = footCenter2StepCenter(obj.biped, obj.goal_pos.center, true, obj.options.nom_step_width);
               elseif data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_LEFT_FOOT
@@ -155,8 +180,6 @@ classdef FootstepPlanner < DRCPlanner
               msg ='Foot Plan : Error: Mismatched foot'; disp(msg); send_status(6,0,0,msg);
               break;
             end
-            old_X = obj.steps(n2p(ndx));
-%             new_pos = obj.biped.footOrig2Contact(obj.target_footsteps(ndx).pos, 'center', old_X.is_right_foot);
             new_pos = obj.target_footsteps(ndx).pos;
             if ~obj.options.ignore_terrain || isnan(obj.target_footsteps(ndx).pos(3))
               new_pos = fitStepToTerrain(obj.biped, new_pos, 'center');
@@ -169,7 +192,6 @@ classdef FootstepPlanner < DRCPlanner
         end
       end
     end
-
 
     function run(obj, interval)
       obj.steps = [];
@@ -199,10 +221,7 @@ classdef FootstepPlanner < DRCPlanner
         if obj.needs_plan
           assert(~isempty(obj.goal_pos));
           disp('creating steps')
-          obj.options.bdi_step_duration
-          % profile on
           obj.steps = obj.biped.createInitialSteps(data.x0, obj.goal_pos, obj.options);
-          % profile viewer
         end
 
         obj = obj.getNewDraggedSteps(data, changed, changelist);

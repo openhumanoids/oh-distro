@@ -78,6 +78,18 @@ typedef struct _RendererWalking {
   BotGtkParamWidget *map_mode_pw;
   BotGtkParamWidget *ignore_terrain_pw;
   BotGtkParamWidget *path_pw;
+  GtkWidget *bdi_feedback_table;
+  GtkWidget *bdi_label_step_duration;
+  GtkWidget *bdi_label_sway_duration;
+  GtkWidget *bdi_label_step_height;
+  GtkWidget *bdi_label_lift_height;
+  GtkWidget *bdi_label_toe_off;
+  GtkWidget *bdi_label_knee_nominal;
+  GtkWidget *bdi_label_max_body_accel;
+  GtkWidget *bdi_label_max_foot_vel;
+  GtkWidget *bdi_label_sway_end_dist;
+  GtkWidget *bdi_label_step_end_dist;
+  GtkWidget *bdi_table;
   
   // PerceptionData *perceptionData;
 
@@ -116,6 +128,10 @@ typedef struct _RendererWalking {
   float bdi_step_duration;
   float bdi_sway_duration;
   float bdi_lift_height;
+  float bdi_max_body_accel;
+  float bdi_max_foot_vel;
+  float bdi_sway_end_dist;
+  float bdi_step_end_dist;
   bdi_toe_off_t bdi_toe_off;
   float bdi_knee_nominal;
 

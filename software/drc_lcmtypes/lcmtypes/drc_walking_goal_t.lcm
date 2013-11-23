@@ -36,6 +36,10 @@ struct walking_goal_t
 	float bdi_lift_height;
 	int32_t bdi_toe_off; // see drc_atlas_behavior_step_action_t
 	float bdi_knee_nominal;
+	float bdi_max_body_accel;
+	float bdi_max_foot_vel;
+	float bdi_sway_end_dist;
+	float bdi_step_end_dist;
 
 	boolean follow_spline;
 	boolean ignore_terrain;

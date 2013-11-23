@@ -42,6 +42,9 @@ struct atlas_behavior_step_action_t
 	//! on whether the step is using a toe-off or not.
 	//!
 	int32_t toe_off;
+	const int32_t TOE_OFF_DISABLE = 0;
+	const int32_t TOE_OFF_ENABLE = 1;
+	const int32_t TOE_OFF_FORCE_ENABLE = 2;
 
 	//!
 	//! \brief Nominal knee angle during the step.
@@ -53,7 +56,23 @@ struct atlas_behavior_step_action_t
 	//! 
 	float knee_nominal;
 
-	const int32_t TOE_OFF_DISABLE = 0;
-	const int32_t TOE_OFF_ENABLE = 1;
-	const int32_t TOE_OFF_FORCE_ENABLE = 2;
+	// Maximum body acceleration to determine minimum sway duration.
+	// The minimum sway duration will be determined by this maximum allowable body acceleration. Increase this value to allow the robot to move faster, but doing so may cause instability.
+	// Ignored if zero
+	float max_body_accel;
+
+	// Maximum foot velocity to determine minimum step duration.
+	// The minimum step duration will be determined by this maximum foot velocity. Increase this value to allow the robot to move faster, but doing so may destabilize the robot.
+	// Ignored if zero
+	float max_foot_vel;
+
+	// Distance short of the foot to aim for at the end of sway (in meters)
+	// Tuning parameter for swaying. Increase this value if the robot falls to the outside at the end of a sway.
+	// Ignored if not less than +- 5cm
+	float sway_end_dist;
+
+	// Distance to lean into the step before the foot comes down (in meters)
+	// Tuning parameter for stepping. Increase this value if the foot touchdown tends push the robot over unstably.
+	// Ignored if not less than +- 5cm
+	float step_end_dist;
 }
