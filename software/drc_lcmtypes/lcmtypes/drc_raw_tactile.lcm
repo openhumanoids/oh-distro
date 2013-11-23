@@ -3,7 +3,7 @@ package drc;
 // This message is a 1-to-1 translation of the scandia hand messge;
 // sandia_hand_msgs/msg/RawTactile.msg
 
-struct raw_tactile_t
+struct sandia_tactile_t
 {
   int64_t utime;
   
