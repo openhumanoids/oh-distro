@@ -68,6 +68,7 @@
 #define PARAM_MAP_MODE "Map mode "
 #define PARAM_FORCE_STICKY_FEET "Force final poses to sticky feet"
 #define PARAM_VELOCITY_BASED_STEPS "Velocity-based step positions"
+#define PARAM_SHOW_ADVANCED "Show advanced options"
 
 #define WALKING_MODE "Preset "
 
@@ -387,8 +388,8 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_FOOT_VEL, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, -1);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, -1);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0);  
   } else if (mode == STEPPING_BDI) {
     std::cout << "Using preset mode: BDI Stepping\n"; 
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 10); 
@@ -407,8 +408,8 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_FOOT_VEL, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, -1);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, -1);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0);  
   } else if (mode == STEPPING_BDI_OBSTACLES) {
     std::cout << "Using preset mode: BDI Obstacle Stepping\n"; 
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 4); 
@@ -427,8 +428,8 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_FOOT_VEL, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, -1);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, -1);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0);  
   } else if (mode == STEPPING_BDI_FINE) {
     std::cout << "Using preset mode: BDI Fine Stepping\n"; 
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 6); 
@@ -447,8 +448,8 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_FOOT_VEL, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, -1);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, -1);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0);  
   } else if (mode == WALKING_BDI_INFINITE) {
     std::cout << "Using preset mode: BDI Infinite Walking\n"; 
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 2); 
@@ -468,8 +469,8 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_FOOT_VEL, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, -1);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, -1);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0);  
   }else if (mode == WALKING_LADDER){
     std::cout << "Using preset mode: Ladder\n";
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 2);  
@@ -555,25 +556,30 @@ static void on_pw_changed(BotGtkParamWidget *pw, const char *name, void *user) {
   }
 
   get_params_from_widget(self);
-  switch (self->behavior) {
-    case BEHAVIOR_WALKING:
-      gtk_widget_show(GTK_WIDGET(self->drake_pw));
-      gtk_widget_hide(GTK_WIDGET(self->bdi_table));
-      break;
-    case BEHAVIOR_CRAWLING:
-      gtk_widget_show(GTK_WIDGET(self->drake_pw));
-      gtk_widget_hide(GTK_WIDGET(self->bdi_table));
-      break;
-    case BEHAVIOR_BDI_WALKING:
-      gtk_widget_show(GTK_WIDGET(self->bdi_table));
-      gtk_widget_hide(GTK_WIDGET(self->drake_pw));
-      break;
-    case BEHAVIOR_BDI_STEPPING:
-      gtk_widget_show(GTK_WIDGET(self->bdi_table));
-      gtk_widget_hide(GTK_WIDGET(self->drake_pw));
-      break;
-    default:
-      break;
+  if (!bot_gtk_param_widget_get_bool(self->main_pw, PARAM_SHOW_ADVANCED)) {
+    gtk_widget_hide(GTK_WIDGET(self->drake_pw));
+    gtk_widget_hide(GTK_WIDGET(self->bdi_table));
+  } else {
+    switch (self->behavior) {
+      case BEHAVIOR_WALKING:
+        gtk_widget_show(GTK_WIDGET(self->drake_pw));
+        gtk_widget_hide(GTK_WIDGET(self->bdi_table));
+        break;
+      case BEHAVIOR_CRAWLING:
+        gtk_widget_show(GTK_WIDGET(self->drake_pw));
+        gtk_widget_hide(GTK_WIDGET(self->bdi_table));
+        break;
+      case BEHAVIOR_BDI_WALKING:
+        gtk_widget_show(GTK_WIDGET(self->bdi_table));
+        gtk_widget_hide(GTK_WIDGET(self->drake_pw));
+        break;
+      case BEHAVIOR_BDI_STEPPING:
+        gtk_widget_show(GTK_WIDGET(self->bdi_table));
+        gtk_widget_hide(GTK_WIDGET(self->drake_pw));
+        break;
+      default:
+        break;
+    }
   }
   publish_walking_goal(self, FALSE);
 }
@@ -756,12 +762,15 @@ _free (BotRenderer *renderer)
 
 GtkWidget * create_feedback_label(RendererWalking* self, int row) {
   GtkWidget* label = gtk_label_new("");
-  gtk_table_attach(GTK_TABLE(self->bdi_feedback_table), GTK_WIDGET(label), 0, 1, row, row+1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_table_attach(GTK_TABLE(self->bdi_table), GTK_WIDGET(label), 1, 2, row, row+1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(label);
   return label;
 }
-  
 
+static void add_nav_button(GtkWidget* nav_table, GtkWidget* button, int c0, int c1, int r0, int r1) {
+  gtk_table_attach(GTK_TABLE(nav_table), button, c0, c1, r0, r1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_widget_show(button);
+}
 
 BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t *lcm, BotParam * param, BotFrames * frames)
 {
@@ -810,8 +819,8 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->bdi_sway_duration = 0;
   self->bdi_max_body_accel = 0;
   self->bdi_max_foot_vel = 0;
-  self->bdi_sway_end_dist = -1;
-  self->bdi_step_end_dist = -1;
+  self->bdi_sway_end_dist = 0;
+  self->bdi_step_end_dist = 0;
   self->mu = 1.0;
   self->leading_foot = DRC_WALKING_GOAL_T_LEAD_AUTO;
   self->robot_rot[0] = 1;
@@ -823,11 +832,6 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   self->velocity_based_steps = false;
 
   self->height_ground = 0.0;
-  
-  // self->perceptionData = new PerceptionData();
-  // self->perceptionData->mBotWrapper.reset(new maps::BotWrapper(lcm,param,frames));
-  // self->perceptionData->mViewClient.setBotWrapper(self->perceptionData->mBotWrapper);
-  // self->perceptionData->mViewClient.start();
 
   bot_core_pose_t_subscribe(self->lc, "POSE_GROUND", on_pose_ground, self);
   
@@ -873,22 +877,14 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   // bot_gtk_param_widget_add_booleans(self->follow_spline_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FOLLOW_SPLINE, 0, NULL);
 
 
-  gtk_table_attach(GTK_TABLE(nav_table), place_goal_button, 0,1,0,2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(place_goal_button);
-  gtk_table_attach(GTK_TABLE(nav_table), turn_left_button, 1, 2, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(turn_left_button);
-  gtk_table_attach(GTK_TABLE(nav_table), go_forward_button, 2, 3, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(go_forward_button);
-  gtk_table_attach(GTK_TABLE(nav_table), turn_right_button, 3, 4, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(turn_right_button);
-  gtk_table_attach(GTK_TABLE(nav_table), go_left_button, 1, 2, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(go_left_button);
-  gtk_table_attach(GTK_TABLE(nav_table), go_backward_button, 2, 3, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(go_backward_button);
-  gtk_table_attach(GTK_TABLE(nav_table), go_right_button, 3, 4, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(go_right_button);
-  gtk_table_attach(GTK_TABLE(nav_table), update_params_button, 4,5,0,2, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(update_params_button);
+  add_nav_button(nav_table, place_goal_button, 0,1,0,2);
+  add_nav_button(nav_table, turn_left_button, 1, 2, 0, 1);
+  add_nav_button(nav_table, go_forward_button, 2, 3, 0, 1);
+  add_nav_button(nav_table, turn_right_button, 3, 4, 0, 1);
+  add_nav_button(nav_table, go_left_button, 1, 2, 1, 2);
+  add_nav_button(nav_table, go_backward_button, 2, 3, 1, 2);
+  add_nav_button(nav_table, go_right_button, 3, 4, 1, 2);
+  add_nav_button(nav_table, update_params_button, 4,5,0,2);
 
   gtk_table_attach(GTK_TABLE(nav_table), GTK_WIDGET(self->lead_foot_pw), 0,4,2,3, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(GTK_WIDGET(self->lead_foot_pw));
@@ -922,6 +918,7 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_double(self->main_pw, PARAM_NOM_STEP_WIDTH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.22, 0.40, 0.01, self->nom_step_width);
   bot_gtk_param_widget_add_double(self->main_pw, PARAM_MAX_STEP_WIDTH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.22, 0.43, 0.01, self->max_step_width);
   bot_gtk_param_widget_add_booleans(self->main_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_FORCE_STICKY_FEET, self->force_to_sticky_feet, NULL);
+  bot_gtk_param_widget_add_booleans(self->main_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_ADVANCED, false, NULL);
   // bot_gtk_param_widget_add_booleans(self->main_pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_VELOCITY_BASED_STEPS, self->velocity_based_steps, NULL);
 
   self->drake_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
@@ -934,11 +931,11 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   self->bdi_table = gtk_table_new(1,2,FALSE);
   gtk_box_pack_start(GTK_BOX(outer_box), GTK_WIDGET(self->bdi_table), FALSE, TRUE, 0);
-  gtk_widget_show(self->bdi_table);
+  gtk_widget_hide(self->bdi_table);
 
   self->bdi_pw = BOT_GTK_PARAM_WIDGET(bot_gtk_param_widget_new());
   // gtk_box_pack_start(GTK_BOX(outer_box), GTK_WIDGET(self->bdi_pw), FALSE, TRUE, 0);
-  gtk_table_attach(GTK_TABLE(self->bdi_table), GTK_WIDGET(self->bdi_pw), 0, 1, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
+  gtk_table_attach(GTK_TABLE(self->bdi_table), GTK_WIDGET(self->bdi_pw), 0, 1, 0, 11, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
   gtk_widget_show(GTK_WIDGET(self->bdi_pw));
   bot_gtk_param_widget_add_separator (self->bdi_pw,"BDI Params"); 
   bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_STEP_DURATION, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.1, self->bdi_step_duration);
@@ -949,23 +946,25 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
   bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 2.0, 0.1, self->bdi_knee_nominal);
   bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 10, 0.1, self->bdi_max_body_accel);
   bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_MAX_FOOT_VEL, BOT_GTK_PARAM_WIDGET_SPINBOX, 0.0, 5.0, 0.1, self->bdi_max_foot_vel);
-  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, BOT_GTK_PARAM_WIDGET_SPINBOX, -1, 0.05, 0.01, self->bdi_sway_end_dist);
-  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, BOT_GTK_PARAM_WIDGET_SPINBOX, -1, 0.05, 0.01, self->bdi_step_end_dist);
+  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, BOT_GTK_PARAM_WIDGET_SPINBOX, -0.05, 0.05, 0.01, self->bdi_sway_end_dist);
+  bot_gtk_param_widget_add_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, BOT_GTK_PARAM_WIDGET_SPINBOX, -0.05, 0.05, 0.01, self->bdi_step_end_dist);
 
-  self->bdi_feedback_table = gtk_table_new(10, 1, FALSE);
-  gtk_table_attach(GTK_TABLE(self->bdi_table), GTK_WIDGET(self->bdi_feedback_table), 1, 2, 0, 10, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 0, 0);
-  gtk_widget_show(self->bdi_feedback_table);
-
-  self->bdi_label_step_duration = create_feedback_label(self, 0);
-  self->bdi_label_sway_duration = create_feedback_label(self, 1);
-  self->bdi_label_step_height = create_feedback_label(self, 2);
-  self->bdi_label_lift_height = create_feedback_label(self, 3);
-  self->bdi_label_toe_off = create_feedback_label(self, 4);
-  self->bdi_label_knee_nominal = create_feedback_label(self, 5);
-  self->bdi_label_max_body_accel = create_feedback_label(self, 6);
-  self->bdi_label_max_foot_vel = create_feedback_label(self, 7);
-  self->bdi_label_sway_end_dist = create_feedback_label(self, 8);
-  self->bdi_label_step_end_dist = create_feedback_label(self, 9);
+  GtkWidget *b = gtk_hbox_new(FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(b), gtk_hseparator_new(), TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(b), gtk_label_new("Saturated"), FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(b), gtk_hseparator_new(), TRUE, TRUE, 0);
+  gtk_widget_show_all(GTK_WIDGET(b));
+  gtk_table_attach(GTK_TABLE(self->bdi_table), b, 1, 2, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), (GtkAttachOptions)(GTK_FILL | GTK_SHRINK), 10, 0);
+  self->bdi_label_step_duration = create_feedback_label(self, 1);
+  self->bdi_label_sway_duration = create_feedback_label(self, 2);
+  self->bdi_label_step_height = create_feedback_label(self, 3);
+  self->bdi_label_lift_height = create_feedback_label(self, 4);
+  self->bdi_label_toe_off = create_feedback_label(self, 5);
+  self->bdi_label_knee_nominal = create_feedback_label(self, 6);
+  self->bdi_label_max_body_accel = create_feedback_label(self, 7);
+  self->bdi_label_max_foot_vel = create_feedback_label(self, 8);
+  self->bdi_label_sway_end_dist = create_feedback_label(self, 9);
+  self->bdi_label_step_end_dist = create_feedback_label(self, 10);
 
   g_signal_connect(G_OBJECT(place_goal_button), "clicked", G_CALLBACK(on_place_goal_clicked), self);
   g_signal_connect(G_OBJECT(turn_left_button), "clicked", G_CALLBACK(on_turn_left_clicked), self);

@@ -78,7 +78,6 @@ typedef struct _RendererWalking {
   BotGtkParamWidget *map_mode_pw;
   BotGtkParamWidget *ignore_terrain_pw;
   BotGtkParamWidget *path_pw;
-  GtkWidget *bdi_feedback_table;
   GtkWidget *bdi_label_step_duration;
   GtkWidget *bdi_label_sway_duration;
   GtkWidget *bdi_label_step_height;
