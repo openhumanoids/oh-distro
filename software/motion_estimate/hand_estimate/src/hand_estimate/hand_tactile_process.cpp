@@ -72,8 +72,10 @@ class AppIRobot: public App{
   private:
     static const unsigned int NTACTILE = 48;
     static const int TACTILE_THRESHOLD = 100;
-    float sandia_tactile_processed[NTACTILE];
-    float prob_sandia_tactile_processed[NTACTILE];
+    static const int TACTILE_SUM_THRESHOLD = 200;
+    
+    float irobot_tactile_processed[NTACTILE];
+    float prob_irobot_tactile_processed[NTACTILE];
     //////////////////////////////////////
     void irobotHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::raw_irobot_hand_t* msg);    
@@ -162,11 +164,11 @@ void AppIRobot::irobotHandler(const lcm::ReceiveBuffer* rbuf,
   
   // no tactile calibration needed
   for(size_t i=0;i<NTACTILE;i++)
-    sandia_tactile_processed[i] = msg->palmTactile[i];
+    irobot_tactile_processed[i] = msg->palmTactile[i];
       
   // map 0-200 to 0-1 using logistic function
   for(size_t i=0; i<NTACTILE; i++){
-    prob_sandia_tactile_processed[i] = logit(sandia_tactile_processed[i], 100, 0.1);
+    prob_irobot_tactile_processed[i] = logit(irobot_tactile_processed[i], 100, 0.1);
   }
   publishIRobotTactile(msg->utime);
 }
@@ -233,15 +235,15 @@ void AppIRobot::publishIRobotTactile(int64_t utime){
   msg_out.n_palm = NTACTILE;
   msg_out.palm.resize(NTACTILE);
   for(size_t i=0; i<NTACTILE; i++){
-    //msg_out.palm[i] = (float)sandia_tactile_processed[i];
-    msg_out.palm[i] = (float)prob_sandia_tactile_processed[i];
+    //msg_out.palm[i] = (float)irobot_tactile_processed[i];
+    msg_out.palm[i] = (float)prob_irobot_tactile_processed[i];
   }
   
   // summarize signals
-  float vmax = sandia_tactile_processed[0], vmin = sandia_tactile_processed[0];
+  float vmax = irobot_tactile_processed[0], vmin = irobot_tactile_processed[0];
   float vsum = 0;
   for(size_t i = 1; i < NTACTILE; i++){
-    float v = sandia_tactile_processed[i];
+    float v = irobot_tactile_processed[i];
     vmax = std::max(vmax,v);
     vmin = std::min(vmin,v);
     
@@ -259,8 +261,9 @@ void AppIRobot::publishIRobotTactile(int64_t utime){
   //msg_out.f3.push_back(prob_finger_tactile[3]);
   
   
-  msg_out.signal = logit(vsum, TACTILE_THRESHOLD, 0.1); //(float)fabs(vmax-vmin); 
-  msg_out.touched =  vsum > TACTILE_THRESHOLD;
+  msg_out.signal = logit(vsum, TACTILE_SUM_THRESHOLD, 0.1); //(float)fabs(vmax-vmin); 
+  //msg_out.signal = vsum;
+  msg_out.touched =  vsum > TACTILE_SUM_THRESHOLD;
   lcm_->publish(strHandName+"_"+strHandLR+"_TACTILE_STATE", &msg_out); 
   
   
@@ -340,7 +343,7 @@ int main(int argc, char *argv[]){
   AppSandia app_sandia_l(lcm, 1, 0);
   AppSandia app_sandia_r(lcm, 0, 0);
   AppIRobot app_irobot_l(lcm, 1, 0);
-  AppIRobot app_irobot_r(lcm, 0, 0);
+  AppIRobot app_irobot_r(lcm, 0, 1);
   
   while(0 == lcm->handle());
   return 0;
