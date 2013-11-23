@@ -137,10 +137,22 @@ def getHoseMateSuckerPunch():
   return [position, name]
 
 
+def getHoseMateSuckerPunchV2():
+  position=[0.107062466443, -0.0196658596396, -0.663225,  -1.05796146393, 1.40310549736, 0.173738107085, 1.54221315309, -0.830571591854, 0.01]
+  name=["back_bkx", "back_bky", "back_bkz",  "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position, name]
+
 def getHosePsycho():
   position=[-1.74607777596, 0.65927785635, 0.224538683891, 0.808890104294, -0.590336024761, 1.1200705735]
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position, name]
+
+
+def getHoseWalking():
+  position=[ -2.35619, 2.27305955092, 0.165548540652, 1.17722764717, 0.785398, 1.74017934501]
+  name=[ "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position, name]
+
 
 def keypress(input_char):
   global posture_side
@@ -170,7 +182,11 @@ def keypress(input_char):
   elif (input_char == "6"):
     [msg.joint_position, msg.joint_name] = getHoseMateSuckerPunch()
   elif (input_char == "7"):
+    [msg.joint_position, msg.joint_name] = getHoseMateSuckerPunchV2()
+  elif (input_char == "8"):
     [msg.joint_position, msg.joint_name] = getHosePsycho()
+  elif (input_char == "9"):
+    [msg.joint_position, msg.joint_name] = getHoseWalking()
   elif (input_char == "q"):
     [msg.joint_position, msg.joint_name] = getHandDown()
   elif (input_char == "w"):
@@ -213,23 +229,25 @@ if __name__ == '__main__':
   draw_string(screen, font, 10, 90,  "4 pulldown    - lower config below the current")
   draw_string(screen, font, 10, 110, "5 hosemate    - config mate")
   draw_string(screen, font, 10, 130, "6 hosemate    - sucker punch")
-  draw_string(screen, font, 10, 150, "7 hose pyscho - raise arm up after pulldown")
+  draw_string(screen, font, 10, 150, "7 hosemate    - sucker punch v2")
+  draw_string(screen, font, 10, 170, "8 hose pyscho - raise arm up after pulldown")
+  draw_string(screen, font, 10, 190, "9 hose walking- tuck arm in for walking")
 
-  draw_string(screen, font, 10, 190, "q handdown    - handdown")
-  draw_string(screen, font, 10, 210, "w zero back   - zero the back joint")
+  draw_string(screen, font, 10, 250, "q handdown    - handdown")
+  draw_string(screen, font, 10, 270, "w zero back   - zero the back joint")
 
-  draw_string(screen, font, 10, 250, "a shooter     - hand up and finger away")
-  draw_string(screen, font, 10, 270, "s shooterback - hand up and finger away, back straight")
-  draw_string(screen, font, 10, 290, "d crane       - hand pointing down from in front")
+  draw_string(screen, font, 10, 310, "a shooter     - hand up and finger away")
+  draw_string(screen, font, 10, 330, "s shooterback - hand up and finger away, back straight")
+  draw_string(screen, font, 10, 350, "d crane       - hand pointing down from in front")
 
-  draw_string(screen, font, 10, 330, "z minipoolque - lean back away and pull arm back")
-  draw_string(screen, font, 10, 350, "x poolqueue   - draw hand back with face down")
-  draw_string(screen, font, 10, 370, "c turn back   - turn the back z joint")
-  draw_string(screen, font, 10, 390, "v retract     - turn back and retract hand")
+  draw_string(screen, font, 10, 390, "z minipoolque - lean back away and pull arm back")
+  draw_string(screen, font, 10, 410, "x poolqueue   - draw hand back with face down")
+  draw_string(screen, font, 10, 430, "c turn back   - turn the back z joint")
+  draw_string(screen, font, 10, 450, "v retract     - turn back and retract hand")
 
 
 
-  draw_string(screen, font, 10, 410, "h switch hands")
+  draw_string(screen, font, 10, 510, "h switch hands")
   posture_side = 'l'
 
   pygame.display.flip()
