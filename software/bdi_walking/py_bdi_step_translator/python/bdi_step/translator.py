@@ -197,6 +197,10 @@ class BDIStepTranslator:
                               bdi_lift_height=0,
                               bdi_toe_off=0,
                               bdi_knee_nominal=0,
+                              bdi_max_body_accel=0,
+                              bdi_max_foot_vel=0,
+                              bdi_sway_end_dist=-1,
+                              bdi_step_end_dist=-1,
                               terrain_pts=np.matrix([]))] * n_steps
 
         self.bdi_step_queue = [f.to_bdi_spec(self.behavior, -1) for f in footsteps]

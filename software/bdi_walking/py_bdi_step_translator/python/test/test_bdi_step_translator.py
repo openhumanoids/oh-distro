@@ -72,7 +72,7 @@ class TestStepTranslation(unittest.TestCase):
         translator = BDIStepTranslator()
         def handle_steps(channel, msg_data):
             msg = drc.atlas_behavior_step_params_t.decode(msg_data)
-            self.assertAlmostEqual(msg.desired_step_spec.foot.position[0], 0.06)
+            self.assertAlmostEqual(msg.desired_step_spec.foot.position[0], 0.04)
             self.assertAlmostEqual(msg.desired_step_spec.foot.position[1], 0)
             self.assertAlmostEqual(msg.desired_step_spec.foot.position[2], 0)
             self.assertAlmostEqual(msg.desired_step_spec.foot.normal[0], 0)
@@ -83,7 +83,7 @@ class TestStepTranslation(unittest.TestCase):
         translator.handle_footstep_plan('COMMITTED_FOOTSTEP_PLAN', plan.encode())
         lc.handle()
 
-        self.assertAlmostEqual(translator.bdi_step_queue[0].foot.position[0], 0.06)
+        self.assertAlmostEqual(translator.bdi_step_queue[0].foot.position[0], 0.04)
         self.assertAlmostEqual(translator.bdi_step_queue[0].foot.position[1], 0)
         self.assertAlmostEqual(translator.bdi_step_queue[0].foot.position[2], 0)
         self.assertAlmostEqual(translator.bdi_step_queue[0].foot.normal[0], 0)
@@ -102,7 +102,7 @@ class TestStepTranslation(unittest.TestCase):
         translator = BDIStepTranslator(use_spec=False)
         def handle_steps(channel, msg_data):
             msg = drc.atlas_behavior_step_params_t.decode(msg_data)
-            self.assertAlmostEqual(msg.desired_step.position[0], 0.06)
+            self.assertAlmostEqual(msg.desired_step.position[0], 0.04)
             self.assertAlmostEqual(msg.desired_step.position[1], 0)
             self.assertAlmostEqual(msg.desired_step.position[2], 0)
             self.assertAlmostEqual(msg.desired_step.normal[0], 0)
@@ -113,7 +113,7 @@ class TestStepTranslation(unittest.TestCase):
         translator.handle_footstep_plan('COMMITTED_FOOTSTEP_PLAN', plan.encode())
         lc.handle()
 
-        self.assertAlmostEqual(translator.bdi_step_queue[0].position[0], 0.06)
+        self.assertAlmostEqual(translator.bdi_step_queue[0].position[0], 0.04)
         self.assertAlmostEqual(translator.bdi_step_queue[0].position[1], 0)
         self.assertAlmostEqual(translator.bdi_step_queue[0].position[2], 0)
         self.assertAlmostEqual(translator.bdi_step_queue[0].normal[0], 0)
@@ -133,7 +133,7 @@ class TestStepTranslation(unittest.TestCase):
         translator = BDIStepTranslator()
         def handle_steps(channel, msg_data):
             msg = drc.atlas_behavior_walk_params_t.decode(msg_data)
-            self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[0], 0.06)
+            self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[0], 0.04)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[1], 0)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.position[2], 0)
             self.assertAlmostEqual(msg.walk_spec_queue[0].foot.normal[0], 0)
@@ -146,7 +146,7 @@ class TestStepTranslation(unittest.TestCase):
 
         plotter = BDIStepTranslator(mode=Mode.plotting)
         plotter.handle_footstep_plan('CANDIDATE_FOOTSTEP_PLAN', plan.encode())
-        self.assertAlmostEqual(translator.bdi_step_queue[0].foot.position[0], 0.06)
+        self.assertAlmostEqual(translator.bdi_step_queue[0].foot.position[0], 0.04)
         self.assertAlmostEqual(translator.bdi_step_queue[0].foot.position[1], 0)
         self.assertAlmostEqual(translator.bdi_step_queue[0].foot.position[2], 0)
         self.assertAlmostEqual(translator.bdi_step_queue[0].foot.normal[0], 0)
@@ -162,7 +162,7 @@ class TestStepTranslation(unittest.TestCase):
         translator = BDIStepTranslator(use_spec=False)
         def handle_steps(channel, msg_data):
             msg = drc.atlas_behavior_walk_params_t.decode(msg_data)
-            self.assertAlmostEqual(msg.step_queue[0].position[0], 0.06)
+            self.assertAlmostEqual(msg.step_queue[0].position[0], 0.04)
             self.assertAlmostEqual(msg.step_queue[0].position[1], 0)
             self.assertAlmostEqual(msg.step_queue[0].position[2], 0)
             self.assertAlmostEqual(msg.step_queue[0].normal[0], 0)
@@ -175,7 +175,7 @@ class TestStepTranslation(unittest.TestCase):
 
         plotter = BDIStepTranslator(mode=Mode.plotting)
         plotter.handle_footstep_plan('CANDIDATE_FOOTSTEP_PLAN', plan.encode())
-        self.assertAlmostEqual(translator.bdi_step_queue[0].position[0], 0.06)
+        self.assertAlmostEqual(translator.bdi_step_queue[0].position[0], 0.04)
         self.assertAlmostEqual(translator.bdi_step_queue[0].position[1], 0)
         self.assertAlmostEqual(translator.bdi_step_queue[0].position[2], 0)
         self.assertAlmostEqual(translator.bdi_step_queue[0].normal[0], 0)
