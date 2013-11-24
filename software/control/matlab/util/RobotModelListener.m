@@ -40,7 +40,7 @@ classdef RobotModelListener
       elseif(msg.right_hand == msg.RIGHT_IROBOT_HOSE)
         data.right_hand_mode = 3;
       end
-      data.robot_name = string(msg.robot_name);
+      data.robot_name = char(msg.robot_name);
     end
   end
 end

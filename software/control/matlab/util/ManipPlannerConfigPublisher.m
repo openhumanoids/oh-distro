@@ -5,7 +5,7 @@ classdef ManipPlannerConfigPublisher
   end
   
   methods
-    function obj = ManipPlanPublisher(channel)
+    function obj = ManipPlannerConfigPublisher(channel)
       obj.channel = channel;
       obj.lc = lcm.lcm.LCM.getSingleton();
     end
@@ -16,16 +16,35 @@ classdef ManipPlannerConfigPublisher
       msg.desired_ee_arc_speed = data.desired_ee_arc_speed;
       msg.desired_joint_speed = data.desired_joint_speed;
       msg.plan_execution_time = data.plan_execution_time;
-      if(data.planning_mode == 1)
-        msg.planning_mode = drc.manip_plan_control_t.IKSEQUENCE_ON;
-      elseif(data.planning_mode == 2)
-        msg.planning_mode = drc.manip_plan_control_t.IKSEQUENCE_OFF;
-      elseif(data.planning_mode == 3)
-        msg.planning_mode = drc.manip_plan_control_t.TELEOP;
-      elseif(data.planning_mode == 4)
-        msg.planning_mode = drc.manip_plan_control_t.FIXEDJOINTS;
-      else
-        error('Invalid planning mode');
+      msg.reaching_planner_params = drc.reaching_planner_config_t();
+      msg.reaching_planner_params.control = drc.manip_plan_control_t();
+      msg.manip_planner_params = drc.manip_planner_config_t();
+      msg.manip_planner_params.control = drc.manip_plan_control_t();
+      msg.planner = data.planner;
+      if(data.planner == drc.planner_config_t.REACHING_PLANNER) 
+        if(data.planning_mode == 1)
+          msg.reaching_planner_params.control.mode= drc.manip_plan_control_t.IKSEQUENCE_ON;
+        elseif(data.planning_mode == 2)
+          msg.reaching_planner_params.control.mode= drc.manip_plan_control_t.IKSEQUENCE_OFF;
+        elseif(data.planning_mode == 3)
+          msg.reaching_planner_params.control.mode= drc.manip_plan_control_t.TELEOP;
+        elseif(data.planning_mode == 4)
+          msg.reaching_planner_params.control.mode= drc.manip_plan_control_t.FIXEDJOINTS;
+        else
+          error('mode not supported');
+        end
+      elseif(data.planner == drc.planner_config_t.MANIPULATION_PLANNER)
+        if(data.planning_mode == 1)
+          msg.manip_planner_params.control.mode= drc.manip_plan_control_t.IKSEQUENCE_ON;
+        elseif(data.planning_mode == 2)
+          msg.manip_planner_params.control.mode= drc.manip_plan_control_t.IKSEQUENCE_OFF;
+        elseif(data.planning_mode == 3)
+          msg.manip_planner_params.control.mode= drc.manip_plan_control_t.TELEOP;
+        elseif(data.planning_mode == 4)
+          msg.manip_planner_params.control.mode= drc.manip_plan_control_t.FIXEDJOINTS;
+        else
+          error('mode not supported');
+        end
       end
       
       obj.lc.publish(obj.channel, msg);

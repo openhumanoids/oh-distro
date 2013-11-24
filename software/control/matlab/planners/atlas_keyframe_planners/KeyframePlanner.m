@@ -489,13 +489,11 @@ classdef KeyframePlanner < handle
           BDI_joint_constraint = BDI_joint_constraint.setJointLimits(fixed_joint_idx,q0(fixed_joint_idx),q0(fixed_joint_idx));
         end
         
-        function publishPlannerConfig(obj,utime,plan_execution_time)
+        function data = checkPlannerConfig(obj,plan_execution_time)
           data = struct();
           data.desired_ee_arc_speed = obj.plan_cache.v_desired;
           data.desired_joint_speed = obj.plan_cache.qdot_desired;
-          data.planning_mode = obj.planning_mode;
           data.plan_execution_time = plan_execution_time;
-          obj.planner_config_publisher.publish(utime,data);
         end
     end
      %-----------------------------------------------------------------------------------------------------------------

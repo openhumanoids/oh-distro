@@ -18,6 +18,7 @@ classdef EndPosePlanner < KeyframePlanner
         l_hpy_lb
         shrinkfactor
         pelvis_upright_gaze_tol
+        
     end
     
     methods
@@ -49,23 +50,22 @@ classdef EndPosePlanner < KeyframePlanner
             obj.l_hpy_ub = -0.2;
             obj.l_hpx_lb = 0.0;
             obj.l_hpy_lb = -1.0;
-;
             
             obj.pelvis_upright_gaze_tol = pi/30;
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags) %#ok<INUSD>
+        function [xtraj,info] = generateAndPublishCandidateRobotEndPose(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags) %#ok<INUSD>
             N = length(unique(timeIndices));
             if(N>1)
-                %performs IKtraj 
-                 runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
+              %performs IKtraj 
+              [xtraj,info] = runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
             else
-                % performs IK
-                runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
+              % performs IK
+              [xtraj,info] = runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,timeIndices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
             end
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
+        function [xtraj_atlas,snopt_info] = runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
             disp('Generating candidate endpose via IKTraj Given EE Loci...');
             send_status(3,0,0,'Generating candidate endpose given EE Loci...');
             
@@ -328,11 +328,12 @@ classdef EndPosePlanner < KeyframePlanner
             pause(0.1);
           end
           
+          
            % TODO: Update Cache for Keyframe Adjustment
           
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
+        function [xtraj_atlas,snopt_info] = runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
             
             disp('Generating candidate endpose...');
             send_status(3,0,0,'Generating candidate endpose via IK...');
@@ -597,6 +598,7 @@ classdef EndPosePlanner < KeyframePlanner
             xtraj_atlas = zeros(2*nq_atlas,1);
             xtraj_atlas(1:nq_atlas,:) = q_out(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
             obj.pose_pub.publish(xtraj_atlas,utime);
+            
             
             %TODO: Update Plan Cache
             s = [0 1];

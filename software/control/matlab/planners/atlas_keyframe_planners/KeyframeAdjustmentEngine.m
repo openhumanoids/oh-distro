@@ -792,6 +792,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                    end
 
                 end
+                
                
             else
                 xtraj_atlas = zeros(nx_atlas,1);
@@ -799,6 +800,9 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 xtraj_atlas(1:nx_atlas/2) = q1(obj.atlas2robotFrameIndMap); % only publish the last state as an EndPose
                 obj.pose_pub.publish(xtraj_atlas,utime);
             end
+            planner_data = obj.checkPlannerConfig(ts(end)-ts(1));
+            planner_data.planner = drc.planner_config_t.ADJUST_ENGINE;
+            obj.planner_config_publisher.publish(utime,planner_data);
         end
         %-----------------------------------------------------------------------------------------------------------------  
         function cost = getCostVector(obj)

@@ -19,14 +19,16 @@ classdef PosturePlanner < KeyframePlanner
             obj.num_breaks = 4;
         end
     %-----------------------------------------------------------------------------------------------------------------              
-        function generateAndPublishPosturePlan(obj,x0,q_desired,useIK_state)
+        function [xtraj,info] = generateAndPublishPosturePlan(obj,x0,q_desired,useIK_state)
             %useIK_state -  {0,1,...,5};
-            %0-NoIK;
-            %1-WithIK, Ensures Feet are in contact also realigns pelvis to be upright ;
-            %2-WithIK, Ensures Feet are in contact, No Realignment;
-            %3-Only reads Left Arm Joint Angles from the mat file (w. Pelvis Realignment);
-            %4-Only reads Right Arm Joint Angles from the mat file (w. Pelvis Realignment);
-            %5-For Crouching, offsets pelvis height manually so that the rfoot is on the ground(z=0);
+            % 0 - NoIK;
+            % 1 - WithIK, Ensures Feet are in contact also realigns pelvis to be upright ;
+            % 2 - WithIK, Ensures Feet are in contact, No Realignment;
+            % 3 - Only reads Left Arm Joint Angles from the mat file (w. Pelvis Realignment);
+            % 4 - Only reads Right Arm Joint Angles from the mat file (w. Pelvis Realignment);
+            % 5 - For Crouching, offsets pelvis height manually so that the rfoot is on the ground(z=0);
+            % 6 - NoIK; copy the all joints (except fo the leg joints) from q_desired, and
+            %     take leg joints from x0
             if(obj.isBDIManipMode())
                 if (useIK_state==5)
                     warning('PosturePlanner:: you cant crouch in BDI_MANIP_MODE.');
@@ -34,10 +36,10 @@ classdef PosturePlanner < KeyframePlanner
                 end
             end
             
-            runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state);
+            [xtraj,info] = runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state);
         end
      %-----------------------------------------------------------------------------------------------------------------             
-        function runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state)
+        function [xtraj_atlas,info] = runOptimizationForPosturePlan(obj,x0,q_desired,useIK_state)
           obj.plan_cache.clearCache();
           obj.plan_cache.num_breaks = obj.num_breaks;
                       
@@ -224,7 +226,7 @@ classdef PosturePlanner < KeyframePlanner
             pelvis_desired_height = pelvis_height+rfoot_curr_height;
             q_desired(3) = pelvis_desired_height;
             q_desired([1 2 6]) = q0([1 2 6]);
-            
+            info = 1;
           elseif(useIK_state == 6)
             % change both hands, the pelvis and the torso to q_desired, and keep the lower
             % body joints and base to q0;
@@ -233,6 +235,7 @@ classdef PosturePlanner < KeyframePlanner
             upper_joint_ind = cellfun(@(s) isempty(strfind(s,'leg')) & isempty(strfind(s,'base')),coords);
             lower_joint_ind = ~upper_joint_ind;
             q_desired(lower_joint_ind) = q0(lower_joint_ind);
+            info = 1;
           end
           
           qdot0 = zeros(obj.r.getNumDOF,1);

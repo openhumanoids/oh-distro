@@ -23,7 +23,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           obj.restrict_feet=true;
       end
      %-----------------------------------------------------------------------------------------------------------------             
-      function generateAndPublishWholeBodyPlan(obj,varargin)
+      function [xtraj,info_vector] = generateAndPublishWholeBodyPlan(obj,varargin)
         switch nargin
           case 7
             x0 = varargin{1};
@@ -38,13 +38,13 @@ classdef WholeBodyPlanner < KeyframePlanner
             %runOptimization(obj,x0,ee_names,ee_loci,timeIndices);
 
             % Point wise IK, much faster, linear complexity.
-            runOptimizationForWholeBodyPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,goal_type_flags);
+            [xtraj,info_vector] = runOptimizationForWholeBodyPlanGivenEELoci(obj,x0,ee_names,ee_loci,timeIndices,postureconstraint,goal_type_flags);
           otherwise
             error('Incorrect usage of generateAndPublishWholeBodyPlan in Manip Planner. Undefined number of vargin.')
         end
       end
      %-----------------------------------------------------------------------------------------------------------------             
-      function runOptimizationForWholeBodyPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,goal_type_flags)
+      function [xtraj_atlas,snopt_info_vector] = runOptimizationForWholeBodyPlanGivenEELoci(obj,x0,ee_names,ee_loci,Indices,postureconstraint,goal_type_flags)
       
           obj.plan_cache.clearCache();
           obj.plan_cache.isPointWiseIK= true;
@@ -103,24 +103,13 @@ classdef WholeBodyPlanner < KeyframePlanner
             kinsol = doKinematics(obj.r,q_guess);
             r_foot_pose0 = forwardKin(obj.r,kinsol,obj.r_foot_body,[0;0;0],2);
             l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,[0;0;0],2);
-            head_pose0 = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],2);
-            head_pose0(1:3)=nan(3,1); % only set head orientation not position
-            head_pose_relaxed_constraint = {WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7),1e-4,[0 0])};
 
-            % compute fixed COM goal
-            gc = contactPositions(obj.r,q_guess);
-            k = convhull(gc(1:2,:)');
-            com0 = getCOM(obj.r,q_guess);
-            %   comgoal = [mean(gc(1:2,k(1:end-1)),2);com0(3)];
-            %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
-            com_constraint = {WorldCoMConstraint(obj.r,[com0(1)-.1;com0(2)-.1;com0(3)-.5],[com0(1)+.1;com0(2)+.1;com0(3)+0.5],[0 0])};
+            
+            
 
             % compute EE trajectories
             r_hand_pose0 = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
             l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
-            pelvis_pose0 = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
-            utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
-            utorso_pose0_relaxed_constraint = parse2PosQuatConstraint(obj.r,obj.utorso_body,[0;0;0],utorso_pose0,0,1e-4,[0 0]);
 
             % utorso_pose0 = utorso_pose0(1:3);
 
@@ -305,7 +294,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           for brk =1:length(s_breaks),
              q_breaks(:,brk) = obj.plan_cache.qtraj.eval(s_breaks(brk));
           end
-          q_atlas_breaks = q_breaks(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
+          
           
           Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
           Tmax_joints=obj.getTMaxForMaxJointSpeed();
@@ -389,6 +378,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           else
               obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
           end
+          
       end% end function
     %-----------------------------------------------------------------------------------------------------------------              
         function cost = getCostVector(obj)

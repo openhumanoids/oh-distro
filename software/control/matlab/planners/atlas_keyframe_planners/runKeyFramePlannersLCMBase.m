@@ -458,7 +458,7 @@ while(1)
         else
             disp('Keyframe adjustment engine currently expects one constraint at a time') ;
         end
-        
+        displayGazeConstraint(ee_goal_type_flags);
         keyframe_adjustment_engine.adjustAndPublishCachedPlan(x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,ee_goal_type_flags);
         
         % clear old constraints (currently we maintain a buffer of h constraint, it persists)
@@ -547,6 +547,7 @@ while(1)
             (~isempty(rep_gaze))|| (~isempty(lep_gaze))||...
             (~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))||...
             (~isempty(rf_ee_traj))||(~isempty(lf_ee_traj)))
+        displayGazeConstraint(ee_goal_type_flags);
         reaching_planner.generateAndPublishReachingPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
         cache = reaching_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
@@ -570,6 +571,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
+        displayGazeConstraint(ee_goal_type_flags);
         manip_planner.generateAndPublishManipulationPlan(x0,ee_names,ee_loci,timestamps,postureconstraint,ee_goal_type_flags);
         cache = manip_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
@@ -591,6 +593,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
+        displayGazeConstraint(ee_goal_type_flags);
         manip_planner.generateAndPublishManipulationMap(x0,ee_names,ee_loci,affIndices,ee_goal_type_flags);
         % NO KEYFRAME ADJUSTMENT FOR MANIP MAP
     end
@@ -614,6 +617,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
+        displayGazeConstraint(ee_goal_type_flags);
         wholebody_planner.generateAndPublishWholeBodyPlan(x0,ee_names,ee_loci,timestamps,postureconstraint,ee_goal_type_flags);
         cache = wholebody_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
@@ -714,6 +718,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
+        displayGazeConstraint(ee_goal_type_flags);
         endpose_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
         cache = endpose_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
@@ -818,9 +823,6 @@ while(1)
     
 end
 
-for i = 1:num_urdf
-  delete(urdf_names{i});
-end
 end
 
 
@@ -862,3 +864,22 @@ end
 %      manip_planner.generateAndPublishTeleopPlan(x0,ee_delta_pos,ee_delta_rpy,ee_teleop_msg.RIGHT_HAND,ee_teleop_msg.LEFT_HAND,aff2hand_offset,mate_axis);
 %    end
 %  end
+
+function displayGazeConstraint(ee_goal_type_flags)
+if(ee_goal_type_flags.h == 2)
+  msg = 'head camera gaze goal';
+  send_status(3,0,0,msg);
+end
+if(ee_goal_type_flags.lidar == 2)
+  msg = 'lidar gaze goal';
+  send_status(3,0,0,msg);
+end
+if(ee_goal_type_flags.lh == 2)
+  msg = 'left hand gaze goal';
+  send_status(3,0,0,msg);
+end
+if(ee_goal_type_flags.rh == 2)
+  msg = 'right hand gaze goal';
+  send_status(3,0,0,msg);
+end
+end

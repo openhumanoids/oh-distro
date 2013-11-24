@@ -10,6 +10,12 @@ classdef ReachingPlanner < KeyframePlanner
         planning_mode % 1 if ik sequence is on, 2 if use IK only, 3 if use teleop
         num_breaks
         hand_space; % A HandWorkspace object, used to retrieve a seed for IK.
+        
+        mx_pos_tol;
+        max_quat_tol;
+        max_ik_trial ;
+        pos_tol_array ;
+        quat_tol_array;
     end
     
     methods
@@ -24,8 +30,9 @@ classdef ReachingPlanner < KeyframePlanner
             obj.restrict_feet=true;
             obj.planning_mode = 1;
             obj.hand_space = HandWorkspace([getenv('DRC_PATH'),'/control/matlab/data/HandWorkSpace.mat']);
-            coords = obj.r.getStateFrame.coordinates;
-            coords = coords(1:obj.r.getNumDOF);
+            obj.max_ik_trial = 4;
+            obj.setPosTol(0.03); % 3 cm maximum
+            obj.setQuatTol(12); % 12 degrees maximum
         end
         
         function setPlanningMode(obj,val)
@@ -49,24 +56,13 @@ classdef ReachingPlanner < KeyframePlanner
               h_ee_goal = varargin{6};
               lidar_ee_goal = varargin{7};
               goal_type_flags =varargin{8};
-              snopt_info = runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
-            case 10
-              x0 = varargin{1};
-              rh_ee_goal= varargin{2};
-              lh_ee_goal= varargin{3};
-              rf_ee_goal= varargin{4};
-              lf_ee_goal= varargin{5};
-              h_ee_goal = varargin{6};
-              lidar_ee_goal = varargin{7};
-              goal_type_flags =varargin{8};
-              q_desired = varargin{9};
-              snopt_info = runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags,q_desired);
+              [xtraj,snopt_info] = runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
             otherwise
               error('Incorrect usage of generateAndPublishReachingPlan in Reaching Planner. Undefined number of inputs.')
           end
         end
         
-        function generateReachPlanToCompensateForCurrentSSE(obj,x0,mode)
+        function [xtraj,snopt_info] = generateReachPlanToCompensateForCurrentSSE(obj,x0,mode)
             rh_ee_goal= [];
             lh_ee_goal= [];
             rf_ee_goal= [];
@@ -181,80 +177,22 @@ classdef ReachingPlanner < KeyframePlanner
             
             previous_planning_mode = obj.planning_mode;
             setPlanningMode(obj,3); % set to teleop mode
-            runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags);
+            [xtraj,snopt_info] = runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,goal_type_flags);
             setPlanningMode(obj,previous_planning_mode);
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function snopt_info = runOptimization(obj,varargin)
+        function [xtraj_atlas,snopt_info] = runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
             
             obj.plan_cache.clearCache();
             obj.plan_cache.num_breaks = obj.num_breaks;
-            
-            q_desired= [];
-            rh_ee_goal= [];
-            lh_ee_goal= [];
-            rf_ee_goal= [];
-            lf_ee_goal= [];
-            h_ee_goal = [];
-            lidar_ee_goal = [];
-            goal_type_flags.lh = 0; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-            goal_type_flags.rh = 0;
-            goal_type_flags.h  = 0;
-            goal_type_flags.lf = 0;
-            goal_type_flags.rf = 0;
-            goal_type_flags.lidar = 0;
-            switch nargin
-                case 9
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    lidar_ee_goal = varargin{7};
-                    goal_type_flags= varargin{8};
-                case 10
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    lidar_ee_goal = varargin{7};
-                    goal_type_flags= varargin{8};
-                    q_desired = varargin{9};
-                otherwise
-                    error('Incorrect usage of runOptimization in Manip Planner. Undefined number of vargin.')
-            end
-            
             
             disp('Generating plan...');
             send_status(3,0,0,'Generating  plan...');
             
             q0 = x0(1:getNumDOF(obj.r));
-            obj.checkPosture(q0);
-            T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
-            [joint_lb_tmp,joint_ub_tmp] = obj.r.getJointLimits();
-            q0_bound = min([q0 joint_ub_tmp],[],2);
-            q0_bound = max([q0_bound joint_lb_tmp],[],2);
-            
-            if(obj.isBDIManipMode())
-              % Add the joint constraints on the lower bodies in the BDI manip mode, to guarantee
-              % that lower joints are fixed
-              coords = obj.r.getStateFrame.coordinates();
-              coords = coords(1:obj.r.getNumDOF());
-              joint_idx = (1:obj.r.getNumDOF())';
-              lower_fixed_joint_idx = joint_idx(cellfun(@(s) ~isempty(strfind(s,'leg')) | ~isempty(strfind(s,'base')),coords));
-              lower_fixed_posture_constraint = PostureConstraint(obj.r);
-              lower_fixed_posture_constraint = lower_fixed_posture_constraint.setJointLimits(lower_fixed_joint_idx,...
-              q0_bound(lower_fixed_joint_idx),q0_bound(lower_fixed_joint_idx));
-              if(any(q0_bound<joint_lb_tmp) || any(q0_bound>joint_ub_tmp))
-                 error('Joint limit not satisfied');
-              end
-            else
-              lower_fixed_posture_constraint = PostureConstraint(obj.r);
-            end
-            
+            q0_bound = obj.checkPosture(q0);
+            T_world_body = HT(q0_bound(1:3),q0_bound(4),q0_bound(5),q0_bound(6));
+             
             % get foot positions
             kinsol = doKinematics(obj.r,q0_bound);
             r_foot_contact_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
@@ -267,23 +205,13 @@ classdef ReachingPlanner < KeyframePlanner
             l_foot_pose0 = forwardKin(obj.r,kinsol,obj.l_foot_body,l_foot_pts,2);
             
             
-            % compute fixed COM goal
-            gc = contactPositions(obj.r,q0_bound);
-            k = convhull(gc(1:2,:)');
-            com0 = getCOM(obj.r,kinsol);
-            %   comgoal = [mean(gc(1:2,k),2);com0(3)];
-            %   comgoal = com0; % DOnt move com for now as this is pinned manipulation
-            
-            
-            % get hand positions
-            
             % compute EE trajectories
             r_hand_pose0 = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
             l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
-            
+            pelvis_pose0 = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
+            utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
             
             % Get head position
-            
             head_pose0 = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],2);
             %======================================================================================================
             
@@ -291,36 +219,34 @@ classdef ReachingPlanner < KeyframePlanner
             
             if(isempty(rh_ee_goal))
                 rh_ee_goal = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],1);
-                rhandT  = rh_ee_goal(1:6);
                 rhandT = [nan;nan;nan;nan;nan;nan];
             else
-                if(goal_type_flags.rh ~=2)
-                    rhandT = zeros(6,1);
-                    % Desired position of palm in world frame
-                    T_world_palm_r = HT(rh_ee_goal(1:3),rh_ee_goal(4),rh_ee_goal(5),rh_ee_goal(6));
-                    T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
-                    rhandT(1:3) = T_world_hand_r(1:3,4);
-                    rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
-                else
-                    rhandT = rh_ee_goal(1:6);
-                end
+              if(goal_type_flags.rh ~=2)
+                rhandT = zeros(6,1);
+                % Desired position of palm in world frame
+                T_world_palm_r = HT(rh_ee_goal(1:3),rh_ee_goal(4),rh_ee_goal(5),rh_ee_goal(6));
+                T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
+                rhandT(1:3) = T_world_hand_r(1:3,4);
+                rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
+              else
+                rhandT = rh_ee_goal(1:6);
+              end
             end
             
             if(isempty(lh_ee_goal))
                 lh_ee_goal = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
-                lhandT  = lh_ee_goal(1:6);
                 lhandT = [nan;nan;nan;nan;nan;nan];
             else
-                if(goal_type_flags.lh ~= 2)
-                    lhandT = zeros(6,1);
-                    % Desired position of palm in world frame
-                    T_world_palm_l = HT(lh_ee_goal(1:3),lh_ee_goal(4),lh_ee_goal(5),lh_ee_goal(6));
-                    T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
-                    lhandT(1:3) = T_world_hand_l(1:3,4);
-                    lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
-                else
-                    lhandT = lh_ee_goal(1:6);
-                end
+              if(goal_type_flags.lh ~= 2)
+                lhandT = zeros(6,1);
+                % Desired position of palm in world frame
+                T_world_palm_l = HT(lh_ee_goal(1:3),lh_ee_goal(4),lh_ee_goal(5),lh_ee_goal(6));
+                T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
+                lhandT(1:3) = T_world_hand_l(1:3,4);
+                lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
+              else
+                lhandT = lh_ee_goal(1:6);
+              end
             end
             
             if(isempty(rf_ee_goal))
@@ -332,9 +258,9 @@ classdef ReachingPlanner < KeyframePlanner
                 rfootT = zeros(6,num_r_foot_pts);
                 % Desired position of palm in world frame
                 for k = 1:num_r_foot_pts
-                    T_world_foot_r = HT(rf_ee_goal(1:3,k),rf_ee_goal(4,k),rf_ee_goal(5,k),rf_ee_goal(6,k));
-                    rfootT(1:3,k) = T_world_foot_r(1:3,4);
-                    rfootT(4:6,k) =rotmat2rpy(T_world_foot_r(1:3,1:3));
+                  T_world_foot_r = HT(rf_ee_goal(1:3,k),rf_ee_goal(4,k),rf_ee_goal(5,k),rf_ee_goal(6,k));
+                  rfootT(1:3,k) = T_world_foot_r(1:3,4);
+                  rfootT(4:6,k) =rotmat2rpy(T_world_foot_r(1:3,1:3));
                 end
             end
             
@@ -355,7 +281,6 @@ classdef ReachingPlanner < KeyframePlanner
             
             if(isempty(h_ee_goal))
                 h_ee_goal = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],1);
-                headT  = h_ee_goal(1:6);
                 headT = nan(6,1);
             else
               if(goal_type_flags.h ~= 2)
@@ -367,31 +292,6 @@ classdef ReachingPlanner < KeyframePlanner
                 headT(1:3) = T_world_head(1:3, 4);
                 headT(4:6) =rotmat2rpy(T_world_head(1:3,1:3));
             end
-            
-            
-            
-            %===========================================================================
-            % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-            head_gaze_target = [];
-            lhand_gaze_target = [];
-            rhand_gaze_target = [];
-            lidar_gaze_target = [];
-            if(goal_type_flags.h == 2)
-                % headT(1:3) is actually object pos
-                head_gaze_target = headT(1:3);
-            end
-            if(goal_type_flags.lh == 2)
-                % lhandT(1:3) is actually object pos
-                lhand_gaze_target = lhandT(1:3);
-            end
-            if(goal_type_flags.rh == 2)
-                % rhandT(1:3) is actually object pos
-                rhand_gaze_target = rhandT(1:3);
-            end
-            if(goal_type_flags.lidar == 2)
-              lidar_gaze_target = lidar_ee_goal(1:3);
-            end
-            %===========================================================================
             
             if(goal_type_flags.rh ~=2)
                 r_hand_poseT = [rhandT(1:3); rpy2quat(rhandT(4:6))];
@@ -429,257 +329,193 @@ classdef ReachingPlanner < KeyframePlanner
             ikoptions = ikoptions.setDebug(true);
             ikoptions = ikoptions.setMajorIterationsLimit(500);
             
-            comgoal.min = [com0(1)-.1;com0(2)-.1;com0(3)-.5];
-            comgoal.max = [com0(1)+.1;com0(2)+.1;com0(3)+0.5];
-            pelvis_pose0 = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
-            
-            utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
-            utorso_pose0_relaxed = utorso_pose0;
-            %       utorso_pose0_relaxed.min=utorso_pose0-[0*ones(3,1);1e-1*ones(4,1)];
-            %       utorso_pose0_relaxed.max=utorso_pose0+[0*ones(3,1);1e-1*ones(4,1)];
-            %       utorso_pose0 = utorso_pose0(1:3);
-            
-            
-            
             s = [0 1]; % normalized arc length index
-            
-            tol=1e-3;
-            [rhand_poseT_min,rhand_poseT_max,rhand_poseT_quat,rhand_poseT_tol] = parsePoseT(obj,r_hand_poseT,tol,rhand_poseT_isnan);
-            [lhand_poseT_min,lhand_poseT_max,lhand_poseT_quat,lhand_poseT_tol] = parsePoseT(obj,l_hand_poseT,tol,lhand_poseT_isnan);
-            [rfoot_poseT_min,rfoot_poseT_max,rfoot_poseT_quat,rfoot_poseT_tol] = parsePoseT(obj,r_foot_poseT,tol,false);
-            [lfoot_poseT_min,lfoot_poseT_max,lfoot_poseT_quat,lfoot_poseT_tol] = parsePoseT(obj,l_foot_poseT,tol,false);
-            [head_poseT_min,head_poseT_max,head_poseT_quat,head_poseT_tol] = parsePoseT(obj,head_poseT,tol,head_poseT_isnan);
             
             
             % End State Constraints
             % Constraints for feet
-            
+
+
             iktraj_lhand_constraint = {};
             iktraj_rhand_constraint = {};
             iktraj_lfoot_constraint = {};
             iktraj_rfoot_constraint = {};
             iktraj_pelvis_constraint = {};
             iktraj_head_constraint = {};
+            rhand_constraint = {};
+            lhand_constraint = {};
+            head_constraint = {};
+            pelvis_constraint = {};
             if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
-                if(obj.restrict_feet)
-                    rfoot_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose0,0,0,[s(1),s(end)]);
-                    lfoot_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose0,0,0,[s(1),s(end)]);
-                    iktraj_rfoot_constraint = [iktraj_rfoot_constraint,rfoot_constraint];
-                    iktraj_lfoot_constraint = [iktraj_lfoot_constraint,lfoot_constraint];
-                else
-                    rfoot_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose0,0,0,[s(1),s(1)]);
-                    lfoot_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose0,0,0,[s(1),s(1)]);
-                    iktraj_rfoot_constraint = [iktraj_rfoot_constraint,rfoot_constraint];
-                    iktraj_lfoot_constraint = [iktraj_lfoot_constraint,lfoot_constraint];
-                    
-                    iktraj_rfoot_constraint = [iktraj_rfoot_constraint,...
-                        parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,...
-                        [(rfoot_poseT_min+rfoot_poseT_max)/2;rfoot_poseT_quat],...
-                        (rfoot_poseT_max-rfoot_poseT_min)/2,r_foot_poseT_tol,[s(end),s(end)])];
-                    iktraj_lfoot_constraint = [iktraj_lfoot_constraint,...
-                        parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,...
-                        [(lfoot_poseT_min+lfoot_poseT_max)/2;lfoot_poseT_quat],...
-                        (lfoot_poseT_max-lfoot_poseT_min)/2,l_foot_poseT_tol,[s(end),s(end)])];
-                    
-                end
-                qsc = qsc.addContact(obj.l_foot_body,l_foot_contact_pts,obj.r_foot_body,r_foot_contact_pts);
+              if(obj.restrict_feet)
+                rfoot_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose0,0,0,[s(1),s(end)]);
+                lfoot_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose0,0,0,[s(1),s(end)]);
+                iktraj_rfoot_constraint = [iktraj_rfoot_constraint,rfoot_constraint];
+                iktraj_lfoot_constraint = [iktraj_lfoot_constraint,lfoot_constraint];
+              else
+                rfoot_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose0,0,0,[s(1),s(1)]);
+                lfoot_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose0,0,0,[s(1),s(1)]);
+                iktraj_rfoot_constraint = [iktraj_rfoot_constraint,rfoot_constraint];
+                iktraj_lfoot_constraint = [iktraj_lfoot_constraint,lfoot_constraint];
+
+                iktraj_rfoot_constraint = [iktraj_rfoot_constraint,...
+                  parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,...
+                  r_foot_poseT,0,0,[s(end),s(end)])];
+                iktraj_lfoot_constraint = [iktraj_lfoot_constraint,...
+                  parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,...
+                  l_foot_poseT,0,0,[s(end),s(end)])];
+              end
+              qsc = qsc.addContact(obj.l_foot_body,l_foot_contact_pts,obj.r_foot_body,r_foot_contact_pts);
             end % end if(~obj.isBDIManipMode())
             
             
             % Constraints for hands
-            quat_Tol=sind(2).^2;
-            rhand_constraint0 = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0(1:3,:),r_hand_pose0(1:3,:),[s(1),s(1)]),...
-                WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose0(4:7,1),quat_Tol,[s(1) s(1)])};
-            lhand_constraint0 = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0(1:3,:),l_hand_pose0(1:3,:),[s(1),s(1)]),...
-                WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose0(4:7,1),quat_Tol,[s(1) s(1)])};
+            rhand_constraint0 = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0,0,0,[s(1) s(1)]);
+            lhand_constraint0 = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0,0,0,[s(1) s(1)]);
+            
             iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraint0];
             iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint0];
-            if(~rhand_poseT_isnan)
-                rhand_constraintT = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],rhand_poseT_min,rhand_poseT_max,[s(end),s(end)]),...
-                    WorldQuatConstraint(obj.r,obj.r_hand_body,rhand_poseT_quat,quat_Tol,[s(end),s(end)])};
-                iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraintT];
-            end
-            if(~lhand_poseT_isnan)
-                lhand_constraintT = {WorldPositionConstraint(obj.r,obj.l_hand_body,[0;0;0],lhand_poseT_min,lhand_poseT_max,[s(end),s(end)]),...
-                    WorldQuatConstraint(obj.r,obj.l_hand_body,lhand_poseT_quat,quat_Tol,[s(end),s(end)])};
-                iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraintT];
-            end
-            
-            % Constraints for head
-            head_constraint0 = {WorldPositionConstraint(obj.r,obj.head_body,[0;0;0],head_pose0(1:3,:),head_pose0(1:3,:),[s(1),s(1)]),...
-                WorldQuatConstraint(obj.r,obj.head_body,head_pose0(4:7,1),quat_Tol,[s(1) s(1)])};
-            if(~head_poseT_isnan)
-                head_constraintT = {WorldPositionConstraint(obj.r,obj.head_body,[0;0;0],head_poseT_min,head_poseT_max,[s(end),s(end)]),...
-                    WorldQuatConstraint(obj.r,obj.head_body,head_poseT_quat,head_poseT_tol,[s(end),s(end)])};
-            end
-            
             
             if(obj.restrict_feet)
-                pelvis_quat_Tol=sind(0.01).^2;
-                pelvis_constraint = {WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0(1:3,:),pelvis_pose0(1:3,:),[s(1),s(end)]),...
-                    WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose0(4:7,1),pelvis_quat_Tol,[s(1) s(end)])};
+                pelvis_quat_tol=sind(0.01).^2;
+                pelvis_constraint = parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,0,pelvis_quat_tol,[s(1) s(end)]);
                 iktraj_pelvis_constraint = [iktraj_pelvis_constraint,pelvis_constraint];
             end
             
             % Solve IK at final pose and pass as input to sequence search
-            pert = [1e-3*ones(3,1); 1e-2*ones(4,1)];
+
             
             
-            lhand_min = l_hand_poseT-repmat(pert,1,size(l_hand_poseT,2));
-            lhand_max = l_hand_poseT+repmat(pert,1,size(l_hand_poseT,2));
-            rfoot_min = r_foot_poseT-repmat(pert,1,size(r_foot_poseT,2));
-            rfoot_max = r_foot_poseT+repmat(pert,1,size(r_foot_poseT,2));
-            lfoot_min = l_foot_poseT-repmat(pert,1,size(l_foot_poseT,2));
-            lfoot_max = l_foot_poseT+repmat(pert,1,size(l_foot_poseT,2));
-            head_min = head_poseT-repmat(pert,1,size(head_poseT,2));
-            head_max = head_poseT+repmat(pert,1,size(head_poseT,2));
-            tspan = [1 1];
-            if(~rhand_poseT_isnan)
-                rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_poseT,1e-3,1e-4,tspan);
-            else
-                rhand_constraint = {};
+            if(goal_type_flags.h == 2)
+              head_gaze_target = h_ee_goal(1:3);
+              head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,head_gaze_target,obj.h_camera_origin,obj.head_gaze_tol)};
+              iktraj_head_constraint = [iktraj_head_constraint,head_constraint];
+            end
+            if(goal_type_flags.rh == 2)
+              rhand_gaze_target = rh_ee_goal(1:3);
+              rhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rhand_gaze_target,obj.rh_camera_origin,obj.hand_gaze_tol)};
+              iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraint];
+            end
+            if(goal_type_flags.lh == 2)
+              lhand_gaze_target = lh_ee_goal(1:3);
+              lhand_constraint = {WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lhand_gaze_target,obj.lh_camera_origin,obj.hand_gaze_tol)};
+              iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint];
             end
             
-            if(~lhand_poseT_isnan)
-                lhand_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_poseT,1e-3,1e-4,tspan);
-            else
-                lhand_constraint = {};
+            if(goal_type_flags.lidar == 2)
+              lidar_gaze_target = h_ee_goal(1:3);
+              head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,lidar_gaze_target,obj.h_camera_origin,obj.lidar_gaze_tol)};
+              iktraj_head_constraint = [iktraj_head_constraint,head_constraint];
             end
             
-            if(~head_poseT_isnan)
-                head_constraint = parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_poseT,1e-3,1e-4,tspan);
-            else
-                head_constraint = {};
-            end
-            rfoot_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,[0;0;0],r_foot_poseT,1e-3,1e-4,tspan);
-            lfoot_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,[0;0;0],l_foot_poseT,1e-3,1e-4,tspan);
-            
-            
-            if(~isempty(head_gaze_target))
-                head_constraint = [head_constraint,{WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,head_gaze_target,obj.h_camera_origin,obj.head_gaze_tol)}];
-                iktraj_head_constraint = [iktraj_head_constraint,head_constraint];
-            end
-            if(~isempty(rhand_gaze_target))
-                rhand_constraint = [rhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.r_hand_body,obj.rh_gaze_axis,rhand_gaze_target,obj.rh_camera_origin,obj.hand_gaze_tol)}];
-                iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraint];
-            end
-            if(~isempty(lhand_gaze_target))
-                lhand_constraint = [lhand_constraint,{WorldGazeTargetConstraint(obj.r,obj.l_hand_body,obj.lh_gaze_axis,lhand_gaze_target,obj.lh_camera_origin,obj.hand_gaze_tol)}];
-                iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint];
-            end
-            
-            if(~isempty(lidar_gaze_target))
-              new_head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,lidar_gaze_target,obj.h_camera_origin,obj.lidar_gaze_tol)};
-              head_constraint = [head_constraint,new_head_constraint];
-              iktraj_head_constraint = [iktraj_head_constraint,new_head_constraint];
-            end
-            
-            %============================
-            %       0,comgoal,...
             q_final_guess= q0_bound;
             
-            if(isempty(q_desired))
-                q_start=q0_bound;
-                rfoot_pose0_constraint = {WorldPositionConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose0(1:3,:),r_foot_pose0(1:3,:),tspan),...
-                    WorldQuatConstraint(obj.r,obj.r_foot_body,r_foot_pose0(4:7,1),0,tspan)};
-                lfoot_pose0_constraint = {WorldPositionConstraint(obj.r,obj.l_foot_body,r_foot_pts,l_foot_pose0(1:3,:),l_foot_pose0(1:3,:),tspan),...
-                    WorldQuatConstraint(obj.r,obj.l_foot_body,l_foot_pose0(4:7,1),0,tspan)};
-                qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
-                
-                if(obj.planning_mode == 3)% teleop mode
-                    kinsol = doKinematics(obj.r,q0_bound);
-                    rhand_pose = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
-                    lhand_pose = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
-                    head_pose = forwardKin(obj.r,kinsol,obj.head_body,[0;0;0],2);
-                    pelvis_pose = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
-                    
-                    tspan = [1 1];
-                    if(all(isnan(pelvis_pose0)))
-                        pelvis_constraint = [pelvis_constraint,parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose,0,0,tspan)];
-                    end
-                    if(rhand_poseT_isnan)
-                        rhand_constraint = [rhand_constraint,parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],rhand_pose,0,0,tspan)];
-                    end
-                    if(lhand_poseT_isnan)
-                        lhand_constraint = [lhand_constraint,parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],lhand_pose,0,0,tspan)];
-                    end
-                    if(head_poseT_isnan)
-                        head_constraint = [head_constraint,parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_pose,0,0,tspan)];
-                    end
-                end
-                
-                
-                hand_joint_idx = [obj.lhand2robotFrameIndMap(obj.lhand2robotFrameIndMap <= obj.r.getNumDOF);...
-                  obj.rhand2robotFrameIndMap(obj.rhand2robotFrameIndMap <= obj.r.getNumDOF)];
-                reaching_joint_cnst = obj.joint_constraint;
-                reaching_joint_cnst = reaching_joint_cnst.setJointLimits(hand_joint_idx,...
-                  q0_bound(hand_joint_idx),...
-                  q0_bound(hand_joint_idx));
-                if(obj.planning_mode == 4)
-                  if(isempty(rhand_constraint))
-                    reaching_joint_cnst = reaching_joint_cnst.setJointLimits(obj.r_arm_joint_ind,...
-                      q0_bound(obj.r_arm_joint_ind),...
-                      q0_bound(obj.r_arm_joint_ind));
-                  end
-                  if(isempty(lhand_constraint))
-                    reaching_joint_cnst = reaching_joint_cnst.setJointLimits(obj.l_arm_joint_ind,...
-                      q0_bound(obj.l_arm_joint_ind),...
-                      q0_bound(obj.l_arm_joint_ind));
-                  end
-                end
-                if(obj.isBDIManipMode())
-                  reaching_joint_cnst = reaching_joint_cnst.setJointLimits(lower_fixed_joint_idx,q0_bound(lower_fixed_joint_idx),q0_bound(lower_fixed_joint_idx));
-                end
-                
-                
-                total_ik_attempt = 30;
-                
-                
-                if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
-                    if(obj.restrict_feet)
-                        %obj.pelvis_body,[0;0;0],pelvis_pose0,...
-                        [q_final_guess,snopt_info,infeasible_constraint] = inverseKinRepeatSearch(obj.r,total_ik_attempt,q_start,ik_qnom,...
-                            rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
-                            rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                            reaching_joint_cnst,qsc,ikoptions);
-                    else
-                        % if feet are not restricted then you need to add back pelvis constraint
-                        [q_final_guess,snopt_info,infeasible_constraint] = inverseKinRepeatSearch(obj.r,total_ik_attempt,q_start,ik_qnom,...
-                            pelvis_constraint{:},...
-                            rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
-                            rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                            reaching_joint_cnst,qsc,ikoptions);
-                    end
-                else
-                    [q_final_guess,snopt_info,infeasible_constraint] = inverseKinRepeatSearch(obj.r,total_ik_attempt,q_start,ik_qnom,...
-                        rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
-                        reaching_joint_cnst,ikoptions);
-                end % end if(~obj.isBDIManipMode())
-                
-                  
-                
-                
-                if(snopt_info >10)
-                    % this warning is at an intermediate point in the planning
-                    % it is not an indication that the final plan is in violation
-                    
-                    send_msg = sprintf('snopt_info = %d. Reaching plan initial IK is not very good.',snopt_info);
-                    if(obj.planning_mode == 2 || obj.planning_mode == 3)
-                      send_status(4,0,0,send_msg);
-                    end
-                    display(infeasibleConstraintMsg(infeasible_constraint));
-                end
+            q_start=q0_bound;
+            if(obj.restrict_feet)
+              tspan_feet = [0 1];
             else
-                q_final_guess =q_desired;
-                snopt_info = 0;
+              tspan_feet = [0 0];
             end
-            %============================
-            
+            rfoot_pose0_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,r_foot_pts,r_foot_pose0,0,0,tspan_feet);
+            lfoot_pose0_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,l_foot_pts,l_foot_pose0,0,0,tspan_feet);
+            qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);
 
-            qtraj_guess = PPTrajectory(spline([s(1) s(end)],[zeros(obj.r.getNumDOF,1) q0_bound q_final_guess zeros(obj.r.getNumDOF,1)]));
-%             collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
-            iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
-            if(obj.planning_mode == 1 || obj.planning_mode == 4)
+                        
+            if(obj.planning_mode == 3)% teleop mode
+              pelvis_constraint = [pelvis_constraint,parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,0,0,[1,1])];
+              if(rhand_poseT_isnan)
+                rhand_constraint = [rhand_constraint,parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0,0,0,[1,1])];
+              end
+              if(lhand_poseT_isnan)
+                lhand_constraint = [lhand_constraint,parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0,0,0,[1,1])];
+              end
+              if(head_poseT_isnan)
+                head_constraint = [head_constraint,parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_pose0,0,0,[1,1])];
+              end
+            end
+
+            hand_joint_idx = [obj.lhand2robotFrameIndMap(obj.lhand2robotFrameIndMap <= obj.r.getNumDOF);...
+              obj.rhand2robotFrameIndMap(obj.rhand2robotFrameIndMap <= obj.r.getNumDOF)];
+            reaching_joint_cnst = obj.joint_constraint;
+            reaching_joint_cnst = reaching_joint_cnst.setJointLimits(hand_joint_idx,...
+              q0_bound(hand_joint_idx),...
+              q0_bound(hand_joint_idx));
+            if(obj.planning_mode == 4)
+              if(rhand_poseT_isnan)
+                reaching_joint_cnst = reaching_joint_cnst.setJointLimits(obj.r_arm_joint_ind,...
+                  q0_bound(obj.r_arm_joint_ind),...
+                  q0_bound(obj.r_arm_joint_ind));
+              end
+              if(lhand_poseT_isnan)
+                reaching_joint_cnst = reaching_joint_cnst.setJointLimits(obj.l_arm_joint_ind,...
+                  q0_bound(obj.l_arm_joint_ind),...
+                  q0_bound(obj.l_arm_joint_ind));
+              end
+            end
+            if(obj.isBDIManipMode())
+              reaching_joint_cnst = obj.setBDIJointLimits(reaching_joint_cnst,q0_bound);
+            end
+
+
+            ik_trial = 1;
+            rhand_constraint_no_relax = rhand_constraint;
+            lhand_constraint_no_relax = lhand_constraint;
+            head_constraint_no_relax = head_constraint;
+            iktraj_rhand_constraint_no_relax = iktraj_rhand_constraint;
+            iktraj_lhand_constraint_no_relax = iktraj_lhand_constraint;
+            iktraj_head_constraint_no_relax = iktraj_head_constraint;
+            not_found_solution = true;
+            while(ik_trial<=obj.max_ik_trial && not_found_solution)
+              pos_tol = obj.pos_tol_array(ik_trial);
+              quat_tol = obj.quat_tol_array(ik_trial);
+              if(~rhand_poseT_isnan)
+                  rhand_constraint = [rhand_constraint_no_relax,parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_poseT,pos_tol,quat_tol,[1,1])];
+                  iktraj_rhand_constraint = [iktraj_rhand_constraint_no_relax,rhand_constraint];
+              end
+
+              if(~lhand_poseT_isnan)
+                  lhand_constraint = [lhand_constraint_no_relax,parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_poseT,pos_tol,quat_tol,[1,1])];
+                  iktraj_lhand_constraint = [iktraj_lhand_constraint_no_relax,lhand_constraint];
+              end
+
+              if(~head_poseT_isnan)
+                  head_constraint = [head_constraint_no_relax,parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_poseT,pos_tol,quat_tol,[1,1])];
+                  iktraj_head_constraint = [iktraj_head_constraint_no_relax,head_constraint];
+              end
+              if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
+                if(obj.restrict_feet)
+                  %obj.pelvis_body,[0;0;0],pelvis_pose0,...
+                  [q_final_guess,snopt_info,infeasible_constraint] = inverseKin(obj.r,q_start,ik_qnom,...
+                    rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
+                    rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
+                    reaching_joint_cnst,qsc,ikoptions);
+                else
+                  % if feet are not restricted then you need to add back pelvis constraint
+                  [q_final_guess,snopt_info,infeasible_constraint] = inverseKin(obj.r,q_start,ik_qnom,...
+                    pelvis_constraint{:},...
+                    rfoot_pose0_constraint{:},lfoot_pose0_constraint{:},...
+                    rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
+                    reaching_joint_cnst,qsc,ikoptions);
+                end
+              else
+                [q_final_guess,snopt_info,infeasible_constraint] = inverseKin(obj.r,q_start,ik_qnom,...
+                    rhand_constraint{:},lhand_constraint{:},head_constraint{:},...
+                    reaching_joint_cnst,ikoptions);
+              end % end if(~obj.isBDIManipMode())
+
+
+              if(obj.planning_mode == 2 || obj.planning_mode == 3)
+                if(snopt_info<10)
+                  not_found_solution = false;
+                end
+              end
+              %============================
+
+
+              qtraj_guess = PPTrajectory(spline([s(1) s(end)],[zeros(obj.r.getNumDOF,1) q0_bound q_final_guess zeros(obj.r.getNumDOF,1)]));
+  %             collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
+              iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
+              if(obj.planning_mode == 1 || obj.planning_mode == 4)
                 % PERFORM inverseKinTraj OPT
                 iktraj_options = IKoptions(obj.r);
                 iktraj_options = iktraj_options.setDebug(true);
@@ -694,7 +530,7 @@ classdef ReachingPlanner < KeyframePlanner
                 end
                 qsc = qsc.setShrinkFactor(0.9);
                 iktraj_options = iktraj_options.setMajorIterationsLimit(300);
-                
+
                 %============================
                 iktraj_t_verify = linspace(iktraj_tbreaks(1),iktraj_tbreaks(end),20);
                 [xtraj,snopt_info,infeasible_constraint] = inverseKinTrajWcollision(obj.r,obj.collision_check,iktraj_t_verify,...
@@ -703,30 +539,42 @@ classdef ReachingPlanner < KeyframePlanner
                     iktraj_rhand_constraint{:},iktraj_lhand_constraint{:},...
                     iktraj_rfoot_constraint{:},iktraj_lfoot_constraint{:},...
                     iktraj_pelvis_constraint{:},reaching_joint_cnst,qsc,...
-                    lower_fixed_posture_constraint,...
                     iktraj_options);
-                if(snopt_info > 10)
-                    warning('The IK traj fails');
-                    send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
-                    send_status(4,0,0,send_msg);
-                    display(infeasibleConstraintMsg(infeasible_constraint));
+                if(snopt_info<10)
+                  not_found_solution = false;            
                 end
+                
                 %============================
-                
+
                 xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
-                
+
                 s_breaks = iktraj_tbreaks;
                 x_breaks = xtraj.eval(s_breaks);
                 q_breaks = x_breaks(1:obj.r.getNumDOF,:);
                 qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
                 qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
                 qtraj_guess = PPTrajectory(spline(s_breaks,[qdot0 q_breaks qdotf]));
-            elseif(obj.planning_mode == 2 || obj.planning_mode == 3)
-              s_breaks = iktraj_tbreaks;
-              q_breaks = qtraj_guess.eval(s_breaks);
-              qdot0 = zeros(obj.r.getNumDOF,1);
-              qdotf = zeros(obj.r.getNumDOF,1);
+              elseif(obj.planning_mode == 2 || obj.planning_mode == 3)
+                s_breaks = iktraj_tbreaks;
+                q_breaks = qtraj_guess.eval(s_breaks);
+                qdot0 = zeros(obj.r.getNumDOF,1);
+                qdotf = zeros(obj.r.getNumDOF,1);
+              end
+              if(not_found_solution)
+                ik_trial = ik_trial+1;
+              else
+                send_msg = sprintf('Succeeds with pos_tol=%3.1fcm,angle_tol=%3.1f deg',pos_tol*100, asind(sqrt(quat_tol)));
+                send_status(2,0,0,send_msg);
+              end
             end
+            
+            if(not_found_solution)
+              send_msg = sprintf('Fails with pos_tol=%dcm,angle_tol=%3.1f deg',pos_tol*100, asind(sqrt(quat_tol)));
+              send_status(4,0,0,send_msg);
+              display(infeasibleConstraintMsg(infeasible_constraint));
+            end
+            
+            
             
             
             Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
@@ -800,9 +648,17 @@ classdef ReachingPlanner < KeyframePlanner
             
             obj.plan_pub.publish(xtraj_atlas,ts,utime, snopt_info_vector);
             display(sprintf('Reaching planner ts %5.3f\n',ts(end)));
-            obj.publishPlannerConfig(utime,ts);
+            planner_data = obj.checkPlannerConfig(ts(end)-ts(1));
+            obj.planner_config_publisher.publish(utime,planner_data);
+            
+%             palm_pt = obj.T_hand_palm_r*[0;0;0;1];
+%             kinsol = obj.r.doKinematics(q_breaks(:,end));
+%             plot_lcm_poses(rh_ee_goal(1:3)', flipud(rh_ee_goal(4:6))', 8, 'Goal', 5, 1, 0, 9)
+%             palm_pos = obj.r.forwardKin(kinsol,obj.r_hand_body,palm_pt(1:3),1);
+%             plot_lcm_poses(palm_pos(1:3)', flipud(palm_pos(4:6))', 10, 'Final EE Pose', 5, 1, 0, 11)
         end
         %-----------------------------------------------------------------------------------------------------------------
+        
         function cost = getCostVector(obj)
             cost = Point(obj.r.getStateFrame,1);
             cost.base_x = 100;
@@ -848,21 +704,36 @@ classdef ReachingPlanner < KeyframePlanner
             
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function [pos_min,pos_max,pose_quat,pose_tol] = parsePoseT(obj,pose,tol,pose_isnan)
-            % A utility function to pase the pose and tol
-            if(size(pose,1)~=7)
-                error('pose must have 7 rows');
-            end
-            pos_min = pose(1:3,:)-tol;
-            pos_max = pose(1:3,:)+tol;
-            if(~pose_isnan)
-                pose_quat = pose(4:7,1);
-                pose_tol = tol;
-            else
-                pose_quat = [];
-                pose_tol = [];
-            end
+        
+        
+        function setPosTol(obj,pos_tol)
+          if(pos_tol<0)
+            error('Tolerance must be nonnegative');
+          end
+          obj.pos_tol_array = linspace(0,pos_tol,obj.max_ik_trial);
         end
         
+        function setQuatTol(obj,angle_tol)
+          if(angle_tol<0 || angle_tol>180)
+            error('tolerance is within [0 180] degrees');
+          end
+          obj.quat_tol_array = sind(linspace(0,angle_tol,obj.max_ik_trial)).^2;
+        end
+        
+        function data = checkPlannerConfig(obj,plan_execution_time)
+          data = checkPlannerConfig@KeyframePlanner(obj,plan_execution_time);
+          data.planner = drc.planner_config_t.REACHING_PLANNER;
+          data.planning_mode = obj.planning_mode;
+          if(obj.planning_mode == 1)
+            planning_mode_msg = 'IKSEQUENCE ON';
+          elseif(obj.planning_mode == 2)
+            planning_mode_msg = 'IKSEQUENCE OFF';
+          elseif(obj.planning_mode == 3)
+            planning_mode_msg = 'TELEOP';
+          elseif(obj.planning_mode == 4)
+            planning_mode_msg = 'FIXED JOINT';
+          end
+          send_status(3,0,0,planning_mode_msg);
+        end
     end% end methods
 end% end classdef
