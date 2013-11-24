@@ -96,12 +96,27 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
   // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(28,0.0);
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 3.14; // robot software v1.9
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = -0.02; // robot software v1.9
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.15; // robot software v1.9
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 0.02; // robot software v1.9
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = 2.055; // robot software v1.9
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0; // robot software v1.9
+
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 1.0739; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 1.0577; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 1.0111; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0668; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0158; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = -0.9653; // robot software v1.10
+
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.0470; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0653; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -0.0611; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = 0.9186; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -1.0553; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0338; // robot software v1.10
+
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 3.14; // robot software v1.9
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = -0.02; // robot software v1.9
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = -0.15; // robot software v1.9
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 0.02; // robot software v1.9
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = 2.055; // robot software v1.9
+  // encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0; // robot software v1.9
   
   // encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 0.0182; // robot software v1.8
   // encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 0.0052; // robot software v1.8
@@ -110,12 +125,12 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -1.0802; // robot software v1.8
   // encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.0104; // robot software v1.8
 
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -0.027; // robot software v1.8/9
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -0.0201; // robot software v1.8/9
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = 3.13; // robot software v1.8/9
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -0.0202; // robot software v1.8/9
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114; // robot software v1.8/9
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290; // robot software v1.8/9
+  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -0.027; // robot software v1.8/9
+  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -0.0201; // robot software v1.8/9
+  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = 3.13; // robot software v1.8/9
+  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -0.0202; // robot software v1.8/9
+  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114; // robot software v1.8/9
+  // encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290; // robot software v1.8/9
 
   //encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 1.1125; // robot software v1.8
   encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.235 - 2*M_PI;  // robot software v1.9
@@ -243,12 +258,6 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
               atlas_joints_.position[i] -= 2*M_PI;
             atlas_joints_.position[i] += encoder_joint_offsets_[i];
-
-            // check for wonky encoder initialization :(
-            while (atlas_joints_.position[i] - mod_positions[i] > 0.5)
-              atlas_joints_.position[i] -= 2*M_PI/3;
-            while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
-              atlas_joints_.position[i] += 2*M_PI/3;
 
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
 
