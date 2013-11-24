@@ -318,4 +318,5 @@
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
+    <pose_seed name="2013-11-20-22-03::left_jam" />
 </object>
