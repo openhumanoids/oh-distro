@@ -204,7 +204,7 @@ def storePose(poseType, captureChannel, group, name, description, outFile):
     hasRight = getRightArmInJoints(joints)
     posture['nominal_handedness'] = 'none'
     if hasLeft != hasRight:
-        posture['nominal_handedness'] = 'left' if hasLast else 'right'
+        posture['nominal_handedness'] = 'left' if hasLeft else 'right'
 
     config = loadConfig(outFile)
     postures = config.setdefault(group, [])
@@ -489,6 +489,7 @@ class CapturePanel(object):
                     return
 
         storePose(poseType, captureChannel, group, name, description, outFile)
+        self.ui.onPostureAdded()
 
 
 class MainWindow(QtGui.QWidget):
@@ -604,6 +605,9 @@ class MainWindow(QtGui.QWidget):
 
         self.capturePanel.onGroupsChanged()
         self.sendPosturePanel.onGroupsChanged()
+
+    def onPostureAdded(self):
+        self.sendPosturePanel.updatePostureListWidget()
 
 
 
