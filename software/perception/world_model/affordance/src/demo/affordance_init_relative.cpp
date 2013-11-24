@@ -353,6 +353,10 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
     utorso_to_aff.translation()  << 0.55, 0.0, 0.30;
     utorso_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(180*M_PI/180,0*M_PI/180,20*M_PI/180)) );
     aff = getFireHoseAffordancePlus("notused", utorso_to_aff, 0);
+    aff.aff.origin_xyz[2] = 1.10;
+    aff.aff.origin_rpy[0] = 3.14;
+    aff.aff.origin_rpy[1] = 0;
+    aff.aff.origin_rpy[2] = 0;
   }else if (which_affordance_ ==5){
     Eigen::Isometry3d utorso_to_aff(Eigen::Isometry3d::Identity());
     utorso_to_aff.translation()  << 0.74, 0.0, 0.30;
@@ -388,9 +392,8 @@ int main(int argc, char ** argv) {
   std::cout << "1 - Steering Cylinder at right shoulder\n";
   std::cout << "2 - 2x4 low\n";
   std::cout << "3 - cylinder pipe\n";
-  std::cout << "4 - firehose\n";
+  std::cout << "4 - firehose (at 1.4m)\n";
   std::cout << "5 - wye (at 1m)\n";  
-  std::cout << "5 - wye\n";
   std::cout << "6 - door_right_handed\n";
   
   string mode = "both";

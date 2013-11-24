@@ -1054,7 +1054,7 @@ void Pass::planGraspSteeringCylinder(Eigen::Isometry3d init_grasp_pose){
 }
 
 
-drc::position_3d_t EigenToDRC(Eigen::Isometry3d &pose){
+drc::position_3d_t EigenToDRC(Eigen::Isometry3d pose){
   drc::position_3d_t hand_pose;
   hand_pose.translation.x = pose.translation().x();
   hand_pose.translation.y = pose.translation().y();
