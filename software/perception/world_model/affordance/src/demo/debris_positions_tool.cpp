@@ -56,6 +56,7 @@ public:
   vector<double> hand_xyz_;
   int hand_type_; // 3 or 4 for irobot
   
+  std::string message_;
 };
 
 
@@ -241,6 +242,8 @@ void Pass::getCurrentStandingPositionAsRelative(Eigen::Isometry3d min_pt){
   pc_vis_->pose_to_lcm_from_list(600001, current_walking_goalT);   
   
   
+
+  
   Eigen::Isometry3d robot_to_corner =  world_to_corner.inverse() * world_to_standing_ ;
   
   Isometry3dTime robot_to_cornerT = Isometry3dTime(current_utime_,  robot_to_corner  );
@@ -318,6 +321,7 @@ void Pass::readStandingPositionsFile(std::string filename, std::vector<AffRaw> &
       standing_position.rotate(quat);
       
       AffRaw affraw = AffRaw(tokens[0], standing_position) ;
+      affraw.message_ = tokens[5];
       affraw_list.push_back(affraw);       
       
       
@@ -516,6 +520,11 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     getCurrentStandingPositionAsRelative(min_pt);
     int id = config_.server_id; // was lib id
     
+    drc::system_status_t status;
+    status.system = 4; // palnning
+    status.value = affraw_list[id].message_;
+    lcm_->publish("SYSTEM_STATUS", &status);
+    
     // Publish an affordance relative hand position:
     // Assumes an aff relative hand position:
     Eigen::Isometry3d aff_to_hand(Eigen::Isometry3d::Identity());
@@ -527,7 +536,7 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     Eigen::Quaterniond mh_quat = Eigen::Quaterniond( min_pt_to_hand.rotation() );
     double rpy[3];
     quat_to_euler ( mh_quat , rpy[0], rpy[1], rpy[2] );
-    std::cout << "min_pt_to_hand:\n";
+    std::cout << "min_pt_to_hand: [rpyxyz]\n";
     std::cout << rpy[0] << ", " << rpy[1] << ", " << rpy[2] << ", "
               << min_pt_to_hand.translation().x() << ", " << min_pt_to_hand.translation().y() << ", " << min_pt_to_hand.translation().z() << "\n";
     
@@ -550,7 +559,11 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     int id = config_.library_id; // was lib id
     getPriorStandingPositionAsRelative(min_pt, affraw_list[id].standing_position_ );
     
-
+    drc::system_status_t status;
+    status.system = 4; // palnning
+    status.value = affraw_list[id].message_;
+    lcm_->publish("SYSTEM_STATUS", &status);
+    
     // Publish an affordance relative hand position:
     // assumes a corner-to-hand position transform:
     Eigen::Isometry3d corner_to_hand(Eigen::Isometry3d::Identity());
