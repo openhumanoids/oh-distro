@@ -436,6 +436,7 @@ classdef ReachingPlanner < KeyframePlanner
 
             hand_joint_idx = [obj.lhand2robotFrameIndMap(obj.lhand2robotFrameIndMap <= obj.r.getNumDOF);...
               obj.rhand2robotFrameIndMap(obj.rhand2robotFrameIndMap <= obj.r.getNumDOF)];
+            obj.setDefaultJointConstraint();
             reaching_joint_cnst = obj.joint_constraint;
             reaching_joint_cnst = reaching_joint_cnst.setJointLimits(hand_joint_idx,...
               q0_bound(hand_joint_idx),...
@@ -562,6 +563,7 @@ classdef ReachingPlanner < KeyframePlanner
               end
               if(not_found_solution)
                 ik_trial = ik_trial+1;
+                q_start = q_final_guess;
               else
                 send_msg = sprintf('Succeeds with pos_tol=%3.1fcm,angle_tol=%3.1f deg',pos_tol*100, asind(sqrt(quat_tol)));
                 send_status(2,0,0,send_msg);
@@ -583,12 +585,10 @@ classdef ReachingPlanner < KeyframePlanner
             s = linspace(0,1,max(ceil(s_total/obj.plan_arc_res)+1,5)); % Must have two points atleast
             s = unique([s(:);s_breaks(:)]);
             
-            % fine grained verification of COM constraints of fixed resolution.
-            q = q_breaks(:,1);
-            for i=2:length(s)
-                si = s(i);
-                q(:,i) =qtraj_guess.eval(si);
-            end
+            q = qtraj_guess.eval(s);
+            q(:,1) = q_breaks(:,1);
+            qdot = qtraj_guess.deriv(s);
+            qdot(:,1) = qdot0;
             
             % update plan cache for keyframe adjustment engine
             if(obj.planning_mode == 1 || obj.planning_mode == 4)
@@ -631,13 +631,14 @@ classdef ReachingPlanner < KeyframePlanner
             if(length(s_breaks)>obj.plan_cache.num_breaks)
                 keyframe_inds = unique(round(linspace(1,length(s_breaks),obj.plan_cache.num_breaks)));
             else
-                keyframe_inds =[1:length(s_breaks)];
+                keyframe_inds = 1:length(s_breaks);
             end
             
             for l = keyframe_inds,
                 xtraj_atlas(1,s == s_breaks(l)) = 1.0;
             end
             xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
+            xtraj_atlas(2+nq_atlas+(1:nq_atlas),:) = qdot(obj.atlas2robotFrameIndMap(nq_atlas+(1:nq_atlas))-size(q,1),:);
             snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
             
             Tmax_joints=obj.getTMaxForMaxJointSpeed();
