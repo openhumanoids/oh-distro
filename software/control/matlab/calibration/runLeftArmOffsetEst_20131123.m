@@ -46,7 +46,7 @@ end
 
 % for 10-24 data
 % t_sample = [568.8 644.8 675.2 772.6  830.5 887.5 965.2 1061];
-t_sample = [94.7 181.1
+t_sample = [129.2 203.7 218.6 245.9 263.3 284.3 303.1 353.1];
 % torso_markers = reshape(vicon_data(21:40,:),4,5,length(t_vicon));
 % hand_markers = reshape(vicon_data(1:20,:),4,5,length(t_vicon));
 torso_markers = vicon_data_struct{2}.data;
