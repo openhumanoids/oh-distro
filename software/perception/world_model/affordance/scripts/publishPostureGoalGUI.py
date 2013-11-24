@@ -1,23 +1,4 @@
 #!/usr/bin/env python
-#
-# Software License Agreement (Apache License)
-#
-# Copyright 2013 Open Source Robotics Foundation
-# Author: Morgan Quigley
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 import sys, os
 import pygame, time
 from pygame.locals import *
@@ -70,13 +51,13 @@ def getFarHang():
   return [position,name]
 
 def getShooter():
-  position=[-2.35619, 1.35674083233, 0.0874569192529, 0.270734280348, 0.785398, 0.286707222462]
+  position=[-2.35619, 1.89674083233, 0.0874569192529, 1.0104280348, 0.785398, 1.336707222462]
   name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position,name]
 
 def getShooterBack():
-  position=[0,0,0,-2.35619, 1.35674083233, 0.0874569192529, 0.270734280348, 0.785398, 0.286707222462]
-  name=["back_bkx", "back_bky", "back_bkz","r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  position=[-2.35619, 1.89674083233, 0.0874569192529, 1.0104280348, 0.785398, 1.336707222462,0,0,0]
+  name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy", "back_bkx", "back_bky", "back_bkz"]
   return [position,name]
 
 def getPullDown():
@@ -138,7 +119,7 @@ def getHoseMateSuckerPunch():
 
 
 def getHoseMateSuckerPunchV2():
-  position=[0.107062466443, -0.0196658596396, -0.663225,  -1.05796146393, 1.40310549736, 0.173738107085, 1.54221315309, -0.830571591854, 0.01]
+  position=[0.107062466443, -0.0196658596396, -0.33225,  -1.05796146393, 1.0310549736, 0.173738107085, 1.24221315309, -0.830571591854, 0.01]
   name=["back_bkx", "back_bky", "back_bkz",  "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position, name]
 
@@ -149,10 +130,14 @@ def getHosePsycho():
 
 
 def getHoseWalking():
-  position=[ -2.35619, 2.27305955092, 0.165548540652, 1.17722764717, 0.785398, 1.74017934501]
+  position=[ -2.30619, 1.89305955092, 0.165548540652, 0.62722764717, 0.785398, 1.74017934501]
   name=[ "r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
   return [position, name]
 
+def getOtherArmTuck():
+  position=[-0.5283812, 3.14159, -0.02423405817, 0.96891692, 0.785398000, 3.141590000]
+  name=["r_arm_elx", "r_arm_ely", "r_arm_mwx", "r_arm_shx", "r_arm_usy", "r_arm_uwy"]
+  return [position, name]
 
 def keypress(input_char):
   global posture_side
@@ -187,6 +172,8 @@ def keypress(input_char):
     [msg.joint_position, msg.joint_name] = getHosePsycho()
   elif (input_char == "9"):
     [msg.joint_position, msg.joint_name] = getHoseWalking()
+  elif (input_char == "0"):
+    [msg.joint_position, msg.joint_name] = getOtherArmTuck()
   elif (input_char == "q"):
     [msg.joint_position, msg.joint_name] = getHandDown()
   elif (input_char == "w"):
@@ -232,6 +219,7 @@ if __name__ == '__main__':
   draw_string(screen, font, 10, 150, "7 hosemate    - sucker punch v2")
   draw_string(screen, font, 10, 170, "8 hose pyscho - raise arm up after pulldown")
   draw_string(screen, font, 10, 190, "9 hose walking- tuck arm in for walking")
+  draw_string(screen, font, 10, 210, "0 tuck arm    - tuck the other arm away while mating")
 
   draw_string(screen, font, 10, 250, "q handdown    - handdown")
   draw_string(screen, font, 10, 270, "w zero back   - zero the back joint")
