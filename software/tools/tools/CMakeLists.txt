@@ -15,6 +15,7 @@ lcmtypes_build()
 
 file(COPY scripts/drc-svn-stat.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 file(COPY scripts/drc-lcm-logger.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+file(COPY scripts/drc-robot-pose-util DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 pods_install_python_script(drc-scope-motionest scripts/python_lcmscope.py)
 pods_install_python_script(drc-scope-bandwidth scripts/bandwidth_scope.py)
