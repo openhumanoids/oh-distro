@@ -68,6 +68,8 @@ classdef KeyframePlanner < handle
         l_arm_joint_ind;
         r_arm_joint_ind;
         lower_joint_ind; %leg joints and floating base;
+        
+        planner_config_publisher;
     end
     
     methods
@@ -145,6 +147,8 @@ classdef KeyframePlanner < handle
             obj.l_arm_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'l_arm')),coords));
             obj.r_arm_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords));
             obj.lower_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'leg')) | ~isempty(strfind(s,'base')),coords));
+            
+            obj.planner_config_publisher = ManipPlannerConfigPublisher('PLANNER_CONFIG');
         end
      %-----------------------------------------------------------------------------------------------------------------        
         function [cache] = getPlanCache(obj)
@@ -485,6 +489,14 @@ classdef KeyframePlanner < handle
           BDI_joint_constraint = BDI_joint_constraint.setJointLimits(fixed_joint_idx,q0(fixed_joint_idx),q0(fixed_joint_idx));
         end
         
+        function publishPlannerConfig(obj,utime,plan_execution_time)
+          data = struct();
+          data.desired_ee_arc_speed = obj.plan_cache.v_desired;
+          data.desired_joint_speed = obj.plan_cache.qdot_desired;
+          data.planning_mode = obj.planning_mode;
+          data.plan_execution_time = plan_execution_time;
+          obj.planner_config_publisher.publish(utime,data);
+        end
     end
      %-----------------------------------------------------------------------------------------------------------------
 end

@@ -37,33 +37,33 @@ classdef ReachingPlanner < KeyframePlanner
             end
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function generateAndPublishReachingPlan(obj,varargin)
+        function [xtraj,snopt_info] = generateAndPublishReachingPlan(obj,varargin)
             
-            switch nargin
-                case 9
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    lidar_ee_goal = varargin{7};
-                    goal_type_flags =varargin{8};
-                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
-                case 10
-                    x0 = varargin{1};
-                    rh_ee_goal= varargin{2};
-                    lh_ee_goal= varargin{3};
-                    rf_ee_goal= varargin{4};
-                    lf_ee_goal= varargin{5};
-                    h_ee_goal = varargin{6};
-                    lidar_ee_goal = varargin{7};
-                    goal_type_flags =varargin{8};
-                    q_desired = varargin{9};
-                    runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags,q_desired);
-                otherwise
-                    error('Incorrect usage of generateAndPublishReachingPlan in Reaching Planner. Undefined number of inputs.')
-            end
+          switch nargin
+            case 9
+              x0 = varargin{1};
+              rh_ee_goal= varargin{2};
+              lh_ee_goal= varargin{3};
+              rf_ee_goal= varargin{4};
+              lf_ee_goal= varargin{5};
+              h_ee_goal = varargin{6};
+              lidar_ee_goal = varargin{7};
+              goal_type_flags =varargin{8};
+              snopt_info = runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags);
+            case 10
+              x0 = varargin{1};
+              rh_ee_goal= varargin{2};
+              lh_ee_goal= varargin{3};
+              rf_ee_goal= varargin{4};
+              lf_ee_goal= varargin{5};
+              h_ee_goal = varargin{6};
+              lidar_ee_goal = varargin{7};
+              goal_type_flags =varargin{8};
+              q_desired = varargin{9};
+              snopt_info = runOptimization(obj,x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags,q_desired);
+            otherwise
+              error('Incorrect usage of generateAndPublishReachingPlan in Reaching Planner. Undefined number of inputs.')
+          end
         end
         
         function generateReachPlanToCompensateForCurrentSSE(obj,x0,mode)
@@ -185,7 +185,7 @@ classdef ReachingPlanner < KeyframePlanner
             setPlanningMode(obj,previous_planning_mode);
         end
         %-----------------------------------------------------------------------------------------------------------------
-        function runOptimization(obj,varargin)
+        function snopt_info = runOptimization(obj,varargin)
             
             obj.plan_cache.clearCache();
             obj.plan_cache.num_breaks = obj.num_breaks;
@@ -800,6 +800,7 @@ classdef ReachingPlanner < KeyframePlanner
             
             obj.plan_pub.publish(xtraj_atlas,ts,utime, snopt_info_vector);
             display(sprintf('Reaching planner ts %5.3f\n',ts(end)));
+            obj.publishPlannerConfig(utime,ts);
         end
         %-----------------------------------------------------------------------------------------------------------------
         function cost = getCostVector(obj)
