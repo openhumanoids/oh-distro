@@ -123,13 +123,16 @@ typedef struct
   float foot_right[3];
   float foot_spacing;
   
-  
   float left_hand_contact;
   float right_hand_contact;
   
-  
   float estimated_biases[3];
   bool estimated_biases_converged;
+  
+  // state of the planner
+  double desired_ee_arc_speed;
+  double desired_joint_speed;
+  std::string planner_name;
   
 } RendererSystemStatus;
 
@@ -305,6 +308,40 @@ on_tactile_state(const lcm_recv_buf_t * buf, const char *channel, const drc_hand
   }
 }
 
+static string get_planner_string(int16_t mode){
+  if( mode ==  DRC_PLANNER_CONFIG_T_IKSEQUENCE_ON){
+    return string("Reaching IK On");      
+  }else if( mode ==  DRC_PLANNER_CONFIG_T_IKSEQUENCE_OFF){
+    return string("Reaching IK Off");      
+  }else if( mode ==  DRC_PLANNER_CONFIG_T_TELEOP){
+    return string("Reaching Teleop");            
+  }else if( mode ==  DRC_PLANNER_CONFIG_T_FIXEDJOINTS){
+    return string("Reaching Fixed Joints");            
+  }
+}
+
+static void
+on_planner_config(const lcm_recv_buf_t * buf, const char *channel, const drc_planner_config_t *msg, void *user_data){
+  RendererSystemStatus *self = (RendererSystemStatus*) user_data; 
+  self->desired_ee_arc_speed = msg->desired_ee_arc_speed;
+  self->desired_joint_speed = msg->desired_joint_speed;
+  
+  
+  if (msg->active_planner == DRC_PLANNER_CONFIG_T_REACHING_PLANNER){
+    self->planner_name = get_planner_string(msg->reaching_mode);
+  }else if (msg->active_planner == DRC_PLANNER_CONFIG_T_ENDPOSE_PLANNER){
+    self->planner_name = "Endpose"; 
+  }else if (msg->active_planner == DRC_PLANNER_CONFIG_T_POSTURE_PLANNER){
+    self->planner_name = "Posture"; 
+  }else if (msg->active_planner == DRC_PLANNER_CONFIG_T_MANIPULATION_PLANNER){
+    self->planner_name = get_planner_string(msg->reaching_mode);
+  }else{
+    self->planner_name = "Unknown planner"; 
+  }
+  
+}
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -379,26 +416,21 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
   
   
   char line[80];
-  snprintf(line, 70,  "ee speed 00.0 ms/s");
+  snprintf(line, 70,  "ee speed %2.2f ms/s", self->desired_ee_arc_speed );
   glColor3f(  0.0, 0.0, 0.8 );
   glRasterPos2f(0, gl_height + (0 - self->frequency_list.size()  - 9) * line_height );
   glutBitmapString(font, (unsigned char*) line);  
  
-  snprintf(line, 70,  "joint speed 00 deg/s");
+  snprintf(line, 70,  "joint speed %2.0f deg/s", self->desired_joint_speed);
   glColor3f(  0.0, 0.0, 0.8 );
   glRasterPos2f(0, gl_height + (-1 - self->frequency_list.size()  - 9) * line_height);
   glutBitmapString(font, (unsigned char*) line);  
   
-  snprintf(line, 70,  "ik sequence on/off");
+  snprintf(line, 70,  "%s", self->planner_name.c_str() );
   glColor3f(  0.0, 0.0, 0.8 );
   glRasterPos2f(0, gl_height + (-2 - self->frequency_list.size()  - 9) * line_height);
   glutBitmapString(font, (unsigned char*) line);  
 
-  snprintf(line, 70,  "manip plan from current");
-  glColor3f(  0.0, 0.0, 0.8 );
-  glRasterPos2f(0, gl_height + (-3 - self->frequency_list.size()  - 9) * line_height);
-  glutBitmapString(font, (unsigned char*) line);  
-  
   
   /// Status Block:  
   char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
@@ -723,7 +755,11 @@ static void _destroy(BotRenderer *r){
 }
 
 BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *lcm){
-  RendererSystemStatus *self = (RendererSystemStatus*)calloc(1, sizeof(RendererSystemStatus));
+//  RendererSystemStatus *self = (RendererSystemStatus*)calloc(1, sizeof(RendererSystemStatus));
+  
+  RendererSystemStatus *self = (RendererSystemStatus*)new (RendererSystemStatus);
+  
+  
   
   self->lcm = lcm;
   self->viewer = viewer;
@@ -756,6 +792,10 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   self->right_hand_contact = 0;
   self->left_hand_contact = 0;
   
+  self->desired_joint_speed = 0;
+  self->desired_ee_arc_speed = 0;
+  self->planner_name ="";
+  
   std::string channel_name ="SAM";
   self->msgchannels.push_back(channel_name);
   channel_name ="CONTROL";
@@ -780,7 +820,11 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   drc_estimated_biases_t_subscribe(self->lcm,"ESTIMATED_ACCEL_BIASES",on_estimated_bias,self);
   drc_grasp_opt_status_t_subscribe(self->lcm,"GRASP_OPT_STATUS",on_grasp_opt_status, self);
 
-  drc_hand_tactile_state_t_subscribe(self->lcm,"*_TACTILE_STATE",on_tactile_state, self);
+  drc_hand_tactile_state_t_subscribe(self->lcm,".*_TACTILE_STATE",on_tactile_state, self);
+  
+  drc_planner_config_t_subscribe(self->lcm,"PLANNER_CONFIG",on_planner_config, self);
+  
+
   
   
   self->param_status[0] = PARAM_STATUS_0_DEFAULT;  
