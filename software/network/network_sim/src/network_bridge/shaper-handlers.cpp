@@ -110,7 +110,10 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     if (!disable_custom_codecs){    
         load_custom_codecs();
     }
-
+    bool disable_pmd_custom_codecs = true;
+    if (!disable_pmd_custom_codecs){    
+        load_pmd_custom_codecs();
+    }
     
     dccl_->validate<drc::ShaperHeader>();
     
@@ -738,11 +741,43 @@ int64_t KMCLApp::get_current_utime()
     return goby::common::goby_time<goby::uint64>();
 }
 
+void DRCShaper::load_pmd_custom_codecs()
+{
+    custom_codecs_.insert(std::make_pair("PMD_ORDERS2", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node_))));
+    custom_codecs_.insert(std::make_pair("PMD_INFO2", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node_))));    
+
+
+    // test pmd info diff
+        {
+            drc::PMDInfoDiff diff, diff_out;
+            diff.set_reference_time(243);
+            diff.set_utime(6000000);
+            
+            drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff.add_cmds();
+            diff_cmd->mutable_cmd()->set_name("FOO");
+            diff_cmd->mutable_cmd()->set_group("BAR");
+            diff_cmd->set_pid(263);
+            diff_cmd->mutable_cmd()->set_auto_respawn(false);
+            
+            
+            diff.set_ncmds(diff.cmds_size());
+            
+            std::string bytes;
+            dccl_->encode(&bytes, diff);
+            
+            DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::PMDInfoDiff>();
+            dccl_->decode(bytes, &diff_out);
+            
+//        std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
+            assert(diff.SerializeAsString() == diff_out.SerializeAsString());
+            
+        }
+        
+
+}
+
 void DRCShaper::load_custom_codecs()
 {
-    custom_codecs_.insert(std::make_pair("PMD_ORDERS", boost::shared_ptr<CustomChannelCodec>(new PMDOrdersCodec(node_))));
-    custom_codecs_.insert(std::make_pair("PMD_INFO", boost::shared_ptr<CustomChannelCodec>(new PMDInfoCodec(node_))));
-
     //custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
 
     const std::string& ers_channel = "EST_ROBOT_STATE";
@@ -767,33 +802,6 @@ void DRCShaper::load_custom_codecs()
     const std::string& manip_map_channel = "COMMITTED_MANIP_MAP";
     custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
     custom_codecs_[manip_map_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_map_channel];
-
-    // test pmd info diff
-    {
-        drc::PMDInfoDiff diff, diff_out;
-        diff.set_reference_time(243);
-        diff.set_utime(6000000);
-            
-        drc::PMDInfoDiff::PMDDeputyCmdDiff* diff_cmd = diff.add_cmds();
-        diff_cmd->set_name("FOO");
-        diff_cmd->set_group("BAR");
-        diff_cmd->set_pid(263);
-        diff_cmd->set_auto_respawn(false);
-            
-            
-        diff.set_ncmds(diff.cmds_size());
-            
-        std::string bytes;
-        dccl_->encode(&bytes, diff);
-            
-        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::PMDInfoDiff>();
-        dccl_->decode(bytes, &diff_out);
-            
-//        std::cout << diff.DebugString() << diff_out.DebugString() << std::endl;
-        assert(diff.SerializeAsString() == diff_out.SerializeAsString());
-            
-    }
-        
         
         // test minimal robot state
     {

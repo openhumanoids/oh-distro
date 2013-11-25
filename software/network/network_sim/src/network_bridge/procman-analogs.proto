@@ -24,6 +24,17 @@ message ProcManWrapper
   optional bytes data = 4;
 }
 
+message PMDCommandDiff
+{
+  optional string name = 2 [(dccl.field) = { max_length: 255  codec: "presence_bit" } ];
+  optional string nickname = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
+  optional string group = 4 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
+  optional bool auto_respawn = 5;
+
+  optional int32 stop_signal = 6 [(dccl.field) = { min: 0 max: 31 codec: "presence_bit" } ];
+  optional float stop_time_allowed = 7 [(dccl.field) = { min: 0 max: 100 codec: "presence_bit" } ];
+}
+
 message PMDOrdersDiff
 {
   option (dccl.msg).max_bytes = 100000;
@@ -43,13 +54,11 @@ message PMDOrdersDiff
   message PMDSheriffCmdDiff
   {
     optional int32 index = 1 [(dccl.field) = { min: 0 max: 100 codec: "presence_bit" } ];
-    optional string name = 2 [(dccl.field) = { max_length: 255 codec: "presence_bit" } ];
-    optional string nickname = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
-    optional string group = 4 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
+    optional PMDCommandDiff cmd = 2;
+    
     optional int32 desired_runid = 5 [(dccl.field) = { min: 0 max: 127 codec: "presence_bit"} ];
     optional bool force_quit = 6;
     optional int32 sheriff_id = 7 [(dccl.field) = { min: 0 max: 0x7FFFFFFE codec: "presence_bit" } ];
-    optional bool auto_respawn = 8;
   }
 }
 
@@ -69,14 +78,13 @@ message PMDInfoDiff
   message PMDDeputyCmdDiff
   {
     optional int32 index = 1 [(dccl.field) = { min: 0 max: 100 codec: "presence_bit" } ];
-    optional string name = 2 [(dccl.field) = { max_length: 255  codec: "presence_bit" } ];
-    optional string nickname = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
-    optional string group = 4 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
+
+    optional PMDCommandDiff cmd = 2;
+
     optional int32 pid = 5 [(dccl.field) = { min: 0 max: 32768 codec: "presence_bit" }]; // cat /proc/sys/kernel/pid_max
     optional int32 actual_runid = 6 [(dccl.field) = { min: 0 max: 127 codec: "presence_bit"} ];
     optional int32 exit_code = 7 [(dccl.field) = { min: 0 max: 255 codec: "presence_bit"} ];;
     optional int32 sheriff_id = 8 [(dccl.field) = { min: 0 max: 0x7FFFFFFE codec: "presence_bit"} ];
-    optional bool auto_respawn = 9;
   }
 }
 

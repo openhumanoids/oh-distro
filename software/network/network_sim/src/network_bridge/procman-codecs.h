@@ -3,8 +3,8 @@
 
 #include "custom-codecs.h"
 
-#include <lcmtypes/bot_procman/orders_t.hpp>
-#include <lcmtypes/bot_procman/info_t.hpp>
+#include <lcmtypes/bot_procman/orders2_t.hpp>
+#include <lcmtypes/bot_procman/info2_t.hpp>
 
 #include "procman-analogs.pb.h"
 
@@ -274,7 +274,7 @@ template<typename LCMType, typename DiffType, typename Codec, typename OtherCode
 
 class PMDInfoCodec;
 
-class PMDOrdersCodec : public PMDWrapperCodec<bot_procman::orders_t, drc::PMDOrdersDiff, PMDOrdersCodec, PMDInfoCodec>
+class PMDOrdersCodec : public PMDWrapperCodec<bot_procman::orders2_t, drc::PMDOrdersDiff, PMDOrdersCodec, PMDInfoCodec>
 {
   public:
   PMDOrdersCodec(Node node)
@@ -289,19 +289,19 @@ class PMDOrdersCodec : public PMDWrapperCodec<bot_procman::orders_t, drc::PMDOrd
         only = false;
     }
 
-    bool make_diff(const bot_procman::orders_t& orders, const bot_procman::orders_t& reference,
+    bool make_diff(const bot_procman::orders2_t& orders, const bot_procman::orders2_t& reference,
                    drc::PMDOrdersDiff* diff);
-    bool reverse_diff(bot_procman::orders_t* orders, const bot_procman::orders_t& reference,
+    bool reverse_diff(bot_procman::orders2_t* orders, const bot_procman::orders2_t& reference,
                       const drc::PMDOrdersDiff& diff);
     bool send_no_change() { return false; }
     
     
     // maps host to latest state
-    static std::map<std::string, State<bot_procman::orders_t, drc::PMDOrdersDiff> > host_info_;
+    static std::map<std::string, State<bot_procman::orders2_t, drc::PMDOrdersDiff> > host_info_;
 };
 
 
-class PMDInfoCodec : public PMDWrapperCodec<bot_procman::info_t, drc::PMDInfoDiff, PMDInfoCodec, PMDOrdersCodec>
+class PMDInfoCodec : public PMDWrapperCodec<bot_procman::info2_t, drc::PMDInfoDiff, PMDInfoCodec, PMDOrdersCodec>
 {
   public:
   PMDInfoCodec(Node node)
@@ -315,15 +315,15 @@ class PMDInfoCodec : public PMDWrapperCodec<bot_procman::info_t, drc::PMDInfoDif
         only = false;
     }
 
-    bool make_diff(const bot_procman::info_t& info, const bot_procman::info_t& reference,
+    bool make_diff(const bot_procman::info2_t& info, const bot_procman::info2_t& reference,
                    drc::PMDInfoDiff* diff);
-    bool reverse_diff(bot_procman::info_t* info, const bot_procman::info_t& reference,
+    bool reverse_diff(bot_procman::info2_t* info, const bot_procman::info2_t& reference,
                       const drc::PMDInfoDiff& diff);
 
     bool send_no_change() { return true; }
 
-    // maps host to latest info_t
-    static std::map<std::string, State<bot_procman::info_t, drc::PMDInfoDiff> > host_info_;
+    // maps host to latest info2_t
+    static std::map<std::string, State<bot_procman::info2_t, drc::PMDInfoDiff> > host_info_;
 };
 
 

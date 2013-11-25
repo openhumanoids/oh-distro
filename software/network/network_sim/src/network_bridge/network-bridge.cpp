@@ -272,15 +272,14 @@ int main (int argc, char ** argv) {
     std::cout << "base only: " << cl_cfg.base_only << "\n";
 
     // Different URLS for different robots has been disabled:
-    /*
+    
     char* lcm_url_robot;
     lcm_url_robot = getenv ( "LCM_URL_DRC_ROBOT" );
     
     if (lcm_url_robot!=NULL){
         printf ("The lcm_url_robot is: %s\n",lcm_url_robot);
     }else{
-        std::cout << "LCM_URL_DRC_ROBOT environment variable has not been set." << std::endl;
-        exit(-1);
+        std::cout << "LCM_URL_DRC_ROBOT environment variable has not been set, using default LCM address." << std::endl;
     }
 
     char* lcm_url_base;
@@ -288,17 +287,16 @@ int main (int argc, char ** argv) {
     if (lcm_url_base!=NULL){
         printf ("The lcm_url_base is: %s\n",lcm_url_base);      
     }else{
-        std::cout << "LCM_URL_DRC_BASE environment variable has not been set." << std::endl;
-        exit(-1);
+        std::cout << "LCM_URL_DRC_BASE environment variable has not been set, using default LCM address" << std::endl;
     }
-    */
+    
 
 
-    boost::shared_ptr<lcm::LCM> robot_lcm(new lcm::LCM());// lcm_url_robot )  );
+    boost::shared_ptr<lcm::LCM> robot_lcm(lcm_url_robot ? new lcm::LCM(lcm_url_robot) : new lcm::LCM());
     if(!robot_lcm->good()){
         std::cerr <<"ERROR: lcm is not good()" <<std::endl;
     }
-    boost::shared_ptr<lcm::LCM> base_lcm(new lcm::LCM());// lcm_url_base )  );
+    boost::shared_ptr<lcm::LCM> base_lcm(lcm_url_base ? new lcm::LCM(lcm_url_base) : new lcm::LCM());
     if(!base_lcm->good()){
         std::cerr <<"ERROR: lcm is not good()" <<std::endl;
     }
