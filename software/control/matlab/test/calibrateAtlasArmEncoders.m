@@ -23,7 +23,7 @@ end
 act_idx = getActuatedJoints(r);
 
 [jlmin,jlmax] = getJointLimits(r);
-delta = 0.15; % [rad] amount to command beyond joint limits
+delta = 0.25; % [rad] amount to command beyond joint limits
 
 % initial/final configuration
 x0 = Point(state_frame);
@@ -66,16 +66,16 @@ calib_val.l_arm_mwx =  1.16325;
 calib_val = double(calib_val);
 
 % move to initial pos
-atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,3);
+atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
 
 % move to calib pos
-atlasLinearMoveToPos(q_calib,state_frame,ref_frame,act_idx,3);
+atlasLinearMoveToPos(q_calib,state_frame,ref_frame,act_idx,5);
 
 % record encoder values
 [ex,~] = extra_frame.getMessage();
 
 % move to initial pos again
-atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,3);
+atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
 
 % display encoder offsets 
 ex = ex(1:2*28); % just grab state off the robot
@@ -96,19 +96,19 @@ JOINT_R_ARM_UWY   = 26;
 JOINT_R_ARM_MWX   = 27;
 
 fprintf('\nPaste the following code into state_sync.cpp in the area highlighted at the top:\n\n');
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = %2.4f;\n',enc_diff(JOINT_L_ARM_USY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = %2.4f;\n',enc_diff(JOINT_L_ARM_SHX));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = %2.4f;\n',enc_diff(JOINT_L_ARM_ELY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = %2.4f;\n',enc_diff(JOINT_L_ARM_ELX));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = %2.4f;\n',enc_diff(JOINT_L_ARM_UWY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = %2.4f;\n\n',enc_diff(JOINT_L_ARM_MWX));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = %2.4f;\n',enc_diff(JOINT_R_ARM_USY));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = %2.4f;\n',enc_diff(JOINT_R_ARM_SHX));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = %2.4f;\n',enc_diff(JOINT_R_ARM_ELY));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = %2.4f;\n',enc_diff(JOINT_R_ARM_ELX));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = %2.4f;\n',enc_diff(JOINT_R_ARM_UWY));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = %2.4f;\n\n',enc_diff(JOINT_R_ARM_MWX));
 
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = %2.4f;\n',enc_diff(JOINT_R_ARM_USY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = %2.4f;\n',enc_diff(JOINT_R_ARM_SHX));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = %2.4f;\n',enc_diff(JOINT_R_ARM_ELY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = %2.4f;\n',enc_diff(JOINT_R_ARM_ELX));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = %2.4f;\n',enc_diff(JOINT_R_ARM_UWY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = %2.4f;\n',enc_diff(JOINT_R_ARM_MWX));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = %2.4f;\n',enc_diff(JOINT_L_ARM_USY));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = %2.4f;\n',enc_diff(JOINT_L_ARM_SHX));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = %2.4f;\n',enc_diff(JOINT_L_ARM_ELY));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = %2.4f;\n',enc_diff(JOINT_L_ARM_ELX));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = %2.4f;\n',enc_diff(JOINT_L_ARM_UWY));
+fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = %2.4f;\n',enc_diff(JOINT_L_ARM_MWX));
 
 fprintf('\n then recompile and restart the state sync process: drc-state-sync -b -e\n\n');
 
