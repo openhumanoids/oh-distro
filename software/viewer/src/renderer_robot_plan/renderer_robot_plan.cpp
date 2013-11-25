@@ -862,10 +862,11 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                        NULL);
     
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_PLANNER_PARAMS, NULL);
-    update_planar_params(self);
+    // don't publish these on launch: 
+    // update_planar_params(self);
         
-   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-  	self->selection_enabled = 1;
+    g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
+    self->selection_enabled = 1;
     bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
     self->use_colormap = 1; // default - never changed now
     //bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);
