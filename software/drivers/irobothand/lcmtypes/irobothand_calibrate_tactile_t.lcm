@@ -1,0 +1,7 @@
+package irobothand;
+
+struct calibrate_tactile_t
+{
+  int64_t utime;
+  boolean in_jig; // whether or not the hand is in the calibration jig
+}
