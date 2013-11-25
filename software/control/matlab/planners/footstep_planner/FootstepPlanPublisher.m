@@ -59,6 +59,10 @@ classdef FootstepPlanPublisher
 			msg.bdi_lift_height = X.bdi_lift_height;
 			msg.bdi_toe_off = X.bdi_toe_off;
 			msg.bdi_knee_nominal = X.bdi_knee_nominal;
+            msg.bdi_max_body_accel = X.bdi_max_body_accel;
+            msg.bdi_max_foot_vel = X.bdi_max_foot_vel;
+            msg.bdi_sway_end_dist = X.bdi_sway_end_dist;
+            msg.bdi_step_end_dist = X.bdi_step_end_dist;
 
 			if ~isfield(X, 'terrain_pts') || isempty(X.terrain_pts)
 				msg.num_terrain_pts = 0;
