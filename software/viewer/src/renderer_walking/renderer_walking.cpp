@@ -845,9 +845,15 @@ BotRenderer *renderer_walking_new (BotViewer *viewer, int render_priority, lcm_t
 
   gtk_container_add(GTK_CONTAINER(self->renderer.widget), outer_box);
 
-  GtkWidget *stop_walking_button = (GtkWidget *) gtk_button_new_with_label(PARAM_STOP_WALKING);
-  gtk_box_pack_start(GTK_BOX(outer_box), stop_walking_button, FALSE, TRUE, 0);
-  gtk_widget_show(stop_walking_button);
+  GtkWidget *stop_box = gtk_hbox_new(FALSE, 0);
+  GtkWidget *stop_label = gtk_label_new("Stop Walking! ");
+  GtkWidget *stop_walking_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_STOP);
+  gtk_box_pack_start(GTK_BOX(stop_box), stop_label, FALSE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(stop_box), stop_walking_button, FALSE, TRUE, 0);
+  gtk_widget_show_all(stop_box);
+
+  gtk_box_pack_start(GTK_BOX(outer_box), stop_box, FALSE, TRUE, 0);
+  gtk_widget_show_all(stop_walking_button);
   gtk_box_pack_start(GTK_BOX(outer_box), nav_table, FALSE, TRUE, 0);
   gtk_widget_show(nav_table);
 
