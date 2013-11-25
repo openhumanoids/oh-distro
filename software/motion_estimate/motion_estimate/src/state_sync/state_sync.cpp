@@ -102,12 +102,12 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 1.0111; // robot software v1.10
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0668; // robot software v1.10
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0158; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = -0.9653; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = -1.2288; // robot software v1.10
 
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.0470; // robot software v1.10
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0653; // robot software v1.10
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -0.0611; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = 0.9186; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = 1.0526; // robot software v1.10
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -1.0553; // robot software v1.10
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0338; // robot software v1.10
 
@@ -145,19 +145,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
   use_encoder_.assign(28,false);
   
-  // use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
-  // use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
+  use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
 
-  // use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
-  // use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
+  use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
   
   use_encoder_[Atlas::JOINT_NECK_AY] = true;
 }
