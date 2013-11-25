@@ -25,6 +25,9 @@ else()
   add_mex(HeightMapWrapper HeightMapWrapper.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
   pods_use_pkg_config_packages(HeightMapWrapper maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
 
+  add_mex(BotParamClient BotParamClient.cpp)
+  pods_use_pkg_config_packages(BotParamClient lcm bot2-param-client)
+
   add_mex(QPControllermex QPControllermex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
   pods_use_pkg_config_packages(QPControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(QPControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
