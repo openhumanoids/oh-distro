@@ -1,8 +1,10 @@
 function [X, foot_goals] = footstepLineSearch(biped, foot_orig, goal_pos, params)
 
 debug = false;
-
 X = createOriginSteps(biped, foot_orig, params.right_foot_lead);
+foot_orig.right(4:5) = 0;
+foot_orig.left(4:5) = 0;
+
 
 p0 = footCenter2StepCenter(biped, X(2).pos, X(2).is_right_foot, params.nom_step_width);
 goal_pos(6) = p0(6) + angleDiff(p0(6), goal_pos(6));

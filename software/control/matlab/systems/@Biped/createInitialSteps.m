@@ -16,8 +16,6 @@ end
 
 q0 = x0(1:end/2);
 foot_orig = biped.feetPosition(q0);
-foot_orig.right(4:5) = 0;
-foot_orig.left(4:5) = 0;
 
 if params.velocity_based_steps
   X = createOriginSteps(biped, foot_orig, true);
@@ -65,7 +63,7 @@ X = best_steps;
 
 for j = 1:length(X)
   X(j).id = j;
-  for var = {'step_speed', 'step_height', 'bdi_step_duration', 'bdi_sway_duration', 'bdi_lift_height', 'bdi_toe_off', 'bdi_knee_nominal'}
+  for var = {'step_speed', 'step_height', 'bdi_step_duration', 'bdi_sway_duration', 'bdi_lift_height', 'bdi_toe_off', 'bdi_knee_nominal', 'bdi_max_body_accel', 'bdi_max_foot_vel', 'bdi_sway_end_dist', 'bdi_step_end_dist'}
     v = var{1};
     X(j).(v) = params.(v);
   end

@@ -3,6 +3,8 @@ function [X, foot_goals] = footstepCollocation(biped, foot_orig, goal_pos, param
 debug = false;
 use_snopt = 1;
 use_mex = 1;
+foot_orig.right(4:5) = 0;
+foot_orig.left(4:5) = 0;
 
 params.right_foot_lead = logical(params.right_foot_lead);
 
