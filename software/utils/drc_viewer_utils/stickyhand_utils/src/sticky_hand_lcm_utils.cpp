@@ -44,7 +44,7 @@ namespace visualization_utils
         {
             KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
             KDL::Vector handframe_offset;
-            handframe_offset[0]=0.01;handframe_offset[1]=0;handframe_offset[2]=0;
+            handframe_offset[0]=0;handframe_offset[1]=0;handframe_offset[2]=0;
             KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
             KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
             T_world_ee.p += worldframe_offset;
