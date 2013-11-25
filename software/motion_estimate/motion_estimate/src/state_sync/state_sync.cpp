@@ -132,8 +132,9 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -0.0114; // robot software v1.8/9
   // encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 0.0290; // robot software v1.8/9
 
-  //encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 1.1125; // robot software v1.8
-  encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.235 - 2*M_PI;  // robot software v1.9
+  // encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 1.1125; // robot software v1.8
+  // encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.235 - 2*M_PI;  // robot software v1.9
+  encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.24;  // robot software v1.10
 
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
   // if q < min_angle, use q + 2*pi
@@ -143,20 +144,21 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
-  use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
+  
+  // use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
+  // use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
+  // use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
+  // use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
+  // use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
+  // use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
 
-  use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
-
+  // use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
+  // use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
+  // use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
+  // use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
+  // use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
+  // use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
+  
   use_encoder_[Atlas::JOINT_NECK_AY] = true;
 }
 
@@ -258,6 +260,12 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
               atlas_joints_.position[i] -= 2*M_PI;
             atlas_joints_.position[i] += encoder_joint_offsets_[i];
+
+            // check for wonky encoder initialization :(
+            while (atlas_joints_.position[i] - mod_positions[i] > 0.5)
+              atlas_joints_.position[i] -= 2*M_PI/3;
+            while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
+              atlas_joints_.position[i] += 2*M_PI/3;
 
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
 
