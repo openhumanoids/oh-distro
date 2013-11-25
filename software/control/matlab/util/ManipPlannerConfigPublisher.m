@@ -16,32 +16,28 @@ classdef ManipPlannerConfigPublisher
       msg.desired_ee_arc_speed = data.desired_ee_arc_speed;
       msg.desired_joint_speed = data.desired_joint_speed;
       msg.plan_execution_time = data.plan_execution_time;
-      msg.reaching_planner_params = drc.reaching_planner_config_t();
-      msg.reaching_planner_params.control = drc.manip_plan_control_t();
-      msg.manip_planner_params = drc.manip_planner_config_t();
-      msg.manip_planner_params.control = drc.manip_plan_control_t();
-      msg.planner = data.planner;
+      msg.active_planner = data.planner;
       if(data.planner == drc.planner_config_t.REACHING_PLANNER) 
         if(data.planning_mode == 1)
-          msg.reaching_planner_params.control.mode= drc.manip_plan_control_t.IKSEQUENCE_ON;
+          msg.reaching_mode= drc.manip_plan_control_t.IKSEQUENCE_ON;
         elseif(data.planning_mode == 2)
-          msg.reaching_planner_params.control.mode= drc.manip_plan_control_t.IKSEQUENCE_OFF;
+          msg.reaching_mode= drc.manip_plan_control_t.IKSEQUENCE_OFF;
         elseif(data.planning_mode == 3)
-          msg.reaching_planner_params.control.mode= drc.manip_plan_control_t.TELEOP;
+          msg.reaching_mode= drc.manip_plan_control_t.TELEOP;
         elseif(data.planning_mode == 4)
-          msg.reaching_planner_params.control.mode= drc.manip_plan_control_t.FIXEDJOINTS;
+          msg.reaching_mode= drc.manip_plan_control_t.FIXEDJOINTS;
         else
           error('mode not supported');
         end
       elseif(data.planner == drc.planner_config_t.MANIPULATION_PLANNER)
         if(data.planning_mode == 1)
-          msg.manip_planner_params.control.mode= drc.manip_plan_control_t.IKSEQUENCE_ON;
+          msg.manip_mode= drc.manip_plan_control_t.IKSEQUENCE_ON;
         elseif(data.planning_mode == 2)
-          msg.manip_planner_params.control.mode= drc.manip_plan_control_t.IKSEQUENCE_OFF;
+          msg.manip_mode= drc.manip_plan_control_t.IKSEQUENCE_OFF;
         elseif(data.planning_mode == 3)
-          msg.manip_planner_params.control.mode= drc.manip_plan_control_t.TELEOP;
+          msg.manip_mode= drc.manip_plan_control_t.TELEOP;
         elseif(data.planning_mode == 4)
-          msg.manip_planner_params.control.mode= drc.manip_plan_control_t.FIXEDJOINTS;
+          msg.manip_mode= drc.manip_plan_control_t.FIXEDJOINTS;
         else
           error('mode not supported');
         end
