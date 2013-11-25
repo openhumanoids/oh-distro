@@ -8,6 +8,7 @@ classdef KeyframePlanner < handle
     % adjustmentEngine.adjustAndPublishPlan(keyframe_constraint);
     properties
         r
+        atlas
         plan_cache;
         hardware_mode % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
 
@@ -127,6 +128,8 @@ classdef KeyframePlanner < handle
             % - 1, validation only, no optimization
             % - 2, optimize without collision constraint first, then validate. 
             obj.collision_check = 0;
+            
+            obj.atlas = atlas;
             obj.atlas2robotFrameIndMap = zeros(atlas.getNumStates,1);
             obj.atlas_frame = atlas.getStateFrame;
             obj.lhand_frame = lhand_frame;
@@ -300,7 +303,10 @@ classdef KeyframePlanner < handle
         function Tmax_joints=getTMaxForMaxJointSpeed(obj)
             dqtraj=fnder(obj.plan_cache.qtraj,1); 
             sfine = linspace(0,1,50);
-            Tmax_joints = max(max(abs(eval(dqtraj,sfine)),[],2))/obj.plan_cache.qdot_desired;
+            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+            neck_idx = strcmp(coords,'neck_ay');
+            qdot_breaks = dqtraj.eval(sfine);
+            Tmax_joints = max(max(abs(qdot_breaks(~neck_idx,:)),[],2))/obj.plan_cache.qdot_desired;
          end
      %-----------------------------------------------------------------------------------------------------------------        
         function cachePelvisPose(obj,tspan,pose)

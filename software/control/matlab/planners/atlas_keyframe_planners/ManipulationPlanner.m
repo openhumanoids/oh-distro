@@ -308,9 +308,10 @@ classdef ManipulationPlanner < KeyframePlanner
               end
             end
 
+            obj.setDefaultJointConstraint();
             manip_joint_cnst = obj.joint_constraint;
             if(obj.isBDIManipMode())
-              fixed_base_ind = [1;2;4;5;6];
+              fixed_base_ind = [1;2;3;4;5;6];
               manip_joint_cnst = manip_joint_cnst.setJointLimits(fixed_base_ind,q0(fixed_base_ind),q0(fixed_base_ind));
             end
             ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
