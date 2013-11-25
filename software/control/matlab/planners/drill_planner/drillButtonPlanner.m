@@ -191,7 +191,7 @@ classdef drillButtonPlanner
       
       % create drill direction constraint
       finger_dir_constraint = WorldGazeDirConstraint(obj.r,obj.finger_hand_body,obj.finger_axis_on_hand,...
-        button_axis_world, obj.default_axis_threshold);
+        button_axis_world, obj.default_axis_threshold, [t_vec(end) t_vec(end)]);
       
       % create posture constraint
       posture_index = setdiff((1:obj.r.num_q)',obj.finger_joint_indices);

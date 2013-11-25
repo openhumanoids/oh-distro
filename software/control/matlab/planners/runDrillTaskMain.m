@@ -29,6 +29,7 @@ drill.guard_pos = [    0.15
    -0.2602
     0.0306];
   drill.drill_axis = [1;0;0];
+%   drill.drill_axis = [.5;0;sqrt(3)/2;
 finger_pt_on_hand = [0; 0.2752; 0.015];
 finger_axis_on_hand = [0;1;0];
 
@@ -288,7 +289,7 @@ while(true)
         if ~isempty(xtraj_button)
           xlast = xtraj_button.eval(xtraj_button.tspan(2));
           q0 = lcm_mon.getStateEstimate();
-          q0(setdiff(1:34',[1;2;3;4;5;6;button_pub.button_joint_indices])) = xlast(setdiff(1:34',[1;2;3;4;5;6;button_pub.button_joint_indices]));
+          q0(setdiff(1:34',[1;2;3;4;5;6;button_pub.finger_joint_indices])) = xlast(setdiff(1:34',[1;2;3;4;5;6;button_pub.finger_joint_indices]));
           button_offset = last_button_offset + ctrl_data(1:3);
 %           last_button_offset = button_offset;
           [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPokePlan(q0, button_offset, 5);
