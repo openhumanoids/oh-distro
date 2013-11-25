@@ -408,8 +408,8 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_FOOT_VEL, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0.02);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0.02);  
   } else if (mode == STEPPING_BDI_OBSTACLES) {
     std::cout << "Using preset mode: BDI Obstacle Stepping\n"; 
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 4); 
@@ -448,8 +448,8 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_FOOT_VEL, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_END_DIST, 0.02);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_END_DIST, 0.02);  
   } else if (mode == WALKING_BDI_INFINITE) {
     std::cout << "Using preset mode: BDI Infinite Walking\n"; 
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 2); 
