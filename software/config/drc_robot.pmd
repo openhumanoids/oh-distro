@@ -60,22 +60,22 @@ group "a.0.hand_drivers" {
     }
     cmd "irobot-right" {
         exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=r hand_id:=44";
-        host = "localhost";
+        host = "robot";
     }
     cmd "irobot-left" {
         exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=l hand_id:=44";
-        host = "localhost";
-    }   
+        host = "robot";
+    }
 }
 
 group "a.1.core" {
     cmd "spin-lidar" {
         exec = "spin-lidar-command";
-        host = "localhost";
+        host = "robot";
     }
     cmd "roscore" {
         exec = "roscore";
-        host = "localhost";
+        host = "robot";
     }
     cmd "aa-sync" {
         exec = "drc-state-sync -b -e";
