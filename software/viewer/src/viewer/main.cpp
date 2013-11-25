@@ -26,7 +26,6 @@
 #include <occ_map/occ_map_renderers.h>
 // Individual Renderers:
 #include <renderer_drc/renderer_scrollingplots.h>
-#include <renderer_drc/renderer_driving.hpp>
 #include <renderer_drc/renderer_walking.hpp>
 #include <renderer_drc/renderer_controller_options.hpp>
 #include <renderer_drc/renderer_status.hpp>
@@ -37,10 +36,8 @@
 // block of renderers
 #include <renderer_robot_state/renderer_robot_state.hpp>
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
-#include <renderer_crawling_plan/renderer_crawling_plan.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <renderer_sticky_feet/renderer_sticky_feet.hpp>
-#include <renderer_end_effector_goal/renderer_end_effector_goal.hpp>
 
 #include <tracker-renderer/TrackerRenderer.hpp>
 
