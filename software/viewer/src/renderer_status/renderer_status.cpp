@@ -76,6 +76,18 @@ const bool PARAM_RATES_DEFAULT= true;
   fprintf(stderr, fmt, ##__VA_ARGS__); \
 } while (0)
 
+
+typedef struct
+{
+  // state of the planner
+  double desired_ee_arc_speed;
+  double desired_joint_speed;
+  std::string planner_name;
+  double plan_execution_time;
+
+} CurrentPlan;
+
+
 typedef struct
 {
   BotRenderer renderer;
@@ -129,10 +141,7 @@ typedef struct
   float estimated_biases[3];
   bool estimated_biases_converged;
   
-  // state of the planner
-  double desired_ee_arc_speed;
-  double desired_joint_speed;
-  std::string planner_name;
+  CurrentPlan current_plan;
   
 } RendererSystemStatus;
 
@@ -310,33 +319,33 @@ on_tactile_state(const lcm_recv_buf_t * buf, const char *channel, const drc_hand
 
 static string get_planner_string(int16_t mode){
   if( mode ==  DRC_PLANNER_CONFIG_T_IKSEQUENCE_ON){
-    return string("Reaching IK On");      
+    return string("IK On");      
   }else if( mode ==  DRC_PLANNER_CONFIG_T_IKSEQUENCE_OFF){
-    return string("Reaching IK Off");      
+    return string("IK Off");      
   }else if( mode ==  DRC_PLANNER_CONFIG_T_TELEOP){
-    return string("Reaching Teleop");            
+    return string("Teleop");            
   }else if( mode ==  DRC_PLANNER_CONFIG_T_FIXEDJOINTS){
-    return string("Reaching Fixed Joints");            
+    return string("Fixed Joints");            
   }
 }
 
 static void
 on_planner_config(const lcm_recv_buf_t * buf, const char *channel, const drc_planner_config_t *msg, void *user_data){
   RendererSystemStatus *self = (RendererSystemStatus*) user_data; 
-  self->desired_ee_arc_speed = msg->desired_ee_arc_speed;
-  self->desired_joint_speed = msg->desired_joint_speed;
-  
+  self->current_plan.desired_ee_arc_speed = msg->desired_ee_arc_speed;
+  self->current_plan.desired_joint_speed = msg->desired_joint_speed;
+  self->current_plan.plan_execution_time = msg->plan_execution_time;
   
   if (msg->active_planner == DRC_PLANNER_CONFIG_T_REACHING_PLANNER){
-    self->planner_name = get_planner_string(msg->reaching_mode);
+    self->current_plan.planner_name = string("Reaching w ") + get_planner_string(msg->reaching_mode);
   }else if (msg->active_planner == DRC_PLANNER_CONFIG_T_ENDPOSE_PLANNER){
-    self->planner_name = "Endpose"; 
+    self->current_plan.planner_name = "Endpose"; 
   }else if (msg->active_planner == DRC_PLANNER_CONFIG_T_POSTURE_PLANNER){
-    self->planner_name = "Posture"; 
+    self->current_plan.planner_name = "Posture"; 
   }else if (msg->active_planner == DRC_PLANNER_CONFIG_T_MANIPULATION_PLANNER){
-    self->planner_name = get_planner_string(msg->reaching_mode);
+    self->current_plan.planner_name = string("Manip w ") + get_planner_string(msg->reaching_mode);
   }else{
-    self->planner_name = "Unknown planner"; 
+    self->current_plan.planner_name = "Unknown planner"; 
   }
   
 }
@@ -416,21 +425,25 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
   
   
   char line[80];
-  snprintf(line, 70,  "ee speed %2.2f ms/s", self->desired_ee_arc_speed );
+  snprintf(line, 70,  "ee speed %2.1f cm/s", self->current_plan.desired_ee_arc_speed*100 );
   glColor3f(  0.0, 0.0, 0.8 );
   glRasterPos2f(0, gl_height + (0 - self->frequency_list.size()  - 9) * line_height );
   glutBitmapString(font, (unsigned char*) line);  
  
-  snprintf(line, 70,  "joint speed %2.0f deg/s", self->desired_joint_speed);
+  snprintf(line, 70,  "joint speed %2.0f deg/s", self->current_plan.desired_joint_speed*180/M_PI);
   glColor3f(  0.0, 0.0, 0.8 );
   glRasterPos2f(0, gl_height + (-1 - self->frequency_list.size()  - 9) * line_height);
   glutBitmapString(font, (unsigned char*) line);  
   
-  snprintf(line, 70,  "%s", self->planner_name.c_str() );
+  snprintf(line, 70,  "%s", self->current_plan.planner_name.c_str() );
   glColor3f(  0.0, 0.0, 0.8 );
   glRasterPos2f(0, gl_height + (-2 - self->frequency_list.size()  - 9) * line_height);
   glutBitmapString(font, (unsigned char*) line);  
 
+  snprintf(line, 70,  "Duration %2.2fsec",   self->current_plan.plan_execution_time  );
+  glColor3f(  0.0, 0.0, 0.8 );
+  glRasterPos2f(0, gl_height + (-3 - self->frequency_list.size()  - 9) * line_height);
+  glutBitmapString(font, (unsigned char*) line);  
   
   /// Status Block:  
   char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
@@ -792,9 +805,10 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   self->right_hand_contact = 0;
   self->left_hand_contact = 0;
   
-  self->desired_joint_speed = 0;
-  self->desired_ee_arc_speed = 0;
-  self->planner_name ="";
+  self->current_plan.desired_joint_speed = 0;
+  self->current_plan.desired_ee_arc_speed = 0;
+  self->current_plan.planner_name ="Planner & Mode";
+  self->current_plan.plan_execution_time = 0;
   
   std::string channel_name ="SAM";
   self->msgchannels.push_back(channel_name);
