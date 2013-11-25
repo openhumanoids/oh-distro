@@ -55,7 +55,7 @@
       "nominal_handedness": "right", 
       "name": "pulldown", 
       "description": "lower config below the current"
-    },
+    }, 
     {
       "joints": {
         "r_arm_elx": -2.35619, 
@@ -156,8 +156,37 @@
       "name": "retract", 
       "description": "turn back and retract hand"
     }
-  ],
-
+  ], 
+  "drill": [
+    {
+      "joints": {
+        "r_arm_elx": -0.2782212495803833, 
+        "r_arm_ely": 2.956566095352173, 
+        "r_arm_usy": -0.0961771011352539, 
+        "r_arm_uwy": 3.1636111736297607, 
+        "r_arm_mwx": -1.108652114868164, 
+        "r_arm_shx": 1.1664966344833374
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "right", 
+      "name": "hand out of the way", 
+      "description": "hand out of the way"
+    }, 
+    {
+      "joints": {
+        "r_arm_elx": -2.248619556427002, 
+        "r_arm_ely": 1.6829783916473389, 
+        "r_arm_usy": -0.291759729385376, 
+        "r_arm_uwy": 1.1257176399230957, 
+        "r_arm_mwx": -0.38355880975723267, 
+        "r_arm_shx": 0.7920135259628296
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "right", 
+      "name": "hand in camera", 
+      "description": "hand in camera"
+    }
+  ], 
   "hose": [
     {
       "joints": {
@@ -235,8 +264,7 @@
       "name": "hose walking", 
       "description": "tuck arm in for walking"
     }
-  ],
-
+  ], 
   "General": [
     {
       "joints": {
