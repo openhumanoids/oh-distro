@@ -108,6 +108,7 @@ struct ViewMetaData::Helper {
   MapsRenderer* mRenderer;
   int64_t mViewId;
   bool mVisible;
+  bool mUseTransform;
 
   Attributes mAttributes;
 
@@ -118,6 +119,7 @@ struct ViewMetaData::Helper {
   Helper(const MapsRenderer* iRenderer, const int64_t iViewId) {
     mRenderer = (MapsRenderer*)iRenderer;
     mBox = NULL;
+    mUseTransform = false;
 
     mViewId = iViewId;
     auto item = gGlobals.mAttributesMap.find(mViewId);
@@ -166,7 +168,8 @@ struct ViewMetaData::Helper {
     iMeshRenderer->setRangeOrigin(mLatestTransform.translation());
     iMeshRenderer->setScaleRange(mAttributes.mMinZ, mAttributes.mMaxZ);
     iMeshRenderer->setPointSize(mAttributes.mPointSize);
-    Eigen::Projective3f worldToMap = iView->getTransform();
+    Eigen::Projective3f worldToMap = mUseTransform ? iView->getTransform() :
+      Eigen::Projective3f::Identity();
     Eigen::Projective3f mapToWorld = worldToMap.inverse();
     Eigen::Matrix3f calib;
     Eigen::Isometry3f pose;
@@ -199,14 +202,14 @@ struct ViewMetaData::Helper {
       usePoints = true;
     }
     else {
-      mesh = iView->getAsMesh(false);
+      mesh = iView->getAsMesh(!mUseTransform);
       if (mesh == NULL) usePoints = true;
     }
 
     // just a point cloud
     if (usePoints) {
       mesh.reset(new maps::TriangleMesh());
-      maps::PointCloud::Ptr cloud = iView->getAsPointCloud(false);
+      maps::PointCloud::Ptr cloud = iView->getAsPointCloud(!mUseTransform);
       mesh->mVertices.reserve(cloud->size());
       for (size_t i = 0; i < cloud->size(); ++i) {
         mesh->mVertices.push_back((*cloud)[i].getVector3fMap());

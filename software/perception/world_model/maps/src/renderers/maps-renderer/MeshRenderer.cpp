@@ -611,7 +611,7 @@ draw() {
         float* col = bot_color_util_jet(w);
         color = Eigen::Vector3f(col[0], col[1], col[2]);
       }
-      if ((mState->mColorMode == ColorModeRange) || modeNormals) {
+      else if ((mState->mColorMode == ColorModeRange) || modeNormals) {
         float z = (values[i] - valueMin) * invValueDenom;
         float w = (z - mState->mScaleMinZ) * invDenom2;
         float* col = bot_color_util_jet(w);
