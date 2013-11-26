@@ -157,36 +157,6 @@
       "description": "turn back and retract hand"
     }
   ], 
-  "drill": [
-    {
-      "joints": {
-        "r_arm_elx": -0.2782212495803833, 
-        "r_arm_ely": 2.956566095352173, 
-        "r_arm_usy": -0.0961771011352539, 
-        "r_arm_uwy": 3.1636111736297607, 
-        "r_arm_mwx": -1.108652114868164, 
-        "r_arm_shx": 1.1664966344833374
-      }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "hand out of the way", 
-      "description": "hand out of the way"
-    }, 
-    {
-      "joints": {
-        "r_arm_elx": -2.248619556427002, 
-        "r_arm_ely": 1.6829783916473389, 
-        "r_arm_usy": -0.291759729385376, 
-        "r_arm_uwy": 1.1257176399230957, 
-        "r_arm_mwx": -0.38355880975723267, 
-        "r_arm_shx": 0.7920135259628296
-      }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "hand in camera", 
-      "description": "hand in camera"
-    }
-  ], 
   "hose": [
     {
       "joints": {
@@ -263,6 +233,36 @@
       "nominal_handedness": "right", 
       "name": "hose walking", 
       "description": "tuck arm in for walking"
+    }
+  ], 
+  "drill": [ 
+    {
+      "joints": {
+        "r_arm_elx": -1.4047385454177856, 
+        "r_arm_ely": 2.664982318878174, 
+        "r_arm_usy": 0.03612875938415527, 
+        "r_arm_uwy": 2.428642511367798, 
+        "r_arm_mwx": 0.9866377711296082, 
+        "r_arm_shx": 0.709945559501648
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "right", 
+      "name": "hand back pre grasp", 
+      "description": "hand back pre grasp"
+    }, 
+    {
+      "joints": {
+        "r_arm_elx": -1.8516064882278442, 
+        "r_arm_ely": 1.683713674545288, 
+        "r_arm_usy": -0.4306807518005371, 
+        "r_arm_uwy": 2.4879884719848633, 
+        "r_arm_mwx": 0.7594167590141296, 
+        "r_arm_shx": 1.1932454109191895
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "right", 
+      "name": "hand in camera", 
+      "description": "hand in camera"
     }
   ], 
   "General": [
