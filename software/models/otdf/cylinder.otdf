@@ -59,7 +59,7 @@
         <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
     </joint>
-<!--
+    <!--
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_0" />
@@ -75,4 +75,25 @@
         <state num_joints="12" joint_names="left_f0_j0 left_f0_j1 left_f0_j2 left_f1_j0 left_f1_j1 left_f1_j2 left_f2_j0 left_f2_j1 left_f2_j2 left_f3_j0 left_f3_j1 left_f3_j2 " joint_positions="-0.0144491 1.12633 0.62465 -0.00496385 0.964135 0.554495 0.01353 0.787397 0.517136 0.28348 0.218039 0.237527 " />
     </grasp_seed>
 -->
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0" />
+        <relative_pose rpy="1.03142 -0.499076 0.899436" xyz="0.000211886 0.191715 -0.0227275" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0" />
+        <relative_pose rpy="-1.60184 0.0578292 -0.985099" xyz="0.0584051 -0.0810719 0.0818028" />
+        <grasp_type type="7" />
+        <state num_joints="11" joint_names="right_finger_1_joint_1 right_finger_1_joint_2 right_finger_1_joint_3 right_finger_2_joint_1 right_finger_2_joint_2 right_finger_2_joint_3 right_finger_middle_joint_1 right_finger_middle_joint_2 right_finger_middle_joint_3 right_palm_finger_1_joint right_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0" />
+        <relative_pose rpy="-1.56362 -0.016978 2.34229" xyz="-0.0773013 0.0644613 -0.0253557" />
+        <grasp_type type="6" />
+        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
 </object>
