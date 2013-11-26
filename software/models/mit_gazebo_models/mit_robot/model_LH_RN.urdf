@@ -1353,7 +1353,7 @@
       </contact>
     </sensor>
   </gazebo>
-  <!--    <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
+  <!-- <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />-->
   <joint name="left_hook_hand_joint" type="fixed">
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
     <parent link="l_hand"/>
@@ -1365,53 +1365,17 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
-    <!-- MIT's own extension plate -->
     <collision>
       <geometry>
-        <cylinder length="0.01" radius="0.045"/>
+        <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.025"/>
+      <origin rpy="0 0 0.0" xyz="0.00 0.0 0.0"/>
     </collision>
     <visual>
       <geometry>
-        <cylinder length="0.01" radius="0.045"/>
+        <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="darkgray">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
-      <origin rpy="0 0 0" xyz="0 0 0.025"/>
-    </visual>
-    <!-- MIT's pointer rod -->
-    <collision>
-      <geometry>
-        <cylinder length="0.15" radius="0.006"/>
-      </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.1"/>
-    </collision>
-    <visual>
-      <geometry>
-        <cylinder length="0.15" radius="0.006"/>
-      </geometry>
-      <material name="darkgray">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
-      <origin rpy="0 0 0" xyz="0 0 0.1"/>
-    </visual>
-    <!-- MIT's hook -->
-    <collision>
-      <geometry>
-        <cylinder length="0.04" radius="0.006"/>
-      </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
-    </collision>
-    <visual>
-      <geometry>
-        <cylinder length="0.04" radius="0.006"/>
-      </geometry>
-      <material name="darkgray">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
+      <origin rpy="0 0 0.0" xyz="0.00 0.0 0.0"/>
     </visual>
   </link>
 </robot>
