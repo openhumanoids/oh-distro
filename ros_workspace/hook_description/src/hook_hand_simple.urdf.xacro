@@ -76,7 +76,7 @@
 
 
 <!-- joint to irobot hand -->
-  <joint name="${side}_irobot_hand_joint" type="fixed">
+  <joint name="${side}_hook_hand_joint" type="fixed">
     <insert_block name="origin"/>
     <parent link="${parent}"/>
     <child link="${side}_base_link"/>
@@ -125,12 +125,11 @@
 
 
 <!-- MIT's hook -->
-<!--
     <collision>
       <geometry>
         <cylinder length="0.04" radius="0.006"/>
       </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
     </collision>
     <visual>
       <geometry>
@@ -139,9 +138,8 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
     </visual>
--->
   </link>
 
 
