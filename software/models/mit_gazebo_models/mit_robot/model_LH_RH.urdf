@@ -1353,7 +1353,7 @@
       </contact>
     </sensor>
   </gazebo>
-  <!--    <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
+  <!--<xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
   <joint name="right_hook_hand_joint" type="fixed">
     <origin rpy="1.57079 0 0" xyz="0 -0.11516 -0.015"/>
     <parent link="r_hand"/>
