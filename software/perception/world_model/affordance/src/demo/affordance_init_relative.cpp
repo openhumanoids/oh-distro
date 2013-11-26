@@ -24,6 +24,8 @@
 #include <bot_param/param_client.h>
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 
+#include <lcmtypes/bot_core.hpp>
+
 
 #include <pointcloud_tools/pointcloud_vis.hpp>
 #include <pointcloud_tools/pointcloud_math.hpp>
@@ -60,6 +62,8 @@ class Pass{
     void sendPlanEELoci(const  drc::grasp_opt_control_t* msg, 
                         Eigen::Isometry3d aff_to_palmgeometry, std::vector <double> rel_angles);
 
+    void poseGroundHandler(const lcm::ReceiveBuffer* rbuf, 
+                           const std::string& channel, const  bot_core::pose_t* msg);
     
     drc::affordance_plus_t getSteeringCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
     drc::affordance_plus_t getCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
@@ -81,6 +85,8 @@ class Pass{
     
     // place the affordance relative to left shoulder
     int which_affordance_;
+    
+    double ground_height_;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, int which_affordance_):
@@ -102,14 +108,19 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, int which_affor
   sleep(1);
   
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robot_state_handler,this);  
+  lcm_->subscribe( "POSE_GROUND" ,&Pass::poseGroundHandler,this);
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
       
-
+  ground_height_ = -1;
 }
 
+
+void Pass::poseGroundHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  ground_height_ = msg->pos[2];
+}
 
 drc::affordance_plus_t Pass::getSteeringCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid){ 
   Eigen::Isometry3d world_to_aff = world_to_utorso_*utorso_to_aff; 
@@ -313,6 +324,11 @@ drc::affordance_plus_t Pass::getDoorAffordancePlus(std::string filename, Eigen::
 }
 
 void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+  if (ground_height_ == -1){
+    std::cout << "waiting for ground height...\n";
+    return;
+  }
+  
   
   frames_cpp_->get_trans_with_utime( "utorso" , "local", msg->utime, world_to_utorso_);
   frames_cpp_->get_trans_with_utime( "ground", "local", msg->utime, world_to_ground_);
@@ -362,13 +378,13 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
     utorso_to_aff.translation()  << 0.74, 0.0, 0.30;
     utorso_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(180*M_PI/180,0*M_PI/180,20*M_PI/180)) );
     aff = getFireHoseAffordancePlus("notused", utorso_to_aff, 0);
-    aff.aff.origin_xyz[2] = 1.00;
+    aff.aff.origin_xyz[2] = ground_height_ + 1.00;
     aff.aff.origin_rpy[0] = 0;
     aff.aff.origin_rpy[2] = 0;
     aff.aff.otdf_type = "wye";
   }else if (which_affordance_ ==6){
     Eigen::Isometry3d ground_to_aff(Eigen::Isometry3d::Identity());
-    ground_to_aff.translation()  << 2.0, -0.5, 1.016;
+    ground_to_aff.translation()  << 2.0, -0.5,  ground_height_+ 1.016;
     ground_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(0,0,90*M_PI/180)) );
     aff = getDoorAffordancePlus("notused", ground_to_aff, 0);
     aff.aff.otdf_type = "door_right_handed";
@@ -380,6 +396,7 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
     exit(-1); 
   }
   
+  std::cout << "publishing affordance and exiting.\n";
   lcm_->publish("AFFORDANCE_FIT",&aff);
   
   exit(-1);  
