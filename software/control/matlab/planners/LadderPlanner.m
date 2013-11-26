@@ -20,7 +20,7 @@ function LadderPlanner(filename)
   %urdf_filename = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_no_hands.urdf');
   %r_collision = Atlas(urdf_filename);
   S = warning();
-  warning('off');
+  warning('OFF','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
   r = Atlas();
   warning(S);
   load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
@@ -204,7 +204,7 @@ function LadderPlanner(filename)
         link_constraints(r_hand_constraint_idx).axis = r_hand_axis;
       end
       
-      [x_data,ts] = robotLadderPlan(r,r, q0, q0, comtraj, link_constraints,support_times,support);
+      [x_data,ts] = robotLadderPlanLeanBack(r,r, q0, q0, comtraj, link_constraints,support_times,support);
       
       plan_pub.publish(ts,x_data);
       

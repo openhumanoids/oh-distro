@@ -1,6 +1,10 @@
 function [x_data, t] = robotLadderPlan(r_minimal,r, q0, qstar, comtraj, link_constraints,support_times,support)
 
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'robotLadderPlan');
+red = {1,0,0};
+blue = {0,0,1};
+gray = {0.5,0.5,0.5};
+black = {0,0,0};
 nq = r.getNumDOF();
 
 use_quasistatic_constraint =  true;
@@ -22,6 +26,8 @@ pelvis = r.findLinkInd('pelvis');
 utorso = r.findLinkInd('utorso');
 r_foot = r.findLinkInd('r_foot');
 l_foot = r.findLinkInd('l_foot');
+r_hand = r.findLinkInd('r_hand');
+l_hand = r.findLinkInd('l_hand');
 neck_joint = findJointIndices(r,'neck');
 %ankle_joints = [findJointIndices(r,'r_leg_aky')];
  ankle_joints = [findJointIndices(r,'l_leg_aky'); ...
@@ -45,7 +51,8 @@ hand_pos_tol = 0.0;
 pelvis_threshold = 0.05;
 com_tol = 0.01;
 com_incr_tol = 0.02;
-com_tol_max = 0.1;
+com_tol_max = 0.5;
+qs_margin = 0.0;
 arm_tol = 6*pi/180/n;
 arm_tol_total = 30*pi/180;
 %comtraj = comtraj + 0.05;
@@ -81,6 +88,7 @@ cost.back_bkx = 1e2;
 cost = double(cost);
 ikoptions = IKoptions(r);
 ikoptions = ikoptions.setQ(diag(cost(1:r.getNumDOF)));
+ikoptions = ikoptions.setDebug(true);
 %ikoptions = ikoptions.setSequentialSeedFlag(true);
  %ikoptions = ikoptions.setMex(false);
 
@@ -90,7 +98,7 @@ fprintf('\n');
 fprintf('Constraint Summary\n');
 fprintf('==================================\n');
 fprintf('Name                      Status    Tolerance\n');
-fprintf('QS Constraint             %s        %4.2f\n', logical2str(use_quasistatic_constraint),shrink_factor);
+fprintf('QS Constraint             %s        %4.2f\n', logical2str(use_quasistatic_constraint),qs_margin);
 fprintf('Incr. COM Constraint:     %s        %4.2f m\n', logical2str(use_incr_com_constraint), com_incr_tol);
 fprintf('COM Constraint:           %s        %4.2f m\n', logical2str(use_com_constraint), com_tol);
 fprintf('Final COM Constraint:     %s\n', logical2str(use_final_com_constraint));
@@ -108,15 +116,24 @@ fprintf('Arm Constraints (total):  %s        %4.2f deg\n', logical2str(use_total
 q = zeros(nq,nt);
 q(:,1) = q0;
 
+r_hand_constraint = link_constraints([link_constraints.link_ndx] == r_hand);
+r_hand_grasped = ~isempty(r_hand_constraint);
+l_hand_constraint = link_constraints([link_constraints.link_ndx] == l_hand);
+l_hand_grasped = ~isempty(l_hand_constraint);
+
 r_foot_support_data = zeros(size(support_times));
-r_foot_support_data(1:end-1) = cellfun(@(supp) double(any(supp.bodies==r_foot)),support); 
+r_foot_support_data(1:end-1) = ...
+  cellfun(@(supp) double(any(supp.bodies==r_foot)),support); 
 r_foot_support_data(end) = r_foot_support_data(end-1);
-r_foot_support_traj = PPTrajectory(zoh(support_times,r_foot_support_data));
+r_foot_support_traj = ...
+  PPTrajectory(zoh(support_times,r_foot_support_data));
 
 l_foot_support_data = zeros(size(support_times));
-l_foot_support_data(1:end-1) = cellfun(@(supp) double(any(supp.bodies==l_foot)),support); 
+l_foot_support_data(1:end-1) = ...
+  cellfun(@(supp) double(any(supp.bodies==l_foot)),support); 
 l_foot_support_data(end) = l_foot_support_data(end-1);
-l_foot_support_traj = PPTrajectory(zoh(support_times,l_foot_support_data));
+l_foot_support_traj = ...
+  PPTrajectory(zoh(support_times,l_foot_support_data));
 basic_constraints = {};
 
 if use_ankle_constraint
@@ -211,16 +228,151 @@ for i=1:nt
   r_foot_supported = eval(r_foot_support_traj,t);
   l_foot_supported = eval(l_foot_support_traj,t);
   if use_quasistatic_constraint && (r_foot_supported || l_foot_supported)
-    qsc = QuasiStaticConstraint(r);
+    %qsc = QuasiStaticConstraint(r);
+    foot_pts_in_world = [];
+    hand_pts_in_world = [];
     if r_foot_supported
-      qsc = qsc.addContact(r_foot,r.getBodyContacts(r_foot));
+      r_foot_pts = r.getBodyContacts(r_foot);
+      r_foot_pos = link_constraints([link_constraints.link_ndx] == r_foot).traj.eval(t);
+      T_r_foot_to_world = [rpy2rotmat(r_foot_pos(4:6)),r_foot_pos(1:3); ... 
+                         zeros(1,3),1];
+      r_foot_pts_in_world = T_r_foot_to_world*[r_foot_pts;ones(1,size(r_foot_pts,2))];
+      foot_pts_in_world = [foot_pts_in_world, r_foot_pts_in_world(1:3,:)];
+      %qsc = qsc.addContact(r_foot,r.getBodyContacts(r_foot));
     end
     if l_foot_supported
-      qsc = qsc.addContact(l_foot,r.getBodyContacts(l_foot));
+      l_foot_pts = r.getBodyContacts(l_foot);
+      l_foot_pos = link_constraints([link_constraints.link_ndx] == l_foot).traj.eval(t);
+      T_l_foot_to_world = [rpy2rotmat(l_foot_pos(4:6)),l_foot_pos(1:3); ... 
+                         zeros(1,3),1];
+      l_foot_pts_in_world = T_l_foot_to_world*[l_foot_pts;ones(1,size(l_foot_pts,2))];
+      foot_pts_in_world = [foot_pts_in_world, l_foot_pts_in_world(1:3,:)];
+      %qsc = qsc.addContact(l_foot,r.getBodyContacts(l_foot));
     end
-    qsc = qsc.setShrinkFactor(shrink_factor);
-    qsc = qsc.setActive(true);
-    constraints = [constraints, {qsc}];
+    if r_hand_grasped
+      r_hand_pos = 0.5*(r_hand_constraint.min_traj.eval(t) ...
+                          +r_hand_constraint.min_traj.eval(t));
+      hand_pts_in_world = [hand_pts_in_world, r_hand_pos(1:3,:)];
+    end
+    if l_hand_grasped
+      l_hand_pos = 0.5*(l_hand_constraint.min_traj.eval(t) ...
+                          +l_hand_constraint.min_traj.eval(t));
+      hand_pts_in_world = [hand_pts_in_world, l_hand_pos(1:3,:)];
+    end
+    K = convhulln(foot_pts_in_world(1:2,:)');
+    foot_chull_pts_in_world = foot_pts_in_world(:,K(:,1));
+    foot_chull_pts_in_world(3,:) = min(foot_chull_pts_in_world(3,:));
+    foot_chull_pts_in_bot = ...
+      o_T_pelvis\[foot_chull_pts_in_world;ones(1,size(foot_chull_pts_in_world,2))];
+    foot_chull_pts_in_bot(3,:) = [];
+    n_chull_pts = size(foot_chull_pts_in_world,2);
+    foot_chull_edges = circshift(foot_chull_pts_in_world,[0,1]) ...
+                       - foot_chull_pts_in_world;
+    foot_chull_edge_directions = ...
+      bsxfun(@rdivide,foot_chull_edges, ...
+             sqrt(sum(foot_chull_edges.^2,1)));
+    if ~isempty(hand_pts_in_world)
+      hand_pts_in_bot = ...
+        o_T_pelvis\[hand_pts_in_world;ones(1,size(hand_pts_in_world,2))];
+      hand_pts_in_bot(3,:) = [];
+      if size(hand_pts_in_world,2)
+        h1_minus_chull_pts = ...
+          bsxfun(@minus,foot_chull_pts_in_bot,hand_pts_in_bot(:,1));
+        h1_angles = atan2(h1_minus_chull_pts(2,:),h1_minus_chull_pts(1,:));
+        [~,p1_idx] = min(h1_angles);
+        foot_chull_pts_in_world = ...
+          circshift(foot_chull_pts_in_world,[0 -p1_idx+1]);
+        foot_chull_pts_in_bot = ...
+          circshift(foot_chull_pts_in_bot,[0 -p1_idx+1]);
+        foot_chull_edges = circshift(foot_chull_edges,[0 -p1_idx+1]);
+        foot_chull_edge_directions = ...
+          circshift(foot_chull_edge_directions,[0 -p1_idx+1]);
+        p1_idx = 1;
+        h2_minus_chull_pts = ...
+          bsxfun(@minus,foot_chull_pts_in_bot,hand_pts_in_bot(:,2));
+        h2_angles = atan2(h2_minus_chull_pts(2,:),h2_minus_chull_pts(1,:));
+        [~,p2_idx] = max(h2_angles);
+
+        % Replace edge(p1_idx) with vector from h1 to p1
+%         foot_chull_edge_directions(:,p1_idx) = ...
+%           -normalizeVec(foot_chull_pts_in_world(:,p1_idx) - [hand_pts_in_world(1:2,1); foot_chull_pts_in_world(3,p1_idx)]);
+        foot_chull_edge_directions = ...
+          [foot_chull_edge_directions(:,1), ...
+          -normalizeVec(foot_chull_pts_in_world(:,p1_idx) - [hand_pts_in_world(1:2,1); foot_chull_pts_in_world(3,p1_idx)]),...
+          -normalizeVec([hand_pts_in_world(1:2,2);foot_chull_pts_in_world(3,p2_idx)] - foot_chull_pts_in_world(:,p2_idx)),...
+          foot_chull_edge_directions(:,p2_idx+1:end)];
+        foot_chull_pts_in_world = ...
+          foot_chull_pts_in_world(:,[p1_idx,p1_idx,p2_idx:end]);
+%           foot_chull_pts_in_world(:,[1,p2_idx,p2_idx:end]);
+        p2_idx = 3;
+      elseif size(hand_hold_pts,1)
+        h1_minus_chull_pts = ...
+          bsxfun(@minus,foot_chull_pts_in_bot,hand_pts_in_bot(:,1));
+        h1_angles = atan2(h1_minus_chull_pts(2,:),h1_minus_chull_pts(1,:));
+        [~,p1_idx] = min(h1_angles);
+        foot_chull_pts_in_world = ...
+          circshift(foot_chull_pts_in_world,[0 -p1_idx]);
+        foot_chull_pts_in_bot = ...
+          circshift(foot_chull_pts_in_bot,[0 -p1_idx]);
+        p1_idx = 1;
+      end
+    end
+    for j = 1:size(foot_chull_edge_directions)
+      R = quat2rotmat(quatTransform([1;0;0],foot_chull_edge_directions(:,j)));
+      P = foot_chull_pts_in_world(:,j);
+      T = [R,P;zeros(1,3),1];
+      com_halfspace_constraint = ...
+        WorldCoMInFrameConstraint(r,T,[NaN;qs_margin;NaN],[NaN;NaN;NaN]);
+      constraints = [constraints, {com_halfspace_constraint}];
+    end
+
+    % Draw all support points
+    lcmgl.glColor3f(gray{:});
+    for pt = foot_pts_in_world
+      lcmgl.sphere(pt,0.01,20,20);
+    end
+    % Draw convex hull points
+    lcmgl.glColor3f(blue{:});
+    for pt = foot_chull_pts_in_world
+      lcmgl.sphere(pt,0.02,20,20);
+    end
+    % Draw edges
+    %lcmgl.glColor3f(black{:});
+    %lcmgl.glLineWidth(4);
+    %for j = 1:n_chull_pts
+      %lcmgl.glBegin(lcmgl.LCMGL_LINES);
+      %lcmgl.glVertex3d(foot_chull_pts_in_world(1,j),foot_chull_pts_in_world(2,j),foot_chull_pts_in_world(3,j))
+      %lcmgl.glVertex3d(foot_chull_pts_in_world(1,j)+foot_chull_edges(1,j),foot_chull_pts_in_world(2,j)+foot_chull_edges(2,j),foot_chull_pts_in_world(3,j)+foot_chull_edges(3,j))
+      %lcmgl.glEnd()
+    %end
+    % Draw hand points
+    lcmgl.glColor3f(red{:});
+    for pt = hand_pts_in_world
+      pt(3) = 0;
+      lcmgl.sphere(pt,0.02,20,20);
+    end
+    lcmgl.glColor3f(black{:});
+    lcmgl.sphere(foot_chull_pts_in_world(:,p1_idx),0.03,20,20);
+    lcmgl.glColor3f(gray{:});
+    lcmgl.sphere(foot_chull_pts_in_world(:,p2_idx),0.03,20,20);
+    lcmgl.glLineWidth(2);
+    for j = 1:size(foot_chull_edge_directions,2)
+      aa = quat2axis(quatTransform([1;0;0],foot_chull_edge_directions(:,j)));
+      lcmgl.glTranslated(foot_chull_pts_in_world(1,j), ...
+                        foot_chull_pts_in_world(2,j), ...
+                        foot_chull_pts_in_world(3,j));
+      lcmgl.glRotated(-aa(4)*180/pi,aa(1),aa(2),aa(3));
+      lcmgl.glDrawAxes();
+      lcmgl.glRotated(aa(4)*180/pi,aa(1),aa(2),aa(3));
+      lcmgl.glTranslated(-foot_chull_pts_in_world(1,j), ...
+                        -foot_chull_pts_in_world(2,j), ...
+                        -foot_chull_pts_in_world(3,j));
+    end
+    lcmgl.switchBuffers();
+
+    %qsc = qsc.setShrinkFactor(shrink_factor);
+    %qsc = qsc.setActive(true);
+    %constraints = [constraints, {qsc}];
   end
   if use_arm_constraints
     arm_constraint = PostureConstraint(r);
@@ -292,7 +444,7 @@ for i=1:nt
       constraints, ...
       {WorldCoMConstraint(r,com-com_tol_vec,com+com_tol_vec)}];
   end
-  [q(:,i),info] = inverseKinPointwise(r,t,q_seed,q_nom,constraints{:},ikoptions);
+  [q(:,i),info,infeasible] = inverseKinPointwise(r,t,q_seed,q_nom,constraints{:},ikoptions);
 %   if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;
   if info ~= 1 
     if use_com_constraint
@@ -305,6 +457,7 @@ for i=1:nt
       end
     end
     if info ~= 1 
+      disp(infeasible);keyboard
       n_err = n_err+1; 
       if first_err
         err_segments(end+1,1) = i/nt;
