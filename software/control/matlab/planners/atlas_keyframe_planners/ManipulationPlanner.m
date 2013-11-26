@@ -334,7 +334,7 @@ classdef ManipulationPlanner < KeyframePlanner
                   WorldQuatConstraint(obj.r,obj.l_hand_body,l_hand_pose0(4:7),1e-4)};
               end
               if(isempty(rhand_constraint))
-                lhand_constraint = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0(1:3)-1e-2,r_hand_pose0(1:3)+1e-2),...
+                rhand_constraint = {WorldPositionConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0(1:3)-1e-2,r_hand_pose0(1:3)+1e-2),...
                   WorldQuatConstraint(obj.r,obj.r_hand_body,r_hand_pose0(4:7),1e-4)};
               end
             end

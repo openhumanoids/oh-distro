@@ -21,9 +21,12 @@ end
 % @param l_hand_mode          - 0 no left hand
 %                            - 1 sandia left hand
 %                            - 2 irobot left hand
+%                            - 4 robotiq left hand
 % @param r_hand_mode         - 0 no right hand
 %                            - 1 sandia right hand
 %                            - 2 irobot right hand
+%                            - (3 seems to be used for HOSE TASK in RobotModelListener.m)
+%                            - 4 robotiq right hand
 getModelFlag = false;
 model_listener = RobotModelListener('ROBOT_MODEL');
 while(~getModelFlag)
@@ -42,6 +45,8 @@ while(~getModelFlag)
       l_hand_str = 'sandia hand';
     elseif(l_hand_mode == 2)
       l_hand_str = 'irobot hand';
+    elseif(l_hand_mode == 4)
+      l_hand_str = 'robotiq hand';      
     end
     if(r_hand_mode == 0)
       r_hand_str = 'no hand';
@@ -49,6 +54,8 @@ while(~getModelFlag)
       r_hand_str = 'sandia hand';
     elseif(r_hand_mode == 2 || r_hand_mode == 3)
       r_hand_str = 'irobot hand';
+    elseif(r_hand_mode == 4)
+      l_hand_str = 'robotiq hand';      
     end
     send_status(4,0,0,sprintf('receive model with left %s, right %s\n',l_hand_str,r_hand_str));
   end

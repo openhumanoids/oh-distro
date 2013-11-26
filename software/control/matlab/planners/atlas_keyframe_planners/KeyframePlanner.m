@@ -39,9 +39,12 @@ classdef KeyframePlanner < handle
         T_hand_palm_r_sandia
         T_hand_palm_l_irobot
         T_hand_palm_r_irobot
+        T_hand_palm_l_robotiq
+        T_hand_palm_r_robotiq
         T_hand_palm_r_hose_irobot
         sandia_gaze_axis
         irobot_gaze_axis
+        robotiq_gaze_axis
         lh_name
         rh_name
         lh_gaze_axis
@@ -66,6 +69,8 @@ classdef KeyframePlanner < handle
         l_sandia_camera_origin;
         r_irobot_camera_origin;
         l_irobot_camera_origin;
+        r_robotiq_camera_origin;
+        l_robotiq_camera_origin;
         l_arm_joint_ind;
         r_arm_joint_ind;
         lower_joint_ind; %leg joints and floating base;
@@ -110,13 +115,20 @@ classdef KeyframePlanner < handle
             
             obj.T_hand_palm_r_hose_irobot = HT([0;-0.11516;-0.015],1.57079,1.57079,0);
             
+            % these need to be verified on hardware after mounting brackets are designed,
+            obj.T_hand_palm_l_robotiq = HT([0;0.11516;0.015],0,0,0);
+            obj.T_hand_palm_r_robotiq = HT([0;-0.11516;-0.015],0,3.14159,3.14159);
+            
             obj.sandia_gaze_axis = [0;0;1];
             obj.irobot_gaze_axis = [0;1;0];
+            obj.robotiq_gaze_axis = [0;1;0];
             obj.head_gaze_axis = [1;0;0];
             obj.l_sandia_camera_origin = [0;0.2;0];
             obj.r_sandia_camera_origin = [0;-0.2;0];
             obj.l_irobot_camera_origin = [0;0;0];
             obj.r_irobot_camera_origin = [0;0;0];
+            obj.l_robotiq_camera_origin = [0;0;0];
+            obj.r_robotiq_camera_origin = [0;0;0];  
             obj.hand_gaze_tol = pi/18;
             obj.head_gaze_tol = pi/8;% FOV for multisense is 80x45, so 45/2 should be the max tolerance
             obj.lidar_gaze_tol = pi/2.5;
@@ -183,6 +195,9 @@ classdef KeyframePlanner < handle
           elseif(~isempty(strfind(lhand_frame.name,'irobot')))
             obj.l_hand_mode = 2;
             display('iRobot left hand');
+          elseif(~isempty(strfind(lhand_frame.name,'robotiq')))
+            obj.l_hand_mode = 4;
+            display('Robotiq left hand');            
           end
           if(~isempty(strfind(rhand_frame.name,'no')))
             obj.r_hand_mode = 0;
@@ -198,6 +213,9 @@ classdef KeyframePlanner < handle
               obj.r_hand_mode = 2;
               display('iRobot right hand');
             end
+          elseif(~isempty(strfind(rhand_frame.name,'robotiq')))
+            obj.l_hand_mode = 4;
+            display('Robotiq right hand');     
           end
             
             if(obj.l_hand_mode == 1)
@@ -214,6 +232,12 @@ classdef KeyframePlanner < handle
               obj.T_hand_palm_l = obj.T_hand_palm_l_irobot; 
                obj.lh_gaze_axis = obj.irobot_gaze_axis;
                obj.lh_camera_origin = obj.l_irobot_camera_origin;
+            elseif(obj.l_hand_mode == 4)
+              % I need to talk with Sisir about this palm-hand
+              % transformation
+              obj.T_hand_palm_l = obj.T_hand_palm_l_robotiq; 
+               obj.lh_gaze_axis = obj.robotiq_gaze_axis;
+               obj.lh_camera_origin = obj.l_robotiq_camera_origin;
             end
             
             if(obj.r_hand_mode == 1)
@@ -232,19 +256,25 @@ classdef KeyframePlanner < handle
               obj.T_hand_palm_r = obj.T_hand_palm_r_hose_irobot;
               obj.rh_gaze_axis = obj.irobot_gaze_axis;
               obj.rh_camera_origin = obj.r_irobot_camera_origin;
+            elseif(obj.l_hand_mode == 4)
+              % I need to talk with Sisir about this palm-hand
+              % transformation
+              obj.T_hand_palm_r = obj.T_hand_palm_r_robotiq; 
+               obj.rh_gaze_axis = obj.robotiq_gaze_axis;
+               obj.rh_camera_origin = obj.r_robotiq_camera_origin;
             end
             
                         
             obj.lh_name='';
-            if(obj.l_hand_mode==2)
+            if(obj.l_hand_mode==0 || obj.l_hand_mode==2 || obj.l_hand_mode == 3)
                 obj.lh_name='left_base_link';
-            else
+            elseif(obj.l_hand_mode==1 || obj.l_hand_mode==4 )
                 obj.lh_name='left_palm';
             end
             obj.rh_name='';
-            if(obj.r_hand_mode==2 || obj.r_hand_mode == 3)
+            if(obj.r_hand_mode==0 || obj.r_hand_mode==2 || obj.r_hand_mode == 3)
                 obj.rh_name='right_base_link';
-            else
+            elseif(obj.r_hand_mode==1 || obj.r_hand_mode==4 )
                 obj.rh_name='right_palm';
             end
             

@@ -30,6 +30,8 @@ classdef RobotModelListener
         data.left_hand_mode = 1;
       elseif(msg.left_hand == msg.LEFT_IROBOT)
         data.left_hand_mode = 2;
+      elseif(msg.left_hand == msg.LEFT_ROBOTIQ)
+        data.left_hand_mode = 4;  
       end
       if(msg.right_hand == msg.RIGHT_NONE)
         data.right_hand_mode = 0;
@@ -39,6 +41,8 @@ classdef RobotModelListener
         data.right_hand_mode = 2;
       elseif(msg.right_hand == msg.RIGHT_IROBOT_HOSE)
         data.right_hand_mode = 3;
+      elseif(msg.right_hand == msg.RIGHT_ROBOTIQ)
+        data.right_hand_mode = 4;   
       end
       data.robot_name = char(msg.robot_name);
     end

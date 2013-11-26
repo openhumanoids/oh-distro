@@ -39,5 +39,9 @@ elseif(hand_mode == 3)
   hand_dim = 0;
   hand_frame_str = {};
   frame = CoordinateFrame(sprintf('irobotHose%sHand',prefix),hand_dim*2,[],hand_frame_str);
+elseif(hand_mode == 4)
+  hand_dim = 0;
+  hand_frame_str = {};
+  frame = CoordinateFrame(sprintf('robotiq%sHand',prefix),hand_dim*2,[],hand_frame_str);  
 end
 end
