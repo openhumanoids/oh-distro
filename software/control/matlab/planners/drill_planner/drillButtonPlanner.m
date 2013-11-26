@@ -194,7 +194,7 @@ classdef drillButtonPlanner
       finger_target = button_pos + offset(1)*button_axis_world + offset(2)*offset_y + offset(3)*drill_axis_world;
       
       
-      finger_pt_init = obj.r.forwardKin(obj.finger_hand_body, obj.finger_pt_on_hand);
+      finger_pt_init = obj.r.forwardKin(kinsol, obj.finger_hand_body, obj.finger_pt_on_hand);
       
       T = max(obj.min_poke_time, norm(finger_pt_init - finger_target)/speed);
       t_vec = linspace(0,T,N);

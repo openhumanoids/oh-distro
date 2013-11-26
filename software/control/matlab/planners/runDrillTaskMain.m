@@ -63,7 +63,7 @@ predrill_distance = .1;
 
 xtraj_nominal = []; %to know if we've got a plan
 xtraj_button = []; %to know if we've got a plan
-
+%%
 while(true)
   % Update wall
   new_wall = lcm_mon.getWallAffordance();
