@@ -15,13 +15,13 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
   methods
     function obj = HoseMatingEndPosePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
       obj = obj@EndPosePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode);
-      obj.pelvis_upright_gaze_tol = pi/18;
+      obj.pelvis_upright_gaze_tol = 0;
       obj.ee_torso_dist_lb = 0.5;
       obj.nozzle_hand = obj.r_hand_body;
       obj.hose_hand = obj.l_hand_body;
       obj.nozzle_axis = [0;0;1];
       obj.affordance_listener = AffordanceStateListener('AFFORDANCE_COLLECTION');
-      obj.head_gaze_tol = pi/4;
+      obj.head_gaze_tol = pi/6;
     end
     
     function [lfoot_constraint,rfoot_constraint,pelvis_constraint,head_constraint,dist_constraint,qsc,joint_constraint] ...
@@ -75,18 +75,17 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       obj.updateWyePose();
       T_world_wye = HT(obj.wye_pose(1:3),obj.wye_pose(4),obj.wye_pose(5),obj.wye_pose(6));
       % pelvis facing the wye
-      pelvis_constraint = [pelvis_constraint,{WorldPositionInFrameConstraint(obj.r,obj.pelvis_body,[0;0;0],T_world_wye,[-0.9;-0.3;-0.7],[-0.35;0.3;0.5])}];
+      pelvis_constraint = [pelvis_constraint,{WorldPositionInFrameConstraint(obj.r,obj.pelvis_body,[0;0;0],T_world_wye,[-0.9;-0.4;-0.7],[-0.35;0.4;0.5])}];
 
       % distance between two feed
       % distance between hand and torso
       dist_constraint = {Point2PointDistanceConstraint(obj.r,obj.nozzle_hand,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb,inf),...
-        Point2PointDistanceConstraint(obj.r,obj.hose_hand,obj.utorso_body,[0;0;0],[0;0;0],obj.ee_torso_dist_lb/2,inf),...
-        Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,[0;0;0],[0;0;0],0.2,inf)};
+        Point2PointDistanceConstraint(obj.r,obj.l_foot_body,obj.r_foot_body,[0;0;0],[0;0;0],0.2,0.5)};
       
      
       qsc = QuasiStaticConstraint(obj.r);
       qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);  
-      qsc = qsc.setActive(true);
+      qsc = qsc.setActive(false);
       qsc = qsc.setShrinkFactor(0.9); % search for a conservative pose
       
       
@@ -103,11 +102,11 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       r_leg_hpz = joint_ind(strcmp(coords,'r_leg_hpz'));
       joint_constraint = joint_constraint.setJointLimits(neck_idx,0,0.3*pi);
       joint_constraint = joint_constraint.setJointLimits([l_leg_kny;r_leg_kny],[0.2*pi;0.2*pi],[inf;inf]);
-      joint_constraint = joint_constraint.setJointLimits([l_leg_hpz;r_leg_hpz],[-0.2;-0.2],[0.2;0.2]);
-      joint_constraint = joint_constraint.setJointLimits(3,0.5,0.92);
+%       joint_constraint = joint_constraint.setJointLimits([l_leg_hpz;r_leg_hpz],[-0.2;-0.2],[0.2;0.2]);
+      joint_constraint = joint_constraint.setJointLimits(3,0.7,0.92);
     end
     
-    function runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
+    function [xtraj_atlas,snopt_info] = runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
       disp('Generating candidate hose mating endpose via IKtraj Given EE loci...')
       send_status(3,0,0,'Generating candidate endpose given EE Loci...');
       q0 = x0(1:getNumDOF(obj.r));
@@ -191,7 +190,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
      
       joint_ind = (1:obj.r.getNumDOF)';
       lower_joint_idx = joint_ind(cellfun(@(s) ~isempty(strfind(s,'leg')),coords));
-      pc_fixed = PostureChangeConstraint(obj.r,(1:6)',[0;0;-0.1;0;0;0],[0;0;0.1;0;0;0]);
+      pc_fixed = PostureChangeConstraint(obj.r,[1;2;4;5;6],[0;0;0;0;0],[0;0;0;0;0]);
           
       fix_feet_constraint = {WorldFixedBodyPoseConstraint(obj.r,obj.l_foot_body),WorldFixedBodyPoseConstraint(obj.r,obj.r_foot_body)};
       display('Fix feet');
@@ -201,14 +200,14 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       else
         nozzle_arm_joint_ind = obj.l_arm_joint_ind;
       end
-      joint_constraint = joint_constraint.setJointLimits(nozzle_arm_joint_ind,0.9*joint_lb(nozzle_arm_joint_ind)+0.1*joint_ub(nozzle_arm_joint_ind),...
-        0.1*joint_lb(nozzle_arm_joint_ind)+0.9*joint_ub(nozzle_arm_joint_ind));
+%       joint_constraint = joint_constraint.setJointLimits(nozzle_arm_joint_ind,0.9*joint_lb(nozzle_arm_joint_ind)+0.1*joint_ub(nozzle_arm_joint_ind),...
+%         0.1*joint_lb(nozzle_arm_joint_ind)+0.9*joint_ub(nozzle_arm_joint_ind));
       display('Add slack to nozzle arm joint constraint');
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         iktraj_tbreaks,iktraj_qseed_traj,iktraj_qnom_traj,...
         iktraj_lfoot_constraint{:},iktraj_rfoot_constraint{:},...
         iktraj_pelvis_constraint{:},iktraj_head_constraint{:},...
-        joint_constraint,iktraj_hose_hand_constraint{:},iktraj_nozzle_hand_constraint{:},...
+        joint_constraint,iktraj_nozzle_hand_constraint{:},...
         qsc,iktraj_dist_constraint{:},...
         pc_fixed,fix_feet_constraint{:},...
         iktraj_options);
@@ -243,16 +242,18 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         pause(0.1);
       end
          
-      x_start = xtraj.eval(s_breaks(1));
-      q_start = obj.checkPosture(x_start(1:obj.r.getNumDOF));
-      xstar = [q_start;zeros(size(q_start))];
-      save([getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'],'xstar');
+      if(snopt_info<10)
+        x_start = xtraj.eval(s_breaks(1));
+        q_start = obj.checkPosture(x_start(1:obj.r.getNumDOF));
+        xstar = [q_start;zeros(size(q_start))];
+        save([getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'],'xstar');
+      end
     end
     
     
     
     
-    function runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
+    function [xtraj_atlas,snopt_info] = runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
       disp('Generating candidate hose mating endpose via IK Given EE loci...')
       send_status(3,0,0,'Generating candidate hose mating endpose given EE Loci...');
       q0 = x0(1:getNumDOF(obj.r));
@@ -410,7 +411,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         data = obj.affordance_listener.getNextMessage(5);
         if(~isempty(data))
           for i = 1:obj.affordance_listener.naffs
-            if(strcmp(data.otdf_type{i},'firehose_simple'))
+            if(strcmp(data.otdf_type{i},'firehose'))
               obj.nozzle_pose = [data.xyz(:,i);data.rpy(:,i)];
             end
           end

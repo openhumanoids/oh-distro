@@ -685,7 +685,7 @@ while(1)
         q_desired = d.xstar(1:getNumDOF(robot));
         if(useIK_state ==1||useIK_state == 3|| useIK_state == 4) % correct pelvis
             q_desired([1 2 6]) = x0([1 2 6]); % For stand hands up/down, change the pelvis orientation to the nominal one
-        elseif(useIK_state == 5)
+        elseif(useIK_state == 5 || useIK_state == 6)
         else
             q_desired(1:6) = x0(1:6); % fix pelvis pose to current
         end

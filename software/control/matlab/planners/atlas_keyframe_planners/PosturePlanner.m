@@ -228,13 +228,7 @@ classdef PosturePlanner < KeyframePlanner
             q_desired([1 2 6]) = q0([1 2 6]);
             info = 1;
           elseif(useIK_state == 6)
-            % change both hands, the pelvis and the torso to q_desired, and keep the lower
-            % body joints and base to q0;
-            coords = obj.r.getStateFrame.coordinates();
-            coords = coords(1:obj.r.getNumDOF());
-            upper_joint_ind = cellfun(@(s) isempty(strfind(s,'leg')) & isempty(strfind(s,'base')),coords);
-            lower_joint_ind = ~upper_joint_ind;
-            q_desired(lower_joint_ind) = q0(lower_joint_ind);
+            % change the whole body joints to q_desired
             info = 1;
           end
           
