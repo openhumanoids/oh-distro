@@ -184,6 +184,10 @@ group "a.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
         host = "extra";
     }
+    cmd "model_LH_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RR.urdf";
+        host = "extra";
+    }
 }
 
 group "b.1.core" {
@@ -239,6 +243,18 @@ group "b.2.p_and_c" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runPalmGazePlanner();\"";
        host = "base";
     }
+    cmd "ValvePlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runValveTaskMain();\"";
+       host = "base";
+    }
+    cmd "DrillPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runDrillTaskMain();\"";
+       host = "base";
+    }
+    cmd "DrillTracker" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); drillPositionTracker();\"";
+       host = "base";
+    }
 }
 
 group "b.3.models" {   
@@ -280,6 +296,10 @@ group "b.3.models" {
     }
     cmd "base_model_LH_RI" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
+        host = "base";
+    }
+    cmd "base_model_LH_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RR.urdf";
         host = "base";
     }
 }
@@ -472,6 +492,15 @@ script "prep_LI_RI" {
 script "prep_LH_RI" {
     start cmd "model_LH_RI";
     start cmd "base_model_LH_RI";
+    run_script "prep_core";
+    start cmd "IrobotGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "irobot-right";
+}
+
+script "prep_LH_RR" {
+    start cmd "model_LH_RR";
+    start cmd "base_model_LH_RR";
     run_script "prep_core";
     start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
