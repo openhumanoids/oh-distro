@@ -256,33 +256,6 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
   rstate_= *msg;
   rstate_init_ = true;
   return;
-  
-  // 0. Extract World Pose of body:
-  world_to_body_.setIdentity();
-  world_to_body_.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
-                                               msg->pose.rotation.y, msg->pose.rotation.z);
-  world_to_body_.rotate(quat);    
-    
-  // 1. Solve for Forward Kinematics:
-  // call a routine that calculates the transforms the joint_state_t* msg.
-  map<string, double> jointpos_in;
-  cartpos_.clear();
-  for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
-    jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
-  
-  // Calculate forward position kinematics
-  bool kinematics_status;
-  bool flatten_tree=true; // determines absolute transforms to robot origin, otherwise relative transforms between joints.
-  kinematics_status = fksolver_->JntToCart(jointpos_in,cartpos_,flatten_tree);
-  if(kinematics_status>=0){
-    // cout << "Success!" <<endl;
-  }else{
-    cerr << "Error: could not calculate forward kinematics!" <<endl;
-    return;
-  }
-  
-  cartpos_ready_=true;
 }
 
 
