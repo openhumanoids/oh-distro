@@ -25,6 +25,10 @@ namespace visualization_utils
       // never decremented, used to set uid of sticky hands which is unique
       int free_running_sticky_hand_cnt; 
       void load_stored(OtdfInstanceStruc& instance_struc);
+      bool seed(const string &object_name, const string &geometry_name,
+                const KDL::Frame &T_geom_lhandpose,  
+                const KDL::Frame &T_geom_rhandpose,const int grasp_type); 
+
        // returns true if a given object name has dependent sticky hands
       bool is_parent_object(std::string& object_name);
       void add_or_update(const drc::desired_grasp_state_t* msg);		

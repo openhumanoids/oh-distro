@@ -92,8 +92,11 @@ namespace visualization_utils
   void get_eigen_grasp_types(std::vector<std::string> &_names);
   void set_eigen_grasp(StickyHandStruc &hand_struc,int eig_grasp_type);
   
-  bool get_hand_palm_link_name(int hand_type,std::string &ee_name);
+  bool get_hand_palm_link_name(int hand_type,std::string &ee_name);// decodes hand types in desired_grasp_state_t type
+  bool get_hand_palm_link_name_given_urdf_handtype(int urdf_hand_type,std::string &ee_name); // decodes hand types in robot_urdf_t type
+  bool get_hand_link_name(int hand_type,std::string &hand_link_name);
   bool get_hand_name(int hand_type,std::string &hand_name);
+  bool is_left_hand(int hand_type);
   bool get_hand_urdf_file_name_and_ext(int hand_type,std::string &file_name,std::string &ext);
 
 }//end_namespace

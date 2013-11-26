@@ -27,10 +27,10 @@ StickyhandCollectionManager::StickyhandCollectionManager(boost::shared_ptr<lcm::
   _handtype_id_map[msg.SANDIA_RIGHT]=1;
   _handtype_id_map[msg.IROBOT_LEFT]= 2; 
   _handtype_id_map[msg.IROBOT_RIGHT]=3;
-  /*_handtype_id_map[msg.ROBOTIQ_LEFT]=4;
+  _handtype_id_map[msg.ROBOTIQ_LEFT]=4;
   _handtype_id_map[msg.ROBOTIQ_RIGHT]=5;
   _handtype_id_map[msg.INERT_LEFT]= 6;
-  _handtype_id_map[msg.INERT_RIGHT]=7;*/
+  _handtype_id_map[msg.INERT_RIGHT]=7;/**/
   
    // load and pre-parse base_gl_hands for left and right hand
   boost::shared_ptr<GlKinematicBody> new_hand;
@@ -153,6 +153,77 @@ bool StickyhandCollectionManager::store_selected(boost::shared_ptr<visualization
   return success;
 }  
 //-------------------------------------------------------------------------------------------  
+bool StickyhandCollectionManager::seed(const string &object_name, const string &geometry_name,
+                                       const KDL::Frame &T_geom_lhandpose,  
+                                       const KDL::Frame &T_geom_rhandpose,const int grasp_type)
+ {                     
+          drc::desired_grasp_state_t msg;
+          
+          msg.utime = bot_timestamp_now(); // best estimate of latest sim time
+          msg.robot_name = "atlas";
+          msg.object_name = object_name;
+          msg.geometry_name = geometry_name;
+          
+          int uid =free_running_sticky_hand_cnt++;
+          msg.unique_id = uid; 
+          msg.grasp_type =  grasp_type;
+          msg.power_grasp = false;
+          msg.num_r_joints = 0;
+          msg.num_l_joints = 0;
+          
+          drc::position_3d_t lhandpose;
+          lhandpose.translation.x = T_geom_lhandpose.p[0];
+          lhandpose.translation.y = T_geom_lhandpose.p[1];
+          lhandpose.translation.z = T_geom_lhandpose.p[2];
+          T_geom_lhandpose.M.GetQuaternion(lhandpose.rotation.x, lhandpose.rotation.y, lhandpose.rotation.z, lhandpose.rotation.w);
+    
+          drc::position_3d_t rhandpose;
+          rhandpose.translation.x = T_geom_rhandpose.p[0];
+          rhandpose.translation.y = T_geom_rhandpose.p[1];
+          rhandpose.translation.z = T_geom_rhandpose.p[2];
+          T_geom_rhandpose.M.GetQuaternion(rhandpose.rotation.x, rhandpose.rotation.y, rhandpose.rotation.z, rhandpose.rotation.w);
+          
+          map<int,int>::iterator hand_it = _handtype_id_map.find(msg.grasp_type);
+         if(hand_it!=_handtype_id_map.end())//exists in cache
+          {
+            if(msg.grasp_type == msg.SANDIA_LEFT || msg.grasp_type == msg.SANDIA_BOTH 
+              || msg.grasp_type == msg.IROBOT_LEFT || msg.grasp_type == msg.IROBOT_BOTH
+              || msg.grasp_type == msg.ROBOTIQ_LEFT || msg.grasp_type == msg.ROBOTIQ_BOTH
+              || msg.grasp_type == msg.INERT_LEFT || msg.grasp_type == msg.INERT_BOTH){
+              
+              msg.l_hand_pose = lhandpose;
+              typedef map<string, double > jointpos_mapType;      
+              for( jointpos_mapType::iterator it =  _gl_hand_list[hand_it->second]->_current_jointpos.begin(); it!=_gl_hand_list[hand_it->second]->_current_jointpos.end(); it++)
+              {
+               msg.num_l_joints++;
+               msg.l_joint_name.push_back(it->first);
+               msg.l_joint_position.push_back(it->second);
+              }
+
+            }else if(msg.grasp_type == msg.SANDIA_RIGHT || msg.grasp_type == msg.SANDIA_BOTH 
+              || msg.grasp_type == msg.IROBOT_RIGHT || msg.grasp_type == msg.IROBOT_BOTH
+              || msg.grasp_type == msg.ROBOTIQ_RIGHT || msg.grasp_type == msg.ROBOTIQ_BOTH
+              || msg.grasp_type == msg.INERT_RIGHT || msg.grasp_type == msg.INERT_BOTH){
+             
+              msg.r_hand_pose = rhandpose;
+              typedef map<string, double > jointpos_mapType;      
+              for( jointpos_mapType::iterator it =  _gl_hand_list[hand_it->second]->_current_jointpos.begin(); it!=_gl_hand_list[hand_it->second]->_current_jointpos.end(); it++)
+              {
+               msg.num_r_joints++;
+               msg.r_joint_name.push_back(it->first);
+               msg.r_joint_position.push_back(it->second);
+              }
+            }else{
+              cout << "StickyhandCollectionManager::seed. grasp_type not recognized: " << msg.grasp_type << endl;
+              return false;
+            }
+          }
+          msg.optimization_status = drc::desired_grasp_state_t::SUCCESS;
+          _lcm->publish("CANDIDATE_GRASP",&msg); // so that direct seeding shows up in lcm logs.
+          //this->add_or_update(&msg);
+          return true;
+  }
+//------------------------------------------------------------------------------------------- 
 void StickyhandCollectionManager::load_stored(OtdfInstanceStruc& instance_struc)
 {
 
@@ -202,7 +273,8 @@ void StickyhandCollectionManager::load_stored(OtdfInstanceStruc& instance_struc)
             cout << "add_new_otdf_object_instance error. grasp_type not recognized: " << msg.grasp_type << endl;
           }
           msg.optimization_status = drc::desired_grasp_state_t::SUCCESS;
-          _lcm->publish("CANDIDATE_GRASP",&msg);
+          _lcm->publish("CANDIDATE_GRASP",&msg); // so that loading seeds shows up in lcm logs.
+          //this->add_or_update(&msg);
         }
     }
 

@@ -234,6 +234,9 @@ _T_world_com(KDL::Frame::Identity()),_T_world_com_future(KDL::Frame::Identity())
     } // end if(it->second->visual)
   } // end for
 
+   std::map<std::string, double> jointpos_in;
+   jointpos_in = _current_jointpos;
+   set_state(KDL::Frame::Identity(),jointpos_in); // initialize
 }
 
 GlKinematicBody::GlKinematicBody(boost::shared_ptr<otdf::ModelInterface> otdf_instance): initialized(false),

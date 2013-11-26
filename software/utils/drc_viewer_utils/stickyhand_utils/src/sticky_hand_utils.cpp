@@ -15,9 +15,9 @@ namespace visualization_utils
       else if(hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)   
           ee_name ="right_base_link";
       else if(hand_type==drc::desired_grasp_state_t::ROBOTIQ_LEFT)
-          ee_name ="left_base_link";    
+          ee_name ="left_palm";    
       else if(hand_type==drc::desired_grasp_state_t::ROBOTIQ_RIGHT)   
-          ee_name ="right_base_link";                  
+          ee_name ="right_palm";                  
       else if(hand_type==drc::desired_grasp_state_t::INERT_LEFT)
           ee_name ="left_base_link";    
       else if(hand_type==drc::desired_grasp_state_t::INERT_RIGHT)   
@@ -27,6 +27,56 @@ namespace visualization_utils
           return false;
       }
       return true;
+  }
+  
+   bool get_hand_palm_link_name_given_urdf_handtype(int hand_type,std::string &ee_name)
+  {
+      if(hand_type==drc::robot_urdf_t::LEFT_SANDIA)
+          ee_name ="left_palm";    
+      else if(hand_type==drc::robot_urdf_t::RIGHT_SANDIA)   
+          ee_name ="right_palm";    
+      else if(hand_type==drc::robot_urdf_t::LEFT_IROBOT)
+          ee_name ="left_base_link";    
+      else if(hand_type==drc::robot_urdf_t::RIGHT_IROBOT)   
+          ee_name ="right_base_link";
+      else if(hand_type==drc::robot_urdf_t::LEFT_ROBOTIQ)
+          ee_name ="left_palm";    
+      else if(hand_type==drc::robot_urdf_t::RIGHT_ROBOTIQ)   
+          ee_name ="right_palm";                  
+      else if(hand_type==drc::robot_urdf_t::LEFT_NONE)
+          ee_name ="left_base_link";    
+      else if(hand_type==drc::robot_urdf_t::RIGHT_NONE)   
+          ee_name ="right_base_link";       
+      else {
+          cout << "unknown hand_type\n";   
+          return false;
+      }
+      return true;
+  } 
+  
+   bool get_hand_link_name(int hand_type,std::string &hand_link_name)
+  {
+      if((hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)||(hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)||(hand_type==drc::desired_grasp_state_t::ROBOTIQ_LEFT)||(hand_type==drc::desired_grasp_state_t::INERT_LEFT))
+          hand_link_name ="l_hand";    
+      else if((hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)||(hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)||(hand_type==drc::desired_grasp_state_t::ROBOTIQ_RIGHT)||(hand_type==drc::desired_grasp_state_t::INERT_RIGHT))
+          hand_link_name ="r_hand";    
+      else {
+          cout << "unknown hand_type\n";   
+          return false;
+      }
+      return true;
+  } 
+  
+  bool is_left_hand(int hand_type)
+  {
+       if((hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)||(hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)||(hand_type==drc::desired_grasp_state_t::ROBOTIQ_LEFT)||(hand_type==drc::desired_grasp_state_t::INERT_LEFT))
+          return true;    
+      else if((hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)||(hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT)||(hand_type==drc::desired_grasp_state_t::ROBOTIQ_RIGHT)||(hand_type==drc::desired_grasp_state_t::INERT_RIGHT))
+          return false;  
+      else {
+          cout << "unknown hand_type\n";   
+          return false;
+      }
   }
   
   bool get_hand_name(int hand_type,std::string &hand_name)

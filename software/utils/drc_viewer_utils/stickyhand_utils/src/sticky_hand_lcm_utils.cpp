@@ -205,7 +205,7 @@ namespace visualization_utils
     hand_pose.rotation.z = z;
     hand_pose.rotation.w = w;
 
-    if((msg.grasp_type == msg.SANDIA_LEFT)||(msg.grasp_type == msg.IROBOT_LEFT)){
+    if(is_left_hand(msg.grasp_type)){
         msg.l_hand_pose = hand_pose;
         msg.num_l_joints  = sticky_hand_struc.joint_name.size();
         msg.num_r_joints  = 0;
@@ -224,7 +224,8 @@ namespace visualization_utils
             msg.l_joint_name[i]= sticky_hand_struc.joint_name[i];
         }
     }
-    else if((msg.grasp_type == msg.SANDIA_RIGHT)||(msg.grasp_type == msg.IROBOT_RIGHT)){
+    else 
+    {
         msg.r_hand_pose = hand_pose;
         msg.num_r_joints  = sticky_hand_struc.joint_name.size();
         msg.num_l_joints  = 0;
@@ -319,7 +320,7 @@ namespace visualization_utils
     hand_pose.rotation.z = z;
     hand_pose.rotation.w = w;
 
-    if((msg.grasp_type == msg.SANDIA_LEFT)||(msg.grasp_type == msg.IROBOT_LEFT)){
+    if(is_left_hand(msg.grasp_type)){
         msg.l_hand_pose = hand_pose;
         msg.num_l_joints  = sticky_hand_struc.joint_name.size();
         msg.num_r_joints  = 0;
@@ -355,7 +356,7 @@ namespace visualization_utils
         }
    
     }
-    else if((msg.grasp_type == msg.SANDIA_RIGHT)||(msg.grasp_type == msg.IROBOT_RIGHT)){
+    else {
         msg.r_hand_pose = hand_pose;
         msg.num_r_joints  = sticky_hand_struc.joint_name.size();
         msg.num_l_joints  = 0;
@@ -556,7 +557,9 @@ namespace visualization_utils
               KDL::Frame T_world_ee = T_world_hand*T_hand_palm;//T_world_palm ; TODO: Eventually will be in object frame                             
               KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
               KDL::Vector handframe_offset;
-              if((handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT)||(handstruc.hand_type==drc::desired_grasp_state_t::SANDIA_LEFT))
+              string hand_name;
+              get_hand_name(handstruc.hand_type,hand_name);
+              if(hand_name=="sandia")
               {
                 handframe_offset[0]=retracting_offset;handframe_offset[1]=0;handframe_offset[2]=0;
               }
