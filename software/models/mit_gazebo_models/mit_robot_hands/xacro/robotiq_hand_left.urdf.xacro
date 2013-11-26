@@ -1,0 +1,20 @@
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       name="robotiq_hand_left" >
+       
+  <include filename="$(find robotiq_hand_description)/cfg/robotiq_hand.urdf.xacro" />
+  
+  <link name="plane::xy::base">
+    <inertial>
+        <mass value="0.1" />
+        <origin xyz="0 0 0.0" rpy="0 0 0" />
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+    </inertial>
+  </link>
+  
+  <xacro:robotiq_hand side="left" parent="plane::xy::base" reflect="-1">
+    <origin rpy="0 1.57 1.57" xyz="0 0 0"/>
+  </xacro:robotiq_hand>
+</robot>
