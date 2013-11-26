@@ -558,8 +558,8 @@ classdef ManipulationPlanner < KeyframePlanner
           q_breaks_atlas = q_breaks(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
           Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
           Tmax_joints=obj.getTMaxForMaxJointSpeed();
-          ts = s.*max(Tmax_joints,Tmax_ee); % plan timesteps
-          obj.plan_cache.time_2_index_scale = 1./(max(Tmax_joints,Tmax_ee));
+          ts = s.*Tmax_ee; % plan timesteps
+          obj.plan_cache.time_2_index_scale = 1./(Tmax_ee);
           brkpts =logical(zeros(1,length(timeIndices))==1);
           if(~isempty(postureconstraint))
             timetags = [postureconstraint.utime];
@@ -642,7 +642,7 @@ classdef ManipulationPlanner < KeyframePlanner
           else
             obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
           end
-          send_status(3,0,0,['Published manip plan of ' num2str(max(Tmax_joints,Tmax_ee)) ' sec']);
+          send_status(3,0,0,['Published manip plan of ' num2str(max(Tmax_ee)) ' sec']);
         end
 
       end
