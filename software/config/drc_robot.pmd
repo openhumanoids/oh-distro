@@ -188,6 +188,10 @@ group "a.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RR.urdf";
         host = "extra";
     }
+    cmd "model_LH_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RN.urdf";
+        host = "extra";
+    }
 }
 
 group "b.1.core" {
@@ -302,6 +306,10 @@ group "b.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RR.urdf";
         host = "base";
     }
+    cmd "base_model_LH_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RN.urdf";
+        host = "base";
+    }
 }
 
 group "m.state_est" {
@@ -404,7 +412,7 @@ script "prep_core" {
     start cmd "sa-left";
     start cmd "sandia_hand_eigen_grasps";
 }
-
+base_model_LH_RN
 script "prep_LN_RN" { 
     start cmd "model_LN_RN";
     start cmd "base_model_LN_RN";
@@ -505,6 +513,12 @@ script "prep_LH_RR" {
     start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
     start cmd "irobot-right";
+}
+
+script "prep_LH_RN" {
+    start cmd "model_LH_RN";
+    start cmd "base_model_LH_RN";
+    run_script "prep_core";
 }
 
 
