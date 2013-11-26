@@ -412,7 +412,7 @@ script "prep_core" {
     start cmd "sa-left";
     start cmd "sandia_hand_eigen_grasps";
 }
-base_model_LH_RN
+
 script "prep_LN_RN" { 
     start cmd "model_LN_RN";
     start cmd "base_model_LN_RN";
