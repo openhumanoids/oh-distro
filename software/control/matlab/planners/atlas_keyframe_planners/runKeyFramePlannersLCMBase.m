@@ -8,6 +8,11 @@ function runKeyFramePlannersLCMBase(varargin)
 %                           -2 BDI_Manip_Mode(upper body only)
 %                           -3 for BDI_User
 
+% silence some warnings
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+
 switch nargin
     case 1
         hardware_mode = varargin{1}; % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User

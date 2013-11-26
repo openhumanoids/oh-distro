@@ -4,6 +4,11 @@ if nargin < 1
   controller_type = 2; % 1: PID, 2: PID+manip params, 3: PD+gravity comp, 4: inverse dynamics
 end
 
+% silence some warnings
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+options.visual = false; % loads faster
 options.floating = true;
 % options.floating = false;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
