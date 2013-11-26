@@ -86,6 +86,15 @@ pods_use_pkg_config_packages(put-firehose-in-hand lcm model-client
 pods_install_executables(put-firehose-in-hand)
 
 
+add_executable (affordance_draw_with_plan  affordance_draw_with_plan.cpp)
+target_link_libraries (affordance_draw_with_plan curses boost_system   lcm)
+pods_use_pkg_config_packages(affordance_draw_with_plan lcm model-client
+   lcmtypes_drc_lcmtypes  bot2-core glib-2.0 affordance-utils
+   pointcloud_math pointcloud_vis rgbd_primitives
+   eigen3 ${REQUIRED_PACKAGES})
+pods_install_executables(affordance_draw_with_plan)
+
+
 ############ Demo Apps: ###########################
 # send one poly:
 add_executable (affordance_points_demo affordance_points_demo.cpp )
