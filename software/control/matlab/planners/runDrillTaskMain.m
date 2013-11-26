@@ -1,16 +1,24 @@
-% The main program for the drill task
-
-%% Setup our simulink objects and lcm monitor
-r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
-atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
-
-drill_depth = 0;
-
-%% Wait for drill and wall affordance and create planner
+%% The main program for the drill task
 publishPlans = true;
 useRightHand = true;
 useVisualization = false;
 allowPelvisHeight = true;
+
+
+%% Setup our simulink objects and lcm monitor
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+rbmoptions.floating = true;
+if ~useVisualization
+  rbmoptions.visual = false;
+end
+r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
+atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),rbmoptions);
+
+drill_depth = 0;
+
+%% Wait for drill and wall affordance and create planner
 
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 
@@ -24,12 +32,13 @@ disp('waiting for drill and wall affordances...');
 while isempty(wall) || isempty(drill)
   [wall,drill] = lcm_mon.getWallAndDrillAffordances();
 end
-
-drill.guard_pos = [    0.15
-   -0.2602
-    0.0306];
-  drill.drill_axis = [1;0;0];
-%   drill.drill_axis = [.5;0;sqrt(3)/2;
+% 
+% drill.guard_pos = [    0.15
+%    -0.2602
+%     0.0306];
+%   drill.drill_axis = [1;0;0];
+  drill.drill_axis = -[.5;0;sqrt(3)/2];  % or -.5, and -.04 on x below
+  drill.guard_pos = [-.07;-.3;-.15];
 finger_pt_on_hand = [0; 0.2752; 0.015];
 finger_axis_on_hand = [0;1;0];
 
@@ -47,9 +56,9 @@ segment_index = 1;
 cut_lengths = sum((drill_points(:,2:end) - drill_points(:,1:end-1)).*(drill_points(:,2:end) - drill_points(:,1:end-1)));
 [~,diagonal_index] = max(cut_lengths);
 
-short_cut = .03;
-long_cut = .1;
-target_radius = .05;
+short_cut = .02;
+long_cut = .05;
+target_radius = .07;
 predrill_distance = .1;
 
 xtraj_nominal = []; %to know if we've got a plan
@@ -135,6 +144,7 @@ while(true)
     case drc.drill_control_t.RQ_NOMINAL_PLAN
       %hand picked joints that make for a decent guess
       q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
+      q0_init(drill_pub.joint_indices)=[0.6315; 0.0867; 0.1009; -0.5439; 0.6321;1.3733; -0.8194; 0.9061; -1.0353];
 %       q0_init(drill_pub.joint_indices) = randn(9,1);
       q0 = lcm_mon.getStateEstimate();
       q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]));
@@ -292,7 +302,7 @@ while(true)
           q0(setdiff(1:34',[1;2;3;4;5;6;button_pub.finger_joint_indices])) = xlast(setdiff(1:34',[1;2;3;4;5;6;button_pub.finger_joint_indices]));
           button_offset = last_button_offset + ctrl_data(1:3);
 %           last_button_offset = button_offset;
-          [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPokePlan(q0, button_offset, 5);
+          [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPokePlan(q0, button_offset, .02);
           %         % use back and off-hand joints from last plan
           %         q0(button_pub.button_joint_indices) = xlast(button_pub.button_joint_indices);
           %         q0(button_pub.back_joint_indices) = xlast(button_pub.back_joint_indices);

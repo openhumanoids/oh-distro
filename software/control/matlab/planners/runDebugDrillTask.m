@@ -12,21 +12,23 @@ if 0
 wall.normal = [1;0;0];
 x = .8;
 z = 0;
-wall_z = .6;
+wall_z = .6;cos
 wall_y = .6;
 wall_center = [x; .1; .3   + z]; % -7,3,2 works for backwards hand
 wall.targets = [wall_center + [0;wall_y/2;wall_z/2]]; 
 wall.targets = [wall.targets wall_center + [0;-wall_y/2;wall_z/2]];
 wall.targets = [wall.targets wall_center + [0;-wall_y/2;-wall_z/2]];
 wall.targets = [wall.targets wall_center + [0;wall_y/2;-wall_z/2]];
-drill.drill_axis = [1;0;0];
-drill.guard_pos = [.25;-.25;0];  
+% drill.drill_axis = [1;0;0];
+drill.drill_axis = [0;-1;0];
+% drill.guard_pos = [.25;-.25;0];  
+drill.guard_pos = [0;-.25;.25];  
 % drill.drill_axis = [0;0;-1];
 % drill.guard_pos = [0;-.25;-.25];
 end
 
 use_simulated_state = false;
-useVisualization = true;
+useVisualization = false;
 publishPlans = true;
 useRightHand = true;
 allowPelvisHeight = true;
@@ -42,6 +44,9 @@ drill.guard_pos = [    0.15
    -0.2602
     0.0306];
   drill.drill_axis = [1;0;0];
+  th = 60;
+  drill.drill_axis = [cosd(th);0;sind(th)];
+  drill.guard_pos = [0;-.25;0] + .15*drill.drill_axis;
   
 end
 
@@ -66,7 +71,25 @@ drill_points = [triangle triangle(:,1)];
 
 %% get nominal posture and publish walking plan
 q0_init = [zeros(6,1); 0.0355; 0.0037; 0.0055; zeros(12,1); -1.2589; 0.3940; 2.3311; -1.8152; 1.6828; zeros(6,1); -0.9071;0];
-
+q0_init(drill_pub.joint_indices) = .1*randn(9,1) + [    0.6315
+    0.0867
+    0.1009
+   -0.5439
+    0.6321
+    1.3733
+   -0.8194
+    0.9061
+   -1.0353];  % 
+ 
+% q0_init(drill_pub.joint_indices) = .1*randn(9,1) + [    0
+%    -0.0025
+%     0.1786
+%    -0.6970
+%     0.7539
+%     1.7582
+%    -0.5542
+%     0.3580
+%    -0.9114];
 tri_centroid = mean(triangle,2);
 
 % create wall coordinate frame
@@ -75,7 +98,7 @@ wall_z = wall_z - wall_z'*wall.normal*wall.normal;
 wall_z = wall_z/norm(wall_z);
 wall_y = cross(wall_z, wall.normal);
 
-q0_init(1:3) = tri_centroid - wall.normal*.8 - .2*wall_z + .4*wall_y;
+q0_init(1:3) = tri_centroid - wall.normal*1.0 - .2*wall_z + .0*wall_y;
 q0_init(6) = atan2(wall.normal(2), wall.normal(1));
 
 
@@ -83,7 +106,7 @@ if ~use_simulated_state
   q0 = lcm_mon.getStateEstimate();
   q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]))
 end
-[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, .2);
+[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, .5);
 
 
 %% move the arm before walking
@@ -114,7 +137,7 @@ drill_points = [triangle triangle(:,1)];
 
 if use_simulated_state
   q_check = xtraj_arm_init.eval(0);
-  q_check = q_check(1:34);f
+  q_check = q_check(1:34);
 %   q_check = zeros(34,1);
 %   q_check(drill_pub.joint_indices) = .1*randn(9,1);
 else

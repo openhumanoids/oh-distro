@@ -27,6 +27,8 @@ classdef drillButtonPlanner
     atlas2robotFrameIndMap
     lc
     lcmgl
+    
+    min_poke_time = 1;
   end
   
   methods
@@ -172,9 +174,10 @@ classdef drillButtonPlanner
       end
     end
     
-    function [xtraj,snopt_info,infeasible_constraint] = createPokePlan(obj, q0, offset, T)
+    function [xtraj,snopt_info,infeasible_constraint] = createPokePlan(obj, q0, offset, speed)
+      
+      
       N = 5;
-      t_vec = linspace(0,T,N);
       
       % Get world button axis
       kinsol = obj.r.doKinematics(q0);
@@ -184,10 +187,17 @@ classdef drillButtonPlanner
       button_pos = button_state(1:3);
       
       
+      
       % in the offset axis, button_axis is X, drill_axis is Z
       offset_y = cross(drill_axis_world, button_axis_world);
       
       finger_target = button_pos + offset(1)*button_axis_world + offset(2)*offset_y + offset(3)*drill_axis_world;
+      
+      
+      finger_pt_init = obj.r.forwardKin(obj.finger_hand_body, obj.finger_pt_on_hand);
+      
+      T = max(obj.min_poke_time, norm(finger_pt_init - finger_target)/speed);
+      t_vec = linspace(0,T,N);
       
       % create drill direction constraint
       finger_dir_constraint = WorldGazeDirConstraint(obj.r,obj.finger_hand_body,obj.finger_axis_on_hand,...
