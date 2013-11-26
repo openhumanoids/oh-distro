@@ -37,7 +37,7 @@
 #define PARAM_UPDATE_PLANNER_PARAMS "Update Params"
 #define PARAM_PLAN_ADJUST_MODE "Plan Adjustment Filter"
 #define PARAM_MANIP_PLAN_INITSEED_MODE "ManipPlanFromCurrentState"
-
+#define PARAM_PLAN_USING_BDI_HEIGHT_MODE "Plan & Control w BDI Height"
 #define PARAM_ADJUST_PLAN_TO_CURRENT_POSE "Adjust Plan To Current Pose"
 #define PARAM_ADJUST_PLAN_AND_REACH "Achieve First Posture"
 #define PARAM_COMPENSATE_LAST_FRAME_FOR_SSE "Compensate for SSE"
@@ -685,6 +685,13 @@ static void update_planar_params( void *user)
        self->lcm->publish("MANIP_PLAN_FROM_CURRENT_STATE", &msg);
      }
               
+     {
+       drc::plan_adjust_mode_t msg;
+       msg.utime = bot_timestamp_now();
+       msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_PLAN_USING_BDI_HEIGHT_MODE);
+       self->lcm->publish("PLAN_USING_BDI_HEIGHT", &msg);
+     }
+
 }
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
@@ -768,6 +775,12 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
     msg.utime = self->robot_utime;
     msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_MANIP_PLAN_INITSEED_MODE);
     self->lcm->publish("MANIP_PLAN_FROM_CURRENT_STATE", &msg);
+  }
+  else if(! strcmp(name, PARAM_PLAN_USING_BDI_HEIGHT_MODE)){
+    drc::plan_adjust_mode_t msg;
+    msg.utime = self->robot_utime;
+    msg.mode = (int)bot_gtk_param_widget_get_bool(self->pw,PARAM_PLAN_USING_BDI_HEIGHT_MODE);
+    self->lcm->publish("PLAN_USING_BDI_HEIGHT", &msg);
   }
   else if(! strcmp(name, PARAM_COMPENSATE_LAST_FRAME_FOR_SSE)){
     drc::plan_adjust_mode_t msg;
@@ -861,13 +874,19 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
                                        "Teleop", drc::manip_plan_control_t::TELEOP,
                                        "Fixed Joints", drc::manip_plan_control_t::FIXEDJOINTS,
                                        NULL);
+
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_PLAN_USING_BDI_HEIGHT_MODE, 1, NULL);
     
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_UPDATE_PLANNER_PARAMS, NULL);
     // don't publish these on launch: 
     // update_planar_params(self);
+
+
         
    	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
   	self->selection_enabled = 1;
+
+    bot_gtk_param_widget_set_bool(self->pw, PARAM_PLAN_USING_BDI_HEIGHT_MODE,true);
     bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
     self->use_colormap = 1; // default - never changed now
     //bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);
