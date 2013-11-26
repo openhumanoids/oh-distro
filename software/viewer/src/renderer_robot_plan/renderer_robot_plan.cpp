@@ -525,6 +525,7 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
       if (self->robotPlanListener->is_in_motion(self->selected_keyframe_index)){
          toggle = !markeractive;
       }
+
       self->robotPlanListener->set_in_motion_hands_state(self->selected_keyframe_index);
       self->robotPlanListener->_gl_left_hand->enable_bodypose_adjustment(toggle); 
       self->robotPlanListener->_gl_right_hand->enable_bodypose_adjustment(toggle);
@@ -865,8 +866,8 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     // don't publish these on launch: 
     // update_planar_params(self);
         
-    g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
-    self->selection_enabled = 1;
+   	g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
+  	self->selection_enabled = 1;
     bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
     self->use_colormap = 1; // default - never changed now
     //bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);

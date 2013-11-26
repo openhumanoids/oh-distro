@@ -28,8 +28,6 @@ namespace renderer_robot_plan
 		_num_breakpoints(0),
     _retractable_cycle_counter(0),
 		_plan_paused(false),
-		_is_left_sandia(true),
-		_is_right_sandia(true),
 		_current_plan_committed(false)
 
   {
@@ -365,8 +363,9 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _base_gl_robot->disable_joint_limit_enforcement();
     cout<< "Number of Joints: " << _base_gl_robot->get_num_joints() <<endl;
     
+   /*
      // determine sandia hands or irobot hands by inspecting robot urdf.
-    
+ 
     std::vector<std::string > robot_link_names;
     robot_link_names = _base_gl_robot->get_link_names();
   
@@ -401,10 +400,10 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       cerr << "ERROR: right_palm or right_base_link was not found robot urdf." << endl;
       _is_right_sandia = true;
       _rhand_ee_name = "left_palm";
-    }           
+    }  */         
     
     std::string _left_hand_urdf_xml_string,_right_hand_urdf_xml_string;
-    if(!load_hand_urdfs(_is_left_sandia,_is_right_sandia,_left_hand_urdf_xml_string,_right_hand_urdf_xml_string))
+    if(!load_hand_urdfs( msg->left_hand, msg->right_hand,_left_hand_urdf_xml_string,_right_hand_urdf_xml_string))
        cerr << "\nHand Urdfs Not Found" << endl;
     else{
         string unique_hand_name = "lhand_local_copy";
@@ -772,7 +771,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     _lcm->publish(channel, &msg);
   }  
   
-  bool RobotPlanListener::load_hand_urdfs(bool _is_left_sandia, bool _is_right_sandia, std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string)
+  bool RobotPlanListener::load_hand_urdfs(int left_hand_type, int right_hand_type, std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string)
   {
   
     string urdf_models_path = string(getModelsPath()) + "/mit_gazebo_models/mit_robot_hands/"; 
@@ -782,12 +781,17 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     get_URDF_filenames_from_dir(urdf_models_path.c_str(),urdf_files);
 
     std::string filename, ext;
+    visualization_utils::get_hand_palm_link_name_given_urdf_handtype(left_hand_type,_lhand_ee_name);
+    visualization_utils::get_hand_palm_link_name_given_urdf_handtype(right_hand_type,_rhand_ee_name);
     
-
-    if(_is_left_sandia)    
+    if(left_hand_type==drc::robot_urdf_t::LEFT_SANDIA)    
       filename ="sandia_hand_left";
-    else
+    else if(left_hand_type==drc::robot_urdf_t::LEFT_IROBOT)   
       filename ="irobot_hand_left";
+    else if(left_hand_type==drc::robot_urdf_t::LEFT_ROBOTIQ)   
+      filename ="robotiq_hand_left";
+    else 
+      filename ="inert_hand_left";  
     ext=".urdf";
     
     std::vector<std::string>::const_iterator found;
@@ -801,10 +805,14 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
       return false;
     }
     
-    if(_is_right_sandia)    
+    if(right_hand_type==drc::robot_urdf_t::RIGHT_SANDIA)    
       filename ="sandia_hand_right";
-    else
+    else if(right_hand_type==drc::robot_urdf_t::RIGHT_IROBOT)   
       filename ="irobot_hand_right";
+    else if(right_hand_type==drc::robot_urdf_t::RIGHT_ROBOTIQ)   
+      filename ="robotiq_hand_right";
+    else 
+      filename ="inert_hand_right";  
     ext=".urdf";
     
     if (found != urdf_files.end()) {

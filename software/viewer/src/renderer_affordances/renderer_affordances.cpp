@@ -18,7 +18,7 @@
 #define GEOM_EPSILON 1e-9
 #define PARAM_COLOR_ALPHA "Alpha"
 #define PARAM_DEBUG_MODE "Local Aff Store (Debug Only)"
-#define PARAM_GRASP_OPT_MODE "GraspOpt Mode"
+
 
 using namespace std;
 using namespace boost;
@@ -267,103 +267,38 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
        
             // Check reachability w.r.t to current pelvis
             bool reachable;
-            if(hand_it->second.hand_type == drc::desired_grasp_state_t::SANDIA_RIGHT) {
-                
-                reachable = true;
-                
-                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-                
-                if(!hand_it->second._gl_hand->get_link_frame("right_palm",T_geometry_palm))
-                    cout <<"ERROR: ee link "<< "right_palm" << " not found in sticky hand urdf"<< endl;
-                
-                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
-                KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
-                T_hand_palm_r.p[1] = -0.1;
-                T_hand_palm_r.M=KDL::Rotation::RPY(-1.57079,0,-1.57079);
-                
-                
-                KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
-                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
-                }
-                if(reachable){
-                    ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
-                }
-                else{
-                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                }
+            //Make all the following code generic for all hands
+            std::string ee_name,hand_link_name;
+            visualization_utils::get_hand_palm_link_name(hand_it->second.hand_type,ee_name);
+            visualization_utils::get_hand_link_name(hand_it->second.hand_type,hand_link_name);
+            reachable = true;
+            KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+            if(!hand_it->second._gl_hand->get_link_frame(ee_name,T_geometry_palm))
+              cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+           
+            if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
+                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; 
+                KDL::Frame T_robotframe_hand,T_robotframe_palm;
+                self->robotStateListener->_gl_robot->get_link_frame(hand_link_name,T_robotframe_hand);
+                self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_robotframe_palm);
+                KDL::Frame T_hand_palm = T_robotframe_hand.Inverse()*T_robotframe_palm;
+                KDL::Frame T_world_hand=T_world_palm*T_hand_palm.Inverse();
+                reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand);
             }
-            else if(hand_it->second.hand_type == drc::desired_grasp_state_t::SANDIA_LEFT) {
-                reachable = true;
-                
-                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-                if(!hand_it->second._gl_hand->get_link_frame("left_palm",T_geometry_palm))
-                    cout <<"ERROR: ee link "<< "left_palm" << " not found in sticky hand urdf"<< endl;
-                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
-                
-                KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
-                T_hand_palm_l.p[1] = 0.1;
-                T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
-                
-                KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
-                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
-                if(reachable){
-                    ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
-                }
-                else{
-                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                }
-            }   
-            else if(hand_it->second.hand_type == drc::desired_grasp_state_t::IROBOT_RIGHT) {
-                
-                reachable = true;
-                
-                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-                
-                if(!hand_it->second._gl_hand->get_link_frame("right_base_link",T_geometry_palm))
-                    cout <<"ERROR: ee link "<< "right_base_link" << " not found in sticky hand urdf"<< endl;
-                
-                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
-                KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
-                T_hand_palm_r.p[1] = -0.05;
-                T_hand_palm_r.M=KDL::Rotation::RPY(1.57079, 0, 3.14159);
-                
-                
-                KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
-                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
-                }
-                if(reachable){
-                    ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
-                }
-                else{
-                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                }
-            }   
-            else if(hand_it->second.hand_type == drc::desired_grasp_state_t::IROBOT_LEFT) {
-                reachable = true;
-                
-                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-                if(!hand_it->second._gl_hand->get_link_frame("left_base_link",T_geometry_palm))
-                    cout <<"ERROR: ee link "<< "left_base_link" << " not found in sticky hand urdf"<< endl;
-                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
-                
-                KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
-                T_hand_palm_l.p[1] = 0.05;
-                T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
-                
-                KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
-                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
-                if(reachable){
-   
-                    ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
-                }
-                else{
-                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                }
-            }   
+            if(reachable){
+              if(visualization_utils::is_left_hand(hand_it->second.hand_type))    
+              {            
+                  ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
+              }
+              else
+              {
+                ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2]; 
+              }    
+            }
+            else{
+                ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
+            }  
+         
             if(active)
               hand_it->second._gl_hand->draw_body_in_frame (ch,alpha,T_world_graspgeometry);//draws in grasp_geometry frame
               
@@ -400,100 +335,36 @@ static void _draw (BotViewer *viewer, BotRenderer *renderer)
 
             // Check reachability w.r.t to current pelvis
             bool reachable;
-            if(hand_it->second.hand_type == drc::desired_grasp_state_t::SANDIA_RIGHT)
-            {
-                reachable = true;
-      
-                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-
-                hand_it->second._gl_hand->get_link_future_frame("right_palm",T_geometry_palm);      
-                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
-                KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
-                T_hand_palm_r.p[1] = -0.145;
-                T_hand_palm_r.M=KDL::Rotation::RPY(-1.57079,0,-1.57079);
-
-
-                KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
-                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
-                }
-                if(reachable){
-                    ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
-                }
-                else{
-                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                }
-            }   
-      
-            else if(hand_it->second.hand_type == drc::desired_grasp_state_t::SANDIA_LEFT)
-            {
-                reachable = true;
-      
-                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-                hand_it->second._gl_hand->get_link_future_frame("left_palm",T_geometry_palm);
-       
-                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
-      
-                KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
-                T_hand_palm_l.p[1] = 0.145;
-                T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
-
-                KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
-                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
-                if(reachable){
-                    ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
-                }
-                else{
-                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                }
-            }   
-            else if(hand_it->second.hand_type == drc::desired_grasp_state_t::IROBOT_RIGHT)
-            {
-                reachable = true;
-      
-                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-
-                hand_it->second._gl_hand->get_link_future_frame("right_base_link",T_geometry_palm);      
-                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; // but this is palm or frame
-                KDL::Frame T_hand_palm_r = KDL::Frame::Identity();
-                T_hand_palm_r.p[1] = -0.095;
-                T_hand_palm_r.M=KDL::Rotation::RPY(1.57079, 0, 3.14159);
-
-                KDL::Frame T_world_hand_r=T_world_palm*T_hand_palm_r.Inverse();
-                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_r);
-                }
-                if(reachable){
-                    ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2];
-                }
-                else{
-                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                }
+            std::string ee_name,hand_link_name;
+            visualization_utils::get_hand_palm_link_name(hand_it->second.hand_type,ee_name);
+            visualization_utils::get_hand_link_name(hand_it->second.hand_type,hand_link_name);
+            reachable = true;
+            KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
+            hand_it->second._gl_hand->get_link_future_frame(ee_name,T_geometry_palm);  
+           
+            if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter)){
+                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm; 
+                KDL::Frame T_robotframe_hand,T_robotframe_palm;
+                self->robotStateListener->_gl_robot->get_link_frame(hand_link_name,T_robotframe_hand);
+                self->robotStateListener->_gl_robot->get_link_frame(ee_name,T_robotframe_palm);
+                KDL::Frame T_hand_palm = T_robotframe_hand.Inverse()*T_robotframe_palm;
+                 KDL::Frame T_world_hand=T_world_palm*T_hand_palm.Inverse();
+                reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand);
+            }
+            if(reachable){
+              if(visualization_utils::is_left_hand(hand_it->second.hand_type))    
+              {            
+                  ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
+              }
+              else
+              {
+                ch[0]=c_green[0]; ch[1]=c_green[1];  ch[2]=c_green[2]; 
+              }    
+            }
+            else{
+                ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
             } 
-            else if(hand_it->second.hand_type == drc::desired_grasp_state_t::IROBOT_LEFT)
-            {
-                reachable = true;
-      
-                KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
-                hand_it->second._gl_hand->get_link_future_frame("left_base_link",T_geometry_palm);
-       
-                KDL::Frame T_world_palm = T_world_graspgeometry*T_geometry_palm;// but this is palm or frame
-      
-                KDL::Frame T_hand_palm_l=KDL::Frame::Identity();
-                T_hand_palm_l.p[1] = 0.095;
-                T_hand_palm_l.M=KDL::Rotation::RPY(1.57079,0,1.57079);
-
-                KDL::Frame T_world_hand_l=T_world_palm*T_hand_palm_l.Inverse();
-                if((self->robotStateListener->_robot_state_received)&&(self->enableReachabilityFilter))
-                    reachable = self->reachabilityVerifier->has_IK_solution_from_pelvis_to_hand(self->robotStateListener->_last_robotstate_msg,hand_it->second.hand_type,T_world_hand_l);
-                if(reachable){
-                    ch[0]=c_yellow[0]; ch[1]=c_yellow[1];  ch[2]=c_yellow[2];
-                }
-                else{
-                    ch[0]=c_gray[0]; ch[1]=c_gray[1];  ch[2]=c_gray[2];
-                }
-            }   
+                       
             if(active)  
              hand_it->second._gl_hand->draw_body_in_frame (ch,alpha2,T_world_graspgeometry);
         
@@ -1021,12 +892,27 @@ on_robot_model(const lcm_recv_buf_t * buf, const char *channel, const drc_robot_
       self->lhand_urdf_id= found - self->urdf_filenames.begin();
       bot_gtk_param_widget_set_enum(self->pw,PARAM_LHAND_URDF_SELECT,self->lhand_urdf_id);
     }
-  }else if(msg->left_hand == DRC_ROBOT_URDF_T_LEFT_IROBOT){
+  }
+  else if(msg->left_hand == DRC_ROBOT_URDF_T_LEFT_IROBOT){
     std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "irobot_hand_left"); 
     if (found != self->urdf_filenames.end()) {
       self->lhand_urdf_id= found - self->urdf_filenames.begin();
       bot_gtk_param_widget_set_enum(self->pw,PARAM_LHAND_URDF_SELECT,self->lhand_urdf_id);
     }
+  }    
+  else if(msg->left_hand == DRC_ROBOT_URDF_T_LEFT_ROBOTIQ){
+    std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "robotiq_hand_left"); 
+    if (found != self->urdf_filenames.end()) {
+      self->lhand_urdf_id= found - self->urdf_filenames.begin();
+      bot_gtk_param_widget_set_enum(self->pw,PARAM_LHAND_URDF_SELECT,self->lhand_urdf_id);
+    }
+  }
+  else if(msg->left_hand == DRC_ROBOT_URDF_T_LEFT_NONE){
+    std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "inert_hand_left"); 
+    if (found != self->urdf_filenames.end()) {
+      self->lhand_urdf_id= found - self->urdf_filenames.begin();
+      bot_gtk_param_widget_set_enum(self->pw,PARAM_LHAND_URDF_SELECT,self->lhand_urdf_id);
+    }    
   }
 
   if (msg->right_hand == DRC_ROBOT_URDF_T_RIGHT_SANDIA ){
@@ -1035,14 +921,29 @@ on_robot_model(const lcm_recv_buf_t * buf, const char *channel, const drc_robot_
       self->rhand_urdf_id= found - self->urdf_filenames.begin();
       bot_gtk_param_widget_set_enum(self->pw,PARAM_RHAND_URDF_SELECT,self->rhand_urdf_id);
     }
-  }else if(msg->right_hand == DRC_ROBOT_URDF_T_RIGHT_IROBOT){
+  }
+  else if(msg->right_hand == DRC_ROBOT_URDF_T_RIGHT_IROBOT){
     std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "irobot_hand_right"); 
     if (found != self->urdf_filenames.end()) {
       self->rhand_urdf_id= found - self->urdf_filenames.begin();
       bot_gtk_param_widget_set_enum(self->pw,PARAM_RHAND_URDF_SELECT,self->rhand_urdf_id);
     }
   }
-
+  else if(msg->right_hand == DRC_ROBOT_URDF_T_RIGHT_ROBOTIQ){
+    std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "robotiq_hand_right"); 
+    if (found != self->urdf_filenames.end()) {
+      self->rhand_urdf_id= found - self->urdf_filenames.begin();
+      bot_gtk_param_widget_set_enum(self->pw,PARAM_RHAND_URDF_SELECT,self->rhand_urdf_id);
+    }
+  }
+  else if(msg->right_hand == DRC_ROBOT_URDF_T_RIGHT_NONE){
+    std::vector<std::string>::const_iterator found = std::find (self->urdf_filenames.begin(), self->urdf_filenames.end(), "inert_hand_right"); 
+    if (found != self->urdf_filenames.end()) {
+      self->rhand_urdf_id= found - self->urdf_filenames.begin();
+      bot_gtk_param_widget_set_enum(self->pw,PARAM_RHAND_URDF_SELECT,self->rhand_urdf_id);
+    }  
+  }
+  
   //std::cout << "Unsubscribing from Robot Model\n";
   drc_robot_urdf_t_unsubscribe(self->lcm->getUnderlyingLCM(), self->urdf_sub);
 }

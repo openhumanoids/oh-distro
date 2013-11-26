@@ -14,6 +14,7 @@
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
 #include <visualization_utils/file_access_utils.hpp>
 #include <visualization_utils/eigen_kdl_conversions.hpp>
+#include <visualization_utils/stickyhand_utils/sticky_hand_utils.hpp>
 #include <visualization_utils/affordance_utils/affordance_seed_utils.hpp>
 #include <sys/time.h>
 #include <time.h>
@@ -32,8 +33,6 @@ namespace renderer_robot_plan
    
    private:      
     std::string _urdf_xml_string;   
-    bool _is_left_sandia;
-    bool _is_right_sandia;
    
     lcm::Subscription *_urdf_subscription; //valid as long as _urdf_parsed == false
 
@@ -111,26 +110,41 @@ namespace renderer_robot_plan
 
     void set_in_motion_hands_state(int index)
     {
- 
-      KDL::Frame T_base_palm_sandia,T_base_palm_irobot,T_world_palm_l,T_world_palm_r,T_world_base_l,T_world_base_r;
-    
-      T_base_palm_sandia = KDL::Frame::Identity();
-      T_base_palm_sandia.M = KDL::Rotation::RPY(0,-M_PI/2,0);
-      T_base_palm_irobot = KDL::Frame::Identity();
-      T_base_palm_irobot.M = KDL::Rotation::RPY(M_PI/2,0,-M_PI/2);
-      
-      _gl_robot_keyframe_list[index]->get_link_frame(_lhand_ee_name,T_world_palm_l);
-      _gl_robot_keyframe_list[index]->get_link_frame(_rhand_ee_name,T_world_palm_r);
 
-      if(_is_left_sandia)		
-      	T_world_base_l = T_world_palm_l*(T_base_palm_sandia.Inverse());
-      else
-	T_world_base_l = T_world_palm_l*(T_base_palm_irobot.Inverse());
-      if(_is_right_sandia)	
-      	T_world_base_r = T_world_palm_r*(T_base_palm_sandia.Inverse());
-      else
-	T_world_base_r = T_world_palm_r*(T_base_palm_irobot.Inverse());
+      KDL::Frame T_base_palm_l,T_base_palm_r,T_world_palm_l,T_world_palm_r,T_world_base_l,T_world_base_r;
+
+      T_world_palm_l = KDL::Frame::Identity();
+      T_world_palm_r = KDL::Frame::Identity();
+      bool success;
+      success = _gl_left_hand->get_link_frame(_lhand_ee_name,T_world_palm_l);
+      T_base_palm_l = _gl_left_hand->_T_world_body.Inverse()*T_world_palm_l;
+      success=_gl_right_hand->get_link_frame(_rhand_ee_name,T_world_palm_r);
+      T_base_palm_r = _gl_right_hand->_T_world_body.Inverse()*T_world_palm_r;
+     
       
+      if(!_gl_robot_keyframe_list[index]->get_link_frame(_lhand_ee_name,T_world_palm_l)) 
+      {
+      // if ee is not in robot urdf(if LN_RN is used instead of say LH_RH)
+       KDL::Frame T_world_hand_l,T_hand_palm_inert_l;
+       T_hand_palm_inert_l = KDL::Frame::Identity();
+       T_hand_palm_inert_l.p[1] = 0.11516;T_hand_palm_inert_l.p[2] = 0.015;
+       T_hand_palm_inert_l.M = KDL::Rotation::RPY(M_PI/2,M_PI,M_PI);
+       _gl_robot_keyframe_list[index]->get_link_frame("l_hand",T_world_hand_l);
+       T_world_palm_l = T_world_hand_l*T_hand_palm_inert_l; 
+      }
+      if(!_gl_robot_keyframe_list[index]->get_link_frame(_rhand_ee_name,T_world_palm_r))
+      {
+        KDL::Frame T_world_hand_r,T_hand_palm_inert_r;
+        T_hand_palm_inert_r = KDL::Frame::Identity();
+        T_hand_palm_inert_r.p[1] = -0.11516;T_hand_palm_inert_r.p[2] = -0.015;
+        T_hand_palm_inert_r.M = KDL::Rotation::RPY(M_PI/2,0,0);
+        _gl_robot_keyframe_list[index]->get_link_frame("r_hand",T_world_hand_r);
+        T_world_palm_r = T_world_hand_r*T_hand_palm_inert_r;    
+      }
+
+    	T_world_base_l = T_world_palm_l*(T_base_palm_l.Inverse());
+    	T_world_base_r = T_world_palm_r*(T_base_palm_r.Inverse());
+ 
       // Flip marker direction to always point away from the body center.
       double normal, flipped;
       Eigen::Vector3f u_x(1,0,0);
@@ -570,7 +584,7 @@ namespace renderer_robot_plan
     }
   };
 			      
-  bool load_hand_urdfs(bool _is_left_sandia, bool _is_right_sandia, std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
+  bool load_hand_urdfs(int left_hand_type, int right_hand_type, std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
   bool load_foot_urdfs(std::string &_left_foot_urdf_xml_string,std::string &_right_foot_urdf_xml_string);
   bool load_misc_marker_urdfs(std::string &_pelvis_urdf_xml_string,std::string &_com_urdf_xml_string);
   

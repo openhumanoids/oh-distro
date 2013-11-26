@@ -63,6 +63,8 @@ namespace renderer_affordances
      bot_viewer_request_redraw(_parent_renderer->viewer);
 
   } // end handleMessage
+  
+
 
 //-------------------------------------------------------------------------------------        
 

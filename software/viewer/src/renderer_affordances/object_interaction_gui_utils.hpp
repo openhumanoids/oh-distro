@@ -1,6 +1,7 @@
 #ifndef OBJECT_INTERACTION_GUI_UTILS_HPP
 #define OBJECT_INTERACTION_GUI_UTILS_HPP
 
+#define PARAM_GRASP_OPT_MODE "GraspOpt Mode"
 #define PARAM_REQUEST_PTCLD_FROM_MAPS "Req PtCld 4 Aff"
 #define PARAM_REQUEST_LINKGEOM_PTCLD_FROM_MAPS "Req PtCld 4 Aff Geom"
 
@@ -835,27 +836,43 @@ namespace renderer_affordances_gui_utils
       T_geom_lhandpose.p[1] = self->ray_hit(1);
       T_geom_lhandpose.p[2] = self->ray_hit(2);      
       */
-      
-      int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_HAND_CONTACT_MASK_SELECT);  
-      int drake_control =msg.NEW;//or NEW=0, RESET=1, HALT=2;
-      self->stickyHandCollection->free_running_sticky_hand_cnt++;
-      int uid = self->stickyHandCollection->free_running_sticky_hand_cnt;
-       std::string channel;
-       if(self->graspOptStatusListener->isOptPoolReady())
+       int mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_GRASP_OPT_MODE);
+       if((mode==drc::grasp_opt_mode_t::OPT_OFF)||((grasp_type == msg.ROBOTIQ_RIGHT)||(grasp_type == msg.ROBOTIQ_LEFT)
+                                                ||(grasp_type == msg.INERT_RIGHT)||(grasp_type == msg.INERT_LEFT)))
        {
-          int id =  self->graspOptStatusListener->getNextAvailableOptChannelId();
-          if((id!=-1)&&(self->graspOptStatusListener->reserveOptChannel(id,uid)))
-          {
-           //int id =  1;
-            std::stringstream oss;
-            oss << "INIT_GRASP_OPT_" << id; 
-            channel = oss.str();
-            std::cout << channel << "  id :" << id << std::endl;
-            double dilation_factor = bot_gtk_param_widget_get_double(pw,PARAM_DIL_FACTOR);
-            self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,
-              grasp_type,contact_mask,drake_control,uid,dilation_factor, self->ray_hit);
-           }             
+         string object_name =  self->object_selection;
+         string object_geometry_name =  self->link_selection;
+         string object_name_token  =object_name  + "_";
+         size_t found = object_geometry_name.find(object_name_token);  
+         string geometry_name =object_geometry_name.substr(found+object_name_token.size());
+         cout <<  "seeding stickyhand without optimization\n";
+         self->stickyHandCollection->seed(object_name,geometry_name,T_geom_lhandpose,T_geom_rhandpose,grasp_type);
        }
+       else if(mode==drc::grasp_opt_mode_t::OPT_ON)
+       {
+          int contact_mask = bot_gtk_param_widget_get_enum (pw, PARAM_HAND_CONTACT_MASK_SELECT);  
+          int drake_control =msg.NEW;//or NEW=0, RESET=1, HALT=2;
+          self->stickyHandCollection->free_running_sticky_hand_cnt++;
+          int uid = self->stickyHandCollection->free_running_sticky_hand_cnt;
+           std::string channel;
+           if(self->graspOptStatusListener->isOptPoolReady())
+           {
+              int id =  self->graspOptStatusListener->getNextAvailableOptChannelId();
+              if((id!=-1)&&(self->graspOptStatusListener->reserveOptChannel(id,uid)))
+              {
+               //int id =  1;
+                std::stringstream oss;
+                oss << "INIT_GRASP_OPT_" << id; 
+                channel = oss.str();
+                std::cout << channel << "  id :" << id << std::endl;
+                double dilation_factor = bot_gtk_param_widget_get_double(pw,PARAM_DIL_FACTOR);
+                self->initGraspOptPublisher->publishGraspOptControlMsg(channel,T_geom_lhandpose,T_geom_rhandpose,
+                  grasp_type,contact_mask,drake_control,uid,dilation_factor, self->ray_hit);
+               }             
+           }      
+       
+       }// end else if(mode==drc::grasp_opt_mode_t::OPT_ON)
+
     }
     else if ((!strcmp(name, PARAM_SEED_LF))||(!strcmp(name, PARAM_SEED_RF))) {
       //self->stickyFootCollection->free_running_sticky_foot_cnt++;
