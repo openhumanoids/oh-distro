@@ -13,7 +13,7 @@
 <!-- ########################################### -->
 
 
-<xacro:macro name="hook_hand" params="side parent reflect *origin">
+<xacro:macro name="hook_hand" params="side parent reflect hookflip *origin">
 <!--<xacro:flex_link side="${side}" finger_id="0" link_id="1"/>-->
 <!--<xacro:flex_link side="${side}" finger_id="0" link_id="2"/>-->
 <!--<xacro:flex_link side="${side}" finger_id="0" link_id="3"/>-->
@@ -129,7 +129,7 @@
       <geometry>
         <cylinder length="0.04" radius="0.006"/>
       </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 ${-0.02 * reflect} 0.16"/>
     </collision>
     <visual>
       <geometry>
@@ -138,7 +138,7 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 ${-0.02 * reflect} 0.16"/>
     </visual>
   </link>
 

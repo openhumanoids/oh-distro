@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="hook_hand">
+<!-- roslaunch urdf_tutorial display.launch model:=handle.urdf gui:=True -->
+<!-- rosrun xacro xacro.py handle_urdf.xacro > handle.urdf -->
+
+
+
+<xacro:property name="pi" value="3.14" />
+
+
+<!-- ########################################### -->
+<!-- MIT changes (8th August 2013) -->
+<!-- ########################################### -->
+
+
+<xacro:macro name="hook_hand" params="side parent reflect hookflip *origin">
+
+
+<!-- ########################################### -->
+
+
+<!-- joint to irobot hand -->
+  <joint name="${side}_hook_hand_joint" type="fixed">
+    <insert_block name="origin"/>
+    <parent link="${parent}"/>
+    <child link="${side}_base_link"/>
+  </joint>
+  <link name="${side}_base_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <geometry>
+        <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <origin rpy="0 0 ${hookflip*-1.571}" xyz="0.00 0.0 0.0"/>
+    </collision>
+    <visual>
+      <geometry>
+        <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <origin rpy="0 0 ${hookflip*-1.571}" xyz="0.00 0.0 0.0"/>
+    </visual>
+  </link>
+
+
+</xacro:macro>
+
+</robot>
