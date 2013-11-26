@@ -22,7 +22,7 @@ void getHandConfiguration(std::vector<std::string> joint_names, int8_t &left_han
   }else if(find(joint_names.begin(), joint_names.end(), "left_finger[0]/joint_base" ) != joint_names.end()){
     std::cout << "Robot fitted with left iRobot hand\n";
     left_hand = drc::robot_urdf_t::LEFT_IROBOT;
-  }else if(find(joint_names.begin(), joint_names.end(), "left_finger_1_joint_0" ) != joint_names.end()){
+  }else if(find(joint_names.begin(), joint_names.end(), "left_finger_1_joint_1" ) != joint_names.end()){
     std::cout << "Robot fitted with left Robotiq hand\n";
     left_hand = drc::robot_urdf_t::LEFT_ROBOTIQ;
   }else{
@@ -36,7 +36,7 @@ void getHandConfiguration(std::vector<std::string> joint_names, int8_t &left_han
   }else if(find(joint_names.begin(), joint_names.end(), "right_finger[0]/joint_base" ) != joint_names.end()){
     std::cout << "Robot fitted with right iRobot hand\n";
     right_hand = drc::robot_urdf_t::RIGHT_IROBOT;
-  }else if(find(joint_names.begin(), joint_names.end(), "right_finger_1_joint_0" ) != joint_names.end()){
+  }else if(find(joint_names.begin(), joint_names.end(), "right_finger_1_joint_1" ) != joint_names.end()){
     std::cout << "Robot fitted with right Robotiq hand\n";
     left_hand = drc::robot_urdf_t::RIGHT_ROBOTIQ;
   }else{
