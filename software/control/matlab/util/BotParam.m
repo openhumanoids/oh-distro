@@ -36,7 +36,11 @@ classdef BotParam < handle
             if (numel(this.rootStr) > 0)
                 key = sprintf('%s.%s',this.rootStr,key);
             end
-            BotParamClient('setkey',key,val);
+            if (ischar(val) || iscell(val))
+                BotParamClient('setstr',key,val);
+            elseif (isreal(val))
+                BotParamClient('setnum',key,val);
+            end
         end
         
         %         function out = subsref(this,dat)

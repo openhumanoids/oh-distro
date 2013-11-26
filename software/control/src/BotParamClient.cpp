@@ -4,10 +4,12 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 
 #include <bot_param/param_client.h>
 #include <bot_core/timestamp.h>
 
+#include <drc_utils/LcmWrapper.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_param/set_t.hpp>
 
@@ -18,19 +20,41 @@ namespace {
     mxFree(chars);
     return str;
   }
+
+  bot_param::set_t constructSetMessage(BotParam* iParam,
+                                       const std::string& iKey) {
+    bot_param::set_t msg;
+    msg.utime = bot_timestamp_now();
+    msg.sequence_number = bot_param_get_seqno(iParam);
+    msg.server_id = bot_param_get_server_id(iParam);
+    msg.numEntries = 1;
+    msg.entries.resize(1);
+    msg.entries[0].key = iKey;
+    msg.entries[0].is_array = false;
+    return msg;
+  }
+
+  bool isSetCommand(const std::string& iCommand) {
+    return (iCommand == "setstr") || (iCommand == "setnum");
+  }
+
 }
 
 class BotParamClient {
-public:
+protected:
   BotParamClient() {
     mBotParam = NULL;
     mLcm.reset(new lcm::LCM());
+    mLcmWrapper.reset(new drc::LcmWrapper(mLcm));
+    mLcmWrapper->startHandleThread();
     getParamFromServer();
   }
 
   ~BotParamClient() {
+    mLcmWrapper->stopHandleThread();
   }
 
+public:
   static BotParamClient& instance() {
     static BotParamClient theClient;
     return theClient;
@@ -49,7 +73,7 @@ public:
 
   static void onParamUpdate(BotParam* iOldParam, BotParam* iNewParam,
                             int64_t iUtime, void* iUser) {
-    BotParamClient* self = (BotParamClient*)iUser;
+    //BotParamClient* self = (BotParamClient*)iUser;
     // TODO: update stuff if necessary
   }
 
@@ -67,6 +91,7 @@ protected:
 
 protected:
   std::shared_ptr<lcm::LCM> mLcm;
+  std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
   BotParam* mBotParam;
 };
 
@@ -82,8 +107,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   std::transform(command.begin(), command.end(), command.begin(), ::tolower);
   std::string key = ::getString(prhs[1]);
 
-  if ((nrhs > 3) || ((nrhs == 3) && (command != "setkey"))) {
+  if ((nrhs > 3) || ((nrhs == 3) && !::isSetCommand(command))) {
     mexErrMsgTxt("BotParamClient: too many input arguments");
+  }
+
+  if (isSetCommand(command) && (nrhs != 3)) {
+    mexErrMsgTxt("BotParamClient: need value argument");
   }
 
   BotParam* param = BotParamClient::instance().getUnderlyingBotParam();
@@ -92,7 +121,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   }
 
   bool hasKey = (0 != bot_param_has_key(param, key.c_str()));
-  if (!hasKey && (command != "setkey") && (command != "haskey")) {
+  if (!hasKey && !isSetCommand(command) && (command != "haskey")) {
     mexErrMsgTxt("BotParamClient: invalid key");
   }
 
@@ -188,25 +217,53 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
   }
 
-  else if (command == "setkey") {
-    if (!mxIsChar(prhs[1])) {
-      mexErrMsgTxt("BotParamClient: third argument must be value string");
+  else if (command == "setstr") {
+    bot_param::set_t msg = constructSetMessage(param, key);
+    std::string value;
+    if (mxIsCell(prhs[2])) {
+      int len = mxGetNumberOfElements(prhs[2]);
+      for (int i = 0; i < len; ++i) {
+        mxArray* cellVal = mxGetCell(prhs[2],i);
+        if (!mxIsChar(cellVal)) {
+          mexErrMsgTxt("BotParamClient: invalid string value argument");
+        }
+        std::string curVal = ::getString(cellVal);
+        value += (curVal + std::string(","));
+      }
+      if (value.size() > 0) {
+        value = value.substr(0,value.size()-1);
+      }
+      msg.entries[0].is_array = true;
     }
-    std::string value = ::getString(prhs[2]);
+    else {
+      if (!mxIsChar(prhs[2])) {
+        mexErrMsgTxt("BotParamClient: invalid string value argument");
+      }
+      value = ::getString(prhs[2]);
+    }
+    msg.entries[0].value = value;
+    BotParamClient::instance().getLcm()->publish("PARAM_SET", &msg);
+  }
 
-    bot_param::set_t msg;
-    msg.utime = bot_timestamp_now();
-    msg.sequence_number = bot_param_get_seqno(param);
-    msg.server_id = bot_param_get_server_id(param);
-    bot_param::entry_t entry;
-    entry.key = key;
-    entry.value = value;
-    msg.numEntries = 1;
-    msg.entries.resize(1);
-    msg.entries[0] = entry;
-
-    std::string channel("PARAM_SET");
-    BotParamClient::instance().getLcm()->publish(channel, &msg);
+  else if (command == "setnum") {
+    if (!mxIsDouble(prhs[2]) || mxIsComplex(prhs[2])) {
+      mexErrMsgTxt("BotParamClient: third argument must be real value array");
+    }
+    bot_param::set_t msg = constructSetMessage(param, key);
+    std::string value;
+    int len = mxGetNumberOfElements(prhs[2]);
+    double* valArray = mxGetPr(prhs[2]);
+    for (int i = 0; i < len; ++i) {
+      std::ostringstream oss;
+      oss << valArray[i] << ",";
+      value += oss.str();
+    }
+    if (value.size() > 0) {
+      value = value.substr(0,value.size()-1);
+    }
+    msg.entries[0].value = value;
+    msg.entries[0].is_array = (len > 1);
+    BotParamClient::instance().getLcm()->publish("PARAM_SET", &msg);
   }
 
   else if (command == "print") {
@@ -214,6 +271,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   }
 
   else {
-    mexErrMsgTxt("BotParamClient: command must be haskey, subkeys, getnum, getbool, getstr, or setkey");
+    mexErrMsgTxt("BotParamClient: command must be haskey, subkeys, getnum, getbool, getstr, or setstr");
   }
 }
