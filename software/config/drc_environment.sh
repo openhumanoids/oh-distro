@@ -43,8 +43,6 @@ setup_drc()
   export CLASSPATH=$CLASSPATH:/usr/local/share/java/lcm.jar:$DRC_BASE/software/build/share/java/lcmtypes_drc_lcmtypes.jar
   export CLASSPATH=$CLASSPATH:$DRC_BASE/software/build/share/java/drake.jar
   export PKG_CONFIG_PATH=$DRC_BASE/software/build/lib/pkgconfig:$DRC_BASE/software/build/lib64/pkgconfig:$PKG_CONFIG_PATH
-  export LCM_URL_DRC_ROBOT="udpm://239.255.76.67:7667?ttl=0"
-  export LCM_URL_DRC_BASE="udpm://239.255.76.68:7668?ttl=0"
 
   # gurobi
   export GUROBI_HOME=$DRC_BASE/software/externals/gurobi/gurobi550/linux64
