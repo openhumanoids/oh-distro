@@ -59,7 +59,7 @@
       <geometry>
         <cylinder length="0.04" radius="0.006"/>
       </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.16"/>
     </collision>
     <visual>
       <geometry>
@@ -68,8 +68,12 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 -0.02 0.16"/>
     </visual>
   </link>
+  <!--  <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
+  <!--  <xacro:hook_hand side="right" parent="plane::xy::base" reflect="1" hookflip="1">-->
+  <!--    <origin rpy="1.57 -1.57 -1.57" xyz="0 0 0"/>   -->
+  <!--  </xacro:hook_hand>  -->
 </robot>
 

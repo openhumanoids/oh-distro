@@ -12,7 +12,7 @@
     </inertial>
   </link>
   <joint name="left_hook_hand_joint" type="fixed">
-    <origin rpy="1.57 0.0 -1.57" xyz="0 0 0"/>
+    <origin rpy="1.57 -1.57 -1.57" xyz="0.0 0.0 0.0"/>
     <parent link="plane::xy::base"/>
     <child link="left_base_link"/>
   </joint>
@@ -71,5 +71,9 @@
       <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
     </visual>
   </link>
+  <!--  <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
+  <!--  <xacro:hook_hand side="left" parent="plane::xy::base" reflect="-1" hookflip="1">-->
+  <!--    <origin rpy="1.57 -1.57 -1.57" xyz="0 0 0"/>   -->
+  <!--  </xacro:hook_hand>    -->
 </robot>
 
