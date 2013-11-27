@@ -6,8 +6,8 @@
 
   <xacro:include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
 
- <!-- <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />-->
-  <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />
+ <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />
+ <!-- <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
 
   <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
     <origin rpy="1.57079 0 0" xyz="0 -0.11516 -0.015"/>

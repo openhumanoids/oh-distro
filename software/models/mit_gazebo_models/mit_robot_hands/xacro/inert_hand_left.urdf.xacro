@@ -12,13 +12,13 @@
     </inertial>
   </link>
   
-<!-- <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />-->
-<!--  <xacro:hook_hand side="left" parent="plane::xy::base" reflect="-1" hookflip="1">-->
-<!--    <origin rpy="1.57 0.0 -1.57" xyz="0.0 0.0 0.0"/>-->
-<!--  </xacro:hook_hand>-->
-
- <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />
+ <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />
   <xacro:hook_hand side="left" parent="plane::xy::base" reflect="-1" hookflip="1">
     <origin rpy="1.57 0.0 -1.57" xyz="0.0 0.0 0.0"/>
   </xacro:hook_hand>
+
+<!-- <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
+<!--  <xacro:hook_hand side="left" parent="plane::xy::base" reflect="-1" hookflip="1">-->
+<!--    <origin rpy="1.57 0.0 -1.57" xyz="0.0 0.0 0.0"/>-->
+<!--  </xacro:hook_hand>-->
 </robot>

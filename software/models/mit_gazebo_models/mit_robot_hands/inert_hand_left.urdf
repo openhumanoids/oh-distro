@@ -11,10 +11,6 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <!-- <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />-->
-  <!--  <xacro:hook_hand side="left" parent="plane::xy::base" reflect="-1" hookflip="1">-->
-  <!--    <origin rpy="1.57 0.0 -1.57" xyz="0.0 0.0 0.0"/>-->
-  <!--  </xacro:hook_hand>-->
   <joint name="left_hook_hand_joint" type="fixed">
     <origin rpy="1.57 0.0 -1.57" xyz="0.0 0.0 0.0"/>
     <parent link="plane::xy::base"/>
@@ -26,18 +22,58 @@
       <origin xyz="0 0 0"/>
       <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
     </inertial>
+    <!-- MIT's own extension plate -->
     <collision>
       <geometry>
-        <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="0.001 0.001 0.001"/>
+        <cylinder length="0.01" radius="0.045"/>
       </geometry>
-      <origin rpy="0 0 0.0" xyz="0.00 0.0 0.0"/>
+      <origin rpy="0 0 0" xyz="0 0 0.025"/>
     </collision>
     <visual>
       <geometry>
-        <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="0.001 0.001 0.001"/>
+        <cylinder length="0.01" radius="0.045"/>
       </geometry>
-      <origin rpy="0 0 0.0" xyz="0.00 0.0 0.0"/>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 0 0" xyz="0 0 0.025"/>
+    </visual>
+    <!-- MIT's pointer rod -->
+    <collision>
+      <geometry>
+        <cylinder length="0.15" radius="0.006"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder length="0.15" radius="0.006"/>
+      </geometry>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+    </visual>
+    <!-- MIT's hook -->
+    <collision>
+      <geometry>
+        <cylinder length="0.04" radius="0.006"/>
+      </geometry>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.006"/>
+      </geometry>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.02 0.16"/>
     </visual>
   </link>
+  <!-- <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
+  <!--  <xacro:hook_hand side="left" parent="plane::xy::base" reflect="-1" hookflip="1">-->
+  <!--    <origin rpy="1.57 0.0 -1.57" xyz="0.0 0.0 0.0"/>-->
+  <!--  </xacro:hook_hand>-->
 </robot>
 

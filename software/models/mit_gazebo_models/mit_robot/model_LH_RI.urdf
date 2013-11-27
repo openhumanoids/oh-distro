@@ -1353,7 +1353,7 @@
       </contact>
     </sensor>
   </gazebo>
-  <!--    <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
+  <!-- <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />-->
   <joint name="right_finger[0]/joint_flex" type="revolute">
     <parent link="right_finger[0]/proximal_link"/>
     <child link="right_finger[0]/distal_link"/>
