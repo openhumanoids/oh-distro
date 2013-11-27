@@ -2,8 +2,8 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
        xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
-       name="inert_hand_right" >
-
+       name="inert_hand_left" >
+       
   <link name="plane::xy::base">
     <inertial>
         <mass value="0.1" />
@@ -12,8 +12,10 @@
     </inertial>
   </link>
   
-  <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />
-   <xacro:hook_hand side="right" parent="plane::xy::base" reflect="1" hookflip="1">
-     <origin rpy="1.57 3.14 -1.57" xyz="0 0 0"/>
-  </xacro:hook_hand>  
+ <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />
+  <xacro:hook_hand side="left" parent="plane::xy::base" reflect="-1" hookflip="1">
+    <origin rpy="1.57 0.0 -1.57" xyz="0.0 0.0 0.0"/>
+  </xacro:hook_hand>
+
 </robot>
+
