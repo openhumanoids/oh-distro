@@ -764,7 +764,7 @@ static void _destroy(BotRenderer *r){
   if (!r) return;
 
   RendererSystemStatus *self = (RendererSystemStatus*)r->user;
-  free(self);
+  delete self;
 }
 
 BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *lcm){
@@ -777,6 +777,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   self->lcm = lcm;
   self->viewer = viewer;
   BotRenderer *r = &self->renderer;
+  r->user = self;
   self->renderer.name = "System Status";
   self->renderer.draw = _draw;
   self->renderer.destroy = _destroy;
