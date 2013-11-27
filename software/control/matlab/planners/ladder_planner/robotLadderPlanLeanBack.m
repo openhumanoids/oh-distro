@@ -1,4 +1,4 @@
-function [x_data, t_data] = robotLadderPlanLeanBack(r_minimal,r, q0, qstar, comtraj, link_constraints,support_times,support)
+function [x_data, t_data] = robotLadderPlanLeanBack(r_minimal,r, q0, qstar, comtraj, link_constraints,support_times,support,ladder_opts)
 
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'robotLadderPlan');
 red = {1,0,0};
@@ -22,7 +22,9 @@ neck_joint = findJointIndices(r,'neck');
 knee_joints = findJointIndices(r,'l_leg_kny');
 arm_joints = findJointIndices(r,'arm');
 
-ladder_opts = struct();
+if ~exist('ladder_opts')
+  ladder_opts = struct();
+end
 if ~isfield(ladder_opts,'use_quasistatic_constraint') 
   ladder_opts.use_quasistatic_constraint =  true;
 end
@@ -287,7 +289,7 @@ ladder_opts.hand_threshold = sin(5*pi/180);
 ladder_opts.compute_intro = true;
 ladder_opts.n = 1;
 ladder_opts.smooth_output = true;
-ladder_opts.smoothing_span = 7;
+ladder_opts.smoothing_span = 9;
 ladder_opts.smoothing_method = 'moving'; 
 % ladder_opts.use_pelvis_constraint = false;
 % ladder_opts.use_pelvis_gaze_constraint = false;

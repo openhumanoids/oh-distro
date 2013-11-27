@@ -97,6 +97,7 @@ function LadderPlanner(filename)
     %                            - 2 irobot right hand
     getModelFlag = false;
     model_listener = RobotModelListener('ROBOT_MODEL');
+    ladder_opts = struct();
     while(~getModelFlag)
       data = model_listener.getNextMessage(5);
       if(~isempty(data))
@@ -104,9 +105,12 @@ function LadderPlanner(filename)
         l_hand_mode = data.left_hand_mode;
         r_hand_mode = data.right_hand_mode;
         if(l_hand_mode == 0)
-          l_hand_str = 'no hand';
-          l_hand_offset = [0;0;0];
+          l_hand_str = 'hook hand';
+          l_hand_offset = [0;0.219+0.125;-0.092];
           l_hand_axis = [1;0;0];
+          ladder_opts.hand_cone_threshold = sin(10*pi/180);
+          ladder_opts.shrink_factor = 1;
+          ladder_opts.final_shrink_factor = 0.1;
         elseif(l_hand_mode == 1)
           l_hand_str = 'sandia hand';
           l_hand_offset = [0.025;0.25;0.04];
@@ -118,8 +122,8 @@ function LadderPlanner(filename)
           %         l_hand_axis = [0;0;1];
         end
         if(r_hand_mode == 0)
-          r_hand_str = 'no hand';
-          r_hand_offset = [0;0;0];
+          r_hand_str = 'hook hand';
+          r_hand_offset = [0;-0.219-0.125;-0.092];
           r_hand_axis = [1;0;0];
         elseif(r_hand_mode == 1)
           r_hand_str = 'sandia hand';
@@ -204,7 +208,7 @@ function LadderPlanner(filename)
         link_constraints(r_hand_constraint_idx).axis = r_hand_axis;
       end
       
-      [x_data,ts] = robotLadderPlanLeanBack(r,r, q0, q0, comtraj, link_constraints,support_times,support);
+      [x_data,ts] = robotLadderPlanLeanBack(r,r, q0, q0, comtraj, link_constraints,support_times,support,ladder_opts);
       
       plan_pub.publish(ts,x_data);
       

@@ -82,6 +82,9 @@ end
 if ~isfield(ladder_opts,'shrink_factor') 
   ladder_opts.shrink_factor = 0.1;
 end
+if ~isfield(ladder_opts,'final_shrink_factor') 
+  ladder_opts.shrink_factor = 0.5;
+end
 if ~isfield(ladder_opts,'utorso_threshold') 
   ladder_opts.utorso_threshold = 25*pi/180;
 end
@@ -531,7 +534,7 @@ if ladder_opts.use_final_com_constraint
 %   com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
   com_constraint_f = QuasiStaticConstraint(r);
   com_constraint_f = com_constraint_f.setActive(true);
-  com_constraint_f = com_constraint_f.setShrinkFactor(0.5);
+  com_constraint_f = com_constraint_f.setShrinkFactor(ladder_opts.final_shrink_factor);
   foot1_pts = r.getBodyContacts(ee_info.feet(1).idx);
   foot2_pts = r.getBodyContacts(ee_info.feet(2).idx);
   com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
