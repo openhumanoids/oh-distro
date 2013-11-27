@@ -1,5 +1,6 @@
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 
 #include <lcm/lcm-cpp.hpp>
@@ -21,12 +22,23 @@ struct ChannelData {
   int mWidth;
   int mHeight;
 
-  void onImage(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
-               const bot_core::image_t* iMessage) {
-    std::cout << "ImageReceive: got image on " << iChannel << std::endl;
+  std::thread mThread;
+  std::mutex mDataMutex;
+  std::mutex mConditionMutex;
+  std::condition_variable mCondition;
+  std::list<std::shared_ptr<bot_core::image_t> > mDataQueue;
+  bool mRunning;
+  int mReceivedCount;
+  int mProcessedCount;
 
+  ChannelData() {
+    mReceivedCount = mProcessedCount = 0;
+    mRunning = false;
+  }
+
+  void handleImage(const std::shared_ptr<bot_core::image_t>& iImage) {
     // uncompress
-    cv::Mat raw = cv::imdecode(cv::Mat(iMessage->data), -1);
+    cv::Mat raw = cv::imdecode(cv::Mat(iImage->data), -1);
     if (raw.channels() == 3) cv::cvtColor(raw, raw, CV_RGB2BGR);
 
     // resize to normal
@@ -43,7 +55,7 @@ struct ChannelData {
       break;
     default:
       std::cout << "ImageReceive: invalid image type on channel " <<
-        iChannel << std::endl;
+        mChannelReceive << std::endl;
       return;
     }
 
@@ -52,7 +64,7 @@ struct ChannelData {
 
     // re-transmit
     bot_core::image_t msg;
-    msg.utime = iMessage->utime;
+    msg.utime = iImage->utime;
     msg.width = img.cols;
     msg.height = img.rows;
     msg.row_stride = img.step;
@@ -64,6 +76,43 @@ struct ChannelData {
     std::cout << "ImageReceive: re-transmitted image on " <<
       mChannelTransmit << std::endl;
   }
+
+  void operator()() {
+    mRunning = true;
+    while (mRunning) {
+      std::unique_lock<std::mutex> lock(mConditionMutex);
+      mCondition.wait_for(lock, std::chrono::milliseconds(100));
+      std::vector<std::shared_ptr<bot_core::image_t> > workQueue;
+      {
+        std::unique_lock<std::mutex> lock(mDataMutex);
+        workQueue.reserve(mDataQueue.size());
+        while (!mDataQueue.empty()) {
+          workQueue.push_back(mDataQueue.front());
+          mDataQueue.pop_front();
+        }
+      }
+      for (auto img : workQueue) {
+        handleImage(img);
+        ++mProcessedCount;
+        std::cout << mChannelTransmit << ": received " << mReceivedCount <<
+          ", processed " << mProcessedCount << std::endl;
+      }
+    }
+  }
+
+  void onImage(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
+               const bot_core::image_t* iMessage) {
+    std::unique_lock<std::mutex> lock(mDataMutex);
+    std::shared_ptr<bot_core::image_t> img(new bot_core::image_t(*iMessage));
+    mDataQueue.push_back(img);
+    const int maxQueueSize = 10;
+    ++mReceivedCount;
+    while ((int)mDataQueue.size() > maxQueueSize) {
+      mDataQueue.pop_front();
+    }
+    mCondition.notify_one();
+  }
+
 };
 
 struct ImageReceive {
@@ -90,6 +139,7 @@ struct ImageReceive {
     data->mHeight = bot_camtrans_get_height(camTrans);
     data->mLcm = mLcm;
     mChannels[data->mChannelReceive] = data;
+    data->mThread = std::thread(std::ref(*data));
     mLcm->subscribe(data->mChannelReceive, &ChannelData::onImage, data.get());
   }
 
