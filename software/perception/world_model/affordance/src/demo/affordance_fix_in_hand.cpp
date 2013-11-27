@@ -42,10 +42,15 @@ struct Config{
   
   bool use_sandia_;
   bool use_left_hand_;
+  bool use_prior_relative_;
+  int aff_id_;
   
   Config () {
         use_sandia_ = false;
         use_left_hand_ = false;
+        
+        use_prior_relative_ = false;
+        aff_id_ = -1;
   }
 };
 
@@ -110,7 +115,8 @@ class Pass{
     vector<double> irobot_l_joint_position_;    
     vector<double> irobot_r_joint_position_;    
     
-    
+    Eigen::Isometry3d palm_to_hose_ ;
+    bool init_meld_;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
@@ -165,6 +171,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
   
   
   eeloci_plan_outstanding_ = false;
+  init_meld_ = false;
 }
 
 
@@ -309,18 +316,26 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
 
     affs_[ ss.str() ]=  aff;
     
-    if (aff.otdf_type == "firehose"){
+    if (aff.uid == config_.aff_id_){
+
+       Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
+       Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
       
+       
+      if (!init_meld_){
+        if (config_.use_prior_relative_){
+          palm_to_hose_ = Eigen::Isometry3d::Identity();
+          palm_to_hose_.translation()<< 0,0,0.115;
+          palm_to_hose_.rotate( euler_to_quat ( 0 , M_PI/2, 0  ) );
+        }else{
+          Eigen::Isometry3d world_to_hose = affutils_.getPose(aff.origin_xyz, aff.origin_rpy );
+          palm_to_hose_ = world_to_palm.inverse() * world_to_hose;
+        }
+        init_meld_=true;
+      }
+        
       
-      Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
-      Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
-      
-      Eigen::Isometry3d palm_to_hose = Eigen::Isometry3d::Identity();
-      palm_to_hose.translation()<< 0,0,0.115;
-      palm_to_hose.rotate( euler_to_quat ( 0 , M_PI/2, 0  ) );
-      Eigen::Isometry3d world_to_hose =  world_to_palm* palm_to_hose;
-      
-      
+      Eigen::Isometry3d world_to_hose =  world_to_palm* palm_to_hose_;
       
       affutils_.setXYZRPYFromIsometry3d(aff.origin_xyz, aff.origin_rpy, world_to_hose);
   
@@ -350,6 +365,8 @@ int main(int argc, char ** argv) {
   Config config;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config.use_left_hand_, "l", "use_left_hand","use left hand [defualt is right]");
+  opt.add(config.use_prior_relative_, "p", "use_prior_relative","use a relative position known in advance (firehose)");  
+  opt.add(config.aff_id_, "a", "affordance","the affordance to move");  
   opt.parse();
   
   

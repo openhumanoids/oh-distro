@@ -35,6 +35,8 @@
 using namespace Eigen;
 
 
+
+
 using namespace std;
 
 class Pass{
@@ -101,10 +103,12 @@ class Pass{
     
     drc::grasp_opt_control_t grasp_opt_msg_;
 
+    bool verbose_;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
     lcm_(lcm_){
+  verbose_ = false;
   cartpos_ready_ = false;
       
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
@@ -372,7 +376,7 @@ void Pass::initGraspHandler(const lcm::ReceiveBuffer* rbuf,
   Eigen::Isometry3d init_grasp_pose = Eigen::Isometry3d::Identity();
   init_grasp_pose.translation() << msg->ray_hit[0], msg->ray_hit[1], msg->ray_hit[2];
   init_grasp_poseT.push_back( Isometry3dTime(msg->utime, init_grasp_pose) );
-  pc_vis_->pose_collection_to_lcm_from_list(60011, init_grasp_poseT); 
+  if (verbose_)  pc_vis_->pose_collection_to_lcm_from_list(60011, init_grasp_poseT); 
   
   grasp_opt_msg_ = *msg; // need this to creat output
   
@@ -707,11 +711,11 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
   Eigen::Isometry3d actualplam_to_palmgeometry = Eigen::Isometry3d::Identity();
   
   actualplam_to_palmgeometry.rotate( euler_to_quat( 0*M_PI/180, 0*M_PI/180, 180*M_PI/180 ) );
-  actualplam_to_palmgeometry.translation()  <<  -0.095 , 0 , 0.0  ;   // + x + y + z
+  actualplam_to_palmgeometry.translation()  <<  -0.115 , 0 , 0.0  ;   // + x + y + z
   
   Eigen::Isometry3d aff_to_palmgeometry = aff_to_actualpalm*actualplam_to_palmgeometry;
   
-  pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
+  if (verbose_) pc_vis_->pose_collection_to_lcm_from_list(60001, eeloci_poses_); 
   
   sendCandidateGrasp(aff_to_palmgeometry, 0);  
 }
