@@ -544,9 +544,11 @@ int main(int argc, char *argv[])
   
   string config_file = "";
   int network_debug = 0; 
+  bool use_all_renderers = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config_file, "c", "config_file","Robot cfg file");
   opt.add(network_debug, "n", "network_debug","Network Debug [0 nothing, 1 feet, 2 plan, 3 state]");
+  opt.add(use_all_renderers, "a", "all_renderers","Instantiate all renderers");
   opt.parse();
   std::cout << "config_file: " << config_file << "\n";
   std::cout << "network_debug: " << (int) network_debug << "\n";
@@ -624,7 +626,9 @@ int main(int argc, char *argv[])
 
   add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
   // Please don't commit this renderer enabled as it is very heavyweight:
-  // multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+  if (use_all_renderers) {
+    multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+  }
 
   bdi_add_renderer_to_viewer(viewer, 0, lcm);
 
