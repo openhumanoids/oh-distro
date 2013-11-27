@@ -44,7 +44,7 @@ drill.guard_pos = [    0.15
    -0.2602
     0.0306];
   drill.drill_axis = [1;0;0];
-  th = 60;
+  th = 60+180;
   drill.drill_axis = [cosd(th);0;sind(th)];
   drill.guard_pos = [0;-.25;0] + .15*drill.drill_axis;
   

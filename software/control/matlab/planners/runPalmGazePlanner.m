@@ -1,6 +1,13 @@
 %%
-r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
-atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
+display('Constructing atlas objects');
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+rbmoptions.floating = true;
+rbmoptions.visual = false;
+
+r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),rbmoptions);
+atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),rbmoptions);
 %%
 lcm_mon = palmGazeLCMMonitor(atlas);
 
@@ -12,7 +19,7 @@ planner = palmGazePlanner(r,atlas, doVisualization, doPublish, allowPelvisHeight
 
 speed = .05;
 
-
+display('Ready to receive requests');
 while(true)
   q0 = lcm_mon.getStateEstimate();
 
