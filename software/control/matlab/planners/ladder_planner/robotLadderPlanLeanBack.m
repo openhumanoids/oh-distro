@@ -283,7 +283,6 @@ ladder_opts.comtraj = PPTrajectory(foh(support_times(1:end-1),com_data));
 ladder_opts.use_com_constraint = true;
 ladder_opts.use_final_com_constraint = true;
 ladder_opts.com_tol = 0.01;
-ladder_opts.com_tol = 0.01;
 ladder_opts.use_swing_foot_euler_constraint = true;
 ladder_opts.hand_threshold = sin(5*pi/180);
 ladder_opts.compute_intro = true;
@@ -295,7 +294,10 @@ ladder_opts.smoothing_method = 'moving';
 % ladder_opts.use_pelvis_gaze_constraint = false;
 % ladder_opts.use_torso_constraint = false;
 % ladder_opts.use_incr_com_constraint = true;
-[q_data, t_data, ee_info] = ladderIK(r,unique([ts,0:dt:tf],'sorted'),q0,qstar,ee_info,ladder_opts,ikoptions);
+% [q_data, t_data, ee_info] = ladderIK(r,unique([ts,0:dt:tf],'sorted'),q0,qstar,ee_info,ladder_opts,ikoptions);
+[q_data, t_data, ee_info] = ladderIK(r,unique([0:dt:tf],'sorted'),q0,qstar,ee_info,ladder_opts,ikoptions);
+[t_data,t_idx] = unique(t_data,'sorted');
+q_data = q_data(:,t_idx);
 x_data = [q_data;zeros(size(q_data))];
 % t_data = t;
 
@@ -660,7 +662,7 @@ lcmgl.switchBuffers();
 %       disp(infeasible);keyboard
 %       n_err = n_err+1; 
 %       if first_err
-%         err_segments(end+1,1) = i/nt;
+%         err_segments(end+1,1) = i/nt;hand_cone_threshold
 %         first_err = false;
 %       else
 %         err_segments(end,2) = i/nt;

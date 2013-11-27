@@ -539,7 +539,10 @@ if ladder_opts.use_final_com_constraint
   foot2_pts = r.getBodyContacts(ee_info.feet(2).idx);
   com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
   constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
-  [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,ikoptions);
+  pelvis_constraint_f = WorldPositionInFrameConstraint(r,pelvis, ...
+    [0;0;0], o_T_pelvis, [NaN;NaN;0.3], ...
+    [NaN;NaN;NaN]);
+  [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},pelvis_constraint_f,ikoptions);
   if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); keyboard; end;
   q_end_nom = PPTrajectory(foh([t_end(1),t_end(end)],[q(:,end),qf]));
   end_posture_constraint = PostureConstraint(r,t_end_coarse(end)*[1,1]);

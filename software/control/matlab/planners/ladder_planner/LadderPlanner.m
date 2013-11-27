@@ -110,7 +110,7 @@ function LadderPlanner(filename)
           l_hand_axis = [1;0;0];
           ladder_opts.hand_cone_threshold = sin(10*pi/180);
           ladder_opts.shrink_factor = 1;
-          ladder_opts.final_shrink_factor = 0.1;
+          ladder_opts.final_shrink_factor = 1.2;
         elseif(l_hand_mode == 1)
           l_hand_str = 'sandia hand';
           l_hand_offset = [0.025;0.25;0.04];
@@ -210,10 +210,12 @@ function LadderPlanner(filename)
       
       [x_data,ts] = robotLadderPlanLeanBack(r,r, q0, q0, comtraj, link_constraints,support_times,support,ladder_opts);
       
+      
+      msg =['Ladder Plan (', location, '): MAKE SURE THE BOT IS IN USER MODE']; disp(msg); send_status(status_code,0,0,msg);
       plan_pub.publish(ts,x_data);
       
       waiting = true;
-      msg =['QS Stepping Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
+      msg =['Ladder Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
     end
   end
 end
