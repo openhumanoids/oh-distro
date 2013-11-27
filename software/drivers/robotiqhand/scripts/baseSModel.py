@@ -97,11 +97,11 @@ class robotiqBaseSModel:
         #Decode the lcm string into a message
         command = robotiqhand.command_t.decode(message)
 
-        #Limit the value of each variable
-        command = self.verifyCommand(command)
-
         #Unwrap the ints back into uints
         command = self.int_uint_convert(command)
+
+        #Limit the value of each variable
+        command = self.verifyCommand(command)
 
         #Initiate command as an empty list
         self.message = []

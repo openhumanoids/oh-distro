@@ -65,7 +65,6 @@ def genCommand(char, command):
         if command.rSPA < 0:
             command.rSPA = 0
 
-
     if char == 'i':
         command.rFRA += 25
         if command.rFRA > 255:
@@ -150,6 +149,7 @@ def publisher(side):
     try:
         while True:
             command = genCommand(askForCommand(command), command)
+
             command.utime = (time() * 1000000)
             command = uint_int_convert(command)
 
