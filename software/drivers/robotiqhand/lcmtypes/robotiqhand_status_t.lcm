@@ -1,0 +1,32 @@
+package robotiqhand;
+
+// Recreation of ros robotiq hand "input" or status message
+struct status_t
+{
+    int64_t utime;
+
+    // All of the following types are from robotiq original
+    // driver, needs documentation
+    int8_t gACT;
+    int8_t gMOD;
+    int8_t gGTO;
+    int8_t gIMC;
+    int8_t gSTA;
+    int8_t gDTA;
+    int8_t gDTB;
+    int8_t gDTC;
+    int8_t gDTS;
+    int8_t gFLT;
+    int8_t gPRA;
+    int8_t gPOA;
+    int8_t gCUA;
+    int8_t gPRB;
+    int8_t gPOB;
+    int8_t gCUB;
+    int8_t gPRC;
+    int8_t gPOC;
+    int8_t gCUC;
+    int8_t gPRS;
+    int8_t gPOS;
+    int8_t gCUS;
+}
