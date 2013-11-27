@@ -700,7 +700,7 @@
         <parent link="ltorso" />
         <child link="mtorso" />
         <dynamics damping="0.1" friction="0" />
-        <limit effort="206.843" velocity="12" lower="-0.610691" upper="0.438427" />
+        <limit effort="206.843" velocity="12" lower="-0.610691" upper="0.49" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6107" soft_upper_limit="10.4384" />
     </joint>
     <joint name="back_bkz" type="revolute">
