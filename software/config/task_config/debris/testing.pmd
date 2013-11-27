@@ -7,7 +7,7 @@ group "0.development" {
         exec = "bot-procman-deputy -n extra";
         host = "localhost";
     }
-    cmd "base_deputy" {
+    cmd "deputy" {
         exec = "bot-procman-deputy -n base";
         host = "localhost";
     }
@@ -71,44 +71,52 @@ group "b.2.planners" {
 
 
 group "b.3.models" {
-    cmd "base_model_LH_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
-        host = "base";
-    }
-    cmd "base_model_LN_RN" {
+    cmd "model_LN_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
         host = "base";
     }
-    cmd "base_model_LN_RI" {
+    cmd "model_LN_RI" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RI.urdf";
         host = "base";
     }
-    cmd "base_model_LN_RS" {
+    cmd "model_LN_RS" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
         host = "base";
     }
-    cmd "base_model_LS_RN" {
+    cmd "model_LS_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RN.urdf";
         host = "base";
     }
-    cmd "base_model_LS_RI" {
+    cmd "model_LS_RI" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RI.urdf";
         host = "base";
     }
-    cmd "base_model_LS_RS" {
+    cmd "model_LS_RS" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
         host = "base";
     }
-    cmd "base_model_LI_RN" {
+    cmd "model_LI_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RN.urdf";
         host = "base";
     }
-    cmd "base_model_LI_RI" {
+    cmd "model_LI_RI" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
         host = "base";
     }
-    cmd "base_model_LI_RS" {
+    cmd "model_LI_RS" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
+        host = "base";
+    }
+    cmd "model_LH_RH" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
+        host = "base";
+    }
+    cmd "model_LH_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RR.urdf";
+        host = "extra";
+    }
+    cmd "model_LH_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
         host = "base";
     }
 }
@@ -125,24 +133,91 @@ group "b.4.populate_affs" {
     }
 }
 
+
+
+
+
+script "start_LN_RN" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LN_RN";
+}
+
+script "start_LN_RI" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LN_RI";
+}
+
+
+script "start_LN_RS" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LN_RS";
+}
+
+script "start_LS_RN" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LS_RN";
+}
+
+script "start_LS_RI" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LS_RI";
+}
+
 script "start_LS_RS" {
     start group "0.development";
     start group "a.1.core";
     start group "b.2.planners";
-    start cmd "base_model_LS_RS";
+    start cmd "model_LS_RS";
+}
+
+script "start_LI_RN" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LI_RN";
 }
 
 script "start_LI_RI" {
     start group "0.development";
     start group "a.1.core";
     start group "b.2.planners";
-    start cmd "base_model_LI_RI";
+    start cmd "model_LI_RI";
+}
+
+script "start_LI_RS" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LI_RS";
+}
+
+script "start_LH_RH" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LH_RH";
+}
+
+script "start_LH_RR" {
+    start group "0.development";
+    start group "a.1.core";
+    start group "b.2.planners";
+    start cmd "model_LH_RR";
 }
 
 script "start_LH_RI" {
     start group "0.development";
     start group "a.1.core";
     start group "b.2.planners";
-    start cmd "base_model_LH_RI";
+    start cmd "model_LH_RI";
 }
-

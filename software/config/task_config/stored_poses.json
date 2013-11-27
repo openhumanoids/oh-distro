@@ -61,36 +61,6 @@
       "description": "draw hand back with face down"
     }
   ], 
-  "drill": [
-    {
-      "joints": {
-        "r_arm_elx": -1.4047385454177856, 
-        "r_arm_ely": 2.664982318878174, 
-        "r_arm_usy": 0.03612875938415527, 
-        "r_arm_uwy": 2.428642511367798, 
-        "r_arm_mwx": 0.9866377711296082, 
-        "r_arm_shx": 0.709945559501648
-      }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "hand back pre grasp", 
-      "description": "hand back pre grasp"
-    }, 
-    {
-      "joints": {
-        "r_arm_elx": -1.8516064882278442, 
-        "r_arm_ely": 1.683713674545288, 
-        "r_arm_usy": -0.4306807518005371, 
-        "r_arm_uwy": 2.4879884719848633, 
-        "r_arm_mwx": 0.7594167590141296, 
-        "r_arm_shx": 1.1932454109191895
-      }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "hand in camera", 
-      "description": "hand in camera"
-    }
-  ], 
   "hose": [
     {
       "joints": {
@@ -223,6 +193,97 @@
       "nominal_handedness": "right", 
       "name": "hose walking", 
       "description": "tuck arm in for walking"
+    }
+  ], 
+  "door": [
+    {
+      "joints": {
+        "l_arm_elx": 2.0847930908203125, 
+        "l_arm_ely": 1.5530805587768555, 
+        "l_arm_mwx": -1.1780999898910522, 
+        "l_arm_shx": -1.4747473001480103, 
+        "l_arm_usy": -0.013502662070095539, 
+        "l_arm_uwy": 3.0500290393829346
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "left", 
+      "name": "pregrasp", 
+      "description": "wrist up and pointed down"
+    }, 
+    {
+      "joints": {
+        "l_arm_elx": 1.0244245529174805, 
+        "l_arm_ely": 2.0497074127197266, 
+        "l_arm_mwx": 0.9504258036613464, 
+        "l_arm_shx": -0.05926292762160301, 
+        "l_arm_usy": -0.06112086772918701, 
+        "l_arm_uwy": 0.06773398071527481
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "left", 
+      "name": "pull protect 1", 
+      "description": "first pull position for spare arm"
+    }, 
+    {
+      "joints": {
+        "l_arm_elx": 1.412906527519226, 
+        "l_arm_ely": 2.0497074127197266, 
+        "l_arm_mwx": -0.3010343015193939, 
+        "l_arm_shx": -0.6671001315116882, 
+        "l_arm_usy": -0.9100856781005859, 
+        "l_arm_uwy": 0.0
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "left", 
+      "name": "pull protect 2", 
+      "description": "pull position 2 for spare arm"
+    }, 
+    {
+      "joints": {
+        "l_arm_elx": 0.6242178678512573, 
+        "l_arm_ely": 2.0497074127197266, 
+        "l_arm_mwx": -0.3010343015193939, 
+        "l_arm_shx": -0.4595920443534851, 
+        "l_arm_usy": -1.5154443979263306, 
+        "back_bkz": -0.663224995136261, 
+        "back_bky": 0.08527377992868423, 
+        "back_bkx": 0.03662845864892006, 
+        "l_arm_uwy": 0.0
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "left", 
+      "name": "pull protect 3", 
+      "description": "pull position 4 for spare arm - fully turnedback"
+    }
+  ], 
+  "drill": [
+    {
+      "joints": {
+        "r_arm_elx": -1.4047385454177856, 
+        "r_arm_ely": 2.664982318878174, 
+        "r_arm_usy": 0.03612875938415527, 
+        "r_arm_uwy": 2.428642511367798, 
+        "r_arm_mwx": 0.9866377711296082, 
+        "r_arm_shx": 0.709945559501648
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "right", 
+      "name": "hand back pre grasp", 
+      "description": "hand back pre grasp"
+    }, 
+    {
+      "joints": {
+        "r_arm_elx": -1.8516064882278442, 
+        "r_arm_ely": 1.683713674545288, 
+        "r_arm_usy": -0.4306807518005371, 
+        "r_arm_uwy": 2.4879884719848633, 
+        "r_arm_mwx": 0.7594167590141296, 
+        "r_arm_shx": 1.1932454109191895
+      }, 
+      "allow_mirror": true, 
+      "nominal_handedness": "right", 
+      "name": "hand in camera", 
+      "description": "hand in camera"
     }
   ], 
   "General": [
