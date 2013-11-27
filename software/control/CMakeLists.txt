@@ -62,6 +62,8 @@ file(WRITE ${CMAKE_INSTALL_PREFIX}/config/drc_control_setup.m
     )
 
 enable_testing()
+include(CTest)
+
 #find_program(matlab matlab)
 #if (NOT matlab-NOTFOUND)
 #   add_test(NAME MATLAB_Unit_Tests 
