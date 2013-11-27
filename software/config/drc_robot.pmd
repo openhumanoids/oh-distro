@@ -192,6 +192,10 @@ group "a.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RN.urdf";
         host = "extra";
     }
+    cmd "model_LH_RH" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
+        host = "extra";
+    }
 }
 
 group "b.1.core" {
@@ -308,6 +312,10 @@ group "b.3.models" {
     }
     cmd "base_model_LH_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RN.urdf";
+        host = "base";
+    }
+    cmd "base_model_LH_RH" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
         host = "base";
     }
 }
@@ -518,6 +526,12 @@ script "prep_LH_RR" {
 script "prep_LH_RN" {
     start cmd "model_LH_RN";
     start cmd "base_model_LH_RN";
+    run_script "prep_core";
+}
+
+script "prep_LH_RH" {
+    start cmd "model_LH_RH";
+    start cmd "base_model_LH_RH";
     run_script "prep_core";
 }
 
