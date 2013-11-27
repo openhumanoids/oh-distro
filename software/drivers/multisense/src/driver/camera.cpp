@@ -258,8 +258,10 @@ struct Camera::Publisher {
     msg.n_images = use_left + use_right + use_disp;
     msg.images.resize(msg.n_images);
     msg.image_types.clear();
+    int disp_type = camera_->config_.do_zlib_compress_ ?
+      multisense::images_t::DISPARITY_ZIPPED : multisense::images_t::DISPARITY;
     if (use_left) msg.image_types.push_back((int)multisense::images_t::LEFT);
-    if (use_disp) msg.image_types.push_back(camera_->lcm_disp_type_);
+    if (use_disp) msg.image_types.push_back(disp_type);
     if (use_right) msg.image_types.push_back((int)multisense::images_t::RIGHT);
 
     while (running_) {
