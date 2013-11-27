@@ -1,0 +1,7 @@
+package robotiqhand;
+
+// comment like this
+struct command_t
+{
+    int64_t  utime;
+}

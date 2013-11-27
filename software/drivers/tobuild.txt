@@ -8,3 +8,4 @@ ipwebcam
 ptgrey
 3dmouse
 irobothand
+robotiqhand
