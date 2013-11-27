@@ -26,7 +26,7 @@
 #
 # ----
 # File: pods.cmake
-# Distributed with pods version: 12.01.11
+# Distributed with pods version: 12.09.21
 
 # pods_install_headers(<header1.h> ... DESTINATION <subdir_name>)
 # 
@@ -88,7 +88,7 @@ endfunction(pods_install_libraries)
 function(pods_install_pkg_config_file)
     list(GET ARGV 0 pc_name)
     # TODO error check
-
+    
     set(pc_version 0.0.1)
     set(pc_description ${pc_name})
     set(pc_requires "")
@@ -312,12 +312,12 @@ macro(pods_use_pkg_config_packages target)
     # make the target depend on libraries that are cmake targets
     if (_pods_pkg_ldflags)
         string(REPLACE " " ";" _split_ldflags ${_pods_pkg_ldflags})
-        foreach(lib ${_split_ldflags})
-                string(REGEX REPLACE "^-l" "" libname ${lib})
-                get_target_property(IS_TARGET ${libname} LOCATION)
+        foreach(__ldflag ${_split_ldflags})
+                string(REGEX REPLACE "^-l" "" __depend_target_name ${__ldflag})
+                get_target_property(IS_TARGET ${__depend_target_name} LOCATION)
                 if (NOT IS_TARGET STREQUAL "IS_TARGET-NOTFOUND")
                     #message("---- ${target} depends on  ${libname}")
-                    add_dependencies(${target} ${libname})
+                    add_dependencies(${target} ${__depend_target_name})
                 endif() 
         endforeach()
     endif()
@@ -374,7 +374,9 @@ macro(pods_config_search_paths)
         
         # hack to force cmake always create install and clean targets 
         install(FILES DESTINATION)
-        add_custom_target(tmp)
+        string(RANDOM LENGTH 32 __rand_target__name__)
+        add_custom_target(${__rand_target__name__})
+        unset(__rand_target__name__)
 
         set(__pods_setup true)
     endif(NOT DEFINED __pods_setup)
