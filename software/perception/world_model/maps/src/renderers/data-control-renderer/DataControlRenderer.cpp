@@ -537,11 +537,12 @@ public:
     //addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, handControlBox); 
     yCur = 0;
     mCameraCompression = 0;
-    labels = { "-", "Low", "Med", "High" };
+    labels = { "-", "Low", "Med", "High", "Super" };
     ids =
       { -1, drc::sensor_request_t::QUALITY_LOW,
         drc::sensor_request_t::QUALITY_MED,
-        drc::sensor_request_t::QUALITY_HIGH};
+        drc::sensor_request_t::QUALITY_HIGH,
+        drc::sensor_request_t::QUALITY_SUPER };
     mLeftGraspNameEnum = 0;
     label = Gtk::manage(new Gtk::Label("Camera Quality", Gtk::ALIGN_RIGHT));
     combo = gtkmm::RendererBase::createCombo(mCameraCompression, labels, ids);

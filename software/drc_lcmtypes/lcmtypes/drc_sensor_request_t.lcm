@@ -17,4 +17,5 @@ struct sensor_request_t {
   const int8_t QUALITY_LOW = 1;
   const int8_t QUALITY_MED = 2;
   const int8_t QUALITY_HIGH = 3;
+  const int8_t QUALITY_SUPER = 4;
 }

@@ -23,6 +23,8 @@ struct ChannelData {
 
   void onImage(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
                const bot_core::image_t* iMessage) {
+    std::cout << "ImageReceive: got image on " << iChannel << std::endl;
+
     // uncompress
     cv::Mat raw = cv::imdecode(cv::Mat(iMessage->data), -1);
     if (raw.channels() == 3) cv::cvtColor(raw, raw, CV_RGB2BGR);
@@ -59,7 +61,8 @@ struct ChannelData {
     msg.data = buf;
     msg.nmetadata = 0;
     mLcm->publish(mChannelTransmit, &msg);
-    std::cout << "re-transmitted image on " << mChannelTransmit << std::endl;
+    std::cout << "ImageReceive: re-transmitted image on " <<
+      mChannelTransmit << std::endl;
   }
 };
 
