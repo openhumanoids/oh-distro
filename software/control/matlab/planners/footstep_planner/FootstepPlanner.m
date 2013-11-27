@@ -81,7 +81,11 @@ classdef FootstepPlanner < DRCPlanner
             obj.options.(x{1}) = obj.biped.(x{1});
           end
         end
-         obj.biped.setTerrain(obj.biped.getTerrain().setMapMode(obj.options.map_command));
+        terrain = obj.biped.getTerrain();
+        if ismethod(terrain, 'setMapMode')
+          obj.biped.setTerrain(terrain.setMapMode(obj.options.map_command));
+        end
+%         obj.biped.setTerrain(obj.biped.getTerrain().setMapMode(obj.options.map_command));
         if (changelist.step_seq) 
           [obj.goal_pos, adj] = obj.stepSeq2GoalPos(data.step_seq);
           obj.target_footsteps = adj;

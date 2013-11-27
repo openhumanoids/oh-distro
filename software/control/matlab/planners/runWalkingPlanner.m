@@ -1,9 +1,12 @@
-function runWalkingPlanner(location, lcm_plan, goal_x, goal_y, goal_yaw)
-if nargin < 5; goal_yaw = 0.0; end
-if nargin < 4; goal_y = 0.0; end
-if nargin < 3; goal_x = 2.0; end
-if nargin < 2; lcm_plan = true; end
+function runWalkingPlanner(location, options)
+
 if nargin < 1; location = 'base'; end
+if (nargin < 2); options = struct(); end
+if ~isfield(options, 'goal_yaw'); options.goal_yaw = 0.0; end
+if ~isfield(options, 'goal_y'); options.goal_y = 0.0; end
+if ~isfield(options, 'goal_x'); options.goal_x = 0.0; end
+if ~isfield(options, 'lcm_plan'); options.lcm_plan = true; end
+if ~isfield(options, 'enable_terrainmaps'); options.enable_terrainmaps = true; end
 
 if strcmp(location, 'base')
   status_code = 6;
@@ -20,7 +23,9 @@ options.dt = 0.001;
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = removeCollisionGroupsExcept(r,{'heel','toe','inner'});
-% r = setTerrain(r,DRCTerrainMap(false,struct('name',['Walk Plan (', location, ')'],'status_code',status_code,'fill',true)));
+if options.enable_terrainmaps
+  r = setTerrain(r,DRCTerrainMap(false,struct('name',['Walk Plan (', location, ')'],'status_code',status_code,'fill',true)));
+end
 r = compile(r);
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
@@ -43,10 +48,10 @@ while true
   x0 = xstar; % sho
   qstar = xstar(1:nq);
 
-  pose = [goal_x;goal_y;0;0;0;goal_yaw];
+  pose = [options.goal_x;options.goal_y;0;0;0;options.goal_yaw];
   navgoal = [pose; 20];
 
-  if ~lcm_plan
+  if ~options.lcm_plan
     footsteps = planFootsteps(r, x0, navgoal, struct('plotting', true, 'interactive', false));
   else
     approved_footstep_plan_listener = FootstepPlanListener('APPROVED_FOOTSTEP_PLAN');
