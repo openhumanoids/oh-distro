@@ -90,7 +90,7 @@ void image_io_utils::decodeImageToGray(const  bot_core::image_t* msg, uint8_t* i
       std::copy(local_img_buffer_          , local_img_buffer_+buf_size   , img_buf);
       break;
     default:
-      std::cout << "Unrecognized image format\n";
+      std::cout << "Unrecognized image format gray\n";
       exit(-1);
       break;
   }  
@@ -108,8 +108,12 @@ void image_io_utils::decodeImageToRGB(const  bot_core::image_t* msg, uint8_t* im
                               w, h, w*3);  
       std::copy(local_img_buffer_          , local_img_buffer_+buf_size   , img_buf);
       break;
+    case BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB:
+      img_buf =  (uint8_t*) msg->data.data();
+      //*img_buf = msg->data.data()[0];
+      break;
     default:
-      std::cout << "Unrecognized image format\n";
+      std::cout << "Unrecognized image format rgb\n";
       exit(-1);
       break;
   }    

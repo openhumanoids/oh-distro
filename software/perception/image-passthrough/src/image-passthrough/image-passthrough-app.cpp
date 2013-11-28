@@ -312,6 +312,9 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
       trans_2nd.translation()  << 0,0, 0.033;      
       trans_2nd = transform * trans_2nd;
       simexample->mergePolygonMesh(mesh_out, prim_->getCylinderWithTransform(trans_2nd, 0.031, 0.031, 0.024 ) );
+    }else if (otdf_type == "wye"){ // temporary door handle wye in nov 2013
+      //cout  << aff_uid << " is a box\n";
+      mesh_out = prim_->getCubeWithTransform(transform,0.01, 0.13, 0.005);
     }else if(otdf_type == "wye_mesh"){ 
       //cout  << aff_uid << " is a wye_mesh\n";
       std::string fname = string(getenv( "DRC_BASE" )) + string( "/software/models/mit_gazebo_models/otdf/wye.obj");

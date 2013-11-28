@@ -70,7 +70,7 @@ void Main::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
     
     imgutils_->decodeImageToRGB(&(msg->images[0]),  img_buf_ );
     
-    pass->sendOutputOverlay(msg_time, img_buf_);  
+    pass->sendOutputOverlay(msg_time, img_buf_); 
   }
 }
 

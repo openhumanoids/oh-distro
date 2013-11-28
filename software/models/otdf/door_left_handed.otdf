@@ -271,34 +271,34 @@
         <grasp_type type="10" />
         <state num_joints="0" joint_names="" joint_positions="" />
     </grasp_seed>
-<!--    <grasp_seed>-->
-<!--        <appendage type="HAND" />-->
-<!--        <geometry name="r_lever_0" />-->
-<!--        <relative_pose rpy="0.00860035 -0.0389185 -0.358811" xyz="-0.0525112 0.143507 0.118319" />-->
-<!--        <grasp_type type="6" />-->
-<!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
-<!--    </grasp_seed>-->
-<!--    <grasp_seed>-->
-<!--        <appendage type="HAND" />-->
-<!--        <geometry name="r_lever_0" />-->
-<!--        <relative_pose rpy="-0.087997 -0.227692 -1.3459" xyz="-0.0134156 -0.172021 0.0233132" />-->
-<!--        <grasp_type type="6" />-->
-<!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
-<!--    </grasp_seed>-->
-<!--    <grasp_seed>-->
-<!--        <appendage type="HAND" />-->
-<!--        <geometry name="r_lever_0" />-->
-<!--        <relative_pose rpy="0.00860035 -0.0389185 -1.00782" xyz="0.198893 0.178494 0.556246" />-->
-<!--        <grasp_type type="6" />-->
-<!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
-<!--    </grasp_seed>-->
-<!--    <grasp_seed>-->
-<!--        <appendage type="HAND" />-->
-<!--        <geometry name="r_lever_0" />-->
-<!--        <relative_pose rpy="0.22069 -0.892582 -1.067" xyz="0.191191 0.196659 -0.100309" />-->
-<!--        <grasp_type type="6" />-->
-<!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
-<!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="HAND" />-->
+    <!--        <geometry name="r_lever_0" />-->
+    <!--        <relative_pose rpy="0.00860035 -0.0389185 -0.358811" xyz="-0.0525112 0.143507 0.118319" />-->
+    <!--        <grasp_type type="6" />-->
+    <!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="HAND" />-->
+    <!--        <geometry name="r_lever_0" />-->
+    <!--        <relative_pose rpy="-0.087997 -0.227692 -1.3459" xyz="-0.0134156 -0.172021 0.0233132" />-->
+    <!--        <grasp_type type="6" />-->
+    <!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="HAND" />-->
+    <!--        <geometry name="r_lever_0" />-->
+    <!--        <relative_pose rpy="0.00860035 -0.0389185 -1.00782" xyz="0.198893 0.178494 0.556246" />-->
+    <!--        <grasp_type type="6" />-->
+    <!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="HAND" />-->
+    <!--        <geometry name="r_lever_0" />-->
+    <!--        <relative_pose rpy="0.22069 -0.892582 -1.067" xyz="0.191191 0.196659 -0.100309" />-->
+    <!--        <grasp_type type="6" />-->
+    <!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
+    <!--    </grasp_seed>-->
     <pose_seed name="2013-11-26-12-21::trial_w_hook1" />
     <grasp_seed>
         <appendage type="FOOT" />
@@ -356,5 +356,12 @@
         <relative_pose rpy="-0.000197362 0.00918207 1.61406" xyz="0.750867 -0.766711 -0.934894" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="r_lever_0" />
+        <relative_pose rpy="-3.01808 -0.18247 -1.68088" xyz="-0.0498249 -0.233111 0.0195438" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
     </grasp_seed>
 </object>
