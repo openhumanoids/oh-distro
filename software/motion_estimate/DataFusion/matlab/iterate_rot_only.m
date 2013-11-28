@@ -19,9 +19,9 @@ function [Result, Sys] = iterate_rot_only(Param, Sys, Measurement)
 T = Sys.T;
 
 Sys.Cont.F = zeros(6);
-Sys.Cont.F(1:3,4:6) = q2R(Measurement.INS.pose.lQb)'; % here we need the body to local rotation matrix
+Sys.Cont.F(1:3,4:6) = q2R(Measurement.INS.pose.bQl); % here we need the body to local rotation matrix
 
-Sys.Cont.Q = diag([1E-6*ones(1,6)]);
+Sys.Cont.Q = diag([zeros(1,3), 1E-6*ones(1,3)]);
 Sys.covariances.R = diag(0.003*ones(3,1));
 
 [Sys.Disc.A,Sys.covariances.Qd] = lti_disc(Sys.Cont.F, [], Sys.Cont.Q, T);
