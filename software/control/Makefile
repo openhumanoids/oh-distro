@@ -44,6 +44,7 @@ configure:
 
 	# create the temporary build directory if needed
 	@mkdir -p pod-build
+	@cd pod-build && ln -sF ../CTestCustom.cmake  # actually has to live in the build path
 
 	# run CMake to generate and configure the build scripts
 	@cd pod-build && cmake -DCMAKE_INSTALL_PREFIX=$(BUILD_PREFIX) \
@@ -53,9 +54,7 @@ doxygen :
 	$(DOXYCOMMAND);
 
 test	: all 
-	cmake/add_matlab_unit_tests.pl
-	-cd pod-build && ctest -D ExperimentalStart && ctest -D ExperimentalTest --output-on-failure 
-	-cd pod-build && ctest -D ExperimentalSubmit
+	-@cd pod-build && ctest -D Experimental --output-on-failure --timeout 7200
 
 clean:
 	-if [ -e pod-build/install_manifest.txt ]; then rm -f `cat pod-build/install_manifest.txt`; fi
