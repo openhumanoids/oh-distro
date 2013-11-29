@@ -56,6 +56,9 @@ doxygen :
 test	: all 
 	-@cd pod-build && ctest -D Experimental --output-on-failure --timeout 7200
 
+test_continuous : configure
+	while true; do $(MAKE) Continuous; sleep 300; done
+
 clean:
 	-if [ -e pod-build/install_manifest.txt ]; then rm -f `cat pod-build/install_manifest.txt`; fi
 	-if [ -d pod-build ]; then $(MAKE) -C pod-build clean; rm -rf pod-build; fi
