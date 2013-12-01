@@ -100,19 +100,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // *******************************************************************************
   //  BEGIN: paste output code from calibrate script here 
   // *******************************************************************************
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 1.0739; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 1.0577; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 1.0111; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0668; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0158; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = -1.0946; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 1.0726;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 1.0570;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 1.0191;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0638;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0090;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.8663;
 
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.0470; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0653; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -0.0611; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = 0.9206; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -1.0553; // robot software v1.10
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0338; // robot software v1.10
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.0455;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0659;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -0.0584;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = 0.9270;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -1.0529;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0304;
   // *******************************************************************************
   //  END 
   // *******************************************************************************
