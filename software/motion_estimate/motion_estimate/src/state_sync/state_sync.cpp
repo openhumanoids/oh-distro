@@ -250,6 +250,10 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
               atlas_joints_.position[i] += 2*M_PI/3;
 
+            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.09 && (msg->utime % 2000000 == 0))
+              std::cout << "Joint " << i << " encoder might need to be calibrated.\n"; 
+
+
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
 
             // copy pot positions back into _out so we have them in the lcm log
