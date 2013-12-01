@@ -1,68 +1,137 @@
 {
-  "debris": [
+  "General": [
     {
-      "joints": {
-        "r_arm_elx": -0.0359195768833, 
-        "r_arm_ely": 1.35790967941, 
-        "r_arm_usy": 0.767885386944, 
-        "back_bkz": -0.663225, 
-        "r_arm_uwy": 0.0597184896469, 
-        "r_arm_mwx": 0.734279990196, 
-        "r_arm_shx": 0.168820291758
-      }, 
       "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "retract", 
-      "description": "turn back and retract hand"
+      "description": "handdown", 
+      "joints": {
+        "r_arm_elx": -0.4582, 
+        "r_arm_ely": 1.8040870559, 
+        "r_arm_mwx": 0.051782415, 
+        "r_arm_shx": 1.297657576, 
+        "r_arm_usy": 0.239791974, 
+        "r_arm_uwy": 0.009811
+      }, 
+      "name": "handdown", 
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": false, 
+      "description": "zero the back joint", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0
+      }, 
+      "name": "zero back", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "hand up and finger away", 
+      "joints": {
+        "r_arm_elx": -2.35619, 
+        "r_arm_ely": 1.89674083233, 
+        "r_arm_mwx": 0.0874569192529, 
+        "r_arm_shx": 1.0104280348, 
+        "r_arm_usy": 0.785398, 
+        "r_arm_uwy": 1.336707222462
+      }, 
+      "name": "shooter", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "hand up and finger away, back straight", 
+      "joints": {
+        "back_bkx": 0, 
+        "back_bky": 0, 
+        "back_bkz": 0, 
+        "r_arm_elx": -2.35619, 
+        "r_arm_ely": 1.89674083233, 
+        "r_arm_mwx": 0.0874569192529, 
+        "r_arm_shx": 1.0104280348, 
+        "r_arm_usy": 0.785398, 
+        "r_arm_uwy": 1.336707222462
+      }, 
+      "name": "shooterback", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "turn the back z joint", 
+      "joints": {
+        "back_bkz": -0.663225
+      }, 
+      "name": "turn back", 
+      "nominal_handedness": "right"
+    }
+  ], 
+  "debris": [
+    {
+      "allow_mirror": true, 
+      "description": "turn back and retract hand", 
+      "joints": {
+        "back_bkz": -0.663225, 
+        "r_arm_elx": -0.0359195768833, 
+        "r_arm_ely": 1.35790967941, 
+        "r_arm_mwx": 0.734279990196, 
+        "r_arm_shx": 0.168820291758, 
+        "r_arm_usy": 0.767885386944, 
+        "r_arm_uwy": 0.0597184896469
+      }, 
+      "name": "retract", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "hand pointing down from in front", 
       "joints": {
         "r_arm_elx": -1.61829870194, 
         "r_arm_ely": 2.56434223056, 
-        "r_arm_usy": -0.773799479008, 
-        "r_arm_uwy": 0.727126836777, 
         "r_arm_mwx": -1.10402787743, 
-        "r_arm_shx": -0.796537280083
+        "r_arm_shx": -0.796537280083, 
+        "r_arm_usy": -0.773799479008, 
+        "r_arm_uwy": 0.727126836777
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "crane", 
-      "description": "hand pointing down from in front"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "lean back away and pull arm back", 
       "joints": {
+        "back_bkx": 0.11807117, 
+        "back_bkz": 0, 
         "r_arm_elx": -2.10062, 
         "r_arm_ely": 2.4081, 
-        "r_arm_usy": 0.785398, 
-        "back_bkz": 0, 
-        "back_bkx": 0.11807117, 
-        "r_arm_uwy": 2.97983, 
         "r_arm_mwx": -1.11795, 
-        "r_arm_shx": 0.951634
+        "r_arm_shx": 0.951634, 
+        "r_arm_usy": 0.785398, 
+        "r_arm_uwy": 2.97983
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "minipoolque", 
-      "description": "lean back away and pull arm back"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "draw hand back with face down", 
       "joints": {
+        "back_bkz": -0.6583873, 
         "r_arm_elx": -0.493037, 
         "r_arm_ely": 3.08459508499, 
-        "r_arm_usy": 0.785398, 
-        "back_bkz": -0.6583873, 
-        "r_arm_uwy": 2.7694771, 
         "r_arm_mwx": 1.1543736, 
-        "r_arm_shx": 0.27625912
+        "r_arm_shx": 0.27625912, 
+        "r_arm_usy": 0.785398, 
+        "r_arm_uwy": 2.7694771
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "poolqueue", 
-      "description": "draw hand back with face down"
+      "nominal_handedness": "right"
     }
   ], 
   "door": [
     {
+      "allow_mirror": true, 
+      "description": "wrist up and pointed down", 
       "joints": {
         "l_arm_elx": 2.0847930908203125, 
         "l_arm_ely": 1.5530805587768555, 
@@ -71,12 +140,12 @@
         "l_arm_usy": -0.013502662070095539, 
         "l_arm_uwy": 3.0500290393829346
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "left", 
       "name": "pregrasp", 
-      "description": "wrist up and pointed down"
+      "nominal_handedness": "left"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "first pull position for spare arm", 
       "joints": {
         "l_arm_elx": 1.0244245529174805, 
         "l_arm_ely": 2.0497074127197266, 
@@ -85,12 +154,12 @@
         "l_arm_usy": -0.06112086772918701, 
         "l_arm_uwy": 0.06773398071527481
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "left", 
       "name": "pull protect 1", 
-      "description": "first pull position for spare arm"
+      "nominal_handedness": "left"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "pull position 2 for spare arm", 
       "joints": {
         "l_arm_elx": 1.412906527519226, 
         "l_arm_ely": 2.0497074127197266, 
@@ -99,272 +168,217 @@
         "l_arm_usy": -0.9100856781005859, 
         "l_arm_uwy": 0.0
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "left", 
       "name": "pull protect 2", 
-      "description": "pull position 2 for spare arm"
+      "nominal_handedness": "left"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "pull position 4 for spare arm - fully turnedback", 
       "joints": {
+        "back_bkx": 0.03662845864892006, 
+        "back_bky": 0.08527377992868423, 
+        "back_bkz": -0.663224995136261, 
         "l_arm_elx": 0.6242178678512573, 
         "l_arm_ely": 2.0497074127197266, 
         "l_arm_mwx": -0.3010343015193939, 
         "l_arm_shx": -0.4595920443534851, 
         "l_arm_usy": -1.5154443979263306, 
-        "back_bkz": -0.663224995136261, 
-        "back_bky": 0.08527377992868423, 
-        "back_bkx": 0.03662845864892006, 
         "l_arm_uwy": 0.0
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "left", 
       "name": "pull protect 3", 
-      "description": "pull position 4 for spare arm - fully turnedback"
+      "nominal_handedness": "left"
     }
   ], 
   "drill": [
     {
+      "allow_mirror": true, 
+      "description": "hand back pre grasp", 
       "joints": {
         "r_arm_elx": -1.4047385454177856, 
         "r_arm_ely": 2.664982318878174, 
-        "r_arm_usy": 0.03612875938415527, 
-        "r_arm_uwy": 2.428642511367798, 
         "r_arm_mwx": 0.9866377711296082, 
-        "r_arm_shx": 0.709945559501648
+        "r_arm_shx": 0.709945559501648, 
+        "r_arm_usy": 0.03612875938415527, 
+        "r_arm_uwy": 2.428642511367798
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hand back pre grasp", 
-      "description": "hand back pre grasp"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "hand in camera", 
       "joints": {
         "r_arm_elx": -1.8516064882278442, 
         "r_arm_ely": 1.683713674545288, 
-        "r_arm_usy": -0.4306807518005371, 
-        "r_arm_uwy": 2.4879884719848633, 
         "r_arm_mwx": 0.7594167590141296, 
-        "r_arm_shx": 1.1932454109191895
+        "r_arm_shx": 1.1932454109191895, 
+        "r_arm_usy": -0.4306807518005371, 
+        "r_arm_uwy": 2.4879884719848633
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hand in camera", 
-      "description": "hand in camera"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "hand pre-grasp high", 
       "joints": {
         "r_arm_elx": -2.3703794479370117, 
         "r_arm_ely": 1.2602708339691162, 
-        "r_arm_usy": 0.7671663761138916, 
-        "r_arm_uwy": 1.325326919555664, 
         "r_arm_mwx": 0.0724896788597107, 
-        "r_arm_shx": -0.4345959424972534
+        "r_arm_shx": -0.4345959424972534, 
+        "r_arm_usy": 0.7671663761138916, 
+        "r_arm_uwy": 1.325326919555664
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hand pre-grasp high", 
-      "description": "hand pre-grasp high"
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - button away", 
+      "joints": {
+        "r_arm_elx": -1.5126925706863403, 
+        "r_arm_ely": 1.6788561344146729, 
+        "r_arm_mwx": 1.1842422485351562, 
+        "r_arm_shx": -0.05292236804962158, 
+        "r_arm_usy": -0.847827672958374, 
+        "r_arm_uwy": 2.814438819885254
+      }, 
+      "name": "drill in camera - button away", 
+      "nominal_handedness": "right"
     }
   ], 
   "hose": [
     {
+      "allow_mirror": true, 
+      "description": "close to robot, hand upside down", 
       "joints": {
         "r_arm_elx": -2.1563617329, 
         "r_arm_ely": 2.2, 
-        "r_arm_usy": -0.943417046462, 
-        "r_arm_uwy": 2.93858361244, 
         "r_arm_mwx": 0.100071714551, 
-        "r_arm_shx": 0.0580735206604
+        "r_arm_shx": 0.0580735206604, 
+        "r_arm_usy": -0.943417046462, 
+        "r_arm_uwy": 2.93858361244
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "cradle", 
-      "description": "close to robot, hand upside down"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "hand just about cradle. thumb in", 
       "joints": {
         "r_arm_elx": -1.03245399544, 
         "r_arm_ely": 1.79775392296, 
-        "r_arm_usy": -1.228967243, 
-        "r_arm_uwy": 0.0, 
         "r_arm_mwx": -1.17321766434, 
-        "r_arm_shx": 0.101622587872
+        "r_arm_shx": 0.101622587872, 
+        "r_arm_usy": -1.228967243, 
+        "r_arm_uwy": 0.0
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hang", 
-      "description": "hand just about cradle. thumb in"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "above, further away", 
       "joints": {
         "r_arm_elx": -0.281868335103, 
         "r_arm_ely": 1.79775392296, 
-        "r_arm_usy": -1.0226471182, 
-        "r_arm_uwy": 0.0, 
         "r_arm_mwx": -1.17321766434, 
-        "r_arm_shx": 0.351412541103
+        "r_arm_shx": 0.351412541103, 
+        "r_arm_usy": -1.0226471182, 
+        "r_arm_uwy": 0.0
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "farhang", 
-      "description": "above, further away"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "lower config below the current", 
       "joints": {
         "r_arm_elx": -1.66505864662, 
         "r_arm_ely": 2.12239654256, 
-        "r_arm_usy": -0.596253812313, 
-        "r_arm_uwy": 3.14159, 
         "r_arm_mwx": 0.423257291317, 
-        "r_arm_shx": 0.664812326431
+        "r_arm_shx": 0.664812326431, 
+        "r_arm_usy": -0.596253812313, 
+        "r_arm_uwy": 3.14159
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "pulldown", 
-      "description": "lower config below the current"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "config mate", 
       "joints": {
         "r_arm_elx": -0.899628996849, 
         "r_arm_ely": 3.14159, 
-        "r_arm_usy": -0.739547431469, 
-        "r_arm_uwy": 0.199334427714, 
         "r_arm_mwx": -0.848963201046, 
-        "r_arm_shx": -0.0953866541386
+        "r_arm_shx": -0.0953866541386, 
+        "r_arm_usy": -0.739547431469, 
+        "r_arm_uwy": 0.199334427714
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hosemate config", 
-      "description": "config mate"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "sucker punch", 
       "joints": {
+        "back_bkx": 0.100242577493, 
+        "back_bky": -0.0315173082054, 
+        "back_bkz": 0.322634994984, 
         "r_arm_elx": -1.70546746254, 
         "r_arm_ely": 1.28341770172, 
-        "r_arm_usy": 0.487143397331, 
-        "back_bkz": 0.322634994984, 
-        "back_bky": -0.0315173082054, 
-        "back_bkx": 0.100242577493, 
-        "r_arm_uwy": 0.0, 
         "r_arm_mwx": -0.111346885562, 
-        "r_arm_shx": 1.54854994373
+        "r_arm_shx": 1.54854994373, 
+        "r_arm_usy": 0.487143397331, 
+        "r_arm_uwy": 0.0
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hosemate sucker punch", 
-      "description": "sucker punch"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "sucker punch v2", 
       "joints": {
+        "back_bkx": 0.107062466443, 
+        "back_bky": -0.0196658596396, 
+        "back_bkz": -0.33225, 
         "r_arm_elx": -1.05796146393, 
         "r_arm_ely": 1.0310549736, 
-        "r_arm_usy": -0.830571591854, 
-        "back_bkz": -0.33225, 
-        "back_bky": -0.0196658596396, 
-        "back_bkx": 0.107062466443, 
-        "r_arm_uwy": 0.01, 
         "r_arm_mwx": 0.173738107085, 
-        "r_arm_shx": 1.24221315309
+        "r_arm_shx": 1.24221315309, 
+        "r_arm_usy": -0.830571591854, 
+        "r_arm_uwy": 0.01
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hosemate sucker punch v2", 
-      "description": "sucker punch v2"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "raise arm up after pulldown", 
       "joints": {
         "r_arm_elx": -1.74607777596, 
         "r_arm_ely": 0.65927785635, 
-        "r_arm_usy": -0.590336024761, 
-        "r_arm_uwy": 1.1200705735, 
         "r_arm_mwx": 0.224538683891, 
-        "r_arm_shx": 0.808890104294
+        "r_arm_shx": 0.808890104294, 
+        "r_arm_usy": -0.590336024761, 
+        "r_arm_uwy": 1.1200705735
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hose pyscho", 
-      "description": "raise arm up after pulldown"
+      "nominal_handedness": "right"
     }, 
     {
+      "allow_mirror": true, 
+      "description": "tuck arm in for walking", 
       "joints": {
         "r_arm_elx": -2.30619, 
         "r_arm_ely": 1.89305955092, 
-        "r_arm_usy": 0.785398, 
-        "r_arm_uwy": 1.74017934501, 
         "r_arm_mwx": 0.165548540652, 
-        "r_arm_shx": 0.62722764717
+        "r_arm_shx": 0.62722764717, 
+        "r_arm_usy": 0.785398, 
+        "r_arm_uwy": 1.74017934501
       }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
       "name": "hose walking", 
-      "description": "tuck arm in for walking"
-    }
-  ], 
-  "General": [
-    {
-      "joints": {
-        "r_arm_elx": -0.4582, 
-        "r_arm_ely": 1.8040870559, 
-        "r_arm_usy": 0.239791974, 
-        "r_arm_uwy": 0.009811, 
-        "r_arm_mwx": 0.051782415, 
-        "r_arm_shx": 1.297657576
-      }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "handdown", 
-      "description": "handdown"
-    }, 
-    {
-      "joints": {
-        "back_bkz": 0.0, 
-        "back_bky": 0.0, 
-        "back_bkx": 0.0
-      }, 
-      "allow_mirror": false, 
-      "nominal_handedness": "none", 
-      "name": "zero back", 
-      "description": "zero the back joint"
-    }, 
-    {
-      "joints": {
-        "r_arm_elx": -2.35619, 
-        "r_arm_ely": 1.89674083233, 
-        "r_arm_usy": 0.785398, 
-        "r_arm_uwy": 1.336707222462, 
-        "r_arm_mwx": 0.0874569192529, 
-        "r_arm_shx": 1.0104280348
-      }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "shooter", 
-      "description": "hand up and finger away"
-    }, 
-    {
-      "joints": {
-        "r_arm_elx": -2.35619, 
-        "r_arm_ely": 1.89674083233, 
-        "r_arm_usy": 0.785398, 
-        "back_bkz": 0, 
-        "back_bky": 0, 
-        "back_bkx": 0, 
-        "r_arm_uwy": 1.336707222462, 
-        "r_arm_mwx": 0.0874569192529, 
-        "r_arm_shx": 1.0104280348
-      }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "shooterback", 
-      "description": "hand up and finger away, back straight"
-    }, 
-    {
-      "joints": {
-        "back_bkz": -0.663225
-      }, 
-      "allow_mirror": true, 
-      "nominal_handedness": "right", 
-      "name": "turn back", 
-      "description": "turn the back z joint"
+      "nominal_handedness": "right"
     }
   ]
 }
