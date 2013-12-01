@@ -61,12 +61,14 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
       x=varargin{2};
       qtraj = obj.controller_data.data.qtraj;
 
-      plan_adjust = obj.plan_adjust_listener.getMessage();
+      plan_adjust = obj.plan_adjust_listener.getNextMessage(0);
       if ~isempty(plan_adjust)
         if plan_adjust.mode == 1
           obj.controller_data.setField('enable_bdi_manip',true);
+          send_status(3, 0, 0, 'Atlas controller will stream BDI manip parameters.');
         else
           obj.controller_data.setField('enable_bdi_manip',false);
+          send_status(3, 0, 0, 'Atlas controller will NOT stream BDI manip parameters.');
         end
       end
       
