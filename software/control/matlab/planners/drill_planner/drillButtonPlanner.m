@@ -112,10 +112,16 @@ classdef drillButtonPlanner
       % Get world button axis
       kinsol = obj.r.doKinematics(q0);
       button_state = obj.r.forwardKin(kinsol, obj.button_hand_body, obj.button_pt_on_hand, 2);
-      button_axis_world = -quat2rotmat(button_state(4:7))*obj.button_axis_on_hand % flip sign so axis points AT the button
+      button_axis_world = -quat2rotmat(button_state(4:7))*obj.button_axis_on_hand; % flip sign so axis points AT the button
       button_pos = button_state(1:3);
       
-      finger_target = button_pos - button_axis_world*.1;
+      offset = [0;.1;0];
+      head_pos = obj.r.forwardKin(kinsol,30,zeros(3,1),2);
+      quat_head = head_pos(4:7);
+      R_head = quat2rotmat(quat_head);
+      finger_target = button_pos + R_head*offset;
+      
+%       finger_target = button_pos - button_axis_world*.1;
       
       % create drill direction constraint
       finger_dir_constraint = WorldGazeDirConstraint(obj.r,obj.finger_hand_body,obj.finger_axis_on_hand,...
@@ -183,16 +189,20 @@ classdef drillButtonPlanner
       kinsol = obj.r.doKinematics(q0);
       button_state = obj.r.forwardKin(kinsol, obj.button_hand_body, obj.button_pt_on_hand, 2);
       button_axis_world = -quat2rotmat(button_state(4:7))*obj.button_axis_on_hand; % flip sign so axis points AT the button
-      drill_axis_world = -quat2rotmat(button_state(4:7))*obj.drill_axis_on_hand; % flip sign so axis points AT the button
+%       drill_axis_world = -quat2rotmat(button_state(4:7))*obj.drill_axis_on_hand; % flip sign so axis points AT the button
       button_pos = button_state(1:3);
       
       
       
       % in the offset axis, button_axis is X, drill_axis is Z
-      offset_y = cross(drill_axis_world, button_axis_world);
+%       offset_y = cross(drill_axis_world, button_axis_world);
       
-      finger_target = button_pos + offset(1)*button_axis_world + offset(2)*offset_y + offset(3)*drill_axis_world;
+%       finger_target = button_pos + offset(1)*button_axis_world + offset(2)*offset_y + offset(3)*drill_axis_world;
       
+      head_pos = obj.r.forwardKin(kinsol,30,zeros(3,1),2);
+      quat_head = head_pos(4:7);
+      R_head = quat2rotmat(quat_head);
+      finger_target = button_pos + R_head*offset;
       
       finger_pt_init = obj.r.forwardKin(kinsol, obj.finger_hand_body, obj.finger_pt_on_hand);
       

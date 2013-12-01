@@ -252,7 +252,7 @@ while(true)
         drill_target = nearest_point;
       end
       
-      [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 5);
+      [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 10);
     case drc.drill_control_t.RQ_DRILL_TARGET_PLAN
       if sizecheck(ctrl_data, [3 1])
         drill_target = ctrl_data(1:3);
@@ -291,7 +291,8 @@ while(true)
       end
     case drc.drill_control_t.RQ_BUTTON_PREPOSE_PLAN
       q0 = lcm_mon.getStateEstimate();
-      last_button_offset = [-.1;0;0];
+%       last_button_offset = [-.1;0;0];
+      last_button_offset = [0;.1;0];
       [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPrePokePlan(q0, 5);
     case drc.drill_control_t.RQ_BUTTON_DELTA_PLAN
       if sizecheck(ctrl_data, [3 1])
