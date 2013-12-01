@@ -59,7 +59,7 @@ group "a.0.hand_drivers" {
         host = "robot";
     }
     cmd "irobot-right" {
-        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=r hand_id:=44";
+        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=r hand_id:=41";
         host = "robot";
     }
     cmd "irobot-left" {
@@ -99,6 +99,10 @@ group "a.1.core" {
     }
     cmd "maps-server" {
         exec = "maps-server";
+        host = "extra";
+    }
+    cmd "maps-registrar" {
+        exec = "maps-registrar";
         host = "extra";
     }
     cmd "lidar-passthrough" {
@@ -205,6 +209,10 @@ group "b.1.core" {
     }
     cmd "aff_server" {
         exec = "affordance_server -r base";
+        host = "base";
+    }
+    cmd "maps-affordance-updater" {
+        exec = "maps-affordance-updater";
         host = "base";
     }
     cmd "j2f" {
