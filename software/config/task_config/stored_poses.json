@@ -192,7 +192,7 @@
   "drill": [
     {
       "allow_mirror": true, 
-      "description": "hand back pre grasp", 
+      "description": "pre-grasp low", 
       "joints": {
         "r_arm_elx": -1.4047385454177856, 
         "r_arm_ely": 2.664982318878174, 
@@ -201,12 +201,12 @@
         "r_arm_usy": 0.03612875938415527, 
         "r_arm_uwy": 2.428642511367798
       }, 
-      "name": "hand back pre grasp", 
+      "name": "pre-grasp low", 
       "nominal_handedness": "right"
     }, 
     {
       "allow_mirror": true, 
-      "description": "hand in camera", 
+      "description": "drill in camera - button left", 
       "joints": {
         "r_arm_elx": -1.8516064882278442, 
         "r_arm_ely": 1.683713674545288, 
@@ -215,12 +215,12 @@
         "r_arm_usy": -0.4306807518005371, 
         "r_arm_uwy": 2.4879884719848633
       }, 
-      "name": "hand in camera", 
+      "name": "drill in camera - button left", 
       "nominal_handedness": "right"
     }, 
     {
       "allow_mirror": true, 
-      "description": "hand pre-grasp high", 
+      "description": "pre-grasp high", 
       "joints": {
         "r_arm_elx": -2.3703794479370117, 
         "r_arm_ely": 1.2602708339691162, 
@@ -229,7 +229,7 @@
         "r_arm_usy": 0.7671663761138916, 
         "r_arm_uwy": 1.325326919555664
       }, 
-      "name": "hand pre-grasp high", 
+      "name": "pre-grasp high", 
       "nominal_handedness": "right"
     }, 
     {
@@ -244,6 +244,20 @@
         "r_arm_uwy": 2.814438819885254
       }, 
       "name": "drill in camera - button away", 
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - button right", 
+      "joints": {
+        "r_arm_elx": -2.373188018798828, 
+        "r_arm_ely": 2.2527987957000732, 
+        "r_arm_mwx": -0.877946138381958, 
+        "r_arm_shx": -1.029042363166809, 
+        "r_arm_usy": -1.1007963418960571, 
+        "r_arm_uwy": 2.9896888732910156
+      }, 
+      "name": "drill in camera - button right", 
       "nominal_handedness": "right"
     }
   ], 
