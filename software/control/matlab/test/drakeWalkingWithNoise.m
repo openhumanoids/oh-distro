@@ -7,6 +7,11 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 plot_comtraj = false;
 navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
 
+% silence some warnings
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+
 % construct robot model---one for simulation, one for control (to test
 % model discrepencies)
 options.floating = true;

@@ -179,7 +179,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
 
       
       iktraj_options = iktraj_options.setMajorIterationsLimit(1000);
-      nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+      nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
       qstar = nomdata.xstar(1:obj.r.getNumDOF());
       iktraj_tbreaks = s_breaks;
       iktraj_qseed_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 repmat(qstar,1,NBreaks-1)]));
@@ -330,7 +330,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       ikoptions = ikoptions.setDebug(true);
 
       qseed = q0;
-      nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+      nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
       qnom = nomdata.xstar(1:obj.r.getNumDOF());
       [q,snopt_info,infeasible_constraint] = inverseKin(obj.r,...
         qseed,qnom,...

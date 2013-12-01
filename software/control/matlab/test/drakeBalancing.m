@@ -8,6 +8,11 @@ visualize = false;
 if (nargin>0) options.use_mex = use_mex;
 else options.use_mex = true; end
 
+% silence some warnings
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+
 options.floating = true;
 options.dt = 0.002;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
@@ -19,7 +24,7 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 1000*randn();
 xstar(2) = 1000*randn();
 xstar(6) = pi*randn();
-xstar(nq+1) = 0.1;
+%xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
 
 x0 = xstar;

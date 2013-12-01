@@ -645,7 +645,7 @@ while(1)
     if(~isempty(posture_goal))
         disp('Preset Posture goal received .');
         if(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_DWN)
-            d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));%standing hands down
+            d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));%standing hands down
             useIK_state = 1;
         elseif(posture_goal.preset==drc.robot_posture_preset_t.STANDING_HNDS_UP)
             d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_hands_up.mat'));%standing hands up
@@ -669,10 +669,10 @@ while(1)
             d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));%bdi fp
             useIK_state = 0;
         elseif(posture_goal.preset==drc.robot_posture_preset_t.LFTHND_DWN)
-            d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+            d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
             useIK_state = 3; % A hack, indicate using the left arm joint angles of the mat file
         elseif(posture_goal.preset==drc.robot_posture_preset_t.RGTHND_DWN)
-            d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+            d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
             useIK_state = 4; % A hack, indicate using the right arm joint angles of the mat file
         elseif(posture_goal.preset==drc.robot_posture_preset_t.LFTHND_INHEADVIEW)
             d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_larm_inhead_view.mat'));
