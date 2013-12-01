@@ -69,8 +69,9 @@ calib_val = double(calib_val);
 atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
 
 % move to calib pos
-atlasLinearMoveToPos(q_calib,state_frame,ref_frame,act_idx,5);
+atlasLinearMoveToPos(q_calib,state_frame,ref_frame,act_idx,7);
 
+pause(0.1);
 % record encoder values
 [ex,~] = extra_frame.getMessage();
 
@@ -78,22 +79,22 @@ atlasLinearMoveToPos(q_calib,state_frame,ref_frame,act_idx,5);
 atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
 
 % display encoder offsets 
-ex = ex(1:2*28); % just grab state off the robot
-enc_diff = calib_val(bdiInd()) - ex(1:28);
+ex = ex(1:28); % just grab state off the robot
+enc_diff = calib_val(bdiInd()) - ex;
 
 % note: using BDI's order (extra message uses this)
-JOINT_L_ARM_USY   = 16;
-JOINT_L_ARM_SHX   = 17;
-JOINT_L_ARM_ELY   = 18;
-JOINT_L_ARM_ELX   = 19;
-JOINT_L_ARM_UWY   = 20;
-JOINT_L_ARM_MWX   = 21;
-JOINT_R_ARM_USY   = 22;
-JOINT_R_ARM_SHX   = 23;
-JOINT_R_ARM_ELY   = 24;
-JOINT_R_ARM_ELX   = 25;
-JOINT_R_ARM_UWY   = 26;
-JOINT_R_ARM_MWX   = 27;
+JOINT_L_ARM_USY   = 17;
+JOINT_L_ARM_SHX   = 18;
+JOINT_L_ARM_ELY   = 19;
+JOINT_L_ARM_ELX   = 20;
+JOINT_L_ARM_UWY   = 21;
+JOINT_L_ARM_MWX   = 22;
+JOINT_R_ARM_USY   = 23;
+JOINT_R_ARM_SHX   = 24;
+JOINT_R_ARM_ELY   = 25;
+JOINT_R_ARM_ELX   = 26;
+JOINT_R_ARM_UWY   = 27;
+JOINT_R_ARM_MWX   = 28;
 
 fprintf('\nPaste the following code into state_sync.cpp in the area highlighted at the top:\n\n');
 fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = %2.4f;\n',enc_diff(JOINT_R_ARM_USY));
