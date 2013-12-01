@@ -57,6 +57,8 @@ class state_sync{
     bool simulation_mode_;
     bool use_encoder_joint_sensors_;
 
+    long utime_prev_;
+
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg);
     void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg);

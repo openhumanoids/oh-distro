@@ -143,6 +143,8 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
   
   use_encoder_[Atlas::JOINT_NECK_AY] = true;
+
+  utime_prev_ = 0;
 }
 
 
@@ -250,8 +252,10 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
               atlas_joints_.position[i] += 2*M_PI/3;
 
-            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.09 && (msg->utime % 2000000 == 0))
+            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.09 && (msg->utime - utime_prev_ > 2000000)) {
+              utime_prev_ = msg->utime;
               std::cout << "Joint " << i << " encoder might need to be calibrated.\n"; 
+            }
 
 
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
