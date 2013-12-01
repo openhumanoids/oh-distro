@@ -16,14 +16,14 @@ classdef AtlasManipController < DRCController
       end
       
       if ~isfield(options,'controller_type')
-        options.controller_type = 1;
+        options.controller_type = 2;
       end
       
       arm_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'arm'));
       back_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'back'));
   
       integral_gains = zeros(getNumDOF(r),1);
-      if options.controller_type == 1 % use PID control
+      if options.controller_type == 1 || options.controller_type == 2 % use PID control
         integral_gains(arm_ind) = 0.6;
         integral_gains(back_ind) = 0.2;
       end
