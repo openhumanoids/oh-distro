@@ -177,7 +177,7 @@ def saveConfig(config, filename):
     config argument, a dict. 
     '''
     with open(filename, 'w') as outfile:
-        json.dump(config, outfile, indent=2)
+        json.dump(config, outfile, indent=2, sort_keys=True)
 
 
 def storePose(poseType, captureChannel, group, name, description, outFile):
