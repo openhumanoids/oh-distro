@@ -130,7 +130,7 @@ classdef KeyframePlanner < handle
             obj.l_robotiq_camera_origin = [0;0;0];
             obj.r_robotiq_camera_origin = [0;0;0];  
             obj.hand_gaze_tol = pi/18;
-            obj.head_gaze_tol = pi/8;% FOV for multisense is 80x45, so 45/2 should be the max tolerance
+            obj.head_gaze_tol = pi/16;% FOV for multisense is 80x45, so 45/2 should be the max tolerance
             obj.lidar_gaze_tol = pi/2.5;
             obj.h_camera_origin = [0;0;0];
 
