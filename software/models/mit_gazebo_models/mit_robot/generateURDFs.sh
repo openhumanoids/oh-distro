@@ -21,11 +21,12 @@ rosrun xacro xacro.py xacro/atlas_LS_RI.urdf.xacro > model_LS_RI.urdf
 rosrun xacro xacro.py xacro/atlas_LS_RN.urdf.xacro > model_LS_RN.urdf
 rosrun xacro xacro.py xacro/atlas_LS_RS.urdf.xacro > model_LS_RS.urdf
 
-echo "Hook left - 4"
+echo "Hook left - 5"
 rosrun xacro xacro.py xacro/atlas_LH_RI.urdf.xacro > model_LH_RI.urdf
 rosrun xacro xacro.py xacro/atlas_LH_RN.urdf.xacro > model_LH_RN.urdf
 rosrun xacro xacro.py xacro/atlas_LH_RH.urdf.xacro > model_LH_RH.urdf
 rosrun xacro xacro.py xacro/atlas_LH_RR.urdf.xacro > model_LH_RR.urdf
+rosrun xacro xacro.py xacro/atlas_LH_RQ.urdf.xacro > model_LH_RQ.urdf
 
 echo "Pointer left - 0"
 
