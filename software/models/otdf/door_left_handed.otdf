@@ -182,34 +182,6 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="9.72935e-05 0.00928157 2.17774" xyz="0.70745 -0.912581 -0.934894" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-0.000197358 0.00918212 2.18483" xyz="0.99546 -0.715888 -0.934894" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-1.44413e-08 -1.0694e-07 1.3545" xyz="0.639418 -0.889717 -0.934881" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="1.84772e-09 -2.12984e-08 1.35499" xyz="0.295595 -0.82496 -0.934881" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="plane::xy::base_link_0" />
         <relative_pose rpy="-0.000548399 0.000171891 3.13059" xyz="0.121293 -0.698684 -0.934977" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
@@ -249,28 +221,11 @@
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
-    <pose_seed name="2013-11-12-11-05::RHnd_Pull_1" />
-    <plan_seed name="2013-11-15-12-27::reach_before_pelvis_adjustment" />
     <plan_seed name="2013-11-12-15-29::rhnd_reach_to_handle" />
     <plan_seed name="2013-11-15-11-54::low_sideprofile_posture" />
-    <plan_seed name="2013-11-12-18-38::push_door_walkthrough_posture" />
     <plan_seed name="2013-11-12-18-31::pull_door_walkthrough_posture" />
-    <plan_seed name="2013-11-14-13-12::left_hand_jam_plan" />
-    <plan_seed name="2013-11-18-13-42::reach_to_handle2" />
-    <pose_seed name="2013-11-18-14-27::Rhnd_Push_1" />
     <plan_seed name="2013-11-18-14-48::nom_pose" />
     <pose_seed name="2013-11-18-14-48::nom_pose" />
-    <plan_seed name="2013-11-20-14-10::reach_for_push" />
-    <plan_seed name="2013-11-20-15-10::reach_from_pose3" />
-    <pose_seed name="2013-11-20-15-33::rhnd_push_3" />
-    <pose_seed name="2013-11-20-15-38::rhnd_fistpush_2" />
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="door_base_0" />
-        <relative_pose rpy="1.57374 0.149403 0.143861" xyz="0.404827 0.316351 0.212197" />
-        <grasp_type type="10" />
-        <state num_joints="0" joint_names="" joint_positions="" />
-    </grasp_seed>
     <!--    <grasp_seed>-->
     <!--        <appendage type="HAND" />-->
     <!--        <geometry name="r_lever_0" />-->
@@ -299,69 +254,163 @@
     <!--        <grasp_type type="6" />-->
     <!--        <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />-->
     <!--    </grasp_seed>-->
-    <pose_seed name="2013-11-26-12-21::trial_w_hook1" />
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="-0.000278874 -0.00161827 2.12274" xyz="0.891784 -0.836701 -0.934904" />-->
+    <!--        <grasp_type type="1" />-->
+    <!--        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="-0.000378549 5.27436e-05 1.98149" xyz="0.646715 -0.969235 -0.934904" />-->
+    <!--        <grasp_type type="0" />-->
+    <!--        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <pose_seed name="2013-11-26-17-12::bdi_hook_pull" />-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="8.10629e-10 -6.48016e-09 1.66016" xyz="0.900299 -0.929817 -0.934886" />-->
+    <!--        <grasp_type type="1" />-->
+    <!--        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="-3.75156e-09 8.89059e-09 1.64049" xyz="0.598865 -1.09641 -0.934886" />-->
+    <!--        <grasp_type type="0" />-->
+    <!--        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="9.72936e-05 0.00928166 1.49324" xyz="0.411162 -0.769522 -0.934894" />-->
+    <!--        <grasp_type type="0" />-->
+    <!--        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="-0.000197362 0.00918207 1.61406" xyz="0.750867 -0.766711 -0.934894" />-->
+    <!--        <grasp_type type="1" />-->
+    <!--        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <pose_seed name="2013-12-02-11-41::LHnd-Robotiq-pull" />
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="r_lever_0" />
+        <relative_pose rpy="-3.13624 0.589191 -1.56266" xyz="-0.0317917 -0.219264 -0.0248328" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="r_lever_0" />
+        <relative_pose rpy="-3.13624 0.589191 -1.56266" xyz="-0.0224615 -0.219264 -0.0248328" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <pose_seed name="2013-12-02-12-18::rhnd_hook_push" />
+    <plan_seed name="2013-12-02-12-28::lift_rhnd_hook" />
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="r_lever_0" />
+        <relative_pose rpy="-3.00612 0.605455 -1.52324" xyz="-0.0395283 -0.229463 0.0955704" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="r_lever_0" />
+        <relative_pose rpy="-3.13624 0.589191 -1.56266" xyz="-0.0224615 -0.231597 0.0973345" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="l_lever_0" />
+        <relative_pose rpy="-1.87454 0.200141 0.223659" xyz="0.253802 0.0289616 0.24295" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-0.000278874 -0.00161827 2.12274" xyz="0.891784 -0.836701 -0.934904" />
+        <relative_pose rpy="-0.0191834 -0.00054101 1.7517" xyz="0.558648 -0.902444 -0.926205" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="0.00994315 -0.00276736 1.82001" xyz="0.873329 -0.890356 -0.925992" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <pose_seed name="2013-12-02-14-45::lhnd_hook_pull" />
+    <plan_seed name="2013-12-02-14-46::lift_lhnd_hook" />
+    <pose_seed name="2013-12-02-15-11::low_sideprofile_posture" />
+    <pose_seed name="2013-12-02-15-58::lhnd_extended_posture" />
+    <pose_seed name="2013-12-02-16-02::rhnd_tuck_door_posture" />
+    <pose_seed name="2013-12-02-16-10::lhnd_tuck_door_posture" />
+    <pose_seed name="2013-12-02-16-22::left_half_extended" />
+    <pose_seed name="2013-12-02-16-30::rhnd_half_extended" />
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="1.18139e-09 -2.84246e-08 2.81464" xyz="0.474428 -0.989631 -0.924881" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="FOOT" />
+        <geometry name="plane::xy::base_link_0" />
+        <relative_pose rpy="-2.33665e-09 3.89344e-08 2.81464" xyz="0.557929 -0.743405 -0.924881" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-0.000378549 5.27436e-05 1.98149" xyz="0.646715 -0.969235 -0.934904" />
+        <relative_pose rpy="-0.00912961 -0.0141466 2.67445" xyz="0.673564 -0.973223 -0.924881" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="r_lever_0" />
-        <relative_pose rpy="-2.52861 -0.181425 -1.19843" xyz="0.0667459 -0.14461 -0.00884725" />
-        <grasp_type type="9" />
-        <state num_joints="0" joint_names="" joint_positions="" />
-    </grasp_seed>
-    <pose_seed name="2013-11-26-17-12::bdi_hook_pull" />
-    <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="8.10629e-10 -6.48016e-09 1.66016" xyz="0.900299 -0.929817 -0.934886" />
+        <relative_pose rpy="-0.00912958 -0.0141523 2.67445" xyz="0.790673 -0.741103 -0.922508" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-3.75156e-09 8.89059e-09 1.64049" xyz="0.598865 -1.09641 -0.934886" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="r_lever_0" />
-        <relative_pose rpy="-3.01808 -0.18247 -1.13633" xyz="0.0976401 -0.208304 0.0195438" />
-        <grasp_type type="9" />
-        <state num_joints="0" joint_names="" joint_positions="" />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="9.72936e-05 0.00928166 1.49324" xyz="0.411162 -0.769522 -0.934894" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="plane::xy::base_link_0" />
-        <relative_pose rpy="-0.000197362 0.00918207 1.61406" xyz="0.750867 -0.766711 -0.934894" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="r_lever_0" />
-        <relative_pose rpy="-3.01808 -0.18247 -1.68088" xyz="-0.0498249 -0.233111 0.0195438" />
-        <grasp_type type="9" />
-        <state num_joints="0" joint_names="" joint_positions="" />
-    </grasp_seed>
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="9.72935e-05 0.00928157 2.17774" xyz="0.70745 -0.912581 -0.934894" />-->
+    <!--        <grasp_type type="0" />-->
+    <!--        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="-0.000197358 0.00918212 2.18483" xyz="0.99546 -0.715888 -0.934894" />-->
+    <!--        <grasp_type type="1" />-->
+    <!--        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="1.84772e-09 -2.12984e-08 1.35499" xyz="0.295595 -0.82496 -0.934881" />-->
+    <!--        <grasp_type type="0" />-->
+    <!--        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
+    <!--    <grasp_seed>-->
+    <!--        <appendage type="FOOT" />-->
+    <!--        <geometry name="plane::xy::base_link_0" />-->
+    <!--        <relative_pose rpy="-1.44413e-08 -1.0694e-07 1.3545" xyz="0.639418 -0.889717 -0.934881" />-->
+    <!--        <grasp_type type="1" />-->
+    <!--        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />-->
+    <!--    </grasp_seed>-->
 </object>
