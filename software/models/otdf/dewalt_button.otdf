@@ -83,8 +83,15 @@
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="mesh_0" />
-        <relative_pose rpy="2.60011 0.0121158 1.4559" xyz="0.0211505 0.134766 -0.0213445" />
+        <relative_pose rpy="2.60011 0.0121158 1.4559" xyz="0.0211505 0.134766 0.0114163" />
         <grasp_type type="4" />
         <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="mesh_0" />
+        <relative_pose rpy="1.0917 -0.0409556 -1.71978" xyz="0.00408814 -0.109339 0.0157208" />
+        <grasp_type type="7" />
+        <state num_joints="11" joint_names="right_finger_1_joint_1 right_finger_1_joint_2 right_finger_1_joint_3 right_finger_2_joint_1 right_finger_2_joint_2 right_finger_2_joint_3 right_finger_middle_joint_1 right_finger_middle_joint_2 right_finger_middle_joint_3 right_palm_finger_1_joint right_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />
     </grasp_seed>
 </object>
