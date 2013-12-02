@@ -475,7 +475,7 @@ void set_default_params(RendererWalking* self, int mode) {
     std::cout << "Using preset mode: Ladder\n";
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MAX_NUM_STEPS, 2);  
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 1);  
-    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_SPEED, 0.01);  
+    bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_SPEED, 0.1);  
     bot_gtk_param_widget_set_double(self->drake_pw, PARAM_STEP_HEIGHT, 0.1);  
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.25);  
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.45);  
