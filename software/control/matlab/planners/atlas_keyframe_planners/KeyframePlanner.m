@@ -214,7 +214,7 @@ classdef KeyframePlanner < handle
               display('iRobot right hand');
             end
           elseif(~isempty(strfind(rhand_frame.name,'robotiq')))
-            obj.l_hand_mode = 4;
+            obj.r_hand_mode = 4;
             display('Robotiq right hand');     
           end
             
@@ -256,7 +256,7 @@ classdef KeyframePlanner < handle
               obj.T_hand_palm_r = obj.T_hand_palm_r_hose_irobot;
               obj.rh_gaze_axis = obj.irobot_gaze_axis;
               obj.rh_camera_origin = obj.r_irobot_camera_origin;
-            elseif(obj.l_hand_mode == 4)
+            elseif(obj.r_hand_mode == 4)
               % I need to talk with Sisir about this palm-hand
               % transformation
               obj.T_hand_palm_r = obj.T_hand_palm_r_robotiq; 

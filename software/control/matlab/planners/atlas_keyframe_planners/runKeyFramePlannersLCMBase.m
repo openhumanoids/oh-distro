@@ -60,7 +60,7 @@ while(~getModelFlag)
     elseif(r_hand_mode == 2 || r_hand_mode == 3)
       r_hand_str = 'irobot hand';
     elseif(r_hand_mode == 4)
-      l_hand_str = 'robotiq hand';      
+      r_hand_str = 'robotiq hand';      
     end
     send_status(4,0,0,sprintf('receive model with left %s, right %s\n',l_hand_str,r_hand_str));
   end
