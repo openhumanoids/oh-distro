@@ -168,6 +168,7 @@ classdef AtlasManipController < DRCController
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
       obj = addLCMTransition(obj,'COMMITTED_PLAN_PAUSE',drc.plan_control_t(),name); % stop plan execution
+      obj = addLCMTransition(obj,'ATLAS_COMMAND_UNSAFE',drc.utime_t(),name); % set desired to current 
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
     end
     
@@ -216,15 +217,15 @@ classdef AtlasManipController < DRCController
         catch err
           disp(err);
           disp('error recieving plan, setting desired to current');
-          r = obj.robot;
-          x0 = data.AtlasState; % should have an atlas state
-          q0 = x0(1:getNumDOF(r));
+
+          x0 = data.AtlasState; % should always have an atlas state
+          q0 = x0(1:getNumDOF(obj.robot));
           if obj.robot.floating
             obj.controller_data.setField('qtraj',q0);
           else
             obj.controller_data.setField('qtraj',q0(7:end));
           end
-          obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(r),1)));
+          obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
         end
         
       elseif isfield(data,'COMMITTED_PLAN_PAUSE')
@@ -237,6 +238,18 @@ classdef AtlasManipController < DRCController
         
         obj.controller_data.setField('qtraj',qtraj);
         obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
+
+      elseif isfield(data,'ATLAS_COMMAND_UNSAFE')
+
+        x0 = data.AtlasState; % should always have an atlas state
+        q0 = x0(1:getNumDOF(obj.robot));
+        if obj.robot.floating
+          obj.controller_data.setField('qtraj',q0);
+        else
+          obj.controller_data.setField('qtraj',q0(7:end));
+        end
+        obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
+      
       end
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
