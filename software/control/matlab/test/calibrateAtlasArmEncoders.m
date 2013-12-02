@@ -80,7 +80,7 @@ atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
 
 % display encoder offsets 
 ex = ex(1:28); % just grab state off the robot
-enc_diff = calib_val(bdiInd()) - ex;
+enc_diff = calib_val(r.stateToBDIInd) - ex;
 
 % note: using BDI's order (extra message uses this)
 JOINT_L_ARM_USY   = 17;

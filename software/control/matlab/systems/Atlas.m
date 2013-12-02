@@ -26,6 +26,10 @@ classdef Atlas < Biped
       obj = obj@Biped(urdf,options.dt,options);
 
       obj.floating =options.floating;
+      
+      obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
+      obj.BDIToStateInd = 6*obj.floating+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
+      
       if options.floating
         % could also do fixed point search here
         obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
@@ -206,5 +210,7 @@ classdef Atlas < Biped
     pelvis_min_height = 0.65; % [m] above feet, for hardware
     pelvis_max_height = 0.92; % [m] above feet, for hardware
     floating = true;
+    stateToBDIInd;
+    BDIToStateInd;
   end
 end
