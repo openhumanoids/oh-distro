@@ -254,9 +254,21 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
 
             if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.09 && (msg->utime - utime_prev_ > 2000000)) {
               utime_prev_ = msg->utime;
-              std::cout << "Joint " << i << " encoder might need to be calibrated.\n"; 
-            }
 
+              // display system status message in viewer
+              drc::system_status_t stat_msg;
+              stat_msg.utime = msg->utime;
+              stat_msg.system = stat_msg.MOTION_ESTIMATION;
+              stat_msg.importance = stat_msg.VERY_IMPORTANT;
+              stat_msg.frequency = stat_msg.LOW_FREQUENCY;
+
+              std::stringstream message;
+              message << "State Sync: Joint '" << ATLAS_JOINT_NAMES[i] << "' encoder might need calibration.";
+              stat_msg.value = message.str();
+
+              lcm_->publish(("SYSTEM_STATUS"), &stat_msg); 
+              std::cout << message.str() << std::endl; 
+            }
 
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
 

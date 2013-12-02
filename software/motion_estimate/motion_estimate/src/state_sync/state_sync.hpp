@@ -15,6 +15,7 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 #include "atlas/AtlasControlTypes.h"
+#include "atlas/AtlasJointNames.h"
 
 struct Joints { 
   std::vector<float> position;
