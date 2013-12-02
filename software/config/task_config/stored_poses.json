@@ -245,7 +245,7 @@
       }, 
       "name": "drill in camera - button away", 
       "nominal_handedness": "right"
-    },
+    }, 
     {
       "allow_mirror": true, 
       "description": "drill in camera - button right", 
@@ -258,6 +258,20 @@
         "r_arm_uwy": 2.9896888732910156
       }, 
       "name": "drill in camera - button right", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - button left/away", 
+      "joints": {
+        "r_arm_elx": -1.852769136428833, 
+        "r_arm_ely": 1.683416724205017, 
+        "r_arm_mwx": 0.918527364730835, 
+        "r_arm_shx": 1.1938576698303223, 
+        "r_arm_usy": -0.4306621551513672, 
+        "r_arm_uwy": 3.1420366764068604
+      }, 
+      "name": "drill in camera - button left/away", 
       "nominal_handedness": "right"
     }
   ], 
