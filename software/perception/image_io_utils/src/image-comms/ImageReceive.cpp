@@ -13,6 +13,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <ConciseArgs>
+
 struct ChannelData {
   typedef std::shared_ptr<ChannelData> Ptr;
   std::shared_ptr<lcm::LCM> mLcm;
@@ -21,6 +23,7 @@ struct ChannelData {
   std::string mChannelTransmit;
   int mWidth;
   int mHeight;
+  int mJpegQuality;
 
   std::thread mThread;
   std::mutex mDataMutex;
@@ -45,33 +48,37 @@ struct ChannelData {
     cv::Mat img;
     cv::resize(raw, img, cv::Size(mWidth, mHeight));
 
-    int pixelFormat;
-    switch (img.channels()) {
-    case 1:
-      pixelFormat = bot_core::image_t::PIXEL_FORMAT_GRAY;
-      break;
-    case 3:
-      pixelFormat = bot_core::image_t::PIXEL_FORMAT_RGB;
-      break;
-    default:
-      std::cout << "ImageReceive: invalid image type on channel " <<
-        mChannelReceive << std::endl;
-      return;
-    }
-
-    // copy final data
-    std::vector<uint8_t> buf(img.data, img.data + img.step*img.rows);
-
-    // re-transmit
+    // form output message
     bot_core::image_t msg;
     msg.utime = iImage->utime;
     msg.width = img.cols;
     msg.height = img.rows;
     msg.row_stride = img.step;
-    msg.pixelformat = pixelFormat;
-    msg.size = buf.size();
-    msg.data = buf;
     msg.nmetadata = 0;
+
+    // re-compress if desired
+    if (mJpegQuality < 100) {
+      std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, mJpegQuality };
+      if (!cv::imencode(".jpg", img, msg.data, params)) {
+        std::cout << "error encoding jpeg image" << std::endl;
+      }
+      msg.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+    }
+    else {
+      msg.data.resize(img.step*img.rows);
+      std::copy(img.data, img.data + img.step*img.rows, msg.data.data());
+      switch (img.channels()) {
+      case 1: msg.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY; break;
+      case 3: msg.pixelformat = bot_core::image_t::PIXEL_FORMAT_RGB;  break;
+      default:
+        std::cout << "ImageReceive: invalid image type on channel " <<
+          mChannelReceive << std::endl;
+        return;
+      }
+    }
+    msg.size = msg.data.size();
+
+    // re-transmit
     mLcm->publish(mChannelTransmit, &msg);
     std::cout << "ImageReceive: re-transmitted image on " <<
       mChannelTransmit << std::endl;
@@ -121,11 +128,17 @@ struct ImageReceive {
   typedef std::unordered_map<std::string, ChannelData::Ptr> ChannelGroup;
   ChannelGroup mChannels;
   BotParam* mBotParam;
+  int mJpegQuality;
 
   ImageReceive() {
     mLcmWrapper.reset(new drc::LcmWrapper());
     mLcm = mLcmWrapper->get();
     mBotParam = bot_param_get_global(mLcmWrapper->get()->getUnderlyingLCM(),0);
+    mJpegQuality = 90;
+  }
+
+  void setJpegQuality(const int iQuality) {
+    mJpegQuality = iQuality;
   }
 
   void addChannel(const std::string& iChannel) {
@@ -138,6 +151,7 @@ struct ImageReceive {
     data->mWidth = bot_camtrans_get_width(camTrans);
     data->mHeight = bot_camtrans_get_height(camTrans);
     data->mLcm = mLcm;
+    data->mJpegQuality = mJpegQuality;
     mChannels[data->mChannelReceive] = data;
     data->mThread = std::thread(std::ref(*data));
     mLcm->subscribe(data->mChannelReceive, &ChannelData::onImage, data.get());
@@ -148,9 +162,15 @@ struct ImageReceive {
   }
 };
 
-int main() {
+int main(const int iArgc, const char** iArgv) {
+  int jpegQuality = 90;
+  ConciseArgs opt(iArgc, (char**)iArgv);
+  opt.add(jpegQuality, "j", "jpeg_quality",
+          "jpeg quality (1-100), where 100 is uncompressed");
+  opt.parse();
+  
   ImageReceive obj;
-
+  obj.setJpegQuality(jpegQuality);
   obj.addChannel("CAMERA_LEFT");
   obj.addChannel("CAMERA_RIGHT");
   obj.addChannel("CAMERACHEST_LEFT");
