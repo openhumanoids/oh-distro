@@ -234,6 +234,8 @@ if ladder_opts.use_pelvis_constraint
 end
 
 rpy_tol_max = 30*pi/180;
+foot_retract_max = 0.1;
+foot_retract_vec = foot_retract_max*o_T_pelvis(1:3,1:3)*[-1;0;0];
 for i=1:2
   deriv = fnder(ee_info.feet(i).traj);
   t_moving = ts(any(eval(deriv,ts) > 0,1));
@@ -243,7 +245,9 @@ for i=1:2
     t_move0 = t_moving(1);
     t_movef = t_moving(end);
     ee_info.feet(i).rpy_tol_traj = ...
-      PPTrajectory(foh([0,linspace(t_move0,t_movef,3),tf],repmat([0,0,rpy_tol_max,0,0],3,1)));
+      PPTrajectory(foh([0,linspace(t_move0,t_movef,4),tf],repmat([0,0,rpy_tol_max,0,0,0],3,1)));
+    ee_info.feet(i).foot_retract_traj = ...
+      PPTrajectory(foh([0,linspace(t_move0,t_movef,3),tf],[zeros(3,2),foot_retract_vec(1:3),zeros(3,2)]));
   end
 end
 
@@ -373,11 +377,11 @@ for i=1:nt
         WorldCoMInFrameConstraint(r,T,[NaN;ladder_opts.qs_margin;NaN],[NaN;NaN;NaN]);
 %       constraints = [constraints, {com_halfspace_constraint}];
     end
-    R = o_T_pelvis(1:3,1:3);
-    P = mean(foot_back,2);
-    T = [R,P;zeros(1,3),1];
-    com_halfspace_constraint = ...
-      WorldCoMInFrameConstraint(r,T,[-l_c;NaN;NaN],[NaN;NaN;NaN]);
+%     R = o_T_pelvis(1:3,1:3);
+%     P = mean(foot_back,2);
+%     T = [R,P;zeros(1,3),1];
+%     com_halfspace_constraint = ...
+%       WorldCoMInFrameConstraint(r,T,[-l_c;NaN;NaN],[NaN;NaN;NaN]);
 %     constraints = [constraints, {com_halfspace_constraint}];
 
     % Draw all support points
@@ -437,6 +441,8 @@ for i=1:nt
   for j = 1:2
     pos_eq = ee_info.feet(j).traj.eval(t_data);
     rpy_tol = eval(ee_info.feet(j).rpy_tol_traj,t_data);
+    foot_retract = eval(ee_info.feet(j).foot_retract_traj,t_data);
+    pos_eq(1:2) = pos_eq(1:2) + foot_retract(1:2);
     constraints = [ ...
       constraints, ...
       {WorldPositionConstraint(r,ee_info.feet(j).idx, ...
