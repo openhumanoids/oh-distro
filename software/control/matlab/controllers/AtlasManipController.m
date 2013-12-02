@@ -168,7 +168,7 @@ classdef AtlasManipController < DRCController
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
       obj = addLCMTransition(obj,'COMMITTED_PLAN_PAUSE',drc.plan_control_t(),name); % stop plan execution
-      obj = addLCMTransition(obj,'ATLAS_COMMAND_UNSAFE',drc.utime_t(),name); % set desired to current 
+      obj = addLCMTransition(obj,'ATLAS_COMMAND_UNSAFE',drc.atlas_command_t(),name); % set desired to previous 
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
     end
     
@@ -220,11 +220,7 @@ classdef AtlasManipController < DRCController
 
           x0 = data.AtlasState; % should always have an atlas state
           q0 = x0(1:getNumDOF(obj.robot));
-          if obj.robot.floating
-            obj.controller_data.setField('qtraj',q0);
-          else
-            obj.controller_data.setField('qtraj',q0(7:end));
-          end
+          obj.controller_data.setField('qtraj',q0((1+obj.robot.floating*6):end));
           obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
         end
         
@@ -241,15 +237,25 @@ classdef AtlasManipController < DRCController
 
       elseif isfield(data,'ATLAS_COMMAND_UNSAFE')
 
+        % set desired configuration to be the current state, set difference
+        % between desired and current to integrators
+
         x0 = data.AtlasState; % should always have an atlas state
         q0 = x0(1:getNumDOF(obj.robot));
-        if obj.robot.floating
-          obj.controller_data.setField('qtraj',q0);
-        else
-          obj.controller_data.setField('qtraj',q0(7:end));
-        end
+        obj.controller_data.setField('qtraj',q0((1+obj.robot.floating*6):end));
         obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
-      
+
+        % get current desired pos on robot
+        msg = data.ATLAS_COMMAND_UNSAFE;
+        qdes = q0;
+        qdes((1+obj.robot.floating*6):end) = msg.position(obj.robot.BDIToStateInd-6); % sent back from driver in BDI ordering
+     
+        % set integral terms to be des-cur
+        integ = obj.controller_data.data.integral;
+        torso = (obj.arm_joints | obj.back_joints);
+        integ(torso) = qdes(torso) - q0(torso);
+        obj.controller_data.setField('integral',integ);      
+
       end
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
