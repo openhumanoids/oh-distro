@@ -1353,9 +1353,15 @@
       </contact>
     </sensor>
   </gazebo>
-  <joint name="right_robotiq_hand_joint" type="fixed">
-    <origin rpy="0 -.5236 3.141" xyz="0 -.19016 -0.015"/>
+  <link name="right_base_link"/>
+  <joint name="right_base_link_fix" type="fixed">
     <parent link="r_hand"/>
+    <child link="right_base_link"/>
+    <origin rpy="0 -.5236 3.141" xyz="0 -.19016 -0.015"/>
+  </joint>
+  <joint name="right_robotiq_hand_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="right_base_link"/>
     <child link="right_palm"/>
   </joint>
   <link name="right_finger_1_link_0">
