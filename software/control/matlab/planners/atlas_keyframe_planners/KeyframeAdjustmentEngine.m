@@ -332,7 +332,10 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     r_hand_poseT(1:3) = rhand_int_constraint(1:3);
                     r_hand_poseT(4:7) = rpy2quat(rhand_int_constraint(4:6));
                     %  replace Boundary Constraint In Cache
-                    obj.replaceCachedConstraint(obj.r_hand_body,[1 1],r_hand_poseT(:));
+                    %obj.replaceCachedConstraint(obj.r_hand_body,[1 1],r_hand_poseT(:));
+                    pos_tol = 1e-2; quat_tol = sind(5).^2;
+                    new_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_poseT(:),pos_tol,quat_tol,[1,1]);
+                    obj.plan_cache.rhand_constraint_cell = replaceConstraintCell(obj.plan_cache.rhand_constraint_cell,new_constraint);
                     rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
                     rh_ee_constraint=[];
                 end
@@ -353,10 +356,14 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 
                 if(abs(1-s_int_lh)<1e-3)
                     disp('lh end state is modified')
+                   
                     l_hand_poseT(1:3) = lhand_int_constraint(1:3);
                     l_hand_poseT(4:7) = rpy2quat(lhand_int_constraint(4:6));
                     %  replace Boundary Constraint In Cache
-                    obj.replaceCachedConstraint(obj.l_hand_body,[1 1],l_hand_poseT(:));
+                    %  obj.replaceCachedConstraint(obj.l_hand_body,[1 1],l_hand_poseT(:));
+                    pos_tol = 1e-2; quat_tol = sind(5).^2;
+                    new_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_poseT(:),pos_tol,quat_tol,[1,1]);
+                    obj.plan_cache.lhand_constraint_cell = replaceConstraintCell(obj.plan_cache.lhand_constraint_cell,new_constraint);
                     lhand_int_constraint = [nan;nan;nan;nan;nan;nan];
                     lh_ee_constraint=[];
                 end
@@ -386,7 +393,14 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                             r_foot_poseT(4:7,k) = rpy2quat(rfoot_int_constraint(4:6,k));
                             %obj.rfootT(:,k) = rfoot_int_constraint(:,k); // Must replace Boundary Constraint In Cache
                         end
-                        obj.replaceCachedConstraint(obj.r_foot_body,[1 1],r_foot_poseT);
+                        %obj.replaceCachedConstraint(obj.r_foot_body,[1 1],r_foot_poseT);
+                        
+                        pos_tol = 1e-2; quat_tol = sind(5).^2;
+                        new_constraint = parse2PosQuatConstraint(obj.r,obj.r_foot_body,[0;0;0],r_foot_poseT(:),pos_tol,quat_tol,[1,1]);
+                        obj.plan_cache.rfoot_constraint_cell = replaceConstraintCell(obj.plan_cache.rfoot_constraint_cell,new_constraint);
+                        rfoot_contact_pts = obj.r.getBody(obj.r_foot_body).getContactPoints();
+                        obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.r_foot_body,rfoot_contact_pts);
+                        
                         rfoot_int_constraint = nan(6,num_r_foot_pts);
                         rf_ee_constraint=[];
                     end
@@ -412,7 +426,13 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                             l_foot_poseT(4:7,k) = rpy2quat(lfoot_int_constraint(4:6,k));
                             %obj.lfootT(:,k) = lfoot_int_constraint(:,k); // Must replace Boundary Constraint In Cache
                         end
-                        obj.replaceCachedConstraint(obj.l_foot_body,[1 1],l_foot_poseT);
+                        %obj.replaceCachedConstraint(obj.l_foot_body,[1 1],l_foot_poseT);
+                         pos_tol = 1e-2; quat_tol = sind(5).^2;
+                        new_constraint = parse2PosQuatConstraint(obj.r,obj.l_foot_body,[0;0;0],l_foot_poseT(:),pos_tol,quat_tol,[1,1]);
+                        obj.plan_cache.lfoot_constraint_cell = replaceConstraintCell(obj.plan_cache.lfoot_constraint_cell,new_constraint);
+                        lfoot_contact_pts = obj.r.getBody(obj.l_foot_body).getContactPoints();
+                        obj.plan_cache.qsc = obj.plan_cache.qsc.addContact(obj.l_foot_body,lfoot_contact_pts);
+                        
                         lfoot_int_constraint = nan(6,num_l_foot_pts);
                         lf_ee_constraint=[];
                     end
@@ -447,7 +467,10 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     head_poseT(1:3) = head_int_constraint(1:3);
                     head_poseT(4:7) = rpy2quat(head_int_constraint(4:6));
                     %obj.headT = head_int_constraint; // Must replace Boundary Constraint In Cache
-                    obj.replaceCachedConstraint(obj.head_body,[1 1],head_poseT);
+                    %obj.replaceCachedConstraint(obj.head_body,[1 1],head_poseT);
+                    pos_tol = 1e-2; quat_tol = sind(5).^2;
+                    new_constraint = parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_poseT(:),pos_tol,quat_tol,[1,1]);
+                    obj.plan_cache.head_constraint_cell = replaceConstraintCell(obj.plan_cache.head_constraint_cell,new_constraint);
                     head_int_constraint = [nan;nan;nan;nan;nan;nan];
                     h_ee_constraint=[];
                 end
@@ -519,7 +542,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             if(~isempty(rh_ee_constraint))
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_rh)); % snap to closest break point (avoiding very close double constraints)
                 s_int_rh=obj.plan_cache.s_breaks(ind);
-                rhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose_int,1e-2,sind(5).^2,[s_int_rh,s_int_rh]);
+                pos_tol = 1e-2; quat_tol = sind(10).^2;
+                rhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose_int,pos_tol,quat_tol,[s_int_rh,s_int_rh]);
                 rhand_constraint_cell = obj.plan_cache.rhand_constraint_cell;
                 rhand_constraint_cell = removeBodyConstraintUtil([s_int_rh,s_int_rh],rhand_constraint_cell);
                 rhand_constraint_cell = [rhand_constraint_cell,rhand_intermediate_constraint];
@@ -530,7 +554,8 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             if(~isempty(lh_ee_constraint))
                 [~,ind] = min(abs(obj.plan_cache.s_breaks-s_int_lh));
                 s_int_lh=obj.plan_cache.s_breaks(ind);
-                lhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose_int,1e-2,sind(5).^2,[s_int_lh,s_int_lh]);
+                pos_tol = 1e-2; quat_tol = sind(10).^2;
+                lhand_intermediate_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose_int,pos_tol,quat_tol,[s_int_lh,s_int_lh]);
                 lhand_constraint_cell = obj.plan_cache.lhand_constraint_cell;
                 lhand_constraint_cell = removeBodyConstraintUtil([s_int_lh,s_int_lh],lhand_constraint_cell);
                 lhand_constraint_cell = [lhand_constraint_cell,lhand_intermediate_constraint];
