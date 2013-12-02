@@ -6,6 +6,9 @@ gray = {0.5,0.5,0.5};
 black = {0,0,0};
 nq = r.getNumDOF();
 F_hand_max = 25; %lbs
+r_idx = findJointIndices(r,'r_');
+l_idx = findJointIndices(r,'l_');
+r_flip = [1; -1; 1; -1; 1; -1; -1; 1; 1; 1; -1; -1];
 
 pelvis = r.findLinkInd('pelvis');
 utorso = r.findLinkInd('utorso');
@@ -13,13 +16,16 @@ neck_joint = findJointIndices(r,'neck');
 %ankle_joints = [findJointIndices(r,'r_leg_aky')];
  ankle_joints = [findJointIndices(r,'l_leg_aky'); ...
                  findJointIndices(r,'r_leg_aky')];
-% knee_joints = [findJointIndices(r,'l_leg_kny'); ...
-%                 findJointIndices(r,'r_leg_kny')];
-knee_joints = findJointIndices(r,'l_leg_kny');
+ knee_joints = [findJointIndices(r,'l_leg_kny'); ...
+                 findJointIndices(r,'r_leg_kny')];
+%knee_joints = findJointIndices(r,'l_leg_kny');
 arm_joints = findJointIndices(r,'arm');
 
 if ~isfield(ladder_opts,'use_quasistatic_constraint') 
   ladder_opts.use_quasistatic_constraint =  true;
+end
+if ~isfield(ladder_opts,'use_arm_tension_constraint') 
+  ladder_opts.use_arm_tension_constraint =  false;
 end
 if ~isfield(ladder_opts,'use_com_constraint') 
   ladder_opts.use_com_constraint =          false;
@@ -218,7 +224,7 @@ end
 
 pelvis_xyzrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
 o_T_pelvis = HT(pelvis_xyzrpy(1:3),pelvis_xyzrpy(4),pelvis_xyzrpy(5),pelvis_xyzrpy(6));
-o_T_pelvis(1:3,1:3) = eye(3);
+% o_T_pelvis(1:3,1:3) = eye(3);
 if ladder_opts.use_pelvis_constraint
   basic_constraints = [ ...
     basic_constraints, ...
@@ -260,7 +266,17 @@ for i=1:nt
   foot_supported(1) = ( eval(ee_info.feet(1).support_traj,t_data) && eval(ee_info.feet(1).support_traj,ts(min(i+1,nt))) );
   foot_supported(2) = ( eval(ee_info.feet(2).support_traj,t_data) && eval(ee_info.feet(2).support_traj,ts(min(i+1,nt))) );
   if ladder_opts.use_quasistatic_constraint && any(foot_supported)
-    %qsc = QuasiStaticConstraint(r);
+    qsc = QuasiStaticConstraint(r);
+    for j = 1:2
+      if foot_supported(j)
+        qsc = qsc.addContact(ee_info.feet(j).idx,r.getBodyContacts(ee_info.feet(j).idx));
+      end
+    end
+    qsc = qsc.setShrinkFactor(ladder_opts.shrink_factor);
+    qsc = qsc.setActive(true);
+    constraints = [constraints, {qsc}];
+  end
+  if ladder_opts.use_arm_tension_constraint && any(foot_supported)
     foot_pts_in_world = [];
     hand_pts_in_world = [];
     for j = 1:2
@@ -271,7 +287,6 @@ for i=1:nt
           zeros(1,3),1];
         curr_foot_pts_in_world = T_foot_to_world*[foot_pts;ones(1,size(foot_pts,2))];
         foot_pts_in_world = [foot_pts_in_world, curr_foot_pts_in_world(1:3,:)];
-        %qsc = qsc.addContact(foot,r.getBodyContacts(foot));
       end
       if hand_grasped(j)
         hand_pos = 0.5*(ee_info.hands(j).min_traj.eval(t_data) ...
@@ -356,14 +371,14 @@ for i=1:nt
       T = [R,P;zeros(1,3),1];
       com_halfspace_constraint = ...
         WorldCoMInFrameConstraint(r,T,[NaN;ladder_opts.qs_margin;NaN],[NaN;NaN;NaN]);
-      constraints = [constraints, {com_halfspace_constraint}];
+%       constraints = [constraints, {com_halfspace_constraint}];
     end
     R = o_T_pelvis(1:3,1:3);
     P = mean(foot_back,2);
     T = [R,P;zeros(1,3),1];
     com_halfspace_constraint = ...
       WorldCoMInFrameConstraint(r,T,[-l_c;NaN;NaN],[NaN;NaN;NaN]);
-    constraints = [constraints, {com_halfspace_constraint}];
+%     constraints = [constraints, {com_halfspace_constraint}];
 
     % Draw all support points
     lcmgl.glColor3f(gray{:});
@@ -408,10 +423,6 @@ for i=1:nt
                         -foot_chull_pts_in_world(3,j));
     end
     lcmgl.switchBuffers();
-
-    %qsc = qsc.setShrinkFactor(ladder_opts.shrink_factor);
-    %qsc = qsc.setActive(true);
-    %constraints = [constraints, {qsc}];
   end
   if ladder_opts.use_arm_constraints
     arm_constraint = PostureConstraint(r);
@@ -445,13 +456,14 @@ for i=1:nt
       rpy = quat2rpy(pos_eq(4:7));
       pelvis_T_rail = eye(4);
       pelvis_T_rail(1:3,1:3) = roty(30*pi/180);
-      pelvis_T_rail(1:3,4) = pos_eq(1:3) - o_T_pelvis(1:3,4);
+      pelvis_T_rail(1:3,4) = o_T_pelvis(1:3,1:3)\(pos_eq(1:3) - o_T_pelvis(1:3,4));
       o_T_rail = o_T_pelvis*pelvis_T_rail;
       constraints = [ ...
         constraints, ...
         {WorldPositionInFrameConstraint(r, ee_info.hands(j).link_ndx, ...
           ee_info.hands(j).pt, o_T_rail, [-ladder_opts.hand_pos_tol;-ladder_opts.hand_pos_tol;-ladder_opts.hand_pos_tol], [ladder_opts.hand_pos_tol;ladder_opts.hand_pos_tol;ladder_opts.hand_pos_tol]), ...
-         WorldGazeOrientConstraint(r,ee_info.hands(j).link_ndx,ee_info.hands(j).axis,pos_min(4:7),ladder_opts.hand_cone_threshold,ladder_opts.hand_threshold)}];
+        WorldQuatConstraint(r,ee_info.hands(j).link_ndx,pos_min(4:7),ladder_opts.hand_threshold)}];
+         %WorldGazeOrientConstraint(r,ee_info.hands(j).link_ndx,ee_info.hands(j).axis,pos_min(4:7),ladder_opts.hand_cone_threshold,ladder_opts.hand_threshold)}];
     end
   end
 
@@ -480,7 +492,7 @@ for i=1:nt
       end
     end
     if info > 4
-      disp(infeasible);keyboard
+%       disp(infeasible);keyboard
       n_err = n_err+1; 
       if first_err
         err_segments(end+1,1) = i/nt;
@@ -515,7 +527,11 @@ for i=1:nt
   kinsol = doKinematics(r,q_seed);
   com_prev = r.getCOM(kinsol);
   com_prev(3) = NaN;
-%   q_nom = q(:,i);
+  q_nom = q(:,i);
+  sym_states = (q_nom(l_idx) + r_flip.*q_nom(r_idx))/2;
+  q_nom(l_idx) = sym_states;
+  q_nom(r_idx) = r_flip.*sym_states;
+%   q_nom = (q_nom+qstar)/2;
   %   disp(info);
 end
 fprintf('\n');
@@ -539,10 +555,14 @@ if ladder_opts.use_final_com_constraint
   foot2_pts = r.getBodyContacts(ee_info.feet(2).idx);
   com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
   constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
+%   pelvis_constraint_f = WorldPositionInFrameConstraint(r,pelvis, ...
+%     [0;0;0], o_T_pelvis, [0.3/sqrt(3);-0.01;0.3], ...
+%     [NaN;0.01;NaN]);
   pelvis_constraint_f = WorldPositionInFrameConstraint(r,pelvis, ...
-    [0;0;0], o_T_pelvis, [NaN;NaN;0.3], ...
-    [NaN;NaN;NaN]);
-  [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},pelvis_constraint_f,ikoptions);
+    [0;0;0], o_T_pelvis, [NaN;-0.01;NaN], ...
+    [NaN;0.01;NaN]);
+  [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,ikoptions);
+%   [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},pelvis_constraint_f,ikoptions);
   if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); keyboard; end;
   q_end_nom = PPTrajectory(foh([t_end(1),t_end(end)],[q(:,end),qf]));
   end_posture_constraint = PostureConstraint(r,t_end_coarse(end)*[1,1]);
