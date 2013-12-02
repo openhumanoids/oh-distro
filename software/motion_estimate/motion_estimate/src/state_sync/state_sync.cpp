@@ -100,19 +100,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // *******************************************************************************
   //  BEGIN: paste output code from calibrate script here 
   // *******************************************************************************
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 1.0726;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 1.0570;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 1.0191;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0638;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0090;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 0.8663;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 1.0790;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 1.0586;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 1.0194;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0665;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0089;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 1.0016;
 
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.0455;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0659;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.0435;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0664;
   encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -0.0584;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = 0.9270;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -1.0529;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0304;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -1.0470;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -1.0526;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0308;
   // *******************************************************************************
   //  END 
   // *******************************************************************************
@@ -252,7 +252,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
               atlas_joints_.position[i] += 2*M_PI/3;
 
-            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.09 && (msg->utime - utime_prev_ > 2000000)) {
+            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.09 && (msg->utime - utime_prev_ > 5000000)) {
               utime_prev_ = msg->utime;
 
               // display system status message in viewer
@@ -263,7 +263,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
               stat_msg.frequency = stat_msg.LOW_FREQUENCY;
 
               std::stringstream message;
-              message << "State Sync: Joint '" << ATLAS_JOINT_NAMES[i] << "' encoder might need calibration.";
+              message << "State Sync: Joint '" << ATLAS_JOINT_NAMES[i] << "' encoder might need calibration :)";
               stat_msg.value = message.str();
 
               lcm_->publish(("SYSTEM_STATUS"), &stat_msg); 
