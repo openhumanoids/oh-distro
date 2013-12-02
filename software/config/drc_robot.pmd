@@ -26,7 +26,7 @@ group "a.0.drivers" {
         host = "extra";
     }
     cmd "multisense" {
-        exec = "drc-multisense -o 0";
+        exec = "drc-multisense -o 3";
         host = "extra";
     }
     cmd "atlas-off" {
