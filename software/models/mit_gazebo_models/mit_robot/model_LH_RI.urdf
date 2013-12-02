@@ -1625,7 +1625,7 @@
     </inertial>
     <collision>
       <geometry>
-        <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="1 1 1"/>
       </geometry>
       <origin rpy="0 0 0.0" xyz="0.00 0.0 0.0"/>
     </collision>
