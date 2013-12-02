@@ -92,8 +92,9 @@ class communication:
 
       #Fill the output with the bytes in the appropriate order
       for i in range(0, numRegs):
-         output.append((response.getRegister(i) & 0xFF00) >> 8)
-         output.append( response.getRegister(i) & 0x00FF)
+         if response:
+            output.append((response.getRegister(i) & 0xFF00) >> 8)
+            output.append( response.getRegister(i) & 0x00FF)
 
       #Output the result
       return output
