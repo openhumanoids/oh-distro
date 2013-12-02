@@ -231,6 +231,10 @@ group "b.1.core" {
         exec = "drc-image-receive";
         host = "base";
     }
+    cmd "image-anaglyph" {
+        exec = "drc-image-anaglyph";
+        host = "base";
+    }
     cmd "logger-base" {
         exec = "drc-lcm-logger.sh base";
         host = "base";
