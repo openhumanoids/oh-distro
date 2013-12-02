@@ -76,11 +76,11 @@ classdef PosturePlanner < KeyframePlanner
             joint_constraint = joint_constraint.setJointLimits(upper_joint_ind,q_desired(upper_joint_ind),q_desired(upper_joint_ind));
             joint_constraint = joint_constraint.setJointLimits(knee_joint_ind,0.2*ones(length(knee_joint_ind),1),inf(length(knee_joint_ind),1));              
 
-            if(obj.isBDIManipMode()) % Dont adjust pelvis in BDIManipMode
-                pelvis_pose = forwardKin(obj.r,kinsol0,obj.pelvis_body,[0;0;0],2);
-                pelvis_constraint = {WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose(1:3),pelvis_pose(1:3)),...
-                  WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)};
-            end
+            %if(obj.isBDIManipMode()) % Dont adjust pelvis in BDIManipMode
+                %pelvis_pose = forwardKin(obj.r,kinsol0,obj.pelvis_body,[0;0;0],2);
+                %pelvis_constraint = {WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose(1:3),pelvis_pose(1:3)),...
+                  %WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)};
+            %end
 
             ikoptions = IKoptions(obj.r);
             ikoptions = ikoptions.setDebug(true);
@@ -112,11 +112,11 @@ classdef PosturePlanner < KeyframePlanner
               WorldPositionConstraint(obj.r,obj.l_foot_body,[0;0;0],lfoot0(1:3),lfoot0(1:3)),...
               WorldQuatConstraint(obj.r,obj.r_foot_body,rfoot0(4:7),0),...
               WorldQuatConstraint(obj.r,obj.l_foot_body,lfoot0(4:7),0)};
-            if(obj.isBDIManipMode()) % Dont adjust pelvis in BDIManipMode
-              pelvis_pose = forwardKin(obj.r,kinsol0,obj.pelvis_body,[0;0;0],2);
-              ik_constr = [ik_constr,{WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose(1:3),pelvis_pose(1:3)),...
-                WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)}]; % pin pelvis
-            end
+%             if(obj.isBDIManipMode()) % Dont adjust pelvis in BDIManipMode
+%               pelvis_pose = forwardKin(obj.r,kinsol0,obj.pelvis_body,[0;0;0],2);
+%               ik_constr = [ik_constr,{WorldPositionConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose(1:3),pelvis_pose(1:3)),...
+%                 WorldQuatConstraint(obj.r,obj.pelvis_body,pelvis_pose(4:7),0)}]; % pin pelvis
+%             end
             [q_desired,info,infeasible_constr] = inverseKin(obj.r,q0,q0,joint_constraint,ik_constr{:},ikoptions);
             if(info>10)
               send_msg = sprintf('IK info = %d in posture plan optimization\n %s',info,infeasibleConstraintMsg(infeasible_constr));
@@ -229,6 +229,13 @@ classdef PosturePlanner < KeyframePlanner
             info = 1;
           elseif(useIK_state == 6)
             % change the whole body joints to q_desired
+            info = 1;
+          elseif(useIK_state ==7) % copy the lower body joints and floating base from current, copy the upper body joints from q_desired
+            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+            lower_joint_ind = cellfun(@(s) ~isempty(strfind(s,'leg')),coords);
+            lower_joint_ind(1:6) = true(6,1);
+            upper_joint_ind = ~lower_joint_ind;
+            q_desired(lower_joint_ind) = q0(lower_joint_ind);
             info = 1;
           end
           

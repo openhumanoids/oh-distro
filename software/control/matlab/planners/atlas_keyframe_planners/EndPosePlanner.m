@@ -554,7 +554,7 @@ classdef EndPosePlanner < KeyframePlanner
                 %                           Point2PointDistanceConstraint(obj.r,obj.r_foot_body,obj.pelvis_body,[0;0;0],[0;0;0],obj.pelvis_foot_dist_lb,obj.pelvis_foot_dist_ub,[0 1])};
                 %ik_dist_constraint = [ik_dist_constraint,ft_pelvis_ht_constraint];     
                           
-                total_ik_trials = 10;
+                total_ik_trials = 1;
                 if(~isempty(head_constraint))
                     [q_sample(:,k),snopt_info,infeasible_constraint] = inverseKinRepeatSearch(obj.r,total_ik_trials,q_guess,ik_qnom,...
                         rhand_constraint{:},lhand_constraint{:},rfoot_constraint{:},lfoot_constraint{:},head_constraint{:},pelvis_constraint{:},...

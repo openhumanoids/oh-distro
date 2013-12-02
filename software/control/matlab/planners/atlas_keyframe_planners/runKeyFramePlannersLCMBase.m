@@ -712,6 +712,9 @@ while(1)
         end
         q_desired([1,2,6]) = x0([1,2,6]); % fix pelvis pose to current % THIS IS WRONG, this prevents the robot from squating.
         useIK_state = 2; % Doing IK for all joints, with foot on the ground.
+        if(posture_planner.isBDIManipMode())
+          useIK_state = 7;
+        end
         posture_planner.generateAndPublishPosturePlan(x0,q_desired,useIK_state);
         cache = posture_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
