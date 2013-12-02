@@ -78,6 +78,9 @@ while(true)
     drill_pub = drill_pub.updateWallNormal(wall.normal);
     drill_points = [wall.targets wall.targets(:,1)];
     drill_points = drill_points + repmat(drill_depth*wall.normal,1,size(drill_points,2));
+    
+    cut_lengths = sum((drill_points(:,2:end) - drill_points(:,1:end-1)).*(drill_points(:,2:end) - drill_points(:,1:end-1)));
+    [~,diagonal_index] = max(cut_lengths);
   end
   
   disp('waiting for control message...');
@@ -135,6 +138,7 @@ while(true)
       new_drill = lcm_mon.getDrillAffordance();
       if ~isempty(new_drill)
         drill = new_drill;
+        disp(sprintf('new drill axis is %3.3f, %3.3f, %3.3f', drill.drill_axis(1), drill.drill_axis(2), drill.drill_axis(3)));
         drill_pub = drill_pub.updateDrill(drill.guard_pos, drill.drill_axis);
         button_pub = button_pub.updateDrill(drill.button_pos, drill.button_normal, drill.drill_axis);
       else
@@ -251,7 +255,7 @@ while(true)
       else
         drill_target = nearest_point;
       end
-      
+%       keyboard
       [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 10);
     case drc.drill_control_t.RQ_DRILL_TARGET_PLAN
       if sizecheck(ctrl_data, [3 1])
