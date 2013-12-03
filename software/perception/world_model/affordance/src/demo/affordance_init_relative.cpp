@@ -278,7 +278,7 @@ drc::affordance_plus_t Pass::getDoorAffordancePlus(std::string filename, Eigen::
   xyzrpy[1] = world_to_aff.translation().y();
   xyzrpy[2] = world_to_aff.translation().z();
   quat_to_euler ( Eigen::Quaterniond(world_to_aff.rotation() ), xyzrpy[3], xyzrpy[4], xyzrpy[5] );  
-  
+
   drc::affordance_plus_t p;
   drc::affordance_t a;
   a.utime =0;
@@ -388,7 +388,7 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
     aff.aff.otdf_type = "wye";
   }else if (which_affordance_ ==6){
     Eigen::Isometry3d ground_to_aff(Eigen::Isometry3d::Identity());
-    ground_to_aff.translation()  << 2.0, -0.5,  ground_height_+ 1.016;
+    ground_to_aff.translation()  << 2.0, -0.5, 1.016;
     ground_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(0,0,90*M_PI/180)) );
     aff = getDoorAffordancePlus("notused", ground_to_aff, 0,true);
     aff.aff.otdf_type = "door_right_handed";
