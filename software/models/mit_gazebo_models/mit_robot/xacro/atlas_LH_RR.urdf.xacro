@@ -11,7 +11,7 @@
   <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
     <origin rpy="1.57079 2.0944 0" xyz="0 -0.11516 -0.015"/>
   </xacro:irobot_hand>
-  <xacro:hook_hand side="left" parent="l_hand" reflect="-1"  hookflip="1">
+  <xacro:hook_hand side="left" parent="l_hand" reflect="-1"  hookflip="1"  noof30degoffset="0">
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
   </xacro:hook_hand>
 

@@ -6,7 +6,7 @@
 
   <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />
 
-  <xacro:hook_hand side="left" parent="l_hand" reflect="-1" hookflip="1">
+  <xacro:hook_hand side="left" parent="l_hand" reflect="-1" hookflip="1" noof30degoffset="0">
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
   </xacro:hook_hand>
 
