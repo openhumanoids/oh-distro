@@ -2,7 +2,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="hook_hand">
 
 <xacro:property name="pi" value="3.14" />
-<xacro:macro name="hook_hand" params="side parent reflect hookflip *origin">
+<xacro:macro name="hook_hand" params="side parent reflect hookflip noof30degoffset *origin">
 
 <!-- joint to irobot hand -->
   <joint name="${side}_hook_hand_joint" type="fixed">
@@ -20,13 +20,13 @@
       <geometry>
         <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="1 1 1"/>
       </geometry>
-      <origin rpy="0 0 ${reflect*1.57+hookflip*1.57}" xyz="0.00 0.0 0.0"/>
+      <origin rpy="0 0 ${reflect*(pi/2+noof30degoffset*(pi/6))+hookflip*(pi/2)}" xyz="0.00 0.0 0.0"/>
     </collision>
     <visual>
       <geometry>
         <mesh filename="package://hook_description/meshes/bdi_hook.stl" scale="1 1 1"/>
       </geometry>
-      <origin rpy="0 0 ${reflect*1.57+hookflip*1.57}" xyz="0.00 0.0 0.0"/>
+      <origin rpy="0 0 ${reflect*(pi/2+noof30degoffset*(pi/6))+hookflip*(pi/2)}" xyz="0.00 0.0 0.0"/>
     </visual>
   </link>
 
