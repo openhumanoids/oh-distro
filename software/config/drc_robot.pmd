@@ -25,6 +25,9 @@ group "a.0.drivers" {
         exec = "ipwebcam -f 2 -q 50 -c CAMERAREAR -u http://admin:admin1234@10.66.171.26/video2.mjpg -r 90";
         host = "extra";
     }
+    cmd "audio server" {
+        exec = "python $DRC_BASE/software/tools/tools/scripts/oggStreamLCM.py --server'
+    }
     cmd "multisense" {
         exec = "drc-multisense -o 3";
         host = "extra";
