@@ -28,6 +28,7 @@ oggProc = None
 
 def serverStreamLoop():
 
+    print 'starting ogg publisher'
     stream = urllib2.urlopen('http://'+oggUrl)
 
     lcmHandle = lcm.LCM()
@@ -50,7 +51,7 @@ def serverStreamLoop():
 
         lcmHandle.publish(serverChannel, m.encode())
 
-    print 'stream publisher loop returning'
+    print 'stopping ogg publisher'
 
 
 def handleMessageFromClient(channel, data):
