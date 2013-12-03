@@ -12,7 +12,7 @@
     </inertial>
   </link>
   <joint name="right_hook_hand_joint" type="fixed">
-    <origin rpy="1.57 3.14 -1.57" xyz="0 0 0"/>
+    <origin rpy="1.57 3.14 -1.57" xyz="0.243 0.0 -0.127"/>
     <parent link="plane::xy::base"/>
     <child link="right_base_link"/>
   </joint>
