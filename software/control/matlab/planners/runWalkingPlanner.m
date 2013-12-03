@@ -88,8 +88,11 @@ while true
 
 
       if (~isempty(footsteps))
-%         r.setTerrain(r.getTerrain().setMapMode(footstep_opts.map_command));
-        r = setTerrain(r,RigidBodyTerrain());
+        if options.enable_terrainmaps
+          r.setTerrain(r.getTerrain().setMapMode(footstep_opts.map_command));
+        else
+          r = setTerrain(r,RigidBodyTerrain());
+        end
         
         % Align the first two steps to the current feet poses
         feet_pos = feetPosition(r, x0(1:nq));
