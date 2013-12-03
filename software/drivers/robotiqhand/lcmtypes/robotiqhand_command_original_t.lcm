@@ -1,0 +1,29 @@
+package robotiqhand;
+
+// Recreation of ros robotiq hand "output" or command message
+struct command_t
+{
+    int64_t utime;
+
+    // All of the following types are from robotiq original
+    // driver, needs documentation
+    int8_t rACT;
+    int8_t rMOD;
+    int8_t rGTO;
+    int8_t rATR;
+    int8_t rGLV;
+    int8_t rICF;
+    int8_t rICS;
+    int8_t rPRA;
+    int8_t rSPA;
+    int8_t rFRA;
+    int8_t rPRB;
+    int8_t rSPB;
+    int8_t rFRB;
+    int8_t rPRC;
+    int8_t rSPC;
+    int8_t rFRC;
+    int8_t rPRS;
+    int8_t rSPS;
+    int8_t rFRS;
+}

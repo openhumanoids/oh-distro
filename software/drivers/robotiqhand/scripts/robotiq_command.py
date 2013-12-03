@@ -17,14 +17,14 @@ def genCommand(char, command):
     """Update the command according to the character entered by the user."""
 
     if char == 'a':
-        command = robotiqhand.command_t();
+        command = robotiqhand.command_original_t();
         command.rACT = 1
         command.rGTO = 1
         command.rSPA = 255
         command.rFRA = 150
 
     if char == 'r':
-        command = robotiqhand.command_t();
+        command = robotiqhand.command_original_t();
         command.rACT = 0
 
     if char == 'c':
@@ -144,7 +144,7 @@ def publisher(side):
 
     lc = lcm.LCM()
 
-    command = robotiqhand.command_t();
+    command = robotiqhand.command_original_t();
 
     try:
         while True:

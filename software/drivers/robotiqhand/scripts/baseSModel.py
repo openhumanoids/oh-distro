@@ -135,7 +135,7 @@ class robotiqBaseSModel:
         status = self.client.getStatus(16);
 
         #Message to output
-        message = robotiqhand.status_t()
+        message = robotiqhand.status_original_t()
 
         #Add a time stamp for this message
         message.utime = (time.time() * 1000000)

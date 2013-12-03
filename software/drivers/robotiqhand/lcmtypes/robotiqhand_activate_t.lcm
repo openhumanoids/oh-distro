@@ -1,0 +1,11 @@
+package robotiqhand;
+
+// Basic high level commands
+struct activate_t
+{
+  int64_t utime;
+ 
+  // 0 - inactive
+  // 1 - active
+  int8_t activate;
+}

@@ -1,32 +1,39 @@
 package robotiqhand;
 
-// Recreation of ros robotiq hand "input" or status message
 struct status_t
 {
     int64_t utime;
 
-    // All of the following types are from robotiq original
-    // driver, needs documentation
-    int8_t gACT;
-    int8_t gMOD;
-    int8_t gGTO;
-    int8_t gIMC;
-    int8_t gSTA;
-    int8_t gDTA;
-    int8_t gDTB;
-    int8_t gDTC;
-    int8_t gDTS;
-    int8_t gFLT;
-    int8_t gPRA;
-    int8_t gPOA;
-    int8_t gCUA;
-    int8_t gPRB;
-    int8_t gPOB;
-    int8_t gCUB;
-    int8_t gPRC;
-    int8_t gPOC;
-    int8_t gCUC;
-    int8_t gPRS;
-    int8_t gPOS;
-    int8_t gCUS;
+    // Modes, Codes, and Status extracted from status words
+    int8_t activated;
+    int8_t mode;
+    int8_t goto;
+    int8_t motionStatus;
+    int8_t fingerAStatus;
+    int8_t fingerBStatus;
+    int8_t fingerCStatus;
+    int8_t fingerSStatus;
+    int32_t faultCode;
+
+    // All data here is in range 0-255
+    // current is 0.1*value in mA
+    // Finger A
+    int32_t posRequestA;
+    int32_t positionA;
+    int32_t currentA;
+
+    // Finger B
+    int32_t posRequestB;
+    int32_t positionB;
+    int32_t currentB;
+
+    // Finger C
+    int32_t posRequestC;
+    int32_t positionC;
+    int32_t currentC;
+
+    // Scissor
+    int32_t posRequestS;
+    int32_t positionS;
+    int32_t currentS;
 }
