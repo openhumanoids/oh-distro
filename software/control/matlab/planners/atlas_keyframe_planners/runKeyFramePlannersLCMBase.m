@@ -699,7 +699,15 @@ while(1)
         keyframe_adjustment_engine.setPlanCache(cache);
     end
     
-    posture_goal =posture_goal_listener.getNextMessage(msg_timeout);
+    posture_goal = [];
+    while 1
+      newer_posture_goal = posture_goal_listener.getNextMessage(msg_timeout);
+      if ~isempty(newer_posture_goal)
+        posture_goal = newer_posture_goal;
+      else
+        break
+      end
+    end
     if(~isempty(posture_goal))
         disp('Posture goal received .');
         q0 = x0(1:getNumDOF(robot));

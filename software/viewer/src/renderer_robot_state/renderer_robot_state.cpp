@@ -251,6 +251,18 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     self->robotStateListener->_gl_robot->highlight_marker((*self->marker_selection));
     //self->robotStateListener->_gl_robot->enable_whole_body_selection(self->selection_enabled);
     self->robotStateListener->_gl_robot->draw_body (c,alpha);
+
+
+    std::map<std::string, double> jointpos_in;
+    jointpos_in = self->robotStateListener->_gl_robot->_future_jointpos;
+    string link_name = (*self->selection); 
+    string marker_name = (*self->marker_selection); 
+    string token  = "markers::";
+    size_t found = marker_name.find(token);  
+    if (!(found == std::string::npos)) {
+      string joint_name =marker_name.substr(found+token.size());
+      bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
+    }
     
     if(self->visualize_forces){
       draw_ee_force(self,"l_hand");   draw_ee_force(self,"r_hand");
@@ -350,6 +362,10 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
      spawn_teleop_ee_popup(self);
 
   } 
+  else if (! strcmp(name,PARAM_CURRENT_JOINTPOS)) 
+  {
+      set_desired_robot_posture_from_pw(user, bot_gtk_param_widget_get_double(self->pw, PARAM_CURRENT_JOINTPOS));
+  }
 }
 
 void 
@@ -398,6 +414,8 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     
     
     bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
+
+    bot_gtk_param_widget_add_double (self->pw, PARAM_CURRENT_JOINTPOS, BOT_GTK_PARAM_WIDGET_SPINBOX, -6.29, 6.29, 0.01, 0);
       
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->alpha = 1.0;

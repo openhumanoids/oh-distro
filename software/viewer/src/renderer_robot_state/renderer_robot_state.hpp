@@ -33,6 +33,7 @@
 #define PARAM_SELECTION "Enable Selection"
 #define PARAM_WIRE "Show BBoxs For Meshes"  
 #define PARAM_COLOR_ALPHA "Alpha"
+#define PARAM_CURRENT_JOINTPOS "Current joint pos"
 #define PARAM_ENABLE_POSTURE_ADJUSTMENT "Set Desired Posture"
 #define PARAM_SEND_POSTURE_GOAL_BACK_ZEROED "Zero All Back Joints"
 #define PARAM_RESET_POSTURE "Reset"
@@ -330,6 +331,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
           jointpos_in.find(joint_name)->second = (jointpos_in.find(joint_name)->second +dtheta); 
           self->robotStateListener->_gl_robot->set_future_state(T_world_body_future,jointpos_in);   
           bot_viewer_request_redraw(self->viewer);
+          bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
          }// end revolute joints
          else if(type==otdf::Joint::PRISMATIC)
          {
@@ -341,14 +343,14 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
            jointpos_in = self->robotStateListener->_gl_robot->_future_jointpos;
            jointpos_in.find(joint_name)->second -= distance;
            self->robotStateListener->_gl_robot->set_future_state(T_world_body_future,jointpos_in); 
-            bot_viewer_request_redraw(self->viewer);  
+           bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
+           bot_viewer_request_redraw(self->viewer);  
          }
       }
       
       self->prev_ray_hit_drag = self->ray_hit_drag; 
      bot_viewer_request_redraw(self->viewer);     
   }   // end set_desired_robot_posture_on_marker_motion()
-  
   
   inline static void publish_posture_goal(void *user, const string& channel)
   {
@@ -371,6 +373,31 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
         msg.num_joints =  num_joints; 
         self->lcm->publish(channel, &msg);
    }
+
+  static void set_desired_robot_posture_from_pw(void *user, double value)
+  {
+    RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
+    if(!self->robotStateListener->_gl_robot->is_future_state_changing()) {
+      self->robotStateListener->_gl_robot->set_future_state_changing(true);  
+     }
+    KDL::Frame T_world_body_future = self->robotStateListener->_gl_robot->_T_world_body_future;
+    if(self->robotStateListener->_gl_robot->is_jointdof_adjustment_enabled())
+    {
+      string link_name = (*self->selection); 
+      string marker_name = (*self->marker_selection); 
+      string token  = "markers::";
+      size_t found = marker_name.find(token);  
+      if (found==std::string::npos)
+          return;
+      string joint_name =marker_name.substr(found+token.size());
+      std::map<std::string, double> jointpos_in;
+      jointpos_in = self->robotStateListener->_gl_robot->_future_jointpos;
+      jointpos_in.find(joint_name)->second = value; 
+      self->robotStateListener->_gl_robot->set_future_state(T_world_body_future,jointpos_in);   
+      bot_viewer_request_redraw(self->viewer);
+    }
+    publish_posture_goal(self, "POSTURE_GOAL");
+  }
 
 
   // Backwardly compatiable:
