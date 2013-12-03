@@ -8,15 +8,15 @@ import select
 import subprocess
 import threading
 
-
-# VLC command:
-# cvlc <input> --sout '#transcode{acodec=vorb,ab=10,channels=1,samplerate=8000}:std{access=http,mux=ogg,url=localhost:8080}'
-# where <input> is a file or a url
-
+#
+# VLC example command for robot computer to Atlas D-Link webcam:
+#
+# cvlc rtsp://10.66.171.26:554/live2.sdp --sout '#transcode{acodec=vorb,ab=10,channels=1,samplerate=8000}:std{access=http,mux=ogg,url=localhost:8123}'
+#
 
 serverChannel = 'OGG_SERVER'
 clientChannel = 'OGG_CLIENT'
-oggUrl = 'http://localhost:8080'
+oggUrl = 'http://localhost:8123'
 messageSize = 4096
 
 serverThreadRunning = False
@@ -74,7 +74,6 @@ def server():
     while True:
         lcmHandle.handle()
 
-    
 
 oggProc = None
 
