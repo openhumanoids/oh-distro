@@ -293,13 +293,6 @@
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
-    <pose_seed name="2013-11-26-21-27::TL_RR_Hooks" />
-    <pose_seed name="2013-11-26-21-35::HOOK_Walk" />
-    <pose_seed name="2013-11-27-07-38::HOOK_BothUp" />
-    <plan_seed name="2013-11-27-07-49::HOOK_LR_RR_to_LT_RT" />
-    <pose_seed name="2013-11-27-07-50::HOOK_LT_RT" />
-    <pose_seed name="2013-11-27-08-03::HOOK_AfterStep" />
-    <plan_seed name="2013-11-27-09-37::HOOK_Walk_to_BothUp" />
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="lower_platform_0" />
@@ -314,6 +307,26 @@
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="-0.275 0.0629 " />
     </grasp_seed>
-    <pose_seed name="2013-11-27-12-20::HOOK_LR_RR" />
-    <plan_seed name="2013-11-27-13-06::HOOK_BothUp_to_LR_RR" />
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="-3.1416 0.5236 0.0" xyz="0.2 0.28 0.12" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="-3.1416 0.5236 0.0" xyz="0.2 -0.28 0.12" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <pose_seed name="2013-12-02-22-22::HOOK_Start" />
+    <pose_seed name="2013-12-02-22-07::HOOK_BothUp" />
+    <pose_seed name="2013-12-02-22-08::HOOK_BothIn" />
+    <pose_seed name="2013-12-02-22-09::HOOK_Reach" />
+    <plan_seed name="2013-12-02-22-12::HOOK_Start_to_Reach" />
+    <plan_seed name="2013-12-02-22-12::HOOK_Start_to_BothUp" />
+    <plan_seed name="2013-12-02-22-13::HOOK_BothUp_to_BothIn" />
+    <plan_seed name="2013-12-02-22-14::HOOK_BothIn_to_Reach" />
 </object>
