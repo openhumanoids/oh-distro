@@ -140,6 +140,9 @@ class robotiqBaseSModel:
         #Add a time stamp for this message
         message.utime = (time.time() * 1000000)
 
+        if len(status) == 0:
+            return []
+
         #Assign the values to their respective variables
         message.gACT = (status[0] >> 0) & 0x01;
         message.gMOD = (status[0] >> 1) & 0x03;
