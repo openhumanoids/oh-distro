@@ -182,7 +182,7 @@ while(true)
         drill_points_expanded(:,i) = drill_points_expanded(:,i) + target_expansion*(drill_points_expanded(:,i) - target_centroid)/norm(drill_points_expanded(:,i) - target_centroid) + wall.normal*depth_increase;
       end
       
-      q0_init(1:3) = target_centroid - wall.normal*.8 - .2*wall_z + .0*wall_y;
+      q0_init(1:3) = target_centroid - wall.normal*.6 - .2*wall_z + .0*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
       [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .2);
       

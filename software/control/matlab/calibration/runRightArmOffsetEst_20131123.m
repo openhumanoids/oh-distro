@@ -48,7 +48,7 @@ end
 % for 10-24 data
 % t_sample = [55 110 144 178.7 215 245 333 364.4 395 424.4 492.1 518.7 540.8];
 % t_sample = [88 111.8 150.5 171.1 187.8 204 244.3];
-t_sample = [40.07 51.33 56.52 60.57 65.3];
+% t_sample = [40.07 51.33 56.52 60.57 65.3];
 t_sample = [22.57  35.65 78 113.4 132 155 172 223.8];
 
 % torso_markers = reshape(vicon_data(21:40,:),4,5,length(t_vicon));
@@ -150,7 +150,7 @@ floating_states = fs_torsoonly;
 %%
 v = r.constructVisualizer;
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'bullet_collision_closest_points_test');
-j = 1;
+j = j+1;
 q = q_data(:,j);
 % q(setdiff(1:34,joint_indices),:) = 0*q(setdiff(1:34,joint_indices),:);
 % q = q*0 

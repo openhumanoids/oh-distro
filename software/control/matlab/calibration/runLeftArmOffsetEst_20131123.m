@@ -20,7 +20,7 @@ t_x = t_x - t_x(1);
 
 joint_indices = [10:14 21];
 % joint_indices = [];
-x0_offset = -extra_data(22+(1:6),1)+x_data(joint_indices((1:6)),1);
+x0_offset = -extra_data(16+(1:6),1)+x_data(joint_indices((1:6)),1);
 % hack to use encoder data
 x_data_bkp = x_data;
 for i=1:6,
@@ -145,7 +145,7 @@ fs_torsoonly = floating_states;
 %%
 v = r.constructVisualizer;
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'bullet_collision_closest_points_test');
-j = 2;
+j = j+1;
 q = q_data(:,j);
 % q(setdiff(1:34,joint_indices),:) = 0*q(setdiff(1:34,joint_indices),:);
 % q = q*0 
@@ -221,7 +221,7 @@ q_check;
 end
 
 [~, ~, ~, floating_states_check, residual_check, info_check, J_check, body1_resids_check, body2_resids_check] = ...
-  jointOffsetCalibration(r, q_check, [],torso_body,@(params) torsoMarkerPos_20131123(params,true), 0, torso_check, hand_body, @(params) rightHandMarkerPos_20131123(body2_params,true), 0, hand_check);
+  jointOffsetCalibration(r, q_check, [],torso_body,@(params) torsoMarkerPos_20131123(params,true), 0, torso_check, hand_body, @(params) leftHandMarkerPos_20131123(body2_params,true), 0, hand_check);
 
 
 if length(t_check > 0)
@@ -240,8 +240,8 @@ b2 = body2_params;
 q(joint_indices,1) = q(joint_indices,1);
 v.draw(0,q);
 kinsol = r.doKinematics(q);
-handpts = r.forwardKin(kinsol,hand_body,handMarkerPos_newmarkers(b2));
-torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos_newmarkers(body1_params,true));
+handpts = r.forwardKin(kinsol,hand_body,leftHandMarkerPos_20131123(b2));
+torsopts = r.forwardKin(kinsol,torso_body,torsoMarkerPos_20131123(body1_params,true));
 
 for i=1:size(torso_markers,2),
   lcmgl.glColor3f(1,0,0); % red
