@@ -333,7 +333,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     r_hand_poseT(4:7) = rpy2quat(rhand_int_constraint(4:6));
                     %  replace Boundary Constraint In Cache
                     %obj.replaceCachedConstraint(obj.r_hand_body,[1 1],r_hand_poseT(:));
-                    pos_tol = 1e-2; quat_tol = sind(5).^2;
+                    pos_tol = 1e-2; quat_tol = sind(1).^2;
                     new_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_poseT(:),pos_tol,quat_tol,[1,1]);
                     obj.plan_cache.rhand_constraint_cell = replaceConstraintCell(obj.plan_cache.rhand_constraint_cell,new_constraint);
                     rhand_int_constraint = [nan;nan;nan;nan;nan;nan];
@@ -361,7 +361,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                     l_hand_poseT(4:7) = rpy2quat(lhand_int_constraint(4:6));
                     %  replace Boundary Constraint In Cache
                     %  obj.replaceCachedConstraint(obj.l_hand_body,[1 1],l_hand_poseT(:));
-                    pos_tol = 1e-2; quat_tol = sind(5).^2;
+                    pos_tol = 1e-2; quat_tol = sind(1).^2;
                     new_constraint = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_poseT(:),pos_tol,quat_tol,[1,1]);
                     obj.plan_cache.lhand_constraint_cell = replaceConstraintCell(obj.plan_cache.lhand_constraint_cell,new_constraint);
                     lhand_int_constraint = [nan;nan;nan;nan;nan;nan];
