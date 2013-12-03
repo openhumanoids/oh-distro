@@ -1,4 +1,4 @@
-function [q_data, t_data, ee_info] = ladderIK(r,ts,q0,qstar,ee_info,ladder_opts,ikoptions)
+function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_info,ladder_opts,ikoptions)
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'robotLadderPlan');
 red = {1,0,0};
 blue = {0,0,1};
@@ -158,7 +158,7 @@ fprintf('Final COM Constraint:     %s\n', logical2str(ladder_opts.use_final_com_
 fprintf('Pelvis Constraint:        %s        %4.2f m\n', logical2str(ladder_opts.use_pelvis_constraint), ladder_opts.pelvis_threshold);
 fprintf('Pelvis GazeConstraint:    %s        %4.2f deg\n', logical2str(ladder_opts.use_pelvis_gaze_constraint),ladder_opts.pelvis_gaze_threshold*180/pi);
 fprintf('Torso Constraint:         %s        %4.2f deg\n', logical2str(ladder_opts.use_utorso_constraint),ladder_opts.utorso_threshold*180/pi);
-fprintf('Knee Constraint:          %s        [%4.2f deg, %4.2f deg]\n', logical2str(ladder_opts.use_knee_constraint),ladder_opts.knee_lb,ladder_opts.knee_ub);
+fprintf('Knee Constraint:          %s        [%4.2f deg, %4.2f deg]\n', logical2str(ladder_opts.use_knee_constraint),ladder_opts.knee_lb(1)*180/pi,ladder_opts.knee_ub(1)*180/pi);
 fprintf('Neck Constraint:          %s\n', logical2str(ladder_opts.use_neck_constraint));
 fprintf('Ankle Constraint:         %s\n', logical2str(ladder_opts.use_ankle_constraint));
 fprintf('Arm Constraints (incr):   %s        %4.2f deg\n', logical2str(ladder_opts.use_arm_constraints),ladder_opts.arm_tol*180/pi);
@@ -238,7 +238,7 @@ foot_retract_max = 0.1;
 foot_retract_vec = foot_retract_max*o_T_pelvis(1:3,1:3)*[-1;0;0];
 for i=1:2
   deriv = fnder(ee_info.feet(i).traj);
-  t_moving = ts(any(eval(deriv,ts) > 0,1));
+  t_moving = ts(any(abs(eval(deriv,ts)) > 0,1));
   if isempty(t_moving)
     ee_info.feet(i).rpy_tol_traj = PPTrajectory(foh([0,tf],repmat([0,0],3,1)));
   else
@@ -247,7 +247,7 @@ for i=1:2
     ee_info.feet(i).rpy_tol_traj = ...
       PPTrajectory(foh([0,linspace(t_move0,t_movef,4),tf],repmat([0,0,rpy_tol_max,0,0,0],3,1)));
     ee_info.feet(i).foot_retract_traj = ...
-      PPTrajectory(foh([0,linspace(t_move0,t_movef,3),tf],[zeros(3,2),foot_retract_vec(1:3),zeros(3,2)]));
+      PPTrajectory(foh([0,linspace(t_move0,t_movef,5),tf],[zeros(3,2),repmat(foot_retract_vec(1:3),1,2),zeros(3,3)]));
   end
 end
 
@@ -263,6 +263,7 @@ q_nom = qstar;
 q = zeros(nq,nt);
 q(:,1) = q_seed;
 constraint_array = cell(nt,1);
+idx_t_infeasible = false(1,nt);
 for i=1:nt
   t_data = ts(i);
   constraints = basic_constraints;
@@ -375,7 +376,7 @@ for i=1:nt
       T = [R,P;zeros(1,3),1];
       com_halfspace_constraint = ...
         WorldCoMInFrameConstraint(r,T,[NaN;ladder_opts.qs_margin;NaN],[NaN;NaN;NaN]);
-%       constraints = [constraints, {com_halfspace_constraint}];
+       constraints = [constraints, {com_halfspace_constraint}];
     end
 %     R = o_T_pelvis(1:3,1:3);
 %     P = mean(foot_back,2);
@@ -506,6 +507,7 @@ for i=1:nt
       else
         err_segments(end,2) = i/nt;
       end
+      idx_t_infeasible(i) = true;
     else
       first_err = true;
     end
@@ -533,11 +535,11 @@ for i=1:nt
   kinsol = doKinematics(r,q_seed);
   com_prev = r.getCOM(kinsol);
   com_prev(3) = NaN;
-  q_nom = q(:,i);
-  sym_states = (q_nom(l_idx) + r_flip.*q_nom(r_idx))/2;
-  q_nom(l_idx) = sym_states;
-  q_nom(r_idx) = r_flip.*sym_states;
-%   q_nom = (q_nom+qstar)/2;
+  %q_nom = q(:,i);
+  %sym_states = (q_nom(l_idx) + r_flip.*q_nom(r_idx))/2;
+  %q_nom(l_idx) = sym_states;
+  %q_nom(r_idx) = r_flip.*sym_states;
+  %q_nom = (q_nom+qstar)/2;
   %   disp(info);
 end
 fprintf('\n');
@@ -546,6 +548,7 @@ t_data = ts;
 if ladder_opts.compute_intro
   q_data = [q_init,q];
   t_data = [t_init, ts+t_init(end)+dt];
+  idx_t_infeasible = [false(size(t_init)),idx_t_infeasible];
 end
 if ladder_opts.use_final_com_constraint
   % Compute plan from q(:,end) to qf
@@ -564,15 +567,18 @@ if ladder_opts.use_final_com_constraint
 %   pelvis_constraint_f = WorldPositionInFrameConstraint(r,pelvis, ...
 %     [0;0;0], o_T_pelvis, [0.3/sqrt(3);-0.01;0.3], ...
 %     [NaN;0.01;NaN]);
-  pelvis_constraint_f = WorldPositionInFrameConstraint(r,pelvis, ...
-    [0;0;0], o_T_pelvis, [NaN;-0.01;NaN], ...
-    [NaN;0.01;NaN]);
-  [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,ikoptions);
+%   pelvis_constraint_f = WorldPositionInFrameConstraint(r,pelvis, ...
+%     [0;0;0], o_T_pelvis, [NaN;-0.01;NaN], ...
+%     [NaN;0.01;NaN]);
+  back_z_constraint_f = PostureConstraint(r);
+  back_z_constraint_f = back_z_constraint_f.setJointLimits([6;findJointIndices(r,'back_bkz')],[q0(6);0],[q0(6);0]);
+  [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,back_z_constraint_f,ikoptions);
 %   [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},pelvis_constraint_f,ikoptions);
   if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); keyboard; end;
   q_end_nom = PPTrajectory(foh([t_end(1),t_end(end)],[q(:,end),qf]));
   end_posture_constraint = PostureConstraint(r,t_end_coarse(end)*[1,1]);
   end_posture_constraint = end_posture_constraint.setJointLimits((1:nq)',qf,qf);
+  ikoptions = ikoptions.setAdditionaltSamples(t_end);
   % [q_end,info] = inverseKinPointwise(r,t_end, ...
   %   eval(q_end_nom,t_end), ...
   %   eval(q_end_nom,t_end), ...
@@ -588,6 +594,7 @@ if ladder_opts.use_final_com_constraint
   % q = q(:,1:5:end);
   q_data = [q_data,q_end];
   t_data = [t_data, t_end + t_data(end) + dt];
+  idx_t_infeasible = [idx_t_infeasible,false(size(t_end))];
 end
 %x_data = zeros(2*nq,size(q_data,2));
 %x_data(1:getNumDOF(r),:) = q_data;

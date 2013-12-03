@@ -7,8 +7,12 @@ function Q = ladderInverseKinQ(r)
   cost.base_pitch = 1000;
   cost.base_yaw = 0;
   cost.back_bkz = 1e2;
-  cost.back_bky = 1e2;
+  cost.back_bky = 1e4;
   cost.back_bkx = 1e2;
+%   cost.l_arm_usy = 1e1;
+%   cost.r_arm_usy = 1e1;
+  cost.l_arm_shx = 1e2;
+  cost.r_arm_shx = 1e2;
   cost = double(cost);
   Q = diag(cost(1:r.getNumDOF));
 end

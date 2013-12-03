@@ -97,18 +97,21 @@ function LadderPlanner(options)
     case 'quasistatic'
       ladder_opts.fine.use_quasistatic_constraint =  true;
       ladder_opts.fine.use_arm_tension_constraint =  false;
+      ladder_opts.fine.use_com_constraint = true;
+      ladder_opts.fine.use_incr_com_constraint =     false;
+      ladder_opts.fine.use_utorso_constraint =       true;
     case 'tension'
       ladder_opts.fine.use_quasistatic_constraint =  false;
       ladder_opts.fine.use_arm_tension_constraint =  true;
+      ladder_opts.fine.use_com_constraint = false;
+      ladder_opts.fine.use_incr_com_constraint =     true;
+      ladder_opts.fine.use_utorso_constraint =       true;
   end
-  ladder_opts.fine.use_com_constraint = true;
-  ladder_opts.fine.use_incr_com_constraint =     false;
   ladder_opts.fine.use_final_com_constraint = true;
   ladder_opts.fine.use_arm_constraints =         false;
   ladder_opts.fine.use_total_arm_constraints =   false;
   ladder_opts.fine.use_pelvis_gaze_constraint =  true;
   ladder_opts.fine.use_pelvis_constraint =       true;
-  ladder_opts.fine.use_utorso_constraint =       false;
   ladder_opts.fine.use_knee_constraint =         true;
   ladder_opts.fine.use_ankle_constraint =        true;
   ladder_opts.fine.use_neck_constraint =         true;
@@ -116,21 +119,21 @@ function LadderPlanner(options)
   ladder_opts.fine.use_smoothing_constraint =    false;
   ladder_opts.fine.use_swing_foot_euler_constraint = true;
   ladder_opts.fine.smooth_output = true;
-  ladder_opts.fine.smoothing_span = 9;
+  ladder_opts.fine.smoothing_span = 11;
   ladder_opts.fine.smoothing_method = 'moving'; 
   ladder_opts.fine.n = 1;
   ladder_opts.fine.compute_intro = true;
   ladder_opts.fine.shrink_factor = 0.5;
   ladder_opts.fine.utorso_threshold = 25*pi/180;
-  ladder_opts.fine.pelvis_gaze_threshold = 20*pi/180;
+  ladder_opts.fine.pelvis_gaze_threshold = 10*pi/180;
   ladder_opts.fine.ankle_limit = 15*pi/180*ones(2,1);
-  ladder_opts.fine.knee_lb = 30*pi/180*ones(2,1);
+  ladder_opts.fine.knee_lb = 35*pi/180*ones(2,1);
   ladder_opts.fine.knee_ub = inf*pi/180*ones(2,1);
   ladder_opts.fine.hand_threshold = sin(5*pi/180);
   ladder_opts.fine.hand_cone_threshold = sin(1*pi/180);
   ladder_opts.fine.hand_pos_tol = 0.0;
   ladder_opts.fine.pelvis_threshold = 0.05;
-  ladder_opts.fine.com_tol = 0.01;
+  ladder_opts.fine.com_tol = 0.0;
   ladder_opts.fine.com_incr_tol = 0.02;
   ladder_opts.fine.com_tol_max = 0.5;
   ladder_opts.fine.qs_margin = 0.0;
@@ -161,7 +164,7 @@ function LadderPlanner(options)
         ladder_opts.coarse.final_shrink_factor = 1;
         ladder_opts.fine.hand_threshold = sin(1*pi/180);
         ladder_opts.fine.shrink_factor = 1;
-        ladder_opts.fine.final_shrink_factor = 0.1;
+        ladder_opts.fine.final_shrink_factor = 0.2;
       elseif(l_hand_mode == 1)
         l_hand_str = 'sandia hand';
         l_hand_offset = [0.025;0.25;0.04];
