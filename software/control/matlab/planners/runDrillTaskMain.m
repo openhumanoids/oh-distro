@@ -90,46 +90,60 @@ while(true)
   
   switch ctrl_type
     case drc.drill_control_t.RQ_GOTO_BUTTON_PRESET
+      disp('Searching for a button hand posture');
+      if useRightHand
+        gaze_in_pelvis = [-.5;1;.5];
+      else
+        gaze_in_pelvis = [-.5;-1;.5];
+      end
+      
+      gaze_in_pelvis = gaze_in_pelvis/norm(gaze_in_pelvis);
       q0 = lcm_mon.getStateEstimate();
-      disp('generating plan to preset position');
-      % get the pose somehow, todo
-%       load poke_pose_0;
-      button_preset = [ -0.3112
-   -1.5089
-    0.8768
-   -0.0114
-    0.0148
-   -1.4788
-    0.0595
-    0.0293
-   -0.0071
-    0.0043
-   -0.0261
-    1.5633
-    1.4976
-    0.0196
-   -0.0073
-    0.0775
-   -0.5662
-    0.9945
-   -0.4712
-   -0.0790
-   -0.0205
-   -0.9346
-    0.2673
-    1.8375
-   -1.5831
-    0.0002
-   -0.0014
-   -0.0259
-   -0.5396
-    1.0068
-   -0.4437
-    0.0578
-   -0.2694
-    0.4094];
-  button_preset(1:6) = q0(1:6);
-      posture_pub.generateAndPublishPosturePlan(q0,button_preset,0)
+      kinsol = r.doKinematics(q0);
+      pelvis_pose = r.forwardKin(kinsol,2,zeros(3,1),2);
+      R = quat2rotmat(pelvis_pose(4:7));
+      button_gaze = R*gaze_in_pelvis;
+      [xtraj,snopt_info,infeasible_constraint] = button_pub.createButtonPreposePlan(q0, button_gaze, 20*pi/180, 5);
+
+%       disp('generating plan to preset position');
+%       % get the pose somehow, todo
+% %       load poke_pose_0;
+%       button_preset = [ -0.3112
+%    -1.5089
+%     0.8768
+%    -0.0114
+%     0.0148
+%    -1.4788
+%     0.0595
+%     0.0293
+%    -0.0071
+%     0.0043
+%    -0.0261
+%     1.5633
+%     1.4976
+%     0.0196
+%    -0.0073
+%     0.0775
+%    -0.5662
+%     0.9945
+%    -0.4712
+%    -0.0790
+%    -0.0205
+%    -0.9346
+%     0.2673
+%     1.8375
+%    -1.5831
+%     0.0002
+%    -0.0014
+%    -0.0259
+%    -0.5396
+%     1.0068
+%    -0.4437
+%     0.0578
+%    -0.2694
+%     0.4094];
+%   button_preset(1:6) = q0(1:6);
+%       posture_pub.generateAndPublishPosturePlan(q0,button_preset,0)
 
     case drc.drill_control_t.REFIT_DRILL
         
@@ -161,9 +175,16 @@ while(true)
       wall_z = wall_z/norm(wall_z);
       wall_y = cross(wall_z, wall.normal);
       
-      q0_init(1:3) = target_centroid - wall.normal*.8 - .2*wall_z + .4*wall_y;
+      depth_increase = .05;
+      target_expansion = .1;
+      drill_points_expanded = drill_points;
+      for i=1:size(drill_points_expanded,2),
+        drill_points_expanded(:,i) = drill_points_expanded(:,i) + target_expansion*(drill_points_expanded(:,i) - target_centroid)/norm(drill_points_expanded(:,i) - target_centroid) + wall.normal*depth_increase;
+      end
+      
+      q0_init(1:3) = target_centroid - wall.normal*.8 - .2*wall_z + .0*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
-      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, .2);
+      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .2);
       
     case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)

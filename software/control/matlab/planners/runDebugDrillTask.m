@@ -90,7 +90,7 @@ q0_init(drill_pub.joint_indices) = .1*randn(9,1) + [    0.6315
 %    -0.5542
 %     0.3580
 %    -0.9114];
-tri_centroid = mean(triangle,2);
+target_centroid = mean(triangle,2);
 
 % create wall coordinate frame
 wall_z = [0;0;1];
@@ -98,15 +98,21 @@ wall_z = wall_z - wall_z'*wall.normal*wall.normal;
 wall_z = wall_z/norm(wall_z);
 wall_y = cross(wall_z, wall.normal);
 
-q0_init(1:3) = tri_centroid - wall.normal*1.0 - .2*wall_z + .0*wall_y;
+q0_init(1:3) = target_centroid - wall.normal*.8 - .2*wall_z + .0*wall_y;
 q0_init(6) = atan2(wall.normal(2), wall.normal(1));
 
+depth_increase = .05;
+target_expansion = .1;
+drill_points_expanded = drill_points;
+for i=1:size(drill_points_expanded,2),
+  drill_points_expanded(:,i) = drill_points_expanded(:,i) + target_expansion*(drill_points_expanded(:,i) - target_centroid)/norm(drill_points_expanded(:,i) - target_centroid) + wall.normal*depth_increase;
+end
 
 if ~use_simulated_state
   q0 = lcm_mon.getStateEstimate();
   q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]))
 end
-[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points, true, .5);
+[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .1);
 
 
 %% move the arm before walking
