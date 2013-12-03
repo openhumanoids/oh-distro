@@ -76,7 +76,8 @@ class App{
     void manipPlanHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg);    
     
-    void solveFK(drc::robot_state_t state, Eigen::Isometry3d &world_to_body, 
+    void solveFK(drc::robot_state_t state, Eigen::Isometry3d &world_to_body,
+                 Eigen::Isometry3d &actual_body_to_palm, 
                  map<string, KDL::Frame > &cartpos, bool &cartpos_ready  );
     
     std::string getPalmLink();
@@ -87,7 +88,7 @@ class App{
     
     int last_input_;
 
-    Eigen::Isometry3d world_to_body_;
+    Eigen::Isometry3d world_to_body_,actual_body_to_palm_;
     Eigen::Quaterniond starting_gaze_quat_; // quaternion of the palm when we switched to gaze mode - retain this gaze not any other
     
     boost::shared_ptr<ModelClient> model_;
@@ -101,7 +102,7 @@ class App{
     bool rstate_init_;
     bool cartpos_ready_;
     bool plan_from_robot_state_;
-    bool use_left_hand_, use_sandia_, use_reach_, show_palm_triads_;
+    bool use_left_hand_, use_sandia_, use_reach_, show_palm_triads_, use_relative_to_body_frame_;
 };   
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_):
@@ -114,6 +115,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
   use_left_hand_ = true;
   use_sandia_ = true;
   use_reach_ = true;
+  use_relative_to_body_frame_ = true;
   show_palm_triads_ = false;
   
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
@@ -156,9 +158,10 @@ void App::manipPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& ch
     std::vector <Isometry3dTime> world_to_palmT;
     for (size_t i=0; i < msg->plan.size() ; i++){
       Eigen::Isometry3d world_to_body = Eigen::Isometry3d::Identity();
+      Eigen::Isometry3d world_to_l_foot = Eigen::Isometry3d::Identity();      
       map<string, KDL::Frame > cartpos;
       bool cartpos_ready; // not used
-      solveFK(msg->plan[i] ,world_to_body, cartpos, cartpos_ready);
+      solveFK(msg->plan[i] ,world_to_body, world_to_l_foot, cartpos, cartpos_ready);
       Eigen::Isometry3d world_to_palm =  world_to_body* KDLToEigen(cartpos.find( getPalmLink() )->second);
       world_to_palmT.push_back( Isometry3dTime(i, world_to_palm ));
     
@@ -177,7 +180,9 @@ void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
 }
   
  
-void App::solveFK(drc::robot_state_t state, Eigen::Isometry3d &world_to_body, map<string, KDL::Frame > &cartpos, bool &cartpos_ready  ){
+void App::solveFK(drc::robot_state_t state, Eigen::Isometry3d &world_to_body, 
+                  Eigen::Isometry3d &actual_body_to_palm, 
+                  map<string, KDL::Frame > &cartpos, bool &cartpos_ready  ){
   // 0. Extract World Pose of body:
   world_to_body.setIdentity();
   world_to_body.translation()  << state.pose.translation.x, state.pose.translation.y, state.pose.translation.z;
@@ -203,6 +208,9 @@ void App::solveFK(drc::robot_state_t state, Eigen::Isometry3d &world_to_body, ma
     return;
   }
   
+  
+  actual_body_to_palm = KDLToEigen(cartpos.find( getPalmLink() )->second);
+  
   cartpos_ready=true;  
 }
 
@@ -211,12 +219,24 @@ void App::solveFK(drc::robot_state_t state, Eigen::Isometry3d &world_to_body, ma
 
 void App::publish_palm_goal(){
   // palm goal is published in world frame
+  // For movements in hand frame, the transform is applied after the current body_to_palm
+  // For movement in the body frame, the transform is applied as part of body_to_palm
   
+  Eigen::Isometry3d palm_to_palm_delta;
+  palm_to_palm_delta.setIdentity();
   Eigen::Isometry3d body_to_palm;
   body_to_palm.setIdentity();
-  body_to_palm.translation()<< trans_[0] , trans_[1] , trans_[2];
-  body_to_palm.rotate( euler_to_quat ( rpy_[0], rpy_[1], rpy_[2] ) );
-  Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
+  
+  if (use_relative_to_body_frame_){
+    body_to_palm.translation()<< trans_[0] , trans_[1] , trans_[2];
+    body_to_palm.rotate( euler_to_quat ( rpy_[0], rpy_[1], rpy_[2] ) );
+  }else{
+    body_to_palm = actual_body_to_palm_;
+    palm_to_palm_delta.translation()<< trans_[0] , trans_[1] , trans_[2];
+    palm_to_palm_delta.rotate( euler_to_quat ( rpy_[0], rpy_[1], rpy_[2] ) );
+  }
+  
+  Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm * palm_to_palm_delta;
   
   drc::ee_goal_t msg;
   msg.utime = bot_timestamp_now();
@@ -276,11 +296,11 @@ std::string App::getPalmLink(){
 void App::publish_reset(){
   if (plan_from_robot_state_){
     if(rstate_init_){
-      solveFK(rstate_,world_to_body_, cartpos_, cartpos_ready_);
+      solveFK(rstate_,world_to_body_, actual_body_to_palm_,  cartpos_, cartpos_ready_);
     }
   }else{
     if (planstate_init_){
-      solveFK(planstate_,world_to_body_, cartpos_, cartpos_ready_);
+      solveFK(planstate_,world_to_body_, actual_body_to_palm_, cartpos_, cartpos_ready_);
     }
   }
     
@@ -297,20 +317,24 @@ void App::publish_reset(){
   }
 //  sleep(1);
 
-  Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
-  trans_[0] = body_to_palm.translation().x();
-  trans_[1] = body_to_palm.translation().y();
-  trans_[2] = body_to_palm.translation().z();
-  quat_to_euler(  Eigen::Quaterniond(body_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
-  trans_[2] += 0.0005; // slight motion required to avoid error from mike posa's planner
   
-  /*
-  Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
-  trans_[0] = world_to_palm.translation().x();
-  trans_[1] = world_to_palm.translation().y();
-  trans_[2] = world_to_palm.translation().z();
-  quat_to_euler(  Eigen::Quaterniond(world_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
-  */
+  if (use_relative_to_body_frame_){
+    Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
+    trans_[0] = body_to_palm.translation().x();
+    trans_[1] = body_to_palm.translation().y();
+    trans_[2] = body_to_palm.translation().z();
+    trans_[2] += 0.0005; // slight motion required to avoid error from mike posa's planner
+    quat_to_euler(  Eigen::Quaterniond(body_to_palm.rotation()) ,rpy_[0],rpy_[1],rpy_[2] );
+  }else{
+    trans_[0] =0;
+    trans_[1] =0;
+    trans_[2] =0;
+    trans_[2] = 0.0005; // slight motion required to avoid error from mike posa's planner
+    rpy_[0] = 0;
+    rpy_[1] = 0;
+    rpy_[2] = 0;
+  }  
+  
   publish_palm_goal();
 
 
@@ -362,13 +386,20 @@ int App::repaint (int64_t now){
   if (!show_palm_triads_)
     show_palm_triads_string = "Hiding Triads";
   
+  std::string use_relative_to_body_frame_string = " Transforming in body frame";
+  if (!use_relative_to_body_frame_)
+    use_relative_to_body_frame_string = "Transforming in hand frame";
 
+
+  
   wmove(w, 10, 0);
   wprintw(w, "conf: %s %s with %s to %s", hand_side_string.c_str() , hand_type_string.c_str(), mode_string.c_str(), controller_string.c_str() );
   wmove(w, 11, 0);
   wprintw(w, "      [z]   [x]         [c]              [v]",  (int) use_sandia_);
   wmove(w, 13, 0);
-  wprintw(w, "[b] %s",  show_palm_triads_string.c_str() );
+  wprintw(w, "[b] %s",  use_relative_to_body_frame_string.c_str() );
+  wmove(w, 14, 0);
+  wprintw(w, "[n] %s",  show_palm_triads_string.c_str() );
 
   color_set(COLOR_TITLE, NULL);
   
@@ -469,9 +500,9 @@ bool App::on_input(){
       use_reach_= !use_reach_;
       
       if (!use_reach_){ 
-        Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
-        Eigen::Isometry3d current_world_to_palm =  world_to_body_* body_to_palm;           
-        starting_gaze_quat_ = Eigen::Quaterniond (current_world_to_palm.rotation());
+          Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
+          Eigen::Isometry3d current_world_to_palm =  world_to_body_* body_to_palm;           
+          starting_gaze_quat_ = Eigen::Quaterniond (current_world_to_palm.rotation());
       }
       
       // dont reset to allow hot switching
@@ -479,7 +510,11 @@ bool App::on_input(){
       lcm_->publish("RIGHT_PALM_GOAL_CLEAR", &goal_msg);
       publish_palm_goal();
       break;      
-    case 'b': // draw triads of the ee or not
+    case 'b': // transform relative to the body frame, left previous hand frame
+      use_relative_to_body_frame_= !use_relative_to_body_frame_;
+      publish_reset();
+      break;
+    case 'n': // draw triads of the ee or not
       show_palm_triads_= !show_palm_triads_;
       break;      
   }
