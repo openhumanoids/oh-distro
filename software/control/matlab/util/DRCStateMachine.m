@@ -33,7 +33,7 @@ classdef DRCStateMachine
       while 1
         ctrl = obj.controllers.(obj.active_controller);
         msg = ['Controller: initializing ' ctrl.name];
-        send_status(3, 0, 0, msg );
+%         send_status(3, 0, 0, msg );
         disp(msg);
         
         init_tic = tic;
@@ -41,7 +41,7 @@ classdef DRCStateMachine
         disp([ctrl.name ' initialize time: ' num2str(toc(init_tic))]);
         
         msg = ['Controller: running ' ctrl.name];
-        send_status(3, 0, 0, msg );
+%         send_status(3, 0, 0, msg );
         send_controller_status(ctrl.name);
         disp(msg);
         disp(['Controller: transition time ' num2str(toc(transition_tic))]);
