@@ -26,6 +26,7 @@ serverThread = None
 vlcProc = None
 oggProc = None
 
+
 def serverStreamLoop():
 
     print 'starting ogg publisher'
@@ -54,22 +55,32 @@ def serverStreamLoop():
     print 'stopping ogg publisher'
 
 
-def handleMessageFromClient(channel, data):
-
-    m = bot_core.raw_t.decode(data)
-    print 'message from client:', m.data
-
+def stopServerThread():
     global serverThread, serverThreadRunning
-
     if serverThread:
         serverThreadRunning = False
         serverThread.join()
         serverThread = None
 
+
+def startServerThread():
+    global serverThread, serverThreadRunning
     serverThreadRunning = True
     serverThread = threading.Thread(target=serverStreamLoop)
     serverThread.daemon = True
     serverThread.start()
+
+
+def handleMessageFromClient(channel, data):
+
+    m = bot_core.raw_t.decode(data)
+    print 'message from client:', m.data
+
+    if m.data == 'restart_stream':
+        stopServerThread()
+        startServerThread()
+    elif m.data == 'stop_stream':
+        stopServerThread()
 
 
 def startVLC(vlcInputStream):
@@ -99,22 +110,31 @@ def handleMessageFromServer(channel, data):
     oggProc.stdin.write(m.data)
 
 
+def sendMessageToServer(commandString, lcmHandle):
+    print 'sending message to server:', commandString
+    m = bot_core.raw_t()
+    m.utime = 0
+    m.data = commandString
+    m.length = len(m.data)
+    lcmHandle.publish(clientChannel, m.encode())
+
+
 def client():
 
     global oggProc
     oggProc = subprocess.Popen(['ogg123', '-'], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     lcmHandle = lcm.LCM()
-
-    m = bot_core.raw_t()
-    m.utime = 0
-    m.data = 'restart_stream'
-    m.length = len(m.data)
-    lcmHandle.publish(clientChannel, m.encode())
+    sendMessageToServer('restart_stream', lcmHandle)
 
     subscription = lcmHandle.subscribe(serverChannel, handleMessageFromServer)
     while True:
-        lcmHandle.handle()
+        try:
+            lcmHandle.handle()
+        except KeyboardInterrupt:
+            break
+
+    sendMessageToServer('stop_stream', lcmHandle)
 
 
 def main():
