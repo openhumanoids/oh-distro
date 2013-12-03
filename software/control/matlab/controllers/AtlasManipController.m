@@ -238,23 +238,27 @@ classdef AtlasManipController < DRCController
 
         x0 = data.AtlasState; % should always have an atlas state
         q0 = x0(1:getNumDOF(obj.robot));
-%         obj.controller_data.setField('qtraj',q0((1+~obj.robot.floating*6):end));
-%         obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
+        obj.controller_data.setField('qtraj',q0((1+~obj.robot.floating*6):end));
+        obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
 
         % get current desired pos on robot
         msg = data.ATLAS_COMMAND_UNSAFE;
         qdes = q0;
         qdes((1+obj.robot.floating*6):end) = msg.position(obj.robot.BDIToStateInd-obj.robot.floating*6); % sent back from driver in BDI ordering
      
-%         % set integral terms to be des-cur
-%         integ = obj.controller_data.data.integral;
-%         torso = (obj.arm_joints | obj.back_joints);
-%         integ(torso) = qdes(torso) - q0(torso);
-%         obj.controller_data.setField('integral',integ);      
+        % note that if any(integ > max_integ), this will get thresholded in
+        % the controller and produce a jump (this shouldn't happen
+        % during normal operation)
+        
+        % set integral terms to be des-cur
+        integ = obj.controller_data.data.integral;
+        torso = (obj.arm_joints | obj.back_joints);
+        integ(torso) = qdes(torso) - q0(torso);
+        obj.controller_data.setField('integral',integ);      
 
-        obj.controller_data.setField('qtraj',qdes((1+~obj.robot.floating*6):end));
-        obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
-        obj.controller_data.setField('integral',zeros(getNumDOF(obj.robot),1));      
+%         obj.controller_data.setField('qtraj',qdes((1+~obj.robot.floating*6):end));
+%         obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
+%         obj.controller_data.setField('integral',zeros(getNumDOF(obj.robot),1));      
 
       end
       obj = setDuration(obj,inf,false); % set the controller timeout

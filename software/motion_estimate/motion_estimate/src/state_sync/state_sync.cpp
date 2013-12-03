@@ -100,19 +100,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // *******************************************************************************
   //  BEGIN: paste output code from calibrate script here 
   // *******************************************************************************
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 1.0790;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 1.0586;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 1.0767;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 1.0582;
   encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 1.0194;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0665;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0089;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 1.0016;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0649;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0088;
+  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 1.0040;
 
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = -1.0435;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0664;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -0.0584;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -1.0470;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = -1.0526;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0308;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = 0.9203;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0661;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -0.0587;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -1.0455;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = 1.0418;
+  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0304;
   // *******************************************************************************
   //  END 
   // *******************************************************************************
