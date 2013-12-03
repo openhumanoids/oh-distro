@@ -63,6 +63,7 @@ end
 ts = sort([ts,support_times(idx_add_to_ts)]);
 [q_data, t_data,~,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_info,ladder_opts.fine,ikoptions);
 x_data = [q_data;zeros(size(q_data))];
+t_data = t_data(1):dt:(length(t_data)-1)*dt;
 
 % Plot COM traj
 % v = r.constructVisualizer();
