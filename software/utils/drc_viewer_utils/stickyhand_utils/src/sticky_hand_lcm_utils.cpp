@@ -27,6 +27,7 @@ namespace visualization_utils
         KDL::Frame  T_geometry_palm = KDL::Frame::Identity(); 
         if(!sticky_hand_struc._gl_hand->get_link_frame(ee_name,T_geometry_palm))
             cout <<"ERROR: ee link "<< ee_name << " not found in sticky hand urdf"<< endl;
+            
       
         T_world_ee = T_world_geometry*T_geometry_palm;
              
@@ -35,18 +36,29 @@ namespace visualization_utils
             KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
             KDL::Vector handframe_offset;
             handframe_offset[0]=0.1;handframe_offset[1]=0;handframe_offset[2]=0;
-            KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+            KDL::Vector palmframe_offset= T_palm_hand.M*handframe_offset;
             KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
             T_world_ee.p += worldframe_offset;
 
         }  
         else
         {
-            KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
+            KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base  
+              
+             // debug
+             /*cout <<"T_palm_hand"<<T_palm_hand.p[0]<<" "<<T_palm_hand.p[1]<<" "<<T_palm_hand.p[2] << endl;
+             double ro,pi,ya;
+               T_palm_hand.M.GetRPY(ro,pi,ya);
+               cout <<"roll"<<ro*(180/M_PI) << endl;
+               cout <<"pitch"<<pi*(180/M_PI) << endl;
+               cout <<"yaw"<<ya*(180/M_PI) << endl; */           
+            
             KDL::Vector handframe_offset;
             handframe_offset[0]=0;handframe_offset[1]=0;handframe_offset[2]=0;
-            KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+            KDL::Vector palmframe_offset= T_palm_hand.M*handframe_offset;            
             KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
+            //cout <<"palmframe_offset"<<palmframe_offset[0]<<" "<<palmframe_offset[1]<<" "<<palmframe_offset[2] << endl;
+            //cout <<"worldframe_offset"<<worldframe_offset[0]<<" "<<worldframe_offset[1]<<" "<<worldframe_offset[2] << endl;
             T_world_ee.p += worldframe_offset;
 
         }  
@@ -458,7 +470,7 @@ namespace visualization_utils
           KDL::Frame T_palm_hand = T_geometry_palm.Inverse()*T_geometry_hand; //this should be T_palm_base    
           KDL::Vector handframe_offset;
           handframe_offset[0]=0.0;handframe_offset[1]=0;handframe_offset[2]=0;
-          KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+          KDL::Vector palmframe_offset= T_palm_hand.M*handframe_offset;
           KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
           T_world_ee.p += worldframe_offset;                    
           
@@ -567,7 +579,7 @@ namespace visualization_utils
                 handframe_offset[0]=retracting_offset;handframe_offset[1]=0;handframe_offset[2]=0;
               }
                   
-              KDL::Vector palmframe_offset= T_palm_hand*handframe_offset;
+              KDL::Vector palmframe_offset= T_palm_hand.M*handframe_offset;
               KDL::Vector worldframe_offset=T_world_ee.M*palmframe_offset;
               T_world_ee.p += worldframe_offset;   
               T_world_ee_frames.push_back(T_world_ee);
