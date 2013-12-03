@@ -69,7 +69,7 @@ class Pass{
     drc::affordance_plus_t getCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
     drc::affordance_plus_t getBoxAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);
     drc::affordance_plus_t getFireHoseAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid);   
-    drc::affordance_plus_t getDoorAffordancePlus(std::string filename, Eigen::Isometry3d ground_to_aff, int uid);
+    drc::affordance_plus_t getDoorAffordancePlus(std::string filename, Eigen::Isometry3d ground_to_aff, int uid, bool right_handed);
     
     BotParam* botparam_;
     bot::frames* frames_cpp_;
@@ -121,6 +121,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, int which_affor
 void Pass::poseGroundHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
   ground_height_ = msg->pos[2];
 }
+
 
 drc::affordance_plus_t Pass::getSteeringCylinderAffordancePlus(std::string filename, Eigen::Isometry3d utorso_to_aff, int uid){ 
   Eigen::Isometry3d world_to_aff = world_to_utorso_*utorso_to_aff; 
@@ -270,7 +271,7 @@ drc::affordance_plus_t Pass::getFireHoseAffordancePlus(std::string filename, Eig
 }
 
 
-drc::affordance_plus_t Pass::getDoorAffordancePlus(std::string filename, Eigen::Isometry3d ground_to_aff, int uid){ 
+drc::affordance_plus_t Pass::getDoorAffordancePlus(std::string filename, Eigen::Isometry3d ground_to_aff, int uid, bool right_handed){ 
   Eigen::Isometry3d world_to_aff = world_to_ground_*ground_to_aff; 
   std::vector<double> xyzrpy = {.0 , .0 , .0, 0. , 0 , 0};
   xyzrpy[0] = world_to_aff.translation().x();
@@ -283,7 +284,10 @@ drc::affordance_plus_t Pass::getDoorAffordancePlus(std::string filename, Eigen::
   a.utime =0;
   a.map_id =0;
   a.uid =uid;
-  a.otdf_type ="door_right_handed";
+  if(right_handed)
+    a.otdf_type ="door_right_handed";
+  else
+    a.otdf_type ="door_left_handed";  
   a.aff_store_control = drc::affordance_t::NEW;
   
   a.params.push_back(0.09946  ); a.param_names.push_back("Frame_Offset");
@@ -386,10 +390,16 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
     Eigen::Isometry3d ground_to_aff(Eigen::Isometry3d::Identity());
     ground_to_aff.translation()  << 2.0, -0.5,  ground_height_+ 1.016;
     ground_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(0,0,90*M_PI/180)) );
-    aff = getDoorAffordancePlus("notused", ground_to_aff, 0);
+    aff = getDoorAffordancePlus("notused", ground_to_aff, 0,true);
     aff.aff.otdf_type = "door_right_handed";
   }
-  
+  else if (which_affordance_ ==7){
+    Eigen::Isometry3d ground_to_aff(Eigen::Isometry3d::Identity());
+    ground_to_aff.translation()  << 2.0, 0.5, 1.016;
+    ground_to_aff.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-90*M_PI/180)) );
+    aff = getDoorAffordancePlus("notused", ground_to_aff, 0,false);
+    aff.aff.otdf_type = "door_left_handed";
+  }  
   
   else{
     std::cout << "Affordance not recognised\n";
@@ -412,7 +422,8 @@ int main(int argc, char ** argv) {
   std::cout << "4 - firehose (at 1.4m)\n";
   std::cout << "5 - wye (at 1m)\n";  
   std::cout << "6 - door_right_handed\n";
-  
+  std::cout << "7 - door_left_handed\n";
+    
   string mode = "both";
   int which_affordance = 0;
   ConciseArgs opt(argc, (char**)argv);
