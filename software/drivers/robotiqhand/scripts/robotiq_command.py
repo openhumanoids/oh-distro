@@ -13,98 +13,74 @@ import baseSModel
 
 from time import sleep, time
 
-def genCommand(char, command):
+forceLevel = 128
+speedLevel = 128
+
+def genCommand(char):
     """Update the command according to the character entered by the user."""
 
-    if char == 'a':
-        command = robotiqhand.command_original_t();
-        command.rACT = 1
-        command.rGTO = 1
-        command.rSPA = 255
-        command.rFRA = 150
+    global forceLevel
+    global speedLevel
 
-    if char == 'r':
-        command = robotiqhand.command_original_t();
-        command.rACT = 0
+    command = robotiqhand.command_original_t();
 
     if char == 'c':
-        command.rPRA = 255
+        command.go_to = 1
+        command.position = 255
 
     if char == 'o':
-        command.rPRA = 0
+        command.go_to = 1
+        command.position = 0
 
     if char == 'b':
-        command.rMOD = 0
+        command.mode = 0
 
     if char == 'p':
-        command.rMOD = 1
+        command.mode = 2
 
     if char == 'w':
-        command.rMOD = 2
+        command.mode = 1
 
     if char == 's':
-        command.rMOD = 3
-
-    #If the command entered is a int, assign this value to rPRA
-    try:
-        command.rPRA = int(char)
-        if command.rPRA > 255:
-            command.rPRA = 255
-        if command.rPRA < 0:
-            command.rPRA = 0
-    except ValueError:
-        pass
+        command.mode = 3
 
     if char == 'f':
-        command.rSPA += 25
-        if command.rSPA > 255:
-            command.rSPA = 255
+        speedLevel += 16
+        if speedLevel > 255:
+            speedlLevel = 255
+        print "speed level now:", self.speedLevel
+        command.speed = speedLevel
 
     if char == 'l':
-        command.rSPA -= 25
-        if command.rSPA < 0:
-            command.rSPA = 0
+        speedLevel += 16
+        if speedLevel > 255:
+            speedlLevel = 255
+        print "speed level now:", self.speedLevel
+        command.speed = speedLevel
 
     if char == 'i':
-        command.rFRA += 25
-        if command.rFRA > 255:
-            command.rFRA = 255
+        forceLevel += 16
+        if forceLevel > 255:
+            forcelLevel = 255
+        print "force level now:", self.forceLevel
+        command.force = forceLevel
 
     if char == 'd':
-        command.rFRA -= 25
-        if command.rFRA < 0:
-            command.rFRA = 0
+        forceLevel -= 16
+        if forceLevel > 0:
+            command.forceLevel = 0
+        print "force level now:", self.forceLevel
+        command.force = forceLevel
+
+    if char in [str(x) for x in range(255)]:
+        command.go_to = 1
+        command.position = int(char)
 
     return command
 
 
-def askForCommand(command):
+def askForCommand():
     """Ask the user for a command to send to the gripper."""
-
-    currentCommand  = 'Simple S-Model Controller\n-----\nCurrent command:'
-    currentCommand += ' rACT = '  + str(command.rACT)
-    currentCommand += ', rMOD = ' + str(command.rMOD)
-    currentCommand += ', rGTO = ' + str(command.rGTO)
-    currentCommand += ', rATR = ' + str(command.rATR)
-##    currentCommand += ', rGLV = ' + str(command.rGLV)
-##    currentCommand += ', rICF = ' + str(command.rICF)
-##    currentCommand += ', rICS = ' + str(command.rICS)
-    currentCommand += ', rPRA = ' + str(command.rPRA)
-    currentCommand += ', rSPA = ' + str(command.rSPA)
-    currentCommand += ', rFRA = ' + str(command.rFRA)
-
-    #We only show the simple control mode
-##    currentCommand += ', rPRB = ' + str(command.rPRB)
-##    currentCommand += ', rSPB = ' + str(command.rSPB)
-##    currentCommand += ', rFRB = ' + str(command.rFRB)
-##    currentCommand += ', rPRC = ' + str(command.rPRC)
-##    currentCommand += ', rSPC = ' + str(command.rSPC)
-##    currentCommand += ', rFRC = ' + str(command.rFRC)
-##    currentCommand += ', rPRS = ' + str(command.rPRS)
-##    currentCommand += ', rSPS = ' + str(command.rSPS)
-##    currentCommand += ', rFRS = ' + str(command.rFRS)
-
-    print currentCommand
 
     strAskForCommand  = '-----\nAvailable commands\n\n'
     strAskForCommand += 'r: Reset\n'
@@ -125,16 +101,6 @@ def askForCommand(command):
 
     return raw_input(strAskForCommand)
 
-def uint_int_convert(command):
-
-    attr_list = [x for x in dir(command) if x[0]=='r']
-
-    for attr in attr_list:
-        x = command.__getattribute__(attr)
-        if x > 127:
-            command.__setattr__(attr,x-256)
-
-    return command
 
 def publisher(side):
     """Main loop which requests new commands and publish them on the
@@ -144,14 +110,13 @@ def publisher(side):
 
     lc = lcm.LCM()
 
-    command = robotiqhand.command_original_t();
+    command = commandMsg()
 
     try:
         while True:
-            command = genCommand(askForCommand(command), command)
+            command = parseString(genCommand(askForCommand()))
 
             command.utime = (time() * 1000000)
-            command = uint_int_convert(command)
 
             lc.publish(command_topic, command.encode())
 

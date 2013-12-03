@@ -1,7 +1,7 @@
 package robotiqhand;
 
 // Recreation of ros robotiq hand "output" or command message
-struct command_t
+struct command_original_t
 {
     int64_t utime;
 

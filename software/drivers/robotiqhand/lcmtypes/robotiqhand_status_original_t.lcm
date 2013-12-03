@@ -1,7 +1,7 @@
 package robotiqhand;
 
 // Recreation of ros robotiq hand "input" or status message
-struct status_t
+struct status_original_t
 {
     int64_t utime;
 
