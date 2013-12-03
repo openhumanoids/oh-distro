@@ -16,15 +16,19 @@ import threading
 
 serverChannel = 'OGG_SERVER'
 clientChannel = 'OGG_CLIENT'
-oggUrl = 'http://localhost:8123'
+oggUrl = 'localhost:8080'
+webcamUrl = 'rtsp://10.66.171.26:554/live2.sdp'
+transcodeArgs = 'ab=10,channels=1,samplerate=8000'
 messageSize = 4096
 
 serverThreadRunning = False
 serverThread = None
+vlcProc = None
+oggProc = None
 
 def serverStreamLoop():
 
-    stream = urllib2.urlopen(oggUrl)
+    stream = urllib2.urlopen('http://'+oggUrl)
 
     lcmHandle = lcm.LCM()
     m = bot_core.raw_t()
@@ -67,15 +71,27 @@ def handleMessageFromClient(channel, data):
     serverThread.start()
 
 
-def server():
+def startVLC(vlcInputStream):
+
+    soutString = '#transcode{acodec=vorb,%s}:std{access=http,mux=ogg,url=%s}' % (transcodeArgs, oggUrl)
+    command = ['cvlc', vlcInputStream, '--sout', soutString]
+
+    print 'starting VLC with command:'
+    print ' '.join(command)
+
+    global vlcProc
+    vlcProc = subprocess.Popen(command)
+
+
+def server(vlcInputStream):
+
+    startVLC(vlcInputStream)
 
     lcmHandle = lcm.LCM()
     subscription = lcmHandle.subscribe(clientChannel, handleMessageFromClient)
     while True:
         lcmHandle.handle()
 
-
-oggProc = None
 
 def handleMessageFromServer(channel, data):
     m = bot_core.raw_t.decode(data)
@@ -106,7 +122,11 @@ def main():
     assert mode in ('--client', '--server')
 
     if mode == '--server':
-        server()
+        try:
+            vlcInputStream = sys.argv[2]
+        except IndexError:
+            vlcInputStream = webcamUrl
+        server(vlcInputStream)
     else:
         client()
 
