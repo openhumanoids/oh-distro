@@ -79,7 +79,7 @@ function LadderPlanner(options)
   ladder_opts.coarse.shrink_factor = 0.5;
   ladder_opts.coarse.utorso_threshold = 25*pi/180;
   ladder_opts.coarse.pelvis_gaze_threshold = 20*pi/180;
-  ladder_opts.coarse.ankle_limit = 15*pi/180*ones(2,1);
+  ladder_opts.coarse.ankle_limit = 15*pi/180;
   ladder_opts.coarse.knee_lb = 30*pi/180*ones(2,1);
   ladder_opts.coarse.knee_ub = inf*pi/180*ones(2,1);
   ladder_opts.coarse.hand_threshold = sin(1*pi/180);
@@ -103,7 +103,7 @@ function LadderPlanner(options)
     case 'tension'
       ladder_opts.fine.use_quasistatic_constraint =  false;
       ladder_opts.fine.use_arm_tension_constraint =  true;
-      ladder_opts.fine.use_com_constraint = false;
+      ladder_opts.fine.use_com_constraint = true;
       ladder_opts.fine.use_incr_com_constraint =     true;
       ladder_opts.fine.use_utorso_constraint =       true;
   end
@@ -126,14 +126,14 @@ function LadderPlanner(options)
   ladder_opts.fine.shrink_factor = 0.5;
   ladder_opts.fine.utorso_threshold = 25*pi/180;
   ladder_opts.fine.pelvis_gaze_threshold = 10*pi/180;
-  ladder_opts.fine.ankle_limit = 15*pi/180*ones(2,1);
+  ladder_opts.fine.ankle_limit = 15*pi/180;
   ladder_opts.fine.knee_lb = 35*pi/180*ones(2,1);
   ladder_opts.fine.knee_ub = inf*pi/180*ones(2,1);
   ladder_opts.fine.hand_threshold = sin(5*pi/180);
   ladder_opts.fine.hand_cone_threshold = sin(1*pi/180);
   ladder_opts.fine.hand_pos_tol = 0.0;
   ladder_opts.fine.pelvis_threshold = 0.05;
-  ladder_opts.fine.com_tol = 0.0;
+  ladder_opts.fine.com_tol = 0.05;
   ladder_opts.fine.com_incr_tol = 0.02;
   ladder_opts.fine.com_tol_max = 0.5;
   ladder_opts.fine.qs_margin = 0.0;
@@ -200,6 +200,7 @@ function LadderPlanner(options)
 
   while true
     while waiting
+      pause(0.1);
       [x,~] = getNextMessage(robot_state_coder,10);
       if (~isempty(x))
         x0=x;

@@ -21,7 +21,7 @@ end
 % time spacing of samples for IK
 tf = comtraj.tspan(2);
 dt = max(0.5,tf/1000);
-support_times(end+1) = support_times(end)+eps;
+% support_times(end+1) = support_times(end)+eps;
 nt_support = length(support_times);
 
 %% create desired joint trajectory
@@ -56,7 +56,7 @@ ladder_opts.fine.comtraj = PPTrajectory(foh(support_times,support_centroid));
 ts = 0:dt:tf;
 idx_add_to_ts = false(size(support_times));
 for i = 1:nt_support
-  if min(abs(ts - support_times(i))) > 0.001
+  if min(abs(ts - support_times(i))) > 0.01
     idx_add_to_ts(i) = true;
   end
 end

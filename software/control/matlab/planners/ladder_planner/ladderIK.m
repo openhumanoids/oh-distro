@@ -98,7 +98,7 @@ if ~isfield(ladder_opts,'pelvis_gaze_threshold')
   ladder_opts.pelvis_gaze_threshold = 20*pi/180;
 end
 if ~isfield(ladder_opts,'ankle_limit') 
-  ladder_opts.ankle_limit = 25*pi/180*ones(size(ankle_joints));
+  ladder_opts.ankle_limit = 25*pi/180;
 end
 if ~isfield(ladder_opts,'knee_lb') 
   ladder_opts.knee_lb = 30*pi/180*ones(size(knee_joints));
@@ -173,14 +173,6 @@ hand_grasped(2) = ~isempty(ee_info.hands(1));
 basic_constraints = {};
 
 tf = ts(end);
-
-if ladder_opts.use_ankle_constraint
-  ankle_constraint = PostureConstraint(r,tf*[0*0.9,Inf]);
-  ankle_constraint = ankle_constraint.setJointLimits(ankle_joints, ...
-    -ladder_opts.ankle_limit, ...
-    10*ladder_opts.ankle_limit); 
-  basic_constraints = [basic_constraints, {ankle_constraint}];
-end
 
 if ladder_opts.use_knee_constraint
   knee_constraint = PostureConstraint(r);
@@ -270,6 +262,19 @@ for i=1:nt
   
   foot_supported(1) = ( eval(ee_info.feet(1).support_traj,t_data) && eval(ee_info.feet(1).support_traj,ts(min(i+1,nt))) );
   foot_supported(2) = ( eval(ee_info.feet(2).support_traj,t_data) && eval(ee_info.feet(2).support_traj,ts(min(i+1,nt))) );
+
+  if ladder_opts.use_ankle_constraint && any(foot_supported)
+      for j = 1:2
+          if foot_supported(j)
+              ankle_constraint = PostureConstraint(r);
+              ankle_constraint = ankle_constraint.setJointLimits( ...
+                  findJointIndices(r,r.getBody(r.getBody(ee_info.feet(j).idx).parent).jointname), ...
+                  -ladder_opts.ankle_limit, ...
+                  10*ladder_opts.ankle_limit);
+              constraints = [constraints, {ankle_constraint}];
+          end
+      end
+  end
   if ladder_opts.use_quasistatic_constraint && any(foot_supported)
     qsc = QuasiStaticConstraint(r);
     for j = 1:2
@@ -376,7 +381,7 @@ for i=1:nt
       T = [R,P;zeros(1,3),1];
       com_halfspace_constraint = ...
         WorldCoMInFrameConstraint(r,T,[NaN;ladder_opts.qs_margin;NaN],[NaN;NaN;NaN]);
-       constraints = [constraints, {com_halfspace_constraint}];
+%        constraints = [constraints, {com_halfspace_constraint}];
     end
 %     R = o_T_pelvis(1:3,1:3);
 %     P = mean(foot_back,2);
