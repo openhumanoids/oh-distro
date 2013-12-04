@@ -56,45 +56,6 @@ function LadderPlanner(options)
 
   switch options.stability_type
     case 'quasistatic'
-      ladder_opts.coarse.use_quasistatic_constraint =  true;
-      ladder_opts.coarse.use_arm_tension_constraint =  false;
-    case 'tension'
-      ladder_opts.coarse.use_quasistatic_constraint =  false;
-      ladder_opts.coarse.use_arm_tension_constraint =  true;
-  end
-  ladder_opts.coarse.use_com_constraint =          false;
-  ladder_opts.coarse.use_incr_com_constraint =     false;
-  ladder_opts.coarse.use_final_com_constraint =    false;
-  ladder_opts.coarse.use_arm_constraints =         false;
-  ladder_opts.coarse.use_total_arm_constraints =   false;
-  ladder_opts.coarse.use_pelvis_gaze_constraint =  true;
-  ladder_opts.coarse.use_pelvis_constraint =       true;
-  ladder_opts.coarse.use_utorso_constraint =       false;
-  ladder_opts.coarse.use_knee_constraint =         true;
-  ladder_opts.coarse.use_ankle_constraint =        true;
-  ladder_opts.coarse.use_neck_constraint =         true;
-  ladder_opts.coarse.use_collision_constraint =    false;
-  ladder_opts.coarse.use_smoothing_constraint =    false;
-  ladder_opts.coarse.n = 1;
-  ladder_opts.coarse.shrink_factor = 0.5;
-  ladder_opts.coarse.utorso_threshold = 25*pi/180;
-  ladder_opts.coarse.pelvis_gaze_threshold = 20*pi/180;
-  ladder_opts.coarse.ankle_limit = 15*pi/180;
-  ladder_opts.coarse.knee_lb = 30*pi/180*ones(2,1);
-  ladder_opts.coarse.knee_ub = inf*pi/180*ones(2,1);
-  ladder_opts.coarse.hand_threshold = sin(1*pi/180);
-  ladder_opts.coarse.hand_cone_threshold = sin(1*pi/180);
-  ladder_opts.coarse.hand_pos_tol = 0.0;
-  ladder_opts.coarse.pelvis_threshold = 0.05;
-  ladder_opts.coarse.com_tol = 0.1;
-  ladder_opts.coarse.com_incr_tol = 0.02;
-  ladder_opts.coarse.com_tol_max = 0.5;
-  ladder_opts.coarse.qs_margin = 0.0;
-  ladder_opts.coarse.arm_tol = 6*pi/180/ladder_opts.coarse.n;
-  ladder_opts.coarse.arm_tol_total = 30*pi/180;
-
-  switch options.stability_type
-    case 'quasistatic'
       ladder_opts.fine.use_quasistatic_constraint =  true;
       ladder_opts.fine.use_arm_tension_constraint =  false;
       ladder_opts.fine.use_com_constraint = true;
@@ -161,9 +122,6 @@ function LadderPlanner(options)
         l_hand_str = 'hook hand';
         l_hand_offset = [0;0.219+0.125;-0.092];
         l_hand_axis = [1;0;0];
-        ladder_opts.coarse.hand_threshold = sin(1*pi/180);
-        ladder_opts.coarse.shrink_factor = 1;
-        ladder_opts.coarse.final_shrink_factor = 1;
         ladder_opts.fine.hand_threshold = sin(0.5*pi/180);
         ladder_opts.fine.shrink_factor = 1.3;
         ladder_opts.fine.final_shrink_factor = 0.2;
@@ -175,7 +133,6 @@ function LadderPlanner(options)
         l_hand_str = 'irobot hand';
         l_hand_offset = [0;0.15;0];
         l_hand_axis = [1;0;0];
-        ladder_opts.coarse.final_shrink_factor = 1.2;
         ladder_opts.fine.final_shrink_factor = 1.2;
         %         l_hand_axis = [0;0;1];
       end
@@ -211,13 +168,10 @@ function LadderPlanner(options)
 
       [footsteps, step_options] = approved_footstep_plan_listener.getNextMessage(10);
       if (~isempty(footsteps))
-        if strcmp(qnom_state,'fix_both')
-          msg =['Ladder Plan: Footstep plan received']; disp(msg); send_status(status_code,0,0,msg);
-          waiting = false;
-        else
-          msg =['Ladder Plan: Please ''Fix Both'' hands before requesting a plan']; disp(msg); send_status(status_code,0,0,msg);
-          msg =['Ladder Plan: Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
-        end
+        fixed_links = struct('link',r.findLinkInd('r_hand+r_hand_point_mass'),'pt',r_hand_offset,'tolerance',hand_tol);
+        fixed_links(2) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',l_hand_offset,'tolerance',hand_tol);
+        msg =['Ladder Plan: Footstep plan received']; disp(msg); send_status(status_code,0,0,msg);
+        waiting = false;
       end
 
       qnom_data = qnom_mon.getNextMessage(0);

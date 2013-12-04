@@ -7,9 +7,6 @@ nq = r.getNumDOF();
 if ~exist('ladder_opts','var')
   ladder_opts = struct();
 end
-if ~isfield(ladder_opts,'coarse')
-  ladder_opts.coarse = defaultLadderOptsCoarse();
-end
 if ~isfield(ladder_opts,'fine')
   ladder_opts.fine = defaultLadderOptsFine();
 end
