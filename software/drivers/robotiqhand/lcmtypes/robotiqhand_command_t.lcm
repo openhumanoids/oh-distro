@@ -5,10 +5,20 @@ struct command_t
 {
   int64_t utime;
 
-  // 0 - basic (normal)
-  // 1 - pinch
-  // 2 - wide
-  // 3 - scissor
+  // flag to set the hand as active
+  // 1 - active
+  // 0 - not active
+  int8_t activate;
+
+  // 1 - move the gripper this this command
+  // 0 - don't move, just changing a mode or setting
+  int8_t do_move;
+
+  // -1 - ignore (use previous mode)
+  //  0 - basic (normal)
+  //  1 - pinch
+  //  2 - wide
+  //  3 - scissor
   int8_t mode;
 
   // The range for all of these is 0-255

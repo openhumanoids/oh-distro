@@ -40,7 +40,7 @@ def mainLoop(side, address):
             lc.handle()
 
             #Get and publish the Gripper status
-            status = gripper.getStatus()
+            #status = gripper.getStatus()
 
             ## TODO: fix encoding of uints in status message
             ##lc.publish(status_topic, status.encode())
@@ -50,6 +50,7 @@ def mainLoop(side, address):
 
             #Send the most recent command
             gripper.sendCommand()
+            print gripper.message
 
             #Wait a little
             sleep(0.05)

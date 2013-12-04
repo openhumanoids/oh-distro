@@ -1,7 +1,203 @@
 import robotiqhand
 import time
 
-class robotiqBaseSModel:
+class commandLcmToModbusConverter(object):
+
+    def __init__ (self):
+
+        #Byte 0
+        self.rACT = 0  # Activate: 1 bit, 0=reset, 1=activate
+        self.rMOD = 0  # Mode: 2 bits, 00=basic, 10=pinch, 01=wide, 11=scissor
+        self.rGTO = 0  # Goto: 1 bit, 0=stop, 1=goto requested position
+        self.rATR = 0  # Release: 1 bit, 0=normal release, 1=automatic release
+        self.rRS0 = 0  # Reserved: bits 5-7
+
+        #Byte 1
+        self.rGLV = 0  # Glove mode: 1 bit, 0=normal, 1=glove mode
+        self.rRS1 = 0  # Reserved: 1 bit
+        self.rICF = 0  # Finger Individual mode: 1 bit, 0=normal, 1=individual
+        self.rICS = 0  # Scissor Individual mode: 1 bit, 0=normal, 1=individual
+        self.rRS2 = 0  # Reserved bits 4-7
+
+        #Byte 2
+        self.rRS3 = 0  # Reserved bits 0-7
+
+        #Bytes 3-5
+        self.rPRA = 0  # Position of finger A (or all in simple mode)
+        self.rSPA = 0  # Speed of finger A (or all in simple mode)
+        self.rFRA = 0  # Force of finger A (or all in simple mode)
+
+        #Bytes 6-8
+        self.rPRB = 0  # Position of finger B
+        self.rSPB = 0  # Speed of finger B
+        self.rFRB = 0  # Force of finger B
+
+        #Bytes 9-11
+        self.rPRC = 0  # Position of finger C
+        self.rSPC = 0  # Speed of finger C
+        self.rFRC = 0  # Force of finger C
+
+        #Bytes 12-14
+        self.rPRS = 0  # Position of scissor fingers
+        self.rSPS = 0  # Speed of scissor fingers
+        self.rFRS = 0  # Force of scissor fingers
+
+        #State variables
+        self.mode = 0
+        self.position = 0
+        self.speed = 128
+        self.force = 128
+
+    def verifyCommand(self):
+
+        fullBytes = ['rPRA', 'rSPA', 'rFRA',
+                     'rPRB', 'rSPB', 'rFRB',
+                     'rPRC', 'rSPC', 'rFRC',
+                     'rPRS', 'rSPS', 'rFRS']
+        oneBit = ['rACT', 'rGTO', 'rATR',
+                  'rGLV', 'rICF', 'rICS']
+        twoBits = ['rMOD']
+
+        for word in fullBytes:
+            self.__setattr__(word, min(255, self.__getattribute__(word)))
+            self.__setattr__(word, max(0, self.__getattribute__(word)))
+
+        for word in oneBit:
+            self.__setattr__(word, min(1, self.__getattribute__(word)))
+            self.__setattr__(word, max(0, self.__getattribute__(word)))
+
+        for word in twoBits:
+            self.__setattr__(word, min(3, self.__getattribute__(word)))
+            self.__setattr__(word, max(0, self.__getattribute__(word)))
+
+    def parseLcm(self, lcmCommand):
+
+        if lcmCommand.mode != -1 and self.mode != lcmCommand.mode:
+            self.mode = lcmCommand.mode
+            self.position = 0
+
+        self.rMOD = self.mode
+
+        self.rACT = lcmCommand.activate
+
+        if lcmCommand.do_move == 1:
+            self.position = lcmCommand.position
+            self.force = lcmCommand.force
+            self.speed = lcmCommand.velocity
+
+        self.rGTO = lcmCommand.do_move
+
+        self.rPRA = self.position
+        self.rPRB = self.position
+        self.rPRC = self.position
+        self.rPRS = self.position
+
+        self.rSPA = self.speed
+        self.rSPB = self.speed
+        self.rSPC = self.speed
+        self.rSPS = self.speed
+
+        self.rFRA = self.force
+        self.rFRB = self.force
+        self.rFRC = self.force
+        self.rFRS = self.force
+
+        #Data populated, now verify
+        self.verifyCommand()
+
+    def getModbusString(self):
+        #Initiate command as an empty list
+        message = []
+
+        #Build the command with each output variable
+        message.append(self.rACT + (self.rMOD << 1) + (self.rGTO << 3) + (self.rATR << 4))
+        message.append(self.rGLV + (self.rICF << 2) + (self.rICS << 3))
+        message.append(0)
+        message.append(self.rPRA)
+        message.append(self.rSPA)
+        message.append(self.rFRA)
+        message.append(self.rPRB)
+        message.append(self.rSPB)
+        message.append(self.rFRB)
+        message.append(self.rPRC)
+        message.append(self.rSPC)
+        message.append(self.rFRC)
+        message.append(self.rPRS)
+        message.append(self.rSPS)
+        message.append(self.rFRS)
+
+        return message
+
+
+class statusModbusToLcmConverter(object):
+
+    def __init__ (self):
+
+        #Byte 0 - Gripper Status
+        self.gACT = 0  # Activated: 1 bit, 0=reset, 1=activated
+        self.gMOD = 0  # Mode 2 bits, 00=basic, 10=pinch, 01=wide, 11=scissor
+        self.gGTO = 0  # Goto: 1 bit, 0=standby, 1=goto position request
+        self.gIMC = 0  # Initialization & Mode Status: 2 bits, 00=reset, 10=activate in progress, 01=mode change, 11=complete
+        self.gSTA = 0  # Gripper status: 2 bits, 00=moving, 10=one stopped, 01=all stopped, 11=all achieved
+
+        #Byte 1 - Object Status
+        # 00 - finger in motion
+        # 10 - finger stopped while opening
+        # 01 - finger stopped while closing
+        # 11 - finger reached position request
+        self.gDTA = 0  # Status finger A, 2 bits, see above
+        self.gDTB = 0  # Status finger B, 2 bits, see above
+        self.gDTC = 0  # Status finger C, 2 bits, see above
+        self.gDTS = 0  # Status scissor axis, 2 bits, see above
+
+        #Byte 2 - Fault Status
+        # 0x00 - no fault
+        # Priority
+        # 0x05 - action delayed, activation must complete
+        # 0x06 - action delayed, mode change must complete
+        # 0x07 - activation bit must be set first
+        # Minor
+        # 0x09 - Comm no tready
+        # 0x0A - Mode change fault, interfereance on scissor (<20s)
+        # 0x0B - auto release in progress
+        # Major
+        # 0x0D - Action fault
+        # 0x0E - change mode fault, interferance on scissor (>20s)
+        # 0x0F - automatic release complete, reset and activate required
+        self.gFLT = 0  # Fault: 4 bits, fault code (see above)
+        self.gRS1 = 0  # Reserved, 4 bits, all zero
+
+        #Byte 3
+        self.gPRA = 0  # Echo of position request for finger A
+        self.gPOA = 0  # Position of finger A
+        self.gCUA = 0  # Current on finger A
+
+        #Byte 3
+        self.gPRB = 0  # Echo of position request for finger B
+        self.gPOB = 0  # Position of finger B
+        self.gCUB = 0  # Current on finger B
+
+        #Byte 3
+        self.gPRC = 0  # Echo of position request for finger C
+        self.gPOC = 0  # Position of finger C
+        self.gCUC = 0  # Current on finger C
+
+        #Byte 3
+        self.gPRS = 0  # Echo of position request for Scissor axis
+        self.gPOS = 0  # Position of finger S
+        self.gCUS = 0  # Current on finger S
+
+
+    def populateStatus(self, string):
+        print ""
+        #fill in internal variables based on an extracted modbus string
+
+    def generateLcmStatus(self):
+        print ""
+        #return a sensible lcm message based on internal data
+
+
+class robotiqBaseSModel(object):
     """Base class (communication protocol agnostic) for sending
     commands and receiving the status of the Robotic S-Model
     gripper."""
@@ -11,117 +207,24 @@ class robotiqBaseSModel:
         #Initiate output message as an empty list
         self.message = []
 
+        #create and store local converter objects
+        self.command = commandLcmToModbusConverter()
+        self.status = statusModbusToLcmConverter()
+
         #Note: after the instantiation, a ".client" member must be added to the object
 
-
-    def verifyCommand(self, command):
-        """Function to verify that the value of each variable satisfy
-        its limits."""
-
-        #Verify that each variable is in its correct range
-        command.rACT = max(0, command.rACT)
-        command.rACT = min(1, command.rACT)
-
-        command.rMOD = max(0, command.rMOD)
-        command.rMOD = min(3, command.rMOD)
-
-        command.rGTO = max(0, command.rGTO)
-        command.rGTO = min(1, command.rGTO)
-
-        command.rATR = max(0, command.rATR)
-        command.rATR = min(1, command.rATR)
-
-        command.rGLV = max(0, command.rGLV)
-        command.rGLV = min(1, command.rGLV)
-
-        command.rICF = max(0, command.rICF)
-        command.rICF = min(1, command.rICF)
-
-        command.rICS = max(0, command.rICS)
-        command.rICS = min(1, command.rICS)
-
-        command.rPRA = max(0,   command.rPRA)
-        command.rPRA = min(255, command.rPRA)
-
-        command.rSPA = max(0,   command.rSPA)
-        command.rSPA = min(255, command.rSPA)
-
-        command.rFRA = max(0,   command.rFRA)
-        command.rFRA = min(255, command.rFRA)
-
-        command.rPRB = max(0,   command.rPRB)
-        command.rPRB = min(255, command.rPRB)
-
-        command.rSPB = max(0,   command.rSPB)
-        command.rSPB = min(255, command.rSPB)
-
-        command.rFRB = max(0,   command.rFRB)
-        command.rFRB = min(255, command.rFRB)
-
-        command.rPRC = max(0,   command.rPRC)
-        command.rPRC = min(255, command.rPRC)
-
-        command.rSPC = max(0,   command.rSPC)
-        command.rSPC = min(255, command.rSPC)
-
-        command.rFRC = max(0,   command.rFRC)
-        command.rFRC = min(255, command.rFRC)
-
-        command.rPRS = max(0,   command.rPRS)
-        command.rPRS = min(255, command.rPRS)
-
-        command.rSPS = max(0,   command.rSPS)
-        command.rSPS = min(255, command.rSPS)
-
-        command.rFRS = max(0,   command.rFRS)
-        command.rFRS = min(255, command.rFRS)
-
-        #Return the modified command
-        return command
-
-    def int_uint_convert(self, command):
-
-        attr_list = [x for x in dir(command) if x[0]=='r']
-
-        for attr in attr_list:
-            x = command.__getattribute__(attr)
-            if x < 0:
-                command.__setattr__(attr,x+256)
-
-        return command
 
     def refreshCommand(self, channel, message):
         """Function to update the command which will be sent during
         the next sendCommand() call."""
 
         #Decode the lcm string into a message
-        command = robotiqhand.command_t.decode(message)
+        rawLcm = robotiqhand.command_t.decode(message)
 
-        #Unwrap the ints back into uints
-        command = self.int_uint_convert(command)
+        self.command.parseLcm(rawLcm)
 
-        #Limit the value of each variable
-        command = self.verifyCommand(command)
-
-        #Initiate command as an empty list
-        self.message = []
-
-        #Build the command with each output variable
-        self.message.append(command.rACT + (command.rMOD << 1) + (command.rGTO << 3) + (command.rATR << 4))
-        self.message.append(command.rGLV + (command.rICF << 2) + (command.rICS << 3))
-        self.message.append(0)
-        self.message.append(command.rPRA)
-        self.message.append(command.rSPA)
-        self.message.append(command.rFRA)
-        self.message.append(command.rPRB)
-        self.message.append(command.rSPB)
-        self.message.append(command.rFRB)
-        self.message.append(command.rPRC)
-        self.message.append(command.rSPC)
-        self.message.append(command.rFRC)
-        self.message.append(command.rPRS)
-        self.message.append(command.rSPS)
-        self.message.append(command.rFRS)
+        #Grab the message from the lcm converter
+        self.message = self.converter.getModbusString()
 
     def sendCommand(self):
         """Send the command to the Gripper."""

@@ -22,59 +22,98 @@ def genCommand(char):
     global forceLevel
     global speedLevel
 
-    command = robotiqhand.command_original_t();
+    command = robotiqhand.command_t();
+
+    #this is the default, overwrite below
+    command.activate = 1
+    command.do_move = 1
+    command.mode = -1
+
+    if char == 'a':
+        command.do_move = 0
+
+    if char == 'r':
+        command.activate = 0
+        command.do_move = 0
 
     if char == 'c':
-        command.go_to = 1
         command.position = 255
+        command.force = forceLevel
+        command.velocity = speedLevel
 
     if char == 'o':
-        command.go_to = 1
         command.position = 0
+        command.force = forceLevel
+        command.velocity = speedLevel
 
     if char == 'b':
+        command.do_move = 0
         command.mode = 0
+        command.position = 0
+        command.velocity = speedLevel
+        command.force = forceLevel
 
     if char == 'p':
-        command.mode = 2
+        command.do_move = 0
+        command.mode = 1
+        command.position = 0
+        command.velocity = speedLevel
+        command.force = forceLevel
 
     if char == 'w':
-        command.mode = 1
+        command.do_move = 0
+        command.mode = 2
+        command.position = 0
+        command.velocity = speedLevel
+        command.force = forceLevel
 
     if char == 's':
+        command.do_move = 0
         command.mode = 3
+        command.position = 0
+        command.velocity = speedLevel
+        command.force = forceLevel
 
     if char == 'f':
-        speedLevel += 16
+        command.do_move = 0
+        speedLevel += 32
         if speedLevel > 255:
-            speedlLevel = 255
-        print "speed level now:", self.speedLevel
-        command.speed = speedLevel
+            speedLevel = 255
+        print "speed level now:", speedLevel
+        command.velocity = speedLevel
+        command.force = forceLevel
 
     if char == 'l':
-        speedLevel += 16
-        if speedLevel > 255:
-            speedlLevel = 255
-        print "speed level now:", self.speedLevel
-        command.speed = speedLevel
+        command.do_move = 0
+        speedLevel -= 32
+        if speedLevel < 0:
+            speedLevel = 0
+        print "speed level now:", speedLevel
+        command.velocity = speedLevel
+        command.force = forceLevel
 
     if char == 'i':
-        forceLevel += 16
+        command.do_move = 0
+        forceLevel += 32
         if forceLevel > 255:
-            forcelLevel = 255
-        print "force level now:", self.forceLevel
+            forceLevel = 255
+        print "force level now:", forceLevel
+        command.velocity = speedLevel
         command.force = forceLevel
 
     if char == 'd':
-        forceLevel -= 16
-        if forceLevel > 0:
-            command.forceLevel = 0
-        print "force level now:", self.forceLevel
+        command.do_move = 0
+        forceLevel -= 32
+        if forceLevel < 0:
+            forceLevel = 0
+        print "force level now:", forceLevel
+        command.velocity = speedLevel
         command.force = forceLevel
 
     if char in [str(x) for x in range(255)]:
-        command.go_to = 1
         command.position = int(char)
+        command.force = forceLevel
+        command.velocity = speedLevel
 
     return command
 
@@ -110,11 +149,9 @@ def publisher(side):
 
     lc = lcm.LCM()
 
-    command = commandMsg()
-
     try:
         while True:
-            command = parseString(genCommand(askForCommand()))
+            command = genCommand(askForCommand())
 
             command.utime = (time() * 1000000)
 
