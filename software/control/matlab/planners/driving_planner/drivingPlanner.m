@@ -81,8 +81,8 @@ classdef drivingPlanner
       cost([1 2 6]) = 5000*ones(3,1);
       cost(3) = 200;
       
-      vel_cost = cost*.05;
-      accel_cost = cost*.05;
+      vel_cost = cost;%*.05;
+      accel_cost = cost;%*.05;
       
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.lcmgl = drake.util.BotLCMGLClient(obj.lc,'drill_planned_path');
@@ -112,21 +112,31 @@ classdef drivingPlanner
       end
     end
      
-    function [xtraj,snopt_info,infeasible_constraint] = createDrivingPlan(obj, q0, steering_angle, ankle_angle, steering_speed, ankle_speed)
-      % get current steering angle
-      kinsol = obj.r.doKinematics(q0);
-      x_pt_init = obj.r.forwardKin(kinsol,obj.hand_body,obj.pt_on_hand);
-      x_root_init = obj.r.forwardKin(kinsol,obj.root_body, zeros(3,1),2);
-      R_root = quat2rotmat(x_root_init(4:7));
-      x_root_init = x_root_init(1:3);
+    function xtraj = createDrivingPlan(obj, q0, steering_angle, ankle_angle, steering_speed, ankle_speed, steering_vec, q_vec)
+      vec_len = length(steering_vec);
+      %closest point to start
+      q_diff = q_vec - repmat(q0,1,vec_len);
+      q_diff = q_diff(obj.joint_indices,:);
+      [~,steer_ind] = min(sum(q_diff.*q_diff));
       
-      x_init_in_root = R_root'*(x_pt_init - x_root_init);
+      [~,steer_end_ind] = min((steering_vec - steering_angle).*(steering_vec - steering_angle));
       
-      radius_vec = x_init_in_root - obj.steer_center_in_root;
-      radius_vec = radius_vec - radius_vec'*obj.steer_axis_in_root*obj.steer_axis_in_root;
-      radius = norm(radius_vec);
-      
-      steering_init = acos(radius_vec'/radius*obj.steer_zero_vec_in_root);
+      q_closest = q_vec(:,steer_ind);
+      if max(abs(q_closest(obj.joint_indices) - q0(obj.joint_indices))) > .2
+        % splice something onto the beginning
+        N_splice = 5;
+        T0 = .5;
+        t_splice = linspace(0,T0,N_splice);
+        q_arm_splice = repmat(q0(obj.joint_indices),1,N_splice) + (q_closest(obj.joint_indices) - q0(obj.joint_indices))*linspace(0,1,N_splice);
+        q_splice = repmat(q0,1,N_splice);
+        q_splice(obj.joint_indices,:) = q_arm_splice;
+      else
+        T0 = 0;
+        t_splice = [0];
+        q_splice = zeros(34,1);
+      end
+         
+      steering_init = steering_vec(steer_ind);
       
       % create ankle and angle trajectories
       ankle_init = q0(obj.ankle_joint);
@@ -134,40 +144,73 @@ classdef drivingPlanner
       T_steering = abs((steering_init - steering_angle)/steering_speed);
       T = max(T_ankle, T_steering);
       
-      N = 10;
+      N = 20;
+      t_vec = linspace(T0,T+T0,N);
       if T_ankle > T_steering
-        t_vec = linspace(0,T_ankle,N);
         ankle_vec = linspace(ankle_init, ankle_angle, N);
         N_steering = ceil(N*T_steering/T_ankle);
         steering_vec_1 = linspace(steering_init, steering_angle, N_steering);
         steering_vec_2 = linspace(steering_angle, steering_angle, N - N_steering);
-        steering_vec = [steering_vec_1 steering_vec_2];
+        steering_plan_vec = [steering_vec_1 steering_vec_2];
       else
-        t_vec = linspace(0,T_steering,N);
-        steering_vec = linspace(steering_init, steering_angle, N);
+        steering_plan_vec = linspace(steering_init, steering_angle, N);
         N_ankle = ceil(N*T_ankle/T_steering);
         ankle_vec_1 = linspace(ankle_init, ankle_angle, N_ankle);
         ankle_vec_2 = linspace(ankle_angle, ankle_angle, N - N_ankle);
         ankle_vec = [ankle_vec_1 ankle_vec_2];
       end
       
+      q_steering_vec = interp1(steering_vec,q_vec',steering_plan_vec)';
+      
+      q_traj = repmat(q0,1,N);
+      q_traj(obj.joint_indices,:) = q_steering_vec(obj.joint_indices,:);
+      q_traj(obj.ankle_joint,:) = ankle_vec;
+      
+      t_vec = [t_splice(1:end-1) t_vec];
+      q_traj = [q_splice(:,1:end-1) q_traj];
+      
+      xtraj = PPTrajectory(foh(t_vec,[q_traj;0*q_traj]));
+      xtraj = xtraj.setOutputFrame(obj.r.getStateFrame);
+      
+      if obj.doVisualization
+        obj.v.playback(xtraj);
+      end
+      
+      if obj.doPublish
+        obj.publishTraj(xtraj,1);
+      end
+      
+      %todo...execute plan immediately, haha!
+    end
+     
+    function [q_vec,steering_vec] = createNominalSteeringPlan(obj, q0, min_steering_angle, max_steering_angle)
+      % create ankle and angle trajectories
+      T = 5;
+      N = 200;
+      t_vec = linspace(0,T,N);
+      steering_vec = linspace(min_steering_angle, max_steering_angle,N);
+      
+      
+      kinsol = obj.r.doKinematics(q0);
+      x_pt_init = obj.r.forwardKin(kinsol,obj.hand_body,obj.pt_on_hand);
+      x_root_init = obj.r.forwardKin(kinsol,obj.root_body, zeros(3,1),2);
+      R_root = quat2rotmat(x_root_init(4:7));
+      x_root_init = x_root_init(1:3);
+      
       % generate ankle and steering constraints
       steering_axis_1 = obj.steer_zero_vec_in_root;
       steering_axis_2 = cross(steering_axis_1, obj.steer_axis_in_root);
       
       ankle_constraint = cell(1,N);
-      steering_constraint = cell(1,N);
-      for i=1:N,
-        ankle_constraint{i} = PostureConstraint(obj.r,[t_vec(i) t_vec(i)]);
-        ankle_constraint{i} = ankle_constraint{i}.setJointLimits(obj.ankle_joint, ankle_vec(i), ankle_vec(i));
-        
+      steering_pos_constraint = cell(1,N);
+      for i=1:N,    
         x_steering_in_root = obj.steer_center_in_root + obj.steer_radius*(cos(steering_vec(i))*steering_axis_1 + sin(steering_vec(i))*steering_axis_2);
         x_steering_in_world = R_root*(x_steering_in_root - x_root_init) + x_root_init;
         steering_pos_constraint{i} = WorldPositionConstraint(obj.r,obj.hand_body,obj.pt_on_hand,x_steering_in_world,x_steering_in_world,[t_vec(i) t_vec(i)]);
       end
       
       % create posture constraint
-      posture_index = setdiff((1:obj.r.num_q)',[obj.ankle_joint; obj.joint_indices]);
+      posture_index = setdiff((1:obj.r.num_q)',[obj.joint_indices]);
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       
@@ -177,28 +220,25 @@ classdef drivingPlanner
       hand_dir_constraint = WorldGazeDirConstraint(obj.r,obj.hand_body,obj.axis_on_hand,...
         steering_axis_world,obj.default_axis_threshold);
       
-      % Find nominal pose
-      [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
-        steering_pos_constraint{end}, ankle_constraint{end},hand_dir_constraint,posture_constraint,obj.ik_options);
-      if(snopt_info_ik > 10)
-        send_msg = sprintf('snopt_info = %d. The IK fails.',snopt_info_ik);
-        send_status(4,0,0,send_msg);
-        display(infeasibleConstraintMsg(infeasible_constraint_ik));
-        warning(send_msg);
+      % find poses one at a time
+      q_vec = zeros(34,N);
+      q_last = q0;
+      snopt_info = 0;
+      for i=1:N,
+        [q_vec(:,i),snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q_last,q_last,...
+          steering_pos_constraint{i},hand_dir_constraint,posture_constraint,obj.ik_options);
+        q_last = q_vec(:,i);
+        if(snopt_info_ik > 10)
+          send_msg = sprintf('snopt_info = %d. The IK fails for angle %d',snopt_info_ik, steering_vec(i));
+          send_status(4,0,0,send_msg);
+          display(infeasibleConstraintMsg(infeasible_constraint_ik));
+          warning(send_msg);
+        end
+        snopt_info = max(snopt_info, snopt_info_ik);
       end
-      qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
       
-      obj.ik_options = obj.ik_options.setMajorIterationsLimit(200);
-      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-        t_vec,qtraj_guess,qtraj_guess,...
-        steering_pos_constraint{:}, ankle_constraint{:},hand_dir_constraint,posture_constraint,obj.ik_options);
-      
-      if(snopt_info > 10)
-        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
-        send_status(4,0,0,send_msg);
-        display(infeasibleConstraintMsg(infeasible_constraint));
-        warning(send_msg);
-      end
+      xtraj = PPTrajectory(foh(t_vec,[q_vec;0*q_vec]));
+      xtraj = xtraj.setOutputFrame(obj.r.getStateFrame);
       
       if obj.doVisualization
         obj.v.playback(xtraj);
@@ -207,8 +247,6 @@ classdef drivingPlanner
       if obj.doPublish && snopt_info <= 10
         obj.publishTraj(xtraj,snopt_info);
       end
-      
-      %todo...execute plan immediately, haha!
     end
     
     function obj = updateWallNormal(obj, normal)
