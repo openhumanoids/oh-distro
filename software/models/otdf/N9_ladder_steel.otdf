@@ -329,4 +329,7 @@
     <plan_seed name="2013-12-02-22-12::HOOK_Start_to_BothUp" />
     <plan_seed name="2013-12-02-22-13::HOOK_BothUp_to_BothIn" />
     <plan_seed name="2013-12-02-22-14::HOOK_BothIn_to_Reach" />
+    <pose_seed name="2013-12-03-17-43::HOOK_BothOut" />
+    <plan_seed name="2013-12-03-17-44::HOOK_BothOut_to_BothUp" />
+    <plan_seed name="2013-12-03-17-45::HOOK_Start_to_BothOut" />
 </object>
