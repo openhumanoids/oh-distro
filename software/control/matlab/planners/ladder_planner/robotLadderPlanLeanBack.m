@@ -28,7 +28,7 @@ ikoptions = ikoptions.setMajorIterationsLimit(5000);
 %ikoptions = ikoptions.setSequentialSeedFlag(true);
  %ikoptions = ikoptions.setMex(false);
 
-msg ='Ladder Plan : Computing robot plan...'; disp(msg); send_status(6,0,0,msg);
+msg ='Ladder Plan: Computing robot plan...'; disp(msg); send_status(6,0,0,msg);
 
 % [q_data, t_data, ee_info] = ladderIK(r,support_times,q0,qstar,ee_info,ladder_opts.coarse,ikoptions);
 % 
@@ -58,17 +58,20 @@ for i = 1:nt_support
 end
 ts = sort([ts,support_times(idx_add_to_ts)]);
 [q_data, t_data,~,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_info,ladder_opts.fine,ikoptions);
+if any(idx_t_infeasible)
+  msg ='Ladder Plan : PLAN CONTAINS INFEASIBLE POINTS'; disp(msg); send_status(6,0,0,msg);
+end
 x_data = [q_data;zeros(size(q_data))];
 t_data = t_data(1):dt:(length(t_data)-1)*dt;
 
 % Plot COM traj
 % v = r.constructVisualizer();
-for i = 1:size(x_data_orig,2)
+for i = 1:size(x_data,2)
 %   v.draw(0,x_data(:,i));
-  kinsol = doKinematics(r,x_data_orig(1:nq,i));
+  kinsol = doKinematics(r,x_data(1:nq,i));
   com = getCOM(r,kinsol);
   com(3) = 0;
-  phi = i/size(x_data_orig,2);
+  phi = i/size(x_data,2);
   if idx_t_infeasible(i)
     lcmgl.glColor3f(0,0,0);
   else

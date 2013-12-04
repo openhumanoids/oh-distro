@@ -98,13 +98,15 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   if ~isfield(ladder_opts,'arm_tol_total') 
     ladder_opts.arm_tol_total = 30*pi/180;
   end
+  if ~isfield(ladder_opts,'verbose') 
+    ladder_opts.verbose = false;
+  end
   com_tol_vec = [ladder_opts.com_tol;ladder_opts.com_tol;NaN];
   com_incr_tol_vec = [ladder_opts.com_incr_tol;ladder_opts.com_incr_tol;NaN];
 
   % time spacing of samples for IK
   nt = length(ts);
 
-  msg ='Ladder Plan : Computing robot plan...'; disp(msg); send_status(6,0,0,msg);
   logical2str = @(b) regexprep(sprintf('%i',b),{'1','0'},{' ON ',' OFF '});
   fprintf('\n');
   fprintf('Constraint Summary\n');
@@ -184,9 +186,11 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     end
   end
 
-  msg = '  0%%';
-  fprintf(['Progress: ',msg]);
-  len_prev_msg = length(sprintf(msg));
+  if ladder_opts.verbose
+    msg = '  0%%';
+    fprintf(['Progress: ',msg]);
+    len_prev_msg = length(sprintf(msg));
+  end
   n_err = 0;
   first_err = true;
   err_segments = [];
@@ -300,9 +304,11 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     else
       first_err = true;
     end;
-    msg = '%3.0f%% (No. Errors: %4.0f)';
-    fprintf([repmat('\b',1,len_prev_msg), msg],i/nt*100,n_err);
-    len_prev_msg = length(sprintf(msg,i/nt*100,n_err));
+    if ladder_opts.verbose
+      msg = '%3.0f%% (No. Errors: %4.0f)';
+      fprintf([repmat('\b',1,len_prev_msg), msg],i/nt*100,n_err);
+      len_prev_msg = length(sprintf(msg,i/nt*100,n_err));
+    end
     if ladder_opts.compute_intro && i==1
       % Compute plan from q0 to q(:,1)
       nt_init = floor(nt/4);
@@ -360,7 +366,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     back_z_constraint_f = back_z_constraint_f.setJointLimits([6;findJointIndices(r,'back_bkz')],[q0(6);0],[q0(6);0]);
     [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,back_z_constraint_f,ikoptions);
     %   [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},pelvis_constraint_f,ikoptions);
-    if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); keyboard; end;
+    if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;
     q_end_nom = PPTrajectory(foh([t_end(1),t_end(end)],[q(:,end),qf]));
     end_posture_constraint = PostureConstraint(r,t_end_coarse(end)*[1,1]);
     end_posture_constraint = end_posture_constraint.setJointLimits((1:nq)',qf,qf);
@@ -380,7 +386,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     % q = q(:,1:5:end);
     q_data = [q_data,q_end];
     t_data = [t_data, t_end + t_data(end) + dt];
-    idx_t_infeasible = [idx_t_infeasible,false(size(t_end))];
+    idx_t_infeasible = [idx_t_infeasible,repmat(info>10,size(t_end))];
   end
   %x_data = zeros(2*nq,size(q_data,2));
   %x_data(1:getNumDOF(r),:) = q_data;

@@ -1,9 +1,8 @@
 function LadderPlanner(options)
   if nargin < 1, options = struct(); end;
-  if ~isfield(options,'stability_type'), options.stability_type = 'quasistatic'; end;
+  if ~isfield(options,'stability_type'), options.stability_type = 'tension'; end;
   
   %NOTEST
-  location = 'base';
   status_code = 6;
   
   approved_footstep_plan_listener = FootstepPlanListener('APPROVED_FOOTSTEP_PLAN');
@@ -126,7 +125,7 @@ function LadderPlanner(options)
   ladder_opts.fine.n = 1;
   ladder_opts.fine.compute_intro = true;
   ladder_opts.fine.shrink_factor = 0.5;
-  ladder_opts.fine.utorso_threshold = 5*pi/180;
+  ladder_opts.fine.utorso_threshold = 8*pi/180;
   ladder_opts.fine.pelvis_gaze_threshold = 10*pi/180;
   ladder_opts.fine.ankle_limit = 15*pi/180;
   ladder_opts.fine.knee_lb = 35*pi/180*ones(2,1);
@@ -196,7 +195,7 @@ function LadderPlanner(options)
     end
   end
 
-  msg =['Ladder Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
+  msg =['Ladder Plan: Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
 
 
   while true
@@ -211,11 +210,11 @@ function LadderPlanner(options)
       [footsteps, step_options] = approved_footstep_plan_listener.getNextMessage(10);
       if (~isempty(footsteps))
         if strcmp(qnom_state,'fix_both')
-          msg =['Ladder Plan (', location, '): plan received']; disp(msg); send_status(status_code,0,0,msg);
+          msg =['Ladder Plan: Footstep plan received']; disp(msg); send_status(status_code,0,0,msg);
           waiting = false;
         else
-          msg =['Ladder Plan (', location, '): Please ''Fix Both'' hands before requesting a plan']; disp(msg); send_status(status_code,0,0,msg);
-          msg =['Ladder Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
+          msg =['Ladder Plan: Please ''Fix Both'' hands before requesting a plan']; disp(msg); send_status(status_code,0,0,msg);
+          msg =['Ladder Plan: Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
         end
       end
 
@@ -271,10 +270,10 @@ function LadderPlanner(options)
     [x_data,ts] = robotLadderPlanLeanBack(r, q0, q0, comtraj, ee_info, support_times,ladder_opts);
 
 
-    msg =['Ladder Plan (', location, '): MAKE SURE THE BOT IS IN USER MODE']; disp(msg); send_status(status_code,0,0,msg);
+    msg =['Ladder Plan: MAKE SURE THE BOT IS IN USER MODE']; disp(msg); send_status(status_code,0,0,msg);
     plan_pub.publish(ts,x_data);
 
     waiting = true;
-    msg =['Ladder Plan (', location, '): Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
+    msg =['Ladder Plan: Listening for plans']; disp(msg); send_status(status_code,0,0,msg);
   end
 end
