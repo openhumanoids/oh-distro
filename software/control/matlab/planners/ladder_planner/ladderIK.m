@@ -381,7 +381,7 @@ for i=1:nt
       T = [R,P;zeros(1,3),1];
       com_halfspace_constraint = ...
         WorldCoMInFrameConstraint(r,T,[NaN;ladder_opts.qs_margin;NaN],[NaN;NaN;NaN]);
-%        constraints = [constraints, {com_halfspace_constraint}];
+       constraints = [constraints, {com_halfspace_constraint}];
     end
 %     R = o_T_pelvis(1:3,1:3);
 %     P = mean(foot_back,2);
@@ -500,7 +500,7 @@ for i=1:nt
         %display(ladder_opts.com_tol_local(1))
         ladder_opts.com_tol_local = ladder_opts.com_tol_local+0.01;
         constraints{end} = WorldCoMConstraint(r,com-ladder_opts.com_tol_local,com+ladder_opts.com_tol_local);
-        [q(:,i),info] = inverseKinPointwise(r,t_data,q_seed,q_nom,constraints{:},ikoptions);
+        [q(:,i),info,infeasible] = inverseKinPointwise(r,t_data,q_seed,q_nom,constraints{:},ikoptions);
       end
     end
     if info > 4

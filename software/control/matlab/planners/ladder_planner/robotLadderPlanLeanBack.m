@@ -63,22 +63,28 @@ end
 ts = sort([ts,support_times(idx_add_to_ts)]);
 [q_data, t_data,~,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_info,ladder_opts.fine,ikoptions);
 x_data = [q_data;zeros(size(q_data))];
+t_data_orig = t_data;
+x_data_orig = x_data;
 t_data = t_data(1):dt:(length(t_data)-1)*dt;
+% x_traj = PPTrajectory(foh(t_data,x_data));
+% t_data = t_data(1):dt*1e-1:t_data(end);
+% x_data = eval(x_traj,t_data);
 
 % Plot COM traj
 % v = r.constructVisualizer();
-for i = 1:size(x_data,2)
+for i = 1:size(x_data_orig,2)
 %   v.draw(0,x_data(:,i));
-  kinsol = doKinematics(r,x_data(1:nq,i));
+  kinsol = doKinematics(r,x_data_orig(1:nq,i));
   com = getCOM(r,kinsol);
   com(3) = 0;
-  phi = i/size(x_data,2);
+  phi = i/size(x_data_orig,2);
   if idx_t_infeasible(i)
     lcmgl.glColor3f(0,0,0);
   else
     lcmgl.glColor3f(phi,0,1-phi);
   end
   lcmgl.sphere(com,0.02,20,20);
+%   lcmgl.switchBuffers();
 end
 lcmgl.switchBuffers();
 end
