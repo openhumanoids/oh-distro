@@ -10,7 +10,7 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 
 
 useVisualization = true;
-doAutoCommit = false;
+doAutoCommit = true;
 publishPlans = true;
 useRightHand = false;
 allowPelvisHeight = false;

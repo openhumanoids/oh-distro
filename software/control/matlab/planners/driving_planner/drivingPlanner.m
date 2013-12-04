@@ -13,6 +13,7 @@ classdef drivingPlanner
     r
     atlas
     plan_pub
+    committed_plan_pub
     pose_pub
     v
     pt_on_hand
@@ -65,6 +66,7 @@ classdef drivingPlanner
       
       obj.doPublish = doPublish;
       obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
+      obj.committed_plan_pub = RobotPlanPublisher('COMMITTED_ROBOT_PLAN',true,joint_names);
       obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
       
       if useRightHand
@@ -176,8 +178,10 @@ classdef drivingPlanner
         obj.v.playback(xtraj);
       end
       
-      if obj.doPublish
-        obj.publishTraj(xtraj,1);
+      if obj.doAutoCommit
+        obj.publishTraj(xtraj,1,true);
+      elseif obj.doPublish
+        obj.publishTraj(xtraj,1,false);
       end
       
       %todo...execute plan immediately, haha!
@@ -245,7 +249,7 @@ classdef drivingPlanner
       end
       
       if obj.doPublish && snopt_info <= 10
-        obj.publishTraj(xtraj,snopt_info);
+        obj.publishTraj(xtraj,snopt_info,false);
       end
     end
     
@@ -255,17 +259,27 @@ classdef drivingPlanner
     
     % publish trajectory as a plan
     % also draw the drill tip with LCMGL
-    function publishTraj(obj,xtraj,snopt_info)
+    function publishTraj(obj,xtraj,snopt_info,use_committed_pub)
       utime = etime(clock,[1970 1 1 0 0 0])*1e6;
       nq_atlas = length(obj.atlas2robotFrameIndMap)/2;
       ts = xtraj.pp.breaks;
       q = xtraj.eval(ts);
-      xtraj_atlas = zeros(2+2*nq_atlas,length(ts));
-%       xtraj_atlas(1,:) = ones(1,length(ts)); % make everything a keyframe
-      xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
-      snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
-      
-      obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
+
+      if use_committed_pub
+        xtraj_atlas = zeros(2*nq_atlas,length(ts));
+        xtraj_atlas(1:nq_atlas,:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
+        snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
+        
+        
+        obj.committed_plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
+      else
+        
+        xtraj_atlas = zeros(2+2*nq_atlas,length(ts));
+        xtraj_atlas(2+(1:nq_atlas),:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
+        snopt_info_vector = snopt_info*ones(1, size(xtraj_atlas,2));
+        
+        obj.plan_pub.publish(xtraj_atlas,ts,utime,snopt_info_vector);
+      end
       
       ts_line = linspace(xtraj.tspan(1),xtraj.tspan(2),200);
       x_line = xtraj.eval(ts_line);
