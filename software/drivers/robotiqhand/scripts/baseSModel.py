@@ -224,7 +224,7 @@ class robotiqBaseSModel(object):
         self.command.parseLcm(rawLcm)
 
         #Grab the message from the lcm converter
-        self.message = self.converter.getModbusString()
+        self.message = self.command.getModbusString()
 
     def sendCommand(self):
         """Send the command to the Gripper."""
