@@ -58,7 +58,7 @@ struct ChannelData {
 
     // re-compress if desired
     if (mJpegQuality < 100) {
-      cv::cvtColor(img,img,CV_RGB2BGR);
+      if (img.channels()==3) cv::cvtColor(img,img,CV_RGB2BGR);
       std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, mJpegQuality };
       if (!cv::imencode(".jpg", img, msg.data, params)) {
         std::cout << "error encoding jpeg image" << std::endl;
