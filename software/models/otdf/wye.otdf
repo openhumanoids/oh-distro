@@ -63,14 +63,14 @@
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="box_0" />
-        <relative_pose rpy="0 0.5 3.14118" xyz="-0.20853 0.003 0.035" />
-        <grasp_type type="9" />
+        <relative_pose rpy="0.000294769 -0.261536 3.14122" xyz="0.0507473 0.00300525 0.075557" />
+        <grasp_type type="10" />
         <state num_joints="0" joint_names="" joint_positions="" />
     </grasp_seed>
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="box_0" />
-        <relative_pose rpy="0 0.5 3.14118" xyz="-0.20853 -0.003 0.035" />
+        <relative_pose rpy="0.000294769 -0.261536 3.14122" xyz="0.0229623 0.00300525 0.166225" />
         <grasp_type type="10" />
         <state num_joints="0" joint_names="" joint_positions="" />
     </grasp_seed>
