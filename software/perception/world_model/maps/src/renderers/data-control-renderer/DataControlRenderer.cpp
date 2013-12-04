@@ -24,6 +24,7 @@
 
 #include <lcmtypes/multisense.hpp>
 #include <lcmtypes/irobothand.hpp>
+#include <lcmtypes/robotiqhand.hpp>
 
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
@@ -76,9 +77,16 @@ protected:
   
   int mControlIrobotRightHand; // 0 left/ 1 right
   int mIrobotCalibrate;
-  int mIrobotCloseFraction;
+  int mIrobotClosePercent;
   int mIrobotSpreadDegree;
   bool mIrobotFingerEnabled[3];
+  
+  int mControlRobotiqRightHand; // 0 left/ 1 right
+  int mRobotiqMode;
+  int mRobotiqClosePercent;
+  int mRobotiqForce;
+  int mRobotiqVelocity;
+  bool mRoboticFingerEnabled[3];
   
   bool mMinimalAffordances;
   int mControllerHeightMapMode;
@@ -396,7 +404,7 @@ public:
     notebook->append_page(*mAffControlBox, "Affs");
 
     
-    //
+    // Hands
     Gtk::VBox* handControlBox = Gtk::manage(new Gtk::VBox());
 
     /////////////////////////////////
@@ -489,8 +497,8 @@ public:
     handControlBox->pack_start(*table, false, false);
     xCur = yCur = 0;
     label = Gtk::manage(new Gtk::Label("Partial Closed %"));
-    mIrobotCloseFraction = 0;
-    spin = createSpin(mIrobotCloseFraction, 0, 100, 10);
+    mIrobotClosePercent = 0;
+    spin = createSpin(mIrobotClosePercent, 0, 100, 10);
     button = Gtk::manage(new Gtk::Button("Grasp"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onIrobotPartialGraspButton));
@@ -523,9 +531,93 @@ public:
     table->attach(*label,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
     table->attach(*combo,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
     table->attach(*button,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
-    
-    
     notebook->append_page(*handControlBox, "Hands");    
+    
+    
+    
+    // Robotiq
+    Gtk::VBox* robotiqControlBox = Gtk::manage(new Gtk::VBox());
+
+    ids = { 0, 1 };
+    labels = { "Robotiq Left", "Robotiq Right" };  
+    hbox = Gtk::manage(new Gtk::HBox());
+    label = Gtk::manage(new Gtk::Label("Controlling:"));
+    mControlRobotiqRightHand = 0;
+    combo = createCombo(mControlRobotiqRightHand, labels, ids);
+    mRoboticFingerEnabled[0] = true;
+    mRoboticFingerEnabled[1] = true;
+    mRoboticFingerEnabled[2] = true;
+    hbox->pack_start(*label,false,false);
+    hbox->pack_start(*combo,false,false);
+    box = Gtk::manage(new Gtk::VBox());
+    addCheck("0 Finger", mRoboticFingerEnabled[0], box);
+    addCheck("1 Finger", mRoboticFingerEnabled[1], box);
+    hbox->pack_start(*box,false,false);
+    box = Gtk::manage(new Gtk::VBox());
+    addCheck("2 Thumb", mRoboticFingerEnabled[2], box);
+    hbox->pack_start(*box,false,false);
+    robotiqControlBox->pack_start(*hbox, false, false);
+    
+
+    hbox = Gtk::manage(new Gtk::HBox());
+    button = Gtk::manage(new Gtk::Button("Open"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onRobotiqOpenButton));
+    hbox->add(*button);
+    button = Gtk::manage(new Gtk::Button("Close"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onRobotiqCloseButton));
+    hbox->add(*button);
+    robotiqControlBox->pack_start(*hbox, false, false);
+
+    table = Gtk::manage(new Gtk::Table());
+    robotiqControlBox->pack_start(*table, false, false);
+    xCur = yCur = 0;
+    label = Gtk::manage(new Gtk::Label("Partial Closed %"));
+    mRobotiqClosePercent = 0;
+    spin = createSpin(mRobotiqClosePercent, 0, 100, 10);
+    table->attach(*label,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*spin,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    ++yCur;
+
+    xCur = 0;
+    label = Gtk::manage(new Gtk::Label("Force %"));
+    mRobotiqForce = 100;
+    spin = createSpin(mRobotiqForce, 0, 100, 10);
+    table->attach(*label,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*spin,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    ++yCur;
+
+    xCur = 0;
+    label = Gtk::manage(new Gtk::Label("Velocity %"));
+    mRobotiqVelocity = 100;
+    spin = createSpin(mRobotiqVelocity, 0, 100, 10);
+    table->attach(*label,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*spin,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    ++yCur;
+    
+    xCur = 0;
+    ids = { 0, 1 , 2 };
+    labels = { "Basic", "Pinch", "Wide" };
+    label = Gtk::manage(new Gtk::Label("Mode"));
+    mRobotiqMode = 0;
+    combo = createCombo(mRobotiqMode, labels, ids);
+    table->attach(*label,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    table->attach(*combo,xCur,xCur+1,yCur,yCur+1,xOpts,yOpts); ++xCur;
+    
+    
+    
+    
+    hbox = Gtk::manage(new Gtk::HBox());
+    button = Gtk::manage(new Gtk::Button("Grasp"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onRobotiqPartialGraspButton));
+    hbox->add(*button);
+    robotiqControlBox->pack_start(*hbox, false, false);
+    
+    
+    notebook->append_page(*robotiqControlBox, "Robotiq");
+    
     
     
     ///////////////////////////////////////////////////////////
@@ -817,7 +909,7 @@ public:
   void onIrobotPartialGraspButton() {
     irobothand::position_control_close_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.close_fraction = (float) mIrobotCloseFraction/100;
+    msg.close_fraction = (float) mIrobotClosePercent/100;
     int8_t valid[] = {mIrobotFingerEnabled[0], mIrobotFingerEnabled[1], mIrobotFingerEnabled[2], false};
     memcpy(msg.valid,valid, 4*sizeof(int8_t));
     if (mControlIrobotRightHand)
@@ -868,6 +960,57 @@ public:
       "IROBOT_LEFT_CALIBRATE" : "IROBOT_RIGHT_CALIBRATE";
     getLcm()->publish(channel , &msg);
   }
+  
+  
+  // 
+  void onRobotiqPartialGraspButton() {
+    robotiqhand::command_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.activate = 1;
+    msg.do_move = 1;
+    msg.mode = mRobotiqMode;
+    msg.position = (int) mRobotiqClosePercent*254/100;
+    msg.force = (int) mRobotiqForce*254/100;
+    msg.velocity = (int) mRobotiqVelocity*254/100;
+    if (mControlRobotiqRightHand)
+      getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
+    else
+      getLcm()->publish("ROBOTIQ_LEFT_COMMAND", &msg);
+  }    
+  
+  void onRobotiqOpenButton() {
+    robotiqhand::command_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.activate = 1;
+    msg.do_move = 1;
+    msg.mode = mRobotiqMode;
+    msg.position = (int) 0*254/100;
+    msg.force = (int) mRobotiqForce*254/100;
+    msg.velocity = (int) mRobotiqVelocity*254/100;
+    if (mControlRobotiqRightHand)
+      getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
+    else
+      getLcm()->publish("ROBOTIQ_LEFT_COMMAND", &msg);
+  }  
+  
+  void onRobotiqCloseButton() {
+    robotiqhand::command_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.activate = 1;
+    msg.do_move = 1;
+    msg.mode = mRobotiqMode;
+    msg.position = (int) 254;//*254/100;
+    msg.force = (int) 250;//*254/100;
+    msg.velocity = (int) mRobotiqVelocity*254/100;
+    if (mControlRobotiqRightHand){
+      getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
+      usleep(1E5);
+      msg.force = 254;
+      getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
+    }else{
+      getLcm()->publish("ROBOTIQ_LEFT_COMMAND", &msg);   
+    }
+  }  
 
   void publishMultisense(const double iSpinRate=-1000,
                          const double iFrameRate=-1,
