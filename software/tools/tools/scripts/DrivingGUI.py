@@ -56,19 +56,15 @@ def getUtime():
     return int(time.time() * 1e6)
 
 
-
-def publishDrivingCommand(steeringValue, throttleValue, channel='DRIVING_CONTROL'):
+def publishDrivingCommand(commandType, data, channel='DRILL_CONTROL'):
     '''
     '''
-    msg = lcmdrc.driving_control_cmd_t()
+    msg = lcmdrc.drill_control_t()
     msg.utime = getUtime()
-    msg.steering_angle = steeringValue
-    msg.throttle_value = throttleValue
-    msg.brake_value = 0
-    msg.type = msg.TYPE_DRIVE
+    msg.control_type = commandType
+    msg.data = data
+    msg.data_length = len(data)
     lcmWrapper.publish(channel, msg)
-
-
 
 
 class DrivingPanel(object):
@@ -80,6 +76,10 @@ class DrivingPanel(object):
     def setup(self):
         self.ui.connect(self.ui.throttleSlider, QtCore.SIGNAL('valueChanged(int)'), self.onThrottleSliderValueChanged)
         self.ui.connect(self.ui.steeringSlider, QtCore.SIGNAL('valueChanged(int)'), self.onSteeringSliderValueChanged)
+
+        self.ui.connect(self.ui.setSteeringDepthButton, QtCore.SIGNAL('clicked()'), self.onSetSteeringDepthClicked)
+        self.ui.connect(self.ui.refitSteeringWheelButton, QtCore.SIGNAL('clicked()'), self.onRefitSteeringWheelClicked)
+
         self.onThrottleSliderValueChanged()
         self.onSteeringSliderValueChanged()
 
@@ -91,14 +91,24 @@ class DrivingPanel(object):
 
     def onSteeringSliderValueChanged(self):
         self.ui.steeringLabel.setText(str(self.getSteeringValue()))
-        self.publishCommand()
+        self.publishDrivingControl()
 
     def onThrottleSliderValueChanged(self):
         self.ui.throttleLabel.setText(str(self.getThrottleValue()))
-        self.publishCommand()
+        self.publishDrivingControl()
 
-    def publishCommand(self):
-        publishDrivingCommand(self.getSteeringValue(), self.getThrottleValue())
+    def onRefitSteeringWheelClicked(self):
+        publishDrivingCommand(lcmdrc.drill_control_t.REFIT_STEERING, [])
+
+    def onSetSteeringDepthClicked(self):
+        steeringDepth = self.ui.steeringDepthSpin.value() / 100.0
+        publishDrivingCommand(lcmdrc.drill_control_t.SET_STEERING_DEPTH, [steeringDepth])
+
+    def publishDrivingControl(self):
+        publishDrivingCommand(lcmdrc.drill_control_t.DRIVING_CONTROL, [self.getSteeringValue(), self.getThrottleValue()])
+
+
+
 
     def saveSettings(self, settings):
         pass
