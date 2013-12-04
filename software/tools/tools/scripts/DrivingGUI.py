@@ -84,7 +84,7 @@ class DrivingPanel(object):
         self.onSteeringSliderValueChanged()
 
     def getSteeringValue(self):
-        return self.ui.steeringSlider.value() / 100.0
+        return  -1 + self.ui.steeringSlider.value() / 50.0
 
     def getThrottleValue(self):
         return self.ui.throttleSlider.value() / 100.0
