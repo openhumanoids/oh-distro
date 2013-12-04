@@ -1,10 +1,11 @@
 On Robot and Extra machines:
 ROBOT:
-drc-network-shaper -t manipulation -r robot -c drc_robot_02.cfg -l -p ~/drc/logs/shaper
+drc-network-shaper -t manipulation -r robot -c drc_robot_02.cfg -l -p /media/logs/raw/shaper
 bot-procman-deputy -n robot
 bot-procman-deputy -n extra
 
 BASE:
 bot-procman-deputy -n base
-drc-network-shaper -t manipulation -r base -c drc_robot_02.cfg -l -p ~/drc/logs/shaper
+drc-network-shaper -t manipulation -r base -c drc_robot_02.cfg -l -p /media/logs/raw/shaper
 bot-procman-sheriff ~/drc/software/config/drc_robot.pmd
+
