@@ -86,6 +86,8 @@ namespace renderer_robot_plan
     
     _lhand_ee_name = " ";
     _rhand_ee_name = " ";
+    _T_base_palm_l = KDL::Frame::Identity();
+    _T_base_palm_r = KDL::Frame::Identity();
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize
   }
   
@@ -410,7 +412,19 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
        _gl_left_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_left_hand_urdf_xml_string,true,unique_hand_name));
        unique_hand_name = "rhand_local_copy"; 
        _gl_right_hand = shared_ptr<InteractableGlKinematicBody>(new InteractableGlKinematicBody (_right_hand_urdf_xml_string,true,unique_hand_name));
+    
+      KDL::Frame T_urdfroot_palm_l,T_urdfroot_palm_r;
+      T_urdfroot_palm_l = KDL::Frame::Identity();
+      T_urdfroot_palm_r = KDL::Frame::Identity();
+
+      bool success;
+      success = _gl_left_hand->get_link_frame(_lhand_ee_name,T_urdfroot_palm_l);
+      _T_base_palm_l = _gl_left_hand->_T_world_body.Inverse()*T_urdfroot_palm_l;
+      success=_gl_right_hand->get_link_frame(_rhand_ee_name,T_urdfroot_palm_r);
+      _T_base_palm_r = _gl_right_hand->_T_world_body.Inverse()*T_urdfroot_palm_r;
     }       
+    
+    
     //_gl_phantom_robot = shared_ptr<GlKinematicBody>(new GlKinematicBody(_urdf_xml_string)); // used for keyframe adjustment via joint dof markers.
 
     //remember that we've parsed the urdf already
@@ -784,6 +798,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
     visualization_utils::get_hand_palm_link_name_given_urdf_handtype(left_hand_type,_lhand_ee_name);
     visualization_utils::get_hand_palm_link_name_given_urdf_handtype(right_hand_type,_rhand_ee_name);
     
+      
     if(left_hand_type==drc::robot_urdf_t::LEFT_SANDIA)    
       filename ="sandia_hand_left";
     else if(left_hand_type==drc::robot_urdf_t::LEFT_IROBOT)   

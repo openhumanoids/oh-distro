@@ -30,6 +30,9 @@ namespace renderer_robot_plan
     std::string _robot_name;
     std::string _lhand_ee_name;
     std::string _rhand_ee_name;
+    KDL::Frame  _T_base_palm_l;
+    KDL::Frame  _T_base_palm_r;
+    
    
    private:      
     std::string _urdf_xml_string;   
@@ -115,12 +118,16 @@ namespace renderer_robot_plan
 
       T_world_palm_l = KDL::Frame::Identity();
       T_world_palm_r = KDL::Frame::Identity();
+      /*
+      // recalculating these creates a recursive error than eventually blows up. Wierd.
       bool success;
       success = _gl_left_hand->get_link_frame(_lhand_ee_name,T_world_palm_l);
       T_base_palm_l = _gl_left_hand->_T_world_body.Inverse()*T_world_palm_l;
       success=_gl_right_hand->get_link_frame(_rhand_ee_name,T_world_palm_r);
-      T_base_palm_r = _gl_right_hand->_T_world_body.Inverse()*T_world_palm_r;
+      T_base_palm_r = _gl_right_hand->_T_world_body.Inverse()*T_world_palm_r;*/
      
+      T_base_palm_l = _T_base_palm_l;
+      T_base_palm_r = _T_base_palm_r;
       
       if(!_gl_robot_keyframe_list[index]->get_link_frame(_lhand_ee_name,T_world_palm_l)) 
       {
@@ -204,8 +211,18 @@ namespace renderer_robot_plan
       _gl_right_hand->set_state(T_world_base_r,jointpos_r);    
       _gl_right_hand->set_bodypose_adjustment_type((int)visualization_utils::InteractableGlKinematicBody::THREE_D);
       
-      _in_motion_keyframe_index = index;
-    
+   
+      _in_motion_keyframe_index = index;   
+       
+      /*
+      // for debug
+      double r,p,y;
+      cout <<"\n_rhand_ee_name :" << _rhand_ee_name <<" _lhand_ee_name :" << _lhand_ee_name<< endl;
+      T_world_base_l.M.GetRPY(r,p,y);
+      cout << "_gl_left_hand "  << T_world_base_l.p[0] << " " << T_world_base_l.p[1]  << " " << T_world_base_l.p[2] << " "<< r << " " << p  << " " << y<< " " << endl;
+      T_world_base_r.M.GetRPY(r,p,y);
+      cout << "_gl_right_hand "  << T_world_base_r.p[0] << " " << T_world_base_r.p[1]  << " " << T_world_base_r.p[2] << " "<< r << " " << p  << " " << y<< " " << endl;*/
+
     };
     
     void set_in_motion_feet_state(int index)
