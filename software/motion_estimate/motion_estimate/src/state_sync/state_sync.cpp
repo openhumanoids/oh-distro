@@ -134,13 +134,14 @@ void state_sync::loadEncoderOffsetsFromFile() {
 
   std::cout << "state_sync: refreshing offsets" << std::endl;
 
-  char* drcpath;
-  drcpath = getenv("DRC_BASE");
+  char* drcpath = getenv("DRC_BASE");
   if (drcpath==NULL) {
     std::cout << "state_sync: error reading DRC_BASE environment variable..." << std::endl;
   }
   else {
-    std::ifstream file (strcat(drcpath,"/software/config/encoder_offsets.cfg")); 
+    std::ifstream file;
+    std::string filename = std::string(drcpath) + "/software/config/encoder_offsets.cfg";
+    file.open(filename.c_str());
     std::string value;
     double offset;
     int jindex;
@@ -153,6 +154,7 @@ void state_sync::loadEncoderOffsetsFromFile() {
       // std::cout << "offset: " <<  offset << std::endl;
       encoder_joint_offsets_[jindex] = offset;
     }
+    file.close();
   }
 }
 
@@ -264,7 +266,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
               atlas_joints_.position[i] += 2*M_PI/3;
 
-            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.09 && (msg->utime - utime_prev_ > 5000000)) {
+            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.11 && (msg->utime - utime_prev_ > 5000000)) {
               utime_prev_ = msg->utime;
 
               // display system status message in viewer

@@ -101,7 +101,8 @@ JOINT_R_ARM_ELX   = 26;
 JOINT_R_ARM_UWY   = 27;
 JOINT_R_ARM_MWX   = 28;
 
-filename = '/home/scottk/drc/software/config/encoder_offsets.cfg'; 
+
+filename = strcat(getenv('DRC_BASE'),'/software/config/encoder_offsets.cfg'); 
 fileID = fopen(filename,'wt');
 fprintf(fileID, '%d,%2.3f,',JOINT_R_ARM_USY-1,enc_diff(JOINT_R_ARM_USY));
 fprintf(fileID, '%d,%2.3f,',JOINT_R_ARM_SHX-1,enc_diff(JOINT_R_ARM_SHX));
