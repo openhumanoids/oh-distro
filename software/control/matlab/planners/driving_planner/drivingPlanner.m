@@ -30,7 +30,7 @@ classdef drivingPlanner
     free_ik_options
     doVisualization = true;
     doPublish = false;
-    default_axis_threshold = 5*pi/180;
+    default_axis_threshold = 15*pi/180;
     atlas2robotFrameIndMap
     lc
     state_monitor
@@ -196,7 +196,6 @@ classdef drivingPlanner
       
       
       kinsol = obj.r.doKinematics(q0);
-      x_pt_init = obj.r.forwardKin(kinsol,obj.hand_body,obj.pt_on_hand);
       x_root_init = obj.r.forwardKin(kinsol,obj.root_body, zeros(3,1),2);
       R_root = quat2rotmat(x_root_init(4:7));
       x_root_init = x_root_init(1:3);
@@ -205,11 +204,10 @@ classdef drivingPlanner
       steering_axis_1 = obj.steer_zero_vec_in_root;
       steering_axis_2 = cross(steering_axis_1, obj.steer_axis_in_root);
       
-      ankle_constraint = cell(1,N);
       steering_pos_constraint = cell(1,N);
       for i=1:N,    
         x_steering_in_root = obj.steer_center_in_root + obj.steer_radius*(cos(steering_vec(i))*steering_axis_1 + sin(steering_vec(i))*steering_axis_2);
-        x_steering_in_world = R_root*(x_steering_in_root - x_root_init) + x_root_init;
+        x_steering_in_world = R_root*(x_steering_in_root) + x_root_init;
         steering_pos_constraint{i} = WorldPositionConstraint(obj.r,obj.hand_body,obj.pt_on_hand,x_steering_in_world,x_steering_in_world,[t_vec(i) t_vec(i)]);
       end
       
