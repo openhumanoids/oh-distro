@@ -28,9 +28,9 @@ struct drill_control_t {
   const int8_t SET_DRILL_DEPTH = 14;        //Set the desired drill depth in m.  data = depth
   const int8_t RQ_GOTO_BUTTON_PRESET = 15;  //Goto a hardcoded button pose
 
-  const int8_t REFIT_STEERING = 16;         
-  const int8_t SET_STEERING_DEPTH = 17;
-  const int8_t DRIVING_CONTROL = 18;
+  const int8_t REFIT_STEERING = 16;         //Refit the steering wheel
+  const int8_t SET_STEERING_DEPTH = 17;     //Set the steering depth data[1]
+  const int8_t DRIVING_CONTROL = 18;        //steering=data[1], ankle=data[2]
 
   int64_t utime; 
 
