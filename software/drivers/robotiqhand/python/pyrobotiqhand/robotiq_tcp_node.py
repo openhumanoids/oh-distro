@@ -8,15 +8,15 @@ sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
 
 import lcm
 
-import baseSModel
-import comModbusTcp
+import pyrobotiqhand.baseSModel as baseSModel
+import pyrobotiqhand.comModbusTcp as comModbusTcp
 
 from time import sleep
 
 def mainLoop(side, address):
 
-    command_topic = side.upper() + "_ROBOTIQ_COMMAND"
-    status_topic = side.upper() + "_ROBOTIQ_STATUS"
+    command_topic = "ROBOTIQ_" + side.upper() + "_COMMAND"
+    status_topic = "ROBOTIQ_" + side.upper() + "_STATUS"
 
     #Gripper is a S-Model with a TCP connection
     gripper = baseSModel.robotiqBaseSModel()

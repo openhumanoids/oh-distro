@@ -9,7 +9,7 @@ sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
 import lcm
 import robotiqhand
 
-import baseSModel
+import pyrobotiqhand.baseSModel as baseSModel
 
 from time import sleep, time
 
@@ -145,7 +145,7 @@ def publisher(side):
     """Main loop which requests new commands and publish them on the
     SModelRobotOutput topic."""
 
-    command_topic = side.upper() + "_ROBOTIQ_COMMAND"
+    command_topic =  "ROBOTIQ_" + side.upper() + "_COMMAND"
 
     lc = lcm.LCM()
 

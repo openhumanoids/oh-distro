@@ -9,5 +9,7 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-pods_install_python_script(robotiq_tcp_node scripts/robotiq_tcp_node.py)
-pods_install_python_script(robotiq_command scripts/robotiq_command.py)
+pods_install_python_packages(${CMAKE_CURRENT_SOURCE_DIR}/python)
+
+pods_install_python_script(robotiq_tcp_node python/pyrobotiqhand/robotiq_tcp_node.py)
+pods_install_python_script(robotiq_command python/pyrobotiqhand/robotiq_command.py)
