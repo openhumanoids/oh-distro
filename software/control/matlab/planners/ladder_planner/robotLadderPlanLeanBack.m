@@ -1,10 +1,6 @@
 function [x_data, t_data] = robotLadderPlanLeanBack(r, q0, qstar, comtraj, ee_info, support_times,ladder_opts)
 
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'robotLadderPlan');
-red = {1,0,0};
-blue = {0,0,1};
-gray = {0.5,0.5,0.5};
-black = {0,0,0};
 nq = r.getNumDOF();
 
 
@@ -63,12 +59,7 @@ end
 ts = sort([ts,support_times(idx_add_to_ts)]);
 [q_data, t_data,~,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_info,ladder_opts.fine,ikoptions);
 x_data = [q_data;zeros(size(q_data))];
-t_data_orig = t_data;
-x_data_orig = x_data;
 t_data = t_data(1):dt:(length(t_data)-1)*dt;
-% x_traj = PPTrajectory(foh(t_data,x_data));
-% t_data = t_data(1):dt*1e-1:t_data(end);
-% x_data = eval(x_traj,t_data);
 
 % Plot COM traj
 % v = r.constructVisualizer();

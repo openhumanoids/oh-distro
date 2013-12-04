@@ -105,7 +105,7 @@ function LadderPlanner(options)
       ladder_opts.fine.use_quasistatic_constraint =  false;
       ladder_opts.fine.use_arm_tension_constraint =  false;
       ladder_opts.fine.use_com_constraint = true;
-      ladder_opts.fine.use_incr_com_constraint =     true;
+      ladder_opts.fine.use_incr_com_constraint =     false;
       ladder_opts.fine.use_utorso_constraint =       true;
       ladder_opts.fine.com_tol = 0.0;
   end
@@ -126,7 +126,7 @@ function LadderPlanner(options)
   ladder_opts.fine.n = 1;
   ladder_opts.fine.compute_intro = true;
   ladder_opts.fine.shrink_factor = 0.5;
-  ladder_opts.fine.utorso_threshold = 15*pi/180;
+  ladder_opts.fine.utorso_threshold = 5*pi/180;
   ladder_opts.fine.pelvis_gaze_threshold = 10*pi/180;
   ladder_opts.fine.ankle_limit = 15*pi/180;
   ladder_opts.fine.knee_lb = 35*pi/180*ones(2,1);
