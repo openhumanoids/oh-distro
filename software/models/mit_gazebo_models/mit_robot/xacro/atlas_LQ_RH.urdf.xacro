@@ -11,7 +11,7 @@
   <joint name="left_base_link_fix" type="fixed">
     <parent link="l_hand"/>
     <child link="left_base_link"/>
-    <origin rpy="0 -.5236 0" xyz="0 .19016 0.015"/>
+    <origin rpy="0 .5236 0" xyz="0 .19016 0.015"/>
   </joint>
 
   <xacro:robotiq_hand side="left" parent="left_base_link" reflect="-1">
