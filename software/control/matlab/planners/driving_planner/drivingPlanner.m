@@ -119,10 +119,16 @@ classdef drivingPlanner
       %closest point to start
       q_diff = q_vec - repmat(q0,1,vec_len);
       q_diff = q_diff(obj.joint_indices,:);
-      [~,steer_ind] = min(sum(q_diff.*q_diff));
       
-      [~,steer_end_ind] = min((steering_vec - steering_angle).*(steering_vec - steering_angle));
+      I1 = find(steering_vec > steering_angle - pi*.9,1);
+      I2 = find(steering_vec >= steering_angle + pi*.9,1);
+      if isempty(I2)
+        I2 = length(steering_vec);
+      end
       
+      [~,steer_ind] = min(sum(q_diff(:,I1:I2).*q_diff(:,I1:I2)));
+      steer_ind = steer_ind + I1 - 1;
+            
       q_closest = q_vec(:,steer_ind);
       if max(abs(q_closest(obj.joint_indices) - q0(obj.joint_indices))) > .2
         % splice something onto the beginning
