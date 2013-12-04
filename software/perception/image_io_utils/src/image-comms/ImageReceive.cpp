@@ -42,7 +42,7 @@ struct ChannelData {
   void handleImage(const std::shared_ptr<bot_core::image_t>& iImage) {
     // uncompress
     cv::Mat raw = cv::imdecode(cv::Mat(iImage->data), -1);
-    if (raw.channels() == 3) cv::cvtColor(raw, raw, CV_RGB2BGR);
+    if (raw.channels() == 3) cv::cvtColor(raw, raw, CV_BGR2RGB);
 
     // resize to normal
     cv::Mat img;
@@ -58,6 +58,7 @@ struct ChannelData {
 
     // re-compress if desired
     if (mJpegQuality < 100) {
+      cv::cvtColor(img,img,CV_RGB2BGR);
       std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, mJpegQuality };
       if (!cv::imencode(".jpg", img, msg.data, params)) {
         std::cout << "error encoding jpeg image" << std::endl;
