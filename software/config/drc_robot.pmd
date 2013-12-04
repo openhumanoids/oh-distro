@@ -26,7 +26,8 @@ group "a.0.drivers" {
         host = "extra";
     }
     cmd "webcam audio server" {
-        exec = "drc-webcam-audio-server'
+        exec = "drc-webcam-audio-server";
+        host = "extra";
     }
     cmd "multisense" {
         exec = "drc-multisense -o 3";
