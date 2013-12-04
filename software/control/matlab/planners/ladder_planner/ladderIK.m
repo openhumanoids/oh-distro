@@ -6,6 +6,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   neck_joint = findJointIndices(r,'neck');
   knee_joints = [findJointIndices(r,'l_leg_kny'); ...
                  findJointIndices(r,'r_leg_kny')];
+  arm_joints = findJointIndices(r,'arm');
 
   if ~isfield(ladder_opts,'use_quasistatic_constraint') 
     ladder_opts.use_quasistatic_constraint =  true;
@@ -19,7 +20,10 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   if ~isfield(ladder_opts,'use_final_com_constraint') 
     ladder_opts.use_final_com_constraint =    true;
   end
-  if ~isfield(ladder_opts,'use_pelvis_gaze_constraint') 
+  if ~isfield(ladder_opts,'use_arm_constraints')
+    ladder_opts.use_arm_constraints =         false;
+  end
+  if ~isfield(ladder_opts,'use_pelvis_gaze_constraint')
     ladder_opts.use_pelvis_gaze_constraint =  true;
   end
   if ~isfield(ladder_opts,'use_pelvis_constraint') 
@@ -122,6 +126,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   fprintf('Knee Constraint:          %s        [%4.2f deg, %4.2f deg]\n', logical2str(ladder_opts.use_knee_constraint),ladder_opts.knee_lb(1)*180/pi,ladder_opts.knee_ub(1)*180/pi);
   fprintf('Neck Constraint:          %s\n', logical2str(ladder_opts.use_neck_constraint));
   fprintf('Ankle Constraint:         %s\n', logical2str(ladder_opts.use_ankle_constraint));
+  fprintf('Arm Constraints (incr):   %s        %4.2f deg\n', logical2str(ladder_opts.use_arm_constraints),ladder_opts.arm_tol*180/pi);
 
   hand_grasped(1) = ~isempty(ee_info.hands(1));
   hand_grasped(2) = ~isempty(ee_info.hands(1));
@@ -207,7 +212,16 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
 
     foot_supported(1) = ( eval(ee_info.feet(1).support_traj,t_data) && eval(ee_info.feet(1).support_traj,ts(min(i+1,nt))) );
     foot_supported(2) = ( eval(ee_info.feet(2).support_traj,t_data) && eval(ee_info.feet(2).support_traj,ts(min(i+1,nt))) );
-
+    
+    if ladder_opts.use_arm_constraints
+      arm_constraint = PostureConstraint(r);
+      if i==1
+        arm_constraint = arm_constraint.setJointLimits(arm_joints,q0(arm_joints)-ladder_opts.arm_tol,q0(arm_joints)+ladder_opts.arm_tol);
+      else
+        arm_constraint = arm_constraint.setJointLimits(arm_joints,q(arm_joints,i-1)-ladder_opts.arm_tol,q(arm_joints,i-1)+ladder_opts.arm_tol);
+      end
+      constraints = [constraints, {arm_constraint}];
+    end
     if ladder_opts.use_ankle_constraint && any(foot_supported)
       for j = 1:2
         if foot_supported(j)
@@ -277,7 +291,6 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
         {WorldCoMConstraint(r,com-com_tol_vec,com+com_tol_vec)}];
     end
     [q(:,i),info,infeasible] = inverseKinPointwise(r,t_data,q_seed,q_nom,constraints{:},ikoptions);
-    %   if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;
     if info > 4 
       if ladder_opts.use_com_constraint
         ladder_opts.com_tol_local = ladder_opts.com_tol;
@@ -285,8 +298,9 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
           %display(ladder_opts.com_tol_local(1))
           ladder_opts.com_tol_local = ladder_opts.com_tol_local+0.01;
           constraints{end} = WorldCoMConstraint(r,com-ladder_opts.com_tol_local,com+ladder_opts.com_tol_local);
-          [q(:,i),info,infeasible] = inverseKinPointwise(r,t_data,q_seed,q_nom,constraints{:},ikoptions);
+          [q(:,i),info,infeasible] = inverseKinPointwise(r,t_data,q_seed,q(:,i),constraints{:},ikoptions);
         end
+%         fprintf('Max com deviation: %5.3f m\n',ladder_opts.com_tol_local);
       end
       if info > 4
         %       disp(infeasible);keyboard
@@ -303,9 +317,10 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
       end
     else
       first_err = true;
+%       fprintf('Max com deviation: %5.3f m\n',ladder_opts.com_tol);
     end;
     if ladder_opts.verbose
-      msg = '%3.0f%% (No. Errors: %4.0f)';
+      msg = '%3.0f%% (No. Errors: %2.0f)';
       fprintf([repmat('\b',1,len_prev_msg), msg],i/nt*100,n_err);
       len_prev_msg = length(sprintf(msg,i/nt*100,n_err));
     end
@@ -316,23 +331,12 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
       t_init = 0:dt:nt_init*dt;
       q_init_nom = PPTrajectory(foh([t_init(1),t_init(end)],[q0,q(:,1)]));
       q_init = eval(q_init_nom,t_init);
-      %     init_constraints = constraints(cellfun(@(con) ~(isa(con,'WorldCoMConstraint')||isa(con,'PostureConstraint')), constraints));
-      %     [q_init,info] = inverseKinPointwise(r,t_init, ...
-      %                                         eval(q_init_nom,t_init), ...
-      %                                         eval(q_init_nom,t_init), ...
-      %                                         init_constraints{:},ikoptions);
     end
     q_seed = q(:,i);
     constraint_array{i} = constraints;
     kinsol = doKinematics(r,q_seed);
     com_prev = r.getCOM(kinsol);
     com_prev(3) = NaN;
-    %q_nom = q(:,i);
-    %sym_states = (q_nom(l_idx) + r_flip.*q_nom(r_idx))/2;
-    %q_nom(l_idx) = sym_states;
-    %q_nom(r_idx) = r_flip.*sym_states;
-    %q_nom = (q_nom+qstar)/2;
-    %   disp(info);
   end
   fprintf('\n');
   q_data = q;
@@ -348,49 +352,26 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     dt = mean(diff(ts));
     t_end = 0:dt:nt_end*dt;
     t_end_coarse = linspace(t_end(1),t_end(end),3);
-    %   com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
-    com_constraint_f = QuasiStaticConstraint(r);
-    com_constraint_f = com_constraint_f.setActive(true);
-    com_constraint_f = com_constraint_f.setShrinkFactor(ladder_opts.final_shrink_factor);
-    foot1_pts = r.getBodyContacts(ee_info.feet(1).idx);
-    foot2_pts = r.getBodyContacts(ee_info.feet(2).idx);
-    com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
+    com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
     constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
-    %   pelvis_constraint_f = WorldPositionInFrameConstraint(r,pelvis, ...
-    %     [0;0;0], o_T_pelvis, [0.3/sqrt(3);-0.01;0.3], ...
-    %     [NaN;0.01;NaN]);
-    %   pelvis_constraint_f = WorldPositionInFrameConstraint(r,pelvis, ...
-    %     [0;0;0], o_T_pelvis, [NaN;-0.01;NaN], ...
-    %     [NaN;0.01;NaN]);
     back_z_constraint_f = PostureConstraint(r);
     back_z_constraint_f = back_z_constraint_f.setJointLimits([6;findJointIndices(r,'back_bkz')],[q0(6);0],[q0(6);0]);
-    [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,back_z_constraint_f,ikoptions);
-    %   [qf,info] = inverseKin(r,q(:,end),qstar,constraints{1:end},pelvis_constraint_f,ikoptions);
+    
+    [qf,info,infeasible] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,back_z_constraint_f,ikoptions);
     if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;
+    
     q_end_nom = PPTrajectory(foh([t_end(1),t_end(end)],[q(:,end),qf]));
     end_posture_constraint = PostureConstraint(r,t_end_coarse(end)*[1,1]);
     end_posture_constraint = end_posture_constraint.setJointLimits((1:nq)',qf,qf);
     ikoptions = ikoptions.setAdditionaltSamples(t_end);
-    % [q_end,info] = inverseKinPointwise(r,t_end, ...
-    %   eval(q_end_nom,t_end), ...
-    %   eval(q_end_nom,t_end), ...
-    %   constraints{:},ikoptions);
-    [x_end_traj,info] = inverseKinTraj(r,t_end_coarse, ...
-      q_end_nom, ...
-      q_end_nom, ...
-      constraints{:},end_posture_constraint,ikoptions);
+    x_end_traj = PPTrajectory(foh(t_end([1,end]),[[q(:,end),qf];zeros(nq,2)]));
     x_end = eval(x_end_traj,t_end);
     q_end = x_end(1:nq,:);
-    % q_end=[];
-    % [q(:,2:end),info] = inverseKinPointwise(r,ts(2:end),repmat(q0,1,nt-1),repmat(qstar,1,nt-1),constraints{:},ikoptions);
-    % q = q(:,1:5:end);
     q_data = [q_data,q_end];
     t_data = [t_data, t_end + t_data(end) + dt];
     idx_t_infeasible = [idx_t_infeasible,repmat(info>10,size(t_end))];
   end
-  %x_data = zeros(2*nq,size(q_data,2));
-  %x_data(1:getNumDOF(r),:) = q_data;
-  display(err_segments);
+%   display(err_segments);
   if ladder_opts.smooth_output
     for i = 1:nq
       q_data(i,:) = smooth(q_data(i,:)',ladder_opts.smoothing_span);

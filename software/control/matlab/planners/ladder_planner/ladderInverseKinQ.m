@@ -13,6 +13,8 @@ function Q = ladderInverseKinQ(r)
 %   cost.r_arm_usy = 1e1;
   cost.l_arm_shx = 1e2;
   cost.r_arm_shx = 1e2;
+%   cost.l_arm_mwx = 1e2;
+%   cost.r_arm_mwx = 1e2;
   cost = double(cost);
   Q = diag(cost(1:r.getNumDOF));
 end

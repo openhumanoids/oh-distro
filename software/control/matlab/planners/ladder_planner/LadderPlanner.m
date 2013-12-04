@@ -1,6 +1,7 @@
 function LadderPlanner(options)
   if nargin < 1, options = struct(); end;
   if ~isfield(options,'stability_type'), options.stability_type = 'tension'; end;
+  if ~isfield(options,'verbose'), options.stability_type = 'false'; end;
   
   %NOTEST
   status_code = 6;
@@ -106,10 +107,10 @@ function LadderPlanner(options)
       ladder_opts.fine.use_com_constraint = true;
       ladder_opts.fine.use_incr_com_constraint =     false;
       ladder_opts.fine.use_utorso_constraint =       true;
-      ladder_opts.fine.com_tol = 0.0;
+      ladder_opts.fine.com_tol = 0.005;
   end
   ladder_opts.fine.use_final_com_constraint = true;
-  ladder_opts.fine.use_arm_constraints =         false;
+  ladder_opts.fine.use_arm_constraints =         true;
   ladder_opts.fine.use_total_arm_constraints =   false;
   ladder_opts.fine.use_pelvis_gaze_constraint =  true;
   ladder_opts.fine.use_pelvis_constraint =       true;
@@ -120,25 +121,26 @@ function LadderPlanner(options)
   ladder_opts.fine.use_smoothing_constraint =    false;
   ladder_opts.fine.use_swing_foot_euler_constraint = true;
   ladder_opts.fine.smooth_output = true;
-  ladder_opts.fine.smoothing_span = 11;
+  ladder_opts.fine.smoothing_span = 5;
   ladder_opts.fine.smoothing_method = 'moving'; 
   ladder_opts.fine.n = 1;
   ladder_opts.fine.compute_intro = true;
   ladder_opts.fine.shrink_factor = 0.5;
-  ladder_opts.fine.utorso_threshold = 8*pi/180;
+  ladder_opts.fine.utorso_threshold = 10*pi/180;
   ladder_opts.fine.pelvis_gaze_threshold = 10*pi/180;
   ladder_opts.fine.ankle_limit = 15*pi/180;
   ladder_opts.fine.knee_lb = 35*pi/180*ones(2,1);
   ladder_opts.fine.knee_ub = inf*pi/180*ones(2,1);
-  ladder_opts.fine.hand_threshold = sin(5*pi/180);
+  ladder_opts.fine.hand_threshold = sin(1*pi/180);
   ladder_opts.fine.hand_cone_threshold = sin(1*pi/180);
   ladder_opts.fine.hand_pos_tol = 0.0;
   ladder_opts.fine.pelvis_threshold = 0.05;
   ladder_opts.fine.com_incr_tol = 0.02;
   ladder_opts.fine.com_tol_max = 0.5;
   ladder_opts.fine.qs_margin = 0.0;
-  ladder_opts.fine.arm_tol = 6*pi/180/ladder_opts.fine.n;
+  ladder_opts.fine.arm_tol = 5*pi/180;
   ladder_opts.fine.arm_tol_total = 30*pi/180;
+  ladder_opts.fine.verbose = options.verbose;
 
   % get the robot model first
   % @param l_hand_mode          - 0 no left hand
@@ -162,7 +164,7 @@ function LadderPlanner(options)
         ladder_opts.coarse.hand_threshold = sin(1*pi/180);
         ladder_opts.coarse.shrink_factor = 1;
         ladder_opts.coarse.final_shrink_factor = 1;
-        ladder_opts.fine.hand_threshold = sin(1*pi/180);
+        ladder_opts.fine.hand_threshold = sin(0.5*pi/180);
         ladder_opts.fine.shrink_factor = 1.3;
         ladder_opts.fine.final_shrink_factor = 0.2;
       elseif(l_hand_mode == 1)
@@ -223,7 +225,6 @@ function LadderPlanner(options)
       if(~isempty(qnom_data))
         send_status(status_code,0,0,'Ladder Plan: Got new committed posture preset');
         qnom_msg = drc.robot_posture_preset_t(qnom_data);
-        qnom_msg.preset
         if(qnom_msg.preset == drc.robot_posture_preset_t.CURRENT || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_LFTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_RGTHND_FIX || qnom_msg.preset == drc.robot_posture_preset_t.CURRENT_BOTHHNDS_FIX)
           qnom_state = 'current';
         end
@@ -267,6 +268,7 @@ function LadderPlanner(options)
     ee_info.feet(1).support_traj = supportTraj(l_foot,support_times,support);
     ee_info.feet(2).support_traj = supportTraj(r_foot,support_times,support);
 
+    ladder_opts.fine.comtraj = comtraj;
     [x_data,ts] = robotLadderPlanLeanBack(r, q0, q0, comtraj, ee_info, support_times,ladder_opts);
 
 
