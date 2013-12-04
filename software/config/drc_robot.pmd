@@ -70,6 +70,14 @@ group "a.0.hand_drivers" {
         exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=l hand_id:=44";
         host = "robot";
     }
+    cmd "robotiq-right" {
+        exec = "robotiq_tcp_node RIGHT 192.168.40.101";
+        host = "robot";
+    }
+    cmd "robotiq-left" {
+        exec = "robotiq_tcp_node LEFT 192.168.40.101";
+        host = "robot";
+    }
 }
 
 group "a.1.core" {
@@ -198,6 +206,10 @@ group "a.3.models" {
     }
     cmd "model_LH_RQ" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RQ.urdf";
+        host = "extra";
+    }
+    cmd "model_LQ_RH" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RH.urdf";
         host = "extra";
     }
     cmd "model_LH_RN" {
@@ -336,6 +348,10 @@ group "b.3.models" {
     }
     cmd "base_model_LH_RQ" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RQ.urdf";
+        host = "base";
+    }
+    cmd "base_model_LQ_RH" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RH.urdf";
         host = "base";
     }
     cmd "base_model_LH_RN" {
@@ -555,7 +571,7 @@ script "prep_LH_RR" {
     run_script "prep_core";
     start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
-    start cmd "irobot-right";
+    start cmd "robotiq-right";
 }
 script "prep_LH_RQ" {
     start cmd "model_LH_RQ";
@@ -563,9 +579,16 @@ script "prep_LH_RQ" {
     run_script "prep_core";
     start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
-    start cmd "irobot-right";
+    start cmd "robotiq-right";
 }
-
+script "prep_LQ_RH" {
+    start cmd "model_LQ_RH";
+    start cmd "base_model_LQ_RH";
+    run_script "prep_core";
+    start cmd "IrobotGraspController";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "robotiq-left";
+}
 script "prep_LH_RN" {
     start cmd "model_LH_RN";
     start cmd "base_model_LH_RN";
