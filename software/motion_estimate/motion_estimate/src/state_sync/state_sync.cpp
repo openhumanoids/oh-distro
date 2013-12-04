@@ -3,6 +3,7 @@
 #include <iostream>
 #include <limits>
 #include <vector>
+#include <fstream>
 
 #include "state_sync.hpp"
 #include <ConciseArgs>
@@ -15,10 +16,8 @@ using namespace std;
 void assignJointsStruct( Joints &joints ){
   joints.velocity.assign( joints.name.size(), 0);
   joints.position.assign( joints.name.size(), 0);
-  joints.effort.assign( joints.name.size(), 0);
-  
+  joints.effort.assign( joints.name.size(), 0);  
 }
-
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        bool standalone_head_, bool standalone_hand_,  
@@ -85,6 +84,8 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   ///////////////////////////////////////////////////////////////
   lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);  
   lcm_->subscribe("ATLAS_POT_OFFSETS",&state_sync::potOffsetHandler,this);  
+
+  lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
   
   lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
   pose_BDI_.utime =0; // use this to signify un-initalised
@@ -97,26 +98,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(28,0.0);
 
-  // *******************************************************************************
-  //  BEGIN: paste output code from calibrate script here 
-  // *******************************************************************************
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = 1.0767;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = 1.0582;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = 1.0194;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = 1.0649;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = -0.0088;
-  encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = 1.0040;
-
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = 0.9203;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = -1.0661;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = -0.0587;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = -1.0455;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = 1.0418;
-  encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = 1.0304;
-  // *******************************************************************************
-  //  END 
-  // *******************************************************************************
-
+  loadEncoderOffsetsFromFile();
   encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.24;  // robot software v1.10
 
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
@@ -147,6 +129,36 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   utime_prev_ = 0;
 }
 
+void state_sync::loadEncoderOffsetsFromFile() {
+  // load encoder offsets from file
+
+  std::cout << "state_sync: refreshing offsets" << std::endl;
+
+  char* drcpath;
+  drcpath = getenv("DRC_BASE");
+  if (drcpath==NULL) {
+    std::cout << "state_sync: error reading DRC_BASE environment variable..." << std::endl;
+  }
+  else {
+    std::ifstream file (strcat(drcpath,"/software/config/encoder_offsets.cfg")); 
+    std::string value;
+    double offset;
+    int jindex;
+    while (file.good()) {
+      getline (file, value, ','); // read a string until next comma
+      jindex = ::atoi(value.c_str());
+      // std::cout << "joint index: " << jindex << std::endl;
+      getline (file, value, ',');
+      offset = ::atof(value.c_str());
+      // std::cout << "offset: " <<  offset << std::endl;
+      encoder_joint_offsets_[jindex] = offset;
+    }
+  }
+}
+
+void state_sync::refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
+  loadEncoderOffsetsFromFile();
+}
 
 void state_sync::potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   std::cout << "got potOffsetHandler\n";

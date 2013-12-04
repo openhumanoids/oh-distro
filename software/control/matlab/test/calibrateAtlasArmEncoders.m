@@ -1,6 +1,11 @@
 function calibrateAtlasArmEncoders
 %NOTEST
 
+% silence some warnings
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+
 % must run this with encoders disabled in the state sync process
 r = Atlas();
 nq = getNumDOF(r);
@@ -96,21 +101,30 @@ JOINT_R_ARM_ELX   = 26;
 JOINT_R_ARM_UWY   = 27;
 JOINT_R_ARM_MWX   = 28;
 
-fprintf('\nPaste the following code into state_sync.cpp in the area highlighted at the top:\n\n');
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_USY] = %2.4f;\n',enc_diff(JOINT_R_ARM_USY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_SHX] = %2.4f;\n',enc_diff(JOINT_R_ARM_SHX));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELY] = %2.4f;\n',enc_diff(JOINT_R_ARM_ELY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_ELX] = %2.4f;\n',enc_diff(JOINT_R_ARM_ELX));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_UWY] = %2.4f;\n',enc_diff(JOINT_R_ARM_UWY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_R_ARM_MWX] = %2.4f;\n\n',enc_diff(JOINT_R_ARM_MWX));
+filename = '/home/scottk/drc/software/config/encoder_offsets.cfg'; 
+fileID = fopen(filename,'wt');
+fprintf(fileID, '%d,%2.3f,',JOINT_R_ARM_USY-1,enc_diff(JOINT_R_ARM_USY));
+fprintf(fileID, '%d,%2.3f,',JOINT_R_ARM_SHX-1,enc_diff(JOINT_R_ARM_SHX));
+fprintf(fileID, '%d,%2.3f,',JOINT_R_ARM_ELY-1,enc_diff(JOINT_R_ARM_ELY));
+fprintf(fileID, '%d,%2.3f,',JOINT_R_ARM_ELX-1,enc_diff(JOINT_R_ARM_ELX));
+fprintf(fileID, '%d,%2.3f,',JOINT_R_ARM_UWY-1,enc_diff(JOINT_R_ARM_UWY));
+fprintf(fileID, '%d,%2.3f,',JOINT_R_ARM_MWX-1,enc_diff(JOINT_R_ARM_MWX));
 
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_USY] = %2.4f;\n',enc_diff(JOINT_L_ARM_USY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_SHX] = %2.4f;\n',enc_diff(JOINT_L_ARM_SHX));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELY] = %2.4f;\n',enc_diff(JOINT_L_ARM_ELY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_ELX] = %2.4f;\n',enc_diff(JOINT_L_ARM_ELX));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_UWY] = %2.4f;\n',enc_diff(JOINT_L_ARM_UWY));
-fprintf('encoder_joint_offsets_[Atlas::JOINT_L_ARM_MWX] = %2.4f;\n',enc_diff(JOINT_L_ARM_MWX));
+fprintf(fileID, '%d,%2.3f,',JOINT_L_ARM_USY-1,enc_diff(JOINT_L_ARM_USY));
+fprintf(fileID, '%d,%2.3f,',JOINT_L_ARM_SHX-1,enc_diff(JOINT_L_ARM_SHX));
+fprintf(fileID, '%d,%2.3f,',JOINT_L_ARM_ELY-1,enc_diff(JOINT_L_ARM_ELY));
+fprintf(fileID, '%d,%2.3f,',JOINT_L_ARM_ELX-1,enc_diff(JOINT_L_ARM_ELX));
+fprintf(fileID, '%d,%2.3f,',JOINT_L_ARM_UWY-1,enc_diff(JOINT_L_ARM_UWY));
+fprintf(fileID, '%d,%2.3f',JOINT_L_ARM_MWX-1,enc_diff(JOINT_L_ARM_MWX));
 
-fprintf('\n then recompile and restart the state sync process: drc-state-sync -b -e\n\n');
+fclose(fileID);
+
+disp('Arm encoder calibration completed.');
+send_status(1, 0, 0, 'Arm encoder calibration completed.');
+
+msg = drc.utime_t();
+msg.utime = 0;
+lc = lcm.lcm.LCM.getSingleton();
+lc.publish('REFRESH_ENCODER_OFFSETS',msg);
 
 end
