@@ -283,6 +283,10 @@ group "b.2.p_and_c" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); drillPositionTracker();\"";
        host = "base";
     }
+    cmd "LadderPlanner" {
+      exec = "matlab -nodisplay -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/ladder_planner']); LadderPlanner;\"";
+      host = "base";
+    }
 }
 
 group "b.3.models" {   
