@@ -193,7 +193,7 @@ classdef AtlasManipController < DRCController
             q0=xtraj(1:getNumDOF(obj.robot),1);
 
             if isa(qtraj_prev,'PPTrajectory') 
-              qprev_end = fasteval(qtraj_prev,qtraj_prev.tspan(end));
+              qprev_end = fasteval(qtraj_prev,data.t);
             else
               qprev_end = qtraj_prev;
             end
