@@ -1004,11 +1004,18 @@ public:
     msg.velocity = (int) mRobotiqVelocity*254/100;
     if (mControlRobotiqRightHand){
       getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
-      usleep(1E5);
+      // hack to allow the hand to to power regrasp 
+      // should be solved at the driver instead
+      usleep(1E5); 
       msg.force = 254;
       getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
     }else{
       getLcm()->publish("ROBOTIQ_LEFT_COMMAND", &msg);   
+      // hack to allow the hand to to power regrasp 
+      // should be solved at the driver instead
+      usleep(1E5);
+      msg.force = 254;
+      getLcm()->publish("ROBOTIQ_LEFT_COMMAND", &msg);
     }
   }  
 
