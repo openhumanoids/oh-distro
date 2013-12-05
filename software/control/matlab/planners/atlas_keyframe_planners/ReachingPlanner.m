@@ -611,7 +611,7 @@ classdef ReachingPlanner < KeyframePlanner
             obj.plan_cache.s = s;
             obj.plan_cache.s_breaks = s_breaks;
             obj.plan_cache.qtraj = PPTrajectory(spline(s, [qdot0 q qdotf]));
-            if(obj.planning_mode==1)
+            if(obj.planning_mode==1 || obj.planning_mode == 4)
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(qsc.active);
             else
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);

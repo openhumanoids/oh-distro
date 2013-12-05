@@ -443,6 +443,13 @@ namespace renderer_affordances_lcm_utils
      msg.ee_type=ee_selection;   
      self->lcm->publish(channel, &msg); 
   }  
+  static void publish_hose_mating_cmd(const string& channel, int cmd, void* user)
+  {
+    RendererAffordances *self = (RendererAffordances*) user;
+    drc::hose_mating_cmd_t msg;
+    msg.cmd = cmd;
+    self->lcm->publish(channel, &msg);
+  }
   //----------------------------------------------------------------------------------------------------         
 
 }// end namespace

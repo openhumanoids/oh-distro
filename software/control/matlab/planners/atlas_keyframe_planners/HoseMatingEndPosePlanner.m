@@ -52,8 +52,8 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
       
 
-      obj.updateNozzlePose();
-      head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,obj.nozzle_pose(1:3),obj.h_camera_origin,obj.head_gaze_tol)};
+%       obj.updateNozzlePose();
+      
 %       head_constraint = {};
       
       l_foot_pose = l_foot_pose0;
@@ -74,8 +74,9 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       
       obj.updateWyePose();
       T_world_wye = HT(obj.wye_pose(1:3),obj.wye_pose(4),obj.wye_pose(5),obj.wye_pose(6));
+      head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,obj.wye_pose(1:3),obj.h_camera_origin,obj.head_gaze_tol)};
       % pelvis facing the wye
-      pelvis_constraint = [pelvis_constraint,{WorldPositionInFrameConstraint(obj.r,obj.pelvis_body,[0;0;0],T_world_wye,[-0.9;-0.4;-0.7],[-0.35;0.4;0.5])}];
+%       pelvis_constraint = [pelvis_constraint,{WorldPositionInFrameConstraint(obj.r,obj.pelvis_body,[0;0;0],T_world_wye,[-0.9;-0.4;-0.7],[-0.35;0.4;0.5])}];
 
       % distance between two feed
       % distance between hand and torso
@@ -96,7 +97,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       joint_ind = (1:obj.r.getNumDOF)';
       l_leg_kny = joint_ind(strcmp(coords,'l_leg_kny'));
       r_leg_kny = joint_ind(strcmp(coords,'r_leg_kny'));
-      joint_constraint = joint_constraint.setJointLimits(joint_ind(back_z_ind),-pi/18,pi/18);
+%       joint_constraint = joint_constraint.setJointLimits(joint_ind(back_z_ind),-pi/18,pi/18);
       neck_idx = joint_ind(strcmp(coords,'neck_ay'));
       l_leg_hpz = joint_ind(strcmp(coords,'l_leg_hpz'));
       r_leg_hpz = joint_ind(strcmp(coords,'r_leg_hpz'));
@@ -119,8 +120,8 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       iktraj_hose_hand_constraint = {};
       tspan = [0 1];
       
-      obj.updateNozzlePose();
-      
+%       obj.updateNozzlePose();
+%       
       timeIndices = unique(Indices);
 
             
@@ -128,13 +129,16 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       rh_indices = (~cellfun(@(x) isempty(strfind(char(x),obj.rh_name)),ee_names));
       lhand_constraints=convertEELociFromRPYToQuat(obj,ee_loci(:,lh_indices));
       rhand_constraints=convertEELociFromRPYToQuat(obj,ee_loci(:,rh_indices));
-      if(isempty(lhand_constraints))
-        updateNozzleHand(obj,obj.r_hand_body);
-        nozzle_hand_constraints = rhand_constraints;
-      elseif(isempty(rhand_constraints))
-        updateNozzleHand(obj,obj.l_hand_body);
-        nozzle_hand_constraints = lhand_constraints;
-      end
+%       if(isempty(lhand_constraints))
+%         updateNozzleHand(obj,obj.r_hand_body);
+%         nozzle_hand_constraints = rhand_constraints;
+%       elseif(isempty(rhand_constraints))
+%         updateNozzleHand(obj,obj.l_hand_body);
+%         nozzle_hand_constraints = lhand_constraints;
+%       end
+
+      % temporarily use right hand
+      updateNozzleHand(obj,obj.r_hand_body);
       
       obj.updateWyePose();
       T_world_wye = HT(obj.wye_pose(1:3),obj.wye_pose(4),obj.wye_pose(5),obj.wye_pose(6));
@@ -149,20 +153,32 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       
       if(obj.nozzle_hand == obj.r_hand_body)
         T_world_hose_mate = T_world_wye*[rpy2rotmat([0;0;-pi/3]) [0;0;0];0 0 0 1]; 
+        nozzle_farm_axis = [0;-1;0];
+        nozzle_farm = obj.r.findLinkInd('r_farm');
+        wye_mate_pt = [-0.009;-0.066;0.004];
+        wye_mate_axis = rpy2quat([0;0;1])*[1;0;0];
+        T_wye_wye_axis = HT(wye_mate_pt,0,0,1);
       elseif(obj.nozzle_hand == obj.l_hand_body)
         T_world_hose_mate = T_world_wye*[rpy2rotmat([0;0;pi/3]) [0;0;0];0 0 0 1]; 
+        nozzle_farm_axis = [0;1;0];
+        nozzle_farm = obj.r.findLinkInd('l_farm');
+        wye_mate_pt = [-0.009;0.066;0.004]; % The center of the cylinder on the wye, to be mated
+        wye_mate_axis = rpy2quat([0;0;-1])*[1;0;0];
+        T_wye_wye_axis = HT(wye_mate_pt,0,0,-1);
       end
 %       iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_wye,[-0.5;-0.4;-0.4],[-0.2;0.4;0.2],tspan)}];
       iktraj_hose_hand_constraint = {};
 %       iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldFixedBodyPoseConstraint(obj.r,obj.hose_hand,tspan)}];
         
-      for j = 1:NBreaks
-        si = s_breaks(j);
-        nozzle_hand_pose = pose_spline(s,nozzle_hand_constraints,si);
-        T_world_palm_nozzle = [quat2rotmat(nozzle_hand_pose(4:7)) nozzle_hand_pose(1:3);0 0 0 1];
-        T_world_hand_nozzle = T_world_palm_nozzle*obj.T_palm_hand_nozzle;
-        nozzle_hand_pose = [T_world_hand_nozzle(1:3,4);rotmat2quat(T_world_hand_nozzle(1:3,1:3))];
-        iktraj_nozzle_hand_constraint = [iktraj_nozzle_hand_constraint,parse2PosQuatConstraint(obj.r,obj.nozzle_hand,[0;0;0],nozzle_hand_pose,2e-2,sind(6)^2,[si,si])];
+      wye_axis_world = T_world_wye*[[wye_mate_pt;1] [wye_mate_pt+wye_mate_axis;1]];
+      wye_axis_world = [wye_axis_world(1,2)-wye_axis_world(1,1);wye_axis_world(2,2)-wye_axis_world(2,1);wye_axis_world(3,2)-wye_axis_world(3,1)];
+      iktraj_nozzle_hand_constraint = {WorldGazeDirConstraint(obj.r,nozzle_farm,nozzle_farm_axis,wye_axis_world,0),...
+        WorldPositionInFrameConstraint(obj.r,nozzle_farm,[0;0;0],T_world_wye*T_wye_wye_axis,[-0.2;0;0],[-0.2;0;0])};
+        
+      if(obj.nozzle_hand == obj.r_hand_body)
+        iktraj_head_constraint = [iktraj_head_constraint,{WorldGazeDirConstraint(obj.r,obj.head_body,[0;1;0],wye_axis_world,pi/6)}];
+      else
+        iktraj_head_constraint = [iktraj_head_constraint,{WorldGazeDirConstraint(obj.r,obj.head_body,[0;-1;0],wye_axis_world,pi/6)}];
       end
       
       
@@ -203,8 +219,8 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
 %       joint_constraint = joint_constraint.setJointLimits(nozzle_arm_joint_ind,0.9*joint_lb(nozzle_arm_joint_ind)+0.1*joint_ub(nozzle_arm_joint_ind),...
 %         0.1*joint_lb(nozzle_arm_joint_ind)+0.9*joint_ub(nozzle_arm_joint_ind));
       display('Add slack to nozzle arm joint constraint');
-      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-        iktraj_tbreaks,iktraj_qseed_traj,iktraj_qnom_traj,...
+      [xtraj,snopt_info,infeasible_constraint] = inverseKin(obj.r,...
+        q0,q0,...
         iktraj_lfoot_constraint{:},iktraj_rfoot_constraint{:},...
         iktraj_pelvis_constraint{:},iktraj_head_constraint{:},...
         joint_constraint,iktraj_nozzle_hand_constraint{:},...
@@ -261,44 +277,19 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         obj.parseFixedConstraint(x0);
       
         
-      nozzle_hand_constraint = {};
-      hose_hand_constraint = {};
       
       
-      obj.updateNozzlePose();
-      
-      timeIndices = unique(Indices);
+%       obj.updateNozzlePose();
 
-      ind=find(Indices==timeIndices(1));   
-      lhandT = [];
-      rhandT = [];
-      for k = 1:length(ind)
-        if(strcmp(obj.lh_name,ee_names{ind(k)}))
-          lh_ee_goal = ee_loci(:,ind(k));
-          lhandT = zeros(6,1);
-          T_world_palm_l = HT(lh_ee_goal(1:3),lh_ee_goal(4),lh_ee_goal(5),lh_ee_goal(6));
-          T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
-          lhandT(1:3) = T_world_hand_l(1:3,4);
-          lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
-          l_hand_pose = [lhandT(1:3); rpy2quat(lhandT(4:6))];
-        elseif(strcmp(obj.rh_name,ee_names{ind(k)}))
-          rh_ee_goal = ee_loci(:,ind(k));
-          rhandT = zeros(6,1);
-          T_world_palm_r = HT(rh_ee_goal(1:3),rh_ee_goal(4),rh_ee_goal(5),rh_ee_goal(6));
-          T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
-          rhandT(1:3) = T_world_hand_r(1:3,4);
-          rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
-          r_hand_pose = [rhandT(1:3); rpy2quat(rhandT(4:6))];
-        end
-      end
 
-      if(isempty(lhandT))
-        updateNozzleHand(obj,obj.r_hand_body);
-        nozzle_hand_pose = r_hand_pose;
-      elseif(isempty(rhandT))
-        updateNozzleHand(obj,obj.l_hand_body);
-        nozzle_hand_pose = l_hand_pose;
-      end
+%       if(isempty(lhandT))
+%         updateNozzleHand(obj,obj.r_hand_body);
+%         nozzle_hand_pose = r_hand_pose;
+%       elseif(isempty(rhandT))
+%         updateNozzleHand(obj,obj.l_hand_body);
+%         nozzle_hand_pose = l_hand_pose;
+%       end
+      updateNozzleHand(obj,obj.l_hand_body);
       
       obj.updateWyePose();
       T_world_wye = HT(obj.wye_pose(1:3),obj.wye_pose(4),obj.wye_pose(5),obj.wye_pose(6));
@@ -308,20 +299,36 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       hose_hand_constraint = {};
       
       if(obj.nozzle_hand == obj.r_hand_body)
-        T_world_hose_mate = T_world_wye*[rpy2rotmat([0;0;-pi/3]) [0;0;0];0 0 0 1]; 
+        nozzle_farm_axis = [0;-1;0];
+        nozzle_farm = obj.r.findLinkInd('r_farm');
+        wye_mate_pt = [-0.009;-0.066;0.004];
+        wye_mate_axis = rpy2rotmat([0;0;pi/2-1])*[1;0;0];
+        T_wye_wye_axis = HT(wye_mate_pt,0,0,pi/2-1);
       elseif(obj.nozzle_hand == obj.l_hand_body)
-        T_world_hose_mate = T_world_wye*[rpy2rotmat([0;0;pi/3]) [0;0;0];0 0 0 1]; 
+        nozzle_farm_axis = [0;1;0];
+        nozzle_farm = obj.r.findLinkInd('l_farm');
+        wye_mate_pt = [-0.009;0.066;0.004]; % The center of the cylinder on the wye, to be mated
+        wye_mate_axis = rpy2rotmat([0;0;-(pi/2-1)])*[1;0;0];
+        T_wye_wye_axis = HT(wye_mate_pt,0,0,-(pi/2-1));
       end
-      hose_hand_constraint = [hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_wye,[-0.5;-0.4;-0.4],[-0.2;0.4;0.2])}];
+      
+%       hose_hand_constraint = [hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_wye,[-0.5;-0.4;-0.4],[-0.2;0.4;0.2])}];
 %       iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldFixedBodyPoseConstraint(obj.r,obj.hose_hand,tspan)}];
-        
+      wye_axis_world = T_world_wye*[[wye_mate_pt;1] [wye_mate_pt+wye_mate_axis;1]];
+      wye_axis_world = [wye_axis_world(1,2)-wye_axis_world(1,1);wye_axis_world(2,2)-wye_axis_world(2,1);wye_axis_world(3,2)-wye_axis_world(3,1)];
+      nozzle_hand_constraint = {WorldGazeDirConstraint(obj.r,nozzle_farm,nozzle_farm_axis,wye_axis_world,0),...
+        WorldPositionInFrameConstraint(obj.r,nozzle_farm,[0;0;0],T_world_wye*T_wye_wye_axis,[-0.43;0;0],[-0.43;0;0])};
       
+      if(obj.nozzle_hand == obj.r_hand_body)
+        head_constraint = [head_constraint,{WorldGazeDirConstraint(obj.r,obj.head_body,[0;1;0],wye_axis_world,pi/6)}];
+      else
+        head_constraint = [head_constraint,{WorldGazeDirConstraint(obj.r,obj.head_body,[0;-1;0],wye_axis_world,pi/6)}];
+      end
       
-      
-      T_world_palm_nozzle = [quat2rotmat(nozzle_hand_pose(4:7)) nozzle_hand_pose(1:3);0 0 0 1];
-      T_world_hand_nozzle = T_world_palm_nozzle*obj.T_palm_hand_nozzle;
-      nozzle_hand_pose = [T_world_hand_nozzle(1:3,4);rotmat2quat(T_world_hand_nozzle(1:3,1:3))];
-      nozzle_hand_constraint = [nozzle_hand_constraint,parse2PosQuatConstraint(obj.r,obj.nozzle_hand,[0;0;0],nozzle_hand_pose,2e-2,sind(4)^2)];
+%       T_world_palm_nozzle = [quat2rotmat(nozzle_hand_pose(4:7)) nozzle_hand_pose(1:3);0 0 0 1];
+%       T_world_hand_nozzle = T_world_palm_nozzle*obj.T_palm_hand_nozzle;
+%       nozzle_hand_pose = [T_world_hand_nozzle(1:3,4);rotmat2quat(T_world_hand_nozzle(1:3,1:3))];
+%       nozzle_hand_constraint = [nozzle_hand_constraint,parse2PosQuatConstraint(obj.r,obj.nozzle_hand,[0;0;0],nozzle_hand_pose,2e-2,sind(4)^2)];
       
 
       cost = getCostVector(obj);
@@ -336,7 +343,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         qseed,qnom,...
         rfoot_constraint{:},lfoot_constraint{:},...
         pelvis_constraint{:},head_constraint{:},...
-        joint_constraint,hose_hand_constraint{:},nozzle_hand_constraint{:},...
+        joint_constraint,nozzle_hand_constraint{:},...
         qsc,dist_constraint{:},...
         ikoptions);
       if(snopt_info > 10)
@@ -353,6 +360,13 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
        xtraj_atlas = zeros(2*nq_atlas,1);
        xtraj_atlas(1:nq_atlas,:) = q(obj.atlas2robotFrameIndMap(1:nq_atlas),:);
        obj.pose_pub.publish(xtraj_atlas,utime);
+       
+       if(snopt_info<10)
+        
+        xstar = [q;zeros(size(q))];
+        save([getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'],'xstar');
+       end
+      
     end  
         
         
@@ -404,24 +418,24 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       end
     end
     
-    function updateNozzlePose(obj)
-      receive_aff_flag = false;
-      obj.nozzle_pose = [];
-      while(~receive_aff_flag)
-        data = obj.affordance_listener.getNextMessage(5);
-        if(~isempty(data))
-          for i = 1:obj.affordance_listener.naffs
-            if(strcmp(data.otdf_type{i},'firehose'))
-              obj.nozzle_pose = [data.xyz(:,i);data.rpy(:,i)];
-            end
-          end
-          if(isempty(obj.nozzle_pose))
-            error('nozzle is not in the affordance collection LCM message');
-          end
-          receive_aff_flag = true;
-        end
-      end
-    end
+%     function updateNozzlePose(obj)
+%       receive_aff_flag = false;
+%       obj.nozzle_pose = [];
+%       while(~receive_aff_flag)
+%         data = obj.affordance_listener.getNextMessage(5);
+%         if(~isempty(data))
+%           for i = 1:obj.affordance_listener.naffs
+%             if(strcmp(data.otdf_type{i},'firehose'))
+%               obj.nozzle_pose = [data.xyz(:,i);data.rpy(:,i)];
+%             end
+%           end
+%           if(isempty(obj.nozzle_pose))
+%             error('nozzle is not in the affordance collection LCM message');
+%           end
+%           receive_aff_flag = true;
+%         end
+%       end
+%     end
     
     
   end

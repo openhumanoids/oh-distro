@@ -56,6 +56,8 @@
 #define PARAM_MELD_FOOT_TO_CURRENT  "Meld::2::CurFootState"
 #define PARAM_MELD_PARENT_AFF_TO_ESTROBOTSTATE  "Meld::Aff::2::EstRobotState"
 #define PARAM_MATE     "Mate"
+#define PARAM_WYE_ALIGN     "wye align"
+#define PARAM_WYE_INSERT    "wye insert"
 #define PARAM_SELECT_EE_TYPE "EE :"
 #define PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP "Mate Axis (FemaleEnd):"
 #define PARAM_ENGAGE_EE_TELEOP "Engage EE Teleop"
@@ -1374,6 +1376,14 @@ namespace renderer_affordances_gui_utils
 
       bot_viewer_request_redraw(self->viewer);
     }
+    else if(!strcmp(name,PARAM_WYE_ALIGN)){
+      string channel = "HOSE_MATING";
+      publish_hose_mating_cmd(channel,drc::hose_mating_cmd_t.hose_align; 
+    }
+    else if(!strcmp(name,PARAM_WYE_INSERT)){
+      string channel = "HOSE_MATING";
+      publish_hose_mating_cmd(channel,drc::hose_mating_cmd_t.hose_insert; 
+    }
     
     bot_viewer_request_redraw(self->viewer);
     if(    strcmp(name, PARAM_FOOT_CONTACT_MASK_SELECT)
@@ -1587,6 +1597,8 @@ namespace renderer_affordances_gui_utils
          }
       
           bot_gtk_param_widget_add_buttons(mating_pw,PARAM_MATE, NULL);
+          bot_gtk_param_widget_add_buttons(mating_pw,PARAM_WYE_ALIGN,NULL);
+          bot_gtk_param_widget_add_buttons(mating_pw,PARAM_WYE_INSERT,NULL);
 
           // If affordance is mateable SHOW ee teleop settings.
           
