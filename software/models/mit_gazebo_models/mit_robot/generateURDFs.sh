@@ -6,19 +6,19 @@ echo "Generate Robot Model Configurations:"
 
 
 
-echo "g 1. left pointer, right robotiq: valve"
+echo "1. left pointer, right robotiq: valve"
 rosrun xacro xacro.py xacro/atlas_LP_RR.urdf.xacro > model_LP_RR.urdf
 
-echo "g 2. left irobot, right robotiq: hose, walking"
+echo "2. left irobot, right robotiq: hose, walking"
 rosrun xacro xacro.py xacro/atlas_LI_RR.urdf.xacro > model_LI_RR.urdf
 
-echo "g 3. left irobot, right robotiq, extenders: debris"
+echo "3. left irobot, right robotiq, extenders: debris"
 rosrun xacro xacro.py xacro/atlas_LI_RR_extender.urdf.xacro > model_LI_RR_extender.urdf
 
-echo "g 4. bdi hooks: ladder"
+echo "4. bdi hooks: ladder"
 rosrun xacro xacro.py xacro/atlas_LH_RH.urdf.xacro > model_LH_RH.urdf
 
-echo "g 5. pointers with hook ends: door, driving"
+echo "5. pointers with hook ends: door, driving"
 rosrun xacro xacro.py xacro/atlas_LP_RP.urdf.xacro > model_LP_RP.urdf
 
 echo "6. left robotiq, right pointer, special rotation in urdf: drill"
