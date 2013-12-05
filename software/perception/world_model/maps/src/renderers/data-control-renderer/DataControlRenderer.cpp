@@ -616,6 +616,13 @@ public:
     robotiqControlBox->pack_start(*hbox, false, false);
 
 
+    hbox = Gtk::manage(new Gtk::HBox());
+    button = Gtk::manage(new Gtk::Button("Reset/Calibrate"));
+    button->signal_clicked().connect
+      (sigc::mem_fun(*this, &DataControlRenderer::onRobotiqResetCalibrateButton));
+    hbox->add(*button);
+    robotiqControlBox->pack_start(*hbox, false, false);
+
     notebook->append_page(*robotiqControlBox, "Robotiq");
 
 
@@ -976,6 +983,26 @@ public:
       getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
     else
       getLcm()->publish("ROBOTIQ_LEFT_COMMAND", &msg);
+  }
+
+  void onRobotiqResetCalibrateButton() {
+    robotiqhand::command_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.activate = 0;
+    msg.do_move = 0;
+
+    if (mControlRobotiqRightHand)
+    {
+      getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
+      msg.activate = 1;
+      getLcm()->publish("ROBOTIQ_RIGHT_COMMAND", &msg);
+    }
+    else
+    {
+      getLcm()->publish("ROBOTIQ_LEFT_COMMAND", &msg);
+      msg.activate = 1;
+      getLcm()->publish("ROBOTIQ_LEFT_COMMAND", &msg);
+    }
   }
 
   void onRobotiqOpenButton() {
