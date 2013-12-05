@@ -110,7 +110,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     if (!disable_custom_codecs){    
         load_custom_codecs();
     }
-    bool disable_pmd_custom_codecs = true;
+
+    bool disable_pmd_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, "network.disable_pmd_custom_codecs");
     if (!disable_pmd_custom_codecs){    
         load_pmd_custom_codecs();
     }
