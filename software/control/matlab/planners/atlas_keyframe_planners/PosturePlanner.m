@@ -96,9 +96,7 @@ classdef PosturePlanner < KeyframePlanner
           elseif(useIK_state ==2) % Foot in contact
             ikoptions = IKoptions(obj.r);
             joint_constraint = PostureConstraint(obj.r);
-            [joint_lb,joint_ub] = obj.r.getJointLimits();
-            q_desired = min([q_desired joint_ub],[],2);
-            q_desired = max([q_desired joint_lb],[],2);
+            q_desired = obj.checkPosture(q_desired);
             joint_constraint = joint_constraint.setJointLimits((7:obj.r.getNumDOF)',q_desired(7:end),q_desired(7:end));
             qsc = QuasiStaticConstraint(obj.r);
             qsc = qsc.setShrinkFactor(0.9);
