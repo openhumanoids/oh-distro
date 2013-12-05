@@ -7,9 +7,8 @@ struct status_t
     // Modes, Codes, and Status extracted from status words
     int8_t activated;
     int8_t mode;
-
-    // 
-    int8_t go_to;
+    int8_t gotoStatus;
+    int8_t modeChangeStatus;
     int8_t motionStatus;
     int8_t fingerAStatus;
     int8_t fingerBStatus;

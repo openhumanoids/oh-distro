@@ -201,14 +201,73 @@ class statusModbusToLcmConverter(object):
         self.gCUS = 0  # Current on finger S
 
 
-    def populateStatus(self, string):
-        print ""
-        #fill in internal variables based on an extracted modbus string
+    def populateStatus(self, rawStatData):
+        #Populate internal variables by extracting bytes form the raw data
+
+        if len(rawStatData) == 0:
+            #There was an error reading, do nothing and just republish current status
+            return
+
+        self.gACT = (rawStatData[0] >> 0) & 0x01;
+        self.gMOD = (rawStatData[0] >> 1) & 0x03;
+        self.gGTO = (rawStatData[0] >> 3) & 0x01;
+        self.gIMC = (rawStatData[0] >> 4) & 0x03;
+        self.gSTA = (rawStatData[0] >> 6) & 0x03;
+        self.gDTA = (rawStatData[1] >> 0) & 0x03;
+        self.gDTB = (rawStatData[1] >> 2) & 0x03;
+        self.gDTC = (rawStatData[1] >> 4) & 0x03;
+        self.gDTS = (rawStatData[1] >> 6) & 0x03;
+        self.gFLT =  rawStatData[2]
+        self.gPRA =  rawStatData[3]
+        self.gPOA =  rawStatData[4]
+        self.gCUA =  rawStatData[5]
+        self.gPRB =  rawStatData[6]
+        self.gPOB =  rawStatData[7]
+        self.gCUB =  rawStatData[8]
+        self.gPRC =  rawStatData[9]
+        self.gPOC =  rawStatData[10]
+        self.gCUC =  rawStatData[11]
+        self.gPRS =  rawStatData[12]
+        self.gPOS =  rawStatData[13]
+        self.gCUS =  rawStatData[14]
 
     def generateLcmStatus(self):
-        print ""
-        #return a sensible lcm message based on internal data
+        #Use internal variables to populate an lcm message
+        message = robotiqhand.status_t()
 
+        # Status and fualt codes
+        message.activated = self.gACT
+        message.mode = self.gMOD
+        message.gotoStatus = self.gGTO
+        message.modeChangeStatus = self.gIMC
+        message.motionStatus = self.gSTA
+        message.faultCode = self.gFLT
+
+        # Finger status codes
+        message.fingerAStatus = self.gDTA
+        message.fingerBStatus = self.gDTB
+        message.fingerCStatus = self.gDTC
+        message.fingerSStatus = self.gDTC
+
+        # Motor position command
+        message.posRequestA = self.gPRA
+        message.posRequestB = self.gPRB
+        message.posRequestC = self.gPRC
+        message.posRequestS = self.gPRS
+
+        # Motor position
+        message.positionA = self.gPOA
+        message.positionB = self.gPOB
+        message.positionC = self.gPOC
+        message.positionS = self.gPOS
+
+        # Motor Current
+        message.currentA = self.gCUA
+        message.currentB = self.gCUB
+        message.currentC = self.gCUC
+        message.currentS = self.gCUS
+
+        return message
 
 class robotiqBaseSModel(object):
     """Base class (communication protocol agnostic) for sending
@@ -259,39 +318,13 @@ class robotiqBaseSModel(object):
         """Request the status from the gripper and return it in the SModel_robot_input msg type."""
 
         #Acquire status from the Gripper
-        status = self.client.getStatus(16);
+        rawStatData = self.client.getStatus(16);
 
-        #Message to output
-        message = robotiqhand.status_original_t()
+        #Use converter object to get the data
+        self.status.populateStatus(rawStatData)
+        message = self.status.generateLcmStatus()
 
         #Add a time stamp for this message
         message.utime = (time.time() * 1000000)
-
-        if len(status) == 0:
-            return []
-
-        #Assign the values to their respective variables
-        message.gACT = (status[0] >> 0) & 0x01;
-        message.gMOD = (status[0] >> 1) & 0x03;
-        message.gGTO = (status[0] >> 3) & 0x01;
-        message.gIMC = (status[0] >> 4) & 0x03;
-        message.gSTA = (status[0] >> 6) & 0x03;
-        message.gDTA = (status[1] >> 0) & 0x03;
-        message.gDTB = (status[1] >> 2) & 0x03;
-        message.gDTC = (status[1] >> 4) & 0x03;
-        message.gDTS = (status[1] >> 6) & 0x03;
-        message.gFLT =  status[2]
-        message.gPRA =  status[3]
-        message.gPOA =  status[4]
-        message.gCUA =  status[5]
-        message.gPRB =  status[6]
-        message.gPOB =  status[7]
-        message.gCUB =  status[8]
-        message.gPRC =  status[9]
-        message.gPOC =  status[10]
-        message.gCUC =  status[11]
-        message.gPRS =  status[12]
-        message.gPOS =  status[13]
-        message.gCUS =  status[14]
 
         return message

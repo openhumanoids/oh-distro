@@ -88,6 +88,9 @@ class communication:
 
       #To do!: Implement try/except
       #Get status from the device
+      if not self.client:
+         return []
+
       response = self.client.read_input_registers(0, numRegs)
 
       #Instantiate output as an empty list

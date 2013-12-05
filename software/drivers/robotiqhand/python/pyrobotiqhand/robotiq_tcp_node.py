@@ -7,11 +7,40 @@ sys.path.append(home_dir + "/software/build/lib/python2.7/site-packages")
 sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
 
 import lcm
+import select
+import drc
 
 import pyrobotiqhand.baseSModel as baseSModel
 import pyrobotiqhand.comModbusTcp as comModbusTcp
 
-from time import sleep
+from time import sleep, time
+
+connectPublished = False
+activePublished = False
+
+def publishSystemStatus(side, lcm, status):
+    global connectPublished
+    global activePublished
+
+    if connectPublished and activePublished:
+        return
+
+    msg = drc.system_status_t()
+    msg.utime = (time() * 1000000)
+    msg.system = 4  #provided as the system level for grippers
+    msg.importance = 0
+    msg.frequency = 0
+
+    if connectPublished:
+        if status and status.activated == 1:
+            msg.value = side.upper() + " ROBOTIQ HAND ACTIVE: Receiving status and active"
+            lcm.publish("SYSTEM_STATUS", msg.encode())
+            activePublished = True
+    else:
+        if status:
+            msg.value = side.upper() + " ROBOTIQ HAND ALIVE: Receiving status messages"
+            lcm.publish("SYSTEM_STATUS", msg.encode())
+            connectPublished = True
 
 def mainLoop(side, address):
 
@@ -34,30 +63,30 @@ def mainLoop(side, address):
     # more sense for the message to have human readable data and have the lcm callback
     # convert to the modbus data.
 
+    timeout = 100
+    p = select.poll()
+    p.register(lc.fileno())
+
     #We loop
     try:
         while True:
-            lc.handle()
-
             #Get and publish the Gripper status
-            #status = gripper.getStatus()
+            status = gripper.getStatus()
+            publishSystemStatus(side, lc, status)
+            if status:
+                lc.publish(status_topic, status.encode())
 
-            ## TODO: fix encoding of uints in status message
-            ##lc.publish(status_topic, status.encode())
+            res = p.poll(timeout)
+            if res:
+                lc.handle()
 
-            #Wait a little
-            sleep(0.02)
+                #Send the most recent command
+                gripper.sendCommand()
+                print "command processed"
 
-            #Send the most recent command
-            gripper.sendCommand()
-            print gripper.message1
-            print gripper.message2
-
-            #Wait a little
-            # gripper.sendCommand sends the raw message
-            # 3 times, then mods it and sends that 3 times
-            # each with a 1ms pause, which will take 6ms
-            sleep(0.08)
+                sleep(0.03)
+            else:
+                sleep(0.09)
 
     except KeyboardInterrupt:
         pass
