@@ -168,9 +168,13 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   end
 
   if ladder_opts.use_pelvis_gaze_constraint
-    basic_constraints = [ ...
-      basic_constraints, ...
-      {WorldGazeDirConstraint(r,pelvis,[0;0;1],[0;0;1],ladder_opts.pelvis_gaze_threshold)}];
+%     basic_constraints = [ ...
+%       basic_constraints, ...
+%       {WorldGazeDirConstraint(r,pelvis,[0;0;1],[0;0;1],ladder_opts.pelvis_gaze_threshold)}];
+    pelvis_constraint = PostureConstraint(r);
+    pelvis_constraint = pelvis_constraint.setJointLimits((4:6)',q0(4:6)-ladder_opts.pelvis_gaze_threshold,q0(4:6)+ladder_opts.pelvis_gaze_threshold);
+    basic_constraints = [basic_constraints, {pelvis_constraint}];
+    pelvis_euler_constraint_idx = length(basic_constraints);
   end
 
   rpy_tol_max = 30*pi/180;
@@ -231,6 +235,13 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
             -ladder_opts.ankle_limit, ...
             10*ladder_opts.ankle_limit);
           constraints = [constraints, {ankle_constraint}];
+        else
+          ankle_constraint = PostureConstraint(r);
+          ankle_constraint = ankle_constraint.setJointLimits( ...
+            findJointIndices(r,r.getBody(ee_info.feet(j).idx).jointname), ...
+            0, ...
+            0);
+          constraints = [constraints, {ankle_constraint}];
         end
       end
     end
@@ -286,21 +297,35 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     if ladder_opts.use_com_constraint
       com = eval(ladder_opts.comtraj,ts(i));
       com(3) = NaN;
+      P = com;
+      P(3) = 0;
+      R = o_T_pelvis(1:3,1:3);
+      T = [R,P;zeros(1,3),1];
       constraints = [ ...
         constraints, ...
-        {WorldCoMConstraint(r,com-com_tol_vec,com+com_tol_vec)}];
+        {WorldCoMInFrameConstraint(r,T,[0;0;NaN]-com_tol_vec,[0;0;NaN])}];
     end
     [q(:,i),info,infeasible] = inverseKinPointwise(r,t_data,q_seed,q_nom,constraints{:},ikoptions);
     if info > 4 
-      if ladder_opts.use_com_constraint
-        ladder_opts.com_tol_local = ladder_opts.com_tol;
-        while info ~= 1 && ladder_opts.com_tol_local < ladder_opts.com_tol_max
-          %display(ladder_opts.com_tol_local(1))
-          ladder_opts.com_tol_local = ladder_opts.com_tol_local+0.01;
-          constraints{end} = WorldCoMConstraint(r,com-ladder_opts.com_tol_local,com+ladder_opts.com_tol_local);
-          [q(:,i),info,infeasible] = inverseKinPointwise(r,t_data,q_seed,q(:,i),constraints{:},ikoptions);
+      if ladder_opts.use_pelvis_gaze_constraint
+        ladder_opts.pelvis_gaze_threshold_local = ladder_opts.pelvis_gaze_threshold;
+        while info > 4 && ladder_opts.pelvis_gaze_threshold_local     
+          if info > 4 && ladder_opts.use_com_constraint
+            ladder_opts.com_tol_local = ladder_opts.com_tol;
+            while info ~= 1 && ladder_opts.com_tol_local < ladder_opts.com_tol_max
+              %display(ladder_opts.com_tol_local(1))
+              ladder_opts.com_tol_local = ladder_opts.com_tol_local+0.01;
+              %           constraints{end} = WorldCoMConstraint(r,com-ladder_opts.com_tol_local,com+ladder_opts.com_tol_local);
+              constraints{end} = WorldCoMInFrameConstraint(r,T,[0;0;NaN]-ladder_opts.com_tol_local,[0;0;NaN]);
+              [q(:,i),info,infeasible] = inverseKinPointwise(r,t_data,q_seed,q(:,i),constraints{:},ikoptions);
+            end
+            constraints{end} = WorldCoMInFrameConstraint(r,T,[0;0;NaN]-ladder_opts.com_tol,[0;0;NaN]);
+            %         fprintf('Max com deviation: %5.3f m\n',ladder_opts.com_tol_local);
+          end
+          ladder_opts.pelvis_gaze_threshold_local = ladder_opts.pelvis_gaze_threshold_local + 1*pi/180;
+          constraints{pelvis_euler_constraint_idx} = constraints{pelvis_euler_constraint_idx}.setJointLimits((4:6)',q0(4:6)-ladder_opts.pelvis_gaze_threshold_local,q0(4:6)+ladder_opts.pelvis_gaze_threshold_local);     
         end
-%         fprintf('Max com deviation: %5.3f m\n',ladder_opts.com_tol_local);
+        constraints{pelvis_euler_constraint_idx} = constraints{pelvis_euler_constraint_idx}.setJointLimits((4:6)',q0(4:6)-ladder_opts.pelvis_gaze_threshold,q0(4:6)+ladder_opts.pelvis_gaze_threshold);
       end
       if info > 4
         %       disp(infeasible);keyboard
@@ -352,16 +377,16 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     dt = mean(diff(ts));
     t_end = 0:dt:nt_end*dt;
     t_end_coarse = linspace(t_end(1),t_end(end),3);
-    % com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
-    com_constraint_f = QuasiStaticConstraint(r);
-    com_constraint_f = com_constraint_f.setActive(true);
-    com_constraint_f = com_constraint_f.setShrinkFactor(ladder_opts.final_shrink_factor);
-    foot1_pts = r.getBodyContacts(ee_info.feet(1).idx);
-    foot2_pts = r.getBodyContacts(ee_info.feet(2).idx);
-    com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
+    com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
+%     com_constraint_f = QuasiStaticConstraint(r);
+%     com_constraint_f = com_constraint_f.setActive(true);
+%     com_constraint_f = com_constraint_f.setShrinkFactor(ladder_opts.final_shrink_factor);
+%     foot1_pts = r.getBodyContacts(ee_info.feet(1).idx);
+%     foot2_pts = r.getBodyContacts(ee_info.feet(2).idx);
+%     com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
     constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
     back_z_constraint_f = PostureConstraint(r);
-    back_z_constraint_f = back_z_constraint_f.setJointLimits([6;findJointIndices(r,'back_bkz')],[q0(6);0],[q0(6);0]);
+    back_z_constraint_f = back_z_constraint_f.setJointLimits([(4:6)';findJointIndices(r,'back_bkz')],[q0(4:6);0],[q0(4:6);0]);
     
     [qf,info,infeasible] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,back_z_constraint_f,ikoptions);
     if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;

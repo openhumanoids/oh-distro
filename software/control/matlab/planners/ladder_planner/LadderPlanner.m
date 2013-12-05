@@ -1,7 +1,7 @@
 function LadderPlanner(options)
   if nargin < 1, options = struct(); end;
   if ~isfield(options,'stability_type'), options.stability_type = 'tension'; end;
-  if ~isfield(options,'verbose'), options.stability_type = 'false'; end;
+  if ~isfield(options,'verbose'), options.verbose = 'false'; end;
   
   %NOTEST
   status_code = 6;
@@ -82,14 +82,14 @@ function LadderPlanner(options)
   ladder_opts.fine.use_smoothing_constraint =    false;
   ladder_opts.fine.use_swing_foot_euler_constraint = true;
   ladder_opts.fine.smooth_output = true;
-  ladder_opts.fine.smoothing_span = 5;
+  ladder_opts.fine.smoothing_span = 7;
   ladder_opts.fine.smoothing_method = 'moving'; 
   ladder_opts.fine.n = 1;
   ladder_opts.fine.compute_intro = true;
   ladder_opts.fine.shrink_factor = 0.5;
   ladder_opts.fine.utorso_threshold = 10*pi/180;
-  ladder_opts.fine.pelvis_gaze_threshold = 10*pi/180;
-  ladder_opts.fine.ankle_limit = 15*pi/180;
+  ladder_opts.fine.pelvis_gaze_threshold = 2*pi/180;
+  ladder_opts.fine.ankle_limit = 20*pi/180;
   ladder_opts.fine.knee_lb = 35*pi/180*ones(2,1);
   ladder_opts.fine.knee_ub = inf*pi/180*ones(2,1);
   ladder_opts.fine.hand_threshold = sin(1*pi/180);
@@ -124,7 +124,7 @@ function LadderPlanner(options)
         l_hand_axis = [1;0;0];
         ladder_opts.fine.hand_threshold = sin(0.5*pi/180);
         ladder_opts.fine.shrink_factor = 1.3;
-        ladder_opts.fine.final_shrink_factor = 0.2;
+        ladder_opts.fine.final_shrink_factor = 0.5;
       elseif(l_hand_mode == 1)
         l_hand_str = 'sandia hand';
         l_hand_offset = [0.025;0.25;0.04];
@@ -218,12 +218,17 @@ function LadderPlanner(options)
     ee_info.hands(2).idx = r_hand;
     ee_info.hands(1).axis = l_hand_axis;
     ee_info.hands(1).axis = r_hand_axis;
-
+    
     ee_info.feet(1).support_traj = supportTraj(l_foot,support_times,support);
     ee_info.feet(2).support_traj = supportTraj(r_foot,support_times,support);
-
-    ladder_opts.fine.comtraj = comtraj;
-    [x_data,ts] = robotLadderPlanLeanBack(r, q0, q0, comtraj, ee_info, support_times,ladder_opts);
+    
+    com_data = comtraj.eval(comtraj.getBreaks);
+    com_dir = normalizeVec(com_data(:,end) - com_data(:,1));
+    com_data_sagital = com_dir*(com_data'*com_dir)';
+    comtraj_sagital = PPTrajectory(foh(comtraj.getBreaks,com_data_sagital));
+    
+    ladder_opts.fine.comtraj = comtraj_sagital;
+    [x_data,ts] = robotLadderPlanLeanBack(r, q0, q0, comtraj_sagital, ee_info, support_times,ladder_opts);
 
 
     msg =['Ladder Plan: MAKE SURE THE BOT IS IN USER MODE']; disp(msg); send_status(status_code,0,0,msg);
