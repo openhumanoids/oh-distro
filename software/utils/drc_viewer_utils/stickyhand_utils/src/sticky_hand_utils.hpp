@@ -89,7 +89,7 @@ namespace visualization_utils
   
   // sticky hand presets interms of eigen grasps                       
   void set_joint_position(StickyHandStruc &hand_struc,std::string &name, double val);
-  void get_eigen_grasp_types(std::vector<std::string> &_names);
+  void get_eigen_grasp_types(int hand_type,std::vector<std::string> &_names);
   void set_eigen_grasp(StickyHandStruc &hand_struc,int eig_grasp_type);
   
   bool get_hand_palm_link_name(int hand_type,std::string &ee_name);// decodes hand types in desired_grasp_state_t type

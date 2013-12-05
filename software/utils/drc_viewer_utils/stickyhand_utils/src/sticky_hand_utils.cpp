@@ -507,27 +507,42 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
   //---------------------------------------------------------------------------------------------------------------   
   // Eigen Grasps - Hard Coded
   // --------------
-  void get_eigen_grasp_types(std::vector<std::string> &_names)
+  void get_eigen_grasp_types(int hand_type,std::vector<std::string> &_names)
   {
     _names.clear();
-    _names.push_back("Cylindrical");
-    _names.push_back("Hook-2fgrs");
-    _names.push_back("Hook-3fgrs");
-    _names.push_back("ZeroThumb");
-    _names.push_back("FlipPinky");
-    _names.push_back("ZeroThumbBase");
-    _names.push_back("Cyl-NoThumb");
+    if((hand_type==drc::desired_grasp_state_t::SANDIA_LEFT)||(hand_type==drc::desired_grasp_state_t::SANDIA_RIGHT))
+    {
+      _names.push_back("Cylindrical");
+      _names.push_back("Hook-2fgrs");
+      _names.push_back("Hook-3fgrs");
+      _names.push_back("ZeroThumb");
+      _names.push_back("FlipPinky");
+      _names.push_back("ZeroThumbBase");
+      _names.push_back("Cyl-NoThumb");
+    }
+    else if((hand_type==drc::desired_grasp_state_t::IROBOT_LEFT)||(hand_type==drc::desired_grasp_state_t::IROBOT_RIGHT))
+    {
+      _names.push_back("Cylindrical");
+    }
+    else if((hand_type==drc::desired_grasp_state_t::ROBOTIQ_LEFT)||(hand_type==drc::desired_grasp_state_t::ROBOTIQ_RIGHT))
+    {
+      _names.push_back("Nominal");
+      _names.push_back("Pinch");
+      _names.push_back("Wide");
+      _names.push_back("Zero");
+    }
   }
   
    //--------------------------------------------------------------------------------------------------------------- 
   void set_eigen_grasp(StickyHandStruc &hand_struc,int eig_grasp_type)
   {
       int hand_type = hand_struc.hand_type; //SANDIA_LEFT=0, SANDIA_RIGHT=1, SANDIA_BOTH=2, IROBOT_LEFT=3, IROBOT_RIGHT=4, IROBOT_BOTH=5;
-      bool is_sandia = true;
-      if((hand_struc.hand_type == StickyHandStruc::IROBOT_LEFT)||(hand_struc.hand_type == StickyHandStruc::IROBOT_RIGHT))
-      is_sandia = false;
+      bool is_sandia = ((hand_struc.hand_type == StickyHandStruc::SANDIA_RIGHT)||(hand_struc.hand_type == StickyHandStruc::SANDIA_LEFT));
+      bool is_irobot = ((hand_struc.hand_type == StickyHandStruc::IROBOT_RIGHT)||(hand_struc.hand_type == StickyHandStruc::IROBOT_LEFT));
+      bool is_robotiq = ((hand_struc.hand_type == StickyHandStruc::ROBOTIQ_RIGHT)||(hand_struc.hand_type == StickyHandStruc::ROBOTIQ_LEFT));
+    
       bool is_left = true;
-      if((hand_struc.hand_type == StickyHandStruc::SANDIA_RIGHT)||(hand_struc.hand_type == StickyHandStruc::IROBOT_RIGHT))
+      if((hand_struc.hand_type == StickyHandStruc::SANDIA_RIGHT)||(hand_struc.hand_type == StickyHandStruc::IROBOT_RIGHT)||(hand_struc.hand_type == StickyHandStruc::ROBOTIQ_RIGHT))
       is_left = false;      
  
       string side;
@@ -536,10 +551,18 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
       else
        side ="right_";
       std::string name;
-      if(eig_grasp_type == 0)
+      
+      if(is_sandia)
       {
-          if(is_sandia)
-          {
+      /* _names.push_back("Cylindrical");
+      _names.push_back("Hook-2fgrs");
+      _names.push_back("Hook-3fgrs");
+      _names.push_back("ZeroThumb");
+      _names.push_back("FlipPinky");
+      _names.push_back("ZeroThumbBase");
+      _names.push_back("Cyl-NoThumb");*/
+        if(eig_grasp_type == 0)
+        {
             name = side+"f0_j0"; set_joint_position(hand_struc,name, 0);
             name = side+"f0_j1"; set_joint_position(hand_struc,name, 1.5);   
             name = side+"f0_j2"; set_joint_position(hand_struc,name, 1.7);
@@ -551,25 +574,10 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
             name = side+"f2_j2"; set_joint_position(hand_struc,name, 1.7);   
             name = side+"f3_j0"; set_joint_position(hand_struc,name, 0.2);
             name = side+"f3_j1"; set_joint_position(hand_struc,name, 1.3);   
-            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.5);                                               
-          }
-          else
-          {
-            name = side+"finger[0]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[0]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
-            name = side+"finger[0]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
-            name = side+"finger[1]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[1]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
-            name = side+"finger[1]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
-            name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
-            name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.5);                                  
-          }
-      }
-      else if(eig_grasp_type == 1)
-      {
-          if(is_sandia)
-          {
+            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.5);
+        }
+        else if(eig_grasp_type == 1)
+        {
             name = side+"f0_j0"; set_joint_position(hand_struc,name, 0);
             name = side+"f0_j1"; set_joint_position(hand_struc,name, 1.35);   
             name = side+"f0_j2"; set_joint_position(hand_struc,name, 0.0);
@@ -581,25 +589,10 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
             name = side+"f2_j2"; set_joint_position(hand_struc,name, -1.0);   
             name = side+"f3_j0"; set_joint_position(hand_struc,name, 0.0);
             name = side+"f3_j1"; set_joint_position(hand_struc,name, 0.0);   
-            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.0);                                               
-          }
-          else
-          {
-            name = side+"finger[0]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[0]/joint_base"; set_joint_position(hand_struc,name, 1.5);   
-            name = side+"finger[0]/joint_flex"; set_joint_position(hand_struc,name, 0.0); 
-            name = side+"finger[1]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[1]/joint_base"; set_joint_position(hand_struc,name, 1.5);   
-            name = side+"finger[1]/joint_flex"; set_joint_position(hand_struc,name, 0.0); 
-            name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 0.0);   
-            name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.0);                                  
-          }      
-      }
-      else if(eig_grasp_type == 2)
-      {
-          if(is_sandia)
-          {
+            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.0);     
+        }
+        else if(eig_grasp_type == 2)
+        {
             name = side+"f0_j0"; set_joint_position(hand_struc,name, 0);
             name = side+"f0_j1"; set_joint_position(hand_struc,name, 1.35);   
             name = side+"f0_j2"; set_joint_position(hand_struc,name, 0.0);
@@ -611,67 +604,26 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
             name = side+"f2_j2"; set_joint_position(hand_struc,name, 0.00);  
             name = side+"f3_j0"; set_joint_position(hand_struc,name, 0.0);
             name = side+"f3_j1"; set_joint_position(hand_struc,name, 0.0);   
-            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.0);                                               
-          }
-          else
-          {
-            name = side+"finger[0]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[0]/joint_base"; set_joint_position(hand_struc,name, 1.5);   
-            name = side+"finger[0]/joint_flex"; set_joint_position(hand_struc,name, 0.0); 
-            name = side+"finger[1]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[1]/joint_base"; set_joint_position(hand_struc,name, 1.5);   
-            name = side+"finger[1]/joint_flex"; set_joint_position(hand_struc,name, 0.0); 
-            name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 1.5);   
-            name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.0);                                     
-          }      
-      }
-      else if(eig_grasp_type == 3)
-      {
-          if(is_sandia)
-          {
+            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.0);       
+        }
+        else if(eig_grasp_type == 3)
+        {  
             name = side+"f3_j0"; set_joint_position(hand_struc,name, 0.0);
             name = side+"f3_j1"; set_joint_position(hand_struc,name, 0.0);   
-            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.0);                                               
-          }
-          else
-          {
-            name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 0.0);   
-            name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.0);                                  
-          }   
-      }
-      else if(eig_grasp_type == 4)
-      {
-          if(is_sandia)
-          {
+            name = side+"f3_j2"; set_joint_position(hand_struc,name, 0.0);    
+        }
+        else if(eig_grasp_type == 4)
+        {  
             name = side+"f2_j0"; set_joint_position(hand_struc,name, 0);
             name = side+"f2_j1"; set_joint_position(hand_struc,name, -1.5);   
-            name = side+"f2_j2"; set_joint_position(hand_struc,name, -1.0);                                               
-          }
-          else
-          {
-            name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 0.0);   
-            name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.0);                                  
-          }  
-      }
-      else if(eig_grasp_type == 5)
-      {
-          if(is_sandia)
-          {
-            name = side+"f3_j0"; set_joint_position(hand_struc,name, 0);
-          }
-          else
-          {
-            name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 0.0);   
-          }  
-      }
-      else if(eig_grasp_type == 6)
-      {
-          if(is_sandia)
-          {
+            name = side+"f2_j2"; set_joint_position(hand_struc,name, -1.0);   
+        }  
+        else if(eig_grasp_type == 5)
+        {    
+         name = side+"f3_j0"; set_joint_position(hand_struc,name, 0); 
+        }
+        else if(eig_grasp_type == 6)
+        {  
             name = side+"f0_j0"; set_joint_position(hand_struc,name, 0);
             name = side+"f0_j1"; set_joint_position(hand_struc,name, 1.5);   
             name = side+"f0_j2"; set_joint_position(hand_struc,name, 1.7);
@@ -681,20 +633,92 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
             name = side+"f2_j0"; set_joint_position(hand_struc,name, 0);
             name = side+"f2_j1"; set_joint_position(hand_struc,name, 1.5);   
             name = side+"f2_j2"; set_joint_position(hand_struc,name, 1.7);   
-          }
-          else
-          {
-            name = side+"finger[0]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[0]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
-            name = side+"finger[0]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
-            name = side+"finger[1]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[1]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
-            name = side+"finger[1]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
-            name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
-            name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 0.0);   
-            name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.0);   
-          }  
+        }              
       }
+      else if(is_irobot)
+      {
+         if(eig_grasp_type == 0)
+         {
+          name = side+"finger[0]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
+          name = side+"finger[0]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
+          name = side+"finger[0]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
+          name = side+"finger[1]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
+          name = side+"finger[1]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
+          name = side+"finger[1]/joint_flex"; set_joint_position(hand_struc,name, 0.5); 
+          name = side+"finger[2]/joint_base_rotation"; set_joint_position(hand_struc,name, 0);
+          name = side+"finger[2]/joint_base"; set_joint_position(hand_struc,name, 2.0);   
+          name = side+"finger[2]/joint_flex"; set_joint_position(hand_struc,name, 0.5);    
+         }
+      
+      }
+      else if(is_robotiq)
+      {
+     /* _names.push_back("Nominal");
+      _names.push_back("Pinch");
+      _names.push_back("Wide");
+      _names.push_back("Zero");*/
+         if(eig_grasp_type == 0)
+         {
+          name = side+"finger_1_joint_1"; set_joint_position(hand_struc,name, 1.0);
+          name = side+"finger_1_joint_2"; set_joint_position(hand_struc,name, 1.0);   
+          name = side+"finger_1_joint_3"; set_joint_position(hand_struc,name, 0); 
+          name = side+"finger_2_joint_1"; set_joint_position(hand_struc,name, 1.0);
+          name = side+"finger_2_joint_2"; set_joint_position(hand_struc,name, 1.0);   
+          name = side+"finger_2_joint_3"; set_joint_position(hand_struc,name, 0); 
+          name = side+"finger_middle_joint_1"; set_joint_position(hand_struc,name, 1.0);
+          name = side+"finger_middle_joint_2"; set_joint_position(hand_struc,name, 1.0);   
+          name = side+"finger_middle_joint_3"; set_joint_position(hand_struc,name, 0);   
+          name = side+"palm_finger_1_joint"; set_joint_position(hand_struc,name, 0);   
+          name = side+"palm_finger_2_joint"; set_joint_position(hand_struc,name, 0);    
+         }
+         else if(eig_grasp_type == 1)
+         {
+          name = side+"finger_1_joint_1"; set_joint_position(hand_struc,name, 0.8);
+          name = side+"finger_1_joint_2"; set_joint_position(hand_struc,name, 0);   
+          name = side+"finger_1_joint_3"; set_joint_position(hand_struc,name, 0); 
+          name = side+"finger_2_joint_1"; set_joint_position(hand_struc,name, 0.8);
+          name = side+"finger_2_joint_2"; set_joint_position(hand_struc,name, 0);   
+          name = side+"finger_2_joint_3"; set_joint_position(hand_struc,name, 0); 
+          name = side+"finger_middle_joint_1"; set_joint_position(hand_struc,name, 0.8);
+          name = side+"finger_middle_joint_2"; set_joint_position(hand_struc,name, 0);   
+          name = side+"finger_middle_joint_3"; set_joint_position(hand_struc,name, 0);   
+          //lower = "-0.16" upper="0.25" 
+          name = side+"palm_finger_1_joint"; set_joint_position(hand_struc,name, -0.16);  
+          //lower = "-0.25" upper="0.16"  
+          name = side+"palm_finger_2_joint"; set_joint_position(hand_struc,name, 0.16);    
+         }
+         else if(eig_grasp_type == 2)
+         {
+          name = side+"finger_1_joint_1"; set_joint_position(hand_struc,name, 1.0);
+          name = side+"finger_1_joint_2"; set_joint_position(hand_struc,name, 1.0);   
+          name = side+"finger_1_joint_3"; set_joint_position(hand_struc,name, 0); 
+          name = side+"finger_2_joint_1"; set_joint_position(hand_struc,name, 1.0);
+          name = side+"finger_2_joint_2"; set_joint_position(hand_struc,name, 1.0);   
+          name = side+"finger_2_joint_3"; set_joint_position(hand_struc,name, 0); 
+          name = side+"finger_middle_joint_1"; set_joint_position(hand_struc,name, 1.0);
+          name = side+"finger_middle_joint_2"; set_joint_position(hand_struc,name, 1.0);   
+          name = side+"finger_middle_joint_3"; set_joint_position(hand_struc,name, 0); 
+           //lower = "-0.16" upper="0.25"    
+          name = side+"palm_finger_1_joint"; set_joint_position(hand_struc,name, 0.25);
+          //lower = "-0.25" upper="0.16"    
+          name = side+"palm_finger_2_joint"; set_joint_position(hand_struc,name, -0.25);    
+         } 
+         else if(eig_grasp_type == 3)
+         {
+          name = side+"finger_1_joint_1"; set_joint_position(hand_struc,name, 0.0);
+          name = side+"finger_1_joint_2"; set_joint_position(hand_struc,name, 0.0);   
+          name = side+"finger_1_joint_3"; set_joint_position(hand_struc,name, 0.0); 
+          name = side+"finger_2_joint_1"; set_joint_position(hand_struc,name, 0.0);
+          name = side+"finger_2_joint_2"; set_joint_position(hand_struc,name, 0.0);   
+          name = side+"finger_2_joint_3"; set_joint_position(hand_struc,name, 0.0); 
+          name = side+"finger_middle_joint_1"; set_joint_position(hand_struc,name, 0.0);
+          name = side+"finger_middle_joint_2"; set_joint_position(hand_struc,name, 0.0);   
+          name = side+"finger_middle_joint_3"; set_joint_position(hand_struc,name, 0.0);   
+          name = side+"palm_finger_1_joint"; set_joint_position(hand_struc,name, 0.0);   
+          name = side+"palm_finger_2_joint"; set_joint_position(hand_struc,name, 0.0);    
+         }    
+      }
+     
      drc::joint_angles_t posture_msg;
      posture_msg.num_joints= hand_struc.joint_name.size();
      posture_msg.joint_name = hand_struc.joint_name;
