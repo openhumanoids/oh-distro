@@ -273,6 +273,34 @@
       }, 
       "name": "drill in camera - button left/away", 
       "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "button drill in camera robotiq left", 
+      "joints": {
+        "l_arm_elx": 0.15965116024017334, 
+        "l_arm_ely": 3.105058431625366, 
+        "l_arm_mwx": -0.2964940071105957, 
+        "l_arm_shx": -1.4341771602630615, 
+        "l_arm_usy": 0.022895455360412598, 
+        "l_arm_uwy": 3.1682753562927246
+      }, 
+      "name": "button drill in camera robotiq left", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - robotiq; button inside", 
+      "joints": {
+        "l_arm_elx": 2.2115426063537598, 
+        "l_arm_ely": 1.8519877195358276, 
+        "l_arm_mwx": -0.8890902996063232, 
+        "l_arm_shx": -0.8003555536270142, 
+        "l_arm_usy": -0.41160452365875244, 
+        "l_arm_uwy": 2.1626551151275635
+      }, 
+      "name": "drill in camera - robotiq; button inside", 
+      "nominal_handedness": "left"
     }
   ], 
   "hose": [
