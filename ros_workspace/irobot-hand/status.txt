@@ -12,3 +12,8 @@
 * F2 distal segment LED flashing
 * M4 sounds weird, motor resistances OK
 * F3 pogo pin sticks sometimes
+
+41 status:
+* F1 proximal to distal ribbon cable broken
+* F3 flex cable connector broken
+* F2 finger mount loose

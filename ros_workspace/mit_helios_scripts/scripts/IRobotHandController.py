@@ -22,8 +22,8 @@ spread_motor_index = 4
 finger_spread_ticks_to_radians = 2 * math.pi / 3072 # 3072 per 180 degrees as stated in HandleSensors.msg is wrong
 
 # found using find_calibration_pose.
-# standard deviations: standard deviations: {0: 71.037736450424717, 1: 15.74166446091391, 2: 47.291013945568984}
-jig_pose = {0: 6308.8000000000002, 1: 6281.0, 2: 6555.3999999999996}
+# standard deviations: {0: 22.865694828716666, 1: 13.806158046321215, 2: 47.531463263821365}
+jig_pose = {0: 6433.3999999999996, 1: 6542.3000000000002, 2: 6297.6000000000004}
 
 # standard deviations: {0: 59.872865306414063, 1: 110.36235771312609, 2: 80.058728443561989}
 hand_closed_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
