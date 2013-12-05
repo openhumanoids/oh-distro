@@ -38,17 +38,21 @@ class JointAngleLogger(object):
             self.fieldnames.append(getDistalJointSensorName(i))
         
         self.data = []
+        self.stopped = False
         rospy.Subscriber("sensors/calibrated", HandleSensorsCalibrated, self.calibrated_sensors_callback)
 
     def calibrated_sensors_callback(self, data):
-        data_point = {}
-        data_point[getTimeName()] = rospy.get_time()
-        for i in IRobotHandController.get_close_hand_motor_indices():
-            data_point[getProximalJointSensorName(i)] = data.proximalJointAngle[i]
-            data_point[getDistalJointSensorName(i)] = data.distalJointAngle[i].distal[0]
-#             print data.distalJointAngle[i]
-            data_point[getMotorHallEncoderName(i)] = controller.get_tendon_excursions_with_offset()[i]
-        self.data.append(data_point)
+        if not self.stopped:
+            data_point = {}
+            data_point[getTimeName()] = rospy.get_time()
+            for i in IRobotHandController.get_close_hand_motor_indices():
+                data_point[getProximalJointSensorName(i)] = data.proximalJointAngle[i]
+                data_point[getDistalJointSensorName(i)] = data.distalJointAngle[i].distal[0]
+                data_point[getMotorHallEncoderName(i)] = controller.get_tendon_excursions_with_offset()[i]
+            self.data.append(data_point)
+        
+    def stop(self):
+        self.stopped = True
         
     def write_csv(self):
         currentfile = inspect.getfile(inspect.currentframe())
@@ -66,6 +70,7 @@ if __name__ == '__main__':
     controller = IRobotHandController(side)
     logger = JointAngleLogger(controller)
     controller.close_hand_current_control(300)
+    logger.stop()
     controller.open_hand_motor_excursion_control()
     logger.write_csv()
     

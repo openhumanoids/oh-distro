@@ -15,5 +15,6 @@
 
 41 status:
 * F1 proximal to distal ribbon cable broken
+* F2 flex cable connector broken
 * F3 flex cable connector broken
 * F2 finger mount loose
