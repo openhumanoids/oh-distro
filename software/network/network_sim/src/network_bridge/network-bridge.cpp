@@ -88,7 +88,7 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
 
     // currently allow three groups "a", "b", "c", increase
     // end to increase number of groups
-    for(char c = 'a', end = 'c'; c <= end; ++c)
+    for(char c = 'a', end = 'd'; c <= end; ++c)
     {
         char channels_key[10000], frequency_key[10000];
         std::string channel_key_name = std::string("network.%s.%s.channels_") + std::string(1, c);
