@@ -37,10 +37,10 @@ proximalJointAngle:
 # twist[0]:ktwist * (ratio[0] - ratio[1])	# currently not implemented
 
 distalJointAngle:
-    k_motor_enc    : 0.000477
-    motor_enc_zero : -620.357106
-    k_pin_enc      : 1863.668056
-    0 : {a: 2.418815, ktwist: 0.5, b: 0.876037, kflex: 0.5}
-    1 : {a: -2.624977, ktwist: 0.5, b: -0.667535, kflex: 0.5}
-    2 : {a: -0.487996, ktwist: 0.5, b: 0.380192, kflex: 0.5}
-    3 : {a: 0.309610, ktwist: 0.5, b: 0.511344, kflex: 0.5}
+    k_motor_enc    : 0.000424
+    motor_enc_zero : -1106.966158
+    k_pin_enc      : 2128.714798
+    0 : {a: 0.566776, ktwist: 0.5, b: 0.298663, kflex: 0.5}
+    1 : {a: 0.819015, ktwist: 0.5, b: -0.073142, kflex: 0.5}
+    2 : {a: 0.833997, ktwist: 0.5, b: 0.264967, kflex: 0.5}
+    3 : {a: 0.408867, ktwist: 0.5, b: 0.344963, kflex: 0.5}
