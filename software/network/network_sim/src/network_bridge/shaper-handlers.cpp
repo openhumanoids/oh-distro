@@ -352,7 +352,7 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
             end = priority_.rend(); p_it != end; ++p_it)
     {
         int highest_existing_priority = send_queue_.empty() ? -1 : send_queue_.top().header().priority();
-        glog.is(VERBOSE) && glog << group("tx") << "Current highest priority is: " << highest_existing_priority << std::endl;        
+//        glog.is(VERBOSE) && glog << group("tx") << "Current highest priority is: " << highest_existing_priority << std::endl;        
 
         // no point to keep checking, we've got something good enough already
         if(p_it->first <= highest_existing_priority)
@@ -366,8 +366,8 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
             std::map<std::string, MessageQueue >::iterator q_it =
                 queues_.find(channel_id_.right.at(*iit));
 
-            glog.is(VERBOSE) && glog << group("tx") << "Checking priority: " << p_it->first
-                                     << ", Checking id: " << *iit << std::endl;
+//            glog.is(VERBOSE) && glog << group("tx") << "Checking priority: " << p_it->first
+//                                     << ", Checking id: " << *iit << std::endl;
             
             if(q_it != queues_.end() && !q_it->second.on_demand) // don't queue up on_demand queues here
             {
