@@ -31,9 +31,10 @@ rosrun xacro xacro.py xacro/atlas_LH_RQ.urdf.xacro > model_LH_RQ.urdf
 echo "Pointer left - 0"
 
 
-echo "Robotiq left - 2"
+echo "Robotiq left - 3"
 rosrun xacro xacro.py xacro/atlas_LR_RN.urdf.xacro > model_LR_RN.urdf
 rosrun xacro xacro.py xacro/atlas_LQ_RH.urdf.xacro > model_LQ_RH.urdf
+rosrun xacro xacro.py xacro/atlas_LQ_RI.urdf.xacro > model_LQ_RI.urdf
 
 # the simulated robot configuration - LCM facing and ROS/gazbo facing versions
 echo "17/18 sim - MIT Facing"
