@@ -5,15 +5,15 @@
   <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl.urdf" />
 
   <xacro:include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
+  <xacro:include filename="$(find robotiq_hand_description)/cfg/robotiq_hand.urdf.xacro" />
 
-  <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />
 
-  <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="1.57079 2.0944 0" xyz="0 -0.11516 -0.015"/>
-  </xacro:irobot_hand>
-  <xacro:hook_hand side="left" parent="l_hand" reflect="-1"  hookflip="1"  noof30degoffset="0">
+  <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
-  </xacro:hook_hand>
+  </xacro:irobot_hand>
 
+  <xacro:robotiq_hand side="right" parent="r_hand" reflect="1">
+    <origin rpy="0 3.141 3.141" xyz="0 -0.11516 -0.015"/>
+  </xacro:robotiq_hand>
 
 </robot>

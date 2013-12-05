@@ -2,39 +2,63 @@
 
 echo "Generate Robot Model Configurations:"
 # 9 real robot configurations:
-echo "[I]Robot, [N]one, [S]andia, [H]ook, [P]ointer, [R]obotiq"
+#echo "[I]Robot, [N]one, [S]andia, [H]ook, [P]ointer, [R]obotiq"
 
-echo "IRobot left - 3"
-rosrun xacro xacro.py xacro/atlas_LI_RI.urdf.xacro > model_LI_RI.urdf
-rosrun xacro xacro.py xacro/atlas_LI_RN.urdf.xacro > model_LI_RN.urdf
-rosrun xacro xacro.py xacro/atlas_LI_RS.urdf.xacro > model_LI_RS.urdf
 
-echo "None left - 5"
-rosrun xacro xacro.py xacro/atlas_LN_RI.urdf.xacro > model_LN_RI.urdf
-rosrun xacro xacro.py xacro/atlas_LN_RN.urdf.xacro > model_LN_RN.urdf
-rosrun xacro xacro.py xacro/atlas_LN_RS.urdf.xacro > model_LN_RS.urdf
-rosrun xacro xacro.py xacro/atlas_LN_RR.urdf.xacro > model_LN_RR.urdf
-rosrun xacro xacro.py xacro/atlas_LN_RH.urdf.xacro > model_LN_RH.urdf
 
-echo "Sandia left - 3"
-rosrun xacro xacro.py xacro/atlas_LS_RI.urdf.xacro > model_LS_RI.urdf
-rosrun xacro xacro.py xacro/atlas_LS_RN.urdf.xacro > model_LS_RN.urdf
-rosrun xacro xacro.py xacro/atlas_LS_RS.urdf.xacro > model_LS_RS.urdf
+echo "g 1. left pointer, right robotiq: valve"
+rosrun xacro xacro.py xacro/atlas_LP_RR.urdf.xacro > model_LP_RR.urdf
 
-echo "Hook left - 5"
-rosrun xacro xacro.py xacro/atlas_LH_RI.urdf.xacro > model_LH_RI.urdf
-rosrun xacro xacro.py xacro/atlas_LH_RN.urdf.xacro > model_LH_RN.urdf
+echo "g 2. left irobot, right robotiq: hose, walking"
+rosrun xacro xacro.py xacro/atlas_LI_RR.urdf.xacro > model_LI_RR.urdf
+
+echo "g 3. left irobot, right robotiq, extenders: debris"
+rosrun xacro xacro.py xacro/atlas_LI_RR_extender.urdf.xacro > model_LI_RR_extender.urdf
+
+echo "g 4. bdi hooks: ladder"
 rosrun xacro xacro.py xacro/atlas_LH_RH.urdf.xacro > model_LH_RH.urdf
-rosrun xacro xacro.py xacro/atlas_LH_RR.urdf.xacro > model_LH_RR.urdf
-rosrun xacro xacro.py xacro/atlas_LH_RQ.urdf.xacro > model_LH_RQ.urdf
 
-echo "Pointer left - 0"
+echo "g 5. pointers with hook ends: door, driving"
+rosrun xacro xacro.py xacro/atlas_LP_RP.urdf.xacro > model_LP_RP.urdf
+
+echo "6. left robotiq, right pointer, special rotation in urdf: drill"
+rosrun xacro xacro.py xacro/atlas_LQ_RP.urdf.xacro > model_LQ_RP.urdf
+# wash LQ_RP
 
 
-echo "Robotiq left - 3"
-rosrun xacro xacro.py xacro/atlas_LR_RN.urdf.xacro > model_LR_RN.urdf
-rosrun xacro xacro.py xacro/atlas_LQ_RH.urdf.xacro > model_LQ_RH.urdf
-rosrun xacro xacro.py xacro/atlas_LQ_RI.urdf.xacro > model_LQ_RI.urdf
+#echo "IRobot left - 3"
+#rosrun xacro xacro.py xacro/atlas_LI_RI.urdf.xacro > model_LI_RI.urdf
+#rosrun xacro xacro.py xacro/atlas_LI_RN.urdf.xacro > model_LI_RN.urdf
+#rosrun xacro xacro.py xacro/atlas_LI_RS.urdf.xacro > model_LI_RS.urdf
+
+#echo "None left - 5"
+#rosrun xacro xacro.py xacro/atlas_LN_RI.urdf.xacro > model_LN_RI.urdf
+#rosrun xacro xacro.py xacro/atlas_LN_RN.urdf.xacro > model_LN_RN.urdf
+#rosrun xacro xacro.py xacro/atlas_LN_RS.urdf.xacro > model_LN_RS.urdf
+#rosrun xacro xacro.py xacro/atlas_LN_RR.urdf.xacro > model_LN_RR.urdf
+#rosrun xacro xacro.py xacro/atlas_LN_RH.urdf.xacro > model_LN_RH.urdf
+
+#echo "Sandia left - 3"
+#rosrun xacro xacro.py xacro/atlas_LS_RI.urdf.xacro > model_LS_RI.urdf
+#rosrun xacro xacro.py xacro/atlas_LS_RN.urdf.xacro > model_LS_RN.urdf
+#rosrun xacro xacro.py xacro/atlas_LS_RS.urdf.xacro > model_LS_RS.urdf
+
+#echo "Hook left - 5"
+#rosrun xacro xacro.py xacro/atlas_LH_RI.urdf.xacro > model_LH_RI.urdf
+#rosrun xacro xacro.py xacro/atlas_LH_RN.urdf.xacro > model_LH_RN.urdf
+#rosrun xacro xacro.py xacro/atlas_LH_RH.urdf.xacro > model_LH_RH.urdf
+#rosrun xacro xacro.py xacro/atlas_LH_RR.urdf.xacro > model_LH_RR.urdf
+#rosrun xacro xacro.py xacro/atlas_LH_RQ.urdf.xacro > model_LH_RQ.urdf
+
+#echo "Pointer left - 0"
+
+#echo "Robotiq left - 3"
+#rosrun xacro xacro.py xacro/atlas_LR_RN.urdf.xacro > model_LR_RN.urdf
+#rosrun xacro xacro.py xacro/atlas_LQ_RH.urdf.xacro > model_LQ_RH.urdf
+#rosrun xacro xacro.py xacro/atlas_LQ_RI.urdf.xacro > model_LQ_RI.urdf
+
+#echo "IRobot left - extender"
+
 
 # the simulated robot configuration - LCM facing and ROS/gazbo facing versions
 echo "17/18 sim - MIT Facing"
