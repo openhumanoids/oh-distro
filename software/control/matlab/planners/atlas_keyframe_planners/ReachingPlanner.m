@@ -30,7 +30,7 @@ classdef ReachingPlanner < KeyframePlanner
             obj.restrict_feet=true;
             obj.planning_mode = 1;
             obj.hand_space = HandWorkspace([getenv('DRC_PATH'),'/control/matlab/data/HandWorkSpace.mat']);
-            obj.max_ik_trial = 4;
+            obj.max_ik_trial = 5;
             obj.setPosTol(0.03); % 3 cm maximum
             obj.setQuatTol(12); % 12 degrees maximum
         end
@@ -711,14 +711,18 @@ classdef ReachingPlanner < KeyframePlanner
           if(pos_tol<0)
             error('Tolerance must be nonnegative');
           end
-          obj.pos_tol_array = linspace(0,pos_tol,obj.max_ik_trial);
+          pos_tol_array1 = linspace(0,pos_tol/3,ceil(obj.max_ik_trial/2));
+          pos_tol_array2 = linspace(pos_tol/3,pos_tol,obj.max_ik_trial-ceil(obj.max_ik_trial/2)+1);
+          obj.pos_tol_array = [pos_tol_array1 pos_tol_array2(2:end)];
         end
         
         function setQuatTol(obj,angle_tol)
           if(angle_tol<0 || angle_tol>180)
             error('tolerance is within [0 180] degrees');
           end
-          obj.quat_tol_array = sind(linspace(0,angle_tol,obj.max_ik_trial)).^2;
+          angle_tol_array1 = linspace(0,angle_tol/3,ceil(obj.max_ik_trial/2));
+          angle_tol_array2 = linspace(angle_tol/3,angle_tol,obj.max_ik_trial-ceil(obj.max_ik_trial/2)+1);
+          obj.quat_tol_array = sind([angle_tol_array1 angle_tol_array2(2:end)]).^2;
         end
         
         function data = checkPlannerConfig(obj,plan_execution_time)
