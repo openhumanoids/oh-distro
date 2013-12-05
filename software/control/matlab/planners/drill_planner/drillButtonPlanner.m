@@ -69,7 +69,7 @@ classdef drillButtonPlanner
         obj.button_joint_indices = regexpIndex('^r_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
       else
         obj.button_hand_body = regexpIndex('l_hand',{r.getBody(:).linkname});
-        obj.finger_hand_body = regexpIndex('l_hand',{r.getBody(:).linkname});
+        obj.finger_hand_body = regexpIndex('r_hand',{r.getBody(:).linkname});
         obj.finger_joint_indices = regexpIndex('^r_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
         obj.button_joint_indices = regexpIndex('^l_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
       end
@@ -105,7 +105,7 @@ classdef drillButtonPlanner
       obj.drill_axis_on_hand = drill_axis_on_hand/norm(drill_axis_on_hand);
     end
     
-    function [xtraj,snopt_info,infeasible_constraint] = createPrePokePlan(obj, q0, T)
+    function [xtraj,snopt_info,infeasible_constraint] = createPrePokePlan(obj, q0, offset, T)
       N = 5;
       t_vec = linspace(0,T,N);
 
@@ -115,7 +115,6 @@ classdef drillButtonPlanner
       button_axis_world = -quat2rotmat(button_state(4:7))*obj.button_axis_on_hand; % flip sign so axis points AT the button
       button_pos = button_state(1:3);
       
-      offset = [0;.1;0];
       head_pos = obj.r.forwardKin(kinsol,30,zeros(3,1),2);
       quat_head = head_pos(4:7);
       R_head = quat2rotmat(quat_head);
@@ -193,7 +192,8 @@ classdef drillButtonPlanner
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       
       % create position constraint
-      button_position_constraint = WorldPositionInFrameConstraint(obj.r, obj.button_hand_body, obj.button_pt_on_hand,button_pos_frame,button_pos_min,button_pos_max,[t_vec(end) t_vec(end)]))
+      button_position_constraint = WorldPositionInFrameConstraint(obj.r, obj.button_hand_body,...
+          obj.button_pt_on_hand,button_pos_frame,button_pos_min,button_pos_max,[t_vec(end) t_vec(end)]);
 
       [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
         button_gaze_constraint,button_position_constraint, posture_constraint,obj.ik_options);

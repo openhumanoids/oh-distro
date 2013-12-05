@@ -40,12 +40,15 @@ end
 if useRightHand
     drill.drill_axis = -[.5;0;sqrt(3)/2];  % or -.5, and -.04 on x below
     drill.guard_pos = [-.07;-.3;-.15];
+    finger_pt_on_hand = [0; 0.2752; 0.015];
+    finger_axis_on_hand = [0;1;0];
 else
     drill.drill_axis = -[.5;0;sqrt(3)/2];  % or -.5, and -.04 on x below
     drill.guard_pos = [-.07;.3;-.15];
+    finger_pt_on_hand = [0; -0.2752; 0.015];
+    finger_axis_on_hand = [0;-1;0];
 end
-finger_pt_on_hand = [0; 0.2752; 0.015];
-finger_axis_on_hand = [0;1;0];
+
 
 button_pub = drillButtonPlanner(r,atlas,drill.button_pos, drill.button_normal, drill.drill_axis,...
  finger_pt_on_hand, finger_axis_on_hand, useRightHand, useVisualization, publishPlans);
@@ -99,7 +102,7 @@ while(true)
       if useRightHand
         gaze_in_pelvis = [-1;1;0];
       else
-        gaze_in_pelvis = [-1;-1;0];
+        gaze_in_pelvis = [-1;-1;.5];
       end
       
       gaze_in_pelvis = gaze_in_pelvis/norm(gaze_in_pelvis);
@@ -109,10 +112,10 @@ while(true)
       R = quat2rotmat(pelvis_pose(4:7));
       button_gaze = R*gaze_in_pelvis;
       
-      button_pos_min = [.3;-.2;-inf];
+      button_pos_min = [.5;0;-inf];
       button_pos_max = [inf;.2;inf];
       pelvis_frame = [R pelvis_pose(1:3); 0 0 0 1];
-      [xtraj,snopt_info,infeasible_constraint] = button_pub.createButtonPreposePlan(q0, button_gaze, 10*pi/180, pelvis_frame, button_pos_min, button_pos_max, 5);
+      [xtraj,snopt_info,infeasible_constraint] = button_pub.createButtonPreposePlan(q0, button_gaze, 5*pi/180, pelvis_frame, button_pos_min, button_pos_max, 5);
 
     case drc.drill_control_t.REFIT_DRILL
         
@@ -285,9 +288,12 @@ while(true)
       end
     case drc.drill_control_t.RQ_BUTTON_PREPOSE_PLAN
       q0 = lcm_mon.getStateEstimate();
-%       last_button_offset = [-.1;0;0];
-      last_button_offset = [0;.1;0];
-      [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPrePokePlan(q0, 5);
+      if useRightHand
+        last_button_offset = [0;.1;0];
+      else
+        last_button_offset = [0;-.1;0];
+      end
+      [xtraj_button,snopt_info_button,infeasible_constraint_button] = button_pub.createPrePokePlan(q0,last_button_offset, 5);
     case drc.drill_control_t.RQ_BUTTON_DELTA_PLAN
       if sizecheck(ctrl_data, [3 1])
         

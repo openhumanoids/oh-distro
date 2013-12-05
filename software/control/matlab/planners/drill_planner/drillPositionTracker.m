@@ -21,7 +21,11 @@ while isempty(wall) || isempty(drill)
 end
 
 %%
-hand_body = 29;
+if useRightHand
+  hand_body = 29;
+else
+  hand_body = 17;
+end
 buffer_size = 1000;
 buffer_ind = 1;
 buffer_length = 0;
