@@ -198,7 +198,7 @@ classdef drillButtonPlanner
       [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
         button_gaze_constraint,button_position_constraint, posture_constraint,obj.ik_options);
       
-      if(diff_opt == inf)
+      if(snopt_info_ik > 10)
         send_msg = sprintf('snopt_info = %d. The IK fails.',snopt_info_ik);
         send_status(4,0,0,send_msg);
         display(infeasibleConstraintMsg(infeasible_constraint_ik));

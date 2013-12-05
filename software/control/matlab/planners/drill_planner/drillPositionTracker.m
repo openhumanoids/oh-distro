@@ -6,7 +6,8 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 r = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),struct('floating',true));
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 
-lcm_mon = drillTaskLCMMonitor(atlas, true);
+useRightHand = false;
+lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'drill_path_history');
 line_buffer = drc.control.LCMGLLineBuffer(lcmgl,0,1,0);
 %% get affordance fits

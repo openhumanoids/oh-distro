@@ -1,6 +1,6 @@
 %% The main program for the drill task
 publishPlans = true;
-useRightHand = true;
+useRightHand = false;
 useVisualization = false;
 allowPelvisHeight = true;
 
@@ -37,8 +37,13 @@ end
 %    -0.2602
 %     0.0306];
 %   drill.drill_axis = [1;0;0];
-  drill.drill_axis = -[.5;0;sqrt(3)/2];  % or -.5, and -.04 on x below
-  drill.guard_pos = [-.07;-.3;-.15];
+if useRightHand
+    drill.drill_axis = -[.5;0;sqrt(3)/2];  % or -.5, and -.04 on x below
+    drill.guard_pos = [-.07;-.3;-.15];
+else
+    drill.drill_axis = -[.5;0;sqrt(3)/2];  % or -.5, and -.04 on x below
+    drill.guard_pos = [-.07;.3;-.15];
+end
 finger_pt_on_hand = [0; 0.2752; 0.015];
 finger_axis_on_hand = [0;1;0];
 
@@ -92,9 +97,9 @@ while(true)
     case drc.drill_control_t.RQ_GOTO_BUTTON_PRESET
       disp('Searching for a button hand posture');
       if useRightHand
-        gaze_in_pelvis = [-.5;1;.5];
+        gaze_in_pelvis = [-1;1;0];
       else
-        gaze_in_pelvis = [-.5;-1;.5];
+        gaze_in_pelvis = [-1;-1;0];
       end
       
       gaze_in_pelvis = gaze_in_pelvis/norm(gaze_in_pelvis);
@@ -103,7 +108,7 @@ while(true)
       pelvis_pose = r.forwardKin(kinsol,2,zeros(3,1),2);
       R = quat2rotmat(pelvis_pose(4:7));
       button_gaze = R*gaze_in_pelvis;
-      [xtraj,snopt_info,infeasible_constraint] = button_pub.createButtonPreposePlan(q0, button_gaze, 20*pi/180, 5);
+      [xtraj,snopt_info,infeasible_constraint] = button_pub.createButtonPreposePlan(q0, button_gaze, 10*pi/180, 5);
 
 %       disp('generating plan to preset position');
 %       % get the pose somehow, todo
@@ -182,9 +187,9 @@ while(true)
         drill_points_expanded(:,i) = drill_points_expanded(:,i) + target_expansion*(drill_points_expanded(:,i) - target_centroid)/norm(drill_points_expanded(:,i) - target_centroid) + wall.normal*depth_increase;
       end
       
-      q0_init(1:3) = target_centroid - wall.normal*.6 - .2*wall_z + .0*wall_y;
+      q0_init(1:3) = target_centroid - wall.normal*.6 - .2*wall_z + .1*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
-      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .2);
+      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .0);
       
     case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)
