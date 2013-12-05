@@ -158,6 +158,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         wye_mate_pt = [-0.009;-0.066;0.004];
         wye_mate_axis = rpy2quat([0;0;1])*[1;0;0];
         T_wye_wye_axis = HT(wye_mate_pt,0,0,1);
+        nozzle_mwx = find(obj.r.getStateFrame.coordinates,'r_arm_mwx');
       elseif(obj.nozzle_hand == obj.l_hand_body)
         T_world_hose_mate = T_world_wye*[rpy2rotmat([0;0;pi/3]) [0;0;0];0 0 0 1]; 
         nozzle_farm_axis = [0;1;0];
@@ -165,6 +166,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         wye_mate_pt = [-0.009;0.066;0.004]; % The center of the cylinder on the wye, to be mated
         wye_mate_axis = rpy2quat([0;0;-1])*[1;0;0];
         T_wye_wye_axis = HT(wye_mate_pt,0,0,-1);
+        nozzle_mwx = find(obj.r.getStateFrame.coordinates,'l_arm_mwx');
       end
 %       iktraj_hose_hand_constraint = [iktraj_hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_wye,[-0.5;-0.4;-0.4],[-0.2;0.4;0.2],tspan)}];
       iktraj_hose_hand_constraint = {};
@@ -304,12 +306,14 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
         wye_mate_pt = [-0.009;-0.066;0.004];
         wye_mate_axis = rpy2rotmat([0;0;pi/2-1])*[1;0;0];
         T_wye_wye_axis = HT(wye_mate_pt,0,0,pi/2-1);
+        nozzle_mwx = find(strcmp(obj.r.getStateFrame.coordinates,'r_arm_mwx'));
       elseif(obj.nozzle_hand == obj.l_hand_body)
         nozzle_farm_axis = [0;1;0];
         nozzle_farm = obj.r.findLinkInd('l_farm');
         wye_mate_pt = [-0.009;0.066;0.004]; % The center of the cylinder on the wye, to be mated
         wye_mate_axis = rpy2rotmat([0;0;-(pi/2-1)])*[1;0;0];
         T_wye_wye_axis = HT(wye_mate_pt,0,0,-(pi/2-1));
+        nozzle_mwx = find(strcmp(obj.r.getStateFrame.coordinates,'r_arm_mwx'));
       end
       
 %       hose_hand_constraint = [hose_hand_constraint,{WorldPositionInFrameConstraint(obj.r,obj.hose_hand,obj.hose_palm_pt,T_world_wye,[-0.5;-0.4;-0.4],[-0.2;0.4;0.2])}];
@@ -336,6 +340,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
       ikoptions = ikoptions.setDebug(true);
 
+      joint_constraint = joint_constraint.setJointLimits(nozzle_mwx,0,0);
       qseed = q0;
       nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
       qnom = nomdata.xstar(1:obj.r.getNumDOF());

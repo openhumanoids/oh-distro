@@ -30,12 +30,14 @@ classdef HoseMatingReachingPlanner < ReachingPlanner
         wye_mate_pt = [-0.009;-0.066;0.004];
         wye_mate_axis = rpy2rotmat([0;0;pi/2-1])*[1;0;0];
         T_wye_wye_axis = HT(wye_mate_pt,0,0,pi/2-1);
+        nozzle_mwx = find(strcmp(obj.r.getStateFrame.coordinates,'r_arm_mwx'));
       elseif(obj.nozzle_hand == obj.l_hand_body)
         nozzle_farm_axis = [0;1;0];
         nozzle_farm = obj.r.findLinkInd('l_farm');
         wye_mate_pt = [-0.009;0.066;0.004]; % The center of the cylinder on the wye, to be mated
         wye_mate_axis = rpy2rotmat([0;0;-(pi/2-1)])*[1;0;0];
         T_wye_wye_axis = HT(wye_mate_pt,0,0,-(pi/2-1));
+        nozzle_mwx = find(strcmp(obj.r.getStateFrame.coordinates,'r_arm_mwx'));
       end
       wye_axis_world = T_world_wye*[[wye_mate_pt;1] [wye_mate_pt+wye_mate_axis;1]];
       wye_axis_world = [wye_axis_world(1,2)-wye_axis_world(1,1);wye_axis_world(2,2)-wye_axis_world(2,1);wye_axis_world(3,2)-wye_axis_world(3,1)];
@@ -58,6 +60,7 @@ classdef HoseMatingReachingPlanner < ReachingPlanner
       
       joint_constraint = PostureConstraint(obj.r);
       joint_constraint = joint_constraint.setJointLimits(obj.lower_joint_ind,q0(obj.lower_joint_ind),q0(obj.lower_joint_ind));
+      joint_constraint = joint_constraint.setJointLimits(nozzle_mwx,0,0);
       if(obj.nozzle_hand == obj.r_hand_body)
         joint_constraint = joint_constraint.setJointLimits(obj.l_arm_joint_ind,q0(obj.l_arm_joint_ind),q0(obj.l_arm_joint_ind));
       elseif(obj.nozzle_hand == obj.l_hand_body)
