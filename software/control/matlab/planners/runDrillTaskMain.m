@@ -64,10 +64,10 @@ segment_index = 1;
 cut_lengths = sum((drill_points(:,2:end) - drill_points(:,1:end-1)).*(drill_points(:,2:end) - drill_points(:,1:end-1)));
 [~,diagonal_index] = max(cut_lengths);
 
-short_cut = .02;
+short_cut = .05;
 long_cut = .05;
 target_radius = .07;
-predrill_distance = .1;
+predrill_distance = .07;
 
 xtraj_nominal = []; %to know if we've got a plan
 xtraj_button = []; %to know if we've got a plan
@@ -154,9 +154,9 @@ while(true)
         drill_points_expanded(:,i) = drill_points_expanded(:,i) + target_expansion*(drill_points_expanded(:,i) - target_centroid)/norm(drill_points_expanded(:,i) - target_centroid) + wall.normal*depth_increase;
       end
       
-      q0_init(1:3) = target_centroid - wall.normal*.6 - .2*wall_z + .1*wall_y;
+      q0_init(1:3) = target_centroid - wall.normal*.7 - .2*wall_z + .1*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
-      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .0);
+      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .1);
       
     case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)
@@ -242,8 +242,9 @@ while(true)
       nearest_point = drill_points(:,segment_index) + line_param*(drill_points(:,segment_index+1) -drill_points(:,segment_index));
       
       dist_to_cut = norm(drill0 - nearest_point);
-      if dist_to_cut < .07
-        cut_param = min(1,cut_length/cut_lengths(segment_index) + line_param);
+      if dist_to_cut < cut_length
+        cut_length_on_path = sqrt(cut_length^2 - dist_to_cut^2);
+        cut_param = min(1,cut_length_on_path/cut_lengths(segment_index) + line_param);
         drill_target = drill_points(:,segment_index) + cut_param*(drill_points(:,segment_index+1) -drill_points(:,segment_index));
       else
         drill_target = nearest_point;
