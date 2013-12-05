@@ -416,7 +416,7 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_int(self->main_pw, PARAM_MIN_NUM_STEPS, 0);
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_FORWARD_STEP, 0.25);  
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_FORWARD_STEP, 0.45);  
-    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.3);  
+    bot_gtk_param_widget_set_double(self->main_pw, PARAM_NOM_STEP_WIDTH, 0.26);  
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_MIN_STEP_WIDTH, 0.21);
     bot_gtk_param_widget_set_double(self->main_pw, PARAM_MAX_STEP_WIDTH, 0.40);
     bot_gtk_param_widget_set_enum(self->main_pw, PARAM_BEHAVIOR, BEHAVIOR_BDI_STEPPING);
