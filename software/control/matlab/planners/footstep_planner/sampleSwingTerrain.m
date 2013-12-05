@@ -16,7 +16,7 @@ rhos = linspace(-contact_width, contact_width, options.nrho);
 [R, L] = meshgrid(rhos, lambdas);
 xy = bsxfun(@plus, last_pos(1:2), bsxfun(@times, reshape(R, 1, []), rho_hat) + bsxfun(@times, reshape(L, 1, []), lambda_hat));
 z = reshape(biped.getTerrainHeight(xy), size(R));
-% z = medfilt2(z, 'symmetric');
+z = medfilt2(z, 'symmetric');
 terrain_pts(2, :) = max(z, [], 2);
 terrain_pts(1,:) = lambdas;
 
