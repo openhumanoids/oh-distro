@@ -366,8 +366,8 @@ define_field_field_handler(INSUpdateRequestGyroBiasEstX, drc::ins_update_request
 define_field_field_handler(INSUpdateRequestGyroBiasEstY, drc::ins_update_request_t, gyroBiasEst, y);
 define_field_field_handler(INSUpdateRequestGyroBiasEstZ, drc::ins_update_request_t, gyroBiasEst, z);
 
-
-
+// drill_control_t
+define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexList(100));
 
 
 SignalHandler::SignalHandler(SignalDescription* signalDescription)
@@ -492,12 +492,10 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasControlJointsFFConstHandler>();
     factory.registerClass<AtlasControlJointsKEffortHandler>();
     factory.registerClass<AtlasControlJointsDesiredControllerPeriodHandler>();
-
     factory.registerClass<INSUpdateRequestGyroBiasEstX>();
     factory.registerClass<INSUpdateRequestGyroBiasEstY>();
     factory.registerClass<INSUpdateRequestGyroBiasEstZ>();
-
-
+    factory.registerClass<DrillControlData>();
   }
 
   return factory;
