@@ -41,7 +41,7 @@ classdef DRCStateMachine
         disp([ctrl.name ' initialize time: ' num2str(toc(init_tic))]);
         
         msg = ['Controller: running ' ctrl.name];
-%         send_status(3, 0, 0, msg );
+        send_status(3, 0, 0, msg );
         send_controller_status(ctrl.name);
         disp(msg);
         disp(['Controller: transition time ' num2str(toc(transition_tic))]);
@@ -51,7 +51,7 @@ classdef DRCStateMachine
         transition_to = fn{1}; % arbitrarily take the first one if multiple transitions occured simultaneously
         
         msg = ['Controller: transitioning from ' ctrl.name ' to ' transition_to];
-        send_status(3, 0, 0, msg );
+        %send_status(3, 0, 0, msg );
         disp(msg);
         
         obj = setActiveController(obj,transition_to);
