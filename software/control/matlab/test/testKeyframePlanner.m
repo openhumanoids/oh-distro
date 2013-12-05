@@ -107,8 +107,8 @@ display('Check constraint relaxation in ReachingPlanner')
 reaching_planner.setPlanningMode(4);
 [rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags] = clearReachingEEGoal();
 rh_ee_goal = rh_touch_goal1+[0.2;0.1;0.2;-0.1;0.2;0.2];
-reaching_planner.setPosTol(0.03);
-reaching_planner.setQuatTol(12);
+reaching_planner.setPosTol(0.04);
+reaching_planner.setQuatTol(18);
 [xtraj,snopt_info] = reaching_planner.generateAndPublishReachingPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
 if(snopt_info>10)
   error('Touch plan fails even relax constraint');
@@ -127,7 +127,7 @@ reaching_planner.setQuatTol(12);
 if(snopt_info>10)
   error('TELEOP should succeed after relaxing constraints');
 end
-reaching_planner.setPosTol(0.03);
+reaching_planner.setPosTol(0.02);
 reaching_planner.setQuatTol(6);
 [xtraj,snopt_info] = reaching_planner.generateAndPublishReachingPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
 if(snopt_info<10)
