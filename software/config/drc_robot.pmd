@@ -17,10 +17,6 @@ group "a.0.drivers" {
         exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90";
         host = "robot";
     }
-    cmd "rearcam" {
-        exec = "ipwebcam -f 2 -q 50 -c CAMERAREAR -u http://admin:admin1234@10.66.171.26/video2.mjpg -r 90";
-        host = "robot";
-    }
     cmd "webcam audio server" {
         exec = "drc-webcam-audio-server";
         host = "robot";
@@ -48,14 +44,6 @@ group "a.0.drivers" {
 group "a.0.hand_drivers" {
     cmd "aa-ros2lcm-hands" {
         exec = "roslaunch --wait translators hands_notsim.launch";
-        host = "robot";
-    }
-    cmd "sandia-right" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA R";
-        host = "robot";
-    }
-    cmd "sandia-left" {
-        exec = "rosrun mit_helios_scripts launch_hand_driver.sh SANDIA L";
         host = "robot";
     }
     cmd "irobot-right" {
@@ -133,18 +121,9 @@ group "a.1.core" {
         exec = "drc-frequency";
         host = "robot";
     }
-
 }
 
 group "a.2.p_and_c" {
-    cmd "SandiaGraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForSandiaHand;\"";
-       host = "robot";
-    } 
-    cmd "IrobotGraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForIRobotHand;\"";
-       host = "robot";
-    }
     cmd "BotBDIStepTranslator" {
         exec = "drc-bdi-step-translator";
         host = "robot";
@@ -152,6 +131,7 @@ group "a.2.p_and_c" {
     cmd "AtlasManipController" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
         host = "robot";
+        stop_signal = 15;
     }
 }
 
@@ -226,42 +206,50 @@ group "b.2.p_and_c" {
     cmd "FootstepPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
        host = "base";
+       stop_signal = 15;
     }
     cmd "BaseBDIStepTranslator" {
-        exec = "drc-bdi-step-translator -b";
-        host = "base";
+       exec = "drc-bdi-step-translator -b";
+       host = "base";
     }
     cmd "sticky_hands" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
        host = "base";
+       stop_signal = 15;
     }
     cmd "ReachingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
        host = "base";
+       stop_signal = 15;
     }
     cmd "GazePlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runPalmGazePlanner();\"";
        host = "base";
+       stop_signal = 15;
     }
     cmd "ValvePlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runValveTaskMain();\"";
        host = "base";
+       stop_signal = 15;
     }
     cmd "DrillPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runDrillTaskMain();\"";
        host = "base";
+       stop_signal = 15;
     }
     cmd "DrillTracker" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); drillPositionTracker();\"";
        host = "base";
+       stop_signal = 15;
     }
     cmd "LadderPlanner" {
-      exec = "matlab -nodisplay -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/ladder_planner']); LadderPlanner;\"";
-      host = "base";
+       exec = "matlab -nodisplay -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/ladder_planner']); LadderPlanner;\"";
+       host = "base";
+       stop_signal = 15;
     }
 }
 
-group "b.3.models" {   
+group "b.3.models" {
     cmd "base_model_LP_RR" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RR.urdf";
         host = "base";
@@ -288,83 +276,6 @@ group "b.3.models" {
     }
 }
 
-group "m.state_est" {
-    cmd "StateEstimate" {
-        exec = "state-estimate -x -M";
-        host = "robot";
-    }
-}
-
-group "m.calibration" {
-    cmd "ArmEncoderCalibration" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders;\"";
-        host = "robot";
-    }
-}
-
-group "m.trajectory_simulator" {
-    cmd "ReferenceINS_MATLAB" {
-        exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; receiveimu;\"";
-        host = "robot";
-    }
-    cmd "MotionSimulator_MATLAB" {
-        exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; simulateStateEstimateProcess; exit\"";
-        host = "robot";
-    }
-}
-
-group "m.perception" {
-    cmd "ms-reconfig" {
-        exec = "rosrun dynamic_reconfigure reconfigure_gui";
-        host = "robot";
-    }
-    cmd "vicon" {
-        exec = "vicon-client 192.168.10.1";
-        host = "robot";
-    }
-    cmd "ipwebcam" {
-        exec = "ipwebcam -f 10 -q 90 -c IPWEBCAM -u http://admin:@192.168.0.20/video2.mjpg";
-        host = "robot";
-    }
-    cmd "webcam" {
-        exec = "camview -c webcam.camview";
-        host = "robot";
-    }
-
-    cmd "multisense-ros" {
-        exec = "roslaunch multisense_bringup multisense.launch";
-        host = "robot";
-    }
-    cmd "ms-subscribe" {
-        exec = "rosrun multisense_command multisense_subscribe -d";
-        host = "robot";
-    }
-    cmd "ms-command" {
-        exec = "rosrun multisense_command multisense_command";
-        host = "robot";
-    }
-
-}
-
-group "m.hands" {
-    cmd "sandia_hand_eigen_grasps" {
-        exec = "sandia-simple-grasp";
-        host = "robot";
-    }
-    cmd "sandia_keyboard" {
-        exec = "sandia-simple-grasp-keyboard";
-        host = "robot";
-    }
-    cmd "irobot_hand_eigen_grasps" {
-        exec = "rosrun handle_launch power_grasp_keyboard_teleop.py";
-        host = "robot";
-    }
-    cmd "irobot_highlevel_control_r" {
-        exec = "rosrun handle_launch mit_irobot_hand_control.py R";
-        host = "robot";
-    }
-}
-
 group "m.simple_grasping" {
     cmd "affordance_to_grasp_plan" {
         exec = "affordance_to_grasp_plan";
@@ -380,7 +291,6 @@ group "m.simple_grasping" {
     }
 }
 
-
 #################################################################
 
 script "prep_core" { 
@@ -393,7 +303,6 @@ script "prep_core" {
     start cmd "multisense";
     start cmd "sa-right";
     start cmd "sa-left";
-    start cmd "sandia_hand_eigen_grasps";
 }
 
 script "prep_LP_RR_valve" { 
@@ -442,7 +351,6 @@ script "prep_LQ_RP_drill" {
 
 script "simple_grasp" {
     stop cmd "sticky_hands";
-    stop cmd "SandiaGraspController";
     start group "m.simple_grasping";
 }
 
