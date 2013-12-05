@@ -3,8 +3,8 @@ group "0.development" {
         exec = "bot-procman-deputy -n robot";
         host = "localhost";
     }
-    cmd "extra_deputy" {
-        exec = "bot-procman-deputy -n extra";
+    cmd "robot_deputy" {
+        exec = "bot-procman-deputy -n robot";
         host = "localhost";
     }
     cmd "base_deputy" {
@@ -15,23 +15,23 @@ group "0.development" {
 group "a.0.drivers" {
     cmd "sa-left" {
         exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_LEFT -s 12502221 -r 270";
-        host = "extra";
+        host = "robot";
     }
     cmd "sa-right" {
         exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90";
-        host = "extra";
+        host = "robot";
     }
     cmd "rearcam" {
         exec = "ipwebcam -f 2 -q 50 -c CAMERAREAR -u http://admin:admin1234@10.66.171.26/video2.mjpg -r 90";
-        host = "extra";
+        host = "robot";
     }
     cmd "webcam audio server" {
         exec = "drc-webcam-audio-server";
-        host = "extra";
+        host = "robot";
     }
     cmd "multisense" {
         exec = "drc-multisense -o 3";
-        host = "extra";
+        host = "robot";
     }
     cmd "atlas-off" {
         exec = "drc-atlas -p off";
@@ -99,43 +99,43 @@ group "a.1.core" {
     }
     cmd "pserver" {
         exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
-        host = "extra";
+        host = "robot";
     }
     cmd "aff_server" {
         exec = "affordance_server  -r robot";
-        host = "extra";
+        host = "robot";
     }
     cmd "j2f" {
         exec = "drc-joints2frames -g -b";
-        host = "extra";
+        host = "robot";
     }
     cmd "maps-server" {
         exec = "maps-server";
-        host = "extra";
+        host = "robot";
     }
     cmd "maps-registrar" {
         exec = "maps-registrar";
-        host = "extra";
+        host = "robot";
     }
     cmd "lidar-passthrough" {
         exec = "drc-lidar-passthrough -c 0.06";
-        host = "extra";
+        host = "robot";
     }
     cmd "image-tx" {
         exec = "drc-image-transmit";
-        host = "extra";
+        host = "robot";
     }
     cmd "data-request-server" {
         exec = "data-request-server";
-        host = "extra";
+        host = "robot";
     }
     cmd "utime-publisher" {
         exec = "drc-utime-publisher -f 0";
-        host = "extra";
+        host = "robot";
     }
     cmd "drc-frequency" {
         exec = "drc-frequency";
-        host = "extra";
+        host = "robot";
     }
 
 }
@@ -143,11 +143,11 @@ group "a.1.core" {
 group "a.2.p_and_c" {
     cmd "SandiaGraspController" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForSandiaHand;\"";
-       host = "extra";
+       host = "robot";
     } 
     cmd "IrobotGraspController" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForIRobotHand;\"";
-       host = "extra";
+       host = "robot";
     }
     cmd "BotBDIStepTranslator" {
         exec = "drc-bdi-step-translator";
@@ -162,63 +162,67 @@ group "a.2.p_and_c" {
 group "a.3.models" {   
     cmd "model_LN_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LN_RI" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RI.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LN_RS" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
-        host = "extra";
+        host = "robot";
+    }
+    cmd "model_LR_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RN.urdf";
+        host = "robot";
     }
     cmd "model_LS_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RN.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LS_RI" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RI.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LS_RS" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LI_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RN.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LI_RI" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LI_RS" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LH_RI" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LH_RR" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RR.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LH_RQ" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RQ.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LQ_RH" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RH.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LH_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RN.urdf";
-        host = "extra";
+        host = "robot";
     }
     cmd "model_LH_RH" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
-        host = "extra";
+        host = "robot";
     }
 }
 
@@ -314,6 +318,10 @@ group "b.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
         host = "base";
     }
+    cmd "base_model_LR_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RN.urdf";
+        host = "base";
+    }
     cmd "base_model_LS_RN" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RN.urdf";
         host = "base";
@@ -381,22 +389,22 @@ group "m.calibration" {
 group "m.trajectory_simulator" {
     cmd "ReferenceINS_MATLAB" {
         exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; receiveimu;\"";
-        host = "extra";
+        host = "robot";
     }
     cmd "MotionSimulator_MATLAB" {
         exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; simulateStateEstimateProcess; exit\"";
-        host = "extra";
+        host = "robot";
     }
 }
 
 group "m.perception" {
     cmd "ms-reconfig" {
         exec = "rosrun dynamic_reconfigure reconfigure_gui";
-        host = "extra";
+        host = "robot";
     }
     cmd "vicon" {
         exec = "vicon-client 192.168.10.1";
-        host = "extra";
+        host = "robot";
     }
     cmd "ipwebcam" {
         exec = "ipwebcam -f 10 -q 90 -c IPWEBCAM -u http://admin:@192.168.0.20/video2.mjpg";
@@ -409,15 +417,15 @@ group "m.perception" {
 
     cmd "multisense-ros" {
         exec = "roslaunch multisense_bringup multisense.launch";
-        host = "extra";
+        host = "robot";
     }
     cmd "ms-subscribe" {
         exec = "rosrun multisense_command multisense_subscribe -d";
-        host = "extra";
+        host = "robot";
     }
     cmd "ms-command" {
         exec = "rosrun multisense_command multisense_command";
-        host = "extra";
+        host = "robot";
     }
 
 }
@@ -494,6 +502,13 @@ script "prep_LN_RI" {
     start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
     start cmd "irobot-right";
+}
+
+script "prep_LR_RN" {
+    start cmd "model_LR_RN";
+    start cmd "base_model_LR_RN";
+    run_script "prep_core";
+    start cmd "robotiq-left";
 }
 
 script "prep_LS_RN" {
