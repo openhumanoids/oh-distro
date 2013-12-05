@@ -89,10 +89,10 @@ if __name__ == '__main__':
     controller = IRobotHandController(side)
     lock = threading.Lock()
     
-    def create_callback(callback):
+    def create_callback(calibrated_sensors_callback):
         def ret(channel, message):
             with lock:
-                callback(controller, channel, message)
+                calibrated_sensors_callback(controller, channel, message)
         return ret
     
     lc = lcm.LCM()

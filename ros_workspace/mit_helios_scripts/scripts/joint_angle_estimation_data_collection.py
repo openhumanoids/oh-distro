@@ -7,8 +7,10 @@ Created on Nov 14, 2013
 '''
 import roslib; roslib.load_manifest('mit_helios_scripts')
 from IRobotHandController import IRobotHandController
+from handle_msgs.msg import HandleSensorsCalibrated
 import csv
 import inspect, os
+import rospy
 
 def getTimeName():
     return "time"
@@ -19,29 +21,33 @@ def getMotorHallEncoderName(i):
 def getProximalJointSensorName(i):
     return "proximalJointAngle[%s]" % i
 
-class LoggingListener(object):
-    def __init__(self):
-        indices = IRobotHandController.get_motor_indices()
-        
+def getDistalJointSensorName(i):
+    return "distalJointAngle[%s]" % i
+
+class JointAngleLogger(object):
+    def __init__(self, controller):
+        indices = IRobotHandController.get_close_hand_motor_indices()
+        self.controller = controller
         self.fieldnames = [];
         self.fieldnames.append(getTimeName())
         for i in indices:
             self.fieldnames.append(getMotorHallEncoderName(i))
         for i in indices:
             self.fieldnames.append(getProximalJointSensorName(i))
+        for i in indices:
+            self.fieldnames.append(getDistalJointSensorName(i))
         
         self.data = []
+        rospy.Subscriber("sensors/calibrated", HandleSensorsCalibrated, self.calibrated_sensors_callback)
 
-    
-    def notify(self, data, time):
-        
-        # TODO: take offsets into account
-        
+    def calibrated_sensors_callback(self, data):
         data_point = {}
-        data_point[getTimeName()] = time
-        for motor_index in IRobotHandController.get_motor_indices():
-            data_point[getProximalJointSensorName(motor_index)] = data.proximalJointAngle[motor_index]
-            data_point[getMotorHallEncoderName(motor_index)] = data.motorHallEncoder[motor_index]
+        data_point[getTimeName()] = rospy.get_time()
+        for i in IRobotHandController.get_close_hand_motor_indices():
+            data_point[getProximalJointSensorName(i)] = data.proximalJointAngle[i]
+            data_point[getDistalJointSensorName(i)] = data.distalJointAngle[i].distal[0]
+#             print data.distalJointAngle[i]
+            data_point[getMotorHallEncoderName(i)] = controller.get_tendon_excursions_with_offset()[i]
         self.data.append(data_point)
         
     def write_csv(self):
@@ -58,10 +64,8 @@ class LoggingListener(object):
 if __name__ == '__main__':
     side = 'r'
     controller = IRobotHandController(side)
-    logging_listener = LoggingListener()
-    controller.add_sensor_data_listener(logging_listener)
+    logger = JointAngleLogger(controller)
     controller.close_hand_current_control(300)
-    controller.remove_sensor_data_listener(logging_listener)
     controller.open_hand_motor_excursion_control()
-    logging_listener.write_csv()
+    logger.write_csv()
     

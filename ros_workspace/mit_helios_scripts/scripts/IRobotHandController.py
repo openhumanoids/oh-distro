@@ -63,28 +63,18 @@ class IRobotHandController(object):
         self.command_publisher = rospy.Publisher("control", HandleControl)
         self.state_publisher = rospy.Publisher("sensors/mit_state", MITIRobotHandState)
         self.calibrate_publisher = rospy.Publisher("events/sensors/calibrate", Empty)
-        self.subscriber = rospy.Subscriber("sensors/raw", HandleSensors, self.sensor_data_callback)
-        self.sensor_data_listeners = []
-        
+        self.raw_sensors_subscriber = rospy.Subscriber("sensors/raw", HandleSensors, self.sensor_data_callback)
+#         self.calibrated_sensors_subscriber = rospy.Subscriber("sensors/calibrated", self.calibrated_sensor_data_callback)
 #         rospy.on_shutdown(lambda self : self.exit())
-
-    def add_sensor_data_listener(self, listener):
-        self.sensor_data_listeners.append(listener)
-
-    def remove_sensor_data_listener(self, listener):
-        self.sensor_data_listeners.remove(listener)
 
     def sensor_data_callback(self, data):
         self.sensors = data
+        self.motor_encoders_with_offset = [self.add_offset(self.sensors.motorHallEncoder[i], i) for i in close_hand_motor_indices]
         self.publish_hand_state()
-        for listener in self.sensor_data_listeners:
-            listener.notify(data, rospy.get_time())
 
-    def publish_hand_state(self):
-        motor_encoders_with_offset = [self.add_offset(self.sensors.motorHallEncoder[i], i) for i in close_hand_motor_indices]
-        
+    def publish_hand_state(self):        
         state_message = MITIRobotHandState()
-        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(motor_encoders_with_offset[i]) for i in close_hand_motor_indices]
+        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(self.motor_encoders_with_offset[i]) for i in close_hand_motor_indices]
         state_message.fingerSpread = finger_spread_ticks_to_radians * self.sensors.fingerSpread
         self.state_publisher.publish(state_message)
 
@@ -113,7 +103,7 @@ class IRobotHandController(object):
         set_command_message_same_value(no_current_message, HandleControl.CURRENT, non_spread_motor_indices, 0)
         self.command_publisher.publish(no_current_message)
 
-    def close_hand_current_control(self, finger_close_current, indices):
+    def close_hand_current_control(self, finger_close_current, indices=close_hand_motor_indices):
         grasp_time = 5
         def control(command_message):
             set_command_message_same_value(command_message, HandleControl.CURRENT, indices, finger_close_current)
@@ -168,6 +158,8 @@ class IRobotHandController(object):
     def get_non_spread_motor_indices():
         return non_spread_motor_indices
 
+    def get_tendon_excursions_with_offset(self):
+        return self.motor_encoders_with_offset
 
     def calibrate_motor_encoder_offsets_given_pose(self, calibration_pose):
         print "Calibrating: closing hand"

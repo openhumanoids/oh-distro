@@ -2,19 +2,25 @@ function irobot_hand_joint_angle_estimation()
 
 data = import_irobot_hand_data('../data/joint_angle_estimation_data.csv');
 
-xData = [data.motorHallEncoder0; data.motorHallEncoder1];
-yData = [data.proximalJointAngle0; data.proximalJointAngle1];
+motorHallEncoders = [data.motorHallEncoder0, data.motorHallEncoder1, data.motorHallEncoder2];
+proximalJointAngles = [data.proximalJointAngle0, data.proximalJointAngle1, data.proximalJointAngle2];
+distalJointAngles = [data.distalJointAngle0, data.distalJointAngle1, data.distalJointAngle2];
 
+piecewiseLinearFit(motorHallEncoders, proximalJointAngles, 'motor tendon excursion', 'proximal joint angle', 3);
+piecewiseLinearFit(motorHallEncoders, distalJointAngles, 'motor tendon excursion', 'distal joint angle', 3);
+
+end
+
+function piecewiseLinearFit(xData, yData, xName, yName, nKnotPoints)
 validIndices = find(xData > 0);
-xData = xData(validIndices);
-yData = yData(validIndices);
+xFitData = xData(validIndices);
+yFitData = yData(validIndices);
 
-nKnotPoints = 3;
-[param0, xKnot1, xKnotFinal] = getParam0(xData, yData, nKnotPoints);
+[param0, xKnot1, xKnotFinal] = getParam0(xFitData, yFitData, nKnotPoints);
 
 [lb, ub] = getbounds(param0, xKnot1, xKnotFinal, nKnotPoints);
 
-param = lsqcurvefit(@piecewiseLinear, param0, xData, yData, lb, ub);
+param = lsqcurvefit(@piecewiseLinear, param0, xFitData, yFitData, lb, ub);
 
 xKnotSol = [xKnot1; param(1 : nKnotPoints - 2); xKnotFinal];
 yKnotSol = param(nKnotPoints - 1 : end);
@@ -34,19 +40,15 @@ fprintf('y axis intercepts:\n')
 disp(yAxisIntercepts);
 
 
+figure();
 hold on;
-plot(data.motorHallEncoder0, data.proximalJointAngle0, 'b');
-plot(data.motorHallEncoder1, data.proximalJointAngle1, 'b');
-plot(data.motorHallEncoder0, piecewiseLinear(param, data.motorHallEncoder0), 'r');
-plot(data.motorHallEncoder1, piecewiseLinear(param, data.motorHallEncoder1), 'r');
+for i = 1 : size(xData, 2)
+    plot(xData(:, i), yData(:, i), 'b');
+    plot(xData(:, i), piecewiseLinear(param, xData(:, i)), 'r');
+end
 
-xlabel('motor tendon excursion')
-ylabel('proximal joint angle')
-% for i = 1 : length(slopes)
-%     slope = slopes(i);
-%     intercept = intercepts(i);
-%     plot(data.motorHallEncoder0, slope * data.motorHallEncoder0 + intercept, 'k');
-% end
+xlabel(xName)
+ylabel(yName)
 hold off;
 
   function y = piecewiseLinear(param, xDatai)
@@ -55,6 +57,7 @@ hold off;
     y = interp1(xKnot, yKnot, xDatai, 'linear');
   end
 end
+
 
 function [x0, xKnot1, xKnotFinal] = getParam0(xData, yData, nKnotPoints)
 [xKnot1, minIndex] = min(xData);
