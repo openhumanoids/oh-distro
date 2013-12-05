@@ -256,10 +256,6 @@ classdef AtlasManipController < DRCController
         integ(torso) = qdes(torso) - q0(torso);
         obj.controller_data.setField('integral',integ);      
 
-%         obj.controller_data.setField('qtraj',qdes((1+~obj.robot.floating*6):end));
-%         obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
-%         obj.controller_data.setField('integral',zeros(getNumDOF(obj.robot),1));      
-
       end
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
