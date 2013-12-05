@@ -129,6 +129,19 @@ class commandLcmToModbusConverter(object):
         return message
 
 
+    def tickleForceCommand(self, direction):
+        if direction == 'up':
+            self.rFRA +=1
+            self.rFRB +=1
+            self.rFRC +=1
+            self.rFRS +=1
+
+        if direction == 'down':
+            self.rFRA -=1
+            self.rFRB -=1
+            self.rFRC -=1
+            self.rFRS -=1
+
 class statusModbusToLcmConverter(object):
 
     def __init__ (self):
@@ -205,7 +218,8 @@ class robotiqBaseSModel(object):
     def __init__(self):
 
         #Initiate output message as an empty list
-        self.message = []
+        self.message1 = []
+        self.message2 = []
 
         #create and store local converter objects
         self.command = commandLcmToModbusConverter()
@@ -224,12 +238,22 @@ class robotiqBaseSModel(object):
         self.command.parseLcm(rawLcm)
 
         #Grab the message from the lcm converter
-        self.message = self.command.getModbusString()
+        self.command.tickleForceCommand('down')
+        self.message1 = self.command.getModbusString()
+        self.command.tickleForceCommand('up')
+        self.message2 = self.command.getModbusString()
+
 
     def sendCommand(self):
         """Send the command to the Gripper."""
 
-        self.client.sendCommand(self.message)
+        # send the first desired command, then the modified one
+        # this is done to trick the gripper into thinking all
+        # commands are new
+        # each sendCommand will send multiple times to try to overcome dropouts
+        self.client.sendCommand(self.message1)
+        self.client.sendCommand(self.message2)
+
 
     def getStatus(self):
         """Request the status from the gripper and return it in the SModel_robot_input msg type."""

@@ -46,14 +46,19 @@ def mainLoop(side, address):
             ##lc.publish(status_topic, status.encode())
 
             #Wait a little
-            sleep(0.05)
+            sleep(0.02)
 
             #Send the most recent command
             gripper.sendCommand()
-            print gripper.message
+            print gripper.message1
+            print gripper.message2
 
             #Wait a little
-            sleep(0.05)
+            # gripper.sendCommand sends the raw message
+            # 3 times, then mods it and sends that 3 times
+            # each with a 1ms pause, which will take 6ms
+            sleep(0.08)
+
     except KeyboardInterrupt:
         pass
 

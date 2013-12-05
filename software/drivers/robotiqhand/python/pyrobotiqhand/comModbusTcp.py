@@ -44,6 +44,7 @@ for the Modbus TCP client.
 
 from pymodbus.client.sync import ModbusTcpClient
 from math import ceil
+from time import sleep
 
 class communication:
 
@@ -75,7 +76,9 @@ class communication:
          message.append((data[2*i] << 8) + data[2*i+1])
 
       #To do!: Implement try/except
-      self.client.write_registers(0, message)
+      for _ in range(3):
+         self.client.write_registers(0, message)
+         sleep(0.01)
 
    def getStatus(self, numBytes):
       """Sends a request to read, wait for the response and returns
