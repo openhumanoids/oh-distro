@@ -662,7 +662,7 @@ namespace renderer_affordances_gui_utils
 
 
     std::vector<std::string> _names;
-    get_eigen_grasp_types(_names);
+    get_eigen_grasp_types(hand_it->second.hand_type,_names);
     self->num_eigen_grasps = _names.size();
     self->eigen_grasp_names =(char **) calloc(self->num_eigen_grasps, sizeof(char *));
     self->eigen_grasp_nums = (int *)calloc(self->num_eigen_grasps, sizeof(int));
