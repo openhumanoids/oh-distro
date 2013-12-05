@@ -6,6 +6,11 @@ while 1
   if ~isfield(options, 'enable_terrainmaps'); options.enable_terrainmaps = true; end
   options.floating = true;
   options.dt = 0.001;
+  
+  warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+  warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+  warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+  options.visual = false; % loads faster
   r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
   r = removeCollisionGroupsExcept(r,{'heel','toe'});
   if options.enable_terrainmaps
