@@ -58,6 +58,7 @@
 #define PARAM_MATE     "Mate"
 #define PARAM_WYE_ALIGN     "wye align"
 #define PARAM_WYE_INSERT    "wye insert"
+#define PARAM_WYE_DES_STATE "hose mating DesState"
 #define PARAM_SELECT_EE_TYPE "EE :"
 #define PARAM_SELECT_MATE_AXIS_FOR_EE_TELEOP "Mate Axis (FemaleEnd):"
 #define PARAM_ENGAGE_EE_TELEOP "Engage EE Teleop"
@@ -1378,11 +1379,15 @@ namespace renderer_affordances_gui_utils
     }
     else if(!strcmp(name,PARAM_WYE_ALIGN)){
       string channel = "HOSE_MATING";
-      publish_hose_mating_cmd(channel,drc::hose_mating_cmd_t.hose_align; 
+      publish_hose_mating_cmd(channel,drc::hose_mating_cmd_t::hose_align,self); 
     }
     else if(!strcmp(name,PARAM_WYE_INSERT)){
       string channel = "HOSE_MATING";
-      publish_hose_mating_cmd(channel,drc::hose_mating_cmd_t.hose_insert; 
+      publish_hose_mating_cmd(channel,drc::hose_mating_cmd_t::hose_insert,self); 
+    }
+    else if(!strcmp(name,PARAM_WYE_DES_STATE)){
+      string channel = "HOSE_MATING";
+      publish_hose_mating_cmd(channel,drc::hose_mating_cmd_t::hose_des_state,self);
     }
     
     bot_viewer_request_redraw(self->viewer);
@@ -1599,6 +1604,7 @@ namespace renderer_affordances_gui_utils
           bot_gtk_param_widget_add_buttons(mating_pw,PARAM_MATE, NULL);
           bot_gtk_param_widget_add_buttons(mating_pw,PARAM_WYE_ALIGN,NULL);
           bot_gtk_param_widget_add_buttons(mating_pw,PARAM_WYE_INSERT,NULL);
+          bot_gtk_param_widget_add_buttons(mating_pw,PARAM_WYE_DES_STATE,NULL);
 
           // If affordance is mateable SHOW ee teleop settings.
           

@@ -277,11 +277,11 @@ void Pass::sendStandingPositionWye(drc::affordance_t steering_cyl){
     for (int left_reach = 0; left_reach<2 ; left_reach++){
       Eigen::Isometry3d valve2com(Eigen::Isometry3d::Identity());
       if (left_reach){
-        valve2com.translation()  << -0.40, 0.59, 0;
-        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-35*M_PI/180))  );   
+        valve2com.translation()  << -0.5406, 0.0474, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,0.4353))  );   
       }else{
-        valve2com.translation()  << -0.40, -0.59, 0;
-        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,35*M_PI/180 ))  );   
+        valve2com.translation()  << -0.5406, -0.0474, 0;
+        valve2com.rotate( Eigen::Quaterniond(euler_to_quat(0,0,-0.4353 ))  );   
         // was -0.53 -0.53  and 18 degrees for first trial runthrough
       }
       feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com) );

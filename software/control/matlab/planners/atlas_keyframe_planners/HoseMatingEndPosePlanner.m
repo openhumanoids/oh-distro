@@ -269,7 +269,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
     
     
     
-    function [xtraj_atlas,snopt_info] = runPoseOptimizationViaSingleTimeIK(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
+    function [xtraj_atlas,snopt_info] = runPoseOptimizationViaSingleTimeIK(obj,x0)
       disp('Generating candidate hose mating endpose via IK Given EE loci...')
       send_status(3,0,0,'Generating candidate hose mating endpose given EE Loci...');
       q0 = x0(1:getNumDOF(obj.r));
@@ -317,7 +317,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       wye_axis_world = T_world_wye*[[wye_mate_pt;1] [wye_mate_pt+wye_mate_axis;1]];
       wye_axis_world = [wye_axis_world(1,2)-wye_axis_world(1,1);wye_axis_world(2,2)-wye_axis_world(2,1);wye_axis_world(3,2)-wye_axis_world(3,1)];
       nozzle_hand_constraint = {WorldGazeDirConstraint(obj.r,nozzle_farm,nozzle_farm_axis,wye_axis_world,0),...
-        WorldPositionInFrameConstraint(obj.r,nozzle_farm,[0;0;0],T_world_wye*T_wye_wye_axis,[-0.43;0;0],[-0.43;0;0])};
+        WorldPositionInFrameConstraint(obj.r,nozzle_farm,[0;0;0],T_world_wye*T_wye_wye_axis,[-0.45;0;0],[-0.43;0;0])};
       
       if(obj.nozzle_hand == obj.r_hand_body)
         head_constraint = [head_constraint,{WorldGazeDirConstraint(obj.r,obj.head_body,[0;1;0],wye_axis_world,pi/6)}];
@@ -353,6 +353,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
           display(infeasibleConstraintMsg(infeasible_constraint));
       end
       
+      send_status(2,0,0,sprintf('pelvis_height is %5.3f',q(3)));
        disp('Publishing candidate endpose ...');
        send_status(3,0,0,'Publishing candidate endpose...');
        utime = get_timestamp_now();% equivalent to bot_timestamp_now();
@@ -362,9 +363,8 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
        obj.pose_pub.publish(xtraj_atlas,utime);
        
        if(snopt_info<10)
-        
-        xstar = [q;zeros(size(q))];
-        save([getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'],'xstar');
+         xstar = [q;zeros(size(q))];
+         save([getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'],'xstar');
        end
       
     end  

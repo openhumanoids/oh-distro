@@ -129,19 +129,23 @@ end
 l_hand_frame = handFrame(l_hand_mode,'left');
 r_hand_frame = handFrame(r_hand_mode,'right');
 
-reaching_planner = HoseMatingReachingPlanner(robot,atlas,l_hand_frame,...
+reaching_planner = ReachingPlanner(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode); % single or multiple/successively specified ee constraints
 manip_planner = ManipulationPlanner(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode); % ee motion constraints and point wise IK for manip plans and maps
 posture_planner = PosturePlanner(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode); %posture and posture preset plans
-endpose_planner = HoseMatingEndPosePlanner(robot,atlas,l_hand_frame,...
+endpose_planner = EndPosePlanner(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode); %search for pose given ee constraints
 wholebody_planner = WholeBodyPlanner(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode);%given a time ordered set ee constraints, performs a whole body plan
 keyframe_adjustment_engine = KeyframeAdjustmentEngine(robot,atlas,l_hand_frame,...
   r_hand_frame,hardware_mode); % Common keyframe adjustment for all the above planners
 
+hose_reaching_planner = HoseMatingReachingPlanner(robot,atlas,l_hand_frame,...
+  r_hand_frame,hardware_mode);
+hose_endpose_planner = HoseMatingEndPosePlanner(robot,atlas,l_hand_frame,...
+  r_hand_frame,hardware_mode); %search for pose given ee constraints
 % atlas state subscriber
 atlas_state_frame = atlas.getStateFrame();
 %state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
@@ -214,7 +218,7 @@ committed_plan_listener = RobotPlanListener('COMMITTED_ROBOT_PLAN',true,joint_na
 rejected_plan_listener = RobotPlanListener('REJECTED_ROBOT_PLAN',true,joint_names);
 stored_plan_listener = RobotKeyframePlanListener('STORED_ROBOT_PLAN',true,joint_names);
 
-
+hose_cmd_listener = HoseMatingCmdListener('HOSE_MATING');
 
 rh_ee_goal = [];
 lh_ee_goal = [];
@@ -685,7 +689,7 @@ while(1)
             useIK_state = 1;
         elseif(posture_goal.preset==drc.robot_posture_preset_t.HOSE_MATING)
           d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'));
-          useIK_state = 6;
+          useIK_state = 7;
         end
         q_desired = d.xstar(1:getNumDOF(robot));
         if(useIK_state ==1||useIK_state == 3|| useIK_state == 4) % correct pelvis
@@ -849,6 +853,16 @@ while(1)
         ee_goal_type_flags.rh = -1;
     end
     
+    cmd = getNextMessage(hose_cmd_listener,msg_timeout);
+    if(~isempty(cmd))
+      if(cmd == drc.hose_mating_cmd_t.hose_align)
+        hose_reaching_planner.getPlan(x0,cmd);
+      elseif(cmd == drc.hose_mating_cmd_t.hose_insert)
+        hose_reaching_planner.getPlan(x0,cmd);
+      elseif(cmd == drc.hose_mating_cmd_t.hose_des_state)
+        hose_endpose_planner.runPoseOptimizationViaSingleTimeIK(x0);
+      end
+    end
 end
 
 end
