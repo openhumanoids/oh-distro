@@ -108,47 +108,11 @@ while(true)
       pelvis_pose = r.forwardKin(kinsol,2,zeros(3,1),2);
       R = quat2rotmat(pelvis_pose(4:7));
       button_gaze = R*gaze_in_pelvis;
-      [xtraj,snopt_info,infeasible_constraint] = button_pub.createButtonPreposePlan(q0, button_gaze, 10*pi/180, 5);
-
-%       disp('generating plan to preset position');
-%       % get the pose somehow, todo
-% %       load poke_pose_0;
-%       button_preset = [ -0.3112
-%    -1.5089
-%     0.8768
-%    -0.0114
-%     0.0148
-%    -1.4788
-%     0.0595
-%     0.0293
-%    -0.0071
-%     0.0043
-%    -0.0261
-%     1.5633
-%     1.4976
-%     0.0196
-%    -0.0073
-%     0.0775
-%    -0.5662
-%     0.9945
-%    -0.4712
-%    -0.0790
-%    -0.0205
-%    -0.9346
-%     0.2673
-%     1.8375
-%    -1.5831
-%     0.0002
-%    -0.0014
-%    -0.0259
-%    -0.5396
-%     1.0068
-%    -0.4437
-%     0.0578
-%    -0.2694
-%     0.4094];
-%   button_preset(1:6) = q0(1:6);
-%       posture_pub.generateAndPublishPosturePlan(q0,button_preset,0)
+      
+      button_pos_min = [.3;-.2;-inf];
+      button_pos_max = [inf;.2;inf];
+      pelvis_frame = [R pelvis_pose(1:3); 0 0 0 1];
+      [xtraj,snopt_info,infeasible_constraint] = button_pub.createButtonPreposePlan(q0, button_gaze, 10*pi/180, pelvis_frame, button_pos_min, button_pos_max, 5);
 
     case drc.drill_control_t.REFIT_DRILL
         
