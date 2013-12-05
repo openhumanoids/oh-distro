@@ -20,7 +20,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_procman/printf_t.hpp>
-#include <lcmtypes/bot_procman/info_t.hpp>
+#include <lcmtypes/bot_procman/info2_t.hpp>
 #include <lcmtypes/drc_lcmtypes.hpp>
 
 #include <ConciseArgs>
@@ -37,7 +37,7 @@ class Pass{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     void replyHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::printf_reply_t* msg);   
-    void infoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_procman::info_t* msg);   
+    void infoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_procman::info2_t* msg);   
        
     std::map<int, boost::circular_buffer<string> > pmap_;
     
@@ -50,9 +50,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int request_):
     lcm_(lcm_), request_(request_){
 
       got_robot=false;
-      got_extra=false;
+      got_extra=true;//false;
       
-    lcm_->subscribe( "PMD_INFO" ,&Pass::infoHandler,this);  
+    lcm_->subscribe( "PMD_INFO2" ,&Pass::infoHandler,this);  
     lcm_->subscribe( "PMD_PRINTF_REPLY" ,&Pass::replyHandler,this);  
 }
 
@@ -103,7 +103,7 @@ void Pass::replyHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 void Pass::infoHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  bot_procman::info_t* msg){
+                        const std::string& channel, const  bot_procman::info2_t* msg){
 
   if (request_ > 0){
     drc::printf_request_t req;
@@ -119,7 +119,7 @@ void Pass::infoHandler(const lcm::ReceiveBuffer* rbuf,
     if(msg->host == "robot"){
       if (!got_robot){
 	for(size_t i=0; i <msg->cmds.size() ; i++){
-	  std::cout << "robot " <<msg->cmds[i].group << "\t" << msg->cmds[i].nickname << "\t" << msg->cmds[i].sheriff_id << "\n";
+	  std::cout << "robot " <<msg->cmds[i].cmd.group << "\t" << msg->cmds[i].cmd.command_name << "\t" << msg->cmds[i].sheriff_id << "\n";
 	}	
 	got_robot =true;
       }
@@ -128,7 +128,7 @@ void Pass::infoHandler(const lcm::ReceiveBuffer* rbuf,
     if(msg->host == "extra"){
       if (!got_extra){
 	for(size_t i=0; i <msg->cmds.size() ; i++){
-	  std::cout << "extra " <<msg->cmds[i].group << "\t"<< msg->cmds[i].nickname << "\t" << msg->cmds[i].sheriff_id << "\n";
+	  std::cout << "extra " <<msg->cmds[i].cmd.group << "\t"<< msg->cmds[i].cmd.command_name << "\t" << msg->cmds[i].sheriff_id << "\n";
 	}	
 	got_extra=true;
       }
