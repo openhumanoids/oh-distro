@@ -180,7 +180,7 @@ classdef drillButtonPlanner
       end
     end
     
-    function [xtraj,snopt_info,infeasible_constraint] = createButtonPreposePlan(obj, q0, button_gaze, threshold, T)
+    function [xtraj,snopt_info,infeasible_constraint] = createButtonPreposePlan(obj, q0, button_gaze, threshold, button_pos_min, button_pos_max, T)
       N = 5;
       t_vec = linspace(0,T,N);
       
@@ -192,8 +192,11 @@ classdef drillButtonPlanner
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       
+      % create position constraint
+      button_position_constraint = WorldPositionConstraint(obj.r, obj.button_hand_body, obj.button_pt_on_hand,button_pos_min,button_pos_max,[t_vec(end) t_vec(end)]))
+      
       [q_end_nom,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,q0,q0,...
-        button_gaze_constraint,posture_constraint,obj.ik_options);
+        button_gaze_constraint,button_position_constraint, posture_constraint,obj.ik_options);
       
       if(diff_opt == inf)
         send_msg = sprintf('snopt_info = %d. The IK fails.',snopt_info_ik);
@@ -206,7 +209,7 @@ classdef drillButtonPlanner
       
       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
         t_vec,qtraj_guess,qtraj_guess,...
-        button_gaze_constraint,posture_constraint,obj.ik_options);
+        button_gaze_constraint,posture_constraint,button_position_constraint,obj.ik_options);
       
       if(snopt_info > 10)
         send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
