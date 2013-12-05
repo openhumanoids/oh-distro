@@ -155,7 +155,9 @@ class DRCShaper
     boost::bimap<std::string, int> channel_id_;
     // maps channel number to buffer size
     std::map<int, int> buffer_sizes_;
-
+    // maps priority onto channel number
+    std::map<int, std::list<int> > priority_;    
+    
     // maps channel number to data usage
     std::map<int, DataUsage> sent_data_usage_;
     std::map<int, DataUsage> received_data_usage_;

@@ -22,11 +22,12 @@ void robot2base(KMCLApp& app);
 
 // Structure of which channels to resent and when
 struct Resend{
-Resend(std::string channel, double max_freq, int buffer_size, bool robot2base, int64_t last_utime):
-    channel(channel), max_freq(max_freq), buffer_size(buffer_size), last_utime(last_utime), robot2base(robot2base), queued_msgs(0), queued_bytes(0) {}
+Resend(std::string channel, double max_freq, int buffer_size, int priority, bool robot2base, int64_t last_utime):
+    channel(channel), max_freq(max_freq), buffer_size(buffer_size), priority(priority), last_utime(last_utime), robot2base(robot2base), queued_msgs(0), queued_bytes(0) {}
     std::string channel; // .. LCM channel
     double max_freq; // max freq of transmission
     int buffer_size; // channel buffer size
+    int priority; // channel priority
     int64_t last_utime; // last utime of transmission
     bool robot2base; // true r2b | false b2r
   

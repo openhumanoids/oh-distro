@@ -132,6 +132,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
             glog.is(VERBOSE) && glog << "Mapping: " << resendlist[i].channel << " to id: " << current_id << std::endl;
             channel_id_.insert(boost::bimap<std::string, int>::value_type(resendlist[i].channel, current_id));
             buffer_sizes_.insert(std::make_pair(current_id, resendlist[i].buffer_size));
+            priority_[resendlist[i].priority].push_back(current_id);
             
             
             if(node_ == ROBOT)
@@ -344,32 +345,47 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
 {
     // TODO: check that send_queue has highest priority item
 
-    if(send_queue_.empty())
+
+    
+    // highest priority first
+    for(std::map<int, std::list<int> >::reverse_iterator p_it = priority_.rbegin(),
+            end = priority_.rend(); p_it != end; ++p_it)
     {
-        int starting_send_type = last_send_type_;
+        int highest_existing_priority = send_queue_.empty() ? -1 : send_queue_.top().header().priority();
+        glog.is(VERBOSE) && glog << group("tx") << "Current highest priority is: " << highest_existing_priority << std::endl;        
 
-        while(1)
+        // no point to keep checking, we've got something good enough already
+        if(p_it->first <= highest_existing_priority)
+            break;
+        
+        std::list<int>& ids = p_it->second;
+
+        for(std::list<int>::iterator iit = ids.begin(),
+                iend = ids.end(); iit != iend; ++iit)
         {
-            ++last_send_type_;
-            if(last_send_type_ > largest_id_)
-                last_send_type_ = 0;
-            
-	    //            glog.is(VERBOSE) && glog << "Checking channel id: " << last_send_type_ << std::endl;          
-            //            glog.is(VERBOSE) && glog << "Name: " << channel_id_.right.at(last_send_type_) << std::endl;
-            
-            std::map<std::string, MessageQueue >::iterator it =
-                queues_.find(channel_id_.right.at(last_send_type_));
+            std::map<std::string, MessageQueue >::iterator q_it =
+                queues_.find(channel_id_.right.at(*iit));
 
-            if(it != queues_.end() && !it->second.on_demand) // don't queue up on_demand queues here
-            {
-                if(fill_send_queue(it))
-                    break;
-            }
+            glog.is(VERBOSE) && glog << group("tx") << "Checking priority: " << p_it->first
+                                     << ", Checking id: " << *iit << std::endl;
             
-            // no data at all
-            if(last_send_type_ == starting_send_type) return;
+            if(q_it != queues_.end() && !q_it->second.on_demand) // don't queue up on_demand queues here
+            {
+                if(fill_send_queue(q_it, p_it->first))
+                {
+                    // move this id to the end so it's the last one next time
+                    ids.splice(ids.end(), ids, iit);
+                    break;
+                }
+            }
         }
+        
+        
     }
+
+    // no data at all
+    if(send_queue_.empty())
+        return;
     
     msg->set_dest(partner_);
     msg->set_ack_requested(false);
