@@ -2,7 +2,7 @@ On Robot and Extra machines:
 ROBOT:
 drc-network-shaper -t manipulation -r robot -c drc_robot_02.cfg -l -p /media/logs/raw/shaper
 bot-procman-deputy -n robot
-bot-procman-deputy -n extra
+[[[[ not extra anymore ]]]]
 
 BASE:
 bot-procman-deputy -n base
