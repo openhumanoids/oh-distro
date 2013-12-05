@@ -3,10 +3,6 @@ group "0.development" {
         exec = "bot-procman-deputy -n robot";
         host = "localhost";
     }
-    cmd "robot_deputy" {
-        exec = "bot-procman-deputy -n robot";
-        host = "localhost";
-    }
     cmd "base_deputy" {
         exec = "bot-procman-deputy -n base";
         host = "localhost";
@@ -160,72 +156,28 @@ group "a.2.p_and_c" {
 }
 
 group "a.3.models" {   
-    cmd "model_LN_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+    cmd "model_LP_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RR.urdf";
         host = "robot";
     }
-    cmd "model_LN_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RI.urdf";
+    cmd "model_LI_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RR.urdf";
         host = "robot";
     }
-    cmd "model_LN_RS" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
-        host = "robot";
-    }
-    cmd "model_LR_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RN.urdf";
-        host = "robot";
-    }
-    cmd "model_LS_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RN.urdf";
-        host = "robot";
-    }
-    cmd "model_LS_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RI.urdf";
-        host = "robot";
-    }
-    cmd "model_LS_RS" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
-        host = "robot";
-    }
-    cmd "model_LI_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RN.urdf";
-        host = "robot";
-    }
-    cmd "model_LI_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
-        host = "robot";
-    }
-    cmd "model_LI_RS" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
-        host = "robot";
-    }
-    cmd "model_LH_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
-        host = "robot";
-    }
-    cmd "model_LH_RR" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RR.urdf";
-        host = "robot";
-    }
-    cmd "model_LH_RQ" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RQ.urdf";
-        host = "robot";
-    }
-    cmd "model_LQ_RH" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RH.urdf";
-        host = "robot";
-    }
-    cmd "model_LQ_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RI.urdf";
-        host = "robot";
-    }
-    cmd "model_LH_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RN.urdf";
+    cmd "model_LI_RR_extender" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RR_extender.urdf";
         host = "robot";
     }
     cmd "model_LH_RH" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
+        host = "robot";
+    }
+    cmd "model_LP_RP" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RP.urdf";
+        host = "robot";
+    }
+    cmd "model_LQ_RP" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RP.urdf";
         host = "robot";
     }
 }
@@ -310,72 +262,28 @@ group "b.2.p_and_c" {
 }
 
 group "b.3.models" {   
-    cmd "base_model_LN_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+    cmd "base_model_LP_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RR.urdf";
         host = "base";
     }
-    cmd "base_model_LN_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RI.urdf";
+    cmd "base_model_LI_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RR.urdf";
         host = "base";
     }
-    cmd "base_model_LN_RS" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RS.urdf";
-        host = "base";
-    }
-    cmd "base_model_LR_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RN.urdf";
-        host = "base";
-    }
-    cmd "base_model_LS_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RN.urdf";
-        host = "base";
-    }
-    cmd "base_model_LS_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RI.urdf";
-        host = "base";
-    }
-    cmd "base_model_LS_RS" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LS_RS.urdf";
-        host = "base";
-    }
-    cmd "base_model_LI_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RN.urdf";
-        host = "base";
-    }
-    cmd "base_model_LI_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
-        host = "base";
-    }
-    cmd "base_model_LI_RS" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RS.urdf";
-        host = "base";
-    }
-    cmd "base_model_LH_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RI.urdf";
-        host = "base";
-    }
-    cmd "base_model_LH_RR" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RR.urdf";
-        host = "base";
-    }
-    cmd "base_model_LH_RQ" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RQ.urdf";
-        host = "base";
-    }
-    cmd "base_model_LQ_RH" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RH.urdf";
-        host = "base";
-    }
-    cmd "base_model_LQ_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RI.urdf";
-        host = "base";
-    }
-    cmd "base_model_LH_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RN.urdf";
+    cmd "base_model_LI_RR_extender" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RR_extender.urdf";
         host = "base";
     }
     cmd "base_model_LH_RH" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
+        host = "base";
+    }
+    cmd "base_model_LP_RP" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RP.urdf";
+        host = "base";
+    }
+    cmd "base_model_LQ_RP" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RP.urdf";
         host = "base";
     }
 }
@@ -488,158 +396,55 @@ script "prep_core" {
     start cmd "sandia_hand_eigen_grasps";
 }
 
-script "prep_LN_RN" { 
-    start cmd "model_LN_RN";
-    start cmd "base_model_LN_RN";
+script "prep_LP_RR_valve" { 
+    start cmd "model_LP_RR";
+    start cmd "base_model_LP_RR";
     run_script "prep_core";
-}
-
-script "prep_LN_RS" {
-    start cmd "model_LN_RS";
-    start cmd "base_model_LN_RS";
-    run_script "prep_core";
-    start cmd "SandiaGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "sandia-right";
-}
-
-script "prep_LN_RI" {
-    start cmd "model_LN_RI";
-    start cmd "base_model_LN_RI";
-    run_script "prep_core";
-    start cmd "IrobotGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "irobot-right";
-}
-
-script "prep_LR_RN" {
-    start cmd "model_LR_RN";
-    start cmd "base_model_LR_RN";
-    run_script "prep_core";
-    start cmd "robotiq-left";
-}
-
-script "prep_LS_RN" {
-    start cmd "model_LS_RN";
-    start cmd "base_model_LS_RN";
-    run_script "prep_core";
-    start cmd "SandiaGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "sandia-left";
-}
-
-script "prep_LS_RS" {
-    start cmd "model_LS_RS";
-    start cmd "base_model_LS_RS";
-    run_script "prep_core";
-    start cmd "SandiaGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "sandia-left";
-    start cmd "sandia-right";
-}
-
-script "prep_LS_RI" {
-    start cmd "model_LS_RI";
-    start cmd "base_model_LS_RI";
-    run_script "prep_core";
-    start cmd "SandiaGraspController";
-    start cmd "IrobotGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "sandia-left";
-    start cmd "irobot-right";
-}
-
-script "prep_LI_RN" {
-    start cmd "model_LI_RN";
-    start cmd "base_model_LI_RN";
-    run_script "prep_core";
-    start cmd "IrobotGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "irobot-left";
-}
-
-script "prep_LI_RS" {
-    start cmd "model_LI_RS";
-    start cmd "base_model_LI_RS";
-    run_script "prep_core";
-    start cmd "SandiaGraspController";
-    start cmd "IrobotGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "irobot-left";
-    start cmd "sandia-right";
-}
-
-script "prep_LI_RI" {
-    start cmd "model_LI_RI";
-    start cmd "base_model_LI_RI";
-    run_script "prep_core";
-    start cmd "IrobotGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "irobot-left";
-    start cmd "irobot-right";
-}
-
-script "prep_LH_RI" {
-    start cmd "model_LH_RI";
-    start cmd "base_model_LH_RI";
-    run_script "prep_core";
-    start cmd "IrobotGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "irobot-right";
-}
-
-script "prep_LH_RR" {
-    start cmd "model_LH_RR";
-    start cmd "base_model_LH_RR";
-    run_script "prep_core";
-    start cmd "IrobotGraspController";
-    start cmd "aa-ros2lcm-hands";
     start cmd "robotiq-right";
 }
-script "prep_LH_RQ" {
-    start cmd "model_LH_RQ";
-    start cmd "base_model_LH_RQ";
+
+script "prep_LI_RR_hose_walking" { 
+    start cmd "model_LI_RR";
+    start cmd "base_model_LI_RR";
     run_script "prep_core";
-    start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
+    start cmd "irobot-left";
     start cmd "robotiq-right";
 }
-script "prep_LQ_RH" {
-    start cmd "model_LQ_RH";
-    start cmd "base_model_LQ_RH";
+
+script "prep_LI_RR_extender_debris" { 
+    start cmd "model_LI_RR_extender";
+    start cmd "base_model_LI_RR_extender";
     run_script "prep_core";
-    start cmd "IrobotGraspController";
     start cmd "aa-ros2lcm-hands";
-    start cmd "robotiq-left";
-}
-script "prep_LQ_RI" {
-    start cmd "model_LQ_RI";
-    start cmd "base_model_LQ_RI";
-    run_script "prep_core";
-    start cmd "IrobotGraspController";
-    start cmd "aa-ros2lcm-hands";
-    start cmd "robotiq-left";
-    start cmd "irobot-right";
-}
-script "prep_LH_RN" {
-    start cmd "model_LH_RN";
-    start cmd "base_model_LH_RN";
-    run_script "prep_core";
+    start cmd "irobot-left";
+    start cmd "robotiq-right";
 }
 
-script "prep_LH_RH" {
+script "prep_LH_RH_ladder" {
     start cmd "model_LH_RH";
     start cmd "base_model_LH_RH";
     run_script "prep_core";
 }
 
+script "prep_LP_RP_door_driving" {
+    start cmd "model_LP_RP";
+    start cmd "base_model_LP_RP";
+    run_script "prep_core";
+}
+
+script "prep_LQ_RP_drill" { 
+    start cmd "model_LQ_RP";
+    start cmd "base_model_LQ_RP";
+    run_script "prep_core";
+    start cmd "robotiq-left";
+}
 
 script "simple_grasp" {
     stop cmd "sticky_hands";
     stop cmd "SandiaGraspController";
     start group "m.simple_grasping";
 }
-
 
 script "robot_start" { 
     stop cmd "atlas-off";
