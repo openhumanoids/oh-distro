@@ -625,36 +625,32 @@ void DRCShaper::post_bw_stats()
     }	  
  
     uint64_t now = goby::common::goby_time<uint64_t>();
-    double elapsed_time = (now - app_.bw_init_utime)/1.0e6 ;
-    double bw_window = 1.0; // bw window in seconds
-    if ( elapsed_time  > bw_window  ){
-        drc::bandwidth_stats_t stats;
-        stats.utime = now;
-        stats.previous_utime = app_.bw_init_utime;
-	stats.sim_utime = app_.get_current_utime();	
-        stats.num_sent_channels = sent_data_usage_.size();
-        stats.num_received_channels = received_data_usage_.size();
+    drc::bandwidth_stats_t stats;
+    stats.utime = now;
+    stats.previous_utime = app_.bw_init_utime;
+    stats.sim_utime = app_.get_current_utime();	
+    stats.num_sent_channels = sent_data_usage_.size();
+    stats.num_received_channels = received_data_usage_.size();
 
-        for (std::map<int, DataUsage>::const_iterator it = sent_data_usage_.begin(),
-                 end = sent_data_usage_.end(); it != end; ++it)
-        {
-            stats.sent_channels.push_back(channel_id_.right.at(it->first));
-            stats.queued_msgs.push_back(it->second.queued_msgs);
-            stats.queued_bytes.push_back(it->second.queued_bytes);
-            stats.sent_bytes.push_back(it->second.sent_bytes);
+    for (std::map<int, DataUsage>::const_iterator it = sent_data_usage_.begin(),
+             end = sent_data_usage_.end(); it != end; ++it)
+    {
+        stats.sent_channels.push_back(channel_id_.right.at(it->first));
+        stats.queued_msgs.push_back(it->second.queued_msgs);
+        stats.queued_bytes.push_back(it->second.queued_bytes);
+        stats.sent_bytes.push_back(it->second.sent_bytes);
             
-        }
-        
-        for (std::map<int, DataUsage>::const_iterator it = received_data_usage_.begin(),
-                 end = received_data_usage_.end(); it != end; ++it)
-        {
-            stats.received_channels.push_back(channel_id_.right.at(it->first));
-            stats.received_bytes.push_back(it->second.received_bytes);
-        }        
-        
-        lcm_->publish(node_ == BASE ? "BASE_BW_STATS" : "ROBOT_BW_STATS", &stats);
-        app_.bw_init_utime = stats.utime;
     }
+        
+    for (std::map<int, DataUsage>::const_iterator it = received_data_usage_.begin(),
+             end = received_data_usage_.end(); it != end; ++it)
+    {
+        stats.received_channels.push_back(channel_id_.right.at(it->first));
+        stats.received_bytes.push_back(it->second.received_bytes);
+    }        
+        
+    lcm_->publish(node_ == BASE ? "BASE_BW_STATS" : "ROBOT_BW_STATS", &stats);
+    app_.bw_init_utime = stats.utime;
     
     if(data_usage_log_.is_open())
     {
