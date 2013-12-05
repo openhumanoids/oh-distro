@@ -20,6 +20,7 @@
 
 #include <cassert>
 
+#define DEFAULT_CURVE_STYLE QwtPlotCurve::Dots
 
 class MyPanner : public QObject
 {
@@ -282,7 +283,7 @@ Plot::~Plot()
 void Plot::addSignal(SignalData* signalData, QColor color)
 {
   QwtPlotCurve* d_curve = new QwtPlotCurve();
-  d_curve->setStyle(QwtPlotCurve::Dots);
+  d_curve->setStyle(DEFAULT_CURVE_STYLE);
 
   QPen curvePen(color);
   curvePen.setWidth(0);
@@ -353,10 +354,17 @@ void Plot::setPointSize(double pointSize)
 {
   foreach (QwtPlotCurve* curve, mSignals.values())
   {
-    curve->setStyle(QwtPlotCurve::Dots);
     QPen curvePen = curve->pen();
     curvePen.setWidth(pointSize);
     curve->setPen(curvePen);
+  }
+}
+
+void Plot::setCurveStyle(QwtPlotCurve::CurveStyle style)
+{
+  foreach (QwtPlotCurve* curve, mSignals.values())
+  {
+    curve->setStyle(style);
   }
 }
 

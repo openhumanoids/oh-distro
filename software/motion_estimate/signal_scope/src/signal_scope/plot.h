@@ -4,6 +4,7 @@
 #include <qwt_plot.h>
 #include <qwt_interval.h>
 #include <qwt_system_clock.h>
+#include <qwt_plot_curve.h>
 
 class QwtPlotCurve;
 class QwtPlotMarker;
@@ -43,6 +44,7 @@ public:
     void flagAxisSyncRequired();
 
     void setPointSize(double pointSize);
+    void setCurveStyle(QwtPlotCurve::CurveStyle style);
 
 signals:
 

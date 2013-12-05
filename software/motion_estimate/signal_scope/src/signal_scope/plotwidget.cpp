@@ -414,6 +414,11 @@ void PlotWidget::loadSettings(const QMap<QString, QVariant>& plotSettings)
   double ymax = plotSettings.value("ymax", QVariant(10.0)).toDouble();
   d_plot->setAxisScale(QwtPlot::yLeft, ymin, ymax);
   mTimeWindowSpin->setValue(timeWindow);
+
+  if (plotSettings.value("curveStyle", "dots") == "lines")
+  {
+    d_plot->setCurveStyle(QwtPlotCurve::Lines);
+  }
 }
 
 QMap<QString, QVariant> PlotWidget::saveSettings()
