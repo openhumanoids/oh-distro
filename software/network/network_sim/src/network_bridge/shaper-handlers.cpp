@@ -71,7 +71,6 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
       lcm_(node == BASE ? app.base_lcm : app.robot_lcm),
       last_send_type_(0),
       largest_id_(0),
-      channel_buffer_size_(100),
       dccl_(goby::acomms::DCCLCodec::get())
 {   
     assert(floor_multiple_sixteen(1025) == 1024);
@@ -132,7 +131,9 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         {
             glog.is(VERBOSE) && glog << "Mapping: " << resendlist[i].channel << " to id: " << current_id << std::endl;
             channel_id_.insert(boost::bimap<std::string, int>::value_type(resendlist[i].channel, current_id));
-
+            buffer_sizes_.insert(std::make_pair(current_id, resendlist[i].buffer_size));
+            
+            
             if(node_ == ROBOT)
             {
                 if(resendlist[i].robot2base)
@@ -238,7 +239,6 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         mac_.startup(cfg);
     }
 
-    channel_buffer_size_ = bot_param_get_int_or_fail(app.bot_param, "network.channel_buffer_size");
 
     double expected_packet_loss_percent = bot_param_get_int_or_fail(app.bot_param, "network.expected_packet_loss_percent");
     fec_ = 1/(1-expected_packet_loss_percent/100);
@@ -318,8 +318,11 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
         // if this is the first time we've seen this channel, create a new circular buffer for it
         if(q_it == queues_.end())
         {
-            int buffer_size = on_demand ? 1 : channel_buffer_size_;
+            int buffer_size = on_demand ? 1 : buffer_sizes_[channel_id_.left.at(channel)];
+            glog.is(VERBOSE) && glog << group("ch-push") << "creating queue for [" << channel << "] with buffer size: " << buffer_size << std::endl;
+
             queues_.insert(std::make_pair(channel, MessageQueue(channel, buffer_size, data, on_demand)));
+
         }
         else
         {
