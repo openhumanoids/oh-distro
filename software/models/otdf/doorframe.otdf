@@ -125,14 +125,14 @@
     <joint name="toeline_joint" type="fixed">
         <parent link="base_link" type="link" />
         <child link="toeline" type="link" />
-        <origin rpy="0 0 0" xyz="0 0.19 0" />
+        <origin rpy="0 0 0" xyz="0 0.1265 0" />
         <axis xyz="0 0 1" />
     </joint>
 
     <joint name="heelline_joint" type="fixed">
         <parent link="base_link" type="link" />
         <child link="heelline" type="link" />
-        <origin rpy="0 0 0" xyz="0 -0.09 0" />
+        <origin rpy="0 0 0" xyz="0 -0.1535 0" />
         <axis xyz="0 0 1" />
     </joint>
 
