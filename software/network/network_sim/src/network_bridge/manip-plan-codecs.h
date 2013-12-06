@@ -407,7 +407,10 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
         lcm_object.grasps.push_back(present_grasp);
     }
     
-    lcm_object.num_bytes = 0;    
+    lcm_object.num_bytes = 0;
+
+    lcm_object.plan_info = std::vector<int32_t>(lcm_object.num_states, 0);
+    
     return true;
 }
 

@@ -8,66 +8,70 @@ ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
     using goby::glog;
     using namespace goby::common::logger;
 
-    const float MAX = 6.284;
-    const float MIN = -MAX;    
-
-    std::string model_file_path = getenv ("HOME");
-    model_file_path += "/drc/software/network/network_sim/src/network_bridge/joint_pos_frequencies.csv";
-    std::ifstream model_file(model_file_path.c_str());
-    if(!model_file.is_open())
-        glog.is(DIE) && glog << "Could not open " << model_file_path << " for reading." << std::endl;
-
-    std::string line;
-    std::getline(model_file, line);
-
-    std::vector<std::string> xs;
-    boost::split(xs, line, boost::is_any_of(","));
-
-    std::vector<double> x;
-    for(int i = 0; i < xs.size(); ++i)
-        x.push_back(goby::util::as<double>(xs[i]));
-    
-    for(int j = 0; j < 28; ++j)
+    if(false)
     {
-        goby::acomms::protobuf::ArithmeticModel model;
+        const float MAX = 6.284;
+        const float MIN = -MAX;    
 
-        glog.is(VERBOSE) && glog << "Making joint_pos_" << j << " model" << std::endl;
+        std::string model_file_path = getenv ("HOME");
+        model_file_path += "/drc/software/network/network_sim/src/network_bridge/joint_pos_frequencies.csv";
+        std::ifstream model_file(model_file_path.c_str());
+        if(!model_file.is_open())
+            glog.is(DIE) && glog << "Could not open " << model_file_path << " for reading." << std::endl;
 
+        std::string line;
         std::getline(model_file, line);
-        std::vector<std::string> ys;
-        boost::split(ys, line, boost::is_any_of(","));
-        
-        std::vector<double> y;
+
+        std::vector<std::string> xs;
+        boost::split(xs, line, boost::is_any_of(","));
+
+        std::vector<double> x;
         for(int i = 0; i < xs.size(); ++i)
-            y.push_back(goby::util::as<double>(ys[i]));
-        
-        int total_frequency = 0;        
-        for(int i = 0, n = x.size(); i <= n; ++i)
+            x.push_back(goby::util::as<double>(xs[i]));
+    
+        for(int j = 0; j < 28; ++j)
         {
-            if(i != n)
+            goby::acomms::protobuf::ArithmeticModel model;
+
+            glog.is(VERBOSE) && glog << "Making joint_pos_" << j << " model" << std::endl;
+
+            std::getline(model_file, line);
+            std::vector<std::string> ys;
+            boost::split(ys, line, boost::is_any_of(","));
+        
+            std::vector<double> y;
+            for(int i = 0; i < xs.size(); ++i)
+                y.push_back(goby::util::as<double>(ys[i]));
+        
+            int total_frequency = 0;        
+            for(int i = 0, n = x.size(); i <= n; ++i)
             {
-                int freq = y[i];
-                model.add_value_bound(x[i]);
-                model.add_frequency(freq);
-                total_frequency += freq;
+                if(i != n)
+                {
+                    int freq = y[i];
+                    model.add_value_bound(x[i]);
+                    model.add_frequency(freq);
+                    total_frequency += freq;
+                }
+                else
+                {
+                    model.add_value_bound(x[i-1] + 1/pow(10.0, JOINT_POS_PRECISION));
+                }            
             }
-            else
-            {
-                model.add_value_bound(x[i-1] + 1/pow(10.0, JOINT_POS_PRECISION));
-            }            
-        }
         
-        const double eof_fraction = 0.1; // 10% of total frequency
-        model.set_eof_frequency(total_frequency*eof_fraction/(1-eof_fraction)); 
-        model.set_out_of_range_frequency(0);
+            const double eof_fraction = 0.1; // 10% of total frequency
+            model.set_eof_frequency(total_frequency*eof_fraction/(1-eof_fraction)); 
+            model.set_out_of_range_frequency(0);
         
         
-        model.set_name("joint_pos_" + goby::util::as<std::string>(j));
-        glog.is(VERBOSE) && glog << "Setting joint_pos_" << j << " model" << std::endl;
-        goby::acomms::ModelManager::set_model(model);        
+            model.set_name("joint_pos_" + goby::util::as<std::string>(j));
+            glog.is(VERBOSE) && glog << "Setting joint_pos_" << j << " model" << std::endl;
+            goby::acomms::ModelManager::set_model(model);        
 //        std::cout << pb_to_short_string(model) << std::endl;
     
+        }
     }
+    
     dccl_->validate<drc::MinimalRobotPlan>();
 }
 

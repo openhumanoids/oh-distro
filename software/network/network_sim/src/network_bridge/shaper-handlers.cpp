@@ -864,9 +864,9 @@ void DRCShaper::load_robot_plan_custom_codecs()
         rotation->set_w(0);
 
 
-        plan.mutable_goal_diff()->add_utime_diff(100);
-        plan.mutable_goal_diff()->add_utime_diff(200);
-        plan.mutable_goal_diff()->add_utime_diff(300);
+        plan.mutable_goal_diff()->add_utime_diff(100e3);
+        plan.mutable_goal_diff()->add_utime_diff(200e3);
+        plan.mutable_goal_diff()->add_utime_diff(300e3);
         drc::TranslationVectorDiff* trans_diff = plan.mutable_goal_diff()->mutable_pos_diff()->mutable_translation_diff();
         drc::RotationQuaternionDiff* rot_diff = plan.mutable_goal_diff()->mutable_pos_diff()->mutable_rotation_diff();
         

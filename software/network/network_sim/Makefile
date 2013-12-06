@@ -38,7 +38,8 @@ configure:
 
 	# run CMake to generate and configure the build scripts
 	@cd pod-build && cmake -DCMAKE_INSTALL_PREFIX=$(BUILD_PREFIX) \
-		   -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) ..
+		   -DCMAKE_BUILD_TYPE=$(BUILD_TYPE)  .. 
+#		   -DCMAKE_PREFIX_PATH=/home/toby/goby/2.0-drc ..
 
 clean:
 	-if [ -e pod-build/install_manifest.txt ]; then rm -f `cat pod-build/install_manifest.txt`; fi
