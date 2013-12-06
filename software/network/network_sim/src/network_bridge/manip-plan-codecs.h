@@ -181,6 +181,7 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
         if(!RobotStateCodec::to_minimal_joint_pos(present_grasp.joint_name,
                                                   present_grasp.joint_position,
                                                   dccl_grasp->mutable_joint_position(),
+                                                  dccl_grasp->mutable_joint_id(),
                                                   offset))
             return false;
         
@@ -399,6 +400,7 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
         if(!RobotStateCodec::from_minimal_joint_pos(&present_grasp.joint_name,
                                                     &present_grasp.joint_position,
                                                     dccl_grasp.joint_position(),
+                                                    dccl_grasp.joint_id(),
                                                     offset))
             return false;
 

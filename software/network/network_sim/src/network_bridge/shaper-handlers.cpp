@@ -114,6 +114,13 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     if (!disable_pmd_custom_codecs){    
         load_pmd_custom_codecs();
     }
+
+    
+    bool disable_ers_custom_codecs = bot_param_get_boolean_or_fail(app.bot_param, "network.disable_ers_custom_codecs");
+    if (!disable_ers_custom_codecs){    
+        load_ers_custom_codecs();
+    }
+    
     
     dccl_->validate<drc::ShaperHeader>();
     
@@ -609,7 +616,7 @@ void DRCShaper::publish_receive(std::string channel,
             lcm_->publish("ROBOT_UTIME", &t);
         }
         
-        channel = "EST_ROBOT_STATE_TX";
+        channel = "EST_ROBOT_STATE";
     }
     
     glog.is(VERBOSE) && glog << group("publish")
@@ -792,15 +799,20 @@ void DRCShaper::load_pmd_custom_codecs()
 
 }
 
+void DRCShaper::load_ers_custom_codecs()
+{
+    
+    const std::string& ers_channel = "EST_ROBOT_STATE";
+    custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK")))); // 118
+    custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
+    
+}
+
+
 void DRCShaper::load_custom_codecs()
 {
     //custom_codecs_.insert(std::make_pair("EST_ROBOT_STATE", boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec)));
 
-    const std::string& ers_channel = "EST_ROBOT_STATE";
-    custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK")))); // 118
-    custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
-
-    
     const std::string& footstep_plan_channel = "COMMITTED_FOOTSTEP_PLAN";
     custom_codecs_.insert(std::make_pair(footstep_plan_channel, boost::shared_ptr<CustomChannelCodec>(new FootStepPlanCodec(footstep_plan_channel + "_COMPRESSED_LOOPBACK")))); // 118
     custom_codecs_[footstep_plan_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[footstep_plan_channel];

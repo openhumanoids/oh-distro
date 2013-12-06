@@ -19,8 +19,10 @@ message MinimalGrasp
   required Position3D r_hand_pose = 11;
 
   repeated float l_joint_position = 20 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 12 codec: "presence_bit" } ];
+  repeated int32 l_joint_id = 23 [(dccl.field) = { min: 0 max: 11 max_repeat: 12 codec: "presence_bit" } ];
 
   repeated float r_joint_position = 21 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 12 codec: "presence_bit" } ];
+  repeated int32 r_joint_id = 24 [(dccl.field) = { min: 0 max: 11 max_repeat: 12 codec: "presence_bit" } ];
 
   required int32 optimization_status = 22 [(dccl.field) = { min: 0 max: 2 }];
   

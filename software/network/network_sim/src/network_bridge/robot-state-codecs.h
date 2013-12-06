@@ -57,14 +57,12 @@ class RobotStateCodec : public CustomChannelCodec
         static bool to_minimal_joint_pos(const std::vector<std::string>& joint_names,
                                          const std::vector<D1>& joint_pos,
                                          google::protobuf::RepeatedField<D2>* dccl_joint_pos,
+                                         google::protobuf::RepeatedField<int>* dccl_joint_id,
                                          int offset = 0)
     {
         
         using goby::glog;
         using namespace goby::common::logger;
-
-        for(int i = 0, n = joint_pos.size(); i < n; ++i)
-            dccl_joint_pos->Add(std::numeric_limits<D2>::quiet_NaN());
     
         for(int i = 0, n = joint_pos.size(); i < n; ++i)
         {
@@ -82,7 +80,8 @@ class RobotStateCodec : public CustomChannelCodec
 
 //            std::cout << "joint: " << joint_names[i] <<  " pos: " << position << " index: " << order->second - offset << std::endl;
             
-            dccl_joint_pos->Set(order->second - offset, position);
+            dccl_joint_pos->Add(position);
+            dccl_joint_id->Add(order->second);
         }
         
         return true;
@@ -92,14 +91,15 @@ class RobotStateCodec : public CustomChannelCodec
         static bool from_minimal_joint_pos(std::vector<std::string>* joint_names,
                                            std::vector<D1>* joint_pos,
                                            const google::protobuf::RepeatedField<D2>& dccl_joint_pos,
+                                           const google::protobuf::RepeatedField<int>& dccl_joint_id,                                           
                                            int offset = 0)
     {
 
-        joint_names->resize(dccl_joint_pos.size());
-        std::copy(joint_names_.begin() + offset, joint_names_.begin() + dccl_joint_pos.size() + offset, joint_names->begin());
-    
         for(int i = 0, n = dccl_joint_pos.size(); i < n; ++i)
+        {
+            joint_names->push_back(joint_names_.at(dccl_joint_id.Get(i)));
             joint_pos->push_back(dccl_joint_pos.Get(i));
+        }
 
         return true;
 

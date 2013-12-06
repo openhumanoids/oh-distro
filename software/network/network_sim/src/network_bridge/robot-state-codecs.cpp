@@ -46,30 +46,43 @@ RobotStateCodec::RobotStateCodec(const std::string loopback_channel)
         joint_names_to_order_.insert(std::make_pair("r_arm_uwy", i++));
         joint_names_to_order_.insert(std::make_pair("r_arm_mwx", i++));
         joint_names_to_order_.insert(std::make_pair("hokuyo_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f0_j0", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f0_j1", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f0_j2", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f1_j0", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f1_j1", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f1_j2", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f2_j0", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f2_j1", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f2_j2", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f3_j0", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f3_j1", i++));
-        joint_names_to_order_.insert(std::make_pair("left_f3_j2", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f0_j0", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f0_j1", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f0_j2", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f1_j0", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f1_j1", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f1_j2", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f2_j0", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f2_j1", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f2_j2", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f3_j0", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f3_j1", i++));
-        joint_names_to_order_.insert(std::make_pair("right_f3_j2", i++));;
+        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_x_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_y_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_z_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_roll_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_pitch_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_yaw_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_x_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_y_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_z_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_roll_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_pitch_joint", i++));
+        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_yaw_joint", i++));
+        
+        // joint_names_to_order_.insert(std::make_pair("left_f0_j0", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f0_j1", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f0_j2", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f1_j0", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f1_j1", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f1_j2", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f2_j0", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f2_j1", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f2_j2", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f3_j0", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f3_j1", i++));
+        // joint_names_to_order_.insert(std::make_pair("left_f3_j2", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f0_j0", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f0_j1", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f0_j2", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f1_j0", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f1_j1", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f1_j2", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f2_j0", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f2_j1", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f2_j2", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f3_j0", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f3_j1", i++));
+        // joint_names_to_order_.insert(std::make_pair("right_f3_j2", i++));;
 
         joint_names_.resize(i);
         for(std::map<std::string, int>::const_iterator it = joint_names_to_order_.begin(),
@@ -115,6 +128,8 @@ bool RobotStateCodec::decode(std::vector<unsigned char>* lcm_data, const std::ve
     
     lcm_data->resize(lcm_object.getEncodedSize());
     lcm_object.encode(&(*lcm_data)[0], 0, lcm_data->size());
+
+    
     
     return true;
           
@@ -132,7 +147,8 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
 
     if(!to_minimal_joint_pos(lcm_object.joint_name,
                              lcm_object.joint_position,
-                             dccl_state->mutable_joint_position()))
+                             dccl_state->mutable_joint_position(),
+                             dccl_state->mutable_joint_id()))
         return false;
 
     return true;
@@ -154,7 +170,8 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
     
     if(!from_minimal_joint_pos(&lcm_object->joint_name,
                                &lcm_object->joint_position,
-                               dccl_state.joint_position()))
+                               dccl_state.joint_position(),
+                               dccl_state.joint_id()))
         return false;
     
     std::vector<float> joint_zeros;
@@ -168,6 +185,27 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
     lcm_object->joint_velocity = joint_zeros;
     lcm_object->joint_effort = joint_zeros;
 
+    lcm_object->force_torque.l_foot_force_z = 0;
+    lcm_object->force_torque.l_foot_torque_x = 0;
+    lcm_object->force_torque.l_foot_torque_y = 0;
+    lcm_object->force_torque.l_hand_torque[0] = 0;
+    lcm_object->force_torque.l_hand_torque[1] = 0;
+    lcm_object->force_torque.l_hand_torque[2] = 0;    
+    lcm_object->force_torque.l_hand_force[0] = 0;
+    lcm_object->force_torque.l_hand_force[1] = 0;
+    lcm_object->force_torque.l_hand_force[2] = 0;
+
+    lcm_object->force_torque.r_foot_force_z = 0;
+    lcm_object->force_torque.r_foot_torque_x = 0;
+    lcm_object->force_torque.r_foot_torque_y = 0;
+    lcm_object->force_torque.r_hand_torque[0] = 0;
+    lcm_object->force_torque.r_hand_torque[1] = 0;
+    lcm_object->force_torque.r_hand_torque[2] = 0;    
+    lcm_object->force_torque.r_hand_force[0] = 0;
+    lcm_object->force_torque.r_hand_force[1] = 0;
+    lcm_object->force_torque.r_hand_force[2] = 0;
+        
+    
     return true;
 }
 

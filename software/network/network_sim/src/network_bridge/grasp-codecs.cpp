@@ -40,12 +40,14 @@ bool GraspCodec::encode(const std::vector<unsigned char>& lcm_data, std::vector<
     if(!RobotStateCodec::to_minimal_joint_pos(present_grasp.l_joint_name,
                                               present_grasp.l_joint_position,
                                               dccl_grasp.mutable_l_joint_position(),
+                                              dccl_grasp.mutable_l_joint_id(),
                                               l_hand_offset))
         return false;
 
     if(!RobotStateCodec::to_minimal_joint_pos(present_grasp.r_joint_name,
                                               present_grasp.r_joint_position,
                                               dccl_grasp.mutable_r_joint_position(),
+                                              dccl_grasp.mutable_r_joint_id(),
                                               r_hand_offset))
         return false;
 
@@ -115,13 +117,15 @@ bool GraspCodec::decode(std::vector<unsigned char>* lcm_data, const std::vector<
     if(!RobotStateCodec::from_minimal_joint_pos(&present_grasp.l_joint_name,
                                                 &present_grasp.l_joint_position,
                                                 dccl_grasp.l_joint_position(),
-                                                l_hand_offset))
+                                                dccl_grasp.l_joint_id(),
+                                               l_hand_offset))
         return false;
 
     present_grasp.num_r_joints = dccl_grasp.r_joint_position_size();    
     if(!RobotStateCodec::from_minimal_joint_pos(&present_grasp.r_joint_name,
                                                 &present_grasp.r_joint_position,
                                                 dccl_grasp.r_joint_position(),
+                                                dccl_grasp.r_joint_id(),
                                                 r_hand_offset))
         return false;
     

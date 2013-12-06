@@ -37,6 +37,8 @@ message GraspTransition
   required bool power_grasp = 6;
     
   repeated float joint_position = 7 [(dccl.field) = { min: -3.14 max: 3.14 precision: 2 max_repeat: 12 codec: "presence_bit" } ];
+  repeated int32 joint_id = 8 [(dccl.field) = { min: 0 max: 11 max_repeat: 12 codec: "presence_bit" } ];
+
 }
 
 message AffordanceIndex
