@@ -40,6 +40,10 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     std::cout << "Robot fitted with left iRobot hand\n";
     lcm_->subscribe("IROBOT_LEFT_STATE",&state_sync::leftHandHandler,this);  
     left_hand_joints_.name = joint_utils_.irobot_l_joint_names;
+  }else if(find(joint_names.begin(), joint_names.end(), "left_finger_1_joint_1" ) != joint_names.end()){
+    std::cout << "Robot fitted with left Robotiq hand\n";
+    lcm_->subscribe("ROBOTIQ_LEFT_STATE",&state_sync::leftHandHandler,this);  
+    left_hand_joints_.name = joint_utils_.robotiq_l_joint_names;
   }else{
     std::cout << "Robot has no left hand\n"; 
   }
@@ -52,6 +56,10 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     std::cout << "Robot fitted with right iRobot hand\n";
     lcm_->subscribe("IROBOT_RIGHT_STATE",&state_sync::rightHandHandler,this);
     right_hand_joints_.name = joint_utils_.irobot_r_joint_names;
+  }else if(find(joint_names.begin(), joint_names.end(), "right_finger_1_joint_1" ) != joint_names.end()){
+    std::cout << "Robot fitted with right Robotiq hand\n";
+    lcm_->subscribe("ROBOTIQ_RIGHT_STATE",&state_sync::rightHandHandler,this);  
+    right_hand_joints_.name = joint_utils_.robotiq_r_joint_names;
   }else{
     std::cout << "Robot has no right hand\n"; 
   }
