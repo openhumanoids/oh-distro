@@ -46,6 +46,18 @@ public:
         "right_finger_middle_joint_1", "right_finger_middle_joint_2", "right_finger_middle_joint_3",
         "right_palm_finger_1_joint", "right_palm_finger_2_joint"};
         
+
+    all_joint_names.append(atlas_joint_names);
+    all_joint_names.append(head_joint_names);
+    // all_joint_names.append(simple_head_joint_names); // skipped as its in the above
+    all_joint_names.append(sandia_l_joint_names);
+    all_joint_names.append(sandia_r_joint_names);
+
+    all_joint_names.append(irobot_l_joint_names);
+    all_joint_names.append(irobot_r_joint_names);
+
+    all_joint_names.append(robotiq_l_joint_names);
+    all_joint_names.append(robotiq_r_joint_names);
   };
   ~JointUtils() {}
   
@@ -54,6 +66,7 @@ public:
   std::vector<std::string> sandia_l_joint_names, sandia_r_joint_names;    
   std::vector<std::string> robotiq_l_joint_names, robotiq_r_joint_names; 
 
+  std::vector<std::string> all_joint_names;
 private:
 };
 
