@@ -11,7 +11,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <!-- <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/xacro/bdihook_hand.urdf.xacro" />-->
+  <!--  <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" /> -->
   <joint name="left_hook_hand_joint" type="fixed">
     <origin rpy="1.57 0.0 -1.57" xyz="0.243 0.0 -0.127"/>
     <parent link="plane::xy::base"/>
