@@ -4,15 +4,17 @@ if(hand_mode == 0)
   hand_frame_str = {};
   frame = CoordinateFrame(sprintf('no%sHand',prefix),hand_dim*2,[],hand_frame_str);
 elseif(hand_mode == 1)
-  hand_dim = 12;
-  hand_frame_str = cell(hand_dim*2,1);
-  for i = 0:3
-    for j = 0:2
-      ind = i*3+j+1;
-      hand_frame_str{ind} = sprintf('%s_f%d_j%d',prefix,i,j);
-      hand_frame_str{ind+hand_dim} = sprintf('%s_f%d_j%ddot',prefix,i,j);
-    end
-  end
+  hand_dim = 0;
+  hand_frame_str = {};
+%   hand_dim = 12;
+%   hand_frame_str = cell(hand_dim*2,1);
+%   for i = 0:3
+%     for j = 0:2
+%       ind = i*3+j+1;
+%       hand_frame_str{ind} = sprintf('%s_f%d_j%d',prefix,i,j);
+%       hand_frame_str{ind+hand_dim} = sprintf('%s_f%d_j%ddot',prefix,i,j);
+%     end
+%   end
   frame = CoordinateFrame(sprintf('sandia%sHand',prefix),hand_dim*2,[],hand_frame_str);
 elseif(hand_mode == 2)
 %   hand_dim = 8;

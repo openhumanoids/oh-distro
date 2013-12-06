@@ -67,34 +67,35 @@ while(~getModelFlag)
 end
 options.floating = true;
 options.dt = 0.001;
-if(l_hand_mode == 0 && r_hand_mode == 0)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
-elseif(l_hand_mode == 0 && r_hand_mode == 1)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RS.urdf'),options);
-elseif(l_hand_mode == 0 && r_hand_mode == 2)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RI.urdf'),options);
-elseif(l_hand_mode == 1 && r_hand_mode == 0)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LS_RN.urdf'),options);
-elseif(l_hand_mode == 1 && r_hand_mode == 1)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
-elseif(l_hand_mode == 1 && r_hand_mode == 2)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LS_RI.urdf'),options);
-elseif(l_hand_mode == 2 && r_hand_mode == 0)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RN.urdf'),options);
-elseif(l_hand_mode == 2 && r_hand_mode == 1)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RS.urdf'),options);
-elseif(l_hand_mode == 2 && r_hand_mode == 2)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RI.urdf'),options);
-elseif(l_hand_mode == 2 && r_hand_mode == 3)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RI_Hose.urdf'),options);
-elseif(l_hand_mode == 4 && r_hand_mode == 0)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
-elseif(l_hand_mode == 0 && r_hand_mode == 4)
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
-else
-  error('The urdf for the model does not exist');
-  robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
-end
+% if(l_hand_mode == 0 && r_hand_mode == 0)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
+% elseif(l_hand_mode == 0 && r_hand_mode == 1)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RS.urdf'),options);
+% elseif(l_hand_mode == 0 && r_hand_mode == 2)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RI.urdf'),options);
+% elseif(l_hand_mode == 1 && r_hand_mode == 0)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LS_RN.urdf'),options);
+% elseif(l_hand_mode == 1 && r_hand_mode == 1)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
+% elseif(l_hand_mode == 1 && r_hand_mode == 2)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LS_RI.urdf'),options);
+% elseif(l_hand_mode == 2 && r_hand_mode == 0)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RN.urdf'),options);
+% elseif(l_hand_mode == 2 && r_hand_mode == 1)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RS.urdf'),options);
+% elseif(l_hand_mode == 2 && r_hand_mode == 2)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RI.urdf'),options);
+% elseif(l_hand_mode == 2 && r_hand_mode == 3)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LI_RI_Hose.urdf'),options);
+% elseif(l_hand_mode == 4 && r_hand_mode == 0)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
+% elseif(l_hand_mode == 0 && r_hand_mode == 4)
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
+% else
+%   error('The urdf for the model does not exist');
+%   robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
+% end
+robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_LN_RN.urdf'),options);
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
 
 % if(r_hand_mode == 1)
