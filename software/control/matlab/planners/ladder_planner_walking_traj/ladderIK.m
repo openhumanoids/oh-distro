@@ -168,13 +168,9 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   end
 
   if ladder_opts.use_pelvis_gaze_constraint
-%    basic_constraints = [ ...
-%      basic_constraints, ...
-%      {WorldGazeDirConstraint(r,pelvis,[0;0;1],[0;0;1],ladder_opts.pelvis_gaze_threshold)}];
-    pelvis_constraint = PostureConstraint(r);
-    pelvis_constraint = pelvis_constraint.setJointLimits((4:6)',q0(4:6)-ladder_opts.pelvis_gaze_threshold,q0(4:6)+ladder_opts.pelvis_gaze_threshold);
-    basic_constraints = [basic_constraints, {pelvis_constraint}];
-    pelvis_euler_constraint_idx = length(basic_constraints);
+    basic_constraints = [ ...
+      basic_constraints, ...
+      {WorldGazeDirConstraint(r,pelvis,[0;0;1],[0;0;1],ladder_opts.pelvis_gaze_threshold)}];
   end
 
   rpy_tol_max = 30*pi/180;
@@ -225,7 +221,6 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
         arm_constraint = arm_constraint.setJointLimits(arm_joints,q(arm_joints,i-1)-ladder_opts.arm_tol,q(arm_joints,i-1)+ladder_opts.arm_tol);
       end
       constraints = [constraints, {arm_constraint}];
-      arm_constraint_idx = length(constraints);
     end
     if ladder_opts.use_ankle_constraint && any(foot_supported)
       for j = 1:2
@@ -235,13 +230,6 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
             findJointIndices(r,r.getBody(r.getBody(ee_info.feet(j).idx).parent).jointname), ...
             -ladder_opts.ankle_limit, ...
             10*ladder_opts.ankle_limit);
-          constraints = [constraints, {ankle_constraint}];
-        else
-          ankle_constraint = PostureConstraint(r);
-          ankle_constraint = ankle_constraint.setJointLimits( ...
-            findJointIndices(r,r.getBody(ee_info.feet(j).idx).jointname), ...
-            0, ...
-            0);
           constraints = [constraints, {ankle_constraint}];
         end
       end
@@ -315,7 +303,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
 %         fprintf('Max com deviation: %5.3f m\n',ladder_opts.com_tol_local);
       end
       if info > 4
-%                disp(infeasible);keyboard
+        %       disp(infeasible);keyboard
         n_err = n_err+1; 
         if first_err
           err_segments(end+1,1) = i/nt;
@@ -372,9 +360,8 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     foot2_pts = r.getBodyContacts(ee_info.feet(2).idx);
     com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
     constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
-    constraints(arm_constraint_idx) = [];
     back_z_constraint_f = PostureConstraint(r);
-    back_z_constraint_f = back_z_constraint_f.setJointLimits([(4:6)';findJointIndices(r,'back_bkz')],[q0(4:6);0],[q0(4:6);0]);
+    back_z_constraint_f = back_z_constraint_f.setJointLimits([6;findJointIndices(r,'back_bkz')],[q0(6);0],[q0(6);0]);
     
     [qf,info,infeasible] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,back_z_constraint_f,ikoptions);
     if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;
