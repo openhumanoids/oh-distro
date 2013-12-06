@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(network_bridge)
 
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+
 add_executable(drc-network-bridge network-bridge.cpp bridge-handlers.cpp)
 target_link_libraries (drc-network-bridge boost_system boost_thread)
 pods_use_pkg_config_packages(drc-network-bridge lcm 

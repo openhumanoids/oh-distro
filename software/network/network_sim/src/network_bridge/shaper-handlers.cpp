@@ -805,7 +805,32 @@ void DRCShaper::load_ers_custom_codecs()
     const std::string& ers_channel = "EST_ROBOT_STATE";
     custom_codecs_.insert(std::make_pair(ers_channel, boost::shared_ptr<CustomChannelCodec>(new RobotStateCodec(ers_channel + "_COMPRESSED_LOOPBACK")))); // 118
     custom_codecs_[ers_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[ers_channel];
-    
+
+    {
+        drc::MinimalRobotState state, state_out;
+        state.set_utime(1386344883123000);
+        drc::TranslationVector* translation = state.mutable_pose()->mutable_translation();
+        drc::RotationQuaternion* rotation = state.mutable_pose()->mutable_rotation();
+
+        translation->set_x(23);
+        translation->set_y(50);
+        translation->set_z(8.4);
+
+        rotation->set_x(0);
+        rotation->set_y(1);
+        rotation->set_z(0);
+        rotation->set_w(0);
+
+
+        std::string bytes;
+        dccl_->encode(&bytes, state);
+        
+        DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::MinimalRobotState>();
+        dccl_->decode(bytes, &state_out);
+        std::cout << state.DebugString() << std::endl;
+        std::cout << state_out.DebugString() << std::endl;
+        assert(state.SerializeAsString() == state_out.SerializeAsString());
+    }
 }
 
 
@@ -836,7 +861,7 @@ void DRCShaper::load_custom_codecs()
         drc::MinimalRobotPlan plan, plan_out;
         plan.set_utime(6000000);
             
-        plan.mutable_goal()->set_utime(0);
+        plan.mutable_goal()->set_utime(1386344883123000);
         drc::TranslationVector* translation = plan.mutable_goal()->mutable_pose()->mutable_translation();
         drc::RotationQuaternion* rotation = plan.mutable_goal()->mutable_pose()->mutable_rotation();
 

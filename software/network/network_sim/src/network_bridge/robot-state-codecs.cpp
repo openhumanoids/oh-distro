@@ -1,11 +1,14 @@
 #include "robot-state-codecs.h"
 #include "bot_core/bot_core.h"
+#include "drc_utils/joint_utils.hpp"
 
 std::map<std::string, int> RobotStateCodec::joint_names_to_order_;
 std::vector<std::string> RobotStateCodec::joint_names_;
 
 using goby::glog;
 using namespace goby::common::logger;
+
+
 
 
 RobotStateCodec::RobotStateCodec(const std::string loopback_channel)
@@ -16,73 +19,14 @@ RobotStateCodec::RobotStateCodec(const std::string loopback_channel)
 
     if(joint_names_.empty())
     {
-        int i = 0;
-        joint_names_to_order_.insert(std::make_pair("back_bkz", i++));
-        joint_names_to_order_.insert(std::make_pair("back_bky", i++));
-        joint_names_to_order_.insert(std::make_pair("back_bkx", i++));
-        joint_names_to_order_.insert(std::make_pair("neck_ay", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_hpz", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_hpx", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_hpy", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_kny", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_aky", i++));
-        joint_names_to_order_.insert(std::make_pair("l_leg_akx", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_hpz", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_hpx", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_hpy", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_kny", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_aky", i++));
-        joint_names_to_order_.insert(std::make_pair("r_leg_akx", i++));
-        joint_names_to_order_.insert(std::make_pair("l_arm_usy", i++));
-        joint_names_to_order_.insert(std::make_pair("l_arm_shx", i++));
-        joint_names_to_order_.insert(std::make_pair("l_arm_ely", i++));
-        joint_names_to_order_.insert(std::make_pair("l_arm_elx", i++));
-        joint_names_to_order_.insert(std::make_pair("l_arm_uwy", i++));
-        joint_names_to_order_.insert(std::make_pair("l_arm_mwx", i++));
-        joint_names_to_order_.insert(std::make_pair("r_arm_usy", i++));
-        joint_names_to_order_.insert(std::make_pair("r_arm_shx", i++));
-        joint_names_to_order_.insert(std::make_pair("r_arm_ely", i++));
-        joint_names_to_order_.insert(std::make_pair("r_arm_elx", i++));
-        joint_names_to_order_.insert(std::make_pair("r_arm_uwy", i++));
-        joint_names_to_order_.insert(std::make_pair("r_arm_mwx", i++));
-        joint_names_to_order_.insert(std::make_pair("hokuyo_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_x_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_y_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_z_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_roll_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_pitch_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("pre_spindle_cal_yaw_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_x_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_y_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_z_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_roll_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_pitch_joint", i++));
-        joint_names_to_order_.insert(std::make_pair("post_spindle_cal_yaw_joint", i++));
         
-        // joint_names_to_order_.insert(std::make_pair("left_f0_j0", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f0_j1", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f0_j2", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f1_j0", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f1_j1", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f1_j2", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f2_j0", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f2_j1", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f2_j2", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f3_j0", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f3_j1", i++));
-        // joint_names_to_order_.insert(std::make_pair("left_f3_j2", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f0_j0", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f0_j1", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f0_j2", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f1_j0", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f1_j1", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f1_j2", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f2_j0", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f2_j1", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f2_j2", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f3_j0", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f3_j1", i++));
-        // joint_names_to_order_.insert(std::make_pair("right_f3_j2", i++));;
+        JointUtils utils;
+
+        int i = 0;        
+        for(std::vector<std::string>::const_iterator it = utils.all_joint_names.begin(), end = utils.all_joint_names.end(); it != end; ++it)
+        {
+            joint_names_to_order_.insert(std::make_pair(*it, i++));
+        }
 
         joint_names_.resize(i);
         for(std::map<std::string, int>::const_iterator it = joint_names_to_order_.begin(),

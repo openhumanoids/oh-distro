@@ -12,7 +12,7 @@ message MinimalRobotState
   required double utime = 1 [(dccl.field) = { min: 1300000000e6 max: 1450000000e6 precision: -3 }];
   required Position3D pose = 2;
   repeated float joint_position = 3 [(dccl.field) = { min: -3.142 max: 3.142 precision: 3 max_repeat: 70 codec: "presence_bit" } ];
-  repeated int32 joint_id = 4 [(dccl.field) = { min: 0 max: 69 max_repeat: 70 codec: "presence_bit" } ];
+  repeated int32 joint_id = 4 [(dccl.field) = { min: 0 max: 109 max_repeat: 110 codec: "presence_bit" } ];
 
   // jp: precision was 2 -> 90bytes | 3 -> 110bytes
 }
