@@ -23,7 +23,7 @@ rosrun xacro xacro.py xacro/atlas_LP_RP.urdf.xacro > model_LP_RP.urdf
 
 echo "6. left robotiq, right pointer, special rotation in urdf: drill"
 rosrun xacro xacro.py xacro/atlas_LQ_RP.urdf.xacro > model_LQ_RP.urdf
-# wash LQ_RP
+# was LQ_RP
 
 
 #echo "IRobot left - 3"
