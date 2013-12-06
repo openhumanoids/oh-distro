@@ -14,7 +14,7 @@
   </xacro:hook_hand>
 
   <xacro:robotiq_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="0 3.141 3.141" xyz="0 -0.11516 -0.015"/>
+    <origin rpy="0 3.141 3.141" xyz="0 -0.19016 -0.015"/>
   </xacro:robotiq_hand>
 
 

@@ -1613,7 +1613,7 @@
     <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
   </joint>
   <joint name="right_robotiq_hand_joint" type="fixed">
-    <origin rpy="0 3.141 3.141" xyz="0 -0.11516 -0.015"/>
+    <origin rpy="0 3.141 3.141" xyz="0 -0.19016 -0.015"/>
     <parent link="r_hand"/>
     <child link="right_palm"/>
   </joint>

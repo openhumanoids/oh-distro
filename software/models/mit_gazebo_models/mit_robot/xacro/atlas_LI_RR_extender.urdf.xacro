@@ -4,15 +4,6 @@
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
   <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl.urdf" />
 
-  <xacro:include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
-
-  <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="1.57079 0 0" xyz="0 -0.322 -0.015"/>
-  </xacro:irobot_hand>
-  <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">
-    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.322 0.015"/>
-  </xacro:irobot_hand>
-
 <!-- 
 05 sept: Sisir added an offset of 0.045 in the urdf to account 
 for the force sensor and the coupling plate, changing 
@@ -32,7 +23,7 @@ New y seperation: 0 0.11516
 set z=0.015 as the irobot hand center is clearly aligned with the force torque
 still think that y seperaton could be improved
 
-Extender is 0.2047m long
+Extender is 8" - 0.2047m long
 -->
 
 
@@ -45,7 +36,7 @@ Extender is 0.2047m long
   </xacro:irobot_hand>
 
   <xacro:robotiq_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="0 3.141 3.141" xyz="0 -0.322 -0.015"/>
+    <origin rpy="0 3.141 3.141" xyz="0 -0.397 -0.015"/>
   </xacro:robotiq_hand>
 
 

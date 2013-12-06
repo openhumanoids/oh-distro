@@ -1414,7 +1414,7 @@
     </visual>
   </link>
   <joint name="right_robotiq_hand_joint" type="fixed">
-    <origin rpy="0 3.141 3.141" xyz="0 -0.11516 -0.015"/>
+    <origin rpy="0 3.141 3.141" xyz="0 -0.19016 -0.015"/>
     <parent link="r_hand"/>
     <child link="right_palm"/>
   </joint>
