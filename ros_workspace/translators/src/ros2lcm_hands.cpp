@@ -615,10 +615,10 @@ void App::irobot_hand_state_cb(const mit_helios_scripts::MITIRobotHandStatePtr& 
 
   // copy joint angles
   // for finger spread: divide by two to divide spread angle between fingers over two joints
-  msg_out.joint_position[0]= msg->fingerSpread / 2.0;
+  msg_out.joint_position[0]= msg->fingerSpread;
   msg_out.joint_position[1]= msg->proximalJointAngle[0];
   msg_out.joint_position[2]= msg->distalJointAngle[0];
-  msg_out.joint_position[3]= msg->fingerSpread / 2.0;
+  msg_out.joint_position[3]= msg->fingerSpread;
   msg_out.joint_position[4]= msg->proximalJointAngle[1];
   msg_out.joint_position[5]= msg->distalJointAngle[1];
   msg_out.joint_position[6]= msg->proximalJointAngle[2];

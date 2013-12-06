@@ -6,12 +6,12 @@ TODO:
 * check that everything works with 2 hands connected
 * closing safety (wear prevention)
 * investigate 'getting stuck' in position control mode
+* get rid of unused methods in IRobotHandController, add optional arguments
+* make more tendons
 
 FOCUS FOR TODAY:
-* get rid of unused methods in IRobotHandController, add optional arguments
 
 BUSY:
-* improve visualization
 
 DONE:
 * ping hand
@@ -83,3 +83,4 @@ DONE:
 * fix find_calibration_pose script
 * better calibration pose
 * calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
+* improve visualization
