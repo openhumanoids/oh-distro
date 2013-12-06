@@ -53,8 +53,8 @@ def on_status(channel, data):
   o.joint_position[7] = get_mapping(m.positionC)
   o.joint_position[8] = get_mapping(m.positionC)
 
-  o.joint_position[9] = get_mapping( 0.4 -0.2*m.positionS)
-  o.joint_position[10] = get_mapping(-0.4 + 0.2*m.positionS)
+  o.joint_position[9] = -0.002 * (m.positionS-137)
+  o.joint_position[10] = 0.002 * (m.positionS-137)
 
   if (channel == "ROBOTIQ_RIGHT_STATUS"):
     o.joint_name= r_names
