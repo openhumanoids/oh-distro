@@ -305,6 +305,7 @@ classdef drillPlanner
           q_end_nom = q_tmp;
           diff_opt = c_tmp;
           snopt_info_nom = snopt_info_ik;
+          infeasible_constraint = infeasible_constraint_ik;
         end
       end
       snopt_info = snopt_info_nom;
@@ -331,7 +332,15 @@ classdef drillPlanner
       
       if obj.doPublish && snopt_info <= 10
 %         obj.publishTraj(xtraj,snopt_info);
-        xtraj = obj.posture_pub.generateAndPublishPosturePlan(q0,q_end_nom,0);
+%         xtraj = obj.posture_pub.generateAndPublishPosturePlan(q0,q_end_nom,0);
+        msg = drc.joint_angles_t;
+        msg.robot_name = 'atlas';
+        msg.num_joints = length(obj.joint_indices);
+        msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
+        msg.joint_name = obj.r.getStateFrame.coordinates(obj.joint_indices);
+        msg.joint_position = q_end_nom(obj.joint_indices);
+        obj.lc.publish('POSTURE_GOAL',msg); 
+        xtraj = q_end_nom;
       end
       
       if obj.doVisualization && snopt_info <= 10
