@@ -7,6 +7,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   knee_joints = [findJointIndices(r,'l_leg_kny'); ...
                  findJointIndices(r,'r_leg_kny')];
   arm_joints = findJointIndices(r,'arm');
+  elbow_joints = findJointIndices(r,'elx');
 
   if ~isfield(ladder_opts,'use_quasistatic_constraint') 
     ladder_opts.use_quasistatic_constraint =  true;
@@ -135,6 +136,10 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
 
   tf = ts(end);
 
+  elbow_constraint = PostureConstraint(r);
+  elbow_constraint = elbow_constraint.setJointLimits(elbow_joints,ladder_opts.elbow_min*[1;-Inf],ladder_opts.elbow_min*[Inf;-1]);
+  basic_constraints{end+1} = elbow_constraint;
+
   if ladder_opts.use_knee_constraint
     knee_constraint = PostureConstraint(r);
     knee_constraint = knee_constraint.setJointLimits(knee_joints, ...
@@ -167,6 +172,11 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
       [NaN;ladder_opts.pelvis_threshold;NaN])}];
   end
 
+  l_knee_crossing_constraint = WorldPositionInFrameConstraint(r,findLinkInd(r,'l_lleg'),[0;0;0],o_T_pelvis,[NaN;ladder_opts.knee_crossing_min;NaN],NaN(3,1));
+  r_knee_crossing_constraint = WorldPositionInFrameConstraint(r,findLinkInd(r,'r_lleg'),[0;0;0],o_T_pelvis,NaN(3,1),[NaN;-ladder_opts.knee_crossing_min;NaN]);
+  basic_constraints = [basic_constraints, {l_knee_crossing_constraint, r_knee_crossing_constraint}];
+
+
   if ladder_opts.use_pelvis_gaze_constraint
 %    basic_constraints = [ ...
 %      basic_constraints, ...
@@ -178,6 +188,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   end
 
   rpy_tol_max = 30*pi/180;
+  rpy_tol_min = 5*pi/180;
   foot_retract_max = 0.1;
   foot_retract_vec = foot_retract_max*o_T_pelvis(1:3,1:3)*[-1;0;0];
   for i=1:2
@@ -189,7 +200,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
       t_move0 = t_moving(1);
       t_movef = t_moving(end);
       ee_info.feet(i).rpy_tol_traj = ...
-        PPTrajectory(foh([0,linspace(t_move0,t_movef,4),tf],repmat([0,0,rpy_tol_max,0,0,0],3,1)));
+        PPTrajectory(foh([0,linspace(t_move0,t_movef,4),tf],repmat([0,0,rpy_tol_max,rpy_tol_min,0,0],3,1)));
       ee_info.feet(i).foot_retract_traj = ...
         PPTrajectory(foh([0,linspace(t_move0,t_movef,5),tf],[zeros(3,2),repmat(foot_retract_vec(1:3),1,2),zeros(3,3)]));
     end
@@ -217,6 +228,16 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     foot_supported(1) = ( eval(ee_info.feet(1).support_traj,t_data) && eval(ee_info.feet(1).support_traj,ts(min(i+1,nt))) );
     foot_supported(2) = ( eval(ee_info.feet(2).support_traj,t_data) && eval(ee_info.feet(2).support_traj,ts(min(i+1,nt))) );
     
+    if ladder_opts.use_base_z_constraint
+      base_z_constraint = PostureConstraint(r);
+      if i==1
+        base_z_constraint = base_z_constraint.setJointLimits(3,q0(3)-ladder_opts.base_z_tol,q0(3)+ladder_opts.base_z_tol);
+      else
+        base_z_constraint = base_z_constraint.setJointLimits(3,q(3,i-1)-ladder_opts.base_z_tol,q(3,i-1)+ladder_opts.base_z_tol);
+      end
+      constraints = [constraints, {base_z_constraint}];
+      base_z_constraint_idx = length(constraints);
+    end
     if ladder_opts.use_arm_constraints
       arm_constraint = PostureConstraint(r);
       if i==1
@@ -349,6 +370,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     kinsol = doKinematics(r,q_seed);
     com_prev = r.getCOM(kinsol);
     com_prev(3) = NaN;
+    %q_nom = makeRobotStateSymmetric(q(:,i),'averate');
   end
   fprintf('\n');
   q_data = q;
@@ -364,13 +386,28 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     dt = mean(diff(ts));
     t_end = 0:dt:nt_end*dt;
     t_end_coarse = linspace(t_end(1),t_end(end),3);
-    % com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
     com_constraint_f = QuasiStaticConstraint(r);
     com_constraint_f = com_constraint_f.setActive(true);
     com_constraint_f = com_constraint_f.setShrinkFactor(ladder_opts.final_shrink_factor);
     foot1_pts = r.getBodyContacts(ee_info.feet(1).idx);
     foot2_pts = r.getBodyContacts(ee_info.feet(2).idx);
-    com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
+    xyz_rpy_foot1 = ee_info.feet(1).traj.eval(tf);
+    xyz_rpy_foot2 = ee_info.feet(2).traj.eval(tf);
+    R = rpy2rotmat(xyz_rpy_foot1(4:6));
+    P = xyz_rpy_foot1(1:3);
+    T = [R,P;zeros(1,3),1];
+    %foot1_pts_in_world = T*[foot1_pts;ones(1,size(foot1_pts,2))]; foot1_pts_in_world(4,:)=[];
+    foot1_pts_in_pelvis = inv(o_T_pelvis)*T*[foot1_pts;ones(1,size(foot1_pts,2))]; foot1_pts_in_pelvis(4,:)=[];
+    R = rpy2rotmat(xyz_rpy_foot2(4:6));
+    P = xyz_rpy_foot2(1:3);
+    T = [R,P;zeros(1,3),1];
+    %foot2_pts_in_pelvis = T*[foot2_pts;ones(1,size(foot2_pts,2))]; foot2_pts_in_world(4,:)=[];
+    foot2_pts_in_pelvis = inv(o_T_pelvis)*T*[foot2_pts;ones(1,size(foot2_pts,2))]; foot2_pts_in_pelvis(4,:)=[];
+    com = mean([foot1_pts_in_pelvis,foot2_pts_in_pelvis],2);
+    com(3) = NaN;
+    com_constraint_f = WorldCoMInFrameConstraint(r,o_T_pelvis,com-ladder_opts.com_tol_f*[1;0;0],com+ladder_opts.com_tol_f*[1;0;0],t_end(end)*[1,1]);
+    %com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
+    %com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
     constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
     constraints(arm_constraint_idx) = [];
     back_z_constraint_f = PostureConstraint(r);
@@ -382,8 +419,12 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     q_end_nom = PPTrajectory(foh([t_end(1),t_end(end)],[q(:,end),qf]));
     end_posture_constraint = PostureConstraint(r,t_end_coarse(end)*[1,1]);
     end_posture_constraint = end_posture_constraint.setJointLimits((1:nq)',qf,qf);
-    ikoptions = ikoptions.setAdditionaltSamples(t_end);
-    x_end_traj = PPTrajectory(foh(t_end([1,end]),[[q(:,end),qf];zeros(nq,2)]));
+    %ikoptions = ikoptions.setAdditionaltSamples(t_end);
+    %x_end_traj = PPTrajectory(foh(t_end([1,end]),[[q(:,end),qf];zeros(nq,2)]));
+    [x_end_traj,info,infeasible] = inverseKinTraj(r,t_end_coarse, ...
+      q_end_nom, ...
+      q_end_nom, ...
+      constraints{:},end_posture_constraint,ikoptions);
     x_end = eval(x_end_traj,t_end);
     q_end = x_end(1:nq,:);
     q_data = [q_data,q_end];
