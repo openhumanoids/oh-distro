@@ -121,8 +121,8 @@ if(snopt_info<10)
 end
 reaching_planner.setPlanningMode(3)
 rh_ee_goal = rh_touch_goal1;
-reaching_planner.setPosTol(0.06);
-reaching_planner.setQuatTol(12);
+reaching_planner.setPosTol(0.15);
+reaching_planner.setQuatTol(18);
 [xtraj,snopt_info] = reaching_planner.generateAndPublishReachingPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
 if(snopt_info>10)
   error('TELEOP should succeed after relaxing constraints');
