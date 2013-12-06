@@ -184,15 +184,11 @@ group "b.1.core" {
         host = "base";
     }
     cmd "j2f" {
-        exec = "drc-joints2frames -g";
+        exec = "drc-joints2frames -g -b";
         host = "base";
     }
     cmd "param_server" {
         exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
-        host = "base";
-    }
-    cmd "est_rsp_base" {
-        exec = "est_robot_state_publisher -g";
         host = "base";
     }
     cmd "image-rx" {
