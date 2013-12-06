@@ -69,14 +69,14 @@ class IRobotHandController(object):
 
     def sensor_data_callback(self, data):
         self.sensors = data
-        self.motor_encoders_with_offset = [self.add_offset(self.sensors.motorHallEncoder[i], i) for i in close_hand_motor_indices]
-        self.publish_hand_state()
+        self.motor_encoders_with_offset = [self.subtract_offset(self.sensors.motorHallEncoder[i], i) for i in close_hand_motor_indices]
+        self.publish_hand_state(self.motor_encoders_with_offset, self.sensors.fingerSpread)
 
-    def publish_hand_state(self):        
+    def publish_hand_state(self, motor_encoders_with_offset, finger_spread_ticks):        
         state_message = MITIRobotHandState()
-        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(self.motor_encoders_with_offset[i], i) for i in close_hand_motor_indices]
-        state_message.distalJointAngle = [IRobotHandController.estimate_distal_joint_angle(self.motor_encoders_with_offset[i], i) for i in close_hand_motor_indices]
-        state_message.fingerSpread = finger_spread_ticks_to_radians * self.sensors.fingerSpread
+        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(motor_encoders_with_offset[i], i) for i in close_hand_motor_indices]
+        state_message.distalJointAngle = [IRobotHandController.estimate_distal_joint_angle(motor_encoders_with_offset[i], i) for i in close_hand_motor_indices]
+        state_message.fingerSpread = finger_spread_ticks_to_radians * finger_spread_ticks
         self.state_publisher.publish(state_message)
 
     """
@@ -170,6 +170,9 @@ class IRobotHandController(object):
 
     def add_offset(self, motor_encoder_count, motor_index):
         return self.config_parser.get_motor_encoder_offset(motor_index) + motor_encoder_count
+
+    def subtract_offset(self, motor_encoder_count, motor_index):
+        return -self.config_parser.get_motor_encoder_offset(motor_index) + motor_encoder_count
 
     def spread_angle_control(self, angle_rad):
         ticks = angle_rad / finger_spread_ticks_to_radians
