@@ -205,7 +205,7 @@ group "b.1.core" {
     }
     cmd "printf-request" {
         exec = "drc-printf-request";
-        host = "robot";
+        host = "base";
     }
 }
 
