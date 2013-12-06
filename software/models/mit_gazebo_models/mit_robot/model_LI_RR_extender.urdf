@@ -1372,7 +1372,7 @@ New y seperation: 0 0.11516
 set z=0.015 as the irobot hand center is clearly aligned with the force torque
 still think that y seperaton could be improved
 
-Extender is 0.2047m long
+Extender is 8" - 0.2047m long
 -->
   <joint name="left_finger[0]/joint_flex" type="revolute">
     <parent link="left_finger[0]/proximal_link"/>
@@ -1634,7 +1634,7 @@ Extender is 0.2047m long
     <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
   </joint>
   <joint name="right_robotiq_hand_joint" type="fixed">
-    <origin rpy="0 3.141 3.141" xyz="0 -0.322 -0.015"/>
+    <origin rpy="0 3.141 3.141" xyz="0 -0.397 -0.015"/>
     <parent link="r_hand"/>
     <child link="right_palm"/>
   </joint>
