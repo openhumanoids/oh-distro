@@ -466,9 +466,10 @@ classdef ReachingPlanner < KeyframePlanner
             iktraj_lhand_constraint_no_relax = iktraj_lhand_constraint;
             iktraj_head_constraint_no_relax = iktraj_head_constraint;
             not_found_solution = true;
-            while(ik_trial<=obj.max_ik_trial && not_found_solution)
-              pos_tol = obj.pos_tol_array(ik_trial);
-              quat_tol = obj.quat_tol_array(ik_trial);
+            [pos_tol_order_array,quat_tol_order_array] = obj.getRelaxationTol();
+            while(ik_trial<=length(pos_tol_order_array) && not_found_solution)
+              pos_tol = pos_tol_order_array(ik_trial);
+              quat_tol = quat_tol_order_array(ik_trial);
               if(~rhand_poseT_isnan)
                   rhand_constraint = [rhand_constraint_no_relax,parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_poseT,pos_tol,quat_tol,[1,1])];
                   iktraj_rhand_constraint = [iktraj_rhand_constraint_no_relax,rhand_constraint];
@@ -723,6 +724,11 @@ classdef ReachingPlanner < KeyframePlanner
           angle_tol_array1 = linspace(0,angle_tol/3,ceil(obj.max_ik_trial/2));
           angle_tol_array2 = linspace(angle_tol/3,angle_tol,obj.max_ik_trial-ceil(obj.max_ik_trial/2)+1);
           obj.quat_tol_array = sind([angle_tol_array1 angle_tol_array2(2:end)]).^2;
+        end
+        
+        function [pos_tol,quat_tol] = getRelaxationTol(obj)
+          pos_tol = [obj.pos_tol_array(1)*ones(1,length(obj.quat_tol_array)) obj.pos_tol_array(2:end)];
+          quat_tol = [obj.quat_tol_array obj.quat_tol_array(2:end)];
         end
         
         function data = checkPlannerConfig(obj,plan_execution_time)
