@@ -34,12 +34,25 @@ public:
         "right_finger[0]/joint_flex", "right_finger[1]/joint_base_rotation", 
         "right_finger[1]/joint_base", "right_finger[1]/joint_flex",
         "right_finger[2]/joint_base", "right_finger[2]/joint_flex" };
+        
+        
+    /// Robotiq:
+    robotiq_l_joint_names = { "left_finger_1_joint_1", "left_finger_1_joint_2", "left_finger_1_joint_3",
+        "left_finger_2_joint_1", "left_finger_2_joint_2", "left_finger_2_joint_3",
+        "left_finger_middle_joint_1", "left_finger_middle_joint_2", "left_finger_middle_joint_3",
+        "left_palm_finger_1_joint", "left_palm_finger_2_joint"};
+    robotiq_r_joint_names = { "right_finger_1_joint_1", "right_finger_1_joint_2", "right_finger_1_joint_3",
+        "right_finger_2_joint_1", "right_finger_2_joint_2", "right_finger_2_joint_3",
+        "right_finger_middle_joint_1", "right_finger_middle_joint_2", "right_finger_middle_joint_3",
+        "right_palm_finger_1_joint", "right_palm_finger_2_joint"};
+        
   };
   ~JointUtils() {}
   
   std::vector<std::string> atlas_joint_names, head_joint_names, simple_head_joint_names;    
   std::vector<std::string> irobot_l_joint_names, irobot_r_joint_names;
   std::vector<std::string> sandia_l_joint_names, sandia_r_joint_names;    
+  std::vector<std::string> robotiq_l_joint_names, robotiq_r_joint_names; 
 
 private:
 };
