@@ -654,6 +654,14 @@ static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel,
   RendererRobotPlan *self = (RendererRobotPlan*) user;
   self->robot_utime = msg->utime;
 }
+
+static void
+onAtlasStatus(const lcm_recv_buf_t * buf, const char *channel, const drc_atlas_status_t *msg, void *user_data){
+  RendererRobotPlan *self = (RendererRobotPlan*) user_data;
+  self->atlas_state = msg->behavior;
+  self->atlas_status_utime = msg->utime; 
+}
+
 static void update_planar_params( void *user)
 {
     RendererRobotPlan *self = (RendererRobotPlan*) user;  
@@ -825,7 +833,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     
     // C-style subscribe:
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
-
+    drc_atlas_status_t_subscribe(self->lcm->getUnderlyingLCM(),"ATLAS_STATUS",onAtlasStatus,self);
     
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
     // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
@@ -905,6 +913,8 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     self->afftriggered_popup = NULL;
     self->selected_plan_index= -1;
     self->selected_keyframe_index = -1;
+    self->atlas_state = drc::atlas_status_t::BEHAVIOR_STAND;
+    self->atlas_status_utime = 0; 
     self->_renderer_foviate = false;
     int plan_size =   self->robotPlanListener->_gl_robot_list.size();
     self->show_fullplan = bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_FULLPLAN);

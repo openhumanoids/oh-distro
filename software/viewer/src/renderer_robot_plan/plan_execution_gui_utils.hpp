@@ -78,6 +78,39 @@ namespace renderer_robot_plan_gui_utils
       gtk_container_add (GTK_CONTAINER (window), vbox);
       gtk_widget_show_all(window); 
   }   
+  
+  static bool plan_execute_warning_popup(void *user)
+  {
+      RendererRobotPlan *self = (RendererRobotPlan*) user;
+
+      // create popup warning
+      GtkWidget *dialog, *label1,*label2, *content_area;
+      dialog = gtk_dialog_new_with_buttons ("Message",
+                                            GTK_WINDOW(self->viewer->window),
+                                            GTK_DIALOG_MODAL,
+                                            GTK_STOCK_YES,
+                                            GTK_RESPONSE_YES,
+                                            GTK_STOCK_NO,
+                                            GTK_RESPONSE_NO,
+                                            NULL);
+      content_area = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+      label1 = gtk_label_new ("WARNING:: NOT IN MANIP MODE");
+      label2 = gtk_label_new ("Are you sure you want to commit plan?");
+      //g_signal_connect_swapped (dialog,"response",G_CALLBACK (gtk_widget_destroy),dialog);
+      gtk_container_add (GTK_CONTAINER (content_area), label1);
+      gtk_container_add (GTK_CONTAINER (content_area), label2);
+      gtk_widget_show_all (dialog);  
+
+      // popup warning
+      gint result = gtk_dialog_run (GTK_DIALOG (dialog));
+      gtk_widget_destroy (dialog);
+
+      // handle response
+      if (result == GTK_RESPONSE_YES){
+        return true;
+      }
+      return false;
+  }  
  //==================================================================================================    
   static gboolean on_stop_walking_button_clicked (GtkButton* button, void *user)
   {
@@ -148,6 +181,12 @@ namespace renderer_robot_plan_gui_utils
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     cout <<"Robot plan approved" << endl;
     
+    if(self->atlas_state != drc::atlas_status_t::BEHAVIOR_MANIPULATE)
+    {
+      if(!plan_execute_warning_popup( self))
+        return FALSE;    
+    }
+    
    if(!self->robotPlanListener->is_multi_approval_plan())
 	 {
       gtk_widget_destroy (self->plan_execute_button);
@@ -217,6 +256,7 @@ namespace renderer_robot_plan_gui_utils
  
     return TRUE;
   }
+
    
    
   static void spawn_plan_execution_dock  (void *user)
