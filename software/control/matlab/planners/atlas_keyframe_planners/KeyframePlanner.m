@@ -341,7 +341,10 @@ classdef KeyframePlanner < handle
             coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
             neck_idx = strcmp(coords,'neck_ay');
             qdot_breaks = dqtraj.eval(sfine);
-            Tmax_joints = max(max(abs(qdot_breaks(~neck_idx,:)),[],2))/obj.plan_cache.qdot_desired;
+            weighted_qdot_breaks = qdot_breaks(~neck_idx,:);
+            back_joints = cellfun(@(s) ~isempty(strfind(s,'back_bk')),coords);
+            weighted_qdot_breaks(back_joints,:) = 2*weighted_qdot_breaks(back_joints,:);
+            Tmax_joints = max(max(abs(weighted_qdot_breaks),[],2))/obj.plan_cache.qdot_desired;
          end
      %-----------------------------------------------------------------------------------------------------------------        
         function cachePelvisPose(obj,tspan,pose)
