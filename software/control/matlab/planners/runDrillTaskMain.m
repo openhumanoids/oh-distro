@@ -22,10 +22,6 @@ drill_depth = 0;
 
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 
-l_hand_frame = handFrame(2,'left');
-r_hand_frame = handFrame(2,'right');
-posture_pub = PosturePlanner(r,atlas,l_hand_frame,r_hand_frame,2);
-
 disp('waiting for drill and wall affordances...');
 
 [wall,drill] = lcm_mon.getWallAndDrillAffordances();

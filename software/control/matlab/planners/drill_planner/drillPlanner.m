@@ -14,6 +14,7 @@ classdef drillPlanner
     atlas
     plan_pub
     pose_pub
+    posture_pub
     v
     drill_pt_on_hand
     drill_axis_on_hand
@@ -43,6 +44,12 @@ classdef drillPlanner
         obj.v = obj.r.constructVisualizer;
         obj.v.playback_speed = 5;
       end
+      
+      
+      l_hand_frame = handFrame(2,'left');
+      r_hand_frame = handFrame(2,'right');
+      obj.posture_pub = PosturePlanner(r,atlas,l_hand_frame,r_hand_frame,2);
+
       
       obj.doPublish = doPublish;
       
@@ -288,16 +295,19 @@ classdef drillPlanner
       % Find nominal pose
       diff_opt = inf;
       q_end_nom = q0;
+      snopt_info_nom = -1;
       for i=1:50,
         [q_tmp,snopt_info_ik,infeasible_constraint_ik] = inverseKin(obj.r,qseed + .1*randn(obj.r.num_q,1),q0,...
           drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
         
         c_tmp = (q_tmp - q0)'*obj.ik_options.Q*(q_tmp - q0);
-        if snopt_info_ik == 1 && c_tmp < diff_opt
+        if snopt_info_ik <= 3 && c_tmp < diff_opt
           q_end_nom = q_tmp;
           diff_opt = c_tmp;
+          snopt_info_nom = snopt_info_ik;
         end
       end
+      snopt_info = snopt_info_nom;
       
       if(diff_opt == inf)
         send_msg = sprintf('snopt_info = %d. The IK fails.',snopt_info_ik);
@@ -305,26 +315,27 @@ classdef drillPlanner
         display(infeasibleConstraintMsg(infeasible_constraint_ik));
         warning(send_msg);
       end
-      qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
+%       qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
+%       
+%       
+%       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+%         t_vec,qtraj_guess,qtraj_guess,...
+%         drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
+%       
+%       if(snopt_info > 10)
+%         send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
+%         send_status(4,0,0,send_msg);
+%         display(infeasibleConstraintMsg(infeasible_constraint));
+%         warning(send_msg);
+%       end
       
-      
-      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-        t_vec,qtraj_guess,qtraj_guess,...
-        drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
-      
-      if(snopt_info > 10)
-        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
-        send_status(4,0,0,send_msg);
-        display(infeasibleConstraintMsg(infeasible_constraint));
-        warning(send_msg);
+      if obj.doPublish && snopt_info <= 10
+%         obj.publishTraj(xtraj,snopt_info);
+        xtraj = obj.posture_pub.generateAndPublishPosturePlan(q0,q_end_nom,0);
       end
       
       if obj.doVisualization && snopt_info <= 10
         obj.v.playback(xtraj);
-      end
-      
-      if obj.doPublish && snopt_info <= 10
-        obj.publishTraj(xtraj,snopt_info);
       end
     end
     
