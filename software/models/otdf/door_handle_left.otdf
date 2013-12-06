@@ -60,6 +60,7 @@
         <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
     </joint>
+
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="box_0" />
@@ -74,18 +75,21 @@
         <grasp_type type="9" />
         <state num_joints="0" joint_names="" joint_positions="" />
     </grasp_seed>
+
+
     <grasp_seed>
-        <appendage type="HAND" />
+        <appendage type="FOOT" />
         <geometry name="box_0" />
-        <relative_pose rpy="0.000294769 -0.261536 3.14122" xyz="0.0507473 0.003 0.075557" />
-        <grasp_type type="10" />
-        <state num_joints="0" joint_names="" joint_positions="" />
+        <relative_pose rpy="0 0 0" xyz="-0.7 -0.1 -1" />
+        <grasp_type type="0" />
+        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
+
     <grasp_seed>
-        <appendage type="HAND" />
+        <appendage type="FOOT" />
         <geometry name="box_0" />
-        <relative_pose rpy="0.000294769 -0.261536 3.14122" xyz="0.0229623 0.003 0.166225" />
-        <grasp_type type="10" />
-        <state num_joints="0" joint_names="" joint_positions="" />
+        <relative_pose rpy="0 0 0" xyz="-0.7 -0.3 -1" />
+        <grasp_type type="1" />
+        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
 </object>
