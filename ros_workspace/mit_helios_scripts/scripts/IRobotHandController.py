@@ -100,7 +100,7 @@ class IRobotHandController(object):
         if motor_encoder_ticks < 0:
             motor_encoder_ticks = 0
         if motor_encoder_ticks < 5.8865e3:
-            estimated_angles = -0.0298 * motor_encoder_ticks + 0.6152
+            estimated_angles = -0.0298e-3 * motor_encoder_ticks + 0.6152
         else:
             estimated_angles = 0.5159e-3 * motor_encoder_ticks - 2.5971
         return estimated_angles

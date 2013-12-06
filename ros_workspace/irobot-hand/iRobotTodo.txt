@@ -8,11 +8,10 @@ TODO:
 * investigate 'getting stuck' in position control mode
 
 FOCUS FOR TODAY:
-* improve visualization
-* calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
 * get rid of unused methods in IRobotHandController, add optional arguments
 
 BUSY:
+* improve visualization
 
 DONE:
 * ping hand
@@ -83,3 +82,4 @@ DONE:
 * make 10 spare tendons
 * fix find_calibration_pose script
 * better calibration pose
+* calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
