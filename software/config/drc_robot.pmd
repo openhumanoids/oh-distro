@@ -62,6 +62,10 @@ group "a.0.hand_drivers" {
         exec = "robotiq_tcp_node LEFT 192.168.40.101";
         host = "robot";
     }
+    cmd "robotiq-status2state" {
+        exec = "robotiq_status2state";
+        host = "robot";
+    }
 }
 
 group "a.1.core" {
@@ -318,6 +322,7 @@ script "prep_LP_RR_valve" {
     start cmd "base_model_LP_RR";
     run_script "prep_core";
     start cmd "robotiq-right";
+    start cmd "robotiq-status2state";
 }
 
 script "prep_LI_RR_hose_walking" { 
@@ -327,6 +332,7 @@ script "prep_LI_RR_hose_walking" {
     start cmd "aa-ros2lcm-hands";
     start cmd "irobot-left";
     start cmd "robotiq-right";
+    start cmd "robotiq-status2state";
 }
 
 script "prep_LI_RR_extender_debris" { 
@@ -336,6 +342,7 @@ script "prep_LI_RR_extender_debris" {
     start cmd "aa-ros2lcm-hands";
     start cmd "irobot-left";
     start cmd "robotiq-right";
+    start cmd "robotiq-status2state";
 }
 
 script "prep_LH_RH_ladder" {
@@ -355,6 +362,7 @@ script "prep_LQ_RP_drill" {
     start cmd "base_model_LQ_RP";
     run_script "prep_core";
     start cmd "robotiq-left";
+    start cmd "robotiq-status2state";
 }
 
 script "simple_grasp" {
