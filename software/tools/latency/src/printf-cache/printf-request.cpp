@@ -52,7 +52,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, int request_):
       got_robot=false;
       got_extra=true;//false;
       
-    lcm_->subscribe( "PMD_INFO2" ,&Pass::infoHandler,this);  
+   // lcm_->subscribe( "PMD_INFO2" ,&Pass::infoHandler,this);  
     lcm_->subscribe( "PMD_PRINTF_REPLY" ,&Pass::replyHandler,this);  
 }
 
@@ -99,7 +99,7 @@ void Pass::replyHandler(const lcm::ReceiveBuffer* rbuf,
       string_last.erase(std::remove(string_last.begin(), string_last.end(), '\n'), string_last.end());
       std::cout << i<<": " << string_last << "\n";
   }	
-  exit(-1);
+//  exit(-1);
 }
 
 void Pass::infoHandler(const lcm::ReceiveBuffer* rbuf, 
