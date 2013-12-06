@@ -48,17 +48,20 @@ public:
         
 
     // Combine all joint names into one variable. Used by Toby in the shapers
-    all_joint_names.append(atlas_joint_names);
-    all_joint_names.append(head_joint_names);
-    // all_joint_names.append(simple_head_joint_names); // skipped as its in the above
-    all_joint_names.append(sandia_l_joint_names);
-    all_joint_names.append(sandia_r_joint_names);
+    all_joint_names.insert(all_joint_names.end(), atlas_joint_names.begin(), atlas_joint_names.end());
+    
+    all_joint_names.insert(all_joint_names.end(), head_joint_names.begin(), head_joint_names.end());    
+    // all_joint_names.insert(all_joint_names.end(), simple_head_joint_names.begin(), simple_head_joint_names.end()); // skipped as its in the above
+    
+    all_joint_names.insert(all_joint_names.end(), sandia_l_joint_names.begin(), sandia_l_joint_names.end());
+    all_joint_names.insert(all_joint_names.end(), sandia_r_joint_names.begin(), sandia_r_joint_names.end());
+    
+    all_joint_names.insert(all_joint_names.end(), irobot_l_joint_names.begin(), irobot_l_joint_names.end());
+    all_joint_names.insert(all_joint_names.end(), irobot_r_joint_names.begin(), irobot_r_joint_names.end());
+    
+    all_joint_names.insert(all_joint_names.end(), robotiq_l_joint_names.begin(), robotiq_l_joint_names.end());
+    all_joint_names.insert(all_joint_names.end(), robotiq_r_joint_names.begin(), robotiq_r_joint_names.end());
 
-    all_joint_names.append(irobot_l_joint_names);
-    all_joint_names.append(irobot_r_joint_names);
-
-    all_joint_names.append(robotiq_l_joint_names);
-    all_joint_names.append(robotiq_r_joint_names);
   };
   ~JointUtils() {}
   
