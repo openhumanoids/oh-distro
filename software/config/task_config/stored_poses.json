@@ -435,6 +435,20 @@
       }, 
       "name": "hose walking", 
       "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "tuck ther other  arm out of the way", 
+      "joints": {
+        "l_arm_elx": 0.5283812284469604, 
+        "l_arm_ely": 3.141590118408203, 
+        "l_arm_mwx": 0.02423405833542347, 
+        "l_arm_shx": -0.9689168930053711, 
+        "l_arm_usy": 0.785398006439209, 
+        "l_arm_uwy": 3.141590118408203
+      }, 
+      "name": "tuckarm", 
+      "nominal_handedness": "left"
     }
   ]
 }
