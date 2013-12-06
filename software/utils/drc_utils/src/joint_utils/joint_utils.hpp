@@ -16,7 +16,7 @@ public:
     head_joint_names = {"hokuyo_joint","pre_spindle_cal_x_joint", "pre_spindle_cal_y_joint", 
         "pre_spindle_cal_z_joint", "pre_spindle_cal_roll_joint", "pre_spindle_cal_pitch_joint", 
         "pre_spindle_cal_yaw_joint", "post_spindle_cal_x_joint", "post_spindle_cal_y_joint", 
-        "post_spindle_cal_z_joint", "post_spindle_cal_roll_joint", "post_spindle_cal_pitch_joint", "post_spindle_cal_yaw_joint" };  
+        "post_spindle_cal_z_joint", "post_spindle_cal_roll_joint", "post_spindle_cal_pitch_joint", "post_spindle_cal_yaw_joint" };
     simple_head_joint_names =  {"hokuyo_joint"}; // used in simulation
         
     
@@ -47,6 +47,7 @@ public:
         "right_palm_finger_1_joint", "right_palm_finger_2_joint"};
         
 
+    // Combine all joint names into one variable. Used by Toby in the shapers
     all_joint_names.append(atlas_joint_names);
     all_joint_names.append(head_joint_names);
     // all_joint_names.append(simple_head_joint_names); // skipped as its in the above
