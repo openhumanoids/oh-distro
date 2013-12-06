@@ -6,8 +6,10 @@ motorHallEncoders = [data.motorHallEncoder0, data.motorHallEncoder1, data.motorH
 proximalJointAngles = [data.proximalJointAngle0, data.proximalJointAngle1, data.proximalJointAngle2];
 distalJointAngles = [data.distalJointAngle0, data.distalJointAngle1, data.distalJointAngle2];
 
-piecewiseLinearFit(motorHallEncoders, proximalJointAngles, 'motor tendon excursion', 'proximal joint angle', 3);
-piecewiseLinearFit(motorHallEncoders, distalJointAngles, 'motor tendon excursion', 'distal joint angle', 3);
+piecewiseLinearFit(motorHallEncoders(:, 1:2), proximalJointAngles(:, 1:2), 'motor tendon excursion', 'proximal joint angle 1 2', 3);
+piecewiseLinearFit(motorHallEncoders(:, 3), proximalJointAngles(:, 3), 'motor tendon excursion', 'proximal joint angle 3', 3);
+piecewiseLinearFit(motorHallEncoders(:, 1:2), distalJointAngles(:, 1:2), 'motor tendon excursion', 'distal joint angle 1 2', 3);
+piecewiseLinearFit(motorHallEncoders(:, 3), distalJointAngles(:, 3), 'motor tendon excursion', 'distal joint angle 3', 3);
 
 end
 
@@ -27,6 +29,7 @@ yKnotSol = param(nKnotPoints - 1 : end);
 slopes = diff(yKnotSol) ./ diff(xKnotSol);
 yAxisIntercepts = yKnotSol(2 : end) - slopes .* xKnotSol(2 : end);
 
+disp(yName);
 fprintf('xKnotSol:\n');
 disp(xKnotSol);
 

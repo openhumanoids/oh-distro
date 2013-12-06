@@ -74,8 +74,8 @@ class IRobotHandController(object):
 
     def publish_hand_state(self):        
         state_message = MITIRobotHandState()
-        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(self.motor_encoders_with_offset[i]) for i in close_hand_motor_indices]
-        state_message.distalJointAngle = [IRobotHandController.estimate_distal_joint_angle(self.motor_encoders_with_offset[i]) for i in close_hand_motor_indices]
+        state_message.proximalJointAngle = [IRobotHandController.estimate_proximal_joint_angle(self.motor_encoders_with_offset[i], i) for i in close_hand_motor_indices]
+        state_message.distalJointAngle = [IRobotHandController.estimate_distal_joint_angle(self.motor_encoders_with_offset[i], i) for i in close_hand_motor_indices]
         state_message.fingerSpread = finger_spread_ticks_to_radians * self.sensors.fingerSpread
         self.state_publisher.publish(state_message)
 
@@ -83,27 +83,43 @@ class IRobotHandController(object):
     mapping found using mit_helios_scripts/matlab/irobot_hand_joint_angle_estimation.m
     """
     @staticmethod
-    def estimate_proximal_joint_angle(motor_encoder_ticks):
-        if motor_encoder_ticks < 0:
-            motor_encoder_ticks = 0
-        if motor_encoder_ticks < 5.7514e3:
-            estimated_angles = 0.5035e-3 * motor_encoder_ticks - 0.3528
+    def estimate_proximal_joint_angle(motor_encoder_ticks, index):
+        if index in range(2):
+            if motor_encoder_ticks < 5.2530e3:
+                estimated_angle = 0.5186e-3 * motor_encoder_ticks -0.1026
+            else:
+                estimated_angle = 0.0128e-3 * motor_encoder_ticks + 2.5542
+        elif index == 2:
+            if motor_encoder_ticks < 4.8574e3:
+                estimated_angle =  0.5301e-3 * motor_encoder_ticks + 0.0002
+            else:
+                estimated_angle = -0.0056e-3 * motor_encoder_ticks + 2.6021
         else:
-            estimated_angles = 0.0440e-3 * motor_encoder_ticks + 2.2900
-        return estimated_angles
+            raise RuntimeError('index not recognized')
+
+        if estimated_angle < 0:
+            estimated_angle = 0
+        return estimated_angle
 
     """
     mapping found using mit_helios_scripts/matlab/irobot_hand_joint_angle_estimation.m
     """
     @staticmethod
-    def estimate_distal_joint_angle(motor_encoder_ticks):
-        if motor_encoder_ticks < 0:
-            motor_encoder_ticks = 0
-        if motor_encoder_ticks < 5.8865e3:
-            estimated_angles = -0.0298e-3 * motor_encoder_ticks + 0.6152
+    def estimate_distal_joint_angle(motor_encoder_ticks, index):
+        if index in range(2):
+            if motor_encoder_ticks < 5.5242e3:
+                estimated_angle = -0.0186e-3 * motor_encoder_ticks + 0.3792
+            else:
+                estimated_angle = 0.5967e-3 * motor_encoder_ticks -3.0199
+        elif index == 2:
+            if motor_encoder_ticks < 4.9278e3:
+                estimated_angle = -0.0505e-3 * motor_encoder_ticks + 0.6206
+            else:
+                estimated_angle = 0.490e-3 * motor_encoder_ticks -2.0430
         else:
-            estimated_angles = 0.5159e-3 * motor_encoder_ticks - 2.5971
-        return estimated_angles
+            raise RuntimeError('index not recognized')
+                    
+        return estimated_angle
 
     @staticmethod
     def compute_proximal_joint_angle(proximal_joint_angle_ticks):
