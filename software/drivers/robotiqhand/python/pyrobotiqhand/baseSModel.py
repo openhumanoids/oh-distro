@@ -317,8 +317,14 @@ class robotiqBaseSModel(object):
     def getStatus(self):
         """Request the status from the gripper and return it in the SModel_robot_input msg type."""
 
+        if not self.client:
+            return
+
         #Acquire status from the Gripper
-        rawStatData = self.client.getStatus(16);
+        rawStatData = self.client.getStatus(16)
+
+        if rawStatData == []:
+            return
 
         #Use converter object to get the data
         self.status.populateStatus(rawStatData)

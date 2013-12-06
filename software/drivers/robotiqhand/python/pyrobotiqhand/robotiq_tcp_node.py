@@ -9,11 +9,11 @@ sys.path.append(home_dir + "/software/build/lib/python2.7/dist-packages")
 import lcm
 import select
 import drc
+from time import sleep, time
+from drc.hand_state_t import hand_state_t
 
 import pyrobotiqhand.baseSModel as baseSModel
 import pyrobotiqhand.comModbusTcp as comModbusTcp
-
-from time import sleep, time
 
 connectPublished = False
 activePublished = False
@@ -41,6 +41,53 @@ def publishSystemStatus(side, lcm, status):
             msg.value = side.upper() + " ROBOTIQ HAND ALIVE: Receiving status messages"
             lcm.publish("SYSTEM_STATUS", msg.encode())
             connectPublished = True
+
+l_names = [ "left_finger_1_joint_1", "left_finger_1_joint_2", "left_finger_1_joint_3",
+        "left_finger_2_joint_1", "left_finger_2_joint_2", "left_finger_2_joint_3",
+        "left_finger_middle_joint_1", "left_finger_middle_joint_2", "left_finger_middle_joint_3",
+        "left_palm_finger_1_joint", "left_palm_finger_2_joint"]
+r_names = [ "right_finger_1_joint_1", "right_finger_1_joint_2", "right_finger_1_joint_3",
+        "right_finger_2_joint_1", "right_finger_2_joint_2", "right_finger_2_joint_3",
+        "right_finger_middle_joint_1", "right_finger_middle_joint_2", "right_finger_middle_joint_3",
+        "right_palm_finger_1_joint", "right_palm_finger_2_joint"]
+
+def get_mapping(input_val):
+    return 1.0*input_val/255
+
+def publishJointStates(side, lcm, status):
+    global l_names
+    global r_names
+
+    state = hand_state_t()
+    state.utime = status.utime
+    state.num_joints = 11
+
+    state.joint_velocity = [0]*11
+    state.joint_effort = [0]*11
+    state.joint_position = [0]*11
+
+    state.joint_position[0] = get_mapping(status.positionA)
+    state.joint_position[1] = get_mapping(status.positionA)
+    state.joint_position[2] = get_mapping(status.positionA)
+
+    state.joint_position[3] = get_mapping(status.positionB)
+    state.joint_position[4] = get_mapping(status.positionB)
+    state.joint_position[5] = get_mapping(status.positionB)
+
+    state.joint_position[6] = get_mapping(status.positionC)
+    state.joint_position[7] = get_mapping(status.positionC)
+    state.joint_position[8] = get_mapping(status.positionC)
+
+    state.joint_position[9] = -0.002 * (status.positionS-137)
+    state.joint_position[10] = 0.002 * (status.positionS-137)
+
+    if (side[0] == 'r'):
+        state.joint_name = r_names
+        lcm.publish("ROBOTIQ_" + side.upper() + "_STATE", state.encode())
+    else:
+        state.joint_name = l_names
+        lcm.publish("ROBOTIQ_" + side.upper() + "_STATE", state.encode())
+
 
 def mainLoop(side, address):
 
@@ -71,10 +118,12 @@ def mainLoop(side, address):
     try:
         while True:
             #Get and publish the Gripper status
-            status = gripper.getStatus()
-            publishSystemStatus(side, lc, status)
-            if status:
-                lc.publish(status_topic, status.encode())
+            if gripper:
+                status = gripper.getStatus()
+                if status:
+                    publishSystemStatus(side, lc, status)
+                    publishJointStates(side, lc, status)
+                    lc.publish(status_topic, status.encode())
 
             res = p.poll(timeout)
             if res:
@@ -82,7 +131,7 @@ def mainLoop(side, address):
 
                 #Send the most recent command
                 gripper.sendCommand()
-                print "command processed"
+                print "command received"
 
                 sleep(0.03)
             else:
