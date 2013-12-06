@@ -3,6 +3,8 @@
 #include <thread>
 #include <mutex>
 #include <unordered_map>
+#include <string>
+#include <algorithm>
 
 #include <gtkmm.h>
 #include <GL/gl.h>
@@ -90,6 +92,9 @@ protected:
 
   bool mMinimalAffordances;
   int mControllerHeightMapMode;
+  
+  Gtk::Label* mNeckPitchLabel;
+  int64_t mLastNeckPitchLabelUpdateTime;
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
   Gtk::TreeView* mAffordanceListBox;
@@ -109,7 +114,7 @@ public:
                           iParam, iFrames, 0) {
 
     mGraspNames = { "cylindrical", "spherical", "prismatic" };
-
+    mLastNeckPitchLabelUpdateTime = 0;
     // set up robot time clock
     drc::Clock::instance()->setLcm(getLcm());
     drc::Clock::instance()->setVerbose(false);
@@ -124,7 +129,10 @@ public:
     // create update timer
     Glib::signal_timeout().connect
       (sigc::mem_fun(*this, &DataControlRenderer::checkTimers), 500);
-
+      
+    // create a subscription to EST_ROBOT_STATE and update some widget labels
+    getLcm()->subscribe("EST_ROBOT_STATE", &DataControlRenderer::on_robot_state, this);
+       
     // create affordance update timer
     Glib::signal_timeout().connect
       (sigc::mem_fun(*this, &DataControlRenderer::checkAffordances), 500);
@@ -133,6 +141,24 @@ public:
   ~DataControlRenderer() {
   }
 
+  void on_robot_state(const lcm::ReceiveBuffer* rbuf,
+                      const std::string& chan,
+                      const drc::robot_state_t * msg)
+  { 
+    std::vector<std::string>::const_iterator found;
+    found = std::find(msg->joint_name.begin(), msg->joint_name.end(), "neck_ay"); 
+    int64_t currentTime = msg->utime;
+    int dtSec = (currentTime - mLastNeckPitchLabelUpdateTime)/1000000;
+    if ((found !=msg->joint_name.end())&&(dtSec>1)) {
+      unsigned int index = found - msg->joint_name.begin();
+      std::stringstream oss;
+      oss << msg->joint_position[index]*(180/M_PI);
+      std::string text = "Pitch ("+ oss.str() + " deg)";
+      mNeckPitchLabel->set_text(text); // update neck label.
+      mLastNeckPitchLabelUpdateTime= currentTime;
+   }
+  }	
+  
   bool checkTimers() {
     int64_t currentTime = drc::Clock::instance()->getCurrentWallTime();
     std::unordered_map<std::string, TimeKeeper>::const_iterator iter;
@@ -702,14 +728,15 @@ public:
     sensorControlTable->attach(*spin, 1, 2, yCur, yCur+1, xOpts, yOpts);
     sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
     ++yCur;
-
-    label = Gtk::manage(new Gtk::Label("Pitch (deg)", Gtk::ALIGN_RIGHT));
+    
+    //label = Gtk::manage(new Gtk::Label("Pitch (deg)", Gtk::ALIGN_RIGHT));
+    mNeckPitchLabel= Gtk::manage(new Gtk::Label("Pitch (deg)", Gtk::ALIGN_RIGHT));
     mDummyIntValue = 45;
     spin = gtkmm::RendererBase::createSpin(mDummyIntValue, -90, 90, 5);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->onHeadPitchControlButton(spin->get_value());});
-    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*mNeckPitchLabel, 0, 1, yCur, yCur+1, xOpts, yOpts);
     sensorControlTable->attach(*spin, 1, 2, yCur, yCur+1, xOpts, yOpts);
     sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
     ++yCur;
