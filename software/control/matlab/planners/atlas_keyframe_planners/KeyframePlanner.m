@@ -113,7 +113,7 @@ classdef KeyframePlanner < handle
             obj.T_hand_palm_l_irobot = HT([0;0.11516;0.015],1.57079,3.14159,3.14159);
             obj.T_hand_palm_r_irobot = HT([0;-0.11516;-0.015],1.57079,0,0);
  
-% might be useful for the extenders           
+            % might be useful for the extenders           
 %            obj.T_hand_palm_l_irobot = HT([0;0.322;0.015],1.57079,3.14159,3.14159);
 %            obj.T_hand_palm_r_irobot = HT([0;-0.322;-0.015],1.57079,0,0);
 

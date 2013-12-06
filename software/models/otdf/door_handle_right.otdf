@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<object name="door_handle">
+<object name="door_handle_right">
     <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
     <!-- World frame origin of the object -->
     <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
@@ -16,26 +16,6 @@
     <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
     <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
     <link name="base_link" />
-    <!--<link name="cylinder">-->
-    <!--<inertial>-->
-    <!--   <mass value="${(Density*(3.141^2)*(length)*(radius^2))}" />-->
-    <!--   <inertia ixx="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}"  ixy="0.0" ixz="0.0"-->
-    <!--            iyy="${((Density*(3.141^2)*(length)*(radius^2))/12)*(3*(radius^2)+(length^2))}" iyz="0.0"-->
-    <!--            izz="${((Density*(3.141^2)*(length)*(radius^2))/2)*(radius^2)}" />-->
-    <!--</inertial>-->
-    <!--	<visual>-->
-    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
-    <!--		<geometry>-->
-    <!--			<cylinder radius="${radius}" length="${length}"/> -->
-    <!--		</geometry>-->
-    <!--	</visual>-->
-    <!--	<collision>-->
-    <!--		<origin rpy="0 0 0" xyz="0 0 0"/>-->
-    <!--		<geometry>-->
-    <!--			<cylinder radius="${radius}" length="${length}"/> -->
-    <!--		</geometry>-->
-    <!--	</collision>-->
-    <!--</link>-->
     <link name="box">
         <inertial>
             <mass value="${mass}" />
@@ -60,7 +40,7 @@
         <origin rpy="0 0 0" xyz="0 0 0" />
         <axis xyz="0 0 1" />
     </joint>
-
+<!-- BDI hooks right
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="box_0" />
@@ -75,7 +55,22 @@
         <grasp_type type="10" />
         <state num_joints="0" joint_names="" joint_positions="" />
     </grasp_seed>
-
+-->
+<!-- Pointers right -->
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="box_0" />
+        <relative_pose rpy="0.0 0.0 3.14157" xyz="0.100675 -0.003 0.148352" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="box_0" />
+        <relative_pose rpy="0.0 0.0 3.14157" xyz="0.0829694 -0.003 0.20" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
 
     <grasp_seed>
         <appendage type="FOOT" />

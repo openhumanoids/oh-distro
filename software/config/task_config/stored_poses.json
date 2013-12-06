@@ -64,6 +64,26 @@
       }, 
       "name": "turn back", 
       "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "both hands down", 
+      "joints": {
+        "l_arm_elx": 0.45820000767707825, 
+        "l_arm_ely": 1.8040870428085327, 
+        "l_arm_mwx": -0.05178241431713104, 
+        "l_arm_shx": -1.2976576089859009, 
+        "l_arm_usy": 0.23979197442531586, 
+        "l_arm_uwy": 0.00981099996715784, 
+        "r_arm_elx": -0.45820000767707825, 
+        "r_arm_ely": 1.8040870428085327, 
+        "r_arm_mwx": 0.05178241431713104, 
+        "r_arm_shx": 1.2976576089859009, 
+        "r_arm_usy": 0.23979197442531586, 
+        "r_arm_uwy": 0.00981099996715784
+      }, 
+      "name": "both handsdown", 
+      "nominal_handedness": "none"
     }
   ], 
   "debris": [
