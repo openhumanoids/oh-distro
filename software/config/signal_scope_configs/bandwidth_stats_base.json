@@ -1,0 +1,652 @@
+{
+  "plots": [
+
+
+    {
+      "signals": [
+        {
+          "arrayKeys": [
+            "0"
+          ], 
+          "channel": "TOTAL_BWPB", 
+          "color": [
+            255, 
+            0, 
+            0
+          ], 
+          "fieldName": "data", 
+          "messageType": "drc::drill_control_t", 
+          "visible": true
+        }
+                 ], 
+      "timeWindow": 10, 
+      "ymin": 0, 
+      "ymax": 200,
+      "curveStyle": "lines"
+    },
+
+    {
+      "signals": 
+
+
+
+
+[
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "MAP_REQUEST_BWPB", 
+    "color": [
+      0, 
+      0, 
+      255
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "SENSOR_REQUEST_BWPB", 
+    "color": [
+      165, 
+      42, 
+      42
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "COMMITTED_FOOTSTEP_PLAN_BWPB", 
+    "color": [
+      138, 
+      43, 
+      226
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "PMD_ORDERS_BWPB", 
+    "color": [
+      95, 
+      158, 
+      160
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "PMD_ORDERS2_BWPB", 
+    "color": [
+      255, 
+      127, 
+      80
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "DATA_REQUEST_BWPB", 
+    "color": [
+      220, 
+      20, 
+      60
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "COMMITTED_ROBOT_PLAN_BWPB", 
+    "color": [
+      0, 
+      0, 
+      139
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "COMMITTED_GRASP_BWPB", 
+    "color": [
+      0, 
+      139, 
+      139
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "AFFORDANCE_PLUS_BOT_OVERWRITE_BWPB", 
+    "color": [
+      184, 
+      134, 
+      11
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "GAZE_COMMAND_BWPB", 
+    "color": [
+      0, 
+      100, 
+      0
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "DESIRED_NECK_PITCH_BWPB", 
+    "color": [
+      153, 
+      50, 
+      204
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "SIMPLE_GRASP_COMMAND_BWPB", 
+    "color": [
+      139, 
+      0, 
+      0
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "COMMITTED_MANIP_GAIN_BWPB", 
+    "color": [
+      34, 
+      139, 
+      34
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "COMMITTED_POSTURE_PRESET_BWPB", 
+    "color": [
+      205, 
+      92, 
+      92
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "PMD_PRINTF_REQUEST_BWPB", 
+    "color": [
+      75, 
+      0, 
+      130
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "COMMITTED_PLAN_PAUSE_BWPB", 
+    "color": [
+      72, 
+      61, 
+      139
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "RECOVERY_CMD_BWPB", 
+    "color": [
+      47, 
+      79, 
+      79
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "COMMITTED_EE_ADJUSTMENT_BWPB", 
+    "color": [
+      218, 
+      165, 
+      32
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "CONTROLLER_MODE_BWPB", 
+    "color": [
+      128, 
+      0, 
+      0
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "MAP_CONTROLLER_COMMAND_BWPB", 
+    "color": [
+      128, 
+      0, 
+      128
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "COMMITTED_MANIP_MAP_BWPB", 
+    "color": [
+      255, 
+      0, 
+      0
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "MOTIONEST_REQUEST_BWPB", 
+    "color": [
+      0, 
+      0, 
+      255
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "STOP_WALKING_BWPB", 
+    "color": [
+      165, 
+      42, 
+      42
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "MULTISENSE_COMMAND_BWPB", 
+    "color": [
+      138, 
+      43, 
+      226
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "MAP_REQUEST_BBOX_BWPB", 
+    "color": [
+      95, 
+      158, 
+      160
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_LEFT_SIMPLE_GRASP_BWPB", 
+    "color": [
+      255, 
+      127, 
+      80
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_RIGHT_SIMPLE_GRASP_BWPB", 
+    "color": [
+      220, 
+      20, 
+      60
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "SANDIA_LEFT_SIMPLE_GRASP_BWPB", 
+    "color": [
+      0, 
+      0, 
+      139
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "SANDIA_RIGHT_SIMPLE_GRASP_BWPB", 
+    "color": [
+      0, 
+      139, 
+      139
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_RIGHT_CALIBRATE_BWPB", 
+    "color": [
+      184, 
+      134, 
+      11
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_RIGHT_SPREAD_BWPB", 
+    "color": [
+      0, 
+      100, 
+      0
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_RIGHT_POSITION_CONTROL_CLOSE_BWPB", 
+    "color": [
+      153, 
+      50, 
+      204
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_RIGHT_CURRENT_CONTROL_CLOSE_BWPB", 
+    "color": [
+      139, 
+      0, 
+      0
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_LEFT_CALIBRATE_BWPB", 
+    "color": [
+      34, 
+      139, 
+      34
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_LEFT_SPREAD_BWPB", 
+    "color": [
+      205, 
+      92, 
+      92
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_LEFT_POSITION_CONTROL_CLOSE_BWPB", 
+    "color": [
+      75, 
+      0, 
+      130
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "IROBOT_LEFT_CURRENT_CONTROL_CLOSE_BWPB", 
+    "color": [
+      72, 
+      61, 
+      139
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "ROBOTIQ_LEFT_COMMAND_BWPB", 
+    "color": [
+      47, 
+      79, 
+      79
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "ROBOTIQ_RIGHT_COMMAND_BWPB", 
+    "color": [
+      218, 
+      165, 
+      32
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "OGG_CLIENT_BWPB", 
+    "color": [
+      128, 
+      0, 
+      0
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "PLAN_USING_BDI_HEIGHT_BWPB", 
+    "color": [
+      128, 
+      0, 
+      128
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "ATLAS_BEHAVIOR_COMMAND_BWPB", 
+    "color": [
+      255, 
+      0, 
+      0
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }, 
+  {
+    "arrayKeys": [
+      "0"
+    ], 
+    "channel": "ATLAS_MANIPULATE_PARAMS_BWPB", 
+    "color": [
+      0, 
+      0, 
+      255
+    ], 
+    "fieldName": "data", 
+    "messageType": "drc::drill_control_t", 
+    "visible": true
+  }
+]
+
+
+
+
+      , 
+      "timeWindow": 10, 
+      "ymin": 0, 
+      "ymax": 200,
+      "curveStyle": "lines"
+    }
+  ], 
+  "windowWidth": 2219, 
+  "windowHeight": 939
+}
+
