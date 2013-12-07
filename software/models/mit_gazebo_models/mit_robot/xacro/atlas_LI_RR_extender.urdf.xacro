@@ -23,7 +23,13 @@ New y seperation: 0 0.11516
 set z=0.015 as the irobot hand center is clearly aligned with the force torque
 still think that y seperaton could be improved
 
+1 dec:
 Extender is 8" - 0.2047m long
+
+6 dec:
+Newer extender is 6" - 0.1524m
+robotiq = 0.19016 +  0.1524 = 0.39486
+irobot  = 0.11516 +  0.1524 = 0.26756
 -->
 
 
@@ -32,11 +38,11 @@ Extender is 8" - 0.2047m long
 
 
   <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">
-    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.322 0.015"/>
+    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.26756 0.015"/>
   </xacro:irobot_hand>
 
   <xacro:robotiq_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="0 3.141 3.141" xyz="0 -0.397 -0.015"/>
+    <origin rpy="0 3.141 3.141" xyz="0 -0.34256 -0.015"/>
   </xacro:robotiq_hand>
 
 
