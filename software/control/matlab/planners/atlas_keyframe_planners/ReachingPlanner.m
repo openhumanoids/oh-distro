@@ -30,9 +30,9 @@ classdef ReachingPlanner < KeyframePlanner
             obj.restrict_feet=true;
             obj.planning_mode = 1;
             obj.hand_space = HandWorkspace([getenv('DRC_PATH'),'/control/matlab/data/HandWorkSpace.mat']);
-            obj.max_ik_trial = 5;
-            obj.setPosTol(0.03); % 3 cm maximum
-            obj.setQuatTol(12); % 12 degrees maximum
+            obj.max_ik_trial = 6;
+            obj.setPosTol(2); % exponential of 2 cm 
+            obj.setQuatTol(2); % exponential of 2 degrees
         end
         
         function setPlanningMode(obj,val)
@@ -188,6 +188,9 @@ classdef ReachingPlanner < KeyframePlanner
             
             disp('Generating plan...');
             send_status(3,0,0,'Generating  plan...');
+            % I am going to use the palm point instead of hand point
+            r_palm_pt = obj.T_hand_palm_r(1:3,4);
+            l_palm_pt = obj.T_hand_palm_l(1:3,4);
             
             q0 = x0(1:getNumDOF(obj.r));
             q0_bound = obj.checkPosture(q0);
@@ -206,8 +209,8 @@ classdef ReachingPlanner < KeyframePlanner
             
             
             % compute EE trajectories
-            r_hand_pose0 = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],2);
-            l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],2);
+            r_hand_pose0 = forwardKin(obj.r,kinsol,obj.r_hand_body,r_palm_pt,2);
+            l_hand_pose0 = forwardKin(obj.r,kinsol,obj.l_hand_body,l_palm_pt,2);
             pelvis_pose0 = forwardKin(obj.r,kinsol,obj.pelvis_body,[0;0;0],2);
             utorso_pose0 = forwardKin(obj.r,kinsol,obj.utorso_body,[0;0;0],2);
             
@@ -218,7 +221,7 @@ classdef ReachingPlanner < KeyframePlanner
             obj.restrict_feet=true;
             
             if(isempty(rh_ee_goal))
-                rh_ee_goal = forwardKin(obj.r,kinsol,obj.r_hand_body,[0;0;0],1);
+                rh_ee_goal = forwardKin(obj.r,kinsol,obj.r_hand_body,r_palm_pt,1);
                 rhandT = [nan;nan;nan;nan;nan;nan];
             else
               if(goal_type_flags.rh ~=2)
@@ -228,13 +231,14 @@ classdef ReachingPlanner < KeyframePlanner
                 T_world_hand_r = T_world_palm_r*obj.T_palm_hand_r;
                 rhandT(1:3) = T_world_hand_r(1:3,4);
                 rhandT(4:6) =rotmat2rpy(T_world_hand_r(1:3,1:3));
+                rhandT(1:3) = rh_ee_goal(1:3);
               else
                 rhandT = rh_ee_goal(1:6);
               end
             end
             
             if(isempty(lh_ee_goal))
-                lh_ee_goal = forwardKin(obj.r,kinsol,obj.l_hand_body,[0;0;0],1);
+                lh_ee_goal = forwardKin(obj.r,kinsol,obj.l_hand_body,l_palm_pt,1);
                 lhandT = [nan;nan;nan;nan;nan;nan];
             else
               if(goal_type_flags.lh ~= 2)
@@ -244,6 +248,7 @@ classdef ReachingPlanner < KeyframePlanner
                 T_world_hand_l = T_world_palm_l*obj.T_palm_hand_l;
                 lhandT(1:3) = T_world_hand_l(1:3,4);
                 lhandT(4:6) =rotmat2rpy(T_world_hand_l(1:3,1:3));
+                lhandT(1:3) = lh_ee_goal(1:3);
               else
                 lhandT = lh_ee_goal(1:6);
               end
@@ -370,8 +375,8 @@ classdef ReachingPlanner < KeyframePlanner
             
             
             % Constraints for hands
-            rhand_constraint0 = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0,0,0,[s(1) s(1)]);
-            lhand_constraint0 = parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0,0,0,[s(1) s(1)]);
+            rhand_constraint0 = parse2PosQuatConstraint(obj.r,obj.r_hand_body,r_palm_pt,r_hand_pose0,0,0,[s(1) s(1)]);
+            lhand_constraint0 = parse2PosQuatConstraint(obj.r,obj.l_hand_body,l_palm_pt,l_hand_pose0,0,0,[s(1) s(1)]);
             
             iktraj_rhand_constraint = [iktraj_rhand_constraint,rhand_constraint0];
             iktraj_lhand_constraint = [iktraj_lhand_constraint,lhand_constraint0];
@@ -424,10 +429,10 @@ classdef ReachingPlanner < KeyframePlanner
             if(obj.planning_mode == 3)% teleop mode
               pelvis_constraint = [pelvis_constraint,parse2PosQuatConstraint(obj.r,obj.pelvis_body,[0;0;0],pelvis_pose0,0,0,[1,1])];
               if(rhand_poseT_isnan)
-                rhand_constraint = [rhand_constraint,parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose0,0,0,[1,1])];
+                rhand_constraint = [rhand_constraint,parse2PosQuatConstraint(obj.r,obj.r_hand_body,r_palm_pt,r_hand_pose0,0,0,[1,1])];
               end
               if(lhand_poseT_isnan)
-                lhand_constraint = [lhand_constraint,parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_pose0,0,0,[1,1])];
+                lhand_constraint = [lhand_constraint,parse2PosQuatConstraint(obj.r,obj.l_hand_body,l_palm_pt,l_hand_pose0,0,0,[1,1])];
               end
               if(head_poseT_isnan)
                 head_constraint = [head_constraint,parse2PosQuatConstraint(obj.r,obj.head_body,[0;0;0],head_pose0,0,0,[1,1])];
@@ -471,12 +476,12 @@ classdef ReachingPlanner < KeyframePlanner
               pos_tol = pos_tol_order_array(ik_trial);
               quat_tol = quat_tol_order_array(ik_trial);
               if(~rhand_poseT_isnan)
-                  rhand_constraint = [rhand_constraint_no_relax,parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_poseT,pos_tol,quat_tol,[1,1])];
+                  rhand_constraint = [rhand_constraint_no_relax,parse2PosQuatConstraint(obj.r,obj.r_hand_body,r_palm_pt,r_hand_poseT,pos_tol,quat_tol,[1,1])];
                   iktraj_rhand_constraint = [iktraj_rhand_constraint_no_relax,rhand_constraint];
               end
 
               if(~lhand_poseT_isnan)
-                  lhand_constraint = [lhand_constraint_no_relax,parse2PosQuatConstraint(obj.r,obj.l_hand_body,[0;0;0],l_hand_poseT,pos_tol,quat_tol,[1,1])];
+                  lhand_constraint = [lhand_constraint_no_relax,parse2PosQuatConstraint(obj.r,obj.l_hand_body,l_palm_pt,l_hand_poseT,pos_tol,quat_tol,[1,1])];
                   iktraj_lhand_constraint = [iktraj_lhand_constraint_no_relax,lhand_constraint];
               end
 
@@ -708,22 +713,12 @@ classdef ReachingPlanner < KeyframePlanner
         %-----------------------------------------------------------------------------------------------------------------
         
         
-        function setPosTol(obj,pos_tol)
-          if(pos_tol<0)
-            error('Tolerance must be nonnegative');
-          end
-          pos_tol_array1 = linspace(0,pos_tol/3,ceil(obj.max_ik_trial/2));
-          pos_tol_array2 = linspace(pos_tol/3,pos_tol,obj.max_ik_trial-ceil(obj.max_ik_trial/2)+1);
-          obj.pos_tol_array = [pos_tol_array1 pos_tol_array2(2:end)];
+        function setPosTol(obj,pos_step)
+          obj.pos_tol_array = [0 pos_step.^(0:0.5:(obj.max_ik_trial-2)/2)/100];
         end
         
-        function setQuatTol(obj,angle_tol)
-          if(angle_tol<0 || angle_tol>180)
-            error('tolerance is within [0 180] degrees');
-          end
-          angle_tol_array1 = linspace(0,angle_tol/3,ceil(obj.max_ik_trial/2));
-          angle_tol_array2 = linspace(angle_tol/3,angle_tol,obj.max_ik_trial-ceil(obj.max_ik_trial/2)+1);
-          obj.quat_tol_array = sind([angle_tol_array1 angle_tol_array2(2:end)]).^2;
+        function setQuatTol(obj,angle_step)
+          obj.quat_tol_array = sind([0,angle_step.^(0:0.5:(obj.max_ik_trial-2)/2)]).^2;
         end
         
         function [pos_tol,quat_tol] = getRelaxationTol(obj)
