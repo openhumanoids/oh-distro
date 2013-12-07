@@ -98,6 +98,76 @@
       }, 
       "name": "Zero all arm joints - dont do", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 3 C", 
+      "joints": {
+        "l_arm_elx": 1.1472582817077637, 
+        "l_arm_ely": 0.20761220157146454, 
+        "l_arm_mwx": 0.11008258908987045, 
+        "l_arm_shx": -0.8746435642242432, 
+        "l_arm_usy": 0.2129143923521042, 
+        "l_arm_uwy": 0.059745460748672485
+      }, 
+      "name": "retact 3 C", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 4 A", 
+      "joints": {
+        "l_arm_elx": 0.20683471858501434, 
+        "l_arm_ely": 2.7119221687316895, 
+        "l_arm_mwx": -1.1653659343719482, 
+        "l_arm_shx": -0.4637797772884369, 
+        "l_arm_usy": -1.4389861822128296, 
+        "l_arm_uwy": 3.0893540382385254
+      }, 
+      "name": "retact 4 A", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 4 A better", 
+      "joints": {
+        "l_arm_elx": 0.747405469417572, 
+        "l_arm_ely": 2.23557710647583, 
+        "l_arm_mwx": -0.8642046451568604, 
+        "l_arm_shx": -0.4637797772884369, 
+        "l_arm_usy": -1.4389861822128296, 
+        "l_arm_uwy": 2.646191358566284
+      }, 
+      "name": "retact 4 A better", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 4 A better (remove the other one)", 
+      "joints": {
+        "l_arm_elx": 0.747405469417572, 
+        "l_arm_ely": 2.23557710647583, 
+        "l_arm_mwx": -1.005751132965088, 
+        "l_arm_shx": -0.4637797772884369, 
+        "l_arm_usy": -1.4389861822128296, 
+        "l_arm_uwy": 2.8884005546569824
+      }, 
+      "name": "retact 4 A better (remove the other one)", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 5 A ", 
+      "joints": {
+        "l_arm_elx": 1.8459675312042236, 
+        "l_arm_ely": 1.9566855430603027, 
+        "l_arm_mwx": 0.8667466640472412, 
+        "l_arm_shx": -0.05010373517870903, 
+        "l_arm_usy": -0.7652769088745117, 
+        "l_arm_uwy": 3.141589403152466
+      }, 
+      "name": "retact 5 A ", 
+      "nominal_handedness": "left"
     }
   ], 
   "debris": [
@@ -160,6 +230,104 @@
       }, 
       "name": "poolqueue", 
       "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 1 A", 
+      "joints": {
+        "l_arm_elx": 0.1613728553056717, 
+        "l_arm_ely": 2.657864570617676, 
+        "l_arm_mwx": 0.6600790619850159, 
+        "l_arm_shx": -1.198436975479126, 
+        "l_arm_usy": -0.9115458726882935, 
+        "l_arm_uwy": 1.2960577011108398
+      }, 
+      "name": "retact 1 A", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 1 A fixed", 
+      "joints": {
+        "l_arm_elx": 1.2072020769119263, 
+        "l_arm_ely": 3.1392171382904053, 
+        "l_arm_mwx": 0.6077333092689514, 
+        "l_arm_shx": -0.4274123013019562, 
+        "l_arm_usy": -1.3352952003479004, 
+        "l_arm_uwy": 0.7946487069129944
+      }, 
+      "name": "retact 1 A fixed", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 1 B", 
+      "joints": {
+        "l_arm_elx": 1.2072020769119263, 
+        "l_arm_ely": 3.1392171382904053, 
+        "l_arm_mwx": 0.6077333092689514, 
+        "l_arm_shx": -0.4274123013019562, 
+        "l_arm_usy": -1.3352952003479004, 
+        "l_arm_uwy": 0.7946487069129944
+      }, 
+      "name": "retact 1 B", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 2 A", 
+      "joints": {
+        "l_arm_elx": 0.28844529390335083, 
+        "l_arm_ely": 2.7180631160736084, 
+        "l_arm_mwx": 1.108810544013977, 
+        "l_arm_shx": -0.7790966033935547, 
+        "l_arm_usy": -1.3648383617401123, 
+        "l_arm_uwy": 0.4430542290210724
+      }, 
+      "name": "retact 2 A", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 2 B", 
+      "joints": {
+        "l_arm_elx": 1.1843665838241577, 
+        "l_arm_ely": 1.5022797584533691, 
+        "l_arm_mwx": 1.1780999898910522, 
+        "l_arm_shx": 0.020469292998313904, 
+        "l_arm_usy": -0.8959740400314331, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "retact 2 B", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 3 B", 
+      "joints": {
+        "l_arm_elx": 1.736939549446106, 
+        "l_arm_ely": 2.125560998916626, 
+        "l_arm_mwx": 0.4534730911254883, 
+        "l_arm_shx": -1.3541127443313599, 
+        "l_arm_usy": 0.7853968739509583, 
+        "l_arm_uwy": 0.07791746407747269
+      }, 
+      "name": "retact 3 B (or A alternative)", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "retact 3 B", 
+      "joints": {
+        "l_arm_elx": 1.7943699359893799, 
+        "l_arm_ely": 1.8168171644210815, 
+        "l_arm_mwx": 0.09039656817913055, 
+        "l_arm_shx": -1.4967443943023682, 
+        "l_arm_usy": 0.3458968698978424, 
+        "l_arm_uwy": 0.10786999762058258
+      }, 
+      "name": "retact 3 B", 
+      "nominal_handedness": "left"
     }
   ], 
   "door": [
