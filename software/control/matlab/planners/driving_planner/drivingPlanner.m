@@ -137,7 +137,7 @@ classdef drivingPlanner
         t_splice = linspace(0,T0,N_splice);
         q_arm_splice = repmat(q0(obj.joint_indices),1,N_splice) + (q_closest(obj.joint_indices) - q0(obj.joint_indices))*linspace(0,1,N_splice);
         q_splice = repmat(q0,1,N_splice);
-        q_splice(obj.joint_indices,:) = q_arm_splice;
+%         q_splice(obj.joint_indices,:) = q_arm_splice;
       else
         T0 = 0;
         t_splice = [0];
@@ -171,7 +171,7 @@ classdef drivingPlanner
       q_steering_vec = interp1(steering_vec,q_vec',steering_plan_vec)';
       
       q_traj = repmat(q0,1,N);
-      q_traj(obj.joint_indices,:) = q_steering_vec(obj.joint_indices,:);
+%       q_traj(obj.joint_indices,:) = q_steering_vec(obj.joint_indices,:);
       q_traj(obj.ankle_joint,:) = ankle_vec;
       
       t_vec = [t_splice(1:end-1) t_vec];

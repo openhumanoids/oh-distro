@@ -54,9 +54,9 @@ while true
     case drc.drill_control_t.DRIVING_CONTROL
       if sizecheck(ctrl_data, [2 1])
         steering_angle = ctrl_data(1)*2*pi;
-        ankle_angle = ctrl_data(2);
+        ankle_angle = 2*(ctrl_data(2) - .5);
         steering_speed = .5;
-        ankle_speed = .2;
+        ankle_speed = .05;
         q0 = lcm_mon.getStateEstimate();
         xtraj = planner.createDrivingPlan(q0, steering_angle, ankle_angle, steering_speed, ankle_speed, steering_vec, q_vec);
       else
