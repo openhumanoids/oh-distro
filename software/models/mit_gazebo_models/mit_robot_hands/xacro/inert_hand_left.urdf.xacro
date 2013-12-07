@@ -12,8 +12,8 @@
     </inertial>
   </link>
   
- <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" /> 
-<!--  <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" /> -->
+<!-- <xacro:include filename="$(find hook_description)/src/bdihook_hand.urdf.xacro" />  -->
+ <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />
 
   <xacro:hook_hand side="left" parent="plane::xy::base" reflect="-1" hookflip="-1" noof30degoffset="0">
     <origin rpy="1.57 0.0 -1.57" xyz="0.243 0.0 -0.127"/>

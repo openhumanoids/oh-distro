@@ -1383,13 +1383,13 @@
     <!-- MIT's pointer rod -->
     <collision>
       <geometry>
-        <cylinder length="0.15" radius="0.006"/>
+        <cylinder length="0.16" radius="0.006"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </collision>
     <visual>
       <geometry>
-        <cylinder length="0.15" radius="0.006"/>
+        <cylinder length="0.16" radius="0.006"/>
       </geometry>
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -1401,7 +1401,7 @@
       <geometry>
         <cylinder length="0.044" radius="0.006"/>
       </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.185"/>
     </collision>
     <visual>
       <geometry>
@@ -1410,7 +1410,7 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.185"/>
     </visual>
   </link>
   <joint name="left_hook_hand_joint" type="fixed">
@@ -1443,13 +1443,13 @@
     <!-- MIT's pointer rod -->
     <collision>
       <geometry>
-        <cylinder length="0.15" radius="0.006"/>
+        <cylinder length="0.16" radius="0.006"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </collision>
     <visual>
       <geometry>
-        <cylinder length="0.15" radius="0.006"/>
+        <cylinder length="0.16" radius="0.006"/>
       </geometry>
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -1461,7 +1461,7 @@
       <geometry>
         <cylinder length="0.044" radius="0.006"/>
       </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 -0.018 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 -0.018 0.185"/>
     </collision>
     <visual>
       <geometry>
@@ -1470,7 +1470,7 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 -0.018 0.16"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 -0.018 0.185"/>
     </visual>
   </link>
 </robot>
