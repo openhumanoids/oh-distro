@@ -832,16 +832,14 @@ namespace renderer_affordances_gui_utils
         }                
       }
       
-      /*      
-      // NBNBNB mfallon modification to publish xyz location of visual intersection instead of grasp hand pose
-      // No longer needed, ray_hit is pushed out in the lcm message now:
-      T_geom_lhandpose.p[0] = self->ray_hit(0);
-      T_geom_lhandpose.p[1] = self->ray_hit(1);
-      T_geom_lhandpose.p[2] = self->ray_hit(2);      
-      */
+      
        int mode = bot_gtk_param_widget_get_enum(self->pw,PARAM_GRASP_OPT_MODE);
-       if((mode==drc::grasp_opt_mode_t::OPT_OFF)||((grasp_type == msg.ROBOTIQ_RIGHT)||(grasp_type == msg.ROBOTIQ_LEFT)
-                                                ||(grasp_type == msg.INERT_RIGHT)||(grasp_type == msg.INERT_LEFT)))
+
+       // mfallon, 7 Dec 2013: I've enabled the publish of a Robotiq Grasp optimization LCM message publish
+       // I use it for Debris boxes
+       //if((mode==drc::grasp_opt_mode_t::OPT_OFF)||((grasp_type == msg.ROBOTIQ_RIGHT)||(grasp_type == msg.ROBOTIQ_LEFT)
+       //                                         ||(grasp_type == msg.INERT_RIGHT)||(grasp_type == msg.INERT_LEFT)))
+       if((mode==drc::grasp_opt_mode_t::OPT_OFF)||((grasp_type == msg.INERT_RIGHT)||(grasp_type == msg.INERT_LEFT)))
        {
          string object_name =  self->object_selection;
          string object_geometry_name =  self->link_selection;
