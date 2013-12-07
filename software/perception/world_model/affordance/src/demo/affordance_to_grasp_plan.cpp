@@ -98,6 +98,11 @@ class Pass{
     vector<double> irobot_l_joint_position_;    
     vector<double> irobot_r_joint_position_;    
     
+    vector<string> robotiq_l_joint_name_;
+    vector<string> robotiq_r_joint_name_;
+    vector<double> robotiq_l_joint_position_;    
+    vector<double> robotiq_r_joint_position_;    
+    
     std::vector <Isometry3dTime> eeloci_poses_;
     bool eeloci_plan_outstanding_;    
     
@@ -108,7 +113,7 @@ class Pass{
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
     lcm_(lcm_){
-  verbose_ = false;
+  verbose_ = true;
   cartpos_ready_ = false;
       
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
@@ -160,6 +165,18 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
       "right_finger[2]/joint_base", "right_finger[2]/joint_flex" };
   irobot_r_joint_position_ = { 0, 0, 0,         0, 0, 0,         0, 0};
   
+  
+  
+  robotiq_l_joint_name_ = { "left_finger_1_joint_1", "left_finger_1_joint_2", "left_finger_1_joint_3",
+        "left_finger_2_joint_1", "left_finger_2_joint_2", "left_finger_2_joint_3",
+        "left_finger_middle_joint_1", "left_finger_middle_joint_2", "left_finger_middle_joint_3",
+        "left_palm_finger_1_joint", "left_palm_finger_2_joint"};
+  robotiq_l_joint_position_ = { 0, 0, 0,         0,0,0,         0,0,0   ,0,0};
+  robotiq_r_joint_name_ = { "right_finger_1_joint_1", "right_finger_1_joint_2", "right_finger_1_joint_3",
+        "right_finger_2_joint_1", "right_finger_2_joint_2", "right_finger_2_joint_3",
+        "right_finger_middle_joint_1", "right_finger_middle_joint_2", "right_finger_middle_joint_3",
+        "right_palm_finger_1_joint", "right_palm_finger_2_joint"};  
+  robotiq_r_joint_position_ = { 0, 0, 0,         0,0,0,         0,0,0   ,0,0};
   
   eeloci_plan_outstanding_ = false;
 }
@@ -544,6 +561,9 @@ void Pass::planGraspBox(Eigen::Isometry3d init_grasp_pose){
   }else if ( (grasp_opt_msg_.grasp_type ==3) || (grasp_opt_msg_.grasp_type ==4) ) { // iRobot left or right
     std::cout << "Grasp Box with iRobot left or right\n";
     planGraspBoxIrobot(init_grasp_pose);
+  }else if ( (grasp_opt_msg_.grasp_type ==6) || (grasp_opt_msg_.grasp_type ==7) ) { // Robotiq left or right
+    std::cout << "Grasp Box with Robotiq left or right\n";
+    planGraspBoxIrobot(init_grasp_pose);
   }
   
 }
@@ -669,10 +689,32 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
     direction_rotation << 0 , 0, M_PI;
   }
   
+  
   Eigen::Isometry3d aff_to_actualpalm = Eigen::Isometry3d::Identity();
   aff_to_actualpalm.rotate( euler_to_quat( face_rotation(0) , face_rotation(1),  face_rotation(2) ) );   
+  
+  {
+  std::cout << "face_rotation: " << face_rotation.transpose() << "\n";
+  std::stringstream ss;
+  print_Isometry3d(aff_to_actualpalm, ss);
+  std::cout << "0 aff_to_actualpalm: " << ss.str() << "\n";
+  }  
+  
   aff_to_actualpalm.rotate( euler_to_quat( direction_rotation(0) , direction_rotation(1),  direction_rotation(2) ) );   
+  
+  {
+  std::cout << "direction_rotation: " << direction_rotation.transpose() << "\n";
+  std::stringstream ss;
+  print_Isometry3d(aff_to_actualpalm, ss);
+  std::cout << "A aff_to_actualpalm: " << ss.str() << "\n";
+  }  
+  
   aff_to_actualpalm.rotate( euler_to_quat( fingers_rotation(0) , fingers_rotation(1),  fingers_rotation(2) ) );   
+
+  Eigen::Quaterniond r= euler_to_quat( fingers_rotation(0) , fingers_rotation(1),  fingers_rotation(2) );
+  std::cout << "fingers quat: " << r.w()<<", "<<r.x()<<", "<<r.y()<<", "<<r.z() << "\n";
+  
+  std::cout << "fingers_rotation: " << fingers_rotation.transpose() << "\n";
   
   //if(face_dim==2){
   //  std::cout << "awkward error case on dim 2 correction\n";
@@ -680,6 +722,13 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
   //}
   
   aff_to_actualpalm.translation()  << grasp_point(0) , grasp_point(1) , grasp_point(2) ;
+  
+  
+  {
+  std::stringstream ss;
+  print_Isometry3d(aff_to_actualpalm, ss);
+  std::cout << "B aff_to_actualpalm: " << ss.str() << "\n";
+  }
   
   
   if ( fabs(aff_len(face_dim)-aff_len(short_dim)) < 0.02){
@@ -703,6 +752,16 @@ void Pass::planGraspBoxIrobot(Eigen::Isometry3d init_grasp_pose){
     }
   }
   
+  std::stringstream ss;
+  print_Isometry3d(world_to_aff_, ss);
+  std::cout << "World to Aff: " << ss.str() << "\n";
+  
+  {
+  std::stringstream ss;
+  print_Isometry3d(aff_to_actualpalm, ss);
+  std::cout << "C aff_to_actualpalm: " << ss.str() << "\n";
+  }
+
   
   eeloci_poses_.clear();
   eeloci_poses_.push_back( Isometry3dTime(0, world_to_aff_* aff_to_actualpalm));
@@ -1114,11 +1173,16 @@ void Pass::sendCandidateGrasp(Eigen::Isometry3d aff_to_palmgeometry, double rel_
     cg.l_joint_position = sandia_l_joint_position_;
     cg.r_joint_name = sandia_r_joint_name_;
     cg.r_joint_position = sandia_r_joint_position_;
-  }else{
+  }else if ( (grasp_opt_msg_.grasp_type ==3) || (grasp_opt_msg_.grasp_type ==4) ){ // irobot
     cg.l_joint_name = irobot_l_joint_name_;
     cg.l_joint_position = irobot_l_joint_position_;
     cg.r_joint_name = irobot_r_joint_name_;
     cg.r_joint_position = irobot_r_joint_position_;
+  }else if ( (grasp_opt_msg_.grasp_type ==6) || (grasp_opt_msg_.grasp_type ==7) ){ // robotiq
+    cg.l_joint_name = robotiq_l_joint_name_;
+    cg.l_joint_position = robotiq_l_joint_position_;
+    cg.r_joint_name = robotiq_r_joint_name_;
+    cg.r_joint_position = robotiq_r_joint_position_;
   }
   
   cg.num_l_joints =cg.l_joint_position.size();

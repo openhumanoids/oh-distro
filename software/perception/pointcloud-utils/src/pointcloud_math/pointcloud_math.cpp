@@ -23,6 +23,19 @@ void scale_quaternion(double r,Eigen::Quaterniond q,Eigen::Quaterniond &q_out){
 
 
 Eigen::Quaterniond euler_to_quat(double roll, double pitch, double yaw) {
+  
+  // This conversion function introduces a NaN in Eigen Rotations when:
+  // roll == pi , pitch,yaw =0    ... or other combinations.
+  // cos(pi) ~=0 but not exactly 0 
+  // Post DRC Trails: replace these with Eigen's own conversions
+  if ( ((roll==M_PI) && (pitch ==0)) && (yaw ==0)){
+    return  Eigen::Quaterniond(0,1,0,0);
+  }else if( ((pitch==M_PI) && (roll ==0)) && (yaw ==0)){
+    return  Eigen::Quaterniond(0,0,1,0);
+  }else if( ((yaw==M_PI) && (roll ==0)) && (pitch ==0)){
+    return  Eigen::Quaterniond(0,0,0,1);
+  }
+  
   double sy = sin(yaw*0.5);
   double cy = cos(yaw*0.5);
   double sp = sin(pitch*0.5);
