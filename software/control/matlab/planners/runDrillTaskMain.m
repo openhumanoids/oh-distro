@@ -62,7 +62,7 @@ cut_lengths = sum((drill_points(:,2:end) - drill_points(:,1:end-1)).*(drill_poin
 
 short_cut = .05;
 long_cut = .05;
-target_radius = .07;
+target_radius = .08;
 predrill_distance = .07;
 
 xtraj_nominal = []; %to know if we've got a plan
@@ -221,13 +221,8 @@ while(true)
         else
           cut_length = long_cut;
         end
+        display(sprintf('Hit target, setting segment index to %d',segment_index))
       else
-      % create wall coordinate frame
-      wall_z = [0;0;1];
-      wall_z = wall_z - wall_z'*wall.normal*wall.normal;
-      wall_z = wall_z/norm(wall_z);
-      wall_y = cross(wall_z, wall.normal);
-      
         cut_length = long_cut;
       end
       
@@ -239,12 +234,15 @@ while(true)
       nearest_point = drill_points(:,segment_index) + line_param*(drill_points(:,segment_index+1) -drill_points(:,segment_index));
       
       dist_to_cut = norm(drill0 - nearest_point);
+
       if dist_to_cut < cut_length
         cut_length_on_path = sqrt(cut_length^2 - dist_to_cut^2);
         cut_param = min(1,cut_length_on_path/cut_lengths(segment_index) + line_param);
         drill_target = drill_points(:,segment_index) + cut_param*(drill_points(:,segment_index+1) -drill_points(:,segment_index));
+        display(sprintf('Distance to cut is %f.  Old line param: %f, new line param: %f',dist_to_cut, line_param, cut_param))
       else
         drill_target = nearest_point;
+        display(sprintf('Distance to cut is %f.  Old line param: %f, new line param: %f',dist_to_cut, line_param, line_param))
       end
 %       keyboard
       [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 10);
