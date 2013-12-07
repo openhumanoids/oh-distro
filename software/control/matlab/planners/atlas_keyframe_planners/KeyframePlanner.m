@@ -113,17 +113,18 @@ classdef KeyframePlanner < handle
             obj.T_hand_palm_l_irobot = HT([0;0.11516;0.015],1.57079,3.14159,3.14159);
             obj.T_hand_palm_r_irobot = HT([0;-0.11516;-0.015],1.57079,0,0);
  
-            % might be useful for the extenders           
-%            obj.T_hand_palm_l_irobot = HT([0;0.322;0.015],1.57079,3.14159,3.14159);
-%            obj.T_hand_palm_r_irobot = HT([0;-0.322;-0.015],1.57079,0,0);
-
-
             obj.T_hand_palm_r_hose_irobot = HT([0;-0.11516;-0.015],1.57079,1.57079,0);
             
-            % these need to be verified on hardware after mounting brackets are designed,
             obj.T_hand_palm_l_robotiq = HT([0;0.11516;0.015],0,0,0);
             obj.T_hand_palm_r_robotiq = HT([0;-0.11516;-0.015],0,3.14159,3.14159);
             
+
+            % Hands with 6 inch extenders - 6 Dec 2013, mfallon:
+            %obj.T_hand_palm_l_irobot = HT([0;0.26756;0.015],1.57079,3.14159,3.14159);
+            %obj.T_hand_palm_r_irobot = HT([0;-0.26756;-0.015],1.57079,0,0);
+            %obj.T_hand_palm_l_robotiq = HT([0;0.34256;0.015],0,0,0);
+            %obj.T_hand_palm_r_robotiq = HT([0;-0.34256;-0.015],0,3.14159,3.14159);
+
             obj.sandia_gaze_axis = [0;0;1];
             obj.irobot_gaze_axis = [0;1;0];
             obj.robotiq_gaze_axis = [0;1;0];
