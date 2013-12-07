@@ -38,12 +38,21 @@ irobot  = 0.11516 +  0.1524 = 0.26756
 
 
   <xacro:irobot_hand side="left" parent="l_hand" reflect="-1">
-    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.26756 0.015"/>
+    <origin rpy="1.57079 0 -3.14159" xyz="0 0.26756 0.015"/>
   </xacro:irobot_hand>
 
   <xacro:robotiq_hand side="right" parent="r_hand" reflect="1">
     <origin rpy="0 3.141 3.141" xyz="0 -0.34256 -0.015"/>
   </xacro:robotiq_hand>
 
+
+
+
+<!-- if using other combo
+  <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
+    <origin rpy="1.57079 0 3.141" xyz="0 -0.26756 -0.015"/>
+  </xacro:irobot_hand>
+
+-->
 
 </robot>

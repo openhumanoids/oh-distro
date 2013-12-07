@@ -120,10 +120,11 @@ classdef KeyframePlanner < handle
             
 
             % Hands with 6 inch extenders - 6 Dec 2013, mfallon:
-            %obj.T_hand_palm_l_irobot = HT([0;0.26756;0.015],1.57079,3.14159,3.14159);
-            %obj.T_hand_palm_r_irobot = HT([0;-0.26756;-0.015],1.57079,0,0);
-            %obj.T_hand_palm_l_robotiq = HT([0;0.34256;0.015],0,0,0);
-            %obj.T_hand_palm_r_robotiq = HT([0;-0.34256;-0.015],0,3.14159,3.14159);
+            % mod1: rotates irobots by 180 due to calbe length
+            obj.T_hand_palm_l_irobot = HT([0;0.26756;0.015],1.57079, 0, -3.14159);
+            obj.T_hand_palm_r_irobot = HT([0;-0.26756;-0.015],1.57079,0,3.141);
+            obj.T_hand_palm_l_robotiq = HT([0;0.34256;0.015],0,0,0);
+            obj.T_hand_palm_r_robotiq = HT([0;-0.34256;-0.015],0,3.14159,3.14159);
 
             obj.sandia_gaze_axis = [0;0;1];
             obj.irobot_gaze_axis = [0;1;0];

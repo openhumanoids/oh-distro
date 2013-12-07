@@ -299,6 +299,14 @@ group "m.simple_grasping" {
     }
 }
 
+group "m.calibration" {
+    cmd "EncoderCalibration" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders;\"";
+        host = "robot";
+        stop_signal = 15;
+    }
+}
+
 #################################################################
 
 script "prep_core" { 
