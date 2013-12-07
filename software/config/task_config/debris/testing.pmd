@@ -63,6 +63,10 @@ group "b.2.planners" {
         exec = "hand_cloud";
         host = "base";
     }
+    cmd "drc-robot-pose-util" {
+        exec = "drc-robot-pose-util";
+        host = "base";
+    }
 }
 
 

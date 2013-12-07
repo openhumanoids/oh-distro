@@ -84,6 +84,20 @@
       }, 
       "name": "both handsdown", 
       "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "Zero all arm joints - dont do", 
+      "joints": {
+        "l_arm_elx": 9.610368056911511e-16, 
+        "l_arm_ely": 0.0, 
+        "l_arm_mwx": -0.08745691925287247, 
+        "l_arm_shx": 1.9081958235744878e-16, 
+        "l_arm_usy": -0.004602000117301941, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "Zero all arm joints - dont do", 
+      "nominal_handedness": "left"
     }
   ], 
   "debris": [
