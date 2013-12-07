@@ -150,9 +150,9 @@ while(true)
         drill_points_expanded(:,i) = drill_points_expanded(:,i) + target_expansion*(drill_points_expanded(:,i) - target_centroid)/norm(drill_points_expanded(:,i) - target_centroid) + wall.normal*depth_increase;
       end
       
-      q0_init(1:3) = target_centroid - wall.normal*.7 - .2*wall_z + .1*wall_y;
+      q0_init(1:3) = target_centroid - wall.normal*.6 - .2*wall_z + .1*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
-      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .1);
+      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .0);
       
     case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)
@@ -175,7 +175,8 @@ while(true)
         kinsol = r.doKinematics(qf);
         drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
         
-        [xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q0, drill_f - predrill_distance*wall.normal, 5);
+        
+        [xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q0, drill_f - predrill_distance*wall.normal, 5, qf);
       else
         send_status(4,0,0,'Nominal trajectory not instantiated yet, cannot create a walking goal');
       end
