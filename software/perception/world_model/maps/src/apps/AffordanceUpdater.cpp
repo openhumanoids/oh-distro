@@ -44,7 +44,7 @@ struct State {
     mUpdateTime = mPrevUpdateTime = 0;
     mIsRunning = false;
     mUpdateOnce = false;
-    mShouldUpdate = true;
+    mShouldUpdate = false;
 
     mLcm->subscribe("MAP_LOCAL_CORRECTION", &State::onCorrection, this);
     mLcm->subscribe("MAP_REGISTRATION_COMMAND", &State::onCommand, this);
