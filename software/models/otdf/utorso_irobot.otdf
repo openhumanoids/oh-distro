@@ -180,4 +180,11 @@
         <grasp_type type="4" />
         <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
     </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="box_0" />
+        <relative_pose rpy="1.57897 0.001302 1.58838" xyz="0.420414 0.316463 0.292872" />
+        <grasp_type type="3" />
+        <state num_joints="8" joint_names="left_finger[0]/joint_base_rotation left_finger[0]/joint_base left_finger[0]/joint_flex left_finger[1]/joint_base_rotation left_finger[1]/joint_base left_finger[1]/joint_flex left_finger[2]/joint_base left_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
 </object>
