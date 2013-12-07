@@ -84,7 +84,7 @@ def printStats(data):
       continue
     totalBytes = dat[-1] - dat[0]
     totalVal,totalSuffix = getBandwidthString(totalBytes)
-    avgVal,avgSuffix = getBandwidthString(totalBytes/dt)
+    avgVal,avgSuffix = getBandwidthString(totalBytes*8/dt)
     allBytes += totalBytes
     print('%s : %.3f %sbytes total, %.3f %sbps average' % (chan, totalVal, totalSuffix, avgVal, avgSuffix))
   val,suff = getBandwidthString(allBytes/dt)
@@ -101,7 +101,7 @@ def doPlots(data,title):
   plt.hold(True)
   totals = numpy.zeros(dt.shape)
   for chan in channels:
-    dat = data[chan]
+    dat = data[chan]*8
     ddat = numpy.diff(dat)/dt
     if numpy.any(ddat>1024):
       legendChannels.append(chan)
@@ -143,4 +143,4 @@ def processDir(dirName):
   for d in glob.glob(dirName + '/*.csv'):
     print('processing %s...' % (d))
     go(d)
-  
+x

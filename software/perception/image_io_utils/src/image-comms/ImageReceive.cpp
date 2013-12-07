@@ -10,6 +10,7 @@
 #include <bot_core/camtrans.h>
 
 #include <lcmtypes/bot_core/image_t.hpp>
+#include <lcmtypes/drc/subimage_response_t.hpp>
 
 #include <opencv2/opencv.hpp>
 
@@ -30,6 +31,7 @@ struct ChannelData {
   std::mutex mConditionMutex;
   std::condition_variable mCondition;
   std::list<std::shared_ptr<bot_core::image_t> > mDataQueue;
+  std::shared_ptr<drc::subimage_response_t> mSubImage;
   bool mRunning;
   int mReceivedCount;
   int mProcessedCount;
@@ -47,6 +49,20 @@ struct ChannelData {
     // resize to normal
     cv::Mat img;
     cv::resize(raw, img, cv::Size(mWidth, mHeight));
+
+    // insert subimage if appropriate
+    if (mSubImage != NULL) {
+      auto req = mSubImage->subimage_request;
+      cv::Mat raw = cv::imdecode(cv::Mat(mSubImage->image.data), -1);
+      if (raw.channels() == 3) cv::cvtColor(raw, raw, CV_BGR2RGB);
+      cv::Mat roi(img, cv::Rect(req.x, req.y, req.w, req.h));
+      cv::Mat subImg(roi.rows, roi.cols, roi.type(), raw.data,
+                     mSubImage->image.row_stride);
+      subImg.copyTo(roi);
+      mSubImage = NULL;
+      std::cout << "inserted subimage (" <<
+        roi.rows << "x" << roi.cols << ")" << std::endl;
+    }
 
     // form output message
     bot_core::image_t msg;
@@ -121,6 +137,10 @@ struct ChannelData {
     mCondition.notify_one();
   }
 
+  void onSubImage(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
+                  const drc::subimage_response_t* iMessage) {
+    mSubImage.reset(new drc::subimage_response_t(*iMessage));
+  }
 };
 
 struct ImageReceive {
@@ -156,6 +176,8 @@ struct ImageReceive {
     mChannels[data->mChannelReceive] = data;
     data->mThread = std::thread(std::ref(*data));
     mLcm->subscribe(data->mChannelReceive, &ChannelData::onImage, data.get());
+    mLcm->subscribe(data->mChannelBase + "_SUB",
+                    &ChannelData::onSubImage, data.get());
   }
 
   void start() {

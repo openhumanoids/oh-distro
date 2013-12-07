@@ -9,6 +9,8 @@
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/sensor_request_t.hpp>
 #include <lcmtypes/drc/data_request_t.hpp>
+#include <lcmtypes/drc/subimage_request_t.hpp>
+#include <lcmtypes/drc/subimage_response_t.hpp>
 #include <lcmtypes/multisense/images_t.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -17,12 +19,17 @@
 
 struct ChannelData {
   typedef std::shared_ptr<ChannelData> Ptr;
+  std::shared_ptr<lcm::LCM> mLcm;
   std::string mChannelBase;
   std::string mChannelTransmit;
+  std::string mChannelSubImage;
   bot_core::image_t mLatestImage;
   int mRequestType;
   int mMultisenseType;
-  std::mutex mMutex;
+  std::mutex mDataMutex;
+  int mJpegQuality;
+  int mDownSampleFactor;
+  std::shared_ptr<drc::subimage_request_t> mSubImageRequest;
 
   ChannelData() {
     mLatestImage.size = 0;
@@ -30,7 +37,7 @@ struct ChannelData {
 
   void onImage(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
                const bot_core::image_t* iMessage) {
-    std::lock_guard<std::mutex> lock(mMutex);
+    std::lock_guard<std::mutex> lock(mDataMutex);
     mLatestImage = *iMessage;
   }
 
@@ -38,98 +45,19 @@ struct ChannelData {
                 const multisense::images_t* iMessage) {
     for (int i = 0; i < iMessage->n_images; ++i) {
       if (iMessage->image_types[i] == mMultisenseType) {
-        std::lock_guard<std::mutex> lock(mMutex);
+        std::lock_guard<std::mutex> lock(mDataMutex);
         mLatestImage = iMessage->images[i];
         break;
       }
     }
   }
-};
 
-struct ImageTransmit {
-  std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
-  std::shared_ptr<lcm::LCM> mLcm;
-  typedef std::unordered_map<int, ChannelData::Ptr> ChannelGroup;
-  ChannelGroup mChannels;
-
-  int mJpegQuality;
-  int mDownSampleFactor;
-
-  ImageTransmit() {
-    mLcmWrapper.reset(new drc::LcmWrapper());
-    mLcm = mLcmWrapper->get();
-    mLcm->subscribe("SENSOR_REQUEST", &ImageTransmit::onSensorRequest, this);
-    mLcm->subscribe("TRIGGER_CAMERA", &ImageTransmit::onTrigger, this);
-    setQuality(drc::sensor_request_t::QUALITY_LOW);
-  }
-
-  void addChannel(const int iRequestType, const std::string& iChannel) {
-    ChannelData::Ptr data(new ChannelData());
-    data->mChannelBase = iChannel;
-    data->mRequestType = iRequestType;
-    data->mChannelTransmit = data->mChannelBase + "_TX";
-    mLcm->subscribe(data->mChannelBase, &ChannelData::onImage, data.get());
-    mChannels[iRequestType] = data;
-  }
-
-  void addMultiChannel(const int iRequestType, const std::string& iChannel, 
-                       const int iMultisenseType) {
-    ChannelData::Ptr data(new ChannelData());
-    data->mChannelBase = iChannel;
-    data->mRequestType = iRequestType;
-    std::string suffix;
-    switch (iMultisenseType) {
-    case multisense::images_t::LEFT: suffix = "_LEFT"; break;
-    case multisense::images_t::RIGHT: suffix = "_RIGHT"; break;
-    default: break;
+  void publish() {
+    bot_core::image_t img;
+    {
+      std::lock_guard<std::mutex> lock(mDataMutex);
+      img = mLatestImage;
     }
-    data->mChannelTransmit = data->mChannelBase + suffix + "_TX";
-    data->mMultisenseType = iMultisenseType;
-    mLcm->subscribe(data->mChannelBase, &ChannelData::onImages, data.get());
-    mChannels[iRequestType] = data;
-  }
-
-  void setQuality(const int iQuality) {
-    switch (iQuality) {
-    case drc::sensor_request_t::QUALITY_LOW:
-      mJpegQuality = 50;
-      mDownSampleFactor = 4;
-      break;
-    case drc::sensor_request_t::QUALITY_MED:
-      mJpegQuality = 70;
-      mDownSampleFactor = 4;
-      break;
-    case drc::sensor_request_t::QUALITY_HIGH:
-      mJpegQuality = 50;
-      mDownSampleFactor = 2;
-      break;
-    case drc::sensor_request_t::QUALITY_SUPER:
-      mJpegQuality = 90;
-      mDownSampleFactor = 1;
-    default:
-      break;
-    }
-  }
-
-  void start() {
-    mLcmWrapper->startHandleThread(true);
-  }
-
-  void onSensorRequest(const lcm::ReceiveBuffer* iBuf,
-                       const std::string& iChannel,
-                       const drc::sensor_request_t* iMessage) {
-    if (iMessage->camera_compression >= 0) {
-      setQuality(iMessage->camera_compression);
-    }
-  }
-
-  void onTrigger(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
-                 const drc::data_request_t* iMessage) {
-    ChannelGroup::const_iterator item = mChannels.find(iMessage->type);
-    if (item == mChannels.end()) return;
-    const ChannelData::Ptr data = item->second;
-    std::lock_guard<std::mutex> lock(data->mMutex);
-    bot_core::image_t& img = data->mLatestImage;
     if (img.size == 0) return;
 
     // uncompress
@@ -166,12 +94,42 @@ struct ImageTransmit {
       break;
     default:
       std::cout << "ImageTransmit: invalid pixel format on channel " <<
-        iChannel << std::endl;
+        mChannelBase << std::endl;
       return;
     }
 
     void* bytes = const_cast<void*>(static_cast<const void*>(img.data.data()));
     cv::Mat imgOrig(img.height, img.width, imgType, bytes, img.row_stride);
+
+    // grab and send subimage if applicable
+    auto req = mSubImageRequest;
+    if (req != NULL) {
+      if ((req->w > 0) && (req->h > 0)) {
+        if (req->x < 0) req->x = 0;
+        if (req->y < 0) req->y = 0;
+        if (req->x+req->w > img.width) req->w = img.width-req->x;
+        if (req->y+req->h > img.height) req->h = img.height-req->y;
+        cv::Mat subImg;
+        cv::Mat(imgOrig, cv::Rect(req->x,req->y,req->w,req->h)).copyTo(subImg);
+        drc::subimage_response_t msg;
+        msg.image.utime = img.utime;
+        msg.image.width = subImg.cols;
+        msg.image.height = subImg.rows;
+        msg.image.row_stride = subImg.channels()*msg.image.width;
+        msg.image.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+        msg.image.nmetadata = 0;
+        std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 70 };
+        if (subImg.channels() == 3) cv::cvtColor(subImg, subImg, CV_RGB2BGR);
+        if (!cv::imencode(".jpg", subImg, msg.image.data, params)) {
+          std::cout << "Error encoding jpeg subimage!" << std::endl;
+        }
+        msg.image.size = msg.image.data.size();
+        msg.subimage_request = *mSubImageRequest;
+        mLcm->publish(mChannelSubImage, &msg);
+        std::cout << "sent subimage image (" << subImg.cols << "x" <<
+          subImg.rows << "), " << msg.image.size << " bytes" << std::endl;
+      }
+    }
 
     // downsample
     cv::Mat outImage;
@@ -196,10 +154,119 @@ struct ImageTransmit {
     msg.size = msg.data.size();
     
     // transmit
-    mLcm->publish(data->mChannelTransmit, &msg);
+    mLcm->publish(mChannelTransmit, &msg);
     std::cout << "sent image (" << msg.size << " bytes) on " <<
-      data->mChannelTransmit << " with quality=" << mJpegQuality <<
+      mChannelTransmit << " with quality=" << mJpegQuality <<
       " and downsample=" << mDownSampleFactor << std::endl;
+  }
+};
+
+struct ImageTransmit {
+  std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
+  std::shared_ptr<lcm::LCM> mLcm;
+  typedef std::unordered_map<int, ChannelData::Ptr> ChannelGroup;
+  ChannelGroup mChannels;
+
+  int mJpegQuality;
+  int mDownSampleFactor;
+
+  ImageTransmit() {
+    mLcmWrapper.reset(new drc::LcmWrapper());
+    mLcm = mLcmWrapper->get();
+    mLcm->subscribe("SENSOR_REQUEST", &ImageTransmit::onSensorRequest, this);
+    mLcm->subscribe("TRIGGER_CAMERA", &ImageTransmit::onTrigger, this);
+    mLcm->subscribe("SUBIMAGE_REQUEST", &ImageTransmit::onSubRequest, this);
+    setQuality(drc::sensor_request_t::QUALITY_LOW);
+  }
+
+  void addChannel(const int iRequestType, const std::string& iChannel) {
+    ChannelData::Ptr data(new ChannelData());
+    data->mLcm = mLcm;
+    data->mChannelBase = iChannel;
+    data->mRequestType = iRequestType;
+    data->mChannelTransmit = data->mChannelBase + "_TX";
+    data->mChannelSubImage = data->mChannelBase + "_SUB";
+    data->mJpegQuality = mJpegQuality;
+    data->mDownSampleFactor = mDownSampleFactor;
+    mLcm->subscribe(data->mChannelBase, &ChannelData::onImage, data.get());
+    mChannels[iRequestType] = data;
+  }
+
+  void addMultiChannel(const int iRequestType, const std::string& iChannel, 
+                       const int iMultisenseType) {
+    ChannelData::Ptr data(new ChannelData());
+    data->mLcm = mLcm;
+    data->mChannelBase = iChannel;
+    data->mRequestType = iRequestType;
+    std::string suffix;
+    switch (iMultisenseType) {
+    case multisense::images_t::LEFT: suffix = "_LEFT"; break;
+    case multisense::images_t::RIGHT: suffix = "_RIGHT"; break;
+    default: break;
+    }
+    data->mChannelTransmit = data->mChannelBase + suffix + "_TX";
+    data->mChannelSubImage = data->mChannelBase + suffix + "_SUB";
+    data->mMultisenseType = iMultisenseType;
+    data->mJpegQuality = mJpegQuality;
+    data->mDownSampleFactor = mDownSampleFactor;
+    mLcm->subscribe(data->mChannelBase, &ChannelData::onImages, data.get());
+    mChannels[iRequestType] = data;
+  }
+
+  void setQuality(const int iQuality) {
+    switch (iQuality) {
+    case drc::sensor_request_t::QUALITY_LOW:
+      mJpegQuality = 50;
+      mDownSampleFactor = 4;
+      break;
+    case drc::sensor_request_t::QUALITY_MED:
+      mJpegQuality = 70;
+      mDownSampleFactor = 4;
+      break;
+    case drc::sensor_request_t::QUALITY_HIGH:
+      mJpegQuality = 50;
+      mDownSampleFactor = 2;
+      break;
+    case drc::sensor_request_t::QUALITY_SUPER:
+      mJpegQuality = 90;
+      mDownSampleFactor = 1;
+    default:
+      break;
+    }
+    for (auto chan : mChannels) {
+      chan.second->mJpegQuality = mJpegQuality;
+      chan.second->mDownSampleFactor = mDownSampleFactor;
+    }
+  }
+
+  void start() {
+    mLcmWrapper->startHandleThread(true);
+  }
+
+  void onSensorRequest(const lcm::ReceiveBuffer* iBuf,
+                       const std::string& iChannel,
+                       const drc::sensor_request_t* iMessage) {
+    if (iMessage->camera_compression >= 0) {
+      setQuality(iMessage->camera_compression);
+    }
+  }
+
+  void onSubRequest(const lcm::ReceiveBuffer* iBuf,
+                    const std::string& iChannel,
+                    const drc::subimage_request_t* iMessage) {
+    ChannelGroup::const_iterator item =
+      mChannels.find(iMessage->data_request.type);
+    if (item == mChannels.end()) return;
+    const ChannelData::Ptr data = item->second;
+    data->mSubImageRequest.reset(new drc::subimage_request_t(*iMessage));
+  }
+
+  void onTrigger(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
+                 const drc::data_request_t* iMessage) {
+    ChannelGroup::const_iterator item = mChannels.find(iMessage->type);
+    if (item == mChannels.end()) return;
+    const ChannelData::Ptr data = item->second;
+    data->publish();
   }
 
 };
