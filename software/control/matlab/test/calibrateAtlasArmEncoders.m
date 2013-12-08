@@ -32,7 +32,7 @@ end
 act_idx = getActuatedJoints(r);
 
 [jlmin,jlmax] = getJointLimits(r);
-delta = 0.25; % [rad] amount to command beyond joint limits
+delta = 0.2; % [rad] amount to command beyond joint limits
 
 % initial/final configuration
 x0 = Point(state_frame);
@@ -81,7 +81,7 @@ if runLCM % wait for LCM trigger, then run
   
   while true
     pause(0.1);
-    [x,~] = getNextMessage(monitor,1);
+    x = monitor.getNextMessage(1);
     if ~isempty(x)
       moveAndWriteCalibration();
     end
