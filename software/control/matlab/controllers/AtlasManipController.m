@@ -166,6 +166,7 @@ classdef AtlasManipController < DRCController
       obj = addLCMTransition(obj,'COMMITTED_PLAN_PAUSE',drc.plan_control_t(),name); % stop plan execution
       obj = addLCMTransition(obj,'ATLAS_COMMAND_UNSAFE',drc.atlas_command_t(),name); % set desired to previous 
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
+      obj = addLCMTransition(obj,'CALIBRATE_ARM_ENCODERS',drc.utime_t(),'init'); 
     end
     
     function msg = status_message(obj,t_sim,t_ctrl)
