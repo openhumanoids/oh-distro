@@ -155,7 +155,7 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="ground_0" />
-        <relative_pose rpy="0 0 1.57079" xyz="-0.9 0 0.0752444" />
+        <relative_pose rpy="0 0 1.57079" xyz="-0.9 -0.0635 0.0752444" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
@@ -163,7 +163,7 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="ground_0" />
-        <relative_pose rpy="0 0 1.57079" xyz="-0.7 0 0.0743584" />
+        <relative_pose rpy="0 0 1.57079" xyz="-0.7 -0.0635 0.0743584" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
@@ -172,7 +172,7 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="ground_0" />
-        <relative_pose rpy="0 0 1.57079" xyz="0.7 0 0.0752444" />
+        <relative_pose rpy="0 0 1.57079" xyz="0.7 -0.0635 0.0752444" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_uay l_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
@@ -180,7 +180,7 @@
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="ground_0" />
-        <relative_pose rpy="0 0 1.57079" xyz="0.9 0 0.0743584" />
+        <relative_pose rpy="0 0 1.57079" xyz="0.9 -0.0635 0.0743584" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_uay r_leg_lax " joint_positions="0 0 " />
     </grasp_seed>
