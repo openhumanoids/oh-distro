@@ -382,7 +382,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   end
   if ladder_opts.use_final_com_constraint
     % Compute plan from q(:,end) to qf
-    nt_end = floor(nt/4);
+    nt_end = floor(nt/2);
     dt = mean(diff(ts));
     t_end = 0:dt:nt_end*dt;
     t_end_coarse = linspace(t_end(1),t_end(end),3);
