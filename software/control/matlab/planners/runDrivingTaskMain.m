@@ -10,7 +10,6 @@ atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_dra
 
 
 useVisualization = false;
-doAutoCommit = true;
 publishPlans = true;
 useRightHand = false;
 allowPelvisHeight = false;
@@ -40,10 +39,11 @@ finger_axis_on_hand = [0; 1; 0];
 
 planner = drivingPlanner(r,atlas,finger_pt_on_hand, finger_axis_on_hand, ...
         root_body, steer_center_in_root, steer_axis_in_root, steer_zero_vec_in_root,steer_radius, ...
-        useRightHand, useVisualization, publishPlans, doAutoCommit);
+        useRightHand, useVisualization, publishPlans);
 display('Got affordance, getting nominal steering poses')
 [q_vec,steering_vec] = planner.createNominalSteeringPlan(q0, -2*pi, 2*pi);
 steering_depth = 0;
+leg_zero_angles = [];
 %%
 while true 
 %   display('Waiting for control message...')
@@ -51,18 +51,32 @@ while true
   [ctrl_type, ctrl_data] = lcm_mon.getDrillControlMsg();
   
   switch ctrl_type
-    case drc.drill_control_t.DRIVING_CONTROL
-      if sizecheck(ctrl_data, [2 1])
-        steering_angle = ctrl_data(1)*2*pi;
-        ankle_angle = 2*(ctrl_data(2) - .5);
-        steering_speed = .5;
-        ankle_speed = .05;
+    case drc.drill_control_t.DRIVING_PULSE
+      if isempty(leg_zero_angles)
+        send_status(4,0,0,'Leg zero angles must be set first');
+      elseif sizecheck(ctrl_data, [2 1])
+        ankle_position = ctrl_data(1);
+        duration = ctrl_data(2);
+        doAutoCommit = ctrl_data(3); 
         q0 = lcm_mon.getStateEstimate();
-        xtraj = planner.createDrivingPlan(q0, steering_angle, ankle_angle, steering_speed, ankle_speed, steering_vec, q_vec);
+        q0(planner.leg_joint_indices) = leg_zero_angles;
+        xtraj = planner.createDrivingPulse(q0, ankle_position, duration, doAutoCommit);
       else
         send_status(4,0,0,'Invalid size of control data. Expected 3x1');
       end
-      
+    case drc.drill_control_t.SET_STEERING_ANGLE
+      if sizecheck(ctrl_data, [2 1])
+        steering_angle = ctrl_data(1)*2*pi;
+        doAutoCommit = ctrl_data(2); 
+        steering_speed = .5;
+        q0 = lcm_mon.getStateEstimate();
+        if ~isempty(leg_zero_angles)
+          q0(planner.leg_joint_indices) = leg_zero_angles;
+        end
+        xtraj = planner.createSteeringPlan(q0, steering_angle, steering_speed, steering_vec, q_vec, doAutoCommit);
+      else
+        send_status(4,0,0,'Invalid size of control data. Expected 3x1');
+      end
     case drc.drill_control_t.REFIT_STEERING
       display('Refitting steering wheel, waiting for affordance');
       wheel = lcm_mon.getValveAffordance();
@@ -84,9 +98,26 @@ while true
       planner = drivingPlanner(r,atlas,finger_pt_on_hand, finger_axis_on_hand, ...
         root_body, steer_center_in_root + steering_depth*steer_axis_in_root,...
         steer_axis_in_root, steer_zero_vec_in_root,steer_radius, ...
-        useRightHand, useVisualization, publishPlans, doAutoCommit);
+        useRightHand, useVisualization, publishPlans);
       display('Got affordance, getting nominal steering poses')
       [q_vec,steering_vec] = planner.createNominalSteeringPlan(q0, -2*pi, 2*pi);
+    case drc.drill_control_t.LEFT_LEG_JOINT_TELEOP
+      if sizecheck(ctrl_data, [7 1])
+        q0 = lcm_mon.getStateEstimate();
+        leg_angles = ctrl_data(1:6);
+        doAutoCommit = ctrl_data(7);
+        speed = .1;
+        xtraj = planner.createLegTeleopPlan(q0, leg_angles, speed, doAutoCommit);
+      else
+        send_status(4,0,0,'Invalid size of control data. Expected 7x1');
+      end
+    case drc.drill_control_t.SET_DRIVING_ZERO_POSITION
+      if sizecheck(ctrl_data, [6 1])
+        leg_zero_angles = ctrl_data(1:6);
+        send_status(4,0,0,'Set leg zero position');
+      else
+        send_status(4,0,0,'Invalid size of control data. Expected 6x1');
+      end
     case drc.drill_control_t.SET_STEERING_DEPTH
       if sizecheck(ctrl_data, [1 1])
         display(sprintf('Setting steering depth to %f, getting nominal steering poses',ctrl_data(1)));
@@ -95,7 +126,7 @@ while true
         planner = drivingPlanner(r,atlas,finger_pt_on_hand, finger_axis_on_hand, ...
           root_body, steer_center_in_root + steering_depth*steer_axis_in_root,...
           steer_axis_in_root, steer_zero_vec_in_root,steer_radius, ...
-          useRightHand, useVisualization, publishPlans, doAutoCommit);
+          useRightHand, useVisualization, publishPlans);
         display('Got affordance, getting nominal steering poses')
         [q_vec,steering_vec] = planner.createNominalSteeringPlan(q0, -2*pi, 2*pi);
       else
