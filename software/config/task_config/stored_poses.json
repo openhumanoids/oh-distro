@@ -98,6 +98,34 @@
       }, 
       "name": "Zero all arm joints - dont do", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "1 retract B - sunday better", 
+      "joints": {
+        "l_arm_elx": 1.2072020769119263, 
+        "l_arm_ely": 3.1392171382904053, 
+        "l_arm_mwx": 0.4433589577674866, 
+        "l_arm_shx": -0.4274123013019562, 
+        "l_arm_usy": -1.0894560813903809, 
+        "l_arm_uwy": 0.7946487069129944
+      }, 
+      "name": "1 retract B - sunday better", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "1 retract C - sunday", 
+      "joints": {
+        "l_arm_elx": 1.2072020769119263, 
+        "l_arm_ely": 3.1392171382904053, 
+        "l_arm_mwx": 0.3205966353416443, 
+        "l_arm_shx": -0.4274123013019562, 
+        "l_arm_usy": -1.0894560813903809, 
+        "l_arm_uwy": 0.017822623252868652
+      }, 
+      "name": "1 retract C - sunday", 
+      "nominal_handedness": "left"
     }
   ], 
   "debris": [
@@ -317,7 +345,7 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "1 reach", 
+      "description": "1 goto", 
       "joints": {
         "back_bkx": -0.009936914779245853, 
         "back_bky": 0.011819809675216675, 
@@ -329,7 +357,279 @@
         "l_arm_usy": -0.9498946666717529, 
         "l_arm_uwy": 0.9350754022598267
       }, 
-      "name": "1 reach", 
+      "name": "1 goto", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "1 retract B sunday", 
+      "joints": {
+        "back_bkx": -0.10040615499019623, 
+        "back_bky": 0.1007762923836708, 
+        "back_bkz": -0.06598282605409622, 
+        "l_arm_elx": 1.2064828872680664, 
+        "l_arm_ely": 3.1151251792907715, 
+        "l_arm_mwx": 0.6097311973571777, 
+        "l_arm_shx": -0.4273650646209717, 
+        "l_arm_usy": -1.3354032039642334, 
+        "l_arm_uwy": 0.7950993776321411
+      }, 
+      "name": "1 retract B sunday", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "1 retract D - sunday", 
+      "joints": {
+        "back_bkx": 0.21189039945602417, 
+        "back_bky": 0.023386258631944656, 
+        "back_bkz": 0.663224995136261, 
+        "l_arm_elx": 0.0, 
+        "l_arm_ely": 3.1395952701568604, 
+        "l_arm_mwx": 0.08036428689956665, 
+        "l_arm_shx": -0.4274123013019562, 
+        "l_arm_usy": -0.9969509840011597, 
+        "l_arm_uwy": 0.017822623252868652
+      }, 
+      "name": "1 retract D - sunday", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "1 retract C - sunday better", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.663224995136261, 
+        "l_arm_elx": 1.2072020769119263, 
+        "l_arm_ely": 3.141590118408203, 
+        "l_arm_mwx": 0.3205966353416443, 
+        "l_arm_shx": -0.4274123013019562, 
+        "l_arm_usy": -0.6677414774894714, 
+        "l_arm_uwy": 0.017822623252868652
+      }, 
+      "name": "1 retract C - sunday better", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "1 retract D - sunday better", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.663224995136261, 
+        "l_arm_elx": 0.40840578079223633, 
+        "l_arm_ely": 3.141590118408203, 
+        "l_arm_mwx": 0.5536089539527893, 
+        "l_arm_shx": -0.13956007361412048, 
+        "l_arm_usy": -0.6677414774894714, 
+        "l_arm_uwy": 0.017822623252868652
+      }, 
+      "name": "1 retract D - sunday better", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "2 reach A - sunday", 
+      "joints": {
+        "back_bkx": -0.07773999124765396, 
+        "back_bky": 0.07846632599830627, 
+        "back_bkz": -0.4236108064651489, 
+        "l_arm_elx": 0.5186841487884521, 
+        "l_arm_ely": 1.91008722782135, 
+        "l_arm_mwx": 1.102522611618042, 
+        "l_arm_shx": -0.37914061546325684, 
+        "l_arm_usy": -0.7573797702789307, 
+        "l_arm_uwy": 1.2818509340286255
+      }, 
+      "name": "2 reach A - sunday", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "2 retract B - sunday", 
+      "joints": {
+        "back_bkx": 0.07212673127651215, 
+        "back_bky": 0.048732392489910126, 
+        "back_bkz": -0.6263429522514343, 
+        "l_arm_elx": 0.2933804988861084, 
+        "l_arm_ely": 2.6969234943389893, 
+        "l_arm_mwx": 1.1084668636322021, 
+        "l_arm_shx": -0.7690591812133789, 
+        "l_arm_usy": -1.3544819355010986, 
+        "l_arm_uwy": 0.4426673650741577
+      }, 
+      "name": "2 retract B - sunday", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "2 retract B - sunday better", 
+      "joints": {
+        "back_bkx": 0.07228207588195801, 
+        "back_bky": 0.048714566975831985, 
+        "back_bkz": -0.6261036396026611, 
+        "l_arm_elx": 0.38129687309265137, 
+        "l_arm_ely": 2.5493736267089844, 
+        "l_arm_mwx": 1.108562707901001, 
+        "l_arm_shx": -0.6759657859802246, 
+        "l_arm_usy": -1.2963826656341553, 
+        "l_arm_uwy": 0.39127933979034424
+      }, 
+      "name": "2 retract B - sunday better", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "2 retract C - sunday", 
+      "joints": {
+        "back_bkx": 0.07220777869224548, 
+        "back_bky": 0.048821672797203064, 
+        "back_bkz": -0.6262264251708984, 
+        "l_arm_elx": 0.49366092681884766, 
+        "l_arm_ely": 2.387059211730957, 
+        "l_arm_mwx": 1.1118226051330566, 
+        "l_arm_shx": -0.5689706802368164, 
+        "l_arm_usy": -1.2282164096832275, 
+        "l_arm_uwy": 0.3241673707962036
+      }, 
+      "name": "2 retract C - sunday", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "2 retract C - sunday better", 
+      "joints": {
+        "back_bkx": 0.07228544354438782, 
+        "back_bky": 0.048711489886045456, 
+        "back_bkz": -0.6260428428649902, 
+        "l_arm_elx": 0.8634462356567383, 
+        "l_arm_ely": 1.9302207231521606, 
+        "l_arm_mwx": 1.1553492546081543, 
+        "l_arm_shx": -0.2466428279876709, 
+        "l_arm_usy": -1.0518085956573486, 
+        "l_arm_uwy": 0.1524573564529419
+      }, 
+      "name": "2 retract C - sunday better", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "2 retract D - sunday", 
+      "joints": {
+        "back_bkx": 0.07227957993745804, 
+        "back_bky": 0.048597510904073715, 
+        "back_bkz": -0.6264488697052002, 
+        "l_arm_elx": 1.171776294708252, 
+        "l_arm_ely": 1.5411648750305176, 
+        "l_arm_mwx": 1.1628270149230957, 
+        "l_arm_shx": 0.007518291473388672, 
+        "l_arm_usy": -0.9166262149810791, 
+        "l_arm_uwy": 0.026862740516662598
+      }, 
+      "name": "2 retract D - sunday", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "3 goto", 
+      "joints": {
+        "back_bkx": -0.030121000483632088, 
+        "back_bky": 0.03066977486014366, 
+        "back_bkz": -0.12573255598545074, 
+        "l_arm_elx": 1.7709875106811523, 
+        "l_arm_ely": 1.4359912872314453, 
+        "l_arm_mwx": 0.27800798416137695, 
+        "l_arm_shx": -1.1191904544830322, 
+        "l_arm_usy": 0.4453568458557129, 
+        "l_arm_uwy": 1.155105710029602
+      }, 
+      "name": "3 goto", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "3 retract - sunday. remove all others", 
+      "joints": {
+        "back_bkx": -0.09980969876050949, 
+        "back_bky": 0.09994085878133774, 
+        "back_bkz": -0.4220319390296936, 
+        "l_arm_elx": 0.3038308620452881, 
+        "l_arm_ely": 0.18790610134601593, 
+        "l_arm_mwx": 1.017099142074585, 
+        "l_arm_shx": -1.1297364234924316, 
+        "l_arm_usy": -0.5491421222686768, 
+        "l_arm_uwy": 0.8116856813430786
+      }, 
+      "name": "3 retract - sunday. remove all others", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "3 retract C - sunday", 
+      "joints": {
+        "back_bkx": -0.09992115944623947, 
+        "back_bky": 0.0999029353260994, 
+        "back_bkz": -0.42232826352119446, 
+        "l_arm_elx": 0.30737829208374023, 
+        "l_arm_ely": 0.18790610134601593, 
+        "l_arm_mwx": 1.017099142074585, 
+        "l_arm_shx": -1.132516860961914, 
+        "l_arm_usy": -0.5491421222686768, 
+        "l_arm_uwy": 0.811493992805481
+      }, 
+      "name": "3 retract C - sunday", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "3 retract B - sunday", 
+      "joints": {
+        "back_bkx": -0.09982173144817352, 
+        "back_bky": 0.09994910657405853, 
+        "back_bkz": -0.42229163646698, 
+        "l_arm_elx": 0.30948734283447266, 
+        "l_arm_ely": 0.18800197541713715, 
+        "l_arm_mwx": 1.017195224761963, 
+        "l_arm_shx": -1.1338591575622559, 
+        "l_arm_usy": -0.5491421222686768, 
+        "l_arm_uwy": 0.8115898370742798
+      }, 
+      "name": "3 retract B - sunday - just turn back", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "4 goto", 
+      "joints": {
+        "back_bkx": -0.10093492269515991, 
+        "back_bky": 0.1011250838637352, 
+        "back_bkz": -0.20368224382400513, 
+        "l_arm_elx": 0.8356428146362305, 
+        "l_arm_ely": 0.014853887259960175, 
+        "l_arm_mwx": 1.0328221321105957, 
+        "l_arm_shx": -1.2400872707366943, 
+        "l_arm_usy": -0.5186543464660645, 
+        "l_arm_uwy": 1.4280582666397095
+      }, 
+      "name": "4 goto", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "5 goto", 
+      "joints": {
+        "back_bkx": -0.09991329163312912, 
+        "back_bky": 0.10002084076404572, 
+        "back_bkz": -0.5624725222587585, 
+        "l_arm_elx": 0.08667659759521484, 
+        "l_arm_ely": 0.8486683368682861, 
+        "l_arm_mwx": 1.163881778717041, 
+        "l_arm_shx": -0.2222909927368164, 
+        "l_arm_usy": -0.5864369869232178, 
+        "l_arm_uwy": 1.3195291757583618
+      }, 
+      "name": "5 goto", 
       "nominal_handedness": "left"
     }
   ], 
