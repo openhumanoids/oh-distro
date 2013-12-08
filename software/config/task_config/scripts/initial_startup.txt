@@ -3,3 +3,6 @@ more to add
 1 disk space
 2 which gui tools where
 3 something about checking the imu status?
+
+
+4 is "Plan & Control w BDI Height" turned off for all tasks except drilling?

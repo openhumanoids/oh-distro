@@ -6,6 +6,8 @@ startup:
 5. create a box and have the planner reach with both hands to it
 6. also verify that pat can visualise affordance motion in plans
 
+verify the pieces are leaning in the expected way
+
 positioning:
 1. walk to very close to debris but short. raise hands up to shooter position
 2. stop find best standing point with perception ( legs between truss)
