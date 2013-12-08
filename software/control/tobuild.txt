@@ -3,7 +3,7 @@
 
 fall_detector
 atlas_push
-
+neck_control
 
 #drc_controller_manager
 #reactive_navigation_2d

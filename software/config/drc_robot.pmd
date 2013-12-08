@@ -146,6 +146,11 @@ group "a.2.p_and_c" {
         host = "robot";
         stop_signal = 15;
     }
+    cmd "NeckPitchControl" {
+        exec = "drc-neck-control\"";
+        host = "robot";
+        stop_signal = 15;
+    }
 }
 
 group "a.3.models" {   
