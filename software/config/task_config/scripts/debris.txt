@@ -1,0 +1,23 @@
+startup:
+1. run prep and simple grasp scripts
+2. verify robot came up with right arm config. look at arms and legs - are their any joint errors
+3. did system status messages indicate: irobot left and robotiq right?
+4. calibrate left hand. watch for visual movement and sys status msgs
+5. create a box and have the planner reach with both hands to it
+
+
+positioning:
+1. walk to very close to debris but short. raise hands up to shooter position
+2. stop find best standing point with perception ( legs between truss)
+3. walk to standing point
+4. go to manip mode. crouch to 66cm. 
+
+reach 1: reach to side of truss
+1. hand fit with xxxxxx fingers facing backwards
+2. move pelvis ypr: xxxxxx
+3. do 90% reach
+4. refit, touch, grasp
+5. raise height to 90cm. slowly xxxxxxxxxxxxxxxxxxxx
+6. retract plans
+
+
