@@ -141,6 +141,11 @@ group "a.2.p_and_c" {
         host = "robot";
         stop_signal = 15;
     }
+    cmd "EncoderCalibration" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders(true);\"";
+        host = "robot";
+        stop_signal = 15;
+    }
 }
 
 group "a.3.models" {   
@@ -299,13 +304,6 @@ group "m.simple_grasping" {
     }
 }
 
-group "m.calibration" {
-    cmd "EncoderCalibration" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders;\"";
-        host = "robot";
-        stop_signal = 15;
-    }
-}
 
 #################################################################
 
