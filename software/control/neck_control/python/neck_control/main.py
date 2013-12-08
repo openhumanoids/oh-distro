@@ -9,7 +9,8 @@ lc = lcm.LCM()
 
 class NeckControl:
     def __init__(self):
-        self.delta_max = 0.05;
+        self.delta_max = 0.15;
+        self.deadband = 0.05;
         self.cur_neck_pitch = None;
         self.des_neck_pitch = None;
 
@@ -26,8 +27,8 @@ class NeckControl:
             command = drc.neck_pitch_t();
             command.utime = msg.utime;
             error = self.des_neck_pitch - self.cur_neck_pitch
-            if abs(error) > self.delta_max: # deadband 
-                command.pitch = max(-self.delta_max,min(self.delta_max,error));
+            if abs(error) > self.deadband:
+                command.pitch = self.cur_neck_pitch + max(-self.delta_max,min(self.delta_max,error));
                 lc.publish("COMMANDED_NECK_PITCH", command.encode())
 
   

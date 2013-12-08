@@ -36,6 +36,8 @@ endif()
 
 
 add_subdirectory(src)
+add_subdirectory(neck_control)
+add_subdirectory(fall_detector)
 
 message(STATUS "Writing addpath_control.m and rmpath_control.m to ${CMAKE_INSTALL_PREFIX}/matlab") 
 
