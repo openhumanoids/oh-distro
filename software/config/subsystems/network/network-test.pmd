@@ -27,6 +27,10 @@ group "spy" {
         exec = "xlogo";
         host = "extra";
     }
+    cmd "robot_yes" {
+        exec = "bash -c 'while [ 1 ]; do echo 0123456789; sleep 0.001; done'";
+        host = "robot";
+    }
 }
 
 group "matlab" {
