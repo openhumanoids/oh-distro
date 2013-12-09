@@ -278,8 +278,8 @@ struct Worker {
     msg.map_id = 3;
     msg.view_id = iId;
     msg.resolution = 0.01;
-    msg.width = 100;
-    msg.height = 200;
+    msg.width = 200;
+    msg.height = 400;
     msg.quantization_max = 0.02;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     for (int i = 0; i < 6; ++i) msg.clip_planes[i][3] = 2;
