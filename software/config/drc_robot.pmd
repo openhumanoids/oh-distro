@@ -265,6 +265,11 @@ group "b.2.p_and_c" {
        host = "base";
        stop_signal = 15;
     }
+    cmd "LadderHandPlanner" {
+       exec = "matlab -nodisplay -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/ladder_planner']); runLadderHandPlanner;\"";
+       host = "base";
+       stop_signal = 15;
+    }
 }
 
 group "b.3.models" {
