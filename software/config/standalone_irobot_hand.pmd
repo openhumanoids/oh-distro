@@ -8,16 +8,16 @@ group "drivers" {
         host = "localhost";
     }
     cmd "irobot-right" {
-        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=r hand_id:=41";
+        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=r hand_id:=34";
         host = "localhost";
     }
     cmd "irobot-left" {
-        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=l hand_id:=41";
+        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=l hand_id:=34";
         host = "localhost";
     }
 }
 group "model-pubs" {
-    cmd "irobot-left-model-pub" {
+    cmd "irobot-right-model-pub" {
         exec = "robot_model_publisher  -u $DRC_BASE/software/models/mit_gazebo_models/irobot_hand/model_RI_standalone.urdf";
         host = "localhost";
     }

@@ -5,8 +5,10 @@ startup:
 4. calibrate left hand. watch for visual movement and sys status msgs
 5. create a box and have the planner reach with both hands to it
 6. also verify that pat can visualise affordance motion in plans
+7. Make sure "plan & control w BDI height" is turned off
 
-verify the pieces are leaning in the expected way
+verify the pieces are leaning in the expected way:
+flat, up right, up left, up right, up left
 
 positioning:
 1. walk to very close to debris but short. raise hands up to shooter position
