@@ -294,6 +294,8 @@ doFill(maps::DepthImageView::Ptr& iView) {
   case drc::map_controller_command_t::Z_NORMALS:
     fillUnderRobot(iView, FillMethods::MethodRansac);
     fillIterative(iView);
+    // TODO: can enable this if spikes are an issue
+    // filterSpikes(iView);
     //fillConnected(iView);
     //fprintf(stderr, "using full heightmap\n");
     break;
@@ -517,7 +519,7 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
   }
 
   Eigen::Vector3f sol;
-  if (points.size() >= 10) {
+  if (points.size() >= 20) {
     if (iMethod == MethodRobust) {
       sol = fitHorizontalPlaneRobust(points);
     }
@@ -783,6 +785,41 @@ fillConnected(maps::DepthImageView::Ptr& iView) {
   }
 
   img->setData(depths, type);
+}
+
+void FillMethods::
+filterSpikes(std::shared_ptr<maps::DepthImageView>& iView) {
+  maps::DepthImage::Type type = maps::DepthImage::TypeDepth;
+  maps::DepthImage::Ptr img = iView->getDepthImage();
+  std::vector<float>& depths =
+    const_cast<std::vector<float>&>(img->getData(type));
+  const float invalidValue = img->getInvalidValue(type);
+  int w(img->getWidth()), h(img->getHeight());
+  std::vector<float> vals;
+  vals.reserve(8);
+  const float thresh = 0.25;
+  for (int i = 1; i < h-1; ++i) {
+    for (int j = 1; j < w-1; ++j) {
+      int idx = i*w+j;
+      float z0 = depths[idx];
+      if (z0 == invalidValue) continue;
+      float z;
+      vals.clear();
+      z = depths[idx+1]; if(z != invalidValue) vals.push_back(z);
+      z = depths[idx-1]; if(z != invalidValue) vals.push_back(z);
+      z = depths[idx+w]; if(z != invalidValue) vals.push_back(z);
+      z = depths[idx-w]; if(z != invalidValue) vals.push_back(z);
+      z = depths[idx+w+1]; if(z != invalidValue) vals.push_back(z);
+      z = depths[idx+w-1]; if(z != invalidValue) vals.push_back(z);
+      z = depths[idx-w+1]; if(z != invalidValue) vals.push_back(z);
+      z = depths[idx-w-1]; if(z != invalidValue) vals.push_back(z);
+      std::sort(vals.begin(), vals.end());
+      int n = vals.size();
+      if (n == 0) continue;
+      float medianZ = vals[(n-1)/2];
+      if ((z-medianZ) > thresh) depths[idx] = medianZ;
+    }
+  }
 }
 
 

@@ -67,6 +67,7 @@ public:
   void fillIterative(std::shared_ptr<maps::DepthImageView>& iView,
                      const int iMaxPasses=-1);
   void fillLevelPlaneFromFeet(std::shared_ptr<maps::DepthImageView>& iView);
+  void filterSpikes(std::shared_ptr<maps::DepthImageView>& iView);
 
 protected:
   void onGround(const lcm::ReceiveBuffer* iBuf,
