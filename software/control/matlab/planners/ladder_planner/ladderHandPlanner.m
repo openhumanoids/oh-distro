@@ -16,7 +16,7 @@ classdef ladderHandPlanner
     free_ik_options
     doVisualization = true;
     doPublish = false;
-    default_axis_threshold = 5*pi/180;
+    default_axis_threshold = 1*pi/180;
     atlas2robotFrameIndMap
     lc
     state_monitor
