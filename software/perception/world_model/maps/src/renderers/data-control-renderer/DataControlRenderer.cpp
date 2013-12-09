@@ -582,11 +582,11 @@ public:
     hbox->pack_start(*label,false,false);
     hbox->pack_start(*combo,false,false);
     box = Gtk::manage(new Gtk::VBox());
-    addCheck("0 Finger", mRoboticFingerEnabled[0], box);
-    addCheck("1 Finger", mRoboticFingerEnabled[1], box);
+    addCheck("0 Finger ", mRoboticFingerEnabled[0], box);
+    addCheck("1 Finger ", mRoboticFingerEnabled[1], box);
     hbox->pack_start(*box,false,false);
     box = Gtk::manage(new Gtk::VBox());
-    addCheck("2 Thumb", mRoboticFingerEnabled[2], box);
+    addCheck("2 Thumb ", mRoboticFingerEnabled[2], box);
     hbox->pack_start(*box,false,false);
     robotiqControlBox->pack_start(*hbox, false, false);
 
