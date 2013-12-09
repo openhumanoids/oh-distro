@@ -21,6 +21,7 @@ classdef Atlas < Biped
       end
       
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
+      warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
   
 %       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped(urdf,options.dt,options);
