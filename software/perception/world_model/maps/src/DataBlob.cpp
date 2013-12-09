@@ -112,7 +112,7 @@ compress(const CompressionType& iType) {
     unsigned long compressedSize = compressedBytes.size();
     int ret = compress2(&compressedBytes[0], &compressedSize,
                         (const Bytef*)(&mBytes[0]), mBytes.size(),
-                        Z_BEST_SPEED);
+                        Z_BEST_COMPRESSION);
     if (ret != Z_OK) {
       return false;
     }
