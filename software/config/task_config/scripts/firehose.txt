@@ -20,15 +20,21 @@ disable BDI height mode in planning and control
 
 task start
 ----------
-
-
-NB: Very Important
-
-
-Pull the hose down and to the left.
-walk backwards to the right to straighten the hose out 
-
+turn back
+go to shooter
+fit hand facing into the 
+reach
+teleop into contact
+close hand slowly
+Pull the hose down and to the left
+move arm to walking pose
+walk backwards to the right to straighten the hose out. hopefully it will unspool
+walk to wye.
+PAT: fit the wye early and often
 When just short of the wall tuck the right hand behind the robot "tuckarm"
+finish walking to triad
+turn back to the left
+
 
 
 
