@@ -22,6 +22,20 @@ from drc.walking_goal_t import walking_goal_t
 from drc.atlas_behavior_manipulate_params_t import atlas_behavior_manipulate_params_t
 from drc.robot_urdf_t import robot_urdf_t
 from drc.robot_plan_t import robot_plan_t
+from drc.atlas_status_t import atlas_status_t
+
+from drc.atlas_behavior_feedback_t import atlas_behavior_feedback_t
+from drc.atlas_stand_feedback_t import atlas_stand_feedback_t
+from drc.atlas_step_feedback_t import atlas_step_feedback_t
+from drc.atlas_walk_feedback_t import atlas_walk_feedback_t
+from drc.atlas_manipulate_feedback_t import atlas_manipulate_feedback_t
+
+from drc.atlas_step_data_t import atlas_step_data_t
+from drc.atlas_behavior_step_spec_t import atlas_behavior_step_spec_t
+
+from drc.atlas_behavior_foot_data_t import atlas_behavior_foot_data_t
+from drc.atlas_behavior_step_action_t import atlas_behavior_step_action_t
+from drc.atlas_behavior_pelvis_servo_params_t import atlas_behavior_pelvis_servo_params_t
 ########################################################################################
 
 class JointNames:
@@ -246,6 +260,27 @@ def getRobotStateMsg():
                     'r_arm_ely', 'r_arm_elx', 'r_arm_uwy', 'r_arm_mwx']
   return msg  
   
+def sendManipStatus():
+  stat = atlas_status_t()
+  stat.behavior = 6;
+  stat.behavior_feedback = atlas_behavior_feedback_t();
+  stat.stand_feedback = atlas_stand_feedback_t();
+  stat.step_feedback = atlas_step_feedback_t();
+  stat.step_feedback.desired_step_saturated = atlas_step_data_t();
+  stat.step_feedback.desired_step_spec_saturated = atlas_behavior_step_spec_t();
+
+  stat.step_feedback.desired_step_spec_saturated.foot = atlas_behavior_foot_data_t();
+  stat.step_feedback.desired_step_spec_saturated.action = atlas_behavior_step_action_t();
+
+  stat.walk_feedback = atlas_walk_feedback_t();
+  stat.manipulate_feedback = atlas_manipulate_feedback_t();
+
+  stat.manipulate_feedback.clamped = atlas_behavior_pelvis_servo_params_t()
+  stat.manipulate_feedback.internal_desired = atlas_behavior_pelvis_servo_params_t()
+  stat.manipulate_feedback.internal_sensed = atlas_behavior_pelvis_servo_params_t()
+
+  lc.publish("ATLAS_STATUS", stat.encode())
+
 def sendRobotStateMsg():
   global goal_yaw, goal_pelvis_height, goal_pelvis_pitch, goal_pelvis_roll, goal_pos, goal_xy, goal_hand_config, jnames, \
          goal_committed_use, goal_committed
@@ -304,7 +339,7 @@ def sendRobotStateMsg():
     msg = appendJoints(msg,jnames.right_irobot)
 
   lc.publish("EST_ROBOT_STATE", msg.encode())
-
+  sendManipStatus()
 
 def on_manip_params(channel, data):
   global goal_pelvis_height,goal_pelvis_pitch,goal_pelvis_roll, goal_xy, goal_committed_use
