@@ -275,15 +275,15 @@ struct Worker {
     msg.map_id = 3;
     msg.view_id = iId;
     msg.resolution = 0.01;
-    msg.width = 50;
-    msg.height = 100;
+    msg.width = 100;
+    msg.height = 200;
     msg.quantization_max = 0.02;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     for (int i = 0; i < 6; ++i) msg.clip_planes[i][3] = 2;
     msg.clip_planes[0][3] = 0;
     msg.clip_planes[5][3] = 1;
     Eigen::Projective3f projector =
-      createProjector(60, 90, msg.width, msg.height);
+      createProjector(90, 90, msg.width, msg.height);
     const float kPi = acos(-1);
     Eigen::AngleAxisf angleAxis(-iYaw*kPi/180, Eigen::Vector3f(0,0,1));
     projector = projector*angleAxis;
