@@ -101,7 +101,7 @@ classdef ladderHandPlanner
       
       % create hand position constraint
       hand_pt_init = obj.r.forwardKin(kinsol,obj.left_hand_body,obj.left_hand_pt);
-      hand_pos_constraint = WorldPositionConstraint(obj.r,obj.left_hand_body,obj.left_hand_pt,hand_pt_init,[hand_pt_init(1:2);inf]);
+      hand_pos_constraint = WorldPositionConstraint(obj.r,obj.left_hand_body,obj.left_hand_pt,hand_pt_init,[hand_pt_init(1:2);hand_pt_init(3) + .1]);
       
       % create orientation constraint
       orientation_constraint = WorldGazeDirConstraint(obj.r,obj.left_hand_body,obj.left_hand_axis,...
