@@ -98,7 +98,7 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "both hands down", 
+      "description": "handsdown both", 
       "joints": {
         "l_arm_elx": 0.45820000767707825, 
         "l_arm_ely": 1.8040870428085327, 
@@ -113,7 +113,7 @@
         "r_arm_usy": 0.23979197442531586, 
         "r_arm_uwy": 0.00981099996715784
       }, 
-      "name": "both handsdown", 
+      "name": "handsdown both", 
       "nominal_handedness": "none"
     }, 
     {
@@ -439,6 +439,83 @@
       }, 
       "name": "2 goto", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "store unused arm", 
+      "joints": {
+        "r_arm_elx": -2.2305872440338135, 
+        "r_arm_ely": 0.0, 
+        "r_arm_mwx": -0.9891408681869507, 
+        "r_arm_shx": 1.2976576089859009, 
+        "r_arm_usy": 0.021108344197273254, 
+        "r_arm_uwy": 0.00981099996715784
+      }, 
+      "name": "store unused arm", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "store unused arm prep", 
+      "joints": {
+        "back_bkx": -0.009936914779245853, 
+        "back_bky": 0.011819809675216675, 
+        "back_bkz": 0.002703507663682103, 
+        "l_arm_elx": 0.0, 
+        "l_arm_ely": 0.20632050931453705, 
+        "l_arm_mwx": -0.05178241431713104, 
+        "l_arm_shx": -1.3209635019302368, 
+        "l_arm_usy": 0.23769687116146088, 
+        "l_arm_uwy": 1.552773118019104, 
+        "r_arm_elx": 0.0, 
+        "r_arm_ely": 0.20632050931453705, 
+        "r_arm_mwx": 0.05178241431713104, 
+        "r_arm_shx": 1.3209635019302368, 
+        "r_arm_usy": 0.23769687116146088, 
+        "r_arm_uwy": 1.552773118019104
+      }, 
+      "name": "store unused arm prep", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "store unused arm both", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0, 
+        "l_arm_elx": 2.2305872440338135, 
+        "l_arm_ely": 0.0, 
+        "l_arm_mwx": 0.9891408681869507, 
+        "l_arm_shx": -1.2976576089859009, 
+        "l_arm_usy": 0.021108344197273254, 
+        "l_arm_uwy": 0.00981099996715784, 
+        "r_arm_elx": -2.2305872440338135, 
+        "r_arm_ely": 0.0, 
+        "r_arm_mwx": -0.9891408681869507, 
+        "r_arm_shx": 1.2976576089859009, 
+        "r_arm_usy": 0.021108344197273254, 
+        "r_arm_uwy": 0.00981099996715784
+      }, 
+      "name": "store unused arm both", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "2 retract MONDAY", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0, 
+        "l_arm_elx": 0.28844529390335083, 
+        "l_arm_ely": 3.141590118408203, 
+        "l_arm_mwx": 1.1780999898910522, 
+        "l_arm_shx": -0.3846697211265564, 
+        "l_arm_usy": -1.5707999467849731, 
+        "l_arm_uwy": 0.5466151237487793
+      }, 
+      "name": "2 retract MONDAY", 
+      "nominal_handedness": "left"
     }
   ], 
   "door": [
@@ -672,94 +749,7 @@
   "hose": [
     {
       "allow_mirror": true, 
-      "description": "close to robot, hand upside down", 
-      "joints": {
-        "r_arm_elx": -2.1563617329, 
-        "r_arm_ely": 2.2, 
-        "r_arm_mwx": 0.100071714551, 
-        "r_arm_shx": 0.0580735206604, 
-        "r_arm_usy": -0.943417046462, 
-        "r_arm_uwy": 2.93858361244
-      }, 
-      "name": "cradle", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "hand just about cradle. thumb in", 
-      "joints": {
-        "r_arm_elx": -1.03245399544, 
-        "r_arm_ely": 1.79775392296, 
-        "r_arm_mwx": -1.17321766434, 
-        "r_arm_shx": 0.101622587872, 
-        "r_arm_usy": -1.228967243, 
-        "r_arm_uwy": 0.0
-      }, 
-      "name": "hang", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "above, further away", 
-      "joints": {
-        "r_arm_elx": -0.281868335103, 
-        "r_arm_ely": 1.79775392296, 
-        "r_arm_mwx": -1.17321766434, 
-        "r_arm_shx": 0.351412541103, 
-        "r_arm_usy": -1.0226471182, 
-        "r_arm_uwy": 0.0
-      }, 
-      "name": "farhang", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "lower config below the current", 
-      "joints": {
-        "r_arm_elx": -1.66505864662, 
-        "r_arm_ely": 2.12239654256, 
-        "r_arm_mwx": 0.423257291317, 
-        "r_arm_shx": 0.664812326431, 
-        "r_arm_usy": -0.596253812313, 
-        "r_arm_uwy": 3.14159
-      }, 
-      "name": "pulldown", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "config mate", 
-      "joints": {
-        "r_arm_elx": -0.899628996849, 
-        "r_arm_ely": 3.14159, 
-        "r_arm_mwx": -0.848963201046, 
-        "r_arm_shx": -0.0953866541386, 
-        "r_arm_usy": -0.739547431469, 
-        "r_arm_uwy": 0.199334427714
-      }, 
-      "name": "hosemate config", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "sucker punch", 
-      "joints": {
-        "back_bkx": 0.100242577493, 
-        "back_bky": -0.0315173082054, 
-        "back_bkz": 0.322634994984, 
-        "r_arm_elx": -1.70546746254, 
-        "r_arm_ely": 1.28341770172, 
-        "r_arm_mwx": -0.111346885562, 
-        "r_arm_shx": 1.54854994373, 
-        "r_arm_usy": 0.487143397331, 
-        "r_arm_uwy": 0.0
-      }, 
-      "name": "hosemate sucker punch", 
-      "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "sucker punch v2", 
+      "description": "sucker punch - pre hosemate", 
       "joints": {
         "back_bkx": 0.107062466443, 
         "back_bky": -0.0196658596396, 
@@ -771,23 +761,9 @@
         "r_arm_usy": -0.830571591854, 
         "r_arm_uwy": 0.01
       }, 
-      "name": "hosemate sucker punch v2", 
+      "name": "3hosemate sucker punch", 
       "nominal_handedness": "right"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "raise arm up after pulldown", 
-      "joints": {
-        "r_arm_elx": -1.74607777596, 
-        "r_arm_ely": 0.65927785635, 
-        "r_arm_mwx": 0.224538683891, 
-        "r_arm_shx": 0.808890104294, 
-        "r_arm_usy": -0.590336024761, 
-        "r_arm_uwy": 1.1200705735
-      }, 
-      "name": "hose pyscho", 
-      "nominal_handedness": "right"
-    }, 
+    },
     {
       "allow_mirror": true, 
       "description": "tuck arm in for walking", 
@@ -799,7 +775,7 @@
         "r_arm_usy": 0.785398, 
         "r_arm_uwy": 1.74017934501
       }, 
-      "name": "hose walking", 
+      "name": "1 walking with hose", 
       "nominal_handedness": "right"
     }, 
     {
@@ -813,7 +789,7 @@
         "l_arm_usy": 0.785398006439209, 
         "l_arm_uwy": 3.141590118408203
       }, 
-      "name": "tuckarm", 
+      "name": "2 tuckarm", 
       "nominal_handedness": "left"
     }
   ], 

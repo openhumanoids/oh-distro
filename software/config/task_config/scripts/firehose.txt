@@ -25,6 +25,12 @@ task start
 NB: Very Important
 
 
+Pull the hose down and to the left.
+walk backwards to the right to straighten the hose out 
+
+When just short of the wall tuck the right hand behind the robot "tuckarm"
+
+
 
 
 todo

@@ -5,6 +5,13 @@ days before
 
 
 
+hand setup
+----------
+
+debris:
+- 6" extender on right robotiq: blue tape
+
+
 pre mission
 -----------
 - disk space
