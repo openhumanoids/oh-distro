@@ -94,6 +94,23 @@ classdef drillTaskLCMMonitor
       end
     end
     
+    function ladder_data = getLadderAffordance(obj)
+      data = obj.affordance_monitor.getNextMessage(4000); % default timeout
+      if isempty(data)
+        ladder_data = [];
+        return
+      end
+      
+      aff_collection = drc.affordance_collection_t(data);
+      
+      ladder_aff = obj.getAffordanceByOTDFType(aff_collection, 'N9_ladder_steel');
+      if isempty(ladder_aff)
+        ladder_data = [];
+      else
+        ladder_data = obj.parseLadderData(ladder_aff);
+      end
+    end
+    
     function valve_data = getValveAffordance(obj)
       data = obj.affordance_monitor.getNextMessage(2000); % default timeout
       if isempty(data)
@@ -191,7 +208,7 @@ classdef drillTaskLCMMonitor
       drill_data.drill_axis = R_hand'*R*drill_axis;
       drill_data.drill_axis = drill_data.drill_axis/norm(drill_data.drill_axis);
     end
-    
+   
     % positive-x points into the wall
     % look for drill
     % use otdf_type = 'drill_wall'
@@ -234,6 +251,11 @@ classdef drillTaskLCMMonitor
       valve_z = valve_z/norm(valve_z);
       valve_data.center = valve_aff.origin_xyz;%  + .10*valve_data.normal;
       valve_data.init_pt = valve_data.center + valve_z*valve_data.radius;
+    end
+    
+    function ladder_data = parseLadderData(obj, ladder_aff)
+      R = rpy2rotmat(ladder_aff.origin_rpy);
+      ladder_data.forward = -R(:,1);
     end
     
     function aff = getAffordanceByOTDFType(obj, collection, type)
