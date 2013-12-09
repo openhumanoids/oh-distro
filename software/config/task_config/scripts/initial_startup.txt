@@ -1,10 +1,14 @@
-more to add
+days before
+-----------
+- Toby: verify ntp server access to both machines
+- give the hands a run through on the bench to test for any pending finger breaks
 
-1 disk space
-2 which gui tools where
-3 something about checking the imu status?
 
 
-4 is "Plan & Control w BDI Height" turned off for all tasks except drilling?
-
-set pelvis params current desireds to 0, 0, 0, 0, 0.85
+pre mission
+-----------
+- disk space
+- which gui tools are to be used? start them up and tile them
+- something about checking the imu status?
+- is "Plan & Control w BDI Height" turned off for all tasks except drilling?
+- set pelvis params current desireds to 0, 0, 0, 0, 0.85

@@ -1,12 +1,20 @@
+remaining practices
+-------------------
+redo the experiment with hands rotated
+remove cables from smart sensors for april tags
+Do the task with the robotiq hand - for backup
+Aim for a 15 min time in case we need an intervention
+
+
 day before
 ----------
-
+run a series of tests on the iRobot hands to make sure they are behaving in an 
+expected way
 
 before clock starts
 -------------------
-
 calibrate hands
-reset pelvis params to defaults
+reset pelvis params to defaults - including pressing the reset button.
 start the simple grasp script
 disable BDI height mode in planning and control
 
@@ -14,12 +22,11 @@ task start
 ----------
 
 
+NB: Very Important
+
 
 
 
 todo
 ----
-
-discuss with Maurice the stepping back strategy of the firehose
-
 drake designer todos: add wye and hose nozzle frames to drc view, fix frame widget
