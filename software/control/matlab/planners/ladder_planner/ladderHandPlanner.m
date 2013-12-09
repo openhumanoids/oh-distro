@@ -63,7 +63,6 @@ classdef ladderHandPlanner
       cost = ones(34,1);
       cost([1 2 6]) = 5000*ones(3,1);
       cost(3) = 200;
-      cost(back_joint_indices) = [100;1000;100];
       
       vel_cost = cost*.05;
       accel_cost = cost*.05;
@@ -111,6 +110,11 @@ classdef ladderHandPlanner
       [q_end_nom,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,...
         hand_pos_constraint,orientation_constraint,posture_constraint,obj.ik_options);
       
+      if(snopt_info > 10)
+        send_msg = infeasibleConstraintMsg(infeasible_constraint);
+        send_status(4,0,0,send_msg);
+        warning(send_msg);
+      end
       
       if obj.doPublish && snopt_info <= 10
         msg = drc.joint_angles_t;
@@ -121,6 +125,8 @@ classdef ladderHandPlanner
         msg.joint_position = q_end_nom(obj.left_joint_indices);
         obj.lc.publish('POSTURE_GOAL',msg); 
         xtraj = q_end_nom;
+      else
+        xtraj = [];
       end
     end
     
@@ -144,6 +150,11 @@ classdef ladderHandPlanner
       [q_end_nom,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,...
         hand_pos_constraint,orientation_constraint,posture_constraint,obj.ik_options);
       
+      if(snopt_info > 10)
+        send_msg = infeasibleConstraintMsg(infeasible_constraint);
+        send_status(4,0,0,send_msg);
+        warning(send_msg);
+      end
       
       if obj.doPublish && snopt_info <= 10
         msg = drc.joint_angles_t;
@@ -154,6 +165,8 @@ classdef ladderHandPlanner
         msg.joint_position = q_end_nom(obj.right_joint_indices);
         obj.lc.publish('POSTURE_GOAL',msg);
         xtraj = q_end_nom;
+      else
+        xtraj = [];
       end
     end
   end
