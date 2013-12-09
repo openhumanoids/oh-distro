@@ -34,6 +34,10 @@ struct drill_control_t {
   const int8_t LEFT_LEG_JOINT_TELEOP = 19;  //Teleop the left leg.  len(data) = 7. where data[1-6]=[hpz, hpx, hpy, kny, aky, akx] and data[7] = doAutoCommit
   const int8_t SET_DRIVING_ZERO_POSITION = 20;  //Same as LEFT_LEG_JOINT_TELEOP, except saves the commanded state into the planner as thje zero position
   const int8_t DRIVING_PULSE = 21;          //Send a driving pulse command. data[1] = ankle position, data[2] = duration, data[3] = doAutoCommit
+
+  const int8_t LADDER_STRAIGHTEN_LEFT = 22;
+  const int8_t LADDER_STRAIGHTEN_RIGHT = 23;
+
   int64_t utime; 
 
   int8_t control_type;
