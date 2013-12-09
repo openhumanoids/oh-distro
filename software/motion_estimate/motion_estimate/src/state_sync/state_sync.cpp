@@ -94,6 +94,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   lcm_->subscribe("ATLAS_POT_OFFSETS",&state_sync::potOffsetHandler,this);  
 
   lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
+  lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
   
   lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
   pose_BDI_.utime =0; // use this to signify un-initalised
@@ -117,25 +118,33 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   max_encoder_wrap_angle_[Atlas::JOINT_L_ARM_ELY] = 3; // robot software v1.9
 
   use_encoder_.assign(28,false);
-  
-  use_encoder_[Atlas::JOINT_R_ARM_USY] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_SHX] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_ELY] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_ELX] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_UWY] = true;
-  use_encoder_[Atlas::JOINT_R_ARM_MWX] = true;
-
-  use_encoder_[Atlas::JOINT_L_ARM_USY] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_SHX] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_ELY] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_ELX] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_UWY] = true;
-  use_encoder_[Atlas::JOINT_L_ARM_MWX] = true;
-  
-  use_encoder_[Atlas::JOINT_NECK_AY] = true;
+  enableEncoders(true);
 
   utime_prev_ = 0;
 }
+
+void state_sync::enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
+  enableEncoders(msg->utime > 0); // sneakily use utime as a flag
+}
+
+
+void state_sync::enableEncoders(bool enable) {
+    use_encoder_[Atlas::JOINT_R_ARM_USY] = enable;
+    use_encoder_[Atlas::JOINT_R_ARM_SHX] = enable;
+    use_encoder_[Atlas::JOINT_R_ARM_ELY] = enable;
+    use_encoder_[Atlas::JOINT_R_ARM_ELX] = enable;
+    use_encoder_[Atlas::JOINT_R_ARM_UWY] = enable;
+    use_encoder_[Atlas::JOINT_R_ARM_MWX] = enable;
+
+    use_encoder_[Atlas::JOINT_L_ARM_USY] = enable;
+    use_encoder_[Atlas::JOINT_L_ARM_SHX] = enable;
+    use_encoder_[Atlas::JOINT_L_ARM_ELY] = enable;
+    use_encoder_[Atlas::JOINT_L_ARM_ELX] = enable;
+    use_encoder_[Atlas::JOINT_L_ARM_UWY] = enable;
+    use_encoder_[Atlas::JOINT_L_ARM_MWX] = enable;
+    
+    use_encoder_[Atlas::JOINT_NECK_AY] = enable;
+  }
 
 void state_sync::loadEncoderOffsetsFromFile() {
   // load encoder offsets from file

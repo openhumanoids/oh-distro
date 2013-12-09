@@ -69,6 +69,8 @@ class state_sync{
     void potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     void refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
     void loadEncoderOffsetsFromFile();
+    void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
+    void enableEncoders(bool enable);
     
     Joints head_joints_;
     Joints atlas_joints_;

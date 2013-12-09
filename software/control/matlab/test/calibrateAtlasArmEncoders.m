@@ -91,7 +91,12 @@ else
 end
 
   function moveAndWriteCalibration
-    
+
+    lc = lcm.lcm.LCM.getSingleton();
+    msg = drc.utime_t();
+    msg.utime = -1; % disable with negative utime
+    lc.publish('ENABLE_ENCODERS',msg);
+
     % move to initial pos
     atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
 
@@ -137,7 +142,7 @@ end
     fprintf(fileID, '%d,%2.3f,',JOINT_L_ARM_ELY-1,enc_diff(JOINT_L_ARM_ELY));
     fprintf(fileID, '%d,%2.3f,',JOINT_L_ARM_ELX-1,enc_diff(JOINT_L_ARM_ELX));
     fprintf(fileID, '%d,%2.3f,',JOINT_L_ARM_UWY-1,enc_diff(JOINT_L_ARM_UWY));
-    fprintf(fileID, '%d,%2.3f',JOINT_L_ARM_MWX-1,enc_diff(JOINT_L_ARM_MWX));
+    fprintf(fileID, '%d,%2.3f' ,JOINT_L_ARM_MWX-1,enc_diff(JOINT_L_ARM_MWX));
 
     fclose(fileID);
 
@@ -146,8 +151,12 @@ end
 
     msg = drc.utime_t();
     msg.utime = 0;
-    lc = lcm.lcm.LCM.getSingleton();
     lc.publish('REFRESH_ENCODER_OFFSETS',msg);
+
+    msg = drc.utime_t();
+    msg.utime = 1; % enable with positive utime
+    lc.publish('ENABLE_ENCODERS',msg);
+
   end
 
 
