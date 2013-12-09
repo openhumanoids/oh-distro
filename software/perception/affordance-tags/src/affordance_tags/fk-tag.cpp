@@ -270,7 +270,7 @@ void Tags::processTag(int64_t utime_in){
       Eigen::Isometry3d local_to_camera;
       botframes_cpp_->get_trans_with_utime( camera_frame_ , "local", utime_in, local_to_camera);    
       Eigen::Isometry3d tag_pose = local_to_camera*Eigen::Isometry3d(T)   ;
-      tag_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  M_PI ,  0 )  ) );
+      tag_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  (M_PI+0.001) ,  0 )  ) );
 
       updateAffordance( it->second , tag_pose, it->first );
       
