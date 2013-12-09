@@ -1,0 +1,25 @@
+day before
+----------
+
+
+before clock starts
+-------------------
+
+calibrate hands
+reset pelvis params to defaults
+start the simple grasp script
+disable BDI height mode in planning and control
+
+task start
+----------
+
+
+
+
+
+todo
+----
+
+discuss with Maurice the stepping back strategy of the firehose
+
+drake designer todos: add wye and hose nozzle frames to drc view, fix frame widget
