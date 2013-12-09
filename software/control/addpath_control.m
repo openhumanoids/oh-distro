@@ -48,6 +48,7 @@ addpath(fullfile(pwd,'matlab'));
 addpath(fullfile(pwd,'matlab','controllers'));
 addpath(fullfile(pwd,'matlab','planners'));
 addpath(fullfile(pwd,'matlab','planners','drill_planner'));
+addpath(fullfile(pwd,'matlab','planners','ladder_planner'));
 addpath(fullfile(pwd,'matlab','planners','driving_planner'));
 addpath(fullfile(pwd,'matlab','planners','footstep_planner'));
 addpath(fullfile(pwd,'matlab','planners','atlas_keyframe_planners'));
