@@ -80,8 +80,8 @@ if runLCM % wait for LCM trigger, then run
   lc.subscribe('CALIBRATE_ARM_ENCODERS',monitor);  
   
   while true
-    pause(0.1);
-    x = monitor.getNextMessage(1);
+    pause(0.25);
+    x = monitor.getNextMessage(10);
     if ~isempty(x)
       moveAndWriteCalibration();
     end
