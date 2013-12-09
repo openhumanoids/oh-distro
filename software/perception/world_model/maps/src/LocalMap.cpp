@@ -5,6 +5,7 @@
 #include <octomap/octomap.h>
 
 #include "PointDataBuffer.hpp"
+#include "LidarScan.hpp"
 #include "Utils.hpp"
 #include "PointCloudView.hpp"
 #include "OctreeView.hpp"
@@ -32,6 +33,55 @@ set(const std::vector<Eigen::Vector4f>& iPlanes,
   mTimeMax = iTimeMax;
 }
 
+
+LocalMap::RangeFilter::
+RangeFilter() {
+  setValidRanges(0, 1e10);
+}
+
+void LocalMap::RangeFilter::
+setValidRanges(const float iMin, const float iMax) {
+  mRangeMin = iMin;
+  mRangeMax = iMax;
+}
+
+void LocalMap::RangeFilter::
+operator()(LidarScan& ioScan) {
+  int n = ioScan.getRanges().size();
+  for (int i = 0; i < n; ++i) {
+    float range = ioScan.range(i);
+    if ((range < mRangeMin) || (range > mRangeMax)) {
+      ioScan.range(i) = -fabs(range);
+    }
+  }
+}
+
+LocalMap::RangeDiffFilter::
+RangeDiffFilter() {
+  mDiffMax = 1e10;
+  mRangeMax = 0;
+}
+
+void LocalMap::RangeDiffFilter::
+set(const float iDiffMax, const float iRangeMax) {
+  mDiffMax = iDiffMax;
+  mRangeMax = iRangeMax;
+}
+
+void LocalMap::RangeDiffFilter::
+operator()(LidarScan& ioScan) {
+  int n = ioScan.getRanges().size();
+  for (int i = 1; i < n-1; ++i) {
+    float range = fabs(ioScan.range(i));
+    float range1 = fabs(ioScan.range(i-1));
+    float range2 = fabs(ioScan.range(i+1));
+    float diff1 = fabs(range-range1);
+    float diff2 = fabs(range-range2);
+    if (((diff1 > mDiffMax) || (diff2 > mDiffMax)) && (range < mRangeMax)) {
+      ioScan.range(i) = -range;
+    }
+  }
+}
 
 
 
@@ -67,21 +117,6 @@ getMaxPointDataBufferSize() const {
   return mPointData->getMaxLength();
 }
 
-Eigen::Vector3f LocalMap::
-getBoundMin() const {
-  return mSpec.mBoundMin;
-}
-
-Eigen::Vector3f LocalMap::
-getBoundMax() const {
-  return mSpec.mBoundMax;
-}
-
-std::vector<Eigen::Vector4f> LocalMap::
-getBoundPlanes() const {
-  return Utils::planesFromBox(mSpec.mBoundMin, mSpec.mBoundMax);
-}
-
 LocalMap::Spec LocalMap::
 getSpec() const {
   return mSpec;
@@ -96,6 +131,21 @@ bool LocalMap::isActive() const {
   return mSpec.mActive;
 }
 
+void LocalMap::
+addFilter(const std::shared_ptr<Filter>& iFilter) {
+  mFilters.push_back(iFilter);
+}
+
+bool LocalMap::
+addData(const maps::LidarScan& iScan) {
+  if (!mSpec.mActive) return false;
+  LidarScan scan = iScan;
+  for (auto filter : mFilters) (*filter)(scan);
+  PointSet points;
+  scan.get(points);
+  return addData(points);
+}
+
 bool LocalMap::
 addData(const maps::PointSet& iPointSet) {
   // if data is frozen, do not allow new points to be added
@@ -103,49 +153,24 @@ addData(const maps::PointSet& iPointSet) {
     return false;
   }
 
+  // apply filters
+  PointSet points = iPointSet;
+  for (auto filter : mFilters) (*filter)(points);
+
   // transform points to reference coords
-  Eigen::Affine3f xformToReference = Utils::getPose(*iPointSet.mCloud);
+  Eigen::Affine3f xformToReference = Utils::getPose(*points.mCloud);
   maps::PointCloud refCloud;
-  pcl::transformPointCloud(*iPointSet.mCloud, refCloud, xformToReference);
+  pcl::transformPointCloud(*points.mCloud, refCloud, xformToReference);
 
   // set up new point cloud
   maps::PointCloud::Ptr outCloud(new maps::PointCloud());
   outCloud->is_dense = false;
 
-  const float minThresh2 = iPointSet.mMinRange*iPointSet.mMinRange;
-  const float maxThresh2 = iPointSet.mMaxRange*iPointSet.mMaxRange;
-
   // loop over all points
   Eigen::Vector3f refOrigin = xformToReference.translation();
   for (int i = 0; i < refCloud.size(); ++i) {
 
-    // check to see if the point is too close to the sensor
-    Eigen::Vector3f refPt(refCloud[i].x, refCloud[i].y, refCloud[i].z);
-    if ((refPt - refOrigin).squaredNorm() < minThresh2) {
-      continue;
-    }
-
-    // clip lidar ray against bounds
-    Eigen::Vector3f p1, p2;
-    float t1, t2;
-    if (!Utils::clipRay(refOrigin, refPt, mSpec.mBoundMin, mSpec.mBoundMax,
-                        p1, p2, t1, t2)) {
-      continue;
-    }
-
-    if ((refPt-refOrigin).squaredNorm() > maxThresh2) {
-      continue;
-    }
-
-    // check to see whether the point is within bounds
-    /* TODO: need? we probably want the points outside the bound
-       if their rays intersect the bound, to construct free space properly
-    if ((refPt[0] < mSpec.mBoundMin[0]) || (refPt[0] > mSpec.mBoundMax[0]) ||
-        (refPt[1] < mSpec.mBoundMin[1]) || (refPt[1] > mSpec.mBoundMax[1]) ||
-        (refPt[2] < mSpec.mBoundMin[2]) || (refPt[2] > mSpec.mBoundMax[2])) {
-      continue;
-    }
-    */
+    // TODO: can add filters back in if necessary
 
     // add point to internal point set
     outCloud->push_back(refCloud[i]);
@@ -153,7 +178,7 @@ addData(const maps::PointSet& iPointSet) {
   
   // if any points survived, add them to buffer and update state count
   if (outCloud->size() > 0) {
-    maps::PointSet pointSet = iPointSet;
+    maps::PointSet pointSet = points;
     pointSet.mCloud = outCloud;
     mPointData->add(pointSet);
     ++mStateId;
@@ -175,7 +200,6 @@ getAsPointCloud(const float iResolution,
 
   // grab point cloud and crop to space-time bounds
   maps::PointCloud::Ptr cloud = mPointData->getAsCloud(timeMin, timeMax);
-  Utils::crop(*cloud, *cloud, mSpec.mBoundMin, mSpec.mBoundMax);
   Utils::crop(*cloud, *cloud, iBounds.mPlanes);
 
   PointCloudView::Ptr view(new PointCloudView());
@@ -195,7 +219,6 @@ getAsOctree(const float iResolution, const bool iTraceRays,
 
   if (!iTraceRays) {
     maps::PointCloud::Ptr cloud = mPointData->getAsCloud(timeMin, timeMax);
-    Utils::crop(*cloud, *cloud, mSpec.mBoundMin, mSpec.mBoundMax);
     Utils::crop(*cloud, *cloud, iBounds.mPlanes);
     view->set(cloud);
   }
@@ -205,7 +228,6 @@ getAsOctree(const float iResolution, const bool iTraceRays,
     for (int i = 0; i < pointSets.size(); ++i) {
       maps::PointCloud::Ptr inCloud = pointSets[i].mCloud;
       maps::PointCloud::Ptr outCloud(new maps::PointCloud());
-      Utils::crop(*inCloud, *outCloud, mSpec.mBoundMin, mSpec.mBoundMax);
       Utils::crop(*outCloud, *outCloud, iBounds.mPlanes);
       octomap::Pointcloud octCloud;    
       for (int j = 0; j < outCloud->points.size(); ++j) {

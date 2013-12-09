@@ -16,8 +16,6 @@ namespace maps {
 
   struct PointSet {
     int64_t mTimestamp;
-    float mMinRange;
-    float mMaxRange;
     PointCloud::Ptr mCloud;
   };
 

@@ -704,19 +704,34 @@ int main(const int iArgc, const char** iArgv) {
       addChannel(rawChannel, SensorDataReceiver::SensorTypePlanarLidar,
                  rawChannel, "local");
     state.mCollector->bind(rawChannel, 2);
+    state.mCollector->bind(rawChannel, 3);
   }
 
-  // set up remaining parameters
+  // add maps
   LocalMap::Spec mapSpec;
   mapSpec.mId = 1;
   mapSpec.mPointBufferSize = 5000;
   mapSpec.mActive = true;
-  mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*1e10;
-  mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*1e10;
   mapSpec.mResolution = defaultResolution;
   state.mCollector->getMapManager()->createMap(mapSpec);
   mapSpec.mId = 2;
   state.mCollector->getMapManager()->createMap(mapSpec);
+
+  // add filtered map
+  mapSpec.mId = 3;
+  state.mCollector->getMapManager()->createMap(mapSpec);
+  LocalMap::Ptr localMap =
+    state.mCollector->getMapManager()->getMap(mapSpec.mId);
+  LocalMap::Filter::Ptr rangeFilter(new LocalMap::RangeFilter());
+  std::static_pointer_cast<LocalMap::RangeFilter>(rangeFilter)
+    ->setValidRanges(0.1, 3.0);
+  LocalMap::Filter::Ptr diffFilter(new LocalMap::RangeDiffFilter());
+  std::static_pointer_cast<LocalMap::RangeDiffFilter>(diffFilter)
+    ->set(0.03, 2.0);
+  localMap->addFilter(rangeFilter);
+  localMap->addFilter(diffFilter);
+
+  // set up remaining parameters
   state.mRequestSubscription =
     lcm->subscribe("MAP_REQUEST", &State::onRequest, &state);
   state.mMapCommandSubscription =

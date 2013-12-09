@@ -160,8 +160,6 @@ struct State : public maps::Collector::DataListener {
     mapSpec.mId = mActiveMapId;
     mapSpec.mPointBufferSize = 5000;
     mapSpec.mActive = true;
-    mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*1e10;
-    mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*1e10;
     mapSpec.mResolution = 0.01;
     mCollector->getMapManager()->createMap(mapSpec);
 

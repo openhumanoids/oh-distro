@@ -53,7 +53,11 @@ namespace {
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DEPTH_MAP_SCENE, "Depth Scene", 0.5,0,0.5, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
-      add(data_request_t::DEPTH_MAP_WORKSPACE, "Depth Workspace", 0,0,1, 0,1,3,
+      add(data_request_t::DEPTH_MAP_WORKSPACE_C, "Workspace C", 0,0,1, 0,1,3,
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
+      add(data_request_t::DEPTH_MAP_WORKSPACE_L, "Workspace L", 0,0,1, 0,1,3,
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
+      add(data_request_t::DEPTH_MAP_WORKSPACE_R, "Workspace R", 0,0,1, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::STEREO_MAP_HEAD, "Stereo Head", 0.1,1,0.1, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);

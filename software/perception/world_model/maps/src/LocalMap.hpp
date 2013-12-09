@@ -12,6 +12,7 @@ class PointDataBuffer;
 class PointCloudView;
 class OctreeView;
 class DepthImageView;
+class LidarScan;
 
 class LocalMap {
 public:
@@ -20,22 +21,47 @@ public:
   // structure for specifying map params
   struct Spec {
     int64_t mId;
-    Eigen::Vector3f mBoundMin;
-    Eigen::Vector3f mBoundMax;
     int mPointBufferSize;
     bool mActive;
     float mResolution;
 
     Spec() {
       mId = -1;
-      mBoundMin = Eigen::Vector3f(-1e10, -1e10, -1e10);
-      mBoundMax = Eigen::Vector3f(1e10, 1e10, 1e10);
       mPointBufferSize = 1000;
       mActive = true;
       mResolution = 0.1;
     }
   };
 
+  // abstract class for filtering points
+  class Filter {
+  public:
+    typedef std::shared_ptr<Filter> Ptr;
+    virtual void operator()(LidarScan& ioScan) {}
+    virtual void operator()(maps::PointSet& ioPoints) {}
+  };
+
+  // class for filtering scans based on ranges
+  class RangeFilter : public Filter {
+  protected:
+    float mRangeMin;
+    float mRangeMax;
+  public:
+    RangeFilter();
+    void setValidRanges(const float iMin, const float iMax);
+    void operator()(LidarScan& ioScan);
+  };
+
+  // class for filtering scans based on range differentials
+  class RangeDiffFilter : public Filter {
+  protected:
+    float mDiffMax;
+    float mRangeMax;
+  public:
+    RangeDiffFilter();
+    void set(const float iDiffMax, const float iRangeMax);
+    void operator()(LidarScan& ioScan);
+  };
 
   // structure for specifying data volume in space and time
   struct SpaceTimeBounds {
@@ -63,17 +89,18 @@ public:
   int64_t getId() const;
   int64_t getStateId() const;
   int getMaxPointDataBufferSize() const;
-  Eigen::Vector3f getBoundMin() const;
-  Eigen::Vector3f getBoundMax() const;
-  std::vector<Eigen::Vector4f> getBoundPlanes() const;  // TODO: may not need
   Spec getSpec() const;
 
   // set/get whether this map should reject additional data
   void setActive(const bool iVal);
   bool isActive() const;
 
+  // add filters
+  void addFilter(const std::shared_ptr<Filter>& iFilter);
+
   // transform points to reference frame, crop against bounds, and add
   bool addData(const maps::PointSet& iPointSet);
+  bool addData(const LidarScan& iScan);
 
   // get point data buffer
   const std::shared_ptr<PointDataBuffer> getPointData() const;
@@ -105,6 +132,7 @@ protected:
   Spec mSpec;
   bool mIsFrozen;
   std::shared_ptr<PointDataBuffer> mPointData;
+  std::vector<Filter::Ptr> mFilters;
 };
 
 }

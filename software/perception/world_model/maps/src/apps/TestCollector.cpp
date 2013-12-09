@@ -166,8 +166,6 @@ int main() {
   mapSpec.mId = 1;
   mapSpec.mPointBufferSize = 5000;
   mapSpec.mActive = true;
-  mapSpec.mBoundMin = Eigen::Vector3f(-1,-1,-1)*10;
-  mapSpec.mBoundMax = Eigen::Vector3f(1,1,1)*10;
   mapSpec.mResolution = 0.01;
   state.mActiveMapId = state.mCollector->getMapManager()->createMap(mapSpec);
 

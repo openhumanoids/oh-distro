@@ -4,6 +4,7 @@ add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
 
 set(LIBRARY_NAME atlas-camera-renderer)
 add_library(${LIBRARY_NAME} SHARED
+  SelectionRectangle.cpp
   CameraRenderer.cpp)
   
 set_target_properties(${LIBRARY_NAME} PROPERTIES SOVERSION 1)

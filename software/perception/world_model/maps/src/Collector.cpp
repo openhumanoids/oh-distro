@@ -17,7 +17,7 @@ struct Collector::Helper {
   std::thread mConsumerThread;
   bool mRunning;
   std::set<DataListener*> mDataListeners;
-  std::unordered_map<std::string,int64_t> mChannelToMapBindings;
+  std::unordered_map<std::string,std::vector<int64_t> > mChannelToMapBindings;
 
   static const double kPi;
 
@@ -28,14 +28,19 @@ struct Collector::Helper {
       while (mHelper->mRunning) {
         SensorDataReceiver::SensorData data;
         if (mHelper->mDataReceiver->waitForData(data)) {
-          int64_t mapId = -1;
           if (mHelper->mChannelToMapBindings.size() > 0) {
             auto item = mHelper->mChannelToMapBindings.find(data.mChannel);
             if (item != mHelper->mChannelToMapBindings.end()) {
-              mapId = item->second;
+              for (auto mapId : item->second) {
+                if (data.mScan == NULL) {
+                  mHelper->mMapManager->addData(*data.mPointSet, mapId);
+                }
+                else {
+                  mHelper->mMapManager->addData(*data.mScan, mapId);
+                }
+              }
             }
           }
-          mHelper->mMapManager->addData(*data.mPointSet, mapId);
           std::set<DataListener*>::const_iterator iter =
             mHelper->mDataListeners.begin();
           for (; iter != mHelper->mDataListeners.end(); ++iter) {
@@ -106,14 +111,20 @@ removeListener(const DataListener& iListener) {
 
 void Collector::
 bind(const std::string& iChannel, const int64_t iMapId) {
-  mHelper->mChannelToMapBindings[iChannel] = iMapId;
+  mHelper->mChannelToMapBindings[iChannel].push_back(iMapId);
 }
 
 void Collector::
-unbind(const std::string& iChannel) {
+unbind(const std::string& iChannel, const int64_t iMapId) {
   auto item = mHelper->mChannelToMapBindings.find(iChannel);
   if (item != mHelper->mChannelToMapBindings.end()) {
-    mHelper->mChannelToMapBindings.erase(item);
+    if (iMapId < 0) {
+      mHelper->mChannelToMapBindings.erase(item);
+    }
+    else {
+      auto& ids = item->second;
+      ids.erase(std::remove(ids.begin(), ids.end(), iMapId), ids.end());
+    }
   }
 }
 

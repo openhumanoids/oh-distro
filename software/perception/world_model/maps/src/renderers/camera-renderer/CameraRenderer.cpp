@@ -23,6 +23,8 @@
 #include <drc_utils/BotWrapper.hpp>
 #include <gtkmm-renderer/RendererBase.hpp>
 
+#include "SelectionRectangle.hpp"
+
 namespace drc {
 
 class CameraRenderer : public gtkmm::RendererBase {
@@ -81,6 +83,8 @@ protected:
     double mZoomFactor;
     Eigen::Vector2f mImageCenter;
     Eigen::Matrix3d mRotation;
+
+    SelectionRectangle mSelectionRectangle;
 
     GLuint mTextureId;
     bool mTextureValid;
@@ -198,6 +202,12 @@ protected:
           std::cout << "Error decoding jpeg" << std::endl;
         }
       }
+
+      /* TODO
+      cv::Mat img(mImage.height, mImage.width, imgType, mImage.data.data(),
+                  mImage.row_stride);
+      // TODO: gain adjust
+      */
 
       mBotWrapper->getTransform(mCoordFrame, "local", mPose, mImage.utime);
       mTextureValid = false;
@@ -528,8 +538,7 @@ protected:
 
 public:
 
-  CameraRenderer(BotViewer* iViewer, const int iPriority,
-                 const lcm_t* iLcm,
+  CameraRenderer(BotViewer* iViewer, const int iPriority, const lcm_t* iLcm,
                  const BotParam* iParam, const BotFrames* iFrames)
     : gtkmm::RendererBase("Atlas Cameras", iViewer, iPriority,
                           iLcm, iParam, iFrames) {

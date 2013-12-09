@@ -299,10 +299,12 @@ public:
                "CAMERA_LEFT", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT, "Camera Head R.",
                "CAMERA_RIGHT", ChannelTypeAnonymous);
+    /*
     addControl(drc::data_request_t::CAMERA_IMAGE_LHAND, "Camera L.Hand",
                "CAMERA_LHANDLEFT", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_RHAND, "Camera R.Hand",
                "CAMERA_RHANDLEFT", ChannelTypeAnonymous);
+    */
     addControl(drc::data_request_t::CAMERA_IMAGE_LCHEST, "Camera L.Chest",
                "CAMERA_LCHEST", ChannelTypeAnonymous);
     addControl(drc::data_request_t::CAMERA_IMAGE_RCHEST, "Camera R.Chest",
@@ -344,7 +346,11 @@ public:
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Points",
                "MAP_OCTREE", ChannelTypeAnonymous);
     */
-    addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth",
+    addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE_C, "Workspace Depth C",
+               "MAP_DEPTH", ChannelTypeDepthImage);
+    addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE_L, "Workspace Depth L",
+               "MAP_DEPTH", ChannelTypeDepthImage);
+    addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE_R, "Workspace Depth R",
                "MAP_DEPTH", ChannelTypeDepthImage);
 
     //mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
@@ -662,12 +668,11 @@ public:
     //addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, handControlBox);
     yCur = 0;
     mCameraCompression = 0;
-    labels = { "-", "Low", "Med", "High", "Super" };
+    labels = { "-", "Low", "Med", "High" };
     ids =
       { -1, drc::sensor_request_t::QUALITY_LOW,
         drc::sensor_request_t::QUALITY_MED,
-        drc::sensor_request_t::QUALITY_HIGH,
-        drc::sensor_request_t::QUALITY_SUPER };
+        drc::sensor_request_t::QUALITY_HIGH };
     mLeftGraspNameEnum = 0;
     label = Gtk::manage(new Gtk::Label("Camera Quality", Gtk::ALIGN_RIGHT));
     combo = gtkmm::RendererBase::createCombo(mCameraCompression, labels, ids);

@@ -2,6 +2,7 @@
 
 #include "PointDataBuffer.hpp"
 #include "LocalMap.hpp"
+#include "LidarScan.hpp"
 
 using namespace maps;
 
@@ -161,6 +162,27 @@ addData(const maps::PointSet& iPointSet, const int64_t iMapId) {
     }
     if ((iMapId <= 0) || (localMap->getId() == iMapId)) {
       localMap->addData(iPointSet);
+    }
+  }
+  return true;
+}
+
+bool MapManager::
+addData(const maps::LidarScan& iScan, const int64_t iMapId) {
+  // add to internal point buffer
+  PointSet pointSet;
+  iScan.get(pointSet);
+  mPointData->add(pointSet);
+
+  // add to maps
+  MapCollection::iterator iter;
+  for (iter = mMaps.begin(); iter != mMaps.end(); ++iter) {
+    LocalMap::Ptr localMap = iter->second;
+    if (!localMap->isActive()) {
+      continue;
+    }
+    if ((iMapId <= 0) || (localMap->getId() == iMapId)) {
+      localMap->addData(iScan);
     }
   }
   return true;

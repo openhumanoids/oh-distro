@@ -84,8 +84,12 @@ struct Worker {
         sendHeightMapDenseRequest(); break;
       case drc::data_request_t::DEPTH_MAP_SCENE:
         sendDepthMapSceneRequest(); break;
-      case drc::data_request_t::DEPTH_MAP_WORKSPACE:
-        sendDepthMapWorkspaceRequest(); break;
+      case drc::data_request_t::DEPTH_MAP_WORKSPACE_C:
+        sendDepthMapWorkspaceRequestCenter(); break;
+      case drc::data_request_t::DEPTH_MAP_WORKSPACE_L:
+        sendDepthMapWorkspaceRequestLeft(); break;
+      case drc::data_request_t::DEPTH_MAP_WORKSPACE_R:
+        sendDepthMapWorkspaceRequestRight(); break;
       case drc::data_request_t::DENSE_CLOUD_LHAND:
         sendDenseCloudLeftHandRequest(); break;
       case drc::data_request_t::DENSE_CLOUD_RHAND:
@@ -265,12 +269,50 @@ struct Worker {
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
+  void sendDepthMapWorkspaceRequestNarrow(const float iYaw,
+                                          const int iId) {
+    drc::map_request_t msg = prepareRequestMessage();
+    msg.map_id = 3;
+    msg.view_id = iId;
+    msg.resolution = 0.01;
+    msg.width = 50;
+    msg.height = 100;
+    msg.quantization_max = 0.02;
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
+    for (int i = 0; i < 6; ++i) msg.clip_planes[i][3] = 2;
+    msg.clip_planes[0][3] = 0;
+    msg.clip_planes[5][3] = 1;
+    Eigen::Projective3f projector =
+      createProjector(60, 90, msg.width, msg.height);
+    const float kPi = acos(-1);
+    Eigen::AngleAxisf angleAxis(-iYaw*kPi/180, Eigen::Vector3f(0,0,1));
+    projector = projector*angleAxis;
+    setTransform(projector, msg);
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendDepthMapWorkspaceRequestCenter() {
+    return sendDepthMapWorkspaceRequestNarrow
+      (0,drc::data_request_t::DEPTH_MAP_WORKSPACE_C);
+  }
+
+  void sendDepthMapWorkspaceRequestLeft() {
+    return sendDepthMapWorkspaceRequestNarrow
+      (60,drc::data_request_t::DEPTH_MAP_WORKSPACE_L);
+  }
+
+  void sendDepthMapWorkspaceRequestRight() {
+    return sendDepthMapWorkspaceRequestNarrow
+      (-60,drc::data_request_t::DEPTH_MAP_WORKSPACE_R);
+  }
+
+  /* deprecated
   void sendDepthMapWorkspaceRequest() {
     drc::map_request_t msg = prepareRequestMessage();
-    msg.map_id = 1;
-    msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE;
+    msg.map_id = 3;
+    msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE_C;
     msg.resolution = 0.01;
-    msg.width = msg.height = 400;
+    msg.width = msg.height = 200;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     for (int i = 0; i < 6; ++i) {
       msg.clip_planes[i][3] = 2;
@@ -283,6 +325,7 @@ struct Worker {
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
   }
+  */
 
   void sendDenseCloudLeftHandRequest() {
     Eigen::Vector3f handPos(0,0,0);

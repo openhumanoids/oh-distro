@@ -6,6 +6,7 @@ add_library(maps SHARED
   VoxelGrid.cpp
   DepthImage.cpp
   BotWrapper.cpp
+  LidarScan.cpp
   SensorDataReceiver.cpp
   ViewBase.cpp
   PointCloudView.cpp
@@ -17,7 +18,7 @@ add_library(maps SHARED
   LcmTranslator.cpp
   ViewClient.cpp
   Collector.cpp
-  Surfelizer.cpp
+#  Surfelizer.cpp
 #  ViewServer.cpp
 )
 
@@ -34,6 +35,7 @@ pods_install_headers(
   VoxelGrid.hpp
   DepthImage.hpp
   BotWrapper.hpp
+  LidarScan.hpp
   SensorDataReceiver.hpp
   ViewBase.hpp
   PointCloudView.hpp
@@ -45,7 +47,7 @@ pods_install_headers(
   LcmTranslator.hpp
   ViewClient.hpp
   Collector.hpp
-  Surfelizer.hpp
+#  Surfelizer.hpp
 #  ViewServer.hpp
   DESTINATION maps
 )

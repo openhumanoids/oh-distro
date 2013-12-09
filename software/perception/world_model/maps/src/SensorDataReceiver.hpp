@@ -7,6 +7,7 @@
 namespace maps {
 
 struct PointSet;
+class LidarScan;
 class BotWrapper;
 
 class SensorDataReceiver {
@@ -18,6 +19,7 @@ public:
 
   struct SensorData {
     std::shared_ptr<PointSet> mPointSet;
+    std::shared_ptr<LidarScan> mScan;
     SensorType mSensorType;
     std::string mChannel;
   };

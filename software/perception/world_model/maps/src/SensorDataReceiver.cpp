@@ -9,9 +9,9 @@
 #include <lcmtypes/drc/pointcloud2_t.hpp>
 
 #include "Types.hpp"
+#include "LidarScan.hpp"
 #include "ThreadSafeQueue.hpp"
 #include "BotWrapper.hpp"
-#include "Utils.hpp"
 
 #include <pcl/io/io.h>
 #include <bot_param/param_util.h>
@@ -55,6 +55,10 @@ struct SensorDataReceiver::Helper {
                 maps::PointCloud::Ptr& cloud = iter->mPointSet->mCloud;
                 if (mHelper->getPose(info, dataTime, cloud->sensor_origin_,
                                      cloud->sensor_orientation_)) {
+                  Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
+                  pose.translation() = cloud->sensor_origin_.head<3>();
+                  pose.linear() = cloud->sensor_orientation_.matrix();
+                  iter->mScan->setPose(pose);
                   data = *iter;
                   mPendingData.erase(iter++);
                   data.mSensorType = info->mSensorType;
@@ -118,8 +122,6 @@ struct SensorDataReceiver::Helper {
     SensorData data;
     data.mPointSet.reset(new PointSet());
     data.mPointSet->mTimestamp = iMessage->utime;
-    data.mPointSet->mMinRange = 1e10;
-    data.mPointSet->mMaxRange = 1e10;
     data.mPointSet->mCloud = newCloud;
     data.mChannel = iChannel;
     mImmediateBuffer.push(data);
@@ -143,12 +145,17 @@ struct SensorDataReceiver::Helper {
     }
 
     maps::PointCloud::Ptr cloud(new maps::PointCloud());
+    LidarScan::Ptr scan(new LidarScan());
+    scan->setTimestamp(iMessage->utime);
+    scan->setAngles(iMessage->rad0, iMessage->radstep);
+    std::vector<float> ranges(iMessage->nranges);
     cloud->height = 1;
     cloud->is_dense = false;
     cloud->points.reserve(iMessage->nranges);
     for (int i = 0; i < iMessage->nranges; ++i) {
       double theta = iMessage->rad0 + i*iMessage->radstep;
       double range = iMessage->ranges[i];
+      ranges[i] = range;
       if (range < info->mRangeMin) range = 0;
       else if (range > info->mRangeMax) range = 1000;
       PointType pt;
@@ -158,13 +165,13 @@ struct SensorDataReceiver::Helper {
       cloud->points.push_back(pt);
     }
     cloud->width = cloud->points.size();
+    scan->setRanges(ranges);
 
     SensorData data;
     data.mPointSet.reset(new PointSet());
     data.mPointSet->mTimestamp = iMessage->utime;
-    data.mPointSet->mMinRange = info->mRangeMin;
-    data.mPointSet->mMaxRange = info->mRangeMax;
     data.mPointSet->mCloud = cloud;
+    data.mScan = scan;
     data.mChannel = iChannel;
     mImmediateBuffer.push(data);
     {

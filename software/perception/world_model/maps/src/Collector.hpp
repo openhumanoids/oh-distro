@@ -28,7 +28,7 @@ public:
   void removeListener(const DataListener& iListener);
 
   void bind(const std::string& iChannel, const int64_t iMapId);
-  void unbind(const std::string& iChannel);
+  void unbind(const std::string& iChannel, const int64_t iMapId=-1);
   void unbindAll();
 
   std::shared_ptr<SensorDataReceiver> getDataReceiver() const;

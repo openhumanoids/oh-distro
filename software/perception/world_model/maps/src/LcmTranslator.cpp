@@ -24,10 +24,6 @@ bool LcmTranslator::
 toLcm(const LocalMap::Spec& iSpec, drc::map_params_t& oMessage) {
   oMessage.map_id = iSpec.mId;
   oMessage.resolution = iSpec.mResolution;
-  for (int i = 0; i < 3; ++i) {
-    oMessage.bound_min[i] = iSpec.mBoundMin[i];
-    oMessage.bound_max[i] = iSpec.mBoundMax[i];
-  }
   oMessage.buffer_size = iSpec.mPointBufferSize;
   return true;
 }
@@ -36,10 +32,6 @@ bool LcmTranslator::
 fromLcm(const drc::map_params_t& iMessage, LocalMap::Spec& oSpec) {
   oSpec.mId = iMessage.map_id;
   oSpec.mResolution = iMessage.resolution;
-  for (int i = 0; i < 3; ++i) {
-    oSpec.mBoundMin[i] = iMessage.bound_min[i];
-    oSpec.mBoundMax[i] = iMessage.bound_max[i];
-  }
   oSpec.mPointBufferSize = iMessage.buffer_size;
   oSpec.mActive = true;
   return true;
@@ -395,6 +387,11 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
     if (val == invalidValue) continue;
     outDepths[i] = (outDepths[i]-zOffset)/zScale + 0.5f;  // 0.5 for rounding
   }
+  std::ofstream ofs("/home/antone/test_depths.txt");
+  ofs << depthImage->getWidth() << " " << depthImage->getHeight() << std::endl;
+  for (int i = 0; i < numDepths; ++i) ofs << outDepths[i] << " ";
+  ofs << std::endl;
+  ofs.close();
 
   // store to blob
   DataBlob::Spec spec;

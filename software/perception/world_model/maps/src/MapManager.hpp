@@ -12,6 +12,7 @@
 namespace maps {
 
 class PointDataBuffer;
+class LidarScan;
 
 class MapManager {
 
@@ -61,6 +62,7 @@ public:
 
   // add data to all active maps
   bool addData(const maps::PointSet& iPointSet, const int64_t iMapId=-1);
+  bool addData(const maps::LidarScan& iScan, const int64_t iMapId=-1);
 
   // get underlying point data
   const std::shared_ptr<PointDataBuffer> getPointData() const;
