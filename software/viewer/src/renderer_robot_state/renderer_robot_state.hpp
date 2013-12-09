@@ -35,15 +35,27 @@
 #define PARAM_COLOR_ALPHA "Alpha"
 #define PARAM_CURRENT_JOINTPOS "Current joint pos"
 #define PARAM_ENABLE_POSTURE_ADJUSTMENT "Set Desired Posture"
-#define PARAM_SEND_POSTURE_GOAL_BACK_ZEROED "Zero All Back Joints"
+#define PARAM_SEND_POSTURE_GOAL_BACK_ZEROED "Zero Selected Back Joints"
 #define PARAM_RESET_POSTURE "Reset"
 #define PARAM_SHOW_FORCES "Show EE Forces (0.05*(f_meas/g))"
 #define PARAM_ENABLE_EE_TELEOP "FineGrained EE Teleop"
+#define PARAM_BACK_ROLL "Roll"
+#define PARAM_BACK_PITCH "Pitch"
+#define PARAM_BACK_YAW "Yaw"
+#define PARAM_BACK_FIX_HANDS "Fix Hands"
 
 using namespace std;
 using namespace boost;
 using namespace Eigen;
 using namespace visualization_utils;
+
+typedef struct _ZeroBackOptions {
+  bool roll;
+  bool pitch;
+  bool yaw;
+  bool fix_hands;
+} ZeroBackOptions;
+
 namespace renderer_robot_state_gui_utils{
  static void spawn_endpose_storage_addition_popup(void* user);
 }
@@ -95,6 +107,8 @@ namespace renderer_robot_state
     GtkWidget *afftriggered_popup;
     std::string* trigger_source_otdf_id;
     KDL::Frame T_world_trigger_aff;
+
+    ZeroBackOptions zero_back_options;
     
      void keyboardSignalCallback(int keyval, bool is_pressed)
     {
@@ -401,21 +415,43 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
 
 
   // Backwardly compatiable:
-  inline static void publish_posture_goal_back_zeroed(void *user, const string& channel)
+  inline static void publish_posture_goal_back_zeroed(void *user)
   {
-        RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
-        drc::joint_angles_t msg;
-        msg.utime = self->robotStateListener->_last_state_msg_sim_timestamp;
-        msg.robot_name = self->robotStateListener->_robot_name;
-        // Hard coded zeroing of joints:
+    RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
+    if (!(self->zero_back_options.roll | self->zero_back_options.pitch | self->zero_back_options.yaw)) {
+      return;
+    }
+    // Fixing the hands is currently only supported through the drill planner, rather than the posture planner, 
+    // so we'll deciede here which planner to use (and thus which channel to transmit on) based on that flag.
+    if (!self->zero_back_options.fix_hands) {
+      drc::joint_angles_t msg;
+      // Hard coded zeroing of joints:
+      if (self->zero_back_options.roll) {
         msg.joint_name.push_back("back_bkx");
         msg.joint_position.push_back(0);
+      }
+      if (self->zero_back_options.pitch) {
         msg.joint_name.push_back("back_bky");
         msg.joint_position.push_back(0);
+      }
+      if (self->zero_back_options.yaw) {
         msg.joint_name.push_back("back_bkz");
         msg.joint_position.push_back(0);
-        msg.num_joints =  msg.joint_name.size(); 
-        self->lcm->publish(channel, &msg);
+      }
+      msg.num_joints =  msg.joint_name.size(); 
+      msg.utime = self->robotStateListener->_last_state_msg_sim_timestamp;
+      msg.robot_name = self->robotStateListener->_robot_name;
+      self->lcm->publish("POSTURE_GOAL", &msg);
+    } else {
+      drc::drill_control_t msg;
+      msg.control_type = drc::drill_control_t::STRAIGHTEN_BACK_FIXED_HANDS;
+      msg.data.push_back((double) self->zero_back_options.roll);
+      msg.data.push_back((double) self->zero_back_options.pitch);
+      msg.data.push_back((double) self->zero_back_options.yaw);
+      msg.data_length = 3;
+      msg.utime = self->robotStateListener->_last_state_msg_sim_timestamp;
+      self->lcm->publish("DRILL_CONTROL", &msg);
+    }
   }
    
   inline static void publish_walking_goal(void *user, const string& channel)

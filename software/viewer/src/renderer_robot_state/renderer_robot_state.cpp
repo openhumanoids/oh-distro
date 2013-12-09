@@ -332,7 +332,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }
   else if(! strcmp(name, PARAM_SEND_POSTURE_GOAL_BACK_ZEROED)) {
     cout << "publishing posture goal with zeroed back joints\n";
-    publish_posture_goal_back_zeroed(self,"POSTURE_GOAL");
+    publish_posture_goal_back_zeroed(self);
   }
   else if(! strcmp(name, PARAM_RESET_POSTURE)) {
    if(self->robotStateListener->_gl_robot->is_future_state_changing())
@@ -366,6 +366,18 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   {
       set_desired_robot_posture_from_pw(user, bot_gtk_param_widget_get_double(self->pw, PARAM_CURRENT_JOINTPOS));
   }
+  else if (!strcmp(name, PARAM_BACK_ROLL)) {
+    self->zero_back_options.roll = bot_gtk_param_widget_get_bool(self->pw, name);
+  }
+  else if (!strcmp(name, PARAM_BACK_PITCH)) {
+    self->zero_back_options.pitch = bot_gtk_param_widget_get_bool(self->pw, name);
+  }
+  else if (!strcmp(name, PARAM_BACK_YAW)) {
+    self->zero_back_options.yaw = bot_gtk_param_widget_get_bool(self->pw, name);
+  }
+  else if (!strcmp(name, PARAM_BACK_FIX_HANDS)) {
+    self->zero_back_options.fix_hands = bot_gtk_param_widget_get_bool(self->pw, name);
+  }
 }
 
 void 
@@ -394,28 +406,35 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     renderer->user = self;
     renderer->enabled = 1;
 
+    self->zero_back_options.roll = true;
+    self->zero_back_options.pitch = true;
+    self->zero_back_options.yaw = true;
+    self->zero_back_options.fix_hands = false;
     self->viewer = viewer;
 
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
 
+    bot_gtk_param_widget_add_separator(self->pw, "Display");
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
     // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FORCES, 0, NULL);
+    bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
     
+    bot_gtk_param_widget_add_separator(self->pw, "Joint Teleop");
     bool val=false;
     if(!(self->robotStateListener->_urdf_subscription_on))
       val = self->robotStateListener->_gl_robot->is_jointdof_adjustment_enabled();
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_POSTURE_ADJUSTMENT, val, NULL);
     bot_gtk_param_widget_add_buttons(self->pw,PARAM_RESET_POSTURE, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw,PARAM_SEND_POSTURE_GOAL_BACK_ZEROED, NULL);
-    
-
-    // disabled_for_cleanup bot_gtk_param_widget_add_buttons(self->pw,PARAM_ENABLE_EE_TELEOP,NULL);
-    
-    
-    bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
-
     bot_gtk_param_widget_add_double (self->pw, PARAM_CURRENT_JOINTPOS, BOT_GTK_PARAM_WIDGET_SPINBOX, -6.29, 6.29, 0.01, 0);
+
+    bot_gtk_param_widget_add_separator(self->pw, "Back Control");
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_BACK_ROLL, self->zero_back_options.roll, PARAM_BACK_PITCH, self->zero_back_options.pitch, PARAM_BACK_YAW, self->zero_back_options.yaw, NULL);
+    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_BACK_FIX_HANDS, self->zero_back_options.fix_hands, NULL);
+    bot_gtk_param_widget_add_buttons(self->pw,PARAM_SEND_POSTURE_GOAL_BACK_ZEROED, NULL);
+    bot_gtk_param_widget_add_separator(self->pw, "");
+    
+    // disabled_for_cleanup bot_gtk_param_widget_add_buttons(self->pw,PARAM_ENABLE_EE_TELEOP,NULL);
       
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->alpha = 1.0;
