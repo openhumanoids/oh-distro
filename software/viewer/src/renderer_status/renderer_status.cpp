@@ -141,6 +141,9 @@ typedef struct
   float estimated_biases[3];
   bool estimated_biases_converged;
   
+  int estimated_latency_ms;
+  int target_bps;
+
   CurrentPlan current_plan;
   
 } RendererSystemStatus;
@@ -317,6 +320,16 @@ on_tactile_state(const lcm_recv_buf_t * buf, const char *channel, const drc_hand
   }
 }
 
+
+static void
+on_bw_stats(const lcm_recv_buf_t * buf, const char *channel, const drc_bandwidth_stats_t *msg, void *user_data){
+  RendererSystemStatus *self = (RendererSystemStatus*) user_data; 
+  self->estimated_latency_ms = msg->estimated_latency_ms;
+  self->target_bps = msg->target_bps;
+}
+
+
+
 static string get_planner_string(int16_t mode){
   if( mode ==  DRC_PLANNER_CONFIG_T_IKSEQUENCE_ON){
     return string("IK On");      
@@ -399,7 +412,7 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
       if (self->channel_list[i] == DRC_FREQUENCY_T_EST_ROBOT_STATE ){ chan = "EST_ROBOT_STATE"; happy_freq_thres = 300;
       }else if (self->channel_list[i] == DRC_FREQUENCY_T_ATLAS_COMMAND ){ chan = "ATLAS_COMMAND"; happy_freq_thres = 300;
       }else if (self->channel_list[i] == DRC_FREQUENCY_T_CAMERA ){ chan = "CAMERA"; happy_freq_thres = 3;
-      }else if (self->channel_list[i] == DRC_FREQUENCY_T_CAMERA_LHAND ){ chan = "CAMERA_LHAND"; happy_freq_thres = -1;
+      }else if (self->channel_list[i] == DRC_FREQUENCY_T_CAMERA_LHAND ){ chan = "CAMERA_LHAND"; happy_freq_thres = -1; 
       }else if (self->channel_list[i] == DRC_FREQUENCY_T_CAMERA_RHAND ){ chan = "CAMERA_RHAND"; happy_freq_thres = -1;
       }else if (self->channel_list[i] == DRC_FREQUENCY_T_SCAN ){ chan = "SCAN"; happy_freq_thres = 35;
       }else { chan = "UNKNOWN"; }
@@ -448,8 +461,8 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
   /// Status Block:  
   char line1[80], line2[80], line3[80], line4[80], line5[80], line6[80], line7[90], line8[90], line9[90];
   
-  snprintf(line1,70, "hand contact");
-  snprintf(line2,70, "L %2.2f  R %2.2f", self->left_hand_contact, self->right_hand_contact  ); // add logic and coloring here
+  snprintf(line1,70, "est latency %d", self->estimated_latency_ms);
+  snprintf(line2,70, "target kbps %.0f", (float) self->target_bps/1000);
   
   int64_t now = bot_timestamp_now();
   if(now > (self->last_grasp_opt_status_utime + 4*1E6)){
@@ -839,6 +852,7 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   
   drc_planner_config_t_subscribe(self->lcm,"PLANNER_CONFIG",on_planner_config, self);
   
+  drc_bandwidth_stats_t_subscribe(self->lcm,"BASE_BW_STATS",on_bw_stats, self);
 
   
   
