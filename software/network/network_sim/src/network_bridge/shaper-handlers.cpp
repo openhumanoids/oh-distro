@@ -785,6 +785,13 @@ void DRCShaper::post_bw_stats()
         }
         data_usage_log_ << std::endl;
     }
+
+    drc::utime_t t;
+    t.utime = now;
+
+    if(node_ == BASE)
+        lcm_->publish("BASE_UTIME", &t);
+
 }
 
 
