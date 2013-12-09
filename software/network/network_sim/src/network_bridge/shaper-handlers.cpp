@@ -264,8 +264,28 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         std::cout << "timer expires at: " << next_slot_t_ << std::endl;
         
     }
+
+
+    int latency_keys[127];
+    int latency_keys_size = bot_param_get_int_array(app.bot_param, "network.latency", latency_keys, 127);
+    int throughput[127];
+    int throughput_values_size = bot_param_get_int_array(app.bot_param, "network.throughput_bps", throughput, 127);
+    
+    if(latency_keys_size != throughput_values_size)
+    {
+        std::cerr << "network.latency/network.throughput_bps pairs improperly configured" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    glog.is(VERBOSE) && glog << "Read in latency/throughput pairs: " << std::endl;
+    for(int i = 0, n = latency_keys_size; i < n; ++i)
+    {
+        glog.is(VERBOSE) && glog << latency_keys[i] << " ms: " << throughput[i] << " bps" << std::endl;
+        latency_throughput_[latency_keys[i]] = throughput[i];
+    }
+    
     
 
+    
     double expected_packet_loss_percent = bot_param_get_int_or_fail(app.bot_param, "network.expected_packet_loss_percent");
     fec_ = 1/(1-expected_packet_loss_percent/100);
     glog.is(VERBOSE) && glog << "Forward error correction: " << fec_ << std::endl;
@@ -420,7 +440,9 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
 
     std::string* frame = msg->add_frame();
     std::string header;
-    dccl_->encode(frame, send_queue_.top().header());
+    drc::ShaperHeader header_msg = send_queue_.top().header();
+    header_msg.set_sent_millisec((goby::common::goby_time<goby::uint64>()/1000) % LATENCY_MAX);
+    dccl_->encode(frame, header_msg);
     (*frame) += send_queue_.top().data();
     
     int encoded_size = msg->frame(0).size();
@@ -530,10 +552,19 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
         packet.set_data(msg.frame(0).substr(dccl_->size(packet.header())));    
 
         received_data_usage_[packet.header().channel()].received_bytes += msg.frame(0).size();
-    
-        glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | "
-                                 << DebugStringNoData(packet) << std::endl;    
 
+        if(packet.header().has_sent_millisec())
+        {
+            int now_ms = (goby::common::goby_time<goby::uint64>()/1000) % LATENCY_MAX;
+            latency_ms_ = now_ms - packet.header().sent_millisec();
+            if(latency_ms_ < 0)
+                latency_ms_ += LATENCY_MAX;
+        }
+
+        glog.is(VERBOSE) && glog << group("rx") <<  "received: " << app_.get_current_utime() << " | " << DebugStringNoData(packet) << std::endl;
+
+
+        
         if(packet.header().is_last_fragment()
            && !packet.header().has_fragment())
         {
@@ -638,7 +669,7 @@ void DRCShaper::publish_receive(std::string channel,
         if(robot_state.decode(&lcm_data[0], 0, lcm_data.size()) != -1)
         {
             drc::utime_t t;
-            t.utime = robot_state.utime;
+            t.utime = robot_state.utime;            
             lcm_->publish("ROBOT_UTIME", &t);
         }
         
@@ -698,6 +729,41 @@ void DRCShaper::post_bw_stats()
     glog.is(VERBOSE) && glog << group("rx") << "Sent Rate: " << (sent_bytes-last_sent_bytes)*8/1.0 << " bps" << std::endl;
     glog.is(VERBOSE) && glog << group("rx") << "Target Rate: " << target_rate_bps_ << " bps" << std::endl;
     last_sent_bytes = sent_bytes;
+
+    glog.is(VERBOSE) && glog << group("rx") << "Latency: " << latency_ms_ << " ms" << std::endl;
+
+    static int64_t utime_last_bps_change = 0;
+    if(latency_throughput_.size())
+    {
+        // find the closest latency to the measured value
+        std::map<int, int>::iterator upper_it = latency_throughput_.lower_bound(latency_ms_);
+        std::map<int, int>::iterator lower_it = upper_it;
+        
+        int upper_error, lower_error;
+        if(upper_it == latency_throughput_.end())
+            upper_it--;
+        if(lower_it != latency_throughput_.begin())
+            lower_it--;
+
+        upper_error = std::abs(upper_it->first - latency_ms_);
+        lower_error = std::abs(lower_it->first - latency_ms_);
+
+        
+        int new_target_rate_bps = (upper_error < lower_error) ? upper_it->second : lower_it->second;
+        if(new_target_rate_bps != target_rate_bps_)
+        {
+            utime_last_bps_change = now;
+            target_rate_bps_ = new_target_rate_bps;
+        }
+
+        glog.is(VERBOSE) && glog << group("rx") << "Setting throughput to: " << target_rate_bps_ << " bps" << std::endl;
+
+    }
+    
+    stats.utime_last_bps_change = utime_last_bps_change;
+    
+    stats.estimated_latency_ms = latency_ms_;
+    stats.target_bps = target_rate_bps_;
     
     for (std::map<int, DataUsage>::const_iterator it = received_data_usage_.begin(),
              end = received_data_usage_.end(); it != end; ++it)

@@ -10,7 +10,7 @@
 
 enum { RECEIVE_MODULUS = 16 };    
 enum { MIN_NUM_FRAGMENTS_FOR_FEC = 3 };
-
+enum { LATENCY_MAX = 2550 };
 
 struct MessageQueue
 {
@@ -192,6 +192,9 @@ class DRCShaper
     // give the io_service some work to do forever
     boost::asio::io_service::work work_;
     boost::posix_time::ptime next_slot_t_;
+
+    int latency_ms_;
+    std::map<int, int> latency_throughput_;
     
     class ReceiveMessageParts
     {
