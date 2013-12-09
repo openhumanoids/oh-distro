@@ -6,3 +6,5 @@ more to add
 
 
 4 is "Plan & Control w BDI Height" turned off for all tasks except drilling?
+
+set pelvis params current desireds to 0, 0, 0, 0, 0.85

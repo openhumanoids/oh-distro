@@ -10,6 +10,7 @@ before clock starts
 -------------------
 
 switch to manip to trigger manip glitch
+activate hand and hand driver
 walking path to auto
 setup sensor pull requests
 reduce transparency on affordances
