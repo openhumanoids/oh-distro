@@ -50,8 +50,16 @@ struct Worker {
 
   void operator()() {
     mActive = true;
+    int numCycles = 0;
     while (mActive) {
 
+      // see if this is a cancel request
+      if ((numCycles > 0) && (mRequest.period == 0)) {
+        mActive = false;
+        break;
+      }
+
+      // dispatch
       switch(mRequest.type) {
       case drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT:
       case drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT:
@@ -100,14 +108,9 @@ struct Worker {
         cout << "Unknown request type" << endl; break;
       }
 
-      // see if this is just a one-shot request
-      if (mRequest.period == 0) {
-        mActive = false;
-        break;
-      }
-
       // wait for timer expiry
       // period is in tenths of seconds, so conversion to milli = x100
+      ++numCycles;
       int millis = mRequest.period*100;
       std::this_thread::sleep_for(std::chrono::milliseconds(millis));
     }
