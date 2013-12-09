@@ -30,6 +30,7 @@ while true
     case drc.drill_control_t.LADDER_STRAIGHTEN_LEFT
       ladder = lcm_mon.getLadderAffordance();
       if ~isempty(ladder)
+        q0 = lcm_mon.getStateEstimate();
         [q_end, snopt_info, infeasible_constraint] = planner.straightenLeftHand(q0, ladder.forward);
       else
         send_status(4,0,0,'No ladder found, cannot straighten left hand');
@@ -37,6 +38,7 @@ while true
     case drc.drill_control_t.LADDER_STRAIGHTEN_RIGHT
       ladder = lcm_mon.getLadderAffordance();
       if ~isempty(ladder)
+        q0 = lcm_mon.getStateEstimate();
         [q_end, snopt_info, infeasible_constraint] = planner.straightenRightHand(q0, ladder.forward);
       else
         send_status(4,0,0,'No ladder found, cannot straighten left hand');
