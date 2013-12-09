@@ -636,6 +636,20 @@
   "door": [
     {
       "allow_mirror": true, 
+      "description": "handdown", 
+      "joints": {
+        "r_arm_elx": -0.4582, 
+        "r_arm_ely": 1.8040870559, 
+        "r_arm_mwx": 0.051782415, 
+        "r_arm_shx": 1.297657576, 
+        "r_arm_usy": 0.239791974, 
+        "r_arm_uwy": 0.009811
+      }, 
+      "name": "handdown", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
       "description": "wrist up and pointed down", 
       "joints": {
         "l_arm_elx": 2.0847930908203125, 
@@ -650,47 +664,72 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "first pull position for spare arm", 
+      "description": "Bring the hand out to the side, elbow bent", 
       "joints": {
-        "l_arm_elx": 1.0244245529174805, 
-        "l_arm_ely": 2.0497074127197266, 
-        "l_arm_mwx": 0.9504258036613464, 
-        "l_arm_shx": -0.05926292762160301, 
-        "l_arm_usy": -0.06112086772918701, 
-        "l_arm_uwy": 0.06773398071527481
+        "l_arm_elx": 2.084794521331787, 
+        "l_arm_ely": 8.932128548622131e-05, 
+        "l_arm_mwx": -1.175258994102478, 
+        "l_arm_shx": -1.57066011428833, 
+        "l_arm_usy": -0.012865424156188965, 
+        "l_arm_uwy": 3.0499672889709473
       }, 
-      "name": "pull protect 1", 
+      "name": "side-retract", 
       "nominal_handedness": "left"
     }, 
     {
       "allow_mirror": true, 
-      "description": "pull position 2 for spare arm", 
+      "description": "Bring the hand out to the side, elbow bent", 
       "joints": {
-        "l_arm_elx": 1.412906527519226, 
-        "l_arm_ely": 2.0497074127197266, 
-        "l_arm_mwx": -0.3010343015193939, 
-        "l_arm_shx": -0.6671001315116882, 
-        "l_arm_usy": -0.9100856781005859, 
-        "l_arm_uwy": 0.0
+        "l_arm_elx": 0.1366388201713562, 
+        "l_arm_ely": 0.004499513655900955, 
+        "l_arm_mwx": -1.1751631498336792, 
+        "l_arm_shx": -1.5690302848815918, 
+        "l_arm_usy": -0.013536572456359863, 
+        "l_arm_uwy": 3.0509257316589355
       }, 
-      "name": "pull protect 2", 
+      "name": "side-retract-down", 
       "nominal_handedness": "left"
     }, 
     {
       "allow_mirror": true, 
-      "description": "pull position 4 for spare arm - fully turnedback", 
+      "description": "rdeits-pull-protect-0", 
       "joints": {
-        "back_bkx": 0.03662845864892006, 
-        "back_bky": 0.08527377992868423, 
-        "back_bkz": -0.663224995136261, 
-        "l_arm_elx": 0.6242178678512573, 
-        "l_arm_ely": 2.0497074127197266, 
-        "l_arm_mwx": -0.3010343015193939, 
-        "l_arm_shx": -0.4595920443534851, 
-        "l_arm_usy": -1.5154443979263306, 
-        "l_arm_uwy": 0.0
+        "l_arm_elx": 1.5029363632202148, 
+        "l_arm_ely": 0.489963173866272, 
+        "l_arm_mwx": -0.018390536308288574, 
+        "l_arm_shx": -0.2801988124847412, 
+        "l_arm_usy": -0.9940379858016968, 
+        "l_arm_uwy": 3.076140880584717
       }, 
-      "name": "pull protect 3", 
+      "name": "rdeits-pull-protect-prep", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "rdeits-pull-protect-1", 
+      "joints": {
+        "l_arm_elx": 1.502265214920044, 
+        "l_arm_ely": 1.9939355850219727, 
+        "l_arm_mwx": -0.17869174480438232, 
+        "l_arm_shx": -0.2801029682159424, 
+        "l_arm_usy": -0.9937504529953003, 
+        "l_arm_uwy": 3.0762367248535156
+      }, 
+      "name": "rdeits-pull-protect-1", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "rdeits-pull-protect-2", 
+      "joints": {
+        "l_arm_elx": 0.7169628739356995, 
+        "l_arm_ely": 2.003810405731201, 
+        "l_arm_mwx": -0.43707168102264404, 
+        "l_arm_shx": -0.6333019733428955, 
+        "l_arm_usy": -1.555378794670105, 
+        "l_arm_uwy": 3.1443071365356445
+      }, 
+      "name": "rdeits-pull-protect-2", 
       "nominal_handedness": "left"
     }
   ], 
@@ -953,6 +992,22 @@
         "l_arm_uwy": 3.141590118408203
       }, 
       "name": "tuckarm", 
+      "nominal_handedness": "left"
+    }
+  ], 
+  "terrain": [
+    {
+      "allow_mirror": true, 
+      "description": "move the arm out to compensate for tipping", 
+      "joints": {
+        "l_arm_elx": 1.3580594062805176, 
+        "l_arm_ely": 1.953518033027649, 
+        "l_arm_mwx": -0.006449699401855469, 
+        "l_arm_shx": -0.5699293613433838, 
+        "l_arm_usy": 0.28639793395996094, 
+        "l_arm_uwy": 0.0261915922164917
+      }, 
+      "name": "out_and_forward", 
       "nominal_handedness": "left"
     }
   ]

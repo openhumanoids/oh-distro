@@ -57,33 +57,32 @@
     </grasp_seed>
 -->
     <!-- Pointers left -->
-    <grasp_seed>
+<!--     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="box_0" />
-        <relative_pose rpy="0 -0 3.14157" xyz="0.0790811 -0.003 0.168" />
+        <relative_pose rpy="0 -0 3.14157" xyz="0.0390811 -0.003 0.168" />
         <grasp_type type="9" />
         <state num_joints="0" joint_names="" joint_positions="" />
-    </grasp_seed>
+    </grasp_seed> -->
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="box_0" />
-        <relative_pose rpy="0 -0 3.14157" xyz="0.0607106 -0.003 0.213895" />
+        <relative_pose rpy="0 -0 3.14157" xyz="0.0207106 -0.003 0.213895" />
         <grasp_type type="9" />
         <state num_joints="0" joint_names="" joint_positions="" />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="box_0" />
-        <relative_pose rpy="0 0 0" xyz="-0.7 -0.1 -1" />
+        <relative_pose rpy="-8.08719e-21 -5.70728e-39 -1.42131e-18" xyz="-0.6414 -0.211583 -0.878874" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
         <geometry name="box_0" />
-        <relative_pose rpy="0 0 0" xyz="-0.7 -0.3 -1" />
+        <relative_pose rpy="-9.43505e-21 -7.776e-39 -1.65819e-18" xyz="-0.631265 -0.427979 -0.878183" />
         <grasp_type type="1" />
         <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
     </grasp_seed>
-
 </object>
