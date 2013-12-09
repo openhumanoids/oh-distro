@@ -12,10 +12,4 @@ struct sensor_request_t {
   // hand camera(s) fps: [both l+r will be the same]
   int8_t hand_fps;
   // quality of camera compression (enum): pairs with jpeg compression values in image-tool
-  int8_t camera_compression;
-
-  const int8_t QUALITY_LOW = 1;
-  const int8_t QUALITY_MED = 2;
-  const int8_t QUALITY_HIGH = 3;
-  const int8_t QUALITY_SUPER = 4;
 }

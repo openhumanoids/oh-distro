@@ -17,6 +17,7 @@
 
 #include <lcmtypes/drc/data_request_list_t.hpp>
 #include <lcmtypes/drc/sensor_request_t.hpp>
+#include <lcmtypes/drc/camera_settings_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/neck_pitch_t.hpp>
 #include <lcmtypes/drc/affordance_mini_t.hpp>
@@ -51,6 +52,7 @@ protected:
     const int mId;
     bool mEnabled;
     double mPeriod;
+    int mQuality;
     typedef std::shared_ptr<RequestControl> Ptr;
   };
 
@@ -65,10 +67,10 @@ protected:
   double mDummyDoubleValue;
 
   Gtk::VBox* mRequestControlBox;
+  Gtk::Table* mRequestControlTable;
   Gtk::VBox* mAffControlBox;
   std::unordered_map<int, RequestControl::Ptr> mRequestControls;
   int mHandCameraFrameRate;
-  int mCameraCompression;
   bool mCameraAutoGain;
 
   int mLeftGraspState;
@@ -131,7 +133,7 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::checkTimers), 500);
       
     // create a subscription to EST_ROBOT_STATE and update some widget labels
-    getLcm()->subscribe("EST_ROBOT_STATE", &DataControlRenderer::on_robot_state, this);
+    getLcm()->subscribe("EST_ROBOT_STATE", &DataControlRenderer::onRobotState, this);
        
     // create affordance update timer
     Glib::signal_timeout().connect
@@ -141,21 +143,20 @@ public:
   ~DataControlRenderer() {
   }
 
-  void on_robot_state(const lcm::ReceiveBuffer* rbuf,
-                      const std::string& chan,
-                      const drc::robot_state_t * msg)
-  { 
-    std::vector<std::string>::const_iterator found;
-    found = std::find(msg->joint_name.begin(), msg->joint_name.end(), "neck_ay"); 
-    int64_t currentTime = msg->utime;
+  void onRobotState(const lcm::ReceiveBuffer* iBuf,
+                    const std::string& iChannel,
+                    const drc::robot_state_t* iMessage) { 
+    auto found = std::find(iMessage->joint_name.begin(),
+                           iMessage->joint_name.end(), "neck_ay"); 
+    int64_t currentTime = iMessage->utime;
     int dtSec = (currentTime - mLastNeckPitchLabelUpdateTime)/1000000;
-    if ((found !=msg->joint_name.end())&&(dtSec>1)) {
-      unsigned int index = found - msg->joint_name.begin();
-      std::stringstream oss;
-      oss << msg->joint_position[index]*(180/M_PI);
-      std::string text = "Pitch ("+ oss.str() + " deg)";
-      mNeckPitchLabel->set_text(text); // update neck label.
-      mLastNeckPitchLabelUpdateTime= currentTime;
+    if ((found != iMessage->joint_name.end()) && (dtSec>1)) {
+      unsigned int index = found - iMessage->joint_name.begin();
+      char valStr[64];
+      sprintf(valStr,"%.1f", iMessage->joint_position[index]*(180/M_PI));
+      std::string text = "Pitch (" + std::string(valStr) + " deg)";
+      mNeckPitchLabel->set_text(text);
+      mLastNeckPitchLabelUpdateTime = currentTime;
    }
   }	
   
@@ -294,11 +295,13 @@ public:
 
     // for data requests
     mRequestControlBox = Gtk::manage(new Gtk::VBox());
+    mRequestControlTable = Gtk::manage(new Gtk::Table());
+    mRequestControlBox->pack_start(*mRequestControlTable,false,false);
     typedef drc::data_request_t dr;
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT, "Camera Head",
-               "CAMERA_LEFT", ChannelTypeAnonymous);
+               "CAMERA_LEFT", ChannelTypeAnonymous,true);
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT, "Camera Head R.",
-               "CAMERA_RIGHT", ChannelTypeAnonymous);
+               "CAMERA_RIGHT", ChannelTypeAnonymous,true);
     /*
     addControl(drc::data_request_t::CAMERA_IMAGE_LHAND, "Camera L.Hand",
                "CAMERA_LHANDLEFT", ChannelTypeAnonymous);
@@ -306,10 +309,10 @@ public:
                "CAMERA_RHANDLEFT", ChannelTypeAnonymous);
     */
     addControl(drc::data_request_t::CAMERA_IMAGE_LCHEST, "Camera L.Chest",
-               "CAMERA_LCHEST", ChannelTypeAnonymous);
+               "CAMERACHEST_LEFT", ChannelTypeAnonymous,true);
     addControl(drc::data_request_t::CAMERA_IMAGE_RCHEST, "Camera R.Chest",
-               "CAMERA_RCHEST", ChannelTypeAnonymous);
-    mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+               "CAMERACHEST_RIGHT", ChannelTypeAnonymous,true);
+    //mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
 
     /*
     addControl(drc::data_request_t::MINIMAL_ROBOT_STATE, "Robot State",
@@ -409,7 +412,7 @@ public:
     mAffControlBox->pack_start(*button, false, false);
     mAffControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
     addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
-               "AFFORDANCE_LIST", ChannelTypeAnonymous, mAffControlBox);
+               "AFFORDANCE_LIST", ChannelTypeAnonymous, false, mAffControlBox);
     button = Gtk::manage(new Gtk::Button("Pull"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
@@ -433,7 +436,7 @@ public:
       box->pack_start(*button,false,false);
       mAffControlBox->pack_start(*box,false,false);
     }
-    notebook->append_page(*mAffControlBox, "Affs");
+    //notebook->append_page(*mAffControlBox, "Affs");
 
 
     // Hands
@@ -667,22 +670,7 @@ public:
     mHandCameraFrameRate = -1;
     //addSpin("Hands Cam fps", mHandCameraFrameRate, -1, 10, 1, handControlBox);
     yCur = 0;
-    mCameraCompression = 0;
-    labels = { "-", "Low", "Med", "High" };
-    ids =
-      { -1, drc::sensor_request_t::QUALITY_LOW,
-        drc::sensor_request_t::QUALITY_MED,
-        drc::sensor_request_t::QUALITY_HIGH };
     mLeftGraspNameEnum = 0;
-    label = Gtk::manage(new Gtk::Label("Camera Quality", Gtk::ALIGN_RIGHT));
-    combo = gtkmm::RendererBase::createCombo(mCameraCompression, labels, ids);
-    button = Gtk::manage(new Gtk::Button("send"));
-    button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onSendRatesControlButton));
-    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
-    sensorControlTable->attach(*combo, 1, 2, yCur, yCur+1, xOpts, yOpts);
-    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
-    ++yCur;
 
     label = Gtk::manage(new Gtk::Label("Head Cam fps", Gtk::ALIGN_RIGHT));
     mDummyIntValue = 5;
@@ -763,26 +751,49 @@ public:
 
   void addControl(const int iId, const std::string& iLabel,
                   const std::string& iChannel, const ChannelType iChannelType,
-                  Gtk::Box* iContainer=NULL) {
-    Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
+                  const bool iQuality=false, Gtk::Box* iContainer=NULL) {
     Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
     Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel));
     Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
     Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(" "));
+    Gtk::ComboBox* combo = NULL;
     spin->set_range(0, 10);
     spin->set_increments(1, 2);
     spin->set_digits(0);
-    box->add(*check);
-    box->add(*label);
-    box->add(*ageLabel);
-    box->add(*spin);
     RequestControl::Ptr group(new RequestControl());
     group->mEnabled = false;
     group->mPeriod = 0;
+    group->mQuality = 0;
     bind(check, iLabel + " enable", group->mEnabled);
     bind(spin, iLabel + " period", group->mPeriod);
-    if (iContainer == NULL)  mRequestControlBox->pack_start(*box,false,false);
-    else iContainer->pack_start(*box,false,false);
+    if (iQuality) {
+      std::vector<std::string> labels = { "-", "Low", "Med", "High" };
+      std::vector<int> ids = { -1, drc::camera_settings_t::QUALITY_LOW,
+                               drc::camera_settings_t::QUALITY_MED,
+                               drc::camera_settings_t::QUALITY_HIGH };
+      combo = createCombo(group->mQuality,labels,ids);
+    }
+    if (iContainer == NULL) {
+      Gtk::AttachOptions xOpts = Gtk::FILL;
+      Gtk::AttachOptions yOpts = Gtk::SHRINK;
+      unsigned int yCur, cols;
+      mRequestControlTable->get_size(yCur,cols);
+      mRequestControlTable->attach(*check,0,1,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*label,1,2,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*ageLabel,2,3,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*spin,3,4,yCur,yCur+1,xOpts,yOpts);
+      if (combo != NULL) {
+        mRequestControlTable->attach(*combo,4,5,yCur,yCur+1,xOpts,yOpts);
+      }
+    }
+    else {
+      Gtk::HBox* box = Gtk::manage(new Gtk::HBox());
+      box->add(*check);
+      box->add(*label);
+      box->add(*ageLabel);
+      box->add(*spin);
+      iContainer->pack_start(*box,false,false);
+    }
     mRequestControls[iId] = group;
 
     std::string key = iChannel;
@@ -814,6 +825,13 @@ public:
       drc::data_request_t req;
       req.type = iter->first;
       req.period = (int)(iter->second->mPeriod*10);
+      if (iter->second->mQuality > 0) {
+        drc::camera_settings_t settingsMessage;
+        settingsMessage.data_request.type = req.type;
+        settingsMessage.data_request.period = 0;
+        settingsMessage.quality = iter->second->mQuality;
+        getLcm()->publish("CAMERA_SETTINGS", &settingsMessage);
+      }
       msg.requests.push_back(req);
     }
     msg.num_requests = msg.requests.size();
@@ -909,7 +927,6 @@ public:
     msg.spindle_rpm = -1;
     msg.head_fps = -1;
     msg.hand_fps = mHandCameraFrameRate;
-    msg.camera_compression = mCameraCompression;
     getLcm()->publish("SENSOR_REQUEST", &msg);
     // TODO: set all to -1
   }
