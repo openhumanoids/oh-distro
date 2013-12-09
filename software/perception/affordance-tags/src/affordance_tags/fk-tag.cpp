@@ -288,6 +288,11 @@ void Tags::processTag(int64_t utime_in){
       pose.pos[0] = tag_pose.translation().x();
       pose.pos[1] = tag_pose.translation().y();
       pose.pos[2] = tag_pose.translation().z();
+      Eigen::Quaterniond r_x(tag_pose.rotation());
+      pose.orientation[0] =  r_x.w();  
+      pose.orientation[1] =  r_x.x();  
+      pose.orientation[2] =  r_x.y();  
+      pose.orientation[3] =  r_x.z();  
       
       lcm_->publish("POSE_TAG", &pose );
       
