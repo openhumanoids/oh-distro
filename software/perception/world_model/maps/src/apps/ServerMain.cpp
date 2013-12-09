@@ -42,6 +42,50 @@
 using namespace std;
 using namespace maps;
 
+// a class to filter lidar points that hit the robot's torso
+class TorsoFilter : public LocalMap::Filter {
+public:
+  TorsoFilter(const BotWrapper::Ptr& iBotWrapper) {
+    mBotWrapper = iBotWrapper;
+  }
+
+  void operator()(maps::PointSet& ioPoints) {
+    // transform points into torso frame
+    Eigen::Isometry3f torsoToLocal;
+    mBotWrapper->getTransform("utorso","local",torsoToLocal);
+    Eigen::Isometry3f scanToLocal = Utils::getPose(*ioPoints.mCloud);
+    Eigen::Isometry3f scanToTorso = torsoToLocal.inverse()*scanToLocal;
+
+    // clip points against torso
+    int numPoints = ioPoints.mCloud->size();
+    std::vector<int> goodIndices;
+    goodIndices.reserve(numPoints);
+    for (int i = 0; i < numPoints; ++i) {
+      const maps::PointType& pt = (*ioPoints.mCloud)[i];
+      Eigen::Vector3f p = scanToTorso*Eigen::Vector3f(pt.x,pt.y,pt.z);
+      // NOTE: these bounds were taken from urdf 2013-12-09
+      bool bad = ((p[0] < 0.3) && (p[0] > -0.2) && (fabs(p[1]) < 0.25) &&
+                  (p[2] < 0.75) && (p[2] > 0));
+      if (!bad) goodIndices.push_back(i);
+    }
+
+    // create new points
+    maps::PointCloud::Ptr cloud(new maps::PointCloud());
+    cloud->resize(goodIndices.size());
+    cloud->width = goodIndices.size();
+    cloud->height = 1;
+    cloud->is_dense = false;
+    cloud->sensor_origin_ = ioPoints.mCloud->sensor_origin_;
+    cloud->sensor_orientation_ = ioPoints.mCloud->sensor_orientation_;
+    for (int i = 0; i < goodIndices.size(); ++i) {
+      (*cloud)[i] = (*ioPoints.mCloud)[goodIndices[i]];
+    }
+    ioPoints.mCloud = cloud;
+  }
+protected:
+  BotWrapper::Ptr mBotWrapper;
+};
+
 class State;
 
 struct StereoHandler {
@@ -728,8 +772,10 @@ int main(const int iArgc, const char** iArgv) {
   LocalMap::Filter::Ptr diffFilter(new LocalMap::RangeDiffFilter());
   std::static_pointer_cast<LocalMap::RangeDiffFilter>(diffFilter)
     ->set(0.03, 2.0);
+  LocalMap::Filter::Ptr torsoFilter(new TorsoFilter(state.mBotWrapper));
   localMap->addFilter(rangeFilter);
   localMap->addFilter(diffFilter);
+  localMap->addFilter(torsoFilter);
 
   // set up remaining parameters
   state.mRequestSubscription =
