@@ -123,11 +123,11 @@ classdef KeyframePlanner < handle
             % mod1: rotates irobots by 180 due to calbe length
             extenders =0;
             if (extenders ==1)
-              send_status(2,0,0,'Planner is assuming Arm extenders!!!!!!!!');
+              send_status(2,0,0,'Planner is assuming Arm extenders. Careful!');
               obj.T_hand_palm_l_irobot = HT([0;0.26756;0.015],1.57079, 0, -3.14159);
-              obj.T_hand_palm_r_irobot = HT([0;-0.26756;-0.015],1.57079,0,3.141);
+              obj.T_hand_palm_r_irobot = HT([0;-0.26756;-0.015],1.57079,0,3.14159);
               obj.T_hand_palm_l_robotiq = HT([0;0.34256;0.015],0,0,0);
-              obj.T_hand_palm_r_robotiq = HT([0;-0.34256;-0.015],0,3.14159,3.14159);
+              obj.T_hand_palm_r_robotiq = HT([0;-0.34256;-0.015],0,1.57079,3.14159);
             end
 
             obj.sandia_gaze_axis = [0;0;1];
