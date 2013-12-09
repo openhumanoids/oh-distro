@@ -129,31 +129,57 @@ void state_sync::enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std:
 
 
 void state_sync::enableEncoders(bool enable) {
-    use_encoder_[Atlas::JOINT_R_ARM_USY] = enable;
-    use_encoder_[Atlas::JOINT_R_ARM_SHX] = enable;
-    use_encoder_[Atlas::JOINT_R_ARM_ELY] = enable;
-    use_encoder_[Atlas::JOINT_R_ARM_ELX] = enable;
-    use_encoder_[Atlas::JOINT_R_ARM_UWY] = enable;
-    use_encoder_[Atlas::JOINT_R_ARM_MWX] = enable;
-
-    use_encoder_[Atlas::JOINT_L_ARM_USY] = enable;
-    use_encoder_[Atlas::JOINT_L_ARM_SHX] = enable;
-    use_encoder_[Atlas::JOINT_L_ARM_ELY] = enable;
-    use_encoder_[Atlas::JOINT_L_ARM_ELX] = enable;
-    use_encoder_[Atlas::JOINT_L_ARM_UWY] = enable;
-    use_encoder_[Atlas::JOINT_L_ARM_MWX] = enable;
-    
-    use_encoder_[Atlas::JOINT_NECK_AY] = enable;
+  // display system status message in viewer
+  drc::system_status_t stat_msg;
+  stat_msg.utime = 0;
+  stat_msg.system = stat_msg.MOTION_ESTIMATION;
+  stat_msg.importance = stat_msg.VERY_IMPORTANT;
+  stat_msg.frequency = stat_msg.LOW_FREQUENCY;
+  std::string str;
+  if (enable) {
+    str = "State Sync: enabling encoders.";
   }
+  else {
+    str = "State Sync: disabling encoders.";
+  }
+  stat_msg.value = str;
+  lcm_->publish(("SYSTEM_STATUS"), &stat_msg);   
+
+  use_encoder_[Atlas::JOINT_R_ARM_USY] = enable;
+  use_encoder_[Atlas::JOINT_R_ARM_SHX] = enable;
+  use_encoder_[Atlas::JOINT_R_ARM_ELY] = enable;
+  use_encoder_[Atlas::JOINT_R_ARM_ELX] = enable;
+  use_encoder_[Atlas::JOINT_R_ARM_UWY] = enable;
+  use_encoder_[Atlas::JOINT_R_ARM_MWX] = enable;
+
+  use_encoder_[Atlas::JOINT_L_ARM_USY] = enable;
+  use_encoder_[Atlas::JOINT_L_ARM_SHX] = enable;
+  use_encoder_[Atlas::JOINT_L_ARM_ELY] = enable;
+  use_encoder_[Atlas::JOINT_L_ARM_ELX] = enable;
+  use_encoder_[Atlas::JOINT_L_ARM_UWY] = enable;
+  use_encoder_[Atlas::JOINT_L_ARM_MWX] = enable;
+  
+  use_encoder_[Atlas::JOINT_NECK_AY] = enable;
+}
 
 void state_sync::loadEncoderOffsetsFromFile() {
   // load encoder offsets from file
 
-  std::cout << "state_sync: refreshing offsets" << std::endl;
+  std::string str = "State Sync: refreshing offsets";
+  std::cout << str << std::endl;
+
+  // display system status message in viewer
+  drc::system_status_t stat_msg;
+  stat_msg.utime = 0;
+  stat_msg.system = stat_msg.MOTION_ESTIMATION;
+  stat_msg.importance = stat_msg.VERY_IMPORTANT;
+  stat_msg.frequency = stat_msg.LOW_FREQUENCY;
+  stat_msg.value = str;
+  lcm_->publish(("SYSTEM_STATUS"), &stat_msg);   
 
   char* drcpath = getenv("DRC_BASE");
   if (drcpath==NULL) {
-    std::cout << "state_sync: error reading DRC_BASE environment variable..." << std::endl;
+    std::cout << "State Sync: error reading DRC_BASE environment variable..." << std::endl;
   }
   else {
     std::ifstream file;
