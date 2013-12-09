@@ -184,7 +184,11 @@ class DRCShaper
     std::stringstream header_string_;
 
     int target_rate_bps_;
+    int fallback_target_rate_bps_;
 
+    int fallback_seconds_;
+    int disallow_rate_change_seconds_;
+    
     // asynchronous timer
     boost::asio::io_service io_;
     

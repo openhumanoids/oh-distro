@@ -237,7 +237,12 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         free(base_host);
     }
 
-    target_rate_bps_ = bot_param_get_int_or_fail(app.bot_param, "network.target_rate_bps");
+    fallback_target_rate_bps_ = bot_param_get_int_or_fail(app.bot_param, "network.target_rate_bps");
+    target_rate_bps_ = fallback_target_rate_bps_;
+    
+    fallback_seconds_ = bot_param_get_int_or_fail(app.bot_param, "network.fallback_seconds");
+    disallow_rate_change_seconds_ = bot_param_get_int_or_fail(app.bot_param, "network.disallow_rate_change_seconds");
+    
     bool use_new_timer = true;
     if(!use_new_timer)
     {
@@ -750,12 +755,21 @@ void DRCShaper::post_bw_stats()
 
         
         int new_target_rate_bps = (upper_error < lower_error) ? upper_it->second : lower_it->second;
-        if(new_target_rate_bps != target_rate_bps_)
+
+        if(new_target_rate_bps != target_rate_bps_ && ((now - utime_last_bps_change) / 1000000 > disallow_rate_change_seconds_))
         {
             utime_last_bps_change = now;
             target_rate_bps_ = new_target_rate_bps;
         }
 
+        if(fallback_target_rate_bps_ != target_rate_bps_ && (now - utime_last_bps_change) / 1000000 > fallback_seconds_)
+        {
+            glog.is(VERBOSE) && glog << group("rx") << "More than " << fallback_seconds_ << " seconds since last rate change; conservatively switching us back to fallback rate" << std::endl;        
+            utime_last_bps_change = now;
+            target_rate_bps_ = fallback_target_rate_bps_;
+        }
+        
+        
         glog.is(VERBOSE) && glog << group("rx") << "Setting throughput to: " << target_rate_bps_ << " bps" << std::endl;
 
     }
