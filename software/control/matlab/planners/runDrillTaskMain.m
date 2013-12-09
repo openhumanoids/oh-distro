@@ -245,7 +245,7 @@ while(true)
         display(sprintf('Distance to cut is %f.  Old line param: %f, new line param: %f',dist_to_cut, line_param, line_param))
       end
 %       keyboard
-      [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 10);
+      [xtraj_drill,snopt_info_drill,infeasible_constraint_drill] = drill_pub.createDrillingPlan(q0, drill_target, 5);
     case drc.drill_control_t.RQ_DRILL_TARGET_PLAN
       if sizecheck(ctrl_data, [3 1])
         drill_target = ctrl_data(1:3);
