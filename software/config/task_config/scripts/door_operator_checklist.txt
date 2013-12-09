@@ -1,0 +1,56 @@
+
+
+day before
+----------
+
+inspect door, measure door handle height
+measure door jam width
+determine whether or not doors will swing back into the robot
+update affordances as required
+check orientation of hook pointer
+
+before clock starts
+-------------------
+
+place door frame affordance
+fit left hand door handle and place walking goal
+move hands to pre-grasp postures
+open and configure ee-driver
+turn on show ee forces
+turn off bdi height mode in controller
+
+run starts
+-----------
+
+walk to door
+while walking, pitch neck to 45 degrees
+refit left hand handle
+reach
+update camera rate
+ee-driver teleop to turn handle and punch open
+bring hand down & zero back
+bring neck pitch to 0 degrees
+begin turning robot
+refit door frame
+sidestep through door
+
+turn and face pull door
+fit right hand door handle
+
+
+
+---------------------------------
+
+todo:
+
+test with hands on the head
+
+determine when to switch to manip mode and back to stand
+need a way to disable warning when executing plans in stand/user mode
+
+
+talk to scott about controller notifying when plan execution has completed, then we could dismiss robot plans after they complete
+
+constrain door handle distance from door
+
+calibration warning triggers if you execute an arm plan against a wall and arm stops short against the wall
