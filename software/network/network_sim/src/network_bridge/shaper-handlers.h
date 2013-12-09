@@ -6,6 +6,7 @@
 #include "drc_udp_driver.h"
 #include "ldpc/ldpc_wrapper.h"
 #include "custom-codecs.h"
+#include <boost/asio.hpp>
 
 enum { RECEIVE_MODULUS = 16 };    
 enum { MIN_NUM_FRAGMENTS_FOR_FEC = 3 };
@@ -139,6 +140,8 @@ class DRCShaper
     void load_ers_custom_codecs();    
     void load_robot_plan_custom_codecs();
 
+    void begin_slot(const boost::system::error_code& e);
+
     
     friend void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data);
   private:
@@ -179,6 +182,16 @@ class DRCShaper
     std::ofstream flog_;
     std::ofstream data_usage_log_;
     std::stringstream header_string_;
+
+    int target_rate_bps_;
+
+    // asynchronous timer
+    boost::asio::io_service io_;
+    
+    boost::asio::deadline_timer timer_;
+    // give the io_service some work to do forever
+    boost::asio::io_service::work work_;
+    boost::posix_time::ptime next_slot_t_;
     
     class ReceiveMessageParts
     {

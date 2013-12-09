@@ -86,7 +86,7 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
     std::vector<int> buffer_sizes;
     std::vector<int> prioritys;
 
-    // currently allow three groups "a", "b", "c", increase
+    // currently allow three groups "a", "b", "c", "d" increase
     // end to increase number of groups
     for(char c = 'a', end = 'd'; c <= end; ++c)
     {

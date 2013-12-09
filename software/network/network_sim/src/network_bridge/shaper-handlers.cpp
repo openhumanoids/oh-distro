@@ -71,7 +71,10 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
       lcm_(node == BASE ? app.base_lcm : app.robot_lcm),
       last_send_type_(0),
       largest_id_(0),
-      dccl_(goby::acomms::DCCLCodec::get())
+      dccl_(goby::acomms::DCCLCodec::get()),
+      timer_(io_),
+      work_(io_),
+      next_slot_t_(goby::common::goby_time())
 {   
     assert(floor_multiple_sixteen(1025) == 1024);
     dccl_->add_id_codec<DRCEmptyIdentifierCodec>("drc_header_codec");    
@@ -233,8 +236,11 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         free(robot_host);
         free(base_host);
     }
+
+    target_rate_bps_ = bot_param_get_int_or_fail(app.bot_param, "network.target_rate_bps");
+    bool use_new_timer = true;
+    if(!use_new_timer)
     {
-        int target_rate_bps = bot_param_get_int_or_fail(app.bot_param, "network.target_rate_bps");
 
         // add slots as part of cfg
         goby::acomms::protobuf::MACConfig cfg;
@@ -244,14 +250,21 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         goby::acomms::protobuf::ModemTransmission slot;
         slot.set_src(node_);
         slot.set_type(goby::acomms::protobuf::ModemTransmission::DATA);
-        slot.set_slot_seconds(static_cast<double>(max_frame_size_)*8/target_rate_bps);
+        slot.set_slot_seconds(static_cast<double>(max_frame_size_)*8/target_rate_bps_);
         cfg.add_slot()->CopyFrom(slot);
 
         goby::acomms::bind(mac_, *udp_driver_);
         glog.is(VERBOSE) && glog << "Starting MAC with configuration: " << cfg.ShortDebugString() << std::endl;
         mac_.startup(cfg);
     }
-
+    else
+    {
+        timer_.expires_at(next_slot_t_);
+        timer_.async_wait(boost::bind(&DRCShaper::begin_slot, this, _1));
+        std::cout << "timer expires at: " << next_slot_t_ << std::endl;
+        
+    }
+    
 
     double expected_packet_loss_percent = bot_param_get_int_or_fail(app.bot_param, "network.expected_packet_loss_percent");
     fec_ = 1/(1-expected_packet_loss_percent/100);
@@ -356,8 +369,6 @@ void DRCShaper::outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel
 void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* msg)
 {
     // TODO: check that send_queue has highest priority item
-
-
     
     // highest priority first
     for(std::map<int, std::list<int> >::reverse_iterator p_it = priority_.rbegin(),
@@ -397,7 +408,12 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
 
     // no data at all
     if(send_queue_.empty())
+    {
+        next_slot_t_ += boost::posix_time::milliseconds(1);
+        timer_.expires_at(next_slot_t_);
+        timer_.async_wait(boost::bind(&DRCShaper::begin_slot, this, _1));
         return;
+    }
     
     msg->set_dest(partner_);
     msg->set_ack_requested(false);
@@ -407,12 +423,17 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     dccl_->encode(frame, send_queue_.top().header());
     (*frame) += send_queue_.top().data();
     
-    
+    int encoded_size = msg->frame(0).size();
     glog.is(VERBOSE) && glog << group("tx") << "Sending: " << DebugStringNoData(send_queue_.top()) << std::endl;
     glog.is(VERBOSE) && glog << group("tx") << "Data size: " << send_queue_.top().data().size() << std::endl;
-    glog.is(VERBOSE) && glog << group("tx") << "Encoded size: " << msg->frame(0).size() << std::endl;
+    glog.is(VERBOSE) && glog << group("tx") << "Encoded size: " << encoded_size << std::endl;
 
-    sent_data_usage_[send_queue_.top().header().channel()].sent_bytes += msg->frame(0).size();
+    const int UDP_HEADER_BYTES = 20;
+    next_slot_t_ += boost::posix_time::microseconds(((encoded_size+UDP_HEADER_BYTES)*8.0)/target_rate_bps_*1e6);
+    timer_.expires_at(next_slot_t_);
+    timer_.async_wait(boost::bind(&DRCShaper::begin_slot, this, _1));
+    
+    sent_data_usage_[send_queue_.top().header().channel()].sent_bytes += msg->frame(0).size() + UDP_HEADER_BYTES;
     
     send_queue_.pop();
 
@@ -427,7 +448,7 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
     {
         std::vector<unsigned char>& qmsg = it->second.messages.front();
         ++it->second.message_count;
-        receive_mod(it->second.message_count);
+         receive_mod(it->second.message_count);
 
         static int overhead = dccl_->size(drc::ShaperHeader());
         int payload_size = max_frame_size_-overhead;
@@ -663,6 +684,8 @@ void DRCShaper::post_bw_stats()
     stats.num_sent_channels = sent_data_usage_.size();
     stats.num_received_channels = received_data_usage_.size();
 
+    static int last_sent_bytes = 0;
+    int sent_bytes = 0;
     for (std::map<int, DataUsage>::const_iterator it = sent_data_usage_.begin(),
              end = sent_data_usage_.end(); it != end; ++it)
     {
@@ -670,9 +693,12 @@ void DRCShaper::post_bw_stats()
         stats.queued_msgs.push_back(it->second.queued_msgs);
         stats.queued_bytes.push_back(it->second.queued_bytes);
         stats.sent_bytes.push_back(it->second.sent_bytes);
-            
+        sent_bytes += it->second.sent_bytes;
     }
-        
+    glog.is(VERBOSE) && glog << group("rx") << "Sent Rate: " << (sent_bytes-last_sent_bytes)*8/1.0 << " bps" << std::endl;
+    glog.is(VERBOSE) && glog << group("rx") << "Target Rate: " << target_rate_bps_ << " bps" << std::endl;
+    last_sent_bytes = sent_bytes;
+    
     for (std::map<int, DataUsage>::const_iterator it = received_data_usage_.begin(),
              end = received_data_usage_.end(); it != end; ++it)
     {
@@ -748,8 +774,11 @@ void DRCShaper::run()
         if(0 == status) {
             // no messages
             udp_driver_->do_work(); 
-            mac_.do_work();
 
+            //mac_.do_work();
+            
+            io_.poll();
+            
             double now = goby::common::goby_time<double>();
             if(now > last_bw_stats_time + 1)
             {
@@ -925,4 +954,16 @@ void DRCShaper::load_custom_codecs()
     custom_codecs_.insert(std::make_pair(manip_map_channel, boost::shared_ptr<CustomChannelCodec>(new ManipMapCodec(manip_map_channel + "_COMPRESSED_LOOPBACK")))); 
     custom_codecs_[manip_map_channel + "_COMPRESSED_LOOPBACK"] = custom_codecs_[manip_map_channel];
         
+}
+
+void DRCShaper::begin_slot(const boost::system::error_code& e)
+{        
+    // canceled the last timer
+    if(e == boost::asio::error::operation_aborted) return;   
+
+    goby::acomms::protobuf::ModemTransmission s;
+    s.set_type(goby::acomms::protobuf::ModemTransmission::DATA);
+    s.set_src(0);
+
+    udp_driver_->handle_initiate_transmission(s);    
 }
