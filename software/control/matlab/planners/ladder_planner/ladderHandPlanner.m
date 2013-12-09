@@ -16,7 +16,7 @@ classdef ladderHandPlanner
     free_ik_options
     doVisualization = true;
     doPublish = false;
-    default_axis_threshold = 1*pi/180;
+    default_axis_threshold = 3*pi/180;
     atlas2robotFrameIndMap
     lc
     state_monitor
@@ -100,8 +100,13 @@ classdef ladderHandPlanner
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       
       % create hand position constraint
+      ladder_z = [0;0;1];
+      ladder_y = cross(ladder_z,ladder_axis);
+      
       hand_pt_init = obj.r.forwardKin(kinsol,obj.left_hand_body,obj.left_hand_pt);
-      hand_pos_constraint = WorldPositionConstraint(obj.r,obj.left_hand_body,obj.left_hand_pt,hand_pt_init,[hand_pt_init(1:2);hand_pt_init(3) + .1]);
+      o_T_f = [[ladder_axis ladder_y ladder_z] hand_pt_init; 0 0 0 1];
+      hand_pos_constraint = WorldPositionInFrameConstraint(obj.r,obj.left_hand_body,obj.left_hand_pt,o_T_f,...
+          [0;-.05;0],[0;.05;.1]);
       
       % create orientation constraint
       orientation_constraint = WorldGazeDirConstraint(obj.r,obj.left_hand_body,obj.left_hand_axis,...
@@ -139,9 +144,15 @@ classdef ladderHandPlanner
       posture_constraint = PostureConstraint(obj.r);
       posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
       
+ 
       % create hand position constraint
+      ladder_z = [0;0;1];
+      ladder_y = cross(ladder_z,ladder_axis);
+      
       hand_pt_init = obj.r.forwardKin(kinsol,obj.right_hand_body,obj.right_hand_pt);
-      hand_pos_constraint = WorldPositionConstraint(obj.r,obj.right_hand_body,obj.right_hand_pt,hand_pt_init,[hand_pt_init(1:2);inf]);
+      o_T_f = [[ladder_axis ladder_y ladder_z] hand_pt_init; 0 0 0 1];
+      hand_pos_constraint = WorldPositionInFrameConstraint(obj.r,obj.right_hand_body,obj.right_hand_pt,o_T_f,...
+          [0;-.05;0],[0;.05;.1]);
       
       % create orientation constraint
       orientation_constraint = WorldGazeDirConstraint(obj.r,obj.right_hand_body,obj.right_hand_axis,...

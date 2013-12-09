@@ -3,7 +3,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
-doVisualization = true;
+doVisualization = false;
 doPublish = true;
 rbmoptions.floating = true;
 if ~doVisualization
