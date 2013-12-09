@@ -43,5 +43,13 @@ while true
       else
         send_status(4,0,0,'No ladder found, cannot straighten left hand');
       end
+    case drc.drill_control_t.STRAIGHTEN_BACK_FIXED_HANDS
+      if sizecheck(ctrl_data, [3 1])
+        back_joints_to_zero = ctrl_data;
+        q0 = lcm_mon.getStateEstimate();
+        [xtraj, snopt_info, infeasible_constraint] = planner.straightenBackFixedHands(q0, back_joints_to_zero);
+      else
+        send_status(4,0,0,'Invalid size of control data. Expected 3x1');
+      end
   end
 end

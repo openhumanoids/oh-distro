@@ -12,6 +12,7 @@ classdef ladderHandPlanner
     right_hand_body;
     left_joint_indices;
     right_joint_indices
+    back_joint_indices
     ik_options
     free_ik_options
     doVisualization = true;
@@ -60,6 +61,8 @@ classdef ladderHandPlanner
       obj.left_hand_body = regexpIndex('l_hand',{r.getBody(:).linkname});
       obj.left_joint_indices = regexpIndex('^l_arm_[a-z]*[x-z]$',r.getStateFrame.coordinates);
 
+      obj.back_joint_indices = regexpIndex('^back_bk[x-z]$',r.getStateFrame.coordinates);
+      
       cost = ones(34,1);
       cost([1 2 6]) = 5000*ones(3,1);
       cost(3) = 200;
@@ -117,8 +120,8 @@ classdef ladderHandPlanner
       
       if(snopt_info > 10)
         send_msg = infeasibleConstraintMsg(infeasible_constraint);
-        send_status(4,0,0,send_msg);
         warning(send_msg);
+        send_status(4,0,0,sprintf('snopt_info = %d. The IK traj fails.',snopt_info));
       end
       
       if obj.doPublish && snopt_info <= 10
@@ -163,8 +166,8 @@ classdef ladderHandPlanner
       
       if(snopt_info > 10)
         send_msg = infeasibleConstraintMsg(infeasible_constraint);
-        send_status(4,0,0,send_msg);
         warning(send_msg);
+        send_status(4,0,0,sprintf('snopt_info = %d. The IK traj fails.',snopt_info));
       end
       
       if obj.doPublish && snopt_info <= 10
@@ -174,6 +177,57 @@ classdef ladderHandPlanner
         msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
         msg.joint_name = obj.r.getStateFrame.coordinates(obj.right_joint_indices);
         msg.joint_position = q_end_nom(obj.right_joint_indices);
+        obj.lc.publish('POSTURE_GOAL',msg);
+        xtraj = q_end_nom;
+      else
+        xtraj = [];
+      end
+    end
+    
+    function [xtraj, snopt_info, infeasible_constraint] = straightenBackFixedHands(obj, q0, back_joints_to_zero)
+      zero_joint_indices = obj.back_joint_indices(back_joints_to_zero ~= 0);
+      
+      kinsol = obj.r.doKinematics(q0);
+      
+      % create posture constraint
+      posture_index = setdiff((1:obj.r.num_q)',[obj.right_joint_indices; obj.left_joint_indices]);
+      posture_constraint = PostureConstraint(obj.r);
+      posture_constraint = posture_constraint.setJointLimits(posture_index,q0(posture_index),q0(posture_index));
+      posture_constraint = posture_constraint.setJointLimits(zero_joint_indices,zeros(length(zero_joint_indices),1),zeros(length(zero_joint_indices),1));
+      
+      % create hand position constraints
+      right_hand_pt_init = obj.r.forwardKin(kinsol,obj.right_hand_body,obj.right_hand_pt,2);
+      right_hand_quat = right_hand_pt_init(4:7);
+      right_hand_pos_constraint = WorldPositionConstraint(obj.r,obj.right_hand_body,obj.right_hand_pt,right_hand_pt_init(1:3),right_hand_pt_init(1:3));
+            
+      left_hand_pt_init = obj.r.forwardKin(kinsol,obj.left_hand_body,obj.left_hand_pt,2);
+      left_hand_quat = left_hand_pt_init(4:7);
+      left_hand_pos_constraint = WorldPositionConstraint(obj.r,obj.left_hand_body,obj.left_hand_pt,left_hand_pt_init(1:3),left_hand_pt_init(1:3));
+      
+      % create orientation constraints
+      left_quat_constraint = WorldQuatConstraint(obj.r,obj.left_hand_body,left_hand_quat,0.0);
+      right_quat_constraint = WorldQuatConstraint(obj.r,obj.right_hand_body,right_hand_quat,0.0);
+      
+      [q_end_nom,snopt_info,infeasible_constraint] = inverseKin(obj.r,q0,q0,...
+        right_hand_pos_constraint,left_hand_pos_constraint,...
+        left_quat_constraint,right_quat_constraint,posture_constraint,obj.ik_options);
+      
+      if(snopt_info > 10)
+        send_msg = infeasibleConstraintMsg(infeasible_constraint);
+        warning(send_msg);
+        send_status(4,0,0,sprintf('snopt_info = %d. The IK traj fails.',snopt_info));
+      end
+      
+      
+      
+      if obj.doPublish && snopt_info <= 10
+        joints = [zero_joint_indices; obj.right_joint_indices; obj.left_joint_indices];
+        msg = drc.joint_angles_t;
+        msg.robot_name = 'atlas';
+        msg.num_joints = length(joints);
+        msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
+        msg.joint_name = obj.r.getStateFrame.coordinates(joints);
+        msg.joint_position = q_end_nom(joints);
         obj.lc.publish('POSTURE_GOAL',msg);
         xtraj = q_end_nom;
       else
