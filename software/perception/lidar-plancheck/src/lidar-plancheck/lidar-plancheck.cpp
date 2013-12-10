@@ -182,7 +182,7 @@ class PlanCheck{
     void robotPlanWKeyframesHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg);   
 
     Collision_Object_GFE* collision_object_gfe_;
-    Collision_Object_Point_Cloud* collision_object_point_cloud_;
+    //Collision_Object_Point_Cloud* collision_object_point_cloud_;
     Collision_Detector* collision_detector_;
     int n_collision_points_;
 
@@ -239,7 +239,7 @@ PlanCheck::PlanCheck(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
     }
     n_collision_points_ = 1081; // was 1000, real lidar from sensor head has about 1081 returns (varies)
 
-    collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ , collision_threshold_);
+    //collision_object_point_cloud_ = new Collision_Object_Point_Cloud( "collision-object-point-cloud", n_collision_points_ , collision_threshold_);
     // create the collision detector
     collision_detector_ = new Collision_Detector();
     btOverlapFilterCallback* filter_callback = new GFEFilterCallback(collision_object_gfe_);
@@ -248,7 +248,7 @@ PlanCheck::PlanCheck(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
     // special grouping is used here, as we want to check self-collisions. The
     // filter callback should take care adjacent links)
     collision_detector_->add_collision_object( collision_object_gfe_, COLLISION_DETECTOR_GROUP_1);
-    collision_detector_->add_collision_object( collision_object_point_cloud_, COLLISION_DETECTOR_GROUP_2, COLLISION_DETECTOR_GROUP_1 );   
+    //collision_detector_->add_collision_object( collision_object_point_cloud_, COLLISION_DETECTOR_GROUP_2, COLLISION_DETECTOR_GROUP_1 );   
 
 
     lcmgl_= bot_lcmgl_init(lcm_->getUnderlyingLCM(), "lidar-pt");
@@ -292,20 +292,21 @@ void PlanCheck::DoCollisionCheck(int64_t current_utime ){
 
 
   // 2. Check for collisions
-  if (init_lidar_) {
+  //if (init_lidar_) {
     // set the state of the lidar collision objects
-    vector< Vector3f > points;
-    vector<unsigned int> possible_indices; // the indices of points that could possibly be in intersection: not to near and not too far
-    ProcessLastLidar(points,possible_indices);
-    if (points.size() > 0) {
-      collision_object_point_cloud_->set( points );
-    }
-  }
+    //vector< Vector3f > points;
+    //vector<unsigned int> possible_indices; // the indices of points that could possibly be in intersection: not to near and not too far
+    //ProcessLastLidar(points,possible_indices);
+    //if (points.size() > 0) {
+      //collision_object_point_cloud_->set( points );
+    //}
+  //}
 
-  drc::robot_plan_t in_collision_plan(rplan_);
+  //drc::robot_plan_t in_collision_plan(rplan_);
   drc::robot_collision_array_t collision_msg;
   collision_msg.utime = rplan_.utime;
-  in_collision_plan.plan.clear();
+  collision_msg.collision_states.clear();
+  //in_collision_plan.plan.clear();
   vector< vector<Collision> > collisions;
   int i = 0;
   for (drc::robot_state_t rstate : rplan_.plan) {
@@ -317,7 +318,7 @@ void PlanCheck::DoCollisionCheck(int64_t current_utime ){
       collision_msg_i.utime = rstate.utime;
       collision_msg_i.plan_idx = i;
       cout << "PlanCheck::DoCollisionCheck: State " << i << " is in collision. Adding it to output plan ..." << endl;
-      in_collision_plan.plan.push_back(rstate);
+      //in_collision_plan.plan.push_back(rstate);
       cout << "Links in collision: " << endl;
       for (Collision collision : collisions.back()) {
         if (find(collision_msg_i.links_in_collision.begin(), 
@@ -340,13 +341,15 @@ void PlanCheck::DoCollisionCheck(int64_t current_utime ){
     i++;
   }
   collision_msg.num_collision_states = collision_msg.collision_states.size();
+  //cout << "PlanCheck::DoCollisionCheck: Num Collision States: " << collision_msg.num_collision_states << endl;
   // 4. Output plan containing in-collision states
-  if (in_collision_plan.plan.size() > 0) {
-    in_collision_plan.num_states = in_collision_plan.plan.size();
+  if (collision_msg.num_collision_states > 0) {
+    //in_collision_plan.num_states = in_collision_plan.plan.size();
     cout << "PlanCheck::DoCollisionCheck: Publishing in-collision plan" << endl;
     lcm_->publish( ("ROBOT_COLLISIONS") , &collision_msg);        
   } else {
     cout << "PlanCheck::DoCollisionCheck: Plan is clean" << endl;
+    lcm_->publish( ("ROBOT_COLLISIONS") , &collision_msg);        
   }
 
   //cout << "gfe obj size: " << collision_object_gfe_->bt_collision_objects().size() << "\n";
