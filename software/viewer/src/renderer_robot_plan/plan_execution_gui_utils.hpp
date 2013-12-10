@@ -79,6 +79,14 @@ namespace renderer_robot_plan_gui_utils
       gtk_widget_show_all(window); 
   }   
   
+
+  static gboolean on_ignore_warning_checkbox_changed (GtkWidget* checkbox, void *user)
+  {
+    RendererRobotPlan *self = (RendererRobotPlan*) user;    
+    self->ignore_plan_execution_warning =  (bool) GTK_TOGGLE_BUTTON (checkbox)->active;
+    return TRUE;
+  }
+  
   static bool plan_execute_warning_popup(void *user)
   {
       RendererRobotPlan *self = (RendererRobotPlan*) user;
@@ -94,12 +102,24 @@ namespace renderer_robot_plan_gui_utils
                                             GTK_RESPONSE_NO,
                                             NULL);
       content_area = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
-      label1 = gtk_label_new ("WARNING:: NOT IN MANIP MODE");
+      label1 = gtk_label_new ("WARNING:: NOT IN MANIP/USER MODE");
       label2 = gtk_label_new ("Are you sure you want to commit plan?");
+      
+      GtkWidget* checkbox;
+      checkbox = gtk_check_button_new_with_label("Don't warn again");
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (checkbox),(gboolean)self->ignore_plan_execution_warning);
+      
       //g_signal_connect_swapped (dialog,"response",G_CALLBACK (gtk_widget_destroy),dialog);
       gtk_container_add (GTK_CONTAINER (content_area), label1);
       gtk_container_add (GTK_CONTAINER (content_area), label2);
+      gtk_container_add(GTK_CONTAINER (content_area),checkbox);
       gtk_widget_show_all (dialog);  
+      
+     
+       g_signal_connect (G_OBJECT (checkbox),
+                "clicked",
+                G_CALLBACK (on_ignore_warning_checkbox_changed),
+                self);
 
       // popup warning
       gint result = gtk_dialog_run (GTK_DIALOG (dialog));
@@ -182,7 +202,8 @@ namespace renderer_robot_plan_gui_utils
     cout <<"Robot plan approved" << endl;
     
     if(self->atlas_state != drc::atlas_status_t::BEHAVIOR_MANIPULATE && 
-       self->atlas_state != drc::atlas_status_t::BEHAVIOR_USER)
+       self->atlas_state != drc::atlas_status_t::BEHAVIOR_USER &&
+       !self->ignore_plan_execution_warning)
     {
       if(!plan_execute_warning_popup( self))
         return FALSE;    

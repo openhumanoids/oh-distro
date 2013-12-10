@@ -84,6 +84,7 @@ namespace renderer_robot_plan
     int64_t atlas_status_utime; 
   
     GtkWidget *plan_execution_dock;
+    bool ignore_plan_execution_warning;
     GtkWidget *plan_execute_button;
     GtkWidget *multiapprove_plan_execution_dock;
     GtkWidget *plan_approval_dock;

@@ -908,6 +908,7 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     self->visualize_bbox = false;
     self->multiapprove_plan_execution_dock= NULL; 
     self->plan_execution_dock= NULL; 
+    self->ignore_plan_execution_warning = FALSE;
     self->plan_approval_dock= NULL; 
     self->plan_execute_button= NULL; 
     self->afftriggered_popup = NULL;
