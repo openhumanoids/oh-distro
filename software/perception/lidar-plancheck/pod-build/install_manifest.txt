@@ -1,0 +1,6 @@
+/home/avalenzu/drc/software/build/bin/drc-lidar-plancheck
+/home/avalenzu/drc/software/build/bin/drc-lidar-filter
+/home/avalenzu/drc/software/build/bin/drc-get-lidar-depth-image
+/home/avalenzu/drc/software/build/bin/drc-get-lidar-depth-image-minimal
+/home/avalenzu/drc/software/build/bin/drc-colorize-lidar-scan
+/home/avalenzu/drc/software/build/bin/drc-stream
