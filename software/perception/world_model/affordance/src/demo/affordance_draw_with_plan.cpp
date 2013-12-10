@@ -73,8 +73,6 @@ class Pass{
     void manipPlanHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg);    
 
-    void collision_avoidance_urdf_handler(const lcm::ReceiveBuffer* rbuf, 
-                                          const std::string& channel, const  drc::workspace_object_urdf_t* msg);
     
     boost::shared_ptr<ModelClient> model_;
     KDL::TreeFkSolverPosFull_recursive* fksolver_;
@@ -86,7 +84,8 @@ class Pass{
     bool   aff_init_;
 
     
-
+    std::vector <drc::affordance_plus_t> affs_;
+    
     drc::affordance_plus_t aff_;
     Eigen::Isometry3d world_to_body_;
     
@@ -123,7 +122,6 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
   lcm_->subscribe("CANDIDATE_MANIP_PLAN",&Pass::manipPlanHandler,this);
   
   lcm_->subscribe( "AFFORDANCE_PLUS_COLLECTION" ,&Pass::affHandler,this);
-  lcm_->subscribe( "COLLISION_AVOIDANCE_URDFS" ,&Pass::collision_avoidance_urdf_handler,this);
 
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
@@ -218,10 +216,6 @@ void Pass::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string
   rstate_init_ = true;
 }
 
-void Pass::collision_avoidance_urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::workspace_object_urdf_t* msg){
-  config_.aff_id_ = msg->uid;
-  std::cout << "updating mate id to " << config_.aff_id_ << "\n";
-}
 
 
 void Pass::manipPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_w_keyframes_t* msg){
@@ -234,37 +228,59 @@ void Pass::manipPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
    return; 
   }
   if (!aff_init_){
-   std::cout << "no aff yet\n";
+   std::cout << "no affs yet\n";
    return; 
   }
   
- 
-  // Determine the current hand to aff pose: 
-  Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
-  Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
 
-  Eigen::Isometry3d world_to_hose = affutils_.getPose(aff_.aff.origin_xyz, aff_.aff.origin_rpy );
-  palm_to_hose_ = world_to_palm.inverse() * world_to_hose;
-
- 
   // Make a poly mesh of the hypothesied positions of the mesh:
   pcl::PolygonMesh::Ptr full_mesh(new pcl::PolygonMesh());
-  for (size_t i=0; i < msg->plan.size() ; i++){     
-    map<string, KDL::Frame > cartpos_plan;
-    bool cartpos_ready_plan = false;
-    Eigen::Isometry3d world_to_body_plan;
-    solveFK(msg->plan[ i],world_to_body_plan, cartpos_plan, cartpos_ready_plan);
+  
+  if (affs_.size() ==0){
+    std::cout << "no affs present\n";
+    return;
+  }
+  
+  std::cout << "creating mesh with " << affs_.size() << " affs\n";
+  
+  for (size_t  j=0; j< affs_.size() ; j++){
+    drc::affordance_plus_t this_aff  = affs_[j];
+  
+    // Determine the current hand to aff pose: 
+    Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
+    Eigen::Isometry3d world_to_palm =  world_to_body_* body_to_palm;
 
-    Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_plan.find( getPalmLink() )->second);
-    Eigen::Isometry3d world_to_palm =  world_to_body_plan* body_to_palm;
-    Eigen::Isometry3d world_to_hose =  world_to_palm* palm_to_hose_;
-    affutils_.setXYZRPYFromIsometry3d(aff_.aff.origin_xyz, aff_.aff.origin_rpy, world_to_hose);
+    Eigen::Isometry3d world_to_hose = affutils_.getPose(this_aff.aff.origin_xyz, this_aff.aff.origin_rpy );
+    palm_to_hose_ = world_to_palm.inverse() * world_to_hose;
 
+  
+    for (size_t i=0; i < msg->plan.size() ; i++){     
+      map<string, KDL::Frame > cartpos_plan;
+      bool cartpos_ready_plan = false;
+      Eigen::Isometry3d world_to_body_plan;
+      solveFK(msg->plan[ i],world_to_body_plan, cartpos_plan, cartpos_ready_plan);
 
-    pcl::PolygonMesh::Ptr new_aff_mesh(new pcl::PolygonMesh());
-    float jet_color = ((float) i) / (msg->plan.size() -1);
-    affordancePlusInterpret(aff_, jet_color, new_aff_mesh );
-    pc_vis_->mergePolygonMesh(full_mesh,new_aff_mesh  );
+      Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_plan.find( getPalmLink() )->second);
+      Eigen::Isometry3d world_to_palm =  world_to_body_plan* body_to_palm;
+      Eigen::Isometry3d world_to_hose =  world_to_palm* palm_to_hose_;
+      affutils_.setXYZRPYFromIsometry3d(this_aff.aff.origin_xyz, this_aff.aff.origin_rpy, world_to_hose);
+
+      std::stringstream ss ;
+      print_Isometry3d(palm_to_hose_, ss);
+      std::cout << ss.str() << " [palm to hose]\n";
+
+      {
+      std::stringstream ss ;
+      print_Isometry3d(palm_to_hose_, ss);
+      std::cout << ss.str() << " [palm to hose]\n";
+      }
+      
+      pcl::PolygonMesh::Ptr new_aff_mesh(new pcl::PolygonMesh());
+      float jet_color = ((float) i) / (msg->plan.size() -1);
+      affordancePlusInterpret(this_aff, jet_color, new_aff_mesh );
+      pc_vis_->mergePolygonMesh(full_mesh,new_aff_mesh  );
+    }
+  
   }
   
   Eigen::Isometry3d null_pose;
@@ -382,12 +398,17 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, float aff_uid
 void Pass::affHandler(const lcm::ReceiveBuffer* rbuf, 
                         const std::string& channel, const  drc::affordance_plus_collection_t* msg){
 
-  for (int i=0 ; i < msg->naffs ; i++){
+  affs_ = msg->affs_plus;
+  aff_init_ =true;
+  
+  
+/*  for (int i=0 ; i < msg->naffs ; i++){
     if (msg->affs_plus[i].aff.uid ==  config_.aff_id_){
       aff_ = msg->affs_plus[i];
       aff_init_= true;
     }
   }
+  */
 }
 
 
