@@ -63,7 +63,7 @@ cut_lengths = sum((drill_points(:,2:end) - drill_points(:,1:end-1)).*(drill_poin
 short_cut = .05;
 long_cut = .05;
 target_radius = .08;
-predrill_distance = .07;
+predrill_distance = .12;
 
 xtraj_nominal = []; %to know if we've got a plan
 xtraj_button = []; %to know if we've got a plan
@@ -96,9 +96,9 @@ while(true)
     case drc.drill_control_t.RQ_GOTO_BUTTON_PRESET
       disp('Searching for a button hand posture');
       if useRightHand
-        gaze_in_pelvis = [-1;1;0];
+        gaze_in_pelvis = [-.8;1;.1];
       else
-        gaze_in_pelvis = [-1;-1;.5];
+        gaze_in_pelvis = [-.8;-1;.1];
       end
       
       gaze_in_pelvis = gaze_in_pelvis/norm(gaze_in_pelvis);
@@ -150,9 +150,9 @@ while(true)
         drill_points_expanded(:,i) = drill_points_expanded(:,i) + target_expansion*(drill_points_expanded(:,i) - target_centroid)/norm(drill_points_expanded(:,i) - target_centroid) + wall.normal*depth_increase;
       end
       
-      q0_init(1:3) = target_centroid - wall.normal*.6 - .2*wall_z + .1*wall_y;
+      q0_init(1:3) = target_centroid - wall.normal*.7 - .2*wall_z + 0.3*wall_y;
       q0_init(6) = atan2(wall.normal(2), wall.normal(1));
-      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .0);
+      [xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, 0);
       
     case drc.drill_control_t.RQ_WALKING_GOAL
       if ~isempty(xtraj_nominal)
@@ -176,7 +176,7 @@ while(true)
         drill_f = r.forwardKin(kinsol,drill_pub.hand_body,drill_pub.drill_pt_on_hand);
         
         
-        [xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q0, drill_f - predrill_distance*wall.normal, 5, qf);
+        [xtraj_arm_init,snopt_info_arm_init,infeasible_constraint_arm_init] = drill_pub.createInitialReachPlan(q0, drill_f - (drill_depth + predrill_distance)*wall.normal, 10, qf);
       else
         send_status(4,0,0,'Nominal trajectory not instantiated yet, cannot create a walking goal');
       end

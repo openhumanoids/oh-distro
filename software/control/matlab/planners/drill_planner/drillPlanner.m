@@ -292,6 +292,14 @@ classdef drillPlanner
       % create drill position constraint
       drill_pos_constraint = WorldPositionConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,x_drill,x_drill,[t_vec(end) t_vec(end)]);
       
+      wall_z = [0;0;1] - [0;0;1]'*obj.drilling_world_axis*obj.drilling_world_axis;
+      wall_z = wall_z/norm(wall_z);
+      wall_y = cross(wall_z,obj.drilling_world_axis);
+      
+      o_T_f = [[obj.drilling_world_axis wall_y wall_z] x_drill; 0 0 0 1];
+      
+      drill_distance_constraint = WorldPositionInFrameConstraint(obj.r,obj.hand_body,obj.drill_pt_on_hand,o_T_f,-inf(3,1),[0;inf;inf]);
+      
       % Find nominal pose
       diff_opt = inf;
       q_end_nom = q0;
@@ -316,31 +324,31 @@ classdef drillPlanner
         display(infeasibleConstraintMsg(infeasible_constraint_ik));
         warning(send_msg);
       end
-%       qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
-%       
-%       
-%       [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
-%         t_vec,qtraj_guess,qtraj_guess,...
-%         drill_pos_constraint,drill_dir_constraint,posture_constraint,obj.ik_options);
-%       
-%       if(snopt_info > 10)
-%         send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
-%         send_status(4,0,0,send_msg);
-%         display(infeasibleConstraintMsg(infeasible_constraint));
-%         warning(send_msg);
-%       end
+      qtraj_guess = PPTrajectory(foh([0 T],[q0, q_end_nom]));
+      
+      
+      [xtraj,snopt_info,infeasible_constraint] = inverseKinTraj(obj.r,...
+        t_vec,qtraj_guess,qtraj_guess,...
+        drill_pos_constraint,drill_dir_constraint,posture_constraint,drill_distance_constraint,obj.ik_options);
+      
+      if(snopt_info > 10)
+        send_msg = sprintf('snopt_info = %d. The IK traj fails.',snopt_info);
+        send_status(4,0,0,send_msg);
+        display(infeasibleConstraintMsg(infeasible_constraint));
+        warning(send_msg);
+      end
       
       if obj.doPublish && snopt_info <= 10
-%         obj.publishTraj(xtraj,snopt_info);
+        obj.publishTraj(xtraj,snopt_info);
 %         xtraj = obj.posture_pub.generateAndPublishPosturePlan(q0,q_end_nom,0);
-        msg = drc.joint_angles_t;
-        msg.robot_name = 'atlas';
-        msg.num_joints = length(obj.joint_indices);
-        msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
-        msg.joint_name = obj.r.getStateFrame.coordinates(obj.joint_indices);
-        msg.joint_position = q_end_nom(obj.joint_indices);
-        obj.lc.publish('POSTURE_GOAL',msg); 
-        xtraj = q_end_nom;
+%         msg = drc.joint_angles_t;
+%         msg.robot_name = 'atlas';
+%         msg.num_joints = length(obj.joint_indices);
+%         msg.utime = etime(clock,[1970 1 1 0 0 0])*1e6;
+%         msg.joint_name = obj.r.getStateFrame.coordinates(obj.joint_indices);
+%         msg.joint_position = q_end_nom(obj.joint_indices);
+%         obj.lc.publish('POSTURE_GOAL',msg); 
+%         xtraj = q_end_nom;
       end
       
       if obj.doVisualization && snopt_info <= 10
