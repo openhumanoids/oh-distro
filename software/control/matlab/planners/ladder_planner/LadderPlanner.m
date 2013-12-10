@@ -103,9 +103,9 @@ function LadderPlanner(options)
   ladder_opts.fine.arm_tol_total = 30*pi/180;
   ladder_opts.fine.verbose = options.verbose;
   ladder_opts.fine.base_z_tol = 0.05;
-  ladder_opts.fine.elbow_min = 30*pi/180;
+  ladder_opts.fine.elbow_min = 0*pi/180;
   ladder_opts.fine.knee_crossing_min = 0.05;
-  ladder_opts.lean_back_dist = 0.2;
+  ladder_opts.lean_back_dist = 0.1;
 
   % get the robot model first
   % @param l_hand_mode          - 0 no left hand
@@ -245,9 +245,9 @@ function LadderPlanner(options)
     %com_data_new_sagital = bsxfun(@plus,com_dir*(min(foot_data_sagital_coords)-ladder_opts.lean_back_dist),com_data(:,1));
     %com_data_new = com_data_new_sagital + com_data_frontal; 
     %com_data_new = com_data_new_sagital; 
-    com_data_sagital_coords = ([min(foot_data_sagital_coords(:)),min(foot_data_sagital_coords(:)),min(foot_data_sagital_coords(:))]-ladder_opts.lean_back_dist*[1,1,0]);
+    com_data_sagital_coords = ([min(foot_data_sagital_coords(:)),max(foot_data_sagital_coords(:)),max(foot_data_sagital_coords(:))]-ladder_opts.lean_back_dist*[1,1,1]);
     %com_traj_sagital = PPTrajectory(spline(linspace(t0,tf,3),com_data_sagital_coords));
-    com_traj_sagital = PPTrajectory(foh(linspace(t0,tf,3),com_data_sagital_coords));
+    com_traj_sagital = PPTrajectory(foh(t0+[0,0.7,1]*tf,com_data_sagital_coords));
     com_data_new = bsxfun(@plus,com_dir*eval(com_traj_sagital,comtraj.getBreaks),com_data(:,1));
 
     comtraj_new = PPTrajectory(foh(comtraj.getBreaks,com_data_new));

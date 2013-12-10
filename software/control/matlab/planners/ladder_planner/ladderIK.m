@@ -115,7 +115,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
   logical2str = @(b) regexprep(sprintf('%i',b),{'1','0'},{' ON ',' OFF '});
   fprintf('\n');
   fprintf('Constraint Summary\n');
-  fprintf('==================================\n');
+  fprintf('==================================true\n');
   fprintf('Name                      Status    Tolerance\n');
   fprintf('QS Constraint             %s        %4.2f\n', logical2str(ladder_opts.use_quasistatic_constraint),ladder_opts.shrink_factor);
   fprintf('Incr. COM Constraint:     %s        %4.2f m\n', logical2str(ladder_opts.use_incr_com_constraint), ladder_opts.com_incr_tol);
@@ -405,7 +405,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     foot2_pts_in_pelvis = inv(o_T_pelvis)*T*[foot2_pts;ones(1,size(foot2_pts,2))]; foot2_pts_in_pelvis(4,:)=[];
     com = mean([foot1_pts_in_pelvis,foot2_pts_in_pelvis],2);
     com(3) = NaN;
-    com_constraint_f = WorldCoMInFrameConstraint(r,o_T_pelvis,com-ladder_opts.com_tol_f*[1;0;0],com+ladder_opts.com_tol_f*[1;0;0],t_end(end)*[1,1]);
+    com_constraint_f = WorldCoMInFrameConstraint(r,o_T_pelvis,com-ladder_opts.com_tol_f*[1;0.5;0],com+ladder_opts.com_tol_f*[1;0.5;0],t_end(end)*[1,1]);
     %com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
     %com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
     constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
