@@ -95,6 +95,30 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
                              dccl_state->mutable_joint_id()))
         return false;
 
+    dccl_state->set_l_foot_force_z(lcm_object.force_torque.l_foot_force_z);
+    dccl_state->set_l_foot_torque_x(lcm_object.force_torque.l_foot_torque_x);
+    dccl_state->set_l_foot_torque_y(lcm_object.force_torque.l_foot_torque_y);
+
+    dccl_state->set_r_foot_force_z(lcm_object.force_torque.r_foot_force_z);
+    dccl_state->set_r_foot_torque_x(lcm_object.force_torque.r_foot_torque_x);
+    dccl_state->set_r_foot_torque_y(lcm_object.force_torque.r_foot_torque_y);
+
+    dccl_state->add_l_hand_force(lcm_object.force_torque.l_hand_force[0]);
+    dccl_state->add_l_hand_force(lcm_object.force_torque.l_hand_force[1]);
+    dccl_state->add_l_hand_force(lcm_object.force_torque.l_hand_force[2]);
+
+    dccl_state->add_l_hand_torque(lcm_object.force_torque.l_hand_torque[0]);
+    dccl_state->add_l_hand_torque(lcm_object.force_torque.l_hand_torque[1]);
+    dccl_state->add_l_hand_torque(lcm_object.force_torque.l_hand_torque[2]);
+
+    dccl_state->add_r_hand_force(lcm_object.force_torque.r_hand_force[0]);
+    dccl_state->add_r_hand_force(lcm_object.force_torque.r_hand_force[1]);
+    dccl_state->add_r_hand_force(lcm_object.force_torque.r_hand_force[2]);
+
+    dccl_state->add_r_hand_torque(lcm_object.force_torque.r_hand_torque[0]);
+    dccl_state->add_r_hand_torque(lcm_object.force_torque.r_hand_torque[1]);
+    dccl_state->add_r_hand_torque(lcm_object.force_torque.r_hand_torque[2]);
+    
     return true;
 }
 
@@ -129,26 +153,65 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
     lcm_object->joint_velocity = joint_zeros;
     lcm_object->joint_effort = joint_zeros;
 
-    lcm_object->force_torque.l_foot_force_z = 0;
-    lcm_object->force_torque.l_foot_torque_x = 0;
-    lcm_object->force_torque.l_foot_torque_y = 0;
-    lcm_object->force_torque.l_hand_torque[0] = 0;
-    lcm_object->force_torque.l_hand_torque[1] = 0;
-    lcm_object->force_torque.l_hand_torque[2] = 0;    
-    lcm_object->force_torque.l_hand_force[0] = 0;
-    lcm_object->force_torque.l_hand_force[1] = 0;
-    lcm_object->force_torque.l_hand_force[2] = 0;
+    lcm_object->force_torque.l_foot_force_z = dccl_state.l_foot_force_z();
+    lcm_object->force_torque.l_foot_torque_x = dccl_state.l_foot_torque_x();
+    lcm_object->force_torque.l_foot_torque_y = dccl_state.l_foot_torque_y();
 
-    lcm_object->force_torque.r_foot_force_z = 0;
-    lcm_object->force_torque.r_foot_torque_x = 0;
-    lcm_object->force_torque.r_foot_torque_y = 0;
-    lcm_object->force_torque.r_hand_torque[0] = 0;
-    lcm_object->force_torque.r_hand_torque[1] = 0;
-    lcm_object->force_torque.r_hand_torque[2] = 0;    
-    lcm_object->force_torque.r_hand_force[0] = 0;
-    lcm_object->force_torque.r_hand_force[1] = 0;
-    lcm_object->force_torque.r_hand_force[2] = 0;
-        
+    if(dccl_state.l_hand_torque_size() == 3)
+    {
+        lcm_object->force_torque.l_hand_torque[0] = dccl_state.l_hand_torque(0);
+        lcm_object->force_torque.l_hand_torque[1] = dccl_state.l_hand_torque(1);
+        lcm_object->force_torque.l_hand_torque[2] = dccl_state.l_hand_torque(2);
+    }
+    else
+    {
+        lcm_object->force_torque.l_hand_torque[0] = 0;
+        lcm_object->force_torque.l_hand_torque[1] = 0;
+        lcm_object->force_torque.l_hand_torque[2] = 0;    
+    }
+    
+    if(dccl_state.l_hand_force_size() == 3)
+    {
+        lcm_object->force_torque.l_hand_force[0] = dccl_state.l_hand_force(0);
+        lcm_object->force_torque.l_hand_force[1] = dccl_state.l_hand_force(1);
+        lcm_object->force_torque.l_hand_force[2] = dccl_state.l_hand_force(2);
+    }
+    else
+    {
+        lcm_object->force_torque.l_hand_force[0] = 0;
+        lcm_object->force_torque.l_hand_force[1] = 0;
+        lcm_object->force_torque.l_hand_force[2] = 0;    
+    }
+
+    lcm_object->force_torque.r_foot_force_z = dccl_state.r_foot_force_z();
+    lcm_object->force_torque.r_foot_torque_x = dccl_state.r_foot_torque_x();
+    lcm_object->force_torque.r_foot_torque_y = dccl_state.r_foot_torque_y();
+
+    if(dccl_state.r_hand_torque_size() == 3)
+    {
+        lcm_object->force_torque.r_hand_torque[0] = dccl_state.r_hand_torque(0);
+        lcm_object->force_torque.r_hand_torque[1] = dccl_state.r_hand_torque(1);
+        lcm_object->force_torque.r_hand_torque[2] = dccl_state.r_hand_torque(2);
+    }
+    else
+    {
+        lcm_object->force_torque.r_hand_torque[0] = 0;
+        lcm_object->force_torque.r_hand_torque[1] = 0;
+        lcm_object->force_torque.r_hand_torque[2] = 0;    
+    }
+    
+    if(dccl_state.r_hand_force_size() == 3)
+    {
+        lcm_object->force_torque.r_hand_force[0] = dccl_state.r_hand_force(0);
+        lcm_object->force_torque.r_hand_force[1] = dccl_state.r_hand_force(1);
+        lcm_object->force_torque.r_hand_force[2] = dccl_state.r_hand_force(2);
+    }
+    else
+    {
+        lcm_object->force_torque.r_hand_force[0] = 0;
+        lcm_object->force_torque.r_hand_force[1] = 0;
+        lcm_object->force_torque.r_hand_force[2] = 0;    
+    }
     
     return true;
 }

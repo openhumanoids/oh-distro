@@ -15,6 +15,20 @@ message MinimalRobotState
   repeated int32 joint_id = 4 [(dccl.field) = { min: 0 max: 109 max_repeat: 110 codec: "presence_bit" } ];
 
   // jp: precision was 2 -> 90bytes | 3 -> 110bytes
+
+  optional float l_foot_force_z = 10 [(dccl.field) = { min: -500  max: 2000 precision: 1 codec: "presence_bit" } ];
+  optional float l_foot_torque_x = 11 [(dccl.field) = { min: -500 max: 500 precision: 1 codec: "presence_bit" } ];
+  optional float l_foot_torque_y = 12 [(dccl.field) = { min: -500 max: 500 precision: 1 codec: "presence_bit" } ];
+
+  optional float r_foot_force_z = 13 [(dccl.field) = { min: -500 max: 2000 precision: 1 codec: "presence_bit" } ];
+  optional float r_foot_torque_x = 14 [(dccl.field) = { min: -500 max: 500 precision: 1 codec: "presence_bit" } ];
+  optional float r_foot_torque_y = 15 [(dccl.field) = { min: -500 max: 500 precision: 1 codec: "presence_bit" } ];
+
+  repeated float l_hand_force = 20 [(dccl.field) = { min: -600 max: 600 precision: 1 max_repeat: 3 codec: "presence_bit" } ];
+  repeated float l_hand_torque = 21 [(dccl.field) = { min: -250 max: 250 precision: 1 max_repeat: 3 codec: "presence_bit" } ];
+  repeated float r_hand_force = 22 [(dccl.field) = { min: -600 max: 600 precision: 1 max_repeat: 3 codec: "presence_bit" } ];
+  repeated float r_hand_torque = 23 [(dccl.field) = { min: -250 max: 250 precision: 1 max_repeat: 3 codec: "presence_bit"} ];  
+
 }
 
 

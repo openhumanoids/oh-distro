@@ -91,12 +91,39 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     glog.add_group("rx-cleanup", goby::common::Colors::lt_green);
 
     goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
-
-
-
     
     if(app.cl_cfg.enable_gui)
         goby::glog.enable_gui();
+
+    
+    if(app.cl_cfg.file_log)
+    {
+        // debug log
+        using namespace boost::posix_time;
+
+        std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
+
+        flog_.open(goby_debug_file_name.c_str());
+        if(!flog_.is_open())
+        {
+            std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
+                              &flog_);
+
+
+        // data usage log
+	open_usage_log();
+    }    
+    
+
+    if(app.cl_cfg.verbose)
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
+    else
+        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::WARN), &std::cout);
+    
 
     goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitStringCodec, google::protobuf::FieldDescriptor::TYPE_STRING>("presence_bit");
     goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitNumericFieldCodec<goby::int32> >("presence_bit");
@@ -169,30 +196,7 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
         }
     }
 
-    
-    if(app.cl_cfg.file_log)
-    {
-        // debug log
-        using namespace boost::posix_time;
 
-        std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
-
-        flog_.open(goby_debug_file_name.c_str());
-        if(!flog_.is_open())
-        {
-            std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-
-        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
-                              &flog_);
-
-
-        // data usage log
-	open_usage_log();
-    }    
-    
-    
     largest_id_ = current_id-1;
     
     
@@ -266,15 +270,16 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     {
         timer_.expires_at(next_slot_t_);
         timer_.async_wait(boost::bind(&DRCShaper::begin_slot, this, _1));
-        std::cout << "timer expires at: " << next_slot_t_ << std::endl;
+//        std::cout << "timer expires at: " << next_slot_t_ << std::endl;
         
     }
 
 
-    int latency_keys[127];
-    int latency_keys_size = bot_param_get_int_array(app.bot_param, "network.latency", latency_keys, 127);
-    int throughput[127];
-    int throughput_values_size = bot_param_get_int_array(app.bot_param, "network.throughput_bps", throughput, 127);
+    const int latency_map_size = 2;
+    int latency_keys[latency_map_size];
+    int latency_keys_size = bot_param_get_int_array(app.bot_param, "network.latency", latency_keys, latency_map_size);
+    int throughput[latency_map_size];
+    int throughput_values_size = bot_param_get_int_array(app.bot_param, "network.throughput_bps", throughput, latency_map_size);
     
     if(latency_keys_size != throughput_values_size)
     {
@@ -294,11 +299,6 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     double expected_packet_loss_percent = bot_param_get_int_or_fail(app.bot_param, "network.expected_packet_loss_percent");
     fec_ = 1/(1-expected_packet_loss_percent/100);
     glog.is(VERBOSE) && glog << "Forward error correction: " << fec_ << std::endl;
-
-    if(app.cl_cfg.verbose)
-        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
-    else
-        goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::WARN), &std::cout);
 }
 
 void DRCShaper::open_usage_log()
@@ -942,14 +942,22 @@ void DRCShaper::load_ers_custom_codecs()
         rotation->set_z(0);
         rotation->set_w(0);
 
+        state.set_l_foot_force_z(1004.5);
+        state.set_r_foot_force_z(1005.5);
 
+        state.set_l_foot_torque_x(234.6);
+        state.set_r_foot_torque_x(-432.4);
+
+        state.set_l_foot_torque_y(222.6);
+        state.set_r_foot_torque_y(-1.5);
+        
         std::string bytes;
         dccl_->encode(&bytes, state);
         
         DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::MinimalRobotState>();
         dccl_->decode(bytes, &state_out);
-        std::cout << state.DebugString() << std::endl;
-        std::cout << state_out.DebugString() << std::endl;
+//        std::cout << state.DebugString() << std::endl;
+//        std::cout << state_out.DebugString() << std::endl;
         assert(state.SerializeAsString() == state_out.SerializeAsString());
     }
 }
@@ -1005,7 +1013,7 @@ void DRCShaper::load_robot_plan_custom_codecs()
 
         plan.set_aff_num_states(0);
         
-        std::cout << plan.DebugString() << std::endl;
+//        std::cout << plan.DebugString() << std::endl;
         
         std::string bytes;
         dccl_->encode(&bytes, plan);
@@ -1013,7 +1021,7 @@ void DRCShaper::load_robot_plan_custom_codecs()
         DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::MinimalRobotPlan>();
         dccl_->decode(bytes, &plan_out);
 
-        std::cout << plan_out.DebugString() << std::endl;
+//        std::cout << plan_out.DebugString() << std::endl;
 
         while(plan_out.grasp_size() > plan_out.num_grasp_transitions())
             plan_out.mutable_grasp()->RemoveLast();
