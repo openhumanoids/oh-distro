@@ -4,7 +4,7 @@ add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
 
 set(LIBRARY_NAME data-control-renderer)
 add_library(${LIBRARY_NAME} SHARED
-  DataControlRenderer.cpp)
+  ParamManager.cpp DataControlRenderer.cpp)
   
 set_target_properties(${LIBRARY_NAME} PROPERTIES SOVERSION 1)
 

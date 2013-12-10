@@ -33,6 +33,11 @@
 #include <bot_vis/viewer.h>
 #include <affordance/AffordanceUpWrapper.h>
 
+#include <bot_param/param_client.h>
+#include <maps/BotWrapper.hpp>
+
+#include "ParamManager.hpp"
+
 // convenience class for list boxes
 struct ComboColumns : public Gtk::TreeModel::ColumnRecord {
   Gtk::TreeModelColumn<int> mId;
@@ -108,6 +113,8 @@ protected:
   std::unordered_map<std::string, TimeKeeper> mTimeKeepers;
   std::mutex mTimeKeepersMutex;
 
+  std::shared_ptr<ParamManager> mParamManager;
+
 public:
 
   DataControlRenderer(BotViewer* iViewer, const int iPriority,
@@ -121,6 +128,13 @@ public:
     // set up robot time clock
     drc::Clock::instance()->setLcm(getLcm());
     drc::Clock::instance()->setVerbose(false);
+
+    std::shared_ptr<maps::BotWrapper> updatingBotWrapper;
+    lcm_t* lcm = const_cast<lcm_t*>(iLcm);
+    BotParam* updatingBotParam = bot_param_new_from_server(lcm, 1);
+    updatingBotWrapper.reset(new maps::BotWrapper(lcm, updatingBotParam));
+    mParamManager.reset(new ParamManager(updatingBotWrapper));
+    mParamManager->setKeyBase("maps.datacontrol.pull");
 
     // set up affordance wrapper
     mAffordanceWrapper.reset(new affordance::AffordanceUpWrapper
@@ -453,8 +467,8 @@ public:
           drc::map_registration_command_t msg;
           msg.utime = now();
           msg.command = check->get_active() ?
-            drc::map_registration_command_t::AFF_UPDATE_START :
-            drc::map_registration_command_t::AFF_UPDATE_PAUSE;
+            (int)drc::map_registration_command_t::AFF_UPDATE_START :
+            (int)drc::map_registration_command_t::AFF_UPDATE_PAUSE;
           getLcm()->publish("MAP_REGISTRATION_COMMAND", &msg);
         });
       box->pack_start(*label,false,false);
@@ -761,31 +775,38 @@ public:
 
     container->add(*notebook);
     container->show_all();
+
+    mParamManager->onParamChange();
   }
 
   void addControl(const int iId, const std::string& iLabel,
                   const std::string& iChannel, const ChannelType iChannelType,
                   const bool iQuality=false, Gtk::Box* iContainer=NULL) {
-    Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
-    Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel));
-    Gtk::SpinButton* spin = Gtk::manage(new Gtk::SpinButton());
-    Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(" "));
-    Gtk::ComboBox* combo = NULL;
-    spin->set_range(0, 10);
-    spin->set_increments(1, 2);
-    spin->set_digits(0);
     RequestControl::Ptr group(new RequestControl());
     group->mEnabled = false;
     group->mPeriod = 0;
     group->mQuality = 0;
-    bind(check, iLabel + " enable", group->mEnabled);
-    bind(spin, iLabel + " period", group->mPeriod);
+
+    Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
+    check->signal_toggled().connect
+      ([check,group]{group->mEnabled=check->get_active();});
+    Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel));
+    Gtk::SpinButton* spin = createSpin(group->mPeriod,0,10,1);
+    spin->set_digits(0);
+    Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(" "));
+    Gtk::ComboBox* combo = NULL;
+    std::string safeLabel = iLabel;
+    std::replace(safeLabel.begin(), safeLabel.end(), ' ', '_');
+    std::replace(safeLabel.begin(), safeLabel.end(), '.', '_');
+    mParamManager->bind(safeLabel+".enable",*check);
+    mParamManager->bind(safeLabel+".period",*spin);
     if (iQuality) {
       std::vector<std::string> labels = { "-", "Low", "Med", "High" };
       std::vector<int> ids = { -1, drc::camera_settings_t::QUALITY_LOW,
                                drc::camera_settings_t::QUALITY_MED,
                                drc::camera_settings_t::QUALITY_HIGH };
       combo = createCombo(group->mQuality,labels,ids);
+      mParamManager->bind(safeLabel+".quality",*combo);
     }
     if (iContainer == NULL) {
       Gtk::AttachOptions xOpts = Gtk::FILL;
@@ -852,6 +873,7 @@ public:
     if (msg.num_requests > 0) {
       getLcm()->publish("DATA_REQUEST", &msg);
     }
+    mParamManager->pushValues();
   }
 
   void onDataPushButton() {
