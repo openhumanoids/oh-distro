@@ -223,7 +223,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
         }
     }
     bool append_currenthandstate = (_breakpoint_indices.size()==0);
-    cout << "append_currenthandstate: "<< append_currenthandstate << " " << _breakpoint_indices.size() << endl;
+    //cout << "append_currenthandstate: "<< append_currenthandstate << " " << _breakpoint_indices.size() << endl;
     int count=0; 	   	// always display the last state in the plan
     for (uint i = 0; i <(uint)msg->num_states; i++)
     {
