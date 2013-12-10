@@ -1,0 +1,9 @@
+package drc;
+
+struct map_depth_settings_t {
+  // which map, indicated by type of data request
+  data_request_t data_request;
+
+  // whether to filter ground
+  boolean remove_ground;
+}
