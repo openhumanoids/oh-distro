@@ -74,9 +74,12 @@ calib_val.l_arm_uwy =  0.02515;
 calib_val.l_arm_mwx =  1.16325;
 calib_val = double(calib_val);
 
+behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
+behavior_lis = AtlasBehaviorModeListener('ATLAS_STATUS');
+
+lc = lcm.lcm.LCM.getSingleton();
 if runLCM % wait for LCM trigger, then run
   monitor = drake.util.MessageMonitor(drc.utime_t,'utime');
-  lc = lcm.lcm.LCM.getSingleton();
   lc.subscribe('CALIBRATE_ARM_ENCODERS',monitor);  
   
   while true
@@ -92,7 +95,18 @@ end
 
   function moveAndWriteCalibration
 
-    lc = lcm.lcm.LCM.getSingleton();
+    switch_back_to_freeze = false;
+    % get current atlas behavior
+    behavior = behavior_lis.getMessage();
+    if behavior == AtlasBehaviorModeListener.BEHAVIOR_FREEZE
+      switch_back_to_freeze = true;
+      % switch to user mode
+      d.t = 0;
+      d.behavior = 'user';
+      behavior_pub.publish(d);
+      pause(0.5);
+    end
+    
     msg = drc.utime_t();
     msg.utime = -1; % disable with negative utime
     lc.publish('ENABLE_ENCODERS',msg);
@@ -156,6 +170,14 @@ end
     msg = drc.utime_t();
     msg.utime = 1; % enable with positive utime
     lc.publish('ENABLE_ENCODERS',msg);
+    
+    if switch_back_to_freeze      
+      % switch to user mode
+      d.t = 0;
+      d.behavior = 'freeze';
+      behavior_pub.publish(d);
+      pause(0.5);
+    end
 
   end
 
