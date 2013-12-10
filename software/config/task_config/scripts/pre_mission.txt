@@ -76,9 +76,4 @@ pre-mission
 - is "Plan & Control w BDI Height" turned off for all tasks except drilling?
 - set pelvis params current desireds to 0, 0, 0, 0, 0.85
 
-
------------
-prep
-stand
-wranglers: any task-specific adjustments XXX ?
-
+- when standing transition to manip to flush the back tweak

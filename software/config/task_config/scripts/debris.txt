@@ -1,3 +1,12 @@
+what if shaper crashes? how do we restart with low bandwidth
+remove plan motion affordances as required
+
+goto 2 over reaches
+piece 2 - use back for mid-retract
+
+need better plan for reach 3
+------------------------------------------
+
 
 DEBRIS TASK
 
@@ -9,75 +18,83 @@ Field team: Steve, Matt D., XXX, XXX, XXX
 
 
 startup:
-1. run prep and simple grasp scripts
-2. verify robot came up with right arm config. 
+run prep and simple grasp scripts
+verify robot came up with right arm config. 
    look at arms and legs - are there any joint errors?
-3. did system status messages indicate: irobot left, robotiq right?
-4. calibrate left hand. watch for visual movement and sys status msgs
-5. create a box and have the planner reach with both hands to it
-6. verify that pat can visualise affordance motion in plans
-7. verify that planner is expecting hand extensions
-8. make sure "plan & control w BDI height" is turned OFF
+did system status messages indicate: irobot left, robotiq right?
+calibrate left hand. watch for visual movement and sys status msgs
+create a box and have the planner reach with both hands to it
+verify that pat can visualise affordance motion in plans
+verify that planner is expecting hand extensions
+make sure "plan & control w BDI height" is turned OFF
 
 
 verify that pieces are leaning in the expected way:
 flat, up right, up left, up right, up left
 
+
+--------------------------------
 positioning:
-1. walk very close to debris but short. raise hands up to shooter position
-2. stop, find best standing point with perception (legs between truss)
-3. walk to standing point
-4. go to manip mode. crouch to 66cm.
+walk very close to debris but short. raise hands up to shooter position
+stop, find best standing point with perception (legs between truss)
+walk to standing point
+go to manip mode. crouch to 66cm.
 
+
+--------------------------------
 reach 1: reach to side of truss. IMPORTANT:  Make sure elbow is OUT when lifting
-1. hand fit with 2 fingers facing start line
-2. move pelvis ypr: 0, 0, 0
-3. do 90% reach
-4. refit, touch, grasp
-5. raise height to 90cm.
-6. retract plans
+hand fit with 2 fingers facing start line
+move pelvis ypr: 0, 0, 0
+do 90% reach
+refit, touch, grasp
+raise height to 90cm.
+retract plans
 
 
+--------------------------------
 reach 2: careful to reach over piece 3.
-1. hand fit with 2 fingers facing start line
-2. move pelvis ypr: pitch 5, yaw 5, roll 0
-3. do 90% reach
-4. refit, touch, grasp
-5. raise pelvis by 5cm and yaw 5degrees to clear wall
-5. raise height to 90cm.
-6. make sure to bring arm closer to body to avoid hitting board 3
-7. retract plans
+hand fit with 2 fingers facing start line
+move pelvis ypr: pitch 5, yaw 5, roll 0
+do 90% reach
+refit, touch, grasp
+raise pelvis by 5cm and yaw 5degrees to clear wall
+raise height to 90cm.
+make sure to bring arm closer to body to avoid hitting board 3
+retract plans
 
 
+--------------------------------
 reach 3: IMPORTANT: Use goto posture to avoid singularity
-1. hand fit with 2 fingers EXACTLY pointing down <<<<<<<<<<
-2. move pelvis ypr: pitch 5, yaw 5, roll 0
-3. do 90% reach. check this is correct - problems with sings XXX
-4. refit, touch, grasp
-5. raise pelvis by 5cm and then yaw 5degrees to clear sidewall
-6. raise height to 90cm.
-7. pelvis pitch to -5, yaw 0
-8. retract plans
+hand fit with 2 fingers EXACTLY pointing down <<<<<<<<<<
+move pelvis ypr: pitch 5, yaw 5, roll 0
+do 90% reach. check this is correct - problems with sings XXX
+refit, touch, grasp
+raise pelvis by 5cm and then yaw 5degrees to clear sidewall
+raise height to 90cm.
+pelvis pitch to -5, yaw 0
+retract plans
 
 
+--------------------------------
 reach 4:
-1. hand fit with 2 fingers facing toward robot
-2. move pelvis ypr: yaw 10, roll 0. important to keep good camera seeing
-3. do 90% reach.
-4. refit, touch, grasp
-5. raise pelvis by 5cm and then yaw 5degrees to clear sidewall
-6. raise height to 90cm. slowly xxxxxx get scott to help xxxxxx
-7. pelvis pitch to -5, yaw 0
-8. after small retraction yaw to right with pelvis and back
-9. lift directly up using one of the 3 postures
+hand fit with 2 fingers facing toward robot
+move pelvis ypr: yaw 10, roll 0. important to keep good camera seeing
+do 90% reach.
+refit, touch, grasp
+raise pelvis by 5cm and then yaw 5degrees to clear sidewall
+raise height to 90cm. slowly xxxxxx get scott to help xxxxxx
+pelvis pitch to -5, yaw 0
+after small retraction yaw to right with pelvis and back
+lift directly up using one of the 3 postures
 10. yaw left with back and pelvis
 
 
+--------------------------------
 reach 5: make sure to have single finger pointing down to right, makes retract easier
-1. hand fit with XX fingers facing XX
-2. move pelvis ypr: y p at max positive
-3. do 90% reach
-4. refit, touch, grasp
-5. raise height to 90cm.
-6. can i zero back joints with hand stationary - with the new mode? 
-7. retract plans
+hand fit with XX fingers facing XX
+move pelvis ypr: y p at max positive
+do 90% reach
+refit, touch, grasp
+raise height to 90cm.
+can i zero back joints with hand stationary - with the new mode? 
+retract plans
