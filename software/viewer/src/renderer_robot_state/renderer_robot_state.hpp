@@ -160,6 +160,24 @@ namespace renderer_robot_state
       }
     }
     
+    
+    void handleCannedPostureGoalMsg(const lcm::ReceiveBuffer* rbuf,
+	          const std::string& chan, 
+	          const drc::joint_angles_t* msg)
+    {
+       cout << "received canned posture goal" << endl;
+       if(!this->robotStateListener->_gl_robot->is_future_state_changing())
+         this->robotStateListener->_gl_robot->set_future_state_changing(true);
+         
+        std::map<std::string, double> jointpos_in;
+        jointpos_in = this->robotStateListener->_gl_robot->_current_jointpos;
+        for(size_t j=0;j<msg->num_joints;j++)
+        {
+           jointpos_in.find(msg->joint_name[j])->second = msg->joint_position[j];
+        }
+        this->robotStateListener->_gl_robot->set_future_state(this->robotStateListener->_gl_robot->_T_world_body,jointpos_in); 
+    }
+    
   } RobotStateRendererStruc;
 
 inline static double get_shortest_distance_between_robot_links_and_jointdof_markers (void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)

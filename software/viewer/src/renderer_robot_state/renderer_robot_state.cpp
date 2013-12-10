@@ -380,6 +380,7 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
   }
 }
 
+
 void 
 setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, int operation_mode, KeyboardSignalRef signalRef,AffTriggerSignalsRef affTriggerSignalsRef,RendererFoviationSignalRef rendererFoviationSignalRef)
 {
@@ -390,7 +391,8 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
               viewer, operation_mode));
     self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RobotStateRendererStruc::keyboardSignalCallback,self,_1,_2)));
     self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RobotStateRendererStruc::affTriggerSignalsCallback,self,_1,_2,_3,_4)));
-    self->_rendererFoviationSignalRef = rendererFoviationSignalRef;          
+    self->_rendererFoviationSignalRef = rendererFoviationSignalRef;      
+    self->lcm->subscribe("POSTURE_GOAL_CANNED",&RobotStateRendererStruc::handleCannedPostureGoalMsg, self);      
     
     BotRenderer *renderer = &self->renderer;
 
