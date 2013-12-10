@@ -199,6 +199,8 @@ class DRCShaper
 
     int latency_ms_;
     std::map<int, int> latency_throughput_;
+
+    int expected_packet_loss_percent_;
     
     class ReceiveMessageParts
     {

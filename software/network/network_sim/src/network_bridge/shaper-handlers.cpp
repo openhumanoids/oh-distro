@@ -296,8 +296,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
 
     
-    double expected_packet_loss_percent = bot_param_get_int_or_fail(app.bot_param, "network.expected_packet_loss_percent");
-    fec_ = 1/(1-expected_packet_loss_percent/100);
+    expected_packet_loss_percent_ = bot_param_get_int_or_fail(app.bot_param, "network.expected_packet_loss_percent");
+    fec_ = 1/(1-(double)expected_packet_loss_percent_/100);
     glog.is(VERBOSE) && glog << "Forward error correction: " << fec_ << std::endl;
 }
 
@@ -474,8 +474,6 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
     if(it != queues_.end() && !it->second.messages.empty())
     {
         std::vector<unsigned char>& qmsg = it->second.messages.front();
-        ++it->second.message_count;
-         receive_mod(it->second.message_count);
 
         static int overhead = dccl_->size(drc::ShaperHeader());
         int payload_size = max_frame_size_-overhead;
@@ -497,6 +495,8 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
         else
         {
             msg_head->set_message_size(qmsg.size());
+            ++it->second.message_count;
+            receive_mod(it->second.message_count);
             msg_head->set_message_number(it->second.message_count);
 
             payload_size = floor_multiple_sixteen(max_frame_size_-overhead);
@@ -821,16 +821,21 @@ void DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& messa
                                             DRCShaper::fec_));
     }
 
+    
+    
     if(decoder_done_)
         return;
     
     int dec_done = decoder_->processPacket(
         reinterpret_cast<uint8_t*>(&fragments_[message.header().fragment()].mutable_data()->at(0)),
         message.header().fragment());
-
+    
     switch(dec_done)
     {
-        case 0: return;
+        case 0:
+            if(message.header().is_last_fragment())
+                glog.is(WARN) && glog << group("rx") << "Error: ldpc got last sent packet, but thought it wasn't done decoding!" << std::endl;
+            return;
         case 1:
             decoder_done_ = true;
             glog.is(VERBOSE) && glog << group("rx") << "Decoder done!" << std::endl;
