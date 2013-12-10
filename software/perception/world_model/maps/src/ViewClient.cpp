@@ -347,6 +347,15 @@ getAllSpecs() const {
   return specs;
 }
 
+bool ViewClient::
+removeView(const int64_t iId) {
+  std::unique_lock<std::mutex> lock(mWorker->mMutex);
+  if (mViews.find(iId) == mViews.end()) return false;
+  mViews.erase(iId);
+  if (mCatalog.find(iId) != mCatalog.end()) mCatalog.erase(iId);
+  return true;
+}
+
 void ViewClient::
 clearAll() {
   mViews.clear();

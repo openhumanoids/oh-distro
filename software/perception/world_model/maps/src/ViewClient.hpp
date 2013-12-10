@@ -46,6 +46,7 @@ public:
   bool getSpec(const int64_t iId, ViewBase::Spec& oSpec) const;
   std::vector<ViewBase::Spec> getAllSpecs() const;
 
+  bool removeView(const int64_t iId);
   void clearAll();
 
   bool addListener(const Listener* iListener);

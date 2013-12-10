@@ -263,7 +263,7 @@ struct ViewMetaData::Helper {
       Gtk::Button* cancelButton = Gtk::manage(new Gtk::Button("X"));
       box->pack_start(*cancelButton, false, false);
       cancelButton->signal_clicked().connect
-        (sigc::mem_fun(*this, &Helper::onCancelButton));
+        (sigc::mem_fun(*this, &Helper::onRemoveButton));
     }
     Gtk::Button* button = Gtk::manage(new Gtk::Button("save"));
     button->signal_clicked().connect
@@ -318,16 +318,12 @@ struct ViewMetaData::Helper {
     return true;
   }
 
-  void onCancelButton() {
-    maps::ViewBase::Spec spec;
-    spec.mMapId = 0;
-    spec.mViewId = mViewId;
-    spec.mResolution = spec.mFrequency = 0;
-    spec.mTimeMin = spec.mTimeMax = 0;
-    spec.mActive = false;
-    spec.mType = maps::ViewBase::TypePointCloud;
-    mRenderer->mViewClient.request(spec);
+  void onRemoveButton() {
+    auto self = mRenderer->mViewData[mViewId];
+    if (self == NULL) return;
+    mRenderer->mViewClient.removeView(mViewId);
     mRenderer->requestDraw();
+    mRenderer->mViewData.erase(mViewId);
   }
 
   void onSaveButton() {
