@@ -79,6 +79,11 @@ struct GFEFilterCallback : public btOverlapFilterCallback
       if (find(ignored_links.begin(),ignored_links.end(),name1) != ignored_links.end()) {
           return false;
       }
+      if (name0.find("finger") != std::string::npos && 
+          name1.find("finger") != std::string::npos){
+        //cout << "Ignoring pair: (" << name0 << ", " << name1 << ")" << endl;
+        return false;
+      }
       //cout << "Checking pair: (" << name0 << ", " << name1 << ")" << endl;
       KDL::SegmentMap::const_iterator it0 = gfe_tree_->getSegment(name0);
       KDL::SegmentMap::const_iterator it1 = gfe_tree_->getSegment(name1);
