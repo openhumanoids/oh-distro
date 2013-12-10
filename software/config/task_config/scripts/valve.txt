@@ -3,13 +3,17 @@ VALVE TASK
 
 Operator: Scott
 Wingman: Pat
-Monitor:
-Field team: 
+Monitor: Matt A.
+Field team: Steve, Matt D., Maurice (???), XXX, XXX
 
 
 day before
 ----------
 
+
+during physical prep
+--------------------
+check that hands are as desired (poker, iRobot?)
 
 
 during run prep

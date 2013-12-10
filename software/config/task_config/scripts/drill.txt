@@ -2,15 +2,15 @@
 DRILL TASK
 
 Operator: Michael
-Wingman: XXX
+Wingman: Pat
 Monitor: Matt A.
-Field team: Steve, Matt D., Maurice (???), XXX, XXX
+Field team: Matt D., Steve, Maurice (???), XXX, XXX
 
 
 day before
 ----------
 
-determine orientation of drill (two drills) on table 
+determine orientation of drill (two drills) on table
 seed sticky hand (and feet?) as appropriate
 
 

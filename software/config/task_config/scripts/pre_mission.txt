@@ -69,11 +69,31 @@ right hand:  BDI hook
 pre-mission
 -----------
 - mount appropriate hands (see above)
-- power on robot; calibrate XXX; check head sensors, hand responses
-- check disk space for logs
+
+- check disk space 
+    confirm enough free space for logs
+
+- power on robot
+    start viewer
+    robot power
+    kill and restart all P&C processes
+    go into user mode
+    run joint calibration
+    go back to freeze mode
+    click calibrate for joint sensors
+    check head sensors
+    check hand responses
+
 - which GUI tools are to be used? start them up and tile them
 - something about checking the IMU status?
 - is "Plan & Control w BDI Height" turned off for all tasks except drilling?
 - set pelvis params current desireds to 0, 0, 0, 0, 0.85
 
-- when standing transition to manip to flush the back tweak
+
+prep
+-----------
+
+go to STAND
+wranglers: any task-specific adjustments XXX ?
+once standing, transition to manip to flush the back tweak
+
