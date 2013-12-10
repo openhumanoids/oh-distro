@@ -39,6 +39,8 @@
 
 #include <zlib.h>
 
+#include "LidarFilters.hpp"
+
 using namespace std;
 using namespace maps;
 
@@ -50,7 +52,7 @@ public:
   }
 
   void operator()(maps::PointSet& ioPoints) {
-    // transform points into torso frame
+    // compute scan to torso transform
     Eigen::Isometry3f torsoToLocal;
     mBotWrapper->getTransform("utorso","local",torsoToLocal);
     Eigen::Isometry3f scanToLocal = Utils::getPose(*ioPoints.mCloud);
@@ -85,6 +87,55 @@ public:
 protected:
   BotWrapper::Ptr mBotWrapper;
 };
+
+// a class to filter lidar points that are close to the ground
+class GroundFilter : public LocalMap::Filter {
+public:
+  GroundFilter(const BotWrapper::Ptr& iBotWrapper) {
+    mBotWrapper = iBotWrapper;
+    mActive = true;
+  }
+
+  void operator()(maps::PointSet& ioPoints) {
+    if (!mActive) return;
+
+    // transform ground plane to scan coords
+    Eigen::Isometry3f groundToLocal;
+    mBotWrapper->getTransform("ground","local",groundToLocal);
+    Eigen::Isometry3f scanToLocal = Utils::getPose(*ioPoints.mCloud);
+    Eigen::Isometry3f scanToGround = groundToLocal.inverse()*scanToLocal;
+    Eigen::Matrix4f groundPlaneToScan = scanToGround.matrix().transpose();
+    const float kDistanceThresh = 0.1;
+    Eigen::Vector4f plane = groundPlaneToScan*Eigen::Vector4f(0,0,1,0);
+
+    // include only points higher than threshold above ground
+    int numPoints = ioPoints.mCloud->size();
+    std::vector<int> goodIndices;
+    goodIndices.reserve(numPoints);
+    for (int i = 0; i < numPoints; ++i) {
+      const maps::PointType& pt = (*ioPoints.mCloud)[i];
+      float dist = plane[0]*pt.x + plane[1]*pt.y + plane[2]*pt.z + plane[3];
+      if (dist > kDistanceThresh) goodIndices.push_back(i);
+    }
+
+    // create new points
+    maps::PointCloud::Ptr cloud(new maps::PointCloud());
+    cloud->resize(goodIndices.size());
+    cloud->width = goodIndices.size();
+    cloud->height = 1;
+    cloud->is_dense = false;
+    cloud->sensor_origin_ = ioPoints.mCloud->sensor_origin_;
+    cloud->sensor_orientation_ = ioPoints.mCloud->sensor_orientation_;
+    for (int i = 0; i < goodIndices.size(); ++i) {
+      (*cloud)[i] = (*ioPoints.mCloud)[goodIndices[i]];
+    }
+    ioPoints.mCloud = cloud;
+  }
+protected:
+  BotWrapper::Ptr mBotWrapper;
+  bool mActive;
+};
+
 
 class State;
 
@@ -545,6 +596,7 @@ public:
   lcm::Subscription* mCatalogTriggerSubscription;
 
   float mCatalogPublishPeriod;
+  std::shared_ptr<maps::GroundFilter> mGroundFilter;
 
   State() {
     mBotWrapper.reset(new BotWrapper());
@@ -772,10 +824,12 @@ int main(const int iArgc, const char** iArgv) {
   LocalMap::Filter::Ptr diffFilter(new LocalMap::RangeDiffFilter());
   std::static_pointer_cast<LocalMap::RangeDiffFilter>(diffFilter)
     ->set(0.03, 2.0);
-  LocalMap::Filter::Ptr torsoFilter(new TorsoFilter(state.mBotWrapper));
+  LocalMap::Filter::Ptr torsoFilter(new maps::TorsoFilter(state.mBotWrapper));
+  state.mGroundFilter.reset(new maps::GroundFilter(state.mBotWrapper));
   localMap->addFilter(rangeFilter);
   localMap->addFilter(diffFilter);
   localMap->addFilter(torsoFilter);
+  localMap->addFilter(state.mGroundFilter);
 
   // set up remaining parameters
   state.mRequestSubscription =

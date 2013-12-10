@@ -18,6 +18,7 @@
 #include <lcmtypes/drc/data_request_list_t.hpp>
 #include <lcmtypes/drc/sensor_request_t.hpp>
 #include <lcmtypes/drc/camera_settings_t.hpp>
+#include <lcmtypes/drc/map_depth_settings_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 #include <lcmtypes/drc/neck_pitch_t.hpp>
 #include <lcmtypes/drc/affordance_mini_t.hpp>
@@ -190,15 +191,6 @@ public:
     return true;
   }
 
-  /* TODO: no longer needed
-  bool sendHeightMode() {
-    drc::map_controller_command_t msg;
-    msg.command = mControllerHeightMapMode;
-    getLcm()->publish("MAP_CONTROLLER_COMMAND", &msg);
-    return true;
-  }
-  */
-
   std::vector<int> getSelectedAffordanceIds() {
     struct Functor {
       std::vector<int> mIds;
@@ -362,10 +354,12 @@ public:
     //addControl(drc::data_request_t::HEIGHT_MAP_DENSE, "*DENSE HEIGHT!!*",
     //           "MAP_DEPTH", ChannelTypeDepthImage);
 
+    /*
     addControl(drc::data_request_t::DENSE_CLOUD_LHAND, "Dense Box L.Hand",
                "MAP_CLOUD", ChannelTypeDepthImage);
     addControl(drc::data_request_t::DENSE_CLOUD_RHAND, "Dense Box R.Hand",
                "MAP_CLOUD", ChannelTypeDepthImage);
+    */
 
     // some widgets and variables
     Gtk::Button* button;
@@ -381,11 +375,43 @@ public:
     Gtk::AttachOptions yOpts = Gtk::SHRINK;
     int xCur(0), yCur(0);
 
+    // request button
     button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
       (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
     mRequestControlBox->add(*button);
     notebook->append_page(*mRequestControlBox, "Pull");
+
+    // ground filter
+    hbox = Gtk::manage(new Gtk::HBox());
+    check = Gtk::manage(new Gtk::CheckButton("filter ground"));
+    button = Gtk::manage(new Gtk::Button("send"));
+    hbox->pack_start(*check,false,false);
+    hbox->pack_start(*button,false,false);
+    button->signal_clicked().connect
+      ([this,check]{
+        drc::map_depth_settings_t msg;
+        msg.data_request.type = drc::data_request_t::DEPTH_MAP_WORKSPACE_C;
+        msg.data_request.period = -1;
+        msg.remove_ground = check->get_active();
+        this->getLcm()->publish("MAP_DEPTH_SETTINGS",&msg);
+      });
+    mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    mRequestControlBox->add(*hbox);
+
+    // neck pitch
+    mNeckPitchLabel= Gtk::manage(new Gtk::Label("Pitch (deg)"));
+    mDummyIntValue = 45;
+    spin = gtkmm::RendererBase::createSpin(mDummyIntValue, -90, 90, 5);
+    button = Gtk::manage(new Gtk::Button("send"));
+    button->signal_clicked().connect
+      ([this,spin]{this->onHeadPitchControlButton(spin->get_value());});
+    hbox = Gtk::manage(new Gtk::HBox());
+    hbox->pack_start(*mNeckPitchLabel, false, false);
+    hbox->pack_start(*spin, false, false);
+    hbox->pack_start(*button, false, false);
+    mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    mRequestControlBox->pack_start(*hbox, false, false);
 
     // for pushing data (e.g., affordances)
     mAffControlBox = Gtk::manage(new Gtk::VBox());
@@ -722,18 +748,6 @@ public:
     sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
     ++yCur;
     
-    //label = Gtk::manage(new Gtk::Label("Pitch (deg)", Gtk::ALIGN_RIGHT));
-    mNeckPitchLabel= Gtk::manage(new Gtk::Label("Pitch (deg)", Gtk::ALIGN_RIGHT));
-    mDummyIntValue = 45;
-    spin = gtkmm::RendererBase::createSpin(mDummyIntValue, -90, 90, 5);
-    button = Gtk::manage(new Gtk::Button("send"));
-    button->signal_clicked().connect
-      ([this,spin]{this->onHeadPitchControlButton(spin->get_value());});
-    sensorControlTable->attach(*mNeckPitchLabel, 0, 1, yCur, yCur+1, xOpts, yOpts);
-    sensorControlTable->attach(*spin, 1, 2, yCur, yCur+1, xOpts, yOpts);
-    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
-    ++yCur;
-
     sensorControlBox->pack_start(*sensorControlTable,false,false);
 
     /*

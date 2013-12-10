@@ -272,8 +272,7 @@ struct Worker {
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
-  void sendDepthMapWorkspaceRequestNarrow(const float iYaw,
-                                          const int iId) {
+  void sendDepthMapWorkspaceRequestNarrow(const float iYaw, const int iId) {
     drc::map_request_t msg = prepareRequestMessage();
     msg.map_id = 3;
     msg.view_id = iId;
@@ -286,9 +285,11 @@ struct Worker {
     msg.clip_planes[0][3] = 0;
     msg.clip_planes[5][3] = 1;
     Eigen::Projective3f projector =
-      createProjector(75, 90, msg.width, msg.height);
+      createProjector(75, 110, msg.width, msg.height);
     const float kPi = acos(-1);
     Eigen::AngleAxisf angleAxis(-iYaw*kPi/180, Eigen::Vector3f(0,0,1));
+    projector = projector*angleAxis;
+    angleAxis = Eigen::AngleAxisf(-20*kPi/180, Eigen::Vector3f(1,0,0));
     projector = projector*angleAxis;
     setTransform(projector, msg);
     mLcm->publish("MAP_REQUEST", &msg);
