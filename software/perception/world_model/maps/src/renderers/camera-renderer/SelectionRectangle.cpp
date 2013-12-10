@@ -7,8 +7,8 @@ using namespace drc;
 SelectionRectangle::
 SelectionRectangle() {
   mColor << 1,0,0;
-  mDragPoint1 << 0,0,0;
-  mDragPoint2 << 0,0,0;
+  mDragPoint1 << 0,0;
+  mDragPoint2 << 0,0;
   mActive = false;
 }
 
