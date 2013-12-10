@@ -156,10 +156,9 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
 
   kinsol = doKinematics(r,q0);
   if ladder_opts.use_utorso_constraint
-    utorso_posquat = forwardKin(r,kinsol,utorso,[0;0;0],2);
     basic_constraints = [ ...
       basic_constraints, ...
-      {WorldGazeOrientConstraint(r,utorso,[0;0;1],utorso_posquat(4:7),ladder_opts.utorso_threshold,90*pi/180)}];
+      {WorldGazeDirConstraint(r,utorso,[0;0;1],[0;0;1],ladder_opts.utorso_threshold)}];
   end
 
   pelvis_xyzrpy = forwardKin(r,kinsol,pelvis,[0;0;0],1);
@@ -178,13 +177,10 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
 
 
   if ladder_opts.use_pelvis_gaze_constraint
-%    basic_constraints = [ ...
-%      basic_constraints, ...
-%      {WorldGazeDirConstraint(r,pelvis,[0;0;1],[0;0;1],ladder_opts.pelvis_gaze_threshold)}];
-    pelvis_constraint = PostureConstraint(r);
-    pelvis_constraint = pelvis_constraint.setJointLimits((4:6)',q0(4:6)-ladder_opts.pelvis_gaze_threshold,q0(4:6)+ladder_opts.pelvis_gaze_threshold);
-    basic_constraints = [basic_constraints, {pelvis_constraint}];
-    pelvis_euler_constraint_idx = length(basic_constraints);
+    basic_constraints = [ ...
+      basic_constraints, ...
+      {WorldGazeDirConstraint(r,pelvis,[0;0;1],[0;0;1],ladder_opts.pelvis_gaze_threshold)}];
+    pelvis_gaze_constraint_idx = length(basic_constraints);
   end
 
   rpy_tol_max = 30*pi/180;
@@ -336,7 +332,7 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
 %         fprintf('Max com deviation: %5.3f m\n',ladder_opts.com_tol_local);
       end
       if info > 4
-%                disp(infeasible);keyboard
+                %disp(infeasible);keyboard
         n_err = n_err+1; 
         if first_err
           err_segments(end+1,1) = i/nt;
@@ -362,8 +358,15 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
       nt_init = floor(nt/4);
       dt = mean(diff(ts));
       t_init = 0:dt:nt_init*dt;
+      t_init_coarse = linspace(t_init(1),t_init(end),3);
       q_init_nom = PPTrajectory(foh([t_init(1),t_init(end)],[q0,q(:,1)]));
-      q_init = eval(q_init_nom,t_init);
+      constraints(pelvis_gaze_constraint_idx) = [];
+      [x_init_traj,info,infeasible] = inverseKinTraj(r,t_init_coarse, ...
+        q_init_nom, ...
+        q_init_nom, ...
+        constraints{:},ikoptions);
+      x_init = eval(x_init_traj,t_init);
+      q_init = x_init(1:nq,:);
     end
     q_seed = q(:,i);
     constraint_array{i} = constraints;
@@ -396,22 +399,23 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
     R = rpy2rotmat(xyz_rpy_foot1(4:6));
     P = xyz_rpy_foot1(1:3);
     T = [R,P;zeros(1,3),1];
-    %foot1_pts_in_world = T*[foot1_pts;ones(1,size(foot1_pts,2))]; foot1_pts_in_world(4,:)=[];
-    foot1_pts_in_pelvis = inv(o_T_pelvis)*T*[foot1_pts;ones(1,size(foot1_pts,2))]; foot1_pts_in_pelvis(4,:)=[];
+    foot1_pts_in_world = T*[foot1_pts;ones(1,size(foot1_pts,2))]; foot1_pts_in_world(4,:)=[];
+    %foot1_pts_in_pelvis = inv(o_T_pelvis)*T*[foot1_pts;ones(1,size(foot1_pts,2))]; foot1_pts_in_pelvis(4,:)=[];
     R = rpy2rotmat(xyz_rpy_foot2(4:6));
     P = xyz_rpy_foot2(1:3);
     T = [R,P;zeros(1,3),1];
-    %foot2_pts_in_pelvis = T*[foot2_pts;ones(1,size(foot2_pts,2))]; foot2_pts_in_world(4,:)=[];
-    foot2_pts_in_pelvis = inv(o_T_pelvis)*T*[foot2_pts;ones(1,size(foot2_pts,2))]; foot2_pts_in_pelvis(4,:)=[];
-    com = mean([foot1_pts_in_pelvis,foot2_pts_in_pelvis],2);
+    foot2_pts_in_world = T*[foot2_pts;ones(1,size(foot2_pts,2))]; foot2_pts_in_world(4,:)=[];
+    %foot2_pts_in_pelvis = inv(o_T_pelvis)*T*[foot2_pts;ones(1,size(foot2_pts,2))]; foot2_pts_in_pelvis(4,:)=[];
+    %com = mean([foot1_pts_in_pelvis,foot2_pts_in_pelvis],2);
+    com = mean([foot1_pts_in_world,foot2_pts_in_world],2);
     com(3) = NaN;
-    com_constraint_f = WorldCoMInFrameConstraint(r,o_T_pelvis,com-ladder_opts.com_tol_f*[1;0.5;0],com+ladder_opts.com_tol_f*[1;0.5;0],t_end(end)*[1,1]);
+    %com_constraint_f = WorldCoMInFrameConstraint(r,o_T_pelvis,com-ladder_opts.com_tol_f*[1;0.5;0],com+ladder_opts.com_tol_f*[1;0.5;0],t_end(end)*[1,1]);
     %com_constraint_f = com_constraint_f.addContact(ee_info.feet(1).idx,foot1_pts,ee_info.feet(2).idx,foot2_pts);
-    %com_constraint_f = WorldCoMConstraint(r,com,com,t_end(end)*[1,1]);
+    com_constraint_f = WorldCoMConstraint(r,com-ladder_opts.com_tol_f,com+ladder_opts.com_tol_f,t_end(end)*[1,1]);
     constraints(cellfun(@(con) isa(con,'WorldCoMConstraint'),constraints)) = [];
     constraints(arm_constraint_idx) = [];
     back_z_constraint_f = PostureConstraint(r);
-    back_z_constraint_f = back_z_constraint_f.setJointLimits([(4:6)';findJointIndices(r,'back_bkz')],[q0(4:6);0],[q0(4:6);0]);
+    back_z_constraint_f = back_z_constraint_f.setJointLimits([(4:5)';findJointIndices(r,'back_bkz')],[0;0;0],[0;0;0]);
     
     [qf,info,infeasible] = inverseKin(r,q(:,end),qstar,constraints{1:end},com_constraint_f,back_z_constraint_f,ikoptions);
     if info ~= 1, warning('robotLaderPlanner:badInfo','info = %d',info); end;

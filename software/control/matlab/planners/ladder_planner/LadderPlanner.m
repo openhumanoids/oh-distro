@@ -81,12 +81,12 @@ function LadderPlanner(options)
   ladder_opts.fine.use_swing_foot_euler_constraint = true;
   ladder_opts.fine.use_base_z_constraint = false;
   ladder_opts.fine.smooth_output = true;
-  ladder_opts.fine.smoothing_span = 7;
+  ladder_opts.fine.smoothing_span = 9;
   ladder_opts.fine.smoothing_method = 'moving'; 
   ladder_opts.fine.n = 1;
   ladder_opts.fine.compute_intro = true;
   ladder_opts.fine.shrink_factor = 0.5;
-  ladder_opts.fine.utorso_threshold = 5*pi/180;
+  ladder_opts.fine.utorso_threshold = 15*pi/180;
   ladder_opts.fine.pelvis_gaze_threshold = 5*pi/180;
   ladder_opts.fine.ankle_limit = 17*pi/180;
   ladder_opts.fine.knee_lb = 35*pi/180*ones(2,1);
@@ -94,7 +94,7 @@ function LadderPlanner(options)
   ladder_opts.fine.hand_threshold = sin(5*pi/180);
   ladder_opts.fine.hand_cone_threshold = sin(1*pi/180);
   ladder_opts.fine.hand_pos_tol = 0.0;
-  ladder_opts.fine.pelvis_threshold = 0.05;
+  ladder_opts.fine.pelvis_threshold = 0.1;
   ladder_opts.fine.com_incr_tol = 0.02;
   ladder_opts.fine.com_tol_max = 0.5;
   ladder_opts.fine.com_tol_f = 0.02;
