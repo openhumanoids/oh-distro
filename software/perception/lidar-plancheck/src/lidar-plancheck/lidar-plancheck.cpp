@@ -577,7 +577,7 @@ int main( int argc, char** argv ){
   // was 0.04 for a long time
   // using 0.06 for the simulator
   // using 0.1 for the real robot - until the new urdf arrives ... aug 2013
-  double collision_threshold = 0.02; 
+  double collision_threshold = 0.05; 
   double delta_threshold = 0.03; 
   bool simulated_data = FALSE;
   parser.add(verbose, "v", "verbose", "Verbosity");
