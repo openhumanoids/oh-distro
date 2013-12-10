@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<object name="lever_valve">
+    <!-- z,y,z,roll,pitch,yaw params must exist for all otdf objects-->
+    <!-- World frame origin of the object -->
+    <param name="x" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="y" default_value="0.0" inc="0.001" min="-100" max="100" />
+    <param name="z" default_value="1.0" inc="0.001" min="-100" max="100" />
+    <!--roll,pitch,yaw are about Body Frame-->
+    <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <param name="yaw" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
+    <!-- Size of the outer most bounding volume -->
+    <param name="radius" default_value="0.01" inc="0.0025" min="0" max="100" />
+    <param name="length" default_value="0.33" inc="0.0025" min="0" max="100" />
+    <!--<param name="Density" default_value="1.0" inc="0.01" min="0" max="100"/>-->
+    <param name="mass" default_value="1.0" inc="0.01" min="0" max="100" />
+    <link name="plane::xy::base_link" />
+    <link name="cylinder">
+        <inertial>
+            <mass value="${mass}" />
+            <inertia ixx="${(mass/12)*(3*(radius^2)+(length^2))}" ixy="0.0" ixz="0.0" iyy="${(mass/12)*(3*(radius^2)+(length^2))}" iyz="0.0" izz="${(mass/2)*(radius^2)}" />
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder radius="${radius}" length="${length}" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="base_joint" type="revolute">
+        <parent link="plane::xy::base_link" type="link" />
+        <child link="cylinder" type="link" />
+        <origin rpy="0 0 0" xyz="0 0 0" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" lower="-3.14" upper="3.14" velocity="1" />
+    </joint>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="cylinder_0" />
+        <relative_pose rpy="0 3.14 0" xyz="-0.1 0.1 0.035" />
+        <grasp_type type="3" />
+        <state num_joints="8" joint_names="left_finger[0]/joint_base_rotation left_finger[0]/joint_base left_finger[0]/joint_flex left_finger[1]/joint_base_rotation left_finger[1]/joint_base left_finger[1]/joint_flex left_finger[2]/joint_base left_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
+</object>

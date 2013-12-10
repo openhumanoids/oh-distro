@@ -375,7 +375,7 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
 
     affs_[ ss.str() ]=  aff;
     
-    if (aff.otdf_type == "steering_cyl"){
+    if (aff.otdf_type == "steering_cyl" || aff.otdf_type == "lever_valve"){
       sendStandingPositionValve( aff );
     }else if (aff.otdf_type == "wye"){
       sendStandingPositionWye( aff );
