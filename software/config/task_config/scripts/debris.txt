@@ -1,29 +1,40 @@
+
+DEBRIS TASK
+
+Operator: Maurice
+Wingman: Pat
+Monitor: Matt A.
+Field team: Steve, Matt D., XXX, XXX, XXX
+
+
+
 startup:
 1. run prep and simple grasp scripts
-2. verify robot came up with right arm config. look at arms and legs - are their any joint errors
-3. did system status messages indicate: irobot left and robotiq right?
+2. verify robot came up with right arm config. 
+   look at arms and legs - are there any joint errors?
+3. did system status messages indicate: irobot left, robotiq right?
 4. calibrate left hand. watch for visual movement and sys status msgs
 5. create a box and have the planner reach with both hands to it
-6. also verify that pat can visualise affordance motion in plans
-7. verify planner is expecting hand extensions
-8. make sure "plan & control w BDI height" is turned off
+6. verify that pat can visualise affordance motion in plans
+7. verify that planner is expecting hand extensions
+8. make sure "plan & control w BDI height" is turned OFF
 
 
-verify the pieces are leaning in the expected way:
+verify that pieces are leaning in the expected way:
 flat, up right, up left, up right, up left
 
 positioning:
-1. walk to very close to debris but short. raise hands up to shooter position
-2. stop find best standing point with perception ( legs between truss)
+1. walk very close to debris but short. raise hands up to shooter position
+2. stop, find best standing point with perception (legs between truss)
 3. walk to standing point
-4. go to manip mode. crouch to 66cm. 
+4. go to manip mode. crouch to 66cm.
 
 reach 1: reach to side of truss
 1. hand fit with 2 fingers facing start line
 2. move pelvis ypr: 0, 0, 0
 3. do 90% reach
 4. refit, touch, grasp
-5. raise height to 90cm. slowly xxxxxx get scott to help xxxxxx
+5. raise height to 90cm. slowly xxxXXX get scott to help xxxXXX
 6. retract plans
 
 
@@ -40,12 +51,13 @@ reach 2: careful to reach over piece 3.
 reach 3: 1 finger down. 2 fingers down doesnt work well
 1. hand fit with 1 finger facing diagonal down and left.
 2. move pelvis ypr: pitch 10, yaw 10, roll 0
-3. do 90% reach. check this is correct - problems with sings
+3. do 90% reach. check this is correct - problems with sings XXX
 4. refit, touch, grasp
 5. raise pelvis by 5cm and then yaw 5degrees to clear sidewall
-6. raise height to 90cm. slowly xxxxxx get scott to help xxxxxx
+6. raise height to 90cm. slowly xxxXXX get scott to help xxxXXX
 7. pelvis pitch to -10, yaw 0
 8. retract plans
+
 
 reach 4: 1 finger down. 2 fingers down doesnt work well
 1. hand fit with 1 finger facing diagonal down and left.
@@ -65,5 +77,5 @@ reach 5: make sure to have single finger pointing down to right, makes retract e
 2. move pelvis ypr: y p at max positive
 3. do 90% reach
 4. refit, touch, grasp
-5. raise height to 90cm. slowly xxxxxxxxxxxxxxxxxxxx
+5. raise height to 90cm. slowly xxxxxxxxxxxxxxxxxXXX
 6. retract plans

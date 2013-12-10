@@ -1,41 +1,54 @@
+
+FIREHOSE TASK
+
+Operator: Maurice
+Wingman: Pat
+Monitor: Matt A.
+Field team: Steve, Matt D., XXX, XXX, XXX
+
+
 remaining practices
 -------------------
-redo the experiment with hands rotated
+redo experiment with hands rotated
 remove cables from smart sensors for april tags
 Do the task with the robotiq hand - for backup
-Aim for a 15 min time in case we need an intervention
+Aim for a 15-minute time in case we need an intervention
 
 
 day before
 ----------
-run a series of tests on the iRobot hands to make sure they are behaving in an 
+run series of tests on iRobot hands to make sure they are behaving in an 
 expected way
+
 
 before clock starts
 -------------------
 calibrate hands
-reset pelvis params to defaults - including pressing the reset button.
+reset pelvis params to defaults - including pressing reset button
 start the simple grasp script
 disable BDI height mode in planning and control
 
-task start
-----------
+
+upon task start
+---------------
+
 turn back
 go to shooter
-fit hand facing into the 
+fit hand facing into the XXX
 reach
 teleop into contact
 close hand slowly
-Pull the hose down and to the left
+pull hose down and to the left
 move arm to walking pose
 walk backwards to the right to straighten the hose out. hopefully it will unspool
-walk to wye.
+walk to wye valve.
 PAT: fit the wye early and often
-When just short of the wall tuck the right hand behind the robot "tuckarm"
+When just short of the wall, tuck the right hand behind the robot "tuckarm"
 finish walking to triad
 turn back to the left
 
-
+touch nozzle to wye valve
+jam nozzle onto wye valve
 
 
 

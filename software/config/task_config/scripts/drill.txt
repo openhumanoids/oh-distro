@@ -1,0 +1,72 @@
+
+DRILL TASK
+
+Operator: Michael
+Wingman: XXX
+Monitor: Matt A.
+Field team: Steve, Matt D., Maurice (???), XXX, XXX
+
+
+day before
+----------
+
+determine orientation of drill (two drills) on table 
+seed sticky hand (and feet?) as appropriate
+
+
+during run prep
+---------------
+
+mount Robotiq hand to left arm (no extender)
+confirm orientation: XXX
+
+
+when in place, but before clock starts
+--------------------------------------
+
+switch to manip to trigger manip glitch
+activate hand and hand driver
+set walking path to auto
+set up sensor pull requests
+reduce transparency on affordances
+set head camera angle *requires hydraulic power
+get rough fit of drill on table and wall
+place walking goal to table
+
+
+once run starts
+---------------
+
+walk to table
+refit drill
+send poses: pre-grasp low; pre-grasp-high
+send reach
+send touch
+review hand in camera views; tele-op hand
+close hand
+send poses: door-pregrasp; pre-grasp low
+walk to position in front of wall
+send pose: drill in camera
+fix drill orientation in hand; refit drill
+optimize drill in camera
+send button prepose
+teleop poker to button
+send button prepose
+send poses:  pre-grasp low
+fit wall
+request nominal plan
+send walking goal
+walk
+pre-drill posture
+drill in
+adjust drill depth
+
+
+after run ends
+--------------
+
+remove hand, stow on head (depends on next task)
+
+
+
+
