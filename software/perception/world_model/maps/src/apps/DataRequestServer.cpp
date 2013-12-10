@@ -201,8 +201,8 @@ struct Worker {
   }
 
   void sendHeightMapSceneRequest() {
-    const Eigen::Vector3f minPt(-2, -5, -3);
-    const Eigen::Vector3f maxPt(5, 5, 0.3);
+    const Eigen::Vector3f minPt(-0.5, -2, -3);
+    const Eigen::Vector3f maxPt(5, 2, 0.3);
     drc::map_request_t msg =
       prepareHeightRequestMessage(minPt, maxPt, 0.03, 0.03);
     Eigen::Isometry3f pelvisPose;
