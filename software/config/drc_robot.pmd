@@ -312,6 +312,10 @@ group "m.simple_grasping" {
         exec = "hand_cloud";
         host = "base";
     }
+    cmd "affordance_draw_with_plan" {
+        exec = "affordance_draw_with_plan -l";
+        host = "base";
+    }
 }
 
 group "m.calibration" {

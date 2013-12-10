@@ -129,6 +129,20 @@
       }, 
       "name": "Zero all arm joints - dont do", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "1 goto TUESDAY", 
+      "joints": {
+        "l_arm_elx": 0.7737017869949341, 
+        "l_arm_ely": 3.139346122741699, 
+        "l_arm_mwx": 0.48761361837387085, 
+        "l_arm_shx": -0.7749624252319336, 
+        "l_arm_usy": -0.9883816838264465, 
+        "l_arm_uwy": 0.9078769683837891
+      }, 
+      "name": "1 goto TUESDAY", 
+      "nominal_handedness": "left"
     }
   ], 
   "debris": [
@@ -204,20 +218,6 @@
         "l_arm_uwy": 2.8884005546569824
       }, 
       "name": "4 retract A", 
-      "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "5 retract A", 
-      "joints": {
-        "l_arm_elx": 1.8459675312042236, 
-        "l_arm_ely": 1.9566855430603027, 
-        "l_arm_mwx": 0.8667466640472412, 
-        "l_arm_shx": -0.05010373517870903, 
-        "l_arm_usy": -0.7652769088745117, 
-        "l_arm_uwy": 3.141589403152466
-      }, 
-      "name": "5 retract A", 
       "nominal_handedness": "left"
     }, 
     {
@@ -303,23 +303,6 @@
         "l_arm_uwy": 1.155105710029602
       }, 
       "name": "3 goto", 
-      "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "3 retract", 
-      "joints": {
-        "back_bkx": -0.09980969876050949, 
-        "back_bky": 0.09994085878133774, 
-        "back_bkz": -0.4220319390296936, 
-        "l_arm_elx": 0.3038308620452881, 
-        "l_arm_ely": 0.18790610134601593, 
-        "l_arm_mwx": 1.017099142074585, 
-        "l_arm_shx": -1.1297364234924316, 
-        "l_arm_usy": -0.5491421222686768, 
-        "l_arm_uwy": 0.8116856813430786
-      }, 
-      "name": "3 retract", 
       "nominal_handedness": "left"
     }, 
     {
@@ -515,6 +498,204 @@
         "l_arm_uwy": 0.5466151237487793
       }, 
       "name": "2 retract MONDAY", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "1 goto TUESDAY", 
+      "joints": {
+        "l_arm_elx": 0.7737017869949341, 
+        "l_arm_ely": 3.139346122741699, 
+        "l_arm_mwx": 0.48761361837387085, 
+        "l_arm_shx": -0.7749624252319336, 
+        "l_arm_usy": -0.9883816838264465, 
+        "l_arm_uwy": 0.9078769683837891
+      }, 
+      "name": "1 goto TUESDAY", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "l_arm_elx": 1.0670000314712524, 
+        "l_arm_ely": 2.372999906539917, 
+        "l_arm_mwx": 0.7440000176429749, 
+        "l_arm_shx": -0.35100001096725464, 
+        "l_arm_usy": -0.6679999828338623, 
+        "l_arm_uwy": 0.9240000247955322
+      }, 
+      "name": "2 retract B TUESDAY", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0, 
+        "l_arm_elx": 0.8040372729301453, 
+        "l_arm_ely": 1.7589924335479736, 
+        "l_arm_mwx": -0.9700106978416443, 
+        "l_arm_shx": -1.385887861251831, 
+        "l_arm_usy": -0.04636180400848389, 
+        "l_arm_uwy": 3.0859005451202393
+      }, 
+      "name": "3 goto TUESDAY - USE ME", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": 0.002868529176339507, 
+        "back_bky": -0.0014862937387079, 
+        "back_bkz": 0.0007649775943718851, 
+        "l_arm_elx": 2.349802255630493, 
+        "l_arm_ely": 1.3452506065368652, 
+        "l_arm_mwx": 0.3801825940608978, 
+        "l_arm_shx": -0.8091128468513489, 
+        "l_arm_usy": 0.20745250582695007, 
+        "l_arm_uwy": 2.3330776691436768
+      }, 
+      "name": "3 retract", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": 0.002868529176339507, 
+        "back_bky": -0.0014862937387079, 
+        "back_bkz": 0.663224995136261, 
+        "l_arm_elx": 1.3259038925170898, 
+        "l_arm_ely": 0.47809693217277527, 
+        "l_arm_mwx": 0.3801825940608978, 
+        "l_arm_shx": -0.48056501150131226, 
+        "l_arm_usy": 0.20745250582695007, 
+        "l_arm_uwy": 2.3330776691436768
+      }, 
+      "name": "3 retract B", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": -0.09910006821155548, 
+        "back_bky": 0.09943331032991409, 
+        "back_bkz": -0.047134462743997574, 
+        "l_arm_elx": 0.8245309591293335, 
+        "l_arm_ely": 1.5751365423202515, 
+        "l_arm_mwx": 0.9724004864692688, 
+        "l_arm_shx": -0.3730394244194031, 
+        "l_arm_usy": -0.971869707107544, 
+        "l_arm_uwy": 1.2027320861816406
+      }, 
+      "name": "4 goto TUESDAY", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": -0.09910006821155548, 
+        "back_bky": 0.09943331032991409, 
+        "back_bkz": -0.047134462743997574, 
+        "l_arm_elx": 1.004997968673706, 
+        "l_arm_ely": 1.5751365423202515, 
+        "l_arm_mwx": 1.1780999898910522, 
+        "l_arm_shx": -0.3730394244194031, 
+        "l_arm_usy": -0.971869707107544, 
+        "l_arm_uwy": 0.7347716689109802
+      }, 
+      "name": "4 retract TUESDAY (alternative)", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": -0.10000000149011612, 
+        "back_bky": 0.09959252178668976, 
+        "back_bkz": 0.14295732975006104, 
+        "l_arm_elx": 1.8184503316879272, 
+        "l_arm_ely": 1.2871520519256592, 
+        "l_arm_mwx": 0.9202275276184082, 
+        "l_arm_shx": -0.01773100346326828, 
+        "l_arm_usy": 0.03972189500927925, 
+        "l_arm_uwy": 0.11050164699554443
+      }, 
+      "name": "4 retract TUESDAY (2nd alternative)", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": -0.10000000149011612, 
+        "back_bky": 0.09959252178668976, 
+        "back_bkz": 0.663224995136261, 
+        "l_arm_elx": 0.02188718318939209, 
+        "l_arm_ely": 1.2871520519256592, 
+        "l_arm_mwx": 0.057290077209472656, 
+        "l_arm_shx": 0.21949458122253418, 
+        "l_arm_usy": 0.03972189500927925, 
+        "l_arm_uwy": 0.11050164699554443
+      }, 
+      "name": "4 retract zz last", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": -0.10000000149011612, 
+        "back_bky": 0.10000000149011612, 
+        "back_bkz": -0.48899999260902405, 
+        "l_arm_elx": 0.8159999847412109, 
+        "l_arm_ely": 1.1469999551773071, 
+        "l_arm_mwx": 1.1649999618530273, 
+        "l_arm_shx": -0.5289999842643738, 
+        "l_arm_usy": -0.5680000185966492, 
+        "l_arm_uwy": 1.4490000009536743
+      }, 
+      "name": "4 retract TUESDAY (different orientation alternative)", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": -0.10799999535083771, 
+        "back_bky": -0.0010000005131587386, 
+        "back_bkz": -0.47999998927116394, 
+        "l_arm_elx": 1.4851431846618652, 
+        "l_arm_ely": 1.6799999475479126, 
+        "l_arm_mwx": -0.6258867383003235, 
+        "l_arm_shx": -0.12118971347808838, 
+        "l_arm_usy": 0.5270206332206726, 
+        "l_arm_uwy": 2.0402679443359375
+      }, 
+      "name": "5 retract A", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": -0.10799999535083771, 
+        "back_bky": -0.0010000005131587386, 
+        "back_bkz": 0.3832249939441681, 
+        "l_arm_elx": 0.3987792134284973, 
+        "l_arm_ely": 0.46877050399780273, 
+        "l_arm_mwx": -0.3587343096733093, 
+        "l_arm_shx": 0.0309903621673584, 
+        "l_arm_usy": -0.24095040559768677, 
+        "l_arm_uwy": 1.8267076015472412
+      }, 
+      "name": "5 retract B", 
       "nominal_handedness": "left"
     }
   ], 
@@ -763,7 +944,7 @@
       }, 
       "name": "3hosemate sucker punch", 
       "nominal_handedness": "right"
-    },
+    }, 
     {
       "allow_mirror": true, 
       "description": "tuck arm in for walking", 
@@ -790,6 +971,20 @@
         "l_arm_uwy": 3.141590118408203
       }, 
       "name": "2 tuckarm", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "3 suckerpunch NEW - hose visable and hand point up", 
+      "joints": {
+        "l_arm_elx": 1.0579614639282227, 
+        "l_arm_ely": 1.031054973602295, 
+        "l_arm_mwx": 1.011553168296814, 
+        "l_arm_shx": -1.2422131299972534, 
+        "l_arm_usy": -0.8305715918540955, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "3 suckerpunch NEW", 
       "nominal_handedness": "left"
     }
   ], 

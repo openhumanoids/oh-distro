@@ -67,6 +67,10 @@ group "b.2.planners" {
         exec = "drc-robot-pose-util";
         host = "base";
     }
+    cmd "affordance_draw_with_plan" {
+        exec = "affordance_draw_with_plan -l";
+        host = "base";
+    }
 }
 
 
