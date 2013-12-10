@@ -121,7 +121,7 @@ classdef KeyframePlanner < handle
 
             % Hands with 6 inch extenders - 6 Dec 2013, mfallon:
             % mod1: rotates irobots by 180 due to calbe length
-            extenders =1;
+            extenders =0;
             if (extenders ==1)
               send_status(2,0,0,'Planner is assuming Arm extenders. Careful!');
               obj.T_hand_palm_l_irobot = HT([0;0.26756;0.015],1.57079, 0, -3.14159);
