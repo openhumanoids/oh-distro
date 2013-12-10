@@ -181,8 +181,7 @@ namespace renderer_robot_plan_gui_utils
     RendererRobotPlan *self = (RendererRobotPlan*) user;
     cout <<"Robot plan approved" << endl;
     
-    if(self->atlas_state != drc::atlas_status_t::BEHAVIOR_MANIPULATE || 
-       self->atlas_state != drc::atlas_status_t::BEHAVIOR_USER)
+    if(self->atlas_state != drc::atlas_status_t::BEHAVIOR_MANIPULATE)
     {
       if(!plan_execute_warning_popup( self))
         return FALSE;    
