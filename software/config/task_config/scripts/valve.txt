@@ -1,0 +1,54 @@
+
+VALVE TASK
+
+Operator: Scott
+Wingman: Pat
+Monitor:
+Field team: 
+
+
+day before
+----------
+
+
+
+during run prep
+---------------
+
+switch to manip to trigger the pitch
+
+
+when in place, but before clock starts
+--------------------------------------
+
+fit valve
+place walking goal
+open ee-driver
+enable show ee forces
+disable plan & control with bdi height mode
+
+once run starts
+---------------
+
+walk to valve
+reach to sticky hand
+check affordance fit
+teleop into spokes
+turn valve with circle plans
+retract hand & zero back
+fit next valve
+place walking goal and walk
+...repeat...
+
+
+after run ends
+--------------
+
+
+
+todo
+----
+
+affordance with sticky hand for bar valve
+need alternative methods for generating valve affordances
+

@@ -45,7 +45,8 @@ reach 2: careful to reach over piece 3.
 4. refit, touch, grasp
 5. raise pelvis by 5cm and yaw 5degrees to clear wall
 5. raise height to 90cm. slowly xxxxxx get scott to help xxxxxx
-6. retract plans
+6. make sure to bring arm closer to body to avoid hitting board 3
+7. retract plans
 
 
 reach 3: 1 finger down. 2 fingers down doesnt work well
