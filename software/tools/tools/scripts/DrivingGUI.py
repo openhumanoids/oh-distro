@@ -6,6 +6,7 @@ import lcm
 import sys
 import json
 import time
+import math
 import os
 import drc as lcmdrc
 
@@ -74,40 +75,98 @@ class DrivingPanel(object):
         self.setup()
 
     def setup(self):
-        self.ui.connect(self.ui.throttleSlider, QtCore.SIGNAL('valueChanged(int)'), self.onThrottleSliderValueChanged)
         self.ui.connect(self.ui.steeringSlider, QtCore.SIGNAL('valueChanged(int)'), self.onSteeringSliderValueChanged)
-
         self.ui.connect(self.ui.setSteeringDepthButton, QtCore.SIGNAL('clicked()'), self.onSetSteeringDepthClicked)
         self.ui.connect(self.ui.refitSteeringWheelButton, QtCore.SIGNAL('clicked()'), self.onRefitSteeringWheelClicked)
 
-        self.onThrottleSliderValueChanged()
+        self.ui.connect(self.ui.throttlePulseButton, QtCore.SIGNAL('clicked()'), self.onThrottlePulseClicked)
+        self.ui.connect(self.ui.grabCurrentButton, QtCore.SIGNAL('clicked()'), self.onGrabCurrentClicked)
+        self.ui.connect(self.ui.setLegZeroButton, QtCore.SIGNAL('clicked()'), self.onSetLegZeroClicked)
+
+        self.ui.connect(self.ui.hipXSlider, QtCore.SIGNAL('valueChanged(int)'), self.onLegTeleop)
+        self.ui.connect(self.ui.hipYSlider, QtCore.SIGNAL('valueChanged(int)'), self.onLegTeleop)
+        self.ui.connect(self.ui.hipZSlider, QtCore.SIGNAL('valueChanged(int)'), self.onLegTeleop)
+        self.ui.connect(self.ui.kneeSlider, QtCore.SIGNAL('valueChanged(int)'), self.onLegTeleop)
+        self.ui.connect(self.ui.ankleXSlider, QtCore.SIGNAL('valueChanged(int)'), self.onLegTeleop)
+        self.ui.connect(self.ui.ankleYSlider, QtCore.SIGNAL('valueChanged(int)'), self.onLegTeleop)
+
         self.onSteeringSliderValueChanged()
+
 
     def getSteeringValue(self):
         return  -1 + self.ui.steeringSlider.value() / 50.0
 
-    def getThrottleValue(self):
-        return self.ui.throttleSlider.value() / 100.0
+    def getThrottleDuration(self):
+        return self.ui.throttleDurationSpin.value()
+
+    def getThrottleAnkleDegrees(self):
+        return self.ui.throttleAnkleSpin.value()
+
+    def getSteeringDepth(self):
+        return self.ui.steeringDepthSpin.value() / 100.0
+
+    def getAutoCommitIsEnabled(self):
+        return self.ui.autoCommitCheckBox.isChecked()
 
     def onSteeringSliderValueChanged(self):
         self.ui.steeringLabel.setText(str(self.getSteeringValue()))
-        self.publishDrivingControl()
-
-    def onThrottleSliderValueChanged(self):
-        self.ui.throttleLabel.setText(str(self.getThrottleValue()))
-        self.publishDrivingControl()
+        publishDrivingCommand(lcmdrc.drill_control_t.SET_STEERING_ANGLE, [self.getSteeringValue()])
 
     def onRefitSteeringWheelClicked(self):
         publishDrivingCommand(lcmdrc.drill_control_t.REFIT_STEERING, [])
 
     def onSetSteeringDepthClicked(self):
-        steeringDepth = self.ui.steeringDepthSpin.value() / 100.0
-        publishDrivingCommand(lcmdrc.drill_control_t.SET_STEERING_DEPTH, [steeringDepth])
+        publishDrivingCommand(lcmdrc.drill_control_t.SET_STEERING_DEPTH, [self.getSteeringDepth()])
 
-    def publishDrivingControl(self):
-        publishDrivingCommand(lcmdrc.drill_control_t.DRIVING_CONTROL, [self.getSteeringValue(), self.getThrottleValue()])
+    def onThrottlePulseClicked(self):
+
+        duration = self.getThrottleDuration()
+        ankleRadians = math.radians(self.getThrottleAnkleDegrees())
+        autoCommit = self.getAutoCommitIsEnabled()
+
+        data = [ankleRadians, duration, float(autoCommit)]
+        publishDrivingCommand(lcmdrc.drill_control_t.DRIVING_PULSE, data)
+
+    def onGrabCurrentClicked(self):
+        self.setLegJointPositionsFromRobotState()
+        self.updateLegTeleopLabels()
+
+    def updateLegTeleopLabels(self):
+        pass
+
+    def getLegJointPositionsFromSliders(self):
+        '''
+        returns [hpz, hpx, hpy, kny, aky, akx] in radians
+        '''
+
+        hpx = self.ui.hipXSlider.value()
+        hpy = self.ui.hipYSlider.value()
+        hpz = self.ui.hipZSlider.value()
+        kny = self.ui.kneeSlider.value()
+        akx = self.ui.ankleXSlider.value()
+        aky = self.ui.ankleYSlider.value()
+
+        values = [hpz, hpx, hpy, kny, aky, akx]
+        values = [math.radians(x) for x in values]
+        return values
 
 
+    def setLegJointPositionsFromRobotState(self):
+        pass
+
+    def onLegTeleop(self):
+
+        autoCommit = self.getAutoCommitIsEnabled()
+
+        data = self.getLegJointPositionsFromSliders()
+        data.append(float(autoCommit))
+        publishDrivingCommand(lcmdrc.drill_control_t.LEFT_LEG_JOINT_TELEOP, data)
+
+
+    def onSetLegZeroClicked(self):
+
+        data = self.getLegJointPositionsFromSliders()
+        publishDrivingCommand(lcmdrc.drill_control_t.SET_DRIVING_ZERO_POSITION, data)
 
 
     def saveSettings(self, settings):
