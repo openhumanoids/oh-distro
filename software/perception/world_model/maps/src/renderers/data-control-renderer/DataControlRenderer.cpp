@@ -816,8 +816,8 @@ public:
     hbox->pack_start(*vbox,true,true);
     mainBox->pack_start(*hbox,false,false);
     mRequestControlBox->add(*mainBox);
-    mParamManager->bind("workspace.fov", *fovSlider);
-    mParamManager->bind("workspace.yaw", *yawSlider);
+    mParamManager->bind("Workspace_Depth.fov", *fovSlider);
+    mParamManager->bind("Workspace_Depth.yaw", *yawSlider);
   }
 
   void addControl(const int iId, const std::string& iLabel,
@@ -868,7 +868,7 @@ public:
       mRequestControlTable->attach(*ageLabel,3,4,yCur,yCur+1,xOpts,yOpts);
       mRequestControlTable->attach(*spin,4,5,yCur,yCur+1,xOpts,yOpts);
       if (combo != NULL) {
-        mRequestControlTable->attach(*combo,4,5,yCur,yCur+1,xOpts,yOpts);
+        mRequestControlTable->attach(*combo,5,6,yCur,yCur+1,xOpts,yOpts);
       }
     }
     else {
