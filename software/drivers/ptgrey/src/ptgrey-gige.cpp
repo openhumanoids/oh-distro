@@ -17,6 +17,7 @@ struct State {
   int mRotation;
   bool mTrigger;
   float mInitSeconds;
+  float mDelaySeconds;
   int64_t mDesiredSerial;
 
   bool mShouldCompress;
@@ -36,6 +37,7 @@ struct State {
     mRotation = 0;
     mTrigger = false;
     mInitSeconds = 3;
+    mDelaySeconds = 0;
     mDesiredSerial = -1;
     mLcm.reset(new lcm::LCM());
     mIsRunning = false;
@@ -49,6 +51,12 @@ struct State {
   bool start() {
     mShouldCompress = (mCompressionQuality < 100);
     mPeriodMs = (mFrameRate == 0 ? 0 : 1000/mFrameRate);
+
+    // wait first
+    std::cout << "Waiting for " << mDelaySeconds << " seconds..." << std::flush;
+    std::this_thread::sleep_for
+      (std::chrono::milliseconds((int)(1000*mDelaySeconds)));
+    std::cout << "done." << std::endl;
 
     // connect to camera
     std::cout << "Connecting to camera..." << std::flush;
@@ -422,6 +430,7 @@ int main(const int iArgc, const char** iArgv) {
   State state;
 
   // parse program arguments
+  int maxAttempts = 3;
   ConciseArgs opt(iArgc, (char**)iArgv);
   opt.add(state.mPublishChannel, "c", "channel", "output channel");
   opt.add(state.mCompressionQuality, "q", "quality",
@@ -431,6 +440,8 @@ int main(const int iArgc, const char** iArgv) {
   opt.add(state.mDesiredSerial, "s", "serial number");
   opt.add(state.mTrigger, "t", "trigger", "whether to use trigger mode");
   opt.add(state.mInitSeconds, "i", "init", "number of seconds for init");
+  opt.add(state.mDelaySeconds, "d", "delay", "number of seconds before init");
+  opt.add(maxAttempts, "a", "attempts", "number of tries to start up");
   opt.parse();
 
   // validate rotation
@@ -440,7 +451,18 @@ int main(const int iArgc, const char** iArgv) {
     return -1;
   }
 
-  state.start();
+  // multiple attempts at startup
+  bool success = false;
+  for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+    std::cout << "startup attempt " << attempt << std::endl;
+    success = state.start();
+    if (success) break;
+  }
+  if (!success) {
+    std::cout << "error: problem starting camera after " << maxAttempts <<
+      " attempts" << std::endl;
+  }
+
   if (state.mCaptureThread.joinable()) state.mCaptureThread.join();
 
   return 0;
