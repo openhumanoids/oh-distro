@@ -6,11 +6,15 @@ Created on Nov 13, 2013
 
 import time, math
 
+import roslib; roslib.load_manifest('mit_helios_scripts')
 import rospy
 from handle_msgs.msg import HandleControl
 from handle_msgs.msg import HandleSensors
 from mit_helios_scripts.msg import MITIRobotHandState
 from std_msgs.msg import Empty
+from drc.system_status_t import system_status_t
+import lcm
+
 
 
 from IRobotHandConfigParser import IRobotHandConfigParser
@@ -21,14 +25,22 @@ non_spread_motor_indices = range(4)
 spread_motor_index = 4
 finger_spread_ticks_to_radians = 2 * math.pi / 3072 # 3072 per 180 degrees as stated in HandleSensors.msg is wrong
 
-# found using find_calibration_pose.
-# standard deviations: {0: 22.865694828716666, 1: 13.806158046321215, 2: 47.531463263821365}
+#found using find_calibration_pose with the smart hand #41
+#standard deviations: {0: 22.865694828716666, 1: 13.806158046321215, 2: 47.531463263821365}
 jig_pose = {0: 6433.3999999999996, 1: 6542.3000000000002, 2: 6297.6000000000004}
+
+# TODO: incporate fact that dumb hand has different values
+# dumb hand #35
+# standard deviations: {0: 93.470904563933701, 1: 97.829494530024022, 2: 21.325102578885758}
+#jig_pose = {0: 8041.3000000000002, 1: 7472.3000000000002, 2: 6156.8000000000002}
 
 # standard deviations: {0: 59.872865306414063, 1: 110.36235771312609, 2: 80.058728443561989}
 hand_closed_pose = {0: 8990.7999999999993, 1: 8931.5, 2: 9428.0}
 
 hand_open_desired_pose = {0: 500, 1: 500, 2: 500}
+
+def timestamp_now ():
+    return int (time.time () * 1000000)
 
 def set_command_message_same_value(message, control_type, indices, value):
     values = dict((motor_index, value) for motor_index in indices)
@@ -54,6 +66,7 @@ class IRobotHandController(object):
     def __init__(self, side):
         self.sensors = HandleSensors()
         self.config_parser = IRobotHandConfigParser(side)
+        self.side = side
         self.config_parser.load()
         
         ros_rate = 100.0  # todo: something smarter
@@ -66,6 +79,7 @@ class IRobotHandController(object):
         self.raw_sensors_subscriber = rospy.Subscriber("sensors/raw", HandleSensors, self.sensor_data_callback)
 #         self.calibrated_sensors_subscriber = rospy.Subscriber("sensors/calibrated", self.calibrated_sensor_data_callback)
 #         rospy.on_shutdown(lambda self : self.exit())
+        self.lcm = lcm.LCM()
 
     def sensor_data_callback(self, data):
         self.sensors = data
@@ -206,6 +220,16 @@ class IRobotHandController(object):
         
         self.zero_current()
         self.config_parser.save()
+        self.send_status_message(self.side +' iRobot hand: calibration complete')
+
+    def send_status_message(self, value):
+        msg = system_status_t()
+        msg.utime = timestamp_now()
+        msg.system = 4 # TODO: make pink
+        msg.importance = 0
+        msg.frequency = 0
+        msg.value = value
+        self.lcm.publish("SYSTEM_STATUS", msg.encode())
 
     def calibrate_motor_encoder_offsets(self, in_jig):
         if in_jig:

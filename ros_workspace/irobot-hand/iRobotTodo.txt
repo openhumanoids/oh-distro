@@ -7,9 +7,11 @@ TODO:
 * closing safety (wear prevention)
 * investigate 'getting stuck' in position control mode
 * get rid of unused methods in IRobotHandController, add optional arguments
-* make more tendons
+* incoporate separate calibration pose for dumb hand
+* send back broken dumb fingers
 
 FOCUS FOR TODAY:
+* get more needles
 
 BUSY:
 
@@ -84,3 +86,6 @@ DONE:
 * better calibration pose
 * calibrate distal joint angles using smart fingers, use to estimate them based on motor tendon excursion
 * improve visualization
+* figure out if having a separate calibration pose for dumb and smart hands is a good idea
+* fix tendon on #41
+* make more tendons
