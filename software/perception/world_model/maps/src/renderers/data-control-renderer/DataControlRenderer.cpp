@@ -101,6 +101,9 @@ protected:
 
   int mWorkspaceDepthFov;
   int mWorkspaceDepthYaw;
+
+  int mPresetId;
+  std::vector<std::string> mPresetNames;
   
   Gtk::Label* mNeckPitchLabel;
   int64_t mLastNeckPitchLabelUpdateTime;
@@ -135,7 +138,11 @@ public:
     std::shared_ptr<drc::BotWrapper> updatingBotWrapper;
     lcm_t* lcm = const_cast<lcm_t*>(iLcm);
     BotParam* updatingBotParam = bot_param_new_from_server(lcm, 1);
-    if (updatingBotParam == NULL) updatingBotParam = getBotParam();
+    if (updatingBotParam == NULL) {
+      updatingBotParam = getBotParam();
+      std::cout << "Warning: DataControlRenderer: " <<
+        "param server not found; params will not auto-update" << std::endl;
+    }
     updatingBotWrapper.reset(new drc::BotWrapper(lcm, updatingBotParam));
     mParamManager.reset(new ParamManager(updatingBotWrapper));
     mParamManager->setKeyBase("datacontrol.pull");
@@ -303,11 +310,16 @@ public:
     }
   }
 
-  void createPresets() {
+  void loadPreset(const int iNum) {
+    std::cout << "LOADING PRESET " << iNum << std::endl;
     drc::BotWrapper botWrapper(getLcm(), getBotParam(), getBotFrames());
-    std::string keyBase = "viewer.datacontrol_presets";
-    auto presetNames = botWrapper.getKeys(keyBase);
-    for (auto str : presetNames) std::cout << "preset " << str << std::endl;
+    const std::string keyBase = "viewer.datacontrol_presets";
+    ParamManager manager = *mParamManager;
+    manager.setKeyBase(keyBase + "." + mPresetNames[iNum]);
+    manager.onParamChange();
+    for (auto iter : mRequestControls) {
+      sendSingleDataRequest(iter.second);
+    }
   }
 
   void setupWidgets() {
@@ -421,6 +433,31 @@ public:
       ([this]{this->sendDataRequest(this->mRequestControls);});
     mRequestControlBox->add(*button);
     */
+
+    // set up preset controls for pull
+    {
+      hbox = Gtk::manage(new Gtk::HBox());
+      label = Gtk::manage(new Gtk::Label("preset"));
+      drc::BotWrapper botWrapper(getLcm(), getBotParam(), getBotFrames());
+      const std::string keyBase = "viewer.datacontrol_presets";
+      mPresetNames = botWrapper.getKeys(keyBase);
+      std::vector<std::string> presetLabels(mPresetNames.size());
+      for (size_t i = 0; i < presetLabels.size(); ++i) {
+        presetLabels[i] =
+          botWrapper.get(keyBase + "." + mPresetNames[i] + ".label");
+      }
+      std::vector<int> ids(presetLabels.size());
+      for (size_t i = 0; i < ids.size(); ++i) ids[i] = i;
+      mPresetId = 0;
+      Gtk::ComboBox* combo = createCombo(mPresetId,presetLabels,ids);
+      button = Gtk::manage(new Gtk::Button("go"));
+      button->signal_clicked().connect([this]{loadPreset(mPresetId);});
+      hbox->pack_start(*label,false,false);
+      hbox->pack_start(*combo,false,false);
+      hbox->pack_start(*button,false,false);
+      mRequestControlBox->add(*hbox);
+    }
+
     notebook->append_page(*mRequestControlBox, "Pull");
 
     // ground filter
@@ -439,9 +476,6 @@ public:
       });
     mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
     mRequestControlBox->add(*hbox);
-
-    // set up preset controls for pull
-    createPresets();
 
     // neck pitch
     mNeckPitchLabel= Gtk::manage(new Gtk::Label("Pitch (deg)"));

@@ -144,7 +144,9 @@ onParamChange(const std::shared_ptr<drc::BotWrapper>& iBotWrapper) {
   auto botWrapper = (iBotWrapper == NULL) ? mBotWrapper : iBotWrapper;
   for (auto item : mBindings) {
     std::string key = mKeyBase + "." + item.second->mSubKey;
+    printf("key %s\n", key.c_str());
     if (!botWrapper->hasKey(key)) continue;
+    printf("has it\n");
 
     Gtk::Widget* widget = item.second->mWidget;
     switch (item.second->mType) {
