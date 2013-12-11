@@ -127,7 +127,9 @@ pushValues() {
       break;
     }
     entry.value = oss.str();
-    msg.entries.push_back(entry);
+    if (mBotWrapper->get(entry.key)!=entry.value) {
+      msg.entries.push_back(entry);
+    }
   }
 
   msg.numEntries = msg.entries.size();

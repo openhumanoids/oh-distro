@@ -54,8 +54,7 @@ protected:
   };
 
   struct RequestControl {
-    const int mId;
-    bool mEnabled;
+    int mId;
     double mPeriod;
     int mQuality;
     typedef std::shared_ptr<RequestControl> Ptr;
@@ -105,6 +104,8 @@ protected:
   
   Gtk::Label* mNeckPitchLabel;
   int64_t mLastNeckPitchLabelUpdateTime;
+
+  Gtk::Button* mWorkspaceApplyButton;
 
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
   Gtk::TreeView* mAffordanceListBox;
@@ -414,10 +415,12 @@ public:
     int xCur(0), yCur(0);
 
     // request button
+    /* TODO: disabled for now
     button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
       ([this]{this->sendDataRequest(this->mRequestControls);});
     mRequestControlBox->add(*button);
+    */
     notebook->append_page(*mRequestControlBox, "Pull");
 
     // ground filter
@@ -438,7 +441,7 @@ public:
     mRequestControlBox->add(*hbox);
 
     // set up preset controls for pull
-    //createPresets();
+    createPresets();
 
     // neck pitch
     mNeckPitchLabel= Gtk::manage(new Gtk::Label("Pitch (deg)"));
@@ -481,8 +484,10 @@ public:
     addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
                "AFFORDANCE_LIST", ChannelTypeAnonymous, false, mAffControlBox);
     button = Gtk::manage(new Gtk::Button("Pull"));
+    /* TODO: disabled for now
     button->signal_clicked().connect
       ([this]{this->sendDataRequest(this->mRequestControls);});
+    */
     mAffControlBox->pack_start(*button,false,false);
     {
       box = Gtk::manage(new Gtk::HBox());
@@ -823,8 +828,12 @@ public:
     Gtk::Box* hbox = Gtk::manage(new Gtk::HBox());
     mWorkspaceDepthFov = 90;
     Gtk::HScale* fovSlider = createSlider(mWorkspaceDepthFov,60,130,10);
+    fovSlider->signal_value_changed().connect
+      ([this]{mWorkspaceApplyButton->set_sensitive(true);});
     mWorkspaceDepthYaw = 0;
     Gtk::HScale* yawSlider = createSlider(mWorkspaceDepthYaw,-90,100,10);
+    yawSlider->signal_value_changed().connect
+      ([this]{mWorkspaceApplyButton->set_sensitive(true);});
     Gtk::Label* label = Gtk::manage(new Gtk::Label("yaw"));
     vbox->pack_start(*label,false,false);
     vbox->pack_start(*yawSlider,false,false);
@@ -844,24 +853,48 @@ public:
                   const std::string& iChannel, const ChannelType iChannelType,
                   const bool iQuality=false, Gtk::Box* iContainer=NULL) {
     RequestControl::Ptr group(new RequestControl());
-    group->mEnabled = false;
+    group->mId = iId;
     group->mPeriod = 0;
     group->mQuality = 0;
 
     Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
-    check->signal_toggled().connect
-      ([check,group]{group->mEnabled=check->get_active();});
     Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel,Gtk::ALIGN_LEFT));
     Gtk::SpinButton* spin = createSpin(group->mPeriod,1,10,1);
     spin->set_digits(0);
     Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(" "));
     Gtk::ComboBox* combo = NULL;
-    Gtk::Button* button = Gtk::manage(new Gtk::Button("go"));
+    Gtk::Button* button = Gtk::manage(new Gtk::Button("now"));
     button->signal_clicked().connect
-      ([this,group,iId]{
-        std::unordered_map<int,RequestControl::Ptr> data;
-        data[iId] = group;
-        sendDataRequest(data);
+      ([this,group]{
+        RequestControl::Ptr tempGroup(new RequestControl(*group));
+        tempGroup->mPeriod = 0;
+        sendSingleDataRequest(tempGroup);
+      });
+
+    // apply button
+    Gtk::Button* apply = Gtk::manage(new Gtk::Button("apply"));
+    if (iId==drc::data_request_t::DEPTH_MAP_WORKSPACE) {
+      mWorkspaceApplyButton = apply;
+    }
+    apply->set_sensitive(false);
+    apply->signal_clicked().connect
+      ([this,apply,group]{
+        sendSingleDataRequest(group);
+        apply->set_sensitive(false);
+      });
+
+    // callbacks
+    check->signal_toggled().connect
+      ([check,spin,group,apply]{
+        group->mPeriod = check->get_active() ? spin->get_value() : 0;
+        apply->set_sensitive(true);
+      });
+    spin->signal_value_changed().connect
+      ([check,spin,group,apply]{
+        if (check->get_active()) {
+          group->mPeriod = spin->get_value();
+          apply->set_sensitive(true);
+        }
       });
     
     std::string safeLabel = iLabel;
@@ -875,6 +908,7 @@ public:
                                drc::camera_settings_t::QUALITY_MED,
                                drc::camera_settings_t::QUALITY_HIGH };
       combo = createCombo(group->mQuality,labels,ids);
+      combo->signal_changed().connect([apply]{ apply->set_sensitive(true); });
       mParamManager->bind(safeLabel+".quality",*combo);
     }
     if (iContainer == NULL) {
@@ -887,6 +921,7 @@ public:
       mRequestControlTable->attach(*label,2,3,yCur,yCur+1,xOpts,yOpts);
       mRequestControlTable->attach(*ageLabel,3,4,yCur,yCur+1,xOpts,yOpts);
       mRequestControlTable->attach(*spin,4,5,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*apply,6,7,yCur,yCur+1,xOpts,yOpts);
       if (combo != NULL) {
         mRequestControlTable->attach(*combo,5,6,yCur,yCur+1,xOpts,yOpts);
       }
@@ -897,6 +932,7 @@ public:
       box->add(*label);
       box->add(*ageLabel);
       box->add(*spin);
+      if (combo != NULL) box->add(*combo);
       iContainer->pack_start(*box,false,false);
     }
     mRequestControls[iId] = group;
@@ -920,28 +956,23 @@ public:
     }
   }
 
-  void sendDataRequest(const std::unordered_map<int,RequestControl::Ptr>&
-                       iControls) {
+  void sendSingleDataRequest(const RequestControl::Ptr& iGroup) {
     drc::data_request_list_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
-    std::unordered_map<int,RequestControl::Ptr>::const_iterator iter;
-    for (auto iter : iControls) {
-      if (!iter.second->mEnabled) continue;
-      drc::data_request_t req;
-      req.type = iter.first;
-      req.period = (int)(iter.second->mPeriod*10);
-      if (req.type == drc::data_request_t::DEPTH_MAP_WORKSPACE) {
-        sendWorkspaceDepthRequest(iter.second->mPeriod);
-      }
-      if (iter.second->mQuality > 0) {
-        drc::camera_settings_t settingsMessage;
-        settingsMessage.data_request.type = req.type;
-        settingsMessage.data_request.period = 0;
-        settingsMessage.quality = iter.second->mQuality;
-        getLcm()->publish("CAMERA_SETTINGS", &settingsMessage);
-      }
-      msg.requests.push_back(req);
+    drc::data_request_t req;
+    req.type = iGroup->mId;
+    req.period = iGroup->mPeriod*10;
+    if (req.type == drc::data_request_t::DEPTH_MAP_WORKSPACE) {
+      sendWorkspaceDepthRequest(iGroup->mPeriod);
     }
+    if (iGroup->mQuality > 0) {
+      drc::camera_settings_t settingsMessage;
+      settingsMessage.data_request.type = req.type;
+      settingsMessage.data_request.period = 0;
+      settingsMessage.quality = iGroup->mQuality;
+      getLcm()->publish("CAMERA_SETTINGS", &settingsMessage);
+    }
+    msg.requests.push_back(req);
     msg.num_requests = msg.requests.size();
     if (msg.num_requests > 0) {
       getLcm()->publish("DATA_REQUEST", &msg);
