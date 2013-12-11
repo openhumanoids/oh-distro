@@ -182,11 +182,13 @@ namespace drc {
 
 bool BotWrapper::
 hasKey(const std::string& iKey) const {
+  if (mBotParam == NULL) return false;
   return (0 != bot_param_has_key(mBotParam, iKey.c_str()));
 }
 
 bool BotWrapper::
 set(const std::string& iKey, const std::string& iValue) {
+  if (mBotParam == NULL) return false;
   publishSetParamMessage(*this, iKey, iValue);
   return true;
 }
@@ -237,6 +239,7 @@ getBool(const std::string& iKey) const {
 bool BotWrapper::
 get(const std::string& iKey, std::string& oValue) const {
   char* val = NULL;
+  if (mBotParam == NULL) return false;
   if (bot_param_get_str(mBotParam, iKey.c_str(), &val) != 0) return false;
   oValue = val;
   return true;
@@ -244,18 +247,21 @@ get(const std::string& iKey, std::string& oValue) const {
 
 bool BotWrapper::
 get(const std::string& iKey, int& oValue) const {
+  if (mBotParam == NULL) return false;
   if (bot_param_get_int(mBotParam, iKey.c_str(), &oValue) != 0) return false;
   return true;
 }
 
 bool BotWrapper::
 get(const std::string& iKey, double& oValue) const {
+  if (mBotParam == NULL) return false;
   if (bot_param_get_double(mBotParam, iKey.c_str(), &oValue) != 0) return false;
   return true;
 }
 
 bool BotWrapper::
 get(const std::string& iKey, bool& oValue) const {
+  if (mBotParam == NULL) return false;
   int val = 0;
   if (bot_param_get_boolean(mBotParam, iKey.c_str(), &val) != 0) return false;
   oValue = (val!=0);
@@ -264,6 +270,7 @@ get(const std::string& iKey, bool& oValue) const {
 
 std::vector<std::string> BotWrapper::
 getKeys(const std::string& iKey) const {
+  if (mBotParam == NULL) return std::vector<std::string>();
   char** subkeysRaw = bot_param_get_subkeys(mBotParam, iKey.c_str());
   std::vector<std::string> subkeys;
   for (char** subkeyPtr = subkeysRaw; *subkeyPtr != NULL; ++subkeyPtr) {

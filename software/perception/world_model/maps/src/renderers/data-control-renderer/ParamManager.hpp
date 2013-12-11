@@ -54,7 +54,7 @@ public:
   void onParamChange(const std::shared_ptr<drc::BotWrapper>& iBotWrapper=NULL);
 
 protected:
-
+  void initialize();
 };
 
 #endif

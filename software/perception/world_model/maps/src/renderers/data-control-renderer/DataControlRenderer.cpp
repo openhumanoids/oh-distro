@@ -135,6 +135,7 @@ public:
     std::shared_ptr<drc::BotWrapper> updatingBotWrapper;
     lcm_t* lcm = const_cast<lcm_t*>(iLcm);
     BotParam* updatingBotParam = bot_param_new_from_server(lcm, 1);
+    if (updatingBotParam == NULL) updatingBotParam = getBotParam();
     updatingBotWrapper.reset(new drc::BotWrapper(lcm, updatingBotParam));
     mParamManager.reset(new ParamManager(updatingBotWrapper));
     mParamManager->setKeyBase("datacontrol.pull");
@@ -801,7 +802,7 @@ public:
     Gtk::Box* vbox = Gtk::manage(new Gtk::VBox());
     Gtk::Box* hbox = Gtk::manage(new Gtk::HBox());
     mWorkspaceDepthFov = 90;
-    Gtk::HScale* fovSlider = createSlider(mWorkspaceDepthFov,30,130,10);
+    Gtk::HScale* fovSlider = createSlider(mWorkspaceDepthFov,60,130,10);
     mWorkspaceDepthYaw = 0;
     Gtk::HScale* yawSlider = createSlider(mWorkspaceDepthYaw,-90,100,10);
     Gtk::Label* label = Gtk::manage(new Gtk::Label("yaw"));

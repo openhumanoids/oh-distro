@@ -14,7 +14,9 @@ namespace {
   void onParamChange(BotParam* iOldParam, BotParam* iNewParam,
                      int64_t iTimestamp, void* iUser) {
     ParamManager& manager = *((ParamManager*)iUser);
-    if (iOldParam == manager.getBotWrapper()->getBotParam()) {
+    BotParam* botParam = manager.getBotWrapper()->getBotParam();
+    if (botParam == NULL) return;
+    if (iOldParam == botParam) {
       std::shared_ptr<drc::BotWrapper> tempWrapper
         (new drc::BotWrapper(manager.getBotWrapper()->getLcm(), iNewParam));
       manager.onParamChange(tempWrapper);
@@ -26,12 +28,20 @@ namespace {
 ParamManager::
 ParamManager(const std::shared_ptr<drc::BotWrapper>& iBotWrapper) {
   mBotWrapper = iBotWrapper;
-  bot_param_add_update_subscriber(mBotWrapper->getBotParam(),
-                                  ::onParamChange, this);
+  initialize();
 }
 
 ParamManager::
 ~ParamManager() {
+}
+
+void ParamManager::
+initialize() {
+  BotParam* botParam = mBotWrapper->getBotParam();
+  if (botParam == NULL) return;
+  bot_param_add_update_subscriber(mBotWrapper->getBotParam(),
+                                  ::onParamChange, this);
+  onParamChange();
 }
 
 std::shared_ptr<drc::BotWrapper> ParamManager::
@@ -88,6 +98,7 @@ bind(const std::string& iSubKey, Gtk::Scale& iWidget) {
 void ParamManager::
 pushValues() {
   BotParam* botParam = mBotWrapper->getBotParam();
+  if (botParam == NULL) return;
   bot_param::set_t msg;
   msg.utime = drc::Clock::instance()->getCurrentTime();
   msg.sequence_number = bot_param_get_seqno(botParam);
