@@ -114,7 +114,7 @@ class Pass{
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
     lcm_(lcm_){
-  verbose_ = true;
+  verbose_ = false;
   cartpos_ready_ = false;
       
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));

@@ -112,7 +112,6 @@ class Pass{
     Eigen::Isometry3d world_to_leftfoot_,world_to_rightfoot_, world_to_standing_;
     drc::affordance_t aff_;
     map<string, drc::affordance_t > affs_;
-    Eigen::Isometry3d world_to_debris_edge_ ;
     
     double ground_height_;
     
@@ -220,6 +219,19 @@ void Pass::poseRightFootHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   world_to_standing_.translation() = ( world_to_rightfoot_.translation()  + world_to_leftfoot_.translation() )/2;  // mid foot position
   world_to_standing_.rotate ( quat);
   
+  // 2 create a pose back and to the left of the sim world
+  Eigen::Isometry3d feet_to_debris_edge(Eigen::Isometry3d::Identity());
+  feet_to_debris_edge.translation()  << -10, 10, 0; // far back corner of sim world
+  Eigen::Isometry3d world_to_debris_edge = world_to_standing_* feet_to_debris_edge;
+  
+  Isometry3dTime world_to_debris_edgeT = Isometry3dTime(current_utime_,  world_to_debris_edge  );
+  pc_vis_->pose_to_lcm_from_list(600006, world_to_debris_edgeT);   
+
+  /// 3 finally reference point is a point at a high height  
+  Eigen::Isometry3d debris_edge_to_birds_eye(Eigen::Isometry3d::Identity());
+  debris_edge_to_birds_eye.translation()  << 0.0, 0, 10; // far back corner of sim world
+  world_to_birds_eye_ = world_to_debris_edge* debris_edge_to_birds_eye;
+  
   walkinggoal_ready_ = true;
 }
 
@@ -266,7 +278,7 @@ void Pass::getCurrentStandingPositionAsRelative(Eigen::Isometry3d min_pt){
 void Pass::getPriorStandingPositionAsRelative(Eigen::Isometry3d min_pt, Eigen::Isometry3d corner_to_walking_goal){
   // A point on the ground under the nearest corner facing along the plank
   Eigen::Isometry3d world_to_corner(Eigen::Isometry3d::Identity());
-  world_to_corner.translation() << min_pt.translation().x(), min_pt.translation().y(), 0 ; // point on the ground
+  world_to_corner.translation() << min_pt.translation().x(), min_pt.translation().y(), ground_height_ ; // point on the ground
   world_to_corner.rotate( euler_to_quat(0,0, aff_.origin_rpy[2]) );
   Isometry3dTime pt_poseT = Isometry3dTime(current_utime_, world_to_corner );
   pc_vis_->pose_to_lcm_from_list(600000, pt_poseT);   
@@ -406,54 +418,14 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
   current_utime_ = msg->utime;
   std::cout << "got "<< msg->naffs << " affs\n";
   
-  bool found_debris_edge=false;
+  
   for (int i=0 ; i < msg->naffs ; i++){
     drc::affordance_t aff = msg->affs_plus[i].aff;
     std::stringstream ss;
     ss << aff.otdf_type << '_' << aff.uid;    
     // std::cout << ss.str() << "\n";
     affs_[ ss.str() ]=  aff;
-    
-    
-    if (aff.otdf_type == "debris_edge"){
-      std::cout << "Found Debris Edge Affordance\n"; 
-      
-      // 1 get the debris edge:
-      world_to_debris_edge_  = affutils_.getPose(aff.origin_xyz, aff.origin_rpy) ;
-      Isometry3dTime world_to_debris_edgeT = Isometry3dTime(current_utime_,  world_to_debris_edge_  );
-      pc_vis_->pose_to_lcm_from_list(600006, world_to_debris_edgeT);   
-      
-      // 2 create a pose back and to the left of the sim world
-      Eigen::Isometry3d debris_edge_to_birds_eye(Eigen::Isometry3d::Identity());
-      debris_edge_to_birds_eye.translation()  << -1, -1, 1000; // far back corner of sim world
-      world_to_birds_eye_ = world_to_debris_edge_* debris_edge_to_birds_eye;
-
-      // 3 clearance line for the hip
-      Eigen::Isometry3d debris_edge_to_hipclearance(Eigen::Isometry3d::Identity());
-      debris_edge_to_hipclearance.translation()  << -0.39, 0, 0; 
-      Eigen::Isometry3d world_to_hipclearance = world_to_debris_edge_* debris_edge_to_hipclearance;
-      Isometry3dTime world_to_hipclearanceT = Isometry3dTime(current_utime_,  world_to_hipclearance  );
-      pc_vis_->pose_to_lcm_from_list(600007, world_to_hipclearanceT);   
-      
-      // 4 clearance line for the knee caps
-      Eigen::Isometry3d debris_edge_to_kneecapclearance(Eigen::Isometry3d::Identity());
-      debris_edge_to_kneecapclearance.translation()  << -0.39, 0, 0; // far back corner of sim world
-      Eigen::Isometry3d world_to_kneecapclearance = world_to_debris_edge_* debris_edge_to_kneecapclearance;
-      Isometry3dTime world_to_kneecapclearanceT = Isometry3dTime(current_utime_,  world_to_kneecapclearance  );
-      pc_vis_->pose_to_lcm_from_list(600008, world_to_kneecapclearanceT);   
-      
-      
-      
-      found_debris_edge = true;
-    }
-  }     
-  
-  
-  if (!found_debris_edge){
-    std::cout << "Did not find Debris Edge Affordance ... returning\n"; 
-    return;
   }
-  
   
   std::stringstream object_name_ss;
   object_name_ss << "box_" << config_.server_id;
@@ -557,12 +529,15 @@ void Pass::affHandler(const lcm::ReceiveBuffer* rbuf,
     
     
     int id = config_.library_id; // was lib id
+    
+    // disabled:
     getPriorStandingPositionAsRelative(min_pt, affraw_list[id].standing_position_ );
     
-    drc::system_status_t status;
-    status.system = 4; // palnning
-    status.value = affraw_list[id].message_;
-    lcm_->publish("SYSTEM_STATUS", &status);
+    //drc::system_status_t status;
+    //status.system = 4; // palnning
+    //status.value = affraw_list[id].message_;
+    //lcm_->publish("SYSTEM_STATUS", &status);
+    
     
     // Publish an affordance relative hand position:
     // assumes a corner-to-hand position transform:
