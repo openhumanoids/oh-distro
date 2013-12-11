@@ -18,12 +18,12 @@ classdef palmGazePlanner
     default_axis_threshold = 2.5*pi/180;
     atlas2robotFrameIndMap
     allowPelvisHeight
-    T_palm_hand_l = inv(HT([0;0.11516;0.015],1.57079,3.14159,3.14159));
-    T_palm_hand_r = inv(HT([0;-0.11516;-0.015],1.57079,0,0));
+    T_palm_hand_l
+    T_palm_hand_r
   end
   
   methods    
-    function obj = palmGazePlanner(r,atlas, doVisualization, doPublish, allowPelvisHeight)
+    function obj = palmGazePlanner(r,atlas, T_palm_hand_l, T_palm_hand_r, doVisualization, doPublish, allowPelvisHeight)
       obj.atlas = atlas;
       obj.r = r;
       obj.doVisualization = doVisualization;
@@ -31,7 +31,8 @@ classdef palmGazePlanner
         obj.v = obj.r.constructVisualizer;
         obj.v.playback_speed = 5;
       end
-      
+      obj.T_palm_hand_l = T_palm_hand_l;
+      obj.T_palm_hand_r = T_palm_hand_r;
       obj.doPublish = doPublish;
       
       obj.allowPelvisHeight = allowPelvisHeight;
