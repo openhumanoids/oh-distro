@@ -382,6 +382,7 @@ struct ViewWorker {
   void operator()() {
     mActive = true;
     while (mActive) {
+      int64_t checkpointStart = bot_timestamp_now();
       auto lcm = mBotWrapper->getLcm();
       // get map
       LocalMap::Ptr localMap;
@@ -573,8 +574,13 @@ struct ViewWorker {
       }
 
       // wait for timer expiry
-      std::this_thread::sleep_for
-        (std::chrono::milliseconds(int(1000/mRequest.frequency)));
+      int elapsedMs = (bot_timestamp_now() - checkpointStart)/1000;
+      int periodMs = 1000/mRequest.frequency;
+      int sleepMs = periodMs-elapsedMs;
+      if (sleepMs > 0) {
+        std::this_thread::sleep_for
+          (std::chrono::milliseconds(periodMs-elapsedMs));
+      }
     }
   }
 };

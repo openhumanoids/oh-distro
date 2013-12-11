@@ -53,6 +53,8 @@ namespace {
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DEPTH_MAP_SCENE, "Depth Scene", 0.5,0,0.5, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
+      add(data_request_t::DEPTH_MAP_WORKSPACE, "Workspace", 0,0,1, 0,1,3,
+          MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DEPTH_MAP_WORKSPACE_C, "Workspace C", 0,0,1, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DEPTH_MAP_WORKSPACE_L, "Workspace L", 0,0,1, 0,1,3,
@@ -146,12 +148,20 @@ struct ViewMetaData::Helper {
     }
   }
 
-  /*
-  void drawFrustum(const Frustum& iFrustum, const Eigen::Vector3f& iColor) {
+  void drawBounds() {
+    ViewBase::Spec spec;
+    if (!mRenderer->mViewClient.getSpec(mViewId, spec)) return;
+    if (spec.mClipPlanes.size() == 0) return;
     std::vector<Eigen::Vector3f> vertices;
     std::vector<std::vector<int> > faces;
-    maps::Utils::polyhedronFromPlanes(iFrustum.mPlanes, vertices, faces);
-    glColor3f(iColor[0], iColor[1], iColor[2]);
+    maps::Utils::polyhedronFromPlanes(spec.mClipPlanes, vertices, faces);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    if (spec.mRelativeLocation) {
+      glMultMatrixf(mLatestTransform.data());
+    }
+    glColor3f(mAttributes.mColor[0], mAttributes.mColor[1],
+              mAttributes.mColor[2]);
     glLineWidth(3);
     for (size_t i = 0; i < faces.size(); ++i) {
       glBegin(GL_LINE_LOOP);
@@ -161,8 +171,8 @@ struct ViewMetaData::Helper {
       }
       glEnd();
     }
+    glPopMatrix();
   }
-  */
 
   void draw(const std::shared_ptr<maps::ViewBase>& iView,
             const std::shared_ptr<MeshRenderer>& iMeshRenderer) {
@@ -180,24 +190,6 @@ struct ViewMetaData::Helper {
     bool ortho;
     maps::Utils::factorViewMatrix(worldToMap, calib, pose, ortho);
     iMeshRenderer->setNormalZero(-pose.linear().col(2));
-
-    /*
-    // draw frustum
-    ViewBase::Spec viewSpec;
-    if (mViewClient.getSpec(id, viewSpec)) {
-      if (viewSpec.mClipPlanes.size() > 0) {
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        if (viewSpec.mRelativeLocation) {
-          glMultMatrixf(data->mLatestTransform.data());
-        }
-        Frustum frustum;
-        frustum.mPlanes = viewSpec.mClipPlanes;
-        drawFrustum(frustum, data->mColor);
-        glPopMatrix();
-      }
-    }
-    */
 
     // see whether we need to (and can) get a mesh representation
     bool usePoints = false;
@@ -234,6 +226,7 @@ struct ViewMetaData::Helper {
 
     // draw this view's data
     iMeshRenderer->draw();
+    drawBounds();
   }
 
   bool addWidgets(Gtk::Box* iBox) {

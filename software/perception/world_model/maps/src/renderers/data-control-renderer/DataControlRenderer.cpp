@@ -34,7 +34,7 @@
 #include <affordance/AffordanceUpWrapper.h>
 
 #include <bot_param/param_client.h>
-#include <maps/BotWrapper.hpp>
+#include <drc_utils/BotWrapper.hpp>
 
 #include "ParamManager.hpp"
 
@@ -100,6 +100,9 @@ protected:
 
   bool mMinimalAffordances;
   int mControllerHeightMapMode;
+
+  int mWorkspaceDepthFov;
+  int mWorkspaceDepthYaw;
   
   Gtk::Label* mNeckPitchLabel;
   int64_t mLastNeckPitchLabelUpdateTime;
@@ -129,12 +132,12 @@ public:
     drc::Clock::instance()->setLcm(getLcm());
     drc::Clock::instance()->setVerbose(false);
 
-    std::shared_ptr<maps::BotWrapper> updatingBotWrapper;
+    std::shared_ptr<drc::BotWrapper> updatingBotWrapper;
     lcm_t* lcm = const_cast<lcm_t*>(iLcm);
     BotParam* updatingBotParam = bot_param_new_from_server(lcm, 1);
-    updatingBotWrapper.reset(new maps::BotWrapper(lcm, updatingBotParam));
+    updatingBotWrapper.reset(new drc::BotWrapper(lcm, updatingBotParam));
     mParamManager.reset(new ParamManager(updatingBotWrapper));
-    mParamManager->setKeyBase("maps.datacontrol.pull");
+    mParamManager->setKeyBase("datacontrol.pull");
 
     // set up affordance wrapper
     mAffordanceWrapper.reset(new affordance::AffordanceUpWrapper
@@ -182,23 +185,25 @@ public:
       std::lock_guard<std::mutex> lock(mTimeKeepersMutex);
       for (iter = mTimeKeepers.begin(); iter != mTimeKeepers.end(); ++iter) {
         int64_t lastUpdateTime = iter->second.mLastUpdateTime;
-        if (lastUpdateTime < 0) continue;
         int dtSec = (currentTime - lastUpdateTime)/1000000;
-        if (dtSec > 0) {
+        //if (lastUpdateTime < 0) continue;
+        if (lastUpdateTime < 0) dtSec = 100;
+        if (dtSec == 0) continue;
+        if (dtSec >= 0) {
           std::string text;
           Gdk::Color color;
-          if (dtSec <= 60) {
+          color.set_rgb_p(0, 0, 0);
+          if (dtSec > 60) {
+            color.set_rgb_p(0.7, 0, 0);
+            text = ">60s";
+          }
+          else if (dtSec > 0) {
             text = static_cast<std::ostringstream*>
               (&(std::ostringstream() << dtSec) )->str();
-            text = "(" + text + "s)";
-            color.set_rgb_p(0, 0, 0);
-          }
-          else {
-            text = "(>60s)";
-            color.set_rgb_p(0.7, 0, 0);
+            text = text + "s";
           }
           iter->second.mLabel->modify_fg(Gtk::STATE_NORMAL, color);
-          iter->second.mLabel->set_text(text);
+          iter->second.mLabel->set_text(" " + text + " ");
         }
       }
     }
@@ -289,7 +294,10 @@ public:
       if (item != mTimeKeepers.end()) {
         item->second.mLastUpdateTime =
           drc::Clock::instance()->getCurrentWallTime();
-        item->second.mLabel->set_text("");
+        item->second.mLabel->set_text(" 0s ");
+        Gdk::Color color;
+        color.set_rgb_p(0, 0.7, 0);
+        item->second.mLabel->modify_fg(Gtk::STATE_NORMAL, color);
       }
     }
   }
@@ -306,8 +314,10 @@ public:
     typedef drc::data_request_t dr;
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT, "Camera Head",
                "CAMERA_LEFT", ChannelTypeAnonymous,true);
+    /*
     addControl(drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT, "Camera Head R.",
                "CAMERA_RIGHT", ChannelTypeAnonymous,true);
+    */
     /*
     addControl(drc::data_request_t::CAMERA_IMAGE_LHAND, "Camera L.Hand",
                "CAMERA_LHANDLEFT", ChannelTypeAnonymous);
@@ -355,12 +365,15 @@ public:
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Points",
                "MAP_OCTREE", ChannelTypeAnonymous);
     */
+
+    /*
     addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE_C, "Workspace Depth C",
                "MAP_DEPTH", ChannelTypeDepthImage);
     addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE_L, "Workspace Depth L",
                "MAP_DEPTH", ChannelTypeDepthImage);
     addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE_R, "Workspace Depth R",
                "MAP_DEPTH", ChannelTypeDepthImage);
+    */
 
     //mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
     //addControl(drc::data_request_t::TERRAIN_COST, "Terrain Cost",
@@ -374,6 +387,10 @@ public:
     addControl(drc::data_request_t::DENSE_CLOUD_RHAND, "Dense Box R.Hand",
                "MAP_CLOUD", ChannelTypeDepthImage);
     */
+
+    addWorkspaceViewWidgets();
+    addControl(drc::data_request_t::DEPTH_MAP_WORKSPACE, "Workspace Depth",
+               "MAP_DEPTH", ChannelTypeDepthImage);
 
     // some widgets and variables
     Gtk::Button* button;
@@ -779,6 +796,29 @@ public:
     mParamManager->onParamChange();
   }
 
+  void addWorkspaceViewWidgets() {
+    Gtk::Box* mainBox = Gtk::manage(new Gtk::VBox());
+    Gtk::Box* vbox = Gtk::manage(new Gtk::VBox());
+    Gtk::Box* hbox = Gtk::manage(new Gtk::HBox());
+    mWorkspaceDepthFov = 90;
+    Gtk::HScale* fovSlider = createSlider(mWorkspaceDepthFov,30,130,10);
+    mWorkspaceDepthYaw = 0;
+    Gtk::HScale* yawSlider = createSlider(mWorkspaceDepthYaw,-90,100,10);
+    Gtk::Label* label = Gtk::manage(new Gtk::Label("yaw"));
+    vbox->pack_start(*label,false,false);
+    vbox->pack_start(*yawSlider,false,false);
+    hbox->pack_start(*vbox,true,true);
+    vbox = Gtk::manage(new Gtk::VBox());
+    label = Gtk::manage(new Gtk::Label("fov"));
+    vbox->pack_start(*label,false,false);
+    vbox->pack_start(*fovSlider,false,false);
+    hbox->pack_start(*vbox,true,true);
+    mainBox->pack_start(*hbox,false,false);
+    mRequestControlBox->add(*mainBox);
+    mParamManager->bind("workspace.fov", *fovSlider);
+    mParamManager->bind("workspace.yaw", *yawSlider);
+  }
+
   void addControl(const int iId, const std::string& iLabel,
                   const std::string& iChannel, const ChannelType iChannelType,
                   const bool iQuality=false, Gtk::Box* iContainer=NULL) {
@@ -860,6 +900,9 @@ public:
       drc::data_request_t req;
       req.type = iter->first;
       req.period = (int)(iter->second->mPeriod*10);
+      if (req.type == drc::data_request_t::DEPTH_MAP_WORKSPACE) {
+        sendWorkspaceDepthRequest(iter->second->mPeriod);
+      }
       if (iter->second->mQuality > 0) {
         drc::camera_settings_t settingsMessage;
         settingsMessage.data_request.type = req.type;
@@ -873,7 +916,66 @@ public:
     if (msg.num_requests > 0) {
       getLcm()->publish("DATA_REQUEST", &msg);
     }
+
     mParamManager->pushValues();
+  }
+
+  void sendWorkspaceDepthRequest(const int iPeriod) {
+    drc::map_request_t msg;
+
+    // basic message field setup
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    msg.map_id = 3;
+    msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE;
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
+    msg.resolution = 0.01;
+    msg.frequency = (iPeriod > 0) ? 1.0f/iPeriod : 0;
+    msg.quantization_max = 0.02;
+    msg.width = 200;
+    msg.height = 200;
+    msg.time_min = 0;
+    msg.time_max = 190;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE;
+    msg.relative_location = true;
+    msg.active = true;
+
+    // bounding planes
+    msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, 0}));
+    msg.clip_planes.push_back(std::vector<float>({-1, 0, 0, 2}));
+    msg.clip_planes.push_back(std::vector<float>({ 0, 1, 0, 2}));
+    msg.clip_planes.push_back(std::vector<float>({ 0,-1, 0, 2}));
+    msg.clip_planes.push_back(std::vector<float>({ 0, 0, 1, 2}));
+    msg.clip_planes.push_back(std::vector<float>({ 0, 0,-1, 1}));
+    msg.num_clip_planes = msg.clip_planes.size();
+
+    // projector
+    const float kPi = acos(-1);
+    const float kDegToRad = kPi/180;
+    const float hFov = mWorkspaceDepthFov*kDegToRad;
+    const float vFovDeg = 110;
+    const float vFov = vFovDeg*kDegToRad;
+    Eigen::Isometry3f pose = Eigen::Isometry3f::Identity();
+    pose.linear() << 0,0,1, -1,0,0, 0,-1,0;
+    Eigen::Projective3f calib = Eigen::Projective3f::Identity();
+    calib.matrix().row(2).swap(calib.matrix().row(3));
+    calib(0,0) = msg.width/2/tan(hFov/2);
+    calib(1,1) = msg.height/2/tan(vFov/2);
+    calib(0,2) = msg.width/2;
+    calib(1,2) = msg.height/2;
+
+    // adjustment for yaw and pitch
+    Eigen::AngleAxisf angleAxis;
+    angleAxis = Eigen::AngleAxisf((90-vFovDeg/2)*kDegToRad,
+                                  Eigen::Vector3f(0,1,0));
+    pose = angleAxis*pose;
+    angleAxis = Eigen::AngleAxisf(-mWorkspaceDepthYaw*kDegToRad,
+                                  Eigen::Vector3f(0,0,1));
+    pose = angleAxis*pose;
+    Eigen::Projective3f projector = calib*pose.inverse();
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) msg.transform[i][j] = projector(i,j);
+    }
+    getLcm()->publish("MAP_REQUEST",&msg);
   }
 
   void onDataPushButton() {

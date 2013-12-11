@@ -1,5 +1,5 @@
-#ifndef _BotWrapper_hpp_
-#define _BotWrapper_hpp_
+#ifndef _drc_BotWrapper_hpp_
+#define _drc_BotWrapper_hpp_
 
 #include <memory>
 #include <Eigen/Geometry>
@@ -35,20 +35,32 @@ public:
   BotParam* getBotParam() const;
   BotFrames* getBotFrames() const;
 
+  // for bot frames
   int64_t getLatestTime(const std::string& iFrom, const std::string& iTo) const;
+  template <typename T>
   bool getTransform(const std::string& iFrom, const std::string& iTo,
-                    Eigen::Isometry3f& oTransform,
+                    Eigen::Transform<T,3,Eigen::Isometry>& oTransform,
                     const int64_t iTime=-1) const;
+  template <typename T>
   bool getTransform(const std::string& iFrom, const std::string& iTo,
-                    Eigen::Quaternionf& oRot, Eigen::Vector3f& oTrans,
-                    const int64_t iTime=-1) const;
-  bool getTransform(const std::string& iFrom, const std::string& iTo,
-                    Eigen::Isometry3d& oTransform,
-                    const int64_t iTime=-1) const;
-  bool getTransform(const std::string& iFrom, const std::string& iTo,
-                    Eigen::Quaterniond& oRot, Eigen::Vector3d& oTrans,
+                    Eigen::Quaternion<T>& oRot, Eigen::Matrix<T,3,1>& oTrans,
                     const int64_t iTime=-1) const;
 
+  // for bot param
+  bool hasKey(const std::string& iKey) const;
+  bool set(const std::string& iKey, const std::string& iValue);
+  bool set(const std::string& iKey, const int iValue);
+  bool set(const std::string& iKey, const double iValue);
+  bool set(const std::string& iKey, const bool iValue);
+  std::string get(const std::string& iKey) const;
+  int getInt(const std::string& iKey) const;
+  double getDouble(const std::string& iKey) const;
+  bool getBool(const std::string& iKey) const;
+  bool get(const std::string& iKey, std::string& oValue) const;
+  bool get(const std::string& iKey, int& oValue) const;
+  bool get(const std::string& iKey, double& oValue) const;
+  bool get(const std::string& iKey, bool& oValue) const;
+  std::vector<std::string> getKeys(const std::string& iKey) const;
 
 protected:
   std::shared_ptr<lcm::LCM> mLcm;

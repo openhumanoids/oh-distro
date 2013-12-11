@@ -3,7 +3,7 @@
 #include <bot_param/param_client.h>
 #include <lcmtypes/bot_param/set_t.hpp>
 #include <lcmtypes/bot_param/entry_t.hpp>
-#include <maps/BotWrapper.hpp>
+#include <drc_utils/BotWrapper.hpp>
 #include <drc_utils/Clock.hpp>
 
 #include <lcm/lcm-cpp.hpp>
@@ -15,14 +15,16 @@ namespace {
                      int64_t iTimestamp, void* iUser) {
     ParamManager& manager = *((ParamManager*)iUser);
     if (iOldParam == manager.getBotWrapper()->getBotParam()) {
-      manager.onParamChange();
+      std::shared_ptr<drc::BotWrapper> tempWrapper
+        (new drc::BotWrapper(manager.getBotWrapper()->getLcm(), iNewParam));
+      manager.onParamChange(tempWrapper);
     }
   }
 }
 
 
 ParamManager::
-ParamManager(const std::shared_ptr<maps::BotWrapper>& iBotWrapper) {
+ParamManager(const std::shared_ptr<drc::BotWrapper>& iBotWrapper) {
   mBotWrapper = iBotWrapper;
   bot_param_add_update_subscriber(mBotWrapper->getBotParam(),
                                   ::onParamChange, this);
@@ -32,7 +34,7 @@ ParamManager::
 ~ParamManager() {
 }
 
-std::shared_ptr<maps::BotWrapper> ParamManager::
+std::shared_ptr<drc::BotWrapper> ParamManager::
 getBotWrapper() const {
   return mBotWrapper;
 }
@@ -72,6 +74,17 @@ bind(const std::string& iSubKey, Gtk::CheckButton& iWidget) {
   return true;
 }
 
+bool ParamManager::
+bind(const std::string& iSubKey, Gtk::Scale& iWidget) {
+  Binding::Ptr binding(new Binding());
+  binding->mSubKey = iSubKey;
+  binding->mWidget = &iWidget;
+  binding->mType = WidgetTypeSlider;
+  mBindings[iSubKey] = binding;
+  return true;
+}
+
+
 void ParamManager::
 pushValues() {
   BotParam* botParam = mBotWrapper->getBotParam();
@@ -96,6 +109,9 @@ pushValues() {
     case WidgetTypeCheck:
       oss << (((Gtk::CheckButton*)widget)->get_active() ? "true" : "false");
       break;
+    case WidgetTypeSlider:
+      oss << ((Gtk::Scale*)widget)->get_value();
+      break;
     default:
       break;
     }
@@ -107,38 +123,44 @@ pushValues() {
   if (msg.numEntries > 0) {
     mBotWrapper->getLcm()->publish("PARAM_SET", &msg);
   }
-  // TODO: prepare multi message instead
 }
 
 
 void ParamManager::
-onParamChange() {
+onParamChange(const std::shared_ptr<drc::BotWrapper>& iBotWrapper) {
+  auto botWrapper = (iBotWrapper == NULL) ? mBotWrapper : iBotWrapper;
   for (auto item : mBindings) {
     std::string key = mKeyBase + "." + item.second->mSubKey;
-    if (!mBotWrapper->hasKey(key)) continue;
+    if (!botWrapper->hasKey(key)) continue;
 
     Gtk::Widget* widget = item.second->mWidget;
     switch (item.second->mType) {
     case WidgetTypeCombo: {
-      int val = mBotWrapper->getInt(key);
+      int val = botWrapper->getInt(key);
       if (((Gtk::ComboBox*)widget)->get_active_row_number() != val) {
         ((Gtk::ComboBox*)widget)->set_active(val);
       }
       break;
     }
     case WidgetTypeSpin: {
-      double val = mBotWrapper->getDouble(key);
+      double val = botWrapper->getDouble(key);
       if (((Gtk::SpinButton*)widget)->get_value() != val) {
         ((Gtk::SpinButton*)widget)->set_value(val);
       }
       break;
     }
     case WidgetTypeCheck: {
-      bool val = mBotWrapper->getBool(key);
+      bool val = botWrapper->getBool(key);
       if (((Gtk::CheckButton*)widget)->get_active() != val) {
         ((Gtk::CheckButton*)widget)->set_active(val);
       }
       break;
+    }
+    case WidgetTypeSlider: {
+      double val = botWrapper->getDouble(key);
+      if (((Gtk::Scale*)widget)->get_value() != val) {
+        ((Gtk::Scale*)widget)->set_value(val);      
+      }
     }
     default:
       break;

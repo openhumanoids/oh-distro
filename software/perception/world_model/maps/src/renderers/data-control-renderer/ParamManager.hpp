@@ -1,11 +1,11 @@
-#ifndef _maps_ParamManager_hpp_
-#define _maps_ParamManager_hpp_
+#ifndef _ParamManager_hpp_
+#define _ParamManager_hpp_
 
 #include <memory>
 #include <string>
 #include <map>
 
-namespace maps {
+namespace drc {
   class BotWrapper;
 }
 
@@ -14,6 +14,7 @@ namespace Gtk {
   class ComboBox;
   class SpinButton;
   class CheckButton;
+  class Scale;
 }
 
 class ParamManager {
@@ -22,6 +23,7 @@ protected:
     WidgetTypeSpin,
     WidgetTypeCheck,
     WidgetTypeCombo,
+    WidgetTypeSlider,
   };
 
   struct Binding {
@@ -32,23 +34,24 @@ protected:
   };
 
 protected:
-  std::shared_ptr<maps::BotWrapper> mBotWrapper;
+  std::shared_ptr<drc::BotWrapper> mBotWrapper;
   std::string mKeyBase;
   std::map<std::string,Binding::Ptr> mBindings;
 
 public:
-  ParamManager(const std::shared_ptr<maps::BotWrapper>& iBotWrapper);
+  ParamManager(const std::shared_ptr<drc::BotWrapper>& iBotWrapper);
   ~ParamManager();
 
-  std::shared_ptr<maps::BotWrapper> getBotWrapper() const;
+  std::shared_ptr<drc::BotWrapper> getBotWrapper() const;
 
   void setKeyBase(const std::string& iBase);
   bool bind(const std::string& iSubKey, Gtk::ComboBox& iWidget);
   bool bind(const std::string& iSubKey, Gtk::SpinButton& iWidget);
   bool bind(const std::string& iSubKey, Gtk::CheckButton& iWidget);
+  bool bind(const std::string& iSubKey, Gtk::Scale& iWidget);
 
   void pushValues();
-  void onParamChange();
+  void onParamChange(const std::shared_ptr<drc::BotWrapper>& iBotWrapper=NULL);
 
 protected:
 
