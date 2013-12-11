@@ -104,6 +104,8 @@ classdef ladderHandPlanner
       
       % create hand position constraint
       ladder_z = [0;0;1];
+      ladder_z = ladder_z - ladder_axis*(ladder_axis'*ladder_z);
+      ladder_z = ladder_z/norm(ladder_z);
       ladder_y = cross(ladder_z,ladder_axis);
       
       hand_pt_init = obj.r.forwardKin(kinsol,obj.left_hand_body,obj.left_hand_pt);
@@ -150,6 +152,8 @@ classdef ladderHandPlanner
  
       % create hand position constraint
       ladder_z = [0;0;1];
+      ladder_z = ladder_z - ladder_axis*(ladder_axis'*ladder_z);
+      ladder_z = ladder_z/norm(ladder_z);
       ladder_y = cross(ladder_z,ladder_axis);
       
       hand_pt_init = obj.r.forwardKin(kinsol,obj.right_hand_body,obj.right_hand_pt);
