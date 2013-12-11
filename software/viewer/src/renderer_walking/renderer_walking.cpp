@@ -426,7 +426,7 @@ void set_default_params(RendererWalking* self, int mode) {
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_STEP_DURATION, 2.0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWAY_DURATION, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_SWING_HEIGHT, 0.05);  
-    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, 0.1);  
+    bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_LIFT_HEIGHT, 0.05);  
     bot_gtk_param_widget_set_enum(self->bdi_pw, PARAM_BDI_TOE_OFF, BDI_TOE_OFF_ENABLE);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_KNEE_NOMINAL, 0);  
     bot_gtk_param_widget_set_double(self->bdi_pw, PARAM_BDI_MAX_BODY_ACCEL, 0);  
