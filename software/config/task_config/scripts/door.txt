@@ -25,6 +25,7 @@ command hands to pre-grasp postures
 open and configure ee-driver
 turn on show EE forces in viewer
 turn off BDI height mode in controller
+turn off footstep planner in perception side drc-viewer
 
 run starts
 -----------
