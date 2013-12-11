@@ -311,7 +311,6 @@ public:
   }
 
   void loadPreset(const int iNum) {
-    std::cout << "LOADING PRESET " << iNum << std::endl;
     drc::BotWrapper botWrapper(getLcm(), getBotParam(), getBotFrames());
     const std::string keyBase = "viewer.datacontrol_presets";
     ParamManager manager = *mParamManager;
@@ -320,6 +319,7 @@ public:
     for (auto iter : mRequestControls) {
       sendSingleDataRequest(iter.second);
     }
+    std::cout << "Loaded preset " << mPresetNames[iNum] << std::endl;
   }
 
   void setupWidgets() {
@@ -515,8 +515,10 @@ public:
       (sigc::mem_fun(*this, &DataControlRenderer::onDataPushButton));
     mAffControlBox->pack_start(*button, false, false);
     mAffControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
+    /*
     addControl(drc::data_request_t::AFFORDANCE_LIST, "Affordance List",
                "AFFORDANCE_LIST", ChannelTypeAnonymous, false, mAffControlBox);
+    */
     button = Gtk::manage(new Gtk::Button("Pull"));
     /* TODO: disabled for now
     button->signal_clicked().connect
