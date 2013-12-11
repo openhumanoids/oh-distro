@@ -1,4 +1,7 @@
-function runRelativeEndEffectorTrajPlanner(channel,delim)
+function runRelativeEndEffectorTrajPlanner(channel,delim,options)
+  if nargin < 3
+    options = struct();
+  end
   lc = lcm.lcm.LCM.getSingleton();
   status_code = 6;
   waiting = true;
@@ -16,7 +19,7 @@ function runRelativeEndEffectorTrajPlanner(channel,delim)
   % Create lcm monitor and publisher
   msg_monitor = drake.util.MessageMonitor(drc.atlas_behavior_command_t(),'utime');
   lc.subscribe(channel,msg_monitor);
-  plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_ROBOT_PLAN');
+  plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
   % Main loop
   msg ='Relative EETraj Plan: Listening ...'; disp(msg); send_status(status_code,0,0,msg);
   while true
@@ -55,7 +58,7 @@ function runRelativeEndEffectorTrajPlanner(channel,delim)
 
     % Publish plan
     msg ='Relative EETraj Plan: Publishing plan ...'; disp(msg); send_status(status_code,0,0,msg);
-    plan_pub.publish(T,X_plan);
+    plan_pub.publish([zeros(2,size(X_plan,2));X_plan],T,get_timestamp_now());
     waiting = true;
   end
 end
