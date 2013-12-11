@@ -264,6 +264,7 @@ def publishPostureGoal(joints, postureName, channel='POSTURE_GOAL'):
         msg.joint_position.append(position)
     msg.num_joints = len(msg.joint_name)
     lcmWrapper.publish(channel, msg)
+    lcmWrapper.publish('POSTURE_GOAL_CANNED', msg)
 
     publishSystemStatus('sending posture goal: ' + postureName)
 
