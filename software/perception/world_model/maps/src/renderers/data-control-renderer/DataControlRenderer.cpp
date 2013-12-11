@@ -409,7 +409,7 @@ public:
     // request button
     button = Gtk::manage(new Gtk::Button("Submit Request"));
     button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
+      ([this]{this->sendDataRequest(this->mRequestControls);});
     mRequestControlBox->add(*button);
     notebook->append_page(*mRequestControlBox, "Pull");
 
@@ -472,7 +472,7 @@ public:
                "AFFORDANCE_LIST", ChannelTypeAnonymous, false, mAffControlBox);
     button = Gtk::manage(new Gtk::Button("Pull"));
     button->signal_clicked().connect
-      (sigc::mem_fun(*this, &DataControlRenderer::onDataRequestButton));
+      ([this]{this->sendDataRequest(this->mRequestControls);});
     mAffControlBox->pack_start(*button,false,false);
     {
       box = Gtk::manage(new Gtk::HBox());
@@ -830,11 +830,19 @@ public:
     Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
     check->signal_toggled().connect
       ([check,group]{group->mEnabled=check->get_active();});
-    Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel));
+    Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel,Gtk::ALIGN_LEFT));
     Gtk::SpinButton* spin = createSpin(group->mPeriod,0,10,1);
     spin->set_digits(0);
     Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(" "));
     Gtk::ComboBox* combo = NULL;
+    Gtk::Button* button = Gtk::manage(new Gtk::Button("go"));
+    button->signal_clicked().connect
+      ([this,group,iId]{
+        std::unordered_map<int,RequestControl::Ptr> data;
+        data[iId] = group;
+        sendDataRequest(data);
+      });
+    
     std::string safeLabel = iLabel;
     std::replace(safeLabel.begin(), safeLabel.end(), ' ', '_');
     std::replace(safeLabel.begin(), safeLabel.end(), '.', '_');
@@ -853,10 +861,11 @@ public:
       Gtk::AttachOptions yOpts = Gtk::SHRINK;
       unsigned int yCur, cols;
       mRequestControlTable->get_size(yCur,cols);
-      mRequestControlTable->attach(*check,0,1,yCur,yCur+1,xOpts,yOpts);
-      mRequestControlTable->attach(*label,1,2,yCur,yCur+1,xOpts,yOpts);
-      mRequestControlTable->attach(*ageLabel,2,3,yCur,yCur+1,xOpts,yOpts);
-      mRequestControlTable->attach(*spin,3,4,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*button,0,1,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*check,1,2,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*label,2,3,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*ageLabel,3,4,yCur,yCur+1,xOpts,yOpts);
+      mRequestControlTable->attach(*spin,4,5,yCur,yCur+1,xOpts,yOpts);
       if (combo != NULL) {
         mRequestControlTable->attach(*combo,4,5,yCur,yCur+1,xOpts,yOpts);
       }
@@ -890,24 +899,24 @@ public:
     }
   }
 
-  void onDataRequestButton() {
+  void sendDataRequest(const std::unordered_map<int,RequestControl::Ptr>&
+                       iControls) {
     drc::data_request_list_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     std::unordered_map<int,RequestControl::Ptr>::const_iterator iter;
-    for (iter = mRequestControls.begin();
-         iter != mRequestControls.end(); ++iter) {
-      if (!iter->second->mEnabled) continue;
+    for (auto iter : iControls) {
+      if (!iter.second->mEnabled) continue;
       drc::data_request_t req;
-      req.type = iter->first;
-      req.period = (int)(iter->second->mPeriod*10);
+      req.type = iter.first;
+      req.period = (int)(iter.second->mPeriod*10);
       if (req.type == drc::data_request_t::DEPTH_MAP_WORKSPACE) {
-        sendWorkspaceDepthRequest(iter->second->mPeriod);
+        sendWorkspaceDepthRequest(iter.second->mPeriod);
       }
-      if (iter->second->mQuality > 0) {
+      if (iter.second->mQuality > 0) {
         drc::camera_settings_t settingsMessage;
         settingsMessage.data_request.type = req.type;
         settingsMessage.data_request.period = 0;
-        settingsMessage.quality = iter->second->mQuality;
+        settingsMessage.quality = iter.second->mQuality;
         getLcm()->publish("CAMERA_SETTINGS", &settingsMessage);
       }
       msg.requests.push_back(req);
