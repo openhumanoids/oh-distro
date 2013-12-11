@@ -24,7 +24,7 @@ confirm orientation: XXX
 when in place, but before clock starts
 --------------------------------------
 
-switch to manip to trigger manip glitch
+stand & switch to manip to trigger manip glitch
 activate hand and hand driver
 set walking path to auto
 set up sensor pull requests
@@ -45,6 +45,7 @@ send touch
 review hand in camera views; tele-op hand
 close hand
 send poses: door-pregrasp; pre-grasp low
+zero back
 walk to position in front of wall
 send pose: drill in camera
 fix drill orientation in hand; refit drill
@@ -69,4 +70,19 @@ remove hand, stow on head (depends on next task)
 
 
 
+
+
+todo
+----
+
+practice drill grasp orientation
+add walking goal to drill affordance, determine orientation
+
+need better plans to get the hand up and away from the table
+
+add ee-driver support to robotiq hand
+
+plans not going through
+
+make slightly smaller drill target triangle affordance
 
