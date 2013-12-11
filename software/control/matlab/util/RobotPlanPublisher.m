@@ -68,11 +68,11 @@ classdef RobotPlanPublisher
                     plan(i).pose = drc.position_3d_t();
                     plan(i).pose.translation = drc.vector_3d_t();
                     plan(i).pose.rotation = drc.quaternion_t();
-                    plan(i).pose.translation.x = X(3,i);
-                    plan(i).pose.translation.y = X(4,i);
-                    plan(i).pose.translation.z = X(5,i);
+                    plan(i).pose.translation.x = X(1,i);
+                    plan(i).pose.translation.y = X(2,i);
+                    plan(i).pose.translation.z = X(3,i);
                     
-                    q = rpy2quat([X(6,i) X(7,i) X(8,i)]);                    
+                    q = rpy2quat([X(4,i) X(5,i) X(6,i)]);                    
                     plan(i).pose.rotation.w = q(1);
                     plan(i).pose.rotation.x = q(2);
                     plan(i).pose.rotation.y = q(3);
