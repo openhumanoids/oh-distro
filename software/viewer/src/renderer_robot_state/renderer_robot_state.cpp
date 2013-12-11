@@ -128,8 +128,18 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
     double movement = diff.norm();
     if(((*self->marker_selection)  != " ")&&(movement>=1e-3)){
       cout << "publishing posture goal \n";
-      string channel = "POSTURE_GOAL";
-      publish_posture_goal(self,channel);
+      std::map<std::string, double> jointpos_in;
+      jointpos_in = self->robotStateListener->_gl_robot->_future_jointpos;
+      string link_name = (*self->selection); 
+      string marker_name = (*self->marker_selection); 
+      string token  = "markers::";
+      size_t found = marker_name.find(token);  
+      if (!(found == std::string::npos)) {
+        string joint_name =marker_name.substr(found+token.size());
+        bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
+      }
+      //string channel = "POSTURE_GOAL";
+      //publish_posture_goal(self,channel);
     }
   }  
   
@@ -253,6 +263,8 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     self->robotStateListener->_gl_robot->draw_body (c,alpha);
 
 
+    /*
+    // only update this widget on marker mouse release,otherwise a lot of posture goals will be sent (sisir).
     std::map<std::string, double> jointpos_in;
     jointpos_in = self->robotStateListener->_gl_robot->_future_jointpos;
     string link_name = (*self->selection); 
@@ -262,7 +274,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     if (!(found == std::string::npos)) {
       string joint_name =marker_name.substr(found+token.size());
       bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
-    }
+    }*/
     
     if(self->visualize_forces){
       draw_ee_force(self,"l_hand");   draw_ee_force(self,"r_hand");
@@ -392,7 +404,9 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RobotStateRendererStruc::keyboardSignalCallback,self,_1,_2)));
     self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RobotStateRendererStruc::affTriggerSignalsCallback,self,_1,_2,_3,_4)));
     self->_rendererFoviationSignalRef = rendererFoviationSignalRef;      
-    self->lcm->subscribe("POSTURE_GOAL_CANNED",&RobotStateRendererStruc::handleCannedPostureGoalMsg, self);      
+    self->lcm->subscribe("POSTURE_GOAL_CANNED",&RobotStateRendererStruc::handleCannedPostureGoalMsg, self); 
+    self->lcm->subscribe("COMMITTED_ROBOT_PLAN",&RobotStateRendererStruc::handleCommittedOrRejectedRobotPlanMsg, self);     
+    self->lcm->subscribe("REJECTED_ROBOT_PLAN",&RobotStateRendererStruc::handleCommittedOrRejectedRobotPlanMsg, self); 
     
     BotRenderer *renderer = &self->renderer;
 

@@ -178,6 +178,19 @@ namespace renderer_robot_state
         this->robotStateListener->_gl_robot->set_future_state(this->robotStateListener->_gl_robot->_T_world_body,jointpos_in); 
     }
     
+     void handleCommittedOrRejectedRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
+	          const std::string& chan, 
+	          const drc::robot_plan_t* msg)
+    {
+       // reset future robot state on plan commit
+       if(this->robotStateListener->_gl_robot->is_future_state_changing())
+       this->robotStateListener->_gl_robot->set_future_state_changing(false);
+       this->robotStateListener->_gl_robot->set_future_state( this->robotStateListener->_gl_robot->_T_world_body, this->robotStateListener->_gl_robot->_current_jointpos);   
+       this->robotStateListener->_gl_robot->disable_future_display();      
+       bot_viewer_request_redraw(this->viewer); 
+    }   
+    
+    
   } RobotStateRendererStruc;
 
 inline static double get_shortest_distance_between_robot_links_and_jointdof_markers (void *user,Eigen::Vector3f &from,Eigen::Vector3f &to)
@@ -363,7 +376,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
           jointpos_in.find(joint_name)->second = (jointpos_in.find(joint_name)->second +dtheta); 
           self->robotStateListener->_gl_robot->set_future_state(T_world_body_future,jointpos_in);   
           bot_viewer_request_redraw(self->viewer);
-          bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
+         // bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second); // DO NOT SET THIS ON MARKER MOTION
          }// end revolute joints
          else if(type==otdf::Joint::PRISMATIC)
          {
@@ -375,7 +388,7 @@ inline static double get_shortest_distance_between_robot_links_and_jointdof_mark
            jointpos_in = self->robotStateListener->_gl_robot->_future_jointpos;
            jointpos_in.find(joint_name)->second -= distance;
            self->robotStateListener->_gl_robot->set_future_state(T_world_body_future,jointpos_in); 
-           bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
+          // bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second); // DO NOT SET THIS ON MARKER MOTION
            bot_viewer_request_redraw(self->viewer);  
          }
       }
