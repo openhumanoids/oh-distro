@@ -8,4 +8,6 @@ struct command_t
    
    float rpm;
    int8_t agc;   // -1 for ignore, 0 for off, 1 for on
+   boolean leds_flash;  // false for no flash, true for flash
+   float leds_duty_cycle;  // 0 for off, 100 for fully on
 }

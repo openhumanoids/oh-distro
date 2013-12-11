@@ -16,7 +16,6 @@
 #include <gtkmm-renderer/RendererBase.hpp>
 
 #include <lcmtypes/drc/data_request_list_t.hpp>
-#include <lcmtypes/drc/sensor_request_t.hpp>
 #include <lcmtypes/drc/camera_settings_t.hpp>
 #include <lcmtypes/drc/map_depth_settings_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
@@ -303,6 +302,13 @@ public:
     }
   }
 
+  void createPresets() {
+    drc::BotWrapper botWrapper(getLcm(), getBotParam(), getBotFrames());
+    std::string keyBase = "viewer.datacontrol_presets";
+    auto presetNames = botWrapper.getKeys(keyBase);
+    for (auto str : presetNames) std::cout << "preset " << str << std::endl;
+  }
+
   void setupWidgets() {
     Gtk::Container* container = getGtkContainer();
 
@@ -360,9 +366,9 @@ public:
     addControl(drc::data_request_t::HEIGHT_MAP_COARSE, "Coarse Height",
                "MAP_DEPTH", ChannelTypeDepthImage);
     */
-    /*
     addControl(drc::data_request_t::DEPTH_MAP_SCENE, "Scene Depth",
                "MAP_DEPTH", ChannelTypeDepthImage);
+    /*
     addControl(drc::data_request_t::OCTREE_SCENE, "Scene Points",
                "MAP_OCTREE", ChannelTypeAnonymous);
     */
@@ -430,6 +436,9 @@ public:
       });
     mRequestControlBox->add(*Gtk::manage(new Gtk::HSeparator()));
     mRequestControlBox->add(*hbox);
+
+    // set up preset controls for pull
+    //createPresets();
 
     // neck pitch
     mNeckPitchLabel= Gtk::manage(new Gtk::Label("Pitch (deg)"));
@@ -779,6 +788,17 @@ public:
     sensorControlTable->attach(*spin, 1, 2, yCur, yCur+1, xOpts, yOpts);
     sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
     ++yCur;
+
+    label = Gtk::manage(new Gtk::Label("LED on", Gtk::ALIGN_RIGHT));
+    check = Gtk::manage(new Gtk::CheckButton());
+    button = Gtk::manage(new Gtk::Button("send"));
+    button->signal_clicked().connect
+      ([this,check]{this->publishMultisense(-1000,-1,-1,-1,check->get_active());});
+    sensorControlTable->attach(*label, 0, 1, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*check, 1, 2, yCur, yCur+1, xOpts, yOpts);
+    sensorControlTable->attach(*button, 2, 3, yCur, yCur+1, xOpts, yOpts);
+    ++yCur;
+
     
     sensorControlBox->pack_start(*sensorControlTable,false,false);
 
@@ -832,7 +852,7 @@ public:
     check->signal_toggled().connect
       ([check,group]{group->mEnabled=check->get_active();});
     Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel,Gtk::ALIGN_LEFT));
-    Gtk::SpinButton* spin = createSpin(group->mPeriod,0,10,1);
+    Gtk::SpinButton* spin = createSpin(group->mPeriod,1,10,1);
     spin->set_digits(0);
     Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(" "));
     Gtk::ComboBox* combo = NULL;
@@ -1069,16 +1089,6 @@ public:
     }
   }
 
-  void onSendRatesControlButton() {
-    drc::sensor_request_t msg;
-    msg.utime = drc::Clock::instance()->getCurrentTime();
-    msg.spindle_rpm = -1;
-    msg.head_fps = -1;
-    msg.hand_fps = mHandCameraFrameRate;
-    getLcm()->publish("SENSOR_REQUEST", &msg);
-    // TODO: set all to -1
-  }
-
   void onHeadPitchControlButton(const double iHeadPitchAngle ) {
     const double kPi = 4*atan(1);
     double degreesToRadians = kPi/180;
@@ -1235,13 +1245,16 @@ public:
 
   void publishMultisense(const double iSpinRate=-1000,
                          const double iFrameRate=-1,
-                         const double iGain=-1, const int iAgc=-1) {
+                         const double iGain=-1, const int iAgc=-1,
+                         const bool iLight=false) {
     multisense::command_t msg;
     msg.utime = drc::Clock::instance()->getCurrentTime();
     msg.rpm = iSpinRate;
     msg.fps = iFrameRate;
     msg.gain = iGain;
     msg.agc = iAgc;
+    msg.leds_flash = false;
+    msg.leds_duty_cycle = iLight ? 100 : 0;
     getLcm()->publish("MULTISENSE_COMMAND", &msg);
   }
 

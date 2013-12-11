@@ -63,6 +63,8 @@ struct CameraConfig{
   bool do_jpeg_compress_;
   bool do_zlib_compress_;
   int jpeg_quality_;
+  bool leds_flash_;
+  float leds_duty_cycle_;
   
   // 0 leftgrey,rightgrey | 1 leftcolor,disp | 2 leftcolor | 3 leftcolor,disp,rightcolor
   int output_mode_;
@@ -76,6 +78,8 @@ struct CameraConfig{
         do_jpeg_compress_ = true;
         do_zlib_compress_ = true;
         jpeg_quality_ = 94;
+        leds_flash_ = false;
+        leds_duty_cycle_ = 0;
         output_mode_ = 0;
         gain_ = 3.0;
         agc_ = 1;

@@ -423,6 +423,8 @@ void Camera::applyConfig(CameraConfig& config){
   std::cout << "do_jpeg_compress_ " << config.do_jpeg_compress_ << "\n"; 
   std::cout << "do_zlib_compress_ " << config.do_zlib_compress_ << "\n";
   std::cout << "agc_ " << config.agc_ << "\n";
+  std::cout << "leds_flash_ " << config.leds_flash_ << "\n";
+  std::cout << "leds_duty_cycle_ " << config.leds_duty_cycle_ << "\n";
   
   //const float radiansPerSecondToRpm = 9.54929659643;
   if (fabs(config.spindle_rpm_) <= 25) {
@@ -450,19 +452,8 @@ void Camera::applyConfig(CameraConfig& config){
 
     
     lighting::Config leds;
-    /*
-    if (false == config.lighting) {
-        leds.setFlash(false);
-        leds.setDutyCycle(0.0);
-    } else {
-        leds.setFlash(config.flash);
-        leds.setDutyCycle(config.led_duty_cycle * 100.0);
-    }
-    */
-    
-    
-    leds.setFlash(true);
-    leds.setDutyCycle( 0.0 * 100.0);
+    leds.setFlash(config.leds_flash_);
+    leds.setDutyCycle(config.leds_duty_cycle_);
 
     status = driver_->setLightingConfig(leds);
     if (Status_Ok != status)

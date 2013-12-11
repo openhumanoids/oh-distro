@@ -270,9 +270,10 @@ get(const std::string& iKey, bool& oValue) const {
 
 std::vector<std::string> BotWrapper::
 getKeys(const std::string& iKey) const {
-  if (mBotParam == NULL) return std::vector<std::string>();
-  char** subkeysRaw = bot_param_get_subkeys(mBotParam, iKey.c_str());
   std::vector<std::string> subkeys;
+  if (mBotParam == NULL) return subkeys;
+  char** subkeysRaw = bot_param_get_subkeys(mBotParam, iKey.c_str());
+  if (subkeysRaw == NULL) return subkeys;
   for (char** subkeyPtr = subkeysRaw; *subkeyPtr != NULL; ++subkeyPtr) {
     subkeys.push_back(std::string(*subkeyPtr));
   }

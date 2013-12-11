@@ -64,6 +64,8 @@ void Pass::commandHandler(const lcm::ReceiveBuffer* rbuf,
    config.fps_ = (float) msg->fps;
    config.gain_ = (float) msg->gain;
    config.agc_ = msg->agc;
+   config.leds_flash_ = msg->leds_flash;
+   config.leds_duty_cycle_ = msg->leds_duty_cycle;
    camera->applyConfig(config);
 }
 
