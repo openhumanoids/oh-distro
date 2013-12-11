@@ -916,6 +916,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
   }  
   
   
+  /*
   if ((which_publish==9)|| (which_publish==10) ){ 
     drc::affordance_t a;
     a.utime =0;
@@ -944,7 +945,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     a1.npoints= 0; 
     a1.ntriangles = 0;
     lcm_->publish("AFFORDANCE_FIT",&a1);      
-  }
+  }*/
   
   
   

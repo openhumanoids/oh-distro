@@ -221,7 +221,7 @@ void Pass::poseRightFootHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   
   // 2 create a pose back and to the left of the sim world
   Eigen::Isometry3d feet_to_debris_edge(Eigen::Isometry3d::Identity());
-  feet_to_debris_edge.translation()  << -10, 10, 0; // far back corner of sim world
+  feet_to_debris_edge.translation()  << -10, 1, 0; // far back corner of sim world  ///// NBNBNB changined this again - now behind robot slightly to left
   Eigen::Isometry3d world_to_debris_edge = world_to_standing_* feet_to_debris_edge;
   
   Isometry3dTime world_to_debris_edgeT = Isometry3dTime(current_utime_,  world_to_debris_edge  );
