@@ -55,6 +55,15 @@ once run starts
 * Step down from zig zag blocks
 
 
+during flat steps
+-----------------
+* Ascent: 
+	* Left lead
+	* 2 steps at a time
+	* 35cm forward step
+* Descent:
+	* Stay at least 1.5 boxes back from front edges of steps!
+
 after run ends
 --------------
 
