@@ -101,15 +101,23 @@ end
     if behavior == AtlasBehaviorModeListener.BEHAVIOR_FREEZE
       switch_back_to_freeze = true;
       % switch to user mode
-      d.t = 0;
-      d.behavior = 'user';
+      d.utime = 0;
+      d.command = 'user';
       behavior_pub.publish(d);
-      pause(0.5);
+      pause(5.0);
+  
+      % gross, have to turn the controller off again after user transition
+      msg = drc.utime_t();
+      msg.utime = 0; % enable with positive utime
+      lc.publish('CALIBRATE_ARM_ENCODERS',msg);
+      pause(5.0);
+      monitor.getNextMessage(10);
     end
     
     msg = drc.utime_t();
     msg.utime = -1; % disable with negative utime
     lc.publish('ENABLE_ENCODERS',msg);
+    pause(0.1);
 
     % move to initial pos
     atlasLinearMoveToPos(q0,state_frame,ref_frame,act_idx,5);
@@ -173,8 +181,8 @@ end
     
     if switch_back_to_freeze      
       % switch to user mode
-      d.t = 0;
-      d.behavior = 'freeze';
+      d.utime = 0;
+      d.command = 'freeze';
       behavior_pub.publish(d);
       pause(0.5);
     end
