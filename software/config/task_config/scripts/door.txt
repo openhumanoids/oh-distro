@@ -21,7 +21,7 @@ during prep, before clock starts
 
 place door frame affordance
 fit left-hand door handle and place walking goal
-command hands to pre-grasp postures
+command left hand to pre-grasp postures
 open and configure ee-driver
 turn on show EE forces in viewer
 turn off BDI height mode in controller
