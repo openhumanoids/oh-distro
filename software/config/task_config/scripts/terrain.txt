@@ -1,0 +1,62 @@
+
+============
+TERRAIN TASK
+============
+
+Operator: Robin
+Wingman: Scott or Andres
+Monitor: ???
+Field team: ????
+
+
+day before
+----------
+Inspect terrain layout:
+
+* Measure distance to zig zags from ramp
+* Check arrangement of tilted steps
+
+during physical prep
+--------------------
+
+* check that hands are as desired (iRobot left, Robotiq right)
+* wipe off bottoms of feet
+
+
+during run prep
+---------------
+
+
+
+when in place, but before clock starts
+--------------------------------------
+
+* switch to manip to trigger the pitch
+* Preset to BDI Obstacle Stepping
+* Show EE forces ON
+* Scene height on request
+* Workspace depth every 5s
+* Head to 55 degrees
+* Flat ground terrain map
+* Move to correct starting position
+* Full heights terrain map
+* Spline
+* Left lead
+* Make footstep plan from start to peak of ramp
+	* CHECK: verify that transitional step from flat to ramp has good normal & height
+
+once run starts
+---------------
+
+* Don't fall over!
+* Walk to peak of ramp
+* Walk over peak of ramp
+* Walk down ramp and onto zig zag blocks
+* Step down from zig zag blocks
+
+
+after run ends
+--------------
+
+* Party
+
