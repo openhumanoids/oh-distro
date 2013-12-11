@@ -129,38 +129,9 @@
       }, 
       "name": "Zero all arm joints - dont do", 
       "nominal_handedness": "left"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "5 retract E", 
-      "joints": {
-        "l_arm_elx": 0.5688214898109436, 
-        "l_arm_ely": 1.7773864269256592, 
-        "l_arm_mwx": 0.26115185022354126, 
-        "l_arm_shx": -0.1382995992898941, 
-        "l_arm_usy": -0.6224939227104187, 
-        "l_arm_uwy": 3.469446951953614e-18
-      }, 
-      "name": "5 retract E", 
-      "nominal_handedness": "left"
     }
   ], 
   "debris": [
-    {
-      "allow_mirror": true, 
-      "description": "turn back and retract hand", 
-      "joints": {
-        "back_bkz": -0.663225, 
-        "r_arm_elx": -0.0359195768833, 
-        "r_arm_ely": 1.35790967941, 
-        "r_arm_mwx": 0.734279990196, 
-        "r_arm_shx": 0.168820291758, 
-        "r_arm_usy": 0.767885386944, 
-        "r_arm_uwy": 0.0597184896469
-      }, 
-      "name": "0 retract main", 
-      "nominal_handedness": "right"
-    }, 
     {
       "allow_mirror": true, 
       "description": "lean back away and pull arm back", 
@@ -239,7 +210,7 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "store unused arm", 
+      "description": "0 store unused arm", 
       "joints": {
         "r_arm_elx": -2.2305872440338135, 
         "r_arm_ely": 0.0, 
@@ -248,12 +219,12 @@
         "r_arm_usy": 0.021108344197273254, 
         "r_arm_uwy": 0.00981099996715784
       }, 
-      "name": "store unused arm", 
+      "name": "0 store unused arm", 
       "nominal_handedness": "right"
     }, 
     {
       "allow_mirror": true, 
-      "description": "store unused arm prep", 
+      "description": "0 store unused arm prep", 
       "joints": {
         "back_bkx": -0.009936914779245853, 
         "back_bky": 0.011819809675216675, 
@@ -271,12 +242,12 @@
         "r_arm_usy": 0.23769687116146088, 
         "r_arm_uwy": 1.552773118019104
       }, 
-      "name": "store unused arm prep", 
+      "name": "0 store unused arm prep", 
       "nominal_handedness": "none"
     }, 
     {
       "allow_mirror": true, 
-      "description": "store unused arm both", 
+      "description": "0 store unused arm both", 
       "joints": {
         "back_bkx": 0.0, 
         "back_bky": 0.0, 
@@ -294,7 +265,7 @@
         "r_arm_usy": 0.021108344197273254, 
         "r_arm_uwy": 0.00981099996715784
       }, 
-      "name": "store unused arm both", 
+      "name": "0 store unused arm both", 
       "nominal_handedness": "none"
     }, 
     {
@@ -690,17 +661,31 @@
     }, 
     {
       "allow_mirror": true, 
+      "description": "0 retract main", 
+      "joints": {
+        "l_arm_elx": 1.1112251281738281, 
+        "l_arm_ely": 1.3579096794128418, 
+        "l_arm_mwx": -0.5290277004241943, 
+        "l_arm_shx": -0.16882029175758362, 
+        "l_arm_usy": -0.26757916808128357, 
+        "l_arm_uwy": 0.3363243341445923
+      }, 
+      "name": "0 retract main", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
       "description": "5 retract E", 
       "joints": {
         "back_bkx": 0.10000000149011612, 
         "back_bky": -0.09603577852249146, 
-        "back_bkz": 0.2821458578109741, 
-        "l_arm_elx": 1.1414233446121216, 
-        "l_arm_ely": 1.7773864269256592, 
-        "l_arm_mwx": 0.26115185022354126, 
-        "l_arm_shx": -0.1382995992898941, 
-        "l_arm_usy": -0.6224939227104187, 
-        "l_arm_uwy": 3.469446951953614e-18
+        "back_bkz": 0.663224995136261, 
+        "l_arm_elx": 1.1112251281738281, 
+        "l_arm_ely": 1.3579096794128418, 
+        "l_arm_mwx": -0.5290277004241943, 
+        "l_arm_shx": -0.16882029175758362, 
+        "l_arm_usy": -0.26757916808128357, 
+        "l_arm_uwy": 0.3363243341445923
       }, 
       "name": "5 retract E", 
       "nominal_handedness": "left"
