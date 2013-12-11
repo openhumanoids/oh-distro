@@ -612,6 +612,7 @@ public:
   }
 
   double pickQuery(const double iRayStart[3], const double iRayDir[3]) {
+    if (getBotRenderer()->enabled == 0) return -1;
     Eigen::Vector3d pt3d(iRayStart[0]+iRayDir[0], iRayStart[1]+iRayDir[1],
                          iRayStart[2]+iRayDir[2]);
     double x, y, z;
