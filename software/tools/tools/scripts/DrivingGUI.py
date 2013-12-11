@@ -131,8 +131,31 @@ class DrivingPanel(object):
         self.setLegJointPositionsFromRobotState()
         self.updateLegTeleopLabels()
 
+    def getLegTeleopSliders(self):
+        return [
+            self.ui.hipXSlider,
+            self.ui.hipYSlider,
+            self.ui.hipZSlider,
+            self.ui.kneeSlider,
+            self.ui.ankleXSlider,
+            self.ui.ankleYSlider
+            ]
+
+    def getLegTeleopLabels(self):
+        return [
+            self.ui.hipXLabel,
+            self.ui.hipYLabel,
+            self.ui.hipZLabel,
+            self.ui.kneeLabel,
+            self.ui.ankleXLabel,
+            self.ui.ankleYLabel
+            ]
+
     def updateLegTeleopLabels(self):
-        pass
+
+        for slider, label in zip(self.getLegTeleopSliders(), self.getLegTeleopLabels()):
+            label.setText('%.1f' % slider.value())
+
 
     def getLegJointPositionsFromSliders(self):
         '''
