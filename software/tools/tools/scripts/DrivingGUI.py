@@ -53,6 +53,15 @@ def captureRobotState():
     return lcmWrapper.captureMessage('EST_ROBOT_STATE', lcmdrc.robot_state_t)
 
 
+def getRobotStateJointAngles():
+    robotState = captureRobotState()
+
+    angles = {}
+    for name, angle in zip(robotState.joint_name, robotState.joint_position):
+        angles[name] = angle
+    return angles
+
+
 def getUtime():
     return int(time.time() * 1e6)
 
@@ -110,7 +119,11 @@ class DrivingPanel(object):
 
     def onSteeringSliderValueChanged(self):
         self.ui.steeringLabel.setText(str(self.getSteeringValue()))
-        publishDrivingCommand(lcmdrc.drill_control_t.SET_STEERING_ANGLE, [self.getSteeringValue()])
+
+        steeringValue = self.getSteeringValue()
+        autoCommit = self.getAutoCommitIsEnabled()
+
+        publishDrivingCommand(lcmdrc.drill_control_t.SET_STEERING_ANGLE, [steeringValue, float(autoCommit)])
 
     def onRefitSteeringWheelClicked(self):
         publishDrivingCommand(lcmdrc.drill_control_t.REFIT_STEERING, [])
@@ -175,9 +188,20 @@ class DrivingPanel(object):
 
 
     def setLegJointPositionsFromRobotState(self):
-        pass
+        angles = getRobotStateJointAngles()
+
+        legName = 'l_leg'
+        jointNames = ['hpx', 'hpy', 'hpz', 'kny', 'akx', 'aky']
+        jointNames = ['%s_%s' % (legName, jointName) for jointName in jointNames]
+
+        sliders = self.getLegTeleopSliders()
+
+        for jointName, slider in zip(jointNames, sliders):
+            slider.setValue(math.degrees(angles[jointName]))
 
     def onLegTeleop(self):
+
+        self.updateLegTeleopLabels()
 
         autoCommit = self.getAutoCommitIsEnabled()
 
