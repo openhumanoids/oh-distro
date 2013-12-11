@@ -349,6 +349,12 @@ getBotViewer() const {
   return mHelper->mBotViewer;
 }
 
+BotRenderer* RendererBase::
+getBotRenderer() const {
+  return &mHelper->mBotRenderer;
+}
+
+
 BotEventHandler* RendererBase::
 getBotEventHandler() const {
   return &mHelper->mBotEventHandler;

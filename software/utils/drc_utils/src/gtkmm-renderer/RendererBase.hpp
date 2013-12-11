@@ -6,6 +6,7 @@
 #include <vector>
 
 // forward declarations
+typedef struct _BotRenderer BotRenderer;
 typedef struct _BotViewer BotViewer;
 typedef struct _BotParam BotParam;
 typedef struct _BotFrames BotFrames;
@@ -66,6 +67,7 @@ protected:
   BotParam* getBotParam() const;
   BotFrames* getBotFrames() const;
   BotViewer* getBotViewer() const;
+  BotRenderer* getBotRenderer() const;
   BotEventHandler* getBotEventHandler() const;
   Gtk::DrawingArea* getGlDrawingArea() const;
   Gtk::Container* getGtkContainer() const;
