@@ -1,0 +1,42 @@
+BOT_VIEWER_PRETTIER: 0
+Using X Visual 0x21
+udp_read_packet -- select:: Interrupted system call
+loading urdf: /home/avalenzu/drc/software/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf
+replacing package://mit_drcsim_scripts/models/multisense_sl/meshes/head.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/multisense_sl/meshes/head.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_clav.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_clav.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_farm.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_farm.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_foot.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_foot.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_hand.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_hand.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_elbow_rx.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_elbow_rx.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_lglut.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lglut.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_lleg.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_sh_rx.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_sh_rx.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_talus.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_talus.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_elbow_ry.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_elbow_ry.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_uglut.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uglut.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/ltorso.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/ltorso.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/mtorso.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/mtorso.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/pelvis.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_clav.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_clav.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_farm.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_farm.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_foot.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_foot.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_hand.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_hand.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_elbow_rx.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_elbow_rx.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lglut.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_lleg.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_sh_rx.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_sh_rx.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_talus.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_talus.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_elbow_ry.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_elbow_ry.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uglut.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/utorso.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/utorso.wrl
+replacing package://mit_drcsim_scripts/models/mit_robot/meshes/utorso_pack.wrl with /home/avalenzu/drc/ros_workspace/mit_drcsim_scripts/models/mit_robot/meshes/utorso_pack.wrl
+==== LCM Warning ===
+LCM detected that large packets are being received, but the kernel UDP
+receive buffer is very small.  The possibility of dropping packets due to
+insufficient buffer space is very high.
+
+For more information, visit:
+   http://lcm.googlecode.com/svn/www/reference/lcm/multicast.html
+

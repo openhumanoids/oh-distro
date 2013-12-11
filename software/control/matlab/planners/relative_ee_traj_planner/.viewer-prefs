@@ -1,0 +1,23 @@
+[__libviewer_enabled_renderers]
+Drake URDF=true
+Grid=true
+LCM GL=true
+
+[__libviewer_show_renderers]
+Grid=false
+LCM GL=true
+
+[__libviewer_bookmarks]
+bookmark_0=0;0;0;0;0;0;0;0;0;0;0;
+bookmark_1=0;0;0;0;0;0;0;0;0;0;0;
+bookmark_2=0;0;0;0;0;0;0;0;0;0;0;
+bookmark_3=0;0;0;0;0;0;0;0;0;0;0;
+bookmark_4=0;0;0;0;0;0;0;0;0;0;0;
+bookmark_5=0;0;0;0;0;0;0;0;0;0;0;
+
+[Grid]
+Ground=false
+Automatic Spacing=true
+Rotation=0
+Light=true
+Spacing=0.5
