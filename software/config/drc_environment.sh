@@ -60,7 +60,7 @@ setup_drc()
 
 setup_robot_computers()
 {
-  if [[ "paladin-04|paladin-05|paladin-06|paladin-10" =~ $(hostname) ]]
+  if [[ "paladin-04|paladin-05|paladin-06|paladin-10|paladin-12" =~ $(hostname) ]]
   then
     export LCM_DEFAULT_URL='udpm://239.255.76.67:7667?ttl=1'
   fi
