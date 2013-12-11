@@ -19,6 +19,11 @@ world_model
 
 # too to filter lidar self detections
 lidar-passthrough
+
+# too check for self-collisions (and collisions with lidar eventually -
+# commented out for now)
+lidar-plancheck
+
 # and module to apply object masks:
 image-passthrough
 
