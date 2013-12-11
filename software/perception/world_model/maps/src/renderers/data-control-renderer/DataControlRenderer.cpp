@@ -493,7 +493,7 @@ public:
       box->pack_start(*button,false,false);
       mAffControlBox->pack_start(*box,false,false);
     }
-    //notebook->append_page(*mAffControlBox, "Affs");
+    notebook->append_page(*mAffControlBox, "Affs");
 
 
     // Hands
