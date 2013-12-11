@@ -265,15 +265,28 @@ def publishPostureGoal(joints, postureName, channel='POSTURE_GOAL'):
     msg.num_joints = len(msg.joint_name)
     lcmWrapper.publish(channel, msg)
 
-    # publish a system status message
+    publishSystemStatus('sending posture goal: ' + postureName)
+
+
+def publishTrajGoal(name, channel=''):
+
+    msg = lcmdrc.atlas_behavior_command_t()
+    msg.utime = getUtime()
+    msg.command = name
+    lcmWrapper.publish('EE_TRAJ_GOAL', msg)
+
+    publishSystemStatus('sending EE traj goal: ' + name)
+
+
+def publishSystemStatus(text):
+
     msg = lcmdrc.system_status_t()
     msg.utime = getUtime()
     msg.system = 5
     msg.importance = 0
     msg.frequency = 0
-    msg.value = 'sending posture goal: ' + postureName
+    msg.value = text
     lcmWrapper.publish('SYSTEM_STATUS', msg)
-
 
 
 class SendPosturePanel(object):
@@ -413,6 +426,62 @@ class SendPosturePanel(object):
         self.setSelectedGroup(settings.value('sendPose/currentGroup', 'All').toString())
 
 
+class SendEETrajPanel(object):
+
+    def __init__(self, ui):
+        self.ui = ui
+        self.selectedTraj = None
+        self.setup()
+
+
+    def setup(self):
+        self.ui.sendTrajDefaultButton.setVisible(False)
+        self.ui.connect(self.ui.sendTrajLeftButton, QtCore.SIGNAL('clicked()'), self.onLeftClicked)
+        self.ui.connect(self.ui.sendTrajRightButton, QtCore.SIGNAL('clicked()'), self.onRightClicked)
+        self.ui.connect(self.ui.sendTrajDefaultButton, QtCore.SIGNAL('clicked()'), self.onDefaultClicked)
+        #self.ui.connect(self.ui.trajListWidget, QtCore.SIGNAL('currentRowChanged(int)'), self.onTrajSelected)
+        self.updateListWidget()
+
+    def updateListWidget(self):
+
+        trajList = ['ladder_reach_up']
+
+        self.ui.trajListWidget.blockSignals(True)
+        self.ui.trajListWidget.clear()
+        for name in sorted(trajList):
+            self.ui.trajListWidget.addItem(name)
+        self.ui.trajListWidget.setCurrentRow(0)
+        self.ui.trajListWidget.blockSignals(False)
+
+        #self.onTrajSelected()
+
+    def getSelectedTraj(self):
+        currentItem = self.ui.trajListWidget.currentItem()
+        if not currentItem:
+            return None
+
+        name = str(currentItem.text())
+        return name
+
+    def onLeftClicked(self):
+        traj = self.getSelectedTraj()
+        publishTrajGoal(traj + ':LEFT')
+
+    def onRightClicked(self):
+        traj = self.getSelectedTraj()
+        publishTrajGoal(traj + ':RIGHT')
+
+    def onDefaultClicked(self):
+        traj = self.getSelectedTraj()
+        publishTrajGoal(traj + ':DEFAULT')
+
+    def saveSettings(self, settings):
+        pass
+
+    def restoreSettings(self, settings):
+        pass
+
+
 class CapturePanel(object):
 
     def __init__(self, ui):
@@ -518,6 +587,7 @@ class MainWindow(QtGui.QWidget):
         self.connect(QtGui.QShortcut(QtGui.QKeySequence('Ctrl+Q'), self), QtCore.SIGNAL('activated()'), self.close)
         self.capturePanel = CapturePanel(self)
         self.sendPosturePanel = SendPosturePanel(self)
+        self.sendTrajPanel = SendEETrajPanel(self)
 
     def showWarning(self, title, message):
         QtGui.QMessageBox.warning(self, title, message)
