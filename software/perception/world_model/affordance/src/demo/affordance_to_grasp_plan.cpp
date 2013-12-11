@@ -382,8 +382,8 @@ void Pass::sendStandingPositionDewaltButton(drc::affordance_t aff){
     for (int left_reach = 0; left_reach<2 ; left_reach++){
       Eigen::Isometry3d valve2com(Eigen::Isometry3d::Identity());
 
-      valve2com.translation()  << -0.45, -0.45, 0;  // x y
-      valve2com.rotate( Eigen::Quaterniond(  euler_to_quat(0,0, 0*M_PI/180)   ))  ;    // yaw
+      valve2com.translation()  << 0.65, 0.45, 0;  // x y
+      valve2com.rotate( Eigen::Quaterniond(  euler_to_quat(0,0, M_PI)   ))  ;    // yaw
 
       feet_positionsT.push_back( Isometry3dTime(counter++, valve_pose*valve2com) );
 
