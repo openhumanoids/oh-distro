@@ -655,6 +655,37 @@ static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel,
   self->robot_utime = msg->utime;
 }
 
+static void onPlanExecuteEvent (const lcm_recv_buf_t * buf, const char *channel, 
+                               const drc_utime_t *msg, void *user)
+{
+    RendererRobotPlan *self = (RendererRobotPlan*) user;
+    if((!self->robotPlanListener->_current_plan_committed)&&(self->plan_execute_button!=NULL))
+    {
+      gtk_widget_destroy (self->plan_execute_button);
+      self->plan_execute_button= NULL;
+      self->robotPlanListener->_current_plan_committed = true;
+    }
+}
+
+static void onPlanRejectEvent (const lcm_recv_buf_t * buf, const char *channel, 
+                               const drc_robot_plan_t *msg, void *user)
+{
+    RendererRobotPlan *self = (RendererRobotPlan*) user;
+    if((self->plan_execution_dock!=NULL)||(self->multiapprove_plan_execution_dock!=NULL))
+    {
+      self->robotPlanListener->purge_current_plan();
+      self->plan_execute_button = NULL;
+      if(self->robotPlanListener->is_multi_approval_plan()){
+        gtk_widget_destroy(self->multiapprove_plan_execution_dock);
+        self->multiapprove_plan_execution_dock= NULL;    
+      }
+      else {
+        gtk_widget_destroy(self->plan_execution_dock);
+        self->plan_execution_dock= NULL;
+      }
+    }
+}
+
 static void
 onAtlasStatus(const lcm_recv_buf_t * buf, const char *channel, const drc_atlas_status_t *msg, void *user_data){
   RendererRobotPlan *self = (RendererRobotPlan*) user_data;
@@ -834,6 +865,9 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     // C-style subscribe:
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
     drc_atlas_status_t_subscribe(self->lcm->getUnderlyingLCM(),"ATLAS_STATUS",onAtlasStatus,self);
+    drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_PLAN_EXECUTE_EVENT",onPlanExecuteEvent,self);
+    drc_robot_plan_t_subscribe(self->lcm->getUnderlyingLCM(),"REJECTED_ROBOT_PLAN",onPlanRejectEvent,self);
+
     
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
     // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);

@@ -46,6 +46,11 @@ namespace renderer_sticky_feet_gui_utils
 			cout <<"Publishing on COMMITTED_FOOTSTEP_PLAN" << endl;
 			string channel = "COMMITTED_FOOTSTEP_PLAN";
       self->footStepPlanListener->commit_footstep_plan(self->robot_utime,channel);  
+      
+      drc::utime_t msg;
+      msg.utime =bot_timestamp_now();
+      // All other active viewers will also kill their respective execute buttons
+      self->lcm->publish("FOOTSTEP_PLAN_EXECUTE_EVENT", &msg); 
       self->footStepPlanListener->_last_plan_approved_or_executed = true;
       gtk_widget_destroy (self->plan_execute_button);
       self->plan_execute_button= NULL;

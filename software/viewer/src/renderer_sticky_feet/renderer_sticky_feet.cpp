@@ -340,6 +340,32 @@ static void onRobotUtime (const lcm_recv_buf_t * buf, const char *channel,
   self->robot_utime = msg->utime;
 }
 
+static void onPlanExecuteEvent (const lcm_recv_buf_t * buf, const char *channel, 
+                               const drc_utime_t *msg, void *user)
+{
+    RendererStickyFeet *self = (RendererStickyFeet*) user;
+    if((!self->footStepPlanListener->_last_plan_approved_or_executed)&&(self->plan_execute_button!=NULL))
+    {
+      gtk_widget_destroy (self->plan_execute_button);
+      self->plan_execute_button= NULL;
+      self->footStepPlanListener->_last_plan_approved_or_executed=true;
+    }
+}
+
+static void onPlanRejectEvent (const lcm_recv_buf_t * buf, const char *channel, 
+                               const drc_footstep_plan_t *msg, void *user)
+{
+  RendererStickyFeet *self = (RendererStickyFeet*) user;
+  if(self->plan_execution_dock!=NULL)
+  {
+   self->footStepPlanListener->_gl_planned_stickyfeet_list.clear();    
+   gtk_widget_destroy (self->plan_execution_dock);
+   self->plan_execution_dock= NULL;
+   self->plan_execute_button = NULL;
+   self->footStepPlanListener->_waiting_for_new_plan = true;
+  }
+}
+
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererStickyFeet *self = (RendererStickyFeet*) user;
@@ -392,6 +418,8 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     
     // C-style subscribe:
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
+    drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"FOOTSTEP_PLAN_EXECUTE_EVENT",onPlanExecuteEvent,self);
+    drc_footstep_plan_t_subscribe(self->lcm->getUnderlyingLCM(),"REJECTED_FOOTSTEP_PLAN",onPlanRejectEvent,self);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_CLEAR_FOOTSTEP_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DETAILS, 0, NULL);

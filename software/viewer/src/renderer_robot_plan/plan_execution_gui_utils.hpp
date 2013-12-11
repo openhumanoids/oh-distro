@@ -212,6 +212,11 @@ namespace renderer_robot_plan_gui_utils
    if(!self->robotPlanListener->is_multi_approval_plan())
 	 {
       gtk_widget_destroy (self->plan_execute_button);
+      // Send Msg to Update All Other Viewers
+      drc::utime_t msg;
+      msg.utime =bot_timestamp_now();
+      // All other active viewers will also kill their respective execute buttons
+      self->lcm->publish("ROBOT_PLAN_EXECUTE_EVENT", &msg); 
       self->plan_execute_button= NULL;
       self->robotPlanListener->_current_plan_committed = true;
     }
