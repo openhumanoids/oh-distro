@@ -434,6 +434,11 @@ bool App::on_input(){
   switch (c)
   {
     case 32: // space bar:
+      if (!use_reach_){ 
+          Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
+          Eigen::Isometry3d current_world_to_palm =  world_to_body_* body_to_palm;           
+          starting_gaze_quat_ = Eigen::Quaterniond (current_world_to_palm.rotation());
+      }
       publish_reset();
       break;
     case 65: // up arrow:
@@ -490,6 +495,11 @@ bool App::on_input(){
       break;
     case 'z': // switch modes: hand and end of plan
       use_left_hand_= !use_left_hand_;
+      if (!use_reach_){ 
+          Eigen::Isometry3d body_to_palm = KDLToEigen(cartpos_.find( getPalmLink() )->second);
+          Eigen::Isometry3d current_world_to_palm =  world_to_body_* body_to_palm;           
+          starting_gaze_quat_ = Eigen::Quaterniond (current_world_to_palm.rotation());
+      }
       publish_reset();
       break;
     case 'x': // switch modes: hand and end of plan
