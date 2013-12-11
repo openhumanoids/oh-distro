@@ -252,7 +252,7 @@ def applyMirror(joints):
     return flipped
 
 
-def publishPostureGoal(joints, channel='POSTURE_GOAL'):
+def publishPostureGoal(joints, postureName, channel='POSTURE_GOAL'):
     '''
     Given a dict mapping joint name strings to joint positions, creates a
     joint_angles_t LCM message and publishes the result on the given channel name.
@@ -264,6 +264,15 @@ def publishPostureGoal(joints, channel='POSTURE_GOAL'):
         msg.joint_position.append(position)
     msg.num_joints = len(msg.joint_name)
     lcmWrapper.publish(channel, msg)
+
+    # publish a system status message
+    msg = lcmdrc.system_status_t()
+    msg.utime = getUtime()
+    msg.system = 5
+    msg.importance = 0
+    msg.frequency = 0
+    msg.value = 'sending posture goal: ' + postureName
+    lcmWrapper.publish('SYSTEM_STATUS', msg)
 
 
 
@@ -385,17 +394,17 @@ class SendPosturePanel(object):
         joints = self.selectedPosture['joints']
         if self.getNominalHandedness(self.selectedPosture) == 'right':
             joints = applyMirror(joints)
-        publishPostureGoal(joints)
+        publishPostureGoal(joints, self.selectedPosture['name'] + ' left')
 
     def onRightClicked(self):
         joints = self.selectedPosture['joints']
         if self.getNominalHandedness(self.selectedPosture) == 'left':
             joints = applyMirror(joints)
-        publishPostureGoal(joints)
+        publishPostureGoal(joints, self.selectedPosture['name'] + ' right')
 
     def onDefaultClicked(self):
         joints = self.selectedPosture['joints']
-        publishPostureGoal(joints)
+        publishPostureGoal(joints, self.selectedPosture['name'] + ' default')
 
     def saveSettings(self, settings):
         settings.setValue('sendPose/currentGroup', self.getSelectedGroup())
