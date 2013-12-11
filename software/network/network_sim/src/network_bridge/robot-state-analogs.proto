@@ -18,7 +18,7 @@ message MinimalRobotState
 
 
   // 2*joint effort, then divide by 2 to get precision of 0.5
-  repeated float twice_joint_effort = 5 [(dccl.field) = { min: -240 max: 240 max_repeat: 110 precision: 0 codec: "presence_bit" } ];
+  repeated float twice_joint_effort = 5 [(dccl.field) = { min: -240 max: 240 max_repeat: 30 precision: 0 codec: "presence_bit" } ];
 
   optional float l_foot_force_z = 10 [(dccl.field) = { min: -500  max: 2000 precision: 1 codec: "presence_bit" } ];
   optional float l_foot_torque_x = 11 [(dccl.field) = { min: -500 max: 500 precision: 1 codec: "presence_bit" } ];
