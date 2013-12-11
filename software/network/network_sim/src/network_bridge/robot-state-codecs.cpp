@@ -44,7 +44,7 @@ bool RobotStateCodec::encode(const std::vector<unsigned char>& lcm_data, std::ve
 
     drc::MinimalRobotState dccl_state;
 
-    if(!to_minimal_state(lcm_object, &dccl_state))
+    if(!to_minimal_state(lcm_object, &dccl_state, false, true))
         return false;
     
     glog.is(VERBOSE) && glog << "MinimalRobotState: " << dccl_state.ShortDebugString() << std::endl;
@@ -81,7 +81,8 @@ bool RobotStateCodec::decode(std::vector<unsigned char>* lcm_data, const std::ve
 
 bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
                                        drc::MinimalRobotState* dccl_state,
-                                       bool use_rpy /* = false */)
+                                       bool use_rpy /* = false */,
+                                       bool add_joint_effort /* = false */)
 {
     dccl_state->set_utime(lcm_object.utime);
 
@@ -95,6 +96,19 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
                              dccl_state->mutable_joint_id()))
         return false;
 
+
+    if(add_joint_effort)
+    {
+        for(int i = 0, n = lcm_object.joint_effort.size(); i < n; ++i)
+        {
+            // only the arms
+            if(lcm_object.joint_name[i].find("_arm_") != std::string::npos)
+                dccl_state->add_twice_joint_effort(lcm_object.joint_effort[i]*2);            
+        } 
+    }
+    
+
+    
     dccl_state->set_l_foot_force_z(lcm_object.force_torque.l_foot_force_z);
     dccl_state->set_l_foot_torque_x(lcm_object.force_torque.l_foot_torque_x);
     dccl_state->set_l_foot_torque_y(lcm_object.force_torque.l_foot_torque_y);
@@ -143,7 +157,7 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
         return false;
     
     std::vector<float> joint_zeros;
-    joint_zeros.assign ( joint_names_.size(),0); 
+    joint_zeros.assign ( lcm_object->num_joints,0); 
     lcm_object->twist.linear_velocity.x =0;
     lcm_object->twist.linear_velocity.y =0;
     lcm_object->twist.linear_velocity.z =0;
@@ -151,8 +165,24 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
     lcm_object->twist.angular_velocity.y =0;
     lcm_object->twist.angular_velocity.z =0;  
     lcm_object->joint_velocity = joint_zeros;
+
     lcm_object->joint_effort = joint_zeros;
 
+    if(dccl_state.twice_joint_effort_size() != 0)
+    {
+        int j = 0;
+        for(int i = 0, n = lcm_object->joint_name.size(); i < n; ++i)
+        { 
+            if(lcm_object->joint_name[i].find("_arm_") != std::string::npos)
+            {
+                lcm_object->joint_effort[i] = (float)dccl_state.twice_joint_effort(j++)/2;
+                if(j >= dccl_state.twice_joint_effort_size())
+                    break;
+            }
+        }
+        
+    }
+    
     lcm_object->force_torque.l_foot_force_z = dccl_state.l_foot_force_z();
     lcm_object->force_torque.l_foot_torque_x = dccl_state.l_foot_torque_x();
     lcm_object->force_torque.l_foot_torque_y = dccl_state.l_foot_torque_y();

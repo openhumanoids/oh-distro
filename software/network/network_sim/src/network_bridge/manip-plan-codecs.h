@@ -49,7 +49,7 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
     
     dccl_plan.set_utime(lcm_object.utime);
 
-    RobotStateCodec::to_minimal_state(lcm_object.plan[0], dccl_plan.mutable_goal(), true);
+    RobotStateCodec::to_minimal_state(lcm_object.plan[0], dccl_plan.mutable_goal());
 
     drc::MinimalRobotState previous_goal = dccl_plan.goal();
 
@@ -64,15 +64,14 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
         const drc::robot_state_t& present_lcm_goal = lcm_object.plan[i];
         
         drc::MinimalRobotState present_goal;
-        RobotStateCodec::to_minimal_state(present_lcm_goal, &present_goal, true);
+        RobotStateCodec::to_minimal_state(present_lcm_goal, &present_goal);
 
         drc::MinimalRobotStateDiff* present_goal_diff = dccl_plan.mutable_goal_diff();
         present_goal_diff->add_utime_diff(present_lcm_goal.utime - previous_lcm_goal.utime);
         if(!RobotStateCodec::to_position3d_diff(present_lcm_goal.pose,
                                                 previous_lcm_goal.pose,
-                                                present_goal_diff->mutable_pos_diff(),
-                                                true))
-           return false;
+                                                present_goal_diff->mutable_pos_diff()))
+            return false;
 
         
         for(int i = 0, n = present_goal.joint_position_size(); i < n; ++i)
@@ -261,7 +260,7 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
 
     drc::robot_state_t first_lcm_goal;
 
-    if(!RobotStateCodec::from_minimal_state(&first_lcm_goal, dccl_plan.goal(), true))
+    if(!RobotStateCodec::from_minimal_state(&first_lcm_goal, dccl_plan.goal()))
         return false;
 
     lcm_object.plan.push_back(first_lcm_goal);
@@ -367,7 +366,7 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
 
          
          if(!RobotStateCodec::from_position3d_diff(present_goal.mutable_pose(),
-                                                   dccl_plan.goal_diff().pos_diff(), i, true))
+                                                   dccl_plan.goal_diff().pos_diff(), i))
             return false;
 
          if(!RobotStateCodec::from_minimal_state(&lcm_goal, present_goal))

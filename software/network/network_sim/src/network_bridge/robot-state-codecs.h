@@ -29,7 +29,8 @@ class RobotStateCodec : public CustomChannelCodec
 
     static bool to_minimal_state(const drc::robot_state_t& lcm_object,
                                  drc::MinimalRobotState* dccl_state,
-                                 bool use_rpy = false);
+                                 bool use_rpy = false,
+                                 bool add_joint_effort = false);
 
     static bool from_minimal_state(drc::robot_state_t* lcm_object,
                                    const drc::MinimalRobotState& dccl_state,
