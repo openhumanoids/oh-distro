@@ -1,0 +1,4 @@
+#! /bin/bash
+patch -p0 -i switchToBDIHooks.diff 
+make clean;
+make -j
