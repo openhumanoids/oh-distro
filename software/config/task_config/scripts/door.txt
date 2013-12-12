@@ -60,3 +60,5 @@ scott: if controller notifies when plan execution has completed, then we could d
 constrain door handle distance from door
 
 calibration warning triggers if you execute an arm plan against a wall and arm stops short against the wall
+
+fix z height of doorframe sticky feet
