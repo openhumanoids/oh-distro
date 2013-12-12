@@ -64,7 +64,7 @@ retract plans
 
 
 --------------------------------
-reach 2: ypr from spreadsheet
+reach 2: ypr from spreadsheet. careful to reach over piece 3.
   SKIP hand fit with 2 fingers facing start line
   SKIP move pelvis ypr: pitch 5, yaw 5, roll 0
   SKIP do 90% reach
