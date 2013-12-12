@@ -19,17 +19,23 @@ during run prep
 
 mount Robotiq hand to left arm (no extender)
 confirm orientation: XXX
+mount iRobot hand slightly to right of center
 
 
 when in place, but before clock starts
 --------------------------------------
+
+run calibration procedure
+in a.2.P_and_C, kill EncoderCalibration
 
 stand & switch to manip to trigger manip glitch
 activate hand and hand driver
 set walking path to auto
 set up sensor pull requests
 reduce transparency on affordances
+pat: set camera views full screen
 start ee-driver
+uncheck "Plan & Control w/ BDI height" checkbox
 start maurice's triad thing
 set head camera angle *requires hydraulic power
 get rough fit of drill on table and wall
@@ -41,37 +47,54 @@ once run starts
 ---------------
 
 walk to table
-refit drill
-send poses: pre-grasp low; pre-grasp-high
+wait for stop; refit drill
+go to manip mode
+send pose retract down
+send pose retract
+send pose pre-grasp high
 send reach
 send touch
 review hand in camera views; tele-op hand
+check grasp height on drill (don't block button)
+  top of hand should align with top of black plate
 close hand
-send poses: door-pregrasp; pre-grasp low
-zero back
+send pose: pregrasp-high
+send retract
+send retract-down
+zero the back
+go to stand
 walk to position in front of wall
+go to manip
 send pose: drill in camera
 fix drill orientation in hand; refit drill
-optimize drill in camera
+optimize drill button in camera
 send button prepose
 teleop poker to button
 send button prepose
-send poses:  pre-grasp low
+  TELEOP to TURN BUTTON ON
+send pose:  side-retract
+send pose:  side-retract-down
 fit wall
 request nominal plan
+go to stand
 send walking goal
 walk
-pre-drill posture
+go to manip
+check "Plan & Control w/ BDI height" checkbox
+send pre-drill posture
+pat: check drill placement w.r.t. perimeter
 drill in
 adjust drill depth
+...
+score four points
 
 
 after run ends
 --------------
 
+safely retract hands, keep drill bit away from body
+
 remove hand, stow on head (depends on next task)
-
-
 
 
 
@@ -79,6 +102,7 @@ todo
 ----
 
 practice drill grasp orientation
+
 add walking goal to drill affordance, determine orientation
 
 need better plans to get the hand up and away from the table
@@ -88,4 +112,8 @@ add ee-driver support to robotiq hand
 plans not going through
 
 make slightly smaller drill target triangle affordance
+
+TODO
+ 
+Pat, add slider to adjust drill depth in hand
 
