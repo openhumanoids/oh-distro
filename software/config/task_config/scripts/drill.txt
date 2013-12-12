@@ -29,9 +29,12 @@ activate hand and hand driver
 set walking path to auto
 set up sensor pull requests
 reduce transparency on affordances
+start ee-driver
+start maurice's triad thing
 set head camera angle *requires hydraulic power
 get rough fit of drill on table and wall
 place walking goal to table
+
 
 
 once run starts
