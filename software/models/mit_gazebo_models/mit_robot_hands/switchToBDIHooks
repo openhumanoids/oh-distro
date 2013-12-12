@@ -1,4 +1,11 @@
 #! /bin/bash
+# This script changes the inert_hand_left/right urdfs to use the BDI hook
+# geometries. To switch back just run
+#
+# $ svn revert -R ./
+#
+# in this directory
+
 patch -p0 -i switchToBDIHooks.diff 
 make clean;
 make -j
