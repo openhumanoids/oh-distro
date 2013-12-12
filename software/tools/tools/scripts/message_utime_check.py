@@ -36,8 +36,8 @@ def on_ers(channel, data):
   age_of_incoming_message = (local_wall_utime - m.utime)/1E6
   if (abs(delta/1E6) > 0.27):
     print "age of incoming ", age_of_incoming_message,  "incomingutime, ", m.utime, ", delta:", delta/1E6 , " ==============="
-  else:
-    print "age of incoming ", age_of_incoming_message, "incomingutime, ", m.utime, ", delta:", delta/1E6 
+  #else:
+  #  print "age of incoming ", age_of_incoming_message, "incomingutime, ", m.utime, ", delta:", delta/1E6 
   s.prev_utime = m.utime
 
 ####################################################################
