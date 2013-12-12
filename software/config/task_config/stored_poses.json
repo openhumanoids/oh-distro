@@ -775,6 +775,48 @@
       }, 
       "name": "rdeits-pull-protect-2", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pull protect", 
+      "joints": {
+        "l_arm_elx": 1.5169999599456787, 
+        "l_arm_ely": 2.006999969482422, 
+        "l_arm_mwx": 0.023000000044703484, 
+        "l_arm_shx": -0.6320000290870667, 
+        "l_arm_usy": -1.5549999475479126, 
+        "l_arm_uwy": 3.1419999599456787
+      }, 
+      "name": "rdeits-pull-protect-3", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pull protect", 
+      "joints": {
+        "r_arm_elx": -1.8509999513626099, 
+        "r_arm_ely": 1.965999960899353, 
+        "r_arm_mwx": 0.27000001072883606, 
+        "r_arm_shx": 1.5110000371932983, 
+        "r_arm_usy": -0.1509999930858612, 
+        "r_arm_uwy": 0.07699999958276749
+      }, 
+      "name": "rdeits-pull-protect-4-offhand", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pull protect", 
+      "joints": {
+        "r_arm_elx": -1.8489999771118164, 
+        "r_arm_ely": 0.7120000123977661, 
+        "r_arm_mwx": 0.26499998569488525, 
+        "r_arm_shx": 1.5110000371932983, 
+        "r_arm_usy": -0.1509999930858612, 
+        "r_arm_uwy": 0.07800000160932541
+      }, 
+      "name": "rdeits-pull-protect-5-offhand", 
+      "nominal_handedness": "right"
     }
   ], 
   "drill": [
@@ -903,6 +945,20 @@
       }, 
       "name": "crane", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pre-grasp high and tight", 
+      "joints": {
+        "l_arm_elx": 2.3399999141693115, 
+        "l_arm_ely": 2.0880000591278076, 
+        "l_arm_mwx": 0.2720000147819519, 
+        "l_arm_shx": -1.4850000143051147, 
+        "l_arm_usy": 0.30000001192092896, 
+        "l_arm_uwy": 3.1689999103546143
+      }, 
+      "name": "pre-grasp high and tight", 
+      "nominal_handedness": "left"
     }
   ], 
   "hose": [
@@ -980,6 +1036,20 @@
       }, 
       "name": "out_and_forward", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "hands-forward", 
+      "joints": {
+        "r_arm_elx": -0.46000000834465027, 
+        "r_arm_ely": 2.0199999809265137, 
+        "r_arm_mwx": -0.02800000086426735, 
+        "r_arm_shx": 0.4129999876022339, 
+        "r_arm_usy": -1.2259999513626099, 
+        "r_arm_uwy": 0.03999999910593033
+      }, 
+      "name": "hands-forward", 
+      "nominal_handedness": "right"
     }
   ]
 }
