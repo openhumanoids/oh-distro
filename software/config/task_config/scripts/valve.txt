@@ -29,7 +29,9 @@ fit valve
 place walking goal
 open ee-driver
 enable show ee forces
+verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
 disable plan & control with bdi height mode
+
 
 once run starts
 ---------------

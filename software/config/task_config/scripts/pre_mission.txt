@@ -68,6 +68,9 @@ right hand:  BDI hook
 
 pre-mission
 -----------
+- check OIL LEVEL
+- check AIR PRESSURE level
+
 - mount appropriate hands (see above)
 
 - check disk space 
@@ -83,6 +86,7 @@ pre-mission
     click calibrate for joint sensors
     check head sensors
     check hand responses
+    [check for rogue Matlab instances...]
 
 - which GUI tools are to be used? start them up and tile them
 - something about checking the IMU status?

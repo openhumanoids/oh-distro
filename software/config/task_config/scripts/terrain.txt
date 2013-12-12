@@ -26,14 +26,16 @@ during physical prep
 during run prep
 ---------------
 
-
-
 when in place, but before clock starts
 --------------------------------------
+
+??? reset pelvis params to defaults - including pressing reset button
+??? set BDI height mode?
 
 * switch to manip to trigger the pitch
 * Preset to BDI Obstacle Stepping
 * Show EE forces ON
+* Verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
 * Scene height on request
 * Workspace depth every 5s
 * Head to 55 degrees

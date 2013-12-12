@@ -27,7 +27,7 @@ create a box and have the planner reach with both hands to it
 verify that pat can visualise affordance motion in plans
 verify that planner is expecting hand extensions
 make sure "plan & control w BDI height" is turned OFF
-
+verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
 
 verify that pieces are leaning in the expected way:
 flat, up right, up left, up right, up left
