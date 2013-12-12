@@ -21,17 +21,23 @@ classdef AtlasManipController < DRCController
       
       arm_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'arm'));
       back_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'back'));
+      back_y_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'back_bky'));
   
       integral_gains = zeros(getNumDOF(r),1);
+      integral_clamps = zeros(getNumDOF(r),1);
       if options.controller_type == 1 || options.controller_type == 2 % use PID control
         integral_gains(arm_ind) = 1.0;
         integral_gains(back_ind) = 0.2;
+        integral_clamps(arm_ind) = 0.3;
+        integral_clamps(back_ind) = 0.2;
+        integral_clamps(back_y_ind) = 0.1;
       end
       
       ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
                         'qddtraj',zeros(getNumDOF(r),1),...
                         'integral',zeros(getNumDOF(r),1),...
                         'integral_gains',integral_gains,...
+                        'integral_clamps',integral_clamps,...
                         'enable_bdi_manip',false,...
                         'firstplan',true)); 
 

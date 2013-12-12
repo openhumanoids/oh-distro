@@ -68,14 +68,14 @@ classdef QTrajEvalBlock < MIMODrakeSystem
         qdes = fasteval(qtraj,t);
       end
       if obj.use_error_integrator
-        delt = 0.35;
         q = x(1:end/2);
+        i_clamp = obj.controller_data.data.integral_clamps;
         newintg = obj.controller_data.data.integral + obj.controller_data.data.integral_gains.*(qdes-q)*obj.dt;
-        newintg = max(-delt,min(delt,newintg));
+        newintg = max(-i_clamp,min(i_clamp,newintg));
         setField(obj.controller_data,'integral', newintg);
         qdes = qdes + newintg;
         [jlmin,jlmax] = getJointLimits(obj.robot);
-        qdes = max(jlmin-delt,min(jlmax+delt,qdes)); % allow it to go delta above and below jlims
+        qdes = max(jlmin-i_clamp,min(jlmax+i_clamp,qdes)); % allow it to go delta above and below jlims
       end
     end
   end
