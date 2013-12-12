@@ -103,7 +103,19 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
         {
             // only the arms and back
             if(lcm_object.joint_name[i].find("_arm_") != std::string::npos || lcm_object.joint_name[i].find("back_") != std::string::npos)
-                dccl_state->add_twice_joint_effort(lcm_object.joint_effort[i]*2);            
+            {
+                static const double max = drc::MinimalRobotState::descriptor()->FindFieldByName("twice_joint_effort")->options().GetExtension(dccl::field).max();
+                static const double min = drc::MinimalRobotState::descriptor()->FindFieldByName("twice_joint_effort")->options().GetExtension(dccl::field).min();
+
+                float twice_joint_effort = lcm_object.joint_effort[i]*2;
+
+                if(twice_joint_effort > max)
+                    twice_joint_effort = max;
+                if(twice_joint_effort < min)
+                    twice_joint_effort = min;
+                
+                dccl_state->add_twice_joint_effort(twice_joint_effort);
+            }
         } 
     }
     
