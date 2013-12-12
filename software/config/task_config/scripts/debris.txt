@@ -22,27 +22,39 @@ run prep and simple grasp scripts
 verify robot came up with right arm config. 
    look at arms and legs - are there any joint errors?
 did system status messages indicate: irobot left, robotiq right?
-calibrate left hand. watch for visual movement and sys status msgs
-create a box and have the planner reach with both hands to it
+calibrate left hand. watch for visual movement and system status msgs
+SKIP create a box and have the planner reach with both hands to it
 verify that pat can visualise affordance motion in plans
 verify that planner is expecting hand extensions
-make sure "plan & control w BDI height" is turned OFF
-verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
+make sure "plan & control w BDI height" checkbox is turned OFF
+  MAURICE -- local change to planner hardcoded parameters
 
 verify that pieces are leaning in the expected way:
 flat, up right, up left, up right, up left
 
+run calibrate
+run prep
+run stand
+pitch head down
+pat, fit affordance to first plank
+place a walking goal short of the fitted affordance
+
+CLOCK STARTS
 
 --------------------------------
 positioning:
-walk very close to debris but short. raise hands up to shooter position
-stop, find best standing point with perception (legs between truss)
+
+walk close to debris but stop short.
+raise hands to stow position.  refit affordance.
+  VIEWER BUG -- Maurice lost mouse input here
+  any reason not to auto-restart from procman?
+find best standing point with perception (legs between truss)
 walk to standing point
 go to manip mode. crouch to 66cm.
 
 
 --------------------------------
-reach 1: reach to side of truss. IMPORTANT:  Make sure elbow is OUT when lifting
+reach 1: reach to side of truss.  IMPORTANT:  Make sure elbow is OUT when lifting
 hand fit with 2 fingers facing start line
 move pelvis ypr: 0, 0, 0
 do 90% reach
@@ -52,10 +64,10 @@ retract plans
 
 
 --------------------------------
-reach 2: careful to reach over piece 3.
-hand fit with 2 fingers facing start line
-move pelvis ypr: pitch 5, yaw 5, roll 0
-do 90% reach
+reach 2: ypr from spreadsheet
+  SKIP hand fit with 2 fingers facing start line
+  SKIP move pelvis ypr: pitch 5, yaw 5, roll 0
+  SKIP do 90% reach
 refit, touch, grasp
 raise pelvis by 5cm and yaw 5degrees to clear wall
 raise height to 90cm.
@@ -64,7 +76,7 @@ retract plans
 
 
 --------------------------------
-reach 3: IMPORTANT: Use goto posture to avoid singularity
+reach 3:
 hand fit with 2 fingers EXACTLY pointing down <<<<<<<<<<
 move pelvis ypr: pitch 5, yaw 5, roll 0
 do 90% reach. check this is correct - problems with sings XXX
@@ -78,10 +90,16 @@ retract plans
 --------------------------------
 reach 4:
 hand fit with 2 fingers facing toward robot
-move pelvis ypr: yaw 10, roll 0. important to keep good camera seeing
+  pelvis yaw 10, roll 0. important to keep good camera seeing
+pitch the head up
+careful when unpitching the back!
 do 90% reach.
 refit, touch, grasp
-raise pelvis by 5cm and then yaw 5degrees to clear sidewall
+
+  => at 13 minutes 
+
+FIX  raise pelvis 5cm then yaw 5degrees to clear sidewall
+
 raise height to 90cm. slowly xxxxxx get scott to help xxxxxx
 pelvis pitch to -5, yaw 0
 after small retraction yaw to right with pelvis and back
@@ -92,9 +110,15 @@ lift directly up using one of the 3 postures
 --------------------------------
 reach 5: make sure to have single finger pointing down to right, makes retract easier
 hand fit with XX fingers facing XX
-move pelvis ypr: y p at max positive
+move pelvis ypr: yaw and pitch at max positive
+pitch forward 6, be careful unpitching
+yaw right
+switch to teleop
 do 90% reach
 refit, touch, grasp
-raise height to 90cm.
+
+HAD TO RESTART IROBOT HAND DRIVER!
+
+yaw left, raise height a little bit, then to 90 cm.
 can i zero back joints with hand stationary - with the new mode? 
 retract plans
