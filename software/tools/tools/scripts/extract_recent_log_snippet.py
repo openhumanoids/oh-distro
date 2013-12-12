@@ -64,7 +64,6 @@ def copyEndOfLog(inFileName,outFileName,timeSec):
   outLog = lcm.EventLog(outFileName,'w')
   timeMax = findLastTimestamp(inLog)  
   timeMin = timeMax-int(timeSec*1e6)
-  print timeMin,timeMax
   chopLog(inLog,outLog,timeMin,timeMax)
   inLog.close()
   outLog.close()
@@ -79,8 +78,9 @@ def findNewestFile(pattern):
   maxIndex = times.index(max(times))
   return files[maxIndex]
   
-def go(pattern,timeSec):
+def go(pattern,timeSec,label):
   import datetime
+  import os
   inFileName = findNewestFile(pattern)
   if inFileName is None:
     print 'error: no files matched pattern ' + pattern
@@ -89,8 +89,15 @@ def go(pattern,timeSec):
   timeMax = findLastTimestamp(inLog)
   inLog.close()
   timeStr = datetime.datetime.fromtimestamp(timeMax/1e6).strftime('%Y-%m-%d_%H-%M-%S')
-  outFileName = inFileName + '_snippet_' + str(int(timeSec)) + '_' + timeStr
+  inputPath,baseFileName = os.path.split(inFileName)
+  outputPath = inputPath + '/snippets'
+  try: os.makedirs(outputPath)
+  except OSError: pass
+  if label is None or (len(label)==0):
+    label = 'snippet'
+  outFileName = '%s/%s_%s_%s_%s' % (outputPath, baseFileName, label, str(int(timeSec)), timeStr)
   copyEndOfLog(inFileName,outFileName,timeSec)
+  print 'wrote file %s' % (outFileName)
   return True
 
 if __name__=='__main__':
@@ -98,8 +105,9 @@ if __name__=='__main__':
   parser = argparse.ArgumentParser(description='copy data from end of lcm log')
   parser.add_argument('-i', dest='inputpattern', required=True, help='input log directory')
   parser.add_argument('-d', dest='duration', type=float, default=60.0, help='duration of output log')
+  parser.add_argument('-n', dest='label', default='', help='label name for snippet')
   args = parser.parse_args()
-  result = go(args.inputpattern,args.duration)
+  result = go(args.inputpattern,args.duration,args.label)
   if result:
     print 'done'
   else:
