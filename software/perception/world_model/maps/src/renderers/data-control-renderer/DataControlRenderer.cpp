@@ -108,8 +108,6 @@ protected:
   Gtk::Label* mNeckPitchLabel;
   int64_t mLastNeckPitchLabelUpdateTime;
 
-  Gtk::Button* mWorkspaceApplyButton;
-
   Glib::RefPtr<Gtk::ListStore> mAffordanceTreeModel;
   Gtk::TreeView* mAffordanceListBox;
   std::shared_ptr<affordance::AffordanceUpWrapper> mAffordanceWrapper;
@@ -311,14 +309,12 @@ public:
   }
 
   void loadPreset(const int iNum) {
+    if (iNum < 0) return;
     drc::BotWrapper botWrapper(getLcm(), getBotParam(), getBotFrames());
     const std::string keyBase = "viewer.datacontrol_presets";
     ParamManager manager = *mParamManager;
     manager.setKeyBase(keyBase + "." + mPresetNames[iNum]);
     manager.onParamChange();
-    for (auto iter : mRequestControls) {
-      sendSingleDataRequest(iter.second);
-    }
     std::cout << "Loaded preset " << mPresetNames[iNum] << std::endl;
   }
 
@@ -448,10 +444,11 @@ public:
       }
       std::vector<int> ids(presetLabels.size());
       for (size_t i = 0; i < ids.size(); ++i) ids[i] = i;
-      mPresetId = 0;
+      mPresetId = -1;
       Gtk::ComboBox* combo = createCombo(mPresetId,presetLabels,ids);
-      button = Gtk::manage(new Gtk::Button("go"));
-      button->signal_clicked().connect([this]{loadPreset(mPresetId);});
+      combo->signal_changed().connect([this]{loadPreset(mPresetId);});
+      button = Gtk::manage(new Gtk::Button("apply all"));
+      button->signal_clicked().connect([this]{sendAllDataRequests();});
       hbox->pack_start(*label,false,false);
       hbox->pack_start(*combo,false,false);
       hbox->pack_start(*button,false,false);
@@ -469,7 +466,7 @@ public:
     button->signal_clicked().connect
       ([this,check]{
         drc::map_depth_settings_t msg;
-        msg.data_request.type = drc::data_request_t::DEPTH_MAP_WORKSPACE_C;
+        msg.data_request.type = drc::data_request_t::DEPTH_MAP_WORKSPACE;
         msg.data_request.period = -1;
         msg.remove_ground = check->get_active();
         this->getLcm()->publish("MAP_DEPTH_SETTINGS",&msg);
@@ -864,12 +861,8 @@ public:
     Gtk::Box* hbox = Gtk::manage(new Gtk::HBox());
     mWorkspaceDepthFov = 90;
     Gtk::HScale* fovSlider = createSlider(mWorkspaceDepthFov,60,130,10);
-    fovSlider->signal_value_changed().connect
-      ([this]{mWorkspaceApplyButton->set_sensitive(true);});
     mWorkspaceDepthYaw = 0;
     Gtk::HScale* yawSlider = createSlider(mWorkspaceDepthYaw,-90,100,10);
-    yawSlider->signal_value_changed().connect
-      ([this]{mWorkspaceApplyButton->set_sensitive(true);});
     Gtk::Label* label = Gtk::manage(new Gtk::Label("yaw"));
     vbox->pack_start(*label,false,false);
     vbox->pack_start(*yawSlider,false,false);
@@ -900,37 +893,16 @@ public:
     Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(" "));
     Gtk::ComboBox* combo = NULL;
     Gtk::Button* button = Gtk::manage(new Gtk::Button("now"));
-    button->signal_clicked().connect
-      ([this,group]{
-        RequestControl::Ptr tempGroup(new RequestControl(*group));
-        tempGroup->mPeriod = 0;
-        sendSingleDataRequest(tempGroup);
-      });
-
-    // apply button
-    Gtk::Button* apply = Gtk::manage(new Gtk::Button("apply"));
-    if (iId==drc::data_request_t::DEPTH_MAP_WORKSPACE) {
-      mWorkspaceApplyButton = apply;
-    }
-    apply->set_sensitive(false);
-    apply->signal_clicked().connect
-      ([this,apply,group]{
-        sendSingleDataRequest(group);
-        apply->set_sensitive(false);
-      });
+    button->signal_clicked().connect([this,group]{sendOneShotRequest(group);});
 
     // callbacks
     check->signal_toggled().connect
-      ([check,spin,group,apply]{
-        group->mPeriod = check->get_active() ? spin->get_value() : 0;
-        apply->set_sensitive(true);
+      ([check,spin,group]{
+        group->mPeriod = check->get_active() ? spin->get_value() : -1;
       });
     spin->signal_value_changed().connect
-      ([check,spin,group,apply]{
-        if (check->get_active()) {
-          group->mPeriod = spin->get_value();
-          apply->set_sensitive(true);
-        }
+      ([check,spin,group]{
+        group->mPeriod = check->get_active() ? spin->get_value() : -1;
       });
     
     std::string safeLabel = iLabel;
@@ -944,7 +916,6 @@ public:
                                drc::camera_settings_t::QUALITY_MED,
                                drc::camera_settings_t::QUALITY_HIGH };
       combo = createCombo(group->mQuality,labels,ids);
-      combo->signal_changed().connect([apply]{ apply->set_sensitive(true); });
       mParamManager->bind(safeLabel+".quality",*combo);
     }
     if (iContainer == NULL) {
@@ -957,7 +928,6 @@ public:
       mRequestControlTable->attach(*label,2,3,yCur,yCur+1,xOpts,yOpts);
       mRequestControlTable->attach(*ageLabel,3,4,yCur,yCur+1,xOpts,yOpts);
       mRequestControlTable->attach(*spin,4,5,yCur,yCur+1,xOpts,yOpts);
-      mRequestControlTable->attach(*apply,6,7,yCur,yCur+1,xOpts,yOpts);
       if (combo != NULL) {
         mRequestControlTable->attach(*combo,5,6,yCur,yCur+1,xOpts,yOpts);
       }
@@ -992,9 +962,7 @@ public:
     }
   }
 
-  void sendSingleDataRequest(const RequestControl::Ptr& iGroup) {
-    drc::data_request_list_t msg;
-    msg.utime = drc::Clock::instance()->getCurrentTime();
+  drc::data_request_t getDataRequest(const RequestControl::Ptr& iGroup) {
     drc::data_request_t req;
     req.type = iGroup->mId;
     req.period = iGroup->mPeriod*10;
@@ -1008,12 +976,34 @@ public:
       settingsMessage.quality = iGroup->mQuality;
       getLcm()->publish("CAMERA_SETTINGS", &settingsMessage);
     }
+    return req;
+  }
+
+  void sendAllDataRequests() {
+    drc::data_request_list_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    for (auto iter : mRequestControls) {
+      auto req = getDataRequest(iter.second);
+      msg.requests.push_back(req);
+    }
+    msg.num_requests = msg.requests.size();
+    if (msg.num_requests > 0) {
+      getLcm()->publish("DATA_REQUEST", &msg);
+    }
+    mParamManager->pushValues();
+  }
+
+  void sendOneShotRequest(const RequestControl::Ptr& iGroup) {
+    drc::data_request_list_t msg;
+    msg.utime = drc::Clock::instance()->getCurrentTime();
+    RequestControl::Ptr tempGroup(new RequestControl(*iGroup));
+    tempGroup->mPeriod = 0;
+    auto req = getDataRequest(tempGroup);
     msg.requests.push_back(req);
     msg.num_requests = msg.requests.size();
     if (msg.num_requests > 0) {
       getLcm()->publish("DATA_REQUEST", &msg);
     }
-
     mParamManager->pushValues();
   }
 
@@ -1026,7 +1016,7 @@ public:
     msg.view_id = drc::data_request_t::DEPTH_MAP_WORKSPACE;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.resolution = 0.01;
-    msg.frequency = (iPeriod > 0) ? 1.0f/iPeriod : 0;
+    msg.frequency = (iPeriod>0) ? 1.0f/iPeriod : (iPeriod==0 ? 0 : -1);
     msg.quantization_max = 0.02;
     msg.width = 200;
     msg.height = 200;

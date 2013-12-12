@@ -54,7 +54,7 @@ struct Worker {
     while (mActive) {
 
       // see if this is a cancel request
-      if ((numCycles > 0) && (mRequest.period == 0)) {
+      if ((mRequest.period<0) || ((mRequest.period == 0) && (numCycles>0))) {
         mActive = false;
         break;
       }
@@ -526,7 +526,7 @@ struct State {
         item = mWorkers.find(req.type);
       }
       else {
-        if (req.period == 0 && item->second->mActive) {
+        if ((req.period < 0) && item->second->mActive) {
           item->second->stop();
           continue;
         }

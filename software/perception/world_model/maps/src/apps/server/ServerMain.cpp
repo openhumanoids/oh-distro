@@ -382,6 +382,13 @@ struct ViewWorker {
   void operator()() {
     mActive = true;
     while (mActive) {
+
+      // check for cancel
+      if (mRequest.frequency < 0) {
+        mActive = false;
+        break;
+      }
+
       int64_t checkpointStart = bot_timestamp_now();
       auto lcm = mBotWrapper->getLcm();
       // get map
