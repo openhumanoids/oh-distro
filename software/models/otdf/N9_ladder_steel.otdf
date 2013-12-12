@@ -2,9 +2,9 @@
 <object name="N9_ladder_steel">
     <!-- X,Y,Z,Roll,Pitch,Yaw params must exist for all otdf objects-->
     <!-- World frame origin of the object -->
-    <param name="x" default_value="0" inc="0.001" min="-1000" max="1000" />
+    <param name="x" default_value="-0.4" inc="0.001" min="-1000" max="1000" />
     <param name="y" default_value="0" inc="0.001" min="-1000" max="1000" />
-    <param name="z" default_value="0" inc="0.001" min="-1000" max="1000" />
+    <param name="z" default_value="-0.3" inc="0.001" min="-1000" max="1000" />
     <!--Roll,Pitch,Yaw are about Body Frame-->
     <param name="roll" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
     <param name="pitch" default_value="0.0" inc="0.01" min="-3.1416" max="3.1416" />
@@ -323,48 +323,6 @@
     </grasp_seed>
     <grasp_seed>
         <appendage type="FOOT" />
-        <geometry name="STEPS_2_0" />
-        <relative_pose rpy="0.00136052 -0.00445251 -3.11998" xyz="0.0654334 0.1 0.105827" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="STEPS_2_0" />
-        <relative_pose rpy="-0.00651061 -0.0489061 -3.10079" xyz="0.0687846 -0.1 0.104039" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="STEPS_3_0" />
-        <relative_pose rpy="0.00136052 -0.00445251 -3.11998" xyz="0.0654334 0.1 0.105827" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="STEPS_3_0" />
-        <relative_pose rpy="-0.00651061 -0.0489061 -3.10079" xyz="0.0687846 -0.1 0.104039" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="STEPS_4_0" />
-        <relative_pose rpy="0.00136052 -0.00445251 -3.11998" xyz="0.0654334 0.1 0.105827" />
-        <grasp_type type="1" />
-        <state num_joints="2" joint_names="r_leg_aky r_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
-        <geometry name="STEPS_4_0" />
-        <relative_pose rpy="-0.00651061 -0.0489061 -3.10079" xyz="0.0687846 -0.1 0.104039" />
-        <grasp_type type="0" />
-        <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="FOOT" />
         <geometry name="STEPS_5_0" />
         <relative_pose rpy="0.00136052 -0.00445251 -3.11998" xyz="0.0654334 0.1 0.105827" />
         <grasp_type type="1" />
@@ -418,20 +376,6 @@
         <relative_pose rpy="-0.00651061 -0.0489061 -3.10079" xyz="0.0687846 -0.1 0.104039" />
         <grasp_type type="0" />
         <state num_joints="2" joint_names="l_leg_aky l_leg_akx " joint_positions="0 0 " />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="STEPS_3_0" />
-        <relative_pose rpy="-3.1416 0.5236 0.0" xyz="0.2 0.28 0.12" />
-        <grasp_type type="10" />
-        <state num_joints="0" joint_names="" joint_positions="" />
-    </grasp_seed>
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="STEPS_3_0" />
-        <relative_pose rpy="-3.1416 0.5236 0.0" xyz="0.2 -0.28 0.12" />
-        <grasp_type type="9" />
-        <state num_joints="0" joint_names="" joint_positions="" />
     </grasp_seed>
     <pose_seed name="2013-12-02-22-22::HOOK_Start" />
     <pose_seed name="2013-12-02-22-07::HOOK_BothUp" />
@@ -445,4 +389,136 @@
     <plan_seed name="2013-12-03-17-44::HOOK_BothOut_to_BothUp" />
     <plan_seed name="2013-12-03-17-45::HOOK_Start_to_BothOut" />
     <pose_seed name="2013-12-04-08-35::HOOK_ReachIn" />
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="-3.1416 0.5236 0.0" xyz="-0.17 -0.25 0.07" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 -0.25 0.06" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 -0.25 0.112279" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 -0.25 0.0081843" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="-3.1416 0.5236 0.0" xyz="-0.17 0.25 0.07" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 0.25 0.06" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 0.25 0.112279" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_3_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 0.25 0.0081843" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+
+
+
+
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="-3.1416 0.5236 0.0" xyz="-0.17 -0.25 0.07" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 -0.25 0.06" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 -0.25 0.112279" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 -0.25 0.0081843" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="-3.23446 1.00063 -0.148129" xyz="0.133872 -0.239394 0.191873" />
+        <grasp_type type="9" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="-3.1416 0.5236 0.0" xyz="-0.17 0.25 0.07" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 0.25 0.06" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 0.25 0.112279" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="3.14159 0.5236 0.0" xyz="-0.104078 0.25 0.0081843" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="STEPS_4_0" />
+        <relative_pose rpy="-3.03446 1.00063 0.148129" xyz="0.133872 0.239394 0.191873" />
+        <grasp_type type="10" />
+        <state num_joints="0" joint_names="" joint_positions="" />
+    </grasp_seed>
 </object>
