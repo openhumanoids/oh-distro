@@ -416,6 +416,20 @@ static void on_start_spy_clicked(GtkToggleToolButton *tb, void *user_data)
 }
 
 
+static void on_stop_manipulation_clicked(GtkToggleToolButton *tb, void *user_data)
+{
+  lcm_t * lcm = (lcm_t *) user_data;
+  
+  drc_plan_control_t msg;
+  msg.utime = bot_timestamp_now();
+  msg.control = 0;
+  
+  drc_plan_control_t_publish( lcm, "COMMITTED_PLAN_PAUSE", &msg);
+
+  std::cout <<"fdsfdsdfsfasd\n";
+}
+
+
 
 
 
@@ -663,23 +677,38 @@ int main(int argc, char *argv[])
   // add custom TOP VIEW button
   GtkWidget *top_view_button;
   top_view_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_FIT);
+  gtk_widget_set_size_request(top_view_button, 70, 70);
   gtk_tool_button_set_label(GTK_TOOL_BUTTON(top_view_button), "Top View");
   gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(top_view_button), viewer->tips, "Switch to Top View", NULL);
-  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(top_view_button), 4);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(top_view_button), 3);
   gtk_widget_show(top_view_button);
   g_signal_connect(G_OBJECT(top_view_button), "clicked", G_CALLBACK(on_top_view_clicked), viewer);
   on_top_view_clicked(NULL, (void *) viewer);  
 
   
+  
   // add custom START SPY button
   GtkWidget *start_spy_button;
   start_spy_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_FIND);
+  gtk_widget_set_size_request(start_spy_button, 70, 70);
   gtk_tool_button_set_label(GTK_TOOL_BUTTON(start_spy_button), "Bot Spy");
   gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(start_spy_button), viewer->tips, "Launch Bot Spy", NULL);
-  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(start_spy_button), 4);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(start_spy_button), 3);
   gtk_widget_show(start_spy_button);
   g_signal_connect(G_OBJECT(start_spy_button), "clicked", G_CALLBACK(on_start_spy_clicked), viewer);
   on_start_spy_clicked(NULL, (void *) viewer);    
+  
+
+  // add custom stop manipulation button
+  GtkWidget *stop_manipulation_button;
+  stop_manipulation_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
+  gtk_widget_set_size_request(stop_manipulation_button, 70, 70);
+  gtk_tool_button_set_label(GTK_TOOL_BUTTON(stop_manipulation_button), "Pause Manipulation Execution");
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(stop_manipulation_button), viewer->tips, "Pause Manipulation Execution", NULL);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(stop_manipulation_button), 5);
+  gtk_widget_show(stop_manipulation_button);
+  g_signal_connect(G_OBJECT(stop_manipulation_button), "clicked", G_CALLBACK(on_stop_manipulation_clicked), lcm);
+  on_stop_manipulation_clicked(NULL, (void *) lcm);      
   
   // add custom "collapse all" button
   GtkToolItem *item = gtk_tool_button_new_from_stock (GTK_STOCK_CLEAR);
@@ -687,7 +716,7 @@ int main(int argc, char *argv[])
   gtk_tool_item_set_is_important (GTK_TOOL_ITEM (item), TRUE);
   gtk_tool_item_set_tooltip (GTK_TOOL_ITEM (item), viewer->tips,
                              "Collapse all visible renderers", NULL);
-  gtk_toolbar_insert (GTK_TOOLBAR (viewer->toolbar), item, -1);
+  gtk_toolbar_insert (GTK_TOOLBAR (viewer->toolbar), item, 5);
   gtk_widget_show (GTK_WIDGET (item));
   g_signal_connect (G_OBJECT (item), "clicked", 
                     G_CALLBACK (on_collapse_all_clicked), viewer);
@@ -695,10 +724,11 @@ int main(int argc, char *argv[])
   // add a posture_presets_button (if current broadcasts to all planners and controllers to reset their nominal posture, otherwise sends a preset posture goal for planners.)
   GtkWidget *posture_presets_button;
   posture_presets_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ORIENTATION_PORTRAIT);
+  gtk_widget_set_size_request(posture_presets_button, 70, 70); 
   gtk_tool_button_set_label(GTK_TOOL_BUTTON(posture_presets_button), "Posture Presets");
   //gtk_tool_item_set_is_important (GTK_TOOL_ITEM (posture_presets_button), TRUE);
   gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(posture_presets_button), viewer->tips, "Update nominal posture(q_nom) across P&C to current posture (or) send a resetting posture goal for pre-determined fixed points", NULL);
-  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(posture_presets_button), -1);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(posture_presets_button), 6);
   gtk_widget_show(posture_presets_button);
   g_signal_connect(G_OBJECT(posture_presets_button), "clicked", G_CALLBACK(on_posture_presets_clicked), lcm);
  // on_posture_presets_clicked(NULL, (void *) viewer);           
@@ -737,7 +767,7 @@ int main(int argc, char *argv[])
   gtk_container_add (GTK_CONTAINER (toolitem), hbox);
   gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(toolitem), viewer->tips, "Posture Presets", NULL);
   gtk_widget_show_all (GTK_WIDGET (toolitem));
-  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), toolitem, -1);
+  gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), toolitem, 7);
   
   // add custom renderer groups menu
   RendererGroupUtil groupUtil(viewer, bot_param);

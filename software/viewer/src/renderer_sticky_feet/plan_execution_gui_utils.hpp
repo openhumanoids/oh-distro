@@ -67,8 +67,11 @@ namespace renderer_sticky_feet_gui_utils
     GtkWidget  *stop_walking_button,*cancel_button;
 
     self->plan_execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY); 
+    gtk_widget_set_size_request(self->plan_execute_button, 70, 70);
     stop_walking_button =  (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_STOP);
+    gtk_widget_set_size_request(stop_walking_button, 70, 70);
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CANCEL);
+    gtk_widget_set_size_request(cancel_button, 70, 70);
 
     gtk_widget_set_tooltip_text (self->plan_execute_button, "Execute BDI FootStep Plan");
     gtk_widget_set_tooltip_text(stop_walking_button, "Stop walking NOW");
@@ -78,7 +81,7 @@ namespace renderer_sticky_feet_gui_utils
     hbox = gtk_hbox_new (FALSE, 0);
     GtkToolItem * sep = gtk_separator_tool_item_new ();
     gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET (sep), FALSE, TRUE,10);
-    GtkWidget * label = gtk_label_new ("FootStepPlan:");
+    GtkWidget * label = gtk_label_new ("               Walking Steps:");
     gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, FALSE,0);    
     gtk_box_pack_start (GTK_BOX (hbox), self->plan_execute_button, FALSE, FALSE, 3);
     gtk_box_pack_end(GTK_BOX(hbox), stop_walking_button, FALSE, FALSE, 3);
@@ -86,7 +89,7 @@ namespace renderer_sticky_feet_gui_utils
     
     GtkToolItem * toolitem = gtk_tool_item_new ();   
     gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
-    gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 6);
+    gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 9);
    
     g_signal_connect (G_OBJECT (self->plan_execute_button),
                   "clicked",

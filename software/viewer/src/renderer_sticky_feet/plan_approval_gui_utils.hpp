@@ -71,8 +71,9 @@ namespace renderer_sticky_feet_gui_utils
     
     GtkWidget  *approve_button, *cancel_button;
     approve_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_APPLY);
+    gtk_widget_set_size_request(approve_button, 70, 70);
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CANCEL);
-
+    gtk_widget_set_size_request(cancel_button, 70, 70);
         
     gtk_widget_set_tooltip_text (approve_button, "Accept Footstep Plan");
     gtk_widget_set_tooltip_text (cancel_button, "Cancel Footstep Plan");
@@ -93,7 +94,7 @@ namespace renderer_sticky_feet_gui_utils
     //GtkWidget * sep = gtk_vseparator_new ();  
     GtkToolItem * sep = gtk_separator_tool_item_new ();
     gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET (sep), FALSE, TRUE,10);
-    GtkWidget * label = gtk_label_new ("Footsteps:");
+    GtkWidget * label = gtk_label_new ("Step Plan:");
     gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, FALSE,0);
     gtk_box_pack_start (GTK_BOX (hbox), approve_button, FALSE, FALSE,0);
     gtk_box_pack_start (GTK_BOX (hbox), cancel_button, FALSE, FALSE,0);
@@ -101,7 +102,9 @@ namespace renderer_sticky_feet_gui_utils
 
   GtkToolItem * toolitem = gtk_tool_item_new ();   
   gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
-  gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 6);
+
+
+  gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 9);
   self->plan_approval_dock = GTK_WIDGET(toolitem);  
   std::cout << "running gtk_widget_show_all in plan approval gui spawn\n";
   gtk_widget_show_all (self->plan_approval_dock);

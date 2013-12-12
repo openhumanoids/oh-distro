@@ -305,19 +305,23 @@ namespace renderer_robot_plan_gui_utils
      }
 
     execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY);
+    gtk_widget_set_size_request(execute_button, 70, 70);
     self->plan_execute_button  =  execute_button;
     
     //compliant_execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CONNECT);
     if(self->robotPlanListener->is_manip_plan())
     {
       pause_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
+      gtk_widget_set_size_request(pause_button, 70, 70);
       gtk_widget_set_tooltip_text (pause_button, "Pause");
       //rewind_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_REWIND);
       //gtk_widget_set_tooltip_text (rewind_button, "Revert (Do Prev QuasiStatic Plan In Reverse)");
     }
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
+    gtk_widget_set_size_request(cancel_button, 70, 70);
 
     stop_walking_button =  (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_STOP);
+    gtk_widget_set_size_request(stop_walking_button, 70, 70);
     //stop_walking_button = (GtkWidget *) gtk_button_new_with_label(PARAM_STOP_WALKING);
 
     gtk_widget_set_tooltip_text (execute_button, "Execute Plan");
@@ -330,7 +334,7 @@ namespace renderer_robot_plan_gui_utils
     hbox = gtk_hbox_new (FALSE, 0);
     GtkToolItem * sep = gtk_separator_tool_item_new ();
     gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET (sep), FALSE, TRUE,10);
-    GtkWidget * label = gtk_label_new ("RobotPlan:");
+    GtkWidget * label = gtk_label_new ("               Manipulation:");
     gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, FALSE,0);    
     gtk_box_pack_start (GTK_BOX (hbox), execute_button, FALSE, FALSE, 3);
     if(self->robotPlanListener->is_multi_approval_plan())
@@ -348,8 +352,14 @@ namespace renderer_robot_plan_gui_utils
     }
     
     GtkToolItem * toolitem = gtk_tool_item_new ();   
-    gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
-    gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 6);
+    gtk_container_add (GTK_CONTAINER (toolitem), hbox);
+
+    if(self->robotPlanListener->is_walking_plan()) {  
+      gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 9);
+    }else{
+      gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 10);
+    }
+
     if(self->robotPlanListener->is_multi_approval_plan()){    
       if(self->plan_execution_dock!=NULL){ // kill other dock
         gtk_widget_destroy(self->plan_execution_dock);
