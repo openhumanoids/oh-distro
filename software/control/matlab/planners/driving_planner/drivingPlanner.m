@@ -114,7 +114,7 @@ classdef drivingPlanner
       end
     end
     
-    function xtraj = planner.createDrivingPulse(q0, ankle_position, duration, doAutoCommit);
+    function xtraj = createDrivingPulse(obj, q0, ankle_position, duration, doAutoCommit)
       N1 = 5;
       N2 = 6;
       N3 = 6;
@@ -152,7 +152,7 @@ classdef drivingPlanner
       T = max(1,max(abs(q0(obj.leg_joint_indices) - leg_angles))/speed);
       t_vec = linspace(0,T,N);
       
-      q_traj = repmat(q0,N);
+      q_traj = repmat(q0,1,N);
       q_traj(obj.leg_joint_indices,:) = repmat(q0(obj.leg_joint_indices),1,N) + (leg_angles-q0(obj.leg_joint_indices))*linspace(0,1,N);
       xtraj = PPTrajectory(foh(t_vec,[q_traj;0*q_traj]));
       
@@ -186,7 +186,7 @@ classdef drivingPlanner
       if max(abs(q_closest(obj.joint_indices) - q0(obj.joint_indices))) > .2
         % splice something onto the beginning
         N_splice = 5;
-        T0 = .5;
+        T0 = 5;
         t_splice = linspace(0,T0,N_splice);
         q_arm_splice = repmat(q0(obj.joint_indices),1,N_splice) + (q_closest(obj.joint_indices) - q0(obj.joint_indices))*linspace(0,1,N_splice);
         q_splice = repmat(q0,1,N_splice);

@@ -54,7 +54,7 @@ while true
     case drc.drill_control_t.DRIVING_PULSE
       if isempty(leg_zero_angles)
         send_status(4,0,0,'Leg zero angles must be set first');
-      elseif sizecheck(ctrl_data, [2 1])
+      elseif sizecheck(ctrl_data, [3 1])
         ankle_position = ctrl_data(1);
         duration = ctrl_data(2);
         doAutoCommit = ctrl_data(3); 
@@ -75,7 +75,7 @@ while true
         end
         xtraj = planner.createSteeringPlan(q0, steering_angle, steering_speed, steering_vec, q_vec, doAutoCommit);
       else
-        send_status(4,0,0,'Invalid size of control data. Expected 3x1');
+        send_status(4,0,0,'Invalid size of control data. Expected 2x1');
       end
     case drc.drill_control_t.REFIT_STEERING
       display('Refitting steering wheel, waiting for affordance');
