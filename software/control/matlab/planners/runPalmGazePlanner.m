@@ -48,7 +48,7 @@ end
 if r_hand_mode == 4
   T_palm_hand_r = inv(HT([0;-0.19016;-0.015],0,pi,pi));
 else
-  T_palm_hand_r = inv(HT([0;-0.11516;-0.015],pi/2,pi,0));
+  T_palm_hand_r = inv(HT([0;-0.11516;-0.015],pi/2,0,0));
 end
 %%
 lcm_mon = palmGazeLCMMonitor(atlas);
