@@ -1,4 +1,4 @@
-import lcm, os, sys, drc, math
+import lcm, os, sys, drc, math, time
 
 """
 Very simple neck controller that spools out neck pitch commands to the atlas driver.
@@ -30,6 +30,7 @@ class NeckControl:
             if abs(error) > self.deadband:
                 command.pitch = self.cur_neck_pitch + max(-self.delta_max,min(self.delta_max,error));
                 lc.publish("COMMANDED_NECK_PITCH", command.encode())
+                time.sleep(0.05) # publish at a lower rate
 
   
 def main():
