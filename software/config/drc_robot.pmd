@@ -398,3 +398,7 @@ script "robot_start" {
     wait ms 2000;
     start cmd "atlas-high";
 }
+
+script "kill_calibration_process" { 
+    stop cmd "EncoderCalibration";
+}
