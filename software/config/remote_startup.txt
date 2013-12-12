@@ -1,8 +1,8 @@
 On Robot and Extra machines:
 ROBOT:
-drc-network-shaper -t manipulation -r robot -c drc_robot_02.cfg -l -p /media/logs/raw/shaper
-bot-procman-deputy -n robot
-[[[[ not extra anymore ]]]]
+drc-network-shaper -t manipulation -r robot -c drc_robot_02.cfg -l -p /media/logs/raw/shaper &> /media/logs/raw/shaper/shaper_printf &
+bot-procman-deputy -n robot &> /media/logs/raw/shaper/deputy_printf &
+[[[[[ LOG OUT ]]]]
 
 BASE:
 bot-procman-deputy -n base
@@ -23,3 +23,7 @@ cd /home/drc/drc/software/tools/tools/scripts/TrafficMonitor
 Or for sent:
 signal-scope bandwidth_stats_base.json
 ./bwstats.py --side base --type sent
+
+
+==== finding robot processes ===
+ps -aux | egrep "shaper|deputy"
