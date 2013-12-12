@@ -57,6 +57,7 @@ protected:
     int mId;
     double mPeriod;
     int mQuality;
+    bool mEnabled;
     typedef std::shared_ptr<RequestControl> Ptr;
   };
 
@@ -885,10 +886,11 @@ public:
     group->mId = iId;
     group->mPeriod = 0;
     group->mQuality = 0;
+    group->mEnabled = false;
 
     Gtk::CheckButton* check = Gtk::manage(new Gtk::CheckButton());
     Gtk::Label* label = Gtk::manage(new Gtk::Label(iLabel,Gtk::ALIGN_LEFT));
-    Gtk::SpinButton* spin = createSpin(group->mPeriod,1,10,1);
+    Gtk::SpinButton* spin = createSpin(group->mPeriod,1,20,1);
     spin->set_digits(0);
     Gtk::Label* ageLabel = Gtk::manage(new Gtk::Label(" "));
     Gtk::ComboBox* combo = NULL;
@@ -898,12 +900,15 @@ public:
     // callbacks
     check->signal_toggled().connect
       ([check,spin,group]{
-        group->mPeriod = check->get_active() ? spin->get_value() : -1;
+        group->mEnabled = check->get_active();
+        group->mPeriod = group->mEnabled ? spin->get_value() : -1;
       });
     spin->signal_value_changed().connect
       ([check,spin,group]{
         group->mPeriod = check->get_active() ? spin->get_value() : -1;
       });
+    group->mEnabled = false;
+    group->mPeriod = -1;
     
     std::string safeLabel = iLabel;
     std::replace(safeLabel.begin(), safeLabel.end(), ' ', '_');
