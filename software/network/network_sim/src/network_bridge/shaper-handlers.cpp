@@ -74,7 +74,8 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
       dccl_(goby::acomms::DCCLCodec::get()),
       timer_(io_),
       work_(io_),
-      next_slot_t_(goby::common::goby_time())
+      next_slot_t_(goby::common::goby_time()),
+      latency_ms_(0)
 {   
     assert(floor_multiple_sixteen(1025) == 1024);
     dccl_->add_id_codec<DRCEmptyIdentifierCodec>("drc_header_codec");    
@@ -161,8 +162,23 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
     goby::glog.is(goby::common::logger::VERBOSE) && goby::glog << *dccl_ << std::endl;
 
+    drc::ShaperHeader full_header;
+    full_header.set_channel(0);
+    full_header.set_priority(0);
+    full_header.set_message_number(0);
+    full_header.set_fragment(0);
+    full_header.set_is_last_fragment(false);
+    full_header.set_message_size(0);
+    full_header.set_sent_millisec(0);
+    DRCEmptyIdentifierCodec::currently_decoded_id = dccl_->id<drc::ShaperHeader>();
+    full_header_overhead_ = dccl_->size(full_header);
 
+    std::string encoded_header;
+    dccl_->encode(&encoded_header, full_header);
+    assert(encoded_header.size() == full_header_overhead_);
     
+
+        
     
     const std::vector<Resend>& resendlist = app.resendlist();
     
@@ -448,6 +464,7 @@ void DRCShaper::data_request_handler(goby::acomms::protobuf::ModemTransmission* 
     drc::ShaperHeader header_msg = send_queue_.top().header();
     header_msg.set_sent_millisec((goby::common::goby_time<goby::uint64>()/1000) % LATENCY_MAX);
     dccl_->encode(frame, header_msg);
+
     (*frame) += send_queue_.top().data();
     
     int encoded_size = msg->frame(0).size();
@@ -475,8 +492,7 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
     {
         std::vector<unsigned char>& qmsg = it->second.messages.front();
 
-        static int overhead = dccl_->size(drc::ShaperHeader());
-        int payload_size = max_frame_size_-overhead;
+        int payload_size = max_frame_size_-full_header_overhead_;
 
         drc::ShaperPacket msg_frag;
         drc::ShaperHeader* msg_head = msg_frag.mutable_header();
@@ -484,7 +500,7 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
         int16_t fragment = 0;
         msg_head->set_channel(channel_id_.left.at(it->second.channel));
         msg_head->set_priority(priority);
-
+        
         if(qmsg.size() <= payload_size)
         {
             msg_frag.set_data(&qmsg[0], qmsg.size());
@@ -499,7 +515,7 @@ bool DRCShaper::fill_send_queue(std::map<std::string, MessageQueue >::iterator i
             receive_mod(it->second.message_count);
             msg_head->set_message_number(it->second.message_count);
 
-            payload_size = floor_multiple_sixteen(max_frame_size_-overhead);
+            payload_size = floor_multiple_sixteen(max_frame_size_-full_header_overhead_);
             while(qmsg.size() / payload_size < MIN_NUM_FRAGMENTS_FOR_FEC)
                 payload_size = floor_multiple_sixteen(payload_size-1);
 

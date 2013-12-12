@@ -109,8 +109,10 @@ template<typename WireType, typename FieldType = WireType>
               wire_value *= std::pow(10.0, precision());
 
               wire_value = goby::util::unbiased_round(wire_value, 0);
-              goby::acomms::Bitset bits(single_present_field_size(),
+              const unsigned PRESENCE_BIT = 1; 
+              goby::acomms::Bitset bits(single_present_field_size() - PRESENCE_BIT,
                                         goby::util::as<unsigned long>(wire_value));
+              
               bits.push_front(true);
               all_bits.append(bits);
           }
@@ -133,7 +135,8 @@ template<typename WireType, typename FieldType = WireType>
           std::vector<WireType> return_vec;
           while(bits->to_ulong())
           {
-              bits->get_more_bits(single_present_field_size());
+              const unsigned PRESENCE_BIT = 1; 
+              bits->get_more_bits(single_present_field_size()-PRESENCE_BIT);
               (*bits) >>= 1;
               unsigned long t = bits->to_ulong();
               WireType return_value = goby::util::unbiased_round(

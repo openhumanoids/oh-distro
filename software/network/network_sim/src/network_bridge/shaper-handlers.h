@@ -10,7 +10,7 @@
 
 enum { RECEIVE_MODULUS = 16 };    
 enum { MIN_NUM_FRAGMENTS_FOR_FEC = 3 };
-enum { LATENCY_MAX = 2550 };
+enum { LATENCY_MAX = 40940 };
 
 struct MessageQueue
 {
@@ -201,6 +201,8 @@ class DRCShaper
     std::map<int, int> latency_throughput_;
 
     int expected_packet_loss_percent_;
+
+    int full_header_overhead_;
     
     class ReceiveMessageParts
     {
