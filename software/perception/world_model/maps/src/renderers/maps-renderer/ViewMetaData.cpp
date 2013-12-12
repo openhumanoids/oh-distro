@@ -45,13 +45,13 @@ namespace {
     Globals() {
       add(data_request_t::OCTREE_SCENE, "Octree Scene", 0,0,0, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
-      add(data_request_t::HEIGHT_MAP_SCENE, "Height Scene", 1,0,0, 0,1,3,
+      add(data_request_t::HEIGHT_MAP_SCENE, "Scene Height", 1,0,0, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::HEIGHT_MAP_COARSE, "Height Coarse", 1,0.5,0, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::HEIGHT_MAP_DENSE, "Height Dense", 1,0.5,0, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
-      add(data_request_t::DEPTH_MAP_SCENE, "Depth Scene", 0.5,0,0.5, 0,1,3,
+      add(data_request_t::DEPTH_MAP_SCENE, "Scene Depth", 0.5,0,0.5, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
       add(data_request_t::DEPTH_MAP_WORKSPACE, "Workspace", 0,0,1, 0,1,3,
           MeshRenderer::ColorModeHeight, MeshRenderer::MeshModePoints,true);
