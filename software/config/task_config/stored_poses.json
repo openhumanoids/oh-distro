@@ -268,7 +268,41 @@
         "l_arm_usy": 0.20745250582695007, 
         "l_arm_uwy": 2.3330776691436768
       }, 
-      "name": "3 retract A", 
+      "name": "3 retract A - replace me with a plan. for now use eedriver", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": 0.002868529176339507, 
+        "back_bky": -0.0014862937387079, 
+        "back_bkz": 0.0007649775943718851, 
+        "l_arm_elx": 2.349802255630493, 
+        "l_arm_ely": 1.3452506065368652, 
+        "l_arm_mwx": 0.3801825940608978, 
+        "l_arm_shx": -0.8091128468513489, 
+        "l_arm_usy": 0.20745250582695007, 
+        "l_arm_uwy": 2.3330776691436768
+      }, 
+      "name": "3 retract B - (i)", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris", 
+      "joints": {
+        "back_bkx": 0.002868529176339507, 
+        "back_bky": -0.0014862937387079, 
+        "back_bkz": 0.0007649775943718851, 
+        "l_arm_elx": 2.349802255630493, 
+        "l_arm_ely": 1.3452506065368652, 
+        "l_arm_mwx": 0.3801825940608978, 
+        "l_arm_shx": -0.8091128468513489, 
+        "l_arm_usy": 0.20745250582695007, 
+        "l_arm_uwy": 2.3330776691436768
+      }, 
+      "name": "3 retract B - (ii)", 
       "nominal_handedness": "left"
     }, 
     {
@@ -443,7 +477,7 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "3 retract B", 
+      "description": "3 retract C", 
       "joints": {
         "back_bkx": 0.002868529176339507, 
         "back_bky": -0.0014862937387079, 
@@ -455,7 +489,7 @@
         "l_arm_usy": 0.20745250582695007, 
         "l_arm_uwy": 2.3330776691436768
       }, 
-      "name": "3 retract B", 
+      "name": "3 retract C", 
       "nominal_handedness": "left"
     }, 
     {
