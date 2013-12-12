@@ -105,7 +105,7 @@ draw_state(BotViewer *viewer, BotRenderer *super, uint i, float rgb[]){
 
 static void 
 draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
-
+   
   float c_blue[3] = {0.3,0.3,0.6}; // light blue
   float c_green[3] = {0.3,0.6,0.3}; // green
   float c_red[3] = {1.0,0.1,0.1}; // red
@@ -147,7 +147,9 @@ draw_keyframe(BotViewer *viewer, BotRenderer *super, uint i){
   } 
   else if(!markeractive)
   {
-  	if(((*self->selection)  != " ")&&(self->selected_keyframe_index!=-1))
+  	if(((*self->selection)  != " ")
+  	    &&(self->selected_keyframe_index!=-1)
+  	    &&(self->selected_keyframe_index < self->robotPlanListener->_gl_robot_keyframe_list.size()))
 	   selected_keyframe_name = self->robotPlanListener->_gl_robot_keyframe_list[self->selected_keyframe_index]->_unique_name; 
     self->robotPlanListener->_gl_robot_keyframe_list[i]->highlight_body(selected_keyframe_name);
     self->robotPlanListener->_gl_robot_keyframe_list[i]->draw_body(c,alpha);
