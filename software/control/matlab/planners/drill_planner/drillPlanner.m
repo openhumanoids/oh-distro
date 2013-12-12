@@ -75,7 +75,7 @@ classdef drillPlanner
 
       cost = ones(34,1);
       cost([1 2 6]) = 5000*ones(3,1);
-      cost(3) = 200;
+      cost(3) = 10;
       cost(back_joint_indices) = [100;1000;100];
       
       vel_cost = cost*.05;
@@ -270,7 +270,7 @@ classdef drillPlanner
     % Create a plan starting from q0 to get the drill to x_drill
     % satisfies the drill gaze constraint only for t=T
     function [xtraj,snopt_info,infeasible_constraint] = createInitialReachPlan(obj, q0, x_drill, T, qseed)
-      N = 5;
+      N = 10;
       t_vec = linspace(0,T,N);
       
       if nargin < 5
