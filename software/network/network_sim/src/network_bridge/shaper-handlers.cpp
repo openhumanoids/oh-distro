@@ -645,12 +645,14 @@ void DRCShaper::udp_data_receive(const goby::acomms::protobuf::ModemTransmission
             if(message_parts.decoder_done())
             {
                 // already done and published, just add for statistics
-                message_parts.add_fragment(packet);            
+                if(!message_parts.add_fragment(packet))
+                    this_queue.erase(packet.header().message_number());
             }
             else
             {
-                message_parts.add_fragment(packet);
-                if(message_parts.decoder_done())
+                if(!message_parts.add_fragment(packet))
+                    this_queue.erase(packet.header().message_number());
+                else if(message_parts.decoder_done())
                 {
                     std::vector<unsigned char> buffer(packet.header().message_size());
                     message_parts.get_decoded(&buffer);
@@ -694,7 +696,18 @@ void DRCShaper::publish_receive(std::string channel,
             lcm_->publish("ROBOT_UTIME", &t);
         }
         
-        channel = "EST_ROBOT_STATE";
+
+        static int64_t newest_ers_utime = 0;
+
+        if(newest_ers_utime > robot_state.utime)
+        {
+            glog.is(WARN) && glog << group("ch-pop") << "EST_ROBOT_STATE message received with older time than latest ... discarding message." << std::endl;
+            return;
+        }
+        else
+        {
+            newest_ers_utime = robot_state.utime;
+        }
     }
     
     glog.is(VERBOSE) && glog << group("publish")
@@ -826,7 +839,7 @@ void DRCShaper::post_bw_stats()
 
 
 
-void DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& message)
+bool DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& message)
 {
     fragments_[message.header().fragment()] = message;
     
@@ -840,7 +853,7 @@ void DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& messa
     
     
     if(decoder_done_)
-        return;
+        return true;
     
     int dec_done = decoder_->processPacket(
         reinterpret_cast<uint8_t*>(&fragments_[message.header().fragment()].mutable_data()->at(0)),
@@ -850,15 +863,22 @@ void DRCShaper::ReceiveMessageParts::add_fragment(const drc::ShaperPacket& messa
     {
         case 0:
             if(message.header().is_last_fragment())
+            {
                 glog.is(WARN) && glog << group("rx") << "Error: ldpc got last sent packet, but thought it wasn't done decoding!" << std::endl;
-            return;
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         case 1:
             decoder_done_ = true;
             glog.is(VERBOSE) && glog << group("rx") << "Decoder done!" << std::endl;
-            return;
+            return true;
+            
         default:
             glog.is(WARN) && glog << group("rx") << "Error: ldpc got all the sent packets, but couldn't reconstruct... this shouldn't happen!" << std::endl;
-            return;
+            return false;
     }    
 }
 

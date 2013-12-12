@@ -5,7 +5,7 @@ package drc;
 
 message MinimalRobotPlan
 {
-  option (dccl.msg).max_bytes = 20000;
+  option (dccl.msg).max_bytes = 200000;
   option (dccl.msg).id = 0xD4C0006;
   
   required double utime = 1 [(dccl.field) = { min: 0 max: 1450000000e6 precision: -3 }];

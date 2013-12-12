@@ -211,7 +211,7 @@ class DRCShaper
           : decoder_done_(false)
         {  }
         
-        void add_fragment(const drc::ShaperPacket& fragment);
+        bool add_fragment(const drc::ShaperPacket& fragment);
         bool decoder_done() { return decoder_done_; }
         void get_decoded(std::vector<unsigned char>* buffer)
         {
