@@ -101,8 +101,8 @@ bool RobotStateCodec::to_minimal_state(const drc::robot_state_t& lcm_object,
     {
         for(int i = 0, n = lcm_object.joint_effort.size(); i < n; ++i)
         {
-            // only the arms
-            if(lcm_object.joint_name[i].find("_arm_") != std::string::npos)
+            // only the arms and back
+            if(lcm_object.joint_name[i].find("_arm_") != std::string::npos || lcm_object.joint_name[i].find("back_") != std::string::npos)
                 dccl_state->add_twice_joint_effort(lcm_object.joint_effort[i]*2);            
         } 
     }
@@ -173,7 +173,7 @@ bool RobotStateCodec::from_minimal_state(drc::robot_state_t* lcm_object,
         int j = 0;
         for(int i = 0, n = lcm_object->joint_name.size(); i < n; ++i)
         { 
-            if(lcm_object->joint_name[i].find("_arm_") != std::string::npos)
+            if(lcm_object->joint_name[i].find("_arm_") != std::string::npos || lcm_object->joint_name[i].find("back_") != std::string::npos)
             {
                 lcm_object->joint_effort[i] = (float)dccl_state.twice_joint_effort(j++)/2;
                 if(j >= dccl_state.twice_joint_effort_size())
