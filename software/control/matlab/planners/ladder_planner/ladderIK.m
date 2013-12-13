@@ -177,10 +177,13 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
 
 
   if ladder_opts.use_pelvis_gaze_constraint
-    basic_constraints = [ ...
-      basic_constraints, ...
-      {WorldGazeDirConstraint(r,pelvis,[0;0;1],[0;0;1],ladder_opts.pelvis_gaze_threshold)}];
-    pelvis_gaze_constraint_idx = length(basic_constraints);
+%    basic_constraints = [ ...
+%      basic_constraints, ...
+%      {WorldGazeDirConstraint(r,pelvis,[0;0;1],[0;0;1],ladder_opts.pelvis_gaze_threshold)}];
+    pelvis_constraint = PostureConstraint(r);
+    pelvis_constraint = pelvis_constraint.setJointLimits((4:6)',q0(4:6)-ladder_opts.pelvis_gaze_threshold,q0(4:6)+ladder_opts.pelvis_gaze_threshold);
+    basic_constraints = [basic_constraints, {pelvis_constraint}];
+    pelvis_euler_constraint_idx = length(basic_constraints);
   end
 
   rpy_tol_max = 30*pi/180;
@@ -358,15 +361,16 @@ function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_
       nt_init = floor(nt/4);
       dt = mean(diff(ts));
       t_init = 0:dt:nt_init*dt;
-      t_init_coarse = linspace(t_init(1),t_init(end),3);
+%      t_init_coarse = linspace(t_init(1),t_init(end),3);
       q_init_nom = PPTrajectory(foh([t_init(1),t_init(end)],[q0,q(:,1)]));
-      constraints(pelvis_gaze_constraint_idx) = [];
-      [x_init_traj,info,infeasible] = inverseKinTraj(r,t_init_coarse, ...
-        q_init_nom, ...
-        q_init_nom, ...
-        constraints{:},ikoptions);
-      x_init = eval(x_init_traj,t_init);
-      q_init = x_init(1:nq,:);
+%      constraints(pelvis_gaze_constraint_idx) = [];
+%      [x_init_traj,info,infeasible] = inverseKinTraj(r,t_init_coarse, ...
+%        q_init_nom, ...
+%        q_init_nom, ...
+%        constraints{:},ikoptions);
+%      x_init = eval(x_init_traj,t_init);
+%      q_init = x_init(1:nq,:);
+      q_init = eval(q_init_nom,t_init);
     end
     q_seed = q(:,i);
     constraint_array{i} = constraints;
