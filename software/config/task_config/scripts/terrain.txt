@@ -26,24 +26,32 @@ during physical prep
 during run prep
 ---------------
 
+
 when in place, but before clock starts
 --------------------------------------
 
-??? reset pelvis params to defaults - including pressing reset button
-??? set BDI height mode?
-
-* switch to manip to trigger the pitch
 * Preset to BDI Obstacle Stepping
 * Show EE forces ON
-* Verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
-* Scene height on request
-* Workspace depth every 5s
-* Head to 55 degrees
-* Flat ground terrain map
+* Turn on show step details
+* Set scene height to on request
+* Set workspace depth rate to 10 sec
+* Set field of view to 80
+* Set map mode to flat ground
+
+* Wingman: turn footstep renderer ON
+
+* Calibrate
+* Prep, and wait for team to lower the bot
+* Stand
+* Go to manip mode to trigger roll glitch
+* Go to stand
+* Head to 65 degrees
+
 * Move to correct starting position
+
 * Full heights terrain map
-* Spline
-* Left lead
+* Set path to spline 
+* Left leading foot
 * Make footstep plan from start to peak of ramp
 	* CHECK: verify that transitional step from flat to ramp has good normal & height
 
@@ -56,6 +64,11 @@ once run starts
 * Walk down ramp and onto zig zag blocks
 * Step down from zig zag blocks
 
+during ramp
+-----------
+
+* stop before top
+
 
 during flat steps
 -----------------
@@ -63,8 +76,40 @@ during flat steps
 	* Left lead
 	* 2 steps at a time
 	* 35cm forward step
+* At peak:
+    * Keep toe one and a half boxes back from edge
 * Descent:
 	* Stay at least 1.5 boxes back from front edges of steps!
+
+
+during tilted steps
+-------------------
+
+* Set max number of steps to two
+* Set nominal forward step to 35cm
+
+* Ascent:
+    * Say, "Robin, give me an audible upon reaching peak"
+
+* At peak:
+    * Disable toe-off
+    * Check that next block is down
+    * Switch leading foot to right
+    * Keep toe one and a half boxes back from edge
+
+* At last step:
+    * Switch to manip
+    * Robin set BDI sway duration to 5 seconds
+    * Scott set pelvis to height 90, pitch as needed to see toes
+    * Ensure that right food forward displacement is <= 27cm
+    * Scott restore pelvis parameters
+    * Switch back to stand
+    * Check footsteps
+
+* On reaching flat ground:
+    * Switch to BDI step preset
+    * Set map mode to flat ground
+    * Step calmly across finish
 
 after run ends
 --------------
