@@ -4,9 +4,9 @@ TERRAIN TASK
 ============
 
 Operator: Robin
-Wingman: Scott or Andres
+Wingman: Scott
 Monitor: ???
-Field team: ????
+Field team: Matt D. (wrangler), Andres backup wrangler, Steve
 
 
 day before
@@ -30,6 +30,8 @@ during run prep
 when in place, but before clock starts
 --------------------------------------
 
+* Robot power
+
 * Preset to BDI Obstacle Stepping
 * Show EE forces ON
 * Turn on show step details
@@ -46,11 +48,13 @@ when in place, but before clock starts
 * Go to manip mode to trigger roll glitch
 * Go to stand
 * Head to 65 degrees
+* Turn off debug map view
+* Set scene height view to wireframe
 
 * Move to correct starting position
 
-* Full heights terrain map
-* Set path to spline 
+* Set map mode to full heights
+* Set path to spline
 * Left leading foot
 * Make footstep plan from start to peak of ramp
 	* CHECK: verify that transitional step from flat to ramp has good normal & height
@@ -85,6 +89,7 @@ during flat steps
 during tilted steps
 -------------------
 
+* Set map mode to full heights
 * Set max number of steps to two
 * Set nominal forward step to 35cm
 
@@ -101,6 +106,7 @@ during tilted steps
     * Switch to manip
     * Robin set BDI sway duration to 5 seconds
     * Scott set pelvis to height 90, pitch as needed to see toes
+      [Wait until can see toes]
     * Ensure that right food forward displacement is <= 27cm
     * Scott restore pelvis parameters
     * Switch back to stand
