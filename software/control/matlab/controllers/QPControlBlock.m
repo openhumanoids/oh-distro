@@ -579,7 +579,7 @@ classdef QPControlBlock < MIMODrakeSystem
         Aeq_fqp = full(Aeq);
 
         %% NOTE: model.obj is 2* f for fastQP!!!
-        [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Aeq_fqp,beq,Ain_fqp,bin_fqp,ctrl_data.qp_active_set);
+        [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
       else
         info_fqp = -1;
       end
@@ -597,7 +597,7 @@ classdef QPControlBlock < MIMODrakeSystem
         model.obj = fqp;
         if ~isempty(model.A) && obj.solver_options.method==2
           % see drake/algorithms/test/mygurobi.m
-          model.obj = 2*model.obj;
+          model.Q = .5*model.Q;
         end
 
         if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
@@ -610,11 +610,6 @@ classdef QPControlBlock < MIMODrakeSystem
 %         fprintf('QP solve: %2.4f\n',qp_toc);
       
         alpha = result.x;
-
-        if isempty(model.A) && obj.solver_options.method==2
-          % see drake/algorithms/test/mygurobi.m
-          alpha = alpha/2;
-        end
       end
         
       qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
