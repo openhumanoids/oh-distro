@@ -1032,7 +1032,7 @@ public:
     msg.active = true;
 
     // bounding planes
-    msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, 0}));
+    msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, 1}));
     msg.clip_planes.push_back(std::vector<float>({-1, 0, 0, 2}));
     msg.clip_planes.push_back(std::vector<float>({ 0, 1, 0, 2}));
     msg.clip_planes.push_back(std::vector<float>({ 0,-1, 0, 2}));
@@ -1057,7 +1057,7 @@ public:
 
     // adjustment for yaw and pitch
     Eigen::AngleAxisf angleAxis;
-    angleAxis = Eigen::AngleAxisf((90-vFovDeg/2)*kDegToRad,
+    angleAxis = Eigen::AngleAxisf((10 + (90-vFovDeg/2))*kDegToRad,
                                   Eigen::Vector3f(0,1,0));
     pose = angleAxis*pose;
     angleAxis = Eigen::AngleAxisf(-mWorkspaceDepthYaw*kDegToRad,
