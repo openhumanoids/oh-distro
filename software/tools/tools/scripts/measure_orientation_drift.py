@@ -49,7 +49,7 @@ def on_ers(channel, data):
   m = robot_state_t.decode(data)
 
   delta = (m.utime - s.prev_utime)/1E6
-  if (delta < 10):
+  if (delta < 1):
     return
 
 
@@ -60,9 +60,9 @@ def on_ers(channel, data):
   velocity = math.sqrt(pow(xyz[0]-s.prev_xyz[0],2) + pow(xyz[1]-s.prev_xyz[1],2) + pow(xyz[2]-s.prev_xyz[2],2) )/delta
 
   delta_rpy=[0,0,0]
-  delta_rpy[0] = abs(rpy[0] - s.prev_rpy[0])
-  delta_rpy[1] = abs(rpy[1] - s.prev_rpy[1])
-  delta_rpy[2] = abs(rpy[2] - s.prev_rpy[2])
+  delta_rpy[0] = (rpy[0] - s.prev_rpy[0])
+  delta_rpy[1] = (rpy[1] - s.prev_rpy[1])
+  delta_rpy[2] = (rpy[2] - s.prev_rpy[2])
 
   #doPrint()
   if (delta < 100000):
