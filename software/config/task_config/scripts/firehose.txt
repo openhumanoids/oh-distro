@@ -4,7 +4,7 @@ FIREHOSE TASK
 Operator: Maurice
 Wingman: Pat
 Monitor: Matt A.
-Field team: Steve, Matt D., XXX, XXX, XXX
+Field team: Matt D. wrangling, Steve, Russ field lead, XXX
 
 
 remaining practices
@@ -17,40 +17,106 @@ Aim for a 15-minute time in case we need an intervention
 
 day before
 ----------
-run series of tests on iRobot hands to make sure they are behaving in an 
-expected way
-
+test iRobot hands to make sure they are behaving as expected
 
 before clock starts
 -------------------
+
+run encoder calibration
+pat set up data control
+*** in KeyframePlanner.m, ensure that "encoders" variable is set to zero
 calibrate hands
-reset pelvis params to defaults - including pressing reset button
+reset pelvis parameters to defaults - press Send
 start the simple grasp script
-disable BDI height mode in planning and control
-verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
+close robotiq hand for duration
+
+start the robot
+calibrating encoders
+kill calibration process
+run BDI calibration
+run prep
+drop robot
+
+[AWAIT word from field that slack has been established]
+
+go to stand
+
+go to manip to provoke roll glitch
+[ SKIP height to 66cm to spool belay ]
+
+go to stand
+set rough walking goal near hose
+
+Get DARPA OK to start clock
+start clock
 
 upon task start
 ---------------
 
-turn back
+walk to near the hose
+head down during approach
+on arrival, Pat fit nozzle affordance
+
+set precision walking goal
+walk there
+
+go to manip
+set pelvis height to 79cm
+
+send back left posture
+
 go to shooter
-fit hand facing into the XXX
+  [move right hand slightly further away?]
+
+refit affordance
+adjust sticky hand to top of nozzle
+
 reach
 teleop into contact
+try to align top of single finger with top of collar
 close hand slowly
-pull hose down and to the left
-move arm to walking pose
-walk backwards to the right to straighten the hose out. hopefully it will unspool
-walk to wye valve.
-PAT: fit the wye early and often
-When just short of the wall, tuck the right hand behind the robot "tuckarm"
+
+EE teleop to down and left (and lower pelvis to XXX cm)
+
+move arm to "walking with hose", execute slowly
+zero the back joint
+verify that raising pelvis is safe
+
+slowly raise pelvis, then go to stand
+
+set walking goal behind and right; walk
+  check for hose unspool
+
+turn to bring wye into view
+set walking goal for wye approach; walk
+pat update wye fit
+lower camera to hand
+
+Send right arm pose "tuckarm"
+
 finish walking to triad
-turn back to the left
+
+send back left posture
+
+send sucker punch posture [choose which one]
+
+go to manip
+
+reach so that single finger is facing camera
+  pat: advise pelvis height needed to match hose and wye height
+  pat: advise pelvis yaw
+  pat: advise EE teleop needed for contact
+  pat: advise pelvis yaw
+
+await confirmation that we've scored point
 
 touch nozzle to wye valve
+
 jam nozzle onto wye valve
 
+do 10% ungrasp
 
+AT END: close robotiq hand at end of experiment
 
 todo
 ----
