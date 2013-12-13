@@ -26,6 +26,7 @@ determine orientation of drill (two drills) on table
 seed sticky hand (and feet?) as appropriate
 
 
+
 during run prep
 ---------------
 
@@ -36,7 +37,7 @@ mount iRobot hand slightly to right of center
 
 when in place, but before clock starts
 --------------------------------------
-
+start audio server
 in KeyframePlanner.m, ensure that "encoders" variable is set to zero
 [possible: disable motion safety checks]
 
@@ -44,9 +45,10 @@ run joint calibration
 run BDI calibration
 [merge start audio server item]
 in a.2.P_and_C, kill EncoderCalibration
+run drc-joint-monitor
+start signal scope
 go to prep
 lower the robot
-
 stand
 stand for a minute to let IMU converge ?
 pat, check IMU yaw rate
@@ -145,19 +147,7 @@ remove hand, stow on head (depends on next task)
 todo
 ----
 
-practice drill grasp orientation
-
-add walking goal to drill affordance, determine orientation
-
-need better plans to get the hand up and away from the table
-
-add ee-driver support to robotiq hand
-
-plans not going through
-
 make slightly smaller drill target triangle affordance
-
-TODO
  
 Pat, add slider to adjust drill depth in hand
 
