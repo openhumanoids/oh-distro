@@ -1379,6 +1379,12 @@ Extender is 8" - 0.2047m long
 Newer extender is 6" - 0.1524m
 robotiq = 0.19016 +  0.1524 = 0.39486
 irobot  = 0.11516 +  0.1524 = 0.26756
+
+8 dec:
+rotated robotiq to match an irobot orientation on the right
+
+12 dec:
+added visual element for cylinder
 -->
   <joint name="left_finger[0]/joint_flex" type="revolute">
     <parent link="left_finger[0]/proximal_link"/>
@@ -1964,14 +1970,45 @@ irobot  = 0.11516 +  0.1524 = 0.26756
     <axis xyz="0 0 1"/>
     <origin rpy="0 0 1.57" xyz="0.0455 0.0214 0"/>
   </joint>
+  <link name="left_extender">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 .0862"/>
+      <geometry>
+        <cylinder length="0.184" radius="0.03"/>
+      </geometry>
+      <material name="left_extender">
+        <color rgba="0.835 0.655 0.345 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="left_extender_fixed_joint" type="fixed">
+    <parent link="l_hand"/>
+    <child link="left_extender"/>
+    <origin rpy="1.57079 1.57079 3.141" xyz="0 0.11516 0.015"/>
+  </joint>
+  <link name="right_extender">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 -.0862"/>
+      <geometry>
+        <cylinder length="0.184" radius="0.03"/>
+      </geometry>
+      <material name="right_extender">
+        <color rgba="0.835 0.655 0.345 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="right_extender_fixed_joint" type="fixed">
+    <parent link="r_hand"/>
+    <child link="right_extender"/>
+    <origin rpy="1.57079 1.57079 3.141" xyz="0 -0.11516 -0.015"/>
+  </joint>
   <!-- if using other combo
   <xacro:irobot_hand side="right" parent="r_hand" reflect="1">
     <origin rpy="1.57079 0 3.141" xyz="0 -0.26756 -0.015"/>
   </xacro:irobot_hand>
 
 
-0 3.141 3.141 - 90 out
-
+robotiq not done
 -->
 </robot>
 

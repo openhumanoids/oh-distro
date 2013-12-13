@@ -33,6 +33,9 @@ irobot  = 0.11516 +  0.1524 = 0.26756
 
 8 dec:
 rotated robotiq to match an irobot orientation on the right
+
+12 dec:
+added visual element for cylinder
 -->
 
 
@@ -48,6 +51,41 @@ rotated robotiq to match an irobot orientation on the right
     <origin rpy="0 1.57079 3.141" xyz="0 -0.34256 -0.015"/>
   </xacro:robotiq_hand>
 
+
+
+  <link name="left_extender">
+    <visual>
+      <origin rpy="0 0 0" xyz = "0 0 .0862"/>
+      <geometry>
+        <cylinder length="0.184" radius="0.03"/>
+      </geometry>
+      <material name="left_extender">
+        <color rgba="0.835 0.655 0.345 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="left_extender_fixed_joint" type="fixed">
+    <parent link="l_hand"/>
+    <child link="left_extender"/>
+    <origin rpy="1.57079 1.57079 3.141" xyz="0 0.11516 0.015"/>
+  </joint>
+
+  <link name="right_extender">
+    <visual>
+      <origin rpy="0 0 0" xyz = "0 0 -.0862"/>
+      <geometry>
+        <cylinder length="0.184" radius="0.03"/>
+      </geometry>
+      <material name="right_extender">
+        <color rgba="0.835 0.655 0.345 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="right_extender_fixed_joint" type="fixed">
+    <parent link="r_hand"/>
+    <child link="right_extender"/>
+    <origin rpy="1.57079 1.57079 3.141" xyz="0 -0.11516 -0.015"/>
+  </joint>
 
 
 
