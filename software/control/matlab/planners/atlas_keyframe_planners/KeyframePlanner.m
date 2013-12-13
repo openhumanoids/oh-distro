@@ -116,11 +116,12 @@ classdef KeyframePlanner < handle
             obj.T_hand_palm_r_hose_irobot = HT([0;-0.11516;-0.015],1.57079,1.57079,0);
             
             obj.T_hand_palm_l_robotiq = HT([0;0.11516;0.015],0,0,0);
-            obj.T_hand_palm_r_robotiq = HT([0;-0.11516;-0.015],0,3.14159,3.14159);
+            % mfallon changed this on 13dec2013
+            obj.T_hand_palm_r_robotiq = HT([0;-0.19016;-0.015],0,1.57079,3.14159);
             
 
             % Hands with 6 inch extenders - 6 Dec 2013, mfallon:
-            % mod1: rotates irobots by 180 due to calbe length
+            % mod1: rotates irobots by 180 due to cable length
             extenders =0;
             if (extenders ==1)
               send_status(2,0,0,'Planner is assuming Arm extenders. Careful!');
