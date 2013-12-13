@@ -62,7 +62,7 @@ cut_lengths = sum((drill_points(:,2:end) - drill_points(:,1:end-1)).*(drill_poin
 
 short_cut = .05;
 long_cut = .05;
-target_radius = .08;
+target_radius = .04;
 predrill_distance = .12;
 
 xtraj_nominal = []; %to know if we've got a plan
