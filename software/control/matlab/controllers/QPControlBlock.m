@@ -595,8 +595,8 @@ classdef QPControlBlock < MIMODrakeSystem
         model.ub = ub;
 
         model.obj = fqp;
-        if ~isempty(model.A) && obj.solver_options.method==2
-          % see drake/algorithms/test/mygurobi.m
+        if obj.solver_options.method==2
+          % see drake/algorithms/QuadraticProgram.m solveWGUROBI
           model.Q = .5*model.Q;
         end
 
