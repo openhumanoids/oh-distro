@@ -425,8 +425,6 @@ static void on_stop_manipulation_clicked(GtkToggleToolButton *tb, void *user_dat
   msg.control = 0;
   
   drc_plan_control_t_publish( lcm, "COMMITTED_PLAN_PAUSE", &msg);
-
-  std::cout <<"fdsfdsdfsfasd\n";
 }
 
 
