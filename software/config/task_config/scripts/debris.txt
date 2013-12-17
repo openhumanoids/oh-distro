@@ -1,13 +1,3 @@
-what if shaper crashes? how do we restart with low bandwidth
-remove plan motion affordances as required
-
-goto 2 over reaches
-piece 2 - use back for mid-retract
-
-need better plan for reach 3
-------------------------------------------
-
-
 DEBRIS TASK
 
 Operator: Maurice
@@ -28,6 +18,8 @@ verify that pat can visualise affordance motion in plans
 verify that planner is expecting hand extensions
 make sure "plan & control w BDI height" checkbox is turned OFF
   MAURICE -- local change to planner hardcoded parameters
+
+IMPORTANT: for practice run use the "Fixed Joints" mode of the planner.
 
 verify that pieces are leaning in the expected way
 flat, up right, up left, up right, up left

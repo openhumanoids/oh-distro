@@ -182,7 +182,7 @@
     }, 
     {
       "allow_mirror": true, 
-      "description": "1 retract D", 
+      "description": "1 retract C", 
       "joints": {
         "l_arm_elx": 0.40840578079223633, 
         "l_arm_ely": 3.141590118408203, 
@@ -191,7 +191,7 @@
         "l_arm_usy": -0.6677414774894714, 
         "l_arm_uwy": 0.017822623252868652
       }, 
-      "name": "1 retract D", 
+      "name": "1 retract C", 
       "nominal_handedness": "left"
     }, 
     {
@@ -708,6 +708,85 @@
         "l_arm_uwy": 0.3363243341445923
       }, 
       "name": "5 retract E", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "2 retract A - alt", 
+      "joints": {
+        "back_bkx": -0.10000000149011612, 
+        "back_bky": 0.10000000149011612, 
+        "back_bkz": -0.18000000715255737, 
+        "l_arm_elx": 0.4729999899864197, 
+        "l_arm_ely": 2.1659998893737793, 
+        "l_arm_mwx": -1.1790000200271606, 
+        "l_arm_shx": -1.0329999923706055, 
+        "l_arm_usy": -0.09000000357627869, 
+        "l_arm_uwy": 2.3489999771118164
+      }, 
+      "name": "2 retract A - alt", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "3 retract A", 
+      "joints": {
+        "back_bkx": -0.03400000184774399, 
+        "back_bky": 0.09200000017881393, 
+        "back_bkz": -0.6629999876022339, 
+        "l_arm_elx": 1.718999981880188, 
+        "l_arm_ely": 2.0290000438690186, 
+        "l_arm_mwx": 0.3659999966621399, 
+        "l_arm_shx": 0.5049999952316284, 
+        "l_arm_usy": -0.33000001311302185, 
+        "l_arm_uwy": 0.024000000208616257
+      }, 
+      "name": "3 retract A", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "4 retract B alt 2", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0, 
+        "l_arm_elx": 1.004997968673706, 
+        "l_arm_ely": 1.647919774055481, 
+        "l_arm_mwx": 1.1780999898910522, 
+        "l_arm_shx": -0.10940307378768921, 
+        "l_arm_usy": -0.971869707107544, 
+        "l_arm_uwy": 0.18606698513031006
+      }, 
+      "name": "4 retract B alt 2", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "4 retract C", 
+      "joints": {
+        "back_bkx": -0.10000000149011612, 
+        "back_bky": 0.09959252178668976, 
+        "back_bkz": 0.663224995136261
+      }, 
+      "name": "4 retract C", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "4 retract D", 
+      "joints": {
+        "back_bkx": -0.10000000149011612, 
+        "back_bky": 0.09959252178668976, 
+        "back_bkz": 0.663224995136261, 
+        "l_arm_elx": 1.2981849908828735, 
+        "l_arm_ely": 1.2871520519256592, 
+        "l_arm_mwx": -0.3267848491668701, 
+        "l_arm_shx": 0.03982412815093994, 
+        "l_arm_usy": 0.03972189500927925, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "4 retract D", 
       "nominal_handedness": "left"
     }
   ], 
