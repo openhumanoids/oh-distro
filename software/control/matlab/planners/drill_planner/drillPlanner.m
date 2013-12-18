@@ -74,9 +74,9 @@ classdef drillPlanner
       
 
       cost = ones(34,1);
-      cost([1 2 6]) = 5000*ones(3,1);
+      cost([1 2 6]) = 50*ones(3,1);
       cost(3) = 10;
-      cost(back_joint_indices) = [100;1000;100];
+      cost(back_joint_indices) = [1000;2000;500];
       
       vel_cost = cost*.05;
       accel_cost = cost*.05;

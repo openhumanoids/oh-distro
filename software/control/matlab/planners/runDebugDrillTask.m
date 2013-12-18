@@ -30,7 +30,7 @@ end
 use_simulated_state = false;
 useVisualization = false;
 publishPlans = true;
-useRightHand = true;
+useRightHand = false;
 allowPelvisHeight = true;
 lcm_mon = drillTaskLCMMonitor(atlas, useRightHand);
 
@@ -46,7 +46,11 @@ drill.guard_pos = [    0.15
   drill.drill_axis = [1;0;0];
   th = 60+180;
   drill.drill_axis = [cosd(th);0;sind(th)];
-  drill.guard_pos = [0;-.25;0] + .15*drill.drill_axis;
+  if useRightHand
+    drill.guard_pos = [0;-.25;0] + .15*drill.drill_axis;
+  else
+    drill.guard_pos = [0;.25;0] + .15*drill.drill_axis;
+  end
   
 end
 
@@ -97,12 +101,12 @@ wall_z = [0;0;1];
 wall_z = wall_z - wall_z'*wall.normal*wall.normal;
 wall_z = wall_z/norm(wall_z);
 wall_y = cross(wall_z, wall.normal);
-
-q0_init(1:3) = target_centroid - wall.normal*.8 - .2*wall_z + .0*wall_y;
-q0_init(6) = atan2(wall.normal(2), wall.normal(1));
+      
+q0_init(1:3) = target_centroid - wall.normal*.7 - .2*wall_z + .0*wall_y;
+q0_init(6) = atan2(wall.normal(2), wall.normal(1)) + .3;
 
 depth_increase = .05;
-target_expansion = .1;
+target_expansion = .08 ;
 drill_points_expanded = drill_points;
 for i=1:size(drill_points_expanded,2),
   drill_points_expanded(:,i) = drill_points_expanded(:,i) + target_expansion*(drill_points_expanded(:,i) - target_centroid)/norm(drill_points_expanded(:,i) - target_centroid) + wall.normal*depth_increase;
@@ -112,7 +116,7 @@ if ~use_simulated_state
   q0 = lcm_mon.getStateEstimate();
   q0_init(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices])) = q0(setdiff(1:r.num_q,[1; 2; 6; drill_pub.joint_indices]))
 end
-[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, .1);
+[xtraj_nominal,snopt_info_nominal,infeasible_constraint_nominal] = drill_pub.findDrillingMotion(q0_init, drill_points_expanded, true, 0);
 
 
 %% move the arm before walking
@@ -167,7 +171,7 @@ if ~isempty(xtraj_nominal)
   qseed(drill_pub.joint_indices) =  x_nom_end(drill_pub.joint_indices);
 end
 
-x_drill_reach = wall.targets(:,1) - .1*wall.normal;
+x_drill_reach = wall.targets(:,1) - .12*wall.normal;
 
 [xtraj_reach,snopt_info_reach,infeasible_constraint_reach] = drill_pub.createInitialReachPlan(q0, x_drill_reach, 5, qseed);
 
