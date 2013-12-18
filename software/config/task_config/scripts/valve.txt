@@ -19,6 +19,9 @@ check that hands are as desired (poker, iRobot?)
 during run prep
 ---------------
 
+* Log out of all open ssh sessions
+calibrate
+prep
 switch to manip to trigger the pitch
 
 

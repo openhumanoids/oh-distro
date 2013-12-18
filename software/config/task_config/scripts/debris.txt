@@ -13,7 +13,7 @@ verify robot came up with correct arm config
    look at arms and legs - are there any joint errors?
 did system status messages indicate: irobot left, robotiq right?
 calibrate left hand.  watch for visual movement and system status msgs
-SKIP create a box and have the planner reach with both hands to it
+  SKIP create a box and have the planner reach with both hands to it
 verify that pat can visualise affordance motion in plans
 verify that planner is expecting hand extensions
 make sure "plan & control w BDI height" checkbox is turned OFF
@@ -24,6 +24,7 @@ IMPORTANT: for practice run use the "Fixed Joints" mode of the planner.
 verify that pieces are leaning in the expected way
 flat, up right, up left, up right, up left
 
+* Log out of all open ssh sessions
 run calibrate
 run prep
 run stand
@@ -32,6 +33,8 @@ pat, fit affordance to first plank
 place a walking goal short of the fitted affordance
 
 CLOCK STARTS
+
+Wed 131pm
 
 --------------------------------
 positioning:
@@ -46,7 +49,8 @@ go to manip mode. crouch to 66cm.
 
 
 --------------------------------
-reach 1: reach to side of truss.  IMPORTANT:  Make sure elbow is OUT when lifting
+reach 1: reach to side of truss.  
+  IMPORTANT:  Make sure elbow is OUT when lifting
 hand fit with 2 fingers facing start line
 move pelvis ypr: 0, 0, 0
 do 90% reach
@@ -60,11 +64,11 @@ reach 2: ypr from spreadsheet. careful to reach over piece 3.
   SKIP hand fit with 2 fingers facing start line
   SKIP move pelvis ypr: pitch 5, yaw 5, roll 0
   SKIP do 90% reach
-do "go to" posture before sending
+  SKIP do "go to" posture before sending
 refit, touch, grasp
 raise pelvis by 5cm and yaw 5degrees to clear wall
 raise height to 90cm
-make sure to bring arm closer to body to avoid hitting board 3
+make sure to bring arm close to body to avoid hitting board 3
 retract plans
 
 
@@ -82,7 +86,7 @@ retract plans
 
 --------------------------------
 reach 4: => at 12 mins
-careful when unpitching the back!
+
 ? hand fit with 2 fingers facing toward robot
   ? pelvis yaw 10, roll 0. important to keep good camera seeing
 pitch the head up
@@ -90,6 +94,7 @@ do 90% reach.
 refit, touch, grasp
 
 * after grasp and lift, take pitch out of pelvis
+* careful when unpitching the back!
 
   => at 13 minutes 
 
@@ -120,6 +125,7 @@ can i zero back joints with hand stationary - with the new mode?
 retract plans
 
 scored 1 point at 20 mins
+Wed: scored 1 point at 21 minutes
 
 reposition to grab truss with right hand at 24 minutes
 

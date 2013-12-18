@@ -33,6 +33,7 @@ close robotiq hand for duration
 start the robot
 calibrating encoders
 kill calibration process
+* Log out of all open ssh sessions
 run BDI calibration
 run prep
 drop robot

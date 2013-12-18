@@ -42,6 +42,7 @@ in KeyframePlanner.m, ensure that "encoders" variable is set to zero
 [possible: disable motion safety checks]
 
 run joint calibration
+* Log out of all open ssh sessions
 run BDI calibration
 [merge start audio server item]
 in a.2.P_and_C, kill EncoderCalibration

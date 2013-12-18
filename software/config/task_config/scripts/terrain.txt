@@ -42,6 +42,7 @@ when in place, but before clock starts
 
 * Wingman: turn footstep renderer ON
 
+* Log out of all open ssh sessions
 * Calibrate
 * Prep, and wait for team to lower the bot
 * Stand

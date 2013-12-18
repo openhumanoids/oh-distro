@@ -19,6 +19,10 @@ check orientation of hook pointer
 during prep, before clock starts
 -------------------
 
+* log out of all ssh sessions
+calibrate
+prep
+
 place door frame affordance
 fit left-hand door handle and place walking goal
 command left hand to pre-grasp postures
