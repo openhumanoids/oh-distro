@@ -56,6 +56,7 @@ when in place, but before clock starts
 * Set map mode to full heights
 * Set path to spline
 * Left leading foot
+* Set forward step to 19cm
 * Make footstep plan from start to peak of ramp
 	* CHECK: verify that transitional step from flat to ramp has good normal & height
 
@@ -77,9 +78,9 @@ during ramp
 during flat steps
 -----------------
 * Ascent: 
-	* Left lead
-	* 2 steps at a time
-	* 35cm forward step
+	* Right lead
+	* Plan 2 steps at a time
+	* Set forward step to 35cm 
 * At peak:
     * Keep toe one and a half boxes back from edge
 * Descent:
@@ -89,9 +90,14 @@ during flat steps
 during tilted steps
 -------------------
 
+* Set right foot to lead foot
 * Set map mode to full heights
 * Set max number of steps to two
 * Set nominal forward step to 35cm
+* Remind: stay back from first step up
+* On first step, set sway duration to 5 sec.
+
+* After first step, set sway duration to 0 sec. (default)
 
 * Ascent:
     * Say, "Robin, give me an audible upon reaching peak"
@@ -99,7 +105,7 @@ during tilted steps
 * At peak:
     * Disable toe-off
     * Check that next block is down
-    * Switch leading foot to right
+    * Switch leading foot to left
     * Keep toe one and a half boxes back from edge
 
 * At last step:
@@ -113,6 +119,7 @@ during tilted steps
     * Check footsteps
 
 * On reaching flat ground:
+    * Set BDI sway duration to 0 seconds (default)
     * Switch to BDI step preset
     * Set map mode to flat ground
     * Step calmly across finish
