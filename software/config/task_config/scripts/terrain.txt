@@ -52,17 +52,21 @@ when in place, but before clock starts
 * Turn off debug map view
 * Set scene height view to wireframe
 
+* check IMU drift
 * Move to correct starting position
 
 * Set map mode to full heights
 * Set path to spline
 * Left leading foot
 * Set forward step to 19cm
+
 * Make footstep plan from start to peak of ramp
 	* CHECK: verify that transitional step from flat to ramp has good normal & height
 
 once run starts
 ---------------
+
+* start timer
 
 * Don't fall over!
 * Walk to peak of ramp
@@ -84,21 +88,28 @@ during flat steps
 	* Set forward step to 35cm 
 * At peak:
     * Keep toe one and a half boxes back from edge
+    * disable toe-off
 * Descent:
 	* Stay at least 1.5 boxes back from front edges of steps!
+* on flat
+       * enable toe-off
 
+on flat
+-----
+* set map mode to flat ground
+* set nominal forward step to 20cm
 
 during tilted steps
 -------------------
 
+* Remind: stay back from first step up (at least 2 heightmap boxes)
+
 * Set right foot to lead foot
-* Set map mode to full heights
+*** Set map mode to full heights
 * Set max number of steps to two
 * Set nominal forward step to 35cm
-* Remind: stay back from first step up
-* On first step, set sway duration to 5 sec.
-
-* After first step, set sway duration to 0 sec. (default)
+* Set sway duration to 5s
+* check IMU drift
 
 * Ascent:
     * Say, "Robin, give me an audible upon reaching peak"
@@ -111,7 +122,6 @@ during tilted steps
 
 * At last step:
     * Switch to manip
-    * Robin set BDI sway duration to 5 seconds
     * Scott set pelvis to height 90, pitch as needed to see toes
       [Wait until can see toes]
     * Ensure that right food forward displacement is <= 27cm
@@ -120,7 +130,6 @@ during tilted steps
     * Check footsteps
 
 * On reaching flat ground:
-    * Set BDI sway duration to 0 seconds (default)
     * Switch to BDI step preset
     * Set map mode to flat ground
     * Step calmly across finish
