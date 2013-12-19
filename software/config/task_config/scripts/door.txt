@@ -26,6 +26,7 @@ Viewer setup:
 place door frame affordance
 open and configure ee-driver
 turn on show EE forces in viewer
+go to manip to trigger roll
 turn off BDI height mode in controller
 turn off footstep planner in perception side drc-viewer
 fit left-hand door handle and place walking goal
