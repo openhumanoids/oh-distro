@@ -2,7 +2,7 @@
 DOOR TASK
 
 Operator: Robin
-Wingman: XXX
+Wingman: Pat
 Monitor: Matt A.
 Field team: Steve, Matt D., Maurice (???), XXX, XXX
 
@@ -19,18 +19,19 @@ check orientation of hook pointer
 during prep, before clock starts
 -------------------
 
-* log out of all ssh sessions
-calibrate
-prep
+Before Procman Prep:
+check for local changes on operator computer
 
+Viewer setup:
 place door frame affordance
-fit left-hand door handle and place walking goal
-command left hand to pre-grasp postures
-verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
 open and configure ee-driver
 turn on show EE forces in viewer
 turn off BDI height mode in controller
 turn off footstep planner in perception side drc-viewer
+fit left-hand door handle and place walking goal
+verify that sticky hand shows pointer, not BDI hook
+command left hand to pre-grasp postures
+verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
 
 run starts
 -----------
@@ -43,7 +44,8 @@ update camera rate
 use ee-driver teleop to turn handle and punch open
 bring hand down & zero back
 bring neck pitch to 0 degrees
-begin turning robot
+step backwards 3 steps
+turn robot 90 degrees to the right
 refit door frame
 sidestep through door
 
@@ -53,12 +55,6 @@ fit right-hand door handle
 ---------------------------------
 
 todo:
-
-test with hands mounted on the head
-
-determine when to switch to manip mode and back to stand
-
-need way to disable warning when executing plans in stand/user mode
 
 scott: if controller notifies when plan execution has completed, then we could dismiss robot plans after they complete
 
