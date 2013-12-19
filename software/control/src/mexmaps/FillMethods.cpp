@@ -519,7 +519,9 @@ fillUnderRobot(maps::DepthImageView::Ptr& iView, const Method iMethod) {
   }
 
   Eigen::Vector3f sol;
-  if (points.size() >= 20) {
+  // TODO: auto-fitting was disabled for the competition; just use the feet
+  //if (points.size() >= 20) {
+  if (false) {
     if (iMethod == MethodRobust) {
       sol = fitHorizontalPlaneRobust(points);
     }
