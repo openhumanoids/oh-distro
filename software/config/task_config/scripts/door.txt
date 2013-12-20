@@ -19,30 +19,49 @@ check orientation of hook pointer
 during prep, before clock starts
 -------------------
 
+kill any active ssh sessions
+
 Before Procman Prep:
-check for local changes on operator computer
+
+check EXTENDERS variable in planner
+
+CHECK FOR UNCOMMITTED LOCAL CHANGES!
 
 Viewer setup:
-place door frame affordance
+
 open and configure ee-driver
 turn on show EE forces in viewer
 turn off BDI height mode in controller
-turn off footstep planner in perception side drc-viewer
+*** turn off footstep planner in perception side drc-viewer
+BEFORE MOVING HAND:
+  verify that sticky hand shows pointer, not BDI hook
 
-Power on, calibrate encoders, calibrate BDI, prep, stand
-go to manip to trigger roll
-fit left-hand door handle and place walking goal
-verify that sticky hand shows pointer, not BDI hook
-command left hand to pre-grasp postures
+Friday 20 Dec 2013 at 302pm
+Power on, calibrate encoders, calibrate BDI, prep, drop, stand
+
+once feet on ground, pat do yaw check
+
 verify that "Plan & Control w/ BDI height" checkbox is UNCHECKED
+
+go to manip to trigger roll glitch
+go to stand
+place door frame affordance
+fit left-hand door handle and place walking goal
+command left hand to pre-grasp postures
+
 
 run starts
 -----------
 
 walk to door
+
+START at 306pm
+
 while walking, pitch neck to 45 degrees
+on arrival, go to stand
 refit left-hand handle
 reach
+touch
 update camera rate
 use ee-driver teleop to turn handle and punch open
 bring hand down & zero back
@@ -52,6 +71,11 @@ turn robot 90 degrees to the right
 refit door frame
 sidestep through door
 
+(protip: type H on the screen to hide the plan)
+
+AFTER PASSING THROUGH FIRST DOOR:
+
+reconfigure to right hand!
 turn and face pull door
 fit right-hand door handle
 
