@@ -930,6 +930,20 @@
       }, 
       "name": "rdeits-pull-protect-5-offhand", 
       "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "push-door-hand-protect", 
+      "joints": {
+        "l_arm_elx": 0.3869999945163727, 
+        "l_arm_ely": 3.1050000190734863, 
+        "l_arm_mwx": 0.43799999356269836, 
+        "l_arm_shx": -1.2339999675750732, 
+        "l_arm_usy": 0.020999999716877937, 
+        "l_arm_uwy": 1.593000054359436
+      }, 
+      "name": "push-door-hand-protect", 
+      "nominal_handedness": "left"
     }
   ], 
   "drill": [
