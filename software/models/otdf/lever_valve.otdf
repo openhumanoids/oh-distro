@@ -43,7 +43,7 @@
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="cylinder_0" />
-        <relative_pose rpy="0 3.14 0" xyz="-0.1 0.1 0.035" />
+        <relative_pose rpy="1.57 3.14 0" xyz="-0.1 0.1 0.035" />
         <grasp_type type="3" />
         <state num_joints="8" joint_names="left_finger[0]/joint_base_rotation left_finger[0]/joint_base left_finger[0]/joint_flex left_finger[1]/joint_base_rotation left_finger[1]/joint_base left_finger[1]/joint_flex left_finger[2]/joint_base left_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
     </grasp_seed>
