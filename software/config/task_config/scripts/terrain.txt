@@ -43,6 +43,7 @@ when in place, but before clock starts
 * Wingman: turn footstep renderer ON
 
 * Log out of all open ssh sessions
+* Confirm hands closed
 * Calibrate
 * Prep, and wait for team to lower the bot
 * Stand
@@ -73,7 +74,7 @@ once run starts
 * Walk over peak of ramp
 * Walk down ramp and onto zig zag blocks
 * Step down from zig zag blocks
-
+* Switch to flat ground height maps
 during ramp
 -----------
 
@@ -86,6 +87,7 @@ during flat steps
 	* Right lead
 	* Plan 2 steps at a time
 	* Set forward step to 35cm 
+        * Set z normals
 * At peak:
     * Keep toe one and a half boxes back from edge
     * disable toe-off
