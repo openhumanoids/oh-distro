@@ -21,8 +21,12 @@ T = Sys.T;
 Sys.Cont.F = zeros(6);
 Sys.Cont.F(1:3,4:6) = q2R(Measurement.INS.pose.bQl); % here we need the body to local rotation matrix
 
-Sys.Cont.Q = diag([zeros(1,3), 1E-6*ones(1,3)]);
+Sys.Cont.Q = diag([1E-6*ones(1,3), 1E-4*ones(1,3)]);
 Sys.covariances.R = diag(0.003*ones(3,1));
+
+Sys.Disc.L = eye(6);
+Sys.Disc.L(1:3,1:3) = -q2R(Measurement.INS.pose.bQl);
+
 
 [Sys.Disc.A,Sys.covariances.Qd] = lti_disc(Sys.Cont.F, [], Sys.Cont.Q, T);
 Sys.Disc.B = zeros(6,1);

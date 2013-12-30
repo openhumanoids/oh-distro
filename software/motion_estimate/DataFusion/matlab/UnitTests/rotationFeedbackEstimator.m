@@ -17,7 +17,7 @@ dt = 0.001;
 
 gn = [0,0,9.81]';
 
-wbias = 0.00;
+wbias = 0.01;
 
 % Setup the datafusion variables
 posterior.x = zeros(6,1);
@@ -30,13 +30,13 @@ index = 0;
 % Prep data
 traj.true.w_b = zeros(iterations,3);
 traj.true.w_b(5001:5100,2) = +pi/4/100*1000;
-traj.true.f_l = [1*ones(iterations,1) zeros(iterations,2)]; % forward left up frame
+traj.true.f_l = [1*ones(iterations,1) zeros(iterations,2)]; % forward left up frame -- ADDING 1 M/S/S IN LOCAL X
 
 traj.true.bQl = [ones(iterations,1), zeros(iterations,3)];
 traj.true.E = zeros(iterations,3);
 
 traj.measured.w_b = traj.true.w_b;
-traj.measured.w_b(:,2) = traj.true.w_b(:,2) + wbias; % this is gyro bias
+traj.measured.w_b(1:floor(end/4),2) = traj.true.w_b(1:floor(end/4),2) + wbias; % this is gyro bias
 traj.measured.a_b = traj.true.f_l; % this just initializes memory
 
 traj.INS.bQl = [ones(iterations,1), zeros(iterations,3)];
@@ -81,7 +81,7 @@ for k = 2:iterations
         Sys.T = 0.02;% this should be taken from the utime stamps when ported to real data
         Sys.posterior = posterior;
 
-        Measurement.quaternionManifoldResidual = R2q(  q2R(traj.true.bQl(k,:)')' * q2R(traj.INS.bQl(k,:)') );
+        Measurement.quaternionManifoldResidual = R2q( q2R(traj.INS.bQl(k,:)')' * q2R(traj.true.bQl(k,:)') );
         Measurement.INS.pose.bQl = traj.INS.bQl(k,:)';
         
         disp(['rotationFeedbackEstimator -- quaternion manifold residual: norm=' num2str(norm(Measurement.quaternionManifoldResidual)) ', q = ' num2str(Measurement.quaternionManifoldResidual)])
