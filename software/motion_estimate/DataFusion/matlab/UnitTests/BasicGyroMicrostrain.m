@@ -17,16 +17,38 @@ dt = 0.01;
 
 disp 'Loading data from file...'
 
-data = load('UnitTests/testdata/GH_imudata01.txt');
+initstart = 1;
+initend = 500;
 
-keep = 2500;
+lQb = [1;0;0;0]; % start at identity quaternion -- in this case forward-left-up
+
+switch (4)
+    case 1
+        data = load('UnitTests/testdata/GH_imudata01.txt');
+        keep = 2500;
+        lQb = [0;1;0;0]; % Microstrain data is known to start with Z pointing down
+    case 2
+        data = load('UnitTests/testdata/dfd_loggedIMU_01.txt');
+        keep = 8500;
+    case 3
+        data = load('UnitTests/testdata/dfd_loggedIMU_02.txt');
+        keep = 7000;
+        initend = 300;
+    case 4
+        data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
+        keep = 6000; 
+        initend = 1000;
+end
+
+% close all
+% plot(data(:,1:3))
+
 
 measured.wb = data(1:keep,1:3);
 measured.ab = data(1:keep,4:6);
 
 % Try estimate the error parameters of the sensors
-initstart = 1;
-initend = 500;
+
 biasg = mean(measured.wb(initstart:initend,:));
 biasg = repmat(biasg,keep,1);
 
@@ -34,15 +56,16 @@ measured.wb = measured.wb - biasg;
 
 %% Own data sequence
 
-measured.wb = zeros(keep,3);
-measured.wb(201:300,2) = measured.wb(201:300,2) - pi/1/100/dt;
-measured.wb(501:600,1) = measured.wb(501:600,1) + pi/2/100/dt;
-measured.wb(801:900,2) = measured.wb(801:900,2) - pi/2/100/dt;
-measured.wb(1101:1200,1) = measured.wb(1101:1200,1) - pi/2/100/dt;
-measured.wb(1401:1500,3) = measured.wb(1401:1500,3) + pi/2/100/dt;
-measured.wb(1701:1800,1) = measured.wb(1701:1800,1) - pi/2/100/dt;
-measured.wb(2001:2100,2) = measured.wb(2001:2100,2) - pi/2/100/dt;
-measured.wb(2301:2400,3) = measured.wb(2301:2400,3) + pi/1/100/dt;
+% measured.wb = zeros(keep,3);
+% measured.wb(201:300,2) = measured.wb(201:300,2) - pi/1/100/dt;
+% measured.wb(501:600,1) = measured.wb(501:600,1) + pi/2/100/dt;
+% measured.wb(801:900,2) = measured.wb(801:900,2) - pi/2/100/dt;
+% measured.wb(1101:1200,1) = measured.wb(1101:1200,1) - pi/2/100/dt;
+% measured.wb(1401:1500,3) = measured.wb(1401:1500,3) + pi/2/100/dt;
+% measured.wb(1701:1800,1) = measured.wb(1701:1800,1) - pi/2/100/dt;
+% measured.wb(2001:2100,2) = measured.wb(2001:2100,2) - pi/2/100/dt;
+% measured.wb(2301:2400,3) = measured.wb(2301:2400,3) + pi/1/100/dt;
+% lQb = qprod([1;0;0;0],[0;1;0;0]); % Microstrain data is known to start with Z pointing down
 
 %%
 disp 'STARTING...'
@@ -74,7 +97,6 @@ X = [];
 COV = [];
 
 % bRl = q2R(e2q(initE));
-lQb = qprod([1;0;0;0],[0;1;0;0]); % Microstrain data is known to start with Z pointing down
 
 DE = [];
 TE = [];
@@ -129,15 +151,15 @@ end
 %% Plotting
 
 figure(1),clf
-subplot(411),plot(measured.wb)
+subplot(511),plot(measured.wb)
 title('Measured rotation rates w')
-subplot(412),plot(measured.ab)
+subplot(512),plot(measured.ab)
 title('Body measured accelerations')
-subplot(413),plot(CE)
+subplot(513),plot(CE)
 title('Computed Euler angles')
-subplot(414),plot(GB)
+subplot(514),plot(GB)
 title('predicted body measured gravity')
-
+subplot(515),plot(measured.ab - GB)
 
 
 % figure(2),clf

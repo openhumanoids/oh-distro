@@ -139,14 +139,14 @@ for k = 1:iter
 
     predicted.al(k,:) = qrot(qconj(lQb),measured.ab(k,:)')';
     
-    predicted.fl(k,:) = (qrot(qconj(lQb),measured.ab(k,:)') - gn)';
+    predicted.fl(k,:) = (predicted.al(k,:)' - gn)';
     if (k > 1)
         predicted.vl(k,:) = predicted.vl(k-1,:) + 0.5*dt*(predicted.fl(k-1,:) + predicted.fl(k,:));
     end
     
     F = zeros(9);
     F(1:3,4:6) = q2R(qconj(lQb));
-%     F(7:9,1:3) = vec2skew(-predicted.fl(k,:)');
+    F(7:9,1:3) = vec2skew(-predicted.fl(k,:)');
     
     %Disc.A = eye(6) + F.*dt; % Basic first order approximate
     Disc.A = expm(F.*dt); % w Pade approximations
@@ -160,7 +160,7 @@ for k = 1:iter
     L = blkdiag(q2R(qconj(lQb)), eye(3), zeros(3));
     covariances.Qd = L*Q*L'*dt;
     
-    nDEF = [nDEF; (vec2skew(-predicted.fl(k,:)')*posterior.x(1:3))' ];
+    nDEF = [nDEF; (vec2skew(-predicted.fl(k,:)')*posterior.x(1:3))'*dt ];
     
     priori = KF_timeupdate(posterior, 0, Disc, covariances);
     
@@ -213,7 +213,7 @@ title('True body measured accelerations')
 
 
 figure(2),clf
-subplot(411),plot(DE)
+subplot(411),plot(X(:,1:3));%DE)
 title('Measured Misalignment')
 grid on
 subplot(412),plot(DE - X(:,1:3))
