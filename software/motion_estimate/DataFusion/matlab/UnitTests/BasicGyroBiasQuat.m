@@ -22,52 +22,57 @@ dt = 0.001;
 gn = [0;0;1]; % forward left up
 
 initE = [0;0;0];
+
 bias = [0.;0.01;0];
 bias2 = [-0.005;0;0];
 
 
 % something with bias.
 
+true.wb = zeros(iter, 3);
 
-true.w = zeros(iter, 3);
+true.wb(3500:3600,2) = +pi/6/100*1000;
 
-true.w(3500:3600,2) = +pi/6/100*1000;
 
-subplot(411),plot(true.w)
-title('True rotation rates w')
 
-% tbRl = eye(3);
-tbQl = e2q(initE);
-tbRl = q2R(tbQl);
+% tbQl = e2q(initE);
+tlQb = [1;0;0;0];
+% tbRl = q2R(tbQl);
 
 % E = cumsum(true.w.*dt);
 E = [];
 GB = [];
 for k = 1:iter
-    tbRl = closed_form_DCM_farrell(-dt*true.w(k,:)', tbRl); % True rotation matrix
-    E = [E; q2e(R2q(tbRl))'];
-    GB = [GB;(tbRl'*gn)'];
+    %     tbRl = closed_form_DCM_farrell(-dt*true.w(k,:)', tbRl); % True rotation matrix
+    tlQb = zeroth_int_Quat_closed_form(-true.wb(k,:)', tlQb, dt); % true orientation quaternion
+%     E = [E; q2e(R2q(tbRl))'];
+    E = [E; q2e(tlQb)'];
+%     GB = [GB;(tbRl'*gn)'];
+    gb = qrot(tlQb,gn);
+    GB = [GB; gb'];
 end
 
+
+measured.wb = true.wb;
+% add the biases to the measured values
+for k = 500:(5000)
+    measured.wb(k,:) = measured.wb(k,:) + bias';
+end
+for k = (4000):iter
+    measured.wb(k,:) = measured.wb(k,:) + bias2';
+end
+measured.wb = measured.wb + 0.001*randn(size(measured.wb));
+
+subplot(411),plot(true.wb)
+title('True rotation rates w')
+subplot(412),plot(measured.wb)
+title('Measured rotation rates w')
 subplot(413),plot(E)
 title('True Euler angles')
 subplot(414),plot(GB)
 title('True body measured accelerations')
 
-
-measured.w = true.w;
-% add the biases to the measured values
-for k = 500:(5000)
-    measured.w(k,:) = measured.w(k,:) + bias';
-end
-for k = (4000):iter
-    measured.w(k,:) = measured.w(k,:) + bias2';
-end
-measured.w = measured.w + 0.001*randn(size(measured.w));
-
-subplot(412),plot(measured.w)
-title('Measured rotation rates w')
-
+%%
 
 % estimate the misalignment and gyro bias
 
@@ -80,34 +85,40 @@ Disc.B = 0;
 X = [];
 COV = [];
 
-tbQl = e2q(initE);
-tbRl = q2R(tbQl);
-bQl = e2q(initE);
+% tbQl = e2q(initE);
+tlQb = [1;0;0;0];
+% tbRl = q2R(tbQl);
+% bQl = e2q(initE);
+lQb = [1;0;0;0];
 % bRl = q2R(bQl);
 
 DE = [];
 TE = [];
 
 for k = 1:iter
-    tbRl = closed_form_DCM_farrell(-dt*true.w(k,:)', tbRl); % True rotation matrix
+    %tbRl = closed_form_DCM_farrell(-dt*true.w(k,:)', tbRl); % True rotation matrix
+    %bRl = q2R(bQl);
+    %bRl = closed_form_DCM_farrell(-dt*measured.w(k,:)', bRl); % use negative rotations because here we are looking at the body to world rotations
+    %bQl = R2q(bRl);
     
-    bRl = q2R(bQl);
-    bRl = closed_form_DCM_farrell(-dt*measured.w(k,:)', bRl); % use negative rotations because here we are looking at the body to world rotations
-    bQl = R2q(bRl);
-    %     bRl = q2R(e2q(E(k,:)'));
-
+    tlQb = zeroth_int_Quat_closed_form(-true.wb(k,:)', tlQb, dt);
+    lQb = zeroth_int_Quat_closed_form(-measured.wb(k,:)', lQb, dt);
+    
     F = zeros(6);
 %     F(1:3,4:6) = bRl';
-    F(1:3,4:6) = q2R(bQl)';
+    F(1:3,4:6) = q2R(qconj(lQb));
     
-    Disc.A = eye(6) + F.*dt; % Basic first order approximate
+    Disc.A = eye(6) + F.*dt; % Basic first order approximate, but will be converted expm
+    % use expm with Pade approximation
     Disc.C = [eye(3), zeros(3)];
     
     covariances.R = 1E-3*eye(3);
     
     Q = diag([1E-10*ones(1,3), 1E-5*ones(1,3)]);
     
-    L = [bRl', zeros(3); zeros(3), eye(3)];
+    %     L = [bRl', zeros(3); zeros(3), eye(3)]; % this line may be wrong
+    
+    L = [q2R(qconj(lQb)), zeros(3); zeros(3), eye(3)];
     covariances.Qd = L*Q*L'*dt;
     
     priori = KF_timeupdate(posterior, 0, Disc, covariances);
@@ -115,13 +126,13 @@ for k = 1:iter
     %     testE = E(k,:)' - dE_R
     %     dE = zeros(3,1) - E(k,:)';
 
-    predE = q2e(R2q(bRl));
-    %     dE = zeros(3,1) - predE    
+    predE = q2e(lQb);
+    %     d_bQl = R2q(q2R(bQl)' * tbRl);
+    %     dE_Q = q2e(d_bQl);
+        
 
-    %     d_bRl = bRl' * tbRl;
-    %     dE_R = q2e(R2q(d_bRl));
-    d_bQl = R2q(q2R(bQl)' * tbRl);
-    dE_Q = q2e(d_bQl);
+    d_lQb = qprod(qconj(lQb), tlQb);
+    dE_Q = q2e(d_lQb);
     
     dE = dE_Q;
     
