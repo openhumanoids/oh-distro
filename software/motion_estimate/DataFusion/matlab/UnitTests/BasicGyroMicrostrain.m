@@ -22,7 +22,23 @@ initend = 500;
 
 lQb = [1;0;0;0]; % start at identity quaternion -- in this case forward-left-up
 
-switch (4)
+switch (2)
+    case 0
+        % own data sequence
+        keep = 2500;
+        measured.wb = zeros(keep,3);
+        measured.wb(201:300,2) = measured.wb(201:300,2) - pi/1/100/dt;
+        measured.wb(501:600,1) = measured.wb(501:600,1) + pi/2/100/dt;
+        measured.wb(801:900,2) = measured.wb(801:900,2) - pi/2/100/dt;
+        measured.wb(1101:1200,1) = measured.wb(1101:1200,1) - pi/2/100/dt;
+        measured.wb(1401:1500,3) = measured.wb(1401:1500,3) + pi/2/100/dt;
+        measured.wb(1701:1800,1) = measured.wb(1701:1800,1) - pi/2/100/dt;
+        measured.wb(2001:2100,2) = measured.wb(2001:2100,2) - pi/2/100/dt;
+        measured.wb(2301:2400,3) = measured.wb(2301:2400,3) + pi/1/100/dt;
+        lQb = qprod([1;0;0;0],[0;1;0;0]); % Microstrain data is known to start with Z pointing down
+        initend = 1;
+        
+        data = [measured.wb, zeros(size(measured.wb))];
     case 1
         data = load('UnitTests/testdata/GH_imudata01.txt');
         keep = 2500;
@@ -43,29 +59,16 @@ end
 % close all
 % plot(data(:,1:3))
 
-
 measured.wb = data(1:keep,1:3);
 measured.ab = data(1:keep,4:6);
 
 % Try estimate the error parameters of the sensors
 
-biasg = mean(measured.wb(initstart:initend,:));
+biasg = mean(measured.wb(initstart:initend,:),1);
 biasg = repmat(biasg,keep,1);
 
 measured.wb = measured.wb - biasg;
 
-%% Own data sequence
-
-% measured.wb = zeros(keep,3);
-% measured.wb(201:300,2) = measured.wb(201:300,2) - pi/1/100/dt;
-% measured.wb(501:600,1) = measured.wb(501:600,1) + pi/2/100/dt;
-% measured.wb(801:900,2) = measured.wb(801:900,2) - pi/2/100/dt;
-% measured.wb(1101:1200,1) = measured.wb(1101:1200,1) - pi/2/100/dt;
-% measured.wb(1401:1500,3) = measured.wb(1401:1500,3) + pi/2/100/dt;
-% measured.wb(1701:1800,1) = measured.wb(1701:1800,1) - pi/2/100/dt;
-% measured.wb(2001:2100,2) = measured.wb(2001:2100,2) - pi/2/100/dt;
-% measured.wb(2301:2400,3) = measured.wb(2301:2400,3) + pi/1/100/dt;
-% lQb = qprod([1;0;0;0],[0;1;0;0]); % Microstrain data is known to start with Z pointing down
 
 %%
 disp 'STARTING...'
@@ -160,6 +163,7 @@ title('Computed Euler angles')
 subplot(514),plot(GB)
 title('predicted body measured gravity')
 subplot(515),plot(measured.ab - GB)
+title('Residual gravity; should be around zero. ( measured.ab - predicted.ab )')
 
 
 % figure(2),clf

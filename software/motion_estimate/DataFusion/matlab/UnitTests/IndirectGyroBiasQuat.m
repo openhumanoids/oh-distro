@@ -146,7 +146,7 @@ for k = 1:iter
     
     F = zeros(9);
     F(1:3,4:6) = q2R(qconj(lQb));
-    F(7:9,1:3) = vec2skew(-predicted.fl(k,:)');
+%     F(7:9,1:3) = vec2skew(-predicted.fl(k,:)');
     
     %Disc.A = eye(6) + F.*dt; % Basic first order approximate
     Disc.A = expm(F.*dt); % w Pade approximations
@@ -158,7 +158,7 @@ for k = 1:iter
     Q = diag([1E-10*ones(1,3), 1E-5*ones(1,3), 1E-5*ones(1,3)]);
     
     L = blkdiag(q2R(qconj(lQb)), eye(3), zeros(3));
-    covariances.Qd = L*Q*L'*dt;
+    covariances.Qd = Disc.A*L*Q*L'*Disc.A'*dt; % this will be replaced with the expansion of fractions method
     
     nDEF = [nDEF; (vec2skew(-predicted.fl(k,:)')*posterior.x(1:3))'*dt ];
     
