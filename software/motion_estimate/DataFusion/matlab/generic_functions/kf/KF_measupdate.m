@@ -20,6 +20,7 @@ function [posterior] = KF_measupdate(priori, sys_d, y)
 
 
 posterior.innov = kf_innov(y,sys_d.C,priori.x);
-posterior.x = priori.x + priori.K * posterior.innov;
+posterior.dx =  priori.K * posterior.innov;
+posterior.x = priori.x + posterior.dx;
 posterior.P = kf_P_MU(priori.K,sys_d.C,priori.M);
 
