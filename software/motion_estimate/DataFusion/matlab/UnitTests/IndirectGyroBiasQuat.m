@@ -32,7 +32,7 @@ true.ab = zeros(iter,3);
 % true and measured velocities
 
 true.wb = zeros(iter, 3);
-true.wb(3500:3600,1) = pi/6/100*1000;
+true.wb(3500:3600,1) = 0*pi/6/100*1000;
 
 % Add more random motion tot he true signal
 if (1==0)
@@ -151,7 +151,7 @@ for k = 1:iter
     
     F = zeros(9);
     F(1:3,4:6) = -q2R(qconj(plQb));
-    F(7:9,1:3) = vec2skew(-predicted.fl(k,:));
+    F(7:9,1:3) = vec2skew(-(predicted.fl(k,:)'-gn));
 %     F(7:9,1:3) = [0, predicted.fl(k,3), -predicted.fl(k,2);...
 %                  -predicted.fl(k,3), 0, predicted.fl(k,1);...
 %                  predicted.fl(k,2), -predicted.fl(k,1), 0];
