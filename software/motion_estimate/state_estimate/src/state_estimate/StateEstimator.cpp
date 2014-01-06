@@ -141,7 +141,7 @@ void StateEstimate::StateEstimator::run()
 		  double dt;
 		  dt = (imu.utime - previous_imu_utime)*1.E-6;
 		  previous_imu_utime = imu.utime;
-		  handle_inertial_data_temp_name(dt, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg);
+		  handle_inertial_data_temp_name(dt, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg, _leg_odo);
 
 		  std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
 

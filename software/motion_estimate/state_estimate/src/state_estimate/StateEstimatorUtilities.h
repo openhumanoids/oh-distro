@@ -79,7 +79,8 @@ void handle_inertial_data_temp_name(
 		const Eigen::Isometry3d &IMU_to_body,
 		InertialOdometry::Odometry &inert_odo,
 		drc::robot_state_t& _ERSmsg,
-		drc::ins_update_request_t& _DFRequest);
+		drc::ins_update_request_t& _DFRequest,
+		TwoLegs::TwoLegOdometry *_leg_odo);
 
 //int getIMUBodyAlignment(const unsigned long utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_);
 

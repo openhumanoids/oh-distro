@@ -90,7 +90,8 @@ void StateEstimate::handle_inertial_data_temp_name(
 		const Eigen::Isometry3d &IMU_to_body,
 		InertialOdometry::Odometry &inert_odo,
 		drc::robot_state_t& _ERSmsg,
-		drc::ins_update_request_t& _DFRequest) {
+		drc::ins_update_request_t& _DFRequest,
+		TwoLegs::TwoLegOdometry *_leg_odo) {
   
   // We want to take body frame inerial data an put it in the imu_data structure
   // For now we are going to use the orientation quaternion from BDI
@@ -147,11 +148,18 @@ void StateEstimate::handle_inertial_data_temp_name(
   _DFRequest.local_linear_force.z = InerOdoEst.f_l(2);
 
 
+  Eigen::Isometry3d pelvis;
+  pelvis = _leg_odo->getPelvisState();
   // remember that this will have to publish a LCM message 
-  _ERSmsg.pose.translation.x = InerOdoEst.P(0);
-  _ERSmsg.pose.translation.y = InerOdoEst.P(1);
-  _ERSmsg.pose.translation.z = InerOdoEst.P(2);
-  
+  //  _ERSmsg.pose.translation.x = InerOdoEst.P(0);
+  //  _ERSmsg.pose.translation.y = InerOdoEst.P(1);
+  //  _ERSmsg.pose.translation.z = InerOdoEst.P(2);
+  _ERSmsg.pose.translation.x = pelvis.translation().x();
+  _ERSmsg.pose.translation.y = pelvis.translation().y();
+  _ERSmsg.pose.translation.z = pelvis.translation().z();
+
+
+
   _DFRequest.pose.translation.x = InerOdoEst.P(0);
   _DFRequest.pose.translation.y = InerOdoEst.P(1);
   _DFRequest.pose.translation.z = InerOdoEst.P(2);
