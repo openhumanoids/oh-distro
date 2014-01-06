@@ -156,8 +156,8 @@ for k = 1:iter
 %                  -predicted.fl(k,3), 0, predicted.fl(k,1);...
 %                  predicted.fl(k,2), -predicted.fl(k,1), 0];
     
-    Disc.C = [eye(3), zeros(3,6)];
-%     Disc.C = [zeros(3,6), eye(3)];
+%     Disc.C = [eye(3), zeros(3,6)];
+    Disc.C = [zeros(3,6), eye(3)];
     
     covariances.R = blkdiag(1E-3*eye(3));
     
@@ -192,8 +192,8 @@ for k = 1:iter
     dV = measured.vl(k,:)' - ( predicted.vl(k,:)' + 0*posterior.x(7:9) );
     % dV = 1E-3*randn(3,1);
     
-    posterior = KF_measupdate(priori, Disc, [dE]);
-%     posterior = KF_measupdate(priori, Disc, [dV]);
+%     posterior = KF_measupdate(priori, Disc, [dE]);
+    posterior = KF_measupdate(priori, Disc, [dV]);
     
     DX = [DX; posterior.dx'];
     
