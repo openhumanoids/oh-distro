@@ -22,7 +22,7 @@ initend = 500;
 
 lQb = [1;0;0;0]; % start at identity quaternion -- in this case forward-left-up
 
-switch (2)
+switch (4)
     case 0
         % own data sequence
         keep = 2500;

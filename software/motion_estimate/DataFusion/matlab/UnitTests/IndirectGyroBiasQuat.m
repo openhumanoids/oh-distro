@@ -10,18 +10,18 @@
 % feedback structure. 
 
 clc
-clear
+clear all
 
 disp 'STARTING...'
 
 
-iter = 20000;
+iter = 15000;
 dt = 0.001;
 
 gn = [0;0;1]; % forward left up
 
 initE = [0;0;0];
-bias = [0.;0.001;0];
+bias = [0.;0.0003;0];
 bias2 = 0*[-0.005;0;0];
 
 % Translational components
@@ -32,7 +32,7 @@ true.ab = zeros(iter,3);
 % true and measured velocities
 
 true.wb = zeros(iter, 3);
-true.wb(3500:3600,2) = 0*pi/6/100*1000;
+true.wb(3500:3600,1) = pi/6/100*1000;
 
 % Add more random motion tot he true signal
 if (1==0)
@@ -80,7 +80,7 @@ end
 % Measured body frame accelerations, with measurement noise
 measured.ab = true.ab + 0*1E-3*randn(iter,3);
 % Measured local frame velocities, with added measurement noise
-measured.vl = true.vl + 0*3E-4*randn(iter,3);
+measured.vl = true.vl + 0*1E-3*randn(iter,3);
 
 
 measured.wb = true.wb;
@@ -105,7 +105,7 @@ predicted.vl = zeros(iter,3);
 % estimate the misalignment and gyro bias
 
 posterior.x = zeros(9,1);
-posterior.P = blkdiag(1*eye(3),1*eye(3),1*eye(3));
+posterior.P = blkdiag(100*eye(3),500*eye(3),100*eye(3));
 
 Disc.B = 0;
 
@@ -137,7 +137,10 @@ for k = 1:iter
     tlQb = zeroth_int_Quat_closed_form(-true.wb(k,:)', tlQb, dt);
     lQb = zeroth_int_Quat_closed_form(-measured.wb(k,:)', lQb, dt);
 
-    predicted.al(k,:) = qrot(qconj(lQb),measured.ab(k,:)')';
+    plQb = lQb;
+%     plQb = qprod(e2q(posterior.x(1:3)), lQb);
+
+    predicted.al(k,:) = qrot(qconj(plQb),measured.ab(k,:)')';
     
     predicted.fl(k,:) = (predicted.al(k,:)' - gn)';
     if (k > 1)
@@ -147,25 +150,26 @@ for k = 1:iter
 %     plQb = qprod(e2q(posterior.x(1:3)), lQb);
     
     F = zeros(9);
-    F(1:3,4:6) = q2R(qconj(lQb));
-%     F(7:9,1:3) = vec2skew(-predicted.fl(k,:)');
-    F(7:9,1:3) = [0, predicted.fl(k,3), -predicted.fl(k,2);...
-                 -predicted.fl(k,3), 0, predicted.fl(k,1);...
-                 predicted.fl(k,2), -predicted.fl(k,1), 0];
+    F(1:3,4:6) = -q2R(qconj(plQb));
+    F(7:9,1:3) = vec2skew(-predicted.fl(k,:));
+%     F(7:9,1:3) = [0, predicted.fl(k,3), -predicted.fl(k,2);...
+%                  -predicted.fl(k,3), 0, predicted.fl(k,1);...
+%                  predicted.fl(k,2), -predicted.fl(k,1), 0];
     
-    %Disc.A = eye(6) + F.*dt; % Basic first order approximate
-    Disc.A = expm(F.*dt); % w Pade approximations
-    Disc.C = [0*eye(3), zeros(3,6); zeros(3,6), eye(3)];
-    %     Disc.C = [eye(3), zeros(3)];
+    Disc.C = [eye(3), zeros(3,6)];
+%     Disc.C = [zeros(3,6), eye(3)];
     
-    covariances.R = blkdiag(1E-1*eye(3),1E-2*eye(3));
+    covariances.R = blkdiag(1E-3*eye(3));
     
-    
-    
-    Q = diag([0*1E-8*ones(1,3), 1E-3*ones(1,3), 0*1E-10*ones(1,3)]);
+    Q = diag([1E-8*ones(1,3), 1E-5*ones(1,3), 1E-8*ones(1,3)]);
     
     L = blkdiag(q2R(qconj(lQb)), eye(3), zeros(3));
-    covariances.Qd = Disc.A*L*Q*L'*Disc.A'*dt; % this will be replaced with the expansion of fractions method
+    
+    
+%     Disc.A = expm(F.*dt); % w Pade approximations
+%     covariances.Qd = Disc.A*L*Q*L'*Disc.A'*dt; % this will be replaced with the expansion of fractions method
+    
+    [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt);
     
     nDEF = [nDEF; (vec2skew(-predicted.fl(k,:)')*posterior.x(1:3))'*dt ];
     
@@ -185,10 +189,12 @@ for k = 1:iter
     
     % predictedV = [0;0;0];
     
-    dV = measured.vl(k,:)' - ( predicted.vl(k,:)' + posterior.x(7:9) );
+    dV = measured.vl(k,:)' - ( predicted.vl(k,:)' + 0*posterior.x(7:9) );
     % dV = 1E-3*randn(3,1);
     
-    posterior = KF_measupdate(priori, Disc, [0*dE; dV]);
+    posterior = KF_measupdate(priori, Disc, [dE]);
+%     posterior = KF_measupdate(priori, Disc, [dV]);
+    
     DX = [DX; posterior.dx'];
     
     X = [X; posterior.x'];
@@ -242,7 +248,7 @@ grid on
 
 sf = 2;
 index = 4;
-subplot(6,3,16),plot(true.bias.wb(:,1) - X(:,index))
+subplot(6,3,16),plot(true.bias.wb(:,1) + X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -250,7 +256,7 @@ axis([1,iter,-sf*max(bias),sf*max(bias)])
 grid on
 
 index = 5;
-subplot(6,3,17),plot(true.bias.wb(:,2) - X(:,index))
+subplot(6,3,17),plot(true.bias.wb(:,2) + X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -259,7 +265,7 @@ axis([1,iter,-sf*max(bias),sf*max(bias)])
 grid on
 
 index = 6;
-subplot(6,3,18),plot(true.bias.wb(:,3) - X(:,index))
+subplot(6,3,18),plot(true.bias.wb(:,3) + X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
