@@ -15,14 +15,19 @@ clear all
 disp 'STARTING...'
 
 
-iter = 15000;
+iter = 40000;
 dt = 0.001;
 
 gn = [0;0;1]; % forward left up
 
-initE = [0;0;0];
-bias = [0.;0.0003;0];
-bias2 = 0*[-0.005;0;0];
+init_lQb = e2q([0.6;-0.5;0])
+init_lQb = e2q([0;0;1.7])
+init_lQb = [1;0;0;0];
+
+
+% Bias errors to introduce later
+bias = 0*[0;0.001;0];
+bias2 = [-0.001;0;0];
 
 % Translational components
 true.vl = zeros(iter,3);
@@ -32,7 +37,7 @@ true.ab = zeros(iter,3);
 % true and measured velocities
 
 true.wb = zeros(iter, 3);
-true.wb(3500:3600,1) = 0*pi/6/100*1000;
+true.wb(3500:3600,3) = 0*pi/6/100*1000;
 
 % Add more random motion tot he true signal
 if (1==0)
@@ -51,7 +56,9 @@ end
 % tbRl = eye(3);
 % tbQl = e2q(initE);
 % tbRl = q2R(tbQl);
-tlQb = [1;0;0;0];
+
+
+tlQb = init_lQb;
 
 E = [];
 GB = [];
@@ -86,10 +93,10 @@ measured.vl = true.vl + 0*1E-3*randn(iter,3);
 measured.wb = true.wb;
 % add the biases to the measured values
 true.bias.wb = zeros(iter,3);
-for k = 200:(iter)
+for k = 1:(20000)
     true.bias.wb(k,:) = true.bias.wb(k,:) + bias';
 end
-for k = (6000):iter
+for k = (6001):30000
     true.bias.wb(k,:) = true.bias.wb(k,:) + bias2';
 end
 
@@ -98,6 +105,7 @@ measured.wb = measured.wb + true.bias.wb;
 % Add measurement noise
 measured.wb = measured.wb + 0*0.001*randn(size(measured.wb));
 
+predicted.ab = zeros(iter,3);
 predicted.al = zeros(iter,3);
 predicted.fl = zeros(iter,3);
 predicted.vl = zeros(iter,3);
@@ -118,13 +126,16 @@ COV = [];
 % bQl = e2q(initE);
 % bRl = q2R(bQl);
 
-tlQb = [1;0;0;0];
-lQb = [1;0;0;0];
+tlQb = init_lQb;
+lQb = init_lQb;
 
 DE = [];
 TE = [];
 DV = [];
 nDEF = [];
+Rbias = [];
+
+data{iter} = [];
 
 for k = 1:iter
     
@@ -140,9 +151,13 @@ for k = 1:iter
     plQb = lQb;
 %     plQb = qprod(e2q(posterior.x(1:3)), lQb);
 
-    predicted.al(k,:) = qrot(qconj(plQb),measured.ab(k,:)')';
+    % Accelerometer bias compensation
+    predicted.ab(k,:) = measured.ab(k,:);
     
-    predicted.fl(k,:) = (predicted.al(k,:)' - gn)';
+    % predict local frame accelerations
+    predicted.al(k,:) = qrot(qconj(plQb),predicted.ab(k,:)')';
+    
+    predicted.fl(k,:) = (predicted.al(k,:)' - gn)';% For velocity and position
     if (k > 1)
         predicted.vl(k,:) = predicted.vl(k-1,:) + 0.5*dt*(predicted.fl(k-1,:) + predicted.fl(k,:));
     end
@@ -151,19 +166,20 @@ for k = 1:iter
     
     F = zeros(9);
     F(1:3,4:6) = -q2R(qconj(plQb));
-    F(7:9,1:3) = vec2skew(-(predicted.fl(k,:)'-gn));
-%     F(7:9,1:3) = [0, predicted.fl(k,3), -predicted.fl(k,2);...
-%                  -predicted.fl(k,3), 0, predicted.fl(k,1);...
-%                  predicted.fl(k,2), -predicted.fl(k,1), 0];
+    F(7:9,1:3) = vec2skew(-(q2R(qconj(plQb))*predicted.al(k,:)' - 0*2*gn));
+%     F(7:9,1:3) = [0, predicted.al(k,3)-2*gn(3), -predicted.al(k,2);...
+%                  -predicted.al(k,3)+2*gn(3), 0, predicted.al(k,1);...
+%                  predicted.al(k,2), -predicted.al(k,1), 0];
     
-%     Disc.C = [eye(3), zeros(3,6)];
+%     Disc.C = [eye(3), zeros(3,6)]; % for direct angular updates
     Disc.C = [zeros(3,6), eye(3)];
+%     Disc.C = [vec2skew(gn), zeros(3), -eye(3)];
     
-    covariances.R = blkdiag(1E-3*eye(3));
+    covariances.R = diag([1E-3*ones(3,1)]);
     
     Q = diag([1E-8*ones(1,3), 1E-5*ones(1,3), 1E-8*ones(1,3)]);
     
-    L = blkdiag(q2R(qconj(lQb)), eye(3), zeros(3));
+    L = blkdiag(q2R(qconj(plQb)), eye(3), zeros(3));
     
     
 %     Disc.A = expm(F.*dt); % w Pade approximations
@@ -182,22 +198,28 @@ for k = 1:iter
     %     d_bQl = R2q(q2R(bQl)' * tbRl);
     %     dE_Q = q2e(d_bQl);
     
-    predE = q2e(lQb);
+    predE = q2e(plQb);
     d_lQb = qprod(qconj(lQb), tlQb);
     dE_Q = q2e(d_lQb);
     dE = dE_Q;
     
     % predictedV = [0;0;0];
     
-    dV = measured.vl(k,:)' - ( predicted.vl(k,:)' + 0*posterior.x(7:9) );
+    dV = measured.vl(k,:)' - ( predicted.vl(k,:)' );
     % dV = 1E-3*randn(3,1);
+    
     
 %     posterior = KF_measupdate(priori, Disc, [dE]);
     posterior = KF_measupdate(priori, Disc, [dV]);
     
+    data{k}.K = priori.K;
+    data{k}.innov = posterior.innov;
+    
+    
     DX = [DX; posterior.dx'];
     
     X = [X; posterior.x'];
+    Rbias = [Rbias; qrot(e2q(posterior.x(1:3)),posterior.x(4:6))'];
     COV = [COV;diag(posterior.P)'];
     
     clear bRl
@@ -242,34 +264,39 @@ grid on
 subplot(614)
 plot(DX(:,4:6))
 title('K * Innov updates to gyro bias')
-subplot(615),plot(X(:,4:6))
+subplot(615)
+% plot(X(:,4:6))
+plot(Rbias)
 title('Estimated gyro biases')
 grid on
 
-sf = 2;
+sf = 8;
 index = 4;
-subplot(6,3,16),plot(true.bias.wb(:,1) + X(:,index))
+
+covbounds = sf*max(abs([bias; bias2]));
+
+subplot(6,3,16),plot(true.bias.wb(:,1) - X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-sf*max(bias),sf*max(bias)])
+axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = 5;
-subplot(6,3,17),plot(true.bias.wb(:,2) + X(:,index))
+subplot(6,3,17),plot(true.bias.wb(:,2) - X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
 title('Bias estimation error')
-axis([1,iter,-sf*max(bias),sf*max(bias)])
+axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = 6;
-subplot(6,3,18),plot(true.bias.wb(:,3) + X(:,index))
+subplot(6,3,18),plot(true.bias.wb(:,3) - X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-sf*max(bias),sf*max(bias)])
+axis([1,iter,-covbounds,covbounds])
 grid on
 
 % Plot velocity components separately
