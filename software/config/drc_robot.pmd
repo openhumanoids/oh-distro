@@ -318,13 +318,6 @@ group "m.simple_grasping" {
     }
 }
 
-group "m.calibration" {
-    cmd "StartEncoderCalibration" {
-        exec = "python $DRC_BASE/software/control/calibratePublish.py";
-        host = "robot";
-    }
-}
-
 
 #################################################################
 
