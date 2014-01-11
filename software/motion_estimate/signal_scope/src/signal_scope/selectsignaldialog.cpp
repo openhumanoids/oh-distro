@@ -22,7 +22,7 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
   mInternal->setupUi(this);
 
   QStringList channels;
-  channels << "ATLAS_STATE" << "ATLAS_STATE_EXTRA" << "ATLAS_STATUS" << "ATLAS_COMMAND" << "ATLAS_FOOT_POS_EST" << "TRUE_ROBOT_STATE" << "EST_ROBOT_STATE" << "SCALED_ROBOT_STATE" << "VICON_ATLAS" << "SE_INS_POSE_STATE" << "SE_MATLAB_DATAFUSION_REQ";
+  channels << "FOOT_CONTACT_ESTIMATE" << "ATLAS_STATE" << "ATLAS_STATE_EXTRA" << "ATLAS_STATUS" << "ATLAS_COMMAND" << "ATLAS_FOOT_POS_EST" << "TRUE_ROBOT_STATE" << "EST_ROBOT_STATE" << "SCALED_ROBOT_STATE" << "VICON_ATLAS" << "SE_INS_POSE_STATE" << "SE_MATLAB_DATAFUSION_REQ";
 
   QStringList messageTypes = SignalHandlerFactory::instance().messageTypes();
   QStringList messageFields;

@@ -369,6 +369,9 @@ define_field_field_handler(INSUpdateRequestGyroBiasEstZ, drc::ins_update_request
 // drill_control_t
 define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexList(100));
 
+// foot_contact_estimate_t
+define_field_handler(FootContactLeft, drc::foot_contact_estimate_t, left_contact);
+define_field_handler(FootContactRight, drc::foot_contact_estimate_t, right_contact);
 
 SignalHandler::SignalHandler(SignalDescription* signalDescription)
 {
@@ -496,6 +499,9 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<INSUpdateRequestGyroBiasEstY>();
     factory.registerClass<INSUpdateRequestGyroBiasEstZ>();
     factory.registerClass<DrillControlData>();
+    factory.registerClass<FootContactLeft>();
+    factory.registerClass<FootContactRight>();
+
   }
 
   return factory;
