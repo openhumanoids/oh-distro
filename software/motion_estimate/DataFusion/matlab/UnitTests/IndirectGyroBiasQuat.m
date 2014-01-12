@@ -21,7 +21,7 @@ dt = 0.001;
 gn = [0;0;1]; % forward left up
 
 init_lQb = e2q([0.6;-0.5;0])
-init_lQb = e2q([0;0;1.7])
+init_lQb = e2q([0;0;pi/2])
 init_lQb = [1;0;0;0];
 
 
@@ -166,6 +166,7 @@ for k = 1:iter
     
     F = zeros(9);
     F(1:3,4:6) = -q2R(qconj(plQb));
+%     F(1:3,4:6) = -eye(3);
     F(7:9,1:3) = vec2skew(-(q2R(qconj(plQb))*predicted.al(k,:)' - 0*2*gn));
 %     F(7:9,1:3) = [0, predicted.al(k,3)-2*gn(3), -predicted.al(k,2);...
 %                  -predicted.al(k,3)+2*gn(3), 0, predicted.al(k,1);...
@@ -179,7 +180,9 @@ for k = 1:iter
     
     Q = diag([1E-8*ones(1,3), 1E-5*ones(1,3), 1E-8*ones(1,3)]);
     
-    L = blkdiag(q2R(qconj(plQb)), eye(3), zeros(3));
+%     L = blkdiag(q2R(qconj(plQb)), eye(3), zeros(3));
+    L = blkdiag(eye(3), q2R(qconj(plQb)), eye(3));
+    
     
     
 %     Disc.A = expm(F.*dt); % w Pade approximations
