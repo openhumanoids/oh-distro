@@ -16,11 +16,30 @@ disp 'STARTING...'
 
 dt = 0.01;
 
-data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
-iter = 6000;
 
 initstart = 1;
-initend = 1000;
+
+switch (1)
+    case 1
+        data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
+        iter = 6000;
+        initend = 1000;
+    case 2
+        data = load('UnitTests/testdata/microstrain_rot_peraxis/x/loggedIMU.txt');
+        iter = 6000;
+        initend = 800;
+    case 3
+        data = load('UnitTests/testdata/microstrain_rot_peraxis/y/loggedIMU.txt');
+        iter = 6000;
+        initend = 800;
+    case 4
+        data = load('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
+        iter = 6000;
+        initend = 800;
+end
+
+
+
 
 gn = [0;0;9.81]; % forward left up
 
@@ -39,7 +58,7 @@ measured.ab = data(1:iter,4:6);
 
 % remove gyro biases
 
-biasg = mean(measured.wb(initstart:initend,:),1) + [0.01,0,0];
+biasg = mean(measured.wb(initstart:initend,:),1) + 0*[0,0.01,0];
 biasg = repmat(biasg,iter,1);
 measured.wb = measured.wb - biasg;
 
@@ -48,8 +67,11 @@ predicted.fl = zeros(iter,3);
 predicted.vl = zeros(iter,3);
 
 
-posterior.x = zeros(9,1);
-posterior.P = blkdiag(100*eye(3),500*eye(3),100*eye(3));
+% posterior.x = zeros(9,1);
+% posterior.P = blkdiag(100*eye(3),500*eye(3),100*eye(3));
+posterior.x = zeros(12,1);
+posterior.P = blkdiag(20*eye(3),100*eye(3), 20*eye(3), 20*eye(3));
+
 
 Disc.B = 0;
 
@@ -70,10 +92,11 @@ for k = 1:iter
     
     lQb = zeroth_int_Quat_closed_form(-measured.wb(k,:)', lQb, dt);
 
+%       plQb = qprod(lQb,e2q(posterior.x(1:3)));
     plQb = lQb;
 
     % Accelerometer bias compensation
-    predicted.ab(k,:) = measured.ab(k,:);
+    predicted.ab(k,:) = measured.ab(k,:) - posterior.x(10:12)';
     
     % predict local frame accelerations
     predicted.al(k,:) = qrot(qconj(plQb),predicted.ab(k,:)')';
@@ -83,17 +106,18 @@ for k = 1:iter
         predicted.vl(k,:) = predicted.vl(k-1,:) + 0.5*dt*(predicted.fl(k-1,:) + predicted.fl(k,:));
     end
     
-    F = zeros(9);
+    F = zeros(12);
     F(1:3,4:6) = -eye(3);
     F(7:9,1:3) = -q2R(qconj(plQb))*vec2skew(predicted.ab(k,:)');
+    F(7:9,10:12) = -q2R(qconj(plQb));
     
-    Disc.C = [zeros(3,6), eye(3)];
+    Disc.C = [zeros(3,6), eye(3), zeros(3)];
     
-    covariances.R = diag([1E-2*ones(3,1)]);
+    covariances.R = diag([1E-0*ones(3,1)]);
     
-    Q = diag([1E-9*ones(1,3), 1E-4*ones(1,3), 1E-9*ones(1,3)]);
+    Q = 100*diag([1E-10*ones(1,3), 1E-5*ones(1,3), 1E-11*ones(1,3), 1E-7*ones(1,3)]);
     
-    L = blkdiag(eye(3), -eye(3), eye(3));
+    L = blkdiag(eye(3), -eye(3), -q2R(qconj(plQb)), eye(3));
     
     [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt);
     
@@ -138,11 +162,11 @@ end
 
 figure(1),clf
 % subplot(411),plot(true.wb)
-title('True rotation rates w')
-subplot(412),plot(measured.wb)
+% title('True rotation rates w')
+subplot(411),plot(measured.wb)
 title('Measured rotation rates w')
-subplot(413),plot(E)
-title('True Euler angles')
+subplot(412),plot(TE)
+title('Predicted Euler angles')
 % subplot(414),plot(true.ab)
 title('True body measured accelerations')
 
@@ -242,10 +266,15 @@ plot(X(:,7:9))
 title('Estimated dVl')
 
 
+figure(4),clf
 
-% subplot(414)
-% plot(cumsum(nDEF))
-% title('cumsum(nDEF)')
+subplot(411)
+plot(DX(:,10:12))
+title('K * innov updates to accelerometer bias estimates')
+
+subplot(412)
+plot(X(:,10:12))
+title('Accelerometer bias estimates')
 
 disp 'DONE'
 
