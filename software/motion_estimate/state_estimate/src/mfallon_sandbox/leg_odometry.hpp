@@ -54,12 +54,27 @@ class leg_odometry{
     
     foot_contact* foot_contact_;
     bool last_left_contact_, last_right_contact_;
+    
+    // Pure Leg Odometry, no IMU
+    void leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    // At the moment a foot transition occurs: slave the pelvis pitch and roll and then fix foot using fk.
+    // Dont move or rotate foot after that.
+    void leg_odometry_gravity_slaved(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    // Foot position, as with above. For subsequent ticks, foot quaternion is updated using the pelvis quaternion
+    // The pelvis position is then backed out using this new foot positon and fk.
+    void leg_odometry_continually_gravity_slaved(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    
+    Eigen::Isometry3d world_to_body_bdi_;
+    
     // has the leg odometry been initialized
     bool leg_odo_init_;
     Eigen::Isometry3d world_to_body_;
     int primary_foot_;
     Eigen::Isometry3d world_to_fixed_primary_foot_;
     Eigen::Isometry3d world_to_secondary_foot_;
+    
+    Eigen::Isometry3d previous_body_to_l_foot_;
+    Eigen::Isometry3d previous_body_to_r_foot_;
 };    
 
 #endif
