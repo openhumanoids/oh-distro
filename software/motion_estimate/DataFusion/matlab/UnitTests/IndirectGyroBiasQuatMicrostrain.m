@@ -14,103 +14,39 @@ clear all
 
 disp 'STARTING...'
 
+dt = 0.01;
 
-iter = 40000;
-dt = 0.001;
+data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
+iter = 6000;
 
-gn = [0;0;1]; % forward left up
+initstart = 1;
+initend = 1000;
 
-% init_lQb = e2q([0.6;-0.5;0]);
-% init_lQb = e2q([0;0;pi/2])
-% init_lQb = [0;0;0;1];
+gn = [0;0;9.81]; % forward left up
+
 init_lQb = [1;0;0;0];
+% tlQb = init_lQb;
 
 % Bias errors to introduce later
 bias = 0*[0;0.002;0];
-bias2 = [-0.001;0;0];
 
-% Translational components
-true.vl = zeros(iter,3);
-true.fb = zeros(iter,3); % there are no forces on the body, so body frame forces are zero for the time being
-measured.fb = true.fb + 1E-2*randn(iter,3);
-true.ab = zeros(iter,3);
-% true and measured velocities
-
-true.wb = zeros(iter, 3);
-true.wb(3500:3600,3) = 0*pi/6/100*1000;
-
-% Add more random motion tot he true signal
-if (1==0)
-    WRT = [];
-    repsteps = 100;
-    for k = 1:3
-        WRa = randn(iter/repsteps,1);
-        WRa = repmat(WRa,1,repsteps);
-        WRa = reshape(WRa',[],1);
-        WRT = [WRT, WRa];
-    end
-    true.wb = true.wb + WRT;
-end
-
-
-% tbRl = eye(3);
-% tbQl = e2q(initE);
-% tbRl = q2R(tbQl);
-
-
-tlQb = init_lQb;
 
 E = [];
 GB = [];
-for k = 1:iter
-    %     tbRl = closed_form_DCM_farrell(-dt*true.w(k,:)', tbRl); % True rotation matrix
-    tlQb = zeroth_int_Quat_closed_form(-true.wb(k,:)', tlQb, dt); % true orientation quaternion
 
-    % E = [E; q2e(R2q(tbRl))'];
-    E = [E; q2e(tlQb)'];
-    
-    %     true.ab(k,:) = (tbRl'*gn)' + true.fb(k,:); % we are in the forward left up frame
-    true.ab(k,:) = qrot(tlQb,gn)' + true.fb(k,:); % we are in the forward left up frame
-    
-    %     GB = [GB;true.ab(k,:)];
-    gb = qrot(tlQb,gn);
-    GB = [GB; gb'];
-    
-    if (k > 1)
-        %true.vl(k,:) = true.vl(k-1,:) + 0.5*dt*(true.ab(k-1,:) + true.ab(k,:)) - dt*(tbRl'*gn)';
-        % true.vl(k,:) = true.vl(k-1,:) + 0.5*dt*(true.ab(k-1,:) + true.ab(k,:)) - dt*qrot(tlQb,gn)';
-        %or directly from fl
-        true.vl(k,:) = true.vl(k-1,:) + qrot(  qconj(tlQb), 0.5*dt*(true.fb(k-1,:)' + true.fb(k,:)')  )';
-    end
-end
+measured.wb = data(1:iter,1:3);
+measured.ab = data(1:iter,4:6);
 
-% Measured body frame accelerations, with measurement noise
-measured.ab = true.ab + 0*1E-3*randn(iter,3);
-% Measured local frame velocities, with added measurement noise
-measured.vl = true.vl + 0*1E-3*randn(iter,3);
+% remove gyro biases
 
+biasg = mean(measured.wb(initstart:initend,:),1) + [0.01,0,0];
+biasg = repmat(biasg,iter,1);
+measured.wb = measured.wb - biasg;
 
-measured.wb = true.wb;
-% add the biases to the measured values
-true.bias.wb = zeros(iter,3);
-for k = 1:(20000)
-    true.bias.wb(k,:) = true.bias.wb(k,:) + bias';
-end
-for k = (6001):30000
-    true.bias.wb(k,:) = true.bias.wb(k,:) + bias2';
-end
-
-% Add the biases
-measured.wb = measured.wb + true.bias.wb;
-% Add measurement noise
-measured.wb = measured.wb + 0*0.001*randn(size(measured.wb));
-
-predicted.ab = zeros(iter,3);
 predicted.al = zeros(iter,3);
 predicted.fl = zeros(iter,3);
 predicted.vl = zeros(iter,3);
 
-% estimate the misalignment and gyro bias
 
 posterior.x = zeros(9,1);
 posterior.P = blkdiag(100*eye(3),500*eye(3),100*eye(3));
@@ -121,11 +57,6 @@ X = [];
 DX = [];
 COV = [];
 
-% tbQl = e2q(initE);
-% tbRl = q2R(tbQl);
-% bQl = e2q(initE);
-% bRl = q2R(bQl);
-
 tlQb = init_lQb;
 lQb = init_lQb;
 
@@ -135,21 +66,11 @@ DV = [];
 nDEF = [];
 Rbias = [];
 
-data{iter} = [];
-
 for k = 1:iter
     
-    %     tbRl = closed_form_DCM_farrell(-dt*true.w(k,:)', tbRl); % True rotation matrix
-    %     % Orientation estimate
-    %     bRl = q2R(bQl);
-    %     bRl = closed_form_DCM_farrell(-dt*measured.w(k,:)', bRl); % use negative rotations because here we are looking at the body to world rotations
-    %     bQl = R2q(bRl);
-    
-    tlQb = zeroth_int_Quat_closed_form(-true.wb(k,:)', tlQb, dt);
     lQb = zeroth_int_Quat_closed_form(-measured.wb(k,:)', lQb, dt);
 
     plQb = lQb;
-%     plQb = qprod(e2q(posterior.x(1:3)), lQb);
 
     % Accelerometer bias compensation
     predicted.ab(k,:) = measured.ab(k,:);
@@ -162,58 +83,32 @@ for k = 1:iter
         predicted.vl(k,:) = predicted.vl(k-1,:) + 0.5*dt*(predicted.fl(k-1,:) + predicted.fl(k,:));
     end
     
-%     plQb = qprod(e2q(posterior.x(1:3)), lQb);
-    
     F = zeros(9);
-%     F(1:3,4:6) = -q2R(qconj(plQb));
     F(1:3,4:6) = -eye(3);
     F(7:9,1:3) = -q2R(qconj(plQb))*vec2skew(predicted.ab(k,:)');
     
-%     Disc.C = [eye(3), zeros(3,6)]; % for direct angular updates
     Disc.C = [zeros(3,6), eye(3)];
-%     Disc.C = [vec2skew(gn), zeros(3), -eye(3)];
     
-    covariances.R = diag([1E-3*ones(3,1)]);
+    covariances.R = diag([1E-2*ones(3,1)]);
     
-    Q = diag([1E-8*ones(1,3), 1E-5*ones(1,3), 1E-8*ones(1,3)]);
+    Q = diag([1E-9*ones(1,3), 1E-4*ones(1,3), 1E-9*ones(1,3)]);
     
-%     L = blkdiag(q2R(qconj(plQb)), eye(3), zeros(3));
-%     L = blkdiag(eye(3), q2R(qconj(plQb)), eye(3));
     L = blkdiag(eye(3), -eye(3), eye(3));
-    
-    
-    
-    
-%     Disc.A = expm(F.*dt); % w Pade approximations
-%     covariances.Qd = Disc.A*L*Q*L'*Disc.A'*dt; % this will be replaced with the expansion of fractions method
     
     [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt);
     
-    nDEF = [nDEF; (vec2skew(-predicted.fl(k,:)')*posterior.x(1:3))'*dt ];
-    
     priori = KF_timeupdate(posterior, 0, Disc, covariances);
-    
-    %     testE = E(k,:)' - dE_R
-    %     dE = zeros(3,1) - E(k,:)';
-    
-    %     predE = q2e(R2q(bRl));
-    %     d_bQl = R2q(q2R(bQl)' * tbRl);
-    %     dE_Q = q2e(d_bQl);
     
     predE = q2e(plQb);
     d_lQb = qprod(qconj(lQb), tlQb);
     dE_Q = q2e(d_lQb);
     dE = dE_Q;
     
-    % predictedV = [0;0;0];
+    measured.vl = [0;0;0];
     
-    dV = measured.vl(k,:)' - predicted.vl(k,:)';
+    dV = measured.vl - predicted.vl(k,:)';
     
-%     posterior = KF_measupdate(priori, Disc, [dE]);
     posterior = KF_measupdate(priori, Disc, [dV]);
-    
-    data{k}.K = priori.K;
-    data{k}.innov = posterior.innov;
     
     
     DX = [DX; posterior.dx'];
@@ -242,13 +137,13 @@ end
 %% Plotting
 
 figure(1),clf
-subplot(411),plot(true.wb)
+% subplot(411),plot(true.wb)
 title('True rotation rates w')
 subplot(412),plot(measured.wb)
 title('Measured rotation rates w')
 subplot(413),plot(E)
 title('True Euler angles')
-subplot(414),plot(true.ab)
+% subplot(414),plot(true.ab)
 title('True body measured accelerations')
 
 
@@ -272,9 +167,9 @@ grid on
 sf = 3;
 index = 4;
 
-covbounds = sf*max(abs([bias; bias2]));
+covbounds = 0.5;%sf*max(abs([bias; bias2]));
 
-subplot(6,3,16),plot(true.bias.wb(:,1) - X(:,index))
+subplot(6,3,16),plot(X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -282,7 +177,7 @@ axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = 5;
-subplot(6,3,17),plot(true.bias.wb(:,2) - X(:,index))
+subplot(6,3,17),plot(X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -291,7 +186,7 @@ axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = 6;
-subplot(6,3,18),plot(true.bias.wb(:,3) - X(:,index))
+subplot(6,3,18),plot(X(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -303,7 +198,7 @@ grid on
 figure(3), clf
 
 subplot(411)
-plot(true.ab)
+% plot(true.ab)
 title('True body accelerations')
 
 subplot(412)
