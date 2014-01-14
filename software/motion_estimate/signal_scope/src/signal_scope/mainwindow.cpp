@@ -316,28 +316,31 @@ void MainWindow::onTogglePause()
   }
 }
 
-SignalHandler* MainWindow::getSignalSelectionFromUser()
+QList<SignalHandler*> MainWindow::getSignalSelectionFromUser()
 {
   SelectSignalDialog dialog(this);
   int result = dialog.exec();
   if (result != QDialog::Accepted)
   {
-    return 0;
+    return QList<SignalHandler*>();
   }
 
-  return dialog.createSignalHandler();
+  return dialog.createSignalHandlers();
 }
 
 void MainWindow::onNewPlotClicked()
 {
-  SignalHandler* signalHandler = this->getSignalSelectionFromUser();
-  if (!signalHandler)
+  QList<SignalHandler*> signalHandlers = this->getSignalSelectionFromUser();
+  if (signalHandlers.isEmpty())
   {
     return;
   }
 
   PlotWidget* plot = this->addPlot();
-  plot->addSignal(signalHandler);
+  foreach (SignalHandler* signalHandler, signalHandlers)
+  {
+    plot->addSignal(signalHandler);
+  }
 }
 
 PlotWidget* MainWindow::addPlot()
@@ -364,13 +367,16 @@ void MainWindow::onAddSignalToPlot(PlotWidget* plot)
     return;
   }
 
-  SignalHandler* signalHandler = this->getSignalSelectionFromUser();
-  if (!signalHandler)
+  QList<SignalHandler*> signalHandlers = this->getSignalSelectionFromUser();
+  if (signalHandlers.isEmpty())
   {
     return;
   }
 
-  plot->addSignal(signalHandler);
+  foreach (SignalHandler* signalHandler, signalHandlers)
+  {
+    plot->addSignal(signalHandler);
+  }
 }
 
 void MainWindow::onRemoveAllPlots()

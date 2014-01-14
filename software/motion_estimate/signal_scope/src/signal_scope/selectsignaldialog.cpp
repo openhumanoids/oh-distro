@@ -86,10 +86,16 @@ void SelectSignalDialog::onFieldNameChanged()
     assert(keys.size());
     QListWidget* listWidget = new QListWidget;
     listWidget->addItems(keys);
-    listWidget->setCurrentRow(0);    
+    listWidget->setCurrentRow(0);
     mInternal->ArrayKeyWidgets.append(listWidget);
     mInternal->ArrayKeysContainer->layout()->addWidget(listWidget);
   }
+
+  if (mInternal->ArrayKeyWidgets.size())
+  {
+    mInternal->ArrayKeyWidgets.back()->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  }
+
 }
 
 
@@ -98,7 +104,7 @@ SelectSignalDialog::~SelectSignalDialog()
   delete mInternal;
 }
 
-SignalHandler* SelectSignalDialog::createSignalHandler() const
+QList<SignalHandler*> SelectSignalDialog::createSignalHandlers() const
 {
   QString channel = mInternal->ChannelListBox->currentItem()->text();
   QString messageType = mInternal->MessageTypeListBox->currentItem()->text();
@@ -110,14 +116,42 @@ SignalHandler* SelectSignalDialog::createSignalHandler() const
   desc.mMessageType = messageType;
   desc.mFieldName = messageField;
 
-  foreach (QListWidget* listWidget, mInternal->ArrayKeyWidgets)
+  QList<SignalDescription> descriptions;
+
+  if (mInternal->ArrayKeyWidgets.length())
   {
-    QString arrayKey = listWidget->currentItem()->text();
-    desc.mArrayKeys.append(arrayKey);
+    foreach (QListWidget* listWidget, mInternal->ArrayKeyWidgets)
+    {
+      if (listWidget == mInternal->ArrayKeyWidgets.back())
+      {
+        foreach (QListWidgetItem*	selectedItem, listWidget->selectedItems())
+        {
+          QString arrayKey = selectedItem->text();
+          SignalDescription descCopy(desc);
+          descCopy.mArrayKeys.append(arrayKey);
+          descriptions.append(descCopy);
+        }
+      }
+      else
+      {
+        QString arrayKey = listWidget->currentItem()->text();
+        desc.mArrayKeys.append(arrayKey);
+      }
+    }
+  }
+  else
+  {
+    descriptions.append(desc);
   }
 
-  SignalHandler* signalHandler = SignalHandlerFactory::instance().createHandler(&desc);
-  assert(signalHandler);
-  return signalHandler;
+  QList<SignalHandler*> signalHandlers;
+  foreach (const SignalDescription& description, descriptions)
+  {
+    SignalHandler* signalHandler = SignalHandlerFactory::instance().createHandler(&description);
+    assert(signalHandler);
+    signalHandlers.append(signalHandler);
+  }
+
+  return signalHandlers;
 }
 

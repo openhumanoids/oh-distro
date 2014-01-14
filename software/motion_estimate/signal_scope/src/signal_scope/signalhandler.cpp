@@ -88,7 +88,7 @@ namespace
 //-----------------------------------------------------------------------------
 #define define_array_handler(className, _messageType, _fieldName, _arrayKeyFunction) \
 declare_signal_handler(className); \
-className::className(SignalDescription* desc) : SignalHandler(desc) \
+className::className(const SignalDescription* desc) : SignalHandler(desc) \
 { \
    mArrayIndex = ArrayIndexFromKeys(desc->mArrayKeys, 0); \
    mArrayKey = desc->mArrayKeys[0]; \
@@ -118,7 +118,7 @@ QString className::description() { return QString("%1.%2[%3]").arg(this->message
 //-----------------------------------------------------------------------------
 #define define_array_array_handler(className, _messageType, _fieldName1, _fieldName2, _arrayKeyFunction1, _arrayKeyFunction2) \
 declare_signal_handler(className); \
-className::className(SignalDescription* desc) : SignalHandler(desc) \
+className::className(const SignalDescription* desc) : SignalHandler(desc) \
 { \
    mArrayIndex = ArrayIndexFromKeys(desc->mArrayKeys, 0); \
    mArrayIndex2 = ArrayIndexFromKeys(desc->mArrayKeys, 1); \
@@ -150,7 +150,7 @@ QString className::description() { return QString("%1.%2[%3].%4[%5]").arg(this->
 //-----------------------------------------------------------------------------
 #define define_field_array_handler(className, _messageType, _fieldName1, _fieldName2, _arrayKeyFunction) \
 declare_signal_handler(className); \
-className::className(SignalDescription* desc) : SignalHandler(desc) \
+className::className(const SignalDescription* desc) : SignalHandler(desc) \
 { \
    mArrayIndex = ArrayIndexFromKeys(desc->mArrayKeys, 0); \
    mArrayKey = desc->mArrayKeys[0]; \
@@ -180,7 +180,7 @@ QString className::description() { return QString("%1.%2.%3[%4]").arg(this->mess
 //-----------------------------------------------------------------------------
 #define define_field_handler(className, _messageType, _fieldName) \
 declare_signal_handler(className); \
-className::className(SignalDescription* desc) : SignalHandler(desc) { } \
+className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
@@ -201,7 +201,7 @@ QString className::description() { return QString("%1.%2").arg(this->messageType
 //-----------------------------------------------------------------------------
 #define define_field_field_handler(className, _messageType, _fieldName1, _fieldName2) \
 declare_signal_handler(className); \
-className::className(SignalDescription* desc) : SignalHandler(desc) { } \
+className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
@@ -221,7 +221,7 @@ QString className::description() { return QString("%1.%2").arg(this->messageType
 //-----------------------------------------------------------------------------
 #define define_field_field_field_handler(className, _messageType, _fieldName1, _fieldName2, _fieldName3) \
 declare_signal_handler(className); \
-className::className(SignalDescription* desc) : SignalHandler(desc) { } \
+className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
 bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
 { \
@@ -373,11 +373,11 @@ define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexLi
 define_field_handler(FootContactLeft, drc::foot_contact_estimate_t, left_contact);
 define_field_handler(FootContactRight, drc::foot_contact_estimate_t, right_contact);
 
-SignalHandler::SignalHandler(SignalDescription* signalDescription)
+SignalHandler::SignalHandler(const SignalDescription* signalDescription)
 {
   assert(signalDescription != 0);
   mDescription = *signalDescription;
-  mSignalData = new SignalData(signalDescription);
+  mSignalData = new SignalData();
   mSubscription = 0;
 }
 
@@ -507,7 +507,7 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
   return factory;
 }
 
-SignalHandler* SignalHandlerFactory::createHandler(SignalDescription* desc) const
+SignalHandler* SignalHandlerFactory::createHandler(const SignalDescription* desc) const
 {
   Constructor constructor = mConstructors.value(desc->mMessageType).value(desc->mFieldName);
   if (constructor == NULL)

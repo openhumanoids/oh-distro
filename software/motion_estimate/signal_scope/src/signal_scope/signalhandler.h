@@ -27,7 +27,7 @@ class SignalHandler : public QObject
 
 public:
 
-  SignalHandler(SignalDescription* signalDescription);
+  SignalHandler(const SignalDescription* signalDescription);
   virtual ~SignalHandler();
 
   SignalData* signalData()
@@ -65,7 +65,7 @@ public:
       mValidArrayKeys[T::messageType()][T::fieldName()] = T::validArrayKeys();
     }
 
-    SignalHandler* createHandler(SignalDescription* desc) const;
+    SignalHandler* createHandler(const SignalDescription* desc) const;
 
     static SignalHandlerFactory& instance();
 
@@ -74,10 +74,10 @@ public:
     const QList<QList<QString> >& validArrayKeys(const QString& messageType, const QString& fieldName) { return mValidArrayKeys[messageType][fieldName]; }
 
 private:
-  typedef SignalHandler* (*Constructor)(SignalDescription* desc);
+  typedef SignalHandler* (*Constructor)(const SignalDescription* desc);
 
   template<typename T>
-  static SignalHandler* constructorHelper(SignalDescription* desc)
+  static SignalHandler* constructorHelper(const SignalDescription* desc)
   {
     return new T(desc);
   }
@@ -92,7 +92,7 @@ private:
 class className : public SignalHandler \
 { \
 public: \
-  className(SignalDescription* desc); \
+  className(const SignalDescription* desc); \
   virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue); \
   static QString messageType(); \
   static QString fieldName(); \

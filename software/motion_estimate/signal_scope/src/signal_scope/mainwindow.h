@@ -53,7 +53,7 @@ protected:
   void loadPlot(const QMap<QString, QVariant>& plot);
 
   PlotWidget* addPlot();
-  SignalHandler* getSignalSelectionFromUser();
+  QList<SignalHandler*> getSignalSelectionFromUser();
 
   bool mPlaying;
   QString mLastOpenFile;

@@ -21,7 +21,7 @@ public:
   QColor mColor;
   QList<QString> mArrayKeys;
 
-  QString descriptionString()
+  QString descriptionString() const
   {
     QStringList args;
     args << mChannel << mMessageType << mFieldName << mArrayKeys;

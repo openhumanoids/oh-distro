@@ -1,5 +1,4 @@
 #include "signaldata.h"
-#include "signaldescription.h"
 
 #include <qvector.h>
 #include <qmutex.h>
@@ -30,14 +29,11 @@ public:
   QVector<double> pendingyvalues;
 
   FPSCounter fpsCounter;
-
-  SignalDescription* signalDescription;
 };
 
-SignalData::SignalData(SignalDescription* signalDescription)
+SignalData::SignalData()
 {
   d_data = new PrivateData();
-  d_data->signalDescription = signalDescription;
 }
 
 SignalData::~SignalData()

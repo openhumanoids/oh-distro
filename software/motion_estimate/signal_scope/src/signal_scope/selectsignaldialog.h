@@ -13,7 +13,7 @@ public:
   SelectSignalDialog(QWidget* parent=0);
   virtual ~SelectSignalDialog();
 
-  SignalHandler* createSignalHandler() const;
+  QList<SignalHandler*> createSignalHandlers() const;
 
 protected slots:
 
