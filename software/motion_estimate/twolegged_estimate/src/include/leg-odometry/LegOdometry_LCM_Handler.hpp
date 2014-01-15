@@ -94,6 +94,7 @@ struct command_switches {
   bool verbose;
   int medianlength;
   bool slide_compensation;
+  float mass; // real 1400.0
 };
 
 

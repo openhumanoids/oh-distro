@@ -52,6 +52,7 @@ int main(int argc, char ** argv) {
   switches.verbose = false;
   switches.slide_compensation = false;
   switches.medianlength=5;
+  switches.mass = 1400.0; // real
 
   ConciseArgs opt(argc, (char**)argv);
   opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");
@@ -70,6 +71,7 @@ int main(int argc, char ** argv) {
   opt.add(switches.medianlength, "m", "Casually challenged median filter length");
   opt.add(switches.verbose,"v","Enable verbose debug printouts");
   opt.add(switches.slide_compensation,"s","Incorporate foot sliding compensation");
+  opt.add(switches.mass, "w", "mass","Robot Mass [real=1400, sim=900]");
   opt.parse();
   std::cout << "Do motion estimation: " << switches.do_estimation<< std::endl;
   std::cout << "Draw footsteps: " << switches.draw_footsteps << std::endl;

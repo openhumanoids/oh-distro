@@ -41,8 +41,11 @@ int main(int argc, char ** argv) {
   switches.lcm_add_ext = false;
   switches.lcm_read_trues = false;
   switches.print_computation_time = false;
+  switches.mass = 1400.0f; // 1400 for real. 900 for vrc/simulation
   
   ConciseArgs opt(argc, (char**)argv);
+  opt.add(switches.mass, "w", "mass","Robot Mass [real=1400, sim=900]");
+  
   //opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");
   //cout << "Do motion estimation: " << switches.do_estimation<< endl;
   

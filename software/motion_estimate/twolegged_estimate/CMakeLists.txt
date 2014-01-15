@@ -32,6 +32,7 @@ add_library(leg-odometry  SHARED
   src/QuaternionLib.cpp 
   src/LegOdometry_LCM_Handler.cpp 
   src/Footsteps.cpp 
+  src/FootContact.cpp
   src/TwoLegOdometry.cpp
   src/sharedUtilities.cpp)
   
@@ -50,6 +51,7 @@ pods_install_headers( src/include/leg-odometry/LegOdometry_LCM_Handler.hpp
   src/include/leg-odometry/LegOdo_Parameters.hpp
   src/include/leg-odometry/QuaternionLib.h
   src/include/leg-odometry/Footsteps.h
+  src/include/leg-odometry/FootContact.h
   src/include/leg-odometry/TwoLegOdometry.h
   src/include/leg-odometry/TwoLegsEstimate_types.h
   src/include/leg-odometry/data_fusion_parameters.hpp
@@ -57,7 +59,7 @@ pods_install_headers( src/include/leg-odometry/LegOdometry_LCM_Handler.hpp
   DESTINATION leg-odometry)
   
 pods_install_pkg_config_file(leg-odometry
-  LIBS -lleg-odometry 
+  LIBS -lleg-odometry -linertial-odometry
   VERSION 0.0.1)
   
 ###############   THIS IS THE KALMAN FILTER LIBRARY

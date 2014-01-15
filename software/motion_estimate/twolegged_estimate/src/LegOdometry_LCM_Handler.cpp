@@ -171,7 +171,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   maxtime = 0;
   prev_frame_utime = 0;
 
-  _leg_odo = new TwoLegOdometry(_switches->log_data_files, _switches->publish_footcontact_states, 900.f);
+  _leg_odo = new TwoLegOdometry(_switches->log_data_files, _switches->publish_footcontact_states, _switches->mass);//900.f);
 //#if defined( DISPLAY_FOOTSTEP_POSES ) || defined( DRAW_DEBUG_LEGTRANSFORM_POSES )
   if (_switches->draw_footsteps) {
   _viewer = new Viewer(lcm_viewer);
@@ -218,7 +218,7 @@ void LegOdometry_Handler::InitializeFilters(const int num_filters) {
 void LegOdometry_Handler::DetermineLegContactStates(long utime, float left_z, float right_z) {
   // The idea here is to determine the contact state of each foot independently
   // to enable better initialization logic when the robot is stating up, or stading up after falling down
-  _leg_odo->updateSingleFootContactStates(utime, left_z, right_z);
+  _leg_odo->foot_contact->updateSingleFootContactStates(utime, left_z, right_z);
 }
 
 void LegOdometry_Handler::FilterHandForces(const drc::robot_state_t* msg, drc::robot_state_t* estmsg) {
@@ -690,7 +690,7 @@ void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf,
 
 
       //clock_gettime(CLOCK_REALTIME, &threequat);
-      //std::cout << "Standing on: " << (_leg_odo->getActiveFoot()==LEFTFOOT ? "LEFT" : "RIGHT" ) << std::endl;
+      //std::cout << "Standing on: " << (_leg_odo->foot_contact->getStandingFoot()==LEFTFOOT ? "LEFT" : "RIGHT" ) << std::endl;
 
       if (imu_msg_received) {
         PublishEstimatedStates(_msg, &est_msgout);
@@ -1143,11 +1143,11 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
   ss << msg->force_torque.r_foot_force_z << ", "; // right
 
   // Active foot is
-  ss << (_leg_odo->getActiveFoot() == LEFTFOOT ? "0" : "1") << ", ";
+  ss << (_leg_odo->foot_contact->getStandingFoot() == LEFTFOOT ? "0" : "1") << ", ";
 
   // The single foot contact states are also written to file for reference -- even though its published by a separate processing using this same class.
-  ss << _leg_odo->leftContactStatus() << ", ";
-  ss << _leg_odo->rightContactStatus() << ", "; // 30
+  ss << _leg_odo->foot_contact->leftContactStatus() << ", ";
+  ss << _leg_odo->foot_contact->rightContactStatus() << ", "; // 30
 
   for (int i=0;i<16;i++) {
     ss << joint_positions[i] << ", "; //59-74
@@ -1373,8 +1373,8 @@ void LegOdometry_Handler::PublishFootContactEst(int64_t utime) {
   // TODO -- Convert this to use the enumerated types from inside the LCM message
   msg_contact_est.detection_method = DIFF_SCHMITT_WITH_DELAY;
   
-  msg_contact_est.left_contact = _leg_odo->leftContactStatus();
-  msg_contact_est.right_contact = _leg_odo->rightContactStatus();
+  msg_contact_est.left_contact = _leg_odo->foot_contact->leftContactStatus();
+  msg_contact_est.right_contact = _leg_odo->foot_contact->rightContactStatus();
   
   lcm_->publish("FOOT_CONTACT_ESTIMATE",&msg_contact_est);
 }
@@ -1462,7 +1462,7 @@ void LegOdometry_Handler::DrawLegPoses(const Eigen::Isometry3d &left, const Eige
 
 // this function may be depreciated soon
 void LegOdometry_Handler::addFootstepPose_draw() {
-  std::cout << "Drawing pose for foot: " << (_leg_odo->getActiveFoot() == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl; 
+  std::cout << "Drawing pose for foot: " << (_leg_odo->foot_contact->getStandingFoot() == LEFTFOOT ? "LEFT" : "RIGHT") << std::endl; 
   _obj->add(collectionindex, isam::Pose3d(_leg_odo->getPrimaryInLocal().translation().x(),_leg_odo->getPrimaryInLocal().translation().y(),_leg_odo->getPrimaryInLocal().translation().z(),0,0,0));  
   collectionindex = collectionindex + 1;
 }
