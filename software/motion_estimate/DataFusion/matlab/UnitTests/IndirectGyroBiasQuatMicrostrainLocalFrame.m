@@ -39,16 +39,16 @@ switch (1)
 end
 
 
-gn = [0;0;9.81]; % forward left up
+gn = [0;0;9.8]; % forward left up
 
 init_lQb = [1;0;0;0];
-init_lQb = e2q([0;0;pi]);
+init_lQb = e2q([0;0;-pi/2]);
 init_Vl = [0;0;0];
 
 % tlQb = init_lQb;
 
 % Bias errors to introduce later
-gyrobias = 1*[0;0.005;0]
+gyrobias = 0*[0;-0.005;0]
 accelbias = 0*[-0.1;0;0]
 
 E = [];
@@ -63,6 +63,7 @@ biasg = mean(measured.wb(initstart:initend,:),1) + gyrobias';
 biasg = repmat(biasg,iter,1);
 measured.wb = measured.wb - biasg;
 
+predicted.wb = zeros(iter,3);
 predicted.al = zeros(iter,3);
 predicted.fl = zeros(iter,3);
 predicted.vl = zeros(iter,3);
@@ -74,7 +75,7 @@ predicted.vl(1,:) = init_Vl';
 % posterior.x = zeros(9,1);
 % posterior.P = blkdiag(100*eye(3),500*eye(3),100*eye(3));
 posterior.x = zeros(12,1);
-posterior.P = blkdiag(20*eye(3),100*eye(3), 20*eye(3), 20*eye(3));
+posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 10*eye(3), 0.01*eye(3));
 
 
 Disc.B = 0;
@@ -96,7 +97,9 @@ Rbias = [];
 
 for k = 1:iter
     
-    lQb = zeroth_int_Quat_closed_form(-measured.wb(k,:)', lQb, dt);
+    predicted.wb(k,:) = measured.wb(k,:);
+    
+    lQb = zeroth_int_Quat_closed_form(-predicted.wb(k,:)', lQb, dt);
 
     plQb = qprod(lQb,qconj(dlQl));
 
@@ -118,9 +121,9 @@ for k = 1:iter
     
     Disc.C = [zeros(3,6), eye(3), zeros(3)];
     
-    covariances.R = diag([1E-0*ones(3,1)]);
+    covariances.R = diag([1E1*ones(3,1)]);
     
-    Q = 10*diag([1E-16*ones(1,3), 1E-5*ones(1,3), 1E-15*ones(1,3), 1E-7*ones(1,3)]);
+    Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-5*ones(1,3)]);
     
     L = blkdiag(eye(3), -eye(3), -q2R(qconj(plQb)), eye(3));
     
@@ -143,6 +146,11 @@ for k = 1:iter
     % linearization
     dlQl = qprod(e2q(posterior.x(1:3)),dlQl);
     posterior.x(1:3) = [0;0;0];
+    
+    %Apply velocity updates to the system also, and remove information from
+    %the filter state
+    predicted.vl(k,:) = predicted.vl(k,:) + posterior.x(7:9)';
+    posterior.x(7:9) = [0;0;0];
     
     DX = [DX; posterior.dx'];
     
@@ -247,8 +255,8 @@ plot(predicted.vl)
 title('Preidcted local frame velocity')
 
 subplot(615)
-plot(X(:,7:9))
-title('Estimate local frame velocity error -- DV')
+plot(DX(:,7:9))
+title('Kalman updates to estimated local frame velocity errors -- DV')
 
 subplot(616)
 plot(predicted.vl + X(:,7:9))
@@ -306,9 +314,10 @@ COLS = 3;
 r = 1;
 index = 1;
 
-covbounds = 0.5;%sf*max(abs([bias; bias2]));
+covbounds = 0.001;%sf*max(abs([bias; bias2]));
 
-subplot(ROWS,COLS,COLS*(r-1)+1),plot(X(:,index))
+subplot(ROWS,COLS,COLS*(r-1)+1),
+plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -316,16 +325,16 @@ axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = 2;
-subplot(ROWS,COLS,COLS*(r-1)+2),plot(X(:,index))
+subplot(ROWS,COLS,COLS*(r-1)+2),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-title('Misalignment estimates in body frame')
+title('Updates to misalignment estimates in local frame -- accumulated outside filter')
 axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = 3;
-subplot(ROWS,COLS,COLS*(r-1)+3),plot(X(:,index))
+subplot(ROWS,COLS,COLS*(r-1)+3),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -336,7 +345,7 @@ grid on
 r = r+1;
 index = index+1;
 
-covbounds = 0.2;%sf*max(abs([bias; bias2]));
+covbounds = 0.02;%sf*max(abs([bias; bias2]));
 
 subplot(ROWS,COLS,COLS*(r-1)+1),plot(X(:,index))
 hold on
@@ -408,6 +417,8 @@ plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
 axis([1,iter,-covbounds,covbounds])
 grid on
+xlabel('X')
+
 
 index = index+1;
 subplot(ROWS,COLS,COLS*(r-1)+2),plot(ACCBIASERR(:,2))
@@ -417,6 +428,7 @@ plot(-sqrt(COV(:,index)) ,'r')
 title('Estimated accelerometer bias error in body frame')
 axis([1,iter,-covbounds,covbounds])
 grid on
+xlabel('Y')
 
 index = index+1;
 subplot(ROWS,COLS,COLS*(r-1)+3),plot(ACCBIASERR(:,3))
@@ -425,6 +437,7 @@ plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
 axis([1,iter,-covbounds,covbounds])
 grid on
+xlabel('Z')
 
 
 disp 'DONE'

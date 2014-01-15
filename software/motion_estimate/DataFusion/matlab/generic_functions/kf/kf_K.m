@@ -6,5 +6,9 @@ function [K] = kf_K(M,H,R)
 %
 
 MHT = M*H';
-K = MHT*inv(H*MHT + R);
+S= (H*MHT + R);
+% K = MHT*inv(S);
+
+K = MHT * (S\eye(size(S)));
+
 
