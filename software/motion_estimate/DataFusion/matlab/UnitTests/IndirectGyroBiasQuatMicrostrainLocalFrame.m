@@ -42,8 +42,8 @@ end
 gn = [0;0;9.81]; % forward left up
 
 init_lQb = [1;0;0;0];
-% init_lQb = e2q([0;0;pi/2]);
-init_Vl = [10;0;0];
+init_lQb = e2q([0;0;pi]);
+init_Vl = [0;0;0];
 
 % tlQb = init_lQb;
 
@@ -86,6 +86,8 @@ COV = [];
 tlQb = init_lQb;
 lQb = init_lQb;
 
+dlQl = [1;0;0;0];
+
 DE = [];
 TE = [];
 DV = [];
@@ -96,9 +98,7 @@ for k = 1:iter
     
     lQb = zeroth_int_Quat_closed_form(-measured.wb(k,:)', lQb, dt);
 
-    %plQb = qprod(lQb,e2q(posterior.x(1:3)));
-%     dlQb = qprod(e2q())
-    plQb = lQb;
+    plQb = qprod(lQb,qconj(dlQl));
 
     % Accelerometer bias compensation
     predicted.ab(k,:) = measured.ab(k,:) - posterior.x(10:12)';
@@ -112,8 +112,8 @@ for k = 1:iter
     end
     
     F = zeros(12);
-    F(1:3,4:6) = -eye(3);
-    F(7:9,1:3) = -q2R(qconj(plQb))*vec2skew(predicted.ab(k,:)');  % NOT USING BIAS YET
+    F(1:3,4:6) = -q2R(qconj(plQb));
+    F(7:9,1:3) = -vec2skew(predicted.al(k,:)');  % NOT USING BIAS YET
     F(7:9,10:12) = -q2R(qconj(plQb));
     
     Disc.C = [zeros(3,6), eye(3), zeros(3)];
@@ -139,6 +139,10 @@ for k = 1:iter
     
     posterior = KF_measupdate(priori, Disc, [dV]);
     
+    % we move misalignment information out of the filter to achieve better
+    % linearization
+    dlQl = qprod(e2q(posterior.x(1:3)),dlQl);
+    posterior.x(1:3) = [0;0;0];
     
     DX = [DX; posterior.dx'];
     
