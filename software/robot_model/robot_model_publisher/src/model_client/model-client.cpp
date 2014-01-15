@@ -107,9 +107,17 @@ ModelClient::ModelClient(lcm_t* lcm_, int keep_updated_):
 ModelClient::ModelClient(lcm_t* lcm_, std::string model_channel_, int keep_updated_):
     urdf_parsed_(false),lcm_(lcm_),
     model_channel_(model_channel_), keep_updated_(keep_updated_){
-  doModelClient();
-  
+  doModelClient();  
 }
+
+ModelClient::ModelClient(std::string urdf_filename){
+  // Received robot urdf string. Store it internally and get all available joints.
+  readURDFFromFile(urdf_filename);
+  std::cout<< "Read urdf_xml_string of robot [" 
+      << robot_name_ << "] from file, storing it internally as a param" << std::endl;
+  parseURDFString();  
+}
+
 
 
 void ModelClient::drc_robot_urdf_handler(const char* channel, const drc_robot_urdf_t *msg){
@@ -119,7 +127,10 @@ void ModelClient::drc_robot_urdf_handler(const char* channel, const drc_robot_ur
   urdf_xml_string_ = msg->urdf_xml_string;
   std::cout<< "Received urdf_xml_string of robot [" 
       << msg->robot_name << "], storing it internally as a param" << std::endl;
+  parseURDFString();
+}
 
+void ModelClient::parseURDFString(){      
   // Get a urdf Model from the xml string and get all the joint names.
   urdf::Model robot_model; 
   if (!robot_model.initString( urdf_xml_string_ ))
@@ -136,6 +147,76 @@ void ModelClient::drc_robot_urdf_handler(const char* channel, const drc_robot_ur
   links_map_ =  robot_model.links_;
   
   std::cout<< "Number of Joints: " << joint_names_.size() <<std::endl;  
+  setHandConfiguration();
+  
   urdf_parsed_  = true;
+  
 }
 
+
+
+bool ModelClient::readURDFFromFile(std::string urdf_file){
+
+  // get the entire file
+  std::string xml_string;
+  std::fstream xml_file(urdf_file.c_str(), std::fstream::in);
+  if (xml_file.is_open())
+  {
+    while ( xml_file.good() )
+    {
+      std::string line;
+      std::getline( xml_file, line);     
+      xml_string += (line + "\n");
+    }
+    xml_file.close();
+    std::cout << "File ["<< urdf_file << "]  parsed successfully.\n";    
+  }
+  else
+  {
+    std::cout << "ERROR: Could not open file ["<< urdf_file << "] for parsing.\n";
+    return false;
+  }
+  
+  // Get a urdf Model from the xml string and get all the joint names.
+  urdf::Model robot_model; 
+  if (!robot_model.initString( xml_string ))
+  {
+    std::cerr << "ERROR: Model Parsing the xml failed" << std::endl;
+  }
+
+  // Set the member variable:
+  urdf_xml_string_ = xml_string;
+  robot_name_ = robot_model.getName();
+}
+
+
+void ModelClient::setHandConfiguration(){
+
+  if(find(joint_names_.begin(), joint_names_.end(), "left_f0_j0" ) != joint_names_.end()){
+    std::cout << "Robot fitted with left Sandia hand\n";
+    left_hand_ = DRC_ROBOT_URDF_T_LEFT_SANDIA; //drc::robot_urdf_t::LEFT_SANDIA;
+  }else if(find(joint_names_.begin(), joint_names_.end(), "left_finger[0]/joint_base" ) != joint_names_.end()){
+    std::cout << "Robot fitted with left iRobot hand\n";
+    left_hand_ = DRC_ROBOT_URDF_T_LEFT_IROBOT; //drc::robot_urdf_t::LEFT_IROBOT;
+  }else if(find(joint_names_.begin(), joint_names_.end(), "left_finger_1_joint_1" ) != joint_names_.end()){
+    std::cout << "Robot fitted with left Robotiq hand\n";
+    left_hand_ = DRC_ROBOT_URDF_T_LEFT_ROBOTIQ; //drc::robot_urdf_t::LEFT_ROBOTIQ;
+  }else{
+    std::cout << "Robot has no left hand\n"; 
+    left_hand_ = DRC_ROBOT_URDF_T_LEFT_NONE; //drc::robot_urdf_t::LEFT_NONE;
+  }
+
+  if(find(joint_names_.begin(), joint_names_.end(), "right_f0_j0" ) != joint_names_.end()){
+    std::cout << "Robot fitted with right Sandia hand\n";
+    right_hand_ = DRC_ROBOT_URDF_T_RIGHT_SANDIA;//drc::robot_urdf_t::RIGHT_SANDIA;
+  }else if(find(joint_names_.begin(), joint_names_.end(), "right_finger[0]/joint_base" ) != joint_names_.end()){
+    std::cout << "Robot fitted with right iRobot hand\n";
+    right_hand_ = DRC_ROBOT_URDF_T_RIGHT_IROBOT;//drc::robot_urdf_t::RIGHT_IROBOT;
+  }else if(find(joint_names_.begin(), joint_names_.end(), "right_finger_1_joint_1" ) != joint_names_.end()){
+    std::cout << "Robot fitted with right Robotiq hand\n";
+    right_hand_ = DRC_ROBOT_URDF_T_RIGHT_ROBOTIQ;//drc::robot_urdf_t::RIGHT_ROBOTIQ;
+  }else{
+    std::cout << "Robot has no right hand\n"; 
+    right_hand_ = DRC_ROBOT_URDF_T_RIGHT_NONE;//drc::robot_urdf_t::RIGHT_NONE;
+  }
+}
