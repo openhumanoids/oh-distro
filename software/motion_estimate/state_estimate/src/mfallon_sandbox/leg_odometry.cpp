@@ -5,19 +5,30 @@
 #include <limits>
 
 #include "leg_odometry.hpp"
+#include <path_util/path_util.h>
 #include <ConciseArgs>
 
 using namespace std;
 using namespace boost;
 using namespace boost::assign;
 
-leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_):
-          lcm_(lcm_){
+bool read_log = false;
+
+leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_):
+          lcm_subscribe_(lcm_subscribe_), lcm_publish_(lcm_publish_){
+          
+  std::string config_filename = "drc_robot_02.cfg";            
+  std::string config_filename_full = std::string(getConfigPath()) +'/' + std::string(config_filename);
+  botparam_ = bot_param_new_from_file(config_filename_full.c_str());
             
-  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
             
-            
-  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  std::string urdf_filename = "model_LH_RH.urdf";            
+  std::string urdf_filename_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string(urdf_filename);
+  model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_filename_full  ));
+  
+  // botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+  // model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  
   KDL::Tree tree;
   if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
     cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
@@ -26,18 +37,28 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_):
   fksolver_ = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pointcloud_vis( lcm_publish_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1001,"Body Pose",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1002,"Primary Foot",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1003,"Secondary Foot",5,1) );
   
-  lcm_->subscribe("EST_ROBOT_STATE",&leg_odometry::robot_state_handler,this);  
-  lcm_->subscribe("FOOT_CONTACT_ESTIMATE",&leg_odometry::foot_contact_handler,this);
+  lcm_subscribe_->subscribe("EST_ROBOT_STATE",&leg_odometry::robot_state_handler,this);  
+  lcm_subscribe_->subscribe("FOOT_CONTACT_ESTIMATE",&leg_odometry::foot_contact_handler,this);
   
+  bool log_data_files = false;
+  float atlas_weight = 1400.0;
+  
+  foot_contact_logic_ = new TwoLegs::FootContact(log_data_files, atlas_weight);
+  foot_contact_logic_->setStandingFoot( LEFTFOOT ); // Not sure that double states should be used, this should probably change TODO
+  primary_foot_ = 0; // ie left
+  leg_odo_init_ = false;
+   
   foot_contact_ = new foot_contact();
   last_left_contact_ = false;
   last_right_contact_ = false;
+  
+  verbose_ = 1;
 }
 
 Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
@@ -61,10 +82,24 @@ void leg_odometry::publishPose(Eigen::Isometry3d pose, int64_t utime, std::strin
   pose_msg.orientation[1] =  r_x.x();  
   pose_msg.orientation[2] =  r_x.y();  
   pose_msg.orientation[3] =  r_x.z();  
-  lcm_->publish( channel, &pose_msg);
+  lcm_publish_->publish( channel, &pose_msg);
 }
 
+void insertPoseInRobotState(drc::robot_state_t& msg, Eigen::Isometry3d pose){
 
+  msg.pose.translation.x = pose.translation().x();
+  msg.pose.translation.y = pose.translation().y();
+  msg.pose.translation.z = pose.translation().z();
+  
+  Eigen::Quaterniond r_x(pose.rotation());
+  msg.pose.rotation.w = r_x.w();  
+  msg.pose.rotation.x = r_x.x();  
+  msg.pose.rotation.y = r_x.y();  
+  msg.pose.rotation.z = r_x.z();  
+
+
+}
+  
 
 
 void leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
@@ -81,7 +116,7 @@ void leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
     // TODO: add ability to initialize off of right foot
   }else{
     if (contact_status == 2 && primary_foot_ ==0){
-      std::cout << "Using fixed Left foot, update pelvis position\n";
+      if (verbose_>2) std::cout << "Using fixed Left foot, update pelvis position\n";
       world_to_body_ = world_to_fixed_primary_foot_ * body_to_l_foot.inverse() ;
       world_to_secondary_foot_ = world_to_body_ * body_to_r_foot;
     }else if (contact_status == 1 && primary_foot_ == 0){
@@ -94,7 +129,7 @@ void leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
       world_to_secondary_foot_ = world_to_body_ * body_to_l_foot;
       primary_foot_ = 1;
     }else if (contact_status == 3 && primary_foot_ == 1){
-      std::cout << "Using fixed Right foot, update pelvis position\n";
+      if (verbose_>2) std::cout << "Using fixed Right foot, update pelvis position\n";
       world_to_body_ = world_to_fixed_primary_foot_ * body_to_r_foot.inverse() ;
       world_to_secondary_foot_ = world_to_body_ * body_to_l_foot;
     }else if (contact_status == 0 && primary_foot_ == 1){
@@ -126,7 +161,7 @@ void leg_odometry::leg_odometry_gravity_slaved(Eigen::Isometry3d body_to_l_foot,
     // TODO: add ability to initialize off of right foot
   }else{
     if (contact_status == 2 && primary_foot_ ==0){
-      std::cout << "Using fixed Left foot, update pelvis position\n";
+      if (verbose_>2) std::cout << "Using fixed Left foot, update pelvis position\n";
       world_to_body_ = world_to_fixed_primary_foot_ * body_to_l_foot.inverse() ;
       world_to_secondary_foot_ = world_to_body_ * body_to_r_foot;
     }else if (contact_status == 1 && primary_foot_ == 0){
@@ -159,7 +194,7 @@ void leg_odometry::leg_odometry_gravity_slaved(Eigen::Isometry3d body_to_l_foot,
       world_to_secondary_foot_ = world_to_body_ * body_to_l_foot;
       primary_foot_ = 1;
     }else if (contact_status == 3 && primary_foot_ == 1){
-      std::cout << "Using fixed Right foot, update pelvis position\n";
+      if (verbose_>2) std::cout << "Using fixed Right foot, update pelvis position\n";
       world_to_body_ = world_to_fixed_primary_foot_ * body_to_r_foot.inverse() ;
       world_to_secondary_foot_ = world_to_body_ * body_to_l_foot;
     }else if (contact_status == 0 && primary_foot_ == 1){
@@ -197,13 +232,26 @@ void leg_odometry::leg_odometry_gravity_slaved(Eigen::Isometry3d body_to_l_foot,
   }
 }
 
+void leg_odometry::initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot){
+  if (mode ==0){ 
+    // Initialize with primary foot at zero
+    world_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
+    world_to_body_ =world_to_fixed_primary_foot_*body_to_l_foot.inverse();
+  }else if (mode ==1){
+    // At the EST_ROBOT_STATE pose that was logged into the file
+    world_to_body_ = world_to_body_bdi_;
+    world_to_fixed_primary_foot_ = world_to_body_*body_to_l_foot;
+  }
+}
+
+
+
 void leg_odometry::leg_odometry_continually_gravity_slaved(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
   if (!leg_odo_init_){
     if (contact_status == 2){
       std::cout << "Initialize Leg Odometry using left foot\n"; 
-      // Initialize with primary foot at zero
-      world_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
-      world_to_body_ =world_to_fixed_primary_foot_*body_to_l_foot.inverse();
+      initializePose(1, body_to_l_foot, body_to_r_foot);
+      
       world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
       primary_foot_ = 0; // left
       leg_odo_init_ = true;
@@ -211,7 +259,7 @@ void leg_odometry::leg_odometry_continually_gravity_slaved(Eigen::Isometry3d bod
     // TODO: add ability to initialize off of right foot
   }else{
     if (contact_status == 2 && primary_foot_ ==0){
-      std::cout << "Using fixed Left foot, update pelvis position\n";
+      if (verbose_>2) std::cout << "Using fixed Left foot, update pelvis position\n";
       // Take the quaternion from BDI, apply the pitch and roll to the primary foot 
       // via fk. Then update the pelvis position
       
@@ -272,7 +320,7 @@ void leg_odometry::leg_odometry_continually_gravity_slaved(Eigen::Isometry3d bod
       world_to_secondary_foot_ = world_to_body_ * body_to_l_foot;
       primary_foot_ = 1;
     }else if (contact_status == 3 && primary_foot_ == 1){
-      std::cout << "Using fixed Right foot, update pelvis position\n";
+      if (verbose_>2) std::cout << "Using fixed Right foot, update pelvis position\n";
       
       // Take the quaternion from BDI, apply the pitch and roll to the primary foot 
       // via fk. Then update the pelvis position
@@ -349,6 +397,13 @@ void leg_odometry::foot_contact_handler(const lcm::ReceiveBuffer* rbuf, const st
 }
 
 void leg_odometry::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+  if (read_log){
+    if (msg->utime <  1377035515663604 ){
+      std::cout << msg->utime << " too early\n";
+      return;
+    }
+  }
+  
   // std::cout << "got foot con: "<<msg->left_contact << " and " << msg->right_contact <<"\n";
   
   // 0. Extract World Pose of body as estimated by BDI
@@ -380,19 +435,54 @@ void leg_odometry::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std
   Eigen::Isometry3d body_to_r_foot = KDLToEigen(cartpos_out.find("r_foot")->second);  
 
   
-  int contact_status = foot_contact_->update(last_left_contact_, last_right_contact_);
-  if (contact_status < 0){
-    std::cout << "Feet not in contact yet... not integrating\n";  
+  // Depricated version I wrote:
+  //int contact_status = foot_contact_->update(last_left_contact_, last_right_contact_);
+  //if (contact_status < 0){
+  //  std::cout << "Feet not in contact yet... not integrating\n";  
+  //}  
+
+  // The Foot Contact Logic that Dehann wrote in the VRC:
+  TwoLegs::footstep newstep;
+  newstep = foot_contact_logic_->DetectFootTransistion(msg->utime, 
+                                                       msg->force_torque.l_foot_force_z, 
+                                                       msg->force_torque.r_foot_force_z);
+  if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
+    foot_contact_logic_->setStandingFoot(newstep.foot);
   }
   
-
+  
+  int contact_status_new;  
+  if (newstep.foot != -1){
+    std::cout << "NEW STEP ON " << ((foot_contact_logic_->secondary_foot()==LEFTFOOT) ? "LEFT" : "RIGHT")  << std::endl;
+    if ( foot_contact_logic_->getStandingFoot() == LEFTFOOT ){
+      contact_status_new = 0;
+    }else if ( foot_contact_logic_->getStandingFoot() == RIGHTFOOT ){
+      contact_status_new = 1;
+    }else{
+      std::cout << "Foot Contact Error "<< foot_contact_logic_->getStandingFoot() << " (switch)\n";
+      int blah;
+      cin >> blah;      
+    }    
+  }else{
+    if ( foot_contact_logic_->getStandingFoot() == LEFTFOOT ){
+      contact_status_new = 2;
+    }else if ( foot_contact_logic_->getStandingFoot() == RIGHTFOOT ){
+      contact_status_new = 3;
+    }else{
+      std::cout << "NEW Foot Contact Error "<< foot_contact_logic_->getStandingFoot() << " \n";
+      int blah;
+      cin >> blah;      
+    }
+  }
+  
+  
   int mode = 2;
   if (mode==0){
-    leg_odometry_basic(body_to_l_foot, body_to_r_foot, contact_status);
+    leg_odometry_basic(body_to_l_foot, body_to_r_foot, contact_status_new);
   }else if (mode==1){  
-    leg_odometry_gravity_slaved(body_to_l_foot, body_to_r_foot, contact_status);
+    leg_odometry_gravity_slaved(body_to_l_foot, body_to_r_foot, contact_status_new);
   }else{  
-    leg_odometry_continually_gravity_slaved(body_to_l_foot, body_to_r_foot, contact_status);
+    leg_odometry_continually_gravity_slaved(body_to_l_foot, body_to_r_foot, contact_status_new);
   }
   
   
@@ -410,7 +500,20 @@ void leg_odometry::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std
     world_to_secondary_T.push_back( Isometry3dTime(msg->utime , world_to_secondary_foot_  )  );
     pc_vis_->pose_collection_to_lcm_from_list(1003, world_to_secondary_T);
     
+    // BDI estimated:
+    if (read_log){
+      publishPose(world_to_body_bdi_, msg->utime, "POSE_BODY");   
+      lcm_publish_->publish("EST_ROBOT_STATE", msg);
+    }
+
+    
+    // MIT estimated:
     publishPose(world_to_body_, msg->utime, "POSE_BODY_ALT");
+    drc::robot_state_t msg_out = *msg;
+    insertPoseInRobotState(msg_out, world_to_body_);
+    lcm_publish_->publish("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &msg_out );
+    
+
   }
   
   previous_body_to_l_foot_ = body_to_l_foot;
@@ -442,12 +545,23 @@ main(int argc, char ** argv){
   ConciseArgs opt(argc, (char**)argv);
   opt.parse();*/
   
+  std::string  lcmurl="";
+  if (read_log){
+    string in_log_fname = "/media/bay_drive/data/atlas/2013-08-20-atlas-walking/lcmlog-2013-08-20.07_log06";
+    lcmurl = "file://" + in_log_fname + "?speed=3";// + "&start_timestamp=";// + begin_timestamp;
+  }else{
+    lcmurl="";
+  }
   
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM("") );
-  if(!lcm->good())
+  boost::shared_ptr<lcm::LCM> lcm_subscribe(new lcm::LCM(lcmurl) );
+  boost::shared_ptr<lcm::LCM> lcm_publish(new lcm::LCM("") );
+  
+  if(!lcm_subscribe->good())
+    return 1;  
+  if(!lcm_publish->good())
     return 1;  
   
-  leg_odometry app(lcm);
-  while(0 == lcm->handle());
+  leg_odometry app(lcm_subscribe, lcm_publish);
+  while(0 == lcm_subscribe->handle());
   return 0;
 }

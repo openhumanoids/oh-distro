@@ -31,17 +31,19 @@
 
 #include "foot_contact.hpp"
 
+#include <leg-odometry/FootContact.h>
+
 ///////////////////////////////////////////////////////////////
 class leg_odometry{
   public:
-    leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_);
+    leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_, boost::shared_ptr<lcm::LCM> &lcm_publish_);
     
     ~leg_odometry(){
     }
     void Identity();
     
   private:
-    boost::shared_ptr<lcm::LCM> lcm_;
+    boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
     BotParam* botparam_;
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
@@ -51,6 +53,8 @@ class leg_odometry{
     void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
     void foot_pos_est_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_foot_pos_est_t* msg);
     void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
+    
+    TwoLegs::FootContact* foot_contact_logic_;
     
     foot_contact* foot_contact_;
     bool last_left_contact_, last_right_contact_;
@@ -64,6 +68,8 @@ class leg_odometry{
     // The pelvis position is then backed out using this new foot positon and fk.
     void leg_odometry_continually_gravity_slaved(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
     
+    void initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot);
+    
     Eigen::Isometry3d world_to_body_bdi_;
     
     // has the leg odometry been initialized
@@ -75,6 +81,10 @@ class leg_odometry{
     
     Eigen::Isometry3d previous_body_to_l_foot_;
     Eigen::Isometry3d previous_body_to_r_foot_;
+    
+    int verbose_;
+    
+
 };    
 
 #endif
