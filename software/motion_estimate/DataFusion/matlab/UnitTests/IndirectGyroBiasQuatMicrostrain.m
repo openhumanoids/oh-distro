@@ -266,7 +266,7 @@ plot(X(:,7:9))
 title('Estimated dVl')
 
 
-figure(4),clf
+figure(5),clf
 
 subplot(411)
 plot(DX(:,10:12))
@@ -275,6 +275,136 @@ title('K * innov updates to accelerometer bias estimates')
 subplot(412)
 plot(X(:,10:12))
 title('Accelerometer bias estimates')
+
+
+
+figure(6), clf
+
+sf = 3;
+
+
+ROWS = 5;
+COLS = 3;
+
+r = 1;
+index = 1;
+
+covbounds = 0.5;%sf*max(abs([bias; bias2]));
+
+subplot(ROWS,COLS,COLS*(r-1)+1),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+index = 2;
+subplot(ROWS,COLS,COLS*(r-1)+2),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+title('Misalignment estimates in body frame')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+index = 3;
+subplot(ROWS,COLS,COLS*(r-1)+3),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+
+r = r+1;
+index = index+1;
+
+covbounds = 0.2;%sf*max(abs([bias; bias2]));
+
+subplot(ROWS,COLS,COLS*(r-1)+1),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+index = index+1;
+subplot(ROWS,COLS,COLS*(r-1)+2),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+title('Gyro bias estimates in body frame')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+index = index+1;
+subplot(ROWS,COLS,COLS*(r-1)+3),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+
+r = r+1;
+index = index+1;
+
+covbounds = 0.5;%sf*max(abs([bias; bias2]));
+
+subplot(ROWS,COLS,COLS*(r-1)+1),plot(predicted.vl(:,1) + X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+index = index+1;
+subplot(ROWS,COLS,COLS*(r-1)+2),plot(predicted.vl(:,2) + X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+title('Local frame velocity errors')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+index = index+1;
+subplot(ROWS,COLS,COLS*(r-1)+3),plot(predicted.vl(:,3) + X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+
+r = r+1;
+index = index+1;
+
+covbounds = 0.1;%sf*max(abs([bias; bias2]));
+
+subplot(ROWS,COLS,COLS*(r-1)+1),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+index = index+1;
+subplot(ROWS,COLS,COLS*(r-1)+2),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+title('Estimated accelerometer bias in body frame')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
+index = index+1;
+subplot(ROWS,COLS,COLS*(r-1)+3),plot(X(:,index))
+hold on
+plot(sqrt(COV(:,index)) ,'r')
+plot(-sqrt(COV(:,index)) ,'r')
+axis([1,iter,-covbounds,covbounds])
+grid on
+
 
 disp 'DONE'
 
