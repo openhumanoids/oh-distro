@@ -18,7 +18,6 @@
 #include <btBulletCollisionCommon.h>
 #include <Eigen/Dense>
 
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <collision/collision_object.h>
 
 namespace collision {

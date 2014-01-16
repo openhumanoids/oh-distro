@@ -4,7 +4,6 @@
 
 using namespace std;
 using namespace Eigen;
-using namespace drc;
 using namespace collision;
 
 int 
