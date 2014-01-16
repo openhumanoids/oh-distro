@@ -69,12 +69,12 @@ Initialize the Drake submodule:
     cd drc
     git submodule update --init
 
-Add the *stage* remote. The *stage* is the location where branches can be shared.
+Add the *sandbox* remote. The *sandbox* is the location where branches can be shared.
 
 ::
 
-    git remote add stage git@github.com:drcbot/drc.git
-    git fetch stage
+    git remote add sandbox git@github.com:drcbot/drc.git
+    git fetch sandbox
 
 
 Dependencies
