@@ -88,7 +88,7 @@ set(camunits-extra-wrapper_revision 887)
 set(camunits-extra-wrapper_depends camunits-wrapper)
 
 set(apriltags_url https://svn.csail.mit.edu/apriltags)
-set(apriltags_revision 15)
+set(apriltags_revision 24)
 set(apriltags_depends opencv-drc)
 
 set(spotless_url https://svn.csail.mit.edu/locomotion/pods/spotless)
