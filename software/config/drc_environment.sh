@@ -1,23 +1,32 @@
-
+# This awkward line exists to support zsh (instead of bash). 
+# Due to limitations of zsh, it must be the first line in the file. Sorry.
+thisFile=$_
+if [ $BASH ] 
+then
+  # may be a relative or absolute path
+  thisFile=${BASH_SOURCE[0]}
+fi
 
 # This function sets the DRC_BASE environment variable to be the DRC
 # root directory.  The path to the root directory is computed using
 # the absolute path of this bash file.  Due to symlinks, this bash
 # file can be located in $DRC_BASE/software/config or
 # $DRC_BASE/software/build/config.
+
+# Due to intricacies of shells, this only works if it's the first line in the file
+environmentFile=$_
+echo $environmentFile
+return
 set_drc_base()
 {
-  # may be a relative or absolute path
-  environmentFile=${BASH_SOURCE[0]}
-
   # use cd and pwd to get an absolute path
-  configParentDir="$(cd "$(dirname "$environmentFile")/.." && pwd)"
+  configParentDir="$(cd "$(dirname "$thisFile")/.." && pwd)"
 
   # different cases for software/config or software/build/config
   case "$(basename $configParentDir)" in
     "software") export DRC_BASE=$(dirname $configParentDir);;
     "build") export DRC_BASE=$(dirname $(dirname $configParentDir));;
-    *) echo "Warning: DRC environment file is stored in unrecognized location: $environmentFile";;
+    *) echo "Warning: DRC environment file is stored in unrecognized location: $thisFile";;
   esac
 }
 
