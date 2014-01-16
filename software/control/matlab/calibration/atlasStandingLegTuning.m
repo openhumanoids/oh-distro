@@ -32,7 +32,7 @@ signal = 'chirp';% <----  zoh, foh, chirp
 dim = 2; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
   zero_crossing = true;
-  ts = linspace(0,40,500);% <----
+  ts = linspace(0,20,500);% <----
   amp = -0.05;% <---- meters, COM DELTA
   freq = linspace(0.02,0.1,500);% <----  cycles per second
 else
@@ -43,7 +43,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 T=ts(end);
-
 
 % load robot model
 r = Atlas();
@@ -181,14 +180,8 @@ qtraj = PPTrajectory(spline(ts,q));
 qddtraj = fnder(qtraj,2);
 keyboard;
 
-% kalman filter params
-Hk = [eye(nq) zeros(nq)];
-R = 5e-4*eye(nq);
-P = eye(2*nq);
-x_est = zeros(2*nq,1);
-
+% set up QP controller params---exclude ZMP for now
 foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-    
 ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
   'B',[zeros(2); eye(2)],...
@@ -227,28 +220,13 @@ while tt<T+2
   if ~isempty(x)
     if toffset==-1
       toffset=t;
-      tlast=0;
       xy_offset = x(1:2); % because state estimate will not be 0,0 to start
     end
     tt=t-toffset;
-    dt = tt-tlast;
-    tlast =tt;
-
-    F = [eye(nq) dt*eye(nq); zeros(nq) eye(nq)];
-    Q = 0.3*[dt*eye(nq) zeros(nq); zeros(nq) eye(nq)];
     
-    % estimate state
-    jprior = F*x_est;
-    Pprior = F*P*F' + Q;
-    meas_resid = x(1:nq) - Hk*jprior;
-    S = Hk*Pprior*Hk' + R;
-    K = (P*Hk')/S;
-    x_est = jprior + K*meas_resid;
-    P = (eye(2*nq) - K*Hk)*Pprior;
-    
-    q = x_est(1:nq);
+    q = x(1:nq);
     q(1:2) = q(1:2)-xy_offset;
-    qd = x_est(nq+(1:nq));
+    qd = x(nq+(1:nq));
     
     % get desired configuration
     qt = qtraj.eval(tt);
@@ -256,23 +234,11 @@ while tt<T+2
 
     qt(6) = q(6); % ignore yaw
     
-    % get desired acceleration
+    % get desired acceleration, open loop + PD
     qdddes = qddtraj.eval(tt) + 19.0*(qt-q) - 0.8*qd;
     
     u = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
     udes(joint_act_ind) = u(joint_act_ind);
-    
-%     Fc = 10;
-%     Fv = 0.5;
-%     Fc_window = 0.175;
-%     tau_friction = zeros(34,1);
-%     for i=1:length(joint_ind)
-%       j=joint_ind(i);
-%       v = qd(j) + 0.3*qdd(j);
-%       tau_friction(j) = max(-1,min(1,v/Fc_window)) .* Fc + Fv*v; 
-%     end
-%     
-%     tf_act = tau_friction(act_idx_map);
 
     % should really be using qdd from QP solution
     f_friction = computeFrictionForce(r,qd + 0.3*qdddes) - computeFrictionForce(r,qd);
