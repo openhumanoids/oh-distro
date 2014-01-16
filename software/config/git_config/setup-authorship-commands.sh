@@ -21,4 +21,6 @@ function set-git-author() {
 function clear-git-author() {
     unset GIT_AUTHOR_EMAIL
     unset GIT_AUTHOR_NAME
+	echo "Goodbye. Git authorship reset to default values:"
+	git var GIT_AUTHOR_IDENT
 }
