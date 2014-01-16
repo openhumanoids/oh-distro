@@ -612,8 +612,9 @@ int main(int argc, char *argv[])
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  //bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  //bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  // extra frames rendering:
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   collections_add_renderer_to_viewer(viewer, 1, lcm);
   
@@ -622,6 +623,8 @@ int main(int argc, char *argv[])
   
   // Block of Renderers:  
   setup_renderer_robot_state(viewer, 0, lcm,0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+
+  setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
