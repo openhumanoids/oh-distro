@@ -1,0 +1,3 @@
+[submodule "software/drake"]
+	path = software/drake
+	url = git@github.com:mitdrc/drake.git
