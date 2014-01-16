@@ -28,11 +28,7 @@
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/drc_lcmtypes.hpp"
 
-
-#include "foot_contact.hpp"
-
 #include <leg-odometry/FootContact.h>
-
 
 struct CommandLineConfig
 {
@@ -52,7 +48,9 @@ class leg_odometry{
     
     ~leg_odometry(){
     }
-    void Identity();
+    
+    void Update(const  drc::robot_state_t* msg);
+    void terminate();    
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
@@ -65,16 +63,10 @@ class leg_odometry{
     // params:
     std::string leg_odometry_mode_;
     
-    void foot_contact_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::foot_contact_estimate_t* msg);
-    void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
-    void foot_pos_est_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_foot_pos_est_t* msg);
-    void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
-    
+   
     TwoLegs::FootContact* foot_contact_logic_;
     
-    foot_contact* foot_contact_;
-    bool last_left_contact_, last_right_contact_;
-    
+    void initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot);
     // Pure Leg Odometry, no IMU
     void leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
     // At the moment a foot transition occurs: slave the pelvis pitch and roll and then fix foot using fk.
@@ -84,10 +76,8 @@ class leg_odometry{
     // The pelvis position is then backed out using this new foot positon and fk.
     void leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
     
-    void initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot);
-    
+    // Position Estimate produced by BDI:
     Eigen::Isometry3d world_to_body_bdi_;
-    
     // has the leg odometry been initialized
     bool leg_odo_init_;
     Eigen::Isometry3d world_to_body_;
@@ -98,11 +88,11 @@ class leg_odometry{
     Eigen::Isometry3d previous_body_to_l_foot_;
     Eigen::Isometry3d previous_body_to_r_foot_;
     
-    int verbose_;
     
+    // Utilities and Logging
+    int verbose_;
     void openLogFile();
     ofstream logfile_;
-    void terminate();
 };    
 
 #endif
