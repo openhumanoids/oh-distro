@@ -3,6 +3,7 @@
 #include <lcm/lcm.h>
 #include <iostream>
 #include <limits>
+#include <fstream>
 
 #include "leg_odometry.hpp"
 #include <path_util/path_util.h>
@@ -14,20 +15,29 @@ using namespace boost::assign;
 
 bool read_log = false;
 
-leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_):
-          lcm_subscribe_(lcm_subscribe_), lcm_publish_(lcm_publish_){
-          
-  std::string config_filename = "drc_robot_02.cfg";            
-  std::string config_filename_full = std::string(getConfigPath()) +'/' + std::string(config_filename);
-  botparam_ = bot_param_new_from_file(config_filename_full.c_str());
-            
-            
-  std::string urdf_filename = "model_LH_RH.urdf";            
-  std::string urdf_filename_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string(urdf_filename);
-  model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_filename_full  ));
+
+
+leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_, const CommandLineConfig& cl_cfg_):
+          lcm_subscribe_(lcm_subscribe_), lcm_publish_(lcm_publish_), cl_cfg_(cl_cfg_){
   
-  // botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
-  // model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
+  if (cl_cfg_.config_filename == ""){
+    botparam_ = bot_param_new_from_server(lcm_subscribe_->getUnderlyingLCM(), 0);
+  }else{
+    //std::string config_filename = "drc_robot_02.cfg";            
+    std::string config_filename_full = std::string(getConfigPath()) +'/' + std::string(cl_cfg_.config_filename);
+    botparam_ = bot_param_new_from_file(config_filename_full.c_str());
+  }
+            
+  if (cl_cfg_.urdf_filename == ""){           
+    model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_subscribe_->getUnderlyingLCM(), 0));
+  }else{
+    //std::string urdf_filename = "model_LH_RH.urdf";            
+    std::string urdf_filename_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string(cl_cfg_.urdf_filename);
+    model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_filename_full  ));
+  }
+
+  leg_odometry_mode_ = bot_param_get_str_or_fail(botparam_, "state_estimator.leg_odometry_mode");            
+  
   
   KDL::Tree tree;
   if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
@@ -59,6 +69,28 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
   last_right_contact_ = false;
   
   verbose_ = 1;
+  
+  openLogFile();
+}
+
+
+void leg_odometry::openLogFile(){
+  time_t rawtime;
+  struct tm * timeinfo;  
+  char buffer [80];
+  time (&rawtime);
+  timeinfo = localtime (&rawtime);
+
+  strftime (buffer,80,"/tmp/state-estimate-result-%Y-$m-%d-%H-%M.txt",timeinfo);
+  std::string filename = buffer;
+  
+  std::cout << "Opening Logfile: "<< filename << "\n";
+  logfile_.open ( filename.c_str() );
+}
+
+void leg_odometry::terminate(){
+  std::cout << "Closing Logfile: " << "\n";
+  logfile_.close();
 }
 
 Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
@@ -86,18 +118,14 @@ void leg_odometry::publishPose(Eigen::Isometry3d pose, int64_t utime, std::strin
 }
 
 void insertPoseInRobotState(drc::robot_state_t& msg, Eigen::Isometry3d pose){
-
   msg.pose.translation.x = pose.translation().x();
   msg.pose.translation.y = pose.translation().y();
   msg.pose.translation.z = pose.translation().z();
-  
   Eigen::Quaterniond r_x(pose.rotation());
   msg.pose.rotation.w = r_x.w();  
   msg.pose.rotation.x = r_x.x();  
   msg.pose.rotation.y = r_x.y();  
   msg.pose.rotation.z = r_x.z();  
-
-
 }
   
 
@@ -106,9 +134,8 @@ void leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
   if (!leg_odo_init_){
     if (contact_status == 2){
       std::cout << "Initialize Leg Odometry using left foot\n"; 
-      // Initialize with primary foot at zero
-      world_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
-      world_to_body_ =world_to_fixed_primary_foot_*body_to_l_foot.inverse();
+      initializePose(1, body_to_l_foot, body_to_r_foot);
+      
       world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
       primary_foot_ = 0; // left
       leg_odo_init_ = true;
@@ -147,13 +174,12 @@ void leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
   }
 }
 
-void leg_odometry::leg_odometry_gravity_slaved(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
+void leg_odometry::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
   if (!leg_odo_init_){
     if (contact_status == 2){
       std::cout << "Initialize Leg Odometry using left foot\n"; 
-      // Initialize with primary foot at zero
-      world_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
-      world_to_body_ =world_to_fixed_primary_foot_*body_to_l_foot.inverse();
+      initializePose(1, body_to_l_foot, body_to_r_foot);
+
       world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
       primary_foot_ = 0; // left
       leg_odo_init_ = true;
@@ -246,7 +272,7 @@ void leg_odometry::initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eige
 
 
 
-void leg_odometry::leg_odometry_continually_gravity_slaved(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
+void leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
   if (!leg_odo_init_){
     if (contact_status == 2){
       std::cout << "Initialize Leg Odometry using left foot\n"; 
@@ -397,12 +423,22 @@ void leg_odometry::foot_contact_handler(const lcm::ReceiveBuffer* rbuf, const st
 }
 
 void leg_odometry::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
-  if (read_log){
-    if (msg->utime <  1377035515663604 ){
-      std::cout << msg->utime << " too early\n";
+  if ( cl_cfg_.begin_timestamp > -1){
+    if (msg->utime <  cl_cfg_.begin_timestamp ){
+      double seek_seconds = (cl_cfg_.begin_timestamp - msg->utime)*1E-6;
+      std::cout << msg->utime << " too early | seeking " << seek_seconds    << "secs, to " << cl_cfg_.begin_timestamp << "\n";
       return;
     }
   }
+  if ( cl_cfg_.end_timestamp > -1){
+    if (msg->utime >  cl_cfg_.end_timestamp ){
+      std::cout << msg->utime << " finishing\n";
+      
+      exit(-1);
+      return;
+    }    
+  }
+  
   
   // std::cout << "got foot con: "<<msg->left_contact << " and " << msg->right_contact <<"\n";
   
@@ -476,14 +512,18 @@ void leg_odometry::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std
   }
   
   
-  int mode = 2;
-  if (mode==0){
+  int mode = 0;
+  if (leg_odometry_mode_ == "basic" ){
     leg_odometry_basic(body_to_l_foot, body_to_r_foot, contact_status_new);
-  }else if (mode==1){  
-    leg_odometry_gravity_slaved(body_to_l_foot, body_to_r_foot, contact_status_new);
-  }else{  
-    leg_odometry_continually_gravity_slaved(body_to_l_foot, body_to_r_foot, contact_status_new);
+  }else if (leg_odometry_mode_ == "slaved_once" ){  
+    leg_odometry_gravity_slaved_once(body_to_l_foot, body_to_r_foot, contact_status_new);
+  }else if( leg_odometry_mode_ == "slaved_always" ){  
+    leg_odometry_gravity_slaved_always(body_to_l_foot, body_to_r_foot, contact_status_new);
+  }else{
+    std::cout << "Unrecognised odometry algorithm\n"; 
+    exit(-1);
   }
+    
   
   
   
@@ -513,7 +553,12 @@ void leg_odometry::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std
     insertPoseInRobotState(msg_out, world_to_body_);
     lcm_publish_->publish("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &msg_out );
     
-
+    std::stringstream ss;
+    ss << print_Isometry3d(world_to_body_bdi_) << ", "
+       << print_Isometry3d(world_to_body_);
+       
+    std::cout << ss.str() << "\n";
+    logfile_ << ss.str() << "\n";
   }
   
   previous_body_to_l_foot_ = body_to_l_foot;
@@ -541,16 +586,28 @@ void leg_odometry::foot_pos_est_handler(const lcm::ReceiveBuffer* rbuf, const st
 
 int
 main(int argc, char ** argv){
-  /*
-  ConciseArgs opt(argc, (char**)argv);
-  opt.parse();*/
+  CommandLineConfig cl_cfg;
+  cl_cfg.urdf_filename = "";
+  cl_cfg.config_filename = "";
+  cl_cfg.lcmlog_filename = "";
+  cl_cfg.read_lcmlog = false;
+  cl_cfg.begin_timestamp = -1;
+  cl_cfg.end_timestamp = -1;
   
-  std::string  lcmurl="";
-  if (read_log){
-    string in_log_fname = "/media/bay_drive/data/atlas/2013-08-20-atlas-walking/lcmlog-2013-08-20.07_log06";
-    lcmurl = "file://" + in_log_fname + "?speed=3";// + "&start_timestamp=";// + begin_timestamp;
-  }else{
+  ConciseArgs opt(argc, (char**)argv);
+  opt.add(cl_cfg.urdf_filename, "uf", "urdf_filename","urdf_filename");
+  opt.add(cl_cfg.config_filename, "cf", "config_filename","config_filename");
+  opt.add(cl_cfg.lcmlog_filename, "lf", "lcmlog_filename","lcmlog_filename");
+  opt.add(cl_cfg.begin_timestamp, "bt", "begin_timestamp","Run estimation from this timestamp");
+  opt.add(cl_cfg.end_timestamp, "et", "end_timestamp","End estimation at this timestamp");  
+  opt.parse();
+  
+  std::string lcmurl = "";
+  if (cl_cfg.lcmlog_filename == "" ){
     lcmurl="";
+  }else{
+    cl_cfg.read_lcmlog = true;
+    lcmurl = "file://" + cl_cfg.lcmlog_filename + "?speed=3";// + "&start_timestamp=";// + begin_timestamp;
   }
   
   boost::shared_ptr<lcm::LCM> lcm_subscribe(new lcm::LCM(lcmurl) );
@@ -561,7 +618,7 @@ main(int argc, char ** argv){
   if(!lcm_publish->good())
     return 1;  
   
-  leg_odometry app(lcm_subscribe, lcm_publish);
+  leg_odometry app(lcm_subscribe, lcm_publish, cl_cfg);
   while(0 == lcm_subscribe->handle());
   return 0;
 }

@@ -33,10 +33,22 @@
 
 #include <leg-odometry/FootContact.h>
 
+
+struct CommandLineConfig
+{
+    std::string config_filename;
+    std::string urdf_filename;
+    std::string lcmlog_filename;
+    bool read_lcmlog;
+    int64_t begin_timestamp;
+    int64_t end_timestamp;
+};
+
+
 ///////////////////////////////////////////////////////////////
 class leg_odometry{
   public:
-    leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_, boost::shared_ptr<lcm::LCM> &lcm_publish_);
+    leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_, boost::shared_ptr<lcm::LCM> &lcm_publish_, const CommandLineConfig& cl_cfg_);
     
     ~leg_odometry(){
     }
@@ -44,10 +56,14 @@ class leg_odometry{
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
+    const CommandLineConfig cl_cfg_;
     BotParam* botparam_;
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
     pointcloud_vis* pc_vis_;
+    
+    // params:
+    std::string leg_odometry_mode_;
     
     void foot_contact_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::foot_contact_estimate_t* msg);
     void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
@@ -63,10 +79,10 @@ class leg_odometry{
     void leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
     // At the moment a foot transition occurs: slave the pelvis pitch and roll and then fix foot using fk.
     // Dont move or rotate foot after that.
-    void leg_odometry_gravity_slaved(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    void leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
     // Foot position, as with above. For subsequent ticks, foot quaternion is updated using the pelvis quaternion
     // The pelvis position is then backed out using this new foot positon and fk.
-    void leg_odometry_continually_gravity_slaved(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    void leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
     
     void initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot);
     
@@ -84,7 +100,9 @@ class leg_odometry{
     
     int verbose_;
     
-
+    void openLogFile();
+    ofstream logfile_;
+    void terminate();
 };    
 
 #endif
