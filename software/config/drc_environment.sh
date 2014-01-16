@@ -5,11 +5,11 @@
 # the absolute path of this bash file.  Due to symlinks, this bash
 # file can be located in $DRC_BASE/software/config or
 # $DRC_BASE/software/build/config.
+
+# Due to intricacies of shells, this only works if it's the first line in the file
+environmentFile=$_
 set_drc_base()
 {
-  # may be a relative or absolute path
-  environmentFile=${BASH_SOURCE[0]}
-
   # use cd and pwd to get an absolute path
   configParentDir="$(cd "$(dirname "$environmentFile")/.." && pwd)"
 
