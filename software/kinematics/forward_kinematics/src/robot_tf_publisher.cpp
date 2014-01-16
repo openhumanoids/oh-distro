@@ -7,7 +7,9 @@
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
 #include <kdl/tree.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/tf_t.hpp"
+#include "lcmtypes/drc/joint_angles_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 #include "forward_kinematics/tf_publisher.hpp"
 #include "kdl_parser/kdl_parser.hpp"
 

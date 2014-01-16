@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/tf_t.hpp"
 
 namespace robot_tf_listener {
 class Handler 
