@@ -8,6 +8,8 @@
 
 # Due to intricacies of shells, this only works if it's the first line in the file
 environmentFile=$_
+echo $environmentFile
+return
 set_drc_base()
 {
   # use cd and pwd to get an absolute path
