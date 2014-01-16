@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Adapted from http://stackoverflow.com/a/9629729
+# Refuses to allow commits unless author is explicitly set through the GIT_AUTHOR_NAME and GIT_AUTHOR_EMAIL environment variables.
+
+AUTHORINFO=$(git var GIT_AUTHOR_IDENT) || exit 1
+NAME=$(printf '%s\n' "${AUTHORINFO}" | sed -n 's/^\(.*\) <.*$/\1/p')
+EMAIL=$(printf '%s\n' "${AUTHORINFO}" | sed -n 's/^.* <\(.*\)> .*$/\1/p')
+[ "${NAME}" != root ] && [ "${EMAIL}" != "root@localhost" ] || {
+    cat <<EOF >&2
+Error!
+This is a shared machine, so you will need to tell git who you are before you commit.
+You should do this for duration of your terminal session by running "set-git-author yourusername".
+EOF
+    exit 1
+}
