@@ -24,7 +24,6 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <ros/callback_queue.h>
 
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression

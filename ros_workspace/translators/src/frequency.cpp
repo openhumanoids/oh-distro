@@ -27,7 +27,7 @@
 
 #include <frequency/frequency.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 
 #include <ConciseArgs>
 using namespace std;
