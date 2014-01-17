@@ -3,3 +3,6 @@ pod-build/
 data
 *.sublime-project
 *.sublime-workspace
+.viewer-prefs
+logfile.tmp
+drake_viewer.out
