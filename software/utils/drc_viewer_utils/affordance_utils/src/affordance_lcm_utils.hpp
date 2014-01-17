@@ -1,8 +1,11 @@
 #ifndef AFFORDANCE_LCM_UTILS_HPP
 #define AFFORDANCE_LCM_UTILS_HPP
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <algorithm>
 #include <string> 
+#include "lcmtypes/drc/aff_indexed_traj_opt_constraint_t.hpp"
+#include "lcmtypes/drc/affordance_index_t.hpp"
+#include "lcmtypes/drc/position_3d_t.hpp"
+#include "lcmtypes/drc/traj_opt_constraint_t.hpp"
 
 using namespace std;
 using namespace boost;
