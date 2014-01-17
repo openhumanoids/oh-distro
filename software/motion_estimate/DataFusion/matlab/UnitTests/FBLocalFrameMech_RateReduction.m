@@ -99,7 +99,8 @@ nDEF = [];
 Rbias = [];
 
 % this is the filter update counter
-FilterRate = 10;
+FilterRate = 20;
+limitedFB = 0.5;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
@@ -135,7 +136,7 @@ for k = 1:iter
         
         Disc.C = [zeros(3,6), eye(3), zeros(3)];
         
-        covariances.R = diag([1E1*ones(3,1)]);
+        covariances.R = diag([5E-1*ones(3,1)]);
         
         Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-5*ones(1,3)]);
         
@@ -163,19 +164,19 @@ for k = 1:iter
         
         % we move misalignment information out of the filter to achieve better
         % linearization
-        dlQl = qprod(e2q(posterior.x(1:3)),dlQl);
-        posterior.x(1:3) = [0;0;0];
+        dlQl = qprod(e2q(limitedFB*posterior.x(1:3)),dlQl);
+        posterior.x(1:3) = (1-limitedFB)*posterior.x(1:3);
         
         %Apply velocity updates to the system also, and remove information from
         %the filter state
-        predicted.vl(k,:) = predicted.vl(k,:) + posterior.x(7:9)';
-        posterior.x(7:9) = [0;0;0];
+        predicted.vl(k,:) = predicted.vl(k,:) + limitedFB*posterior.x(7:9)';
+        posterior.x(7:9) = (1-limitedFB)*posterior.x(7:9);
         
         % Store the biases outside the filter states
-        predicted.ba(k+1,:) = predicted.ba(k,:) + posterior.x(10:12)';
-        posterior.x(10:12) = [0;0;0];
-        predicted.bg(k+1,:) = predicted.bg(k,:) + posterior.x(4:6)';
-        posterior.x(4:6) = [0;0;0];
+        predicted.ba(k+1,:) = predicted.ba(k,:) + limitedFB*posterior.x(10:12)';
+        posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
+        predicted.bg(k+1,:) = predicted.bg(k,:) + limitedFB*posterior.x(4:6)';
+        posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
         
         
         %     Rbias = [Rbias; qrot(e2q(posterior.x(1:3)),posterior.x(4:6))'];
