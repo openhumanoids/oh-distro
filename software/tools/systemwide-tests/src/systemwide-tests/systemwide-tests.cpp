@@ -8,7 +8,13 @@
 
 #include <bot_core/bot_core.h>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/controller_status_t.hpp"
+#include "lcmtypes/drc/data_request_t.hpp"
+#include "lcmtypes/drc/data_request_list_t.hpp"
+#include "lcmtypes/drc/footstep_plan_t.hpp"
+#include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/walking_goal_t.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/StdVector>

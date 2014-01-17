@@ -5,7 +5,7 @@
 #include <sys/time.h>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/atlas_state_t.hpp"
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/multisense.hpp"
 
