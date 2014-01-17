@@ -154,3 +154,10 @@ endmacro()
 foreach(external ${externals})
   add_svn_external(${external})
 endforeach()
+
+
+# Eigen will install eigen3.pc to build/share instead of build/lib
+# unless this directory is created before Eigen configures.
+ExternalProject_Add_Step(Eigen_pod make_pkgconfig_dir
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
+  DEPENDERS configure)
