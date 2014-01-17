@@ -37,7 +37,7 @@ switch (1)
         iter = 6000;
         initend = 800;
 end
-
+ 
 
 gn = [0;0;9.8]; % forward left up
 
