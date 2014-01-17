@@ -37,9 +37,9 @@
 
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
 #include <lcmtypes/drc_robot_urdf_t.h>
+#include <lcmtypes/drc/ee_teleop_transform_t.hpp>
 
 #include <path_util/path_util.h>
 

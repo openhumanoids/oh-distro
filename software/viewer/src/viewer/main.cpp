@@ -44,7 +44,8 @@
 
 #include "udp_util.h"
 #include "RendererGroupUtil.hpp"
-#include <lcmtypes/drc_lcmtypes.h>
+#include "lcmtypes/drc_plan_control_t.h"
+#include "lcmtypes/drc_robot_posture_preset_t.h"
 #include <visualization_utils/keyboard_signal_utils.hpp>
 #include <visualization_utils/foviation_signal_utils.hpp>
 #include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>

@@ -3,7 +3,6 @@
 
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
 
 #include <GL/gl.h>
 #include <bot_vis/bot_vis.h>

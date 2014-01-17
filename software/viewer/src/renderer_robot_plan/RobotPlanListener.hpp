@@ -9,6 +9,14 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/aff_indexed_robot_plan_t.hpp"
+#include "lcmtypes/drc/footstep_plan_t.hpp"
+#include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
+#include "lcmtypes/drc/system_status_t.hpp"
+#include "lcmtypes/drc/controller_status_t.hpp"
 #include <bot_vis/bot_vis.h>
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/InteractableGlKinematicBody.hpp>

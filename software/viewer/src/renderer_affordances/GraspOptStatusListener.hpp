@@ -3,6 +3,7 @@
 
 
 #include "renderer_affordances.hpp" // has definition of RendererAffordances struc
+#include "lcmtypes/drc/grasp_opt_status_t.hpp"
 
 namespace renderer_affordances
 {

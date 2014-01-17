@@ -20,7 +20,11 @@
 #include <iostream>
 #include <boost/function.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/drill_control_t.hpp"
+#include "lcmtypes/drc/joint_angles_t.hpp"
+#include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/traj_opt_constraint_t.hpp"
+#include "lcmtypes/drc/walking_goal_t.hpp"
 #include <bot_core/rotations.h>
 #include <Eigen/Dense>
 #include <visualization_utils/angles.hpp>

@@ -1,8 +1,8 @@
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
 #include "InitGraspOptPublisher.hpp"
 #include <algorithm>
+#include "lcmtypes/drc/grasp_opt_control_t.hpp"
 
 using namespace std;
 using namespace boost;

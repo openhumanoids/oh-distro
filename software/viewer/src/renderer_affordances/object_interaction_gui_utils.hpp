@@ -125,6 +125,11 @@
 #include "renderer_affordances.hpp"
 #include "otdf_instance_management_gui_utils.hpp"
 #include "lcm_utils.hpp"
+#include "lcmtypes/drc/atlas_behavior_manipulate_params_t.hpp"
+#include "lcmtypes/drc/grasp_opt_mode_t.hpp"
+#include "lcmtypes/drc/grasp_opt_control_t.hpp"
+#include "lcmtypes/drc/world_box_t.hpp"
+#include "lcmtypes/drc/workspace_object_urdf_t.hpp"
 
 //#include "AffordanceCollectionListener.hpp"
 #include "RobotStateListener.hpp"
