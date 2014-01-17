@@ -5,9 +5,18 @@
 #include "jointnames.h"
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/vicon.hpp>
+#include "lcmtypes/drc/atlas_command_t.hpp"
+#include "lcmtypes/drc/atlas_foot_pos_est_t.hpp"
+#include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
+#include "lcmtypes/drc/atlas_state_t.hpp"
+#include "lcmtypes/drc/atlas_state_extra_t.hpp"
+#include "lcmtypes/drc/atlas_status_t.hpp"
+#include "lcmtypes/drc/drill_control_t.hpp"
+#include "lcmtypes/drc/foot_contact_estimate_t.hpp"
+#include "lcmtypes/drc/ins_update_request_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 
 #include <cassert>
 

@@ -10,8 +10,13 @@
 #include <drc_utils/joint_utils.hpp>
 
 #include "lcmtypes/bot_core.hpp"
-#include "lcmtypes/drc_lcmtypes.hpp"
 #include "lcmtypes/multisense.hpp"
+#include "lcmtypes/drc/atlas_state_t.hpp"
+#include "lcmtypes/drc/atlas_state_extra_t.hpp"
+#include "lcmtypes/drc/hand_state_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/system_status_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 #include "atlas/AtlasControlTypes.h"

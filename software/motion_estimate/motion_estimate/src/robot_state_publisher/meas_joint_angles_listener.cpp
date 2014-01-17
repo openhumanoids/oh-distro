@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/joint_angles_t.hpp"
 
 namespace meas_joint_angles_listener {
 class Handler 

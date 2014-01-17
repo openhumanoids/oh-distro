@@ -24,9 +24,10 @@
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp>
 
-//#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/atlas_foot_pos_est_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 
 struct FrequencyLimit {
   FrequencyLimit(){}
