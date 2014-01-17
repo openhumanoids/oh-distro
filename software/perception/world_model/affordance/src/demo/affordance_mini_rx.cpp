@@ -5,8 +5,9 @@
 #include <sys/time.h>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
 #include "lcmtypes/drc/affordance_mini_collection_t.hpp"
+#include "lcmtypes/drc/affordance_plus_t.hpp"
+#include "lcmtypes/drc/affordance_plus_collection_t.hpp"
 #include "lcmtypes/bot_core.hpp"
 
 

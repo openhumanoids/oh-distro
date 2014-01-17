@@ -9,7 +9,10 @@
 #define AFFORDANCESERVER_H_
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_collection_t.hpp"
+#include "lcmtypes/drc/affordance_plus_collection_t.hpp"
+#include "lcmtypes/drc/affordance_plus_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/thread.hpp>

@@ -23,7 +23,11 @@
 #include <lcmtypes/drc/affordance_mini_t.hpp>
 #include <lcmtypes/drc/affordance_mini_collection_t.hpp>
 #include <lcmtypes/drc/simple_grasp_t.hpp>
+#include <lcmtypes/drc/map_request_t.hpp>
+#include <lcmtypes/drc/map_registration_command_t.hpp>
 #include <lcmtypes/drc/motionest_request_t.hpp>
+#include <lcmtypes/drc/robot_state_t.hpp>
+#include <lcmtypes/drc/sandia_simple_grasp_t.hpp>
 
 #include <lcmtypes/multisense.hpp>
 #include <lcmtypes/irobothand.hpp>
