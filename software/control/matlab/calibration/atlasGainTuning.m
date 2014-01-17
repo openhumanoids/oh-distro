@@ -52,7 +52,7 @@ gains = getAtlasGains(input_frame);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_hpy';% <---- 
+joint = 'r_leg_hpz';% <---- 
 control_mode = 'force';% <----  force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
@@ -75,9 +75,9 @@ end
 % SIGNAL PARAMS %%%%%%%%%%%%%
 if strcmp( signal, 'chirp' )
   zero_crossing = true;
-  ts = linspace(0,40,800);% <----
-  amp = 10;% <----  Nm or radians
-  freq = linspace(0.04,0.5,800);% <----  cycles per second
+  ts = linspace(0,30,800);% <----
+  amp = 2;% <----  Nm or radians
+  freq = linspace(0.25,1.0,800);% <----  cycles per second
 else
 %   vals = 1.6*[0 1 1 .5 .5 0 0];% <----  Nm or radians
   vals = 20*[0 1 1 -1 -1 0 0];% <----  Nm or radians
