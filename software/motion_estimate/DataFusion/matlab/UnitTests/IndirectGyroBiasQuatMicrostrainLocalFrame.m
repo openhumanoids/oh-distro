@@ -68,6 +68,9 @@ predicted.al = zeros(iter,3);
 predicted.fl = zeros(iter,3);
 predicted.vl = zeros(iter,3);
 
+predicted.bg = zeros(iter,3);
+predicted.ba = zeros(iter,3);
+
 % Lets do an initial velocity to help debug,
 predicted.vl(1,:) = init_Vl';
 
@@ -97,14 +100,14 @@ Rbias = [];
 
 for k = 1:iter
     
-    predicted.wb(k,:) = measured.wb(k,:);
+    predicted.wb(k,:) = measured.wb(k,:) - predicted.bg(k,:);
     
     lQb = zeroth_int_Quat_closed_form(-predicted.wb(k,:)', lQb, dt);
 
     plQb = qprod(lQb,qconj(dlQl));
 
     % Accelerometer bias compensation
-    predicted.ab(k,:) = measured.ab(k,:) - posterior.x(10:12)';
+    predicted.ab(k,:) = measured.ab(k,:) - predicted.ba(k,:);
     
     % predict local frame accelerations
     predicted.al(k,:) = qrot(qconj(plQb),predicted.ab(k,:)')'; % NOT USING BIAS YET
@@ -142,6 +145,9 @@ for k = 1:iter
     
     posterior = KF_measupdate(priori, Disc, [dV]);
     
+    DX = [DX; posterior.dx'];
+    X = [X; posterior.x'];
+    
     % we move misalignment information out of the filter to achieve better
     % linearization
     dlQl = qprod(e2q(posterior.x(1:3)),dlQl);
@@ -152,9 +158,13 @@ for k = 1:iter
     predicted.vl(k,:) = predicted.vl(k,:) + posterior.x(7:9)';
     posterior.x(7:9) = [0;0;0];
     
-    DX = [DX; posterior.dx'];
+    % Store the biases outside the filter states
+    predicted.ba(k+1,:) = predicted.ba(k,:) + posterior.x(10:12)';
+    posterior.x(10:12) = [0;0;0];
+    predicted.bg(k+1,:) = predicted.bg(k,:) + posterior.x(4:6)';
+    posterior.x(4:6) = [0;0;0];
     
-    X = [X; posterior.x'];
+    
 %     Rbias = [Rbias; qrot(e2q(posterior.x(1:3)),posterior.x(4:6))'];
     COV = [COV;diag(posterior.P)'];
     
@@ -294,11 +304,20 @@ title('Estimated dVl')
 figure(5),clf
 
 subplot(411)
+plot(DX(:,4:6))
+title('K * innov updates to gyro bias estimates')
+
+subplot(412)
+plot(predicted.bg)
+title('Gyro bias estimates')
+
+
+subplot(413)
 plot(DX(:,10:12))
 title('K * innov updates to accelerometer bias estimates')
 
-subplot(412)
-plot(X(:,10:12))
+subplot(414)
+plot(predicted.ba)
 title('Accelerometer bias estimates')
 
 
