@@ -9,7 +9,8 @@
 
 #include <lcm/lcm-cpp.hpp>
 
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/bandwidth_stats_t.hpp"
+#include "lcmtypes/drc/score_t.hpp"
 
 using namespace std;
 
