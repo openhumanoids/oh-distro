@@ -42,7 +42,7 @@ end
 gn = [0;0;9.8]; % forward left up
 
 init_lQb = [1;0;0;0];
-init_lQb = e2q([0;0;-pi/2]);
+% init_lQb = e2q([0;0;-pi/2]);
 init_Vl = [0;0;0];
 
 % tlQb = init_lQb;
@@ -98,6 +98,12 @@ DV = [];
 nDEF = [];
 Rbias = [];
 
+% this is the filter update counter
+FilterRate = 10;
+FilterRateReduction = (1/dt/FilterRate)
+m = 0;
+dt_m = dt*FilterRateReduction;
+
 for k = 1:iter
     
     predicted.wb(k,:) = measured.wb(k,:) - predicted.bg(k,:);
@@ -117,66 +123,75 @@ for k = 1:iter
         predicted.vl(k,:) = predicted.vl(k-1,:) + 0.5*dt*(predicted.fl(k-1,:) + predicted.fl(k,:));
     end
     
-    F = zeros(12);
-    F(1:3,4:6) = -q2R(qconj(plQb));
-    F(7:9,1:3) = -vec2skew(predicted.al(k,:)');
-    F(7:9,10:12) = -q2R(qconj(plQb));
     
-    Disc.C = [zeros(3,6), eye(3), zeros(3)];
+    % Run filter at a lower rate
+    if (mod(k,FilterRateReduction)==0)
+        m = m+1;
     
-    covariances.R = diag([1E1*ones(3,1)]);
-    
-    Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-5*ones(1,3)]);
-    
-    % uneasy about the negative signs, but this is what we have in
-    % literature (noise is noise, right.)
-    L = blkdiag(eye(3), -eye(3), -q2R(qconj(plQb)), eye(3));
-    
-    [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt);
-    
-    priori = KF_timeupdate(posterior, 0, Disc, covariances);
-    
-    predE = q2e(plQb);
-    d_lQb = qprod(qconj(lQb), tlQb);
-    dE_Q = q2e(d_lQb);
-    dE = dE_Q;
-    
-    measured.vl = init_Vl;
-    
-    dV = measured.vl - predicted.vl(k,:)';
-    
-    posterior = KF_measupdate(priori, Disc, [dV]);
-    
-    DX = [DX; posterior.dx'];
-    X = [X; posterior.x'];
-    
-    % we move misalignment information out of the filter to achieve better
-    % linearization
-    dlQl = qprod(e2q(posterior.x(1:3)),dlQl);
-    posterior.x(1:3) = [0;0;0];
-    
-    %Apply velocity updates to the system also, and remove information from
-    %the filter state
-    predicted.vl(k,:) = predicted.vl(k,:) + posterior.x(7:9)';
-    posterior.x(7:9) = [0;0;0];
-    
-    % Store the biases outside the filter states
-    predicted.ba(k+1,:) = predicted.ba(k,:) + posterior.x(10:12)';
-    posterior.x(10:12) = [0;0;0];
-    predicted.bg(k+1,:) = predicted.bg(k,:) + posterior.x(4:6)';
-    posterior.x(4:6) = [0;0;0];
-    
-    
-%     Rbias = [Rbias; qrot(e2q(posterior.x(1:3)),posterior.x(4:6))'];
-    COV = [COV;diag(posterior.P)'];
-    
-    clear bRl
-    
-    %store data for later plotting
-    DE = [DE;dE'];
-    TE = [TE;predE'];
-    
-    DV = [DV; dV'];
+        F = zeros(12);
+        F(1:3,4:6) = -q2R(qconj(plQb));
+        F(7:9,1:3) = -vec2skew(predicted.al(k,:)');
+        F(7:9,10:12) = -q2R(qconj(plQb));
+        
+        Disc.C = [zeros(3,6), eye(3), zeros(3)];
+        
+        covariances.R = diag([1E1*ones(3,1)]);
+        
+        Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-5*ones(1,3)]);
+        
+        % uneasy about the negative signs, but this is what we have in
+        % literature (noise is noise, right.)
+        L = blkdiag(eye(3), -eye(3), -q2R(qconj(plQb)), eye(3));
+        
+        [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
+        
+        priori = KF_timeupdate(posterior, 0, Disc, covariances);
+        
+        predE = q2e(plQb);
+        d_lQb = qprod(qconj(lQb), tlQb);
+        dE_Q = q2e(d_lQb);
+        dE = dE_Q;
+        
+        measured.vl = init_Vl;
+        
+        dV = measured.vl - predicted.vl(k,:)';
+        
+        posterior = KF_measupdate(priori, Disc, [dV]);
+        
+        DX = [DX; posterior.dx'];
+        X = [X; posterior.x'];
+        
+        % we move misalignment information out of the filter to achieve better
+        % linearization
+        dlQl = qprod(e2q(posterior.x(1:3)),dlQl);
+        posterior.x(1:3) = [0;0;0];
+        
+        %Apply velocity updates to the system also, and remove information from
+        %the filter state
+        predicted.vl(k,:) = predicted.vl(k,:) + posterior.x(7:9)';
+        posterior.x(7:9) = [0;0;0];
+        
+        % Store the biases outside the filter states
+        predicted.ba(k+1,:) = predicted.ba(k,:) + posterior.x(10:12)';
+        posterior.x(10:12) = [0;0;0];
+        predicted.bg(k+1,:) = predicted.bg(k,:) + posterior.x(4:6)';
+        posterior.x(4:6) = [0;0;0];
+        
+        
+        %     Rbias = [Rbias; qrot(e2q(posterior.x(1:3)),posterior.x(4:6))'];
+        COV = [COV;diag(posterior.P)'];
+        
+        clear bRl
+        
+        %store data for later plotting
+        DE = [DE;dE'];
+        TE = [TE;predE'];
+        DV = [DV; dV'];
+       
+    else
+        predicted.ba(k+1,:) = predicted.ba(k,:);
+        predicted.bg(k+1,:) = predicted.bg(k,:);
+    end
     
     if (mod(k,1000)==0)
         disp(['t = ' num2str(k/1000) ' s'])
@@ -271,7 +286,7 @@ plot(DX(:,7:9))
 title('Kalman updates to estimated local frame velocity errors -- DV')
 
 subplot(616)
-plot(predicted.vl + X(:,7:9))
+plot(predicted.vl)
 title('Predicted local frame velocities')
 
 
@@ -329,7 +344,7 @@ grid on
 figure(6), clf
 
 sf = 3;
-
+ratereducediter = iter/FilterRateReduction;
 
 ROWS = 5;
 COLS = 3;
@@ -344,7 +359,7 @@ plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 index = 2;
@@ -353,7 +368,7 @@ hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
 title('K * innov updates to misalignment in local frame -- accumulated outside filter')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 index = 3;
@@ -361,7 +376,7 @@ subplot(ROWS,COLS,COLS*(r-1)+3),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 
@@ -374,7 +389,7 @@ subplot(ROWS,COLS,COLS*(r-1)+1),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 index = index+1;
@@ -383,7 +398,7 @@ hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
 title('K * innov gyro bias updates in body frame')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 index = index+1;
@@ -391,7 +406,7 @@ subplot(ROWS,COLS,COLS*(r-1)+3),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 
@@ -404,7 +419,7 @@ subplot(ROWS,COLS,COLS*(r-1)+1),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 index = index+1;
@@ -413,7 +428,7 @@ hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
 title('K * innov local frame velocity updates')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 index = index+1;
@@ -421,12 +436,12 @@ subplot(ROWS,COLS,COLS*(r-1)+3),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 
 % Accel biases
 
-ACCBIASERR = repmat(accelbias',iter,1) - X(:,10:12);
+% ACCBIASERR = repmat(accelbias',iter,1) - X(:,10:12);
 
 r = r+1;
 index = index+1;
@@ -437,7 +452,7 @@ subplot(ROWS,COLS,COLS*(r-1)+1),plot(DX(:,10))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 xlabel('X')
 
@@ -448,7 +463,7 @@ hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
 title('K * innov accelerometer bias updates')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 xlabel('Y')
 
@@ -457,7 +472,7 @@ subplot(ROWS,COLS,COLS*(r-1)+3),plot(DX(:,12))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
+axis([1,ratereducediter,-covbounds,covbounds])
 grid on
 xlabel('Z')
 
