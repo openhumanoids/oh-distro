@@ -1,5 +1,5 @@
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/tracker_command_t.hpp"
 
 #include <ConciseArgs>
 using namespace std;
