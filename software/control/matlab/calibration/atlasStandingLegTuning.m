@@ -25,15 +25,15 @@ function atlasStandingLegTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint_str = {};% <---- 
+joint_str = {'r_leg_hpy'};% <---- 
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % SIGNAL PARAMS %%%%%%%%%%%%%
 dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
 if strcmp( signal, 'chirp' )
-  zero_crossing = true;
-  ts = linspace(0,20,500);% <----
-  amp = -0.05;% <---- meters, COM DELTA
+  zero_crossing = false;
+  ts = linspace(0,40,500);% <----
+  amp = -0.1;% <---- meters, COM DELTA
   freq = linspace(0.02,0.05,500);% <----  cycles per second
 else
   vals = -0.02*[0 0 1 0 0];% <---- meters, COM DELTA
@@ -244,7 +244,7 @@ while tt<T+2
     f_friction = computeFrictionForce(r,qd + 0.3*qdddes) - computeFrictionForce(r,qd);
     f_friction_act = f_friction(act_idx_map);
 
-    udes(joint_act_ind) = udes(joint_act_ind) + f_friction_act(joint_act_ind);
+    udes(joint_act_ind) = udes(joint_act_ind) + 0*f_friction_act(joint_act_ind);
     
     ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
   end
