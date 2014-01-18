@@ -19,7 +19,7 @@ dt = 0.01;
 
 initstart = 1;
 
-switch (1)
+switch (4)
     case 1
         data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
         iter = 6000;
@@ -30,25 +30,26 @@ switch (1)
         initend = 800;
     case 3
         data = load('UnitTests/testdata/microstrain_rot_peraxis/y/loggedIMU.txt');
-        iter = 6000;
+        iter = 6750;
         initend = 800;
     case 4
         data = load('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
-        iter = 6000;
-        initend = 800;
+        iter = 12000;
+        initend = 1;
 end
- 
+
 
 gn = [0;0;9.8]; % forward left up
 
 init_lQb = [1;0;0;0];
 % init_lQb = e2q([0;0;-pi/2]);
 init_Vl = [0;0;0];
+init_Pl = [0;0;0];
 
 % tlQb = init_lQb;
 
 % Bias errors to introduce later
-gyrobias = 0*[0;-0.005;0]
+gyrobias = 1*[0;-0.05;0]
 accelbias = 0*[-0.1;0;0]
 
 E = [];
@@ -67,18 +68,20 @@ predicted.wb = zeros(iter,3);
 predicted.al = zeros(iter,3);
 predicted.fl = zeros(iter,3);
 predicted.vl = zeros(iter,3);
+predicted.pl = zeros(iter,3);
 
 predicted.bg = zeros(iter,3);
 predicted.ba = zeros(iter,3);
 
 % Lets do an initial velocity to help debug,
 predicted.vl(1,:) = init_Vl';
+predicted.pl(1,:) = init_Pl';
 
 
 % posterior.x = zeros(9,1);
 % posterior.P = blkdiag(100*eye(3),500*eye(3),100*eye(3));
-posterior.x = zeros(12,1);
-posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 10*eye(3), 0.01*eye(3));
+posterior.x = zeros(15,1);
+posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 10*eye(3), 0.01*eye(3), 10*eye(3));
 
 
 Disc.B = 0;
@@ -121,6 +124,7 @@ for k = 1:iter
     
     predicted.fl(k,:) = (predicted.al(k,:)' - gn)';% For velocity and position
     if (k > 1)
+        predicted.pl(k,:) = predicted.pl(k-1,:) + 0.5*dt*(predicted.vl(k-1,:) + predicted.vl(k,:));
         predicted.vl(k,:) = predicted.vl(k-1,:) + 0.5*dt*(predicted.fl(k-1,:) + predicted.fl(k,:));
     end
     
@@ -129,20 +133,21 @@ for k = 1:iter
     if (mod(k,FilterRateReduction)==0)
         m = m+1;
     
-        F = zeros(12);
+        F = zeros(15);
         F(1:3,4:6) = -q2R(qconj(plQb));
         F(7:9,1:3) = -vec2skew(predicted.al(k,:)');
         F(7:9,10:12) = -q2R(qconj(plQb));
+        F(13:15,7:9) = eye(3);
         
-        Disc.C = [zeros(3,6), eye(3), zeros(3)];
+        Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
         
         covariances.R = diag([5E-1*ones(3,1)]);
         
-        Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-5*ones(1,3)]);
+        Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-5*ones(1,3), 0*ones(1,3)]);
         
         % uneasy about the negative signs, but this is what we have in
         % literature (noise is noise, right.)
-        L = blkdiag(eye(3), -eye(3), -q2R(qconj(plQb)), eye(3));
+        L = blkdiag(eye(3), -eye(3), -q2R(qconj(plQb)), eye(3), eye(3));
         
         [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
         
@@ -167,10 +172,16 @@ for k = 1:iter
         dlQl = qprod(e2q(limitedFB*posterior.x(1:3)),dlQl);
         posterior.x(1:3) = (1-limitedFB)*posterior.x(1:3);
         
-        %Apply velocity updates to the system also, and remove information from
+        %Apply velocity updates to the system, and remove information from
         %the filter state
         predicted.vl(k,:) = predicted.vl(k,:) + limitedFB*posterior.x(7:9)';
         posterior.x(7:9) = (1-limitedFB)*posterior.x(7:9);
+        
+        %Apply position updates to the system, and remove information from
+        %the filter state
+        predicted.pl(k,:) = predicted.pl(k,:) + limitedFB*posterior.x(13:15)';
+        posterior.x(13:15) = (1-limitedFB)*posterior.x(13:15);
+        
         
         % Store the biases outside the filter states
         predicted.ba(k+1,:) = predicted.ba(k,:) + limitedFB*posterior.x(10:12)';
@@ -205,98 +216,99 @@ end
 
 %% Plotting
 
-figure(1),clf
+% figure(1),clf
 % subplot(411),plot(true.wb)
 % title('True rotation rates w')
-subplot(411),plot(measured.wb)
-title('Measured rotation rates w')
-subplot(412),plot(TE)
-title('Predicted Euler angles')
+% subplot(411),plot(measured.wb)
+% title('Measured rotation rates w')
+% subplot(412),plot(TE)
+% title('Predicted Euler angles')
 % subplot(414),plot(true.ab)
-title('True body measured accelerations')
+% title('True body measured accelerations')
 
 
-figure(2),clf
-subplot(611),plot(DE)
-title('Measured Misalignment -- SOMETHING IS WRONG WITH THIS MEASUREMENT PROCESS, ignore for now')
-grid on
-subplot(612),plot(DX(:,1:3))
-title('K * Innov updates to misalignment')
-subplot(613),plot(X(:,1:3))
-title('KF misalignment estimates')
-grid on
-subplot(614)
-plot(DX(:,4:6))
-title('K * Innov updates to gyro bias')
-subplot(615)
-plot(X(:,4:6))
-title('Estimated gyro biases')
-grid on
+% figure(2),clf
+% subplot(611),plot(DE)
+% title('Measured Misalignment -- SOMETHING IS WRONG WITH THIS MEASUREMENT PROCESS, ignore for now')
+% grid on
+% subplot(612),plot(DX(:,1:3))
+% title('K * Innov updates to misalignment')
+% subplot(613),plot(X(:,1:3))
+% title('KF misalignment estimates')
+% grid on
+% subplot(614)
+% plot(DX(:,4:6))
+% title('K * Innov updates to gyro bias')
+% subplot(615)
+% plot(X(:,4:6))
+% title('Estimated gyro biases')
+% grid on
 
-sf = 3;
-index = 4;
-
-covbounds = 0.5;%sf*max(abs([bias; bias2]));
-
-subplot(6,3,16),plot(X(:,index))
-hold on
-plot(sqrt(COV(:,index)) ,'r')
-plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
-grid on
-
-index = 5;
-subplot(6,3,17),plot(X(:,index))
-hold on
-plot(sqrt(COV(:,index)) ,'r')
-plot(-sqrt(COV(:,index)) ,'r')
-title('Bias estimation error')
-axis([1,iter,-covbounds,covbounds])
-grid on
-
-index = 6;
-subplot(6,3,18),plot(X(:,index))
-hold on
-plot(sqrt(COV(:,index)) ,'r')
-plot(-sqrt(COV(:,index)) ,'r')
-axis([1,iter,-covbounds,covbounds])
-grid on
+% sf = 3;
+% index = 4;
+% 
+% covbounds = 0.5;%sf*max(abs([bias; bias2]));
+% 
+% subplot(6,3,16),plot(X(:,index))
+% hold on
+% plot(sqrt(COV(:,index)) ,'r')
+% plot(-sqrt(COV(:,index)) ,'r')
+% axis([1,iter,-covbounds,covbounds])
+% grid on
+% 
+% index = 5;
+% subplot(6,3,17),plot(X(:,index))
+% hold on
+% plot(sqrt(COV(:,index)) ,'r')
+% plot(-sqrt(COV(:,index)) ,'r')
+% title('Bias estimation error')
+% axis([1,iter,-covbounds,covbounds])
+% grid on
+% 
+% index = 6;
+% subplot(6,3,18),plot(X(:,index))
+% hold on
+% plot(sqrt(COV(:,index)) ,'r')
+% plot(-sqrt(COV(:,index)) ,'r')
+% axis([1,iter,-covbounds,covbounds])
+% grid on
 
 % Plot velocity components separately
 
 figure(3), clf
 
 subplot(611)
-plot(measured.ab)
-title('Measured accelerations in body frame')
+plot(predicted.ab)
+title('Predicted accelerations in body frame')
 
 subplot(612)
-plot(X(:,10:12))
-title('Estimated accelerometer biases')
-
-subplot(613)
 plot(predicted.fl)
 title('Predicted local frame specific force')
 
-subplot(614)
+subplot(613)
 plot(predicted.vl)
 title('Preidcted local frame velocity')
 
-subplot(615)
+subplot(614)
 plot(DX(:,7:9))
 title('Kalman updates to estimated local frame velocity errors -- DV')
 
-subplot(616)
+subplot(615)
 plot(predicted.vl)
 title('Predicted local frame velocities')
 
+subplot(616)
+plot(X(:,13:15))
+title('Estimated accelerometer biases')
 
-% Tracing gravity feedback error
-figure(4), clf
 
+% Gray box INS state estimate
+figH = figure(4);
+clf
+set(figH,'Name','Gray box INS state estimate','NumberTitle','off')
 subplot(611),
 plot(TE)
-title('Predicted euler angles')
+title('Predicted local to body Euler angles')
 
 subplot(612)
 plot(predicted.fl)
@@ -307,16 +319,16 @@ plot(predicted.vl)
 title('Predicted velocity in local frame')
 
 subplot(614)
-plot(DV)
-title('Local frame velocity innovation -- DV = measured - estimated')
+plot(DX(:,7:9))
+title('K * Innovation updates to velocity in local frame')
 
 subplot(615)
-plot(DX(:,7:9))
-title('K * Innovation updates to dV')
+plot(predicted.pl)
+title('Predicted position in local frame')
 
 subplot(616)
-plot(X(:,7:9))
-title('Estimated dVl')
+plot(DX(:,13:15))
+title('K * Innovation updates to position in local frame')
 
 
 figure(5),clf
