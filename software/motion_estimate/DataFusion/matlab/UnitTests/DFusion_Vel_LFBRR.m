@@ -19,15 +19,15 @@ dt = 0.01;
 
 initstart = 1;
 
-switch (4)
+switch (2)
     case 1
         data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
         iter = 6000;
-        initend = 1000;
+        initend = 1;
     case 2
         data = load('UnitTests/testdata/microstrain_rot_peraxis/x/loggedIMU.txt');
         iter = 6000;
-        initend = 800;
+        initend = 1;
     case 3
         data = load('UnitTests/testdata/microstrain_rot_peraxis/y/loggedIMU.txt');
         iter = 6750;
@@ -49,8 +49,8 @@ init_Pl = [0;0;0];
 % tlQb = init_lQb;
 
 % Bias errors to introduce later
-gyrobias = 0*[0;-0.05;0]
-accelbias = 0*[-0.1;0;0]
+gyrobias = 0*[0.01;0;0]
+accelbias = 0*[0;0.1;0]
 
 E = [];
 GB = [];
@@ -73,13 +73,18 @@ predicted.pl = zeros(iter,3);
 predicted.bg = zeros(iter,3);
 predicted.ba = zeros(iter,3);
 
-% Lets do an initial velocity to help debug,
+% The recursive compensation data buffer structure
+INSCompensator.bg = [0;0;0];
+INSCompensator.ba = [0;0;0];
+
+
+% Initial conditions
 predicted.vl(1,:) = init_Vl';
 predicted.pl(1,:) = init_Pl';
 
 
-% posterior.x = zeros(9,1);
-% posterior.P = blkdiag(100*eye(3),500*eye(3),100*eye(3));
+pose = init_pose();
+
 posterior.x = zeros(15,1);
 posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
@@ -110,14 +115,33 @@ dt_m = dt*FilterRateReduction;
 
 for k = 1:iter
     
-    predicted.wb(k,:) = measured.wb(k,:) - predicted.bg(k,:);
+    % Gray box steps -- feed back inertial estimate
+    % Compensate inertial measurements
+    % Gyro bias compensation
+    predicted.wb(k,:) = measured.wb(k,:) - INSCompensator.bg';
+    % Accelerometer bias compensation
+    predicted.ab(k,:) = measured.ab(k,:) - INSCompensator.ba';
+    
+    
+    % Apply scheduled updates to inertially predicted steps
+    
+    
+    
+    % Create measurement data structure for generic INS
+    
+    
+    % Run generic local frame INS
+    %     [pose] = INS_lQb([], pose__k1, pose__k2, inertialData)
+    
+    
+    
     
     lQb = zeroth_int_Quat_closed_form(-predicted.wb(k,:)', lQb, dt);
 
+    % Incorporate EKF based state misalignment
     plQb = qprod(lQb,qconj(dlQl));
-
-    % Accelerometer bias compensation
-    predicted.ab(k,:) = measured.ab(k,:) - predicted.ba(k,:);
+    lQb = plQb;
+    dlQl = [1;0;0;0];
     
     % predict local frame accelerations
     predicted.al(k,:) = qrot(qconj(plQb),predicted.ab(k,:)')';
@@ -127,6 +151,8 @@ for k = 1:iter
         predicted.pl(k,:) = predicted.pl(k-1,:) + 0.5*dt*(predicted.vl(k-1,:) + predicted.vl(k,:));
         predicted.vl(k,:) = predicted.vl(k-1,:) + 0.5*dt*(predicted.fl(k-1,:) + predicted.fl(k,:));
     end
+    
+    
     
     
     % Run filter at a lower rate
@@ -143,7 +169,7 @@ for k = 1:iter
         
         covariances.R = diag([5E-1*ones(3,1)]);
         
-        Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-7*ones(1,3), 0*ones(1,3)]);
+        Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-6*ones(1,3), 0*ones(1,3)]);
         
         % uneasy about the negative signs, but this is what we have in
         % literature (noise is noise, right.)
@@ -164,8 +190,23 @@ for k = 1:iter
         
         posterior = KF_measupdate(priori, Disc, [dV]);
         
+        % Store data for plotting
         DX = [DX; posterior.dx'];
         X = [X; posterior.x'];
+        
+        
+%         predicted.bg(k+1,:) = predicted.bg(k,:) + limitedFB*posterior.x(4:6)';
+%         predicted.ba(k+1,:) = predicted.ba(k,:) + limitedFB*posterior.x(10:12)';
+        
+        % schedule an IMU update
+        INSCompensator.bg = INSCompensator.bg + limitedFB*posterior.x(4:6);
+        posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
+        INSCompensator.ba = INSCompensator.ba + limitedFB*posterior.x(10:12);
+        posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
+
+        % Store the biases outside the filter states
+        predicted.bg(k+1,:) = INSCompensator.bg;
+        predicted.ba(k+1,:) = INSCompensator.ba;
         
         % we move misalignment information out of the filter to achieve better
         % linearization
@@ -183,11 +224,7 @@ for k = 1:iter
         posterior.x(13:15) = (1-limitedFB)*posterior.x(13:15);
         
         
-        % Store the biases outside the filter states
-        predicted.ba(k+1,:) = predicted.ba(k,:) + limitedFB*posterior.x(10:12)';
-        posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
-        predicted.bg(k+1,:) = predicted.bg(k,:) + limitedFB*posterior.x(4:6)';
-        posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
+
         
         
         %     Rbias = [Rbias; qrot(e2q(posterior.x(1:3)),posterior.x(4:6))'];
