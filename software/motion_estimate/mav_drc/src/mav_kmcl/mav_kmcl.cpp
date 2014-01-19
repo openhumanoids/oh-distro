@@ -6,8 +6,8 @@
 
 #include <mav_state_est/gpf-rgbd-lib/rbis_gpf_update.hpp>
 #include <mav_state_est/mav-est-fovis/rbis_fovis_update.hpp>
-//#include <mav_state_est/mav-est-legodo/rbis_legodo_update.hpp>
-//#include <mav_state_est/mav-est-legodo/rbis_legodo_external_update.hpp>
+#include <mav_state_est/mav-est-legodo/rbis_legodo_update.hpp>
+#include <mav_state_est/mav-est-legodo/rbis_legodo_external_update.hpp>
 
 #include <ConciseArgs>
 
@@ -125,7 +125,7 @@ public:
       front_end->addSensor("fovis", &MavStateEst::FovisHandler::processMessage, fovis_handler);
     }
 
-/*
+
 
     if (front_end->isActive("legodo")) {
       // legodo_handler = new LegOdoHandler(front_end->param);
@@ -149,7 +149,7 @@ public:
       legodo_external_handler = new LegOdoExternalHandler(front_end->param);
       front_end->addSensor("legodo_external", &MavStateEst::LegOdoExternalHandler::processMessage, legodo_external_handler);
     }
-*/
+
   }
 
   void run()
@@ -185,8 +185,8 @@ public:
   LaserGPFHandler * laser_gpf_handler;
   RgbdGPFHandler * rgbd_gpf_handler;
   FovisHandler * fovis_handler;
-//  LegOdoHandler * legodo_handler;
-//  LegOdoExternalHandler * legodo_external_handler;
+  LegOdoHandler * legodo_handler;
+  LegOdoExternalHandler * legodo_external_handler;
   IndexedMeasurementHandler * indexed_measurement_handler;
   ScanMatcherHandler * scan_matcher_handler;
   OpticalFlowHandler * optical_flow_handler;

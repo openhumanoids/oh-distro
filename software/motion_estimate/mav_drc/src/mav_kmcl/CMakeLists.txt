@@ -5,10 +5,10 @@ pods_use_pkg_config_packages(mav-kmcl
     mav-est-fovis
     gpf-laser-lib
     lcmtypes_kinect
-#    mav-est-legodo
-#    mav-est-legodo-external
-#    lcmtypes_drc_lcmtypes
-#    model-client  
+    mav-est-legodo
+    mav-est-legodo-external
+    lcmtypes_drc_lcmtypes
+    model-client  
     gpf-rgbd-lib)
 
 # don't know why this is necessary (something to do with concise args):

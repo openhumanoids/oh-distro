@@ -38,9 +38,12 @@
 #include <renderer_robot_plan/renderer_robot_plan.hpp>
 #include <renderer_affordances/renderer_affordances.hpp>
 #include <renderer_sticky_feet/renderer_sticky_feet.hpp>
-
 #include <tracker-renderer/TrackerRenderer.hpp>
 
+// mav renderers:
+#include <mav_state_est/mav_state_est_renderers.h>
+#include <octomap_utils/renderer_octomap.h>
+#include <occ_map/occ_map_renderers.h>
 
 #include "udp_util.h"
 #include "RendererGroupUtil.hpp"
@@ -625,7 +628,6 @@ int main(int argc, char *argv[])
   // Block of Renderers:  
   setup_renderer_robot_state(viewer, 0, lcm,0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
 
-  setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
@@ -641,12 +643,25 @@ int main(int argc, char *argv[])
   status_add_renderer_to_viewer(viewer, 0, lcm);
 
   add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
-  // Please don't commit this renderer enabled as it is very heavyweight:
-  if (use_all_renderers) {
-    multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
-  }
 
   bdi_add_renderer_to_viewer(viewer, 0, lcm);
+
+
+  if (use_all_renderers) {
+    // Please don't commit this renderer enabled as it is very heavyweight:
+    // multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+    bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "boxy_renderer");
+    bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "model_renderer");
+    add_octomap_renderer_to_viewer(viewer, 1, lcm);
+    add_map_measurement_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
+    add_mav_state_est_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
+    occ_map_pixel_map_add_renderer_to_viewer(viewer, 1, "SLAM_MAP", "Slam Map");
+
+    // A second robot renderer: (on a different channel, currently "EST_ROBOT_STATE_COMPRESSED_LOOPBACK
+    setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+  }
+
+
 
   /*
   // Various Renderers - disabled since VRC
@@ -664,11 +679,7 @@ int main(int argc, char *argv[])
     setup_renderer_robot_state(viewer, 0, lcm, 1);
     // only one debg version needed
   }
-  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","LIDARSWEEP", bot_param);
-  multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA_SGBM", bot_param);
 
-  // add_octomap_renderer_to_viewer(viewer, 1, lcm);
-  // occ_map_pixel_map_add_renderer_to_viewer_lcm(viewer, 0, lcm, "TERRAIN_DIST_MAP", "PixelMap");
   // setup_renderer_driving(viewer, 0, lcm, bot_param, bot_frames);
   // tracker_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   // setup_renderer_recovery(viewer, 0,lcm,bot_param,bot_frames);
