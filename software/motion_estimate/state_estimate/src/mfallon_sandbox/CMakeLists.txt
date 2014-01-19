@@ -10,7 +10,7 @@ set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 add_library(estimate  SHARED leg_odometry.cpp)
 pods_use_pkg_config_packages(estimate ${PCL_LIBRARIES}
   ${PKG_CONFIG_DEPS}  opencv
-  lcmtypes_bot2-core  
+  lcmtypes_bot2-core lcmtypes_fovis-bot2 
   pointcloud_math  pointcloud_vis
   leg-odometry inertial-odometry 
   eigen3)
@@ -18,15 +18,17 @@ set_target_properties(estimate PROPERTIES SOVERSION 1)
 pods_install_libraries(estimate)
 pods_install_headers( leg_odometry.hpp DESTINATION estimate)
 pods_install_pkg_config_file(estimate
-  LIBS -lestimate -lleg-odometry -linertial-odometry 
+  LIBS -lestimate -lleg-odometry -linertial-odometry -lpcl_io
+  REQUIRES pcl_io-1.6
   VERSION 0.0.1)
 
 
 ################
 add_executable(drc-leg-odometry main.cpp )
-pods_use_pkg_config_packages(drc-leg-odometry estimate)
-target_link_libraries (drc-leg-odometry lcm)
-#    path-util model-client   bot2-param-client
+pods_use_pkg_config_packages(drc-leg-odometry estimate path-util
+   bot2-param-client model-client   )
+target_link_libraries (drc-leg-odometry lcm )
+#     
 #        pointcloud_lcm                pointcloud_math
 #	lcmtypes_drc_lcmtypes  lcmtypes_visualization
 #       ${PCL_LIBRARIES} ${REQUIRED_PACKAGES}

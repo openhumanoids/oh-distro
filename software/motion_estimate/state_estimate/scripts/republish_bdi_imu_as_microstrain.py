@@ -29,15 +29,25 @@ def on_atlas_imu_batch(channel, data):
 
   ins = ins_t()
   ins.utime = m.utime
+  
+  dt = 0.001
+  older_logs = 1
+  if (older_logs ==1):
+    dt = 0.001
+  else:
+    dt = (m.raw_imu[0].utime - m.raw_imu[1].utime)*1E-6
 
   ins.device_time = m.raw_imu[0].utime
-  ins.accel = m.raw_imu[0].linear_acceleration
+  ins.accel[0] = m.raw_imu[0].linear_acceleration[0]
+  ins.accel[1] = m.raw_imu[0].linear_acceleration[1]
+  ins.accel[2] = m.raw_imu[0].linear_acceleration[2]
 
-  dt = (m.raw_imu[0].utime - m.raw_imu[1].utime)*1E-6
-  ins.gyro[0] = (m.raw_imu[0].delta_rotation[0] - m.raw_imu[1].delta_rotation[0])/dt
-  ins.gyro[1] = (m.raw_imu[0].delta_rotation[1] - m.raw_imu[1].delta_rotation[1])/dt
-  ins.gyro[2] = (m.raw_imu[0].delta_rotation[2] - m.raw_imu[1].delta_rotation[2])/dt
+  
+  ins.gyro[0] = (m.raw_imu[0].delta_rotation[0])/dt
+  ins.gyro[1] = (m.raw_imu[0].delta_rotation[1])/dt
+  ins.gyro[2] = (m.raw_imu[0].delta_rotation[2])/dt
 
+  print dt
   if (1==0):
     print "======"
     print "old"

@@ -1,6 +1,16 @@
 #include <estimate/leg_odometry.hpp>
+#include <path_util/path_util.h>
 #include <ConciseArgs>
 
+struct CommandLineConfig
+{
+    std::string config_filename;
+    std::string urdf_filename;
+    std::string lcmlog_filename;
+    bool read_lcmlog;
+    int64_t begin_timestamp;
+    int64_t end_timestamp;
+};
 
 class App{
   public:
@@ -11,18 +21,36 @@ class App{
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
+    BotParam* botparam_;
+    boost::shared_ptr<ModelClient> model_;
+    
     const CommandLineConfig cl_cfg_;
     leg_odometry* leg_odo_;
     
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
     
-
 };
     
 App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_, const CommandLineConfig& cl_cfg_):
           lcm_subscribe_(lcm_subscribe_), lcm_publish_(lcm_publish_), cl_cfg_(cl_cfg_){
 
-  leg_odo_ = new leg_odometry(lcm_subscribe_, lcm_publish_, cl_cfg_);
+  if (cl_cfg_.config_filename == ""){
+    botparam_ = bot_param_new_from_server(lcm_subscribe_->getUnderlyingLCM(), 0);
+  }else{
+    //std::string config_filename = "drc_robot_02.cfg";            
+    std::string config_filename_full = std::string(getConfigPath()) +'/' + std::string(cl_cfg_.config_filename);
+    botparam_ = bot_param_new_from_file(config_filename_full.c_str());
+  }
+            
+  if (cl_cfg_.urdf_filename == ""){           
+    model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_subscribe_->getUnderlyingLCM(), 0));
+  }else{
+    //std::string urdf_filename = "model_LH_RH.urdf";            
+    std::string urdf_filename_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string(cl_cfg_.urdf_filename);
+    model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_filename_full  ));
+  }            
+            
+  leg_odo_ = new leg_odometry(lcm_subscribe_, lcm_publish_, botparam_, model_);
             
   lcm_subscribe_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);  
 }
@@ -48,7 +76,8 @@ void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
 }
 
 
-int main(int argc, char ** argv){
+int
+main(int argc, char ** argv){
   CommandLineConfig cl_cfg;
   cl_cfg.urdf_filename = "";
   cl_cfg.config_filename = "";
