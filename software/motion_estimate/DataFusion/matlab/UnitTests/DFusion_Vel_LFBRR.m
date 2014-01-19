@@ -10,7 +10,7 @@
 % feedback structure. 
 
 clc
-% clear all
+clear all
 
 disp 'STARTING...'
 
@@ -108,7 +108,7 @@ COV = [];
 % tlQb = init_lQb;
 lQb = init_lQb;
 
-% dlQl = [1;0;0;0];
+INSCompensator.dlQl = [1;0;0;0];
 IMUCompensator.dlQl = [1;0;0;0];
 
 DE = [];
@@ -119,25 +119,30 @@ Rbias = [];
 
 % this is the filter update counter
 FilterRate = 20;
-limitedFB = 0.5;
+limitedFB = 0.4;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
 
 for k = 1:iter
     
+    % Gyro bias compensation
     predicted.wb(k,:) = measured.wb(k,:) - predicted.bg(k,:);
-    
-    lQb = zeroth_int_Quat_closed_form(-predicted.wb(k,:)', lQb, dt);
-
-    plQb = qprod(lQb,qconj(dlQl));
-
     % Accelerometer bias compensation
     predicted.ab(k,:) = measured.ab(k,:) - predicted.ba(k,:);
     
-    % predict local frame accelerations
-    predicted.al(k,:) = qrot(qconj(plQb),predicted.ab(k,:)')';
+    if (k > 1)
+        lQb = qprod(lQb,qconj(INSCompensator.dlQl));
+        INSCompensator.dlQl = [1;0;0;0];
+        predicted.vl(k-1,:) = predicted.vl(k-1,:) + INSCompensator.dV_l';
+        INSCompensator.dV_l = [0;0;0];
+        predicted.pl(k-1,:) = predicted.pl(k-1,:) + INSCompensator.dP_l';
+        INSCompensator.dP_l = [0;0;0];
+    end
     
+    % predict local frame accelerations
+    predicted.al(k,:) = qrot(qconj(lQb),predicted.ab(k,:)')';
+    lQb = zeroth_int_Quat_closed_form(-predicted.wb(k,:)', lQb, dt);
     predicted.fl(k,:) = (predicted.al(k,:)' - gn)';% For velocity and position
     if (k > 1)
         predicted.pl(k,:) = predicted.pl(k-1,:) + 0.5*dt*(predicted.vl(k-1,:) + predicted.vl(k,:));
@@ -145,39 +150,29 @@ for k = 1:iter
     end
     
     
+    INSpose.lQb = lQb;
+    INSpose.a_l = predicted.al(k,:)';
+    INSpose.V_l = predicted.vl(k,:)';
+    INSpose.P_l = predicted.pl(k,:)';
+    
     % Run filter at a lower rate
     if (mod(k,FilterRateReduction)==0)
         m = m+1;
-    
-        F = zeros(15);
-        F(1:3,4:6) = -q2R(qconj(plQb));
-        F(7:9,1:3) = -vec2skew(predicted.al(k,:)');
-        F(7:9,10:12) = -q2R(qconj(plQb));
-        F(13:15,7:9) = eye(3);
         
+        predE = q2e(lQb);
+        
+        % EKF
+        [F, L, Q] = dINS_EKFmodel(INSpose);
         Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
-        
         covariances.R = diag([5E-1*ones(3,1)]);
         
-        Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-7*ones(1,3), 0*ones(1,3)]);
-        
-        % uneasy about the negative signs, but this is what we have in
-        % literature (noise is noise, right.)
-        L = blkdiag(eye(3), -eye(3), -q2R(qconj(plQb)), eye(3), eye(3));
-        
+        % Filter propagation
         [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
-        
         priori = KF_timeupdate(posterior, 0, Disc, covariances);
         
-        predE = q2e(plQb);
-        d_lQb = qprod(qconj(lQb), tlQb);
-        dE_Q = q2e(d_lQb);
-        dE = dE_Q;
-        
+        % Filter measurement model
         measured.vl = init_Vl;
-        
         dV = measured.vl - predicted.vl(k,:)';
-        
         posterior = KF_measupdate(priori, Disc, [dV]);
         
         DX = [DX; posterior.dx'];
@@ -185,17 +180,13 @@ for k = 1:iter
         
         % we move misalignment information out of the filter to achieve better
         % linearization
-        dlQl = qprod(e2q(limitedFB*posterior.x(1:3)),dlQl);
+        INSCompensator.dlQl = qprod(e2q(limitedFB*posterior.x(1:3)),INSCompensator.dlQl);
         posterior.x(1:3) = (1-limitedFB)*posterior.x(1:3);
-        
-        %Apply velocity updates to the system, and remove information from
+        % velocity and position updates to the system, and remove information from
         %the filter state
-        predicted.vl(k,:) = predicted.vl(k,:) + limitedFB*posterior.x(7:9)';
+        INSCompensator.dV_l = limitedFB*posterior.x(7:9);
         posterior.x(7:9) = (1-limitedFB)*posterior.x(7:9);
-        
-        %Apply position updates to the system, and remove information from
-        %the filter state
-        predicted.pl(k,:) = predicted.pl(k,:) + limitedFB*posterior.x(13:15)';
+        INSCompensator.dP_l = limitedFB*posterior.x(13:15);
         posterior.x(13:15) = (1-limitedFB)*posterior.x(13:15);
         
         
@@ -206,13 +197,15 @@ for k = 1:iter
         posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
         
         
+        
+        
         %     Rbias = [Rbias; qrot(e2q(posterior.x(1:3)),posterior.x(4:6))'];
         COV = [COV;diag(posterior.P)'];
         
-        clear bRl
+%         clear bRl
         
         %store data for later plotting
-        DE = [DE;dE'];
+%         DE = [DE;dE'];
         TE = [TE;predE'];
         DV = [DV; dV'];
        
@@ -223,10 +216,6 @@ for k = 1:iter
     
     if (mod(k,1000)==0)
         disp(['t = ' num2str(k/1000) ' s'])
-%         disp 'Predicted bRl'
-%         q2R(qconj(lQb))
-%         disp 'Estimated misalignment'
-%         q2R(qconj(tlQb))*( eye(3) + vec2skew(posterior.x(1:3)) )
     end
 end
 
