@@ -25,7 +25,7 @@ F(7:9,10:12) = -q2R(qconj(plQb));
 F(13:15,7:9) = eye(3);
 
 covariances.R = diag([9E-1*ones(3,1)]);
-Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-6*ones(1,3), 0*ones(1,3)]);
+Q = 1*diag([0*1E-16*ones(1,3), 1E-4*ones(1,3), 0*1E-8*ones(1,3), 1E-6*ones(1,3), 0*ones(1,3)]);
 
 % uneasy about the negative signs, but this is what we have in
 % literature (noise is noise, right.)
