@@ -25,20 +25,20 @@ function [pose] = INS_lQb(PARAM, pose__k1, pose__k2, inertialData)
 %
 
 % time first
-if (inertialData.predicted.utime<pose__.utime)
+if (inertialData.predicted.utime<pose__k1.utime)
     disp('INS_lQb.m: ERROR, you cannot integrate backwards in time.');
 end
 
 pose.utime = inertialData.predicted.utime;
-dt = (pose.utime - pose__k1.utime)*1e-6; % convert units to seconds
+dt = (inertialData.predicted.utime - pose__k1.utime)*1e-6; % convert units to seconds
 
 % predict local frame accelerations
-pose.a_l = qrot(qconj(pose__k1.lQb),inertialData.predicted.ab);
-pose.f_l = (inertialData.predicted.al - inertialData.gw)';
+pose.a_l = qrot(qconj(pose__k1.lQb),inertialData.predicted.a_b);
+pose.f_l = (pose.a_l - inertialData.gw);
 pose.P_l = pose__k1.P_l + 0.5*dt*(pose__k1.V_l + pose__k2.V_l);
 pose.V_l = pose__k1.V_l + 0.5*dt*(pose__k1.f_l + pose__k2.f_l);
 
-pose.lQb = zeroth_int_Quat_closed_form(-inertialData.predicted.wb, pose__k1.lQb, dt);
+pose.lQb = zeroth_int_Quat_closed_form(-inertialData.predicted.w_b, pose__k1.lQb, dt);
 
 return % Previous implementation is temporarily kept below
 

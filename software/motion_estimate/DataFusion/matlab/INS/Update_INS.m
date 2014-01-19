@@ -1,19 +1,14 @@
 function [pose, INSCompensator] = Update_INS(pose__, INSCompensator)
 
+pose = pose__;
 
-% time first
-if (inertialData.predicted.utime<pose__.utime)
-    disp('Update_INS.m: ERROR, you cannot work backwards in time.');
-end
+% Incorporate EKF based state misalignment
+pose.lQb = qprod(pose__.lQb,qconj(INSCompensator.dlQl));
+INSCompensator.dlQl = [1;0;0;0];
 
-% predict local frame accelerations
-pose.al = qrot(qconj(pose__k1.lQb),inertialData.predicted.ab);
-pose.fl = (inertialData.predicted.al - inertialData.gw)';
-pose.P_l = pose__k1.pl + 0.5*dt*(pose__k1.vl + pose__k2.vl);
-pose.V_l = pose__k1.vl + 0.5*dt*(pose__k1.fl + pose__k2.fl);
-
-pose.lQb = zeroth_int_Quat_closed_form(-inertialData.predicted.wb, pose__k1.lQb, dt);
-
-
+pose.V_l = pose__.V_l + INSCompensator.dV_l;
+INSCompensator.dV_l = [0;0;0];
+pose.P_l = pose__.P_l + INSCompensator.dP_l;
+INSCompensator.dP_l = [0;0;0];
 
 
