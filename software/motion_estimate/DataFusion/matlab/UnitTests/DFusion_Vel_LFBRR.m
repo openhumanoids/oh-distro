@@ -102,11 +102,11 @@ DX = [];
 COV = [];
 
 % tlQb = init_lQb;
-lQb = init_lQb;
+INSpose.lQb = init_lQb;
 
 
 DE = [];
-TE = [];
+PE = [];
 DV = [];
 nDEF = [];
 Rbias = [];
@@ -120,7 +120,6 @@ dt_m = dt*FilterRateReduction;
 
 for k = 1:iter
     
-
     % generate IMU data measurement frame
     inertialData.predicted.utime = k*dt*1E6;
     inertialData.measured.w_b = measured.wb(k,:)';
@@ -128,27 +127,15 @@ for k = 1:iter
     inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
     inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
     
-    %     tempINSCompensator = INSCompensator;
+    % Propagate inertial solution, first apply scheduled INS update (if available)
     [INSpose__k1, INSCompensator] = Update_INS(INSpose__k1, INSCompensator);
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
-    
-    
-    predicted.wb(k,:) = inertialData.predicted.w_b';
-    predicted.ab(k,:) = inertialData.predicted.a_b';
-    lQb = INSpose.lQb;
-    predicted.al(k,:) = INSpose.a_l';
-    predicted.fl(k,:) = INSpose.f_l';
-    predicted.vl(k,:) = INSpose.V_l';
-    predicted.pl(k,:) = INSpose.P_l';
-        
-        
-
     
     % Run filter at a lower rate
     if (mod(k,FilterRateReduction)==0)
         m = m+1;
         
-        predE = q2e(lQb);
+        predE = q2e(INSpose.lQb);
         
         % EKF
         [F, L, Q] = dINS_EKFmodel(INSpose);
@@ -161,57 +148,37 @@ for k = 1:iter
         
         % Filter measurement model
         measured.vl = init_Vl;
-        dV = measured.vl - predicted.vl(k,:)';
+        dV = measured.vl - INSpose.V_l;
         posterior = KF_measupdate(priori, Disc, [dV]);
         
+        
+        %store data for later plotting
         DX = [DX; posterior.dx'];
         X = [X; posterior.x'];
         COV = [COV;diag(posterior.P)'];
-        
-        if (true)
-            [ posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
-        else
-            
-            % we move misalignment information out of the filter to achieve better
-            % linearization
-            INSCompensator.dlQl = qprod(e2q(limitedFB*posterior.x(1:3)),INSCompensator.dlQl);
-            posterior.x(1:3) = (1-limitedFB)*posterior.x(1:3);
-            % velocity and position updates to the system, and remove information from
-            %the filter state
-            INSCompensator.dV_l = limitedFB*posterior.x(7:9);
-            posterior.x(7:9) = (1-limitedFB)*posterior.x(7:9);
-            INSCompensator.dP_l = limitedFB*posterior.x(13:15);
-            posterior.x(13:15) = (1-limitedFB)*posterior.x(13:15);
-            
-            % Store the biases outside the filter states
-            %         predicted.ba(k+1,:) = predicted.ba(k,:) + limitedFB*posterior.x(10:12)';
-            %         posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
-            %         predicted.bg(k+1,:) = predicted.bg(k,:) + limitedFB*posterior.x(4:6)';
-            %         posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
-            
-            INSCompensator.biases.bg = INSCompensator.biases.bg + limitedFB*posterior.x(4:6);
-            posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
-            INSCompensator.biases.ba = INSCompensator.biases.ba + limitedFB*posterior.x(10:12);
-            posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
-            
-        end
-        
-        % Store biases for later plotting
-        predicted.bg(k+1,:) = INSCompensator.biases.bg;
-        predicted.ba(k+1,:) = INSCompensator.biases.ba;
-        
-        %store data for later plotting
         % DE = [DE;dE'];
-        TE = [TE;predE'];
+        PE = [PE;predE'];
         DV = [DV; dV'];
+        
+        
+        [ posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
        
-    else
-        predicted.ba(k+1,:) = predicted.ba(k,:);
-        predicted.bg(k+1,:) = predicted.bg(k,:);
     end
     
     
-    % Store internal state
+    % Store data for later plotting
+    predicted.bg(k+1,:) = INSCompensator.biases.bg;
+    predicted.ba(k+1,:) = INSCompensator.biases.ba;
+    predicted.wb(k,:) = inertialData.predicted.w_b';
+    predicted.ab(k,:) = inertialData.predicted.a_b';
+    predicted.lQb(k,:) = INSpose.lQb';
+    predicted.al(k,:) = INSpose.a_l';
+    predicted.fl(k,:) = INSpose.f_l';
+    predicted.vl(k,:) = INSpose.V_l';
+    predicted.pl(k,:) = INSpose.P_l';
+    
+    
+    % Temporary internal state memory for midpoint integrators
     INSpose__k2 = INSpose__k1;
     INSpose__k1 = INSpose;
     
@@ -237,7 +204,7 @@ figure(2),clf
 subplot(611),plot(predicted.wb)
 title('Predicted rotation rates')
 grid on
-subplot(612),plot(TE)
+subplot(612),plot(PE)
 title('Predicted local to body Euler angles')
 % subplot(613),plot(X(:,1:3))
 % title('KF misalignment estimates')
@@ -313,7 +280,7 @@ figH = figure(4);
 clf
 set(figH,'Name','Gray box INS state estimate','NumberTitle','off')
 subplot(611),
-plot(TE)
+plot(PE)
 title('Predicted local to body Euler angles')
 
 subplot(612)
