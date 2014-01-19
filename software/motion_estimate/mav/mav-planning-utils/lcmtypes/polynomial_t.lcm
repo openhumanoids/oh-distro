@@ -1,0 +1,7 @@
+package planning;
+
+struct polynomial_t
+{
+	int32_t N_poly;
+	double coeffs[N_poly];
+}

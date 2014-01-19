@@ -1,0 +1,11 @@
+package mav;
+
+struct rigid_body_pose_cov_t
+{
+    int64_t utime;           
+	double quat[4];
+	double xyz_pos[3];
+	
+	double pose_cov[36]; //covariance of rigid_body_pose in [chi;xyz_pos] order where chi are the perturbation exponential coordinates
+	int8_t active_indices[6]; //0 or 1 flag for active indices, used to turn off pieces of the pose for lower rank measurements
+}

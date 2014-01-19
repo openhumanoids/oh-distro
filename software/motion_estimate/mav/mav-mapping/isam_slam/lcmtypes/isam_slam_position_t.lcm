@@ -1,0 +1,15 @@
+package isam_slam;
+
+//this message contains the position of the vehicle at a given time as computed by the SLAM algorithm... 
+//it is likely significantly delayed, but represents our best estimate of the vehicle position at that time
+struct position_t
+{
+    int64_t utime;              // utime that the actual measurement took place
+
+    double pos[3];              // position x,y,z in meters in local frame
+
+    double orientation[4];      // rotate vector in body coordinate frame 
+                                // (X-forward, Z-up) by this to get that vector
+                                // in local frame
+
+}

@@ -1,0 +1,9 @@
+package mav;
+
+struct gps_satellite_info_list_t
+{
+	int64_t utime;
+
+	int32_t num_sats;
+	gps_satellite_info_t sat_info[num_sats];
+}
