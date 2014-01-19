@@ -49,7 +49,7 @@ init_Pl = [0;0;0];
 % tlQb = init_lQb;
 
 % Bias errors to introduce later
-gyrobias = 0*[0.01;0;0]
+gyrobias = 0*[-0.01;0;0]
 accelbias = 0*[0;0.1;0]
 
 E = [];
@@ -87,7 +87,7 @@ INSpose = init_pose();
 testpose = init_pose();
 INSpose__k1 = init_pose();
 INSpose__k2 = init_pose();
-inertialData = init_inertialData(9.8)
+inertialData = init_inertialData(9.8);
 
 
 posterior.x = zeros(15,1);
@@ -112,69 +112,37 @@ nDEF = [];
 Rbias = [];
 
 % this is the filter update counter
-FilterRate = 20;
-limitedFB = 0.2;
+FilterRate = 10;
+limitedFB = 0.5;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
 
 for k = 1:iter
     
-    if (true)
-        % generate IMU data measurement frame
-        inertialData.predicted.utime = k*dt*1E6;
-        inertialData.measured.w_b = measured.wb(k,:)';
-        inertialData.measured.a_b = measured.ab(k,:)';
-        inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
-        inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
+
+    % generate IMU data measurement frame
+    inertialData.predicted.utime = k*dt*1E6;
+    inertialData.measured.w_b = measured.wb(k,:)';
+    inertialData.measured.a_b = measured.ab(k,:)';
+    inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
+    inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
+    
+    %     tempINSCompensator = INSCompensator;
+    [INSpose__k1, INSCompensator] = Update_INS(INSpose__k1, INSCompensator);
+    INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
+    
+    
+    predicted.wb(k,:) = inertialData.predicted.w_b';
+    predicted.ab(k,:) = inertialData.predicted.a_b';
+    lQb = INSpose.lQb;
+    predicted.al(k,:) = INSpose.a_l';
+    predicted.fl(k,:) = INSpose.f_l';
+    predicted.vl(k,:) = INSpose.V_l';
+    predicted.pl(k,:) = INSpose.P_l';
         
-        %     tempINSCompensator = INSCompensator;
-        [INSpose__k1, INSCompensator] = Update_INS(INSpose__k1, INSCompensator);
-        INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
         
-        
-        predicted.wb(k,:) = inertialData.predicted.w_b';
-        predicted.ab(k,:) = inertialData.predicted.a_b';
-        lQb = INSpose.lQb;
-        predicted.al(k,:) = INSpose.a_l';
-        predicted.fl(k,:) = INSpose.f_l';
-        predicted.vl(k,:) = INSpose.V_l';
-        predicted.pl(k,:) = INSpose.P_l';
-        
-        
-    else
-        % Gyro bias compensation
-        predicted.wb(k,:) = measured.wb(k,:) - INSCompensator.biases.bg';
-        % Accelerometer bias compensation
-        predicted.ab(k,:) = measured.ab(k,:) - INSCompensator.biases.ba';
-        
-        if (k > 1)
-            lQb = qprod(lQb,qconj(INSCompensator.dlQl));
-            INSCompensator.dlQl = [1;0;0;0];
-            predicted.vl(k-1,:) = predicted.vl(k-1,:) + INSCompensator.dV_l';
-            INSCompensator.dV_l = [0;0;0];
-            predicted.pl(k-1,:) = predicted.pl(k-1,:) + INSCompensator.dP_l';
-            INSCompensator.dP_l = [0;0;0];
-        end
-        
-        % predict local frame accelerations
-        predicted.al(k,:) = qrot(qconj(lQb),predicted.ab(k,:)')';
-        lQb = zeroth_int_Quat_closed_form(-predicted.wb(k,:)', lQb, dt);
-        predicted.fl(k,:) = (predicted.al(k,:)' - gn)';% For velocity and position
-        if (k > 1)
-            if (k>2)
-                predicted.pl(k,:) = predicted.pl(k-1,:) + 0.5*dt*(predicted.vl(k-2,:) + predicted.vl(k-1,:));
-            else
-                predicted.pl(k,:) = predicted.pl(k-1,:) + dt*(predicted.vl(k-1,:));
-            end
-            predicted.vl(k,:) = predicted.vl(k-1,:) + 0.5*dt*(predicted.fl(k-1,:) + predicted.fl(k,:));
-        end
-        
-        INSpose.lQb = lQb;
-        INSpose.a_l = predicted.al(k,:)';
-        INSpose.V_l = predicted.vl(k,:)';
-        INSpose.P_l = predicted.pl(k,:)';
-    end
+
     
     % Run filter at a lower rate
     if (mod(k,FilterRateReduction)==0)
@@ -185,7 +153,7 @@ for k = 1:iter
         % EKF
         [F, L, Q] = dINS_EKFmodel(INSpose);
         Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
-        covariances.R = diag( 5E-1*ones(3,1) );
+        covariances.R = diag( 1E0*ones(3,1) );
         
         % Filter propagation
         [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
@@ -200,32 +168,37 @@ for k = 1:iter
         X = [X; posterior.x'];
         COV = [COV;diag(posterior.P)'];
         
-        % we move misalignment information out of the filter to achieve better
-        % linearization
-        INSCompensator.dlQl = qprod(e2q(limitedFB*posterior.x(1:3)),INSCompensator.dlQl);
-        posterior.x(1:3) = (1-limitedFB)*posterior.x(1:3);
-        % velocity and position updates to the system, and remove information from
-        %the filter state
-        INSCompensator.dV_l = limitedFB*posterior.x(7:9);
-        posterior.x(7:9) = (1-limitedFB)*posterior.x(7:9);
-        INSCompensator.dP_l = limitedFB*posterior.x(13:15);
-        posterior.x(13:15) = (1-limitedFB)*posterior.x(13:15);
+        if (true)
+            [ posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
+        else
+            
+            % we move misalignment information out of the filter to achieve better
+            % linearization
+            INSCompensator.dlQl = qprod(e2q(limitedFB*posterior.x(1:3)),INSCompensator.dlQl);
+            posterior.x(1:3) = (1-limitedFB)*posterior.x(1:3);
+            % velocity and position updates to the system, and remove information from
+            %the filter state
+            INSCompensator.dV_l = limitedFB*posterior.x(7:9);
+            posterior.x(7:9) = (1-limitedFB)*posterior.x(7:9);
+            INSCompensator.dP_l = limitedFB*posterior.x(13:15);
+            posterior.x(13:15) = (1-limitedFB)*posterior.x(13:15);
+            
+            % Store the biases outside the filter states
+            %         predicted.ba(k+1,:) = predicted.ba(k,:) + limitedFB*posterior.x(10:12)';
+            %         posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
+            %         predicted.bg(k+1,:) = predicted.bg(k,:) + limitedFB*posterior.x(4:6)';
+            %         posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
+            
+            INSCompensator.biases.bg = INSCompensator.biases.bg + limitedFB*posterior.x(4:6);
+            posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
+            INSCompensator.biases.ba = INSCompensator.biases.ba + limitedFB*posterior.x(10:12);
+            posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
+            
+        end
         
-        % Store the biases outside the filter states
-%         predicted.ba(k+1,:) = predicted.ba(k,:) + limitedFB*posterior.x(10:12)';
-%         posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
-%         predicted.bg(k+1,:) = predicted.bg(k,:) + limitedFB*posterior.x(4:6)';
-%         posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
-        
-        INSCompensator.biases.bg = INSCompensator.biases.bg + limitedFB*posterior.x(4:6);
-        posterior.x(4:6) = (1-limitedFB)*posterior.x(4:6);
-        INSCompensator.biases.ba = INSCompensator.biases.ba + limitedFB*posterior.x(10:12);
-        posterior.x(10:12) = (1-limitedFB)*posterior.x(10:12);
-
-        % Store the biases outside the filter states
+        % Store biases for later plotting
         predicted.bg(k+1,:) = INSCompensator.biases.bg;
         predicted.ba(k+1,:) = INSCompensator.biases.ba;
-        
         
         %store data for later plotting
         % DE = [DE;dE'];
