@@ -7,13 +7,13 @@ function [pose] = INS_lQb(PARAM, pose__k1, pose__k2, inertialData)
 %   -- inertialData.predicted.wb
 %   -- inertialData.predicted.ab
 %   -- inertialData.predicted.lQb
+%   -- inertialData.gw
+%
 % Previous poses
 %   -- pose__k1
 %   -- pose__k2
 %
 % To be added in the future
-%   -- inertialData.gw
-%
 %   -- PARAM.w_ie_w
 %   -- PARAM.Re_maj
 %   -- PARAM.Re_min

@@ -17,7 +17,12 @@ posemsg.twist.angular_velocity = drc.vector_3d_t();
 posemsg.local_linear_acceleration = drc.vector_3d_t();
 
 % the initial conditions for the system
-pose = init_pose();
+RecursiveData.pose = init_pose();
+RecursiveData.pose__k1 = init_pose();
+RecursiveData.pose__k2 = init_pose();
+% The recursive compensation data buffer structure
+RecursiveData.INSCompensator = init_INSCompensator();
+inertialData = init_inertialData(9.8);
 
 while true
     while true
@@ -39,10 +44,13 @@ while true
 %     disp([ 'received timestamp:   ' sprintf('%d ', m.utime) ])
     
     % propagate the estimated navigation solution
-    pose = handle_imu(pose, m);
+    RecursiveData.pose = handle_imu(RecursiveData, m);
     % broadcast the estimated state via LCM
-    sendpose_lcm(lc, posemsg, pose);
+    sendpose_lcm(lc, posemsg, RecursiveData.pose);
     
+    % Store previous states for INS mechanization
+    RecursiveData.pose__k2 = RecursiveData.pose__k1;
+    RecursiveData.pose__k1 = RecursiveData.pose;
 
     if (m.utime==(20000*1000))
         break

@@ -31,7 +31,7 @@ switch (4)
     case 3
         data = load('UnitTests/testdata/microstrain_rot_peraxis/y/loggedIMU.txt');
         iter = 6750;
-        initend = 800;
+        initend = 1;
     case 4
         data = load('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
         iter = 12000;
@@ -39,7 +39,7 @@ switch (4)
 end
 
 
-gn = [0;0;9.8]; % forward left up
+% gn = [0;0;9.8]; % forward left up
 
 init_lQb = [1;0;0;0];
 % init_lQb = e2q([0;0;-pi/2]);
@@ -59,7 +59,6 @@ measured.wb = data(1:iter,1:3);
 measured.ab = data(1:iter,4:6) + repmat(accelbias',iter,1);
 
 % remove gyro biases
-
 biasg = mean(measured.wb(initstart:initend,:),1) + gyrobias';
 biasg = repmat(biasg,iter,1);
 measured.wb = measured.wb - biasg;
@@ -89,13 +88,11 @@ INSpose__k1 = init_pose();
 INSpose__k2 = init_pose();
 inertialData = init_inertialData(9.8);
 
-
 posterior.x = zeros(15,1);
 posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
 Disc.B = 0;
 Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
-
 
 X = [];
 DX = [];
@@ -103,7 +100,6 @@ COV = [];
 
 % tlQb = init_lQb;
 INSpose.lQb = init_lQb;
-
 
 DE = [];
 PE = [];
@@ -135,8 +131,6 @@ for k = 1:iter
     if (mod(k,FilterRateReduction)==0)
         m = m+1;
         
-        predE = q2e(INSpose.lQb);
-        
         % EKF
         [F, L, Q] = dINS_EKFmodel(INSpose);
         Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
@@ -151,13 +145,13 @@ for k = 1:iter
         dV = measured.vl - INSpose.V_l;
         posterior = KF_measupdate(priori, Disc, [dV]);
         
-        
         %store data for later plotting
         DX = [DX; posterior.dx'];
         X = [X; posterior.x'];
         COV = [COV;diag(posterior.P)'];
         % DE = [DE;dE'];
-        PE = [PE;predE'];
+        %predE = q2e(INSpose.lQb);
+        PE = [PE;q2e(INSpose.lQb)'];
         DV = [DV; dV'];
         
         
@@ -187,7 +181,7 @@ for k = 1:iter
     end
 end
 
-%% Plotting
+%% Direct Plotting
 
 % figure(1),clf
 % subplot(411),plot(true.wb)

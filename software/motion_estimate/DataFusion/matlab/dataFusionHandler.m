@@ -52,6 +52,7 @@ while (true)
     Sys.posterior = posterior;
 
     Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
+    Measurement.velocityResidual = Measurement.LegOdo.pose.V_l - Measurement.INS.pose.V_l;
     
     Measurement.quaternionLinearResidual = Measurement.LegOdo.pose.q - Measurement.INS.pose.q; % We do not intend to use the linear difference between the quaternions, just a sanity check
     Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.q)' * q2R(Measurement.LegOdo.pose.q));

@@ -1,25 +1,31 @@
-function [pose] = handle_imu(pose__, imu)
+function [RecursiveData] = handle_imu(RecursiveData, imu)
 
-pose.utime = imu.utime;
-dt = (pose.utime - pose__.utime)*1e-6;
+RecursiveData.pose.utime = imu.utime;
+dt = (RecursiveData.pose.utime - RecursiveData.pose__k1.utime)*1e-6;
 
-% Newton 2 mechanisation
-% pose.P = pose__.P + (pose__.V) * dt; 
-% pose.f_l = pose__.R * (imudata.linear_acceleration) - [0;0;9.81];
-% pose.V = pose__.V + 0.5*(pose__.f_l + pose.f_l) * dt;
-% pose.R = closed_form_DCM_farrell(imudata.angular_velocity,pose__.R,dt);
 
-imudata.utime = imu.utime;
-imudata.ddp = imu.linear_acceleration;
-imudata.da = imu.angular_velocity;
-imudata.q = imu.orientation;
-imudata.gravity = [0;0;9.81];
+inertialData.predicted.utime = imu.utime;
+inertialData.measured.w_b = imu.angular_velocity;
+inertialData.measured.a_b = imu.linear_acceleration;
+inertialData.predicted.w_b = inertialData.measured.w_b - RecursiveData.INSCompensator.biases.bg;
+inertialData.predicted.a_b = inertialData.measured.a_b - RecursiveData.INSCompensator.biases.ba;
 
-pose = INS_Mechanisation(pose__, imudata);
+[RecursiveData.pose__k1, RecursiveData.INSCompensator] = Update_INS(pose__k1, RecursiveData.INSCompensator);
+RecursiveData.pose = INS_lQb([], RecursiveData.pose__k1, RecursiveData.pose__k2, inertialData);
+
+    
+% imudata.utime = imu.utime;
+% imudata.ddp = imu.linear_acceleration;
+% imudata.da = imu.angular_velocity;
+% imudata.q = imu.orientation;
+% imudata.gravity = [0;0;9.8];
+% 
+% pose = INS_Mechanisation(pose__, imudata);
+
 
 % platform rates in the estimated reference frame
-pose.w_l = pose.R*imudata.da;
+RecursiveData.pose.w_l = qrot(qconj(RecursiveData.pose.lQb),imudata.angular_velocity);
 
 % convert R to q -- quaternion attitude computer to be used as primary in
 % the future
-pose.q = R2q(pose.R);
+% pose.q = R2q(pose.R);
