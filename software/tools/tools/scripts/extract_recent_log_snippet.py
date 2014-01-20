@@ -44,7 +44,7 @@ def findLastTimestamp(log):
       time = event.timestamp
       while True:
         event = log.read_next_event()
-        if event is None:
+        if event is None or log.tell()>=totalBytes:
           break
   return time
 
@@ -58,15 +58,6 @@ def chopLog(inLog,outLog,timeMin,timeMax):
     if (time > timeMax):
       break
     outLog.write_event(event.timestamp, event.channel, event.data)
-
-def copyEndOfLog(inFileName,outFileName,timeSec):
-  inLog = lcm.EventLog(inFileName,'r')
-  outLog = lcm.EventLog(outFileName,'w')
-  timeMax = findLastTimestamp(inLog)  
-  timeMin = timeMax-int(timeSec*1e6)
-  chopLog(inLog,outLog,timeMin,timeMax)
-  inLog.close()
-  outLog.close()
 
 def findNewestFile(pattern):
   import glob
@@ -87,7 +78,6 @@ def go(pattern,timeSec,label):
     return False
   inLog = lcm.EventLog(inFileName,'r')
   timeMax = findLastTimestamp(inLog)
-  inLog.close()
   timeStr = datetime.datetime.fromtimestamp(timeMax/1e6).strftime('%Y-%m-%d_%H-%M-%S')
   inputPath,baseFileName = os.path.split(inFileName)
   outputPath = inputPath + '/snippets'
@@ -96,7 +86,11 @@ def go(pattern,timeSec,label):
   if label is None or (len(label)==0):
     label = 'snippet'
   outFileName = '%s/%s_%s_%s_%s' % (outputPath, baseFileName, label, str(int(timeSec)), timeStr)
-  copyEndOfLog(inFileName,outFileName,timeSec)
+  outLog = lcm.EventLog(outFileName,'w')
+  timeMin = timeMax-int(timeSec*1e6)
+  chopLog(inLog,outLog,timeMin,timeMax)
+  inLog.close()
+  outLog.close()
   print 'wrote file %s' % (outFileName)
   return True
 
