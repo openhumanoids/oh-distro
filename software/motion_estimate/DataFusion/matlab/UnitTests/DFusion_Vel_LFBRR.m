@@ -154,15 +154,14 @@ for k = 1:iter
         PE = [PE;q2e(INSpose.lQb)'];
         DV = [DV; dV'];
         
-        
         [ posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
        
     end
     
     
     % Store data for later plotting
-    predicted.bg(k+1,:) = INSCompensator.biases.bg;
-    predicted.ba(k+1,:) = INSCompensator.biases.ba;
+    predicted.bg(k,:) = INSCompensator.biases.bg;
+    predicted.ba(k,:) = INSCompensator.biases.ba;
     predicted.wb(k,:) = inertialData.predicted.w_b';
     predicted.ab(k,:) = inertialData.predicted.a_b';
     predicted.lQb(k,:) = INSpose.lQb';

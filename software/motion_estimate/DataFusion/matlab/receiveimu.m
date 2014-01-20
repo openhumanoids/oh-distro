@@ -22,7 +22,6 @@ RecursiveData.pose__k1 = init_pose();
 RecursiveData.pose__k2 = init_pose();
 % The recursive compensation data buffer structure
 RecursiveData.INSCompensator = init_INSCompensator();
-inertialData = init_inertialData(9.8);
 
 while true
     while true

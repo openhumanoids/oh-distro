@@ -3,6 +3,7 @@ function [RecursiveData] = handle_imu(RecursiveData, imu)
 RecursiveData.pose.utime = imu.utime;
 dt = (RecursiveData.pose.utime - RecursiveData.pose__k1.utime)*1e-6;
 
+inertialData = init_inertialData(9.8);
 
 inertialData.predicted.utime = imu.utime;
 inertialData.measured.w_b = imu.angular_velocity;

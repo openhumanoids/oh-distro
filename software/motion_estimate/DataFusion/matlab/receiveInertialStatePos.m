@@ -25,7 +25,7 @@ INS.pose.a_l = [m.local_linear_acceleration.x;m.local_linear_acceleration.y;m.lo
 Meas.pose.P_l = [m.referencePos_local.x;m.referencePos_local.y;m.referencePos_local.z];
 Meas.pose.V_l = [m.referenceVel_local.x;m.referenceVel_local.y;m.referenceVel_local.z];
 Meas.pose.V_b = [m.referenceVel_body.x;m.referenceVel_body.y;m.referenceVel_body.z];
-Meas.pose.q = [m.referenceQ_local.w;m.referenceQ_local.x;m.referenceQ_local.y;m.referenceQ_local.z];
+Meas.pose.lQb = [m.referenceQ_local.w;m.referenceQ_local.x;m.referenceQ_local.y;m.referenceQ_local.z];
 
 Meas.updateType = m.updateType;
 

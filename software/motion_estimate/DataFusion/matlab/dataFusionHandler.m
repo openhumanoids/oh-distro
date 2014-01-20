@@ -23,18 +23,17 @@ INSUpdateMsg = initINSUpdateLCMMsg();
 
 % initialize the Kalman Filter
 
-% States are misalignment and gyro bias
-posterior.x = zeros(15,1);
-posterior.P = 999*eye(15);
+% state vector
+% x = [dPsi dbg dV dba dP]
+dfSys.posterior.x = zeros(15,1);
+dfSys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
 DFRESULTS.STATEX = zeros(iterations,15);
 DFRESULTS.STATECOV = zeros(iterations,15);
 
 index = 0;
 
-% We assume that this loop will be run at no more than 50 Hz -- although we
-% still need to test and validate this. The assumption is based on normal
-% complimentary filtering practices from the Aerospace community.
+% We assume this loop runs at 50 Hz or less 
 while (true)
     index = index + 1;
     % wait for message
@@ -48,8 +47,8 @@ while (true)
         disp(['WARNING -- dataFusionHandler is taking longer than 40ms, time taken was' num2str(computationTime)]) 
     end
 
-    Sys.T = 0.02;% this should be taken from the utime stamps when ported to real data
-    Sys.posterior = posterior;
+    dfSys.T = 0.02;% this should be taken from the utime stamps when ported to real data
+    %dfSys.posterior = posterior;
 
     Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
     Measurement.velocityResidual = Measurement.LegOdo.pose.V_l - Measurement.INS.pose.V_l;
@@ -57,32 +56,36 @@ while (true)
     Measurement.quaternionLinearResidual = Measurement.LegOdo.pose.q - Measurement.INS.pose.q; % We do not intend to use the linear difference between the quaternions, just a sanity check
     Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.q)' * q2R(Measurement.LegOdo.pose.q));
     
-    disp(['dataFusionHandler -- Position residual ' num2str(Measurement.positionResidual')])
-%     disp(['Linear difference in quaternion ' num2str(Measurement.quaternionLinearResidual')])
-    disp(['dataFusionHandler -- Manifold residual in quaternion norm: ' num2str(norm(Measurement.quaternionManifoldResidual)) ', q = ' num2str(Measurement.quaternionManifoldResidual)])
+    disp(['dataFusionHandler -- Local frame Position residual ' num2str(Measurement.positionResidual')])
+    disp(['dataFusionHandler -- Local frame Velocity residual ' num2str(Measurement.velocityResidual')])
+    
+    %     disp(['dataFusionHandler -- Manifold residual in quaternion norm: ' num2str(norm(Measurement.quaternionManifoldResidual)) ', q = ' num2str(Measurement.quaternionManifoldResidual)])
    
-    [Result, dfSys] = iterate([], Sys, Measurement);
+    [Result, dfSys] = iterate([], dfSys, Measurement);
 
     
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
     if (ENABLE_FEEDBACK == 1)
+        % From the DFusion_Vel_LFBRR test script. Different implementation here
+        %[ dfSys.posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
         publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, lc);
-        % We have now sent the information to the INS solution and remove the
-        % information from the state estimate here
-        % We assume no packet loss, with the safety net of some additional process noise
-        % we are bleeding INS error state information out gracefully.
+        % move error information to the INS solution and remove from state
+        % estimate posterior. This is a feedback step.
+        % Assume no packet loss, with the safety net of some additional
+        % process noise and move to C++ implementation.
+        % Graceful tranfer of estimated error state to compensate for 
+        % linearization errors; also prevents orbitting of the solution.
         dfSys.posterior.x = (1-feedbackGain) * dfSys.posterior.x;
     end
     
     % Store data in the correct location -- We can streamline this once the
     % system is running properly
-    posterior = dfSys.posterior;
-    
+    %posterior = dfSys.posterior;
     
     % Store stuff for later plotting
-    DFRESULTS.STATEX(index,:) = posterior.x';
-    DFRESULTS.STATECOV(index,:) = diag(posterior.P);
+    DFRESULTS.STATEX(index,:) = dfSys.posterior.x';
+    DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
     
     computationTime = toc
     if (Measurement.INS.pose.utime == (50 * iterations * 1000) )
@@ -94,7 +97,7 @@ end
 
 %% Here we want to plot some dataFusion results.
 
-% We standardize our approach 
+% Must standardize this plotting
 
 figure(10), clf
 subplot(321),semilogx(DFRESULTS.STATEX(:,4:6)),title('Gyro Bias Estimate'), grid on
