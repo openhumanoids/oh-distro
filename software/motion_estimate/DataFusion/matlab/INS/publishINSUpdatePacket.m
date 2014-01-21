@@ -4,12 +4,9 @@ function publishINSUpdatePacket( msg, posterior, feedbackGain, lc )
 
 msg.utime = posterior.utime;
 
-dQ = e2q(feedbackGain*posterior.x(1:3));
-
-msg.dQ.w = dQ(1);
-msg.dQ.x = dQ(2);
-msg.dQ.y = dQ(3);
-msg.dQ.z = dQ(4);
+msg.dE_l.x = feedbackGain*posterior.x(1);
+msg.dE_l.y = feedbackGain*posterior.x(2);
+msg.dE_l.z = feedbackGain*posterior.x(3);
 
 msg.dbiasGyro_b.x = feedbackGain*posterior.x(4);
 msg.dbiasGyro_b.y = feedbackGain*posterior.x(5);

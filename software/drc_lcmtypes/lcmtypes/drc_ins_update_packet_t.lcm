@@ -6,11 +6,10 @@ struct ins_update_packet_t
 {
   int64_t utime;
 
-  quaternion_t dQ;
   vector_3d_t dbiasGyro_b;
-
-  vector_3d_t dPos_l;
-  vector_3d_t dVel_l;
   vector_3d_t dbiasAcc_b;
-  
+
+  vector_3d_t dE_l;
+  vector_3d_t dVel_l;
+  vector_3d_t dPos_l;  
 }

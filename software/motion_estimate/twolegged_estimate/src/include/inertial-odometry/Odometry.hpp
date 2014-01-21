@@ -24,8 +24,8 @@ namespace InertialOdometry {
 		void UpdateStructState(InertialOdomOutput &output_data);// ??
 
 
-		InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe* _imu);
-		InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe* _imu, const Eigen::Quaterniond &orient);
+		InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu);
+		InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
 
 		//Eigen::Matrix<double, 3, 3> Expmap(Eigen::Vector3d const &w);
 	  
@@ -37,8 +37,8 @@ namespace InertialOdometry {
 		// Constructor with standard parameters
 		Odometry();
 		// Propagate the internal state registers with new IMU data
-		DynamicState PropagatePrediction(IMU_dataframe* _imu, const Eigen::Quaterniond &orient);
-		DynamicState PropagatePrediction(IMU_dataframe *_imu);
+		DynamicState PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
+		DynamicState PropagatePrediction(IMU_dataframe &_imu);
 		
 		DynamicState getDynamicState();
 

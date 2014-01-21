@@ -73,33 +73,28 @@ namespace InertialOdometry {
   }
 
   //Compensation subtracts biases FIRST, then scales according to the scale factors given
-  void IMUCompensation::Gyro_Compensation(IMU_dataframe *_imu_pre)
+  void IMUCompensation::Gyro_Compensation(IMU_dataframe &_imu)
   {    
-    _imu_pre->gyr_b = gyro_errors * (_imu_pre->gyro_ - gyro_biases);
-    _imu_pre->gyro_compensated_flag = true;
+    _imu.w_b = gyro_errors * (_imu.w_b_measured - gyro_biases);
+    _imu.gyro_compensated_flag = true;
     return;
   }
 
   //Compensation subtracts biases FIRST, then scales according to the scale factors given
-  void IMUCompensation::Accel_Compensation(IMU_dataframe *_imu_pre)
+  void IMUCompensation::Accel_Compensation(IMU_dataframe &_imu)
   {
-	  //Eigen::Vector3d pre;
-	  //pre = _imu_pre->acc_b;
-    _imu_pre->acc_comp = accel_errors * (_imu_pre->acc_b - accel_biases);
-
-    //std::cout << "Compensating Accel: " << pre.transpose() << " | " << _imu_pre->accel_.transpose() << " | " << accel_errors <<  std::endl;
-
-    _imu_pre->accel_compensated_flag = true;
+    _imu.a_b = accel_errors * (_imu.a_b_measured - accel_biases);
+    _imu.accel_compensated_flag = true;
     return;
   }
 
   //Compensation subtracts biases FIRST, then scales according to the scale factors given
-   void IMUCompensation::Full_Compensation(IMU_dataframe *_imu_pre)
+   void IMUCompensation::Full_Compensation(IMU_dataframe &_imu)
   {
     //std::cout << "IMUCompensation::Full_Compensation occured" << std::endl;
 
-    Gyro_Compensation(_imu_pre);
-    Accel_Compensation(_imu_pre);
+    Gyro_Compensation(_imu);
+    Accel_Compensation(_imu);
 
     return;
   }

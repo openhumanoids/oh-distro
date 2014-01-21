@@ -17,7 +17,7 @@ namespace InertialOdometry {
 
 class OrientationComputer {
 private:
-	Eigen::Quaterniond q_state;
+	Eigen::Quaterniond lQb;
 	unsigned long long latest_uts;
 
 	Eigen::Vector3d prevWb;
@@ -35,13 +35,15 @@ public:
 	void updateOrientationWithRate(const unsigned long long &uts, const Eigen::Vector3d &w_b);
 
 	// Adjust the orientation estimate with a know rotational quantity
-	void rotateOrientationUpdate(const Eigen::Quaterniond &dq);
+	void rotateOrientationUpdate(const Eigen::Vector3d &_dE_l);
 
 	Eigen::Vector3d ResolveBodyToRef(const Eigen::Vector3d &vec_b);
-	void updateOutput(InertialOdomOutput* _out);
+	void updateOutput(InertialOdomOutput &_out);
 	Eigen::Quaterniond q();
 
 	void exmap(const Eigen::Vector3d &w_k0, Eigen::Matrix3d &R);
+	Eigen::Quaterniond exmap(const Eigen::Vector3d &dE_l, Eigen::Quaterniond &lQb);
+
 	Eigen::Matrix3d vec2skew(const Eigen::Vector3d &v);
 
 };

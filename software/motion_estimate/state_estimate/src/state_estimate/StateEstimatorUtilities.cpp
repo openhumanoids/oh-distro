@@ -104,10 +104,10 @@ void StateEstimate::handle_inertial_data_temp_name(
 	
   // Using the BDI quaternion estimate for now
   Eigen::Quaterniond q(bdiPose.orientation[0],bdiPose.orientation[1],bdiPose.orientation[2],bdiPose.orientation[3]);
-  q.setIdentity();
+  //q.setIdentity();
 
   
-  std::cout << "StateEstimate::handle_inertial_data_temp_name -- q = " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
+  //std::cout << "StateEstimate::handle_inertial_data_temp_name -- q = " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
   
   imu_data.uts = imu.utime;
   
@@ -117,14 +117,14 @@ void StateEstimate::handle_inertial_data_temp_name(
   // We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
   // We know that eh KVH will sample at every 1 ms, so that is also the rotation rate. We later assume the time for which the
   // platform is maintaining that rotation rate.
-  imu_data.gyro_ = 1E3 * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-  imu_data.dang_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-  imu_data.acc_b = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
+  imu_data.w_b_measured = 1E3 * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  //  imu_data.dang_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.a_b_measured = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
   
   std::cout << "StateEstimate::handle_inertial_data_temp_name -- acc before pelvis alignment " << Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]).transpose() << std::endl;
   
   // Estimate our own orientation estimate
-  InerOdoEst = inert_odo.PropagatePrediction(&imu_data);
+  InerOdoEst = inert_odo.PropagatePrediction(imu_data);
   
 
   // This is the unit test block for the INS POSE state estimate -- used in conjunction with ground truth
@@ -134,10 +134,10 @@ void StateEstimate::handle_inertial_data_temp_name(
   // TODO -- check that we want to keep doing with fusion from a MATLAB process. 
   // Think it should be good, but this is a bread crum for the future to make sure that we do this correctly
   
-  _DFRequest.pose.rotation.w = InerOdoEst.q.w();
-  _DFRequest.pose.rotation.x = InerOdoEst.q.x();
-  _DFRequest.pose.rotation.y = InerOdoEst.q.y();
-  _DFRequest.pose.rotation.z = InerOdoEst.q.z();
+  _DFRequest.pose.rotation.w = InerOdoEst.lQb.w();
+  _DFRequest.pose.rotation.x = InerOdoEst.lQb.x();
+  _DFRequest.pose.rotation.y = InerOdoEst.lQb.y();
+  _DFRequest.pose.rotation.z = InerOdoEst.lQb.z();
 
   _DFRequest.local_linear_acceleration.x = InerOdoEst.a_l(0);
   _DFRequest.local_linear_acceleration.y = InerOdoEst.a_l(1);
@@ -259,10 +259,10 @@ void StateEstimate::stampInertialPoseUpdateRequestMsg(InertialOdometry::Odometry
   msg.pose.translation.y = _insState.P(1);
   msg.pose.translation.z = _insState.P(2);
   
-  msg.pose.rotation.w = _insState.q.w();
-  msg.pose.rotation.x = _insState.q.x();
-  msg.pose.rotation.y = _insState.q.y();
-  msg.pose.rotation.z = _insState.q.z();
+  msg.pose.rotation.w = _insState.lQb.w();
+  msg.pose.rotation.x = _insState.lQb.x();
+  msg.pose.rotation.y = _insState.lQb.y();
+  msg.pose.rotation.z = _insState.lQb.z();
   
   msg.twist.linear_velocity.x = _insState.V(0);
   msg.twist.linear_velocity.y = _insState.V(1);

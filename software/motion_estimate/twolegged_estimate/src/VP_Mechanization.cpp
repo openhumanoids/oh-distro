@@ -10,42 +10,34 @@ namespace InertialOdometry {
 	  last_uts = 0;
   }
 
-  void VP_Mechanization::SubtractGravity(IMU_dataframe* _imu) {
 
-	  _imu->force_ = _imu->accel_ - std_param.gravity;
-	  //	  std::cout << "VP_Mechanization::SubtractGravity -- std_param.gravity = " <<  std_param.gravity.transpose() << std::endl;
-	  _imu->gravity_subtracted = true;
-
-  }
-
-
-  void VP_Mechanization::PropagateTranslation(IMU_dataframe* _imu)
+  void VP_Mechanization::PropagateTranslation(IMU_dataframe &_imu)
   {
 	  
-	  std::cout << "VP_Mechanization::PropagateTranslation -- before subtracting gravity " << _imu->accel_.transpose() << std::endl;
-	  SubtractGravity(_imu);
-	  std::cout << "VP_Mechanization::PropagateTranslation -- after subtracting gravity " << _imu->force_.transpose() << std::endl;
-	  	  
 
-	  //	  Eigen::Vector3d V_l;
-	  //	  V_l = ;
 
-	  state.first_pose_rel_vel = a2v.integrate(_imu->uts,_imu->force_);
-	  state.first_pose_rel_pos = v2p.integrate(_imu->uts, state.first_pose_rel_vel);
+	  _imu.f_l = _imu.a_l - std_param.gravity;
+	  _imu.gravity_subtracted = true;
 
-	  //std::cout << " state: " << _imu->force_.transpose() << " | " << state.first_pose_rel_pos.transpose() << std::endl;
+	  std::cout << "VP_Mechanization::PropagateTranslation -- before subtracting gravity " << _imu.a_l.transpose() << std::endl;
+	  std::cout << "VP_Mechanization::PropagateTranslation -- after subtracting gravity " << _imu.f_l.transpose() << std::endl;
 
-	  last_uts = _imu->uts;
+	  state.first_pose_rel_vel = a2v.integrate(_imu.uts,_imu.f_l);
+	  state.first_pose_rel_pos = v2p.integrate(_imu.uts, state.first_pose_rel_vel);
+
+	  //std::cout << " state: " << _imu.f_l.transpose() << " | " << state.first_pose_rel_pos.transpose() << std::endl;
+
+	  last_uts = _imu.uts;
 
 	  return;
   }
 
-   void VP_Mechanization::updateOutput(InertialOdomOutput* _out) {
+   void VP_Mechanization::updateOutput(InertialOdomOutput &_out) {
 
-	  _out->vp_uts = last_uts;
+	  _out.vp_uts = last_uts;
 
-	  _out->first_pose_rel_pos = state.first_pose_rel_pos;
-	  _out->first_pose_rel_vel = state.first_pose_rel_vel;
+	  _out.first_pose_rel_pos = state.first_pose_rel_pos;
+	  _out.first_pose_rel_vel = state.first_pose_rel_vel;
 
 	  return;
   }

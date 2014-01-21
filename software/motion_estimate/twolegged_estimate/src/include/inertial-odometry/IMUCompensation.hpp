@@ -29,9 +29,9 @@ namespace InertialOdometry
        void UpdateAccelScaleFactor(const double sf[3]);
        void SetGyroMisalignments(const double MA[3]);
        void SetAccelMisalignments(const double MA[3]);
-       void Full_Compensation(IMU_dataframe *imu_pre);
-       void Gyro_Compensation(IMU_dataframe *imu_pre);
-       void Accel_Compensation(IMU_dataframe *imu_pre);
+       void Full_Compensation(IMU_dataframe &_imu);
+       void Gyro_Compensation(IMU_dataframe &_imu);
+       void Accel_Compensation(IMU_dataframe &_imu);
 
        Eigen::Vector3d getGyroBiases();
        Eigen::Vector3d getAccelBiases();
