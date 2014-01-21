@@ -181,12 +181,15 @@ void StateEstimate::handle_inertial_data_temp_name(
 
   // Rotate the body measured rotation rates with the current best known quaternion -- for now we use the BDIPOose orientation estimate
   
-  _ERSmsg.pose.rotation.w = bdiPose.orientation[0];
-  _ERSmsg.pose.rotation.x = bdiPose.orientation[1];
-  _ERSmsg.pose.rotation.y = bdiPose.orientation[2];
-  _ERSmsg.pose.rotation.z = bdiPose.orientation[3];
-  
-  ;
+  //  _ERSmsg.pose.rotation.w = bdiPose.orientation[0];
+  //  _ERSmsg.pose.rotation.x = bdiPose.orientation[1];
+  //  _ERSmsg.pose.rotation.y = bdiPose.orientation[2];
+  //  _ERSmsg.pose.rotation.z = bdiPose.orientation[3];
+
+  _ERSmsg.pose.rotation.w = InerOdoEst.lQb.w();
+  _ERSmsg.pose.rotation.x = InerOdoEst.lQb.x();
+  _ERSmsg.pose.rotation.y = InerOdoEst.lQb.y();
+  _ERSmsg.pose.rotation.z = InerOdoEst.lQb.z();
   
   // TODO -- The bit below should be moved into the inertial odometry class, and then be available in the system by default
   Eigen::Vector3d rates_l;
@@ -194,8 +197,8 @@ void StateEstimate::handle_inertial_data_temp_name(
   
   // Insert local frame rates estimates in the ERS message
   _ERSmsg.twist.angular_velocity.x = rates_l(0);
-  _ERSmsg.twist.angular_velocity.x = rates_l(1);
-  _ERSmsg.twist.angular_velocity.x = rates_l(2);
+  _ERSmsg.twist.angular_velocity.y = rates_l(1);
+  _ERSmsg.twist.angular_velocity.z = rates_l(2);
   
   return;
 }

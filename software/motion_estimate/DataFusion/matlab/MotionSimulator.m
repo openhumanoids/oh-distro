@@ -31,6 +31,10 @@ switch (trajtype)
         %RESULTS = setupUnitTest1Results(iterations);
         RESULTS.traj = load_specific_traj(iterations, 'UnitTests/testdata/dfd_loggedIMU_03.txt');
         param.dt = 1E-2;
+    case 'Microstrain_04'
+        iterations = 12000;
+        RESULTS.traj = load_specific_traj(iterations, 'UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
+        param.dt = 1E-2;
 end
 
 
