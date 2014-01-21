@@ -569,6 +569,10 @@ Eigen::VectorXd TrapezoidalInt::getVal() {
 	return int_dx;
 }
 
+void TrapezoidalInt::setVal(const Eigen::VectorXd &val) {
+	int_dx = val;
+}
+
 void TrapezoidalInt::setStateTo(const Eigen::VectorXd &set_val) {
 	int_dx = set_val;
 	prev_dx = set_val;

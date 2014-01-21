@@ -1359,7 +1359,7 @@ void LegOdometry_Handler::delta_vo_handler(  const lcm::ReceiveBuffer* rbuf,
 
 
   // need the delta translation in the world frame
-  FovisEst.V = (inert_odo.C_bw()*vo_dtrans)/((_msg->timestamp - FovisEst.uts)*1E-6); // convert to a world frame velocity
+  FovisEst.V = (inert_odo.ResolveBodyToRef(vo_dtrans))/((_msg->timestamp - FovisEst.uts)*1E-6); // convert to a world frame velocity
 
   FovisEst.uts = _msg->timestamp;
 

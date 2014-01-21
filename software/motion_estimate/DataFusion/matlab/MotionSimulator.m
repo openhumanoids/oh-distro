@@ -129,7 +129,7 @@ for n = 1:iterations
     
     % add earth bound effects, including gravity
 %     measured.imu.utime   =  RESULTS.traj.utime(n);
-    measured.imu.utime   =  param.dt*n;
+    measured.imu.utime   =  param.dt*n*1E6;
     measured.imu.gyr     =  RESULTS.traj.measured.w_b(n,:)';
     measured.imu.acc     =  RESULTS.traj.measured.a_b(n,:)';
 %     measured.imu.lQb     =  RESULTS.traj.measured.lQb(n,:)';

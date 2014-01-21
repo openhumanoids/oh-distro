@@ -15,7 +15,7 @@ function [imuMsgBatch, sentMsg] = sendDrcAtlasRawIMU(dt, n, data, imuMsgBatch, l
 % mounted on the Atlas robot.
 sRb = eye(3);        % We use the trivial case for now -- sensor to body rotation
 Trans = zeros(3,1);
-deltaAng = sRb * data.imu.gyr*dt + Trans;
+deltaAng = sRb * data.imu.gyr*dt;
 linAcc = sRb * data.imu.acc + Trans;
 
 imumsg = drc.atlas_raw_imu_t();
@@ -45,12 +45,12 @@ imuMsgBatch = [imumsg, imuMsgBatch(1:14)];
 
 sentMsg = 0;
 % rate change to 333Hz, TBC
-% if (mod(imumsg.utime,1000)==0)
-
-msg = drc.atlas_raw_imu_batch_t();
-msg.utime = data.imu.utime;
-msg.num_packets = 15;
-msg.raw_imu = imuMsgBatch;
+% if (mod(imumsg.utime,3000)==0)
+    msg = drc.atlas_raw_imu_batch_t();
+    msg.utime = data.imu.utime;
+    msg.num_packets = 15;
+    msg.raw_imu = imuMsgBatch;
+% end
 
 %     if (setPauseFlag == 1)
 % %         pause

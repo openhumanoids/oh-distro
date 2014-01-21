@@ -16,9 +16,10 @@ namespace InertialOdometry {
 	// We are going to now compute he quaternion ourselves
     //orc.updateOrientation(_imu->uts,orient);
 
+	// We use update WithRate, since we would like to cater for packet loss. Ideally though, we should use delta_angles directly
     orc.updateOrientationWithRate(_imu.uts,_imu.w_b);
 
-    _imu.a_l = orc.ResolveBodyToRef( _imu.a_b);//??
+    _imu.a_l = orc.ResolveBodyToRef( _imu.a_b);
     ret.first_pose_rel_acc = _imu.a_l;
     
     avp.PropagateTranslation(_imu);
@@ -38,7 +39,7 @@ namespace InertialOdometry {
   	  // We are going to now compute he quaternion ourselves
       orc.updateOrientation(_imu.uts,orient);
 
-      _imu.a_l = orc.ResolveBodyToRef( _imu.a_b);//??
+      _imu.a_l = orc.ResolveBodyToRef( _imu.a_b);
       ret.first_pose_rel_acc = _imu.a_l;
 
       avp.PropagateTranslation(_imu);
@@ -163,8 +164,8 @@ namespace InertialOdometry {
 	}
 
 
-	Eigen::Matrix3d Odometry::C_bw() {
-		return q2C(orc.q()); //Not sure about the transpose -- must test
+	Eigen::Vector3d Odometry::ResolveBodyToRef(const Eigen::Vector3d &_va) {
+		return orc.ResolveBodyToRef(_va);
 	}
 
 }

@@ -86,6 +86,9 @@ StateEstimate::StateEstimator::StateEstimator(
   
   // This is used to initialize the states of the robot -- note we should use ONLY this variable
   firstpass = 1;
+  prevImuPacketCount = 0;
+  Ts_imu = 1E-3;
+  receivedIMUPackets = 0;
 }
 
 // TODO -- fix this constructor
@@ -138,14 +141,35 @@ void StateEstimate::StateEstimator::run()
 
 		  // do something with new imu...
 		  // The inertial odometry object is currently passed down to the handler function, where the INS is propagated and the 12 states are inserted inthe ERS message
-		  double dt;
-		  dt = (imu.utime - previous_imu_utime)*1.E-6;
-		  previous_imu_utime = imu.utime;
-		  handle_inertial_data_temp_name(dt, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg, _leg_odo);
 
+		  //std::cout << "StateEstimator::run -- imu.packet_count " << imu.packet_count << std::endl;
+		  // Auto-detect the sample rate of the IMU -- mainly for testing from different IMUs, should be 1kHz for KVH on Atlas and probably 100Hz for Microstrain
+		  unsigned long long deltaPacket;
+		  if (imu.packet_count > prevImuPacketCount) {
+			  deltaPacket = imu.packet_count - prevImuPacketCount;
+			  if (deltaPacket > 1) {
+				  std::cout << "StateEstimator::run -- " << deltaPacket-1 << " missing IMU packets!" << std::endl;
+			  }
+			  else
+			  {
+				  if (receivedIMUPackets < 10) {
+					  receivedIMUPackets++;
+					  Ts_imu = (imu.utime - previous_imu_utime)*1.E-6/deltaPacket;
+					  previous_imu_utime = imu.utime;
+					  std::cout << "StateEstimator::run -- deltaPacket computed as: " << deltaPacket << ", Ts_imu set to " << Ts_imu << std::endl;
+				  }
+			  }
+		  } else {
+			  if (prevImuPacketCount != 0) {
+				  std::cerr << "StateEstimator::run -- non-monotonic IMU packet count!!! assuming " << Ts_imu << " s spacing between packets." << std::endl;
+			  }
+		  }
+		  prevImuPacketCount = imu.packet_count;
+
+		  handle_inertial_data_temp_name(Ts_imu, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg, _leg_odo);
 		  std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
 
-		  // TODO -- Pat, dehann: we need to do this publishing in a better manner. We should wait on IMU message, not AtlasState
+		  // TODO -- We should wait on IMU message, not AtlasState
 		  // For now we are going to publish on the last element of this queue
 		  //      std::cout << "StateEstimator::run -- nIMU = " << nIMU << std::endl;
 		  if (i==(nIMU-1)) {

@@ -73,7 +73,7 @@ void doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasSt
 
 // IMU DATA============================================================================
 void handle_inertial_data_temp_name(
-		const double dt,
+		const double Ts_imu,
 		const drc::atlas_raw_imu_t &imu,
 		const bot_core::pose_t &bdiPose,
 		const Eigen::Isometry3d &IMU_to_body,

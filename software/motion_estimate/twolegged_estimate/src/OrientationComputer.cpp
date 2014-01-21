@@ -68,7 +68,7 @@ namespace InertialOdometry {
 		dt = 1.E-6*((double)(uts - latest_uts));
 
 		Eigen::Vector3d temp;
-		temp = 0.5*dt*(w_b + prevWb); // TODO -- This should be an integration module from SignalTap
+		temp = dt*(w_b); // TODO -- This should be an integration module from SignalTap
 
 		updateOrientationWithAngle(uts, temp); // We use midpoint integration to obtain a delta angle
 

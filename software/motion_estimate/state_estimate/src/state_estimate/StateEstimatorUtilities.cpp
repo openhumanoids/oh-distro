@@ -84,7 +84,7 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
 
 
 void StateEstimate::handle_inertial_data_temp_name(
-		const double dt,
+		const double Ts_imu,
 		const drc::atlas_raw_imu_t &imu,
 		const bot_core::pose_t &bdiPose,
 		const Eigen::Isometry3d &IMU_to_body,
@@ -115,13 +115,13 @@ void StateEstimate::handle_inertial_data_temp_name(
 
   // We expect to see some LCM pack loss -- this is how we choose to deal with it.
   // We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
-  // We know that eh KVH will sample at every 1 ms, so that is also the rotation rate. We later assume the time for which the
-  // platform is maintaining that rotation rate.
-  imu_data.w_b_measured = 1E3 * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-  //  imu_data.dang_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  // We know the KVH will sample every 1 ms.
+  imu_data.dang_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.w_b_measured = 1/Ts_imu * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
   imu_data.a_b_measured = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
   
-  std::cout << "StateEstimate::handle_inertial_data_temp_name -- acc before pelvis alignment " << Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]).transpose() << std::endl;
+  std::cout << "StateEstimate::handle_inertial_data_temp_name -- Rotation rates after IMU to pelvis alignment " << std::endl << imu_data.w_b_measured.transpose() << std::endl;
+  std::cout << "StateEstimate::handle_inertial_data_temp_name -- Acceleration after IMU to pelvis alignment " << std::endl << imu_data.a_b_measured.transpose() << std::endl;
   
   // Estimate our own orientation estimate
   InerOdoEst = inert_odo.PropagatePrediction(imu_data);
@@ -151,13 +151,12 @@ void StateEstimate::handle_inertial_data_temp_name(
   Eigen::Isometry3d pelvis;
   pelvis = _leg_odo->getPelvisState();
   // remember that this will have to publish a LCM message 
-  //  _ERSmsg.pose.translation.x = InerOdoEst.P(0);
-  //  _ERSmsg.pose.translation.y = InerOdoEst.P(1);
-  //  _ERSmsg.pose.translation.z = InerOdoEst.P(2);
-  _ERSmsg.pose.translation.x = pelvis.translation().x();
-  _ERSmsg.pose.translation.y = pelvis.translation().y();
-  _ERSmsg.pose.translation.z = pelvis.translation().z();
-
+  _ERSmsg.pose.translation.x = InerOdoEst.P(0);
+  _ERSmsg.pose.translation.y = InerOdoEst.P(1);
+  _ERSmsg.pose.translation.z = InerOdoEst.P(2);
+  //  _ERSmsg.pose.translation.x = pelvis.translation().x();
+  //  _ERSmsg.pose.translation.y = pelvis.translation().y();
+  //  _ERSmsg.pose.translation.z = pelvis.translation().z();
 
 
   _DFRequest.pose.translation.x = InerOdoEst.P(0);
@@ -187,19 +186,17 @@ void StateEstimate::handle_inertial_data_temp_name(
   _ERSmsg.pose.rotation.y = bdiPose.orientation[2];
   _ERSmsg.pose.rotation.z = bdiPose.orientation[3];
   
-  Eigen::Vector3d rates_b(imu.delta_rotation[0]/dt, imu.delta_rotation[1]/dt, imu.delta_rotation[3]/dt);
+  ;
   
   // TODO -- The bit below should be moved into the inertial odometry class, and then be available in the system by default
   Eigen::Vector3d rates_l;
-  rates_l = inert_odo.C_bw() * rates_b;
+  rates_l = inert_odo.ResolveBodyToRef(Eigen::Vector3d(imu.delta_rotation[0]/Ts_imu, imu.delta_rotation[1]/Ts_imu, imu.delta_rotation[3]/Ts_imu));
   
   // Insert local frame rates estimates in the ERS message
   _ERSmsg.twist.angular_velocity.x = rates_l(0);
   _ERSmsg.twist.angular_velocity.x = rates_l(1);
   _ERSmsg.twist.angular_velocity.x = rates_l(2);
   
-
-
   return;
 }
 
