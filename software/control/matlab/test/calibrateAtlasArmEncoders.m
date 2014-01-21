@@ -78,10 +78,9 @@ behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
 behavior_lis = AtlasBehaviorModeListener('ATLAS_STATUS');
 
 lc = lcm.lcm.LCM.getSingleton();
+monitor = drake.util.MessageMonitor(drc.utime_t,'utime');
+lc.subscribe('CALIBRATE_ARM_ENCODERS',monitor);  
 if runLCM % wait for LCM trigger, then run
-  monitor = drake.util.MessageMonitor(drc.utime_t,'utime');
-  lc.subscribe('CALIBRATE_ARM_ENCODERS',monitor);  
-  
   while true
     pause(0.25);
     x = monitor.getNextMessage(10);
