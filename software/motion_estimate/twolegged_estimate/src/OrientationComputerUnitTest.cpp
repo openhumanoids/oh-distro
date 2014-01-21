@@ -92,14 +92,8 @@ int main() {
 
 	orc.updateOrientation(0,Eigen::Quaterniond::Identity());
 
-    Eigen::Quaterniond dQ;
-    dQ.setIdentity();
     E << 0.1, 0, 0;
-    dQ = e2q(E);
-
-    cout << "dQ is " << dQ.w() << ", " << dQ.x() << ", " << dQ.y() << ", " << dQ.z() << endl;
-    orc.rotateOrientationUpdate(dQ);
-    orc.rotateOrientationUpdate(dQ);
+    orc.rotateOrientationUpdate(E);
 
 
     cout << "orc.q() is " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << endl;

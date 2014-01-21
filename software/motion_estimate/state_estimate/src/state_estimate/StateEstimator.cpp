@@ -242,22 +242,18 @@ void StateEstimate::StateEstimator::run()
 		mINSUpdateQueue.dequeue(INSUpdate);
 
 	  // do something with new MatlabTruthPose...
-	  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
-	  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket dbg " << INSUpdate.dbiasGyro_b.x << ", " << INSUpdate.dbiasGyro_b.y << ", " << INSUpdate.dbiasGyro_b.z << std::endl;
+	  //std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
+	  //std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket dbg " << INSUpdate.dbiasGyro_b.x << ", " << INSUpdate.dbiasGyro_b.y << ", " << INSUpdate.dbiasGyro_b.z << std::endl;
 
 	  InertialOdometry::INSUpdatePacket insUpdatePacket;
 	  insUpdatePacket.dbiasGyro_b << INSUpdate.dbiasGyro_b.x, INSUpdate.dbiasGyro_b.y, INSUpdate.dbiasGyro_b.z;
 
-	  insUpdatePacket.dQ.w() = INSUpdate.dQ.w;
-	  insUpdatePacket.dQ.x() = INSUpdate.dQ.x;
-	  insUpdatePacket.dQ.y() = INSUpdate.dQ.y;
-	  insUpdatePacket.dQ.z() = INSUpdate.dQ.z;
-
-	  insUpdatePacket.dQ.setIdentity();
+	  insUpdatePacket.dE_l(0) = INSUpdate.dE_l.x;
+	  insUpdatePacket.dE_l(1) = INSUpdate.dE_l.y;
+	  insUpdatePacket.dE_l(2) = INSUpdate.dE_l.z;
 
 	  // And here we finally roll in the updates to the InertialOdometry INS prediction
 	  inert_odo.incorporateERRUpdate(insUpdatePacket);
-
 	}
 
     // add artificial delay

@@ -37,7 +37,7 @@ switch (1)
         iter = 6000;
         initend = 800;
 end
-
+ 
 
 gn = [0;0;9.8]; % forward left up
 
@@ -68,6 +68,9 @@ predicted.al = zeros(iter,3);
 predicted.fl = zeros(iter,3);
 predicted.vl = zeros(iter,3);
 
+predicted.bg = zeros(iter,3);
+predicted.ba = zeros(iter,3);
+
 % Lets do an initial velocity to help debug,
 predicted.vl(1,:) = init_Vl';
 
@@ -97,17 +100,17 @@ Rbias = [];
 
 for k = 1:iter
     
-    predicted.wb(k,:) = measured.wb(k,:);
+    predicted.wb(k,:) = measured.wb(k,:) - predicted.bg(k,:);
     
     lQb = zeroth_int_Quat_closed_form(-predicted.wb(k,:)', lQb, dt);
 
     plQb = qprod(lQb,qconj(dlQl));
 
     % Accelerometer bias compensation
-    predicted.ab(k,:) = measured.ab(k,:) - posterior.x(10:12)';
+    predicted.ab(k,:) = measured.ab(k,:) - predicted.ba(k,:);
     
     % predict local frame accelerations
-    predicted.al(k,:) = qrot(qconj(plQb),predicted.ab(k,:)')'; % NOT USING BIAS YET
+    predicted.al(k,:) = qrot(qconj(plQb),predicted.ab(k,:)')';
     
     predicted.fl(k,:) = (predicted.al(k,:)' - gn)';% For velocity and position
     if (k > 1)
@@ -116,7 +119,7 @@ for k = 1:iter
     
     F = zeros(12);
     F(1:3,4:6) = -q2R(qconj(plQb));
-    F(7:9,1:3) = -vec2skew(predicted.al(k,:)');  % NOT USING BIAS YET
+    F(7:9,1:3) = -vec2skew(predicted.al(k,:)');
     F(7:9,10:12) = -q2R(qconj(plQb));
     
     Disc.C = [zeros(3,6), eye(3), zeros(3)];
@@ -125,6 +128,8 @@ for k = 1:iter
     
     Q = 1*diag([0*1E-16*ones(1,3), 1E-5*ones(1,3), 0*1E-15*ones(1,3), 1E-5*ones(1,3)]);
     
+    % uneasy about the negative signs, but this is what we have in
+    % literature (noise is noise, right.)
     L = blkdiag(eye(3), -eye(3), -q2R(qconj(plQb)), eye(3));
     
     [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt);
@@ -142,6 +147,9 @@ for k = 1:iter
     
     posterior = KF_measupdate(priori, Disc, [dV]);
     
+    DX = [DX; posterior.dx'];
+    X = [X; posterior.x'];
+    
     % we move misalignment information out of the filter to achieve better
     % linearization
     dlQl = qprod(e2q(posterior.x(1:3)),dlQl);
@@ -152,9 +160,13 @@ for k = 1:iter
     predicted.vl(k,:) = predicted.vl(k,:) + posterior.x(7:9)';
     posterior.x(7:9) = [0;0;0];
     
-    DX = [DX; posterior.dx'];
+    % Store the biases outside the filter states
+    predicted.ba(k+1,:) = predicted.ba(k,:) + posterior.x(10:12)';
+    posterior.x(10:12) = [0;0;0];
+    predicted.bg(k+1,:) = predicted.bg(k,:) + posterior.x(4:6)';
+    posterior.x(4:6) = [0;0;0];
     
-    X = [X; posterior.x'];
+    
 %     Rbias = [Rbias; qrot(e2q(posterior.x(1:3)),posterior.x(4:6))'];
     COV = [COV;diag(posterior.P)'];
     
@@ -294,13 +306,24 @@ title('Estimated dVl')
 figure(5),clf
 
 subplot(411)
-plot(DX(:,10:12))
-title('K * innov updates to accelerometer bias estimates')
+plot(DX(:,4:6))
+title('K * innov updates to gyro bias estimates')
+grid on
 
 subplot(412)
-plot(X(:,10:12))
-title('Accelerometer bias estimates')
+plot(predicted.bg)
+title('Gyro bias estimates')
+grid on
 
+subplot(413)
+plot(DX(:,10:12))
+title('K * innov updates to accelerometer bias estimates')
+grid on
+
+subplot(414)
+plot(predicted.ba)
+title('Accelerometer bias estimates')
+grid on
 
 
 figure(6), clf
@@ -329,7 +352,7 @@ subplot(ROWS,COLS,COLS*(r-1)+2),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-title('Updates to misalignment estimates in local frame -- accumulated outside filter')
+title('K * innov updates to misalignment in local frame -- accumulated outside filter')
 axis([1,iter,-covbounds,covbounds])
 grid on
 
@@ -347,7 +370,7 @@ index = index+1;
 
 covbounds = 0.02;%sf*max(abs([bias; bias2]));
 
-subplot(ROWS,COLS,COLS*(r-1)+1),plot(X(:,index))
+subplot(ROWS,COLS,COLS*(r-1)+1),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -355,16 +378,16 @@ axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = index+1;
-subplot(ROWS,COLS,COLS*(r-1)+2),plot(X(:,index))
+subplot(ROWS,COLS,COLS*(r-1)+2),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-title('Gyro bias estimates in body frame')
+title('K * innov gyro bias updates in body frame')
 axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = index+1;
-subplot(ROWS,COLS,COLS*(r-1)+3),plot(X(:,index))
+subplot(ROWS,COLS,COLS*(r-1)+3),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -377,25 +400,24 @@ index = index+1;
 
 covbounds = 0.5;%sf*max(abs([bias; bias2]));
 
-subplot(ROWS,COLS,COLS*(r-1)+1),plot(predicted.vl(:,1) + X(:,index)-init_Vl(1))
+subplot(ROWS,COLS,COLS*(r-1)+1),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
 axis([1,iter,-covbounds,covbounds])
 grid on
-title('subtracting init\_Vl')
 
 index = index+1;
-subplot(ROWS,COLS,COLS*(r-1)+2),plot(predicted.vl(:,2) + X(:,index)-init_Vl(2))
+subplot(ROWS,COLS,COLS*(r-1)+2),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-title('Local frame predicted + estimated velocity')
+title('K * innov local frame velocity updates')
 axis([1,iter,-covbounds,covbounds])
 grid on
 
 index = index+1;
-subplot(ROWS,COLS,COLS*(r-1)+3),plot(predicted.vl(:,3) + X(:,index)-init_Vl(3))
+subplot(ROWS,COLS,COLS*(r-1)+3),plot(DX(:,index))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -411,7 +433,7 @@ index = index+1;
 
 covbounds = 0.1;%sf*max(abs([bias; bias2]));
 
-subplot(ROWS,COLS,COLS*(r-1)+1),plot(ACCBIASERR(:,1))
+subplot(ROWS,COLS,COLS*(r-1)+1),plot(DX(:,10))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
@@ -421,17 +443,17 @@ xlabel('X')
 
 
 index = index+1;
-subplot(ROWS,COLS,COLS*(r-1)+2),plot(ACCBIASERR(:,2))
+subplot(ROWS,COLS,COLS*(r-1)+2),plot(DX(:,11))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')
-title('Estimated accelerometer bias error in body frame')
+title('K * innov accelerometer bias updates')
 axis([1,iter,-covbounds,covbounds])
 grid on
 xlabel('Y')
 
 index = index+1;
-subplot(ROWS,COLS,COLS*(r-1)+3),plot(ACCBIASERR(:,3))
+subplot(ROWS,COLS,COLS*(r-1)+3),plot(DX(:,12))
 hold on
 plot(sqrt(COV(:,index)) ,'r')
 plot(-sqrt(COV(:,index)) ,'r')

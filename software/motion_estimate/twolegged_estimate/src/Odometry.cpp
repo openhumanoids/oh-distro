@@ -9,49 +9,49 @@ namespace InertialOdometry {
 
     }
 
-  InertialOdomOutput Odometry::PropagatePrediction_wo_IMUCompensation(IMU_dataframe* _imu)
+  InertialOdomOutput Odometry::PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu)
   {
 	InertialOdomOutput ret; // populated at end of this member
 
 	// We are going to now compute he quaternion ourselves
     //orc.updateOrientation(_imu->uts,orient);
 
-    orc.updateOrientationWithRate(_imu->uts,_imu->gyr_b);
+    orc.updateOrientationWithRate(_imu.uts,_imu.w_b);
 
-    _imu->accel_ = orc.ResolveBodyToRef( _imu->acc_comp);//??
-    ret.first_pose_rel_acc = _imu->accel_;
+    _imu.a_l = orc.ResolveBodyToRef( _imu.a_b);//??
+    ret.first_pose_rel_acc = _imu.a_l;
     
     avp.PropagateTranslation(_imu);
 
     // update output structure
-    orc.updateOutput(&ret);
-    avp.updateOutput(&ret);
+    orc.updateOutput(ret);
+    avp.updateOutput(ret);
 
     // return the data
     return ret;
   }
   
-  InertialOdomOutput Odometry::PropagatePrediction_wo_IMUCompensation(IMU_dataframe* _imu, const Eigen::Quaterniond &orient)
+  InertialOdomOutput Odometry::PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu, const Eigen::Quaterniond &orient)
   {
   	  InertialOdomOutput ret; // populated at end of this member
 
   	  // We are going to now compute he quaternion ourselves
-      orc.updateOrientation(_imu->uts,orient);
+      orc.updateOrientation(_imu.uts,orient);
 
-      _imu->accel_ = orc.ResolveBodyToRef( _imu->acc_comp);//??
-      ret.first_pose_rel_acc = _imu->accel_;
+      _imu.a_l = orc.ResolveBodyToRef( _imu.a_b);//??
+      ret.first_pose_rel_acc = _imu.a_l;
 
       avp.PropagateTranslation(_imu);
 
       // update output structure
-      orc.updateOutput(&ret);
-      avp.updateOutput(&ret);
+      orc.updateOutput(ret);
+      avp.updateOutput(ret);
 
       // return the data
       return ret;
   }
 
-  DynamicState Odometry::PropagatePrediction(IMU_dataframe *_imu, const Eigen::Quaterniond &orient)
+  DynamicState Odometry::PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient)
   {
 	InertialOdomOutput out;
 
@@ -62,22 +62,22 @@ namespace InertialOdometry {
     //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
 
     //    DynamicState ret;
-    state.imu = *_imu;
-    state.uts = _imu->uts;
-    state.a_l = _imu->accel_;
-    state.f_l = _imu->force_;
-    state.w_l = C_bw()*_imu->gyro_; // TODO -- this may be a duplicated computation. Ensure this is done in only one place
+    state.imu = _imu;
+    state.uts = _imu.uts;
+    state.a_l = _imu.a_l;
+    state.f_l = _imu.f_l;
+    state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
     state.P = out.first_pose_rel_pos;
     state.V = out.first_pose_rel_vel;
     state.E.setZero();
     state.b_a.setZero();
     state.b_g.setZero();
-    state.q = out.quat;
+    state.lQb = out.quat;
     
     return state;
   }
   
-  DynamicState Odometry::PropagatePrediction(IMU_dataframe *_imu)
+  DynamicState Odometry::PropagatePrediction(IMU_dataframe &_imu)
   {
   	  InertialOdomOutput out;
 
@@ -88,17 +88,17 @@ namespace InertialOdometry {
       //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
 
       //    DynamicState ret;
-      state.imu = *_imu;
-      state.uts = _imu->uts;
-      state.a_l = _imu->accel_;
-      state.f_l = _imu->force_;
-      state.w_l = C_bw()*_imu->gyr_b; // TODO -- this may be a duplicated computation. Ensure this is done in only one place
+      state.imu = _imu;
+      state.uts = _imu.uts;
+      state.a_l = _imu.a_l;
+      state.f_l = _imu.f_l;
+      state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
       state.P = out.first_pose_rel_pos;
       state.V = out.first_pose_rel_vel;
       state.E.setZero();
       state.b_a.setZero();
       state.b_g.setZero();
-      state.q = out.quat;
+      state.lQb = out.quat;
 
       return state;
     }
@@ -118,7 +118,7 @@ namespace InertialOdometry {
 
 	  // update integrated states
 	  // Orientation first
-	  orc.rotateOrientationUpdate(updateData.dQ);
+	  orc.rotateOrientationUpdate(updateData.dE_l);
 
   }
 
