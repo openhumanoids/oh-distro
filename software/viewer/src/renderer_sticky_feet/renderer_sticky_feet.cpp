@@ -5,6 +5,8 @@
 #include <glib.h>
 #include <bot_vis/gl_util.h>
 #include <bot_core/fasttrig.h>
+#include "lcmtypes/drc_utime_t.h"
+#include "lcmtypes/drc_footstep_plan_t.h"
 
 #define RENDERER_NAME "Footstep Plans"
 #define PARAM_SHOW_DETAILS "Show Step Details"

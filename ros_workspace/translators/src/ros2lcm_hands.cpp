@@ -27,7 +27,11 @@
 #include <handle_msgs/HandleSensorsCalibrated.h>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/hand_state_t.hpp"
+#include "lcmtypes/drc/raw_irobot_hand_t.hpp"
+#include "lcmtypes/drc/raw_sandia_hand_t.hpp"
+#include "lcmtypes/drc/raw_sandia_hand_finger_t.hpp"
+#include "lcmtypes/drc/system_status_t.hpp"
 
 using namespace std;
 

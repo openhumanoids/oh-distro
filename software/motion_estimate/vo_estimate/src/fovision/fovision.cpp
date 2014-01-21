@@ -1,5 +1,5 @@
 #include "fovision.hpp"
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/system_status_t.hpp"
 
 using namespace std;
 

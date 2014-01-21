@@ -9,7 +9,7 @@
 
 #include "urdf/model.h"
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 #include <ConciseArgs>
 
 #include <model-client/model-client.hpp>

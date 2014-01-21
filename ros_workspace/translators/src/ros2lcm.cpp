@@ -25,8 +25,14 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/multisense.hpp>
+#include "lcmtypes/drc/atlas_state_t.hpp"
+#include "lcmtypes/drc/force_torque_t.hpp"
+#include "lcmtypes/drc/imu_t.hpp"
+#include "lcmtypes/drc/hand_state_t.hpp"
+#include "lcmtypes/drc/score_t.hpp"
+#include "lcmtypes/drc/system_status_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 
 using namespace std;
 

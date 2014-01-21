@@ -27,7 +27,7 @@
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/multisense.hpp"
 #include <bot_core/bot_core.h>
 

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 
 class Handler 
 {

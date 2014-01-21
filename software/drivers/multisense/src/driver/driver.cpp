@@ -8,7 +8,6 @@
 #include "camera.h"
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <ConciseArgs>
 
 using namespace crl::multisense;

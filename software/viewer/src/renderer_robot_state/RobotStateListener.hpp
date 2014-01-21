@@ -14,6 +14,7 @@
 #include <visualization_utils/eigen_kdl_conversions.hpp>
 #include <visualization_utils/affordance_utils/affordance_seed_utils.hpp>
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 #include <bot_vis/bot_vis.h>
 #include <bot_core/bot_core.h>
 #include <path_util/path_util.h>

@@ -9,7 +9,8 @@
 
 #include <urdf/model.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 
 using namespace std;
 

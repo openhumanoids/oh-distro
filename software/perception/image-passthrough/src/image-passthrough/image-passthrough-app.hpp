@@ -19,6 +19,8 @@
 #include <path_util/path_util.h>
 #include <affordance/AffordanceUtils.hpp>
 
+#include "lcmtypes/drc/affordance_plus_t.hpp"
+#include "lcmtypes/drc/affordance_plus_collection_t.hpp"
 
 
 #include <ConciseArgs>

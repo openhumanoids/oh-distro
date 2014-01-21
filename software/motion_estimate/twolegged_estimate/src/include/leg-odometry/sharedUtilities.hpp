@@ -12,12 +12,11 @@
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
 #include <model-client/model-client.hpp>
+#include "lcmtypes/drc/link_transform_t.hpp"
 
 #include "kdl/tree.hpp"
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
-
-#include "lcmtypes/drc_lcmtypes.hpp"
 
 #include <leg-odometry/BotTransforms.hpp>
 #include <leg-odometry/QuaternionLib.h>

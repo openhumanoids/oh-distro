@@ -39,7 +39,8 @@
 #include <Eigen/Geometry>
 
 #include <kdl/frames.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/joint_angles_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 
 namespace visualization_utils {
 

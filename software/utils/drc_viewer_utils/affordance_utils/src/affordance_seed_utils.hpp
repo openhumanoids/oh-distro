@@ -1,6 +1,6 @@
 #ifndef AFFORDANCE_SEED_UTILS_HPP
 #define AFFORDANCE_SEED_UTILS_HPP
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
 #include <algorithm>
 #include <string> 
 #include <visualization_utils/eigen_kdl_conversions.hpp>

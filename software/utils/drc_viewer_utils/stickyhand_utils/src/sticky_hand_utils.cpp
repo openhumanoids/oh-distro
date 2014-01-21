@@ -1,4 +1,6 @@
 #include "sticky_hand_utils.hpp"
+#include "lcmtypes/drc/desired_grasp_state_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 
 namespace visualization_utils
 {

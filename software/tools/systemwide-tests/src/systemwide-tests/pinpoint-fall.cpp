@@ -8,7 +8,7 @@
 
 #include <bot_core/bot_core.h>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/robot_state_t.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/StdVector>

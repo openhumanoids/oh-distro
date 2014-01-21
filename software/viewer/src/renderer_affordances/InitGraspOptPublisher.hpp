@@ -12,7 +12,6 @@
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.h>
 
 #include "renderer_affordances.hpp" // has definition of RendererAffordances struc

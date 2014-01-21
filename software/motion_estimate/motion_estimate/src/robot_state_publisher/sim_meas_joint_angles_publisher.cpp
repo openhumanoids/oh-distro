@@ -14,7 +14,8 @@
 
 #include <urdf/model.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/joint_angles_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 
 namespace sim_meas_joint_angles_publisher {
 

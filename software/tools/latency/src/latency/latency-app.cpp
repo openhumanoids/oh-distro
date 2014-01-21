@@ -5,8 +5,10 @@
 #include <sys/time.h>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/atlas_command_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/utime_two_t.hpp"
 #include <latency/latency.hpp>
 
 #include <ConciseArgs>

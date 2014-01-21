@@ -8,7 +8,6 @@
 #include <urdf/model.h>
 #include <kdl/tree.hpp>
 #include <kdl/treefksolverpos_recursive.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 
 namespace kinematics {
   class Kinematics_Model_URDF {

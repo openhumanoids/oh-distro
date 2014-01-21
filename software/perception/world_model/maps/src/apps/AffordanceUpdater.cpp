@@ -11,6 +11,7 @@
 
 #include <lcmtypes/bot_core/rigid_transform_t.hpp>
 #include <lcmtypes/drc/affordance_t.hpp>
+#include <lcmtypes/drc/map_registration_command_t.hpp>
 
 struct AffordanceMetadata {
   int64_t mUpdateTime;

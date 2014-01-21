@@ -17,7 +17,10 @@
 #include <boost/assign/std/vector.hpp>
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_plus_t.hpp"
+#include "lcmtypes/drc/affordance_plus_collection_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
 #include <lcmtypes/bot_core.hpp>
 
 #include "urdf/model.h"

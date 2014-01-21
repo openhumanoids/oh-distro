@@ -14,7 +14,8 @@
 #include <map>
 
 #include <lcmtypes/bot_procman/printf_t.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/printf_reply_t.hpp"
+#include "lcmtypes/drc/printf_request_t.hpp"
 
 
 using namespace std;

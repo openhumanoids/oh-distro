@@ -9,6 +9,7 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/footstep_plan_t.hpp"
 #include <bot_vis/bot_vis.h>
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/InteractableGlKinematicBody.hpp>

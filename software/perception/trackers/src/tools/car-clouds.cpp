@@ -15,7 +15,6 @@
 #include <boost/foreach.hpp>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
 #include "lcmtypes/bot_core.hpp"
 
 #include <Eigen/Dense>

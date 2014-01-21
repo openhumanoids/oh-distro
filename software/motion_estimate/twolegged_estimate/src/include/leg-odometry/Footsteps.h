@@ -7,8 +7,6 @@
 
 #include <leg-odometry/TwoLegsEstimate_types.h>
 
-#include "lcmtypes/drc_lcmtypes.hpp"
-
 
 namespace TwoLegs {
 

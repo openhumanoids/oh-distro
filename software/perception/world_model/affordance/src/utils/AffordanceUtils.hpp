@@ -24,7 +24,7 @@
 #include <pcl/common/transforms.h>
 
 #include <rgbd_simulation/rgbd_primitives.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_plus_t.hpp"
 
 
 class AffordanceUtils {

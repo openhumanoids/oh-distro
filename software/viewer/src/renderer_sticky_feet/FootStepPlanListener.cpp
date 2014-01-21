@@ -4,8 +4,8 @@
 
 #include <iostream>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
 #include "FootStepPlanListener.hpp"
+#include "lcmtypes/drc/plan_control_t.hpp"
 
 using namespace std;
 using namespace boost;
