@@ -318,6 +318,15 @@ group "m.simple_grasping" {
     }
 }
 
+group "m.misc" {
+    cmd "vicon" {
+        exec = "vicon-client 192.168.10.1";
+        host = "robot";
+    }
+
+
+}
+
 
 #################################################################
 
