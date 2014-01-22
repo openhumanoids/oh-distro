@@ -83,6 +83,7 @@ private:
 	
   InertialOdometry::Odometry inert_odo;
   unsigned long long previous_imu_utime;
+  unsigned long long prevImuPacketCount;
 
   BotParam* _botparam;
   BotFrames* _botframes;
@@ -97,6 +98,8 @@ private:
   TwoLegs::FK_Data fk_data;
   
   int firstpass;
+  double Ts_imu; // Auto-detect the sample rate of the IMU
+  int receivedIMUPackets;
 };
 
 } // end namespace

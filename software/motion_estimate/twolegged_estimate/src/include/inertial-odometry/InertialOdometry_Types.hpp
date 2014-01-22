@@ -13,7 +13,7 @@ namespace InertialOdometry {
 
     Eigen::Vector3d w_b_measured;
     Eigen::Vector3d w_b; // This is after compensation
-    //    Eigen::Vector3d dang_b;
+    Eigen::Vector3d dang_b;
 
     Eigen::Vector3d f_l;
     Eigen::Vector3d a_l;

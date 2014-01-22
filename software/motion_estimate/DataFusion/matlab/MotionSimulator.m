@@ -31,6 +31,10 @@ switch (trajtype)
         %RESULTS = setupUnitTest1Results(iterations);
         RESULTS.traj = load_specific_traj(iterations, 'UnitTests/testdata/dfd_loggedIMU_03.txt');
         param.dt = 1E-2;
+    case 'Microstrain_04'
+        iterations = 12000;
+        RESULTS.traj = load_specific_traj(iterations, 'UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
+        param.dt = 1E-2;
 end
 
 
@@ -129,7 +133,7 @@ for n = 1:iterations
     
     % add earth bound effects, including gravity
 %     measured.imu.utime   =  RESULTS.traj.utime(n);
-    measured.imu.utime   =  param.dt*n;
+    measured.imu.utime   =  param.dt*n*1E6;
     measured.imu.gyr     =  RESULTS.traj.measured.w_b(n,:)';
     measured.imu.acc     =  RESULTS.traj.measured.a_b(n,:)';
 %     measured.imu.lQb     =  RESULTS.traj.measured.lQb(n,:)';
