@@ -6,6 +6,7 @@ data
 .viewer-prefs
 logfile.tmp
 drake_viewer.out
+*~
 
 
 #######################
