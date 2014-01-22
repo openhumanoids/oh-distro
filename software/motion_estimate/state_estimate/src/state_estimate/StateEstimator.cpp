@@ -191,9 +191,9 @@ void StateEstimate::StateEstimator::run()
 			  stampInertialPoseUpdateRequestMsg(inert_odo, mDFRequestMsg);
 
 			  if (_mSwitches->MATLAB_MotionSimulator) {
-				  stampMatlabReferencePoseUpdateRequest(matlabPose, mDFRequestMsg);
+//				  stampMatlabReferencePoseUpdateRequest(matlabPose, mDFRequestMsg);
 			  } else {
-				  stampPositionReferencePoseUpdateRequest(_leg_odo->getPelvisState().translation(), mDFRequestMsg);
+				  stampEKFReferenceMeasurementUpdateRequest(_leg_odo->getPelvisState().translation(), drc::ins_update_request_t::POSITION_LOCAL, mDFRequestMsg);
 			  }
 
 			  // This message will contain reference measurement information from various sources -- for now it is LegOdo, Fovis, MatlabtrajectorMotionSimulation

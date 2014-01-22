@@ -290,27 +290,36 @@ void StateEstimate::stampLegOdoPoseUpdateRequestMsg(TwoLegs::TwoLegOdometry &_le
 
 }
 
-void StateEstimate::stampPositionReferencePoseUpdateRequest(const Eigen::Vector3d &_refPos, drc::ins_update_request_t &msg) {
-	  msg.updateType =  drc::ins_update_request_t::POSITION_LOCAL;
+void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const int type, drc::ins_update_request_t &msg) {
 
-	  //  msg.referencePos_local.x = LegOdoPelvis.translation().x();
-	  //  msg.referencePos_local.y = LegOdoPelvis.translation().y();
-	  //  msg.referencePos_local.z = LegOdoPelvis.translation().z();
-	  copyDrcVec3D(_refPos, msg.referencePos_local);
-
-
-	  // These are unused, but initialized as a precaution
+	// Set defaults
+	  copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referencePos_local);
 	  copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_local);
-
-	  msg.referenceVel_body.x = 0.;
-	  msg.referenceVel_body.y = 0.;
-	  msg.referenceVel_body.z = 0.;
-
+	  copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_body);
 	  msg.referenceQ_local.w = 1.;
 	  msg.referenceQ_local.x = 0.;
 	  msg.referenceQ_local.y = 0.;
 	  msg.referenceQ_local.z = 0.;
 
+
+	  switch (type) {
+	  case drc::ins_update_request_t::POSITION_LOCAL:
+		  copyDrcVec3D(_ref, msg.referencePos_local);
+		  break;
+	  case drc::ins_update_request_t::VELOCITY_LOCAL:
+		  copyDrcVec3D(_ref, msg.referenceVel_local);
+		  break;
+	  case drc::ins_update_request_t::VELOCITY_BODY:
+		  copyDrcVec3D(_ref, msg.referenceVel_body);
+		  break;
+	  default:
+		  std::cerr << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- requesting invalid EKF update request type." << std::endl;
+		  break;
+	  }
+
+	  msg.updateType = type;
+
+	  return;
 }
 
 void StateEstimate::copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to) {

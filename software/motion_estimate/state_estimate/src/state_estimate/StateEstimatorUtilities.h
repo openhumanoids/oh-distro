@@ -92,7 +92,8 @@ void stampInertialPoseUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, dr
 void stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg);
 void stampLegOdoPoseUpdateRequestMsg(TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg);
 
-void stampPositionReferencePoseUpdateRequest(const Eigen::Vector3d &_refPos, drc::ins_update_request_t &msg);
+//void stampPositionReferencePoseUpdateRequest(const Eigen::Vector3d &_refPos, drc::ins_update_request_t &msg);
+void stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const int type, drc::ins_update_request_t &msg);
 void copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to);
 
 void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot);
