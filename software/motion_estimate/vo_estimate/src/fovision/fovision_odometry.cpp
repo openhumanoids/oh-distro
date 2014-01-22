@@ -8,7 +8,8 @@
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
 #include <lcmtypes/microstrain_comm.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/imu_t.hpp"
 
 #include "drcvision/voconfig.hpp"
 #include "drcvision/vofeatures.hpp"

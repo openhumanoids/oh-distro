@@ -3,7 +3,7 @@
 
 #include "urdf/model.h"
 #include <lcm/lcm.h>
-#include "lcmtypes/drc_lcmtypes.h"
+#include "lcmtypes/drc_robot_urdf_t.h"
 #include <fstream>
 
 class ModelClient 

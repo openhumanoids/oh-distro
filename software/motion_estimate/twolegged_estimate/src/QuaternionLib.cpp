@@ -234,6 +234,49 @@ void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew)
 }
 
 
+// Quaternion product for [scalar vector] quaternion -- Purposefully does not renormalize.
+Eigen::Quaterniond qprod(const Eigen::Quaterniond &_b, const Eigen::Quaterniond &_a) {
+
+	//	B = [b(1), -b(2), -b(3), -b(4);...
+	//	     b(2),  b(1), -b(4),  b(3);...
+	//	     b(3),  b(4),  b(1), -b(2);...
+	//	     b(4), -b(3),  b(2),  b(1)];
+	//
+	//	 q = B*c;
+
+	Eigen::Quaterniond result;
+	result.setIdentity();
+
+	result.w() = _b.w()*_a.w() - _b.x()*_a.x() - _b.y()*_a.y() - _b.z()*_a.z();
+	result.x() = _b.x()*_a.w() + _b.w()*_a.x() - _b.z()*_a.y() + _b.y()*_a.z();
+	result.y() = _b.y()*_a.w() + _b.z()*_a.x() + _b.w()*_a.y() - _b.x()*_a.z();
+	result.z() = _b.z()*_a.w() - _b.y()*_a.x() + _b.x()*_a.y() + _b.w()*_a.z();
+
+	return result;
+}
+
+Eigen::Vector3d qrot(const Eigen::Quaterniond &_aQb, const Eigen::Vector3d &_v) {
+
+	//	V_A = [0;v_a];
+	//
+	//	V_B = qprod( aQb,  qprod(V_A,qconj(aQb))  );
+	//
+	//	v_b = V_B(2:4);
+
+	Eigen::Quaterniond Va;
+	Eigen::Quaterniond Vb;
+
+	Va.w() = 0.;
+	Va.x() = _v(0);
+	Va.y() = _v(1);
+	Va.z() = _v(2);
+
+	Vb = qprod(_aQb, qprod(Va, _aQb.conjugate()));
+
+	return Eigen::Vector3d(Vb.x(), Vb.y(), Vb.z());
+}
+
+
 
 
 namespace InertialOdometry 

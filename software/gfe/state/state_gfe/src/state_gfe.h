@@ -5,7 +5,7 @@
 #include <string>
 
 #include <kdl/tree.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/robot_state_t.hpp"
 #include <urdf/model.h>
 
 #include <state/state.h>

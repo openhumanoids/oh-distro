@@ -8,7 +8,8 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/bot_core.hpp"
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/atlas_state_t.hpp"
+#include "lcmtypes/drc/atlas_state_extra_t.hpp"
 #include "lcmtypes/multisense.hpp"
 
 using namespace std;

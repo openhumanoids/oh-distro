@@ -5,7 +5,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include <lcmtypes/drc/robot_urdf_t.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/retired_lcmtypes.hpp>
 

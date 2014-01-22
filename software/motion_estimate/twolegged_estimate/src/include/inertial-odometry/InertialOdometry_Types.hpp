@@ -11,14 +11,14 @@ namespace InertialOdometry {
 
 	unsigned long long uts;
 
-    Eigen::Vector3d gyro_;
-    Eigen::Vector3d gyr_b; // This is after compensation
+    Eigen::Vector3d w_b_measured;
+    Eigen::Vector3d w_b; // This is after compensation
     Eigen::Vector3d dang_b;
 
-    Eigen::Vector3d force_;
-    Eigen::Vector3d accel_;
-    Eigen::Vector3d acc_b;
-    Eigen::Vector3d acc_comp;
+    Eigen::Vector3d f_l;
+    Eigen::Vector3d a_l;
+    Eigen::Vector3d a_b;
+    Eigen::Vector3d a_b_measured;
 
     bool gyro_compensated_flag;
     bool accel_compensated_flag;
@@ -48,7 +48,7 @@ namespace InertialOdometry {
 	  Eigen::Vector3d b_a;
 	  Eigen::Vector3d b_g;
 
-	  Eigen::Quaterniond q;
+	  Eigen::Quaterniond lQb;
 
 	  unsigned long long uts;
   };
@@ -69,7 +69,7 @@ namespace InertialOdometry {
 	  Eigen::Vector3d dbiasGyro_b;
 	  Eigen::Vector3d dbiasAcc_b;
 
-	  Eigen::Quaterniond dQ;
+	  Eigen::Vector3d dE_l;
 	  Eigen::Vector3d dVel_l;
 	  Eigen::Vector3d dPos_l;
   };

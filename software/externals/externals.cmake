@@ -137,11 +137,16 @@ set(externals
   flycapture
   )
 
+set(svn_credentials)
+if(DRC_SVN_PASSWORD)
+  set(svn_credentials SVN_USERNAME drc SVN_PASSWORD ${DRC_SVN_PASSWORD})
+endif()
 
 macro(add_svn_external proj)
   ExternalProject_Add(${proj}
     SVN_REPOSITORY ${${proj}_url}
     SVN_REVISION -r ${${proj}_revision}
+    ${svn_credentials}
     DEPENDS ${${proj}_depends}
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
@@ -154,3 +159,10 @@ endmacro()
 foreach(external ${externals})
   add_svn_external(${external})
 endforeach()
+
+
+# Eigen will install eigen3.pc to build/share instead of build/lib
+# unless this directory is created before Eigen configures.
+ExternalProject_Add_Step(Eigen_pod make_pkgconfig_dir
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
+  DEPENDERS configure)

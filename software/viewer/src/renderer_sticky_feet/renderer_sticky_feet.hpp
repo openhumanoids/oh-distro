@@ -6,8 +6,8 @@
 
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
-#include "lcmtypes/drc_lcmtypes.h"
+#include "lcmtypes/drc/data_request_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else

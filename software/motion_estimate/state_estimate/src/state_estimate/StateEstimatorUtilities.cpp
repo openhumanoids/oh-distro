@@ -84,7 +84,7 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
 
 
 void StateEstimate::handle_inertial_data_temp_name(
-		const double dt,
+		const double Ts_imu,
 		const drc::atlas_raw_imu_t &imu,
 		const bot_core::pose_t &bdiPose,
 		const Eigen::Isometry3d &IMU_to_body,
@@ -104,10 +104,10 @@ void StateEstimate::handle_inertial_data_temp_name(
 	
   // Using the BDI quaternion estimate for now
   Eigen::Quaterniond q(bdiPose.orientation[0],bdiPose.orientation[1],bdiPose.orientation[2],bdiPose.orientation[3]);
-  q.setIdentity();
+  //q.setIdentity();
 
   
-  std::cout << "StateEstimate::handle_inertial_data_temp_name -- q = " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
+  //std::cout << "StateEstimate::handle_inertial_data_temp_name -- q = " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
   
   imu_data.uts = imu.utime;
   
@@ -115,16 +115,16 @@ void StateEstimate::handle_inertial_data_temp_name(
 
   // We expect to see some LCM pack loss -- this is how we choose to deal with it.
   // We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
-  // We know that eh KVH will sample at every 1 ms, so that is also the rotation rate. We later assume the time for which the
-  // platform is maintaining that rotation rate.
-  imu_data.gyro_ = 1E3 * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-  imu_data.dang_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-  imu_data.acc_b = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
+  // We know the KVH will sample every 1 ms.
+  imu_data.dang_b = - IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.w_b_measured = - 1/Ts_imu * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.a_b_measured = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
   
-  std::cout << "StateEstimate::handle_inertial_data_temp_name -- acc before pelvis alignment " << Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]).transpose() << std::endl;
+  std::cout << "StateEstimate::handle_inertial_data_temp_name -- Rotation rates after IMU to pelvis alignment " << std::endl << imu_data.w_b_measured.transpose() << std::endl;
+  std::cout << "StateEstimate::handle_inertial_data_temp_name -- Acceleration after IMU to pelvis alignment " << std::endl << imu_data.a_b_measured.transpose() << std::endl;
   
   // Estimate our own orientation estimate
-  InerOdoEst = inert_odo.PropagatePrediction(&imu_data);
+  InerOdoEst = inert_odo.PropagatePrediction(imu_data);
   
 
   // This is the unit test block for the INS POSE state estimate -- used in conjunction with ground truth
@@ -134,10 +134,10 @@ void StateEstimate::handle_inertial_data_temp_name(
   // TODO -- check that we want to keep doing with fusion from a MATLAB process. 
   // Think it should be good, but this is a bread crum for the future to make sure that we do this correctly
   
-  _DFRequest.pose.rotation.w = InerOdoEst.q.w();
-  _DFRequest.pose.rotation.x = InerOdoEst.q.x();
-  _DFRequest.pose.rotation.y = InerOdoEst.q.y();
-  _DFRequest.pose.rotation.z = InerOdoEst.q.z();
+  _DFRequest.pose.rotation.w = InerOdoEst.lQb.w();
+  _DFRequest.pose.rotation.x = InerOdoEst.lQb.x();
+  _DFRequest.pose.rotation.y = InerOdoEst.lQb.y();
+  _DFRequest.pose.rotation.z = InerOdoEst.lQb.z();
 
   _DFRequest.local_linear_acceleration.x = InerOdoEst.a_l(0);
   _DFRequest.local_linear_acceleration.y = InerOdoEst.a_l(1);
@@ -151,13 +151,12 @@ void StateEstimate::handle_inertial_data_temp_name(
   Eigen::Isometry3d pelvis;
   pelvis = _leg_odo->getPelvisState();
   // remember that this will have to publish a LCM message 
-  //  _ERSmsg.pose.translation.x = InerOdoEst.P(0);
-  //  _ERSmsg.pose.translation.y = InerOdoEst.P(1);
-  //  _ERSmsg.pose.translation.z = InerOdoEst.P(2);
-  _ERSmsg.pose.translation.x = pelvis.translation().x();
-  _ERSmsg.pose.translation.y = pelvis.translation().y();
-  _ERSmsg.pose.translation.z = pelvis.translation().z();
-
+  _ERSmsg.pose.translation.x = InerOdoEst.P(0);
+  _ERSmsg.pose.translation.y = InerOdoEst.P(1);
+  _ERSmsg.pose.translation.z = InerOdoEst.P(2);
+  //  _ERSmsg.pose.translation.x = pelvis.translation().x();
+  //  _ERSmsg.pose.translation.y = pelvis.translation().y();
+  //  _ERSmsg.pose.translation.z = pelvis.translation().z();
 
 
   _DFRequest.pose.translation.x = InerOdoEst.P(0);
@@ -182,24 +181,25 @@ void StateEstimate::handle_inertial_data_temp_name(
 
   // Rotate the body measured rotation rates with the current best known quaternion -- for now we use the BDIPOose orientation estimate
   
-  _ERSmsg.pose.rotation.w = bdiPose.orientation[0];
-  _ERSmsg.pose.rotation.x = bdiPose.orientation[1];
-  _ERSmsg.pose.rotation.y = bdiPose.orientation[2];
-  _ERSmsg.pose.rotation.z = bdiPose.orientation[3];
-  
-  Eigen::Vector3d rates_b(imu.delta_rotation[0]/dt, imu.delta_rotation[1]/dt, imu.delta_rotation[3]/dt);
+  //  _ERSmsg.pose.rotation.w = bdiPose.orientation[0];
+  //  _ERSmsg.pose.rotation.x = bdiPose.orientation[1];
+  //  _ERSmsg.pose.rotation.y = bdiPose.orientation[2];
+  //  _ERSmsg.pose.rotation.z = bdiPose.orientation[3];
+
+  _ERSmsg.pose.rotation.w = InerOdoEst.lQb.w();
+  _ERSmsg.pose.rotation.x = InerOdoEst.lQb.x();
+  _ERSmsg.pose.rotation.y = InerOdoEst.lQb.y();
+  _ERSmsg.pose.rotation.z = InerOdoEst.lQb.z();
   
   // TODO -- The bit below should be moved into the inertial odometry class, and then be available in the system by default
   Eigen::Vector3d rates_l;
-  rates_l = inert_odo.C_bw() * rates_b;
+  rates_l = inert_odo.ResolveBodyToRef(Eigen::Vector3d(imu.delta_rotation[0]/Ts_imu, imu.delta_rotation[1]/Ts_imu, imu.delta_rotation[3]/Ts_imu));
   
   // Insert local frame rates estimates in the ERS message
   _ERSmsg.twist.angular_velocity.x = rates_l(0);
-  _ERSmsg.twist.angular_velocity.x = rates_l(1);
-  _ERSmsg.twist.angular_velocity.x = rates_l(2);
+  _ERSmsg.twist.angular_velocity.y = rates_l(1);
+  _ERSmsg.twist.angular_velocity.z = rates_l(2);
   
-
-
   return;
 }
 
@@ -259,10 +259,10 @@ void StateEstimate::stampInertialPoseUpdateRequestMsg(InertialOdometry::Odometry
   msg.pose.translation.y = _insState.P(1);
   msg.pose.translation.z = _insState.P(2);
   
-  msg.pose.rotation.w = _insState.q.w();
-  msg.pose.rotation.x = _insState.q.x();
-  msg.pose.rotation.y = _insState.q.y();
-  msg.pose.rotation.z = _insState.q.z();
+  msg.pose.rotation.w = _insState.lQb.w();
+  msg.pose.rotation.x = _insState.lQb.x();
+  msg.pose.rotation.y = _insState.lQb.y();
+  msg.pose.rotation.z = _insState.lQb.z();
   
   msg.twist.linear_velocity.x = _insState.V(0);
   msg.twist.linear_velocity.y = _insState.V(1);
@@ -290,27 +290,36 @@ void StateEstimate::stampLegOdoPoseUpdateRequestMsg(TwoLegs::TwoLegOdometry &_le
 
 }
 
-void StateEstimate::stampPositionReferencePoseUpdateRequest(const Eigen::Vector3d &_refPos, drc::ins_update_request_t &msg) {
-	  msg.updateType =  drc::ins_update_request_t::POSITION_LOCAL;
+void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const int type, drc::ins_update_request_t &msg) {
 
-	  //  msg.referencePos_local.x = LegOdoPelvis.translation().x();
-	  //  msg.referencePos_local.y = LegOdoPelvis.translation().y();
-	  //  msg.referencePos_local.z = LegOdoPelvis.translation().z();
-	  copyDrcVec3D(_refPos, msg.referencePos_local);
-
-
-	  // These are unused, but initialized as a precaution
+	// Set defaults
+	  copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referencePos_local);
 	  copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_local);
-
-	  msg.referenceVel_body.x = 0.;
-	  msg.referenceVel_body.y = 0.;
-	  msg.referenceVel_body.z = 0.;
-
+	  copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_body);
 	  msg.referenceQ_local.w = 1.;
 	  msg.referenceQ_local.x = 0.;
 	  msg.referenceQ_local.y = 0.;
 	  msg.referenceQ_local.z = 0.;
 
+
+	  switch (type) {
+	  case drc::ins_update_request_t::POSITION_LOCAL:
+		  copyDrcVec3D(_ref, msg.referencePos_local);
+		  break;
+	  case drc::ins_update_request_t::VELOCITY_LOCAL:
+		  copyDrcVec3D(_ref, msg.referenceVel_local);
+		  break;
+	  case drc::ins_update_request_t::VELOCITY_BODY:
+		  copyDrcVec3D(_ref, msg.referenceVel_body);
+		  break;
+	  default:
+		  std::cerr << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- requesting invalid EKF update request type." << std::endl;
+		  break;
+	  }
+
+	  msg.updateType = type;
+
+	  return;
 }
 
 void StateEstimate::copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to) {

@@ -281,7 +281,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
 
     speed = LeggO.V.norm();
 
-    C_wb = q2C(InerO.q).transpose();
+    C_wb = q2C(InerO.lQb).transpose();
 
     // Determine the error in the body frame
     err_b = C_wb * (LeggO.P - InerO.P);
@@ -404,15 +404,15 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
       std::cout << "LeggO: " << LeggO.P.transpose() << std::endl
             << "InerO: " << InerO.P.transpose() << std::endl
             << "dP_w : " << (LeggO.P - InerO.P).transpose() << std::endl
-            << "IO.q : " << InerO.q.w() << ", " << InerO.q.x() << ", " << InerO.q.y() << ", " << InerO.q.z() << std::endl
+            << "IO.q : " << InerO.lQb.w() << ", " << InerO.lQb.x() << ", " << InerO.lQb.y() << ", " << InerO.lQb.z() << std::endl
             << "err_b: " << err_b.transpose() << std::endl
-            << "acc_b: " << just_checking_imu_frame.acc_b.transpose() << std::endl
-            << "b_acc: " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl
-            << "acc_c: " << just_checking_imu_frame.acc_comp.transpose() << std::endl
-            << "accel_ " << just_checking_imu_frame.accel_.transpose() << std::endl
-            << "force_ " << just_checking_imu_frame.force_.transpose() << std::endl
+            << "a_b_measured: " << just_checking_imu_frame.a_b_measured.transpose() << std::endl
+            << "ba_b: " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl
+            << "a_b: " << just_checking_imu_frame.a_b.transpose() << std::endl
+            << "a_l " << just_checking_imu_frame.a_l.transpose() << std::endl
+            << "f_l " << just_checking_imu_frame.f_l.transpose() << std::endl
             << "a gain " << err_b.norm() << " | "<< a << ", " << (0.6+0.3*(a)) << ", " << 0.3*(1-a)+0.1 << ", " << (0.6+0.3*(a))+0.3*(1-a)+0.1 << std::endl
-            << "C_w2b: " << std::endl << q2C(InerO.q).transpose() << std::endl
+            << "C_w2b: " << std::endl << q2C(InerO.lQb).transpose() << std::endl
             << std::endl;
     }
 
@@ -1205,7 +1205,7 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
    }
 
    for (int i=0;i<3;i++) {
-    ss << just_checking_imu_frame.force_(i) << ", "; //149-151
+    ss << just_checking_imu_frame.f_l(i) << ", "; //149-151
    }
 
    ss << zvu_flag << ", "; //152
@@ -1305,7 +1305,7 @@ void LegOdometry_Handler::torso_imu_handler(  const lcm::ReceiveBuffer* rbuf,
   imu_data.uts = msg->utime;
 
 
-  imu_data.acc_b = Eigen::Vector3d(accels[0],accels[1],accels[2]);
+  imu_data.a_b_measured = Eigen::Vector3d(accels[0],accels[1],accels[2]);
 
 
   //Eigen::Quaterniond trivial_OL_q;
@@ -1317,7 +1317,7 @@ void LegOdometry_Handler::torso_imu_handler(  const lcm::ReceiveBuffer* rbuf,
   //imu_data.acc_b << 0.1+9.81/sqrt(2), 0., +9.81/sqrt(2);
 
   just_checking_imu_frame = imu_data;
-  InerOdoEst = inert_odo.PropagatePrediction(&imu_data,q);
+  InerOdoEst = inert_odo.PropagatePrediction(imu_data,q);
 
   //std::cout << "T_OL, ut: " << imu_data.uts << ", " << InerOdoEst.V.transpose() << " | " << InerOdoEst.P.transpose() << std::endl;
 
@@ -1359,7 +1359,7 @@ void LegOdometry_Handler::delta_vo_handler(  const lcm::ReceiveBuffer* rbuf,
 
 
   // need the delta translation in the world frame
-  FovisEst.V = (inert_odo.C_bw()*vo_dtrans)/((_msg->timestamp - FovisEst.uts)*1E-6); // convert to a world frame velocity
+  FovisEst.V = (inert_odo.ResolveBodyToRef(vo_dtrans))/((_msg->timestamp - FovisEst.uts)*1E-6); // convert to a world frame velocity
 
   FovisEst.uts = _msg->timestamp;
 

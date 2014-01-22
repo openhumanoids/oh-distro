@@ -3,6 +3,7 @@
 
 #include "renderer_robot_state.hpp"
 #include "RobotStateListener.hpp"
+#include "lcmtypes/drc/ee_cartesian_adjust_t.hpp"
 #define PARAM_SELECT_EE_TYPE "EE :"
 #define PARAM_SELECT_RES  "Res (m): "
 #define PARAM_SELECT_ANG_RES "AngRes (deg): "

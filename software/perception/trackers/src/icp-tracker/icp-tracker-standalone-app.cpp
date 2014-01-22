@@ -34,8 +34,9 @@ capture a sweep
 
 #include <trackers/icp-tracker.hpp>
 
+#include "lcmtypes/drc/affordance_t.hpp"
+#include "lcmtypes/drc/affordance_collection_t.hpp"
 
-#include <lcmtypes/drc_lcmtypes.hpp>
 
 using namespace Eigen;
 using namespace std;

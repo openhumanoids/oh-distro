@@ -7,6 +7,7 @@
 #include "ldpc/ldpc_wrapper.h"
 #include "custom-codecs.h"
 #include <boost/asio.hpp>
+#include "lcmtypes/drc/shaper_data_request_t.hpp"
 
 enum { RECEIVE_MODULUS = 16 };    
 enum { MIN_NUM_FRAGMENTS_FOR_FEC = 3 };

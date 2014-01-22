@@ -4,6 +4,7 @@
 #include <visualization_utils/affordance_utils/affordance_lcm_utils.hpp>
 #include <visualization_utils/stickyhand_utils/sticky_hand_lcm_utils.hpp>
 #include <visualization_utils/stickyfoot_utils/sticky_foot_lcm_utils.hpp>
+#include "lcmtypes/drc/hose_mating_cmd_t.hpp"
 
 using namespace std;
 using namespace boost;

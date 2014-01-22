@@ -16,7 +16,7 @@
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/robot_state_t.hpp"
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 

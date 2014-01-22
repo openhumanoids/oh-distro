@@ -2,7 +2,14 @@
 #include <string>
 #include <ros/ros.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/actuator_cmd_t.hpp"
+#include "lcmtypes/drc/atlas_command_t.hpp"
+#include "lcmtypes/drc/controller_mode_t.hpp"
+#include "lcmtypes/drc/joint_command_t.hpp"
+#include "lcmtypes/drc/sensor_request_t.hpp"
+#include "lcmtypes/drc/simple_grasp_t.hpp"
+#include "lcmtypes/drc/system_status_t.hpp"
+#include "lcmtypes/drc/twist_t.hpp"
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>

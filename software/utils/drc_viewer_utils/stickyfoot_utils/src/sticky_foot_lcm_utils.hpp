@@ -1,7 +1,8 @@
 #ifndef STICKYFOOT_LCM_UTILS_HPP
 #define STICKYFOOT_LCM_UTILS_HPP
 #include "sticky_foot_utils.hpp"
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/ee_goal_t.hpp"
+#include "lcmtypes/drc/traj_opt_constraint_t.hpp"
 
 using namespace std;
 using namespace boost;

@@ -12,6 +12,9 @@
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/atlas_status_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 #include <bot_vis/bot_vis.h>
 #include "renderer_affordances.hpp" // has definition of RendererAffordances struc
 

@@ -47,7 +47,8 @@
 
 #include "udp_util.h"
 #include "RendererGroupUtil.hpp"
-#include <lcmtypes/drc_lcmtypes.h>
+#include "lcmtypes/drc_plan_control_t.h"
+#include "lcmtypes/drc_robot_posture_preset_t.h"
 #include <visualization_utils/keyboard_signal_utils.hpp>
 #include <visualization_utils/foviation_signal_utils.hpp>
 #include <visualization_utils/affordance_utils/aff_trigger_signal_utils.hpp>
@@ -560,11 +561,13 @@ int main(int argc, char *argv[])
   
   string config_file = "";
   int network_debug = 0; 
-  bool use_all_renderers = false;
+  bool use_additional_renderers = false;
+  bool use_multisense_renderer = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config_file, "c", "config_file","Robot cfg file");
   opt.add(network_debug, "n", "network_debug","Network Debug [0 nothing, 1 feet, 2 plan, 3 state]");
-  opt.add(use_all_renderers, "a", "all_renderers","Instantiate all renderers");
+  opt.add(use_multisense_renderer, "m", "multisense","Add multisense renderers");
+  opt.add(use_additional_renderers, "a", "additional","Add additional renderers: bot_frames");
   opt.parse();
   std::cout << "config_file: " << config_file << "\n";
   std::cout << "network_debug: " << (int) network_debug << "\n";
@@ -616,9 +619,6 @@ int main(int argc, char *argv[])
   bot_lcmgl_add_renderer_to_viewer(viewer, lcm, 1);
   laser_util_add_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
   bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  // extra frames rendering:
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-  bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
   collections_add_renderer_to_viewer(viewer, 1, lcm);
   
@@ -647,9 +647,14 @@ int main(int argc, char *argv[])
   bdi_add_renderer_to_viewer(viewer, 0, lcm);
 
 
-  if (use_all_renderers) {
-    // Please don't commit this renderer enabled as it is very heavyweight:
-    // multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+  if (use_multisense_renderer) {
+    multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+  }
+  if (use_additional_renderers) {
+    bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+    bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+
+
     bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "boxy_renderer");
     bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "model_renderer");
     add_octomap_renderer_to_viewer(viewer, 1, lcm);
@@ -659,7 +664,9 @@ int main(int argc, char *argv[])
 
     // A second robot renderer: (on a different channel, currently "EST_ROBOT_STATE_COMPRESSED_LOOPBACK
     setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+
   }
+
 
 
 

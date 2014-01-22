@@ -4,6 +4,14 @@
 #include "plan_execution_gui_utils.hpp" 
 #include "plan_approval_gui_utils.hpp"
 #include "plan_store_gui_utils.hpp"
+#include "lcmtypes/drc/ee_goal_t.hpp"
+#include "lcmtypes/drc/ee_manip_gain_t.hpp"
+#include "lcmtypes/drc/manip_plan_control_t.hpp"
+#include "lcmtypes/drc/plan_execution_speed_t.hpp"
+#include "lcmtypes/drc/plan_adjust_mode_t.hpp"
+#include "lcmtypes/drc_atlas_status_t.h"
+#include "lcmtypes/drc_robot_plan_t.h"
+#include "lcmtypes/drc_utime_t.h"
 
 #define PARAM_KP_DEFAULT 5
 #define PARAM_KD_DEFAULT 1

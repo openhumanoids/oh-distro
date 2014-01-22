@@ -1,8 +1,9 @@
 #include <lcm/lcm-cpp.hpp>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <goby/common/time.h>
+#include <lcmtypes/drc/minimal_robot_state_t.hpp>
+#include <lcmtypes/drc/utime_t.hpp>
 
 void in_robot_state_minimal(const lcm::ReceiveBuffer *rbuf,
                             const std::string &channel,

@@ -21,7 +21,6 @@
 #include <bot_core/bot_core.h>
 
 #include <lcmtypes/fovis_update_t.h>
-#include <lcmtypes/drc_lcmtypes.h>
 
 
 #define PARAM_NAME_GRAPH_TIMESPAN "Time span"

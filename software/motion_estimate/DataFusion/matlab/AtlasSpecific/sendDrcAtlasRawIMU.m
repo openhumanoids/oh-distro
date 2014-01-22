@@ -1,6 +1,5 @@
-function [imuMsgBatch, sentMsg] = sendDrcAtlasRawIMU(dt, n, data,imuMsgBatch, lc)
-
-%% First create a new imu message to be added to the batch queue
+function [imuMsgBatch, sentMsg] = sendDrcAtlasRawIMU(dt, n, data, imuMsgBatch, lc)
+%% New imu message to be added to the batch queue
 
 % struct atlas_raw_imu_t
 % {
@@ -10,14 +9,14 @@ function [imuMsgBatch, sentMsg] = sendDrcAtlasRawIMU(dt, n, data,imuMsgBatch, lc
 %   double linear_acceleration[3];
 % }
 
-setPauseFlag = 0;
+% setPauseFlag = 0;
 
 % We need to introduce the same misalignment of the KVH IMU here, is it is
 % mounted on the Atlas robot.
-sCb = eye(3);        % We use the trivial case for now -- sensor to body rotation
+sRb = eye(3);        % We use the trivial case for now -- sensor to body rotation
 Trans = zeros(3,1);
-deltaAng = sCb * data.imu.gyr*dt + Trans;
-linAcc = sCb * data.imu.acc + Trans;
+deltaAng = sRb * data.imu.gyr*dt;
+linAcc = sRb * data.imu.acc + Trans;
 
 imumsg = drc.atlas_raw_imu_t();
 
@@ -31,13 +30,12 @@ imumsg.linear_acceleration = linAcc;
 
 imuMsgBatch = [imumsg, imuMsgBatch(1:14)];
 
-if (norm(data.imu.gyr) > 0)
-    setPauseFlag = 1; 
-end
+% if (norm(data.imu.gyr) > 0)
+%     setPauseFlag = 1;
+% end
 
 
-%% Prepare and send the actual message -- this only runs at third rate
-
+% Prepare and send the actual message -- this only runs at third rate
 % struct atlas_raw_imu_batch_t
 % {
 %   int64_t utime; // timestamp of corresponding status and state message
@@ -47,21 +45,18 @@ end
 
 sentMsg = 0;
 % rate change to 333Hz, TBC
-% if (mod(imumsg.utime,1000)==0)
-
+% if (mod(imumsg.utime,3000)==0)
     msg = drc.atlas_raw_imu_batch_t();
     msg.utime = data.imu.utime;
     msg.num_packets = 15;
     msg.raw_imu = imuMsgBatch;
+% end
 
 %     if (setPauseFlag == 1)
 % %         pause
 %     end
-    
-     lc.publish('ATLAS_IMU_BATCH_MS', msg);
-     sentMsg = 1;
-% end
 
-
+lc.publish('ATLAS_IMU_BATCH_MS', msg);
+sentMsg = 1;
 
 

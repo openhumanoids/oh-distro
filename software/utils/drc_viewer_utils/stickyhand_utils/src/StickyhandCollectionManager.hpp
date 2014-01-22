@@ -7,6 +7,8 @@
 #include <visualization_utils/affordance_utils/BatchFKQueryHandler.hpp>
 #include <visualization_utils/SelectionManager.hpp>
 #include <otdf_parser/otdf_parser.h>
+#include "lcmtypes/drc/affordance_index_t.hpp"
+#include "lcmtypes/drc/desired_grasp_state_t.hpp"
 using namespace std;
 
 namespace visualization_utils

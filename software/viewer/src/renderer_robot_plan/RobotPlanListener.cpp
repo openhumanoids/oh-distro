@@ -1,7 +1,9 @@
 #include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/desired_grasp_state_t.hpp"
+#include "lcmtypes/drc/driving_affordance_status_t.hpp"
+#include "lcmtypes/drc/plan_control_t.hpp"
 
 #include "RobotPlanListener.hpp"
 

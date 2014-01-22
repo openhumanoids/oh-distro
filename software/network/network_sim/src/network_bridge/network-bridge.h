@@ -5,7 +5,8 @@
 
 #include <lcm/lcm-cpp.hpp>
 //#include <lcmtypes/bot_core.h>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include <lcmtypes/drc/utime_t.hpp>
+#include <lcmtypes/drc/bandwidth_stats_t.hpp>
 
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>

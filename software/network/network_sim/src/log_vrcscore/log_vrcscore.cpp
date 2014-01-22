@@ -12,7 +12,8 @@
 
 #include <bot_core/bot_core.h>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/score_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/StdVector>

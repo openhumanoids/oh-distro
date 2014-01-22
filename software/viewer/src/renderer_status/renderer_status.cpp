@@ -22,7 +22,19 @@
 #include <bot_vis/bot_vis.h>
 #include <bot_core/bot_core.h>
 
-#include <lcmtypes/drc_lcmtypes.h>
+#include "lcmtypes/drc_affordance_collection_t.h"
+#include "lcmtypes/drc_atlas_status_t.h"
+#include "lcmtypes/drc_bandwidth_stats_t.h"
+#include "lcmtypes/drc_controller_status_t.h"
+#include "lcmtypes/drc_estimated_biases_t.h"
+#include "lcmtypes/drc_foot_contact_estimate_t.h"
+#include "lcmtypes/drc_frequency_t.h"
+#include "lcmtypes/drc_grasp_opt_status_t.h"
+#include "lcmtypes/drc_hand_tactile_state_t.h"
+#include "lcmtypes/drc_planner_config_t.h"
+#include "lcmtypes/drc_system_status_t.h"
+#include "lcmtypes/drc_robot_state_t.h"
+#include "lcmtypes/drc_utime_t.h"
 
 using namespace std;
 #define RENDERER_NAME "System_Status"

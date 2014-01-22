@@ -9,7 +9,6 @@
 #include <kdl/tree.hpp>
 #include <kdl/treefksolverpos_recursive.hpp>
 #include <kdl/chainiksolverpos_lma.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <state/state_gfe.h>
 
 namespace kinematics {

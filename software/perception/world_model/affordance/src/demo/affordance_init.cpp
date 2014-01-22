@@ -7,7 +7,7 @@
 #include <boost/foreach.hpp>
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_plus_t.hpp"
 
 
 // define the following in order to eliminate the deprecated headers warning

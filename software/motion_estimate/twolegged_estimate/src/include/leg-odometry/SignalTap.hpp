@@ -136,6 +136,7 @@ public:
 
 };
 
+// This is a mid-point integratioin rule, not trapezoidal
 class TrapezoidalInt {
 private:
 	Eigen::VectorXd int_dx;
@@ -163,6 +164,7 @@ public:
 	Eigen::VectorXd integrate(const unsigned long long &ts, const int &num_joints, const double samples[]);
 
 	Eigen::VectorXd getVal();
+	void setVal(const Eigen::VectorXd &val);
 
 	void reset_in_time();
 

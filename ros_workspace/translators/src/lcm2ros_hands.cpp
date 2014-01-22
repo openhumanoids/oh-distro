@@ -2,7 +2,10 @@
 #include <string>
 #include <ros/ros.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/data_request_t.hpp"
+#include "lcmtypes/drc/joint_command_t.hpp"
+#include "lcmtypes/drc/joint_command_relative_t.hpp"
+#include "lcmtypes/drc/sandia_simple_grasp_t.hpp"
 #include <lcmtypes/irobothand.hpp>
 
 #include <sensor_msgs/JointState.h>

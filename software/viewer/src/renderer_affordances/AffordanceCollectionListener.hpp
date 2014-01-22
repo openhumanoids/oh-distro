@@ -13,8 +13,10 @@
 
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/bot_core.hpp>
+#include "lcmtypes/drc/affordance_collection_t.hpp"
+#include "lcmtypes/drc/affordance_plus_collection_t.hpp"
+#include "lcmtypes/drc/traj_opt_constraint_t.hpp"
 #include <bot_vis/bot_vis.h>
 #include "renderer_affordances.hpp" // has definition of RendererAffordances struc
 #include <visualization_utils/GlKinematicBody.hpp>

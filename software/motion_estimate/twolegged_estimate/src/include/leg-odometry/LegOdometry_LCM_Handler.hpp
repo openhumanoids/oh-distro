@@ -37,11 +37,14 @@
 #include <lcmtypes/bot_core.hpp>
 
 #include <lcm/lcm.h>
-#include "lcmtypes/drc_lcmtypes.hpp"
 #include <leg-odometry/TwoLegOdometry.h>
 #include <leg-odometry/sharedUtilities.hpp>
 #include <inertial-odometry/Odometry.hpp>
 
+#include "lcmtypes/drc/estimated_biases_t.hpp"
+#include "lcmtypes/drc/foot_contact_estimate_t.hpp"
+#include "lcmtypes/drc/imu_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
 #include <lcmtypes/fovis_bot2.hpp>
 
 // So that we can draw pretty pictures and figure out what the transforms are doing

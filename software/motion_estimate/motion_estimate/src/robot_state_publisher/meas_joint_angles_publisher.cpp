@@ -17,7 +17,8 @@
 
 #include <urdf/model.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/joint_angles_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 
 namespace meas_joint_angles_publisher {
   

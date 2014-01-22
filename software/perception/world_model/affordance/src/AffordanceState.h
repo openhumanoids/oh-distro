@@ -9,7 +9,7 @@
 #define AFFORDANCE_STATE_H
 
 #include <affordance/ModelState.h>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_t.hpp"
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include <otdf_lcm_utils/otdf_lcm_utils.h>

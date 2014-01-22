@@ -18,17 +18,15 @@ namespace InertialOdometry {
 
       unsigned long long last_uts; // ?? micro_seconds?
 
-      void SubtractGravity(IMU_dataframe* _imu);
-
     public:
       EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
       VP_Mechanization();
 
-      void PropagateTranslation(IMU_dataframe* _imu);
+      void PropagateTranslation(IMU_dataframe &_imu);
 
       // This function
-      void updateOutput(InertialOdomOutput *_out);
+      void updateOutput(InertialOdomOutput &_out);
 
       void setPosStates(const Eigen::Vector3d &P_set);
       void setVelStates(const Eigen::Vector3d &V_set);

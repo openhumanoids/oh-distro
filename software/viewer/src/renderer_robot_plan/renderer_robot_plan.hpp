@@ -6,9 +6,9 @@
 
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
-
-#include "lcmtypes/drc_lcmtypes.h"
+#include "lcmtypes/drc/atlas_status_t.hpp"
+#include "lcmtypes/drc/traj_opt_constraint_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 
 #include <GL/gl.h>
 #include <bot_vis/bot_vis.h>
