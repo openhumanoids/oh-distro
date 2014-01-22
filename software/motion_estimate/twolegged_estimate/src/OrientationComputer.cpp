@@ -37,25 +37,8 @@ namespace InertialOdometry {
 			return;
 		}
 
-		//		Eigen::Matrix3d R;
-		//		R = q2C(lQb);
-
-		// We now need to implement our own rotation computation. We shall use the exponential map to do this
-		//		std::cout << "OrientationComputer::updateOrientation -- q " << "before" << lQb.w() << ", " << lQb.x() << ", " << lQb.y() << ", " << lQb.z() << std::endl;
-
 		lQb = exmap(delta_ang, lQb);
-		//		exmap(delta_ang, R); // midpoint integration, before application through the exponential map
-		//
-		//		// Convert back to quaternion world and store state data
-		//		Eigen::Quaterniond tempq;
-		//
-		//		tempq = C2q(R);
-		//
-		//		if (tempq.norm() <=0.95) {
-		//			std::cerr << "OrientationComputer::updateOrientation -- Setting the quaternion to a non-unit quaternion.\n";
-		//		}
-		//
-		//		lQb = tempq;
+
 		latest_uts = uts;
 		//		std::cout << "OrientationComputer::updateOrientation -- lQb " << "after" << lQb.w() << ", " << lQb.x() << ", " << lQb.y() << ", " << lQb.z() << std::endl;
 

@@ -235,7 +235,7 @@ void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew)
 
 
 // Quaternion product for [scalar vector] quaternion -- Purposefully does not renormalize.
-Eigen::Quaterniond qprod(const Eigen::Quaterniond &_a, const Eigen::Quaterniond &_b) {
+Eigen::Quaterniond qprod(const Eigen::Quaterniond &_b, const Eigen::Quaterniond &_a) {
 
 	//	B = [b(1), -b(2), -b(3), -b(4);...
 	//	     b(2),  b(1), -b(4),  b(3);...

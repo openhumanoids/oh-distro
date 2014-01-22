@@ -17,7 +17,7 @@ namespace InertialOdometry {
     //orc.updateOrientation(_imu->uts,orient);
 
 	// We use update WithRate, since we would like to cater for packet loss. Ideally though, we should use delta_angles directly
-    orc.updateOrientationWithRate(_imu.uts,_imu.w_b);
+    orc.updateOrientationWithRate(_imu.uts, _imu.w_b);
 
     _imu.a_l = orc.ResolveBodyToRef( _imu.a_b);
     ret.first_pose_rel_acc = _imu.a_l;

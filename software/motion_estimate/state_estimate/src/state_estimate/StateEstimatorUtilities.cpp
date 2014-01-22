@@ -116,8 +116,8 @@ void StateEstimate::handle_inertial_data_temp_name(
   // We expect to see some LCM pack loss -- this is how we choose to deal with it.
   // We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
   // We know the KVH will sample every 1 ms.
-  imu_data.dang_b = IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-  imu_data.w_b_measured = 1/Ts_imu * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.dang_b = - IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
+  imu_data.w_b_measured = - 1/Ts_imu * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
   imu_data.a_b_measured = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
   
   std::cout << "StateEstimate::handle_inertial_data_temp_name -- Rotation rates after IMU to pelvis alignment " << std::endl << imu_data.w_b_measured.transpose() << std::endl;
