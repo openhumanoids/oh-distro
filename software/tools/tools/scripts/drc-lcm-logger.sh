@@ -5,7 +5,8 @@
 #echo "|$1|"
 
 date_str=$(date +"lcmlog-%Y-%m-%d-%H-%M")
-date_str="/media/logs/raw/$date_str"
+#date_str="/media/logs/raw/$date_str"
+date_str="/home/drc/logs/raw/$date_str"
 
 
 if [ -n "$1" ]; then
