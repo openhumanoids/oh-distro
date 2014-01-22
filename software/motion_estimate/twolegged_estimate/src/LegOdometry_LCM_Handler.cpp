@@ -338,7 +338,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
     // if not expiration timer
     //std::cout << "before " << expire_bias_avg_process.getState() << " | " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl;
     if (!expire_bias_avg_process.getState()) {
-      inert_odo.imu_compensator.AccumulateAccelBiases(db_a);
+      inert_odo.imu_compensator.AccumulateAccelBiases(Eigen::Vector3d(db_a[0], db_a[1], db_a[2]));
 
       double norm = sqrt(db_a[0]*db_a[0]+db_a[1]*db_a[1]+db_a[2]*db_a[2]);
 

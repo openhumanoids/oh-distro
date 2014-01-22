@@ -108,7 +108,7 @@ nDEF = [];
 Rbias = [];
 
 % this is the filter update counter
-FilterRate = 10;
+FilterRate = 20;
 limitedFB = 0.5;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
@@ -125,8 +125,11 @@ for k = 1:iter
     inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
     
     % Propagate inertial solution, first apply scheduled INS update (if available)
-    [INSpose__k1, INSCompensator] = Update_INS(INSpose__k1, INSCompensator);
+    
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
+    
+    
+    PE = [PE;q2e(INSpose.lQb)'];
     
     % Run filter at a lower rate
     if (mod(k,FilterRateReduction)==0)
@@ -160,13 +163,17 @@ for k = 1:iter
         
         [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer( Sys.posterior.x, limitedFB, INSCompensator );
         
+        % LCM trip to C++ state-estimate to update INS states
+        
+        [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
+        
         %store data for later plotting
         DX = [DX; Sys.posterior.dx'];
         X = [X; Sys.posterior.x'];
         COV = [COV;diag(Sys.posterior.P)'];
         % DE = [DE;dE'];
         %predE = q2e(INSpose.lQb);
-        PE = [PE;q2e(INSpose.lQb)'];
+        
         DV = [DV; dV'];
         
     end

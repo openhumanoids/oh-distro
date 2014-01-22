@@ -110,16 +110,26 @@ namespace InertialOdometry {
   
   void Odometry::incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData) {
 
+	  std::cout << "Odometry::incorporateERRUpdate -- received and INSUpdatePacket." << std::endl;
+
+	  Eigen::Vector3d tmp;
+
 	  // Add a delta estimate to the biases in the IMU compensator block
-	  double delta_biases[3];
-	  delta_biases[0] = updateData.dbiasGyro_b(0);
-	  delta_biases[1] = updateData.dbiasGyro_b(1);
-	  delta_biases[2] = updateData.dbiasGyro_b(2);
-	  imu_compensator.AccumulateGyroBiases(delta_biases);
+	  //double delta_biases[3];
+	  //	  delta_biases[0] = updateData.dbiasGyro_b(0);
+	  //	  delta_biases[1] = updateData.dbiasGyro_b(1);
+	  //	  delta_biases[2] = updateData.dbiasGyro_b(2);
+	  imu_compensator.AccumulateGyroBiases(updateData.dbiasGyro_b);
+	  imu_compensator.AccumulateAccelBiases(updateData.dbiasAcc_b);
 
 	  // update integrated states
 	  // Orientation first
 	  orc.rotateOrientationUpdate(updateData.dE_l);
+	  tmp = avp.getVelStates();
+	  avp.setVelStates(tmp - updateData.dVel_l);
+	  tmp = avp.getPosStates();
+	  avp.setPosStates(tmp - updateData.dPos_l);
+
 
   }
 

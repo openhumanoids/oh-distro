@@ -10,7 +10,7 @@ iterations = 12000/50;
 % back into the INS solution (choose this parameter wisely, or it will bite you)
 feedbackGain = 0.2;
 
-ENABLE_FEEDBACK = 0;
+ENABLE_FEEDBACK = 1;
 
 % Initialize local variables
 computationTime = 0;

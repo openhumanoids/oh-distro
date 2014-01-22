@@ -46,6 +46,15 @@ namespace InertialOdometry {
 	   return;
    }
 
+   Eigen::Vector3d VP_Mechanization::getVelStates() {
+	   return state.first_pose_rel_vel;
+   }
+
+   Eigen::Vector3d VP_Mechanization::getPosStates() {
+	   return state.first_pose_rel_pos;
+   }
+
+
    void VP_Mechanization::setVelStates(const Eigen::Vector3d &V_set) {
 
    	   a2v.setStateTo(V_set);
