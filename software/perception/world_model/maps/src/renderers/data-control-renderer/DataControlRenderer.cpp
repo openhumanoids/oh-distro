@@ -784,7 +784,7 @@ public:
 
     label = Gtk::manage(new Gtk::Label("Head Cam fps", Gtk::ALIGN_RIGHT));
     mDummyIntValue = 5;
-    spin = gtkmm::RendererBase::createSpin(mDummyIntValue, 0, 10, 1);
+    spin = gtkmm::RendererBase::createSpin(mDummyIntValue, 0, 30, 1);
     button = Gtk::manage(new Gtk::Button("send"));
     button->signal_clicked().connect
       ([this,spin]{this->publishMultisense(-1000,spin->get_value(),-1);});

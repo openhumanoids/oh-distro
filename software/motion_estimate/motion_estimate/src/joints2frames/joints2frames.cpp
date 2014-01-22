@@ -55,9 +55,9 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     std::cout << "Output signals will not limited in rate\n";  
   #else
     std::cout << "Output signals will be limited to these rates:\n";
-    pub_frequency_["POSE_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
-    pub_frequency_["HEAD_TO_BODY"] = FrequencyLimit(0, 1E6/getMaxFrequency( "body") );
-    pub_frequency_["POSE_BODY"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "body_floating" ) );
+    pub_frequency_["POSE_BODY"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "body" ) );
+    pub_frequency_["BODY_TO_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
+    //pub_frequency_["POSE_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
 
     // Is this only used for simulation:
     pub_frequency_["HEAD_TO_HOKUYO_LINK"] = FrequencyLimit(0, 1E6/getMaxFrequency( "hokuyo_link") ); 
@@ -236,10 +236,7 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
      */
     
     if (bdi_motion_estimate_){
-      publishRigidTransform(body_to_head.inverse(), msg->utime, "HEAD_TO_BODY");
-      
-      Eigen::Isometry3d world_to_head = world_to_body * body_to_head ;
-      publishPose(world_to_head, msg->utime, "POSE_HEAD" );
+      publishRigidTransform(body_to_head, msg->utime, "BODY_TO_HEAD");
     }
     
     if (body_to_hokuyo_link_found){
