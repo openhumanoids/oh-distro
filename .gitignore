@@ -6,3 +6,35 @@ data
 .viewer-prefs
 logfile.tmp
 drake_viewer.out
+*~
+
+
+#######################
+# Ignores for lcmtypes
+#
+# In newer versions of git you can use "**" to match any number of
+# subdirectories, but these ignores assume that feature is not available.
+
+/*/*/lcmtypes/c/
+/*/*/*/lcmtypes/c/
+/*/*/*/*/lcmtypes/c/
+/*/*/*/*/*/lcmtypes/c/
+/*/*/*/*/*/*/lcmtypes/c/
+
+/*/*/lcmtypes/cpp/
+/*/*/*/lcmtypes/cpp/
+/*/*/*/*/lcmtypes/cpp/
+/*/*/*/*/*/lcmtypes/cpp/
+/*/*/*/*/*/*/lcmtypes/cpp/
+
+/*/*/lcmtypes/java/
+/*/*/*/lcmtypes/java/
+/*/*/*/*/lcmtypes/java/
+/*/*/*/*/*/lcmtypes/java/
+/*/*/*/*/*/*/lcmtypes/java/
+
+/*/*/lcmtypes/python/
+/*/*/*/lcmtypes/python/
+/*/*/*/*/lcmtypes/python/
+/*/*/*/*/*/lcmtypes/python/
+/*/*/*/*/*/*/lcmtypes/python/
