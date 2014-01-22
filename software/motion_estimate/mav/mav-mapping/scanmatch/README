@@ -1,0 +1,17 @@
+This pod contains the Fast and Robust Scan Matching library developed by Abraham Bachrach.
+
+I intend to license this software under GNU GPL license... however the copyright notices aer not currently in place!
+
+The build system uses the PODs framework... for more info see:
+https://groups.csail.mit.edu/rrg/Wiki/index.php?title=Pods
+
+It depends on:
+opencv
+if Intel's IPP libraries are available/installed, they will be used and provide a ~2X speedup
+
+The LCM based incremental scan matcher depend on libbot2:
+svn co https://svn.csail.mit.edu/libbot2
+
+
+
+

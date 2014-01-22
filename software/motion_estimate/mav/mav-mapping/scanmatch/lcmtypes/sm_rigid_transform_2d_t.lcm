@@ -1,0 +1,13 @@
+package sm;
+
+struct rigid_transform_2d_t
+{
+    int64_t utime;      // utime that the actual measurement took place
+    int64_t utime_prev; // utime that the previous measurement took place
+
+    double pos[2];      // position x,y in meters 
+    double theta;       // heading estimate 
+    
+    double cov[9];      // 3x3 covariance matrix for the odometry estimate (x,y,theta)
+                               
+}

@@ -1,0 +1,11 @@
+
+iSAM 1.5 (Nov 12, 2010)
+- code optimization, reducing execution time for the Manhattan sequence by half
+- added optional CSparse-based batch factorization for comparison with CHOLMOD
+- changed default properties:
+  + solve in every step (instead of every 10)
+  + max_iterations for batch_optimization 20 (instead of 0 = unlimited)
+- added toggle (key 'c') to flip background color of 3D viewer
+
+iSAM 1.4 (Aug 29, 2010)
+- first release

@@ -1,0 +1,445 @@
+------------------------------------------------------------------------
+r129 | abry | 2012-07-31 15:37:34 -0400 (Tue, 31 Jul 2012) | 1 line
+
+everything should be all set, tested on gpf in and out of process, gps, ins, viewer measurements - haven't done vicon, scan_matcher, or optical flow
+------------------------------------------------------------------------
+r128 | abry | 2012-07-27 09:52:08 -0400 (Fri, 27 Jul 2012) | 1 line
+
+added back initializer class
+------------------------------------------------------------------------
+r127 | abry | 2012-07-26 17:16:39 -0400 (Thu, 26 Jul 2012) | 1 line
+
+working on coherent and simple front end
+------------------------------------------------------------------------
+r119 | abry | 2012-07-16 04:22:44 -0400 (Mon, 16 Jul 2012) | 1 line
+
+working on lcm front end separation
+------------------------------------------------------------------------
+r118 | abry | 2012-07-15 20:34:32 -0400 (Sun, 15 Jul 2012) | 1 line
+
+branching to separate lcm front end and make state extensible
+------------------------------------------------------------------------
+r116 | abry | 2012-06-27 01:06:34 -0400 (Wed, 27 Jun 2012) | 1 line
+
+put likelihood function into Octomap likelihood interface, seems to speed up quite a bit 34% cpu to 25% cpu
+------------------------------------------------------------------------
+r115 | abry | 2012-06-26 21:18:27 -0400 (Tue, 26 Jun 2012) | 1 line
+
+added params for unknown log likelihood and cov scaling, also got rid of Z plane measurement thing
+------------------------------------------------------------------------
+r114 | abry | 2012-06-26 15:07:14 -0400 (Tue, 26 Jun 2012) | 1 line
+
+added {} around one line ifs so autoformatting works
+------------------------------------------------------------------------
+r113 | abry | 2012-06-26 15:01:32 -0400 (Tue, 26 Jun 2012) | 1 line
+
+fixed bug where laser gpf was downsampled twice when running out of process
+------------------------------------------------------------------------
+r112 | abry | 2012-06-25 18:06:55 -0400 (Mon, 25 Jun 2012) | 1 line
+
+minor change back to 1x1
+------------------------------------------------------------------------
+r111 | abry | 2012-06-25 17:48:49 -0400 (Mon, 25 Jun 2012) | 1 line
+
+scripting working for param optimization
+------------------------------------------------------------------------
+r110 | car | 2012-06-25 15:57:18 -0400 (Mon, 25 Jun 2012) | 1 line
+
+changed a line in rbis_update_interface.hpp to "static const unsigned int m = 4" to fix the weird compile error resulting from enum{ m = 4 }
+------------------------------------------------------------------------
+r109 | abry | 2012-06-23 18:46:03 -0400 (Sat, 23 Jun 2012) | 1 line
+
+added likelihood functionality, all the measurements in rbis now return their loglikelihood, the update interface has an extra argument and state value for log likelhihood, and the state estimator has a method to return it, tested and nothing old is broken, but be careful!
+------------------------------------------------------------------------
+r107 | jskelly | 2012-06-22 20:05:52 -0400 (Fri, 22 Jun 2012) | 2 lines
+
+Tidied up mav_state_estimator by moving init code to sensor handlers.
+
+------------------------------------------------------------------------
+r106 | abry | 2012-06-22 19:16:47 -0400 (Fri, 22 Jun 2012) | 1 line
+
+fixed nan bug and added mex output of errors and error covs
+------------------------------------------------------------------------
+r104 | abry | 2012-06-22 14:27:16 -0400 (Fri, 22 Jun 2012) | 1 line
+
+won't let you overwrite log, and found bug where it hangs on exit, related to nvidia http://www.nvnews.net/vbulletin/showthread.php?t=164619
+------------------------------------------------------------------------
+r103 | abachrac | 2012-06-20 18:42:34 -0400 (Wed, 20 Jun 2012) | 1 line
+
+fix initialization of covariances when heading isn't overridden
+------------------------------------------------------------------------
+r98 | jskelly | 2012-06-17 15:24:07 -0400 (Sun, 17 Jun 2012) | 2 lines
+
+Changed Vicon init mode to position only, fixed bug in Vicon handler (covar).
+
+------------------------------------------------------------------------
+r97 | abry | 2012-06-15 21:07:37 -0400 (Fri, 15 Jun 2012) | 1 line
+
+use new event logging to create log instead of publishing and added timestamping to lcm message creation from RBIS
+------------------------------------------------------------------------
+r96 | jskelly | 2012-06-15 20:47:20 -0400 (Fri, 15 Jun 2012) | 2 lines
+
+Added support for orientation measurements in Vicon handler.
+
+------------------------------------------------------------------------
+r95 | abry | 2012-06-12 16:35:55 -0400 (Tue, 12 Jun 2012) | 1 line
+
+smarter way to initilize window covariances
+------------------------------------------------------------------------
+r94 | abry | 2012-06-12 01:06:55 -0400 (Tue, 12 Jun 2012) | 1 line
+
+added tools for noise id stuff
+------------------------------------------------------------------------
+r93 | jskelly | 2012-06-08 17:40:30 -0400 (Fri, 08 Jun 2012) | 2 lines
+
+Ok - here we go.
+
+------------------------------------------------------------------------
+r92 | jskelly | 2012-06-08 17:30:43 -0400 (Fri, 08 Jun 2012) | 2 lines
+
+Let's try this again...
+
+------------------------------------------------------------------------
+r91 | jskelly | 2012-06-08 17:26:40 -0400 (Fri, 08 Jun 2012) | 2 lines
+
+Added *MeasurementGetKandCovDelta functions back to RBIS (sorry Adam! ;-).
+
+------------------------------------------------------------------------
+r89 | jskelly | 2012-06-07 17:26:56 -0400 (Thu, 07 Jun 2012) | 2 lines
+
+Fixed array indexing bug in estimator scan matcher yaw handler.
+
+------------------------------------------------------------------------
+r88 | jskelly | 2012-06-07 00:14:46 -0400 (Thu, 07 Jun 2012) | 2 lines
+
+Fixed Eigen vector init bug (my bad).
+
+------------------------------------------------------------------------
+r87 | jskelly | 2012-06-06 23:40:25 -0400 (Wed, 06 Jun 2012) | 2 lines
+
+Fixed bug related to Eigen? Grrr...
+
+------------------------------------------------------------------------
+r86 | jskelly | 2012-06-06 23:25:39 -0400 (Wed, 06 Jun 2012) | 2 lines
+
+Another minor bugfix.
+
+------------------------------------------------------------------------
+r85 | jskelly | 2012-06-06 23:23:13 -0400 (Wed, 06 Jun 2012) | 2 lines
+
+Bug fix in indexedPlusOrientationMeasurement call.
+
+------------------------------------------------------------------------
+r84 | jskelly | 2012-06-06 23:08:43 -0400 (Wed, 06 Jun 2012) | 3 lines
+
+Modified filter indexedPlusOrientationMeasurement routine (as per discussion
+with Adam).  Added support for MODE_VELOCITY_YAW to ScanMatchHandler.
+
+------------------------------------------------------------------------
+r83 | wrvb | 2012-06-06 17:42:07 -0400 (Wed, 06 Jun 2012) | 1 line
+
+Minor changes to optical flow UKF code, including graceful failure if numerical instability occurs
+------------------------------------------------------------------------
+r82 | wrvb | 2012-06-05 22:15:57 -0400 (Tue, 05 Jun 2012) | 1 line
+
+Working version of optical flow ukf
+------------------------------------------------------------------------
+r81 | jskelly | 2012-06-04 23:52:47 -0400 (Mon, 04 Jun 2012) | 2 lines
+
+Updated RBIS measurement functions to use common code (matrixMeasurement).
+
+------------------------------------------------------------------------
+r80 | abry | 2012-06-04 17:36:07 -0400 (Mon, 04 Jun 2012) | 1 line
+
+smoothing now seems to work, also changed initializer to not publish over lcm for running from log (previous commit by mistake)
+------------------------------------------------------------------------
+r79 | abry | 2012-06-04 16:10:07 -0400 (Mon, 04 Jun 2012) | 1 line
+
+changed RBISOpticalFlowMeasurement::m to an enum b/c it wasn't compiling in debug mode, shouldn't change behavior
+------------------------------------------------------------------------
+r78 | wrvb | 2012-06-04 13:38:20 -0400 (Mon, 04 Jun 2012) | 1 line
+
+Removed now-unnecessary channel selectors
+------------------------------------------------------------------------
+r77 | abry | 2012-06-03 22:21:02 -0400 (Sun, 03 Jun 2012) | 1 line
+
+added smoothing option to mav-state-estimator. it's untested, but shouldn't change regular behavior
+------------------------------------------------------------------------
+r76 | jskelly | 2012-06-03 19:07:13 -0400 (Sun, 03 Jun 2012) | 11 lines
+
+Fix for *nasty* bug in gcc/gcc+ version prior to 4.6 (maybe?).
+Inside a class:
+
+  static const int = 4;
+
+will fail to link, but
+
+  static const unsigned = 4;
+
+links just fine!
+
+------------------------------------------------------------------------
+r75 | jskelly | 2012-06-03 16:08:06 -0400 (Sun, 03 Jun 2012) | 2 lines
+
+Added support for position+yaw to scan matcher handler.
+
+------------------------------------------------------------------------
+r74 | jskelly | 2012-05-31 22:36:00 -0400 (Thu, 31 May 2012) | 2 lines
+
+Added unified indexed + orientation measurement update function.
+
+------------------------------------------------------------------------
+r73 | wrvb | 2012-05-31 22:32:23 -0400 (Thu, 31 May 2012) | 1 line
+
+Adding new lcmtype name 'optical_flow'
+------------------------------------------------------------------------
+r72 | wrvb | 2012-05-31 22:04:53 -0400 (Thu, 31 May 2012) | 1 line
+
+New optical flow handlers and UKF code
+------------------------------------------------------------------------
+r70 | abachrac | 2012-05-25 10:55:01 -0400 (Fri, 25 May 2012) | 1 line
+
+ConciseArgs include changes
+------------------------------------------------------------------------
+r68 | abachrac | 2012-05-12 13:30:08 -0400 (Sat, 12 May 2012) | 1 line
+
+rework initialization to move everything to the library (gps/vicon)
+------------------------------------------------------------------------
+r67 | abry | 2012-05-12 11:09:40 -0400 (Sat, 12 May 2012) | 1 line
+
+fixed bug in initializer
+------------------------------------------------------------------------
+r66 | abry | 2012-05-11 19:49:14 -0400 (Fri, 11 May 2012) | 1 line
+
+changed to agree with new simulator
+------------------------------------------------------------------------
+r65 | abachrac | 2012-05-11 10:15:00 -0400 (Fri, 11 May 2012) | 1 line
+
+make adam's scaling factor wider, and add back check for particle weight distribution
+------------------------------------------------------------------------
+r64 | abachrac | 2012-05-10 21:04:51 -0400 (Thu, 10 May 2012) | 1 line
+
+switch to using adam's magic scaling factor
+------------------------------------------------------------------------
+r63 | abachrac | 2012-05-10 17:22:33 -0400 (Thu, 10 May 2012) | 1 line
+
+pulled the initialization code out into a seperate library, and added command line option to initialize at origin in the mav-state-estimator
+------------------------------------------------------------------------
+r62 | abachrac | 2012-05-09 19:57:37 -0400 (Wed, 09 May 2012) | 1 line
+
+fix bug with loading two octomaps, and add parameter for min dist between points
+------------------------------------------------------------------------
+r61 | abachrac | 2012-05-08 22:06:21 -0400 (Tue, 08 May 2012) | 1 line
+
+fix GUI initialization
+------------------------------------------------------------------------
+r60 | abry | 2012-05-08 20:29:02 -0400 (Tue, 08 May 2012) | 1 line
+
+took out time diff printing
+------------------------------------------------------------------------
+r59 | abachrac | 2012-05-08 19:44:39 -0400 (Tue, 08 May 2012) | 1 line
+
+handle loading octomap from absolute path, or home-dir relative paths
+------------------------------------------------------------------------
+r58 | abachrac | 2012-05-08 19:27:45 -0400 (Tue, 08 May 2012) | 2 lines
+
+created a SensorHandler base class that loads the channel name, offset, and decimation.
+this FIXES a bug in the out of process GPF where it was using the GPS time offset
+------------------------------------------------------------------------
+r57 | abry | 2012-05-08 17:23:21 -0400 (Tue, 08 May 2012) | 1 line
+
+updated state estimator to use same param block for in and out of thread laser gpf processing
+------------------------------------------------------------------------
+r54 | abry | 2012-04-11 19:46:01 -0400 (Wed, 11 Apr 2012) | 1 line
+
+fixed initialization stuff around biases
+------------------------------------------------------------------------
+r53 | abry | 2012-04-11 19:42:08 -0400 (Wed, 11 Apr 2012) | 1 line
+
+added bias estimation. filter still runs with 0 bias set in param files, haven't actually tested performance with bias
+------------------------------------------------------------------------
+r52 | abry | 2012-04-11 19:18:09 -0400 (Wed, 11 Apr 2012) | 1 line
+
+fixed formatting
+------------------------------------------------------------------------
+r51 | abry | 2012-04-11 19:11:40 -0400 (Wed, 11 Apr 2012) | 1 line
+
+fixed formatting errors arround eigen stuff
+------------------------------------------------------------------------
+r50 | abry | 2012-04-11 19:10:43 -0400 (Wed, 11 Apr 2012) | 1 line
+
+fixed formatting errors arround eigen stuff
+------------------------------------------------------------------------
+r47 | abry | 2012-03-22 16:36:52 -0400 (Thu, 22 Mar 2012) | 1 line
+
+added dependent lcmtypes for optical flow and removed vicon dependency by using bot_core type instead
+------------------------------------------------------------------------
+r46 | jskelly | 2012-03-18 21:12:12 -0400 (Sun, 18 Mar 2012) | 4 lines
+
+Fix - optical flow exectuable doesn't currently support changing the name of
+the channel on which flow data is published, so moved this into the mav state
+estimator config for now.
+
+------------------------------------------------------------------------
+r45 | jskelly | 2012-03-17 23:23:53 -0400 (Sat, 17 Mar 2012) | 3 lines
+
+Added support for camera-to-body transform in state estimator optical flow
+handler.
+
+------------------------------------------------------------------------
+r44 | jskelly | 2012-03-17 02:42:09 -0400 (Sat, 17 Mar 2012) | 2 lines
+
+Incorporated optic flow into mav state estimator (in a naive way, for now).
+
+------------------------------------------------------------------------
+r43 | jskelly | 2012-03-15 01:02:26 -0400 (Thu, 15 Mar 2012) | 3 lines
+
+Added NaN checks to state estimator renderers.  Removed ugly kludge from 
+rbis (all clean now). 
+
+------------------------------------------------------------------------
+r42 | jskelly | 2012-03-13 23:44:51 -0400 (Tue, 13 Mar 2012) | 3 lines
+
+Added support for scan matcher yaw measurements in state estimator.
+Bit of a hack at the moment - will need to be updated.
+
+------------------------------------------------------------------------
+r41 | jskelly | 2012-03-07 00:46:19 -0500 (Wed, 07 Mar 2012) | 2 lines
+
+Minor naming change.
+
+------------------------------------------------------------------------
+r40 | jskelly | 2012-03-06 23:12:03 -0500 (Tue, 06 Mar 2012) | 2 lines
+
+Fixed param name typo.
+
+------------------------------------------------------------------------
+r39 | jskelly | 2012-03-06 23:04:34 -0500 (Tue, 06 Mar 2012) | 2 lines
+
+Fix to scan matcher interface covariance matrix code.
+
+------------------------------------------------------------------------
+r38 | jskelly | 2012-03-05 17:40:51 -0500 (Mon, 05 Mar 2012) | 3 lines
+
+Updated mav state estimator to process scan matcher measurements
+(still need to incorporate yaw, yaw rate data).
+
+------------------------------------------------------------------------
+r35 | abachrac | 2012-02-08 21:33:50 -0500 (Wed, 08 Feb 2012) | 1 line
+
+fix bug in gpf all_states, and setup param_sweep run for just all_states
+------------------------------------------------------------------------
+r34 | abry | 2012-02-08 14:16:06 -0500 (Wed, 08 Feb 2012) | 1 line
+
+handle vicon dropout
+------------------------------------------------------------------------
+r33 | abry | 2012-02-07 21:17:03 -0500 (Tue, 07 Feb 2012) | 1 line
+
+final changes for icra2012 run (hopefully)
+------------------------------------------------------------------------
+r32 | abry | 2012-02-07 20:22:42 -0500 (Tue, 07 Feb 2012) | 1 line
+
+added error handling for missing files and added pose and state channels to config file
+------------------------------------------------------------------------
+r31 | car | 2012-01-31 22:12:28 -0500 (Tue, 31 Jan 2012) | 1 line
+
+updated mav-state-estimator to reflect change in field names of vicon message
+------------------------------------------------------------------------
+r28 | abachrac | 2012-01-28 01:00:13 -0500 (Sat, 28 Jan 2012) | 1 line
+
+ready to kick off a bunch of jobs
+------------------------------------------------------------------------
+r27 | abachrac | 2012-01-27 22:26:56 -0500 (Fri, 27 Jan 2012) | 1 line
+
+add parameter overriding
+------------------------------------------------------------------------
+r26 | abachrac | 2012-01-27 20:42:32 -0500 (Fri, 27 Jan 2012) | 1 line
+
+print out which substate mode we're using
+------------------------------------------------------------------------
+r25 | abachrac | 2012-01-27 20:39:20 -0500 (Fri, 27 Jan 2012) | 1 line
+
+reoganize the param block in the state estimator... 
+------------------------------------------------------------------------
+r24 | abachrac | 2012-01-27 18:47:22 -0500 (Fri, 27 Jan 2012) | 1 line
+
+check whether handlers are null
+------------------------------------------------------------------------
+r23 | abachrac | 2012-01-27 18:45:33 -0500 (Fri, 27 Jan 2012) | 1 line
+
+publish the GPF update for logging.
+------------------------------------------------------------------------
+r22 | abachrac | 2012-01-27 18:40:14 -0500 (Fri, 27 Jan 2012) | 1 line
+
+fix a bug in the noalias stuff...
+------------------------------------------------------------------------
+r21 | abry | 2012-01-26 20:52:38 -0500 (Thu, 26 Jan 2012) | 1 line
+
+took local hack out of map_measurement_renderer
+------------------------------------------------------------------------
+r19 | abry | 2012-01-26 20:41:19 -0500 (Thu, 26 Jan 2012) | 1 line
+
+added tolerance for quieries outside of map warnings
+------------------------------------------------------------------------
+r18 | car | 2012-01-26 18:11:00 -0500 (Thu, 26 Jan 2012) | 3 lines
+
+fixed a memory leak in the creation of filter state messages.
+fixed vicon downsampling
+added .noalias() calls to hopefully speed up some of the internal fitler computations
+------------------------------------------------------------------------
+r17 | abry | 2012-01-26 13:49:42 -0500 (Thu, 26 Jan 2012) | 1 line
+
+updated to ConciseArgs
+------------------------------------------------------------------------
+r16 | abry | 2012-01-25 00:37:13 -0500 (Wed, 25 Jan 2012) | 1 line
+
+added scalar vis to renderer
+------------------------------------------------------------------------
+r15 | car | 2012-01-24 23:05:47 -0500 (Tue, 24 Jan 2012) | 1 line
+
+changed a few hard coded numbers to params (dt, utime_delay, downsample factor for vicon)
+------------------------------------------------------------------------
+r14 | abry | 2012-01-21 17:29:54 -0500 (Sat, 21 Jan 2012) | 1 line
+
+corrected header so it takes in K argument for getKandCovDelta
+------------------------------------------------------------------------
+r13 | abry | 2012-01-21 17:28:45 -0500 (Sat, 21 Jan 2012) | 1 line
+
+added max laser range option for generating map and set it to append to the file name for saving
+------------------------------------------------------------------------
+r11 | abry | 2012-01-19 15:43:06 -0500 (Thu, 19 Jan 2012) | 1 line
+
+gave gen-map measurement some love and worked out pixel map issues. pixelmap locations are the centers so everything is right except the bounds which are bottom left shifter by half a pixel width (see correction for psi in map_measurement_fuction.cpp, generate from octomap
+------------------------------------------------------------------------
+r10 | car | 2012-01-18 15:49:24 -0500 (Wed, 18 Jan 2012) | 1 line
+
+added bot_tictoc to mav_state_estimator.cpp
+------------------------------------------------------------------------
+r9 | car | 2012-01-18 15:48:45 -0500 (Wed, 18 Jan 2012) | 1 line
+
+added a bot_tictoc to rbis_update_interface.hpp
+------------------------------------------------------------------------
+r8 | abry | 2012-01-18 08:06:56 -0500 (Wed, 18 Jan 2012) | 1 line
+
+pointed to old include directory
+------------------------------------------------------------------------
+r7 | car | 2012-01-17 11:52:31 -0500 (Tue, 17 Jan 2012) | 1 line
+
+updated vicon handler to get utime_delay from param server
+------------------------------------------------------------------------
+r6 | abry | 2012-01-17 08:52:09 -0500 (Tue, 17 Jan 2012) | 1 line
+
+fixed header file location for map measurement functions stuff and added print_up_to_cur functions for dubins-poly paths for lcmgl drawing partial paths
+------------------------------------------------------------------------
+r5 | abry | 2012-01-12 17:52:47 -0500 (Thu, 12 Jan 2012) | 1 line
+
+got rid of sbg_comm dependency
+------------------------------------------------------------------------
+r3 | abry | 2012-01-12 16:19:20 -0500 (Thu, 12 Jan 2012) | 1 line
+
+deleted lcmtypes that are purely fixie related and handled renaming based on new mav prefixes
+------------------------------------------------------------------------
+r1 | abry | 2012-01-12 14:53:26 -0500 (Thu, 12 Jan 2012) | 1 line
+
+first commit of pods copied over from Fixie, no history, see https://svn.csail.mit.edu/Fixie for history if need be
+------------------------------------------------------------------------

@@ -8,6 +8,7 @@
 #include <lcmtypes/drc/robot_urdf_t.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/retired_lcmtypes.hpp>
+#include <lcmtypes/drc/atlas_state_t.hpp>
 
 #include <ConciseArgs>
 
@@ -25,12 +26,17 @@ class Pass{
     void retired_robot_urdf_29oct2013_handler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  retired::robot_urdf_29oct2013_t* msg);
 
+    void retired_atlas_state_28oct2013_handler(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, const  retired::atlas_state_28oct2013_t* msg);
+
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
     lcm_(lcm_){
       
-  lcm_->subscribe("RETIRED_ROBOT_MODEL",&Pass::retired_robot_urdf_29oct2013_handler,this);  
+  lcm_->subscribe("RETIRED_ROBOT_MODEL",&Pass::retired_robot_urdf_29oct2013_handler,this);
+
+  lcm_->subscribe("RETIRED_ATLAS_STATE",&Pass::retired_atlas_state_28oct2013_handler,this);    
 }
 
 void Pass::retired_robot_urdf_29oct2013_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  retired::robot_urdf_29oct2013_t* msg){
@@ -43,6 +49,19 @@ void Pass::retired_robot_urdf_29oct2013_handler(const lcm::ReceiveBuffer* rbuf, 
 
   lcm_->publish("ROBOT_MODEL", &out);
 }
+
+void Pass::retired_atlas_state_28oct2013_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  retired::atlas_state_28oct2013_t* msg){
+  drc::atlas_state_t out;
+  out.utime = msg->utime;
+  out.num_joints = msg->num_joints;
+  // The joint names are dropped
+  out.joint_position = msg->joint_position;
+  out.joint_velocity = msg->joint_velocity;
+  out.joint_effort = msg->joint_effort;
+  out.force_torque = msg->force_torque;
+  lcm_->publish("ATLAS_STATE", &out);
+}
+
 
 int main(int argc, char ** argv) {
   

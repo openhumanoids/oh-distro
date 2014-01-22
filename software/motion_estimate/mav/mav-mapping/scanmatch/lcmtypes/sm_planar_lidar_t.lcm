@@ -1,0 +1,24 @@
+package sm;
+
+// this lcmtype is copied from the bot-core pod in libbot2. 
+// it should be kept in sysnc for compatibility!
+
+struct planar_lidar_t
+{
+	int64_t  utime;
+
+	// range data (meters)
+	int32_t  nranges;
+	float    ranges[nranges];
+
+	// intensity data, in sensor-specific units
+	int32_t  nintensities;
+	float    intensities[nintensities];
+
+	// the angle (in radians) to the first point in nranges,
+	// relative to the laser scanner's own coordinate frame.
+	float    rad0; 
+
+	// the number of radians between each successive sample
+	float    radstep;
+}

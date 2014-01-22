@@ -6,6 +6,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
+#include <lcmtypes/microstrain_comm.hpp>
 #include <lcmtypes/vicon.hpp>
 #include "lcmtypes/drc/atlas_command_t.hpp"
 #include "lcmtypes/drc/atlas_foot_pos_est_t.hpp"
@@ -313,6 +314,14 @@ define_array_handler(AtlasStateExtraJointPressureNegHandler, drc::atlas_state_ex
 define_array_array_handler(AtlasRawIMUBatchIMUDeltaRotation, drc::atlas_raw_imu_batch_t, raw_imu, delta_rotation,  createIndexList(15), createIndexList(3));
 define_array_array_handler(AtlasRawIMUBatchIMULinearAcceleration, drc::atlas_raw_imu_batch_t, raw_imu, linear_acceleration, createIndexList(15), createIndexList(3));
 
+// atlas_raw_imu_t ( a single message broken out from the above message )
+define_array_handler(AtlasRawIMUPacketDeltaRotation, drc::atlas_raw_imu_t, delta_rotation, createIndexList(3));
+define_array_handler(AtlasRawIMUPacketLinearAcceleration, drc::atlas_raw_imu_t, linear_acceleration, createIndexList(3));
+
+// atlas_raw_imu_t ( a single message broken out from the above message )
+define_array_handler(MicrostrainINSGyro, microstrain::ins_t, gyro, createIndexList(3));
+define_array_handler(MicrostrainINSAccel, microstrain::ins_t, accel, createIndexList(3));
+
 // pose_t
 define_array_handler(PoseTypePositionHandler, bot_core::pose_t, pos, createIndexList(3));
 define_array_handler(PoseTypeVelocityHandler, bot_core::pose_t, vel, createIndexList(3));
@@ -526,6 +535,10 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasFootPosEstRightPositionHandler>();
     factory.registerClass<AtlasRawIMUBatchIMUDeltaRotation>();
     factory.registerClass<AtlasRawIMUBatchIMULinearAcceleration>();
+    factory.registerClass<AtlasRawIMUPacketDeltaRotation>();
+    factory.registerClass<AtlasRawIMUPacketLinearAcceleration>();
+    factory.registerClass<MicrostrainINSGyro>();
+    factory.registerClass<MicrostrainINSAccel>();
     factory.registerClass<PoseTypeVelocityHandler>();
     factory.registerClass<PoseTypeOrientationHandler>();
     factory.registerClass<PoseTypeRotationRateHandler>();

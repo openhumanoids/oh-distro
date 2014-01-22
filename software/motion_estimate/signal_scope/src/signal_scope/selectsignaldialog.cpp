@@ -26,7 +26,8 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
            << "ATLAS_STATUS" << "ATLAS_COMMAND" << "ATLAS_FOOT_POS_EST"
            << "TRUE_ROBOT_STATE" << "EST_ROBOT_STATE" << "SCALED_ROBOT_STATE"
            << "VICON_ATLAS" << "SE_INS_POSE_STATE" << "SE_MATLAB_DATAFUSION_REQ"
-           << "INS_ERR_UPDATE";
+           << "INS_ERR_UPDATE" << "ATLAS_IMU_PACKET" << "STATE_ESTIMATOR_POSE"
+           << "MICROSTRAIN_INS"  << "POSE_BDI";
 
   QStringList messageTypes = SignalHandlerFactory::instance().messageTypes();
   QStringList messageFields;

@@ -112,6 +112,8 @@ Eigen::Isometry3d isometryFloatToDouble(Eigen::Isometry3f );
 Eigen::Isometry3f isometryDoubleToFloat(Eigen::Isometry3d );
 Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d );
 
+std::string print_Isometry3d(Eigen::Isometry3d pose);
+
 void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss);
 
 void print_Quaterniond(Eigen::Quaterniond r, std::stringstream &ss);

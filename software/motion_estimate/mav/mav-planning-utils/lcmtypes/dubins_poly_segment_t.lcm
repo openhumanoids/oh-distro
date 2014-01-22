@@ -1,0 +1,7 @@
+package dubins;
+
+struct poly_segment_t
+{
+	dubins.primitive_t dubins_primitive;
+	planning.polynomial_t poly;
+}

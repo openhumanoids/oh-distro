@@ -8,6 +8,7 @@ set(RENDERERS bot2-vis bot2-lcmgl-renderer
         octomap-renderer
         occ-map-renderers
         maps-renderer
+        mav-state-est-renderers
         atlas-camera-renderer
         data-control-renderer
         lcmtypes_drc_lcmtypes

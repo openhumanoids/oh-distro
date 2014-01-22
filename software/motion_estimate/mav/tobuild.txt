@@ -1,0 +1,7 @@
+mav-lcmtypes
+mav-planning-utils
+mav-state-estimator
+
+# wont build with dev version of mav est for mfallon
+#mav-mapping
+#mav-rrbt
