@@ -10,7 +10,8 @@
 #include <opencv2/opencv.hpp>
 
 #include <AprilTags/TagDetector.h>
-#include <AprilTags/Tag36h11.h>
+//#include <AprilTags/Tag36h11.h>
+#include <AprilTags/Tag16h5.h>
 
 using namespace std;
 
@@ -66,7 +67,7 @@ int main(int argc, char* argv[]) {
  // }
 
   // determines which family of April tags is detected
-  AprilTags::TagDetector tag_detector(AprilTags::tagCodes36h11);
+  AprilTags::TagDetector tag_detector(AprilTags::tagCodes16h5);
 
   cv::namedWindow(window_name, 1);
   cv::Mat color;

@@ -96,7 +96,7 @@ bool leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
   if (!leg_odo_init_){
     if (contact_status == 2){
       std::cout << "Initialize Leg Odometry using left foot\n"; 
-      initializePose(1, body_to_l_foot, body_to_r_foot);
+      initializePose(0, body_to_l_foot, body_to_r_foot);
       
       world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
       primary_foot_ = 0; // left
@@ -371,27 +371,29 @@ bool leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
   }  
 }
 
-bool leg_odometry::Update(const  drc::robot_state_t* msg){
+bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
+                    std::vector<float> joint_velocity, std::vector<float> joint_effort, 
+                    int64_t utime){ 
   previous_utime_ = current_utime_;
   previous_world_to_body_ = world_to_body_;
   bool delta_world_to_body_valid = false;
-  current_utime_ = msg->utime;
+  current_utime_ = utime;
 
-  
+/*  
   // 0. Extract World Pose of body as estimated by BDI
   // primarily the orientation of of interest
   world_to_body_bdi_.setIdentity();
   world_to_body_bdi_.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
   Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
                                                msg->pose.rotation.y, msg->pose.rotation.z);
-  world_to_body_bdi_.rotate(quat);    
+  world_to_body_bdi_.rotate(quat);    */
     
   // 1. Solve for Forward Kinematics:
   // call a routine that calculates the transforms the joint_state_t* msg.
   map<string, double> jointpos_in;
   map<string, KDL::Frame > cartpos_out;
-  for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
-    jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+  for (size_t i=0; i<  joint_name.size(); i++) //cast to uint to suppress compiler warning
+    jointpos_in.insert(make_pair(joint_name[i], joint_position[i]));
   
   // Calculate forward position kinematics
   bool kinematics_status;
@@ -409,8 +411,8 @@ bool leg_odometry::Update(const  drc::robot_state_t* msg){
   // The Foot Contact Logic that Dehann wrote in the VRC:
   TwoLegs::footstep newstep;
   newstep = foot_contact_logic_->DetectFootTransistion(current_utime_, 
-                                                       msg->force_torque.l_foot_force_z, 
-                                                       msg->force_torque.r_foot_force_z);
+                                                       left_foot_force_, 
+                                                       right_foot_force_);
   if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
     foot_contact_logic_->setStandingFoot(newstep.foot);
   }
@@ -481,8 +483,6 @@ bool leg_odometry::Update(const  drc::robot_state_t* msg){
     
     
     
-    
-    
     std::vector<Isometry3dTime> world_to_body_T;
     world_to_body_T.push_back( Isometry3dTime(current_utime_ , world_to_body_  )  );
     pc_vis_->pose_collection_to_lcm_from_list(1001, world_to_body_T);
@@ -499,16 +499,16 @@ bool leg_odometry::Update(const  drc::robot_state_t* msg){
     if (republish_incoming_){
       bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body_bdi_, current_utime_);
       lcm_publish_->publish("POSE_BODY", &pose_msg );
-      lcm_publish_->publish("EST_ROBOT_STATE", msg);
+      // lcm_publish_->publish("EST_ROBOT_STATE", msg);
     }
 
     
     // MIT estimated:
     bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body_, current_utime_);
     lcm_publish_->publish("POSE_BODY_ALT", &pose_msg );    
-    drc::robot_state_t msg_out = *msg;
-    insertPoseInRobotState(msg_out, world_to_body_);
-    lcm_publish_->publish("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &msg_out );
+    //drc::robot_state_t msg_out = *msg;
+    //insertPoseInRobotState(msg_out, world_to_body_);
+    //lcm_publish_->publish("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &msg_out );
     
     std::stringstream ss;
     ss << print_Isometry3d(world_to_body_bdi_) << ", "

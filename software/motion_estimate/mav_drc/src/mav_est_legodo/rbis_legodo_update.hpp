@@ -32,6 +32,8 @@ public:
   // Converts the Pelvis Translation into a RBIS measurement
   // which is then passed to the estimator
   LegOdoCommon* leg_odo_common_;
+  
+  lcm::LCM* lcm_pub;
 };
 
 

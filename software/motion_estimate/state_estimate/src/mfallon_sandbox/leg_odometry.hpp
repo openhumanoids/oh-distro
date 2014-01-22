@@ -42,7 +42,15 @@ class leg_odometry{
     ~leg_odometry(){
     }
     
-    bool Update(const  drc::robot_state_t* msg);
+    void setPoseBDI(Eigen::Isometry3d world_to_body_bdi_in ){ world_to_body_bdi_ = world_to_body_bdi_in; }
+    void setFootForces(float left_foot_force_in, float right_foot_force_in ){ 
+      left_foot_force_ = left_foot_force_in;
+      right_foot_force_ = right_foot_force_in;       
+    }
+    
+    bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
+                        std::vector<float> joint_velocity, std::vector<float> joint_effort,
+                        int64_t utime);
     
     void getDeltaLegOdometry(Eigen::Isometry3d &delta_world_to_body, int64_t &current_utime, int64_t &previous_utime){
       delta_world_to_body = delta_world_to_body_;
@@ -63,6 +71,8 @@ class leg_odometry{
     std::string leg_odometry_mode_;
     
     TwoLegs::FootContact* foot_contact_logic_;
+    // most recent measurements for the feet forces (typically synchronise with joints
+    float left_foot_force_, right_foot_force_;
     
     void initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot);
     // Pure Leg Odometry, no IMU

@@ -1,6 +1,8 @@
 package drc;
 
 // Full Combined Robot State
+// The velocity measurements are in inertial or local frame
+
 struct robot_state_t
 {
   int64_t utime;

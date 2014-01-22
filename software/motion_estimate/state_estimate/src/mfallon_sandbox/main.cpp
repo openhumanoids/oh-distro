@@ -51,7 +51,9 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LC
   }            
             
   leg_odo_ = new leg_odometry(lcm_subscribe_, lcm_publish_, botparam_, model_);
-            
+  
+  
+
   lcm_subscribe_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);  
 }
 
@@ -72,7 +74,19 @@ void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
     }    
   }
   
-  leg_odo_->Update(msg);
+  Eigen::Isometry3d world_to_body_bdi;
+  world_to_body_bdi.setIdentity();
+  world_to_body_bdi.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
+                                               msg->pose.rotation.y, msg->pose.rotation.z);
+  world_to_body_bdi.rotate(quat); 
+  
+  leg_odo_->setPoseBDI( world_to_body_bdi ); 
+  leg_odo_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
+  leg_odo_->updateOdometry(msg->joint_name, msg->joint_position,
+                           msg->joint_velocity, msg->joint_effort, msg->utime);
+  
+//  leg_odo_->Update(msg);
 }
 
 
