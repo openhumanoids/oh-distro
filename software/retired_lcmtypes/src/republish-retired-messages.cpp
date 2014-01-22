@@ -8,6 +8,7 @@
 #include <lcmtypes/drc/robot_urdf_t.hpp>
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/retired_lcmtypes.hpp>
+#include <lcmtypes/drc/atlas_state_t.hpp>
 
 #include <ConciseArgs>
 
