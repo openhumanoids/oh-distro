@@ -88,11 +88,11 @@ INSpose__k1 = init_pose();
 INSpose__k2 = init_pose();
 inertialData = init_inertialData(9.8);
 
-posterior.x = zeros(15,1);
-posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
+Sys.posterior.x = zeros(15,1);
+Sys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
-Disc.B = 0;
-Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
+
+
 
 X = [];
 DX = [];
@@ -113,6 +113,7 @@ limitedFB = 0.5;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
+Sys.T = dt_m;
 
 for k = 1:iter
     
@@ -131,31 +132,43 @@ for k = 1:iter
     if (mod(k,FilterRateReduction)==0)
         m = m+1;
         
-        % EKF
-        [F, L, Q] = dINS_EKFmodel(INSpose);
-        Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
-        covariances.R = diag( 1E0*ones(3,1) );
-        
-        % Filter propagation
-        [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
-        priori = KF_timeupdate(posterior, 0, Disc, covariances);
-        
-        % Filter measurement model
         measured.vl = init_Vl;
         dV = measured.vl - INSpose.V_l;
-        posterior = KF_measupdate(priori, Disc, [dV]);
+        
+        if (false)
+        
+            % EKF
+            [F, L, Q] = dINS_EKFmodel(INSpose);
+            Disc.B = 0;
+            Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
+            covariances.R = diag( 1E0*ones(3,1) );
+            
+            % Filter propagation
+            [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
+            priori = KF_timeupdate(Sys.posterior, 0, Disc, covariances);
+            
+            % Filter measurement model
+            Sys.posterior = KF_measupdate(priori, Disc, [dV]);
+            
+        else 
+            
+            Measurement.INS.pose = INSpose;
+            Measurement.velocityResidual = dV;
+            [Result, Sys] = iterate([], Sys, Measurement);
+            
+        end
+        
+        [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer( Sys.posterior.x, limitedFB, INSCompensator );
         
         %store data for later plotting
-        DX = [DX; posterior.dx'];
-        X = [X; posterior.x'];
-        COV = [COV;diag(posterior.P)'];
+        DX = [DX; Sys.posterior.dx'];
+        X = [X; Sys.posterior.x'];
+        COV = [COV;diag(Sys.posterior.P)'];
         % DE = [DE;dE'];
         %predE = q2e(INSpose.lQb);
         PE = [PE;q2e(INSpose.lQb)'];
         DV = [DV; dV'];
         
-        [ posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
-       
     end
     
     

@@ -4,13 +4,13 @@ function DFRESULTS = dataFusionHandler()
 % only.
 
 % This is temporary
-iterations = 20000/50;
+iterations = 12000/50;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
 feedbackGain = 0.2;
 
-ENABLE_FEEDBACK = 1;
+ENABLE_FEEDBACK = 0;
 
 % Initialize local variables
 computationTime = 0;
@@ -50,14 +50,14 @@ while (true)
     dfSys.T = 0.02;% this should be taken from the utime stamps when ported to real data
     %dfSys.posterior = posterior;
 
-    Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
+    %Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
     Measurement.velocityResidual = Measurement.LegOdo.pose.V_l - Measurement.INS.pose.V_l;
     
-    Measurement.quaternionLinearResidual = Measurement.LegOdo.pose.q - Measurement.INS.pose.q; % We do not intend to use the linear difference between the quaternions, just a sanity check
-    Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.q)' * q2R(Measurement.LegOdo.pose.q));
+    %Measurement.quaternionLinearResidual = Measurement.LegOdo.pose.lQb - Measurement.INS.pose.lQb; % We do not intend to use the linear difference between the quaternions, just a sanity check
+    %Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.lQb)' * q2R(Measurement.LegOdo.pose.lQb));
     
-    disp(['dataFusionHandler -- Local frame Position residual ' num2str(Measurement.positionResidual')])
-    disp(['dataFusionHandler -- Local frame Velocity residual ' num2str(Measurement.velocityResidual')])
+    %disp(['dataFusionHandler -- dP_l ' num2str(Measurement.positionResidual')])
+    disp(['dataFusionHandler -- dV_l ' num2str(Measurement.velocityResidual')])
     
     %     disp(['dataFusionHandler -- Manifold residual in quaternion norm: ' num2str(norm(Measurement.quaternionManifoldResidual)) ', q = ' num2str(Measurement.quaternionManifoldResidual)])
    
@@ -88,7 +88,7 @@ while (true)
     DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
     
     computationTime = toc
-    if (Measurement.INS.pose.utime == (50 * iterations * 1000) )
+    if (Measurement.INS.pose.utime == (120 * 1000000) )
         break;
     end
 end
