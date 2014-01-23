@@ -65,7 +65,7 @@ void RateSetPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
   this->callback_queue_thread_ = boost::thread(boost::bind(&RateSetPlugin::QueueThread, this));
     
   // Listen to the update event. This event is broadcast every simulation iteration.
-  this->updateConnection = event::Events::ConnectWorldUpdateStart(
+  this->updateConnection = event::Events::ConnectWorldUpdateBegin(
         boost::bind(&RateSetPlugin::OnUpdate, this));
 
   if(!lcm_publish_.good()){ gzerr <<"ERROR: lcm is not good()" <<std::endl; }
