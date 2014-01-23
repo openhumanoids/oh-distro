@@ -55,6 +55,11 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
   current_utime_ = 0;
   
   world_to_body_.setIdentity();
+  
+  initialize_mode_ = 2;
+  
+  world_to_body_vicon_init_ = false;
+  world_to_body_vicon_.setIdentity();
 }
 
 
@@ -78,16 +83,27 @@ void leg_odometry::terminate(){
 }
   
 
-void leg_odometry::initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot){
-  if (mode ==0){ 
+// TODO: need to move this function outside of the class, down to app
+bool leg_odometry::initializePose(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot){
+  if (initialize_mode_ ==0){ 
     // Initialize with primary foot at zero
     world_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
     world_to_body_ =world_to_fixed_primary_foot_*body_to_l_foot.inverse();
-  }else if (mode ==1){
+  }else if (initialize_mode_ ==1){
     // At the EST_ROBOT_STATE pose that was logged into the file
     world_to_body_ = world_to_body_bdi_;
     world_to_fixed_primary_foot_ = world_to_body_*body_to_l_foot;
+  }else if (initialize_mode_ ==2){
+    if (!world_to_body_vicon_init_){
+      std::cout << "Haven't received a vicon pose, cannot initialize\n";
+      return false;
+    }
+    // At the vicon position
+    world_to_body_ = world_to_body_vicon_;
+    world_to_fixed_primary_foot_ = world_to_body_*body_to_l_foot;
   }
+  
+  return true;
 }
   
 bool leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
@@ -96,12 +112,14 @@ bool leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
   if (!leg_odo_init_){
     if (contact_status == 2){
       std::cout << "Initialize Leg Odometry using left foot\n"; 
-      initializePose(0, body_to_l_foot, body_to_r_foot);
-      
-      world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
-      primary_foot_ = 0; // left
-      leg_odo_init_ = true;
-      init_this_iteration = true;
+      bool success = initializePose(body_to_l_foot, body_to_r_foot); // typical init mode =0
+      if (success){
+        // if successful, complete initialization
+        world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
+        primary_foot_ = 0; // left
+        leg_odo_init_ = true;
+        init_this_iteration = true;
+      }
     }
     // TODO: add ability to initialize off of right foot
   }else{
@@ -144,12 +162,14 @@ bool leg_odometry::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_
   if (!leg_odo_init_){
     if (contact_status == 2){
       std::cout << "Initialize Leg Odometry using left foot\n"; 
-      initializePose(1, body_to_l_foot, body_to_r_foot);
-
-      world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
-      primary_foot_ = 0; // left
-      leg_odo_init_ = true;
-      init_this_iteration = true;
+      // typical init mode 1
+      bool success = initializePose( body_to_l_foot, body_to_r_foot);
+      if (success){
+        world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
+        primary_foot_ = 0; // left
+        leg_odo_init_ = true;
+        init_this_iteration = true;
+      }
     }
     // TODO: add ability to initialize off of right foot
   }else{
@@ -231,12 +251,14 @@ bool leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
   if (!leg_odo_init_){
     if (contact_status == 2){
       std::cout << "Initialize Leg Odometry using left foot\n"; 
-      initializePose(1, body_to_l_foot, body_to_r_foot);
-      
-      world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
-      primary_foot_ = 0; // left
-      leg_odo_init_ = true;
-      init_this_iteration = true;
+      // typical init mode 1
+      bool success = initializePose(body_to_l_foot, body_to_r_foot);
+      if (success){
+        world_to_secondary_foot_ = world_to_body_*body_to_r_foot;
+        primary_foot_ = 0; // left
+        leg_odo_init_ = true;
+        init_this_iteration = true;
+      }
     }
     // TODO: add ability to initialize off of right foot
   }else{

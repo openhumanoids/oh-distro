@@ -9,6 +9,9 @@
 #include <mav_state_est/mav-est-legodo/rbis_legodo_update.hpp>
 #include <mav_state_est/mav-est-legodo/rbis_legodo_external_update.hpp>
 
+#include <path_util/path_util.h>
+
+
 #include <ConciseArgs>
 
 using namespace std;
@@ -30,6 +33,7 @@ public:
     string in_log_fname = "";
     string out_log_fname = "";
     string param_file = "";
+    string urdf_file = "";
     string override_str = "";
     output_likelihood_filename = "";
     string begin_timestamp= "0";
@@ -45,10 +49,14 @@ public:
         "Run Kalman smoothing and publish poses at end - only works when running from log");
     opt.add(output_likelihood_filename, "M", "meas_like", "save the measurement likelihood to this file");
     opt.add(begin_timestamp, "t", "begin_timestamp", "Run estimation from this timestamp"); // mfallon
+    opt.add(urdf_file, "U", "urdf_file", "Pull params from this file instead of LCM"); // mfallon
     opt.parse();
 
+    
+    std::string param_file_full = std::string(getConfigPath()) +'/' + std::string(param_file);    
+    
     //create front end
-    front_end = new LCMFrontEnd(in_log_fname, out_log_fname, param_file, override_str,begin_timestamp);
+    front_end = new LCMFrontEnd(in_log_fname, out_log_fname, param_file_full , override_str,begin_timestamp);
     rbis_initializer = new RBISInitializer(front_end, RBISInitializer::getDefaultState(front_end->param),
         RBISInitializer::getDefaultCov(front_end->param));
 
@@ -131,13 +139,13 @@ public:
       // legodo_handler = new LegOdoHandler(front_end->param);
 
       ModelClient* model;
-      //if (cl_cfg_.urdf_filename == ""){           
-      model = new ModelClient(  front_end->lcm_recv->getUnderlyingLCM(), 0);
-      //}else{
-      //  //std::string urdf_filename = "model_LH_RH.urdf";            
-      //  std::string urdf_filename_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string(cl_cfg_.urdf_filename);
-      //  model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_filename_full  ));
-      //}  
+      if (urdf_file == ""){           
+        model = new ModelClient(  front_end->lcm_recv->getUnderlyingLCM(), 0);
+      }else{
+        //std::string urdf_file = "model_LH_RH.urdf";            
+        std::string urdf_filename_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string( urdf_file );
+        model = new ModelClient( urdf_filename_full );
+      }  
       legodo_handler = new LegOdoHandler(front_end->lcm_recv, front_end->lcm_pub, front_end->param, model);
 
 

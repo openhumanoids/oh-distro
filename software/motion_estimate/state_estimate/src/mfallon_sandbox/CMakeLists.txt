@@ -24,13 +24,23 @@ pods_install_pkg_config_file(estimate
 
 
 ################
-add_executable(drc-leg-odometry main.cpp )
-pods_use_pkg_config_packages(drc-leg-odometry estimate path-util
+add_executable(se-leg-odometry main.cpp )
+pods_use_pkg_config_packages(se-leg-odometry estimate path-util
    bot2-param-client model-client   )
-target_link_libraries (drc-leg-odometry lcm )
+target_link_libraries (se-leg-odometry lcm )
 #     
 #        pointcloud_lcm                pointcloud_math
 #	lcmtypes_drc_lcmtypes  lcmtypes_visualization
 #       ${PCL_LIBRARIES} ${REQUIRED_PACKAGES}
 #       leg-odometry)
-pods_install_executables(drc-leg-odometry )
+pods_install_executables(se-leg-odometry )
+
+
+
+
+################
+add_executable(se-convert-bdi-into-vicon-frame convert_bdi_into_vicon_frame.cpp )
+pods_use_pkg_config_packages(se-convert-bdi-into-vicon-frame 
+    pointcloud_vis)
+target_link_libraries (se-convert-bdi-into-vicon-frame lcm )
+pods_install_executables(se-convert-bdi-into-vicon-frame )

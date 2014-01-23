@@ -28,6 +28,7 @@ class App{
     leg_odometry* leg_odo_;
     
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+    void viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg);
     
 };
     
@@ -55,6 +56,10 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LC
   
 
   lcm_subscribe_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);  
+  
+  lcm_subscribe_->subscribe("VICON_BODY",&App::viconHandler,this);  
+  
+  
 }
 
 void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
@@ -88,6 +93,24 @@ void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
   
 //  leg_odo_->Update(msg);
 }
+
+
+void App::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg){
+
+  std::cout << "got vicon\n"; 
+  
+  Eigen::Isometry3d world_to_body_vicon;
+  world_to_body_vicon.setIdentity();
+  world_to_body_vicon.translation()  << msg->trans[0], msg->trans[1] , msg->trans[2];
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->quat[0], msg->quat[1], 
+                                               msg->quat[2], msg->quat[3]);
+  world_to_body_vicon.rotate(quat); 
+  
+  
+  leg_odo_->setPoseVicon( world_to_body_vicon ); 
+  
+}
+
 
 
 int
