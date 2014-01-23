@@ -1,9 +1,10 @@
 #!/bin/bash
 GAZEBO_TAG=gazebo_2.2
+SDFORMAT_TAG=sdf_1.4
 DRCSIM_TAG=drcsim_3.1.1
 MODELS_REV=467
 
-make_parallel=-j3
+make_parallel=-j6
 
 work_dir=$DRC_BASE/software/build/drcsim-and-gazebo-builds
 
@@ -11,6 +12,26 @@ clean_build_dir()
 {
   rm -rf $work_dir
   mkdir -p $work_dir
+}
+
+build_sdformat()
+{
+  echo "CHECKING OUT sdformat ====================================="
+  hg clone https://bitbucket.org/osrf/sdformat $work_dir/sdformat
+
+  echo "Applying Specific Revision of sdformat ===================="
+  cd $work_dir/sdformat
+  hg up $SDFORMAT_TAG
+
+  echo "Configure and build sdformat ====================="
+  rm -rf build
+  mkdir build
+  cd build
+  cmake ../
+  make $make_parallel
+  sudo make install
+
+  echo "Finished Installing sdformat ==================="
 }
 
 build_gazebo()
@@ -159,6 +180,7 @@ download_models()
 }
 
 clean_build_dir
+build_sdformat
 build_gazebo
 build_osrf_common
 build_sandia_hand
