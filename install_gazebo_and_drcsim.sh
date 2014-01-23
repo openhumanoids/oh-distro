@@ -1,16 +1,11 @@
 #!/bin/bash
-GAZEBO_REV=8795
-GAZEBO_VERSION=1.8
-SIM_REV=2840
-MODELS_REV=310
+GAZEBO_TAG=gazebo_2.2
+DRCSIM_TAG=drcsim_3.1.1
+MODELS_REV=467
 
-make_parallel=-j6
+make_parallel=-j3
 
-# get the path to DRC svn repo (where this script is located)
-cd `dirname $0`
-drc_dir=`pwd`
-work_dir=$drc_dir/software/build/drcsim-and-gazebo-builds
-
+work_dir=$DRC_BASE/software/build/drcsim-and-gazebo-builds
 
 clean_build_dir()
 {
@@ -18,74 +13,133 @@ clean_build_dir()
   mkdir -p $work_dir
 }
 
-build_sandia_hand()
-{
-  echo "Installing sandia-hand from src ===================="
-
-  source /opt/ros/fuerte/setup.bash
-  export ROS_PACKAGE_PATH=$drc_dir/ros_workspace:$ROS_PACKAGE_PATH
-  rosmake osrf_msgs --pre-clean
-  rosmake sandia_hand_driver --pre-clean
-
-  cd $drc_dir/ros_workspace/sandia-hand
-  ./install.sh
-
-  echo "Finished Installing sandia-hand ===================="
-}
-
-
 build_gazebo()
 {
   echo "CHECKING OUT GAZEBO ====================================="
   hg clone https://bitbucket.org/osrf/gazebo $work_dir/gazebo
 
-  echo "Removing bullet ====================="
-  cd $drc_dir/software/externals/bullet
-  make clean
-
+  # echo "Removing bullet ====================="
+  # cd $drc_dir/software/externals/bullet
+  # make clean
 
   echo "Applying Specific Revision of Gazebo ===================="
   cd $work_dir/gazebo
-  hg update -r$GAZEBO_REV
+  hg up $GAZEBO_TAG
 
   echo "Configure and build Gazebo ====================="
-  cd ..
-  rm -rf gazebo-build
-  mkdir gazebo-build
-  cd gazebo-build
-  cmake -DPKG_CONFIG_PATH=/opt/ros/fuerte/lib/pkgconfig/:/opt/ros/fuerte/stacks/visualization_common/ogre/ogre/lib/pkgconfig/ ../gazebo
+  rm -rf build
+  mkdir build
+  cd build
+  cmake ../ -DCMAKE_INSTALL_PREFIX=/usr/local
   make $make_parallel
   sudo make install
 
-  echo "Performing a clean build of bullet ====================="
-  cd $drc_dir/software/externals/bullet
-  make $make_parallel
+  # echo "Performing a clean build of bullet ====================="
+  # cd $drc_dir/software/externals/bullet
+  # make $make_parallel
 
   echo "Finished Installing Gazebo==================="
 }
 
 
+build_sandia_hand()
+{
+  echo "Installing sandia-hand from src ===================="
+
+  source /opt/ros/groovy/setup.sh
+#  source /usr/local/share/gazebo/setup.sh
+ 
+  echo "CHECKING OUT sandia-hand ======================="
+	hg clone https://bitbucket.org/osrf/sandia-hand $work_dir/sandia-hand
+
+  echo "Configure and build sandia-hand ====================="
+  cd $work_dir/sandia-hand
+  rm -rf build
+  mkdir build
+  cd build
+  cmake ../ -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO
+  make $make_parallel
+  sudo make install
+
+  echo "Finished Installing sandia-hand ===================="
+}
+
+
+build_osrf_common()
+{
+  source /opt/ros/groovy/setup.sh
+#  source /usr/local/share/gazebo/setup.sh
+ 
+  echo "CHECKING OUT OSRF-COMMON ======================="
+  hg clone https://bitbucket.org/osrf/osrf-common $work_dir/osrf-common
+
+  echo "Configure and build OSRF-COMMON ====================="
+  cd $work_dir/osrf-common
+  rm -rf build
+  mkdir build
+  cd build
+  cmake ../ -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO
+  make $make_parallel
+  sudo make install
+
+  echo "Finished Installing OSRF-COMMON ==================="
+}
+
+
+build_gazebo_ros_pkgs()
+{
+  source /opt/ros/groovy/setup.sh
+ 
+  echo "CHECKING OUT GAZEBO-ROS-PKGS ======================="
+  git clone https://github.com/ros-simulation/gazebo_ros_pkgs $work_dir/gazebo_ros_pkgs
+
+  echo "Configure and build GAZEBO-ROS-PKGS ====================="
+  cd $work_dir/gazebo_ros_pkgs
+	# build gazebo_msgs
+	cd gazebo_msgs
+	mkdir build
+	cd build
+	cmake .. -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO
+	make $make_parallel
+	sudo make install
+
+	# build gazebo_plugins
+	cd ../../gazebo_plugins
+	mkdir build
+	cd build
+	cmake .. -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO
+	make $make_parallel
+	sudo make install
+
+	# gazebo_ros
+	cd ../../gazebo_ros
+	mkdir build
+	cd build
+	cmake .. -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO
+	make $make_parallel
+	sudo make install
+
+  echo "Finished Installing GAZEBO-ROS-PKGS ==================="
+}
+
+
 build_drcsim()
 {
-  source /opt/ros/fuerte/setup.bash
-  source /usr/local/share/gazebo-$GAZEBO_VERSION/setup.sh
-  export ROS_PACKAGE_PATH=$drc_dir/ros_workspace:$ROS_PACKAGE_PATH
-
-
+  source /opt/ros/groovy/setup.sh
+#  source /usr/local/share/gazebo/setup.sh
+ 
   echo "CHECKING OUT DRCSIM ======================="
   hg clone https://bitbucket.org/osrf/drcsim $work_dir/drcsim
 
-
   echo "Applying Specific Revision of DRCSIM =================="
   cd $work_dir/drcsim
-  hg update -r$SIM_REV
+  hg up $DRCSIM_TAG
 
   echo "Configure and build DRCSIM ====================="
-  cd ..
-  rm -rf drcsim-build
-  mkdir drcsim-build
-  cd drcsim-build
-  cmake  -Dsandia-hand_DIR=$drc_dir/ros_workspace/sandia-hand/build ../drcsim
+  rm -rf build
+  mkdir build
+  cd build
+  cmake ../ -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO -DCMAKE_INSTALL_PREFIX=/usr/local
   make $make_parallel
   sudo make install
 
@@ -105,9 +159,12 @@ download_models()
 }
 
 clean_build_dir
-build_sandia_hand
 build_gazebo
+build_osrf_common
+build_sandia_hand
+build_gazebo_ros_pkgs
 build_drcsim
 download_models
+
 
 
