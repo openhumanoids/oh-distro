@@ -133,22 +133,19 @@ this README under Environment Setup.
 
 https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Installing\_GUROBI
 
-ROS Dependencies
+Simulation Dependencies
 ----------------
 
-The ROS dependencies are optional. Install with the following commands:
+Gazebo (http://gazebosim.org/wiki/2.2/install#Install_Required_Dependencies)
+
+In addition to above packages, run:
 
 ::
+    
+    sudo apt-get install libboost-all-dev libcegui-mk2-dev libopenal-dev  libswscale-dev libavformat-dev libavcodec-dev libogre-dev libgts-dev libltdl3-dev playerc++ 
 
-    sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
-    sudo sh -c 'echo "deb http://packages.osrfoundation.org/drc/ubuntu precise main" > /etc/apt/sources.list.d/drc-latest.list'
+DRCSIM requires ROS dependencies listed here: http://gazebosim.org/wiki/DRC/Install#Ubuntu_and_ROS_Groovy
 
-    wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
-    wget http://packages.osrfoundation.org/drc.key -O - | sudo apt-key add -
-
-    sudo apt-get update
-
-    sudo apt-get install ros-fuerte-common-msgs ros-fuerte-geometry ros-fuerte-image-common ros-fuerte-pr2-mechanism ros-fuerte-std-msgs ros-fuerte-urdfdom ros-fuerte-visualization-common ros-fuerte-pr2-controllers ros-fuerte-geometry-experimental ros-fuerte-robot-model-visualization ros-fuerte-image-pipeline ros-fuerte-vision-opencv ros-fuerte-image-transport-plugins ros-fuerte-qt-ros python-rosdep python-rosinstal
 
 Build Instructions
 ==================
