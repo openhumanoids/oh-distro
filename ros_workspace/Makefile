@@ -1,5 +1,5 @@
 
-SUBDIRS = osrf_msgs atlas_gazebo_msgs keyboard_teleop keyboard_driving multisense_command driving_interface irobot-hand mit_helios_scripts translators
+SUBDIRS = atlas_gazebo_msgs keyboard_teleop keyboard_driving multisense_command driving_interface irobot-hand mit_helios_scripts translators
 
 all: $(SUBDIRS)
 	echo Making MITs ROS DRC repo
