@@ -19,7 +19,7 @@ pods_install_headers(pointcloud_lcm.hpp DESTINATION pointcloud_tools)
 target_link_libraries(pointcloud_lcm
     z)
 pods_install_pkg_config_file(pointcloud_lcm
-    LIBS -lpointcloud_lcm -lz -lpcl_io-1.6
+    LIBS -lpointcloud_lcm -lz 
     REQUIRES bot2-vis kinect-utils image-utils eigen3 pcl_io-1.6 flann
     VERSION 0.0.1)
 
