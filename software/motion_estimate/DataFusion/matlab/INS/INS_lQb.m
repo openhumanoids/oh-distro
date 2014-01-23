@@ -32,6 +32,8 @@ end
 pose.utime = inertialData.predicted.utime;
 dt = (inertialData.predicted.utime - pose__k1.utime)*1e-6; % convert units to seconds
 
+
+
 % predict local frame accelerations
 pose.a_l = qrot(qconj(pose__k1.lQb),inertialData.predicted.a_b);
 pose.f_l = (pose.a_l - inertialData.gw);

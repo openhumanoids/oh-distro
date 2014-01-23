@@ -29,8 +29,8 @@ accelbias = 0*[0;0.1;0]
 
 
 
-traj.measured.w_b = data(1:iterations,1:3) + repmat(gyrobias',iterations,1);
-traj.measured.a_b = data(1:iterations,4:6) + repmat(accelbias',iterations,1);
+traj.measured.w_b = data(1:iterations,1:3);% + repmat(gyrobias',iterations,1);
+traj.measured.a_b = data(1:iterations,4:6);% + repmat(accelbias',iterations,1);
 
 
 

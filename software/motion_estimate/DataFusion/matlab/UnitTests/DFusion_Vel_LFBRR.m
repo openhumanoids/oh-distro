@@ -59,9 +59,9 @@ measured.wb = data(1:iter,1:3);
 measured.ab = data(1:iter,4:6) + repmat(accelbias',iter,1);
 
 % remove gyro biases
-biasg = mean(measured.wb(initstart:initend,:),1) + gyrobias';
-biasg = repmat(biasg,iter,1);
-measured.wb = measured.wb - biasg;
+% biasg = mean(measured.wb(initstart:initend,:),1) + gyrobias';
+% biasg = repmat(biasg,iter,1);
+% measured.wb = measured.wb - biasg;
 
 predicted.lQb = [ones(iter,1) zeros(iter,3)];
 predicted.wb = zeros(iter,3);
@@ -125,12 +125,8 @@ for k = 1:iter
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
     
-    inertialData.predicted.utime
-    INSpose.lQb
-    pause
-    
     % More representative of how LCM traffic is running
-    %[INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
+    [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
     
     PE = [PE;q2e(INSpose.lQb)'];
     
@@ -141,7 +137,7 @@ for k = 1:iter
         measured.vl = init_Vl;
         dV = measured.vl - INSpose.V_l;
         
-        if (false)
+        if (true)
         
             % EKF
             [F, L, Q] = dINS_EKFmodel(INSpose);
