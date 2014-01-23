@@ -10,7 +10,7 @@
 % feedback structure. 
 
 clc
-clear all
+% clear all
 
 disp 'STARTING...'
 
@@ -91,9 +91,6 @@ inertialData = init_inertialData(9.8);
 Sys.posterior.x = zeros(15,1);
 Sys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
-
-
-
 X = [];
 DX = [];
 COV = [];
@@ -108,7 +105,7 @@ nDEF = [];
 Rbias = [];
 
 % this is the filter update counter
-FilterRate = 20;
+FilterRate = 50;
 limitedFB = 0.5;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
@@ -128,11 +125,17 @@ for k = 1:iter
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
     
+    inertialData.predicted.utime
+    INSpose.lQb
+    pause
+    
+    % More representative of how LCM traffic is running
+    %[INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
     
     PE = [PE;q2e(INSpose.lQb)'];
     
     % Run filter at a lower rate
-    if (mod(k,FilterRateReduction)==0)
+    if (mod(k,FilterRateReduction)==0 && false)
         m = m+1;
         
         measured.vl = init_Vl;
@@ -153,19 +156,19 @@ for k = 1:iter
             % Filter measurement model
             Sys.posterior = KF_measupdate(priori, Disc, [dV]);
             
-        else 
+        else
             
             Measurement.INS.pose = INSpose;
             Measurement.velocityResidual = dV;
             [Result, Sys] = iterate([], Sys, Measurement);
             
+            
         end
         
-        [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer( Sys.posterior.x, limitedFB, INSCompensator );
+        [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
         
         % LCM trip to C++ state-estimate to update INS states
         
-        [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
         
         %store data for later plotting
         DX = [DX; Sys.posterior.dx'];

@@ -57,7 +57,7 @@ while (true)
     %Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.lQb)' * q2R(Measurement.LegOdo.pose.lQb));
     
     %disp(['dataFusionHandler -- dP_l ' num2str(Measurement.positionResidual')])
-    disp(['dataFusionHandler -- dV_l ' num2str(Measurement.velocityResidual')])
+    %disp(['dataFusionHandler -- dV_l ' num2str(Measurement.velocityResidual')])
     
     %     disp(['dataFusionHandler -- Manifold residual in quaternion norm: ' num2str(norm(Measurement.quaternionManifoldResidual)) ', q = ' num2str(Measurement.quaternionManifoldResidual)])
    
@@ -87,7 +87,7 @@ while (true)
     DFRESULTS.STATEX(index,:) = dfSys.posterior.x';
     DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
     
-    computationTime = toc
+    computationTime = toc;
     if (Measurement.INS.pose.utime == (120 * 1000000) )
         break;
     end

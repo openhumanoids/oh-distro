@@ -190,11 +190,11 @@ void StateEstimate::StateEstimator::run()
 			  // Insert the required inertial data in the data fusion update request message
 			  stampInertialPoseUpdateRequestMsg(inert_odo, mDFRequestMsg);
 
-			  if (_mSwitches->MATLAB_MotionSimulator) {
-//				  stampMatlabReferencePoseUpdateRequest(matlabPose, mDFRequestMsg);
-			  } else {
-				  stampEKFReferenceMeasurementUpdateRequest(_leg_odo->getPelvisState().translation(), drc::ins_update_request_t::POSITION_LOCAL, mDFRequestMsg);
-			  }
+//			  if (_mSwitches->MATLAB_MotionSimulator) {
+////				  stampMatlabReferencePoseUpdateRequest(matlabPose, mDFRequestMsg);
+//			  } else {
+			  	  stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, mDFRequestMsg);
+//			  }
 
 			  // This message will contain reference measurement information from various sources -- for now it is LegOdo, Fovis, MatlabtrajectorMotionSimulation
 			  mLCM->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
@@ -270,11 +270,23 @@ void StateEstimate::StateEstimator::run()
 	  //std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket dbg " << INSUpdate.dbiasGyro_b.x << ", " << INSUpdate.dbiasGyro_b.y << ", " << INSUpdate.dbiasGyro_b.z << std::endl;
 
 	  InertialOdometry::INSUpdatePacket insUpdatePacket;
-	  insUpdatePacket.dbiasGyro_b << INSUpdate.dbiasGyro_b.x, INSUpdate.dbiasGyro_b.y, INSUpdate.dbiasGyro_b.z;
+	  insUpdatePacket.utime = INSUpdate.utime;
+	  insUpdatePacket.dbiasGyro_b(0) = INSUpdate.dbiasGyro_b.x;
+	  insUpdatePacket.dbiasGyro_b(1) = INSUpdate.dbiasGyro_b.y;
+	  insUpdatePacket.dbiasGyro_b(2) = INSUpdate.dbiasGyro_b.z;
+
+	  insUpdatePacket.dbiasAcc_b << INSUpdate.dbiasAcc_b.x, INSUpdate.dbiasAcc_b.y, INSUpdate.dbiasAcc_b.z;
+
+	  // Temporary addition for debugging
+	  //insUpdatePacket.dbiasGyro_b.setZero();
+	  //insUpdatePacket.dbiasAcc_b.setZero();
 
 	  insUpdatePacket.dE_l(0) = INSUpdate.dE_l.x;
 	  insUpdatePacket.dE_l(1) = INSUpdate.dE_l.y;
 	  insUpdatePacket.dE_l(2) = INSUpdate.dE_l.z;
+
+	  insUpdatePacket.dVel_l << INSUpdate.dVel_l.x, INSUpdate.dVel_l.y, INSUpdate.dVel_l.z;
+	  insUpdatePacket.dPos_l << INSUpdate.dPos_l.x, INSUpdate.dPos_l.y, INSUpdate.dPos_l.z;
 
 	  // And here we finally roll in the updates to the InertialOdometry INS prediction
 	  inert_odo.incorporateERRUpdate(insUpdatePacket);

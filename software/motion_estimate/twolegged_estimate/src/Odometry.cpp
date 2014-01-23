@@ -88,6 +88,8 @@ namespace InertialOdometry {
 
       //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
 
+      //std::cout << "Odometry::PropagatePrediction -- lQb " << out.quat.w() << ", " << out.quat.x() << ", " << out.quat.y() << ", " << out.quat.z() << std::endl;
+
       //    DynamicState ret;
       state.imu = _imu;
       state.uts = _imu.uts;
@@ -108,6 +110,10 @@ namespace InertialOdometry {
 	  return state;
   }
   
+  unsigned long long Odometry::get_utime() {
+	  return state.uts;
+  }
+
   void Odometry::incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData) {
 
 	  std::cout << "Odometry::incorporateERRUpdate -- received and INSUpdatePacket." << std::endl;
@@ -133,8 +139,7 @@ namespace InertialOdometry {
 
   }
 
-  // This should be moved to the QuaternionLib library
-  // TODO -- should be updated with trigonometric and near zero power expansion cases.
+  // Been moved to QuaternionLib
 //  Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)
 //  {
 //	  Eigen::Matrix3d R;

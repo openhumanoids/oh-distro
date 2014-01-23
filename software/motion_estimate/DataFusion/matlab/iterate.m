@@ -26,6 +26,12 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 % Tm = Sys.T; -- to be depreciated
 
 
+% Measurement.INS.pose.utime
+% Measurement.INS.pose.lQb
+% Measurement.INS.pose.a_l
+% Measurement.velocityResidual
+
+
 % EKF
 [F, L, Q] = dINS_EKFmodel(Measurement.INS.pose);
 covariances.R = diag( 1E0*ones(3,1) );
@@ -43,6 +49,7 @@ Sys.priori.utime = Measurement.INS.pose.utime;
 Sys.posterior = KF_measupdate(Sys.priori, Disc, [Measurement.velocityResidual]);
 Sys.posterior.utime = Sys.priori.utime;
 
+% Sys.posterior.x
 
 % Some results to look at later=====================================================================
 

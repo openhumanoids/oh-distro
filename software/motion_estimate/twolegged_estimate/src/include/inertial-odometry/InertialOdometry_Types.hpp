@@ -66,6 +66,8 @@ namespace InertialOdometry {
   struct INSUpdatePacket {
 	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+	  unsigned long long utime;
+
 	  Eigen::Vector3d dbiasGyro_b;
 	  Eigen::Vector3d dbiasAcc_b;
 
