@@ -50,7 +50,7 @@ namespace InertialOdometry {
 		double dt;
 		dt = 1.E-6*((double)(uts - latest_uts));
 		if (latest_uts == 0) { // assumption for initial condition
-			dt = 0.001;
+			dt = 0.01;
 		}
 
 		Eigen::Vector3d temp;

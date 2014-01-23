@@ -17,6 +17,7 @@
 
 #include <leg-odometry/QuaternionLib.h>
 #include <inertial-odometry/OrientationComputer.hpp>
+#include <inertial-odometry/Odometry.hpp>
 
 #define ITERATIONS 		1000
 //#define PI 				   3.14159265358979323
@@ -27,6 +28,7 @@ using namespace std;
 bool testQuaternionProduct();
 bool testQuaternionExmap();
 bool testQuaternionPropagation();
+bool testInertialOdoPropagation();
 
 void setupData(double data[][3]);
 void getRandomQs(vector<Eigen::Quaterniond> &Qa, vector<Eigen::Vector3d> &dE, vector<Eigen::Quaterniond> &Qb, vector<Eigen::Quaterniond> &Qc);
@@ -43,7 +45,7 @@ int main() {
 	failed = failed || testQuaternionProduct();
 	failed = failed || testQuaternionExmap();
 	failed = failed || testQuaternionPropagation();
-
+	failed = failed || testInertialOdoPropagation();
 
 
 
@@ -201,14 +203,52 @@ bool testQuaternionPropagation() {
 		err = err + abs(tmp.w() - LQB[k].w()) + abs(tmp.x() - LQB[k].x()) + abs(tmp.y() - LQB[k].y()) + abs(tmp.z() - LQB[k].z());
 	}
 
-	cout << "Cumulative absolute sum error from all " << dE.size() << " OrientationComputer delta anngle propagations is: " << err << endl;
-		if (err > 0.001) {
-			cout << "testQuaternionPropagation failed." << endl;
-			return true;
-		}
+	cout << "Cumulative absolute sum error from all " << dE.size() << " OrientationComputer delta angle propagations is: " << err << endl;
+	if (err > 0.001) {
+		cout << "testQuaternionPropagation failed." << endl;
+		return true;
+	}
 	return false;
 }
 
+bool testInertialOdoPropagation() {
+	InertialOdometry::Odometry inert_odo;
+	InertialOdometry::IMU_dataframe imu_data;
+	InertialOdometry::DynamicState InerOdoEst;
+
+	vector<Eigen::Quaterniond> LQB;
+	vector<Eigen::Vector3d> dE;
+
+	Eigen::Quaterniond tmp, tmp2;
+	double err;
+	err = 0.;
+	double dt;
+	dt = 0.01;
+
+	getINSPropData(dE, LQB);
+
+
+	for (int k=0;k<dE.size();k++) {
+		imu_data.uts = (k+1)*dt*1E6;
+		imu_data.dang_b = - Eigen::Vector3d(dE[k](0), dE[k](1), dE[k](2));
+		imu_data.w_b_measured = 1/dt * imu_data.dang_b;
+		imu_data.a_b_measured = Eigen::Vector3d::Zero();
+
+		InerOdoEst = inert_odo.PropagatePrediction(imu_data);
+
+		tmp = inert_odo.getDynamicState().lQb;
+		tmp2 = InerOdoEst.lQb;
+		err = err + abs(tmp.w() - LQB[k].w()) + abs(tmp.x() - LQB[k].x()) + abs(tmp.y() - LQB[k].y()) + abs(tmp.z() - LQB[k].z());
+		err = err + abs(tmp2.w() - tmp.w()) + abs(tmp2.x() - tmp.x()) + abs(tmp2.y() - tmp.y()) + abs(tmp2.z() - tmp.z());
+	}
+
+	cout << "Cumulative absolute sum error on rotations from all " << dE.size() << " InertialOdometry IMU propagations: " << err << endl;
+	if (err > 0.001) {
+		cout << "testInertialOdoPropagation failed." << endl;
+		return true;
+	}
+	return false;
+}
 
 
 void setupData(double data[][3]) {

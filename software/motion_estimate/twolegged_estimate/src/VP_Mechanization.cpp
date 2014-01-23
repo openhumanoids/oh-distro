@@ -18,7 +18,7 @@ namespace InertialOdometry {
 	  _imu.gravity_subtracted = true;
 
 	  //std::cout << "VP_Mechanization::PropagateTranslation -- before subtracting gravity " << _imu.a_l.transpose() << std::endl;
-	  std::cout << "VP_Mechanization::PropagateTranslation -- f_l after subtracting gravity " << _imu.f_l.transpose() << std::endl;
+	  //std::cout << "VP_Mechanization::PropagateTranslation -- f_l after subtracting gravity " << _imu.f_l.transpose() << std::endl;
 
 	  state.first_pose_rel_pos = v2p.integrate(_imu.uts, state.first_pose_rel_vel); // Position first
 	  state.first_pose_rel_vel = a2v.integrate(_imu.uts,_imu.f_l); // Velocity second

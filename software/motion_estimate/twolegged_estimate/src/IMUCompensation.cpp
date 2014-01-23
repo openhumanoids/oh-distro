@@ -28,7 +28,7 @@ namespace InertialOdometry {
                                                                          
   void IMUCompensation::UpdateAccelBiases(const double biases[3])
   {
-	std::cout << "Accel biases being updated: " << biases[0] << ", " << biases[1] << ", " << biases[2] << std::endl;
+	//std::cout << "IMUCompensation::UpdateAccelBiases -- Accel biases being updated: " << biases[0] << ", " << biases[1] << ", " << biases[2] << std::endl;
     for (int i=0;i<3;i++)
       accel_biases(i) = biases[i];
   }
@@ -128,7 +128,7 @@ namespace InertialOdometry {
   IMUCompensation::IMUCompensation()
   {
 
-    std::cout << "An InertialOdometry::IMUCompensation Object was created." << std::endl;
+    //std::cout << "An InertialOdometry::IMUCompensation Object was created." << std::endl;
     
     double initvector[3];
 

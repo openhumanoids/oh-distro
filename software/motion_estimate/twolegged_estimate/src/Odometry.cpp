@@ -5,7 +5,7 @@ namespace InertialOdometry {
 
   Odometry::Odometry()
     {
-      std::cout << "An InertialOdometry::Odometry object was created, using internal state structure." << std::endl;
+      //std::cout << "An InertialOdometry::Odometry object was created, using internal state structure." << std::endl;
 
     }
 
