@@ -1519,7 +1519,7 @@
       <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.0</updateRate>
-        <cameraName>sandia_hands/plane::xy::base/camera</cameraName>
+        <cameraName>sandia_hands/plane::xy::base</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
         <frameName>right_palm_left_camera_optical_frame</frameName>
