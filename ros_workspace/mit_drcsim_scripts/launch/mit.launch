@@ -23,13 +23,14 @@
   <param name="/atlas/delay_max_per_step" type="double" value="0.025"/>
 
   <!-- Robot Description -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find atlas_description)/robots/atlas_v3.urdf.xacro'" />
+  <!-- <param name="robot_description" command="$(find xacro)/xacro.py '$(find atlas_description)/robots/atlas_v3.urdf.xacro'" /> -->
+  <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model_sim_gazebo.urdf"/>
   <param name="robot_initial_pose/x"     value="0" type="double"/>
   <param name="robot_initial_pose/y"     value="0" type="double"/>
   <param name="robot_initial_pose/z"     value="0.95" type="double"/>
   <param name="robot_initial_pose/roll"  value="0" type="double"/>
   <param name="robot_initial_pose/pitch" value="0" type="double"/>
   <param name="robot_initial_pose/yaw"   value="0" type="double"/>
-
+ 
   <include file="$(find drcsim_gazebo)/launch/atlas_v3_bringup.launch"/>
 </launch>
