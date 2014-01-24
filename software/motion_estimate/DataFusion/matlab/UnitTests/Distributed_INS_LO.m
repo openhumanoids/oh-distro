@@ -16,6 +16,13 @@ disp 'STARTING...'
 
 dt = 0.01;
 
+% We are going to transmit and listen for LCM traffic
+lc = lcm.lcm.LCM.getSingleton();
+aggregator = lcm.lcm.MessageAggregator();
+lc.subscribe('INS_ERR_UPDATE', aggregator);
+
+ReqMsg = initINSRequestLCMMsg();
+
 
 initstart = 1;
 
@@ -139,40 +146,41 @@ for k = 1:iter
         
         if (false)
         
-            % EKF
-            [F, L, Q] = dINS_EKFmodel(INSpose);
-            Disc.B = 0;
-            Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
-            covariances.R = diag( 1E0*ones(3,1) );
-            
-            % Filter propagation
-            [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
-            priori = KF_timeupdate(Sys.posterior, 0, Disc, covariances);
-            
-            % Filter measurement model
-            Sys.posterior = KF_measupdate(priori, Disc, [dV]);
-            
-        else
-            
             Measurement.INS.pose = INSpose;
             Measurement.velocityResidual = dV;
             [Result, Sys] = iterate([], Sys, Measurement);
-
+            
+            
+            %store data for later plotting
+            DX = [DX; Sys.posterior.dx'];
+            X = [X; Sys.posterior.x'];
+            COV = [COV;diag(Sys.posterior.P)'];
+            DV = [DV; dV'];
+            [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
+        
+            
+        else
+            
+            % Pass EKF computation out to separate Matlab Development
+            % process
+            sendDataFusionReq(INSpose, ReqMsg, lc);
+            
+            % Currently the outside process holds state -- this will all be
+            % moved to C++ once we are happy with the data fusion
+            % performance
+            
+            % Wait for update message
+            updatePacket = receiveINSUpdatePacket( aggregator );
+            disp('Received dataFusion updatePacket')
+            
+            INSCompensator.biases.bg = INSCompensator.biases.bg + updatePacket.dbiasGyro_b;
+            INSCompensator.biases.ba = INSCompensator.biases.bg + updatePacket.dbiasAcc_b;
+            INSCompensator.dE_l = updatePacket.dE_l;
+            INSCompensator.dV_l = updatePacket.dVel_l;
+            INSCompensator.dP_l = updatePacket.dPos_l;
+            
         end
         
-        [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
-        
-        % LCM trip to C++ state-estimate to update INS states
-        
-        
-        %store data for later plotting
-        DX = [DX; Sys.posterior.dx'];
-        X = [X; Sys.posterior.x'];
-        COV = [COV;diag(Sys.posterior.P)'];
-        % DE = [DE;dE'];
-        %predE = q2e(INSpose.lQb);
-        
-        DV = [DV; dV'];
         
     end
     

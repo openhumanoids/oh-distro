@@ -136,35 +136,40 @@ void StateEstimate::StateEstimator::run()
 	  for (int i = 0; i < nIMU; ++i)
 	  {
 		  this->mIMUQueue.dequeue(imu);
-
-		  std::cout << "StateEstimator::run -- dequeued IMU utime " << imu.utime << std::endl;
-
+		  //std::cout << "StateEstimator::run -- dequeued IMU utime " << imu.utime << std::endl;
 		  // do something with new imu...
 		  // The inertial odometry object is currently passed down to the handler function, where the INS is propagated and the 12 states are inserted inthe ERS message
 
 		  //std::cout << "StateEstimator::run -- imu.packet_count " << imu.packet_count << std::endl;
 		  // Auto-detect the sample rate of the IMU -- mainly for testing from different IMUs, should be 1kHz for KVH on Atlas and probably 100Hz for Microstrain
 		  unsigned long long deltaPacket;
-		  if (imu.packet_count > prevImuPacketCount) {
-			  deltaPacket = imu.packet_count - prevImuPacketCount;
-			  if (deltaPacket > 1) {
-				  std::cout << "StateEstimator::run -- " << deltaPacket-1 << " missing IMU packets!" << std::endl;
-			  }
-			  else
-			  {
-				  if (receivedIMUPackets < 10) {
-					  receivedIMUPackets++;
-					  Ts_imu = (imu.utime - previous_imu_utime)*1.E-6/deltaPacket;
-					  previous_imu_utime = imu.utime;
-					  std::cout << "StateEstimator::run -- deltaPacket computed as: " << deltaPacket << ", Ts_imu set to " << Ts_imu << std::endl;
-				  }
-			  }
+		  if (prevImuPacketCount == 0) {
+			  prevImuPacketCount = imu.packet_count;
+			  previous_imu_utime = imu.utime;
+			  Ts_imu = 1E-2;
 		  } else {
-			  if (prevImuPacketCount != 0) {
-				  std::cerr << "StateEstimator::run -- non-monotonic IMU packet count!!! assuming " << Ts_imu << " s spacing between packets." << std::endl;
+			  if (imu.packet_count > prevImuPacketCount) {
+				  deltaPacket = imu.packet_count - prevImuPacketCount;
+				  if (deltaPacket > 1) {
+					  std::cout << "StateEstimator::run -- " << deltaPacket-1 << " missing IMU packets!" << std::endl;
+				  }
+				  else
+				  {
+					  if (receivedIMUPackets < 10) {
+						  receivedIMUPackets++;
+						  Ts_imu = (imu.utime - previous_imu_utime)*1.E-6/deltaPacket;
+						  previous_imu_utime = imu.utime;
+						  std::cout << "StateEstimator::run -- deltaPacket computed as: " << deltaPacket << ", Ts_imu set to " << Ts_imu << std::endl;
+					  }
+				  }
+			  } else {
+				  if (prevImuPacketCount != 0) {
+					  std::cerr << "StateEstimator::run -- non-monotonic IMU packet count!!! assuming " << Ts_imu << " s spacing between packets." << std::endl;
+				  }
 			  }
 		  }
 		  prevImuPacketCount = imu.packet_count;
+		  std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << std::endl;
 
 		  handle_inertial_data_temp_name(Ts_imu, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg, _leg_odo);
 		  std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
@@ -174,7 +179,7 @@ void StateEstimate::StateEstimator::run()
 		  //      std::cout << "StateEstimator::run -- nIMU = " << nIMU << std::endl;
 		  if (i==(nIMU-1)) {
 			  //publish ERS message
-			  std::cout << std::endl << std::endl << "Going to publish ERS" << std::endl;
+			  std::cout << "StateEstimator::run -- Publish ERS" << std::endl;
 			  mERSMsg.utime = imu.utime;
 			  mLCM->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg); // There is some silly problem here
 
@@ -266,7 +271,7 @@ void StateEstimate::StateEstimator::run()
 		mINSUpdateQueue.dequeue(INSUpdate);
 
 	  // do something with new MatlabTruthPose...
-	  //std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
+	  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
 	  //std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket dbg " << INSUpdate.dbiasGyro_b.x << ", " << INSUpdate.dbiasGyro_b.y << ", " << INSUpdate.dbiasGyro_b.z << std::endl;
 
 	  InertialOdometry::INSUpdatePacket insUpdatePacket;
@@ -295,5 +300,7 @@ void StateEstimate::StateEstimator::run()
     // add artificial delay
     //boost::this_thread::sleep(boost::posix_time::milliseconds(500));
 
+
+	std::cout << std::endl << std::endl;
   }
 }

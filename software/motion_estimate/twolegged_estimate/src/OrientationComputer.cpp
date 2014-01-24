@@ -68,7 +68,9 @@ namespace InertialOdometry {
 
 		//		INSCompensator.dlQl = qprod(e2q(-limitedFB*x(1:3)),INSCompensator.dlQl);
 		//		pose.lQb = qprod(pose__.lQb,(INSCompensator.dlQl)); -- we do the limitedFB and sign flip on _dE_l at output of the EKF
-		lQb = qprod(lQb, e2q(_dE_l));
+		Eigen::Quaterniond tmp;
+		tmp = qprod(lQb, e2q(_dE_l));
+		lQb = tmp;
 	}
 
 

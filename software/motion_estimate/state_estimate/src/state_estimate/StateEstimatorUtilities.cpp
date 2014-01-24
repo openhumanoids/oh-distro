@@ -120,8 +120,8 @@ void StateEstimate::handle_inertial_data_temp_name(
   imu_data.w_b_measured = - 1/Ts_imu * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
   imu_data.a_b_measured = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
   
-  std::cout << "StateEstimate::handle_inertial_data_temp_name -- Rotation rates after IMU to pelvis alignment " << std::endl << imu_data.w_b_measured.transpose() << std::endl;
-  std::cout << "StateEstimate::handle_inertial_data_temp_name -- Acceleration after IMU to pelvis alignment " << std::endl << imu_data.a_b_measured.transpose() << std::endl;
+  //std::cout << "StateEstimate::handle_inertial_data_temp_name -- Rotation rates after IMU to pelvis alignment " << std::endl << imu_data.w_b_measured.transpose() << std::endl;
+  //std::cout << "StateEstimate::handle_inertial_data_temp_name -- Acceleration after IMU to pelvis alignment " << std::endl << imu_data.a_b_measured.transpose() << std::endl;
   
   // Estimate our own orientation estimate
   InerOdoEst = inert_odo.PropagatePrediction(imu_data);

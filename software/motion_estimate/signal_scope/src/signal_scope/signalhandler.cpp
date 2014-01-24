@@ -372,6 +372,20 @@ define_array_handler(AtlasControlJointsKEffortHandler, drc::atlas_command_t, k_e
 define_field_handler(AtlasControlJointsDesiredControllerPeriodHandler, drc::atlas_command_t, desired_controller_period_ms);
 
 // ins_update_request_t
+
+define_field_field_field_handler(INSUpdateRequestPoseTranslationXHandler, drc::ins_update_request_t, pose, translation, x);
+define_field_field_field_handler(INSUpdateRequestPoseTranslationYHandler, drc::ins_update_request_t, pose, translation, y);
+define_field_field_field_handler(INSUpdateRequestPoseTranslationZHandler, drc::ins_update_request_t, pose, translation, z);
+
+define_field_field_field_handler(INSUpdateRequestTwistLinearVelocityXHandler, drc::ins_update_request_t, twist, linear_velocity, x);
+define_field_field_field_handler(INSUpdateRequestTwistLinearVelocityYHandler, drc::ins_update_request_t, twist, linear_velocity, y);
+define_field_field_field_handler(INSUpdateRequestTwistLinearVelocityZHandler, drc::ins_update_request_t, twist, linear_velocity, z);
+
+define_field_field_field_handler(INSUpdateRequestPoseRotationWHandler, drc::ins_update_request_t, pose, rotation, w);
+define_field_field_field_handler(INSUpdateRequestPoseRotationXHandler, drc::ins_update_request_t, pose, rotation, x);
+define_field_field_field_handler(INSUpdateRequestPoseRotationYHandler, drc::ins_update_request_t, pose, rotation, y);
+define_field_field_field_handler(INSUpdateRequestPoseRotationZHandler, drc::ins_update_request_t, pose, rotation, z);
+
 define_field_field_handler(INSUpdateRequestGyroBiasEstX, drc::ins_update_request_t, gyroBiasEst, x);
 define_field_field_handler(INSUpdateRequestGyroBiasEstY, drc::ins_update_request_t, gyroBiasEst, y);
 define_field_field_handler(INSUpdateRequestGyroBiasEstZ, drc::ins_update_request_t, gyroBiasEst, z);
@@ -551,6 +565,16 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasControlJointsFFConstHandler>();
     factory.registerClass<AtlasControlJointsKEffortHandler>();
     factory.registerClass<AtlasControlJointsDesiredControllerPeriodHandler>();
+    factory.registerClass<INSUpdateRequestPoseTranslationXHandler>();
+    factory.registerClass<INSUpdateRequestPoseTranslationYHandler>();
+    factory.registerClass<INSUpdateRequestPoseTranslationZHandler>();
+    factory.registerClass<INSUpdateRequestTwistLinearVelocityXHandler>();
+    factory.registerClass<INSUpdateRequestTwistLinearVelocityYHandler>();
+    factory.registerClass<INSUpdateRequestTwistLinearVelocityZHandler>();
+    factory.registerClass<INSUpdateRequestPoseRotationWHandler>();
+    factory.registerClass<INSUpdateRequestPoseRotationXHandler>();
+    factory.registerClass<INSUpdateRequestPoseRotationYHandler>();
+    factory.registerClass<INSUpdateRequestPoseRotationZHandler>();
     factory.registerClass<INSUpdateRequestGyroBiasEstX>();
     factory.registerClass<INSUpdateRequestGyroBiasEstY>();
     factory.registerClass<INSUpdateRequestGyroBiasEstZ>();
