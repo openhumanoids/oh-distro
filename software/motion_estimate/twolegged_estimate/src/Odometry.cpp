@@ -116,7 +116,7 @@ namespace InertialOdometry {
 
   void Odometry::incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData) {
 
-	  std::cout << "Odometry::incorporateERRUpdate -- received and INSUpdatePacket." << std::endl;
+//	  std::cout << "Odometry::incorporateERRUpdate -- received and INSUpdatePacket." << std::endl;
 //	  std::cout << "Odometry::incorporateERRUpdate -- utime " << std::endl << updateData.utime << std::endl;
 //	  std::cout << "Odometry::incorporateERRUpdate -- dbg_b " << std::endl << updateData.dbiasGyro_b << std::endl;
 //	  std::cout << "Odometry::incorporateERRUpdate -- dba_b " << std::endl << updateData.dbiasAcc_b << std::endl;
@@ -126,7 +126,7 @@ namespace InertialOdometry {
 
 	  Eigen::Vector3d tmp;
 
-	  imu_compensator.AccumulateGyroBiases(updateData.dbiasGyro_b);
+	  imu_compensator.AccumulateGyroBiases(-updateData.dbiasGyro_b);
 	  imu_compensator.AccumulateAccelBiases(updateData.dbiasAcc_b);
 //
 //	  // update integrated states

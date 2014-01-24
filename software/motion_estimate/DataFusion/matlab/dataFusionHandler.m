@@ -8,7 +8,7 @@ iterations = 12000/50;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
-feedbackGain = 0.2;
+feedbackGain = 0.5;
 
 ENABLE_FEEDBACK = 1;
 

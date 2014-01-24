@@ -10,7 +10,7 @@
 % feedback structure. 
 
 clc
-clear
+% clear
 
 disp 'STARTING...'
 
@@ -63,7 +63,7 @@ E = [];
 GB = [];
 
 measured.wb = data(1:iter,1:3);
-measured.ab = data(1:iter,4:6) + repmat(accelbias',iter,1);
+measured.ab = data(1:iter,4:6);% + repmat(accelbias',iter,1);
 
 % remove gyro biases
 % biasg = mean(measured.wb(initstart:initend,:),1) + gyrobias';
@@ -82,6 +82,7 @@ predicted.ba = zeros(iter,3);
 
 % The recursive compensation data buffer structure
 INSCompensator = init_INSCompensator();
+INSCompensator2 = init_INSCompensator();
 
 
 % Initial conditions
@@ -135,6 +136,10 @@ for k = 1:iter
     % More representative of how LCM traffic is running
     [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
     
+    INSCompensator2.dE_l = [0;0;0];
+    INSCompensator2.dV_l = [0;0;0];
+    INSCompensator2.dP_l = [0;0;0];
+    
     PE = [PE;q2e(INSpose.lQb)'];
     
     % Run filter at a lower rate
@@ -142,7 +147,7 @@ for k = 1:iter
         m = m+1;
         
         measured.vl = init_Vl;
-        dV = measured.vl - INSpose.V_l;
+        dV = measured.vl - INSpose.V_l + 0.01*randn(3,1);
         
         if (false)
         
@@ -156,7 +161,7 @@ for k = 1:iter
             X = [X; Sys.posterior.x'];
             COV = [COV;diag(Sys.posterior.P)'];
             DV = [DV; dV'];
-            [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
+            [ Sys.posterior.x, INSCompensator2 ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator2 );
         
             
         else
@@ -171,13 +176,20 @@ for k = 1:iter
             
             % Wait for update message
             updatePacket = receiveINSUpdatePacket( aggregator );
-            disp('Received dataFusion updatePacket')
             
+            INSCompensator.utime = updatePacket.utime;
             INSCompensator.biases.bg = INSCompensator.biases.bg + updatePacket.dbiasGyro_b;
-            INSCompensator.biases.ba = INSCompensator.biases.bg + updatePacket.dbiasAcc_b;
+            INSCompensator.biases.ba = INSCompensator.biases.ba + updatePacket.dbiasAcc_b;
             INSCompensator.dE_l = updatePacket.dE_l;
             INSCompensator.dV_l = updatePacket.dVel_l;
             INSCompensator.dP_l = updatePacket.dPos_l;
+            
+%             updatePacket.utime
+%             updatePacket.dbiasGyro_b
+%             updatePacket.dbiasAcc_b
+%             updatePacket.dE_l
+%             updatePacket.dVel_l
+%             updatePacket.dPos_l
             
         end
         
@@ -205,6 +217,8 @@ for k = 1:iter
         disp(['t = ' num2str(k/1000) ' s'])
     end
 end
+
+return
 
 %% Direct Plotting
 
