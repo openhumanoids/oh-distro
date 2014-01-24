@@ -35,7 +35,7 @@ namespace InertialOdometry
 
        Eigen::Vector3d getGyroBiases();
        Eigen::Vector3d getAccelBiases();
-       Eigen::Vector3d get_accel_biases();
+       //Eigen::Vector3d get_accel_biases();
 
        void cout_current_values();
   };

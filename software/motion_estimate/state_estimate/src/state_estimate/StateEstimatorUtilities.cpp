@@ -272,6 +272,18 @@ void StateEstimate::stampInertialPoseUpdateRequestMsg(InertialOdometry::Odometry
   msg.twist.angular_velocity.y = _insState.w_l(1);
   msg.twist.angular_velocity.z = _insState.w_l(2);
   
+  msg.gyroBiasEst.x = inert_odo.imu_compensator.getGyroBiases()(0);
+  msg.gyroBiasEst.y = inert_odo.imu_compensator.getGyroBiases()(1);
+  msg.gyroBiasEst.z = inert_odo.imu_compensator.getGyroBiases()(2);
+
+  msg.gyroBiasEst.x = inert_odo.imu_compensator.getGyroBiases()(0);
+  msg.gyroBiasEst.y = inert_odo.imu_compensator.getGyroBiases()(1);
+  msg.gyroBiasEst.z = inert_odo.imu_compensator.getGyroBiases()(2);
+
+  msg.accBiasEst.x = inert_odo.imu_compensator.getAccelBiases()(0);
+  msg.accBiasEst.y = inert_odo.imu_compensator.getAccelBiases()(1);
+  msg.accBiasEst.z = inert_odo.imu_compensator.getAccelBiases()(2);
+
   return;
 }
 

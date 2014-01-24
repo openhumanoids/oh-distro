@@ -109,10 +109,6 @@ namespace InertialOdometry {
     return;
   }
 
-   Eigen::Vector3d IMUCompensation::get_accel_biases() {
-	   return accel_biases;
-   }
-
    Eigen::Vector3d IMUCompensation::getGyroBiases() {
 
 	   return gyro_biases;
