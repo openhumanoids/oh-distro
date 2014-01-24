@@ -1288,7 +1288,7 @@
             <visibility>1.000000</visibility>
           </technique>
         </extra>
-        <node name="r_foot" id="r_foot" sid="r_foot">
+        <node name="r_foot_node" id="r_foot_node" sid="r_foot_node">
           <matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix>
           <extra>
             <technique profile="FCOLLADA">
