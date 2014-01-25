@@ -78,7 +78,7 @@ bool FootStepPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::
     using goby::glog;
     using namespace goby::common::logger;
     
-    drc::footstep_plan_t lcm_object;
+    drc::deprecated_footstep_plan_t lcm_object;
     if(lcm_object.decode(&lcm_data[0], 0, lcm_data.size()) == -1)
         return false;
 
@@ -156,7 +156,7 @@ bool FootStepPlanCodec::decode(std::vector<unsigned char>* lcm_data, const std::
 
     glog.is(VERBOSE) && glog << "MinimalFootStepPlan: " << pb_to_short_string(dccl_plan) << std::endl;
     
-    drc::footstep_plan_t lcm_object;
+    drc::deprecated_footstep_plan_t lcm_object;
     lcm_object.utime = dccl_plan.utime();
     lcm_object.robot_name = "atlas";
     lcm_object.num_steps = dccl_plan.goal_diff().bool_mask_size() + 1; // +1 for first_goal    

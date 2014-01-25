@@ -81,7 +81,7 @@ classdef FootstepPlanPublisher
 				t = get_timestamp_now()*1e-6;% get_timestamp already returns in usec, so converting to sec as we multiply by 1e6 later
 			end
 		    robot_name = 'atlas';
-		    msg = drc.footstep_plan_t();
+		    msg = drc.deprecated_footstep_plan_t();
 		    msg.utime = t * 1000000;
 		    msg.robot_name = robot_name;
 		    msg.num_steps = length(X);

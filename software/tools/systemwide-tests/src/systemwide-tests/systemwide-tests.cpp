@@ -11,7 +11,7 @@
 #include "lcmtypes/drc/controller_status_t.hpp"
 #include "lcmtypes/drc/data_request_t.hpp"
 #include "lcmtypes/drc/data_request_list_t.hpp"
-#include "lcmtypes/drc/footstep_plan_t.hpp"
+#include "lcmtypes/drc/deprecated_footstep_plan_t.hpp"
 #include "lcmtypes/drc/robot_plan_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/walking_goal_t.hpp"
@@ -36,7 +36,7 @@ class Pass{
     int verbose_;
     boost::shared_ptr<lcm::LCM> lcm_;
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);   
-    void candidateFootstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::footstep_plan_t* msg);    
+    void candidateFootstepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::deprecated_footstep_plan_t* msg);    
     void candidateRobotPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_plan_t* msg);    
     void controllerStatusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::controller_status_t* msg);    
     
@@ -50,7 +50,7 @@ class Pass{
     
     int footsteps_;
     
-    drc::footstep_plan_t last_footstep_msg_;
+    drc::deprecated_footstep_plan_t last_footstep_msg_;
     
     bool was_walking_last_;
 };
@@ -190,7 +190,7 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 void Pass::candidateFootstepPlanHandler(const lcm::ReceiveBuffer* rbuf, 
-                             const std::string& channel, const  drc::footstep_plan_t* msg){
+                             const std::string& channel, const  drc::deprecated_footstep_plan_t* msg){
   if (stage_==1){
     sendDataRequests(msg->utime);
     sleep(1); 

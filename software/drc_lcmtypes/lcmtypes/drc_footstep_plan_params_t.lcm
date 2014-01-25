@@ -1,0 +1,39 @@
+package drc;
+
+struct footstep_plan_params_t
+{
+	int64_t utime;
+
+	int32_t max_num_steps;
+	int32_t min_num_steps;
+
+	// Parameters which define the feasible foot offsets
+	float min_step_width;
+	float nom_step_width;
+	float max_step_width;
+	float nom_forward_step;
+	float max_forward_step;
+
+	// The defaults for parameters which may vary from one step to another
+	footstep_params_t default_footstep_params;
+
+	boolean follow_spline;
+	boolean ignore_terrain;
+	boolean force_to_sticky_feet;
+
+    int8_t behavior;
+    const int8_t BEHAVIOR_WALKING = 0;
+    const int8_t BEHAVIOR_CRAWLING = 1;
+    const int8_t BEHAVIOR_BDI_WALKING = 2;
+    const int8_t BEHAVIOR_BDI_STEPPING = 3;
+
+	int8_t map_command;
+
+	// whether to allow optimization of the foostep plan
+	boolean allow_optimization;
+
+	int8_t leading_foot;
+	const int8_t LEAD_RIGHT = 1;
+	const int8_t LEAD_LEFT = 0;
+	const int8_t LEAD_AUTO = -1;
+}

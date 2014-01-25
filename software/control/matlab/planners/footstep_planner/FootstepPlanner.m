@@ -22,9 +22,9 @@ classdef FootstepPlanner < DRCPlanner
 
       obj = addInput(obj,'goal', 'WALKING_GOAL', 'drc.walking_goal_t', false, true, true);
       obj = addInput(obj,'x0','EST_ROBOT_STATE',obj.biped.getStateFrame().lcmcoder,true,true,false);
-      obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.footstep_plan_t(), false, true,false);
-      obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true,false);
-      obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.footstep_plan_t(), false, true,false);
+      obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.deprecated_footstep_plan_t(), false, true,false);
+      obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.deprecated_footstep_plan_t(), false, true,false);
+      obj = addInput(obj, 'plan_reject', 'REJECTED_FOOTSTEP_PLAN', drc.deprecated_footstep_plan_t(), false, true,false);
       obj = addInput(obj, 'step_seq', 'DESIRED_FOOT_STEP_SEQUENCE', drc.traj_opt_constraint_t(), false, true,true);
       obj.goal_pos = [];
       obj.adjusted_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');

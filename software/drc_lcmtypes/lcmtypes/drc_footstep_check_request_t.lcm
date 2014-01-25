@@ -1,0 +1,11 @@
+package drc;
+
+struct footstep_check_request_t
+{
+	int64_t utime;
+
+	footstep_plan_t footstep_plan;
+	footstep_plan_params_t footstep_params;
+	boolean snap_to_terrain;
+	boolean compute_infeasibility;
+}

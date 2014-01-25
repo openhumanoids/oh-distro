@@ -6,7 +6,7 @@
 #include <bot_vis/gl_util.h>
 #include <bot_core/fasttrig.h>
 #include "lcmtypes/drc_utime_t.h"
-#include "lcmtypes/drc_footstep_plan_t.h"
+#include "lcmtypes/drc_deprecated_footstep_plan_t.h"
 
 #define RENDERER_NAME "Footstep Plans"
 #define PARAM_SHOW_DETAILS "Show Step Details"
@@ -355,7 +355,7 @@ static void onPlanExecuteEvent (const lcm_recv_buf_t * buf, const char *channel,
 }
 
 static void onPlanRejectEvent (const lcm_recv_buf_t * buf, const char *channel, 
-                               const drc_footstep_plan_t *msg, void *user)
+                               const drc_deprecated_footstep_plan_t *msg, void *user)
 {
   RendererStickyFeet *self = (RendererStickyFeet*) user;
   if(self->plan_execution_dock!=NULL)
@@ -421,7 +421,7 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     // C-style subscribe:
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_UTIME",onRobotUtime,self); 
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"FOOTSTEP_PLAN_EXECUTE_EVENT",onPlanExecuteEvent,self);
-    drc_footstep_plan_t_subscribe(self->lcm->getUnderlyingLCM(),"REJECTED_FOOTSTEP_PLAN",onPlanRejectEvent,self);
+    drc_deprecated_footstep_plan_t_subscribe(self->lcm->getUnderlyingLCM(),"REJECTED_FOOTSTEP_PLAN",onPlanRejectEvent,self);
 
     bot_gtk_param_widget_add_buttons(self->pw, PARAM_CLEAR_FOOTSTEP_PLAN, NULL);
     bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_DETAILS, 0, NULL);

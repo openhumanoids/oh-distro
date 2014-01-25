@@ -30,4 +30,6 @@ struct footstep_goal_t
 	int32_t num_terrain_pts;
 	float terrain_path_dist[num_terrain_pts];
 	float terrain_height[num_terrain_pts];
+
+	double infeasibility;
 }
