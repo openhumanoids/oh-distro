@@ -34,7 +34,6 @@ setup_drcsim()
   export GAZEBO_MODEL_PATH=$DRC_BASE/software/models/mit_gazebo_models:$GAZEBO_MODEL_PATH
   export GAZEBO_MODEL_PATH=$DRC_BASE/software/models/mit_gazebo_objects:$GAZEBO_MODEL_PATH
   export VRC_CHEATS_ENABLED=1
-  export CPLUS_INCLUDE_PATH=/usr/include/player-3.0:/usr/local/include/gazebo-2.2/gazebo:$CPLUS_INCLUDE_PATH
 }
 
 
