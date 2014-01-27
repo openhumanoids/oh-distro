@@ -338,7 +338,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
     // if not expiration timer
     //std::cout << "before " << expire_bias_avg_process.getState() << " | " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl;
     if (!expire_bias_avg_process.getState()) {
-      inert_odo.imu_compensator.AccumulateAccelBiases(db_a);
+      inert_odo.imu_compensator.AccumulateAccelBiases(Eigen::Vector3d(db_a[0], db_a[1], db_a[2]));
 
       double norm = sqrt(db_a[0]*db_a[0]+db_a[1]*db_a[1]+db_a[2]*db_a[2]);
 
@@ -365,7 +365,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
     if (allowbiasestimation) {
       //std::cout << "Bias averaging is being allowed.\n";
 
-      acc_bias_avg.processSamples(inert_odo.imu_compensator.get_accel_biases());
+      acc_bias_avg.processSamples(inert_odo.imu_compensator.getAccelBiases());
       //std::cout << "bias is: " << acc_bias_avg.getCA().transpose() << std::endl;
 
       // we should run run the expire counter here
@@ -407,7 +407,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
             << "IO.q : " << InerO.lQb.w() << ", " << InerO.lQb.x() << ", " << InerO.lQb.y() << ", " << InerO.lQb.z() << std::endl
             << "err_b: " << err_b.transpose() << std::endl
             << "a_b_measured: " << just_checking_imu_frame.a_b_measured.transpose() << std::endl
-            << "ba_b: " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl
+            << "ba_b: " << inert_odo.imu_compensator.getAccelBiases().transpose() << std::endl
             << "a_b: " << just_checking_imu_frame.a_b.transpose() << std::endl
             << "a_l " << just_checking_imu_frame.a_l.transpose() << std::endl
             << "f_l " << just_checking_imu_frame.f_l.transpose() << std::endl
@@ -777,7 +777,7 @@ void LegOdometry_Handler::publishAccBiasEst(const unsigned long long &uts) {
     drc::estimated_biases_t msg;
 
     Eigen::Vector3d biases;
-    biases = inert_odo.imu_compensator.get_accel_biases();
+    biases = inert_odo.imu_compensator.getAccelBiases();
 
     msg.utime = uts;
     msg.x = (float)biases(0);
@@ -1194,7 +1194,7 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 
    Eigen::Vector3d biasesa;
 
-   biasesa = inert_odo.imu_compensator.get_accel_biases();
+   biasesa = inert_odo.imu_compensator.getAccelBiases();
 
    for (int i=0;i<3;i++) {
         ss << biasesa(i) << ", ";//140-142
@@ -1567,6 +1567,6 @@ void LegOdometry_Handler::terminate() {
 
 Eigen::Vector3d LegOdometry_Handler::getInerAccBiases() {
 
-  return inert_odo.imu_compensator.get_accel_biases();
+  return inert_odo.imu_compensator.getAccelBiases();
 }
 

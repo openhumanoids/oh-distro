@@ -44,7 +44,6 @@ namespace InertialOdometry {
 	  Eigen::Vector3d f_l;
 	  Eigen::Vector3d a_l;
 	  Eigen::Vector3d w_l;
-	  Eigen::Vector3d E;
 	  Eigen::Vector3d b_a;
 	  Eigen::Vector3d b_g;
 
@@ -65,6 +64,8 @@ namespace InertialOdometry {
   
   struct INSUpdatePacket {
 	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	  unsigned long long utime;
 
 	  Eigen::Vector3d dbiasGyro_b;
 	  Eigen::Vector3d dbiasAcc_b;
@@ -133,7 +134,7 @@ namespace InertialOdometry {
     	   Qimu.setZero(6,6);
     	   Qimu.setIdentity(6,6);
     	   
-    	   gravity << 0, 0, 9.81;
+    	   gravity << 0, 0, 9.8;
        }
   };
 

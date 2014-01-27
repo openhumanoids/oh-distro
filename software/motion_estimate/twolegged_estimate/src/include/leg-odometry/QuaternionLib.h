@@ -17,6 +17,7 @@ void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew);
 
 Eigen::Quaterniond qprod(const Eigen::Quaterniond &_b, const Eigen::Quaterniond &_a);
 Eigen::Vector3d qrot(const Eigen::Quaterniond &_aQb, const Eigen::Vector3d &_v);
+Eigen::Quaterniond exmap(const Eigen::Vector3d &dE_l, const Eigen::Quaterniond &lQb);
 
 namespace InertialOdometry 
 {

@@ -11,8 +11,8 @@ namespace InertialOdometry {
   class VP_Mechanization {
     private:
       InertialOdomOutput state;
-      TrapezoidalInt a2v;
-      TrapezoidalInt v2p;
+      //TrapezoidalInt a2v;
+      //TrapezoidalInt v2p;
 
       Parameters std_param;
 
@@ -30,6 +30,9 @@ namespace InertialOdometry {
 
       void setPosStates(const Eigen::Vector3d &P_set);
       void setVelStates(const Eigen::Vector3d &V_set);
+
+      Eigen::Vector3d getVelStates();
+      Eigen::Vector3d getPosStates();
 
       int Reset_all_states();
 

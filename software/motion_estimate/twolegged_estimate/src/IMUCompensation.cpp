@@ -11,27 +11,37 @@ namespace InertialOdometry {
     //std::cout << "The gyro biases were updated" << std::endl;
   }
 
-  void IMUCompensation::AccumulateGyroBiases(const double delta_biases[3]) {
+  void IMUCompensation::AccumulateGyroBiases(const Eigen::Vector3d &_delta_biases) {
 
-	  std::cout << "IMUCompensation::AccumulateGyroBiases -- deltaGyrobias " << delta_biases[0] << ", " << delta_biases[1] << ", " <<  delta_biases[2] << ", " << std::endl;
-	  for (int i=0;i<3;i++) {
-       gyro_biases(i) = gyro_biases(i) + delta_biases[i];
-	}
+	  //std::cout << "IMUCompensation::AccumulateGyroBiases -- deltaGyrobias " << delta_biases[0] << ", " << delta_biases[1] << ", " <<  delta_biases[2] << ", " << std::endl;
+	  //	  for (int i=0;i<3;i++) {
+	  //        gyro_biases(i) = gyro_biases(i) + delta_biases[i];
+	  //	  }
 
-	std::cout << "IMUCompensation::AccumulateGyroBiases -- gyro bias now is " << gyro_biases.transpose() << std::endl;
+	Eigen::Vector3d tmp;
+
+	tmp = gyro_biases + _delta_biases;
+	gyro_biases = tmp;
+	//
+	//	std::cout << "IMUCompensation::AccumulateGyroBiases -- gyro bias now is " << gyro_biases.transpose() << std::endl;
   }
                                                                          
   void IMUCompensation::UpdateAccelBiases(const double biases[3])
   {
-	std::cout << "Accel biases being updated: " << biases[0] << ", " << biases[1] << ", " << biases[2] << std::endl;
+	//std::cout << "IMUCompensation::UpdateAccelBiases -- Accel biases being updated: " << biases[0] << ", " << biases[1] << ", " << biases[2] << std::endl;
     for (int i=0;i<3;i++)
       accel_biases(i) = biases[i];
   }
 
-  void IMUCompensation::AccumulateAccelBiases(const double delta_biases[3]) {
-	  for (int i=0;i<3;i++) {
-	        accel_biases(i) += delta_biases[i];
-	  }
+  void IMUCompensation::AccumulateAccelBiases(const Eigen::Vector3d &_delta_biases) {
+	  Eigen::Vector3d tmp;
+
+	  tmp = accel_biases + _delta_biases;
+	  accel_biases = tmp;
+
+	  //	  for (int i=0;i<3;i++) {
+	  //	        accel_biases(i) += delta_biases[i];
+	  //	  }
   }
 
   void IMUCompensation::UpdateGyroScaleFactor(const double sf[3])
@@ -76,6 +86,7 @@ namespace InertialOdometry {
   void IMUCompensation::Gyro_Compensation(IMU_dataframe &_imu)
   {    
     _imu.w_b = gyro_errors * (_imu.w_b_measured - gyro_biases);
+    //std::cout << "IMUCompensation::Gyro_Compensation -- gyro biases are" << std::endl << gyro_biases << std::endl;
     _imu.gyro_compensated_flag = true;
     return;
   }
@@ -99,10 +110,6 @@ namespace InertialOdometry {
     return;
   }
 
-   Eigen::Vector3d IMUCompensation::get_accel_biases() {
-	   return accel_biases;
-   }
-
    Eigen::Vector3d IMUCompensation::getGyroBiases() {
 
 	   return gyro_biases;
@@ -118,7 +125,7 @@ namespace InertialOdometry {
   IMUCompensation::IMUCompensation()
   {
 
-    std::cout << "An InertialOdometry::IMUCompensation Object was created." << std::endl;
+    //std::cout << "An InertialOdometry::IMUCompensation Object was created." << std::endl;
     
     double initvector[3];
 

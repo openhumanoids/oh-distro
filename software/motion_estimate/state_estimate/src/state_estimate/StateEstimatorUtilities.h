@@ -70,17 +70,14 @@ void insertAtlasJoints(const drc::atlas_state_t* msg, Joints &jointContainer, Ro
 // Store result as StateEstimator:: state
 void doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot);
 
-
 // IMU DATA============================================================================
-void handle_inertial_data_temp_name(
-		const double Ts_imu,
-		const drc::atlas_raw_imu_t &imu,
-		const bot_core::pose_t &bdiPose,
-		const Eigen::Isometry3d &IMU_to_body,
-		InertialOdometry::Odometry &inert_odo,
-		drc::robot_state_t& _ERSmsg,
-		drc::ins_update_request_t& _DFRequest,
-		TwoLegs::TwoLegOdometry *_leg_odo);
+InertialOdometry::DynamicState PropagateINS(	const double &Ts_imu,
+												InertialOdometry::Odometry &inert_odo,
+												const Eigen::Isometry3d &IMU_to_body,
+												const drc::atlas_raw_imu_t &imu);
+
+
+void stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst, drc::robot_state_t &msg);
 
 //int getIMUBodyAlignment(const unsigned long utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_);
 
@@ -88,15 +85,15 @@ void handle_inertial_data_temp_name(
 // DATA FUSION UTILITIES ==============================================================
 
 //void packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg);
-void stampInertialPoseUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, drc::ins_update_request_t &msg);
+void stampInertialPoseUpdateRequestMsg(const InertialOdometry::DynamicState &_insState, drc::ins_update_request_t &msg);
 void stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg);
 void stampLegOdoPoseUpdateRequestMsg(TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg);
-
-//void stampPositionReferencePoseUpdateRequest(const Eigen::Vector3d &_refPos, drc::ins_update_request_t &msg);
 void stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const int type, drc::ins_update_request_t &msg);
-void copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to);
 
+// Utilities
+void copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to);
 void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot);
+void detectIMUSampleTime(unsigned long long &prevImuPacketCount, unsigned long long &previous_imu_utime, int &receivedIMUPackets, double &previous_Ts_imu, const drc::atlas_raw_imu_t &imu);
 
 } // namespace StateEstimate
 
