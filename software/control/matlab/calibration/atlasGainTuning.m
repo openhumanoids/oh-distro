@@ -40,6 +40,10 @@ chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offse
 
 % z/foh
 vals = 20*[0 1 1 -1 -1 0 0];% <----  Nm or radians
+
+% inverse dynamics PD gains (only for input=position, control=force)
+Kp = 19;
+Kd = 7;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -47,7 +51,6 @@ vals = 20*[0 1 1 -1 -1 0 0];% <----  Nm or radians
 
 if strcmp(signal, 'chirp')
   ts = linspace(0,T,800);
-  freq = linspace(chirp_f0,chirp_fT,800);
 else
   ts = linspace(0,T,length(vals));
 end
@@ -59,7 +62,6 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 % load fixed-base model
 options.floating = false;
 r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
-fixed_joint_idx = find(strcmp(r_fixed.getStateFrame.coordinates,joint));
 
 % setup frames
 state_frame = getStateFrame(r);
@@ -69,10 +71,13 @@ ref_frame = AtlasPosTorqueRef(r);
 
 nq = getNumDOF(r);
 nu = getNumInputs(r);
+nq_fixed = getNumDOF(r_fixed);
 
 joint_index_map = cell2struct(num2cell(1:nq),state_frame.coordinates(1:nq),2);
+joint_index_map_fixed = cell2struct(num2cell(1:nq),r_fixed.getStateFrame.coordinates(1:nq),2);
 
 act_idx = getActuatedJoints(r);
+act_idx_fixed = getActuatedJoints(r_fixed);
 
 % check value ranges --- TODO: should be joint specific
 if ~exist('vals','var')
@@ -138,33 +143,31 @@ elseif strcmp(control_mode,'position')
 else
   error('unknown control mode');
 end 
-
 ref_frame.updateGains(gains);
-udes = zeros(nu,1);
 
 vals = motion_sign * vals;
 if strcmp(input_mode,'position')
   offset = qdes(joint_index_map.(joint));
   vals = offset + vals;  
+else
+  offset = 0;
 end
+
 if strcmp(signal,'zoh')
   input_traj = PPTrajectory(zoh(ts,vals));
 elseif strcmp(signal,'foh')
   input_traj = PPTrajectory(foh(ts,vals));
 elseif strcmp(signal,'chirp')
-  if strcmp(input_mode,'force')
-    offset = 0;
-  end
-  if chirp_sign==0
-  	input_traj = PPTrajectory(foh(ts, offset + amp*sin(ts.*freq*2*pi)));
-  else
-    input_traj = PPTrajectory(foh(ts, offset + chirp_sign*motion_sign*(0.5*amp - 0.5*amp*cos(ts.*freq*2*pi))));
-  end
+  input_traj = chirpTraj(amp,chirp_f0,chirp_fT,T,offset,chirp_sign*motion_sign);
 else
   error('unknown signal');
 end
 
+inputd_traj = fnder(input_traj,1);
+inputdd_traj = fnder(input_traj,2);
+
 qdes=qdes(act_idx); % convert to input frame
+udes = zeros(nu,1);
 toffset = -1;
 tt=-1;
 while tt<T
@@ -177,7 +180,26 @@ while tt<T
     if strcmp(input_mode,'force')
       udes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt);
     elseif strcmp(input_mode,'position')
-      qdes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt);
+      jdes = input_traj.eval(tt);
+      jddes = inputd_traj.eval(tt);
+      jdddes = inputdd_traj.eval(tt);
+      
+      qdes(act_idx==joint_index_map.(joint)) = jdes;
+      
+      if strcmp(control_mode,'force')
+        % do inverse dynamics on fixed base model
+        q = x(6+(1:nq_fixed));
+        qd = x(nq_fixed+12+(1:nq_fixed));
+        [H,C,B] = manipulatorDynamics(r_fixed,q,qd);
+
+        qddot_des = zeros(nq_fixed,1);
+        fidx = joint_index_map_fixed.(joint);
+        qddot_des(fidx) = jdddes + Kp*(jdes-q(fidx)) + Kd*(jddes-qd(fidx));
+
+        u = B\(H*qddot_des + C);
+        udes(act_idx==joint_index_map.(joint)) = u(act_idx_fixed==joint_index_map_fixed.(joint));
+      end
+        
     end
     ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
   end
