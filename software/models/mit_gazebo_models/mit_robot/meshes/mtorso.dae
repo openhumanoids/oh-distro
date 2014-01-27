@@ -224,7 +224,7 @@
             <visibility>1.000000</visibility>
           </technique>
         </extra>
-        <node name="mtorso" id="mtorso" sid="mtorso">
+        <node name="mtorso_node" id="mtorso_node" sid="mtorso_node">
           <matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix>
           <extra>
             <technique profile="FCOLLADA">

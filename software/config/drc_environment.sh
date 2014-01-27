@@ -28,9 +28,7 @@ set_drc_base()
 setup_drcsim()
 {
   source /usr/local/share/drcsim/setup.sh # this will also source setup.sh for ROS and Gazebo
-  export LD_LIBRARY_PATH=/opt/ros/fuerte/stacks/visualization_common/ogre/ogre/lib:$LD_LIBRARY_PATH
   export ROS_PACKAGE_PATH=$DRC_BASE/ros_workspace:$ROS_PACKAGE_PATH
-  #:/usr/share/osrf-common-1.0/ros
   export GAZEBO_PLUGIN_PATH=$DRC_BASE/software/build/lib:$GAZEBO_PLUGIN_PATH
   export GAZEBO_PLUGIN_PATH=$DRC_BASE/ros_workspace/mit_drcsim_plugins/lib:$GAZEBO_PLUGIN_PATH
   export GAZEBO_MODEL_PATH=$DRC_BASE/software/models/mit_gazebo_models:$GAZEBO_MODEL_PATH

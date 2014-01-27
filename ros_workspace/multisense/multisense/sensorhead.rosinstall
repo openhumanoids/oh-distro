@@ -1,9 +1,0 @@
--hg:
-  local-name: multisense
-  uri:ssh://hg@bitbucket.org/ekratzer/cr_multisense
-  version: default
-
--hg:
-  local-name: osrf_multisense
-  uri: ssh://hg@bitbucket.org/osrf/drcsim
-  version: sandia_hand_integration
