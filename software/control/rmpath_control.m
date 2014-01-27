@@ -23,6 +23,7 @@ rmpath_drake;
 
 % remove the drake control matlab util directory into the matlab path:
 rmpath(fullfile(pwd,'matlab'));
+rmpath(fullfile(pwd,'matlab','calibration'));
 rmpath(fullfile(pwd,'matlab','controllers'));
 rmpath(fullfile(pwd,'matlab','planners'));
 rmpath(fullfile(pwd,'matlab','planners','constraints'));
