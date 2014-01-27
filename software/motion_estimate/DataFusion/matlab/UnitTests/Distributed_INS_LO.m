@@ -115,7 +115,7 @@ updatePackets = [];
 
 % this is the filter update counter
 FilterRate = 50;
-limitedFB = 0.5;
+limitedFB = 1;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
@@ -129,7 +129,6 @@ for k = 1:iter
     inertialData.measured.a_b = measured.ab(k,:)';
     inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
     inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
-    INSCompensator.biases.bg
     % Propagate inertial solution, first apply scheduled INS update (if available)
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
@@ -148,9 +147,9 @@ for k = 1:iter
         m = m+1;
         
         measured.vl = init_Vl;
-        dV = measured.vl - INSpose.V_l + 0.01*randn(3,1);
+        dV = measured.vl - INSpose.V_l + 0.*randn(3,1);
         
-        if (false)
+        if (true)
         
             Measurement.INS.pose = INSpose;
             Measurement.velocityResidual = dV;
@@ -162,7 +161,7 @@ for k = 1:iter
             X = [X; Sys.posterior.x'];
             COV = [COV;diag(Sys.posterior.P)'];
             DV = [DV; dV'];
-            [ Sys.posterior.x, INSCompensator2 ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator2 );
+            [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
         
             
         else
@@ -185,15 +184,6 @@ for k = 1:iter
             INSCompensator.dE_l = updatePacket.dE_l;
             INSCompensator.dV_l = updatePacket.dVel_l;
             INSCompensator.dP_l = updatePacket.dPos_l;
-            
-            updatePackets = [updatePackets; updatePacket.dbiasGyro_b'];
-            
-%             updatePacket.utime
-%             updatePacket.dbiasGyro_b
-%             updatePacket.dbiasAcc_b
-%             updatePacket.dE_l
-%             updatePacket.dVel_l
-%             updatePacket.dPos_l
             
         end
         
@@ -222,7 +212,7 @@ for k = 1:iter
     end
 end
 
-return
+% return
 
 %% Direct Plotting
 
@@ -285,31 +275,31 @@ title('Predicted local to body Euler angles')
 
 % Plot velocity components separately
 
-figure(3), clf
-
-subplot(611)
-plot(predicted.ab)
-title('Predicted accelerations in body frame')
-
-subplot(612)
-plot(predicted.fl)
-title('Predicted local frame specific force')
-
-subplot(613)
-plot(predicted.vl)
-title('Preidcted local frame velocity')
-
-subplot(614)
-plot(DX(:,7:9))
-title('Kalman updates to estimated local frame velocity errors -- DV')
-
-subplot(615)
-plot(predicted.vl)
-title('Predicted local frame velocities')
-
-subplot(616)
-plot(X(:,13:15))
-title('Estimated accelerometer biases')
+% figure(3), clf
+% 
+% subplot(611)
+% plot(predicted.ab)
+% title('Predicted accelerations in body frame')
+% 
+% subplot(612)
+% plot(predicted.fl)
+% title('Predicted local frame specific force')
+% 
+% subplot(613)
+% plot(predicted.vl)
+% title('Preidcted local frame velocity')
+% 
+% subplot(614)
+% plot(DX(:,7:9))
+% title('Kalman updates to estimated local frame velocity errors -- DV')
+% 
+% subplot(615)
+% plot(predicted.vl)
+% title('Predicted local frame velocities')
+% 
+% subplot(616)
+% plot(X(:,13:15))
+% title('Estimated accelerometer biases')
 
 
 % Gray box INS state estimate

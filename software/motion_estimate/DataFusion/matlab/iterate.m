@@ -34,7 +34,7 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 
 % EKF
 [F, L, Q] = dINS_EKFmodel(Measurement.INS.pose);
-covariances.R = diag( 1E0*ones(3,1) );
+covariances.R = diag( 5E0*ones(3,1) );
 
 Disc.B = 0;
 Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
