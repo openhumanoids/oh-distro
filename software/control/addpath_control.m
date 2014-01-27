@@ -50,6 +50,7 @@ addpath([pods_get_base_path,'/matlab']);
 addpath(fullfile(pwd,'matlab'));
 addpath(fullfile(pwd,'matlab','controllers'));
 addpath(fullfile(pwd,'matlab','planners'));
+addpath(fullfile(pwd,'matlab','planners','constraints'));
 addpath(fullfile(pwd,'matlab','planners','drill_planner'));
 addpath(fullfile(pwd,'matlab','planners','ladder_planner'));
 addpath(fullfile(pwd,'matlab','planners','driving_planner'));
