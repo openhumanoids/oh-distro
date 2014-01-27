@@ -26,16 +26,16 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 joint = 'r_leg_hpz';% <---- joint name 
 input_mode = 'position';% <---- force, position
-control_mode = 'force';% <---- force, position
+control_mode = 'position';% <---- force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
 T = 30;% <--- signal duration (sec)
 
 % chirp specific
-amp = 2;% <----  Nm or radians
+amp = 0.1;% <----  Nm or radians
 chirp_f0 = 0.25;% <--- chirp starting frequency
-chirp_fT = 1.00;% <--- chirp ending frequency
+chirp_fT = 0.50;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
@@ -80,7 +80,7 @@ act_idx = getActuatedJoints(r);
 act_idx_fixed = getActuatedJoints(r_fixed);
 
 % check value ranges --- TODO: should be joint specific
-if ~exist('vals','var')
+if strcmp(signal,'chirp')
   vals=amp;
 end
 if strcmp(control_mode,'force')
@@ -114,18 +114,12 @@ gains.ff_qd = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % setup desired pose based on joint being tuned
-[qdes,motion_sign] = getAtlasJointMotionConfig(r,joint_name);
+[qdes,motion_sign] = getAtlasJointMotionConfig(r,joint);
 
 % move to desired pos
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
 
-% set gains to user specified values
-gains.ff_const(act_idx==joint_index_map.(joint)) = ff_const;
 if strcmp(control_mode,'force')
-  % set force gains
-  gains.k_f_p(act_idx==joint_index_map.(joint)) = k_f_p; 
-  gains.ff_f_d(act_idx==joint_index_map.(joint)) = ff_f_d;
-  gains.ff_qd(act_idx==joint_index_map.(joint)) = ff_qd;
   % set joint position gains to 0
   gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;
   gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
@@ -136,10 +130,6 @@ elseif strcmp(control_mode,'position')
   gains.k_f_p(act_idx==joint_index_map.(joint)) = 0; 
   gains.ff_f_d(act_idx==joint_index_map.(joint)) = 0;
   gains.ff_qd(act_idx==joint_index_map.(joint)) = 0;
-  % set joint position gains 
-  gains.k_q_p(act_idx==joint_index_map.(joint)) = k_q_p;
-  gains.k_q_i(act_idx==joint_index_map.(joint)) = k_q_i;
-  gains.k_qd_p(act_idx==joint_index_map.(joint)) = k_qd_p;
 else
   error('unknown control mode');
 end 
@@ -181,9 +171,6 @@ while tt<T
       udes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt);
     elseif strcmp(input_mode,'position')
       jdes = input_traj.eval(tt);
-      jddes = inputd_traj.eval(tt);
-      jdddes = inputdd_traj.eval(tt);
-      
       qdes(act_idx==joint_index_map.(joint)) = jdes;
       
       if strcmp(control_mode,'force')
@@ -191,6 +178,9 @@ while tt<T
         q = x(6+(1:nq_fixed));
         qd = x(nq_fixed+12+(1:nq_fixed));
         [H,C,B] = manipulatorDynamics(r_fixed,q,qd);
+
+        jddes = inputd_traj.eval(tt);
+        jdddes = inputdd_traj.eval(tt);
 
         qddot_des = zeros(nq_fixed,1);
         fidx = joint_index_map_fixed.(joint);

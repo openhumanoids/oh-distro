@@ -144,17 +144,17 @@ elseif any(strcmp(joint_name,{'r_arm_elx','r_arm_uwy','r_arm_mwx'}))
       error('unknown config_id');
   end
 
-elseif strcmp(joint,'l_leg_hpy') 
+elseif strcmp(joint_name,'l_leg_hpy') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
   qdes(joint_index_map.r_leg_hpx) = -0.25;
   
-elseif strcmp(joint,'r_leg_hpy') 
+elseif strcmp(joint_name,'r_leg_hpy') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
   qdes(joint_index_map.l_leg_hpx) = 0.25;
 
-elseif strcmp(joint,'l_leg_hpz') 
+elseif strcmp(joint_name,'l_leg_hpz') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
   switch config_id
@@ -166,7 +166,7 @@ elseif strcmp(joint,'l_leg_hpz')
       error('unknown config_id');
   end
 
-elseif strcmp(joint,'r_leg_hpz') 
+elseif strcmp(joint_name,'r_leg_hpz') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
   switch config_id
@@ -178,24 +178,24 @@ elseif strcmp(joint,'r_leg_hpz')
       error('unknown config_id');
   end
   
-elseif strcmp(joint,'l_leg_hpx') 
+elseif strcmp(joint_name,'l_leg_hpx') 
   qdes(joint_index_map.r_arm_shx) = 0.7;
   qdes(joint_index_map.l_arm_shx) = -0.7;
   qdes(joint_index_map.r_leg_hpx) = -0.5;
 
-elseif strcmp(joint,'r_leg_hpx') 
+elseif strcmp(joint_name,'r_leg_hpx') 
   qdes(joint_index_map.r_arm_shx) = 0.7;
   qdes(joint_index_map.l_arm_shx) = -0.7;
   qdes(joint_index_map.l_leg_hpx) = 0.5;
   motion_direction = -1;
 
-elseif strcmp(joint,'l_leg_kny') 
+elseif strcmp(joint_name,'l_leg_kny') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
   qdes(joint_index_map.l_leg_hpy) = -pi/2;
   qdes(joint_index_map.l_leg_kny) = pi/2;  
 
-elseif strcmp(joint,'r_leg_kny') 
+elseif strcmp(joint_name,'r_leg_kny') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
   qdes(joint_index_map.r_leg_hpy) = -pi/2;
