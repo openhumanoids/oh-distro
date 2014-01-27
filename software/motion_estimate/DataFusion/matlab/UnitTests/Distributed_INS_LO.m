@@ -129,7 +129,7 @@ for k = 1:iter
     inertialData.measured.a_b = measured.ab(k,:)';
     inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
     inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
-    
+    INSCompensator.biases.bg
     % Propagate inertial solution, first apply scheduled INS update (if available)
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
@@ -170,6 +170,7 @@ for k = 1:iter
             % Pass EKF computation out to separate Matlab Development
             % process
             sendDataFusionReq(INSpose, ReqMsg, lc);
+            
             
             % Currently the outside process holds state -- this will all be
             % moved to C++ once we are happy with the data fusion

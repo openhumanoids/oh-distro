@@ -236,7 +236,7 @@ bool testInertialOdoPropagation() {
 
 		InerOdoEst = inert_odo.PropagatePrediction(imu_data);
 
-		tmp = inert_odo.getDynamicState().lQb;
+		tmp = inert_odo.lQb();
 		tmp2 = InerOdoEst.lQb;
 		err = err + abs(tmp.w() - LQB[k].w()) + abs(tmp.x() - LQB[k].x()) + abs(tmp.y() - LQB[k].y()) + abs(tmp.z() - LQB[k].z());
 		err = err + abs(tmp2.w() - tmp.w()) + abs(tmp2.x() - tmp.x()) + abs(tmp2.y() - tmp.y()) + abs(tmp2.z() - tmp.z());

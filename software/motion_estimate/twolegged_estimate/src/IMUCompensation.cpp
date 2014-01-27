@@ -86,6 +86,7 @@ namespace InertialOdometry {
   void IMUCompensation::Gyro_Compensation(IMU_dataframe &_imu)
   {    
     _imu.w_b = gyro_errors * (_imu.w_b_measured - gyro_biases);
+    //std::cout << "IMUCompensation::Gyro_Compensation -- gyro biases are" << std::endl << gyro_biases << std::endl;
     _imu.gyro_compensated_flag = true;
     return;
   }

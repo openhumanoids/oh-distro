@@ -1,4 +1,4 @@
-function [INS, Meas] = receiveInertialStatePos(aggregator)
+function [INS, Meas, m] = receiveInertialStatePos(aggregator)
 
 
 while true

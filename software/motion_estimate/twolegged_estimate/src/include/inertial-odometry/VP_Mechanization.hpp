@@ -11,8 +11,8 @@ namespace InertialOdometry {
   class VP_Mechanization {
     private:
       InertialOdomOutput state;
-      TrapezoidalInt a2v;
-      TrapezoidalInt v2p;
+      //TrapezoidalInt a2v;
+      //TrapezoidalInt v2p;
 
       Parameters std_param;
 

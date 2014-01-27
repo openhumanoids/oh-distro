@@ -4,8 +4,8 @@ namespace InertialOdometry {
 
   VP_Mechanization::VP_Mechanization()
   {
-	  a2v.setSize(3);
-	  v2p.setSize(3);
+	  //a2v.setSize(3);
+	  //v2p.setSize(3);
 
 	  last_uts = 0;
   }
@@ -23,6 +23,7 @@ namespace InertialOdometry {
 	  double dt;
 	  dt = (_imu.uts - last_uts)*1E-6;
 
+	  // TODO -- Improve to better numerical integration
 	  state.first_pose_rel_pos = state.first_pose_rel_pos + dt*state.first_pose_rel_vel; // Position first
 	  state.first_pose_rel_vel = state.first_pose_rel_vel + dt*_imu.f_l; // Velocity second
 

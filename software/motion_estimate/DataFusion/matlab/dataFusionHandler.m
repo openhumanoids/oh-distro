@@ -31,17 +31,21 @@ dfSys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*
 DFRESULTS.STATEX = zeros(iterations,15);
 DFRESULTS.STATECOV = zeros(iterations,15);
 DFRESULTS.poses = [];
-
+DFRESULTS.REQMSGS = [];
+DFRESULTS.REQMSGS = initDFReqMsgData(iterations, DFRESULTS.REQMSGS);
 
 DFRESULTS.updatePackets = []; % temporary logging
 
 index = 0;
 
+DFRESULTS.REQMSGS.utime(end+1) = 0
+
 % We assume this loop runs at 50 Hz or less 
 while (true)
     index = index + 1;
     % wait for message
-    [Measurement.INS, Measurement.LegOdo] = receiveInertialStatePos(aggregator);
+    [Measurement.INS, Measurement.LegOdo, DFReqMsg] = receiveInertialStatePos(aggregator);
+    DFRESULTS.REQMSGS = storeDFReqMsgData(index, DFRESULTS.REQMSGS, DFReqMsg);
     
     % Now we can start computation
     tic;

@@ -25,7 +25,8 @@ namespace InertialOdometry {
     avp.PropagateTranslation(_imu);
 
     // update output structure
-    orc.updateOutput(ret);
+    //orc.updateOutput(ret);
+    ret.quat = orc.q();
     avp.updateOutput(ret);
 
     // return the data
@@ -45,7 +46,8 @@ namespace InertialOdometry {
       avp.PropagateTranslation(_imu);
 
       // update output structure
-      orc.updateOutput(ret);
+      //orc.updateOutput(ret);
+      ret.quat = orc.q();
       avp.updateOutput(ret);
 
       // return the data
@@ -62,7 +64,7 @@ namespace InertialOdometry {
 
     //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
 
-    //    DynamicState ret;
+    DynamicState state;
     state.imu = _imu;
     state.uts = _imu.uts;
     state.a_l = _imu.a_l;
@@ -79,38 +81,35 @@ namespace InertialOdometry {
   
   DynamicState Odometry::PropagatePrediction(IMU_dataframe &_imu)
   {
-  	  InertialOdomOutput out;
+    InertialOdomOutput out;
 
-      imu_compensator.Full_Compensation(_imu);
+    imu_compensator.Full_Compensation(_imu);
 
-      out = PropagatePrediction_wo_IMUCompensation(_imu);
+    out = PropagatePrediction_wo_IMUCompensation(_imu);
 
-      //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
+    //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
 
-      //std::cout << "Odometry::PropagatePrediction -- lQb " << out.quat.w() << ", " << out.quat.x() << ", " << out.quat.y() << ", " << out.quat.z() << std::endl;
+    //std::cout << "Odometry::PropagatePrediction -- lQb " << out.quat.w() << ", " << out.quat.x() << ", " << out.quat.y() << ", " << out.quat.z() << std::endl;
 
-      //    DynamicState ret;
-      state.imu = _imu;
-      state.uts = _imu.uts;
-      state.a_l = _imu.a_l;
-      state.f_l = _imu.f_l;
-      state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
-      state.P = out.first_pose_rel_pos;
-      state.V = out.first_pose_rel_vel;
-      state.b_a.setZero();
-      state.b_g.setZero();
-      state.lQb = out.quat;
+    DynamicState state;
+    state.imu = _imu;
+    state.uts = _imu.uts;
+    state.a_l = _imu.a_l;
+    state.f_l = _imu.f_l;
+    state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
+    state.P = out.first_pose_rel_pos;
+    state.V = out.first_pose_rel_vel;
+    state.b_a.setZero();
+    state.b_g.setZero();
+    state.lQb = out.quat;
 
-      return state;
-    }
+    return state;
+  }
 
-  DynamicState Odometry::getDynamicState() {
-	  return state;
+  Eigen::Quaterniond Odometry::lQb() {
+	  return orc.q();
   }
   
-  unsigned long long Odometry::get_utime() {
-	  return state.uts;
-  }
 
   void Odometry::incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData) {
 
@@ -124,7 +123,7 @@ namespace InertialOdometry {
 
 	  Eigen::Vector3d tmp;
 
-	  imu_compensator.AccumulateGyroBiases(updateData.dbiasGyro_b);
+	  imu_compensator.AccumulateGyroBiases(-updateData.dbiasGyro_b);
 	  imu_compensator.AccumulateAccelBiases(updateData.dbiasAcc_b);
 
 	  // update integrated states
