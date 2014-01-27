@@ -15,6 +15,7 @@
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <lcmtypes/drc/pose_transform_t.hpp>
 #include <lcmtypes/drc/robot_state_t.hpp>
+#include <bot_frames_cpp/bot_frames_cpp.hpp>
 
 namespace MavStateEst {
 
@@ -22,7 +23,7 @@ class LegOdoHandler {
 public:
 
   LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub, 
-      BotParam * param, ModelClient* model);
+      BotParam * param, ModelClient* model, BotFrames * frames);
 
   RBISUpdateInterface * processMessage(const drc::robot_state_t *msg);
 
@@ -33,7 +34,17 @@ public:
   // which is then passed to the estimator
   LegOdoCommon* leg_odo_common_;
   
+
+  void viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg);  
+  
+  void republishHandler (const lcm::ReceiveBuffer* rbuf, const std::string& channel);
+  
   lcm::LCM* lcm_pub;
+  lcm::LCM* lcm_recv;
+  BotFrames* frames;
+  bot::frames* frames_cpp;
+  // To republish certain incoming messages, so as to produced output logs:
+  bool republish_incoming_;
 };
 
 

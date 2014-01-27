@@ -34,4 +34,4 @@ add_subdirectory(src/pcl_pcd_grabber)
 add_subdirectory(src/fisheye)
 
 
-
+add_subdirectory(src/libbot_eigen_comparison)

@@ -142,6 +142,16 @@ void pointcloud_vis::pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT){
   vs_obj_collection_t_publish(publish_lcm_, "OBJ_COLLECTION", &objs);
 }
 
+void pointcloud_vis::pose_collection_reset(int id, std::string name){
+  vs_obj_collection_t objs;
+  objs.id = id;
+  objs.name =(char*) name.c_str();
+  objs.type =5;
+  objs.reset = true;
+  objs.nobjs = 0;
+  vs_obj_collection_t_publish(publish_lcm_, "OBJ_COLLECTION", &objs);
+}
+
 
 void pointcloud_vis::ptcld_collection_to_lcm_from_list(int id, std::vector< pcl::PointCloud<pcl::PointXYZRGB> > &clouds,
   int64_t obj_id, int64_t ptcld_id){
@@ -398,6 +408,15 @@ void pointcloud_vis::mesh_to_lcm(ptcld_cfg pcfg, pcl::PolygonMesh::Ptr mesh,
   }
 }
 
+void pointcloud_vis::ptcld_collection_reset(int id, std::string name){
+  vs_point3d_list_collection_t point_lists;
+  point_lists.id = id;
+  point_lists.name =(char*) name.c_str();
+  point_lists.type =5;
+  point_lists.reset = true;
+  point_lists.nlists= 0;
+  vs_point3d_list_collection_t_publish(publish_lcm_, "POINTS_COLLECTION", &point_lists);
+}
 
 
 

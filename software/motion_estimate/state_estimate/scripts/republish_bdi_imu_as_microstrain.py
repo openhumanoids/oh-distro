@@ -31,7 +31,7 @@ def on_atlas_imu_batch(channel, data):
   ins.utime = m.utime
   
   dt = 0.001
-  older_logs = 1
+  older_logs = 0
   if (older_logs ==1):
     dt = 0.001
   else:
@@ -42,21 +42,24 @@ def on_atlas_imu_batch(channel, data):
   ins.accel[1] = m.raw_imu[0].linear_acceleration[1]
   ins.accel[2] = m.raw_imu[0].linear_acceleration[2]
 
-  
   ins.gyro[0] = (m.raw_imu[0].delta_rotation[0])/dt
   ins.gyro[1] = (m.raw_imu[0].delta_rotation[1])/dt
   ins.gyro[2] = (m.raw_imu[0].delta_rotation[2])/dt
 
+  # initialize mag values as zero - can be used in mav estimator
+  # but typically unused
+  ins.mag[0] = 0
+  ins.mag[1] = 0
+  ins.mag[2] = 0
+  
   print dt
-  if (1==0):
+  if (1==1):
     print "======"
-    print "old"
-    print m.raw_imu[1].utime
-    print m.raw_imu[1].delta_rotation
-    print "new"
+    print "rotation"
     print m.raw_imu[0].utime
+    print m.raw_imu[1].utime
     print m.raw_imu[0].delta_rotation
-    print "diff"
+    print "rotation rate"
     print dt
     print ins.gyro
 

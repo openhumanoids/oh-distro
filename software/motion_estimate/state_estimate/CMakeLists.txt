@@ -17,5 +17,8 @@ add_subdirectory(src/state_estimate)
 add_subdirectory(src/mfallon_sandbox)
 
 
+pods_install_python_script(se-bdi-imu-to-ms scripts/republish_bdi_imu_as_microstrain.py)
 
-pods_install_python_script(mest-bdi-imu-to-ms scripts/republish_bdi_imu_as_microstrain.py)
+
+file(COPY scripts/se-batch-process.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+

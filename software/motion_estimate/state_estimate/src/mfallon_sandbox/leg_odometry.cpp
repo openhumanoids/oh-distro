@@ -9,8 +9,6 @@
 
 
 
-#include "common_conversions.hpp"
-
 using namespace std;
 using namespace boost;
 using namespace boost::assign;
@@ -19,12 +17,10 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
   BotParam * botparam_, boost::shared_ptr<ModelClient> &model_):
   lcm_subscribe_(lcm_subscribe_), lcm_publish_(lcm_publish_), 
   botparam_(botparam_), model_(model_){
-  
-  republish_incoming_ = false; // republish messages for rest of system TODO: read from file
     
   leg_odometry_mode_ = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.integration_mode");
   std::cout << "Leg Odometry Accumulation Mode: " << leg_odometry_mode_ << " \n";
-  
+
   KDL::Tree tree;
   if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
     cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
@@ -49,57 +45,44 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
   leg_odo_init_ = false;
    
   verbose_ = 1;
-  openLogFile();
   
   previous_utime_ = 0; // Set utimes to known values
   current_utime_ = 0;
   
   world_to_body_.setIdentity();
-  
-  initialize_mode_ = 2;
-  
-  world_to_body_vicon_init_ = false;
-  world_to_body_vicon_.setIdentity();
+  world_to_body_bdi_.setIdentity();
+  initialize_mode_ = 0; 
 }
 
 
-void leg_odometry::openLogFile(){
-  time_t rawtime;
-  struct tm * timeinfo;  
-  char buffer [80];
-  time (&rawtime);
-  timeinfo = localtime (&rawtime);
 
-  strftime (buffer,80,"/tmp/state-estimate-result-%Y-%m-%d-%H-%M.txt",timeinfo);
-  std::string filename = buffer;
-  
-  std::cout << "Opening Logfile: "<< filename << "\n";
-  logfile_.open ( filename.c_str() );
-}
 
-void leg_odometry::terminate(){
-  std::cout << "Closing Logfile: " << "\n";
-  logfile_.close();
-}
+
   
 
 // TODO: need to move this function outside of the class, down to app
 bool leg_odometry::initializePose(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot){
+
+  // TODO: have this init at pelvis = 0.85cm or something instead of zero
+  // Initializing with mode =0 and gravity slaved integraion will result in an orientation change at start
   if (initialize_mode_ ==0){ 
-    // Initialize with primary foot at zero
+    // Initialize with primary foot at zero but orientation using bdi rotation:
+    // Otherwise, there is a discontinuity at the start
+    Eigen::Quaterniond q_slaved( world_to_body_bdi_.rotation() );
+    Eigen::Isometry3d world_to_body_at_zero;
+    world_to_body_at_zero.setIdentity(); // ... Dont need to use the translation, so not filling it in
+    world_to_body_at_zero.rotate(q_slaved);
+    Eigen::Isometry3d world_to_r_foot_at_zero = world_to_body_at_zero*body_to_l_foot;
+    Eigen::Quaterniond q_foot_new( world_to_r_foot_at_zero.rotation() );
     world_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
+    world_to_fixed_primary_foot_.rotate( q_foot_new );     
+    
+    // was...
+    //world_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
     world_to_body_ =world_to_fixed_primary_foot_*body_to_l_foot.inverse();
   }else if (initialize_mode_ ==1){
     // At the EST_ROBOT_STATE pose that was logged into the file
     world_to_body_ = world_to_body_bdi_;
-    world_to_fixed_primary_foot_ = world_to_body_*body_to_l_foot;
-  }else if (initialize_mode_ ==2){
-    if (!world_to_body_vicon_init_){
-      std::cout << "Haven't received a vicon pose, cannot initialize\n";
-      return false;
-    }
-    // At the vicon position
-    world_to_body_ = world_to_body_vicon_;
     world_to_fixed_primary_foot_ = world_to_body_*body_to_l_foot;
   }
   
@@ -516,28 +499,6 @@ bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vect
     std::vector<Isometry3dTime> world_to_secondary_T;
     world_to_secondary_T.push_back( Isometry3dTime(current_utime_ , world_to_secondary_foot_  )  );
     pc_vis_->pose_collection_to_lcm_from_list(1003, world_to_secondary_T);
-    
-    // BDI estimated:
-    if (republish_incoming_){
-      bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body_bdi_, current_utime_);
-      lcm_publish_->publish("POSE_BODY", &pose_msg );
-      // lcm_publish_->publish("EST_ROBOT_STATE", msg);
-    }
-
-    
-    // MIT estimated:
-    bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body_, current_utime_);
-    lcm_publish_->publish("POSE_BODY_ALT", &pose_msg );    
-    //drc::robot_state_t msg_out = *msg;
-    //insertPoseInRobotState(msg_out, world_to_body_);
-    //lcm_publish_->publish("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &msg_out );
-    
-    std::stringstream ss;
-    ss << print_Isometry3d(world_to_body_bdi_) << ", "
-       << print_Isometry3d(world_to_body_);
-       
-    // std::cout << ss.str() << "\n";
-    logfile_ << ss.str() << "\n";
   }
   
   previous_body_to_l_foot_ = body_to_l_foot;

@@ -6,7 +6,8 @@ using namespace Eigen;
 namespace MavStateEst {
 
 LCMFrontEnd::LCMFrontEnd(const std::string & in_log_fname, const std::string & out_log_fname,
-    const std::string & param_fname, const std::string & param_override_str, const std::string & begin_timestamp)
+    const std::string & param_fname, const std::string & param_override_str, 
+    const std::string & begin_timestamp, int processing_rate)
 {
 
   state_estimator = NULL;
@@ -22,10 +23,11 @@ LCMFrontEnd::LCMFrontEnd(const std::string & in_log_fname, const std::string & o
   if (running_from_log) {
     printf("running from log file: %s\n", in_log_fname.c_str());
     //std::string lcmurl = "file://" + in_log_fname + "?speed=0";
-    std::string lcmurl = "file://" + in_log_fname + "?speed=0" + "&start_timestamp=" + begin_timestamp;
-    lcm_recv = new lcm::LCM(lcmurl);
+    std::stringstream lcmurl;
+    lcmurl << "file://" << in_log_fname << "?speed=" << processing_rate << "&start_timestamp=" << begin_timestamp;
+    lcm_recv = new lcm::LCM(lcmurl.str());
     if (!lcm_recv->good()) {
-      fprintf(stderr, "Error couldn't load log file %s\n", lcmurl.c_str());
+      fprintf(stderr, "Error couldn't load log file %s\n", lcmurl.str().c_str());
       exit(1);
     }
   }

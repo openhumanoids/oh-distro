@@ -85,6 +85,7 @@ struct _RendererMavStateEst {
   VectorXd gpf_z_effective;
   VectorXi gpf_indices;
 
+  char * pose_render_frame;
 };
 
 static void gpf_measurement_message_handler(const lcm_recv_buf_t *rbuf, const char * channel,
@@ -120,7 +121,7 @@ static void filter_state_message_handler(const lcm_recv_buf_t *rbuf, const char 
 static void pose_vecs(_RendererMavStateEst * self)
 {
   BotTrans body_trans;
-  bot_frames_get_trans(self->frames, "body", "local", &body_trans);
+  bot_frames_get_trans(self->frames, self->pose_render_frame , "local", &body_trans); // pose_render_frame was "body"
 
   // Safety check
   if (hasNan(self->filter_state.acceleration()) ||
@@ -149,7 +150,7 @@ static void pose_vecs(_RendererMavStateEst * self)
 static void pose_vecs_cov(_RendererMavStateEst * self)
 {
   BotTrans body_trans;
-  bot_frames_get_trans(self->frames, "body", "local", &body_trans);
+  bot_frames_get_trans(self->frames, self->pose_render_frame, "local", &body_trans); // pose_render_frame was "body"
 
   Eigen::Matrix3d vb_cov = self->filter_cov.block<3, 3>(RBIS::velocity_ind, RBIS::velocity_ind);
   Eigen::Matrix3d omega_cov = self->filter_cov.block<3, 3>(RBIS::angular_velocity_ind, RBIS::angular_velocity_ind);
@@ -544,6 +545,10 @@ BotRenderer *renderer_mav_state_est_new(BotViewer *viewer, int render_priority, 
 
   self->filter_state = RBIS();
   self->filter_cov = RBIM();
+
+  // Coordinate Frame at which to renderer the state variables: [add mfallon]
+  //self->pose_render_frame = "body";
+  self->pose_render_frame = bot_param_get_str_or_fail(param, "state_estimator.pose_render_frame");
 
   //subscribe to filter, gpf
   mav_filter_state_t_subscribe(lcm, bot_param_get_str_or_fail(param, "state_estimator.filter_state_channel"),
