@@ -13,7 +13,8 @@ add_library(mav-est-legodo SHARED
                 rbis_legodo_update.cpp
                 rbis_legodo_common.cpp)
 
-pods_use_pkg_config_packages(mav-est-legodo ${REQUIRED_LIBS} estimate)
+pods_use_pkg_config_packages(mav-est-legodo ${REQUIRED_LIBS} estimate
+    bot2-frames_cpp)
 pods_install_libraries(mav-est-legodo)
 pods_install_pkg_config_file(mav-est-legodo
     CFLAGS

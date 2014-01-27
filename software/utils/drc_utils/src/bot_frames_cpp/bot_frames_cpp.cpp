@@ -24,6 +24,10 @@ frames::frames(BotParam *botparam_ ){
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
 };
 
+frames::frames(BotFrames *frames ){
+  botframes_= frames;
+};
+
 int frames::get_trans_with_utime(std::string from_frame, std::string to_frame, 
                                  int64_t utime, Eigen::Isometry3d & mat){
   int status;

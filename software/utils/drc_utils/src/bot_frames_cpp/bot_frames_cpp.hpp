@@ -25,6 +25,8 @@ public:
   
   frames(BotParam *botparam_ );
   
+  frames(BotFrames *frames );
+  
   
   int get_trans_with_utime(std::string from_frame, std::string to_frame, 
                                  int64_t utime, Eigen::Isometry3d & mat); 

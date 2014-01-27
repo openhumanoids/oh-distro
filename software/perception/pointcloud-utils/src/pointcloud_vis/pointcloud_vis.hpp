@@ -63,6 +63,8 @@ class pointcloud_vis {
     
     void pose_collection_to_lcm_from_list(int id, std::vector<Isometry3dTime> & posesT);
     void pose_collection_to_lcm(obj_cfg ocfg, std::vector<Isometry3dTime> & posesT);
+    // Also can be used by a single pose
+    void pose_collection_reset(int id, std::string name);
 
     void pose_to_lcm_from_list(int id,Isometry3dTime& poseT);
     void pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT);
@@ -72,6 +74,8 @@ class pointcloud_vis {
             int64_t obj_id, int64_t ptcld_id);
     void ptcld_collection_to_lcm(ptcld_cfg pcfg, std::vector< pcl::PointCloud<pcl::PointXYZRGB> > &clouds,
             int64_t obj_id, int64_t ptcld_id);
+    // Also can be used by mesh
+    void ptcld_collection_reset(int id, std::string name);
 
     
     void ptcld_to_lcm_from_list(int id, pcl::PointCloud<pcl::PointXYZRGB> &cloud,

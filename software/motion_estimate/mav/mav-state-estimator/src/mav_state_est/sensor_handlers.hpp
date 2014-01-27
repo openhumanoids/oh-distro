@@ -14,6 +14,8 @@
 #include <lcmtypes/bot_core/rigid_transform_t.hpp>
 #include <lcmtypes/bot_core/pose_t.hpp>
 
+#include <lcmtypes/drc/atlas_raw_imu_batch_t.hpp>
+
 namespace MavStateEst {
 
 class InsHandler {
@@ -22,9 +24,21 @@ protected:
   public:
   InsHandler(BotParam * _param, BotFrames * _frames);
 
+  // Microstrain Functions:
   RBISUpdateInterface * processMessage(const mav::ins_t * msg);
   bool processMessageInit(const mav::ins_t * msg, const std::map<std::string, bool> & sensors_initialized
       , const RBIS & default_state, const RBIM & default_cov, RBIS & init_state, RBIM & init_cov);
+
+  // Compariable Atlas Functions:
+  RBISUpdateInterface * processMessageAtlas(const drc::atlas_raw_imu_batch_t * msg);
+  bool processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg, const std::map<std::string, bool> & sensors_initialized
+      , const RBIS & default_state, const RBIM & default_cov, RBIS & init_state, RBIM & init_cov);
+
+  // Common Initialization Function:
+  bool processMessageInitCommon(const std::map<std::string, bool> & sensors_initialized
+      , const RBIS & default_state, const RBIM & default_cov,
+      RBIS & init_state, RBIM & init_cov,
+      RBISIMUProcessStep * update, Eigen::Vector3d mag_vec);
 
   BotTrans ins_to_body;
 

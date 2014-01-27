@@ -73,7 +73,8 @@ public:
    * @param[in]  begin_timestamp lcm logfile message timestamp to start from. 0= start (ie from unixtime=0)
    */
   LCMFrontEnd(const std::string & in_log_fname, const std::string & out_log_fname = "",
-      const std::string & param_fname = "", const std::string & param_override_str = "", const std::string & begin_timestamp = "0");
+      const std::string & param_fname = "", const std::string & param_override_str = "",
+      const std::string & begin_timestamp = "0", int processing_rate = 1);
   ~LCMFrontEnd();
 
   template<class lcmType, class SensorHandlerClass>

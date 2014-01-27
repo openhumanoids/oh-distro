@@ -31,6 +31,7 @@
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include "lcmtypes/fovis_bot2.hpp"
 
+#include <estimate/common_conversions.hpp>
 #include <leg-odometry/FootContact.h>
 
 ///////////////////////////////////////////////////////////////
@@ -43,6 +44,7 @@ class leg_odometry{
     }
     
     void setPoseBDI(Eigen::Isometry3d world_to_body_bdi_in ){ world_to_body_bdi_ = world_to_body_bdi_in; }
+
     void setFootForces(float left_foot_force_in, float right_foot_force_in ){ 
       left_foot_force_ = left_foot_force_in;
       right_foot_force_ = right_foot_force_in;       
@@ -57,7 +59,10 @@ class leg_odometry{
       current_utime = current_utime_;
       previous_utime = previous_utime_;
     }
-    void terminate();    
+    
+    Eigen::Isometry3d getRunningEstimate(){ return world_to_body_; }
+    
+    void setLegOdometryMode(std::string leg_odometry_mode_in ){ leg_odometry_mode_ = leg_odometry_mode_in; }
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
@@ -67,14 +72,15 @@ class leg_odometry{
     pointcloud_vis* pc_vis_;
     
     // params:
-    bool republish_incoming_;
     std::string leg_odometry_mode_;
+    // How the position will be initialized
+    int initialize_mode_;
     
     TwoLegs::FootContact* foot_contact_logic_;
     // most recent measurements for the feet forces (typically synchronise with joints
     float left_foot_force_, right_foot_force_;
     
-    void initializePose(int mode,Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot);
+    bool initializePose(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot);
     // Pure Leg Odometry, no IMU
     // return: true on initialization, else false
     bool leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
@@ -88,7 +94,7 @@ class leg_odometry{
     bool leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
     
     // Current time from current input msg 
-    int64_t current_utime_;    
+    int64_t current_utime_;
     int64_t previous_utime_;
     Eigen::Isometry3d previous_world_to_body_;
     
@@ -97,6 +103,9 @@ class leg_odometry{
     
     // Position Estimate produced by BDI:
     Eigen::Isometry3d world_to_body_bdi_;
+    // Position Estimate produced by Vicon (if available):
+    Eigen::Isometry3d world_to_body_vicon_;
+    bool world_to_body_vicon_init_;
     // has the leg odometry been initialized
     bool leg_odo_init_;
     Eigen::Isometry3d world_to_body_;
@@ -108,10 +117,7 @@ class leg_odometry{
     Eigen::Isometry3d previous_body_to_r_foot_;
     
     
-    // Utilities and Logging
     int verbose_;
-    void openLogFile();
-    std::ofstream logfile_;
 };    
 
 #endif

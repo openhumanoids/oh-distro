@@ -1,6 +1,6 @@
 # create the kixie state estimation executable, and make it public
-add_executable(mav-kmcl mav_kmcl.cpp)
-pods_use_pkg_config_packages(mav-kmcl
+add_executable(se-fusion mav_kmcl.cpp)
+pods_use_pkg_config_packages(se-fusion
     mav-state-est
     mav-est-fovis
     gpf-laser-lib
@@ -12,6 +12,6 @@ pods_use_pkg_config_packages(mav-kmcl
     gpf-rgbd-lib)
 
 # don't know why this is necessary (something to do with concise args):
-target_link_libraries(mav-kmcl
+target_link_libraries(se-fusion
     boost_system)
-pods_install_executables(mav-kmcl)
+pods_install_executables(se-fusion)

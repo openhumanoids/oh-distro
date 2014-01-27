@@ -9,6 +9,9 @@
 #include <mav_state_est/mav-est-legodo/rbis_legodo_update.hpp>
 #include <mav_state_est/mav-est-legodo/rbis_legodo_external_update.hpp>
 
+#include <path_util/path_util.h>
+
+
 #include <ConciseArgs>
 
 using namespace std;
@@ -30,10 +33,12 @@ public:
     string in_log_fname = "";
     string out_log_fname = "";
     string param_file = "";
+    string urdf_file = "";
     string override_str = "";
     output_likelihood_filename = "";
     string begin_timestamp= "0";
     smooth_at_end = false;
+    int processing_rate = 1; // real time
 
     ConciseArgs opt(argc, argv);
     opt.add(in_log_fname, "L", "in_log_name", "Run state estimation directly on this log");
@@ -45,10 +50,16 @@ public:
         "Run Kalman smoothing and publish poses at end - only works when running from log");
     opt.add(output_likelihood_filename, "M", "meas_like", "save the measurement likelihood to this file");
     opt.add(begin_timestamp, "t", "begin_timestamp", "Run estimation from this timestamp"); // mfallon
+    opt.add(urdf_file, "U", "urdf_file", "Pull params from this file instead of LCM"); // mfallon
+    opt.add(processing_rate, "pr", "processing_rate","Processing Rate from a log [0=ASAP, 1=realtime]");        
     opt.parse();
 
+    
+    std::string param_file_full = std::string(getConfigPath()) +'/' + std::string(param_file);    
+    
     //create front end
-    front_end = new LCMFrontEnd(in_log_fname, out_log_fname, param_file, override_str,begin_timestamp);
+    front_end = new LCMFrontEnd(in_log_fname, out_log_fname, param_file_full , 
+                                override_str,begin_timestamp, processing_rate);
     rbis_initializer = new RBISInitializer(front_end, RBISInitializer::getDefaultState(front_end->param),
         RBISInitializer::getDefaultCov(front_end->param));
 
@@ -76,8 +87,15 @@ public:
 
     if (front_end->isActive("ins") || rbis_initializer->initializingWith("ins")) {
       ins_handler = new InsHandler(front_end->param, front_end->frames);
-      front_end->addSensor("ins", &MavStateEst::InsHandler::processMessage, ins_handler);
-      rbis_initializer->addSensor("ins", &MavStateEst::InsHandler::processMessageInit, ins_handler);
+
+      // TODO: enable easy switching between sensors:
+      //if("MICROSTRAIN_INS"){
+      //front_end->addSensor("ins", &MavStateEst::InsHandler::processMessage, ins_handler);
+      //rbis_initializer->addSensor("ins", &MavStateEst::InsHandler::processMessageInit, ins_handler);
+      //}else{
+        front_end->addSensor("ins", &MavStateEst::InsHandler::processMessageAtlas, ins_handler);
+        rbis_initializer->addSensor("ins", &MavStateEst::InsHandler::processMessageInitAtlas, ins_handler);
+      //}
     }
 
     if (front_end->isActive("gps") || rbis_initializer->initializingWith("gps")) {
@@ -131,14 +149,14 @@ public:
       // legodo_handler = new LegOdoHandler(front_end->param);
 
       ModelClient* model;
-      //if (cl_cfg_.urdf_filename == ""){           
-      model = new ModelClient(  front_end->lcm_recv->getUnderlyingLCM(), 0);
-      //}else{
-      //  //std::string urdf_filename = "model_LH_RH.urdf";            
-      //  std::string urdf_filename_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string(cl_cfg_.urdf_filename);
-      //  model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_filename_full  ));
-      //}  
-      legodo_handler = new LegOdoHandler(front_end->lcm_recv, front_end->lcm_pub, front_end->param, model);
+      if (urdf_file == ""){           
+        model = new ModelClient(  front_end->lcm_recv->getUnderlyingLCM(), 0);
+      }else{
+        //std::string urdf_file = "model_LH_RH.urdf";            
+        std::string urdf_filename_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string( urdf_file );
+        model = new ModelClient( urdf_filename_full );
+      }  
+      legodo_handler = new LegOdoHandler(front_end->lcm_recv, front_end->lcm_pub, front_end->param, model, front_end->frames);
 
 
 
