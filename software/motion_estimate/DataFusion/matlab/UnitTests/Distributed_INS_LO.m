@@ -111,6 +111,7 @@ PE = [];
 DV = [];
 nDEF = [];
 Rbias = [];
+updatePackets = [];
 
 % this is the filter update counter
 FilterRate = 50;
@@ -183,6 +184,8 @@ for k = 1:iter
             INSCompensator.dE_l = updatePacket.dE_l;
             INSCompensator.dV_l = updatePacket.dVel_l;
             INSCompensator.dP_l = updatePacket.dPos_l;
+            
+            updatePackets = [updatePackets; updatePacket.dbiasGyro_b'];
             
 %             updatePacket.utime
 %             updatePacket.dbiasGyro_b

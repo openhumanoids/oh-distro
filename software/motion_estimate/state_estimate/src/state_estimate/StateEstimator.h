@@ -81,6 +81,8 @@ private:
   drc::robot_state_t testing;
   drc::ins_update_request_t mDFRequestMsg;
 	
+  // We maintain own InerOdoEst state, to avoid potential future multi-threaded issues
+  InertialOdometry::DynamicState InerOdoEst;
   InertialOdometry::Odometry inert_odo;
   unsigned long long previous_imu_utime;
   unsigned long long prevImuPacketCount;
@@ -100,6 +102,9 @@ private:
   int firstpass;
   double Ts_imu; // Auto-detect the sample rate of the IMU
   int receivedIMUPackets;
+
+  // ======== SERVICE ROUTINES ===========
+  void IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm);
 };
 
 } // end namespace

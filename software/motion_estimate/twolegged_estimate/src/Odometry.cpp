@@ -70,7 +70,6 @@ namespace InertialOdometry {
     state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
     state.P = out.first_pose_rel_pos;
     state.V = out.first_pose_rel_vel;
-    state.E.setZero();
     state.b_a.setZero();
     state.b_g.setZero();
     state.lQb = out.quat;
@@ -98,7 +97,6 @@ namespace InertialOdometry {
       state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
       state.P = out.first_pose_rel_pos;
       state.V = out.first_pose_rel_vel;
-      state.E.setZero();
       state.b_a.setZero();
       state.b_g.setZero();
       state.lQb = out.quat;
@@ -126,15 +124,16 @@ namespace InertialOdometry {
 
 	  Eigen::Vector3d tmp;
 
-	  imu_compensator.AccumulateGyroBiases(-updateData.dbiasGyro_b);
+	  imu_compensator.AccumulateGyroBiases(updateData.dbiasGyro_b);
 	  imu_compensator.AccumulateAccelBiases(updateData.dbiasAcc_b);
-//
-//	  // update integrated states
-//	  // Orientation first
+
+	  // update integrated states
+	  // Orientation first
 	  orc.rotateOrientationUpdate(updateData.dE_l);
 	  tmp = avp.getVelStates();
 	  avp.setVelStates(tmp - updateData.dVel_l);
 	  tmp = avp.getPosStates();
+	  //std::cout << "Odometry::incorporateErrUpdate -- Position update " << updateData.dPos_l << std::endl;
 	  avp.setPosStates(tmp - updateData.dPos_l);
 
 

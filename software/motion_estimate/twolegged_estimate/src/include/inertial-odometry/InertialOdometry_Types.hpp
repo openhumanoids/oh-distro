@@ -44,7 +44,6 @@ namespace InertialOdometry {
 	  Eigen::Vector3d f_l;
 	  Eigen::Vector3d a_l;
 	  Eigen::Vector3d w_l;
-	  Eigen::Vector3d E;
 	  Eigen::Vector3d b_a;
 	  Eigen::Vector3d b_g;
 

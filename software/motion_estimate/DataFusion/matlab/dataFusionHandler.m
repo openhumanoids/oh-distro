@@ -30,6 +30,10 @@ dfSys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*
 
 DFRESULTS.STATEX = zeros(iterations,15);
 DFRESULTS.STATECOV = zeros(iterations,15);
+DFRESULTS.poses = [];
+
+
+DFRESULTS.updatePackets = []; % temporary logging
 
 index = 0;
 
@@ -64,12 +68,20 @@ while (true)
     [Result, dfSys] = iterate([], dfSys, Measurement);
 
     
+    % Store stuff for later plotting
+    DFRESULTS.poses = storePose(Measurement.INS.pose, DFRESULTS.poses, index);
+    DFRESULTS.STATEX(index,:) = dfSys.posterior.x';
+    DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
+    
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
     if (ENABLE_FEEDBACK == 1)
         % From the DFusion_Vel_LFBRR test script. Different implementation here
         %[ dfSys.posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
         publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, lc);
+        
+        DFRESULTS.updatePackets = [DFRESULTS.updatePackets; feedbackGain*dfSys.posterior.x(4:6)'];
+        
         % move error information to the INS solution and remove from state
         % estimate posterior. This is a feedback step.
         % Assume no packet loss, with the safety net of some additional
@@ -83,9 +95,6 @@ while (true)
     % system is running properly
     %posterior = dfSys.posterior;
     
-    % Store stuff for later plotting
-    DFRESULTS.STATEX(index,:) = dfSys.posterior.x';
-    DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
     
     computationTime = toc;
     if (Measurement.INS.pose.utime == (120 * 1000000) )
@@ -99,12 +108,12 @@ end
 
 % Must standardize this plotting
 
-figure(10), clf
-subplot(321),semilogx(DFRESULTS.STATEX(:,4:6)),title('Gyro Bias Estimate'), grid on
-subplot(323),semilogx(DFRESULTS.STATEX(:,13:15)),title('Acc Bias Estimate'), grid on
-
-
-subplot(322),loglog(sqrt(DFRESULTS.STATECOV(:,4:6))),title('predicted gyro bias residual covariance'), grid on
-subplot(324),loglog(sqrt(DFRESULTS.STATECOV(:,13:15))),title('predicted acc bias residual covariance'), grid on
+% figure(10), clf
+% subplot(321),plot(DFRESULTS.STATEX(:,4:6)),title('Gyro Bias Estimate'), grid on
+% subplot(323),semilogx(DFRESULTS.STATEX(:,13:15)),title('Acc Bias Estimate'), grid on
+% 
+% 
+% subplot(322),loglog(sqrt(DFRESULTS.STATECOV(:,4:6))),title('predicted gyro bias residual covariance'), grid on
+% subplot(324),loglog(sqrt(DFRESULTS.STATECOV(:,13:15))),title('predicted acc bias residual covariance'), grid on
 
 

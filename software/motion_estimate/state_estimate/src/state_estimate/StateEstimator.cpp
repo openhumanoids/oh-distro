@@ -136,74 +136,9 @@ void StateEstimate::StateEstimator::run()
 	  for (int i = 0; i < nIMU; ++i)
 	  {
 		  this->mIMUQueue.dequeue(imu);
-		  //std::cout << "StateEstimator::run -- dequeued IMU utime " << imu.utime << std::endl;
-		  // do something with new imu...
-		  // The inertial odometry object is currently passed down to the handler function, where the INS is propagated and the 12 states are inserted inthe ERS message
-
-		  //std::cout << "StateEstimator::run -- imu.packet_count " << imu.packet_count << std::endl;
-		  // Auto-detect the sample rate of the IMU -- mainly for testing from different IMUs, should be 1kHz for KVH on Atlas and probably 100Hz for Microstrain
-		  unsigned long long deltaPacket;
-		  if (prevImuPacketCount == 0) {
-			  prevImuPacketCount = imu.packet_count;
-			  previous_imu_utime = imu.utime;
-			  Ts_imu = 1E-2;
-		  } else {
-			  if (imu.packet_count > prevImuPacketCount) {
-				  deltaPacket = imu.packet_count - prevImuPacketCount;
-				  if (deltaPacket > 1) {
-					  std::cout << "StateEstimator::run -- " << deltaPacket-1 << " missing IMU packets!" << std::endl;
-				  }
-				  else
-				  {
-					  if (receivedIMUPackets < 10) {
-						  receivedIMUPackets++;
-						  Ts_imu = (imu.utime - previous_imu_utime)*1.E-6/deltaPacket;
-						  previous_imu_utime = imu.utime;
-						  std::cout << "StateEstimator::run -- deltaPacket computed as: " << deltaPacket << ", Ts_imu set to " << Ts_imu << std::endl;
-					  }
-				  }
-			  } else {
-				  if (prevImuPacketCount != 0) {
-					  std::cerr << "StateEstimator::run -- non-monotonic IMU packet count!!! assuming " << Ts_imu << " s spacing between packets." << std::endl;
-				  }
-			  }
-		  }
-		  prevImuPacketCount = imu.packet_count;
-		  std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << std::endl;
-
-		  handle_inertial_data_temp_name(Ts_imu, imu, bdiPose, IMU_to_body, inert_odo, mERSMsg, mDFRequestMsg, _leg_odo);
 		  std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
-
-		  // TODO -- We should wait on IMU message, not AtlasState
-		  // For now we are going to publish on the last element of this queue
-		  //      std::cout << "StateEstimator::run -- nIMU = " << nIMU << std::endl;
-		  if (i==(nIMU-1)) {
-			  //publish ERS message
-			  std::cout << "StateEstimator::run -- Publish ERS" << std::endl;
-			  mERSMsg.utime = imu.utime;
-			  mLCM->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg); // There is some silly problem here
-
-			  mDFRequestMsg.updateType = mDFRequestMsg.INS_POSE_ONLY;
-			  mLCM->publish("SE_INS_POSE_STATE", &mDFRequestMsg);
-		  }
-
-		  if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
-			  std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
-
-			  // populate the INS state information and the measurement aiding information
-
-			  // Insert the required inertial data in the data fusion update request message
-			  stampInertialPoseUpdateRequestMsg(inert_odo, mDFRequestMsg);
-
-//			  if (_mSwitches->MATLAB_MotionSimulator) {
-////				  stampMatlabReferencePoseUpdateRequest(matlabPose, mDFRequestMsg);
-//			  } else {
-			  	  stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, mDFRequestMsg);
-//			  }
-
-			  // This message will contain reference measurement information from various sources -- for now it is LegOdo, Fovis, MatlabtrajectorMotionSimulation
-			  mLCM->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
-		  }
+		  // Handle IMU data
+		  IMUServiceRoutine(imu, (i==(nIMU-1)), mLCM); // Minimum computational cost function -- publishes 2 LCM message types internally
 	  }
 
 
@@ -276,6 +211,7 @@ void StateEstimate::StateEstimator::run()
 
 	  InertialOdometry::INSUpdatePacket insUpdatePacket;
 	  insUpdatePacket.utime = INSUpdate.utime;
+
 	  insUpdatePacket.dbiasGyro_b(0) = INSUpdate.dbiasGyro_b.x;
 	  insUpdatePacket.dbiasGyro_b(1) = INSUpdate.dbiasGyro_b.y;
 	  insUpdatePacket.dbiasGyro_b(2) = INSUpdate.dbiasGyro_b.z;
@@ -297,10 +233,36 @@ void StateEstimate::StateEstimator::run()
 	  inert_odo.incorporateERRUpdate(insUpdatePacket);
 	}
 
-    // add artificial delay
-    //boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-
-
 	std::cout << std::endl << std::endl;
   }
 }
+
+
+void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm) {
+
+	if (receivedIMUPackets < 10) {
+		detectIMUSampleTime(prevImuPacketCount, previous_imu_utime, receivedIMUPackets, Ts_imu, imu);
+		std::cout << "StateEstimator::run -- auto-detecting IMU sample time at " << Ts_imu << " s" << std::endl;
+	}
+	std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << " s" << std::endl; // Remove once confirmed to be working properly
+
+	InerOdoEst = PropagateINS(Ts_imu, inert_odo, IMU_to_body, imu);
+
+	if (publishERSflag) {
+		//publish ERS message on last IMU message in the current queue
+		stampInertialPoseERSMsg(InerOdoEst, mERSMsg);
+		std::cout << "StateEstimator::run -- Publish ERS" << std::endl;
+		lcm->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg);
+		//lcm->publish("POSE_BODY", &??);
+	}
+
+	// Request an update to the INS state -- This publish should be blocked until publishing of ERS message
+	if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
+		std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
+		stampInertialPoseUpdateRequestMsg(InerOdoEst, mDFRequestMsg);
+		stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, mDFRequestMsg);
+		lcm->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
+	}
+
+}
+

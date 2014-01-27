@@ -43,9 +43,7 @@ namespace InertialOdometry {
 		DynamicState getDynamicState();
 
 		unsigned long long get_utime();
-
 		void setPositionState(const Eigen::Vector3d &P_set);
-
 		void setVelocityState(const Eigen::Vector3d &V_set);
 
 		Eigen::Vector3d ResolveBodyToRef(const Eigen::Vector3d &_va);
