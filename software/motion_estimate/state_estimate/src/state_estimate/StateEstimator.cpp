@@ -137,42 +137,16 @@ void StateEstimate::StateEstimator::run()
 	{
 	  this->mIMUQueue.dequeue(imu);
 	  std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
-	  // Handle IMU data
-	  IMUServiceRoutine(imu, (i==(nIMU-1)), mLCM); // Minimum computational cost function -- publishes 2 LCM message types internally
+	  // Handle IMU data -- Special case, this one retransmits ERS and INSUpdateRequest messages internally
+	  IMUServiceRoutine(imu, (i==(nIMU-1)), mLCM);
 	}
-
-
 
     int nAtlasStates = mAtlasStateQueue.size();
     for (int i = 0; i < nAtlasStates; ++i)
     {
       this->mAtlasStateQueue.dequeue(atlasState);
-
-      // do something with new atlas state...
-      
-      // Here we compute the joint velocities with num_joints Kalman Filters in parallel
-      // TODO -- make this dependent on local state and not the message number
-      //float joint_velocities[atlasState.num_joints];
-      // Joint velocity states in the atlasState message are overwriten by this process
-      mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
-      insertAtlasState_ERS(atlasState, mERSMsg, robot);
-      // std::cout << "Handled Atlas state" << std::endl;
-      
-      // here we compute the leg odometry position solution
-      // TODO -- we are using the BDI orientation -- should change to either pure leg kin, combination of yaw, or V/P fused orientation
-      
-      doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, robot);
-
-      // TODO -- remove this, only a temporary display object
-      // Tihs is where leg odometry thinks the pelvis is at
-      Eigen::Isometry3d LegOdoPelvis;
-      LegOdoPelvis.setIdentity();
-      LegOdoPelvis = _leg_odo->getPelvisState();
-      std::cout << "StateEstimator::run -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
-      
-      // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
-      if (firstpass>0)
-        firstpass--;
+      // Handle atlasState message
+      AtlasStateServiceRoutine(atlasState, bdiPose);
     }
 
     const int nPoses = mBDIPoseQueue.size();
@@ -188,6 +162,7 @@ void StateEstimate::StateEstimator::run()
     {
       mViconQueue.dequeue(viconPose);
       // do something with new vicon pose...
+
     }
 
     const int nMatlabTruth = mMatlabTruthQueue.size();
@@ -197,28 +172,14 @@ void StateEstimate::StateEstimator::run()
 
 	  // do something with new MatlabTruthPose...
 	  std::cout << "StateEstimator::run -- Processing new matlabTruthPose message" << std::endl;
-
 	}
 
 	const int nINSUpdates = mINSUpdateQueue.size();
 	for (int i = 0; i < nINSUpdates; ++i)
 	{
 	  mINSUpdateQueue.dequeue(INSUpdate);
-
-	  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
-
-	  InertialOdometry::INSUpdatePacket insUpdatePacket;
-	  insUpdatePacket.utime = INSUpdate.utime;
-
-	  insUpdatePacket.dbiasGyro_b << INSUpdate.dbiasGyro_b.x, INSUpdate.dbiasGyro_b.y, INSUpdate.dbiasGyro_b.z;
-	  insUpdatePacket.dbiasAcc_b << INSUpdate.dbiasAcc_b.x, INSUpdate.dbiasAcc_b.y, INSUpdate.dbiasAcc_b.z;
-	  insUpdatePacket.dE_l << INSUpdate.dE_l.x, INSUpdate.dE_l.y, INSUpdate.dE_l.z;
-
-	  insUpdatePacket.dVel_l << INSUpdate.dVel_l.x, INSUpdate.dVel_l.y, INSUpdate.dVel_l.z;
-	  insUpdatePacket.dPos_l << INSUpdate.dPos_l.x, INSUpdate.dPos_l.y, INSUpdate.dPos_l.z;
-
-	  // And here we finally roll in the updates to the InertialOdometry INS prediction
-	  inert_odo.incorporateERRUpdate(insUpdatePacket);
+	  // Handle the INS update request
+	  INSUpdateServiceRoutine(INSUpdate);
 	}
 
 	std::cout << std::endl << std::endl;
@@ -251,5 +212,44 @@ void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t
 		stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, mDFRequestMsg);
 		lcm->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
 	}
+}
+
+void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_update_packet_t &INSUpdate) {
+
+  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
+  InertialOdometry::INSUpdatePacket insUpdatePacket;
+  insUpdatePacket.utime = INSUpdate.utime;
+
+  insUpdatePacket.dbiasGyro_b << INSUpdate.dbiasGyro_b.x, INSUpdate.dbiasGyro_b.y, INSUpdate.dbiasGyro_b.z;
+  insUpdatePacket.dbiasAcc_b << INSUpdate.dbiasAcc_b.x, INSUpdate.dbiasAcc_b.y, INSUpdate.dbiasAcc_b.z;
+  insUpdatePacket.dE_l << INSUpdate.dE_l.x, INSUpdate.dE_l.y, INSUpdate.dE_l.z;
+
+  insUpdatePacket.dVel_l << INSUpdate.dVel_l.x, INSUpdate.dVel_l.y, INSUpdate.dVel_l.z;
+  insUpdatePacket.dPos_l << INSUpdate.dPos_l.x, INSUpdate.dPos_l.y, INSUpdate.dPos_l.z;
+
+  // And here we finally roll in the updates to the InertialOdometry INS prediction
+  inert_odo.incorporateERRUpdate(insUpdatePacket);
+}
+
+void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose) {
+
+  // compute the joint velocities with num_joints Kalman Filters in parallel
+  // TODO -- make this dependent on local state and not the message number
+  //mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
+  insertAtlasState_ERS(atlasState, mERSMsg, robot);
+
+  // TODO -- we are using the BDI orientation -- should change to either pure leg kin, combination of yaw, or V/P fused orientation
+  doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, robot);
+
+  // TODO -- remove this, only a temporary display object
+  Eigen::Isometry3d LegOdoPelvis;
+  LegOdoPelvis.setIdentity();
+  LegOdoPelvis = _leg_odo->getPelvisState();
+  std::cout << "StateEstimator::run -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
+
+  // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
+  if (firstpass>0)
+	firstpass--;
+
 }
 

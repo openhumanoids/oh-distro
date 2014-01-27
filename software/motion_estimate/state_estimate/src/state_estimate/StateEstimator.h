@@ -105,6 +105,8 @@ private:
 
   // ======== SERVICE ROUTINES ===========
   void IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm);
+  void INSUpdateServiceRoutine(const drc::ins_update_packet_t &INSUpdate);
+  void AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose);
 };
 
 } // end namespace
