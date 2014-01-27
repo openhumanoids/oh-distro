@@ -30,6 +30,10 @@ public:
     return mQueue;
   }
 
+  IMUFilter* getIMUFilter() {
+	return &mIMUFilter;
+  }
+
 protected:
 
   void messageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::atlas_raw_imu_batch_t* msg)
@@ -42,9 +46,9 @@ protected:
 
     this->mIMUFilter.handleIMUPackets(imuPackets, this->mLCM, lastPose);
 
-    for (size_t i = 0; i < imuPackets.size(); ++i)
+    for (size_t i = 0; i < imuPackets.size(); i++)
     {
-      std::cout << "IMUMessageProducer::messageHandler -- enqueue" << std::endl;
+      //std::cout << "IMUMessageProducer::messageHandler -- enqueue" << std::endl;
       mQueue.enqueue(imuPackets[i]);
     }
 

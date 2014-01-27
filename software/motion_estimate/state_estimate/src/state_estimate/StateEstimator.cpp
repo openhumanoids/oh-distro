@@ -17,7 +17,8 @@ StateEstimate::StateEstimator::StateEstimator(
   mBDIPoseQueue(bdiPoseQueue),
   mViconQueue(viconPoseQueue),
   mMatlabTruthQueue(viconMatlabtruthQueue),
-  mINSUpdateQueue(INSUpdateQueue)
+  mINSUpdateQueue(INSUpdateQueue),
+  inert_odo(0.01)
 {
 
   _mSwitches = _switches;
@@ -180,6 +181,7 @@ void StateEstimate::StateEstimator::run()
 	  mINSUpdateQueue.dequeue(INSUpdate);
 	  // Handle the INS update request
 	  INSUpdateServiceRoutine(INSUpdate);
+
 	}
 
 	std::cout << std::endl << std::endl;
@@ -213,6 +215,7 @@ void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t
 		lcm->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
 	}
 }
+
 
 void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_update_packet_t &INSUpdate) {
 
@@ -250,6 +253,17 @@ void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_st
   // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
   if (firstpass>0)
 	firstpass--;
+}
 
+InertialOdometry::Odometry* StateEstimate::StateEstimator::getInertialOdometry() {
+  return &inert_odo;
+}
+
+drc::robot_state_t* StateEstimate::StateEstimator::getERSMsg() {
+  return &mERSMsg;
+}
+
+drc::ins_update_request_t* StateEstimate::StateEstimator::getDataFusionReqMsg() {
+  return &mDFRequestMsg;
 }
 

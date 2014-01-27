@@ -63,6 +63,12 @@ int StateEstimate::StateEstimateApplication::exec()
     matlabTruthPoseProducer.messageQueue(),
     INSUpdateProducer.messageQueue());
 
+  IMUFilter* imuFilter = imuProducer.getIMUFilter();
+  imuFilter->setInertialOdometry( estimator.getInertialOdometry() );
+  imuFilter->setERSMsg( estimator.getERSMsg() );
+  imuFilter->setDataFusionReqMsg( estimator.getDataFusionReqMsg() );
+
+
   // start comm thread
   lcmThread.start();
 

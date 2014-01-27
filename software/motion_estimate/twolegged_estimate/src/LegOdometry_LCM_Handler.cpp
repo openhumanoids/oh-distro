@@ -22,7 +22,7 @@ using namespace TwoLegs;
 using namespace std;
 
 LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, command_switches* commands):
-        _finish(false), lcm_(lcm_) {
+        _finish(false), lcm_(lcm_), inert_odo(0.001) {
   // Create the object we want to use to estimate the robot's pelvis position
   // In this case its a two legged vehicle and we use TwoLegOdometry class for this task
   

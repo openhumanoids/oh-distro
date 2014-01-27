@@ -51,6 +51,10 @@ public:
 
   ~StateEstimator();
 
+  InertialOdometry::Odometry* getInertialOdometry();
+  drc::robot_state_t* getERSMsg();
+  drc::ins_update_request_t* getDataFusionReqMsg();
+
 protected:
 
   void run();
@@ -78,7 +82,7 @@ private:
   std::string ERSMsgSuffix;
 
   drc::robot_state_t mERSMsg;
-  drc::robot_state_t testing;
+  //drc::robot_state_t testing;
   drc::ins_update_request_t mDFRequestMsg;
 	
   // We maintain own InerOdoEst state, to avoid potential future multi-threaded issues
