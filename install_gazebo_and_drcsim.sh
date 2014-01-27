@@ -118,6 +118,7 @@ build_gazebo_ros_pkgs()
   cd $work_dir/gazebo_ros_pkgs
 	# build gazebo_msgs
 	cd gazebo_msgs
+  rm -rf build
 	mkdir build
 	cd build
 	cmake .. -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO
@@ -126,6 +127,7 @@ build_gazebo_ros_pkgs()
 
 	# build gazebo_plugins
 	cd ../../gazebo_plugins
+  rm -rf build
 	mkdir build
 	cd build
 	cmake .. -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO
@@ -134,6 +136,7 @@ build_gazebo_ros_pkgs()
 
 	# gazebo_ros
 	cd ../../gazebo_ros
+  rm -rf build
 	mkdir build
 	cd build
 	cmake .. -DCMAKE_INSTALL_PREFIX=/opt/ros/$ROS_DISTRO
