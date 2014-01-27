@@ -146,6 +146,11 @@ In addition to above packages, run:
 
 DRCSIM requires ROS dependencies listed here: http://gazebosim.org/wiki/DRC/Install#Ubuntu_and_ROS_Groovy
 
+After you have installed ros packages you should run these commands:::
+
+    sudo rosdep init
+    rosdep update
+
 
 Build Instructions
 ==================
