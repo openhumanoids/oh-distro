@@ -24,25 +24,6 @@ goal_pos.left(3) = st0(3);
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 foot_goals = goal_pos;
 
-% function x = encodeCollocationSteps(steps)
-%   nsteps = size(steps, 2);
-%   x = zeros(12,nsteps);
-%   x(1:6,:) = steps;
-%   x(7:12,1) = steps(:,1);
-%   for j = 2:nsteps
-%     R = rotmat(-steps(6,j-1));
-%     x(7:12,j) = [R * (steps(1:2,j) - steps(1:2,j-1));
-%                 steps(3:6,j) - steps(3:6,j-1)];
-%   end
-%   x = reshape(x, [], 1);
-% end
-
-% function [steps, rel_steps] = decodeCollocationSteps(x)
-%   x = reshape(x, 12, []);
-%   steps = x(1:6,:);
-%   rel_steps = x(7:12,:);
-% end
-
 function [c, ceq, dc, dceq] = constraints(x)
   cf = goal_pos.center;
   if use_mex == 0 || use_mex == 2
@@ -115,34 +96,7 @@ for nsteps = min_steps:max_steps
   end
   nv = 12 * nsteps;
 
-  A = zeros(nc*(nsteps-1), nv);
-  b = zeros(nc*(nsteps-1), 1);
-  if params.right_foot_lead 
-    A_reach = A_reach * diag([1,-1,1,1,1,1]);
-  end
-  for j = 2:nsteps
-    con_ndx = nc*(j-2)+1:nc*(j-1);
-    var_ndx = (j-1)*12+7:j*12;
-    A(con_ndx,var_ndx) = A_reach;
-    b(con_ndx) = b_reach;
-    A_reach = A_reach * diag([1,-1,1,1,1,1]);
-  end
-
-  Aeq = zeros(4*(nsteps-1),nv);
-  beq = zeros(4*(nsteps-1),1);
-  for j = 2:nsteps
-    con_ndx = (j-2)*4+(1:4);
-    x1_ndx = (j-2)*12+(1:6);
-    x2_ndx = (j-1)*12+(1:6);
-    dx_ndx = (j-1)*12+(7:12);
-    Aeq(con_ndx, x1_ndx(3:6)) = -diag(ones(4,1));
-    Aeq(con_ndx, x2_ndx(3:6)) = diag(ones(4,1));
-    if ~mod(params.right_foot_lead+j, 2)
-      Aeq(con_ndx, dx_ndx(3:6)) = -diag(ones(4,1));
-    else
-      Aeq(con_ndx, dx_ndx(3:6)) = -diag([1,1,1,-1]);
-    end
-  end
+  [A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);
 
   lb = -inf(12,nsteps);
   ub = inf(size(lb));
