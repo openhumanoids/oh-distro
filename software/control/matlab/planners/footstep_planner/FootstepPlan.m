@@ -17,6 +17,10 @@ classdef FootstepPlan
       end
       msg.footsteps = step_msgs;
     end
+
+    function msg = toLCM(obj)
+      msg = obj.to_footstep_plan_t();
+    end
   end
 
   methods(Static=true)
@@ -32,6 +36,13 @@ classdef FootstepPlan
         infeasibility = nan;
         walking_params = [];
         plan(j) = Footstep(pos, id, is_right_foot, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
+      end
+    end
+
+    function plan = from_footstep_plan_t(msg)
+      plan = Footstep.empty();
+      for j = 1:msg.num_steps
+        plan(j) = Footstep.from_footstep_t(msg.footsteps(j));
       end
     end
   end
