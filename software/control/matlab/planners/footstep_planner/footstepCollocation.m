@@ -169,17 +169,17 @@ for nsteps = min_steps:max_steps
     ObjRow = 1;
     global SNOPT_USERFUN
     SNOPT_USERFUN = @collocation_userfun;
-    tic
+    % tic
     [xstar, fval, ~, ~, exitflag] = snsolve(x0,xlow,xupp,xmul,xstate,    ...
                  Flow,Fupp,Fmul,Fstate,      ...
                  ObjAdd,ObjRow,A_sn(iAndx),iAfun,jAvar,...
                  iGfun,jGvar,'snoptUserfun');
-    toc
-    exitflag
+    % toc
+    % exitflag
   else
-    tic
+    % tic
     [xstar, fval, exitflag] = fmincon(@objfun, x0, sparse(A), b, sparse(Aeq), beq, lb, ub, @constraints, optimset('Algorithm', 'interior-point', 'DerivativeCheck', 'on', 'GradConstr', 'on', 'GradObj', 'on', 'OutputFcn',{}));
-    toc
+    % toc
   end
 
   % plotfun(xstar);
@@ -199,7 +199,7 @@ for j = 2:nsteps
   end
   valuecheck(steps(:,j-1) + [R * steps_rel(1:2,j); steps_rel(3:6,j)], steps(:,j),1e-4);
 end
-nsteps
+% nsteps
 
 valuecheck(steps([1,2,6],1), X(2).pos([1,2,6]),1e-8);
 for j = 2:nsteps
