@@ -157,10 +157,10 @@ elseif strcmp(joint_name,'r_leg_hpy')
 elseif strcmp(joint_name,'l_leg_hpz') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
+  qdes(joint_index_map.r_leg_hpx) = -0.4;
   switch config_id
     case 1
     case 2
-      qdes(joint_index_map.r_leg_hpx) = -0.4;
       qdes(joint_index_map.l_leg_kny) = 1.57;
     otherwise
       error('unknown config_id');
@@ -169,10 +169,10 @@ elseif strcmp(joint_name,'l_leg_hpz')
 elseif strcmp(joint_name,'r_leg_hpz') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
+      qdes(joint_index_map.l_leg_hpx) = 0.4;
   switch config_id
     case 1
     case 2
-      qdes(joint_index_map.l_leg_hpx) = 0.4;
       qdes(joint_index_map.r_leg_kny) = 1.57;
     otherwise
       error('unknown config_id');

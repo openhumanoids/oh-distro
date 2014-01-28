@@ -24,13 +24,13 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_hpz';% <---- joint name 
+joint = 'r_leg_hpy';% <---- joint name 
 input_mode = 'position';% <---- force, position
-control_mode = 'position';% <---- force, position
+control_mode = 'force';% <---- force, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 30;% <--- signal duration (sec)
+T = 15;% <--- signal duration (sec)
 
 % chirp specific
 amp = 0.1;% <----  Nm or radians
@@ -120,20 +120,18 @@ ref_frame.updateGains(gains);
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
 
 if strcmp(control_mode,'force')
+  % update gains for joint
+  gains2 = getAtlasGains(input_frame);
   % set joint position gains to 0
   gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;
   gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
   gains.k_qd_p(act_idx==joint_index_map.(joint)) = 0;
-
-elseif strcmp(control_mode,'position')  
-  % set force gains to 0
-  gains.k_f_p(act_idx==joint_index_map.(joint)) = 0; 
-  gains.ff_f_d(act_idx==joint_index_map.(joint)) = 0;
-  gains.ff_qd(act_idx==joint_index_map.(joint)) = 0;
-else
-  error('unknown control mode');
+  % set force gains
+  gains.k_f_p(act_idx==joint_index_map.(joint)) = gains2.k_f_p(act_idx==joint_index_map.(joint)); 
+  gains.ff_f_d(act_idx==joint_index_map.(joint)) = gains2.ff_f_d(act_idx==joint_index_map.(joint));
+  gains.ff_qd(act_idx==joint_index_map.(joint)) = gains2.ff_qd(act_idx==joint_index_map.(joint));
+  ref_frame.updateGains(gains);
 end 
-ref_frame.updateGains(gains);
 
 vals = motion_sign * vals;
 if strcmp(input_mode,'position')
