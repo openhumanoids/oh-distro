@@ -37,11 +37,19 @@ classdef StatelessFootstepPlanner
       for p = params_set
         params = struct(p{1});
         params.right_foot_lead = params.leading_foot; % for backwards compatibility
-        if params.planning_mode == drc.footstep_plan_params_t.MODE_AUTO
-          footsteps = footstepCollocation(biped, foot_orig, goal_pos, params);
+        if request.num_goal_steps == 0
+          params.allow_odd_num_steps = true;
+          params.allow_even_num_steps = true;
         else
-          footsteps = footstepLineSearch(biped, foot_orig, goal_pos.center, params);
+          if xor(request.goal_steps(end).is_right_foot, params.right_foot_lead)
+            params.allow_even_num_steps = true;
+            params.allow_odd_num_steps = false;
+          else
+            params.allow_even_num_steps = false;
+            params.allow_odd_num_steps = true;
+          end
         end
+        footsteps = footstepCollocation(biped, foot_orig, goal_pos, params);
         step_vect = encodeCollocationSteps([footsteps(2:end).pos]);
         [steps, steps_rel] = decodeCollocationSteps(step_vect);
         l = length(footsteps);

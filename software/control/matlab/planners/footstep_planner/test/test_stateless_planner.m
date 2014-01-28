@@ -82,8 +82,8 @@ request.default_step_params.bdi_step_end_dist = 0.02;
 request.default_step_params.mu = 1.0;
 
 
-p = StatelessFootstepPlanner(r);
-footsteps = p.plan_footsteps(request);
+p = StatelessFootstepPlanner();
+footsteps = p.plan_footsteps(r, request);
 assert(footsteps(3).pos(2) == 0.20);
 assert(length(footsteps) == 12);
 assert(footsteps(3).infeasibility > 1e-6);
@@ -108,6 +108,100 @@ goal_steps(1).id = -1;
 goal_steps(1).is_right_foot = 1;
 request.goal_steps = goal_steps;
 
-footsteps = p.plan_footsteps(request);
+footsteps = p.plan_footsteps(r, request);
 s = Footstep.from_footstep_t(goal_steps(1));
-assert(all(footsteps(end).pos == p.biped.footOrig2Contact(s.pos, 'center', false)));
+assert(all(footsteps(end).pos == r.footOrig2Contact(s.pos, 'center', false)));
+
+request.num_goal_steps = 3;
+goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
+goal_steps(1) = drc.footstep_t();
+goal_steps(1).pos = drc.position_3d_t();
+goal_steps(1).pos.translation = drc.vector_3d_t();
+goal_steps(1).pos.translation.x = 2.0;
+goal_steps(1).pos.translation.y = -0.15;
+goal_steps(1).pos.translation.z = 0;
+goal_steps(1).pos.rotation = drc.quaternion_t();
+goal_steps(1).pos.rotation.w = 1.0;
+goal_steps(1).pos.rotation.x = 0;
+goal_steps(1).pos.rotation.y = 0;
+goal_steps(1).pos.rotation.z = 0;
+goal_steps(1).id = -1;
+goal_steps(1).is_right_foot = 1;
+goal_steps(2) = drc.footstep_t();
+goal_steps(2).pos = drc.position_3d_t();
+goal_steps(2).pos.translation = drc.vector_3d_t();
+goal_steps(2).pos.translation.x = 2.1;
+goal_steps(2).pos.translation.y = 0.1;
+goal_steps(2).pos.translation.z = 0;
+goal_steps(2).pos.rotation = drc.quaternion_t();
+goal_steps(2).pos.rotation.w = 1.0;
+goal_steps(2).pos.rotation.x = 0;
+goal_steps(2).pos.rotation.y = 0;
+goal_steps(2).pos.rotation.z = 0;
+goal_steps(2).id = -1;
+goal_steps(2).is_right_foot = 0;
+goal_steps(3) = drc.footstep_t();
+goal_steps(3).pos = drc.position_3d_t();
+goal_steps(3).pos.translation = drc.vector_3d_t();
+goal_steps(3).pos.translation.x = 2.2;
+goal_steps(3).pos.translation.y = -0.15;
+goal_steps(3).pos.translation.z = 0;
+goal_steps(3).pos.rotation = drc.quaternion_t();
+goal_steps(3).pos.rotation.w = 1.0;
+goal_steps(3).pos.rotation.x = 0;
+goal_steps(3).pos.rotation.y = 0;
+goal_steps(3).pos.rotation.z = 0;
+goal_steps(3).id = -1;
+goal_steps(3).is_right_foot = 1;
+request.goal_steps = goal_steps;
+
+footsteps = p.plan_footsteps(r, request);
+assert(length(footsteps) == 12)
+assert(all([footsteps(1:2:end).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
+
+request.num_goal_steps = 3;
+goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
+goal_steps(1) = drc.footstep_t();
+goal_steps(1).pos = drc.position_3d_t();
+goal_steps(1).pos.translation = drc.vector_3d_t();
+goal_steps(1).pos.translation.x = 2.0;
+goal_steps(1).pos.translation.y = 0.1;
+goal_steps(1).pos.translation.z = 0;
+goal_steps(1).pos.rotation = drc.quaternion_t();
+goal_steps(1).pos.rotation.w = 1.0;
+goal_steps(1).pos.rotation.x = 0;
+goal_steps(1).pos.rotation.y = 0;
+goal_steps(1).pos.rotation.z = 0;
+goal_steps(1).id = -1;
+goal_steps(1).is_right_foot = 0;
+goal_steps(2) = drc.footstep_t();
+goal_steps(2).pos = drc.position_3d_t();
+goal_steps(2).pos.translation = drc.vector_3d_t();
+goal_steps(2).pos.translation.x = 2.1;
+goal_steps(2).pos.translation.y = -0.15;
+goal_steps(2).pos.translation.z = 0;
+goal_steps(2).pos.rotation = drc.quaternion_t();
+goal_steps(2).pos.rotation.w = 1.0;
+goal_steps(2).pos.rotation.x = 0;
+goal_steps(2).pos.rotation.y = 0;
+goal_steps(2).pos.rotation.z = 0;
+goal_steps(2).id = -1;
+goal_steps(2).is_right_foot = 1;
+goal_steps(3) = drc.footstep_t();
+goal_steps(3).pos = drc.position_3d_t();
+goal_steps(3).pos.translation = drc.vector_3d_t();
+goal_steps(3).pos.translation.x = 2.2;
+goal_steps(3).pos.translation.y = 0.1;
+goal_steps(3).pos.translation.z = 0;
+goal_steps(3).pos.rotation = drc.quaternion_t();
+goal_steps(3).pos.rotation.w = 1.0;
+goal_steps(3).pos.rotation.x = 0;
+goal_steps(3).pos.rotation.y = 0;
+goal_steps(3).pos.rotation.z = 0;
+goal_steps(3).id = -1;
+goal_steps(3).is_right_foot = 0;
+request.goal_steps = goal_steps;
+
+footsteps = p.plan_footsteps(r, request);
+assert(length(footsteps) == 11)
+assert(all([footsteps(1:2:end-1).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
