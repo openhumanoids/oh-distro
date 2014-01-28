@@ -6,7 +6,7 @@ classdef FirstOrderKalmanFilter < DrakeSystem
 % @param process_noise (nx1) vector of the velocity process noise
 % @param obs_noise (nx1) vector of the position observation noise
 % state order is
-% [q;qd;P1(1,1);P2(1,1);...Pn(1,1);P1(1,2);...Pn(1,2);P1(2,2);...Pn(2,2)]
+% [t_prev;q;qd;P1(1,1);P2(1,1);...Pn(1,1);P1(1,2);...Pn(1,2);P1(2,2);...Pn(2,2)]
 % where Pi is the 2x2 symmetric covariance matrix of joint i
   methods
     function obj = FirstOrderKalmanFilter(process_noise, obs_noise)
@@ -15,7 +15,7 @@ classdef FirstOrderKalmanFilter < DrakeSystem
       sizecheck(obs_noise,[n 1]);
       % 5n+1 states: 1 for last time, 3n for sym-covariance, 2n for state
       % inputs are n measurements
-      % outputs is the state
+      % output is the estimated state
       obj = obj@DrakeSystem(0,1+5*n,n,2*n,false,true);
       obj.process_noise = process_noise;
       obj.obs_noise = obs_noise;

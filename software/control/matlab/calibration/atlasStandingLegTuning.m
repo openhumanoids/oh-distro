@@ -198,6 +198,12 @@ udes_prev = zeros(nu,1);
 toffset = -1;
 tt=-1;
 dt = 0.03;
+
+process_noise = 0.3;
+observation_noise = 5e-4;
+kf = FirstOrderKalmanFilter(process_noise,observation_noise);
+kf_state = kf.getInitialState;
+
 while tt<T+2
   [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
@@ -207,6 +213,10 @@ while tt<T+2
     end
     tt=t-toffset;
     
+    % get estimated state
+	kf_state = kf.update(tt,kf_state,x(1:nq));
+	x = kf.output(tt,kf_state,x(1:nq))
+
     q = x(1:nq);
     q(1:2) = q(1:2)-xy_offset;
     qd = x(nq+(1:nq));
