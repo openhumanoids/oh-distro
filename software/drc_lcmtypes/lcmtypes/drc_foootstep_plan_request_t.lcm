@@ -19,4 +19,6 @@ struct footstep_plan_request_t
 	footstep_t existing_steps[num_existing_steps];
 
 	footstep_plan_params_t params;
+
+	footstep_params_t default_step_params;
 }
