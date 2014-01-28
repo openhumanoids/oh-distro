@@ -2,7 +2,7 @@ function REQM = storeDFReqMsgData(k, REQM, msg)
 
 
 REQM.utime(k) = msg.utime;
-
+toc
 REQM.ba(k,1:3) = [msg.accBiasEst.x, msg.accBiasEst.y, msg.accBiasEst.z];
 REQM.bg(k,1:3) = [msg.gyroBiasEst.x, msg.gyroBiasEst.y, msg.gyroBiasEst.z];
 REQM.a_b(k,1:3) = [msg.predicted_a_b.x, msg.predicted_a_b.y, msg.predicted_a_b.z];

@@ -26,7 +26,7 @@ ReqMsg = initINSRequestLCMMsg();
 
 initstart = 1;
 
-switch (5)
+switch (4)
     case 1
         data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
         iter = 6000;

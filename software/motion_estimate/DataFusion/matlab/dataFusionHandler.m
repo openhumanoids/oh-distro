@@ -4,7 +4,7 @@ function DFRESULTS = dataFusionHandler()
 % only.
 
 % This is temporary
-iterations = 10000/50;
+iterations = 12000;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
@@ -13,6 +13,7 @@ feedbackGain = 1;
 dfSys.T = 0;
 
 ENABLE_FEEDBACK = 1;
+DataLogging = 1;
 
 % Initialize local variables
 computationTime = 0;
@@ -30,30 +31,28 @@ INSUpdateMsg = initINSUpdateLCMMsg();
 dfSys.posterior.x = zeros(15,1);
 dfSys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
-DFRESULTS.STATEX = zeros(iterations,15);
-DFRESULTS.STATECOV = zeros(iterations,15);
-DFRESULTS.poses = [];
-DFRESULTS.REQMSGS = [];
-DFRESULTS.REQMSGS = initDFReqMsgData(iterations, DFRESULTS.REQMSGS);
-
-DFRESULTS.updatePackets = []; % temporary logging
+if (DataLogging == 1)
+    DFRESULTS.STATEX = zeros(iterations,15);
+    DFRESULTS.STATECOV = zeros(iterations,15);
+    DFRESULTS.poses = [];
+    DFRESULTS.REQMSGS = [];
+    DFRESULTS.REQMSGS = initDFReqMsgData(iterations, DFRESULTS.REQMSGS);
+    DFRESULTS.updatePackets = []; % temporary logging
+end
 
 index = 0;
 
-DFRESULTS.REQMSGS.utime(end+1) = 0
 
 % We assume this loop runs at 50 Hz or less 
 while (true)
+    tic;
     index = index + 1;
     % wait for message
     [Measurement.INS, Measurement.LegOdo, DFReqMsg] = receiveInertialStatePos(aggregator);
-    DFRESULTS.REQMSGS = storeDFReqMsgData(index, DFRESULTS.REQMSGS, DFReqMsg);
     
     % Now we can start computation
-    tic;
-%     disp('Received data fusion request')
     % Ensure that we are not exceeding our allotted computation time
-    if (computationTime > 0.045)
+    if ((computationTime > 0.020) && DataLogging~=1)
         disp(['WARNING -- dataFusionHandler is taking longer than 40ms, time taken was' num2str(computationTime)]) 
     end
 
@@ -74,9 +73,23 @@ while (true)
 
     
     % Store stuff for later plotting
-    DFRESULTS.poses = storePose(Measurement.INS.pose, DFRESULTS.poses, index);
-    DFRESULTS.STATEX(index,:) = dfSys.posterior.x';
-    DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
+    if (DataLogging == 1)
+        %DFRESULTS.REQMSGS = storeDFReqMsgData(index, DFRESULTS.REQMSGS, DFReqMsg);
+        DFRESULTS.REQMSGS.utime(index) = DFReqMsg.utime;
+        DFRESULTS.REQMSGS.ba(index,1:3) = [DFReqMsg.accBiasEst.x, DFReqMsg.accBiasEst.y, DFReqMsg.accBiasEst.z];
+        DFRESULTS.REQMSGS.bg(index,1:3) = [DFReqMsg.gyroBiasEst.x, DFReqMsg.gyroBiasEst.y, DFReqMsg.gyroBiasEst.z];
+        DFRESULTS.REQMSGS.a_b(index,1:3) = [DFReqMsg.predicted_a_b.x, DFReqMsg.predicted_a_b.y, DFReqMsg.predicted_a_b.z];
+        DFRESULTS.REQMSGS.w_b(index,1:3) = [DFReqMsg.predicted_w_b.x, DFReqMsg.predicted_w_b.y, DFReqMsg.predicted_w_b.z];
+        DFRESULTS.REQMSGS.a_l(index,1:3) = [DFReqMsg.local_linear_acceleration.x, DFReqMsg.local_linear_acceleration.y, DFReqMsg.local_linear_acceleration.z];
+        DFRESULTS.REQMSGS.f_l(index,1:3) = [DFReqMsg.local_linear_force.x, DFReqMsg.local_linear_force.y, DFReqMsg.local_linear_force.z];
+        DFRESULTS.REQMSGS.P_l(index,1:3) = [DFReqMsg.pose.translation.x, DFReqMsg.pose.translation.y, DFReqMsg.pose.translation.z];
+        DFRESULTS.REQMSGS.V_l(index,1:3) = [DFReqMsg.twist.linear_velocity.x, DFReqMsg.twist.linear_velocity.y, DFReqMsg.twist.linear_velocity.z];
+        DFRESULTS.REQMSGS.lQb(index,1:4) = [DFReqMsg.pose.rotation.w, DFReqMsg.pose.rotation.x, DFReqMsg.pose.rotation.y, DFReqMsg.pose.rotation.z];
+        DFRESULTS.poses = storePose(Measurement.INS.pose, DFRESULTS.poses, index);
+        DFRESULTS.STATEX(index,:) = dfSys.posterior.x';
+        DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
+    end
+    
     
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
@@ -88,7 +101,7 @@ while (true)
     end
     
     computationTime = toc;
-    if (Measurement.INS.pose.utime == (100 * 1000000) )
+    if (Measurement.INS.pose.utime == (120 * 1E6) )
         break;
     end
 end
