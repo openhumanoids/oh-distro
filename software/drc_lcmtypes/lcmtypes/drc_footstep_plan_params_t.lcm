@@ -14,12 +14,13 @@ struct footstep_plan_params_t
 	float nom_forward_step;
 	float max_forward_step;
 
-	// The defaults for parameters which may vary from one step to another
-	footstep_params_t default_footstep_params;
-
-	boolean follow_spline;
 	boolean ignore_terrain;
 	boolean force_to_sticky_feet;
+
+	int8_t planning_mode;
+	const int8_t MODE_AUTO = 0;
+	const int8_t MODE_SPLINE = 1;
+	const int8_t MODE_NO_SPLINE = 2;
 
     int8_t behavior;
     const int8_t BEHAVIOR_WALKING = 0;
@@ -29,8 +30,6 @@ struct footstep_plan_params_t
 
 	int8_t map_command;
 
-	// whether to allow optimization of the foostep plan
-	boolean allow_optimization;
 
 	int8_t leading_foot;
 	const int8_t LEAD_RIGHT = 1;
