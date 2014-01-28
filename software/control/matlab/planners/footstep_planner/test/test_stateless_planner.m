@@ -64,7 +64,7 @@ request.params.force_to_sticky_feet = false;
 request.params.planning_mode = drc.footstep_plan_params_t.MODE_AUTO;
 request.params.behavior = drc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING;
 request.params.map_command = 0;
-request.params.leading_foot = drc.footstep_plan_params_t.LEAD_AUTO;
+request.params.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
 
 request.default_step_params = drc.footstep_params_t();
 request.default_step_params.utime = 0;
@@ -84,3 +84,30 @@ request.default_step_params.mu = 1.0;
 
 p = StatelessFootstepPlanner(r);
 footsteps = p.plan_footsteps(request);
+assert(footsteps(3).pos(2) == 0.20);
+assert(length(footsteps) == 12);
+assert(footsteps(3).infeasibility > 1e-6);
+assert(footsteps(4).infeasibility > 1e-6);
+assert(all([footsteps(5:end).infeasibility] < 1e-6))
+assert(all(p.pairReverse([1,2,3,4]) == [2,1,4,3]))
+
+request.num_goal_steps = 1;
+goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
+goal_steps(1) = drc.footstep_t();
+goal_steps(1).pos = drc.position_3d_t();
+goal_steps(1).pos.translation = drc.vector_3d_t();
+goal_steps(1).pos.translation.x = 2.0;
+goal_steps(1).pos.translation.y = -0.15;
+goal_steps(1).pos.translation.z = 0;
+goal_steps(1).pos.rotation = drc.quaternion_t();
+goal_steps(1).pos.rotation.w = 1.0;
+goal_steps(1).pos.rotation.x = 0;
+goal_steps(1).pos.rotation.y = 0;
+goal_steps(1).pos.rotation.z = 0;
+goal_steps(1).id = -1;
+goal_steps(1).is_right_foot = 1;
+request.goal_steps = goal_steps;
+
+footsteps = p.plan_footsteps(request);
+s = Footstep.from_footstep_t(goal_steps(1));
+assert(all(footsteps(end).pos == p.biped.footOrig2Contact(s.pos, 'center', false)));

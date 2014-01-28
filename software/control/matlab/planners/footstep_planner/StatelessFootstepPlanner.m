@@ -9,15 +9,10 @@ classdef StatelessFootstepPlanner
       obj.biped = biped;
     end
 
-    function footsteps = plan_footsteps(obj, request)
+    function plan = plan_footsteps(obj, request)
       x0 = obj.biped.getStateFrame().lcmcoder.decode(request.initial_state);
       q0 = x0(1:end/2);
       foot_orig = obj.biped.feetPosition(q0);
-
-      terrain = obj.biped.getTerrain();
-      if ismethod(terrain, 'setMapMode')
-        obj.biped.setTerrain(terrain.setMapMode(request.params.map_command));
-      end
 
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(obj.biped, request);
 
@@ -58,25 +53,30 @@ classdef StatelessFootstepPlanner
           best_params = params;
         end
       end
-      footsteps = best_steps;
+      plan = FootstepPlan.from_collocation_results(best_steps);
       params = best_params;
 
-      footsteps = StatelessFootstepPlanner.setStepParams(footsteps, request);
-      footsteps = StatelessFootstepPlanner.mergeExistingSteps(obj.biped, footsteps, request);
-      footsteps = StatelessFootstepPlanner.checkReachInfeasibility(obj.biped, footsteps, params);
+      plan = StatelessFootstepPlanner.addGoalSteps(obj.biped, plan, request);
+      plan = StatelessFootstepPlanner.mergeExistingSteps(obj.biped, plan, request);
+      plan = StatelessFootstepPlanner.setStepParams(plan, request);
+      if ~request.params.ignore_terrain
+        plan = StatelessFootstepPlanner.snapToTerrain(obj.biped, plan, request);
+        plan = StatelessFootstepPlanner.applySwingTerrain(obj.biped, plan, request);
+      end
+      plan = StatelessFootstepPlanner.checkReachInfeasibility(obj.biped, plan, params);
     end
 
   end
   methods (Static=true)
     function goal_pos = compute_goal_pos(biped, request)
       if request.num_goal_steps == 0
-        pos = StatelessFootstepPlanner.decodePosition3d(request.goal_pos);
+        pos = decodePosition3d(request.goal_pos);
         goal_pos.center = pos;
         goal_pos.right = Biped.stepCenter2FootCenter(pos, true, request.params.nom_step_width);
         goal_pos.left = Biped.stepCenter2FootCenter(pos, false, request.params.nom_step_width);
       else
         for j = 1:(min([2, request.num_goal_steps]))
-          pos = StatelessFootstepPlanner.decodePosition3d(request.goal_steps(j).pos);
+          pos = decodePosition3d(request.goal_steps(j).pos);
           if request.goal_steps(j).is_right_foot
             goal_pos.right = biped.footOrig2Contact(pos, 'center', true);
           else
@@ -100,14 +100,42 @@ classdef StatelessFootstepPlanner
     function footsteps = setStepParams(footsteps, request)
       for j = 1:length(footsteps)
         footsteps(j).id = j;
-        footsteps(j).params = request.default_step_params;
-        if j <= 2
-          footsteps(j).pos_fixed = ones(6,1);
-        else
-          footsteps(j).pos_fixed = zeros(6,1);
-        end
+        footsteps(j).walking_params = request.default_step_params;
         footsteps(j).is_in_contact = true;
       end
+    end
+
+    function footsteps = addGoalSteps(biped, footsteps, request)
+      nsteps = length(footsteps);
+      if request.num_goal_steps == 0
+        return;
+      elseif request.num_goal_steps == 1
+        goal_step = Footstep.from_footstep_t(request.goal_steps(1));
+        goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
+        if footsteps(end).is_right_foot == goal_step.is_right_foot
+          k = nsteps;
+        else
+          k = nsteps - 1;
+        end
+        footsteps(k) = goal_step;
+      else
+        if footsteps(end-1).is_right_foot ~= request.goal_steps(1).is_right_foot
+          request.goal_steps = StatelessFootstepPlanner.pairReverse(request.goal_steps);
+        end
+        for j = 1:request.num_goal_steps
+          k = nsteps - 2 + j;
+          goal_step = Footstep.from_footstep_t(request.goal_steps(j));
+          goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
+          footsteps(k) = goal_step;
+        end
+      end
+    end
+
+    function y = pairReverse(x)
+      % If x is [a, b, c, d], returns [b, a, d, c]
+      y = zeros(size(x));
+      y(1:2:end) = x(2:2:end);
+      y(2:2:end) = x(1:2:end);
     end
 
     function footsteps = mergeExistingSteps(biped, footsteps, request)
@@ -120,26 +148,50 @@ classdef StatelessFootstepPlanner
           fprintf(1, 'Error: Right/left foot doesn''t match at ID %d', ndx);
           break
         end
-        existing_pos = StatelessFootstepPlanner.decodePosition3d(request.existing_steps(j).pos);
-        existing_pos = biped.footOrig2Contact(existing_pos, 'center', request.existing_steps(j).is_right_foot);
+        existing_step = Footstep.from_footstep_t(request.existing_steps(j));
+        existing_step.pos = biped.footOrig2Contact(existing_step.pos, 'center', existing_step.is_right_foot);
         if request.existing_steps(j).fixed_x
-          footsteps(ndx).pos(1) = existing_pos(1);
+          footsteps(ndx).pos(1) = existing_step.pos(1);
         end
         if request.existing_steps(j).fixed_y
-          footsteps(ndx).pos(2) = existing_pos(2);
+          footsteps(ndx).pos(2) = existing_step.pos(2);
         end
         if request.existing_steps(j).fixed_z
-          footsteps(ndx).pos(3) = existing_pos(3);
+          footsteps(ndx).pos(3) = existing_step.pos(3);
         end
         if request.existing_steps(j).fixed_roll
-          footsteps(ndx).pos(4) = existing_pos(4);
+          footsteps(ndx).pos(4) = existing_step.pos(4);
         end
         if request.existing_steps(j).fixed_pitch
-          footsteps(ndx).pos(5) = existing_pos(5);
+          footsteps(ndx).pos(5) = existing_step.pos(5);
         end
         if request.existing_steps(j).fixed_yaw
-          footsteps(ndx).pos(6) = existing_pos(6);
+          footsteps(ndx).pos(6) = existing_step.pos(6);
         end
+        footsteps(ndx).pos_fixed = existing_step.pos_fixed;
+      end
+    end
+
+    function plan = snapToTerrain(biped, plan, request)
+      terrain = biped.getTerrain();
+      if ismethod(terrain, 'setMapMode')
+        biped.setTerrain(terrain.setMapMode(request.params.map_command));
+      end
+      nsteps = length(plan);
+      for j = 1:nsteps
+        plan(j).pos = fitStepToTerrain(biped, plan(j).pos, 'center');
+      end
+    end
+
+    function plan = applySwingTerrain(biped, plan, request)
+      terrain = biped.getTerrain();
+      if ismethod(terrain, 'setMapMode')
+        biped.setTerrain(terrain.setMapMode(request.params.map_command));
+      end
+      nsteps = length(plan);
+      for j = 3:nsteps
+        [contact_width, ~, ~] = contactVolume(biped, plan(j-2).pos, plan(j).pos, struct('nom_z_clearance', plan(j).walking_params.step_height));
+        plan(j).terrain_pts = sampleSwingTerrain(biped, plan(j-2).pos, plan(j).pos, contact_width);
       end
     end
 
@@ -157,58 +209,6 @@ classdef StatelessFootstepPlanner
       violation_ineq = A * step_vect - b;
       for j = 2:nsteps
         footsteps(j+1).infeasibility = max(violation_ineq(step_map.ineq(j)));
-      end
-    end
-
-    function pose = decodePosition3d(position_3d)
-      pose = zeros(6,1);
-      pose(1:3) = [position_3d.translation.x; position_3d.translation.y; position_3d.translation.z];
-      [pose(4), pose(5), pose(6)] = quat2angle([position_3d.rotation.w,...
-                                          position_3d.rotation.x,...
-                                          position_3d.rotation.y,...
-                                          position_3d.rotation.z], 'XYZ');
-    end
-
-    function msg = encodeFootstep(X, t)
-      if nargin < 2
-        t = get_timestamp_now()*1e-6;
-      end
-
-      msg = drc.footstep_t();
-      msg.utime = t * 1000000;
-      msg.pos = drc.position_3d_t();
-      trans = drc.vector_3d_t();
-      trans.x = X.pos(1);
-      trans.y = X.pos(2);
-      trans.z = X.pos(3);
-      rot = drc.quaternion_t();
-      q = rpy2quat([X.pos(4), X.pos(5), X.pos(6)]);
-      rot.w = q(1);
-      rot.x = q(2);
-      rot.y = q(3);
-      rot.z = q(4);
-      msg.pos.translation = trans;
-      msg.pos.rotation = rot;
-
-      msg.id = int32(X.id);
-      msg.fixed_x = X.pos_fixed(1);
-      msg.fixed_y = X.pos_fixed(2);
-      msg.fixed_z = X.pos_fixed(3);
-      msg.fixed_roll = X.pos_fixed(4);
-      msg.fixed_pitch = X.pos_fixed(5);
-      msg.fixed_yaw = X.pos_fixed(6);
-      msg.is_right_foot = X.is_right_foot;
-      msg.is_in_contact = X.is_in_contact;
-      msg.infeasibility = X.infeasibility;
-
-      msg.params = X.params;
-
-      if ~isfield(X, 'terrain_pts') || isempty(X.terrain_pts)
-        msg.num_terrain_pts = 0;
-      else
-        msg.num_terrain_pts = size(X.terrain_pts, 2);
-        msg.terrain_path_dist = X.terrain_pts(1,:);
-        msg.terrain_height = X.terrain_pts(2,:);
       end
     end
   end
