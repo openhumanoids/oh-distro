@@ -58,7 +58,7 @@ private:
   image_io_utils*  imgutils_;  
 };
 
-App::App(ros::NodeHandle node_) :it_(node_), node_(node_){
+App::App(ros::NodeHandle node_) : node_(node_), it_(node_){
   ROS_INFO("Initializing Translator");
   if(!lcm_publish_.good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
@@ -163,7 +163,7 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
 int main(int argc, char **argv){
   ros::init(argc, argv, "ros2lcm_camera");
   ros::NodeHandle nh;
-  App *app = new App(nh);
+  new App(nh);
   std::cout << "ros2lcm translator ready\n";
   ROS_ERROR("Mono Camera Translator Sleeping");
   sleep(4);
