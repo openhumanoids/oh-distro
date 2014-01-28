@@ -53,6 +53,8 @@ int StateEstimate::StateEstimateApplication::exec()
   matlabTruthPoseProducer.subscribe(lcmThread.lcmHandle());
   INSUpdateProducer.subscribe(lcmThread.lcmHandle());
 
+  imuProducer.setSpecialLCMPtr(lcmThread.lcmHandle());
+
   StateEstimator estimator(
     _switches,
     lcmThread.lcmHandle(),

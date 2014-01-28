@@ -13,7 +13,7 @@ StateEstimate::IMUFilter::~IMUFilter()
 }
 
 //-----------------------------------------------------------------------------
-void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw_imu_t>& imuPackets, boost::shared_ptr<lcm::LCM> lcmHandle, const bot_core::pose_t &atlasPose)
+void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw_imu_t>& imuPackets, const bot_core::pose_t &atlasPose)
 {
   // note, this runs on the LCM comm thread, so be quick!
   // Only update INS and publish existing ERS message
@@ -32,7 +32,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 
   stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
   stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
-  lcmHandle->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
+  mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
 
 
   //VarNotUsed(imuPackets);
@@ -49,6 +49,10 @@ void StateEstimate::IMUFilter::setERSMsg(drc::robot_state_t* _msg) {
 
 void StateEstimate::IMUFilter::setDataFusionReqMsg(drc::ins_update_request_t* _msg) {
   _DFRequestMsg = _msg;
+}
+
+void StateEstimate::IMUFilter::setLCMPtr(boost::shared_ptr<lcm::LCM> lcmHandle) {
+	mLCM = lcmHandle;
 }
 
 

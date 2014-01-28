@@ -20,12 +20,15 @@ public:
   IMUFilter();
   ~IMUFilter();
 
-  void handleIMUPackets(const std::vector<drc::atlas_raw_imu_t>& imuPackets, boost::shared_ptr<lcm::LCM> lcmHandle, const bot_core::pose_t &atlasPose);
+  void handleIMUPackets(const std::vector<drc::atlas_raw_imu_t>& imuPackets, const bot_core::pose_t &atlasPose);
   void setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr);
   void setERSMsg(drc::robot_state_t* _msg);
   void setDataFusionReqMsg(drc::ins_update_request_t* _msg);
+  void setLCMPtr(boost::shared_ptr<lcm::LCM> lcmHandle);
 
 private:
+  boost::shared_ptr<lcm::LCM> mLCM;
+
   InertialOdometry::Odometry* _inert_odo;
   InertialOdometry::IMU_dataframe imu_data;
   InertialOdometry::DynamicState lastInerOdoState;

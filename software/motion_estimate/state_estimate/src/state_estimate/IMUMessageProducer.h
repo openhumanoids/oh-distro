@@ -34,6 +34,11 @@ public:
 	return &mIMUFilter;
   }
 
+
+  void setSpecialLCMPtr(boost::shared_ptr<lcm::LCM> lcmHandle) {
+	  mIMUFilter.setLCMPtr(lcmHandle);
+  }
+
 protected:
 
   void messageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::atlas_raw_imu_batch_t* msg)
@@ -44,7 +49,7 @@ protected:
     std::vector<drc::atlas_raw_imu_t> imuPackets;
     this->mBatchProcessor.handleIMUBatchMessage(msg, imuPackets);
 
-    this->mIMUFilter.handleIMUPackets(imuPackets, this->mLCM, lastPose);
+    this->mIMUFilter.handleIMUPackets(imuPackets, lastPose);
 
     for (size_t i = 0; i < imuPackets.size(); i++)
     {
