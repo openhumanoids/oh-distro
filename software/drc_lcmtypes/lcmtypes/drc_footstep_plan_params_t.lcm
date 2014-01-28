@@ -15,7 +15,6 @@ struct footstep_plan_params_t
 	float max_forward_step;
 
 	boolean ignore_terrain;
-	boolean force_to_sticky_feet;
 
 	int8_t planning_mode;
 	const int8_t MODE_AUTO = 0;
