@@ -28,7 +28,28 @@ request.goal_pos.rotation.z = 0;
 
 request.num_goal_steps = 0;
 
-request.num_existing_steps = 0;
+request.num_existing_steps = 1;
+existing_steps = javaArray('drc.footstep_t', request.num_existing_steps);
+existing_steps(1) = drc.footstep_t();
+existing_steps(1).pos = drc.position_3d_t();
+existing_steps(1).pos.translation = drc.vector_3d_t();
+existing_steps(1).pos.translation.x = 0.2527;
+existing_steps(1).pos.translation.y = 0.20;
+existing_steps(1).pos.translation.z = 0;
+existing_steps(1).pos.rotation = drc.quaternion_t();
+existing_steps(1).pos.rotation.w = 1.0;
+existing_steps(1).pos.rotation.x = 0;
+existing_steps(1).pos.rotation.y = 0;
+existing_steps(1).pos.rotation.z = 0;
+existing_steps(1).id = 3;
+existing_steps(1).is_right_foot = 0;
+existing_steps(1).fixed_x = 1;
+existing_steps(1).fixed_y = 1;
+existing_steps(1).fixed_z = 1;
+existing_steps(1).fixed_roll = 1;
+existing_steps(1).fixed_pitch = 1;
+existing_steps(1).fixed_yaw = 1;
+request.existing_steps = existing_steps;
 
 request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 10;
@@ -62,4 +83,4 @@ request.default_step_params.mu = 1.0;
 
 
 p = StatelessFootstepPlanner(r);
-p.plan_footsteps(request);
+footsteps = p.plan_footsteps(request);
