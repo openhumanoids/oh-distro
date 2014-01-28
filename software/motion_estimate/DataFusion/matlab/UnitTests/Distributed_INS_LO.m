@@ -118,7 +118,7 @@ limitedFB = 1;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
-Sys.T = dt_m;
+Sys.dt = dt_m;
 
 for k = 1:iter
     
@@ -148,7 +148,7 @@ for k = 1:iter
         measured.vl = init_Vl;
         dV = measured.vl - INSpose.V_l + 0.*randn(3,1);
         
-        if (true)
+        if (false)
         
             Measurement.INS.pose = INSpose;
             Measurement.velocityResidual = dV;

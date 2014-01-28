@@ -10,6 +10,8 @@ iterations = 10000/50;
 % back into the INS solution (choose this parameter wisely, or it will bite you)
 feedbackGain = 1;
 
+dfSys.T = 0;
+
 ENABLE_FEEDBACK = 1;
 
 % Initialize local variables
@@ -55,20 +57,19 @@ while (true)
         disp(['WARNING -- dataFusionHandler is taking longer than 40ms, time taken was' num2str(computationTime)]) 
     end
 
-    dfSys.T = 0.02;% this should be taken from the utime stamps when ported to real data
-    %dfSys.posterior = posterior;
-
+    if (dfSys.T ~= 0)
+        dfSys.dt = 1E-6*(Measurement.INS.pose.utime - dfSys.T);% this should be taken from the utime stamps when ported to real data
+    else
+        dfSys.dt = 1E-2;
+    end
+    dfSys.T = Measurement.INS.pose.utime;
+    
     %Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
     Measurement.velocityResidual = Measurement.LegOdo.pose.V_l - Measurement.INS.pose.V_l;
     
-    %Measurement.quaternionLinearResidual = Measurement.LegOdo.pose.lQb - Measurement.INS.pose.lQb; % We do not intend to use the linear difference between the quaternions, just a sanity check
     %Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.lQb)' * q2R(Measurement.LegOdo.pose.lQb));
     
-    %disp(['dataFusionHandler -- dP_l ' num2str(Measurement.positionResidual')])
-    %disp(['dataFusionHandler -- dV_l ' num2str(Measurement.velocityResidual')])
-    
-    %     disp(['dataFusionHandler -- Manifold residual in quaternion norm: ' num2str(norm(Measurement.quaternionManifoldResidual)) ', q = ' num2str(Measurement.quaternionManifoldResidual)])
-   
+
     [Result, dfSys] = iterate([], dfSys, Measurement);
 
     
@@ -80,25 +81,11 @@ while (true)
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
     if (ENABLE_FEEDBACK == 1)
-        % From the DFusion_Vel_LFBRR test script. Different implementation here
-        %[ dfSys.posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
+
         publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, lc);
-        
         DFRESULTS.updatePackets = [DFRESULTS.updatePackets; feedbackGain*dfSys.posterior.x(4:6)'];
-        
-        % move error information to the INS solution and remove from state
-        % estimate posterior. This is a feedback step.
-        % Assume no packet loss, with the safety net of some additional
-        % process noise and move to C++ implementation.
-        % Graceful tranfer of estimated error state to compensate for 
-        % linearization errors; also prevents orbitting of the solution.
         dfSys.posterior.x = (1-feedbackGain) * dfSys.posterior.x;
     end
-    
-    % Store data in the correct location -- We can streamline this once the
-    % system is running properly
-    %posterior = dfSys.posterior;
-    
     
     computationTime = toc;
     if (Measurement.INS.pose.utime == (100 * 1000000) )
