@@ -1,20 +1,20 @@
 classdef StatelessFootstepPlanner
-  properties
-    biped
+  methods
+    function obj = StatelessFootstepPlanner()
+    end
   end
 
-  methods
-    function obj = StatelessFootstepPlanner(biped)
-      typecheck(biped, 'Biped');
-      obj.biped = biped;
-    end
-
-    function plan = plan_footsteps(obj, request)
-      x0 = obj.biped.getStateFrame().lcmcoder.decode(request.initial_state);
+  methods (Static=true)
+    function plan = plan_footsteps(biped, request)
+      x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
       q0 = x0(1:end/2);
-      foot_orig = obj.biped.feetPosition(q0);
+      foot_orig = biped.feetPosition(q0);
 
-      goal_pos = StatelessFootstepPlanner.compute_goal_pos(obj.biped, request);
+      goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
+      if request.num_goal_steps > 2
+        request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
+        request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
+      end
 
       params_set = {request.params};
       if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
@@ -38,9 +38,9 @@ classdef StatelessFootstepPlanner
         params = struct(p{1});
         params.right_foot_lead = params.leading_foot; % for backwards compatibility
         if params.planning_mode == drc.footstep_plan_params_t.MODE_AUTO
-          footsteps = footstepCollocation(obj.biped, foot_orig, goal_pos, params);
+          footsteps = footstepCollocation(biped, foot_orig, goal_pos, params);
         else
-          footsteps = footstepLineSearch(obj.biped, foot_orig, goal_pos.center, params);
+          footsteps = footstepLineSearch(biped, foot_orig, goal_pos.center, params);
         end
         step_vect = encodeCollocationSteps([footsteps(2:end).pos]);
         [steps, steps_rel] = decodeCollocationSteps(step_vect);
@@ -56,18 +56,29 @@ classdef StatelessFootstepPlanner
       plan = FootstepPlan.from_collocation_results(best_steps);
       params = best_params;
 
-      plan = StatelessFootstepPlanner.addGoalSteps(obj.biped, plan, request);
-      plan = StatelessFootstepPlanner.mergeExistingSteps(obj.biped, plan, request);
+      plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
+      plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
       if ~request.params.ignore_terrain
-        plan = StatelessFootstepPlanner.snapToTerrain(obj.biped, plan, request);
-        plan = StatelessFootstepPlanner.applySwingTerrain(obj.biped, plan, request);
+        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+        plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
       end
-      plan = StatelessFootstepPlanner.checkReachInfeasibility(obj.biped, plan, params);
+      plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
     end
 
-  end
-  methods (Static=true)
+    function plan = check_footstep_plan(biped, request)
+      plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan);
+      if request.snap_to_terrain
+        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+        plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
+      end
+      if request.compute_infeasibility
+        params = struct(request.footstep_params);
+        params.right_foot_lead = plan(1).is_right_foot;
+        plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
+      end
+    end
+
     function goal_pos = compute_goal_pos(biped, request)
       if request.num_goal_steps == 0
         pos = decodePosition3d(request.goal_pos);
