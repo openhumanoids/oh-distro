@@ -2,47 +2,32 @@ function atlasStandingLegTuning
 %NOTEST
 
 % simple function for tuning position and torque control gains
-% joint-by-joint while standing using position control
-
-% gain spec: 
-% q, qd, f are sensed position, velocity, torque, from AtlasJointState
-%
-% q_d, qd_d, f_d are desired position, velocity, torque, from
-% AtlasJointDesired
-%
-% The final joint command will be:
-%
-%  k_q_p   * ( q_d - q ) +
-%  k_q_i   * 1/s * ( q_d - q ) +
-%  k_qd_p  * ( qd_d - qd ) +
-%  k_f_p   * ( f_d - f ) +
-%  ff_qd   * qd +
-%  ff_qd_d * qd_d +
-%  ff_f_d  * f_d +
-%  ff_const
-
+% while standing using position and force control for different subsets of
+% joints
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint_str = {'r_leg_hpy'};% <---- 
-signal = 'chirp';% <----  zoh, foh, chirp
+joint_str = {'l_leg_kny'};% <---- cell array of (sub)strings  
 
-% SIGNAL PARAMS %%%%%%%%%%%%%
+% INPUT SIGNAL PARAMS %%%%%%%%%%%%%
 dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
-if strcmp( signal, 'chirp' )
-  zero_crossing = false;
-  ts = linspace(0,40,500);% <----
-  amp = -0.1;% <---- meters, COM DELTA
-  freq = linspace(0.02,0.05,500);% <----  cycles per second
-else
-  vals = -0.02*[0 0 1 0 0];% <---- meters, COM DELTA
-  ts = linspace(0,30,length(vals));% <----
-end
+T = 10;% <--- signal duration (sec)
+
+% chirp params
+amp = 0.0;% <---- meters, COM DELTA
+chirp_f0 = 0.05;% <--- chirp starting frequency
+chirp_fT = 0.1;% <--- chirp ending frequency
+chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
+
+% inverse dynamics PD gains (only for input=position, control=force)
+Kp = 25;
+Kd = 4;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-T=ts(end);
+
+ts = linspace(0,T,800);
 
 % load robot model
 r = Atlas();
@@ -55,15 +40,10 @@ r = r.setInitialState(xstar);
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
-ref_frame = AtlasPosTorqueRef(r);
+ref_frame = AtlasPosVelTorqueRef(r);
 
 nu = getNumInputs(r);
 nq = getNumDOF(r);
-
-joint_index_map = struct(); % maps joint names to indices
-for i=1:nq
-  joint_index_map.(state_frame.coordinates{i}) = i;
-end
 
 act_idx_map = getActuatedJoints(r);
 gains = getAtlasGains(input_frame); % change gains in this file
@@ -79,6 +59,7 @@ end
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
+gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % move to fixed point configuration 
@@ -90,6 +71,7 @@ gains2 = getAtlasGains(input_frame);
 gains.k_f_p(joint_act_ind) = gains2.k_f_p(joint_act_ind); 
 gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
+gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
 gains.k_q_p(joint_act_ind) = 0;
 gains.k_q_i(joint_act_ind) = 0;
@@ -103,20 +85,10 @@ q0 = x0(1:nq);
 com0 = getCOM(r,q0);
 comtraj = ConstantTrajectory(com0);
 
-if strcmp(signal,'zoh')
-  input_traj = PPTrajectory(zoh(ts,vals));
-elseif strcmp(signal,'foh')
-  input_traj = PPTrajectory(foh(ts,vals));
-elseif strcmp(signal,'chirp')
-  offset = 0;
-  if zero_crossing
-  	input_traj = PPTrajectory(foh(ts, offset + amp*sin(ts.*freq*2*pi)));
-  else
-    input_traj = PPTrajectory(foh(ts, offset + 0.5*amp - 0.5*amp*cos(ts.*freq*2*pi)));
-  end
-else
-  error('unknown signal');
-end
+input_traj = chirpTraj(amp,chirp_f0,chirp_fT,T,0,chirp_sign);
+fade_window = 2; % sec
+fader = PPTrajectory(foh([0 fade_window T-fade_window T],[0 1 1 0]));
+input_traj = fader*input_traj;
 
 if dim==1
   comtraj = comtraj + [input_traj;0;0];
@@ -177,8 +149,13 @@ for i=1:length(ts)
   v.draw(t,q(:,i));
 end
 qtraj = PPTrajectory(spline(ts,q));
+qdtraj = fnder(qtraj,1);
 qddtraj = fnder(qtraj,2);
-keyboard;
+
+resp = input('OK to send input to robot? (y/n): ','s');
+if ~strcmp(resp,{'y','yes'})
+  return;
+end
 
 % set up QP controller params---exclude ZMP for now
 foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
@@ -212,9 +189,15 @@ options.contact_threshold = 0.05;
 qp = QPControlBlock(r,ctrl_data,options);
 
 xy_offset = [0;0];
+qddes = zeros(nu,1);
 udes = zeros(nu,1);
+
+qddes_prev = zeros(nu,1);
+udes_prev = zeros(nu,1);
+
 toffset = -1;
 tt=-1;
+dt = 0.03;
 while tt<T+2
   [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
@@ -235,18 +218,27 @@ while tt<T+2
     qt(6) = q(6); % ignore yaw
     
     % get desired acceleration, open loop + PD
-    qdddes = qddtraj.eval(tt) + 19.0*(qt-q) - 0.8*qd;
+    qdtraj_t = qdtraj.eval(tt);
+    pd = Kp*(qt-q) + Kd*(qdtraj_t-qd);
+    qdddes = qddtraj.eval(tt) + pd;
     
     u = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
     udes(joint_act_ind) = u(joint_act_ind);
 
-    % should really be using qdd from QP solution
-    f_friction = computeFrictionForce(r,qd + 0.3*qdddes) - computeFrictionForce(r,qd);
-    f_friction_act = f_friction(act_idx_map);
-
-    udes(joint_act_ind) = udes(joint_act_ind) + 0*f_friction_act(joint_act_ind);
+    % compute desired velocity
+    qddes_state_frame = qdtraj_t + pd*dt;
+    qddes_input_frame = qddes_state_frame(act_idx_map);
+    qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
-    ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
+    % low pass filter inputs
+    alpha = 0.1;
+    udes = (1-alpha)*udes_prev + alpha*udes; 
+    qddes = (1-alpha)*qddes_prev + alpha*qddes; 
+    
+    ref_frame.publish(t,[qdes;qddes;udes],'ATLAS_COMMAND');
+
+    udes_prev = udes;
+    qddes_prev = qddes;
   end
 end
 
@@ -260,6 +252,5 @@ ref_frame.updateGains(gains);
 % move to fixed point configuration 
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx_map,4);
-
 
 end

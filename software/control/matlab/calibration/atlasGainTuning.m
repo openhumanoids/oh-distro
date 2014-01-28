@@ -105,7 +105,34 @@ if ~isfield(joint_index_map,joint)
   error ('unknown joint name');
 end
 
-[qdes,motion_sign]=moveToNominalConfig;
+gains = getAtlasGains(input_frame);
+
+% zero out force gains to start --- move to nominal joint position
+gains.k_f_p = zeros(nu,1);
+gains.ff_f_d = zeros(nu,1);
+gains.ff_qd = zeros(nu,1);
+gains.ff_qd_d = zeros(nu,1);
+ref_frame.updateGains(gains);
+
+% setup desired pose based on joint being tuned
+[qdes,motion_sign] = getAtlasJointMotionConfig(r,joint,2);
+
+% move to desired pos
+atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
+
+gains2 = getAtlasGains(input_frame);
+if any(strcmp(control_mode,{'force','force+velocity'}))
+  % set joint position gains to 0
+  gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;
+  gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
+  gains.k_qd_p(act_idx==joint_index_map.(joint)) = 0;
+  % set force gains
+  gains.k_f_p(act_idx==joint_index_map.(joint)) = gains2.k_f_p(act_idx==joint_index_map.(joint));
+  gains.ff_f_d(act_idx==joint_index_map.(joint)) = gains2.ff_f_d(act_idx==joint_index_map.(joint));
+  gains.ff_qd(act_idx==joint_index_map.(joint)) = gains2.ff_qd(act_idx==joint_index_map.(joint));
+  gains.ff_qd_d(act_idx==joint_index_map.(joint)) = gains2.ff_qd_d(act_idx==joint_index_map.(joint));
+  ref_frame.updateGains(gains);
+end
  
 vals = motion_sign * vals;
 if strcmp(input_mode,'position')
@@ -175,39 +202,6 @@ while tt<T
     ref_frame.publish(t,[qdes;qddes;udes],'ATLAS_COMMAND');
   end
 end
-
 ref_frame.publish(t,[qdes;0*qddes;udes],'ATLAS_COMMAND');
-
-
-  function [qdes,motion_sign]=moveToNominalConfig
-    gains = getAtlasGains(input_frame);
-
-    % zero out force gains to start --- move to nominal joint position
-    gains.k_f_p = zeros(nu,1);
-    gains.ff_f_d = zeros(nu,1);
-    gains.ff_qd = zeros(nu,1);
-    gains.ff_qd_d = zeros(nu,1);
-    ref_frame.updateGains(gains);
-    
-    % setup desired pose based on joint being tuned
-    [qdes,motion_sign] = getAtlasJointMotionConfig(r,joint,2);
-    
-    % move to desired pos
-    atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
-    
-    gains2 = getAtlasGains(input_frame);
-    if any(strcmp(control_mode,{'force','force+velocity'}))
-      % set joint position gains to 0
-      gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;
-      gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
-      gains.k_qd_p(act_idx==joint_index_map.(joint)) = 0;
-      % set force gains
-      gains.k_f_p(act_idx==joint_index_map.(joint)) = gains2.k_f_p(act_idx==joint_index_map.(joint));
-      gains.ff_f_d(act_idx==joint_index_map.(joint)) = gains2.ff_f_d(act_idx==joint_index_map.(joint));
-      gains.ff_qd(act_idx==joint_index_map.(joint)) = gains2.ff_qd(act_idx==joint_index_map.(joint));
-      gains.ff_qd_d(act_idx==joint_index_map.(joint)) = gains2.ff_qd_d(act_idx==joint_index_map.(joint));
-      ref_frame.updateGains(gains);
-    end
-  end
 
 end
