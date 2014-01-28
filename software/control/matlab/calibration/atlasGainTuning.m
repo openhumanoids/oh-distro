@@ -24,25 +24,25 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_kny';% <---- joint name 
+joint = 'r_leg_hpx';% <---- joint name 
 input_mode = 'position';% <---- force, position
 control_mode = 'force+velocity';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 25;% <--- signal duration (sec)
+T = 30;% <--- signal duration (sec)
 
 % chirp specific
-amp = 0.25;% <----  Nm or radians
+amp = 0.45;% <----  Nm or radians
 chirp_f0 = 0.1;% <--- chirp starting frequency
 chirp_fT = 0.3;% <--- chirp ending frequency
-chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
+chirp_sign = 1;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
 vals = 20*[0 1 1 -1 -1 0 0];% <----  Nm or radians
 
 % inverse dynamics PD gains (only for input=position, control=force)
-Kp = 22;
+Kp = 25;
 Kd = 8;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -176,7 +176,7 @@ while tt<T
   end
 end
 
-moveToNominalConfig;
+ref_frame.publish(t,[qdes;0*qddes;udes],'ATLAS_COMMAND');
 
 
   function [qdes,motion_sign]=moveToNominalConfig
