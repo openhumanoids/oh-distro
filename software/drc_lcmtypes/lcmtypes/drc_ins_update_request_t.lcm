@@ -11,6 +11,9 @@ struct ins_update_request_t
   vector_3d_t local_linear_acceleration;
   vector_3d_t local_linear_force;
 
+  vector_3d_t predicted_a_b;
+  vector_3d_t predicted_w_b;
+
   vector_3d_t gyroBiasEst;
   vector_3d_t accBiasEst;
 
