@@ -20,6 +20,7 @@ namespace InertialOdometry {
     Eigen::Vector3d a_b;
     Eigen::Vector3d a_b_measured;
 
+    bool use_dang;
     bool gyro_compensated_flag;
     bool accel_compensated_flag;
     bool gravity_subtracted;

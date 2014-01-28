@@ -153,7 +153,7 @@ for k = 1:iter
         measured.vl = init_Vl;
         dV = measured.vl - INSpose.V_l + 0.*randn(3,1);
         
-        if (true)
+        if (false)
         
             Measurement.INS.pose = INSpose;
             Measurement.velocityResidual = dV;

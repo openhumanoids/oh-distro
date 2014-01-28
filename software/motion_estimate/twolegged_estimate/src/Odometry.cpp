@@ -93,12 +93,18 @@ namespace InertialOdometry {
   {
     InertialOdomOutput out;
 
+    if (&_imu.use_dang) {
+    	_imu.w_b_measured = 1/Ts_imu * _imu.dang_b;
+    }
+    std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
 
     imu_compensator.Full_Compensation(_imu);
 
     out = PropagatePrediction_wo_IMUCompensation(_imu);
-
-    std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
 
     DynamicState state;
     state.imu = _imu;
@@ -108,8 +114,8 @@ namespace InertialOdometry {
     state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
     state.P = out.first_pose_rel_pos;
     state.V = out.first_pose_rel_vel;
-    state.ba.setZero();
-    state.bg.setZero();
+    state.ba = imu_compensator.getAccelBiases();
+    state.bg = imu_compensator.getGyroBiases();
     state.a_b = _imu.a_b;
     state.w_b = _imu.w_b;
     state.lQb = out.quat;
@@ -135,13 +141,12 @@ namespace InertialOdometry {
 	Eigen::Vector3d tmp;
 
 	enterCritical();
-	imu_compensator.AccumulateGyroBiases(-updateData.dbiasGyro_b);
+	imu_compensator.AccumulateGyroBiases(updateData.dbiasGyro_b);
 	imu_compensator.AccumulateAccelBiases(updateData.dbiasAcc_b);
 	orc.rotateOrientationUpdate(updateData.dE_l);
 	tmp = avp.getVelStates();
 	avp.setVelStates(tmp - updateData.dVel_l);
 	tmp = avp.getPosStates();
-	//std::cout << "Odometry::incorporateErrUpdate -- Position update " << updateData.dPos_l << std::endl;
 	avp.setPosStates(tmp - updateData.dPos_l);
 	exitCritical();
   }

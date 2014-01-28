@@ -220,13 +220,12 @@ void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t
 void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_update_packet_t &INSUpdate) {
 
   std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
+
   InertialOdometry::INSUpdatePacket insUpdatePacket;
   insUpdatePacket.utime = INSUpdate.utime;
-
   insUpdatePacket.dbiasGyro_b << INSUpdate.dbiasGyro_b.x, INSUpdate.dbiasGyro_b.y, INSUpdate.dbiasGyro_b.z;
   insUpdatePacket.dbiasAcc_b << INSUpdate.dbiasAcc_b.x, INSUpdate.dbiasAcc_b.y, INSUpdate.dbiasAcc_b.z;
   insUpdatePacket.dE_l << INSUpdate.dE_l.x, INSUpdate.dE_l.y, INSUpdate.dE_l.z;
-
   insUpdatePacket.dVel_l << INSUpdate.dVel_l.x, INSUpdate.dVel_l.y, INSUpdate.dVel_l.z;
   insUpdatePacket.dPos_l << INSUpdate.dPos_l.x, INSUpdate.dPos_l.y, INSUpdate.dPos_l.z;
 
