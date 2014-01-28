@@ -7,6 +7,8 @@
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include <inertial-odometry/Odometry.hpp>
 
+#include "StateEstimatorUtilities.h"
+
 
 namespace StateEstimate
 {

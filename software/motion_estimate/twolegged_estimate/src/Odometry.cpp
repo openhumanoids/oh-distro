@@ -72,8 +72,10 @@ namespace InertialOdometry {
     state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
     state.P = out.first_pose_rel_pos;
     state.V = out.first_pose_rel_vel;
-    state.b_a.setZero();
-    state.b_g.setZero();
+    state.ba.setZero();
+    state.bg.setZero();
+    state.a_b = _imu.a_b;
+    state.w_b = _imu.w_b;
     state.lQb = out.quat;
     
     return state;
@@ -106,8 +108,10 @@ namespace InertialOdometry {
     state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
     state.P = out.first_pose_rel_pos;
     state.V = out.first_pose_rel_vel;
-    state.b_a.setZero();
-    state.b_g.setZero();
+    state.ba.setZero();
+    state.bg.setZero();
+    state.a_b = _imu.a_b;
+    state.w_b = _imu.w_b;
     state.lQb = out.quat;
 
     return state;

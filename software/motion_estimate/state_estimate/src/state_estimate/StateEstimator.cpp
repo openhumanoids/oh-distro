@@ -197,23 +197,23 @@ void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t
 	}
 	std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << " s" << std::endl; // Remove once confirmed to be working properly
 
-	InerOdoEst = PropagateINS(Ts_imu, inert_odo, IMU_to_body, imu);
+	//InerOdoEst = PropagateINS(Ts_imu, inert_odo, IMU_to_body, imu);
 
-	if (publishERSflag) {
-	  //publish ERS message on last IMU message in the current queue
-      stampInertialPoseERSMsg(InerOdoEst, mERSMsg);
-      std::cout << "StateEstimator::run -- Publish ERS" << std::endl;
-      lcm->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg);
-      //lcm->publish("POSE_BODY", &??);
-	}
+//	if (publishERSflag) {
+//	  //publish ERS message on last IMU message in the current queue
+//      stampInertialPoseERSMsg(InerOdoEst, mERSMsg);
+//      std::cout << "StateEstimator::run -- Publish ERS" << std::endl;
+//      lcm->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg);
+//      //lcm->publish("POSE_BODY", &??);
+//	}
 
 	// Request an update to the INS state -- This publish should be blocked until publishing of ERS message
-	if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
-		std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
-		stampInertialPoseUpdateRequestMsg(InerOdoEst, mDFRequestMsg);
-		stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, mDFRequestMsg);
-		lcm->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
-	}
+//	if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
+//		std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
+//		stampInertialPoseUpdateRequestMsg(InerOdoEst, mDFRequestMsg);
+//		stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, mDFRequestMsg);
+//		lcm->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
+//	}
 }
 
 

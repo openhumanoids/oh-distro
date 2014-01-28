@@ -51,11 +51,23 @@ switch (5)
         measured.w_b = data(1:iter,1:3);
         measured.a_b = data(1:iter,4:6);
     case 5
-        disp 'Gyrobias only -- test trajectory'
+        disp 'Gyrobias in x -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
         measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
         measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];
+    case 6
+        disp 'Gyrobias in y -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_b = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
+        measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];  
+    case 7
+        disp 'Accelbias in x -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_b = zeros(iter, 3);
+        measured.a_b  = [0.0025*ones(iter, 1), zeros(iter, 1), 9.8*ones(iter, 1)]; 
 end
 
 %%
@@ -128,18 +140,11 @@ for k = 1:iter
     inertialData.measured.a_b = measured.a_b(k,:)';
     inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
     inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
-    % Propagate inertial solution, first apply scheduled INS update (if available)
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
     
     % More representative of how LCM traffic is running
     [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
-    
-    %     INSCompensator2.dE_l = [0;0;0];
-    %     INSCompensator2.dV_l = [0;0;0];
-    %     INSCompensator2.dP_l = [0;0;0];
-    
-    %PE = [PE;q2e(INSpose.lQb)'];
     
     % Run filter at a lower rate
     if (mod(k,FilterRateReduction)==0 && true)
@@ -148,7 +153,7 @@ for k = 1:iter
         measured.vl = init_Vl;
         dV = measured.vl - INSpose.V_l + 0.*randn(3,1);
         
-        if (false)
+        if (true)
         
             Measurement.INS.pose = INSpose;
             Measurement.velocityResidual = dV;

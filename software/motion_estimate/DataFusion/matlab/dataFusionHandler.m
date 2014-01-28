@@ -99,6 +99,7 @@ end
 
 
 plotGrayINSPredicted(DFRESULTS.REQMSGS, 1);
+plotEKFResults(DFRESULTS, 2)
 
 % Must standardize this plotting
 
