@@ -24,26 +24,26 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_hpy';% <---- joint name 
+joint = 'l_leg_kny';% <---- joint name 
 input_mode = 'position';% <---- force, position
-control_mode = 'force';% <---- force, position
+control_mode = 'force+velocity';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 15;% <--- signal duration (sec)
+T = 25;% <--- signal duration (sec)
 
 % chirp specific
-amp = 0.1;% <----  Nm or radians
-chirp_f0 = 0.25;% <--- chirp starting frequency
-chirp_fT = 0.50;% <--- chirp ending frequency
+amp = 0.25;% <----  Nm or radians
+chirp_f0 = 0.1;% <--- chirp starting frequency
+chirp_fT = 0.3;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
 vals = 20*[0 1 1 -1 -1 0 0];% <----  Nm or radians
 
 % inverse dynamics PD gains (only for input=position, control=force)
-Kp = 19;
-Kd = 7;
+Kp = 22;
+Kd = 8;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -67,7 +67,7 @@ r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_mod
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
-ref_frame = AtlasPosTorqueRef(r);
+ref_frame = AtlasPosVelTorqueRef(r);
 
 nq = getNumDOF(r);
 nu = getNumInputs(r);
@@ -83,7 +83,7 @@ act_idx_fixed = getActuatedJoints(r_fixed);
 if strcmp(signal,'chirp')
   vals=amp;
 end
-if strcmp(control_mode,'force')
+if strcmp(input_mode,'force')
   rangecheck(vals,-200,200);
   if ~rangecheck(vals,-50,50)
     resp = input('Warning: about to command relatively high torque. OK? (y/n): ','s');
@@ -91,7 +91,7 @@ if strcmp(control_mode,'force')
       return;
     end
   end
-elseif strcmp(control_mode,'position')  
+elseif strcmp(input_mode,'position')  
   rangecheck(vals,-3.2,3.2);
   if ~rangecheck(vals,-1,1)
     resp = input('Warning: about to command relatively large position change. OK? (y/n): ','s');
@@ -111,17 +111,17 @@ gains = getAtlasGains(input_frame);
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
+gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % setup desired pose based on joint being tuned
-[qdes,motion_sign] = getAtlasJointMotionConfig(r,joint);
+[qdes,motion_sign] = getAtlasJointMotionConfig(r,joint,2);
 
 % move to desired pos
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
 
-if strcmp(control_mode,'force')
-  % update gains for joint
-  gains2 = getAtlasGains(input_frame);
+gains2 = getAtlasGains(input_frame);
+if any(strcmp(control_mode,{'force','force+velocity'}))
   % set joint position gains to 0
   gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;
   gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
@@ -130,6 +130,7 @@ if strcmp(control_mode,'force')
   gains.k_f_p(act_idx==joint_index_map.(joint)) = gains2.k_f_p(act_idx==joint_index_map.(joint)); 
   gains.ff_f_d(act_idx==joint_index_map.(joint)) = gains2.ff_f_d(act_idx==joint_index_map.(joint));
   gains.ff_qd(act_idx==joint_index_map.(joint)) = gains2.ff_qd(act_idx==joint_index_map.(joint));
+  gains.ff_qd_d(act_idx==joint_index_map.(joint)) = gains2.ff_qd_d(act_idx==joint_index_map.(joint));
   ref_frame.updateGains(gains);
 end 
 
@@ -155,9 +156,11 @@ inputd_traj = fnder(input_traj,1);
 inputdd_traj = fnder(input_traj,2);
 
 qdes=qdes(act_idx); % convert to input frame
+qddes=zeros(nu,1); 
 udes = zeros(nu,1);
 toffset = -1;
 tt=-1;
+dt = 0.03;
 while tt<T
   [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
@@ -171,7 +174,7 @@ while tt<T
       jdes = input_traj.eval(tt);
       qdes(act_idx==joint_index_map.(joint)) = jdes;
       
-      if strcmp(control_mode,'force')
+      if any(strcmp(control_mode,{'force','force+velocity'}))
         % do inverse dynamics on fixed base model
         q = x(6+(1:nq_fixed));
         qd = x(nq_fixed+12+(1:nq_fixed));
@@ -186,10 +189,14 @@ while tt<T
 
         u = B\(H*qddot_des + C);
         udes(act_idx==joint_index_map.(joint)) = u(act_idx_fixed==joint_index_map_fixed.(joint));
+
+        if strcmp(control_mode,'force+velocity')
+          qddes(act_idx==joint_index_map.(joint)) = jddes + Kp*(jdes-q(fidx))*dt + Kd*(jddes-qd(fidx))*dt;
+        end
       end
         
     end
-    ref_frame.publish(t,[qdes;udes],'ATLAS_COMMAND');
+    ref_frame.publish(t,[qdes;qddes;udes],'ATLAS_COMMAND');
   end
 end
 
