@@ -51,7 +51,7 @@ group "a.0.hand_drivers" {
         host = "robot";
     }
     cmd "irobot-left" {
-        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=l hand_id:=44";
+        exec = "roslaunch --wait mit_helios_scripts irobot_hand.launch side:=l hand_id:=34";
         host = "robot";
     }
     cmd "robotiq-right" {
@@ -178,6 +178,10 @@ group "a.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RP.urdf";
         host = "robot";
     }
+    cmd "model_LI_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
+        host = "robot";
+    }
 }
 
 group "b.1.core" {
@@ -297,6 +301,10 @@ group "b.3.models" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LQ_RP.urdf";
         host = "base";
     }
+    cmd "base_model_LI_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
+        host = "base";
+    }
 }
 
 group "m.simple_grasping" {
@@ -388,6 +396,15 @@ script "prep_LQ_RP_drill" {
     run_script "prep_core";
     start cmd "robotiq-left";
     start cmd "robotiq-status2state";
+}
+
+script "prep_LI_RI" { 
+    start cmd "model_LI_RI";
+    start cmd "base_model_LI_RI";
+    run_script "prep_core";
+    start cmd "aa-ros2lcm-hands";
+    start cmd "irobot-left";
+    start cmd "irobot-right";
 }
 
 script "simple_grasp" {
