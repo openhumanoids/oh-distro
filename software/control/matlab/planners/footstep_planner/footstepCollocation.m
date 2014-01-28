@@ -10,6 +10,8 @@ params.right_foot_lead = logical(params.right_foot_lead);
 
 if ~isfield(params, 'nom_step_width'); params.nom_step_width = 0.26; end
 if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
+if ~isfield(params, 'allow_even_num_steps'); params.allow_even_num_steps = true; end
+if ~isfield(params, 'allow_odd_num_steps'); params.allow_odd_num_steps = true; end
 
 X = createOriginSteps(biped, foot_orig, params.right_foot_lead);
 
@@ -72,15 +74,13 @@ function stop = plotfun(x)
 end
 
 params.forward_step = params.nom_forward_step;
-[A_reach_0, b_reach] = biped.getFootstepDiamondCons(true, params);
+[A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
 min_steps = max([params.min_num_steps+1,2]);
 max_steps = params.max_num_steps + 1;
 
 steps = [];
 
 for nsteps = min_steps:max_steps
-  A_reach = A_reach_0;
-  nc = length(b_reach);
   if ~params.right_foot_lead
     r_ndx = 1:2:nsteps;
     l_ndx = 2:2:nsteps;
@@ -188,7 +188,13 @@ for nsteps = min_steps:max_steps
   diff_r = steps(:,r_ndx(end)) - goal_pos.right;
   diff_l = steps(:,l_ndx(end)) - goal_pos.left;
   if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;0.02;0.02;0.1;0.1;0.1])
-    break
+    if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
+      continue
+    elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
+      continue
+    else
+      break
+    end
   end
 end
 
@@ -207,6 +213,6 @@ for j = 2:nsteps
   X(j+1).is_right_foot = logical(mod(params.right_foot_lead+j,2));
 end
 
-biped.getNextStepID(true); % reset the counter
+% biped.getNextStepID(true); % reset the counter
 
 end
