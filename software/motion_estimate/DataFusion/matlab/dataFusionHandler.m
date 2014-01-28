@@ -4,11 +4,11 @@ function DFRESULTS = dataFusionHandler()
 % only.
 
 % This is temporary
-iterations = 12000/50;
+iterations = 10000/50;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
-feedbackGain = 0.5;
+feedbackGain = 1;
 
 ENABLE_FEEDBACK = 1;
 
@@ -101,7 +101,7 @@ while (true)
     
     
     computationTime = toc;
-    if (Measurement.INS.pose.utime == (120 * 1000000) )
+    if (Measurement.INS.pose.utime == (100 * 1000000) )
         break;
     end
 end
@@ -109,6 +109,9 @@ end
 
 
 %% Here we want to plot some dataFusion results.
+
+
+plotGrayINSPredicted(DFRESULTS.REQMSGS, 1);
 
 % Must standardize this plotting
 
