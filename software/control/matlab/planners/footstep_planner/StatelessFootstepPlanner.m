@@ -72,6 +72,9 @@ classdef StatelessFootstepPlanner
         plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
       end
       plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
+      for j = 1:length(plan.footsteps)
+        plan.footsteps(j).pos = biped.footContact2Orig(plan.footsteps(j).pos, 'center', plan.footsteps(j).is_right_foot);
+      end
     end
 
     function plan = check_footstep_plan(biped, request)
@@ -116,36 +119,28 @@ classdef StatelessFootstepPlanner
       end
     end
 
-    function footsteps = setStepParams(footsteps, request)
-      for j = 1:length(footsteps)
-        footsteps(j).id = j;
-        footsteps(j).walking_params = request.default_step_params;
-        footsteps(j).is_in_contact = true;
-      end
-    end
-
-    function footsteps = addGoalSteps(biped, footsteps, request)
-      nsteps = length(footsteps);
+    function plan = addGoalSteps(biped, plan, request)
+      nsteps = length(plan.footsteps);
       if request.num_goal_steps == 0
         return;
       elseif request.num_goal_steps == 1
         goal_step = Footstep.from_footstep_t(request.goal_steps(1));
         goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
-        if footsteps(end).is_right_foot == goal_step.is_right_foot
+        if plan.footsteps(end).is_right_foot == goal_step.is_right_foot
           k = nsteps;
         else
           k = nsteps - 1;
         end
-        footsteps(k) = goal_step;
+        plan.footsteps(k) = goal_step;
       else
-        if footsteps(end-1).is_right_foot ~= request.goal_steps(1).is_right_foot
+        if plan.footsteps(end-1).is_right_foot ~= request.goal_steps(1).is_right_foot
           request.goal_steps = StatelessFootstepPlanner.pairReverse(request.goal_steps);
         end
         for j = 1:request.num_goal_steps
           k = nsteps - 2 + j;
           goal_step = Footstep.from_footstep_t(request.goal_steps(j));
           goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
-          footsteps(k) = goal_step;
+          plan.footsteps(k) = goal_step;
         end
       end
     end
@@ -157,37 +152,45 @@ classdef StatelessFootstepPlanner
       y(2:2:end) = x(1:2:end);
     end
 
-    function footsteps = mergeExistingSteps(biped, footsteps, request)
+    function plan = mergeExistingSteps(biped, plan, request)
       for j = 1:request.num_existing_steps
         if request.existing_steps(j).id <= 2
           continue
         end
         ndx = request.existing_steps(j).id;
-        if footsteps(ndx).is_right_foot ~= request.existing_steps(j).is_right_foot
+        if plan.footsteps(ndx).is_right_foot ~= request.existing_steps(j).is_right_foot
           fprintf(1, 'Error: Right/left foot doesn''t match at ID %d', ndx);
           break
         end
         existing_step = Footstep.from_footstep_t(request.existing_steps(j));
         existing_step.pos = biped.footOrig2Contact(existing_step.pos, 'center', existing_step.is_right_foot);
         if request.existing_steps(j).fixed_x
-          footsteps(ndx).pos(1) = existing_step.pos(1);
+          plan.footsteps(ndx).pos(1) = existing_step.pos(1);
         end
         if request.existing_steps(j).fixed_y
-          footsteps(ndx).pos(2) = existing_step.pos(2);
+          plan.footsteps(ndx).pos(2) = existing_step.pos(2);
         end
         if request.existing_steps(j).fixed_z
-          footsteps(ndx).pos(3) = existing_step.pos(3);
+          plan.footsteps(ndx).pos(3) = existing_step.pos(3);
         end
         if request.existing_steps(j).fixed_roll
-          footsteps(ndx).pos(4) = existing_step.pos(4);
+          plan.footsteps(ndx).pos(4) = existing_step.pos(4);
         end
         if request.existing_steps(j).fixed_pitch
-          footsteps(ndx).pos(5) = existing_step.pos(5);
+          plan.footsteps(ndx).pos(5) = existing_step.pos(5);
         end
         if request.existing_steps(j).fixed_yaw
-          footsteps(ndx).pos(6) = existing_step.pos(6);
+          plan.footsteps(ndx).pos(6) = existing_step.pos(6);
         end
-        footsteps(ndx).pos_fixed = existing_step.pos_fixed;
+        plan.footsteps(ndx).pos_fixed = existing_step.pos_fixed;
+      end
+    end
+
+    function plan = setStepParams(plan, request)
+      for j = 1:length(plan.footsteps)
+        plan.footsteps(j).id = j;
+        plan.footsteps(j).walking_params = request.default_step_params;
+        plan.footsteps(j).is_in_contact = true;
       end
     end
 
@@ -196,9 +199,9 @@ classdef StatelessFootstepPlanner
       if ismethod(terrain, 'setMapMode')
         biped.setTerrain(terrain.setMapMode(request.params.map_command));
       end
-      nsteps = length(plan);
+      nsteps = length(plan.footsteps);
       for j = 1:nsteps
-        plan(j).pos = fitStepToTerrain(biped, plan(j).pos, 'center');
+        plan.footsteps(j).pos = fitStepToTerrain(biped, plan.footsteps(j).pos, 'center');
       end
     end
 
@@ -207,27 +210,27 @@ classdef StatelessFootstepPlanner
       if ismethod(terrain, 'setMapMode')
         biped.setTerrain(terrain.setMapMode(request.params.map_command));
       end
-      nsteps = length(plan);
+      nsteps = length(plan.footsteps);
       for j = 3:nsteps
-        [contact_width, ~, ~] = contactVolume(biped, plan(j-2).pos, plan(j).pos, struct('nom_z_clearance', plan(j).walking_params.step_height));
-        plan(j).terrain_pts = sampleSwingTerrain(biped, plan(j-2).pos, plan(j).pos, contact_width);
+        [contact_width, ~, ~] = contactVolume(biped, plan.footsteps(j-2).pos, plan.footsteps(j).pos, struct('nom_z_clearance', plan.footsteps(j).walking_params.step_height));
+        plan.footsteps(j).terrain_pts = sampleSwingTerrain(biped, plan.footsteps(j-2).pos, plan.footsteps(j).pos, contact_width);
       end
     end
 
-    function footsteps = checkReachInfeasibility(biped, footsteps, params)
+    function plan = checkReachInfeasibility(biped, plan, params)
       params.right_foot_lead = logical(params.right_foot_lead);
       if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
       params.forward_step = params.nom_forward_step;
       [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
-      nsteps = length(footsteps) - 1;
-      [A, b, Aeq, beq, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);
+      nsteps = length(plan.footsteps) - 1;
+      [A, b, ~, ~, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);
       for j = [1,2]
-        footsteps(j).infeasibility = 0;
+        plan.footsteps(j).infeasibility = 0;
       end
-      step_vect = encodeCollocationSteps([footsteps(2:end).pos]);
+      step_vect = encodeCollocationSteps([plan.footsteps(2:end).pos]);
       violation_ineq = A * step_vect - b;
       for j = 2:nsteps
-        footsteps(j+1).infeasibility = max(violation_ineq(step_map.ineq(j)));
+        plan.footsteps(j+1).infeasibility = max(violation_ineq(step_map.ineq(j)));
       end
     end
   end
