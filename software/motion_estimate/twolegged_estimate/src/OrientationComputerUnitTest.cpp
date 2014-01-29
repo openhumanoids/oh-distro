@@ -212,7 +212,7 @@ bool testQuaternionPropagation() {
 }
 
 bool testInertialOdoPropagation() {
-	InertialOdometry::Odometry inert_odo;
+	InertialOdometry::Odometry inert_odo(0.01);
 	InertialOdometry::IMU_dataframe imu_data;
 	InertialOdometry::DynamicState InerOdoEst;
 

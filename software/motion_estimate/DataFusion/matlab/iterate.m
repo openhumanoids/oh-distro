@@ -31,16 +31,15 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 % Measurement.INS.pose.a_l
 % Measurement.velocityResidual
 
-
 % EKF
 [F, L, Q] = dINS_EKFmodel(Measurement.INS.pose);
-covariances.R = diag( 1E0*ones(3,1) );
+covariances.R = diag( 5E0*ones(3,1) );
 
 Disc.B = 0;
 Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
 
 % TIME UPDATE, PRIORI STATE=========================================================================
-[Disc.A,covariances.Qd] = lti_disc(F, L, Q, Sys.T);
+[Disc.A,covariances.Qd] = lti_disc(F, L, Q, Sys.dt);
 Sys.priori = KF_timeupdate(Sys.posterior, 0, Disc, covariances);
 Sys.priori.utime = Measurement.INS.pose.utime;
 

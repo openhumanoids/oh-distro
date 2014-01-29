@@ -1,4 +1,4 @@
-function sendDataFusionReq(INSpose, msg, lc)
+function sendDataFusionReq(INSpose, INSCompensator, inertialData, msg, lc)
 
 
 msg.utime = INSpose.utime;
@@ -27,6 +27,21 @@ msg.local_linear_acceleration.x = INSpose.a_l(1);
 msg.local_linear_acceleration.y = INSpose.a_l(2);
 msg.local_linear_acceleration.z = INSpose.a_l(3);
 
+msg.predicted_a_b.x = inertialData.predicted.a_b(1);
+msg.predicted_a_b.y = inertialData.predicted.a_b(2);
+msg.predicted_a_b.z = inertialData.predicted.a_b(3);
+
+msg.predicted_w_b.x = inertialData.predicted.w_b(1);
+msg.predicted_w_b.y = inertialData.predicted.w_b(3);
+msg.predicted_w_b.z = inertialData.predicted.w_b(3);
+
+msg.gyroBiasEst.x = INSCompensator.biases.bg(1);
+msg.gyroBiasEst.y = INSCompensator.biases.bg(2);
+msg.gyroBiasEst.z = INSCompensator.biases.bg(3);
+
+msg.accBiasEst.x = INSCompensator.biases.ba(1);
+msg.accBiasEst.y = INSCompensator.biases.ba(2);
+msg.accBiasEst.z = INSCompensator.biases.ba(3);
 
 % reference measurements
 msg.referencePos_local.x = 0;

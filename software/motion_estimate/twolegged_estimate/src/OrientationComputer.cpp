@@ -37,7 +37,7 @@ namespace InertialOdometry {
 			return;
 		}
 
-		lQb = exmap(delta_ang, lQb);
+		lQb = exmap(-delta_ang, lQb);
 
 		latest_uts = uts;
 		//		std::cout << "OrientationComputer::updateOrientation -- lQb " << "after" << lQb.w() << ", " << lQb.x() << ", " << lQb.y() << ", " << lQb.z() << std::endl;

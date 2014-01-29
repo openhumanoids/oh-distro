@@ -172,8 +172,10 @@ void StateEstimate::stampInertialPoseUpdateRequestMsg(const InertialOdometry::Dy
   copyDrcVec3D(InerOdoEst.V, msg.twist.linear_velocity);
   copyDrcVec3D(InerOdoEst.w_l, msg.twist.angular_velocity);
   copyDrcVec3D(InerOdoEst.P, msg.pose.translation);
-  copyDrcVec3D(InerOdoEst.b_g, msg.gyroBiasEst);
-  copyDrcVec3D(InerOdoEst.b_a, msg.accBiasEst);
+  copyDrcVec3D(InerOdoEst.bg, msg.gyroBiasEst);
+  copyDrcVec3D(InerOdoEst.ba, msg.accBiasEst);
+  copyDrcVec3D(InerOdoEst.a_b, msg.predicted_a_b);
+  copyDrcVec3D(InerOdoEst.w_b, msg.predicted_w_b);
 
   return;
 }

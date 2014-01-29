@@ -10,7 +10,7 @@
 % feedback structure. 
 
 clc
-% clear
+clear
 
 disp 'STARTING...'
 
@@ -30,23 +30,47 @@ switch (4)
     case 1
         data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
         iter = 6000;
-        initend = 1;
+        measured.w_b = data(1:iter,1:3);
+        measured.a_b = data(1:iter,4:6);
     case 2
         data = load('UnitTests/testdata/microstrain_rot_peraxis/x/loggedIMU.txt');
         iter = 6000;
         initend = 1;
+        measured.w_b = data(1:iter,1:3);
+        measured.a_b = data(1:iter,4:6);
     case 3
         data = load('UnitTests/testdata/microstrain_rot_peraxis/y/loggedIMU.txt');
         iter = 6750;
         initend = 1;
+        measured.w_b = data(1:iter,1:3);
+        measured.a_b = data(1:iter,4:6);
     case 4
         data = load('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
         iter = 12000;
         initend = 1;
+        measured.w_b = data(1:iter,1:3);
+        measured.a_b = data(1:iter,4:6);
+    case 5
+        disp 'Gyrobias in x -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];
+    case 6
+        disp 'Gyrobias in y -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_b = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
+        measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];  
+    case 7
+        disp 'Accelbias in x -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_b = zeros(iter, 3);
+        measured.a_b  = [0.0025*ones(iter, 1), zeros(iter, 1), 9.8*ones(iter, 1)]; 
 end
 
-
-% gn = [0;0;9.8]; % forward left up
+%%
 
 init_lQb = [1;0;0;0];
 % init_lQb = e2q([0;0;-pi/2]);
@@ -55,34 +79,21 @@ init_Pl = [0;0;0];
 
 % tlQb = init_lQb;
 
-% Bias errors to introduce later
-gyrobias = 0*[-0.01;0;0]
-accelbias = 0*[0;0.1;0]
-
 E = [];
 GB = [];
 
-measured.wb = data(1:iter,1:3);
-measured.ab = data(1:iter,4:6);% + repmat(accelbias',iter,1);
-
-% remove gyro biases
-% biasg = mean(measured.wb(initstart:initend,:),1) + gyrobias';
-% biasg = repmat(biasg,iter,1);
-% measured.wb = measured.wb - biasg;
-
 predicted.lQb = [ones(iter,1) zeros(iter,3)];
-predicted.wb = zeros(iter,3);
-predicted.al = zeros(iter,3);
-predicted.fl = zeros(iter,3);
-predicted.vl = zeros(iter,3);
-predicted.pl = zeros(iter,3);
-
+predicted.w_b = zeros(iter,3);
+predicted.a_l = zeros(iter,3);
+predicted.f_l = zeros(iter,3);
+predicted.V_l = zeros(iter,3);
+predicted.P_l = zeros(iter,3);
 predicted.bg = zeros(iter,3);
 predicted.ba = zeros(iter,3);
 
 % The recursive compensation data buffer structure
 INSCompensator = init_INSCompensator();
-INSCompensator2 = init_INSCompensator();
+% INSCompensator2 = init_INSCompensator();
 
 
 % Initial conditions
@@ -114,41 +125,33 @@ Rbias = [];
 updatePackets = [];
 
 % this is the filter update counter
-FilterRate = 50;
-limitedFB = 0.5;
+FilterRate = 100;
+limitedFB = 1;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
-Sys.T = dt_m;
+Sys.dt = dt_m;
 
 for k = 1:iter
     
     % generate IMU data measurement frame
     inertialData.predicted.utime = k*dt*1E6;
-    inertialData.measured.w_b = measured.wb(k,:)';
-    inertialData.measured.a_b = measured.ab(k,:)';
+    inertialData.measured.w_b = measured.w_b(k,:)';
+    inertialData.measured.a_b = measured.a_b(k,:)';
     inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
     inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
-    INSCompensator.biases.bg
-    % Propagate inertial solution, first apply scheduled INS update (if available)
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
     
     % More representative of how LCM traffic is running
     [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
     
-    INSCompensator2.dE_l = [0;0;0];
-    INSCompensator2.dV_l = [0;0;0];
-    INSCompensator2.dP_l = [0;0;0];
-    
-    PE = [PE;q2e(INSpose.lQb)'];
-    
     % Run filter at a lower rate
     if (mod(k,FilterRateReduction)==0 && true)
         m = m+1;
         
         measured.vl = init_Vl;
-        dV = measured.vl - INSpose.V_l + 0.01*randn(3,1);
+        dV = measured.vl - INSpose.V_l + 0.*randn(3,1);
         
         if (false)
         
@@ -162,14 +165,14 @@ for k = 1:iter
             X = [X; Sys.posterior.x'];
             COV = [COV;diag(Sys.posterior.P)'];
             DV = [DV; dV'];
-            [ Sys.posterior.x, INSCompensator2 ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator2 );
+            [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
         
             
         else
             
             % Pass EKF computation out to separate Matlab Development
             % process
-            sendDataFusionReq(INSpose, ReqMsg, lc);
+            sendDataFusionReq(INSpose, INSCompensator, inertialData, ReqMsg, lc);
             
             
             % Currently the outside process holds state -- this will all be
@@ -186,15 +189,6 @@ for k = 1:iter
             INSCompensator.dV_l = updatePacket.dVel_l;
             INSCompensator.dP_l = updatePacket.dPos_l;
             
-            updatePackets = [updatePackets; updatePacket.dbiasGyro_b'];
-            
-%             updatePacket.utime
-%             updatePacket.dbiasGyro_b
-%             updatePacket.dbiasAcc_b
-%             updatePacket.dE_l
-%             updatePacket.dVel_l
-%             updatePacket.dPos_l
-            
         end
         
         
@@ -204,13 +198,13 @@ for k = 1:iter
     % Store data for later plotting
     predicted.bg(k,:) = INSCompensator.biases.bg;
     predicted.ba(k,:) = INSCompensator.biases.ba;
-    predicted.wb(k,:) = inertialData.predicted.w_b';
-    predicted.ab(k,:) = inertialData.predicted.a_b';
+    predicted.w_b(k,:) = inertialData.predicted.w_b';
+    predicted.a_b(k,:) = inertialData.predicted.a_b';
     predicted.lQb(k,:) = INSpose.lQb';
-    predicted.al(k,:) = INSpose.a_l';
-    predicted.fl(k,:) = INSpose.f_l';
-    predicted.vl(k,:) = INSpose.V_l';
-    predicted.pl(k,:) = INSpose.P_l';
+    predicted.a_l(k,:) = INSpose.a_l';
+    predicted.f_l(k,:) = INSpose.f_l';
+    predicted.V_l(k,:) = INSpose.V_l';
+    predicted.P_l(k,:) = INSpose.P_l';
     
     
     % Temporary internal state memory for midpoint integrators
@@ -222,9 +216,17 @@ for k = 1:iter
     end
 end
 
-return
+% return
 
 %% Direct Plotting
+
+
+
+plotGrayINSPredicted(predicted, 1);
+
+return
+
+%
 
 % figure(1),clf
 % subplot(411),plot(true.wb)
@@ -237,12 +239,12 @@ return
 % title('True body measured accelerations')
 
 
-figure(2),clf
-subplot(611),plot(predicted.wb)
-title('Predicted rotation rates')
-grid on
-subplot(612),plot(PE)
-title('Predicted local to body Euler angles')
+% figure(2),clf
+% subplot(611),plot(predicted.w_b)
+% title('Predicted rotation rates')
+% grid on
+% subplot(612),plot(PE)
+% title('Predicted local to body Euler angles')
 % subplot(613),plot(X(:,1:3))
 % title('KF misalignment estimates')
 % grid on
@@ -285,47 +287,21 @@ title('Predicted local to body Euler angles')
 
 % Plot velocity components separately
 
-figure(3), clf
-
-subplot(611)
-plot(predicted.ab)
-title('Predicted accelerations in body frame')
-
-subplot(612)
-plot(predicted.fl)
-title('Predicted local frame specific force')
-
-subplot(613)
-plot(predicted.vl)
-title('Preidcted local frame velocity')
-
-subplot(614)
-plot(DX(:,7:9))
-title('Kalman updates to estimated local frame velocity errors -- DV')
-
-subplot(615)
-plot(predicted.vl)
-title('Predicted local frame velocities')
-
-subplot(616)
-plot(X(:,13:15))
-title('Estimated accelerometer biases')
-
 
 % Gray box INS state estimate
-figH = figure(4);
+figH = figure(2);
 clf
-set(figH,'Name','Gray box INS state estimate','NumberTitle','off')
+set(figH,'Name',['Gray box INS state estimate, ' num2str(clock())],'NumberTitle','off')
 subplot(611),
-plot(PE)
-title('Predicted local to body Euler angles')
+plot(predicted.lQb(:,2:4))
+title('Vector portion predicted lQb')
 
 subplot(612)
-plot(predicted.fl)
+plot(predicted.f_l)
 title('Predicted local frame specific force')
 
 subplot(613)
-plot(predicted.vl)
+plot(predicted.V_l)
 title('Predicted velocity in local frame')
 
 subplot(614)
@@ -333,7 +309,7 @@ plot(DX(:,7:9))
 title('K * Innovation updates to velocity in local frame')
 
 subplot(615)
-plot(predicted.pl)
+plot(predicted.P_l)
 title('Predicted position in local frame')
 
 subplot(616)
@@ -341,7 +317,7 @@ plot(DX(:,13:15))
 title('K * Innovation updates to position in local frame')
 
 
-figure(5),clf
+figure(3),clf
 
 subplot(411)
 plot(DX(:,4:6))
@@ -364,7 +340,7 @@ title('Accelerometer bias estimates')
 grid on
 
 
-figH = figure(6);
+figH = figure(4);
 clf
 set(figH,'Name','EKF K * innov error state estimate updates','NumberTitle','off')
 sf = 3;

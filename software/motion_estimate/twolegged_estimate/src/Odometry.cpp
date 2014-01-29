@@ -3,11 +3,11 @@
 
 namespace InertialOdometry {
 
-  Odometry::Odometry()
-    {
-      //std::cout << "An InertialOdometry::Odometry object was created, using internal state structure." << std::endl;
+  Odometry::Odometry(double imu_sampletime)
+  {
+	Ts_imu = imu_sampletime;
 
-    }
+  }
 
   InertialOdomOutput Odometry::PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu)
   {
@@ -72,24 +72,39 @@ namespace InertialOdometry {
     state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
     state.P = out.first_pose_rel_pos;
     state.V = out.first_pose_rel_vel;
-    state.b_a.setZero();
-    state.b_g.setZero();
+    state.ba.setZero();
+    state.bg.setZero();
+    state.a_b = _imu.a_b;
+    state.w_b = _imu.w_b;
     state.lQb = out.quat;
     
     return state;
   }
   
+  IMU_dataframe PlatformSpecificIMUTransform(IMU_dataframe &_imu) {
+	// Align IMU to body
+
+	// Compute rotation rate and accelerations from delta quantities
+	//_imu.w_b_measured = - 1/Ts_imu * Eigen::Vector3d(_imu.delta_rotation[0], _imu.delta_rotation[1], _imu.delta_rotation[2]);
+	return _imu;
+  }
+
   DynamicState Odometry::PropagatePrediction(IMU_dataframe &_imu)
   {
     InertialOdomOutput out;
 
+    if (&_imu.use_dang) {
+    	_imu.w_b_measured = 1/Ts_imu * _imu.dang_b;
+    }
+    std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
+
     imu_compensator.Full_Compensation(_imu);
 
     out = PropagatePrediction_wo_IMUCompensation(_imu);
-
-    //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
-
-    //std::cout << "Odometry::PropagatePrediction -- lQb " << out.quat.w() << ", " << out.quat.x() << ", " << out.quat.y() << ", " << out.quat.z() << std::endl;
 
     DynamicState state;
     state.imu = _imu;
@@ -99,8 +114,10 @@ namespace InertialOdometry {
     state.w_l = orc.ResolveBodyToRef(_imu.w_b); // TODO -- this may be a duplicated computation. Ensure this is done in only one place
     state.P = out.first_pose_rel_pos;
     state.V = out.first_pose_rel_vel;
-    state.b_a.setZero();
-    state.b_g.setZero();
+    state.ba = imu_compensator.getAccelBiases();
+    state.bg = imu_compensator.getGyroBiases();
+    state.a_b = _imu.a_b;
+    state.w_b = _imu.w_b;
     state.lQb = out.quat;
 
     return state;
@@ -113,32 +130,54 @@ namespace InertialOdometry {
 
   void Odometry::incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData) {
 
-//	  std::cout << "Odometry::incorporateERRUpdate -- received and INSUpdatePacket." << std::endl;
-//	  std::cout << "Odometry::incorporateERRUpdate -- utime " << std::endl << updateData.utime << std::endl;
-//	  std::cout << "Odometry::incorporateERRUpdate -- dbg_b " << std::endl << updateData.dbiasGyro_b << std::endl;
-//	  std::cout << "Odometry::incorporateERRUpdate -- dba_b " << std::endl << updateData.dbiasAcc_b << std::endl;
-//	  std::cout << "Odometry::incorporateERRUpdate -- dE_l " << std::endl << updateData.dE_l << std::endl;
-//	  std::cout << "Odometry::incorporateERRUpdate -- dV_l " << std::endl << updateData.dVel_l << std::endl;
-//	  std::cout << "Odometry::incorporateERRUpdate -- dP_l " << std::endl << updateData.dPos_l << std::endl;
+	//	  std::cout << "Odometry::incorporateERRUpdate -- received and INSUpdatePacket." << std::endl;
+	//	  std::cout << "Odometry::incorporateERRUpdate -- utime " << std::endl << updateData.utime << std::endl;
+	//	  std::cout << "Odometry::incorporateERRUpdate -- dbg_b " << std::endl << updateData.dbiasGyro_b << std::endl;
+	//	  std::cout << "Odometry::incorporateERRUpdate -- dba_b " << std::endl << updateData.dbiasAcc_b << std::endl;
+	//	  std::cout << "Odometry::incorporateERRUpdate -- dE_l " << std::endl << updateData.dE_l << std::endl;
+	//	  std::cout << "Odometry::incorporateERRUpdate -- dV_l " << std::endl << updateData.dVel_l << std::endl;
+	//	  std::cout << "Odometry::incorporateERRUpdate -- dP_l " << std::endl << updateData.dPos_l << std::endl;
 
-	  Eigen::Vector3d tmp;
+	Eigen::Vector3d tmp;
 
-	  imu_compensator.AccumulateGyroBiases(-updateData.dbiasGyro_b);
-	  imu_compensator.AccumulateAccelBiases(updateData.dbiasAcc_b);
-
-	  // update integrated states
-	  // Orientation first
-	  orc.rotateOrientationUpdate(updateData.dE_l);
-	  tmp = avp.getVelStates();
-	  avp.setVelStates(tmp - updateData.dVel_l);
-	  tmp = avp.getPosStates();
-	  //std::cout << "Odometry::incorporateErrUpdate -- Position update " << updateData.dPos_l << std::endl;
-	  avp.setPosStates(tmp - updateData.dPos_l);
-
-
+	enterCritical();
+	imu_compensator.AccumulateGyroBiases(updateData.dbiasGyro_b);
+	imu_compensator.AccumulateAccelBiases(updateData.dbiasAcc_b);
+	orc.rotateOrientationUpdate(updateData.dE_l);
+	tmp = avp.getVelStates();
+	avp.setVelStates(tmp - updateData.dVel_l);
+	tmp = avp.getPosStates();
+	avp.setPosStates(tmp - updateData.dPos_l);
+	exitCritical();
   }
 
-  // Been moved to QuaternionLib
+  void Odometry::setPositionState(const Eigen::Vector3d &P_set) {
+	avp.setPosStates(P_set);
+	return;
+  }
+
+  void Odometry::setVelocityState(const Eigen::Vector3d &V_set) {
+	avp.setVelStates(V_set);
+	return;
+  }
+
+
+  Eigen::Vector3d Odometry::ResolveBodyToRef(const Eigen::Vector3d &_va) {
+	return orc.ResolveBodyToRef(_va);
+  }
+
+  void Odometry::enterCritical() {
+	bool unlocked = false;
+	while (!mINSUpdateAtomic.compare_exchange_weak(unlocked, true));
+  }
+
+  void Odometry::exitCritical() {
+	mINSUpdateAtomic.store(false);
+  }
+
+}
+
+// Been moved to QuaternionLib
 //  Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)
 //  {
 //	  Eigen::Matrix3d R;
@@ -162,24 +201,3 @@ namespace InertialOdometry {
 //
 //	  return R;
 //  }
-
-	void Odometry::setPositionState(const Eigen::Vector3d &P_set) {
-
-		avp.setPosStates(P_set);
-
-		return;
-	}
-
-	void Odometry::setVelocityState(const Eigen::Vector3d &V_set) {
-
-		avp.setVelStates(V_set);
-
-		return;
-	}
-
-
-	Eigen::Vector3d Odometry::ResolveBodyToRef(const Eigen::Vector3d &_va) {
-		return orc.ResolveBodyToRef(_va);
-	}
-
-}
