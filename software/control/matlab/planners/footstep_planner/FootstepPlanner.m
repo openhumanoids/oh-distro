@@ -99,9 +99,9 @@ classdef FootstepPlanner < DRCPlanner
               obj.target_footsteps = containers.Map('KeyType','int32', 'ValueType', 'any');
               msg ='Foot Plan : Received New Goal'; disp(msg); send_status(6,0,0,msg);
               if data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_RIGHT_FOOT
-                obj.goal_pos.center = footCenter2StepCenter(obj.biped, obj.goal_pos.center, true, obj.options.nom_step_width);
+                obj.goal_pos.center = obj.biped.footCenter2StepCenter(obj.goal_pos.center, true, obj.options.nom_step_width);
               elseif data.goal.goal_type == drc.walking_goal_t.GOAL_TYPE_LEFT_FOOT
-                obj.goal_pos.center = footCenter2StepCenter(obj.biped, obj.goal_pos.center, false, obj.options.nom_step_width);
+                obj.goal_pos.center = obj.biped.footCenter2StepCenter(obj.goal_pos.center, false, obj.options.nom_step_width);
               end
               obj.needs_plan = true;
             end

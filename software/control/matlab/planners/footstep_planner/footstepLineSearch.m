@@ -6,7 +6,7 @@ foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
 
 
-p0 = footCenter2StepCenter(biped, X(2).pos, X(2).is_right_foot, params.nom_step_width);
+p0 = biped.footCenter2StepCenter(X(2).pos, X(2).is_right_foot, params.nom_step_width);
 goal_pos(6) = p0(6) + angleDiff(p0(6), goal_pos(6));
 goal_pos(3,:) = p0(3);
 if ~params.ignore_terrain
