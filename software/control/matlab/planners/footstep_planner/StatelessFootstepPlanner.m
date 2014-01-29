@@ -16,7 +16,7 @@ classdef StatelessFootstepPlanner
         request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
       end
 
-      params_set = {request.params};
+      params_set = {struct(request.params)};
       if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
         new_params_set = {};
         for p = params_set
