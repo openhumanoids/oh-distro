@@ -203,14 +203,14 @@ void MainWindow::onRedrawPlots()
     return;
   }
 
-  float maxTime = std::numeric_limits<float>::min();
+  float maxTime = -std::numeric_limits<float>::max();
 
   foreach (SignalData* signalData, signalDataList)
   {
     signalData->updateValues();
     if (signalData->size())
     {
-      float signalMaxTime = signalData->value(signalData->size() - 1).x();
+      float signalMaxTime = signalData->boundingRect().right();
       if (signalMaxTime > maxTime)
       {
         maxTime = signalMaxTime;
@@ -218,7 +218,7 @@ void MainWindow::onRedrawPlots()
     }
   }
 
-  if (maxTime == std::numeric_limits<float>::min())
+  if (maxTime == -std::numeric_limits<float>::max())
   {
     return;
   }

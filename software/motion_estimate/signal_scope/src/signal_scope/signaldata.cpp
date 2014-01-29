@@ -138,22 +138,32 @@ void SignalData::updateValues()
   // recompute bounding rect
   if (xvalues.size() > 1)
   {
-    d_data->boundingRect.setLeft(xvalues.front());
-    d_data->boundingRect.setRight(xvalues.back());
-
     double minY = yvalues.front();
     double maxY = minY;
 
+    double minX = xvalues.front();
+    double maxX = minX;
+
     for (int i = 0; i < yvalues.size(); ++i)
     {
-      double sampleY = yvalues[idx];
+      double sampleY = yvalues[i];
+      double sampleX = xvalues[i];
 
       if (sampleY < minY)
         minY = sampleY;
 
       if (sampleY > maxY)
         maxY = sampleY;
+
+      if (sampleX < minX)
+        minX = sampleX;
+
+      if (sampleX > maxX)
+        maxX = sampleX;
     }
+
+    d_data->boundingRect.setLeft(minX);
+    d_data->boundingRect.setRight(maxX);
 
     d_data->boundingRect.setTop(maxY);
     d_data->boundingRect.setBottom(minY);
