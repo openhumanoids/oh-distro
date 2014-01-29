@@ -1,4 +1,4 @@
-function [ traj ] = load_specific_traj( iterations, filename )
+function [ traj ] = load_specific_traj( filename )
 % Load test data from file
 
 % traj.parameters.gravity = 9.8;
@@ -27,10 +27,10 @@ accelbias = 0*[0;0.1;0]
 
 
 
+traj.iterations = size(data,1);
 
-
-traj.measured.w_b = data(1:iterations,1:3);% + repmat(gyrobias',iterations,1);
-traj.measured.a_b = data(1:iterations,4:6);% + repmat(accelbias',iterations,1);
+traj.measured.w_b = data(1:traj.iterations,1:3);% + repmat(gyrobias',iterations,1);
+traj.measured.a_b = data(1:traj.iterations,4:6);% + repmat(accelbias',iterations,1);
 
 
 

@@ -137,7 +137,7 @@ void StateEstimate::StateEstimator::run()
 	for (int i = 0; i < nIMU; ++i)
 	{
 	  this->mIMUQueue.dequeue(imu);
-	  std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
+	  //std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
 	  // Handle IMU data -- Special case, this one retransmits ERS and INSUpdateRequest messages internally
 	  IMUServiceRoutine(imu, (i==(nIMU-1)), mLCM);
 	}

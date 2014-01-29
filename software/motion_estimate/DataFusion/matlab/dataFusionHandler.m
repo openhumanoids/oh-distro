@@ -45,15 +45,15 @@ index = 0;
 
 % We assume this loop runs at 50 Hz or less 
 while (true)
-    tic;
+    
     index = index + 1;
     % wait for message
     [Measurement.INS, Measurement.LegOdo, DFReqMsg] = receiveInertialStatePos(aggregator);
-    
+    tic;
     % Now we can start computation
     % Ensure that we are not exceeding our allotted computation time
-    if ((computationTime > 0.015) && DataLogging~=1)
-        disp(['WARNING -- dataFusionHandler is taking longer than 15ms, time taken was' num2str(computationTime)]) 
+    if ((computationTime > 0.01) && DataLogging~=1)
+        disp(['WARNING -- dataFusionHandler, long computation time ' num2str(computationTime*1000) ' ms']) 
     end
 
     if (dfSys.T ~= 0)
@@ -109,9 +109,10 @@ end
 
 %% Here we want to plot some dataFusion results.
 
-
-plotGrayINSPredicted(DFRESULTS.REQMSGS, 1);
-plotEKFResults(DFRESULTS, 2)
+if (DataLogging == 1)
+    plotGrayINSPredicted(DFRESULTS.REQMSGS, 1);
+    plotEKFResults(DFRESULTS, 2)
+end
 
 % Must standardize this plotting
 

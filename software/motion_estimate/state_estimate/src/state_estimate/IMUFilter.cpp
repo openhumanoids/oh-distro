@@ -36,7 +36,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
   mLCM->publish("EST_ROBOT_STATE", _ERSMsg);
 
   // EKF measurement update rate set to 20ms here
-  if ((lastInerOdoState.uts % 20000) == 0) {
+  if ((lastInerOdoState.uts % 50000) == 0) {
 	stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
 	stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
 	mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
