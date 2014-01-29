@@ -196,8 +196,8 @@ toffset = -1;
 tt=-1;
 dt = 0.03;
 
-process_noise = 0.3*ones(nq,1);
-observation_noise = 5e-4*ones(nq,1);
+process_noise = 5e-4*ones(nq,1);
+observation_noise = 0.5*ones(nq,1);
 kf = FirstOrderKalmanFilter(process_noise,observation_noise);
 kf_state = kf.getInitialState;
 
