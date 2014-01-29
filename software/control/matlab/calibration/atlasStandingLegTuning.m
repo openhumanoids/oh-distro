@@ -8,16 +8,16 @@ function atlasStandingLegTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint_str = {'l_leg_kny'};% <---- cell array of (sub)strings  
+joint_str = {'leg_hpy','leg_kny'};% <---- cell array of (sub)strings  
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
 dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
-T = 10;% <--- signal duration (sec)
+T = 15;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.0;% <---- meters, COM DELTA
+amp = 0.02;% <---- meters, COM DELTA
 chirp_f0 = 0.05;% <--- chirp starting frequency
-chirp_fT = 0.1;% <--- chirp ending frequency
+chirp_fT = 0.05;% <--- chirp ending frequency
 chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % inverse dynamics PD gains (only for input=position, control=force)
@@ -192,15 +192,12 @@ xy_offset = [0;0];
 qddes = zeros(nu,1);
 udes = zeros(nu,1);
 
-qddes_prev = zeros(nu,1);
-udes_prev = zeros(nu,1);
-
 toffset = -1;
 tt=-1;
 dt = 0.03;
 
-process_noise = 0.3;
-observation_noise = 5e-4;
+process_noise = 0.3*ones(nq,1);
+observation_noise = 5e-4*ones(nq,1);
 kf = FirstOrderKalmanFilter(process_noise,observation_noise);
 kf_state = kf.getInitialState;
 
@@ -214,8 +211,8 @@ while tt<T+2
     tt=t-toffset;
     
     % get estimated state
-	kf_state = kf.update(tt,kf_state,x(1:nq));
-	x = kf.output(tt,kf_state,x(1:nq))
+    kf_state = kf.update(tt,kf_state,x(1:nq));
+    x = kf.output(tt,kf_state,x(1:nq));
 
     q = x(1:nq);
     q(1:2) = q(1:2)-xy_offset;
@@ -240,15 +237,7 @@ while tt<T+2
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
-    % low pass filter inputs
-    alpha = 0.1;
-    udes = (1-alpha)*udes_prev + alpha*udes; 
-    qddes = (1-alpha)*qddes_prev + alpha*qddes; 
-    
     ref_frame.publish(t,[qdes;qddes;udes],'ATLAS_COMMAND');
-
-    udes_prev = udes;
-    qddes_prev = qddes;
   end
 end
 
