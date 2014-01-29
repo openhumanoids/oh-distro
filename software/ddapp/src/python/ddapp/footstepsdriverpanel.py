@@ -26,7 +26,9 @@ def getVisibleRobotModel():
 
 class FootstepsPanel(object):
 
-    def __init__(self):
+    def __init__(self, driver):
+
+        self.driver = driver
 
         self.widget = QtGui.QWidget()
         self.widget.setWindowTitle('Footsteps Panel')
@@ -42,21 +44,21 @@ class FootstepsPanel(object):
 
     def onNewWalkingGoal(self):
         model = getVisibleRobotModel()
-        footsteps.createWalkingGoal(model)
+        self.driver.createWalkingGoal(model)
 
     def onExecute(self):
-        footsteps.commitFootstepPlan()
+        self.driver.commitFootstepPlan()
 
     def onStop(self):
-        footsteps.sendStopWalking()
+        self.driver.sendStopWalking()
 
 
-def init():
+def init(driver):
 
     global panel
     global dock
 
-    panel = FootstepsPanel()
+    panel = FootstepsPanel(driver)
     dock = app.addWidgetToDock(panel.widget)
     #dock.hide()
 

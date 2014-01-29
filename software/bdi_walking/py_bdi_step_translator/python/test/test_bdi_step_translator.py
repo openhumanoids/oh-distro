@@ -7,7 +7,7 @@ from bdi_step.translator import BDIStepTranslator, Mode
 
 class TestStepTranslation(unittest.TestCase):
     def generate_plan(self, behavior):
-        plan = drc.footstep_plan_t()
+        plan = drc.deprecated_footstep_plan_t()
         plan.utime = 0
         plan.robot_name = 'atlas'
         plan.num_steps = 10

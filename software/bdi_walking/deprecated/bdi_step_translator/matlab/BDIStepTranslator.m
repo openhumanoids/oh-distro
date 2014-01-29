@@ -6,7 +6,7 @@ classdef BDIStepTranslator < DRCPlanner
   methods 
     function obj = BDIStepTranslator()
       obj = obj@DRCPlanner();
-      obj = addInput(obj, 'foot_plan', 'APPROVED_FOOTSTEP_PLAN', 'drc.footstep_plan_t', 1, 1, 1);
+      obj = addInput(obj, 'foot_plan', 'APPROVED_FOOTSTEP_PLAN', 'drc.deprecated_footstep_plan_t', 1, 1, 1);
       obj.lc = lcm.lcm.LCM.getSingleton();
     end
 

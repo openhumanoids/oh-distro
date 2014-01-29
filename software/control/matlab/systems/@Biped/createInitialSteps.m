@@ -76,7 +76,7 @@ for j = 1:length(X)
 end
 
 if params.ignore_terrain
-  p0 = footCenter2StepCenter(biped, X(2).pos, X(2).is_right_foot, params.nom_step_width);
+  p0 = biped.footCenter2StepCenter(X(2).pos, X(2).is_right_foot, params.nom_step_width);
   normal = rpy2rotmat(p0(4:6)) * [0;0;1];
   for j = 3:length(X)
     X(j).pos(3) = p0(3) - (1 / normal(3)) * (normal(1) * (X(j).pos(1) - p0(1)) + normal(2) * (X(j).pos(2) - p0(2)));
