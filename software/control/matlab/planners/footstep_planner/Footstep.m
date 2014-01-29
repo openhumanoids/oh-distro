@@ -35,8 +35,10 @@ classdef Footstep
       msg.fixed_pitch = obj.pos_fixed(5);
       msg.fixed_yaw = obj.pos_fixed(6);
       msg.num_terrain_pts = size(obj.terrain_pts, 2);
-      msg.terrain_path_dist = obj.terrain_pts(1,:);
-      msg.terrain_height = obj.terrain_pts(2,:);
+      if msg.num_terrain_pts > 0
+        msg.terrain_path_dist = obj.terrain_pts(1,:);
+        msg.terrain_height = obj.terrain_pts(2,:);
+      end
       msg.infeasibility = obj.infeasibility;
       msg.params = obj.walking_params;
     end
