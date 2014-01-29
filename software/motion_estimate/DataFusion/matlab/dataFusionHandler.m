@@ -4,7 +4,7 @@ function DFRESULTS = dataFusionHandler()
 % only.
 
 % This is temporary
-iterations = 12000/5;
+iterations = 12000/2;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
@@ -13,7 +13,7 @@ feedbackGain = 0.5;
 dfSys.T = 0;
 
 ENABLE_FEEDBACK = 1;
-DataLogging = 1;
+DataLogging = 0;
 
 % Initialize local variables
 computationTime = 0;
@@ -52,8 +52,8 @@ while (true)
     
     % Now we can start computation
     % Ensure that we are not exceeding our allotted computation time
-    if ((computationTime > 0.020) && DataLogging~=1)
-        disp(['WARNING -- dataFusionHandler is taking longer than 40ms, time taken was' num2str(computationTime)]) 
+    if ((computationTime > 0.015) && DataLogging~=1)
+        disp(['WARNING -- dataFusionHandler is taking longer than 15ms, time taken was' num2str(computationTime)]) 
     end
 
     if (dfSys.T ~= 0)
@@ -88,15 +88,14 @@ while (true)
         DFRESULTS.poses = storePose(Measurement.INS.pose, DFRESULTS.poses, index);
         DFRESULTS.STATEX(index,:) = dfSys.posterior.x';
         DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
+        DFRESULTS.updatePackets = [DFRESULTS.updatePackets; feedbackGain*dfSys.posterior.x(4:6)'];
     end
     
     
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
     if (ENABLE_FEEDBACK == 1)
-
         publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, lc);
-        DFRESULTS.updatePackets = [DFRESULTS.updatePackets; feedbackGain*dfSys.posterior.x(4:6)'];
         dfSys.posterior.x = (1-feedbackGain) * dfSys.posterior.x;
     end
     

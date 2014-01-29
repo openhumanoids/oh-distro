@@ -151,7 +151,7 @@ for k = 1:iter
         m = m+1;
         
         measured.vl = init_Vl;
-        dV = measured.vl - INSpose.V_l + 0.*randn(3,1);
+        dV = measured.vl - INSpose.V_l + 1*randn(3,1);
         
         if (false)
         

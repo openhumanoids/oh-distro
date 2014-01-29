@@ -190,12 +190,14 @@ void StateEstimate::StateEstimator::run()
 
 
 void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm) {
+  //
+  //	if (receivedIMUPackets < 10) {
+  //		detectIMUSampleTime(prevImuPacketCount, previous_imu_utime, receivedIMUPackets, Ts_imu, imu);
+  //		std::cout << "StateEstimator::run -- auto-detecting IMU sample time at " << Ts_imu << " s" << std::endl;
+  //	}
+  //std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << " s" << std::endl; // Remove once confirmed to be working properly
 
-	if (receivedIMUPackets < 10) {
-		detectIMUSampleTime(prevImuPacketCount, previous_imu_utime, receivedIMUPackets, Ts_imu, imu);
-		std::cout << "StateEstimator::run -- auto-detecting IMU sample time at " << Ts_imu << " s" << std::endl;
-	}
-	std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << " s" << std::endl; // Remove once confirmed to be working properly
+  // EKF measurement update rate set to 20ms here
 
 	//InerOdoEst = PropagateINS(Ts_imu, inert_odo, IMU_to_body, imu);
 

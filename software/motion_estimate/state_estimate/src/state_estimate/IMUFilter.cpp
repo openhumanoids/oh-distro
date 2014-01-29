@@ -32,10 +32,13 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
   }
   _inert_odo->exitCritical();
 
-  stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
-  stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
+  stampInertialPoseERSMsg(lastInerOdoState, *_ERSMsg);
+  mLCM->publish("EST_ROBOT_STATE", _ERSMsg);
 
-  if ((lastInerOdoState.uts % 50000) == 0) {
+  // EKF measurement update rate set to 20ms here
+  if ((lastInerOdoState.uts % 20000) == 0) {
+	stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
+	stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
 	mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
   }
 
