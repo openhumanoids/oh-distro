@@ -146,7 +146,6 @@ if usePlanning:
     def planCallback():
         planListener.stopAnimation()
         planListener.playPlan(jc)
-        planListener.picklePlan('plan.pkl')
 
     def animationCallback():
         sendEstRobotState(jc.currentPoseName)
@@ -155,6 +154,10 @@ if usePlanning:
     planListener.animationCallback = animationCallback
 
     app.addToolbarMacro('plot plan', planListener.plotPlan)
+
+    def replan(side='left'):
+        assert side in ('left', 'right')
+        planListener.sendEndEffectorGoal('%s_hand' % side[0], om.findObjectByName('%s_base_link' % side).transform)
 
 
 if usePerception:
@@ -251,7 +254,10 @@ def getLinkFrame(linkName, model=None):
 
 
 def showLinkFrame(linkName, model=None):
-    return vis.updateFrame(getLinkFrame(linkName, model), linkName, parent='link frames')
+    frame = getLinkFrame(linkName, model)
+    if not frame:
+        raise Exception('Link not found: ' + linkName)
+    return vis.updateFrame(frame, linkName, parent='link frames')
 
 
 def createWalkingGoal():
