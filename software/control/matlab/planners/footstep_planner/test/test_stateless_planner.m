@@ -60,7 +60,6 @@ request.params.max_step_width = 0.35;
 request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.35;
 request.params.ignore_terrain = true;
-request.params.force_to_sticky_feet = false;
 request.params.planning_mode = drc.footstep_plan_params_t.MODE_AUTO;
 request.params.behavior = drc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING;
 request.params.map_command = 0;
@@ -83,7 +82,9 @@ request.default_step_params.mu = 1.0;
 
 
 p = StatelessFootstepPlanner();
-footsteps = p.plan_footsteps(r, request);
+plan = p.plan_footsteps(r, request);
+plan.toLCM();
+footsteps = plan.footsteps;
 assert(footsteps(3).pos(2) == 0.20);
 assert(length(footsteps) == 12);
 assert(footsteps(3).infeasibility > 1e-6);
@@ -108,9 +109,10 @@ goal_steps(1).id = -1;
 goal_steps(1).is_right_foot = 1;
 request.goal_steps = goal_steps;
 
-footsteps = p.plan_footsteps(r, request);
+plan = p.plan_footsteps(r, request);
+footsteps = plan.footsteps;
 s = Footstep.from_footstep_t(goal_steps(1));
-assert(all(footsteps(end).pos == r.footOrig2Contact(s.pos, 'center', false)));
+assert(all(footsteps(end).pos == s.pos));
 
 request.num_goal_steps = 3;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
@@ -155,7 +157,8 @@ goal_steps(3).id = -1;
 goal_steps(3).is_right_foot = 1;
 request.goal_steps = goal_steps;
 
-footsteps = p.plan_footsteps(r, request);
+plan = p.plan_footsteps(r, request);
+foosteps = plan.footsteps;
 assert(length(footsteps) == 12)
 assert(all([footsteps(1:2:end).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
 
@@ -202,6 +205,7 @@ goal_steps(3).id = -1;
 goal_steps(3).is_right_foot = 0;
 request.goal_steps = goal_steps;
 
-footsteps = p.plan_footsteps(r, request);
+plan = p.plan_footsteps(r, request);
+footsteps = plan.footsteps;
 assert(length(footsteps) == 11)
 assert(all([footsteps(1:2:end-1).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
