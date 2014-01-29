@@ -34,7 +34,6 @@ class LCM2ROS{
   public:
     LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_);
     ~LCM2ROS() {}
-
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
