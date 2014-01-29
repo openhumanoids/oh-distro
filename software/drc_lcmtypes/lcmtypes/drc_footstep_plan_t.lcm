@@ -5,5 +5,5 @@ struct footstep_plan_t
 	int64_t utime;
 
 	int32_t num_steps;
-	footstep_t footsteps;
+	footstep_t footsteps[num_steps];
 }
