@@ -34,7 +34,10 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 
   stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
   stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
-  mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
+
+  if ((lastInerOdoState.uts % 50000) == 0) {
+	mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
+  }
 
 
   //VarNotUsed(imuPackets);
