@@ -15,3 +15,4 @@ set_property(DIRECTORY PROPERTY EP_PREFIX ${DRCExternals_BINARY_DIR})
 
 include(cmake/check-svn.cmake)
 include(cmake/externals.cmake)
+include(cmake/dd-externals.cmake)
