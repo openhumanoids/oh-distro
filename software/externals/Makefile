@@ -1,7 +1,5 @@
 # Default makefile distributed with pods version: 12.01.11
 
-default_target: all
-
 # Default to a less-verbose build.  If you want all the gory compiler output,
 # run "make VERBOSE=1"
 $(VERBOSE).SILENT:
@@ -45,5 +43,5 @@ clean:
 	-if [ -d pod-build ]; then $(MAKE) -C pod-build clean; rm -rf pod-build; fi
 
 # other (custom) targets are passed through to the cmake-generated Makefile 
-#%::
-#	$(MAKE) -C pod-build $@
+%::
+	$(MAKE) -C pod-build $@
