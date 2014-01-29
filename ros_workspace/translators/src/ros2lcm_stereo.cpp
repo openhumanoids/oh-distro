@@ -312,8 +312,7 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& l_image,
   lcm_left_.row_stride=n_colors*l_image->width;
   if (do_jpeg_compress_){
     int jpeg_compressed_size =  isize*n_colors;//image_buf_size;
-    // int status = jpeg_compress_8u_rgb  (l_image->data.data(), l_image->width, l_image->height, 
-    // l_image->width*n_colors, color_compress_buffer_ , &jpeg_compressed_size, jpeg_quality_);
+    jpeg_compress_8u_rgb  (l_image->data.data(), l_image->width, l_image->height, l_image->width*n_colors, color_compress_buffer_ , &jpeg_compressed_size, jpeg_quality_);
     lcm_left_.data.resize( jpeg_compressed_size);
     memcpy(&lcm_left_.data[0], color_compress_buffer_ , jpeg_compressed_size);
     lcm_left_.size = jpeg_compressed_size;
