@@ -25,7 +25,7 @@ classdef FootstepPlan
 
   methods(Static=true)
     function plan = from_collocation_results(X)
-      plan = Footstep.empty();
+      footsteps = Footstep.empty();
       for j = 1:length(X)
         pos = X(j).pos;
         id = j;
@@ -35,8 +35,9 @@ classdef FootstepPlan
         terrain_pts = [];
         infeasibility = nan;
         walking_params = [];
-        plan(j) = Footstep(pos, id, is_right_foot, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
+        footsteps(j) = Footstep(pos, id, is_right_foot, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
       end
+      plan = FootstepPlan(footsteps);
     end
 
     function plan = from_footstep_plan_t(msg)
