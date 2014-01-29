@@ -126,30 +126,17 @@ classdef StatelessFootstepPlanner
       elseif request.num_goal_steps == 1
         goal_step = Footstep.from_footstep_t(request.goal_steps(1));
         goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
-        if plan.footsteps(end).is_right_foot == goal_step.is_right_foot
-          k = nsteps;
-        else
-          k = nsteps - 1;
-        end
-        plan.footsteps(k) = goal_step;
+        assert(goal_step.is_right_foot == plan.footsteps(end).is_right_foot);
+        plan.footsteps(end) = goal_step;
       else
-        if plan.footsteps(end-1).is_right_foot ~= request.goal_steps(1).is_right_foot
-          request.goal_steps = StatelessFootstepPlanner.pairReverse(request.goal_steps);
-        end
         for j = 1:request.num_goal_steps
-          k = nsteps - 2 + j;
+          k = nsteps - 3 + j;
           goal_step = Footstep.from_footstep_t(request.goal_steps(j));
+          assert(goal_step.is_right_foot == plan.footsteps(k).is_right_foot);
           goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
           plan.footsteps(k) = goal_step;
         end
       end
-    end
-
-    function y = pairReverse(x)
-      % If x is [a, b, c, d], returns [b, a, d, c]
-      y = zeros(size(x));
-      y(1:2:end) = x(2:2:end);
-      y(2:2:end) = x(1:2:end);
     end
 
     function plan = mergeExistingSteps(biped, plan, request)
