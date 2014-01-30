@@ -46,6 +46,12 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   
   prev_worldvicon_to_body_vicon_.setIdentity();
   prev_vicon_utime_ = -1;
+  
+  
+  local_integration_ = true;
+  local_max_count_ = 10;
+  local_counter_ = 0;
+  local_prev_utime_=0;
 }
 
 RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *msg)
@@ -89,23 +95,61 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *ms
     std::cout << "Leg Odometry is not valid ==============================\n";
     return NULL;
   }
+  
+  
+  if (local_integration_){
+    local_accum_ =  local_accum_*delta_odo;
+    local_counter_++;
+    
+    std::cout << local_counter_ << " counter" << "\n";
+    // If the counter is max, then integrate it, else return null pointer
+    if (local_counter_ > local_max_count_){
+      std::cout << local_counter_ << " integrate" << "\n";
+      delta_odo = local_accum_;
+      local_accum_.setIdentity();
 
-  BotTrans msgT;
-  memset(&msgT, 0, sizeof(msgT));
-//  memcpy(msgT.trans_vec, msg->translation, 3 * sizeof(double));
-//  memcpy(msgT.rot_quat,  msg->rotation   , 4 * sizeof(double));
+      int64_t temp_prev_utime= local_prev_utime_; // local copy to pass
+      local_counter_=0;
+      local_prev_utime_ = utime;
+      
+      if (temp_prev_utime ==0){
+        // skip the first iteration
+        return NULL; 
+      }
+      
+      BotTrans msgT;
+      memset(&msgT, 0, sizeof(msgT));
+      Eigen::Vector3d motion_T = delta_odo.translation();
+      Eigen::Quaterniond motion_R = Eigen::Quaterniond(delta_odo.rotation());
+      msgT.trans_vec[0] = motion_T(0);
+      msgT.trans_vec[1] = motion_T(1);
+      msgT.trans_vec[2] = motion_T(2);
+      msgT.rot_quat[0] = motion_R.w();
+      msgT.rot_quat[1] = motion_R.x();
+      msgT.rot_quat[2] = motion_R.y();
+      msgT.rot_quat[3] = motion_R.z();  
 
-  Eigen::Vector3d motion_T = delta_odo.translation();
-  Eigen::Quaterniond motion_R = Eigen::Quaterniond(delta_odo.rotation());
-  msgT.trans_vec[0] = motion_T(0);
-  msgT.trans_vec[1] = motion_T(1);
-  msgT.trans_vec[2] = motion_T(2);
-  msgT.rot_quat[0] = motion_R.w();
-  msgT.rot_quat[1] = motion_R.x();
-  msgT.rot_quat[2] = motion_R.y();
-  msgT.rot_quat[3] = motion_R.z();  
+      return leg_odo_common_->createMeasurement(msgT, utime, temp_prev_utime);
+    }else{
+      std::cout << local_counter_ << " skip" << "\n";
+      return NULL; 
+    }
+  }else{
+    BotTrans msgT;
+    memset(&msgT, 0, sizeof(msgT));
+    Eigen::Vector3d motion_T = delta_odo.translation();
+    Eigen::Quaterniond motion_R = Eigen::Quaterniond(delta_odo.rotation());
+    msgT.trans_vec[0] = motion_T(0);
+    msgT.trans_vec[1] = motion_T(1);
+    msgT.trans_vec[2] = motion_T(2);
+    msgT.rot_quat[0] = motion_R.w();
+    msgT.rot_quat[1] = motion_R.x();
+    msgT.rot_quat[2] = motion_R.y();
+    msgT.rot_quat[3] = motion_R.z();  
 
-  return leg_odo_common_->createMeasurement(msgT, utime, prev_utime);
+    return leg_odo_common_->createMeasurement(msgT, utime, prev_utime);
+  }
+  
 
 }
 

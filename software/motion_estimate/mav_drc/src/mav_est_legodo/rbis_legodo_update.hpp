@@ -50,6 +50,15 @@ public:
   // Vicon state:
   Eigen::Isometry3d prev_worldvicon_to_body_vicon_;
   int64_t prev_vicon_utime_;
+  
+  
+  // To locally integrate - to denoise
+  Eigen::Isometry3d local_accum_;
+  bool local_integration_;
+  int local_max_count_;
+  int local_counter_;
+  int64_t local_prev_utime_;
+  
 };
 
 
