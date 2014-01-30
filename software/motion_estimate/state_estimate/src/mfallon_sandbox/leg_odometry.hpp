@@ -63,6 +63,7 @@ class leg_odometry{
     Eigen::Isometry3d getRunningEstimate(){ return world_to_body_; }
     
     void setLegOdometryMode(std::string leg_odometry_mode_in ){ leg_odometry_mode_ = leg_odometry_mode_in; }
+    void setInitializationMode(std::string initialization_mode_in ){ initialization_mode_ = initialization_mode_in; }
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
@@ -74,7 +75,7 @@ class leg_odometry{
     // params:
     std::string leg_odometry_mode_;
     // How the position will be initialized
-    int initialize_mode_;
+    std::string initialization_mode_;
     
     TwoLegs::FootContact* foot_contact_logic_;
     // most recent measurements for the feet forces (typically synchronise with joints

@@ -18,6 +18,8 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
   lcm_subscribe_(lcm_subscribe_), lcm_publish_(lcm_publish_), 
   botparam_(botparam_), model_(model_){
     
+  initialization_mode_ = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.initialization_mode");
+  std::cout << "Leg Odometry Initialize Mode: " << initialization_mode_ << " \n";
   leg_odometry_mode_ = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.integration_mode");
   std::cout << "Leg Odometry Accumulation Mode: " << leg_odometry_mode_ << " \n";
 
@@ -51,7 +53,6 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
   
   world_to_body_.setIdentity();
   world_to_body_bdi_.setIdentity();
-  initialize_mode_ = 0; 
 }
 
 
@@ -63,11 +64,9 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
 // TODO: need to move this function outside of the class, down to app
 bool leg_odometry::initializePose(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot){
 
-  // TODO: have this init at pelvis = 0.85cm or something instead of zero
-  // Initializing with mode =0 and gravity slaved integraion will result in an orientation change at start
-  if (initialize_mode_ ==0){ 
-    // Initialize with primary foot at zero but orientation using bdi rotation:
-    // Otherwise, there is a discontinuity at the start
+  if (initialization_mode_ == "zero"){ 
+    // Initialize with primary foot at (0,0,0) but orientation using bdi rotation:
+    // Otherwise, there is a discontinuity at the very start
     Eigen::Quaterniond q_slaved( world_to_body_bdi_.rotation() );
     Eigen::Isometry3d world_to_body_at_zero;
     world_to_body_at_zero.setIdentity(); // ... Dont need to use the translation, so not filling it in
@@ -80,7 +79,7 @@ bool leg_odometry::initializePose(Eigen::Isometry3d body_to_l_foot,Eigen::Isomet
     // was...
     //world_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
     world_to_body_ =world_to_fixed_primary_foot_*body_to_l_foot.inverse();
-  }else if (initialize_mode_ ==1){
+  }else if (initialization_mode_ == "bdi"){
     // At the EST_ROBOT_STATE pose that was logged into the file
     world_to_body_ = world_to_body_bdi_;
     world_to_fixed_primary_foot_ = world_to_body_*body_to_l_foot;
@@ -482,7 +481,6 @@ bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vect
       legodo_msg.rotation[1] = motion_R.x();
       legodo_msg.rotation[2] = motion_R.y();
       legodo_msg.rotation[3] = motion_R.z();    
-      // legodo_msg.estimate_status = 0;//fovis::update_t::ESTIMATE_VALID;
       lcm_publish_->publish("LEG_ODOMETRY_DELTA", &legodo_msg);          
     }
     

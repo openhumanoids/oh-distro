@@ -1,14 +1,14 @@
 group "0.development" {
     cmd "pserver" {
-        exec = "bot-param-server 01_0_holodeck_lidar.cfg";
+        exec = "bot-param-server 02_0_corridor_trolley_lidar.cfg";
         host = "localhost";
     }
     cmd "octomap" {
-        exec = "octomap-server  /media/bay_drive/data/other/sensor_rig/2012-10-03-rig-vicon-fixie/occmap/octomap.bt";
+        exec = "octomap-server  /media/bay_drive/data/other/sensor_rig/octomaps/stairarea/icra_octomap/icra_octomap.bt";
         host = "localhost";
     }
     cmd "est" {
-        exec = "se-fusion  -L /media/bay_drive/data/other/sensor_rig/2012-10-03-rig-vicon-fixie/lcmlog-2012-10-03.02  -p sensor_rig/01_0_holodeck_lidar.cfg  -t 1349286406000000";
+        exec = "se-fusion -L /media/bay_drive/data/other/sensor_rig/2012-10-31-rig-stairarea-trolley/lcmlog-2012-10-31.00 -P sensor_rig/02_0_corridor_trolley_lidar.cfg   -t 0";
         host = "localhost";
     }
     cmd "vis" {

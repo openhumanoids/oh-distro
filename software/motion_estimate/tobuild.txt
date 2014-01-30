@@ -4,7 +4,8 @@
 # Motion Estimation:
 twolegged_estimate
 #CollierTools
-vo_estimate
+# switching between fovis versions
+#vo_estimate
 
 motion_estimate
 

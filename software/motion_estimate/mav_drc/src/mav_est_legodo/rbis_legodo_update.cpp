@@ -21,7 +21,7 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   leg_odo_ = new leg_odometry(  lcm_recv_boost , lcm_pub_boost ,
                                param, model_boost );
 
-  leg_odo_common_ = new LegOdoCommon(param);
+  leg_odo_common_ = new LegOdoCommon(lcm_recv, lcm_pub, param);
   
   
   // 
@@ -44,6 +44,8 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   }
  
   
+  prev_worldvicon_to_body_vicon_.setIdentity();
+  prev_vicon_utime_ = -1;
 }
 
 RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *msg)
@@ -127,9 +129,22 @@ void LegOdoHandler::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   Eigen::Isometry3d frontplate_vicon_to_body_vicon;
   frames_cpp->get_trans_with_utime( "body_vicon" , "frontplate_vicon", msg->utime, frontplate_vicon_to_body_vicon);    
   Eigen::Isometry3d worldvicon_to_body_vicon = worldvicon_to_frontplate_vicon* frontplate_vicon_to_body_vicon;
-
   bot_core::pose_t pose_msg = getPoseAsBotPose(worldvicon_to_body_vicon, msg->utime);
+  
+  // determine the vicon body frame velocity:
+  if (prev_vicon_utime_ > 0){
+    // the delta transform between the previous and current 
+    Eigen::Isometry3d delta_vicon = prev_worldvicon_to_body_vicon_.inverse() * worldvicon_to_body_vicon;
+    double elapsed_time = ( (double) msg->utime -  prev_vicon_utime_)/1000000;
+    pose_msg.vel[0] = delta_vicon.translation().x() / elapsed_time;
+    pose_msg.vel[1] = delta_vicon.translation().y() / elapsed_time;
+    pose_msg.vel[2] = delta_vicon.translation().z() / elapsed_time;
+  }
+  
   lcm_pub->publish("POSE_VICON", &pose_msg );    
+  
+  prev_worldvicon_to_body_vicon_ = worldvicon_to_body_vicon;
+  prev_vicon_utime_ = msg->utime;
 }
 
 

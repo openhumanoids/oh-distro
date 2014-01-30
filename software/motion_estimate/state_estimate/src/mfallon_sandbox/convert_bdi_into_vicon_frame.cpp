@@ -5,11 +5,11 @@
 
 #include <pointcloud_tools/pointcloud_vis.hpp>
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
+#include <path_util/path_util.h>
 
 #include "visualization/collections.hpp"
 
 using namespace std;
-
 
 class PoseTransformer{
   public:
@@ -65,9 +65,7 @@ PoseTransformer::PoseTransformer(boost::shared_ptr<lcm::LCM> &lcm_, int pose_cou
   world_to_viconbody_init_ = false;
   world_to_estbody_init_ = false;
   world_tf_init_ = false;
-  
-  verbose_ = false;
-  
+  verbose_ = false;  
 }
 
 void PoseTransformer::doWork(Eigen::Isometry3d worldest_to_estbody, int64_t utime, int pose_counter){
@@ -113,7 +111,9 @@ class App{
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
+    BotParam* botparam_;
     bot::frames* frames_cpp_;
+    BotFrames* frames_;
     
     void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  bot_core::pose_t* msg);
@@ -123,11 +123,7 @@ class App{
     void viconHandler(const lcm::ReceiveBuffer* rbuf, 
                       const std::string& channel, const  bot_core::rigid_transform_t* msg);
 
-    //PoseTransformer* pt0_;
-    //PoseTransformer* pt1_;    
-    
-    std::vector <PoseTransformer> pts_;
-    
+    std::vector <PoseTransformer> pts_;    
 };
 
 
@@ -135,7 +131,20 @@ class App{
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_):
     lcm_(lcm_){
-  frames_cpp_ = new bot::frames( lcm_);
+      
+  //if (cl_cfg_.param_file == ""){
+  //   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
+  //}else{
+    std::string param_file = "drc_robot_02.cfg";            
+    std::string param_file_full = std::string(getConfigPath()) +'/' + std::string(param_file);
+    botparam_ = bot_param_new_from_file(param_file_full.c_str());
+  //}
+  // TODO: not sure what do do here ... what if i want the frames from the file?
+  //frames_ = bot_frames_new(NULL, botparam_);
+  frames_ = bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
+  frames_cpp_ = new bot::frames(frames_);  
+  
+  //  frames_cpp_ = new bot::frames( lcm_);
 
   lcm_->subscribe( "POSE_BDI" ,&App::poseBDIHandler,this);
   lcm_->subscribe( "POSE_BODY_ALT" ,&App::poseMITHandler,this);
@@ -143,13 +152,9 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
   
   PoseTransformer pt0_(lcm_, 0);
   PoseTransformer pt1_(lcm_, 1);
-//  pt0_ = new PoseTransformer(lcm_, 0);
- // pt1_ = new PoseTransformer(lcm_, 1);  
 
-  
   pts_.push_back( pt0_ );  
-  pts_.push_back( pt1_ );  
-  
+  pts_.push_back( pt1_ );    
 }
 
 

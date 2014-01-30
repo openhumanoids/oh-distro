@@ -13,7 +13,10 @@ public:
     MODE_LIN_RATE, MODE_ROT_RATE, MODE_LIN_AND_ROT_RATE
   } LegOdoCommonMode;  
   
-  LegOdoCommon(BotParam * param);
+  LegOdoCommon(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub, BotParam * param);
+  lcm::LCM* lcm_pub;
+  lcm::LCM* lcm_recv;
+  
   
   // Converts the Pelvis Translation into a RBIS measurement
   // which is then passed to the estimator  

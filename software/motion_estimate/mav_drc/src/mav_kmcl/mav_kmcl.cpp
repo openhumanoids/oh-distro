@@ -38,7 +38,7 @@ public:
     output_likelihood_filename = "";
     string begin_timestamp= "0";
     smooth_at_end = false;
-    int processing_rate = 1; // real time
+    double processing_rate = 1; // real time
 
     ConciseArgs opt(argc, argv);
     opt.add(in_log_fname, "L", "in_log_name", "Run state estimation directly on this log");
@@ -88,14 +88,14 @@ public:
     if (front_end->isActive("ins") || rbis_initializer->initializingWith("ins")) {
       ins_handler = new InsHandler(front_end->param, front_end->frames);
 
-      // TODO: enable easy switching between sensors:
-      //if("MICROSTRAIN_INS"){
-      //front_end->addSensor("ins", &MavStateEst::InsHandler::processMessage, ins_handler);
-      //rbis_initializer->addSensor("ins", &MavStateEst::InsHandler::processMessageInit, ins_handler);
-      //}else{
+      // TODO: enable easy switching between inertial sensors:
+      if( ins_handler->channel =="MICROSTRAIN_INS"){
+        front_end->addSensor("ins", &MavStateEst::InsHandler::processMessage, ins_handler);
+        rbis_initializer->addSensor("ins", &MavStateEst::InsHandler::processMessageInit, ins_handler);
+      }else if( ins_handler->channel =="ATLAS_IMU_BATCH"){
         front_end->addSensor("ins", &MavStateEst::InsHandler::processMessageAtlas, ins_handler);
         rbis_initializer->addSensor("ins", &MavStateEst::InsHandler::processMessageInitAtlas, ins_handler);
-      //}
+      }
     }
 
     if (front_end->isActive("gps") || rbis_initializer->initializingWith("gps")) {
@@ -139,7 +139,7 @@ public:
 
 
     if (front_end->isActive("fovis")) {
-      fovis_handler = new FovisHandler(front_end->param);
+      fovis_handler = new FovisHandler(front_end->lcm_recv, front_end->lcm_pub, front_end->param);
       front_end->addSensor("fovis", &MavStateEst::FovisHandler::processMessage, fovis_handler);
     }
 
@@ -164,7 +164,7 @@ public:
     }
 
     if (front_end->isActive("legodo_external")) {
-      legodo_external_handler = new LegOdoExternalHandler(front_end->param);
+      legodo_external_handler = new LegOdoExternalHandler(front_end->lcm_recv, front_end->lcm_pub, front_end->param);
       front_end->addSensor("legodo_external", &MavStateEst::LegOdoExternalHandler::processMessage, legodo_external_handler);
     }
 

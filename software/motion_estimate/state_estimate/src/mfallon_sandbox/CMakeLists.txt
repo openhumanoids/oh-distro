@@ -41,6 +41,7 @@ pods_install_executables(se-leg-odometry )
 ################
 add_executable(se-convert-bdi-into-vicon-frame convert_bdi_into_vicon_frame.cpp )
 pods_use_pkg_config_packages(se-convert-bdi-into-vicon-frame  bot2-frames_cpp
+    path-util
     pointcloud_vis  )
 target_link_libraries (se-convert-bdi-into-vicon-frame lcm pointcloud_math  )
 pods_install_executables(se-convert-bdi-into-vicon-frame )

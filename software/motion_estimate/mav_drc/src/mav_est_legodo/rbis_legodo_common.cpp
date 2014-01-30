@@ -2,8 +2,9 @@
 
 namespace MavStateEst {
 
-LegOdoCommon::LegOdoCommon(BotParam * param){
-  verbose = false;
+LegOdoCommon::LegOdoCommon(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub, BotParam * param):
+  lcm_recv(lcm_recv), lcm_pub(lcm_pub){
+  verbose = true;
   
   char* mode_str = bot_param_get_str_or_fail(param, "state_estimator.legodo.mode");
 
@@ -56,8 +57,6 @@ LegOdoCommon::LegOdoCommon(BotParam * param){
   else{
     // ... incomplete...
   }
-
-
 
 
   // Initialize covariance matrix based on mode.
@@ -121,6 +120,28 @@ void printTrans(BotTrans bt, std::string message){
 }
 
 
+
+// NOTE: this inserts the BotTrans trans_vec 
+// as the velocity components in the pose 
+bot_core::pose_t getBotTransAsBotPoseVelocity(BotTrans bt, int64_t utime ){
+  bot_core::pose_t pose;
+  pose.utime = utime;
+  pose.pos[0] = 0;
+  pose.pos[1] = 0;
+  pose.pos[2] = 0;
+  pose.orientation[0] = 0;
+  pose.orientation[1] = 0;
+  pose.orientation[2] = 0;
+  pose.orientation[3] = 0;
+  pose.vel[0] = bt.trans_vec[0];
+  pose.vel[1] = bt.trans_vec[1];
+  pose.vel[2] = bt.trans_vec[2];
+  pose.rotation_rate[0] = 0;//bt.rot_quat[0];
+  pose.rotation_rate[1] = 0;//bt.rot_quat[1];
+  pose.rotation_rate[2] = 0;//bt.rot_quat[2];
+  return pose;
+}
+
 RBISUpdateInterface * LegOdoCommon::createMeasurement(BotTrans &msgT, int64_t utime, int64_t prev_utime){
 //  , bool verbose){
   double rpy[3];
@@ -140,6 +161,7 @@ RBISUpdateInterface * LegOdoCommon::createMeasurement(BotTrans &msgT, int64_t ut
     std::cout << "RPY: " << rpy[0]*180/M_PI << ", "<<rpy[1]*180/M_PI << ", "<<rpy[2]*180/M_PI <<" deg\n";
     std::cout << "RPY: " << rpy_rate[0] << ", "<<rpy_rate[1] << ", "<<rpy_rate[2] <<" rad/s | velocity scaled\n";
     std::cout << "RPY: " << rpy_rate[0]*180/M_PI << ", "<<rpy_rate[1]*180/M_PI << ", "<<rpy_rate[2]*180/M_PI <<" deg/s | velocity scaled\n";
+    std::cout << "XYZ: " << msgT.trans_vec[0] << ", "  << msgT.trans_vec[1] << ", "  << msgT.trans_vec[2] << "\n";
   }
 
   
@@ -157,8 +179,12 @@ RBISUpdateInterface * LegOdoCommon::createMeasurement(BotTrans &msgT, int64_t ut
     std::stringstream ss2;
     ss2 << " msgT_vel: ";
     printTrans(msgT_vel, ss2.str() );
+    std::cout << "\n\n";
   }
-
+  
+  // Get the velocity as a pose message:
+  bot_core::pose_t vel_pose = getBotTransAsBotPoseVelocity(msgT_vel, utime)  ;
+  lcm_pub->publish("POSE_BODY_LEGODO_VELOCITY", &vel_pose );   
 
   if (mode == MODE_LIN_AND_ROT_RATE) {
     // Working on this:

@@ -42,18 +42,6 @@ static inline bot_core::pose_t getRobotStatePoseAsBotPose(const drc::robot_state
     bdipose.rotation_rate[0] = msg->twist.angular_velocity.x;
     bdipose.rotation_rate[1] = msg->twist.angular_velocity.y;
     bdipose.rotation_rate[2] = msg->twist.angular_velocity.z;  
-  
-    /*
-  bot_core::pose_t pose_msg;
-  pose_msg.utime =   utime;
-  pose_msg.pos[0] = pose.translation().x();
-  pose_msg.pos[1] = pose.translation().y();
-  pose_msg.pos[2] = pose.translation().z();  
-  Eigen::Quaterniond r_x(pose.rotation());
-  pose_msg.orientation[0] =  r_x.w();  
-  pose_msg.orientation[1] =  r_x.x();  
-  pose_msg.orientation[2] =  r_x.y();  
-  pose_msg.orientation[3] =  r_x.z();  */
   return bdipose;
 }
 
@@ -67,6 +55,7 @@ static inline void insertPoseInRobotState(drc::robot_state_t& msg, Eigen::Isomet
   msg.pose.rotation.y = r_x.y();  
   msg.pose.rotation.z = r_x.z();  
 }
+
 
 
 #endif

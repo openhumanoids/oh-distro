@@ -4,8 +4,11 @@
 namespace MavStateEst {
 
 
-FovisHandler::FovisHandler(BotParam * param)
+FovisHandler::FovisHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
+                           BotParam * param): lcm_recv(lcm_recv), lcm_pub(lcm_pub)
 {
+  
+  
   char* mode_str = bot_param_get_str_or_fail(param, "state_estimator.fovis.mode");
 
   if (strcmp(mode_str, "lin_rot_rate") == 0) {
@@ -122,6 +125,29 @@ void printTrans(BotTrans bt, std::string message){
 }
 
 
+// NOTE: this inserts the BotTrans trans_vec 
+// as the velocity components in the pose 
+bot_core::pose_t getBotTransAsBotPoseVelocity(BotTrans bt, int64_t utime ){
+  bot_core::pose_t pose;
+  pose.utime = utime;
+  pose.pos[0] = 0;
+  pose.pos[1] = 0;
+  pose.pos[2] = 0;
+  pose.orientation[0] = 0;
+  pose.orientation[1] = 0;
+  pose.orientation[2] = 0;
+  pose.orientation[3] = 0;
+  pose.vel[0] = bt.trans_vec[0];
+  pose.vel[1] = bt.trans_vec[1];
+  pose.vel[2] = bt.trans_vec[2];
+  pose.rotation_rate[0] = 0;//bt.rot_quat[0];
+  pose.rotation_rate[1] = 0;//bt.rot_quat[1];
+  pose.rotation_rate[2] = 0;//bt.rot_quat[2];
+  return pose;
+}
+
+
+
 RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg)
 {
   /// ... insert handling and special cases here.
@@ -131,14 +157,30 @@ RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg)
     std::cout << "FovisHandler: FOVIS failure, quitting\n";
     return NULL;
   }
+  
+  // TODO: explore why this is allowed to be published upstream
+  if ( isnan( msg->translation[0]) ){
+    std::cout << "FovisHandler: FOVIS produced NaN. x="<< msg->translation[0] << ", quitting\n";
+    return NULL;
+  }
+  
 
-  // Need to divide by
+  // This scales the transformation by time
+  // I don't think this is a good way of doing this conversion
 
   BotTrans msgT;
   memset(&msgT, 0, sizeof(msgT));
   memcpy(msgT.trans_vec, msg->translation, 3 * sizeof(double));
   memcpy(msgT.rot_quat,  msg->rotation   , 4 * sizeof(double));
 
+  
+  bool verbose_ = true;
+  if (verbose_){
+    std::cout << "\n\n";
+    std::stringstream ss2;
+    ss2 << " msgT: ";
+    printTrans(msgT, ss2.str() );
+  }  
 
   double rpy[3];
   bot_quat_to_roll_pitch_yaw(msgT.rot_quat,rpy);
@@ -149,7 +191,6 @@ RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg)
   rpy_rate[1] = rpy[1]/elapsed_time;
   rpy_rate[2] = rpy[2]/elapsed_time;
   
-  bool verbose_ = false;
   if (verbose_){
     std::stringstream ss;
     ss << msg->timestamp << " msgT: ";
@@ -163,6 +204,7 @@ RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg)
   BotTrans msgT_vel;
   memset(&msgT_vel, 0, sizeof(msgT_vel));
   // Convert to robot body frame from Camera Frame:
+  // TODO: properly do this with bot frames:
   msgT_vel.trans_vec[0] = msgT.trans_vec[2]/elapsed_time;
   msgT_vel.trans_vec[1] = -msgT.trans_vec[0]/elapsed_time;
   msgT_vel.trans_vec[2] = -msgT.trans_vec[1]/elapsed_time;
@@ -175,6 +217,9 @@ RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg)
     printTrans(msgT_vel, ss2.str() );
   }
 
+  // Get the velocity as a pose message:
+  bot_core::pose_t vel_pose = getBotTransAsBotPoseVelocity(msgT_vel, msg->timestamp)  ;
+  lcm_pub->publish("POSE_BODY_FOVIS_VELOCITY", &vel_pose );   
 
   if (mode == MODE_LIN_AND_ROT_RATE) {
     // Working on this:

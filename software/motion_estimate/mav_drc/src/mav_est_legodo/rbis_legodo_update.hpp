@@ -45,6 +45,11 @@ public:
   bot::frames* frames_cpp;
   // To republish certain incoming messages, so as to produced output logs:
   bool republish_incoming_;
+  
+  
+  // Vicon state:
+  Eigen::Isometry3d prev_worldvicon_to_body_vicon_;
+  int64_t prev_vicon_utime_;
 };
 
 

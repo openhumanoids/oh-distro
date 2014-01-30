@@ -3,16 +3,8 @@ close all
 global bot_
 bot_ = bot;
 
-%longstepping 180
-%typicalstep 455
-%manipmode 259
-%dyn1 129
-%dyn2 95
-%dyn3 50
-%dyn4 98
-%dyn5 80
-%dyn6 144
-%blocks 222
+% longstepping 180, typicalstep 455, manipmode 259, blocks 222
+% dyn1 129, dyn2 95, dyn3 50, dyn4 98, dyn5 80, dyn6 144
 %normals 86
 
 main_dir = '/home/mfallon/data/atlas/2014-01-21-vicon-walking/results/'
@@ -22,77 +14,133 @@ path = [main_dir '2014-01-26-22-14' '/'];
 
 logs = dir( [path '*mat'])
 
+
+settings.parse_async =0;
+settings.plot_async = 0;
+settings.parse_sync = 1;
+settings.plot_sync = 1;
+settings.save_raw_plots = 0;
+settings.do_sync_comparison=1;
+
 for i=1:size(logs,1)
   disp([ num2str(i) ': ' logs(i).name])
 end
 
 
+% all:
 %which_process= 1:size(logs,1)
 % most interesting ones:
-which_process=[1,2,3,4,7,8,9,10,11]
-%which_process=[1,2]
+%which_process=[1,2,3,4,7,8,9,10,11]
+which_process=[2]
+
+
+%%%%%%%%%%%%%%%% DO WORK %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for i = 1:size(which_process,2)
   disp(num2str(i))
-  summary(i) = file_analysis( [path, logs( which_process(i) ).name ] );
+  summary(i) = file_analysis( [path, logs( which_process(i) ).name ], settings );
 end
 
-figure
-for i = 1:size(which_process,2)
-  a = [summary(i).b.xyz_drift  summary(i).m.xyz_drift ];
-  b = [summary(i).b.xy_drift  summary(i).m.xy_drift ];
-  c = [summary(i).b.z_drift  summary(i).m.z_drift ];
 
-  log_summary = [a;b;c];
-  subplot(3,3,i); hold on; bar(log_summary,.75,'grouped')
-  ylabel(num2str(summary(i).b.t, '%2.0f sec'))
-  title( logs(which_process(i) ).name  )
-  set(gca,'XTick',[1,2,3]);set(gca,'XTickLabel',{'XYZ drift','XY drift','Z drift'})
+if (settings.do_sync_comparison)
+  figure
+  for i = 1:size(which_process,2)
+    a = [summary(i).b.xyz_drift  summary(i).m.xyz_drift ];
+    b = [summary(i).b.xy_drift  summary(i).m.xy_drift ];
+    c = [summary(i).b.z_drift  summary(i).m.z_drift ];
+    
+    log_summary = [a;b;c];
+    subplot(3,3,i); hold on; bar(log_summary,.75,'grouped')
+    ylabel(num2str(summary(i).b.t, '%2.0f sec'))
+    title( logs(which_process(i) ).name  )
+    set(gca,'XTick',[1,2,3]);set(gca,'XTickLabel',{'XYZ drift','XY drift','Z drift'})
+  end
+  subplot(3,3,8)
+  xlabel('BDI: Blue, MIT: Magenta | Drift in dimensions')
 end
-
-subplot(3,3,8)
-xlabel('BDI: Blue, MIT: Magenta | Drift in dimensions')
-
-function summary = file_analysis(log_filename)
+  
+function summary = file_analysis(log_filename,settings)
 load(log_filename);
 raw = [ 0*ones(size(POSE_VICON,1),1) , POSE_VICON ];
 raw = [raw; 1*ones(size(POSE_BDI,1),1) , POSE_BDI];
 raw = [raw; 2*ones(size(POSE_BODY_ALT,1),1) , POSE_BODY_ALT];
 res = sortrows(raw, 2);
-
-[summary,handles] = analysis(res);
-
-% save plots to file:
-for j=1:size(handles,1)
-  png_fname = [log_filename(1:end-4) '-' num2str(j) '.png'];
-  saveas( handles(j), png_fname,'png');
-end
-close all
-
-function [out,handles] = analysis(res)
 % convert to mins from zero
 res(:,2) = (res(:,2) - res(1,2))*1E-6;
 
-% extra the vicon, bdi or mit estimates:
-i_vicon = res(:,1) ==0;
-i_bdi =  res(:,1) ==1;
-i_mit =  res(:,1) ==2;
 
-plot_async = 0;
-if (plot_async==1)
-  % Transform the Asynchronous Log into the vicon frame
-  a.v = split_data(res,i_vicon);
-  a.b = split_data(res,i_bdi);
-  a.m = split_data(res,i_mit);
-  a.v.init.trans_vec = a.v.trans_vec(1,:);
-  a.v.init.rot_quat = a.v.rot_quat(1,:);
-  disp('b -> v [async]')
-  a.b=transform_est_to_vicon(a.v.init, a.b,1);
-  disp('m -> v [async]')
-  a.m=transform_est_to_vicon(a.v.init, a.m,1);
+%%%%% Parseing %%%%%%%%%%%%%%%%%%
+if (settings.parse_async)
+  [a] = parse_async(res);
+end
+if (settings.parse_sync)
+  [s] = parse_sync(res);
+end
+
+keyboard
+
+%%%% Plotting  %%%%%%%%%%%%%%%%%%
+handles=[];
+if (settings.plot_async==1)
   make_plots(a)
+end
+if (settings.plot_sync==1)
+  handles_a=make_plots(s);
+  handles = [handles;handles_a];
+end
+if (settings.save_raw_plots)
+  % save plots to file:
+  for j=1:size(handles,1)
+    png_fname = [log_filename(1:end-4) '-' num2str(j) '.png'];
+    saveas( handles(j), png_fname,'png');
+  end
+  close all
 end
 
 
+if (settings.do_sync_comparison)
+  s.b.rpy_drift =  s.v.rot_rpy(:,3)  - s.b.rel_v.rot_rpy(:,3);
+  s.m.rpy_drift =  s.v.rot_rpy(:,3)  - s.m.rel_v.rot_rpy(:,3);
+  s.b.xyz_drift =  sqrt(sum((s.v.trans_vec - s.b.rel_v.trans_vec).^2,2));
+  s.m.xyz_drift =  sqrt(sum((s.v.trans_vec - s.m.rel_v.trans_vec).^2,2));
+  s.b.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.b.rel_v.trans_vec(:,1:2) ).^2,2));
+  s.m.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.m.rel_v.trans_vec(:,1:2) ).^2,2));
+  s.b.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.b.rel_v.trans_vec(:,3) ).^2,2));
+  s.m.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.m.rel_v.trans_vec(:,3) ).^2,2));
+  handles_b=make_plots_synced(s);
+  handles = [handles;handles_b];
+  
+  summary.b.xy_drift = s.b.xy_drift(end);
+  summary.b.xyz_drift = s.b.xyz_drift(end);
+  summary.b.z_drift = s.b.z_drift(end);
+  summary.b.t = s.b.t(end);
+  summary.m.xy_drift = s.m.xy_drift(end);
+  summary.m.xyz_drift = s.m.xyz_drift(end);
+  summary.m.z_drift = s.m.z_drift(end);
+  summary.m.t = s.m.t(end);
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function a=parse_async(res)
+% extract the vicon, bdi or mit estimates:
+i_vicon = res(:,1) ==0;
+i_bdi =  res(:,1) ==1;
+i_mit =  res(:,1) ==2;
+a.v = split_data(res,i_vicon);
+a.b = split_data(res,i_bdi);
+a.m = split_data(res,i_mit);
+
+% Transform the Asynchronous Log into the vicon frame
+a.v.init.trans_vec = a.v.trans_vec(1,:);
+a.v.init.rot_quat = a.v.rot_quat(1,:);
+disp('b -> v [async]')
+a.b=transform_est_to_vicon(a.v.init, a.b,1);
+disp('m -> v [async]')
+a.m=transform_est_to_vicon(a.v.init, a.m,1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function s=parse_sync(res)
 % Synchronize the log:
 last_b = res(  find(res(:,1) == 1 ,1) , :);
 last_m = res(  find(res(:,1) == 2 ,1) , :);
@@ -124,13 +172,11 @@ for i=1:size(res,1)
     last_m = res(i,:);
   end
 end
-
-
-
-% Transform the Synchronous Log into the vicon frame
 s.b = split_data(res_sync.b , 1:size(res_sync.b,1));
 s.m = split_data(res_sync.m , 1:size(res_sync.m,1));
 s.v = split_data(res_sync.v , 1:size(res_sync.v,1));
+
+% Transform the Synchronous Log into the vicon frame
 s.v.init.trans_vec =s.v.trans_vec(1,:);
 s.v.init.rot_quat = s.v.rot_quat(1,:);
 disp('b -> v [sync]')
@@ -139,28 +185,7 @@ disp('m -> v [sync]')
 s.m=transform_est_to_vicon(s.v.init, s.m,0);
 
 
-s.b.rpy_drift =  s.v.rot_rpy(:,3)  - s.b.rel_v.rot_rpy(:,3);
-s.m.rpy_drift =  s.v.rot_rpy(:,3)  - s.m.rel_v.rot_rpy(:,3);
-s.b.xyz_drift =  sqrt(sum((s.v.trans_vec - s.b.rel_v.trans_vec).^2,2));
-s.m.xyz_drift =  sqrt(sum((s.v.trans_vec - s.m.rel_v.trans_vec).^2,2));
-s.b.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.b.rel_v.trans_vec(:,1:2) ).^2,2));
-s.m.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.m.rel_v.trans_vec(:,1:2) ).^2,2));
-s.b.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.b.rel_v.trans_vec(:,3) ).^2,2));
-s.m.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.m.rel_v.trans_vec(:,3) ).^2,2));
-
-out.b.xy_drift = s.b.xy_drift(end);
-out.b.xyz_drift = s.b.xyz_drift(end);
-out.b.z_drift = s.b.z_drift(end);
-out.b.t = s.b.t(end);
-out.m.xy_drift = s.m.xy_drift(end);
-out.m.xyz_drift = s.m.xyz_drift(end);
-out.m.z_drift = s.m.z_drift(end);
-out.m.t = s.m.t(end);
-
-handles_a=make_plots(s);
-handles_b=make_plots_synced(s);
-handles = [handles_a;handles_b];
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function handles= make_plots_synced(s)
 handles=figure('Position', [1, 1, 1700, 900]);
 
@@ -196,7 +221,8 @@ plot(t_cum_dist, cum_dist)
 title('Distance Travelled')
 
 
-% plotting - either sync
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot generic details - either sync or asyc
 function handles=make_plots(d)
 handles=figure('Position', [1, 1, 1700, 900]);
 %subplot(2,3,1)
@@ -259,6 +285,7 @@ plot(d.b.rel_v.t(:), d.b.rel_v.rot_rpy(:,3)*180/pi,'b')
 plot(d.m.rel_v.t(:), d.m.rel_v.rot_rpy(:,3)*180/pi,'m')
 title('aligned yaw (deg) and time')
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [mode] = split_data(res, i)
 global bot_;
@@ -268,9 +295,10 @@ mode.rot_quat = res(i,9:12);
 % TODO:VECTORIZED THIS
 for i=1:size(mode.rot_quat,1)
   mode.rot_rpy(i,:) = bot_.quat_to_roll_pitch_yaw( mode.rot_quat(i,:) );
-end 
+end
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function e=transform_est_to_vicon(v_init,e, use_subset)
 global bot_
 init.trans_vec = e.trans_vec(1,:);
@@ -283,7 +311,7 @@ else
 end
 
 %for i=100:size(e.trans_vec,1)
-for i=1:size(indices,2)  
+for i=1:size(indices,2)
   e_current.trans_vec =  e.trans_vec( indices(i),:);
   e_current.rot_quat =  e.rot_quat( indices(i),:);
   e_current_rel_v = transform_relative(v_init, init, e_current);
@@ -294,6 +322,8 @@ for i=1:size(indices,2)
   e.rel_v.t(i) = e.t(indices(i));
 end
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % given an initial vicon position and an initial estimate position (taken
 % synchronously), determine the current position in the vicon frame
 function worldvicon_to_est =transform_relative(init_vicon, init_est, current_est)
@@ -304,4 +334,3 @@ estbody_zerotime_to_estbody_current = bot_.trans_apply_trans( current_est,temp  
 
 % ... applied to the initial vicon
 worldvicon_to_est = bot_.trans_apply_trans(estbody_zerotime_to_estbody_current, init_vicon );
-

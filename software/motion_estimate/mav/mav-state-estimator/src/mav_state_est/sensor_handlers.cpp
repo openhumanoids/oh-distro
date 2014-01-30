@@ -6,6 +6,8 @@ namespace MavStateEst {
 
 InsHandler::InsHandler(BotParam * _param, BotFrames * _frames)
 {
+  // mfallon: this chooses between MICROSTRAIN and ATLAS_IMU_BATCH
+  channel = bot_param_get_str_or_fail(_param, "state_estimator.ins.channel");
 
   cov_gyro = bot_param_get_double_or_fail(_param, "state_estimator.ins.q_gyro");
   cov_gyro = bot_sq(bot_to_radians(cov_gyro));

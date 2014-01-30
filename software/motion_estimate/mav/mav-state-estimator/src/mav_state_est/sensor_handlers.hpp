@@ -23,6 +23,9 @@ protected:
   void create(BotParam * _param, BotFrames * _frames);
   public:
   InsHandler(BotParam * _param, BotFrames * _frames);
+  
+  // channel is used to determine which signal to subscribe to:
+  std::string channel;
 
   // Microstrain Functions:
   RBISUpdateInterface * processMessage(const mav::ins_t * msg);

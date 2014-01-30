@@ -72,9 +72,15 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LC
   }            
             
   leg_odo_ = new leg_odometry(lcm_subscribe_, lcm_publish_, botparam_, model_);
+
+  // Overwrite the Default parameters
+  string init_mode = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo_driven_process.initialization_mode");
+  std::cout << "Overwriting leg odom init mode:: " << init_mode << "\n";
+  leg_odo_->setInitializationMode( init_mode );
   string leg_odo_mode = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo_driven_process.integration_mode");
-  std::cout << "Overwriting the leg odom mode:: " << leg_odo_mode << "\n";
+  std::cout << "Overwriting leg odom integration mode:: " << leg_odo_mode << "\n";
   leg_odo_->setLegOdometryMode( leg_odo_mode );
+  
   
 
   lcm_subscribe_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);  
@@ -148,7 +154,12 @@ void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
   bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, msg->utime);
   lcm_publish_->publish("POSE_BODY_ALT", &pose_msg );   
   
-  
+  // Publish Pose as a robot state:
+  drc::robot_state_t state_out_msg;
+  state_out_msg = *msg;
+  insertPoseInRobotState(state_out_msg, world_to_body);
+  lcm_publish_->publish("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &state_out_msg );   
+
   //logfile_ <<  1 << ", " << msg->utime << ", " << print_Isometry3d(world_to_body_bdi) << "\n";  
   //logfile_ <<  2 << ", " << msg->utime << ", " << print_Isometry3d(world_to_body) << "\n";      
 }
