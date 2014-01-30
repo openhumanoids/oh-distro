@@ -7,9 +7,6 @@ end
 if ~isfield(options, 'step_height')
   options.step_height = biped.nom_step_clearance; %m
 end
-if ~isfield(options, 'ignore_terrain')
-  options.ignore_terrain = false;
-end
 
 if options.step_speed < 0
   % negative step speed is an indicator to take a fast, fixed-duration step (e.g. for recovery)
@@ -41,7 +38,7 @@ apex_pos(3,:) = last_pos(3) + options.step_height + max([next_pos(3) - last_pos(
 
 apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
 
-if (step_dist_xy > 0.01 && ~options.ignore_terrain)
+if (step_dist_xy > 0.01)
   [contact_length, contact_width, contact_height] = contactVolume(biped, last_pos, next_pos, struct('nom_z_clearance', options.step_height, 'planar_clearance', 0.05));
 
   %% Grab the max height of the terrain across the width of the foot from last_pos to next_pos

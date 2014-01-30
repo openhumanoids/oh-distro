@@ -1,21 +1,28 @@
-function [zmptraj, foottraj, support_times, supports] = planZMPTraj(biped, q0, X, options)
+function [zmptraj, foottraj, support_times, supports] = planZMPTraj(biped, q0, footsteps, options)
 
-if ~isfield(options, 'ignore_terrain') options.ignore_terrain = false; end
+if nargin < 4; options = struct(); end
+
+if ~isfield(footsteps(1), 'zmp'); 
+  zmp_pts = [];
+else
+  zmp_pts = [footsteps(2:end).zmp];
+end
+if ~isfield(options, 't0'); options.t0 = 0; end
 if ~isfield(options, 'full_foot_pose_constraint') options.full_foot_pose_constraint = false; end
+if ~isfield(options, 'debug'); options.debug = true; end
+
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
 sizecheck(q0,[biped.getNumDOF,1]);
 
-debug = true;
-
-is_right_foot = X(1).is_right_foot;
+is_right_foot = footsteps(1).is_right_foot;
 
 com0 = getCOM(biped,q0);
 foot0 = feetPosition(biped, q0);
 foot0.right(6) = foot0.left(6) + angleDiff(foot0.left(6), foot0.right(6));
 
-steps.right = X([X.is_right_foot]);
-steps.left = X(~[X.is_right_foot]);
+steps.right = footsteps([footsteps.is_right_foot]);
+steps.left = footsteps(~[footsteps.is_right_foot]);
 steps.right(1).pos = foot0.right;
 steps.left(1).pos = foot0.left;
 
@@ -26,10 +33,12 @@ for f = {'left', 'right'}
   end
 end
 for k = 1:length(steps.right)
-  steps.right(k).center = biped.footOrig2Contact(steps.right(k).pos, 'center', 1);
+  steps.right(k).pos = struct('orig', steps.right(k).pos,...
+                              'center', biped.footOrig2Contact(steps.right(k).pos, 'center', 1));
 end
 for k = 1:length(steps.left)
-  steps.left(k).center = biped.footOrig2Contact(steps.left(k).pos, 'center', 0);
+  steps.left(k).pos = struct('orig', steps.left(k).pos,...
+                              'center', biped.footOrig2Contact(steps.left(k).pos, 'center', 0));
 end
 
 function pos = feetCenter(rfootpos,lfootpos)
@@ -39,26 +48,22 @@ function pos = feetCenter(rfootpos,lfootpos)
 end
 
 supp0 = struct('right', steps.right(1).is_in_contact, 'left', steps.left(1).is_in_contact);
-zmp0 = [];
-if supp0.right
-  zmp0(:,end+1) = steps.right(1).center(1:2);
+if isempty(zmp_pts)
+  zmp0 = [];
+  if supp0.right
+    zmp0(:,end+1) = steps.right(1).pos.center(1:2);
+  end
+  if supp0.left
+    zmp0(:,end+1) = steps.left(1).pos.center(1:2);
+  end
+  zmp0 = mean(zmp0, 2);
+else
+  zmp0 = zmp_pts(:,1);
 end
-if supp0.left
-  zmp0(:,end+1) = steps.left(1).center(1:2);
-end
-zmp0 = mean(zmp0, 2);
 
 
-step_knots = struct('t', 0, 'right', struct('orig', steps.right(1).pos), 'left', struct('orig', steps.left(1).pos));
-zmp_knots = struct('t', 0, 'zmp', zmp0, 'supp', supp0);
-
-if zmp_knots(1).supp.right && zmp_knots(1).supp.left
-  zmp_knots(end+1) = zmp_knots(end);
-  zmp_knots(end).t = 0.5;
-  zmp_knots(end).zmp = com0(1:2);
-  step_knots(end+1) = step_knots(end);
-  step_knots(end).t = zmp_knots(end).t;
-end
+step_knots = struct('t', options.t0, 'right', struct('orig', steps.right(1).pos.orig), 'left', struct('orig', steps.left(1).pos.orig));
+zmp_knots = struct('t', options.t0, 'zmp', zmp0, 'supp', supp0);
 
 istep = struct('right', 1, 'left', 1);
 
@@ -70,18 +75,28 @@ while 1
     sw_foot = 'left';
     st_foot = 'right';
   end
-  options.step_speed = steps.(sw_foot)(istep.(sw_foot)).step_speed;
-  options.step_height = steps.(sw_foot)(istep.(sw_foot)).step_height;
+  sw0 = steps.(sw_foot)(istep.(sw_foot));
+  sw1 = steps.(sw_foot)(istep.(sw_foot)+1);
+  st = steps.(st_foot)(istep.(st_foot));
 
+  options.step_speed = sw1.walking_params.step_speed;
+  options.step_height = sw1.walking_params.step_height;
+
+  % if options.step_speed < 0
+  %   [swing_ts, swing_poses, takeoff_time, landing_time] = planFixedDurationSwing(biped,...
+  %               sw0.center,...
+  %               sw1.center, options);
+  % else
   [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped,...
-                steps.(sw_foot)(istep.(sw_foot)).center,...
-                steps.(sw_foot)(istep.(sw_foot)+1).center, options);
+                sw0.pos.center,...
+                sw1.pos.center, sw1.walking_params);
+  % end
 
   t0 = step_knots(end).t;
   for j = 1:length(swing_ts)
     step_knots(end+1).t = swing_ts(j) + t0;
     step_knots(end).(sw_foot).orig = biped.footContact2Orig(swing_poses.center(:,j), 'center', is_right_foot);
-    step_knots(end).(st_foot).orig = steps.(st_foot)(istep.(st_foot)).pos;
+    step_knots(end).(st_foot).orig = st.pos.orig;
     
     if ~options.full_foot_pose_constraint && j >= 3 && j <= (length(swing_ts) - 4)
       % Release orientation constraints on the foot during the middle of the swing
@@ -90,10 +105,15 @@ while 1
   end
 
   step_duration = (swing_ts(end) - swing_ts(1));
-  zmp1 = steps.(st_foot)(istep.(st_foot)).center(1:2);
-  zmp2 = feetCenter(steps.(sw_foot)(istep.(sw_foot)+1).pos,...
-                    steps.(st_foot)(istep.(st_foot)).pos);
-  zmp2 = zmp2(1:2);
+  if isempty(zmp_pts)
+    zmp1 = st.pos.center(1:2);
+    zmp2 = feetCenter(sw1.pos.orig, st.pos.orig);
+    zmp2 = zmp2(1:2);
+  else
+    zmp1 = zmp_pts(:,istep.right+istep.left-1);
+    zmp2 = zmp_pts(:,istep.right+istep.left);
+  end
+
   supp1 = struct('right', ~is_right_foot, 'left', is_right_foot);
   supp2 = struct('right', 1, 'left', 1);
   zmp_knots(end+1) = struct('t', t0 + takeoff_time, 'zmp', zmp1, 'supp', supp1);
@@ -144,7 +164,7 @@ for i=1:length(zmp_ts)
   supports{i} = SupportState(biped,foot_supports(:,i),cpts);
 end
 
-if debug
+if options.debug
   ts = foottraj.right.orig.getBreaks();
   pts.right = foottraj.right.orig.eval(ts);
   pts.left = foottraj.left.orig.eval(ts);
@@ -158,5 +178,3 @@ if debug
 end
 
 end
-
-

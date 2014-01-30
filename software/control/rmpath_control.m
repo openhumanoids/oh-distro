@@ -31,6 +31,7 @@ rmpath(fullfile(pwd,'matlab','planners','drill_planner'));
 rmpath(fullfile(pwd,'matlab','planners','ladder_planner'));
 rmpath(fullfile(pwd,'matlab','planners','driving_planner'));
 rmpath(fullfile(pwd,'matlab','planners','footstep_planner'));
+rmpath(fullfile(pwd,'matlab','planners','walking_planner'));
 rmpath(fullfile(pwd,'matlab','planners','atlas_keyframe_planners'));
 rmpath(fullfile(pwd,'matlab','util'));
 rmpath(fullfile(pwd,'matlab','frames'));
