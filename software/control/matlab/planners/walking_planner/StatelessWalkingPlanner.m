@@ -5,7 +5,7 @@ classdef StatelessWalkingPlanner
   end
 
   methods(Static=true)
-    function walking_plan = plan_walking(r, request)
+    function walking_plan = plan_walking(r, request, compute_xtraj)
       debug = false;
       
       x0 = r.getStateFrame().lcmcoder.decode(request.initial_state);
@@ -48,40 +48,33 @@ classdef StatelessWalkingPlanner
 
       [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(r, x0, footsteps);
       tf = comtraj.tspan(end); assert(abs(eval(V,tf,zeros(4,1)))<1e-4);  % relatively fast check to make sure i'm in the correct frame (x-zmp_tf)
+
       link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
 
-      % compute s1,s2 derivatives for controller Vdot computation
-      s1dot = fnder(V.s1,1);
-      s2dot = fnder(V.s2,1);
+      % % compute s1,s2 derivatives for controller Vdot computation
+      % s1dot = fnder(V.s1,1);
+      % s2dot = fnder(V.s2,1);
       
       mus = zeros(length(footsteps), 1);
       for j = 1:length(footsteps)
         mus(j) = footsteps(j).walking_params.mu;
       end
       mu = mean(mus); % TODO: controller should accept step-specific mu
-      walking_plan = struct('S',V.S,'s1',V.s1,'s2',V.s2,'s1dot',s1dot,'s2dot',s2dot,...
-          'support_times',support_times,'supports',{supports},'comtraj',comtraj,'mu',mu,'t_offset',0,...
-          'link_constraints',link_constraints,'zmptraj',zmptraj,'qtraj',qstar,'ignore_terrain',false)
-      walking_pub = WalkingPlanPublisher('WALKING_PLAN');
-      walking_pub.publish(0,walking_plan);
+      t_offset = 0;
+      ignore_terrain = false;
 
-      [xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, qstar, zmptraj, comtraj, link_constraints);
-      % publish robot plan
-      joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-      joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-      plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_ROBOT_PLAN');
+      if ~compute_xtraj
+        walking_plan = WalkingControllerData(V, support_times,...
+                                           {supports}, comtraj, mu, t_offset,...
+                                           link_constraints, zmptraj, qstar,...
+                                           ignore_terrain);
+      else
+        [xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, qstar, zmptraj, comtraj, link_constraints);
+        joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+        joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 
-      plan_pub.publish(ts,xtraj);
-      
-      if debug
-        tt = 0:0.05:ts(end);
-        compoints = zeros(3,length(tt));
-        for i=1:length(tt)
-          compoints(1:2,i) = comtraj.eval(tt(i));
-        end
-        compoints(3,:) = getTerrainHeight(r,compoints(1:2,:));
-        plot_lcm_points(compoints',[zeros(length(tt),1), ones(length(tt),1), zeros(length(tt),1)],555,'Desired COM',1,true);
-      end  
+        walking_plan = WalkingPlan(ts, xtraj, joint_names);
+      end
     end
   end
 end

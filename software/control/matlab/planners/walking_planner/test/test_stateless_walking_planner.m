@@ -72,4 +72,6 @@ request.use_new_nominal_state = false;
 request.footstep_plan = plan_msg;
 
 wp = StatelessWalkingPlanner();
-walking_plan = wp.plan_walking(r, request);
+walking_plan = wp.plan_walking(r, request, true);
+lc = lcm.lcm.LCM.getSingleton();
+lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
