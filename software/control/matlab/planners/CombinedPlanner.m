@@ -2,6 +2,7 @@ classdef CombinedPlanner
   properties
     biped
     footstep_planner
+    walking_planner
     monitors
     request_channels
     handlers
@@ -75,12 +76,12 @@ classdef CombinedPlanner
 
     function plan = plan_walking_traj(obj, msg)
       msg = drc.walking_plan_request_t(msg);
-      plan = obj.walking_planner.plan_walking(obj, msg, true);
+      plan = obj.walking_planner.plan_walking(obj.biped, msg, true);
     end
 
     function plan = plan_walking_controller(obj, msg)
       msg = drc.walking_plan_request_t(msg);
-      plan = obj.walking_planner.plan_walking(obj, msg, false);
+      plan = obj.walking_planner.plan_walking(obj.biped, msg, false);
     end
   end
 end
