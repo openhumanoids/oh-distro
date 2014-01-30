@@ -7,7 +7,7 @@ msg = drc.ins_update_packet_t();
 
 msg.utime = 0;
 
-msg.dQ = drc.quaternion_t();
+msg.dE_l = drc.vector_3d_t();
 msg.dbiasGyro_b = drc.vector_3d_t();
 msg.dPos_l = drc.vector_3d_t();
 msg.dVel_l = drc.vector_3d_t();

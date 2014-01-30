@@ -10,6 +10,8 @@ params.right_foot_lead = logical(params.right_foot_lead);
 
 if ~isfield(params, 'nom_step_width'); params.nom_step_width = 0.26; end
 if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
+if ~isfield(params, 'allow_even_num_steps'); params.allow_even_num_steps = true; end
+if ~isfield(params, 'allow_odd_num_steps'); params.allow_odd_num_steps = true; end
 
 X = createOriginSteps(biped, foot_orig, params.right_foot_lead);
 
@@ -23,25 +25,6 @@ goal_pos.left(3) = st0(3);
 
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 foot_goals = goal_pos;
-
-% function x = encodeCollocationSteps(steps)
-%   nsteps = size(steps, 2);
-%   x = zeros(12,nsteps);
-%   x(1:6,:) = steps;
-%   x(7:12,1) = steps(:,1);
-%   for j = 2:nsteps
-%     R = rotmat(-steps(6,j-1));
-%     x(7:12,j) = [R * (steps(1:2,j) - steps(1:2,j-1));
-%                 steps(3:6,j) - steps(3:6,j-1)];
-%   end
-%   x = reshape(x, [], 1);
-% end
-
-% function [steps, rel_steps] = decodeCollocationSteps(x)
-%   x = reshape(x, 12, []);
-%   steps = x(1:6,:);
-%   rel_steps = x(7:12,:);
-% end
 
 function [c, ceq, dc, dceq] = constraints(x)
   cf = goal_pos.center;
@@ -91,15 +74,13 @@ function stop = plotfun(x)
 end
 
 params.forward_step = params.nom_forward_step;
-[A_reach_0, b_reach] = biped.getFootstepDiamondCons(true, params);
+[A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
 min_steps = max([params.min_num_steps+1,2]);
 max_steps = params.max_num_steps + 1;
 
 steps = [];
 
 for nsteps = min_steps:max_steps
-  A_reach = A_reach_0;
-  nc = length(b_reach);
   if ~params.right_foot_lead
     r_ndx = 1:2:nsteps;
     l_ndx = 2:2:nsteps;
@@ -115,34 +96,7 @@ for nsteps = min_steps:max_steps
   end
   nv = 12 * nsteps;
 
-  A = zeros(nc*(nsteps-1), nv);
-  b = zeros(nc*(nsteps-1), 1);
-  if params.right_foot_lead 
-    A_reach = A_reach * diag([1,-1,1,1,1,1]);
-  end
-  for j = 2:nsteps
-    con_ndx = nc*(j-2)+1:nc*(j-1);
-    var_ndx = (j-1)*12+7:j*12;
-    A(con_ndx,var_ndx) = A_reach;
-    b(con_ndx) = b_reach;
-    A_reach = A_reach * diag([1,-1,1,1,1,1]);
-  end
-
-  Aeq = zeros(4*(nsteps-1),nv);
-  beq = zeros(4*(nsteps-1),1);
-  for j = 2:nsteps
-    con_ndx = (j-2)*4+(1:4);
-    x1_ndx = (j-2)*12+(1:6);
-    x2_ndx = (j-1)*12+(1:6);
-    dx_ndx = (j-1)*12+(7:12);
-    Aeq(con_ndx, x1_ndx(3:6)) = -diag(ones(4,1));
-    Aeq(con_ndx, x2_ndx(3:6)) = diag(ones(4,1));
-    if ~mod(params.right_foot_lead+j, 2)
-      Aeq(con_ndx, dx_ndx(3:6)) = -diag(ones(4,1));
-    else
-      Aeq(con_ndx, dx_ndx(3:6)) = -diag([1,1,1,-1]);
-    end
-  end
+  [A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);
 
   lb = -inf(12,nsteps);
   ub = inf(size(lb));
@@ -215,17 +169,17 @@ for nsteps = min_steps:max_steps
     ObjRow = 1;
     global SNOPT_USERFUN
     SNOPT_USERFUN = @collocation_userfun;
-    tic
+    % tic
     [xstar, fval, ~, ~, exitflag] = snsolve(x0,xlow,xupp,xmul,xstate,    ...
                  Flow,Fupp,Fmul,Fstate,      ...
                  ObjAdd,ObjRow,A_sn(iAndx),iAfun,jAvar,...
                  iGfun,jGvar,'snoptUserfun');
-    toc
-    exitflag
+    % toc
+    % exitflag
   else
-    tic
+    % tic
     [xstar, fval, exitflag] = fmincon(@objfun, x0, sparse(A), b, sparse(Aeq), beq, lb, ub, @constraints, optimset('Algorithm', 'interior-point', 'DerivativeCheck', 'on', 'GradConstr', 'on', 'GradObj', 'on', 'OutputFcn',{}));
-    toc
+    % toc
   end
 
   % plotfun(xstar);
@@ -234,7 +188,13 @@ for nsteps = min_steps:max_steps
   diff_r = steps(:,r_ndx(end)) - goal_pos.right;
   diff_l = steps(:,l_ndx(end)) - goal_pos.left;
   if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;0.02;0.02;0.1;0.1;0.1])
-    break
+    if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
+      continue
+    elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
+      continue
+    else
+      break
+    end
   end
 end
 
@@ -245,7 +205,7 @@ for j = 2:nsteps
   end
   valuecheck(steps(:,j-1) + [R * steps_rel(1:2,j); steps_rel(3:6,j)], steps(:,j),1e-4);
 end
-nsteps
+% nsteps
 
 valuecheck(steps([1,2,6],1), X(2).pos([1,2,6]),1e-8);
 for j = 2:nsteps
@@ -253,6 +213,6 @@ for j = 2:nsteps
   X(j+1).is_right_foot = logical(mod(params.right_foot_lead+j,2));
 end
 
-biped.getNextStepID(true); % reset the counter
+% biped.getNextStepID(true); % reset the counter
 
 end

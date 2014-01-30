@@ -22,25 +22,33 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 % storing measurement data for later plotting with eef
 % Sys.measured = Measurement.measured;
 
-Tm = Sys.T;
 
+% Tm = Sys.T; -- to be depreciated
+
+
+% Measurement.INS.pose.utime
+% Measurement.INS.pose.lQb
+% Measurement.INS.pose.a_l
+% Measurement.velocityResidual
 
 % EKF
-[F, L, Q] = dINS_EKFmodel(Measurement.INS);
-Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
-covariances.R = diag( 1E0*ones(3,1) );
+[F, L, Q] = dINS_EKFmodel(Measurement.INS.pose);
+covariances.R = diag( 5E0*ones(3,1) );
 
+Disc.B = 0;
+Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
 
 % TIME UPDATE, PRIORI STATE=========================================================================
-[Disc.A,covariances.Qd] = lti_disc(F, L, Q, Tm);
+[Disc.A,covariances.Qd] = lti_disc(F, L, Q, Sys.dt);
 Sys.priori = KF_timeupdate(Sys.posterior, 0, Disc, covariances);
 Sys.priori.utime = Measurement.INS.pose.utime;
 
 
 % MEASUREMENT UPDATE, POSTERIOR STATE===============================================================
-posterior = KF_measupdate(Sys.priori, Disc, [Measurement.velocityResidual]);
+Sys.posterior = KF_measupdate(Sys.priori, Disc, [Measurement.velocityResidual]);
 Sys.posterior.utime = Sys.priori.utime;
 
+% Sys.posterior.x
 
 % Some results to look at later=====================================================================
 

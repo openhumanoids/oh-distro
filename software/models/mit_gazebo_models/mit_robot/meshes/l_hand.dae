@@ -922,7 +922,7 @@
             <visibility>1.000000</visibility>
           </technique>
         </extra>
-        <node name="l_hand" id="l_hand" sid="l_hand">
+        <node name="l_hand_node" id="l_hand_node" sid="l_hand_node">
           <matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix>
           <extra>
             <technique profile="FCOLLADA">

@@ -10,3 +10,4 @@ pose.f_l = zeros(3,1);
 pose.da = zeros(3,1);% to be depreciated
 pose.q = [1;0;0;0];% to be depreciated
 pose.E = zeros(3,1);% to be depreciated
+pose.w_l = zeros(3,1);

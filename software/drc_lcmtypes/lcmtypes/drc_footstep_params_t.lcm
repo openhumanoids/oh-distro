@@ -1,0 +1,25 @@
+package drc;
+
+struct footstep_params_t
+{
+	int64_t utime;
+
+	// speed at which the foot should move while swinging (m/s)
+	float step_speed; 
+
+	// Minimum clearance of the step over the terrain (m)
+	float step_height;
+
+	// BDI-specific parameters
+	float bdi_step_duration;
+	float bdi_sway_duration;
+	float bdi_lift_height;
+	int32_t bdi_toe_off; // see drc_atlas_behavior_step_action_t
+	float bdi_knee_nominal;
+	float bdi_max_body_accel;
+	float bdi_max_foot_vel;
+	float bdi_sway_end_dist;
+	float bdi_step_end_dist;
+
+	float mu;
+}

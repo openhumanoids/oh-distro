@@ -37,7 +37,7 @@ namespace InertialOdometry {
 			return;
 		}
 
-		lQb = exmap(delta_ang, lQb);
+		lQb = exmap(-delta_ang, lQb);
 
 		latest_uts = uts;
 		//		std::cout << "OrientationComputer::updateOrientation -- lQb " << "after" << lQb.w() << ", " << lQb.x() << ", " << lQb.y() << ", " << lQb.z() << std::endl;
@@ -49,13 +49,16 @@ namespace InertialOdometry {
 
 		double dt;
 		dt = 1.E-6*((double)(uts - latest_uts));
+		if (latest_uts == 0) { // assumption for initial condition
+			dt = 0.01;
+		}
 
 		Eigen::Vector3d temp;
 		temp = dt*(w_b); // TODO -- This should be an integration module from SignalTap
 
 		updateOrientationWithAngle(uts, temp); // We use midpoint integration to obtain a delta angle
 
-		std::cout << "OrientationComputer::updateOrientationWithRate -- dt " << dt << std::endl;
+		//std::cout << "OrientationComputer::updateOrientationWithRate -- dt " << dt << std::endl;
 
 		latest_uts = uts;
 		prevWb = w_b;
@@ -63,9 +66,11 @@ namespace InertialOdometry {
 
 	void OrientationComputer::rotateOrientationUpdate(const Eigen::Vector3d &_dE_l) {
 
-		//		INSCompensator.dlQl = qprod(e2q(limitedFB*x(1:3)),INSCompensator.dlQl);
-		//		pose.lQb = qprod(pose__.lQb,qconj(INSCompensator.dlQl)); -- we do the limitedFB and sign flip on _dE_l at output of the EKF
-		lQb = qprod(lQb, e2q(_dE_l));
+		//		INSCompensator.dlQl = qprod(e2q(-limitedFB*x(1:3)),INSCompensator.dlQl);
+		//		pose.lQb = qprod(pose__.lQb,(INSCompensator.dlQl)); -- we do the limitedFB and sign flip on _dE_l at output of the EKF
+		Eigen::Quaterniond tmp;
+		tmp = qprod(lQb, e2q(_dE_l));
+		lQb = tmp;
 	}
 
 
@@ -82,7 +87,9 @@ namespace InertialOdometry {
 		return lQb;
 	}
 
-	void OrientationComputer::exmap(const Eigen::Vector3d &w_k0, Eigen::Matrix3d &R) {
+
+	// Must move this out to a separate library
+	/*void OrientationComputer::exmap(const Eigen::Vector3d &w_k0, Eigen::Matrix3d &R) {
 
 		//		std::cout << "OrientationComputer::exmap -- w_k0 " << std::endl << w_k0.transpose() << std::endl;
 
@@ -109,66 +116,7 @@ namespace InertialOdometry {
 		aliastemp = R;
 		R = coeff*aliastemp;
 
-	}
-
-	Eigen::Quaterniond OrientationComputer::exmap(const Eigen::Vector3d &dE_l, Eigen::Quaterniond &lQb) {
-		//		w_dt = w*dt; -- This is dE_l (delta rotation in the local frame)
-		//		w_norm = norm(w);
-		//		w_norm_dt = w_norm*dt;
-		//
-		//		if (w_norm>1E-6) % 1E-7 is chosen because double numerical LSB is around 1E-18 for nominal values [-pi..pi]
-		//		    % and (1E-7)^2 is at 1E-14, but 1E-7 rad/s is 0.02 deg/h
-		//		    r = [cos(w_norm*dt/2);...
-		//		         w./w_norm*sin(w_norm*dt/2)];
-		//
-		//		    aQb_k0 = qprod(r,aQb_k1);
-		//		else
-		//		    r = [cos(w_norm_dt/2);...
-		//		         w_dt*(0.5-w_norm_dt*w_norm_dt/48)];
-		//
-		//		    aQb_k0 = qprod(r,aQb_k1);
-		//		end
-		//
-		//		if (abs(1-norm(aQb_k0))>1E-13)
-		//		    disp 'zeroth_int_Quat_closed_form -- normalizing time propagated quaternion'
-		//		    aQb_k0 = aQb_k0./norm(aQb_k0);
-		//		end
-
-
-		double dE_lNorm;
-		dE_lNorm = dE_l.norm();
-
-		Eigen::Quaterniond r;
-		Eigen::Quaterniond result;
-		r.setIdentity();
-		result.setIdentity();
-
-		double sindE;
-		sindE = sin(0.5*dE_lNorm)/dE_lNorm;
-
-		if (dE_lNorm>1E-7) { //% 1E-7 is chosen because double numerical LSB is around 1E-15 for nominal values [-pi..pi]
-			r.w() = cos(0.5*dE_lNorm);
-			r.x() = dE_l(0)*sindE;
-			r.y() = dE_l(1)*sindE;
-			r.z() = dE_l(2)*sindE;
-		} else {
-			double tmp;
-			tmp = (0.5 - dE_lNorm*dE_lNorm*0.020833333333333333);
-
-			r.w() = cos(0.5*dE_lNorm);
-			r.x() = dE_l(0)*tmp;
-			r.y() = dE_l(1)*tmp;
-			r.z() = dE_l(2)*tmp;
-		}
-
-		result = qprod(r,lQb);
-
-		if (abs(1-result.norm()) > 1E-13){
-			std::cout << "OrientationComputer::exmap -- had to renormalize quaternion" << std::endl;
-			result = result.normalized();
-		}
-		return result;
-	}
+	}*/
 
 
 	Eigen::Matrix3d OrientationComputer::vec2skew(const Eigen::Vector3d &v) {

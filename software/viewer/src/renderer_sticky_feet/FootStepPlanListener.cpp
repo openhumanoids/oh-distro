@@ -121,7 +121,7 @@ namespace renderer_sticky_feet
 
 void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
-						 const drc::footstep_plan_t* msg)						 
+						 const drc::deprecated_footstep_plan_t* msg)						 
   {
    cout << "\n handleFootStepPlanMsg: Footstep plan received" << endl;
    
@@ -275,7 +275,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
  void FootStepPlanListener::commit_footstep_plan(int64_t utime,string &channel)
  {
-    drc::footstep_plan_t msg = revieved_plan_;
+    drc::deprecated_footstep_plan_t msg = revieved_plan_;
     
     int64_t old_utime = msg.utime;
     msg.utime = utime;

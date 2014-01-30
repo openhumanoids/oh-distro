@@ -53,6 +53,8 @@ int StateEstimate::StateEstimateApplication::exec()
   matlabTruthPoseProducer.subscribe(lcmThread.lcmHandle());
   INSUpdateProducer.subscribe(lcmThread.lcmHandle());
 
+  imuProducer.setSpecialLCMPtr(lcmThread.lcmHandle());
+
   StateEstimator estimator(
     _switches,
     lcmThread.lcmHandle(),
@@ -62,6 +64,12 @@ int StateEstimate::StateEstimateApplication::exec()
     viconPoseProducer.messageQueue(),
     matlabTruthPoseProducer.messageQueue(),
     INSUpdateProducer.messageQueue());
+
+  IMUFilter* imuFilter = imuProducer.getIMUFilter();
+  imuFilter->setInertialOdometry( estimator.getInertialOdometry() );
+  imuFilter->setERSMsg( estimator.getERSMsg() );
+  imuFilter->setDataFusionReqMsg( estimator.getDataFusionReqMsg() );
+
 
   // start comm thread
   lcmThread.start();

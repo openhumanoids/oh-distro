@@ -10,7 +10,7 @@
 % feedback structure. 
 
 clc
-clear all
+clear
 
 disp 'STARTING...'
 
@@ -59,9 +59,9 @@ measured.wb = data(1:iter,1:3);
 measured.ab = data(1:iter,4:6) + repmat(accelbias',iter,1);
 
 % remove gyro biases
-biasg = mean(measured.wb(initstart:initend,:),1) + gyrobias';
-biasg = repmat(biasg,iter,1);
-measured.wb = measured.wb - biasg;
+% biasg = mean(measured.wb(initstart:initend,:),1) + gyrobias';
+% biasg = repmat(biasg,iter,1);
+% measured.wb = measured.wb - biasg;
 
 predicted.lQb = [ones(iter,1) zeros(iter,3)];
 predicted.wb = zeros(iter,3);
@@ -88,11 +88,8 @@ INSpose__k1 = init_pose();
 INSpose__k2 = init_pose();
 inertialData = init_inertialData(9.8);
 
-posterior.x = zeros(15,1);
-posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
-
-Disc.B = 0;
-Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
+Sys.posterior.x = zeros(15,1);
+Sys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
 X = [];
 DX = [];
@@ -108,11 +105,12 @@ nDEF = [];
 Rbias = [];
 
 % this is the filter update counter
-FilterRate = 10;
+FilterRate = 50;
 limitedFB = 0.5;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
+Sys.T = dt_m;
 
 for k = 1:iter
     
@@ -124,38 +122,58 @@ for k = 1:iter
     inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
     
     % Propagate inertial solution, first apply scheduled INS update (if available)
-    [INSpose__k1, INSCompensator] = Update_INS(INSpose__k1, INSCompensator);
+    
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
     
+    % More representative of how LCM traffic is running
+    [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
+    
+    PE = [PE;q2e(INSpose.lQb)'];
+    
     % Run filter at a lower rate
-    if (mod(k,FilterRateReduction)==0)
+    if (mod(k,FilterRateReduction)==0 && true)
         m = m+1;
         
-        % EKF
-        [F, L, Q] = dINS_EKFmodel(INSpose);
-        Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
-        covariances.R = diag( 1E0*ones(3,1) );
-        
-        % Filter propagation
-        [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
-        priori = KF_timeupdate(posterior, 0, Disc, covariances);
-        
-        % Filter measurement model
         measured.vl = init_Vl;
         dV = measured.vl - INSpose.V_l;
-        posterior = KF_measupdate(priori, Disc, [dV]);
+        
+        if (false)
+        
+            % EKF
+            [F, L, Q] = dINS_EKFmodel(INSpose);
+            Disc.B = 0;
+            Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
+            covariances.R = diag( 1E0*ones(3,1) );
+            
+            % Filter propagation
+            [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dt_m);
+            priori = KF_timeupdate(Sys.posterior, 0, Disc, covariances);
+            
+            % Filter measurement model
+            Sys.posterior = KF_measupdate(priori, Disc, [dV]);
+            
+        else
+            
+            Measurement.INS.pose = INSpose;
+            Measurement.velocityResidual = dV;
+            [Result, Sys] = iterate([], Sys, Measurement);
+
+        end
+        
+        [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
+        
+        % LCM trip to C++ state-estimate to update INS states
+        
         
         %store data for later plotting
-        DX = [DX; posterior.dx'];
-        X = [X; posterior.x'];
-        COV = [COV;diag(posterior.P)'];
+        DX = [DX; Sys.posterior.dx'];
+        X = [X; Sys.posterior.x'];
+        COV = [COV;diag(Sys.posterior.P)'];
         % DE = [DE;dE'];
         %predE = q2e(INSpose.lQb);
-        PE = [PE;q2e(INSpose.lQb)'];
+        
         DV = [DV; dV'];
         
-        [ posterior.x, INSCompensator ] = LimitedStateTransfer( posterior.x, limitedFB, INSCompensator );
-       
     end
     
     

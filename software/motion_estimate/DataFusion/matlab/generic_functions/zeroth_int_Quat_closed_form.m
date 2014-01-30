@@ -30,3 +30,4 @@ if (abs(1-norm(aQb_k0))>1E-13)
     disp 'zeroth_int_Quat_closed_form -- normalizing time propagated quaternion'
     aQb_k0 = aQb_k0./norm(aQb_k0);
 end
+

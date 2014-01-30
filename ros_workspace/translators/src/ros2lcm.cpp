@@ -111,7 +111,7 @@ private:
 };
 
 App::App(ros::NodeHandle node_, bool send_ground_truth_) :
-    node_(node_), send_ground_truth_(send_ground_truth_){
+    send_ground_truth_(send_ground_truth_), node_(node_){
   ROS_INFO("Initializing Translator");
 
   received_head_joint_states_ = false;
@@ -498,7 +498,6 @@ void App::appendLimbSensor(drc::force_torque_t& msg_out , atlas_msgs::ForceTorqu
 
 
 int main(int argc, char **argv){
-  bool control_output = true;// by default
   bool send_ground_truth = false;  
 
   std::string mode_argument;
@@ -520,7 +519,7 @@ int main(int argc, char **argv){
 
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
-  App *app = new App(nh, send_ground_truth);
+  new App(nh, send_ground_truth);
   std::cout << "ros2lcm translator ready\n";
   ROS_ERROR("ROS2LCM Control Translator Sleeping: [%s]",  mode_argument.c_str());
   sleep(4);

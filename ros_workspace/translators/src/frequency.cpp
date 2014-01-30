@@ -140,7 +140,7 @@ int main (int argc, char ** argv){
   
   
   ros::NodeHandle nh;
-  App *app = new App(lcm, nh, verbose );
+  new App(lcm, nh, verbose );
   std::cout << "launching frequency as " << name <<"\n";
   ros::spin();
   

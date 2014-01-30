@@ -3,7 +3,7 @@
 
 #include "custom-codecs.h"
 
-#include "lcmtypes/drc/footstep_plan_t.hpp"
+#include "lcmtypes/drc/deprecated_footstep_plan_t.hpp"
 
 #include "footstep-plan-analogs.pb.h"
 

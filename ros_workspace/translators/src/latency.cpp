@@ -92,7 +92,7 @@ int main(int argc, char **argv){
   ros::NodeHandle nh;
   nh.setCallbackQueue(&local_callback_queue);
   
-  App *app = new App(nh );
+  new App(nh );
   std::cout << "launching roslatency as " << name <<"\n";
   while (ros::ok()){
     local_callback_queue.callAvailable(ros::WallDuration(0.01));

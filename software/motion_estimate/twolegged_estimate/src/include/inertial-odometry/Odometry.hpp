@@ -2,6 +2,10 @@
 #define __ODOMETRY_H__
 
 #include <iostream>
+#include <atomic>
+
+#include <boost/thread/mutex.hpp>
+
 #include <inertial-odometry/InertialOdometry_Types.hpp>
 #include <inertial-odometry/OrientationComputer.hpp>
 #include <inertial-odometry/VP_Mechanization.hpp>
@@ -11,44 +15,51 @@
 
 namespace InertialOdometry {
 
+  typedef std::atomic<bool> Lock;
+
   class Odometry {
     private:
-		OrientationComputer orc;
-		VP_Mechanization avp;
-		Parameters param;
-		//InertialOdomOutput output_state; // State memory should only exist in the attitude and vp objects -- this should not be here
+	  double Ts_imu;
 
-		// Store state memory
-		DynamicState state;
-		
-		void UpdateStructState(InertialOdomOutput &output_data);// ??
+	  OrientationComputer orc;
+	  VP_Mechanization avp;
+	  Parameters param;
 
+	  Lock mINSUpdateAtomic;
 
-		InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu);
-		InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
+	  void UpdateStructState(InertialOdomOutput &output_data);// ??
 
-		//Eigen::Matrix<double, 3, 3> Expmap(Eigen::Vector3d const &w);
+	  InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu);
+	  InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
+
+	  //Eigen::Matrix<double, 3, 3> Expmap(Eigen::Vector3d const &w);
 	  
     public:
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-		IMUCompensation imu_compensator;
+      IMUCompensation imu_compensator;
+      mutable boost::mutex mutex_; // Protect INS propagation from EKF update to INS state -- slaved to kinematics message
 
-		// Constructor with standard parameters
-		Odometry();
-		// Propagate the internal state registers with new IMU data
-		DynamicState PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
-		DynamicState PropagatePrediction(IMU_dataframe &_imu);
-		
-		DynamicState getDynamicState();
 
-		void setPositionState(const Eigen::Vector3d &P_set);
+      // Constructor with standard parameters
+      Odometry(double imu_sampletime);
+      // Propagate the internal state registers with new IMU data
+      DynamicState PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
+      DynamicState PropagatePrediction(IMU_dataframe &_imu);
 
-		void setVelocityState(const Eigen::Vector3d &V_set);
+      //DynamicState getDynamicState();
+      Eigen::Quaterniond lQb();
 
-		Eigen::Vector3d ResolveBodyToRef(const Eigen::Vector3d &_va);
+      //unsigned long long get_utime();
+      void setPositionState(const Eigen::Vector3d &P_set);
+      void setVelocityState(const Eigen::Vector3d &V_set);
 
-		void incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData);
+      Eigen::Vector3d ResolveBodyToRef(const Eigen::Vector3d &_va);
+
+      void incorporateERRUpdate(const InertialOdometry::INSUpdatePacket &updateData);
+
+	  void enterCritical();
+	  void exitCritical();
   };
 
 }

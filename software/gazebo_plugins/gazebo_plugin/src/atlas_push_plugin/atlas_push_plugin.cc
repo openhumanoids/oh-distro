@@ -16,7 +16,7 @@ namespace gazebo
 			this->model = _parent;
 			this->world = _parent->GetWorld();
 
-			this->updateConnection = event::Events::ConnectWorldUpdateStart(boost::bind(&AtlasPushPlugin::OnUpdate, this));
+			this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&AtlasPushPlugin::OnUpdate, this));
 			this->push_end = 0;
 			this->current_time = 0;
 			this->callback_queue_thread = boost::thread(boost::bind(&AtlasPushPlugin::QueueThread, this));

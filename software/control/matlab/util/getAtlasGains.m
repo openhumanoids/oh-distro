@@ -159,7 +159,7 @@ k_qd_p.l_leg_akx = 0.1;
 k_qd_p.l_arm_usy = 0.85; % 11-14-13
 k_qd_p.l_arm_shx = 2.7; % 11-14-13 
 k_qd_p.l_arm_ely = 2.25; % 11-14-13
-k_qd_p.l_arm_elx = 10.5; % 11-14-13--yikes
+k_qd_p.l_arm_elx = 5.5; % 11-14-13--yikes
 k_qd_p.l_arm_uwy = 0.5; % 11-14-13
 k_qd_p.l_arm_mwx = 0.95;% 11-14-13
 k_qd_p.r_leg_hpz = k_qd_p.l_leg_hpz;
@@ -171,7 +171,7 @@ k_qd_p.r_leg_akx = k_qd_p.l_leg_akx;
 k_qd_p.r_arm_usy = 1.5; % 11-14-13
 k_qd_p.r_arm_shx = 1.6; % 11-14-13
 k_qd_p.r_arm_ely = 0.85; % 11-14-13
-k_qd_p.r_arm_elx = 10.5; % 11-13-13--yikes
+k_qd_p.r_arm_elx = 5.5; % 11-13-13--yikes
 k_qd_p.r_arm_uwy = 0.5; % 11-13-13
 k_qd_p.r_arm_mwx = 1.0; % 11-14-13
 

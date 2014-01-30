@@ -32,6 +32,8 @@ end
 pose.utime = inertialData.predicted.utime;
 dt = (inertialData.predicted.utime - pose__k1.utime)*1e-6; % convert units to seconds
 
+
+
 % predict local frame accelerations
 pose.a_l = qrot(qconj(pose__k1.lQb),inertialData.predicted.a_b);
 pose.f_l = (pose.a_l - inertialData.gw);
@@ -39,6 +41,8 @@ pose.P_l = pose__k1.P_l + 0.5*dt*(pose__k1.V_l + pose__k2.V_l);
 pose.V_l = pose__k1.V_l + 0.5*dt*(pose__k1.f_l + pose__k2.f_l);
 
 pose.lQb = zeroth_int_Quat_closed_form(-inertialData.predicted.w_b, pose__k1.lQb, dt);
+
+pose.w_l = [0;0;0];
 
 return % Previous implementation is temporarily kept below
 

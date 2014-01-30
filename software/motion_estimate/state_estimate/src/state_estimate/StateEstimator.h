@@ -51,6 +51,10 @@ public:
 
   ~StateEstimator();
 
+  InertialOdometry::Odometry* getInertialOdometry();
+  drc::robot_state_t* getERSMsg();
+  drc::ins_update_request_t* getDataFusionReqMsg();
+
 protected:
 
   void run();
@@ -78,9 +82,11 @@ private:
   std::string ERSMsgSuffix;
 
   drc::robot_state_t mERSMsg;
-  drc::robot_state_t testing;
+  //drc::robot_state_t testing;
   drc::ins_update_request_t mDFRequestMsg;
 	
+  // We maintain own InerOdoEst state, to avoid potential future multi-threaded issues
+  InertialOdometry::DynamicState InerOdoEst;
   InertialOdometry::Odometry inert_odo;
   unsigned long long previous_imu_utime;
   unsigned long long prevImuPacketCount;
@@ -100,6 +106,11 @@ private:
   int firstpass;
   double Ts_imu; // Auto-detect the sample rate of the IMU
   int receivedIMUPackets;
+
+  // ======== SERVICE ROUTINES ===========
+  void IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm);
+  void INSUpdateServiceRoutine(const drc::ins_update_packet_t &INSUpdate);
+  void AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose);
 };
 
 } // end namespace

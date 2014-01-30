@@ -60,32 +60,6 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       X = planner.plan(navgoal, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
     end
 
-    function Xo = stepCenter2FootCenter(obj, Xc, is_right_foot, nom_step_width)
-      Xo = footCenter2StepCenter(obj, Xc, is_right_foot, -nom_step_width);
-    end
-
-    function Xc = footCenter2StepCenter(obj, Xo, is_right_foot, nom_step_width)
-      % Convert a position of the center of one of the biped's feet to the
-      % corresponding point half the step width toward the bot's center.
-      % nom_step_width should be scalar or vector of size(1, size(Xo,2))
-      if nargin < 4
-        nom_step_width = obj.nom_step_width;
-      end
-      if length(nom_step_width) == 1
-        nom_step_width = repmat(nom_step_width, 1, size(Xo, 2));
-      end
-      if is_right_foot
-        offs = [zeros(1,length(nom_step_width)); -nom_step_width/2; zeros(1,length(nom_step_width))];
-      else
-        offs = [zeros(1,length(nom_step_width)); nom_step_width/2; zeros(1,length(nom_step_width))];
-      end
-      for j = 1:length(Xo(1,:))
-        M = rpy2rotmat(Xo(4:6,j));
-        d = M * offs(:,j);
-        Xc(:,j) = [Xo(1:3,j) - d(1:3); Xo(4:end,j)];
-      end
-    end
-
     % function [pos, width] = feetPosition(obj, q0)
     function foot_orig = feetPosition(obj, q0)
       typecheck(q0,'numeric');
@@ -277,9 +251,28 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       u = M * bsxfun(@minus, pf(1:3,:), p0(1:3,:));
       u = [u; zeros(2, size(u,2)); bsxfun(@angleDiff, pf(6,:), p0(6))];
     end
+
+    function Xo = stepCenter2FootCenter(Xc, is_right_foot, nom_step_width)
+      Xo = Biped.footCenter2StepCenter(Xc, is_right_foot, -nom_step_width);
+    end
+
+    function Xc = footCenter2StepCenter( Xo, is_right_foot, nom_step_width)
+      % Convert a position of the center of one of the biped's feet to the
+      % corresponding point half the step width toward the bot's center.
+      % nom_step_width should be scalar or vector of size(1, size(Xo,2))
+      if length(nom_step_width) == 1
+        nom_step_width = repmat(nom_step_width, 1, size(Xo, 2));
+      end
+      if is_right_foot
+        offs = [zeros(1,length(nom_step_width)); -nom_step_width/2; zeros(1,length(nom_step_width))];
+      else
+        offs = [zeros(1,length(nom_step_width)); nom_step_width/2; zeros(1,length(nom_step_width))];
+      end
+      for j = 1:length(Xo(1,:))
+        M = rpy2rotmat(Xo(4:6,j));
+        d = M * offs(:,j);
+        Xc(:,j) = [Xo(1:3,j) - d(1:3); Xo(4:end,j)];
+      end
+    end
   end
-
 end
-
-      
-      

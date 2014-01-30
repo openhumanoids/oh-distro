@@ -21,16 +21,22 @@ rmpath_drake;
 %rmpath_eigen_utils;
 %rmpath_matlab_utils;
 
-% add the drake control matlab util directory into the matlab path:
+% remove the drake control matlab util directory into the matlab path:
 rmpath(fullfile(pwd,'matlab'));
+rmpath(fullfile(pwd,'matlab','calibration'));
 rmpath(fullfile(pwd,'matlab','controllers'));
 rmpath(fullfile(pwd,'matlab','planners'));
+rmpath(fullfile(pwd,'matlab','planners','constraints'));
+rmpath(fullfile(pwd,'matlab','planners','drill_planner'));
+rmpath(fullfile(pwd,'matlab','planners','ladder_planner'));
+rmpath(fullfile(pwd,'matlab','planners','driving_planner'));
 rmpath(fullfile(pwd,'matlab','planners','footstep_planner'));
-% rmpath(fullfile(pwd,'matlab','planners','pinned_manipulation','spherical_interp'));
+rmpath(fullfile(pwd,'matlab','planners','atlas_keyframe_planners'));
 rmpath(fullfile(pwd,'matlab','util'));
 rmpath(fullfile(pwd,'matlab','frames'));
 rmpath(fullfile(pwd,'matlab','test'));
 rmpath(fullfile(pwd,'matlab','systems'));
 rmpath(fullfile(pwd,'collections_utils'));
+
 
 end

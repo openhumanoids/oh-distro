@@ -23,7 +23,12 @@ switch (trajtype)
     case 'rotate'
         RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
     case 'gyro_bias'
-        RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
+        %RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
+        param.dt = 1E-2;
+        RESULTS.traj.iterations = 10000;
+        RESULTS.traj.measured.w_b = [0.005*ones(RESULTS.traj.iterations, 1), zeros(RESULTS.traj.iterations, 2)];
+        RESULTS.traj.measured.a_b  = [zeros(RESULTS.traj.iterations, 2), 9.8*ones(RESULTS.traj.iterations, 1)];
+        
     case 'acc_bias'
         RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
     case 'Microstrain_01'
@@ -67,7 +72,7 @@ end
 
 % Setup the results data structure
 
-%% Send and IMU messages
+% Send and IMU messages
 
 % prepare LCM messages
 
@@ -104,7 +109,7 @@ end
 % trueINS.pose__k2 = init_pose();
 
 disp('Starting the motion simulation loop')
-for n = 1:iterations
+for n = 1: RESULTS.traj.iterations
     n
     pause(0.001);
 %     true.inertial.utime =  RESULTS.traj.utime(n);
