@@ -43,6 +43,22 @@ def getRightFootColor():
 _footMeshes = None
 
 
+def getDefaultStepParams():
+    default_step_params = lcmdrc.footstep_params_t()
+    default_step_params.step_speed = 1.0
+    default_step_params.step_height = 0.05
+    default_step_params.bdi_step_duration = 2.0
+    default_step_params.bdi_sway_duration = 0.0
+    default_step_params.bdi_lift_height = 0.05
+    default_step_params.bdi_toe_off = 1
+    default_step_params.bdi_knee_nominal = 0.0
+    default_step_params.bdi_max_foot_vel = 0.0
+    default_step_params.bdi_sway_end_dist = 0.02
+    default_step_params.bdi_step_end_dist = 0.02
+    default_step_params.mu = 1.0
+    return default_step_params
+
+
 def getFootMeshes():
     global _footMeshes
     if not _footMeshes:
@@ -61,6 +77,8 @@ def getFootstepsFolder():
 class FootstepsDriver(object):
     def __init__(self, jc):
         self.lastFootstepPlanMessage = None
+        self.lastFootstepRequest = None
+        self.goalSteps = None
         self.has_plan = False
         self._setupSubscriptions()
         self.jc = jc
@@ -78,12 +96,17 @@ class FootstepsDriver(object):
         self.has_plan = True
         planFolder = getFootstepsFolder()
 
-        for i, footstep in enumerate(msg.footsteps[2:]):
+        allTransforms = []
+        for i, footstep in enumerate(msg.footsteps):
             trans = footstep.pos.translation
             trans = [trans.x, trans.y, trans.z]
             quat = footstep.pos.rotation
             quat = [quat.w, quat.x, quat.y, quat.z]
             footstepTransform = transformUtils.transformFromPose(trans, quat)
+            allTransforms.append(footstepTransform)
+
+            if i < 2:
+                continue
 
             if footstep.is_right_foot:
                 mesh = getRightFootMesh()
@@ -91,10 +114,24 @@ class FootstepsDriver(object):
             else:
                 mesh = getLeftFootMesh()
                 color = getLeftFootColor()
+            if footstep.infeasibility > 1e-6:
+                d = DebugData()
+                # normal = np.array(allTransforms[i-1].GetPosition()) - np.array(footstepTransform.GetPosition())
+                # normal = normal / np.linalg.norm(normal)
+                start = allTransforms[i-1].GetPosition()
+                end = footstepTransform.GetPosition()
+                d.addArrow(start, end, 0.02, 0.005,
+                           startHead=True,
+                           endHead=True)
+                # d.addCone(start, normal, 0.02, 0.02)
+                # d.addCone(end, -normal, 0.02, 0.02)
+                # d.addLine(start, end,radius=0.005)
+                vis.showPolyData(d.getPolyData(), 'infeasibility %d -> %d' % (i-2, i-1), parent=planFolder, color=[1, 0.2, 0.2])
 
-            obj = vis.showPolyData(mesh, 'step %d' % i, color=color, alpha=1.0, parent=planFolder)
+
+            obj = vis.showPolyData(mesh, 'step %d' % (i-1), color=color, alpha=1.0, parent=planFolder)
             frameObj = vis.showFrame(footstepTransform, 'frame', parent=obj, scale=0.3, visible=False)
-            frameObj.onTransformModifiedCallback = functools.partial(self.onStepModified, i)
+            frameObj.onTransformModifiedCallback = functools.partial(self.onStepModified, i-2)
             obj.actor.SetUserTransform(footstepTransform)
 
         self.lastFootstepPlanMessage = msg
@@ -129,6 +166,45 @@ class FootstepsDriver(object):
         frameObj.onTransformModifiedCallback = self.onWalkingGoalModified
         self.sendFootstepPlanRequest()
 
+    def createGoalSteps(self, model):
+        distanceForward = 1.0
+
+        fr = model.getLinkFrame('l_foot')
+        fl = model.getLinkFrame('r_foot')
+        pelvisT = model.getLinkFrame('pelvis')
+
+        xaxis = [1.0, 0.0, 0.0]
+        pelvisT.TransformVector(xaxis, xaxis)
+        xaxis = np.array(xaxis)
+        zaxis = np.array([0.0, 0.0, 1.0])
+        yaxis = np.cross(zaxis, xaxis)
+        xaxis = np.cross(yaxis, zaxis)
+
+        numGoalSteps = 3
+        is_right_foot = True
+        self.goalSteps = []
+        for i in range(numGoalSteps):
+            t = transformUtils.getTransformFromAxes(xaxis, yaxis, zaxis)
+            t.PostMultiply()
+            if is_right_foot:
+                t.Translate(fr.GetPosition())
+            else:
+                t.Translate(fl.GetPosition())
+            t.Translate(xaxis*distanceForward)
+            distanceForward += 0.15
+            is_right_foot = not is_right_foot
+            step = lcmdrc.footstep_t()
+            step.pos = transformUtils.positionMessageFromFrame(t)
+            step.is_right_foot = is_right_foot
+            step.params = getDefaultStepParams()
+            self.goalSteps.append(step)
+        request = self.constructFootstepPlanRequest()
+        request.num_goal_steps = len(self.goalSteps)
+        request.goal_steps = self.goalSteps
+        self.lastFootstepRequest = request
+        lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', request)
+        return request
+
     def onStepModified(self, ndx, frameObj):
         self.lastFootstepPlanMessage.footsteps[ndx+2].pos = transformUtils.positionMessageFromFrame(frameObj.transform)
         self.lastFootstepPlanMessage.footsteps[ndx+2].fixed_x = True
@@ -137,19 +213,17 @@ class FootstepsDriver(object):
         self.sendUpdatePlanRequest()
 
     def sendUpdatePlanRequest(self):
-        msg = self.constructFootstepPlanRequest()
+        msg = self.lastFootstepRequest
         msg.num_existing_steps = self.lastFootstepPlanMessage.num_steps
         msg.existing_steps = self.lastFootstepPlanMessage.footsteps
+        self.lastFootstepRequest = msg
         lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', msg)
         return msg
 
     def onWalkingGoalModified(self, frameObj):
-        pos, wxyz = transformUtils.poseFromTransform(frameObj.transform)
         self.sendFootstepPlanRequest()
 
     def constructFootstepPlanRequest(self):
-        goalObj = om.findObjectByName('walking goal')
-        assert goalObj
 
         msg = lcmdrc.footstep_plan_request_t()
         msg.utime = getUtime()
@@ -157,7 +231,11 @@ class FootstepsDriver(object):
         state_msg = robotstate.drakePoseToRobotState(pose)
         msg.initial_state = state_msg
 
-        msg.goal_pos = transformUtils.positionMessageFromFrame(goalObj.transform)
+        goalObj = om.findObjectByName('walking goal')
+        if goalObj:
+            msg.goal_pos = transformUtils.positionMessageFromFrame(goalObj.transform)
+        else:
+            msg.goal_pos = transformUtils.positionMessageFromFrame(transformUtils.transformFromPose((0,0,0), (1,0,0,0)))
         msg.params = lcmdrc.footstep_plan_params_t()
         msg.params.max_num_steps = 30
         msg.params.min_num_steps = 0
@@ -171,24 +249,13 @@ class FootstepsDriver(object):
         msg.params.behavior = msg.params.BEHAVIOR_BDI_STEPPING
         msg.params.map_command = 2
         msg.params.leading_foot = msg.params.LEAD_AUTO
-
-        msg.default_step_params = lcmdrc.footstep_params_t()
-        msg.default_step_params.step_speed = 1.0
-        msg.default_step_params.step_height = 0.05
-        msg.default_step_params.bdi_step_duration = 2.0
-        msg.default_step_params.bdi_sway_duration = 0.0
-        msg.default_step_params.bdi_lift_height = 0.05
-        msg.default_step_params.bdi_toe_off = 1
-        msg.default_step_params.bdi_knee_nominal = 0.0
-        msg.default_step_params.bdi_max_foot_vel = 0.0
-        msg.default_step_params.bdi_sway_end_dist = 0.02
-        msg.default_step_params.bdi_step_end_dist = 0.02
-        msg.default_step_params.mu = 1.0
+        msg.default_step_params = getDefaultStepParams()
 
         return msg
 
     def sendFootstepPlanRequest(self):
         msg = self.constructFootstepPlanRequest()
+        self.lastFootstepRequest = msg
         lcmUtils.publish('FOOTSTEP_PLAN_REQUEST', msg)
         return msg
 

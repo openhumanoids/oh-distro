@@ -90,7 +90,6 @@ assert(length(footsteps) == 12);
 assert(footsteps(3).infeasibility > 1e-6);
 assert(footsteps(4).infeasibility > 1e-6);
 assert(all([footsteps(5:end).infeasibility] < 1e-6))
-assert(all(p.pairReverse([1,2,3,4]) == [2,1,4,3]))
 
 request.num_goal_steps = 1;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
@@ -207,5 +206,5 @@ request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
-assert(length(footsteps) == 11)
+assert(mod(length(footsteps), 2) == 1)
 assert(all([footsteps(1:2:end-1).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
