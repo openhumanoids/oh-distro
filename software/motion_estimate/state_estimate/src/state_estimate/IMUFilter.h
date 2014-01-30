@@ -35,6 +35,9 @@ private:
   drc::robot_state_t* _ERSMsg;
   drc::ins_update_request_t* _DFRequestMsg;
 
+  RateChange fusion_rate;
+  Eigen::VectorXd fusion_rate_dummy; // Unused variable -- added to class private definition for speed.
+
 };
 
 

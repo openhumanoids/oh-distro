@@ -40,7 +40,7 @@ StateEstimate::StateEstimator::StateEstimator(
   _botparam = bot_param_new_from_server(mLCM->getUnderlyingLCM(), 0);
   _botframes= bot_frames_get_global(mLCM->getUnderlyingLCM(), _botparam);
 
-
+  Eigen::Isometry3d IMU_to_body;
   // Define the transform between the pelvis and IMU -- considering that we purposefull skip this transform during development
   IMU_to_body.setIdentity();
   if (_mSwitches->MATLAB_MotionSimulator == false) {
@@ -54,7 +54,7 @@ StateEstimate::StateEstimator::StateEstimator(
 	  }
 	}
   }
-  std::cout << "StateEstimator::StateEstimator -- IMU_to_body: " << IMU_to_body.linear() << std::endl << IMU_to_body.translation() << std::endl;
+  inert_odo.setIMU2Body(IMU_to_body);
   
   // Go get the joint names for FK
     robot = new RobotModel;
@@ -68,14 +68,7 @@ StateEstimate::StateEstimator::StateEstimator(
   // using this constructor as a bit of legacy -- but in reality we should probably inprove on this situation
   _leg_odo = new TwoLegs::TwoLegOdometry(false, false, 1400.f);
   
-  unsigned long fusion_period;
-  fusion_period = 20000-500;
-  fusion_rate.setDesiredPeriod_us(0,fusion_period);
-  fusion_rate.setSize(1);
-  fusion_rate_dummy.resize(1);
-  fusion_rate_dummy << 0;
-  std::cout << "StateEstimator::StateEstimator -- Setting data fusion period trigger is set to " << fusion_period << std::endl;
- 
+
   // This is for forward kinematics -- maybe not the best way to do this, but we are a little short on time. Code evolution will fix this in the long run
   fk_data.model_ = boost::shared_ptr<ModelClient>(new ModelClient(mLCM->getUnderlyingLCM(), 0));
   // Parse KDL tree

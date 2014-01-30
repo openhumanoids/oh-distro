@@ -6,7 +6,7 @@ namespace InertialOdometry {
   Odometry::Odometry(double imu_sampletime)
   {
 	Ts_imu = imu_sampletime;
-
+	IMU_to_body.setIdentity();
   }
 
   InertialOdomOutput Odometry::PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu)
@@ -18,6 +18,8 @@ namespace InertialOdometry {
 
 	// We use update WithRate, since we would like to cater for packet loss. Ideally though, we should use delta_angles directly
     orc.updateOrientationWithRate(_imu.uts, _imu.w_b);
+
+    std::cout << "Odometry::PropagatePrediction_wo_IMUCompensation -- a_b " << std::endl << _imu.a_b.transpose() << std::endl;
 
     _imu.a_l = orc.ResolveBodyToRef( _imu.a_b);
     ret.first_pose_rel_acc = _imu.a_l;
@@ -37,6 +39,8 @@ namespace InertialOdometry {
   {
   	  InertialOdomOutput ret; // populated at end of this member
 
+  	sensedImuToBodyTransform(_imu);
+
   	  // We are going to now compute he quaternion ourselves
       orc.updateOrientation(_imu.uts,orient);
 
@@ -54,15 +58,12 @@ namespace InertialOdometry {
       return ret;
   }
 
-  DynamicState Odometry::PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient)
-  {
+  DynamicState Odometry::PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient) {
 	InertialOdomOutput out;
 
+	sensedImuToBodyTransform(_imu);
     imu_compensator.Full_Compensation(_imu);
-
     out = PropagatePrediction_wo_IMUCompensation(_imu,orient);
-
-    //std::cout << "imu: " << _imu->force_.transpose() << " | " << out.first_pose_rel_pos.transpose() << std::endl;
 
     DynamicState state;
     state.imu = _imu;
@@ -93,14 +94,16 @@ namespace InertialOdometry {
   {
     InertialOdomOutput out;
 
+    sensedImuToBodyTransform(_imu);
+
     if (&_imu.use_dang) {
     	_imu.w_b_measured = 1/Ts_imu * _imu.dang_b;
     }
     std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
-//    std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
-//    std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
-//    std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
-//    std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
+    std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
+    std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
+    std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
+    std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
 
     imu_compensator.Full_Compensation(_imu);
 
@@ -173,6 +176,19 @@ namespace InertialOdometry {
 
   void Odometry::exitCritical() {
 	mINSUpdateAtomic.store(false);
+  }
+
+  void Odometry::setIMU2Body(const Eigen::Isometry3d &imu2body) {
+	IMU_to_body = imu2body;
+	std::cout << "Odometry::setIMU2Body -- IMU_to_body: " << IMU_to_body.linear() << std::endl << IMU_to_body.translation() << std::endl;
+  }
+
+  void Odometry::sensedImuToBodyTransform(IMU_dataframe &_imu) {
+	//_imu.a_b_measured = IMU_to_body.linear() * _imu.a_s_measured;
+	//_imu.dang_b = IMU_to_body.linear() * _imu.dang_s;
+
+	_imu.a_b_measured = _imu.a_s_measured;
+	_imu.dang_b = _imu.dang_s;
   }
 
 }

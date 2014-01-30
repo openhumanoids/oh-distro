@@ -3,7 +3,13 @@
 //-----------------------------------------------------------------------------
 StateEstimate::IMUFilter::IMUFilter()
 {
-
+  unsigned long long fusion_period;
+  fusion_period = 20000-500;
+  fusion_rate.setDesiredPeriod_us(0,fusion_period);
+  fusion_rate.setSize(1);
+  fusion_rate_dummy.resize(1);
+  fusion_rate_dummy << 0;
+  std::cout << "StateEstimate::IMUFilter::IMUFilter -- Setting data fusion trigger period to " << fusion_period << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -24,8 +30,8 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 	imu_data.uts = imuPackets[k].utime;
 	// We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
 	// We know the KVH will sample every 1 ms.
-	imu_data.dang_b = Eigen::Vector3d(imuPackets[k].delta_rotation[0], imuPackets[k].delta_rotation[1], imuPackets[k].delta_rotation[2]);
-	imu_data.a_b_measured = Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]);
+	imu_data.dang_s = Eigen::Vector3d(imuPackets[k].delta_rotation[0], imuPackets[k].delta_rotation[1], imuPackets[k].delta_rotation[2]);
+	imu_data.a_s_measured = Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]);
 	imu_data.use_dang = true;
 
 	lastInerOdoState = _inert_odo->PropagatePrediction(imu_data);
@@ -36,7 +42,8 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
   mLCM->publish("EST_ROBOT_STATE", _ERSMsg);
 
   // EKF measurement update rate set to 20ms here
-  if ((lastInerOdoState.uts % 50000) == 0) {
+  if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
+
 	stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
 	stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
 	mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);

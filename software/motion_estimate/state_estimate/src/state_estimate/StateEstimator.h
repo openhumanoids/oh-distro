@@ -94,11 +94,7 @@ private:
   BotParam* _botparam;
   BotFrames* _botframes;
   
-  Eigen::Isometry3d IMU_to_body;
-  
-  RateChange fusion_rate;
-  Eigen::VectorXd fusion_rate_dummy;
-  
+
   // LegOdometry Object
   TwoLegs::TwoLegOdometry *_leg_odo;
   TwoLegs::FK_Data fk_data;

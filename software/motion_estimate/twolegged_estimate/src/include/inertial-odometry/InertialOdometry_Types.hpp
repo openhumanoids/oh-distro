@@ -11,14 +11,16 @@ namespace InertialOdometry {
 
 	unsigned long long uts;
 
-    Eigen::Vector3d w_b_measured;
-    Eigen::Vector3d w_b; // This is after compensation
-    Eigen::Vector3d dang_b;
+    Eigen::Vector3d w_b; // rate after bias compensation
+	Eigen::Vector3d w_b_measured;
+	Eigen::Vector3d dang_b;
+    Eigen::Vector3d dang_s;
 
     Eigen::Vector3d f_l;
     Eigen::Vector3d a_l;
     Eigen::Vector3d a_b;
     Eigen::Vector3d a_b_measured;
+	Eigen::Vector3d a_s_measured;
 
     bool use_dang;
     bool gyro_compensated_flag;
