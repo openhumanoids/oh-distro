@@ -85,6 +85,11 @@ InertialOdometry::DynamicState StateEstimate::PropagateINS(	const double &Ts_imu
 															InertialOdometry::Odometry &inert_odo,
 															const Eigen::Isometry3d &IMU_to_body,
 															const drc::atlas_raw_imu_t &imu) {
+
+	std::cout << "StateEstimate::PropagateINS -- function not usable, since abstraction around the IMU_to_body rigid transform has been moved into the inertial odometry class directly. This function must first be reworked and tested before it can be used to propagate the inertial solution." << std::endl;
+	// convertion between dang_b and w_b must also be check if this function is to be revived.
+	assert(false);
+
 	InertialOdometry::IMU_dataframe imu_data;
 	imu_data.uts = imu.utime;
 

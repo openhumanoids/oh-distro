@@ -70,7 +70,6 @@ int StateEstimate::StateEstimateApplication::exec()
   imuFilter->setERSMsg( estimator.getERSMsg() );
   imuFilter->setDataFusionReqMsg( estimator.getDataFusionReqMsg() );
 
-
   // start comm thread
   lcmThread.start();
 

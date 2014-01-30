@@ -48,17 +48,21 @@ namespace InertialOdometry {
 	void OrientationComputer::updateOrientationWithRate(const unsigned long long &uts, const Eigen::Vector3d &w_b) {
 
 		double dt;
-		dt = 1.E-6*((double)(uts - latest_uts));
+		if (latest_uts != 0) {
+		  dt = 1.E-6*((double)(uts - latest_uts));
+		}else {
+		  dt = 0.001;
+		}
+		//std::cout << "OrientationComputer::updateOrientationWithRate -- dt is computed as " << dt << std::endl;
+
 		if (latest_uts == 0) { // assumption for initial condition
-			dt = 0.01;
+			dt = 0.001; // TODO -- this timestamp should strictly speaking not be a hard-coded value
 		}
 
 		Eigen::Vector3d temp;
 		temp = dt*(w_b); // TODO -- This should be an integration module from SignalTap
 
 		updateOrientationWithAngle(uts, temp); // We use midpoint integration to obtain a delta angle
-
-		//std::cout << "OrientationComputer::updateOrientationWithRate -- dt " << dt << std::endl;
 
 		latest_uts = uts;
 		prevWb = w_b;

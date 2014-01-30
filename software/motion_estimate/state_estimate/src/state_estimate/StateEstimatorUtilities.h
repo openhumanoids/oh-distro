@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 #include <string>
-
+#include <assert.h>
 
 #include <Eigen/Dense>
 

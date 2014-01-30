@@ -18,7 +18,7 @@ StateEstimate::StateEstimator::StateEstimator(
   mViconQueue(viconPoseQueue),
   mMatlabTruthQueue(viconMatlabtruthQueue),
   mINSUpdateQueue(INSUpdateQueue),
-  inert_odo(0.01)
+  inert_odo(0.001)
 {
 
   _mSwitches = _switches;
