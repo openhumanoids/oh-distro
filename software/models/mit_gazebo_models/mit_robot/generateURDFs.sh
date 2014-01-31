@@ -52,7 +52,8 @@ rosrun xacro xacro.py xacro/atlas_LI_RI.urdf.xacro > model_LI_RI.urdf
 
 #echo "Pointer left combinations - 0"
 
-#echo "Robotiq left combinations - 3"
+echo "Robotiq left combinations - 1"
+rosrun xacro xacro.py xacro/atlas_LR_RR.urdf.xacro > model_LR_RR.urdf
 #rosrun xacro xacro.py xacro/atlas_LR_RN.urdf.xacro > model_LR_RN.urdf
 #rosrun xacro xacro.py xacro/atlas_LQ_RH.urdf.xacro > model_LQ_RH.urdf
 #rosrun xacro xacro.py xacro/atlas_LQ_RI.urdf.xacro > model_LQ_RI.urdf
