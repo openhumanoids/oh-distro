@@ -61,8 +61,8 @@ namespace InertialOdometry {
   DynamicState Odometry::PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient) {
 	InertialOdomOutput out;
 
-	sensedImuToBodyTransform(_imu);
     imu_compensator.Full_Compensation(_imu);
+    sensedImuToBodyTransform(_imu);
     out = PropagatePrediction_wo_IMUCompensation(_imu,orient);
 
     DynamicState state;
@@ -94,13 +94,11 @@ namespace InertialOdometry {
   {
     InertialOdomOutput out;
 
+    imu_compensator.Full_Compensation(_imu);
     sensedImuToBodyTransform(_imu);
-
     if (&_imu.use_dang) {
     	_imu.w_b_measured = 1/Ts_imu * _imu.dang_b;
     }
-
-    imu_compensator.Full_Compensation(_imu);
 
     out = PropagatePrediction_wo_IMUCompensation(_imu);
 

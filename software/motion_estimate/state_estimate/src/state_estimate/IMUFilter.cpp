@@ -4,7 +4,7 @@
 StateEstimate::IMUFilter::IMUFilter()
 {
   unsigned long long fusion_period;
-  fusion_period = 20000-500;
+  fusion_period = 5000-500;
   fusion_rate.setDesiredPeriod_us(0,fusion_period);
   fusion_rate.setSize(1);
   fusion_rate_dummy.resize(1);
@@ -52,15 +52,17 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 	}
 	_inert_odo->exitCritical();
 
-	stampInertialPoseERSMsg(lastInerOdoState, *_ERSMsg);
-	mLCM->publish("EST_ROBOT_STATE", _ERSMsg);
+	if (!uninitialized) {
+		stampInertialPoseERSMsg(lastInerOdoState, *_ERSMsg);
+		mLCM->publish("EST_ROBOT_STATE", _ERSMsg);
 
-	// EKF measurement update rate set to 20ms here
-	if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
+		// EKF measurement update rate set to 20ms here
+		if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
 
-		stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
-		stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
-		mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
+			stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
+			stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
+			mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
+		}
 	}
 
   //VarNotUsed(imuPackets);

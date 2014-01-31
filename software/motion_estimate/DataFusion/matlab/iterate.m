@@ -32,7 +32,7 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 % Measurement.velocityResidual
 
 % EKF
-[F, L, Q] = dINS_EKFmodel(Measurement.INS.pose);
+[F, L, Q] = dINS_EKFmodel_s2b(Measurement.INS.pose);
 covariances.R = diag( 5E0*ones(3,1) );
 
 Disc.B = 0;
