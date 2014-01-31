@@ -189,6 +189,8 @@ namespace InertialOdometry {
   }
 
   void Odometry::sensedImuToBodyTransform(IMU_dataframe &_imu) {
+	//std::cout << "Odometry::sensedImuToBodyTransform -- IMU_to_body.linear()" << IMU_to_body.linear() << std::endl;
+
 	_imu.a_b_measured = IMU_to_body.linear() * _imu.a_s_measured; // TODO -- Remove radial acceleration component from this signal.
 	_imu.dang_b = IMU_to_body.linear() * _imu.dang_s;
 
@@ -213,20 +215,24 @@ namespace InertialOdometry {
 	double roll, pitch;
 
 	roll = atan2(-a_b(1),-a_b(2));
-	pitch = atan2(a_b(0), sqrt(a_b(1)*a_b(1) + a_b(2)*a_b(2)));
+	pitch = atan2( a_b(0), sqrt(a_b(1)*a_b(1) + a_b(2)*a_b(2) ) );
+
+	std::cout<< "Odometry::setInitPitchRoll -- roll, pitch " << roll << ", " << pitch << std::endl;
+
 	Eigen::Vector3d E(roll,pitch,0);
 	Eigen::Matrix3d bRn, tmp;
 	bRn = e2C(E);
+
+	std::cout<< "Odometry::setInitPitchRoll -- bRn " << std::endl << bRn << std::endl;
+
 	Eigen::Quaterniond q;
-	q.w() = 1.;
-	q.x() = 0.;
+	q.w() = 0.;
+	q.x() = 1.;
 	q.y() = 0.;
 	q.z() = 0.;
 	tmp = q2C(q)*bRn;
 	bRn = tmp;
 
-	orc.updateOrientation(0, C2q(bRn.transpose()));
-	std::cout << "Odometry::setInitPitchRoll -- Initial lQb has been set to " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << std::endl;
 
 
 	//    Eigen::Vector3d v1,v2,v3,v3m,tmp;
@@ -266,6 +272,9 @@ namespace InertialOdometry {
 	//	B(2,2) = v3m(2);
 	//
 	//	nRb = B * A.inverse();
+
+	orc.updateOrientation(0, C2q(bRn.transpose()));
+		std::cout << "Odometry::setInitPitchRoll -- Initial lQb has been set to " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << std::endl;
 
 
 	//	ab = mean_acc(:)/norm(mean_acc);

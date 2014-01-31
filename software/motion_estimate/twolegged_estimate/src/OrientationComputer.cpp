@@ -57,7 +57,7 @@ namespace InertialOdometry {
 
 
 		Eigen::Vector3d temp;
-		temp = dt*(w_b); // TODO -- This should be an integration module from SignalTap
+		temp = dt*(w_b);
 
 		updateOrientationWithAngle(uts, temp); // We use midpoint integration to obtain a delta angle
 
@@ -77,6 +77,7 @@ namespace InertialOdometry {
 
 	Eigen::Vector3d OrientationComputer::ResolveBodyToRef(const Eigen::Vector3d &vec_b) {
 
+		//std::cout << "OrientationComputer::ResolveBodyToRef -- lQb " << lQb.w() << ", " << lQb.x() << ", " << lQb.y() << ", " << lQb.z() << std::endl;
 		return qrot(lQb.conjugate(), vec_b);
 	}
 

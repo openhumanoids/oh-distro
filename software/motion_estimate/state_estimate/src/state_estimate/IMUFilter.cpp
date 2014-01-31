@@ -28,23 +28,6 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
   // Only update INS and publish existing ERS message
     std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- sees " << imuPackets.size() << " new IMU messages in the imu packet vector" << std::endl;
 
-	for (int k=0;k<imuPackets.size() && uninitialized;k++) {
-		initacceldata.push_back(Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]));
-		initindex++;
-		std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- initindex at " << initindex << std::endl;
-		if (initindex>=100) {
-		  _inert_odo->setInitPitchRoll(initacceldata);
-		  uninitialized = false;
-		}
-		if (initindex>100) {
-			std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- BAD, overinitializing." << std::endl;
-		}
-	}
-	if (uninitialized) {
-	  return;
-	}
-
-
 	_inert_odo->enterCritical();
 	for (int k=0;k<imuPackets.size();k++) {
 		imu_data.uts = imuPackets[k].utime;
@@ -54,7 +37,18 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		imu_data.a_s_measured = Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]);
 		imu_data.use_dang = true;
 
-		lastInerOdoState = _inert_odo->PropagatePrediction(imu_data);
+		if (!uninitialized) {
+		  lastInerOdoState = _inert_odo->PropagatePrediction(imu_data);
+		} else {
+		  _inert_odo->sensedImuToBodyTransform(imu_data); // This is a bit messy -- improve abstraction
+	      initacceldata.push_back(imu_data.a_b_measured);
+		  initindex++;
+		  if (initindex>=100) {
+			_inert_odo->setInitPitchRoll(initacceldata);
+			uninitialized = false;
+			std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- initindex imu packets at " << initindex << ". Initialization complete." << std::endl;
+		  }
+		}
 	}
 	_inert_odo->exitCritical();
 
