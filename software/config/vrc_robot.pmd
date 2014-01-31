@@ -20,11 +20,11 @@ group "0.development" {
 
 group "a.1.core" {
     cmd "aa-ros2lcm" {
-        exec = "roslaunch translators not_cheating.launch --wait";
+        exec = "roslaunch translators cheating.launch --wait";
         host = "robot";
     }
     cmd "aa-sync" {
-        exec = "drc-state-sync -s";
+        exec = "drc-state-sync -b";
         host = "robot";
     }
     cmd "drc-printf-cache" {
@@ -44,7 +44,7 @@ group "a.1.core" {
         host = "extra";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_sim.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "extra";
     }
     cmd "LegOdometry" {
@@ -52,7 +52,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "j2f" {
-        exec = "drc-joints2frames -g";
+        exec = "drc-joints2frames -g -b";
         host = "extra";
     }
     cmd "maps-server" {
@@ -83,10 +83,6 @@ group "a.1.core" {
         exec = "drc-init-laser";
         host = "extra";
     }
-    cmd "logger-robot" {
-        exec = "lcm-logger -f $DRC_BASE/data/latest_robot_log.lcm";
-        host = "robot";
-    }
     cmd "drc-frequency" {
         exec = "drc-frequency";
         host = "extra";
@@ -97,7 +93,15 @@ group "a.1.core" {
     }
 }
 
-group "a.2.walking" {
+group "a.2.p_and_c" {
+    cmd "AtlasManipController" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
+        host = "robot";
+        stop_signal = 15;
+    }
+}
+
+group "a.2.p_and_c_whole_body" {
     cmd "WalkingStateMachine" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runWalkingStateMachine;\"";
         host = "robot";
@@ -106,69 +110,8 @@ group "a.2.walking" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('robot');\"";
        host = "extra";
     }
-    cmd "BotCrawlingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runCrawlingPlanner('robot');\"";
-       host = "extra";
-    }
     cmd "fall-detector" {
         exec = "drc-fall-detector --vdot_threshold 0.5 --count_threshold 3 --memory 10";
-        host = "robot";
-    }
-    cmd "GraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForSandiaHand;\"";
-       host = "extra";
-    } 
-    cmd "recovery" {
-        exec = "rosrun  tutorial_atlas_control do_sequence_lcm.py";
-        host = "robot";
-    }
-}
-
-group "a.4.driving.utils" {
-    cmd "vehicle-groundtruth-state" {
-        exec = "rosrun driving_interface groundtruth_receiver";
-        host = "robot";
-    }
-    cmd "affordance-tracker" {
-        exec = "object-tracker -v 2";
-        host = "robot";
-    }
-    cmd "affordance-to-carframe" {
-    	exec = "affordance-to-frames";
-        host = "robot";
-    }
-    cmd "drc-terrain-classifier" {
-        exec = "drc-terrain-classifier";
-        host = "robot";
-    }
-}
-
-group "a.4.driving" {
-    cmd "drc-driving-control" {
-        exec = "drc-driving-control";
-        host = "robot";
-    }
-    cmd "driving_interface" {
-        exec = "rosrun driving_interface driving_interface";
-        host = "robot";
-    }
-    cmd "DrivingController" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runSeatedDrivingStateMachine;\"";
-        host = "robot";
-    }
-    cmd "drivingGraspController" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/controllers/grasping']); runGraspExecutionForSandiaHand;\"";
-       host = "robot";
-    } 
-    cmd "ManipMapStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runManipulationMapStateMachine;\"";
-        host = "robot";
-    }
-}
-
-group "a.4.ingress" {
-    cmd "IngressStateMachine" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab']); runIngressStateMachine;\"";
         host = "robot";
     }
 }
@@ -179,7 +122,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "modelpub" {
-        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_sim.urdf";
+        exec = "robot_model_publisher -r base -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "base";
     }
     cmd "aff_server" {
@@ -202,18 +145,26 @@ group "b.1.core" {
         exec = "drc-image-receive";
         host = "base";
     }
-    cmd "lcm-logger-base" {
-        exec = "lcm-logger  -f $DRC_BASE/data/latest_base_log.lcm";
-        host = "base";
-    }
     cmd "drc-log-vrcscore"{
         exec = "drc-log-vrcscore";
         host = "base";
     }  
 }
 
-group "b.2.walking" {
+group "b.2.p_and_c" {
     cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
+       host = "base";
+    }
+    cmd "ReachingPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
+       host = "base";
+       stop_signal = 15;
+    }
+}
+
+group "b.2.p_and_c_whole_body"{
+    cmd "FootstepPlanner_WB" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); runFootstepPlanner;\"";
        host = "base";
     }
@@ -221,39 +172,23 @@ group "b.2.walking" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runWalkingPlanner('base');\"";
        host = "base";
     }
-    cmd "BaseCrawlingPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runCrawlingPlanner('base');\"";
-       host = "base";
-    }
-    cmd "ReachingPlanner" {
+    cmd "ReachingPlanner_WB" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(1);\"";
        host = "base";
     }
-    cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
-       host = "base";
-    }
 }
-
-group "b.4.driving" {
-    cmd "sticky_hands_driving" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer (2);\"";
-       host = "base";
-    }
-    cmd "ReachingPlannerDriving" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
-       host = "base";
-    }
-}
-
 
 group "g.0.gazebo" {
     cmd "gz_mit_walking" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "robot";
     }
+    cmd "gz_quals_1" {
+        exec = "roslaunch drcsim_gazebo qual_task_1.launch";
+        host = "robot";
+    }
     cmd "gz_quals_2" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world";
+        exec = "roslaunch mit_drcsim_scripts mit_no_backpack.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world  x:=0.75 y:=2 yaw:=-1.5707 hand_suffix:=_stumps";
         host = "robot";
     }
     cmd "gz_quals_3" {
@@ -265,7 +200,7 @@ group "g.0.gazebo" {
         host = "robot";
     }
     cmd "gz_vrc_manip" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
+        exec = "roslaunch drcsim_gazebo qual_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
         host = "robot";
     }
     cmd "gz_drc_task" {
@@ -287,7 +222,22 @@ group "m.simple-control" {
         exec = "rostopic pub --once /multisense_sl/fps std_msgs/Float64 '{ data : 5 }'";
         host = "robot";
     }
+    cmd "spin-lidar" {
+        exec = "rostopic pub --once /multisense_sl/set_spindle_speed std_msgs/Float64 '{ data : 0.5 }'";
+        host = "robot";
+    }
+    cmd "tilt-head" {
+        exec = "rosrun mit_drcsim_scripts tilt_head.py 0.5";
+        host = "robot";
+    }
+    cmd "demo-control-modes" {
+        exec = "rosrun mit_drcsim_scripts demo_control_modes.py";
+        host = "robot";
+    }
 }
+
+
+
 
 group "m.dev_tools" {
     cmd "segmentation_viewer" {
@@ -296,10 +246,6 @@ group "m.dev_tools" {
     }
     cmd "enable_gravity_when_pinned" {
         exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
-        host = "robot";
-    }
-    cmd "maskunzip" {
-        exec = "drc-image-tool -m 1 -c CAMERALEFT_MASKZIPPED -d 1";
         host = "robot";
     }
     cmd "systemwide-test" {
@@ -314,17 +260,13 @@ group "m.dev_tools" {
         exec = "roslaunch translators perception.launch";
         host = "robot";
     }
-    cmd "driving-lidar-classifier" {
-        exec = "drc-lidar-classifier";
-        host = "robot";
-    }
     cmd "control-hangup" {
         exec = "drc-control-hangup";
         host = "robot";
     }
-    cmd "BDIStepTranslator" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; addpath_bdi_step_translator; RunBDIStepTranslator;\"";
-        host = "base";
+    cmd "BotBDIStepTranslator" {
+        exec = "drc-bdi-step-translator";
+        host = "robot";
     }
 }
 
@@ -340,73 +282,6 @@ group "m.grasping" {
     } 
 }
 
-group "m.ground_truth"{
-    cmd "cheating_launch" {
-        exec = "roslaunch translators cheating.launch --wait";
-        host = "robot";
-    }
-    cmd "estpub" {
-        exec = "est_robot_state_publisher -g";
-        host = "extra";
-    }
-    cmd "estdriving" {
-        exec = "driving_state_publisher";
-        host = "extra";
-    }
-}
-
-group "m.driving_utils" {
-    cmd "enable_gravity_when_pinned" {
-        exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned_with_gravity'";
-        host = "robot";
-    }
-    cmd "exit_car" {
-        exec = "rostopic pub --once /drc_world/robot_exit_car geometry_msgs/Pose '{}'";
-        host = "robot";
-    }
-   cmd "enter_car_pelvis_pinned" {
-        exec = "rostopic pub --once /drc_world/robot_enter_car geometry_msgs/Pose '{ position: { x: 0.0125, y: 0, z: -0.20}, orientation: { x: 0, y: 0, z: 0, w: 1 } }'";
-        host = "robot";
-    }  
-    cmd "enable_user_mode" {
-        exec = "rostopic pub --once atlas/control_mode std_msgs/String 'User'";
-        host = "robot";
-    }  
-    cmd "unpin" {
-        exec = "rostopic pub --once atlas/mode std_msgs/String 'nominal'";
-        host = "robot";
-    }
-    
-    cmd "pin" {
-        exec = "rostopic pub --once atlas/mode std_msgs/String 'pinned'";
-        host = "robot";
-    }
-    cmd "disengage_hand_brake" {
-        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 0 }'";
-        host = "robot";
-    }
-    cmd "engage_hand_brake" {
-        exec = "rostopic pub --once /drc_vehicle/hand_brake/cmd std_msgs/Float64 '{ data : 1 }'";
-        host = "robot";
-    }
-    cmd "ignition" {
-        exec = "rostopic pub --once /drc_vehicle/key/cmd std_msgs/Int8 '{ data : 1 }'";
-        host = "robot";
-    }
-    cmd "set_gear_N" {
-        exec = "rostopic pub --once /drc_vehicle/direction/cmd std_msgs/Int8 '{ data : 0 }'";
-        host = "robot";
-    }
-    cmd "set_gear_F" {
-        exec = "rostopic pub --once /drc_vehicle/direction/cmd std_msgs/Int8 '{ data : 1 }'";
-        host = "robot";
-    }
-    cmd "set_gear_R" {
-        exec = "rostopic pub --once /drc_vehicle/direction/cmd std_msgs/Int8 '{ data : -1 }'";
-        host = "robot";
-    }
-}
-
 group "m.hose_task_utils" {
     cmd "affordance_init_standpipe_firehose_assembly" {
         exec = "affordance_init -e 4";
@@ -420,188 +295,133 @@ group "m.hose_task_utils" {
         exec = "affordance_init -e 7";
         host = "base";
     }
-}
-
-group "m.authoring" {
-    cmd "MotionPlanServer_from_seated" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot','pelvis'}},'groupnames',{{'heel','toe','heel','toe','butt'}})));\""; host = "localhost";
-    }
-
-    cmd "MotionPlanServer_from_standing" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
-    }
-
-    cmd "MotionPlanServer_from_standing_oneshot" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']);actionAuthoringServer(1,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'l_foot','l_foot','r_foot','r_foot'}},'groupnames',{{'heel','toe','heel','toe'}})));\""; host = "localhost";
-    }
-    
-    cmd "MotionPlanServer_from_turtled" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true,'debug',true,'initial_contact_groups',struct('linknames',{{'utorso','pelvis'}},'groupnames',{{'back','back'}})));\"";
-       host = "localhost";
-    }
-
-    cmd "MotionPlanServer_online" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/']);actionAuthoringServer(3,struct('verbose',true));\"";
-       host = "localhost";
-    }
-
-    cmd "AuthoringGUI" {
-       exec = "qt4-widget-authoring-lcm-interface-test ../models/mit_gazebo_models/mit_robot_drake/model_simple_visuals.urdf";
-       host = "localhost";
-    }
-
-    cmd "DemoAffordanceServer" {
-       exec = "demo_populate_aff_server";
-       host = "localhost";
-    }
-
-    cmd "PublishPassengerSeatedState" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_passenger.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotStateContinuously(xstar,'EST_ROBOT_STATE');\"";
-       host = "localhost";
-    }
-
-    cmd "PublishDriverSeatedState" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_seated_forward.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotStateContinuously(xstar,'EST_ROBOT_STATE');\"";
-       host = "localhost";
-    }
-
-    cmd "PublishStandingState" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/atlas_fp.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotStateContinuously(xstar,'EST_ROBOT_STATE');\"";
-       host = "localhost";
-    }
-
-    cmd "PublishPreingressState" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/util']);addpath dev_tools;cd([getenv('DRC_PATH'),'/control/matlab']);load data/aa_atlas_preingress.mat;cd([getenv('DRC_PATH'),'/control/matlab/util']);publishRobotStateContinuously(xstar,'EST_ROBOT_STATE');\"";
-       host = "localhost";
+    cmd "affordance_init_skil" {
+        exec = "affordance_init -e 2";
+        host = "base";
     }
 }
 
 ######################################
 # testing on a single machine - with deputies:
+script "dev.vrc_quals_1" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.p_and_c";
+    start group "b.2.p_and_c";
+    stop cmd "BotWalkingPlanner";
+    wait ms 5000;
+    start cmd "gz_quals_1"; 
+    wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    start cmd "tilt-head";
+}
+
+script "dev.vrc_quals_2" { 
+    start group "0.development";
+    start group "a.1.core";
+    start group "a.2.p_and_c";
+    start group "b.2.p_and_c";
+    stop cmd "BotWalkingPlanner";
+    wait ms 5000;
+    start cmd "gz_quals_2"; 
+    wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    start cmd "tilt-head";
+    start cmd "affordance_init_skil";
+}
+
 script "dev.quals_slope" { 
     start group "0.development";
     start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
+    start group "a.2.p_and_c";
+    start group "b.2.p_and_c";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
     start cmd "gz_quals_3"; 
     wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    start cmd "tilt-head";
 }
 
 script "dev.vrc_walking" { 
     start group "0.development";
     start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
+    start group "a.2.p_and_c";
+    start group "b.2.p_and_c";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
     start cmd "gz_vrc_walking"; 
     wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    start cmd "tilt-head";
 }
 
 script "dev.drc_task" { 
     start group "0.development";
     start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
+    start group "a.2.p_and_c";
+    start group "b.2.p_and_c";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
     start cmd "gz_drc_task"; 
     wait ms 5000;
-}
-
-
-script "dev.vrc_driving" {
-    start group "0.development";
-    start group "a.1.core";
-    stop cmd "LegOdometry";
-    start group "a.4.manipulation4driving";
-    start group "b.4.driving";
-    start cmd "estdriving";
-    start group "b.1.core";
-    start cmd "gz_vrc_driving";
+    start cmd "spin-lidar";
     wait ms 5000;
-    start cmd "enable_gravity_when_pinned";
-    wait ms 1000;
-    start cmd "enable_user_mode";
-    wait ms 15000;
-    start cmd "enter_car_pelvis_pinned";
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    start cmd "tilt-head";
 }
-
 
 script "dev.flat_walking" {
     start group "0.development";
     start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
+    start group "a.2.p_and_c";
+    start group "b.2.p_and_c";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
     start cmd "gz_mit_walking";
-}
-
-script "dev.ingress" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.4.ingress";
-    start group "b.2.walking";
     wait ms 5000;
-    start cmd "gz_vrc_driving";
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    wait ms 5000;
+    start cmd "spin-lidar";
+    start cmd "tilt-head";
 }
 
 script "dev.vrc_manip" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.3.manip";
-    start group "b.2.walking";
+    start group "b.2.p_and_c";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
     start cmd "gz_vrc_manip";
-    start cmd "set-sim-rate";
-    wait ms 10000;
-    start group "m.hose_task_utils";    
-}
-
-
-script "dev.vrc_manip_mating_test" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.3.manip";
-    start group "b.2.walking";
-    stop cmd "BotWalkingPlanner";
     wait ms 5000;
-    start cmd "gz_vrc_task_3_mating";
-    start cmd "set-sim-rate";
-    wait ms 10000;
-    start group "m.hose_task_utils";    
-}
-
-script "dev.greg.aa.ingress" {
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    stop cmd "BotWalkingPlanner";
-    wait ms 1000;
-    start cmd "AuthoringGUI";
-    start cmd "MotionPlanServer_from_standing";
-    start cmd "MotionPlanServer_from_standing_oneshot";
-    wait ms 4000;
-    start cmd "gz_greg_aas_ingress";
-}
-
-script "dev.greg.aa.flat" {
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.walking";
-    start group "b.2.walking";
-    stop cmd "BotWalkingPlanner";
+    start cmd "spin-lidar";
+    start group "m.hose_task_utils";
     wait ms 5000;
-    start cmd "gz_greg_aas_flat";
+    start cmd "spin-lidar";
     wait ms 5000;
-    start cmd "AuthoringGUI";
-    start cmd "MotionPlanServer_from_standing";
-    start cmd "MotionPlanServer_from_standing_oneshot";
+    start cmd "spin-lidar";    
+    start cmd "tilt-head";
 }
 
 ############ System Tests ############
@@ -613,8 +433,8 @@ script "systest-main" {
     stop cmd "systemwide-test";
     stop group "0.development";
     stop group "a.1.core";
-    stop group "a.2.walking";
-    stop group "b.2.walking";
+    stop group "a.2.p_and_c";
+    stop group "b.2.p_and_c";
     stop cmd "BotWalkingPlanner";
     stop cmd "gz_mit_walking";
 }

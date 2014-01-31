@@ -234,11 +234,6 @@ group "b.2.p_and_c" {
        exec = "drc-bdi-step-translator -b";
        host = "base";
     }
-    cmd "sticky_hands" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
-       host = "base";
-       stop_signal = 15;
-    }
     cmd "ReachingPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/atlas_keyframe_planners']); runKeyFramePlannersLCMBase(2);\"";
        host = "base";
@@ -246,6 +241,15 @@ group "b.2.p_and_c" {
     }
     cmd "GazePlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); runPalmGazePlanner();\"";
+       host = "base";
+       stop_signal = 15;
+    }
+}
+
+
+group "b.2.p_and_c_retired" {
+    cmd "sticky_hands" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/sticky_hands']); runGraspSynthesisPoolServer(2);\"";
        host = "base";
        stop_signal = 15;
     }

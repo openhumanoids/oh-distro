@@ -115,8 +115,9 @@ classdef KeyframePlanner < handle
  
             obj.T_hand_palm_r_hose_irobot = HT([0;-0.11516;-0.015],1.57079,1.57079,0);
             
-            obj.T_hand_palm_l_robotiq = HT([0;0.11516;0.015],0,0,0);
-            % mfallon changed this on 13dec2013
+            % mfallon changed Right on 13dec2013
+            % mfallon changed Left  on 30jan2014
+            obj.T_hand_palm_l_robotiq = HT([0;1.19016;0.015],0,1.57079,0);
             obj.T_hand_palm_r_robotiq = HT([0;-0.19016;-0.015],0,1.57079,3.14159);
             
 
