@@ -16,6 +16,17 @@ disp 'STARTING...'
 
 dt = 0.01;
 
+exmap = @(dE,q) zeroth_int_Quat_closed_form(dE, q, 1)
+
+sQb = exmap([0;0;3*pi/4],[0;1;0;0]);
+sRb = q2R(sQb);
+% Atlas IMU to body
+% sRb = [-0.707107, 0.707107, 0;...
+%         0.707107, 0.707107, 0;...
+%         0, 0, -1];
+
+%
+
 % We are going to transmit and listen for LCM traffic
 lc = lcm.lcm.LCM.getSingleton();
 aggregator = lcm.lcm.MessageAggregator();
@@ -23,52 +34,51 @@ lc.subscribe('INS_ERR_UPDATE', aggregator);
 
 ReqMsg = initINSRequestLCMMsg();
 
+% initstart = 1;
 
-initstart = 1;
-
-switch (4)
+switch (1)
     case 1
-        data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
-        iter = 6000;
-        measured.w_b = data(1:iter,1:3);
-        measured.a_b = data(1:iter,4:6);
+        disp 'Gyrobias in x -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_s  = [zeros(iter, 2), 9.8*ones(iter, 1)];
+        sQb = exmap([0;0;pi/4],[1;0;0;0]);
+        sRb = q2R(sQb);
     case 2
-        data = load('UnitTests/testdata/microstrain_rot_peraxis/x/loggedIMU.txt');
-        iter = 6000;
-        initend = 1;
-        measured.w_b = data(1:iter,1:3);
-        measured.a_b = data(1:iter,4:6);
+        disp 'Gyrobias in y -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_s = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
+        measured.a_s  = [zeros(iter, 2), 9.8*ones(iter, 1)];  
     case 3
-        data = load('UnitTests/testdata/microstrain_rot_peraxis/y/loggedIMU.txt');
-        iter = 6750;
-        initend = 1;
-        measured.w_b = data(1:iter,1:3);
-        measured.a_b = data(1:iter,4:6);
+        disp 'Accelbias in x -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_s = zeros(iter, 3);
+        measured.a_s  = [0.0025*ones(iter, 1), zeros(iter, 1), 9.8*ones(iter, 1)];
     case 4
         data = load('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
         iter = 12000;
         initend = 1;
-        measured.w_b = data(1:iter,1:3);
-        measured.a_b = data(1:iter,4:6);
+        measured.w_s = data(1:iter,1:3);
+        measured.a_s = data(1:iter,4:6);
+        sRb = eye(3);
     case 5
         disp 'Gyrobias in x -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
-        measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
-        measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];
-    case 6
-        disp 'Gyrobias in y -- test trajectory'
-        param.dt = 1E-2;
-        iter = 10000;
-        measured.w_b = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
-        measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];  
-    case 7
-        disp 'Accelbias in x -- test trajectory'
-        param.dt = 1E-2;
-        iter = 10000;
-        measured.w_b = zeros(iter, 3);
-        measured.a_b  = [0.0025*ones(iter, 1), zeros(iter, 1), 9.8*ones(iter, 1)]; 
+        measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_s  = [zeros(iter, 2), 9.8*ones(iter, 1)];
+        sRb = eye(3);
 end
+
+sRb
+sRb*[1;0;0]
+sRb*[0;1;0]
+sRb*[0;0;1]
+
+
 
 %%
 
@@ -132,14 +142,21 @@ m = 0;
 dt_m = dt*FilterRateReduction;
 Sys.dt = dt_m;
 
+
+
 for k = 1:iter
     
     % generate IMU data measurement frame
     inertialData.predicted.utime = k*dt*1E6;
-    inertialData.measured.w_b = measured.w_b(k,:)';
-    inertialData.measured.a_b = measured.a_b(k,:)';
-    inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
-    inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
+    
+    inertialData.predicted.w_s = measured.w_s(k,:)';
+    inertialData.predicted.a_s = measured.a_s(k,:)';
+    
+    inertialData.predicted.w_s = inertialData.predicted.w_s - INSCompensator.biases.bg;
+    inertialData.predicted.a_s = inertialData.predicted.a_s - INSCompensator.biases.ba;
+    
+    inertialData.predicted.w_b = sRb * inertialData.predicted.w_s;
+    inertialData.predicted.a_b = sRb * inertialData.predicted.a_s;
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
     

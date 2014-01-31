@@ -1,10 +1,6 @@
-function [F,L,Q] = dINS_EKFmodel_s2b(pose)
-
-sRb = [-0.707107, 0.707107, 0;...
-        0.707107, 0.707107, 0;...
-        0, 0, -1];
+function [F,L,Q] = dINS_EKFmodel_s2b(pose, sRb)
     
-disp(['dINS_EKFmodel_s2b -- ' num2str(pose.lQb')])
+% disp(['dINS_EKFmodel_s2b -- ' num2str(pose.lQb')]);
     
 F = zeros(15);
 F(1:3,4:6) = -q2R(qconj(pose.lQb)) * sRb;
@@ -20,3 +16,4 @@ L = blkdiag(eye(3), -eye(3), -q2R(qconj(pose.lQb))*sRb, eye(3), eye(3));
 
 
 return
+

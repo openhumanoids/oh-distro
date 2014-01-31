@@ -1,4 +1,4 @@
-function [Result, Sys] = iterate(Param, Sys, Measurement)
+function [Result, Sys] = iterate(Param, Sys, Measurement, sRb)
 % This function must be able to be called as part of a separate process, given Param, Sys and a Measurement
 %
 % Requires:
@@ -25,6 +25,9 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 
 % Tm = Sys.T; -- to be depreciated
 
+if (nargin<4)
+    sRb = eye(3);
+end
 
 % Measurement.INS.pose.utime
 % Measurement.INS.pose.lQb
@@ -32,7 +35,7 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 % Measurement.velocityResidual
 
 % EKF
-[F, L, Q] = dINS_EKFmodel_s2b(Measurement.INS.pose);
+[F, L, Q] = dINS_EKFmodel_s2b(Measurement.INS.pose, sRb);
 covariances.R = diag( 5E0*ones(3,1) );
 
 Disc.B = 0;

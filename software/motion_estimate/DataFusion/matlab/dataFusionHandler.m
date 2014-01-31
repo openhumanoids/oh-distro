@@ -59,7 +59,7 @@ while (true)
     if (dfSys.T ~= 0)
         dfSys.dt = 1E-6*(Measurement.INS.pose.utime - dfSys.T);% this should be taken from the utime stamps when ported to real data
     else
-        dfSys.dt = 1E-2;
+        dfSys.dt = 1E-3;
     end
     dfSys.T = Measurement.INS.pose.utime;
     
