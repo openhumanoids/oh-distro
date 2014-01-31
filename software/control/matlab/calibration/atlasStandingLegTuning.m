@@ -8,21 +8,21 @@ function atlasStandingLegTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint_str = {'leg_hpy','leg_kny'};% <---- cell array of (sub)strings  
+joint_str = {'leg_hpy','leg_kny','leg_aky'};% <---- cell array of (sub)strings  
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
 dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
-T = 15;% <--- signal duration (sec)
+T = 30;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.02;% <---- meters, COM DELTA
-chirp_f0 = 0.05;% <--- chirp starting frequency
-chirp_fT = 0.05;% <--- chirp ending frequency
+amp = 0.08;% <---- meters, COM DELTA
+chirp_f0 = 0.075;% <--- chirp starting frequency
+chirp_fT = 0.075;% <--- chirp ending frequency
 chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % inverse dynamics PD gains (only for input=position, control=force)
-Kp = 25;
-Kd = 4;
+Kp = 20;
+Kd = 5;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,6 +39,8 @@ r = r.setInitialState(xstar);
 % setup frames
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
+state_plus_effort_frame = AtlasStateAndEffort(r);
+state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
 ref_frame = AtlasPosVelTorqueRef(r);
 
@@ -196,19 +198,24 @@ toffset = -1;
 tt=-1;
 dt = 0.03;
 
-process_noise = 5e-4*ones(nq,1);
-observation_noise = 0.5*ones(nq,1);
+process_noise = 0.01*ones(nq,1);
+observation_noise = 5e-4*ones(nq,1);
 kf = FirstOrderKalmanFilter(process_noise,observation_noise);
 kf_state = kf.getInitialState;
 
+torque_fade_in = 0.75; % sec, to avoid jumps at the start
+
 while tt<T+2
-  [x,t] = getNextMessage(state_frame,1);
+  [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
     if toffset==-1
       toffset=t;
       xy_offset = x(1:2); % because state estimate will not be 0,0 to start
     end
     tt=t-toffset;
+
+    tau = x(2*nq+(1:nq));
+    tau = tau(act_idx_map);
     
     % get estimated state
     kf_state = kf.update(tt,kf_state,x(1:nq));
@@ -231,7 +238,11 @@ while tt<T+2
     
     u = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
     udes(joint_act_ind) = u(joint_act_ind);
-
+    
+    % fade in desired torques to avoid spikes at the start
+    alpha = min(1.0,tt/torque_fade_in);
+    udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
+    
     % compute desired velocity
     qddes_state_frame = qdtraj_t + pd*dt;
     qddes_input_frame = qddes_state_frame(act_idx_map);

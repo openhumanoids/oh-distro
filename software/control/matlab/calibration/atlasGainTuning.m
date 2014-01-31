@@ -24,7 +24,7 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_hpx';% <---- joint name 
+joint = 'l_leg_hpy';% <---- joint name 
 input_mode = 'position';% <---- force, position
 control_mode = 'force+velocity';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
@@ -33,7 +33,7 @@ signal = 'chirp';% <----  zoh, foh, chirp
 T = 30;% <--- signal duration (sec)
 
 % chirp specific
-amp = 0.45;% <----  Nm or radians
+amp = 1.25;% <----  Nm or radians
 chirp_f0 = 0.1;% <--- chirp starting frequency
 chirp_fT = 0.3;% <--- chirp ending frequency
 chirp_sign = 1;% <--- -1: below offset, 1: above offset, 0: centered about offset 
@@ -158,6 +158,12 @@ end
 inputd_traj = fnder(input_traj,1);
 inputdd_traj = fnder(input_traj,2);
 
+
+process_noise = 0.01*ones(nq,1);
+observation_noise = 5e-4*ones(nq,1);
+kf = FirstOrderKalmanFilter(process_noise,observation_noise);
+kf_state = kf.getInitialState;
+
 qdes=qdes(act_idx); % convert to input frame
 qddes=zeros(nu,1); 
 udes = zeros(nu,1);
@@ -179,6 +185,11 @@ while tt<T
       
       if any(strcmp(control_mode,{'force','force+velocity'}))
         % do inverse dynamics on fixed base model
+        
+        % get estimated state
+        kf_state = kf.update(tt,kf_state,x(1:nq));
+        x = kf.output(tt,kf_state,x(1:nq));
+    
         q = x(6+(1:nq_fixed));
         qd = x(nq_fixed+12+(1:nq_fixed));
         [H,C,B] = manipulatorDynamics(r_fixed,q,qd);
