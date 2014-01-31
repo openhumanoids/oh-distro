@@ -29,6 +29,7 @@ bool testQuaternionProduct();
 bool testQuaternionExmap();
 bool testQuaternionPropagation();
 bool testInertialOdoPropagation();
+bool testComputeInitial_lQb();
 
 void setupData(double data[][3]);
 void getRandomQs(vector<Eigen::Quaterniond> &Qa, vector<Eigen::Vector3d> &dE, vector<Eigen::Quaterniond> &Qb, vector<Eigen::Quaterniond> &Qc);
@@ -45,7 +46,8 @@ int main() {
 	failed = failed || testQuaternionProduct();
 	failed = failed || testQuaternionExmap();
 	failed = failed || testQuaternionPropagation();
-	failed = failed || testInertialOdoPropagation();
+	//testInertialOdoPropagation();
+	testComputeInitial_lQb();
 
 
 
@@ -241,13 +243,30 @@ bool testInertialOdoPropagation() {
 		err = err + abs(tmp.w() - LQB[k].w()) + abs(tmp.x() - LQB[k].x()) + abs(tmp.y() - LQB[k].y()) + abs(tmp.z() - LQB[k].z());
 		err = err + abs(tmp2.w() - tmp.w()) + abs(tmp2.x() - tmp.x()) + abs(tmp2.y() - tmp.y()) + abs(tmp2.z() - tmp.z());
 	}
-
 	cout << "Cumulative absolute sum error on rotations from all " << dE.size() << " InertialOdometry IMU propagations: " << err << endl;
 	if (err > 0.001) {
 		cout << "testInertialOdoPropagation failed." << endl;
 		return true;
 	}
 	return false;
+}
+
+bool testComputeInitial_lQb() {
+  InertialOdometry::Odometry odo(0.001);
+
+  std::vector<Eigen::Vector3d> data;
+
+  for (int k=0;k<100;k++) {
+	data.push_back(Eigen::Vector3d(0,0,-9.78732));
+  }
+
+  odo.setInitPitchRoll(data);
+
+  if (true) {
+  		cout << "testComputeInitial_lQb failed." << endl;
+  		return true;
+  	}
+  return false;
 }
 
 

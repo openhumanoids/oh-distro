@@ -10,6 +10,9 @@ StateEstimate::IMUFilter::IMUFilter()
   fusion_rate_dummy.resize(1);
   fusion_rate_dummy << 0;
   std::cout << "StateEstimate::IMUFilter::IMUFilter -- Setting data fusion trigger period to " << fusion_period << std::endl;
+
+  uninitialized = true;
+  initindex = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -23,32 +26,48 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 {
   // note, this runs on the LCM comm thread, so be quick!
   // Only update INS and publish existing ERS message
-  // std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- sees " << imuPackets.size() << " new IMU messages in the imu packet vector" << std::endl;
+    std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- sees " << imuPackets.size() << " new IMU messages in the imu packet vector" << std::endl;
 
-  _inert_odo->enterCritical();
-  for (int k=0;k<imuPackets.size();k++) {
-	imu_data.uts = imuPackets[k].utime;
-	// We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
-	// We know the KVH will sample every 1 ms.
-	imu_data.dang_s = Eigen::Vector3d(imuPackets[k].delta_rotation[0], imuPackets[k].delta_rotation[1], imuPackets[k].delta_rotation[2]);
-	imu_data.a_s_measured = Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]);
-	imu_data.use_dang = true;
+	for (int k=0;k<imuPackets.size() && uninitialized;k++) {
+		initacceldata.push_back(Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]));
+		initindex++;
+		std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- initindex at " << initindex << std::endl;
+		if (initindex>=100) {
+		  _inert_odo->setInitPitchRoll(initacceldata);
+		  uninitialized = false;
+		}
+		if (initindex>100) {
+			std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- BAD, overinitializing." << std::endl;
+		}
+	}
+	if (uninitialized) {
+	  return;
+	}
 
-	lastInerOdoState = _inert_odo->PropagatePrediction(imu_data);
-  }
-  _inert_odo->exitCritical();
 
-  stampInertialPoseERSMsg(lastInerOdoState, *_ERSMsg);
-  mLCM->publish("EST_ROBOT_STATE", _ERSMsg);
+	_inert_odo->enterCritical();
+	for (int k=0;k<imuPackets.size();k++) {
+		imu_data.uts = imuPackets[k].utime;
+		// We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
+		// We know the KVH will sample every 1 ms.
+		imu_data.dang_s = Eigen::Vector3d(imuPackets[k].delta_rotation[0], imuPackets[k].delta_rotation[1], imuPackets[k].delta_rotation[2]);
+		imu_data.a_s_measured = Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]);
+		imu_data.use_dang = true;
 
-  // EKF measurement update rate set to 20ms here
-  if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
+		lastInerOdoState = _inert_odo->PropagatePrediction(imu_data);
+	}
+	_inert_odo->exitCritical();
 
-	stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
-	stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
-	mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
-  }
+	stampInertialPoseERSMsg(lastInerOdoState, *_ERSMsg);
+	mLCM->publish("EST_ROBOT_STATE", _ERSMsg);
 
+	// EKF measurement update rate set to 20ms here
+	if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
+
+		stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
+		stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
+		mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
+	}
 
   //VarNotUsed(imuPackets);
   //VarNotUsed(lcmHandle);

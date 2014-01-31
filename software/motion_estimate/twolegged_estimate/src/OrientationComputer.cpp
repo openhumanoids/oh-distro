@@ -51,13 +51,10 @@ namespace InertialOdometry {
 		if (latest_uts != 0) {
 		  dt = 1.E-6*((double)(uts - latest_uts));
 		}else {
-		  dt = 0.001;
+		  dt = 0.001;// TODO -- this timestamp should strictly speaking not be a hard-coded value
 		}
 		//std::cout << "OrientationComputer::updateOrientationWithRate -- dt is computed as " << dt << std::endl;
 
-		if (latest_uts == 0) { // assumption for initial condition
-			dt = 0.001; // TODO -- this timestamp should strictly speaking not be a hard-coded value
-		}
 
 		Eigen::Vector3d temp;
 		temp = dt*(w_b); // TODO -- This should be an integration module from SignalTap

@@ -1,6 +1,8 @@
 #ifndef __IMUFilter_h
 #define __IMUFilter_h
 
+#include <vector>
+
 #include "LCMSubscriber.h"
 #include "QueueTypes.h"
 
@@ -38,6 +40,9 @@ private:
   RateChange fusion_rate;
   Eigen::VectorXd fusion_rate_dummy; // Unused variable -- added to class private definition for speed.
 
+  std::vector<Eigen::Vector3d> initacceldata;
+  bool uninitialized;
+  int initindex;
 };
 
 

@@ -99,11 +99,6 @@ namespace InertialOdometry {
     if (&_imu.use_dang) {
     	_imu.w_b_measured = 1/Ts_imu * _imu.dang_b;
     }
-    std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
-    std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
-    std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
-    std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
-    std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
 
     imu_compensator.Full_Compensation(_imu);
 
@@ -122,6 +117,16 @@ namespace InertialOdometry {
     state.a_b = _imu.a_b;
     state.w_b = _imu.w_b;
     state.lQb = out.quat;
+
+
+    std::cout << "Odometry::PropagatePrediction -- current lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
+	std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
+	std::cout << "Odometry::PropagatePrediction -- a_s_measured " << _imu.a_s_measured.transpose() << std::endl;
+	std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
+	std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
+	std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
+	std::cout << "Odometry::PropagatePrediction -- a_l " << _imu.a_l.transpose() << std::endl;
+	std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
 
     return state;
   }
@@ -184,11 +189,111 @@ namespace InertialOdometry {
   }
 
   void Odometry::sensedImuToBodyTransform(IMU_dataframe &_imu) {
-	//_imu.a_b_measured = IMU_to_body.linear() * _imu.a_s_measured;
-	//_imu.dang_b = IMU_to_body.linear() * _imu.dang_s;
+	_imu.a_b_measured = IMU_to_body.linear() * _imu.a_s_measured; // TODO -- Remove radial acceleration component from this signal.
+	_imu.dang_b = IMU_to_body.linear() * _imu.dang_s;
 
-	_imu.a_b_measured = _imu.a_s_measured;
-	_imu.dang_b = _imu.dang_s;
+	//_imu.a_b_measured = _imu.a_s_measured;
+	//_imu.dang_b = _imu.dang_s;
+  }
+
+  void Odometry::setInitPitchRoll(const std::vector<Eigen::Vector3d> &initacceldata) {
+
+	Eigen::Vector3d a_b;
+	a_b.setZero();
+
+	int length;
+	length = initacceldata.size();
+
+	for (int k=0;k<length;k++) {
+	  std::cout << "Odometry::setInitPitchRoll -- initacceldata[k] = " << initacceldata[k].transpose() << std::endl;
+      a_b = a_b + initacceldata[k]/(length+0.) ;
+	}
+	std::cout << "Odometry::setInitPitchRoll -- a_b = " << a_b.transpose() << std::endl;
+
+	double roll, pitch;
+
+	roll = atan2(-a_b(1),-a_b(2));
+	pitch = atan2(a_b(0), sqrt(a_b(1)*a_b(1) + a_b(2)*a_b(2)));
+	Eigen::Vector3d E(roll,pitch,0);
+	Eigen::Matrix3d bRn, tmp;
+	bRn = e2C(E);
+	Eigen::Quaterniond q;
+	q.w() = 1.;
+	q.x() = 0.;
+	q.y() = 0.;
+	q.z() = 0.;
+	tmp = q2C(q)*bRn;
+	bRn = tmp;
+
+	orc.updateOrientation(0, C2q(bRn.transpose()));
+	std::cout << "Odometry::setInitPitchRoll -- Initial lQb has been set to " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << std::endl;
+
+
+	//    Eigen::Vector3d v1,v2,v3,v3m,tmp;
+	//
+	//    tmp = a_b/a_b.norm();
+	//    a_b = tmp;
+	//
+	//    v1 << 0,0,1;
+	//    v2 << 1,0,0;
+	//    v3 = v1.cross(v2);
+	//    v3m = a_b.cross(v2);
+	//
+	//    Eigen::Matrix3d A, B, nRb;
+	//
+	//    A(0,0) = v1(0);
+	//    A(1,0) = v1(1);
+	//    A(2,0) = v1(2);
+	//
+	//    A(0,1) = v2(0);
+	//	A(1,1) = v2(1);
+	//	A(2,1) = v2(2);
+	//
+	//	A(0,2) = v3(0);
+	//	A(1,2) = v3(1);
+	//	A(2,2) = v3(2);
+	//
+	//	B(0,0) = a_b(0);
+	//	B(1,0) = a_b(1);
+	//	B(2,0) = a_b(2);
+	//
+	//	B(0,1) = v2(0);
+	//	B(1,1) = v2(1);
+	//	B(2,1) = v2(2);
+	//
+	//	B(0,2) = v3m(0);
+	//	B(1,2) = v3m(1);
+	//	B(2,2) = v3m(2);
+	//
+	//	nRb = B * A.inverse();
+
+
+	//	ab = mean_acc(:)/norm(mean_acc);
+	//
+	//	v1 = [0;0;1];
+	//	v2 = [1;0;0];
+	//	v3 = cross(v1,v2);
+	//	v3m = cross(ab,v2);
+	//
+	//	if (true)
+	//	    A = [v1,v2,v3];
+	//	    B = [ab(:)/norm(ab),v2(:)/norm(v2),v3m(:)/norm(v3m)];
+	//	    R_nav_to_body = B*inv(A); % synthetic heading alignment is not working
+	//	else
+	//	    roll = atan2(-ab(2),-ab(3));
+	//		pitch = atan2(ab(1), norm(ab(2:3)));
+	//		R_body_to_nav = q2R(e2q([roll;pitch;0]));
+	//
+	//		% purposefully flip about x axis -- not part of the normal procedure
+	//		% kept for future refenence
+	//		R_body_to_nav = q2R([0;1;0;0])*R_body_to_nav
+	//		R_nav_to_body = R_body_to_nav';
+	//		q_nb = R2q(R_nav_to_body);
+	//	end
+	//
+	//	R_nav_to_body'*mean_acc
+	//
+	//	init_lQb = R2q(R_nav_to_body);
   }
 
 }

@@ -54,6 +54,9 @@ StateEstimate::StateEstimator::StateEstimator(
 	  }
 	}
   }
+
+  // TEMPORARY
+  //IMU_to_body.setIdentity();
   inert_odo.setIMU2Body(IMU_to_body);
   
   // Go get the joint names for FK
