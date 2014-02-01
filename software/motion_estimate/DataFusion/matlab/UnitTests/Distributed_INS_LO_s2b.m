@@ -34,7 +34,12 @@ lc.subscribe('INS_ERR_UPDATE', aggregator);
 
 ReqMsg = initINSRequestLCMMsg();
 
-% initstart = 1;
+
+init_lQb = [1;0;0;0];
+% init_lQb = e2q([0;0;-pi/2]);
+init_Vl = [0;0;0];
+init_Pl = [0;0;0];
+
 
 switch (1)
     case 1
@@ -42,9 +47,10 @@ switch (1)
         param.dt = 1E-2;
         iter = 10000;
         measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
-        measured.a_s  = [zeros(iter, 2), 9.8*ones(iter, 1)];
-        sQb = exmap([0;0;pi/4],[1;0;0;0]);
+        measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        sQb = exmap([0;0;0],[1;0;0;0]);
         sRb = q2R(sQb);
+        
     case 2
         disp 'Gyrobias in y -- test trajectory'
         param.dt = 1E-2;
@@ -82,10 +88,6 @@ sRb*[0;0;1]
 
 %%
 
-init_lQb = [1;0;0;0];
-% init_lQb = e2q([0;0;-pi/2]);
-init_Vl = [0;0;0];
-init_Pl = [0;0;0];
 
 % tlQb = init_lQb;
 

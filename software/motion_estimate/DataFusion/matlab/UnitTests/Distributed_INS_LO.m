@@ -10,7 +10,7 @@
 % feedback structure. 
 
 clc
-clear
+clear all
 
 disp 'STARTING...'
 
@@ -23,10 +23,14 @@ lc.subscribe('INS_ERR_UPDATE', aggregator);
 
 ReqMsg = initINSRequestLCMMsg();
 
+% initstart = 1;
 
-initstart = 1;
+init_lQb = [1;0;0;0];
+% init_lQb = e2q([0;0;-pi/2]);
+init_Vl = [0;0;0];
+init_Pl = [0;0;0];
 
-switch (4)
+switch (6)
     case 1
         data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
         iter = 6000;
@@ -57,12 +61,19 @@ switch (4)
         measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
         measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];
     case 6
+        disp 'Gyrobias in x, upside down -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_b  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        init_lQb = [0;1;0;0];
+    case 7
         disp 'Gyrobias in y -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
         measured.w_b = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
         measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];  
-    case 7
+    case 8
         disp 'Accelbias in x -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
@@ -72,10 +83,7 @@ end
 
 %%
 
-init_lQb = [1;0;0;0];
-% init_lQb = e2q([0;0;-pi/2]);
-init_Vl = [0;0;0];
-init_Pl = [0;0;0];
+
 
 % tlQb = init_lQb;
 
@@ -116,6 +124,7 @@ COV = [];
 
 % tlQb = init_lQb;
 INSpose.lQb = init_lQb;
+INSpose__k1.lQb = init_lQb;
 
 DE = [];
 PE = [];
@@ -224,20 +233,29 @@ end
 
 plotGrayINSPredicted(predicted, 1);
 
+figure(2),clf
+subplot(511),
+plot(X(:,1:3)),
+grid on
+title('State 1:3 -- Misalignment')
+subplot(512),
+plot(X(:,4:6)),
+grid on
+title('State 4:6 -- Gyro bias')
+subplot(513),
+plot(X(:,7:9)),
+grid on
+title('State 7:9 -- delta Velocity')
+subplot(514),
+plot(X(:,10:12)),
+grid on
+title('State 10:12 -- Accel bias')
+subplot(515),
+plot(X(:,13:15)),
+grid on
+title('State 13:15 -- delta Position')
+
 return
-
-%
-
-% figure(1),clf
-% subplot(411),plot(true.wb)
-% title('True rotation rates w')
-% subplot(412),plot(measured.wb)
-% title('Measured rotation rates w')
-% subplot(413),plot(TE)
-% title('Predicted Euler angles')
-% subplot(414),plot(true.ab)
-% title('True body measured accelerations')
-
 
 % figure(2),clf
 % subplot(611),plot(predicted.w_b)
@@ -289,7 +307,7 @@ return
 
 
 % Gray box INS state estimate
-figH = figure(2);
+figH = figure(3);
 clf
 set(figH,'Name',['Gray box INS state estimate, ' num2str(clock())],'NumberTitle','off')
 subplot(611),
@@ -317,7 +335,7 @@ plot(DX(:,13:15))
 title('K * Innovation updates to position in local frame')
 
 
-figure(3),clf
+figure(4),clf
 
 subplot(411)
 plot(DX(:,4:6))
