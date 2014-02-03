@@ -1,5 +1,6 @@
 function atlasStepping
 %NOTEST
+addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 joint_str = {'leg'};% <---- cell array of (sub)strings  
 
@@ -61,14 +62,18 @@ ref_frame.updateGains(gains);
 [x,~] = getMessage(state_plus_effort_frame);
 x0 = x(1:2*nq); 
 q0 = x0(1:nq);
-navgoal = [x0(1);x0(2);0;0;0;x0(6)];
+
+% create navgoal
+R = rpy2rotmat([0;0;x0(6)]);
+v = R*[0.5;0;0];
+navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % compute desired footstep and zmp trajectories
 footstep_planner = FootstepPlanner(r);
 step_options = footstep_planner.defaults;
 step_options.max_num_steps = 2;
 step_options.min_num_steps = 1;
-step_options.step_speed = 0.01;
+step_options.step_speed = 0.02;
 step_options.follow_spline = false;
 step_options.right_foot_lead = true;
 step_options.ignore_terrain = false;
@@ -94,7 +99,7 @@ qtraj = PPTrajectory(spline(ts,xtraj(1:nq,:)));
 v = r.constructVisualizer;
 for i=linspace(0,T,100)
   v.draw(i,qtraj.eval(i));
-  pause(T/100/3);
+  pause(T/100/4);
 end
 qdtraj = fnder(qtraj,1);
 qddtraj = fnder(qtraj,2);

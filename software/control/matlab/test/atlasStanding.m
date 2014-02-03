@@ -13,14 +13,14 @@ function atlasStanding
 joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
-T = 15;% <--- signal duration (sec)
+dim = 2; % what spatial dimension to move COM: x/y/z (1/2/3)
+T = 10;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.075;% <---- meters, COM DELTA
-chirp_f0 = 0.55;% <--- chirp starting frequency
-chirp_fT = 0.55;% <--- chirp ending frequency
-chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
+amp = 0.05;% <---- meters, COM DELTA
+chirp_f0 = 0.5;% <--- chirp starting frequency
+chirp_fT = 0.5;% <--- chirp ending frequency
+chirp_sign = 0;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % inverse dynamics PD gains (only for input=position, control=force)
 Kp = 20;
@@ -78,7 +78,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = 0;
+gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.4;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
