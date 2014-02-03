@@ -18,7 +18,7 @@ StateEstimate::StateEstimator::StateEstimator(
   mViconQueue(viconPoseQueue),
   mMatlabTruthQueue(viconMatlabtruthQueue),
   mINSUpdateQueue(INSUpdateQueue),
-  inert_odo(0.01)
+  inert_odo(0.001)
 {
 
   _mSwitches = _switches;
@@ -128,7 +128,7 @@ void StateEstimate::StateEstimator::run()
 
 	// This is the special case which will also publish the message
 	int nIMU = mIMUQueue.size();
-	std::cout << "StateEstimator::run -- mIMUQueue.size() " << nIMU << std::endl;
+	//std::cout << "StateEstimator::run -- mIMUQueue.size() " << nIMU << std::endl;
 	// printf("have %d new imu\n", nIMU);
 	for (int i = 0; i < nIMU; ++i)
 	{
@@ -180,7 +180,7 @@ void StateEstimate::StateEstimator::run()
 
 	}
 
-	std::cout << std::endl << std::endl;
+	//std::cout << std::endl << std::endl;
   }
 }
 

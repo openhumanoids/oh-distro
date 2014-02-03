@@ -3,6 +3,8 @@ function DFRESULTS = dataFusionHandler()
 % state-estimation process. This scipts interacts through a LCM interface
 % only.
 
+clc
+
 % This is temporary
 iterations = 10000;
 
@@ -13,7 +15,7 @@ feedbackGain = 1;
 dfSys.T = 0;
 
 ENABLE_FEEDBACK = 1;
-DataLogging = 1;
+DataLogging = 0;
 
 % Initialize local variables
 computationTime = 0;
@@ -41,15 +43,28 @@ if (DataLogging == 1)
 end
 
 index = 0;
-
+waitTime = 0;
+reciD = 0;
+dfSys.dt = 1E-3;
 
 % We assume this loop runs at 50 Hz or less 
 while (true)
-    
+    tic
     index = index + 1;
+    
+    % Check computation times
+    % computationTime = totaltime - waitTime;
+    if (mod(index-1,100)==0)
+        disp(['Wait fraction ' num2str(reciD) ' %'])
+        reciD = 0;
+        dfSys.dt
+    else
+        reciD = reciD + waitTime/totalTime;
+    end
+    
     % wait for message
     [Measurement.INS, Measurement.LegOdo, DFReqMsg] = receiveInertialStatePos(aggregator);
-    tic;
+    waitTime = toc;
     % Now we can start computation
     % Ensure that we are not exceeding our allotted computation time
     if ((computationTime > 0.01) && DataLogging~=1)
@@ -99,10 +114,12 @@ while (true)
         dfSys.posterior.x = (1-feedbackGain) * dfSys.posterior.x;
     end
     
-    computationTime = toc;
-    if (Measurement.INS.pose.utime == (100 * 1E6) )
-        break;
-    end
+    
+    %     if (Measurement.INS.pose.utime == (100 * 1E6) )
+    %     if (index == 10000)
+    %         break;
+    %     end
+    totalTime = toc;
 end
 
 

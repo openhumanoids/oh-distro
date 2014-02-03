@@ -49,10 +49,11 @@ switch (1)
         param.dt = 1E-2;
         iter = 10000;
         measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
-        measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        measured.a_s  = [zeros(iter, 1), 9.8*0.5*ones(iter, 1),-9.8*0.8660*ones(iter, 1)];
         sQb = exmap([0;0;3*pi/4],[0;1;0;0]);
         sRb = q2R(sQb);
         lRp = sRb;
+        init_lQb = e2q([pi/6;0;0]);
     case 2
         disp 'Gyrobias in y -- test trajectory'
         param.dt = 1E-2;
@@ -179,7 +180,7 @@ for k = 1:iter
         Reference.V_p = init_V_p;
         Reference.V_l = lRp' * init_V_p;
         
-        if (false)
+        if (true)
         
             Measurement.INS.pose = INSpose;
             dV_l = Reference.V_l - INSpose.V_l + 0*randn(3,1);

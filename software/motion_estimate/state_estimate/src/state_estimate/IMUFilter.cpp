@@ -4,7 +4,7 @@
 StateEstimate::IMUFilter::IMUFilter()
 {
   unsigned long long fusion_period;
-  fusion_period = 5000-500;
+  fusion_period = 9000-500;
   fusion_rate.setDesiredPeriod_us(0,fusion_period);
   fusion_rate.setSize(1);
   fusion_rate_dummy.resize(1);
@@ -26,9 +26,9 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 {
   // note, this runs on the LCM comm thread, so be quick!
   // Only update INS and publish existing ERS message
-    std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- sees " << imuPackets.size() << " new IMU messages in the imu packet vector" << std::endl;
+    //std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- sees " << imuPackets.size() << " new IMU messages in the imu packet vector" << std::endl;
 
-    uninitialized = false;
+    //uninitialized = false; -- TEMP TESTING
 	_inert_odo->enterCritical();
 	for (int k=0;k<imuPackets.size();k++) {
 		imu_data.uts = imuPackets[k].utime;
