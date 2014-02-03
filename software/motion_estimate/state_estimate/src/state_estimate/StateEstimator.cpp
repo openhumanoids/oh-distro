@@ -18,7 +18,7 @@ StateEstimate::StateEstimator::StateEstimator(
   mViconQueue(viconPoseQueue),
   mMatlabTruthQueue(viconMatlabtruthQueue),
   mINSUpdateQueue(INSUpdateQueue),
-  inert_odo(0.001)
+  inert_odo(0.01)
 {
 
   _mSwitches = _switches;
@@ -57,7 +57,7 @@ StateEstimate::StateEstimator::StateEstimator(
 
   // TEMPORARY
   //IMU_to_body.setIdentity();
-  inert_odo.setIMU2Body(IMU_to_body);
+  inert_odo.setIMU2Body(Eigen::Isometry3d::Identity());
   
   // Go get the joint names for FK
     robot = new RobotModel;

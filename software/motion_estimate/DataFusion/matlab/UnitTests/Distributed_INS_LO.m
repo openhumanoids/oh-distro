@@ -23,14 +23,12 @@ lc.subscribe('INS_ERR_UPDATE', aggregator);
 
 ReqMsg = initINSRequestLCMMsg();
 
-% initstart = 1;
-
 init_lQb = [1;0;0;0];
 % init_lQb = e2q([0;0;-pi/2]);
 init_Vl = [0;0;0];
 init_Pl = [0;0;0];
 
-switch (6)
+switch (5)
     case 1
         data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
         iter = 6000;
@@ -118,7 +116,7 @@ inertialData = init_inertialData(9.8);
 Sys.posterior.x = zeros(15,1);
 Sys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
-X = [];
+RESULTS.STATEX = [];
 DX = [];
 COV = [];
 
@@ -135,7 +133,7 @@ updatePackets = [];
 
 % this is the filter update counter
 FilterRate = 100;
-limitedFB = 1;
+limitedFB = 0;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
@@ -159,10 +157,10 @@ for k = 1:iter
     if (mod(k,FilterRateReduction)==0 && true)
         m = m+1;
         
-        measured.vl = init_Vl;
-        dV = measured.vl - INSpose.V_l + 0*randn(3,1);
+        Reference.V_l = init_Vl;
+        dV = Reference.V_l - INSpose.V_l + 0*randn(3,1);
         
-        if (true)
+        if (false)
         
             Measurement.INS.pose = INSpose;
             Measurement.velocityResidual = dV;
@@ -171,7 +169,7 @@ for k = 1:iter
             
             %store data for later plotting
             DX = [DX; Sys.posterior.dx'];
-            X = [X; Sys.posterior.x'];
+            RESULTS.STATEX = [RESULTS.STATEX; Sys.posterior.x'];
             COV = [COV;diag(Sys.posterior.P)'];
             DV = [DV; dV'];
             [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
@@ -181,7 +179,7 @@ for k = 1:iter
             
             % Pass EKF computation out to separate Matlab Development
             % process
-            sendDataFusionReq(INSpose, INSCompensator, inertialData, ReqMsg, lc);
+            sendDataFusionReq(INSpose, INSCompensator, inertialData, Reference, ReqMsg, lc);
             
             
             % Currently the outside process holds state -- this will all be
@@ -232,28 +230,7 @@ end
 
 
 plotGrayINSPredicted(predicted, 1);
-
-figure(2),clf
-subplot(511),
-plot(X(:,1:3)),
-grid on
-title('State 1:3 -- Misalignment')
-subplot(512),
-plot(X(:,4:6)),
-grid on
-title('State 4:6 -- Gyro bias')
-subplot(513),
-plot(X(:,7:9)),
-grid on
-title('State 7:9 -- delta Velocity')
-subplot(514),
-plot(X(:,10:12)),
-grid on
-title('State 10:12 -- Accel bias')
-subplot(515),
-plot(X(:,13:15)),
-grid on
-title('State 13:15 -- delta Position')
+plotEKFResults(RESULTS, 2);
 
 return
 

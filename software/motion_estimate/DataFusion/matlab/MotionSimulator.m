@@ -27,8 +27,7 @@ switch (trajtype)
         param.dt = 1E-2;
         RESULTS.traj.iterations = 10000;
         RESULTS.traj.measured.w_b = [0.005*ones(RESULTS.traj.iterations, 1), zeros(RESULTS.traj.iterations, 2)];
-        RESULTS.traj.measured.a_b  = [zeros(RESULTS.traj.iterations, 2), 9.8*ones(RESULTS.traj.iterations, 1)];
-        
+        RESULTS.traj.measured.a_b  = [zeros(RESULTS.traj.iterations, 2), -9.8*ones(RESULTS.traj.iterations, 1)];
     case 'acc_bias'
         RESULTS.traj = gen_specifc_traj(iterations, param, trajtype);
     case 'Microstrain_01'
@@ -36,7 +35,6 @@ switch (trajtype)
         RESULTS.traj.iterations = 6000;
         param.dt = 1E-2;
     case 'Microstrain_04'
-        
         RESULTS.traj = load_specific_traj('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
         param.dt = 1E-2;
         RESULTS.traj.iterations = 12000;

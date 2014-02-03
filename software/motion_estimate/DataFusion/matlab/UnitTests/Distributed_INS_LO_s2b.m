@@ -10,13 +10,17 @@
 % feedback structure. 
 
 clc
-clear
+clear all
 
 disp 'STARTING...'
 
 dt = 0.01;
 
-exmap = @(dE,q) zeroth_int_Quat_closed_form(dE, q, 1)
+FilterRate = 100;
+limitedFB = 1;
+FilterRateReduction = (1/dt/FilterRate)
+
+exmap = @(dE,q) zeroth_int_Quat_closed_form(dE, q, 1);
 
 sQb = exmap([0;0;3*pi/4],[0;1;0;0]);
 sRb = q2R(sQb);
@@ -37,8 +41,6 @@ ReqMsg = initINSRequestLCMMsg();
 
 init_lQb = [1;0;0;0];
 % init_lQb = e2q([0;0;-pi/2]);
-init_Vl = [0;0;0];
-init_Pl = [0;0;0];
 
 
 switch (1)
@@ -48,21 +50,23 @@ switch (1)
         iter = 10000;
         measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
         measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
-        sQb = exmap([0;0;0],[1;0;0;0]);
+        sQb = exmap([0;0;3*pi/4],[0;1;0;0]);
         sRb = q2R(sQb);
-        
+        lRp = sRb;
     case 2
         disp 'Gyrobias in y -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
         measured.w_s = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
-        measured.a_s  = [zeros(iter, 2), 9.8*ones(iter, 1)];  
+        measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        sRb = eye(3);
+        init_lQb = [0;1;0;0];
     case 3
         disp 'Accelbias in x -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
         measured.w_s = zeros(iter, 3);
-        measured.a_s  = [0.0025*ones(iter, 1), zeros(iter, 1), 9.8*ones(iter, 1)];
+        measured.a_s  = [0.0025*ones(iter, 1), zeros(iter, 1), -9.8*ones(iter, 1)];
     case 4
         data = load('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
         iter = 12000;
@@ -75,7 +79,16 @@ switch (1)
         param.dt = 1E-2;
         iter = 10000;
         measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
-        measured.a_s  = [zeros(iter, 2), 9.8*ones(iter, 1)];
+        measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        sRb = eye(3);
+        init_lQb = [1;0;0;0];
+     case 6
+        disp 'Gyrobias in x, upside down -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        init_lQb = [1;0;0;0];
         sRb = eye(3);
 end
 
@@ -84,16 +97,14 @@ sRb*[1;0;0]
 sRb*[0;1;0]
 sRb*[0;0;1]
 
-
-
 %%
 
+% Velocity initial conditions
+init_Vl = [10;0;0];
+init_Pl = [0;0;0];
+init_V_p = lRp * init_Vl
 
-% tlQb = init_lQb;
-
-E = [];
-GB = [];
-
+% Prepare arrays to store data for later plotting of results
 predicted.lQb = [ones(iter,1) zeros(iter,3)];
 predicted.w_b = zeros(iter,3);
 predicted.a_l = zeros(iter,3);
@@ -102,11 +113,24 @@ predicted.V_l = zeros(iter,3);
 predicted.P_l = zeros(iter,3);
 predicted.bg = zeros(iter,3);
 predicted.ba = zeros(iter,3);
+RESULTS.Reference.V_l = zeros(iter/FilterRateReduction,3);
+RESULTS.Reference.V_p = zeros(iter/FilterRateReduction,3);
+RESULTS.Reference.V_innov_l = zeros(iter/FilterRateReduction,3);
+% Initialize EKF data storage variables
+RESULTS.STATEX = [];
+DX = [];
+COV = [];
+E = [];
+GB = [];
+DE = [];
+PE = [];
+DV = [];
+nDEF = [];
+Rbias = [];
+updatePackets = [];
 
 % The recursive compensation data buffer structure
 INSCompensator = init_INSCompensator();
-% INSCompensator2 = init_INSCompensator();
-
 
 % Initial conditions
 predicted.vl(1,:) = init_Vl';
@@ -119,31 +143,20 @@ INSpose__k1 = init_pose();
 INSpose__k2 = init_pose();
 inertialData = init_inertialData(9.8);
 
+% tlQb = init_lQb;
+INSpose.lQb = init_lQb;
+INSpose__k1.lQb = init_lQb;
+INSpose.V_l = init_Vl;
+INSpose__k1.V_l = init_Vl;
+
+% EKF state and covariance initialization
 Sys.posterior.x = zeros(15,1);
 Sys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
-X = [];
-DX = [];
-COV = [];
-
-% tlQb = init_lQb;
-INSpose.lQb = init_lQb;
-
-DE = [];
-PE = [];
-DV = [];
-nDEF = [];
-Rbias = [];
-updatePackets = [];
-
 % this is the filter update counter
-FilterRate = 100;
-limitedFB = 1;
-FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
 Sys.dt = dt_m;
-
 
 
 for k = 1:iter
@@ -151,47 +164,40 @@ for k = 1:iter
     % generate IMU data measurement frame
     inertialData.predicted.utime = k*dt*1E6;
     
-    inertialData.predicted.w_s = measured.w_s(k,:)';
-    inertialData.predicted.a_s = measured.a_s(k,:)';
-    
-    inertialData.predicted.w_s = inertialData.predicted.w_s - INSCompensator.biases.bg;
-    inertialData.predicted.a_s = inertialData.predicted.a_s - INSCompensator.biases.ba;
-    
-    inertialData.predicted.w_b = sRb * inertialData.predicted.w_s;
-    inertialData.predicted.a_b = sRb * inertialData.predicted.a_s;
+    inertialData.predicted.w_b = measured.w_s(k,:)' - INSCompensator.biases.bg;
+    inertialData.predicted.a_b = measured.a_s(k,:)' - INSCompensator.biases.ba;
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
     
-    % More representative of how LCM traffic is running
+    % More representative simulation of real system update cycle
     [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
     
     % Run filter at a lower rate
     if (mod(k,FilterRateReduction)==0 && true)
         m = m+1;
         
-        measured.vl = init_Vl;
-        dV = measured.vl - INSpose.V_l + 0*randn(3,1);
+        Reference.V_p = init_V_p;
+        Reference.V_l = lRp' * init_V_p;
         
-        if (true)
+        if (false)
         
             Measurement.INS.pose = INSpose;
-            Measurement.velocityResidual = dV;
+            dV_l = Reference.V_l - INSpose.V_l + 0*randn(3,1);
+            Measurement.velocityResidual = dV_l;
             [Result, Sys] = iterate([], Sys, Measurement);
-            
             
             %store data for later plotting
             DX = [DX; Sys.posterior.dx'];
-            X = [X; Sys.posterior.x'];
+            RESULTS.STATEX = [RESULTS.STATEX; Sys.posterior.x'];
             COV = [COV;diag(Sys.posterior.P)'];
-            DV = [DV; dV'];
+            DV = [DV; dV_l'];
             [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
-        
             
         else
             
             % Pass EKF computation out to separate Matlab Development
             % process
-            sendDataFusionReq(INSpose, INSCompensator, inertialData, ReqMsg, lc);
+            sendDataFusionReq(INSpose, INSCompensator, inertialData, Reference, ReqMsg, lc);
             
             
             % Currently the outside process holds state -- this will all be
@@ -208,8 +214,13 @@ for k = 1:iter
             INSCompensator.dV_l = updatePacket.dVel_l;
             INSCompensator.dP_l = updatePacket.dPos_l;
             
+            dV_l = updatePacket.VelocityResidual_l;
+            
         end
         
+        RESULTS.Reference.V_l(m,:) = Reference.V_l';
+        RESULTS.Reference.V_p(m,:) = Reference.V_p';
+        RESULTS.Reference.V_innov_l(m,:) = dV_l';
         
     end
     
@@ -242,6 +253,9 @@ end
 
 
 plotGrayINSPredicted(predicted, 1);
+
+plotReferenceMeasurement(RESULTS, 3);
+plotEKFResults(RESULTS, 2);
 
 return
 

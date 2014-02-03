@@ -45,14 +45,14 @@ imuMsgBatch = [imumsg, imuMsgBatch(1:14)];
 
 sentMsg = 0;
 % rate change to 333Hz, TBC
-if (mod(imumsg.utime,3000) == 0)
+% if (mod(imumsg.utime,3000) == 0)
     msg = drc.atlas_raw_imu_batch_t();
     msg.utime = data.imu.utime;
     msg.num_packets = 15;
     msg.raw_imu = imuMsgBatch;
     lc.publish('ATLAS_IMU_BATCH_MS', msg);
     sentMsg = 1;
-end
+% end
 
 %     if (setPauseFlag == 1)
 % %         pause

@@ -28,6 +28,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
   // Only update INS and publish existing ERS message
     std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- sees " << imuPackets.size() << " new IMU messages in the imu packet vector" << std::endl;
 
+    uninitialized = false;
 	_inert_odo->enterCritical();
 	for (int k=0;k<imuPackets.size();k++) {
 		imu_data.uts = imuPackets[k].utime;

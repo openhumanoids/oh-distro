@@ -223,14 +223,16 @@ namespace InertialOdometry {
 
 	std::cout<< "Odometry::setInitPitchRoll -- bRn " << std::endl << bRn << std::endl;
 
-	Eigen::Quaterniond q;
-	q.w() = 0.;
-	q.x() = 1.;
-	q.y() = 0.;
-	q.z() = 0.;
-	tmp = q2C(q)*bRn;
-	bRn = tmp;
+	//	Eigen::Quaterniond q;
+	//	q.w() = 0.;
+	//	q.x() = 1.;
+	//	q.y() = 0.;
+	//	q.z() = 0.;
+	//	tmp = q2C(q)*bRn;
+	//	bRn = tmp;
 
+	orc.updateOrientation(0, C2q(bRn.transpose()));
+	std::cout << "Odometry::setInitPitchRoll -- Initial lQb has been set to " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << std::endl;
 
 
 	//    Eigen::Vector3d v1,v2,v3,v3m,tmp;
@@ -271,8 +273,6 @@ namespace InertialOdometry {
 	//
 	//	nRb = B * A.inverse();
 
-	orc.updateOrientation(0, C2q(bRn.transpose()));
-		std::cout << "Odometry::setInitPitchRoll -- Initial lQb has been set to " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << std::endl;
 
 
 	//	ab = mean_acc(:)/norm(mean_acc);
@@ -302,7 +302,6 @@ namespace InertialOdometry {
 	//
 	//	init_lQb = R2q(R_nav_to_body);
   }
-
 }
 
 // Been moved to QuaternionLib

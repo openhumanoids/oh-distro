@@ -1,4 +1,4 @@
-function plotGrayINSPredicted(predicted, fignumber)
+function figH = plotGrayINSPredicted(predicted, fignumber)
 
 if (nargin <2)
     fignumber = 1;

@@ -4,16 +4,16 @@ function DFRESULTS = dataFusionHandler()
 % only.
 
 % This is temporary
-iterations = 12000/2;
+iterations = 10000;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
-feedbackGain = 0.5;
+feedbackGain = 1;
 
 dfSys.T = 0;
 
 ENABLE_FEEDBACK = 1;
-DataLogging = 0;
+DataLogging = 1;
 
 % Initialize local variables
 computationTime = 0;
@@ -95,12 +95,12 @@ while (true)
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
     if (ENABLE_FEEDBACK == 1)
-        publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, lc);
+        publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, Measurement, lc);
         dfSys.posterior.x = (1-feedbackGain) * dfSys.posterior.x;
     end
     
     computationTime = toc;
-    if (Measurement.INS.pose.utime == (120 * 1E6) )
+    if (Measurement.INS.pose.utime == (100 * 1E6) )
         break;
     end
 end
@@ -110,8 +110,10 @@ end
 %% Here we want to plot some dataFusion results.
 
 if (DataLogging == 1)
-    plotGrayINSPredicted(DFRESULTS.REQMSGS, 1);
-    plotEKFResults(DFRESULTS, 2)
+    figH = plotGrayINSPredicted(DFRESULTS.REQMSGS, 1);
+    set(figH,'Name',['dataFusionHandler -- Gray INS, ' num2str(clock())],'NumberTitle','off')
+    figH = plotEKFResults(DFRESULTS, 2);
+    set(figH,'Name',['dataFusionhandler -- EKF state, ' num2str(clock())],'NumberTitle','off')
 end
 
 % Must standardize this plotting
