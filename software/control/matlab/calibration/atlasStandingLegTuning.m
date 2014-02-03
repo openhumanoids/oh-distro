@@ -15,7 +15,7 @@ dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
 T = 30;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.08;% <---- meters, COM DELTA
+amp = 0.05;% <---- meters, COM DELTA
 chirp_f0 = 0.075;% <--- chirp starting frequency
 chirp_fT = 0.075;% <--- chirp ending frequency
 chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
@@ -37,8 +37,6 @@ r = compile(r);
 r = r.setInitialState(xstar);
 
 % setup frames
-state_frame = getStateFrame(r);
-state_frame.subscribe('EST_ROBOT_STATE');
 state_plus_effort_frame = AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
@@ -53,7 +51,7 @@ gains = getAtlasGains(input_frame); % change gains in this file
 joint_ind = [];
 joint_act_ind = [];
 for i=1:length(joint_str)
-  joint_ind = union(joint_ind,find(~cellfun(@isempty,strfind(state_frame.coordinates(1:nq),joint_str{i}))));
+  joint_ind = union(joint_ind,find(~cellfun(@isempty,strfind(state_plus_effort_frame.coordinates(1:nq),joint_str{i}))));
   joint_act_ind = union(joint_act_ind,find(~cellfun(@isempty,strfind(input_frame.coordinates,joint_str{i}))));
 end
 
@@ -66,7 +64,7 @@ ref_frame.updateGains(gains);
 
 % move to fixed point configuration 
 qdes = xstar(1:nq);
-atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx_map,5);
+atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 gains2 = getAtlasGains(input_frame); 
 % reset force gains for joint being tuned
@@ -261,6 +259,6 @@ ref_frame.updateGains(gains);
 
 % move to fixed point configuration 
 qdes = xstar(1:nq);
-atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx_map,4);
+atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,4);
 
 end
