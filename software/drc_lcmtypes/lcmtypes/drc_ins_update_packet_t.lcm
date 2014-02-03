@@ -11,5 +11,8 @@ struct ins_update_packet_t
 
   vector_3d_t dE_l;
   vector_3d_t dVel_l;
-  vector_3d_t dPos_l;  
+  vector_3d_t dPos_l;
+
+  vector_3d_t V_resid_l;
+  vector_3d_t P_resid_l;
 }
