@@ -904,7 +904,7 @@
     <axis xyz="1 0 0"/>
     <parent link="l_talus"/>
     <child link="l_foot"/>
-    <dynamics coulomb_window="0.175" damping="0.5" friction="10.0"/>
+    <dynamics coulomb_window="0.175" damping="1.0" friction="15.0"/>
     <limit effort="90" lower="-0.8" upper="0.8" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8"/>
   </joint>
@@ -913,7 +913,7 @@
     <axis xyz="0 1 0"/>
     <parent link="l_lleg"/>
     <child link="l_talus"/>
-    <dynamics coulomb_window="0.175" damping="0.5" friction="13.0"/>
+    <dynamics coulomb_window="0.175" damping="1.0" friction="15.0"/>
     <limit effort="700" lower="-1" upper="0.7" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11" soft_upper_limit="10.7"/>
   </joint>
@@ -922,7 +922,7 @@
     <axis xyz="1 0 0"/>
     <parent link="l_uglut"/>
     <child link="l_lglut"/>
-    <dynamics coulomb_window="0.175" damping="0.5" friction="12.0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="15.0"/>
     <limit effort="180" lower="-0.523599" upper="0.523599" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236"/>
   </joint>
@@ -1021,7 +1021,7 @@
     <axis xyz="1 0 0"/>
     <parent link="r_talus"/>
     <child link="r_foot"/>
-    <dynamics coulomb_window="0.175" damping="0.5" friction="10.0"/>
+    <dynamics coulomb_window="0.175" damping="1.0" friction="15.0"/>
     <limit effort="90" lower="-0.8" upper="0.8" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8"/>
   </joint>
@@ -1030,7 +1030,7 @@
     <axis xyz="0 1 0"/>
     <parent link="r_lleg"/>
     <child link="r_talus"/>
-    <dynamics coulomb_window="0.175" damping="0.5" friction="13.0"/>
+    <dynamics coulomb_window="0.175" damping="1.0" friction="15.0"/>
     <limit effort="700" lower="-1" upper="0.7" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11" soft_upper_limit="10.7"/>
   </joint>
@@ -1039,7 +1039,7 @@
     <axis xyz="1 0 0"/>
     <parent link="r_uglut"/>
     <child link="r_lglut"/>
-    <dynamics coulomb_window="0.175" damping="0.5" friction="12.0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="15.0"/>
     <limit effort="180" lower="-0.523599" upper="0.523599" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236"/>
   </joint>
