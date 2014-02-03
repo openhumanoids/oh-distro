@@ -11,14 +11,14 @@ function atlasStandingLegTuning
 joint_str = {'leg_hpy','leg_kny','leg_aky'};% <---- cell array of (sub)strings  
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
+dim = 2; % what spatial dimension to move COM: x/y/z (1/2/3)
 T = 30;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.05;% <---- meters, COM DELTA
-chirp_f0 = 0.075;% <--- chirp starting frequency
-chirp_fT = 0.075;% <--- chirp ending frequency
-chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
+amp = 0.02;% <---- meters, COM DELTA
+chirp_f0 = 0.05;% <--- chirp starting frequency
+chirp_fT = 0.05;% <--- chirp ending frequency
+chirp_sign = 0;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % inverse dynamics PD gains (only for input=position, control=force)
 Kp = 20;
