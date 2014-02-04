@@ -7,6 +7,7 @@
 #include "QueueTypes.h"
 
 #include "lcmtypes/drc_lcmtypes.hpp"
+#include <bot_frames/bot_frames.h>
 #include <inertial-odometry/Odometry.hpp>
 
 #include "StateEstimatorUtilities.h"
@@ -36,6 +37,7 @@ private:
   InertialOdometry::DynamicState lastInerOdoState;
   drc::robot_state_t* _ERSMsg;
   drc::ins_update_request_t* _DFRequestMsg;
+  bot_core::pose_t mPoseBodyMsg;
 
   RateChange fusion_rate;
   Eigen::VectorXd fusion_rate_dummy; // Unused variable -- added to class private definition for speed.

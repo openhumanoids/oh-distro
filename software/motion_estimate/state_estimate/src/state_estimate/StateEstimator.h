@@ -15,7 +15,7 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc_lcmtypes.hpp"
-//#include <model-client/model-client.hpp>
+#include <model-client/model-client.hpp>
 
 #include <inertial-odometry/Odometry.hpp>
 #include <leg-odometry/TwoLegOdometry.h>
@@ -25,6 +25,8 @@
 #include "JointFilters.h"
 
 #include "SharedTypes.h"
+
+#include <estimate/leg_odometry.hpp>
 
 
 namespace StateEstimate

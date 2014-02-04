@@ -239,6 +239,12 @@ void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_st
   insertAtlasState_ERS(atlasState, mERSMsg, robot);
 
   // TODO -- we are using the BDI orientation -- should change to either pure leg kin, combination of yaw, or V/P fused orientation
+  Eigen::Quaterniond BDi_quat;
+  BDi_quat.w() = bdiPose.orientation[0];
+  BDi_quat.x() = bdiPose.orientation[1];
+  BDi_quat.y() = bdiPose.orientation[2];
+  BDi_quat.z() = bdiPose.orientation[3];
+  _leg_odo->setOrientationTransform(BDi_quat, Eigen::Vector3d::Zero());
   doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, robot);
 
   // TODO -- remove this, only a temporary display object
@@ -249,7 +255,21 @@ void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_st
   _leg_odo->calculateUpdateVelocityStates(atlasState.utime, LegOdoPelvis);
   std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo pelvis velocities " << _leg_odo->getPelvisVelocityStates().transpose() << std::endl;
 
+  bot_core::pose_t LegOdoPosMsg;
 
+  LegOdoPosMsg.utime = atlasState.utime;
+  LegOdoPosMsg.pos[0] = LegOdoPelvis.translation()(0);
+  LegOdoPosMsg.pos[1] = LegOdoPelvis.translation()(1);
+  LegOdoPosMsg.pos[2] = LegOdoPelvis.translation()(2);
+
+  Eigen::Quaterniond PelvisQ;
+  PelvisQ = C2q(LegOdoPelvis.linear());
+  LegOdoPosMsg.orientation[0] = PelvisQ.w();
+  LegOdoPosMsg.orientation[1] = PelvisQ.x();
+  LegOdoPosMsg.orientation[2] = PelvisQ.y();
+  LegOdoPosMsg.orientation[3] = PelvisQ.z();
+
+  mLCM->publish("POSE_BODY_ALT", &LegOdoPosMsg);
 
   // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
   if (firstpass>0)

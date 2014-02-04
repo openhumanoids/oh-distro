@@ -26,7 +26,7 @@ pods_install_pkg_config_file(estimate
 ################
 add_executable(se-leg-odometry main.cpp )
 pods_use_pkg_config_packages(se-leg-odometry estimate path-util
-   bot2-param-client model-client  pointcloud_math bot2-frames_cpp)
+   bot2-param-client model-client pointcloud_math bot2-frames_cpp)
 target_link_libraries (se-leg-odometry lcm )
 #     
 #        pointcloud_lcm                pointcloud_math

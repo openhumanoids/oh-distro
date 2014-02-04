@@ -95,6 +95,8 @@ void copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to);
 void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot);
 void detectIMUSampleTime(unsigned long long &prevImuPacketCount, unsigned long long &previous_imu_utime, int &receivedIMUPackets, double &previous_Ts_imu, const drc::atlas_raw_imu_t &imu);
 
+void stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst, bot_core::pose_t &_msg);
+
 } // namespace StateEstimate
 
 #endif /*STATEESTIMATORUTILITIES_H_*/

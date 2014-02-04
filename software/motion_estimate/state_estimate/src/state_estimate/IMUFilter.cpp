@@ -55,7 +55,9 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 
 	if (!uninitialized) {
 		stampInertialPoseERSMsg(lastInerOdoState, *_ERSMsg);
-		mLCM->publish("EST_ROBOT_STATE", _ERSMsg);
+		mLCM->publish("EST_ROBOT_STATE_EXP", _ERSMsg);
+		stampInertialPoseBodyMsg(lastInerOdoState, mPoseBodyMsg);
+		mLCM->publish("POSE_BODY", &mPoseBodyMsg);
 
 		// EKF measurement update rate set to 20ms here
 		if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {

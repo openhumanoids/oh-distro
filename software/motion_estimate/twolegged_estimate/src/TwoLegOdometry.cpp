@@ -72,8 +72,6 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
   Eigen::Isometry3d old_pelvis;
   old_pelvis = getPelvisFromStep();
 
-  //std::cout << "TwoLegOdometry::UpdateStates -- midway" << std::endl;
-
   setLegTransforms(left, right);
 
   foot_transition = FootLogic(utime, left_force, right_force);
