@@ -47,6 +47,7 @@ footstep_request.default_step_params = drc.footstep_params_t();
 footstep_request.default_step_params.utime = 0;
 footstep_request.default_step_params.step_speed = 1.0;
 footstep_request.default_step_params.step_height = 0.05;
+footstep_request.default_step_params.constrain_full_foot_pose = false;
 footstep_request.default_step_params.bdi_step_duration = 0;
 footstep_request.default_step_params.bdi_sway_duration = 0;
 footstep_request.default_step_params.bdi_lift_height = 0;
