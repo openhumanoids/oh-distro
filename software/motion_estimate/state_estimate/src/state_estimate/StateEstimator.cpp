@@ -217,7 +217,7 @@ void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t
 
 void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_update_packet_t &INSUpdate) {
 
-  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
+  //std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
 
   InertialOdometry::INSUpdatePacket insUpdatePacket;
   insUpdatePacket.utime = INSUpdate.utime;
@@ -245,7 +245,11 @@ void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_st
   Eigen::Isometry3d LegOdoPelvis;
   LegOdoPelvis.setIdentity();
   LegOdoPelvis = _leg_odo->getPelvisState();
-  std::cout << "StateEstimator::run -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
+  //std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
+  _leg_odo->calculateUpdateVelocityStates(atlasState.utime, LegOdoPelvis);
+  std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo pelvis velocities " << _leg_odo->getPelvisVelocityStates().transpose() << std::endl;
+
+
 
   // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
   if (firstpass>0)

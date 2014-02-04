@@ -14,7 +14,7 @@ lcmtypes_build()
 add_subdirectory(src/state_estimate)
 
 
-#add_subdirectory(src/mfallon_sandbox)
+add_subdirectory(src/mfallon_sandbox)
 
 
 pods_install_python_script(se-bdi-imu-to-ms scripts/republish_bdi_imu_as_microstrain.py)
