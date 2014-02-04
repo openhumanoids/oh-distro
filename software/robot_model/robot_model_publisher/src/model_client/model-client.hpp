@@ -1,3 +1,7 @@
+#ifndef __MODEL_CLIENT_HPP__
+#define __MODEL_CLIENT_HPP__
+
+
 #include <map>
 #include <boost/shared_ptr.hpp>
 
@@ -53,3 +57,5 @@ class ModelClient
     
     int8_t left_hand_, right_hand_;
 };
+
+#endif
