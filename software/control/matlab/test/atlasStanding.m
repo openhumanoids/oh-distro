@@ -138,7 +138,6 @@ cost = double(cost);
 ikoptions = IKoptions(r);
 ikoptions = ikoptions.setQ(diag(cost(1:nq)));
 
-v = r.constructVisualizer;
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
@@ -151,9 +150,17 @@ for i=1:length(ts)
   else
     q = q0;
   end
-  v.draw(t,q(:,i));
 end
+
+% visualize trajectory
 qtraj = PPTrajectory(spline(ts,q));
+
+traj = [qtraj;0*qtraj];
+traj = traj.setOutputFrame(r.getStateFrame);
+
+v = r.constructVisualizer;
+playback(v,traj,struct('slider',true));
+
 qdtraj = fnder(qtraj,1);
 qddtraj = fnder(qtraj,2);
 
