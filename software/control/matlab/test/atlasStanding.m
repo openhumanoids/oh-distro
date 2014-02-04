@@ -13,17 +13,17 @@ function atlasStanding
 joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 2; % what spatial dimension to move COM: x/y/z (1/2/3)
+dim = 3; % what spatial dimension to move COM: x/y/z (1/2/3)
 T = 10;% <--- signal duration (sec)
 
 % chirp params
 amp = 0.05;% <---- meters, COM DELTA
-chirp_f0 = 1.0;% <--- chirp starting frequency
-chirp_fT = 1.0;% <--- chirp ending frequency
-chirp_sign = 0;% <--- -1: negative, 1: positive, 0: centered about offset 
+chirp_f0 = 0.2;% <--- chirp starting frequency
+chirp_fT = 0.2;% <--- chirp ending frequency
+chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % inverse dynamics PD gains (only for input=position, control=force)
-Kp = 20;
+Kp = 40;
 Kd = 5;
 
 % turn on/off ZMP objective

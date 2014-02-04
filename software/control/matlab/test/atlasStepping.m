@@ -5,8 +5,8 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % inverse dynamics PD gains (only for input=position, control=force)
-Kp = 20;
-Kd = 5;
+Kp = 30;
+Kd = 2;
 
 % load robot model
 r = Atlas();
@@ -76,20 +76,20 @@ request.goal_pos = encodePosition3d(navgoal);
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
-request.params.max_num_steps = 2;
+request.params.max_num_steps = 3;
 request.params.min_num_steps = 1;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.26;
 request.params.max_step_width = 0.39;
 request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.45;
-request.params.ignore_terrain = true;
+request.params.ignore_terrain = false;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
-request.params.leading_foot = request.params.LEAD_AUTO;
+request.params.leading_foot = request.params.LEAD_RIGHT;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.01;
+request.default_step_params.step_speed = 0.04;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 
@@ -113,7 +113,6 @@ ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
   'B',[zeros(2); eye(2)],...
   'C',[eye(2),zeros(2)],...
-  'D',0,...
   'Qy',eye(2),...
   'R',zeros(2),...
   'is_time_varying',true,...
@@ -148,7 +147,7 @@ qddtraj = fnder(qtraj,2);
 % instantiate QP controller
 options.dt = 0.003;
 options.slack_limit = 30.0;
-options.w = 0.001;
+options.w = 0.005;
 options.lcm_foot_contacts = false;
 options.use_mex = true;
 options.contact_threshold = 0.05;
