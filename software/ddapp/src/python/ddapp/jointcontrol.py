@@ -12,6 +12,7 @@ class JointController(object):
         self.models = models
         self.poses = {}
         self.poseCollection = poseCollection
+        self.currentPoseName = None
         self.addPose('q_zero', [0.0 for i in xrange(self.numberOfJoints)])
 
     def setJointPosition(self, jointId, position):
@@ -29,7 +30,9 @@ class JointController(object):
     def reset(self):
         self.q = [0.0 for i in xrange(self.numberOfJoints)]
 
-    def setPose(self, poseName):
+    def setPose(self, poseName, poseData=None):
+        if poseData is not None:
+            self.addPose(poseName, poseData)
         if poseName not in self.poses:
             raise Exception('Pose %r has not been defined.' % poseName)
         self.q = self.poses[poseName]

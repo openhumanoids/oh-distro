@@ -100,7 +100,7 @@ class RobotModelItem(ObjectModelItem):
         self.addProperty('Filename', model.filename())
         self.addProperty('Visible', model.visible())
         self.addProperty('Alpha', model.alpha())
-        self.addProperty('Color', QtGui.QColor(255,0,0))
+        self.addProperty('Color', model.color())
         self.views = []
 
     def _onPropertyChanged(self, propertyName):
@@ -159,7 +159,6 @@ class PolyDataItem(ObjectModelItem):
 
         self._renderAllViews()
 
-
     def _renderAllViews(self):
         for view in self.views:
             view.render()
@@ -178,6 +177,16 @@ class PolyDataItem(ObjectModelItem):
             scalars = self.polyData.GetPointData().GetScalars()
             if scalars:
                 return scalars.GetName()
+
+    def getArrayNames(self):
+        pointData = self.polyData.GetPointData()
+        return [pointData.GetArrayName(i) for i in xrange(pointData.GetNumberOfArrays())]
+
+    def setSolidColor(self, color):
+
+        color = [component * 255 for component in color]
+        self.setProperty('Color', QtGui.QColor(*color))
+        self.colorBy(None)
 
     def colorBy(self, arrayName, scalarRange=None, lut=None):
 
@@ -207,6 +216,7 @@ class PolyDataItem(ObjectModelItem):
         self.mapper.SetScalarRange(scalarRange)
         self.mapper.InterpolateScalarsBeforeMappingOff()
         #self.mapper.SetInputArrayToProcess(0,0,0, vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS, arrayName)
+        self._renderAllViews()
 
 
     def addToView(self, view):
@@ -244,10 +254,18 @@ class PolyDataItem(ObjectModelItem):
             return ObjectModelItem.getPropertyAttributes(self, propertyName)
 
     def onRemoveFromObjectModel(self):
-        for view in self.views:
-            view.renderer().RemoveActor(self.actor)
-            view.render()
+        self.removeFromAllViews()
 
+    def removeFromAllViews(self):
+        for view in list(self.views):
+            self.removeFromView(view)
+        assert len(self.views) == 0
+
+    def removeFromView(self, view):
+        assert view in self.views
+        self.views.remove(view)
+        view.renderer().RemoveActor(self.actor)
+        view.render()
 
 
 def getObjectTree():

@@ -2,6 +2,7 @@ import os
 import vtkAll as vtk
 from ddapp import botpy
 import math
+import time
 import numpy as np
 
 from ddapp import transformUtils
@@ -15,6 +16,7 @@ from ddapp import ioUtils
 from ddapp.simpletimer import SimpleTimer
 from ddapp.utime import getUtime
 from ddapp import robotstate
+from ddapp import botpy
 
 import drc as lcmdrc
 
@@ -27,17 +29,25 @@ class RobotPlanListener(object):
 
     def __init__(self):
         lcmUtils.addSubscriber('CANDIDATE_MANIP_PLAN', lcmdrc.robot_plan_w_keyframes_t, self.onManipPlan)
-        self.lastPlanMsg = None
+        lcmUtils.addSubscriber('WALKING_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
+        self.lastManipPlanMsg = None
+        self.lastWalkingPlanMsg = None
         self.animationTimer = None
         self.manipPlanCallback = None
+        self.walkingPlanCallback = None
         self.animationCallback = None
         self.interpolationMethod = 'cubic'
         self.playbackSpeed = 1.0
 
     def onManipPlan(self, msg):
-        self.lastPlanMsg = msg
+        self.lastManipPlanMsg = msg
         if self.manipPlanCallback:
             self.manipPlanCallback()
+
+    def onWalkingPlan(self, msg):
+        self.lastWalkingPlanMsg = msg
+        if self.walkingPlanCallback:
+            self.walkingPlanCallback()
 
     def convertKeyframePlan(self, keyframeMsg):
         msg = lcmdrc.robot_plan_t()
@@ -58,16 +68,36 @@ class RobotPlanListener(object):
         return msg
 
 
-    def commitPlan(self):
-        msg = self.convertKeyframePlan(msg)
+    def commitManipPlan(self):
+        assert self.lastManipPlanMsg is not None
+        msg = self.convertKeyframePlan(self.lastManipPlanMsg)
         msg.utime = getUtime()
         lcmUtils.publish('COMMITTED_ROBOT_PLAN', msg)
+
 
     def sendPlannerModeControl(self, mode='fixed_joints'):
         msg = lcmdrc.grasp_opt_mode_t()
         msg.utime = getUtime()
         msg.mode = {'fixed_joints' : 3}[mode]
         lcmUtils.publish('MANIP_PLANNER_MODE_CONTROL', msg)
+
+
+    def sendJointSpeedLimit(self, speedLimit=25):
+
+        assert speedLimit > 0 and speedLimit < 50
+        msg = lcmdrc.plan_execution_speed_t()
+        msg.speed = math.radians(speedLimit)
+        msg.utime = getUtime()
+        lcmUtils.publish('DESIRED_JOINT_SPEED', msg)
+
+
+    def sendEEArcSpeedLimit(self, speedLimit=0.20):
+
+        assert speedLimit > 0 and speedLimit < 0.50
+        msg = lcmdrc.plan_execution_speed_t()
+        msg.utime = getUtime()
+        msg.speed = speedLimit
+        lcmUtils.publish('DESIRED_EE_ARC_SPEED', msg)
 
 
     def clearEndEffectorGoals(self):
@@ -83,10 +113,21 @@ class RobotPlanListener(object):
         lcmUtils.publish('RIGHT_PALM_GOAL_CLEAR', msg)
 
 
-    def sendEndEffectorGoal(self, linkName, goalInWorldFrame):
-
+    def sendPlannerSettings(self):
+        '''
+        This will be removed when the planner lcm messages are updated to
+        take parameters and inputs.
+        '''
         self.clearEndEffectorGoals()
         self.sendPlannerModeControl()
+        self.sendJointSpeedLimit()
+        self.sendEEArcSpeedLimit()
+        time.sleep(0.05)
+
+
+    def sendEndEffectorGoal(self, linkName, goalInWorldFrame):
+
+        self.sendPlannerSettings()
 
         msg = lcmdrc.ee_goal_t()
         msg.ee_goal_pos = transformUtils.positionMessageFromFrame(goalInWorldFrame)
@@ -115,14 +156,19 @@ class RobotPlanListener(object):
         for name in robotstate.getDrakePoseJointNames()[6:]:
             jointPositions.append(jointMap[name])
 
-        pose = [0.0] * 6
-        pose += jointPositions
+        trans = msg.pose.translation
+        quat = msg.pose.rotation
+        trans = [trans.x, trans.y, trans.z]
+        quat = [quat.w, quat.x, quat.y, quat.z]
+        rpy = botpy.quat_to_roll_pitch_yaw(quat)
+
+        pose = np.hstack((trans, rpy, jointPositions))
         assert len(pose) == 34
-        return np.array(pose)
+        return pose
 
 
     def getPlanPoses(self, msg=None):
-        msg = msg or self.lastPlanMsg
+        msg = msg or self.lastManipPlanMsg
         assert msg
 
         poses = []
@@ -135,7 +181,7 @@ class RobotPlanListener(object):
 
 
     def getPlanElapsedTime(self, msg=None):
-        msg = msg or self.lastPlanMsg
+        msg = msg or self.lastManipPlanMsg
         assert msg
 
         startTime = msg.plan[0].utime
@@ -153,18 +199,23 @@ class RobotPlanListener(object):
 
 
     def picklePlan(self, filename, msg=None):
-        msg = msg or self.lastPlanMsg
+        msg = msg or self.lastManipPlanMsg
         assert msg
 
         poseTimes, poses = self.getPlanPoses(msg)
         pickle.dump((poseTimes, poses), open(filename, 'w'))
 
 
-    def playPlan(self, jointController, msg=None):
-        msg = msg or self.lastPlanMsg
-        assert msg
+    def playManipPlan(self, jointController):
+        self.playPlan(self.lastManipPlanMsg, jointController)
 
-        position = list(jointController.q[:6])
+
+    def playWalkingPlan(self, jointController):
+        self.playPlan(self.lastWalkingPlanMsg, jointController)
+
+
+    def playPlan(self, msg, jointController):
+
         poseTimes, poses = self.getPlanPoses(msg)
 
         if self.interpolationMethod in ['slinear', 'quadratic', 'cubic']:
@@ -180,7 +231,6 @@ class RobotPlanListener(object):
 
             if tNow > poseTimes[-1]:
                 pose = poses[-1]
-                pose = position + pose[6:].tolist()
                 jointController.addPose('plan_playback', pose)
                 jointController.setPose('plan_playback')
 
@@ -190,8 +240,6 @@ class RobotPlanListener(object):
                 return False
 
             pose = f(tNow)
-            pose = position + pose[6:].tolist()
-
             jointController.addPose('plan_playback', pose)
             jointController.setPose('plan_playback')
 
@@ -249,8 +297,4 @@ class RobotPlanListener(object):
         plt.xlabel('time (s)')
         plt.ylabel('joint angle (deg)')
         plt.show()
-
-
-
-
 

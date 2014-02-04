@@ -27,6 +27,8 @@ from ddapp import footstepsdriverpanel
 from ddapp import atlasdriver
 from ddapp import atlasdriverpanel
 from ddapp import robotplanlistener
+from ddapp import handdriver
+from ddapp import plansequence
 from ddapp import vtkNumpy as vnp
 from ddapp import visualization as vis
 from ddapp import actionhandlers
@@ -36,7 +38,10 @@ from ddapp import lcmUtils
 from ddapp.shallowCopy import shallowCopy
 import drc as lcmdrc
 
+from ddapp import botpy
+
 import functools
+import math
 
 import numpy as np
 from ddapp.debugVis import DebugData
@@ -60,12 +65,12 @@ updatePolyData = segmentation.updatePolyData
 ###############################################################################
 
 
-useIk = True
-usePerception = False
+useIk = False
+usePerception = True
 useSpreadsheet = True
 useFootsteps = True
-usePlanning = False
-useAtlasDriver = False
+usePlanning = True
+useAtlasDriver = True
 
 
 poseCollection = PythonQt.dd.ddSignalMap()
@@ -108,6 +113,7 @@ if useIk:
     jc.setNominalPose()
     jc.addPose('q_end', jc.poses['q_nom'])
     jc.addPose('q_start', jc.poses['q_nom'])
+    defaultJointController = jc
 
 
     def startIkServer():
@@ -133,31 +139,6 @@ if useAtlasDriver:
     atlasdriver.init()
     atlasdriverpanel.init(atlasdriver.driver)
 
-if useFootsteps:
-    # footsteps.init()
-    footstepsdriver.init(jc)
-    footstepsdriverpanel.init(footstepsdriver.driver)
-
-
-if usePlanning:
-    planListener = robotplanlistener.RobotPlanListener()
-    planListener.playbackSpeed = 5.0
-
-    def planCallback():
-        planListener.stopAnimation()
-        planListener.playPlan(jc)
-
-    def animationCallback():
-        sendEstRobotState(jc.currentPoseName)
-
-    planListener.manipPlanCallback = planCallback
-    planListener.animationCallback = animationCallback
-
-    app.addToolbarMacro('plot plan', planListener.plotPlan)
-
-    def replan(side='left'):
-        assert side in ('left', 'right')
-        planListener.sendEndEffectorGoal('%s_hand' % side[0], om.findObjectByName('%s_base_link' % side).transform)
 
 
 if usePerception:
@@ -170,7 +151,11 @@ if usePerception:
 
 
     robotStateJointController = jointcontrol.JointController([robotStateModel])
-    robotStateJointController.setZeroPose()
+    robotStateJointController.setPose('EST_ROBOT_STATE', robotStateJointController.getPose('q_zero'))
+    defaultJointController = robotStateJointController
+
+
+    defaultJointController.currentPoseName = 'EST_ROBOT_STATE'
 
     perception.init(view, robotStateJointController)
     segmentationpanel.init()
@@ -237,6 +222,84 @@ if usePerception:
 
 
 
+if useFootsteps:
+    footstepsdriver.init(defaultJointController)
+    footstepsdriverpanel.init(footstepsdriver.driver)
+
+
+if usePlanning:
+
+
+    planningFolder = om.getOrCreateContainer('planning')
+
+    urdfFile = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf')
+
+    planningModel = app.loadRobotModelFromFile(urdfFile)
+    obj = om.addRobotModel(planningModel, planningFolder)
+    obj.addToView(view)
+    obj.setProperty('Visible', False)
+    obj.setProperty('Name', 'robot model')
+    obj.setProperty('Color', QtGui.QColor(255, 253, 213))
+    planningRobotModel = obj
+
+
+    planningJc = jointcontrol.JointController([planningModel], poseCollection)
+    planningJc.addNominalPoseFromFile(app.getNominalPoseMatFile())
+    planningJc.setNominalPose()
+    planningJc.addPose('q_end', planningJc.poses['q_nom'])
+    planningJc.addPose('q_start', planningJc.poses['q_nom'])
+
+
+    planListener = robotplanlistener.RobotPlanListener()
+    planListener.playbackSpeed = 1.0
+
+    def manipPlanCallback():
+        planListener.stopAnimation()
+        #planListener.playbackSpeed = 1.0
+        planningRobotModel.setProperty('Visible', True)
+        planListener.playManipPlan(planningJc)
+
+    def walkingPlanCallback():
+        planListener.stopAnimation()
+        #planListener.playbackSpeed = 1.0
+        planningRobotModel.setProperty('Visible', True)
+        planListener.playWalkingPlan(planningJc)
+
+    def animationCallback():
+        planner.sendPlanningEstimatedRobotState()
+
+    planListener.manipPlanCallback = manipPlanCallback
+    planListener.walkingPlanCallback = walkingPlanCallback
+    #planListener.animationCallback = animationCallback
+
+    app.addToolbarMacro('plot plan', planListener.plotPlan)
+
+    def fitDrillMultisense():
+        pd = om.findObjectByName('Multisense').model.revPolyData
+        om.removeFromObjectModel(om.findObjectByName('debug'))
+        segmentation.findAndFitDrillBarrel(pd,  getLinkFrame('utorso'))
+
+    app.addToolbarMacro('fit drill', fitDrillMultisense)
+
+    def drillTrackerOn():
+        om.findObjectByName('Multisense').model.showRevolutionCallback = fitDrillMultisense
+
+    def drillTrackerOff():
+        om.findObjectByName('Multisense').model.showRevolutionCallback = None
+
+    def planSequenceTest():
+        global planner
+        planner = plansequence.PlanSequence(planningRobotModel, footstepsdriver.driver, planListener, robotStateJointController, planningJc)
+
+        app.addToolbarMacro('update drill', planner.findDrillAffordance)
+        app.addToolbarMacro('get footsteps', planner.computeFootstepPlan)
+        app.addToolbarMacro('get walking', planner.computeWalkingPlanRequest)
+        app.addToolbarMacro('get grasping', planner.computeGraspPlan)
+
+    planSequenceTest()
+    #drillTrackerOn()
+
+
 app.resetCamera(viewDirection=[-1,0,0], view=view)
 
 
@@ -258,10 +321,6 @@ def showLinkFrame(linkName, model=None):
     if not frame:
         raise Exception('Link not found: ' + linkName)
     return vis.updateFrame(frame, linkName, parent='link frames')
-
-
-def createWalkingGoal():
-    footstepsdriver.driver.createWalkingGoal(defaultRobotModel)
 
 
 def resetCameraToRobot():
@@ -310,7 +369,9 @@ tc.targetFps = 60
 tc.callback = resetCameraToHeadView
 
 
+d = handdriver.IRobotHandDriver(side='left')
 
+'''
 class ViewEventFilter(object):
 
     def __init__(self, view):
@@ -355,3 +416,4 @@ def onViewDoubleClicked(displayPoint):
 
 ef = ViewEventFilter(ikview)
 ef.doubleClickCallback = onViewDoubleClicked
+'''
