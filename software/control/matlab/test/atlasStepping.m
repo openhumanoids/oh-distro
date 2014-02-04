@@ -133,13 +133,13 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'y0',walking_ctrl_data.zmptraj));
 
-qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
+traj = PPTrajectory(spline(ts,walking_plan.xtraj));
+traj = traj.setOutputFrame(r.getStateFrame);
 
 v = r.constructVisualizer;
-for i=linspace(0,T,100)
-  v.draw(i,qtraj.eval(i));
-  pause(T/100);
-end
+playback(v,traj,struct('slider',true));
+
+qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
 qdtraj = fnder(qtraj,1);
 qddtraj = fnder(qtraj,2);
 
