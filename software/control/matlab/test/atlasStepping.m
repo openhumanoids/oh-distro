@@ -52,7 +52,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.3;
+gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.2;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
@@ -89,7 +89,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.0001;
+request.default_step_params.step_speed = 0.01;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 
@@ -135,13 +135,13 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'y0',walking_ctrl_data.zmptraj));
 
-traj = PPTrajectory(spline(ts,walking_plan.xtraj));
+traj = PPTrajectory(foh(ts,walking_plan.xtraj));
 traj = traj.setOutputFrame(r.getStateFrame);
 
 v = r.constructVisualizer;
 playback(v,traj,struct('slider',true));
 
-qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
+qtraj = PPTrajectory(foh(ts,walking_plan.xtraj(1:nq,:)));
 qdtraj = fnder(qtraj,1);
 qddtraj = fnder(qtraj,2);
 
