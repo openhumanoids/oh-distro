@@ -102,9 +102,9 @@ while 1
 
   step_duration = (swing_ts(end) - swing_ts(1));
   if isempty(zmp_pts)
-    instep_shift = [0;0;0];
+    instep_shift = [-0.0125;0.0275;0];
     if ~st.is_right_foot
-      instep_shift = -instep_shift;
+      instep_shift = [1;-1;1].*instep_shift;
     end
     R = rpy2rotmat(st.pos.center(4:6));
     shift = R*instep_shift;
