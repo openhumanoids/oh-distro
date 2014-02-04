@@ -4,7 +4,8 @@ nq = getNumDOF(biped);
 q0 = x0(1:nq);
 kinsol = doKinematics(biped,q0);
 
-[zmptraj,foottraj, support_times, supports] = planZMPTraj(biped, q0, footsteps);
+options.full_foot_pose_constraint = true;
+[zmptraj,foottraj, support_times, supports] = planZMPTraj(biped, q0, footsteps,options);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 %% construct ZMP feedback controller
 com = getCOM(biped,kinsol);
