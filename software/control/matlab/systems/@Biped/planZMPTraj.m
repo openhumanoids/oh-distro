@@ -8,7 +8,6 @@ else
   zmp_pts = [footsteps(2:end).zmp];
 end
 if ~isfield(options, 't0'); options.t0 = 0; end
-if ~isfield(options, 'full_foot_pose_constraint') options.full_foot_pose_constraint = false; end
 if ~isfield(options, 'debug'); options.debug = true; end
 
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
@@ -79,9 +78,6 @@ while 1
   sw1 = steps.(sw_foot)(istep.(sw_foot)+1);
   st = steps.(st_foot)(istep.(st_foot));
 
-  options.step_speed = sw1.walking_params.step_speed;
-  options.step_height = sw1.walking_params.step_height;
-
   % if options.step_speed < 0
   %   [swing_ts, swing_poses, takeoff_time, landing_time] = planFixedDurationSwing(biped,...
   %               sw0.center,...
@@ -98,7 +94,7 @@ while 1
     step_knots(end).(sw_foot).orig = biped.footContact2Orig(swing_poses.center(:,j), 'center', is_right_foot);
     step_knots(end).(st_foot).orig = st.pos.orig;
     
-    if ~options.full_foot_pose_constraint && j >= 3 && j <= (length(swing_ts) - 4)
+    if ~sw1.walking_params.constrain_full_foot_pose && j >= 3 && j <= (length(swing_ts) - 4)
       % Release orientation constraints on the foot during the middle of the swing
       step_knots(end).(sw_foot).orig(4:5) = nan;
     end
