@@ -63,6 +63,7 @@ addpath(fullfile(pwd,'matlab','frames'));
 addpath(fullfile(pwd,'matlab','test'));
 addpath(fullfile(pwd,'matlab','systems'));
 addpath(fullfile(pwd,'collections_utils'));
+addpath(fullfile(pwd,'..','drake','examples','ZMP'));
 
 
 end
