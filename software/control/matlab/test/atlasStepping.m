@@ -61,76 +61,87 @@ ref_frame.updateGains(gains);
 % get current state
 [x,~] = getMessage(state_plus_effort_frame);
 x0 = x(1:2*nq); 
-q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
 v = R*[0.5;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
-% compute desired footstep and zmp trajectories
-footstep_planner = FootstepPlanner(r);
-step_options = footstep_planner.defaults;
-step_options.max_num_steps = 2;
-step_options.min_num_steps = 1;
-step_options.step_speed = 0.02;
-step_options.follow_spline = false;
-step_options.right_foot_lead = true;
-step_options.ignore_terrain = false;
-step_options.nom_step_width = r.nom_step_width;
-step_options.nom_forward_step = r.nom_forward_step;
-step_options.max_forward_step = r.max_forward_step;
-step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
-step_options.full_foot_pose_constraint = true;
+% create footstep and ZMP trajectories
+footstep_planner = StatelessFootstepPlanner();
+request = drc.footstep_plan_request_t();
+request.utime = 0;
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
+request.goal_pos = encodePosition3d(navgoal);
+request.num_goal_steps = 0;
+request.num_existing_steps = 0;
+request.params = drc.footstep_plan_params_t();
+request.params.max_num_steps = 30;
+request.params.min_num_steps = 2;
+request.params.min_step_width = 0.2;
+request.params.nom_step_width = 0.26;
+request.params.max_step_width = 0.39;
+request.params.nom_forward_step = 0.2;
+request.params.max_forward_step = 0.45;
+request.params.ignore_terrain = true;
+request.params.planning_mode = request.params.MODE_AUTO;
+request.params.behavior = request.params.BEHAVIOR_WALKING;
+request.params.map_command = 0;
+request.params.leading_foot = request.params.LEAD_AUTO;
+request.default_step_params = drc.footstep_params_t();
+request.default_step_params.step_speed = 0.75;
+request.default_step_params.step_height = 0.05;
+request.default_step_params.mu = 1.0;
 
-footsteps = r.createInitialSteps(x0, navgoal, step_options);
-for j = 1:length(footsteps)
-  footsteps(j).pos = r.footContact2Orig(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
-end
-step_options.full_foot_pose_constraint = true;
-[support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(r, x0, footsteps,step_options);
-link_constraints = buildLinkConstraints(r, q0, foottraj);
- 
-[xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, q0, zmptraj, comtraj, link_constraints);
+footstep_plan = footstep_planner.plan_footsteps(r, request);
+
+walking_planner = StatelessWalkingPlanner();
+request = drc.walking_plan_request_t();
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
+request.footstep_plan = footstep_plan.toLCM();
+walking_plan = walking_planner.plan_walking(r, request, true);
+walking_ctrl_data = walking_planner.plan_walking(r, request, false);
+walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
+
+% ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
+ts = walking_plan.ts;
 T = ts(end);
-
-qtraj = PPTrajectory(spline(ts,xtraj(1:nq,:)));
-
-v = r.constructVisualizer;
-for i=linspace(0,T,100)
-  v.draw(i,qtraj.eval(i));
-  pause(T/100/4);
-end
-qdtraj = fnder(qtraj,1);
-qddtraj = fnder(qtraj,2);
-
-% compute s1,s2 derivatives for controller Vdot computation
-s1dot = fnder(V.s1,1);
-s2dot = fnder(V.s2,1);
 
 ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
   'B',[zeros(2); eye(2)],...
   'C',[eye(2),zeros(2)],...
+  'D',0,...
   'Qy',eye(2),...
   'R',zeros(2),...
   'is_time_varying',true,...
-  'S',V.S.eval(0),... % always a constant
-  's1',V.s1,...
-  's2',V.s2,...
-  's1dot',s1dot,...
-  's2dot',s2dot,...
-  'x0',[zmptraj.eval(T);0;0],...
+  'S',walking_ctrl_data.S.eval(0),... % always a constant
+  's1',walking_ctrl_data.s1,...
+  's2',walking_ctrl_data.s2,...
+  's1dot',walking_ctrl_data.s1dot,...
+  's2dot',walking_ctrl_data.s2dot,...
+  'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
   'u0',zeros(2,1),...
-  'comtraj',comtraj,...
-  'link_constraints',link_constraints, ...
-  'support_times',support_times,...
-  'supports',[supports{:}],...
+  'comtraj',walking_ctrl_data.comtraj,...
+  'link_constraints',walking_ctrl_data.link_constraints, ...
+  'support_times',walking_ctrl_data.support_times,...
+  'supports',[walking_ctrl_data.supports{:}],...
   't_offset',0,...
-  'mu',1,...
-  'ignore_terrain',false,...
+  'mu',walking_ctrl_data.mu,...
+  'ignore_terrain',walking_ctrl_data.ignore_terrain,...
+  'qp_active_set',0,...
   'trans_drift',[0;0;0],...
-  'y0',zmptraj));
+  'y0',walking_ctrl_data.zmptraj));
+
+qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
+
+v = r.constructVisualizer;
+for i=linspace(0,T,100)
+  v.draw(i,qtraj.eval(i));
+  pause(T/100);
+end
+qdtraj = fnder(qtraj,1);
+qddtraj = fnder(qtraj,2);
 
 % instantiate QP controller
 options.dt = 0.003;
