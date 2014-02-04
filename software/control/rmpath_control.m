@@ -38,6 +38,7 @@ rmpath(fullfile(pwd,'matlab','frames'));
 rmpath(fullfile(pwd,'matlab','test'));
 rmpath(fullfile(pwd,'matlab','systems'));
 rmpath(fullfile(pwd,'collections_utils'));
+rmpath(fullfile(pwd,'..','drake','examples','ZMP'));
 
 
 end
