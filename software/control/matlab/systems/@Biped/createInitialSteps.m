@@ -73,7 +73,6 @@ for j = 1:length(X)
     X(j).pos_fixed = zeros(6,1);
   end
   X(j).is_in_contact = true;
-  X(j).walking_params =params;
 end
 
 if params.ignore_terrain
