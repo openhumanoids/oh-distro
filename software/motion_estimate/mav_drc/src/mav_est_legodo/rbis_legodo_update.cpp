@@ -48,7 +48,7 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   prev_vicon_utime_ = -1;
   
   
-  local_integration_ = true;
+  local_integration_ = false;
   local_max_count_ = 10;
   local_counter_ = 0;
   local_prev_utime_=0;

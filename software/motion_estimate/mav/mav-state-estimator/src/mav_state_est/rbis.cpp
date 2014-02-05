@@ -36,7 +36,16 @@ void getIMUProcessLinearizationContinuous(const RBIS & state, RBIM & Ac)
 
 void insUpdateState(const Eigen::Vector3d & gyro, const Eigen::Vector3d & accelerometer, double dt, RBIS & state)
 {
-
+ 
+  bool verbose = false;
+  if (verbose){
+    std::cout << "mfallon insUpdateState\n";
+    std::cout << state << " state prior\n";
+    std::cout << gyro.transpose() << "\n";
+    std::cout << accelerometer.transpose() << "\n";
+    std::cout << dt << "\n";
+  }
+  
   //put the ins measurements into the state, correcting for bias
   state.angularVelocity() = gyro - state.gyroBias();
   state.acceleration() = accelerometer - state.accelBias();
@@ -52,7 +61,17 @@ void insUpdateState(const Eigen::Vector3d & gyro, const Eigen::Vector3d & accele
   //integrate
   dstate.vec *= dt;
   dstate.chiToQuat();
+  
+  if (verbose){
+    std::cout << dstate << " dstate\n";
+  }
+  
   state.addState(dstate);
+  
+  if (verbose){
+    std::cout << dstate << " state updated\n";
+    std::cout << "\n";
+  }
 }
 
 void insUpdateCovariance(double q_gyro, double q_accel, double q_gyro_bias, double q_accel_bias, const RBIS & state,

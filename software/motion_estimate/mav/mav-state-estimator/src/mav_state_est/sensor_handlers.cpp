@@ -31,6 +31,7 @@ InsHandler::InsHandler(BotParam * _param, BotFrames * _frames)
   gyro_bias_sum.setZero();
 }
 
+////////// Typical Micro Strain INS /////////////////
 RBISUpdateInterface * InsHandler::processMessage(const mav::ins_t * msg)
 {
   //    get everything into the right frame
@@ -43,60 +44,6 @@ RBISUpdateInterface * InsHandler::processMessage(const mav::ins_t * msg)
   Eigen::Map<Eigen::Vector3d> gyro(body_gyro);
 
   return new RBISIMUProcessStep(gyro, accelerometer, cov_gyro, cov_accel, cov_gyro_bias, cov_accel_bias, dt, msg->utime);
-}
-
-RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_batch_t * msg)
-{
-  //    get everything into the right frame
-  double body_accel[3];
-  bot_trans_apply_vec(&ins_to_body, msg->raw_imu[0].linear_acceleration, body_accel);
-  Eigen::Map<Eigen::Vector3d> accelerometer(body_accel);
-
-  // Convert Rotation Amounts to rotation rates:
-  dt = (msg->raw_imu[0].utime - msg->raw_imu[1].utime)*1E-6;
-  double sensor_gyro[3];
-  sensor_gyro[0] = (msg->raw_imu[0].delta_rotation[0])/dt;
-  sensor_gyro[1] = (msg->raw_imu[0].delta_rotation[1])/dt;
-  sensor_gyro[2] = (msg->raw_imu[0].delta_rotation[2])/dt;
-
-  if (1==0){
-  std::cout << "===\n";
-  std::cout << "rotation\n";
-  std::cout << msg->raw_imu[0].utime << "\n";
-  std::cout << msg->raw_imu[1].utime << "\n";
-  std::cout << msg->raw_imu[0].delta_rotation[0] << ", " << msg->raw_imu[0].delta_rotation[1] << ", " 
-            << msg->raw_imu[0].delta_rotation[2] << " delta_rot\n";
-  std::cout << "rotation rate\n";
-  std::cout << dt << "\n";
-  std::cout << sensor_gyro[0] << ", " << sensor_gyro[1] << ", " 
-            << sensor_gyro[2] << " gyro\n";  
-  }
-
-  double body_gyro[3];
-  bot_trans_apply_vec(&ins_to_body, sensor_gyro, body_gyro);
-  Eigen::Map<Eigen::Vector3d> gyro(body_gyro);
-
-  return new RBISIMUProcessStep(gyro, accelerometer, cov_gyro, cov_accel, cov_gyro_bias, cov_accel_bias, dt, msg->utime);
-}
-
-bool InsHandler::processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg,
-    const std::map<std::string, bool> & sensors_initialized
-    , const RBIS & default_state, const RBIM & default_cov,
-    RBIS & init_state, RBIM & init_cov)
-{
-  init_state.utime = msg->utime;
-
-  RBISIMUProcessStep * update = dynamic_cast<RBISIMUProcessStep *>(processMessageAtlas(msg));
-
-  if(  !RBISInitializer::allInitializedExcept(sensors_initialized, "ins")) //force the INS to go last
-    return false;
-
-  init_counter++;
-
-  double mag[3] = {0.0,0.0,0.0}; //not used
-  Eigen::Map<Eigen::Vector3d> mag_vec(mag);
-
-  return processMessageInitCommon(sensors_initialized, default_state, default_cov, init_state, init_cov, update, mag_vec);
 }
 
 bool InsHandler::processMessageInit(const mav::ins_t * msg,
@@ -120,7 +67,78 @@ bool InsHandler::processMessageInit(const mav::ins_t * msg,
   return processMessageInitCommon(sensors_initialized, default_state, default_cov, init_state, init_cov, update, mag_vec);
 }
 
+////////// Atlas KVH INS /////////////////
+RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_batch_t * msg)
+{
+  //    get everything into the right frame
+  double body_accel[3];
+  bot_trans_apply_vec(&ins_to_body, msg->raw_imu[0].linear_acceleration, body_accel);
+  Eigen::Map<Eigen::Vector3d> accelerometer(body_accel);
 
+  // Convert Rotation Amounts to rotation rates:
+  double raw_dt = (msg->raw_imu[0].utime - msg->raw_imu[1].utime)*1E-6;
+  double sensor_gyro[3];
+  sensor_gyro[0] = (msg->raw_imu[0].delta_rotation[0])/raw_dt;
+  sensor_gyro[1] = (msg->raw_imu[0].delta_rotation[1])/raw_dt;
+  sensor_gyro[2] = (msg->raw_imu[0].delta_rotation[2])/raw_dt;
+
+  if (1==0){
+  std::cout << "===\n";
+  std::cout << "rotation\n";
+  std::cout << msg->raw_imu[0].utime << "\n";
+  std::cout << msg->raw_imu[1].utime << "\n";
+  std::cout << msg->raw_imu[0].delta_rotation[0] << ", " << msg->raw_imu[0].delta_rotation[1] << ", " 
+            << msg->raw_imu[0].delta_rotation[2] << " delta_rot\n";
+  std::cout << "rotation rate\n";
+  std::cout << raw_dt << "\n";
+  std::cout << sensor_gyro[0] << ", " << sensor_gyro[1] << ", " 
+            << sensor_gyro[2] << " gyro\n";  
+  }
+
+  double body_gyro[3];
+  bot_trans_apply_vec(&ins_to_body, sensor_gyro, body_gyro);
+  Eigen::Map<Eigen::Vector3d> gyro(body_gyro);
+
+  // Use message timestamp for dt after initialization
+  // TODO: quantify if this is useful versus just using 1/nominal_hz
+  double integration_dt;
+  if (prev_utime_atlas==0){
+    integration_dt = dt; // use default
+  }else{
+    integration_dt = (msg->utime - prev_utime_atlas)*1E-6; 
+  }
+  if (integration_dt > 0.1){ // until dt integrity is confirmed..
+    std::cout << "dt was : " << integration_dt << " - there is an issue with timestamps\n";
+    //exit(-1); 
+  }
+  prev_utime_atlas = msg->utime;
+  
+  return new RBISIMUProcessStep(gyro, accelerometer, cov_gyro, cov_accel, cov_gyro_bias, cov_accel_bias, integration_dt, msg->utime);
+}
+
+bool InsHandler::processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg,
+    const std::map<std::string, bool> & sensors_initialized
+    , const RBIS & default_state, const RBIM & default_cov,
+    RBIS & init_state, RBIM & init_cov)
+{
+  init_state.utime = msg->utime;
+
+  RBISIMUProcessStep * update = dynamic_cast<RBISIMUProcessStep *>(processMessageAtlas(msg));
+
+  if(  !RBISInitializer::allInitializedExcept(sensors_initialized, "ins")) //force the INS to go last
+    return false;
+
+  init_counter++;
+
+  double mag[3] = {0.0,0.0,0.0}; //not used
+  Eigen::Map<Eigen::Vector3d> mag_vec(mag);
+
+  return processMessageInitCommon(sensors_initialized, default_state, default_cov, init_state, init_cov, update, mag_vec);
+}
+
+
+
+////////////////// Common ///////////////////
 bool InsHandler::processMessageInitCommon(const std::map<std::string, bool> & sensors_initialized
     , const RBIS & default_state, const RBIM & default_cov,
     RBIS & init_state, RBIM & init_cov,

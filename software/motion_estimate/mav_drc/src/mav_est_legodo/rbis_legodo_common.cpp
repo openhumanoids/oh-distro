@@ -4,7 +4,7 @@ namespace MavStateEst {
 
 LegOdoCommon::LegOdoCommon(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub, BotParam * param):
   lcm_recv(lcm_recv), lcm_pub(lcm_pub){
-  verbose = true;
+  verbose = false;
   
   char* mode_str = bot_param_get_str_or_fail(param, "state_estimator.legodo.mode");
 
@@ -143,7 +143,6 @@ bot_core::pose_t getBotTransAsBotPoseVelocity(BotTrans bt, int64_t utime ){
 }
 
 RBISUpdateInterface * LegOdoCommon::createMeasurement(BotTrans &msgT, int64_t utime, int64_t prev_utime){
-//  , bool verbose){
   double rpy[3];
   bot_quat_to_roll_pitch_yaw(msgT.rot_quat,rpy);
   double elapsed_time = ( (double) utime -  prev_utime)/1000000;
@@ -182,7 +181,7 @@ RBISUpdateInterface * LegOdoCommon::createMeasurement(BotTrans &msgT, int64_t ut
     std::cout << "\n\n";
   }
   
-  // Get the velocity as a pose message:
+  // Get the velocity as a pose message for visualization with signal scope:
   bot_core::pose_t vel_pose = getBotTransAsBotPoseVelocity(msgT_vel, utime)  ;
   lcm_pub->publish("POSE_BODY_LEGODO_VELOCITY", &vel_pose );   
 

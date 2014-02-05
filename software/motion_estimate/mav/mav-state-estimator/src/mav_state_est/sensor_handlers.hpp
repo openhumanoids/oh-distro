@@ -36,6 +36,7 @@ protected:
   RBISUpdateInterface * processMessageAtlas(const drc::atlas_raw_imu_batch_t * msg);
   bool processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg, const std::map<std::string, bool> & sensors_initialized
       , const RBIS & default_state, const RBIM & default_cov, RBIS & init_state, RBIM & init_cov);
+  double prev_utime_atlas; // cached previous time
 
   // Common Initialization Function:
   bool processMessageInitCommon(const std::map<std::string, bool> & sensors_initialized

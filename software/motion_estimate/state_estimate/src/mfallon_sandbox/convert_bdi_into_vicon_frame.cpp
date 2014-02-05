@@ -6,6 +6,7 @@
 #include <pointcloud_tools/pointcloud_vis.hpp>
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 #include <path_util/path_util.h>
+#include <ConciseArgs>
 
 #include "visualization/collections.hpp"
 
@@ -78,11 +79,11 @@ void PoseTransformer::doWork(Eigen::Isometry3d worldest_to_estbody, int64_t utim
     if (verbose_){
       // how much have we moved since we started:
       Isometry3dTime worldest_to_estbody_zerotime_T(utime, worldest_to_estbody_zerotime_);
-      pc_vis_->pose_to_lcm_from_list(10000 + pose_counter*10, worldest_to_estbody_zerotime_T); // all joints in world frame
+      pc_vis_->pose_to_lcm_from_list(10000 + pose_counter*10, worldest_to_estbody_zerotime_T); 
 
       // in vicon world where where we at start time
       Isometry3dTime worldvicon_to_viconbody_zerotime_T(utime, worldvicon_to_viconbody_zerotime_);
-      pc_vis_->pose_to_lcm_from_list(10003 + pose_counter*10, worldvicon_to_viconbody_zerotime_T); // all joints in world frame
+      pc_vis_->pose_to_lcm_from_list(10003 + pose_counter*10, worldvicon_to_viconbody_zerotime_T); 
     }
   }
   
@@ -90,22 +91,28 @@ void PoseTransformer::doWork(Eigen::Isometry3d worldest_to_estbody, int64_t utim
   Eigen::Isometry3d estbody_zerotime_to_estbody_current = worldest_to_estbody_zerotime_.inverse() * worldest_to_estbody;
   if (verbose_){
     Isometry3dTime estbody_zerotime_to_estbody_current_T(utime, estbody_zerotime_to_estbody_current);
-    pc_vis_->pose_to_lcm_from_list(10001 + pose_counter*10, estbody_zerotime_to_estbody_current_T); // all joints in world frame
+    pc_vis_->pose_to_lcm_from_list(10001 + pose_counter*10, estbody_zerotime_to_estbody_current_T); 
   }
   
   // ... applied to the initial vicon
   Eigen::Isometry3d worldvicon_to_estbody = worldvicon_to_viconbody_zerotime_ * estbody_zerotime_to_estbody_current;
   Isometry3dTime worldvicon_to_estbody_T(utime, worldvicon_to_estbody);
-  pc_vis_->pose_to_lcm_from_list(10002 + pose_counter*10, worldvicon_to_estbody_T); // all joints in world frame
-  pc_vis_->pose_to_lcm_from_list(10004 + pose_counter*10, worldvicon_to_estbody_T); // all joints in world frame
+  pc_vis_->pose_to_lcm_from_list(10002 + pose_counter*10, worldvicon_to_estbody_T); 
+  pc_vis_->pose_to_lcm_from_list(10004 + pose_counter*10, worldvicon_to_estbody_T); 
 }
 
 
 
 ////////////////////////////////////////
+struct CommandLineConfig
+{
+    bool use_pose_vicon;
+};
+
+
 class App{
   public:
-    App(boost::shared_ptr<lcm::LCM> &lcm_);
+    App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_);
     
     ~App(){
     }    
@@ -120,17 +127,22 @@ class App{
     void poseMITHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  bot_core::pose_t* msg);
     
+    
+    void viconPoseHandler(const lcm::ReceiveBuffer* rbuf, 
+                           const std::string& channel, const  bot_core::pose_t* msg);
     void viconHandler(const lcm::ReceiveBuffer* rbuf, 
                       const std::string& channel, const  bot_core::rigid_transform_t* msg);
 
-    std::vector <PoseTransformer> pts_;    
+    std::vector <PoseTransformer> pts_;   
+    const CommandLineConfig cl_cfg_;   
+    pointcloud_vis* pc_vis_; 
 };
 
 
 
 
-App::App(boost::shared_ptr<lcm::LCM> &lcm_):
-    lcm_(lcm_){
+App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
+    lcm_(lcm_), cl_cfg_(cl_cfg_){
       
   //if (cl_cfg_.param_file == ""){
   //   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
@@ -148,13 +160,27 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
 
   lcm_->subscribe( "POSE_BDI" ,&App::poseBDIHandler,this);
   lcm_->subscribe( "POSE_BODY_ALT" ,&App::poseMITHandler,this);
-  lcm_->subscribe("VICON_FRONTPLATE",&App::viconHandler,this);  
+
+  if (cl_cfg_.use_pose_vicon){
+    lcm_->subscribe("POSE_VICON",&App::viconPoseHandler,this);  
+  }else{
+    lcm_->subscribe("VICON_FRONTPLATE",&App::viconHandler,this);  
+  }
+  
   
   PoseTransformer pt0_(lcm_, 0);
   PoseTransformer pt1_(lcm_, 1);
-
   pts_.push_back( pt0_ );  
   pts_.push_back( pt1_ );    
+  
+  
+  // Vis Config:
+  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(10022,"Vicon (v)",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(10023,"Vicon at init",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(10024,"Vicon (v all)",5,0) );
+  pc_vis_->pose_collection_reset(10024,"Vicon (v all)");
+  
 }
 
 
@@ -213,37 +239,79 @@ void App::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chan
 
 
 
-void App::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg){
+void App::viconPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+
+  Eigen::Isometry3d worldvicon_to_body_vicon;
+  worldvicon_to_body_vicon.setIdentity();
+  worldvicon_to_body_vicon.translation()  << msg->pos[0], msg->pos[1] , msg->pos[2];
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->orientation[0], msg->orientation[1], 
+                                            msg->orientation[2], msg->orientation[3]);
+  worldvicon_to_body_vicon.rotate(quat); 
+  
+  // Publish Vicon
+  Isometry3dTime worldvicon_to_body_vicon_T(msg->utime, worldvicon_to_body_vicon);
+  pc_vis_->pose_to_lcm_from_list(10022, worldvicon_to_body_vicon_T); 
+  pc_vis_->pose_to_lcm_from_list(10024, worldvicon_to_body_vicon_T);     
+  
   for (size_t i=0; i < pts_.size() ; i++){
     PoseTransformer* pt = &(pts_[i]);
     
     if (!pt->world_to_viconbody_init_){
       std::cout << "initialize vicon\n";
-      Eigen::Isometry3d worldvicon_to_frontplate_vicon_zerotime;
-      worldvicon_to_frontplate_vicon_zerotime.setIdentity();
-      worldvicon_to_frontplate_vicon_zerotime.translation()  << msg->trans[0], msg->trans[1] , msg->trans[2];
-      Eigen::Quaterniond quat = Eigen::Quaterniond(msg->quat[0], msg->quat[1], 
-                                                msg->quat[2], msg->quat[3]);
-      worldvicon_to_frontplate_vicon_zerotime.rotate(quat); 
       
-      Eigen::Isometry3d frontplate_vicon_to_body_vicon;
-      frames_cpp_->get_trans_with_utime( "body_vicon" , "frontplate_vicon", msg->utime, frontplate_vicon_to_body_vicon);    
-      Eigen::Isometry3d worldvicon_to_body_vicon_zerotime = worldvicon_to_frontplate_vicon_zerotime * frontplate_vicon_to_body_vicon;
       
       pt->world_to_viconbody_init_ = true;
-      pt->worldvicon_to_viconbody_zerotime_ = worldvicon_to_body_vicon_zerotime;
+      pt->worldvicon_to_viconbody_zerotime_ = worldvicon_to_body_vicon;
+    }      
+  }
+}
+
+
+
+void App::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg){
+  
+  Eigen::Isometry3d worldvicon_to_frontplate_vicon;
+  worldvicon_to_frontplate_vicon.setIdentity();
+  worldvicon_to_frontplate_vicon.translation()  << msg->trans[0], msg->trans[1] , msg->trans[2];
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->quat[0], msg->quat[1], 
+                                            msg->quat[2], msg->quat[3]);
+  worldvicon_to_frontplate_vicon.rotate(quat); 
+  Eigen::Isometry3d frontplate_vicon_to_body_vicon;
+  frames_cpp_->get_trans_with_utime( "body_vicon" , "frontplate_vicon", msg->utime, frontplate_vicon_to_body_vicon);    
+  Eigen::Isometry3d worldvicon_to_body_vicon = worldvicon_to_frontplate_vicon * frontplate_vicon_to_body_vicon;
+
+  
+  // Publish Vicon
+  Isometry3dTime worldvicon_to_body_vicon_T(msg->utime, worldvicon_to_body_vicon);
+  pc_vis_->pose_to_lcm_from_list(10022, worldvicon_to_body_vicon_T); 
+  pc_vis_->pose_to_lcm_from_list(10024, worldvicon_to_body_vicon_T);   
+  
+  
+  for (size_t i=0; i < pts_.size() ; i++){
+    PoseTransformer* pt = &(pts_[i]);
+    
+    if (!pt->world_to_viconbody_init_){
+      std::cout << "initialize vicon\n";
+      
+      pt->world_to_viconbody_init_ = true;
+      pt->worldvicon_to_viconbody_zerotime_ = worldvicon_to_body_vicon;
     }      
   }
 }
 
 int main(int argc, char ** argv) {
+  CommandLineConfig cl_cfg;
+  cl_cfg.use_pose_vicon = false;
+  ConciseArgs opt(argc, (char**)argv);
+  opt.add(cl_cfg.use_pose_vicon, "p", "use_pose_vicon","Will a POSE_VICON be published");
+  opt.parse();  
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  App app(lcm);
+  App app(lcm, cl_cfg);
   cout << "Tool ready" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
