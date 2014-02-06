@@ -132,12 +132,12 @@ end
 		fz_l = force_torque(l_foot_fz_idx);
     tx_l = force_torque(l_foot_tx_idx);
 		ty_l = force_torque(l_foot_ty_idx);
-		l_foot_pt = [-ty_l/fz_l; -tx_l/fz_l; 0];
+		l_foot_pt = [-ty_l/fz_l; tx_l/fz_l; 0];
     
 		fz_r = force_torque(r_foot_fz_idx);
 		tx_r = force_torque(r_foot_tx_idx);
 		ty_r = force_torque(r_foot_ty_idx);
-		r_foot_pt = [-ty_r/fz_r; -tx_r/fz_r; 0];
+		r_foot_pt = [-ty_r/fz_r; tx_r/fz_r; 0];
 
 		lfoot_pos = forwardKin(r,kinsol, lfoot_ind, l_foot_pt);
 		rfoot_pos = forwardKin(r,kinsol, rfoot_ind, r_foot_pt);
