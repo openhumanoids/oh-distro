@@ -135,7 +135,44 @@ class FootGoal(BaseFootGoal):
             goal.pos[pl.find(pl.isnan(goal.pos))] = 0
         return goal
 
-def decode_footstep_plan(plan_msg):
+    @staticmethod
+    def from_footstep_msg(goal_msg):
+        rpy = quat2rpy([goal_msg.pos.rotation.w,
+                        goal_msg.pos.rotation.x,
+                        goal_msg.pos.rotation.y,
+                        goal_msg.pos.rotation.z])
+        goal = FootGoal(pos=pl.vstack([goal_msg.pos.translation.x,
+                                       goal_msg.pos.translation.y,
+                                       goal_msg.pos.translation.z,
+                                       rpy]),
+                        step_speed=goal_msg.params.step_speed,
+                        step_height=goal_msg.params.step_height,
+                        step_id=goal_msg.id,
+                        pos_fixed=[goal_msg.fixed_x,
+                                   goal_msg.fixed_y,
+                                   goal_msg.fixed_z,
+                                   goal_msg.fixed_roll,
+                                   goal_msg.fixed_pitch,
+                                   goal_msg.fixed_yaw],
+                        is_right_foot=goal_msg.is_right_foot,
+                        is_in_contact=goal_msg.is_in_contact,
+                        bdi_step_duration=goal_msg.params.bdi_step_duration,
+                        bdi_sway_duration=goal_msg.params.bdi_sway_duration,
+                        bdi_lift_height=goal_msg.params.bdi_lift_height,
+                        bdi_toe_off=goal_msg.params.bdi_toe_off,
+                        bdi_knee_nominal=goal_msg.params.bdi_knee_nominal,
+                        bdi_max_body_accel=goal_msg.params.bdi_max_body_accel,
+                        bdi_max_foot_vel=goal_msg.params.bdi_max_foot_vel,
+                        bdi_sway_end_dist=goal_msg.params.bdi_sway_end_dist,
+                        bdi_step_end_dist=goal_msg.params.bdi_step_end_dist,
+                        terrain_pts=pl.vstack([goal_msg.terrain_path_dist, goal_msg.terrain_height]))
+        if any(pl.isnan(goal.pos[[0,1,5]])):
+            raise ValueError("I don't know how to handle NaN in x, y, or yaw")
+        else:
+            goal.pos[pl.find(pl.isnan(goal.pos))] = 0
+        return goal
+
+def decode_deprecated_footstep_plan(plan_msg):
     footsteps = []
     for goal in plan_msg.footstep_goals:
         footsteps.append(FootGoal.from_goal_msg(goal))
@@ -144,3 +181,10 @@ def decode_footstep_plan(plan_msg):
                'behavior': plan_msg.footstep_opts.behavior}
     return footsteps, options
 
+def decode_footstep_plan(plan_msg):
+    footsteps = []
+    for step in plan_msg.footsteps:
+        footsteps.append(FootGoal.from_footstep_msg(step))
+    options = {'ignore_terrain': false,
+               'mu': 1.0,
+               'behavior': Behavior.BDI_STEPPING}
