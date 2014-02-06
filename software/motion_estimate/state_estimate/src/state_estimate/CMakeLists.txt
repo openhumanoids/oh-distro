@@ -7,7 +7,8 @@ set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED COMPONENTS system thread)
 include_directories(${Boost_INCLUDE_DIRS})
 
-set(required_packages eigen3 
+set(required_packages  ${PCL_LIBRARIES}
+                      eigen3 
                       drc-lcmtypes 
                       kalman-filter 
                       inertial-odometry 
@@ -17,7 +18,8 @@ set(required_packages eigen3
                       urdf orocos-kdl 
                       kdl-parser 
                       forward-kinematics
-                      model-client)
+                      model-client
+                      bot2-lcmgl-client)
 
 set(srcs
   IMUFilter.cpp
@@ -30,8 +32,8 @@ set(srcs
 #SET(CMAKE_BUILD_TYPE Debug)
 
 add_library(StateEstimate  SHARED ${srcs})
-target_link_libraries(StateEstimate ${Boost_LIBRARIES})
-pods_use_pkg_config_packages(StateEstimate ${required_packages} ${PCL_LIBRARIES})
+target_link_libraries(StateEstimate ${Boost_LIBRARIES} estimate)
+pods_use_pkg_config_packages(StateEstimate ${required_packages})
 
 
 add_executable(state_estimate main.cpp)

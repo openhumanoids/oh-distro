@@ -4,6 +4,7 @@
 StateEstimate::StateEstimator::StateEstimator(
 	const command_switches* _switches,
     boost::shared_ptr<lcm::LCM> lcmHandle,
+    CommandLineConfig& cl_cfg,
     AtlasStateQueue& atlasStateQueue,
     IMUQueue& imuQueue,
     PoseQueue& bdiPoseQueue,
@@ -18,6 +19,7 @@ StateEstimate::StateEstimator::StateEstimator(
   mViconQueue(viconPoseQueue),
   mMatlabTruthQueue(viconMatlabtruthQueue),
   mINSUpdateQueue(INSUpdateQueue),
+  LegOdoWrapper(lcmHandle, lcmHandle, cl_cfg),
   inert_odo(0.001)
 {
 
@@ -27,6 +29,10 @@ StateEstimate::StateEstimator::StateEstimator(
   if (_switches->ExperimentalMsgs) {
 	  ERSMsgSuffix = "_EXP";
   }
+
+  // Sandbox leg odo
+  setupLegOdo();
+
 
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
   int num_joints = 28;
@@ -86,6 +92,15 @@ StateEstimate::StateEstimator::StateEstimator(
   prevImuPacketCount = 0;
   Ts_imu = 1E-3;
   receivedIMUPackets = 0;
+
+
+  pelvis_vel_diff.setSize(3);
+  d_pelvis_vel_diff.setSize(3);
+
+  lcm = lcm_create(NULL); // Currently this pointer is not being deleted -- must be done before use
+  lcmgl_ = bot_lcmgl_init(lcm, "StateEstimator");
+  drawVelArrow();
+
 }
 
 // TODO -- fix this constructor
@@ -233,10 +248,20 @@ void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_updat
 
 void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose) {
 
+  // This will publish "POSE_BODY_ALT message"
+  PropagateLegOdometry(bdiPose, atlasState);
+
+
+  return;
+  // Skipping the old stuff -- clearly needs clearing up.
+
   // compute the joint velocities with num_joints Kalman Filters in parallel
   // TODO -- make this dependent on local state and not the message number
   //mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
   insertAtlasState_ERS(atlasState, mERSMsg, robot);
+
+
+
 
   // TODO -- we are using the BDI orientation -- should change to either pure leg kin, combination of yaw, or V/P fused orientation
   Eigen::Quaterniond BDi_quat;
@@ -289,20 +314,77 @@ drc::ins_update_request_t* StateEstimate::StateEstimator::getDataFusionReqMsg() 
 }
 
 
-void StateEstimate::StateEstimator::PropagateLegOdometry() {
-	Eigen::Isometry3d world_to_body_bdi;
-	world_to_body_bdi.setIdentity();
-	world_to_body_bdi.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
-	Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x,
-			msg->pose.rotation.y, msg->pose.rotation.z);
-	world_to_body_bdi.rotate(quat);
+void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState) {
+  Eigen::Isometry3d world_to_body_bdi;
+  world_to_body_bdi.setIdentity();
+  //world_to_body_bdi.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(bdiPose.orientation[0], bdiPose.orientation[1], bdiPose.orientation[2], bdiPose.orientation[3]);
+  world_to_body_bdi.rotate(quat);
 
-	leg_odo_->setPoseBDI( world_to_body_bdi );
-	leg_odo_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
-	leg_odo_->updateOdometry(msg->joint_name, msg->joint_position,
-			msg->joint_velocity, msg->joint_effort, msg->utime);
+  leg_odo_->setPoseBDI( world_to_body_bdi );
+  leg_odo_->setFootForces(atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z);
+  leg_odo_->updateOdometry(joint_utils_.atlas_joint_names, atlasState.joint_position, atlasState.utime);
 
-	Eigen::Isometry3d world_to_body = leg_odo_->getRunningEstimate();
-	bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, msg->utime);
-	lcm_publish_->publish("POSE_BODY_ALT", &pose_msg );
+  Eigen::Isometry3d world_to_body = leg_odo_->getRunningEstimate();
+  Eigen::Vector3d pelvisVel_world, drawPelvisVel_world;
+
+  pelvisVel_world = pelvis_vel_diff.diff(atlasState.utime, world_to_body.translation());
+  double vel[3];
+  vel[0] = lpfilter[0].processSample(pelvisVel_world(0));
+  vel[1] = lpfilter[1].processSample(pelvisVel_world(1));
+  vel[2] = lpfilter[2].processSample(pelvisVel_world(2));
+  drawPelvisVel_world << vel[0], vel[1], vel[2];
+
+  std::cout << "StateEstimator::PropagateLegOdometry -- pelvis vel: " << drawPelvisVel_world.transpose() << std::endl;
+
+  bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, atlasState.utime);
+  mLCM->publish("POSE_BODY_ALT", &pose_msg );
 }
+
+
+void StateEstimate::StateEstimator::drawVelArrow() {
+  //  bot_lcmgl_translated(lcmgl_, 0, 0.5, 0);  // example offset
+
+
+  // euler
+  double rpy[] = {1., 0., 1.0};
+  double angle;
+  double axis[3];
+  bot_roll_pitch_yaw_to_angle_axis (rpy, &angle, axis);
+
+  //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
+  std::cout << angle << "\n";
+  std::cout << axis[0] << "\n";
+  std::cout << axis[1] << "\n";
+  std::cout << axis[2] << "\n";
+
+  bot_lcmgl_push_matrix(lcmgl_);
+//  bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
+  bot_lcmgl_rotated(lcmgl_, angle, axis[0], axis[1], axis[2]);
+  bot_lcmgl_draw_arrow_3d (lcmgl_, 1, 0.1, 0.1, 0.1);
+//  bot_lcmgl_end(lcmgl_);
+  bot_lcmgl_pop_matrix(lcmgl_);
+  bot_lcmgl_switch_buffer(lcmgl_);
+
+
+  //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
+  std::cout << angle << "\n";
+  std::cout << axis[0] << "\n";
+  std::cout << axis[1] << "\n";
+  std::cout << axis[2] << "\n";
+
+  bot_lcmgl_translated(lcmgl_, 0, 0.5, 0);  // example offset
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
+  bot_lcmgl_rotated(lcmgl_, angle, axis[0], axis[1], axis[2]);
+  double magn;
+  magn = 0.5;
+  bot_lcmgl_draw_arrow_3d (lcmgl_, magn*1, magn*0.1, magn*0.15, magn*0.05);
+  bot_lcmgl_pop_matrix(lcmgl_);
+  bot_lcmgl_switch_buffer(lcmgl_);
+
+//  bot2-lcmgl/src/bot_lcmgl_client/lcmgl.h
+//  void bot_lcmgl_draw_arrow_3d (bot_lcmgl_t * lcmgl, double length, double head_width, double head_length, double body_width);
+
+}
+

@@ -97,6 +97,7 @@ void detectIMUSampleTime(unsigned long long &prevImuPacketCount, unsigned long l
 
 void stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst, bot_core::pose_t &_msg);
 
+
 } // namespace StateEstimate
 
 #endif /*STATEESTIMATORUTILITIES_H_*/

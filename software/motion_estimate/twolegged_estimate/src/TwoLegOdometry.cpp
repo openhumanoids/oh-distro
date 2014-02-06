@@ -263,15 +263,7 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
   Eigen::Isometry3d returnval;
   returnval.setIdentity();
 
-  #ifdef MATTS_HELP
-    Eigen::Isometry3d lhs;// this is just to test
-    lhs = slidecorrection * footsteps.getLastStep(); // TODO
-
-    returnval.translation() = add(lhs,getPrimaryFootToPelvis()).translation();
-    returnval.linear() = q2C(local_frame_orientation);
-  #else
-    returnval = getLastStep_w_IMUq() * getPrimaryFootToPelvis();
-  #endif
+  returnval = getLastStep_w_IMUq() * getPrimaryFootToPelvis();
 
   return returnval;
 }
