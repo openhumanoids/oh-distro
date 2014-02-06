@@ -185,6 +185,7 @@ def decode_footstep_plan(plan_msg):
     footsteps = []
     for step in plan_msg.footsteps:
         footsteps.append(FootGoal.from_footstep_msg(step))
-    options = {'ignore_terrain': false,
+    options = {'ignore_terrain': False,
                'mu': 1.0,
                'behavior': Behavior.BDI_STEPPING}
+    return footsteps, options
