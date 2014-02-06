@@ -109,6 +109,18 @@ walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
 ts = walking_plan.ts;
 T = ts(end);
 
+
+% plot walking traj in drake viewer
+lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
+
+for i=1:length(ts)
+	lcmgl.glColor3f(0, 0, 1);
+	lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+  lcmgl.glColor3f(0, 1, 0);
+	lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);  
+end
+lcmgl.switchBuffers();
+
 ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
   'B',[zeros(2); eye(2)],...
