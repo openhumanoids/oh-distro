@@ -5,7 +5,8 @@ function atlasVisualizer
 
 % load robot model
 r = Atlas();
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+d=load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+xstar=d.xstar;
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
 r = r.setInitialState(xstar);
@@ -13,28 +14,37 @@ r = r.setInitialState(xstar);
 % setup frames
 state_plus_effort_frame = AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
+force_torque_frame = AtlasForceTorque();
+force_torque_frame.subscribe('EST_ROBOT_STATE');
+
+l_foot_fz_idx = find(strcmp('l_foot_fz',force_torque_frame.coordinates));
+l_foot_tx_idx = find(strcmp('l_foot_tx',force_torque_frame.coordinates));
+l_foot_ty_idx = find(strcmp('l_foot_ty',force_torque_frame.coordinates));
+r_foot_fz_idx = find(strcmp('r_foot_fz',force_torque_frame.coordinates));
+r_foot_tx_idx = find(strcmp('r_foot_tx',force_torque_frame.coordinates));
+r_foot_ty_idx = find(strcmp('r_foot_ty',force_torque_frame.coordinates));
 
 nq = getNumDOF(r);
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
 
 v = r.constructVisualizer;
-lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'atlas-visualizer');
+lcmgl_com = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'center-of-mass');
+lcmgl_cop = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'measured-cop');
+lcmgl_zmp = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'filtered-zmp');
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
 kf = FirstOrderKalmanFilter(process_noise,observation_noise);
 kf_state = kf.getInitialState;
 
-% hardcoding D for ZMP output dynamics
-D = -0.89./9.81*eye(2); 
 
 t_prev=-1;
 qd_prev=-1;
 qdd_prev=0;
 alpha=0.05;
 while true
-  [x,t] = getNextMessage(state_plus_effort_frame,1);
+  [x,t] = getNextMessage(state_plus_effort_frame,0);
   if ~isempty(x)
 		if t_prev==-1
 			dt=0.003;
@@ -70,13 +80,36 @@ while true
 		
     kinsol = doKinematics(r,q_kf,false,true);
 		cpos = contactPositions(r,kinsol, [rfoot_ind, lfoot_ind]);
-
+		ground_z = min(cpos(3,:));
+		
 		[com,J] = getCOM(r,kinsol);
-    Jdot = forwardJacDot(r,kinsol,0);
 		J = J(1:2,:); 
+
+		drawZMP(kinsol,qd_kf,qdd,com,J,cpos,lcmgl_zmp);
+		
+		drawCOM(com,ground_z,lcmgl_com);
+	
+		force_torque = getMessage(force_torque_frame);
+		drawCOP(force_torque,kinsol,lcmgl_cop);
+		
+    v.draw(t,x_kf);
+  end
+end
+
+	function drawCOM(com,ground_z,lcmgl)
+		lcmgl.glColor3f(0, 0, 0);
+    lcmgl.sphere([com(1:2)', ground_z], 0.015, 20, 20);
+    lcmgl.switchBuffers();
+	end
+
+	function drawZMP(kinsol,qd,qdd,com,J,cpos,lcmgl)
+		Jdot = forwardJacDot(r,kinsol,0);
 		Jdot = Jdot(1:2,:);
 		
-		comdd = Jdot * qd_kf + J * qdd;
+		% hardcoding D for ZMP output dynamics
+		D = -0.89./9.81*eye(2); 
+
+		comdd = Jdot * qd + J * qdd;
 		zmp = com(1:2) + D * comdd;
 		zmp = [zmp', min(cpos(3,:))];
 		convh = convhull(cpos(1,:), cpos(2,:));
@@ -93,8 +126,28 @@ while true
     lcmgl.sphere([com(1:2)', min(cpos(3,:))], 0.015, 20, 20);
 
     lcmgl.switchBuffers();
-    v.draw(t,x_kf);
-  end
-end
+	end
+
+	function drawCOP(force_torque,kinsol,lcmgl)
+		fz_l = force_torque(l_foot_fz_idx);
+    tx_l = force_torque(l_foot_tx_idx);
+		ty_l = force_torque(l_foot_ty_idx);
+		l_foot_pt = [-ty_l/fz_l; -tx_l/fz_l; 0];
+    
+		fz_r = force_torque(r_foot_fz_idx);
+		tx_r = force_torque(r_foot_tx_idx);
+		ty_r = force_torque(r_foot_ty_idx);
+		r_foot_pt = [-ty_r/fz_r; -tx_r/fz_r; 0];
+
+		lfoot_pos = forwardKin(r,kinsol, lfoot_ind, l_foot_pt);
+		rfoot_pos = forwardKin(r,kinsol, rfoot_ind, r_foot_pt);
+
+		cop = (fz_l*lfoot_pos + fz_r*rfoot_pos)/(fz_l+fz_r);
+		cop(3) = cop(3)-0.081;
+		lcmgl.glColor3f(0,0,1);
+		lcmgl.sphere(cop,0.015,20,20);
+    lcmgl.switchBuffers();
+	end
+
 
 end
