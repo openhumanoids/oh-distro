@@ -358,14 +358,6 @@ void StateEstimate::StateEstimator::drawVelArrow() {
   std::cout << axis[1] << "\n";
   std::cout << axis[2] << "\n";
 
-  bot_lcmgl_push_matrix(lcmgl_);
-//  bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
-  bot_lcmgl_rotated(lcmgl_, angle, axis[0], axis[1], axis[2]);
-  bot_lcmgl_draw_arrow_3d (lcmgl_, 1, 0.1, 0.1, 0.1);
-//  bot_lcmgl_end(lcmgl_);
-  bot_lcmgl_pop_matrix(lcmgl_);
-  bot_lcmgl_switch_buffer(lcmgl_);
-
 
   //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
   std::cout << angle << "\n";
