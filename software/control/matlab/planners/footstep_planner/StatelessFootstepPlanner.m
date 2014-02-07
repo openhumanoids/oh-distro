@@ -10,6 +10,10 @@ classdef StatelessFootstepPlanner
       q0 = x0(1:end/2);
       foot_orig = biped.feetPosition(q0);
 
+      if request.params.ignore_terrain
+        biped = biped.setTerrain(KinematicTerrainMap(biped, q0));
+      end
+
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
       if request.num_goal_steps > 2
         request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
@@ -67,10 +71,8 @@ classdef StatelessFootstepPlanner
       plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
-      if ~request.params.ignore_terrain
-        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
-        plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
-      end
+      plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+      plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
       plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
       for j = 1:length(plan.footsteps)
         plan.footsteps(j).pos = biped.footContact2Orig(plan.footsteps(j).pos, 'center', plan.footsteps(j).is_right_foot);
