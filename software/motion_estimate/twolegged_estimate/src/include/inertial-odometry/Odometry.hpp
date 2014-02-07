@@ -48,6 +48,7 @@ namespace InertialOdometry {
       DynamicState PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
       DynamicState PropagatePrediction(IMU_dataframe &_imu);
 
+
       //DynamicState getDynamicState();
       Eigen::Quaterniond lQb();
 

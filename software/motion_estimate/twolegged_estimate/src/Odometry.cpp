@@ -94,11 +94,13 @@ namespace InertialOdometry {
   {
     InertialOdomOutput out;
 
-    imu_compensator.Full_Compensation(_imu);
-    sensedImuToBodyTransform(_imu);
+    std::cout << "Odometry::PropagatePrediction -- before lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
+
+    //sensedImuToBodyTransform(_imu);
     if (&_imu.use_dang) {
     	_imu.w_b_measured = 1/Ts_imu * _imu.dang_b;
     }
+    imu_compensator.Full_Compensation(_imu);
 
     out = PropagatePrediction_wo_IMUCompensation(_imu);
 
@@ -117,14 +119,14 @@ namespace InertialOdometry {
     state.lQb = out.quat;
 
 
-    //    std::cout << "Odometry::PropagatePrediction -- current lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- a_s_measured " << _imu.a_s_measured.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- a_l " << _imu.a_l.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
+//        std::cout << "Odometry::PropagatePrediction -- current lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
+//    	std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
+//    	std::cout << "Odometry::PropagatePrediction -- a_s_measured " << _imu.a_s_measured.transpose() << std::endl;
+//    	std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
+//    	std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
+//    	std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
+//    	std::cout << "Odometry::PropagatePrediction -- a_l " << _imu.a_l.transpose() << std::endl;
+//    	std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
 
     return state;
   }

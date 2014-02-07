@@ -65,6 +65,7 @@ public:
   InertialOdometry::Odometry* getInertialOdometry();
   drc::robot_state_t* getERSMsg();
   drc::ins_update_request_t* getDataFusionReqMsg();
+  InertialOdometry::DynamicState* getInerOdoPtr();
 
 protected:
 
@@ -124,7 +125,9 @@ private:
   LowPassFilter lpfilter[3];
 
   lcm_t* lcm;
-  bot_lcmgl_t* lcmgl_;
+  bot_lcmgl_t* lcmgl_lego;
+  bot_lcmgl_t* lcmgl_inerto;
+
 
   // ======== SERVICE ROUTINES ===========
   void IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm);
@@ -133,7 +136,7 @@ private:
   void PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState);
 
   //========= Some Utilities =============
-  void drawVelArrow();
+  void drawVelArrows(const Eigen::Vector3d &vec);
 };
 
 } // end namespace

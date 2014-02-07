@@ -84,6 +84,7 @@ int StateEstimate::StateEstimateApplication::exec()
   imuFilter->setInertialOdometry( estimator.getInertialOdometry() );
   imuFilter->setERSMsg( estimator.getERSMsg() );
   imuFilter->setDataFusionReqMsg( estimator.getDataFusionReqMsg() );
+  imuFilter->setInerOdoStateContainerPtr(estimator.getInerOdoPtr() );
 
   // start comm thread
   lcmThread.start();

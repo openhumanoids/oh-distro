@@ -28,6 +28,7 @@ public:
   void setERSMsg(drc::robot_state_t* _msg);
   void setDataFusionReqMsg(drc::ins_update_request_t* _msg);
   void setLCMPtr(boost::shared_ptr<lcm::LCM> lcmHandle);
+  void setInerOdoStateContainerPtr(InertialOdometry::DynamicState* _stateptr);
 
 private:
   boost::shared_ptr<lcm::LCM> mLCM;
@@ -35,6 +36,7 @@ private:
   InertialOdometry::Odometry* _inert_odo;
   InertialOdometry::IMU_dataframe imu_data;
   InertialOdometry::DynamicState lastInerOdoState;
+  InertialOdometry::DynamicState* _InerOdoState;
   drc::robot_state_t* _ERSMsg;
   drc::ins_update_request_t* _DFRequestMsg;
   bot_core::pose_t mPoseBodyMsg;

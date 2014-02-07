@@ -34,8 +34,8 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		imu_data.uts = imuPackets[k].utime;
 		// We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
 		// We know the KVH will sample every 1 ms.
-		imu_data.dang_s = Eigen::Vector3d(imuPackets[k].delta_rotation[0], imuPackets[k].delta_rotation[1], imuPackets[k].delta_rotation[2]);
-		imu_data.a_s_measured = Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]);
+		imu_data.dang_b = Eigen::Vector3d(imuPackets[k].delta_rotation[0], imuPackets[k].delta_rotation[1], imuPackets[k].delta_rotation[2]);
+		imu_data.a_b_measured = Eigen::Vector3d(imuPackets[k].linear_acceleration[0],imuPackets[k].linear_acceleration[1],imuPackets[k].linear_acceleration[2]);
 		imu_data.use_dang = true;
 
 		if (!uninitialized) {
@@ -51,6 +51,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		  }
 		}
 	}
+	*_InerOdoState = lastInerOdoState;
 	_inert_odo->exitCritical();
 
 	if (!uninitialized) {
@@ -66,6 +67,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 			stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
 			mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
 		}
+
 	}
 
   //VarNotUsed(imuPackets);
@@ -88,5 +90,8 @@ void StateEstimate::IMUFilter::setLCMPtr(boost::shared_ptr<lcm::LCM> lcmHandle) 
 	mLCM = lcmHandle;
 }
 
+void StateEstimate::IMUFilter::setInerOdoStateContainerPtr(InertialOdometry::DynamicState* _stateptr) {
+  _InerOdoState = _stateptr;
+}
 
 
