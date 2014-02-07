@@ -109,7 +109,6 @@ walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
 ts = walking_plan.ts;
 T = ts(end);
 
-
 % plot walking traj in drake viewer
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 
@@ -170,7 +169,7 @@ udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.03;
+dt = 0.003;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
