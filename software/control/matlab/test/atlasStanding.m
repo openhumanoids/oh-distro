@@ -23,7 +23,7 @@ chirp_fT = 0.2;% <--- chirp ending frequency
 chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % inverse dynamics PD gains (only for input=position, control=force)
-Kp = 40;
+Kp = 20;
 Kd = 5;
 
 % turn on/off ZMP objective
@@ -84,8 +84,9 @@ gains.k_qd_p(joint_act_ind) = 0;
 
 ref_frame.updateGains(gains);
 
-% compute desired COM trajectory
-x0 = r.getInitialState(); 
+% get current state
+[x,~] = getMessage(state_plus_effort_frame);
+x0 = x(1:2*nq); 
 q0 = x0(1:nq);
 com0 = getCOM(r,q0);
 comtraj = ConstantTrajectory(com0);
@@ -108,8 +109,8 @@ kinsol = doKinematics(r,q0);
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
 
-rfoot0 = forwardKin(r,kinsol,rfoot_ind,[0;0;0]);
-lfoot0 = forwardKin(r,kinsol,lfoot_ind,[0;0;0]);
+rfoot0 = forwardKin(r,kinsol,rfoot_ind,[0;0;0],1);
+lfoot0 = forwardKin(r,kinsol,lfoot_ind,[0;0;0],1);
 
 cost = Point(r.getStateFrame,1);
 cost.base_x = 0;
@@ -142,10 +143,10 @@ for i=1:length(ts)
   t = ts(i);
   if (i>1)
     kc_com = constructPtrWorldCoMConstraintmex(r.getMexModelPtr,comtraj.eval(t),comtraj.eval(t));
-    rfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,rfoot_ind,[0;0;0],rfoot0,rfoot0),...
-      constructPtrWorldEulerConstraintmex(r.getMexModelPtr,rfoot_ind,[0;0;0],[0;0;0])};
-    lfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,lfoot_ind,[0;0;0],lfoot0,lfoot0),...
-      constructPtrWorldEulerConstraintmex(r.getMexModelPtr,lfoot_ind,[0;0;0],[0;0;0])};
+    rfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,rfoot_ind,[0;0;0],rfoot0(1:3),rfoot0(1:3)),...
+      constructPtrWorldEulerConstraintmex(r.getMexModelPtr,rfoot_ind,rfoot0(4:end),rfoot0(4:end))};
+    lfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,lfoot_ind,[0;0;0],lfoot0(1:3),lfoot0(1:3)),...
+      constructPtrWorldEulerConstraintmex(r.getMexModelPtr,lfoot_ind,lfoot0(4:end),lfoot0(4:end))};
     q(:,i) = inverseKin(r,q(:,i-1),q0,kc_com,rfarg{:},lfarg{:},ikoptions);
   else
     q = q0;
@@ -169,11 +170,15 @@ foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'f
 
 if use_zmp
   % build TI-ZMP controller
-  q0 = x0(1:nq);
-
   foot_pos = contactPositions(r,q0, [rfoot_ind, lfoot_ind]);
   ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
   comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';%mean(foot_pos(1:2,ch(1:end-1)),2);
+
+  % plot com/zmp goal in drake viewer
+  lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'standing-zmp-goal');
+  lcmgl.glColor3f(.5, .5, 0);
+	lcmgl.sphere([comgoal;0], 0.01, 20, 20);  
+  lcmgl.switchBuffers();
   
   limp = LinearInvertedPendulum(com0(3));
   [~,V] = lqr(limp,comgoal);
@@ -230,13 +235,12 @@ options.use_mex = true;
 options.contact_threshold = 0.05;
 qp = QPControlBlock(r,ctrl_data,options);
 
-xy_offset = [0;0];
 qddes = zeros(nu,1);
 udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.03;
+dt = 0.003;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -255,7 +259,6 @@ while tt<T+2
   if ~isempty(x)
     if toffset==-1
       toffset=t;
-      xy_offset = x(1:2); % because state estimate will not be 0,0 to start
     end
     tt=t-toffset;
 
@@ -267,7 +270,6 @@ while tt<T+2
     x = kf.output(tt,kf_state,x(1:nq));
 
     q = x(1:nq);
-    q(1:2) = q(1:2)-xy_offset;
     qd = x(nq+(1:nq));
     
     % get desired configuration
