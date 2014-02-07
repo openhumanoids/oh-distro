@@ -1,7 +1,7 @@
 function RESULTS = MotionSimulator(iterations, trajtype)
 
 if (nargin<2)
-    trajtype = 'atlas';
+    trajtype = 'xtranstest';
 end
 
 %% Setup lcm
@@ -38,6 +38,11 @@ switch (trajtype)
         RESULTS.traj = load_specific_traj('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
         param.dt = 1E-2;
         RESULTS.traj.iterations = 12000;
+    case 'xtranstest'
+        param.dt = 1E-3;
+        RESULTS.traj.iterations = 1000;
+        RESULTS.traj.measured.w_b = [zeros(RESULTS.traj.iterations, 3)];
+        RESULTS.traj.measured.a_b  = [ones(RESULTS.traj.iterations, 1), zeros(RESULTS.traj.iterations, 1), -9.8*ones(RESULTS.traj.iterations, 1)];
 end
 
 

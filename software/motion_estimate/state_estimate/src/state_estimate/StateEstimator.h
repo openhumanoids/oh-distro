@@ -127,6 +127,7 @@ private:
   lcm_t* lcm;
   bot_lcmgl_t* lcmgl_lego;
   bot_lcmgl_t* lcmgl_inerto;
+  bot_lcmgl_t* lcmgl_measVec;
 
 
   // ======== SERVICE ROUTINES ===========
@@ -136,7 +137,8 @@ private:
   void PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState);
 
   //========= Some Utilities =============
-  void drawVelArrows(const Eigen::Vector3d &vec);
+  void drawLegOdoVelArrow(const Eigen::Vector3d &vec, const Eigen::Matrix3d &wRb_bdi);
+  void drawInertVelArrow();
 };
 
 } // end namespace

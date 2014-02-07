@@ -28,6 +28,9 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
   // Only update INS and publish existing ERS message
     //std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- sees " << imuPackets.size() << " new IMU messages in the imu packet vector" << std::endl;
 
+	// REMEBER THIS HAS BEED DISABLED
+	uninitialized = false;
+
     //uninitialized = false; -- TEMP TESTING
 	_inert_odo->enterCritical();
 	for (int k=0;k<imuPackets.size();k++) {
@@ -41,7 +44,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		if (!uninitialized) {
 		  lastInerOdoState = _inert_odo->PropagatePrediction(imu_data);
 		} else {
-		  _inert_odo->sensedImuToBodyTransform(imu_data); // This is a bit messy -- improve abstraction
+		  //_inert_odo->sensedImuToBodyTransform(imu_data); // This is a bit messy -- improve abstraction
 	      initacceldata.push_back(imu_data.a_b_measured);
 		  initindex++;
 		  if (initindex>=100) {

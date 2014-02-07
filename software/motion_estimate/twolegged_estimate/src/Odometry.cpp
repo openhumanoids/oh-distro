@@ -17,7 +17,7 @@ namespace InertialOdometry {
     //orc.updateOrientation(_imu->uts,orient);
 
 	// We use update WithRate, since we would like to cater for packet loss. Ideally though, we should use delta_angles directly
-    orc.updateOrientationWithRate(_imu.uts, _imu.w_b);
+	orc.updateOrientationWithRate(_imu.uts, _imu.w_b);
 
     //std::cout << "Odometry::PropagatePrediction_wo_IMUCompensation -- a_b " << std::endl << _imu.a_b.transpose() << std::endl;
 
@@ -94,7 +94,7 @@ namespace InertialOdometry {
   {
     InertialOdomOutput out;
 
-    std::cout << "Odometry::PropagatePrediction -- before lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
+    //std::cout << "Odometry::PropagatePrediction -- before lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
 
     //sensedImuToBodyTransform(_imu);
     if (&_imu.use_dang) {
@@ -119,14 +119,14 @@ namespace InertialOdometry {
     state.lQb = out.quat;
 
 
-//        std::cout << "Odometry::PropagatePrediction -- current lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
-//    	std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
-//    	std::cout << "Odometry::PropagatePrediction -- a_s_measured " << _imu.a_s_measured.transpose() << std::endl;
-//    	std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
-//    	std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
-//    	std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
-//    	std::cout << "Odometry::PropagatePrediction -- a_l " << _imu.a_l.transpose() << std::endl;
-//    	std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- current lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_s_measured " << _imu.a_s_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_l " << _imu.a_l.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
 
     return state;
   }
