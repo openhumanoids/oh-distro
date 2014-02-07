@@ -16,6 +16,21 @@ disp 'STARTING...'
 
 dt = 0.01;
 
+FilterRate = 100;
+limitedFB = 1;
+FilterRateReduction = (1/dt/FilterRate)
+
+exmap = @(dE,q) zeroth_int_Quat_closed_form(dE, q, 1);
+
+sQb = exmap([0;0;3*pi/4],[0;1;0;0]);
+sRb = q2R(sQb);
+% Atlas IMU to body
+% sRb = [-0.707107, 0.707107, 0;...
+%         0.707107, 0.707107, 0;...
+%         0, 0, -1];
+
+%
+
 % We are going to transmit and listen for LCM traffic
 lc = lcm.lcm.LCM.getSingleton();
 aggregator = lcm.lcm.MessageAggregator();
@@ -23,71 +38,74 @@ lc.subscribe('INS_ERR_UPDATE', aggregator);
 
 ReqMsg = initINSRequestLCMMsg();
 
+
 init_lQb = [1;0;0;0];
 % init_lQb = e2q([0;0;-pi/2]);
-init_Vl = [0;0;0];
-init_Pl = [0;0;0];
 
-switch (5)
+
+switch (1)
     case 1
-        data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
-        iter = 6000;
-        measured.w_b = data(1:iter,1:3);
-        measured.a_b = data(1:iter,4:6);
+        disp 'Gyrobias in x -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_s  = [zeros(iter, 1), 9.8*0.5*ones(iter, 1),-9.8*0.8660*ones(iter, 1)];
+        sQb = exmap([0;0;3*pi/4],[0;1;0;0]);
+        sRb = q2R(sQb);
+        lRp = sRb;
+        init_lQb = e2q([pi/6;0;0]);
     case 2
-        data = load('UnitTests/testdata/microstrain_rot_peraxis/x/loggedIMU.txt');
-        iter = 6000;
-        initend = 1;
-        measured.w_b = data(1:iter,1:3);
-        measured.a_b = data(1:iter,4:6);
+        disp 'Gyrobias in y -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_s = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
+        measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        sRb = eye(3);
+        init_lQb = [0;1;0;0];
     case 3
-        data = load('UnitTests/testdata/microstrain_rot_peraxis/y/loggedIMU.txt');
-        iter = 6750;
-        initend = 1;
-        measured.w_b = data(1:iter,1:3);
-        measured.a_b = data(1:iter,4:6);
+        disp 'Accelbias in x -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_s = zeros(iter, 3);
+        measured.a_s  = [0.0025*ones(iter, 1), zeros(iter, 1), -9.8*ones(iter, 1)];
     case 4
         data = load('UnitTests/testdata/microstrain_rot_peraxis/z/loggedIMU.txt');
         iter = 12000;
         initend = 1;
-        measured.w_b = data(1:iter,1:3);
-        measured.a_b = data(1:iter,4:6);
+        measured.w_s = data(1:iter,1:3);
+        measured.a_s = data(1:iter,4:6);
+        sRb = eye(3);
     case 5
         disp 'Gyrobias in x -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
-        measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
-        measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];
-    case 6
+        measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        sRb = eye(3);
+        init_lQb = [1;0;0;0];
+     case 6
         disp 'Gyrobias in x, upside down -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
-        measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
-        measured.a_b  = [zeros(iter, 2), -9.8*ones(iter, 1)];
-        init_lQb = [0;1;0;0];
-    case 7
-        disp 'Gyrobias in y -- test trajectory'
-        param.dt = 1E-2;
-        iter = 10000;
-        measured.w_b = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
-        measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];  
-    case 8
-        disp 'Accelbias in x -- test trajectory'
-        param.dt = 1E-2;
-        iter = 10000;
-        measured.w_b = zeros(iter, 3);
-        measured.a_b  = [0.0025*ones(iter, 1), zeros(iter, 1), 9.8*ones(iter, 1)]; 
+        measured.w_s = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_s  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        init_lQb = [1;0;0;0];
+        sRb = eye(3);
 end
+
+sRb
+sRb*[1;0;0]
+sRb*[0;1;0]
+sRb*[0;0;1]
 
 %%
 
+% Velocity initial conditions
+init_Vl = [10;0;0];
+init_Pl = [0;0;0];
+init_V_p = lRp * init_Vl
 
-
-% tlQb = init_lQb;
-
-E = [];
-GB = [];
-
+% Prepare arrays to store data for later plotting of results
 predicted.lQb = [ones(iter,1) zeros(iter,3)];
 predicted.w_b = zeros(iter,3);
 predicted.a_l = zeros(iter,3);
@@ -96,11 +114,24 @@ predicted.V_l = zeros(iter,3);
 predicted.P_l = zeros(iter,3);
 predicted.bg = zeros(iter,3);
 predicted.ba = zeros(iter,3);
+RESULTS.Reference.V_l = zeros(iter/FilterRateReduction,3);
+RESULTS.Reference.V_p = zeros(iter/FilterRateReduction,3);
+RESULTS.Reference.V_innov_l = zeros(iter/FilterRateReduction,3);
+% Initialize EKF data storage variables
+RESULTS.STATEX = [];
+DX = [];
+COV = [];
+E = [];
+GB = [];
+DE = [];
+PE = [];
+DV = [];
+nDEF = [];
+Rbias = [];
+updatePackets = [];
 
 % The recursive compensation data buffer structure
 INSCompensator = init_INSCompensator();
-% INSCompensator2 = init_INSCompensator();
-
 
 % Initial conditions
 predicted.vl(1,:) = init_Vl';
@@ -113,67 +144,55 @@ INSpose__k1 = init_pose();
 INSpose__k2 = init_pose();
 inertialData = init_inertialData(9.8);
 
-Sys.posterior.x = zeros(15,1);
-Sys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
-
-RESULTS.STATEX = [];
-DX = [];
-COV = [];
-
 % tlQb = init_lQb;
 INSpose.lQb = init_lQb;
 INSpose__k1.lQb = init_lQb;
+INSpose.V_l = init_Vl;
+INSpose__k1.V_l = init_Vl;
 
-DE = [];
-PE = [];
-DV = [];
-nDEF = [];
-Rbias = [];
-updatePackets = [];
+% EKF state and covariance initialization
+Sys.posterior.x = zeros(15,1);
+Sys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
 % this is the filter update counter
-FilterRate = 100;
-limitedFB = 0;
-FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
 Sys.dt = dt_m;
+
 
 for k = 1:iter
     
     % generate IMU data measurement frame
     inertialData.predicted.utime = k*dt*1E6;
-    inertialData.measured.w_b = measured.w_b(k,:)';
-    inertialData.measured.a_b = measured.a_b(k,:)';
-    inertialData.predicted.w_b = inertialData.measured.w_b - INSCompensator.biases.bg;
-    inertialData.predicted.a_b = inertialData.measured.a_b - INSCompensator.biases.ba;
+    
+    inertialData.predicted.w_b = measured.w_s(k,:)' - INSCompensator.biases.bg;
+    inertialData.predicted.a_b = measured.a_s(k,:)' - INSCompensator.biases.ba;
     
     INSpose = INS_lQb([], INSpose__k1, INSpose__k2, inertialData);
     
-    % More representative of how LCM traffic is running
+    % More representative simulation of real system update cycle
     [INSpose, INSCompensator] = Update_INS(INSpose, INSCompensator);
     
     % Run filter at a lower rate
     if (mod(k,FilterRateReduction)==0 && true)
         m = m+1;
         
-        Reference.V_l = init_Vl;
-        dV = Reference.V_l - INSpose.V_l + 0*randn(3,1);
+        Reference.V_p = init_V_p;
+        Reference.V_l = lRp' * init_V_p;
         
-        if (false)
+        if (true)
         
             Measurement.INS.pose = INSpose;
-            Measurement.velocityResidual = dV;
+            dV_l = Reference.V_l - INSpose.V_l + 0*randn(3,1);
+            Measurement.velocityResidual = dV_l;
             [Result, Sys] = iterate([], Sys, Measurement);
-            
             
             %store data for later plotting
             DX = [DX; Sys.posterior.dx'];
             RESULTS.STATEX = [RESULTS.STATEX; Sys.posterior.x'];
             COV = [COV;diag(Sys.posterior.P)'];
-            DV = [DV; dV'];
+            DV = [DV; dV_l'];
             [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
-        
             
         else
             
@@ -196,8 +215,13 @@ for k = 1:iter
             INSCompensator.dV_l = updatePacket.dVel_l;
             INSCompensator.dP_l = updatePacket.dPos_l;
             
+            dV_l = updatePacket.VelocityResidual_l;
+            
         end
         
+        RESULTS.Reference.V_l(m,:) = Reference.V_l';
+        RESULTS.Reference.V_p(m,:) = Reference.V_p';
+        RESULTS.Reference.V_innov_l(m,:) = dV_l';
         
     end
     
@@ -230,9 +254,24 @@ end
 
 
 plotGrayINSPredicted(predicted, 1);
+
+plotReferenceMeasurement(RESULTS, 3);
 plotEKFResults(RESULTS, 2);
 
 return
+
+%
+
+% figure(1),clf
+% subplot(411),plot(true.wb)
+% title('True rotation rates w')
+% subplot(412),plot(measured.wb)
+% title('Measured rotation rates w')
+% subplot(413),plot(TE)
+% title('Predicted Euler angles')
+% subplot(414),plot(true.ab)
+% title('True body measured accelerations')
+
 
 % figure(2),clf
 % subplot(611),plot(predicted.w_b)
@@ -284,7 +323,7 @@ return
 
 
 % Gray box INS state estimate
-figH = figure(3);
+figH = figure(2);
 clf
 set(figH,'Name',['Gray box INS state estimate, ' num2str(clock())],'NumberTitle','off')
 subplot(611),
@@ -312,7 +351,7 @@ plot(DX(:,13:15))
 title('K * Innovation updates to position in local frame')
 
 
-figure(4),clf
+figure(3),clf
 
 subplot(411)
 plot(DX(:,4:6))

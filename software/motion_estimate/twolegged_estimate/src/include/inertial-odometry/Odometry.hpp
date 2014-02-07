@@ -24,6 +24,7 @@ namespace InertialOdometry {
 	  OrientationComputer orc;
 	  VP_Mechanization avp;
 	  Parameters param;
+	  Eigen::Isometry3d IMU_to_body;
 
 	  Lock mINSUpdateAtomic;
 
@@ -60,6 +61,9 @@ namespace InertialOdometry {
 
 	  void enterCritical();
 	  void exitCritical();
+	  void setIMU2Body(const Eigen::Isometry3d &imu2body);
+	  void sensedImuToBodyTransform(IMU_dataframe &_imu);
+	  void setInitPitchRoll(const std::vector<Eigen::Vector3d> &initacceldata);
   };
 
 }

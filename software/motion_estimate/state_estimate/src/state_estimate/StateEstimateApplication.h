@@ -6,6 +6,7 @@
 #include <string>
 
 #include "SharedTypes.h"
+#include <estimate/LegOdoWrapper.hpp>
 
 namespace StateEstimate
 {
@@ -25,6 +26,7 @@ public:
   virtual int exec();
 private:
   const command_switches* _switches;
+  CommandLineConfig cl_cfg; // Maurice's leg odometry
 
   std::string mMotionSimulatorSuffix;
 

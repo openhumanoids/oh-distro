@@ -16,6 +16,18 @@ StateEstimate::StateEstimateApplication::StateEstimateApplication(const command_
   if (_switches->MATLAB_MotionSimulator) {
     mMotionSimulatorSuffix = "_MS";
   }
+
+  // Using Maurices latest version of leg odometry
+  cl_cfg.urdf_file = "";
+  cl_cfg.param_file = "";
+  cl_cfg.in_log_name = "";
+  cl_cfg.out_log_name = "";
+  cl_cfg.read_lcmlog = false;
+  cl_cfg.begin_timestamp = -1;
+  cl_cfg.end_timestamp = -1;
+  cl_cfg.republish_incoming = false;
+  cl_cfg.processing_rate = 1;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -55,9 +67,12 @@ int StateEstimate::StateEstimateApplication::exec()
 
   imuProducer.setSpecialLCMPtr(lcmThread.lcmHandle());
 
+
+
   StateEstimator estimator(
     _switches,
     lcmThread.lcmHandle(),
+    cl_cfg,
     atlasStateProducer.messageQueue(),
     imuProducer.messageQueue(),
     bdiPoseProducer.messageQueue(),
@@ -69,7 +84,6 @@ int StateEstimate::StateEstimateApplication::exec()
   imuFilter->setInertialOdometry( estimator.getInertialOdometry() );
   imuFilter->setERSMsg( estimator.getERSMsg() );
   imuFilter->setDataFusionReqMsg( estimator.getDataFusionReqMsg() );
-
 
   // start comm thread
   lcmThread.start();

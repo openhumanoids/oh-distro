@@ -12,10 +12,11 @@
 #include "ThreadLoop.h"
 #include "QueueTypes.h"
 
+#include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc_lcmtypes.hpp"
-//#include <model-client/model-client.hpp>
+#include <model-client/model-client.hpp>
 
 #include <inertial-odometry/Odometry.hpp>
 #include <leg-odometry/TwoLegOdometry.h>
@@ -26,11 +27,20 @@
 
 #include "SharedTypes.h"
 
+#include <drc_utils/joint_utils.hpp>
+//#include "atlas/AtlasJointNames.h"
+
+#include <estimate/LegOdoWrapper.hpp>
+#include <leg-odometry/Filter.hpp>
+
+#include <GL/gl.h>
+#include <bot_lcmgl_client/lcmgl.h>
+
 
 namespace StateEstimate
 {
 
-class StateEstimator : public ThreadLoop
+class StateEstimator : public ThreadLoop, public LegOdoWrapper
 {
 public:
 
@@ -38,6 +48,7 @@ public:
   StateEstimator(
     const StateEstimate::command_switches* _switches,
     boost::shared_ptr<lcm::LCM> lcmHandle,
+    CommandLineConfig& cl_cfg_,
     AtlasStateQueue& atlasStateQueue,
     IMUQueue& imuQueue,
     PoseQueue& bdiPoseQueue,
@@ -94,23 +105,35 @@ private:
   BotParam* _botparam;
   BotFrames* _botframes;
   
-  Eigen::Isometry3d IMU_to_body;
-  
-  RateChange fusion_rate;
-  Eigen::VectorXd fusion_rate_dummy;
-  
+
   // LegOdometry Object
-  TwoLegs::TwoLegOdometry *_leg_odo;
+  TwoLegs::TwoLegOdometry *_leg_odo; // VRC version
+  //  leg_odometry* leg_odo_sandbox;
+
   TwoLegs::FK_Data fk_data;
   
   int firstpass;
   double Ts_imu; // Auto-detect the sample rate of the IMU
   int receivedIMUPackets;
 
+  JointUtils joint_utils_;
+
+  NumericalDiff pelvis_vel_diff;
+  DistributedDiff d_pelvis_vel_diff;
+
+  LowPassFilter lpfilter[3];
+
+  lcm_t* lcm;
+  bot_lcmgl_t* lcmgl_;
+
   // ======== SERVICE ROUTINES ===========
   void IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm);
   void INSUpdateServiceRoutine(const drc::ins_update_packet_t &INSUpdate);
   void AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose);
+  void PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState);
+
+  //========= Some Utilities =============
+  void drawVelArrow();
 };
 
 } // end namespace

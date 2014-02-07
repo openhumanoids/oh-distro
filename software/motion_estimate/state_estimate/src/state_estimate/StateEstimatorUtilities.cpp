@@ -85,6 +85,11 @@ InertialOdometry::DynamicState StateEstimate::PropagateINS(	const double &Ts_imu
 															InertialOdometry::Odometry &inert_odo,
 															const Eigen::Isometry3d &IMU_to_body,
 															const drc::atlas_raw_imu_t &imu) {
+
+	std::cout << "StateEstimate::PropagateINS -- function not usable, since abstraction around the IMU_to_body rigid transform has been moved into the inertial odometry class directly. This function must first be reworked and tested before it can be used to propagate the inertial solution." << std::endl;
+	// convertion between dang_b and w_b must also be check if this function is to be revived.
+	assert(false);
+
 	InertialOdometry::IMU_dataframe imu_data;
 	imu_data.uts = imu.utime;
 
@@ -154,6 +159,8 @@ void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_s
     _leg_odo.ResetWithLeftFootStates(left,right,init_state);
   }
   _leg_odo.UpdateStates(atlasState.utime, left, right, atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
+
+
 }
 
 
@@ -313,7 +320,18 @@ void StateEstimate::detectIMUSampleTime(unsigned long long &prevImuPacketCount,
 	previous_Ts_imu = Ts_imu;
 }
 
+void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst, bot_core::pose_t &_msg) {
+	_msg.utime = InerOdoEst.uts;
 
+	_msg.pos[0] = InerOdoEst.P(0);
+	_msg.pos[1] = InerOdoEst.P(1);
+	_msg.pos[2] = InerOdoEst.P(2);
+
+	_msg.orientation[0] = InerOdoEst.lQb.w();
+	_msg.orientation[1] = InerOdoEst.lQb.x();
+	_msg.orientation[2] = InerOdoEst.lQb.y();
+	_msg.orientation[3] = InerOdoEst.lQb.z();
+}
 
 
 

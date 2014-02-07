@@ -13,9 +13,9 @@ using namespace std;
 using namespace boost;
 using namespace boost::assign;
 
-leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_, 
+leg_odometry::leg_odometry( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   BotParam * botparam_, boost::shared_ptr<ModelClient> &model_):
-  lcm_subscribe_(lcm_subscribe_), lcm_publish_(lcm_publish_), 
+  lcm_publish_(lcm_publish_),
   botparam_(botparam_), model_(model_){
     
   leg_odometry_mode_ = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.integration_mode");
@@ -52,6 +52,7 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
   world_to_body_.setIdentity();
   world_to_body_bdi_.setIdentity();
   initialize_mode_ = 0; 
+
 }
 
 
@@ -137,6 +138,7 @@ bool leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
     }
     
   }
+
 }
 
 bool leg_odometry::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
@@ -376,9 +378,7 @@ bool leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
   }  
 }
 
-bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
-                    std::vector<float> joint_velocity, std::vector<float> joint_effort, 
-                    int64_t utime){ 
+bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime){
   previous_utime_ = current_utime_;
   previous_world_to_body_ = world_to_body_;
   bool delta_world_to_body_valid = false;

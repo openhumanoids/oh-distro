@@ -3,17 +3,19 @@ function DFRESULTS = dataFusionHandler()
 % state-estimation process. This scipts interacts through a LCM interface
 % only.
 
+clc
+
 % This is temporary
-iterations = 12000/5;
+iterations = 10000;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
-feedbackGain = 0.5;
+feedbackGain = 1;
 
 dfSys.T = 0;
 
 ENABLE_FEEDBACK = 1;
-DataLogging = 1;
+DataLogging = 0;
 
 % Initialize local variables
 computationTime = 0;
@@ -41,25 +43,38 @@ if (DataLogging == 1)
 end
 
 index = 0;
-
+waitTime = 0;
+reciD = 0;
+dfSys.dt = 1E-3;
 
 % We assume this loop runs at 50 Hz or less 
 while (true)
-    tic;
+    tic
     index = index + 1;
+    
+    % Check computation times
+    % computationTime = totaltime - waitTime;
+    if (mod(index-1,100)==0)
+        disp(['Wait fraction ' num2str(reciD) ' %'])
+        reciD = 0;
+        dfSys.dt
+    else
+        reciD = reciD + waitTime/totalTime;
+    end
+    
     % wait for message
     [Measurement.INS, Measurement.LegOdo, DFReqMsg] = receiveInertialStatePos(aggregator);
-    
+    waitTime = toc;
     % Now we can start computation
     % Ensure that we are not exceeding our allotted computation time
-    if ((computationTime > 0.020) && DataLogging~=1)
-        disp(['WARNING -- dataFusionHandler is taking longer than 40ms, time taken was' num2str(computationTime)]) 
+    if ((computationTime > 0.01) && DataLogging~=1)
+        disp(['WARNING -- dataFusionHandler, long computation time ' num2str(computationTime*1000) ' ms']) 
     end
 
     if (dfSys.T ~= 0)
         dfSys.dt = 1E-6*(Measurement.INS.pose.utime - dfSys.T);% this should be taken from the utime stamps when ported to real data
     else
-        dfSys.dt = 1E-2;
+        dfSys.dt = 1E-3;
     end
     dfSys.T = Measurement.INS.pose.utime;
     
@@ -88,31 +103,35 @@ while (true)
         DFRESULTS.poses = storePose(Measurement.INS.pose, DFRESULTS.poses, index);
         DFRESULTS.STATEX(index,:) = dfSys.posterior.x';
         DFRESULTS.STATECOV(index,:) = diag(dfSys.posterior.P);
+        DFRESULTS.updatePackets = [DFRESULTS.updatePackets; feedbackGain*dfSys.posterior.x(4:6)'];
     end
     
     
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
     if (ENABLE_FEEDBACK == 1)
-
-        publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, lc);
-        DFRESULTS.updatePackets = [DFRESULTS.updatePackets; feedbackGain*dfSys.posterior.x(4:6)'];
+        publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, Measurement, lc);
         dfSys.posterior.x = (1-feedbackGain) * dfSys.posterior.x;
     end
     
-    computationTime = toc;
-    if (Measurement.INS.pose.utime == (120 * 1E6) )
-        break;
-    end
+    
+    %     if (Measurement.INS.pose.utime == (100 * 1E6) )
+    %     if (index == 10000)
+    %         break;
+    %     end
+    totalTime = toc;
 end
 
 
 
 %% Here we want to plot some dataFusion results.
 
-
-plotGrayINSPredicted(DFRESULTS.REQMSGS, 1);
-plotEKFResults(DFRESULTS, 2)
+if (DataLogging == 1)
+    figH = plotGrayINSPredicted(DFRESULTS.REQMSGS, 1);
+    set(figH,'Name',['dataFusionHandler -- Gray INS, ' num2str(clock())],'NumberTitle','off')
+    figH = plotEKFResults(DFRESULTS, 2);
+    set(figH,'Name',['dataFusionhandler -- EKF state, ' num2str(clock())],'NumberTitle','off')
+end
 
 % Must standardize this plotting
 

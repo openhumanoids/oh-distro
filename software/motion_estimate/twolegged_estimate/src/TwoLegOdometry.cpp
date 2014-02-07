@@ -72,8 +72,6 @@ bool TwoLegOdometry::UpdateStates(int64_t utime, const Eigen::Isometry3d &left, 
   Eigen::Isometry3d old_pelvis;
   old_pelvis = getPelvisFromStep();
 
-  std::cout << "TwoLegOdometry::UpdateStates -- midway" << std::endl;
-
   setLegTransforms(left, right);
 
   foot_transition = FootLogic(utime, left_force, right_force);
@@ -107,7 +105,7 @@ void TwoLegOdometry::updateInternalStates() {
 bool TwoLegOdometry::FootLogic(long utime, float leftz, float rightz) {
   footstep newstep;
 
-  std::cout << "TwoLegOdometry::FootLogic -- before detect" << std::endl;
+  //std::cout << "TwoLegOdometry::FootLogic -- before detect" << std::endl;
   newstep = foot_contact->DetectFootTransistion(utime, leftz, rightz);
   
   if (newstep.foot != -1){
@@ -162,11 +160,11 @@ void TwoLegOdometry::AccruedPrimaryFootOffset(const Eigen::Vector3d &delta) {
 void TwoLegOdometry::setLegTransforms(const Eigen::Isometry3d &left, const Eigen::Isometry3d &right) {
   pelvis_to_left = left;
   pelvis_to_right = right;
-  std::cout << "TwoLegOdometry::setLegTransforms -- " << left.translation().transpose() << std::endl << left.linear() << std::endl;
+  //std::cout << "TwoLegOdometry::setLegTransforms -- " << left.translation().transpose() << std::endl << left.linear() << std::endl;
   left_to_pelvis = left.inverse();
   right_to_pelvis = right.inverse();
 
-  std::cout << "TwoLegOdometry::setLegTransforms -- after" << std::endl;
+  //std::cout << "TwoLegOdometry::setLegTransforms -- after" << std::endl;
 }
 
 void TwoLegOdometry::setOrientationTransform(const Eigen::Quaterniond &ahrs_orientation, const Eigen::Vector3d &body_rates) {
@@ -265,15 +263,7 @@ Eigen::Isometry3d TwoLegOdometry::getPelvisFromStep() {
   Eigen::Isometry3d returnval;
   returnval.setIdentity();
 
-  #ifdef MATTS_HELP
-    Eigen::Isometry3d lhs;// this is just to test
-    lhs = slidecorrection * footsteps.getLastStep(); // TODO
-
-    returnval.translation() = add(lhs,getPrimaryFootToPelvis()).translation();
-    returnval.linear() = q2C(local_frame_orientation);
-  #else
-    returnval = getLastStep_w_IMUq() * getPrimaryFootToPelvis();
-  #endif
+  returnval = getLastStep_w_IMUq() * getPrimaryFootToPelvis();
 
   return returnval;
 }
@@ -386,22 +376,23 @@ void TwoLegOdometry::calculateUpdateVelocityStates(int64_t current_time, const E
   prev_velocities = local_velocities;
   Eigen::Vector3d unfiltered_vel;
 
-  if(usedirectdiff){
-    unfiltered_vel = pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
-  }else{
-    // use a distributed differential
-    unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
-  }
-
-  // with or without filtering
-  if(applyfiltering){
-    for(int i=0;i<3;i++){
-      local_velocities(i) = lpfilter[i].processSample(unfiltered_vel(i));
-    }
-  }else{
-    // no filtering on the joints
+  unfiltered_vel = pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
+//  if(usedirectdiff){
+//    unfiltered_vel = pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
+//  }else{
+//    // use a distributed differential
+//    unfiltered_vel = d_pelvis_vel_diff.diff((unsigned long long)current_time, current_position);
+//  }
+//
+//  // with or without filtering
+//  if(applyfiltering){
+//    for(int i=0;i<3;i++){
+//      local_velocities(i) = lpfilter[i].processSample(unfiltered_vel(i));
+//    }
+//  }else{
+//    // no filtering on the joints
     overwritePelvisVelocity(unfiltered_vel);
-  }
+//  }
 
   local_accelerations = accel.diff(current_time, local_velocities);
 

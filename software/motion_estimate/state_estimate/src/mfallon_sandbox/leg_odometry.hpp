@@ -33,11 +33,12 @@
 
 #include <estimate/common_conversions.hpp>
 #include <leg-odometry/FootContact.h>
+#include <leg-odometry/SignalTap.hpp>
 
 ///////////////////////////////////////////////////////////////
 class leg_odometry{
   public:
-    leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_, boost::shared_ptr<lcm::LCM> &lcm_publish_,
+    leg_odometry( boost::shared_ptr<lcm::LCM> &lcm_publish_,
                  BotParam* botparam_, boost::shared_ptr<ModelClient> &model_);
     
     ~leg_odometry(){
@@ -50,10 +51,12 @@ class leg_odometry{
       right_foot_force_ = right_foot_force_in;       
     }
     
-    bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
-                        std::vector<float> joint_velocity, std::vector<float> joint_effort,
-                        int64_t utime);
-    
+    //bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
+    //                        std::vector<float> joint_velocity, std::vector<float> joint_effort,
+    //                        int64_t utime);
+	bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime);
+
+
     void getDeltaLegOdometry(Eigen::Isometry3d &delta_world_to_body, int64_t &current_utime, int64_t &previous_utime){
       delta_world_to_body = delta_world_to_body_;
       current_utime = current_utime_;

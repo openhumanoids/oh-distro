@@ -18,8 +18,10 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   boost::shared_ptr<lcm::LCM> lcm_recv_boost = boost::shared_ptr<lcm::LCM>(lcm_recv);
   boost::shared_ptr<lcm::LCM> lcm_pub_boost = boost::shared_ptr<lcm::LCM>(lcm_pub);
   boost::shared_ptr<ModelClient> model_boost = boost::shared_ptr<ModelClient>(model);
-  leg_odo_ = new leg_odometry(  lcm_recv_boost , lcm_pub_boost ,
-                               param, model_boost );
+  //leg_odo_ = new leg_odometry(  lcm_recv_boost , lcm_pub_boost ,
+  //                             param, model_boost );
+  leg_odo_ = new leg_odometry( lcm_pub_boost, param, model_boost );
+
 
   leg_odo_common_ = new LegOdoCommon(param);
   
@@ -80,8 +82,9 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *ms
   
   leg_odo_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
     
-  if (leg_odo_->updateOdometry(msg->joint_name, msg->joint_position,
-                           msg->joint_velocity, msg->joint_effort, msg->utime)){
+//  if (leg_odo_->updateOdometry(msg->joint_name, msg->joint_position,
+//                           msg->joint_velocity, msg->joint_effort, msg->utime)){
+  if (leg_odo_->updateOdometry(msg->joint_name, msg->joint_position, msg->utime)){
     leg_odo_->getDeltaLegOdometry(delta_odo, utime, prev_utime);
   } else {
     std::cout << "Leg Odometry is not valid ==============================\n";

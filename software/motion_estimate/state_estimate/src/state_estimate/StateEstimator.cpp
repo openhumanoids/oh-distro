@@ -4,6 +4,7 @@
 StateEstimate::StateEstimator::StateEstimator(
 	const command_switches* _switches,
     boost::shared_ptr<lcm::LCM> lcmHandle,
+    CommandLineConfig& cl_cfg,
     AtlasStateQueue& atlasStateQueue,
     IMUQueue& imuQueue,
     PoseQueue& bdiPoseQueue,
@@ -18,7 +19,8 @@ StateEstimate::StateEstimator::StateEstimator(
   mViconQueue(viconPoseQueue),
   mMatlabTruthQueue(viconMatlabtruthQueue),
   mINSUpdateQueue(INSUpdateQueue),
-  inert_odo(0.01)
+  LegOdoWrapper(lcmHandle, lcmHandle, cl_cfg),
+  inert_odo(0.001)
 {
 
   _mSwitches = _switches;
@@ -27,6 +29,10 @@ StateEstimate::StateEstimator::StateEstimator(
   if (_switches->ExperimentalMsgs) {
 	  ERSMsgSuffix = "_EXP";
   }
+
+  // Sandbox leg odo
+  setupLegOdo();
+
 
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
   int num_joints = 28;
@@ -40,7 +46,7 @@ StateEstimate::StateEstimator::StateEstimator(
   _botparam = bot_param_new_from_server(mLCM->getUnderlyingLCM(), 0);
   _botframes= bot_frames_get_global(mLCM->getUnderlyingLCM(), _botparam);
 
-
+  Eigen::Isometry3d IMU_to_body;
   // Define the transform between the pelvis and IMU -- considering that we purposefull skip this transform during development
   IMU_to_body.setIdentity();
   if (_mSwitches->MATLAB_MotionSimulator == false) {
@@ -54,7 +60,10 @@ StateEstimate::StateEstimator::StateEstimator(
 	  }
 	}
   }
-  std::cout << "StateEstimator::StateEstimator -- IMU_to_body: " << IMU_to_body.linear() << std::endl << IMU_to_body.translation() << std::endl;
+
+  // TEMPORARY
+  //IMU_to_body.setIdentity();
+  inert_odo.setIMU2Body(Eigen::Isometry3d::Identity());
   
   // Go get the joint names for FK
     robot = new RobotModel;
@@ -68,14 +77,7 @@ StateEstimate::StateEstimator::StateEstimator(
   // using this constructor as a bit of legacy -- but in reality we should probably inprove on this situation
   _leg_odo = new TwoLegs::TwoLegOdometry(false, false, 1400.f);
   
-  unsigned long fusion_period;
-  fusion_period = 20000-500;
-  fusion_rate.setDesiredPeriod_us(0,fusion_period);
-  fusion_rate.setSize(1);
-  fusion_rate_dummy.resize(1);
-  fusion_rate_dummy << 0;
-  std::cout << "StateEstimator::StateEstimator -- Setting data fusion period trigger is set to " << fusion_period << std::endl;
- 
+
   // This is for forward kinematics -- maybe not the best way to do this, but we are a little short on time. Code evolution will fix this in the long run
   fk_data.model_ = boost::shared_ptr<ModelClient>(new ModelClient(mLCM->getUnderlyingLCM(), 0));
   // Parse KDL tree
@@ -90,6 +92,15 @@ StateEstimate::StateEstimator::StateEstimator(
   prevImuPacketCount = 0;
   Ts_imu = 1E-3;
   receivedIMUPackets = 0;
+
+
+  pelvis_vel_diff.setSize(3);
+  d_pelvis_vel_diff.setSize(3);
+
+  lcm = lcm_create(NULL); // Currently this pointer is not being deleted -- must be done before use
+  lcmgl_ = bot_lcmgl_init(lcm, "StateEstimator");
+  drawVelArrow();
+
 }
 
 // TODO -- fix this constructor
@@ -132,12 +143,12 @@ void StateEstimate::StateEstimator::run()
 
 	// This is the special case which will also publish the message
 	int nIMU = mIMUQueue.size();
-	std::cout << "StateEstimator::run -- mIMUQueue.size() " << nIMU << std::endl;
+	//std::cout << "StateEstimator::run -- mIMUQueue.size() " << nIMU << std::endl;
 	// printf("have %d new imu\n", nIMU);
 	for (int i = 0; i < nIMU; ++i)
 	{
 	  this->mIMUQueue.dequeue(imu);
-	  std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
+	  //std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
 	  // Handle IMU data -- Special case, this one retransmits ERS and INSUpdateRequest messages internally
 	  IMUServiceRoutine(imu, (i==(nIMU-1)), mLCM);
 	}
@@ -184,18 +195,20 @@ void StateEstimate::StateEstimator::run()
 
 	}
 
-	std::cout << std::endl << std::endl;
+	//std::cout << std::endl << std::endl;
   }
 }
 
 
 void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm) {
+  //
+  //	if (receivedIMUPackets < 10) {
+  //		detectIMUSampleTime(prevImuPacketCount, previous_imu_utime, receivedIMUPackets, Ts_imu, imu);
+  //		std::cout << "StateEstimator::run -- auto-detecting IMU sample time at " << Ts_imu << " s" << std::endl;
+  //	}
+  //std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << " s" << std::endl; // Remove once confirmed to be working properly
 
-	if (receivedIMUPackets < 10) {
-		detectIMUSampleTime(prevImuPacketCount, previous_imu_utime, receivedIMUPackets, Ts_imu, imu);
-		std::cout << "StateEstimator::run -- auto-detecting IMU sample time at " << Ts_imu << " s" << std::endl;
-	}
-	std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << " s" << std::endl; // Remove once confirmed to be working properly
+  // EKF measurement update rate set to 20ms here
 
 	//InerOdoEst = PropagateINS(Ts_imu, inert_odo, IMU_to_body, imu);
 
@@ -219,7 +232,7 @@ void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t
 
 void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_update_packet_t &INSUpdate) {
 
-  std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
+  //std::cout << "StateEstimator::run -- Processing new mINSUpdatePacket message, utime " << INSUpdate.utime << std::endl;
 
   InertialOdometry::INSUpdatePacket insUpdatePacket;
   insUpdatePacket.utime = INSUpdate.utime;
@@ -235,19 +248,53 @@ void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_updat
 
 void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose) {
 
+  // This will publish "POSE_BODY_ALT message"
+  PropagateLegOdometry(bdiPose, atlasState);
+
+
+  return;
+  // Skipping the old stuff -- clearly needs clearing up.
+
   // compute the joint velocities with num_joints Kalman Filters in parallel
   // TODO -- make this dependent on local state and not the message number
   //mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
   insertAtlasState_ERS(atlasState, mERSMsg, robot);
 
+
+
+
   // TODO -- we are using the BDI orientation -- should change to either pure leg kin, combination of yaw, or V/P fused orientation
+  Eigen::Quaterniond BDi_quat;
+  BDi_quat.w() = bdiPose.orientation[0];
+  BDi_quat.x() = bdiPose.orientation[1];
+  BDi_quat.y() = bdiPose.orientation[2];
+  BDi_quat.z() = bdiPose.orientation[3];
+  _leg_odo->setOrientationTransform(BDi_quat, Eigen::Vector3d::Zero());
   doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, robot);
 
   // TODO -- remove this, only a temporary display object
   Eigen::Isometry3d LegOdoPelvis;
   LegOdoPelvis.setIdentity();
   LegOdoPelvis = _leg_odo->getPelvisState();
-  std::cout << "StateEstimator::run -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
+  //std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
+  _leg_odo->calculateUpdateVelocityStates(atlasState.utime, LegOdoPelvis);
+  std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo pelvis velocities " << _leg_odo->getPelvisVelocityStates().transpose() << std::endl;
+
+  bot_core::pose_t LegOdoPosMsg;
+
+  LegOdoPosMsg.utime = atlasState.utime;
+  LegOdoPosMsg.pos[0] = LegOdoPelvis.translation()(0);
+  LegOdoPosMsg.pos[1] = LegOdoPelvis.translation()(1);
+  LegOdoPosMsg.pos[2] = LegOdoPelvis.translation()(2);
+
+  Eigen::Quaterniond PelvisQ;
+  PelvisQ = C2q(LegOdoPelvis.linear());
+  LegOdoPosMsg.orientation[0] = PelvisQ.w();
+  LegOdoPosMsg.orientation[1] = PelvisQ.x();
+  LegOdoPosMsg.orientation[2] = PelvisQ.y();
+  LegOdoPosMsg.orientation[3] = PelvisQ.z();
+
+  mLCM->publish("POSE_BODY_ALT", &LegOdoPosMsg);
 
   // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
   if (firstpass>0)
@@ -264,5 +311,72 @@ drc::robot_state_t* StateEstimate::StateEstimator::getERSMsg() {
 
 drc::ins_update_request_t* StateEstimate::StateEstimator::getDataFusionReqMsg() {
   return &mDFRequestMsg;
+}
+
+
+void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState) {
+  Eigen::Isometry3d world_to_body_bdi;
+  world_to_body_bdi.setIdentity();
+  //world_to_body_bdi.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
+  Eigen::Quaterniond quat = Eigen::Quaterniond(bdiPose.orientation[0], bdiPose.orientation[1], bdiPose.orientation[2], bdiPose.orientation[3]);
+  world_to_body_bdi.rotate(quat);
+
+  leg_odo_->setPoseBDI( world_to_body_bdi );
+  leg_odo_->setFootForces(atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z);
+  leg_odo_->updateOdometry(joint_utils_.atlas_joint_names, atlasState.joint_position, atlasState.utime);
+
+  Eigen::Isometry3d world_to_body = leg_odo_->getRunningEstimate();
+  Eigen::Vector3d pelvisVel_world, drawPelvisVel_world;
+
+  pelvisVel_world = pelvis_vel_diff.diff(atlasState.utime, world_to_body.translation());
+  double vel[3];
+  vel[0] = lpfilter[0].processSample(pelvisVel_world(0));
+  vel[1] = lpfilter[1].processSample(pelvisVel_world(1));
+  vel[2] = lpfilter[2].processSample(pelvisVel_world(2));
+  drawPelvisVel_world << vel[0], vel[1], vel[2];
+
+  std::cout << "StateEstimator::PropagateLegOdometry -- pelvis vel: " << drawPelvisVel_world.transpose() << std::endl;
+
+  bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, atlasState.utime);
+  mLCM->publish("POSE_BODY_ALT", &pose_msg );
+}
+
+
+void StateEstimate::StateEstimator::drawVelArrow() {
+  //  bot_lcmgl_translated(lcmgl_, 0, 0.5, 0);  // example offset
+
+
+  // euler
+  double rpy[] = {1., 0., 1.0};
+  double angle;
+  double axis[3];
+  bot_roll_pitch_yaw_to_angle_axis (rpy, &angle, axis);
+
+  //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
+  std::cout << angle << "\n";
+  std::cout << axis[0] << "\n";
+  std::cout << axis[1] << "\n";
+  std::cout << axis[2] << "\n";
+
+
+  //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
+  std::cout << angle << "\n";
+  std::cout << axis[0] << "\n";
+  std::cout << axis[1] << "\n";
+  std::cout << axis[2] << "\n";
+
+  bot_lcmgl_translated(lcmgl_, 0, 0.5, 0);  // example offset
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
+  bot_lcmgl_rotated(lcmgl_, angle, axis[0], axis[1], axis[2]);
+  double magn;
+  magn = 0.5;
+  bot_lcmgl_draw_arrow_3d (lcmgl_, magn*1, magn*0.1, magn*0.15, magn*0.05);
+  bot_lcmgl_pop_matrix(lcmgl_);
+  bot_lcmgl_switch_buffer(lcmgl_);
+
+//  bot2-lcmgl/src/bot_lcmgl_client/lcmgl.h
+//  void bot_lcmgl_draw_arrow_3d (bot_lcmgl_t * lcmgl, double length, double head_width, double head_length, double body_width);
+
 }
 
