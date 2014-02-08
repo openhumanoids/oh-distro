@@ -66,6 +66,7 @@ public:
   drc::robot_state_t* getERSMsg();
   drc::ins_update_request_t* getDataFusionReqMsg();
   InertialOdometry::DynamicState* getInerOdoPtr();
+  Eigen::Vector3d* getFilteredLegOdoVel();
 
 protected:
 
@@ -108,11 +109,14 @@ private:
   
 
   // LegOdometry Object
+  Eigen::Vector3d pelvisVel_world, filteredPelvisVel_world;
+
+  // Both these leg_odo objects are to be depreciated
   TwoLegs::TwoLegOdometry *_leg_odo; // VRC version
   //  leg_odometry* leg_odo_sandbox;
-
   TwoLegs::FK_Data fk_data;
   
+
   int firstpass;
   double Ts_imu; // Auto-detect the sample rate of the IMU
   int receivedIMUPackets;
@@ -125,9 +129,11 @@ private:
   LowPassFilter lpfilter[3];
 
   lcm_t* lcm;
+  bot_lcmgl_t* lcmgl_;
   bot_lcmgl_t* lcmgl_lego;
   bot_lcmgl_t* lcmgl_inerto;
   bot_lcmgl_t* lcmgl_measVec;
+  bot_lcmgl_t* lcmgl_dV_l;
 
 
   // ======== SERVICE ROUTINES ===========
@@ -137,7 +143,7 @@ private:
   void PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState);
 
   //========= Some Utilities =============
-  void drawLegOdoVelArrow(const Eigen::Vector3d &vec, const Eigen::Matrix3d &wRb_bdi);
+  void drawLegOdoVelArrow(const Eigen::Matrix3d &wRb_bdi);
   void drawInertVelArrow();
 };
 

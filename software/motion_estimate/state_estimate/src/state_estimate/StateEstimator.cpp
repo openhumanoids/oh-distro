@@ -98,10 +98,15 @@ StateEstimate::StateEstimator::StateEstimator(
   d_pelvis_vel_diff.setSize(3);
 
   lcm = lcm_create(NULL); // Currently this pointer is not being deleted -- must be done before use
-  lcmgl_lego = bot_lcmgl_init(lcm, "VelLegOdo");
-  lcmgl_inerto = bot_lcmgl_init(lcm, "VelInerOdo");
-  lcmgl_measVec = bot_lcmgl_init(lcm, "VelMeasurement");
+  lcmgl_ = bot_lcmgl_init(lcm, "VelArrows");
 
+  //  lcmgl_lego = bot_lcmgl_init(lcm, "VelLegOdo");
+  //  lcmgl_inerto = bot_lcmgl_init(lcm, "VelInerOdo");
+  //  lcmgl_measVec = bot_lcmgl_init(lcm, "VelMeasurement");
+  //  lcmgl_dV_l = bot_lcmgl_init(lcm, "VelMeasurement");
+
+  pelvisVel_world.setZero();
+  filteredPelvisVel_world.setZero();
 }
 
 // TODO -- fix this constructor
@@ -321,6 +326,10 @@ InertialOdometry::DynamicState* StateEstimate::StateEstimator::getInerOdoPtr() {
   return &InerOdoEst;
 }
 
+Eigen::Vector3d* StateEstimate::StateEstimator::getFilteredLegOdoVel() {
+  return &filteredPelvisVel_world;
+}
+
 
 void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState) {
   Eigen::Isometry3d world_to_body_bdi;
@@ -334,23 +343,23 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
   leg_odo_->updateOdometry(joint_utils_.atlas_joint_names, atlasState.joint_position, atlasState.utime);
 
   Eigen::Isometry3d world_to_body = leg_odo_->getRunningEstimate();
-  Eigen::Vector3d pelvisVel_world, drawPelvisVel_world;
+
 
   pelvisVel_world = pelvis_vel_diff.diff(atlasState.utime, world_to_body.translation());
   double vel[3];
   vel[0] = lpfilter[0].processSample(pelvisVel_world(0));
   vel[1] = lpfilter[1].processSample(pelvisVel_world(1));
   vel[2] = lpfilter[2].processSample(pelvisVel_world(2));
-  drawPelvisVel_world << vel[0], vel[1], vel[2];
+  filteredPelvisVel_world << vel[0], vel[1], vel[2];
 
   bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, atlasState.utime);
   mLCM->publish("POSE_BODY_ALT", &pose_msg );
 
-  drawLegOdoVelArrow(drawPelvisVel_world, world_to_body_bdi.linear());
+  drawLegOdoVelArrow(world_to_body_bdi.linear());
 }
 
 
-void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Vector3d &vec, const Eigen::Matrix3d &wRb_bdi) {
+void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wRb_bdi) {
 
   Eigen::Matrix3d sRb;
   sRb << -0.707107, 0.707107, 0, 0.707107, 0.707107, 0, 0, 0, -1;
@@ -358,7 +367,7 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Vector3d &ve
   //std::cout << "StateEstimator::drawVelArrows -- sRb " << std::endl << sRb << std::endl;
 
   double magn;
-  magn = 5*vec.norm();
+  magn = 5*filteredPelvisVel_world.norm();
 
   Eigen::Vector3d cp, ref;
   Eigen::Vector3d rotVel;
@@ -366,10 +375,10 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Vector3d &ve
 
   ref << 1., 0., 0.;
 
-  cp = ref.cross(vec);
+  cp = ref.cross(filteredPelvisVel_world);
   cp.normalize();
 
-  angle = acos(ref.dot(vec)/vec.norm());
+  angle = acos(ref.dot(filteredPelvisVel_world)/filteredPelvisVel_world.norm());
 
   // euler
   //double rpy[] = {0., 3.141/4., 0.};
@@ -378,74 +387,95 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Vector3d &ve
   //bot_roll_pitch_yaw_to_angle_axis (rpy, &angle, axis);
 
   //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
-
-  bot_lcmgl_translated(lcmgl_lego, leg_odo_->getRunningEstimate().translation()(0), leg_odo_->getRunningEstimate().translation()(1), leg_odo_->getRunningEstimate().translation()(2));  // example offset
-  bot_lcmgl_push_matrix(lcmgl_lego);
-  bot_lcmgl_color3f(lcmgl_lego, 0, 1, 0); // Green
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_translated(lcmgl_, leg_odo_->getRunningEstimate().translation()(0), leg_odo_->getRunningEstimate().translation()(1), leg_odo_->getRunningEstimate().translation()(2));  // example offset
+  bot_lcmgl_color3f(lcmgl_, 0, 1, 0); // Green
   //bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, axis[0], axis[1], axis[2]);
-  bot_lcmgl_rotated(lcmgl_lego, 180/3.141592*angle, cp[0], cp[1], cp[2]);
+  bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, cp[0], cp[1], cp[2]);
 
-  bot_lcmgl_draw_arrow_3d (lcmgl_lego, magn*1, magn*0.1, magn*0.2, magn*0.05);
-  bot_lcmgl_pop_matrix(lcmgl_lego);
-  bot_lcmgl_switch_buffer(lcmgl_lego);
+  bot_lcmgl_draw_arrow_3d (lcmgl_, magn*1, magn*0.1, magn*0.2, magn*0.05);
+  bot_lcmgl_pop_matrix(lcmgl_);
+//  bot_lcmgl_switch_buffer(lcmgl_);
 
 //  bot2-lcmgl/src/bot_lcmgl_client/lcmgl.h
 //  void bot_lcmgl_draw_arrow_3d (bot_lcmgl_t * lcmgl, double length, double head_width, double head_length, double body_width);
 
   Eigen::Vector3d inerV_l;
 
-    rotVel = InerOdoEst.V;
-    inerV_l = rotVel;
-    magn = 5*inerV_l.norm();
-    //std::cout << "StateEstimate::StateEstimator::drawVelArrows -- inerV_l " << inerV_l.transpose() << std::endl;
-    cp = ref.cross(inerV_l);
-    cp.normalize();
-    angle = acos(ref.dot(inerV_l)/inerV_l.norm());
+  inerV_l = InerOdoEst.V;
+  //inerV_l = rotVel;
+  magn = 5*inerV_l.norm();
+  //std::cout << "StateEstimate::StateEstimator::drawVelArrows -- inerV_l " << inerV_l.transpose() << std::endl;
+  cp = ref.cross(inerV_l);
+  cp.normalize();
+  angle = acos(ref.dot(inerV_l)/inerV_l.norm());
 
 
-    // euler
-    //double rpy[] = {0., 3.141/4., 0.};
-    //double angle;
-    //double axis[3];
-    //bot_roll_pitch_yaw_to_angle_axis (rpy, &angle, axis);p
+  // euler
+  //double rpy[] = {0., 3.141/4., 0.};
+  //double angle;
+  //double axis[3];
+  //bot_roll_pitch_yaw_to_angle_axis (rpy, &angle, axis);p
 
-    //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
+  //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
 
-    //bot_lcmgl_translated(lcmgl_inerto, leg_odo_->getRunningEstimate().translation()(0), leg_odo_->getRunningEstimate().translation()(1), leg_odo_->getRunningEstimate().translation()(2));  // example offset
-    //bot_lcmgl_translated(lcmgl_inerto, 0, 0, 0);  // example offset
+  //bot_lcmgl_translated(lcmgl_inerto, leg_odo_->getRunningEstimate().translation()(0), leg_odo_->getRunningEstimate().translation()(1), leg_odo_->getRunningEstimate().translation()(2));  // example offset
+  //bot_lcmgl_translated(lcmgl_inerto, 0, 0, 0);  // example offset
 
-    bot_lcmgl_push_matrix(lcmgl_inerto);
-    bot_lcmgl_color3f(lcmgl_inerto, 0, 0, 1); // Blue
-    //bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, axis[0], axis[1], axis[2]);
-    bot_lcmgl_rotated(lcmgl_inerto, 180/3.141592*angle, cp[0], cp[1], cp[2]);
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_color3f(lcmgl_, 0, 0, 1); // Blue
+  //bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, axis[0], axis[1], axis[2]);
+  bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, cp[0], cp[1], cp[2]);
 
-    bot_lcmgl_draw_arrow_3d (lcmgl_inerto, magn*1, magn*0.1, magn*0.2, magn*0.05);
-    bot_lcmgl_pop_matrix(lcmgl_inerto);
-    bot_lcmgl_switch_buffer(lcmgl_inerto);
-
-
-    // now we try a leg kin velocity vector in the IMu first posed reference frame
-    // this will be in red
+  bot_lcmgl_draw_arrow_3d (lcmgl_, magn*1, magn*0.1, magn*0.2, magn*0.05);
+  bot_lcmgl_pop_matrix(lcmgl_);
+//  bot_lcmgl_switch_buffer(lcmgl_);
 
 
+  // now we try a leg kin velocity vector in the IMu first posed reference frame
+  // this will be in red
 
-    Eigen::Vector3d LegOdoV_l;
 
-    LegOdoV_l = sRb.transpose() * wRb_bdi.transpose() * vec;
-    magn = 5*LegOdoV_l.norm();
-    cp = ref.cross(LegOdoV_l);
-    cp.normalize();
-    angle = acos(ref.dot(LegOdoV_l)/LegOdoV_l.norm());
 
-    bot_lcmgl_push_matrix(lcmgl_measVec);
-    bot_lcmgl_color3f(lcmgl_measVec, 1, 0, 0); // Blue
-    //bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, axis[0], axis[1], axis[2]);
-    bot_lcmgl_rotated(lcmgl_measVec, 180/3.141592*angle, cp[0], cp[1], cp[2]);
+  Eigen::Vector3d LegOdoV_l;
 
-    bot_lcmgl_draw_arrow_3d (lcmgl_measVec, magn*1, magn*0.1, magn*0.2, magn*0.05);
-    bot_lcmgl_pop_matrix(lcmgl_measVec);
-    bot_lcmgl_switch_buffer(lcmgl_measVec);
+  //LegOdoV_l = sRb.transpose() * wRb_bdi.transpose() * vec; // Rotate back to world frame for pretty pictures sake, but not for data fusion
+  LegOdoV_l = sRb.transpose() * filteredPelvisVel_world;
 
+  magn = 5*LegOdoV_l.norm();
+  cp = ref.cross(LegOdoV_l);
+  cp.normalize();
+  angle = acos(ref.dot(LegOdoV_l)/LegOdoV_l.norm());
+
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_color3f(lcmgl_, 1, 0, 0); // Red
+  //bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, axis[0], axis[1], axis[2]);
+  bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, cp[0], cp[1], cp[2]);
+
+  bot_lcmgl_draw_arrow_3d (lcmgl_, magn*1, magn*0.1, magn*0.2, magn*0.05);
+  bot_lcmgl_pop_matrix(lcmgl_);
+//  bot_lcmgl_switch_buffer(lcmgl_);
+
+
+  // A fourth arrow for residual velocity -- in purple
+
+  Eigen::Vector3d dV_l;
+
+  dV_l = LegOdoV_l - inerV_l;
+  magn = 5*dV_l.norm();
+  cp = ref.cross(dV_l);
+  cp.normalize();
+  angle = acos(ref.dot(dV_l)/dV_l.norm());
+
+  bot_lcmgl_push_matrix(lcmgl_);
+  bot_lcmgl_translated(lcmgl_, 0, 0, 0.5);  // example offset
+  bot_lcmgl_color3f(lcmgl_, 1, 0, 1); // Purple
+  //bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, axis[0], axis[1], axis[2]);
+  bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, cp[0], cp[1], cp[2]);
+
+  bot_lcmgl_draw_arrow_3d (lcmgl_, magn*1, magn*0.1, magn*0.2, magn*0.05);
+  bot_lcmgl_pop_matrix(lcmgl_);
+  bot_lcmgl_switch_buffer(lcmgl_);
 
 }
 

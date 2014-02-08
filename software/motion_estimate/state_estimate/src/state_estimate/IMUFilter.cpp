@@ -42,7 +42,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		imu_data.use_dang = true;
 
 		if (!uninitialized) {
-		  lastInerOdoState = _inert_odo->PropagatePrediction(imu_data);
+			*_InerOdoState = _inert_odo->PropagatePrediction(imu_data);
 		} else {
 		  //_inert_odo->sensedImuToBodyTransform(imu_data); // This is a bit messy -- improve abstraction
 	      initacceldata.push_back(imu_data.a_b_measured);
@@ -54,20 +54,24 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		  }
 		}
 	}
-	*_InerOdoState = lastInerOdoState;
+	//	*_InerOdoState = lastInerOdoState;
 	_inert_odo->exitCritical();
 
 	if (!uninitialized) {
-		stampInertialPoseERSMsg(lastInerOdoState, *_ERSMsg);
+		stampInertialPoseERSMsg(*_InerOdoState, *_ERSMsg);
 		mLCM->publish("EST_ROBOT_STATE_EXP", _ERSMsg);
-		stampInertialPoseBodyMsg(lastInerOdoState, mPoseBodyMsg);
+		stampInertialPoseBodyMsg(*_InerOdoState, mPoseBodyMsg);
 		mLCM->publish("POSE_BODY", &mPoseBodyMsg);
 
 		// EKF measurement update rate set to 20ms here
 		if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
 
-			stampInertialPoseUpdateRequestMsg(lastInerOdoState, *_DFRequestMsg);
-			stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
+			stampInertialPoseUpdateRequestMsg(*_InerOdoState, *_DFRequestMsg);
+			Eigen::Matrix3d sRb;
+			  sRb << -0.707107, 0.707107, 0, 0.707107, 0.707107, 0, 0, 0, -1;
+
+			//stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
+			stampEKFReferenceMeasurementUpdateRequest(sRb.transpose() * (*_filteredLegVel), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
 			mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
 		}
 
@@ -95,6 +99,10 @@ void StateEstimate::IMUFilter::setLCMPtr(boost::shared_ptr<lcm::LCM> lcmHandle) 
 
 void StateEstimate::IMUFilter::setInerOdoStateContainerPtr(InertialOdometry::DynamicState* _stateptr) {
   _InerOdoState = _stateptr;
+}
+
+void StateEstimate::IMUFilter::setFilteredLegOdoVel(Eigen::Vector3d* _legodovel) {
+  _filteredLegVel = _legodovel;
 }
 
 
