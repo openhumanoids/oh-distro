@@ -8,9 +8,11 @@
 
 #include "lcmtypes/drc_lcmtypes.hpp"
 #include <bot_frames/bot_frames.h>
-#include <inertial-odometry/Odometry.hpp>
 
+#include "StateEstimator.h"
+#include <inertial-odometry/Odometry.hpp>
 #include "StateEstimatorUtilities.h"
+
 
 
 namespace StateEstimate
@@ -24,12 +26,10 @@ public:
   ~IMUFilter();
 
   void handleIMUPackets(const std::vector<drc::atlas_raw_imu_t>& imuPackets, const bot_core::pose_t &atlasPose);
-  void setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr);
-  void setERSMsg(drc::robot_state_t* _msg);
-  void setDataFusionReqMsg(drc::ins_update_request_t* _msg);
+
+  // Setup shared memory with StateEstimator class
+  void setupEstimatorSharedMemory(StateEstimator &estimator);
   void setLCMPtr(boost::shared_ptr<lcm::LCM> lcmHandle);
-  void setInerOdoStateContainerPtr(InertialOdometry::DynamicState* _stateptr);
-  void setFilteredLegOdoVel(Eigen::Vector3d* _legodovel);
 
 private:
   boost::shared_ptr<lcm::LCM> mLCM;
@@ -50,6 +50,12 @@ private:
   std::vector<Eigen::Vector3d> initacceldata;
   bool uninitialized;
   int initindex;
+
+  void setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr);
+  void setERSMsg(drc::robot_state_t* _msg);
+  void setDataFusionReqMsg(drc::ins_update_request_t* _msg);
+  void setInerOdoStateContainerPtr(InertialOdometry::DynamicState* _stateptr);
+  void setFilteredLegOdoVel(Eigen::Vector3d* _legodovel);
 };
 
 

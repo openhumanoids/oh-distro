@@ -81,28 +81,6 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
   return;
 }
 
-InertialOdometry::DynamicState StateEstimate::PropagateINS(	const double &Ts_imu,
-															InertialOdometry::Odometry &inert_odo,
-															const Eigen::Isometry3d &IMU_to_body,
-															const drc::atlas_raw_imu_t &imu) {
-
-	std::cout << "StateEstimate::PropagateINS -- function not usable, since abstraction around the IMU_to_body rigid transform has been moved into the inertial odometry class directly. This function must first be reworked and tested before it can be used to propagate the inertial solution." << std::endl;
-	// convertion between dang_b and w_b must also be check if this function is to be revived.
-	assert(false);
-
-	InertialOdometry::IMU_dataframe imu_data;
-	imu_data.uts = imu.utime;
-
-	// We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
-	// We know the KVH will sample every 1 ms.
-	imu_data.dang_b = - IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-	imu_data.w_b_measured = - 1/Ts_imu * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-	imu_data.a_b_measured = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
-
-	// TODO -- The translation of this lever arm offset has not yet been compensated
-	return inert_odo.PropagatePrediction(imu_data);
-}
-
 void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst,
 											drc::robot_state_t& msg) {
 
@@ -121,47 +99,47 @@ void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState
 }
 
 
-void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot) {
-	
-  // Keep joint positions in local memory -- prepare data structure for use with FK
-  std::map<std::string, double> jointpos_in;
-  for (uint i=0; i< (uint) atlasState.num_joints; i++) {
-	//jointpos_in.insert(make_pair(atlasState.joint_name[i], atlasState.joint_position[i]));
-
-	// Changing name types to AtlasControlTypes definition
-	jointpos_in.insert(make_pair(_robot->joint_names_[i], atlasState.joint_position[i]));
-	//std::cout << "StateEstimate::doLegOdometry -- inserting joint " << robot.joint_names_[i] << ", " << atlasState.joint_position[i] << std::endl;
-  }
-  
-  Eigen::Isometry3d current_pelvis;
-  Eigen::VectorXd pelvis_velocity(3);
-
-  Eigen::Isometry3d left;
-  left.setIdentity();
-  Eigen::Isometry3d right;
-  right.setIdentity();
-  
-  // TODO -- Delete head_to_body transform requirement here. This is legacy from VRC -- 
-  Eigen::Isometry3d body_to_head;
-  body_to_head.setIdentity();
-  
-  
-  _fk_data.utime = atlasState.utime;
-  _fk_data.jointpos_in = jointpos_in;
-  
-  TwoLegs::getFKTransforms(_fk_data, left, right, body_to_head);// FK, translations in body frame with no rotation (I)
-  
-  // TODO -- Initialization before the VRC..
-  if (firstpass>0)
-  {
-    Eigen::Isometry3d init_state;
-    init_state.setIdentity();
-    _leg_odo.ResetWithLeftFootStates(left,right,init_state);
-  }
-  _leg_odo.UpdateStates(atlasState.utime, left, right, atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
-
-
-}
+//void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot) {
+//
+//  // Keep joint positions in local memory -- prepare data structure for use with FK
+//  std::map<std::string, double> jointpos_in;
+//  for (uint i=0; i< (uint) atlasState.num_joints; i++) {
+//	//jointpos_in.insert(make_pair(atlasState.joint_name[i], atlasState.joint_position[i]));
+//
+//	// Changing name types to AtlasControlTypes definition
+//	jointpos_in.insert(make_pair(_robot->joint_names_[i], atlasState.joint_position[i]));
+//	//std::cout << "StateEstimate::doLegOdometry -- inserting joint " << robot.joint_names_[i] << ", " << atlasState.joint_position[i] << std::endl;
+//  }
+//
+//  Eigen::Isometry3d current_pelvis;
+//  Eigen::VectorXd pelvis_velocity(3);
+//
+//  Eigen::Isometry3d left;
+//  left.setIdentity();
+//  Eigen::Isometry3d right;
+//  right.setIdentity();
+//
+//  // TODO -- Delete head_to_body transform requirement here. This is legacy from VRC --
+//  Eigen::Isometry3d body_to_head;
+//  body_to_head.setIdentity();
+//
+//
+//  _fk_data.utime = atlasState.utime;
+//  _fk_data.jointpos_in = jointpos_in;
+//
+//  TwoLegs::getFKTransforms(_fk_data, left, right, body_to_head);// FK, translations in body frame with no rotation (I)
+//
+//  // TODO -- Initialization before the VRC..
+//  if (firstpass>0)
+//  {
+//    Eigen::Isometry3d init_state;
+//    init_state.setIdentity();
+//    _leg_odo.ResetWithLeftFootStates(left,right,init_state);
+//  }
+//  _leg_odo.UpdateStates(atlasState.utime, left, right, atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
+//
+//
+//}
 
 
 //void StateEstimate::packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg) {

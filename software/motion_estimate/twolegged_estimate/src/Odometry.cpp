@@ -304,29 +304,11 @@ namespace InertialOdometry {
 	//
 	//	init_lQb = R2q(R_nav_to_body);
   }
+
+  const Eigen::Isometry3d& Odometry::getIMU2Body() {
+	return IMU_to_body;
+  }
+
 }
 
-// Been moved to QuaternionLib
-//  Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)
-//  {
-//	  Eigen::Matrix3d R;
-//	  Eigen::Matrix3d temp;
-//
-//#ifdef USE_TRIGNOMETRIC_EXMAP
-//	  R.setIdentity();
-//	  double mag = w.norm();
-//	  Eigen::Vector3d direction = 1/mag * w;
-//	  skew(direction,temp);
-//	  R += sin(mag) * temp + (1- cos(mag))*(temp*temp);
-//	  //  TODO -- confirm that we do not have to divide by mag -- if then do the numerical fix to second order Taylor
-//
-//#endif
-//
-//	  /*
-//	  mag = norm(w);
-//      direction = w./mag;
-//      R = eye(3) + sin(mag)*skew(direction) + (1-cos(mag))*(skew(direction)^2);
-//      */
-//
-//	  return R;
-//  }
+

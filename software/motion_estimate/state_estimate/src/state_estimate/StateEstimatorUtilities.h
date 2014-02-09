@@ -70,12 +70,6 @@ void insertAtlasJoints(const drc::atlas_state_t* msg, Joints &jointContainer, Ro
 // Store result as StateEstimator:: state
 void doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot);
 
-// IMU DATA============================================================================
-InertialOdometry::DynamicState PropagateINS(	const double &Ts_imu,
-												InertialOdometry::Odometry &inert_odo,
-												const Eigen::Isometry3d &IMU_to_body,
-												const drc::atlas_raw_imu_t &imu);
-
 
 void stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst, drc::robot_state_t &msg);
 

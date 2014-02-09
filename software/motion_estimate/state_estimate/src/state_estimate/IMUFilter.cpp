@@ -28,9 +28,8 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
   // Only update INS and publish existing ERS message
     //std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- sees " << imuPackets.size() << " new IMU messages in the imu packet vector" << std::endl;
 
-	// REMEBER THIS HAS BEED DISABLED
+	// Leave initialization to the Kalman Filter -- This is legacy functionality.
 	uninitialized = false;
-
     //uninitialized = false; -- TEMP TESTING
 	_inert_odo->enterCritical();
 	for (int k=0;k<imuPackets.size();k++) {
@@ -54,7 +53,6 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		  }
 		}
 	}
-	//	*_InerOdoState = lastInerOdoState;
 	_inert_odo->exitCritical();
 
 	if (!uninitialized) {
@@ -67,11 +65,11 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
 
 			stampInertialPoseUpdateRequestMsg(*_InerOdoState, *_DFRequestMsg);
-			Eigen::Matrix3d sRb;
-			  sRb << -0.707107, 0.707107, 0, 0.707107, 0.707107, 0, 0, 0, -1;
+			//Eigen::Matrix3d sRb;
+			//sRb << -0.707107, 0.707107, 0, 0.707107, 0.707107, 0, 0, 0, -1;
 
 			//stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
-			stampEKFReferenceMeasurementUpdateRequest(sRb.transpose() * (*_filteredLegVel), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
+			stampEKFReferenceMeasurementUpdateRequest(_inert_odo->getIMU2Body().linear().transpose() * (*_filteredLegVel), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
 			mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
 		}
 
@@ -79,6 +77,14 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 
   //VarNotUsed(imuPackets);
   //VarNotUsed(lcmHandle);
+}
+
+void StateEstimate::IMUFilter::setupEstimatorSharedMemory(StateEstimate::StateEstimator &estimator) {
+  setInertialOdometry( estimator.getInertialOdometry() );
+  setERSMsg( estimator.getERSMsg() );
+  setDataFusionReqMsg( estimator.getDataFusionReqMsg() );
+  setInerOdoStateContainerPtr( estimator.getInerOdoPtr() );
+  setFilteredLegOdoVel( estimator.getFilteredLegOdoVel() );
 }
 
 void StateEstimate::IMUFilter::setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr) {

@@ -60,32 +60,29 @@ StateEstimate::StateEstimator::StateEstimator(
 	  }
 	}
   }
-
-  // TEMPORARY
-  //IMU_to_body.setIdentity();
-  inert_odo.setIMU2Body(Eigen::Isometry3d::Identity());
+  inert_odo.setIMU2Body(IMU_to_body);
   
   // Go get the joint names for FK
-    robot = new RobotModel;
-	lcm::Subscription* robot_model_subcription_;
-	robot_model_subcription_ = robot->lcm.subscribeFunction("ROBOT_MODEL", StateEstimate::onMessage, robot);
-	while(robot->lcm.handle()==-1);// wait for one message, wait until you get a success.
-	robot->lcm.unsubscribe(robot_model_subcription_);
+  robot = new RobotModel;
+  lcm::Subscription* robot_model_subcription_;
+  robot_model_subcription_ = robot->lcm.subscribeFunction("ROBOT_MODEL", StateEstimate::onMessage, robot);
+  while(robot->lcm.handle()==-1);// wait for one message, wait until you get a success.
+  robot->lcm.unsubscribe(robot_model_subcription_);
 
 
-  std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;
+  //std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;
   // using this constructor as a bit of legacy -- but in reality we should probably inprove on this situation
-  _leg_odo = new TwoLegs::TwoLegOdometry(false, false, 1400.f);
+  //_leg_odo = new TwoLegs::TwoLegOdometry(false, false, 1400.f);
   
 
   // This is for forward kinematics -- maybe not the best way to do this, but we are a little short on time. Code evolution will fix this in the long run
-  fk_data.model_ = boost::shared_ptr<ModelClient>(new ModelClient(mLCM->getUnderlyingLCM(), 0));
-  // Parse KDL tree
-  if (!kdl_parser::treeFromString(  fk_data.model_->getURDFString() , fk_data.tree)){
-	std::cerr << "StateEstimator::StateEstimator -- ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
-	return;
-  }
-  fk_data.fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(fk_data.tree));
+  //  fk_data.model_ = boost::shared_ptr<ModelClient>(new ModelClient(mLCM->getUnderlyingLCM(), 0));
+  //  // Parse KDL tree
+  //  if (!kdl_parser::treeFromString(  fk_data.model_->getURDFString() , fk_data.tree)){
+  //	std::cerr << "StateEstimator::StateEstimator -- ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
+  //	return;
+  //  }
+  //  fk_data.fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(fk_data.tree));
   
   // This is used to initialize the states of the robot -- note we should use ONLY this variable
   firstpass = 1;
@@ -99,11 +96,6 @@ StateEstimate::StateEstimator::StateEstimator(
 
   lcm = lcm_create(NULL); // Currently this pointer is not being deleted -- must be done before use
   lcmgl_ = bot_lcmgl_init(lcm, "VelArrows");
-
-  //  lcmgl_lego = bot_lcmgl_init(lcm, "VelLegOdo");
-  //  lcmgl_inerto = bot_lcmgl_init(lcm, "VelInerOdo");
-  //  lcmgl_measVec = bot_lcmgl_init(lcm, "VelMeasurement");
-  //  lcmgl_dV_l = bot_lcmgl_init(lcm, "VelMeasurement");
 
   pelvisVel_world.setZero();
   filteredPelvisVel_world.setZero();
@@ -123,7 +115,7 @@ StateEstimate::StateEstimator::StateEstimator(
 //-----------------------------------------------------------------------------
 StateEstimate::StateEstimator::~StateEstimator()
 {
-  delete _leg_odo;
+  //delete _leg_odo;
   delete robot;
 }
 
@@ -208,34 +200,6 @@ void StateEstimate::StateEstimator::run()
 
 void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm) {
 
-  //drawInertVelArrow();
-
-  //
-  //	if (receivedIMUPackets < 10) {
-  //		detectIMUSampleTime(prevImuPacketCount, previous_imu_utime, receivedIMUPackets, Ts_imu, imu);
-  //		std::cout << "StateEstimator::run -- auto-detecting IMU sample time at " << Ts_imu << " s" << std::endl;
-  //	}
-  //std::cout << "StateEstimator::run -- Ts_imu set to " << Ts_imu << " s" << std::endl; // Remove once confirmed to be working properly
-
-  // EKF measurement update rate set to 20ms here
-
-	//InerOdoEst = PropagateINS(Ts_imu, inert_odo, IMU_to_body, imu);
-
-//	if (publishERSflag) {
-//	  //publish ERS message on last IMU message in the current queue
-//      stampInertialPoseERSMsg(InerOdoEst, mERSMsg);
-//      std::cout << "StateEstimator::run -- Publish ERS" << std::endl;
-//      lcm->publish("EST_ROBOT_STATE" + ERSMsgSuffix, &mERSMsg);
-//      //lcm->publish("POSE_BODY", &??);
-//	}
-
-	// Request an update to the INS state -- This publish should be blocked until publishing of ERS message
-//	if (fusion_rate.genericRateChange(imu.utime,fusion_rate_dummy,fusion_rate_dummy)) {
-//		std::cout << "StateEstimator::run -- data fusion message is being sent with time " << imu.utime << std::endl;
-//		stampInertialPoseUpdateRequestMsg(InerOdoEst, mDFRequestMsg);
-//		stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, mDFRequestMsg);
-//		lcm->publish("SE_MATLAB_DATAFUSION_REQ", &mDFRequestMsg);
-//	}
 }
 
 
@@ -267,47 +231,45 @@ void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_st
   // compute the joint velocities with num_joints Kalman Filters in parallel
   // TODO -- make this dependent on local state and not the message number
   //mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
-  insertAtlasState_ERS(atlasState, mERSMsg, robot);
-
-
-
-
-  // TODO -- we are using the BDI orientation -- should change to either pure leg kin, combination of yaw, or V/P fused orientation
-  Eigen::Quaterniond BDi_quat;
-  BDi_quat.w() = bdiPose.orientation[0];
-  BDi_quat.x() = bdiPose.orientation[1];
-  BDi_quat.y() = bdiPose.orientation[2];
-  BDi_quat.z() = bdiPose.orientation[3];
-  _leg_odo->setOrientationTransform(BDi_quat, Eigen::Vector3d::Zero());
-  doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, robot);
-
-  // TODO -- remove this, only a temporary display object
-  Eigen::Isometry3d LegOdoPelvis;
-  LegOdoPelvis.setIdentity();
-  LegOdoPelvis = _leg_odo->getPelvisState();
-  //std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
-  _leg_odo->calculateUpdateVelocityStates(atlasState.utime, LegOdoPelvis);
-  std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo pelvis velocities " << _leg_odo->getPelvisVelocityStates().transpose() << std::endl;
-
-  bot_core::pose_t LegOdoPosMsg;
-
-  LegOdoPosMsg.utime = atlasState.utime;
-  LegOdoPosMsg.pos[0] = LegOdoPelvis.translation()(0);
-  LegOdoPosMsg.pos[1] = LegOdoPelvis.translation()(1);
-  LegOdoPosMsg.pos[2] = LegOdoPelvis.translation()(2);
-
-  Eigen::Quaterniond PelvisQ;
-  PelvisQ = C2q(LegOdoPelvis.linear());
-  LegOdoPosMsg.orientation[0] = PelvisQ.w();
-  LegOdoPosMsg.orientation[1] = PelvisQ.x();
-  LegOdoPosMsg.orientation[2] = PelvisQ.y();
-  LegOdoPosMsg.orientation[3] = PelvisQ.z();
-
-  mLCM->publish("POSE_BODY_ALT", &LegOdoPosMsg);
-
-  // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
-  if (firstpass>0)
-	firstpass--;
+  //  insertAtlasState_ERS(atlasState, mERSMsg, robot);
+  //
+  //
+  //  // TODO -- we are using the BDI orientation -- should change to either pure leg kin, combination of yaw, or V/P fused orientation
+  //  Eigen::Quaterniond BDi_quat;
+  //  BDi_quat.w() = bdiPose.orientation[0];
+  //  BDi_quat.x() = bdiPose.orientation[1];
+  //  BDi_quat.y() = bdiPose.orientation[2];
+  //  BDi_quat.z() = bdiPose.orientation[3];
+  //  //_leg_odo->setOrientationTransform(BDi_quat, Eigen::Vector3d::Zero());
+  //  //doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, robot);
+  //
+  //  // TODO -- remove this, only a temporary display object
+  //  Eigen::Isometry3d LegOdoPelvis;
+  //  LegOdoPelvis.setIdentity();
+  //  LegOdoPelvis = _leg_odo->getPelvisState();
+  //  //std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
+  //  _leg_odo->calculateUpdateVelocityStates(atlasState.utime, LegOdoPelvis);
+  //  std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo pelvis velocities " << _leg_odo->getPelvisVelocityStates().transpose() << std::endl;
+  //
+  //  bot_core::pose_t LegOdoPosMsg;
+  //
+  //  LegOdoPosMsg.utime = atlasState.utime;
+  //  LegOdoPosMsg.pos[0] = LegOdoPelvis.translation()(0);
+  //  LegOdoPosMsg.pos[1] = LegOdoPelvis.translation()(1);
+  //  LegOdoPosMsg.pos[2] = LegOdoPelvis.translation()(2);
+  //
+  //  Eigen::Quaterniond PelvisQ;
+  //  PelvisQ = C2q(LegOdoPelvis.linear());
+  //  LegOdoPosMsg.orientation[0] = PelvisQ.w();
+  //  LegOdoPosMsg.orientation[1] = PelvisQ.x();
+  //  LegOdoPosMsg.orientation[2] = PelvisQ.y();
+  //  LegOdoPosMsg.orientation[3] = PelvisQ.z();
+  //
+  //  mLCM->publish("POSE_BODY_ALT", &LegOdoPosMsg);
+  //
+  //  // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
+  //  if (firstpass>0)
+  //	firstpass--;
 }
 
 InertialOdometry::Odometry* StateEstimate::StateEstimator::getInertialOdometry() {
@@ -476,21 +438,6 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wR
   bot_lcmgl_draw_arrow_3d (lcmgl_, magn*1, magn*0.1, magn*0.2, magn*0.05);
   bot_lcmgl_pop_matrix(lcmgl_);
   bot_lcmgl_switch_buffer(lcmgl_);
-
-}
-
-
-
-void StateEstimate::StateEstimator::drawInertVelArrow() {
-  // inertial odometry
-  double magn, angle;
-
-  Eigen::Vector3d cp, ref;
-  Eigen::Matrix3d sRb;
-  sRb << -0.707107, 0.707107, 0, 0.707107, 0.707107, 0, 0, 0, -1;
-  sRb.setIdentity();
-
-
 
 }
 

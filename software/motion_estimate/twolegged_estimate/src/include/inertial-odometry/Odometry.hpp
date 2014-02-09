@@ -48,7 +48,6 @@ namespace InertialOdometry {
       DynamicState PropagatePrediction(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
       DynamicState PropagatePrediction(IMU_dataframe &_imu);
 
-
       //DynamicState getDynamicState();
       Eigen::Quaterniond lQb();
 
@@ -65,6 +64,7 @@ namespace InertialOdometry {
 	  void setIMU2Body(const Eigen::Isometry3d &imu2body);
 	  void sensedImuToBodyTransform(IMU_dataframe &_imu);
 	  void setInitPitchRoll(const std::vector<Eigen::Vector3d> &initacceldata);
+	  const Eigen::Isometry3d& getIMU2Body();
   };
 
 }

@@ -19,7 +19,7 @@
 #include <model-client/model-client.hpp>
 
 #include <inertial-odometry/Odometry.hpp>
-#include <leg-odometry/TwoLegOdometry.h>
+//#include <leg-odometry/TwoLegOdometry.h>
 #include <leg-odometry/sharedUtilities.hpp>
 
 #include "StateEstimatorUtilities.h"
@@ -112,9 +112,9 @@ private:
   Eigen::Vector3d pelvisVel_world, filteredPelvisVel_world;
 
   // Both these leg_odo objects are to be depreciated
-  TwoLegs::TwoLegOdometry *_leg_odo; // VRC version
+  //TwoLegs::TwoLegOdometry *_leg_odo; // VRC version
   //  leg_odometry* leg_odo_sandbox;
-  TwoLegs::FK_Data fk_data;
+  //TwoLegs::FK_Data fk_data;
   
 
   int firstpass;
@@ -130,10 +130,6 @@ private:
 
   lcm_t* lcm;
   bot_lcmgl_t* lcmgl_;
-  bot_lcmgl_t* lcmgl_lego;
-  bot_lcmgl_t* lcmgl_inerto;
-  bot_lcmgl_t* lcmgl_measVec;
-  bot_lcmgl_t* lcmgl_dV_l;
 
 
   // ======== SERVICE ROUTINES ===========
@@ -144,7 +140,6 @@ private:
 
   //========= Some Utilities =============
   void drawLegOdoVelArrow(const Eigen::Matrix3d &wRb_bdi);
-  void drawInertVelArrow();
 };
 
 } // end namespace
