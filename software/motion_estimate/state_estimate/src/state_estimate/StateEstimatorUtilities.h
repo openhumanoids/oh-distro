@@ -71,7 +71,7 @@ void insertAtlasJoints(const drc::atlas_state_t* msg, Joints &jointContainer, Ro
 void doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot);
 
 
-void stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst, drc::robot_state_t &msg);
+void stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst, const Eigen::Isometry3d &IMU_to_body, drc::robot_state_t &msg);
 
 //int getIMUBodyAlignment(const unsigned long utime, Eigen::Isometry3d &IMU_to_body, boost::shared_ptr<lcm::LCM> &lcm_);
 

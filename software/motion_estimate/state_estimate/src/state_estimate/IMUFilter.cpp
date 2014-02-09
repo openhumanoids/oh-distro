@@ -56,7 +56,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 	_inert_odo->exitCritical();
 
 	if (!uninitialized) {
-		stampInertialPoseERSMsg(*_InerOdoState, *_ERSMsg);
+		stampInertialPoseERSMsg(*_InerOdoState, _inert_odo->getIMU2Body(), *_ERSMsg);
 		mLCM->publish(ERSMsgChannelName, _ERSMsg);
 		stampInertialPoseBodyMsg(*_InerOdoState, mPoseBodyMsg);
 		mLCM->publish("POSE_BODY", &mPoseBodyMsg);
@@ -65,11 +65,15 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
 
 			stampInertialPoseUpdateRequestMsg(*_InerOdoState, *_DFRequestMsg);
-			//Eigen::Matrix3d sRb;
-			//sRb << -0.707107, 0.707107, 0, 0.707107, 0.707107, 0, 0, 0, -1;
+
+			Eigen::Vector3d refMeasurement;
+			int updateType;
+
+			refMeasurement = _inert_odo->getIMU2Body().linear().transpose() * (*_filteredLegVel);
+			updateType = drc::ins_update_request_t::VELOCITY_LOCAL;
 
 			//stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
-			stampEKFReferenceMeasurementUpdateRequest(_inert_odo->getIMU2Body().linear().transpose() * (*_filteredLegVel), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
+			stampEKFReferenceMeasurementUpdateRequest(refMeasurement, updateType, *_DFRequestMsg);
 			mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
 		}
 

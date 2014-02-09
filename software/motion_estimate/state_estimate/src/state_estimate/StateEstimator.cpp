@@ -94,6 +94,9 @@ StateEstimate::StateEstimator::StateEstimator(
 
   pelvisVel_world.setZero();
   filteredPelvisVel_world.setZero();
+
+  standingTimer.setDesiredPeriod_us(200*1E3);
+  velUpdateTimer.setDesiredPeriod_us(500*1E3);
 }
 
 // TODO -- fix this constructor
@@ -220,6 +223,12 @@ void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_st
   PropagateLegOdometry(bdiPose, atlasState);
   //std::cout << "StateEstimator::AtlasStateServiceRoutine" << std::endl;
 
+  // Run classifiers to delegate updates
+  double ankle_forces[] = {atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z};
+
+  standingClassifier(atlasState.utime, ankle_forces, filteredPelvisVel_world.norm());
+  velocityUpdateClassifier(atlasState.utime, ankle_forces, filteredPelvisVel_world.norm());
+
   return;
   // Skipping the old stuff -- clearly needs clearing up.
 
@@ -300,7 +309,6 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
   leg_odo_->updateOdometry(joint_utils_.atlas_joint_names, atlasState.joint_position, atlasState.utime);
 
   Eigen::Isometry3d world_to_body = leg_odo_->getRunningEstimate();
-
 
   pelvisVel_world = pelvis_vel_diff.diff(atlasState.utime, world_to_body.translation());
   double vel[3];
@@ -434,6 +442,37 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wR
   bot_lcmgl_pop_matrix(lcmgl_);
   bot_lcmgl_switch_buffer(lcmgl_);
 
+}
+
+bool StateEstimate::StateEstimator::standingClassifier(const unsigned long long &uts, const double forces[2], const double &speed) {
+
+  if (forces[0] > MIN_STANDING_CLASSIF_FORCE && forces[1] > MIN_STANDING_CLASSIF_FORCE && speed < MAX_STANDING_SPEED) {
+    if (standingTimer.processSample(uts)) {
+      return true;
+    }
+  } else {
+	standingTimer.reset();
+  }
+  return false;
+}
+
+bool StateEstimate::StateEstimator::velocityUpdateClassifier(const unsigned long long &uts, const double forces[2], const double &speed) {
+  // identify periods where the robot is walking
+  // Only one foot can be in contact
+  // The pelvis should be moving at some minimum velocity
+
+  if ( ( (forces[0] > MIN_STANDING_CLASSIF_FORCE && forces[1] < MIN_WALKING_FORCE) ||
+		 (forces[1] > MIN_STANDING_CLASSIF_FORCE && forces[0] < MIN_WALKING_FORCE) ) &&
+		  speed > MAX_STANDING_SPEED &&
+		  !standingTimer.getState())
+  {
+	if (velUpdateTimer.processSample(uts)) {
+      return true;
+	}
+  } else {
+	velUpdateTimer.reset();
+  }
+  return false;
 }
 
 

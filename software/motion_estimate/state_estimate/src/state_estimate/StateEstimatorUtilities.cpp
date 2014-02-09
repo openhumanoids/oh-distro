@@ -82,6 +82,7 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
 }
 
 void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst,
+											const Eigen::Isometry3d &IMU_to_body,
 											drc::robot_state_t& msg) {
 
   msg.utime = InerOdoEst.uts;
@@ -91,9 +92,9 @@ void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState
   msg.pose.rotation.y = InerOdoEst.lQb.y();
   msg.pose.rotation.z = InerOdoEst.lQb.z();
   
-  copyDrcVec3D(InerOdoEst.V, msg.twist.linear_velocity);
-  copyDrcVec3D(InerOdoEst.w_l, msg.twist.angular_velocity);
-  copyDrcVec3D(InerOdoEst.P, msg.pose.translation);
+  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.V, msg.twist.linear_velocity);
+  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, msg.twist.angular_velocity);
+  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation(), msg.pose.translation);
   
   return;
 }

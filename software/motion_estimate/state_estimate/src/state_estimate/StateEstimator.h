@@ -21,6 +21,7 @@
 #include <inertial-odometry/Odometry.hpp>
 //#include <leg-odometry/TwoLegOdometry.h>
 #include <leg-odometry/sharedUtilities.hpp>
+#include <leg-odometry/SignalTap.hpp>
 
 #include "StateEstimatorUtilities.h"
 #include "JointFilters.h"
@@ -39,6 +40,10 @@
 
 namespace StateEstimate
 {
+
+#define MIN_STANDING_CLASSIF_FORCE  300.
+#define MIN_WALKING_FORCE            50.
+#define MAX_STANDING_SPEED            0.2
 
 class StateEstimator : public ThreadLoop, public LegOdoWrapper
 {
@@ -137,8 +142,18 @@ private:
   void AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose);
   void PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState);
 
-  //========= Some Utilities =============
+  // ======== Classifiers ================
+  // Return true when standing
+  ExpireTimer standingTimer;
+  bool standingClassifier(const unsigned long long &uts, const double forces[2], const double &speed);
+  ExpireTimer velUpdateTimer;
+  bool velocityUpdateClassifier(const unsigned long long &uts, const double forces[2], const double &speed);
+
+
+  // ======== Some Utilities =============
   void drawLegOdoVelArrow(const Eigen::Matrix3d &wRb_bdi);
+
+
 };
 
 } // end namespace
