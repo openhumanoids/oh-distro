@@ -80,7 +80,7 @@ void stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst, c
 
 //void packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg);
 void stampInertialPoseUpdateRequestMsg(const InertialOdometry::DynamicState &_insState, drc::ins_update_request_t &msg);
-void stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg);
+//void stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg);
 void stampLegOdoPoseUpdateRequestMsg(TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg);
 void stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const int type, drc::ins_update_request_t &msg);
 

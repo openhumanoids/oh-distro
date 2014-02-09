@@ -25,10 +25,9 @@ struct ins_update_request_t
   int8_t updateType;
 
   const int8_t INS_POSE_ONLY=-1;
-  const int8_t MATLAB_TRAJ_ALL=0;
+  const int8_t NO_MEASUREMENT=0;
   const int8_t POSITION_LOCAL=1;
   const int8_t VELOCITY_BODY=2;
   const int8_t VELOCITY_LOCAL=3;
   const int8_t QUATERNION_LOCAL=4;
-  
 }

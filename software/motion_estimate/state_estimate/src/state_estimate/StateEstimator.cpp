@@ -97,6 +97,8 @@ StateEstimate::StateEstimator::StateEstimator(
 
   standingTimer.setDesiredPeriod_us(200*1E3);
   velUpdateTimer.setDesiredPeriod_us(500*1E3);
+
+  mLegStateClassification = 0;
 }
 
 // TODO -- fix this constructor
@@ -226,8 +228,7 @@ void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_st
   // Run classifiers to delegate updates
   double ankle_forces[] = {atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z};
 
-  standingClassifier(atlasState.utime, ankle_forces, filteredPelvisVel_world.norm());
-  velocityUpdateClassifier(atlasState.utime, ankle_forces, filteredPelvisVel_world.norm());
+  mLegStateClassification = classifyDynamicLegState(atlasState.utime, ankle_forces, filteredPelvisVel_world.norm());
 
   return;
   // Skipping the old stuff -- clearly needs clearing up.
@@ -296,6 +297,10 @@ Eigen::Vector3d* StateEstimate::StateEstimator::getFilteredLegOdoVel() {
   return &filteredPelvisVel_world;
 }
 
+int* StateEstimate::StateEstimator::getLegStateClassificationPtr() {
+  return &mLegStateClassification;
+}
+
 
 void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState) {
   Eigen::Isometry3d world_to_body_bdi;
@@ -327,8 +332,8 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
 void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wRb_bdi) {
 
   Eigen::Matrix3d sRb;
-  sRb << -0.707107, 0.707107, 0, 0.707107, 0.707107, 0, 0, 0, -1;
-  //  sRb.setIdentity();
+  //sRb << -0.707107, 0.707107, 0, 0.707107, 0.707107, 0, 0, 0, -1;
+  sRb = inert_odo.getIMU2Body().linear();
   //std::cout << "StateEstimator::drawVelArrows -- sRb " << std::endl << sRb << std::endl;
 
   double magn;
@@ -475,5 +480,14 @@ bool StateEstimate::StateEstimator::velocityUpdateClassifier(const unsigned long
   return false;
 }
 
+int StateEstimate::StateEstimator::classifyDynamicLegState(const unsigned long long &uts, const double forces[2], const double &speed) {
+  if (standingClassifier(uts, forces, speed)) {
+	return drc::ins_update_request_t::POSITION_LOCAL;
+  } else if (velocityUpdateClassifier(uts, forces, speed)) {
+    return drc::ins_update_request_t::VELOCITY_LOCAL;
+  }
+
+  return drc::ins_update_request_t::NO_MEASUREMENT;
+}
 
 

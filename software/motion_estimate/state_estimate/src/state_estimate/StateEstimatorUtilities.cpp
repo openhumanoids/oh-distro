@@ -219,27 +219,28 @@ void StateEstimate::copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &
   to.z = from(2);
 }
 
-void StateEstimate::stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg) {
-
-	msg.updateType = drc::ins_update_request_t::MATLAB_TRAJ_ALL;
-
-	msg.referencePos_local.x = matlabPose.pose.translation.x;
-	msg.referencePos_local.y = matlabPose.pose.translation.y;
-	msg.referencePos_local.z = matlabPose.pose.translation.z;
-
-	msg.referenceVel_local.x = matlabPose.twist.linear_velocity.x;
-	msg.referenceVel_local.y = matlabPose.twist.linear_velocity.y;
-	msg.referenceVel_local.z = matlabPose.twist.linear_velocity.z;
-
-	msg.referenceVel_body.x = 0.;
-	msg.referenceVel_body.y = 0.;
-	msg.referenceVel_body.z = 0.;
-
-	msg.referenceQ_local.w = matlabPose.pose.rotation.w;
-	msg.referenceQ_local.x = matlabPose.pose.rotation.x;
-	msg.referenceQ_local.y = matlabPose.pose.rotation.y;
-	msg.referenceQ_local.z = matlabPose.pose.rotation.z;
-}
+// Depreciated HIL test function
+//void StateEstimate::stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg) {
+//
+//	msg.updateType = drc::ins_update_request_t::MATLAB_TRAJ_ALL;
+//
+//	msg.referencePos_local.x = matlabPose.pose.translation.x;
+//	msg.referencePos_local.y = matlabPose.pose.translation.y;
+//	msg.referencePos_local.z = matlabPose.pose.translation.z;
+//
+//	msg.referenceVel_local.x = matlabPose.twist.linear_velocity.x;
+//	msg.referenceVel_local.y = matlabPose.twist.linear_velocity.y;
+//	msg.referenceVel_local.z = matlabPose.twist.linear_velocity.z;
+//
+//	msg.referenceVel_body.x = 0.;
+//	msg.referenceVel_body.y = 0.;
+//	msg.referenceVel_body.z = 0.;
+//
+//	msg.referenceQ_local.w = matlabPose.pose.rotation.w;
+//	msg.referenceQ_local.x = matlabPose.pose.rotation.x;
+//	msg.referenceQ_local.y = matlabPose.pose.rotation.y;
+//	msg.referenceQ_local.z = matlabPose.pose.rotation.z;
+//}
 
 
 void StateEstimate::onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot) {

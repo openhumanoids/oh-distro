@@ -44,6 +44,7 @@ private:
   bot_core::pose_t mPoseBodyMsg;
 
   Eigen::Vector3d* _filteredLegVel;
+  int* _legKinStateClassification;
 
   RateChange fusion_rate;
   Eigen::VectorXd fusion_rate_dummy; // Unused variable -- added to class private definition for speed.
@@ -57,6 +58,7 @@ private:
   void setDataFusionReqMsg(drc::ins_update_request_t* _msg);
   void setInerOdoStateContainerPtr(InertialOdometry::DynamicState* _stateptr);
   void setFilteredLegOdoVel(Eigen::Vector3d* _legodovel);
+  void setLegStateClassification(int* ptr);
 };
 
 

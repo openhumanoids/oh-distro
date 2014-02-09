@@ -70,6 +70,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 			int updateType;
 
 			refMeasurement = _inert_odo->getIMU2Body().linear().transpose() * (*_filteredLegVel);
+			updateType = *_legKinStateClassification;
 			updateType = drc::ins_update_request_t::VELOCITY_LOCAL;
 
 			//stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
@@ -89,6 +90,7 @@ void StateEstimate::IMUFilter::setupEstimatorSharedMemory(StateEstimate::StateEs
   setDataFusionReqMsg( estimator.getDataFusionReqMsg() );
   setInerOdoStateContainerPtr( estimator.getInerOdoPtr() );
   setFilteredLegOdoVel( estimator.getFilteredLegOdoVel() );
+  setLegStateClassification(estimator.getLegStateClassificationPtr() );
 }
 
 void StateEstimate::IMUFilter::setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr) {
@@ -115,4 +117,7 @@ void StateEstimate::IMUFilter::setFilteredLegOdoVel(Eigen::Vector3d* _legodovel)
   _filteredLegVel = _legodovel;
 }
 
+void StateEstimate::IMUFilter::setLegStateClassification(int* ptr) {
+  _legKinStateClassification = ptr;
+}
 

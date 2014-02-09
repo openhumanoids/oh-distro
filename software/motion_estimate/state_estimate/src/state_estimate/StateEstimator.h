@@ -72,6 +72,7 @@ public:
   drc::ins_update_request_t* getDataFusionReqMsg();
   InertialOdometry::DynamicState* getInerOdoPtr();
   Eigen::Vector3d* getFilteredLegOdoVel();
+  int* getLegStateClassificationPtr();
 
 protected:
 
@@ -143,7 +144,10 @@ private:
   void PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState);
 
   // ======== Classifiers ================
-  // Return true when standing
+  int mLegStateClassification;
+  int classifyDynamicLegState(const unsigned long long &uts, const double forces[2], const double &speed);
+
+  // Utility function used to determine the state of the robot
   ExpireTimer standingTimer;
   bool standingClassifier(const unsigned long long &uts, const double forces[2], const double &speed);
   ExpireTimer velUpdateTimer;
