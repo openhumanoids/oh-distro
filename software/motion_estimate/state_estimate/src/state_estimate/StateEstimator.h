@@ -92,7 +92,6 @@ protected:
   
 private:
   const StateEstimate::command_switches* _mSwitches;
-  std::string ERSMsgSuffix;
 
   drc::robot_state_t mERSMsg;
   //drc::robot_state_t testing;

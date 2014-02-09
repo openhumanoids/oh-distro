@@ -1,7 +1,7 @@
 #include "IMUFilter.h"
 
 //-----------------------------------------------------------------------------
-StateEstimate::IMUFilter::IMUFilter()
+StateEstimate::IMUFilter::IMUFilter(const std::string &ERSChannel) : ERSMsgChannelName(ERSChannel)
 {
   unsigned long long fusion_period;
   fusion_period = 9000-500;
@@ -57,7 +57,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 
 	if (!uninitialized) {
 		stampInertialPoseERSMsg(*_InerOdoState, *_ERSMsg);
-		mLCM->publish("EST_ROBOT_STATE_EXP", _ERSMsg);
+		mLCM->publish(ERSMsgChannelName, _ERSMsg);
 		stampInertialPoseBodyMsg(*_InerOdoState, mPoseBodyMsg);
 		mLCM->publish("POSE_BODY", &mPoseBodyMsg);
 

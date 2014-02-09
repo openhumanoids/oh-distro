@@ -29,6 +29,7 @@ private:
   CommandLineConfig cl_cfg; // Maurice's leg odometry
 
   std::string mMotionSimulatorSuffix;
+  std::string ERSMsgSuffix;
 
 };
 

@@ -16,6 +16,10 @@ StateEstimate::StateEstimateApplication::StateEstimateApplication(const command_
   if (_switches->MATLAB_MotionSimulator) {
     mMotionSimulatorSuffix = "_MS";
   }
+  ERSMsgSuffix = "";
+  if (_switches->ExperimentalMsgs) {
+	  ERSMsgSuffix = "_EXP";
+  }
 
   // Using Maurices latest version of leg odometry
   cl_cfg.urdf_file = "";
@@ -51,7 +55,7 @@ int StateEstimate::StateEstimateApplication::exec()
 
   // create message producers
   AtlasStateMessageProducer atlasStateProducer("ATLAS_STATE");
-  IMUMessageProducer imuProducer("ATLAS_IMU_BATCH" + mMotionSimulatorSuffix);
+  IMUMessageProducer imuProducer("ATLAS_IMU_BATCH" + mMotionSimulatorSuffix, "EST_ROBOT_STATE" + ERSMsgSuffix);
   PoseMessageProducer bdiPoseProducer("POSE_BDI");
   PoseMessageProducer viconPoseProducer("ATLAS_VICON");
   NavStateMessageProducer matlabTruthPoseProducer("TRUTH_TRAJ_MATLAB");
@@ -83,7 +87,6 @@ int StateEstimate::StateEstimateApplication::exec()
 
   // Setup shared memory with the StateEstimator object
   imuProducer.getIMUFilter()->setupEstimatorSharedMemory(estimator);
-
 
   // start comm thread
   lcmThread.start();

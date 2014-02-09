@@ -22,7 +22,7 @@ class IMUFilter
 {
 public:
 
-  IMUFilter();
+  IMUFilter(const std::string &ERSChannel);
   ~IMUFilter();
 
   void handleIMUPackets(const std::vector<drc::atlas_raw_imu_t>& imuPackets, const bot_core::pose_t &atlasPose);
@@ -33,6 +33,7 @@ public:
 
 private:
   boost::shared_ptr<lcm::LCM> mLCM;
+  std::string ERSMsgChannelName;
 
   InertialOdometry::Odometry* _inert_odo;
   InertialOdometry::IMU_dataframe imu_data;

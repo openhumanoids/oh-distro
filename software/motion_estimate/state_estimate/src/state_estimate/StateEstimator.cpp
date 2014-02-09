@@ -25,11 +25,6 @@ StateEstimate::StateEstimator::StateEstimator(
 
   _mSwitches = _switches;
 
-  ERSMsgSuffix = "";
-  if (_switches->ExperimentalMsgs) {
-	  ERSMsgSuffix = "_EXP";
-  }
-
   // Sandbox leg odo
   setupLegOdo();
 
@@ -53,7 +48,7 @@ StateEstimate::StateEstimator::StateEstimator(
 	// This for running on the real robot
 	int status;
 	double matx[16];
-	status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "body",  "imu", 0 /*utime*/, matx);
+	status = bot_frames_get_trans_mat_4x4_with_utime( _botframes, "body",  "imu", 0, matx);
 	for (int i = 0; i < 4; ++i) {
 	  for (int j = 0; j < 4; ++j) {
 		IMU_to_body(i,j) = matx[i*4+j];
