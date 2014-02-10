@@ -31,13 +31,13 @@ class PoseTransformer{
     // The vicon body position at zerotime, the bdi motion since zerotime is applied to it
     // to produce a estimate position that can be compared to VICON
     Eigen::Isometry3d worldvicon_to_viconbody_zerotime_;    
+    pointcloud_vis* pc_vis_;
+    int pose_counter_;
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    pointcloud_vis* pc_vis_;
 
     bool verbose_;
-    int pose_counter_;
 };
 
 PoseTransformer::PoseTransformer(boost::shared_ptr<lcm::LCM> &lcm_, int pose_counter_):
@@ -52,16 +52,16 @@ PoseTransformer::PoseTransformer(boost::shared_ptr<lcm::LCM> &lcm_, int pose_cou
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10002,"BDI (v)",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10003,"Vicon at init",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10004,"BDI (v all)",5,0) );
+    pc_vis_->pose_collection_reset(10004,"BDI (v all)");
   }else if (pose_counter_ ==1){
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10010,"MIT at init",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10011,"MIT motion since init",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10012,"MIT (v)",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10013,"Vicon at init",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10014,"MIT (v all)",5,0) );
+    pc_vis_->pose_collection_reset(10014,"MIT (v all)");    
   }
   
-  pc_vis_->pose_collection_reset(10004,"BDI (v all)");
-  pc_vis_->pose_collection_reset(10014,"MIT (v all)");    
   
   world_to_viconbody_init_ = false;
   world_to_estbody_init_ = false;
@@ -132,10 +132,12 @@ class App{
                            const std::string& channel, const  bot_core::pose_t* msg);
     void viconHandler(const lcm::ReceiveBuffer* rbuf, 
                       const std::string& channel, const  bot_core::rigid_transform_t* msg);
-
+    void useVicon(Eigen::Isometry3d worldvicon_to_body_vicon, int64_t utime);
+    
     std::vector <PoseTransformer> pts_;   
     const CommandLineConfig cl_cfg_;   
     pointcloud_vis* pc_vis_; 
+    int64_t prev_vicon_utime;
 };
 
 
@@ -181,6 +183,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   pc_vis_->obj_cfg_list.push_back( obj_cfg(10024,"Vicon (v all)",5,0) );
   pc_vis_->pose_collection_reset(10024,"Vicon (v all)");
   
+  prev_vicon_utime =0;
 }
 
 
@@ -238,18 +241,22 @@ void App::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chan
 }
 
 
-
-void App::viconPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-
-  Eigen::Isometry3d worldvicon_to_body_vicon;
-  worldvicon_to_body_vicon.setIdentity();
-  worldvicon_to_body_vicon.translation()  << msg->pos[0], msg->pos[1] , msg->pos[2];
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->orientation[0], msg->orientation[1], 
-                                            msg->orientation[2], msg->orientation[3]);
-  worldvicon_to_body_vicon.rotate(quat); 
+void App::useVicon(Eigen::Isometry3d worldvicon_to_body_vicon, int64_t utime){
+  if (prev_vicon_utime > utime){
+    std::cout << "\n";
+    std::cout << "out of order vicon detected, resetting\n";    
+    pc_vis_->pose_collection_reset(10024 ,"Unused String");
+    for (size_t i=0; i < pts_.size() ; i++){
+      PoseTransformer* pt = &(pts_[i]);
+      pt->world_to_viconbody_init_ = false;
+      pt->world_to_estbody_init_ = false;
+      pt->world_tf_init_ = false;      
+      pt->pc_vis_->pose_collection_reset(10004 + i*10,"Unused String");
+    }
+  }
   
   // Publish Vicon
-  Isometry3dTime worldvicon_to_body_vicon_T(msg->utime, worldvicon_to_body_vicon);
+  Isometry3dTime worldvicon_to_body_vicon_T(utime, worldvicon_to_body_vicon);
   pc_vis_->pose_to_lcm_from_list(10022, worldvicon_to_body_vicon_T); 
   pc_vis_->pose_to_lcm_from_list(10024, worldvicon_to_body_vicon_T);     
   
@@ -259,11 +266,25 @@ void App::viconPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& ch
     if (!pt->world_to_viconbody_init_){
       std::cout << "initialize vicon\n";
       
-      
       pt->world_to_viconbody_init_ = true;
       pt->worldvicon_to_viconbody_zerotime_ = worldvicon_to_body_vicon;
     }      
   }
+  
+  prev_vicon_utime = utime;
+}
+
+
+void App::viconPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+
+  Eigen::Isometry3d worldvicon_to_body_vicon;
+  worldvicon_to_body_vicon.setIdentity();
+  worldvicon_to_body_vicon.translation()  << msg->pos[0], msg->pos[1] , msg->pos[2];
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->orientation[0], msg->orientation[1], 
+                                            msg->orientation[2], msg->orientation[3]);
+  worldvicon_to_body_vicon.rotate(quat); 
+
+  useVicon(worldvicon_to_body_vicon, msg->utime);
 }
 
 
@@ -280,23 +301,7 @@ void App::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
   frames_cpp_->get_trans_with_utime( "body_vicon" , "frontplate_vicon", msg->utime, frontplate_vicon_to_body_vicon);    
   Eigen::Isometry3d worldvicon_to_body_vicon = worldvicon_to_frontplate_vicon * frontplate_vicon_to_body_vicon;
 
-  
-  // Publish Vicon
-  Isometry3dTime worldvicon_to_body_vicon_T(msg->utime, worldvicon_to_body_vicon);
-  pc_vis_->pose_to_lcm_from_list(10022, worldvicon_to_body_vicon_T); 
-  pc_vis_->pose_to_lcm_from_list(10024, worldvicon_to_body_vicon_T);   
-  
-  
-  for (size_t i=0; i < pts_.size() ; i++){
-    PoseTransformer* pt = &(pts_[i]);
-    
-    if (!pt->world_to_viconbody_init_){
-      std::cout << "initialize vicon\n";
-      
-      pt->world_to_viconbody_init_ = true;
-      pt->worldvicon_to_viconbody_zerotime_ = worldvicon_to_body_vicon;
-    }      
-  }
+  useVicon(worldvicon_to_body_vicon, msg->utime);
 }
 
 int main(int argc, char ** argv) {

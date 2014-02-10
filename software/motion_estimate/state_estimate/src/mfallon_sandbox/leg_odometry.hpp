@@ -33,6 +33,7 @@
 
 #include <estimate/common_conversions.hpp>
 #include <leg-odometry/FootContact.h>
+#include <leg-odometry/Filter.hpp>
 
 ///////////////////////////////////////////////////////////////
 class leg_odometry{
@@ -76,12 +77,19 @@ class leg_odometry{
     std::string leg_odometry_mode_;
     // How the position will be initialized
     std::string initialization_mode_;
+    // Which link is assumed to be stationary - typically [lr]_foot or [lr]_talus
+    std::string l_standing_link_;
+    std::string r_standing_link_;
+    // use a heavy low pass filter on the input joints
+    bool filter_joint_positions_;
     
     TwoLegs::FootContact* foot_contact_logic_;
     // most recent measurements for the feet forces (typically synchronise with joints
     float left_foot_force_, right_foot_force_;
     
-    bool initializePose(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot);
+    bool initializePose(Eigen::Isometry3d body_to_foot);
+    bool prepInitialization(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    
     // Pure Leg Odometry, no IMU
     // return: true on initialization, else false
     bool leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
@@ -117,6 +125,9 @@ class leg_odometry{
     Eigen::Isometry3d previous_body_to_l_foot_;
     Eigen::Isometry3d previous_body_to_r_foot_;
     
+    
+    // joint position filters, optionally used
+    LowPassFilter lpfilter_[28];  
     
     int verbose_;
 };    

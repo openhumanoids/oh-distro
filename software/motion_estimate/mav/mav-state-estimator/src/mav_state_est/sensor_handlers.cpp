@@ -83,16 +83,16 @@ RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_b
   sensor_gyro[2] = (msg->raw_imu[0].delta_rotation[2])/raw_dt;
 
   if (1==0){
-  std::cout << "===\n";
-  std::cout << "rotation\n";
-  std::cout << msg->raw_imu[0].utime << "\n";
-  std::cout << msg->raw_imu[1].utime << "\n";
-  std::cout << msg->raw_imu[0].delta_rotation[0] << ", " << msg->raw_imu[0].delta_rotation[1] << ", " 
-            << msg->raw_imu[0].delta_rotation[2] << " delta_rot\n";
-  std::cout << "rotation rate\n";
-  std::cout << raw_dt << "\n";
-  std::cout << sensor_gyro[0] << ", " << sensor_gyro[1] << ", " 
-            << sensor_gyro[2] << " gyro\n";  
+    std::cout << "===\n";
+    std::cout << "rotation\n";
+    std::cout << msg->raw_imu[0].utime << "\n";
+    std::cout << msg->raw_imu[1].utime << "\n";
+    std::cout << msg->raw_imu[0].delta_rotation[0] << ", " << msg->raw_imu[0].delta_rotation[1] << ", " 
+              << msg->raw_imu[0].delta_rotation[2] << " delta_rot\n";
+    std::cout << "rotation rate\n";
+    std::cout << raw_dt << "\n";
+    std::cout << sensor_gyro[0] << ", " << sensor_gyro[1] << ", " 
+              << sensor_gyro[2] << " gyro\n";  
   }
 
   double body_gyro[3];
@@ -112,7 +112,7 @@ RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_b
     //exit(-1); 
   }
   prev_utime_atlas = msg->utime;
-  
+  // std::cout << msg->utime << " ins utime\n";  
   return new RBISIMUProcessStep(gyro, accelerometer, cov_gyro, cov_accel, cov_gyro_bias, cov_accel_bias, integration_dt, msg->utime);
 }
 

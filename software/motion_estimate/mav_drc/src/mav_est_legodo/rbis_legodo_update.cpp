@@ -56,6 +56,8 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
 
 RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *msg)
 {
+  // std::cout << msg->utime << " leg utime top\n";
+  
   /// ... insert handling and special cases here.
   bool verbose = false;
   if (verbose) std::cout << "LegOdoHandler: received EST_ROBOT_STATE msg\n";
@@ -92,7 +94,7 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *ms
                            msg->joint_velocity, msg->joint_effort, msg->utime)){
     leg_odo_->getDeltaLegOdometry(delta_odo, utime, prev_utime);
   } else {
-    std::cout << "Leg Odometry is not valid ==============================\n";
+    std::cout << "Leg Odometry is not valid not integrating =========================\n";
     return NULL;
   }
   
@@ -147,6 +149,7 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *ms
     msgT.rot_quat[2] = motion_R.y();
     msgT.rot_quat[3] = motion_R.z();  
 
+    // std::cout << utime << " leg utime bot\n";
     return leg_odo_common_->createMeasurement(msgT, utime, prev_utime);
   }
   

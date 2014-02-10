@@ -95,6 +95,11 @@ public:
       }else if( ins_handler->channel =="ATLAS_IMU_BATCH"){
         front_end->addSensor("ins", &MavStateEst::InsHandler::processMessageAtlas, ins_handler);
         rbis_initializer->addSensor("ins", &MavStateEst::InsHandler::processMessageInitAtlas, ins_handler);
+      }else if( ins_handler->channel =="ATLAS_IMU_BATCH_FILTERED"){
+        std::cout << "Filtered IMU expected\n";
+        // messages will not be incorporated twice, either this or the other - but not both
+        front_end->addSensor("ins", &MavStateEst::InsHandler::processMessageAtlas, ins_handler);
+        rbis_initializer->addSensor("ins", &MavStateEst::InsHandler::processMessageInitAtlas, ins_handler);
       }
     }
 
