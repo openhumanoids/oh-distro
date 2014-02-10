@@ -117,7 +117,7 @@ private:
   
 
   // LegOdometry Object
-  Eigen::Vector3d pelvisVel_world, filteredPelvisVel_world;
+  Eigen::Vector3d pelvisVel_world, filteredPelvisVel_world, imuVel_world;
 
   // Both these leg_odo objects are to be depreciated
   //TwoLegs::TwoLegOdometry *_leg_odo; // VRC version
@@ -131,7 +131,8 @@ private:
 
   JointUtils joint_utils_;
 
-  NumericalDiff pelvis_vel_diff;
+  NumericalDiff pelvis_vel_diff; // Will probably be depreciated, since we are interested in the aided IMU velocity
+  NumericalDiff imu_vel_diff;
   DistributedDiff d_pelvis_vel_diff;
 
   LowPassFilter lpfilter[3];

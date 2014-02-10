@@ -194,8 +194,10 @@ void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vecto
 
 
 	switch (type) {
-	case drc::ins_update_request_t::POSITION_LOCAL:
-		copyDrcVec3D(_ref, msg.referencePos_local);
+	case drc::ins_update_request_t::VEL_HEADING_LOCAL:
+		//copyDrcVec3D(_ref, msg.referencePos_local);
+		copyDrcVec3D(_ref, msg.referenceVel_local);
+//		reference_wanderAzimHeading = ??;
 		break;
 	case drc::ins_update_request_t::VELOCITY_LOCAL:
 		copyDrcVec3D(_ref, msg.referenceVel_local);
@@ -204,7 +206,7 @@ void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vecto
 		copyDrcVec3D(_ref, msg.referenceVel_body);
 		break;
 	case drc::ins_update_request_t::NO_MEASUREMENT:
-		std::cout << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- no measurement update." << std::endl;
+		//std::cout << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- no measurement update." << std::endl;
 		break;
 	default:
 		std::cerr << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- requesting invalid EKF update request type." << std::endl;
@@ -303,12 +305,16 @@ void StateEstimate::detectIMUSampleTime(unsigned long long &prevImuPacketCount,
 	previous_Ts_imu = Ts_imu;
 }
 
-void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst, bot_core::pose_t &_msg) {
+void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst,
+											 const Eigen::Isometry3d &IMU_to_body,
+											 bot_core::pose_t &_msg) {
 	_msg.utime = InerOdoEst.uts;
 
-	_msg.pos[0] = InerOdoEst.P(0);
-	_msg.pos[1] = InerOdoEst.P(1);
-	_msg.pos[2] = InerOdoEst.P(2);
+	Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
+
+	_msg.pos[0] = P_w(0);
+	_msg.pos[1] = P_w(1);
+	_msg.pos[2] = P_w(2);
 
 	_msg.orientation[0] = InerOdoEst.lQb.w();
 	_msg.orientation[1] = InerOdoEst.lQb.x();

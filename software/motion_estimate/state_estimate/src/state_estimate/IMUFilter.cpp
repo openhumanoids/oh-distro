@@ -58,7 +58,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 	if (!uninitialized) {
 		stampInertialPoseERSMsg(*_InerOdoState, _inert_odo->getIMU2Body(), *_ERSMsg);
 		mLCM->publish(ERSMsgChannelName, _ERSMsg);
-		stampInertialPoseBodyMsg(*_InerOdoState, mPoseBodyMsg);
+		stampInertialPoseBodyMsg(*_InerOdoState, _inert_odo->getIMU2Body(), mPoseBodyMsg);
 		mLCM->publish("POSE_BODY", &mPoseBodyMsg);
 
 		// EKF measurement update rate was set to 90Hz
@@ -66,16 +66,16 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 
 			stampInertialPoseUpdateRequestMsg(*_InerOdoState, *_DFRequestMsg);
 
-			Eigen::Vector3d refMeasurement;
+			Eigen::Vector3d refMeasurement, refVelocity;
 			int updateType;
 
-			refMeasurement = _inert_odo->getIMU2Body().linear().transpose() * (*_filteredLegVel);
+			//refMeasurement = _inert_odo->getIMU2Body().linear().transpose() * (*_filteredLegVel);
 			updateType = *_legKinStateClassification;
-			//std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- LegStateClassification: " << updateType << std::endl;
-			//updateType = drc::ins_update_request_t::VELOCITY_LOCAL;
+			refVelocity = (*_filteredLegVel);
 
+			//std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- LegStateClassification: " << updateType << std::endl;
 			//stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
-			stampEKFReferenceMeasurementUpdateRequest(refMeasurement, updateType, *_DFRequestMsg);
+			stampEKFReferenceMeasurementUpdateRequest(refVelocity, updateType, *_DFRequestMsg);
 			mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
 		}
 

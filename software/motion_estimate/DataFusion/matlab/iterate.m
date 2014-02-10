@@ -39,7 +39,7 @@ end
 
 Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
 
-covariances.R = diag( 1E0*ones(3,1) );
+covariances.R = diag( 3E0*ones(3,1) );
 Disc.B = 0;
 
 
@@ -49,7 +49,7 @@ Sys.priori = KF_timeupdate(Sys.posterior, 0, Disc, covariances);
 Sys.priori.utime = Measurement.INS.pose.utime;
 
 % MEASUREMENT UPDATE, POSTERIOR STATE===============================================================
-if (Measurement.LegOdo.updateType ~= 0)
+if (Measurement.LegOdo.updateType > -1)
   Sys.posterior = KF_measupdate(Sys.priori, Disc, [Measurement.velocityResidual]);
   Sys.posterior.utime = Sys.priori.utime;
 end

@@ -85,9 +85,11 @@ StateEstimate::StateEstimator::StateEstimator(
   Ts_imu = 1E-3;
   receivedIMUPackets = 0;
 
-
+  // These may be depreciated
   pelvis_vel_diff.setSize(3);
   d_pelvis_vel_diff.setSize(3);
+
+  imu_vel_diff.setSize(3);
 
   lcm = lcm_create(NULL); // Currently this pointer is not being deleted -- must be done before use
   lcmgl_ = bot_lcmgl_init(lcm, "VelArrows");
@@ -294,7 +296,8 @@ InertialOdometry::DynamicState* StateEstimate::StateEstimator::getInerOdoPtr() {
 }
 
 Eigen::Vector3d* StateEstimate::StateEstimator::getFilteredLegOdoVel() {
-  return &filteredPelvisVel_world;
+//  return &filteredPelvisVel_world;
+  return &imuVel_world;
 }
 
 int* StateEstimate::StateEstimator::getLegStateClassificationPtr() {
@@ -315,7 +318,13 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
 
   Eigen::Isometry3d world_to_body = leg_odo_->getRunningEstimate();
 
+  //Will be depreciated
   pelvisVel_world = pelvis_vel_diff.diff(atlasState.utime, world_to_body.translation());
+
+  // This is where we compute the aiding velocity for the inertial solution
+  Eigen::Isometry3d world_to_IMU = inert_odo.getIMU2Body().inverse() * world_to_body;
+  imuVel_world = imu_vel_diff.diff(atlasState.utime, world_to_IMU.translation());
+
   double vel[3];
   vel[0] = lpfilter[0].processSample(pelvisVel_world(0));
   vel[1] = lpfilter[1].processSample(pelvisVel_world(1));
@@ -491,7 +500,7 @@ bool StateEstimate::StateEstimator::velocityUpdateClassifier(const unsigned long
 
 int StateEstimate::StateEstimator::classifyDynamicLegState(const unsigned long long &uts, const double forces[2], const double &speed) {
   if (standingClassifier(uts, forces, speed)) {
-	return drc::ins_update_request_t::POSITION_LOCAL;
+	return drc::ins_update_request_t::VEL_HEADING_LOCAL;
   } else if (velocityUpdateClassifier(uts, forces, speed)) {
     return drc::ins_update_request_t::VELOCITY_LOCAL;
   }

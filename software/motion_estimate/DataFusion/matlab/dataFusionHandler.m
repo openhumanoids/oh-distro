@@ -10,7 +10,7 @@ iterations = 10000;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
-feedbackGain = 0.5;
+feedbackGain = 0.3;
 
 dfSys.T = 0;
 
@@ -83,39 +83,7 @@ while (true)
     %headingResidual = Measurement.standingHeading
     %Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.lQb)' * q2R(Measurement.LegOdo.pose.lQb));
     
-    %[Result, dfSys] = iterate([], dfSys, Measurement);
-    [F, L, Q] = dINS_EKFmodel(Measurement.INS.pose);
-
-    Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
-    residual = [Measurement.velocityResidual];    
-
-    %switch ( Measurement.LegOdo.updateType)
-    %  case 1:
-	% Standing mode we add a heading measurement
-    %    Disc.C = [Disc.C; zeros(1,15)];
-    %	Disc.C(4,3) = 1;
-    %    residual = [residual; ];
-    %  case 3:
-        % Walking update
-    %end
-
-    covariances.R = diag( 3E0*ones(3,1) );
-    Disc.B = 0;
-
-
-    % TIME UPDATE, PRIORI STATE=========================================================================
-    [Disc.A,covariances.Qd] = lti_disc(F, L, Q, dfSys.dt);
-    dfSys.priori = KF_timeupdate(dfSys.posterior, 0, Disc, covariances);
-    dfSys.priori.utime = Measurement.INS.pose.utime;
-
-    % MEASUREMENT UPDATE, POSTERIOR STATE===============================================================
-    if (Measurement.LegOdo.updateType > 0)
-      % Only do measurement update when we have valid measurements
-      dfSys.posterior = KF_measupdate(dfSys.priori, Disc, residual);
-      dfSys.posterior.utime = dfSys.priori.utime;
-    else
-      disp 'dataFusionHandler -- skipping measurement update'
-    end
+    [Result, dfSys] = iterate([], dfSys, Measurement);
     
     % Store stuff for later plotting
     if (DataLogging == 1)
@@ -139,7 +107,7 @@ while (true)
     
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
-    if ((ENABLE_FEEDBACK == 1) && (Measurement.LegOdo.updateType > 0))
+    if ((ENABLE_FEEDBACK == 1) && (Measurement.LegOdo.updateType > -1))
         publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, Measurement, lc);
         dfSys.posterior.x = (1-feedbackGain) * dfSys.posterior.x;
     end
