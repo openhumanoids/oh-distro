@@ -64,6 +64,7 @@ namespace InertialOdometry {
 	  void setIMU2Body(const Eigen::Isometry3d &imu2body);
 	  void sensedImuToBodyTransform(IMU_dataframe &_imu);
 	  void setInitPitchRoll(const std::vector<Eigen::Vector3d> &initacceldata);
+	  const Eigen::Isometry3d& getIMU2Body();
   };
 
 }

@@ -81,29 +81,8 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
   return;
 }
 
-InertialOdometry::DynamicState StateEstimate::PropagateINS(	const double &Ts_imu,
-															InertialOdometry::Odometry &inert_odo,
-															const Eigen::Isometry3d &IMU_to_body,
-															const drc::atlas_raw_imu_t &imu) {
-
-	std::cout << "StateEstimate::PropagateINS -- function not usable, since abstraction around the IMU_to_body rigid transform has been moved into the inertial odometry class directly. This function must first be reworked and tested before it can be used to propagate the inertial solution." << std::endl;
-	// convertion between dang_b and w_b must also be check if this function is to be revived.
-	assert(false);
-
-	InertialOdometry::IMU_dataframe imu_data;
-	imu_data.uts = imu.utime;
-
-	// We convert a delta angle into a rotation rate, and will then use this as a constant rotation rate between received messages
-	// We know the KVH will sample every 1 ms.
-	imu_data.dang_b = - IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-	imu_data.w_b_measured = - 1/Ts_imu * IMU_to_body.linear() * Eigen::Vector3d(imu.delta_rotation[0], imu.delta_rotation[1], imu.delta_rotation[2]);
-	imu_data.a_b_measured = IMU_to_body.linear() * Eigen::Vector3d(imu.linear_acceleration[0],imu.linear_acceleration[1],imu.linear_acceleration[2]);
-
-	// TODO -- The translation of this lever arm offset has not yet been compensated
-	return inert_odo.PropagatePrediction(imu_data);
-}
-
 void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst,
+											const Eigen::Isometry3d &IMU_to_body,
 											drc::robot_state_t& msg) {
 
   msg.utime = InerOdoEst.uts;
@@ -113,55 +92,55 @@ void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState
   msg.pose.rotation.y = InerOdoEst.lQb.y();
   msg.pose.rotation.z = InerOdoEst.lQb.z();
   
-  copyDrcVec3D(InerOdoEst.V, msg.twist.linear_velocity);
-  copyDrcVec3D(InerOdoEst.w_l, msg.twist.angular_velocity);
-  copyDrcVec3D(InerOdoEst.P, msg.pose.translation);
+  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.V, msg.twist.linear_velocity);
+  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, msg.twist.angular_velocity);
+  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation(), msg.pose.translation);
   
   return;
 }
 
 
-void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot) {
-	
-  // Keep joint positions in local memory -- prepare data structure for use with FK
-  std::map<std::string, double> jointpos_in;
-  for (uint i=0; i< (uint) atlasState.num_joints; i++) {
-	//jointpos_in.insert(make_pair(atlasState.joint_name[i], atlasState.joint_position[i]));
-
-	// Changing name types to AtlasControlTypes definition
-	jointpos_in.insert(make_pair(_robot->joint_names_[i], atlasState.joint_position[i]));
-	//std::cout << "StateEstimate::doLegOdometry -- inserting joint " << robot.joint_names_[i] << ", " << atlasState.joint_position[i] << std::endl;
-  }
-  
-  Eigen::Isometry3d current_pelvis;
-  Eigen::VectorXd pelvis_velocity(3);
-
-  Eigen::Isometry3d left;
-  left.setIdentity();
-  Eigen::Isometry3d right;
-  right.setIdentity();
-  
-  // TODO -- Delete head_to_body transform requirement here. This is legacy from VRC -- 
-  Eigen::Isometry3d body_to_head;
-  body_to_head.setIdentity();
-  
-  
-  _fk_data.utime = atlasState.utime;
-  _fk_data.jointpos_in = jointpos_in;
-  
-  TwoLegs::getFKTransforms(_fk_data, left, right, body_to_head);// FK, translations in body frame with no rotation (I)
-  
-  // TODO -- Initialization before the VRC..
-  if (firstpass>0)
-  {
-    Eigen::Isometry3d init_state;
-    init_state.setIdentity();
-    _leg_odo.ResetWithLeftFootStates(left,right,init_state);
-  }
-  _leg_odo.UpdateStates(atlasState.utime, left, right, atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
-
-
-}
+//void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot) {
+//
+//  // Keep joint positions in local memory -- prepare data structure for use with FK
+//  std::map<std::string, double> jointpos_in;
+//  for (uint i=0; i< (uint) atlasState.num_joints; i++) {
+//	//jointpos_in.insert(make_pair(atlasState.joint_name[i], atlasState.joint_position[i]));
+//
+//	// Changing name types to AtlasControlTypes definition
+//	jointpos_in.insert(make_pair(_robot->joint_names_[i], atlasState.joint_position[i]));
+//	//std::cout << "StateEstimate::doLegOdometry -- inserting joint " << robot.joint_names_[i] << ", " << atlasState.joint_position[i] << std::endl;
+//  }
+//
+//  Eigen::Isometry3d current_pelvis;
+//  Eigen::VectorXd pelvis_velocity(3);
+//
+//  Eigen::Isometry3d left;
+//  left.setIdentity();
+//  Eigen::Isometry3d right;
+//  right.setIdentity();
+//
+//  // TODO -- Delete head_to_body transform requirement here. This is legacy from VRC --
+//  Eigen::Isometry3d body_to_head;
+//  body_to_head.setIdentity();
+//
+//
+//  _fk_data.utime = atlasState.utime;
+//  _fk_data.jointpos_in = jointpos_in;
+//
+//  TwoLegs::getFKTransforms(_fk_data, left, right, body_to_head);// FK, translations in body frame with no rotation (I)
+//
+//  // TODO -- Initialization before the VRC..
+//  if (firstpass>0)
+//  {
+//    Eigen::Isometry3d init_state;
+//    init_state.setIdentity();
+//    _leg_odo.ResetWithLeftFootStates(left,right,init_state);
+//  }
+//  _leg_odo.UpdateStates(atlasState.utime, left, right, atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z); //footstep propagation happens in here -- we assume that body to world quaternion is magically updated by torso_imu
+//
+//
+//}
 
 
 //void StateEstimate::packDFUpdateRequestMsg(InertialOdometry::Odometry &inert_odo, TwoLegs::TwoLegOdometry &_leg_odo, drc::ins_update_request_t &msg) {
@@ -215,14 +194,19 @@ void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vecto
 
 
 	switch (type) {
-	case drc::ins_update_request_t::POSITION_LOCAL:
-		copyDrcVec3D(_ref, msg.referencePos_local);
+	case drc::ins_update_request_t::VEL_HEADING_LOCAL:
+		//copyDrcVec3D(_ref, msg.referencePos_local);
+		copyDrcVec3D(_ref, msg.referenceVel_local);
+//		reference_wanderAzimHeading = ??;
 		break;
 	case drc::ins_update_request_t::VELOCITY_LOCAL:
 		copyDrcVec3D(_ref, msg.referenceVel_local);
 		break;
 	case drc::ins_update_request_t::VELOCITY_BODY:
 		copyDrcVec3D(_ref, msg.referenceVel_body);
+		break;
+	case drc::ins_update_request_t::NO_MEASUREMENT:
+		//std::cout << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- no measurement update." << std::endl;
 		break;
 	default:
 		std::cerr << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- requesting invalid EKF update request type." << std::endl;
@@ -240,27 +224,28 @@ void StateEstimate::copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &
   to.z = from(2);
 }
 
-void StateEstimate::stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg) {
-
-	msg.updateType = drc::ins_update_request_t::MATLAB_TRAJ_ALL;
-
-	msg.referencePos_local.x = matlabPose.pose.translation.x;
-	msg.referencePos_local.y = matlabPose.pose.translation.y;
-	msg.referencePos_local.z = matlabPose.pose.translation.z;
-
-	msg.referenceVel_local.x = matlabPose.twist.linear_velocity.x;
-	msg.referenceVel_local.y = matlabPose.twist.linear_velocity.y;
-	msg.referenceVel_local.z = matlabPose.twist.linear_velocity.z;
-
-	msg.referenceVel_body.x = 0.;
-	msg.referenceVel_body.y = 0.;
-	msg.referenceVel_body.z = 0.;
-
-	msg.referenceQ_local.w = matlabPose.pose.rotation.w;
-	msg.referenceQ_local.x = matlabPose.pose.rotation.x;
-	msg.referenceQ_local.y = matlabPose.pose.rotation.y;
-	msg.referenceQ_local.z = matlabPose.pose.rotation.z;
-}
+// Depreciated HIL test function
+//void StateEstimate::stampMatlabReferencePoseUpdateRequest(const drc::nav_state_t &matlabPose, drc::ins_update_request_t &msg) {
+//
+//	msg.updateType = drc::ins_update_request_t::MATLAB_TRAJ_ALL;
+//
+//	msg.referencePos_local.x = matlabPose.pose.translation.x;
+//	msg.referencePos_local.y = matlabPose.pose.translation.y;
+//	msg.referencePos_local.z = matlabPose.pose.translation.z;
+//
+//	msg.referenceVel_local.x = matlabPose.twist.linear_velocity.x;
+//	msg.referenceVel_local.y = matlabPose.twist.linear_velocity.y;
+//	msg.referenceVel_local.z = matlabPose.twist.linear_velocity.z;
+//
+//	msg.referenceVel_body.x = 0.;
+//	msg.referenceVel_body.y = 0.;
+//	msg.referenceVel_body.z = 0.;
+//
+//	msg.referenceQ_local.w = matlabPose.pose.rotation.w;
+//	msg.referenceQ_local.x = matlabPose.pose.rotation.x;
+//	msg.referenceQ_local.y = matlabPose.pose.rotation.y;
+//	msg.referenceQ_local.z = matlabPose.pose.rotation.z;
+//}
 
 
 void StateEstimate::onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot) {
@@ -320,12 +305,16 @@ void StateEstimate::detectIMUSampleTime(unsigned long long &prevImuPacketCount,
 	previous_Ts_imu = Ts_imu;
 }
 
-void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst, bot_core::pose_t &_msg) {
+void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst,
+											 const Eigen::Isometry3d &IMU_to_body,
+											 bot_core::pose_t &_msg) {
 	_msg.utime = InerOdoEst.uts;
 
-	_msg.pos[0] = InerOdoEst.P(0);
-	_msg.pos[1] = InerOdoEst.P(1);
-	_msg.pos[2] = InerOdoEst.P(2);
+	Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
+
+	_msg.pos[0] = P_w(0);
+	_msg.pos[1] = P_w(1);
+	_msg.pos[2] = P_w(2);
 
 	_msg.orientation[0] = InerOdoEst.lQb.w();
 	_msg.orientation[1] = InerOdoEst.lQb.x();

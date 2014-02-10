@@ -10,7 +10,7 @@ iterations = 10000;
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
-feedbackGain = 1;
+feedbackGain = 0.3;
 
 dfSys.T = 0;
 
@@ -78,14 +78,12 @@ while (true)
     end
     dfSys.T = Measurement.INS.pose.utime;
     
-    %Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
     Measurement.velocityResidual = Measurement.LegOdo.pose.V_l - Measurement.INS.pose.V_l;
-    
+    %Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
+    %headingResidual = Measurement.standingHeading
     %Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.lQb)' * q2R(Measurement.LegOdo.pose.lQb));
     
-
     [Result, dfSys] = iterate([], dfSys, Measurement);
-
     
     % Store stuff for later plotting
     if (DataLogging == 1)
@@ -109,7 +107,7 @@ while (true)
     
     % Here we need to publish an INS update message -- this is caught by
     % state-estimate process and incorporated in the INS there
-    if (ENABLE_FEEDBACK == 1)
+    if ((ENABLE_FEEDBACK == 1) && (Measurement.LegOdo.updateType > -1))
         publishINSUpdatePacket(INSUpdateMsg, dfSys.posterior, feedbackGain, Measurement, lc);
         dfSys.posterior.x = (1-feedbackGain) * dfSys.posterior.x;
     end

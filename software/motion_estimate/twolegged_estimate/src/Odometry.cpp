@@ -17,7 +17,7 @@ namespace InertialOdometry {
     //orc.updateOrientation(_imu->uts,orient);
 
 	// We use update WithRate, since we would like to cater for packet loss. Ideally though, we should use delta_angles directly
-    orc.updateOrientationWithRate(_imu.uts, _imu.w_b);
+	orc.updateOrientationWithRate(_imu.uts, _imu.w_b);
 
     //std::cout << "Odometry::PropagatePrediction_wo_IMUCompensation -- a_b " << std::endl << _imu.a_b.transpose() << std::endl;
 
@@ -94,11 +94,13 @@ namespace InertialOdometry {
   {
     InertialOdomOutput out;
 
-    imu_compensator.Full_Compensation(_imu);
-    sensedImuToBodyTransform(_imu);
+    //std::cout << "Odometry::PropagatePrediction -- before lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
+
+    //sensedImuToBodyTransform(_imu);
     if (&_imu.use_dang) {
     	_imu.w_b_measured = 1/Ts_imu * _imu.dang_b;
     }
+    imu_compensator.Full_Compensation(_imu);
 
     out = PropagatePrediction_wo_IMUCompensation(_imu);
 
@@ -117,14 +119,14 @@ namespace InertialOdometry {
     state.lQb = out.quat;
 
 
-    //    std::cout << "Odometry::PropagatePrediction -- current lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- a_s_measured " << _imu.a_s_measured.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- a_l " << _imu.a_l.transpose() << std::endl;
-    //	std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- current lQb " << orc.q().w() << ", " << orc.q().x() << ", " << orc.q().y() << ", " << orc.q().z() << ", " << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- imu update with utime " << _imu.uts << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_s_measured " << _imu.a_s_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_b_measured " << _imu.a_b_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- w_b_measured " << _imu.w_b_measured.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_b " << _imu.a_b.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- a_l " << _imu.a_l.transpose() << std::endl;
+//    std::cout << "Odometry::PropagatePrediction -- w_b " << _imu.w_b.transpose() << std::endl;
 
     return state;
   }
@@ -302,29 +304,11 @@ namespace InertialOdometry {
 	//
 	//	init_lQb = R2q(R_nav_to_body);
   }
+
+  const Eigen::Isometry3d& Odometry::getIMU2Body() {
+	return IMU_to_body;
+  }
+
 }
 
-// Been moved to QuaternionLib
-//  Eigen::Matrix3d Odometry::Expmap(const Eigen::Vector3d &w)
-//  {
-//	  Eigen::Matrix3d R;
-//	  Eigen::Matrix3d temp;
-//
-//#ifdef USE_TRIGNOMETRIC_EXMAP
-//	  R.setIdentity();
-//	  double mag = w.norm();
-//	  Eigen::Vector3d direction = 1/mag * w;
-//	  skew(direction,temp);
-//	  R += sin(mag) * temp + (1- cos(mag))*(temp*temp);
-//	  //  TODO -- confirm that we do not have to divide by mag -- if then do the numerical fix to second order Taylor
-//
-//#endif
-//
-//	  /*
-//	  mag = norm(w);
-//      direction = w./mag;
-//      R = eye(3) + sin(mag)*skew(direction) + (1-cos(mag))*(skew(direction)^2);
-//      */
-//
-//	  return R;
-//  }
+

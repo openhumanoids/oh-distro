@@ -14,7 +14,7 @@ class IMUMessageProducer : public LCMSubscriber
 {
 public:
 
-  IMUMessageProducer(const std::string& channel) : mChannel(channel)
+  IMUMessageProducer(const std::string& IMURxChannel, const std::string& ERSTxChannel) : mChannel(IMURxChannel), mIMUFilter(ERSTxChannel)
   {
 
   }
