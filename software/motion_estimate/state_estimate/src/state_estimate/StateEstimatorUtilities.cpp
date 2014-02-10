@@ -203,6 +203,9 @@ void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vecto
 	case drc::ins_update_request_t::VELOCITY_BODY:
 		copyDrcVec3D(_ref, msg.referenceVel_body);
 		break;
+	case drc::ins_update_request_t::NO_MEASUREMENT:
+		std::cout << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- no measurement update." << std::endl;
+		break;
 	default:
 		std::cerr << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- requesting invalid EKF update request type." << std::endl;
 		break;

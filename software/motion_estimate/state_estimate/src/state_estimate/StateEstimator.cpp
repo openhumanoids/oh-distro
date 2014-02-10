@@ -95,8 +95,8 @@ StateEstimate::StateEstimator::StateEstimator(
   pelvisVel_world.setZero();
   filteredPelvisVel_world.setZero();
 
-  standingTimer.setDesiredPeriod_us(200*1E3);
-  velUpdateTimer.setDesiredPeriod_us(500*1E3);
+  standingTimer.setDesiredPeriod_us(STANDING_TIMEOUT);
+  velUpdateTimer.setDesiredPeriod_us(WALKING_TIMEOUT);
 
   mLegStateClassification = 0;
 }
@@ -451,12 +451,19 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wR
 
 bool StateEstimate::StateEstimator::standingClassifier(const unsigned long long &uts, const double forces[2], const double &speed) {
 
-  if (forces[0] > MIN_STANDING_CLASSIF_FORCE && forces[1] > MIN_STANDING_CLASSIF_FORCE && speed < MAX_STANDING_SPEED) {
-    if (standingTimer.processSample(uts)) {
-      return true;
+  //std::cout << "StateEstimator::standingClassifier -- speed: " << speed << std::endl;
+
+  if (forces[0] > MIN_STANDING_CLASSIF_FORCE &&
+	  forces[1] > MIN_STANDING_CLASSIF_FORCE &&
+	  speed < MAX_STANDING_SPEED)
+  {
+	if (standingTimer.processSample(uts)) {
+	  //std::cout << "StateEstimator::standingClassifier -- should be standing" << std::endl;
+	  return true;
     }
   } else {
 	standingTimer.reset();
+	//std::cout << "StateEstimator::standingClassifier -- reset timer" << std::endl;
   }
   return false;
 }
@@ -466,12 +473,14 @@ bool StateEstimate::StateEstimator::velocityUpdateClassifier(const unsigned long
   // Only one foot can be in contact
   // The pelvis should be moving at some minimum velocity
 
-  if ( ( (forces[0] > MIN_STANDING_CLASSIF_FORCE && forces[1] < MIN_WALKING_FORCE) ||
-		 (forces[1] > MIN_STANDING_CLASSIF_FORCE && forces[0] < MIN_WALKING_FORCE) ) &&
+  //std::cout << "StateEstimator::velocityUpdateClassifier -- speed: " << speed << std::endl;
+  if ( ( (forces[0] > MIN_STANDING_CLASSIF_FORCE ) ||
+		 (forces[1] > MIN_STANDING_CLASSIF_FORCE ) ) &&
 		  speed > MAX_STANDING_SPEED &&
 		  !standingTimer.getState())
   {
 	if (velUpdateTimer.processSample(uts)) {
+	  //std::cout << "StateEstimator::velocityUpdateClassifier -- should be velocity 0x03" << std::endl;
       return true;
 	}
   } else {

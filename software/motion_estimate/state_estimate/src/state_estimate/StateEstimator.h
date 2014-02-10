@@ -41,9 +41,12 @@
 namespace StateEstimate
 {
 
-#define MIN_STANDING_CLASSIF_FORCE  300.
+#define MIN_STANDING_CLASSIF_FORCE  200.
 #define MIN_WALKING_FORCE            50.
-#define MAX_STANDING_SPEED            0.2
+#define MAX_STANDING_SPEED            0.02
+#define STANDING_TIMEOUT		 100000
+#define WALKING_TIMEOUT		     300000
+
 
 class StateEstimator : public ThreadLoop, public LegOdoWrapper
 {
