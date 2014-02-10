@@ -2,7 +2,7 @@ function drakeWalking(use_mex,use_bullet)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-plot_comtraj = true;
+plot_comtraj = false;
 navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
 
 % construct robot model
@@ -68,7 +68,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.75;
+request.default_step_params.step_speed = 0.5;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = false;
@@ -96,7 +96,6 @@ ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
   'B',[zeros(2); eye(2)],...
   'C',[eye(2),zeros(2)],...
-  'D',0,...
   'Qy',eye(2),...
   'R',zeros(2),...
   'is_time_varying',true,...
@@ -193,8 +192,8 @@ if plot_comtraj
 
     [com(:,i),J]=getCOM(r,kinsol);
     Jdot = forwardJacDot(r,kinsol,0);
-    comdes(:,i)=comtraj.eval(ts(i));
-    zmpdes(:,i)=zmptraj.eval(ts(i));
+    comdes(:,i)=walking_ctrl_data.comtraj.eval(ts(i));
+    zmpdes(:,i)=walking_ctrl_data.zmptraj.eval(ts(i));
     zmpact(:,i)=com(1:2,i) - com(3,i)/9.81 * (J(1:2,:)*qdd + Jdot(1:2,:)*qd);
 
     lfoot_cpos = contactPositions(r,kinsol,lfoot);
