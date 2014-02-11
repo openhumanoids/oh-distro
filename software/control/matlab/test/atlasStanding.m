@@ -97,7 +97,7 @@ ref_frame.updateGains(gains);
 
 % get current state
 [x,~] = getMessage(state_plus_effort_frame);
-x0 = xstar;%x(1:2*nq); 
+x0 = x(1:2*nq); 
 q0 = x0(1:nq);
 com0 = getCOM(r,q0);
 
