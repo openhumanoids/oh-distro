@@ -10,7 +10,18 @@ include_directories(${DRCLCMTYPES_INCLUDE_DIRS})
 find_path(QWT_INCLUDE_DIR qwt.h /usr/include/qwt)
 find_library(QWT_LIBRARY qwt)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${QWT_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${QWT_INCLUDE_DIR})
+
+if(USE_PYTHON)
+  find_package(PythonLibs REQUIRED)
+  find_package(PythonQt REQUIRED)
+  find_package(CTKPythonConsole REQUIRED)
+
+  include_directories(${PYTHON_INCLUDE_DIRS})
+  include_directories(${PYTHONQT_INCLUDE_DIRS})
+  include_directories(${CTK_PYTHONCONSOLE_INCLUDE_DIRS})
+endif()
 
 
 qt4_wrap_cpp(moc_srcs
