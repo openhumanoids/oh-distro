@@ -20,6 +20,12 @@
 
 #include "qjson.h"
 
+#include "ctkPythonConsole.h"
+#include "ctkAbstractPythonManager.h"
+#include "pythonsignalhandler.h"
+#include "pythonchannelsubscribercollection.h"
+
+
 #include <cstdio>
 #include <limits>
 
@@ -41,6 +47,9 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
 
   mLCMThread = new LCMThread;
   mLCMThread->start();
+
+  this->initPython();
+
 
   mScrollArea = new QScrollArea;
   mPlotArea = new QWidget;
@@ -73,10 +82,23 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
   //mRedrawTimer->setSingleShot(true);
   this->connect(mRedrawTimer, SIGNAL(timeout()), this, SLOT(onRedrawPlots()));
 
+  QShortcut* showConsole = new QShortcut(QKeySequence("F8"), this);
+  this->connect(showConsole, SIGNAL(activated()), this->mConsole, SLOT(show()));
+
+  this->connect(new QShortcut(QKeySequence("Ctrl+W"), this->mConsole), SIGNAL(activated()), this->mConsole, SLOT(close()));
+
+  QString closeShortcut = "Ctrl+D";
+  #ifdef Q_OS_DARWIN
+  closeShortcut = "Meta+D";
+  #endif
+  this->connect(new QShortcut(QKeySequence(closeShortcut), this->mConsole), SIGNAL(activated()), this->mConsole, SLOT(close()));
+
   this->resize(1024,800);
   this->handleCommandLineArgs();
 
   this->onTogglePause();
+
+  //this->testPythonSignals();
 }
 
 MainWindow::~MainWindow()
@@ -108,6 +130,51 @@ void MainWindow::handleCommandLineArgs()
     {
       this->loadSettings(settingsFile);
     }
+  }
+}
+
+void MainWindow::testPythonSignals()
+{
+  this->onRemoveAllPlots();
+  PlotWidget* plot = this->addPlot();
+
+  QString testFile = QString(getenv("DRC_BASE")) + "/software/motion_estimate/signal_scope/src/signal_scope/userSignals.py";
+  this->loadPythonSignals(plot, testFile);
+}
+
+void MainWindow::initPython()
+{
+  this->mPythonManager = new ctkAbstractPythonManager(this);
+  this->mConsole = new ctkPythonConsole(this);
+  this->mConsole->setWindowFlags(Qt::Dialog);
+  this->mConsole->initialize(this->mPythonManager);
+  this->mConsole->setAttribute(Qt::WA_QuitOnClose, true);
+  this->mConsole->resize(600, 280);
+  this->mConsole->setProperty("isInteractive", true);
+  this->mPythonManager->addObjectToPythonMain("_console", this->mConsole);
+
+  this->mPythonManager->executeFile(QString(getenv("DRC_BASE")) + "/software/motion_estimate/signal_scope/src/signal_scope/signalScopeSetup.py");
+  PythonQtObjectPtr mainContext = PythonQt::self()->getMainModule();
+  PythonQtObjectPtr decodeCallback = PythonQt::self()->getVariable(mainContext, "decodeMessageFunction");
+
+  this->mSubscribers = new PythonChannelSubscriberCollection(mLCMThread, decodeCallback, this);
+}
+
+void MainWindow::loadPythonSignals(PlotWidget* plot, const QString& filename)
+{
+  this->mPythonManager->executeFile(filename);
+  PythonQtObjectPtr mainContext = PythonQt::self()->getMainModule();
+  QList<QVariant> signalsMap = PythonQt::self()->getVariable(mainContext, "signals").toList();
+  foreach (const QVariant& signalItem, signalsMap)
+  {
+    QList<QVariant> signalItemList = signalItem.toList();
+    QString channel = signalItemList[0].toString();
+    PythonQtObjectPtr callback = signalItemList[1].value<PythonQtObjectPtr>();
+
+    SignalDescription signalDescription;
+    signalDescription.mChannel = channel;
+    PythonSignalHandler* signalHandler = new PythonSignalHandler(&signalDescription, callback);
+    plot->addSignal(signalHandler);
   }
 }
 
@@ -282,7 +349,15 @@ void MainWindow::loadSettings(const QMap<QString, QVariant>& settings)
   foreach (const QVariant& plot, plots)
   {
     PlotWidget* plotWidget = this->addPlot();
-    plotWidget->loadSettings(plot.toMap());
+    QMap<QString, QVariant> plotSettings = plot.toMap();
+    plotWidget->loadSettings(plotSettings);
+
+    QString pythonFile = plotSettings.value("pythonScript").toString();
+    if (pythonFile.length())
+    {
+      pythonFile = QString(getenv("DRC_BASE")) + "/" + pythonFile;
+      this->loadPythonSignals(plotWidget, pythonFile);
+    }
   }
 
   int windowWidth = settings.value("windowWidth", 1024).toInt();
@@ -345,7 +420,7 @@ void MainWindow::onNewPlotClicked()
 
 PlotWidget* MainWindow::addPlot()
 {
-  PlotWidget* plot = new PlotWidget(mLCMThread);
+  PlotWidget* plot = new PlotWidget(mSubscribers);
   mPlotLayout->addWidget(plot);
   this->connect(plot, SIGNAL(removePlotRequested(PlotWidget*)), SLOT(onRemovePlot(PlotWidget*)));
   this->connect(plot, SIGNAL(addSignalRequested(PlotWidget*)), SLOT(onAddSignalToPlot(PlotWidget*)));

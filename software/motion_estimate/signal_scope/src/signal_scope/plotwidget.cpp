@@ -1,11 +1,11 @@
 #include "plotwidget.h"
 #include "plot.h"
-#include "lcmthread.h"
 #include "signalhandler.h"
 #include "signaldata.h"
 #include "setscaledialog.h"
 #include "selectsignaldialog.h"
 #include "signaldescription.h"
+#include "pythonchannelsubscribercollection.h"
 
 #include <qwt_scale_engine.h>
 #include <qlabel.h>
@@ -21,9 +21,9 @@
 #include <QPushButton>
 #include <QColorDialog>
 
-PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
+PlotWidget::PlotWidget(PythonChannelSubscriberCollection* subscribers, QWidget *parent):
     QWidget(parent),
-    mLCMThread(lcmThread)
+    mSubscribers(subscribers)
 {
 
   d_plot = new Plot(this);
@@ -213,7 +213,8 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
     QListWidgetItem* signalItem = mSignalListWidget->currentItem();
     SignalHandler* signalHandler = this->signalForItem(signalItem);
 
-    mLCMThread->removeSignalHandler(signalHandler);
+    mSubscribers->removeSignalHandler(signalHandler);
+
     d_plot->removeSignal(signalHandler->signalData());
     mSignals.remove(signalItem);
 
@@ -388,7 +389,8 @@ void PlotWidget::addSignal(SignalHandler* signalHandler)
   mSignalListWidget->addItem(signalItem);
   mSignals[signalItem] = signalHandler;
 
-  mLCMThread->addSignalHandler(signalHandler);
+  mSubscribers->addSignalHandler(signalHandler);
+
   d_plot->addSignal(signalHandler->signalData(), color);
 
 

@@ -21,6 +21,14 @@ if(USE_PYTHON)
   include_directories(${PYTHON_INCLUDE_DIRS})
   include_directories(${PYTHONQT_INCLUDE_DIRS})
   include_directories(${CTK_PYTHONCONSOLE_INCLUDE_DIRS})
+
+  set(python_deps ${PYTHON_LIBRARIES} ${CTK_PYTHONCONSOLE_LIBRARIES} ${PYTHONQT_LIBRARIES})
+  set(python_moc_srcs
+    pythonsignalhandler.h
+    pythonchannelsubscribercollection.h
+    pythonchannelsubscriber.h
+    )
+  set(python_srcs)
 endif()
 
 
@@ -33,6 +41,7 @@ qt4_wrap_cpp(moc_srcs
   signalhandler.h
   setscaledialog.h
   selectsignaldialog.h
+  ${python_moc_srcs}
   )
 
 qt4_wrap_ui(ui_srcs
@@ -56,10 +65,11 @@ set(srcs
   lcmthread.cpp
   signalhandler.cpp
   selectsignaldialog.cpp
+  ${python_srcs}
   )
 
 add_executable(signal-scope ${srcs})
-target_link_libraries(signal-scope ${QT_LIBRARIES} ${QWT_LIBRARY} ${DRCLCMTYPES_LIBRARIES})
+target_link_libraries(signal-scope ${QT_LIBRARIES} ${QWT_LIBRARY} ${DRCLCMTYPES_LIBRARIES} ${python_deps})
 
 
 pods_install_headers(
@@ -74,6 +84,7 @@ pods_install_headers(
   signaldata.h
   signaldescription.h
   signalhandler.h
+  ${python_moc_srcs}
   DESTINATION signal_scope)
 
 

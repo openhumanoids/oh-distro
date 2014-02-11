@@ -8,7 +8,7 @@ class Plot;
 class Knob;
 class WheelBox;
 class SignalHandler;
-class LCMThread;
+class PythonChannelSubscriberCollection;
 class QListWidget;
 class QListWidgetItem;
 class QLabel;
@@ -19,7 +19,7 @@ class PlotWidget : public QWidget
   Q_OBJECT
 
 public:
-  PlotWidget(LCMThread* lcmThread, QWidget* parent=0);
+  PlotWidget(PythonChannelSubscriberCollection* subscribers, QWidget* parent=0);
 
   void start();
   void stop();
@@ -69,7 +69,7 @@ private:
   Plot *d_plot;
   QMap<QListWidgetItem*, SignalHandler*> mSignals;
   QList<QColor> mColors;
-  LCMThread* mLCMThread;
+  PythonChannelSubscriberCollection* mSubscribers;
 
   QListWidget* mSignalListWidget;
   QLabel* mSignalInfoLabel;
