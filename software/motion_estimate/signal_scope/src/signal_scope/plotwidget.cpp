@@ -359,6 +359,11 @@ void PlotWidget::setPointSize(double pointSize)
   d_plot->setPointSize(pointSize);
 }
 
+void PlotWidget::setCurveStyle(QwtPlotCurve::CurveStyle style)
+{
+  d_plot->setCurveStyle(style);
+}
+
 void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)
 {
   SignalDescription desc;

@@ -3,6 +3,7 @@
 
 #include <qwidget.h>
 #include <qmap.h>
+#include <qwt_plot_curve.h>
 
 class Plot;
 class Knob;
@@ -33,6 +34,7 @@ public:
   void clearHistory();
   void setBackgroundColor(QString color);
   void setPointSize(double pointSize);
+  void setCurveStyle(QwtPlotCurve::CurveStyle style);
 
   void loadSettings(const QMap<QString, QVariant>& plotSettings);
   void addSignal(const QMap<QString, QVariant>& signalSettings);
