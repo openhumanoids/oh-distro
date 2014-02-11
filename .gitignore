@@ -9,6 +9,8 @@ drake_viewer.out
 *~
 jef-client_*.txt
 *.jef
+jrf-client*
+*_text_log_*
 
 #######################
 # Ignores for lcmtypes
