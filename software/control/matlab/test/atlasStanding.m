@@ -28,11 +28,22 @@ Kd = 5;
 
 % turn on/off ZMP objective
 use_zmp = true;
+
+% random pose params for sys id tests
+use_random_traj = true; % if true, ignores chirp params
+num_random_pose = 5;
+pose_hold_time = 5; % sec
+pose_move_time = 10; % sec
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-ts = linspace(0,T,800);
+if use_random_traj
+  T = (pose_hold_time+pose_move_time)*num_random_pose;
+  r_ch = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),0.003);
+else
+  ts = linspace(0,T,800);
+end
 
 % load robot model
 r = Atlas();
@@ -86,78 +97,86 @@ ref_frame.updateGains(gains);
 
 % get current state
 [x,~] = getMessage(state_plus_effort_frame);
-x0 = x(1:2*nq); 
+x0 = xstar;%x(1:2*nq); 
 q0 = x0(1:nq);
 com0 = getCOM(r,q0);
-comtraj = ConstantTrajectory(com0);
 
-input_traj = chirpTraj(amp,chirp_f0,chirp_fT,T,0,chirp_sign);
-fade_window = 2; % sec
-fader = PPTrajectory(foh([0 fade_window T-fade_window T],[0 1 1 0]));
-input_traj = fader*input_traj;
-
-if dim==1
-  comtraj = comtraj + [input_traj;0;0];
-elseif dim==2
-  comtraj = comtraj + [0;input_traj;0];
-else
-  comtraj = comtraj + [0;0;input_traj];
-end
-
-% get foot positions
-kinsol = doKinematics(r,q0);
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
 
-rfoot0 = forwardKin(r,kinsol,rfoot_ind,[0;0;0],1);
-lfoot0 = forwardKin(r,kinsol,lfoot_ind,[0;0;0],1);
-
-cost = Point(r.getStateFrame,1);
-cost.base_x = 0;
-cost.base_y = 0;
-cost.base_z = 0;
-cost.base_roll = 1000;
-cost.base_pitch = 1000;
-cost.base_yaw = 1000;
-cost.back_bkz = 10;
-cost.back_bky = 100;
-cost.back_bkx = 100;
-cost.r_arm_usy = 10;
-cost.r_arm_shx = 10;
-cost.r_arm_ely = 10;
-cost.r_arm_elx = 10;
-cost.r_arm_uwy = 10;
-cost.r_arm_mwx = 10;
-cost.l_arm_usy = 10;
-cost.l_arm_shx = 10;
-cost.l_arm_ely = 10;
-cost.l_arm_elx = 10;
-cost.l_arm_uwy = 10;
-cost.l_arm_mwx = 10;
-
-cost = double(cost);
-ikoptions = IKoptions(r);
-ikoptions = ikoptions.setQ(diag(cost(1:nq)));
-
-for i=1:length(ts)
-  t = ts(i);
-  if (i>1)
-    kc_com = constructPtrWorldCoMConstraintmex(r.getMexModelPtr,comtraj.eval(t),comtraj.eval(t));
-    rfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,rfoot_ind,[0;0;0],rfoot0(1:3),rfoot0(1:3)),...
-      constructPtrWorldEulerConstraintmex(r.getMexModelPtr,rfoot_ind,rfoot0(4:end),rfoot0(4:end))};
-    lfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,lfoot_ind,[0;0;0],lfoot0(1:3),lfoot0(1:3)),...
-      constructPtrWorldEulerConstraintmex(r.getMexModelPtr,lfoot_ind,lfoot0(4:end),lfoot0(4:end))};
-    q(:,i) = inverseKin(r,q(:,i-1),q0,kc_com,rfarg{:},lfarg{:},ikoptions);
+if use_random_traj
+  [xposes,info,~,~,~,constraints,ikoptions] = randomPose(r_ch,x0,num_random_pose);
+  [traj,info] = interpolatingTraj(r_ch,[0 T],xposes,x0,pose_hold_time*num_random_pose/T,constraints,ikoptions);
+  traj = traj.setOutputFrame(r.getStateFrame);
+  qtraj = traj(1:nq);
+else
+  comtraj = ConstantTrajectory(com0);
+  
+  input_traj = chirpTraj(amp,chirp_f0,chirp_fT,T,0,chirp_sign);
+  fade_window = 2; % sec
+  fader = PPTrajectory(foh([0 fade_window T-fade_window T],[0 1 1 0]));
+  input_traj = fader*input_traj;
+  
+  if dim==1
+    comtraj = comtraj + [input_traj;0;0];
+  elseif dim==2
+    comtraj = comtraj + [0;input_traj;0];
   else
-    q = q0;
+    comtraj = comtraj + [0;0;input_traj];
   end
+  
+  % get foot positions
+  kinsol = doKinematics(r,q0);
+  rfoot0 = forwardKin(r,kinsol,rfoot_ind,[0;0;0],1);
+  lfoot0 = forwardKin(r,kinsol,lfoot_ind,[0;0;0],1);
+  
+  cost = Point(r.getStateFrame,1);
+  cost.base_x = 0;
+  cost.base_y = 0;
+  cost.base_z = 0;
+  cost.base_roll = 1000;
+  cost.base_pitch = 1000;
+  cost.base_yaw = 1000;
+  cost.back_bkz = 10;
+  cost.back_bky = 100;
+  cost.back_bkx = 100;
+  cost.r_arm_usy = 10;
+  cost.r_arm_shx = 10;
+  cost.r_arm_ely = 10;
+  cost.r_arm_elx = 10;
+  cost.r_arm_uwy = 10;
+  cost.r_arm_mwx = 10;
+  cost.l_arm_usy = 10;
+  cost.l_arm_shx = 10;
+  cost.l_arm_ely = 10;
+  cost.l_arm_elx = 10;
+  cost.l_arm_uwy = 10;
+  cost.l_arm_mwx = 10;
+  
+  cost = double(cost);
+  ikoptions = IKoptions(r);
+  ikoptions = ikoptions.setQ(diag(cost(1:nq)));
+  
+  for i=1:length(ts)
+    t = ts(i);
+    if (i>1)
+      kc_com = constructPtrWorldCoMConstraintmex(r.getMexModelPtr,comtraj.eval(t),comtraj.eval(t));
+      rfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,rfoot_ind,[0;0;0],rfoot0(1:3),rfoot0(1:3)),...
+        constructPtrWorldEulerConstraintmex(r.getMexModelPtr,rfoot_ind,rfoot0(4:end),rfoot0(4:end))};
+      lfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,lfoot_ind,[0;0;0],lfoot0(1:3),lfoot0(1:3)),...
+        constructPtrWorldEulerConstraintmex(r.getMexModelPtr,lfoot_ind,lfoot0(4:end),lfoot0(4:end))};
+      q(:,i) = inverseKin(r,q(:,i-1),q0,kc_com,rfarg{:},lfarg{:},ikoptions);
+    else
+      q = q0;
+    end
+  end
+  
+  % visualize trajectory
+  qtraj = PPTrajectory(spline(ts,q));
+  traj = [qtraj;0*qtraj];
+  traj = traj.setOutputFrame(r.getStateFrame);
 end
 
-% visualize trajectory
-qtraj = PPTrajectory(spline(ts,q));
-
-traj = [qtraj;0*qtraj];
-traj = traj.setOutputFrame(r.getStateFrame);
 
 v = r.constructVisualizer;
 playback(v,traj,struct('slider',true));
