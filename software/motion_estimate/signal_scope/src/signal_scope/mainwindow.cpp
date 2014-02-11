@@ -10,6 +10,9 @@
 #include <QLabel>
 #include <QLayout>
 #include <QApplication>
+#include <QComboBox>
+#include <QLabel>
+#include <QSpinBox>
 #include <QDebug>
 #include <QScrollArea>
 #include <QPushButton>
@@ -76,6 +79,26 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
   this->connect(mInternal->ActionClearHistory, SIGNAL(triggered()), SLOT(onClearHistory()));
 
   this->connect(mInternal->ActionBackgroundColor, SIGNAL(triggered()), SLOT(onChooseBackgroundColor()));
+
+  mInternal->toolBar->addSeparator();
+  mInternal->toolBar->addWidget(new QLabel("    Style: "));
+
+  QComboBox* curveStyleCombo = new QComboBox(this);
+  curveStyleCombo->addItem("points");
+  curveStyleCombo->addItem("lines");
+  mInternal->toolBar->addWidget(curveStyleCombo);
+
+  mInternal->toolBar->addWidget(new QLabel("    Point size: "));
+
+  QSpinBox* pointSizeSpin = new QSpinBox(this);
+  pointSizeSpin->setMinimum(1);
+  pointSizeSpin->setMaximum(20);
+  pointSizeSpin->setSingleStep(1);
+  pointSizeSpin->setValue(1);
+  mInternal->toolBar->addWidget(pointSizeSpin);
+
+  this->connect(curveStyleCombo, SIGNAL(currentIndexChanged(const QString&)), SLOT(onCurveStyleChanged(QString)));
+  this->connect(pointSizeSpin, SIGNAL(valueChanged(int)), SLOT(onPointSizeChanged(int)));
 
   mRedrawTimer = new QTimer(this);
   //mRedrawTimer->setSingleShot(true);
@@ -174,6 +197,25 @@ void MainWindow::loadPythonSignals(PlotWidget* plot, const QString& filename)
     signalDescription.mChannel = channel;
     PythonSignalHandler* signalHandler = new PythonSignalHandler(&signalDescription, callback);
     plot->addSignal(signalHandler);
+  }
+}
+
+void MainWindow::onCurveStyleChanged(QString style)
+{
+  QwtPlotCurve::CurveStyle curveStyle = style == "lines" ? QwtPlotCurve::Lines : QwtPlotCurve::Dots;
+
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plot->setCurveStyle(curveStyle);
+  }
+}
+
+
+void MainWindow::onPointSizeChanged(int pointSize)
+{
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plot->setPointSize(pointSize - 1);
   }
 }
 

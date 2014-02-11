@@ -49,6 +49,9 @@ protected slots:
 
   void onRedrawPlots();
 
+  void onPointSizeChanged(int size);
+  void onCurveStyleChanged(QString style);
+
 protected:
 
   void handleCommandLineArgs();
