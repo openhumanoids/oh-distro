@@ -76,7 +76,6 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
   this->connect(mInternal->ActionClearHistory, SIGNAL(triggered()), SLOT(onClearHistory()));
 
   this->connect(mInternal->ActionBackgroundColor, SIGNAL(triggered()), SLOT(onChooseBackgroundColor()));
-  this->connect(mInternal->ActionPointSize, SIGNAL(triggered()), SLOT(onChoosePointSize()));
 
   mRedrawTimer = new QTimer(this);
   //mRedrawTimer->setSingleShot(true);
