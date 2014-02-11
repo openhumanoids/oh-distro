@@ -89,9 +89,10 @@ PlotWidget::PlotWidget(PythonChannelSubscriberCollection* subscribers, QWidget *
   this->connect(this, SIGNAL(customContextMenuRequested(const QPoint&)),
       SLOT(onShowContextMenu(const QPoint&)));
 
-  mSignalListWidget->setDragDropMode(QAbstractItemView::DragDrop);
-  mSignalListWidget->setDragEnabled(true);
-  mSignalListWidget->setDefaultDropAction(Qt::MoveAction);
+  //mSignalListWidget->setDragDropMode(QAbstractItemView::DragDrop);
+  //mSignalListWidget->setDragEnabled(true);
+  //mSignalListWidget->setDefaultDropAction(Qt::MoveAction);
+  mSignalListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
   mSignalListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
   this->connect(mSignalListWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -179,8 +180,12 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
   // QPoint globalPos = myWidget->viewport()->mapToGlobal(pos); 
 
   QMenu myMenu;
-  myMenu.addAction("Change color");
-  myMenu.addSeparator();
+  if (mSignalListWidget->selectedItems().size() == 1)
+    {
+    myMenu.addAction("Change color");
+    myMenu.addSeparator();
+    }
+
   myMenu.addAction("Remove signal");
 
   QAction* selectedItem = myMenu.exec(globalPos);
@@ -210,16 +215,21 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
   }
   else if (selectedAction == "Remove signal")
   {
-    QListWidgetItem* signalItem = mSignalListWidget->currentItem();
-    SignalHandler* signalHandler = this->signalForItem(signalItem);
 
-    mSubscribers->removeSignalHandler(signalHandler);
+    QList<QListWidgetItem*> selectedItems = mSignalListWidget->selectedItems();
+    foreach (QListWidgetItem*	selectedItem, selectedItems)
+    {
+      QListWidgetItem* signalItem = mSignalListWidget->currentItem();
+      SignalHandler* signalHandler = this->signalForItem(signalItem);
 
-    d_plot->removeSignal(signalHandler->signalData());
-    mSignals.remove(signalItem);
+      mSubscribers->removeSignalHandler(signalHandler);
 
-    delete signalItem;
-    delete signalHandler;
+      d_plot->removeSignal(signalHandler->signalData());
+      mSignals.remove(signalItem);
+
+      delete signalItem;
+      delete signalHandler;
+    }
   }
 
 }
@@ -273,8 +283,21 @@ void PlotWidget::onResetYAxisScale()
 void PlotWidget::onSignalListItemChanged(QListWidgetItem* item)
 {
   SignalHandler* signalHandler = this->signalForItem(item);
-  bool checked = (item->checkState() == Qt::Checked);
-  d_plot->setSignalVisible(signalHandler->signalData(), checked);
+  Qt::CheckState checkState = item->checkState();
+
+  if (!item->isSelected())
+  {
+    mSignalListWidget->clearSelection();
+    item->setSelected(true);
+  }
+
+  QList<QListWidgetItem*> selectedItems = mSignalListWidget->selectedItems();
+  foreach (QListWidgetItem*	selectedItem, selectedItems)
+  {
+    SignalHandler* signalHandler = this->signalForItem(selectedItem);
+    selectedItem->setCheckState(checkState);
+    d_plot->setSignalVisible(signalHandler->signalData(), checkState == Qt::Checked);
+  }
 }
 
 QListWidgetItem* PlotWidget::itemForSignal(SignalHandler* signalHandler)
