@@ -62,9 +62,9 @@ function [xstar,info,r,ustar,x0,constraints,ikoptions] = randomPose(r,x0,n,v)
       zeros(nq,1)]);
     x_nom.base_x = 0;
     x_nom.base_y = 0;
-    x_nom.base_z = 1;
-    x_nom.base_roll = pi/3*(2*rand-1);
-    x_nom.base_pitch = pi/3*(2*rand-1);
+    x_nom.base_z = 0.8;
+    x_nom.base_roll = pi/8*(2*rand-1);
+    x_nom.base_pitch = pi/8*(2*rand-1);
     x_nom.base_yaw = 0;
     [q,info(i)] = inverseKin(rbm,x_nom(1:nq),x_nom(1:nq),constraints{:},ikoptions);
     if info(i) < 10
