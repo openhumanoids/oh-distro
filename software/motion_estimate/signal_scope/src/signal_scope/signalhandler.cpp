@@ -19,6 +19,7 @@
 #include "lcmtypes/drc/ins_update_request_t.hpp"
 #include "lcmtypes/drc/ins_update_packet_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/six_axis_force_torque_t.hpp"
 
 #include <cassert>
 
@@ -329,6 +330,9 @@ define_array_handler(PoseTypeOrientationHandler, bot_core::pose_t, orientation, 
 define_array_handler(PoseTypeRotationRateHandler, bot_core::pose_t, rotation_rate, createIndexList(3));
 define_array_handler(PoseTypeAcceleration, bot_core::pose_t, accel, createIndexList(3));
 
+// six_axis_force_torque_t
+define_array_handler(SixAxisForceTorqueTypeForceHandler, drc::six_axis_force_torque_t, force, createIndexList(3));
+define_array_handler(SixAxisForceTorqueTypeMomentHandler, drc::six_axis_force_torque_t, moment, createIndexList(3));
 
 // atlas_foot_pos_est_t
 define_array_handler(AtlasFootPosEstLeftPositionHandler, drc::atlas_foot_pos_est_t, left_position, createIndexList(3));
@@ -556,6 +560,8 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<PoseTypeVelocityHandler>();
     factory.registerClass<PoseTypeOrientationHandler>();
     factory.registerClass<PoseTypeRotationRateHandler>();
+    factory.registerClass<SixAxisForceTorqueTypeForceHandler>();
+    factory.registerClass<SixAxisForceTorqueTypeMomentHandler>();
     factory.registerClass<PoseTypeAcceleration>();
     factory.registerClass<ViconBodyTransHandler>();
     factory.registerClass<ViconBodyQuatHandler>();
