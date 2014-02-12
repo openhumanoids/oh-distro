@@ -26,9 +26,6 @@
 #include <QDebug>
 
 
-
-
-
 namespace
 {
   int ArrayIndexFromIntegerKey(const QString& key)
@@ -456,12 +453,11 @@ define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexLi
 define_field_handler(FootContactLeft, drc::foot_contact_estimate_t, left_contact);
 define_field_handler(FootContactRight, drc::foot_contact_estimate_t, right_contact);
 
-SignalHandler::SignalHandler(const SignalDescription* signalDescription)
+SignalHandler::SignalHandler(const SignalDescription* signalDescription, QObject* parent) : LCMSubscriber(parent)
 {
   assert(signalDescription != 0);
   mDescription = *signalDescription;
   mSignalData = new SignalData();
-  mSubscription = 0;
 }
 
 SignalHandler::~SignalHandler()
@@ -469,7 +465,7 @@ SignalHandler::~SignalHandler()
   delete mSignalData;
 }
 
-void SignalHandler::handleRobotStateMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel)
+void SignalHandler::handleMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel)
 {
   float timeNow;
   float signalValue;
@@ -493,15 +489,8 @@ void SignalHandler::subscribe(lcm::LCM* lcmInstance)
     printf("error: SignalHandler::subscribe() called without first calling unsubscribe.\n");
     return;
   }
-  mSubscription = lcmInstance->subscribe(this->channel().toAscii().data(), &SignalHandler::handleRobotStateMessage, this);
+  mSubscription = lcmInstance->subscribe(this->channel().toAscii().data(), &SignalHandler::handleMessage, this);
 }
-
-void SignalHandler::unsubscribe(lcm::LCM* lcmInstance)
-{
-  lcmInstance->unsubscribe(mSubscription);
-  mSubscription = 0;
-}
-
 
 SignalHandlerFactory& SignalHandlerFactory::instance()
 {

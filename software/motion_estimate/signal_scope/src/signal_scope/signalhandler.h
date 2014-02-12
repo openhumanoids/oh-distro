@@ -1,11 +1,12 @@
 #ifndef _SIGNALHANDLER_H_
 #define _SIGNALHANDLER_H_
 
-#include <QObject>
+#include "lcmsubscriber.h"
+#include "signaldescription.h"
+
 #include <QHash>
 #include <string>
 
-#include "signaldescription.h"
 
 namespace lcm {
   class LCM;
@@ -13,21 +14,17 @@ namespace lcm {
   class Subscription;
 }
 
-namespace drc {
-  class robot_state_t;
-}
-
 class SignalData;
 class SignalDescription;
 
 
-class SignalHandler : public QObject
+class SignalHandler : public LCMSubscriber
 {
   Q_OBJECT
 
 public:
 
-  SignalHandler(const SignalDescription* signalDescription);
+  SignalHandler(const SignalDescription* signalDescription, QObject* parent=0);
   virtual ~SignalHandler();
 
   SignalData* signalData()
@@ -41,16 +38,13 @@ public:
 
   virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) = 0;
 
-  void subscribe(lcm::LCM* lcmInstance);
-  void unsubscribe(lcm::LCM* lcmInstance);
+  virtual void subscribe(lcm::LCM* lcmInstance);
 
  protected:
 
-  void handleRobotStateMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel);
+  void handleMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel);
 
   SignalData* mSignalData;
-  lcm::Subscription* mSubscription;
-
   SignalDescription mDescription;
 };
 
