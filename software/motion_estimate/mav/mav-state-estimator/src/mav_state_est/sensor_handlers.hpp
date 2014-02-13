@@ -16,8 +16,8 @@
 
 // Particular to Atlas:
 #include <lcmtypes/drc/atlas_raw_imu_batch_t.hpp>
-#include <estimate/imu_stream.hpp>
-#include <estimate/iir_notch.hpp>
+#include <estimate_tools/imu_stream.hpp>
+#include <estimate_tools/iir_notch.hpp>
 
 namespace MavStateEst {
 
