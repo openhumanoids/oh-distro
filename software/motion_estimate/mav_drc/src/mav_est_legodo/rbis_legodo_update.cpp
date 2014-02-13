@@ -15,12 +15,10 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   std::cout << "LegOdo will compute directly, in thread\n";
   frames_cpp = new bot::frames(frames);
 
-  boost::shared_ptr<lcm::LCM> lcm_recv_boost = boost::shared_ptr<lcm::LCM>(lcm_recv);
-  boost::shared_ptr<lcm::LCM> lcm_pub_boost = boost::shared_ptr<lcm::LCM>(lcm_pub);
-  boost::shared_ptr<ModelClient> model_boost = boost::shared_ptr<ModelClient>(model);
-  leg_odo_ = new leg_odometry(  lcm_recv_boost , lcm_pub_boost ,
-                               param, model_boost );
-
+  lcm_recv_boost = boost::shared_ptr<lcm::LCM>(lcm_recv);
+  lcm_pub_boost = boost::shared_ptr<lcm::LCM>(lcm_pub);
+  model_boost = boost::shared_ptr<ModelClient>(model);
+  leg_odo_ = new leg_odometry(lcm_pub_boost, param, model_boost );
   leg_odo_common_ = new LegOdoCommon(lcm_recv, lcm_pub, param);
   
   lcm_recv->subscribe("POSE_BDI",&LegOdoHandler::poseBDIHandler,this);
@@ -65,7 +63,7 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   
   JointUtils* joint_utils = new JointUtils();
   joint_names_ = joint_utils->atlas_joint_names;
-  std::cout << joint_names_.size() << " joint angles assumed\n";;
+  std::cout << joint_names_.size() << " joint angles assumed\n";
 }
 
 void LegOdoHandler::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
@@ -113,9 +111,8 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   
   // Do the Leg Odometry:
   leg_odo_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
-  
-  if (leg_odo_->updateOdometry(joint_names_, msg->joint_position,
-                           msg->joint_velocity, msg->joint_effort, msg->utime)){
+    
+  if (leg_odo_->updateOdometry(joint_names_, msg->joint_position, msg->utime)){
     leg_odo_->getDeltaLegOdometry(delta_odo, utime, prev_utime);
   } else {
     std::cout << "Leg Odometry is not valid not integrating =========================\n";

@@ -10,7 +10,7 @@
 % feedback structure. 
 
 clc
-clear
+clear all
 
 disp 'STARTING...'
 
@@ -23,10 +23,12 @@ lc.subscribe('INS_ERR_UPDATE', aggregator);
 
 ReqMsg = initINSRequestLCMMsg();
 
+init_lQb = [1;0;0;0];
+% init_lQb = e2q([0;0;-pi/2]);
+init_Vl = [0;0;0];
+init_Pl = [0;0;0];
 
-initstart = 1;
-
-switch (4)
+switch (5)
     case 1
         data = load('UnitTests/testdata/dfd_loggedIMU_03.txt');
         iter = 6000;
@@ -57,12 +59,19 @@ switch (4)
         measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
         measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];
     case 6
+        disp 'Gyrobias in x, upside down -- test trajectory'
+        param.dt = 1E-2;
+        iter = 10000;
+        measured.w_b = [0.005*ones(iter, 1), zeros(iter, 2)];
+        measured.a_b  = [zeros(iter, 2), -9.8*ones(iter, 1)];
+        init_lQb = [0;1;0;0];
+    case 7
         disp 'Gyrobias in y -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
         measured.w_b = [zeros(iter, 1), 0.005*ones(iter, 1), zeros(iter, 1)];
         measured.a_b  = [zeros(iter, 2), 9.8*ones(iter, 1)];  
-    case 7
+    case 8
         disp 'Accelbias in x -- test trajectory'
         param.dt = 1E-2;
         iter = 10000;
@@ -72,10 +81,7 @@ end
 
 %%
 
-init_lQb = [1;0;0;0];
-% init_lQb = e2q([0;0;-pi/2]);
-init_Vl = [0;0;0];
-init_Pl = [0;0;0];
+
 
 % tlQb = init_lQb;
 
@@ -110,12 +116,13 @@ inertialData = init_inertialData(9.8);
 Sys.posterior.x = zeros(15,1);
 Sys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
-X = [];
+RESULTS.STATEX = [];
 DX = [];
 COV = [];
 
 % tlQb = init_lQb;
 INSpose.lQb = init_lQb;
+INSpose__k1.lQb = init_lQb;
 
 DE = [];
 PE = [];
@@ -126,7 +133,7 @@ updatePackets = [];
 
 % this is the filter update counter
 FilterRate = 100;
-limitedFB = 1;
+limitedFB = 0;
 FilterRateReduction = (1/dt/FilterRate)
 m = 0;
 dt_m = dt*FilterRateReduction;
@@ -150,8 +157,8 @@ for k = 1:iter
     if (mod(k,FilterRateReduction)==0 && true)
         m = m+1;
         
-        measured.vl = init_Vl;
-        dV = measured.vl - INSpose.V_l + 0.*randn(3,1);
+        Reference.V_l = init_Vl;
+        dV = Reference.V_l - INSpose.V_l + 0*randn(3,1);
         
         if (false)
         
@@ -162,7 +169,7 @@ for k = 1:iter
             
             %store data for later plotting
             DX = [DX; Sys.posterior.dx'];
-            X = [X; Sys.posterior.x'];
+            RESULTS.STATEX = [RESULTS.STATEX; Sys.posterior.x'];
             COV = [COV;diag(Sys.posterior.P)'];
             DV = [DV; dV'];
             [ Sys.posterior.x, INSCompensator ] = LimitedStateTransfer(inertialData.predicted.utime, Sys.posterior.x, limitedFB, INSCompensator );
@@ -172,7 +179,7 @@ for k = 1:iter
             
             % Pass EKF computation out to separate Matlab Development
             % process
-            sendDataFusionReq(INSpose, INSCompensator, inertialData, ReqMsg, lc);
+            sendDataFusionReq(INSpose, INSCompensator, inertialData, Reference, ReqMsg, lc);
             
             
             % Currently the outside process holds state -- this will all be
@@ -223,21 +230,9 @@ end
 
 
 plotGrayINSPredicted(predicted, 1);
+plotEKFResults(RESULTS, 2);
 
 return
-
-%
-
-% figure(1),clf
-% subplot(411),plot(true.wb)
-% title('True rotation rates w')
-% subplot(412),plot(measured.wb)
-% title('Measured rotation rates w')
-% subplot(413),plot(TE)
-% title('Predicted Euler angles')
-% subplot(414),plot(true.ab)
-% title('True body measured accelerations')
-
 
 % figure(2),clf
 % subplot(611),plot(predicted.w_b)
@@ -289,7 +284,7 @@ return
 
 
 % Gray box INS state estimate
-figH = figure(2);
+figH = figure(3);
 clf
 set(figH,'Name',['Gray box INS state estimate, ' num2str(clock())],'NumberTitle','off')
 subplot(611),
@@ -317,7 +312,7 @@ plot(DX(:,13:15))
 title('K * Innovation updates to position in local frame')
 
 
-figure(3),clf
+figure(4),clf
 
 subplot(411)
 plot(DX(:,4:6))

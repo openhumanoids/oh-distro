@@ -1,4 +1,4 @@
-function [Result, Sys] = iterate(Param, Sys, Measurement)
+function [Result, Sys] = iterate(Param, Sys, Measurement, sRb)
 % This function must be able to be called as part of a separate process, given Param, Sys and a Measurement
 %
 % Requires:
@@ -25,6 +25,9 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 
 % Tm = Sys.T; -- to be depreciated
 
+if (nargin<4)
+    sRb = eye(3);
+end
 
 % Measurement.INS.pose.utime
 % Measurement.INS.pose.lQb
@@ -32,21 +35,24 @@ function [Result, Sys] = iterate(Param, Sys, Measurement)
 % Measurement.velocityResidual
 
 % EKF
-[F, L, Q] = dINS_EKFmodel(Measurement.INS.pose);
-covariances.R = diag( 5E0*ones(3,1) );
+[F, L, Q] = dINS_EKFmodel_s2b(Measurement.INS.pose, sRb);
 
-Disc.B = 0;
 Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
+
+covariances.R = diag( 3E0*ones(3,1) );
+Disc.B = 0;
+
 
 % TIME UPDATE, PRIORI STATE=========================================================================
 [Disc.A,covariances.Qd] = lti_disc(F, L, Q, Sys.dt);
 Sys.priori = KF_timeupdate(Sys.posterior, 0, Disc, covariances);
 Sys.priori.utime = Measurement.INS.pose.utime;
 
-
 % MEASUREMENT UPDATE, POSTERIOR STATE===============================================================
-Sys.posterior = KF_measupdate(Sys.priori, Disc, [Measurement.velocityResidual]);
-Sys.posterior.utime = Sys.priori.utime;
+if (Measurement.LegOdo.updateType > -1)
+  Sys.posterior = KF_measupdate(Sys.priori, Disc, [Measurement.velocityResidual]);
+  Sys.posterior.utime = Sys.priori.utime;
+end
 
 % Sys.posterior.x
 

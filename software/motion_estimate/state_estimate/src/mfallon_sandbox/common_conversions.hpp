@@ -1,5 +1,6 @@
 #ifndef COMMON_CONVERSIONS_HPP_
 #define COMMON_CONVERSIONS_HPP_
+#include "lcmtypes/drc/robot_state_t.hpp"
 
 static inline Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
   Eigen::Isometry3d tf_out;

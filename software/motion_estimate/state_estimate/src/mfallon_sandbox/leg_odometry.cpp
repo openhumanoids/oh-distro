@@ -13,10 +13,9 @@ using namespace std;
 using namespace boost;
 using namespace boost::assign;
 
-leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_, 
+leg_odometry::leg_odometry( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   BotParam * botparam_, boost::shared_ptr<ModelClient> &model_):
-  lcm_subscribe_(lcm_subscribe_), lcm_publish_(lcm_publish_), 
-  botparam_(botparam_), model_(model_){
+  lcm_publish_(lcm_publish_),  botparam_(botparam_), model_(model_){
     
   initialization_mode_ = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.initialization_mode");
   std::cout << "Leg Odometry Initialize Mode: " << initialization_mode_ << " \n";
@@ -65,10 +64,6 @@ leg_odometry::leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::
   world_to_body_bdi_.setIdentity();
   
 }
-
-
-
-
 
   
 
@@ -383,9 +378,7 @@ bool leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
   return init_this_iteration;
 }
 
-bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
-                    std::vector<float> joint_velocity, std::vector<float> joint_effort, 
-                    int64_t utime){ 
+bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime){
   previous_utime_ = current_utime_;
   previous_world_to_body_ = world_to_body_;
   bool delta_world_to_body_valid = false;
@@ -409,15 +402,7 @@ bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vect
   }
   
 
-/*  
-  // 0. Extract World Pose of body as estimated by BDI
-  // primarily the orientation of of interest
-  world_to_body_bdi_.setIdentity();
-  world_to_body_bdi_.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
-                                               msg->pose.rotation.y, msg->pose.rotation.z);
-  world_to_body_bdi_.rotate(quat);    */
-    
+   
   // 1. Solve for Forward Kinematics:
   // call a routine that calculates the transforms the joint_state_t* msg.
   map<string, double> jointpos_in;

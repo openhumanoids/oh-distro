@@ -1,0 +1,15 @@
+package drc;
+
+struct walking_plan_request_t
+{
+	int64_t utime;
+	robot_state_t initial_state;
+
+	footstep_plan_t footstep_plan;
+
+	boolean fix_right_hand;
+	boolean fix_left_hand;
+
+	boolean use_new_nominal_state;
+	robot_state_t new_nominal_state;
+}

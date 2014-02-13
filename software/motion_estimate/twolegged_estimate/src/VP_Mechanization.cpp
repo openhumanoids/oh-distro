@@ -21,7 +21,11 @@ namespace InertialOdometry {
 	  //std::cout << "VP_Mechanization::PropagateTranslation -- f_l after subtracting gravity " << _imu.f_l.transpose() << std::endl;
 
 	  double dt;
-	  dt = (_imu.uts - last_uts)*1E-6;
+	  if (last_uts != 0) {
+		  dt = (_imu.uts - last_uts)*1E-6;
+	  } else {
+		  dt = 0.001;
+	  }
 
 	  // TODO -- Improve to better numerical integration
 	  state.first_pose_rel_pos = state.first_pose_rel_pos + dt*state.first_pose_rel_vel; // Position first

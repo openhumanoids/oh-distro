@@ -69,6 +69,7 @@ request.default_step_params = drc.footstep_params_t();
 request.default_step_params.utime = 0;
 request.default_step_params.step_speed = 1.0;
 request.default_step_params.step_height = 0.05;
+request.default_step_params.constrain_full_foot_pose = false;
 request.default_step_params.bdi_step_duration = 0;
 request.default_step_params.bdi_sway_duration = 0;
 request.default_step_params.bdi_lift_height = 0;
@@ -90,7 +91,6 @@ assert(length(footsteps) == 12);
 assert(footsteps(3).infeasibility > 1e-6);
 assert(footsteps(4).infeasibility > 1e-6);
 assert(all([footsteps(5:end).infeasibility] < 1e-6))
-assert(all(p.pairReverse([1,2,3,4]) == [2,1,4,3]))
 
 request.num_goal_steps = 1;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
@@ -207,5 +207,5 @@ request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
-assert(length(footsteps) == 11)
+assert(mod(length(footsteps), 2) == 1)
 assert(all([footsteps(1:2:end-1).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))

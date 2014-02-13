@@ -10,12 +10,14 @@
 #include "lcmtypes/drc/simple_grasp_t.hpp"
 #include "lcmtypes/drc/system_status_t.hpp"
 #include "lcmtypes/drc/twist_t.hpp"
+#include "lcmtypes/drc/deprecated_footstep_plan_t.hpp"
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float64.h>
 #include <osrf_msgs/JointCommands.h>
 #include <atlas_msgs/AtlasCommand.h>
+#include <atlas_msgs/AtlasSimInterfaceCommand.h>
 #include <sandia_hand_msgs/SimpleGrasp.h>
 #include <map>
 #include <ConciseArgs>
@@ -56,6 +58,10 @@ class LCM2ROS{
     ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);   
     
+    // BDI Footstep Messaging 
+    ros::Publisher committed_footstep_plan_pub_;
+    void committedFootStepPlanHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::deprecated_footstep_plan_t* msg);
+    
     // for swapping between BDI and MIT control
     bool use_bdi;
     void controllerModeHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::controller_mode_t* msg);
@@ -95,6 +101,10 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   simple_grasp_pub_left_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/l_hand/simple_grasp",10); 
   simple_grasp_pub_right_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/sandia_hands/r_hand/simple_grasp",10); 
 //drc_robot.pmd:        exec = "rostopic pub /sandia_hands/r_hand/simple_grasp sandia_hand_msgs/SimpleGrasp  '{closed_amount: 100.0, name: cylindrical}'";
+
+  
+  lcm_->subscribe("COMMITTED_FOOTSTEP_PLAN",&LCM2ROS::committedFootStepPlanHandler,this);  
+  committed_footstep_plan_pub_ = nh_.advertise<atlas_msgs::AtlasSimInterfaceCommand>("/atlas/atlas_sim_interface_command",10);
   
   
   lcm_->subscribe("NAV_CMDS",&LCM2ROS::bodyTwistCmdHandler,this);
@@ -132,6 +142,46 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   last_command_timestamp = -1;
 
   rosnode = new ros::NodeHandle();
+}
+
+void LCM2ROS::committedFootStepPlanHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::deprecated_footstep_plan_t* msg) {
+  ROS_ERROR("LCM2ROS Sending committed footsteps to BDI sim control");
+
+  // This code is functional but the BDI sim driver keeps its own state estimate
+  // which the footsteps have to be relative to
+  // ... so this module needs to listen to /atlas/imu
+  // and then convert the steps into that relative frame. 
+  // this requires making the process listen to ROS and this is incomplete
+  // mfallon jan 2014
+  
+  atlas_msgs::AtlasSimInterfaceCommand msgout;
+  msgout.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+  msgout.behavior = atlas_msgs::AtlasSimInterfaceCommand::WALK;
+  msgout.walk_params.use_demo_walk = false;
+  for(size_t i=0; i < 4; i++){
+    atlas_msgs::AtlasBehaviorStepData step_queue;
+    step_queue.step_index = i+1;
+    if (msg->footstep_goals[i].is_right_foot){
+      step_queue.foot_index = 1;
+    }else{
+      step_queue.foot_index = 0;
+    }
+    step_queue.swing_height = 0.3;
+    step_queue.duration = 0.63;
+    
+    //////////////// These need to be transformed into BDI nav frame
+    step_queue.pose.position.x = msg->footstep_goals[i].pos.translation.x;
+    step_queue.pose.position.y = msg->footstep_goals[i].pos.translation.y;
+    step_queue.pose.position.z = msg->footstep_goals[i].pos.translation.z;
+    step_queue.pose.orientation.w = msg->footstep_goals[i].pos.rotation.w;
+    step_queue.pose.orientation.x = msg->footstep_goals[i].pos.rotation.x;
+    step_queue.pose.orientation.y = msg->footstep_goals[i].pos.rotation.y;
+    step_queue.pose.orientation.z = msg->footstep_goals[i].pos.rotation.z;
+    msgout.walk_params.step_queue [i] = step_queue;
+    ///////////////////////////////////////////////
+  }
+  committed_footstep_plan_pub_.publish(msgout);
+  
 }
 
 

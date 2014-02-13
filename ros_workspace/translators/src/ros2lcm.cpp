@@ -357,12 +357,25 @@ void App::end_effector_sensors_cb(const atlas_msgs::ForceTorqueSensorsConstPtr& 
 int gt_counter =0;
 void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
   if (gt_counter%200 ==0){
-    std::cout << "GRTH " << gt_counter << "\n";
+    ROS_ERROR("GRTH [%d]", gt_counter );
   }  
   gt_counter++;
 
   ground_truth_odom_ = *msg;
   init_recd_[0] =true;
+  
+  bot_core::pose_t pose_msg;
+  pose_msg.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
+  pose_msg.pos[0] = msg->pose.pose.position.x;
+  pose_msg.pos[1] = msg->pose.pose.position.y;
+  pose_msg.pos[2] = msg->pose.pose.position.z;
+  pose_msg.orientation[0] =  msg->pose.pose.orientation.w;
+  pose_msg.orientation[1] =  msg->pose.pose.orientation.x;
+  pose_msg.orientation[2] =  msg->pose.pose.orientation.y;
+  pose_msg.orientation[3] =  msg->pose.pose.orientation.z;
+  
+  lcm_publish_.publish("POSE_BDI", &pose_msg);  
+  
 }
 
 /// Locally cache the joint states:

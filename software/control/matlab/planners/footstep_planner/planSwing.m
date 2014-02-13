@@ -1,15 +1,16 @@
 function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, last_pos, next_pos, options)
 % Compute a collision-free swing trajectory for a single foot. Uses the biped's RigidBodyTerrain to compute a slice of terrain between the two poses.
 
-if ~isfield(options, 'step_speed')
-  options.step_speed = 0.5; % m/s
-end
-if ~isfield(options, 'step_height')
-  options.step_height = biped.nom_step_clearance; %m
-end
-if ~isfield(options, 'ignore_terrain')
-  options.ignore_terrain = false;
-end
+% TODO: These default options are incompatible with the current
+% implementation. The reason is that 'options' comes through as a
+% drc.footstep_params_t object, and calling isfield on a java object seems
+% to return false, regardless of whether that field really exists.
+% if ~isfield(options, 'step_speed')
+%   options.step_speed = 0.5; % m/s
+% end
+% if ~isfield(options, 'step_height')
+%   options.step_height = biped.nom_step_clearance; %m
+% end
 
 if options.step_speed < 0
   % negative step speed is an indicator to take a fast, fixed-duration step (e.g. for recovery)
@@ -41,7 +42,7 @@ apex_pos(3,:) = last_pos(3) + options.step_height + max([next_pos(3) - last_pos(
 
 apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
 
-if (step_dist_xy > 0.01 && ~options.ignore_terrain)
+if (step_dist_xy > 0.01)
   [contact_length, contact_width, contact_height] = contactVolume(biped, last_pos, next_pos, struct('nom_z_clearance', options.step_height, 'planar_clearance', 0.05));
 
   %% Grab the max height of the terrain across the width of the foot from last_pos to next_pos

@@ -610,9 +610,10 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
-    string filename0 = "drill.ply";
+    string filename0 = "skil.ply";
     drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
     a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
+    a0.aff.otdf_type = "skil";
     lcm_->publish("AFFORDANCE_FIT",&a0);
   }
 
@@ -622,9 +623,10 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
-    string filename0 = "drill.ply"; //string(drc_base+ "/software/models/otdf/drill.ply");
+    string filename0 = "skil.ply"; //string(drc_base+ "/software/models/otdf/drill.ply");
     drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
     a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
+    a0.aff.otdf_type = "skil";
     lcm_->publish("AFFORDANCE_FIT",&a0);
   }
   

@@ -9,7 +9,6 @@ add_library(estimate_tools  SHARED imu_stream.cpp iir_notch.cpp)
 pods_use_pkg_config_packages(estimate_tools  ${PKG_CONFIG_DEPS}  
   lcmtypes_bot2-core lcmtypes_fovis-bot2 
   pointcloud_math  pointcloud_vis
-  leg-odometry inertial-odometry 
   eigen3)
 set_target_properties(estimate_tools PROPERTIES SOVERSION 1)
 pods_install_libraries(estimate_tools)

@@ -11,7 +11,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-add_subdirectory(src/state_estimate)
+#add_subdirectory(src/state_estimate)
 
 
 add_subdirectory(src/mfallon_sandbox)

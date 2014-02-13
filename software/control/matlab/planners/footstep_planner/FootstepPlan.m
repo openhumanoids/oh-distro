@@ -41,10 +41,11 @@ classdef FootstepPlan
     end
 
     function plan = from_footstep_plan_t(msg)
-      plan = Footstep.empty();
+      footsteps = Footstep.empty();
       for j = 1:msg.num_steps
-        plan(j) = Footstep.from_footstep_t(msg.footsteps(j));
+        footsteps(j) = Footstep.from_footstep_t(msg.footsteps(j));
       end
+      plan = FootstepPlan(footsteps);
     end
   end
 end

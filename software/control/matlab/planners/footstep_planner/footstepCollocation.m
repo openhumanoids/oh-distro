@@ -24,6 +24,9 @@ goal_pos.right(3) = st0(3);
 goal_pos.left(3) = st0(3);
 
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
+final_disp_rl = rotmat(-goal_pos.right(6)) * (goal_pos.left(1:2) - goal_pos.right(1:2));
+final_disp_lr = rotmat(-goal_pos.left(6)) * (goal_pos.right(1:2) - goal_pos.left(1:2));
+final_dx = max([abs(final_disp_rl(1)), abs(final_disp_lr(1))]) + 0.03;
 foot_goals = goal_pos;
 
 function [c, ceq, dc, dceq] = constraints(x)
@@ -106,8 +109,10 @@ for nsteps = min_steps:max_steps
   ub(1:6,1) = st0;
   lb(7:12,1) = st0;
   ub(7:12,1) = st0;
-  lb(7,end) = -0.03;
-  ub(7,end) = 0.03;
+  lb(7,end) = -final_dx;
+  ub(7,end) = final_dx;
+%   lb(7,end) = -0.03;
+%   ub(7,end) = 0.03;
 
   x0 = encodeCollocationSteps(steps);
 
@@ -185,34 +190,35 @@ for nsteps = min_steps:max_steps
   % plotfun(xstar);
 
   [steps, steps_rel] = decodeCollocationSteps(xstar);
+  if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
+    continue
+  elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
+    continue
+  else
+    output_steps = steps;
+    output_steps_rel = steps_rel;
+    output_nsteps = nsteps;
+  end
   diff_r = steps(:,r_ndx(end)) - goal_pos.right;
   diff_l = steps(:,l_ndx(end)) - goal_pos.left;
   if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;0.02;0.02;0.1;0.1;0.1])
-    if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
-      continue
-    elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
-      continue
-    else
-      break
-    end
+    break
   end
 end
 
-for j = 2:nsteps
-  R = rotmat(steps(6,j-1));
+for j = 2:output_nsteps
+  R = rotmat(output_steps(6,j-1));
   if mod(params.right_foot_lead+j,2)
-    steps_rel(6,j) = -1 * steps_rel(6,j);
+    output_steps_rel(6,j) = -1 * output_steps_rel(6,j);
   end
-  valuecheck(steps(:,j-1) + [R * steps_rel(1:2,j); steps_rel(3:6,j)], steps(:,j),1e-4);
+  valuecheck(output_steps(:,j-1) + [R * output_steps_rel(1:2,j); output_steps_rel(3:6,j)], output_steps(:,j),1e-4);
 end
 % nsteps
 
-valuecheck(steps([1,2,6],1), X(2).pos([1,2,6]),1e-8);
-for j = 2:nsteps
-  X(j+1).pos = steps(:,j);
+valuecheck(output_steps([1,2,6],1), X(2).pos([1,2,6]),1e-8);
+for j = 2:output_nsteps
+  X(j+1).pos = output_steps(:,j);
   X(j+1).is_right_foot = logical(mod(params.right_foot_lead+j,2));
 end
-
-% biped.getNextStepID(true); % reset the counter
 
 end

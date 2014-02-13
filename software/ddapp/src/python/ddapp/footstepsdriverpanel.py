@@ -5,7 +5,6 @@ from ddapp import applogic as app
 from ddapp.utime import getUtime
 from ddapp import objectmodel as om
 from ddapp.timercallback import TimerCallback
-from ddapp import footsteps
 
 import numpy as np
 import math
@@ -37,6 +36,8 @@ class FootstepsPanel(object):
 
         l.addWidget(_makeButton('new walking goal', self.onNewWalkingGoal))
         l.addWidget(QtGui.QLabel(''))
+        l.addWidget(_makeButton('goal steps', self.onGoalSteps))
+        l.addWidget(QtGui.QLabel(''))
         l.addWidget(_makeButton('execute footstep plan', self.onExecute))
         l.addWidget(QtGui.QLabel(''))
         l.addWidget(_makeButton('stop walking', self.onStop))
@@ -46,8 +47,12 @@ class FootstepsPanel(object):
         model = getVisibleRobotModel()
         self.driver.createWalkingGoal(model)
 
+    def onGoalSteps(self):
+        model = getVisibleRobotModel()
+        self.driver.createGoalSteps(model)
+
     def onExecute(self):
-        self.driver.commitFootstepPlan()
+        self.driver.commitFootstepPlan(self.driver.lastFootstepPlan)
 
     def onStop(self):
         self.driver.sendStopWalking()
@@ -60,6 +65,5 @@ def init(driver):
 
     panel = FootstepsPanel(driver)
     dock = app.addWidgetToDock(panel.widget)
-    #dock.hide()
-
+    dock.hide()
     return panel

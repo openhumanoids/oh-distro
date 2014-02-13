@@ -15,6 +15,7 @@ set(python_files
   ddapp/drilltaskpanel.py
   ddapp/footstepsdriver.py
   ddapp/footstepsdriverpanel.py
+  ddapp/handdriver.py
   ddapp/ikeditor.py
   ddapp/ik.py
   ddapp/__init__.py
@@ -26,6 +27,7 @@ set(python_files
   ddapp/midi.py
   ddapp/objectmodel.py
   ddapp/perception.py
+  ddapp/plansequence.py
   ddapp/pointCloudUtils.py
   ddapp/robotstate.py
   ddapp/robotplanlistener.py
@@ -44,7 +46,6 @@ set(python_files
   ddapp/vtkAll.py
   ddapp/vtkNumpy.py
 
-  #ddapp/macros/get_polydata.py
   ddapp/macros/popout.py
   ddapp/macros/publish.py
 

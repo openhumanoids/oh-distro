@@ -10,6 +10,9 @@ struct footstep_params_t
 	// Minimum clearance of the step over the terrain (m)
 	float step_height;
 
+	// If true, constrains the foot's position and rotation at all times during swing. If false, allows the foot to roll and pitch while swinging. 
+	boolean constrain_full_foot_pose;
+
 	// BDI-specific parameters
 	float bdi_step_duration;
 	float bdi_sway_duration;

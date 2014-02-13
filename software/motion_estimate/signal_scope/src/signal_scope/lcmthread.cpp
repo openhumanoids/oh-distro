@@ -1,20 +1,28 @@
 #include "lcmthread.h"
+#include "lcmsubscriber.h"
 
-#include "signalhandler.h"
-
+#include <QMutexLocker>
 #include <lcm/lcm-cpp.hpp>
 
+LCMThread::LCMThread()
+{
+  mShouldStop = false;
+  mShouldPause = false;
+  mLCM = 0;
+}
+
+LCMThread::~LCMThread()
+{
+}
 
 void LCMThread::initLCM()
 {
+  QMutexLocker locker(&mMutex);
+
   if (mLCM)
   {
     return;
   }
-
-  //std::string logFile = "file:///source/drc/logs/snippet.lcm";
-  //std::string logFile = "file:///source/drc/logs/lcmlog-2013-08-01.00";
-  //mLCM = new lcm::LCM(logFile);
 
   mLCM = new lcm::LCM();
   if (!mLCM->good())
@@ -24,19 +32,18 @@ void LCMThread::initLCM()
   }
 }
 
-void LCMThread::addSignalHandler(SignalHandler* handler)
+void LCMThread::addSubscriber(LCMSubscriber* subscriber)
 {
-  // mMutex.lock();
   this->initLCM();
-  mSignalHandlers.append(handler);
-  handler->subscribe(mLCM);
-  // mMutex.unlock();
+  mSubscribers.append(subscriber);
+  subscriber->subscribe(mLCM);
 }
 
-void LCMThread::removeSignalHandler(SignalHandler* handler)
+void LCMThread::removeSubscriber(LCMSubscriber* subscriber)
 {
-  handler->unsubscribe(mLCM);
-  mSignalHandlers.removeAll(handler);
+  this->initLCM();
+  subscriber->unsubscribe(mLCM);
+  mSubscribers.removeAll(subscriber);
 }
 
 void LCMThread::run()
@@ -50,9 +57,7 @@ void LCMThread::run()
       this->waitForResume();
     }
 
-    // mMutex.lock();
     int result = mLCM->handle();
-    // mMutex.unlock();
     if (result != 0)
     {
       printf("mLCM->handle() returned non-zero.  Terminating LCM thread.\n");

@@ -1,5 +1,5 @@
-#ifndef JOINTS2FRAMES_HPP_
-#define JOINTS2FRAMES_HPP_
+#ifndef LEG_ODOMETRY_HPP_
+#define LEG_ODOMETRY_HPP_
 
 #include <fstream>      // std::ofstream
 
@@ -13,6 +13,8 @@
 
 #include <map>
 
+
+
 #include "urdf/model.h"
 #include "kdl/tree.hpp"
 #include "kdl_parser/kdl_parser.hpp"
@@ -22,23 +24,24 @@
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>
 
+
 #include <pointcloud_tools/pointcloud_math.hpp>
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp>
 
-//#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
-#include "lcmtypes/fovis_bot2.hpp"
+#include "lcmtypes/drc/pose_transform_t.hpp"
+//#include "lcmtypes/fovis_bot2.hpp"
 
 #include <estimate/common_conversions.hpp>
 #include <leg-odometry/FootContact.h>
 #include <leg-odometry/Filter.hpp>
+//#include <leg-odometry/SignalTap.hpp>
 
 ///////////////////////////////////////////////////////////////
 class leg_odometry{
   public:
-    leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_subscribe_, boost::shared_ptr<lcm::LCM> &lcm_publish_,
+    leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_publish_,
                  BotParam* botparam_, boost::shared_ptr<ModelClient> &model_);
     
     ~leg_odometry(){
@@ -51,10 +54,12 @@ class leg_odometry{
       right_foot_force_ = right_foot_force_in;       
     }
     
-    bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
-                        std::vector<float> joint_velocity, std::vector<float> joint_effort,
-                        int64_t utime);
-    
+    //bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
+    //                        std::vector<float> joint_velocity, std::vector<float> joint_effort,
+    //                        int64_t utime);
+	bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime);
+
+
     void getDeltaLegOdometry(Eigen::Isometry3d &delta_world_to_body, int64_t &current_utime, int64_t &previous_utime){
       delta_world_to_body = delta_world_to_body_;
       current_utime = current_utime_;
@@ -65,14 +70,14 @@ class leg_odometry{
     
     void setLegOdometryMode(std::string leg_odometry_mode_in ){ leg_odometry_mode_ = leg_odometry_mode_in; }
     void setInitializationMode(std::string initialization_mode_in ){ initialization_mode_ = initialization_mode_in; }
-    
+
   private:
     boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
     BotParam* botparam_;
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
     pointcloud_vis* pc_vis_;
-    
+
     // params:
     std::string leg_odometry_mode_;
     // How the position will be initialized

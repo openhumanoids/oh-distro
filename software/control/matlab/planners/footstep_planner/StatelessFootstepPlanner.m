@@ -10,13 +10,17 @@ classdef StatelessFootstepPlanner
       q0 = x0(1:end/2);
       foot_orig = biped.feetPosition(q0);
 
+      if request.params.ignore_terrain
+        biped = biped.setTerrain(KinematicTerrainMap(biped, q0));
+      end
+
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
       if request.num_goal_steps > 2
         request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
         request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
       end
 
-      params_set = {request.params};
+      params_set = {struct(request.params)};
       if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
         new_params_set = {};
         for p = params_set
@@ -67,10 +71,8 @@ classdef StatelessFootstepPlanner
       plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
-      if ~request.params.ignore_terrain
-        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
-        plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
-      end
+      plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+      plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
       plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
       for j = 1:length(plan.footsteps)
         plan.footsteps(j).pos = biped.footContact2Orig(plan.footsteps(j).pos, 'center', plan.footsteps(j).is_right_foot);
@@ -126,30 +128,17 @@ classdef StatelessFootstepPlanner
       elseif request.num_goal_steps == 1
         goal_step = Footstep.from_footstep_t(request.goal_steps(1));
         goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
-        if plan.footsteps(end).is_right_foot == goal_step.is_right_foot
-          k = nsteps;
-        else
-          k = nsteps - 1;
-        end
-        plan.footsteps(k) = goal_step;
+        assert(goal_step.is_right_foot == plan.footsteps(end).is_right_foot);
+        plan.footsteps(end) = goal_step;
       else
-        if plan.footsteps(end-1).is_right_foot ~= request.goal_steps(1).is_right_foot
-          request.goal_steps = StatelessFootstepPlanner.pairReverse(request.goal_steps);
-        end
         for j = 1:request.num_goal_steps
-          k = nsteps - 2 + j;
+          k = nsteps - 3 + j;
           goal_step = Footstep.from_footstep_t(request.goal_steps(j));
+          assert(goal_step.is_right_foot == plan.footsteps(k).is_right_foot);
           goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
           plan.footsteps(k) = goal_step;
         end
       end
-    end
-
-    function y = pairReverse(x)
-      % If x is [a, b, c, d], returns [b, a, d, c]
-      y = zeros(size(x));
-      y(1:2:end) = x(2:2:end);
-      y(2:2:end) = x(1:2:end);
     end
 
     function plan = mergeExistingSteps(biped, plan, request)
@@ -220,7 +209,7 @@ classdef StatelessFootstepPlanner
     function plan = checkReachInfeasibility(biped, plan, params)
       params.right_foot_lead = logical(params.right_foot_lead);
       if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
-      params.forward_step = params.nom_forward_step;
+      params.forward_step = params.max_forward_step;
       [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
       nsteps = length(plan.footsteps) - 1;
       [A, b, ~, ~, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);

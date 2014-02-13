@@ -5,6 +5,7 @@ import vtk
 import colorsys
 import time
 import functools
+import traceback
 import PythonQt
 from PythonQt import QtCore, QtGui
 import ddapp.applogic as app
@@ -59,7 +60,7 @@ def getCurrentView():
 def getDebugFolder():
     obj = om.findObjectByName('debug')
     if obj is None:
-        obj = om.getOrCreateContainer('debug', om.findObjectByName('segmentation'))
+        obj = om.getOrCreateContainer('debug', om.getOrCreateContainer('segmentation'))
         om.collapse(obj)
     return obj
 
@@ -178,6 +179,9 @@ def extractLargestCluster(polyData, minClusterSize=100):
 
 
 def extractClusters(polyData, **kwargs):
+
+    if not polyData.GetNumberOfPoints():
+        return []
 
     polyData = applyEuclideanClustering(polyData, **kwargs)
     clusterLabels = vtkNumpy.getNumpyFromVtk(polyData, 'cluster_labels')
@@ -398,8 +402,8 @@ def addCoordArraysToPolyData(polyData):
 
 
 def getDebugRevolutionData():
-    dataDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../drc-data'))
-    filename = os.path.join(dataDir, 'valve_wall.vtp')
+    #dataDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../drc-data'))
+    #filename = os.path.join(dataDir, 'valve_wall.vtp')
     #filename = os.path.join(dataDir, 'bungie_valve.vtp')
     #filename = os.path.join(dataDir, 'cinder-blocks.vtp')
     #filename = os.path.join(dataDir, 'cylinder_table.vtp')
@@ -407,6 +411,8 @@ def getDebugRevolutionData():
     #filename = os.path.join(dataDir, 'debris.vtp')
     #filename = os.path.join(dataDir, 'rev1.vtp')
     #filename = os.path.join(dataDir, 'drill-in-hand.vtp')
+
+    filename = '/home/drc/Desktop/scans-for-pat/drill-scan2.vtp'
 
     return addCoordArraysToPolyData(ioUtils.readPolyData(filename))
 
@@ -534,9 +540,10 @@ def removeGround(polyData, groundThickness=0.02, sceneHeightFromGround=0.05):
 
     searchRegionThickness = 0.5
 
-    zvalues = vtkNumpy.getNumpyFromVtk(polyData, 'z')
-    assert zvalues is not None
+    zvalues = vtkNumpy.getNumpyFromVtk(polyData, 'Points')[:,2]
     groundHeight = np.percentile(zvalues, 5)
+
+    vtkNumpy.addNumpyToVtk(polyData, zvalues.copy(), 'z')
     searchRegion = thresholdPoints(polyData, 'z', [groundHeight - searchRegionThickness/2.0, groundHeight + searchRegionThickness/2.0])
 
     updatePolyData(searchRegion, 'ground search region', parent=getDebugFolder(), colorByName='z', visible=False)
@@ -1515,6 +1522,7 @@ def getDrillAffordanceParams(origin, xaxis, yaxis, zaxis):
 
     return params
 
+
 def getDrillMesh():
 
     button = np.array([0.035, 0.007, -0.06])
@@ -1524,6 +1532,10 @@ def getDrillMesh():
     d.addPolyData(drillMesh)
     d.addSphere(button, radius=0.005, color=[0,1,0])
     return d.getPolyData()
+
+
+def getDrillBarrelMesh():
+    return ioUtils.readPolyData(os.path.join(app.getDRCBase(), 'software/models/otdf/dewalt.ply'), computeNormals=True)
 
 
 def segmentDrill(point1, point2, point3):
@@ -1631,6 +1643,247 @@ def segmentDrillAuto(point1):
     aff.setAffordanceParams(params)
     aff.updateParamsFromActorTransform()
     aff.addToView(app.getDRCView())
+
+
+
+def findAndFitDrillBarrel(polyData=None, robotFrame=None):
+
+    inputObj = om.findObjectByName('pointcloud snapshot')
+    polyData = polyData or inputObj.polyData
+
+    groundPoints, scenePoints =  removeGround(polyData, groundThickness=0.02, sceneHeightFromGround=0.50)
+
+    scenePoints = thresholdPoints(scenePoints, 'dist_to_plane', [0.5, 1.7])
+
+    if not scenePoints.GetNumberOfPoints():
+        return
+
+    normalEstimationSearchRadius = 0.10
+
+    f = pcl.vtkPCLNormalEstimation()
+    f.SetSearchRadius(normalEstimationSearchRadius)
+    f.SetInput(scenePoints)
+    f.Update()
+    scenePoints = shallowCopy(f.GetOutput())
+
+    normals = vtkNumpy.getNumpyFromVtk(scenePoints, 'normals')
+    normalsDotUp = np.abs(np.dot(normals, [0,0,1]))
+
+    vtkNumpy.addNumpyToVtk(scenePoints, normalsDotUp, 'normals_dot_up')
+
+    surfaces = thresholdPoints(scenePoints, 'normals_dot_up', [0.95, 1.0])
+
+
+    updatePolyData(groundPoints, 'ground points', parent=getDebugFolder(), visible=False)
+    updatePolyData(scenePoints, 'scene points', parent=getDebugFolder(), colorByName='normals_dot_up', visible=False)
+    updatePolyData(surfaces, 'surfaces', parent=getDebugFolder(), visible=False)
+
+    clusters = extractClusters(surfaces, clusterTolerance=0.15, minClusterSize=50)
+
+    fitResults = []
+
+    robotOrigin = np.array(robotFrame.GetPosition())
+    robotForward = np.array([1.0, 0.0, 0.0])
+    robotFrame.TransformVector(robotForward, robotForward)
+
+    #print 'robot origin:', robotOrigin
+    #print 'robot forward:', robotForward
+
+    for clusterId, cluster in enumerate(clusters):
+        clusterObj = updatePolyData(cluster, 'surface cluster %d' % clusterId, color=[1,1,0], parent=getDebugFolder(), visible=False)
+
+        origin, edges = getOrientedBoundingBox(cluster)
+        edgeLengths = [np.linalg.norm(edge) for edge in edges[:2]]
+
+        skipCluster = False
+        for edgeLength in edgeLengths:
+            #print 'cluster %d edge length: %f' % (clusterId, edgeLength)
+            if edgeLength < 0.35 or edgeLength > 0.75:
+                skipCluster = True
+
+        if skipCluster:
+            continue
+
+        clusterObj.setSolidColor([0, 0, 1])
+        centroid = np.average(vtkNumpy.getNumpyFromVtk(cluster, 'Points'), axis=0)
+
+        try:
+            drillFrame = segmentDrillBarrelFrame(centroid, polyData=scenePoints, forwardDirection=robotForward)
+            if drillFrame is not None:
+                fitResults.append((clusterObj, drillFrame))
+        except:
+            print traceback.format_exc()
+            print 'fit drill failed for cluster:', clusterId
+
+    if not fitResults:
+        return
+
+
+    angleToFitResults = []
+
+    for fitResult in fitResults:
+        cluster, drillFrame = fitResult
+        drillOrigin = np.array(drillFrame.GetPosition())
+        angleToDrill = np.abs(computeSignedAngleBetweenVectors(robotForward, drillOrigin - robotOrigin, [0,0,1]))
+        angleToFitResults.append((angleToDrill, cluster, drillFrame))
+        #print 'angle to candidate drill:', angleToDrill
+
+    angleToFitResults.sort(key=lambda x: x[0])
+
+    #print 'using drill at angle:', angleToFitResults[0][0]
+
+    drillMesh = getDrillBarrelMesh()
+
+    for i, fitResult in enumerate(angleToFitResults):
+
+        angleToDrill, cluster, drillFrame = fitResult
+
+        if i == 0:
+
+            drill = om.findObjectByName('drill')
+            drill = updatePolyData(drillMesh, 'drill', color=[0, 1, 0], visible=True)
+            drillFrame = updateFrame(drillFrame, 'drill frame', parent=drill, visible=False)
+            drill.actor.SetUserTransform(drillFrame.transform)
+
+            drill.setSolidColor([0, 1, 0])
+            cluster.setProperty('Visible', True)
+
+        else:
+
+            drill = showPolyData(drillMesh, 'drill candidate', color=[1,0,0], visible=False, parent=getDebugFolder())
+            drill.actor.SetUserTransform(drillFrame)
+            om.addToObjectModel(drill, parentObj=getDebugFolder())
+
+
+def computeSignedAngleBetweenVectors(v1, v2, perpendicularVector):
+    '''
+    Computes the signed angle between two vectors in 3d, given a perpendicular vector
+    to determine sign.  Result returned is radians.
+    '''
+    v1 = np.array(v1)
+    v2 = np.array(v2)
+    perpendicularVector = np.array(perpendicularVector)
+    v1 /= np.linalg.norm(v1)
+    v2 /= np.linalg.norm(v2)
+    perpendicularVector /= np.linalg.norm(perpendicularVector)
+    return math.atan2(np.dot(perpendicularVector, np.cross(v1, v2)), np.dot(v1, v2))
+
+
+def segmentDrillBarrelFrame(point1, polyData, forwardDirection):
+
+    tableClusterSearchRadius = 0.4
+    drillClusterSearchRadius = 0.5 #0.3
+
+
+    expectedNormal = np.array([0.0, 0.0, 1.0])
+
+    if not polyData.GetNumberOfPoints():
+        return
+
+    polyData, origin, normal = applyPlaneFit(polyData, expectedNormal=expectedNormal,
+        perpendicularAxis=expectedNormal, searchOrigin=point1,
+        searchRadius=tableClusterSearchRadius, angleEpsilon=0.2, returnOrigin=True)
+
+
+    if not polyData.GetNumberOfPoints():
+        return
+
+    tablePoints = thresholdPoints(polyData, 'dist_to_plane', [-0.01, 0.01])
+    updatePolyData(tablePoints, 'table plane points', parent=getDebugFolder(), visible=False)
+
+    tablePoints = labelDistanceToPoint(tablePoints, point1)
+    tablePointsClusters = extractClusters(tablePoints)
+    tablePointsClusters.sort(key=lambda x: vtkNumpy.getNumpyFromVtk(x, 'distance_to_point').min())
+
+    if not tablePointsClusters:
+        return
+
+    tablePoints = tablePointsClusters[0]
+    updatePolyData(tablePoints, 'table points', parent=getDebugFolder(), visible=False)
+
+    searchRegion = thresholdPoints(polyData, 'dist_to_plane', [0.02, 0.3])
+    if not searchRegion.GetNumberOfPoints():
+        return
+
+    searchRegion = cropToSphere(searchRegion, point1, drillClusterSearchRadius)
+    #drillPoints = extractLargestCluster(searchRegion, minClusterSize=1)
+    drillPoints = searchRegion
+
+    if not drillPoints.GetNumberOfPoints():
+        return
+
+    updatePolyData(drillPoints, 'drill cluster', parent=getDebugFolder(), visible=False)
+    drillBarrelPoints = thresholdPoints(drillPoints, 'dist_to_plane', [0.177, 0.30])
+
+    if not drillBarrelPoints.GetNumberOfPoints():
+        return
+
+
+    # fit line to drill barrel points
+    linePoint, lineDirection, _ = applyLineFit(drillBarrelPoints, distanceThreshold=0.5)
+
+    if np.dot(lineDirection, forwardDirection) < 0:
+        lineDirection = -lineDirection
+
+    updatePolyData(drillBarrelPoints, 'drill barrel points', parent=getDebugFolder(), visible=False)
+
+
+    pts = vtkNumpy.getNumpyFromVtk(drillBarrelPoints, 'Points')
+
+    dists = np.dot(pts-linePoint, lineDirection)
+
+    p1 = linePoint + lineDirection*np.min(dists)
+    p2 = linePoint + lineDirection*np.max(dists)
+
+    p1 = projectPointToPlane(p1, origin, normal)
+    p2 = projectPointToPlane(p2, origin, normal)
+
+
+    d = DebugData()
+    d.addSphere(p1, radius=0.01)
+    d.addSphere(p2, radius=0.01)
+    d.addLine(p1, p2)
+    updatePolyData(d.getPolyData(), 'drill debug points', color=[0,1,0], parent=getDebugFolder(), visible=False)
+
+
+    drillToBasePoint = np.array([-0.07,  0.0  , -0.12])
+
+    zaxis = normal
+    xaxis = lineDirection
+    xaxis /= np.linalg.norm(xaxis)
+    yaxis = np.cross(zaxis, xaxis)
+    yaxis /= np.linalg.norm(yaxis)
+    xaxis = np.cross(yaxis, zaxis)
+    xaxis /= np.linalg.norm(xaxis)
+
+    t = getTransformFromAxes(xaxis, yaxis, zaxis)
+    t.PreMultiply()
+    t.Translate(-drillToBasePoint)
+    t.PostMultiply()
+    t.Translate(p1)
+
+    return t
+
+
+def segmentDrillBarrel(point1):
+
+    inputObj = om.findObjectByName('pointcloud snapshot')
+    polyData = inputObj.polyData
+
+    forwardDirection = -np.array(getCurrentView().camera().GetViewPlaneNormal())
+
+    t = segmentDrillBarrel(point1, polyData, forwardDirection)
+    assert t is not None
+
+    drillMesh = getDrillBarrelMesh()
+
+    aff = showPolyData(drillMesh, 'drill', visible=True)
+    aff.addToView(app.getDRCView())
+
+    aff.actor.SetUserTransform(t)
+    drillFrame = showFrame(t, 'drill frame', parent=aff, visible=False)
+    drillFrame.addToView(app.getDRCView())
+    return aff, drillFrame
 
 
 
@@ -1915,6 +2168,7 @@ def labelDistanceToLine(polyData, linePoint1, linePoint2, resultArrayName='dista
 
 
 def labelDistanceToPoint(polyData, point, resultArrayName='distance_to_point'):
+    assert polyData.GetNumberOfPoints()
     points = vtkNumpy.getNumpyFromVtk(polyData, 'Points')
     points = points - point
     dists = np.sqrt(np.sum(points**2, axis=1))
@@ -2026,10 +2280,41 @@ def binByScalar(lidarData, scalarArrayName, binWidth, binLabelsArrayName='bin_la
 
 def showObbs(polyData):
 
+    labelsArrayName = 'cluster_labels'
+    assert polyData.GetPointData().GetArray(labelsArrayName)
+
     f = pcl.vtkAnnotateOBBs()
-    f.SetInputArrayToProcess(0,0,0, vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS, 'cluster_labels')
+    f.SetInputArrayToProcess(0,0,0, vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS, labelsArrayName)
     f.SetInput(polyData)
     f.Update()
+    showPolyData(f.GetOutput(), 'bboxes')
+
+
+def getOrientedBoundingBox(polyData):
+
+    nPoints = polyData.GetNumberOfPoints()
+    assert nPoints
+    polyData = shallowCopy(polyData)
+
+    labelsArrayName = 'bbox_labels'
+    labels = np.ones(nPoints)
+    vtkNumpy.addNumpyToVtk(polyData, labels, labelsArrayName)
+
+    f = pcl.vtkAnnotateOBBs()
+    f.SetInputArrayToProcess(0,0,0, vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS, labelsArrayName)
+    f.SetInput(polyData)
+    f.Update()
+
+    assert f.GetNumberOfBoundingBoxes() == 1
+
+    origin = np.zeros(3)
+    edges = [np.zeros(3) for i in xrange(3)]
+
+    f.GetBoundingBoxOrigin(0, origin)
+    for i in xrange(3):
+        f.GetBoundingBoxEdge(0, i, edges[i])
+
+    return origin, edges
 
 
 def segmentBlockByAnnotation(blockDimensions, p1, p2, p3):
@@ -2592,6 +2877,16 @@ def startDrillAutoSegmentation():
     picker.drawLines = False
     picker.start()
     picker.annotationFunc = functools.partial(segmentDrillAuto)
+
+
+def startDrillBarrelSegmentation():
+
+    picker = PointPicker(numberOfPoints=1)
+    addViewPicker(picker)
+    picker.enabled = True
+    picker.drawLines = False
+    picker.start()
+    picker.annotationFunc = functools.partial(segmentDrillBarrel)
 
 
 def startDrillWallSegmentation():

@@ -27,6 +27,8 @@ from ddapp import footstepsdriverpanel
 from ddapp import atlasdriver
 from ddapp import atlasdriverpanel
 from ddapp import robotplanlistener
+from ddapp import handdriver
+from ddapp import plansequence
 from ddapp import vtkNumpy as vnp
 from ddapp import visualization as vis
 from ddapp import actionhandlers
@@ -36,7 +38,10 @@ from ddapp import lcmUtils
 from ddapp.shallowCopy import shallowCopy
 import drc as lcmdrc
 
+from ddapp import botpy
+
 import functools
+import math
 
 import numpy as np
 from ddapp.debugVis import DebugData
@@ -60,12 +65,12 @@ updatePolyData = segmentation.updatePolyData
 ###############################################################################
 
 
-useIk = True
-usePerception = False
+useIk = False
+usePerception = True
 useSpreadsheet = True
 useFootsteps = True
-usePlanning = False
-useAtlasDriver = False
+usePlanning = True
+useAtlasDriver = True
 
 
 poseCollection = PythonQt.dd.ddSignalMap()
@@ -104,10 +109,10 @@ if useIk:
 
 
     jc = jointcontrol.JointController([model], poseCollection)
-    jc.addNominalPoseFromFile(app.getNominalPoseMatFile())
-    jc.setNominalPose()
+    jc.setNominalPose(jc.loadPoseFromFile(app.getNominalPoseMatFile()))
     jc.addPose('q_end', jc.poses['q_nom'])
     jc.addPose('q_start', jc.poses['q_nom'])
+    defaultJointController = jc
 
 
     def startIkServer():
@@ -130,34 +135,9 @@ if useIk:
 
 
 if useAtlasDriver:
-    atlasdriver.init()
+    atlasdriver.init(app.getOutputConsole())
     atlasdriverpanel.init(atlasdriver.driver)
 
-if useFootsteps:
-    # footsteps.init()
-    footstepsdriver.init(jc)
-    footstepsdriverpanel.init(footstepsdriver.driver)
-
-
-if usePlanning:
-    planListener = robotplanlistener.RobotPlanListener()
-    planListener.playbackSpeed = 5.0
-
-    def planCallback():
-        planListener.stopAnimation()
-        planListener.playPlan(jc)
-
-    def animationCallback():
-        sendEstRobotState(jc.currentPoseName)
-
-    planListener.manipPlanCallback = planCallback
-    planListener.animationCallback = animationCallback
-
-    app.addToolbarMacro('plot plan', planListener.plotPlan)
-
-    def replan(side='left'):
-        assert side in ('left', 'right')
-        planListener.sendEndEffectorGoal('%s_hand' % side[0], om.findObjectByName('%s_base_link' % side).transform)
 
 
 if usePerception:
@@ -170,7 +150,10 @@ if usePerception:
 
 
     robotStateJointController = jointcontrol.JointController([robotStateModel])
-    robotStateJointController.setZeroPose()
+    robotStateJointController.setNominalPose(robotStateJointController.loadPoseFromFile(app.getNominalPoseMatFile()))
+    robotStateJointController.setPose('EST_ROBOT_STATE', robotStateJointController.getPose('q_zero'))
+    defaultJointController = robotStateJointController
+
 
     perception.init(view, robotStateJointController)
     segmentationpanel.init()
@@ -192,16 +175,21 @@ if usePerception:
 
 
     def onRobotModel(m):
+
+        global robotStateModel, defaultRobotModel
+
         model = app.loadRobotModelFromString(m.urdf_xml_string)
         sensorsFolder = om.getOrCreateContainer('sensors')
         obj = om.addRobotModel(model, sensorsFolder)
         obj.setProperty('Name', 'model publisher')
         robotStateJointController.models.append(model)
+        robotStateJointController.push()
 
-        global robotStateModel
         obj.addToView(robotStateModel.views[0])
-        robotStateModel.setProperty('Visible', False)
+        om.removeFromObjectModel(robotStateModel)
+        robotStateJointController.models.remove(robotStateModel.model)
         robotStateModel = obj
+        defaultRobotModel = obj
 
     lcmUtils.captureMessageCallback('ROBOT_MODEL', lcmdrc.robot_urdf_t, onRobotModel)
 
@@ -237,6 +225,88 @@ if usePerception:
 
 
 
+if useFootsteps:
+    footstepsDriver = footstepsdriver.FootstepsDriver(defaultJointController)
+    footstepsdriverpanel.init(footstepsDriver)
+
+
+if usePlanning:
+
+
+    planningFolder = om.getOrCreateContainer('planning')
+
+    urdfFile = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf')
+
+    planningModel = app.loadRobotModelFromFile(urdfFile)
+    obj = om.addRobotModel(planningModel, planningFolder)
+    obj.addToView(view)
+    obj.setProperty('Visible', False)
+    obj.setProperty('Name', 'robot model')
+    obj.setProperty('Color', QtGui.QColor(255, 253, 213))
+    planningRobotModel = obj
+
+    handDriver = handdriver.IRobotHandDriver(side='left')
+
+    planningJc = jointcontrol.JointController([planningModel], poseCollection)
+    planningJc.setNominalPose(planningJc.loadPoseFromFile(app.getNominalPoseMatFile()))
+
+    #midiController = jointcontrol.MidiJointControl(planningJc)
+    #midiController.start()
+
+    manipPlanner = robotplanlistener.ManipulationPlanDriver()
+    planPlayback = robotplanlistener.RobotPlanPlayback()
+
+
+    def showPose(pose):
+        planningRobotModel.setProperty('Visible', True)
+        planningJc.setPose('show_pose', pose)
+
+    def playPlan(plan):
+        playPlans([plan])
+
+    def playPlans(plans):
+        planPlayback.stopAnimation()
+        planningRobotModel.setProperty('Visible', True)
+        planPlayback.playPlans(plans, planningJc)
+
+    def playManipPlan():
+        playPlan(manipPlanner.lastManipPlan)
+
+    def playWalkingPlan():
+        playPlan(footstepsDriver.lastWalkingPlan)
+
+    def plotManipPlan():
+        planPlayback.plotPlan(manipPlanner.lastManipPlan)
+
+    def fitDrillMultisense():
+        pd = om.findObjectByName('Multisense').model.revPolyData
+        om.removeFromObjectModel(om.findObjectByName('debug'))
+        segmentation.findAndFitDrillBarrel(pd,  getLinkFrame('utorso'))
+
+    app.addToolbarMacro('plot plan', plotManipPlan)
+    app.addToolbarMacro('play manip plan', playManipPlan)
+    app.addToolbarMacro('fit drill', fitDrillMultisense)
+
+    def drillTrackerOn():
+        om.findObjectByName('Multisense').model.showRevolutionCallback = fitDrillMultisense
+
+    def drillTrackerOff():
+        om.findObjectByName('Multisense').model.showRevolutionCallback = None
+
+
+    planner = plansequence.PlanSequence(defaultRobotModel, footstepsDriver, manipPlanner,
+                                        handDriver, atlasdriver.driver, perception.multisenseDriver,
+                                        fitDrillMultisense, robotStateJointController,
+                                        playPlans, showPose)
+
+    #planner.userPromptEnabled = False
+    #q = planner.autonomousExecute()
+    #defaultJointController.setPose('EST_ROBOT_STATE', defaultJointController.getPose('q_nom'))
+    #planner.spawnDrillAffordance()
+
+
+
+
 app.resetCamera(viewDirection=[-1,0,0], view=view)
 
 
@@ -258,10 +328,6 @@ def showLinkFrame(linkName, model=None):
     if not frame:
         raise Exception('Link not found: ' + linkName)
     return vis.updateFrame(frame, linkName, parent='link frames')
-
-
-def createWalkingGoal():
-    footstepsdriver.driver.createWalkingGoal(defaultRobotModel)
 
 
 def resetCameraToRobot():
@@ -299,8 +365,9 @@ def resetCameraToHeadView():
     view.render()
 
 
-def sendEstRobotState(poseName='q_end'):
-    pose = jc.getPose(poseName)
+def sendEstRobotState(pose=None):
+    if pose is None:
+        pose = defaultJointController.q
     msg = robotstate.drakePoseToRobotState(pose)
     lcmUtils.publish('EST_ROBOT_STATE', msg)
 
@@ -311,6 +378,7 @@ tc.callback = resetCameraToHeadView
 
 
 
+'''
 class ViewEventFilter(object):
 
     def __init__(self, view):
@@ -355,3 +423,4 @@ def onViewDoubleClicked(displayPoint):
 
 ef = ViewEventFilter(ikview)
 ef.doubleClickCallback = onViewDoubleClicked
+'''

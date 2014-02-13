@@ -18,6 +18,7 @@
 #include <lcmtypes/drc/robot_state_t.hpp>
 #include <lcmtypes/drc/atlas_state_t.hpp>
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
+#include <model-client/model-client.hpp>
 
 namespace MavStateEst {
   
@@ -54,6 +55,10 @@ public:
   
   lcm::LCM* lcm_pub;
   lcm::LCM* lcm_recv;
+  boost::shared_ptr<lcm::LCM> lcm_recv_boost;
+  boost::shared_ptr<lcm::LCM> lcm_pub_boost;
+  boost::shared_ptr<ModelClient> model_boost;
+  
   BotFrames* frames;
   bot::frames* frames_cpp;
   std::vector<std::string> joint_names_;

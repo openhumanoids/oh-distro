@@ -2,6 +2,7 @@ classdef CombinedPlanner
   properties
     biped
     footstep_planner
+    walking_planner
     monitors
     request_channels
     handlers
@@ -27,6 +28,7 @@ classdef CombinedPlanner
 
       obj.biped = r;
       obj.footstep_planner = StatelessFootstepPlanner();
+      obj.walking_planner = StatelessWalkingPlanner();
       obj.monitors = {};
       obj.request_channels = {};
       obj.handlers = {};
@@ -37,6 +39,17 @@ classdef CombinedPlanner
       obj.request_channels{end+1} = 'FOOTSTEP_PLAN_REQUEST';
       obj.handlers{end+1} = @obj.plan_footsteps;
       obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');
+      obj.request_channels{end+1} = 'WALKING_TRAJ_REQUEST';
+      obj.handlers{end+1} = @obj.plan_walking_traj;
+      obj.response_channels{end+1} = 'WALKING_TRAJ_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');
+      obj.request_channels{end+1} = 'WALKING_CONTROLLER_PLAN_REQUEST';
+      obj.handlers{end+1} = @obj.plan_walking_controller;
+      obj.response_channels{end+1} = 'WALKING_CONTROLLER_PLAN_RESPONSE';
+
     end
 
     function run(obj)
@@ -59,6 +72,16 @@ classdef CombinedPlanner
     function plan = plan_footsteps(obj, msg)
       msg = drc.footstep_plan_request_t(msg);
       plan = obj.footstep_planner.plan_footsteps(obj.biped, msg);
+    end
+
+    function plan = plan_walking_traj(obj, msg)
+      msg = drc.walking_plan_request_t(msg);
+      plan = obj.walking_planner.plan_walking(obj.biped, msg, true);
+    end
+
+    function plan = plan_walking_controller(obj, msg)
+      msg = drc.walking_plan_request_t(msg);
+      plan = obj.walking_planner.plan_walking(obj.biped, msg, false);
     end
   end
 end

@@ -1,3 +1,7 @@
+#ifndef __MODEL_CLIENT_HPP__
+#define __MODEL_CLIENT_HPP__
+
+
 #include <map>
 #include <boost/shared_ptr.hpp>
 
@@ -55,3 +59,5 @@ class ModelClient
     
     bool file_read_success_;
 };
+
+#endif

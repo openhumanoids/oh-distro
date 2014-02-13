@@ -1,4 +1,4 @@
-function sendDataFusionReq(INSpose, INSCompensator, inertialData, msg, lc)
+function sendDataFusionReq(INSpose, INSCompensator, inertialData, Reference, msg, lc)
 
 
 msg.utime = INSpose.utime;
@@ -49,9 +49,9 @@ msg.referencePos_local.y = 0;
 msg.referencePos_local.z = 0;
 
 % Should add noise to this in the near future
-msg.referenceVel_local.x = 0;
-msg.referenceVel_local.y = 0;
-msg.referenceVel_local.z = 0;
+msg.referenceVel_local.x = Reference.V_l(1);
+msg.referenceVel_local.y = Reference.V_l(2);
+msg.referenceVel_local.z = Reference.V_l(3);
 
 msg.referenceVel_body.x = 0;
 msg.referenceVel_body.y = 0;

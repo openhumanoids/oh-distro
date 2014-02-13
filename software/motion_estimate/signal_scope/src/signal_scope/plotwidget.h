@@ -3,12 +3,13 @@
 
 #include <qwidget.h>
 #include <qmap.h>
+#include <qwt_plot_curve.h>
 
 class Plot;
 class Knob;
 class WheelBox;
 class SignalHandler;
-class LCMThread;
+class PythonChannelSubscriberCollection;
 class QListWidget;
 class QListWidgetItem;
 class QLabel;
@@ -19,7 +20,7 @@ class PlotWidget : public QWidget
   Q_OBJECT
 
 public:
-  PlotWidget(LCMThread* lcmThread, QWidget* parent=0);
+  PlotWidget(PythonChannelSubscriberCollection* subscribers, QWidget* parent=0);
 
   void start();
   void stop();
@@ -33,6 +34,7 @@ public:
   void clearHistory();
   void setBackgroundColor(QString color);
   void setPointSize(double pointSize);
+  void setCurveStyle(QwtPlotCurve::CurveStyle style);
 
   void loadSettings(const QMap<QString, QVariant>& plotSettings);
   void addSignal(const QMap<QString, QVariant>& signalSettings);
@@ -69,7 +71,7 @@ private:
   Plot *d_plot;
   QMap<QListWidgetItem*, SignalHandler*> mSignals;
   QList<QColor> mColors;
-  LCMThread* mLCMThread;
+  PythonChannelSubscriberCollection* mSubscribers;
 
   QListWidget* mSignalListWidget;
   QLabel* mSignalInfoLabel;
