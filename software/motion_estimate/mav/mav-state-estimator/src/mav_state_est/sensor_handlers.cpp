@@ -6,6 +6,8 @@ namespace MavStateEst {
 
 InsHandler::InsHandler(BotParam * _param, BotFrames * _frames)
 {
+  // mfallon: this chooses between MICROSTRAIN and ATLAS_IMU_BATCH
+  channel = bot_param_get_str_or_fail(_param, "state_estimator.ins.channel");
 
   cov_gyro = bot_param_get_double_or_fail(_param, "state_estimator.ins.q_gyro");
   cov_gyro = bot_sq(bot_to_radians(cov_gyro));
@@ -17,6 +19,9 @@ InsHandler::InsHandler(BotParam * _param, BotFrames * _frames)
   cov_accel_bias = bot_sq(cov_accel_bias);
 
   dt = bot_param_get_double_or_fail(_param, "state_estimator.ins.timestep_dt"); // nominally dt = 0.01 for 100 Hz IMU messages
+  
+  // added by mfallon for atlas:
+  atlas_filter = bot_param_get_boolean_or_fail(_param, "state_estimator.ins.atlas_filter");
 
   char * ins_frame = bot_param_get_str_or_fail(_param, "state_estimator.ins.frame");
   bot_frames_get_trans(_frames, ins_frame, "body", &ins_to_body);
@@ -29,6 +34,7 @@ InsHandler::InsHandler(BotParam * _param, BotFrames * _frames)
   gyro_bias_sum.setZero();
 }
 
+////////// Typical Micro Strain INS /////////////////
 RBISUpdateInterface * InsHandler::processMessage(const mav::ins_t * msg)
 {
   //    get everything into the right frame
@@ -41,60 +47,6 @@ RBISUpdateInterface * InsHandler::processMessage(const mav::ins_t * msg)
   Eigen::Map<Eigen::Vector3d> gyro(body_gyro);
 
   return new RBISIMUProcessStep(gyro, accelerometer, cov_gyro, cov_accel, cov_gyro_bias, cov_accel_bias, dt, msg->utime);
-}
-
-RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_batch_t * msg)
-{
-  //    get everything into the right frame
-  double body_accel[3];
-  bot_trans_apply_vec(&ins_to_body, msg->raw_imu[0].linear_acceleration, body_accel);
-  Eigen::Map<Eigen::Vector3d> accelerometer(body_accel);
-
-  // Convert Rotation Amounts to rotation rates:
-  dt = (msg->raw_imu[0].utime - msg->raw_imu[1].utime)*1E-6;
-  double sensor_gyro[3];
-  sensor_gyro[0] = (msg->raw_imu[0].delta_rotation[0])/dt;
-  sensor_gyro[1] = (msg->raw_imu[0].delta_rotation[1])/dt;
-  sensor_gyro[2] = (msg->raw_imu[0].delta_rotation[2])/dt;
-
-  if (1==0){
-  std::cout << "===\n";
-  std::cout << "rotation\n";
-  std::cout << msg->raw_imu[0].utime << "\n";
-  std::cout << msg->raw_imu[1].utime << "\n";
-  std::cout << msg->raw_imu[0].delta_rotation[0] << ", " << msg->raw_imu[0].delta_rotation[1] << ", " 
-            << msg->raw_imu[0].delta_rotation[2] << " delta_rot\n";
-  std::cout << "rotation rate\n";
-  std::cout << dt << "\n";
-  std::cout << sensor_gyro[0] << ", " << sensor_gyro[1] << ", " 
-            << sensor_gyro[2] << " gyro\n";  
-  }
-
-  double body_gyro[3];
-  bot_trans_apply_vec(&ins_to_body, sensor_gyro, body_gyro);
-  Eigen::Map<Eigen::Vector3d> gyro(body_gyro);
-
-  return new RBISIMUProcessStep(gyro, accelerometer, cov_gyro, cov_accel, cov_gyro_bias, cov_accel_bias, dt, msg->utime);
-}
-
-bool InsHandler::processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg,
-    const std::map<std::string, bool> & sensors_initialized
-    , const RBIS & default_state, const RBIM & default_cov,
-    RBIS & init_state, RBIM & init_cov)
-{
-  init_state.utime = msg->utime;
-
-  RBISIMUProcessStep * update = dynamic_cast<RBISIMUProcessStep *>(processMessageAtlas(msg));
-
-  if(  !RBISInitializer::allInitializedExcept(sensors_initialized, "ins")) //force the INS to go last
-    return false;
-
-  init_counter++;
-
-  double mag[3] = {0.0,0.0,0.0}; //not used
-  Eigen::Map<Eigen::Vector3d> mag_vec(mag);
-
-  return processMessageInitCommon(sensors_initialized, default_state, default_cov, init_state, init_cov, update, mag_vec);
 }
 
 bool InsHandler::processMessageInit(const mav::ins_t * msg,
@@ -118,7 +70,122 @@ bool InsHandler::processMessageInit(const mav::ins_t * msg,
   return processMessageInitCommon(sensors_initialized, default_state, default_cov, init_state, init_cov, update, mag_vec);
 }
 
+////////// Atlas KVH INS /////////////////
+void InsHandler::doFilter(IMUPacket &raw){
+  // notch 85Hz, 170, 340Hz in cascade
+  raw.linear_acceleration[0]  = notchfilter_x[0].processSample( raw.linear_acceleration[0] );
+  raw.linear_acceleration[1]  = notchfilter_y[0].processSample( raw.linear_acceleration[1] );
+  raw.linear_acceleration[2]  = notchfilter_z[0].processSample( raw.linear_acceleration[2] );
+  
+  raw.linear_acceleration[0]  = notchfilter_x[1].processSample( raw.linear_acceleration[0] );
+  raw.linear_acceleration[1]  = notchfilter_y[1].processSample( raw.linear_acceleration[1] );
+  raw.linear_acceleration[2]  = notchfilter_z[1].processSample( raw.linear_acceleration[2] );
 
+  raw.linear_acceleration[0]  = notchfilter_x[2].processSample( raw.linear_acceleration[0] );
+  raw.linear_acceleration[1]  = notchfilter_y[2].processSample( raw.linear_acceleration[1] );
+  raw.linear_acceleration[2]  = notchfilter_z[2].processSample( raw.linear_acceleration[2] );
+}
+
+
+RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_batch_t * msg)
+{
+
+  double linear_acceleration[3];
+  double delta_rotation[3];
+  double raw_dt;
+  int64_t utime;
+  
+  if (atlas_filter){
+    // Decode the data and split out the new packets:
+    drc::atlas_raw_imu_batch_t msg_copy = drc::atlas_raw_imu_batch_t(*msg);
+    IMUBatch batch = imu_data_.convertFromLCMBatch(&msg_copy);  
+    // Only filter new packets:
+    for (int i=0 ; i < batch.packets.size() ; i++ ){
+      doFilter( batch.packets[i] );
+    }  
+    // Get the most recent filtered packet:
+    IMUPacket p = batch.packets[batch.packets.size() -1 ];
+    
+    raw_dt =  p.utime_delta*1E-6;
+    memcpy(linear_acceleration, p.linear_acceleration.data(),p.linear_acceleration.size() * sizeof(double));
+    memcpy(delta_rotation, p.delta_rotation.data(),p.delta_rotation.size() * sizeof(double));
+    utime = msg->utime;
+
+  }else{
+    memcpy( linear_acceleration, msg->raw_imu[0].linear_acceleration, 3*sizeof(double));
+    memcpy( delta_rotation, msg->raw_imu[0].delta_rotation, 3*sizeof(double));
+    raw_dt = (msg->raw_imu[0].utime - msg->raw_imu[1].utime)*1E-6;
+    utime = msg->utime;
+  }
+  
+
+
+  // Convert Rotation Amounts to rotation rates:
+  double sensor_gyro[3];
+  sensor_gyro[0] = (delta_rotation[0])/raw_dt;
+  sensor_gyro[1] = (delta_rotation[1])/raw_dt;
+  sensor_gyro[2] = (delta_rotation[2])/raw_dt;
+
+  if (1==0){
+    std::cout << "===\n";
+    std::cout << "rotation\n";
+    std::cout << delta_rotation[0] << ", " << delta_rotation[1] << ", " 
+              << delta_rotation[2] << " delta_rot\n";
+    std::cout << "rotation rate\n";
+    std::cout << raw_dt << "\n";
+    std::cout << sensor_gyro[0] << ", " << sensor_gyro[1] << ", " 
+              << sensor_gyro[2] << " gyro\n";  
+  }
+
+  //    get everything into the right frame
+  double body_accel[3];
+  bot_trans_apply_vec(&ins_to_body, linear_acceleration, body_accel);
+  Eigen::Map<Eigen::Vector3d> accelerometer(body_accel);  
+  
+  double body_gyro[3];
+  bot_trans_apply_vec(&ins_to_body, sensor_gyro, body_gyro);
+  Eigen::Map<Eigen::Vector3d> gyro(body_gyro);
+
+  // Use message timestamp for dt after initialization
+  // TODO: quantify if this is useful versus just using 1/nominal_hz
+  double integration_dt;
+  if (prev_utime_atlas==0){
+    integration_dt = dt; // use default
+  }else{
+    integration_dt = (utime - prev_utime_atlas)*1E-6; 
+  }
+  if (integration_dt > 0.1){ // until dt integrity is confirmed..
+    std::cout << "dt was : " << integration_dt << " - there is an issue with timestamps\n";
+    //exit(-1); 
+  }
+  prev_utime_atlas = utime;
+  // std::cout << utime << " ins utime\n";  
+  return new RBISIMUProcessStep(gyro, accelerometer, cov_gyro, cov_accel, cov_gyro_bias, cov_accel_bias, integration_dt, utime);
+}
+
+bool InsHandler::processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg,
+    const std::map<std::string, bool> & sensors_initialized
+    , const RBIS & default_state, const RBIM & default_cov,
+    RBIS & init_state, RBIM & init_cov)
+{
+  init_state.utime = msg->utime;
+
+  RBISIMUProcessStep * update = dynamic_cast<RBISIMUProcessStep *>(processMessageAtlas(msg));
+
+  if(  !RBISInitializer::allInitializedExcept(sensors_initialized, "ins")) //force the INS to go last
+    return false;
+
+  init_counter++;
+
+  double mag[3] = {0.0,0.0,0.0}; //not used
+  Eigen::Map<Eigen::Vector3d> mag_vec(mag);
+
+  return processMessageInitCommon(sensors_initialized, default_state, default_cov, init_state, init_cov, update, mag_vec);
+}
+
+
+
+////////////////// Common ///////////////////
 bool InsHandler::processMessageInitCommon(const std::map<std::string, bool> & sensors_initialized
     , const RBIS & default_state, const RBIM & default_cov,
     RBIS & init_state, RBIM & init_cov,
@@ -217,7 +284,7 @@ if(  update == NULL) {
   return true;
 }
 
-ViconHandler::ViconHandler(BotParam * param)
+ViconHandler::ViconHandler(BotParam * param, BotFrames * frames)
 {
   char* mode_str = bot_param_get_str_or_fail(param, "state_estimator.vicon.mode");
 
@@ -234,6 +301,13 @@ ViconHandler::ViconHandler(BotParam * param)
     std::cout << "Unrecognized Vicon mode. Using position mode by default." << std::endl;
   }
 
+  apply_frame = bot_param_get_boolean_or_fail(param, "state_estimator.vicon.apply_frame");
+  if (apply_frame){
+    char* frame_from = bot_param_get_str_or_fail(param, "state_estimator.vicon.frame_from");
+    char* frame_to   = bot_param_get_str_or_fail(param, "state_estimator.vicon.frame_to");
+    bot_frames_get_trans(frames, frame_from, frame_to, &body_to_vicon);
+  }
+    
   free(mode_str);
   init(param);
 }
@@ -265,24 +339,39 @@ void ViconHandler::init(BotParam * param)
 
 RBISUpdateInterface * ViconHandler::processMessage(const bot_core::rigid_transform_t * msg)
 {
-
-  if ((Eigen::Map<const Eigen::Array3d>(msg->trans).abs() < 1e-5).all())
+  
+  BotTrans local_to_vicon;
+  memset(&local_to_vicon, 0, sizeof(local_to_vicon));
+  memcpy(local_to_vicon.trans_vec, msg->trans, 3*sizeof(double));
+  memcpy(local_to_vicon.rot_quat, msg->quat, 4*sizeof(double));
+  
+  BotTrans local_to_body;
+  memset(&local_to_body, 0, sizeof(local_to_body));
+  if (apply_frame){
+    bot_trans_apply_trans_to( &local_to_vicon,&body_to_vicon, &local_to_body);
+  }else{
+    bot_trans_copy(&local_to_body, &local_to_vicon);    
+  }  
+  int64_t utime = msg->utime;
+  ////////////////////////////////////
+  
+  if ((Eigen::Map<const Eigen::Array3d>( local_to_vicon.trans_vec ).abs() < 1e-5).all())
     return NULL;
 
   if (mode == MODE_POSITION) {
-    return new RBISIndexedMeasurement(z_indices, Eigen::Map<const Eigen::Vector3d>(msg->trans),
+    return new RBISIndexedMeasurement(z_indices, Eigen::Map<const Eigen::Vector3d>( local_to_body.trans_vec ),
         cov_vicon.block<3, 3>(0, 0), RBISUpdateInterface::vicon,
-        msg->utime);
+        utime);
   }
   else {
     Eigen::VectorXd z_meas(6);
     Eigen::Quaterniond quat;
-    eigen_utils::botDoubleToQuaternion(quat, msg->quat);
+    eigen_utils::botDoubleToQuaternion(quat, local_to_body.rot_quat );
 
     z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->trans);
 
     return new RBISIndexedPlusOrientationMeasurement(z_indices, z_meas, cov_vicon, quat, RBISUpdateInterface::vicon,
-        msg->utime);
+        utime);
   }
 }
 
@@ -291,10 +380,25 @@ bool ViconHandler::processMessageInit(const bot_core::rigid_transform_t * msg,
     , const RBIS & default_state, const RBIM & default_cov,
     RBIS & init_state, RBIM & init_cov)
 {
+
+  BotTrans local_to_vicon;
+  memset(&local_to_vicon, 0, sizeof(local_to_vicon));
+  memcpy(local_to_vicon.trans_vec, msg->trans, 3*sizeof(double));
+  memcpy(local_to_vicon.rot_quat, msg->quat, 4*sizeof(double));
+  
+  BotTrans local_to_body;
+  memset(&local_to_body, 0, sizeof(local_to_body));
+  if (apply_frame){
+    bot_trans_apply_trans_to( &local_to_vicon,&body_to_vicon, &local_to_body);
+  }else{
+    bot_trans_copy(&local_to_body, &local_to_vicon);    
+  }
+  ////////////////////////////////////
+  
   init_state.utime = msg->utime;
 
-  init_state.position() = Eigen::Map<const Eigen::Vector3d>(msg->trans);
-  eigen_utils::botDoubleToQuaternion(init_state.orientation(), msg->quat);
+  init_state.position() = Eigen::Map<const Eigen::Vector3d>(local_to_body.trans_vec);
+  eigen_utils::botDoubleToQuaternion(init_state.orientation(), local_to_body.rot_quat);
 
   init_cov.block<3, 3>(RBIS::position_ind, RBIS::position_ind) = cov_vicon.topLeftCorner<3, 3>();
   init_cov.block<3, 3>(RBIS::chi_ind, RBIS::chi_ind) = cov_vicon.bottomRightCorner<3, 3>();

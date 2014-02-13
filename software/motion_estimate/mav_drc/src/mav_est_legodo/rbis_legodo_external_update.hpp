@@ -15,10 +15,12 @@ namespace MavStateEst {
 class LegOdoExternalHandler {
 public:
   
-  LegOdoExternalHandler(BotParam * param);
+  LegOdoExternalHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub, BotParam * param);
 
   RBISUpdateInterface * processMessage(const drc::pose_transform_t  * msg);
 
+  lcm::LCM* lcm_pub;
+  lcm::LCM* lcm_recv;
   // Converts the Pelvis Translation into a RBIS measurement
   // which is then passed to the estimator
   LegOdoCommon* leg_odo_common_;

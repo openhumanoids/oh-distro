@@ -4,13 +4,13 @@
 namespace MavStateEst {
 
 
-LegOdoExternalHandler::LegOdoExternalHandler(BotParam * param)
-{
+LegOdoExternalHandler::LegOdoExternalHandler(lcm::LCM* lcm_recv, lcm::LCM* lcm_pub, BotParam * param):
+  lcm_recv(lcm_recv), lcm_pub(lcm_pub){
   std::cout << "LegOdoExternalHandler will compute from incoming delta messages\n";  
   // NB: This module will subscribe to the channel specified in the 
   // state_estimator.legodo_external block of the cfg file
   // but read all perameters from state_estimator.legodo block
-  leg_odo_common_ = new LegOdoCommon(param);
+  leg_odo_common_ = new LegOdoCommon(lcm_recv, lcm_pub, param);
 }
 
 

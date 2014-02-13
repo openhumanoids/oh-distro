@@ -20,13 +20,18 @@ public:
     MODE_LIN_RATE, MODE_ROT_RATE, MODE_LIN_AND_ROT_RATE
   } FovisMode;
 
-  FovisHandler(BotParam * param);
+  FovisHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
+               BotParam * param);
 
   RBISUpdateInterface * processMessage(const fovis::update_t  * msg);
 
   FovisMode mode;
   Eigen::VectorXi z_indices;
   Eigen::MatrixXd cov_fovis;
+  
+  lcm::LCM* lcm_pub;
+  lcm::LCM* lcm_recv;
+  
 
 };
 

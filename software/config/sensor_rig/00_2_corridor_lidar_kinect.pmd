@@ -1,0 +1,42 @@
+group "0.development" {
+    cmd "pserver" {
+        exec = "bot-param-server 00_2_corridor_lidar_kinect.cfg";
+        host = "localhost";
+    }
+    cmd "octomap" {
+        exec = "octomap-server  /media/bay_drive/data/other/sensor_rig/octomaps/stairarea/icra_octomap/icra_octomap.bt";
+        host = "localhost";
+    }
+    cmd "est" {
+        exec = "se-fusion -L /media/bay_drive/data/other/sensor_rig/2012-10-19-rig-holodeck-stair/v2_openni/lcmlog-2012-10-19.02 -P sensor_rig/00_2_corridor_lidar_kinect.cfg   -t 1350671827009443";
+        host = "localhost";
+    }
+    cmd "vis" {
+        exec = "drc-viewer -a";
+        host = "localhost";
+    }
+}
+group "1.testing_with_fovis"{
+    cmd "logplayer" {
+        exec ="lcm-logplayer-gui /media/bay_drive/data/other/sensor_rig/2012-10-19-rig-holodeck-stair/v2_openni/lcmlog-2012-10-19.02 -p";
+        host = "localhost";
+    }
+    cmd "test_est" {
+        exec = "se-fusion -P sensor_rig/00_2_corridor_lidar_kinect.cfg   -t 1350671827009443";
+        host = "localhost";
+    }
+    cmd "kodo" {
+        exec = "kinect-odometry -pPOSE_KINECT  -o KINECT_REL_ODOMETRY -u DOG_TO_CAT";
+        host = "localhost";
+    }
+}
+
+script "run" { 
+    start cmd "pserver";
+    start cmd "vis";
+    wait ms 2000;
+    start cmd "octomap";
+    wait ms 2000;
+    start cmd "est";
+}
+

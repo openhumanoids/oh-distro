@@ -96,9 +96,12 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
   lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
   
+  // Always provided by the Atlas Driver:
   lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
   pose_BDI_.utime =0; // use this to signify un-initalised
-  
+  // Always provided the state estimator:
+  lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this); 
+  pose_MIT_.utime =0; // use this to signify un-initalised
   
   /// Pots and Encoders:
   // pot offsets if pots are used, currently uncalibrated
@@ -357,32 +360,73 @@ void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
 }
 
-bool state_sync::insertPoseBDI(drc::robot_state_t& msg){
-  // TODO: add comparison of msg->utime and pose_BDI_'s utime  
-  if (pose_BDI_.utime ==0){
-    std::cout << "haven't received POSE_BDI, refusing to publish ERS\n";
+void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  pose_MIT_.utime = msg->utime;
+  pose_MIT_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  pose_MIT_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  pose_MIT_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  pose_MIT_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  pose_MIT_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
+}
+
+
+
+// Returns false if the pose is old or hasn't appeared yet
+bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
+  // TODO: add comparison of Atlas State utime and Pose's utime
+  if (pose.utime ==0){
+    std::cout << "haven't received pelvis pose, refusing to publish ERS\n";
     return false;
   }
   
-  msg.pose.translation.x = pose_BDI_.pos[0];
-  msg.pose.translation.y = pose_BDI_.pos[1];
-  msg.pose.translation.z = pose_BDI_.pos[2];
-  msg.pose.rotation.w = pose_BDI_.orientation[0];
-  msg.pose.rotation.x = pose_BDI_.orientation[1];
-  msg.pose.rotation.y = pose_BDI_.orientation[2];
-  msg.pose.rotation.z = pose_BDI_.orientation[3];
+  msg.pose.translation.x = pose.pos[0];
+  msg.pose.translation.y = pose.pos[1];
+  msg.pose.translation.z = pose.pos[2];
+  msg.pose.rotation.w = pose.orientation[0];
+  msg.pose.rotation.x = pose.orientation[1];
+  msg.pose.rotation.y = pose.orientation[2];
+  msg.pose.rotation.z = pose.orientation[3];
 
-  msg.twist.linear_velocity.x = pose_BDI_.vel[0];
-  msg.twist.linear_velocity.y = pose_BDI_.vel[1];
-  msg.twist.linear_velocity.z = pose_BDI_.vel[2];
+  msg.twist.linear_velocity.x = pose.vel[0];
+  msg.twist.linear_velocity.y = pose.vel[1];
+  msg.twist.linear_velocity.z = pose.vel[2];
   
-  msg.twist.angular_velocity.x = pose_BDI_.rotation_rate[0];
-  msg.twist.angular_velocity.y = pose_BDI_.rotation_rate[1];
-  msg.twist.angular_velocity.z = pose_BDI_.rotation_rate[2];
+  msg.twist.angular_velocity.x = pose.rotation_rate[0];
+  msg.twist.angular_velocity.y = pose.rotation_rate[1];
+  msg.twist.angular_velocity.z = pose.rotation_rate[2];
   
   return true;  
 }
+
+bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
+  // TODO: add comparison of Atlas State utime and Pose's utime
+  if (pose.utime ==0){
+    std::cout << "haven't received pelvis pose, refusing to populated pose_t\n";
+    return false;
+  }
   
+  msg.pos[0] = pose.pos[0];
+  msg.pos[1] = pose.pos[1];
+  msg.pos[2] = pose.pos[2];
+  msg.orientation[0] = pose.orientation[0];
+  msg.orientation[1] = pose.orientation[1];
+  msg.orientation[2] = pose.orientation[2];
+  msg.orientation[3] = pose.orientation[3];
+
+  msg.vel[0] = pose.vel[0];
+  msg.vel[1] = pose.vel[1];
+  msg.vel[2] = pose.vel[2];
+  
+  msg.rotation_rate[0] = pose.rotation_rate[0];
+  msg.rotation_rate[1] = pose.rotation_rate[1];
+  msg.rotation_rate[2] = pose.rotation_rate[2];
+  
+  msg.accel[0] = pose.accel[0];
+  msg.accel[1] = pose.accel[1];
+  msg.accel[2] = pose.accel[2];
+  
+  return true;  
+}
 
 
 void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t& force_torque_msg){
@@ -426,11 +470,18 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   }
   
   if (bdi_motion_estimate_){
-    if ( insertPoseBDI(robot_state_msg) ){
+    if ( insertPoseInRobotState(robot_state_msg, pose_BDI_) ){
+      bot_core::pose_t pose_body;
+      insertPoseInBotState(pose_body, pose_BDI_);
+      lcm_->publish("POSE_BODY", &pose_body); 
       lcm_->publish("EST_ROBOT_STATE", &robot_state_msg); 
     }
   }else if(standalone_head_ || standalone_hand_ ){
     lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);
+  }else{ // typical motion estimation
+    if ( insertPoseInRobotState(robot_state_msg, pose_MIT_) ){
+      lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);    
+    }
   }
 }
 

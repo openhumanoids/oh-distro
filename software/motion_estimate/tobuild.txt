@@ -1,10 +1,15 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
+
 # Motion Estimation:
 twolegged_estimate
 #CollierTools
-vo_estimate
+# switching between fovis versions
+#vo_estimate
+
+estimate_tools
+
 
 motion_estimate
 

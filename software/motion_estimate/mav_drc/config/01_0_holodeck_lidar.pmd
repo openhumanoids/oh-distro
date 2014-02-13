@@ -1,18 +1,18 @@
 group "0.development" {
     cmd "pserver" {
-        exec = "bot-param-server holodeck_lidar.cfg";
+        exec = "bot-param-server 01_0_holodeck_lidar.cfg";
         host = "localhost";
     }
     cmd "octomap" {
-        exec = "octomap-server  /media/passport1/data/other/sensor_rig/2012-10-03-rig-vicon-fixie/occmap/octomap.bt";
+        exec = "octomap-server  /media/bay_drive/data/other/sensor_rig/2012-10-03-rig-vicon-fixie/occmap/octomap.bt";
         host = "localhost";
     }
     cmd "est" {
-        exec = "mav-kmcl  -L /media/passport1/data/other/sensor_rig/2012-10-03-rig-vicon-fixie/lcmlog-2012-10-03.02  -P ../config/holodeck_lidar.cfg   -t 1349286406000000";
+        exec = "se-fusion  -L /media/bay_drive/data/other/sensor_rig/2012-10-03-rig-vicon-fixie/lcmlog-2012-10-03.02  -p sensor_rig/01_0_holodeck_lidar.cfg  -t 1349286406000000";
         host = "localhost";
     }
     cmd "vis" {
-        exec = "kmcl-viewer";
+        exec = "drc-viewer -a";
         host = "localhost";
     }
 }

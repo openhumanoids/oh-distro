@@ -1,14 +1,8 @@
-/*
- * LegOdoWrapper.cpp
- *
- *  Created on: Feb 6, 2014
- *      Author: dehann
- */
-
 #include <estimate/LegOdoWrapper.hpp>
 
 
-App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_, CommandLineConfig& cl_cfg_) : LegOdoWrapper(lcm_subscribe_, lcm_publish_, cl_cfg_) {
+App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_, CommandLineConfig& cl_cfg_) : 
+        LegOdoWrapper(lcm_subscribe_, lcm_publish_, cl_cfg_) {
 
   setupLegOdo();
 
@@ -26,29 +20,30 @@ App::~App() {
 
 void LegOdoWrapper::setupLegOdo() {
   if (cl_cfg_.param_file == ""){
-	botparam_ = bot_param_new_from_server(lcm_subscribe_->getUnderlyingLCM(), 0);
-	}else{
-	//std::string param_file = "drc_robot_02.cfg";
-	std::string param_file_full = std::string(getConfigPath()) +'/' + std::string(cl_cfg_.param_file);
-	botparam_ = bot_param_new_from_file(param_file_full.c_str());
-	}
-	// TODO: not sure what do do here ... what if i want the frames from the file?
-	//frames_ = bot_frames_new(NULL, botparam_);
-	frames_ = bot_frames_get_global(lcm_subscribe_->getUnderlyingLCM(), botparam_);
-	frames_cpp_ = new bot::frames(frames_);
+    botparam_ = bot_param_new_from_server(lcm_subscribe_->getUnderlyingLCM(), 0);
+  }else{
+    //std::string param_file = "drc_robot_02.cfg";
+    std::string param_file_full = std::string(getConfigPath()) +'/' + std::string(cl_cfg_.param_file);
+    botparam_ = bot_param_new_from_file(param_file_full.c_str());
+  }
+  
+  // TODO: not sure what do do here ... what if i want the frames from the file?
+  //frames_ = bot_frames_new(NULL, botparam_);
+  frames_ = bot_frames_get_global(lcm_subscribe_->getUnderlyingLCM(), botparam_);
+  frames_cpp_ = new bot::frames(frames_);
 
-	if (cl_cfg_.urdf_file == ""){
-	  model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_subscribe_->getUnderlyingLCM(), 0));
-	}else{
-	  //std::string urdf_file = "model_LH_RH.urdf";
-	  std::string urdf_file_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string(cl_cfg_.urdf_file);
-	  model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_file_full  ));
-	}
+  if (cl_cfg_.urdf_file == ""){
+    model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_subscribe_->getUnderlyingLCM(), 0));
+  }else{
+    //std::string urdf_file = "model_LH_RH.urdf";
+    std::string urdf_file_full = std::string(getModelsPath()) +"/mit_gazebo_models/mit_robot/" + std::string(cl_cfg_.urdf_file);
+    model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_file_full  ));
+  }
 
-	leg_odo_ = new leg_odometry(lcm_publish_, botparam_, model_);
-	string leg_odo_mode = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo_driven_process.integration_mode");
-	std::cout << "Overwriting the leg odom mode:: " << leg_odo_mode << "\n";
-	leg_odo_->setLegOdometryMode( leg_odo_mode );
+  leg_odo_ = new leg_odometry(lcm_publish_, botparam_, model_);
+  string leg_odo_mode = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo_driven_process.integration_mode");
+  std::cout << "Overwriting the leg odom mode:: " << leg_odo_mode << "\n";
+  leg_odo_->setLegOdometryMode( leg_odo_mode );
 }
 
 

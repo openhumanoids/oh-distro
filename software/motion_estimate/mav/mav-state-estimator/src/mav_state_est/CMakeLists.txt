@@ -21,6 +21,7 @@ set(REQUIRED_LIBS bot2-core
     lcmtypes_vicon
     lcmtypes_${POD_NAME}
     lcmtypes_mav-lcmtypes
+    estimate_tools # added by mfallon for drc data filtering
     )
 pods_use_pkg_config_packages(mav-state-est ${REQUIRED_LIBS})
 pods_install_libraries(mav-state-est)

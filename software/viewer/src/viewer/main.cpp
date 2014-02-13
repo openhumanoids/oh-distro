@@ -631,7 +631,7 @@ int main(int argc, char *argv[])
   
   // Individual Renderers:
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
-  atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  //atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
 
   setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
@@ -642,6 +642,7 @@ int main(int argc, char *argv[])
 
   status_add_renderer_to_viewer(viewer, 0, lcm);
 
+  // mfallon revert:
   add_cam_thumb_drc_renderer_to_viewer(viewer, 0, lcm, bot_param, bot_frames);
 
   bdi_add_renderer_to_viewer(viewer, 0, lcm);
@@ -655,8 +656,8 @@ int main(int argc, char *argv[])
     bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
 
-    bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "boxy_renderer");
-    bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "model_renderer");
+    //bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "boxy_renderer");
+    //bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "model_renderer");
     add_octomap_renderer_to_viewer(viewer, 1, lcm);
     add_map_measurement_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
     add_mav_state_est_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);

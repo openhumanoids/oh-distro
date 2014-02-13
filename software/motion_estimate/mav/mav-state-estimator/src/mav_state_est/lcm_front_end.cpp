@@ -7,7 +7,7 @@ namespace MavStateEst {
 
 LCMFrontEnd::LCMFrontEnd(const std::string & in_log_fname, const std::string & out_log_fname,
     const std::string & param_fname, const std::string & param_override_str, 
-    const std::string & begin_timestamp, int processing_rate)
+    const std::string & begin_timestamp, double processing_rate)
 {
 
   state_estimator = NULL;

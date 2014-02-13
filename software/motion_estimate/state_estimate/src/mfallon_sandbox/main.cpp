@@ -1,5 +1,3 @@
-
-
 #include <ConciseArgs>
 #include <estimate/LegOdoWrapper.hpp>
 
@@ -30,41 +28,39 @@ main(int argc, char ** argv){
   opt.parse();
   
   std::stringstream lcmurl_in;
+  if (cl_cfg.in_log_name == "" ){
+    lcmurl_in << "";
+  }else{
+    cl_cfg.read_lcmlog = true;
+    lcmurl_in << "file://" << cl_cfg.in_log_name << "?speed=" << cl_cfg.processing_rate;// + "&start_timestamp=";// + begin_timestamp;
+  }
   boost::shared_ptr<lcm::LCM> lcm_subscribe(new lcm::LCM(lcmurl_in.str()) );
-  std::stringstream lcmurl_out;
+  
+  std::stringstream lcmurl_out;  
+  if (cl_cfg.out_log_name == "" ) {
+    lcmurl_out << ""; // mfallon publish back to lcm if run from log
+  }else{
+    printf("publishing into log file: %s\n", cl_cfg.out_log_name.c_str());
+    lcmurl_out << "file://" << cl_cfg.out_log_name << "?mode=w";
+  } 
   boost::shared_ptr<lcm::LCM> lcm_publish(new lcm::LCM(lcmurl_out.str()) );
 
-
-  if (cl_cfg.in_log_name == "" ){
-	  lcmurl_in << "";
-  }else{
-	  cl_cfg.read_lcmlog = true;
-	  lcmurl_in << "file://" << cl_cfg.in_log_name << "?speed=" << cl_cfg.processing_rate;// + "&start_timestamp=";// + begin_timestamp;
-  }
-  if (cl_cfg.out_log_name == "" ) {
-	  lcmurl_out << ""; // mfallon publish back to lcm if run from log
-  }else{
-	  printf("publishing into log file: %s\n", cl_cfg.out_log_name.c_str());
-	  lcmurl_out << "file://" << cl_cfg.out_log_name << "?mode=w";
-  }
-
   if(!lcm_subscribe->good())
-	  return 1;
+    return 1;
   if(!lcm_publish->good())
-	  return 1;
+    return 1;
 
   if (lcm_publish != lcm_subscribe && cl_cfg.republish_incoming) {
-	  cl_cfg.republish_incoming = true;
+    cl_cfg.republish_incoming = true;
   }else{
-	  // Over-rule if requesting republish
-	  cl_cfg.republish_incoming = false;
+    // Over-rule if requesting republish
+    cl_cfg.republish_incoming = false;
   }
 
 
 
   // launch a stand-alone app to do leg odometry
   App app(lcm_subscribe, lcm_publish, cl_cfg);
-
   while(0 == lcm_subscribe->handle());
   return 0;
 }

@@ -74,7 +74,7 @@ public:
    */
   LCMFrontEnd(const std::string & in_log_fname, const std::string & out_log_fname = "",
       const std::string & param_fname = "", const std::string & param_override_str = "",
-      const std::string & begin_timestamp = "0", int processing_rate = 1);
+      const std::string & begin_timestamp = "0", double processing_rate = 1.0);
   ~LCMFrontEnd();
 
   template<class lcmType, class SensorHandlerClass>

@@ -56,6 +56,8 @@ class ModelClient
     int keep_updated_;
     
     int8_t left_hand_, right_hand_;
+    
+    bool file_read_success_;
 };
 
 #endif

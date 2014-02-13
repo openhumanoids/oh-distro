@@ -39,6 +39,9 @@ struct CommandLineConfig
     int batch_size;
     std::string lidar_channel;
     bool mono;
+    bool colorize;
+    double max_range;
+    double min_range;
 };
 
 
@@ -121,7 +124,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose - Laser",5,reset) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60001,"Cloud - Laser"         ,1,reset, 60000,0, {0.0, 0.0, 1.0} ));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60010,"Pose - Null",5,reset) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60011,"Cloud - Height"         ,1,reset, 60010,0, {0.0, 0.0, 1.0} ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60011,"Cloud (scan-by-scan) - Null"         ,1,reset, 60010,0, {0.0, 0.0, 1.0} ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60012,"Cloud (full sweep) - Null"         ,1,1, 60010,0, {0.0, 0.0, 1.0} ));
+  
   pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Pose - Camera",5,reset) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud - Camera"           ,1,reset, 2000,1, { 1.0, 1.0, 0.0} ));  
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2002,"Cloud - Camera Color"           ,1,reset, 2000,0, { 1.0, 1.0, 0.0} ));  
@@ -213,22 +218,23 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_laser (new pcl::PointCloud<pcl::PointXYZRGB> ());
   
   // 1. Convert scan into simple XY point cloud:  
-  double minRange =0.0; // consider everything - don't remove any points
-  double maxRange = 30.0;
   double validBeamAngles[] ={-10,10}; 
   convertLidar(msg->ranges, msg->nranges, msg->rad0,
-      msg->radstep, scan_laser, minRange, maxRange,
+      msg->radstep, scan_laser, cl_cfg_.min_range, cl_cfg_.max_range,
       validBeamAngles[0], validBeamAngles[1]);  
   
   // Plot original scan from lidar frame:
   // pc_vis_->ptcld_to_lcm_from_list(60001, *scan_laser, printf_counter_, printf_counter_);  
 
-  // 3. Colorize, camera by camera - with head camera last
-  for (size_t cam_id=0; cam_id< cams_.size()  ;cam_id++){
-    if (cams_[cam_id]->img_received_){
-      colorizeLidar(msg->utime, scan_laser, cam_id);
-    }else{
-      // cout << "No "<< cams_[cam_id]->channel_ <<" image yet\n"; 
+  
+  if (cl_cfg_.colorize){
+    // 3. Colorize, camera by camera - with head camera last
+    for (size_t cam_id=0; cam_id< cams_.size()  ;cam_id++){
+      if (cams_[cam_id]->img_received_){
+        colorizeLidar(msg->utime, scan_laser, cam_id);
+      }else{
+        // cout << "No "<< cams_[cam_id]->channel_ <<" image yet\n"; 
+      }
     }
   }
   
@@ -248,57 +254,56 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
       scan_to_local_f.translation(), Eigen::Quaternionf(scan_to_local_f.rotation())  );    
   Isometry3dTime null_T = Isometry3dTime(printf_counter_, Eigen::Isometry3d::Identity()  );
   pc_vis_->pose_to_lcm_from_list(60010, null_T);
-  
+  pc_vis_->ptcld_to_lcm_from_list(60011, *scan_local, printf_counter_, printf_counter_);    
+
   
   *combined_cloud_ += *scan_local;
   
-  
-  // Colorize relative to z=0;
-  for (int i = 0; i < scan_local->points.size() ; i++) {
-    float z = scan_local->points[i].z*10 ;
-    float rgb[3];
-    jet_rgb(z,rgb);
-    scan_local->points[i].r = rgb[0]*255;
-    scan_local->points[i].g = rgb[1]*255;
-    scan_local->points[i].b = rgb[2]*255;
-  }  
-  
-  pc_vis_->ptcld_to_lcm_from_list(60011, *scan_local, printf_counter_, printf_counter_);    
-  
-  
-  if (printf_counter_% cl_cfg_.batch_size ==0){
+  printf_counter_++;  
+  if (printf_counter_ > cl_cfg_.batch_size){
     
+    pc_vis_->ptcld_to_lcm_from_list(60012, *combined_cloud_, printf_counter_, printf_counter_);    
     
     pcl::PCDWriter writer;
     stringstream ss2;
     ss2 << "/tmp/sweep_cloud_"  << msg->utime << ".pcd";
     writer.write (ss2.str(), *combined_cloud_, true); // binary =true
     cout << "finished writing "<< combined_cloud_->points.size() <<" points to:\n" << ss2.str() <<"\n";
-    combined_cloud_->points.empty();
     
+    std::cout << "Writing ptcldToOctomapLogFile\n";
+    pc_vis_->ptcldToOctomapLogFile(*combined_cloud_, "/home/mfallon/Desktop/test.octolog");
+    writer.write ("/home/mfallon/Desktop/test.pcd", *combined_cloud_, true); // binary =true
+    
+    combined_cloud_->points.empty();
     cout << "Filtering: " <<  " "  << msg->utime << "\n";
     //  vs::reset_collections_t reset;
     //  lcm_->publish("RESET_COLLECTIONS", &reset);    
     printf_counter_=0;
   }
-  printf_counter_++;
+
 }
 
 
 int main( int argc, char** argv ){
   CommandLineConfig cl_cfg;
-  cl_cfg.batch_size =200;
+  cl_cfg.batch_size =500;
   cl_cfg.lidar_channel = "SCAN";
   cl_cfg.mono = false;
+  cl_cfg.colorize = false;
+  cl_cfg.min_range = 0.0; // consider everything - don't remove any points
+  cl_cfg.max_range = 30.0;
   
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg.lidar_channel, "l", "lidar_channel","lidar_channel");
-  opt.add( cl_cfg.batch_size, "s", "size","Batch Size");
+  opt.add( cl_cfg.batch_size, "b", "batch_size","Size of the batch of scans");
   opt.add( cl_cfg.mono, "m", "mono","Use the Left Monocular Camera Channel");
+  opt.add( cl_cfg.colorize, "c", "colorize","Use Cameras to Colorize the lidar");
+  opt.add( cl_cfg.min_range, "s", "min_range","Min Range to use");
   opt.parse();
   std::cout << "lidar_channel: " << cl_cfg.lidar_channel << "\n"; 
   std::cout << "size: " << cl_cfg.batch_size<< "\n"; 
   std::cout << "mono: " << cl_cfg.mono<< " (ie CAMERA_LEFT)\n"; 
+  std::cout << "colorize: " << cl_cfg.colorize<< "\n"; 
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){

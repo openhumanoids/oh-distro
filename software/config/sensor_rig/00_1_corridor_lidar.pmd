@@ -1,0 +1,38 @@
+group "0.development" {
+    cmd "pserver" {
+        exec = "bot-param-server 00_1_corridor_lidar.cfg";
+        host = "localhost";
+    }
+    cmd "octomap" {
+        exec = "octomap-server  /media/bay_drive/data/other/sensor_rig/octomaps/stairarea/icra_octomap/icra_octomap.bt";
+        host = "localhost";
+    }
+    cmd "est" {
+        exec = "se-fusion  -L /media/bay_drive/data/other/sensor_rig/2012-10-19-rig-holodeck-stair/v2_openni/lcmlog-2012-10-19.02 -P sensor_rig/00_1_corridor_lidar.cfg   -t 1350671827009443";
+        host = "localhost";
+    }
+    cmd "vis" {
+        exec = "drc-viewer -a";
+        host = "localhost";
+    }
+}
+group "0.testing" {
+    cmd "est-live" {
+        exec = "se-fusion  -P sensor_rig/00_1_corridor_lidar.cfg   -t 1350671827009443";
+        host = "localhost";
+    }
+    cmd "logplayer" {
+        exec = "lcm-logplayer-gui /media/bay_drive/data/other/sensor_rig/2012-10-19-rig-holodeck-stair/v2_openni/lcmlog-2012-10-19.02 -p";
+        host = "localhost";
+    }
+}
+
+script "run" { 
+    start cmd "pserver";
+    start cmd "vis";
+    wait ms 2000;
+    start cmd "octomap";
+    wait ms 2000;
+    start cmd "est";
+}
+

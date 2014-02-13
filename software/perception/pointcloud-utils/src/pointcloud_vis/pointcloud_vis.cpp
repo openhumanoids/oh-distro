@@ -80,6 +80,48 @@ void pointcloud_vis::text_collection_to_lcm(int text_collection_id,
 }
 
 
+void pointcloud_vis::link_to_lcm(link_cfg lcfg, link_data ldata){
+
+  vs_link_collection_t lcolls;
+  lcolls.id = lcfg.id;
+  lcolls.name =  (char*) lcfg.name.c_str();
+  lcolls.type = lcfg.type;
+  lcolls.reset = lcfg.reset; // true will delete them from the viewer
+  lcolls.nlinks= 1;
+  
+  vs_link_t links[lcolls.nlinks];
+  links[0].id = (int64_t) ldata.id;
+  links[0].collection1 = (int32_t) ldata.collection1;
+  links[0].id1 = (int64_t) ldata.id1;
+  links[0].collection2 = (int32_t) ldata.collection2;
+  links[0].id2 = (int64_t) ldata.id2;
+  lcolls.links = links;
+  vs_link_collection_t_publish(publish_lcm_, "LINK_COLLECTION", &lcolls);  
+}
+
+
+void pointcloud_vis::link_collection_to_lcm(link_cfg lcfg, std::vector<link_data> ldata){
+
+  vs_link_collection_t lcolls;
+  lcolls.id = lcfg.id;
+  lcolls.name =  (char*) lcfg.name.c_str();
+  lcolls.type = lcfg.type;
+  lcolls.reset = lcfg.reset; // true will delete them from the viewer
+  lcolls.nlinks= ldata.size();
+  vs_link_t links[lcolls.nlinks];
+  for (int i=0;i< lcolls.nlinks;i++){
+    links[i].id = (int64_t) ldata[i].id;
+    links[i].collection1 = (int32_t) ldata[i].collection1;
+    links[i].id1 = (int64_t) ldata[i].id1;
+    links[i].collection2 = (int32_t) ldata[i].collection2;
+    links[i].id2 = (int64_t) ldata[i].id2;
+  }
+  lcolls.links = links;
+  vs_link_collection_t_publish(publish_lcm_, "LINK_COLLECTION", &lcolls);  
+}
+
+
+
 void pointcloud_vis::pose_collection_to_lcm_from_list(int id, std::vector<Isometry3dTime> & posesT){
  for (size_t i=0; i < obj_cfg_list.size() ; i++){
    if (id == obj_cfg_list[i].id ){
@@ -502,96 +544,28 @@ bool pointcloud_vis::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::Polygon
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-void pointcloud_vis::pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud){
-   
-  vs_point3d_list_collection_t plist_coll;
-  plist_coll.id = ptcoll_cfg.id;
-  plist_coll.name =(char*)   ptcoll_cfg.name.c_str();
-  plist_coll.type =ptcoll_cfg.type; // collection of points
-  plist_coll.reset = ptcoll_cfg.reset;
-  plist_coll.nlists = 1; // number of seperate sets of points
-  vs_point3d_list_t plist[plist_coll.nlists];
+void pointcloud_vis::ptcldToOctomapLogFile(pcl::PointCloud<pcl::PointXYZRGB> &cloud,
+            std::string filename){
+  int npts = cloud.points.size();
   
-  // loop here for many lists
-  vs_point3d_list_t* this_plist = &(plist[0]);
-  // 3.0: header
-  this_plist->id =ptcoll_cfg.point_lists_id; //bot_timestamp_now();
-  this_plist->collection = ptcoll_cfg.collection;
-  this_plist->element_id = ptcoll_cfg.element_id;
-  // 3.1: points/entries (rename) 
-  vs_point3d_t* points = new vs_point3d_t[ptcoll_cfg.npoints];
-  this_plist->npoints = ptcoll_cfg.npoints;
-  // 3.2: colors:
-  vs_color_t* colors = new vs_color_t[ptcoll_cfg.npoints];
-  //points->colors = NULL;
-  this_plist->ncolors = ptcoll_cfg.npoints;
-  // 3.3: normals:
-  this_plist->nnormals = 0;
-  this_plist->normals = NULL;   
-  // 3.4: point ids:
-  this_plist->npointids = ptcoll_cfg.npoints;
-  int64_t* pointsids= new int64_t[ptcoll_cfg.npoints];
+  std::ofstream outputfile;
+  outputfile.open ( filename.c_str() );
+  outputfile << "NODE 0 0 0 0 0 0\n";
+  for(int j=0; j<npts; j++) {  //Nransac
+    outputfile << cloud.points[j].x << " " << cloud.points[j].y << " " << cloud.points[j].z << "\n";
+  }    
+  outputfile.close();  
   
-  float rgba[4];
-  for(int j=0; j<ptcoll_cfg.npoints; j++) {  //Nransac
-      if (ptcoll_cfg.rgba[0] <-0.5){ // if rgba value is negative use it
-	// PARTICAL FIX: now using .r.g.b values
-	//int rgba_one = *reinterpret_cast<int*>(&cloud.points[j].rgba);
-	//rgba[3] =((float) ((rgba_one >> 24) & 0xff))/255.0;
-	//rgba[2] =((float) ((rgba_one >> 16) & 0xff))/255.0;
-	//rgba[1] =((float) ((rgba_one >> 8) & 0xff))/255.0;
-	//rgba[0] =((float) (rgba_one & 0xff) )/255.0;      
-	
-	rgba[2] = cloud.points[j].b/255.0;
-	rgba[1] = cloud.points[j].g/255.0;
-	rgba[0] = cloud.points[j].r/255.0;
-      }else{ // use the rgba value
-	//rgba[3] = ptcoll_cfg.rgba[3];
-	rgba[2] = ptcoll_cfg.rgba[2];
-	rgba[1] = ptcoll_cfg.rgba[1];
-	rgba[0] = ptcoll_cfg.rgba[0];
-	
-      }
-      
-      colors[j].r =  rgba[0]; // points_collection values range 0-1
-      colors[j].g =  rgba[1];
-      colors[j].b = rgba[2];
-      points[j].x = cloud.points[j].x;
-      points[j].y = cloud.points[j].y;
-      points[j].z = cloud.points[j].z;
-      pointsids[j] = ptcoll_cfg.element_id+j; //bot_timestamp_now();
-  }   
- 
-  this_plist->colors = colors;
-  this_plist->points = points;
-  this_plist->pointids = pointsids;
-  plist_coll.point_lists = plist;
-  vs_point3d_list_collection_t_publish(publish_lcm_,"POINTS_COLLECTION",&plist_coll);  
-  
-  
-  delete pointsids;
-  delete colors;
-  delete points;
 }
-*/
+
+
+
+
+
+
+
+
+
 
 //////////////////////////////////////// Older Code - not put into the class yet
 //from hordur:
@@ -645,31 +619,6 @@ void read_poses_csv(std::string poses_files, std::vector<Isometry3dTime>& poses)
   }    
 }
 
-
-
-/*bool ObjU_to_lcm(lcm_t *lcm, Objq_coll_cfg objq_coll_cfg,vector<ObjQ> objq_coll){
-    vs_obj_collection_t objs;
-    objs.id = objq_coll_cfg.id ; // was: this_id;
-    objs.name = (char*)   objq_coll_cfg.name.c_str();
-    objs.type = objq_coll_cfg.type;
-    objs.reset = objq_coll_cfg.reset;
-    objs.nobjs = objq_coll_cfg.nobjs;
-    
-    vs_obj_t all_objs[objq_coll_cfg.nobjs];
-    for (int i = 0; i < objq_coll_cfg.nobjs; i++) {
-        all_objs[i].id = objq_coll[i].utime;
-        all_objs[i].x =objq_coll[i].p.trans_vec[0];
-        all_objs[i].y =objq_coll[i].p.trans_vec[1];
-        all_objs[i].z =objq_coll[i].p.trans_vec[2];
-	double temp_rpy[3];
-	bot_quat_to_roll_pitch_yaw(objq_coll[i].p.rot_quat,temp_rpy);
-        all_objs[i].yaw =temp_rpy[2];
-        all_objs[i].pitch = temp_rpy[1];
-        all_objs[i].roll = temp_rpy[0];
-    }
-    objs.objs = all_objs;
-    vs_obj_collection_t_publish(lcm, "OBJ_COLLECTION", &objs);  
-}*/
 
 void savePLYFile(pcl::PolygonMesh::Ptr model,string fname){
   pcl::PointCloud<pcl::PointXYZRGB> bigcloud;  

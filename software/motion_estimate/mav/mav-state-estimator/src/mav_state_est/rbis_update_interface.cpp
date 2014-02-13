@@ -32,6 +32,8 @@ void RBISIMUProcessStep::updateFilter(const RBIS & prior_state, const RBIM & pri
   posterior_state = prior_state;
   posterior_covariance = prior_cov;
 
+  // mfallon: only called when ins data flows
+  // i think this is only called for IMU
   bot_tictoc("insUpdateState");
   insUpdateState(gyro, accelerometer, dt, posterior_state);
   insUpdateCovariance(q_gyro, q_accel, q_gyro_bias, q_accel_bias, prior_state, posterior_covariance, dt);
@@ -53,10 +55,35 @@ void RBISIndexedMeasurement::updateFilter(const RBIS & prior_state, const RBIM &
 {
   RBIS dstate;
   RBIM dcov;
+  
+  bool verbose= false;
+  bool verbose_cov = false;
+  if (verbose){
+    std::cout << "mfallon a\n";
+    std::cout << " meas: " << measurement.transpose() << "\n";
+    std::cout << " mcov: " << measurement_cov << "\n";
+    std::cout << "index: " << index.transpose() << "\n";
+    std::cout << "prior: " << prior_state << "\n";
+    if (verbose_cov) std::cout << "pcov : " << prior_cov << "\n";
+  }
+  
   double current_loglikelihood = indexedMeasurement(measurement, measurement_cov, index, prior_state, prior_cov, dstate,
       dcov);
+  
+  if (verbose){
+    std::cout << "dstat: " << dstate <<"\n";
+    if (verbose_cov) std::cout << " dcov: " << dcov <<"\n";
+    std::cout << dstate.position() << " pos\n";
+  }
+  
   rbisApplyDelta(prior_state, prior_cov, dstate, dcov, posterior_state, posterior_covariance);
-
+  
+  if (verbose){
+    std::cout << " post: " << posterior_state <<"\n";
+    if (verbose_cov) std::cout << "ptcov: " << posterior_covariance <<"\n";
+    std::cout << "mfallon b\n";
+  }
+  
   loglikelihood = prior_loglikelihood + current_loglikelihood;
   //    eigen_dump(prior_state);
   //    eigen_dump(prior_cov);
