@@ -23,8 +23,8 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
 
   leg_odo_common_ = new LegOdoCommon(lcm_recv, lcm_pub, param);
   
+  lcm_recv->subscribe("POSE_BDI",&LegOdoHandler::poseBDIHandler,this);
   
-  // 
   // Only republish if the lcm objects are different (same logic as for main app)
   republish_incoming_ = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.republish_incoming");  
   if (lcm_pub != lcm_recv && republish_incoming_) {
@@ -32,15 +32,19 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   }else{
     republish_incoming_ = false;
   }
-  
-  // Arbitrary Subscriptions:
   if (republish_incoming_){
     std::cout << "Will republish a variety of channels\n";
-    //lcm_recv->subscribe("WEBCAM",&LegOdoHandler::republishHandler,this);  
     
     lcm_recv->subscribe("VICON_BODY|VICON_FRONTPLATE",&LegOdoHandler::viconHandler,this);
   }else{
     std::cout << "Will not republish other data\n";
+  }
+
+  // Arbitrary Subscriptions:
+  bool republish_cameras = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.republish_cameras");    
+  if (lcm_pub != lcm_recv && republish_cameras) {
+    std::cout << "Will republish camera data\n";
+    lcm_recv->subscribe("WEBCAM",&LegOdoHandler::republishHandler,this);  
   }
  
   
@@ -52,45 +56,65 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   local_max_count_ = 10;
   local_counter_ = 0;
   local_prev_utime_=0;
+  
+  // The most recent estimate of pose-bdi. Assumed to be always current. only used for gravity slaved leg odom:
+  // TODO: query our own leg odom orientation for this:
+  world_to_body_bdi_.setIdentity();
+  prev_bdi_utime_ = -1;
+  body_bdi_init_ = false;
+  
+  JointUtils* joint_utils = new JointUtils();
+  joint_names_ = joint_utils->atlas_joint_names;
+  std::cout << joint_names_.size() << " joint angles assumed\n";;
 }
 
-RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *msg)
-{
-  // std::cout << msg->utime << " leg utime top\n";
+void LegOdoHandler::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  world_to_body_bdi_full_.utime = msg->utime;
+  world_to_body_bdi_full_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  world_to_body_bdi_full_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  world_to_body_bdi_full_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  world_to_body_bdi_full_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  world_to_body_bdi_full_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );    
   
-  /// ... insert handling and special cases here.
+  
+  world_to_body_bdi_.setIdentity();
+  world_to_body_bdi_.translation()  << msg->pos[0], msg->pos[1] , msg->pos[2];
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->orientation[0], msg->orientation[1], 
+                                               msg->orientation[2], msg->orientation[3]);
+  world_to_body_bdi_.rotate(quat);
+  
+  prev_bdi_utime_ = msg->utime;
+  body_bdi_init_ = true;
+}
+
+RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *msg)
+{
+  if (!body_bdi_init_){
+    std::cout << "POSE_BDI not received yet, not integrating leg odometry =========================\n";
+    return NULL;    
+  }
+  
   bool verbose = false;
   if (verbose) std::cout << "LegOdoHandler: received EST_ROBOT_STATE msg\n";
 
   Eigen::Isometry3d delta_odo;
   int64_t utime, prev_utime;
   
-  // The changes below will eventually allow us
-  // to read directly from ATLAS_STATE and to publish EST_ROBOT_STATE
-  // This is unused if using the "basic mode":
+  // Disabling below will turn off all input of POSE_BDI to leg odom:
+  // which is unused if using the "basic_mode"
   if (1==1){
-    Eigen::Isometry3d world_to_body_bdi;
-    world_to_body_bdi.setIdentity();
-    world_to_body_bdi.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
-    Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
-                                               msg->pose.rotation.y, msg->pose.rotation.z);
-    world_to_body_bdi.rotate(quat);   
-    leg_odo_->setPoseBDI( world_to_body_bdi );
+    leg_odo_->setPoseBDI( world_to_body_bdi_ );
   }
-  
-  if (republish_incoming_){
-    // Don't publish then working live:
-    bot_core::pose_t bdipose = getRobotStatePoseAsBotPose(msg);
+  if (republish_incoming_){ // Don't publish when working live:
+    bot_core::pose_t bdipose = getPoseAsBotPose(world_to_body_bdi_, prev_bdi_utime_);
     lcm_pub->publish("POSE_BDI", &bdipose);
   }
   
   
-  ///////////////////////////////////////////////
-  
-  
+  // Do the Leg Odometry:
   leg_odo_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
-    
-  if (leg_odo_->updateOdometry(msg->joint_name, msg->joint_position,
+  
+  if (leg_odo_->updateOdometry(joint_names_, msg->joint_position,
                            msg->joint_velocity, msg->joint_effort, msg->utime)){
     leg_odo_->getDeltaLegOdometry(delta_odo, utime, prev_utime);
   } else {
@@ -114,8 +138,7 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *ms
       local_counter_=0;
       local_prev_utime_ = utime;
       
-      if (temp_prev_utime ==0){
-        // skip the first iteration
+      if (temp_prev_utime ==0){ // skip the first iteration
         return NULL; 
       }
       
@@ -149,10 +172,8 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::robot_state_t *ms
     msgT.rot_quat[2] = motion_R.y();
     msgT.rot_quat[3] = motion_R.z();  
 
-    // std::cout << utime << " leg utime bot\n";
     return leg_odo_common_->createMeasurement(msgT, utime, prev_utime);
-  }
-  
+  }  
 
 }
 

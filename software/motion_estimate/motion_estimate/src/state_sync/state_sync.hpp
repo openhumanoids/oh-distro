@@ -70,6 +70,7 @@ class state_sync{
     void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg);
     void rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg);
     void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
+    void poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg);
     void potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     void refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
@@ -81,17 +82,18 @@ class state_sync{
     Joints atlas_joints_;
     Joints left_hand_joints_;
     Joints right_hand_joints_;
-    PoseT pose_BDI_;
     Joints atlas_joints_out_;
 
+    PoseT pose_BDI_;
+    PoseT pose_MIT_;
+    
+    
     // Keep two different offset vectors, for clarity:
     std::vector<float> pot_joint_offsets_;
     std::vector<float> encoder_joint_offsets_;
     std::vector<float> max_encoder_wrap_angle_;
     std::vector<bool> use_encoder_;
 
-    // Returns false if Pose BDI is old or hasn't appeared yet
-    bool insertPoseBDI( drc::robot_state_t& msg);    
     void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
     void appendJoints(drc::robot_state_t& msg_out, Joints joints);
 };    

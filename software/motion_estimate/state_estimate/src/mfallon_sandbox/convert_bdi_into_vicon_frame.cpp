@@ -38,6 +38,8 @@ class PoseTransformer{
     boost::shared_ptr<lcm::LCM> lcm_;
 
     bool verbose_;
+    int64_t prev_utime_;
+    string base_string_;
 };
 
 PoseTransformer::PoseTransformer(boost::shared_ptr<lcm::LCM> &lcm_, int pose_counter_):
@@ -47,19 +49,35 @@ PoseTransformer::PoseTransformer(boost::shared_ptr<lcm::LCM> &lcm_, int pose_cou
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   if (pose_counter_==0){
-    pc_vis_->obj_cfg_list.push_back( obj_cfg(10000,"BDI at init",5,1) );
-    pc_vis_->obj_cfg_list.push_back( obj_cfg(10001,"BDI motion since init",5,1) );
-    pc_vis_->obj_cfg_list.push_back( obj_cfg(10002,"BDI (v)",5,1) );
+    base_string_ = "EST";
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10000,"EST at init",5,1) );
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10001,"EST motion since init",5,1) );
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10002,"EST (v)",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10003,"Vicon at init",5,1) );
-    pc_vis_->obj_cfg_list.push_back( obj_cfg(10004,"BDI (v all)",5,0) );
-    pc_vis_->pose_collection_reset(10004,"BDI (v all)");
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10004,"EST (v all)",5,0) );
+    // 10005 - link
+    pc_vis_->pose_collection_reset(10004,"EST (v all)");
+    pc_vis_->pose_collection_reset(10005,"EST (l)");    
   }else if (pose_counter_ ==1){
+    base_string_ = "MIT";
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10010,"MIT at init",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10011,"MIT motion since init",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10012,"MIT (v)",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10013,"Vicon at init",5,1) );
     pc_vis_->obj_cfg_list.push_back( obj_cfg(10014,"MIT (v all)",5,0) );
+    // 10015 - link
     pc_vis_->pose_collection_reset(10014,"MIT (v all)");    
+    pc_vis_->pose_collection_reset(10015,"MIT (v all)");    
+  }else if (pose_counter_ ==2){
+    base_string_ = "BDI";
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10020,"BDI at init",5,1) );
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10021,"BDI motion since init",5,1) );
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10022,"BDI (v)",5,1) );
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10023,"Vicon at init",5,1) );
+    pc_vis_->obj_cfg_list.push_back( obj_cfg(10024,"BDI (v all)",5,0) );
+    // 10025 - link
+    pc_vis_->pose_collection_reset(10024,"BDI (v all)"); 
+    pc_vis_->pose_collection_reset(10025,"BDI (l)");    
   }
   
   
@@ -67,6 +85,7 @@ PoseTransformer::PoseTransformer(boost::shared_ptr<lcm::LCM> &lcm_, int pose_cou
   world_to_estbody_init_ = false;
   world_tf_init_ = false;
   verbose_ = false;  
+  prev_utime_ = 0;
 }
 
 void PoseTransformer::doWork(Eigen::Isometry3d worldest_to_estbody, int64_t utime, int pose_counter){
@@ -99,6 +118,14 @@ void PoseTransformer::doWork(Eigen::Isometry3d worldest_to_estbody, int64_t utim
   Isometry3dTime worldvicon_to_estbody_T(utime, worldvicon_to_estbody);
   pc_vis_->pose_to_lcm_from_list(10002 + pose_counter*10, worldvicon_to_estbody_T); 
   pc_vis_->pose_to_lcm_from_list(10004 + pose_counter*10, worldvicon_to_estbody_T); 
+  
+  link_data* ldata_single= new link_data(utime, (10004 + pose_counter*10), prev_utime_, 10004 + pose_counter*10, utime);
+  link_cfg* lcfg = new link_cfg( (10005 + pose_counter*10), string(base_string_ + " (l)"), 0, false);
+  pc_vis_->link_to_lcm(*lcfg, *ldata_single); 
+  
+  
+  
+  prev_utime_ = utime;
 }
 
 
@@ -122,12 +149,15 @@ class App{
     bot::frames* frames_cpp_;
     BotFrames* frames_;
     
-    void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, 
+    void poseESTHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  bot_core::pose_t* msg);
     void poseMITHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  bot_core::pose_t* msg);
+    void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, 
+                           const std::string& channel, const  bot_core::pose_t* msg);
+    void processPose( const  bot_core::pose_t* msg, int pose_counter, std::string channel);
     
-    
+    /////////
     void viconPoseHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  bot_core::pose_t* msg);
     void viconHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -160,8 +190,9 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   
   //  frames_cpp_ = new bot::frames( lcm_);
 
+  lcm_->subscribe( "POSE_BODY" ,&App::poseESTHandler,this);
+  lcm_->subscribe( "POSE_MIT" ,&App::poseMITHandler,this);
   lcm_->subscribe( "POSE_BDI" ,&App::poseBDIHandler,this);
-  lcm_->subscribe( "POSE_BODY_ALT" ,&App::poseMITHandler,this);
 
   if (cl_cfg_.use_pose_vicon){
     lcm_->subscribe("POSE_VICON",&App::viconPoseHandler,this);  
@@ -172,27 +203,27 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   
   PoseTransformer pt0_(lcm_, 0);
   PoseTransformer pt1_(lcm_, 1);
+  PoseTransformer pt2_(lcm_, 2);
   pts_.push_back( pt0_ );  
   pts_.push_back( pt1_ );    
+  pts_.push_back( pt2_ );    
   
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(10022,"Vicon (v)",5,1) );
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(10023,"Vicon at init",5,1) );
-  pc_vis_->obj_cfg_list.push_back( obj_cfg(10024,"Vicon (v all)",5,0) );
-  pc_vis_->pose_collection_reset(10024,"Vicon (v all)");
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(10032,"Vicon (v)",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(10033,"Vicon at init",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(10034,"Vicon (v all)",5,0) );
+  pc_vis_->pose_collection_reset(10034,"Vicon (v all)");
+  // 10035 - link
   
   prev_vicon_utime =0;
 }
 
 
 
-
-void App::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  //std::cout << "i got mit mail\n";
-  
-  PoseTransformer* pt = &(pts_[1]);
+void App::processPose( const  bot_core::pose_t* msg, int pose_counter, std::string channel){
+  PoseTransformer* pt = &(pts_[pose_counter]);
 
   Eigen::Isometry3d worldest_to_estbody;
   worldest_to_estbody.setIdentity();
@@ -203,49 +234,33 @@ void App::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chan
 
 
   if (!pt->world_to_estbody_init_){
-    std::cout << "initialize mit\n";
+    std::cout << "initializing " << channel <<"\n";
     pt->world_to_estbody_init_ = true;
   }    
   
   if (pt->world_to_viconbody_init_  &&  pt->world_to_estbody_init_  ){
-    pt->doWork(worldest_to_estbody, msg->utime, 1);
+    pt->doWork(worldest_to_estbody, msg->utime, pose_counter);
   }else{
-    std::cout << "not initialized, quitting mit\n";
+    std::cout << "not initialized "<< channel <<", quitting\n";
   }
 }
 
 
+void App::poseESTHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  processPose(msg, 0, channel);
+}
+void App::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  processPose(msg, 1, channel);
+}
 void App::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  //std::cout << "i got mail\n";
-
-  PoseTransformer* pt = &(pts_[0]);
-  
-  Eigen::Isometry3d worldest_to_estbody;
-  worldest_to_estbody.setIdentity();
-  worldest_to_estbody.translation()  << msg->pos[0], msg->pos[1], msg->pos[2];
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->orientation[0], msg->orientation[1], 
-                                               msg->orientation[2], msg->orientation[3]);
-  worldest_to_estbody.rotate(quat); 
-
-  if (!pt->world_to_estbody_init_){
-    std::cout << "initialize bdi\n";
-    pt->world_to_estbody_init_ = true;
-  }  
-  
-  
-  if (pt->world_to_viconbody_init_  &&  pt->world_to_estbody_init_  ){
-    pt->doWork(worldest_to_estbody, msg->utime, 0);
-  }else{
-    std::cout << "not initialized, quitting\n";
-  }
+  processPose(msg, 2, channel);
 }
-
 
 void App::useVicon(Eigen::Isometry3d worldvicon_to_body_vicon, int64_t utime){
   if (prev_vicon_utime > utime){
     std::cout << "\n";
     std::cout << "out of order vicon detected, resetting\n";    
-    pc_vis_->pose_collection_reset(10024 ,"Unused String");
+    pc_vis_->pose_collection_reset(10034 ,"Unused String");
     for (size_t i=0; i < pts_.size() ; i++){
       PoseTransformer* pt = &(pts_[i]);
       pt->world_to_viconbody_init_ = false;
@@ -257,8 +272,12 @@ void App::useVicon(Eigen::Isometry3d worldvicon_to_body_vicon, int64_t utime){
   
   // Publish Vicon
   Isometry3dTime worldvicon_to_body_vicon_T(utime, worldvicon_to_body_vicon);
-  pc_vis_->pose_to_lcm_from_list(10022, worldvicon_to_body_vicon_T); 
-  pc_vis_->pose_to_lcm_from_list(10024, worldvicon_to_body_vicon_T);     
+  pc_vis_->pose_to_lcm_from_list(10032, worldvicon_to_body_vicon_T); 
+  pc_vis_->pose_to_lcm_from_list(10034, worldvicon_to_body_vicon_T);     
+  
+  link_data* ldata_single= new link_data(utime, 10034, prev_vicon_utime, 10034, utime);
+  link_cfg* lcfg = new link_cfg( 10035, "Vicon (l)", 0, false);
+  pc_vis_->link_to_lcm(*lcfg, *ldata_single);   
   
   for (size_t i=0; i < pts_.size() ; i++){
     PoseTransformer* pt = &(pts_[i]);
@@ -276,7 +295,6 @@ void App::useVicon(Eigen::Isometry3d worldvicon_to_body_vicon, int64_t utime){
 
 
 void App::viconPoseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-
   Eigen::Isometry3d worldvicon_to_body_vicon;
   worldvicon_to_body_vicon.setIdentity();
   worldvicon_to_body_vicon.translation()  << msg->pos[0], msg->pos[1] , msg->pos[2];

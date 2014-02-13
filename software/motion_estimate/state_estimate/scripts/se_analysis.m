@@ -8,18 +8,20 @@ bot_ = bot;
 %normals 86
 
 main_dir = '/home/mfallon/data/atlas/2014-01-21-vicon-walking/results/'
-%path = [main_dir '/2014-01-26-18-51' '/'];
-%path = [main_dir '2014-01-26-19-44' '/'];
-path = [main_dir '2014-01-26-22-14' '/'];
 
-logs = dir( [path '*mat'])
+%folder_path = [main_dir '2014-01-26-22-14-leg-odo-stand-alone' '/'];
+folder_path = [main_dir '2014-02-12-19-33-imu-leg-odo' '/'];
+folder_path = [main_dir '2014-02-12-19-50-imu-leg-odo-lidar' '/'];
+
+
+logs = dir( [folder_path '*mat'])
 
 
 settings.parse_async =0;
 settings.plot_async = 0;
 settings.parse_sync = 1;
 settings.plot_sync = 1;
-settings.save_raw_plots = 0;
+settings.save_raw_plots = 1;
 settings.do_sync_comparison=1;
 
 for i=1:size(logs,1)
@@ -27,22 +29,23 @@ for i=1:size(logs,1)
 end
 
 
+
 % all:
 %which_process= 1:size(logs,1)
 % most interesting ones:
-%which_process=[1,2,3,4,7,8,9,10,11]
-which_process=[2]
+which_process=[1,2,3,4,7,8,9,10,11]
+%which_process=[7]
 
 
 %%%%%%%%%%%%%%%% DO WORK %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for i = 1:size(which_process,2)
   disp(num2str(i))
-  summary(i) = file_analysis( [path, logs( which_process(i) ).name ], settings );
+  summary(i) = file_analysis( folder_path, logs( which_process(i) ).name , settings );
 end
 
 
 if (settings.do_sync_comparison)
-  figure
+  h=figure('Position', [1, 1, 1700, 1200]);
   for i = 1:size(which_process,2)
     a = [summary(i).b.xyz_drift  summary(i).m.xyz_drift ];
     b = [summary(i).b.xy_drift  summary(i).m.xy_drift ];
@@ -50,22 +53,36 @@ if (settings.do_sync_comparison)
     
     log_summary = [a;b;c];
     subplot(3,3,i); hold on; bar(log_summary,.75,'grouped')
+    set(gca,'fontSize',7)
+
     ylabel(num2str(summary(i).b.t, '%2.0f sec'))
-    title( logs(which_process(i) ).name  )
+    fname = logs(which_process(i) ).name;
+    title( fname(8:end-4)  )
     set(gca,'XTick',[1,2,3]);set(gca,'XTickLabel',{'XYZ drift','XY drift','Z drift'})
   end
   subplot(3,3,8)
   xlabel('BDI: Blue, MIT: Magenta | Drift in dimensions')
 end
-  
-function summary = file_analysis(log_filename,settings)
-load(log_filename);
+png_fname = [folder_path 'summary.png'];
+saveas( h, png_fname,'png');
+%system(
+
+function summary = file_analysis(folder_path,log_filename,settings)
+load([folder_path log_filename]);
 raw = [ 0*ones(size(POSE_VICON,1),1) , POSE_VICON ];
 raw = [raw; 1*ones(size(POSE_BDI,1),1) , POSE_BDI];
-raw = [raw; 2*ones(size(POSE_BODY_ALT,1),1) , POSE_BODY_ALT];
+raw = [raw; 2*ones(size(POSE_BODY,1),1) , POSE_BODY]; % usedto used POSE_BODY_ALT
 res = sortrows(raw, 2);
 % convert to mins from zero
 res(:,2) = (res(:,2) - res(1,2))*1E-6;
+
+clip_start =1;
+if (clip_start)
+  disp('Clipping first 15 seconds')
+  idx_keep = res(:,2) > 15;
+  res = res(idx_keep,:);
+  res(:,2) = res(:,2) - res(1,2); % rezero
+end
 
 
 %%%%% Parseing %%%%%%%%%%%%%%%%%%
@@ -76,21 +93,20 @@ if (settings.parse_sync)
   [s] = parse_sync(res);
 end
 
-keyboard
 
 %%%% Plotting  %%%%%%%%%%%%%%%%%%
 handles=[];
 if (settings.plot_async==1)
-  make_plots(a)
+  make_plots(a,log_filename)
 end
 if (settings.plot_sync==1)
-  handles_a=make_plots(s);
+  handles_a=make_plots(s,log_filename);
   handles = [handles;handles_a];
 end
 if (settings.save_raw_plots)
   % save plots to file:
   for j=1:size(handles,1)
-    png_fname = [log_filename(1:end-4) '-' num2str(j) '.png'];
+    png_fname = [folder_path log_filename(1:end-4) '-' num2str(j) '.png'];
     saveas( handles(j), png_fname,'png');
   end
   close all
@@ -106,7 +122,7 @@ if (settings.do_sync_comparison)
   s.m.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.m.rel_v.trans_vec(:,1:2) ).^2,2));
   s.b.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.b.rel_v.trans_vec(:,3) ).^2,2));
   s.m.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.m.rel_v.trans_vec(:,3) ).^2,2));
-  handles_b=make_plots_synced(s);
+  handles_b=make_plots_synced(s, log_filename);
   handles = [handles;handles_b];
   
   summary.b.xy_drift = s.b.xy_drift(end);
@@ -186,7 +202,7 @@ s.m=transform_est_to_vicon(s.v.init, s.m,0);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function handles= make_plots_synced(s)
+function handles= make_plots_synced(s,log_filename)
 handles=figure('Position', [1, 1, 1700, 900]);
 
 subplot(2,3,1); hold on
@@ -219,11 +235,14 @@ t_cum_dist = time_temp(2:end);
 subplot(2,3,5); hold on
 plot(t_cum_dist, cum_dist)
 title('Distance Travelled')
+xlabel(log_filename)
+
+drawnow
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot generic details - either sync or asyc
-function handles=make_plots(d)
+function handles=make_plots(d,log_filename)
 handles=figure('Position', [1, 1, 1700, 900]);
 %subplot(2,3,1)
 %hold on
@@ -256,6 +275,7 @@ plot(d.b.rel_v.trans_vec(:,1), d.b.rel_v.trans_vec(:,2),'b')
 plot(d.m.rel_v.trans_vec(:,1), d.m.rel_v.trans_vec(:,2),'m')
 axis equal
 title('aligned x and y')
+xlabel(log_filename)
 
 subplot(2,3,3)
 hold on

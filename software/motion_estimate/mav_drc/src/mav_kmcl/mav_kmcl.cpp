@@ -110,7 +110,7 @@ public:
     }
 
     if (front_end->isActive("vicon") || rbis_initializer->initializingWith("vicon")) {
-      vicon_handler = new ViconHandler(front_end->param);
+      vicon_handler = new ViconHandler(front_end->param, front_end->frames);
       front_end->addSensor("vicon", &MavStateEst::ViconHandler::processMessage, vicon_handler);
       rbis_initializer->addSensor("vicon", &MavStateEst::ViconHandler::processMessageInit, vicon_handler);
     }

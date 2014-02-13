@@ -1,3 +1,6 @@
+# added fro joint_utils vector assignment:
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
+
 file(GLOB hpp_files *.hpp)
 
 set(REQUIRED_LIBS mav-state-est 
@@ -14,7 +17,7 @@ add_library(mav-est-legodo SHARED
                 rbis_legodo_common.cpp)
 
 pods_use_pkg_config_packages(mav-est-legodo ${REQUIRED_LIBS} estimate
-    bot2-frames_cpp)
+    bot2-frames_cpp drc-utils)
 pods_install_libraries(mav-est-legodo)
 pods_install_pkg_config_file(mav-est-legodo
     CFLAGS

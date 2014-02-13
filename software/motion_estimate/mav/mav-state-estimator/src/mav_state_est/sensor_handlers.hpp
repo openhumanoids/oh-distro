@@ -14,7 +14,10 @@
 #include <lcmtypes/bot_core/rigid_transform_t.hpp>
 #include <lcmtypes/bot_core/pose_t.hpp>
 
+// Particular to Atlas:
 #include <lcmtypes/drc/atlas_raw_imu_batch_t.hpp>
+#include <estimate/imu_stream.hpp>
+#include <estimate/iir_notch.hpp>
 
 namespace MavStateEst {
 
@@ -36,7 +39,16 @@ protected:
   RBISUpdateInterface * processMessageAtlas(const drc::atlas_raw_imu_batch_t * msg);
   bool processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg, const std::map<std::string, bool> & sensors_initialized
       , const RBIS & default_state, const RBIM & default_cov, RBIS & init_state, RBIM & init_cov);
+  //////////// Members Particular to Atlas:
   double prev_utime_atlas; // cached previous time
+  IMUStream imu_data_;  
+  void doFilter(IMUPacket &raw);
+  // An cascade of 3 notch filters in xyz
+  IIRNotch notchfilter_x[3];
+  IIRNotch notchfilter_y[3];
+  IIRNotch notchfilter_z[3];  
+  bool atlas_filter;
+  ////////////
 
   // Common Initialization Function:
   bool processMessageInitCommon(const std::map<std::string, bool> & sensors_initialized
@@ -44,6 +56,7 @@ protected:
       RBIS & init_state, RBIM & init_cov,
       RBISIMUProcessStep * update, Eigen::Vector3d mag_vec);
 
+  
   BotTrans ins_to_body;
 
   double cov_accel;
@@ -81,7 +94,7 @@ public:
     MODE_POSITION, MODE_POSITION_ORIENT
   } ViconMode;
 
-  ViconHandler(BotParam * param);
+  ViconHandler(BotParam * param, BotFrames *frames);
   ViconHandler(BotParam * param, ViconMode vicon_mode);
   void init(BotParam * param);
   RBISUpdateInterface * processMessage(const bot_core::rigid_transform_t * msg);
@@ -90,6 +103,10 @@ public:
         RBIS & init_state, RBIM & init_cov);
 
 
+  // added mfallon, to allow a plate-to-body transform
+  BotTrans body_to_vicon;
+  bool apply_frame;
+  
   ViconMode mode;
   Eigen::VectorXi z_indices;
   Eigen::MatrixXd cov_vicon;

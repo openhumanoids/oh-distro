@@ -37,7 +37,32 @@ struct ptcld_cfg{
   // inline specification: http://live.boost.org/doc/libs/1_36_0/libs/assign/doc/index.html
 };
 
+// Actually the same contents as obj_cfg
+struct link_cfg{
+  link_cfg(int id, std::string name, int type, bool reset):
+    id(id), name(name), type(type), reset(reset) {}
+  link_cfg(){}
+  int id;
+  std::string name;
+  int type;
+  bool reset;
+};
 
+
+struct link_data{
+  link_data(int64_t id, 
+            int32_t collection1, int64_t id1,
+            int32_t collection2, int64_t id2):
+    id(id), collection1(collection1), id1(id1),
+    collection2(collection2), id2(id2){}
+  link_data(){}
+
+  int64_t id;
+  int32_t collection1;
+  int64_t id1;
+  int32_t collection2;
+  int64_t id2;
+};
 
 
 //

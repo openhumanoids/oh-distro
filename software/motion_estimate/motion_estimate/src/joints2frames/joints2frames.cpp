@@ -55,7 +55,8 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     std::cout << "Output signals will not limited in rate\n";  
   #else
     std::cout << "Output signals will be limited to these rates:\n";
-    pub_frequency_["POSE_BODY"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "body" ) );
+    // Removed and will now be published by state sync
+    //pub_frequency_["POSE_BODY"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "body" ) );
     pub_frequency_["BODY_TO_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
     //pub_frequency_["POSE_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
 
@@ -175,7 +176,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
                                                msg->pose.rotation.y, msg->pose.rotation.z);
   world_to_body.rotate(quat);    
-  publishPose(world_to_body, msg->utime, "POSE_BODY" );
+  // Removed and will now be published by State Sync:
+  //publishPose(world_to_body, msg->utime, "POSE_BODY" );
     
   // 1. Solve for Forward Kinematics:
   // call a routine that calculates the transforms the joint_state_t* msg.

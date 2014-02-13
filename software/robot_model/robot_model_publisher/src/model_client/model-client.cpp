@@ -107,15 +107,22 @@ ModelClient::ModelClient(lcm_t* lcm_, int keep_updated_):
 ModelClient::ModelClient(lcm_t* lcm_, std::string model_channel_, int keep_updated_):
     urdf_parsed_(false),lcm_(lcm_),
     model_channel_(model_channel_), keep_updated_(keep_updated_){
+      
+  file_read_success_ = false; // file wasn't read, book keeping
   doModelClient();  
 }
 
 ModelClient::ModelClient(std::string urdf_filename){
   // Received robot urdf string. Store it internally and get all available joints.
-  readURDFFromFile(urdf_filename);
-  std::cout<< "Read urdf_xml_string of robot [" 
-      << robot_name_ << "] from file, storing it internally as a param" << std::endl;
-  parseURDFString();  
+  file_read_success_ = readURDFFromFile(urdf_filename);
+  if (file_read_success_){
+    std::cout<< "Read urdf_xml_string of robot [" 
+        << robot_name_ << "] from file, storing it internally as a param" << std::endl;
+    parseURDFString();  
+  }else{
+    std::cout<< urdf_filename << " could not be read. exiting" << std::endl;
+    exit(-1);
+  }
 }
 
 

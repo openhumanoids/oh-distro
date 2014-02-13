@@ -9,9 +9,9 @@ close all
 %fvtool(b,a);
 
 % z-vector accel:
-%x =load('accel3.txt');
+x =load('accel3.txt');
 
-x =load('r_leg_kny_positions.txt');
+
 
 
 

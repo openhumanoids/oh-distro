@@ -1,4 +1,5 @@
-# create the kixie state estimation executable, and make it public
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
+
 add_executable(se-fusion mav_kmcl.cpp)
 pods_use_pkg_config_packages(se-fusion
     mav-state-est
