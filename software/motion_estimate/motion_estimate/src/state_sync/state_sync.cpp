@@ -405,6 +405,7 @@ bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
     return false;
   }
   
+  msg.utime = pose.utime;
   msg.pos[0] = pose.pos[0];
   msg.pos[1] = pose.pos[1];
   msg.pos[2] = pose.pos[2];
