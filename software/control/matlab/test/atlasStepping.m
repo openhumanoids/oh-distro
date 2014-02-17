@@ -169,7 +169,7 @@ udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.003;
+dt = 0.001;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -212,7 +212,7 @@ while tt<T+2
     pd = Kp*(qt-q) + Kd*(qdtraj_t-qd);
     qdddes = qddtraj.eval(tt) + pd;
     
-    u = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
+    [u,qdd] = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
     udes(joint_act_ind) = u(joint_act_ind);
     
     % fade in desired torques to avoid spikes at the start
@@ -220,7 +220,7 @@ while tt<T+2
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
     % compute desired velocity
-    qddes_state_frame = qdtraj_t + pd*dt;
+    qddes_state_frame = qdtraj_t + qdd*dt;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     

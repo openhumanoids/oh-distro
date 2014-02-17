@@ -46,7 +46,7 @@ classdef QPControlBlock < MIMODrakeSystem
       dt = 0.004;
     end
     
-    output_frame = r.getInputFrame();
+    output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
     obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
     obj = setInputFrame(obj,input_frame);
@@ -265,7 +265,7 @@ classdef QPControlBlock < MIMODrakeSystem
   
   methods
     
-  function y=mimoOutput(obj,t,~,varargin)
+  function [y,qdd]=mimoOutput(obj,t,~,varargin)
 %    out_tic = tic;
     ctrl_data = obj.controller_data.data;
     
@@ -652,7 +652,7 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi, ...
+      [y,Vdot,active_supports,qdd] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi, ...
           supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu, ...
           contact_sensor,contact_thresh,height,obj.include_angular_momentum);
     end

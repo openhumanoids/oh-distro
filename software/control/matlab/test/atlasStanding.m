@@ -30,7 +30,7 @@ Kd = 5;
 use_zmp = true;
 
 % random pose params for sys id tests
-use_random_traj = true; % if true, ignores chirp params
+use_random_traj = false; % if true, ignores chirp params
 num_random_pose = 5;
 pose_hold_time = 5; % sec
 pose_move_time = 10; % sec
@@ -89,7 +89,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.2;
+gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.1;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
@@ -259,7 +259,7 @@ udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.003;
+dt = 0.001;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -302,7 +302,7 @@ while tt<T+2
     pd = Kp*(qt-q) + Kd*(qdtraj_t-qd);
     qdddes = qddtraj.eval(tt) + pd;
     
-    u = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
+    [u,qdd] = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
     udes(joint_act_ind) = u(joint_act_ind);
     
     % fade in desired torques to avoid spikes at the start
@@ -310,7 +310,7 @@ while tt<T+2
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
     % compute desired velocity
-    qddes_state_frame = qdtraj_t + pd*dt;
+    qddes_state_frame = qdtraj_t + qdd*dt;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     

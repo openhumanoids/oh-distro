@@ -812,6 +812,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       }
   }
 
+  if (nlhs>3) {
+    plhs[3] = eigenToMatlab(qdd);
+  }
+
   if (model) {  // todo: return more info for fastQP
 
 		if (nlhs>3) {  // return model.Q (for unit testing)
