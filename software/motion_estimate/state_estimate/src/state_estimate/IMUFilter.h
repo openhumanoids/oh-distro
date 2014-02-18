@@ -42,6 +42,7 @@ private:
   drc::robot_state_t* _ERSMsg;
   drc::ins_update_request_t* _DFRequestMsg;
   bot_core::pose_t mPoseBodyMsg;
+  leg_odometry* _legOdo;
 
   Eigen::Vector3d* _filteredLegVel;
   int* _legKinStateClassification;
@@ -59,6 +60,7 @@ private:
   void setInerOdoStateContainerPtr(InertialOdometry::DynamicState* _stateptr);
   void setFilteredLegOdoVel(Eigen::Vector3d* _legodovel);
   void setLegStateClassification(int* ptr);
+  void setLegOdoPtr(leg_odometry* _lo);
 };
 
 

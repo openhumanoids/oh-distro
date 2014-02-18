@@ -32,7 +32,7 @@ set(srcs
 #SET(CMAKE_BUILD_TYPE Debug)
 
 add_library(StateEstimate  SHARED ${srcs})
-target_link_libraries(StateEstimate ${Boost_LIBRARIES} estimate)
+target_link_libraries(StateEstimate ${Boost_LIBRARIES} basiclegodo)
 pods_use_pkg_config_packages(StateEstimate ${required_packages})
 
 

@@ -87,12 +87,16 @@ void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState
 
   msg.utime = InerOdoEst.uts;
   
-  msg.pose.rotation.w = InerOdoEst.lQb.w();
-  msg.pose.rotation.x = InerOdoEst.lQb.x();
-  msg.pose.rotation.y = InerOdoEst.lQb.y();
-  msg.pose.rotation.z = InerOdoEst.lQb.z();
+  Eigen::Quaterniond outq;
+
+  outq = exmap(Eigen::Vector3d(0.,0.,-PI__*0.25), InerOdoEst.lQb);
+
+  msg.pose.rotation.w = outq.w();
+  msg.pose.rotation.x = outq.x();
+  msg.pose.rotation.y = outq.y();
+  msg.pose.rotation.z = outq.z();
   
-  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.V, msg.twist.linear_velocity);
+  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.V + (IMU_to_body.linear() * InerOdoEst.w_l).cross(IMU_to_body.translation()), msg.twist.linear_velocity);
   copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, msg.twist.angular_velocity);
   copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation(), msg.pose.translation);
   
@@ -181,7 +185,7 @@ void StateEstimate::stampLegOdoPoseUpdateRequestMsg(TwoLegs::TwoLegOdometry &_le
 
 }
 
-void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const int type, drc::ins_update_request_t &msg) {
+void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const Eigen::Quaterniond &refLegKinQ, const int type, drc::ins_update_request_t &msg) {
 
 	// Set defaults
 	copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referencePos_local);
@@ -192,6 +196,10 @@ void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vecto
 	msg.referenceQ_local.y = 0.;
 	msg.referenceQ_local.z = 0.;
 
+	Eigen::Vector3d E;
+	E = q2e_new(refLegKinQ);
+
+	msg.reference_wanderAzimHeading = E(2);
 
 	switch (type) {
 	case drc::ins_update_request_t::VEL_HEADING_LOCAL:
@@ -316,10 +324,19 @@ void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicStat
 	_msg.pos[1] = P_w(1);
 	_msg.pos[2] = P_w(2);
 
-	_msg.orientation[0] = InerOdoEst.lQb.w();
-	_msg.orientation[1] = InerOdoEst.lQb.x();
-	_msg.orientation[2] = InerOdoEst.lQb.y();
-	_msg.orientation[3] = InerOdoEst.lQb.z();
+	Eigen::Quaterniond outq;
+
+	outq = exmap(Eigen::Vector3d(0.,0.,-PI__*0.25), InerOdoEst.lQb);
+
+	_msg.orientation[0] = outq.w();
+	_msg.orientation[1] = outq.x();
+	_msg.orientation[2] = outq.y();
+	_msg.orientation[3] = outq.z();
+
+//	_msg.orientation[0] = InerOdoEst.lQb.w();
+//	_msg.orientation[1] = InerOdoEst.lQb.x();
+//	_msg.orientation[2] = InerOdoEst.lQb.y();
+//	_msg.orientation[3] = InerOdoEst.lQb.z();
 }
 
 

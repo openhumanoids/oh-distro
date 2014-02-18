@@ -31,7 +31,7 @@
 #include <drc_utils/joint_utils.hpp>
 //#include "atlas/AtlasJointNames.h"
 
-#include <estimate/LegOdoWrapper.hpp>
+#include <basiclegodo/LegOdoWrapper.hpp>
 #include <leg-odometry/Filter.hpp>
 
 #include <GL/gl.h>
