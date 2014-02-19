@@ -81,27 +81,97 @@ void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstima
   return;
 }
 
-void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst,
+void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &InerOdoEst,
 											const Eigen::Isometry3d &IMU_to_body,
-											drc::robot_state_t& msg) {
+											drc::robot_state_t& msg,
+											bot_core::pose_t &_msg,
+											Eigen::Isometry3d *_mArrowTransform,
+											const Eigen::Isometry3d &align) {
 
   msg.utime = InerOdoEst.uts;
   
-  Eigen::Quaterniond outq;
+  Eigen::Quaterniond outq, tmpq;
 
-  outq = exmap(Eigen::Vector3d(0.,0.,-PI__*0.25), InerOdoEst.lQb);
+//  outq = qprod(e2q(Eigen::Vector3d(0.,0.,PI__*0.25)), InerOdoEst.lQb);s
 
+
+
+  tmpq = qprod(e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), InerOdoEst.lQb);
+  outq = qprod(C2q(align.linear()), tmpq);
+  
   msg.pose.rotation.w = outq.w();
   msg.pose.rotation.x = outq.x();
   msg.pose.rotation.y = outq.y();
   msg.pose.rotation.z = outq.z();
-  
-  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.V + (IMU_to_body.linear() * InerOdoEst.w_l).cross(IMU_to_body.translation()), msg.twist.linear_velocity);
+
+  Eigen::Vector3d V_leverarm;
+  V_leverarm = IMU_to_body.linear() * InerOdoEst.V; //+ (InerOdoEst.w_l).cross(IMU_to_body.translation()); Compensate for radial components due to translation offset
+
+  copyDrcVec3D(V_leverarm, msg.twist.linear_velocity);
   copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, msg.twist.angular_velocity);
-  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation(), msg.pose.translation);
-  
+
+  Eigen::Vector3d positionoffset;
+  positionoffset << 1.09, 0.71, 0.76;
+
+  Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation() + positionoffset;
+
+  //copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation() + positionoffset, msg.pose.translation);
+  copyDrcVec3D(P_w, msg.pose.translation);
+
+  // Also do the POSE_BODY message
+  _msg.pos[0] = P_w(0);
+  _msg.pos[1] = P_w(1);
+  _msg.pos[2] = P_w(2);
+
+  _msg.orientation[0] = outq.w();
+  _msg.orientation[1] = outq.x();
+  _msg.orientation[2] = outq.y();
+  _msg.orientation[3] = outq.z();
+
+  _mArrowTransform->linear() = IMU_to_body.linear() * q2C(outq);
+  _mArrowTransform->translation() = P_w;
+
   return;
 }
+
+//void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst,
+//											 const Eigen::Isometry3d &IMU_to_body,
+//											 bot_core::pose_t &_msg,
+//											 Eigen::Isometry3d *_mArrowTransform) {
+//  _msg.utime = InerOdoEst.uts;
+//  Eigen::Vector3d positionoffset;
+//  positionoffset << 1.09, 0.71, 0.76;
+//
+//  Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation() + positionoffset;
+//
+//  _msg.pos[0] = P_w(0);
+//  _msg.pos[1] = P_w(1);
+//  _msg.pos[2] = P_w(2);
+//
+//  Eigen::Quaterniond outq,tmpq;
+//
+//  //	outq = exmap(Eigen::Vector3d(0.,0.,PI__*0.25), InerOdoEst.lQb);
+//  //	outq = qprod(e2q(Eigen::Vector3d(0.,0.,PI__*0.25)), InerOdoEst.lQb);
+//
+//  // quick test case alignment with BDI
+//  Eigen::Quaterniond align;
+//  align.w() = 0.9465690221651;
+//  align.x() = -0.00046656897757202387;
+//  align.y() = 0.002328;
+//  align.z() = 0.3224926292896271;
+//
+//  tmpq = qprod(e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), InerOdoEst.lQb);
+//  outq = qprod(align, tmpq);
+//
+//  _msg.orientation[0] = outq.w();
+//  _msg.orientation[1] = outq.x();
+//  _msg.orientation[2] = outq.y();
+//  _msg.orientation[3] = outq.z();
+//
+//  _mArrowTransform->linear() = IMU_to_body.linear() * q2C(outq);
+//  _mArrowTransform->translation() = P_w;
+//
+//}
 
 
 //void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot) {
@@ -313,31 +383,7 @@ void StateEstimate::detectIMUSampleTime(unsigned long long &prevImuPacketCount,
 	previous_Ts_imu = Ts_imu;
 }
 
-void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst,
-											 const Eigen::Isometry3d &IMU_to_body,
-											 bot_core::pose_t &_msg) {
-	_msg.utime = InerOdoEst.uts;
 
-	Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
-
-	_msg.pos[0] = P_w(0);
-	_msg.pos[1] = P_w(1);
-	_msg.pos[2] = P_w(2);
-
-	Eigen::Quaterniond outq;
-
-	outq = exmap(Eigen::Vector3d(0.,0.,-PI__*0.25), InerOdoEst.lQb);
-
-	_msg.orientation[0] = outq.w();
-	_msg.orientation[1] = outq.x();
-	_msg.orientation[2] = outq.y();
-	_msg.orientation[3] = outq.z();
-
-//	_msg.orientation[0] = InerOdoEst.lQb.w();
-//	_msg.orientation[1] = InerOdoEst.lQb.x();
-//	_msg.orientation[2] = InerOdoEst.lQb.y();
-//	_msg.orientation[3] = InerOdoEst.lQb.z();
-}
 
 
 

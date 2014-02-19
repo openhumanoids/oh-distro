@@ -51,7 +51,7 @@ namespace StateEstimate
 class StateEstimator : public ThreadLoop, public LegOdoWrapper
 {
 public:
-
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   StateEstimator(
     const StateEstimate::command_switches* _switches,
@@ -76,6 +76,8 @@ public:
   InertialOdometry::DynamicState* getInerOdoPtr();
   Eigen::Vector3d* getFilteredLegOdoVel();
   int* getLegStateClassificationPtr();
+  Eigen::Isometry3d* getVelArrowDrawTransform();
+  Eigen::Isometry3d* getAlignTransform();
 
 protected:
 
@@ -139,6 +141,8 @@ private:
 
   lcm_t* lcm;
   bot_lcmgl_t* lcmgl_;
+  Eigen::Isometry3d velArrowTransform;
+  Eigen::Isometry3d align;
 
 
   // ======== SERVICE ROUTINES ===========

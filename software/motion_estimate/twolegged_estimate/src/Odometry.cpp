@@ -309,6 +309,10 @@ namespace InertialOdometry {
 	return IMU_to_body;
   }
 
+  void Odometry::setHeading(const double &psi) {
+	orc.setYaw(psi);
+  }
+
 }
 
 

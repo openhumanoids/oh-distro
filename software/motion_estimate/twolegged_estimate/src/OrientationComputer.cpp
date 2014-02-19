@@ -135,6 +135,13 @@ namespace InertialOdometry {
 		return ret;
 	}
 
+	void OrientationComputer::setYaw(const double &yaw) {
+	  Eigen::Vector3d rpy;
 
+	  rpy = q2e_new(lQb);
+
+	  rpy[2] = yaw;
+	  lQb = e2q(rpy);
+	}
 
 }

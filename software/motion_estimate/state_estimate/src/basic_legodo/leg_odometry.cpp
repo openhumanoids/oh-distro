@@ -139,6 +139,7 @@ bool leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
     
   }
 
+  return false;
 }
 
 bool leg_odometry::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
@@ -228,6 +229,8 @@ bool leg_odometry::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_
       std::cout << "initialized but unknown update: " << contact_status << "\n";
     }
   }
+
+  return false;
 }
 
 bool leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
@@ -376,6 +379,7 @@ bool leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
     }
     
   }  
+  return false;
 }
 
 bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime){

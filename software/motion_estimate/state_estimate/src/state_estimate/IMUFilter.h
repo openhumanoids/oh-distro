@@ -21,6 +21,7 @@ namespace StateEstimate
 class IMUFilter
 {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   IMUFilter(const std::string &ERSChannel);
   ~IMUFilter();
@@ -43,6 +44,7 @@ private:
   drc::ins_update_request_t* _DFRequestMsg;
   bot_core::pose_t mPoseBodyMsg;
   leg_odometry* _legOdo;
+  Eigen::Isometry3d* _VelArrowDrawTrans;
 
   Eigen::Vector3d* _filteredLegVel;
   int* _legKinStateClassification;
@@ -54,6 +56,8 @@ private:
   bool uninitialized;
   int initindex;
 
+  Eigen::Isometry3d* _align;
+
   void setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr);
   void setERSMsg(drc::robot_state_t* _msg);
   void setDataFusionReqMsg(drc::ins_update_request_t* _msg);
@@ -61,6 +65,8 @@ private:
   void setFilteredLegOdoVel(Eigen::Vector3d* _legodovel);
   void setLegStateClassification(int* ptr);
   void setLegOdoPtr(leg_odometry* _lo);
+  void setVelArrowTransform(Eigen::Isometry3d* _ptr);
+  void setAlignTransform(Eigen::Isometry3d* _ptr);
 };
 
 

@@ -5,8 +5,7 @@ function DFRESULTS = dataFusionHandler()
 
 clc
 
-% This is temporary
-iterations = 10000;
+
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
@@ -34,12 +33,14 @@ dfSys.posterior.x = zeros(15,1);
 dfSys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
 if (DataLogging == 1)
-    DFRESULTS.STATEX = zeros(iterations,15);
-    DFRESULTS.STATECOV = zeros(iterations,15);
-    DFRESULTS.poses = [];
-    DFRESULTS.REQMSGS = [];
-    DFRESULTS.REQMSGS = initDFReqMsgData(iterations, DFRESULTS.REQMSGS);
-    DFRESULTS.updatePackets = []; % temporary logging
+  % This is temporary
+  iterations = 10000;
+  DFRESULTS.STATEX = zeros(iterations,15);
+  DFRESULTS.STATECOV = zeros(iterations,15);
+  DFRESULTS.poses = [];
+  DFRESULTS.REQMSGS = [];
+  DFRESULTS.REQMSGS = initDFReqMsgData(iterations, DFRESULTS.REQMSGS);
+  DFRESULTS.updatePackets = []; % temporary logging
 end
 
 index = 0;

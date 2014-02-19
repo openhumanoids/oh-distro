@@ -13,6 +13,7 @@ StateEstimate::IMUFilter::IMUFilter(const std::string &ERSChannel) : ERSMsgChann
 
   uninitialized = true;
   initindex = 0;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -56,9 +57,9 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 	_inert_odo->exitCritical();
 
 	if (!uninitialized) {
-		stampInertialPoseERSMsg(*_InerOdoState, _inert_odo->getIMU2Body(), *_ERSMsg);
+		stampInertialPoseMsgs(*_InerOdoState, _inert_odo->getIMU2Body(), *_ERSMsg, mPoseBodyMsg, _VelArrowDrawTrans, *_align);
 		mLCM->publish(ERSMsgChannelName, _ERSMsg);
-		stampInertialPoseBodyMsg(*_InerOdoState, _inert_odo->getIMU2Body(), mPoseBodyMsg);
+		//stampInertialPoseBodyMsg(*_InerOdoState, _inert_odo->getIMU2Body(), mPoseBodyMsg, _VelArrowDrawTrans);
 		mLCM->publish("POSE_BODY", &mPoseBodyMsg);
 
 		// EKF measurement update rate was set to 90Hz
@@ -80,6 +81,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 			//stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
 			stampEKFReferenceMeasurementUpdateRequest(refVelocity, Eigen::Quaterniond(legKin.linear()), updateType, *_DFRequestMsg);
 			mLCM->publish("SE_MATLAB_DATAFUSION_REQ", _DFRequestMsg);
+			//std::cout << "YAW NOW IS: " << q2e_new(_InerOdoState->lQb)[2] << std::endl;
 		}
 
 	}
@@ -96,6 +98,8 @@ void StateEstimate::IMUFilter::setupEstimatorSharedMemory(StateEstimate::StateEs
   setFilteredLegOdoVel( estimator.getFilteredLegOdoVel() );
   setLegStateClassification(estimator.getLegStateClassificationPtr() );
   setLegOdoPtr(estimator.getLegOdoPtr() );
+  setVelArrowTransform(estimator.getVelArrowDrawTransform() );
+  setAlignTransform(estimator.getAlignTransform());
 }
 
 void StateEstimate::IMUFilter::setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr) {
@@ -130,3 +134,10 @@ void StateEstimate::IMUFilter::setLegOdoPtr(leg_odometry* _lo) {
   _legOdo = _lo;
 }
 
+void StateEstimate::IMUFilter::setVelArrowTransform(Eigen::Isometry3d* _ptr) {
+  _VelArrowDrawTrans = _ptr;
+}
+
+void StateEstimate::IMUFilter::setAlignTransform(Eigen::Isometry3d* _ptr) {
+  _align = _ptr;
+}

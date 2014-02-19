@@ -528,3 +528,10 @@ float leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vec
   previous_body_to_r_foot_ = body_to_r_foot;
   return estimate_status;
 }
+
+
+Eigen::Isometry3d leg_odometry::getKinematicsTransform() {
+
+  std::cout << "leg_odometry::getKinematicsTransform -- work in progress" << std::endl;
+  return Eigen::Isometry3d();
+}
