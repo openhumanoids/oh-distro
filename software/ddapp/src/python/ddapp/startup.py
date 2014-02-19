@@ -16,6 +16,7 @@ from ddapp import ik
 from ddapp import ikeditor
 from ddapp import objectmodel as om
 from ddapp import spreadsheet
+from ddapp import transformUtils
 from ddapp import tdx
 from ddapp import perception
 from ddapp import segmentation
@@ -144,7 +145,7 @@ if usePerception:
 
 
     mitRobotDir = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot')
-    urdfFile = os.path.join(mitRobotDir, 'model_LI_RR.urdf')
+    urdfFile = os.path.join(mitRobotDir, 'model_LI_RI.urdf')
 
     robotStateModel = app.loadRobotModelFromFile(urdfFile)
 
@@ -242,7 +243,8 @@ if usePlanning:
     obj.addToView(view)
     obj.setProperty('Visible', False)
     obj.setProperty('Name', 'robot model')
-    obj.setProperty('Color', QtGui.QColor(255, 253, 213))
+    #obj.setProperty('Color', QtGui.QColor(255, 253, 213))
+    obj.setProperty('Color', QtGui.QColor(255, 180, 0))
     planningRobotModel = obj
 
     handDriver = handdriver.IRobotHandDriver(side='left')
@@ -256,18 +258,20 @@ if usePlanning:
     manipPlanner = robotplanlistener.ManipulationPlanDriver()
     planPlayback = robotplanlistener.RobotPlanPlayback()
 
+    playbackRobotModel = planningRobotModel
+    playbackJointController = planningJc
 
     def showPose(pose):
-        planningRobotModel.setProperty('Visible', True)
-        planningJc.setPose('show_pose', pose)
+        playbackRobotModel.setProperty('Visible', True)
+        playbackJointController.setPose('show_pose', pose)
 
     def playPlan(plan):
         playPlans([plan])
 
     def playPlans(plans):
         planPlayback.stopAnimation()
-        planningRobotModel.setProperty('Visible', True)
-        planPlayback.playPlans(plans, planningJc)
+        playbackRobotModel.setProperty('Visible', True)
+        planPlayback.playPlans(plans, playbackJointController)
 
     def playManipPlan():
         playPlan(manipPlanner.lastManipPlan)
@@ -294,7 +298,7 @@ if usePlanning:
         om.findObjectByName('Multisense').model.showRevolutionCallback = None
 
 
-    planner = plansequence.PlanSequence(defaultRobotModel, footstepsDriver, manipPlanner,
+    planner = plansequence.PlanSequence(robotStateModel, footstepsDriver, manipPlanner,
                                         handDriver, atlasdriver.driver, perception.multisenseDriver,
                                         fitDrillMultisense, robotStateJointController,
                                         playPlans, showPose)
@@ -377,8 +381,53 @@ tc.targetFps = 60
 tc.callback = resetCameraToHeadView
 
 
+import drake as lcmdrake
+class DrakeVisualizer(object):
 
-'''
+    def __init__(self, view):
+        lcmUtils.addSubscriber('DRAKE_VIEWER_COMMAND', lcmdrake.lcmt_viewer_command, self.onViewerCommand)
+        lcmUtils.addSubscriber('DRAKE_VIEWER_STATE', lcmdrake.lcmt_robot_state, self.onRobotState)
+
+        self.view = view
+        self.models = []
+        self.jointControllers = []
+        self.filenames = []
+
+
+    def onViewerCommand(self, msg):
+        print 'viewer command'
+        if msg.command_type == lcmdrake.lcmt_viewer_command.LOAD_URDF:
+            msg.command_type = msg.STATUS
+            lcmUtils.publish('DRAKE_VIEWER_STATUS', msg)
+            urdfFile = msg.command_data
+            for model in self.models:
+                if model.model.filename() == urdfFile:
+                    return
+            self.loadURDF(urdfFile)
+
+    def loadURDF(self, filename):
+        model = app.loadRobotModelFromFile(filename)
+        jointController = jointcontrol.JointController([model])
+        jointController.setZeroPose()
+        obj = om.addRobotModel(model, om.getOrCreateContainer('drake viewer models'))
+        obj.addToView(self.view)
+        self.models.append(obj)
+        self.jointControllers.append(jointController)
+
+
+    def onRobotState(self, msg):
+
+          if not self.models:
+              return
+
+          assert msg.num_robots == 1
+          pose = msg.joint_position
+          self.jointControllers[0].setPose('drake_viewer_pose', pose)
+
+#visualizer = DrakeVisualizer(view)
+
+
+
 class ViewEventFilter(object):
 
     def __init__(self, view):
@@ -390,7 +439,7 @@ class ViewEventFilter(object):
     def filterEvent(self, obj, event):
         if event.type() == QtCore.QEvent.MouseButtonDblClick:
             if self.doubleClickCallback:
-                result = self.doubleClickCallback(vis.mapMousePosition(obj, event))
+                result = self.doubleClickCallback(vis.mapMousePosition(obj, event), self.view)
                 self.eventFilter.setEventHandlerResult(result)
 
     def initEventFilter(self):
@@ -401,11 +450,11 @@ class ViewEventFilter(object):
         self.eventFilter.connect('handleEvent(QObject*, QEvent*)', self.filterEvent)
 
 
-def onViewDoubleClicked(displayPoint):
+def highlightSelectedLink(displayPoint, view):
 
     model = defaultRobotModel.model
 
-    polyData, pickedPoint = vis.pickPoint(displayPoint, view=ikview, pickType='cells')
+    polyData, pickedPoint = vis.pickPoint(displayPoint, view=view, pickType='cells')
     linkName = model.getLinkNameForMesh(polyData)
     if not linkName:
         return False
@@ -421,6 +470,31 @@ def onViewDoubleClicked(displayPoint):
 
     return True
 
-ef = ViewEventFilter(ikview)
-ef.doubleClickCallback = onViewDoubleClicked
-'''
+
+def toggleChildFrameWidget(displayPoint, view):
+
+    pickedObj, pickedPoint = vis.findPickedObject(displayPoint, view=view)
+    if not pickedObj:
+        return False
+
+    name = pickedObj.getProperty('Name')
+    children = om.getObjectChildren(pickedObj)
+
+    for child in children:
+        if isinstance(child, vis.FrameItem) and child.getProperty('Name') == name + ' frame':
+            child.setProperty('Edit', not child.getProperty('Edit'))
+
+    return False
+
+
+def callbackSwitch(displayPoint, view):
+
+  if toggleChildFrameWidget(displayPoint, view):
+      return
+
+  #if highlightSelectedLink(displayPoint, view):
+  #    return
+
+
+ef = ViewEventFilter(view)
+ef.doubleClickCallback = callbackSwitch
