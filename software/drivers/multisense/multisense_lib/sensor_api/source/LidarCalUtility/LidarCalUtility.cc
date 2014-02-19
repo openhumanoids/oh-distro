@@ -24,11 +24,11 @@
  *   2013-05-23, ekratzer@carnegierobotics.com, PR1044, Created file.
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 #include <opencv/cv.h>
 
@@ -66,7 +66,7 @@ int main(int    argc,
          char **argvPP)
 {
     std::string        ipAddress = "10.66.171.21";
-    std::string        calFile ="lidar_cal.yaml";
+    std::string        calFile;
     bool               setCal=false;
     bool               prompt=true;
 
@@ -75,7 +75,7 @@ int main(int    argc,
 
     int c;
 
-    while(-1 != (c = getopt(argc, argvPP, "sya:f:")))
+    while(-1 != (c = getopt(argc, argvPP, "a:f:sy")))
         switch(c) {
         case 'a': ipAddress = std::string(optarg);    break;
         case 'f': calFile   = std::string(optarg);    break;
@@ -132,7 +132,8 @@ int main(int    argc,
 
     status = channelP->getSensorVersion(version);
     if (Status_Ok != status) {
-        fprintf(stderr, "failed to query sensor version: %d\n", status);
+        fprintf(stderr, "failed to query sensor version: %s\n", 
+                Channel::statusString(status));
         goto clean_out;
     }
     
@@ -145,7 +146,8 @@ int main(int    argc,
 
         status = channelP->getLidarCalibration(c);
         if (Status_Ok != status) {
-            fprintf(stderr, "failed to query lidar calibration: %d\n", status);
+            fprintf(stderr, "failed to query lidar calibration: %s\n", 
+                    Channel::statusString(status));
             goto clean_out;
         }
 
@@ -216,7 +218,8 @@ int main(int    argc,
         
         status = channelP->setLidarCalibration(c);
         if (Status_Ok != status) {
-            fprintf(stderr, "failed to set lidar calibration: %d\n", status);
+            fprintf(stderr, "failed to set lidar calibration: %s\n", 
+                    Channel::statusString(status));
             goto clean_out;
         }
 

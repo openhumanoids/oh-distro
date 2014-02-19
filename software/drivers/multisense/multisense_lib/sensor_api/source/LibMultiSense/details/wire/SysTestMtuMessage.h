@@ -1,7 +1,5 @@
 /**
- * @file LibMultiSense/CamSetResolutionMessage.h
- *
- * This message sets the output resolution of the camera.
+ * @file LibMultiSense/SysTestMtuMessage.h
  *
  * Copyright 2013
  * Carnegie Robotics, LLC
@@ -23,40 +21,32 @@
  *
  *
  * Significant history (date, user, job code, action):
- *   2013-05-08, ekratzer@carnegierobotics.com, PR1044, Significant rewrite.
- *   2012-10-19, dstrother@carnegierobotics.com, RD1020, Created file.
+ *   2013-11-19, ekratzer@carnegierobotics.com, PR1044, Significant rewrite.
  **/
 
-#ifndef LibMultiSense_CamSetResolutionMessage
-#define LibMultiSense_CamSetResolutionMessage
+#ifndef LibMultiSense_SysTestMtuMessage
+#define LibMultiSense_SysTestMtuMessage
 
 namespace crl {
 namespace multisense {
 namespace details {
 namespace wire {
 
-class CamSetResolution {
+class SysTestMtu {
 public:
-    static const IdType      ID      = ID_CMD_CAM_SET_RESOLUTION;
-    static const VersionType VERSION = 2;
+    static const IdType      ID      = ID_CMD_SYS_TEST_MTU;
+    static const VersionType VERSION = 1;
 
     //
     // Parameters
 
-    uint32_t width;
-    uint32_t height;
-
-    //
-    // Version 2 additions
-
-    int32_t disparities;
+    uint32_t mtu;
 
     //
     // Constructors
 
-    CamSetResolution(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
-    CamSetResolution(uint32_t w=0, uint32_t h=0, int32_t d=-1) :
-                     width(w), height(h), disparities(d) {};
+    SysTestMtu(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
+    SysTestMtu(uint32_t m=0) : mtu(m) {};
 
     //
     // Serialization routine
@@ -65,13 +55,7 @@ public:
         void serialize(Archive&          message,
                        const VersionType version)
     {
-        message & width;
-        message & height;
-
-        if (version >= 2)
-            message & disparities;
-        else
-            disparities = 0;
+        message & mtu;
     }
 };
 

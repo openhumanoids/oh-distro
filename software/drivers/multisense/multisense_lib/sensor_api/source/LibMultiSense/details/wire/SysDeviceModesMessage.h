@@ -27,8 +27,6 @@
 #ifndef LibMultiSense_SysDeviceModesMessage
 #define LibMultiSense_SysDeviceModesMessage
 
-#include <typeinfo>
-
 namespace crl {
 namespace multisense {
 namespace details {
@@ -36,37 +34,25 @@ namespace wire {
 
 class DeviceMode {
 public:
-
     uint32_t width;
     uint32_t height;
     uint32_t supportedDataSources;
-    uint32_t flags;
+    uint32_t disparities;
 
     DeviceMode(uint32_t w=0,
                uint32_t h=0,
-               uint32_t d=0,
-               uint32_t f=0) :
+               uint32_t s=0,
+               uint32_t d=0) : 
         width(w),
         height(h),
-        supportedDataSources(d),
-        flags(f) {};
-
-    template<class Archive>
-        void serialize(Archive&          message,
-                       const VersionType version)
-    {
-        message & width;
-        message & height;
-        message & supportedDataSources;
-        message & flags;
-    }
-    
+        supportedDataSources(s),
+        disparities(d) {};
 };
 
 class SysDeviceModes {
 public:
     static const IdType      ID      = ID_DATA_SYS_DEVICE_MODES;
-    static const VersionType VERSION = 1;
+    static const VersionType VERSION = 2;
 
     //
     // Available formats
@@ -76,7 +62,8 @@ public:
     //
     // Constructors
 
-    SysDeviceModes(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
+    SysDeviceModes(utility::BufferStreamReader& r, 
+                   VersionType                  v) {serialize(r,v);};
     SysDeviceModes() {};
         
     //
@@ -86,7 +73,23 @@ public:
         void serialize(Archive&          message,
                        const VersionType version)
     {
-        message & modes;
+        uint32_t length = modes.size();
+        message & length;
+        modes.resize(length);
+
+        //
+        // Serialize by hand here to maintain backwards compatibility with
+        // pre-v2.3 firmware.
+
+        for(uint32_t i=0; i<length; i++) {
+
+            DeviceMode& m = modes[i];
+
+            message & m.width;
+            message & m.height;
+            message & m.supportedDataSources;
+            message & m.disparities; // was 'flags' in pre v2.3
+        }
     }
 };
 

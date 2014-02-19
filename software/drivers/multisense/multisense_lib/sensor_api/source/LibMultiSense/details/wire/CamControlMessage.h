@@ -38,7 +38,7 @@ namespace wire {
 class CamControl {
 public:
     static const IdType      ID      = ID_CMD_CAM_CONTROL;
-    static const VersionType VERSION = 1;
+    static const VersionType VERSION = 2;
 
     //
     // Parameters representing the current camera configuration
@@ -57,6 +57,11 @@ public:
     uint8_t  autoWhiteBalance;
     uint32_t autoWhiteBalanceDecay;
     float    autoWhiteBalanceThresh;
+
+    //
+    // Additions in version 2
+
+    float    stereoPostFilterStrength; // [0.0, 1.0]
 
     //
     // Constructors
@@ -85,6 +90,11 @@ public:
         message & autoWhiteBalance;
         message & autoWhiteBalanceDecay;
         message & autoWhiteBalanceThresh;
+
+        if (version >= 2)
+            message & stereoPostFilterStrength;
+        else
+            stereoPostFilterStrength = 0.5f;
     }
 };
 

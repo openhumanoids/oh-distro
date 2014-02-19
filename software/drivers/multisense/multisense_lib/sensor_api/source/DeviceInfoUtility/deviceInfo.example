@@ -21,6 +21,11 @@ buildDate: Thu May 23 02:12:16 UTC 2013
 serialNumber: 0004
 
 # integer
+#
+# For 'hardwareRevision'
+#   1: MultiSense-SL
+#   2: MultiSense-S
+#   3: MultiSense-M (monocular)
 hardwareRevision: 1
 
 # string
@@ -40,7 +45,7 @@ imagerWidth: 2048
 imagerHeight: 1088
 
 # string
-lensName: Unknwown
+lensName: Unknown
 
 # integer
 lensType: 1

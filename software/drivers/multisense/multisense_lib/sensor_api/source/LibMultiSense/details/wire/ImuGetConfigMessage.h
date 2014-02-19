@@ -1,7 +1,5 @@
 /**
- * @file LibMultiSense/CamSetResolutionMessage.h
- *
- * This message sets the output resolution of the camera.
+ * @file LibMultiSense/ImuGetConfigMessage.h
  *
  * Copyright 2013
  * Carnegie Robotics, LLC
@@ -23,40 +21,27 @@
  *
  *
  * Significant history (date, user, job code, action):
- *   2013-05-08, ekratzer@carnegierobotics.com, PR1044, Significant rewrite.
- *   2012-10-19, dstrother@carnegierobotics.com, RD1020, Created file.
+ *   2013-11-08, ekratzer@carnegierobotics.com, PR1044, created file.
  **/
 
-#ifndef LibMultiSense_CamSetResolutionMessage
-#define LibMultiSense_CamSetResolutionMessage
+#ifndef LibMultiSense_ImuGetConfigMessage
+#define LibMultiSense_ImuGetConfigMessage
 
 namespace crl {
 namespace multisense {
 namespace details {
 namespace wire {
 
-class CamSetResolution {
+class ImuGetConfig {
 public:
-    static const IdType      ID      = ID_CMD_CAM_SET_RESOLUTION;
-    static const VersionType VERSION = 2;
-
-    //
-    // Parameters
-
-    uint32_t width;
-    uint32_t height;
-
-    //
-    // Version 2 additions
-
-    int32_t disparities;
+    static const IdType      ID      = ID_CMD_IMU_GET_CONFIG;
+    static const VersionType VERSION = 1;
 
     //
     // Constructors
 
-    CamSetResolution(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
-    CamSetResolution(uint32_t w=0, uint32_t h=0, int32_t d=-1) :
-                     width(w), height(h), disparities(d) {};
+    ImuGetConfig(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
+    ImuGetConfig() {};
 
     //
     // Serialization routine
@@ -65,13 +50,7 @@ public:
         void serialize(Archive&          message,
                        const VersionType version)
     {
-        message & width;
-        message & height;
-
-        if (version >= 2)
-            message & disparities;
-        else
-            disparities = 0;
+        // nothing yet
     }
 };
 

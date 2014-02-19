@@ -71,7 +71,7 @@ private:
 public:
     
     Exception(const char *failureReason, ...);
-    Exception(const std::string failureReason);
+    Exception(const std::string& failureReason);
     ~Exception() throw();
     
     virtual const char* what() const throw();

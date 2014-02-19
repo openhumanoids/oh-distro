@@ -188,9 +188,9 @@ Status impl::doFlashOp(const std::string& filename,
 
         programOrVerifyFlashRegion(file, operation, region);
 
-    } catch (const utility::Exception& e) {
+    } catch (const std::exception& e) {
         CRL_DEBUG("exception: %s\n", e.what());
-        return Status_Error;
+        return Status_Exception;
     }
 
     return Status_Ok;

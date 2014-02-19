@@ -1,7 +1,5 @@
 /**
- * @file LibMultiSense/CamSetResolutionMessage.h
- *
- * This message sets the output resolution of the camera.
+ * @file LibMultiSense/SysTestMtuResponseMessage.h
  *
  * Copyright 2013
  * Carnegie Robotics, LLC
@@ -23,40 +21,32 @@
  *
  *
  * Significant history (date, user, job code, action):
- *   2013-05-08, ekratzer@carnegierobotics.com, PR1044, Significant rewrite.
- *   2012-10-19, dstrother@carnegierobotics.com, RD1020, Created file.
+ *   2013-11-19, ekratzer@carnegierobotics.com, PR1044, Significant rewrite.
  **/
 
-#ifndef LibMultiSense_CamSetResolutionMessage
-#define LibMultiSense_CamSetResolutionMessage
+#ifndef LibMultiSense_SysTestMtuResponseMessage
+#define LibMultiSense_SysTestMtuResponseMessage
+
+#include <typeinfo>
 
 namespace crl {
 namespace multisense {
 namespace details {
 namespace wire {
 
-class CamSetResolution {
+class SysTestMtuResponse {
 public:
-    static const IdType      ID      = ID_CMD_CAM_SET_RESOLUTION;
-    static const VersionType VERSION = 2;
+    static const IdType      ID          = ID_DATA_SYS_TEST_MTU_RESPONSE;
+    static const VersionType VERSION     = 1;
+    static const uint32_t    HEADER_SIZE = sizeof(uint32_t);
 
-    //
-    // Parameters
-
-    uint32_t width;
-    uint32_t height;
-
-    //
-    // Version 2 additions
-
-    int32_t disparities;
+    uint32_t payloadSize;
 
     //
     // Constructors
 
-    CamSetResolution(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
-    CamSetResolution(uint32_t w=0, uint32_t h=0, int32_t d=-1) :
-                     width(w), height(h), disparities(d) {};
+    SysTestMtuResponse(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
+    SysTestMtuResponse(uint32_t s=0) : payloadSize(s) {};
 
     //
     // Serialization routine
@@ -65,13 +55,11 @@ public:
         void serialize(Archive&          message,
                        const VersionType version)
     {
-        message & width;
-        message & height;
-
-        if (version >= 2)
-            message & disparities;
-        else
-            disparities = 0;
+        message & payloadSize;
+        for(uint32_t i=0; i<payloadSize; ++i) {
+            uint8_t dummy = 0;
+            message & dummy;
+        }
     }
 };
 

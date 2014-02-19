@@ -109,10 +109,10 @@ namespace details {
     // Up to [depth] entries will be cached.  Oldest entries
     // will be dropped on insertion once full.
     //
-    // The age of an entry is determined by std::set<KEY>.lower_bound([min]).
+    // The age of an entry is determined by std::map<KEY,DATA>.lower_bound([min]).
     //
-    // Entries may be prevented from deletion by using take(KEY), and
-    // re-considered for deletion by using give(KEY)
+    // DATA objects are assumed to be allocated on the heap, and memory management
+    // of the object is delegated here upon insert().
     //
     // For *_nolock() variations, lock-management must be 
     // done by the user.
@@ -127,7 +127,6 @@ namespace details {
 
         ~DepthCache() {
             utility::ScopedLock lock(m_lock);
-            m_set.clear();
 
             typename MapType::iterator it = m_map.begin();
             for(; it != m_map.end();) {
@@ -167,28 +166,9 @@ namespace details {
             remove_(key);
         };
 
-        bool take(KEY key) {
-            utility::ScopedLock lock(m_lock);
-            return take_(key);
-        };
-
-        bool take_nolock(KEY key) {
-            return take_(key);
-        };
-
-        bool give(KEY key) {
-            utility::ScopedLock lock(m_lock);
-            return give_(key);
-        };
-
-        bool give_nolock(KEY key) {
-            return give_(key);
-        };
-
     private:
 
         typedef std::map<KEY,DATA*> MapType;
-        typedef std::set<KEY>       SetType;
 
         DATA* find_(KEY key) {
             typename MapType::iterator it = m_map.find(key);
@@ -200,17 +180,13 @@ namespace details {
         };
 
         void insert_(KEY key, DATA* data) {
-            m_set.insert(key);
-            if (m_set.size() == m_depth)
-                pop_oldest();
+            if (m_map.size() == m_depth)
+                pop_oldest_();
 
             m_map[key] = data;
         };
 
         void remove_(KEY key) {
-            typename SetType::iterator it = m_set.find(key);
-            if (m_set.end() != it)
-                m_set.erase(it);
             typename MapType::iterator it2 = m_map.find(key);
             if (m_map.end() != it2) {
                 delete it2->second;
@@ -218,48 +194,17 @@ namespace details {
             }
         };
 
-        bool take_(KEY key) {
-
-            typename SetType::iterator it = m_set.find(key);
-            if (m_set.end() != it) {
-                m_set.erase(it);
-                return true;
-            }
-
-            return false;
-        };
-
-        bool give_(KEY key) {
-
-            typename SetType::const_iterator it = m_set.find(key);
-            if (m_set.end() == it) {
-                m_set.insert(key);
-                return true;
-            }
-
-            return false;
-        };
-
-        void pop_oldest() {
-
-            typename SetType::iterator it = m_set.lower_bound(m_minimum);
-            if (m_set.end() != it) {
-
-                typename MapType::iterator it2 = m_map.find(*it);
-                if (m_map.end() == it2)
-                    CRL_DEBUG("could not find key\n");
-                else {
-                    delete it2->second;
-                    m_map.erase(it2);
-                }
-                m_set.erase(it);
+        void pop_oldest_() {
+            typename MapType::iterator it2 = m_map.lower_bound(m_minimum);
+            if (m_map.end() != it2) {
+                delete it2->second;
+                m_map.erase(it2);
             }
         };
 
         const std::size_t m_depth;
         const KEY         m_minimum; // for lower_bound()
 
-        SetType           m_set;
         MapType           m_map;
         utility::Mutex    m_lock;
     };

@@ -55,7 +55,24 @@ public:
     static const IdType      ID      = ID_DATA_SYS_DEVICE_INFO;
     static const VersionType VERSION = 1;
 
-    static const uint8_t MAX_PCBS = 8;
+    //
+    // These constants are stored in flash on the device, do
+    // not change these, only add.
+    //
+    // crl::multisense::DeviceInfo:: has similar constants
+    // that can be changed at will (just remember to 
+    // map any differences when translating between
+    // WIRE and API.)
+
+    static const uint8_t  MAX_PCBS                   = 8;
+    static const uint32_t HARDWARE_REV_MULTISENSE_SL = 1;
+    static const uint32_t HARDWARE_REV_MULTISENSE_S  = 2;
+    static const uint32_t HARDWARE_REV_MULTISENSE_M  = 3;
+
+    static const uint32_t IMAGER_TYPE_CMV2000_GREY   = 1;
+    static const uint32_t IMAGER_TYPE_CMV2000_COLOR  = 2;
+    static const uint32_t IMAGER_TYPE_CMV4000_GREY   = 3;
+    static const uint32_t IMAGER_TYPE_CMV4000_COLOR  = 4;
 
     std::string key;
     std::string name;

@@ -31,8 +31,6 @@
 #include <typeinfo>
 #include <cmath>
 
-#define DISPARITY_32F
-
 namespace crl {
 namespace multisense {
 namespace details {
@@ -160,8 +158,8 @@ public:
         
             for(uint32_t i=0; i<count; i+=2, sP+=3) {
                 
-                dP[i]   = (float) ((sP[0]     ) | ((sP[1] & 0x0F) << 8)) / 16.0f;
-                dP[i+1] = (float) ((sP[1] >> 4) |  (sP[2] << 4)        ) / 16.0f;
+                dP[i]   = static_cast<float>((sP[0]     ) | ((sP[1] & 0x0F) << 8)) / 16.0f;
+                dP[i+1] = static_cast<float>((sP[1] >> 4) |  (sP[2] << 4)        ) / 16.0f;
             }
 
         } else 
