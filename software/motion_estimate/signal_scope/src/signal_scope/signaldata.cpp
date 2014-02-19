@@ -167,8 +167,8 @@ void SignalData::updateValues()
     return;
   }
 
-  // All values that are older than 60 seconds will expire
-  float expireTime = xvalues.back() - 60;
+  // All values that are older than five minutes will expire
+  float expireTime = xvalues.back() - 60*5;
 
   int idx = 0;
   while (idx < xvalues.size() && xvalues[idx] < expireTime)
