@@ -92,6 +92,8 @@ request.default_step_params = drc.footstep_params_t();
 request.default_step_params.step_speed = 0.04;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
+request.default_step_params.constrain_full_foot_pose = true;
+
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
 
