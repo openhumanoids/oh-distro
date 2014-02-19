@@ -1,4 +1,4 @@
-#include <estimate/LegOdoWrapper.hpp>
+#include "LegOdoWrapper.hpp"
 
 
 App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_, CommandLineConfig& cl_cfg_) : 
