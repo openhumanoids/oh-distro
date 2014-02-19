@@ -217,6 +217,10 @@ elseif strcmp(joint_name,'r_leg_kny')
   qdes(joint_index_map.r_leg_hpy) = -pi/2;
   qdes(joint_index_map.r_leg_kny) = pi/2;  
   
+elseif strcmp(joint_name,'back_bky') 
+  qdes(joint_index_map.r_arm_shx) = 1.25;
+  qdes(joint_index_map.l_arm_shx) = -1.25;
+  
 else
   error ('that joint isnt supported yet');
 end

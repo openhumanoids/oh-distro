@@ -24,7 +24,7 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_hpy';% <---- joint name 
+joint = 'back_bky';% <---- joint name 
 input_mode = 'position';% <---- force, position
 control_mode = 'force+velocity';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
