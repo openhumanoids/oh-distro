@@ -144,6 +144,10 @@ private:
   Eigen::Isometry3d velArrowTransform;
   Eigen::Isometry3d align;
 
+   // Grab first BDi quaternion
+  bool alignedBDiQ;
+  Eigen::Quaterniond firstBDiq;
+
 
   // ======== SERVICE ROUTINES ===========
   void IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm);

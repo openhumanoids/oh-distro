@@ -1,5 +1,7 @@
 #include "StateEstimator.h"
 
+#include <leg-odometry/QuaternionLib.h>
+
 //-----------------------------------------------------------------------------
 StateEstimate::StateEstimator::StateEstimator(
 	const command_switches* _switches,
@@ -116,7 +118,8 @@ StateEstimate::StateEstimator::StateEstimator(
   Eigen::Vector3d rpy;
   rpy = q2e_new(alignq);
   //std::cout << "init yaw seems to be: " << rpy[2] << std::endl;
-  inert_odo.setHeading(rpy[2]);
+  //inert_odo.setHeading(rpy[2]);
+  alignedBDiQ = false;
 }
 
 // TODO -- fix this constructor
@@ -181,8 +184,41 @@ void StateEstimate::StateEstimator::run()
     for (int i = 0; i < nPoses; ++i)
     {
       mBDIPoseQueue.dequeue(bdiPose);
+
+      bot_core::pose_t pose_msg;
+      pose_msg.utime =  bdiPose.utime;
+      pose_msg.pos[0] = bdiPose.pos[0];
+      pose_msg.pos[1] = bdiPose.pos[1];
+      pose_msg.pos[2] = bdiPose.pos[2];
+
+      Eigen::Quaterniond q_w, tmp;
+
+      tmp.w() = bdiPose.orientation[0];
+      tmp.x() = bdiPose.orientation[1];
+      tmp.y() = bdiPose.orientation[2];
+      tmp.w() = bdiPose.orientation[3];
+
+      if (alignedBDiQ == false) {
+    	firstBDiq = tmp.conjugate();
+    	alignedBDiQ = true;
+    	printq("first alignment: " , qprod(tmp, firstBDiq));
+      }
+
+      q_w = qprod(tmp , firstBDiq);
+
+      printq("first q is: " , firstBDiq);
+      printq("tmp   q is: " , tmp);
+      printq("q_w   q is: " , q_w);
+
+      pose_msg.orientation[0] =  q_w.w();
+      pose_msg.orientation[1] =  q_w.x();
+      pose_msg.orientation[2] =  q_w.y();
+      pose_msg.orientation[3] =  q_w.z();
+
+      mLCM->publish("POSE_BODY_ALT", &pose_msg );
+
       // push bdiPose info into ERS
-      convertBDIPose_ERS(&bdiPose, mERSMsg);
+      //convertBDIPose_ERS(&bdiPose, mERSMsg);
     }
 
     const int nViconPoses = mViconQueue.size();
@@ -214,6 +250,8 @@ void StateEstimate::StateEstimator::run()
 	//std::cout << std::endl << std::endl;
   }
 }
+
+
 
 
 void StateEstimate::StateEstimator::IMUServiceRoutine(const drc::atlas_raw_imu_t &imu, bool publishERSflag, boost::shared_ptr<lcm::LCM> lcm) {
@@ -333,8 +371,10 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
   Eigen::Isometry3d world_to_body_bdi;
   world_to_body_bdi.setIdentity();
   //world_to_body_bdi.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
+
+  // We align this to first pose is zero
   Eigen::Quaterniond quat = Eigen::Quaterniond(bdiPose.orientation[0], bdiPose.orientation[1], bdiPose.orientation[2], bdiPose.orientation[3]);
-  world_to_body_bdi.rotate(quat);
+  world_to_body_bdi.rotate( qprod(quat, firstBDiq) );
 
   leg_odo_->setPoseBDI( world_to_body_bdi );
   leg_odo_->setFootForces(atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z);
@@ -356,7 +396,7 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
   filteredPelvisVel_world << vel[0], vel[1], vel[2];
 
   bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, atlasState.utime);
-  mLCM->publish("POSE_BODY_ALT", &pose_msg );
+  mLCM->publish("POSE_BODY_ALT_LEG", &pose_msg );
 
   drawLegOdoVelArrow(world_to_body_bdi.linear());
 }
