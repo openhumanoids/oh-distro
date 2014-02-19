@@ -1,3 +1,4 @@
 /drc_control_setup.m
 /gurobi_setup.sh
 /pods_setup_all.sh
+encoder_offsets.cfg
