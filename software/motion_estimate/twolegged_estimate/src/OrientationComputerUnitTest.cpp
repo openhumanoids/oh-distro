@@ -145,18 +145,24 @@ bool testQuaternionProduct() {
 	// Populate the vectors with random test data
 	getRandomQs(Qa, dE, Qb, Qc);
 
-	Eigen::Quaterniond Qt;
+	Eigen::Quaterniond Qt, Qi;
 	double err;
+	double err2;
 	err = 0.;
+	err2 = 0.;
 
 	cout << "Size of randomQs is " << Qa.size() << endl;
 	for (int k=0;k<Qa.size();k++) {
+		Qi = qprod(Qa[k], Qa[k].conjugate());
+		err2 = err2 + Qi.w() - 1. + Qi.x() + Qi.y() + Qi.z();
+		Qi = qprod(Qa[k].conjugate(), Qa[k]);
+		err2 = err2 + Qi.w() - 1. + Qi.x() + Qi.y() + Qi.z();
 		Qt = qprod(Qb[k],Qa[k]);
 		err = err + abs(Qc[k].w() - Qt.w()) + abs(Qc[k].x() - Qt.x()) + abs(Qc[k].y() - Qt.y()) + abs(Qc[k].z() - Qt.z());
 	}
 
-	cout << "Cumulative absolute sum error from all " << Qa.size() << " quaternion product operations is: " << err << endl;
-	if (err > 0.002) {
+	cout << "Cumulative absolute sum error from all " << Qa.size() << " quaternion product operations is: " << err + err2 << endl;
+	if (err+err2 > 0.005) {
 		cout << "testQuaternionProduct failed." << endl;
 		return true;
 	}

@@ -95,9 +95,14 @@ void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &
 //  outq = qprod(e2q(Eigen::Vector3d(0.,0.,PI__*0.25)), InerOdoEst.lQb);s
 
 
-
+  // Convert to output quaternion
   tmpq = qprod(e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), InerOdoEst.lQb);
-  outq = qprod(C2q(align.linear()), tmpq);
+  Eigen::Vector3d rpy;
+  rpy = q2e_new(tmpq);
+  rpy[2] = rpy[2] + (PI__ - C2e(IMU_to_body.linear())[2]);
+  //std::cout << "Redirected: " << (PI__ - C2e(IMU_to_body.linear())[2]) << std::endl;
+  //outq = qprod(C2q(align.linear()), tmpq);
+  outq = e2q(rpy);
   
   msg.pose.rotation.w = outq.w();
   msg.pose.rotation.x = outq.x();
@@ -110,10 +115,7 @@ void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &
   copyDrcVec3D(V_leverarm, msg.twist.linear_velocity);
   copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, msg.twist.angular_velocity);
 
-  Eigen::Vector3d positionoffset;
-  positionoffset << 1.09, 0.71, 0.76;
-
-  Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation() + positionoffset;
+  Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
 
   //copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation() + positionoffset, msg.pose.translation);
   copyDrcVec3D(P_w, msg.pose.translation);

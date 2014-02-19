@@ -107,16 +107,15 @@ StateEstimate::StateEstimator::StateEstimator(
 
   // used to do an initial alignment with BDi quaternion -- used for output only, not inside aide feedback loop!
   align.setIdentity();
-  Eigen::Quaterniond alignq;
-  alignq.w() = 0.9465690221651;
-  alignq.x() = -0.00046656897757202387;
-  alignq.y() = 0.002328;
-  alignq.z() = 0.3224926292896271;
+  //  Eigen::Quaterniond alignq;
+  //  alignq.w() = 0.9465690221651;
+  //  alignq.x() = -0.00046656897757202387;
+  //  alignq.y() = 0.002328;
+  //  alignq.z() = 0.3224926292896271;
+  //  align.linear() = q2C(alignq);
 
-  align.linear() = q2C(alignq);
-
-  Eigen::Vector3d rpy;
-  rpy = q2e_new(alignq);
+  //  Eigen::Vector3d rpy;
+  //  rpy = q2e_new(alignq);
   //std::cout << "init yaw seems to be: " << rpy[2] << std::endl;
   //inert_odo.setHeading(rpy[2]);
   alignedBDiQ = false;
@@ -185,37 +184,38 @@ void StateEstimate::StateEstimator::run()
     {
       mBDIPoseQueue.dequeue(bdiPose);
 
-      bot_core::pose_t pose_msg;
-      pose_msg.utime =  bdiPose.utime;
-      pose_msg.pos[0] = bdiPose.pos[0];
-      pose_msg.pos[1] = bdiPose.pos[1];
-      pose_msg.pos[2] = bdiPose.pos[2];
+      //bot_core::pose_t pose_msg;
+      //      pose_msg.utime =  bdiPose.utime;
+      //      pose_msg.pos[0] = bdiPose.pos[0];
+      //      pose_msg.pos[1] = bdiPose.pos[1];
+      //      pose_msg.pos[2] = bdiPose.pos[2];
 
       Eigen::Quaterniond q_w, tmp;
 
       tmp.w() = bdiPose.orientation[0];
       tmp.x() = bdiPose.orientation[1];
       tmp.y() = bdiPose.orientation[2];
-      tmp.w() = bdiPose.orientation[3];
+      tmp.z() = bdiPose.orientation[3];
 
       if (alignedBDiQ == false) {
-    	firstBDiq = tmp.conjugate();
+    	Eigen::Vector3d rpy;
+    	rpy = q2e_new(tmp.conjugate());
+    	rpy[0] = 0.;
+    	rpy[1] = 0.;
+    	firstBDiq = e2q(rpy);
     	alignedBDiQ = true;
-    	printq("first alignment: " , qprod(tmp, firstBDiq));
+    	printq("StateEstimator::run -- first alignment check for identity: " , qprod(tmp, firstBDiq));
       }
 
-      q_w = qprod(tmp , firstBDiq);
+      //      q_w = qprod(tmp , firstBDiq);
+      //
+      //
+      //      pose_msg.orientation[0] =  q_w.w();
+      //      pose_msg.orientation[1] =  q_w.x();
+      //      pose_msg.orientation[2] =  q_w.y();
+      //      pose_msg.orientation[3] =  q_w.z();
 
-      printq("first q is: " , firstBDiq);
-      printq("tmp   q is: " , tmp);
-      printq("q_w   q is: " , q_w);
-
-      pose_msg.orientation[0] =  q_w.w();
-      pose_msg.orientation[1] =  q_w.x();
-      pose_msg.orientation[2] =  q_w.y();
-      pose_msg.orientation[3] =  q_w.z();
-
-      mLCM->publish("POSE_BODY_ALT", &pose_msg );
+      //mLCM->publish("POSE_BODY_ALT", &pose_msg );
 
       // push bdiPose info into ERS
       //convertBDIPose_ERS(&bdiPose, mERSMsg);
@@ -396,7 +396,7 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
   filteredPelvisVel_world << vel[0], vel[1], vel[2];
 
   bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, atlasState.utime);
-  mLCM->publish("POSE_BODY_ALT_LEG", &pose_msg );
+  mLCM->publish("POSE_BODY_ALT", &pose_msg );
 
   drawLegOdoVelArrow(world_to_body_bdi.linear());
 }
