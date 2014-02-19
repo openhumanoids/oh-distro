@@ -24,6 +24,8 @@ public:
     bool hasMessageError() const;
     void flagMessageError();
 
+    void updateInterval(double minTime, double maxTime);
+
     void clear();
 
     // New signal data points per second are calculated using

@@ -446,6 +446,9 @@ void Plot::replot()
   foreach (SignalData* signalData, signalDataList)
   {
     signalData->lock();
+
+    QwtInterval xinterval = this->axisInterval(QwtPlot::xBottom);
+    signalData->updateInterval(xinterval.minValue(), xinterval.maxValue());
   }
 
   QwtPlot::replot();
