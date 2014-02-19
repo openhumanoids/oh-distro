@@ -24,11 +24,16 @@
  *   2013-05-15, ekratzer@carnegierobotics.com, PR1044, Created file.
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <unistd.h>
+#include <getopt.h>
 
 #include <LibMultiSense/MultiSenseChannel.hh>
+
+#include <fstream>
 
 namespace {  // anonymous
 
@@ -41,8 +46,38 @@ void usage(const char *programNameP)
     fprintf(stderr, "\t-v                     : Perform verify operation\n");
     fprintf(stderr, "\t-b <bitstream_file>    : The bitstream (.bin) file\n");
     fprintf(stderr, "\t-f <firmware_file>     : The firmware (.srec) file\n");
+}
 
-    exit(-1);
+bool verifyFileWithExtension(const std::string& description,
+                             const std::string& fileName,
+                             const std::string& extension)
+{
+    try {
+        std::ifstream file(fileName.c_str(),
+                           std::ios::in | std::ios::binary);
+
+        if (false == file.good()) {
+            fprintf(stderr, "Cannot open %s file \"%s\" for reading, aborting.\n",
+                    description.c_str(), fileName.c_str());
+            return false;
+        }
+
+    } catch (const std::exception& e) {
+        fprintf(stderr, "Exception accessing %s file \"%s\" for reading: %s.\n",
+                description.c_str(), fileName.c_str(), e.what());
+        return false;
+    }
+
+    std::string::size_type idx = fileName.rfind('.');
+
+    if (std::string::npos != idx &&
+        fileName.substr(idx+1) == extension)
+        return true;
+
+    fprintf(stderr, "%s file \"%s\" is not a \".%s\" file, aborting.\n",
+            description.c_str(), fileName.c_str(), extension.c_str());
+
+    return false;
 }
 
 }; // anonymous
@@ -52,9 +87,10 @@ using namespace crl::multisense;
 int main(int    argc, 
          char **argvPP)
 {
-    std::string ipAddress = "10.66.171.21";
-    bool        programOp = false;
-    bool        verifyOp  = false;
+    std::string ipAddress  = "10.66.171.21";
+    bool        programOp  = false;
+    bool        verifyOp   = false;
+    int         returnCode = 0;
     std::string bitstreamFile;
     std::string firmwareFile;
 
@@ -70,8 +106,18 @@ int main(int    argc,
         case 'v': verifyOp      = true;                   break;
         case 'b': bitstreamFile = std::string(optarg);    break;
         case 'f': firmwareFile  = std::string(optarg);    break;
-        default: usage(*argvPP);                          break;
+        default: usage(*argvPP); exit(-1);                break;
         }
+
+    //
+    // Verify that the bitstream/firmware filenames are sane, and that the files exist
+
+    if (false == bitstreamFile.empty() && 
+        false == verifyFileWithExtension("Bitstream", bitstreamFile, "bin"))
+        exit(-2);
+    if (false == firmwareFile.empty() && 
+        false == verifyFileWithExtension("Firmware", firmwareFile, "srec"))
+        exit(-3);
 
     //
     // Initialize communications.
@@ -80,21 +126,13 @@ int main(int    argc,
     if (NULL == channelP) {
 	fprintf(stderr, "Failed to establish communications with \"%s\"\n",
 		ipAddress.c_str());
-	return -1;
-    }
-
-    //
-    // Query version
-
-    VersionType version;
-        
-    if (Status_Ok != channelP->getSensorVersion(version)) {
-        fprintf(stderr, "failed to query sensor version\n");
-        goto clean_out;
+        exit(-4);
     }
     
     //
     // Perform any programming operations first
+
+    Status status=Status_Ok;
 
     if (programOp) {
 
@@ -103,8 +141,11 @@ int main(int    argc,
             fprintf(stderr, "Programming bitstream: %s\n",
                     bitstreamFile.c_str());
 
-            if (Status_Ok != channelP->flashBitstream(bitstreamFile)) {
-                fprintf(stderr, "Programming bitstream failed\n");
+            status = channelP->flashBitstream(bitstreamFile); 
+            if (Status_Ok != status) {
+                fprintf(stderr, "Programming bitstream failed: %s\n",
+                        Channel::statusString(status));
+                returnCode = -6; 
                 goto clean_out;
             }
         }
@@ -114,8 +155,11 @@ int main(int    argc,
             fprintf(stderr, "Programming firmware: %s\n",
                     firmwareFile.c_str());
 
-            if (Status_Ok != channelP->flashFirmware(firmwareFile)) {
-                fprintf(stderr, "Programming firmware failed\n");
+            status = channelP->flashFirmware(firmwareFile);
+            if (Status_Ok != status) {
+                fprintf(stderr, "Programming firmware failed: %s\n",
+                        Channel::statusString(status));
+                returnCode = -7;
                 goto clean_out;
             }
         }
@@ -131,8 +175,11 @@ int main(int    argc,
             fprintf(stderr, "Verifying bitstream: %s\n",
                     bitstreamFile.c_str());
 
-            if (Status_Ok != channelP->verifyBitstream(bitstreamFile)) {
-                fprintf(stderr, "Verify bitstream failed\n");
+            status = channelP->verifyBitstream(bitstreamFile);
+            if (Status_Ok != status) {
+                fprintf(stderr, "Verify bitstream failed: %s\n",
+                        Channel::statusString(status));
+                returnCode = -8;
                 goto clean_out;
             }
         }
@@ -142,8 +189,11 @@ int main(int    argc,
             fprintf(stderr, "Verifying firmware: %s\n",
                     firmwareFile.c_str());
 
-            if (Status_Ok != channelP->verifyFirmware(firmwareFile)) {
-                fprintf(stderr, "Verify firmware failed\n");
+            status = channelP->verifyFirmware(firmwareFile);
+            if (Status_Ok != status) {
+                fprintf(stderr, "Verify firmware failed: %s\n",
+                        Channel::statusString(status));
+                returnCode = -9;
                 goto clean_out;
             }
         }
@@ -152,5 +202,5 @@ int main(int    argc,
 clean_out:
 
     Channel::Destroy(channelP);
-    return 0;
+    return returnCode;
 }

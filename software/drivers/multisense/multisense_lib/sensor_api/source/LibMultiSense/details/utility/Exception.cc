@@ -60,7 +60,7 @@ Exception::Exception(const char *failureReason, ...)
     }
 }
 
-Exception::Exception(const std::string failureReason)
+Exception::Exception(const std::string& failureReason)
 {
     reason = failureReason;
 }

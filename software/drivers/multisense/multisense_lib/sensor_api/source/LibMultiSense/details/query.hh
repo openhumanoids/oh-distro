@@ -39,6 +39,9 @@ namespace details {
 
 template<class T> void impl::publish(const T& message)
 {
+    const wire::IdType      id      = T::ID;
+    const wire::VersionType version = T::VERSION;
+
     //
     // An output stream to serialize the data
 
@@ -53,15 +56,15 @@ template<class T> void impl::publish(const T& message)
     //
     // Set the ID and version
     
-    stream & MSG_ID(T::ID);
-    stream & MSG_VER(T::VERSION);
+    stream & id;
+    stream & version;
     
     //
     // Add the message payload. We cast away const here because
     // we have a single serialize() for both directions, and cannot
     // mark it const.
 
-    const_cast<T*>(&message)->serialize(stream, 0);
+    const_cast<T*>(&message)->serialize(stream, version);
 
     //
     // Publish the stream
@@ -94,9 +97,9 @@ template <class T> Status impl::waitAck(const T&      msg,
 
         return Status_TimedOut;
 
-    } catch (const utility::Exception& e) {
+    } catch (const std::exception& e) {
         CRL_DEBUG("exception: %s\n", e.what());
-        return Status_Error;
+        return Status_Exception;
     }
 }
 
@@ -109,17 +112,48 @@ template <class T, class U> Status impl::waitData(const T&      command,
                                                   const double& timeout,
                                                   int32_t       attempts)
 {
-    Status status = waitAck(command, MSG_ID(U::ID), timeout, attempts);
-    if (Status_Ok != status)
-        return status;
-
     try {
+
+        //
+        // Set up a watch on the command ID in case it is rejected or
+        // unsupported.
+
+        ScopedWatch commandAck(T::ID, m_watch);
+
+        //
+        // Send the command with retry, expecting the data message as a response.
+
+        Status dataStatus = waitAck(command, MSG_ID(U::ID), timeout, attempts);
+
+        //
+        // Also store the response from the command. Do not block, as any
+        // response would be registered by this time.
+
+        Status commandStatus;
+        if (false == commandAck.wait(commandStatus, 0.0))
+            commandStatus = Status_TimedOut;
+    
+        //
+        // If we did not receive the data message, return the response from
+        // the command code instead, unless there was an exception or the 
+        // command ack'd OK.
+
+        if (Status_Ok != dataStatus) {
+            if (Status_Exception == dataStatus ||   // exception 
+                Status_Ok        == commandStatus)  // data payload timeout or MTU error
+                return dataStatus;
+            else
+                return commandStatus; // command error
+        }
+
+        //
+        // We have received the data message, extract it for the user.
         
         return m_messages.extract(data);
         
-    } catch (const utility::Exception& e) {
+    } catch (const std::exception& e) {
         CRL_DEBUG("exception: %s\n", e.what());
-        return Status_Error;
+        return Status_Exception;
     }
 }
 

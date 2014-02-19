@@ -24,11 +24,12 @@
  *   2013-05-22, ekratzer@carnegierobotics.com, PR1044, Created file.
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include <string>
+#include <getopt.h>
 
 #include <LibMultiSense/MultiSenseChannel.hh>
 
@@ -41,9 +42,9 @@ void usage(const char *programNameP)
     fprintf(stderr, "USAGE: %s [<options>]\n", programNameP);
     fprintf(stderr, "Where <options> are:\n");
     fprintf(stderr, "\t-a <ip_address>    : ip address (default=10.66.171.21)\n");
-    fprintf(stderr, "\t-k <key_uuid>      : UUID for setting device info\n");
+    fprintf(stderr, "\t-k <passphrase>    : passphrase for setting device info\n");
     fprintf(stderr, "\t-s <file_name>     : set device info from file\n");
-    fprintf(stderr, "\t-q                 : query device info\n");
+    fprintf(stderr, "\t-q                 : query device info (default)\n");
     fprintf(stderr, "\t-y                 : disable confirmation prompt\n");
     
     exit(-1);
@@ -236,11 +237,8 @@ int main(int    argc,
         usage(*argvPP);
     }
 
-    if (false == query && fileName.empty()) {
-        fprintf(stderr,
-                "Please specify either a query or set command\n");
-        usage(*argvPP);
-    }
+    if (fileName.empty())
+        query = true;
 
     //
     // Initialize communications.
@@ -260,7 +258,8 @@ int main(int    argc,
 
     status = channelP->getSensorVersion(version);
     if (Status_Ok != status) {
-        fprintf(stderr, "Failed to query sensor version: %d\n", status);
+        fprintf(stderr, "Failed to query sensor version: %s\n", 
+                Channel::statusString(status));
         goto clean_out;
     }
 
@@ -289,7 +288,8 @@ int main(int    argc,
 
             status = channelP->setDeviceInfo(key, info);
             if (Status_Ok != status) {
-                fprintf(stderr, "Failed to set the device info: %d\n", status);
+                fprintf(stderr, "Failed to set the device info: %s\n", 
+                        Channel::statusString(status));
                 goto clean_out;
             } else
                 fprintf(stdout, "Device info updated successfully\n");
@@ -305,7 +305,8 @@ int main(int    argc,
 
         status = channelP->getDeviceInfo(info);
         if (Status_Ok != status)
-            fprintf(stderr, "Failed to query device info: %d\n", status);
+            fprintf(stderr, "Failed to query device info: %s\n", 
+                    Channel::statusString(status));
         else
             printDeviceInfo(info);
     }

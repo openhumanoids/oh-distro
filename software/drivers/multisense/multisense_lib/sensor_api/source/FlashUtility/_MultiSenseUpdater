@@ -1,0 +1,194 @@
+#!/bin/bash
+
+#
+# CRL MultiSense Updater
+#
+# 2013-12-02:  v1.0 
+#              initial release
+#
+# Significant history (date, user, job code, action):
+#   2013-12-02, ekratzer@carnegierobotics.com, PR1044, Created file.
+#
+
+VERSION_MAJOR="1"
+VERSION_MINOR="0"
+TMPDIR=""
+BINDIR="../../bin"
+
+usage() 
+{
+cat <<EOF
+usage: $0 <ip_address> <update_file>
+
+Where <ip_address> is the sensor's IPV4 address or resolvable hostname, and 
+      <update_file> is an official ".slf" package file.
+
+EOF
+}
+
+cleanup()
+{
+    if [ ${TMPDIR} != "" ] ; then
+        rm -rf ${TMPDIR}
+    fi
+}
+
+trim() 
+{ 
+    echo $1
+}
+
+echo ""
+echo "CRL MultiSense Updater v$VERSION_MAJOR.$VERSION_MINOR"
+echo ""
+
+#
+# Verify that all required utility commands exist
+
+hash rm     2>&- || { echo >&2 "rm not installed.  Aborting.";     exit 1; }
+hash ls     2>&- || { echo >&2 "ls not installed.  Aborting.";     exit 1; }
+hash cat    2>&- || { echo >&2 "cat not installed.  Aborting.";    exit 1; }
+hash tar    2>&- || { echo >&2 "tar not installed.  Aborting.";    exit 1; }
+hash mktemp 2>&- || { echo >&2 "mktemp not installed.  Aborting."; exit 1; }
+hash md5sum 2>&- || { echo >&2 "md5sum not installed.  Aborting."; exit 1; }
+
+#
+# Verify that we can find the FlashUtility
+
+if [ ! -x "${BINDIR}/FlashUtility" ] ; then
+    echo -e "Unable to locate C++ API command-line tools @ \"${BINDIR}\", please check API installation."
+    exit 2
+fi
+
+#
+# Verify command line arguments
+
+if [ $# -ne 2 ] ; then
+    usage
+    exit 3
+fi
+
+IP_ADDRESS=$1
+SLF_FILE=$2
+
+#
+# Verify that the package file exists
+
+if [ ! -f "${SLF_FILE}" ] ; then
+    echo -e "\nPackage file \"${SLF_FILE}\" not found."
+    exit 4
+fi
+
+#
+# Create a temporary directory for extraction
+
+TMPDIR=`mktemp -d /tmp/selfextract.XXXXXX`
+if [ $? -ne "0" ] ; then
+    echo "Failed to create an extraction directory in /tmp/"
+    exit 5
+fi
+
+#
+# Extract the archive
+
+echo -n "Extracting update package... "
+
+cat "${SLF_FILE}" | tar pxz -C ${TMPDIR}
+if [ $? -ne "0" ] ; then
+    echo -e "FAILED. \"${SLF_FILE}\" is possibly corrupt"
+    cleanup
+    exit 6
+else
+    echo "OK."
+fi
+
+#
+# Move to the extracted directory
+
+CDIR=`pwd`
+cd ${TMPDIR}
+if [ $? -ne "0" ] ; then
+    echo -e "directory change to \"${TMPDIR}\" failed"
+    cleanup
+    exit 7
+fi
+
+#
+# Verify MD5 sums of all extracted files
+
+echo -n "Verifying update package integrity... "
+
+md5sum --quiet --check md5s > /dev/null 2>&1
+if [ $? -ne "0" ] ; then
+    echo "FAILED. md5sum check failed"
+    cleanup
+    exit 8
+else
+    echo "OK."
+fi
+
+#
+# Extract documentation, if any
+
+ls *.pdf > /dev/null 2>&1
+if [ $? -eq "0" ] ; then
+    
+    echo -e -n "\nExtract documentation (`ls *.pdf`) ? (y/N) : "
+    read RESPONSE
+    RESPONSE=$( trim ${RESPONSE} )
+    if [ "${RESPONSE}" = "y" -o "${RESPONSE}" = "Y" ] ; then
+        cp *.pdf ${CDIR}
+    fi
+    echo ""
+fi
+
+#
+# Check comms to sensor with a dry run of FlashUtility
+
+echo -n -e "Verifying comms to sensor at \"${IP_ADDRESS}\"... "
+
+"${BINDIR}/FlashUtility" -a ${IP_ADDRESS} > /dev/null 2>&1
+if [ $? -ne "0" ] ; then
+    echo "FAILED. Please check sensor power and network configuration."
+    cleanup
+    exit 9
+else
+    echo "OK."
+fi
+
+#
+# Make sure the user really wants to do this
+
+echo -e -n "\nReally update the sensor at \"${IP_ADDRESS}\" to firmware v`cat RELEASE.srec` ? (y/N) : "
+read RESPONSE
+RESPONSE=$( trim ${RESPONSE} )
+
+if [ "${RESPONSE}" = "y" -o "${RESPONSE}" = "Y" ] ; then
+
+    #
+    # Perform the flash operation
+
+    echo ""
+    echo "***** Updating sensor: this may take a few minutes, please do not interrupt this process *****"
+    echo ""
+
+    "${BINDIR}/FlashUtility" -a ${IP_ADDRESS} -p -v -f ./firmware.srec -b ./bitstream.bin
+    if [ $? -ne "0" ] ; then
+        echo ""
+        echo "***** Update FAILED with error code $? *****"
+        echo ""
+        cleanup
+        exit 10
+    fi
+
+    echo ""
+    echo "***** Update successful, power-cycle the sensor for changes to take effect *****"
+    echo ""
+
+else
+    echo -e "\nAborting."
+fi
+
+cleanup
+exit 0
+

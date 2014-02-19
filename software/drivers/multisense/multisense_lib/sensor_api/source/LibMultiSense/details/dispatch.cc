@@ -50,6 +50,14 @@
 #include "details/wire/SysLidarCalibrationMessage.h"
 #include "details/wire/SysDeviceModesMessage.h"
 
+#include "details/wire/SysPpsMessage.h"
+
+#include "details/wire/ImuDataMessage.h"
+#include "details/wire/ImuConfigMessage.h"
+#include "details/wire/ImuInfoMessage.h"
+
+#include "details/wire/SysTestMtuResponseMessage.h"
+
 #include <limits>
 
 namespace crl {
@@ -75,8 +83,7 @@ void defaultUdpAssembler(utility::BufferStreamWriter& stream,
 // Publish an image 
 
 void impl::dispatchImage(utility::BufferStream& buffer,
-                         image::Header&         header,
-                         void                  *imageP)
+                         image::Header&         header)
 {
     utility::ScopedLock lock(m_dispatchLock);
 
@@ -85,16 +92,14 @@ void impl::dispatchImage(utility::BufferStream& buffer,
     for(it  = m_imageListeners.begin();
         it != m_imageListeners.end();
         it ++)
-        (*it)->dispatch(buffer, header, imageP);
+        (*it)->dispatch(buffer, header);
 }
 
 //
 // Publish a laser scan
 
-void impl::dispatchLaser(utility::BufferStream& buffer,
-                         lidar::Header&         header,
-                         lidar::RangeType      *rangesP,
-                         lidar::IntensityType  *intensitiesP)
+void impl::dispatchLidar(utility::BufferStream& buffer,
+                         lidar::Header&         header)
 {
     utility::ScopedLock lock(m_dispatchLock);
 
@@ -103,7 +108,37 @@ void impl::dispatchLaser(utility::BufferStream& buffer,
     for(it  = m_lidarListeners.begin();
         it != m_lidarListeners.end();
         it ++)
-        (*it)->dispatch(buffer, header, rangesP, intensitiesP);
+        (*it)->dispatch(buffer, header);
+}
+
+//
+// Publish a PPS event
+
+void impl::dispatchPps(pps::Header& header)
+{
+    utility::ScopedLock lock(m_dispatchLock);
+
+    std::list<PpsListener*>::const_iterator it;
+
+    for(it  = m_ppsListeners.begin();
+        it != m_ppsListeners.end();
+        it ++)
+        (*it)->dispatch(header);
+}
+
+//
+// Publish an IMU event
+
+void impl::dispatchImu(imu::Header& header)
+{
+    utility::ScopedLock lock(m_dispatchLock);
+
+    std::list<ImuListener*>::const_iterator it;
+
+    for(it  = m_imuListeners.begin();
+        it != m_imuListeners.end();
+        it ++)
+        (*it)->dispatch(header);
 }
 
 //
@@ -142,13 +177,23 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
 	const int32_t  scanArc  = utility::degreesToRadians(270.0) * 1e6; // microradians
 	const uint32_t maxRange = 30.0 * 1e3; // mm
 
-        sensorToLocalTime(static_cast<double>(scan.timeStartSeconds) + 
-                          1e-6 * static_cast<double>(scan.timeStartMicroSeconds),
-                          header.timeStartSeconds, header.timeStartMicroSeconds);
+        if (false == m_networkTimeSyncEnabled) {
 
-        sensorToLocalTime(static_cast<double>(scan.timeEndSeconds) + 
-                          1e-6 * static_cast<double>(scan.timeEndMicroSeconds),
-                          header.timeEndSeconds, header.timeEndMicroSeconds);
+            header.timeStartSeconds      = scan.timeStartSeconds;
+            header.timeStartMicroSeconds = scan.timeStartMicroSeconds;
+            header.timeEndSeconds        = scan.timeEndSeconds;
+            header.timeEndMicroSeconds   = scan.timeEndMicroSeconds;
+
+        } else {
+
+            sensorToLocalTime(static_cast<double>(scan.timeStartSeconds) + 
+                              1e-6 * static_cast<double>(scan.timeStartMicroSeconds),
+                              header.timeStartSeconds, header.timeStartMicroSeconds);
+
+            sensorToLocalTime(static_cast<double>(scan.timeEndSeconds) + 
+                              1e-6 * static_cast<double>(scan.timeEndMicroSeconds),
+                              header.timeEndSeconds, header.timeEndMicroSeconds);
+        }
 
         header.scanId            = scan.scanCount;
         header.spindleAngleStart = scan.angleStart;
@@ -156,8 +201,10 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
 	header.scanArc           = scanArc;
 	header.maxRange          = maxRange;
         header.pointCount        = scan.points;
+        header.rangesP           = scan.distanceP;
+        header.intensitiesP      = scan.intensityP;
 
-        dispatchLaser(buffer, header, scan.distanceP, scan.intensityP);
+        dispatchLidar(buffer, header);
 
         break;
     }
@@ -178,13 +225,20 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
 
         const wire::ImageMeta *metaP = m_imageMetaCache.find(image.frameId);
         if (NULL == metaP)
-            CRL_EXCEPTION("no meta cached for frameId %d", image.frameId);
+            break;
+            //CRL_EXCEPTION("no meta cached for frameId %d", image.frameId);
 
         image::Header header;
 
-        sensorToLocalTime(static_cast<double>(metaP->timeSeconds) + 
-                          1e-6 * static_cast<double>(metaP->timeMicroSeconds),
-                          header.timeSeconds, header.timeMicroSeconds);
+        if (false == m_networkTimeSyncEnabled) {
+
+            header.timeSeconds      = metaP->timeSeconds;
+            header.timeMicroSeconds = metaP->timeMicroSeconds;
+
+        } else
+            sensorToLocalTime(static_cast<double>(metaP->timeSeconds) + 
+                              1e-6 * static_cast<double>(metaP->timeMicroSeconds),
+                              header.timeSeconds, header.timeMicroSeconds);
 
         header.source           = sourceWireToApi(image.source);
         header.bitsPerPixel     = image.bitsPerPixel;
@@ -194,8 +248,9 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
         header.exposure         = metaP->exposureTime;
         header.gain             = metaP->gain;
         header.framesPerSecond  = metaP->framesPerSecond;
+        header.imageDataP       = image.dataP;
         
-        dispatchImage(buffer, header, image.dataP);
+        dispatchImage(buffer, header);
 
         break;
     }
@@ -205,14 +260,21 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
 
         const wire::ImageMeta *metaP = m_imageMetaCache.find(image.frameId);
         if (NULL == metaP)
-            CRL_EXCEPTION("no meta cached for frameId %d", image.frameId);
+            break;
+            //CRL_EXCEPTION("no meta cached for frameId %d", image.frameId);
         
         image::Header header;
 
-        sensorToLocalTime(static_cast<double>(metaP->timeSeconds) + 
-                          1e-6 * static_cast<double>(metaP->timeMicroSeconds),
-                          header.timeSeconds, header.timeMicroSeconds);
+        if (false == m_networkTimeSyncEnabled) {
 
+            header.timeSeconds      = metaP->timeSeconds;
+            header.timeMicroSeconds = metaP->timeMicroSeconds;
+
+        } else
+            sensorToLocalTime(static_cast<double>(metaP->timeSeconds) + 
+                              1e-6 * static_cast<double>(metaP->timeMicroSeconds),
+                              header.timeSeconds, header.timeMicroSeconds);
+        
         header.source           = Source_Disparity;
         header.bitsPerPixel     = wire::Disparity::API_BITS_PER_PIXEL;
         header.width            = image.width;
@@ -221,8 +283,61 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
         header.exposure         = metaP->exposureTime;
         header.gain             = metaP->gain;
         header.framesPerSecond  = metaP->framesPerSecond;
+        header.imageDataP       = image.dataP;
 
-        dispatchImage(buffer, header, image.dataP);
+        dispatchImage(buffer, header);
+
+        break;
+    }
+    case MSG_ID(wire::SysPps::ID):
+    {
+        wire::SysPps pps(stream, version);
+
+        pps::Header header;
+
+        header.sensorTime = pps.ppsNanoSeconds;
+
+        dispatchPps(header);
+
+        break;
+    }
+    case MSG_ID(wire::ImuData::ID):
+    {
+        wire::ImuData imu(stream, version);
+
+        imu::Header header;
+
+        header.sequence = imu.sequence;
+        header.samples.resize(imu.samples.size());
+        
+        for(uint32_t i=0; i<imu.samples.size(); i++) {
+
+            const wire::ImuSample& w = imu.samples[i];
+            imu::Sample&           a = header.samples[i];
+
+            if (false == m_networkTimeSyncEnabled) {
+
+                const int64_t oneBillion = static_cast<int64_t>(1e9);
+
+                a.timeSeconds      = static_cast<uint32_t>(w.timeNanoSeconds / oneBillion);
+                a.timeMicroSeconds = static_cast<uint32_t>((w.timeNanoSeconds % oneBillion) / 
+                                                           static_cast<int64_t>(1000));
+
+            } else
+                sensorToLocalTime(static_cast<double>(w.timeNanoSeconds) / 1e9,
+                                  a.timeSeconds, a.timeMicroSeconds);
+
+            switch(w.type) {
+            case wire::ImuSample::TYPE_ACCEL: a.type = imu::Sample::Type_Accelerometer; break;
+            case wire::ImuSample::TYPE_GYRO : a.type = imu::Sample::Type_Gyroscope;     break;
+            case wire::ImuSample::TYPE_MAG  : a.type = imu::Sample::Type_Magnetometer;  break;
+            default: CRL_EXCEPTION("unknown wire IMU type: %d", w.type);
+            }
+
+            a.x = w.x; a.y = w.y; a.z = w.z;
+        }
+
+        dispatchImu(header);
 
         break;
     }
@@ -264,6 +379,15 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
     case MSG_ID(wire::StatusResponse::ID):
         m_messages.store(wire::StatusResponse(stream, version));   
         break;
+    case MSG_ID(wire::ImuConfig::ID):
+        m_messages.store(wire::ImuConfig(stream, version));
+        break;
+    case MSG_ID(wire::ImuInfo::ID):
+        m_messages.store(wire::ImuInfo(stream, version));
+        break;
+    case MSG_ID(wire::SysTestMtuResponse::ID):
+        m_messages.store(wire::SysTestMtuResponse(stream, version));
+        break;
     default:
 
         CRL_DEBUG("unknown message received: id=%d, version=%d\n",
@@ -280,7 +404,7 @@ void impl::dispatch(utility::BufferStreamWriter& buffer)
 
     switch(id) {
     case MSG_ID(wire::Ack::ID):
-	m_watch.signal(wire::Ack(stream, version));
+        m_watch.signal(wire::Ack(stream, version));
 	break;
     default:	
 	m_watch.signal(id);
@@ -361,7 +485,7 @@ const int64_t& impl::unwrapSequenceId(uint16_t wireId)
             m_lastRxSeqId = m_unWrappedRxSeqId = wireId;
 
         //
-        // Detect 16-bit wrap
+        // Detect forward 16-bit wrap
 
         else if (wireId        < ID_CENTER   &&
                  m_lastRxSeqId > ID_CENTER) {
@@ -388,6 +512,8 @@ const int64_t& impl::unwrapSequenceId(uint16_t wireId)
 
 void impl::handle()
 {
+    utility::ScopedLock lock(m_rxLock);
+
     for(;;) {
  
         //
@@ -451,52 +577,42 @@ void impl::handle()
             else {
 
                 //
-                // Create a new tracker for this sequence id. If the tracker cache is
-                // full, the oldest tracker will be released automatically.
+                // Create a new tracker for this sequence id.
 
-                m_udpTrackerCache.insert(sequence,
-                                         (trP = new UdpTracker(getUdpAssembler(inP, bytesRead),
-                                                               findFreeBuffer(header.messageLength))));
+                trP = new UdpTracker(header.messageLength,
+                                     getUdpAssembler(inP, bytesRead),
+                                     findFreeBuffer(header.messageLength));
             }
         }
      
         //
-        // Check for duplicate or out-of-order packets.
-        // Out-of-order packets are technically acceptable, however 
-        // the cost to check if a packet is out-of-order vs. duplicated is high.
-        // Duplicate packets can easily happen on misconfigured network interfaces.
+        // Assemble the datagram into the message stream, returns true if the
+        // assembly is complete.
 
-        if (header.byteOffset <= trP->lastByteOffset)
-            CRL_EXCEPTION("out-of-order or duplicate packet for sequence %lld",
-                          sequence);
-        else
-            trP->lastByteOffset = header.byteOffset;
-
-        //
-        // Assemble the datagram into the message stream
-
-        const uint32_t messageBytes = bytesRead - sizeof(wire::Header);
-
-        trP->assembler(trP->stream,
-                       &(inP[sizeof(wire::Header)]),
-                       header.byteOffset, messageBytes);
-                
-        //
-        // Have we fully re-assembled this message yet?
-        
-        trP->bytesAssembled += messageBytes;
-
-        if (header.messageLength == trP->bytesAssembled) {
+        if (true == trP->assemble(bytesRead - sizeof(wire::Header),
+                                  header.byteOffset,
+                                  &(inP[sizeof(wire::Header)]))) {
 
             //
             // Dispatch to any listeners
 
-            dispatch(trP->stream);
+            dispatch(trP->stream());
 
             //
-            // Free the tracker
+            // Release the tracker
 
-            m_udpTrackerCache.remove(sequence);
+            if (1 == trP->packets())
+                delete trP; // has not yet been cached
+            else
+                m_udpTrackerCache.remove(sequence);
+
+        } else if (1 == trP->packets()) {
+
+            //
+            // Cache the tracker, as more UDP packets are
+            // forthcoming for this message.
+
+            m_udpTrackerCache.insert(sequence, trP);
         }
     }
 }
@@ -536,7 +652,7 @@ void *impl::rxThread(void *userDataP)
 
             selfP->handle();
 
-        } catch (const utility::Exception& e) {
+        } catch (const std::exception& e) {
                     
             CRL_DEBUG("exception while decoding packet: %s\n", e.what());
 

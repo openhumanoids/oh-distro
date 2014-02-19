@@ -224,11 +224,9 @@ namespace { // anonymous
 // Shims for c-style driver callbacks
 
 void lCB(const lidar::Header&        header,
-	 const lidar::RangeType*     rangesP,
-	 const lidar::IntensityType* intensitiesP,
 	 void*                       userDataP)
 {
-    reinterpret_cast<Laser*>(userDataP)->scanCallback(header, rangesP, intensitiesP);
+    reinterpret_cast<Laser*>(userDataP)->scanCallback(header);
 }
 
 
@@ -343,9 +341,7 @@ void Laser::publishLCMTransforms(int64_t utime_out, int32_t spindleAngle){
 
 }
 
-void Laser::scanCallback(const lidar::Header&        header,
-                         const lidar::RangeType*     rangesP,
-                         const lidar::IntensityType* intensitiesP)
+void Laser::scanCallback(const lidar::Header& header)
 {
 
     //
@@ -396,8 +392,8 @@ void Laser::scanCallback(const lidar::Header&        header,
     lcm_laser_msg_.ranges.resize( header.pointCount );
     lcm_laser_msg_.intensities.resize( header.pointCount );
     for (size_t i=0; i < header.pointCount; i++){
-      lcm_laser_msg_.ranges[i]      = static_cast<float>(rangesP[i]) / 1000.0f; // from millimeters
-      lcm_laser_msg_.intensities[i] = static_cast<float>(intensitiesP[i]);      // in device units
+      lcm_laser_msg_.ranges[i]      = static_cast<float>(header.rangesP[i]) / 1000.0f; // from millimeters
+      lcm_laser_msg_.intensities[i] = static_cast<float>(header.intensitiesP[i]);      // in device units
     }
     lcm_laser_msg_.nranges = header.pointCount;
     lcm_laser_msg_.nintensities=header.pointCount;

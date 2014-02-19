@@ -47,14 +47,14 @@ const DataSource allImageSources = (Source_Luma_Left            |
                                     Source_Disparity);
 //
 // Shims for C-style driver callbacks 
-void rectCB(const image::Header& header, const void* imageDataP, void* userDataP)
-{ reinterpret_cast<Camera*>(userDataP)->rectCallback(header, imageDataP); }
-void depthCB(const image::Header& header, const void* imageDataP, void* userDataP)
-{ reinterpret_cast<Camera*>(userDataP)->depthCallback(header, imageDataP); }
-void colorCB(const image::Header& header, const void* imageDataP, void* userDataP)
-{ reinterpret_cast<Camera*>(userDataP)->colorImageCallback(header, imageDataP); }
-void rightRectCB(const image::Header& header, const void* imageDataP, void* userDataP)
-{ reinterpret_cast<Camera*>(userDataP)->rightRectCallback(header, imageDataP); }
+void rectCB(const image::Header& header, void* userDataP)
+{ reinterpret_cast<Camera*>(userDataP)->rectCallback(header); }
+void depthCB(const image::Header& header, void* userDataP)
+{ reinterpret_cast<Camera*>(userDataP)->depthCallback(header); }
+void colorCB(const image::Header& header, void* userDataP)
+{ reinterpret_cast<Camera*>(userDataP)->colorImageCallback(header); }
+void rightRectCB(const image::Header& header, void* userDataP)
+{ reinterpret_cast<Camera*>(userDataP)->rightRectCallback(header); }
 
 }; // anonymous
 
@@ -464,8 +464,7 @@ void Camera::applyConfig(CameraConfig& config){
 
 
 
-void Camera::rectCallback(const image::Header& header,
-                          const void*          imageDataP)
+void Camera::rectCallback(const image::Header& header)
 {    
     /*
     if (Source_Luma_Rectified_Left  == header.source){
@@ -492,7 +491,7 @@ void Camera::rectCallback(const image::Header& header,
 
         // LCM Left:        
         left_data_->msg_.data.resize( imageSize);
-        memcpy(&left_data_->msg_.data[0], imageDataP, imageSize);
+        memcpy(&left_data_->msg_.data[0], header.imageDataP, imageSize);
         left_data_->msg_.size =imageSize;
         left_data_->msg_.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY; 
         left_data_->msg_.utime = data_utime;
@@ -507,7 +506,7 @@ void Camera::rectCallback(const image::Header& header,
 
         // LCM Right:        
         right_data_->msg_.data.resize( imageSize);
-        memcpy(&right_data_->msg_.data[0], imageDataP, imageSize);
+        memcpy(&right_data_->msg_.data[0], header.imageDataP, imageSize);
         right_data_->msg_.size =imageSize;
         right_data_->msg_.pixelformat = bot_core::image_t::PIXEL_FORMAT_GRAY; 
         right_data_->msg_.utime = data_utime;
@@ -539,8 +538,7 @@ void Camera::rectCallback(const image::Header& header,
     
 }
 
-void Camera::depthCallback(const image::Header& header,
-                           const void*          imageDataP)
+void Camera::depthCallback(const image::Header& header)
 {
     if (verbose_){
       printf("depth\n");
@@ -571,7 +569,7 @@ void Camera::depthCallback(const image::Header& header,
         if (config_.do_zlib_compress_){
           int uncompressed_size = isize;
           unsigned long compressed_size = depth_compress_buf_size_;
-          compress2( depth_compress_buf_, &compressed_size, (const Bytef*) imageDataP, uncompressed_size,
+          compress2( depth_compress_buf_, &compressed_size, (const Bytef*) header.imageDataP, uncompressed_size,
                   Z_BEST_SPEED);
           lcm_disp_.data.resize(compressed_size);
           memcpy(&lcm_disp_.data[ 0 ], depth_compress_buf_, compressed_size ); 
@@ -579,7 +577,7 @@ void Camera::depthCallback(const image::Header& header,
           lcm_disp_type_ = multisense::images_t::DISPARITY_ZIPPED;;
         }else{
           lcm_disp_.data.resize(isize);
-          memcpy(&lcm_disp_.data[ 0 ], imageDataP, isize);
+          memcpy(&lcm_disp_.data[ 0 ], header.imageDataP, isize);
           lcm_disp_.size = isize;
           lcm_disp_type_ = multisense::images_t::DISPARITY;
         }
@@ -608,18 +606,16 @@ void Camera::depthCallback(const image::Header& header,
 
 
 
-void Camera::rightRectCallback(const image::Header& header,
-                               const void* imageDataP)
+void Camera::rightRectCallback(const image::Header& header)
 {
   if (header.source != Source_Luma_Rectified_Right) return;
-  right_data_->setRectImage(header, imageDataP);
+  right_data_->setRectImage(header, header.imageDataP);
   int64_t data_utime = header.timeSeconds*1E6 + header.timeMicroSeconds;
   right_data_->pushMessage(data_utime, header.frameId);
 }
 
 
-void Camera::colorImageCallback(const image::Header& header,
-                                const void*          imageDataP)
+void Camera::colorImageCallback(const image::Header& header)
 {
     if (verbose_) printf("colorImageCallback\n");
 
@@ -630,14 +626,14 @@ void Camera::colorImageCallback(const image::Header& header,
     if (Source_Luma_Left == header.source) {
         if (false == left_data_->got_luma_) {
             const uint32_t imageSize = header.width * header.height;
-            memcpy(left_data_->lumaP_, imageDataP, imageSize);
+            memcpy(left_data_->lumaP_, header.imageDataP, imageSize);
             left_data_->luma_frame_id_ = header.frameId;
             left_data_->got_luma_      = true;
         }
     } else if (Source_Luma_Right == header.source) {
         if (false == right_data_->got_luma_) {
             const uint32_t imageSize = header.width * header.height;
-            memcpy(right_data_->lumaP_, imageDataP, imageSize);
+            memcpy(right_data_->lumaP_, header.imageDataP, imageSize);
             right_data_->luma_frame_id_ = header.frameId;
             right_data_->got_luma_      = true;
         }
@@ -645,7 +641,7 @@ void Camera::colorImageCallback(const image::Header& header,
 
     else if (Source_Chroma_Left == header.source) {
         if (header.frameId == left_data_->luma_frame_id_) {
-            left_data_->yuvToRgb(imageDataP);
+            left_data_->yuvToRgb(header.imageDataP);
             left_data_->rectify();
             left_data_->pushMessage(data_utime, header.frameId);
             if (config_.output_mode_ == 2){
@@ -655,7 +651,7 @@ void Camera::colorImageCallback(const image::Header& header,
         left_data_->got_luma_ = false;
     } else if (Source_Chroma_Right == header.source) {
         if (header.frameId == right_data_->luma_frame_id_) {
-            right_data_->yuvToRgb(imageDataP);
+            right_data_->yuvToRgb(header.imageDataP);
             right_data_->rectify();
             right_data_->pushMessage(data_utime, header.frameId);
         }

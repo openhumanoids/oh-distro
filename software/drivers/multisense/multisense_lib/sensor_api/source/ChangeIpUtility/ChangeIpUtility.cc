@@ -24,9 +24,11 @@
  *   2013-05-22, ekratzer@carnegierobotics.com, PR1044, Created file.
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <getopt.h>
 
 #include <LibMultiSense/MultiSenseChannel.hh>
 
@@ -91,7 +93,8 @@ int main(int    argc,
 
     status = channelP->getSensorVersion(version);
     if (Status_Ok != status) {
-        fprintf(stderr, "failed to query sensor version: %d\n", status);
+        fprintf(stderr, "failed to query sensor version: %s\n",
+                Channel::statusString(status));
         goto clean_out;
     }
     
@@ -119,8 +122,8 @@ int main(int    argc,
                                                               desiredGateway,
                                                               desiredNetmask));
     if (Status_Ok != status)
-        fprintf(stderr, "Failed to set the network configuration: %d\n",
-                status);
+        fprintf(stderr, "Failed to set the network configuration: %s\n",
+                Channel::statusString(status));
     else 
         fprintf(stdout, "Network parameters changed successfully\n");
 

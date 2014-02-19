@@ -24,6 +24,8 @@
  *   2013-05-15, ekratzer@carnegierobotics.com, PR1044, Created file.
  **/
 
+#include <stdlib.h>
+
 #include "details/utility/Functional.hh"
 
 #include "details/channel.hh"
@@ -41,6 +43,7 @@
 #include "details/wire/CamSetResolutionMessage.h"
 #include "details/wire/CamGetConfigMessage.h"
 #include "details/wire/CamConfigMessage.h"
+#include "details/wire/CamSetTriggerSourceMessage.h"
 
 #include "details/wire/LidarSetMotorMessage.h"
 
@@ -61,6 +64,14 @@
 #include "details/wire/SysLidarCalibrationMessage.h"
 #include "details/wire/SysGetDeviceModesMessage.h"
 #include "details/wire/SysDeviceModesMessage.h"
+
+#include "details/wire/ImuGetInfoMessage.h"
+#include "details/wire/ImuGetConfigMessage.h"
+#include "details/wire/ImuInfoMessage.h"
+#include "details/wire/ImuConfigMessage.h"
+
+#include "details/wire/SysTestMtuMessage.h"
+#include "details/wire/SysTestMtuResponseMessage.h"
 
 namespace crl {
 namespace multisense {
@@ -93,9 +104,9 @@ Status impl::addIsolatedCallback(image::Callback callback,
                                                      userDataP,
                                                      MAX_USER_IMAGE_QUEUE_SIZE));
 
-    } catch (const utility::Exception& e) {
+    } catch (const std::exception& e) {
         CRL_DEBUG("exception: %s\n", e.what());
-        return Status_Error;
+        return Status_Exception;
     }
     return Status_Ok;
 }
@@ -110,12 +121,55 @@ Status impl::addIsolatedCallback(lidar::Callback callback,
 
         utility::ScopedLock lock(m_dispatchLock);
         m_lidarListeners.push_back(new LidarListener(callback, 
+                                                     0,
                                                      userDataP,
                                                      MAX_USER_LASER_QUEUE_SIZE));
 
-    } catch (const utility::Exception& e) {
+    } catch (const std::exception& e) {
         CRL_DEBUG("exception: %s\n", e.what());
-        return Status_Error;
+        return Status_Exception;
+    }
+    return Status_Ok;
+}
+
+//
+// Adds a new PPS listener
+
+Status impl::addIsolatedCallback(pps::Callback callback, 
+                                 void         *userDataP)
+{
+    try {
+
+        utility::ScopedLock lock(m_dispatchLock);
+        m_ppsListeners.push_back(new PpsListener(callback, 
+                                                 0,
+                                                 userDataP,
+                                                 MAX_USER_PPS_QUEUE_SIZE));
+
+    } catch (const std::exception& e) {
+        CRL_DEBUG("exception: %s\n", e.what());
+        return Status_Exception;
+    }
+    return Status_Ok;
+}
+
+//
+// Adds a new IMU listener
+
+Status impl::addIsolatedCallback(imu::Callback callback, 
+                                 void         *userDataP)
+{
+    try {
+
+        utility::ScopedLock lock(m_dispatchLock);
+        m_imuListeners.push_back(new ImuListener(callback, 
+                                                 0,
+                                                 userDataP,
+                                                 MAX_USER_IMU_QUEUE_SIZE));
+
+    } catch (const std::exception& e) {
+        CRL_DEBUG("exception: %s\n", e.what());
+        return Status_Exception;
     }
     return Status_Ok;
 }
@@ -140,15 +194,16 @@ Status impl::removeIsolatedCallback(image::Callback callback)
             }
         }
 
-    } catch (const utility::Exception& e) {
+    } catch (const std::exception& e) {
         CRL_DEBUG("exception: %s\n", e.what());
+        return Status_Exception;
     }
 
     return Status_Error;
 }
 
 //
-// Removes an lidar listener
+// Removes a lidar listener
 
 Status impl::removeIsolatedCallback(lidar::Callback callback)
 {
@@ -167,13 +222,69 @@ Status impl::removeIsolatedCallback(lidar::Callback callback)
             }
         }
 
-    } catch (const utility::Exception& e) {
+    } catch (const std::exception& e) {
         CRL_DEBUG("exception: %s\n", e.what());
+        return Status_Exception;
     }
 
     return Status_Error;
 }
 
+//
+// Removes a PPS listener
+
+Status impl::removeIsolatedCallback(pps::Callback callback)
+{
+    try {
+        utility::ScopedLock lock(m_dispatchLock);
+
+        std::list<PpsListener*>::iterator it;
+        for(it  = m_ppsListeners.begin();
+            it != m_ppsListeners.end();
+            it ++) {
+        
+            if ((*it)->callback() == callback) {
+                delete *it;
+                m_ppsListeners.erase(it);
+                return Status_Ok;
+            }
+        }
+
+    } catch (const std::exception& e) {
+        CRL_DEBUG("exception: %s\n", e.what());
+        return Status_Exception;
+    }
+
+    return Status_Error;
+}
+
+//
+// Removes an IMU listener
+
+Status impl::removeIsolatedCallback(imu::Callback callback)
+{
+    try {
+        utility::ScopedLock lock(m_dispatchLock);
+
+        std::list<ImuListener*>::iterator it;
+        for(it  = m_imuListeners.begin();
+            it != m_imuListeners.end();
+            it ++) {
+        
+            if ((*it)->callback() == callback) {
+                delete *it;
+                m_imuListeners.erase(it);
+                return Status_Ok;
+            }
+        }
+
+    } catch (const std::exception& e) {
+        CRL_DEBUG("exception: %s\n", e.what());
+        return Status_Exception;
+    }
+
+    return Status_Error;
+}
 
 //
 // Reserve the current callback buffer being used in a dispatch thread
@@ -186,7 +297,7 @@ void *impl::reserveCallbackBuffer()
 
             return reinterpret_cast<void*>(new utility::BufferStream(*dispatchBufferReferenceTP));
             
-        } catch (const utility::Exception& e) {
+        } catch (const std::exception& e) {
             
             CRL_DEBUG("exception: %s\n", e.what());
             
@@ -204,75 +315,68 @@ void *impl::reserveCallbackBuffer()
 
 Status impl::releaseCallbackBuffer(void *referenceP)
 {
-    if (referenceP)
+    if (referenceP) {
         try {
 
             delete reinterpret_cast<utility::BufferStream*>(referenceP);
             return Status_Ok;
 
-        } catch (const utility::Exception& e) {
+        } catch (const std::exception& e) {
             
             CRL_DEBUG("exception: %s\n", e.what());
+            return Status_Exception;
             
         } catch (...) {
             
             CRL_DEBUG("unknown exception\n");
+            return Status_Exception;
         }
+    }
 
-    return Status_Failed;
+    return Status_Error;
 }
 
 //
 // Get a copy of the histogram for a particular frame ID
 
-const uint32_t *impl::getHistogram(int64_t   frameId,
-                                   uint32_t& channels,
-                                   uint32_t& bins)
+Status impl::getImageHistogram(int64_t           frameId,
+                               image::Histogram& histogram)
 {
     try {
         
         utility::ScopedLock lock(m_imageMetaCache.mutex());
 
         const wire::ImageMeta *metaP = m_imageMetaCache.find_nolock(frameId);
-        if (NULL == metaP)
-            CRL_EXCEPTION("no meta cached for frameId %d", frameId);
-
-        if (m_imageMetaCache.take_nolock(frameId)) {
-
-            channels = wire::ImageMeta::HISTOGRAM_CHANNELS;
-            bins     = wire::ImageMeta::HISTOGRAM_BINS;
-
-            return metaP->histogramP;
+        if (NULL == metaP) {
+            CRL_DEBUG("no meta cached for frameId %ld", frameId);
+            return Status_Failed;
         }
 
-    } catch (const utility::Exception& e) {
+        histogram.channels = wire::ImageMeta::HISTOGRAM_CHANNELS;
+        histogram.bins     = wire::ImageMeta::HISTOGRAM_BINS;
 
+        const int entries   = histogram.channels * histogram.bins;
+        const int sizeBytes = entries * sizeof(uint32_t);
+
+        histogram.data.resize(entries);
+        memcpy(&(histogram.data[0]), metaP->histogramP, sizeBytes);
+
+        return Status_Ok;
+
+    } catch (const std::exception& e) {
         CRL_DEBUG("exception: %s\n", e.what());
-    }
-
-    return NULL;
-}
-
-//
-// Release the memory behind a histogram
-
-Status impl::releaseHistogram(int64_t frameId)
-{
-    try {
-
-        if (m_imageMetaCache.give(frameId))
-            return Status_Ok;
-        
-    } catch (const utility::Exception& e) {
-
-        CRL_DEBUG("exception: %s\n", e.what());
-
-    } catch (...) {
-
-        CRL_DEBUG("unknown exception\n");
+        return Status_Exception;
     }
 
     return Status_Error;
+}
+
+//
+// Enable/disable network-based time synchronization
+
+Status impl::networkTimeSynchronization(bool enabled)
+{
+    m_networkTimeSyncEnabled = enabled;
 }
 
 //
@@ -313,6 +417,32 @@ Status impl::getEnabledStreams(DataSource& mask)
     mask = m_streamsEnabled;
 
     return Status_Ok;
+}
+
+//
+// Set the trigger source
+
+Status impl::setTriggerSource(TriggerSource s)
+{
+    uint32_t wireSource;
+
+    switch(s) {
+    case Trigger_Internal: 
+
+        wireSource = wire::CamSetTriggerSource::SOURCE_INTERNAL;
+        break;
+
+    case Trigger_External:
+
+        wireSource = wire::CamSetTriggerSource::SOURCE_EXTERNAL;
+        break;
+
+    default:
+
+        return Status_Error;
+    }
+
+    return waitAck(wire::CamSetTriggerSource(wireSource));
 }
 
 //
@@ -369,14 +499,8 @@ Status impl::setLightingConfig(const lighting::Config& c)
 
 Status impl::getSensorVersion(VersionType& version)
 {
-    Status                status;
-    wire::VersionResponse data;
-
-    status = waitData(wire::VersionRequest(), data);
-    if (Status_Ok == status)
-        version = data.firmwareVersion;
-
-    return status;
+    version = m_sensorVersion.firmwareVersion;
+    return Status_Ok;
 }
 
 //
@@ -393,24 +517,17 @@ Status impl::getApiVersion(VersionType& version)
 
 Status impl::getVersionInfo(system::VersionInfo& v)
 {
-    Status                status;
-    wire::VersionResponse data;
-
-    status = waitData(wire::VersionRequest(), data);
-    if (Status_Ok != status)
-        return status;
-
     char dateP[128] = {0};
 
     snprintf(dateP, 128, "%s, %s", __DATE__, __TIME__);
 
     v.apiBuildDate            = std::string(dateP);
     v.apiVersion              = API_VERSION;
-    v.sensorFirmwareBuildDate = data.firmwareBuildDate;
-    v.sensorFirmwareVersion   = data.firmwareVersion;
-    v.sensorHardwareVersion   = data.hardwareVersion;
-    v.sensorHardwareMagic     = data.hardwareMagic;
-    v.sensorFpgaDna           = data.fpgaDna;
+    v.sensorFirmwareBuildDate = m_sensorVersion.firmwareBuildDate;
+    v.sensorFirmwareVersion   = m_sensorVersion.firmwareVersion;
+    v.sensorHardwareVersion   = m_sensorVersion.hardwareVersion;
+    v.sensorHardwareMagic     = m_sensorVersion.hardwareMagic;
+    v.sensorFpgaDna           = m_sensorVersion.fpgaDna;
 
     return Status_Ok;
 }
@@ -443,6 +560,13 @@ Status impl::getImageConfig(image::Config& config)
     ConfigAccess& a = *((ConfigAccess *) &config);
     
     a.setResolution(d.width, d.height);
+    if (-1 == d.disparities) { // pre v2.3 firmware
+        if (1024 == d.width)   // TODO: check for monocular
+            d.disparities = 128;
+        else
+            d.disparities = 0;
+    }
+    a.setDisparities(d.disparities);
     a.setFps(d.framesPerSecond);
     a.setGain(d.gain);
     
@@ -456,6 +580,7 @@ Status impl::getImageConfig(image::Config& config)
     a.setAutoWhiteBalance(d.autoWhiteBalance != 0);
     a.setAutoWhiteBalanceDecay(d.autoWhiteBalanceDecay);
     a.setAutoWhiteBalanceThresh(d.autoWhiteBalanceThresh);
+    a.setStereoPostFilterStrength(d.stereoPostFilterStrength);
 
     a.setCal(d.fx, d.fy, d.cx, d.cy, 
              d.tx, d.ty, d.tz,
@@ -474,7 +599,9 @@ Status impl::setImageConfig(const image::Config& c)
 {
     Status status;
 
-    status = waitAck(wire::CamSetResolution(c.width(), c.height()));
+    status = waitAck(wire::CamSetResolution(c.width(), 
+                                            c.height(),
+                                            c.disparities()));
     if (Status_Ok != status)
         return status;
 
@@ -489,11 +616,12 @@ Status impl::setImageConfig(const image::Config& c)
     cmd.autoExposureDecay  = c.autoExposureDecay();
     cmd.autoExposureThresh = c.autoExposureThresh();
 
-    cmd.whiteBalanceRed        = c.whiteBalanceRed();
-    cmd.whiteBalanceBlue       = c.whiteBalanceBlue();
-    cmd.autoWhiteBalance       = c.autoWhiteBalance() ? 1 : 0;
-    cmd.autoWhiteBalanceDecay  = c.autoWhiteBalanceDecay();
-    cmd.autoWhiteBalanceThresh = c.autoWhiteBalanceThresh();
+    cmd.whiteBalanceRed          = c.whiteBalanceRed();
+    cmd.whiteBalanceBlue         = c.whiteBalanceBlue();
+    cmd.autoWhiteBalance         = c.autoWhiteBalance() ? 1 : 0;
+    cmd.autoWhiteBalanceDecay    = c.autoWhiteBalanceDecay();
+    cmd.autoWhiteBalanceThresh   = c.autoWhiteBalanceThresh();
+    cmd.stereoPostFilterStrength = c.stereoPostFilterStrength();
 
     return waitAck(cmd);
 }
@@ -583,14 +711,21 @@ Status impl::getDeviceModes(std::vector<system::DeviceMode>& modes)
     if (Status_Ok != status)
         return Status_Error;
 
-    std::vector<wire::DeviceMode>::const_iterator it;
+    modes.resize(d.modes.size());
+    for(uint32_t i=0; i<d.modes.size(); i++) {
 
-    modes.clear();
-    for(it = d.modes.begin(); it != d.modes.end(); it++)
-        modes.push_back(system::DeviceMode((*it).width,
-                                           (*it).height,
-                                           (*it).supportedDataSources,
-                                           (*it).flags));
+        system::DeviceMode&     a = modes[i]; 
+        const wire::DeviceMode& w = d.modes[i];
+
+        a.width                = w.width;
+        a.height               = w.height;
+        a.supportedDataSources = sourceWireToApi(w.supportedDataSources);
+        if (m_sensorVersion.firmwareVersion >= 0x0203)
+            a.disparities = w.disparities;
+        else 
+            a.disparities = (a.width == 1024) ? 128 : 0;
+    }
+                        
     return Status_Ok;
 }
 
@@ -599,7 +734,23 @@ Status impl::getDeviceModes(std::vector<system::DeviceMode>& modes)
 
 Status impl::setMtu(int32_t mtu)
 {
-    Status status = waitAck(wire::SysMtu(mtu));
+    Status status = Status_Ok;
+
+    //
+    // Firmware v2.3 or better will send us an MTU-sized
+    // response packet, which can be used to verify the
+    // MTU setting before we actually make the change.
+
+    if (m_sensorVersion.firmwareVersion <= 0x0202)
+        status = waitAck(wire::SysMtu(mtu));
+    else {
+
+        wire::SysTestMtuResponse resp;
+        status = waitData(wire::SysTestMtu(mtu), resp);
+        if (Status_Ok == status)
+            status = waitAck(wire::SysMtu(mtu));
+    }
+
     if (Status_Ok == status)
         m_sensorMtu = mtu;
 
@@ -655,7 +806,7 @@ Status impl::getDeviceInfo(system::DeviceInfo& info)
     info.name             = w.name;
     info.buildDate        = w.buildDate;
     info.serialNumber     = w.serialNumber;
-    info.hardwareRevision = w.hardwareRevision;
+    info.hardwareRevision = hardwareWireToApi(w.hardwareRevision);
     info.pcbs.clear();
 
     for(uint8_t i=0; i<w.numberOfPcbs; i++) {
@@ -668,7 +819,7 @@ Status impl::getDeviceInfo(system::DeviceInfo& info)
     }
         
     info.imagerName              = w.imagerName;
-    info.imagerType              = w.imagerType;
+    info.imagerType              = imagerWireToApi(w.imagerType);
     info.imagerWidth             = w.imagerWidth;
     info.imagerHeight            = w.imagerHeight;
     info.lensName                = w.lensName;
@@ -699,7 +850,7 @@ Status impl::setDeviceInfo(const std::string& key,
     w.name             = info.name;
     w.buildDate        = info.buildDate;
     w.serialNumber     = info.serialNumber;
-    w.hardwareRevision = info.hardwareRevision;
+    w.hardwareRevision = hardwareApiToWire(info.hardwareRevision);
     w.numberOfPcbs     = std::min((uint32_t) info.pcbs.size(), 
                                   (uint32_t) wire::SysDeviceInfo::MAX_PCBS);
     for(uint32_t i=0; i<w.numberOfPcbs; i++) {
@@ -708,7 +859,7 @@ Status impl::setDeviceInfo(const std::string& key,
     }
         
     w.imagerName              = info.imagerName;
-    w.imagerType              = info.imagerType;
+    w.imagerType              = imagerApiToWire(info.imagerType);
     w.imagerWidth             = info.imagerWidth;
     w.imagerHeight            = info.imagerHeight;
     w.lensName                = info.lensName;
@@ -765,6 +916,150 @@ Status impl::verifyFirmware(const std::string& filename)
     return doFlashOp(filename,
                      wire::SysFlashOp::OP_VERIFY,
                      wire::SysFlashOp::RGN_FIRMWARE);
+}
+
+//
+// Get IMU information
+
+Status impl::getImuInfo(uint32_t& maxSamplesPerMessage,
+                        std::vector<imu::Info>& info)
+{
+    wire::ImuInfo w;
+
+    Status status = waitData(wire::ImuGetInfo(), w);
+    if (Status_Ok != status)
+        return status;
+
+    //
+    // Wire --> API
+
+    maxSamplesPerMessage = w.maxSamplesPerMessage;
+    info.resize(w.details.size());
+    for(uint32_t i=0; i<w.details.size(); i++) {
+
+        const wire::imu::Details& d = w.details[i];
+
+        info[i].name   = d.name;
+        info[i].device = d.device;
+        info[i].units  = d.units;
+        
+        info[i].rates.resize(d.rates.size());
+        for(uint32_t j=0; j<d.rates.size(); j++) {
+            info[i].rates[j].sampleRate      = d.rates[j].sampleRate;
+            info[i].rates[j].bandwidthCutoff = d.rates[j].bandwidthCutoff;
+        }
+        info[i].ranges.resize(d.ranges.size());
+        for(uint32_t j=0; j<d.ranges.size(); j++) {
+            info[i].ranges[j].range      = d.ranges[j].range;
+            info[i].ranges[j].resolution = d.ranges[j].resolution;
+        }
+    }
+
+    return Status_Ok;
+}
+
+//
+// Get IMU configuration
+
+Status impl::getImuConfig(uint32_t& samplesPerMessage,
+                          std::vector<imu::Config>& c)
+{
+    wire::ImuConfig w;
+
+    Status status = waitData(wire::ImuGetConfig(), w);
+    if (Status_Ok != status)
+        return status;
+
+    //
+    // Wire --> API
+
+    samplesPerMessage = w.samplesPerMessage;
+    c.resize(w.configs.size());
+    for(uint32_t i=0; i<w.configs.size(); i++) {
+        c[i].name            = w.configs[i].name;
+        c[i].enabled         = (w.configs[i].flags & wire::imu::Config::FLAGS_ENABLED);
+        c[i].rateTableIndex  = w.configs[i].rateTableIndex;
+        c[i].rangeTableIndex = w.configs[i].rangeTableIndex;
+    }
+
+    return Status_Ok;
+}
+
+//
+// Set IMU configuration
+
+Status impl::setImuConfig(bool storeSettingsInFlash,
+                          uint32_t samplesPerMessage,
+                          const std::vector<imu::Config>& c)
+{
+    wire::ImuConfig w;
+
+    //
+    // API --> wire
+
+    w.storeSettingsInFlash = storeSettingsInFlash ? 1 : 0;
+    w.samplesPerMessage    = samplesPerMessage;
+    w.configs.resize(c.size());
+    for(uint32_t i=0; i<c.size(); i++) {
+        w.configs[i].name            = c[i].name;
+        w.configs[i].flags           = c[i].enabled ? wire::imu::Config::FLAGS_ENABLED : 0;
+        w.configs[i].rateTableIndex  = c[i].rateTableIndex;
+        w.configs[i].rangeTableIndex = c[i].rangeTableIndex;
+    }
+
+    return waitAck(w);
+}
+
+//
+// Get recommended large buffer pool count/size
+
+Status impl::getLargeBufferDetails(uint32_t& bufferCount,
+                                   uint32_t& bufferSize)
+{
+    bufferCount = RX_POOL_LARGE_BUFFER_COUNT;
+    bufferSize  = RX_POOL_LARGE_BUFFER_SIZE;
+    
+    return Status_Ok;
+}
+
+//
+// Replace internal large buffers with user supplied
+
+Status impl::setLargeBuffers(const std::vector<uint8_t*>& buffers,
+                             uint32_t                     bufferSize)
+{
+    if (buffers.size() < RX_POOL_LARGE_BUFFER_COUNT)
+        CRL_DEBUG("WARNING: supplying less than recommended number of large buffers: %ld/%d\n",
+                  buffers.size(), RX_POOL_LARGE_BUFFER_COUNT);
+    if (bufferSize < RX_POOL_LARGE_BUFFER_SIZE)
+        CRL_DEBUG("WARNING: supplying smaller than recommended large buffers: %d/%d bytes\n",
+                  bufferSize, RX_POOL_LARGE_BUFFER_SIZE);
+
+    try {
+
+        utility::ScopedLock lock(m_rxLock); // halt potential pool traversal
+        
+        //
+        // Deletion is safe even if the buffer is in use elsewhere
+        // (BufferStream is reference counted.)
+
+        BufferPool::const_iterator it;
+        for(it  = m_rxLargeBufferPool.begin();
+            it != m_rxLargeBufferPool.end();
+            ++it)
+            delete *it;
+
+        m_rxLargeBufferPool.clear();
+
+        for(uint32_t i=0; i<buffers.size(); i++)
+            m_rxLargeBufferPool.push_back(new utility::BufferStreamWriter(buffers[i], bufferSize));
+
+    } catch (const std::exception& e) {
+        CRL_DEBUG("exception: %s\n", e.what());
+        return Status_Exception;
+    }
+
+    return Status_Ok;
 }
 
 }}}; // namespaces

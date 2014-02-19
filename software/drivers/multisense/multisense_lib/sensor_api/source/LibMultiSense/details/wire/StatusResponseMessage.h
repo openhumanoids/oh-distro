@@ -37,8 +37,9 @@ namespace wire {
 
 class StatusResponse {
 public:
-    static const IdType      ID      = ID_DATA_STATUS;
-    static const VersionType VERSION = 1;
+    static const IdType      ID                  = ID_DATA_STATUS;
+    static const VersionType VERSION             = 2;
+    static const float       INVALID_TEMPERATURE = -99999.0;
 
     //
     // Subsytem status
@@ -47,6 +48,7 @@ public:
     static const uint32_t STATUS_LASER_OK       = (1<<1);
     static const uint32_t STATUS_LASER_MOTOR_OK = (1<<2);
     static const uint32_t STATUS_CAMERAS_OK     = (1<<3);
+    static const uint32_t STATUS_IMU_OK         = (1<<4);
 
     //
     // The reported uptime for the system
@@ -56,13 +58,35 @@ public:
     uint32_t           status;
     float              temperature0; // celsius
     float              temperature1;
+    
+    //
+    // Version 2 additions
+
+    float              temperature2; // celsius
+    float              temperature3;
+
+    float              inputVolts;    // volts
+    float              inputCurrent;  // amps
+    float              fpgaPower;     // watts
+    float              logicPower;
+    float              imagerPower;
 
     //
     // Constructors
 
     StatusResponse(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
-    StatusResponse() {};
-
+    StatusResponse() : uptime(), 
+                       status(0), 
+                       temperature0(INVALID_TEMPERATURE), 
+                       temperature1(INVALID_TEMPERATURE),
+                       temperature2(INVALID_TEMPERATURE),
+                       temperature3(INVALID_TEMPERATURE),
+                       inputVolts(-1.0),
+                       inputCurrent(-1.0),
+                       fpgaPower(-1.0),
+                       logicPower(-1.0),
+                       imagerPower(-1.0) {};
+                       
     //
     // Serialization routine
 
@@ -74,6 +98,16 @@ public:
         message & status;
         message & temperature0;
         message & temperature1;
+
+        if (version >= 2) {
+            message & temperature2;
+            message & temperature3;
+            message & inputVolts;
+            message & inputCurrent;
+            message & fpgaPower;
+            message & logicPower;
+            message & imagerPower;
+        }   
     }
 };
 

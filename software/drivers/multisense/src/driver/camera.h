@@ -93,16 +93,12 @@ public:
     Camera(crl::multisense::Channel* driver, CameraConfig& config_);
     ~Camera();
 
-    void rectCallback(const crl::multisense::image::Header& header,
-                      const void *imageDataP);
+    void rectCallback(const crl::multisense::image::Header& header);
 
-    void depthCallback(const crl::multisense::image::Header& header,
-                       const void *imageDataP);
-    void rightRectCallback(const crl::multisense::image::Header& header,
-                           const void *imageDataP);
-    void colorImageCallback(const crl::multisense::image::Header& header,
-                            const void *imageDataP);
-
+    void depthCallback(const crl::multisense::image::Header& header);
+    void rightRectCallback(const crl::multisense::image::Header& header);
+    void colorImageCallback(const crl::multisense::image::Header& header);
+  
     void applyConfig(CameraConfig& config);
     
 private:

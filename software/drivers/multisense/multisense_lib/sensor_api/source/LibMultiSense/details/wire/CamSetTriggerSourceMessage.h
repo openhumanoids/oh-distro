@@ -1,5 +1,5 @@
 /**
- * @file LibMultiSense/CamSetResolutionMessage.h
+ * @file LibMultiSense/CamSetTriggerSourceMessage.h
  *
  * This message sets the output resolution of the camera.
  *
@@ -23,40 +23,35 @@
  *
  *
  * Significant history (date, user, job code, action):
- *   2013-05-08, ekratzer@carnegierobotics.com, PR1044, Significant rewrite.
- *   2012-10-19, dstrother@carnegierobotics.com, RD1020, Created file.
+ *   2013-07-15, ekratzer@carnegierobotics.com, PR1044, Created file.
  **/
 
-#ifndef LibMultiSense_CamSetResolutionMessage
-#define LibMultiSense_CamSetResolutionMessage
+#ifndef LibMultiSense_CamSetTriggerSourceMessage
+#define LibMultiSense_CamSetTriggerSourceMessage
 
 namespace crl {
 namespace multisense {
 namespace details {
 namespace wire {
 
-class CamSetResolution {
+class CamSetTriggerSource {
 public:
-    static const IdType      ID      = ID_CMD_CAM_SET_RESOLUTION;
-    static const VersionType VERSION = 2;
+    static const IdType      ID      = ID_CMD_CAM_SET_TRIGGER_SOURCE;
+    static const VersionType VERSION = 1;
+
+    static const uint32_t    SOURCE_INTERNAL = 0;
+    static const uint32_t    SOURCE_EXTERNAL = 1; // OPTO_RX
 
     //
     // Parameters
 
-    uint32_t width;
-    uint32_t height;
-
-    //
-    // Version 2 additions
-
-    int32_t disparities;
+    uint32_t source;
 
     //
     // Constructors
 
-    CamSetResolution(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
-    CamSetResolution(uint32_t w=0, uint32_t h=0, int32_t d=-1) :
-                     width(w), height(h), disparities(d) {};
+    CamSetTriggerSource(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
+    CamSetTriggerSource(uint32_t s=SOURCE_INTERNAL) : source(s) {};
 
     //
     // Serialization routine
@@ -65,13 +60,7 @@ public:
         void serialize(Archive&          message,
                        const VersionType version)
     {
-        message & width;
-        message & height;
-
-        if (version >= 2)
-            message & disparities;
-        else
-            disparities = 0;
+        message & source;
     }
 };
 
