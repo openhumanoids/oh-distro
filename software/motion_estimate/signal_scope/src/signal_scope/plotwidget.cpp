@@ -219,15 +219,14 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
     QList<QListWidgetItem*> selectedItems = mSignalListWidget->selectedItems();
     foreach (QListWidgetItem*	selectedItem, selectedItems)
     {
-      QListWidgetItem* signalItem = mSignalListWidget->currentItem();
-      SignalHandler* signalHandler = this->signalForItem(signalItem);
+      SignalHandler* signalHandler = this->signalForItem(selectedItem);
 
       mSubscribers->removeSignalHandler(signalHandler);
 
       d_plot->removeSignal(signalHandler->signalData());
-      mSignals.remove(signalItem);
+      mSignals.remove(selectedItem);
 
-      delete signalItem;
+      delete selectedItem;
       delete signalHandler;
     }
   }
