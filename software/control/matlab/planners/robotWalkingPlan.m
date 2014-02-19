@@ -37,20 +37,22 @@ for i=1:length(ts)
     for j = 1:length(link_constraints)
       if ~isempty(link_constraints(j).traj)
 %         approx_args(end+1:end+3) = {link_constraints(j).link_ndx, link_constraints(j).pt, link_constraints(j).traj.eval(t)};
-        approx_args = [approx_args,wrapDeprecatedConstraint(biped,link_constraints(j).link_ndx, link_constraints(j).pt,link_constraints(j).traj.eval(t),struct('use_mex',true))];
+        xyzrpy = link_constraints(j).traj.eval(t);
+        approx_args = [approx_args,{constructRigidBodyConstraint(RigidBodyConstraint.WorldPositionConstraintType,true,...
+          biped,link_constraints(j).link_ndx, link_constraints(j).pt,xyzrpy(1:3,:),xyzrpy(1:3,:)),...
+          constructRigidBodyConstraint(RigidBodyConstraint.WorldEulerConstraintType,true,biped,link_constraints(j).link_ndx,xyzrpy(4:6,1),xyzrpy(4:6,1))}];
       else
         pos_min = link_constraints(j).min_traj.eval(t);
         pos_max = link_constraints(j).max_traj.eval(t);
 %         approx_args(end+1:end+3) = {link_constraints(j).link_ndx, link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
-        approx_args = [approx_args,wrapDeprecatedConstraint(biped,...
-          link_constraints(j).link_ndx,link_constraints(j).pt,...
-          struct('min',pos_min,'max',pos_max),...
-          struct('use_mex',true))];
+        approx_args = [approx_args,{constructRigidBodyConstraint(RigidBodyConstraint.WorldPositionConstraintType,true,...
+          biped,link_constraints(j).link_ndx,link_constraints(j).pt,pos_min(1:3,:),pos_max(1:3,:)),...
+          constructRigidBodyConstraint(RigidBodyConstraint.WorldEulerConstraintType,true,biped,link_constraints(j).link_ndx,pos_min(4:6,1),pos_max(4:6,1))}];
       end
     end
-    kc_com = constructPtrWorldCoMConstraintmex(biped.getMexModelPtr,[comtraj.eval(t);nan],[comtraj.eval(t);nan]);
+    kc_com = constructRigidBodyConstraint(RigidBodyConstraint.WorldCoMConstraintType,true,biped.getMexModelPtr,[comtraj.eval(t);nan],[comtraj.eval(t);nan]);
 %     [q(:,i),info] = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],approx_args{:},options);
-    [q(:,i),info] = approximateIKmex(biped.getMexModelPtr,q(:,i-1),qstar,kc_com,approx_args{:},ikoptions);
+    [q(:,i),info] = approximateIKmex(biped.getMexModelPtr,q(:,i-1),qstar,kc_com,approx_args{:},ikoptions.mex_ptr);
     if info
       full_IK_calls = full_IK_calls + 1
       q(:,i) = inverseKin(biped,q(:,i-1),qstar,kc_com,approx_args{:},ikoptions);
