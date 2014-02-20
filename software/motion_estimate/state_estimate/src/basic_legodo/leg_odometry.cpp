@@ -8,7 +8,6 @@
 #include "leg_odometry.hpp"
 
 
-
 using namespace std;
 using namespace boost;
 using namespace boost::assign;
@@ -415,7 +414,10 @@ bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vect
     exit(-1);
   }
   Eigen::Isometry3d body_to_l_foot = KDLToEigen(cartpos_out.find("l_foot")->second);
-  Eigen::Isometry3d body_to_r_foot = KDLToEigen(cartpos_out.find("r_foot")->second);  
+  Eigen::Isometry3d body_to_r_foot = KDLToEigen(cartpos_out.find("r_foot")->second);
+
+  mBody_to_l_foot = body_to_l_foot;
+  mBody_to_r_foot = body_to_r_foot;
 
   // The Foot Contact Logic that Dehann wrote in the VRC:
   TwoLegs::footstep newstep;
@@ -510,9 +512,26 @@ bool leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vect
   return delta_world_to_body_valid;
 }
 
-Eigen::Isometry3d leg_odometry::getKinematicsTransform() {
+Eigen::Isometry3d leg_odometry::getKinematicsTransform(const Eigen::Quaterniond &currentbestpitchroll) {
+  // Strange function, but is coded separate to minimize correlations
+  // A more minimal implementation with the core legodo functions is possible, but we also optimizing for a code merge issue at this point
+  // This code was written before we had a walking state classifier
 
+  Eigen::Isometry3d world_to_prim_foot_hybrid;
+  world_to_prim_foot_hybrid.setIdentity();
+  double rpy[3];
+  quat_to_euler(currentbestpitchroll, rpy[0],rpy[1],rpy[2]);
+  world_to_prim_foot_hybrid.translation() = world_to_fixed_primary_foot_.translation();
+  Eigen::Quaterniond tmpq(world_to_fixed_primary_foot_.rotation());
+  double wantyaw[3];
+  quat_to_euler(tmpq, wantyaw[0],wantyaw[1],wantyaw[2]);
+  world_to_prim_foot_hybrid.rotate(euler_to_quat(rpy[0], rpy[1], wantyaw[2]));
 
+  if (primary_foot_ == RIGHTFOOT) {
+	return world_to_prim_foot_hybrid * mBody_to_r_foot.inverse();
+  } else if (primary_foot_ == LEFTFOOT) {
+    return world_to_prim_foot_hybrid * mBody_to_l_foot.inverse();
+  }
 
-  return Eigen::Isometry3d();
+  return Eigen::Isometry3d::Identity();
 }

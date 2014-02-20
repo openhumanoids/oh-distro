@@ -92,17 +92,20 @@ void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &
   
   Eigen::Quaterniond outq, tmpq;
 
-//  outq = qprod(e2q(Eigen::Vector3d(0.,0.,PI__*0.25)), InerOdoEst.lQb);s
+
 
 
   // Convert to output quaternion
-  tmpq = qprod(e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), InerOdoEst.lQb);
-  Eigen::Vector3d rpy;
-  rpy = q2e_new(tmpq);
-  rpy[2] = rpy[2] + (PI__ - C2e(IMU_to_body.linear())[2]);
+  Eigen::Vector3d rpy, rpyout;
+  rpy = q2e_new(InerOdoEst.lQb);
+  outq = qprod(e2q(Eigen::Vector3d(0.,0.,PI__*0.25)), InerOdoEst.lQb);
+  rpyout = q2e_new(outq);
+  rpyout[2] = rpy[2];
+  //  tmpq = qprod(e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), InerOdoEst.lQb);
+  //  rpy[2] = rpy[2] + (PI__ - C2e(IMU_to_body.linear())[2]);
   //std::cout << "Redirected: " << (PI__ - C2e(IMU_to_body.linear())[2]) << std::endl;
   //outq = qprod(C2q(align.linear()), tmpq);
-  outq = e2q(rpy);
+  outq = e2q(rpyout);
   
   msg.pose.rotation.w = outq.w();
   msg.pose.rotation.x = outq.x();
@@ -229,6 +232,8 @@ void StateEstimate::stampInertialPoseUpdateRequestMsg(const InertialOdometry::Dy
   msg.pose.rotation.y = InerOdoEst.lQb.y();
   msg.pose.rotation.z = InerOdoEst.lQb.z();
   
+  //std::cout << "StateEstimate::stampInertialPoseUpdateRequestMsg -- INS estimated heading now is " << q2e_new(InerOdoEst.lQb)[2] << std::endl;
+
   copyDrcVec3D(InerOdoEst.a_l, msg.local_linear_acceleration);
   copyDrcVec3D(InerOdoEst.f_l, msg.local_linear_force);
   copyDrcVec3D(InerOdoEst.V, msg.twist.linear_velocity);
@@ -263,15 +268,17 @@ void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vecto
 	copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referencePos_local);
 	copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_local);
 	copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_body);
-	msg.referenceQ_local.w = 1.;
-	msg.referenceQ_local.x = 0.;
-	msg.referenceQ_local.y = 0.;
-	msg.referenceQ_local.z = 0.;
+
+	msg.referenceQ_local.w = refLegKinQ.w();
+	msg.referenceQ_local.x = refLegKinQ.x();
+	msg.referenceQ_local.y = refLegKinQ.y();
+	msg.referenceQ_local.z = refLegKinQ.z();
 
 	Eigen::Vector3d E;
 	E = q2e_new(refLegKinQ);
-
 	msg.reference_wanderAzimHeading = E(2);
+
+	//std::cout << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- ref heading is " << E[2] << std::endl;
 
 	switch (type) {
 	case drc::ins_update_request_t::VEL_HEADING_LOCAL:

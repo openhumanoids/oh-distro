@@ -81,7 +81,8 @@ while (true)
     
     Measurement.velocityResidual = Measurement.LegOdo.pose.V_l - Measurement.INS.pose.V_l;
     %Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
-    %headingResidual = Measurement.standingHeading
+    eulerResidual = q2e(Measurement.LegOdo.pose.lQb) - q2e(Measurement.INS.pose.lQb);
+    Measurement.headingResidual = - eulerResidual(3);
     %Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.lQb)' * q2R(Measurement.LegOdo.pose.lQb));
     
     [Result, dfSys] = iterate([], dfSys, Measurement);

@@ -67,7 +67,7 @@ class leg_odometry{
     
     void setLegOdometryMode(std::string leg_odometry_mode_in ){ leg_odometry_mode_ = leg_odometry_mode_in; }
     
-    Eigen::Isometry3d getKinematicsTransform();
+    Eigen::Isometry3d getKinematicsTransform(const Eigen::Quaterniond &currentbestpitchroll);
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
@@ -121,6 +121,8 @@ class leg_odometry{
     Eigen::Isometry3d previous_body_to_l_foot_;
     Eigen::Isometry3d previous_body_to_r_foot_;
     
+    Eigen::Isometry3d mBody_to_l_foot;
+    Eigen::Isometry3d mBody_to_r_foot;
     
     int verbose_;
 };    

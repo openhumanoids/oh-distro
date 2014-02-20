@@ -395,6 +395,9 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
   vel[2] = lpfilter[2].processSample(pelvisVel_world(2));
   filteredPelvisVel_world << vel[0], vel[1], vel[2];
 
+  //temporary MUST REMOVE
+  world_to_body.translation() = inert_odo.getIMU2Body().linear() * InerOdoEst.P + inert_odo.getIMU2Body().translation();
+
   bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, atlasState.utime);
   mLCM->publish("POSE_BODY_ALT", &pose_msg );
 

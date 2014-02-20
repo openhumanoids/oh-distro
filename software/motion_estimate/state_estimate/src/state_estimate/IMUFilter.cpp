@@ -75,7 +75,9 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 			refVelocity = (*_filteredLegVel);
 
 			Eigen::Isometry3d legKin;
-			legKin = _legOdo->getKinematicsTransform();
+			// NOt happy with this pitch and roll quaternion yet
+			legKin = _legOdo->getKinematicsTransform(Eigen::Quaterniond::Identity());
+			// We have leg kinematics heading angle encoded in legKin
 
 			//std::cout << "StateEstimate::IMUFilter::handleIMUPackets -- LegStateClassification: " << updateType << std::endl;
 			//stampEKFReferenceMeasurementUpdateRequest(Eigen::Vector3d::Zero(), drc::ins_update_request_t::VELOCITY_LOCAL, *_DFRequestMsg);
