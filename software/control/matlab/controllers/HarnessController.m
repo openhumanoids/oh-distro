@@ -119,7 +119,7 @@ classdef HarnessController < DRCController
           d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%hands down
           %d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%hands up
         else
-          d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
+          d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
         end
 
         if ~obj.floating

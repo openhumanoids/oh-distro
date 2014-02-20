@@ -27,7 +27,7 @@ if nargin > 1
   r.getStateFrame.setDefaultChannel(state_channel);
 end
 
-harness_controller = HarnessController('harnessed',r,10);
+harness_controller = HarnessController('harnessed',r,9);
 standing_controller = StandingManipController('standing',r,options);
 walking_controller = WalkingController('walking',r,options);
 bracing_controller = BracingController('bracing',r,options);

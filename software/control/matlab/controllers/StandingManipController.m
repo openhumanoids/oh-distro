@@ -98,7 +98,7 @@ classdef StandingManipController < DRCController
       obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
       
       % use saved nominal pose 
-      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
+      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
       kinsol = doKinematics(obj.robot,q0);
       com = getCOM(obj.robot,kinsol);
