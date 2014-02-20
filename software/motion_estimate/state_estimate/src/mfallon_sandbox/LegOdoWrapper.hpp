@@ -1,16 +1,13 @@
-/*
- * LegOdoWrapper.hpp
- *
- *  Created on: Feb 6, 2014
- *      Author: dehann
- */
-
 #ifndef LEGODOWRAPPER_HPP_
 #define LEGODOWRAPPER_HPP_
 
 #include <path_util/path_util.h>
 #include <estimate/leg_odometry.hpp>
+#include <pointcloud_tools/pointcloud_math.hpp>
+
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
+#include <lcmtypes/drc/atlas_state_t.hpp>
+#include <drc_utils/joint_utils.hpp>
 
 struct CommandLineConfig
 {
@@ -41,13 +38,19 @@ protected:
   CommandLineConfig cl_cfg_;
   leg_odometry* leg_odo_;
 
-  // logging:
   BotFrames* frames_;
   bot::frames* frames_cpp_;
-  //void openLogFile();
-  //std::ofstream logfile_;
-  //void terminate();
+  std::vector<std::string> joint_names_;
 
+  
+  // Pose BDI:
+  PoseT world_to_body_bdi_full_;  
+  Eigen::Isometry3d world_to_body_bdi_;
+  int64_t prev_bdi_utime_;
+  int64_t body_bdi_init_;  
+  
+  
+  
 };
 
 // Use App if you want a stand-alone, LCM listening application for doing leg odometry
@@ -57,7 +60,8 @@ class App : public LegOdoWrapper {
     ~App();
 
   private:
-    void robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);
+    void atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
+    void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);  
     void viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg);
 };
 

@@ -38,7 +38,8 @@ private:
 	bool current_status;
 	double storedvalue;
 	long timer;
-	long time_delay;
+	long low_time_delay;
+        long high_time_delay;
 	long previous_time;
 	double low_threshold;
 	double high_threshold;
@@ -46,8 +47,8 @@ private:
 	
 public:
 	SchmittTrigger();
-	SchmittTrigger(double lt, double ht, long delay);
-	void setParameters(double lt, double ht, long delay);
+	SchmittTrigger(double lt, double ht, long low_delay, long high_delay);
+	void setParameters(double lt, double ht, long low_delay, long high_delay);
 	void UpdateState(long present_time, double value);
 	void Reset();
 	float getState();
@@ -61,12 +62,11 @@ private:
 	SchmittTrigger* _trigger;
 	//SchmittTrigger* _lowside;
 public:
-	BipolarSchmittTrigger(double lt, double ht, long delay);
+	BipolarSchmittTrigger(double lt, double ht, long low_delay, long high_delay);
 	~BipolarSchmittTrigger();
 	void UpdateState(long present_time, double value);
 	void Reset();
 	float getState();
-	
 };
 
 

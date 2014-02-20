@@ -40,9 +40,9 @@ TwoLegOdometry::TwoLegOdometry(bool _log_data_files, bool dont_init_hack, const 
   //for (int i=0;i<3;i++) {_pos_filter[i] = &pos_lpfilter[i];}
 
   // the idea at this point is that if the acceleration component of velocity is above the limits for 3 ms in a row the state will assume that it is infact the correct veloticy estimate
-  _vel_spike_isolation[0] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY); 
-  _vel_spike_isolation[1] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY);
-  _vel_spike_isolation[2] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY);
+  _vel_spike_isolation[0] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY, VEL_SPIKE_ISOLATION_DELAY); 
+  _vel_spike_isolation[1] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY, VEL_SPIKE_ISOLATION_DELAY);
+  _vel_spike_isolation[2] = new BipolarSchmittTrigger(3, 5, VEL_SPIKE_ISOLATION_DELAY, VEL_SPIKE_ISOLATION_DELAY);
 
   accel_spike_isolation_log.Open(_log_data_files,"accel_spikes.csv");
 

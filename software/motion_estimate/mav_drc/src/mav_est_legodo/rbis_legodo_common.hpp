@@ -17,15 +17,20 @@ public:
   lcm::LCM* lcm_pub;
   lcm::LCM* lcm_recv;
   
+  BotTrans getTransAsVelocityTrans(BotTrans msgT,
+           int64_t utime, int64_t prev_utime);
   
   // Converts the Pelvis Translation into a RBIS measurement
   // which is then passed to the estimator  
+  // odometry_status is a measure 0-1 of the reliability of the odometry
   RBISUpdateInterface * createMeasurement(BotTrans &msgT,
-           int64_t utime, int64_t prev_utime);
+           int64_t utime, int64_t prev_utime, float odometry_status);
   
   LegOdoCommonMode mode;
   Eigen::VectorXi z_indices;
   Eigen::MatrixXd cov_legodo;
+  
+  Eigen::MatrixXd cov_legodo_uncertain; // equivalent matrix, with higher variance with unreliable odometry
   bool verbose;
 };
 

@@ -73,6 +73,15 @@ struct Isometry3dTime{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
+// Equivalent to bot_core_pose contents
+struct PoseT { 
+  int64_t utime;
+  Eigen::Vector3d pos;
+  Eigen::Vector3d vel;
+  Eigen::Vector4d orientation;
+  Eigen::Vector3d rotation_rate;
+  Eigen::Vector3d accel;
+}; 
 
 
 // Convert number to jet colour coordinates

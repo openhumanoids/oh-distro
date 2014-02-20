@@ -1,17 +1,19 @@
 #include "LegOdoWrapper.hpp"
 
-
 App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LCM> &lcm_publish_, CommandLineConfig& cl_cfg_) : 
         LegOdoWrapper(lcm_subscribe_, lcm_publish_, cl_cfg_) {
 
   setupLegOdo();
 
-  lcm_subscribe_->subscribe("EST_ROBOT_STATE",&App::robotStateHandler,this);
+  lcm_subscribe_->subscribe("ATLAS_STATE",&App::atlasStateHandler,this);
+  lcm_subscribe_->subscribe("POSE_BDI",&App::poseBDIHandler,this);
   if ( cl_cfg_.republish_incoming){
     lcm_subscribe_->subscribe("VICON_BODY|VICON_FRONTPLATE",&App::viconHandler,this);
   }
-  // openLogFile();
 
+  JointUtils* joint_utils = new JointUtils();
+  joint_names_ = joint_utils->atlas_joint_names;
+  std::cout << joint_names_.size() << " joint angles assumed\n";
 }
 
 App::~App() {
@@ -46,32 +48,27 @@ void LegOdoWrapper::setupLegOdo() {
   leg_odo_->setLegOdometryMode( leg_odo_mode );
 }
 
-
-
-
-
-/*
-void App::openLogFile(){
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer [80];
-  time (&rawtime);
-  timeinfo = localtime (&rawtime);
-
-  strftime (buffer,80,"/tmp/se-leg-estimate-result-%Y-%m-%d-%H-%M.txt",timeinfo);
-  std::string filename = buffer;
-
-  std::cout << "Opening Logfile: "<< filename << "\n";
-  logfile_.open ( filename.c_str() );
+void App::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  world_to_body_bdi_full_.utime = msg->utime;
+  world_to_body_bdi_full_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  world_to_body_bdi_full_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  world_to_body_bdi_full_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  world_to_body_bdi_full_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  world_to_body_bdi_full_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );    
+  
+  
+  world_to_body_bdi_.setIdentity();
+  world_to_body_bdi_.translation()  << msg->pos[0], msg->pos[1] , msg->pos[2];
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->orientation[0], msg->orientation[1], 
+                                               msg->orientation[2], msg->orientation[3]);
+  world_to_body_bdi_.rotate(quat);
+  
+  prev_bdi_utime_ = msg->utime;
+  body_bdi_init_ = true;
 }
 
-void App::terminate(){
-  std::cout << "Closing Logfile: " << "\n";
-  logfile_.close();
-}
-*/
 
-void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+void App::atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   if ( cl_cfg_.begin_timestamp > -1){
     if (msg->utime <  cl_cfg_.begin_timestamp ){
       double seek_seconds = (cl_cfg_.begin_timestamp - msg->utime)*1E-6;
@@ -88,37 +85,20 @@ void App::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
     }
   }
 
+  //if (cl_cfg_.republish_incoming){
+  //  // Don't publish then working live:
+  //  bot_core::pose_t bdipose = getRobotStatePoseAsBotPose(msg);
+  //  lcm_publish_->publish("POSE_BDI", &bdipose);
+  //}
 
-  if (cl_cfg_.republish_incoming){
-    // Don't publish then working live:
-    bot_core::pose_t bdipose = getRobotStatePoseAsBotPose(msg);
-    lcm_publish_->publish("POSE_BDI", &bdipose);
-  }
-
-
-  Eigen::Isometry3d world_to_body_bdi;
-  world_to_body_bdi.setIdentity();
-  world_to_body_bdi.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x,
-                                               msg->pose.rotation.y, msg->pose.rotation.z);
-  world_to_body_bdi.rotate(quat);
-
-  leg_odo_->setPoseBDI( world_to_body_bdi );
+  leg_odo_->setPoseBDI( world_to_body_bdi_ );
   leg_odo_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
-  leg_odo_->updateOdometry(msg->joint_name, msg->joint_position, msg->utime);
+  leg_odo_->updateOdometry(joint_names_, msg->joint_position, msg->utime);
 
   Eigen::Isometry3d world_to_body = leg_odo_->getRunningEstimate();
   bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, msg->utime);
-  lcm_publish_->publish("POSE_BODY_ALT", &pose_msg );
-
-
-  //logfile_ <<  1 << ", " << msg->utime << ", " << print_Isometry3d(world_to_body_bdi) << "\n";
-  //logfile_ <<  2 << ", " << msg->utime << ", " << print_Isometry3d(world_to_body) << "\n";
+  lcm_publish_->publish("POSE_BODY", &pose_msg );
 }
-
-//void LegOdoWrapper::doLegOdometry() {
-//
-//}
 
 
 void App::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg){
@@ -137,6 +117,4 @@ void App::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channe
 
   bot_core::pose_t pose_msg = getPoseAsBotPose(worldvicon_to_body_vicon, msg->utime);
   lcm_publish_->publish("POSE_VICON", &pose_msg );
-
-  //logfile_ <<  0 << ", " << msg->utime << ", " << print_Isometry3d(worldvicon_to_body_vicon) << "\n";
 }
