@@ -25,9 +25,9 @@
   <!-- Robot Description -->
   <!-- <param name="robot_description" command="$(find xacro)/xacro.py '$(find atlas_description)/robots/atlas_v3.urdf.xacro'" /> -->
   <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model_sim_gazebo.urdf"/>
-  <param name="robot_initial_pose/x"     value="-10" type="double"/>
+  <param name="robot_initial_pose/x"     value="-5" type="double"/>
   <param name="robot_initial_pose/y"     value="0" type="double"/>
-  <param name="robot_initial_pose/z"     value="0.93" type="double"/>
+  <param name="robot_initial_pose/z"     value="0.91" type="double"/>
   <param name="robot_initial_pose/roll"  value="0" type="double"/>
   <param name="robot_initial_pose/pitch" value="0" type="double"/>
   <param name="robot_initial_pose/yaw"   value="0" type="double"/>
