@@ -44,6 +44,7 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 		if (!uninitialized) {
 			*_InerOdoState = _inert_odo->PropagatePrediction(imu_data);
 		} else {
+		  // This will be depreciated soon
 		  //_inert_odo->sensedImuToBodyTransform(imu_data); // This is a bit messy -- improve abstraction
 	      initacceldata.push_back(imu_data.a_b_measured);
 		  initindex++;

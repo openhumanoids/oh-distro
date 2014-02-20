@@ -282,8 +282,13 @@ void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_updat
 
 void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose) {
 
+  // Transform our local quaternion for legodometry
+  Eigen::Quaterniond outq, aliasout;
+  outq = (qprod(C2q(inert_odo.getIMU2Body().linear().transpose()), InerOdoEst.lQb.conjugate()));
+  aliasout = qprod(outq, inert_odo.getAlignmentQuaternion());
+  outq = aliasout;
   // This will publish "POSE_BODY_ALT message"
-  PropagateLegOdometry(bdiPose, atlasState);
+  PropagateLegOdometry(bdiPose, atlasState, outq);
   //std::cout << "StateEstimator::AtlasStateServiceRoutine" << std::endl;
 
   // Run classifiers to delegate updates
@@ -372,14 +377,17 @@ Eigen::Isometry3d* StateEstimate::StateEstimator::getVelArrowDrawTransform() {
 //}
 
 
-void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState) {
+void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState, const Eigen::Quaterniond &localQ) {
   Eigen::Isometry3d world_to_body_bdi;
   world_to_body_bdi.setIdentity();
   //world_to_body_bdi.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
 
   // We align this to first pose is zero
   Eigen::Quaterniond quat = Eigen::Quaterniond(bdiPose.orientation[0], bdiPose.orientation[1], bdiPose.orientation[2], bdiPose.orientation[3]);
-  world_to_body_bdi.rotate( qprod(quat, firstBDiq) );
+
+  //world_to_body_bdi.rotate( qprod(quat, firstBDiq) );
+  world_to_body_bdi.rotate( localQ ); // USING OUR OWN
+
 
   leg_odo_->setPoseBDI( world_to_body_bdi );
   leg_odo_->setFootForces(atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z);
@@ -401,7 +409,7 @@ void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t 
   filteredPelvisVel_world << vel[0], vel[1], vel[2];
 
   //temporary MUST REMOVE
-  world_to_body.translation() = inert_odo.getIMU2Body().linear() * InerOdoEst.P + inert_odo.getIMU2Body().translation();
+  //world_to_body.translation() = inert_odo.getIMU2Body().linear() * InerOdoEst.P + inert_odo.getIMU2Body().translation();
 
   bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, atlasState.utime);
   mLCM->publish("POSE_BODY_ALT", &pose_msg );
