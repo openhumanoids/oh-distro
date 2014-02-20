@@ -49,70 +49,78 @@ SchmittTrigger::SchmittTrigger() {
 	Reset();
 }
 
-SchmittTrigger::SchmittTrigger(double lt, double ht, long delay) {
-	setParameters(lt,ht,delay);
+SchmittTrigger::SchmittTrigger(double lt, double ht, long low_delay, long high_delay) {
+	setParameters(lt,ht,low_delay,high_delay);
 }
 
-void SchmittTrigger::setParameters(double lt, double ht, long delay) {
+void SchmittTrigger::setParameters(double lt, double ht, long low_delay, long high_delay) {
 	low_threshold = lt;
 	high_threshold = ht;
-	time_delay = delay;
+	low_time_delay = low_delay;
+        high_time_delay = high_delay;
 	Reset();
 }
 
 void SchmittTrigger::Reset() {
-	current_status = false;
-	previous_time = 0; // how to handle this when it gets called for the first time.. should we have a flag and then a reset status
-	timer = 0;
-	storedvalue = 0.;
-	
-	// first call flag is used to intialize the timer, to enable delay measuring
-	first_call = true;
+  current_status = false;
+  previous_time = 0; // how to handle this when it gets called for the first time.. should we have a flag and then a reset status
+  timer = 0;
+  storedvalue = 0.;
+  
+  // first call flag is used to intialize the timer, to enable delay measuring
+  first_call = true;
 }
 void SchmittTrigger::forceHigh() {
 	current_status = true;
 }
 
 void SchmittTrigger::UpdateState(long present_time, double value) {
-	if (first_call) {
-		first_call = false;
-		previous_time = present_time;
-	}
-	if (present_time < previous_time) {
-		std::cout << "SchmittTrigger::UpdateState -- Warning object is jumping back in time -- behavior unpredictable.\n";
-	}
-	
-	storedvalue = value;
-	//std::cout << "ST: " << value << "N , timer: " << timer << " us, status is: " << current_status << std::endl;
+  if (first_call) {
+    first_call = false;
+    previous_time = present_time;
+  }
+  if (present_time < previous_time) {
+    std::cout << "SchmittTrigger::UpdateState -- Warning object is jumping back in time -- behavior unpredictable.\n";
+  }
 
-	// The timing logic should be rewritten with ExireTimer at the next opportune moment
-	if (current_status)
-		{
-			if (value <= low_threshold)
-			{
-				//std::cout << "below threshold\n";
-				if (timer > time_delay) {
-					current_status = false;
-				} else {
-					timer += (present_time-previous_time);
-				}
-			} else {
-				timer = 0;
-			}
-			
-		} else {
-			if (value >= high_threshold) {
-				//std::cout << "above threshold\n";
-				if (timer > time_delay) {
-					current_status = true;
-				} else {
-					timer += (present_time-previous_time);
-				}
-			} else {
-				timer = 0;
-			}
-		}
-	previous_time = present_time;
+  storedvalue = value;
+  //std::cout << "ST: " << value << "N , timer: " << timer << " us, status is: " << current_status << std::endl;
+  
+  bool verbose = false;
+
+  // The timing logic should be rewritten with ExireTimer at the next opportune moment
+  if (current_status){
+    
+    if (value <= low_threshold){
+      //std::cout << "below threshold\n";
+      if (timer > low_time_delay) {
+        if (verbose) std::cout << "high state -> low trigger\n";
+        current_status = false;
+      } else {
+        if (verbose) std::cout << "high state but clock rising for low\n";
+        timer += (present_time-previous_time);
+      }
+    } else {
+      if (verbose) std::cout << "high state, clock zero\n";
+      timer = 0;
+    }
+  } else {
+    if (value >= high_threshold) {
+      
+      //std::cout << "above threshold\n";
+      if (timer > high_time_delay) {
+        if (verbose) std::cout << "low state -> high trigger\n";
+        current_status = true;
+      } else {
+        if (verbose) std::cout << "low state but clock rising for high\n";
+        timer += (present_time-previous_time);
+      }
+    } else {
+      if (verbose) std::cout << "low state, clock zero\n";
+      timer = 0;
+    }
+  }
+  previous_time = present_time;
 }
 
 float SchmittTrigger::getState() {
@@ -123,8 +131,8 @@ double SchmittTrigger::getCurrentValue() {
 	return storedvalue;
 }
 
-BipolarSchmittTrigger::BipolarSchmittTrigger(double lt, double ht, long delay) {
-	_trigger = new SchmittTrigger(lt, ht, delay);
+BipolarSchmittTrigger::BipolarSchmittTrigger(double lt, double ht, long low_delay, long high_delay) {
+	_trigger = new SchmittTrigger(lt, ht, low_delay, high_delay);
 	//_lowside  = new SchmittTrigger(-lt, -ht, delay);
 	
 	prev_value = 0.;
@@ -165,6 +173,7 @@ float BipolarSchmittTrigger::getState() {
 		return 1.f;
 	return 0.f;
 }
+
 
 NumericalDiff::NumericalDiff() {
   first_pass = true;

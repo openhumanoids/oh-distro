@@ -75,7 +75,7 @@ IMUBatch IMUStream::convertFromLCMBatch(drc::atlas_raw_imu_batch_t* msg){
 
   for (int i=msg->num_packets-1 ; i >= 0 ; i--){
     if (msg->raw_imu[i].packet_count > last_packet_){
-      if (verbose) std::cout << "new " <<", "<<last_packet_ <<", "<< i <<", "<< msg->raw_imu[i].packet_count << "\n";
+      if (verbose) std::cout << "new " <<", "<<last_packet_ <<", "<< i <<", "<< msg->raw_imu[i].packet_count << ", " << msg->raw_imu[i].utime << "\n";
 
       IMUPacket raw = convertFromLCMPacket(msg->raw_imu[i], last_packet_utime_, msg->utime);
       batch.packets.push_back(raw);
@@ -87,11 +87,11 @@ IMUBatch IMUStream::convertFromLCMBatch(drc::atlas_raw_imu_batch_t* msg){
       // delibrately obsficate the delta field (we dont know it here)
       IMUPacket raw = convertFromLCMPacket(msg->raw_imu[i], -msg->raw_imu[i].utime, msg->utime); 
       batch.packets_old.push_back(raw);
-      if (verbose) std::cout << "old " <<", "<<last_packet_ <<", "<< i <<", "<< msg->raw_imu[i].packet_count << "\n";
+      if (verbose) std::cout << "old " <<", "<<last_packet_ <<", "<< i <<", "<< msg->raw_imu[i].packet_count << ", " << msg->raw_imu[i].utime << "\n";
     }
   }
 
-  if (verbose) std::cout << num_new << "---\n";
+  if (verbose) std::cout << num_new << " in " << msg->utime  << " ---\n\n";
 
   counter_++;
   return batch;

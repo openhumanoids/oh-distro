@@ -29,7 +29,10 @@ RBISUpdateInterface * LegOdoExternalHandler::processMessage(const drc::pose_tran
   int64_t utime = msg->utime;
   int64_t prev_utime = msg->prev_utime;
 
-  return leg_odo_common_->createMeasurement(msgT, utime, prev_utime);
+  // TODO: the pose_transform_t doesn't provide any information about
+  // the confidence of the estimate, this field needs to be added
+  float odometry_status =0.0; // by default assume accurate
+  return leg_odo_common_->createMeasurement(msgT, utime, prev_utime, odometry_status);
 
 }
 }

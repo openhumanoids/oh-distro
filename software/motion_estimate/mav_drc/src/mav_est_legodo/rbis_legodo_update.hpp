@@ -52,6 +52,7 @@ public:
   void viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg);  
   
   void republishHandler (const lcm::ReceiveBuffer* rbuf, const std::string& channel);
+  void sendTransAsVelocityPose(BotTrans msgT, int64_t utime, int64_t prev_utime, std::string channel);
   
   lcm::LCM* lcm_pub;
   lcm::LCM* lcm_recv;
@@ -63,7 +64,10 @@ public:
   bot::frames* frames_cpp;
   std::vector<std::string> joint_names_;
   // To republish certain incoming messages, so as to produced output logs:
-  bool republish_incoming_;
+  bool republish_incoming_poses_;
+  // Publish Debug Data e.g. kinematic velocities and foot contacts
+  bool publish_diagnostics_;
+  int verbose_; 
   
   
   // Vicon state:

@@ -31,8 +31,8 @@ FootContact::FootContact(bool _log_data_files,const float atlasWeight){
   datafile.Open(_log_data_files,"datalog.csv");
   footcontactfile.Open(_log_data_files,"footcontactlog.csv");
   
-  _left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
-  _right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY);
+  _left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY, FOOT_CONTACT_DELAY);
+  _right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY, FOOT_CONTACT_DELAY);
   
 }
 

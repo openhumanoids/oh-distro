@@ -19,6 +19,8 @@
 #include "lcmtypes/drc/utime_t.hpp"
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
+
+#include <pointcloud_tools/pointcloud_math.hpp>
 #include "atlas/AtlasControlTypes.h"
 #include "atlas/AtlasJointNames.h"
 
@@ -28,18 +30,6 @@ struct Joints {
   std::vector<float> effort;
   std::vector<std::string> name;
 };
-
-// Equivalent to bot_core_pose contents
-struct PoseT { 
-  int64_t utime;
-  Eigen::Vector3d pos;
-  Eigen::Vector3d vel;
-  Eigen::Vector4d orientation;
-  Eigen::Vector3d rotation_rate;
-  Eigen::Vector3d accel;
-};
-
-
 
 ///////////////////////////////////////////////////////////////
 class state_sync{

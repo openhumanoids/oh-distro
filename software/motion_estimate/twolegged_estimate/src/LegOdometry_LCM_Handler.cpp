@@ -51,7 +51,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   local_to_head_vel_diff.setSize(3);
   local_to_head_acc_diff.setSize(3);
   local_to_head_rate_diff.setSize(3);
-  zvu_timetrigger.setParameters(0.4,0.6,40000);
+  zvu_timetrigger.setParameters(0.4,0.6,40000,40000);
   
   stageA_test_vel.setSize(3);
 
@@ -69,7 +69,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   // let the biases be averaged and estimated during the first portion of the task
   allowbiasestimation = false; // Do not include initial trasients to the bias averaging process
   acc_bias_avg.setSize(3);
-  trigger_bias_averaging.setParameters(0.003,0.01,1000000);
+  trigger_bias_averaging.setParameters(0.003,0.01,1000000,1000000);
   trigger_bias_averaging.forceHigh(); // Only trip low when the bias update values have reduced to acceptable levels for averaging
   expire_bias_avg_process.setDesiredPeriod_us(10000000);
 
@@ -465,7 +465,7 @@ void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf,
 
   ParseFootForces(_msg, left_force, right_force);
 
-
+  std::cout << " mf, DetermineLegContactStates\n";
   DetermineLegContactStates((long)_msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
   if (_switches->publish_footcontact_states) {
     //std::cout << "Foot forces are: " << left_force << ", " << right_force << std::endl;

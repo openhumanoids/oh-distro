@@ -45,6 +45,7 @@ int main(int argc, char ** argv) {
   
   ConciseArgs opt(argc, (char**)argv);
   opt.add(switches.mass, "w", "mass","Robot Mass [real=1400, sim=900]");
+  opt.parse();
   
   //opt.add(switches.do_estimation, "e", "do_estimation","Do motion estimation");
   //cout << "Do motion estimation: " << switches.do_estimation<< endl;

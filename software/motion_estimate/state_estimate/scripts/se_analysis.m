@@ -9,9 +9,16 @@ bot_ = bot;
 
 main_dir = '/home/mfallon/data/atlas/2014-01-21-vicon-walking/results/'
 
+% 1 basic working version:
 %folder_path = [main_dir '2014-01-26-22-14-leg-odo-stand-alone' '/'];
-folder_path = [main_dir '2014-02-12-19-33-imu-leg-odo' '/'];
-folder_path = [main_dir '2014-02-12-19-50-imu-leg-odo-lidar' '/'];
+
+% 2 first version width lidar:
+%folder_path = [main_dir '2014-02-12-19-33-imu-leg-odo' '/'];
+% folder_path = [main_dir '2014-02-12-19-50-imu-leg-odo-lidar' '/'];
+
+%
+%folder_path = [main_dir '2014-02-19-19-23-imu-leg-odo-lidar' '/'];
+folder_path = [main_dir '2014-02-19-19-28-imu-leg-odo' '/'];
 
 
 logs = dir( [folder_path '*mat'])
@@ -32,7 +39,7 @@ end
 
 % all:
 %which_process= 1:size(logs,1)
-% most interesting ones:
+% most interesting ones: [skip two 
 which_process=[1,2,3,4,7,8,9,10,11]
 %which_process=[7]
 

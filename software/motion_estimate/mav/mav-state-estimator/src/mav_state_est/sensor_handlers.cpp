@@ -103,6 +103,13 @@ RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_b
     for (int i=0 ; i < batch.packets.size() ; i++ ){
       doFilter( batch.packets[i] );
     }  
+    if (batch.packets.size() ==0){
+      std::cout << "IMPORTANT: No new IMU packets detected - shouldn't happen. Skipping iteration\n";
+      // mfallon: I observed this once or twice in my logs from 2014-01-21: exactly the 
+      // same imu data from two consecutive batch messages
+      return NULL;
+    }
+    
     // Get the most recent filtered packet:
     IMUPacket p = batch.packets[batch.packets.size() -1 ];
     

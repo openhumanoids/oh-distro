@@ -33,6 +33,7 @@
 #include "lcmtypes/drc/pose_transform_t.hpp"
 //#include "lcmtypes/fovis_bot2.hpp"
 
+#include <estimate/foot_contact_classify.hpp>
 #include <estimate/common_conversions.hpp>
 #include <leg-odometry/FootContact.h>
 #include <leg-odometry/Filter.hpp>
@@ -54,10 +55,14 @@ class leg_odometry{
       right_foot_force_ = right_foot_force_in;       
     }
     
-    //bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position,
-    //                        std::vector<float> joint_velocity, std::vector<float> joint_effort,
-    //                        int64_t utime);
-	bool updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime);
+    // Update the running leg odometry solution
+    // returns: odometry_status - a foot contact classification
+    // which can be used to determine a suitable covariance
+    // 0 -> 1 float
+    // 0 is very accurate   
+    // 1 very inaccuracy    - foot breaks
+    // -1 unuseable/invalid - foot strikes
+    float updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime);
 
 
     void getDeltaLegOdometry(Eigen::Isometry3d &delta_world_to_body, int64_t &current_utime, int64_t &previous_utime){
@@ -87,10 +92,20 @@ class leg_odometry{
     std::string r_standing_link_;
     // use a heavy low pass filter on the input joints
     bool filter_joint_positions_;
+    // detect and filter kinematics when contact occurs
+    bool filter_contact_events_;
+    // Publish Debug Data e.g. kinematic velocities and foot contacts
+    bool publish_diagnostics_;    
     
     TwoLegs::FootContact* foot_contact_logic_;
-    // most recent measurements for the feet forces (typically synchronise with joints
-    float left_foot_force_, right_foot_force_;
+    // most recent measurements for the feet forces (typically synchronised with joints measurements
+    float left_foot_force_, right_foot_force_; // unfiltered... check
+    
+    // Classify Contact Events:
+    foot_contact_classify* foot_contact_classify_;
+    
+    
+    
     
     bool initializePose(Eigen::Isometry3d body_to_foot);
     bool prepInitialization(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
@@ -129,7 +144,6 @@ class leg_odometry{
     
     Eigen::Isometry3d previous_body_to_l_foot_;
     Eigen::Isometry3d previous_body_to_r_foot_;
-    
     
     // joint position filters, optionally used
     LowPassFilter lpfilter_[28];  
