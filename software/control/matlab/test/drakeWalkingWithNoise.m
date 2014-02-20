@@ -7,7 +7,7 @@ use_bullet = false;
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 plot_comtraj = false;
-navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
+navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -118,6 +118,7 @@ options.dt = 0.003;
 options.slack_limit = 30.0;
 options.w = 0.001;
 options.lcm_foot_contacts = false;
+options.contact_threshold = 0.005;
 options.debug = false;
 options.use_mex = true;
 % ******************* END ADJUSTABLE **************************************
@@ -191,14 +192,14 @@ foot_err = 0;
 pelvis_sway = 0;
 rfoot_idx = findLinkInd(r,'r_foot');
 lfoot_idx = findLinkInd(r,'l_foot');
-rfoottraj = link_constraints(1).traj;
-lfoottraj = link_constraints(2).traj;
+rfoottraj = walking_ctrl_data.link_constraints(1).traj;
+lfoottraj = walking_ctrl_data.link_constraints(2).traj;
 for i=1:length(ts)
   x=traj.eval(ts(i));
   q=x(1:getNumDOF(r));
   kinsol = doKinematics(r,q);
   com(:,i)=getCOM(r,q);
-  com_err = com_err + norm(comtraj.eval(ts(i)) - com(1:2,i))^2;
+  com_err = com_err + norm(walking_ctrl_data.comtraj.eval(ts(i)) - com(1:2,i))^2;
 
   rfoot_pos = forwardKin(r,kinsol,rfoot_idx,[0;0;0]);
   rfoot_des = rfoottraj.eval(ts(i));
