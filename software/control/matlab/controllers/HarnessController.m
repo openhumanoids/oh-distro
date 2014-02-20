@@ -119,7 +119,7 @@ classdef HarnessController < DRCController
           d =load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_seated_pose.mat'));%hands down
           %d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_seated.mat'));%hands up
         else
-          d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+          d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
         end
 
         if ~obj.floating
@@ -129,9 +129,11 @@ classdef HarnessController < DRCController
         end
         q0 = zeros(getNumDOF(obj.robot),1);
         if((strcmp(obj.name,'harnessed_notwalking'))||(strcmp(obj.name,'seated_driving')))
-          qtraj = PPTrajectory(spline([0 4],[q0 q_nom]));
+%           qtraj = PPTrajectory(spline([0 4],[q0 q_nom]));
+          qtraj = PPTrajectory(spline([0 4],[q_nom q_nom]));
         else
-          qtraj = PPTrajectory(spline([5 9],[q0 q_nom]));
+%           qtraj = PPTrajectory(spline([5 9],[q0 q_nom]));
+          qtraj = PPTrajectory(spline([5 9],[q_nom q_nom]));
         end
       end
 
