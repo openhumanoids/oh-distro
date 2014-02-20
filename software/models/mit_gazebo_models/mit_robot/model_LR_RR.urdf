@@ -1352,11 +1352,6 @@
       </imu>
     </sensor>
   </gazebo>
-  <!--
-0 0 0 just rotate 90
-1.57 0 0 wrong fingers up
-
--->
   <joint name="left_robotiq_hand_joint" type="fixed">
     <origin rpy="0 1.57079 0" xyz="0 0.19016 0.015"/>
     <parent link="l_hand"/>

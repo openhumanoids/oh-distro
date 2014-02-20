@@ -50,6 +50,7 @@ classdef WalkingController < DRCController
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 0.001;
+			options.contact_threshold = 0.005;
       qp = QPControlBlock(r,ctrl_data,options);
       
       if options.use_walking_pd
