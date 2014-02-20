@@ -34,6 +34,7 @@ namespace InertialOdometry {
 	  InertialOdomOutput PropagatePrediction_wo_IMUCompensation(IMU_dataframe &_imu, const Eigen::Quaterniond &orient);
 
 	  //Eigen::Matrix<double, 3, 3> Expmap(Eigen::Vector3d const &w);
+	  Eigen::Quaterniond alignq_out;
 	  
     public:
       EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -67,6 +68,9 @@ namespace InertialOdometry {
 	  const Eigen::Isometry3d& getIMU2Body();
 
 	  void setHeading(const double &psi);
+
+	  Eigen::Quaterniond getAlignmentQuaternion();
+	  void setAlignmentQuaternion(const Eigen::Quaterniond &q);
   };
 
 

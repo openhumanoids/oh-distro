@@ -77,7 +77,7 @@ public:
   Eigen::Vector3d* getFilteredLegOdoVel();
   int* getLegStateClassificationPtr();
   Eigen::Isometry3d* getVelArrowDrawTransform();
-  Eigen::Isometry3d* getAlignTransform();
+  //Eigen::Isometry3d* getAlignTransform();
 
 protected:
 
@@ -142,11 +142,12 @@ private:
   lcm_t* lcm;
   bot_lcmgl_t* lcmgl_;
   Eigen::Isometry3d velArrowTransform;
-  Eigen::Isometry3d align;
+  //Eigen::Isometry3d align;
 
    // Grab first BDi quaternion
   bool alignedBDiQ;
   Eigen::Quaterniond firstBDiq;
+  Eigen::Vector3d firstBDitrans;
 
 
   // ======== SERVICE ROUTINES ===========

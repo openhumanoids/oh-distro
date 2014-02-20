@@ -59,6 +59,18 @@ StateEstimate::StateEstimator::StateEstimator(
   }
   inert_odo.setIMU2Body(IMU_to_body);
   
+  Eigen::Quaterniond alignOutputQ;
+  alignOutputQ = qprod( e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), e2q(Eigen::Vector3d(0.,PI__,0.)) );
+  //  qprod( e2q([0.;0.;-pi/4]), e2q([0.;pi;0.]) )
+  // ans =
+  //     0.0000
+  //     0.3827
+  //     0.9239
+  //    -0.0000
+
+  // return the data
+  inert_odo.setAlignmentQuaternion(alignOutputQ);
+
   // Go get the joint names for FK
   robot = new RobotModel;
   lcm::Subscription* robot_model_subcription_;
@@ -68,7 +80,7 @@ StateEstimate::StateEstimator::StateEstimator(
 
 
   //std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;
-  // using this constructor as a bit of legacy -- but in reality we should probably inprove on this situation
+  // using this constructor as a bit of legacy -- but in reality we should probably improve on this situation
   //_leg_odo = new TwoLegs::TwoLegOdometry(false, false, 1400.f);
   
 
@@ -106,18 +118,7 @@ StateEstimate::StateEstimator::StateEstimator(
   velArrowTransform.setIdentity();
 
   // used to do an initial alignment with BDi quaternion -- used for output only, not inside aide feedback loop!
-  align.setIdentity();
-  //  Eigen::Quaterniond alignq;
-  //  alignq.w() = 0.9465690221651;
-  //  alignq.x() = -0.00046656897757202387;
-  //  alignq.y() = 0.002328;
-  //  alignq.z() = 0.3224926292896271;
-  //  align.linear() = q2C(alignq);
-
-  //  Eigen::Vector3d rpy;
-  //  rpy = q2e_new(alignq);
-  //std::cout << "init yaw seems to be: " << rpy[2] << std::endl;
-  //inert_odo.setHeading(rpy[2]);
+  //align.setIdentity();
   alignedBDiQ = false;
 }
 
@@ -184,11 +185,7 @@ void StateEstimate::StateEstimator::run()
     {
       mBDIPoseQueue.dequeue(bdiPose);
 
-      //bot_core::pose_t pose_msg;
-      //      pose_msg.utime =  bdiPose.utime;
-      //      pose_msg.pos[0] = bdiPose.pos[0];
-      //      pose_msg.pos[1] = bdiPose.pos[1];
-      //      pose_msg.pos[2] = bdiPose.pos[2];
+
 
       Eigen::Quaterniond q_w, tmp;
 
@@ -203,9 +200,16 @@ void StateEstimate::StateEstimator::run()
     	rpy[0] = 0.;
     	rpy[1] = 0.;
     	firstBDiq = e2q(rpy);
+    	firstBDitrans << bdiPose.pos[0], bdiPose.pos[1], bdiPose.pos[2];
     	alignedBDiQ = true;
     	printq("StateEstimator::run -- first alignment check for identity: " , qprod(tmp, firstBDiq));
       }
+
+      //bot_core::pose_t pose_msg;
+      //      pose_msg.utime =  bdiPose.utime;
+      //      pose_msg.pos[0] = bdiPose.pos[0];
+      //      pose_msg.pos[1] = bdiPose.pos[1];
+      //      pose_msg.pos[2] = bdiPose.pos[2];
 
       //      q_w = qprod(tmp , firstBDiq);
       //
@@ -214,6 +218,7 @@ void StateEstimate::StateEstimator::run()
       //      pose_msg.orientation[1] =  q_w.x();
       //      pose_msg.orientation[2] =  q_w.y();
       //      pose_msg.orientation[3] =  q_w.z();
+
 
       //mLCM->publish("POSE_BODY_ALT", &pose_msg );
 
@@ -362,9 +367,9 @@ Eigen::Isometry3d* StateEstimate::StateEstimator::getVelArrowDrawTransform() {
   return &velArrowTransform;
 }
 
-Eigen::Isometry3d* StateEstimate::StateEstimator::getAlignTransform() {
-  return &align;
-}
+//Eigen::Isometry3d* StateEstimate::StateEstimator::getAlignTransform() {
+//  return &align;
+//}
 
 
 void StateEstimate::StateEstimator::PropagateLegOdometry(const bot_core::pose_t &bdiPose, const drc::atlas_state_t &atlasState) {
@@ -444,7 +449,7 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wR
 
 
   Eigen::Vector3d inerV_l;
-  inerV_l = velArrowTransform.linear() * InerOdoEst.V;
+  inerV_l = sRb * InerOdoEst.V;
   magn = 5*inerV_l.norm();
   //std::cout << "StateEstimate::StateEstimator::drawVelArrows -- inerV_l " << inerV_l.transpose() << std::endl;
   cp = ref.cross(inerV_l);
@@ -465,7 +470,7 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wR
   Eigen::Vector3d LegOdoV_l;
 
   //LegOdoV_l = sRb.transpose() * wRb_bdi.transpose() * vec; // Rotate back to world frame for pretty pictures sake, but not for data fusion
-  LegOdoV_l = velArrowTransform.linear() * sRb.transpose() * filteredPelvisVel_world;
+  LegOdoV_l = filteredPelvisVel_world;
 
   magn = 5*LegOdoV_l.norm();
   cp = ref.cross(LegOdoV_l);
@@ -487,7 +492,7 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wR
 
   Eigen::Vector3d dV_l;
 
-  dV_l = velArrowTransform.linear() * (LegOdoV_l - inerV_l);
+  dV_l = (LegOdoV_l - inerV_l);
   magn = 5*dV_l.norm();
   cp = ref.cross(dV_l);
   cp.normalize();

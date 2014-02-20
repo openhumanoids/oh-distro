@@ -73,12 +73,12 @@ void doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasSt
 
 
 //void stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst, const Eigen::Isometry3d &IMU_to_body, drc::robot_state_t &msg);
-void stampInertialPoseMsgs(const InertialOdometry::DynamicState &InerOdoEst,
+bot_core::pose_t stampInertialPoseMsgs(const InertialOdometry::DynamicState &InerOdoEst,
 		const Eigen::Isometry3d &IMU_to_body,
 		drc::robot_state_t& msg,
 		bot_core::pose_t &_msg,
 		Eigen::Isometry3d *_mArrowTransform,
-		const Eigen::Isometry3d &align);
+		const Eigen::Quaterniond &alignq_out);
 //void stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst, const Eigen::Isometry3d &IMU_to_body, bot_core::pose_t &_msg, Eigen::Isometry3d *_mArrowTransform); // to be depreciated
 
 

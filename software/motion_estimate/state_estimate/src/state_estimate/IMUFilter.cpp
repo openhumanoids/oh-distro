@@ -56,11 +56,14 @@ void StateEstimate::IMUFilter::handleIMUPackets(const std::vector<drc::atlas_raw
 	}
 	_inert_odo->exitCritical();
 
+
 	if (!uninitialized) {
-		stampInertialPoseMsgs(*_InerOdoState, _inert_odo->getIMU2Body(), *_ERSMsg, mPoseBodyMsg, _VelArrowDrawTrans, *_align);
+		bot_core::pose_t tmp_msg;
+		tmp_msg = stampInertialPoseMsgs(*_InerOdoState, _inert_odo->getIMU2Body(), *_ERSMsg, mPoseBodyMsg, _VelArrowDrawTrans, _inert_odo->getAlignmentQuaternion());
 		mLCM->publish(ERSMsgChannelName, _ERSMsg);
 		//stampInertialPoseBodyMsg(*_InerOdoState, _inert_odo->getIMU2Body(), mPoseBodyMsg, _VelArrowDrawTrans);
 		mLCM->publish("POSE_BODY", &mPoseBodyMsg);
+		//mLCM->publish("POSE_BODY_ALT", &tmp_msg );
 
 		// EKF measurement update rate was set to 90Hz
 		if (fusion_rate.genericRateChange(imu_data.uts,fusion_rate_dummy,fusion_rate_dummy)) {
@@ -101,7 +104,7 @@ void StateEstimate::IMUFilter::setupEstimatorSharedMemory(StateEstimate::StateEs
   setLegStateClassification(estimator.getLegStateClassificationPtr() );
   setLegOdoPtr(estimator.getLegOdoPtr() );
   setVelArrowTransform(estimator.getVelArrowDrawTransform() );
-  setAlignTransform(estimator.getAlignTransform());
+  //setAlignTransform(estimator.getAlignTransform());
 }
 
 void StateEstimate::IMUFilter::setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr) {
@@ -140,6 +143,6 @@ void StateEstimate::IMUFilter::setVelArrowTransform(Eigen::Isometry3d* _ptr) {
   _VelArrowDrawTrans = _ptr;
 }
 
-void StateEstimate::IMUFilter::setAlignTransform(Eigen::Isometry3d* _ptr) {
-  _align = _ptr;
-}
+//void StateEstimate::IMUFilter::setAlignTransform(Eigen::Isometry3d* _ptr) {
+//  _align = _ptr;
+//}

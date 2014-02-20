@@ -56,7 +56,7 @@ private:
   bool uninitialized;
   int initindex;
 
-  Eigen::Isometry3d* _align;
+  //Eigen::Isometry3d* _align;
 
   void setInertialOdometry(InertialOdometry::Odometry* _inertialOdoPtr);
   void setERSMsg(drc::robot_state_t* _msg);
