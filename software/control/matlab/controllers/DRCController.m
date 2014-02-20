@@ -260,6 +260,7 @@ classdef DRCController
             input_data.(obj.controller_input_frames{i}.name) = input_frame_data{i};
           end
           data.(obj.timed_transition) = input_data;
+					data.t=tt;
           break;
         end
         
