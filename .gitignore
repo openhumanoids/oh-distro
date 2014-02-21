@@ -9,7 +9,8 @@ drake_viewer.out
 *~
 jef-client_*.txt
 *.jef
-jrf-client*
+jrf-client_*.txt
+jrf-client.out
 *_text_log_*
 
 #######################
