@@ -1,0 +1,97 @@
+{
+  "plots": [
+    {
+      "signals": [
+        {
+          "color": [
+            255, 
+            85, 
+            0
+          ], 
+          "messageType": "drc::robot_state_t", 
+          "visible": true, 
+          "fieldName": "force_torque.l_hand_force", 
+          "arrayKeys": [
+            "0"
+          ], 
+          "channel": "EST_ROBOT_STATE"
+        }, 
+        {
+          "color": [
+            0, 
+            255, 
+            0
+          ], 
+          "messageType": "drc::robot_state_t", 
+          "visible": true, 
+          "fieldName": "force_torque.l_hand_force", 
+          "arrayKeys": [
+            "1"
+          ], 
+          "channel": "EST_ROBOT_STATE"
+        }, 
+        {
+          "color": [
+            0, 
+            0, 
+            255
+          ], 
+          "messageType": "drc::robot_state_t", 
+          "visible": true, 
+          "fieldName": "force_torque.l_hand_force", 
+          "arrayKeys": [
+            "2"
+          ], 
+          "channel": "EST_ROBOT_STATE"
+        }, 
+        {
+          "color": [
+            255, 
+            0, 
+            0
+          ], 
+          "messageType": "drc::robot_state_t", 
+          "visible": true, 
+          "fieldName": "force_torque.r_hand_force", 
+          "arrayKeys": [
+            "0"
+          ], 
+          "channel": "EST_ROBOT_STATE"
+        }, 
+        {
+          "color": [
+            0, 
+            255, 
+            0
+          ], 
+          "messageType": "drc::robot_state_t", 
+          "visible": true, 
+          "fieldName": "force_torque.r_hand_force", 
+          "arrayKeys": [
+            "1"
+          ], 
+          "channel": "EST_ROBOT_STATE"
+        }, 
+        {
+          "color": [
+            0, 
+            0, 
+            255
+          ], 
+          "messageType": "drc::robot_state_t", 
+          "visible": true, 
+          "fieldName": "force_torque.r_hand_force", 
+          "arrayKeys": [
+            "2"
+          ], 
+          "channel": "EST_ROBOT_STATE"
+        }
+      ], 
+      "timeWindow": 10, 
+      "ymin": -236.9238385836521, 
+      "ymax": 273.9415911598976
+    }
+  ], 
+  "windowWidth": 2560, 
+  "windowHeight": 1412
+}
