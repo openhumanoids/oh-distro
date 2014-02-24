@@ -1,7 +1,12 @@
 <?xml version="1.0" ?>
 <robot name="robotiq_camera" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="robotiq_camera" params="side parent *origin">
-  <link name="${side}_hand_camera_link">
+  <xacro:macro name="robotiq_camera" params="side_letter reflect parent *origin">
+  <joint name="${side_letter}_hand_face_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.12 0"/>
+    <parent link="${parent}"/>
+    <child link="${side_letter}_hand_face"/>
+  </joint>
+  <link name="${side_letter}_hand_face">
     <inertial>
       <mass value="0.1"/>
       <origin xyz="0 0 0"/>
@@ -14,21 +19,53 @@
       </geometry>
     </visual>
   </link>
-  <joint name="${side}_hand_camera_joint" type="fixed">
+  <joint name="${side_letter}_hand_gripper_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.18 0"/>
     <parent link="${parent}"/>
-    <child link="${side}_hand_camera_link"/>
-    <insert_block name="origin" />
+    <child link="${side_letter}_hand_gripper"/>
   </joint>
-  <joint name="${side}_hand_camera_optical_frame_joint" type="fixed">
+  <link name="${side_letter}_hand_gripper">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="${side_letter}_hand_camera_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="${side_letter}_hand_camera_joint" type="fixed">
+    <parent link="${parent}"/>
+    <child link="${side_letter}_hand_camera_link"/>
+    <!-- 9 degree inward angle-->
+    <origin xyz="${-0.09*reflect}  0.12 0.0" rpy="-1.57079 0  ${1.5708-reflect*0.15708}"/>
+  </joint>
+  <joint name="${side_letter}_hand_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
-    <parent link="${side}_hand_camera_link"/>
-    <child link="${side}_hand_camera_optical_frame"/>
+    <parent link="${side_letter}_hand_camera_link"/>
+    <child link="${side_letter}_hand_camera_optical_frame"/>
   </joint>
-  <link name="${side}_hand_camera_optical_frame"/>
-  <gazebo reference="${side}_hand_camera_link">
-    <sensor name="${side}_hand_camera_sensor" type="camera">
+  <link name="${side_letter}_hand_camera_optical_frame"/>
+  <gazebo reference="${side_letter}_hand_camera_link">
+    <sensor name="${side_letter}_hand_camera_sensor" type="camera">
       <update_rate>10.0</update_rate>
-      <camera name="${side}_hand_camera">
+      <camera name="${side_letter}_hand_camera">
         <pose>0 0 0 0 0 0</pose>
         <!-- m.antone estimate of 2.8mm tamron lense fov -->
         <horizontal_fov>2.0</horizontal_fov>
@@ -53,13 +90,13 @@
           <stddev>0.007</stddev>
         </noise>
       </camera>
-      <plugin filename="libgazebo_ros_camera.so" name="${side}_hand_camera_controller">
+      <plugin filename="libgazebo_ros_camera.so" name="${side_letter}_hand_camera_controller">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.0</updateRate>
-        <cameraName>robotiq_hands/${side}_hand_camera</cameraName>
+        <cameraName>robotiq_hands/${side_letter}_hand_camera</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>${side}_hand_camera_optical_frame</frameName>
+        <frameName>${side_letter}_hand_camera_optical_frame</frameName>
         <hackBaseline>0.07</hackBaseline>
         <distortionK1>0.0</distortionK1>
         <distortionK2>0.0</distortionK2>

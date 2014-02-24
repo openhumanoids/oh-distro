@@ -1353,6 +1353,42 @@
       </contact>
     </sensor>
   </gazebo>
+  <link name="l_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0.1245 0.0112"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <link name="r_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="r_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 3.142" xyz="0 -0.1245 0.0112"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_force_torque"/>
+  </joint>
   <joint name="right_finger[0]/joint_flex" type="revolute">
     <parent link="right_finger[0]/proximal_link"/>
     <child link="right_finger[0]/distal_link"/>

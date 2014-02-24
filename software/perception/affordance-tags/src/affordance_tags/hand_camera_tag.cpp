@@ -89,9 +89,12 @@ Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_cpp_ = new bot::frames( lcm_ , botparam_ );
  
-  camera_channel_ = "CAMERARHAND_LEFT";
-  camera_frame_ = "CAMERARHAND_LEFT";
-  lcm_->subscribe( camera_channel_ ,&Tags::imageHandler,this);
+  camera_channel_ = "CAMERARHAND";
+  camera_frame_ = "CAMERARHAND";
+  
+  // subscribe but only keep a queue of one
+  lcm::Subscription* sub = lcm_->subscribe( camera_channel_ ,&Tags::imageHandler,this);
+  sub->setQueueCapacity(1);  
   
   std::string left_str = "cameras."+camera_frame_+".intrinsic_cal";
   width_ = bot_param_get_int_or_fail(botparam_, (left_str+".width").c_str());
@@ -232,7 +235,6 @@ void Tags::processTag(){
   int64_t utime_in =  0;//msg->utime;
   
   // TODO: support jpeg compression
-  std::cout << "111\n";
   
   cv::Mat img = cv::Mat::zeros(height_, width_,CV_8UC3);
   //memcpy(img.data,  msg->data.data() , width_*height_*3 );  

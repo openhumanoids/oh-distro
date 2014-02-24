@@ -64,17 +64,17 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     pub_frequency_["HEAD_TO_HOKUYO_LINK"] = FrequencyLimit(0, 1E6/getMaxFrequency( "hokuyo_link") ); 
 
     pub_frequency_["BODY_TO_UTORSO"] = FrequencyLimit(0, 1E6/getMaxFrequency( "utorso") ); 
-    
-    // Sandia L/R hands:
-    pub_frequency_["BODY_TO_CAMERARHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERARHAND_LEFT") ); 
-    pub_frequency_["BODY_TO_CAMERALHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND_LEFT") );
-    
+        
     // Robotiq:
-    pub_frequency_["BODY_TO_CAMERARHAND"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERARHAND") ); 
-    pub_frequency_["BODY_TO_CAMERALHAND"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND") );
+    pub_frequency_["BODY_TO_RHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "RHAND_FORCE_TORQUE") );
+    pub_frequency_["BODY_TO_LHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "LHAND_FORCE_TORQUE") );
     
-    pub_frequency_["BODY_TO_LPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "LPALM") ); 
-    pub_frequency_["BODY_TO_RPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "RPALM") );
+    
+    pub_frequency_["BODY_TO_CAMERALHAND"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND") );
+    pub_frequency_["BODY_TO_CAMERARHAND"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERARHAND") ); 
+    
+    pub_frequency_["BODY_TO_LHAND_FACE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "LHAND_FACE") ); 
+    pub_frequency_["BODY_TO_RHAND_FACE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "RHAND_FACE") );
 
     pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
     pub_frequency_["POSE_LEFT_FOOT"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "left_foot") );
@@ -209,33 +209,26 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
   bool body_to_hokuyo_link_found = false;
 
   for( map<string, KDL::Frame >::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
-    std::string joint = (*ii).first;
+    std::string link = (*ii).first;
+    //std::cout << link << " is link\n";
     if (   (*ii).first.compare( "head" ) == 0 ){
       body_to_head = KDLToEigen( (*ii).second );
       body_to_head_found=true;
     }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
       body_to_hokuyo_link = KDLToEigen( (*ii).second );
       body_to_hokuyo_link_found=true;
-    }else if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){ // sandia r
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RPALM" );
-    }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){ // sandie l
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LPALM" );      
-    }else if(  (*ii).first.compare( "right_hand_camera_optical_frame" ) == 0 ){ // robotiq r
+    }else if(  (*ii).first.compare( "r_hand_force_torque" ) == 0 ){ // ft sensor
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
+    }else if(  (*ii).first.compare( "l_hand_force_torque" ) == 0 ){ // ft sensor
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND_FORCE_TORQUE" );     
+    }else if(  (*ii).first.compare( "r_hand_camera_optical_frame" ) == 0 ){ // robotiq r
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND" );
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RPALM" );
-    }else if(  (*ii).first.compare( "left_hand_camera_optical_frame" ) == 0 ){ // robotiq l
+    }else if(  (*ii).first.compare( "l_hand_camera_optical_frame" ) == 0 ){ // robotiq l
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND" );
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LPALM" );
-    }else if(  (*ii).first.compare( "left_base_link" ) == 0 ){
-      Eigen::Isometry3d base_link_to_palm_skin = Eigen::Isometry3d::Identity();
-      base_link_to_palm_skin.translation()  << 0,0,0.09;
-      publishRigidTransform( KDLToEigen( (*ii).second )*base_link_to_palm_skin , msg->utime, "BODY_TO_LPALM" );
-    }else if(  (*ii).first.compare( "right_base_link" ) == 0 ){
-      Eigen::Isometry3d base_link_to_palm_skin = Eigen::Isometry3d::Identity();
-      base_link_to_palm_skin.translation()  << 0,0,0.09;
-      publishRigidTransform( KDLToEigen( (*ii).second )*base_link_to_palm_skin   , msg->utime, "BODY_TO_RPALM" );
+    }else if(  (*ii).first.compare( "l_hand_face" ) == 0 ){
+      publishRigidTransform( KDLToEigen( (*ii).second ), msg->utime, "BODY_TO_LHAND_FACE" );
+    }else if(  (*ii).first.compare( "r_hand_face" ) == 0 ){
+      publishRigidTransform( KDLToEigen( (*ii).second ), msg->utime, "BODY_TO_RHAND_FACE" );
     }
     
   }
