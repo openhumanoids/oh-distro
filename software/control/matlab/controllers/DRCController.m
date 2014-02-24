@@ -80,7 +80,7 @@ classdef DRCController
       obj.lc = lcm.lcm.LCM.getSingleton();
       
       % in order to support backup mode:
-      typecheck(obj.controller_output_frame,{'LCMCoordinateFrameWCoder','LCMCoordinateFrame'}); % could be more general, but this should get us started
+      typecheck(obj.controller_output_frame,'LCMCoordinateFrame'); % could be more general, but this should get us started
       obj.controller_output_frame.subscribe(defaultChannel(obj.controller_output_frame));
     end
     

@@ -19,7 +19,7 @@ state_frame.subscribe('EST_ROBOT_STATE');
 ref_frame = AtlasPositionRef(r);
 
 % extra frame contains raw encoder values
-extra_frame = LCMCoordinateFrameWCoder('AtlasStateExtra',4*28,'x');
+extra_frame = LCMCoordinateFrame('AtlasStateExtra',4*28,'x');
 coder = drc.control.AtlasStateExtraCoder(28);
 extra_frame.setLCMCoder(JLCMCoder(coder));
 extra_frame.subscribe('ATLAS_STATE_EXTRA');

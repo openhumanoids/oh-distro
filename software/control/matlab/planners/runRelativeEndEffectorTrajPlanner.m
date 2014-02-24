@@ -9,11 +9,10 @@ function runRelativeEndEffectorTrajPlanner(channel,delim,options)
   r = Atlas();
   nq = r.getNumDOF();
   load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
-  x0 = xstar;
   qstar = xstar(1:nq);
   q0 = qstar;
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-  robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateCoder(joint_names)));
+  robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateCoder(joint_names)),'x');
   robot_state_coder.subscribe('EST_ROBOT_STATE');
 
   % Create lcm monitor and publisher

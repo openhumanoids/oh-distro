@@ -1,4 +1,4 @@
-classdef AtlasForceTorque < LCMCoordinateFrameWCoder & Singleton
+classdef AtlasForceTorque < LCMCoordinateFrame & Singleton
   
   methods
     function obj=AtlasForceTorque()
@@ -10,12 +10,12 @@ classdef AtlasForceTorque < LCMCoordinateFrameWCoder & Singleton
                 'r_hand_fx','r_hand_fy','r_hand_fz',...
                 'r_hand_tx','r_hand_ty','r_hand_tz'};
       
-      obj = obj@LCMCoordinateFrameWCoder('AtlasForceTorque',length(coordinates),'f');
+      obj = obj@LCMCoordinateFrame('AtlasForceTorque',length(coordinates),'f');
       obj = obj@Singleton();
+      
       if isempty(obj.lcmcoder)
         coder = drc.control.ForceTorqueStateCoder();
         obj = setLCMCoder(obj,JLCMCoder(coder));
-
         obj.setCoordinateNames(coordinates);
         obj.setDefaultChannel('EST_ROBOT_STATE');
       end
