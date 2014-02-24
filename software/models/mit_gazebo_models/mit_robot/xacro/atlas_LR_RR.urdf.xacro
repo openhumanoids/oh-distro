@@ -2,7 +2,7 @@
   
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas_skeleton.urdf" />
   <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
-  <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl_sim.urdf" />
+  <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl.urdf" />
 
 
 <!--  left was  0 1.57079 0 -->
@@ -16,7 +16,7 @@
   <xacro:robotiq_hand side="right" parent="r_hand" reflect="1">
     <origin rpy="0 -1.57079 3.141" xyz="0 -0.19016 -0.015"/>
   </xacro:robotiq_hand>
-  
+
 
 <!-- right was 0  0.25 0    -1.57079 0  1.57079      -->
 <!-- right was 0 -0.25 0    -1.57079 3.14158 1.57079 -->

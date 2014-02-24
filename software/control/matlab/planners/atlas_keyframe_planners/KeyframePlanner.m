@@ -117,8 +117,8 @@ classdef KeyframePlanner < handle
             
             % mfallon changed Right on 13dec2013
             % mfallon changed Left  on 30jan2014
-            obj.T_hand_palm_l_robotiq = HT([0;1.19016;0.015],0,1.57079,0);
-            obj.T_hand_palm_r_robotiq = HT([0;-0.19016;-0.015],0,1.57079,3.14159);
+            obj.T_hand_palm_l_robotiq = HT([0;0.19016;0.015],0,-1.57079,0);
+            obj.T_hand_palm_r_robotiq = HT([0;-0.19016;-0.015],0,-1.57079,3.14159);
             
 
             % Hands with 6 inch extenders - 6 Dec 2013, mfallon:

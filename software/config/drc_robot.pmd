@@ -154,8 +154,8 @@ group "a.2.p_and_c" {
 }
 
 group "a.3.models" {   
-    cmd "model_LP_RR" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RR.urdf";
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "robot";
     }
     cmd "model_LI_RR" {
@@ -281,8 +281,8 @@ group "b.2.p_and_c_retired" {
 }
 
 group "b.3.models" {
-    cmd "base_model_LP_RR" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RR.urdf";
+    cmd "base_model_LR_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "base";
     }
     cmd "base_model_LI_RR" {
@@ -358,9 +358,9 @@ script "prep_core" {
     start cmd "sa-left";
 }
 
-script "prep_LP_RR_valve" { 
-    start cmd "model_LP_RR";
-    start cmd "base_model_LP_RR";
+script "prep_LR_RR" { 
+    start cmd "model_LR_RR";
+    start cmd "base_model_LR_RR";
     run_script "prep_core";
     start cmd "robotiq-right";
     start cmd "robotiq-status2state";
