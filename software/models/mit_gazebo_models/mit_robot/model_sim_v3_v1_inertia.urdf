@@ -1810,19 +1810,15 @@
       <update_rate>10.0</update_rate>
       <camera name="left_hand_camera">
         <pose>0 0 0 0 0 0</pose>
-        <!-- Spec sheet says 185deg HFOV @ 1280x1024pi @ 60 hz.
-             Don't think most GPU's can achieve this at real-time right now.
-        <horizontal_fov>3.22885912</horizontal_fov>
-        -->
-        <horizontal_fov>2.0</horizontal_fov>
+        <horizontal_fov>1.25663706144</horizontal_fov>
         <image>
-          <width>1280</width>
-          <height>1024</height>
+          <width>752</width>
+          <height>480</height>
           <format>R8G8B8</format>
         </image>
         <clip>
           <near>0.02</near>
-          <far>300</far>
+          <far>100</far>
         </clip>
         <noise>
           <type>gaussian</type>
@@ -1881,19 +1877,15 @@
       <update_rate>10.0</update_rate>
       <camera name="right_hand_camera">
         <pose>0 0 0 0 0 0</pose>
-        <!-- Spec sheet says 185deg HFOV @ 1280x1024pi @ 60 hz.
-             Don't think most GPU's can achieve this at real-time right now.
-        <horizontal_fov>3.22885912</horizontal_fov>
-        -->
-        <horizontal_fov>2.0</horizontal_fov>
+        <horizontal_fov>1.25663706144</horizontal_fov>
         <image>
-          <width>1280</width>
-          <height>1024</height>
+          <width>752</width>
+          <height>480</height>
           <format>R8G8B8</format>
         </image>
         <clip>
           <near>0.02</near>
-          <far>300</far>
+          <far>100</far>
         </clip>
         <noise>
           <type>gaussian</type>
