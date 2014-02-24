@@ -68,6 +68,11 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     // Sandia L/R hands:
     pub_frequency_["BODY_TO_CAMERARHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERARHAND_LEFT") ); 
     pub_frequency_["BODY_TO_CAMERALHAND_LEFT"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND_LEFT") );
+    
+    // Robotiq:
+    pub_frequency_["BODY_TO_CAMERARHAND"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERARHAND") ); 
+    pub_frequency_["BODY_TO_CAMERALHAND"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND") );
+    
     pub_frequency_["BODY_TO_LPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "LPALM") ); 
     pub_frequency_["BODY_TO_RPALM"] = FrequencyLimit(0, 1E6/getMaxFrequency( "RPALM") );
 
@@ -218,10 +223,10 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LPALM" );      
     }else if(  (*ii).first.compare( "right_hand_camera_optical_frame" ) == 0 ){ // robotiq r
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND" );
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RPALM" );
     }else if(  (*ii).first.compare( "left_hand_camera_optical_frame" ) == 0 ){ // robotiq l
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND" );
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LPALM" );
     }else if(  (*ii).first.compare( "left_base_link" ) == 0 ){
       Eigen::Isometry3d base_link_to_palm_skin = Eigen::Isometry3d::Identity();

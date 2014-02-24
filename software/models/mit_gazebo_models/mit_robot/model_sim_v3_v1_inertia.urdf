@@ -1781,6 +1781,658 @@
   <gazebo>
     <plugin filename="libatlas_push_plugin.so" name="atlas_push_plugin"/>
   </gazebo>
+  <joint name="left_robotiq_hand_joint" type="fixed">
+    <origin rpy="0 -1.57079 0" xyz="0 0.19016 0.015"/>
+    <parent link="l_hand"/>
+    <child link="left_palm"/>
+  </joint>
+  <link name="left_finger_1_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="left_finger_1_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="left_finger_1_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="left_finger_1_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="left_finger_1_joint_1" type="revolute">
+    <parent link="left_finger_1_link_0"/>
+    <child link="left_finger_1_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="left_finger_1_joint_2" type="revolute">
+    <parent link="left_finger_1_link_1"/>
+    <child link="left_finger_1_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="left_finger_1_joint_3" type="revolute">
+    <parent link="left_finger_1_link_2"/>
+    <child link="left_finger_1_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <link name="left_finger_2_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="left_finger_2_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="left_finger_2_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="left_finger_2_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="left_finger_2_joint_1" type="revolute">
+    <parent link="left_finger_2_link_0"/>
+    <child link="left_finger_2_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="left_finger_2_joint_2" type="revolute">
+    <parent link="left_finger_2_link_1"/>
+    <child link="left_finger_2_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="left_finger_2_joint_3" type="revolute">
+    <parent link="left_finger_2_link_2"/>
+    <child link="left_finger_2_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <link name="left_finger_middle_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="left_finger_middle_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="left_finger_middle_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="left_finger_middle_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="left_finger_middle_joint_1" type="revolute">
+    <parent link="left_finger_middle_link_0"/>
+    <child link="left_finger_middle_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="left_finger_middle_joint_2" type="revolute">
+    <parent link="left_finger_middle_link_1"/>
+    <child link="left_finger_middle_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="left_finger_middle_joint_3" type="revolute">
+    <parent link="left_finger_middle_link_2"/>
+    <child link="left_finger_middle_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <link name="left_palm">
+    <visual>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/palm.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/palm.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <joint name="left_palm_finger_1_joint" type="revolute">
+    <parent link="left_palm"/>
+    <child link="left_finger_1_link_0"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 0.036"/>
+    <limit effort="100" lower="-0.16" upper="0.25" velocity="100"/>
+  </joint>
+  <joint name="left_palm_finger_2_joint" type="revolute">
+    <parent link="left_palm"/>
+    <child link="left_finger_2_link_0"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 -0.036"/>
+    <limit effort="100" lower="-0.25" upper="0.16" velocity="100"/>
+  </joint>
+  <joint name="left_palm_finger_middle_joint" type="fixed">
+    <parent link="left_palm"/>
+    <child link="left_finger_middle_link_0"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 1.57" xyz="0.0455 0.0214 0"/>
+  </joint>
+  <joint name="right_robotiq_hand_joint" type="fixed">
+    <origin rpy="0 -1.57079 3.141" xyz="0 -0.19016 -0.015"/>
+    <parent link="r_hand"/>
+    <child link="right_palm"/>
+  </joint>
+  <link name="right_finger_1_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="right_finger_1_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="right_finger_1_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="right_finger_1_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="right_finger_1_joint_1" type="revolute">
+    <parent link="right_finger_1_link_0"/>
+    <child link="right_finger_1_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="right_finger_1_joint_2" type="revolute">
+    <parent link="right_finger_1_link_1"/>
+    <child link="right_finger_1_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="right_finger_1_joint_3" type="revolute">
+    <parent link="right_finger_1_link_2"/>
+    <child link="right_finger_1_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <link name="right_finger_2_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="right_finger_2_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="right_finger_2_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="right_finger_2_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="right_finger_2_joint_1" type="revolute">
+    <parent link="right_finger_2_link_0"/>
+    <child link="right_finger_2_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="right_finger_2_joint_2" type="revolute">
+    <parent link="right_finger_2_link_1"/>
+    <child link="right_finger_2_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="right_finger_2_joint_3" type="revolute">
+    <parent link="right_finger_2_link_2"/>
+    <child link="right_finger_2_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <link name="right_finger_middle_link_0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0.020 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0414 0.036"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <link name="right_finger_middle_link_1">
+    <visual>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="right_finger_middle_link_2">
+    <!--
+			NOTE: This link has an offset in the z-direction based on the models that were
+			used to generate grap-it poses.  With the offset below the model appears visually
+			correct, but it is suspect.
+			-->
+    <visual>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.039 0 0.0075"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <link name="right_finger_middle_link_3">
+    <visual>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0.52" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
+  <joint name="right_finger_middle_joint_1" type="revolute">
+    <parent link="right_finger_middle_link_0"/>
+    <child link="right_finger_middle_link_1"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.020 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="right_finger_middle_joint_2" type="revolute">
+    <parent link="right_finger_middle_link_1"/>
+    <child link="right_finger_middle_link_2"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 -0.52" xyz="0.050 -.028 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <joint name="right_finger_middle_joint_3" type="revolute">
+    <parent link="right_finger_middle_link_2"/>
+    <child link="right_finger_middle_link_3"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 0" xyz="0.039 0 0"/>
+    <limit effort="100" lower="0" upper="3.1416" velocity="100"/>
+  </joint>
+  <link name="right_palm">
+    <visual>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/visual/palm.STL"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://robotiq_hand_description/meshes/s-model_articulated/collision/palm.STL"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="0 1 1 1"/>
+      </material>
+    </collision>
+  </link>
+  <joint name="right_palm_finger_1_joint" type="revolute">
+    <parent link="right_palm"/>
+    <child link="right_finger_1_link_0"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 0.036"/>
+    <limit effort="100" lower="-0.16" upper="0.25" velocity="100"/>
+  </joint>
+  <joint name="right_palm_finger_2_joint" type="revolute">
+    <parent link="right_palm"/>
+    <child link="right_finger_2_link_0"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 3.1416 -1.57" xyz="-0.0455 0.0214 -0.036"/>
+    <limit effort="100" lower="-0.25" upper="0.16" velocity="100"/>
+  </joint>
+  <joint name="right_palm_finger_middle_joint" type="fixed">
+    <parent link="right_palm"/>
+    <child link="right_finger_middle_link_0"/>
+    <axis xyz="0 0 1"/>
+    <origin rpy="0 0 1.57" xyz="0.0455 0.0214 0"/>
+  </joint>
+  <!-- left was 0  0.25 0    -1.57079 0  1.57079 -->
+  <!-- right was 0 -0.25 0   -1.57079 3.14158 1.57079 -->
   <link name="left_hand_camera_link">
     <inertial>
       <mass value="0.1"/>
@@ -1797,7 +2449,7 @@
   <joint name="left_hand_camera_joint" type="fixed">
     <parent link="l_hand"/>
     <child link="left_hand_camera_link"/>
-    <origin rpy="-1.57079 0  1.57079" xyz="0.0  0.25 0.0"/>
+    <origin rpy="-1.57079 0  1.41369" xyz="-0.09  0.24 0.0"/>
   </joint>
   <joint name="left_hand_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
@@ -1864,7 +2516,7 @@
   <joint name="right_hand_camera_joint" type="fixed">
     <parent link="r_hand"/>
     <child link="right_hand_camera_link"/>
-    <origin rpy="-1.57079 3.14158 1.57079" xyz="0.0  -0.25 0.0"/>
+    <origin rpy="-1.57079 3.14158 1.72789" xyz="-0.09  -0.24 0.0"/>
   </joint>
   <joint name="right_hand_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>

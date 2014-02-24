@@ -47,6 +47,10 @@ private:
   void left_image_cb(const sensor_msgs::ImageConstPtr& msg);
   void l_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg);
   void r_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg);
+  
+  void l_hand_robotiq_cb(const sensor_msgs::ImageConstPtr& msg);
+  void r_hand_robotiq_cb(const sensor_msgs::ImageConstPtr& msg);
+  
   void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
     
   image_transport::Subscriber left_image_sub_;
@@ -74,8 +78,8 @@ App::App(ros::NodeHandle node_) : node_(node_), it_(node_){
   l_hand_l_image_sub_ = it_.subscribe("/sandia_hands/l_hand/left/image_raw", 1, &App::l_hand_l_image_cb,this);
   r_hand_l_image_sub_ = it_.subscribe("/sandia_hands/r_hand/left/image_raw", 1, &App::r_hand_l_image_cb,this);
 
-  l_hand_l_image_sub_ = it_.subscribe("/robotiq_hands/left_hand_camera/image_raw", 1, &App::l_hand_l_image_cb,this);
-  r_hand_l_image_sub_ = it_.subscribe("/robotiq_hands/right_hand_camera/image_raw", 1, &App::r_hand_l_image_cb,this);
+  l_hand_l_image_sub_ = it_.subscribe("/robotiq_hands/left_hand_camera/image_raw", 1, &App::l_hand_robotiq_cb,this);
+  r_hand_l_image_sub_ = it_.subscribe("/robotiq_hands/right_hand_camera/image_raw", 1, &App::r_hand_robotiq_cb,this);
   
     
   imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );  
@@ -113,6 +117,30 @@ void App::r_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg){
   r_counter++;
   send_image(msg, "CAMERARHAND_LEFT");
 }
+
+
+
+int l_counter_robotiq =0;
+void App::l_hand_robotiq_cb(const sensor_msgs::ImageConstPtr& msg){
+  if (l_counter_robotiq%30 ==0){
+    ROS_ERROR("L H C [%d]", l_counter_robotiq );
+    ///std::cout << l_counter_robotiq << " left hand image\n";
+  }  
+  l_counter_robotiq++;
+  send_image(msg, "CAMERALHAND");
+}
+
+int r_counter_robotiq =0;
+void App::r_hand_robotiq_cb(const sensor_msgs::ImageConstPtr& msg){
+  if (r_counter_robotiq%30 ==0){
+    ROS_ERROR("R H C [%d]", r_counter_robotiq );
+    ///std::cout << r_counter << " right hand image\n";
+  }  
+  r_counter_robotiq++;
+  send_image(msg, "CAMERARHAND");
+}
+
+
 
 void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
   int64_t current_utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);

@@ -18,12 +18,15 @@
   </xacro:robotiq_hand>
   
 
+<!-- right was 0  0.25 0    -1.57079 0  1.57079      -->
+<!-- right was 0 -0.25 0    -1.57079 3.14158 1.57079 -->
+<!-- 9d = 0.1571 rad -->
   <xacro:include filename="$(find robotiq_camera)/urdf/robotiq_camera.urdf.xacro" />
   <xacro:robotiq_camera side="left" parent="l_hand" >
-    <origin xyz="0.0  0.25 0.0" rpy="-1.57079 0  1.57079"/>
+    <origin xyz="-0.09  0.24 0.0" rpy="-1.57079 0  1.41369"/>
   </xacro:robotiq_camera>
   <xacro:robotiq_camera side="right" parent="r_hand" >
-    <origin xyz="0.0  -0.25 0.0" rpy="-1.57079 3.14158 1.57079"/>
+    <origin xyz="-0.09  -0.24 0.0" rpy="-1.57079 3.14158 1.72789"/>
   </xacro:robotiq_camera>
 
 

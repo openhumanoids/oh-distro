@@ -30,10 +30,11 @@
       <update_rate>10.0</update_rate>
       <camera name="${side}_hand_camera">
         <pose>0 0 0 0 0 0</pose>
-        <horizontal_fov>1.25663706144</horizontal_fov>
+        <!-- m.antone estimate of 2.8mm tamron lense fov -->
+        <horizontal_fov>2.0</horizontal_fov>
         <image>
-          <width>752</width>
-          <height>480</height>
+          <width>1280</width>
+          <height>1024</height>
           <format>R8G8B8</format>
         </image>
         <clip>
