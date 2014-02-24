@@ -9,6 +9,9 @@ cmake_minimum_required(VERSION 2.8.6) # for UseJava.cmake
 set(POD_NAME DataFusionMatlab)
 include(cmake/pods.cmake)
 
+install(FILES matlab/setup_datafusion.m DESTINATION matlab)
+
+
 # set up Java, use a target of 1.6
 #find_package(Java)
 #include(UseJava)
@@ -87,7 +90,7 @@ include(cmake/pods.cmake)
 #	   "  cd(wd);\n"
 #    )
 
-install(FILES matlab/setup_datafusion.m DESTINATION matlab)
+#install(FILES matlab/setup_datafusion.m DESTINATION matlab)
 
 
 #find_program(avl avl PATHS ${CMAKE_INSTALL_DIR}/bin )

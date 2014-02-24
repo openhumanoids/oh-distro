@@ -12,6 +12,7 @@ estimate_tools
 
 
 motion_estimate
+DataFusion
 
 signal_scope
 hand_estimate
