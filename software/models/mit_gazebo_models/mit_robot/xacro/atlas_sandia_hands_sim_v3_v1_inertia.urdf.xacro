@@ -1,0 +1,19 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="atlas" >
+  
+  <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
+
+  <xacro:include filename="$(find atlas_description)/urdf/atlas_v3_with_v1_inertia.urdf" />
+  <xacro:include filename="$(find atlas_description)/urdf/atlas_v3.gazebo" />
+  <xacro:include filename="$(find atlas_description)/urdf/atlas_v3.transmission" />
+  <xacro:include filename="$(find multisense_sl_description)/urdf/multisense_sl_v3.urdf" />
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/mit_atlas.gazebo" />
+
+  <xacro:include filename="$(find robotiq_camera)/urdf/robotiq_camera.urdf.xacro" />
+  <xacro:robotiq_camera side="left" parent="l_hand" >
+    <origin xyz="0.0  0.25 0.0" rpy="-1.57079 0  1.57079"/>
+  </xacro:robotiq_camera>
+  <xacro:robotiq_camera side="right" parent="r_hand" >
+    <origin xyz="0.0  -0.25 0.0" rpy="-1.57079 3.14158 1.57079"/>
+  </xacro:robotiq_camera>
+
+</robot>

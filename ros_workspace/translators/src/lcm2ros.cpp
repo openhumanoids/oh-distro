@@ -221,9 +221,9 @@ void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::s
 }
   
 void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg) {
-  int control_mode = 0;
-  // 0 = osrf pd_gains
-  // 1 = previous mode which seems to be PD also - but gains provided by us
+  int control_mode = 1;
+  // 1 = osrf pd_gains
+  // X = previous mode which seems to be PD also - but gains provided by us
   
   if (control_mode){
     // MIT used k_q_p and  k_qd_p gains in DRC trails

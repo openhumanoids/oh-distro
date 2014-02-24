@@ -73,6 +73,9 @@ App::App(ros::NodeHandle node_) : node_(node_), it_(node_){
   // Real Cameras:  
   l_hand_l_image_sub_ = it_.subscribe("/sandia_hands/l_hand/left/image_raw", 1, &App::l_hand_l_image_cb,this);
   r_hand_l_image_sub_ = it_.subscribe("/sandia_hands/r_hand/left/image_raw", 1, &App::r_hand_l_image_cb,this);
+
+  l_hand_l_image_sub_ = it_.subscribe("/robotiq_hands/left_hand_camera/image_raw", 1, &App::l_hand_l_image_cb,this);
+  r_hand_l_image_sub_ = it_.subscribe("/robotiq_hands/right_hand_camera/image_raw", 1, &App::r_hand_l_image_cb,this);
   
     
   imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );  

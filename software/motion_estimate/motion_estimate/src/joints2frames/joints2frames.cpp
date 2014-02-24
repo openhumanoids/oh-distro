@@ -211,10 +211,16 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
       body_to_hokuyo_link = KDLToEigen( (*ii).second );
       body_to_hokuyo_link_found=true;
-    }else if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){
+    }else if(  (*ii).first.compare( "right_palm_left_camera_optical_frame" ) == 0 ){ // sandia r
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RPALM" );
-    }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){
+    }else if(  (*ii).first.compare( "left_palm_left_camera_optical_frame" ) == 0 ){ // sandie l
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LPALM" );      
+    }else if(  (*ii).first.compare( "right_hand_camera_optical_frame" ) == 0 ){ // robotiq r
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND_LEFT" );
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RPALM" );
+    }else if(  (*ii).first.compare( "left_hand_camera_optical_frame" ) == 0 ){ // robotiq l
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND_LEFT" );
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LPALM" );
     }else if(  (*ii).first.compare( "left_base_link" ) == 0 ){

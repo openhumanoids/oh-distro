@@ -6,7 +6,6 @@
 
   
   <xacro:include filename="$(find robotiq_hand_description)/cfg/robotiq_hand.urdf.xacro" />
-
   <xacro:robotiq_hand side="left" parent="l_hand" reflect="1">
     <origin rpy="0 1.57079 0" xyz="0 0.19016 0.015"/>
   </xacro:robotiq_hand>
@@ -14,4 +13,14 @@
     <origin rpy="0 1.57079 3.141" xyz="0 -0.19016 -0.015"/>
   </xacro:robotiq_hand>
   
+
+  <xacro:include filename="$(find robotiq_camera)/urdf/robotiq_camera.urdf.xacro" />
+  <xacro:robotiq_camera side="left" parent="l_hand" >
+    <origin xyz="0.0  0.25 0.0" rpy="-1.57079 0  1.57079"/>
+  </xacro:robotiq_camera>
+  <xacro:robotiq_camera side="right" parent="r_hand" >
+    <origin xyz="0.0  -0.25 0.0" rpy="-1.57079 3.14158 1.57079"/>
+  </xacro:robotiq_camera>
+
+
 </robot>
