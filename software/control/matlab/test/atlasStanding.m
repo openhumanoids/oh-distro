@@ -252,6 +252,7 @@ options.w = 0.001;
 options.lcm_foot_contacts = false;
 options.use_mex = true;
 options.contact_threshold = 0.05;
+options.output_qdd = true;
 qp = QPControlBlock(r,ctrl_data,options);
 
 qddes = zeros(nu,1);

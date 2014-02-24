@@ -44,10 +44,21 @@ classdef QPControlBlock < MIMODrakeSystem
       dt = options.dt;
     else
       dt = 0.004;
-    end
+		end
     
-    output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
-    obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
+		if ~isfield(options,'output_qdd')
+			options.output_qdd = false;
+    else
+			typecheck(options.output_qdd,'logical');
+		end
+		
+		if options.output_qdd
+			output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
+		else
+			output_frame = r.getInputFrame();
+		end
+		
+		obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
     obj = setInputFrame(obj,input_frame);
     obj = setOutputFrame(obj,output_frame);
@@ -210,6 +221,7 @@ classdef QPControlBlock < MIMODrakeSystem
 
     [obj.jlmin, obj.jlmax] = getJointLimits(r);
         
+		obj.output_qdd = options.output_qdd;
   end
 
   end
@@ -265,7 +277,7 @@ classdef QPControlBlock < MIMODrakeSystem
   
   methods
     
-  function [y,qdd]=mimoOutput(obj,t,~,varargin)
+  function varargout=mimoOutput(obj,t,~,varargin)
 %    out_tic = tic;
     ctrl_data = obj.controller_data.data;
     
@@ -838,7 +850,13 @@ classdef QPControlBlock < MIMODrakeSystem
       if mod(average_tictoc_n,50)==0
         fprintf('Average control output duration: %2.4f\n',average_tictoc);
       end
-    end
+		end
+		
+		if obj.output_qdd
+			varargout = {y,qdd};
+		else
+			varargout = {y};
+		end
   end
   end
 
@@ -872,5 +890,6 @@ classdef QPControlBlock < MIMODrakeSystem
     jlmin;
     jlmax;
     contact_threshold; % min height above terrain to be considered in contact
+		output_qdd = false;
     end
 end
