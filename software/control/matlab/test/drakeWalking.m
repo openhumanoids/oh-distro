@@ -43,8 +43,6 @@ v.display_dt = 0.05;
 nq = getNumDOF(r);
 
 x0 = xstar;
-q0 = x0(1:nq);
-
 
 % create footstep and ZMP trajectories
 footstep_planner = StatelessFootstepPlanner();
@@ -79,7 +77,7 @@ walking_planner = StatelessWalkingPlanner();
 request = drc.walking_plan_request_t();
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
 request.footstep_plan = footstep_plan.toLCM();
-walking_plan = walking_planner.plan_walking(r, request, true);
+walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
 
@@ -160,8 +158,6 @@ sys = mimoCascade(sys,v,[],[],output_select);
 warning(S);
 traj = simulate(sys,[0 T],x0);
 playback(v,traj,struct('slider',true));
-
-
 
 if plot_comtraj
   dt = 0.001;

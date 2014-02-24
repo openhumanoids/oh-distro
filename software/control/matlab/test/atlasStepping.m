@@ -10,7 +10,7 @@ Kd = 2;
 
 % load robot model
 r = Atlas();
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
 r = r.setInitialState(xstar);

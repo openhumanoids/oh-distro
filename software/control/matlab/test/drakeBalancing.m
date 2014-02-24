@@ -3,7 +3,7 @@ function drakeBalancing(use_mex)
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 % put robot in a random x,y,yaw position and balance for 3 seconds
-visualize = false;
+visualize = true;
 
 if (nargin>0) options.use_mex = use_mex;
 else options.use_mex = true; end
@@ -21,8 +21,8 @@ nq = getNumDOF(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 1000*randn();
-xstar(2) = 1000*randn();
+xstar(1) = 1*randn();
+xstar(2) = 1*randn();
 xstar(6) = pi*randn();
 %xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
