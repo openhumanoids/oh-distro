@@ -33,10 +33,10 @@ signal = 'chirp';% <----  zoh, foh, chirp
 T = 30;% <--- signal duration (sec)
 
 % chirp specific
-amp = 1.25;% <----  Nm or radians
-chirp_f0 = 0.1;% <--- chirp starting frequency
-chirp_fT = 0.3;% <--- chirp ending frequency
-chirp_sign = 1;% <--- -1: below offset, 1: above offset, 0: centered about offset 
+amp = 0.3;% <----  Nm or radians
+chirp_f0 = 0.2;% <--- chirp starting frequency
+chirp_fT = 0.2;% <--- chirp ending frequency
+chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
 vals = 20*[0 1 1 -1 -1 0 0];% <----  Nm or radians

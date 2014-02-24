@@ -115,10 +115,9 @@ k_qd_p.neck_ay   = 0.1;
 
 
 
-% ff_f_d.back_bkz  = 0.0;
-% ff_f_d.back_bky  = 0.0;
-% ff_f_d.back_bkx  = 0.0;
-% ff_f_d.neck_ay   = 0.0;
+ff_f_d.back_bkz  = 0.0;
+ff_f_d.back_bky  = 0.0;
+ff_f_d.back_bkx  = 0.0;
 % ff_f_d.l_arm_usy = 0.0; 
 % ff_f_d.l_arm_shx = 0.0;  
 % ff_f_d.l_arm_ely = 0.0; 
@@ -145,9 +144,9 @@ ff_f_d.r_leg_aky = 0.0;
 ff_f_d.r_leg_akx = 0.0;
 
 
-% k_f_p.back_bkz  = 0.012;
-% k_f_p.back_bky  = 0.012;
-% k_f_p.back_bkx  = 0.012;
+k_f_p.back_bkz  = 0.01;
+k_f_p.back_bky  = 0.015;
+k_f_p.back_bkx  = 0.015;
 % k_f_p.l_arm_usy = 0.08; % 9-17-13
 % k_f_p.l_arm_shx = 0.125; % 9-17-13
 % k_f_p.l_arm_ely = 0.115; % 9-17-13
@@ -174,6 +173,9 @@ k_f_p.r_leg_aky = 0.25; % 02-03-14, f+v
 k_f_p.r_leg_akx = 0.3; % 02-03-14, f+v 
 
 
+ff_qd.back_bkz  = 0.01;
+ff_qd.back_bky  = 0.01;
+ff_qd.back_bkx  = 0.01;
 % ff_qd.l_arm_usy = 0.3; % 9-19-13, fc
 % ff_qd.r_arm_usy = 0.3; % 9-19-13, fc
 % ff_qd.l_arm_shx = 0.275; % 9-19-13, fc 
@@ -199,9 +201,9 @@ ff_qd.r_leg_kny = 0.03; % 02-03-14, f+v
 ff_qd.r_leg_aky = 0.5; % 02-03-14, f+v    
 ff_qd.r_leg_akx = 0.65; % 02-04-14, f+v   
 
-% ff_qd_d.back_bkz  = 0.0;
-% ff_qd_d.back_bky  = 0.0;
-% ff_qd_d.back_bkx  = 0.0;
+ff_qd_d.back_bkz  = 1.0;
+ff_qd_d.back_bky  = 2.0;
+ff_qd_d.back_bkx  = 1.0;
 % ff_qd_d.l_arm_usy = 0.0; 
 % ff_qd_d.l_arm_shx = 0.0;  
 % ff_qd_d.l_arm_ely = 0.0; 
