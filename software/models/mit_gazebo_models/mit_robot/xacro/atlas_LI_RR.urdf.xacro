@@ -13,8 +13,8 @@
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
   </xacro:irobot_hand>
 
-  <xacro:robotiq_hand side="right" parent="r_hand" reflect="1">
-    <origin rpy="0 1.57079 3.141" xyz="0 -0.19016 -0.015"/>
+  <xacro:robotiq_hand side="right" parent="r_hand_force_torque" reflect="1">
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
   </xacro:robotiq_hand>
 
 </robot>
