@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
     occ_map_pixel_map_add_renderer_to_viewer(viewer, 1, "SLAM_MAP", "Slam Map");
 
     // A second robot renderer: (on a different channel, currently "EST_ROBOT_STATE_COMPRESSED_LOOPBACK
-    setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+    //setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   }
 
   //--------------    Toolbar Additions
