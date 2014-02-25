@@ -42,7 +42,7 @@ using namespace boost::assign; // bring 'operator+()' into scope
 
 class Tags{
   public:
-    Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_);
+    Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_, bool use_head_cam_);
     
     ~Tags(){
     }    
@@ -53,7 +53,10 @@ class Tags{
     int width_, height_;
     double fx_, fy_, cx_, cy_;
     
+    bool use_head_cam_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    
     void processTag(int64_t utime_in);
 
     BotParam* botparam_;
@@ -67,18 +70,28 @@ class Tags{
     AprilTags::TagDetector* tag_detector_;
 };
 
-Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
-    lcm_(lcm_), verbose_(verbose_){
+Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_, bool use_head_cam_):
+    lcm_(lcm_), verbose_(verbose_), use_head_cam_(use_head_cam_){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_cpp_ = new bot::frames( lcm_ , botparam_ );
  
-  camera_channel_ = "CAMERARHAND";
-  camera_frame_ = "CAMERARHAND";
+  if (use_head_cam_){
+    camera_channel_ = "CAMERA";
+    camera_frame_ = "CAMERA_LEFT";
+
+    // subscribe but only keep a queue of one
+    lcm::Subscription* sub = lcm_->subscribe( camera_channel_ ,&Tags::multisenseHandler,this);
+    sub->setQueueCapacity(1);
+
+  }else{
+    camera_channel_ = "CAMERARHAND";
+    camera_frame_ = "CAMERARHAND";
   
-  // subscribe but only keep a queue of one
-  lcm::Subscription* sub = lcm_->subscribe( camera_channel_ ,&Tags::imageHandler,this);
-  sub->setQueueCapacity(1);  
-  
+    // subscribe but only keep a queue of one
+    lcm::Subscription* sub = lcm_->subscribe( camera_channel_ ,&Tags::imageHandler,this);
+    sub->setQueueCapacity(1);  
+  }
+
   std::string left_str = "cameras."+camera_frame_+".intrinsic_cal";
   width_ = bot_param_get_int_or_fail(botparam_, (left_str+".width").c_str());
   height_ = bot_param_get_int_or_fail(botparam_,(left_str+".height").c_str());
@@ -146,6 +159,12 @@ void Tags::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   processTag(msg->utime);
 }
 
+void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg){
+  // TODO: check that this is the left image
+  imgutils_->decodeImageToRGB(&(msg->images[0]),  img_buf_ );  
+  processTag(msg->utime);//&(msg->images[0]));
+}
+
 void Tags::processTag(int64_t utime_in){
   
   cv::Mat img = cv::Mat::zeros(height_, width_,CV_8UC3);
@@ -167,18 +186,19 @@ void Tags::processTag(int64_t utime_in){
     if (verbose_) draw_detection(img, detections[i]);
    
     // Get the relative transform, match with affordance and publish updated affordance:
+    // NB: note hard coded tag scale parameter!!
     Eigen::Matrix4d T = detections[i].getRelativeTransform( 0.053, fx_, fy_, cx_, cy_);  
     Eigen::Isometry3d local_to_camera;
     botframes_cpp_->get_trans_with_utime( camera_frame_ , "local", utime_in, local_to_camera);    
+    
     Eigen::Isometry3d tag_pose = local_to_camera*Eigen::Isometry3d(T)   ;
-    tag_pose.rotate( Eigen::Quaterniond(  euler_to_quat( 0 ,  (M_PI) ,  0 )  ) );
-
+    // tag_pose is now the world position of the tag with z-dir out of the tag towards camera
     
     if (verbose_){
       Isometry3dTime cameraT = Isometry3dTime(utime_in, local_to_camera);
       pc_vis_->pose_to_lcm_from_list(60001, cameraT);
       
-      Isometry3dTime poseT = Isometry3dTime(utime_in, tag_pose);
+      Isometry3dTime poseT = Isometry3dTime(utime_in+ i, tag_pose );
       detected_posesT.push_back( poseT);
       std::cout << "detected: " << detections[i].id << "\n";
       
@@ -204,16 +224,19 @@ void Tags::processTag(int64_t utime_in){
 int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "drc-tags");
   bool verbose=FALSE;
+  bool use_head_cam=false;
   parser.add(verbose, "v", "verbose", "Verbosity");
+  parser.add(use_head_cam, "u", "use_head_cam", "Use Head Camera [else hand cam]");
   parser.parse();
   cout << verbose << " is verbose\n";
+  cout << use_head_cam << " is use head camera\n";
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
   
-  Tags app(lcm,verbose);
+  Tags app(lcm,verbose, use_head_cam);
   cout << "Ready to find tags" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
