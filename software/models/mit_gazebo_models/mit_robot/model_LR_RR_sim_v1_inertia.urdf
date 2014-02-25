@@ -1831,50 +1831,14 @@
     <parent link="l_hand_force_torque"/>
     <child link="l_hand_face"/>
   </joint>
-  <link name="l_hand_face">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
+  <link name="l_hand_face"/>
   <joint name="l_hand_gripper_joint" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0 0.18 0"/>
     <parent link="l_hand_force_torque"/>
     <child link="l_hand_gripper"/>
   </joint>
-  <link name="l_hand_gripper">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <link name="l_hand_camera_link">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
+  <link name="l_hand_gripper"/>
+  <link name="l_hand_camera_link"/>
   <joint name="l_hand_camera_joint" type="fixed">
     <parent link="l_hand_force_torque"/>
     <child link="l_hand_camera_link"/>
@@ -1936,50 +1900,14 @@
     <parent link="r_hand_force_torque"/>
     <child link="r_hand_face"/>
   </joint>
-  <link name="r_hand_face">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
+  <link name="r_hand_face"/>
   <joint name="r_hand_gripper_joint" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0 0.18 0"/>
     <parent link="r_hand_force_torque"/>
     <child link="r_hand_gripper"/>
   </joint>
-  <link name="r_hand_gripper">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <link name="r_hand_camera_link">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
+  <link name="r_hand_gripper"/>
+  <link name="r_hand_camera_link"/>
   <joint name="r_hand_camera_joint" type="fixed">
     <parent link="r_hand_force_torque"/>
     <child link="r_hand_camera_link"/>

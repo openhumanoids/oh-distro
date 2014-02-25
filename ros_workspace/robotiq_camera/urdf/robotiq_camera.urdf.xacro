@@ -6,50 +6,14 @@
     <parent link="${parent}"/>
     <child link="${side_letter}_hand_face"/>
   </joint>
-  <link name="${side_letter}_hand_face">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
+  <link name="${side_letter}_hand_face"/>
   <joint name="${side_letter}_hand_gripper_joint" type="fixed">
     <origin rpy="0.0 0.0 0.0" xyz="0 0.18 0"/>
     <parent link="${parent}"/>
     <child link="${side_letter}_hand_gripper"/>
   </joint>
-  <link name="${side_letter}_hand_gripper">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <link name="${side_letter}_hand_camera_link">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <box size="0.01 0.01 0.01"/>
-      </geometry>
-    </visual>
-  </link>
+  <link name="${side_letter}_hand_gripper"/>
+  <link name="${side_letter}_hand_camera_link"/>
   <joint name="${side_letter}_hand_camera_joint" type="fixed">
     <parent link="${parent}"/>
     <child link="${side_letter}_hand_camera_link"/>
