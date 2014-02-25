@@ -126,7 +126,7 @@ classdef QPControlBlock < MIMODrakeSystem
       sizecheck(options.use_mex,1);
       obj.use_mex = uint32(options.use_mex);
       rangecheck(obj.use_mex,0,2);
-      if (obj.use_mex && exist('QPControllermex')~=3)
+      if (obj.use_mex && exist('QPControllermex','file')~=3)
         error('can''t find QPControllermex.  did you build it?');
       end
     else
@@ -137,12 +137,6 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.use_hand_ft = options.use_hand_ft;
     else
       obj.use_hand_ft = false;
-    end
-
-    if isfield(options,'include_angular_momentum')
-      obj.include_angular_momentum = options.include_angular_momentum;
-    else
-      obj.include_angular_momentum = false;
     end
 
     if (isfield(options,'ignore_states'))
@@ -441,14 +435,6 @@ classdef QPControlBlock < MIMODrakeSystem
 
       [xcom,J] = getCOM(r,kinsol);
       
-      if obj.include_angular_momentum
-        [Ag,Agdot] = getCMM(r,kinsol,qd);
-  
-        Ag_ang = Ag(1:3,:);
-        Agdot_ang = Agdot(1:3,:);
-        h_ang_dot_des = [0;0;0]; % regulate to zero for now
-        w2 = 0.0001; % QP objective function weight
-      end
       
       Jdot = forwardJacDot(r,kinsol,0);
       J = J(1:2,:); % only need COM x-y
@@ -553,9 +539,6 @@ classdef QPControlBlock < MIMODrakeSystem
       if nc > 0
         Hqp = Iqdd'*J'*R_DQyD_ls*J*Iqdd;
         Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
-        if obj.include_angular_momentum
-          Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + w2*Ag_ang'*Ag_ang;
-        end
         
         fqp = xlimp'*C_ls'*Qy*D_ls*J*Iqdd;
         fqp = fqp + qd'*Jdot'*R_DQyD_ls*J*Iqdd;
@@ -563,10 +546,6 @@ classdef QPControlBlock < MIMODrakeSystem
         fqp = fqp - u0'*R_ls*J*Iqdd;
         fqp = fqp - y0'*Qy*D_ls*J*Iqdd;
         fqp = fqp - obj.w*q_ddot_des'*Iqdd;
-        if obj.include_angular_momentum
-          fqp = fqp + w2*qd'*Agdot_ang'*Ag_ang*Iqdd;
-          fqp = fqp - w2*h_ang_dot_des'*Ag_ang*Iqdd;
-        end
         
         % quadratic slack var cost 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
