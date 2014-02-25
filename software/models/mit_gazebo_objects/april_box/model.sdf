@@ -7,7 +7,7 @@
             <collision name="collision">
                 <geometry>
                     <box>
-                        <size>0.1 0.1 0.1</size>
+                        <size>0.0795 0.0795 0.0795</size>
                     </box>
                 </geometry>
             </collision>
@@ -15,7 +15,7 @@
                 <geometry>
                     <mesh>
                         <uri>model://april_box/meshes/april_box.dae</uri>
-                        <scale>0.1 0.1 0.1</scale>
+                        <scale>0.0795 0.0795 0.0795</scale>
                     </mesh>
                 </geometry>
             </visual>

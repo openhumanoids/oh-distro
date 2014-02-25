@@ -42,8 +42,8 @@
  <param name="robot_description" command="$(find xacro)/xacro.py '$(find atlas_description)/robots/atlas_v3_with_v1_inertia_sandia_hands.urdf.xacro'" />
 -->
 
-<!-- v3, with hands and simple camera -->
-<param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model_sim_v3_v1_inertia.urdf"/>
+<!-- v3, with hands and simple camera and v1 inertia -->
+<param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model_LR_RR_sim_v1_inertia.urdf"/>
 
   <param name="robot_initial_pose/x"     value="$(arg x)" type="double"/>
   <param name="robot_initial_pose/y"     value="$(arg y)" type="double"/>
