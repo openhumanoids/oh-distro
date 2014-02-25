@@ -95,7 +95,7 @@ if useIk:
     om.addPlaceholder('matlab server', om.Icons.Matlab, ikFolder)
 
     #urdfFile = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_fixedjoint_hands.urdf')
-    urdfFile = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/model_LI_RR.urdf')
+    urdfFile = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf')
 
     model = app.loadRobotModelFromFile(urdfFile)
     obj = om.addRobotModel(model, ikFolder)
@@ -146,7 +146,7 @@ if usePerception:
 
 
     mitRobotDir = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot')
-    urdfFile = os.path.join(mitRobotDir, 'model_LI_RI.urdf')
+    urdfFile = os.path.join(mitRobotDir, 'model_LR_RR.urdf')
 
     robotStateModel = app.loadRobotModelFromFile(urdfFile)
 
@@ -239,7 +239,7 @@ if usePlanning:
 
     planningFolder = om.getOrCreateContainer('planning')
 
-    urdfFile = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf')
+    urdfFile = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf')
 
     planningModel = app.loadRobotModelFromFile(urdfFile)
     obj = om.addRobotModel(planningModel, planningFolder)
@@ -292,7 +292,7 @@ if usePlanning:
 
     app.addToolbarMacro('plot plan', plotManipPlan)
     app.addToolbarMacro('play manip plan', playManipPlan)
-    app.addToolbarMacro('fit drill', fitDrillMultisense)
+    #app.addToolbarMacro('fit drill', fitDrillMultisense)
 
     def drillTrackerOn():
         om.findObjectByName('Multisense').model.showRevolutionCallback = fitDrillMultisense
@@ -485,7 +485,13 @@ def toggleChildFrameWidget(displayPoint, view):
 
     for child in children:
         if isinstance(child, vis.FrameItem) and child.getProperty('Name') == name + ' frame':
-            child.setProperty('Edit', not child.getProperty('Edit'))
+            edit = not child.getProperty('Edit')
+            child.setProperty('Edit', edit)
+            pickedObj.setProperty('Alpha', 0.5 if edit else 1.0)
+            return True
+
+    return False
+
 
     return False
 
@@ -497,6 +503,9 @@ def callbackSwitch(displayPoint, view):
 
   #if highlightSelectedLink(displayPoint, view):
   #    return
+
+  if segmentationpanel.activateSegmentationMode():
+        return
 
 
 ef = ViewEventFilter(view)
