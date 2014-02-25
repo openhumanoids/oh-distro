@@ -65,28 +65,7 @@ StateEstimate::StateEstimator::StateEstimator(
   alignOutputQ = qprod( e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), e2q(Eigen::Vector3d(0.,PI__,0.)) );
   inert_odo.setAlignmentQuaternion(alignOutputQ);
 
-  //
-  // Go get the joint names for FK
-
-//  robot = new RobotModel;
-//  lcm::Subscription* robot_model_subcription_;
-//  robot_model_subcription_ = robot->lcm.subscribeFunction("ROBOT_MODEL", StateEstimate::onMessage, robot);
-//  while(robot->lcm.handle()==-1);// wait for one message, wait until you get a success.
-//  robot->lcm.unsubscribe(robot_model_subcription_);
-
-  //std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;
-  // using this constructor as a bit of legacy -- but in reality we should probably improve on this situation
-  //_leg_odo = new TwoLegs::TwoLegOdometry(false, false, 1400.f);
-  
-
-  // This is for forward kinematics -- maybe not the best way to do this, but we are a little short on time. Code evolution will fix this in the long run
-  //  fk_data.model_ = boost::shared_ptr<ModelClient>(new ModelClient(mLCM->getUnderlyingLCM(), 0));
-  //  // Parse KDL tree
-  //  if (!kdl_parser::treeFromString(  fk_data.model_->getURDFString() , fk_data.tree)){
-  //	std::cerr << "StateEstimator::StateEstimator -- ERROR: Failed to extract kdl tree from xml robot description" << std::endl;
-  //	return;
-  //  }
-  //  fk_data.fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(fk_data.tree));
+  InertialPosUninitialized = true;
   
   // This is used to initialize the states of the robot -- note we should use ONLY this variable
   firstpass = 1;
@@ -159,8 +138,8 @@ void StateEstimate::StateEstimator::run()
   while (!this->ShouldStop)
   {
 	// TODO -- Pat please make this pass on any event
-    //this->mAtlasStateQueue.waitWhileEmpty();
-	this->mIMUQueue.waitWhileEmpty();
+    this->mAtlasStateQueue.waitWhileEmpty();
+	//this->mIMUQueue.waitWhileEmpty();
 
 	// This is the special case which will also publish the message
 	int nIMU = mIMUQueue.size();
@@ -240,28 +219,36 @@ void StateEstimate::StateEstimator::INSUpdateServiceRoutine(const drc::ins_updat
 void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_state_t &atlasState, const bot_core::pose_t &bdiPose) {
 
   // Transform our local quaternion for legodometry
-  Eigen::Quaterniond outq, aliasout;
-  outq = (qprod(C2q(inert_odo.getIMU2Body().linear().transpose()), InerOdoEst.lQb.conjugate()));
-  aliasout = qprod(outq, inert_odo.getAlignmentQuaternion());
-  outq = aliasout;
+  Eigen::Quaterniond outq = convertToOutQuaternion(InerOdoEst, inert_odo.getIMU2Body(), inert_odo.getAlignmentQuaternion());
+  //  Eigen::Quaterniond outq, aliasout;
+  //  outq = (qprod(C2q(inert_odo.getIMU2Body().linear().transpose()), InerOdoEst.lQb.conjugate()));
+  //  aliasout = qprod(outq, inert_odo.getAlignmentQuaternion());
+  //  outq = aliasout;
 
   // This will publish "POSE_BODY_ALT message"
   PropagateLegOdometry(bdiPose, atlasState, outq);
+
+  if (InertialPosUninitialized) {
+	Eigen::Isometry3d pelvislk = leg_odo_->getRunningEstimate();
+	inert_odo.setPositionState(Eigen::Vector3d(0.,0.,-pelvislk.translation()[2]-0.1));
+	InertialPosUninitialized = false;
+  }
 
   // This was a temporary short term classifier -- to be depreciated
   // Run classifiers to delegate updates
   double ankle_forces[] = {atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z};
   mLegStateClassification = classifyDynamicLegState(atlasState.utime, ankle_forces, filteredPelvisVel_world.norm());
 
-  // compute the joint velocities with num_joints Kalman Filters in parallel
-  // TODO -- make this dependent on local state and not the message number
+
   for (int i = 0; i < num_joints; i++)  {
     mERSMsg.joint_position[i] = atlasState.joint_position[i];
     mERSMsg.joint_effort[i] = atlasState.joint_effort[i];
   }
-  //mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
+  // compute the joint velocities with num_joints Kalman Filters in parallel
+  // Implementation currently too slow to run filters for each of the joints. Think the Eigen VectorX technique is too fat.
+  //    mJointFilters.updateStates(atlasState.utime, mERSMsg.joint_position, atlasState.joint_velocity[i], num_joints);
   for (int i = 0; i < num_joints; i++)  {
-    mERSMsg.joint_velocity[i] = atlasState.joint_velocity[i];
+	  mERSMsg.joint_velocity[i] = atlasState.joint_velocity[i];
   }
 
   mERSMsg.num_joints = num_joints;
@@ -288,26 +275,6 @@ void StateEstimate::StateEstimator::BDiPoseServiceRoutine(const bot_core::pose_t
 	  alignedBDiQ = true;
 	  printq("StateEstimator::run -- first alignment check for identity: " , qprod(tmp, firstBDiq));
   }
-
-  //bot_core::pose_t pose_msg;
-  //      pose_msg.utime =  bdiPose.utime;
-  //      pose_msg.pos[0] = bdiPose.pos[0];
-  //      pose_msg.pos[1] = bdiPose.pos[1];
-  //      pose_msg.pos[2] = bdiPose.pos[2];
-
-  //      q_w = qprod(tmp , firstBDiq);
-  //
-  //
-  //      pose_msg.orientation[0] =  q_w.w();
-  //      pose_msg.orientation[1] =  q_w.x();
-  //      pose_msg.orientation[2] =  q_w.y();
-  //      pose_msg.orientation[3] =  q_w.z();
-
-
-  //mLCM->publish("POSE_BODY_ALT", &pose_msg );
-
-  // push bdiPose info into ERS
-  //convertBDIPose_ERS(&bdiPose, mERSMsg);
 }
 
 
@@ -402,27 +369,6 @@ void StateEstimate::StateEstimator::drawLegOdoVelArrow(const Eigen::Matrix3d &wR
 
 
   ref << 1., 0., 0.;
-
-  //  cp = ref.cross(filteredPelvisVel_world);
-  //  cp.normalize();
-  //  angle = acos(ref.dot(filteredPelvisVel_world)/filteredPelvisVel_world.norm());
-  //  // euler
-  //  //double rpy[] = {0., 3.141/4., 0.};
-  //  //double angle;
-  //  //double axis[3];
-  //  //bot_roll_pitch_yaw_to_angle_axis (rpy, &angle, axis);
-  //  //  bot_quat_to_angle_axis (const double q[4], double *theta, double axis[3]);
-  //  bot_lcmgl_push_matrix(lcmgl_);
-  //  bot_lcmgl_translated(lcmgl_, leg_odo_->getRunningEstimate().translation()(0), leg_odo_->getRunningEstimate().translation()(1), leg_odo_->getRunningEstimate().translation()(2));  // example offset
-  //  bot_lcmgl_color3f(lcmgl_, 0, 1, 0); // Green
-  //  //bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, axis[0], axis[1], axis[2]);
-  //  bot_lcmgl_rotated(lcmgl_, 180/3.141592*angle, cp[0], cp[1], cp[2]);
-  //  bot_lcmgl_draw_arrow_3d (lcmgl_, magn*1, magn*0.1, magn*0.2, magn*0.05);
-  //  bot_lcmgl_pop_matrix(lcmgl_);
-  //  bot_lcmgl_switch_buffer(lcmgl_);
-  //  bot2-lcmgl/src/bot_lcmgl_client/lcmgl.h
-  //  void bot_lcmgl_draw_arrow_3d (bot_lcmgl_t * lcmgl, double length, double head_width, double head_length, double body_width);
-
 
   Eigen::Vector3d inerV_l;
   inerV_l = sRb * InerOdoEst.V;

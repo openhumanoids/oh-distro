@@ -55,10 +55,10 @@ while (true)
     
     % Check computation times
     % computationTime = totaltime - waitTime;
-    if (mod(index-1,100)==0)
-        disp(['Wait fraction ' num2str(reciD) ' %'])
+    if (mod(index-1,1000)==0)
+        disp(['Wait fraction ' num2str(reciD/10) ' %'])
         reciD = 0;
-        dfSys.dt
+        dfSys.dt;
     else
         reciD = reciD + waitTime/totalTime;
     end

@@ -147,6 +147,9 @@ private:
   Eigen::Isometry3d velArrowTransform;
   //Eigen::Isometry3d align;
 
+  // Used to initialize the INS position at startup
+  bool InertialPosUninitialized;
+
    // Grab first BDi quaternion
   bool alignedBDiQ;
   Eigen::Quaterniond firstBDiq;

@@ -8,17 +8,17 @@ KalmanFilter::KalmanFilter() {
 
 
 KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel &def_model) {
-	std::cout << "KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel -- saying hi." << std::endl;
+	//std::cout << "KalmanFilter::KalmanFilter(KalmanFilter_Models::BaseModel -- saying hi." << std::endl;
 
 	// TODO -- Add more inheretance KF models here
 	// Simpler, but no simpler
 	// This will have to be done for each new model we define :-/ but avoids difficulty in variation of parameters with callback approach
 	if (_model = dynamic_cast<KalmanFilter_Models::Joint_Model*>(&def_model) ) {
 		// we have a joint filter
-		std::cout << "KalmanFilter::KalmanFilter -- Copying pointer for Joint filter" << std::endl;
+		//std::cout << "KalmanFilter::KalmanFilter -- Copying pointer for Joint filter" << std::endl;
 	} else if (_model = dynamic_cast<KalmanFilter_Models::DataFusion_Model*>(&def_model)) {
 		// we have a data fusion filter
-		std::cout << "KalmanFilter::KalmanFilter -- Copying pointer for DataFusion filter" << std::endl;
+		//std::cout << "KalmanFilter::KalmanFilter -- Copying pointer for DataFusion filter" << std::endl;
 	}
 }
 
@@ -31,13 +31,13 @@ KalmanFilter::~KalmanFilter() {
 
 
 void KalmanFilter::Initialize() {
-	std::cout << "KalmanFilter::Initialize -- Initializing." << std::endl;
+	//std::cout << "KalmanFilter::Initialize -- Initializing." << std::endl;
 	_model->identify();
 	
 	ut_last_priori_update = 0;
 	// we need to setup the different matrices to have the correct size
 	_model->setup(priori, posterior);
-	std::cout << "KalmanFilter::Initialize -- priori.mu resized to: " << priori.mu.rows() << std::endl;
+	//std::cout << "KalmanFilter::Initialize -- priori.mu resized to: " << priori.mu.rows() << std::endl;
 	
 	return;
 }

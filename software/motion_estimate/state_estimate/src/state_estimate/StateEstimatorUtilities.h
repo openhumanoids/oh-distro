@@ -87,6 +87,8 @@ void copyDrcVec3D(const Eigen::Vector3d &from, drc::vector_3d_t &to);
 void onMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg, RobotModel* robot);
 void detectIMUSampleTime(unsigned long long &prevImuPacketCount, unsigned long long &previous_imu_utime, int &receivedIMUPackets, double &previous_Ts_imu, const drc::atlas_raw_imu_t &imu);
 
+Eigen::Quaterniond convertToOutQuaternion(const InertialOdometry::DynamicState &InerOdoEst, const Eigen::Isometry3d &IMU_to_body, const Eigen::Quaterniond &alignq_out);
+
 
 
 } // namespace StateEstimate

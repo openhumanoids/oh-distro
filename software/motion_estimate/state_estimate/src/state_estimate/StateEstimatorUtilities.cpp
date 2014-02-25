@@ -45,6 +45,12 @@ bool StateEstimate::insertPoseBDI(const PoseT &pose_BDI_, drc::robot_state_t& ms
   return true;  
 }
 
+Eigen::Quaterniond StateEstimate::convertToOutQuaternion(const InertialOdometry::DynamicState &InerOdoEst, const Eigen::Isometry3d &IMU_to_body, const Eigen::Quaterniond &alignq_out) {
+  Eigen::Quaterniond outq;
+  outq = (qprod(C2q(IMU_to_body.linear().transpose()), InerOdoEst.lQb.conjugate()));
+  return qprod(outq, alignq_out);
+}
+
 void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &InerOdoEst,
 											const Eigen::Isometry3d &IMU_to_body,
 											drc::robot_state_t& ERSmsg,
@@ -54,10 +60,13 @@ void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &
   Eigen::Quaterniond outq, aliasout;
   Eigen::Vector3d P_w, V_leverarm;
 
+  // Convert Inertial quaternion to the output quaternion
+  outq = convertToOutQuaternion(InerOdoEst, IMU_to_body, alignq_out);
+
   // Compute output transforms
-  outq = (qprod(C2q(IMU_to_body.linear().transpose()), InerOdoEst.lQb.conjugate()));
-  aliasout = qprod(outq, alignq_out);
-  outq = aliasout;
+  //  outq = (qprod(C2q(IMU_to_body.linear().transpose()), InerOdoEst.lQb.conjugate()));
+  //  aliasout = qprod(outq, alignq_out);
+  //  outq = aliasout;
 
   P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
 
