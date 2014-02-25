@@ -28,6 +28,7 @@ from ddapp import footstepsdriverpanel
 from ddapp import atlasdriver
 from ddapp import atlasdriverpanel
 from ddapp import atlasstatuspanel
+from ddapp import multisensepanel
 from ddapp import robotplanlistener
 from ddapp import handdriver
 from ddapp import plansequence
@@ -167,6 +168,8 @@ if usePerception:
     defaultRobotModel = robotStateModel
 
     cameraview.cameraView.rayCallback = segmentation.extractPointsAlongClickRay
+
+    multisensepanel.init(perception.multisenseDriver)
 
     def grabRobotState():
         poseName = 'EST_ROBOT_STATE'
