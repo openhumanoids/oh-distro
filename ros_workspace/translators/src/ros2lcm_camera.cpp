@@ -47,6 +47,10 @@ private:
   void left_image_cb(const sensor_msgs::ImageConstPtr& msg);
   void l_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg);
   void r_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg);
+  
+  void l_hand_robotiq_cb(const sensor_msgs::ImageConstPtr& msg);
+  void r_hand_robotiq_cb(const sensor_msgs::ImageConstPtr& msg);
+  
   void send_image(const sensor_msgs::ImageConstPtr& msg,string channel );
     
   image_transport::Subscriber left_image_sub_;
@@ -64,17 +68,10 @@ App::App(ros::NodeHandle node_) : node_(node_), it_(node_){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  
-  // Simulation - disabled:
   left_image_sub_ = it_.subscribe("/multisense_sl/camera/left/image_rect_color", 1, &App::left_image_cb,this);
-  // l_hand_l_image_sub_ = it_.subscribe("/sandia_hands/l_hand/camera/left/image_raw", 1, &App::l_hand_l_image_cb,this);
-  // r_hand_l_image_sub_ = it_.subscribe("/sandia_hands/r_hand/camera/left/image_raw", 1, &App::r_hand_l_image_cb,this);
+  l_hand_l_image_sub_ = it_.subscribe("/robotiq_hands/l_hand_camera/image_raw", 1, &App::l_hand_robotiq_cb,this);
+  r_hand_l_image_sub_ = it_.subscribe("/robotiq_hands/r_hand_camera/image_raw", 1, &App::r_hand_robotiq_cb,this);
   
-  // Real Cameras:  
-  l_hand_l_image_sub_ = it_.subscribe("/sandia_hands/l_hand/left/image_raw", 1, &App::l_hand_l_image_cb,this);
-  r_hand_l_image_sub_ = it_.subscribe("/sandia_hands/r_hand/left/image_raw", 1, &App::r_hand_l_image_cb,this);
-  
-    
   imgutils_ = new image_io_utils( lcm_publish_.getUnderlyingLCM(), width, height );  
 };
 
@@ -85,37 +82,33 @@ int h_counter =0;
 void App::left_image_cb(const sensor_msgs::ImageConstPtr& msg){
   if (h_counter%30 ==0){
     ROS_ERROR("LEFTC [%d]", h_counter );
-    ///std::cout << h_counter << " head left image\n";
   }  
   h_counter++;
   send_image(msg, "CAMERA_LEFT");
 }
 
-int l_counter =0;
-void App::l_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg){
-  if (l_counter%30 ==0){
-    ROS_ERROR("L H C [%d]", l_counter );
-    ///std::cout << l_counter << " left hand image\n";
+int l_counter_robotiq =0;
+void App::l_hand_robotiq_cb(const sensor_msgs::ImageConstPtr& msg){
+  if (l_counter_robotiq%30 ==0){
+    ROS_ERROR("L H C [%d] robotiq", l_counter_robotiq );
   }  
-  l_counter++;
-  send_image(msg, "CAMERALHAND_LEFT");
+  l_counter_robotiq++;
+  send_image(msg, "CAMERALHAND");
 }
 
-int r_counter =0;
-void App::r_hand_l_image_cb(const sensor_msgs::ImageConstPtr& msg){
-  if (r_counter%30 ==0){
-    ROS_ERROR("R H C [%d]", r_counter );
-    ///std::cout << r_counter << " right hand image\n";
+int r_counter_robotiq =0;
+void App::r_hand_robotiq_cb(const sensor_msgs::ImageConstPtr& msg){
+  if (r_counter_robotiq%30 ==0){
+    ROS_ERROR("R H C [%d] robotiq", r_counter_robotiq );
   }  
-  r_counter++;
-  send_image(msg, "CAMERARHAND_LEFT");
+  r_counter_robotiq++;
+  send_image(msg, "CAMERARHAND");
 }
+
+
 
 void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
   int64_t current_utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
-  /*cout << msg->width << " " << msg->height << " | "
-       << msg->encoding << " is encoding | "
-       << current_utime << " | "<< channel << "\n";*/
 
   int n_colors=0;
   if (msg->encoding.compare("mono8") == 0){
@@ -130,9 +123,7 @@ void App::send_image(const sensor_msgs::ImageConstPtr& msg,string channel ){
     return;
   }  
   
-  
   int isize = msg->width*msg->height;
-  //ROS_ERROR("Received size [%d]", msg->data.size() );
   
   if (1==1){
     imgutils_->jpegImageThenSend(singleimage_data, current_utime, 

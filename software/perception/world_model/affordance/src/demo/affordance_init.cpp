@@ -619,7 +619,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
 
   if ((which_publish==2) || (which_publish==0)){
     int uid0 = 13;
-    std::vector<double> xyzrpy0 = {0.51 , 0.23 , 1.16, 0. , 0 , -1.571};
+    std::vector<double> xyzrpy0 = {0.11 , 0.2 , 1.013, 0. , 0 , -1.571};
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
@@ -631,12 +631,21 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
   }
   
   if ((which_publish==3) || (which_publish==0)){
-    int uid1 = 14;
-    std::vector<double> xyzrpy1 = {4.0 , -0.9 , 0.0 , 0. , 0 , -M_PI/2};  
-    string filename1 = "car.pcd";
-    drc::affordance_plus_t a1 = getCarAffordancePlus(filename1, xyzrpy1, uid1 );
-    a1.aff.bounding_lwh[0]=3.0;       a1.aff.bounding_lwh[1]=1.7;      a1.aff.bounding_lwh[2]=2.2;//1.7;
-    a1.aff.otdf_type = "car";
+    int uid0 = 14;
+    std::vector<double> xyzrpy0 = {0.51, 0.2, 1.213, 0, 0, 3.1415};
+    
+    std::vector<double> lengths = { 0.0795, 0.0795, 0.0795};
+    string friendly_name = "april_box";
+
+    Eigen::Isometry3d null_pose;
+    null_pose.setIdentity();    
+    drc::affordance_plus_t a1 = affutils.getBoxAffordancePlus(uid0,friendly_name, null_pose , lengths);
+    a1.aff.otdf_type = "box";
+    
+    a1.aff.origin_xyz[0]=xyzrpy0[0]; a1.aff.origin_xyz[1]=xyzrpy0[1]; a1.aff.origin_xyz[2]=xyzrpy0[2]; 
+    a1.aff.origin_rpy[0]=xyzrpy0[3]; a1.aff.origin_rpy[1]=xyzrpy0[4]; a1.aff.origin_rpy[2]=xyzrpy0[5]; 
+    
+    
     lcm_->publish("AFFORDANCE_FIT",&a1);
   }
   

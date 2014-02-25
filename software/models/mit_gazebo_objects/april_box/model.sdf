@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+    <model name="april_box">
+        <static>true</static>
+        <link name="chassis">
+            <pose>0 0 0 0 0 0</pose>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.0795 0.0795 0.0795</size>
+                    </box>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <mesh>
+                        <uri>model://april_box/meshes/april_box.dae</uri>
+                        <scale>0.0795 0.0795 0.0795</scale>
+                    </mesh>
+                </geometry>
+            </visual>
+        </link>
+    </model>
+</sdf>

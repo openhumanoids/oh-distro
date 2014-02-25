@@ -175,39 +175,8 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
   // Laser:
   rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 100, &App::rotating_scan_cb,this);
 
-	// maps joint names from sim/VRC format to BDI format
-/*
-	jointNameMap["back_ubx"] = "back_bkx";
-	jointNameMap["back_mby"] = "back_bky";
-	jointNameMap["back_lbz"] = "back_bkz";
-        jointNameMap["neck_ay"] = "neck_ay";        
-	jointNameMap["l_leg_lax"] = "l_leg_akx";
-	jointNameMap["l_leg_uay"] = "l_leg_aky";
-	jointNameMap["l_leg_kny"] = "l_leg_kny";
-	jointNameMap["l_leg_mhx"] = "l_leg_hpx";
-	jointNameMap["l_leg_lhy"] = "l_leg_hpy";
-	jointNameMap["l_leg_uhz"] = "l_leg_hpz";
-	jointNameMap["r_leg_lax"] = "r_leg_akx";
-	jointNameMap["r_leg_uay"] = "r_leg_aky";
-	jointNameMap["r_leg_kny"] = "r_leg_kny";
-	jointNameMap["r_leg_mhx"] = "r_leg_hpx";
-	jointNameMap["r_leg_lhy"] = "r_leg_hpy";
-	jointNameMap["r_leg_uhz"] = "r_leg_hpz";
-	jointNameMap["l_arm_mwx"] = "l_arm_mwx";
-	jointNameMap["l_arm_uwy"] = "l_arm_uwy";
-	jointNameMap["l_arm_elx"] = "l_arm_elx";
-	jointNameMap["l_arm_ely"] = "l_arm_ely";
-	jointNameMap["l_arm_shx"] = "l_arm_shx";
-	jointNameMap["l_arm_usy"] = "l_arm_usy";
-	jointNameMap["r_arm_mwx"] = "r_arm_mwx";
-	jointNameMap["r_arm_uwy"] = "r_arm_uwy";
-	jointNameMap["r_arm_elx"] = "r_arm_elx";
-	jointNameMap["r_arm_ely"] = "r_arm_ely";
-	jointNameMap["r_arm_shx"] = "r_arm_shx";
-	jointNameMap["r_arm_usy"] = "r_arm_usy";
-        */
-        
-  // Mapping between OSRF joints and BDI's { index and joint_names }:
+  // Mapping between OSRF joints and BDIs:
+  // [incoming OSRF joint name] =  {  BDI's index and joint_names }
   jointNameMap["back_ubx"] = { 2, "back_bkx"};
   jointNameMap["back_mby"] = { 1, "back_bky"};
   jointNameMap["back_lbz"] = { 0, "back_bkz"};
@@ -237,6 +206,29 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
   jointNameMap["r_arm_shx"] = { 23, "r_arm_shx"};
   jointNameMap["r_arm_usy"] = { 22, "r_arm_usy"};        
 
+  // Additional Corrections due to name changes by OSRF in Winter 2013:
+  jointNameMap["back_bkx"] = { 2, "back_bkx"};  
+  jointNameMap["back_bky"] = { 1, "back_bky"};  
+  jointNameMap["back_bkz"] = { 0, "back_bkz"};  
+  jointNameMap["neck_ry"] = { 3, "neck_ay"};
+  
+  jointNameMap["l_leg_hpz"] = { 4, "l_leg_hpz"};  
+  jointNameMap["l_leg_hpx"] = { 5, "l_leg_hpx"};  
+  jointNameMap["l_leg_hpy"] = { 6, "l_leg_hpy"};  
+  jointNameMap["l_leg_aky"] = { 8, "l_leg_aky"};  
+  jointNameMap["l_leg_akx"] = { 9, "l_leg_akx"}; 
+  jointNameMap["r_leg_hpz"] = { 10, "r_leg_hpz"};  
+  jointNameMap["r_leg_hpx"] = { 11, "r_leg_hpx"};  
+  jointNameMap["r_leg_hpy"] = { 12, "r_leg_hpy"};    
+  jointNameMap["r_leg_aky"] = { 14, "r_leg_aky"};  
+  jointNameMap["r_leg_akx"] = { 15, "r_leg_akx"}; 
+  
+  jointNameMap["r_arm_shy"] = { 22, "r_arm_usy"};
+  jointNameMap["r_arm_wry"] = { 26, "r_arm_uwy"};   
+  jointNameMap["r_arm_wrx"] = { 27, "r_arm_mwx"};   
+  jointNameMap["l_arm_shy"] = { 16, "l_arm_usy"};
+  jointNameMap["l_arm_wry"] = { 20, "l_arm_uwy"};   
+  jointNameMap["l_arm_wrx"] = { 21, "l_arm_mwx"};   
   
 };
 

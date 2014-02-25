@@ -11,6 +11,8 @@
 #include "lcmtypes/drc/system_status_t.hpp"
 #include "lcmtypes/drc/twist_t.hpp"
 #include "lcmtypes/drc/deprecated_footstep_plan_t.hpp"
+#include "lcmtypes/drc/neck_pitch_t.hpp"
+#include "lcmtypes/multisense/command_t.hpp"
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
@@ -41,20 +43,22 @@ class LCM2ROS{
     // DRCSIM 2.6 atlas command API
     void atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg);
     ros::Publisher atlas_cmd_pub_;
-       
+    // for swapping between BDI and MIT control
+    bool use_bdi;
+    void controllerModeHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::controller_mode_t* msg);
+
+    // Sensor Head and Neck:
+    void multisenseCommandHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const multisense::command_t* msg);
+    void sensorRequestHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg);
     ros::Publisher spindle_speed_pub_, head_fps_pub_, hand_fps_pub_, multisense_sl_fps_pub_;
-    void sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg);
+    void desiredNeckPitchHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::neck_pitch_t* msg);
+    double desired_neck_pitch_;
     
+    // Hands:
     void sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
     void sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg);
     ros::Publisher sandia_l_hand_joint_cmd_pub_;
     ros::Publisher sandia_r_hand_joint_cmd_pub_;
-    
-    // Non-api translations:
-    ros::Publisher body_twist_cmd_pub_;
-    void actuatorCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::actuator_cmd_t* msg);
-    void bodyTwistCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_t* msg);
-   
     ros::Publisher simple_grasp_pub_right_ , simple_grasp_pub_left_ ;
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::simple_grasp_t* msg);   
     
@@ -62,17 +66,18 @@ class LCM2ROS{
     ros::Publisher committed_footstep_plan_pub_;
     void committedFootStepPlanHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::deprecated_footstep_plan_t* msg);
     
-    // for swapping between BDI and MIT control
-    bool use_bdi;
-    void controllerModeHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::controller_mode_t* msg);
+    // Non-api translations:
+    void bodyTwistCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_t* msg);
+    ros::Publisher body_twist_cmd_pub_;
     
     ros::NodeHandle* rosnode;
-    bool have_set_multisense_rate_; // have you set the initial multisesne rate
+    
+    
 };
 
 
 LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(lcm_),nh_(nh_) {
-  have_set_multisense_rate_= false;
+  
   
   lcm_->subscribe("CONTROLLER_MODE",&LCM2ROS::controllerModeHandler, this);
        
@@ -86,7 +91,9 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   use_bdi = false;
 
   /// Spinning Laser control:
-  lcm_->subscribe("SENSOR_REQUEST",&LCM2ROS::sensor_request_Callback,this);
+  lcm_->subscribe("MULTISENSE_COMMAND",&LCM2ROS::multisenseCommandHandler,this);
+  
+  lcm_->subscribe("SENSOR_REQUEST",&LCM2ROS::sensorRequestHandler,this);
   spindle_speed_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/set_spindle_speed",10);
   hand_fps_pub_ = nh_.advertise<std_msgs::Float64>("/mit/set_hand_fps",10); 
   multisense_sl_fps_pub_ = nh_.advertise<std_msgs::Float64>("/multisense_sl/fps",10);
@@ -106,10 +113,13 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   lcm_->subscribe("COMMITTED_FOOTSTEP_PLAN",&LCM2ROS::committedFootStepPlanHandler,this);  
   committed_footstep_plan_pub_ = nh_.advertise<atlas_msgs::AtlasSimInterfaceCommand>("/atlas/atlas_sim_interface_command",10);
   
-  
   lcm_->subscribe("NAV_CMDS",&LCM2ROS::bodyTwistCmdHandler,this);
   body_twist_cmd_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel",10);
 
+  lcm_->subscribe("DESIRED_NECK_PITCH",&LCM2ROS::desiredNeckPitchHandler,this);  
+  desired_neck_pitch_ =0;
+  
+  
   // maps joint names from BDI format to sim/VRC format
   jointNameMap["back_bkx"] = "back_ubx";
   jointNameMap["back_bky"] = "back_mby";
@@ -211,14 +221,57 @@ void LCM2ROS::simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf, const std::s
 }
   
 void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::atlas_command_t* msg) {
-//  if (msg->effort[0] == 0){ // assume this is enough to trigger
-//    ROS_ERROR("LCM2ROS Handing back control to BDI - effort field zero");
-//  }
+  int control_mode = 1;
+  // 1 = osrf pd_gains
+  // X = previous mode which seems to be PD also - but gains provided by us
   
-//  if (msg->utime > last_command_timestamp) {
-//    ROS_ERROR("NEW COMMAND: %d > %d", msg->utime, last_command_timestamp);
-//    last_command_timestamp = msg->utime;
+  if (control_mode){
+    // MIT used k_q_p and  k_qd_p gains in DRC trails
+    // equivalent to kp_position nd kp_velocity
 
+    // osrf: kp_position and kd_position
+    std::vector<double> kp_position = {20.0, 4000.0, 2000.0, 20.0, 5.0, 100.0, 2000.0, 1000.0, 900.0, 300.0, 5.0, 100.0, 2000.0, 1000.0, 900.0, 300.0, 2000.0, 1000.0, 200.0, 200.0, 50.0, 100.0, 2000.0, 1000.0, 200.0, 200.0, 50.0, 100.0};
+    std::vector<double> ki_position = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> kd_position = {0.10000000149011612, 2.0, 1.0, 1.0, 0.009999999776482582, 1.0, 10.0, 10.0, 2.0, 1.0, 0.009999999776482582, 1.0, 10.0, 10.0, 2.0, 1.0, 3.0, 20.0, 3.0, 3.0, 0.10000000149011612, 0.20000000298023224, 3.0, 20.0, 3.0, 3.0, 0.10000000149011612, 0.20000000298023224};
+    std::vector<double> kp_velocity = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    // back z y x  ay
+    // back lleg rleg larm rarm    
+    /*
+    std::vector <double> k_effort = {255,255,255,255,
+                                        0.,0.,0.,0.,0.,0.,
+                                        0.,0.,0.,0.,0.,0.,
+                                        0.,0.,0.,0.,0.,0.,
+                                        0.,0.,0.,0.,0.,0.};                                      
+                                        */
+    std::vector <double> k_effort = {255,255,255,255,
+                                        0.,0.,0.,0.,0.,0.,
+                                        0.,0.,0.,0.,0.,0.,
+                                        255,255,255,255,255,255,
+                                        255,255,255,255,255,255};                                         
+    
+    atlas_msgs::AtlasCommand atlas_command_msg;
+    atlas_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
+    atlas_command_msg.i_effort_min.resize(msg->num_joints);
+    atlas_command_msg.i_effort_max.resize(msg->num_joints);
+    atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
+    
+    for (int i=0; i<msg->num_joints; i++) {
+      //atlas_command_msg.name.push_back("atlas::" + jointNameMap[msg->name[i]]); // must use scoped name
+      atlas_command_msg.position.push_back(msg->position[i]);
+      atlas_command_msg.velocity.push_back(msg->velocity[i]);
+      atlas_command_msg.effort.push_back(msg->effort[i]);
+
+      atlas_command_msg.k_effort.push_back(k_effort[i]);
+      atlas_command_msg.kp_position.push_back(kp_position[i]);
+      atlas_command_msg.ki_position.push_back(ki_position[i]);
+      atlas_command_msg.kd_position.push_back(kd_position[i]);
+      atlas_command_msg.kp_velocity.push_back(kp_velocity[i]); 
+    }
+    // overwrite the neck position:
+    atlas_command_msg.position[3] = desired_neck_pitch_;
+    atlas_cmd_pub_.publish(atlas_command_msg);
+    
+  }else{ // Our previous approach
     atlas_msgs::AtlasCommand atlas_command_msg;
     atlas_command_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
     
@@ -226,7 +279,6 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     atlas_command_msg.kp_velocity.resize(msg->num_joints);
     atlas_command_msg.i_effort_min.resize(msg->num_joints);
     atlas_command_msg.i_effort_max.resize(msg->num_joints);
-
     atlas_command_msg.desired_controller_period_ms = msg->desired_controller_period_ms;
 
     for (int i=0; i<msg->num_joints; i++) {
@@ -243,14 +295,9 @@ void LCM2ROS::atlasCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
       atlas_command_msg.kp_position.push_back(msg->k_q_p[i]);
       atlas_command_msg.kd_position.push_back(msg->ff_qd[i]);
     }
-    if(ros::ok()) {
-      atlas_cmd_pub_.publish(atlas_command_msg);
-    } 
-//  }
-//  else {
-//    ROS_ERROR("OLD COMMAND: %d <= %d", msg->utime, last_command_timestamp);
-//  }
-}  
+    atlas_cmd_pub_.publish(atlas_command_msg);
+  }
+}
 
 
 void LCM2ROS::controllerModeHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::controller_mode_t* msg) {
@@ -289,7 +336,7 @@ void LCM2ROS::controllerModeHandler(const lcm::ReceiveBuffer* rbuf, const std::s
 // C++ control of dynamic reconfigure is not implemented - need to use system call:
 // http://ros.org/wiki/hokuyo_node/Tutorials/UsingDynparamToChangeHokuyoLaserParameters#PythonAPI
 // UPDATE: Dynamic Reconfigure Conflicts with messaging if no reconfig server is running - disabled here
-void LCM2ROS::sensor_request_Callback(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg){
+void LCM2ROS::sensorRequestHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sensor_request_t* msg){
   std::cout << "Got SENSOR_REQUEST setting sensor rates\n";
   if ((msg->spindle_rpm >=0) && (msg->spindle_rpm <=49) ){ // driver sets max at 5.2rpm
     double spindle_rads = msg->spindle_rpm * (2*M_PI)/60; // convert from RPM to rad/sec
@@ -356,9 +403,7 @@ void LCM2ROS::sandiaLHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, con
     joint_command_msg.i_effort_min.push_back(msg->i_effort_min[i]);
     joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
   }
-  if(ros::ok()) {
-    sandia_l_hand_joint_cmd_pub_.publish(joint_command_msg);
-  } 
+  sandia_l_hand_joint_cmd_pub_.publish(joint_command_msg);
 } 
 
 void LCM2ROS::sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_t* msg) {
@@ -378,13 +423,9 @@ void LCM2ROS::sandiaRHandJointCommandHandler(const lcm::ReceiveBuffer* rbuf, con
     joint_command_msg.i_effort_min.push_back(msg->i_effort_min[i]);
     joint_command_msg.i_effort_max.push_back(msg->i_effort_max[i]);
   }
-  if(ros::ok()) {
-    sandia_r_hand_joint_cmd_pub_.publish(joint_command_msg);
-  } 
+  sandia_r_hand_joint_cmd_pub_.publish(joint_command_msg);
 }
   
-  int counter =0;
-
 void LCM2ROS::bodyTwistCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::twist_t* msg){
   geometry_msgs::Twist body_twist_cmd_msg;
   //body_twist_cmd_msg.header.stamp= ros::Time().fromSec(msg->utime*1E-6);
@@ -397,6 +438,21 @@ void LCM2ROS::bodyTwistCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::stri
   if(ros::ok()){
     body_twist_cmd_pub_.publish(body_twist_cmd_msg);
   }
+}
+
+void LCM2ROS::desiredNeckPitchHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::neck_pitch_t* msg){
+  ROS_ERROR("LCM2ROS Desired Neck Pitch changed: %f", msg->pitch );
+  desired_neck_pitch_ = msg->pitch;
+}
+
+void LCM2ROS::multisenseCommandHandler(const lcm::ReceiveBuffer* rbuf, const string& channel, const multisense::command_t* msg){
+  std::cout << "Got SENSOR_REQUEST setting sensor rates\n";
+  double spindle_rads = msg->rpm * (2*M_PI)/60; // convert from RPM to rad/sec
+  std_msgs::Float64 spindle_speed_msg;
+  spindle_speed_msg.data = spindle_rads;
+  spindle_speed_pub_.publish(spindle_speed_msg);    
+  ROS_ERROR("LCM2ROS Setting Spindle RPM: %d", ((int) msg->rpm) );
+  ROS_ERROR("                    rad/sec: %f", spindle_rads );  
 }
 
 
@@ -415,10 +471,8 @@ int main(int argc,char** argv) {
   
   
   ROS_ERROR("LCM2ROS Translator Sleeping");
-  //handlerObject.setInitialMultisenseRate(5.0);
   sleep(4);
   ROS_ERROR("LCM2ROS Translator Ready");
-  //handlerObject.setInitialMultisenseRate(5.0);  
   
   while(0 == lcm->handle());
   return 0;

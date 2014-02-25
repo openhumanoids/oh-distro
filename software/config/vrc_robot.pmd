@@ -183,28 +183,8 @@ group "g.0.gazebo" {
         exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/mit_walking.world";
         host = "robot";
     }
-    cmd "gz_quals_1" {
-        exec = "roslaunch drcsim_gazebo qual_task_1.launch";
-        host = "robot";
-    }
-    cmd "gz_quals_2" {
-        exec = "roslaunch mit_drcsim_scripts mit_no_backpack.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world  x:=0.75 y:=2 yaw:=-1.5707 hand_suffix:=_stumps";
-        host = "robot";
-    }
-    cmd "gz_quals_3" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/qual_task_3.world";
-        host = "robot";
-    }
-    cmd "gz_vrc_walking" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_2.world";
-        host = "robot";
-    }
-    cmd "gz_vrc_manip" {
-        exec = "roslaunch drcsim_gazebo qual_task_1.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/vrc_task_3.world";
-        host = "robot";
-    }
-    cmd "gz_drc_task" {
-        exec = "roslaunch mit_drcsim_scripts mit.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/drc_practice_task_3.world";
+    cmd "gz_vrc_quals_2_drill" {
+        exec = "roslaunch mit_drcsim_scripts mit_v1_inertia.launch gzworld:=$DRC_BASE/ros_workspace/mit_drcsim_scripts/worlds/qual_task_2.world  x:=0.75 y:=1 yaw:=-1.5707 hand_suffix:=_stumps";
         host = "robot";
     }
 }
@@ -299,35 +279,21 @@ group "m.hose_task_utils" {
         exec = "affordance_init -e 2";
         host = "base";
     }
+    cmd "affordance_init_april_box" {
+        exec = "affordance_init -e 3";
+        host = "base";
+    }
 }
 
 ######################################
-# testing on a single machine - with deputies:
-script "dev.vrc_quals_1" { 
+script "gz_vrc_quals_2_drill" { 
     start group "0.development";
     start group "a.1.core";
     start group "a.2.p_and_c";
     start group "b.2.p_and_c";
     stop cmd "BotWalkingPlanner";
     wait ms 5000;
-    start cmd "gz_quals_1"; 
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    start cmd "tilt-head";
-}
-
-script "dev.vrc_quals_2" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.p_and_c";
-    start group "b.2.p_and_c";
-    stop cmd "BotWalkingPlanner";
-    wait ms 5000;
-    start cmd "gz_quals_2"; 
+    start cmd "gz_vrc_quals_2_drill"; 
     wait ms 5000;
     start cmd "spin-lidar";
     wait ms 5000;
@@ -336,60 +302,10 @@ script "dev.vrc_quals_2" {
     start cmd "spin-lidar";
     start cmd "tilt-head";
     start cmd "affordance_init_skil";
+    start cmd "affordance_init_april_box";
 }
 
-script "dev.quals_slope" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.p_and_c";
-    start group "b.2.p_and_c";
-    stop cmd "BotWalkingPlanner";
-    wait ms 5000;
-    start cmd "gz_quals_3"; 
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    start cmd "tilt-head";
-}
-
-script "dev.vrc_walking" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.p_and_c";
-    start group "b.2.p_and_c";
-    stop cmd "BotWalkingPlanner";
-    wait ms 5000;
-    start cmd "gz_vrc_walking"; 
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    start cmd "tilt-head";
-}
-
-script "dev.drc_task" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.2.p_and_c";
-    start group "b.2.p_and_c";
-    stop cmd "BotWalkingPlanner";
-    wait ms 5000;
-    start cmd "gz_drc_task"; 
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    start cmd "tilt-head";
-}
-
-script "dev.flat_walking" {
+script "gz_mit_walking" {
     start group "0.development";
     start group "a.1.core";
     start group "a.2.p_and_c";
@@ -403,24 +319,6 @@ script "dev.flat_walking" {
     start cmd "spin-lidar";
     wait ms 5000;
     start cmd "spin-lidar";
-    start cmd "tilt-head";
-}
-
-script "dev.vrc_manip" { 
-    start group "0.development";
-    start group "a.1.core";
-    start group "a.3.manip";
-    start group "b.2.p_and_c";
-    stop cmd "BotWalkingPlanner";
-    wait ms 5000;
-    start cmd "gz_vrc_manip";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    start group "m.hose_task_utils";
-    wait ms 5000;
-    start cmd "spin-lidar";
-    wait ms 5000;
-    start cmd "spin-lidar";    
     start cmd "tilt-head";
 }
 
