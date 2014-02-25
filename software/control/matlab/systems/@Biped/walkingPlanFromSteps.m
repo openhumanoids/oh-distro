@@ -1,4 +1,4 @@
-function [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(biped, x0, footsteps)
+function [support_times, supports, comtraj, foottraj, V, zmptraj,c] = walkingPlanFromSteps(biped, x0, footsteps)
 
 nq = getNumDOF(biped);
 q0 = x0(1:nq);
