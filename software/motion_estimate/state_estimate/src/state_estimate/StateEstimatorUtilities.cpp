@@ -45,125 +45,52 @@ bool StateEstimate::insertPoseBDI(const PoseT &pose_BDI_, drc::robot_state_t& ms
   return true;  
 }
 
-
-
-bool StateEstimate::insertAtlasState_ERS(const drc::atlas_state_t &atlasState, drc::robot_state_t &mERSMsg, RobotModel* _robot){
-
-	Joints jointsContainer;
-	
-	// This is called form state_sync
-	insertAtlasJoints(&atlasState, jointsContainer, _robot);
-	appendJoints(mERSMsg, jointsContainer);
-	
-	return false;
-}
-
-
-
-
-void StateEstimate::appendJoints(drc::robot_state_t& msg_out, const StateEstimate::Joints &joints){
-  for (size_t i = 0; i < joints.position.size(); i++)  {
-    msg_out.joint_name.push_back( joints.name[i] );
-    msg_out.joint_position.push_back( joints.position[i] );
-    msg_out.joint_velocity.push_back( joints.velocity[i] );
-    msg_out.joint_effort.push_back( joints.effort[i] );
-  }
-}
-
-
-void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstimate::Joints &jointContainer, RobotModel* _robot) {
-
-  jointContainer.name = _robot->joint_names_;
-  jointContainer.position = msg->joint_position;
-  jointContainer.velocity = msg->joint_velocity;
-  jointContainer.effort = msg->joint_effort;
-
-  return;
-}
-
-bot_core::pose_t StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &InerOdoEst,
+void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &InerOdoEst,
 											const Eigen::Isometry3d &IMU_to_body,
 											drc::robot_state_t& ERSmsg,
 											bot_core::pose_t &_msg,
 											Eigen::Isometry3d *_mArrowTransform,
 											const Eigen::Quaterniond &alignq_out) {
+  Eigen::Quaterniond outq, aliasout;
+  Eigen::Vector3d P_w, V_leverarm;
 
-  ERSmsg.utime = InerOdoEst.uts;
-  
-  Eigen::Quaterniond outq, tmpq;
-
+  // Compute output transforms
   outq = (qprod(C2q(IMU_to_body.linear().transpose()), InerOdoEst.lQb.conjugate()));
+  aliasout = qprod(outq, alignq_out);
+  outq = aliasout;
 
-  Eigen::Quaterniond aliasout;
-  Eigen::Vector3d rpy = q2e_new(outq);
-  //Eigen::Vector3d goodrpy;
+  P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
 
-  tmpq = outq;
-  //goodrpy[2] = rpy[2];
+  V_leverarm = IMU_to_body.linear() * InerOdoEst.V + qrot(outq,(InerOdoEst.w_b).cross( IMU_to_body.linear().transpose() * IMU_to_body.translation()));
 
-
-
-  //  qprod( e2q([0.;0.;-pi/4]), e2q([0.;pi;0.]) )
-  //
-  // ans =
-  //
-  //     0.0000
-  //     0.3827
-  //     0.9239
-  //    -0.0000
-  //  Eigen::Quaterniond alignq_out2;
-  //  alignq_out2 = qprod( e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), e2q(Eigen::Vector3d(0.,PI__,0.)) );
-
-
-  aliasout = qprod(tmpq, alignq_out);
-  tmpq = aliasout;
-
-  bot_core::pose_t tmp_msg;
-
-//  tmp_msg.orientation[0] = tmpq.w();
-//  tmp_msg.orientation[1] = tmpq.x();
-//  tmp_msg.orientation[2] = tmpq.y();
-//  tmp_msg.orientation[3] = tmpq.z();
-
+  // populate fields
+  ERSmsg.utime = InerOdoEst.uts;
 
   ERSmsg.pose.rotation.w = outq.w();
   ERSmsg.pose.rotation.x = outq.x();
   ERSmsg.pose.rotation.y = outq.y();
   ERSmsg.pose.rotation.z = outq.z();
 
-  Eigen::Vector3d V_leverarm;
-  V_leverarm = IMU_to_body.linear() * InerOdoEst.V; //+ (InerOdoEst.w_l).cross(IMU_to_body.translation()); Compensate for radial components due to translation offset
+  //Compensate for radial components due to translation offset
 
   copyDrcVec3D(V_leverarm, ERSmsg.twist.linear_velocity);
-  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, ERSmsg.twist.angular_velocity);
-
-  Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
-
-  //copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation() + positionoffset, msg.pose.translation);
   copyDrcVec3D(P_w, ERSmsg.pose.translation);
+  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, ERSmsg.twist.angular_velocity);
 
   // Also do the POSE_BODY message
   _msg.pos[0] = P_w(0);
   _msg.pos[1] = P_w(1);
   _msg.pos[2] = P_w(2);
 
-  _msg.orientation[0] = tmpq.w();
-  _msg.orientation[1] = tmpq.x();
-  _msg.orientation[2] = tmpq.y();
-  _msg.orientation[3] = tmpq.z();
+  _msg.orientation[0] = outq.w();
+  _msg.orientation[1] = outq.x();
+  _msg.orientation[2] = outq.y();
+  _msg.orientation[3] = outq.z();
 
   _mArrowTransform->linear() = IMU_to_body.linear() * q2C(outq);
   _mArrowTransform->translation() = P_w;
 
-
-
-  // delete this stuff
-  tmp_msg.pos[0] = P_w(0);
-  tmp_msg.pos[1] = P_w(1);
-  tmp_msg.pos[2] = P_w(2);
-
-
-  return tmp_msg;
+  return;
 }
 
 

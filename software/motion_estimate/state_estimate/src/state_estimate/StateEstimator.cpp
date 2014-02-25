@@ -22,7 +22,7 @@ StateEstimate::StateEstimator::StateEstimator(
   mMatlabTruthQueue(viconMatlabtruthQueue),
   mINSUpdateQueue(INSUpdateQueue),
   LegOdoWrapper(lcmHandle, lcmHandle, cl_cfg),
-  inert_odo(0.001)
+  inert_odo(0.001) // This should be a dynamic time parameter
 {
 
   _mSwitches = _switches;
@@ -32,7 +32,9 @@ StateEstimate::StateEstimator::StateEstimator(
 
 
   // TODO -- dehann, this should be initialized to the number of joints in the system, but just hacking to get it going for now
-  int num_joints = 28;
+  num_joints = 28;
+  std::cout << "StateEstimator::StateEstimator -- hardcoded number of joints: " << num_joints << std::endl;
+
   
   mJointFilters.setSize(num_joints);
   //  mJointVelocities.resize(num_joints);
@@ -61,23 +63,16 @@ StateEstimate::StateEstimator::StateEstimator(
   
   Eigen::Quaterniond alignOutputQ;
   alignOutputQ = qprod( e2q(Eigen::Vector3d(0.,0.,-PI__*0.25)), e2q(Eigen::Vector3d(0.,PI__,0.)) );
-  //  qprod( e2q([0.;0.;-pi/4]), e2q([0.;pi;0.]) )
-  // ans =
-  //     0.0000
-  //     0.3827
-  //     0.9239
-  //    -0.0000
-
-  // return the data
   inert_odo.setAlignmentQuaternion(alignOutputQ);
 
+  //
   // Go get the joint names for FK
-  robot = new RobotModel;
-  lcm::Subscription* robot_model_subcription_;
-  robot_model_subcription_ = robot->lcm.subscribeFunction("ROBOT_MODEL", StateEstimate::onMessage, robot);
-  while(robot->lcm.handle()==-1);// wait for one message, wait until you get a success.
-  robot->lcm.unsubscribe(robot_model_subcription_);
 
+//  robot = new RobotModel;
+//  lcm::Subscription* robot_model_subcription_;
+//  robot_model_subcription_ = robot->lcm.subscribeFunction("ROBOT_MODEL", StateEstimate::onMessage, robot);
+//  while(robot->lcm.handle()==-1);// wait for one message, wait until you get a success.
+//  robot->lcm.unsubscribe(robot_model_subcription_);
 
   //std::cout << "StateEstimator::StateEstimator -- Creating new TwoLegOdometry object." << std::endl;
   // using this constructor as a bit of legacy -- but in reality we should probably improve on this situation
@@ -118,8 +113,18 @@ StateEstimate::StateEstimator::StateEstimator(
   velArrowTransform.setIdentity();
 
   // used to do an initial alignment with BDi quaternion -- used for output only, not inside aide feedback loop!
-  //align.setIdentity();
   alignedBDiQ = false;
+
+  mJointPos.resize(num_joints);
+  mJointVel.resize(num_joints);
+  mJointEff.resize(num_joints);
+
+  for (int i=0;i<num_joints;i++) {mJointPos[i]=0.; mJointVel[i]=0.; mJointEff[i]=0.; }
+
+  mERSMsg.joint_name = joint_utils_.atlas_joint_names;
+  mERSMsg.joint_position = mJointPos;
+  mERSMsg.joint_velocity = mJointVel;
+  mERSMsg.joint_effort = mJointEff;
 }
 
 // TODO -- fix this constructor
@@ -137,7 +142,7 @@ StateEstimate::StateEstimator::StateEstimator(
 StateEstimate::StateEstimator::~StateEstimator()
 {
   //delete _leg_odo;
-  delete robot;
+  //delete robot;
 }
 
 //-----------------------------------------------------------------------------
@@ -153,22 +158,16 @@ void StateEstimate::StateEstimator::run()
 
   while (!this->ShouldStop)
   {
-
-    // wait for at least one new atlas_state message
-	  // TODO -- Pat please make this pass on any event
+	// TODO -- Pat please make this pass on any event
     //this->mAtlasStateQueue.waitWhileEmpty();
 	this->mIMUQueue.waitWhileEmpty();
 
-
 	// This is the special case which will also publish the message
 	int nIMU = mIMUQueue.size();
-	//std::cout << "StateEstimator::run -- mIMUQueue.size() " << nIMU << std::endl;
-	// printf("have %d new imu\n", nIMU);
 	for (int i = 0; i < nIMU; ++i)
 	{
 	  this->mIMUQueue.dequeue(imu);
-	  //std::cout << "StateEstimator::run -- new IMU message, utime: " << imu.utime << std::endl;
-	  // Handle IMU data -- Special case, this one retransmits ERS and INSUpdateRequest messages internally
+	  // Handle IMU data -- Special case, this one transmits ERS / POSE_BODY and INSUpdateRequest messages internally
 	  IMUServiceRoutine(imu, (i==(nIMU-1)), mLCM);
 	}
 
@@ -184,46 +183,8 @@ void StateEstimate::StateEstimator::run()
     for (int i = 0; i < nPoses; ++i)
     {
       mBDIPoseQueue.dequeue(bdiPose);
-
-
-
-      Eigen::Quaterniond q_w, tmp;
-
-      tmp.w() = bdiPose.orientation[0];
-      tmp.x() = bdiPose.orientation[1];
-      tmp.y() = bdiPose.orientation[2];
-      tmp.z() = bdiPose.orientation[3];
-
-      if (alignedBDiQ == false) {
-    	Eigen::Vector3d rpy;
-    	rpy = q2e_new(tmp.conjugate());
-    	rpy[0] = 0.;
-    	rpy[1] = 0.;
-    	firstBDiq = e2q(rpy);
-    	firstBDitrans << bdiPose.pos[0], bdiPose.pos[1], bdiPose.pos[2];
-    	alignedBDiQ = true;
-    	printq("StateEstimator::run -- first alignment check for identity: " , qprod(tmp, firstBDiq));
-      }
-
-      //bot_core::pose_t pose_msg;
-      //      pose_msg.utime =  bdiPose.utime;
-      //      pose_msg.pos[0] = bdiPose.pos[0];
-      //      pose_msg.pos[1] = bdiPose.pos[1];
-      //      pose_msg.pos[2] = bdiPose.pos[2];
-
-      //      q_w = qprod(tmp , firstBDiq);
-      //
-      //
-      //      pose_msg.orientation[0] =  q_w.w();
-      //      pose_msg.orientation[1] =  q_w.x();
-      //      pose_msg.orientation[2] =  q_w.y();
-      //      pose_msg.orientation[3] =  q_w.z();
-
-
-      //mLCM->publish("POSE_BODY_ALT", &pose_msg );
-
-      // push bdiPose info into ERS
-      //convertBDIPose_ERS(&bdiPose, mERSMsg);
+      // Handle
+      BDiPoseServiceRoutine(bdiPose);
     }
 
     const int nViconPoses = mViconQueue.size();
@@ -231,14 +192,12 @@ void StateEstimate::StateEstimator::run()
     {
       mViconQueue.dequeue(viconPose);
       // do something with new vicon pose...
-
     }
 
     const int nMatlabTruth = mMatlabTruthQueue.size();
 	for (int i = 0; i < nMatlabTruth; ++i)
 	{
 		mMatlabTruthQueue.dequeue(matlabPose);
-
 	  // do something with new MatlabTruthPose...
 	  std::cout << "StateEstimator::run -- Processing new matlabTruthPose message" << std::endl;
 	}
@@ -249,9 +208,7 @@ void StateEstimate::StateEstimator::run()
 	  mINSUpdateQueue.dequeue(INSUpdate);
 	  // Handle the INS update request
 	  INSUpdateServiceRoutine(INSUpdate);
-
 	}
-
 	//std::cout << std::endl << std::endl;
   }
 }
@@ -287,61 +244,72 @@ void StateEstimate::StateEstimator::AtlasStateServiceRoutine(const drc::atlas_st
   outq = (qprod(C2q(inert_odo.getIMU2Body().linear().transpose()), InerOdoEst.lQb.conjugate()));
   aliasout = qprod(outq, inert_odo.getAlignmentQuaternion());
   outq = aliasout;
+
   // This will publish "POSE_BODY_ALT message"
   PropagateLegOdometry(bdiPose, atlasState, outq);
-  //std::cout << "StateEstimator::AtlasStateServiceRoutine" << std::endl;
 
+  // This was a temporary short term classifier -- to be depreciated
   // Run classifiers to delegate updates
   double ankle_forces[] = {atlasState.force_torque.l_foot_force_z, atlasState.force_torque.r_foot_force_z};
-
   mLegStateClassification = classifyDynamicLegState(atlasState.utime, ankle_forces, filteredPelvisVel_world.norm());
-
-  return;
-  // Skipping the old stuff -- clearly needs clearing up.
 
   // compute the joint velocities with num_joints Kalman Filters in parallel
   // TODO -- make this dependent on local state and not the message number
+  for (int i = 0; i < num_joints; i++)  {
+    mERSMsg.joint_position[i] = atlasState.joint_position[i];
+    mERSMsg.joint_effort[i] = atlasState.joint_effort[i];
+  }
   //mJointFilters.updateStates(atlasState.utime, atlasState.joint_position, atlasState.joint_velocity);
-  //  insertAtlasState_ERS(atlasState, mERSMsg, robot);
-  //
-  //
-  //  // TODO -- we are using the BDI orientation -- should change to either pure leg kin, combination of yaw, or V/P fused orientation
-  //  Eigen::Quaterniond BDi_quat;
-  //  BDi_quat.w() = bdiPose.orientation[0];
-  //  BDi_quat.x() = bdiPose.orientation[1];
-  //  BDi_quat.y() = bdiPose.orientation[2];
-  //  BDi_quat.z() = bdiPose.orientation[3];
-  //  //_leg_odo->setOrientationTransform(BDi_quat, Eigen::Vector3d::Zero());
-  //  //doLegOdometry(fk_data, atlasState, bdiPose, *_leg_odo, firstpass, robot);
-  //
-  //  // TODO -- remove this, only a temporary display object
-  //  Eigen::Isometry3d LegOdoPelvis;
-  //  LegOdoPelvis.setIdentity();
-  //  LegOdoPelvis = _leg_odo->getPelvisState();
-  //  //std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo translation estimate " << LegOdoPelvis.translation().transpose() << std::endl;
-  //  _leg_odo->calculateUpdateVelocityStates(atlasState.utime, LegOdoPelvis);
-  //  std::cout << "StateEstimator::AtlasStateServiceRoutine -- leg odo pelvis velocities " << _leg_odo->getPelvisVelocityStates().transpose() << std::endl;
-  //
-  //  bot_core::pose_t LegOdoPosMsg;
-  //
-  //  LegOdoPosMsg.utime = atlasState.utime;
-  //  LegOdoPosMsg.pos[0] = LegOdoPelvis.translation()(0);
-  //  LegOdoPosMsg.pos[1] = LegOdoPelvis.translation()(1);
-  //  LegOdoPosMsg.pos[2] = LegOdoPelvis.translation()(2);
-  //
-  //  Eigen::Quaterniond PelvisQ;
-  //  PelvisQ = C2q(LegOdoPelvis.linear());
-  //  LegOdoPosMsg.orientation[0] = PelvisQ.w();
-  //  LegOdoPosMsg.orientation[1] = PelvisQ.x();
-  //  LegOdoPosMsg.orientation[2] = PelvisQ.y();
-  //  LegOdoPosMsg.orientation[3] = PelvisQ.z();
-  //
-  //  mLCM->publish("POSE_BODY_ALT", &LegOdoPosMsg);
-  //
-  //  // This is the counter we use to initialize the pose of the robot at start of the state-estimator process
-  //  if (firstpass>0)
-  //	firstpass--;
+  for (int i = 0; i < num_joints; i++)  {
+    mERSMsg.joint_velocity[i] = atlasState.joint_velocity[i];
+  }
+
+  mERSMsg.num_joints = num_joints;
+
+  return;
 }
+
+void StateEstimate::StateEstimator::BDiPoseServiceRoutine(const bot_core::pose_t &bdiPose) {
+
+  Eigen::Quaterniond q_w, tmp;
+
+  tmp.w() = bdiPose.orientation[0];
+  tmp.x() = bdiPose.orientation[1];
+  tmp.y() = bdiPose.orientation[2];
+  tmp.z() = bdiPose.orientation[3];
+
+  if (alignedBDiQ == false) {
+	  Eigen::Vector3d rpy;
+	  rpy = q2e_new(tmp.conjugate());
+	  rpy[0] = 0.;
+	  rpy[1] = 0.;
+	  firstBDiq = e2q(rpy);
+	  firstBDitrans << bdiPose.pos[0], bdiPose.pos[1], bdiPose.pos[2];
+	  alignedBDiQ = true;
+	  printq("StateEstimator::run -- first alignment check for identity: " , qprod(tmp, firstBDiq));
+  }
+
+  //bot_core::pose_t pose_msg;
+  //      pose_msg.utime =  bdiPose.utime;
+  //      pose_msg.pos[0] = bdiPose.pos[0];
+  //      pose_msg.pos[1] = bdiPose.pos[1];
+  //      pose_msg.pos[2] = bdiPose.pos[2];
+
+  //      q_w = qprod(tmp , firstBDiq);
+  //
+  //
+  //      pose_msg.orientation[0] =  q_w.w();
+  //      pose_msg.orientation[1] =  q_w.x();
+  //      pose_msg.orientation[2] =  q_w.y();
+  //      pose_msg.orientation[3] =  q_w.z();
+
+
+  //mLCM->publish("POSE_BODY_ALT", &pose_msg );
+
+  // push bdiPose info into ERS
+  //convertBDIPose_ERS(&bdiPose, mERSMsg);
+}
+
 
 InertialOdometry::Odometry* StateEstimate::StateEstimator::getInertialOdometry() {
   return &inert_odo;
