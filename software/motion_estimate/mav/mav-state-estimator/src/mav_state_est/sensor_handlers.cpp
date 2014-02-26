@@ -108,6 +108,8 @@ RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_b
       // mfallon: I observed this once or twice in my logs from 2014-01-21: exactly the 
       // same imu data from two consecutive batch messages
       return NULL;
+    }else{
+      std::cout << batch.packets.size() << " new packets\n";
     }
     
     // Get the most recent filtered packet:
@@ -178,6 +180,11 @@ bool InsHandler::processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg,
   init_state.utime = msg->utime;
 
   RBISIMUProcessStep * update = dynamic_cast<RBISIMUProcessStep *>(processMessageAtlas(msg));
+  
+  if (update == NULL){
+    std::cout << "Didn't get a new Atlas packet during initialization, skipping\n";
+    return false;
+  }
 
   if(  !RBISInitializer::allInitializedExcept(sensors_initialized, "ins")) //force the INS to go last
     return false;
