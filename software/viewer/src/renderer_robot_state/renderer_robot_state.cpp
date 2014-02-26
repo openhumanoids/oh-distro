@@ -247,8 +247,9 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
         glPopMatrix();
   }
  
-  float c[3] = {0.15,0.15,0.15}; // was 0.3
-  //glColor3f(c[0],c[1],c[2]);
+  float c[3] = {self->robotStateListener->_robot_color[0], 
+                self->robotStateListener->_robot_color[1],
+                self->robotStateListener->_robot_color[2]};
   glColor4f(c[0],c[1],c[2],self->alpha);
   
   float alpha = self->alpha;
@@ -415,7 +416,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     renderer->widget = bot_gtk_param_widget_new();
     renderer->name = (char *) RENDERER_NAME;
     if (operation_mode==1){
-      renderer->name =(char *) "Robot State LB Compressed";
+      renderer->name =(char *) "State Alt";
     }
     
     renderer->user = self;

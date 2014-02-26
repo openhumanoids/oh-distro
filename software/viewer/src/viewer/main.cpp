@@ -298,8 +298,8 @@ int main(int argc, char *argv[])
     add_mav_state_est_renderer_to_viewer(viewer, 1, lcm, bot_param, bot_frames);
     occ_map_pixel_map_add_renderer_to_viewer(viewer, 1, "SLAM_MAP", "Slam Map");
 
-    // A second robot renderer: (on a different channel, currently "EST_ROBOT_STATE_COMPRESSED_LOOPBACK
-    //setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+    // A second robot renderer: (on a different channel, currently "EST_ROBOT_STATE_BDI
+    setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   }
 
   //--------------    Toolbar Additions
