@@ -21,6 +21,8 @@ classdef FootstepPlanner < DRCPlanner
       obj.biped = biped;
 
       obj = addInput(obj,'goal', 'WALKING_GOAL', 'drc.walking_goal_t', false, true, true);
+      % mfallon modification to run BDI estimator seperate from state estimation: (tempoary - should be used in final system)
+      % obj = addInput(obj,'x0','EST_ROBOT_STATE_BDI',obj.biped.getStateFrame().lcmcoder,true,true,false);
       obj = addInput(obj,'x0','EST_ROBOT_STATE',obj.biped.getStateFrame().lcmcoder,true,true,false);
       obj = addInput(obj, 'plan_con', 'FOOTSTEP_PLAN_CONSTRAINT', drc.deprecated_footstep_plan_t(), false, true,false);
       obj = addInput(obj, 'plan_commit', 'COMMITTED_FOOTSTEP_PLAN', drc.deprecated_footstep_plan_t(), false, true,false);
