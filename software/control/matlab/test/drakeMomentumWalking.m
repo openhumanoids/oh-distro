@@ -1,4 +1,4 @@
-function drakeMomentumWalking(use_mex,use_bullet)
+function drakeMomentumWalking(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -12,9 +12,6 @@ options.ignore_friction = true;
 options.dt = 0.002;
 if (nargin>0); options.use_mex = use_mex;
 else options.use_mex = false; end
-if (nargin<2) 
-  use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
-end
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -28,15 +25,6 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 0*randn();
 xstar(2) = 0*randn();
 r = r.setInitialState(xstar);
-
-if use_bullet
-  r_bullet = RigidBodyManipulator();
-  r_bullet = addRobotFromURDF(r_bullet,strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),[0;0;0],[0;0;0],options);
-  r_bullet = addRobotFromURDF(r_bullet,strcat(fullfile(getDrakePath,'systems','plants','test'),'/ground_plane.urdf'),[xstar(1);xstar(2);0],zeros(3,1),struct('floating',false));
-  r_bullet = TimeSteppingRigidBodyManipulator(r_bullet,options.dt,options);
-  r_bullet = removeCollisionGroupsExcept(r_bullet,{'heel','toe'});
-  r_bullet = compile(r_bullet);
-end
 
 v = r.constructVisualizer;
 v.display_dt = 0.05;
@@ -81,12 +69,6 @@ request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
-
-if use_bullet
-  for i=1:length(walking_ctrl_data.supports)
-    walking_ctrl_data.supports{i}=walking_ctrl_data.supports{i}.setContactSurfaces(-ones(length(walking_ctrl_data.supports{i}.bodies),1));
-  end
-end
 
 ts = walking_plan.ts;
 T = ts(end);
@@ -148,9 +130,6 @@ options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.005;
 
-if use_bullet
-  options.multi_robot = r_bullet;
-end
 qp = MomentumControlBlock(r,ctrl_data,options);
 
 % cascade footstep plan shift block
