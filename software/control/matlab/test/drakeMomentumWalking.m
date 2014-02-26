@@ -3,8 +3,8 @@ function drakeMomentumWalking(use_mex,use_bullet)
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 plot_comtraj = false;
-%navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
-navgoal = [0.25;0;0;0;0;0];
+% navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
+navgoal = [1.0;0;0;0;0;0];
 
 % construct robot model
 options.floating = true;
@@ -78,7 +78,7 @@ walking_planner = StatelessWalkingPlanner();
 request = drc.walking_plan_request_t();
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
 request.footstep_plan = footstep_plan.toLCM();
-walking_planner.plan_walking(r, request, true);
+walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
 
@@ -88,8 +88,30 @@ if use_bullet
   end
 end
 
-ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
+ts = walking_plan.ts;
 T = ts(end);
+
+% compute angular momentum trajectory from kinematic plan
+% this would be replaced by dynamic plan
+qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
+qdtraj = fnder(qtraj,1);
+k = zeros(3,length(ts));
+comz = zeros(1,length(ts));
+for i=1:length(ts)
+  t=ts(i);
+  q=qtraj.eval(t);
+  qd=qdtraj.eval(t);
+  kinsol = doKinematics(r,q,false,true);
+  A = getCMM(r,kinsol);
+  k(:,i) = A(1:3,:)*qd;
+  com = getCOM(r,kinsol);
+  comz(i) = com(3);
+end
+ktraj = PPTrajectory(spline(ts,k));
+
+comztraj = PPTrajectory(spline(ts,comz));
+dcomztraj = fnder(comztraj,1);
+
 
 ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
@@ -113,14 +135,18 @@ ctrl_data = SharedDataHandle(struct(...
   'mu',walking_ctrl_data.mu,...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'y0',walking_ctrl_data.zmptraj,...
-  'K',walking_ctrl_data.K));
+  'K',walking_ctrl_data.K,...
+  'ktraj',ktraj,...
+  'comztraj',comztraj,...
+  'dcomztraj',dcomztraj));
 
 % instantiate QP controller
 options.dt = 0.003;
 options.slack_limit = 0;
-options.w = 0.005;
+options.w = 2.0;
 options.lcm_foot_contacts = false;
 options.debug = false;
+options.contact_threshold = 0.005;
 
 if use_bullet
   options.multi_robot = r_bullet;

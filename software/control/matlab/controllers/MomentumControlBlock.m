@@ -221,7 +221,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       if ~isfield(ctrl_data.data,'D')
         % assumed  ZMP system
         hddot = 0; % could use estimated comddot here
-        ctrl_data.setField('D',-0.89/(hddot+9.81)*eye(2)); % TMP hard coding height here. Could be replaced with htraj from planner
+        ctrl_data.setField('D',-1.04/(hddot+9.81)*eye(2)); % TMP hard coding height here. Could be replaced with htraj from planner
         % or current height above height map;
       end
       if ~isfield(ctrl_data.data,'qp_active_set')
@@ -528,13 +528,15 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       
       % compute desired linear momentum
-      comddot_des = [ustar; 0*(1.04-xcom(3)) - 0.0*z_com_dot];
+      comz_t = fasteval(ctrl_data.comztraj,t);
+      dcomz_t = fasteval(ctrl_data.dcomztraj,t);
+      comddot_des = [ustar; 0*(comz_t-xcom(3)) + 0*(dcomz_t-z_com_dot)];
       ldot_des = comddot_des * 155;
       k = A(1:3,:)*qd;
-      kdot_des = -10.0 * k; 
+      kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
       hdot_des = [kdot_des; ldot_des];
       
-      W = diag([1 1 1 100 100 100]);
+      W = diag([1 1 1 1 1 1]);
       
       %----------------------------------------------------------------------
       % QP cost function ----------------------------------------------------
