@@ -40,7 +40,7 @@ request.goal_pos = encodePosition3d(navgoal);
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
-request.params.max_num_steps = 2;
+request.params.max_num_steps = 20;
 request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.26;
@@ -53,7 +53,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.25;
+request.default_step_params.step_speed = 0.5;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -70,6 +70,19 @@ walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
 
 ts = walking_plan.ts;
 T = ts(end);
+
+
+% plot walking traj in drake viewer
+lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
+
+for i=1:length(ts)
+	lcmgl.glColor3f(0, 0, 1);
+	lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+  lcmgl.glColor3f(0, 1, 0);
+	lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);  
+end
+lcmgl.switchBuffers();
+
 
 % compute angular momentum trajectory from kinematic plan
 % this would be replaced by dynamic plan
@@ -110,10 +123,10 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.dt = 0.003;
 options.slack_limit = 10;
-options.w = 0.1;
+options.w = 0.01;
 options.lcm_foot_contacts = false;
 options.debug = false;
-options.contact_threshold = 0.005;
+options.contact_threshold = 0.002;
 
 qp = MomentumControlBlock(r,ctrl_data,options);
 
@@ -148,7 +161,7 @@ output_select(1).system=1;
 output_select(1).output=1;
 sys = mimoCascade(sys,v,[],[],output_select);
 warning(S);
-traj = simulate(sys,[0 4],x0);
+traj = simulate(sys,[0 T],x0);
 playback(v,traj,struct('slider',true));
 
 if 1%plot_comtraj
@@ -188,13 +201,16 @@ if 1%plot_comtraj
     lfoot_p = forwardKin(r,kinsol,lfoot,[0;0;0],1);
     rfoot_p = forwardKin(r,kinsol,rfoot,[0;0;0],1);
     
-    if any(lfoot_cpos(3,:) < 1e-4)
+		lfoot_pos(:,i) = lfoot_p;
+		rfoot_pos(:,i) = lfoot_p;
+
+		if any(lfoot_cpos(3,:) < 1e-4)
       lstep_counter=lstep_counter+1;
-      lfoot_pos(:,lstep_counter) = lfoot_p;
-    end
+      lfoot_steps(:,lstep_counter) = lfoot_p;
+		end
     if any(rfoot_cpos(3,:) < 1e-4)
       rstep_counter=rstep_counter+1;
-      rfoot_pos(:,rstep_counter) = rfoot_p;
+      rfoot_steps(:,rstep_counter) = rfoot_p;
     end
     
     rfoottraj = walking_ctrl_data.link_constraints(1).traj;
@@ -266,7 +282,7 @@ if 1%plot_comtraj
   end
   
   for i=1:lstep_counter
-    cpos = rpy2rotmat(lfoot_pos(4:6,i)) * getBodyContacts(r,lfoot) + repmat(lfoot_pos(1:3,i),1,4);
+    cpos = rpy2rotmat(lfoot_steps(4:6,i)) * getBodyContacts(r,lfoot) + repmat(lfoot_steps(1:3,i),1,4);
     plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
     plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',1.65);
     plot(cpos(1,[2,4]),cpos(2,[2,4]),'g-','LineWidth',1.65);
@@ -274,7 +290,7 @@ if 1%plot_comtraj
   end
 
   for i=1:rstep_counter
-    cpos = rpy2rotmat(rfoot_pos(4:6,i)) * getBodyContacts(r,rfoot) + repmat(rfoot_pos(1:3,i),1,4);
+    cpos = rpy2rotmat(rfoot_steps(4:6,i)) * getBodyContacts(r,rfoot) + repmat(rfoot_steps(1:3,i),1,4);
     plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
     plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',1.65);
     plot(cpos(1,[2,4]),cpos(2,[2,4]),'g-','LineWidth',1.65);
@@ -289,6 +305,15 @@ if 1%plot_comtraj
 if rms_com > length(footstep_plan.footsteps)*0.5
   error('drakeWalking unit test failed: error is too large');
   navgoal
+end
+
+
+for i=1:6
+	figure;
+	fnplt(walking_ctrl_data.link_constraints(2).traj(i))
+	hold on;
+	plot(ts,lfoot_pos(i,:));
+	hold off;
 end
 
 keyboard;

@@ -359,8 +359,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     
     % do PD on feet to compute body accelerations
-    Kp_body = 20;
-    Kd_body = 0.2;
+    Kp_body = diag([100; 100; 100; 150; 150; 150]);
+    Kd_body = diag([10; 10; 10; 10; 10; 10]);
     if ~any(active_supports==ctrl_data.link_constraints(1).link_ndx)
       [p1,J1] = forwardKin(r,kinsol,ctrl_data.link_constraints(1).link_ndx,...
         ctrl_data.link_constraints(1).pt,1);
@@ -494,6 +494,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
       Jdot = forwardJacDot(r,kinsol,0);
       Jdot = Jdot(1:2,:);
 
+			D_ls = -1.04/9.81*eye(2);
+			
       xcomdd = Jdot * qd + J * qdd;
       zmppos = xcom(1:2) + D_ls * xcomdd;
       zmp = [zmppos', mean(cpos(3,:))];
@@ -598,7 +600,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
       end
       
-      if obj.include_angular_momentum
+      if 0
         % plot momentum vectors
         h = Ag*qd;
         obj.lcmgl.glLineWidth(3);
