@@ -107,6 +107,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj.lfoot_idx = findLinkInd(r,'l_foot');
     obj.rhand_idx = findLinkInd(r,'r_hand');
     obj.lhand_idx = findLinkInd(r,'l_hand');
+    obj.pelvis_idx = findLinkInd(r,'pelvis');
     obj.numq = getNumDOF(r);
     
     if obj.lcm_foot_contacts
@@ -327,8 +328,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     lb(q<=obj.jlmin+1e-4) = 0;
     ub(q>=obj.jlmax-1e-4) = 0;
 
-    Aeq_ = cell(1,4);
-    beq_ = cell(1,4);
+    Aeq_ = cell(1,5);
+    beq_ = cell(1,5);
     Ain_ = cell(1,2);
     bin_ = cell(1,2);
 
@@ -385,8 +386,18 @@ classdef MomentumControlBlock < MIMODrakeSystem
       body2dd = Kp_body*(body2_t - p2) - Kd_body*J2*qd;
       Aeq_{4} = J2(cidx,:)*Iqdd;
       beq_{4} = -J2dot(cidx,:)*qd + body2dd(cidx);
-    end
+		end
     
+		% pelvis
+		[p3,J3] = forwardKin(r,kinsol,obj.pelvis_idx,[0;0;0],1);
+		J3dot = forwardJacDot(r,kinsol,obj.pelvis_idx,[0;0;0],1);
+
+		body3_t = [nan;nan;nan;0;0;0];
+		cidx = ~isnan(body3_t);
+		body3dd = 250*(body3_t - p3) - 30*J3*qd;
+		Aeq_{5} = J3(cidx,:)*Iqdd;
+		beq_{5} = -J3dot(cidx,:)*qd + body3dd(cidx);
+		
     % linear equality constraints: Aeq*alpha = beq
     Aeq = sparse(vertcat(Aeq_{:}));
     beq = vertcat(beq_{:});
@@ -660,7 +671,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     lfoot_idx;
     rhand_idx;
     lhand_idx;
-    solver_options = struct();
+    pelvis_idx;
+		solver_options = struct();
     debug;
     use_mex;
     use_hand_ft;

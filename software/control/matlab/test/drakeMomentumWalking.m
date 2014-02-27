@@ -2,7 +2,7 @@ function drakeMomentumWalking(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-navgoal = [1.0;0;0;0;0;0];
+navgoal = [0.5;0;0;0;0;0];
 
 % construct robot model
 options.floating = true;
@@ -112,8 +112,9 @@ ctrl_data = SharedDataHandle(struct(...
   'link_constraints',walking_ctrl_data.link_constraints, ...
   'support_times',walking_ctrl_data.support_times,...
   'supports',[walking_ctrl_data.supports{:}],...
-  'mu',walking_ctrl_data.mu,...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
+  'trans_drift',[0;0;0],...
+  'qtraj',x0(1:nq),...
   'K',walking_ctrl_data.K,...
   'ktraj',ktraj,...
   'comztraj',comztraj,...
@@ -142,7 +143,7 @@ sys = mimoFeedback(qp,sys,[],[],ins,outs);
 clear ins outs;
 
 % feedback PD block 
-pd = WalkingPDBlock(r,ctrl_data);
+pd = SimplePDBlock(r);
 ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;
@@ -154,6 +155,7 @@ qt = QTrajEvalBlock(r,ctrl_data);
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qt,sys,[],[],[],outs);
+
 
 S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
 output_select(1).system=1;
