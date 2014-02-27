@@ -2,6 +2,7 @@ package drc.control;
 
 import java.io.*;
 import java.lang.*;
+import java.util.Arrays;
 import lcm.lcm.*;
 import viconstructs.*;
 
@@ -91,4 +92,10 @@ public class ViconBodyPointCoder implements drake.util.LCMCoder
   public String getModelName(int index) {
     return m_modelNames[index];
   }
+	
+		public String[] coordinateNames() {
+			String[] coords = new String[dim()];
+			Arrays.fill(coords, "");
+			return coords;
+		}
 }

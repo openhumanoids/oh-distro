@@ -2,6 +2,7 @@ package drc.control;
 
 import java.io.*;
 import java.lang.*;
+import java.util.Arrays;
 import lcm.lcm.*;
 
 public class RobotBodyCoder implements drake.util.LCMCoder
@@ -74,4 +75,10 @@ public class RobotBodyCoder implements drake.util.LCMCoder
     {
       return "utime";
     }
+		
+		public String[] coordinateNames() {
+			String[] coords = new String[dim()];
+			Arrays.fill(coords, "");
+			return coords;
+		}
 }

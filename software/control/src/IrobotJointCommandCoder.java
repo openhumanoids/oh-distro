@@ -168,4 +168,9 @@ public class IrobotJointCommandCoder implements drake.util.LCMCoder
     {
       return "utime";
     }
+		
+		public String[] coordinateNames() {
+			return null;
+		}	
+		
 }

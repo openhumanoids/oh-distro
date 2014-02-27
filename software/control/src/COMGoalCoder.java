@@ -58,4 +58,9 @@ public class COMGoalCoder implements drake.util.LCMCoder
     {
       return "utime";
     }
+		
+		public String[] coordinateNames() {
+			return null;
+		}	
+		
 }
