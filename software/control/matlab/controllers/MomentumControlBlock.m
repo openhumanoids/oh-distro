@@ -107,7 +107,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj.lfoot_idx = findLinkInd(r,'l_foot');
     obj.rhand_idx = findLinkInd(r,'r_hand');
     obj.lhand_idx = findLinkInd(r,'l_hand');
-    obj.nq = getNumDOF(r);
+    obj.numq = getNumDOF(r);
     
     if obj.lcm_foot_contacts
       obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
@@ -161,7 +161,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     x = varargin{3};
        
     r = obj.robot;
-    nq = obj.nq; 
+    nq = obj.numq; 
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
 
@@ -174,7 +174,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
       supp = ctrl_data.supports;
     end
     K = ctrl_data.K;
-    mu = ctrl_data.mu;
 
     % contact_sensor = -1 (no info), 0 (info, no contact), 1 (info, yes contact)
     contact_sensor=-1+0*supp.bodies;  % initialize to -1 for all
@@ -183,8 +182,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
       contact_data = obj.contact_est_monitor.getMessage();
       if ~isempty(contact_data)
         msg = drc.foot_contact_estimate_t(contact_data);
-        contact_sensor(find(supp.bodies==obj.lfoot_idx)) = msg.left_contact;
-        contact_sensor(find(supp.bodies==obj.rfoot_idx)) = msg.right_contact;
+        contact_sensor(supp.bodies==obj.lfoot_idx) = msg.left_contact;
+        contact_sensor(supp.bodies==obj.rfoot_idx) = msg.right_contact;
       end
     end
     
@@ -246,8 +245,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
     %----------------------------------------------------------------------
 
-    nu = getNumInputs(r);
-    nq = getNumDOF(r);
     dim = 3; % 3D
     nd = 4; % for friction cone approx, hard coded for now
     float_idx = 1:6; % indices for floating base dofs
@@ -653,7 +650,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
   properties (SetAccess=private)
     robot; % to be controlled
-    nq;
+    numq;
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
     w; % objective function weight
     slack_limit; % maximum absolute magnitude of acceleration slack variable values
@@ -673,11 +670,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
     num_body_contacts; % vector of num contacts for each body
     multi_robot;
-    num_state_frames; % if there's a multi robot defined this is 1+ the number of other state frames
     using_flat_terrain; % true if using DRCFlatTerrain
-    ignore_states; % array if state indices we want to ignore (and substitute with planned values)
     lcmgl;
-    include_angular_momentum; % tmp flag for testing out angular momentum control
     jlmin;
     jlmax;
     contact_threshold; % min height above terrain to be considered in contact

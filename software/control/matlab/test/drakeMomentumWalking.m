@@ -2,8 +2,6 @@ function drakeMomentumWalking(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-plot_comtraj = false;
-% navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
 navgoal = [1.0;0;0;0;0;0];
 
 % construct robot model
@@ -156,8 +154,7 @@ playback(v,traj,struct('slider',true));
 if 1%plot_comtraj
   dt = 0.001;
   tts = 0:dt:T;
-  qdd = zeros(nq,T/dt);
-  xtraj_smooth=smoothts(eval(traj,tts),'e',150);
+  xtraj_smooth=smoothts(traj.eval(tts),'e',150);
   dtraj = fnder(PPTrajectory(spline(tts,xtraj_smooth)));
   qddtraj = dtraj(nq+(1:nq));
 
