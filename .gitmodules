@@ -1,4 +1,4 @@
 [submodule "software/drake"]
 	path = software/drake
-	url = git@github.com:RobotLocomotion/drake.git
+	url = git@github.com:kuindersma/drake.git
 
