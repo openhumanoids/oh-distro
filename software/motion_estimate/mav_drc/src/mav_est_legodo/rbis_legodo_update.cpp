@@ -28,7 +28,7 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   publish_diagnostics_ = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.publish_diagnostics");  
   
   republish_incoming_poses_ = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.republish_incoming_poses");  
-  if (lcm_pub != lcm_recv && republish_incoming_poses_) { 
+  if ( (lcm_pub != lcm_recv) && republish_incoming_poses_) { 
     republish_incoming_poses_ = true; // Only republish if the lcm objects are different (same logic as for main app)
   }else{
     republish_incoming_poses_ = false;
@@ -135,6 +135,33 @@ void LegOdoHandler::sendTransAsVelocityPose(BotTrans msgT, int64_t utime, int64_
   lcm_pub->publish(channel, &vel_pose );
 }
 
+// TODO: learn how to directly copy the underlying data
+bot_core::pose_t getPoseAsBotPoseFull(PoseT pose){
+  bot_core::pose_t pose_msg;
+  pose_msg.utime =   pose.utime;
+  pose_msg.pos[0] = pose.pos[0];
+  pose_msg.pos[1] = pose.pos[1];
+  pose_msg.pos[2] = pose.pos[2];  
+  pose_msg.orientation[0] =  pose.orientation[0];  
+  pose_msg.orientation[1] =  pose.orientation[1];  
+  pose_msg.orientation[2] =  pose.orientation[2];  
+  pose_msg.orientation[3] =  pose.orientation[3];
+  
+  pose_msg.vel[0] = pose.vel[0];
+  pose_msg.vel[1] = pose.vel[1];
+  pose_msg.vel[2] = pose.vel[2];
+  pose_msg.rotation_rate[0] = pose.rotation_rate[0];
+  pose_msg.rotation_rate[1] = pose.rotation_rate[1];
+  pose_msg.rotation_rate[2] = pose.rotation_rate[2];  
+  
+  pose_msg.accel[0] = pose.accel[0];
+  pose_msg.accel[1] = pose.accel[1];
+  pose_msg.accel[2] = pose.accel[2];
+  
+  return pose_msg;
+}
+
+
 
 RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *msg)
 {
@@ -150,7 +177,7 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
     leg_odo_->setPoseBDI( world_to_body_bdi_ );
   }
   if (republish_incoming_poses_){ // Don't publish when working live:
-    bot_core::pose_t bdipose = getPoseAsBotPose(world_to_body_bdi_, prev_bdi_utime_);
+    bot_core::pose_t bdipose = getPoseAsBotPoseFull(world_to_body_bdi_full_);
     lcm_pub->publish("POSE_BDI", &bdipose);
   }
   
