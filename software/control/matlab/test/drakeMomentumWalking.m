@@ -58,7 +58,7 @@ request.default_step_params = drc.footstep_params_t();
 request.default_step_params.step_speed = 0.25;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
-request.default_step_params.constrain_full_foot_pose = false;
+request.default_step_params.constrain_full_foot_pose = true;
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
 
@@ -111,8 +111,8 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.dt = 0.003;
-options.slack_limit = 0;
-options.w = 2.0;
+options.slack_limit = 10;
+options.w = 0.1;
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.005;
@@ -150,10 +150,10 @@ output_select(1).system=1;
 output_select(1).output=1;
 sys = mimoCascade(sys,v,[],[],output_select);
 warning(S);
-traj = simulate(sys,[0 T],x0);
+traj = simulate(sys,[0 4],x0);
 playback(v,traj,struct('slider',true));
 
-if plot_comtraj
+if 1%plot_comtraj
   dt = 0.001;
   tts = 0:dt:T;
   qdd = zeros(nq,T/dt);
@@ -200,11 +200,14 @@ if plot_comtraj
       rfoot_pos(:,rstep_counter) = rfoot_p;
     end
     
-    lfoot_des = eval(foottraj.left.orig,ts(i));
+    rfoottraj = walking_ctrl_data.link_constraints(1).traj;
+    lfoottraj = walking_ctrl_data.link_constraints(2).traj;
+    
+    lfoot_des = eval(lfoottraj,ts(i));
     lfoot_des(3) = max(lfoot_des(3), 0.0811);     % hack to fix footstep planner bug
     rms_foot = rms_foot+norm(lfoot_des([1:3])-lfoot_p([1:3]))^2;
   
-    rfoot_des = eval(foottraj.right.orig,ts(i));
+    rfoot_des = eval(rfoottraj,ts(i));
     rfoot_des(3) = max(rfoot_des(3), 0.0811);     % hack to fix footstep planner bug
     rms_foot = rms_foot+norm(rfoot_des([1:3])-rfoot_p([1:3]))^2;
 
@@ -242,7 +245,7 @@ if plot_comtraj
   %plot(comdes(1,:),comdes(2,:),'g','LineWidth',3);
   %plot(com(1,:),com(2,:),'m.-','LineWidth',1);
  
-  left_foot_steps = eval(foottraj.left.orig,foottraj.left.orig.getBreaks);
+  left_foot_steps = eval(lfoottraj,lfoottraj.getBreaks);
   for i=1:size(left_foot_steps,2);
     cpos = rpy2rotmat(left_foot_steps(4:6,i)) * getBodyContacts(r,lfoot) + repmat(left_foot_steps(1:3,i),1,4);
     if all(cpos(3,:)<=0.001)
@@ -254,7 +257,7 @@ if plot_comtraj
     end
   end
   
-  right_foot_steps = eval(foottraj.right.orig,foottraj.right.orig.getBreaks);
+  right_foot_steps = eval(rfoottraj,rfoottraj.getBreaks);
   for i=1:size(right_foot_steps,2);
     cpos = rpy2rotmat(right_foot_steps(4:6,i)) * getBodyContacts(r,rfoot) + repmat(right_foot_steps(1:3,i),1,4);
     if all(cpos(3,:)<=0.001)
@@ -286,9 +289,11 @@ if plot_comtraj
 
   axis equal;
   
-if rms_com > length(footsteps)*0.5
+if rms_com > length(footstep_plan.footsteps)*0.5
   error('drakeWalking unit test failed: error is too large');
   navgoal
 end
+
+keyboard;
 
 end

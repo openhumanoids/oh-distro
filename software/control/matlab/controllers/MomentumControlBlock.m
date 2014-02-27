@@ -195,7 +195,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     % another option would be to limit forces on the feet when kinematics
     % says 'contact', but force sensors do not. when both agree, allow full
     % forces on the feet
-    kinsol = doKinematics(r,q,false,true);
+    kinsol = doKinematics(r,q,false,false);
 
     % get active contacts
     i=1;
@@ -253,7 +253,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     float_idx = 1:6; % indices for floating base dofs
     act_idx = 7:nq; % indices for actuated dofs
 
-    kinsol = doKinematics(r,q,false,true,qd);
+    kinsol = doKinematics(r,q,false,false,qd);
 
     [H,C,B] = manipulatorDynamics(r,q,qd);
 
@@ -330,8 +330,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     lb(q<=obj.jlmin+1e-4) = 0;
     ub(q>=obj.jlmax-1e-4) = 0;
 
-    Aeq_ = cell(1,2);
-    beq_ = cell(1,2);
+    Aeq_ = cell(1,4);
+    beq_ = cell(1,4);
     Ain_ = cell(1,2);
     bin_ = cell(1,2);
 
@@ -358,7 +358,36 @@ classdef MomentumControlBlock < MIMODrakeSystem
     if nc > 0
       % relative acceleration constraint
       Aeq_{2} = Jp*Iqdd + Ieps;
-      beq_{2} = -Jpdot*qd - 1.0*Jp*qd;
+      beq_{2} = -Jpdot*qd - 0*Jp*qd;
+    end
+    
+    % do PD on feet to compute body accelerations
+    Kp_body = 20;
+    Kd_body = 0.2;
+    if ~any(active_supports==ctrl_data.link_constraints(1).link_ndx)
+      [p1,J1] = forwardKin(r,kinsol,ctrl_data.link_constraints(1).link_ndx,...
+        ctrl_data.link_constraints(1).pt,1);
+      J1dot = forwardJacDot(r,kinsol,ctrl_data.link_constraints(1).link_ndx,...
+        ctrl_data.link_constraints(1).pt,1);
+      
+      body1_t = fasteval(ctrl_data.link_constraints(1).traj,t);
+      cidx = ~isnan(body1_t);
+      body1dd = Kp_body*(body1_t - p1) - Kd_body*J1*qd;
+      Aeq_{3} = J1(cidx,:)*Iqdd;
+      beq_{3} = -J1dot(cidx,:)*qd + body1dd(cidx);
+    end
+    
+    if ~any(active_supports==ctrl_data.link_constraints(2).link_ndx)
+      [p2,J2] = forwardKin(r,kinsol,ctrl_data.link_constraints(2).link_ndx,...
+        ctrl_data.link_constraints(2).pt,1);
+      J2dot = forwardJacDot(r,kinsol,ctrl_data.link_constraints(2).link_ndx,...
+        ctrl_data.link_constraints(2).pt,1);
+
+      body2_t = fasteval(ctrl_data.link_constraints(2).traj,t);
+      cidx = ~isnan(body2_t);
+      body2dd = Kp_body*(body2_t - p2) - Kd_body*J2*qd;
+      Aeq_{4} = J2(cidx,:)*Iqdd;
+      beq_{4} = -J2dot(cidx,:)*qd + body2dd(cidx);
     end
     
     % linear equality constraints: Aeq*alpha = beq
@@ -370,15 +399,17 @@ classdef MomentumControlBlock < MIMODrakeSystem
     bin = vertcat(bin_{:});
 
     % compute desired linear momentum
-    comz_t = fasteval(ctrl_data.comztraj,t);
-    dcomz_t = fasteval(ctrl_data.dcomztraj,t);
-    comddot_des = [ustar; 0*(comz_t-xcom(3)) + 0*(dcomz_t-z_com_dot)];
+%     comz_t = fasteval(ctrl_data.comztraj,t);
+%     dcomz_t = fasteval(ctrl_data.dcomztraj,t);
+    comddot_des = [ustar; 10*(1.04-xcom(3)) + 0.5*(0-z_com_dot)];
+%     comddot_des = [ustar; 10*(comz_t-xcom(3)) + 0.5*(dcomz_t-z_com_dot)];
     ldot_des = comddot_des * 155;
     k = A(1:3,:)*qd;
-    kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
+%     kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
+    kdot_des = -10.0 *k; 
     hdot_des = [kdot_des; ldot_des];
 
-    W = diag([1 1 1 1 1 1]);
+    W = diag([.1 .1 .1 1 1 1]);
 
     %----------------------------------------------------------------------
     % QP cost function ----------------------------------------------------
