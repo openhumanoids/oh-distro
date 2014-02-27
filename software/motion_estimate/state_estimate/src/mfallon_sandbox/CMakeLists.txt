@@ -43,3 +43,16 @@ pods_use_pkg_config_packages(se-convert-bdi-into-vicon-frame  bot2-frames_cpp
     pointcloud_vis  )
 target_link_libraries (se-convert-bdi-into-vicon-frame lcm pointcloud_math  )
 pods_install_executables(se-convert-bdi-into-vicon-frame )
+
+
+
+
+
+
+################
+add_executable(se-init-from-bdi init_from_bdi.cpp )
+pods_use_pkg_config_packages(se-init-from-bdi  bot2-frames_cpp
+    path-util ${REQUIRED_PACKAGES}
+    pointcloud_vis  )
+target_link_libraries (se-init-from-bdi lcm pointcloud_math  )
+pods_install_executables(se-init-from-bdi )

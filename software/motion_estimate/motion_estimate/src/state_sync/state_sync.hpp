@@ -37,7 +37,8 @@ class state_sync{
     state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
       bool standalone_head_, bool standalone_hand_,
       bool spoof_motion_estimation, bool simulation_mode_,
-      bool use_encoder_joint_sensors_, std::string output_channel_);
+      bool use_encoder_joint_sensors_, std::string output_channel_,
+      bool publish_pose_body_);
     
     ~state_sync(){
     }
@@ -53,6 +54,7 @@ class state_sync{
     bool simulation_mode_;
     bool use_encoder_joint_sensors_;
     std::string output_channel_;
+    bool publish_pose_body_;
 
     long utime_prev_;
 

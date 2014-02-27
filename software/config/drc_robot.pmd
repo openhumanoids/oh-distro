@@ -325,7 +325,7 @@ group "m.misc" {
 
 group "m.state_est" {
     cmd "state-sync-bdi" {
-        exec = "drc-state-sync -b -e -o EST_ROBOT_STATE_BDI";
+        exec = "drc-state-sync -b -e -o EST_ROBOT_STATE_BDI -p";
         host = "robot";
     }
     cmd "state-sync-mit" {
@@ -399,5 +399,6 @@ script "kill_calibration_process" {
 script "launch_state_est" { 
     stop cmd "aa-sync";
     stop cmd "viewer";
+    wait ms 1000;
     start group "m.state_est";
 }
