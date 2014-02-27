@@ -21,7 +21,7 @@ classdef GraspState < LCMCoordinateFrame & Singleton
             if isempty(obj.lcmcoder)  % otherwise I had a singleton
 
               coder = drc.control.GraspStateCoder('atlas',l_jointNames,r_jointNames);            
-              obj = setLCMCoder(obj,JLCMCoder(coder));
+              setLCMCoder(obj,JLCMCoder(coder));
 
               coordNames = cell(nx,1);
 

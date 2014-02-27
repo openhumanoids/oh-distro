@@ -9,7 +9,7 @@ classdef AtlasCOM < LCMCoordinateFrame & Singleton
       
       if isempty(obj.lcmcoder)
         coder = drc.control.COMGoalCoder('atlas');
-        obj = setLCMCoder(obj,JLCMCoder(coder));
+        setLCMCoder(obj,JLCMCoder(coder));
         obj.setDefaultChannel('COM_GOAL');
       end
     end

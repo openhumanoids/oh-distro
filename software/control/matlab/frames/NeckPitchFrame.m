@@ -8,7 +8,7 @@ classdef NeckPitchFrame < LCMCoordinateFrame & Singleton
       
       if isempty(obj.lcmcoder)      
         coder = NeckPitchCoder();
-        obj = setLCMCoder(obj,coder);
+        setLCMCoder(obj,coder);
         obj.setCoordinateNames({'neck_pitch_world'});
         obj.setDefaultChannel('DESIRED_NECK_PITCH');
       end

@@ -21,7 +21,7 @@ classdef AtlasInput < LCMCoordinateFrame & Singleton
 
         coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p*0,gains.k_q_i*0,...
           gains.k_qd_p*0,gains.k_f_p,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d,gains.ff_const);
-        obj.setLCMCoder(JLCMCoder(coder));
+        obj = obj.setLCMCoder(JLCMCoder(coder));
 
         coords = input_names;
 

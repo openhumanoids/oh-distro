@@ -15,7 +15,7 @@ classdef AtlasForceTorque < LCMCoordinateFrame & Singleton
       
       if isempty(obj.lcmcoder)
         coder = drc.control.ForceTorqueStateCoder();
-        obj = setLCMCoder(obj,JLCMCoder(coder));
+        setLCMCoder(obj,JLCMCoder(coder));
         obj.setCoordinateNames(coordinates);
         obj.setDefaultChannel('EST_ROBOT_STATE');
       end

@@ -11,7 +11,7 @@ classdef AtlasCoordinates < LCMCoordinateFrame & Singleton
       if isempty(obj.lcmcoder)
         joint_names = r.getStateFrame.coordinates(1:nq); 
         coder = drc.control.JointAnglesCoder('atlas',joint_names);
-        obj = setLCMCoder(obj,JLCMCoder(coder));
+        setLCMCoder(obj,JLCMCoder(coder));
 
         obj.setCoordinateNames(joint_names);
         obj.setDefaultChannel('DESIRED_ACCELERATION');
