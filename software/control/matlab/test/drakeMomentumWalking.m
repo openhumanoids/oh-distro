@@ -53,7 +53,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.5;
+request.default_step_params.step_speed = 0.3;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -105,7 +105,6 @@ ktraj = PPTrajectory(spline(ts,k));
 comztraj = PPTrajectory(spline(ts,comz));
 dcomztraj = fnder(comztraj,1);
 
-
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
   'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
@@ -123,7 +122,7 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.dt = 0.003;
 options.slack_limit = 10;
-options.w = 0.01;
+options.w = 0.1;
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.002;
