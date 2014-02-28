@@ -336,6 +336,10 @@ group "m.state_est" {
         exec = "drc-viewer -a";
         host = "robot";
     }
+    cmd "viewer-plus" {
+        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02.cfg";
+        host = "robot";
+    }
 }
 
 #################################################################
