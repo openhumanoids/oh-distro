@@ -12,5 +12,6 @@ lcmtypes_build()
 add_subdirectory(src/gpf-rgbd-lib)
 add_subdirectory(src/mav_est_fovis)
 add_subdirectory(src/mav_est_legodo)
+add_subdirectory(src/pose_meas)
 add_subdirectory(src/mav_kmcl)
 

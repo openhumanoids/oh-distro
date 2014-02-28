@@ -8,6 +8,7 @@
 #include <mav_state_est/mav-est-fovis/rbis_fovis_update.hpp>
 #include <mav_state_est/mav-est-legodo/rbis_legodo_update.hpp>
 #include <mav_state_est/mav-est-legodo/rbis_legodo_external_update.hpp>
+#include <mav_state_est/pose_meas.hpp>
 
 #include <path_util/path_util.h>
 
@@ -64,6 +65,7 @@ public:
         RBISInitializer::getDefaultCov(front_end->param));
 
     vicon_handler = NULL;
+    pose_meas_handler = NULL;
     gps_handler = NULL;
     scan_matcher_handler = NULL;
     laser_gpf_handler = NULL;
@@ -113,6 +115,13 @@ public:
       vicon_handler = new ViconHandler(front_end->param, front_end->frames);
       front_end->addSensor("vicon", &MavStateEst::ViconHandler::processMessage, vicon_handler);
       rbis_initializer->addSensor("vicon", &MavStateEst::ViconHandler::processMessageInit, vicon_handler);
+    }
+
+    if (front_end->isActive("pose_meas") || rbis_initializer->initializingWith("pose_meas")) {
+      // Correct the pose in manner similar to vicon corrections: typically so as to init the estimator at BDI's position
+      pose_meas_handler = new PoseMeasHandler(front_end->param, front_end->frames);
+      front_end->addSensor("pose_meas", &MavStateEst::PoseMeasHandler::processMessage, pose_meas_handler);
+      rbis_initializer->addSensor("pose_meas", &MavStateEst::PoseMeasHandler::processMessageInit, pose_meas_handler);
     }
 
     if (front_end->isActive("optical_flow")) {
@@ -203,6 +212,7 @@ public:
   RBISInitializer * rbis_initializer;
 
   ViconHandler * vicon_handler;
+  PoseMeasHandler * pose_meas_handler;
   InsHandler * ins_handler;
   GpsHandler * gps_handler;
   LaserGPFHandler * laser_gpf_handler;
