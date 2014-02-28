@@ -335,7 +335,9 @@ Eigen::Quaterniond exmap(const Eigen::Vector3d &dE_l, const Eigen::Quaterniond &
 	return result;
 }
 
-
+void printq(const std::string &_from, const Eigen::Quaterniond &_q) {
+  std::cout << _from << " w " << _q.w() << ", " << _q.x() << ", " << _q.y() << ", " << _q.z() << std::endl;
+}
 
 
 

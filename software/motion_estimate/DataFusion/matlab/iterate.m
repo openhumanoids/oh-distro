@@ -38,8 +38,10 @@ end
 [F, L, Q] = dINS_EKFmodel_s2b(Measurement.INS.pose, sRb);
 
 Disc.C = [zeros(3,6), eye(3), zeros(3,6)];
+Disc.C = [Disc.C; zeros(1,15)];
+Disc.C(4,3) = 1;
 
-covariances.R = diag( 3E0*ones(3,1) );
+covariances.R = diag( [3E0*ones(3,1); 1] );
 Disc.B = 0;
 
 
@@ -50,7 +52,7 @@ Sys.priori.utime = Measurement.INS.pose.utime;
 
 % MEASUREMENT UPDATE, POSTERIOR STATE===============================================================
 if (Measurement.LegOdo.updateType > -1)
-  Sys.posterior = KF_measupdate(Sys.priori, Disc, [Measurement.velocityResidual]);
+  Sys.posterior = KF_measupdate(Sys.priori, Disc, [Measurement.velocityResidual; Measurement.headingResidual]);
   Sys.posterior.utime = Sys.priori.utime;
 end
 

@@ -45,59 +45,73 @@ bool StateEstimate::insertPoseBDI(const PoseT &pose_BDI_, drc::robot_state_t& ms
   return true;  
 }
 
-
-
-bool StateEstimate::insertAtlasState_ERS(const drc::atlas_state_t &atlasState, drc::robot_state_t &mERSMsg, RobotModel* _robot){
-
-	Joints jointsContainer;
-	
-	// This is called form state_sync
-	insertAtlasJoints(&atlasState, jointsContainer, _robot);
-	appendJoints(mERSMsg, jointsContainer);
-	
-	return false;
+Eigen::Quaterniond StateEstimate::convertToOutQuaternion(const InertialOdometry::DynamicState &InerOdoEst, const Eigen::Isometry3d &IMU_to_body, const Eigen::Quaterniond &alignq_out) {
+  Eigen::Quaterniond outq;
+  outq = (qprod(C2q(IMU_to_body.linear().transpose()), InerOdoEst.lQb.conjugate()));
+  return qprod(outq, alignq_out);
 }
 
-
-
-
-void StateEstimate::appendJoints(drc::robot_state_t& msg_out, const StateEstimate::Joints &joints){
-  for (size_t i = 0; i < joints.position.size(); i++)  {
-    msg_out.joint_name.push_back( joints.name[i] );
-    msg_out.joint_position.push_back( joints.position[i] );
-    msg_out.joint_velocity.push_back( joints.velocity[i] );
-    msg_out.joint_effort.push_back( joints.effort[i] );
-  }
-}
-
-
-void StateEstimate::insertAtlasJoints(const drc::atlas_state_t* msg, StateEstimate::Joints &jointContainer, RobotModel* _robot) {
-
-  jointContainer.name = _robot->joint_names_;
-  jointContainer.position = msg->joint_position;
-  jointContainer.velocity = msg->joint_velocity;
-  jointContainer.effort = msg->joint_effort;
-
-  return;
-}
-
-void StateEstimate::stampInertialPoseERSMsg(const InertialOdometry::DynamicState &InerOdoEst,
+void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &InerOdoEst,
 											const Eigen::Isometry3d &IMU_to_body,
-											drc::robot_state_t& msg) {
+											drc::robot_state_t& ERSmsg,
+											bot_core::pose_t &_msg,
+											Eigen::Isometry3d *_mArrowTransform,
+											const Eigen::Quaterniond &alignq_out) {
+  Eigen::Quaterniond outq, aliasout;
+  Eigen::Vector3d P_w, V_leverarm;
 
-  msg.utime = InerOdoEst.uts;
-  
-  msg.pose.rotation.w = InerOdoEst.lQb.w();
-  msg.pose.rotation.x = InerOdoEst.lQb.x();
-  msg.pose.rotation.y = InerOdoEst.lQb.y();
-  msg.pose.rotation.z = InerOdoEst.lQb.z();
-  
-  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.V, msg.twist.linear_velocity);
-  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, msg.twist.angular_velocity);
-  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation(), msg.pose.translation);
-  
+  // Convert Inertial quaternion to the output quaternion
+  outq = convertToOutQuaternion(InerOdoEst, IMU_to_body, alignq_out);
+
+  // Compute output transforms
+  //  outq = (qprod(C2q(IMU_to_body.linear().transpose()), InerOdoEst.lQb.conjugate()));
+  //  aliasout = qprod(outq, alignq_out);
+  //  outq = aliasout;
+
+  P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
+
+  V_leverarm = IMU_to_body.linear() * InerOdoEst.V + qrot(outq,(InerOdoEst.w_b).cross( IMU_to_body.linear().transpose() * IMU_to_body.translation()));
+
+  // populate fields
+  ERSmsg.utime = InerOdoEst.uts;
+
+  ERSmsg.pose.rotation.w = outq.w();
+  ERSmsg.pose.rotation.x = outq.x();
+  ERSmsg.pose.rotation.y = outq.y();
+  ERSmsg.pose.rotation.z = outq.z();
+
+  //Compensate for radial components due to translation offset
+
+  copyDrcVec3D(V_leverarm, ERSmsg.twist.linear_velocity);
+  copyDrcVec3D(P_w, ERSmsg.pose.translation);
+  Eigen::Vector3d ang_velocity = IMU_to_body.linear() * InerOdoEst.w_l;
+  copyDrcVec3D(ang_velocity, ERSmsg.twist.angular_velocity);
+
+  // Also do the POSE_BODY message
+  _msg.utime = InerOdoEst.uts;
+  _msg.pos[0] = P_w(0);
+  _msg.pos[1] = P_w(1);
+  _msg.pos[2] = P_w(2);
+
+  _msg.orientation[0] = outq.w();
+  _msg.orientation[1] = outq.x();
+  _msg.orientation[2] = outq.y();
+  _msg.orientation[3] = outq.z();
+
+  _msg.vel[0] = V_leverarm(0);
+  _msg.vel[1] = V_leverarm(1);
+  _msg.vel[2] = V_leverarm(2);
+
+  _msg.rotation_rate[0] = ang_velocity(0);
+  _msg.rotation_rate[1] = ang_velocity(1);
+  _msg.rotation_rate[2] = ang_velocity(2);
+
+  _mArrowTransform->linear() = IMU_to_body.linear() * q2C(outq);
+  _mArrowTransform->translation() = P_w;
+
   return;
 }
+
 
 
 //void StateEstimate::doLegOdometry(TwoLegs::FK_Data &_fk_data, const drc::atlas_state_t &atlasState, const bot_core::pose_t &_bdiPose, TwoLegs::TwoLegOdometry &_leg_odo, int firstpass, RobotModel* _robot) {
@@ -153,6 +167,8 @@ void StateEstimate::stampInertialPoseUpdateRequestMsg(const InertialOdometry::Dy
   msg.pose.rotation.y = InerOdoEst.lQb.y();
   msg.pose.rotation.z = InerOdoEst.lQb.z();
   
+  //std::cout << "StateEstimate::stampInertialPoseUpdateRequestMsg -- INS estimated heading now is " << q2e_new(InerOdoEst.lQb)[2] << std::endl;
+
   copyDrcVec3D(InerOdoEst.a_l, msg.local_linear_acceleration);
   copyDrcVec3D(InerOdoEst.f_l, msg.local_linear_force);
   copyDrcVec3D(InerOdoEst.V, msg.twist.linear_velocity);
@@ -181,17 +197,23 @@ void StateEstimate::stampLegOdoPoseUpdateRequestMsg(TwoLegs::TwoLegOdometry &_le
 
 }
 
-void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const int type, drc::ins_update_request_t &msg) {
+void StateEstimate::stampEKFReferenceMeasurementUpdateRequest(const Eigen::Vector3d &_ref, const Eigen::Quaterniond &refLegKinQ, const int type, drc::ins_update_request_t &msg) {
 
 	// Set defaults
 	copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referencePos_local);
 	copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_local);
 	copyDrcVec3D(Eigen::Vector3d::Zero(), msg.referenceVel_body);
-	msg.referenceQ_local.w = 1.;
-	msg.referenceQ_local.x = 0.;
-	msg.referenceQ_local.y = 0.;
-	msg.referenceQ_local.z = 0.;
 
+	msg.referenceQ_local.w = refLegKinQ.w();
+	msg.referenceQ_local.x = refLegKinQ.x();
+	msg.referenceQ_local.y = refLegKinQ.y();
+	msg.referenceQ_local.z = refLegKinQ.z();
+
+	Eigen::Vector3d E;
+	E = q2e_new(refLegKinQ);
+	msg.reference_wanderAzimHeading = E(2);
+
+	//std::cout << "StateEstimate::stampEKFReferenceMeasurementUpdateRequest -- ref heading is " << E[2] << std::endl;
 
 	switch (type) {
 	case drc::ins_update_request_t::VEL_HEADING_LOCAL:
@@ -305,22 +327,7 @@ void StateEstimate::detectIMUSampleTime(unsigned long long &prevImuPacketCount,
 	previous_Ts_imu = Ts_imu;
 }
 
-void StateEstimate::stampInertialPoseBodyMsg(const InertialOdometry::DynamicState &InerOdoEst,
-											 const Eigen::Isometry3d &IMU_to_body,
-											 bot_core::pose_t &_msg) {
-	_msg.utime = InerOdoEst.uts;
 
-	Eigen::Vector3d P_w = IMU_to_body.linear() * InerOdoEst.P + IMU_to_body.translation();
-
-	_msg.pos[0] = P_w(0);
-	_msg.pos[1] = P_w(1);
-	_msg.pos[2] = P_w(2);
-
-	_msg.orientation[0] = InerOdoEst.lQb.w();
-	_msg.orientation[1] = InerOdoEst.lQb.x();
-	_msg.orientation[2] = InerOdoEst.lQb.y();
-	_msg.orientation[3] = InerOdoEst.lQb.z();
-}
 
 
 

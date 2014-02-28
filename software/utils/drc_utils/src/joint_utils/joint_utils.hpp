@@ -1,3 +1,6 @@
+#ifndef __JOINT_UTILS_HPP__
+#define __JOINT_UTILS_HPP__
+
 class JointUtils
 {
 public:
@@ -74,3 +77,5 @@ public:
 private:
 };
 
+
+#endif

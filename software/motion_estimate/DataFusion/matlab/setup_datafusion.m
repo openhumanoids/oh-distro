@@ -16,7 +16,10 @@ end
 % Fusion process
 addpath('generic_functions');
 addpath('generic_functions/kf');
+addpath('lcmMsgHandlers');
 addpath('motion_simulator');
 addpath('AtlasSpecific');
 addpath('INS');
 addpath('UnitTests');
+addpath('tools');
+

@@ -31,7 +31,6 @@ namespace InertialOdometry {
     ret.quat = orc.q();
     avp.updateOutput(ret);
 
-    // return the data
     return ret;
   }
   
@@ -307,6 +306,21 @@ namespace InertialOdometry {
 
   const Eigen::Isometry3d& Odometry::getIMU2Body() {
 	return IMU_to_body;
+  }
+
+  void Odometry::setHeading(const double &psi) {
+	orc.setYaw(psi);
+  }
+
+  Eigen::Quaterniond Odometry::getAlignmentQuaternion() {
+	//printq("Odometry::getAlignmentQuaternion -- returning alignmentQ to ",alignq_out);
+	return alignq_out;
+  }
+
+  void Odometry::setAlignmentQuaternion(const Eigen::Quaterniond &q) {
+	//printq("Odometry::setAlignmentQuaternion -- setting alignmentQ to ",q);
+	alignq_out = q;
+	printq("Odometry::setAlignmentQuaternion -- alignmentQ was set to ",alignq_out);
   }
 
 }

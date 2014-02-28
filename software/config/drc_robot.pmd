@@ -311,6 +311,10 @@ group "m.misc" {
         exec = "vicon-client 192.168.10.1";
         host = "robot";
     }
+    cmd "state-estimate" {
+        exec = "state_estimate -x";
+        host = "robot";
+    }
     cmd "MatlabEKF" {
         exec = "matlab -nosplash -nodesktop -r \"setup_datafusion; dataFusionHandler;\"";
         host = "robot";

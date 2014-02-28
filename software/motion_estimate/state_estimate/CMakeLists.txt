@@ -11,13 +11,14 @@ SET(CMAKE_BUILD_TYPE Debug)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
-#add_subdirectory(src/state_estimate)
 
-
-add_subdirectory(src/mfallon_sandbox)
+add_subdirectory(src/basic_legodo)
+add_subdirectory(src/state_estimate)
+add_subdirectory(src/mfallon_sandbox) # master build was broken
 
 
 pods_install_python_script(se-bdi-imu-individually scripts/republish_bdi_imu_individually.py)
+
 
 
 file(COPY scripts/se-batch-process.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

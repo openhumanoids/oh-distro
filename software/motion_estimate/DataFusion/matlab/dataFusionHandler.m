@@ -5,8 +5,7 @@ function DFRESULTS = dataFusionHandler()
 
 clc
 
-% This is temporary
-iterations = 10000;
+
 
 % feedbackGain dictates how much of the parameter estimate we actually feed
 % back into the INS solution (choose this parameter wisely, or it will bite you)
@@ -34,12 +33,14 @@ dfSys.posterior.x = zeros(15,1);
 dfSys.posterior.P = blkdiag(1*eye(2), [0.05], 0.1*eye(2), [0.1], 1*eye(3), 0.01*eye(3), 0*eye(3));
 
 if (DataLogging == 1)
-    DFRESULTS.STATEX = zeros(iterations,15);
-    DFRESULTS.STATECOV = zeros(iterations,15);
-    DFRESULTS.poses = [];
-    DFRESULTS.REQMSGS = [];
-    DFRESULTS.REQMSGS = initDFReqMsgData(iterations, DFRESULTS.REQMSGS);
-    DFRESULTS.updatePackets = []; % temporary logging
+  % This is temporary
+  iterations = 10000;
+  DFRESULTS.STATEX = zeros(iterations,15);
+  DFRESULTS.STATECOV = zeros(iterations,15);
+  DFRESULTS.poses = [];
+  DFRESULTS.REQMSGS = [];
+  DFRESULTS.REQMSGS = initDFReqMsgData(iterations, DFRESULTS.REQMSGS);
+  DFRESULTS.updatePackets = []; % temporary logging
 end
 
 index = 0;
@@ -54,10 +55,10 @@ while (true)
     
     % Check computation times
     % computationTime = totaltime - waitTime;
-    if (mod(index-1,100)==0)
-        disp(['Wait fraction ' num2str(reciD) ' %'])
+    if (mod(index-1,1000)==0)
+        disp(['Wait fraction ' num2str(reciD/10) ' %'])
         reciD = 0;
-        dfSys.dt
+        dfSys.dt;
     else
         reciD = reciD + waitTime/totalTime;
     end
@@ -80,7 +81,8 @@ while (true)
     
     Measurement.velocityResidual = Measurement.LegOdo.pose.V_l - Measurement.INS.pose.V_l;
     %Measurement.positionResidual = Measurement.LegOdo.pose.P_l - Measurement.INS.pose.P_l;
-    %headingResidual = Measurement.standingHeading
+    eulerResidual = q2e(Measurement.LegOdo.pose.lQb) - q2e(Measurement.INS.pose.lQb);
+    Measurement.headingResidual = - eulerResidual(3);
     %Measurement.quaternionManifoldResidual = R2q(q2R(Measurement.INS.pose.lQb)' * q2R(Measurement.LegOdo.pose.lQb));
     
     [Result, dfSys] = iterate([], dfSys, Measurement);
