@@ -84,9 +84,11 @@ void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &
 
   copyDrcVec3D(V_leverarm, ERSmsg.twist.linear_velocity);
   copyDrcVec3D(P_w, ERSmsg.pose.translation);
-  copyDrcVec3D(IMU_to_body.linear() * InerOdoEst.w_l, ERSmsg.twist.angular_velocity);
+  Eigen::Vector3d ang_velocity = IMU_to_body.linear() * InerOdoEst.w_l;
+  copyDrcVec3D(ang_velocity, ERSmsg.twist.angular_velocity);
 
   // Also do the POSE_BODY message
+  _msg.utime = InerOdoEst.uts;
   _msg.pos[0] = P_w(0);
   _msg.pos[1] = P_w(1);
   _msg.pos[2] = P_w(2);
@@ -95,6 +97,14 @@ void StateEstimate::stampInertialPoseMsgs(const InertialOdometry::DynamicState &
   _msg.orientation[1] = outq.x();
   _msg.orientation[2] = outq.y();
   _msg.orientation[3] = outq.z();
+
+  _msg.vel[0] = V_leverarm(0);
+  _msg.vel[1] = V_leverarm(1);
+  _msg.vel[2] = V_leverarm(2);
+
+  _msg.rotation_rate[0] = ang_velocity(0);
+  _msg.rotation_rate[1] = ang_velocity(1);
+  _msg.rotation_rate[2] = ang_velocity(2);
 
   _mArrowTransform->linear() = IMU_to_body.linear() * q2C(outq);
   _mArrowTransform->translation() = P_w;
