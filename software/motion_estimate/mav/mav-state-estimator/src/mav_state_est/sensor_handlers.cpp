@@ -383,7 +383,7 @@ RBISUpdateInterface * ViconHandler::processMessage(const bot_core::rigid_transfo
     Eigen::Quaterniond quat;
     eigen_utils::botDoubleToQuaternion(quat, local_to_body.rot_quat );
 
-    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->trans);
+    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(local_to_body.trans_vec);
 
     return new RBISIndexedPlusOrientationMeasurement(z_indices, z_meas, cov_vicon, quat, RBISUpdateInterface::vicon,
         utime);
@@ -406,7 +406,7 @@ bool ViconHandler::processMessageInit(const bot_core::rigid_transform_t * msg,
   if (apply_frame){
     bot_trans_apply_trans_to( &local_to_vicon,&body_to_vicon, &local_to_body);
   }else{
-    bot_trans_copy(&local_to_body, &local_to_vicon);    
+    bot_trans_copy(&local_to_body, &local_to_vicon);
   }
   ////////////////////////////////////
   
@@ -422,7 +422,7 @@ bool ViconHandler::processMessageInit(const bot_core::rigid_transform_t * msg,
 
   fprintf(stderr, "initialized position using VICON at xyz: %f,%f,%f\n", init_state.position()(0),
       init_state.position()(1), init_state.position()(2));
-  fprintf(stderr, "initialized orientation using VICON at xyz: %f,%f,%f\n", init_rpy_deg(0),
+  fprintf(stderr, "initialized orientation using VICON at rpy: %f,%f,%f\n", init_rpy_deg(0),
       init_rpy_deg(1), init_rpy_deg(2));
 
   return true;
