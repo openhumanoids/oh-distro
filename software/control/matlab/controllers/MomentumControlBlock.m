@@ -195,7 +195,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     % another option would be to limit forces on the feet when kinematics
     % says 'contact', but force sensors do not. when both agree, allow full
     % forces on the feet
-    kinsol = doKinematics(r,q,false,false);
+    kinsol = doKinematics(r,q,false,true,qd);
 
     % get active contacts
     i=1;
@@ -250,8 +250,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     nd = 4; % for friction cone approx, hard coded for now
     float_idx = 1:6; % indices for floating base dofs
     act_idx = 7:nq; % indices for actuated dofs
-
-    kinsol = doKinematics(r,q,false,false,qd);
 
     [H,C,B] = manipulatorDynamics(r,q,qd);
 
