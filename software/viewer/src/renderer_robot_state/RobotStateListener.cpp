@@ -46,9 +46,9 @@ namespace renderer_robot_state
     }else if(operation_mode==1){
       // Alternative Robot State:
       lcm->subscribe("EST_ROBOT_STATE_BDI", &RobotStateListener::handleRobotStateMsg, this); 
-      _robot_color[0] = 0.4;
+      _robot_color[0] = 0.15;
       _robot_color[1] = 0.15;
-      _robot_color[2] = 0.15;
+      _robot_color[2] = 0.4;
     }
     lcm->subscribe("CANDIDATE_ROBOT_ENDPOSE", &RobotStateListener::handleCandidateRobotEndPoseMsg, this);   
     
