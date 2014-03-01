@@ -6,6 +6,19 @@ using namespace std;
 FootContact::FootContact(bool _log_data_files,const float atlasWeight){
   cout << "A new FootContact object was created" << endl;
 
+  // Set Parameters (previously all #defined)
+  // TODO: expose these in the class API
+  low_foot_contact_thresh_ = 0;
+  high_foot_contact_thresh_ = 5;
+  foot_contact_delay_ = 5000;
+
+  loadsplit_level_ = 0.75;
+  min_standing_force_ = 50.0;
+
+  schmitt_level_ = 0.65;
+  transition_timeout_ = 4000;
+  ////////////////////////////////////////////
+
   standing_foot = -1;
   standingintermediate = true;
 
@@ -31,8 +44,8 @@ FootContact::FootContact(bool _log_data_files,const float atlasWeight){
   datafile.Open(_log_data_files,"datalog.csv");
   footcontactfile.Open(_log_data_files,"footcontactlog.csv");
   
-  _left_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY, FOOT_CONTACT_DELAY);
-  _right_contact_state = new SchmittTrigger(LOW_FOOT_CONTACT_THRESH, HIGH_FOOT_CONTACT_THRESH, FOOT_CONTACT_DELAY, FOOT_CONTACT_DELAY);
+  _left_contact_state  = new SchmittTrigger(low_foot_contact_thresh_, high_foot_contact_thresh_, foot_contact_delay_, foot_contact_delay_);
+  _right_contact_state = new SchmittTrigger(low_foot_contact_thresh_, high_foot_contact_thresh_, foot_contact_delay_, foot_contact_delay_);
   
 }
 
@@ -104,7 +117,7 @@ footstep FootContact::DetectFootTransistion(int64_t utime, float leftz, float ri
   footstep newstep;
   newstep.foot = -1;
 
-  if (getSecondaryFootZforce() - SCHMITT_LEVEL*expectedweight > getPrimaryFootZforce()) {
+  if (getSecondaryFootZforce() - schmitt_level_*expectedweight > getPrimaryFootZforce()) {
     transition_timespan += deltautime;
   }else{
     transition_timespan = 0.;
@@ -114,7 +127,7 @@ footstep FootContact::DetectFootTransistion(int64_t utime, float leftz, float ri
     // potentially standing
   }
 
-  if (transition_timespan > TRANSITION_TIMEOUT && foottransitionintermediateflag)   {
+  if (transition_timespan > transition_timeout_ && foottransitionintermediateflag)   {
     Eigen::Isometry3d transform;
 
     foottransitionintermediateflag = false;
@@ -126,21 +139,17 @@ footstep FootContact::DetectFootTransistion(int64_t utime, float leftz, float ri
     //std::cout << "check4: should be zeros " << (C2e(newstep.footprintlocation.linear()) - q2e_new(local_frame_orientation) ).transpose() << std::endl;
 
     // TODO - investigate this large delay requirement and tie it to a proper requirements, rather than a fudge factor
-    standing_delay = 5*STANDING_TRANSITION_TIMEOUT;
+    standing_delay = 5*standing_transition_timeout_;
     newstep.foot = secondary_foot();
 
   }else{
     newstep.foot = -1;
 
     double loadsplit;
-    loadsplit = abs(leftz*leftz - rightz*rightz) < (LOADSPLIT_LEVEL*expectedweight*LOADSPLIT_LEVEL*expectedweight);
-
-    // separation requirement no longer needed, kept for future reference
-    //separation = abs(pelvis_to_left.translation().x()) + abs(pelvis_to_right.translation().x());
-    //&& separation < MIN_STANDING_FEET_X_SEP
+    loadsplit = abs(leftz*leftz - rightz*rightz) < (loadsplit_level_*expectedweight*loadsplit_level_*expectedweight);
 
     // Second layer of logic testing to isolate the robot standing condition
-    if (loadsplit && leftz > MIN_STANDING_FORCE && rightz > MIN_STANDING_FORCE) {
+    if (loadsplit && leftz > min_standing_force_ && rightz > min_standing_force_) {
 
       if (standing_delay > 0) {
         standing_delay -= deltautime;
@@ -150,8 +159,8 @@ footstep FootContact::DetectFootTransistion(int64_t utime, float leftz, float ri
       }
       standing_timer += deltautime;
     }else{
-      if (standing_timer>STANDING_TRANSITION_TIMEOUT){
-        standing_timer = STANDING_TRANSITION_TIMEOUT;
+      if (standing_timer>standing_transition_timeout_){
+        standing_timer = standing_transition_timeout_;
         standingintermediate = true;
       }
       standing_timer -= deltautime;
@@ -164,7 +173,7 @@ footstep FootContact::DetectFootTransistion(int64_t utime, float leftz, float ri
       }
     }
 
-    if ((standing_timer > STANDING_TRANSITION_TIMEOUT && standing_delay<=0) || standingintermediate) {
+    if ((standing_timer > standing_transition_timeout_ && standing_delay<=0) || standingintermediate) {
       //std::cout << "Standing for: " << standing_timer <<  "\n";
       //both_feet_in_contact = true;
     }else{

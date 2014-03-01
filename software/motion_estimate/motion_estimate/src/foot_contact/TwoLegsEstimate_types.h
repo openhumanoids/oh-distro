@@ -4,8 +4,6 @@
 #include <Eigen/Dense>
 #include <iostream>
 
-//#include "TwoLegOdometry.h"
-
 #define LEFTFOOT  0
 #define RIGHTFOOT 1
 

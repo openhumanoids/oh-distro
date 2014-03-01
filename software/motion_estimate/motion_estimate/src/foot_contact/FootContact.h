@@ -2,13 +2,28 @@
 #define FOOTCONTACT_H_
 
 #include "Footsteps.h"
-#include "LegOdo_Parameters.hpp"
-#include "SignalTap.hpp"
+#include "estimate_tools/SignalTap.hpp"
 
 namespace TwoLegs {
 
 class FootContact {
   private:
+
+    // Parameters:
+    double low_foot_contact_thresh_;
+    double high_foot_contact_thresh_;
+    long foot_contact_delay_;
+
+    double loadsplit_level_;
+    double min_standing_force_;
+
+    int64_t standing_transition_timeout_;
+
+    int64_t schmitt_level_;
+    int64_t transition_timeout_;
+
+    /////////////////////////////////////////////////
+     
     int standing_foot;
     float expectedweight;
     int64_t transition_timespan;
@@ -32,6 +47,7 @@ class FootContact {
 
     float getPrimaryFootZforce();
     float getSecondaryFootZforce();
+
 
   public:     
     FootContact (bool _log_data_files, const float atlasWeight);

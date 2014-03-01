@@ -13,7 +13,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp>
 #include <estimate_tools/Filter.hpp>
-#include <foot_contact/SignalTap.hpp> // SchmittTrigger
+#include <estimate_tools/SignalTap.hpp> // SchmittTrigger
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 
 
