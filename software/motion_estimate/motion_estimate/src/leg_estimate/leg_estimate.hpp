@@ -1,5 +1,5 @@
-#ifndef LEG_ODOMETRY_HPP_
-#define LEG_ODOMETRY_HPP_
+#ifndef LEG_ESTIMATE_HPP_
+#define LEG_ESTIMATE_HPP_
 
 #include <fstream>      // std::ofstream
 
@@ -24,28 +24,25 @@
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>
 
-
 #include <pointcloud_tools/pointcloud_math.hpp>
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <pointcloud_tools/pointcloud_vis.hpp>
 
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/drc/pose_transform_t.hpp"
-//#include "lcmtypes/fovis_bot2.hpp"
 
-#include <estimate/foot_contact_classify.hpp>
-#include <estimate/common_conversions.hpp>
-#include <leg-odometry/FootContact.h>
-#include <leg-odometry/Filter.hpp>
-//#include <leg-odometry/SignalTap.hpp>
+#include <estimate_tools/Filter.hpp>
+#include <foot_contact/FootContact.h>
+#include <leg_estimate/foot_contact_classify.hpp>
+#include <leg_estimate/common_conversions.hpp>
 
 ///////////////////////////////////////////////////////////////
-class leg_odometry{
+class leg_estimate{
   public:
-    leg_odometry(boost::shared_ptr<lcm::LCM> &lcm_publish_,
+    leg_estimate(boost::shared_ptr<lcm::LCM> &lcm_publish_,
                  BotParam* botparam_, boost::shared_ptr<ModelClient> &model_);
     
-    ~leg_odometry(){
+    ~leg_estimate(){
     }
     
     void setPoseBDI(Eigen::Isometry3d world_to_body_bdi_in ){ world_to_body_bdi_ = world_to_body_bdi_in; }

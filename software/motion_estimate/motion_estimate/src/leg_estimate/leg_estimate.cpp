@@ -5,7 +5,7 @@
 #include <limits>
 #include <fstream>
 
-#include "leg_odometry.hpp"
+#include "leg_estimate.hpp"
 
 
 
@@ -13,7 +13,7 @@ using namespace std;
 using namespace boost;
 using namespace boost::assign;
 
-leg_odometry::leg_odometry( boost::shared_ptr<lcm::LCM> &lcm_publish_,
+leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   BotParam * botparam_, boost::shared_ptr<ModelClient> &model_):
   lcm_publish_(lcm_publish_),  botparam_(botparam_), model_(model_){
   
@@ -76,7 +76,7 @@ leg_odometry::leg_odometry( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   
 
 // TODO: need to move this function outside of the class, down to app
-bool leg_odometry::initializePose(Eigen::Isometry3d body_to_foot){
+bool leg_estimate::initializePose(Eigen::Isometry3d body_to_foot){
   if (initialization_mode_ == "zero"){ 
     // Initialize with primary foot at (0,0,0) but orientation using bdi rotation:
     // Otherwise, there is a discontinuity at the very start
@@ -100,7 +100,7 @@ bool leg_odometry::initializePose(Eigen::Isometry3d body_to_foot){
   return true;
 }
 
-bool leg_odometry::prepInitialization(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
+bool leg_estimate::prepInitialization(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
   bool init_this_iteration = false;
   if (contact_status == 2){
     std::cout << "Initialize Leg Odometry using left foot\n"; 
@@ -128,7 +128,7 @@ bool leg_odometry::prepInitialization(Eigen::Isometry3d body_to_l_foot,Eigen::Is
 }
 
   
-bool leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
+bool leg_estimate::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
   bool init_this_iteration= false;
 
   if (!leg_odo_init_){
@@ -169,7 +169,7 @@ bool leg_odometry::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
   return init_this_iteration;
 }
 
-bool leg_odometry::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
+bool leg_estimate::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
   bool init_this_iteration= false;
   
   if (!leg_odo_init_){
@@ -249,7 +249,7 @@ bool leg_odometry::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_
   return init_this_iteration;
 }
 
-bool leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
+bool leg_estimate::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status){
   bool init_this_iteration= false;
   
   if (!leg_odo_init_){
@@ -386,7 +386,7 @@ bool leg_odometry::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
   return init_this_iteration;
 }
 
-float leg_odometry::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime){
+float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime){
   previous_utime_ = current_utime_;
   previous_world_to_body_ = world_to_body_;
   current_utime_ = utime;

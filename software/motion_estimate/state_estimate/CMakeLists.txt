@@ -14,7 +14,6 @@ lcmtypes_build()
 
 add_subdirectory(src/basic_legodo)
 add_subdirectory(src/state_estimate)
-add_subdirectory(src/mfallon_sandbox) # master build was broken
 
 
 pods_install_python_script(se-bdi-imu-individually scripts/republish_bdi_imu_individually.py)

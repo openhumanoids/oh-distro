@@ -2,7 +2,7 @@
 #define LEGODOWRAPPER_HPP_
 
 #include <path_util/path_util.h>
-#include <estimate/leg_odometry.hpp>
+#include <leg_estimate/leg_estimate.hpp>
 #include <pointcloud_tools/pointcloud_math.hpp>
 
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
@@ -36,7 +36,7 @@ protected:
   boost::shared_ptr<ModelClient> model_;
 
   CommandLineConfig cl_cfg_;
-  leg_odometry* leg_odo_;
+  leg_estimate* leg_est_;
 
   BotFrames* frames_;
   bot::frames* frames_cpp_;

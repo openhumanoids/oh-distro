@@ -9,4 +9,6 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/foot_contact)
+
 add_subdirectory(src/leg_estimate)

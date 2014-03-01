@@ -17,7 +17,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_subscribe_,  boost::shared_ptr<lcm::LC
 }
 
 App::~App() {
-  delete(leg_odo_);
+  delete(leg_est_);
 }
 
 void LegOdoWrapper::setupLegOdo() {
@@ -42,10 +42,10 @@ void LegOdoWrapper::setupLegOdo() {
     model_ = boost::shared_ptr<ModelClient>(new ModelClient( urdf_file_full  ));
   }
 
-  leg_odo_ = new leg_odometry(lcm_publish_, botparam_, model_);
+  leg_est_ = new leg_estimate(lcm_publish_, botparam_, model_);
   string leg_odo_mode = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo_driven_process.integration_mode");
   std::cout << "Overwriting the leg odom mode:: " << leg_odo_mode << "\n";
-  leg_odo_->setLegOdometryMode( leg_odo_mode );
+  leg_est_->setLegOdometryMode( leg_odo_mode );
 }
 
 void App::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
@@ -91,11 +91,11 @@ void App::atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
   //  lcm_publish_->publish("POSE_BDI", &bdipose);
   //}
 
-  leg_odo_->setPoseBDI( world_to_body_bdi_ );
-  leg_odo_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
-  leg_odo_->updateOdometry(joint_names_, msg->joint_position, msg->utime);
+  leg_est_->setPoseBDI( world_to_body_bdi_ );
+  leg_est_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
+  leg_est_->updateOdometry(joint_names_, msg->joint_position, msg->utime);
 
-  Eigen::Isometry3d world_to_body = leg_odo_->getRunningEstimate();
+  Eigen::Isometry3d world_to_body = leg_est_->getRunningEstimate();
   bot_core::pose_t pose_msg = getPoseAsBotPose(world_to_body, msg->utime);
   lcm_publish_->publish("POSE_BODY", &pose_msg );
 }
