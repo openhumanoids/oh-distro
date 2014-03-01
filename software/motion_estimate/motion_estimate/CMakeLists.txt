@@ -10,5 +10,21 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 add_subdirectory(src/foot_contact)
-
 add_subdirectory(src/leg_estimate)
+
+# RGBD as a GPF
+add_subdirectory(src/gpf-rgbd-lib)
+
+# mav modules :
+add_subdirectory(src/mav_est_fovis)
+add_subdirectory(src/mav_est_legodo)
+add_subdirectory(src/pose_meas)
+
+# estimator proper
+add_subdirectory(src/fusion)
+
+
+
+pods_install_python_script(se-bdi-imu-individually scripts/republish_bdi_imu_individually.py)
+file(COPY scripts/se-batch-process.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+

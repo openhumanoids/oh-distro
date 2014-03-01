@@ -15,10 +15,3 @@ lcmtypes_build()
 add_subdirectory(src/basic_legodo)
 add_subdirectory(src/state_estimate)
 
-
-pods_install_python_script(se-bdi-imu-individually scripts/republish_bdi_imu_individually.py)
-
-
-
-file(COPY scripts/se-batch-process.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-

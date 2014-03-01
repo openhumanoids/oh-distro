@@ -1,6 +1,6 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 
-add_executable(se-fusion mav_kmcl.cpp)
+add_executable(se-fusion fusion.cpp)
 pods_use_pkg_config_packages(se-fusion
     mav-state-est
     mav-est-fovis

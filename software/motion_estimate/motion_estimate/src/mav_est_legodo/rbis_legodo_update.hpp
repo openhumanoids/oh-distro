@@ -11,7 +11,7 @@
 
 #include <mav_state_est/mav-est-legodo/rbis_legodo_common.hpp>
 
-#include <estimate/leg_odometry.hpp>
+#include <leg_estimate/leg_estimate.hpp>
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <drc_utils/joint_utils.hpp>
 
@@ -41,7 +41,7 @@ public:
   RBISUpdateInterface * processMessage(const drc::atlas_state_t *msg);
 
   // Calculates the Pelvis Translation between measurements:
-  leg_odometry* leg_odo_;
+  leg_estimate* leg_est_;
   
   // Converts the Pelvis Translation into a RBIS measurement
   // which is then passed to the estimator

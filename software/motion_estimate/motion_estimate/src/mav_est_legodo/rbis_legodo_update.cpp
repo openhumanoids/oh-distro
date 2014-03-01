@@ -20,7 +20,7 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   lcm_pub_boost = boost::shared_ptr<lcm::LCM>(lcm_pub);
   model_boost = boost::shared_ptr<ModelClient>(model);
   
-  leg_odo_ = new leg_odometry(lcm_pub_boost, param, model_boost );
+  leg_est_ = new leg_estimate(lcm_pub_boost, param, model_boost );
   leg_odo_common_ = new LegOdoCommon(lcm_recv, lcm_pub, param);
 
   lcm_recv->subscribe("POSE_BDI",&LegOdoHandler::poseBDIHandler,this);
@@ -174,7 +174,7 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   // Disabling below will turn off all input of POSE_BDI to leg odom:
   // which is unused if using the "basic_mode"
   if (1==1){
-    leg_odo_->setPoseBDI( world_to_body_bdi_ );
+    leg_est_->setPoseBDI( world_to_body_bdi_ );
   }
   if (republish_incoming_poses_){ // Don't publish when working live:
     bot_core::pose_t bdipose = getPoseAsBotPoseFull(world_to_body_bdi_full_);
@@ -182,15 +182,15 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   }
   
   // 1. Do the Leg Odometry Integration
-  leg_odo_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
-  float odometry_status = leg_odo_->updateOdometry(joint_names_, msg->joint_position, msg->utime);
+  leg_est_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
+  float odometry_status = leg_est_->updateOdometry(joint_names_, msg->joint_position, msg->utime);
   if (odometry_status<0){
     if (verbose_ >= 3) std::cout << "Leg Odometry is not valid not integrating =========================\n";
     
     if(publish_diagnostics_){
       Eigen::Isometry3d delta_odo;
       int64_t utime, prev_utime;
-      leg_odo_->getDeltaLegOdometry(delta_odo, utime, prev_utime);
+      leg_est_->getDeltaLegOdometry(delta_odo, utime, prev_utime);
       BotTrans msgT = getPoseAsBotTrans(delta_odo);
       sendTransAsVelocityPose( msgT, utime, prev_utime, "POSE_BODY_LEGODO_VELOCITY_FAIL");
     }
@@ -201,7 +201,7 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   // 2. If successful make a RBIS Measurement
   Eigen::Isometry3d delta_odo;
   int64_t utime, prev_utime;
-  leg_odo_->getDeltaLegOdometry(delta_odo, utime, prev_utime);
+  leg_est_->getDeltaLegOdometry(delta_odo, utime, prev_utime);
   
   if (!local_integration_){ // typical case...
     BotTrans msgT = getPoseAsBotTrans(delta_odo);
