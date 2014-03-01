@@ -546,6 +546,7 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasRawIMUPacketLinearAcceleration>();
     factory.registerClass<MicrostrainINSGyro>();
     factory.registerClass<MicrostrainINSAccel>();
+    factory.registerClass<PoseTypePositionHandler>();
     factory.registerClass<PoseTypeVelocityHandler>();
     factory.registerClass<PoseTypeOrientationHandler>();
     factory.registerClass<PoseTypeRotationRateHandler>();

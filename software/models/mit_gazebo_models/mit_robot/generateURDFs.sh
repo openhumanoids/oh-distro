@@ -25,5 +25,5 @@ echo "18/18 sim - Gazebo Facing"
 ./renameSimGazeboURDF.sh
 
 echo "19/18 sim - MIT Facing [2014]"
-rosrun xacro xacro.py xacro/atlas_LR_RR_sim_v1_inertia.urdf.xacro > model_LR_RR_sim_v1_inertia.urdf
+#rosrun xacro xacro.py xacro/atlas_LR_RR_sim_v1_inertia.urdf.xacro > model_LR_RR_sim_v1_inertia.urdf
 

@@ -320,9 +320,27 @@ group "m.misc" {
         host = "robot";
         stop_signal = 15;
     }
-
 }
 
+
+group "m.state_est" {
+    cmd "state-sync-bdi" {
+        exec = "drc-state-sync -b -e -o EST_ROBOT_STATE_BDI -p";
+        host = "robot";
+    }
+    cmd "state-sync-mit" {
+        exec = "drc-state-sync -e -o EST_ROBOT_STATE";
+        host = "robot";
+    }
+    cmd "viewer-plus" {
+        exec = "drc-viewer -a";
+        host = "robot";
+    }
+    cmd "viewer-plus" {
+        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02.cfg";
+        host = "robot";
+    }
+}
 
 #################################################################
 
@@ -380,4 +398,11 @@ script "robot_start" {
 
 script "kill_calibration_process" { 
     stop cmd "EncoderCalibration";
+}
+
+script "launch_state_est" { 
+    stop cmd "aa-sync";
+    stop cmd "viewer";
+    wait ms 1000;
+    start group "m.state_est";
 }

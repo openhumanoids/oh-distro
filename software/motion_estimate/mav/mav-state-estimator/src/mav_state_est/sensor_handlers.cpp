@@ -104,11 +104,14 @@ RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_b
       doFilter( batch.packets[i] );
     }  
     if (batch.packets.size() ==0){
-      std::cout << "IMPORTANT: No new IMU packets detected - shouldn't happen. Skipping iteration\n";
+      //std::cout << msg->utime << " IMPORTANT: No new IMU packets detected - shouldn't happen. Skipping iteration\n";
       // mfallon: I observed this once or twice in my logs from 2014-01-21: exactly the 
       // same imu data from two consecutive batch messages
+      // update: happens all the time at 1kHz
       return NULL;
-    }
+    }//else{
+    //  std::cout << batch.packets.size() << " new packets\n";
+    //}
     
     // Get the most recent filtered packet:
     IMUPacket p = batch.packets[batch.packets.size() -1 ];
@@ -178,6 +181,11 @@ bool InsHandler::processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg,
   init_state.utime = msg->utime;
 
   RBISIMUProcessStep * update = dynamic_cast<RBISIMUProcessStep *>(processMessageAtlas(msg));
+  
+  if (update == NULL){
+    std::cout << "Didn't get a new Atlas packet during initialization, skipping\n";
+    return false;
+  }
 
   if(  !RBISInitializer::allInitializedExcept(sensors_initialized, "ins")) //force the INS to go last
     return false;
@@ -375,7 +383,7 @@ RBISUpdateInterface * ViconHandler::processMessage(const bot_core::rigid_transfo
     Eigen::Quaterniond quat;
     eigen_utils::botDoubleToQuaternion(quat, local_to_body.rot_quat );
 
-    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->trans);
+    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(local_to_body.trans_vec);
 
     return new RBISIndexedPlusOrientationMeasurement(z_indices, z_meas, cov_vicon, quat, RBISUpdateInterface::vicon,
         utime);
@@ -398,7 +406,7 @@ bool ViconHandler::processMessageInit(const bot_core::rigid_transform_t * msg,
   if (apply_frame){
     bot_trans_apply_trans_to( &local_to_vicon,&body_to_vicon, &local_to_body);
   }else{
-    bot_trans_copy(&local_to_body, &local_to_vicon);    
+    bot_trans_copy(&local_to_body, &local_to_vicon);
   }
   ////////////////////////////////////
   
@@ -414,7 +422,7 @@ bool ViconHandler::processMessageInit(const bot_core::rigid_transform_t * msg,
 
   fprintf(stderr, "initialized position using VICON at xyz: %f,%f,%f\n", init_state.position()(0),
       init_state.position()(1), init_state.position()(2));
-  fprintf(stderr, "initialized orientation using VICON at xyz: %f,%f,%f\n", init_rpy_deg(0),
+  fprintf(stderr, "initialized orientation using VICON at rpy: %f,%f,%f\n", init_rpy_deg(0),
       init_rpy_deg(1), init_rpy_deg(2));
 
   return true;

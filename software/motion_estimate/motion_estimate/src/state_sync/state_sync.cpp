@@ -22,11 +22,13 @@ void assignJointsStruct( Joints &joints ){
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        bool standalone_head_, bool standalone_hand_,  
                        bool bdi_motion_estimate_, bool simulation_mode_,
-                       bool use_encoder_joint_sensors_):
+                       bool use_encoder_joint_sensors_, std::string output_channel_,
+                       bool publish_pose_body_):
    lcm_(lcm_), 
    standalone_head_(standalone_head_), standalone_hand_(standalone_hand_),
    bdi_motion_estimate_(bdi_motion_estimate_), simulation_mode_(simulation_mode_),
-   use_encoder_joint_sensors_(use_encoder_joint_sensors_){
+   use_encoder_joint_sensors_(use_encoder_joint_sensors_), output_channel_(output_channel_),
+   publish_pose_body_(publish_pose_body_){
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
 
   // Get the Joint names and determine the correct configuration:
@@ -474,14 +476,14 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
     if ( insertPoseInRobotState(robot_state_msg, pose_BDI_) ){
       bot_core::pose_t pose_body;
       insertPoseInBotState(pose_body, pose_BDI_);
-      lcm_->publish("POSE_BODY", &pose_body); 
-      lcm_->publish("EST_ROBOT_STATE", &robot_state_msg); 
+      if (publish_pose_body_) lcm_->publish("POSE_BODY", &pose_body); 
+      lcm_->publish( output_channel_  , &robot_state_msg); 
     }
   }else if(standalone_head_ || standalone_hand_ ){
-    lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);
+    lcm_->publish( output_channel_ , &robot_state_msg);
   }else{ // typical motion estimation
     if ( insertPoseInRobotState(robot_state_msg, pose_MIT_) ){
-      lcm_->publish("EST_ROBOT_STATE", &robot_state_msg);    
+      lcm_->publish( output_channel_, &robot_state_msg);    
     }
   }
 }
@@ -502,15 +504,20 @@ main(int argc, char ** argv){
   bool bdi_motion_estimate = false;
   bool simulation_mode = false;
   bool use_encoder_joint_sensors = false;
+  bool publish_pose_body = true;
+  string output_channel = "EST_ROBOT_STATE";
   ConciseArgs opt(argc, (char**)argv);
   opt.add(standalone_head, "l", "standalone_head","Standalone Head");
   opt.add(standalone_hand, "f", "standalone_hand","Standalone Hand");
   opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
   opt.add(simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
   opt.add(use_encoder_joint_sensors, "e", "encoder","Use the encoder joint sensors (in the arms)");
+  opt.add(output_channel, "o", "output_channel","Output Channel for robot state msg");
+  opt.add(publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
   opt.parse();
   
   std::cout << "standalone_head: " << standalone_head << "\n";
+  std::cout << "publish_pose_body: " << publish_pose_body << "\n";
   std::cout << "Use transmission joint sensors: " << use_encoder_joint_sensors << " (arms only)\n";
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
@@ -518,7 +525,8 @@ main(int argc, char ** argv){
     return 1;  
   
   state_sync app(lcm, standalone_head,standalone_hand,bdi_motion_estimate, 
-                 simulation_mode, use_encoder_joint_sensors);
+                 simulation_mode, use_encoder_joint_sensors,	
+		 output_channel, publish_pose_body);
   while(0 == lcm->handle());
   return 0;
 }

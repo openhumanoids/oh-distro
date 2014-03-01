@@ -62,6 +62,9 @@ namespace renderer_robot_state
     std::map<std::string,Eigen::Vector3f> ee_forces_map;
     std::map<std::string,Eigen::Vector3f> ee_torques_map;
    
+    // Color of the robot rendering:
+    float _robot_color[3];
+
     //----------------constructor/destructor
   public:
     RobotStateListener(boost::shared_ptr<lcm::LCM> &lcm,
