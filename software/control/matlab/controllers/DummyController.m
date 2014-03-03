@@ -11,7 +11,6 @@ classdef DummyController < DRCController
       obj = obj@DRCController(name,sys,AtlasState(r));
       obj.robot = r;
       obj = addLCMTransition(obj,'START_STANDING',drc.recovery_t(),'standing');
-      obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'crawling');  % for crawling
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
       obj = addLCMTransition(obj,'START_SITUP_CONTROLLER', drc.utime_t(),'sit_up');
   end
