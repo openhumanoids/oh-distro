@@ -5,10 +5,10 @@ import ddapp
 
 import os
 import sys
-import vtk
 import PythonQt
 from PythonQt import QtCore, QtGui
 import ddapp.applogic as app
+from ddapp import vtkAll as vtk
 from ddapp import matlab
 from ddapp import jointcontrol
 from ddapp import cameracontrol
@@ -22,9 +22,11 @@ from ddapp import perception
 from ddapp import segmentation
 from ddapp import cameraview
 from ddapp import colorize
+from ddapp import drakevisualizer
 from ddapp import robotstate
 from ddapp import footstepsdriver
 from ddapp import footstepsdriverpanel
+from ddapp import lcmgl
 from ddapp import atlasdriver
 from ddapp import atlasdriverpanel
 from ddapp import atlasstatuspanel
@@ -75,6 +77,8 @@ useSpreadsheet = True
 useFootsteps = True
 usePlanning = True
 useAtlasDriver = True
+useLCMGL = True
+useDrakeVisualizer = True
 
 
 poseCollection = PythonQt.dd.ddSignalMap()
@@ -154,7 +158,7 @@ if usePerception:
 
     robotStateJointController = jointcontrol.JointController([robotStateModel])
     robotStateJointController.setNominalPose(robotStateJointController.loadPoseFromFile(app.getNominalPoseMatFile()))
-    robotStateJointController.setPose('EST_ROBOT_STATE', robotStateJointController.getPose('q_zero'))
+    robotStateJointController.setPose('EST_ROBOT_STATE', robotStateJointController.getPose('q_nom'))
     defaultJointController = robotStateJointController
 
 
@@ -171,6 +175,10 @@ if usePerception:
     cameraview.cameraView.rayCallback = segmentation.extractPointsAlongClickRay
 
     multisensepanel.init(perception.multisenseDriver)
+
+    vis.showGrid(view)
+    view.connect('computeBoundsRequest(ddQVTKWidgetView*)', vis.computeViewBoundsNoGrid)
+    app.toggleCameraTerrainMode(view)
 
     def grabRobotState():
         poseName = 'EST_ROBOT_STATE'
@@ -233,6 +241,12 @@ if usePerception:
 if useFootsteps:
     footstepsDriver = footstepsdriver.FootstepsDriver(defaultJointController)
     footstepsdriverpanel.init(footstepsDriver)
+
+if useLCMGL:
+    lcmgl.init(view)
+
+if useDrakeVisualizer:
+    drakeVis = drakevisualizer.DrakeVisualizer(view)
 
 
 if usePlanning:
@@ -385,53 +399,6 @@ def sendEstRobotState(pose=None):
 tc = TimerCallback()
 tc.targetFps = 60
 tc.callback = resetCameraToHeadView
-
-
-import drake as lcmdrake
-class DrakeVisualizer(object):
-
-    def __init__(self, view):
-        lcmUtils.addSubscriber('DRAKE_VIEWER_COMMAND', lcmdrake.lcmt_viewer_command, self.onViewerCommand)
-        lcmUtils.addSubscriber('DRAKE_VIEWER_STATE', lcmdrake.lcmt_robot_state, self.onRobotState)
-
-        self.view = view
-        self.models = []
-        self.jointControllers = []
-        self.filenames = []
-
-
-    def onViewerCommand(self, msg):
-        print 'viewer command'
-        if msg.command_type == lcmdrake.lcmt_viewer_command.LOAD_URDF:
-            msg.command_type = msg.STATUS
-            lcmUtils.publish('DRAKE_VIEWER_STATUS', msg)
-            urdfFile = msg.command_data
-            for model in self.models:
-                if model.model.filename() == urdfFile:
-                    return
-            self.loadURDF(urdfFile)
-
-    def loadURDF(self, filename):
-        model = app.loadRobotModelFromFile(filename)
-        jointController = jointcontrol.JointController([model])
-        jointController.setZeroPose()
-        obj = om.addRobotModel(model, om.getOrCreateContainer('drake viewer models'))
-        obj.addToView(self.view)
-        self.models.append(obj)
-        self.jointControllers.append(jointController)
-
-
-    def onRobotState(self, msg):
-
-          if not self.models:
-              return
-
-          assert msg.num_robots == 1
-          pose = msg.joint_position
-          self.jointControllers[0].setPose('drake_viewer_pose', pose)
-
-#visualizer = DrakeVisualizer(view)
-
 
 
 class ViewEventFilter(object):

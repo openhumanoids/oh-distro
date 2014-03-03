@@ -16,6 +16,7 @@ set(python_files
   ddapp/cameraview.py
   ddapp/colorize.py
   ddapp/debugVis.py
+  ddapp/drakevisualizer.py
   ddapp/drilltaskpanel.py
   ddapp/footstepsdriver.py
   ddapp/footstepsdriverpanel.py
@@ -25,6 +26,7 @@ set(python_files
   ddapp/__init__.py
   ddapp/ioUtils.py
   ddapp/jointcontrol.py
+  ddapp/lcmgl.py
   ddapp/lcmUtils.py
   ddapp/mapsregistrar.py
   ddapp/matlab.py

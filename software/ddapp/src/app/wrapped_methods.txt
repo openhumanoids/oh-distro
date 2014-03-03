@@ -68,9 +68,12 @@ ddQVTKWidgetView::~ddQVTKWidgetView();
 vtkCamera* ddQVTKWidgetView::camera() const;
 vtkRenderWindow* ddQVTKWidgetView::renderWindow() const;
 vtkRenderer* ddQVTKWidgetView::renderer() const;
+vtkRenderer* ddQVTKWidgetView::backgroundRenderer() const;
 QVTKWidget* ddQVTKWidgetView::vtkWidget() const;
+vtkOrientationMarkerWidget* ddQVTKWidgetView::orientationMarkerWidget() const;
 QList<double> ddQVTKWidgetView::lastTDxMotion() const;
 void ddQVTKWidgetView::installImageInteractor();
+void ddQVTKWidgetView::addCustomBounds(const QList<double>&);
 
 ddViewManager* ddMainWindow::viewManager()
 ddPropertiesPanel* ddMainWindow::propertiesPanel() const;
@@ -118,11 +121,15 @@ void QtVariantProperty::setValue(const QVariant &);
 void QtVariantProperty::setAttribute(const QString &, const QVariant &);
 bool QtVariantProperty::isSubProperty() const;
 
+ddPropertiesPanel::ddPropertiesPanel();
+ddPropertiesPanel::~ddPropertiesPanel();
 QtVariantProperty* ddPropertiesPanel::addGroup(const QString&);
 QtVariantProperty* ddPropertiesPanel::addProperty(const QString&, const QVariant&);
 QtVariantProperty* ddPropertiesPanel::addSubProperty(const QString&, const QVariant&, QtVariantProperty*);
 QtVariantProperty* ddPropertiesPanel::findProperty(const QString&) const;
 QtVariantProperty* ddPropertiesPanel::findSubProperty(const QString&, QtVariantProperty*) const;
+void ddPropertiesPanel::setBrowserModeToTree();
+void ddPropertiesPanel::setBrowserModeToWidget();
 
 
 ddSignalMap::ddSignalMap();

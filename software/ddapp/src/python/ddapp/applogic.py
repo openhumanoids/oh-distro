@@ -2,11 +2,13 @@
 import os
 import time
 import math
-import vtk
+import ddapp.vtkAll as vtk
 import PythonQt
 from PythonQt import QtCore
 from PythonQt import QtGui
 from ddapp import botspy
+
+_mainWindow = None
 
 def getMainWindow():
     return _mainWindow
@@ -113,6 +115,7 @@ def toggleCameraTerrainMode(view = None):
         view.camera().SetViewUp(0,0,1)
 
     view.render()
+    updateToggleTerrainAction(view)
 
 
 def getToolBarActions():
@@ -132,6 +135,8 @@ def getActions(widget):
 
 
 def updateToggleTerrainAction(view):
+    if not getMainWindow():
+        return
     isTerrainMode = False
     if hasattr(view, 'renderWindow'):
         isTerrainMode = isinstance(view.renderWindow().GetInteractor().GetInteractorStyle(), vtk.vtkInteractorStyleTerrain)
