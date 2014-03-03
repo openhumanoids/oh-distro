@@ -2,6 +2,7 @@ package drc.control;
 
 import java.io.*;
 import java.lang.*;
+import java.util.Arrays;
 import lcm.lcm.*;
 
 public class AtlasStateExtraCoder implements drake.util.LCMCoder
@@ -61,4 +62,10 @@ public class AtlasStateExtraCoder implements drake.util.LCMCoder
     public String timestampName() {
       return "utime";
     }
+		
+		public String[] coordinateNames() {
+			String[] coords = new String[dim()];
+			Arrays.fill(coords, "");
+			return coords;
+		}
 }

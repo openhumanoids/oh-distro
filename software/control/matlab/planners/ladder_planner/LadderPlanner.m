@@ -47,7 +47,7 @@ function LadderPlanner(options)
   fixed_links = [];
 
   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-  robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateCoder(joint_names)));
+  robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateCoder(joint_names)),'x');
   robot_state_coder.subscribe('EST_ROBOT_STATE');
 
   % setup frames

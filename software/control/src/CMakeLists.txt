@@ -59,7 +59,6 @@ set(java_src_files
   AffordanceFullStateCoder.java
   AtlasCommandCoder.java
   CandidateGraspPublisher.java
-  COMGoalCoder.java
   EndEffectorGoalCoder.java
   ForceTorqueStateCoder.java
   GraspGoalCoder.java

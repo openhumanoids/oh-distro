@@ -1,4 +1,4 @@
-classdef AtlasJointConfig < LCMCoordinateFrameWCoder & Singleton
+classdef AtlasJointConfig < LCMCoordinateFrame & Singleton
   % atlas joint position frame (coordinate ordering from atlas state frame, 
   % not input frame)
   methods
@@ -18,11 +18,12 @@ classdef AtlasJointConfig < LCMCoordinateFrameWCoder & Singleton
       end
       
       joint_names = r.getStateFrame.coordinates(jrange); 
-      obj = obj@LCMCoordinateFrameWCoder('NominalPositionGoal',length(jrange),'x');
+      obj = obj@LCMCoordinateFrame('NominalPositionGoal',length(jrange),'x');
       obj = obj@Singleton();
+  
       if isempty(obj.lcmcoder)
         coder = drc.control.JointAnglesCoder('atlas',joint_names);
-        obj = setLCMCoder(obj,JLCMCoder(coder));
+        setLCMCoder(obj,JLCMCoder(coder));
         obj.setCoordinateNames(joint_names);
         obj.setDefaultChannel('NOMINAL_POS_GOAL');
       end
