@@ -153,7 +153,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
   methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
-%    out_tic = tic;
+    out_tic = tic;
     ctrl_data = obj.controller_data.data;
       
     q_ddot_des = varargin{1};
@@ -266,7 +266,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
     [xcom,J] = getCOM(r,kinsol);
     [A,Adot] = getCMM(r,kinsol,qd);
-
+    
     com_dot = J*qd;
     z_com_dot = com_dot(3);
     J = J(1:2,:); % only need COM x-y
@@ -390,9 +390,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
 		[p3,J3] = forwardKin(r,kinsol,obj.pelvis_idx,[0;0;0],1);
 		J3dot = forwardJacDot(r,kinsol,obj.pelvis_idx,[0;0;0],1);
 
-		body3_t = [nan;nan;nan;0;0;0];
+    Kp_pelvis = [0;0;0;250;250;0];
+    Kd_pelvis = [0;0;0;30;30;0];
+		body3_t = [nan;nan;nan;0;0;nan];
 		cidx = ~isnan(body3_t);
-		body3dd = 250*(body3_t - p3) - 30*J3*qd;
+		body3dd = Kp_pelvis.*(body3_t - p3) - Kd_pelvis.*(J3*qd);
 		Aeq_{5} = J3(cidx,:)*Iqdd;
 		beq_{5} = -J3dot(cidx,:)*qd + body3dd(cidx);
 		
@@ -635,7 +637,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.lcmgl.switchBuffers();
     end
 
-    if (0)     % simple timekeeping for performance optimization
+    if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;

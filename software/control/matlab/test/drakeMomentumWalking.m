@@ -2,7 +2,8 @@ function drakeMomentumWalking(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-navgoal = [0.5;0;0;0;0;0];
+navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
+% navgoal = [0.5;0;0;0;0;0];
 
 % construct robot model
 options.floating = true;
@@ -45,15 +46,15 @@ request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.26;
 request.params.max_step_width = 0.39;
-request.params.nom_forward_step = 0.2;
-request.params.max_forward_step = 0.45;
+request.params.nom_forward_step = 0.15;
+request.params.max_forward_step = 0.4;
 request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.3;
+request.default_step_params.step_speed = 0.5;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -121,7 +122,7 @@ ctrl_data = SharedDataHandle(struct(...
   'dcomztraj',dcomztraj));
 
 % instantiate QP controller
-options.dt = 0.003;
+options.dt = 0.002;
 options.slack_limit = 10;
 options.w = 0.1;
 options.lcm_foot_contacts = false;
@@ -309,14 +310,14 @@ if rms_com > length(footstep_plan.footsteps)*0.5
 end
 
 
-for i=1:6
-	figure;
-	fnplt(walking_ctrl_data.link_constraints(2).traj(i))
-	hold on;
-	plot(ts,lfoot_pos(i,:));
-	hold off;
-end
+% for i=1:6
+% 	figure;
+% 	fnplt(walking_ctrl_data.link_constraints(2).traj(i))
+% 	hold on;
+% 	plot(ts,lfoot_pos(i,:));
+% 	hold off;
+% end
 
-keyboard;
+% keyboard;
 
 end
