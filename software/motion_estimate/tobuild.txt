@@ -1,24 +1,24 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
-
-# Motion Estimation:
-twolegged_estimate
-#CollierTools
-# switching between fovis versions
-#vo_estimate
-
-estimate_tools
-
-
-motion_estimate
-DataFusion
-
+state_sync
 signal_scope
 hand_estimate
 
+
+# Maurice's estimator
+estimate_tools
+# dependent on imu filter in estimate_tools
+mav
+motion_estimate
+#vo_estimate
+
+
+# Dehann's estimator:
+twolegged_estimate
 state_estimate
 
 
-mav
-mav_drc
+# TODO:
+# some modules in the estimators have shared class names
+# this is potentially conflicting

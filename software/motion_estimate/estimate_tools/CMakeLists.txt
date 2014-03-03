@@ -13,5 +13,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 
 
 
+add_subdirectory(src/filter_tools)
+
 add_subdirectory(src/estimate_tools)
 
