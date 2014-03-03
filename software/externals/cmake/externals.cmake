@@ -44,7 +44,7 @@ set(isam_include_revision 8298)
 set(isam_include_depends)
 
 set(visualization_url https://svn.csail.mit.edu/drc/trunk/software/externals/visualization)
-set(visualization_revision 8298)
+set(visualization_revision 8321)
 set(visualization_depends isam_include Eigen_pod libbot-drc)
 
 set(velodyne_url https://svn.csail.mit.edu/rrg_pods/drivers/velodyne)
