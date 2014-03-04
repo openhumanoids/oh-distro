@@ -5,23 +5,20 @@ project(leg_estimate)
 
 
 ################
-set(PCL_LIBRARIES  pcl_io-1.6)
-set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
-
+set(REQUIRED_PACKAGES  kdl-parser forward-kinematics)
 
 add_library(leg_estimate  SHARED leg_estimate.cpp foot_contact_classify.cpp)
-pods_use_pkg_config_packages(leg_estimate ${PCL_LIBRARIES}
-  ${PKG_CONFIG_DEPS}  opencv
+pods_use_pkg_config_packages(leg_estimate estimate_tools  filter_tools foot_contact
+  ${REQUIRED_PACKAGES} 
   lcmtypes_bot2-core lcmtypes_fovis-bot2 
-  pointcloud_math  pointcloud_vis
-  leg-odometry inertial-odometry 
+  pointcloud_math  pointcloud_vis 
   eigen3)
 set_target_properties(leg_estimate PROPERTIES SOVERSION 1)
 pods_install_libraries(leg_estimate)
 pods_install_headers( leg_estimate.hpp foot_contact_classify.hpp common_conversions.hpp
                DESTINATION leg_estimate)
 pods_install_pkg_config_file(leg_estimate
-  LIBS -lleg_estimate -lleg-odometry -linertial-odometry -lpcl_io
+  LIBS -lleg_estimate  -lpcl_io  -lfilter_tools
   REQUIRES pcl_io-1.6
   VERSION 0.0.1)
 
@@ -29,7 +26,8 @@ pods_install_pkg_config_file(leg_estimate
 ################
 add_executable(se-leg-odometry main.cpp LegOdoWrapper.cpp)
 pods_use_pkg_config_packages(se-leg-odometry leg_estimate path-util
-   bot2-param-client model-client pointcloud_math bot2-frames_cpp)
+   bot2-param-client model-client pointcloud_math bot2-frames_cpp
+   )
 target_link_libraries (se-leg-odometry lcm )
 pods_install_executables(se-leg-odometry )
 

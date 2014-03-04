@@ -130,7 +130,7 @@ public:
 	void setSize(int s);
 
 	void InitializeTaps(int hist_length, const long &per, const Eigen::VectorXd &w, const Eigen::VectorXd &t);
-	void ParameterFileInit();
+	void ParameterFileInit(std::string path_to_weights);
 
 	Eigen::VectorXd diff(const unsigned long long &u_ts, const Eigen::VectorXd &samples);
 
@@ -212,7 +212,8 @@ public:
 	double processSample(const double &sample);
 };
 
-
+// Deprecated for now as auto isn't in C++ standard
+/*
 template<int N>
 class BlipFilter {
 private:
@@ -230,7 +231,7 @@ public:
   void setMinBlipMagnitude(const double iMag);
   VecType getValue(const VecType& iSample);
 };
-
+*/
 
 class CumulativeAverage {
 private:
