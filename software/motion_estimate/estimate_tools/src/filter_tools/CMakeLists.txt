@@ -5,7 +5,7 @@ project(filter_tools)
 ################
 
 
-add_library(filter_tools  SHARED Filter.cpp HeavyLowPassFilter.cpp)
+add_library(filter_tools  SHARED Filter.cpp HeavyLowPassFilter.cpp SignalTap.cpp)
 pods_use_pkg_config_packages(filter_tools  ${PKG_CONFIG_DEPS}  
   eigen3)
 set_target_properties(filter_tools PROPERTIES SOVERSION 1)
