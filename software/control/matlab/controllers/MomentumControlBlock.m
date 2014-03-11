@@ -1,7 +1,7 @@
 classdef MomentumControlBlock < MIMODrakeSystem
 
   methods
-  function obj = MomentumControlBlock(r,body_motion_inputs_frames,controller_data,options)
+  function obj = MomentumControlBlock(r,body_motion_input_frames,controller_data,options)
     % @param r atlas instance
     % @param controller_data shared data handle containing ZMP-LQR solution, etc
     % @param options structure for specifying objective weight (w), slack
@@ -15,8 +15,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
       options = struct();
     end
     
-    qddframe = AtlasCoordinates(r); % input frame for desired qddot 
-    input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame,body_motion_inputs_frames{:}});
+    qddframe = AtlasCoordinates(r); % input frame for desired qddot, qdd constraints 
+    input_frame = MultiCoordinateFrame({r.getStateFrame,qddframe,body_motion_input_frames{:}});
 
     if ~isfield(options,'output_qdd')
 			options.output_qdd = false;
@@ -147,8 +147,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     out_tic = tic;
     ctrl_data = obj.controller_data.data;
       
-    q_ddot_des = varargin{1};
-    x = varargin{2};
+    x = varargin{1};
+    q_ddot_des = varargin{2};
        
     r = obj.robot;
     nq = obj.numq; 

@@ -139,7 +139,7 @@ qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 % feedback QP controller with atlas
 ins(1).system = 1;
-ins(1).input = 1;
+ins(1).input = 2;
 ins(2).system = 1;
 ins(2).input = 3;
 ins(3).system = 1;
