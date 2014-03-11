@@ -1,4 +1,4 @@
-classdef FootControlBlock < DrakeSystem
+classdef FootMotionControlBlock < DrakeSystem
   % outputs a desired q_ddot (including floating dofs)
   properties
     nq;
@@ -11,7 +11,7 @@ classdef FootControlBlock < DrakeSystem
   end
   
   methods
-    function obj = FootControlBlock(r,name,controller_data,options)
+    function obj = FootMotionControlBlock(r,name,controller_data,options)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
       

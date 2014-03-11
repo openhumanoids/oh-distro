@@ -129,8 +129,8 @@ options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.002;
 
-lfoot_motion = FootControlBlock(r,'l_foot',ctrl_data);
-rfoot_motion = FootControlBlock(r,'r_foot',ctrl_data);
+lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
+rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
 motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
 qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
