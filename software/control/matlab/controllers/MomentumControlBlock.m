@@ -16,9 +16,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     
     qddframe = AtlasCoordinates(r); % input frame for desired qddot 
-    ft_frame = AtlasForceTorque();
-
-    input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame});
+    input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame});
     
     if isfield(options,'dt')
       % controller update rate
@@ -96,12 +94,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.debug = false;
     end
 
-    if isfield(options,'use_hand_ft')
-      obj.use_hand_ft = options.use_hand_ft;
-    else
-      obj.use_hand_ft = false;
-    end
-
     obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
@@ -157,9 +149,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     ctrl_data = obj.controller_data.data;
       
     q_ddot_des = varargin{1};
-    ft = varargin{2};
-    hand_ft = ft(6+(1:12));
-    x = varargin{3};
+    x = varargin{2};
        
     r = obj.robot;
     nq = obj.numq; 
@@ -232,19 +222,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     num_active_contacts = supp.num_contact_pts;      
 
     %----------------------------------------------------------------------
-    % Disable hand force/torque contribution to dynamics as necessary
-    if (~obj.use_hand_ft)
-      hand_ft=0*hand_ft;
-    else
-      if any(active_supports==obj.lhand_idx)
-        hand_ft(1:6)=0;
-      end
-      if any(active_supports==obj.rhand_idx)
-        hand_ft(7:12)=0;
-      end
-    end
-
-    %----------------------------------------------------------------------
 
     dim = 3; % 3D
     nd = 4; % for friction cone approx, hard coded for now
@@ -252,10 +229,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     act_idx = 7:nq; % indices for actuated dofs
 
     [H,C,B] = manipulatorDynamics(r,q,qd);
-
-    [~,Jlhand] = forwardKin(r,kinsol,obj.lhand_idx,zeros(3,1),1);
-    [~,Jrhand] = forwardKin(r,kinsol,obj.rhand_idx,zeros(3,1),1);
-    C = C + Jlhand'*hand_ft(1:6) + Jrhand'*hand_ft(7:12);
 
     H_float = H(float_idx,:);
     C_float = C(float_idx);
