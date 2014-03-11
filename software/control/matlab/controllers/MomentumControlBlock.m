@@ -1,7 +1,7 @@
 classdef MomentumControlBlock < MIMODrakeSystem
 
   methods
-  function obj = MomentumControlBlock(r,controller_data,options)
+  function obj = MomentumControlBlock(r,body_motion_inputs_frames,controller_data,options)
     % @param r atlas instance
     % @param controller_data shared data handle containing ZMP-LQR solution, etc
     % @param options structure for specifying objective weight (w), slack
@@ -9,15 +9,34 @@ classdef MomentumControlBlock < MIMODrakeSystem
     typecheck(r,'Atlas');
     typecheck(controller_data,'SharedDataHandle');
     
-    if nargin>2
+    if nargin>3
       typecheck(options,'struct');
     else
       options = struct();
     end
     
     qddframe = AtlasCoordinates(r); % input frame for desired qddot 
-    input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame});
-    
+    input_frame = MultiCoordinateFrame({qddframe,r.getStateFrame,body_motion_inputs_frames{:}});
+
+    if ~isfield(options,'output_qdd')
+			options.output_qdd = false;
+    else
+			typecheck(options.output_qdd,'logical');
+    end
+		
+		if options.output_qdd
+			output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
+		else
+			output_frame = r.getInputFrame();
+		end
+
+    obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
+    obj = setInputFrame(obj,input_frame);
+    obj = setOutputFrame(obj,output_frame);
+
+    obj.robot = r;
+    obj.controller_data = controller_data;
+
     if isfield(options,'dt')
       % controller update rate
       typecheck(options.dt,'double');
@@ -26,31 +45,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
     else
       dt = 0.001;
     end
-    
-		if ~isfield(options,'output_qdd')
-			options.output_qdd = false;
-    else
-			typecheck(options.output_qdd,'logical');
-		end
-		
-		if options.output_qdd
-			output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
-		else
-			output_frame = r.getInputFrame();
-		end
-		
-		obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
-    obj = setInputFrame(obj,input_frame);
-    obj = setOutputFrame(obj,output_frame);
-
-    obj.robot = r;
-    obj.controller_data = controller_data;
-    
+   
     if ~isfield(obj.controller_data.data,'qp_active_set')
       obj.controller_data.setField('qp_active_set',[]);
     end
-
     
     if isfield(options,'contact_threshold')
       % minimum height above terrain for points to be in contact
@@ -156,7 +155,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
 
-    x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % for x-y plan adjustment
+    x0 = ctrl_data.x0;
     if (ctrl_data.is_time_varying)
       % extract current supports
       supp_idx = find(ctrl_data.support_times<=t,1,'last');
@@ -178,13 +177,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
     end
     
-    % Change in logic here due to recent tests with heightmap noise
-    % for now, we will do a logical OR of the force-based sensor and the
-    % kinematic criterion for foot contacts
-    %
-    % another option would be to limit forces on the feet when kinematics
-    % says 'contact', but force sensors do not. when both agree, allow full
-    % forces on the feet
     kinsol = doKinematics(r,q,false,true,qd);
 
     % get active contacts
@@ -230,7 +222,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
     [H,C,B] = manipulatorDynamics(r,q,qd);
 
-    H_float = H(float_idx,:);
+    H_float = H(float_idx,:);   
     C_float = C(float_idx);
 
     H_act = H(act_idx,:);
@@ -263,7 +255,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       Dbar_float = Dbar(float_idx,:);
       Dbar_act = Dbar(act_idx,:);
 
-      [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
+      [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
       Jp = sparse(Jp);
       Jpdot = sparse(Jpdot);
 
@@ -295,11 +287,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
     ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
 
-    % if at joint limit, disallow accelerations in that direction
-    lb(q<=obj.jlmin+1e-4) = 0;
-    ub(q>=obj.jlmax-1e-4) = 0;
-
-    Aeq_ = cell(1,5);
+    Aeq_ = cell(1,7);
     beq_ = cell(1,5);
     Ain_ = cell(1,2);
     bin_ = cell(1,2);
@@ -327,38 +315,26 @@ classdef MomentumControlBlock < MIMODrakeSystem
     if nc > 0
       % relative acceleration constraint
       Aeq_{2} = Jp*Iqdd + Ieps;
-      beq_{2} = -Jpdot*qd - 0*Jp*qd;
+      beq_{2} = -Jpdot*qd;
     end
-    
-    % do PD on feet to compute body accelerations
-    Kp_body = diag([100; 100; 100; 150; 150; 150]);
-    Kd_body = diag([10; 10; 10; 10; 10; 10]);
-    if ~any(active_supports==ctrl_data.link_constraints(1).link_ndx)
-      [p1,J1] = forwardKin(r,kinsol,ctrl_data.link_constraints(1).link_ndx,...
-        ctrl_data.link_constraints(1).pt,1);
-      J1dot = forwardJacDot(r,kinsol,ctrl_data.link_constraints(1).link_ndx,...
-        ctrl_data.link_constraints(1).pt,1);
-      
-      body1_t = fasteval(ctrl_data.link_constraints(1).traj,t);
-      cidx = ~isnan(body1_t);
-      body1dd = Kp_body*(body1_t - p1) - Kd_body*J1*qd;
-      Aeq_{3} = J1(cidx,:)*Iqdd;
-      beq_{3} = -J1dot(cidx,:)*qd + body1dd(cidx);
-    end
-    
-    if ~any(active_supports==ctrl_data.link_constraints(2).link_ndx)
-      [p2,J2] = forwardKin(r,kinsol,ctrl_data.link_constraints(2).link_ndx,...
-        ctrl_data.link_constraints(2).pt,1);
-      J2dot = forwardJacDot(r,kinsol,ctrl_data.link_constraints(2).link_ndx,...
-        ctrl_data.link_constraints(2).pt,1);
 
-      body2_t = fasteval(ctrl_data.link_constraints(2).traj,t);
-      cidx = ~isnan(body2_t);
-      body2dd = Kp_body*(body2_t - p2) - Kd_body*J2*qd;
-      Aeq_{4} = J2(cidx,:)*Iqdd;
-      beq_{4} = -J2dot(cidx,:)*qd + body2dd(cidx);
-		end
+    eq_count=3;
+    for ii=3:length(varargin)
+      body_input = varargin{ii};
+      body_ind = body_input(1);
+      body_vdot = body_input(2:7);
+      if ~any(active_supports==body_ind)
+        [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
+        Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
+        cidx = ~isnan(body_vdot);
+        Aeq_{eq_count} = J(cidx,:)*Iqdd;
+        beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
+      end
+    end
     
+    p1 = forwardKin(r,kinsol,obj.lfoot_idx,[0;0;0],1);
+    p2 = forwardKin(r,kinsol,obj.rfoot_idx,[0;0;0],1);
+
 		% pelvis
 		[p3,J3] = forwardKin(r,kinsol,obj.pelvis_idx,[0;0;0],1);
 		J3dot = forwardJacDot(r,kinsol,obj.pelvis_idx,[0;0;0],1);
@@ -470,145 +446,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     y = u;
     
-    if obj.debug && nc > 0
-
-%       hdot_des
-%       h = A*qdd + Adot*qd
-      
-      Jdot = forwardJacDot(r,kinsol,0);
-      Jdot = Jdot(1:2,:);
-
-			D_ls = -1.04/9.81*eye(2);
-			
-      xcomdd = Jdot * qd + J * qdd;
-      zmppos = xcom(1:2) + D_ls * xcomdd;
-      zmp = [zmppos', mean(cpos(3,:))];
-      convh = convhull(cpos(1,:), cpos(2,:));
-      zmp_ok = inpolygon(zmppos(1), zmppos(2), cpos(1,convh), cpos(2,convh));
-      if zmp_ok
-        color = [0 1 0];
-      else
-        color = [1 0 0];
-      end
-      obj.lcmgl.glColor3f(color(1), color(2), color(3));
-      obj.lcmgl.sphere(zmp, 0.015, 20, 20);
-
-      obj.lcmgl.glColor3f(0, 0, 0);
-      obj.lcmgl.sphere([xcom(1:2)', mean(cpos(3,:))], 0.015, 20, 20);
-
-%       % plot Vdot indicator
-%       headpos = forwardKin(r,kinsol,findLinkInd(r,'head'),[0;0;0]);
-%       obj.lcmgl.glLineWidth(3);
-%       obj.lcmgl.glPushMatrix();
-%       obj.lcmgl.glTranslated(headpos(1),headpos(2),headpos(3)+0.3);
-%       obj.lcmgl.glRotated(90, 0, 1, 0);
-%       if Vdot < 0
-%         obj.lcmgl.glColor3f(0, 1, 0);
-%         obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-%         obj.lcmgl.glVertex3f(0.025, -0.055, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
-%         obj.lcmgl.glVertex3f(0.025, 0.055, 0.01);
-%         obj.lcmgl.glEnd();
-%       elseif Vdot < 0.1
-%         obj.lcmgl.glColor3f(1, 1, 0);
-%         obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-%         obj.lcmgl.glVertex3f(0.045, -0.055, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, 0.055, 0.01);
-%         obj.lcmgl.glEnd();
-%       elseif Vdot < 0.25
-%         obj.lcmgl.glColor3f(1, 0.5, 0);
-%         obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-%         obj.lcmgl.glVertex3f(0.045, -0.055, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, 0.055, 0.01);
-%         obj.lcmgl.glEnd();
-%       else
-%         obj.lcmgl.glColor3f(1, 0, 0);
-%         obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-%         obj.lcmgl.glVertex3f(0.065, -0.055, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
-%         obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
-%         obj.lcmgl.glVertex3f(0.065, 0.055, 0.01);
-%         obj.lcmgl.glEnd();
-%       end
-%       obj.lcmgl.circle(0,0,0, 0.1);
-%       obj.lcmgl.circle(-0.03,-0.035,0.005, 0.01);
-%       obj.lcmgl.circle(-0.03,0.035,0.005, 0.01);
-%       obj.lcmgl.glPopMatrix();
-      
-      [~,B] = contactConstraintsBV(r,kinsol,active_supports,active_contact_pts);
-      beta = Ibeta*alpha;
-      nd=size(B{1},2); 
-      for j=1:nc
-        beta_j = beta((j-1)*nd+(1:nd),:);
-        b=0.1*B{j}; % scale for drawing
-        obj.lcmgl.glLineWidth(2);
-        obj.lcmgl.glPushMatrix();
-        obj.lcmgl.glTranslated(cpos(1,j),cpos(2,j),cpos(3,j));
-        obj.lcmgl.glColor3f(0, 0, 1);
-        fvec = zeros(3,1);
-        for k=1:nd
-          obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-          obj.lcmgl.glVertex3f(0, 0, 0);
-          obj.lcmgl.glVertex3f(b(1,k), b(2,k), b(3,k)); 
-          obj.lcmgl.glEnd();
-          fvec = fvec + beta_j(k)*b(:,k);
-        end
-        obj.lcmgl.glLineWidth(3);
-        obj.lcmgl.glColor3f(1, 0, 0);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0, 0, 0);
-        obj.lcmgl.glVertex3f(0.025*fvec(1), 0.025*fvec(2), 0.025*fvec(3)); 
-        obj.lcmgl.glEnd();
-        obj.lcmgl.glPopMatrix();
-      end
-      
-      if 0 % plot individual body COMs
-        for jj=1:getNumBodies(r)
-          b = getBody(r,jj);
-          if ~isempty(b.com)
-            bpos = forwardKin(r,kinsol,jj,[0;0;0],1);
-            obj.lcmgl.glColor3f(1, 0, 0);
-            obj.lcmgl.glPushMatrix();
-            obj.lcmgl.glTranslated(bpos(1),bpos(2),bpos(3));
-            ax = rpy2axis(bpos(4:6));
-            obj.lcmgl.glRotated(ax(4)*180/pi, ax(1), ax(2), ax(3));
-            obj.lcmgl.sphere(b.com, b.mass*0.005, 20, 20);
-            obj.lcmgl.glPopMatrix();
-          end
-       end
-        
-      end
-      
-      if 0
-        % plot momentum vectors
-        h = Ag*qd;
-        obj.lcmgl.glLineWidth(3);
-
-        obj.lcmgl.glPushMatrix();
-        obj.lcmgl.glTranslated(xcom(1),xcom(2),xcom(3));
-        obj.lcmgl.glColor3f(0.5, 0.25, 0);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0, 0, 0);
-        obj.lcmgl.glVertex3f(0.05*h(4), 0.05*h(5), 0.05*h(6)); % scale for drawing
-        obj.lcmgl.glEnd();
-
-        aa_h = rpy2axis(h(1:3));
-        obj.lcmgl.glColor3f(0, 0.25, 0.5);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0, 0, 0);
-        obj.lcmgl.glVertex3f(0.2*aa_h(1), 0.2*aa_h(2), 0.2*aa_h(3)); % scale for drawing
-        obj.lcmgl.glEnd();
-        obj.lcmgl.glPopMatrix();
-      end
-      
-      obj.lcmgl.glLineWidth(1);
-      obj.lcmgl.switchBuffers();
-    end
 
     if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
