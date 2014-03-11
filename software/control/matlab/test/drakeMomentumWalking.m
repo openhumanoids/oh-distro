@@ -131,7 +131,10 @@ options.contact_threshold = 0.002;
 
 lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
 rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
-motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
+pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data);
+torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
+motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
+  pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
 qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 % feedback QP controller with atlas
@@ -141,6 +144,10 @@ ins(2).system = 1;
 ins(2).input = 3;
 ins(3).system = 1;
 ins(3).input = 4;
+ins(4).system = 1;
+ins(4).input = 5;
+ins(5).system = 1;
+ins(5).input = 6;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
@@ -154,16 +161,24 @@ ins(2).system = 2;
 ins(2).input = 2;
 ins(3).system = 2;
 ins(3).input = 3;
+ins(4).system = 2;
+ins(4).input = 4;
+ins(5).system = 2;
+ins(5).input = 5;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
 clear ins outs;
 
-% feedback foot motion control blocks
+% feedback body motion control blocks
 ins(1).system = 2;
 ins(1).input = 1;
 ins(2).system = 2;
 ins(2).input = 3;
+ins(3).system = 2;
+ins(3).input = 4;
+ins(4).system = 2;
+ins(4).input = 5;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(lfoot_motion,sys,[],[],ins,outs);
@@ -171,9 +186,29 @@ clear ins outs;
 
 ins(1).system = 2;
 ins(1).input = 1;
+ins(2).system = 2;
+ins(2).input = 3;
+ins(3).system = 2;
+ins(3).input = 4;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(rfoot_motion,sys,[],[],ins,outs);
+clear ins outs;
+
+ins(1).system = 2;
+ins(1).input = 1;
+ins(2).system = 2;
+ins(2).input = 3;
+outs(1).system = 2;
+outs(1).output = 1;
+sys = mimoFeedback(pelvis_motion,sys,[],[],ins,outs);
+clear ins outs;
+
+ins(1).system = 2;
+ins(1).input = 1;
+outs(1).system = 2;
+outs(1).output = 1;
+sys = mimoFeedback(torso_motion,sys,[],[],ins,outs);
 clear ins outs;
 
 qt = QTrajEvalBlock(r,ctrl_data);

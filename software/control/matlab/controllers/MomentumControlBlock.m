@@ -287,7 +287,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
     ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
 
-    Aeq_ = cell(1,7);
+    Aeq_ = cell(1,length(varargin));
     beq_ = cell(1,5);
     Ain_ = cell(1,2);
     bin_ = cell(1,2);
@@ -329,24 +329,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
         cidx = ~isnan(body_vdot);
         Aeq_{eq_count} = J(cidx,:)*Iqdd;
         beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
+        eq_count = eq_count+1;
       end
     end
     
-    p1 = forwardKin(r,kinsol,obj.lfoot_idx,[0;0;0],1);
-    p2 = forwardKin(r,kinsol,obj.rfoot_idx,[0;0;0],1);
-
-		% pelvis
-		[p3,J3] = forwardKin(r,kinsol,obj.pelvis_idx,[0;0;0],1);
-		J3dot = forwardJacDot(r,kinsol,obj.pelvis_idx,[0;0;0],1);
-
-    Kp_pelvis = [0;0;0;250;250;0];
-    Kd_pelvis = [0;0;0;30;30;0];
-		body3_t = [nan;nan;nan;0;0;nan];
-		cidx = ~isnan(body3_t);
-		body3dd = Kp_pelvis.*(body3_t - p3) - Kd_pelvis.*(J3*qd);
-		Aeq_{5} = J3(cidx,:)*Iqdd;
-		beq_{5} = -J3dot(cidx,:)*qd + body3dd(cidx);
-		
     % linear equality constraints: Aeq*alpha = beq
     Aeq = sparse(vertcat(Aeq_{:}));
     beq = vertcat(beq_{:});
