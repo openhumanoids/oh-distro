@@ -287,7 +287,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
     ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
 
-    Aeq_ = cell(1,length(varargin));
+    Aeq_ = cell(1,length(varargin)+1);
     beq_ = cell(1,5);
     Ain_ = cell(1,2);
     bin_ = cell(1,2);
@@ -333,6 +333,15 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
     end
     
+    if ~isempty(ctrl_data.constrained_dofs)
+      % add joint acceleration constraints
+      condof = ctrl_data.constrained_dofs;
+      conmap = zeros(length(condof),nq);
+      conmap(:,condof) = eye(length(condof));
+      Aeq_{eq_count} = conmap*Iqdd;
+      beq_{eq_count} = q_ddot_des(condof);
+    end
+    
     % linear equality constraints: Aeq*alpha = beq
     Aeq = sparse(vertcat(Aeq_{:}));
     beq = vertcat(beq_{:});
@@ -344,7 +353,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     % compute desired linear momentum
 %     comz_t = fasteval(ctrl_data.comztraj,t);
 %     dcomz_t = fasteval(ctrl_data.dcomztraj,t);
-    comddot_des = [ustar; 100*(1.04-xcom(3)) + 10*(0-z_com_dot)];
+    comddot_des = [ustar; 150*(1.04-xcom(3)) + 10*(0-z_com_dot)];
 %     comddot_des = [ustar; 10*(comz_t-xcom(3)) + 0.5*(dcomz_t-z_com_dot)];
     ldot_des = comddot_des * 155;
     k = A(1:3,:)*qd;

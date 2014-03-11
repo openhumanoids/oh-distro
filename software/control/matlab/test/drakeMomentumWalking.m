@@ -2,8 +2,8 @@ function drakeMomentumWalking(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
-% navgoal = [0.5;0;0;0;0;0];
+%navgoal = [rand();randn();0;0;0;pi/2*randn()];
+navgoal = [1.0;0;0;0;0;0];
 
 % construct robot model
 options.floating = true;
@@ -20,7 +20,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp_zero_back.mat'));
 xstar(1) = 0*randn();
 xstar(2) = 0*randn();
 r = r.setInitialState(xstar);
@@ -54,7 +54,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.5;
+request.default_step_params.step_speed = 0.25;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -89,22 +89,21 @@ lcmgl.switchBuffers();
 % this would be replaced by dynamic plan
 qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
 qdtraj = fnder(qtraj,1);
-k = zeros(3,length(ts));
-comz = zeros(1,length(ts));
-for i=1:length(ts)
-  t=ts(i);
-  q=qtraj.eval(t);
-  qd=qdtraj.eval(t);
-  kinsol = doKinematics(r,q,false,true);
-  A = getCMM(r,kinsol);
-  k(:,i) = A(1:3,:)*qd;
-  com = getCOM(r,kinsol);
-  comz(i) = com(3);
-end
-ktraj = PPTrajectory(spline(ts,k));
-
-comztraj = PPTrajectory(spline(ts,comz));
-dcomztraj = fnder(comztraj,1);
+% k = zeros(3,length(ts));
+% comz = zeros(1,length(ts));
+% for i=1:length(ts)
+%   t=ts(i);
+%   q=qtraj.eval(t);
+%   qd=qdtraj.eval(t);
+%   kinsol = doKinematics(r,q,false,true);
+%   A = getCMM(r,kinsol);
+%   k(:,i) = A(1:3,:)*qd;
+%   com = getCOM(r,kinsol);
+%   comz(i) = com(3);
+% end
+% ktraj = PPTrajectory(spline(ts,k));
+%comztraj = PPTrajectory(spline(ts,comz));
+%dcomztraj = fnder(comztraj,1);
 
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
@@ -117,9 +116,7 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'qtraj',x0(1:nq),...
   'K',walking_ctrl_data.K,...
-  'ktraj',ktraj,...
-  'comztraj',comztraj,...
-  'dcomztraj',dcomztraj));
+  'constrained_dofs',findJointIndices(r,'arm')));
 
 % instantiate QP controller
 options.dt = 0.002;
