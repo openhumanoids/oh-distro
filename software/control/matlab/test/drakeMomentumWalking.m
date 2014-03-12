@@ -2,8 +2,8 @@ function drakeMomentumWalking(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-%navgoal = [rand();randn();0;0;0;pi/2*randn()];
-navgoal = [1.0;0;0;0;0;0];
+navgoal = [rand();randn();0;0;0;pi/2*randn()];
+%navgoal = [1.0;0;0;0;0;0];
 
 % construct robot model
 options.floating = true;
@@ -44,9 +44,9 @@ request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 20;
 request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
-request.params.nom_step_width = 0.26;
-request.params.max_step_width = 0.39;
-request.params.nom_forward_step = 0.15;
+request.params.nom_step_width = 0.24;
+request.params.max_step_width = 0.3;
+request.params.nom_forward_step = 0.25;
 request.params.max_forward_step = 0.4;
 request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
@@ -54,7 +54,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.25;
+request.default_step_params.step_speed = 0.75;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -87,8 +87,8 @@ lcmgl.switchBuffers();
 
 % compute angular momentum trajectory from kinematic plan
 % this would be replaced by dynamic plan
-qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
-qdtraj = fnder(qtraj,1);
+% qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
+% qdtraj = fnder(qtraj,1);
 % k = zeros(3,length(ts));
 % comz = zeros(1,length(ts));
 % for i=1:length(ts)
@@ -116,7 +116,7 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'qtraj',x0(1:nq),...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',findJointIndices(r,'arm')));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
 % instantiate QP controller
 options.dt = 0.002;

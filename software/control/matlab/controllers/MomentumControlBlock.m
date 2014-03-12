@@ -358,7 +358,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     ldot_des = comddot_des * 155;
     k = A(1:3,:)*qd;
 %     kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
-    kdot_des = -10.0 *k; 
+    kdot_des = -5.0 *k; 
     hdot_des = [kdot_des; ldot_des];
 
     W = diag([.1 .1 .1 1 1 1]);

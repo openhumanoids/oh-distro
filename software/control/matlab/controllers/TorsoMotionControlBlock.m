@@ -43,7 +43,7 @@ classdef TorsoMotionControlBlock < DrakeSystem
         sizecheck(options.Kd,[6 1]);
         obj.Kd = options.Kd;
       else
-        obj.Kd = [0; 0; 0; 50; 50; 50];
+        obj.Kd = [0; 0; 0; 70; 70; 70];
       end        
         
       if isfield(options,'dt')
