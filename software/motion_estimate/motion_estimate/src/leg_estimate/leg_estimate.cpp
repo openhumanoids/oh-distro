@@ -249,7 +249,7 @@ bool leg_estimate::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_
       world_to_secondary_foot_ = world_to_body_ * body_to_r_foot;
       primary_foot_ = 0;
     }else{
-      std::cout << "initialized but unknown update: " << contact_status << "\n";
+      std::cout << "initialized but unknown update: " << contact_status << " and " << primary_foot_ << "\n";
     }
   }
   
@@ -385,7 +385,7 @@ bool leg_estimate::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
       world_to_secondary_foot_ = world_to_body_ * body_to_r_foot;
       primary_foot_ = 0;
     }else{
-      std::cout << "initialized but unknown update: " << contact_status << "\n";
+      std::cout << "initialized but unknown update: " << contact_status << " and " << primary_foot_ << "\n";
     }
     
   }  
@@ -486,7 +486,7 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
   float contact_classification = foot_contact_classify_->update(current_utime_, world_to_fixed_primary_foot_, 
                                                        world_to_secondary_foot_, standing_foot_);  
   int contact_status = -1;
-  if (1==1){
+  if (1==0){
     contact_status =footTransition(); // original method from Dehann
   }else{
     contact_status =  footTransitionAlt();

@@ -61,9 +61,9 @@ int FootContactAlt::DetectFootTransition(int64_t utime, float leftz, float right
     standing_foot = F_RIGHT;
     return 1;
   }else if(lf_state_last && !lf_state){
-    std::cout << ss.str() << "Left has gone low\n"; 
+    if (verbose_ >= 3) std::cout << ss.str() << "Left has gone low\n"; 
     if (standing_foot==F_LEFT){
-      if (verbose_ >= 1) std::cout << ss.str() << "Left has gone low when used as standing, force switch to right\n"; 
+      if (verbose_ >= 1) std::cout << ss.str() << "Left has gone low when used as standing, force switch to right "<< leftz << " | "<<  rightz <<"\n"; 
       standing_foot = F_RIGHT;
       return 1;
     }else{
@@ -71,11 +71,11 @@ int FootContactAlt::DetectFootTransition(int64_t utime, float leftz, float right
       return 3;
     }
   }else if(rf_state_last && !rf_state){
-    std::cout << ss.str() << "Right has gone low\n"; 
+    if (verbose_ >= 3) std::cout << ss.str() << "Right has gone low\n"; 
     if (standing_foot==F_RIGHT){
-      if (verbose_ >= 1) std::cout << ss.str() << "Right has gone low when used as standing, force switch to left\n"; 
+      if (verbose_ >= 1) std::cout << ss.str() << "Right has gone low when used as standing, force switch to left "<< leftz << " | "<<  rightz <<"\n"; 
       standing_foot = F_LEFT;
-      return 1;
+      return 0;
     }else{
       if (verbose_ >= 3) std::cout << ss.str() << "Right has gone low when used not used as standing. Continue with left\n"; 
       return 2;
