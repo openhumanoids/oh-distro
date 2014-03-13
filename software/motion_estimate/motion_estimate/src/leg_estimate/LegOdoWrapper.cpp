@@ -92,7 +92,8 @@ void App::atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
   //}
 
   leg_est_->setPoseBDI( world_to_body_bdi_ );
-  leg_est_->setFootForces(msg->force_torque.l_foot_force_z,msg->force_torque.r_foot_force_z);
+  leg_est_->setFootSensing(  FootSensing( msg->force_torque.l_foot_force_z, msg->force_torque.l_foot_torque_x,  msg->force_torque.l_foot_torque_y),
+                             FootSensing( msg->force_torque.r_foot_force_z, msg->force_torque.r_foot_torque_x,  msg->force_torque.r_foot_torque_y));
   leg_est_->updateOdometry(joint_names_, msg->joint_position, msg->utime);
 
   Eigen::Isometry3d world_to_body = leg_est_->getRunningEstimate();

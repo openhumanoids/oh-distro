@@ -9,7 +9,11 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+# dehann:
 add_subdirectory(src/foot_contact)
+# mfallon:
+add_subdirectory(src/foot_contact_alt)
+
 add_subdirectory(src/leg_estimate)
 
 # RGBD as a GPF

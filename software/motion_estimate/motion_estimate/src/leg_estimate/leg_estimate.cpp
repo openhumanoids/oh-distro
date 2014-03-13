@@ -15,7 +15,8 @@ using namespace boost::assign;
 
 leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   BotParam * botparam_, boost::shared_ptr<ModelClient> &model_):
-  lcm_publish_(lcm_publish_),  botparam_(botparam_), model_(model_){
+  lcm_publish_(lcm_publish_),  botparam_(botparam_), model_(model_),
+  lfoot_sensing_(0,0,0), rfoot_sensing_(0,0,0) {
   
   initialization_mode_ = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.initialization_mode");
   std::cout << "Leg Odometry Initialize Mode: " << initialization_mode_ << " \n";
@@ -53,12 +54,18 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1005,"Secondary Contacts",1,0, 1003,1, { 1.0, 0.0, 0.0} ));  
   
   
-  bool log_data_files = false;
+  // actually more like 1540N when standing still in Jan 2014
   float atlas_weight = 1400.0;
+  // originally foot shift was when s_foot - 1400*0.65  > p_foot   ... typically s_foot = 1180 | p_foot =200 (~75%)
+  foot_contact_logic_ = new TwoLegs::FootContact(false, atlas_weight);
+  foot_contact_logic_->setStandingFoot( FOOT_LEFT );
+
+  foot_contact_logic_alt_ = new TwoLegs::FootContactAlt(false, atlas_weight);
+  foot_contact_logic_alt_->setStandingFoot( F_LEFT );
   
-  foot_contact_logic_ = new TwoLegs::FootContact(log_data_files, atlas_weight);
-  foot_contact_logic_->setStandingFoot( LEFTFOOT ); // Not sure that double states should be used, this should probably change TODO
+  // these two variables are probably duplicate - need to clean this up...
   primary_foot_ = 0; // ie left
+  standing_foot_ = 0; // 
   leg_odo_init_ = false;
    
   foot_contact_classify_ = new foot_contact_classify(lcm_publish_,publish_diagnostics_);
@@ -161,7 +168,7 @@ bool leg_estimate::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
       world_to_secondary_foot_ = world_to_body_ * body_to_r_foot;
       primary_foot_ = 0;
     }else{
-      std::cout << "initialized but unknown update: " << contact_status << "\n";
+      std::cout << "initialized but unknown update: " << contact_status << " and " << primary_foot_ << "\n";
     }
     
   }
@@ -386,6 +393,54 @@ bool leg_estimate::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
   return init_this_iteration;
 }
 
+
+int leg_estimate::footTransition(){
+  int contact_status = -1;  
+  
+  //std::cout << lfoot_sensing_.force_z <<  " | " << rfoot_sensing_.force_z << "\n";
+  footid newstep = foot_contact_logic_->DetectFootTransition(current_utime_, lfoot_sensing_.force_z, rfoot_sensing_.force_z);
+  if (newstep == FOOT_LEFT || newstep == FOOT_RIGHT) {
+    foot_contact_logic_->setStandingFoot(newstep);
+  }
+  if (newstep != FOOT_UNKNOWN){
+    std::cout << "NEW STEP | STANDING ON " << ((foot_contact_logic_->getStandingFoot()==FOOT_LEFT) ? "LEFT" : "RIGHT")  << std::endl;
+    if ( foot_contact_logic_->getStandingFoot() == FOOT_LEFT ){
+      contact_status = 0;
+    }else if ( foot_contact_logic_->getStandingFoot() == FOOT_RIGHT ){
+      contact_status = 1;
+    }else{
+      std::cout << "Foot Contact Error "<< foot_contact_logic_->getStandingFoot() << " (switch)\n";
+      int blah;
+      cin >> blah;      
+    }    
+  }else{
+    if ( foot_contact_logic_->getStandingFoot() == FOOT_LEFT ){
+      contact_status = 2;
+    }else if ( foot_contact_logic_->getStandingFoot() == FOOT_RIGHT ){
+      contact_status = 3;
+    }else{
+      std::cout << "Foot Contact Error "<< foot_contact_logic_->getStandingFoot() << " \n";
+      int blah;
+      cin >> blah;      
+    }
+  }  
+ 
+  standing_foot_ = foot_contact_logic_->getStandingFoot();
+ 
+  return contact_status;
+}
+
+
+int leg_estimate::footTransitionAlt(){
+  int contact_status = foot_contact_logic_alt_->DetectFootTransition(current_utime_, lfoot_sensing_.force_z, rfoot_sensing_.force_z);
+  
+  standing_foot_ = foot_contact_logic_alt_->getStandingFoot();
+  return contact_status;
+}
+
+
+
+
 float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime){
   previous_utime_ = current_utime_;
   previous_world_to_body_ = world_to_body_;
@@ -424,33 +479,17 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
   Eigen::Isometry3d body_to_r_foot = KDLToEigen(cartpos_out.find(r_standing_link_)->second);  
 
   // 2. Determine Primary Foot State
-  TwoLegs::footstep newstep;
-  newstep = foot_contact_logic_->DetectFootTransistion(current_utime_, left_foot_force_, right_foot_force_);
-  if (newstep.foot == LEFTFOOT || newstep.foot == RIGHTFOOT) {
-    foot_contact_logic_->setStandingFoot(newstep.foot);
-  }
-  int contact_status;  
-  if (newstep.foot != -1){
-    std::cout << "NEW STEP ON " << ((foot_contact_logic_->secondary_foot()==LEFTFOOT) ? "LEFT" : "RIGHT")  << std::endl;
-    if ( foot_contact_logic_->getStandingFoot() == LEFTFOOT ){
-      contact_status = 0;
-    }else if ( foot_contact_logic_->getStandingFoot() == RIGHTFOOT ){
-      contact_status = 1;
-    }else{
-      std::cout << "Foot Contact Error "<< foot_contact_logic_->getStandingFoot() << " (switch)\n";
-      int blah;
-      cin >> blah;      
-    }    
+  
+  // 5. Analyse signals to infer covariance
+  // Classify/Detect Contact events: strike, break, swing, sway
+  foot_contact_classify_->setFootSensing(lfoot_sensing_, rfoot_sensing_);
+  float contact_classification = foot_contact_classify_->update(current_utime_, world_to_fixed_primary_foot_, 
+                                                       world_to_secondary_foot_, standing_foot_);  
+  int contact_status = -1;
+  if (1==1){
+    contact_status =footTransition(); // original method from Dehann
   }else{
-    if ( foot_contact_logic_->getStandingFoot() == LEFTFOOT ){
-      contact_status = 2;
-    }else if ( foot_contact_logic_->getStandingFoot() == RIGHTFOOT ){
-      contact_status = 3;
-    }else{
-      std::cout << "Foot Contact Error "<< foot_contact_logic_->getStandingFoot() << " \n";
-      int blah;
-      cin >> blah;      
-    }
+    contact_status =  footTransitionAlt();
   }
   
   // 3. Integrate the Leg Kinematics
@@ -511,16 +550,13 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
     }
     
   }
-
+ 
   
-  // 5. Analyse signals to infer covariance
-  // Classify/Detect Contact events: strike, break, swing, sway
-  // Skip integration of odometry deemed to be unsuitable
   if (filter_contact_events_){
-    foot_contact_classify_->setFootForces(left_foot_force_,
-                                        right_foot_force_);
-    if (estimate_status > -1){ // if the estimator reports a suitable estimate, classify it further
-      estimate_status = foot_contact_classify_->update(current_utime_, world_to_fixed_primary_foot_, world_to_secondary_foot_);
+    if (estimate_status > -1){ 
+      // if the estimator reports a suitable estimate, use the classifier
+      // Skip integration of odometry deemed to be unsuitable
+      estimate_status = contact_classification;
     }
   }
   

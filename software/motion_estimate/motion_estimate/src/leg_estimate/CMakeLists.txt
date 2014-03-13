@@ -8,7 +8,8 @@ project(leg_estimate)
 set(REQUIRED_PACKAGES  kdl-parser forward-kinematics)
 
 add_library(leg_estimate  SHARED leg_estimate.cpp foot_contact_classify.cpp)
-pods_use_pkg_config_packages(leg_estimate estimate_tools  filter_tools foot_contact
+pods_use_pkg_config_packages(leg_estimate estimate_tools  filter_tools foot_contact 
+  foot_contact_alt
   ${REQUIRED_PACKAGES} 
   lcmtypes_bot2-core lcmtypes_fovis-bot2 
   pointcloud_math  pointcloud_vis 

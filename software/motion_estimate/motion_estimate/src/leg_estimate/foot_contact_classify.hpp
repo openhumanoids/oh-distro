@@ -16,17 +16,19 @@
 #include <estimate_tools/SignalTap.hpp> // SchmittTrigger
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 
+#include <foot_contact/TwoLegsEstimate_types.h>
 
 enum walkmode { 
-  LEFT_PRIME_RIGHT_STAND, //0 both in contact, left has been for longer 
-  LEFT_PRIME_RIGHT_BREAK, //1 .... 
-  LEFT_PRIME_RIGHT_SWING, //2 left in contact, right raised  
-  LEFT_PRIME_RIGHT_STRIKE,// 3 
-  LEFT_STAND_RIGHT_PRIME, //4
-  LEFT_BREAK_RIGHT_PRIME, //5
-  LEFT_SWING_RIGHT_PRIME, //6
-  LEFT_STRIKE_RIGHT_PRIME,// 7// 0
-  UNKNOWN,
+  UNKNOWN = -1,
+  LEFT_PRIME_RIGHT_STAND = 0, //0 both in contact, left has been for longer 
+  LEFT_PRIME_RIGHT_BREAK = 1, //1 .... 
+  LEFT_PRIME_RIGHT_SWING = 2, //2 left in contact, right raised  
+  LEFT_PRIME_RIGHT_STRIKE= 3, //3 
+  LEFT_STAND_RIGHT_PRIME = 4, //4
+  LEFT_BREAK_RIGHT_PRIME = 5, //5
+  LEFT_SWING_RIGHT_PRIME = 6, //6
+  LEFT_STRIKE_RIGHT_PRIME= 7, //7
+  
 };
 
 class foot_contact_classify {
@@ -34,10 +36,18 @@ class foot_contact_classify {
     foot_contact_classify ( boost::shared_ptr<lcm::LCM> &lcm_publish_ , bool publish_diagnostics_);
 
     // Set the classifier from the 
-    void setFootForces(float left_force_in, float right_force_in  ){
-      left_force_ = left_force_in;
-      right_force_ = right_force_in;
+//    void setFootForces(float left_force_in, float right_force_in  ){
+//      left_force_ = left_force_in;
+//      right_force_ = right_force_in;
+//    }
+    void setFootSensing(FootSensing lfoot_sensing_in, 
+                        FootSensing rfoot_sensing_in ){
+      lfoot_sensing_ = lfoot_sensing_in; 
+      rfoot_sensing_ = rfoot_sensing_in;
     }
+    
+    walkmode getMode(){ return mode_; }
+    walkmode getPreviousMode(){ return previous_mode_; }
     
     
     // update foot classification.
@@ -46,7 +56,8 @@ class foot_contact_classify {
     // 0 is very accurate
     // 1 very inaccuracy
     // -1 unuseable/invalid
-    float update (int64_t utime, Eigen::Isometry3d primary_foot, Eigen::Isometry3d secondary_foot);
+    float update (int64_t utime, Eigen::Isometry3d primary_foot, Eigen::Isometry3d secondary_foot,
+                  int standing_foot);
     
     
     // TODO: return variable is not functioning currently [feb 2014]
@@ -65,6 +76,9 @@ class foot_contact_classify {
     // Currently only a stub which determines distance of points off of plane of standing foot
     void determineContactPoints(int64_t utime, Eigen::Isometry3d primary_foot, Eigen::Isometry3d secondary_foot);
     
+    void determineCenterOfPressure(int64_t utime, Eigen::Isometry3d primary_foot, Eigen::Isometry3d secondary_foot,
+                                   int standing_foot);
+    
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getContactPoints(){ return contact_points_; }
 
 
@@ -73,7 +87,9 @@ class foot_contact_classify {
     pointcloud_vis* pc_vis_;
     
     // the schmitt trigger detector for force-based contact classication:
-    float left_force_, right_force_; // un filtered
+    
+    FootSensing lfoot_sensing_, rfoot_sensing_; // un filtered
+    
     LowPassFilter lpfilter_lfoot_, lpfilter_rfoot_; // low pass filters for the feet contact forces
     SchmittTrigger* left_contact_state_weak_;
     SchmittTrigger* right_contact_state_weak_;
@@ -82,6 +98,7 @@ class foot_contact_classify {
     
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr contact_points_;
     // Transform from foot frame origin to a point on the sole below the feet
+    double foot_to_sole_z_;
     Eigen::Isometry3d foot_to_sole_;
     
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cp_moving_prev_;
@@ -92,7 +109,11 @@ class foot_contact_classify {
     // Publish Debug Data e.g. kinematic velocities and foot contacts
     bool publish_diagnostics_;  
     
-    walkmode mode_;    
+    walkmode mode_; 
+    // the mode in the most previous iteration.
+    // NOT: the mode that we came from some time ago
+    walkmode previous_mode_;
+    
     // time when the last mode break or strike transition occurred
     int64_t last_strike_utime_;
     int64_t last_break_utime_; 
