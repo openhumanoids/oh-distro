@@ -1,27 +1,29 @@
-#ifndef FOOTCONTACT_H_
-#define FOOTCONTACT_H_
+#ifndef FOOTCONTACTALT_H_
+#define FOOTCONTACTALT_H_
 
 #include "estimate_tools/SignalTap.hpp"
 #define LEFTFOOT  0
 #define RIGHTFOOT 1
 
 
-enum footid { 
-  FOOT_UNKNOWN=-1,
-  FOOT_LEFT  =0,
-  FOOT_RIGHT =1,
+enum footid_alt { 
+  F_UNKNOWN=-1,
+  F_LEFT  =0,
+  F_RIGHT =1,
 };
 
 namespace TwoLegs {
 
-class FootContact {
+class FootContactAlt {
   private:
+
     // Parameters:
     float schmitt_level_;
     int64_t transition_timeout_;
 
     /////////////////////////////////////////////////
-    footid standing_foot;
+     
+    footid_alt standing_foot;
     float expectedweight;
     int64_t transition_timespan;
     bool foottransitionintermediateflag;
@@ -35,20 +37,23 @@ class FootContact {
     float getPrimaryFootZforce();
     float getSecondaryFootZforce();
 
+    SchmittTrigger* left_contact_state_strong_;
+    SchmittTrigger* right_contact_state_strong_;
 
+    bool verbose_;
   public:     
-    FootContact (bool _log_data_files, const float atlasWeight);
+    FootContactAlt (bool _log_data_files, const float atlasWeight);
 
     void terminate();
 
-    footid DetectFootTransition(int64_t utime, float leftz, float rightz);
+    int DetectFootTransition(int64_t utime, float leftz, float rightz);
 
-    footid getStandingFoot();
+    footid_alt getStandingFoot();
     // Used internally to change the active foot for motion estimation
-    void setStandingFoot(footid foot);
+    void setStandingFoot(footid_alt foot);
 
     // Return which foot is which - these are based on the RIGHTFOOT and LEFTFOOT defines in TwoLegsEstiamte_types.h
-    footid getSecondaryFoot();
+    footid_alt getSecondaryFoot();
 
     float leftContactStatus();
     float rightContactStatus();
@@ -58,4 +63,4 @@ class FootContact {
 
 }
 
-#endif /*FOOTCONTACT_H_*/
+#endif /*FOOTCONTACTALT_H_*/
