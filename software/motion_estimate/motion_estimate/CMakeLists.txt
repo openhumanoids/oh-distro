@@ -29,6 +29,9 @@ add_subdirectory(src/fusion)
 
 
 
+add_subdirectory(src/create_octomap)
+
+
 pods_install_python_script(se-bdi-imu-individually scripts/republish_bdi_imu_individually.py)
 file(COPY scripts/se-batch-process.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 

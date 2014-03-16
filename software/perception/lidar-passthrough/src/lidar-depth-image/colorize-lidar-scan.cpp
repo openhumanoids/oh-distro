@@ -20,7 +20,7 @@
 #include <pcl/point_types.h>
 #include <pcl/common/transforms.h>
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-#include <pointcloud_tools/pointcloud_lcm.hpp> // visualize pt clds
+#include <pointcloud_tools/pointcloud_lcm.hpp> // decode perception lcm messages
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include "lcmtypes/bot_core.hpp"
