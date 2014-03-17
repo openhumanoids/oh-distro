@@ -16,7 +16,19 @@
 #include <estimate_tools/SignalTap.hpp> // SchmittTrigger
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 
-#include <foot_contact/TwoLegsEstimate_types.h>
+//#include <foot_contact/TwoLegsEstimate_types.h>
+#define LEFTFOOT  0
+#define RIGHTFOOT 1
+
+class FootSensing { 
+public:
+  FootSensing(double force_z, double torque_x, double torque_y):
+    force_z (force_z), torque_x (torque_x), torque_y(torque_y){};
+  float force_z;
+  float torque_x;
+  float torque_y;
+};
+
 
 enum walkmode { 
   UNKNOWN = -1,
