@@ -81,6 +81,14 @@ typedef struct _support_state_element
 } SupportStateElement;
 
 
+bool inSupport(vector<SupportStateElement> supports, int body_idx) {
+  for (int i=0; i<supports.size(); i++) {
+    if (supports[i].body_idx == body_idx)
+      return true;
+  }
+  return false;
+}
+
 template <typename DerivedA, typename DerivedB>
 void getRows(set<int> &rows, MatrixBase<DerivedA> const &M, MatrixBase<DerivedB> &Msub)
 {

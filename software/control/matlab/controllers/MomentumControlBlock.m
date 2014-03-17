@@ -61,6 +61,15 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     
     % weight for desired qddot objective term
+    if isfield(options,'W')
+      typecheck(options.W,'double');
+      sizecheck(options.W,6);
+      obj.W = options.W;
+    else
+      obj.W = diag([0.1;0.1;0.1;1.0;1.0;1.0]);
+    end
+   
+    % weight for desired qddot objective term
     if isfield(options,'w')
       typecheck(options.w,'double');
       sizecheck(options.w,1);
@@ -68,7 +77,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     else
       obj.w = 0.1;
     end
-    
+
     % hard bound on slack variable values
     if isfield(options,'slack_limit')
       typecheck(options.slack_limit,'double');
@@ -93,6 +102,26 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.debug = false;
     end
 
+    if isfield(options,'use_mex')
+      % 0 - no mex
+      % 1 - use mex
+      % 2 - run mex and non-mex and valuecheck the result
+      sizecheck(options.use_mex,1);
+      obj.use_mex = uint32(options.use_mex);
+      rangecheck(obj.use_mex,0,2);
+      if (obj.use_mex && exist('MomentumControllermex','file')~=3)
+        error('can''t find MomentumControllermex.  did you build it?');
+      end
+    else
+      obj.use_mex = 1;
+    end
+    
+    % specifies whether or not to solve QP for all DOFs or just the
+    % important subset
+    if (isfield(options,'full_body_opt'))
+      warning('full_body_opt option no longer supported --- controller is always full body.')
+    end
+
     obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
@@ -106,6 +135,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
     end % else estimate contact via kinematics
     
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -121,10 +151,26 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.solver_options.barconvtol = 5e-4;
     end
     
+    if (obj.use_mex>0)
+      terrain = getTerrain(r);
+      if isa(terrain,'DRCTerrainMap') 
+        terrain_map_ptr = terrain.map_handle.getPointerForMex();
+      else
+        terrain_map_ptr = 0;
+      end
+      if isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
+        multi_robot_ptr = obj.multi_robot.getMexModelPtr.ptr;
+      else
+        multi_robot_ptr = 0;
+      end
+      obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),length(body_motion_input_frames),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
+    end
+
     obj.num_body_contacts=zeros(getNumBodies(r),1);
     for i=1:getNumBodies(r)
       obj.num_body_contacts(i) = length(getBodyContacts(r,i));
     end
+    
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')
       obj.using_flat_terrain = true;      
@@ -163,8 +209,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
     else
       supp = ctrl_data.supports;
     end
-    K = ctrl_data.K;
-
+    y0 = ctrl_data.K.y0.eval(t); 
+    K = ctrl_data.K.D.eval(t); % always constant for ZMP dynamics
+    
     % contact_sensor = -1 (no info), 0 (info, no contact), 1 (info, yes contact)
     contact_sensor=-1+0*supp.bodies;  % initialize to -1 for all
     if obj.lcm_foot_contacts
@@ -177,270 +224,287 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
     end
     
-    kinsol = doKinematics(r,q,false,true,qd);
+  	if (obj.use_mex==0 || obj.use_mex==2)
+      kinsol = doKinematics(r,q,false,true,qd);
 
-    % get active contacts
-    i=1;
-    while i<=length(supp.bodies)
-      if ctrl_data.ignore_terrain
-        % use all desired supports UNLESS we have sensor information saying no contact
-        if (contact_sensor(i)==0) 
-          supp = removeBody(supp,i); 
-          contact_sensor(i)=[];
-          i=i-1;
+      % get active contacts
+      i=1;
+      while i<=length(supp.bodies)
+        if ctrl_data.ignore_terrain
+          % use all desired supports UNLESS we have sensor information saying no contact
+          if (contact_sensor(i)==0) 
+            supp = removeBody(supp,i); 
+            contact_sensor(i)=[];
+            i=i-1;
+          end
+        else
+          % check kinematic contact
+          if supp.contact_surfaces(i) == 0
+            phi = contactConstraints(r,kinsol,supp.bodies(i),supp.contact_pts{i});
+          else
+            % use bullet collision between bodies
+            phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
+          end
+          contact_state_kin = any(phi<=obj.contact_threshold);
+
+          if (~contact_state_kin && contact_sensor(i)<1) 
+            % no contact from kin, no contact (or no info) from sensor
+            supp = removeBody(supp,i); 
+            contact_sensor(i)=[];
+            i=i-1;
+          end
         end
+        i=i+1;
+      end
+      active_supports = (supp.bodies)';
+      active_surfaces = supp.contact_surfaces;
+      active_contact_pts = supp.contact_pts;
+      num_active_contacts = supp.num_contact_pts;      
+
+      %----------------------------------------------------------------------
+
+      dim = 3; % 3D
+      nd = 4; % for friction cone approx, hard coded for now
+      float_idx = 1:6; % indices for floating base dofs
+      act_idx = 7:nq; % indices for actuated dofs
+
+      [H,C,B] = manipulatorDynamics(r,q,qd);
+
+      H_float = H(float_idx,:);   
+      C_float = C(float_idx);
+
+      H_act = H(act_idx,:);
+      C_act = C(act_idx);
+      B_act = B(act_idx,:);
+
+      [xcom,J] = getCOM(r,kinsol);
+      [A,Adot] = getCMM(r,kinsol,qd);
+
+      com_dot = J*qd;
+      z_com_dot = com_dot(3);
+      J = J(1:2,:); % only need COM x-y
+
+      if ~isempty(active_supports)
+        nc = sum(num_active_contacts);
+        c_pre = 0;
+        Dbar = [];
+        for j=1:length(active_supports)
+          if active_surfaces(j) == 0
+            [~,~,JB] = contactConstraintsBV(r,kinsol,active_supports(j),active_contact_pts{j});
+          else
+            % use bullet collision between bodies
+            [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
+          end
+          Dbar = [Dbar, [JB{:}]];
+          c_pre = c_pre + length(active_contact_pts{j});
+
+        end
+
+        Dbar_float = Dbar(float_idx,:);
+        Dbar_act = Dbar(act_idx,:);
+
+        [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
+        Jp = sparse(Jp);
+        Jpdot = sparse(Jpdot);
+
+        xlimp = [xcom(1:2); J*qd]; % state of LIP model
+        x_bar = xlimp - x0;
+
+        ustar = K*x_bar + y0; % ustar==u_bar since u_nom=0
       else
-        % check kinematic contact
-        if supp.contact_surfaces(i) == 0
-          phi = contactConstraints(r,kinsol,supp.bodies(i),supp.contact_pts{i});
-        else
-          % use bullet collision between bodies
-          phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
+        nc = 0;
+        ustar = zeros(2,1);
+      end
+      neps = nc*dim;
+
+
+      %----------------------------------------------------------------------
+      % Build handy index matrices ------------------------------------------
+
+      nf = nc*nd; % number of contact force variables
+      nparams = nq+nf+neps;
+      Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
+      Ibeta = zeros(nf,nparams); Ibeta(:,nq+(1:nf)) = eye(nf);
+      Ieps = zeros(neps,nparams);
+      Ieps(:,nq+nf+(1:neps)) = eye(neps);
+
+
+      %----------------------------------------------------------------------
+      % Set up problem constraints ------------------------------------------
+
+      lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
+      ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
+
+      Aeq_ = cell(1,length(varargin)+1);
+      beq_ = cell(1,5);
+      Ain_ = cell(1,2);
+      bin_ = cell(1,2);
+
+      % constrained dynamics
+      if nc>0
+        Aeq_{1} = H_float*Iqdd - Dbar_float*Ibeta;
+      else
+        Aeq_{1} = H_float*Iqdd;
+      end
+      beq_{1} = -C_float;
+
+      % input saturation constraints
+      % u=B_act'*(H_act*qdd + C_act - Jz_act'*z - Dbar_act*beta)
+
+      if nc>0
+        Ain_{1} = B_act'*(H_act*Iqdd - Dbar_act*Ibeta);
+      else
+        Ain_{1} = B_act'*H_act*Iqdd;
+      end
+      bin_{1} = -B_act'*C_act + r.umax;
+      Ain_{2} = -Ain_{1};
+      bin_{2} = B_act'*C_act - r.umin;
+
+      if nc > 0
+        % relative acceleration constraint
+        Aeq_{2} = Jp*Iqdd + Ieps;
+        beq_{2} = -Jpdot*qd;
+      end
+
+      eq_count=3;
+      for ii=3:length(varargin)
+        body_input = varargin{ii};
+        body_ind = body_input(1);
+        body_vdot = body_input(2:7);
+        if ~any(active_supports==body_ind)
+          [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
+          Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
+          cidx = ~isnan(body_vdot);
+          Aeq_{eq_count} = J(cidx,:)*Iqdd;
+          beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
+          eq_count = eq_count+1;
         end
-        contact_state_kin = any(phi<=obj.contact_threshold);
+      end
 
-        if (~contact_state_kin && contact_sensor(i)<1) 
-          % no contact from kin, no contact (or no info) from sensor
-          supp = removeBody(supp,i); 
-          contact_sensor(i)=[];
-          i=i-1;
+      if ~isempty(ctrl_data.constrained_dofs)
+        % add joint acceleration constraints
+        condof = ctrl_data.constrained_dofs;
+        conmap = zeros(length(condof),nq);
+        conmap(:,condof) = eye(length(condof));
+        Aeq_{eq_count} = conmap*Iqdd;
+        beq_{eq_count} = q_ddot_des(condof);
+      end
+
+      % linear equality constraints: Aeq*alpha = beq
+      Aeq = sparse(vertcat(Aeq_{:}));
+      beq = vertcat(beq_{:});
+
+      % linear inequality constraints: Ain*alpha <= bin
+      Ain = sparse(vertcat(Ain_{:}));
+      bin = vertcat(bin_{:});
+
+      % compute desired linear momentum
+  %     comz_t = fasteval(ctrl_data.comztraj,t);
+  %     dcomz_t = fasteval(ctrl_data.dcomztraj,t);
+      comddot_des = [ustar; 150*(1.04-xcom(3)) + 10*(0-z_com_dot)];
+  %     comddot_des = [ustar; 10*(comz_t-xcom(3)) + 0.5*(dcomz_t-z_com_dot)];
+      ldot_des = comddot_des * 155;
+      k = A(1:3,:)*qd;
+  %     kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
+      kdot_des = -5.0 *k; 
+      hdot_des = [kdot_des; ldot_des];
+
+      
+      %----------------------------------------------------------------------
+      % QP cost function ----------------------------------------------------
+      %
+      %  min: quad(h_dot_des - Adot*qd - A*qdd) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
+      if nc > 0
+        Hqp = Iqdd'*A'*obj.W*A*Iqdd;
+        Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
+
+        fqp = qd'*Adot'*obj.W*A*Iqdd;
+        fqp = fqp - hdot_des'*obj.W*A*Iqdd;
+        fqp = fqp - obj.w*q_ddot_des'*Iqdd;
+
+        % quadratic slack var cost 
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
+      else
+        Hqp = Iqdd'*Iqdd;
+        fqp = -q_ddot_des'*Iqdd;
+      end
+
+      %----------------------------------------------------------------------
+      % Solve QP ------------------------------------------------------------
+
+      REG = 1e-8;
+
+      IR = eye(nparams);  
+      lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
+      Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
+      bin_fqp = [bin; -lb(lbind); ub(ubind)];
+
+      % call fastQPmex first
+      QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq),zeros(nf,1)+ REG*ones(nf,1),0.001*ones(neps,1)+ REG*ones(neps,1)};
+      Aeq_fqp = full(Aeq);
+      % NOTE: model.obj is 2* f for fastQP!!!
+      [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
+
+      if info_fqp<0
+        % then call gurobi
+
+        model.Q = sparse(Hqp + REG*eye(nparams));
+        model.A = [Aeq; Ain];
+        model.rhs = [beq; bin];
+        model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
+        model.lb = lb;
+        model.ub = ub;
+
+        model.obj = fqp;
+        if obj.solver_options.method==2
+          % see drake/algorithms/QuadraticProgram.m solveWGUROBI
+          model.Q = .5*model.Q;
         end
-      end
-      i=i+1;
-    end
-    active_supports = (supp.bodies)';
-    active_surfaces = supp.contact_surfaces;
-    active_contact_pts = supp.contact_pts;
-    num_active_contacts = supp.num_contact_pts;      
 
-    %----------------------------------------------------------------------
-
-    dim = 3; % 3D
-    nd = 4; % for friction cone approx, hard coded for now
-    float_idx = 1:6; % indices for floating base dofs
-    act_idx = 7:nq; % indices for actuated dofs
-
-    [H,C,B] = manipulatorDynamics(r,q,qd);
-
-    H_float = H(float_idx,:);   
-    C_float = C(float_idx);
-
-    H_act = H(act_idx,:);
-    C_act = C(act_idx);
-    B_act = B(act_idx,:);
-
-    [xcom,J] = getCOM(r,kinsol);
-    [A,Adot] = getCMM(r,kinsol,qd);
-    
-    com_dot = J*qd;
-    z_com_dot = com_dot(3);
-    J = J(1:2,:); % only need COM x-y
-
-    if ~isempty(active_supports)
-      nc = sum(num_active_contacts);
-      c_pre = 0;
-      Dbar = [];
-      for j=1:length(active_supports)
-        if active_surfaces(j) == 0
-          [~,~,JB] = contactConstraintsBV(r,kinsol,active_supports(j),active_contact_pts{j});
-        else
-          % use bullet collision between bodies
-          [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
+        if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
+          keyboard;
         end
-        Dbar = [Dbar, [JB{:}]];
-        c_pre = c_pre + length(active_contact_pts{j});
 
+  %         qp_tic = tic;
+        result = gurobi(model,obj.solver_options);
+  %         qp_toc = toc(qp_tic);
+  %         fprintf('QP solve: %2.4f\n',qp_toc);
+
+        alpha = result.x;
       end
 
-      Dbar_float = Dbar(float_idx,:);
-      Dbar_act = Dbar(act_idx,:);
+      qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
+      setField(obj.controller_data,'qp_active_set',qp_active_set);
 
-      [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
-      Jp = sparse(Jp);
-      Jpdot = sparse(Jpdot);
+      %----------------------------------------------------------------------
+      % Solve for inputs ----------------------------------------------------
 
-      xlimp = [xcom(1:2); J*qd]; % state of LIP model
-      x_bar = xlimp - x0;
-
-      ustar = output(K,t,[],x_bar); % ustar==u_bar since u_nom=0
-    else
-      nc = 0;
-      ustar = zeros(2,1);
-    end
-    neps = nc*dim;
-
-
-    %----------------------------------------------------------------------
-    % Build handy index matrices ------------------------------------------
-
-    nf = nc*nd; % number of contact force variables
-    nparams = nq+nf+neps;
-    Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
-    Ibeta = zeros(nf,nparams); Ibeta(:,nq+(1:nf)) = eye(nf);
-    Ieps = zeros(neps,nparams);
-    Ieps(:,nq+nf+(1:neps)) = eye(neps);
-
-
-    %----------------------------------------------------------------------
-    % Set up problem constraints ------------------------------------------
-
-    lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
-    ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
-
-    Aeq_ = cell(1,length(varargin)+1);
-    beq_ = cell(1,5);
-    Ain_ = cell(1,2);
-    bin_ = cell(1,2);
-
-    % constrained dynamics
-    if nc>0
-      Aeq_{1} = H_float*Iqdd - Dbar_float*Ibeta;
-    else
-      Aeq_{1} = H_float*Iqdd;
-    end
-    beq_{1} = -C_float;
-
-    % input saturation constraints
-    % u=B_act'*(H_act*qdd + C_act - Jz_act'*z - Dbar_act*beta)
-
-    if nc>0
-      Ain_{1} = B_act'*(H_act*Iqdd - Dbar_act*Ibeta);
-    else
-      Ain_{1} = B_act'*H_act*Iqdd;
-    end
-    bin_{1} = -B_act'*C_act + r.umax;
-    Ain_{2} = -Ain_{1};
-    bin_{2} = B_act'*C_act - r.umin;
-
-    if nc > 0
-      % relative acceleration constraint
-      Aeq_{2} = Jp*Iqdd + Ieps;
-      beq_{2} = -Jpdot*qd;
-    end
-
-    eq_count=3;
-    for ii=3:length(varargin)
-      body_input = varargin{ii};
-      body_ind = body_input(1);
-      body_vdot = body_input(2:7);
-      if ~any(active_supports==body_ind)
-        [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
-        Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
-        cidx = ~isnan(body_vdot);
-        Aeq_{eq_count} = J(cidx,:)*Iqdd;
-        beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
-        eq_count = eq_count+1;
+      qdd = alpha(1:nq);
+      if nc>0
+        beta = alpha(nq+(1:nf));
+        u = B_act'*(H_act*qdd + C_act - Dbar_act*beta);
+      else
+        u = B_act'*(H_act*qdd + C_act);
       end
+      y = u;
     end
-    
-    if ~isempty(ctrl_data.constrained_dofs)
-      % add joint acceleration constraints
-      condof = ctrl_data.constrained_dofs;
-      conmap = zeros(length(condof),nq);
-      conmap(:,condof) = eye(length(condof));
-      Aeq_{eq_count} = conmap*Iqdd;
-      beq_{eq_count} = q_ddot_des(condof);
-    end
-    
-    % linear equality constraints: Aeq*alpha = beq
-    Aeq = sparse(vertcat(Aeq_{:}));
-    beq = vertcat(beq_{:});
-
-    % linear inequality constraints: Ain*alpha <= bin
-    Ain = sparse(vertcat(Ain_{:}));
-    bin = vertcat(bin_{:});
-
-    % compute desired linear momentum
-%     comz_t = fasteval(ctrl_data.comztraj,t);
-%     dcomz_t = fasteval(ctrl_data.dcomztraj,t);
-    comddot_des = [ustar; 150*(1.04-xcom(3)) + 10*(0-z_com_dot)];
-%     comddot_des = [ustar; 10*(comz_t-xcom(3)) + 0.5*(dcomz_t-z_com_dot)];
-    ldot_des = comddot_des * 155;
-    k = A(1:3,:)*qd;
-%     kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
-    kdot_des = -5.0 *k; 
-    hdot_des = [kdot_des; ldot_des];
-
-    W = diag([.1 .1 .1 1 1 1]);
-
-    %----------------------------------------------------------------------
-    % QP cost function ----------------------------------------------------
-    %
-    %  min: quad(h_dot_des - Adot*qd - A*qdd) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
-    if nc > 0
-      Hqp = Iqdd'*A'*W*A*Iqdd;
-      Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
-
-      fqp = qd'*Adot'*W*A*Iqdd;
-      fqp = fqp - hdot_des'*W*A*Iqdd;
-      fqp = fqp - obj.w*q_ddot_des'*Iqdd;
-
-      % quadratic slack var cost 
-      Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
-    else
-      Hqp = Iqdd'*Iqdd;
-      fqp = -q_ddot_des'*Iqdd;
-    end
-
-    %----------------------------------------------------------------------
-    % Solve QP ------------------------------------------------------------
-
-    REG = 1e-8;
-
-    IR = eye(nparams);  
-    lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
-    Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
-    bin_fqp = [bin; -lb(lbind); ub(ubind)];
-
-    % call fastQPmex first
-    QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq),zeros(nf,1)+ REG*ones(nf,1),0.001*ones(neps,1)+ REG*ones(neps,1)};
-    Aeq_fqp = full(Aeq);
-    % NOTE: model.obj is 2* f for fastQP!!!
-    [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
-
-    if info_fqp<0
-      % then call gurobi
-
-      model.Q = sparse(Hqp + REG*eye(nparams));
-      model.A = [Aeq; Ain];
-      model.rhs = [beq; bin];
-      model.sense = [obj.eq_array(1:length(beq)); obj.ineq_array(1:length(bin))];
-      model.lb = lb;
-      model.ub = ub;
-
-      model.obj = fqp;
-      if obj.solver_options.method==2
-        % see drake/algorithms/QuadraticProgram.m solveWGUROBI
-        model.Q = .5*model.Q;
+  
+    if (obj.use_mex==1)
+      if ctrl_data.ignore_terrain
+        contact_thresh =-1;       
+      else
+        contact_thresh = obj.contact_threshold;
       end
-
-      if (any(any(isnan(model.Q))) || any(isnan(model.obj)) || any(any(isnan(model.A))) || any(isnan(model.rhs)) || any(isnan(model.lb)) || any(isnan(model.ub)))
-        keyboard;
+      if obj.using_flat_terrain
+        height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
+      else
+        height = 0;
       end
-
-%         qp_tic = tic;
-      result = gurobi(model,obj.solver_options);
-%         qp_toc = toc(qp_tic);
-%         fprintf('QP solve: %2.4f\n',qp_toc);
-
-      alpha = result.x;
+      mu = 1.0;
+      [y,active_supports,qdd] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x, ...
+          supp,K.D.eval(t),x0,K.y0.eval(t),mu,contact_sensor,contact_thresh,height);
     end
 
-    qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-    setField(obj.controller_data,'qp_active_set',qp_active_set);
-
-    %----------------------------------------------------------------------
-    % Solve for inputs ----------------------------------------------------
-
-    qdd = alpha(1:nq);
-    if nc>0
-      beta = alpha(nq+(1:nf));
-      u = B_act'*(H_act*qdd + C_act - Dbar_act*beta);
-    else
-      u = B_act'*(H_act*qdd + C_act);
-    end
-    y = u;
-    
 
     if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
@@ -470,7 +534,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     robot; % to be controlled
     numq;
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
-    w; % objective function weight
+    W; % angular momentum cost term weight matrix
+    w; % qdd objective function weight
     slack_limit; % maximum absolute magnitude of acceleration slack variable values
     rfoot_idx;
     lfoot_idx;

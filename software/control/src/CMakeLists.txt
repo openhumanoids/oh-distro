@@ -49,7 +49,7 @@ else()
   add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
   pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-  install(TARGETS HeightMapWrapper QPControllermex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id DESTINATION matlab)
+  install(TARGETS HeightMapWrapper QPControllermex MomentumControllermex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id DESTINATION matlab)
 
 endif()
 

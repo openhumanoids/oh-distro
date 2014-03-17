@@ -50,27 +50,29 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     int nq = pdata->r->num_dof, nu = pdata->B.cols();
     
+    int num_spatial_accel_constraints = mxGetScalar(prhs[4]);
+
     pdata->umin.resize(nu);
     pdata->umax.resize(nu);
-    memcpy(pdata->umin.data(),mxGetPr(prhs[4]),sizeof(double)*nu);
-    memcpy(pdata->umax.data(),mxGetPr(prhs[5]),sizeof(double)*nu);
+    memcpy(pdata->umin.data(),mxGetPr(prhs[5]),sizeof(double)*nu);
+    memcpy(pdata->umax.data(),mxGetPr(prhs[6]),sizeof(double)*nu);
 
     pdata->B_act.resize(nu,nu);
     pdata->B_act = pdata->B.bottomRows(nu);
 
      // get the map ptr back from matlab
-     if (!mxIsNumeric(prhs[6]) || mxGetNumberOfElements(prhs[6])!=1)
+     if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
      mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the seventh argument should be the map ptr");
-     memcpy(&pdata->map_ptr,mxGetPr(prhs[6]),sizeof(pdata->map_ptr));
+     memcpy(&pdata->map_ptr,mxGetPr(prhs[7]),sizeof(pdata->map_ptr));
     
 //    pdata->map_ptr = NULL;
     if (!pdata->map_ptr)
       mexWarnMsgTxt("Map ptr is NULL.  Assuming flat terrain at z=0");
     
     // get the multi-robot ptr back from matlab
-    if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
+    if (!mxIsNumeric(prhs[8]) || mxGetNumberOfElements(prhs[8])!=1)
     mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the eigth argument should be the multi_robot ptr");
-    memcpy(&pdata->multi_robot,mxGetPr(prhs[7]),sizeof(pdata->multi_robot));
+    memcpy(&pdata->multi_robot,mxGetPr(prhs[8]),sizeof(pdata->multi_robot));
 
     // create gurobi environment
     error = GRBloadenv(&(pdata->env),NULL);
@@ -129,15 +131,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   assert(nu+6 == nq);
 
-  int narg=1;
-
+  int narg=1;  
+  
   int use_fast_qp = (int) mxGetScalar(prhs[narg++]);
   
   Map< VectorXd > q_ddot_des(mxGetPr(prhs[narg++]),nq);
   
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
-  double *q_multi = mxGetPr(prhs[narg++]);
+//  double *q_multi = mxGetPr(prhs[narg++]);
   
   int desired_support_argid = narg++;
 
@@ -163,10 +165,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   pdata->r->doKinematics(q,false,qd);
 
   #ifdef BULLET_COLLISION
-  if (pdata->multi_robot) {
-    auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
-    multi_robot->doKinematics(q_multi,false);
-  }
+  // if (pdata->multi_robot) {
+  //   auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
+  //   multi_robot->doKinematics(q_multi,false);
+  // }
   #endif
   
   //---------------------------------------------------------------------
@@ -269,8 +271,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   //  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
   VectorXd f(nparams);
   {      
-    if (nc > 0) {
-    
+    if (nc > 0) {    
       // NOTE: moved Hqp calcs below, because I compute the inverse directly for FastQP (and sparse Hqp for gurobi)
       pdata->fqp = qdvec.transpose()*pdata->Agdot.transpose()*pdata->W*pdata->Ag;
       pdata->fqp -= hdot_des.transpose()*pdata->W*pdata->Ag;
@@ -285,8 +286,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
   f.tail(nf+neps) = VectorXd::Zero(nf+neps);
 
-  MatrixXd Aeq(6+neps,nparams);
-  Aeq.topRightCorner(6+neps,neps) = MatrixXd::Zero(6+neps,neps);  // note: obvious sparsity here
+
+
+ //  for (int ib=0; ib<num_spatial_accel_constraints; ib++) {
+ //    body_input = varargin{ii};
+ //    body_ind = body_input(1);
+ //    body_vdot = body_input(2:7);
+   	
+
+ //    if ~any(active_supports==body_ind)
+ //      [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
+ //      Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
+ //      cidx = ~isnan(body_vdot);
+ //      Aeq_{eq_count} = J(cidx,:)*Iqdd;
+ //      beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
+ //      eq_count = eq_count+1;
+ //    end
+	// }
+
+
+  int neq = 6+neps;//+6*num_spatial_accel_constraints;
+  MatrixXd Aeq(neq,nparams);
+  Aeq.topRightCorner(neq,neps) = MatrixXd::Zero(neq,neps);  // note: obvious sparsity here
   VectorXd beq(6+neps);
   
   // constrained floating base dynamics
@@ -305,8 +326,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Aeq.bottomRightCorner(neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
     beq.bottomRows(neps) = (-Jpdot - 1.0*Jp)*qdvec;
   }    
-
-
   
   MatrixXd Ain = MatrixXd::Zero(2*nu,nparams);  // note: obvious sparsity here
   VectorXd bin = VectorXd::Zero(2*nu);
