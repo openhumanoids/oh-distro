@@ -47,6 +47,7 @@ struct QPControllerData {
   RowVectorXd fqp;
   MatrixXd Ag, Agdot; // centroidal momentum matrix
   MatrixXd W; // quadratic cost for momentum control: (hdot_des - hdot)'*W*(hdot_des - hdot)
+  int num_spatial_accel_constraints;
 };
 
 // helper function for shuffling debugging data back into matlab

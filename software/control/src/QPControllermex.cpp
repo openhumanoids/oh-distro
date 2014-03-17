@@ -328,10 +328,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   if (nc > 0) {
     // relative acceleration constraint
-    Aeq.bottomLeftCorner(neps,nq) = Jp;
+    Aeq.block(6,0,neps,nq) = Jp;
     Aeq.block(6,nq,neps,nf) = MatrixXd::Zero(neps,nf);  // note: obvious sparsity here
-    Aeq.bottomRightCorner(neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
-    beq.bottomRows(neps) = (-Jpdot - 1.0*Jp)*qdvec;
+    Aeq.block(6,nq+nf,neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
+    beq.segment(6,neps) = (-Jpdot - 1.0*Jp)*qdvec;
   }    
 
   

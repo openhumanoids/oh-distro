@@ -213,7 +213,6 @@ outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qt,sys,[],[],[],outs);
 
-
 S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
 output_select(1).system=1;
 output_select(1).output=1;

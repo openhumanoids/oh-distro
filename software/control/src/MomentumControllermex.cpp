@@ -50,7 +50,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     int nq = pdata->r->num_dof, nu = pdata->B.cols();
     
-    int num_spatial_accel_constraints = mxGetScalar(prhs[4]);
+    pdata->num_spatial_accel_constraints = mxGetScalar(prhs[4]);
 
     pdata->umin.resize(nu);
     pdata->umax.resize(nu);
@@ -131,8 +131,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   assert(nu+6 == nq);
 
-  int narg=1;  
-  
+  int narg=1;
+
   int use_fast_qp = (int) mxGetScalar(prhs[narg++]);
   
   Map< VectorXd > q_ddot_des(mxGetPr(prhs[narg++]),nq);
@@ -140,6 +140,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
 //  double *q_multi = mxGetPr(prhs[narg++]);
+
+  vector<VectorXd> spatial_accel_constraints;
+  for (int i=0; i<pdata->num_spatial_accel_constraints; i++) {
+    assert(mxGetM(prhs[narg])==7); assert(mxGetN(prhs[narg])==1);
+    VectorXd v = VectorXd::Zero(7,1);
+    memcpy(v.data(),mxGetPr(prhs[narg++]),sizeof(double)*7);
+    spatial_accel_constraints.push_back(v);
+  }
   
   int desired_support_argid = narg++;
 
@@ -222,6 +230,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   pdata->C_float = pdata->C.head(6);
   pdata->C_act = pdata->C.tail(nu);
  
+
   pdata->r->getCMM(q,qd,pdata->Ag,pdata->Agdot);
   
   Vector3d xcom;
@@ -256,22 +265,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int nf = nc*nd; // number of contact force variables
   int nparams = nq+nf+neps;
 
-  Vector3d comddot_des;
-  comddot_des << ustar[0], ustar[1], 150*(1.04-xcom[2]) - 10*pdata->J.row(2)*qdvec;
-  Vector3d ldot_des = comddot_des * 161;
+  Vector3d ldot_des;
+  double robot_mass = 161; // TODO: take this from RBM
+  ldot_des << ustar[0]*robot_mass, 
+              ustar[1]*robot_mass, 
+              (150*(1.04-xcom[2]) - 10*pdata->J.row(2)*qdvec)*robot_mass;
+
 
   Vector3d k = pdata->Ag.topRows(3)*qdvec;
-  Vector3d kdot_des = -10.0 *k; 
-  VectorXd hdot_des;
+  Vector3d kdot_des = -5.0 *k; 
+
+  VectorXd hdot_des(6,1);
   hdot_des << kdot_des[0], kdot_des[1], kdot_des[2], ldot_des[0], ldot_des[1], ldot_des[2];
-  
+
   //----------------------------------------------------------------------
   // QP cost function ----------------------------------------------------
   //
   //  min: quad(Jdot*qd + J*qdd,R_ls)+quad(C*x+D*(Jdot*qd + J*qdd),Qy) + (2*x'*S + s1')*(A*x + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + quad(u,R) + quad(epsilon)
   VectorXd f(nparams);
   {      
-    if (nc > 0) {    
+    if (nc > 0) {
       // NOTE: moved Hqp calcs below, because I compute the inverse directly for FastQP (and sparse Hqp for gurobi)
       pdata->fqp = qdvec.transpose()*pdata->Agdot.transpose()*pdata->W*pdata->Ag;
       pdata->fqp -= hdot_des.transpose()*pdata->W*pdata->Ag;
@@ -285,30 +298,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     } 
   }
   f.tail(nf+neps) = VectorXd::Zero(nf+neps);
+  
 
-
-
- //  for (int ib=0; ib<num_spatial_accel_constraints; ib++) {
- //    body_input = varargin{ii};
- //    body_ind = body_input(1);
- //    body_vdot = body_input(2:7);
-   	
-
- //    if ~any(active_supports==body_ind)
- //      [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
- //      Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
- //      cidx = ~isnan(body_vdot);
- //      Aeq_{eq_count} = J(cidx,:)*Iqdd;
- //      beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
- //      eq_count = eq_count+1;
- //    end
-	// }
-
-
-  int neq = 6+neps;//+6*num_spatial_accel_constraints;
-  MatrixXd Aeq(neq,nparams);
-  Aeq.topRightCorner(neq,neps) = MatrixXd::Zero(neq,neps);  // note: obvious sparsity here
-  VectorXd beq(6+neps);
+  int neq = 6+neps+6*pdata->num_spatial_accel_constraints;
+  MatrixXd Aeq = MatrixXd::Zero(neq,nparams);
+  VectorXd beq = VectorXd::Zero(neq);
   
   // constrained floating base dynamics
   //  H_float*qdd - J_float'*lambda - Dbar_float*beta = -C_float
@@ -321,11 +315,38 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   if (nc > 0) {
     // relative acceleration constraint
-    Aeq.bottomLeftCorner(neps,nq) = Jp;
+    Aeq.block(6,0,neps,nq) = Jp;
     Aeq.block(6,nq,neps,nf) = MatrixXd::Zero(neps,nf);  // note: obvious sparsity here
-    Aeq.bottomRightCorner(neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
-    beq.bottomRows(neps) = (-Jpdot - 1.0*Jp)*qdvec;
+    Aeq.block(6,nq+nf,neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
+    beq.segment(6,neps) = (-Jpdot - 0.0*Jp)*qdvec;
   }    
+  
+  // add in body spatial equality constraints
+  VectorXd body_vdot;
+  MatrixXd orig = MatrixXd::Zero(4,1);
+  orig(3,0) = 1;
+  int body_idx;
+  int equality_ind = 6+neps;
+  MatrixXd Jb(6,nq);
+  MatrixXd Jbdot(6,nq);
+  for (int i=0; i<pdata->num_spatial_accel_constraints; i++) {
+    
+    body_vdot = spatial_accel_constraints[i].bottomRows(6);
+    body_idx = (int)(spatial_accel_constraints[i][0])-1;
+
+    if (!inSupport(active_supports,body_idx)) {
+      pdata->r->forwardJac(body_idx,orig,1,Jb);
+      pdata->r->forwardJacDot(body_idx,orig,1,Jbdot);
+
+      for (int j=0; j<6; j++) {
+        if (!std::isnan(body_vdot[j])) {
+          Aeq.block(equality_ind,0,1,nq) = Jb.row(j);
+          beq[equality_ind] = -Jbdot.row(j)*qdvec + body_vdot[j];
+          equality_ind++;
+        }
+      }
+    }
+  }
   
   MatrixXd Ain = MatrixXd::Zero(2*nu,nparams);  // note: obvious sparsity here
   VectorXd bin = VectorXd::Zero(2*nu);
@@ -361,8 +382,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	if (nc>0) {
 		double wi = pdata->w + REG;
-		pdata->Hqp = wi*MatrixXd::Identity(nq,nq);
-			pdata->Hqp += pdata->Ag.transpose()*pdata->W*pdata->Ag;
+    pdata->Hqp = pdata->Ag.transpose()*pdata->W*pdata->Ag;
+		pdata->Hqp += wi*MatrixXd::Identity(nq,nq);
 	} else {
   	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
 	}
@@ -422,63 +443,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[2] = eigenToMatlab(qdd);
   }
 
-  if (model) {  // todo: return more info for fastQP
-
-		if (nlhs>3) {  // return model.Q (for unit testing)
-			int qnz;
-			CGE (GRBgetintattr(model,"NumQNZs",&qnz), pdata->env);
-			int *qrow = new int[qnz], *qcol = new int[qnz];
-			double* qval = new double[qnz];
-			CGE (GRBgetq(model,&qnz,qrow,qcol,qval), pdata->env);
-			plhs[3] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
-			double* pm = mxGetPr(plhs[3]);
-			memset(pm,0,sizeof(double)*nparams*nparams);
-			for (i=0; i<qnz; i++)
-				pm[qrow[i]+nparams*qcol[i]] = qval[i];
-			delete[] qrow;
-			delete[] qcol;
-			delete[] qval;
-
-			if (nlhs>4) {  // return model.obj (for unit testing)
-				plhs[4] = mxCreateDoubleMatrix(1,nparams,mxREAL);
-				CGE (GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[4])), pdata->env);
-
-				if (nlhs>5) {  // return model.A (for unit testing)
-					int numcon;
-					CGE (GRBgetintattr(model,"NumConstrs",&numcon), pdata->env);
-					plhs[5] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
-					double *pm = mxGetPr(plhs[5]);
-					for (i=0; i<numcon; i++)
-						for (j=0; j<nparams; j++)
-							CGE (GRBgetcoeff(model,i,j,&pm[i+j*numcon]), pdata->env);
-
-					if (nlhs>6) {  // return model.rhs (for unit testing)
-						plhs[6] = mxCreateDoubleMatrix(numcon,1,mxREAL);
-						CGE (GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[6])), pdata->env);
-					}
-
-					if (nlhs>7) { // return model.sense
-						char* sense = new char[numcon+1];
-						CGE (GRBgetcharattrarray(model,"Sense",0,numcon,sense), pdata->env);
-						sense[numcon]='\0';
-						plhs[7] = mxCreateString(sense);
-						// delete[] sense;  // it seems that I'm not supposed to free this
-					}
-
-					if (nlhs>8) {
-						plhs[8] = mxCreateDoubleMatrix(nparams,1,mxREAL);
-						CGE (GRBgetdblattrarray(model, "LB", 0, nparams, mxGetPr(plhs[8])), pdata->env);
-					}
-					if (nlhs>9) {
-						plhs[9] = mxCreateDoubleMatrix(nparams,1,mxREAL);
-						CGE (GRBgetdblattrarray(model, "UB", 0, nparams, mxGetPr(plhs[9])), pdata->env);
-					}
-				}
-			}
-		}
-
-		GRBfreemodel(model);
+  if (nlhs>3) {
+    plhs[3] = eigenToMatlab(pdata->Hqp);
   }
-  
+
+  if (nlhs>4) {
+    plhs[4] = eigenToMatlab(f);
+  }
+
+  if (nlhs>5) {
+    plhs[5] = eigenToMatlab(Aeq);
+  }
+
+  if (nlhs>6) {
+    plhs[6] = eigenToMatlab(beq);
+  }
+
+  if (model) { 
+    GRBfreemodel(model); 
+  } 
   //  GRBfreeenv(env);
 } 

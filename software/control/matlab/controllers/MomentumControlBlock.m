@@ -380,15 +380,15 @@ classdef MomentumControlBlock < MIMODrakeSystem
           eq_count = eq_count+1;
         end
       end
-
-      if ~isempty(ctrl_data.constrained_dofs)
-        % add joint acceleration constraints
-        condof = ctrl_data.constrained_dofs;
-        conmap = zeros(length(condof),nq);
-        conmap(:,condof) = eye(length(condof));
-        Aeq_{eq_count} = conmap*Iqdd;
-        beq_{eq_count} = q_ddot_des(condof);
-      end
+% 
+%       if ~isempty(ctrl_data.constrained_dofs)
+%         % add joint acceleration constraints
+%         condof = ctrl_data.constrained_dofs;
+%         conmap = zeros(length(condof),nq);
+%         conmap(:,condof) = eye(length(condof));
+%         Aeq_{eq_count} = conmap*Iqdd;
+%         beq_{eq_count} = q_ddot_des(condof);
+%       end
 
       % linear equality constraints: Aeq*alpha = beq
       Aeq = sparse(vertcat(Aeq_{:}));
@@ -403,13 +403,12 @@ classdef MomentumControlBlock < MIMODrakeSystem
   %     dcomz_t = fasteval(ctrl_data.dcomztraj,t);
       comddot_des = [ustar; 150*(1.04-xcom(3)) + 10*(0-z_com_dot)];
   %     comddot_des = [ustar; 10*(comz_t-xcom(3)) + 0.5*(dcomz_t-z_com_dot)];
-      ldot_des = comddot_des * 155;
+      ldot_des = comddot_des * 161;
       k = A(1:3,:)*qd;
   %     kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
       kdot_des = -5.0 *k; 
       hdot_des = [kdot_des; ldot_des];
 
-      
       %----------------------------------------------------------------------
       % QP cost function ----------------------------------------------------
       %
@@ -447,7 +446,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       if info_fqp<0
         % then call gurobi
-
+        disp('failed over to gurobi');
         model.Q = sparse(Hqp + REG*eye(nparams));
         model.A = [Aeq; Ain];
         model.rhs = [beq; bin];
@@ -489,7 +488,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       y = u;
     end
   
-    if (obj.use_mex==1)
+    if (obj.use_mex==1 || obj.use_mex==2)
       if ctrl_data.ignore_terrain
         contact_thresh =-1;       
       else
@@ -501,10 +500,22 @@ classdef MomentumControlBlock < MIMODrakeSystem
         height = 0;
       end
       mu = 1.0;
-      [y,active_supports,qdd] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x, ...
-          supp,K.D.eval(t),x0,K.y0.eval(t),mu,contact_sensor,contact_thresh,height);
+      if (obj.use_mex==1)
+        [y,~,qdd] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end}, ...
+          supp,K,x0,y0,mu,contact_sensor,contact_thresh,height);
+      else
+        [y_mex,active_supports_mex,qdd,Hqp_mex,fqp_mex,Aeq_mex,beq_mex] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end}, ...
+          supp,K,x0,y0,mu,contact_sensor,contact_thresh,height);
+        if (nc>0)
+          valuecheck(active_supports_mex,active_supports);
+        end
+        valuecheck(y,y_mex,1e-3); 
+        %valuecheck(Hqp(1:nq,1:nq),Hqp_mex,1e-6)
+        %valuecheck(fqp',fqp_mex,1e-6);
+        %valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6)
+        %valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
+      end
     end
-
 
     if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
@@ -520,7 +531,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       if mod(average_tictoc_n,50)==0
         fprintf('Average control output duration: %2.4f\n',average_tictoc);
       end
-		end
+    end
 		
 		if obj.output_qdd
 			varargout = {y,qdd};
