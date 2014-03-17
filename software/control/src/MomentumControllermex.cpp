@@ -148,7 +148,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     memcpy(v.data(),mxGetPr(prhs[narg++]),sizeof(double)*7);
     spatial_accel_constraints.push_back(v);
   }
-  
+
+  int num_condof;
+  VectorXd condof;
+  if (!mxIsEmpty(prhs[narg])) {
+    assert(mxGetN(prhs[narg])==1);
+    num_condof=mxGetM(prhs[narg]);
+    condof = VectorXd::Zero(num_condof);
+    memcpy(condof.data(),mxGetPr(prhs[narg++]),sizeof(double)*num_condof);
+  }
+  else
+    num_condof=0;
+
   int desired_support_argid = narg++;
 
   assert(mxGetM(prhs[narg])==2); assert(mxGetN(prhs[narg])==4);
@@ -300,7 +311,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   f.tail(nf+neps) = VectorXd::Zero(nf+neps);
   
 
-  int neq = 6+neps+6*pdata->num_spatial_accel_constraints;
+  int neq = 6+neps+6*pdata->num_spatial_accel_constraints+num_condof;
   MatrixXd Aeq = MatrixXd::Zero(neq,nparams);
   VectorXd beq = VectorXd::Zero(neq);
   
@@ -341,12 +352,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       for (int j=0; j<6; j++) {
         if (!std::isnan(body_vdot[j])) {
           Aeq.block(equality_ind,0,1,nq) = Jb.row(j);
-          beq[equality_ind] = -Jbdot.row(j)*qdvec + body_vdot[j];
-          equality_ind++;
+          beq[equality_ind++] = -Jbdot.row(j)*qdvec + body_vdot[j];
         }
       }
     }
   }
+
+  if (num_condof>0) {
+    // add joint acceleration constraints
+    for (int i=0; i<num_condof; i++) {
+      Aeq(equality_ind,(int)condof[i]-1) = 1;
+      beq[equality_ind++] = q_ddot_des[(int)condof[i]-1];
+    }
+  }  
   
   MatrixXd Ain = MatrixXd::Zero(2*nu,nparams);  // note: obvious sparsity here
   VectorXd bin = VectorXd::Zero(2*nu);

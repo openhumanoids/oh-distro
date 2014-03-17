@@ -212,6 +212,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     y0 = ctrl_data.K.y0.eval(t); 
     K = ctrl_data.K.D.eval(t); % always constant for ZMP dynamics
     
+    condof = ctrl_data.constrained_dofs; % dof indices for which q_ddd_des is a constraint
+        
     % contact_sensor = -1 (no info), 0 (info, no contact), 1 (info, yes contact)
     contact_sensor=-1+0*supp.bodies;  % initialize to -1 for all
     if obj.lcm_foot_contacts
@@ -380,15 +382,14 @@ classdef MomentumControlBlock < MIMODrakeSystem
           eq_count = eq_count+1;
         end
       end
-% 
-%       if ~isempty(ctrl_data.constrained_dofs)
-%         % add joint acceleration constraints
-%         condof = ctrl_data.constrained_dofs;
-%         conmap = zeros(length(condof),nq);
-%         conmap(:,condof) = eye(length(condof));
-%         Aeq_{eq_count} = conmap*Iqdd;
-%         beq_{eq_count} = q_ddot_des(condof);
-%       end
+
+      if ~isempty(ctrl_data.constrained_dofs)
+        % add joint acceleration constraints
+        conmap = zeros(length(condof),nq);
+        conmap(:,condof) = eye(length(condof));
+        Aeq_{eq_count} = conmap*Iqdd;
+        beq_{eq_count} = q_ddot_des(condof);
+      end
 
       % linear equality constraints: Aeq*alpha = beq
       Aeq = sparse(vertcat(Aeq_{:}));
@@ -501,19 +502,19 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
       mu = 1.0;
       if (obj.use_mex==1)
-        [y,~,qdd] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end}, ...
+        [y,~,qdd] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end},condof, ...
           supp,K,x0,y0,mu,contact_sensor,contact_thresh,height);
       else
-        [y_mex,active_supports_mex,qdd,Hqp_mex,fqp_mex,Aeq_mex,beq_mex] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end}, ...
-          supp,K,x0,y0,mu,contact_sensor,contact_thresh,height);
+        [y_mex,active_supports_mex,qdd,Hqp_mex,fqp_mex,Aeq_mex,beq_mex] = MomentumControllermex(obj.mex_ptr.data,...
+          1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,mu,contact_sensor,contact_thresh,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
-        valuecheck(y,y_mex,1e-3); 
+        valuecheck(y,y_mex,1e-2); 
         %valuecheck(Hqp(1:nq,1:nq),Hqp_mex,1e-6)
         %valuecheck(fqp',fqp_mex,1e-6);
-        %valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6)
-        %valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
+        valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6);
+        valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
       end
     end
 
