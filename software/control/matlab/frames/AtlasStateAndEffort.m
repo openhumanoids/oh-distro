@@ -5,7 +5,8 @@ classdef AtlasStateAndEffort < LCMCoordinateFrame & Singleton
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
       obj = obj@LCMCoordinateFrame('AtlasStateAndEffort',r.getNumDOF*3,'x');
-    
+      obj = obj@Singleton();
+
       if isempty(obj.lcmcoder)  % otherwise I had a singleton
         joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
         coder = drc.control.RobotStateCoder(joint_names,true);
