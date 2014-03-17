@@ -160,11 +160,12 @@ else
   for i=1:length(ts)
     t = ts(i);
     if (i>1)
-      kc_com = constructPtrWorldCoMConstraintmex(r.getMexModelPtr,comtraj.eval(t),comtraj.eval(t));
-      rfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,rfoot_ind,[0;0;0],rfoot0(1:3),rfoot0(1:3)),...
-        constructPtrWorldEulerConstraintmex(r.getMexModelPtr,rfoot_ind,rfoot0(4:end),rfoot0(4:end))};
-      lfarg = {constructPtrWorldPositionConstraintmex(r.getMexModelPtr,lfoot_ind,[0;0;0],lfoot0(1:3),lfoot0(1:3)),...
-        constructPtrWorldEulerConstraintmex(r.getMexModelPtr,lfoot_ind,lfoot0(4:end),lfoot0(4:end))};
+      
+      kc_com = constructRigidBodyConstraint(RigidBodyConstraint.WorldCoMConstraintType,true,r,comtraj.eval(t),comtraj.eval(t));
+      rfarg = {constructRigidBodyConstraint(RigidBodyConstraint.WorldPositionConstraintType,true,r,rfoot_ind,[0;0;0],rfoot0(1:3),rfoot0(1:3)),...
+        constructRigidBodyConstraint(RigidBodyConstraint.WorldEulerConstraintType,true,r,rfoot_ind,rfoot0(4:end),rfoot0(4:end))};
+      lfarg = {constructRigidBodyConstraint(RigidBodyConstraint.WorldPositionConstraintType,true,r,lfoot_ind,[0;0;0],lfoot0(1:3),lfoot0(1:3)),...
+        constructRigidBodyConstraint(RigidBodyConstraint.WorldEulerConstraintType,true,r,lfoot_ind,lfoot0(4:end),lfoot0(4:end))};
       q(:,i) = inverseKin(r,q(:,i-1),q0,kc_com,rfarg{:},lfarg{:},ikoptions);
     else
       q = q0;
