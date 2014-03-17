@@ -222,6 +222,8 @@ bool LaserGPF::getMeasurement(const RBIS & state, const RBIM & cov, const bot_co
     this->projected_laser_scan = laser_create_projected_scan_from_planar_lidar(this->laser_projector, laser_msg_c,
         "body");
   }
+  // BUG: projected_laser_scan is not checked for NULL
+  //      mfallon noted this can happen if thread is processing a lot (gpf_vis = true)
 
   bot_core_planar_lidar_t_destroy(laser_msg_c);
 
