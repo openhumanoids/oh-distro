@@ -107,7 +107,7 @@ end
 		Jdot = Jdot(1:2,:);
 		
 		% hardcoding D for ZMP output dynamics
-		D = -0.89./9.81*eye(2); 
+		D = -1.04./9.81*eye(2); 
 
 		comdd = Jdot * qd + J * qdd;
 		zmp = com(1:2) + D * comdd;
