@@ -231,6 +231,16 @@ classdef MomentumControlBlock < MIMODrakeSystem
       y0 = [0;0]; 
       K = ctrl_data.K.D; % always constant for ZMP dynamics
     end
+
+     if isfield(ctrl_data,'comztraj')
+       comz_des = fasteval(ctrl_data.comztraj,t);
+       dcomz_des = fasteval(ctrl_data.dcomztraj,t);
+       ddcomz_des = fasteval(ctrl_data.ddcomztraj,t);
+     else
+       comz_des = 1.04;
+       dcomz_des = 0;
+       ddcomz_des = 0;
+     end
     
     condof = ctrl_data.constrained_dofs; % dof indices for which q_ddd_des is a constraint
         
@@ -420,10 +430,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       bin = vertcat(bin_{:});
 
       % compute desired linear momentum
-  %     comz_t = fasteval(ctrl_data.comztraj,t);
-  %     dcomz_t = fasteval(ctrl_data.dcomztraj,t);
-      comddot_des = [ustar; obj.Kp*(1.04-xcom(3)) + obj.Kd*(0-z_com_dot)];
-  %     comddot_des = [ustar; 10*(comz_t-xcom(3)) + 0.5*(dcomz_t-z_com_dot)];
+      comddot_des = [ustar; obj.Kp*(comz_des-xcom(3)) + obj.Kd*(dcomz_des-z_com_dot) + ddcomz_des];
       ldot_des = comddot_des * 161;
       k = A(1:3,:)*qd;
   %     kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
@@ -523,10 +530,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
       mu = 1.0;
       if (obj.use_mex==1)
         [y,~,qdd] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end},condof, ...
-          supp,K,x0,y0,mu,contact_sensor,contact_thresh,height);
+          supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
       else
         [y_mex,active_supports_mex,qdd,Hqp_mex,fqp_mex,Aeq_mex,beq_mex] = MomentumControllermex(obj.mex_ptr.data,...
-          1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,mu,contact_sensor,contact_thresh,height);
+          1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end

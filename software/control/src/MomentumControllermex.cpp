@@ -180,6 +180,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   assert(mxGetM(prhs[narg])==2); assert(mxGetN(prhs[narg])==1);
   Map< Vector2d > y0(mxGetPr(prhs[narg++]));
 
+  // desired com-z refs
+  double comz_des = mxGetScalar(prhs[narg++]);
+  double dcomz_des = mxGetScalar(prhs[narg++]);
+  double ddcomz_des = mxGetScalar(prhs[narg++]);
+
   double mu = mxGetScalar(prhs[narg++]);
 
   double* double_contact_sensor = mxGetPr(prhs[narg]); int len = mxGetNumberOfElements(prhs[narg++]);
@@ -288,8 +293,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double robot_mass = 161; // TODO: take this from RBM
   ldot_des << ustar[0]*robot_mass, 
               ustar[1]*robot_mass, 
-              (pdata->Kp*(1.04-xcom[2]) - pdata->Kd*pdata->J.row(2)*qdvec)*robot_mass;
-
+              (pdata->Kp*(comz_des-xcom[2]) + pdata->Kd*(dcomz_des-pdata->J.row(2)*qdvec) + ddcomz_des)*robot_mass;
 
   Vector3d k = pdata->Ag.topRows(3)*qdvec;
   Vector3d kdot_des = -5.0 *k; 
