@@ -29,6 +29,7 @@ tools
 drake
 control
 bdi_walking
+ddapp
 
 # disabled for now:
 #teleop
