@@ -10,17 +10,17 @@ function atlasStanding
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint_str = {'back_bky','back_bkx','leg'};% <---- cell array of (sub)strings  
+joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 2; % what spatial dimension to move COM: x/y/z (1/2/3)
+dim = 3; % what dimension to move COM: x/y/z (1/2/3)
 T = 10;% <--- signal duration (sec)
 
 % chirp params
 amp = 0.05;% <---- meters, COM DELTA
 chirp_f0 = 0.1;% <--- chirp starting frequency
-chirp_fT = 0.1;% <--- chirp ending frequency
-chirp_sign = 0;% <--- -1: negative, 1: positive, 0: centered about offset 
+chirp_fT = 0.2;% <--- chirp ending frequency
+chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % inverse dynamics PD gains (only for input=position, control=force)
 Kp = 20;
@@ -312,7 +312,7 @@ while tt<T+2
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
     % compute desired velocity
-    qddes_state_frame = qdtraj_t;
+    qddes_state_frame = qdtraj_t + qdd*dt;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
