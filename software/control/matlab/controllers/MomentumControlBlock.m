@@ -75,7 +75,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       sizecheck(options.Kp,1);
       obj.Kp = options.Kp;
     else
-      obj.Kp = 200;
+      obj.Kp = 175;
     end    
 
     % com-z PD gains
@@ -84,7 +84,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       sizecheck(options.Kd,1);
       obj.Kd = options.Kd;
     else
-      obj.Kd = 30;
+      obj.Kd = 20;
     end    
 
     % weight for desired qddot objective term

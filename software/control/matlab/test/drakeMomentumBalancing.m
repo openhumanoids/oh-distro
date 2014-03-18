@@ -20,10 +20,10 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 nq = getNumDOF(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 0*randn();
-xstar(2) = 0*randn();
-xstar(6) = 0*randn();
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp_zero_back.mat'));
+xstar(1) = 1*randn();
+xstar(2) = 1*randn();
+xstar(6) = pi/2*randn();
 %xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
 
@@ -59,10 +59,8 @@ ctrl_data = SharedDataHandle(struct(...
 options.slack_limit = 10;
 options.w = 0.1;
 options.lcm_foot_contacts = false;
-options.output_qdd = true;
-options.contact_threshold = 0.02;
+options.contact_threshold = 0.002;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
-
 
 % feedback QP controller with atlas
 ins(1).system = 1;

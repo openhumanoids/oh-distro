@@ -39,8 +39,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pm = myGetProperty(pobj,"W");
     pdata->W.resize(6,6);
     memcpy(pdata->W.data(),mxGetPr(pm),sizeof(double)*mxGetM(pm)*mxGetN(pm));
-    
-	  // get robot mex model ptr
+
+    pm= myGetProperty(pobj,"Kp");
+    pdata->Kp = mxGetScalar(pm);    
+
+    pm= myGetProperty(pobj,"Kd");
+    pdata->Kd = mxGetScalar(pm);    
+
+    // get robot mex model ptr
     if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
       mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the third argument should be the robot mex ptr");
     memcpy(&(pdata->r),mxGetData(prhs[2]),sizeof(pdata->r));
@@ -148,7 +154,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     memcpy(v.data(),mxGetPr(prhs[narg++]),sizeof(double)*7);
     spatial_accel_constraints.push_back(v);
   }
-
+  
   int num_condof;
   VectorXd condof;
   if (!mxIsEmpty(prhs[narg])) {
@@ -157,8 +163,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     condof = VectorXd::Zero(num_condof);
     memcpy(condof.data(),mxGetPr(prhs[narg++]),sizeof(double)*num_condof);
   }
-  else
+  else {
     num_condof=0;
+    narg++; // skip over empty vector
+  }
 
   int desired_support_argid = narg++;
 
@@ -280,7 +288,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double robot_mass = 161; // TODO: take this from RBM
   ldot_des << ustar[0]*robot_mass, 
               ustar[1]*robot_mass, 
-              (150*(1.04-xcom[2]) - 10*pdata->J.row(2)*qdvec)*robot_mass;
+              (pdata->Kp*(1.04-xcom[2]) - pdata->Kd*pdata->J.row(2)*qdvec)*robot_mass;
 
 
   Vector3d k = pdata->Ag.topRows(3)*qdvec;
