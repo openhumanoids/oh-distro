@@ -30,7 +30,7 @@ classdef SimplePDBlock < MIMODrakeSystem
       
       if isfield(options,'Kp')
         typecheck(options.Kp,'double');
-        sizecheck(options.Kp,[obj.nq obj.nq]);
+        sizecheck(options.Kp,[obj.nq 1]);
         obj.Kp = options.Kp;
       else
         obj.Kp = 170.0*ones(obj.nq,1);
@@ -39,7 +39,7 @@ classdef SimplePDBlock < MIMODrakeSystem
         
       if isfield(options,'Kd')
         typecheck(options.Kd,'double');
-        sizecheck(options.Kd,[obj.nq obj.nq]);
+        sizecheck(options.Kd,[obj.nq 1]);
         obj.Kd = options.Kd;
       else
         obj.Kd = 19.0*ones(obj.nq,1);
@@ -51,7 +51,7 @@ classdef SimplePDBlock < MIMODrakeSystem
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.002;
+        obj.dt = 0.001;
       end
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
       

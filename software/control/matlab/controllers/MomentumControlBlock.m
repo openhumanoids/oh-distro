@@ -232,10 +232,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
       K = ctrl_data.K.D; % always constant for ZMP dynamics
     end
 
-     if isfield(ctrl_data,'comztraj')
-       comz_des = fasteval(ctrl_data.comztraj,t);
-       dcomz_des = fasteval(ctrl_data.dcomztraj,t);
-       ddcomz_des = fasteval(ctrl_data.ddcomztraj,t);
+     if isfield(ctrl_data,'comz_traj')
+       comz_des = fasteval(ctrl_data.comz_traj,t);
+       dcomz_des = fasteval(ctrl_data.dcomz_traj,t);
+       ddcomz_des = fasteval(ctrl_data.ddcomz_traj,t);
      else
        comz_des = 1.04;
        dcomz_des = 0;
