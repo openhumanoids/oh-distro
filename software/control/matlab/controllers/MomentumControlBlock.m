@@ -69,6 +69,24 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.W = diag([0.1;0.1;0.1;1.0;1.0;1.0]);
     end
    
+    % com-z PD gains
+    if isfield(options,'Kp')
+      typecheck(options.Kp,'double');
+      sizecheck(options.Kp,1);
+      obj.Kp = options.Kp;
+    else
+      obj.Kp = 200;
+    end    
+
+    % com-z PD gains
+    if isfield(options,'Kd')
+      typecheck(options.Kd,'double');
+      sizecheck(options.Kd,1);
+      obj.Kd = options.Kd;
+    else
+      obj.Kd = 30;
+    end    
+
     % weight for desired qddot objective term
     if isfield(options,'w')
       typecheck(options.w,'double');
@@ -404,7 +422,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       % compute desired linear momentum
   %     comz_t = fasteval(ctrl_data.comztraj,t);
   %     dcomz_t = fasteval(ctrl_data.dcomztraj,t);
-      comddot_des = [ustar; 150*(1.04-xcom(3)) + 10*(0-z_com_dot)];
+      comddot_des = [ustar; obj.Kp*(1.04-xcom(3)) + obj.Kd*(0-z_com_dot)];
   %     comddot_des = [ustar; 10*(comz_t-xcom(3)) + 0.5*(dcomz_t-z_com_dot)];
       ldot_des = comddot_des * 161;
       k = A(1:3,:)*qd;
@@ -550,6 +568,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
     W; % angular momentum cost term weight matrix
     w; % qdd objective function weight
+    Kp; % com-z P gain
+    Kd; % com-z D gain
     slack_limit; % maximum absolute magnitude of acceleration slack variable values
     rfoot_idx;
     lfoot_idx;

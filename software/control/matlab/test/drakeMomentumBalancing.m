@@ -61,7 +61,6 @@ options.w = 0.1;
 options.lcm_foot_contacts = false;
 options.output_qdd = true;
 options.contact_threshold = 0.02;
-options.use_mex = true;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 
