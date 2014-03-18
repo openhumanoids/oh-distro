@@ -17,7 +17,7 @@ set(pcl_dep_depends)
 
 set(pcl_drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_drc)
 set(pcl_drc_revision 8298)
-set(pcl_drc_depends Eigen_pod)
+set(pcl_drc_depends Eigen_pod pcl_dep)
 
 set(octomap-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/octomap-drc)
 set(octomap-drc_revision 8298)
@@ -65,7 +65,7 @@ set(bullet_depends)
 
 set(fovis-git_url https://svn.csail.mit.edu/drc/trunk/software/externals/fovis-git)
 set(fovis-git_revision 8298)
-set(fovis-git_depends libbot-drc Eigen_pod)
+set(fovis-git_depends libbot-drc Eigen_pod kinect)
 
 set(estimate-pose_url https://svn.csail.mit.edu/rrg_pods/estimate-pose)
 set(estimate-pose_revision 827)
