@@ -1,0 +1,327 @@
+function atlasSteppingMomentum
+%NOTEST
+addpath(fullfile(getDrakePath,'examples','ZMP'));
+
+joint_str = {'leg'};% <---- cell array of (sub)strings  
+
+% inverse dynamics PD gains (only for input=position, control=force)
+Kp = 25;
+Kd = 10;
+
+% load robot model
+r = Atlas();
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
+r = removeCollisionGroupsExcept(r,{'toe','heel'});
+r = compile(r);
+r = r.setInitialState(xstar);
+
+% setup frames
+state_plus_effort_frame = AtlasStateAndEffort(r);
+state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
+input_frame = getInputFrame(r);
+ref_frame = AtlasPosVelTorqueRef(r);
+
+nu = getNumInputs(r);
+nq = getNumDOF(r);
+
+act_idx_map = getActuatedJoints(r);
+gains = getAtlasGains(input_frame); % change gains in this file
+
+joint_ind = [];
+joint_act_ind = [];
+for i=1:length(joint_str)
+  joint_ind = union(joint_ind,find(~cellfun(@isempty,strfind(state_plus_effort_frame.coordinates(1:nq),joint_str{i}))));
+  joint_act_ind = union(joint_act_ind,find(~cellfun(@isempty,strfind(input_frame.coordinates,joint_str{i}))));
+end
+
+% zero out force gains to start --- move to nominal joint position
+gains.k_f_p = zeros(nu,1);
+gains.ff_f_d = zeros(nu,1);
+gains.ff_qd = zeros(nu,1);
+gains.ff_qd_d = zeros(nu,1);
+ref_frame.updateGains(gains);
+
+% move to fixed point configuration 
+qdes = xstar(1:nq);
+atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
+
+gains2 = getAtlasGains(input_frame); 
+% reset force gains for joint being tuned
+gains.k_f_p(joint_act_ind) = gains2.k_f_p(joint_act_ind); 
+gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
+gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
+gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
+% set joint position gains to 0 for joint being tuned
+gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.0;
+gains.k_q_i(joint_act_ind) = 0;
+gains.k_qd_p(joint_act_ind) = 0;
+
+ref_frame.updateGains(gains);
+
+% get current state
+[x,~] = getMessage(state_plus_effort_frame);
+x0 = x(1:2*nq); 
+q0 = x0(1:nq); 
+
+% create navgoal
+R = rpy2rotmat([0;0;x0(6)]);
+v = R*[0;0;0];
+navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
+
+% create footstep and ZMP trajectories
+footstep_planner = StatelessFootstepPlanner();
+request = drc.footstep_plan_request_t();
+request.utime = 0;
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
+request.goal_pos = encodePosition3d(navgoal);
+request.num_goal_steps = 0;
+request.num_existing_steps = 0;
+request.params = drc.footstep_plan_params_t();
+request.params.max_num_steps = 3;
+request.params.min_num_steps = 0;
+request.params.min_step_width = 0.2;
+request.params.nom_step_width = 0.24;
+request.params.max_step_width = 0.3;
+request.params.nom_forward_step = 0.2;
+request.params.max_forward_step = 0.4;
+request.params.ignore_terrain = false;
+request.params.planning_mode = request.params.MODE_AUTO;
+request.params.behavior = request.params.BEHAVIOR_WALKING;
+request.params.map_command = 0;
+request.params.leading_foot = request.params.LEAD_RIGHT;
+request.default_step_params = drc.footstep_params_t();
+request.default_step_params.step_speed = 0.025;
+request.default_step_params.step_height = 0.05;
+request.default_step_params.mu = 1.0;
+request.default_step_params.constrain_full_foot_pose = true;
+
+
+footstep_plan = footstep_planner.plan_footsteps(r, request);
+
+walking_planner = StatelessWalkingPlanner();
+request = drc.walking_plan_request_t();
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
+request.footstep_plan = footstep_plan.toLCM();
+request.use_new_nominal_state = true;
+request.new_nominal_state = r.getStateFrame().lcmcoder.encode(0, x0);
+walking_plan = walking_planner.plan_walking(r, request, true);
+walking_ctrl_data = walking_planner.plan_walking(r, request, false);
+walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
+
+% ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
+ts = walking_plan.ts;
+T = ts(end);
+
+% plot walking traj in drake viewer
+lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
+
+for i=1:length(ts)
+	lcmgl.glColor3f(0, 0, 1);
+	lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+  lcmgl.glColor3f(0, 1, 0);
+	lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);  
+end
+lcmgl.switchBuffers();
+
+ctrl_data = SharedDataHandle(struct(...
+  'is_time_varying',true,...
+  'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
+  'link_constraints',walking_ctrl_data.link_constraints, ...
+  'support_times',walking_ctrl_data.support_times,...
+  'supports',[walking_ctrl_data.supports{:}],...
+  'ignore_terrain',walking_ctrl_data.ignore_terrain,...
+  'trans_drift',[0;0;0],...
+  'qtraj',x0(1:nq),...
+  'K',walking_ctrl_data.K,...
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
+
+traj = PPTrajectory(spline(ts,walking_plan.xtraj));
+traj = traj.setOutputFrame(r.getStateFrame);
+
+v = r.constructVisualizer;
+playback(v,traj,struct('slider',true));
+
+% instantiate QP controller
+options.slack_limit = 10;
+options.w = 0.1;
+options.lcm_foot_contacts = false;
+options.debug = false;
+options.use_mex = true;
+options.contact_threshold = 0.02;
+options.output_qdd = true;
+
+lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
+rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
+pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data);
+torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
+motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
+  pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
+
+
+% cascade PD block
+options.Kp = 25.0*ones(nq,1);
+options.Kp = 10.0*ones(nq,1);
+pd = SimplePDBlock(r,ctrl_data,options);
+ins(1).system = 1;
+ins(1).input = 1;
+ins(2).system = 1;
+ins(2).input = 2;
+ins(3).system = 2;
+ins(3).input = 1;
+ins(4).system = 2;
+ins(4).input = 3;
+ins(5).system = 2;
+ins(5).input = 4;
+ins(6).system = 2;
+ins(6).input = 5;
+ins(7).system = 2;
+ins(7).input = 6;
+outs(1).system = 2;
+outs(1).output = 1;
+outs(2).system = 2;
+outs(2).output = 2;
+sys = mimoCascade(pd,qp,[],ins,outs);
+clear ins;
+
+
+% cascade body motion control blocks
+ins(1).system = 2;
+ins(1).input = 1;
+ins(2).system = 1;
+ins(2).input = 1;
+ins(3).system = 2;
+ins(3).input = 2;
+ins(4).system = 2;
+ins(4).input = 3;
+ins(5).system = 2;
+ins(5).input = 5;
+ins(6).system = 2;
+ins(6).input = 6;
+ins(7).system = 2;
+ins(7).input = 7;
+sys = mimoCascade(lfoot_motion,sys,[],ins,outs);
+clear ins;
+
+ins(1).system = 2;
+ins(1).input = 1;
+ins(2).system = 1;
+ins(2).input = 1;
+ins(3).system = 2;
+ins(3).input = 2;
+ins(4).system = 2;
+ins(4).input = 3;
+ins(5).system = 2;
+ins(5).input = 4;
+ins(6).system = 2;
+ins(6).input = 6;
+ins(7).system = 2;
+ins(7).input = 7;
+sys = mimoCascade(rfoot_motion,sys,[],ins,outs);
+clear ins;
+
+ins(1).system = 2;
+ins(1).input = 1;
+ins(2).system = 1;
+ins(2).input = 1;
+ins(3).system = 2;
+ins(3).input = 2;
+ins(4).system = 2;
+ins(4).input = 3;
+ins(5).system = 2;
+ins(5).input = 4;
+ins(6).system = 2;
+ins(6).input = 5;
+ins(7).system = 2;
+ins(7).input = 7;
+sys = mimoCascade(pelvis_motion,sys,[],ins,outs);
+clear ins;
+
+ins(1).system = 2;
+ins(1).input = 1;
+ins(2).system = 1;
+ins(2).input = 1;
+ins(3).system = 2;
+ins(3).input = 2;
+ins(4).system = 2;
+ins(4).input = 3;
+ins(5).system = 2;
+ins(5).input = 4;
+ins(6).system = 2;
+ins(6).input = 5;
+ins(7).system = 2;
+ins(7).input = 6;
+sys = mimoCascade(torso_motion,sys,[],ins,outs);
+clear ins;
+
+
+qddes = zeros(nu,1);
+udes = zeros(nu,1);
+
+toffset = -1;
+tt=-1;
+dt = 0.001;
+
+process_noise = 0.01*ones(nq,1);
+observation_noise = 5e-4*ones(nq,1);
+kf = FirstOrderKalmanFilter(process_noise,observation_noise);
+kf_state = kf.getInitialState;
+
+torque_fade_in = 0.75; % sec, to avoid jumps at the start
+
+resp = input('OK to send input to robot? (y/n): ','s');
+if ~strcmp(resp,{'y','yes'})
+  return;
+end
+
+qd_int = 0;
+eta = 0.9;
+while tt<T+2
+  [x,t] = getNextMessage(state_plus_effort_frame,1);
+  if ~isempty(x)
+    if toffset==-1
+      toffset=t;
+    end
+    tt=t-toffset;
+
+    tau = x(2*nq+(1:nq));
+    tau = tau(act_idx_map);
+    
+    % get estimated state
+    kf_state = kf.update(tt,kf_state,x(1:nq));
+    x = kf.output(tt,kf_state,x(1:nq));
+
+    q = x(1:nq);
+    qd = x(nq+(1:nq));
+  
+    u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd;q;qd;q;qd;q;qd;q;qd]);
+    u=u_and_qdd(1:nu);
+    qdd=u_and_qdd(nu+1:end);
+    udes(joint_act_ind) = u(joint_act_ind);
+    
+    % fade in desired torques to avoid spikes at the start
+    alpha = min(1.0,tt/torque_fade_in);
+    udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
+    
+    % compute desired velocity
+    qd_int = qd_int + eta*qdd*dt;
+    qddes_state_frame = qd_int;
+    qddes_input_frame = qddes_state_frame(act_idx_map);
+    qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
+    
+    ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
+  end
+end
+
+disp('moving back to fixed point using position control.');
+gains = getAtlasGains(input_frame); % change gains in this file
+gains.k_f_p = zeros(nu,1);
+gains.ff_f_d = zeros(nu,1);
+gains.ff_qd = zeros(nu,1);
+ref_frame.updateGains(gains);
+
+% move to fixed point configuration 
+qdes = xstar(1:nq);
+atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,6);
+
+end

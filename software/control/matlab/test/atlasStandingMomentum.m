@@ -14,17 +14,17 @@ joint_str = {'leg'};% <---- cell array of (sub)strings
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
 dim = 3; % what dimension to move COM: x/y/z (1/2/3)
-T = 10;% <--- signal duration (sec)
+T = 15;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.05;% <---- meters, COM DELTA
+amp = 0.1;% <---- meters, COM DELTA
 chirp_f0 = 0.1;% <--- chirp starting frequency
-chirp_fT = 0.2;% <--- chirp ending frequency
+chirp_fT = 0.1;% <--- chirp ending frequency
 chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
 
-% inverse dynamics PD gains (only for input=position, control=force)
-Kp = 20;
-Kd = 5;
+% inverse dynamics PD gains 
+Kp = 25;
+Kd = 10;
 
 % random pose params for sys id tests
 use_random_traj = false; % if true, ignores chirp params
@@ -86,7 +86,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.1;
+gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
@@ -121,6 +121,10 @@ else
   else
     comtraj = comtraj + [0;0;input_traj];
   end
+  
+  comz_traj = comtraj(3);
+  dcomz_traj= fnder(comz_traj,1);
+  ddcomz_traj= fnder(dcomz_traj,1);
   
   % get foot positions
   kinsol = doKinematics(r,q0);
@@ -208,8 +212,11 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'qtraj',q0,...
   'K',K,...
+  'comz_traj',comz_traj,...
+  'dcomz_traj',dcomz_traj,...
+  'ddcomz_traj',ddcomz_traj,...
   'mu',1,...
-  'constrained_dofs',[]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
 % instantiate QP controller
 options.slack_limit = 10;
@@ -239,6 +246,8 @@ if ~strcmp(resp,{'y','yes'})
   return;
 end
 
+qd_int = 0;
+eta = 0.9;
 while tt<T+2
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -276,7 +285,8 @@ while tt<T+2
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
     % compute desired velocity
-    qddes_state_frame = qdtraj_t + qdd*dt;
+    qd_int = qd_int + eta*qdd*dt;
+    qddes_state_frame = qd_int;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
