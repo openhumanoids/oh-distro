@@ -10,7 +10,7 @@ Kd = 10;
 
 % load robot model
 r = Atlas();
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
 r = r.setInitialState(xstar);
@@ -142,12 +142,13 @@ v = r.constructVisualizer;
 playback(v,traj,struct('slider',true));
 
 % instantiate QP controller
-options.slack_limit = 10;
+options.slack_limit = 20;
 options.w = 0.1;
+options.W = diag([0.1;0.1;0.1;1;1;1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.02;
+options.contact_threshold = 0.05;
 options.output_qdd = true;
 
 lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
@@ -275,7 +276,7 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 qd_int = 0;
-eta = 0.9;
+eta = 0.1;
 while tt<T+2
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)

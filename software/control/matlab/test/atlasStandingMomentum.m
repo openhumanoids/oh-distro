@@ -86,7 +86,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0;
+gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.0;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
@@ -219,12 +219,15 @@ ctrl_data = SharedDataHandle(struct(...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
 % instantiate QP controller
-options.slack_limit = 10;
+options.slack_limit = 20;
 options.w = 0.1;
+options.W = diag([0.1;0.1;0.1;1;1;1]);
 options.lcm_foot_contacts = false;
-options.output_qdd = true;
-options.contact_threshold = 0.02;
+options.debug = false;
 options.use_mex = true;
+options.contact_threshold = 0.05;
+options.output_qdd = true;
+
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 qddes = zeros(nu,1);
@@ -247,7 +250,7 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 qd_int = 0;
-eta = 0.9;
+eta = 0.1;
 while tt<T+2
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
