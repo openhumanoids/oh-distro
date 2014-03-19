@@ -157,9 +157,11 @@ if ~strcmp(resp,{'y','yes'})
   return;
 end
 
+xtraj = [];
+
 qd_int = 0;
 eta = 0.9;
-while tt<T+2
+while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
     if toffset==-1
@@ -174,6 +176,7 @@ while tt<T+2
     kf_state = kf.update(tt,kf_state,x(1:nq));
     x = kf.output(tt,kf_state,x(1:nq));
 
+    xtraj = [xtraj x];
     q = x(1:nq);
     qd = x(nq+(1:nq));
   
@@ -206,5 +209,43 @@ ref_frame.updateGains(gains);
 % move to fixed point configuration 
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,6);
+
+
+% plot tracking performance
+alpha = 0.05;
+zmpact = [];
+for i=1:size(xtraj,2)
+  x = xtraj(:,i);
+  q = x(1:nq);
+  qd = x(nq+(1:nq));  
+  
+  if i==1
+		qdd = 0*qd;
+	else
+		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/dt;
+  end
+  qd_prev = qd;
+	qdd_prev = qdd;  
+
+  kinsol = doKinematics(r,q,false,true);
+  [com,J] = getCOM(r,kinsol);
+	J = J(1:2,:); 
+	Jdot = forwardJacDot(r,kinsol,0);
+  Jdot = Jdot(1:2,:);
+	
+	% hardcoding D for ZMP output dynamics
+	D = -1.04./9.81*eye(2); 
+
+	comdd = Jdot * qd + J * qdd;
+	zmp = com(1:2) + D * comdd;
+	zmpact = [zmpact zmp];
+end
+
+zmpknots = zmptraj.eval(zmptraj.getBreaks());
+figure(11);
+plot(zmpact(1,:),zmpact(2,:),'r');
+hold on;
+plot(zmpknots(1,:),zmpknots(2,:),'g');
+hold off;
 
 end
