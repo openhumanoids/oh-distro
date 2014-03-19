@@ -63,7 +63,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     % weight for desired qddot objective term
     if isfield(options,'W')
       typecheck(options.W,'double');
-      sizecheck(options.W,6);
+      sizecheck(options.W,[6 6]);
       obj.W = options.W;
     else
       obj.W = diag([0.1;0.1;0.1;1.0;1.0;1.0]);
