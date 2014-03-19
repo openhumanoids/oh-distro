@@ -133,7 +133,7 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'qtraj',x0(1:nq),...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
 traj = PPTrajectory(spline(ts,walking_plan.xtraj));
 traj = traj.setOutputFrame(r.getStateFrame);
@@ -151,10 +151,15 @@ options.use_mex = true;
 options.contact_threshold = 0.05;
 options.output_qdd = true;
 
-lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
-rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
-pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data);
-torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
+foot_options.Kp = [10;10;10;10;10;10];
+foot_options.Kd = [1;1;1;1;1;1];
+lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,foot_options);
+rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,foot_options);
+
+pelvis_options.Kp = [nan;nan;nan;nan;nan;nan]; % using nan gains removes the constraint
+pelvis_options.Kd = [nan;nan;nan;nan;nan;nan]; % using nan gains removes the constraint
+pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data,pelvis_options);
+torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,pelvis_options);
 motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
   pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
 qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
