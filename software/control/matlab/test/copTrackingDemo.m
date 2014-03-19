@@ -59,20 +59,28 @@ ref_frame.updateGains(gains);
 x0 = x(1:2*nq); 
 q0 = x0(1:nq); 
 
-% create figure 8 zmp traj
-T = 20;
-dt = 0.01;
-ts = 0:0.01:T;
-nt = T/dt;
-radius = 0.05; % 8 loop radius
-zmpx = [radius*sin(4*pi/T * ts(1:nt/2)), radius*sin(4*pi/T * ts(1:nt/2+1))];
-zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
-zmpknots = [zmpx;zmpy;0*zmpx];
+T = 30;
+if 1
+  % create figure 8 zmp traj
+  dt = 0.01;
+  ts = 0:dt:T;
+  nt = T/dt;
+  radius = 0.05; % 8 loop radius
+  zmpx = [radius*sin(4*pi/T * ts(1:nt/2)), radius*sin(4*pi/T * ts(1:nt/2+1))];
+  zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
+else
+  % rectangle
+  h=0.04; % height/2
+  w=0.1; % width/2
+  zmpx = [0 h h -h -h 0];
+  zmpy = [0 w -w -w w 0];
+  ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
+end
 
-% create navgoal
+zmpknots = [zmpx;zmpy;0*zmpx];
 R = rpy2rotmat([0;0;x0(6)]);
 zmpknots = R*zmpknots;
-zmptraj = PPTrajectory(spline(ts,zmpknots(1:2,:)));
+zmptraj = PPTrajectory(foh(ts,zmpknots(1:2,:)));
 
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
@@ -84,6 +92,7 @@ zmptraj = zmptraj.setOutputFrame(desiredZMP);
 % plot walking traj in drake viewer
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'zmp-traj');
 
+ts = 0:0.1:T;
 for i=1:length(ts)
   lcmgl.glColor3f(0, 1, 0);
 	lcmgl.sphere([zmptraj.eval(ts(i));0], 0.01, 20, 20);  
@@ -113,6 +122,7 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.slack_limit = 20;
 options.w = 0.1;
+options.W = diag([0.1;0.1;0.1;1;1;1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -160,7 +170,7 @@ end
 xtraj = [];
 
 qd_int = 0;
-eta = 0.9;
+eta = 0.1;
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -212,7 +222,7 @@ atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,6);
 
 
 % plot tracking performance
-alpha = 0.05;
+alpha = 0.025;
 zmpact = [];
 for i=1:size(xtraj,2)
   x = xtraj(:,i);
