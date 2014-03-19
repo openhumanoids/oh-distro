@@ -24,13 +24,13 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'back_bky';% <---- joint name 
-input_mode = 'position';% <---- force, position
-control_mode = 'force+velocity';% <---- force, force+velocity, position
-signal = 'chirp';% <----  zoh, foh, chirp
+joint = 'r_leg_kny';% <---- joint name 
+input_mode = 'force';% <---- force, position
+control_mode = 'force';% <---- force, force+velocity, position
+signal = 'foh';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 30;% <--- signal duration (sec)
+T = 60;% <--- signal duration (sec)
 
 % chirp specific
 amp = 0.3;% <----  Nm or radians
@@ -39,7 +39,7 @@ chirp_fT = 0.2;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
-vals = 20*[0 1 1 -1 -1 0 0];% <----  Nm or radians
+vals = 10*[0 1 1 -1 -1 0 0];% <----  Nm or radians
 
 % inverse dynamics PD gains (only for input=position, control=force)
 Kp = 25;
@@ -84,7 +84,7 @@ if strcmp(signal,'chirp')
   vals=amp;
 end
 if strcmp(input_mode,'force')
-  rangecheck(vals,-200,200);
+%   rangecheck(vals,-200,200);
   if ~rangecheck(vals,-50,50)
     resp = input('Warning: about to command relatively high torque. OK? (y/n): ','s');
     if ~strcmp(resp,{'y','yes'})
@@ -127,10 +127,10 @@ if any(strcmp(control_mode,{'force','force+velocity'}))
   gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
   gains.k_qd_p(act_idx==joint_index_map.(joint)) = 0;
   % set force gains
-  gains.k_f_p(act_idx==joint_index_map.(joint)) = gains2.k_f_p(act_idx==joint_index_map.(joint));
-  gains.ff_f_d(act_idx==joint_index_map.(joint)) = gains2.ff_f_d(act_idx==joint_index_map.(joint));
-  gains.ff_qd(act_idx==joint_index_map.(joint)) = gains2.ff_qd(act_idx==joint_index_map.(joint));
-  gains.ff_qd_d(act_idx==joint_index_map.(joint)) = gains2.ff_qd_d(act_idx==joint_index_map.(joint));
+  gains.k_f_p(act_idx==joint_index_map.(joint)) = 0;%gains2.k_f_p(act_idx==joint_index_map.(joint));
+  gains.ff_f_d(act_idx==joint_index_map.(joint)) = 1.0;%gains2.ff_f_d(act_idx==joint_index_map.(joint));
+  gains.ff_qd(act_idx==joint_index_map.(joint)) = 0;%gains2.ff_qd(act_idx==joint_index_map.(joint));
+  gains.ff_qd_d(act_idx==joint_index_map.(joint)) = 0;%gains2.ff_qd_d(act_idx==joint_index_map.(joint));
   ref_frame.updateGains(gains);
 end
  
