@@ -36,9 +36,9 @@ classdef FirstOrderKalmanFilter < DrakeSystem
       qd = x(obj.n+2:2*obj.n+1);
       dt = t - x(1);
       
-      if dt > 1e-2
-        warning('Update step seems large. t=%d and last update was at t=%d',t,x(1));
-      end
+%       if dt > 1e-2
+%         warning('Update step seems large. t=%d and last update was at t=%d',t,x(1));
+%       end
       
       q_prior = q + qd*dt;
       qd_prior = qd;
