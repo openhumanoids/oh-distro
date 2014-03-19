@@ -4,6 +4,7 @@ ConvertOctomap::ConvertOctomap(boost::shared_ptr<lcm::LCM> &lcm_, const ConvertO
     lcm_(lcm_), co_cfg_(co_cfg_){
       
   verbose_ = 1; // 3 lots, 2 some, 1 v.important
+  
 }
 
 
@@ -35,7 +36,7 @@ OcTree* ConvertOctomap::convertPointCloudToOctree(pcl::PointCloud<pcl::PointXYZR
   if (verbose_>=1) std::cout << "Added points to octomap graph\n";
   graph->addNode(scan, pose);
   graph->connectPrevious();
-  if (co_cfg_.write_output){
+  if (write_output_detailed){
     std::string filename_out = path + "example_sweep_cloud_400scans.graph";
     graph->writeBinary(filename_out);
   }
@@ -196,22 +197,27 @@ void ConvertOctomap::doWork(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
     gettimeofday(&stop, NULL);  // stop timer
     double time_to_blur = (stop.tv_sec - start.tv_sec) + 1.0e-6 *(stop.tv_usec - start.tv_usec);
     if (verbose_>=1) cout << "time to insert scans: " << time_to_blur << " sec" << endl;
+    // publishOctree(tree_blurred,"OCTOMAP_BLURRED");
+  
     if (co_cfg_.write_output){
       std::stringstream s;
-      s <<  path <<   "example_sweep_cloud.bt" << "_blurred_" << co_cfg_.blur_sigma ;
+      s <<  getDataPath() <<   "/octomap.bt" ;
+      printf("Saving original map to: %s\n", s.str().c_str());
+      tree->writeBinary(s.str().c_str());
+      s << "_blurred_" << co_cfg_.blur_sigma ;
       printf("Saving blurred map to: %s\n", s.str().c_str());
       octomap_utils::saveOctomap(tree_blurred, s.str().c_str(), minNegLogLike);  
     }
-    publishOctree(tree_blurred,"OCTOMAP_BLURRED");  // the GPF expects this channel
   }
   
+  
   if (co_cfg_.repeat_period > 0) {
-    std::cout << "Republishing octomaps to LCM with period "<< co_cfg_.repeat_period << " sec\n";
+    std::cout << "Republishing unblurred octomap to LCM with period "<< co_cfg_.repeat_period << " sec\n";
     while (1) {
       usleep(1e6 * co_cfg_.repeat_period);
       fprintf(stderr, ".");
       publishOctree(tree,"OCTOMAP");
-      if (co_cfg_.blur_map) publishOctree(tree_blurred,"OCTOMAP_BLURRED");
+      // if (co_cfg_.blur_map) publishOctree(tree_blurred,"OCTOMAP_BLURRED");
     }
   }  
 }

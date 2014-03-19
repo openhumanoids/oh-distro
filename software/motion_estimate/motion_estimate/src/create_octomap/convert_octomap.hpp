@@ -10,6 +10,8 @@
 #include <octomap_utils/octomap_util.hpp>
 #include <lcmtypes/octomap_utils.h>
 
+#include <path_util/path_util.h>
+
 using namespace std;
 using namespace octomap;
 

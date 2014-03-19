@@ -71,9 +71,7 @@ namespace renderer_sticky_feet_gui_utils
     
     GtkWidget  *approve_button, *cancel_button;
     approve_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_APPLY);
-    gtk_widget_set_size_request(approve_button, 70, 70);
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CANCEL);
-    gtk_widget_set_size_request(cancel_button, 70, 70);
         
     gtk_widget_set_tooltip_text (approve_button, "Accept Footstep Plan");
     gtk_widget_set_tooltip_text (cancel_button, "Cancel Footstep Plan");

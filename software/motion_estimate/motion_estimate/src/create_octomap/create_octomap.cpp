@@ -1,8 +1,10 @@
 // Start. collect 400 scans
 // exit callback
-// convert to octomap, blur and continously loop publishing
-// se-create-octomap  -s 300 -b 0.2
-// min range of 2m culls all the points around the robot but doesnt seem to cull the near returns
+// convert to octomap, blur and save to file.
+// Republish the octomap
+// se-create-octomap  -s 500 -b 0.5 -r 20 -w -u
+//
+// min range of 2m seems the right choice: culls self-observations but doesnt cull  ground in front of the robot
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 
@@ -49,7 +51,7 @@ class CloudAccumulate{
     bot::frames* botframes_cpp_;   
     
     int counter_; // used for terminal feedback
-    bool verbose_;
+    int verbose_;
     
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr combined_cloud_;  
     
@@ -74,7 +76,7 @@ CloudAccumulate::CloudAccumulate(boost::shared_ptr<lcm::LCM> &lcm_, const CloudA
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60012,"Cloud (full sweep) - Null"         ,1,1, 60010,0, {0.0, 0.0, 1.0} ));
   
   counter_ =0;  
-  verbose_=false;
+  verbose_=3; // 1 important, 2 useful 3, lots
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
   combined_cloud_ = cloud_ptr;    
@@ -95,9 +97,10 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   // 4. Visualize the scan:
   Eigen::Isometry3d scan_to_local;
   botframes_cpp_->get_trans_with_utime( botframes_ , "SCAN", "local"  , msg->utime, scan_to_local);
+  
   Isometry3dTime scan_to_local_T = Isometry3dTime(counter_, scan_to_local);
-  if (verbose_) pc_vis_->pose_to_lcm_from_list(60000, scan_to_local_T);
-  if (verbose_) pc_vis_->ptcld_to_lcm_from_list(60001, *scan_laser, counter_, counter_);  
+  if (verbose_>=3) pc_vis_->pose_to_lcm_from_list(60000, scan_to_local_T);
+  if (verbose_>=3) pc_vis_->ptcld_to_lcm_from_list(60001, *scan_laser, counter_, counter_);  
   
   
   /////////////////
@@ -107,8 +110,8 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   pcl::transformPointCloud (*scan_laser, *scan_local,
       scan_to_local_f.translation(), Eigen::Quaternionf(scan_to_local_f.rotation())  );    
   Isometry3dTime null_T = Isometry3dTime(counter_, Eigen::Isometry3d::Identity()  );
-  pc_vis_->pose_to_lcm_from_list(60010, null_T);
-  pc_vis_->ptcld_to_lcm_from_list(60011, *scan_local, counter_, counter_);    
+  if (verbose_>=2) pc_vis_->pose_to_lcm_from_list(60010, null_T);
+  if (verbose_>=2) pc_vis_->ptcld_to_lcm_from_list(60011, *scan_local, counter_, counter_);    
 
   // Accumulate
   *combined_cloud_ += *scan_local;
@@ -118,17 +121,21 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
     // too much data for a single message:
     //pc_vis_->ptcld_to_lcm_from_list(60012, *combined_cloud_, counter_, counter_);    
     
-    //pcl::PCDWriter writer;
+    std::stringstream s;
+    s <<  getDataPath() <<   "/octomap.pcd" ;
+    printf("Saving original point cloud to: %s\n", s.str().c_str());
+    pcl::PCDWriter writer;
+    writer.write (s.str(), *combined_cloud_, true); // binary =true
+    cout << "finished writing "<< combined_cloud_->points.size() <<" points to:\n" << s.str() <<"\n";
+    
+    
     //stringstream ss2;
     //ss2 << "/tmp/sweep_cloud_"  << msg->utime << ".pcd";
-    //writer.write (ss2.str(), *combined_cloud_, true); // binary =true
-    //cout << "finished writing "<< combined_cloud_->points.size() <<" points to:\n" << ss2.str() <<"\n";
     //
     //std::cout << "Writing ptcldToOctomapLogFile\n";
     //pc_vis_->ptcldToOctomapLogFile(*combined_cloud_, "/home/mfallon/Desktop/test.octolog");
     //writer.write ("/home/mfallon/Desktop/test.pcd", *combined_cloud_, true); // binary =true
     
-    combined_cloud_->points.empty();
     cout << "Finished Collecting: " << msg->utime << "\n";
     //  vs::reset_collections_t reset;
     //  lcm_->publish("RESET_COLLECTIONS", &reset);    
@@ -160,7 +167,7 @@ int main(int argc, char ** argv) {
   opt.add(co_cfg.blur_map, "u", "blur_map","Blur map here");
   opt.add(co_cfg.blur_sigma, "b", "blur_sigma","Radius of the blur kernel");
   opt.add(co_cfg.repeat_period, "r", "repeat_period","Repeat period of republishes [sec]");
-  opt.add(co_cfg.write_output, "w", "write_output","Write output files (graph, bt, blurred bt");
+  opt.add(co_cfg.write_output, "w", "write_output","Write output octomaps (bt, bt_blurred");
   //
   opt.add(ca_cfg.lidar_channel, "l", "lidar_channel","lidar_channel");
   opt.add(ca_cfg.batch_size, "s", "batch_size","Size of the batch of scans");

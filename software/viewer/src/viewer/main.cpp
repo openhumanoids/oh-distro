@@ -10,7 +10,8 @@
 #include <path_util/path_util.h>
 #include <ConciseArgs>
 
-#include <bot_frames/bot_frames_renderers.h>
+//#include <bot_frames/bot_frames_renderers.h>
+#include <bot_frames_drc/bot_frames_renderers.h>
 
 //imported renderers
 #include <bot_lcmgl_render/lcmgl_bot_renderer.h>
@@ -288,8 +289,8 @@ int main(int argc, char *argv[])
     multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
   }
   if (use_additional_renderers) {
-    bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
-    bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+    //bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
+    //bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );
 
     //bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "boxy_renderer");
     //bot_frames_add_articulated_body_renderer_to_viewer(viewer, 1, bot_param, bot_frames, getModelsPath(), "model_renderer");
@@ -300,6 +301,8 @@ int main(int argc, char *argv[])
 
     // A second robot renderer: (on a different channel, currently "EST_ROBOT_STATE_BDI
     setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
+    // 
+    setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,2);
   }
 
   //--------------    Toolbar Additions
