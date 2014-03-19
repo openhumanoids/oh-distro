@@ -38,6 +38,7 @@ observation_noise = 5e-4*ones(nq,1);
 kf = FirstOrderKalmanFilter(process_noise,observation_noise);
 kf_state = kf.getInitialState;
 
+leg_idx = findJointIndices(r,'leg');
 
 t_prev=-1;
 qd_prev=-1;
@@ -61,7 +62,7 @@ while true
 			t_prev=t;
 		end
 		
-% 		tau = x(2*nq+(1:nq));
+ 		tau = x(2*nq+(1:nq));
  
 		% get estimated state
     kf_state = kf.update(t,kf_state,x(1:nq));
@@ -69,6 +70,9 @@ while true
 
     q_kf = x_kf(1:nq);
     qd_kf = x_kf(nq+(1:nq));
+
+    % spring adjustement
+    q_kf(leg_idx) = q_kf(leg_idx) - 0.000*tau(leg_idx);
     
 		if qd_prev==-1
 			qdd = 0*qd_kf;
@@ -92,7 +96,7 @@ while true
 		force_torque = getMessage(force_torque_frame);
 		drawCOP(force_torque,kinsol,lcmgl_cop);
 		
-    v.draw(t,x_kf);
+    v.draw(t,[q_kf;qd_kf]);
   end
 end
 

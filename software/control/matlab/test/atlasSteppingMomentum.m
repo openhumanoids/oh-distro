@@ -4,10 +4,6 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 joint_str = {'leg'};% <---- cell array of (sub)strings  
 
-% inverse dynamics PD gains (only for input=position, control=force)
-Kp = 25;
-Kd = 10;
-
 % load robot model
 r = Atlas();
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
@@ -90,8 +86,8 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_RIGHT;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.025;
-request.default_step_params.step_height = 0.05;
+request.default_step_params.step_speed = 0.01;
+request.default_step_params.step_height = 0.025;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
 
@@ -144,7 +140,7 @@ playback(v,traj,struct('slider',true));
 % instantiate QP controller
 options.slack_limit = 20;
 options.w = 0.1;
-options.W = diag([0.1;0.1;0.1;1;1;1]);
+options.W = diag([0;0;0;1;1;1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -273,6 +269,8 @@ observation_noise = 5e-4*ones(nq,1);
 kf = FirstOrderKalmanFilter(process_noise,observation_noise);
 kf_state = kf.getInitialState;
 
+leg_idx = findJointIndices(r,'leg');
+
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
 resp = input('OK to send input to robot? (y/n): ','s');
@@ -281,8 +279,7 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 qd_int = 0;
-eta = 0.1;
-while tt<T+2
+while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
     if toffset==-1
@@ -291,7 +288,6 @@ while tt<T+2
     tt=t-toffset;
 
     tau = x(2*nq+(1:nq));
-    tau = tau(act_idx_map);
     
     % get estimated state
     kf_state = kf.update(tt,kf_state,x(1:nq));
@@ -299,18 +295,20 @@ while tt<T+2
 
     q = x(1:nq);
     qd = x(nq+(1:nq));
-  
+    q(leg_idx) = q(leg_idx) - 0.000*tau(leg_idx);
+
     u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd;q;qd;q;qd;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+1:end);
     udes(joint_act_ind) = u(joint_act_ind);
     
     % fade in desired torques to avoid spikes at the start
+    tau = tau(act_idx_map);
     alpha = min(1.0,tt/torque_fade_in);
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
     % compute desired velocity
-    qd_int = qd_int + eta*qdd*dt;
+    qd_int = qd_int + qdd*dt;
     qddes_state_frame = qd_int;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);

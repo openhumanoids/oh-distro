@@ -169,8 +169,8 @@ end
 
 xtraj = [];
 
+q_int = q0;
 qd_int = 0;
-eta = 0.1;
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -180,7 +180,6 @@ while tt<T
     tt=t-toffset;
 
     tau = x(2*nq+(1:nq));
-    tau = tau(act_idx_map);
     
     % get estimated state
     kf_state = kf.update(tt,kf_state,x(1:nq));
@@ -196,11 +195,13 @@ while tt<T
     udes(joint_act_ind) = u(joint_act_ind);
     
     % fade in desired torques to avoid spikes at the start
+    tau = tau(act_idx_map);
     alpha = min(1.0,tt/torque_fade_in);
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
     % compute desired velocity
-    qd_int = qd_int + eta*qdd*dt;
+    qd_int = qd_int + qdd*dt;
+    q_int = q_int + qd_int*dt;
     qddes_state_frame = qd_int;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
@@ -222,7 +223,7 @@ atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,6);
 
 
 % plot tracking performance
-alpha = 0.025;
+alpha = 0.01;
 zmpact = [];
 for i=1:size(xtraj,2)
   x = xtraj(:,i);
@@ -248,14 +249,21 @@ for i=1:size(xtraj,2)
 
 	comdd = Jdot * qd + J * qdd;
 	zmp = com(1:2) + D * comdd;
-	zmpact = [zmpact zmp];
+	zmpact = [zmpact [zmp;0]];
 end
 
-zmpknots = zmptraj.eval(zmptraj.getBreaks());
+nb = length(zmptraj.getBreaks());
+zmpknots = reshape(zmptraj.eval(zmptraj.getBreaks()),2,nb);
+zmpknots = [zmpknots; zeros(1,nb)];
+
+zmpact = R'*zmpact;
+zmpknots = R'*zmpknots;
+
 figure(11);
-plot(zmpact(1,:),zmpact(2,:),'r');
+plot(zmpact(2,:),zmpact(1,:),'r');
 hold on;
-plot(zmpknots(1,:),zmpknots(2,:),'g');
+plot(zmpknots(2,:),zmpknots(1,:),'g');
 hold off;
+axis equal;
 
 end
