@@ -33,6 +33,8 @@ import argparse
 import lcm
 import takktile
 
+import numpy as np
+
 logger = logging.getLogger(__name__)
 
 class TakktileUDPDispatcher(asyncore.dispatcher):
@@ -252,7 +254,16 @@ if __name__ == '__main__':
 
     # Start LCM
     lc = lcm.LCM()
-    channel = 'TAKKTILE_' + args.side.upper()
+    dataChannel = 'TAKKTILE_RAW_' + args.side.upper()
+    contactChannel = 'TAKKTILE_CONTACT_' + args.side.upper()
+
+    MAX_SENSORS = 128
+    THRESHOLD = 5
+
+    forceWindow = [np.zeros(100) for _ in range(MAX_SENSORS)]
+    forceIndex = 0
+
+    initialSweep = True
 
     with TakktileUDP(args.remoteHost, args.remotePort, args.localHost, args.localPort, args.timeout) as tk:
         while tk.alive is None:
@@ -261,14 +272,52 @@ if __name__ == '__main__':
         print ("Alive: {} sensors: {}".format(len(alive),alive))
 
         while True:
-            stateMsg = takktile.state_t()
             data = tk.dataRaw
             if data:
-                for i, key in enumerate(data.keys()):
-                    stateMsg.id[i] = key
-                    stateMsg.force[i] = data[key][0]
-                    stateMsg.temp[i] = data[key][1]
+                #Message for raw data
+                stateMsg = takktile.state_t()
+                stateMsg.data_length = len(data.keys())
+
+                #Message for possible contact
+                contactMsg = takktile.contact_t()
+                contactDetects = 0
+
+                for key in data.keys():
+                    #Queue up the raw data every time
+                    stateMsg.id.append(key)
+                    stateMsg.force.append(data[key][0])
+                    stateMsg.temp.append(data[key][1])
+
+                    #look for possible deviations
+                    delta = data[key][0] - forceWindow[key].mean()
+                    if not initialSweep and abs(delta) > THRESHOLD:
+                        contactDetects += 1
+                        contactMsg.id.append(key)
+                        contactMsg.delta.append(delta)
+
+                        #Don't use this data to change the window
+                        forceWindow[key][forceIndex] = forceWindow[key].mean()
+                    else:
+                        #No contact, add this to the window
+                        forceWindow[key][forceIndex] = data[key][0]
+
+                #increment the counter for the data window, wrap if needed
+                forceIndex += 1
+                if forceIndex == 100:
+                    if initialSweep:
+                        initialSweep = False
+                    forceIndex = 0
+
+                #Always publish the data field
                 stateMsg.utime = time.time() * 1000000
-                lc.publish(channel, stateMsg.encode())
+                lc.publish(dataChannel, stateMsg.encode())
+
+                #Maybe publish contacts
+                if contactDetects > 0:
+                    contactMsg.data_length = contactDetects
+                    contactMsg.utime = time.time() * 1000000
+                    lc.publish(contactChannel, contactMsg.encode())
+
+
 
     print "Exiting"

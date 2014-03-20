@@ -6,7 +6,9 @@ struct state_t
 {
   int64_t utime;
 
-  int16_t id[30];
-  int16_t force[30];
-  int16_t temp[30];
+  int16_t data_length;
+
+  int16_t id[data_length];
+  int16_t force[data_length];
+  int16_t temp[data_length];
 }
