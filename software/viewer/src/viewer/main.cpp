@@ -41,7 +41,7 @@
 #include <renderer_sticky_feet/renderer_sticky_feet.hpp>
 #include <tracker-renderer/TrackerRenderer.hpp>
 
-// mav renderers:
+// state estimation renderers:
 #include <mav_state_est/mav_state_est_renderers.h>
 #include <octomap_utils/renderer_octomap.h>
 #include <occ_map/occ_map_renderers.h>
@@ -301,7 +301,6 @@ int main(int argc, char *argv[])
 
     // A second robot renderer: (on a different channel, currently "EST_ROBOT_STATE_BDI
     setup_renderer_robot_state(viewer, 0, lcm,1,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
-    // 
     setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,2);
   }
 

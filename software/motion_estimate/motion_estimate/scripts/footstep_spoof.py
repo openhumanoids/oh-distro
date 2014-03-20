@@ -39,6 +39,11 @@ def on_pose_bdi(channel, data):
   state.got_pose_bdi = True
   state.pose_bdi = getBotCorePose3dAsBotTrans(m)
 
+  #temp = trans_invert( state.pose_body ) ;
+  #q = trans_apply_trans( state.pose_bdi,temp   );    
+  #q.print_out()
+
+
 def on_pose_body(channel, data):
   m = pose_t.decode(data)
   if (state.got_pose_body == False): print "Received",channel
