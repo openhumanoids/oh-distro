@@ -106,6 +106,24 @@ if use_random_traj
   [traj,info] = interpolatingTraj(r_ch,[0 T],xposes,x0,pose_hold_time*num_random_pose/T,constraints,ikoptions);
   traj = traj.setOutputFrame(r.getStateFrame);
   qtraj = traj(1:nq);
+
+  ts = 0:0.01:traj.tspan(end);
+  comztraj = zeros(1,length(ts));
+  
+  for i=1:length(ts)
+   
+    kinsol = doKinematics(r,qtraj.eval(ts(i)));
+    com = getCOM(r,kinsol);
+    comztraj(i) = com(3);
+    
+   
+  end
+  comz_traj = PPTrajectory(foh(ts,comztraj));
+  fnplt(comz_traj)
+  
+  dcomz_traj= ConstantTrajectory(0);
+  ddcomz_traj= ConstantTrajectory(0);
+  
 else
   comtraj = ConstantTrajectory(com0);
   

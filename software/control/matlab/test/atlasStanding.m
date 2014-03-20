@@ -30,7 +30,7 @@ Kd = 5;
 use_zmp = true;
 
 % random pose params for sys id tests
-use_random_traj = false; % if true, ignores chirp params
+use_random_traj = true; % if true, ignores chirp params
 num_random_pose = 5;
 pose_hold_time = 5; % sec
 pose_move_time = 10; % sec
