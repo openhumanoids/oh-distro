@@ -18,6 +18,7 @@ set(python_files
   ddapp/debugVis.py
   ddapp/drakevisualizer.py
   ddapp/drilltaskpanel.py
+  ddapp/filterUtils.py
   ddapp/footstepsdriver.py
   ddapp/footstepsdriverpanel.py
   ddapp/handdriver.py
@@ -37,6 +38,7 @@ set(python_files
   ddapp/pointCloudUtils.py
   ddapp/robotstate.py
   ddapp/robotplanlistener.py
+  ddapp/roboturdf.py
   ddapp/segmentation.py
   ddapp/segmentationpanel.py
   ddapp/shallowCopy.py
@@ -101,3 +103,4 @@ add_custom_target(python_byte_compile ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/c
 
 
 add_subdirectory(extensions)
+add_subdirectory(tests)
