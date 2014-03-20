@@ -38,6 +38,8 @@ class CloudAccumulate{
     bool getFinished(){ return finished_; }
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud(){ return combined_cloud_; }
     
+    void publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
+
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     const CloudAccumulateConfig& ca_cfg_;
@@ -145,6 +147,12 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
 }
 
 
+void CloudAccumulate::publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud){
+  Isometry3dTime null_T = Isometry3dTime(counter_, Eigen::Isometry3d::Identity()  );
+  pc_vis_->pose_to_lcm_from_list(60010, null_T);
+  pc_vis_->ptcld_to_lcm_from_list(60012, *combined_cloud_, counter_, counter_);    
+}
+
 
 
 int main(int argc, char ** argv) {
@@ -183,10 +191,10 @@ int main(int argc, char ** argv) {
   }
   
   ConvertOctomap convert(lcm, co_cfg);
+  CloudAccumulate accu(lcm, ca_cfg);
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   if (input==0){
-    CloudAccumulate accu(lcm, ca_cfg);
     cout << "Listening for LIDAR from LCM" << endl << "============================" << endl;
     while( (0==lcm->handle()) &&  (!accu.getFinished()) );
     
@@ -203,7 +211,31 @@ int main(int argc, char ** argv) {
 
 
   convert.doWork(cloud);
+
+
+  // LCM collections can only handle about 200k points:
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr sub_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  for (size_t i=0 ; i < 50000 ; i++){
+    sub_cloud->points.push_back( cloud->points[i] );
+  }
+  sub_cloud->width = sub_cloud->points.size();
+  sub_cloud->height = 1;  
+  
+
   
   
+  if (co_cfg.repeat_period > 0) {
+    std::cout << "Republishing unblurred octomap and point cloud to LCM with period "<< co_cfg.repeat_period << " sec\n";
+    while (1) {
+      usleep(1e6 * co_cfg.repeat_period);
+      fprintf(stderr, ".");
+      convert.publishOctree( convert.getTree(),"OCTOMAP");
+
+      accu.publishCloud(sub_cloud);
+      // if (co_cfg_.blur_map) publishOctree(tree_blurred,"OCTOMAP_BLURRED");
+    }
+  }  
+
+
   return 0;
 }

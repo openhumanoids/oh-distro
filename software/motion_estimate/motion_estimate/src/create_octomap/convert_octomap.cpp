@@ -4,7 +4,7 @@ ConvertOctomap::ConvertOctomap(boost::shared_ptr<lcm::LCM> &lcm_, const ConvertO
     lcm_(lcm_), co_cfg_(co_cfg_){
       
   verbose_ = 1; // 3 lots, 2 some, 1 v.important
-  
+  tree_  = new OcTree(1); // set else where
 }
 
 
@@ -180,20 +180,20 @@ void ConvertOctomap::doWork(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   std::cout << "Processing cloud with " << cloud->width * cloud->height
             << " points" << std::endl;  
             
-  OcTree* tree = convertPointCloudToOctree(cloud);
-  publishOctree(tree,"OCTOMAP");
+  tree_ = convertPointCloudToOctree(cloud);
+  publishOctree(tree_,"OCTOMAP");
 
   octomap::OcTree * tree_blurred;
   if (co_cfg_.blur_map){
     timeval start; 
     timeval stop; 
     gettimeofday(&start, NULL);  // start timer  
-    tree->toMaxLikelihood();
-    tree->expand();
+    tree_->toMaxLikelihood();
+    tree_->expand();
     printf("Blurring octomap\n");
     double minNegLogLike;
     
-    tree_blurred = octomap_utils::octomapBlur(tree, co_cfg_.blur_sigma, &minNegLogLike);
+    tree_blurred = octomap_utils::octomapBlur(tree_, co_cfg_.blur_sigma, &minNegLogLike);
     gettimeofday(&stop, NULL);  // stop timer
     double time_to_blur = (stop.tv_sec - start.tv_sec) + 1.0e-6 *(stop.tv_usec - start.tv_usec);
     if (verbose_>=1) cout << "time to insert scans: " << time_to_blur << " sec" << endl;
@@ -203,7 +203,7 @@ void ConvertOctomap::doWork(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
       std::stringstream s;
       s <<  getDataPath() <<   "/octomap.bt" ;
       printf("Saving original map to: %s\n", s.str().c_str());
-      tree->writeBinary(s.str().c_str());
+      tree_->writeBinary(s.str().c_str());
       s << "_blurred_" << co_cfg_.blur_sigma ;
       printf("Saving blurred map to: %s\n", s.str().c_str());
       octomap_utils::saveOctomap(tree_blurred, s.str().c_str(), minNegLogLike);  
@@ -211,13 +211,4 @@ void ConvertOctomap::doWork(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   }
   
   
-  if (co_cfg_.repeat_period > 0) {
-    std::cout << "Republishing unblurred octomap to LCM with period "<< co_cfg_.repeat_period << " sec\n";
-    while (1) {
-      usleep(1e6 * co_cfg_.repeat_period);
-      fprintf(stderr, ".");
-      publishOctree(tree,"OCTOMAP");
-      // if (co_cfg_.blur_map) publishOctree(tree_blurred,"OCTOMAP_BLURRED");
-    }
-  }  
 }
