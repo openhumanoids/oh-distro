@@ -204,8 +204,8 @@ void ConvertOctomap::doWork(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
       s <<  getDataPath() <<   "/octomap.bt" ;
       printf("Saving original map to: %s\n", s.str().c_str());
       tree_->writeBinary(s.str().c_str());
-      s << "_blurred_" << co_cfg_.blur_sigma ;
-      printf("Saving blurred map to: %s\n", s.str().c_str());
+      s << "_blurred"; // " << co_cfg_.blur_sigma ;
+      std::cout << "Saving blurred map to: " << s.str() << " with blur sigma of " << co_cfg_.blur_sigma << "\n" ;
       octomap_utils::saveOctomap(tree_blurred, s.str().c_str(), minNegLogLike);  
     }
   }
