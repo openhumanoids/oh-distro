@@ -64,10 +64,9 @@ def on_ers(channel, data):
   delta_rpy[1] = (rpy[1] - s.prev_rpy[1])
   delta_rpy[2] = (rpy[2] - s.prev_rpy[2])
 
-  #doPrint()
-  if (delta < 100000):
-    print m.utime , ", ", delta , ", " , velocity  , ", ",  delta_rpy[2]*180/math.pi
-
+  if (delta < 100000): # (to avoid capturing spikes)
+    print m.utime , ", ", delta , ", " , velocity  , ", ",  delta_rpy[2]*180/math.pi # drift rate per second
+    sys.stdout.flush()
 
   s.prev_utime = m.utime
   s.prev_rpy = rpy
@@ -79,9 +78,18 @@ lc = lcm.LCM()
 
 s = State()
 
-doPrint()
+#print 'Number of arguments:', len(sys.argv), 'arguments.'
+#print 'Argument List:', str(sys.argv)
 
-sub1 = lc.subscribe("EST_ROBOT_STATE", on_ers)
+channel = "EST_ROBOT_STATE"
+if (len(sys.argv)	 >= 2):
+  channel = sys.argv[1]
+
+#print channel
+
+
+
+sub1 = lc.subscribe(channel, on_ers)
 
 while True:
   ## Handle LCM if new messages have arrived.
