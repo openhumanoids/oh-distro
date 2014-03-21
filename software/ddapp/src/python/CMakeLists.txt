@@ -15,15 +15,18 @@ set(python_files
   ddapp/cameracontrol.py
   ddapp/cameraview.py
   ddapp/colorize.py
+  ddapp/debrisdemo.py
   ddapp/debugVis.py
   ddapp/drakevisualizer.py
+  ddapp/drilldemo.py
   ddapp/drilltaskpanel.py
   ddapp/filterUtils.py
   ddapp/footstepsdriver.py
   ddapp/footstepsdriverpanel.py
   ddapp/handdriver.py
-  ddapp/ikeditor.py
   ddapp/ik.py
+  ddapp/ikconstraints.py
+  ddapp/ikplanner.py
   ddapp/__init__.py
   ddapp/ioUtils.py
   ddapp/jointcontrol.py
@@ -34,7 +37,8 @@ set(python_files
   ddapp/midi.py
   ddapp/objectmodel.py
   ddapp/perception.py
-  ddapp/plansequence.py
+  ddapp/planplayback.py
+  ddapp/playbackpanel.py
   ddapp/pointCloudUtils.py
   ddapp/robotstate.py
   ddapp/robotplanlistener.py
@@ -47,6 +51,7 @@ set(python_files
   ddapp/startup.py
   ddapp/statelistener.py
   ddapp/tdx.py
+  ddapp/teleoppanel.py
   ddapp/timercallback.py
   ddapp/transformUtils.py
   ddapp/utime.py
