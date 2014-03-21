@@ -44,7 +44,7 @@ public:
 	//void exmap(const Eigen::Vector3d &w_k0, Eigen::Matrix3d &R);// exmap for quaternion is in QuaternionLib
 
 	Eigen::Matrix3d vec2skew(const Eigen::Vector3d &v);
-
+    void setYaw(const double &yaw);
 };
 
 }

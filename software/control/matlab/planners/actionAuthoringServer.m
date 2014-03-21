@@ -72,7 +72,7 @@ options.q_traj_nom = ConstantTrajectory(q);
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 
-robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateCoder(joint_names)));
+robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateCoder(joint_names)),'x');
 robot_plan_publisher_oneshot = drc.control.RobotPlanPublisher(joint_names,true, ...
         'RESPONSE_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE');
 

@@ -6,7 +6,7 @@
 #include <string>
 
 #include "SharedTypes.h"
-#include <estimate/LegOdoWrapper.hpp>
+#include <basiclegodo/LegOdoWrapper.hpp>
 
 namespace StateEstimate
 {

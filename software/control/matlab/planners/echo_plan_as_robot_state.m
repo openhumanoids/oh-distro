@@ -15,7 +15,7 @@ function echoPlanAsRobotState(x0)
   if nargin == 1 || isempty(msg)
     r = Atlas();
     joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-    robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateCoder(joint_names)));
+    robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateCoder(joint_names)),'x');
     publish(robot_state_coder,0,x0,'EST_ROBOT_STATE');
     msg = state_monitor.getNextMessage(1);
   end

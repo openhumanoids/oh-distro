@@ -328,41 +328,6 @@ elseif strcmpi(mode,'sit_up')
   Kd.back_bky = 2.0; 
   Kd.back_bkx = 1.0; 
   
-elseif strcmpi(mode,'crawling')
-  Kp.l_arm_usy = 6000.0; 
-  Kp.l_arm_shx = 6000.0; 
-  Kp.l_arm_ely = 5000.0; 
-  Kp.l_arm_elx = 5000.0; 
-  Kp.l_arm_uwy = 2000.0; 
-  Kp.l_arm_mwx = 2000.0; 
-  Kp.l_leg_hpz = 3000.0; 
-  Kp.l_leg_hpx = 3000.0; 
-  Kp.l_leg_hpy = 2000.0; 
-  Kp.l_leg_kny = 2000.0; 
-  Kp.l_leg_aky = 1.0;
-  Kp.l_leg_akx = 1.0;
-  Kp.neck_ay = 200.0; 
-  Kp.back_bkz = 2000.0;  
-  Kp.back_bky = 6000.0; 
-  Kp.back_bkx = 3000.0; 
-
-  Kd.l_arm_usy = 100.0; 
-  Kd.l_arm_shx = 100.0; 
-  Kd.l_arm_ely = 100.0; 
-  Kd.l_arm_elx = 100.0; 
-  Kd.l_arm_uwy = 50.0; 
-  Kd.l_arm_mwx = 50.0; 
-  Kd.l_leg_hpz = 70.0; 
-  Kd.l_leg_hpx = 70.0; 
-  Kd.l_leg_hpy = 80.0; 
-  Kd.l_leg_kny = 80.0; 
-  Kd.l_leg_aky = 1.0;
-  Kd.l_leg_akx = 1.0;
-  Kd.neck_ay = 20.0; 
-  Kd.back_bkz = 50.0; 
-  Kd.back_bky = 80.0; 
-  Kd.back_bkx = 50.0; 
-
 elseif strcmpi(mode,'gazebo_old')
   Kp.l_arm_usy = 750.0; 
   Kp.l_arm_shx = 1300.0; 
@@ -399,7 +364,7 @@ elseif strcmpi(mode,'gazebo_old')
   Kd.back_bkx = 23.0; 
   
 else
-  error('unknown mode given. valid modes are: default, pinned, stance_leg, gazebo, crawling.');
+  error('unknown mode given. valid modes are: default, pinned, stance_leg, gazebo.');
 end
 
 % copy left gains to right side

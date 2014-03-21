@@ -5,8 +5,8 @@
 
 #include <lcmtypes/drc/atlas_raw_imu_batch_t.hpp>
 
-#include <leg-odometry/Filter.hpp>
-#include <leg-odometry/HeavyLowPassFilter.hpp>
+#include <estimate_tools/Filter.hpp>
+#include <estimate_tools/HeavyLowPassFilter.hpp>
 #include <estimate_tools/imu_stream.hpp>
 #include <estimate_tools/iir_notch.hpp>
 

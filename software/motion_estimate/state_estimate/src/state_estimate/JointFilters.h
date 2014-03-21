@@ -22,7 +22,8 @@ public:
   
   void setSize(const int &num_joints);
   
-  void updateStates(ulong utime, const vector<float> &_pos, vector<float> &_vel);
+//  void Test(const std::vector<float> &pos);
+  void updateStates(ulong utime, const std::vector<float> &pos, std::vector<float> &vel, const int &num_joints);
   
 private:
   

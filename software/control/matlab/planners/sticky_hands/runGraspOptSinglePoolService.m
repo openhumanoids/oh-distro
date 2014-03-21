@@ -32,7 +32,7 @@ nx=22;
 
 channel = ['INIT_GRASP_OPT' '_' num2str(matlabpool_id)];
 disp(channel);
-grasp_opt_listener=LCMCoordinateFrameWCoder('atlas',nx,'x',lcmcoder);
+grasp_opt_listener=LCMCoordinateFrame('atlas',lcmcoder,'x');
 setDefaultChannel(grasp_opt_listener,channel);
 grasp_opt_listener.subscribe(channel);
 %defaultChannel(grasp_opt_listener)

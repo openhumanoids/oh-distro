@@ -1,5 +1,4 @@
-classdef SandiaJointCommand < LCMCoordinateFrameWCoder
-%classdef SandiaJointCommand < LCMCoordinateFrameWCoder & Singleton
+classdef SandiaJointCommand < LCMCoordinateFrame
     methods
         function obj = SandiaJointCommand(r,side)
             nq = r.getNumStates/2;
@@ -15,7 +14,7 @@ classdef SandiaJointCommand < LCMCoordinateFrameWCoder
             end
             
             coder = drc.control.SandiaJointCommandCoder('atlas',floating,side, joint_names,Kp,Kd); 
-            obj = obj@LCMCoordinateFrameWCoder('sandia_qd', nq,'q',JLCMCoder(coder));
+            obj = obj@LCMCoordinateFrame('sandia_qd',JLCMCoder(coder),'q');
             obj.setCoordinateNames(joint_names);
             if(strcmp(side,'left'))
               obj.setDefaultChannel('L_HAND_JOINT_COMMANDS');

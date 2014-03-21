@@ -28,7 +28,6 @@ classdef BracingController < DRCController
             
             obj = setTimedTransition(obj,20,name,false); % should transition to prone controller
 
-            obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'crawling');  % for crawling
             obj = addLCMTransition(obj,'RECOVERY_CMD',drc.recovery_t(),'dummy'); % for recovery
             
             obj.head_monitor = drake.util.MessageMonitor(sm.pose_t,'utime');

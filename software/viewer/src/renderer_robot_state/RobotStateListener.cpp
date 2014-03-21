@@ -29,6 +29,11 @@ namespace renderer_robot_state
       return;
     }
 
+    // Default Greyscale color:
+    _robot_color[0] = 0.15;
+    _robot_color[1] = 0.15;
+    _robot_color[2] = 0.15;
+
     // Subscribe to Robot_Model.  Will unsubscribe once a single message has been received
     _urdf_subscription = lcm->subscribe("ROBOT_MODEL", 
 				       &RobotStateListener::handleRobotUrdfMsg,
@@ -39,7 +44,11 @@ namespace renderer_robot_state
     if (operation_mode==0){
       lcm->subscribe("EST_ROBOT_STATE", &RobotStateListener::handleRobotStateMsg, this); 
     }else if(operation_mode==1){
-      lcm->subscribe("EST_ROBOT_STATE_COMPRESSED_LOOPBACK", &RobotStateListener::handleRobotStateMsg, this); 
+      // Alternative Robot State:
+      lcm->subscribe("EST_ROBOT_STATE_BDI", &RobotStateListener::handleRobotStateMsg, this); 
+      _robot_color[0] = 0.15;
+      _robot_color[1] = 0.15;
+      _robot_color[2] = 0.4;
     }
     lcm->subscribe("CANDIDATE_ROBOT_ENDPOSE", &RobotStateListener::handleCandidateRobotEndPoseMsg, this);   
     
@@ -84,6 +93,7 @@ namespace renderer_robot_state
     ee_torques_map.insert(make_pair("r_hand", temp));
     ee_torques_map.insert(make_pair("l_foot", temp));
     ee_torques_map.insert(make_pair("r_foot", temp));
+
   }
 
   RobotStateListener::~RobotStateListener() {
