@@ -150,7 +150,7 @@ hose_endpose_planner = HoseMatingEndPosePlanner(robot,atlas,l_hand_frame,...
 % atlas state subscriber
 atlas_state_frame = atlas.getStateFrame();
 %state_frame.publish(0,xstar,'SET_ROBOT_CONFIG');
-atlas_state_frame.subscribe('EST_ROBOT_STATE_REACHING_PLANNER');
+atlas_state_frame.subscribe('EST_ROBOT_STATE');
 
 % individual end effector goal subscribers
 rh_ee = EndEffectorListener('RIGHT_PALM_GOAL');
