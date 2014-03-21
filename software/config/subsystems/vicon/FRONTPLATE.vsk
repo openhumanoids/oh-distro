@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<KinematicModel VERSION="2.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.vicon.com/Schemas/ViconVST.xsd">
+
+  <Parameters>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479378_x" PRIOR="-2.94636225700378" SD="1.00000002004088e+020" VALUE="-2.94636225700378"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479378_y" PRIOR="5.23795795440674" SD="1.00000002004088e+020" VALUE="5.23795795440674"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479378_z" PRIOR="16.7545051574707" SD="1.00000002004088e+020" VALUE="16.7545051574707"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479334_x" PRIOR="30.7402839660645" SD="1.00000002004088e+020" VALUE="30.7402839660645"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479334_y" PRIOR="-36.6546363830566" SD="1.00000002004088e+020" VALUE="-36.6546363830566"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479334_z" PRIOR="-26.6694450378418" SD="1.00000002004088e+020" VALUE="-26.6694450378418"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479325_x" PRIOR="-7.62531757354736" SD="1.00000002004088e+020" VALUE="-7.62531757354736"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479325_y" PRIOR="7.77560138702393" SD="1.00000002004088e+020" VALUE="7.77560138702393"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479325_z" PRIOR="-41.4442863464355" SD="1.00000002004088e+020" VALUE="-41.4442863464355"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479377_x" PRIOR="-30.023265838623" SD="1.00000002004088e+020" VALUE="-30.023265838623"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479377_y" PRIOR="35.2902488708496" SD="1.00000002004088e+020" VALUE="35.2902488708496"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479377_z" PRIOR="-0.756665050983429" SD="1.00000002004088e+020" VALUE="-0.756665050983429"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479332_x" PRIOR="9.85466289520264" SD="1.00000002004088e+020" VALUE="9.85466289520264"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479332_y" PRIOR="-11.6491727828979" SD="1.00000002004088e+020" VALUE="-11.6491727828979"/>
+    <Parameter HIDDEN="1" NAME="pelvis_Unlabeled479332_z" PRIOR="52.115894317627" SD="1.00000002004088e+020" VALUE="52.115894317627"/>
+  </Parameters>
+
+  <Skeleton>
+    <Segment BOUNDS="-50 -50 -50 50 50 50 " CONTEXT="General" INERTIA="0 0 0 " MASS="0 " MASS-CENTRE="0 0 0 " NAME="FRONTPLATE" RGB="255 164 0">
+      <JointFree BOUNDS="0 0 0 0 0 0 0 0 0 0 0 0" COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" NAME="World_pelvis" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" SIGNS="+ + + + + + " T="* * * * * * ">
+        <JointTemplate COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" POST-ORIENTATION="0 0 0 " POST-POSITION="0 0 0 " PRE-ORIENTATION="0 0 0 " PRE-POSITION="0 0 0 " TPOSE-COVARIANCE="0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  " TPOSE-MEAN="0 0 0 0 0 0"/>
+      </JointFree>
+    </Segment>
+  </Skeleton>
+
+  <MarkerSet>
+    <Markers>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479378" POSITION="-2.94636 5.23796 16.7545" RADIUS="12.5" RGB="255 164 0" SEGMENT="FRONTPLATE" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'pelvis_Unlabeled479378_x' 'pelvis_Unlabeled479378_y' 'pelvis_Unlabeled479378_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479334" POSITION="30.7403 -36.6546 -26.6694" RADIUS="12.5" RGB="255 164 0" SEGMENT="FRONTPLATE" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'pelvis_Unlabeled479334_x' 'pelvis_Unlabeled479334_y' 'pelvis_Unlabeled479334_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479325" POSITION="-7.62532 7.7756 -41.4443" RADIUS="12.5" RGB="255 164 0" SEGMENT="FRONTPLATE" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'pelvis_Unlabeled479325_x' 'pelvis_Unlabeled479325_y' 'pelvis_Unlabeled479325_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479377" POSITION="-30.0233 35.2902 -0.756665" RADIUS="12.5" RGB="255 164 0" SEGMENT="FRONTPLATE" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'pelvis_Unlabeled479377_x' 'pelvis_Unlabeled479377_y' 'pelvis_Unlabeled479377_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479332" POSITION="9.85466 -11.6492 52.1159" RADIUS="12.5" RGB="255 164 0" SEGMENT="FRONTPLATE" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'pelvis_Unlabeled479332_x' 'pelvis_Unlabeled479332_y' 'pelvis_Unlabeled479332_z'"/>
+      </Marker>
+    </Markers>
+    <Sticks>
+      <Stick MARKER1="Unlabeled479378" MARKER2="Unlabeled479334" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479378" MARKER2="Unlabeled479325" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479378" MARKER2="Unlabeled479377" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479378" MARKER2="Unlabeled479332" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479334" MARKER2="Unlabeled479325" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479334" MARKER2="Unlabeled479377" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479334" MARKER2="Unlabeled479332" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479325" MARKER2="Unlabeled479377" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479325" MARKER2="Unlabeled479332" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479377" MARKER2="Unlabeled479332" RGB="255 164 0"/>
+    </Sticks>
+  </MarkerSet>
+
+  <Alignment/>
+
+</KinematicModel>
