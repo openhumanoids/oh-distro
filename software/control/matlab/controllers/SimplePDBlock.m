@@ -32,7 +32,7 @@ classdef SimplePDBlock < MIMODrakeSystem
         typecheck(options.Kp,'double');
         sizecheck(options.Kp,[obj.nq 1]);
         obj.Kp = options.Kp;
-        obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
+        obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       else
         obj.Kp = 170.0*ones(obj.nq,1);
         obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
