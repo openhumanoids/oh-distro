@@ -48,7 +48,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.0;
+gains.k_q_p(joint_act_ind) = 0;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
@@ -162,8 +162,8 @@ qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 
 % cascade PD block
-options.Kp = 25.0*ones(nq,1);
-options.Kp = 10.0*ones(nq,1);
+options.Kp = 30.0*ones(nq,1);
+options.Kd = 8.0*ones(nq,1);
 pd = SimplePDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -262,7 +262,8 @@ udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.001;
+dt = 0.004;
+tt_prev = -1;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -286,7 +287,11 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-
+%     if tt_prev~=-1
+%       dt = 0.99*dt + 0.01*(tt-tt_prev);
+%     end
+%     dt
+    tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
     % get estimated state
@@ -295,8 +300,6 @@ while tt<T
 
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    q(leg_idx) = q(leg_idx) - 0.000*tau(leg_idx);
-
     u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd;q;qd;q;qd;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+1:end);
@@ -309,7 +312,7 @@ while tt<T
     
     % compute desired velocity
     qd_int = qd_int + qdd*dt;
-    qddes_state_frame = qd_int;
+    qddes_state_frame = qd_int-qd;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
