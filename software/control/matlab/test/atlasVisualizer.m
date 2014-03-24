@@ -101,7 +101,7 @@ while true
 end
 
 	function drawCOM(com,ground_z,lcmgl)
-		lcmgl.glColor3f(0, 0, 0);
+		lcmgl.glColor3f(1, 1, 1);
     lcmgl.sphere([com(1:2)', ground_z], 0.015, 20, 20);
     lcmgl.switchBuffers();
 	end
