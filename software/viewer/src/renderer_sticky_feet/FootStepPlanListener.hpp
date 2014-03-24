@@ -55,6 +55,7 @@ namespace renderer_sticky_feet
 
    //----------------constructor/destructor   
   public:
+     bool _allow_execution; // if false no execution button will be presented
      std::string _robot_name;          
      std::string _left_foot_name; // foot ee names
      std::string _right_foot_name;

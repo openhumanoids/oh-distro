@@ -22,7 +22,7 @@ namespace renderer_sticky_feet
   FootStepPlanListener::FootStepPlanListener(boost::shared_ptr<lcm::LCM> &lcm, BotViewer *viewer, int operation_mode):
     _lcm(lcm),_viewer(viewer)
   {
-     //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
+    //_collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
     
     //_lcm = _parent_renderer->lcm;
@@ -31,89 +31,56 @@ namespace renderer_sticky_feet
       cerr << "\nLCM Not Good: Robot FootStepPlan Handler" << endl;
       return;
     }
-      in_motion_footstep_id=-1;
+    in_motion_footstep_id=-1;
 
-     _last_plan_approved_or_executed = false;
-     _waiting_for_new_plan = false;
-     _bdi_footstep_mode = false;
-     _left_foot_name ="l_foot";
-     _right_foot_name = "r_foot";
+    _allow_execution = true;
+    _last_plan_approved_or_executed = false;
+    _waiting_for_new_plan = false;
+    _bdi_footstep_mode = false;
+    _left_foot_name ="l_foot";
+    _right_foot_name = "r_foot";
     if(!load_foot_urdfs())
       return;
       
-      _base_gl_stickyfoot_left =  boost::shared_ptr<GlKinematicBody>(new GlKinematicBody(_left_urdf_xml_string));     
-      _base_gl_stickyfoot_right =  boost::shared_ptr<GlKinematicBody>(new GlKinematicBody(_right_urdf_xml_string));
+    _base_gl_stickyfoot_left =  boost::shared_ptr<GlKinematicBody>(new GlKinematicBody(_left_urdf_xml_string));     
+    _base_gl_stickyfoot_right =  boost::shared_ptr<GlKinematicBody>(new GlKinematicBody(_right_urdf_xml_string));
  
-      std::map<std::string, double> jointpos_in;
-      jointpos_in =  _base_gl_stickyfoot_left->_current_jointpos;
-      _base_gl_stickyfoot_left->set_state(_base_gl_stickyfoot_left->_T_world_body,jointpos_in); // set to initialized values.
-      jointpos_in.clear();
-      jointpos_in =  _base_gl_stickyfoot_right->_current_jointpos;
-      _base_gl_stickyfoot_right->set_state(_base_gl_stickyfoot_left->_T_world_body,jointpos_in); // set to initialized values.
+    std::map<std::string, double> jointpos_in;
+    jointpos_in =  _base_gl_stickyfoot_left->_current_jointpos;
+    _base_gl_stickyfoot_left->set_state(_base_gl_stickyfoot_left->_T_world_body,jointpos_in); // set to initialized values.
+    jointpos_in.clear();
+    jointpos_in =  _base_gl_stickyfoot_right->_current_jointpos;
+    _base_gl_stickyfoot_right->set_state(_base_gl_stickyfoot_left->_T_world_body,jointpos_in); // set to initialized values.
       
+    Eigen::Vector3f whole_body_span;
+    Eigen::Vector3f offset;
+    MeshStruct mesh_struct;
+    bool val;
+    _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
       
+    val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
+    _T_bodyframe_groundframe_left = KDL::Frame::Identity();
+    _T_bodyframe_groundframe_left.p[2] = -(whole_body_span[2]-0.5*(mesh_struct.span_z));    
       
-      
-      Eigen::Vector3f whole_body_span;
-      Eigen::Vector3f offset;
-      MeshStruct mesh_struct;
-      bool val;
-      _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
-      
-      val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
-      _T_bodyframe_groundframe_left = KDL::Frame::Identity();
-      _T_bodyframe_groundframe_left.p[2] = -(whole_body_span[2]-0.5*(mesh_struct.span_z));    
-      
-      _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
-      val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct); 
-     _T_bodyframe_groundframe_right = KDL::Frame::Identity();
-     _T_bodyframe_groundframe_right.p[2] = -(whole_body_span[2]-0.5*(mesh_struct.span_z));
+    _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
+    val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct); 
+    _T_bodyframe_groundframe_right = KDL::Frame::Identity();
+    _T_bodyframe_groundframe_right.p[2] = -(whole_body_span[2]-0.5*(mesh_struct.span_z));
      
-//     Eigen::Vector3f whole_body_span;
-//     Eigen::Vector3f offset;
-//     MeshStruct mesh_struct;
-//      bool val;
-//       
-//     _base_gl_stickyfoot_left->get_whole_body_span_dims(whole_body_span,offset);
-//     val = _base_gl_stickyfoot_left->get_mesh_struct("l_foot_0", mesh_struct);
-//    
-// 
-//      val =_base_gl_stickyfoot_left->get_mesh_struct("l_talus_0", mesh_struct);
-//     _T_bodyframe_meshframe_left = KDL::Frame::Identity();
-//     _T_bodyframe_meshframe_left.p[0] =   -mesh_struct.offset_x;
-//     _T_bodyframe_meshframe_left.p[1] =   -mesh_struct.offset_y;
-//     _T_bodyframe_meshframe_left.p[2] =   -mesh_struct.offset_z;
-//    
-//     _T_bodyframe_groundframe_left = KDL::Frame::Identity();
-//     _T_bodyframe_groundframe_left.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
-// 
-//     
-//     _base_gl_stickyfoot_right->get_whole_body_span_dims(whole_body_span,offset);
-//     val = _base_gl_stickyfoot_right->get_mesh_struct("r_talus_0", mesh_struct);
-//     _T_bodyframe_meshframe_right = KDL::Frame::Identity();
-//     _T_bodyframe_meshframe_right.p[0] =   -mesh_struct.offset_x;
-//     _T_bodyframe_meshframe_right.p[1] =   -mesh_struct.offset_y;
-//     _T_bodyframe_meshframe_right.p[2] =   -mesh_struct.offset_z;
-//    
-//     _T_bodyframe_groundframe_right = KDL::Frame::Identity();
-//     _T_bodyframe_groundframe_right.p[2] = whole_body_span[2]-0.5*(mesh_struct.span_z);
-     
-     
-
     if (operation_mode==0){ // typical mode
-      lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+      lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
       lcm->subscribe("CANDIDATE_BDI_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
     }else if (operation_mode == 1){ 
-      lcm->subscribe("COMMITTED_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+      lcm->subscribe("COMMITTED_FOOTSTEP_PLAN", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
+      _allow_execution = false;
     }else if (operation_mode == 2){
-      lcm->subscribe("COMMITTED_FOOTSTEP_PLAN_COMPRESSED_LOOPBACK", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this); //&this ?
+      lcm->subscribe("CANDIDATE_BDI_FOOTSTEP_PLAN_MIT_FRAME", &renderer_sticky_feet::FootStepPlanListener::handleFootStepPlanMsg, this);
+      _allow_execution = false;
     }
     _last_plan_msg_timestamp = bot_timestamp_now(); //initialize   
-
   }
   
   FootStepPlanListener::~FootStepPlanListener() {
-   // _collision_detector->clear_collision_objects();
   }
   
 
@@ -123,34 +90,35 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
 						 const drc::deprecated_footstep_plan_t* msg)						 
   {
-   cout << "\n handleFootStepPlanMsg: Footstep plan received" << endl;
+    cout << "\n handleFootStepPlanMsg: Footstep plan received" << endl;
    
-   if(chan=="CANDIDATE_BDI_FOOTSTEP_PLAN")
-    _bdi_footstep_mode = true;
-   else
-    _bdi_footstep_mode = false;
+    if(chan=="CANDIDATE_BDI_FOOTSTEP_PLAN")
+      _bdi_footstep_mode = true;
+    else if(chan=="CANDIDATE_BDI_FOOTSTEP_PLAN_MIT_FRAME") // added mfallon
+      _bdi_footstep_mode = true;
+    else
+      _bdi_footstep_mode = false;
     
-   // 0. Make Local copy to later output
+    // 0. Make Local copy to later output
     revieved_plan_ = *msg;
     _last_plan_approved_or_executed = false;
 
     _robot_name = msg->robot_name;
-  	int num_steps = 0;
-		num_steps = msg->num_steps;   
+    int num_steps = 0;
+    num_steps = msg->num_steps;   
 
     if(_waiting_for_new_plan && !msg->is_new_plan) {
       bot_viewer_request_redraw(_viewer);
       return;
     }
     _waiting_for_new_plan = false;
-		if(msg->is_new_plan)
-    {
+    if(msg->is_new_plan){
       // clear old motion copy
       _gl_in_motion_copy.reset();
       in_motion_footstep_id=-1;
     }
     
-		int old_in_motion_footstep_id=in_motion_footstep_id; 		
+    int old_in_motion_footstep_id=in_motion_footstep_id;     
 
     //clear stored data
     _gl_planned_stickyfeet_list.clear();
@@ -159,15 +127,8 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     // _gl_planned_stickyfeet_speeds.clear();
     _gl_planned_stickyfeet_ids.clear();
     
-    
-
-    
     //cout << "utime: "<< msg->utime<< endl;
-   
-    for (uint i = 0; i <(uint)num_steps; i++)
-    {
-     
-    
+    for (uint i = 0; i <(uint)num_steps; i++){
       drc::footstep_goal_t goal_msg  = msg->footstep_goals[i]; 
       // _gl_planned_stickyfeet_speeds.push_back(goal_msg.step_speed);
       _gl_planned_stickyfeet_ids.push_back(goal_msg.id);
@@ -189,18 +150,15 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
       info.is_in_contact=goal_msg.is_in_contact;
       info.step_speed=goal_msg.step_speed;
       info.step_height=goal_msg.step_height;
-      if(!goal_msg.is_right_foot)
-      {
+      if(!goal_msg.is_right_foot){
         boost::shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_left,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
          info.foot_type = FootStepPlanListener::LEFT;
-      }
-      else
-      {
+      }else{
         boost::shared_ptr<InteractableGlKinematicBody>  new_object_ptr(new InteractableGlKinematicBody(*_base_gl_stickyfoot_right,true,oss.str()));
         _gl_planned_stickyfeet_list.push_back(new_object_ptr);
          info.foot_type = FootStepPlanListener::RIGHT;
-       }
+      }
       if (i >= 2) {
         _gl_planned_stickyfeet_list[i]->enable_whole_body_selection(true); 
       } else {
@@ -280,7 +238,7 @@ void FootStepPlanListener::handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
     int64_t old_utime = msg.utime;
     msg.utime = utime;
     int num_steps = 0;
-		num_steps = msg.num_steps;  
+    num_steps = msg.num_steps;  
      for (uint i = 0; i <(uint)num_steps; i++)
     {
         drc::footstep_goal_t goal_msg  = msg.footstep_goals[i];

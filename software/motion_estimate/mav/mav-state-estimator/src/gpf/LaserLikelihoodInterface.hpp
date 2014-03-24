@@ -5,6 +5,9 @@
 #include <eigen_utils/eigen_utils.hpp>
 
 #include <mav_state_est/rbis.hpp>
+
+#include <lcmtypes/octomap_utils.hpp>
+
 #ifndef LASERLIKELIHOODINTERFACE_HPP_
 #define LASERLIKELIHOODINTERFACE_HPP_
 
@@ -27,7 +30,8 @@ public:
 
 class OctomapLikelihoodInterface: public LaserLikelihoodInterface {
 public:
-  OctomapLikelihoodInterface(const char * map_name, double _unknown_loglike, double _information_scaling_factor);
+  OctomapLikelihoodInterface(const char * map_name, double _unknown_loglike, 
+                             double _information_scaling_factor, double _blur_sigma);
   ~OctomapLikelihoodInterface();
 
   double evaluatePointLogLikelihood(const double point[3]);
@@ -38,6 +42,16 @@ public:
 
   double minxyz[3];
   double maxxyz[3];
+  
+  
+  // If querying the map from lcm (added by mfallon):
+  double blur_sigma;
+  // Create an LCM thread and listen for the OCTOMAP message
+  void getOctomapFromLCM();
+  // Handle the OCTOMAP message, blur it and quit the lcm thread
+  void handleOctomapMessage(const lcm::ReceiveBuffer* rbuf,
+                const std::string& chan, const octomap::raw_t* msg);
+  bool waiting_for_octomap_msg;
 };
 
 }

@@ -9,7 +9,11 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+# dehann:
 add_subdirectory(src/foot_contact)
+# mfallon:
+add_subdirectory(src/foot_contact_alt)
+
 add_subdirectory(src/leg_estimate)
 
 # RGBD as a GPF
@@ -25,6 +29,9 @@ add_subdirectory(src/fusion)
 
 
 
+add_subdirectory(src/create_octomap)
+
+
 pods_install_python_script(se-bdi-imu-individually scripts/republish_bdi_imu_individually.py)
 file(COPY scripts/se-batch-process.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
+pods_install_python_script(se-footstep-spoof scripts/footstep_spoof.py)

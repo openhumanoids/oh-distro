@@ -2,6 +2,9 @@
 // uses pcl and can be used to dump cloud to file as PCD
 // fully working as of august 2013
 
+// there is a limit of about 220,000 points when transmitting these via lcm
+// thats about 220 lidar scans.
+
 #include <stdio.h>
 #include <inttypes.h>
 #include <iostream>
@@ -20,7 +23,7 @@
 #include <pcl/point_types.h>
 #include <pcl/common/transforms.h>
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-#include <pointcloud_tools/pointcloud_lcm.hpp> // visualize pt clds
+#include <pointcloud_tools/pointcloud_lcm.hpp> // decode perception lcm messages
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include "lcmtypes/bot_core.hpp"
@@ -125,7 +128,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60001,"Cloud - Laser"         ,1,reset, 60000,0, {0.0, 0.0, 1.0} ));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60010,"Pose - Null",5,reset) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60011,"Cloud (scan-by-scan) - Null"         ,1,reset, 60010,0, {0.0, 0.0, 1.0} ));
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60012,"Cloud (full sweep) - Null"         ,1,1, 60010,0, {0.0, 0.0, 1.0} ));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(60012,"Cloud (full sweep) - Null"         ,1,1, 60010,1, {0.0, 0.0, 1.0} ));
   
   pc_vis_->obj_cfg_list.push_back( obj_cfg(2000,"Pose - Camera",5,reset) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(2001,"Cloud - Camera"           ,1,reset, 2000,1, { 1.0, 1.0, 0.0} ));  
@@ -274,7 +277,7 @@ void Pass::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
     pc_vis_->ptcldToOctomapLogFile(*combined_cloud_, "/home/mfallon/Desktop/test.octolog");
     writer.write ("/home/mfallon/Desktop/test.pcd", *combined_cloud_, true); // binary =true
     
-    combined_cloud_->points.empty();
+    combined_cloud_->points.clear();
     cout << "Filtering: " <<  " "  << msg->utime << "\n";
     //  vs::reset_collections_t reset;
     //  lcm_->publish("RESET_COLLECTIONS", &reset);    

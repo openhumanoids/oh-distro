@@ -32,11 +32,21 @@ double LaserLikelihoodInterface::evaluateScanLogLikelihood(const laser_projected
 
 }
 
+
+
 OctomapLikelihoodInterface::OctomapLikelihoodInterface(const char * map_name, double _unknown_loglike,
-    double _cov_scaling_factor)
+    double _cov_scaling_factor, double _blur_sigma)
 {
-  std::cout << "loading octomap from: " << map_name << std::endl;
-  this->ocTree = octomap_utils::loadOctomap(map_name, &this->minNegLogLike);
+  blur_sigma = _blur_sigma;
+
+  if ( strstr(map_name,"from_lcm") != NULL ){
+    std::cout << "will wait for an incoming octomap via lcm transmission\n";
+    getOctomapFromLCM();
+  }else{
+    std::cout << "loading octomap from: " << map_name << std::endl;
+    this->ocTree = octomap_utils::loadOctomap(map_name, &this->minNegLogLike);
+  }
+  
   ocTree->getMetricMin(minxyz[0], minxyz[1], minxyz[2]);
   ocTree->getMetricMax(maxxyz[0], maxxyz[1], maxxyz[2]);
 
@@ -65,5 +75,52 @@ double OctomapLikelihoodInterface::evaluatePointLogLikelihood(const double xyz[3
   }
 
 }
+
+
+void OctomapLikelihoodInterface::getOctomapFromLCM(){
+  // TODO: the parent class, LaserGPF, has an LCM object, should use that instead
+  // TODO: destroy the lcm instance and the subscription properly
+  lcm::LCM lcm;
+  lcm.subscribe( "OCTOMAP"  ,&OctomapLikelihoodInterface::handleOctomapMessage,this);
+  std::cout << "Waiting...\n";
+  waiting_for_octomap_msg = true;
+  while( (0 == lcm.handle()) && waiting_for_octomap_msg );  
+}
+
+
+void OctomapLikelihoodInterface::handleOctomapMessage(const lcm::ReceiveBuffer* rbuf,
+                const std::string& chan, 
+                const octomap::raw_t* msg)
+{
+  std::cout << "received unblurred octomap. blurring with sigma="<< blur_sigma << "\n";
+  bool write_output = false;
+  
+  std::stringstream datastream;
+  datastream.write((const char*) msg->data.data(), msg->length);
+  octomap::OcTree *unblurred_tree = new octomap::OcTree(1); //resolution will be set by data from message
+  unblurred_tree->readBinary(datastream);
+  
+  
+  timeval start; 
+  timeval stop; 
+  gettimeofday(&start, NULL);  // start timer  
+  unblurred_tree->toMaxLikelihood();
+  unblurred_tree->expand();
+  double minNegLogLike;
+  ocTree = octomap_utils::octomapBlur(unblurred_tree, blur_sigma, &minNegLogLike);
+  gettimeofday(&stop, NULL);  // stop timer
+  double time_to_blur = (stop.tv_sec - start.tv_sec) + 1.0e-6 *(stop.tv_usec - start.tv_usec);
+  std::cout << "time to blur : " << time_to_blur << " sec" << std::endl;
+  if (write_output){
+    std::stringstream s;
+    s <<  "/tmp/gpf_octree.bt" << "_blurred_" << blur_sigma ;
+    printf("Saving blurred map to: %s\n", s.str().c_str());
+    octomap_utils::saveOctomap(ocTree, s.str().c_str(), minNegLogLike);  
+  }  
+  
+  waiting_for_octomap_msg = false;  
+}
+
+
 
 }

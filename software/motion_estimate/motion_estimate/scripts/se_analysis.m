@@ -16,9 +16,14 @@ main_dir = '/home/mfallon/data/atlas/2014-01-21-vicon-walking/results/'
 %folder_path = [main_dir '2014-02-12-19-33-imu-leg-odo' '/'];
 % folder_path = [main_dir '2014-02-12-19-50-imu-leg-odo-lidar' '/'];
 
-%
+% 3 with/out classifier
 %folder_path = [main_dir '2014-02-19-19-23-imu-leg-odo-lidar' '/'];
-folder_path = [main_dir '2014-02-19-19-28-imu-leg-odo' '/'];
+%folder_path = [main_dir '2014-02-19-19-28-imu-leg-odo' '/'];
+
+% 4 with/out alternative transitions
+%folder_path = [main_dir '2014-03-13-14-12-imu-leg-odo-older-transition' '/'];
+%folder_path = [main_dir '2014-03-13-14-25-imu-leg-odo-alt-transition' '/'];
+folder_path = [main_dir '2014-03-13-17-09-imu-leg-odo-lidar-alt-transition' '/'];
 
 
 logs = dir( [folder_path '*mat'])
@@ -245,6 +250,7 @@ title('Distance Travelled')
 xlabel(log_filename)
 
 drawnow
+pause(0.1)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

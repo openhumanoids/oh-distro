@@ -129,10 +129,11 @@ LaserGPF::LaserGPF(lcm_t * lcm, BotParam * param, BotFrames * frames)
 
   free(tmpstr);
 
+  double blur_sigma = bot_param_get_double_or_fail(param, "state_estimator.laser_gpf.blur_sigma"); // added mfallon
   double unknown_loglike = bot_param_get_double_or_fail(param, "state_estimator.laser_gpf.unknown_loglike");
   double cov_scaling = bot_sq(bot_param_get_double_or_fail(param, "state_estimator.laser_gpf.sigma_scaling"));
   LaserLikelihoodInterface * laser_like_iface_ = new OctomapLikelihoodInterface(map_name.c_str(), unknown_loglike,
-      cov_scaling);
+      cov_scaling, blur_sigma);
 
   laser_gpf_substate gpf_substate_mode_ = LaserGPF::num_substates;
   char * substate_str = bot_param_get_str_or_fail(param, "state_estimator.laser_gpf.gpf_substate");
@@ -221,6 +222,8 @@ bool LaserGPF::getMeasurement(const RBIS & state, const RBIM & cov, const bot_co
     this->projected_laser_scan = laser_create_projected_scan_from_planar_lidar(this->laser_projector, laser_msg_c,
         "body");
   }
+  // BUG: projected_laser_scan is not checked for NULL
+  //      mfallon noted this can happen if thread is processing a lot (gpf_vis = true)
 
   bot_core_planar_lidar_t_destroy(laser_msg_c);
 

@@ -107,6 +107,9 @@ class FootstepsDriver(object):
         self.lastFootstepPlan = msg
 
         planFolder = getFootstepsFolder()
+        self.drawFootstepPlan(msg, planFolder)
+
+    def drawFootstepPlan(self, msg, folder,left_color=None, right_color=None):
 
         allTransforms = []
         for i, footstep in enumerate(msg.footsteps):
@@ -122,10 +125,16 @@ class FootstepsDriver(object):
 
             if footstep.is_right_foot:
                 mesh = getRightFootMesh()
-                color = getRightFootColor()
+                if (right_color is None):
+                    color = getRightFootColor()
+                else:
+                    color = right_color
             else:
                 mesh = getLeftFootMesh()
-                color = getLeftFootColor()
+                if (left_color is None):
+                    color = getLeftFootColor()
+                else:
+                    color = left_color
             if footstep.infeasibility > 1e-6:
                 d = DebugData()
                 # normal = np.array(allTransforms[i-1].GetPosition()) - np.array(footstepTransform.GetPosition())
@@ -138,13 +147,36 @@ class FootstepsDriver(object):
                 # d.addCone(start, normal, 0.02, 0.02)
                 # d.addCone(end, -normal, 0.02, 0.02)
                 # d.addLine(start, end,radius=0.005)
-                vis.showPolyData(d.getPolyData(), 'infeasibility %d -> %d' % (i-2, i-1), parent=planFolder, color=[1, 0.2, 0.2])
+                vis.showPolyData(d.getPolyData(), 'infeasibility %d -> %d' % (i-2, i-1), parent=folder, color=[1, 0.2, 0.2])
 
 
-            obj = vis.showPolyData(mesh, 'step %d' % (i-1), color=color, alpha=1.0, parent=planFolder)
+            obj = vis.showPolyData(mesh, 'step %d' % (i-1), color=color, alpha=1.0, parent=folder)
             frameObj = vis.showFrame(footstepTransform, 'frame', parent=obj, scale=0.3, visible=False)
             frameObj.onTransformModifiedCallback = functools.partial(self.onStepModified, i-2)
             obj.actor.SetUserTransform(footstepTransform)
+
+    def getContactPts(self):
+        '''
+        hard coded Location of the Drake contact points relative to foot frame. this should be read from URDF
+        '''
+        contact_pts = np.zeros((4,3))
+        contact_pts[0,:] = [-0.082,  0.0624435, -0.081119]
+        contact_pts[1,:] = [-0.082, -0.0624435, -0.081119]
+        contact_pts[2,:] = [0.178,   0.0624435, -0.081119]
+        contact_pts[3,:] = [0.178,  -0.0624435, -0.081119]
+        return contact_pts
+
+    def getFeetMidPoint(self, model):       
+        contact_pts = self.getContactPts()
+        contact_pts_mid = np.mean(contact_pts, axis=0) # mid point on foot relative to foot frame
+
+        t_lf_mid = model.getLinkFrame('l_foot')
+        t_lf_mid.Translate(contact_pts_mid)
+
+        t_rf_mid = model.getLinkFrame('r_foot')
+        t_rf_mid.Translate(contact_pts_mid)
+        t_feet_mid = transformUtils.frameInterpolate(t_lf_mid, t_rf_mid, 0.5)
+        return t_feet_mid
 
     def createWalkingGoal(self, model):
         distanceForward = 1.0

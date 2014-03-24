@@ -149,6 +149,8 @@ typedef struct
   
   float left_hand_contact;
   float right_hand_contact;
+  float l_foot_force_z;
+  float r_foot_force_z;
   
   float estimated_biases[3];
   bool estimated_biases_converged;
@@ -271,6 +273,8 @@ static void
 on_robot_state(const lcm_recv_buf_t * buf, const char *channel, const drc_robot_state_t *msg, void *user_data){
   RendererSystemStatus *self = (RendererSystemStatus*) user_data;
   self->last_utime = msg->utime;
+  self->l_foot_force_z = msg->force_torque.l_foot_force_z;
+  self->r_foot_force_z = msg->force_torque.r_foot_force_z;
 }
 
 static void
@@ -339,7 +343,6 @@ on_bw_stats(const lcm_recv_buf_t * buf, const char *channel, const drc_bandwidth
   self->estimated_latency_ms = msg->estimated_latency_ms;
   self->target_bps = msg->target_bps;
 }
-
 
 
 static string get_planner_string(int16_t mode){
@@ -476,25 +479,21 @@ static void _draw(BotViewer *viewer, BotRenderer *r){
   snprintf(line1,70, "est latency %d", self->estimated_latency_ms);
   snprintf(line2,70, "target kbps %.0f", (float) self->target_bps/1000);
   
-  int64_t now = bot_timestamp_now();
-  if(now > (self->last_grasp_opt_status_utime + 4*1E6)){
-    snprintf(line3,70, "%d affs. pool missing",self->naffs);
-  }else{
-    snprintf(line3,70, "%d affs. pool ready",self->naffs);
-  }
   
-  snprintf(line4,70, " pitch%5.2f hd%5.2f",self->pitch,self->head_pitch);
-  snprintf(line5,70, "  roll%5.2f hd%5.2f",self->roll,self->head_roll); 
-  snprintf(line6,70, "height%5.2f hd%5.2f",self->height,self->head_height); 
+  snprintf(line3,70, " pitch%5.2f hd%5.2f",self->pitch,self->head_pitch);
+  snprintf(line4,70, "  roll%5.2f hd%5.2f",self->roll,self->head_roll); 
+  snprintf(line5,70, "height%5.2f hd%5.2f",self->height,self->head_height); 
+
   if ((self->left_foot_contact==1)&& (self->right_foot_contact==1) ){
-    snprintf(line7,70, "  feet LR %5.2f", self->foot_spacing);
+    snprintf(line6,70, "  feet LR %5.2f", self->foot_spacing);
   }else if(self->left_foot_contact==1){
-    snprintf(line7,70, "  feet L* %5.2f", self->foot_spacing);
+    snprintf(line6,70, "  feet L* %5.2f", self->foot_spacing);
   }else if(self->right_foot_contact==1){
-    snprintf(line7,70, "  feet *R %5.2f", self->foot_spacing);
+    snprintf(line6,70, "  feet *R %5.2f", self->foot_spacing);
   }else{
-    snprintf(line7,70, "  feet ** %5.2f", self->foot_spacing);
+    snprintf(line6,70, "  feet ** %5.2f", self->foot_spacing);
   }   
+  snprintf(line7,70, "%06.1f %06.1f",self->l_foot_force_z,self->r_foot_force_z); 
 
   float elapsed_control_time =  (self->last_utime - self->controller_utime)*1E-6;
   std::string control_status;
@@ -830,6 +829,9 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   
   self->right_hand_contact = 0;
   self->left_hand_contact = 0;
+
+  self->l_foot_force_z = 0;
+  self->r_foot_force_z = 0;
   
   self->current_plan.desired_joint_speed = 0;
   self->current_plan.desired_ee_arc_speed = 0;
@@ -866,8 +868,6 @@ BotRenderer *renderer_status_new(BotViewer *viewer, int render_priority, lcm_t *
   
   drc_bandwidth_stats_t_subscribe(self->lcm,"BASE_BW_STATS",on_bw_stats, self);
 
-  
-  
   self->param_status[0] = PARAM_STATUS_0_DEFAULT;  
   self->param_status[1] = PARAM_STATUS_1_DEFAULT;  
   self->param_status[2] = PARAM_STATUS_2_DEFAULT;  

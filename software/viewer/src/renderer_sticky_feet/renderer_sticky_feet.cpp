@@ -27,14 +27,26 @@ _renderer_free (BotRenderer *super)
 
 static void 
 draw_state(BotViewer *viewer, BotRenderer *super, uint i){
+  RendererStickyFeet *self = (RendererStickyFeet*) super->user;
 
   float c_blue[3] = {0.3,0.3,0.6}; // light blue
   float c_grey[3] = {0.3,0.3,0.3}; // grey
+
   float c_green[3] = {0.3,0.5,0.3};  // green for right sticky feet
   float c_yellow[3] = {0.5,0.5,0.3}; //yellow for left sticky feet
+
+  if (!self->footStepPlanListener->_allow_execution){
+    c_green[0] = 0.7;
+    c_green[1] = 0.3;
+    c_green[2] = 0.3;
+    c_yellow[0] = 0.3;
+    c_yellow[1] = 0.3;
+    c_yellow[2] = 0.7;
+    // if non executable steps, color red
+  }
+
   float alpha_contact = 0.4;
   float alpha_apex = 0.15;
-  RendererStickyFeet *self = (RendererStickyFeet*) super->user;
   
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->show_bbox(self->visualize_bbox);
 //  self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->enable_link_selection(self->ht_auto_adjust_enabled);
@@ -83,11 +95,9 @@ string no_selection =  " ";
 }
 
 static void 
-_renderer_draw (BotViewer *viewer, BotRenderer *super)
-{
+_renderer_draw (BotViewer *viewer, BotRenderer *super){
   RendererStickyFeet *self = (RendererStickyFeet*) super->user;
 
-  
   glEnable(GL_DEPTH_TEST);
 
   //-draw 
@@ -110,8 +120,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 
   float label_num = 0;
   bool has_apex = false;
-  for(uint i = 0; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++) 
-  { 
+  for(uint i = 0; i < self->footStepPlanListener->_gl_planned_stickyfeet_list.size(); i++){ 
     //cout << "i:"<<i<< endl;
     double pos[3];
     pos[0] = self->footStepPlanListener->_gl_planned_stickyfeet_list[i]->_T_world_body.p[0]; 
@@ -153,22 +162,15 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     draw_state(viewer,super,i);
   }
    
-  if(!self->footStepPlanListener->_bdi_footstep_mode) 
-  { 
-    if(!self->footStepPlanListener->_last_plan_approved_or_executed)
-    {
+  if(!self->footStepPlanListener->_bdi_footstep_mode){ 
+    if(!self->footStepPlanListener->_last_plan_approved_or_executed){
       if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_approval_dock==NULL))
           spawn_plan_approval_dock(self);
     } 
-  }
-  else
-  {
-    if(!self->footStepPlanListener->_last_plan_approved_or_executed)
-    {
-      if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_execute_button==NULL)) 
-      {
-        if(self->plan_execution_dock!=NULL)
-        {
+  }else{
+    if(!self->footStepPlanListener->_last_plan_approved_or_executed){
+      if((self->footStepPlanListener->_gl_planned_stickyfeet_list.size()>0)&&(self->plan_execute_button==NULL)){
+        if(self->plan_execution_dock!=NULL){
          gtk_widget_destroy (self->plan_execution_dock);
          self->plan_execution_dock= NULL;
         }
@@ -408,7 +410,7 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     if (operation_mode == 1){
       renderer->name =(char *) "Footstep Committed";
     }else if (operation_mode == 2){
-      renderer->name =(char *) "Footstep Loopback";      
+      renderer->name =(char *) "Footstep MIT Frame";      
     }
     renderer->user = self;
     renderer->enabled = 1;
@@ -454,7 +456,7 @@ setup_renderer_sticky_feet(BotViewer *viewer, int render_priority, lcm_t *lcm, B
     if (operation_mode ==1){
       ehandler->name =(char *) "Footstep Committed";
     }else if (operation_mode == 2){
-      ehandler->name =(char *) "Footstep Loopback";      
+      ehandler->name =(char *) "Footstep MIT Frame";      
     }
     
 

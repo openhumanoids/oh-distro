@@ -63,16 +63,20 @@ namespace renderer_sticky_feet_gui_utils
   {
     RendererStickyFeet *self = (RendererStickyFeet*) user;
 
-    
+    bool allow_ex = self->footStepPlanListener->_allow_execution;
     GtkWidget  *stop_walking_button,*cancel_button;
 
+    std::cout << allow_ex << " allow execution\n";
+    //if (allow_ex) 
     self->plan_execute_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PLAY); 
     stop_walking_button =  (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_STOP);
     cancel_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_CANCEL);
 
-    gtk_widget_set_tooltip_text (self->plan_execute_button, "Execute BDI FootStep Plan");
+    if (allow_ex) gtk_widget_set_tooltip_text (self->plan_execute_button, "Execute BDI FootStep Plan");
     gtk_widget_set_tooltip_text(stop_walking_button, "Stop walking NOW");
     gtk_widget_set_tooltip_text (cancel_button, "Clear Plan Cache");
+
+
     
     GtkWidget *hbox;
     hbox = gtk_hbox_new (FALSE, 0);
@@ -80,7 +84,7 @@ namespace renderer_sticky_feet_gui_utils
     gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET (sep), FALSE, TRUE,10);
     GtkWidget * label = gtk_label_new ("Walking Steps:");
     gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, FALSE,0);    
-    gtk_box_pack_start (GTK_BOX (hbox), self->plan_execute_button, FALSE, FALSE, 3);
+    if (allow_ex) gtk_box_pack_start (GTK_BOX (hbox), self->plan_execute_button, FALSE, FALSE, 3);
     gtk_box_pack_end(GTK_BOX(hbox), stop_walking_button, FALSE, FALSE, 3);
     gtk_box_pack_start (GTK_BOX (hbox), cancel_button, FALSE, FALSE, 3);
     
@@ -88,20 +92,11 @@ namespace renderer_sticky_feet_gui_utils
     gtk_container_add (GTK_CONTAINER (toolitem), hbox);   
     gtk_toolbar_insert (GTK_TOOLBAR (self->viewer->toolbar), toolitem, 9);
    
-    g_signal_connect (G_OBJECT (self->plan_execute_button),
-                  "clicked",
-                  G_CALLBACK (on_bdiplan_execute_button_clicked),
-                  self);
-    g_signal_connect (G_OBJECT (stop_walking_button),
-                      "clicked",
-                      G_CALLBACK (on_bdiplan_stop_walking_button_clicked),
-                      self);
-   g_signal_connect (G_OBJECT (cancel_button),
-                  "clicked",
-                  G_CALLBACK (on_bdiplan_cancel_button_clicked),
-                  self);
+    if (allow_ex) g_signal_connect (G_OBJECT (self->plan_execute_button), "clicked", G_CALLBACK (on_bdiplan_execute_button_clicked), self);
+    g_signal_connect (G_OBJECT (stop_walking_button), "clicked",G_CALLBACK (on_bdiplan_stop_walking_button_clicked), self);
+    g_signal_connect (G_OBJECT (cancel_button), "clicked", G_CALLBACK (on_bdiplan_cancel_button_clicked), self);
                       
-    gtk_widget_set_can_focus (self->plan_execute_button,false);
+    if (allow_ex) gtk_widget_set_can_focus (self->plan_execute_button,false);
     self->plan_execution_dock = GTK_WIDGET(toolitem);  
       gtk_widget_show_all (self->plan_execution_dock);
   }

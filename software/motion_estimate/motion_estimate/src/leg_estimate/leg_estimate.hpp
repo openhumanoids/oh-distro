@@ -33,6 +33,7 @@
 
 #include <estimate_tools/Filter.hpp>
 #include <foot_contact/FootContact.h>
+#include <foot_contact_alt/FootContactAlt.h>
 #include <leg_estimate/foot_contact_classify.hpp>
 #include <leg_estimate/common_conversions.hpp>
 
@@ -47,9 +48,9 @@ class leg_estimate{
     
     void setPoseBDI(Eigen::Isometry3d world_to_body_bdi_in ){ world_to_body_bdi_ = world_to_body_bdi_in; }
 
-    void setFootForces(float left_foot_force_in, float right_foot_force_in ){ 
-      left_foot_force_ = left_foot_force_in;
-      right_foot_force_ = right_foot_force_in;       
+    void setFootSensing(FootSensing lfoot_sensing_in, FootSensing rfoot_sensing_in ){ 
+      lfoot_sensing_ = lfoot_sensing_in;
+      rfoot_sensing_ = rfoot_sensing_in;
     }
     
     // Update the running leg odometry solution
@@ -94,14 +95,18 @@ class leg_estimate{
     // Publish Debug Data e.g. kinematic velocities and foot contacts
     bool publish_diagnostics_;    
     
-    TwoLegs::FootContact* foot_contact_logic_;
     // most recent measurements for the feet forces (typically synchronised with joints measurements
-    float left_foot_force_, right_foot_force_; // unfiltered... check
-    
-    // Classify Contact Events:
+    FootSensing lfoot_sensing_, rfoot_sensing_; // unfiltered... check
+    TwoLegs::FootContact* foot_contact_logic_; // dehann, conservative
+    TwoLegs::FootContactAlt* foot_contact_logic_alt_; // mfallon
+    // Classify Contact Events (seperate from the above)
     foot_contact_classify* foot_contact_classify_;
     
-    
+    // original method from Dehann uses a very conservative Schmitt trigger
+    int footTransition();
+    // a more aggressive trigger with different logic
+    int footTransitionAlt();
+    int standing_foot_; // result as output from the FootContact class(es)
     
     
     bool initializePose(Eigen::Isometry3d body_to_foot);
