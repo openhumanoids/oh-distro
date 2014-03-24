@@ -237,7 +237,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
        dcomz_des = fasteval(ctrl_data.dcomz_traj,t);
        ddcomz_des = fasteval(ctrl_data.ddcomz_traj,t);
      else
-       comz_des = 1.04;
+       comz_des = 1.03;
        dcomz_des = 0;
        ddcomz_des = 0;
      end
