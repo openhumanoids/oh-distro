@@ -25,24 +25,24 @@ function atlasGainTuning
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 joint = 'r_leg_kny';% <---- joint name 
-input_mode = 'force';% <---- force, position
-control_mode = 'force';% <---- force, force+velocity, position
-signal = 'foh';% <----  zoh, foh, chirp
+input_mode = 'position';% <---- force, position
+control_mode = 'force+velocity';% <---- force, force+velocity, position
+signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 60;% <--- signal duration (sec)
+T = 25;% <--- signal duration (sec)
 
 % chirp specific
-amp = 0.3;% <----  Nm or radians
-chirp_f0 = 0.2;% <--- chirp starting frequency
-chirp_fT = 0.2;% <--- chirp ending frequency
+amp = 0.4;% <----  Nm or radians
+chirp_f0 = 0.1;% <--- chirp starting frequency
+chirp_fT = 0.3;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
-vals = 10*[0 1 1 -1 -1 0 0];% <----  Nm or radians
+vals = 0.2*[0 1 1 -1 -1 0 0];% <----  Nm or radians
 
 % inverse dynamics PD gains (only for input=position, control=force)
-Kp = 25;
+Kp = 100;
 Kd = 8;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -57,6 +57,7 @@ end
 
 % load robot model
 options.floating = true;
+options.ignore_friction = false;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 
 % load fixed-base model
@@ -127,10 +128,10 @@ if any(strcmp(control_mode,{'force','force+velocity'}))
   gains.k_q_i(act_idx==joint_index_map.(joint)) = 0;
   gains.k_qd_p(act_idx==joint_index_map.(joint)) = 0;
   % set force gains
-  gains.k_f_p(act_idx==joint_index_map.(joint)) = 0;%gains2.k_f_p(act_idx==joint_index_map.(joint));
-  gains.ff_f_d(act_idx==joint_index_map.(joint)) = 1.0;%gains2.ff_f_d(act_idx==joint_index_map.(joint));
-  gains.ff_qd(act_idx==joint_index_map.(joint)) = 0;%gains2.ff_qd(act_idx==joint_index_map.(joint));
-  gains.ff_qd_d(act_idx==joint_index_map.(joint)) = 0;%gains2.ff_qd_d(act_idx==joint_index_map.(joint));
+  gains.k_f_p(act_idx==joint_index_map.(joint)) = gains2.k_f_p(act_idx==joint_index_map.(joint));
+  gains.ff_f_d(act_idx==joint_index_map.(joint)) = gains2.ff_f_d(act_idx==joint_index_map.(joint));
+  gains.ff_qd(act_idx==joint_index_map.(joint)) = gains2.ff_qd(act_idx==joint_index_map.(joint));
+  gains.ff_qd_d(act_idx==joint_index_map.(joint)) = gains2.ff_qd_d(act_idx==joint_index_map.(joint));
   ref_frame.updateGains(gains);
 end
  
@@ -169,7 +170,10 @@ qddes=zeros(nu,1);
 udes = zeros(nu,1);
 toffset = -1;
 tt=-1;
-dt = 0.03;
+dt = 0.0025;
+
+qd_int = 0;
+tt_prev=-1;
 while tt<T
   [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
@@ -177,6 +181,12 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
+    if tt_prev==-1
+      dt = 0.0025;
+    else
+      dt = 0.0025; % 0.99*dt + 0.01*(tt-tt_prev);
+    end
+    tt_prev=tt;
     if strcmp(input_mode,'force')
       udes(act_idx==joint_index_map.(joint)) = input_traj.eval(tt);
     elseif strcmp(input_mode,'position')
@@ -194,8 +204,8 @@ while tt<T
         qd = x(nq_fixed+12+(1:nq_fixed));
         [H,C,B] = manipulatorDynamics(r_fixed,q,qd);
 
-        jddes = inputd_traj.eval(tt);
-        jdddes = inputdd_traj.eval(tt);
+        jddes = inputd_traj.eval(tt)*0;
+        jdddes = inputdd_traj.eval(tt)*0;
 
         qddot_des = zeros(nq_fixed,1);
         fidx = joint_index_map_fixed.(joint);
@@ -204,8 +214,10 @@ while tt<T
         u = B\(H*qddot_des + C);
         udes(act_idx==joint_index_map.(joint)) = u(act_idx_fixed==joint_index_map_fixed.(joint));
 
+        qd_int = qd_int + qddot_des(fidx)*dt;
+
         if strcmp(control_mode,'force+velocity')
-          qddes(act_idx==joint_index_map.(joint)) = jddes + Kp*(jdes-q(fidx))*dt + Kd*(jddes-qd(fidx))*dt;
+          qddes(act_idx==joint_index_map.(joint)) = qd_int-qd(fidx); %jddes + Kp*(jdes-q(fidx))*dt + Kd*(jddes-qd(fidx))*dt;
         end
       end
         

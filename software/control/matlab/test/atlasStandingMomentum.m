@@ -17,14 +17,10 @@ dim = 3; % what dimension to move COM: x/y/z (1/2/3)
 T = 15;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.1;% <---- meters, COM DELTA
-chirp_f0 = 0.1;% <--- chirp starting frequency
-chirp_fT = 0.1;% <--- chirp ending frequency
+amp = 0.05;% <---- meters, COM DELTA
+chirp_f0 = 0.2;% <--- chirp starting frequency
+chirp_fT = 0.2;% <--- chirp ending frequency
 chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
-
-% inverse dynamics PD gains 
-Kp = 25;
-Kd = 10;
 
 % random pose params for sys id tests
 use_random_traj = false; % if true, ignores chirp params
@@ -44,10 +40,11 @@ end
 
 % load robot model
 r = Atlas();
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
+
 
 % setup frames
 state_plus_effort_frame = AtlasStateAndEffort(r);
@@ -86,7 +83,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.0;
+gains.k_q_p(joint_act_ind) = 0;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
@@ -228,7 +225,7 @@ ctrl_data = SharedDataHandle(struct(...
   'supports',foot_support,...
   'ignore_terrain',false,...
   'trans_drift',[0;0;0],...
-  'qtraj',q0,...
+  'qtraj',qtraj,...
   'K',K,...
   'comz_traj',comz_traj,...
   'dcomz_traj',dcomz_traj,...
@@ -239,7 +236,7 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.slack_limit = 20;
 options.w = 0.1;
-options.W = diag([0.1;0.1;0.1;1;1;1]);
+options.W = diag([0;0;0;1;1;1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -248,12 +245,30 @@ options.output_qdd = true;
 
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
+% cascade PD block
+options.Kp = 30.0*ones(nq,1);
+options.Kd = 8.0*ones(nq,1);
+pd = SimplePDBlock(r,ctrl_data,options);
+ins(1).system = 1;
+ins(1).input = 1;
+ins(2).system = 1;
+ins(2).input = 2;
+ins(3).system = 2;
+ins(3).input = 1;
+outs(1).system = 2;
+outs(1).output = 1;
+outs(2).system = 2;
+outs(2).output = 2;
+sys = mimoCascade(pd,qp,[],ins,outs);
+clear ins;
+
 qddes = zeros(nu,1);
 udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.001;
+dt = 0.004;
+tt_prev = -1;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -268,17 +283,19 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 qd_int = 0;
-eta = 0.1;
-while tt<T+2
+while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
     if toffset==-1
       toffset=t;
     end
     tt=t-toffset;
-
+%     if tt_prev~=-1
+%       dt = 0.99*dt + 0.01*(tt-tt_prev);
+%     end
+%     dt
+    tt_prev=tt;
     tau = x(2*nq+(1:nq));
-    tau = tau(act_idx_map);
     
     % get estimated state
     kf_state = kf.update(tt,kf_state,x(1:nq));
@@ -289,25 +306,20 @@ while tt<T+2
     
     % get desired configuration
     qt = qtraj.eval(tt);
-    qdes = qt(act_idx_map);
-
-    qt(6) = q(6); % ignore yaw
-    
-    % get desired acceleration, open loop + PD
-    qdtraj_t = qdtraj.eval(tt);
-    pd = Kp*(qt-q) + Kd*(qdtraj_t-qd);
-    qdddes = qddtraj.eval(tt) + pd;
-    
-    [u,qdd] = mimoOutput(qp,tt,[],[q;qd],qdddes);
+    qdes = qt(act_idx_map);    
+    u_and_qdd = output(sys,tt,[],[qt;q;qd;q;qd]);
+    u=u_and_qdd(1:nu);
+    qdd=u_and_qdd(nu+1:end);
     udes(joint_act_ind) = u(joint_act_ind);
     
     % fade in desired torques to avoid spikes at the start
+    tau = tau(act_idx_map);
     alpha = min(1.0,tt/torque_fade_in);
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
     % compute desired velocity
-    qd_int = qd_int + eta*qdd*dt;
-    qddes_state_frame = qd_int;
+    qd_int = qd_int + qdd*dt;
+    qddes_state_frame = qd_int-qd;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
