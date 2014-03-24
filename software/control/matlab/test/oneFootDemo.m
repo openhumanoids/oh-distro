@@ -1,19 +1,16 @@
-function copTrackingDemo
+function oneFootDemo
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 joint_str = {'leg'};% <---- cell array of (sub)strings  
+raise_left_foot = 0;
 
 % load robot model
-options.floating = true;
-options.ignore_friction = true;
-urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf');
-r = Atlas(urdf,options);
+r = Atlas();
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
-
 
 % setup frames
 state_plus_effort_frame = AtlasStateAndEffort(r);
@@ -52,7 +49,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = 0;
+gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.0;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
@@ -61,36 +58,28 @@ ref_frame.updateGains(gains);
 % get current state
 [x,~] = getMessage(state_plus_effort_frame);
 x0 = x(1:2*nq); 
-q0 = x0(1:nq);
+q0 = x0(1:nq); 
 
-T = 20;
-if 0
-  % create figure 8 zmp traj
-  dt = 0.01;
-  ts = 0:dt:T;
-  nt = T/dt;
-  radius = 0.05; % 8 loop radius
-  zmpx = [radius*sin(4*pi/T * ts(1:nt/2)), radius*sin(4*pi/T * ts(1:nt/2+1))];
-  zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
+T_transfer_weight = 10; % move zmp over stance foot
+T_hold = 5; % pause after shift
+T_raise_foot = 0; % total time to raise+lower opposite foot
+T = 2*T_transfer_weight + T_hold + T_raise_foot;
+
+kinsol = doKinematics(r,q0);
+com = getCOM(r,kinsol);
+
+if raise_left_foot
+  rfoot_ind = r.findLinkInd('r_foot');
+  foot_pos = contactPositions(r,q0, rfoot_ind);
 else
-  % rectangle
-  h=0.04; % height/2
-  w=0.1; % width/2
-  zmpx = [0 h h -h -h 0];
-  zmpy = [0 w -w -w w 0];
-  ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
+  lfoot_ind = r.findLinkInd('l_foot');
+  foot_pos = contactPositions(r,q0, lfoot_ind);
 end
+foot_center = mean(foot_pos(1:2,1:4)')';
 
-zmpknots = [zmpx;zmpy;0*zmpx];
-R = rpy2rotmat([0;0;x0(6)]);
-zmpknots = R*zmpknots;
+zmpknots = [com(1:2),foot_center,foot_center,com(1:2)];
+ts = [0, T_transfer_weight, T_transfer_weight+T_hold+T_raise_foot, T];
 zmptraj = PPTrajectory(foh(ts,zmpknots(1:2,:)));
-
-rfoot_ind = r.findLinkInd('r_foot');
-lfoot_ind = r.findLinkInd('l_foot');
-foot_pos = contactPositions(r,q0, [rfoot_ind, lfoot_ind]);
-foot_center = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
-zmptraj = zmptraj + foot_center;
 zmptraj = zmptraj.setOutputFrame(desiredZMP);
 
 % plot walking traj in drake viewer
@@ -126,7 +115,7 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.slack_limit = 20;
 options.w = 0.1;
-options.W = diag([0.1;0.1;0.1;1;1;1]);
+options.W = diag([0;0;0;1;1;1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -136,8 +125,8 @@ options.output_qdd = true;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 % cascade PD block
-options.Kp = 30.0*ones(nq,1);
-options.Kd = 8.0*ones(nq,1);
+options.Kp = 25.0*ones(nq,1);
+options.Kp = 10.0*ones(nq,1);
 pd = SimplePDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -157,8 +146,7 @@ udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.005;
-tt_prev = -1;
+dt = 0.001;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -176,7 +164,6 @@ xtraj = [];
 
 q_int = q0;
 qd_int = 0;
-qd_err_int = 0;
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -184,11 +171,7 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-    if tt_prev~=-1
-      dt = 0.99*dt + 0.01*(tt-tt_prev);
-    end
-    dt
-    tt_prev=tt;
+
     tau = x(2*nq+(1:nq));
     
     % get estimated state
@@ -212,14 +195,15 @@ while tt<T
     % compute desired velocity
     qd_int = qd_int + qdd*dt;
     q_int = q_int + qd_int*dt;
-    
-    qd_err = qd_int-qd;
-    qd_err_int = qd_err_int + 0.0*qd_err*dt;
-    qddes_state_frame = qd_err + qd_err_int;
+    qddes_state_frame = qd_int;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
-    ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
+    qdes = q0(act_idx_map);
+    q_int_input_frame = q_int(act_idx_map);
+    qdes(joint_act_ind) = q_int_input_frame(joint_act_ind);
+    
+    ref_frame.publish(t,[qdes;qddes;udes],'ATLAS_COMMAND');
   end
 end
 
@@ -268,9 +252,6 @@ end
 nb = length(zmptraj.getBreaks());
 zmpknots = reshape(zmptraj.eval(zmptraj.getBreaks()),2,nb);
 zmpknots = [zmpknots; zeros(1,nb)];
-
-zmpact = R'*zmpact;
-zmpknots = R'*zmpknots;
 
 figure(11);
 plot(zmpact(2,:),zmpact(1,:),'r');
