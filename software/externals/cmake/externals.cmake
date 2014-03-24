@@ -1,6 +1,6 @@
 
 set(libbot-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/libbot-drc)
-set(libbot-drc_revision 8322)
+set(libbot-drc_revision 8323)
 set(libbot-drc_depends)
 
 set(Eigen_pod_url https://svn.csail.mit.edu/Eigen_pod)
