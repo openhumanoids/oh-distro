@@ -28,7 +28,7 @@ nq = getNumDOF(r);
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
 
-v = r.constructVisualizer;
+% v = r.constructVisualizer;
 lcmgl_com = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'center-of-mass');
 lcmgl_cop = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'measured-cop');
 lcmgl_zmp = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'filtered-zmp');
@@ -96,7 +96,7 @@ while true
 		force_torque = getMessage(force_torque_frame);
 		drawCOP(force_torque,kinsol,lcmgl_cop);
 		
-    v.draw(t,[q_kf;qd_kf]);
+%     v.draw(t,[q_kf;qd_kf]);
   end
 end
 
