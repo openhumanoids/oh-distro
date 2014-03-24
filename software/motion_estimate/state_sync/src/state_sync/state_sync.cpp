@@ -8,6 +8,8 @@
 #include "state_sync.hpp"
 #include <ConciseArgs>
 
+
+
 using namespace std;
 #define DO_TIMING_PROFILE FALSE
 
@@ -18,6 +20,16 @@ void assignJointsStruct( Joints &joints ){
   joints.position.assign( joints.name.size(), 0);
   joints.effort.assign( joints.name.size(), 0);  
 }
+
+
+void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
+                     int64_t utime, void* user) {  
+  state_sync& sync = *((state_sync*)user);
+  sync.setBotParam(new_botparam);
+  sync.setEncodersFromParam();
+}
+
+
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        bool standalone_head_, bool standalone_hand_,  
@@ -31,6 +43,10 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
    publish_pose_body_(publish_pose_body_){
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
 
+  botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 1); // 1 means keep updated, 0 would ignore updates
+  bot_param_add_update_subscriber(botparam_,
+                                  onParamChangeSync, this);
+   
   // Get the Joint names and determine the correct configuration:
   std::vector<std::string> joint_names = model_->getJointNames();
   
@@ -95,7 +111,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);  
   lcm_->subscribe("ATLAS_POT_OFFSETS",&state_sync::potOffsetHandler,this);  
 
-  lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
+  //lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
   lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
   
   // Always provided by the Atlas Driver:
@@ -108,12 +124,13 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   /// Pots and Encoders:
   // pot offsets if pots are used, currently uncalibrated
   pot_joint_offsets_.assign(28,0.0);
-
   // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(28,0.0);
 
-  loadEncoderOffsetsFromFile();
-  encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.24;  // robot software v1.10
+  // Encoder now read from main cfg file and updates received via param server
+  setEncodersFromParam();
+  //loadEncoderOffsetsFromFile();
+  //encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.24;  // robot software v1.10
 
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
   // if q < min_angle, use q + 2*pi
@@ -127,6 +144,44 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
   utime_prev_ = 0;
 }
+
+
+void state_sync::setEncodersFromParam() {
+  
+  std::string str = "State Sync: refreshing offsets (from param)";
+  std::cout << str << std::endl;
+  // display system status message in viewer
+  drc::system_status_t stat_msg;
+  stat_msg.utime = 0;
+  stat_msg.system = stat_msg.MOTION_ESTIMATION;
+  stat_msg.importance = stat_msg.VERY_IMPORTANT;
+  stat_msg.frequency = stat_msg.LOW_FREQUENCY;
+  stat_msg.value = str;
+  lcm_->publish(("SYSTEM_STATUS"), &stat_msg);  
+  
+  int n_indices = bot_param_get_array_len (botparam_, "encoders.joint_index");  
+  int n_offsets = bot_param_get_array_len (botparam_, "encoders.offsets");  
+  std::cout << n_indices << " indices and " << n_offsets << " offsets\n";
+  if (n_indices != n_offsets){
+    std::cout << "n_indices is now n_offsets, not updating\n";
+    return;
+  }
+    
+  double offsets_in[n_indices];
+  int indices_in[n_offsets];
+  bot_param_get_int_array_or_fail(botparam_, "encoders.joint_index", &indices_in[0], n_indices);  
+  bot_param_get_double_array_or_fail(botparam_, "encoders.offsets", &offsets_in[0], n_offsets);  
+  std::vector<double> indices(indices_in, indices_in + n_indices);
+  std::vector<double> offsets(offsets_in, offsets_in + n_offsets);
+  
+  for (size_t i=0; i < indices.size() ; i++){
+    // encoder_joint_offsets_[jindex] = offset;
+    encoder_joint_offsets_[ indices[i] ] = offsets[i];
+    std::cout << i << ": " << indices[i] << " " << offsets[i] << "\n";
+  }
+  std::cout << "Finished updating encoder offsets (from param)\n";  
+}
+
 
 void state_sync::enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
   enableEncoders(msg->utime > 0); // sneakily use utime as a flag
@@ -167,6 +222,7 @@ void state_sync::enableEncoders(bool enable) {
   use_encoder_[Atlas::JOINT_NECK_AY] = enable;
 }
 
+/*
 void state_sync::loadEncoderOffsetsFromFile() {
   // load encoder offsets from file
 
@@ -205,10 +261,11 @@ void state_sync::loadEncoderOffsetsFromFile() {
     file.close();
   }
 }
+*/
 
-void state_sync::refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
-  loadEncoderOffsetsFromFile();
-}
+//void state_sync::refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
+//  loadEncoderOffsetsFromFile();
+//}
 
 void state_sync::potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   std::cout << "got potOffsetHandler\n";

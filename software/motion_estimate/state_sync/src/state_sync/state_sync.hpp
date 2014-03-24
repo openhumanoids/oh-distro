@@ -20,6 +20,10 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
+#include <bot_param/param_client.h>
+#include <bot_param/param_util.h>
+
+
 #include <pointcloud_tools/pointcloud_math.hpp>
 #include "atlas/AtlasControlTypes.h"
 #include "atlas/AtlasJointNames.h"
@@ -44,9 +48,15 @@ class state_sync{
     }
     void Identity();
     
+    void setBotParam(BotParam* new_botparam){
+      botparam_ = new_botparam;
+    }
+    void setEncodersFromParam();
+    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
+    BotParam* botparam_;
     JointUtils joint_utils_;
     
     bool standalone_head_, standalone_hand_;
@@ -57,7 +67,7 @@ class state_sync{
     bool publish_pose_body_;
 
     long utime_prev_;
-
+    
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg);
     void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg);
@@ -66,8 +76,10 @@ class state_sync{
     void poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg);
     void potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
-    void refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
-    void loadEncoderOffsetsFromFile();
+    
+    // Encoder now read from main cfg file and updates received via param server
+    //void refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
+    // void loadEncoderOffsetsFromFile();
     void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
     void enableEncoders(bool enable);
     
