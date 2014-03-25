@@ -197,19 +197,22 @@ elseif strcmp(joint_name,'r_leg_hpz')
 elseif strcmp(joint_name,'l_leg_aky') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
+  qdes(joint_index_map.r_leg_hpx) = -0.25;
 
 elseif strcmp(joint_name,'r_leg_aky') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
+  qdes(joint_index_map.l_leg_hpx) = 0.25;
 
 elseif strcmp(joint_name,'l_leg_akx') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
+  qdes(joint_index_map.r_leg_hpx) = -0.25;
 
 elseif strcmp(joint_name,'r_leg_akx') 
   qdes(joint_index_map.r_arm_shx) = 1.25;
   qdes(joint_index_map.l_arm_shx) = -1.25;
-  
+  qdes(joint_index_map.l_leg_hpx) = 0.25;
   
 elseif strcmp(joint_name,'l_leg_hpx') 
   qdes(joint_index_map.r_arm_shx) = 0.7;

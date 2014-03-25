@@ -24,7 +24,7 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'r_leg_kny';% <---- joint name 
+joint = 'l_leg_aky';% <---- joint name 
 input_mode = 'position';% <---- force, position
 control_mode = 'force+velocity';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
@@ -35,7 +35,7 @@ T = 25;% <--- signal duration (sec)
 % chirp specific
 amp = 0.4;% <----  Nm or radians
 chirp_f0 = 0.1;% <--- chirp starting frequency
-chirp_fT = 0.3;% <--- chirp ending frequency
+chirp_fT = 0.5;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
