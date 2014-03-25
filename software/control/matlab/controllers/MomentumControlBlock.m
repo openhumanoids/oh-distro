@@ -224,8 +224,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
       % extract current supports
       supp_idx = find(ctrl_data.support_times<=t,1,'last');
       supp = ctrl_data.supports(supp_idx);
-      y0 = ctrl_data.K.y0.eval(t); 
-      K = ctrl_data.K.D.eval(t); % always constant for ZMP dynamics
+      y0 = fasteval(ctrl_data.K.y0,t); 
+      K = fasteval(ctrl_data.K.D,t); % always constant for ZMP dynamics
     else
       supp = ctrl_data.supports;
       y0 = [0;0]; 
