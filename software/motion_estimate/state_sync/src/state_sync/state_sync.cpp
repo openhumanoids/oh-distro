@@ -4,6 +4,7 @@
 #include <limits>
 #include <vector>
 #include <fstream>
+#include <math.h>
 
 #include "state_sync.hpp"
 #include <ConciseArgs>
@@ -29,8 +30,6 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
   sync.setBotParam(new_botparam);
   sync.setEncodersFromParam();
 }
-
-
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        bool standalone_head_, bool standalone_hand_,  
@@ -216,7 +215,6 @@ void state_sync::setEncodersFromParam() {
   }
   std::cout << "Finished updating encoder offsets (from param)\n";  
 }
-
 
 void state_sync::enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
   enableEncoders(msg->utime > 0); // sneakily use utime as a flag
@@ -454,6 +452,21 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
         }
       }
     }
+  }
+
+  double eta;
+  for (int i=0; i<Atlas::NUM_JOINTS; i++) {
+    if (sign(atlas_joints_.velocity[i]) != qd_sign_[i]) {
+      qd_sign_time_[i] = msg->utime;
+    }
+    std::cout << msg->utime << std::endl;
+    std::cout << qd_sign_time_[i] << std::endl;
+    std::cout << (msg->utime-qd_sign_time_[i])/(0.1*1e6) << std::endl << std::endl;
+
+    eta = 1.0;// min(1.0,(msg->utime-qd_sign_time_[i])/(0.1*1e6));
+    qd_filt_[i] = 0.95*qd_filt_[i] + 0.05*atlas_joints_.velocity[i]*eta;
+    qd_sign_[i] = sign(atlas_joints_.velocity[i]);
+    atlas_joints_.velocity[i] = qd_filt_[i];
   }
   
   

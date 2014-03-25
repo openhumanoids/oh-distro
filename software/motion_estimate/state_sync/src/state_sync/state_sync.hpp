@@ -84,6 +84,8 @@ class state_sync{
     // void loadEncoderOffsetsFromFile();
     void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
     void enableEncoders(bool enable);
+
+    int sign(float num);
     
     Joints head_joints_;
     Joints atlas_joints_;
@@ -107,6 +109,10 @@ class state_sync{
     std::vector<float> encoder_joint_offsets_;
     std::vector<float> max_encoder_wrap_angle_;
     std::vector<bool> use_encoder_;
+
+    std::vector<float> qd_filt_;
+    std::vector<int> qd_sign_;
+    std::vector<float> qd_sign_time_;
 
     void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
     void appendJoints(drc::robot_state_t& msg_out, Joints joints);
