@@ -35,34 +35,33 @@ classdef WalkingPDBlock < MIMODrakeSystem
       
       if isfield(options,'Kp')
         typecheck(options.Kp,'double');
-        sizecheck(options.Kp,[obj.nq obj.nq]);
+        sizecheck(options.Kp,[obj.nq 1]);
         obj.Kp = options.Kp;
+        obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       else
-        obj.Kp = 160.0*eye(obj.nq);
-        %obj.Kp(1:2,1:2) = zeros(2); % ignore x,y
-        %obj.Kp(19:20,19:20) = 75*eye(2); % make left/right ankle joints softer
-        %obj.Kp(31:32,31:32) = 75*eye(2);
+        obj.Kp = 170.0*ones(obj.nq,1);
+        obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       end        
         
       if isfield(options,'Kd')
         typecheck(options.Kd,'double');
-        sizecheck(options.Kd,[obj.nq obj.nq]);
+        sizecheck(options.Kd,[obj.nq 1]);
         obj.Kd = options.Kd;
+        obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
       else
-        obj.Kd = 19.0*eye(obj.nq);
-        %obj.Kd(1:2,1:2) = zeros(2); % ignore x,y
-        %obj.Kd(19:20,19:20) = 10*eye(2); % make left/right ankle joints softer
-        %obj.Kd(31:32,31:32) = 10*eye(2);
-      end        
-        
+        obj.Kd = 19.0*ones(obj.nq,1);
+        obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
+      end
+            
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.004;
+        obj.dt = 0.001;
       end
-     
+      obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
+
       state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
       obj.l_ank = find(~cellfun(@isempty,strfind(state_names,'l_leg_akx')) | ~cellfun(@isempty,strfind(state_names,'l_leg_aky')));
       obj.r_ank = find(~cellfun(@isempty,strfind(state_names,'r_leg_akx')) | ~cellfun(@isempty,strfind(state_names,'r_leg_aky')));
@@ -106,16 +105,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
       %joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
       %obj.ikoptions.jointLimitMin(~cellfun(@isempty,strfind(joint_names,'kny'))) = 0.6;
 
-      obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
-
       obj.robot = r;
       obj.max_nrm_err = 1.5;
-      
-      obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
-      lc = lcm.lcm.LCM.getSingleton();
-      lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
-      
-      
     end
    
     function y=mimoOutput(obj,t,~,varargin)
@@ -126,31 +117,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       obj.ik_qnom = varargin{1};
       cdata = obj.controller_data.data;
       
-      Kp = obj.Kp;
-      Kd = obj.Kd;
-      
-      % get foot contact state over LCM
-      contact_data = obj.contact_est_monitor.getMessage();
-      if isempty(contact_data)
-        lfoot_contact_state = 0;
-        rfoot_contact_state = 0;
-      else
-        msg = drc.foot_contact_estimate_t(contact_data);
-        lfoot_contact_state = msg.left_contact > 0.5;
-        rfoot_contact_state = msg.right_contact > 0.5;
-      end
-      
-      if lfoot_contact_state
-        Kp(obj.l_ank,obj.l_ank) = 0*eye(2);
-        Kd(obj.l_ank,obj.l_ank) = 0*eye(2);
-      end
-      if rfoot_contact_state
-        Kp(obj.r_ank,obj.r_ank) = 0*eye(2);
-        Kd(obj.r_ank,obj.r_ank) = 0*eye(2);
-      end
-      
       approx_args = {};
-%       approx_args_bk = {};
       for j = 1:length(cdata.link_constraints)
         if ~isempty(cdata.link_constraints(j).traj)
           pos = fasteval(cdata.link_constraints(j).traj,t);
@@ -200,8 +167,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
       if nrmerr > obj.max_nrm_err
         err_q = obj.max_nrm_err * err_q / nrmerr;
       end
-%       y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp*err_q - obj.Kd*qd));
-      y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),Kp*err_q - Kd*qd));
+
+      y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
     end
   end
   
