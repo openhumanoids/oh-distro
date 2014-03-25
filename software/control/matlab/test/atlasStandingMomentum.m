@@ -13,14 +13,14 @@ function atlasStandingMomentum
 joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 3; % what dimension to move COM: x/y/z (1/2/3)
+dim = 2; % what dimension to move COM: x/y/z (1/2/3)
 T = 15;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.05;% <---- meters, COM DELTA
+amp = 0.04;% <---- meters, COM DELTA
 chirp_f0 = 0.2;% <--- chirp starting frequency
 chirp_fT = 0.2;% <--- chirp ending frequency
-chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
+chirp_sign = 0;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % random pose params for sys id tests
 use_random_traj = false; % if true, ignores chirp params
@@ -98,6 +98,9 @@ com0 = getCOM(r,q0);
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
 
+% set up QP controller params
+foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+
 if use_random_traj
   [xposes,info,~,~,~,constraints,ikoptions] = randomPose(r_ch,x0,num_random_pose);
   [traj,info] = interpolatingTraj(r_ch,[0 T],xposes,x0,pose_hold_time*num_random_pose/T,constraints,ikoptions);
@@ -121,6 +124,29 @@ if use_random_traj
   dcomz_traj= ConstantTrajectory(0);
   ddcomz_traj= ConstantTrajectory(0);
   
+  % build TI-ZMP controller
+  foot_pos = contactPositions(r,q0, [rfoot_ind, lfoot_ind]);
+  ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
+  comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';%mean(foot_pos(1:2,ch(1:end-1)),2);
+  
+  limp = LinearInvertedPendulum(com0(3));
+  K = lqr(limp,comgoal);
+  
+  ctrl_data = SharedDataHandle(struct(...
+    'is_time_varying',false,...
+    'x0',[comgoal;0;0],...
+    'support_times',0,...
+    'supports',foot_support,...
+    'ignore_terrain',false,...
+    'trans_drift',[0;0;0],...
+    'qtraj',qtraj,...
+    'K',K,...
+    'comz_traj',comz_traj,...
+    'dcomz_traj',dcomz_traj,...
+    'ddcomz_traj',ddcomz_traj,...
+    'mu',1,...
+    'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+  
 else
   comtraj = ConstantTrajectory(com0);
   
@@ -130,12 +156,15 @@ else
   input_traj = fader*input_traj;
   
   if dim==1
-    comtraj = comtraj + [input_traj;0;0];
+    traj_in_robot_frame = [input_traj;0;0];
   elseif dim==2
-    comtraj = comtraj + [0;input_traj;0];
+    traj_in_robot_frame = [0;input_traj;0];
   else
-    comtraj = comtraj + [0;0;input_traj];
+    traj_in_robot_frame = [0;0;input_traj];
   end
+  
+  R = rpy2rotmat([0;0;x0(6)]);
+  comtraj = comtraj + R*traj_in_robot_frame;
   
   comz_traj = comtraj(3);
   dcomz_traj= fnder(comz_traj,1);
@@ -192,51 +221,50 @@ else
   qtraj = PPTrajectory(spline(ts,q));
   traj = [qtraj;0*qtraj];
   traj = traj.setOutputFrame(r.getStateFrame);
+  
+  zmptraj = comtraj(1:2,:);
+  zmptraj = zmptraj.setOutputFrame(desiredZMP);
+    
+  % plot zmp traj in drake viewer
+  lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'zmp-traj');
+
+  ts = 0:0.1:T;
+  for i=1:length(ts)
+    lcmgl.glColor3f(0, 1, 0);
+    lcmgl.sphere([zmptraj.eval(ts(i));0], 0.01, 20, 20);
+  end
+  lcmgl.switchBuffers();
+
+
+  kinsol = doKinematics(r,q0,false,true);
+  com = getCOM(r,kinsol);
+  options.com0 = com(1:2);
+  K = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3),zmptraj,options);
+
+  ctrl_data = SharedDataHandle(struct(...
+    'is_time_varying',true,...
+    'x0',[zmptraj.eval(T);0;0],...
+    'support_times',0,...
+    'supports',foot_support,...
+    'ignore_terrain',false,...
+    'trans_drift',[0;0;0],...
+    'qtraj',qtraj,...
+    'K',K,...
+    'mu',1,...
+    'comz_traj',comz_traj,...
+    'dcomz_traj',dcomz_traj,...
+    'ddcomz_traj',ddcomz_traj,...
+    'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 end
 
 
 v = r.constructVisualizer;
 playback(v,traj,struct('slider',true));
 
-qdtraj = fnder(qtraj,1);
-qddtraj = fnder(qtraj,2);
-
-% set up QP controller params
-foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-
-% build TI-ZMP controller
-foot_pos = contactPositions(r,q0, [rfoot_ind, lfoot_ind]);
-ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';%mean(foot_pos(1:2,ch(1:end-1)),2);
-
-% plot com/zmp goal in drake viewer
-lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'standing-zmp-goal');
-lcmgl.glColor3f(.5, .5, 0);
-lcmgl.sphere([comgoal;0], 0.01, 20, 20);  
-lcmgl.switchBuffers();
-
-limp = LinearInvertedPendulum(com0(3));
-K = lqr(limp,comgoal);
-
-ctrl_data = SharedDataHandle(struct(...
-  'is_time_varying',false,...
-  'x0',[comgoal;0;0],...
-  'support_times',0,...
-  'supports',foot_support,...
-  'ignore_terrain',false,...
-  'trans_drift',[0;0;0],...
-  'qtraj',qtraj,...
-  'K',K,...
-  'comz_traj',comz_traj,...
-  'dcomz_traj',dcomz_traj,...
-  'ddcomz_traj',ddcomz_traj,...
-  'mu',1,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
-
 % instantiate QP controller
 options.slack_limit = 20;
-options.w = 0.1;
-options.W = diag([0;0;0;1;1;1]);
+options.w = 1.0;
+options.W = diag([0;0;0;.1;.1;.1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -290,10 +318,10 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-%     if tt_prev~=-1
-%       dt = 0.99*dt + 0.01*(tt-tt_prev);
-%     end
-%     dt
+    if tt_prev~=-1
+      dt = 0.99*dt + 0.01*(tt-tt_prev);
+    end
+    dt
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     

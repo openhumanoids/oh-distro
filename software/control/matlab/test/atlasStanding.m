@@ -117,13 +117,16 @@ else
   fader = PPTrajectory(foh([0 fade_window T-fade_window T],[0 1 1 0]));
   input_traj = fader*input_traj;
   
-  if dim==1
-    comtraj = comtraj + [input_traj;0;0];
+if dim==1
+    traj_in_robot_frame = [input_traj;0;0];
   elseif dim==2
-    comtraj = comtraj + [0;input_traj;0];
+    traj_in_robot_frame = [0;input_traj;0];
   else
-    comtraj = comtraj + [0;0;input_traj];
+    traj_in_robot_frame = [0;0;input_traj];
   end
+  
+  R = rpy2rotmat([0;0;x0(6)]);
+  comtraj = comtraj + R*traj_in_robot_frame;
   
   % get foot positions
   kinsol = doKinematics(r,q0);
