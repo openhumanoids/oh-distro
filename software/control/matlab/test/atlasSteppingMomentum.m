@@ -6,9 +6,9 @@ joint_str = {'leg'};% <---- cell array of (sub)strings
 
 % load robot model
 r = Atlas();
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
@@ -128,6 +128,7 @@ ctrl_data = SharedDataHandle(struct(...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'trans_drift',[0;0;0],...
   'qtraj',x0(1:nq),...
+  'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
@@ -137,33 +138,25 @@ traj = traj.setOutputFrame(r.getStateFrame);
 v = r.constructVisualizer;
 playback(v,traj,struct('slider',true));
 
+qtraj = PPTrajectory(foh(ts,walking_plan.xtraj(1:nq,:)));
+qdtraj = fnder(qtraj,1);
+qddtraj = fnder(qtraj,2);
+
 % instantiate QP controller
 options.slack_limit = 20;
-options.w = 0.1;
-options.W = diag([0;0;0;1;1;1]);
+options.w = 1e-2;
+options.W = diag([0;0;0;100;100;100]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.05;
 options.output_qdd = true;
-
-foot_options.Kp = [10;10;10;10;10;10];
-foot_options.Kd = [1;1;1;1;1;1];
-lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,foot_options);
-rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,foot_options);
-
-pelvis_options.Kp = [nan;nan;nan;nan;nan;nan]; % using nan gains removes the constraint
-pelvis_options.Kd = [nan;nan;nan;nan;nan;nan]; % using nan gains removes the constraint
-pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data,pelvis_options);
-torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,pelvis_options);
-motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
-  pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
-qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
+qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 
 % cascade PD block
 options.Kp = 30.0*ones(nq,1);
-options.Kd = 8.0*ones(nq,1);
+options.Kd = 6.0*ones(nq,1);
 pd = SimplePDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -171,14 +164,6 @@ ins(2).system = 1;
 ins(2).input = 2;
 ins(3).system = 2;
 ins(3).input = 1;
-ins(4).system = 2;
-ins(4).input = 3;
-ins(5).system = 2;
-ins(5).input = 4;
-ins(6).system = 2;
-ins(6).input = 5;
-ins(7).system = 2;
-ins(7).input = 6;
 outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
@@ -186,91 +171,18 @@ outs(2).output = 2;
 sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins;
 
-
-% cascade body motion control blocks
-ins(1).system = 2;
-ins(1).input = 1;
-ins(2).system = 1;
-ins(2).input = 1;
-ins(3).system = 2;
-ins(3).input = 2;
-ins(4).system = 2;
-ins(4).input = 3;
-ins(5).system = 2;
-ins(5).input = 5;
-ins(6).system = 2;
-ins(6).input = 6;
-ins(7).system = 2;
-ins(7).input = 7;
-sys = mimoCascade(lfoot_motion,sys,[],ins,outs);
-clear ins;
-
-ins(1).system = 2;
-ins(1).input = 1;
-ins(2).system = 1;
-ins(2).input = 1;
-ins(3).system = 2;
-ins(3).input = 2;
-ins(4).system = 2;
-ins(4).input = 3;
-ins(5).system = 2;
-ins(5).input = 4;
-ins(6).system = 2;
-ins(6).input = 6;
-ins(7).system = 2;
-ins(7).input = 7;
-sys = mimoCascade(rfoot_motion,sys,[],ins,outs);
-clear ins;
-
-ins(1).system = 2;
-ins(1).input = 1;
-ins(2).system = 1;
-ins(2).input = 1;
-ins(3).system = 2;
-ins(3).input = 2;
-ins(4).system = 2;
-ins(4).input = 3;
-ins(5).system = 2;
-ins(5).input = 4;
-ins(6).system = 2;
-ins(6).input = 5;
-ins(7).system = 2;
-ins(7).input = 7;
-sys = mimoCascade(pelvis_motion,sys,[],ins,outs);
-clear ins;
-
-ins(1).system = 2;
-ins(1).input = 1;
-ins(2).system = 1;
-ins(2).input = 1;
-ins(3).system = 2;
-ins(3).input = 2;
-ins(4).system = 2;
-ins(4).input = 3;
-ins(5).system = 2;
-ins(5).input = 4;
-ins(6).system = 2;
-ins(6).input = 5;
-ins(7).system = 2;
-ins(7).input = 6;
-sys = mimoCascade(torso_motion,sys,[],ins,outs);
-clear ins;
-
-
 qddes = zeros(nu,1);
 udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.004;
+dt = 0.005;
 tt_prev = -1;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
 kf = FirstOrderKalmanFilter(process_noise,observation_noise);
 kf_state = kf.getInitialState;
-
-leg_idx = findJointIndices(r,'leg');
 
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
@@ -287,10 +199,10 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-%     if tt_prev~=-1
-%       dt = 0.99*dt + 0.01*(tt-tt_prev);
-%     end
-%     dt
+    if tt_prev~=-1
+      dt = 0.99*dt + 0.01*(tt-tt_prev);
+    end
+    dt
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
@@ -300,7 +212,9 @@ while tt<T
 
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd;q;qd;q;qd;q;qd;q;qd]);
+  
+    qt = fasteval(qtraj,tt);
+    u_and_qdd = output(sys,tt,[],[qt;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+1:end);
     udes(joint_act_ind) = u(joint_act_ind);
@@ -316,7 +230,7 @@ while tt<T
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
-    ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
+    ref_frame.publish(t,[qt(act_idx_map);qd(act_idx_map);udes],'ATLAS_COMMAND');
   end
 end
 
@@ -325,6 +239,7 @@ gains = getAtlasGains(input_frame); % change gains in this file
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
+gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % move to fixed point configuration 

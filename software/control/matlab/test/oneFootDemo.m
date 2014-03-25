@@ -7,9 +7,9 @@ raise_left_foot = 0;
 
 % load robot model
 r = Atlas();
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
@@ -49,7 +49,7 @@ gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
-gains.k_q_p(joint_act_ind) = gains.k_q_p(joint_act_ind)*0.0;
+gains.k_q_p(joint_act_ind) = 0;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
 
@@ -62,72 +62,106 @@ q0 = x0(1:nq);
 
 T_transfer_weight = 10; % move zmp over stance foot
 T_hold = 5; % pause after shift
-T_raise_foot = 0; % total time to raise+lower opposite foot
+T_raise_foot = 5; % total time to raise+lower opposite foot
 T = 2*T_transfer_weight + T_hold + T_raise_foot;
 
 kinsol = doKinematics(r,q0);
 com = getCOM(r,kinsol);
 
+instep_shift = 0.03; %m
+rfoot_ind = r.findLinkInd('r_foot');
+lfoot_ind = r.findLinkInd('l_foot');
+R = rpy2rotmat([0;0;x0(6)]);
 if raise_left_foot
-  rfoot_ind = r.findLinkInd('r_foot');
   foot_pos = contactPositions(r,q0, rfoot_ind);
+  shift = [0.0; instep_shift; 0.0];
 else
-  lfoot_ind = r.findLinkInd('l_foot');
   foot_pos = contactPositions(r,q0, lfoot_ind);
+  shift = [0.0; -instep_shift; 0.0];
 end
-foot_center = mean(foot_pos(1:2,1:4)')';
+shift = R*shift;
+foot_center = mean(foot_pos(1:2,1:4)')' + shift(1:2);
 
 zmpknots = [com(1:2),foot_center,foot_center,com(1:2)];
 ts = [0, T_transfer_weight, T_transfer_weight+T_hold+T_raise_foot, T];
 zmptraj = PPTrajectory(foh(ts,zmpknots(1:2,:)));
 zmptraj = zmptraj.setOutputFrame(desiredZMP);
 
-% plot walking traj in drake viewer
-lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'zmp-traj');
+com = getCOM(r,kinsol);
+options.com0 = com(1:2);
+zfeet = min(foot_pos(3,:));
+[K,~,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3)-zfeet,zmptraj,options);
 
+
+
+% plot zmp/com traj in drake viewer
+lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'zmp-traj');
 ts = 0:0.1:T;
 for i=1:length(ts)
   lcmgl.glColor3f(0, 1, 0);
 	lcmgl.sphere([zmptraj.eval(ts(i));0], 0.01, 20, 20);  
+  lcmgl.glColor3f(1, 1, 0);
+	lcmgl.sphere([comtraj.eval(ts(i));0], 0.01, 20, 20);  
 end
 lcmgl.switchBuffers();
 
-% set up QP controller params
-foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+supports = cell(3,1);
+supports{1} = SupportState(r,[rfoot_ind;lfoot_ind]);
+if raise_left_foot
+  supports{2} = SupportState(r,rfoot_ind);
+else
+  supports{2} = SupportState(r,lfoot_ind);
+end
+supports{3} = SupportState(r,[rfoot_ind;lfoot_ind]);
+support_times = [0, T_transfer_weight+T_hold, T_transfer_weight+T_hold+T_raise_foot];
 
-kinsol = doKinematics(r,q0,false,true);
-com = getCOM(r,kinsol);
-options.com0 = com(1:2);
-K = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3),zmptraj,options);
+if raise_left_foot
+  foottraj.right.orig = ConstantTrajectory(forwardKin(r,kinsol,rfoot_ind,[0;0;0],1));  
+  lfoot_pos = forwardKin(r,kinsol,lfoot_ind,[0;0;0],1);
+  lfoot_knots = [lfoot_pos, lfoot_pos, lfoot_pos+[0;0;0.05;0;0;0], lfoot_pos, lfoot_pos];
+  ts = [0; T_transfer_weight+T_hold; T_transfer_weight+T_hold+T_raise_foot/2; ...
+     T_transfer_weight+T_hold+T_raise_foot; T];
+  foottraj.left.orig = PPTrajectory(foh(ts,lfoot_knots));
+else
+  foottraj.left.orig = ConstantTrajectory(forwardKin(r,kinsol,lfoot_ind,[0;0;0],1));
+  rfoot_pos = forwardKin(r,kinsol,rfoot_ind,[0;0;0],1);
+  rfoot_knots = [rfoot_pos, rfoot_pos, rfoot_pos+[0;0;0.05;0;0;0], rfoot_pos, rfoot_pos];
+  ts = [0; T_transfer_weight+T_hold; T_transfer_weight+T_hold+T_raise_foot/2; ...
+     T_transfer_weight+T_hold+T_raise_foot; T];
+  foottraj.right.orig = PPTrajectory(foh(ts,rfoot_knots));
+end
+
+link_constraints = buildLinkConstraints(r, q0, foottraj);
 
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
   'x0',[zmptraj.eval(T);0;0],...
-  'support_times',0,...
-  'supports',foot_support,...
+  'support_times',support_times,...
+  'supports',[supports{:}],...
   'ignore_terrain',false,...
   'trans_drift',[0;0;0],...
   'qtraj',q0,...
   'K',K,...
+  'comtraj',comtraj,...
   'mu',1,...
+  'link_constraints',link_constraints,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
 % instantiate QP controller
 options.slack_limit = 20;
-options.w = 0.1;
-options.W = diag([0;0;0;1;1;1]);
+options.w = 1e-2;
+options.W = diag([0;0;0;1000;1000;1000]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.05;
 options.output_qdd = true;
-
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 % cascade PD block
-options.Kp = 25.0*ones(nq,1);
-options.Kp = 10.0*ones(nq,1);
-pd = SimplePDBlock(r,ctrl_data,options);
+options.Kp = 40.0*ones(nq,1);
+options.Kd = 6.0*ones(nq,1);
+pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 1;
@@ -146,7 +180,8 @@ udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.001;
+dt = 0.005;
+tt_prev = -1;
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -171,7 +206,11 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-
+    if tt_prev~=-1
+      dt = 0.99*dt + 0.01*(tt-tt_prev);
+    end
+    dt
+    tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
     % get estimated state
@@ -195,15 +234,12 @@ while tt<T
     % compute desired velocity
     qd_int = qd_int + qdd*dt;
     q_int = q_int + qd_int*dt;
-    qddes_state_frame = qd_int;
+    
+    qddes_state_frame = qd_int-qd;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
-    qdes = q0(act_idx_map);
-    q_int_input_frame = q_int(act_idx_map);
-    qdes(joint_act_ind) = q_int_input_frame(joint_act_ind);
-    
-    ref_frame.publish(t,[qdes;qddes;udes],'ATLAS_COMMAND');
+    ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
 
@@ -212,6 +248,7 @@ gains = getAtlasGains(input_frame); % change gains in this file
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
+gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % move to fixed point configuration 
@@ -242,7 +279,7 @@ for i=1:size(xtraj,2)
   Jdot = Jdot(1:2,:);
 	
 	% hardcoding D for ZMP output dynamics
-	D = -1.04./9.81*eye(2); 
+	D = -1.03./9.81*eye(2); 
 
 	comdd = Jdot * qd + J * qdd;
 	zmp = com(1:2) + D * comdd;
