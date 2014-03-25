@@ -75,7 +75,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       sizecheck(options.Kp,1);
       obj.Kp = options.Kp;
     else
-      obj.Kp = 175;
+      obj.Kp = 100;
     end    
 
     % com-z PD gains
@@ -532,12 +532,13 @@ classdef MomentumControlBlock < MIMODrakeSystem
         [y,~,qdd] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end},condof, ...
           supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
       else
-        [y_mex,active_supports_mex,qdd,Hqp_mex,fqp_mex,Aeq_mex,beq_mex] = MomentumControllermex(obj.mex_ptr.data,...
+        [y_mex,active_supports_mex,mex_qdd,Hqp_mex,fqp_mex,Aeq_mex,beq_mex] = MomentumControllermex(obj.mex_ptr.data,...
           1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
         valuecheck(y,y_mex,1e-2); 
+        valuecheck(qdd,mex_qdd,1e-2); 
         %valuecheck(Hqp(1:nq,1:nq),Hqp_mex,1e-6)
         %valuecheck(fqp',fqp_mex,1e-6);
         valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6);
@@ -545,7 +546,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
     end
 
-    if (1)     % simple timekeeping for performance optimization
+    if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
