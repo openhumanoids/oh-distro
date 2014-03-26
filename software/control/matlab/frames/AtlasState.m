@@ -6,9 +6,9 @@ classdef AtlasState < LCMCoordinateFrame & Singleton
 
       obj = obj@LCMCoordinateFrame('AtlasState',r.getNumStates(),'x');
       obj = obj@Singleton();
-
+      joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
       if isempty(obj.lcmcoder)  % otherwise I had a singleton
-        joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+        
         coder = drc.control.RobotStateCoder(joint_names);
       
         obj.setLCMCoder(JLCMCoder(coder));
