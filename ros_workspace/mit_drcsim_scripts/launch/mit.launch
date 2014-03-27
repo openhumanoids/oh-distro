@@ -1,19 +1,19 @@
 <launch>
 
   <arg name="gzname" default="gazebo"/>
-  <arg name="gzworld" default="vrc_task_1.world"/>
+  <arg name="gzworld" default="atlas.world"/>
+  <arg name="hand_suffix" default=""/>
+  <arg name="extra_gazebo_args" default="-q" />
 
-
-  <param name="/use_sim_time" type="bool" value="true"/>
-  <param name="/atlas/startup_mode" value="pinned" />
-  <param name="/atlas/time_to_unpin" value="10" />
-
+  <param name="/atlas/time_to_unpin" type="double" value="1.0"/>
+  <param name="/atlas/startup_mode" type="string" value="bdi_stand"/>
+  <!-- <param name="/atlas/startup_mode" type="string" value="pinned"/> -->
 
   <!-- start gazebo with the Atlas -->
-  <include file="$(find atlas_utils)/launch/atlas_no_controllers.launch">
+  <include file="$(find drcsim_gazebo)/launch/atlas_no_controllers.launch">
     <arg name="gzname" value="$(arg gzname)"/>
-    <arg name="extra_gazebo_args" value="-q -r --record_encoding=zlib --record_path=/tmp/vrc_task_1" />
     <arg name="gzworld" value="$(arg gzworld)"/>
+    <arg name="extra_gazebo_args" value="$(arg extra_gazebo_args)"/>
   </include>
 
   <!-- to trigger synchronization delay, set
@@ -23,8 +23,14 @@
   <param name="/atlas/delay_max_per_step" type="double" value="0.025"/>
 
   <!-- Robot Description -->
-  <param name="robot_description" textfile="$(find atlas_sandia_hands)/atlas_sandia_hands.urdf"/>
+  <!-- <param name="robot_description" command="$(find xacro)/xacro.py '$(find atlas_description)/robots/atlas_v3.urdf.xacro'" /> -->
+  <param name="robot_description" textfile="$(find mit_drcsim_scripts)/models/mit_robot/model_sim_gazebo.urdf"/>
+  <param name="robot_initial_pose/x"     value="-5" type="double"/>
+  <param name="robot_initial_pose/y"     value="0" type="double"/>
+  <param name="robot_initial_pose/z"     value="0.91" type="double"/>
+  <param name="robot_initial_pose/roll"  value="0" type="double"/>
+  <param name="robot_initial_pose/pitch" value="0" type="double"/>
+  <param name="robot_initial_pose/yaw"   value="0" type="double"/>
 
-  <include file="$(find atlas_utils)/launch/atlas_sandia_hands_bringup.launch"/>
-
+  <include file="$(find drcsim_gazebo)/launch/atlas_v3_bringup.launch"/>
 </launch>

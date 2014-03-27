@@ -18,7 +18,11 @@ classdef NeckPitchCoder < LCMCoder
       msg = drc.neck_pitch_t();
       msg.utime = 1000000*t;
       msg.pitch = x;
-    end
+		end
+		
+		function coords = coordinateNames(obj)
+			coords = {''};
+		end
   end
 end
   

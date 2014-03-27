@@ -11,6 +11,10 @@
 #include <drc_utils/PointerUtils.hpp>
 #include <gtkmm-renderer/RendererBase.hpp>
 #include <affordance/AffordanceUpWrapper.h>
+#include "lcmtypes/drc/data_request_t.hpp"
+#include "lcmtypes/drc/data_request_list_t.hpp"
+#include "lcmtypes/drc/gaze_command_t.hpp"
+#include "lcmtypes/drc/tracker_command_t.hpp"
 
 // convenience class for combo boxes
 struct ComboColumns : public Gtk::TreeModel::ColumnRecord {

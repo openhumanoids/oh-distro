@@ -4,7 +4,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/assign/std/vector.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 
 
 // define the following in order to eliminate the deprecated headers warning

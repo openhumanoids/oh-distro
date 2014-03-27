@@ -10,9 +10,9 @@ r_jointNames = r_right.getStateFrame.coordinates(1:nq_r);
 lcmcoder = JLCMCoder(drc.control.GraspStateCoder('irobot',l_jointNames,r_jointNames));
 nx=19+nq_l+nq_r;
 
-channel = ['COMMITTED_GRASP'];
+channel = 'COMMITTED_GRASP';
 disp(channel);
-grasp_state_listener=LCMCoordinateFrameWCoder('irobot',nx,'x',lcmcoder);
+grasp_state_listener=LCMCoordinateFrame('irobot',lcmcoder,'x');
 setDefaultChannel(grasp_state_listener,channel);
 grasp_state_listener.subscribe(channel);
 %defaultChannel(grasp_opt_listener)
@@ -26,9 +26,9 @@ Kp = [10 10 10 10 10 10 10 10]';
 Kd = [1  1  1  1  1  1  1  1]';
 
 l_coder = JLCMCoder(drc.control.IrobotJointCommandCoder('irobot',floating,'left', l_jointNames,Kp,Kd));
-l_hand_joint_cmd_publisher=LCMCoordinateFrameWCoder('irobot_left',4*nq_l,'q',l_coder);
+l_hand_joint_cmd_publisher=LCMCoordinateFrame('irobot_left',l_coder,'q');
 r_coder = JLCMCoder(drc.control.IrobotJointCommandCoder('irobot',floating,'right', r_jointNames,Kp,Kd));
-r_hand_joint_cmd_publisher=LCMCoordinateFrameWCoder('irobot_right',4*nq_r,'q',r_coder);
+r_hand_joint_cmd_publisher=LCMCoordinateFrame('irobot_right',r_coder,'q');
 
 
 pos_control_flag = [1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0]';% where ever there is zero we are doing mixed control in gazebo

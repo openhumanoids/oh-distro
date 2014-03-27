@@ -9,6 +9,14 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/aff_indexed_robot_plan_t.hpp"
+#include "lcmtypes/drc/deprecated_footstep_plan_t.hpp"
+#include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
+#include "lcmtypes/drc/system_status_t.hpp"
+#include "lcmtypes/drc/controller_status_t.hpp"
 #include <bot_vis/bot_vis.h>
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
@@ -98,7 +106,7 @@ namespace renderer_robot_plan
     drc::robot_plan_w_keyframes_t _previous_keyframe_plan; 
     
     drc::aff_indexed_robot_plan_t _received_map;
-    drc::footstep_plan_t _received_footstep_plan;
+    drc::deprecated_footstep_plan_t _received_footstep_plan;
     
     int64_t _controller_utime;
     int8_t _controller_status;
@@ -520,9 +528,9 @@ namespace renderer_robot_plan
    void handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
 			    const  drc::robot_urdf_t* msg);
    void handleAprvFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, 
-						 const drc::footstep_plan_t* msg);    
+						 const drc::deprecated_footstep_plan_t* msg);    
 	 void handleCanFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, 
-						 const drc::footstep_plan_t* msg);  				 
+						 const drc::deprecated_footstep_plan_t* msg);  				 
    void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_state_t* msg);	

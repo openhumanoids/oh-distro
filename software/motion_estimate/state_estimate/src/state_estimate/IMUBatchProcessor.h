@@ -22,11 +22,6 @@ public:
 
   void handleIMUBatchMessage(const drc::atlas_raw_imu_batch_t* msg, std::vector<drc::atlas_raw_imu_t>& imuPackets)
   {
-    // fill the imuPackets vector with only the new imu packets
-    // ...
-
-	//std::cout << "handleIMUBatchMessage -- is happening " << (msg->raw_imu[0].utime > last_utime) << std::endl;
-	  
 
 	// First we need to find how far back we need to go in the imu message batch
 	int i;
@@ -34,7 +29,7 @@ public:
 	for (i = msg->num_packets-1; i>=0; i--)
     {
 	  if (msg->raw_imu[i].utime > last_utime) {
-		  std::cout << "handleIMUBatchMessage -- new IMU message at utime " << msg->raw_imu[i].utime << std::endl;
+		  //std::cout << "handleIMUBatchMessage -- new IMU message at utime " << msg->raw_imu[i].utime << std::endl;
 		  last_utime = msg->raw_imu[i].utime;
 		  imuPackets.push_back(msg->raw_imu[i]);
 	  }

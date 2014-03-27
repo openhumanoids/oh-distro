@@ -129,9 +129,11 @@ classdef HarnessController < DRCController
         end
         q0 = zeros(getNumDOF(obj.robot),1);
         if((strcmp(obj.name,'harnessed_notwalking'))||(strcmp(obj.name,'seated_driving')))
-          qtraj = PPTrajectory(spline([0 4],[q0 q_nom]));
+%           qtraj = PPTrajectory(spline([0 4],[q0 q_nom]));
+          qtraj = PPTrajectory(spline([0 4],[q_nom q_nom]));
         else
-          qtraj = PPTrajectory(spline([5 9],[q0 q_nom]));
+%           qtraj = PPTrajectory(spline([5 9],[q0 q_nom]));
+          qtraj = PPTrajectory(spline([5 9],[q_nom q_nom]));
         end
       end
 

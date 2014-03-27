@@ -18,7 +18,7 @@
 #include <btBulletCollisionCommon.h>
 #include <Eigen/Dense>
 
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/robot_state_t.hpp"
 #include <state/state_gfe.h>
 #include <kinematics/kinematics_model_gfe.h>
 #include <collision/collision_object.h>

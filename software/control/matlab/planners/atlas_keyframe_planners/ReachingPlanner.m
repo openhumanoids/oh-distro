@@ -714,11 +714,11 @@ classdef ReachingPlanner < KeyframePlanner
         
         
         function setPosTol(obj,pos_step)
-          obj.pos_tol_array = [0 pos_step.^(0:0.5:(obj.max_ik_trial-2)/2)/100];
+          obj.pos_tol_array = pos_step.*(0:0.5:(obj.max_ik_trial-2)/2)/100;
         end
         
         function setQuatTol(obj,angle_step)
-          obj.quat_tol_array = sind([0,angle_step.^(0:0.5:(obj.max_ik_trial-2)/2)]).^2;
+          obj.quat_tol_array = (angle_step.*(0:0.5:(obj.max_ik_trial-2)/2))*2/180*pi;
         end
         
         function [pos_tol,quat_tol] = getRelaxationTol(obj)

@@ -39,6 +39,7 @@ classdef StandingManipController < DRCController
       options.slack_limit = 30.0;
       options.w = 0.001;
       options.lcm_foot_contacts = true;
+			options.contact_threshold = 0.005;
       if(~isfield(options,'use_mex')) options.use_mex = false; end
       if(~isfield(options,'debug')) options.debug = false; end
       
@@ -51,10 +52,8 @@ classdef StandingManipController < DRCController
       ins(1).input = 1;
       ins(2).system = 1;
       ins(2).input = 2;
-      ins(3).system = 1;
+      ins(3).system = 2;
       ins(3).input = 3;
-      ins(4).system = 2;
-      ins(4).input = 3;
       outs(1).system = 2;
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
@@ -68,8 +67,6 @@ classdef StandingManipController < DRCController
       ins(2).input = 2;
       ins(3).system = 2;
       ins(3).input = 3;
-      ins(4).system = 2;
-      ins(4).input = 4;
       outs(1).system = 2;
       outs(1).output = 1;
       connection(1).from_output = 1;

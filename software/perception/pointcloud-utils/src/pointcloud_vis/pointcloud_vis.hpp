@@ -4,6 +4,7 @@
 
 #include <lcm/lcm.h>
 #include <iostream>
+#include <fstream>
 
 
 #include <Eigen/Dense>
@@ -48,6 +49,8 @@ using namespace pcl::io;
 #include <lcmtypes/pointcloud_tools.h>
 
 
+
+
 class pointcloud_vis {
   public:
     pointcloud_vis (lcm_t* publish_lcm);
@@ -60,9 +63,13 @@ class pointcloud_vis {
                             std::vector<std::string >& labels, 
                             std::vector<int64_t>& object_ids);
 
+    void link_collection_to_lcm(link_cfg lcfg, std::vector<link_data> ldata);
+    void link_to_lcm(link_cfg lcfg, link_data ldata);
     
     void pose_collection_to_lcm_from_list(int id, std::vector<Isometry3dTime> & posesT);
     void pose_collection_to_lcm(obj_cfg ocfg, std::vector<Isometry3dTime> & posesT);
+    // Also can be used by a single pose
+    void pose_collection_reset(int id, std::string name);
 
     void pose_to_lcm_from_list(int id,Isometry3dTime& poseT);
     void pose_to_lcm(obj_cfg ocfg, Isometry3dTime& poseT);
@@ -72,6 +79,8 @@ class pointcloud_vis {
             int64_t obj_id, int64_t ptcld_id);
     void ptcld_collection_to_lcm(ptcld_cfg pcfg, std::vector< pcl::PointCloud<pcl::PointXYZRGB> > &clouds,
             int64_t obj_id, int64_t ptcld_id);
+    // Also can be used by mesh
+    void ptcld_collection_reset(int id, std::string name);
 
     
     void ptcld_to_lcm_from_list(int id, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
@@ -88,7 +97,6 @@ class pointcloud_vis {
 
     void pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud, std::string channel, int64_t cloud_utime);
 
-
     std::vector <obj_cfg> obj_cfg_list;
     std::vector <ptcld_cfg> ptcld_cfg_list;
     
@@ -98,6 +106,9 @@ class pointcloud_vis {
     
     // Merge two PolygonMesh structures into the meshA
     bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB);
+    
+    void ptcldToOctomapLogFile(pcl::PointCloud<pcl::PointXYZRGB> &cloud,
+            std::string filename);
     
   private:
     lcm_t *publish_lcm_;
@@ -125,7 +136,7 @@ void remove_colored_polygons(pcl::PolygonMesh::Ptr meshin_ptr, std::vector<int> 
 // of the PolygonMEsh meshin_ptr
 // @input: meshin_ptr - input mesh model
 // @input: center - 3 element vector to center of box
-// @input: dgrid - 3 elements of size of box
+// @input: dgrid - 3 elements of size of boxlcm
 // @output: the polygon INDICES inside the box
 void get_MeshInBoxIndices(pcl::PolygonMesh::Ptr meshin_ptr,
 		   std::vector<double> &center, std::vector<double> &dgrid,

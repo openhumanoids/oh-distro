@@ -16,7 +16,7 @@ classdef FootstepPlanListener
 			if isempty(plan_msg)
 				X = []; options = struct();
 			else
-				[X, options] = FootstepPlanListener.decodeFootstepPlan(drc.footstep_plan_t(plan_msg.data));
+				[X, options] = FootstepPlanListener.decodeFootstepPlan(drc.deprecated_footstep_plan_t(plan_msg.data));
 			end
 		end
 

@@ -1,0 +1,27 @@
+package dubins;
+
+struct primitive_t
+{
+
+	int64_t utime;
+	
+    int8_t type; //identifies as line 0, or arc, -1, 1
+  	double curvature; //curvature (1/R, 9, for lines)
+  	
+  	//segment length, shared between lines and arcs
+    double length; //line length
+ 	
+  	//arc data
+  	double center[2];
+  	double R;
+    int8_t ccw;
+  	double start_angle;
+  	double end_angle;
+  	double sweep_angle;
+	    
+    //line data
+	double start_pt[2];
+	double end_pt[2];
+	double theta; //line heading
+  	   
+}

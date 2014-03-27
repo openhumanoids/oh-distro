@@ -24,12 +24,17 @@
  *   2013-06-14, ekratzer@carnegierobotics.com, PR1044, Created file.
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
 #include <string>
 #include <fstream>
+#include <unistd.h>
+#include <getopt.h>
+
+#include <arpa/inet.h> // htons
 
 #include <LibMultiSense/MultiSenseChannel.hh>
 
@@ -62,21 +67,23 @@ bool savePgm(const std::string& fileName,
              const void        *dataP)
 {
     std::ofstream outputStream(fileName.c_str(), std::ios::binary | std::ios::out);
+    
+    if (false == outputStream.good()) {
+        fprintf(stderr, "failed to open \"%s\"\n", fileName.c_str());
+        return false;
+    }
+
+    const uint32_t imageSize = height * width;
 
     switch(bitsPerPixel) {
-    case 8:
-    {   
+    case 8: 
+    {
+
         outputStream << "P5\n"
                      << width << " " << height << "\n"
                      << 0xFF << "\n";
         
-        const uint8_t *imageP = (const uint8_t *) dataP;
-
-        for (int i=0; i<height; i++)
-            for (int j=0; j<width; j++) {
-                uint8_t o = imageP[(i * width) + j];
-                outputStream.write((const char *)&o, sizeof(o));
-            }
+        outputStream.write(reinterpret_cast<const char*>(dataP), imageSize);
 
         break;
     }
@@ -86,15 +93,12 @@ bool savePgm(const std::string& fileName,
                      << width << " " << height << "\n"
                      << 0xFFFF << "\n";
 
-#define swapshort(x) (((x & 0xFF) << 8) | (x >> 8))
-
-        const uint16_t *imageP = (const uint16_t *) dataP;
-
-        for (int i=0; i<height; i++)
-            for (int j=0; j<width; j++) {
-                uint16_t o = swapshort(imageP[(i * width) + j]);
-                outputStream.write((const char *) &o, sizeof(o));
-            }
+        const uint16_t *imageP = reinterpret_cast<const uint16_t*>(dataP);
+        
+        for (uint32_t i=0; i<imageSize; ++i) {
+            uint16_t o = htons(imageP[i]);
+            outputStream.write(reinterpret_cast<const char*>(&o), sizeof(uint16_t));
+        }
 
         break;
     }
@@ -104,55 +108,50 @@ bool savePgm(const std::string& fileName,
     return true;
 }
 
-void laserCallback(const lidar::Header&        header,
-                   const lidar::RangeType     *rangesP,
-                   const lidar::IntensityType *intensitiesP,
-                   void                       *userP)
+void ppsCallback(const pps::Header& header,
+                 void              *userDataP)
+{
+    fprintf(stderr, "PPS: %ld ns\n", header.sensorTime);
+}                
+
+void laserCallback(const lidar::Header& header,
+                   void                *userDataP)
 {
 //    fprintf(stderr, "lidar: %d\n", header.pointCount);
 }
 
 void imageCallback(const image::Header& header,
-                   const void          *dataP,
-                   void                *userP)
+                   void                *userDataP)
 {
-    Channel *channelP = reinterpret_cast<Channel*>(userP);
+    Channel *channelP = reinterpret_cast<Channel*>(userDataP);
+    
+    double timeStamp = header.timeSeconds + 1e-6 * header.timeMicroSeconds;
+    
+    static int64_t lastFrameId = -1;
 
-    /*
-    fprintf(stderr, "image: type=0x%x, bpp=%d, w=%d, h=%d frame=%d\n", 
-            header.source,
-            header.bitsPerPixel,
-            header.width,
-            header.height,
-            header.frameId);
-    */
+    if (-1 == lastFrameId)
+        savePgm("test.pgm",
+                header.width,
+                header.height,
+                header.bitsPerPixel,
+                header.imageDataP);
 
-    /*
-    savePgm("test.pgm",
-            header.width,
-            header.height,
-            header.bitsPerPixel,
-            dataP);
-    */
+    lastFrameId = header.frameId;
 
-    uint32_t channels, bins;
+    image::Histogram histogram;
 
-    const uint32_t *histogramP = channelP->getHistogram(header.frameId, channels, bins);
-    if (NULL == histogramP)
-        fprintf(stderr, "failed to get histogram for frame %lld\n",
+    if (Status_Ok != channelP->getImageHistogram(header.frameId, histogram))
+        fprintf(stderr, "failed to get histogram for frame %ld\n",
                 header.frameId);
-    else
-        channelP->releaseHistogram(header.frameId);
 }
 
 }; // anonymous
-
-using namespace crl::multisense;
 
 int main(int    argc, 
          char **argvPP)
 {
     std::string currentAddress = "10.66.171.21";
+    int32_t mtu = 7200;
 
     signal(SIGINT, signalHandler);
 
@@ -161,9 +160,10 @@ int main(int    argc,
 
     int c;
 
-    while(-1 != (c = getopt(argc, argvPP, "a:")))
+    while(-1 != (c = getopt(argc, argvPP, "a:m:")))
         switch(c) {
         case 'a': currentAddress = std::string(optarg);    break;
+        case 'm': mtu            = atoi(optarg);           break;
         default: usage(*argvPP);                           break;
         }
 
@@ -185,7 +185,8 @@ int main(int    argc,
 
     status = channelP->getVersionInfo(v);
     if (Status_Ok != status) {
-        fprintf(stderr, "failed to query sensor version: %d\n", status);
+        fprintf(stderr, "failed to query sensor version: %s\n", 
+                Channel::statusString(status));
         goto clean_out;
     }
 
@@ -193,9 +194,9 @@ int main(int    argc,
     fprintf(stdout, "API version         :  0x%04x\n", v.apiVersion);
     fprintf(stdout, "Firmware build date :  %s\n", v.sensorFirmwareBuildDate.c_str());
     fprintf(stdout, "Firmware version    :  0x%04x\n", v.sensorFirmwareVersion);
-    fprintf(stdout, "Hardware version    :  0x%llx\n", v.sensorHardwareVersion);
-    fprintf(stdout, "Hardware magic      :  0x%llx\n", v.sensorHardwareMagic);
-    fprintf(stdout, "FPGA DNA            :  0x%llx\n", v.sensorFpgaDna);
+    fprintf(stdout, "Hardware version    :  0x%lx\n", v.sensorHardwareVersion);
+    fprintf(stdout, "Hardware magic      :  0x%lx\n", v.sensorHardwareMagic);
+    fprintf(stdout, "FPGA DNA            :  0x%lx\n", v.sensorFpgaDna);
 
     //
     // Change framerate
@@ -203,45 +204,70 @@ int main(int    argc,
     {
         image::Config cfg;
 
-        const float FPS = 10.0;
-
         status = channelP->getImageConfig(cfg);
-        if (Status_Ok == status) {
+        if (Status_Ok != status) {
+            fprintf(stderr, "failed to get image config: %s\n",
+                    Channel::statusString(status));
+            goto clean_out;
+        } else {
 
-            cfg.setResolution(2048, 1088);
-
-            fprintf(stderr, "Setting framerate to %f FPS (from %f)\n",
-                    FPS, cfg.fps());
-            cfg.setFps(FPS);
+            cfg.setResolution(1024, 544);
+            cfg.setFps(30.0);
+        
             status = channelP->setImageConfig(cfg);
+            if (Status_Ok != status) {
+                fprintf(stderr, "failed to configure sensor: %s\n",
+                        Channel::statusString(status));
+                goto clean_out;
+            }
         }
     }
 
     //
     // Change MTU
 
-    if (Status_Ok != channelP->setMtu(9000))
-        fprintf(stderr, "failed to set MTU to 9000\n");
+    status = channelP->setMtu(mtu);
+    if (Status_Ok != status) {
+        fprintf(stderr, "failed to set MTU to %d: %s\n",
+                mtu, Channel::statusString(status));
+        goto clean_out;
+    }
 
     //
-    // Add image callback
+    // Change trigger source
+
+    status = channelP->setTriggerSource(Trigger_Internal);
+    if (Status_Ok != status) {
+        fprintf(stderr, "Failed to set trigger source: %s\n",
+                Channel::statusString(status));
+        goto clean_out;
+    }
+
+    //
+    // Add callbacks
 
     channelP->addIsolatedCallback(imageCallback, Source_All, channelP);
-
     channelP->addIsolatedCallback(laserCallback, channelP);
+    channelP->addIsolatedCallback(ppsCallback, channelP);
 
     //
     // Start streaming
 
-//    channelP->startStreams(Source_Disparity);
-//    channelP->startStreams(Source_Luma_Left);
-//    channelP->startStreams(Source_Chroma_Left);
-    channelP->startStreams(Source_All);
+    status = channelP->startStreams(Source_Luma_Rectified_Left | Source_Lidar_Scan);
+    if (Status_Ok != status) {
+        fprintf(stderr, "failed to start streams: %s\n", 
+                Channel::statusString(status));
+        goto clean_out;
+    }
 
     while(!doneG)
         usleep(100000);
 
-    channelP->stopStreams(Source_All);
+    status = channelP->stopStreams(Source_All);
+    if (Status_Ok != status) {
+        fprintf(stderr, "failed to stop streams: %s\n", 
+                Channel::statusString(status));
+    }
 
 clean_out:
 

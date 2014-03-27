@@ -563,7 +563,7 @@
     <parent link="ltorso"/>
     <child link="mtorso"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="206.843" lower="-0.610691" upper="0.49" velocity="12"/>
+    <limit effort="206.843" lower="-0.262" upper="0.524" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6107" soft_upper_limit="10.4384"/>
   </joint>
   <joint name="back_bkz" type="revolute">
@@ -1353,6 +1353,42 @@
       </contact>
     </sensor>
   </gazebo>
+  <link name="l_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0.1245 0.0112"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <link name="r_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="r_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 3.142" xyz="0 -0.1245 -0.0112"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_force_torque"/>
+  </joint>
   <!-- 
 05 sept: Sisir added an offset of 0.045 in the urdf to account 
 for the force sensor and the coupling plate, changing 
@@ -1391,21 +1427,21 @@ added visual element for cylinder
     <child link="left_finger[0]/distal_link"/>
     <origin xyz="0 0 0.078"/>
     <axis xyz="-1 0 0"/>
-    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708" velocity="0.5"/>
   </joint>
   <joint name="left_finger[1]/joint_flex" type="revolute">
     <parent link="left_finger[1]/proximal_link"/>
     <child link="left_finger[1]/distal_link"/>
     <origin xyz="0 0 0.078"/>
     <axis xyz="-1 0 0"/>
-    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708" velocity="0.5"/>
   </joint>
   <joint name="left_finger[2]/joint_flex" type="revolute">
     <parent link="left_finger[2]/proximal_link"/>
     <child link="left_finger[2]/distal_link"/>
     <origin xyz="0 0 0.078"/>
     <axis xyz="-1 0 0"/>
-    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708" velocity="0.5"/>
   </joint>
   <joint name="left_irobot_hand_joint" type="fixed">
     <origin rpy="1.57079 0 -3.14159" xyz="0 0.26756 0.015"/>
@@ -1444,7 +1480,7 @@ added visual element for cylinder
       <geometry>
         <mesh filename="package://handle_description/meshes/finger_base.stl"/>
       </geometry>
-      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
     </collision>
     <visual>
       <geometry>
@@ -1453,7 +1489,7 @@ added visual element for cylinder
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
     </visual>
   </link>
   <link name="left_finger[0]/proximal_link">
@@ -1466,7 +1502,7 @@ added visual element for cylinder
       <geometry>
         <mesh filename="package://handle_description/meshes/finger_proximal.stl"/>
       </geometry>
-      <origin rpy="1.57 -1.57 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 -1.5708 0" xyz="0 0 0"/>
     </collision>
     <visual>
       <geometry>
@@ -1475,7 +1511,7 @@ added visual element for cylinder
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
       </material>
-      <origin rpy="1.57 -1.57 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 -1.5708 0" xyz="0 0 0"/>
     </visual>
   </link>
   <link name="left_finger[0]/distal_link">
@@ -1488,7 +1524,7 @@ added visual element for cylinder
       <geometry>
         <mesh filename="package://handle_description/meshes/finger_distal.stl"/>
       </geometry>
-      <origin rpy="0 3.14 0" xyz="0 0 0"/>
+      <origin rpy="0 3.1416 0" xyz="0 0 0"/>
     </collision>
     <visual>
       <geometry>
@@ -1497,7 +1533,7 @@ added visual element for cylinder
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
       </material>
-      <origin rpy="0 3.14 0" xyz="0 0 0"/>
+      <origin rpy="0 3.1416 0" xyz="0 0 0"/>
     </visual>
   </link>
   <link name="left_finger[1]/base_rotation_link">
@@ -1510,7 +1546,7 @@ added visual element for cylinder
       <geometry>
         <mesh filename="package://handle_description/meshes/finger_base.stl"/>
       </geometry>
-      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
     </collision>
     <visual>
       <geometry>
@@ -1519,7 +1555,7 @@ added visual element for cylinder
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
     </visual>
   </link>
   <link name="left_finger[1]/proximal_link">
@@ -1532,7 +1568,7 @@ added visual element for cylinder
       <geometry>
         <mesh filename="package://handle_description/meshes/finger_proximal.stl"/>
       </geometry>
-      <origin rpy="1.57 -1.57 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 -1.5708 0" xyz="0 0 0"/>
     </collision>
     <visual>
       <geometry>
@@ -1541,7 +1577,7 @@ added visual element for cylinder
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
       </material>
-      <origin rpy="1.57 -1.57 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 -1.5708 0" xyz="0 0 0"/>
     </visual>
   </link>
   <link name="left_finger[1]/distal_link">
@@ -1554,7 +1590,7 @@ added visual element for cylinder
       <geometry>
         <mesh filename="package://handle_description/meshes/finger_distal.stl"/>
       </geometry>
-      <origin rpy="0 3.14 0" xyz="0 0 0"/>
+      <origin rpy="0 3.1416 0" xyz="0 0 0"/>
     </collision>
     <visual>
       <geometry>
@@ -1563,7 +1599,7 @@ added visual element for cylinder
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
       </material>
-      <origin rpy="0 3.14 0" xyz="0 0 0"/>
+      <origin rpy="0 3.1416 0" xyz="0 0 0"/>
     </visual>
   </link>
   <link name="left_finger[2]/proximal_link">
@@ -1576,7 +1612,7 @@ added visual element for cylinder
       <geometry>
         <mesh filename="package://handle_description/meshes/finger_proximal.stl"/>
       </geometry>
-      <origin rpy="1.57 -1.57 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 -1.5708 0" xyz="0 0 0"/>
     </collision>
     <visual>
       <geometry>
@@ -1585,7 +1621,7 @@ added visual element for cylinder
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
       </material>
-      <origin rpy="1.57 -1.57 0" xyz="0 0 0"/>
+      <origin rpy="1.5708 -1.5708 0" xyz="0 0 0"/>
     </visual>
   </link>
   <link name="left_finger[2]/distal_link">
@@ -1598,7 +1634,7 @@ added visual element for cylinder
       <geometry>
         <mesh filename="package://handle_description/meshes/finger_distal.stl"/>
       </geometry>
-      <origin rpy="0 3.14 0" xyz="0 0 0"/>
+      <origin rpy="0 3.1416 0" xyz="0 0 0"/>
     </collision>
     <visual>
       <geometry>
@@ -1607,7 +1643,7 @@ added visual element for cylinder
       <material name="green">
         <color rgba="0.1 0.6 0.1 1"/>
       </material>
-      <origin rpy="0 3.14 0" xyz="0 0 0"/>
+      <origin rpy="0 3.1416 0" xyz="0 0 0"/>
     </visual>
   </link>
   <joint name="left_finger[0]/joint_base_rotation" type="revolute">
@@ -1615,35 +1651,35 @@ added visual element for cylinder
     <child link="left_finger[0]/base_rotation_link"/>
     <origin rpy="0 0 0" xyz="0.03075 0.038 0.069477"/>
     <axis xyz="0 0 -1"/>
-    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708" velocity="0.5"/>
   </joint>
   <joint name="left_finger[0]/joint_base" type="revolute">
     <parent link="left_finger[0]/base_rotation_link"/>
     <child link="left_finger[0]/proximal_link"/>
-    <origin rpy="1.57 0 -3.14" xyz="0 0 0.0135"/>
+    <origin rpy="1.5708 0 -3.1416" xyz="0 0 0.0135"/>
     <axis xyz="-1 0 0"/>
-    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708" velocity="0.5"/>
   </joint>
   <joint name="left_finger[1]/joint_base_rotation" type="revolute">
     <parent link="left_base_link"/>
     <child link="left_finger[1]/base_rotation_link"/>
     <origin rpy="0 0 0" xyz="-0.03075 0.038 0.069477"/>
     <axis xyz="0 0 1"/>
-    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708" velocity="0.5"/>
   </joint>
   <joint name="left_finger[1]/joint_base" type="revolute">
     <parent link="left_finger[1]/base_rotation_link"/>
     <child link="left_finger[1]/proximal_link"/>
-    <origin rpy="1.57 0 -3.14" xyz="0 0 0.0135"/>
+    <origin rpy="1.5708 0 -3.1416" xyz="0 0 0.0135"/>
     <axis xyz="-1 0 0"/>
-    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708" velocity="0.5"/>
   </joint>
   <joint name="left_finger[2]/joint_base" type="revolute">
     <parent link="left_base_link"/>
     <child link="left_finger[2]/proximal_link"/>
-    <origin rpy="1.57 0 0" xyz="0 -0.038 0.082755"/>
+    <origin rpy="1.5708 0 0" xyz="0 -0.038 0.082755"/>
     <axis xyz="-1 0 0"/>
-    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="1.5708" velocity="0.5"/>
   </joint>
   <joint name="right_robotiq_hand_joint" type="fixed">
     <origin rpy="0 1.57079 3.141" xyz="0 -0.34256 -0.015"/>

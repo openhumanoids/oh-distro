@@ -157,7 +157,10 @@ classdef WalkingPDBlock < MIMODrakeSystem
 %           pos(3) = pos(3) - cdata.trans_drift(3);
           pos(1:3) = pos(1:3) - cdata.trans_drift;
 %           approx_args_bk(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, pos};
-          approx_args = [approx_args,wrapDeprecatedConstraint(obj.robot,cdata.link_constraints(j).link_ndx,cdata.link_constraints(j).pt,pos,struct('use_mex',true))];
+          approx_args = [approx_args,{constructPtrRigidBodyConstraintmex(RigidBodyConstraint.WorldPositionConstraintType,...
+            obj.robot.getMexModelPtr,cdata.link_constraints(j).link_ndx,cdata.link_constraints(j).pt,pos(1:3,:),pos(1:3)),...
+            constructPtrRigidBodyConstraintmex(RigidBodyConstraint.WorldEulerConstraintType,obj.robot.getMexModelPtr,...
+            cdata.link_constraints(j).link_ndx,pos(4:6,1),pos(4:6,1))}];
         else
           pos_min = fasteval(cdata.link_constraints(j).min_traj,t);
 %           pos_min(3) = pos_min(3) - cdata.trans_drift(3);
@@ -166,7 +169,10 @@ classdef WalkingPDBlock < MIMODrakeSystem
 %           pos_max(3) = pos_max(3) - cdata.trans_drift(3);
           pos_max(1:3) = pos_max(1:3) - cdata.trans_drift;
 %           approx_args_bk(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, struct('min', pos_min, 'max', pos_max)};
-          approx_args = [approx_args,wrapDeprecatedConstraint(obj.robot,cdata.link_constraints(j).link_ndx,cdata.link_constraints(j).pt,struct('min', pos_min, 'max', pos_max),struct('use_mex',true))];
+          approx_args = [approx_args,{constructPtrRigidBodyConstraintmex(RigidBodyConstraint.WorldPositionConstraintType,...
+            obj.robot.getMexModelPtr,cdata.link_constraints(j).link_ndx,cdata.link_constraints(j).pt,pos_min(1:3,:),pos_max(1:3)),...
+            constructPtrRigidBodyConstraintmex(RigidBodyConstraint.WorldEulerConstraintType,obj.robot.getMexModelPtr,...
+            cdata.link_constraints(j).link_ndx,pos_min(4:6,1),pos_max(4:6,1))}];
         end
       end
       
@@ -178,9 +184,9 @@ classdef WalkingPDBlock < MIMODrakeSystem
       else
         compos = [com(1:2) - cdata.trans_drift(1:2);nan];
       end
-      kc_com = wrapDeprecatedConstraint(obj.robot,0,[],compos,struct('use_mex',true));
-      approx_args = [approx_args,kc_com];
-      [q_des,info] = approximateIKmex(obj.robot.getMexModelPtr,q,obj.ik_qnom,approx_args{:},obj.ikoptions);
+      kc_com = constructPtrRigidBodyConstraintmex(RigidBodyConstraint.WorldCoMConstraintType,obj.robot.getMexModelPtr,compos,compos);
+      approx_args = [approx_args,{kc_com}];
+      [q_des,info] = approximateIKmex(obj.robot.getMexModelPtr,q,obj.ik_qnom,approx_args{:},obj.ikoptions.mex_ptr);
 %       obj.ikoptions_bk.use_mex = false;
 %       [q_des,info] = approximateIK_bk(obj.robot,q,0,compos,approx_args_bk{:},obj.ikoptions_bk);
 %       max(abs((q_des-q_des_bk)))

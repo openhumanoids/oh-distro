@@ -2,6 +2,8 @@
 #include <map>
 #include <path_util/path_util.h>
 #include <kinematics/kinematics_model_urdf.h>
+#include "lcmtypes/drc/position_3d_t.hpp"
+#include "lcmtypes/drc/transform_t.hpp"
 
 using namespace std;
 using namespace urdf;

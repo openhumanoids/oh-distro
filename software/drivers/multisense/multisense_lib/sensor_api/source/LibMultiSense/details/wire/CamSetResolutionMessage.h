@@ -38,7 +38,7 @@ namespace wire {
 class CamSetResolution {
 public:
     static const IdType      ID      = ID_CMD_CAM_SET_RESOLUTION;
-    static const VersionType VERSION = 1;
+    static const VersionType VERSION = 2;
 
     //
     // Parameters
@@ -47,11 +47,16 @@ public:
     uint32_t height;
 
     //
+    // Version 2 additions
+
+    int32_t disparities;
+
+    //
     // Constructors
 
     CamSetResolution(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
-    CamSetResolution(uint32_t w=0, uint32_t h=0) :
-        width(w), height(h) {};
+    CamSetResolution(uint32_t w=0, uint32_t h=0, int32_t d=-1) :
+                     width(w), height(h), disparities(d) {};
 
     //
     // Serialization routine
@@ -62,6 +67,11 @@ public:
     {
         message & width;
         message & height;
+
+        if (version >= 2)
+            message & disparities;
+        else
+            disparities = 0;
     }
 };
 

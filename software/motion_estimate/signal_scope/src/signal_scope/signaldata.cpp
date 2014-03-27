@@ -14,6 +14,8 @@ public:
   PrivateData()
   {
     messageError = false;
+    minIndex = -1;
+    maxIndex = -1;
   }
 
   bool messageError;
@@ -29,6 +31,9 @@ public:
   QVector<double> pendingyvalues;
 
   FPSCounter fpsCounter;
+
+  qint64 minIndex;
+  qint64 maxIndex;
 };
 
 SignalData::SignalData()
@@ -43,11 +48,21 @@ SignalData::~SignalData()
 
 int SignalData::size() const
 {
+  if (d_data->minIndex >= 0)
+  {
+    return d_data->maxIndex - d_data->minIndex;
+  }
+
   return d_data->xvalues.size();
 }
 
 QPointF SignalData::value(int index) const
 {
+  if (d_data->minIndex >= 0)
+  {
+    index = d_data->minIndex + index;
+  }
+
   return QPointF(d_data->xvalues[index], d_data->yvalues[index]);
 }
 
@@ -104,6 +119,37 @@ double SignalData::messageFrequency() const
   return freq;
 }
 
+void SignalData::updateInterval(double minTime, double maxTime)
+{
+  //printf("update interval: %.3f,  %.3f\n", minTime, maxTime);
+  const size_t nvalues = d_data->xvalues.size();
+  if (!nvalues)
+  {
+    d_data->minIndex = -1;
+    d_data->maxIndex = -1;
+    return;
+  }
+
+  qint64 minIndex = 0;
+  qint64 maxIndex = 0;
+
+  for (int i = 0; i < nvalues; ++i)
+  {
+    double sampleX = d_data->xvalues[i];
+
+    if (sampleX <= minTime)
+      minIndex = i;
+
+    if (sampleX <= maxTime)
+      maxIndex = i;
+  }
+
+  //printf("  set indices: %d %d\n", minIndex, maxIndex);
+
+  d_data->minIndex = minIndex;
+  d_data->maxIndex = maxIndex;
+}
+
 void SignalData::updateValues()
 {
   QVector<double>& xvalues = d_data->xvalues;
@@ -121,8 +167,8 @@ void SignalData::updateValues()
     return;
   }
 
-  // All values that are older than 60 seconds will expire
-  float expireTime = xvalues.back() - 60;
+  // All values that are older than five minutes will expire
+  float expireTime = xvalues.back() - 60*5;
 
   int idx = 0;
   while (idx < xvalues.size() && xvalues[idx] < expireTime)
@@ -138,22 +184,32 @@ void SignalData::updateValues()
   // recompute bounding rect
   if (xvalues.size() > 1)
   {
-    d_data->boundingRect.setLeft(xvalues.front());
-    d_data->boundingRect.setRight(xvalues.back());
-
     double minY = yvalues.front();
     double maxY = minY;
 
+    double minX = xvalues.front();
+    double maxX = minX;
+
     for (int i = 0; i < yvalues.size(); ++i)
     {
-      double sampleY = yvalues[idx];
+      double sampleY = yvalues[i];
+      double sampleX = xvalues[i];
 
       if (sampleY < minY)
         minY = sampleY;
 
       if (sampleY > maxY)
         maxY = sampleY;
+
+      if (sampleX < minX)
+        minX = sampleX;
+
+      if (sampleX > maxX)
+        maxX = sampleX;
     }
+
+    d_data->boundingRect.setLeft(minX);
+    d_data->boundingRect.setRight(maxX);
 
     d_data->boundingRect.setTop(maxY);
     d_data->boundingRect.setBottom(minY);

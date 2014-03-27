@@ -1,53 +1,52 @@
-classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
+classdef AtlasPositionRef < LCMCoordinateFrame & Singleton
   % atlas input coordinate frame
   methods
     function obj=AtlasPositionRef(r,gains_id)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
       
-      nu = getNumInputs(r);
-      dim = nu;
+      num_u = getNumInputs(r);
+      dim = num_u;
       
-      obj = obj@LCMCoordinateFrameWCoder('AtlasPositionRef',dim,'x');
+      obj = obj@LCMCoordinateFrame('AtlasPositionRef',dim,'x');
       obj = obj@Singleton();
 
-      obj.nu = nu;
-      input_names = r.getInputFrame().coordinates;
-      input_names = regexprep(input_names,'_motor',''); % remove motor suffix
-      input_frame = getInputFrame(r);
-      input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
+      obj.nu = num_u;
 
-      if nargin<2 % controlling robot
-%         warning('AtlasPositionRef: USING ATLAS GAINS')
-        gains = getAtlasGains(input_frame);
-      else
-%         warning('AtlasPositionRef: USING SIMULATION GAINS')
-        typecheck(gains_id,'char');
-        gains = struct();
-        gains.k_qd_p = zeros(obj.nu,1);
-        gains.k_q_i = zeros(obj.nu,1);
-        gains.k_f_p = zeros(obj.nu,1);
-        gains.ff_f_d = zeros(obj.nu,1);
-        gains.ff_qd_d = zeros(obj.nu,1);
-        gains.ff_const = zeros(obj.nu,1);
+      if isempty(obj.lcmcoder)  % otherwise I had a singleton
+        input_names = r.getInputFrame().coordinates;
+        input_names = regexprep(input_names,'_motor',''); % remove motor suffix
+        input_frame = getInputFrame(r);
+        input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
 
-        [Kp,Kd] = getPDGains(r,gains_id);
-        gains.k_q_p = diag(Kp);
-        gains.ff_qd = diag(Kd);
+        if nargin<2 % controlling robot
+          gains = getAtlasGains(input_frame);
+        else
+          typecheck(gains_id,'char');
+          gains = struct();
+          gains.k_qd_p = zeros(obj.nu,1);
+          gains.k_q_i = zeros(obj.nu,1);
+          gains.k_f_p = zeros(obj.nu,1);
+          gains.ff_f_d = zeros(obj.nu,1);
+          gains.ff_qd_d = zeros(obj.nu,1);
+          gains.ff_const = zeros(obj.nu,1);
+
+          [Kp,Kd] = getPDGains(r,gains_id);
+          gains.k_q_p = diag(Kp);
+          gains.ff_qd = diag(Kd);
+        end
+
+        coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p,gains.k_q_i,...
+          gains.k_qd_p,gains.k_f_p*0,gains.ff_qd*0,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
+        obj = setLCMCoder(obj,JLCMCoder(coder));
+      
+        coords = input_names;
+        obj.setCoordinateNames(coords);
+        obj.setDefaultChannel('ATLAS_COMMAND');
       end
-
-      coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p,gains.k_q_i,...
-        gains.k_qd_p,gains.k_f_p*0,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
-      obj = setLCMCoder(obj,JLCMCoder(coder));
-      
-      coords = input_names;
-      
-      obj.setCoordinateNames(coords);
-      obj.setDefaultChannel('ATLAS_COMMAND');
       
       if (obj.mex_ptr==0)
         obj.mex_ptr = AtlasCommandPublisher(input_names,gains.k_q_p,gains.k_q_i,...
-        gains.k_qd_p,gains.k_f_p*0,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
-        obj = setLCMCoder(obj,JLCMCoder(coder));
+        gains.k_qd_p,gains.k_f_p*0,gains.ff_qd*0,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
       end
     end
     
@@ -71,7 +70,7 @@ classdef AtlasPositionRef < LCMCoordinateFrameWCoder & Singleton
       assert(isfield(gains,'ff_const'));
       
       obj.mex_ptr = AtlasCommandPublisher(obj.mex_ptr,gains.k_q_p,gains.k_q_i,...
-        gains.k_qd_p,gains.k_f_p*0,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
+        gains.k_qd_p,gains.k_f_p*0,gains.ff_qd*0,gains.ff_qd_d*0,gains.ff_f_d*0,gains.ff_const);
     end
 
     function obj = setLCMCoder(obj,lcmcoder)

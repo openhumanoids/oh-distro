@@ -1,0 +1,9 @@
+package isam_slam;
+
+struct trajectory_t
+{
+	int64_t utime;
+
+	int32_t num_poses;
+	position_t poses[num_poses];
+}

@@ -234,6 +234,115 @@ void skew(Eigen::Vector3d const &v_, Eigen::Matrix<double,3,3> &skew)
 }
 
 
+// Quaternion product for [scalar vector] quaternion -- Purposefully does not renormalize.
+Eigen::Quaterniond qprod(const Eigen::Quaterniond &_b, const Eigen::Quaterniond &_a) {
+
+	//	B = [b(1), -b(2), -b(3), -b(4);...
+	//	     b(2),  b(1), -b(4),  b(3);...
+	//	     b(3),  b(4),  b(1), -b(2);...
+	//	     b(4), -b(3),  b(2),  b(1)];
+	//
+	//	 q = B*c;
+
+	Eigen::Quaterniond result;
+	result.setIdentity();
+
+	result.w() = _b.w()*_a.w() - _b.x()*_a.x() - _b.y()*_a.y() - _b.z()*_a.z();
+	result.x() = _b.x()*_a.w() + _b.w()*_a.x() - _b.z()*_a.y() + _b.y()*_a.z();
+	result.y() = _b.y()*_a.w() + _b.z()*_a.x() + _b.w()*_a.y() - _b.x()*_a.z();
+	result.z() = _b.z()*_a.w() - _b.y()*_a.x() + _b.x()*_a.y() + _b.w()*_a.z();
+
+	return result;
+}
+
+Eigen::Vector3d qrot(const Eigen::Quaterniond &_aQb, const Eigen::Vector3d &_v) {
+
+	//	V_A = [0;v_a];
+	//
+	//	V_B = qprod( aQb,  qprod(V_A,qconj(aQb))  );
+	//
+	//	v_b = V_B(2:4);
+
+	Eigen::Quaterniond Va;
+	Eigen::Quaterniond Vb;
+
+	Va.w() = 0.;
+	Va.x() = _v(0);
+	Va.y() = _v(1);
+	Va.z() = _v(2);
+
+	Vb = qprod(_aQb, qprod(Va, _aQb.conjugate()));
+
+	return Eigen::Vector3d(Vb.x(), Vb.y(), Vb.z());
+}
+
+Eigen::Quaterniond exmap(const Eigen::Vector3d &dE_l, const Eigen::Quaterniond &lQb) {
+	//		w_dt = w*dt; -- This is dE_l (delta rotation in the local frame)
+	//		w_norm = norm(w);
+	//		w_norm_dt = w_norm*dt;
+	//
+	//		if (w_norm>1E-6) % 1E-7 is chosen because double numerical LSB is around 1E-18 for nominal values [-pi..pi]
+	//		    % and (1E-7)^2 is at 1E-14, but 1E-7 rad/s is 0.02 deg/h
+	//		    r = [cos(w_norm*dt/2);...
+	//		         w./w_norm*sin(w_norm*dt/2)];
+	//
+	//		    aQb_k0 = qprod(r,aQb_k1);
+	//		else
+	//		    r = [cos(w_norm_dt/2);...
+	//		         w_dt*(0.5-w_norm_dt*w_norm_dt/48)];
+	//
+	//		    aQb_k0 = qprod(r,aQb_k1);
+	//		end
+	//
+	//		if (abs(1-norm(aQb_k0))>1E-13)
+	//		    disp 'zeroth_int_Quat_closed_form -- normalizing time propagated quaternion'
+	//		    aQb_k0 = aQb_k0./norm(aQb_k0);
+	//		end
+
+
+	double dE_lNorm;
+	dE_lNorm = dE_l.norm();
+
+	Eigen::Quaterniond r;
+	Eigen::Quaterniond result;
+	r.setIdentity();
+	result.setIdentity();
+
+	double sindE;
+	sindE = sin(0.5*dE_lNorm)/dE_lNorm;
+
+	if (dE_lNorm>1E-7) { //% 1E-7 is chosen because double numerical LSB is around 1E-15 for nominal values [-pi..pi]
+		r.w() = cos(0.5*dE_lNorm);
+		r.x() = dE_l(0)*sindE;
+		r.y() = dE_l(1)*sindE;
+		r.z() = dE_l(2)*sindE;
+	} else {
+		double tmp;
+		tmp = (0.5 - dE_lNorm*dE_lNorm*0.020833333333333333);
+
+		r.w() = cos(0.5*dE_lNorm);
+		r.x() = dE_l(0)*tmp;
+		r.y() = dE_l(1)*tmp;
+		r.z() = dE_l(2)*tmp;
+	}
+
+	result = qprod(r,lQb);
+
+	if (abs(1-result.norm()) > 1E-13){
+		std::cout << "OrientationComputer::exmap -- had to renormalize quaternion" << std::endl;
+		result = result.normalized();
+	}
+	return result;
+}
+
+void printq(const std::string &_from, const Eigen::Quaterniond &_q) {
+  std::cout << _from << " w " << _q.w() << ", " << _q.x() << ", " << _q.y() << ", " << _q.z() << std::endl;
+}
+
+
+
+
+
 
 
 namespace InertialOdometry 

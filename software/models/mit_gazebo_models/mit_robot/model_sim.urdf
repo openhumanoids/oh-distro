@@ -144,7 +144,7 @@
   <joint name="right_sandia_hand_joint" type="fixed">
     <parent link="r_hand"/>
     <child link="right_palm"/>
-    <origin rpy="0 0 -1.57079" xyz="-0.00179 -0.13516 -0.01176"/>
+    <origin rpy="0 0 -1.57079" xyz="-0.00179 -0.13516 0.01176"/>
   </joint>
   <link name="right_f0_base">
     <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1497,7 +1497,7 @@
       <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.0</updateRate>
-        <cameraName>sandia_hands/r_hand/camera</cameraName>
+        <cameraName>sandia_hands/r_hand</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
         <frameName>right_palm_left_camera_optical_frame</frameName>
@@ -1592,7 +1592,7 @@
       </geometry>
     </collision>
     <collision group="other">
-      <origin rpy="0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
+      <origin rpy="-0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
       <geometry>
         <box size="0.09 .035 .05"/>
       </geometry>
@@ -1639,7 +1639,7 @@
       </material>
     </visual>
     <visual>
-      <origin rpy="0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
+      <origin rpy="-0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
       <geometry>
         <box size="0.09 .035 .05"/>
       </geometry>
@@ -3069,7 +3069,7 @@
       <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.0</updateRate>
-        <cameraName>sandia_hands/l_hand/camera</cameraName>
+        <cameraName>sandia_hands/l_hand</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
         <frameName>left_palm_left_camera_optical_frame</frameName>
@@ -3707,7 +3707,7 @@
     <parent link="ltorso"/>
     <child link="mtorso"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="206.843" lower="-0.610691" upper="0.49" velocity="12"/>
+    <limit effort="206.843" lower="-0.262" upper="0.524" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6107" soft_upper_limit="10.4384"/>
   </joint>
   <joint name="back_bkz" type="revolute">
@@ -4002,7 +4002,7 @@
   </gazebo>
   <gazebo>
     <plugin filename="libAtlasPlugin.so" name="atlas_plugin"/>
-    <plugin filename="libgazebo_ros_joint_trajectory.so" name="joint_trajectory_plugin">
+    <plugin filename="libgazebo_ros_joint_pose_trajectory.so" name="joint_trajectory_plugin">
       <topicName>joint_trajectory</topicName>
       <updateRate>1000.0</updateRate>
     </plugin>
@@ -4324,6 +4324,100 @@
   </gazebo>
   <gazebo reference="r_leg_hpz">
     <cfmDamping>1</cfmDamping>
+  </gazebo>
+  <gazebo reference="r_situational_awareness_camera_link">
+    <sensor name="r_situational_awareness_camera_sensor" type="camera">
+      <update_rate>60.0</update_rate>
+      <camera name="r_situational_awareness_camera">
+        <pose>0 0 0 0 0 0</pose>
+        <!-- Spec sheet says 185deg HFOV @ 1280x1024pi @ 60 hz.
+             Don't think most GPU's can achieve this at real-time right now.
+        <horizontal_fov>3.22885912</horizontal_fov>
+        -->
+        <horizontal_fov>2.0</horizontal_fov>
+        <image>
+          <width>1280</width>
+          <height>1024</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise is sampled independently per pixel on each frame.  
+               That pixel's noise value is added to each of its color
+               channels, which at that point lie in the range [0,1].
+               The stddev value of 0.007 is based on experimental data 
+               from a camera in a Sandia hand pointed at a static scene
+               in a couple of different lighting conditions.  -->
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="r_situational_awareness_camera_controller">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0.0</updateRate>
+        <cameraName>r_situational_awareness_camera</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>r_situational_awareness_camera_optical_frame</frameName>
+        <hackBaseline>0.07</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="l_situational_awareness_camera_link">
+    <sensor name="l_situational_awareness_camera_sensor" type="camera">
+      <update_rate>60.0</update_rate>
+      <camera name="l_situational_awareness_camera">
+        <pose>0 0 0 0 0 0</pose>
+        <!-- Spec sheet says 185deg HFOV @ 1280x1024pi @ 60 hz.
+             Don't think most GPU's can achieve this at real-time right now.
+        <horizontal_fov>3.22885912</horizontal_fov>
+        -->
+        <horizontal_fov>2.0</horizontal_fov>
+        <image>
+          <width>1280</width>
+          <height>1024</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise is sampled independently per pixel on each frame.  
+               That pixel's noise value is added to each of its color
+               channels, which at that point lie in the range [0,1].
+               The stddev value of 0.007 is based on experimental data 
+               from a camera in a Sandia hand pointed at a static scene
+               in a couple of different lighting conditions.  -->
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="l_situational_awareness_camera_controller">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0.0</updateRate>
+        <cameraName>l_situational_awareness_camera</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>l_situational_awareness_camera_optical_frame</frameName>
+        <hackBaseline>0.07</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
   </gazebo>
   <transmission name="head_hokuyo_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="hokuyo_joint"/>
@@ -4831,6 +4925,42 @@
   <gazebo>
     <plugin filename="libatlas_push_plugin.so" name="atlas_push_plugin"/>
   </gazebo>
+  <link name="l_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0.1245 0.0112"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <link name="r_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="r_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 3.142" xyz="0 -0.1245 -0.0112"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_force_torque"/>
+  </joint>
   <gazebo>
     <!-- include plugin for sandia hands -->
     <plugin filename="libSandiaHandPlugin.so" name="sandia_hand_plugin"/>

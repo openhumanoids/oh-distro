@@ -10,6 +10,9 @@
 #include <QLabel>
 #include <QLayout>
 #include <QApplication>
+#include <QComboBox>
+#include <QLabel>
+#include <QSpinBox>
 #include <QDebug>
 #include <QScrollArea>
 #include <QPushButton>
@@ -19,6 +22,12 @@
 #include <QTimer>
 
 #include "qjson.h"
+
+#include "ctkPythonConsole.h"
+#include "ctkAbstractPythonManager.h"
+#include "pythonsignalhandler.h"
+#include "pythonchannelsubscribercollection.h"
+
 
 #include <cstdio>
 #include <limits>
@@ -41,6 +50,9 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
 
   mLCMThread = new LCMThread;
   mLCMThread->start();
+
+  this->initPython();
+
 
   mScrollArea = new QScrollArea;
   mPlotArea = new QWidget;
@@ -67,16 +79,48 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
   this->connect(mInternal->ActionClearHistory, SIGNAL(triggered()), SLOT(onClearHistory()));
 
   this->connect(mInternal->ActionBackgroundColor, SIGNAL(triggered()), SLOT(onChooseBackgroundColor()));
-  this->connect(mInternal->ActionPointSize, SIGNAL(triggered()), SLOT(onChoosePointSize()));
+
+  mInternal->toolBar->addSeparator();
+  mInternal->toolBar->addWidget(new QLabel("    Style: "));
+
+  QComboBox* curveStyleCombo = new QComboBox(this);
+  curveStyleCombo->addItem("points");
+  curveStyleCombo->addItem("lines");
+  mInternal->toolBar->addWidget(curveStyleCombo);
+
+  mInternal->toolBar->addWidget(new QLabel("    Point size: "));
+
+  QSpinBox* pointSizeSpin = new QSpinBox(this);
+  pointSizeSpin->setMinimum(1);
+  pointSizeSpin->setMaximum(20);
+  pointSizeSpin->setSingleStep(1);
+  pointSizeSpin->setValue(1);
+  mInternal->toolBar->addWidget(pointSizeSpin);
+
+  this->connect(curveStyleCombo, SIGNAL(currentIndexChanged(const QString&)), SLOT(onCurveStyleChanged(QString)));
+  this->connect(pointSizeSpin, SIGNAL(valueChanged(int)), SLOT(onPointSizeChanged(int)));
 
   mRedrawTimer = new QTimer(this);
   //mRedrawTimer->setSingleShot(true);
   this->connect(mRedrawTimer, SIGNAL(timeout()), this, SLOT(onRedrawPlots()));
 
+  QShortcut* showConsole = new QShortcut(QKeySequence("F8"), this);
+  this->connect(showConsole, SIGNAL(activated()), this->mConsole, SLOT(show()));
+
+  this->connect(new QShortcut(QKeySequence("Ctrl+W"), this->mConsole), SIGNAL(activated()), this->mConsole, SLOT(close()));
+
+  QString closeShortcut = "Ctrl+D";
+  #ifdef Q_OS_DARWIN
+  closeShortcut = "Meta+D";
+  #endif
+  this->connect(new QShortcut(QKeySequence(closeShortcut), this->mConsole), SIGNAL(activated()), this->mConsole, SLOT(close()));
+
   this->resize(1024,800);
   this->handleCommandLineArgs();
 
   this->onTogglePause();
+
+  //this->testPythonSignals();
 }
 
 MainWindow::~MainWindow()
@@ -108,6 +152,70 @@ void MainWindow::handleCommandLineArgs()
     {
       this->loadSettings(settingsFile);
     }
+  }
+}
+
+void MainWindow::testPythonSignals()
+{
+  this->onRemoveAllPlots();
+  PlotWidget* plot = this->addPlot();
+
+  QString testFile = QString(getenv("DRC_BASE")) + "/software/motion_estimate/signal_scope/src/signal_scope/userSignals.py";
+  this->loadPythonSignals(plot, testFile);
+}
+
+void MainWindow::initPython()
+{
+  this->mPythonManager = new ctkAbstractPythonManager(this);
+  this->mConsole = new ctkPythonConsole(this);
+  this->mConsole->setWindowFlags(Qt::Dialog);
+  this->mConsole->initialize(this->mPythonManager);
+  this->mConsole->setAttribute(Qt::WA_QuitOnClose, true);
+  this->mConsole->resize(600, 280);
+  this->mConsole->setProperty("isInteractive", true);
+  this->mPythonManager->addObjectToPythonMain("_console", this->mConsole);
+
+  this->mPythonManager->executeFile(QString(getenv("DRC_BASE")) + "/software/motion_estimate/signal_scope/src/signal_scope/signalScopeSetup.py");
+  PythonQtObjectPtr mainContext = PythonQt::self()->getMainModule();
+  PythonQtObjectPtr decodeCallback = PythonQt::self()->getVariable(mainContext, "decodeMessageFunction");
+
+  this->mSubscribers = new PythonChannelSubscriberCollection(mLCMThread, decodeCallback, this);
+}
+
+void MainWindow::loadPythonSignals(PlotWidget* plot, const QString& filename)
+{
+  this->mPythonManager->executeFile(filename);
+  PythonQtObjectPtr mainContext = PythonQt::self()->getMainModule();
+  QList<QVariant> signalsMap = PythonQt::self()->getVariable(mainContext, "signals").toList();
+  foreach (const QVariant& signalItem, signalsMap)
+  {
+    QList<QVariant> signalItemList = signalItem.toList();
+    QString channel = signalItemList[0].toString();
+    PythonQtObjectPtr callback = signalItemList[1].value<PythonQtObjectPtr>();
+
+    SignalDescription signalDescription;
+    signalDescription.mChannel = channel;
+    PythonSignalHandler* signalHandler = new PythonSignalHandler(&signalDescription, callback);
+    plot->addSignal(signalHandler);
+  }
+}
+
+void MainWindow::onCurveStyleChanged(QString style)
+{
+  QwtPlotCurve::CurveStyle curveStyle = style == "lines" ? QwtPlotCurve::Lines : QwtPlotCurve::Dots;
+
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plot->setCurveStyle(curveStyle);
+  }
+}
+
+
+void MainWindow::onPointSizeChanged(int pointSize)
+{
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plot->setPointSize(pointSize - 1);
   }
 }
 
@@ -203,14 +311,14 @@ void MainWindow::onRedrawPlots()
     return;
   }
 
-  float maxTime = std::numeric_limits<float>::min();
+  float maxTime = -std::numeric_limits<float>::max();
 
   foreach (SignalData* signalData, signalDataList)
   {
     signalData->updateValues();
     if (signalData->size())
     {
-      float signalMaxTime = signalData->value(signalData->size() - 1).x();
+      float signalMaxTime = signalData->boundingRect().right();
       if (signalMaxTime > maxTime)
       {
         maxTime = signalMaxTime;
@@ -218,7 +326,7 @@ void MainWindow::onRedrawPlots()
     }
   }
 
-  if (maxTime == std::numeric_limits<float>::min())
+  if (maxTime == -std::numeric_limits<float>::max())
   {
     return;
   }
@@ -282,7 +390,15 @@ void MainWindow::loadSettings(const QMap<QString, QVariant>& settings)
   foreach (const QVariant& plot, plots)
   {
     PlotWidget* plotWidget = this->addPlot();
-    plotWidget->loadSettings(plot.toMap());
+    QMap<QString, QVariant> plotSettings = plot.toMap();
+    plotWidget->loadSettings(plotSettings);
+
+    QString pythonFile = plotSettings.value("pythonScript").toString();
+    if (pythonFile.length())
+    {
+      pythonFile = QString(getenv("DRC_BASE")) + "/" + pythonFile;
+      this->loadPythonSignals(plotWidget, pythonFile);
+    }
   }
 
   int windowWidth = settings.value("windowWidth", 1024).toInt();
@@ -345,7 +461,7 @@ void MainWindow::onNewPlotClicked()
 
 PlotWidget* MainWindow::addPlot()
 {
-  PlotWidget* plot = new PlotWidget(mLCMThread);
+  PlotWidget* plot = new PlotWidget(mSubscribers);
   mPlotLayout->addWidget(plot);
   this->connect(plot, SIGNAL(removePlotRequested(PlotWidget*)), SLOT(onRemovePlot(PlotWidget*)));
   this->connect(plot, SIGNAL(addSignalRequested(PlotWidget*)), SLOT(onAddSignalToPlot(PlotWidget*)));

@@ -1,5 +1,0 @@
- <launch>
-  <node ns="sandia_hands/l_hand" name="simple_grasp_left" pkg="sandia_hand_teleop" type="simple_grasp.py"/>
-  <node ns="sandia_hands/r_hand" name="simple_grasp_right" pkg="sandia_hand_teleop" type="simple_grasp.py"/>
-  <node name="simple_grasp_keyboard_teleop" pkg="sandia_hand_teleop" type="simple_grasp_keyboard_teleop.py" />
-</launch>

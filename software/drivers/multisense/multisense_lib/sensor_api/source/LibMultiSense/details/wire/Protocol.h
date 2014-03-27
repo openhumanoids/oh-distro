@@ -152,6 +152,13 @@ static const IdType ID_CMD_STREAM_CONTROL         = 0x001c;
 
 static const IdType ID_CMD_SYS_GET_DEVICE_MODES   = 0x001d;
 
+static const IdType ID_CMD_CAM_SET_TRIGGER_SOURCE = 0x001e;
+
+static const IdType ID_CMD_IMU_GET_INFO           = 0x001f;
+static const IdType ID_CMD_IMU_GET_CONFIG         = 0x0020;
+
+static const IdType ID_CMD_SYS_TEST_MTU           = 0x0021;
+
 //
 // Data 
 
@@ -177,6 +184,14 @@ static const IdType ID_DATA_DISPARITY             = 0x0111;
 
 static const IdType ID_DATA_SYS_DEVICE_MODES      = 0x0112;
 
+static const IdType ID_DATA_SYS_PPS               = 0x0113;
+
+static const IdType ID_DATA_IMU                   = 0x0114;
+static const IdType ID_DATA_IMU_INFO              = 0x0115;
+static const IdType ID_DATA_IMU_CONFIG            = 0x0116;
+
+static const IdType ID_DATA_SYS_TEST_MTU_RESPONSE = 0x0117;
+
 //
 // Data sources
 
@@ -192,9 +207,23 @@ static const SourceType SOURCE_LUMA_RECT_RIGHT   = (1<<5);
 static const SourceType SOURCE_CHROMA_LEFT       = (1<<6);
 static const SourceType SOURCE_CHROMA_RIGHT      = (1<<7);
 static const SourceType SOURCE_DISPARITY         = (1<<10);
+static const SourceType SOURCE_DISPARITY_LEFT    = (1<<10); // same as SOURCE_DISPARITY
+static const SourceType SOURCE_DISPARITY_RIGHT   = (1<<11);
+static const SourceType SOURCE_DISPARITY_COST    = (1<<12);
 static const SourceType SOURCE_LIDAR_SCAN        = (1<<24);
+static const SourceType SOURCE_IMU               = (1<<25);
 
-static const SourceType SOURCE_IMAGES            = 0x04FF;
+static const SourceType SOURCE_IMAGES            = (SOURCE_RAW_LEFT        |
+                                                    SOURCE_RAW_RIGHT       |
+                                                    SOURCE_LUMA_LEFT       |
+                                                    SOURCE_LUMA_RIGHT      |
+                                                    SOURCE_LUMA_RECT_LEFT  |
+                                                    SOURCE_LUMA_RECT_RIGHT |
+                                                    SOURCE_CHROMA_LEFT     |
+                                                    SOURCE_CHROMA_RIGHT    |
+                                                    SOURCE_DISPARITY_LEFT  |
+                                                    SOURCE_DISPARITY_RIGHT |
+                                                    SOURCE_DISPARITY_COST);
 
 //
 // Some helper macros

@@ -23,8 +23,14 @@
 
 //#include <visualization/renderer_localize.h>
 
-#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.h>
+#include "lcmtypes/drc_heightmap_params_t.h"
+#include "lcmtypes/drc_localize_reinitialize_cmd_t.h"
+#include "lcmtypes/drc_map_params_t.h"
+#include "lcmtypes/drc_nav_goal_t.h"
+#include "lcmtypes/drc_nav_goal_timed_t.h"
+#include "lcmtypes/drc_robot_state_t.h"
+#include "lcmtypes/drc_twist_timed_t.h"
 
 #define RENDERER_NAME "Navigate"
 #define PARAM_GOAL_SEND "[G]oal (timed)"

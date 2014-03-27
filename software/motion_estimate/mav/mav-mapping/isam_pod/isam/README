@@ -1,0 +1,19 @@
+
+Incremental Smoothing and Mapping (iSAM) library
+Michael Kaess, Hordur Johannsson, John Leonard, 2010
+
+isamlib/  - Source code for the iSAM library
+include/  - Header files for the iSAM library
+isam/     - Source code for main iSAM executable
+examples/ - Example code for iSAM
+doc/      - Documentation (after calling "make doc")
+data/     - Example data files for 2D and 3D
+lib/      - iSAM library (after calling "make")
+bin/      - Executables (after calling "make")
+
+Type "make doc" to generate the full source documentation including
+installation instructions and examples. Then point your browser to:
+doc/html/index.html
+
+The latest documentation is also available online at:
+http://people.csail.mit.edu/kaess/isam/

@@ -24,8 +24,8 @@
 
 #include <vector>
 
-#include <lcmtypes/drc_lcmtypes.h>
-//#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc_recovery_t.h"
+#include "lcmtypes/drc_utime_t.h"
 #include <lcmtypes/bot_core.h>
 
 #include <maps/ViewClient.hpp>

@@ -563,7 +563,7 @@
     <parent link="ltorso"/>
     <child link="mtorso"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="206.843" lower="-0.610691" upper="0.49" velocity="12"/>
+    <limit effort="206.843" lower="-0.262" upper="0.524" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6107" soft_upper_limit="10.4384"/>
   </joint>
   <joint name="back_bkz" type="revolute">
@@ -1353,6 +1353,42 @@
       </contact>
     </sensor>
   </gazebo>
+  <link name="l_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0.1245 0.0112"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <link name="r_hand_force_torque">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="r_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 3.142" xyz="0 -0.1245 -0.0112"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_force_torque"/>
+  </joint>
   <link name="left_base_link"/>
   <joint name="left_base_link_fix" type="fixed">
     <parent link="l_hand"/>

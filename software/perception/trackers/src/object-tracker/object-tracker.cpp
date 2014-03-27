@@ -33,7 +33,9 @@
 #include <boost/config/no_tr1/complex.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_plus_t.hpp"
+#include "lcmtypes/drc/affordance_plus_collection_t.hpp"
+#include "lcmtypes/drc/tracker_command_t.hpp"
 
 #include <bot_frames/bot_frames.h>
 #include <bot_param/param_client.h>

@@ -27,7 +27,7 @@
 
 #include <frequency/frequency.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 
 #include <ConciseArgs>
 using namespace std;
@@ -140,7 +140,7 @@ int main (int argc, char ** argv){
   
   
   ros::NodeHandle nh;
-  App *app = new App(lcm, nh, verbose );
+  new App(lcm, nh, verbose );
   std::cout << "launching frequency as " << name <<"\n";
   ros::spin();
   

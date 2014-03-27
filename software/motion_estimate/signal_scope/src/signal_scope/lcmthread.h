@@ -6,11 +6,13 @@
 #include <QWaitCondition>
 #include <string>
 
-class SignalHandler;
+class LCMSubscriber;
 
 namespace lcm
 {
   class LCM;
+  class Subscription;
+  class ReceiveBuffer;
 }
 
 class LCMThread : public QThread
@@ -19,21 +21,22 @@ class LCMThread : public QThread
 
 public:
 
-  LCMThread()
-  {
-    mShouldStop = false;
-    mShouldPause = false;
-    mLCM = 0;
-  }
+  LCMThread();
+
+  ~LCMThread();
 
   void stop();
   void pause();
   void resume();
 
-  void addSignalHandler(SignalHandler* handler);
-  void removeSignalHandler(SignalHandler* handler);
+  void addSubscriber(LCMSubscriber* subscriber);
+  void removeSubscriber(LCMSubscriber* subscriber);
 
  protected:
+
+
+  void handleMessageOnChannel(const lcm::ReceiveBuffer* rbuf, const std::string& channel);
+
 
   void run();
   void initLCM();
@@ -41,7 +44,8 @@ public:
 
   bool mShouldPause;
   bool mShouldStop;
-  QList<SignalHandler*> mSignalHandlers;
+  QList<LCMSubscriber*> mSubscribers;
+
   lcm::LCM* mLCM;
 
   QMutex mMutex;

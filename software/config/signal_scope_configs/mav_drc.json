@@ -1,0 +1,112 @@
+{
+  "plots": [
+    {
+      "signals": [
+        {
+          "color": [
+            0, 
+            0, 
+            255
+          ], 
+          "messageType": "bot_core::pose_t", 
+          "visible": true, 
+          "fieldName": "accel", 
+          "arrayKeys": [
+            "0"
+          ], 
+          "channel": "POSE_BDI"
+        }, 
+        {
+          "color": [
+            255, 
+            0, 
+            0
+          ], 
+          "messageType": "bot_core::pose_t", 
+          "visible": true, 
+          "fieldName": "accel", 
+          "arrayKeys": [
+            "0"
+          ], 
+          "channel": "STATE_ESTIMATOR_POSE"
+        }
+      ], 
+      "timeWindow": 5, 
+      "ymin": -4.437704375013713, 
+      "ymax": 3.740785649130174
+    }, 
+    {
+      "signals": [
+        {
+          "color": [
+            0, 
+            0, 
+            255
+          ], 
+          "messageType": "bot_core::pose_t", 
+          "visible": true, 
+          "fieldName": "accel", 
+          "arrayKeys": [
+            "1"
+          ], 
+          "channel": "POSE_BDI"
+        }, 
+        {
+          "color": [
+            255, 
+            0, 
+            0
+          ], 
+          "messageType": "bot_core::pose_t", 
+          "visible": true, 
+          "fieldName": "accel", 
+          "arrayKeys": [
+            "1"
+          ], 
+          "channel": "STATE_ESTIMATOR_POSE"
+        }
+      ], 
+      "timeWindow": 5, 
+      "ymin": -0.7588593451200887, 
+      "ymax": 0.6478403335318548,
+    }, 
+    {
+      "signals": [
+        {
+          "color": [
+            255, 
+            0, 
+            0
+          ], 
+          "messageType": "bot_core::pose_t", 
+          "visible": true, 
+          "fieldName": "accel", 
+          "arrayKeys": [
+            "2"
+          ], 
+          "channel": "STATE_ESTIMATOR_POSE"
+        }, 
+        {
+          "color": [
+            0, 
+            0, 
+            255
+          ], 
+          "messageType": "bot_core::pose_t", 
+          "visible": true, 
+          "fieldName": "accel", 
+          "arrayKeys": [
+            "2"
+          ], 
+          "channel": "POSE_BDI"
+        }
+      ], 
+      "timeWindow": 5, 
+      "ymin": 9.28857927984041, 
+      "ymax": 10.56953568622025
+    }
+  ], 
+  "windowWidth": 1237, 
+  "windowHeight": 785
+}
+

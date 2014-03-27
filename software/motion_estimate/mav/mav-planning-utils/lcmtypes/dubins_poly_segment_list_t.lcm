@@ -1,0 +1,11 @@
+package dubins;
+
+struct poly_segment_list_t
+{
+	int64_t utime;
+	
+	int32_t num_segments;
+	dubins.poly_segment_t path_list[num_segments];   
+	
+	int8_t loop_path;
+}

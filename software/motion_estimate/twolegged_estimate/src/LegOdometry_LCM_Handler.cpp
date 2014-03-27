@@ -22,7 +22,7 @@ using namespace TwoLegs;
 using namespace std;
 
 LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, command_switches* commands):
-        _finish(false), lcm_(lcm_) {
+        _finish(false), lcm_(lcm_), inert_odo(0.001) {
   // Create the object we want to use to estimate the robot's pelvis position
   // In this case its a two legged vehicle and we use TwoLegOdometry class for this task
   
@@ -51,7 +51,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   local_to_head_vel_diff.setSize(3);
   local_to_head_acc_diff.setSize(3);
   local_to_head_rate_diff.setSize(3);
-  zvu_timetrigger.setParameters(0.4,0.6,40000);
+  zvu_timetrigger.setParameters(0.4,0.6,40000,40000);
   
   stageA_test_vel.setSize(3);
 
@@ -69,7 +69,7 @@ LegOdometry_Handler::LegOdometry_Handler(boost::shared_ptr<lcm::LCM> &lcm_, comm
   // let the biases be averaged and estimated during the first portion of the task
   allowbiasestimation = false; // Do not include initial trasients to the bias averaging process
   acc_bias_avg.setSize(3);
-  trigger_bias_averaging.setParameters(0.003,0.01,1000000);
+  trigger_bias_averaging.setParameters(0.003,0.01,1000000,1000000);
   trigger_bias_averaging.forceHigh(); // Only trip low when the bias update values have reduced to acceptable levels for averaging
   expire_bias_avg_process.setDesiredPeriod_us(10000000);
 
@@ -281,7 +281,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
 
     speed = LeggO.V.norm();
 
-    C_wb = q2C(InerO.q).transpose();
+    C_wb = q2C(InerO.lQb).transpose();
 
     // Determine the error in the body frame
     err_b = C_wb * (LeggO.P - InerO.P);
@@ -338,7 +338,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
     // if not expiration timer
     //std::cout << "before " << expire_bias_avg_process.getState() << " | " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl;
     if (!expire_bias_avg_process.getState()) {
-      inert_odo.imu_compensator.AccumulateAccelBiases(db_a);
+      inert_odo.imu_compensator.AccumulateAccelBiases(Eigen::Vector3d(db_a[0], db_a[1], db_a[2]));
 
       double norm = sqrt(db_a[0]*db_a[0]+db_a[1]*db_a[1]+db_a[2]*db_a[2]);
 
@@ -365,7 +365,7 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
     if (allowbiasestimation) {
       //std::cout << "Bias averaging is being allowed.\n";
 
-      acc_bias_avg.processSamples(inert_odo.imu_compensator.get_accel_biases());
+      acc_bias_avg.processSamples(inert_odo.imu_compensator.getAccelBiases());
       //std::cout << "bias is: " << acc_bias_avg.getCA().transpose() << std::endl;
 
       // we should run run the expire counter here
@@ -404,15 +404,15 @@ InertialOdometry::DynamicState LegOdometry_Handler::data_fusion(  const unsigned
       std::cout << "LeggO: " << LeggO.P.transpose() << std::endl
             << "InerO: " << InerO.P.transpose() << std::endl
             << "dP_w : " << (LeggO.P - InerO.P).transpose() << std::endl
-            << "IO.q : " << InerO.q.w() << ", " << InerO.q.x() << ", " << InerO.q.y() << ", " << InerO.q.z() << std::endl
+            << "IO.q : " << InerO.lQb.w() << ", " << InerO.lQb.x() << ", " << InerO.lQb.y() << ", " << InerO.lQb.z() << std::endl
             << "err_b: " << err_b.transpose() << std::endl
-            << "acc_b: " << just_checking_imu_frame.acc_b.transpose() << std::endl
-            << "b_acc: " << inert_odo.imu_compensator.get_accel_biases().transpose() << std::endl
-            << "acc_c: " << just_checking_imu_frame.acc_comp.transpose() << std::endl
-            << "accel_ " << just_checking_imu_frame.accel_.transpose() << std::endl
-            << "force_ " << just_checking_imu_frame.force_.transpose() << std::endl
+            << "a_b_measured: " << just_checking_imu_frame.a_b_measured.transpose() << std::endl
+            << "ba_b: " << inert_odo.imu_compensator.getAccelBiases().transpose() << std::endl
+            << "a_b: " << just_checking_imu_frame.a_b.transpose() << std::endl
+            << "a_l " << just_checking_imu_frame.a_l.transpose() << std::endl
+            << "f_l " << just_checking_imu_frame.f_l.transpose() << std::endl
             << "a gain " << err_b.norm() << " | "<< a << ", " << (0.6+0.3*(a)) << ", " << 0.3*(1-a)+0.1 << ", " << (0.6+0.3*(a))+0.3*(1-a)+0.1 << std::endl
-            << "C_w2b: " << std::endl << q2C(InerO.q).transpose() << std::endl
+            << "C_w2b: " << std::endl << q2C(InerO.lQb).transpose() << std::endl
             << std::endl;
     }
 
@@ -465,7 +465,7 @@ void LegOdometry_Handler::robot_state_handler(  const lcm::ReceiveBuffer* rbuf,
 
   ParseFootForces(_msg, left_force, right_force);
 
-
+  std::cout << " mf, DetermineLegContactStates\n";
   DetermineLegContactStates((long)_msg->utime,left_force,right_force); // should we have a separate foot contact state classifier, which is not embedded in the leg odometry estimation process
   if (_switches->publish_footcontact_states) {
     //std::cout << "Foot forces are: " << left_force << ", " << right_force << std::endl;
@@ -777,7 +777,7 @@ void LegOdometry_Handler::publishAccBiasEst(const unsigned long long &uts) {
     drc::estimated_biases_t msg;
 
     Eigen::Vector3d biases;
-    biases = inert_odo.imu_compensator.get_accel_biases();
+    biases = inert_odo.imu_compensator.getAccelBiases();
 
     msg.utime = uts;
     msg.x = (float)biases(0);
@@ -1194,7 +1194,7 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
 
    Eigen::Vector3d biasesa;
 
-   biasesa = inert_odo.imu_compensator.get_accel_biases();
+   biasesa = inert_odo.imu_compensator.getAccelBiases();
 
    for (int i=0;i<3;i++) {
         ss << biasesa(i) << ", ";//140-142
@@ -1205,7 +1205,7 @@ void LegOdometry_Handler::LogAllStateData(const drc::robot_state_t * msg, const 
    }
 
    for (int i=0;i<3;i++) {
-    ss << just_checking_imu_frame.force_(i) << ", "; //149-151
+    ss << just_checking_imu_frame.f_l(i) << ", "; //149-151
    }
 
    ss << zvu_flag << ", "; //152
@@ -1305,7 +1305,7 @@ void LegOdometry_Handler::torso_imu_handler(  const lcm::ReceiveBuffer* rbuf,
   imu_data.uts = msg->utime;
 
 
-  imu_data.acc_b = Eigen::Vector3d(accels[0],accels[1],accels[2]);
+  imu_data.a_b_measured = Eigen::Vector3d(accels[0],accels[1],accels[2]);
 
 
   //Eigen::Quaterniond trivial_OL_q;
@@ -1317,7 +1317,7 @@ void LegOdometry_Handler::torso_imu_handler(  const lcm::ReceiveBuffer* rbuf,
   //imu_data.acc_b << 0.1+9.81/sqrt(2), 0., +9.81/sqrt(2);
 
   just_checking_imu_frame = imu_data;
-  InerOdoEst = inert_odo.PropagatePrediction(&imu_data,q);
+  InerOdoEst = inert_odo.PropagatePrediction(imu_data,q);
 
   //std::cout << "T_OL, ut: " << imu_data.uts << ", " << InerOdoEst.V.transpose() << " | " << InerOdoEst.P.transpose() << std::endl;
 
@@ -1359,7 +1359,7 @@ void LegOdometry_Handler::delta_vo_handler(  const lcm::ReceiveBuffer* rbuf,
 
 
   // need the delta translation in the world frame
-  FovisEst.V = (inert_odo.C_bw()*vo_dtrans)/((_msg->timestamp - FovisEst.uts)*1E-6); // convert to a world frame velocity
+  FovisEst.V = (inert_odo.ResolveBodyToRef(vo_dtrans))/((_msg->timestamp - FovisEst.uts)*1E-6); // convert to a world frame velocity
 
   FovisEst.uts = _msg->timestamp;
 
@@ -1567,6 +1567,6 @@ void LegOdometry_Handler::terminate() {
 
 Eigen::Vector3d LegOdometry_Handler::getInerAccBiases() {
 
-  return inert_odo.imu_compensator.get_accel_biases();
+  return inert_odo.imu_compensator.getAccelBiases();
 }
 

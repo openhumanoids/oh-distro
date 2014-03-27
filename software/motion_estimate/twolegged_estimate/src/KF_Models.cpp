@@ -52,7 +52,7 @@ MatricesUnit BaseModel::getContinuousMatrices(const VAR_VECTORd &state) {
 }
 
 void BaseModel::setup(KalmanFilter_Types::Priori &priori, KalmanFilter_Types::Posterior &posterior) {
-	std::cout << "BaseModel::setSizes -- setting sizes :" << continuous_matrices.A.cols() << std::endl;
+	//std::cout << "BaseModel::setSizes -- setting sizes :" << continuous_matrices.A.cols() << std::endl;
 	priori.mu.resize(continuous_matrices.A.cols());
 	//priori.M.resize(continuous_matrices.A.cols(),continuous_matrices.A.cols());
 	
@@ -68,7 +68,7 @@ void BaseModel::setup(KalmanFilter_Types::Priori &priori, KalmanFilter_Types::Po
 		posterior.P(i,i) = -1.;
 	}
 	
-	std::cout << "BaseModel::setSizes -- State Covariance initialized to large uncertainty." << std::endl;
+	//std::cout << "BaseModel::setSizes -- State Covariance initialized to large uncertainty." << std::endl;
 	
 }
 
@@ -173,7 +173,7 @@ VAR_VECTORd Joint_Model::measurement_model(VAR_VECTORd Param) {
 
 
 void Joint_Model::identify() { 
-	std::cout << "Joint_Model::identify -- This is the Joint Model class." << std::endl;
+	//std::cout << "Joint_Model::identify -- This is the Joint Model class." << std::endl;
 }
 
 

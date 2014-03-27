@@ -1,9 +1,13 @@
+#ifndef __MODEL_CLIENT_HPP__
+#define __MODEL_CLIENT_HPP__
+
+
 #include <map>
 #include <boost/shared_ptr.hpp>
 
 #include "urdf/model.h"
 #include <lcm/lcm.h>
-#include "lcmtypes/drc_lcmtypes.h"
+#include "lcmtypes/drc_robot_urdf_t.h"
 #include <fstream>
 
 class ModelClient 
@@ -52,4 +56,8 @@ class ModelClient
     int keep_updated_;
     
     int8_t left_hand_, right_hand_;
+    
+    bool file_read_success_;
 };
+
+#endif

@@ -31,12 +31,14 @@
 #ifndef CRL_MULTISENSE_THREAD_HH
 #define CRL_MULTISENSE_THREAD_HH
 
+#include <unistd.h>
 #include <stdint.h>
 #include <pthread.h>
 #include <sched.h>
 #include <errno.h>
 #include <string.h>
 #include <linux/futex.h>
+#include <unistd.h>
 #include <sys/syscall.h>
 
 #include <vector>

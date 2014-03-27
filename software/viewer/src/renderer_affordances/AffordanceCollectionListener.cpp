@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
 
 #include "AffordanceCollectionListener.hpp"
 

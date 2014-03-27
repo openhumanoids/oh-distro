@@ -1162,7 +1162,7 @@
             <visibility>1.000000</visibility>
           </technique>
         </extra>
-        <node name="l_elbow_ry" id="l_elbow_ry" sid="l_elbow_ry">
+        <node name="l_elbow_ry_node" id="l_elbow_ry_node" sid="l_elbow_ry_node">
           <matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 -0.000000 0.000000 0.000000 1.000000 0.009469 0.000000 0.000000 0.000000 1.000000</matrix>
           <extra>
             <technique profile="FCOLLADA">

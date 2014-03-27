@@ -9,7 +9,12 @@ class QVBoxLayout;
 class QTimer;
 class PlotWidget;
 class LCMThread;
+class PythonChannelSubscriberCollection;
 class SignalHandler;
+
+class ctkPythonConsole;
+class ctkAbstractPythonManager;
+
 
 class MainWindow : public QMainWindow
 {
@@ -44,6 +49,9 @@ protected slots:
 
   void onRedrawPlots();
 
+  void onPointSizeChanged(int size);
+  void onCurveStyleChanged(QString style);
+
 protected:
 
   void handleCommandLineArgs();
@@ -51,6 +59,10 @@ protected:
   void loadSettings(const QString& filename);
   void loadSettings(const QMap<QString, QVariant>& settings);
   void loadPlot(const QMap<QString, QVariant>& plot);
+
+  void testPythonSignals();
+  void initPython();
+  void loadPythonSignals(PlotWidget* plot, const QString& filename);
 
   PlotWidget* addPlot();
   QList<SignalHandler*> getSignalSelectionFromUser();
@@ -67,6 +79,10 @@ protected:
   QList<PlotWidget*> mPlots;
 
   LCMThread* mLCMThread;
+
+  ctkPythonConsole* mConsole;
+  ctkAbstractPythonManager* mPythonManager;
+  PythonChannelSubscriberCollection* mSubscribers;
 
   class Internal;
   Internal* mInternal;

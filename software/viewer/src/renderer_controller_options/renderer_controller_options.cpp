@@ -17,8 +17,8 @@
 #include <bot_vis/bot_vis.h>
 #include <bot_core/bot_core.h>
 
-#include <lcmtypes/drc_lcmtypes.h>
-//#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc_map_controller_command_t.h"
+#include "lcmtypes/drc_robot_state_t.h"
 #include <lcmtypes/bot_core.h>
 
 #include <string>

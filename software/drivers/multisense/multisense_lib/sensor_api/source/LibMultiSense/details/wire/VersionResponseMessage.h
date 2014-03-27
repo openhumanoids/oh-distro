@@ -50,7 +50,11 @@ public:
     // Constructors
 
     VersionResponse(utility::BufferStreamReader&r, VersionType v) {serialize(r,v);};
-    VersionResponse() {};
+    VersionResponse() : firmwareBuildDate(),
+                        firmwareVersion(0),
+                        hardwareVersion(0),
+                        hardwareMagic(0),
+                        fpgaDna(0) {};
 
     //
     // Serialization routine

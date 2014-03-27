@@ -1,13 +1,15 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 set(RENDERERS bot2-vis bot2-lcmgl-renderer
-        bot2-frames-renderers  
+#        bot2-frames-renderers  
+        bot2-frames-renderers-drc  
         laser-util-renderer
         renderer_walking
         multisense-renderer
         octomap-renderer
         occ-map-renderers
         maps-renderer
+        mav-state-est-renderers
         atlas-camera-renderer
         data-control-renderer
         lcmtypes_drc_lcmtypes

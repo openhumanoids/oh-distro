@@ -31,7 +31,6 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/multisense.hpp>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <opencv2/opencv.hpp>
@@ -118,8 +117,7 @@ private:
 };
 
 App::App(ros::NodeHandle node_, bool send_head_cameras_, bool send_hand_cameras_) :
-    node_(node_), it_(node_), sync_(10), l_hand_sync_(10), r_hand_sync_(10),
-    send_head_cameras_(send_head_cameras_), send_hand_cameras_(send_hand_cameras_){
+    send_head_cameras_(send_head_cameras_), send_hand_cameras_(send_hand_cameras_), node_(node_), it_(node_), sync_(10),l_hand_sync_(10), r_hand_sync_(10){
   if(!lcm_publish_.good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
@@ -314,8 +312,7 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& l_image,
   lcm_left_.row_stride=n_colors*l_image->width;
   if (do_jpeg_compress_){
     int jpeg_compressed_size =  isize*n_colors;//image_buf_size;
-    int status = jpeg_compress_8u_rgb  (l_image->data.data(), l_image->width, l_image->height, 
-    l_image->width*n_colors, color_compress_buffer_ , &jpeg_compressed_size, jpeg_quality_);
+    jpeg_compress_8u_rgb  (l_image->data.data(), l_image->width, l_image->height, l_image->width*n_colors, color_compress_buffer_ , &jpeg_compressed_size, jpeg_quality_);
     lcm_left_.data.resize( jpeg_compressed_size);
     memcpy(&lcm_left_.data[0], color_compress_buffer_ , jpeg_compressed_size);
     lcm_left_.size = jpeg_compressed_size;
@@ -335,8 +332,8 @@ void App::publishStereo(const sensor_msgs::ImageConstPtr& l_image,
   lcm_disp_.nmetadata =0;
   lcm_disp_.row_stride=2*l_image->width;  // 2 bytes per pixel
   if (1==1){ 
-    int uncompressed_size = isize;
     /*
+    int uncompressed_size = isize;
     // Insert proper compression here if needed:
     unsigned long compressed_size = depth_compress_buf_size_;
     compress2( depth_compress_buf_, &compressed_size, (const Bytef*) imageDataP, uncompressed_size,
@@ -412,7 +409,7 @@ int main(int argc, char **argv){
   sleep(4);
   ROS_ERROR("Stereo Camera Translator Ready: [%s] [%s]", which_camera.c_str() , transport.c_str());
   
-  App *app = new App(nh, send_head_cameras, send_hand_cameras);
+  new App(nh, send_head_cameras, send_hand_cameras);
   std::cout << "ros2lcm translator ready\n";
   
   ros::spin();

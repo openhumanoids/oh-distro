@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<KinematicModel VERSION="2.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.vicon.com/Schemas/ViconVST.xsd">
+
+  <Parameters>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479954_x" PRIOR="30.922191619873" SD="1.00000002004088e+020" VALUE="30.922191619873"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479954_y" PRIOR="-44.0998039245605" SD="1.00000002004088e+020" VALUE="-44.0998039245605"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479954_z" PRIOR="22.4996585845947" SD="1.00000002004088e+020" VALUE="22.4996585845947"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479373_x" PRIOR="25.821849822998" SD="1.00000002004088e+020" VALUE="25.821849822998"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479373_y" PRIOR="-35.6222648620605" SD="1.00000002004088e+020" VALUE="-35.6222648620605"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479373_z" PRIOR="-23.2469234466553" SD="1.00000002004088e+020" VALUE="-23.2469234466553"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479372_x" PRIOR="-1.04228520393372" SD="1.00000002004088e+020" VALUE="-1.04228520393372"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479372_y" PRIOR="1.95849919319153" SD="1.00000002004088e+020" VALUE="1.95849919319153"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479372_z" PRIOR="11.1067142486572" SD="1.00000002004088e+020" VALUE="11.1067142486572"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479476_x" PRIOR="-29.423999786377" SD="1.00000002004088e+020" VALUE="-29.423999786377"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479476_y" PRIOR="40.5860481262207" SD="1.00000002004088e+020" VALUE="40.5860481262207"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479476_z" PRIOR="11.8731937408447" SD="1.00000002004088e+020" VALUE="11.8731937408447"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479380_x" PRIOR="-26.277759552002" SD="1.00000002004088e+020" VALUE="-26.277759552002"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479380_y" PRIOR="37.1775245666504" SD="1.00000002004088e+020" VALUE="37.1775245666504"/>
+    <Parameter HIDDEN="1" NAME="utorso_Unlabeled479380_z" PRIOR="-22.2326412200928" SD="1.00000002004088e+020" VALUE="-22.2326412200928"/>
+  </Parameters>
+
+  <Skeleton>
+    <Segment BOUNDS="-50 -50 -50 50 50 50 " CONTEXT="General" INERTIA="0 0 0 " MASS="0 " MASS-CENTRE="0 0 0 " NAME="utorso" RGB="255 164 0">
+      <JointFree BOUNDS="0 0 0 0 0 0 0 0 0 0 0 0" COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" NAME="World_utorso" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" SIGNS="+ + + + + + " T="* * * * * * ">
+        <JointTemplate COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" POST-ORIENTATION="0 0 0 " POST-POSITION="0 0 0 " PRE-ORIENTATION="0 0 0 " PRE-POSITION="0 0 0 " TPOSE-COVARIANCE="0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  " TPOSE-MEAN="0 0 0 0 0 0"/>
+      </JointFree>
+    </Segment>
+  </Skeleton>
+
+  <MarkerSet>
+    <Markers>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479954" POSITION="30.9222 -44.0998 22.4997" RADIUS="12.5" RGB="255 164 0" SEGMENT="utorso" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'utorso_Unlabeled479954_x' 'utorso_Unlabeled479954_y' 'utorso_Unlabeled479954_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479373" POSITION="25.8218 -35.6223 -23.2469" RADIUS="12.5" RGB="255 164 0" SEGMENT="utorso" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'utorso_Unlabeled479373_x' 'utorso_Unlabeled479373_y' 'utorso_Unlabeled479373_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479372" POSITION="-1.04229 1.9585 11.1067" RADIUS="12.5" RGB="255 164 0" SEGMENT="utorso" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'utorso_Unlabeled479372_x' 'utorso_Unlabeled479372_y' 'utorso_Unlabeled479372_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479476" POSITION="-29.424 40.586 11.8732" RADIUS="12.5" RGB="255 164 0" SEGMENT="utorso" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'utorso_Unlabeled479476_x' 'utorso_Unlabeled479476_y' 'utorso_Unlabeled479476_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled479380" POSITION="-26.2778 37.1775 -22.2326" RADIUS="12.5" RGB="255 164 0" SEGMENT="utorso" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'utorso_Unlabeled479380_x' 'utorso_Unlabeled479380_y' 'utorso_Unlabeled479380_z'"/>
+      </Marker>
+    </Markers>
+    <Sticks>
+      <Stick MARKER1="Unlabeled479954" MARKER2="Unlabeled479373" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479954" MARKER2="Unlabeled479372" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479954" MARKER2="Unlabeled479476" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479954" MARKER2="Unlabeled479380" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479373" MARKER2="Unlabeled479372" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479373" MARKER2="Unlabeled479476" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479373" MARKER2="Unlabeled479380" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479372" MARKER2="Unlabeled479476" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479372" MARKER2="Unlabeled479380" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled479476" MARKER2="Unlabeled479380" RGB="255 164 0"/>
+    </Sticks>
+  </MarkerSet>
+
+  <Alignment/>
+
+</KinematicModel>

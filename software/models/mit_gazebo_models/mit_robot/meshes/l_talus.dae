@@ -332,7 +332,7 @@
             <visibility>1.000000</visibility>
           </technique>
         </extra>
-        <node name="l_talus" id="l_talus" sid="l_talus">
+        <node name="l_talus_node" id="l_talus_node" sid="l_talus_node">
           <matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix>
           <extra>
             <technique profile="FCOLLADA">

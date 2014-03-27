@@ -5,7 +5,8 @@
 #include <string>
 
 #include <kdl/tree.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/position_3d_t.hpp"
+#include "lcmtypes/drc/transform_t.hpp"
 
 namespace kinematics {
   class Kinematics_Model {

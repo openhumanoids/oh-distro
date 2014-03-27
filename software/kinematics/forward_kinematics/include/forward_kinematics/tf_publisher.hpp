@@ -46,7 +46,8 @@
 #include <kdl/frames.hpp>
 #include <kdl/segment.hpp>
 #include <kdl/tree.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/transform_stamped_t.hpp"
+#include "lcmtypes/drc/tf_t.hpp"
 
 
 namespace tf_publisher{

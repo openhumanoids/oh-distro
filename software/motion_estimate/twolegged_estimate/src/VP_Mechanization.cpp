@@ -4,63 +4,75 @@ namespace InertialOdometry {
 
   VP_Mechanization::VP_Mechanization()
   {
-	  a2v.setSize(3);
-	  v2p.setSize(3);
+	  //a2v.setSize(3);
+	  //v2p.setSize(3);
 
 	  last_uts = 0;
   }
 
-  void VP_Mechanization::SubtractGravity(IMU_dataframe* _imu) {
 
-	  _imu->force_ = _imu->accel_ - std_param.gravity;
-	  //	  std::cout << "VP_Mechanization::SubtractGravity -- std_param.gravity = " <<  std_param.gravity.transpose() << std::endl;
-	  _imu->gravity_subtracted = true;
-
-  }
-
-
-  void VP_Mechanization::PropagateTranslation(IMU_dataframe* _imu)
+  void VP_Mechanization::PropagateTranslation(IMU_dataframe &_imu)
   {
 	  
-	  std::cout << "VP_Mechanization::PropagateTranslation -- before subtracting gravity " << _imu->accel_.transpose() << std::endl;
-	  SubtractGravity(_imu);
-	  std::cout << "VP_Mechanization::PropagateTranslation -- after subtracting gravity " << _imu->force_.transpose() << std::endl;
-	  	  
+	  _imu.f_l = _imu.a_l - std_param.gravity;
+	  _imu.gravity_subtracted = true;
 
-	  //	  Eigen::Vector3d V_l;
-	  //	  V_l = ;
+	  //std::cout << "VP_Mechanization::PropagateTranslation -- before subtracting gravity " << _imu.a_l.transpose() << std::endl;
+	  //std::cout << "VP_Mechanization::PropagateTranslation -- f_l after subtracting gravity " << _imu.f_l.transpose() << std::endl;
 
-	  state.first_pose_rel_vel = a2v.integrate(_imu->uts,_imu->force_);
-	  state.first_pose_rel_pos = v2p.integrate(_imu->uts, state.first_pose_rel_vel);
+	  double dt;
+	  if (last_uts != 0) {
+		  dt = (_imu.uts - last_uts)*1E-6;
+	  } else {
+		  dt = 0.001;
+	  }
 
-	  //std::cout << " state: " << _imu->force_.transpose() << " | " << state.first_pose_rel_pos.transpose() << std::endl;
+	  // TODO -- Improve to better numerical integration
+	  state.first_pose_rel_pos = state.first_pose_rel_pos + dt*state.first_pose_rel_vel; // Position first
+	  state.first_pose_rel_vel = state.first_pose_rel_vel + dt*_imu.f_l; // Velocity second
 
-	  last_uts = _imu->uts;
+	  //	  state.first_pose_rel_pos = v2p.integrate(_imu.uts, state.first_pose_rel_vel); // Position first
+	  //	  state.first_pose_rel_vel = a2v.integrate(_imu.uts,_imu.f_l); // Velocity second
+
+
+	  last_uts = _imu.uts;
 
 	  return;
   }
 
-   void VP_Mechanization::updateOutput(InertialOdomOutput* _out) {
+   void VP_Mechanization::updateOutput(InertialOdomOutput &_out) {
 
-	  _out->vp_uts = last_uts;
+	  _out.vp_uts = last_uts;
 
-	  _out->first_pose_rel_pos = state.first_pose_rel_pos;
-	  _out->first_pose_rel_vel = state.first_pose_rel_vel;
+	  _out.first_pose_rel_pos = state.first_pose_rel_pos;
+	  _out.first_pose_rel_vel = state.first_pose_rel_vel;
 
 	  return;
   }
 
    void VP_Mechanization::setPosStates(const Eigen::Vector3d &P_set) {
 
-	   v2p.setStateTo(P_set);
+	   //std::cout << "VP_Mechanization::setPosStates -- previous positions " << v2p.getVal().transpose() << std::endl;
+	   //	   v2p.setStateTo(P_set);
 	   state.first_pose_rel_pos = P_set;
+	   //std::cout << "VP_Mechanization::setPosStates -- P_set " << P_set.transpose() << std::endl;
+	   //std::cout << "VP_Mechanization::setPosStates -- new positions " << v2p.getVal().transpose() << std::endl;
 
 	   return;
    }
 
+   Eigen::Vector3d VP_Mechanization::getVelStates() {
+	   return state.first_pose_rel_vel;
+   }
+
+   Eigen::Vector3d VP_Mechanization::getPosStates() {
+	   return state.first_pose_rel_pos;
+   }
+
+
    void VP_Mechanization::setVelStates(const Eigen::Vector3d &V_set) {
 
-   	   a2v.setStateTo(V_set);
+	   //   	   a2v.setStateTo(V_set);
    	   state.first_pose_rel_vel = V_set;
 
    	   return;

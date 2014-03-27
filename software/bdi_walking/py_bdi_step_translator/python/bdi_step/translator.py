@@ -46,8 +46,16 @@ class BDIStepTranslator:
     def handle_footstep_plan(self, channel, msg):
         print "Starting new footstep plan"
         if isinstance(msg, str):
-            msg = drc.footstep_plan_t.decode(msg)
-        footsteps, opts = bdi_step.footsteps.decode_footstep_plan(msg)
+            try:
+                msg = drc.deprecated_footstep_plan_t.decode(msg)
+            except ValueError:
+                msg = drc.footstep_plan_t.decode(msg)
+        if isinstance(msg, drc.deprecated_footstep_plan_t):
+            footsteps, opts = bdi_step.footsteps.decode_deprecated_footstep_plan(msg)
+        elif isinstance(msg, drc.footstep_plan_t):
+            footsteps, opts = bdi_step.footsteps.decode_footstep_plan(msg)
+        else:
+            raise ValueError("Can't decode footsteps: not a drc.footstep_plan_t or drc.deprecated_footstep_plan_t")
 
         behavior = opts['behavior']
         if behavior == Behavior.BDI_WALKING:

@@ -80,13 +80,8 @@
         <origin rpy="0 0 0" xyz="${guard_x} ${guard_y} ${guard_z}" />
         <axis xyz="0 0 1" />
     </joint>
-    <grasp_seed>
-        <appendage type="HAND" />
-        <geometry name="mesh_0" />
-        <relative_pose rpy="2.60011 0.0121158 1.4559" xyz="0.0211505 0.134766 0.0114163" />
-        <grasp_type type="4" />
-        <state num_joints="8" joint_names="right_finger[0]/joint_base_rotation right_finger[0]/joint_base right_finger[0]/joint_flex right_finger[1]/joint_base_rotation right_finger[1]/joint_base right_finger[1]/joint_flex right_finger[2]/joint_base right_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
-    </grasp_seed>
+<!-- Dewelt Button Grasps used in competition -->
+<!--
     <grasp_seed>
         <appendage type="HAND" />
         <geometry name="mesh_0" />
@@ -100,5 +95,14 @@
         <relative_pose rpy="-0.961781 0.00361384 0.00760208" xyz="0.179103 0.00502017 0.00687111" />
         <grasp_type type="6" />
         <state num_joints="11" joint_names="left_finger_1_joint_1 left_finger_1_joint_2 left_finger_1_joint_3 left_finger_2_joint_1 left_finger_2_joint_2 left_finger_2_joint_3 left_finger_middle_joint_1 left_finger_middle_joint_2 left_finger_middle_joint_3 left_palm_finger_1_joint left_palm_finger_2_joint " joint_positions="0 0 0 0 0 0 0 0 0 0 0 " />
+    </grasp_seed>
+-->
+<!-- Dewelt non-Button Grasp used in Amazon Demo -->
+    <grasp_seed>
+        <appendage type="HAND" />
+        <geometry name="mesh_0" />
+        <relative_pose rpy="1.57658 -0.0668196 -1.64926" xyz="-0.018142 -0.166238 0.0114163" />
+        <grasp_type type="3" />
+        <state num_joints="8" joint_names="left_finger[0]/joint_base_rotation left_finger[0]/joint_base left_finger[0]/joint_flex left_finger[1]/joint_base_rotation left_finger[1]/joint_base left_finger[1]/joint_flex left_finger[2]/joint_base left_finger[2]/joint_flex " joint_positions="0 0 0 0 0 0 0 0 " />
     </grasp_seed>
 </object>

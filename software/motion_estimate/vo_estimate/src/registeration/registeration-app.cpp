@@ -37,7 +37,7 @@ If at any time an alignment to utimeA is not possible, we do VO until it is.
 #include <bot_frames/bot_frames.h>
 #include <bot_param/param_client.h>
 
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/map_params_t.hpp"
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/motion_estimate.hpp>
 

@@ -1,3 +1,0 @@
-<robot name="atlas" >
-  <include filename="$(find multisense_sl_description)/urdf/multisense_sl.urdf" />
-</robot>

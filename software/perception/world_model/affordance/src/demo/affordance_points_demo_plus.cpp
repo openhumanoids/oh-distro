@@ -4,7 +4,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/assign/std/vector.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_collection_t.hpp"
+#include "lcmtypes/drc/affordance_plus_t.hpp"
+#include "lcmtypes/drc/affordance_plus_collection_t.hpp"
 
 
 // define the following in order to eliminate the deprecated headers warning

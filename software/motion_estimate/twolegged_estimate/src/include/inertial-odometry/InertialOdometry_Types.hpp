@@ -11,15 +11,18 @@ namespace InertialOdometry {
 
 	unsigned long long uts;
 
-    Eigen::Vector3d gyro_;
-    Eigen::Vector3d gyr_b; // This is after compensation
-    Eigen::Vector3d dang_b;
+    Eigen::Vector3d w_b; // rate after bias compensation
+	Eigen::Vector3d w_b_measured;
+	Eigen::Vector3d dang_b;
+    Eigen::Vector3d dang_s;
 
-    Eigen::Vector3d force_;
-    Eigen::Vector3d accel_;
-    Eigen::Vector3d acc_b;
-    Eigen::Vector3d acc_comp;
+    Eigen::Vector3d f_l;
+    Eigen::Vector3d a_l;
+    Eigen::Vector3d a_b;
+    Eigen::Vector3d a_b_measured;
+	Eigen::Vector3d a_s_measured;
 
+    bool use_dang;
     bool gyro_compensated_flag;
     bool accel_compensated_flag;
     bool gravity_subtracted;
@@ -44,11 +47,12 @@ namespace InertialOdometry {
 	  Eigen::Vector3d f_l;
 	  Eigen::Vector3d a_l;
 	  Eigen::Vector3d w_l;
-	  Eigen::Vector3d E;
-	  Eigen::Vector3d b_a;
-	  Eigen::Vector3d b_g;
+	  Eigen::Vector3d ba;
+	  Eigen::Vector3d bg;
+	  Eigen::Vector3d a_b;
+	  Eigen::Vector3d w_b;
 
-	  Eigen::Quaterniond q;
+	  Eigen::Quaterniond lQb;
 
 	  unsigned long long uts;
   };
@@ -66,10 +70,12 @@ namespace InertialOdometry {
   struct INSUpdatePacket {
 	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+	  unsigned long long utime;
+
 	  Eigen::Vector3d dbiasGyro_b;
 	  Eigen::Vector3d dbiasAcc_b;
 
-	  Eigen::Quaterniond dQ;
+	  Eigen::Vector3d dE_l;
 	  Eigen::Vector3d dVel_l;
 	  Eigen::Vector3d dPos_l;
   };
@@ -133,7 +139,7 @@ namespace InertialOdometry {
     	   Qimu.setZero(6,6);
     	   Qimu.setIdentity(6,6);
     	   
-    	   gravity << 0, 0, 9.81;
+    	   gravity << 0, 0, -9.81;
        }
   };
 

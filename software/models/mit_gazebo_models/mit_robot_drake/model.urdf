@@ -683,7 +683,7 @@
     <parent link="ltorso"/>
     <child link="mtorso"/>
     <dynamics damping="0.1" friction="0"/>
-    <limit effort="206.843" lower="-0.610691" upper="0.49" velocity="12"/>
+    <limit effort="206.843" lower="-0.262" upper="0.524" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6107" soft_upper_limit="10.4384"/>
   </joint>
   <joint name="back_bkz" type="revolute">
@@ -2413,7 +2413,7 @@
       <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.0</updateRate>
-        <cameraName>sandia_hands/r_hand/camera</cameraName>
+        <cameraName>sandia_hands/r_hand</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
         <frameName>right_palm_left_camera_optical_frame</frameName>
@@ -2508,7 +2508,7 @@
       </geometry>
     </collision>
     <collision group="other">
-      <origin rpy="0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
+      <origin rpy="-0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
       <geometry>
         <box size="0.09 .035 .05"/>
       </geometry>
@@ -2555,7 +2555,7 @@
       </material>
     </visual>
     <visual>
-      <origin rpy="0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
+      <origin rpy="-0.41 0 0.9" xyz="0.064 -0.008 0.021"/>
       <geometry>
         <box size="0.09 .035 .05"/>
       </geometry>
@@ -3985,7 +3985,7 @@
       <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
         <alwaysOn>true</alwaysOn>
         <updateRate>0.0</updateRate>
-        <cameraName>sandia_hands/l_hand/camera</cameraName>
+        <cameraName>sandia_hands/l_hand</cameraName>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
         <frameName>left_palm_left_camera_optical_frame</frameName>

@@ -48,19 +48,22 @@ addpath([pods_get_base_path,'/matlab']);
 
 % add the drake control matlab util directory into the matlab path:
 addpath(fullfile(pwd,'matlab'));
+addpath(fullfile(pwd,'matlab','calibration'));
 addpath(fullfile(pwd,'matlab','controllers'));
 addpath(fullfile(pwd,'matlab','planners'));
+addpath(fullfile(pwd,'matlab','planners','constraints'));
 addpath(fullfile(pwd,'matlab','planners','drill_planner'));
 addpath(fullfile(pwd,'matlab','planners','ladder_planner'));
 addpath(fullfile(pwd,'matlab','planners','driving_planner'));
 addpath(fullfile(pwd,'matlab','planners','footstep_planner'));
+addpath(fullfile(pwd,'matlab','planners','walking_planner'));
 addpath(fullfile(pwd,'matlab','planners','atlas_keyframe_planners'));
-%addpath(fullfile(pwd,'matlab','planners','pinned_manipulation','spherical_interp'));
 addpath(fullfile(pwd,'matlab','util'));
 addpath(fullfile(pwd,'matlab','frames'));
 addpath(fullfile(pwd,'matlab','test'));
 addpath(fullfile(pwd,'matlab','systems'));
 addpath(fullfile(pwd,'collections_utils'));
+addpath(fullfile(pwd,'..','drake','examples','ZMP'));
 
 
 end

@@ -24,11 +24,11 @@
  *   2013-05-23, ekratzer@carnegierobotics.com, PR1044, Created file.
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 #include <opencv/cv.h>
 
@@ -63,8 +63,8 @@ int main(int    argc,
          char **argvPP)
 {
     std::string ipAddress = "10.66.171.21";
-    std::string intrinsicsFile = "saved_extrinsics.yml";
-    std::string extrinsicsFile = "saved_intrinsics.yml";
+    std::string intrinsicsFile;
+    std::string extrinsicsFile;
     bool        setCal=false;
     bool        prompt=true;
 
@@ -85,9 +85,6 @@ int main(int    argc,
 
     //
     // Verify options
-    std::cout << intrinsicsFile << " int \n";
-    std::cout << extrinsicsFile << " ext \n";
-    std::cout << ipAddress << " ip \n";
 
     if (intrinsicsFile.empty() || extrinsicsFile.empty()) {
         fprintf(stderr, "Both intrinsics and extrinsics files must be set\n");
@@ -138,7 +135,8 @@ int main(int    argc,
 
     status = channelP->getSensorVersion(version);
     if (Status_Ok != status) {
-        fprintf(stderr, "failed to query sensor version: %d\n", status);
+        fprintf(stderr, "failed to query sensor version: %s\n", 
+                Channel::statusString(status));
         goto clean_out;
     }
     
@@ -151,7 +149,8 @@ int main(int    argc,
 
         status = channelP->getImageCalibration(c);
         if (Status_Ok != status) {
-            fprintf(stderr, "failed to query image calibration: %d\n", status);
+            fprintf(stderr, "failed to query image calibration: %s\n", 
+                    Channel::statusString(status));
             goto clean_out;
         }
 
@@ -315,7 +314,8 @@ int main(int    argc,
                
         status = channelP->setImageCalibration(c);
         if (Status_Ok != status) {
-            fprintf(stderr, "failed to set image calibration: %d\n", status);
+            fprintf(stderr, "failed to set image calibration: %s\n", 
+                    Channel::statusString(status));
             goto clean_out;
         }
 

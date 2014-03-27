@@ -1,0 +1,15 @@
+package mav;
+
+struct ins_t
+{
+	int64_t utime;
+	int64_t device_time;
+
+	double gyro[3];
+	double mag[3];
+	double accel[3];
+	double quat[4];
+	
+	double pressure;
+	double rel_alt;
+}

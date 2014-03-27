@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="/ui">
+    <file>ddHandControl.ui</file>
+    <file>ddIKEditor.ui</file>
+    <file>ddMultisense.ui</file>
+    <file>ddNavigation.ui</file>
+    <file>ddActionManager.ui</file>
+    <file>ddPlaybackPanel.ui</file>
+    <file>ddRobotStatus.ui</file>
+    <file>ddTeleopPanel.ui</file>
+  </qresource>
+</RCC>

@@ -5,7 +5,6 @@
 #include <collision/collision_object_point_cloud.h>
 
 using namespace std;
-using namespace drc;
 using namespace Eigen;
 using namespace collision;
 

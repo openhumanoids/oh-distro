@@ -35,6 +35,11 @@
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <pointcloud_tools/pointcloud_lcm.hpp> // unpack lidar to xyz
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/robot_collision_t.hpp"
+#include "lcmtypes/drc/robot_collision_array_t.hpp"
+#include "lcmtypes/drc/robot_plan_t.hpp"
+#include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
+#include "lcmtypes/drc/robot_urdf_t.hpp"
 #include <ConciseArgs>
 
 using namespace std;

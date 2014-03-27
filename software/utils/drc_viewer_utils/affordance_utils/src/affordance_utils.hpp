@@ -27,7 +27,8 @@
 
 #include <lcm/lcm.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_t.hpp"
+#include "lcmtypes/drc/affordance_plus_t.hpp"
 #include <lcmtypes/bot_core.h>
 
 using namespace std;

@@ -22,20 +22,20 @@ namespace InertialOdometry
 
        IMUCompensation();
        void UpdateGyroBiases(const double biases[3]);
-       void AccumulateGyroBiases(const double delta_biases[3]);
+       void AccumulateGyroBiases(const Eigen::Vector3d &_delta_biases);
        void UpdateAccelBiases(const double biases[3]);
-       void AccumulateAccelBiases(const double delta_biases[3]);
+       void AccumulateAccelBiases(const Eigen::Vector3d &_delta_biases);
        void UpdateGyroScaleFactor(const double sf[3]);
        void UpdateAccelScaleFactor(const double sf[3]);
        void SetGyroMisalignments(const double MA[3]);
        void SetAccelMisalignments(const double MA[3]);
-       void Full_Compensation(IMU_dataframe *imu_pre);
-       void Gyro_Compensation(IMU_dataframe *imu_pre);
-       void Accel_Compensation(IMU_dataframe *imu_pre);
+       void Full_Compensation(IMU_dataframe &_imu);
+       void Gyro_Compensation(IMU_dataframe &_imu);
+       void Accel_Compensation(IMU_dataframe &_imu);
 
        Eigen::Vector3d getGyroBiases();
        Eigen::Vector3d getAccelBiases();
-       Eigen::Vector3d get_accel_biases();
+       //Eigen::Vector3d get_accel_biases();
 
        void cout_current_values();
   };

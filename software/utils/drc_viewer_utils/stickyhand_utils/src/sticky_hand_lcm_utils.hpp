@@ -2,7 +2,9 @@
 #define STICKYHAND_LCM_UTILS_HPP
 
 #include "sticky_hand_utils.hpp"
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/desired_grasp_state_t.hpp"
+#include "lcmtypes/drc/ee_goal_t.hpp"
+#include "lcmtypes/drc/traj_opt_constraint_t.hpp"
 
 using namespace std;
 using namespace boost;

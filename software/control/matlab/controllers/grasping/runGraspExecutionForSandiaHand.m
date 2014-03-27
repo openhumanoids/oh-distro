@@ -10,9 +10,9 @@ r_jointNames = r_right.getStateFrame.coordinates(1:nq_r);
 lcmcoder = JLCMCoder(drc.control.GraspStateCoder('sandia',l_jointNames,r_jointNames));
 nx=19+nq_l+nq_r;
 
-channel = ['COMMITTED_GRASP'];
+channel = 'COMMITTED_GRASP';
 disp(channel);
-grasp_state_listener=LCMCoordinateFrameWCoder('sandia',nx,'x',lcmcoder);
+grasp_state_listener=LCMCoordinateFrame('sandia',lcmcoder,'x');
 setDefaultChannel(grasp_state_listener,channel);
 grasp_state_listener.subscribe(channel);
 
@@ -24,9 +24,9 @@ Kp = 0.25*[15  10  10   15  10  10    15  10  10 15  10  10]';
 Kd = [0.75 0.45 0.45 0.75 0.45 0.45   0.75 0.45 0.45 0.75 0.45 0.45]';
 
 l_coder = JLCMCoder(drc.control.SandiaJointCommandCoder('sandia',floating,'left', l_jointNames,Kp,Kd));
-l_hand_joint_cmd_publisher=LCMCoordinateFrameWCoder('sandia_left',4*nq_l,'q',l_coder);
+l_hand_joint_cmd_publisher=LCMCoordinateFrame('sandia_left',l_coder,'q');
 r_coder = JLCMCoder(drc.control.SandiaJointCommandCoder('sandia',floating,'right', r_jointNames,Kp,Kd));
-r_hand_joint_cmd_publisher=LCMCoordinateFrameWCoder('sandia_right',4*nq_r,'q',r_coder);
+r_hand_joint_cmd_publisher=LCMCoordinateFrame('sandia_right',r_coder,'q');
 
 
 Kp2 = [15  0 0    15  0 0    15 0 0    15 0 0]';

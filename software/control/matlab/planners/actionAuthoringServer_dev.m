@@ -73,7 +73,7 @@ options.q_traj_nom = ConstantTrajectory(q);
 %r.getStateFrame.subscribe('EST_ROBOT_STATE');
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-robot_state_coder = LCMCoordinateFrameWCoder('AtlasState',r.getNumStates(),'x',JLCMCoder(drc.control.RobotStateConstraintCheckedCoder( joint_names)));
+robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateConstraintCheckedCoder( joint_names)),'x');
 %robot_plan_publisher =  drc.control.RobotPlanConstraintCheckedPublisher(joint_names,true, ...  
   %'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 robot_plan_publisher =  drc.control.RobotPlanPublisher(joint_names,true, ...  

@@ -13,8 +13,8 @@ lcmtypes_build()
 ##############################################################################
 set(DIR multisense_lib) 
 #copy over/install the shared object
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/lib/libMultiSense.so.2.0 ${CMAKE_BINARY_DIR}/lib/libMultiSense.so.2.0 COPYONLY)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/lib/libMultiSense.so.2.0
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/lib/libMultiSense.so.3.0 ${CMAKE_BINARY_DIR}/lib/libMultiSense.so.3.0 COPYONLY)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/lib/libMultiSense.so.3.0
                 DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/lib/libMultiSense.so ${CMAKE_BINARY_DIR}/lib/libMultiSense.so COPYONLY)

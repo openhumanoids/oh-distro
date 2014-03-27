@@ -1,0 +1,31 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="atlas" >
+  
+  <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
+
+  <xacro:include filename="$(find atlas_description)/urdf/atlas_v3_with_v1_inertia.urdf" />
+  <xacro:include filename="$(find atlas_description)/urdf/atlas_v3.gazebo" />
+  <xacro:include filename="$(find atlas_description)/urdf/atlas_v3.transmission" />
+  <xacro:include filename="$(find multisense_sl_description)/urdf/multisense_sl_v3.urdf" />
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/mit_atlas.gazebo" />
+
+  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/hand_force_torque.urdf" />
+  
+<!--
+  <xacro:include filename="$(find robotiq_hand_description)/cfg/robotiq_hand.urdf.xacro" />
+  <xacro:robotiq_hand side="left" parent="l_hand_force_torque" reflect="1">
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
+  </xacro:robotiq_hand>
+  <xacro:robotiq_hand side="right" parent="r_hand_force_torque" reflect="1">
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
+  </xacro:robotiq_hand>
+-->
+
+  <xacro:include filename="$(find robotiq_camera)/urdf/robotiq_camera.urdf.xacro" />
+  <xacro:robotiq_camera  side_letter="l" reflect="1" parent="l_hand_force_torque" >
+    <origin xyz="0.0  0.0 0.0" rpy="0.0 0  0.0"/>
+  </xacro:robotiq_camera>
+  <xacro:robotiq_camera  side_letter="r" reflect="-1" parent="r_hand_force_torque" >
+    <origin xyz="0.0  0.0 0.0" rpy="0.0 0  0.0"/>
+  </xacro:robotiq_camera>
+
+</robot>

@@ -1,4 +1,6 @@
 #include <kinematics/kinematics_model.h>
+#include "lcmtypes/drc/position_3d_t.hpp"
+#include "lcmtypes/drc/transform_t.hpp"
 
 using namespace std;
 using namespace KDL;

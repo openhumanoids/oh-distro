@@ -24,7 +24,7 @@
 #define KDLTREEFKSOLVERPOSFULL_RECURSIVE_HPP
 
 #include <kdl/tree.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/transform_t.hpp"
 
 namespace KDL {
 

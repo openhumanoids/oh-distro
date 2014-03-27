@@ -30,7 +30,9 @@
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/ee_goal_t.hpp"
+#include "lcmtypes/drc/robot_state_t.hpp"
+#include "lcmtypes/drc/robot_plan_w_keyframes_t.hpp"
 #include <bot_core/bot_core.h>
 
 #include "urdf/model.h"

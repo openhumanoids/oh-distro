@@ -1,11 +1,11 @@
 #include "plotwidget.h"
 #include "plot.h"
-#include "lcmthread.h"
 #include "signalhandler.h"
 #include "signaldata.h"
 #include "setscaledialog.h"
 #include "selectsignaldialog.h"
 #include "signaldescription.h"
+#include "pythonchannelsubscribercollection.h"
 
 #include <qwt_scale_engine.h>
 #include <qlabel.h>
@@ -21,9 +21,9 @@
 #include <QPushButton>
 #include <QColorDialog>
 
-PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
+PlotWidget::PlotWidget(PythonChannelSubscriberCollection* subscribers, QWidget *parent):
     QWidget(parent),
-    mLCMThread(lcmThread)
+    mSubscribers(subscribers)
 {
 
   d_plot = new Plot(this);
@@ -89,9 +89,10 @@ PlotWidget::PlotWidget(LCMThread* lcmThread, QWidget *parent):
   this->connect(this, SIGNAL(customContextMenuRequested(const QPoint&)),
       SLOT(onShowContextMenu(const QPoint&)));
 
-  mSignalListWidget->setDragDropMode(QAbstractItemView::DragDrop);
-  mSignalListWidget->setDragEnabled(true);
-  mSignalListWidget->setDefaultDropAction(Qt::MoveAction);
+  //mSignalListWidget->setDragDropMode(QAbstractItemView::DragDrop);
+  //mSignalListWidget->setDragEnabled(true);
+  //mSignalListWidget->setDefaultDropAction(Qt::MoveAction);
+  mSignalListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
   mSignalListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
   this->connect(mSignalListWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
@@ -179,8 +180,12 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
   // QPoint globalPos = myWidget->viewport()->mapToGlobal(pos); 
 
   QMenu myMenu;
-  myMenu.addAction("Change color");
-  myMenu.addSeparator();
+  if (mSignalListWidget->selectedItems().size() == 1)
+    {
+    myMenu.addAction("Change color");
+    myMenu.addSeparator();
+    }
+
   myMenu.addAction("Remove signal");
 
   QAction* selectedItem = myMenu.exec(globalPos);
@@ -210,15 +215,20 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
   }
   else if (selectedAction == "Remove signal")
   {
-    QListWidgetItem* signalItem = mSignalListWidget->currentItem();
-    SignalHandler* signalHandler = this->signalForItem(signalItem);
 
-    mLCMThread->removeSignalHandler(signalHandler);
-    d_plot->removeSignal(signalHandler->signalData());
-    mSignals.remove(signalItem);
+    QList<QListWidgetItem*> selectedItems = mSignalListWidget->selectedItems();
+    foreach (QListWidgetItem*	selectedItem, selectedItems)
+    {
+      SignalHandler* signalHandler = this->signalForItem(selectedItem);
 
-    delete signalItem;
-    delete signalHandler;
+      mSubscribers->removeSignalHandler(signalHandler);
+
+      d_plot->removeSignal(signalHandler->signalData());
+      mSignals.remove(selectedItem);
+
+      delete selectedItem;
+      delete signalHandler;
+    }
   }
 
 }
@@ -272,8 +282,21 @@ void PlotWidget::onResetYAxisScale()
 void PlotWidget::onSignalListItemChanged(QListWidgetItem* item)
 {
   SignalHandler* signalHandler = this->signalForItem(item);
-  bool checked = (item->checkState() == Qt::Checked);
-  d_plot->setSignalVisible(signalHandler->signalData(), checked);
+  Qt::CheckState checkState = item->checkState();
+
+  if (!item->isSelected())
+  {
+    mSignalListWidget->clearSelection();
+    item->setSelected(true);
+  }
+
+  QList<QListWidgetItem*> selectedItems = mSignalListWidget->selectedItems();
+  foreach (QListWidgetItem*	selectedItem, selectedItems)
+  {
+    SignalHandler* signalHandler = this->signalForItem(selectedItem);
+    selectedItem->setCheckState(checkState);
+    d_plot->setSignalVisible(signalHandler->signalData(), checkState == Qt::Checked);
+  }
 }
 
 QListWidgetItem* PlotWidget::itemForSignal(SignalHandler* signalHandler)
@@ -335,6 +358,11 @@ void PlotWidget::setPointSize(double pointSize)
   d_plot->setPointSize(pointSize);
 }
 
+void PlotWidget::setCurveStyle(QwtPlotCurve::CurveStyle style)
+{
+  d_plot->setCurveStyle(style);
+}
+
 void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)
 {
   SignalDescription desc;
@@ -388,7 +416,8 @@ void PlotWidget::addSignal(SignalHandler* signalHandler)
   mSignalListWidget->addItem(signalItem);
   mSignals[signalItem] = signalHandler;
 
-  mLCMThread->addSignalHandler(signalHandler);
+  mSubscribers->addSignalHandler(signalHandler);
+
   d_plot->addSignal(signalHandler->signalData(), color);
 
 

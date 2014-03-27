@@ -2,10 +2,12 @@ function drakeWalkingWithNoise()
 % tests forward walking on flat terrain with state noise, actuator
 % delays, and inertial/damping errors
 
+use_bullet = false;
+
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 plot_comtraj = false;
-navgoal = [randn();0.5*randn();0;0;0;pi*randn()];
+navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -41,46 +43,50 @@ x0 = xstar;
 q0 = x0(1:nq);
 
 % create footstep and ZMP trajectories
-footstep_planner = FootstepPlanner(r);
-step_options = footstep_planner.defaults;
-step_options.max_num_steps = 100;
-step_options.min_num_steps = 2;
-step_options.step_speed = 0.75;
-step_options.follow_spline = true;
-step_options.right_foot_lead = true;
-step_options.ignore_terrain = false;
-step_options.nom_step_width = r.nom_step_width;
-step_options.nom_forward_step = r.nom_forward_step;
-step_options.max_forward_step = r.max_forward_step;
-step_options.behavior = drc.walking_goal_t.BEHAVIOR_WALKING;
+footstep_planner = StatelessFootstepPlanner();
+request = drc.footstep_plan_request_t();
+request.utime = 0;
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
+request.goal_pos = encodePosition3d(navgoal);
+request.num_goal_steps = 0;
+request.num_existing_steps = 0;
+request.params = drc.footstep_plan_params_t();
+request.params.max_num_steps = 30;
+request.params.min_num_steps = 2;
+request.params.min_step_width = 0.2;
+request.params.nom_step_width = 0.26;
+request.params.max_step_width = 0.39;
+request.params.nom_forward_step = 0.2;
+request.params.max_forward_step = 0.45;
+request.params.ignore_terrain = true;
+request.params.planning_mode = request.params.MODE_AUTO;
+request.params.behavior = request.params.BEHAVIOR_WALKING;
+request.params.map_command = 0;
+request.params.leading_foot = request.params.LEAD_AUTO;
+request.default_step_params = drc.footstep_params_t();
+request.default_step_params.step_speed = 0.5;
+request.default_step_params.step_height = 0.05;
+request.default_step_params.mu = 1.0;
+request.default_step_params.constrain_full_foot_pose = false;
 
-footsteps = r.createInitialSteps(x0, navgoal, step_options);
-for j = 1:length(footsteps)
-  footsteps(j).pos = r.footContact2Orig(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
+footstep_plan = footstep_planner.plan_footsteps(r, request);
+
+walking_planner = StatelessWalkingPlanner();
+request = drc.walking_plan_request_t();
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
+request.footstep_plan = footstep_plan.toLCM();
+walking_plan = walking_planner.plan_walking(r, request, true);
+walking_ctrl_data = walking_planner.plan_walking(r, request, false);
+walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
+
+if use_bullet
+  for i=1:length(walking_ctrl_data.supports)
+    walking_ctrl_data.supports{i}=walking_ctrl_data.supports{i}.setContactSurfaces(-ones(length(walking_ctrl_data.supports{i}.bodies),1));
+  end
 end
-[support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(rctrl, x0, footsteps,step_options);
-link_constraints = buildLinkConstraints(rctrl, q0, foottraj);
 
-ts = 0:0.1:zmptraj.tspan(end);
+ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
 T = ts(end);
-
-if plot_comtraj
-  figure(2); 
-  clf; 
-  subplot(3,1,1); hold on;
-  fnplt(zmptraj(1));
-  fnplt(comtraj(1));
-  subplot(3,1,2); hold on;
-  fnplt(zmptraj(2));
-  fnplt(comtraj(2));
-  subplot(3,1,3); hold on;
-  fnplt(zmptraj);
-  fnplt(comtraj);
-end
-
-% compute s1,s2 derivatives for controller Vdot computation
-s1dot = fnder(V.s1,1);
-s2dot = fnder(V.s2,1);
 
 ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
@@ -89,20 +95,22 @@ ctrl_data = SharedDataHandle(struct(...
   'Qy',eye(2),...
   'R',zeros(2),...
   'is_time_varying',true,...
-  'S',V.S.eval(0),... % always a constant
-  's1',V.s1,...
-  's2',V.s2,...
-  's1dot',s1dot,...
-  's2dot',s2dot,...
-  'x0',[zmptraj.eval(T);0;0],...
+  'S',walking_ctrl_data.S.eval(0),... % always a constant
+  's1',walking_ctrl_data.s1,...
+  's2',walking_ctrl_data.s2,...
+  's1dot',walking_ctrl_data.s1dot,...
+  's2dot',walking_ctrl_data.s2dot,...
+  'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
   'u0',zeros(2,1),...
-  'comtraj',comtraj,...
-  'link_constraints',link_constraints, ...
-  'support_times',support_times,...
-  'supports',[supports{:}],...
-  'mu',1,...
-  'ignore_terrain',true,...
-  'y0',zmptraj));
+  'comtraj',walking_ctrl_data.comtraj,...
+  'link_constraints',walking_ctrl_data.link_constraints, ...
+  'support_times',walking_ctrl_data.support_times,...
+  'supports',[walking_ctrl_data.supports{:}],...
+  't_offset',0,...
+  'mu',walking_ctrl_data.mu,...
+  'ignore_terrain',walking_ctrl_data.ignore_terrain,...
+  'qp_active_set',0,...
+  'y0',walking_ctrl_data.zmptraj));
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
@@ -110,6 +118,7 @@ options.dt = 0.003;
 options.slack_limit = 30.0;
 options.w = 0.001;
 options.lcm_foot_contacts = false;
+options.contact_threshold = 0.005;
 options.debug = false;
 options.use_mex = true;
 % ******************* END ADJUSTABLE **************************************
@@ -131,7 +140,7 @@ sys = cascade(qp,delayblk);
 % *************************************************************************
 options.noise_model = struct();
 % position noise
-options.noise_model(1).ind = (1:nq)'; 
+options.noise_model(1).ind = (1:nq)';
 options.noise_model(1).type = 'gauss_markov';
 options.noise_model(1).params = struct('std',0.0001);
 % velocity noise
@@ -156,7 +165,7 @@ outs(1).output = 1;
 sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
 clear ins outs;
 
-% feedback PD block 
+% feedback PD block
 pd = WalkingPDBlock(rctrl,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -179,19 +188,19 @@ traj = simulate(sys,[0 T],[x0;0*x0;zeros((options.delay_steps+1)*nu,1)]);
 playback(v,traj,struct('slider',true));
 
 com_err = 0; % x,y error
-foot_err = 0; 
+foot_err = 0;
 pelvis_sway = 0;
 rfoot_idx = findLinkInd(r,'r_foot');
 lfoot_idx = findLinkInd(r,'l_foot');
-rfoottraj = link_constraints(1).traj;
-lfoottraj = link_constraints(2).traj;
+rfoottraj = walking_ctrl_data.link_constraints(1).traj;
+lfoottraj = walking_ctrl_data.link_constraints(2).traj;
 for i=1:length(ts)
   x=traj.eval(ts(i));
-  q=x(1:getNumDOF(r)); 
+  q=x(1:getNumDOF(r));
   kinsol = doKinematics(r,q);
   com(:,i)=getCOM(r,q);
-  com_err = com_err + norm(comtraj.eval(ts(i)) - com(1:2,i))^2;
-  
+  com_err = com_err + norm(walking_ctrl_data.comtraj.eval(ts(i)) - com(1:2,i))^2;
+
   rfoot_pos = forwardKin(r,kinsol,rfoot_idx,[0;0;0]);
   rfoot_des = rfoottraj.eval(ts(i));
   lfoot_pos = forwardKin(r,kinsol,lfoot_idx,[0;0;0]);

@@ -42,6 +42,8 @@ namespace multisense {
 namespace details {
 namespace utility {
 
+
+
 //
 // The base storage class.
 //
@@ -180,14 +182,13 @@ public:
     };
 
     template <typename T> BufferStreamReader& operator&(std::vector<T>& v) {
+        uint16_t version;
         uint32_t num;
-        v.clear();
-        this->read(&num, sizeof(num));
-        for(uint32_t i=0; i<num; i++) {
-            T data;
-            *this & data;
-            v.push_back(data);
-        }
+        *this & version;
+        *this & num;
+        v.resize(num);
+        for(uint32_t i=0; i<num; i++)
+            v[i].serialize(*this, version);
         return *this;
     }
 
@@ -248,10 +249,12 @@ public:
     };
 
     template <typename T> BufferStreamWriter& operator&(const std::vector<T>& v) {
-        uint32_t num = v.size();
-        this->write(&num, sizeof(num));
+        uint16_t version = T::VERSION;
+        uint32_t num     = v.size();
+        *this & version;
+        *this & num;
         for(uint32_t i=0; i<num; i++)
-            *this & v[i];
+            const_cast<T*>(&v[i])->serialize(*this, version);
         return *this;
     }
 

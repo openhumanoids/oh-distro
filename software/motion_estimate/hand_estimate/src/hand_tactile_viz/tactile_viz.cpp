@@ -2,7 +2,7 @@
 #include <cmath>
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/hand_tactile_state_t.hpp"
 #include <ConciseArgs>
 #include <string>
 #include <cstring>

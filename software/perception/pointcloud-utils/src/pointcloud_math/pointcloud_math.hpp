@@ -37,7 +37,32 @@ struct ptcld_cfg{
   // inline specification: http://live.boost.org/doc/libs/1_36_0/libs/assign/doc/index.html
 };
 
+// Actually the same contents as obj_cfg
+struct link_cfg{
+  link_cfg(int id, std::string name, int type, bool reset):
+    id(id), name(name), type(type), reset(reset) {}
+  link_cfg(){}
+  int id;
+  std::string name;
+  int type;
+  bool reset;
+};
 
+
+struct link_data{
+  link_data(int64_t id, 
+            int32_t collection1, int64_t id1,
+            int32_t collection2, int64_t id2):
+    id(id), collection1(collection1), id1(id1),
+    collection2(collection2), id2(id2){}
+  link_data(){}
+
+  int64_t id;
+  int32_t collection1;
+  int64_t id1;
+  int32_t collection2;
+  int64_t id2;
+};
 
 
 //
@@ -48,6 +73,15 @@ struct Isometry3dTime{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
+// Equivalent to bot_core_pose contents
+struct PoseT { 
+  int64_t utime;
+  Eigen::Vector3d pos;
+  Eigen::Vector3d vel;
+  Eigen::Vector4d orientation;
+  Eigen::Vector3d rotation_rate;
+  Eigen::Vector3d accel;
+}; 
 
 
 // Convert number to jet colour coordinates
@@ -111,6 +145,8 @@ Eigen::Isometry3d isometryFloatToDouble(Eigen::Isometry3f );
 // generic double to float converter: [remove if something in eigen works instead
 Eigen::Isometry3f isometryDoubleToFloat(Eigen::Isometry3d );
 Eigen::Isometry3f Isometry_d2f(Eigen::Isometry3d );
+
+std::string print_Isometry3d(Eigen::Isometry3d pose);
 
 void print_Isometry3d(Eigen::Isometry3d pose, std::stringstream &ss);
 

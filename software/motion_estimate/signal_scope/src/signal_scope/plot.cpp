@@ -358,6 +358,7 @@ void Plot::setPointSize(double pointSize)
     curvePen.setWidth(pointSize);
     curve->setPen(curvePen);
   }
+  this->replot();
 }
 
 void Plot::setCurveStyle(QwtPlotCurve::CurveStyle style)
@@ -366,6 +367,7 @@ void Plot::setCurveStyle(QwtPlotCurve::CurveStyle style)
   {
     curve->setStyle(style);
   }
+  this->replot();
 }
 
 void Plot::setBackgroundColor(QString color)
@@ -444,6 +446,9 @@ void Plot::replot()
   foreach (SignalData* signalData, signalDataList)
   {
     signalData->lock();
+
+    QwtInterval xinterval = this->axisInterval(QwtPlot::xBottom);
+    signalData->updateInterval(xinterval.minValue(), xinterval.maxValue());
   }
 
   QwtPlot::replot();

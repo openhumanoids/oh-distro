@@ -1,7 +1,9 @@
 #include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
-#include "lcmtypes/drc_lcmtypes.hpp"
+#include "lcmtypes/drc/desired_grasp_state_t.hpp"
+#include "lcmtypes/drc/driving_affordance_status_t.hpp"
+#include "lcmtypes/drc/plan_control_t.hpp"
 
 #include "RobotPlanListener.hpp"
 
@@ -438,7 +440,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
   void RobotPlanListener::handleAprvFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
-						 const drc::footstep_plan_t* msg)						 
+						 const drc::deprecated_footstep_plan_t* msg)						 
   {
 		_received_footstep_plan = *msg;
     _aprvd_footstep_plan_in_cache = true;
@@ -447,7 +449,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
   
    void RobotPlanListener::handleCanFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
-						 const drc::footstep_plan_t* msg)						 
+						 const drc::deprecated_footstep_plan_t* msg)						 
   {
     if(_aprvd_footstep_plan_in_cache)
       _aprvd_footstep_plan_in_cache = false;
@@ -483,7 +485,7 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
   void RobotPlanListener::commit_footstep_plan(int64_t utime,std::string &channel)
   {
-    drc::footstep_plan_t msg = _received_footstep_plan;
+    drc::deprecated_footstep_plan_t msg = _received_footstep_plan;
     msg.utime = utime;
     _lcm->publish(channel, &msg);
     _aprvd_footstep_plan_in_cache = false; //clear flag on commit

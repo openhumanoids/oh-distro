@@ -2,7 +2,10 @@
 #include <string>
 #include <ros/ros.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/data_request_t.hpp"
+#include "lcmtypes/drc/joint_command_t.hpp"
+#include "lcmtypes/drc/joint_command_relative_t.hpp"
+#include "lcmtypes/drc/sandia_simple_grasp_t.hpp"
 #include <lcmtypes/irobothand.hpp>
 
 #include <sensor_msgs/JointState.h>
@@ -13,7 +16,7 @@
 #include <atlas_msgs/AtlasCommand.h>
 #include <sandia_hand_msgs/SimpleGrasp.h>
 #include <sandia_hand_msgs/RelativeJointCommands.h>
-#include <sandia_hand_msgs/CameraStreaming.h>
+// #include <sandia_hand_msgs/CameraStreaming.h>
 #include <handle_msgs/HandleControl.h>
 
 #include <mit_helios_scripts/MITIRobotHandSpread.h>
@@ -31,7 +34,6 @@ class LCM2ROS{
   public:
     LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_);
     ~LCM2ROS() {}
-
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
@@ -50,7 +52,7 @@ class LCM2ROS{
 
     void handCameraTriggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::data_request_t* msg);
     
-    ros::Publisher camera_streaming_pub_right_, camera_streaming_pub_left_;
+    // ros::Publisher camera_streaming_pub_right_, camera_streaming_pub_left_;
     
     // Ignore "sandia" - this message is used by both hands
     void simpleGraspCmdHandler(const lcm::ReceiveBuffer* rbuf,const std::string &channel,const drc::sandia_simple_grasp_t* msg);  
@@ -97,8 +99,8 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
   irobot_l_hand_simple_cmd_pub_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/irobot_hands/l_hand/simple_command",10);
   irobot_r_hand_simple_cmd_pub_ = nh_.advertise<sandia_hand_msgs::SimpleGrasp>("/irobot_hands/r_hand/simple_command",10); 
 
-  camera_streaming_pub_left_ = nh_.advertise<sandia_hand_msgs::CameraStreaming>("/sandia_hands/l_hand/camera_streaming",10);
-  camera_streaming_pub_right_ = nh_.advertise<sandia_hand_msgs::CameraStreaming>("/sandia_hands/r_hand/camera_streaming",10);
+  // camera_streaming_pub_left_ = nh_.advertise<sandia_hand_msgs::CameraStreaming>("/sandia_hands/l_hand/camera_streaming",10);
+  // camera_streaming_pub_right_ = nh_.advertise<sandia_hand_msgs::CameraStreaming>("/sandia_hands/r_hand/camera_streaming",10);
   
   
   /// iRobot Messages - keep this clean!
@@ -127,14 +129,14 @@ LCM2ROS::LCM2ROS(boost::shared_ptr<lcm::LCM> &lcm_, ros::NodeHandle &nh_): lcm_(
 }
 
 void LCM2ROS::handCameraTriggerHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const drc::data_request_t* msg) {
-  sandia_hand_msgs::CameraStreaming msgout;
-  msgout.mode = 2;
-  if (msg->type == drc::data_request_t::CAMERA_IMAGE_LHAND) {
-    camera_streaming_pub_left_.publish(msgout);
-  }
-  else if (msg->type == drc::data_request_t::CAMERA_IMAGE_RHAND) {
-    camera_streaming_pub_right_.publish(msgout);
-  }
+  // sandia_hand_msgs::CameraStreaming msgout;
+  // msgout.mode = 2;
+  // if (msg->type == drc::data_request_t::CAMERA_IMAGE_LHAND) {
+  //   camera_streaming_pub_left_.publish(msgout);
+  // }
+  // else if (msg->type == drc::data_request_t::CAMERA_IMAGE_RHAND) {
+  //   camera_streaming_pub_right_.publish(msgout);
+  // }
 }
 
 void LCM2ROS::RelativeJointCommandsHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::joint_command_relative_t* msg) {

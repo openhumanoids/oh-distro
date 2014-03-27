@@ -1,0 +1,30 @@
+package drc;
+
+struct footstep_t
+{
+	int64_t utime;
+
+	position_3d_t pos;
+	int32_t id;
+	boolean is_right_foot;
+
+	// Whether this step is planned to be in contact (currently always true)
+	boolean is_in_contact;
+
+	// These flags specify whether the foot position is considered fixed, typically due to direct adjustment by the user
+	boolean fixed_x;
+	boolean fixed_y;
+	boolean fixed_z;
+	boolean fixed_roll;
+	boolean fixed_pitch;
+	boolean fixed_yaw;
+
+	// These parameters encode the slice of terrain from the previous position of this foot to the current position, and are used to compute the swing trajectory later
+	int32_t num_terrain_pts;
+	float terrain_path_dist[num_terrain_pts];
+	float terrain_height[num_terrain_pts];
+
+	double infeasibility;
+
+	footstep_params_t params;
+}

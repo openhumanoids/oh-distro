@@ -9,6 +9,7 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/deprecated_footstep_plan_t.hpp"
 #include <bot_vis/bot_vis.h>
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/InteractableGlKinematicBody.hpp>
@@ -44,7 +45,7 @@ namespace renderer_sticky_feet
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_stickyfoot_left;
     boost::shared_ptr<visualization_utils::GlKinematicBody> _base_gl_stickyfoot_right;
     
-    drc::footstep_plan_t revieved_plan_;
+    drc::deprecated_footstep_plan_t revieved_plan_;
      
 
     std::string _left_urdf_xml_string;
@@ -54,6 +55,7 @@ namespace renderer_sticky_feet
 
    //----------------constructor/destructor   
   public:
+     bool _allow_execution; // if false no execution button will be presented
      std::string _robot_name;          
      std::string _left_foot_name; // foot ee names
      std::string _right_foot_name;
@@ -127,10 +129,10 @@ namespace renderer_sticky_feet
     
     void handleFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
 		        const std::string& chan, 
-		        const drc::footstep_plan_t* msg);
+		        const drc::deprecated_footstep_plan_t* msg);
 		void handleBDIFootStepPlanMsg (const lcm::ReceiveBuffer* rbuf,
 		        const std::string& chan, 
-		        const drc::footstep_plan_t* msg);       
+		        const drc::deprecated_footstep_plan_t* msg);       
 
     bool load_foot_urdfs();
     int in_motion_footstep_id; // make markers for moving footsteps persistent across multiple plans

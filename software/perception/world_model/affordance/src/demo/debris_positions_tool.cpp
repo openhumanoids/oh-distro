@@ -18,7 +18,11 @@
 #include <boost/lexical_cast.hpp>
 
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
+#include "lcmtypes/drc/affordance_plus_collection_t.hpp"
+#include "lcmtypes/drc/desired_grasp_state_t.hpp"
+#include "lcmtypes/drc/position_3d_t.hpp"
+#include "lcmtypes/drc/system_status_t.hpp"
+#include "lcmtypes/drc/walking_goal_t.hpp"
 #include <lcmtypes/bot_core.hpp>
 
 #include "urdf/model.h"

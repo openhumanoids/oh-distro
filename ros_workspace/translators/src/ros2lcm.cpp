@@ -25,8 +25,14 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/drc_lcmtypes.hpp>
 #include <lcmtypes/multisense.hpp>
+#include "lcmtypes/drc/atlas_state_t.hpp"
+#include "lcmtypes/drc/force_torque_t.hpp"
+#include "lcmtypes/drc/imu_t.hpp"
+#include "lcmtypes/drc/hand_state_t.hpp"
+#include "lcmtypes/drc/score_t.hpp"
+#include "lcmtypes/drc/system_status_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 
 using namespace std;
 
@@ -105,7 +111,7 @@ private:
 };
 
 App::App(ros::NodeHandle node_, bool send_ground_truth_) :
-    node_(node_), send_ground_truth_(send_ground_truth_){
+    send_ground_truth_(send_ground_truth_), node_(node_){
   ROS_INFO("Initializing Translator");
 
   received_head_joint_states_ = false;
@@ -169,39 +175,8 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
   // Laser:
   rotating_scan_sub_ = node_.subscribe(string("/multisense_sl/laser/scan"), 100, &App::rotating_scan_cb,this);
 
-	// maps joint names from sim/VRC format to BDI format
-/*
-	jointNameMap["back_ubx"] = "back_bkx";
-	jointNameMap["back_mby"] = "back_bky";
-	jointNameMap["back_lbz"] = "back_bkz";
-        jointNameMap["neck_ay"] = "neck_ay";        
-	jointNameMap["l_leg_lax"] = "l_leg_akx";
-	jointNameMap["l_leg_uay"] = "l_leg_aky";
-	jointNameMap["l_leg_kny"] = "l_leg_kny";
-	jointNameMap["l_leg_mhx"] = "l_leg_hpx";
-	jointNameMap["l_leg_lhy"] = "l_leg_hpy";
-	jointNameMap["l_leg_uhz"] = "l_leg_hpz";
-	jointNameMap["r_leg_lax"] = "r_leg_akx";
-	jointNameMap["r_leg_uay"] = "r_leg_aky";
-	jointNameMap["r_leg_kny"] = "r_leg_kny";
-	jointNameMap["r_leg_mhx"] = "r_leg_hpx";
-	jointNameMap["r_leg_lhy"] = "r_leg_hpy";
-	jointNameMap["r_leg_uhz"] = "r_leg_hpz";
-	jointNameMap["l_arm_mwx"] = "l_arm_mwx";
-	jointNameMap["l_arm_uwy"] = "l_arm_uwy";
-	jointNameMap["l_arm_elx"] = "l_arm_elx";
-	jointNameMap["l_arm_ely"] = "l_arm_ely";
-	jointNameMap["l_arm_shx"] = "l_arm_shx";
-	jointNameMap["l_arm_usy"] = "l_arm_usy";
-	jointNameMap["r_arm_mwx"] = "r_arm_mwx";
-	jointNameMap["r_arm_uwy"] = "r_arm_uwy";
-	jointNameMap["r_arm_elx"] = "r_arm_elx";
-	jointNameMap["r_arm_ely"] = "r_arm_ely";
-	jointNameMap["r_arm_shx"] = "r_arm_shx";
-	jointNameMap["r_arm_usy"] = "r_arm_usy";
-        */
-        
-  // Mapping between OSRF joints and BDI's { index and joint_names }:
+  // Mapping between OSRF joints and BDIs:
+  // [incoming OSRF joint name] =  {  BDI's index and joint_names }
   jointNameMap["back_ubx"] = { 2, "back_bkx"};
   jointNameMap["back_mby"] = { 1, "back_bky"};
   jointNameMap["back_lbz"] = { 0, "back_bkz"};
@@ -231,6 +206,29 @@ App::App(ros::NodeHandle node_, bool send_ground_truth_) :
   jointNameMap["r_arm_shx"] = { 23, "r_arm_shx"};
   jointNameMap["r_arm_usy"] = { 22, "r_arm_usy"};        
 
+  // Additional Corrections due to name changes by OSRF in Winter 2013:
+  jointNameMap["back_bkx"] = { 2, "back_bkx"};  
+  jointNameMap["back_bky"] = { 1, "back_bky"};  
+  jointNameMap["back_bkz"] = { 0, "back_bkz"};  
+  jointNameMap["neck_ry"] = { 3, "neck_ay"};
+  
+  jointNameMap["l_leg_hpz"] = { 4, "l_leg_hpz"};  
+  jointNameMap["l_leg_hpx"] = { 5, "l_leg_hpx"};  
+  jointNameMap["l_leg_hpy"] = { 6, "l_leg_hpy"};  
+  jointNameMap["l_leg_aky"] = { 8, "l_leg_aky"};  
+  jointNameMap["l_leg_akx"] = { 9, "l_leg_akx"}; 
+  jointNameMap["r_leg_hpz"] = { 10, "r_leg_hpz"};  
+  jointNameMap["r_leg_hpx"] = { 11, "r_leg_hpx"};  
+  jointNameMap["r_leg_hpy"] = { 12, "r_leg_hpy"};    
+  jointNameMap["r_leg_aky"] = { 14, "r_leg_aky"};  
+  jointNameMap["r_leg_akx"] = { 15, "r_leg_akx"}; 
+  
+  jointNameMap["r_arm_shy"] = { 22, "r_arm_usy"};
+  jointNameMap["r_arm_wry"] = { 26, "r_arm_uwy"};   
+  jointNameMap["r_arm_wrx"] = { 27, "r_arm_mwx"};   
+  jointNameMap["l_arm_shy"] = { 16, "l_arm_usy"};
+  jointNameMap["l_arm_wry"] = { 20, "l_arm_uwy"};   
+  jointNameMap["l_arm_wrx"] = { 21, "l_arm_mwx"};   
   
 };
 
@@ -351,12 +349,25 @@ void App::end_effector_sensors_cb(const atlas_msgs::ForceTorqueSensorsConstPtr& 
 int gt_counter =0;
 void App::ground_truth_odom_cb(const nav_msgs::OdometryConstPtr& msg){
   if (gt_counter%200 ==0){
-    std::cout << "GRTH " << gt_counter << "\n";
+    ROS_ERROR("GRTH [%d]", gt_counter );
   }  
   gt_counter++;
 
   ground_truth_odom_ = *msg;
   init_recd_[0] =true;
+  
+  bot_core::pose_t pose_msg;
+  pose_msg.utime = (int64_t) floor(msg->header.stamp.toNSec()/1000);
+  pose_msg.pos[0] = msg->pose.pose.position.x;
+  pose_msg.pos[1] = msg->pose.pose.position.y;
+  pose_msg.pos[2] = msg->pose.pose.position.z;
+  pose_msg.orientation[0] =  msg->pose.pose.orientation.w;
+  pose_msg.orientation[1] =  msg->pose.pose.orientation.x;
+  pose_msg.orientation[2] =  msg->pose.pose.orientation.y;
+  pose_msg.orientation[3] =  msg->pose.pose.orientation.z;
+  
+  lcm_publish_.publish("POSE_BDI", &pose_msg);  
+  
 }
 
 /// Locally cache the joint states:
@@ -492,7 +503,6 @@ void App::appendLimbSensor(drc::force_torque_t& msg_out , atlas_msgs::ForceTorqu
 
 
 int main(int argc, char **argv){
-  bool control_output = true;// by default
   bool send_ground_truth = false;  
 
   std::string mode_argument;
@@ -514,7 +524,7 @@ int main(int argc, char **argv){
 
   ros::init(argc, argv, "ros2lcm");
   ros::NodeHandle nh;
-  App *app = new App(nh, send_ground_truth);
+  new App(nh, send_ground_truth);
   std::cout << "ros2lcm translator ready\n";
   ROS_ERROR("ROS2LCM Control Translator Sleeping: [%s]",  mode_argument.c_str());
   sleep(4);

@@ -1,7 +1,0 @@
-if (@PROJECT_IDENT@_CONFIG_INCLUDED)
-  return()
-endif()
-set(@PROJECT_IDENT@_CONFIG_INCLUDED TRUE)
-
-# install this for passing ros path to drcsim
-set(@PROJECT_IDENT@_ROS_PACKAGE_PATH @CMAKE_INSTALL_PREFIX@/share/@PROJECT_NAME@-@SANDIA_HAND_VERSION@/ros)

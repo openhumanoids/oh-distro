@@ -9,6 +9,7 @@
 #define AFFORDANCE_PLUS_STATE_H
 
 #include <affordance/AffordanceState.h>
+#include "lcmtypes/drc/affordance_plus_t.hpp"
 
 namespace affordance
 {
