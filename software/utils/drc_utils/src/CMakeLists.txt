@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wno-deprecated-declarations")
 
 
 # Create a shared library liblaser-utils.so
@@ -6,6 +6,7 @@ add_library(drc-utils SHARED
     Clock.cpp
     LcmWrapper.cpp
     BotWrapper.cpp
+    LidarUtils.cpp
 )
 
 # make the header public
@@ -14,6 +15,7 @@ pods_install_headers(
   Clock.hpp
   LcmWrapper.hpp
   BotWrapper.hpp
+  LidarUtils.hpp
   PointerUtils.hpp
   PointConvert.h
   DESTINATION drc_utils)
