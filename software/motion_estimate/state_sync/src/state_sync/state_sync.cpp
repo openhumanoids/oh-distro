@@ -155,15 +155,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   
   
   if (use_kalman_filtering_){
-    // all of atlas:
-    //filter_idx_ = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27};
-    // legs
-    filter_idx_ = {4,5,6,7,8,9,10,11,12,13,14,15};
-    for (size_t i=0;i < filter_idx_.size(); i++){
-      KalmanFilter* a_kf = new KalmanFilter (1);
+
+    double process_noise = bot_param_get_double_or_fail(botparam_, "control.filtering.process_noise" );
+    double observation_noise = bot_param_get_double_or_fail(botparam_, "control.filtering.observation_noise" );
+    
+    int n_filters = bot_param_get_array_len (botparam_, "control.filtering.index");  
+    int filter_idx[n_filters];
+    bot_param_get_int_array_or_fail(botparam_, "control.filtering.index", &filter_idx[0], n_filters);  
+    for (size_t i=0;i < n_filters; i++){
+      KalmanFilter* a_kf = new KalmanFilter (1, process_noise, observation_noise);
+      filter_idx_.push_back(filter_idx[i]);
       joint_kf_.push_back(a_kf) ;
     }
-    std::cout << "Created " << joint_kf_.size() << " Kalman Filters\n";  
+    std::cout << "Created " << joint_kf_.size() << " Kalman Filters with noise "<< process_noise << ", " << observation_noise << "\n";
   }
   
   
@@ -183,8 +187,8 @@ void state_sync::setEncodersFromParam() {
   stat_msg.value = str;
   lcm_->publish(("SYSTEM_STATUS"), &stat_msg);  
   
-  int n_indices = bot_param_get_array_len (botparam_, "encoders.joint_index");  
-  int n_offsets = bot_param_get_array_len (botparam_, "encoders.offsets");  
+  int n_indices = bot_param_get_array_len (botparam_, "control.encoder_offsets.index");  
+  int n_offsets = bot_param_get_array_len (botparam_, "control.encoder_offsets.value");  
   std::cout << n_indices << " indices and " << n_offsets << " offsets\n";
   if (n_indices != n_offsets){
     std::cout << "n_indices is now n_offsets, not updating\n";
@@ -193,8 +197,8 @@ void state_sync::setEncodersFromParam() {
     
   double offsets_in[n_indices];
   int indices_in[n_offsets];
-  bot_param_get_int_array_or_fail(botparam_, "encoders.joint_index", &indices_in[0], n_indices);  
-  bot_param_get_double_array_or_fail(botparam_, "encoders.offsets", &offsets_in[0], n_offsets);  
+  bot_param_get_int_array_or_fail(botparam_, "control.encoder_offsets.index", &indices_in[0], n_indices);  
+  bot_param_get_double_array_or_fail(botparam_, "control.encoder_offsets.value", &offsets_in[0], n_offsets);  
   std::vector<double> indices(indices_in, indices_in + n_indices);
   std::vector<double> offsets(offsets_in, offsets_in + n_offsets);
   

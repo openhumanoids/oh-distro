@@ -16,16 +16,14 @@
 using namespace Eigen;
 using namespace std;
 
-KalmanFilter::KalmanFilter(int nq_): nq_(nq_){
+
+
+KalmanFilter::KalmanFilter(int nq_, double process_noise_ , double observation_noise_ ): 
+     nq_(nq_), process_noise_(process_noise_), observation_noise_(observation_noise_){
   init_ = false;
   verbose_ = false;
 
   tlast_ = 0;
-
-  
-  // TODO: make these configurable for tuning:
-  process_noise_ = 0.01;
-  observation_noise_ = 5E-4;
 
   Hk_ = MatrixXf (nq_,2*nq_);
   Hk_ << MatrixXf::Identity(nq_,nq_),
