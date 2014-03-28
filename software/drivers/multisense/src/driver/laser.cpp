@@ -357,7 +357,7 @@ void Laser::scanCallback(const lidar::Header& header)
 
     int64_t start_absolute_utime = header.timeStartSeconds*1E6 + header.timeStartMicroSeconds;
     int64_t end_absolute_utime = header.timeEndSeconds*1E6 + header.timeEndMicroSeconds;
-    int64_t scan_time = (end_absolute_utime - start_absolute_utime)*1E-6; // in sec
+    double scan_time = (end_absolute_utime - start_absolute_utime)*1E-6; // in sec
 
     const float angle_start = 1e-6 * static_cast<float>(header.spindleAngleStart) - offset;
     const float angle_end   = 1e-6 * static_cast<float>(header.spindleAngleEnd) - offset;
@@ -388,7 +388,7 @@ void Laser::scanCallback(const lidar::Header& header)
     const double arcRadians = 1e-6 * static_cast<double>(header.scanArc);
       
     // LCM:
-    lcm_laser_msg_.utime = (int64_t) start_absolute_utime;
+    lcm_laser_msg_.utime = (int64_t) end_absolute_utime; // was start_absolute_utime until april 2014
     lcm_laser_msg_.ranges.resize( header.pointCount );
     lcm_laser_msg_.intensities.resize( header.pointCount );
     for (size_t i=0; i < header.pointCount; i++){

@@ -107,9 +107,17 @@ class CameraView(object):
 
         self.initImageQueue()
 
-        self.initView()
-        self.initEventFilter()
-        self.rayCallback = rayDebug
+        if app.getMainWindow():
+            self.initView()
+            self.initEventFilter()
+            self.rayCallback = rayDebug
+        else:
+            self.view = None
+
+        self.timerCallback = TimerCallback()
+        self.timerCallback.targetFps = 60
+        self.timerCallback.callback = self.updateView
+        self.timerCallback.start()
 
 
     def initImageQueue(self):
@@ -159,8 +167,6 @@ class CameraView(object):
         utorsoToLocal = vtk.vtkTransform()
         self.queue.getTransform('utorso', 'local', imageUtime, utorsoToLocal)
 
-
-
         p = range(3)
         utorsoToLocal.TransformPoint(pickedPoint, p)
 
@@ -184,6 +190,7 @@ class CameraView(object):
         self.eventFilter.connect('handleEvent(QObject*, QEvent*)', self.filterEvent)
 
     def initView(self):
+
         self.view = app.getViewManager().createView('Camera View', 'VTK View')
 
         self.view.camera().SetViewAngle(90)
@@ -194,11 +201,6 @@ class CameraView(object):
         self.sphereObjects = {}
 
         app.toggleCameraTerrainMode(self.view)
-
-        self.timerCallback = TimerCallback()
-        self.timerCallback.targetFps = 60
-        self.timerCallback.callback = self.updateView
-        self.timerCallback.start()
 
 
     def getSphereGeometry(self, imageName):
@@ -270,6 +272,10 @@ class CameraView(object):
         if not self.updateImages():
             return
 
+        if not self.view:
+            return
+
+
         self.updateSphereGeometry()
 
         if not self.view.isVisible():
@@ -280,16 +286,15 @@ class CameraView(object):
 
 class CameraImageView(object):
 
-    def __init__(self, imageManager, imageName='CAMERA_LEFT', viewName='Head camera'):
+    def __init__(self, imageManager, imageName, viewName=None, view=None):
 
         self.imageManager = imageManager
-        self.viewName = viewName
+        self.viewName = viewName or imageName
         self.imageName = imageName
         self.imageInitialized = False
         self.updateUtime = 0
-        self.initView()
+        self.initView(view)
         self.initEventFilter()
-
 
     def onViewDoubleClicked(self, displayPoint):
 
@@ -315,27 +320,27 @@ class CameraImageView(object):
         d.addLine(cameraToLocal.GetPosition(), p)
         vis.updatePolyData(d.getPolyData(), 'camera ray', view=drcView)
 
-
     def filterEvent(self, obj, event):
-        if event.type() == QtCore.QEvent.MouseButtonDblClick:
+        if self.eventFilterEnabled and event.type() == QtCore.QEvent.MouseButtonDblClick:
             self.eventFilter.setEventHandlerResult(True)
             self.onViewDoubleClicked(vis.mapMousePosition(obj, event))
-
 
     def onRubberBandPick(self, obj, event):
         displayPoints = self.interactorStyle.GetStartPosition(), self.interactorStyle.GetEndPosition()
         imagePoints = [vis.pickImage(point, view=self.view)[1] for point in displayPoints]
         sendFOVRequest(self.imageName, imagePoints)
 
-
-    def initView(self):
-        self.view = app.getViewManager().createView(self.viewName, 'VTK View')
+    def initView(self, view):
+        self.view = view or app.getViewManager().createView(self.viewName, 'VTK View')
         self.view.installImageInteractor()
         self.interactorStyle = self.view.renderWindow().GetInteractor().GetInteractorStyle()
-        self.interactorStyle.AddObserver('SelectionChangedEvent', self.onRubberBandPick)    
+        self.interactorStyle.AddObserver('SelectionChangedEvent', self.onRubberBandPick)
+
+        self.view.renderWindow().GetInteractor().AddObserver('KeyPressEvent', self.onKeyPress)
 
         self.imageActor = vtk.vtkImageActor()
         self.imageActor.SetInput(self.imageManager.images[self.imageName])
+        self.imageActor.SetVisibility(False)
         self.view.renderer().AddActor(self.imageActor)
 
         self.timerCallback = TimerCallback()
@@ -350,6 +355,7 @@ class CameraImageView(object):
         qvtkwidget.installEventFilter(self.eventFilter)
         self.eventFilter.addFilteredEventType(QtCore.QEvent.MouseButtonDblClick)
         self.eventFilter.connect('handleEvent(QObject*, QEvent*)', self.filterEvent)
+        self.eventFilterEnabled = True
 
     def resetCamera(self):
         camera = self.view.camera()
@@ -358,6 +364,40 @@ class CameraImageView(object):
         camera.SetPosition(0,0,-1)
         camera.SetViewUp(0,-1, 0)
         self.view.resetCamera()
+        self.fitImageToView()
+
+
+    def onKeyPress(self, obj, event):
+        if obj.GetKeyCode() == 'p':
+            return
+        if obj.GetKeyCode() == 'r':
+            self.fitImageToView()
+
+
+    def fitImageToView(self):
+
+        camera = self.view.camera()
+        image = self.imageManager.images[self.imageName]
+        imageWidth, imageHeight, _ = image.GetDimensions()
+
+        viewWidth, viewHeight = self.view.renderWindow().GetSize()
+        aspectRatio = float(viewWidth)/viewHeight
+        parallelScale = max(imageWidth/aspectRatio, imageHeight) / 2.0
+        camera.SetParallelScale(parallelScale)
+
+
+    def setImageName(self, imageName):
+        if imageName == self.imageName:
+            return
+
+        assert imageName in self.imageManager.images
+
+        self.imageName = imageName
+        self.imageInitialized = False
+        self.updateUtime = 0
+        self.imageActor.SetInput(self.imageManager.images[self.imageName])
+        self.imageActor.SetVisibility(False)
+        self.view.render()
 
     def updateView(self):
 
@@ -370,6 +410,7 @@ class CameraImageView(object):
             self.updateUtime = currentUtime
 
             if not self.imageInitialized and self.imageActor.GetInput().GetDimensions()[0]:
+                self.imageActor.SetVisibility(True)
                 self.resetCamera()
                 self.imageInitialized = True
 
@@ -390,7 +431,7 @@ def init():
     cameraView = CameraView()
 
     global headView, chestLeft, chestRight
-    headView = CameraImageView(cameraView)
+    headView = CameraImageView(cameraView, 'CAMERA_LEFT', 'Head camera')
     chestLeft = CameraImageView(cameraView, 'CAMERACHEST_LEFT', 'Chest left')
     chestRight = CameraImageView(cameraView, 'CAMERACHEST_RIGHT', 'Chest right')
 
