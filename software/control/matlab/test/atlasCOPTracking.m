@@ -1,4 +1,4 @@
-function copTrackingDemo
+function atlasCOPTracking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 

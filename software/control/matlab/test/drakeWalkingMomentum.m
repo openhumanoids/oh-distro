@@ -1,4 +1,4 @@
-function drakeMomentumWalking(use_mex)
+function drakeWalkingMomentum(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 

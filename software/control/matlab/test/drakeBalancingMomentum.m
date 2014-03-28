@@ -1,4 +1,4 @@
-function drakeMomentumBalancing(use_mex)
+function drakeBalancingMomentum(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 

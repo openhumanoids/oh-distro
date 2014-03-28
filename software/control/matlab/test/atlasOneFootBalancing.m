@@ -1,4 +1,4 @@
-function oneFootDemo
+function atlasOneFootBalancing
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
