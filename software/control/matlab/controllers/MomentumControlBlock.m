@@ -60,15 +60,24 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.contact_threshold = 0.001;
     end
     
-    % weight for desired qddot objective term
-    if isfield(options,'W')
-      typecheck(options.W,'double');
-      sizecheck(options.W,[6 6]);
-      obj.W = options.W;
+    % weight for the hdot objective term
+		if isfield(options,'W_hdot')
+      typecheck(options.W_hdot,'double');
+      sizecheck(options.W_hdot,[6 6]);
+      obj.W_hdot = options.W_hdot;
     else
-      obj.W = diag([0.1;0.1;0.1;1.0;1.0;1.0]);
-    end
-   
+      obj.W_hdot = diag([0.1;0.1;0.1;1.0;1.0;1.0]);
+		end
+		
+		% weight for the desired qddot objective term
+		if isfield(options,'w_qdd')
+      typecheck(options.w_qdd,'double');
+      sizecheck(options.w_qdd,[nq 1]); % assume diagonal cost
+      obj.w_qdd = options.w_qdd;
+    else
+      obj.w_qdd = 0.1*ones(nq,1);
+		end		
+		
     % com-z PD gains
     if isfield(options,'Kp')
       typecheck(options.Kp,'double');
@@ -87,14 +96,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.Kd = 20;
     end    
 
-    % weight for desired qddot objective term
-    if isfield(options,'w')
-      typecheck(options.w,'double');
-      sizecheck(options.w,1);
-      obj.w = options.w;
-    else
-      obj.w = 0.1;
-    end
+
 
     % hard bound on slack variable values
     if isfield(options,'slack_limit')
@@ -208,7 +210,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
   methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
-    out_tic = tic;
+    %out_tic = tic;
     ctrl_data = obj.controller_data.data;
       
     x = varargin{1};
@@ -442,11 +444,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
       %
       %  min: quad(h_dot_des - Adot*qd - A*qdd) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
       if nc > 0
-        Hqp = Iqdd'*A'*obj.W*A*Iqdd;
+        Hqp = Iqdd'*A'*obj.W_hdot*A*Iqdd;
         Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
 
-        fqp = qd'*Adot'*obj.W*A*Iqdd;
-        fqp = fqp - hdot_des'*obj.W*A*Iqdd;
+        fqp = qd'*Adot'*obj.W_hdot*A*Iqdd;
+        fqp = fqp - hdot_des'*obj.W_hdot*A*Iqdd;
         fqp = fqp - obj.w*q_ddot_des'*Iqdd;
 
         % quadratic slack var cost 
@@ -574,8 +576,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     robot; % to be controlled
     numq;
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
-    W; % angular momentum cost term weight matrix
-    w; % qdd objective function weight
+    W_hdot; % angular momentum cost term weight matrix
+    w_qdd; % qdd objective function weight vector
     Kp; % com-z P gain
     Kd; % com-z D gain
     slack_limit; % maximum absolute magnitude of acceleration slack variable values

@@ -41,12 +41,12 @@ ref_frame.updateGains(gains);
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-gains2 = getAtlasGains(input_frame); 
+gains_copy = getAtlasGains(input_frame); 
 % reset force gains for joint being tuned
-gains.k_f_p(joint_act_ind) = gains2.k_f_p(joint_act_ind); 
-gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
-gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
-gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
+gains.k_f_p(joint_act_ind) = gains_copy.k_f_p(joint_act_ind); 
+gains.ff_f_d(joint_act_ind) = gains_copy.ff_f_d(joint_act_ind);
+gains.ff_qd(joint_act_ind) = gains_copy.ff_qd(joint_act_ind);
+gains.ff_qd_d(joint_act_ind) = gains_copy.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
 gains.k_q_p(joint_act_ind) = 0;
 gains.k_q_i(joint_act_ind) = 0;
@@ -90,7 +90,6 @@ request.default_step_params.step_speed = 0.01;
 request.default_step_params.step_height = 0.025;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
-
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
 
@@ -179,10 +178,10 @@ tt=-1;
 dt = 0.005;
 tt_prev = -1;
 
-process_noise = 0.01*ones(nq,1);
-observation_noise = 5e-4*ones(nq,1);
-kf = FirstOrderKalmanFilter(process_noise,observation_noise);
-kf_state = kf.getInitialState;
+% process_noise = 0.01*ones(nq,1);
+% observation_noise = 5e-4*ones(nq,1);
+% kf = FirstOrderKalmanFilter(process_noise,observation_noise);
+% kf_state = kf.getInitialState;
 
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
@@ -200,15 +199,15 @@ while tt<T
     end
     tt=t-toffset;
     if tt_prev~=-1
-      dt = 0.99*dt + 0.01*(tt-tt_prev);
+      dt = 0.99*dt + 0.01*(tt-tt_prev); 
     end
     dt
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-    % get estimated state
-    kf_state = kf.update(tt,kf_state,x(1:nq));
-    x = kf.output(tt,kf_state,x(1:nq));
+%     % get estimated state
+%     kf_state = kf.update(tt,kf_state,x(1:nq));
+%     x = kf.output(tt,kf_state,x(1:nq));
 
     q = x(1:nq);
     qd = x(nq+(1:nq));
@@ -235,7 +234,7 @@ while tt<T
 end
 
 disp('moving back to fixed point using position control.');
-gains = getAtlasGains(input_frame); % change gains in this file
+gains = getAtlasGains(input_frame); 
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
