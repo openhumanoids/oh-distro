@@ -7,6 +7,7 @@
 
 #include "state_sync.hpp"
 #include <ConciseArgs>
+#include <sys/time.h>
 
 
 
@@ -35,12 +36,13 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
                        bool standalone_head_, bool standalone_hand_,  
                        bool bdi_motion_estimate_, bool simulation_mode_,
                        bool use_encoder_joint_sensors_, std::string output_channel_,
-                       bool publish_pose_body_):
+                       bool publish_pose_body_,
+                       bool use_kalman_filtering_):
    lcm_(lcm_), 
    standalone_head_(standalone_head_), standalone_hand_(standalone_hand_),
    bdi_motion_estimate_(bdi_motion_estimate_), simulation_mode_(simulation_mode_),
    use_encoder_joint_sensors_(use_encoder_joint_sensors_), output_channel_(output_channel_),
-   publish_pose_body_(publish_pose_body_){
+   publish_pose_body_(publish_pose_body_), use_kalman_filtering_(use_kalman_filtering_){
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
 
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 1); // 1 means keep updated, 0 would ignore updates
@@ -105,21 +107,28 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
       << left_hand_joints_.position.size() << " left, "
       << right_hand_joints_.position.size() << " right\n";
   
-  lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);  
-
+  lcm::Subscription* sub0 = lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);
   ///////////////////////////////////////////////////////////////
-  lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);  
-  lcm_->subscribe("ATLAS_POT_OFFSETS",&state_sync::potOffsetHandler,this);  
-
-  //lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
-  lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
-  
-  // Always provided by the Atlas Driver:
-  lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); 
+  lcm::Subscription* sub1 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);  
+  lcm::Subscription* sub2 = lcm_->subscribe("ATLAS_POT_OFFSETS",&state_sync::potOffsetHandler,this);  
+  //lcm::Subscription* sub3 = lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
+  lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
+  lcm::Subscription* sub5 = lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
+  lcm::Subscription* sub6 =lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
   pose_BDI_.utime =0; // use this to signify un-initalised
-  // Always provided the state estimator:
-  lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this); 
   pose_MIT_.utime =0; // use this to signify un-initalised
+  
+  bool use_short_queue;
+  if (use_short_queue){
+    sub0->setQueueCapacity(1);
+    sub1->setQueueCapacity(1); 
+    sub2->setQueueCapacity(1); 
+    //sub3->setQueueCapacity(1); 
+    sub4->setQueueCapacity(1); 
+    sub5->setQueueCapacity(1); 
+    sub6->setQueueCapacity(1); 
+  }
+ 
   
   /// Pots and Encoders:
   // pot offsets if pots are used, currently uncalibrated
@@ -143,6 +152,21 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   enableEncoders(true);
 
   utime_prev_ = 0;
+  
+  
+  if (use_kalman_filtering_){
+    // all of atlas:
+    //filter_idx_ = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27};
+    // legs
+    filter_idx_ = {4,5,6,7,8,9,10,11,12,13,14,15};
+    for (size_t i=0;i < filter_idx_.size(); i++){
+      KalmanFilter* a_kf = new KalmanFilter (1);
+      joint_kf_.push_back(a_kf) ;
+    }
+    std::cout << "Created " << joint_kf_.size() << " Kalman Filters\n";  
+  }
+  
+  
 }
 
 
@@ -335,6 +359,35 @@ void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
 }
 
 
+// same as bot_timestamp_now():
+int64_t _timestamp_now(){
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
+void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity){
+  //int64_t tic = _timestamp_now();
+  double t = (double) utime*1E-6;
+
+  Eigen::VectorXf  x_D = Eigen::VectorXf(1);
+  Eigen::VectorXf  x_dot_D = Eigen::VectorXf(1);
+  Eigen::VectorXf x_filtered = Eigen::VectorXf ( 1);
+  Eigen::VectorXf x_dot_filtered = Eigen::VectorXf ( 1);
+  
+  for (size_t i=0; i <  filter_idx_.size(); i++){
+    x_D(0) = joint_position[  filter_idx_[i] ];
+    x_dot_D(0) = joint_velocity[ filter_idx_[i] ];
+    joint_kf_[i]->processSample(t,x_D, x_dot_D, x_filtered, x_dot_filtered);
+    joint_position[ filter_idx_[i] ] = x_filtered(0);
+    joint_velocity[ filter_idx_[i] ] = x_dot_filtered(0);
+  }
+  
+  //int64_t toc = _timestamp_now();
+  //double dtime = (toc-tic)*1E-6;
+  //std::cout << dtime << " end\n";   
+}
+
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
   
@@ -398,6 +451,11 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
         }
       }
     }
+  }
+  
+  
+  if (use_kalman_filtering_){//  atlas_joints_ filtering here
+    filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
   }
   
   publishRobotState(msg->utime, msg->force_torque);
@@ -562,6 +620,7 @@ main(int argc, char ** argv){
   bool simulation_mode = false;
   bool use_encoder_joint_sensors = false;
   bool publish_pose_body = true;
+  bool use_kalman_filtering = false;
   string output_channel = "EST_ROBOT_STATE";
   ConciseArgs opt(argc, (char**)argv);
   opt.add(standalone_head, "l", "standalone_head","Standalone Head");
@@ -571,11 +630,13 @@ main(int argc, char ** argv){
   opt.add(use_encoder_joint_sensors, "e", "encoder","Use the encoder joint sensors (in the arms)");
   opt.add(output_channel, "o", "output_channel","Output Channel for robot state msg");
   opt.add(publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
+  opt.add(use_kalman_filtering, "k", "kalman_filter","Use Kalman filtering on joints");
   opt.parse();
   
   std::cout << "standalone_head: " << standalone_head << "\n";
   std::cout << "publish_pose_body: " << publish_pose_body << "\n";
   std::cout << "Use transmission joint sensors: " << use_encoder_joint_sensors << " (arms only)\n";
+  std::cout << "Use kalman filters: " << use_kalman_filtering << "\n";
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   if(!lcm->good())
@@ -583,7 +644,7 @@ main(int argc, char ** argv){
   
   state_sync app(lcm, standalone_head,standalone_hand,bdi_motion_estimate, 
                  simulation_mode, use_encoder_joint_sensors,	
-		 output_channel, publish_pose_body);
+		 output_channel, publish_pose_body, use_kalman_filtering);
   while(0 == lcm->handle());
   return 0;
 }

@@ -1,13 +1,16 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 
+# filters used in motion est and state sync
+estimate_tools
+
+
 state_sync
 signal_scope
 hand_estimate
 
 
 # Maurice's estimator
-estimate_tools
 # dependent on imu filter in estimate_tools
 mav
 motion_estimate

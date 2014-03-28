@@ -27,6 +27,7 @@
 #include <pointcloud_tools/pointcloud_math.hpp>
 #include "atlas/AtlasControlTypes.h"
 #include "atlas/AtlasJointNames.h"
+#include <estimate_tools/kalman_filter.hpp>
 
 struct Joints { 
   std::vector<float> position;
@@ -42,7 +43,7 @@ class state_sync{
       bool standalone_head_, bool standalone_hand_,
       bool spoof_motion_estimation, bool simulation_mode_,
       bool use_encoder_joint_sensors_, std::string output_channel_,
-      bool publish_pose_body_);
+      bool publish_pose_body_, bool use_kalman_filtering_);
     
     ~state_sync(){
     }
@@ -65,6 +66,7 @@ class state_sync{
     bool use_encoder_joint_sensors_;
     std::string output_channel_;
     bool publish_pose_body_;
+    bool use_kalman_filtering_;
 
     long utime_prev_;
     
@@ -91,6 +93,12 @@ class state_sync{
 
     PoseT pose_BDI_;
     PoseT pose_MIT_;
+    
+    // Kalman Filters for joint angles:
+    void filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity);
+    std::vector<KalmanFilter*> joint_kf_;
+    std::vector<int> filter_idx_;
+    
     
     
     // Keep two different offset vectors, for clarity:
