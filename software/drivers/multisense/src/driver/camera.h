@@ -65,6 +65,7 @@ struct CameraConfig{
   int jpeg_quality_;
   bool leds_flash_;
   float leds_duty_cycle_;
+  int desired_width_;
   
   // 0 leftgrey,rightgrey | 1 leftcolor,disp | 2 leftcolor | 3 leftcolor,disp,rightcolor
   int output_mode_;
@@ -83,6 +84,7 @@ struct CameraConfig{
         output_mode_ = 0;
         gain_ = 3.0;
         agc_ = 1;
+        desired_width_ = 1024;
   }
 };
 
@@ -125,11 +127,10 @@ private:
 
     crl::multisense::Channel* driver_;
 
-    struct ColorData;
-
     //
     // Store outgoing messages for efficiency
 
+    struct ColorData;
     std::shared_ptr<ColorData> left_data_;
     std::shared_ptr<ColorData> right_data_;
 
@@ -137,6 +138,11 @@ private:
 
     crl::multisense::image::Config      image_config_;
     crl::multisense::image::Calibration image_calibration_;
+    int calibrated_width_;
+    int calibrated_height_;
+
+    // Desired output size
+    int desired_width_;
 
     //
     // For local rectification of color images
