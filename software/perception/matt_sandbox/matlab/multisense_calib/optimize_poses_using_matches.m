@@ -1,5 +1,9 @@
 function result = optimize_poses_using_matches(data,poses,...
-    P_camera_to_pre_spindle,P_post_spindle_to_lidar)
+    P_camera_to_pre_spindle,P_post_spindle_to_lidar,do_full)
+
+if (~exist('do_full','var'))
+    do_full = false;
+end
 
 if (~exist('P_camera_to_pre_spindle','var'))
     P_camera_to_pre_spindle = eye(4);
@@ -17,10 +21,16 @@ prob.starts = starts;
 prob.ends = ends;
 prob.data = double(data);
 prob.poses = poses;
+prob.do_full = do_full;
 
 rpy2 = rot2rpy(P_post_spindle_to_lidar(1:3,1:3));
-x_init = [rot2rpy(P_camera_to_pre_spindle(1:3,1:3));P_camera_to_pre_spindle(1:3,4);
-    rpy2([1,3]);P_post_spindle_to_lidar(2:3,4)];
+if (do_full)
+    x_init = [rot2rpy(P_camera_to_pre_spindle(1:3,1:3));P_camera_to_pre_spindle(1:3,4);
+        rpy2;P_post_spindle_to_lidar(1:3,4)];
+else
+    x_init = [rot2rpy(P_camera_to_pre_spindle(1:3,1:3));P_camera_to_pre_spindle(1:3,4);
+        rpy2([1,3]);P_post_spindle_to_lidar(2:3,4)];
+end
 opts = optimset('display','iter','maxfunevals',1e6);
 
 prob.draw = false;
@@ -30,10 +40,13 @@ R = rpy2rot(x(1:3));
 T = x(4:6);
 result.P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
 
-% R = rpy2rot(x(7:9));
-% T = x(10:12);
-R = rpy2rot([x(7);0;x(8)]);
-T = [0;x(9);x(10)];
+if (do_full)
+    R = rpy2rot(x(7:9));
+    T = x(10:12);
+else
+    R = rpy2rot([x(7);0;x(8)]);
+    T = [0;x(9);x(10)];
+end
 result.P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
 
 prob.draw = true;
@@ -46,10 +59,13 @@ R = rpy2rot(x(1:3));
 T = x(4:6);
 P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
 
-% R = rpy2rot(x(7:9));
-% T = x(10:12);
-R = rpy2rot([x(7);0;x(8)]);
-T = [0;x(9);x(10)];
+if (prob.do_full)
+    R = rpy2rot(x(7:9));
+    T = x(10:12);
+else
+    R = rpy2rot([x(7);0;x(8)]);
+    T = [0;x(9);x(10)];
+end
 P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
 
 counter = 1;

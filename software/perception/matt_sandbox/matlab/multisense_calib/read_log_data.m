@@ -5,6 +5,8 @@ scans = {};
 disparities = {};
 poses = {};
 imgs = {};
+cur_angle = nan;
+accum_angle = 0;
 while (true)
     try
         event = lcmlog.readNext();
@@ -37,6 +39,23 @@ while (true)
         P = inv([quat2rot(obj.quat), obj.trans(:);0,0,0,1]);
         pose.R = P(1:3,1:3);
         pose.T = P(1:3,4);
+        rpy = rot2rpy(pose.R);
+        if (isnan(cur_angle))
+            cur_angle = rpy(3);
+        end
+        angle_diff = rpy(3)-cur_angle;
+        if (angle_diff>pi)
+            angle_diff = angle_diff-2*pi;
+        elseif (angle_diff<-pi)
+            angle_diff = angle_diff+2*pi;
+        end
+        accum_angle = accum_angle + rad2deg(angle_diff);
+        if (abs(accum_angle) > 365)
+            fprintf('traveled %f degrees\n', accum_angle);
+            break;
+        end
+        cur_angle = rpy(3);
+        
         pose.timestamp = int64(obj.utime);
         poses{end+1} = pose;
     end
