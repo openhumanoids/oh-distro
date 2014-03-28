@@ -340,7 +340,7 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     }
     else {
       for (auto mode : modes) {
-        int delta = std::abs(mode.width - config_.desired_width_);
+        int delta = std::abs((int)mode.width - (int)config_.desired_width_);
         if (delta < best_width_delta) {
           bestMode.width = mode.width;
           bestMode.height = mode.height;
