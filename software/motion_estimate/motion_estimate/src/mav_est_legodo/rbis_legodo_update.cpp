@@ -23,11 +23,10 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   leg_est_ = new leg_estimate(lcm_pub_boost, param, model_boost );
   leg_odo_common_ = new LegOdoCommon(lcm_recv, lcm_pub, param);
 
-  lcm_recv->subscribe("POSE_BDI",&LegOdoHandler::poseBDIHandler,this);
-  
   publish_diagnostics_ = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.publish_diagnostics");  
-  
   republish_incoming_poses_ = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.republish_incoming_poses");  
+  bool republish_cameras = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.republish_cameras");    
+  
   if ( (lcm_pub != lcm_recv) && republish_incoming_poses_) { 
     republish_incoming_poses_ = true; // Only republish if the lcm objects are different (same logic as for main app)
   }else{
@@ -40,54 +39,31 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
     std::cout << "Will not republish other data\n";
   }
   
+  lcm_recv->subscribe("POSE_BDI",&LegOdoHandler::poseBDIHandler,this);
+  lcm_recv->subscribe("POSE_BODY",&LegOdoHandler::poseBodyHandler,this);
+  
   // Arbitrary Subscriptions:
-  bool republish_cameras = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.republish_cameras");    
   if (lcm_pub != lcm_recv && republish_cameras) {
     std::cout << "Will republish camera data\n";
     lcm_recv->subscribe("WEBCAM",&LegOdoHandler::republishHandler,this);  
   }
  
-  
   prev_worldvicon_to_body_vicon_.setIdentity();
   prev_vicon_utime_ = -1;
-  
   
   local_integration_ = false;
   local_max_count_ = 10;
   local_counter_ = 0;
   local_prev_utime_=0;
   
-  // The most recent estimate of pose-bdi. Assumed to be always current. only used for gravity slaved leg odom:
-  // TODO: query our own leg odom orientation for this:
-  world_to_body_bdi_.setIdentity();
-  prev_bdi_utime_ = -1;
   body_bdi_init_ = false;
+  body_init_ = false;
   
   JointUtils* joint_utils = new JointUtils();
   joint_names_ = joint_utils->atlas_joint_names;
-  //std::cout << joint_names_.size() << " joint angles\n";
 }
 
-void LegOdoHandler::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  world_to_body_bdi_full_.utime = msg->utime;
-  world_to_body_bdi_full_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
-  world_to_body_bdi_full_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
-  world_to_body_bdi_full_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
-  world_to_body_bdi_full_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
-  world_to_body_bdi_full_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );    
-  
-  
-  world_to_body_bdi_.setIdentity();
-  world_to_body_bdi_.translation()  << msg->pos[0], msg->pos[1] , msg->pos[2];
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->orientation[0], msg->orientation[1], 
-                                               msg->orientation[2], msg->orientation[3]);
-  world_to_body_bdi_.rotate(quat);
-  
-  prev_bdi_utime_ = msg->utime;
-  body_bdi_init_ = true;
-}
-
-
+/// Extra-class Functions  /////////////////////////////
 BotTrans getPoseAsBotTrans(Eigen::Isometry3d delta_odo){
   BotTrans msgT;
   memset(&msgT, 0, sizeof(msgT));
@@ -103,7 +79,6 @@ BotTrans getPoseAsBotTrans(Eigen::Isometry3d delta_odo){
   
   return msgT;
 }
-
 
 // NOTE: this inserts the BotTrans trans_vec 
 // as the velocity components in the pose (for visualization in signal scope)
@@ -124,15 +99,6 @@ bot_core::pose_t getBotTransAsBotPoseVelocity(BotTrans bt, int64_t utime ){
   pose.rotation_rate[1] = 0;//bt.rot_quat[1];
   pose.rotation_rate[2] = 0;//bt.rot_quat[2];
   return pose;
-}
-
-
-// Convert the delta position into a velocity 
-// as a bot_pose message for visualization with signal scope:
-void LegOdoHandler::sendTransAsVelocityPose(BotTrans msgT, int64_t utime, int64_t prev_utime, std::string channel){
-  BotTrans msgT_vel = leg_odo_common_->getTransAsVelocityTrans(msgT, utime, prev_utime);
-  bot_core::pose_t vel_pose = getBotTransAsBotPoseVelocity(msgT_vel, utime)  ;
-  lcm_pub->publish(channel, &vel_pose );
 }
 
 // TODO: learn how to directly copy the underlying data
@@ -157,14 +123,44 @@ bot_core::pose_t getPoseAsBotPoseFull(PoseT pose){
   pose_msg.accel[0] = pose.accel[0];
   pose_msg.accel[1] = pose.accel[1];
   pose_msg.accel[2] = pose.accel[2];
-  
   return pose_msg;
 }
 
+PoseT getBotPoseAsPoseFull(const bot_core::pose_t *msg){
+  PoseT pose;
+  pose.utime = msg->utime;
+  pose.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  pose.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  pose.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  pose.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  pose.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );    
+  return pose;
+}
 
 
-RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *msg)
-{
+Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
+  Eigen::Isometry3d pose_iso;
+  pose_iso.setIdentity();
+  pose_iso.translation()  << pose.pos[0], pose.pos[1] , pose.pos[2];
+  Eigen::Quaterniond quat = Eigen::Quaterniond(pose.orientation[0], pose.orientation[1], 
+                                               pose.orientation[2], pose.orientation[3]);
+  pose_iso.rotate(quat);
+  return pose_iso;
+}
+
+/// LCM Handlers ////////////////////////////////////
+void LegOdoHandler::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  world_to_body_bdi_full_ = getBotPoseAsPoseFull(msg);
+  body_bdi_init_ = true;
+}
+
+void LegOdoHandler::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  world_to_body_full_ = getBotPoseAsPoseFull(msg);
+  body_init_ = true;  
+}
+
+
+RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *msg){
   
   if (!body_bdi_init_){
     std::cout << "POSE_BDI not received yet, not integrating leg odometry =========================\n";
@@ -174,7 +170,7 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   // Disabling below will turn off all input of POSE_BDI to leg odom:
   // which is unused if using the "basic_mode"
   if (1==1){
-    leg_est_->setPoseBDI( world_to_body_bdi_ );
+    leg_est_->setPoseBDI(  getPoseAsIsometry3d(world_to_body_bdi_full_)      );
   }
   if (republish_incoming_poses_){ // Don't publish when working live:
     bot_core::pose_t bdipose = getPoseAsBotPoseFull(world_to_body_bdi_full_);
@@ -238,18 +234,13 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
       return NULL; 
     }
   }  
-
 }
-
 
 void LegOdoHandler::republishHandler (const lcm::ReceiveBuffer* rbuf, const std::string& channel){
   lcm_pub->publish(channel, rbuf->data, rbuf->data_size);
 }
 
-
-
 void LegOdoHandler::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg){
-
   Eigen::Isometry3d worldvicon_to_frontplate_vicon;
   worldvicon_to_frontplate_vicon.setIdentity();
   worldvicon_to_frontplate_vicon.translation()  << msg->trans[0], msg->trans[1] , msg->trans[2];
@@ -279,6 +270,13 @@ void LegOdoHandler::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   prev_vicon_utime_ = msg->utime;
 }
 
-
+/// Publishing Functions 
+// Convert the delta position into a velocity 
+// as a bot_pose message for visualization with signal scope:
+void LegOdoHandler::sendTransAsVelocityPose(BotTrans msgT, int64_t utime, int64_t prev_utime, std::string channel){
+  BotTrans msgT_vel = leg_odo_common_->getTransAsVelocityTrans(msgT, utime, prev_utime);
+  bot_core::pose_t vel_pose = getBotTransAsBotPoseVelocity(msgT_vel, utime)  ;
+  lcm_pub->publish(channel, &vel_pose );
+}
 
 } // end of namespace
