@@ -40,7 +40,7 @@ class CloudAccumulate{
     bool getFinished(){ return finished_; }
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud(){ return combined_cloud_; }
     
-    void publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
+    void publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
@@ -254,7 +254,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode2(std::share
   for (int i = 0; i < projected_laser_scan_->npoints; i++) {
     // std::cout << i << " " << projected_laser_scan_->points[i].x << "\n";
     // std::cout << i << " " << projected_laser_scan_->points[i].z << "\n";   
-    if (   projected_laser_scan_->rawScan->ranges[i] < 30){
+    if (( projected_laser_scan_->rawScan->ranges[i] < 30.0) && ( projected_laser_scan_->rawScan->ranges[i] > 2.0)){
       scan_body->points[n_valid].x = projected_laser_scan_->points[i].x;
       scan_body->points[n_valid].y = projected_laser_scan_->points[i].y;
       scan_body->points[n_valid].z = projected_laser_scan_->points[i].z;
@@ -330,7 +330,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode3(std::share
   
   int n_valid =0;
   for (int i = 0; i < points.size(); i++) {
-    if (   this_msg->ranges[i] < 30){
+    if ( (this_msg->ranges[i]<30.0)  && (this_msg->ranges[i]>2.0)  ){
       scan_local->points[n_valid].x = points[i](0);;
       scan_local->points[n_valid].y = points[i](1);;
       scan_local->points[n_valid].z = points[i](2);;
@@ -421,10 +421,10 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
 }
 
 
-void CloudAccumulate::publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud){
-  Isometry3dTime null_T = Isometry3dTime(counter_, Eigen::Isometry3d::Identity()  );
+void CloudAccumulate::publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+  Isometry3dTime null_T = Isometry3dTime(1, Eigen::Isometry3d::Identity()  );
   pc_vis_->pose_to_lcm_from_list(60010, null_T);
-  pc_vis_->ptcld_to_lcm_from_list(60012, *combined_cloud_, counter_, counter_);    
+  pc_vis_->ptcld_to_lcm_from_list(60012, *cloud, 1,1);    
 }
 
 
@@ -441,7 +441,9 @@ int main(int argc, char ** argv) {
   ca_cfg.min_range = 2.0; // remove all the short range points
   ca_cfg.max_range = 30.0;
  
-  std::string pcd_filename = "/home/mfallon/data/atlas/2014-01-21-vicon-walking/octomap/working_version/example_sweep_cloud_400scans.pcd";
+  std::stringstream s;
+  s <<  getDataPath() <<   "/octomap.pcd" ;
+  std::string pcd_filename = s.str();
   int input = 0; // 0 = lcm | 1 = file
   
   ConciseArgs opt(argc, (char**)argv);
@@ -456,7 +458,7 @@ int main(int argc, char ** argv) {
   opt.add(ca_cfg.min_range, "m", "min_range","Min Range to use");
   //
   opt.add(pcd_filename, "f", "pcd_filename","Process this PCD file");    
-  opt.add(input, "i", "input","Input mode: 0=lcm 1=file");    
+  opt.add(input, "i", "input","Input mode: 0=lcm 1=file 2=republish pcd only");    
   opt.parse();  
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
@@ -483,10 +485,7 @@ int main(int argc, char ** argv) {
     }      
   }
 
-
-  convert.doWork(cloud);
-
-
+  
   // LCM collections can only handle about 200k points:
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr sub_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   for (size_t i=0 ; i < 50000 ; i++){
@@ -494,6 +493,18 @@ int main(int argc, char ** argv) {
   }
   sub_cloud->width = sub_cloud->points.size();
   sub_cloud->height = 1;  
+
+  if (input == 2){
+    std::cout << sub_cloud->points.size() << " sub_cloud\n";
+    std::cout << cloud->points.size() << " cloud\n";
+    std::cout << "Republishing pcd cloud only\n";
+    accu.publishCloud(sub_cloud);
+    return 0;
+  }
+  
+  convert.doWork(cloud);
+
+
   
 
   
