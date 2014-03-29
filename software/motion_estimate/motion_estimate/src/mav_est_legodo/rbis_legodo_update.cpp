@@ -157,6 +157,8 @@ void LegOdoHandler::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::st
 void LegOdoHandler::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
   world_to_body_full_ = getBotPoseAsPoseFull(msg);
   body_init_ = true;  
+  // (typical latency is tiny 1-2ms)
+  
 }
 
 
@@ -203,8 +205,8 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   if (!local_integration_){ // typical case...
     BotTrans msgT = getPoseAsBotTrans(delta_odo);
     if (publish_diagnostics_) sendTransAsVelocityPose(msgT, utime, prev_utime, "POSE_BODY_LEGODO_VELOCITY");    
+    local_prev_utime_ = utime;
     return leg_odo_common_->createMeasurement(msgT, utime, prev_utime, odometry_status); // 
-    
   }else{    
 
     local_accum_ =  local_accum_*delta_odo;
