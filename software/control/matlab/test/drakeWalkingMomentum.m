@@ -10,7 +10,7 @@ options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.002;
 if (nargin>0); options.use_mex = use_mex;
-else options.use_mex = false; end
+else options.use_mex = true; end
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -120,7 +120,8 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.dt = 0.002;
 options.slack_limit = 10;
-options.w = 0.1;
+options.w_qdd = 0.1*ones(nq,1);
+% options.w_qdd(findJointIndices(r,'leg'))=0;
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.002;

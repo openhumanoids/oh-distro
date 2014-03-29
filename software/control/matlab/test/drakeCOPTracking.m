@@ -97,8 +97,8 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.slack_limit = 20;
-options.w = 1e-4;
-options.W = diag([0;0;0;100;100;100]);
+options.w_qdd = 1e-4*ones(nq,1);
+options.W_hdot = diag([0;0;0;100;100;100]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;

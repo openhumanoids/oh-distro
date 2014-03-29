@@ -30,15 +30,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // get control object properties
     const mxArray* pobj = prhs[1];
     
-    pm= myGetProperty(pobj,"w");
-    pdata->w = mxGetScalar(pm);    
-    
     pm = myGetProperty(pobj,"slack_limit");
     pdata->slack_limit = mxGetScalar(pm);
-    
-    pm = myGetProperty(pobj,"W");
-    pdata->W.resize(6,6);
-    memcpy(pdata->W.data(),mxGetPr(pm),sizeof(double)*mxGetM(pm)*mxGetN(pm));
+
+
+    pm = myGetProperty(pobj,"W_hdot");
+    assert(mxGetM(pm)==6); assert(mxGetN(pm)==6);
+    pdata->W_hdot.resize(mxGetM(pm),mxGetN(pm));
+    memcpy(pdata->W_hdot.data(),mxGetPr(pm),sizeof(double)*mxGetM(pm)*mxGetN(pm));
 
     pm= myGetProperty(pobj,"Kp");
     pdata->Kp = mxGetScalar(pm);    
@@ -56,6 +55,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     int nq = pdata->r->num_dof, nu = pdata->B.cols();
     
+    pm = myGetProperty(pobj,"w_qdd");
+    pdata->w_qdd.resize(nq);
+    memcpy(pdata->w_qdd.data(),mxGetPr(pm),sizeof(double)*nq);
+
     pdata->num_spatial_accel_constraints = mxGetScalar(prhs[4]);
 
     pdata->umin.resize(nu);
@@ -309,9 +312,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   {      
     if (nc > 0) {
       // NOTE: moved Hqp calcs below, because I compute the inverse directly for FastQP (and sparse Hqp for gurobi)
-      pdata->fqp = qdvec.transpose()*pdata->Agdot.transpose()*pdata->W*pdata->Ag;
-      pdata->fqp -= hdot_des.transpose()*pdata->W*pdata->Ag;
-      pdata->fqp -= pdata->w*q_ddot_des.transpose();
+      pdata->fqp = qdvec.transpose()*pdata->Agdot.transpose()*pdata->W_hdot*pdata->Ag;
+      pdata->fqp -= hdot_des.transpose()*pdata->W_hdot*pdata->Ag;
+      pdata->fqp -= (pdata->w_qdd.array()*q_ddot_des.array()).matrix().transpose();
   
       // obj(1:nq) = fqp
       f.head(nq) = pdata->fqp.transpose();
@@ -411,9 +414,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 
 	if (nc>0) {
-		double wi = pdata->w + REG;
-    pdata->Hqp = pdata->Ag.transpose()*pdata->W*pdata->Ag;
-		pdata->Hqp += wi*MatrixXd::Identity(nq,nq);
+		VectorXd w = (pdata->w_qdd.array() + REG).matrix();
+    pdata->Hqp = pdata->Ag.transpose()*pdata->W_hdot*pdata->Ag;
+		pdata->Hqp += w.asDiagonal();
 	} else {
   	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
 	}

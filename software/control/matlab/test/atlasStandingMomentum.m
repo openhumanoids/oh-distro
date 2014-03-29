@@ -263,8 +263,8 @@ playback(v,traj,struct('slider',true));
 
 % instantiate QP controller
 options.slack_limit = 20;
-options.w = 1.0;
-options.W = diag([0;0;0;.1;.1;.1]);
+options.w_qdd = 0.1*ones(nq,1);
+options.W_hdot = diag([0;0;0;1;1;1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;

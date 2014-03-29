@@ -35,6 +35,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj = setOutputFrame(obj,output_frame);
 
     obj.robot = r;
+    obj.numq = getNumDOF(r);
     obj.controller_data = controller_data;
 
     if isfield(options,'dt')
@@ -72,10 +73,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
 		% weight for the desired qddot objective term
 		if isfield(options,'w_qdd')
       typecheck(options.w_qdd,'double');
-      sizecheck(options.w_qdd,[nq 1]); % assume diagonal cost
+      sizecheck(options.w_qdd,[obj.numq 1]); % assume diagonal cost
       obj.w_qdd = options.w_qdd;
     else
-      obj.w_qdd = 0.1*ones(nq,1);
+      obj.w_qdd = 0.1*ones(obj.numq,1);
 		end		
 		
     % com-z PD gains
@@ -95,8 +96,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     else
       obj.Kd = 20;
     end    
-
-
 
     % hard bound on slack variable values
     if isfield(options,'slack_limit')
@@ -148,7 +147,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj.rhand_idx = findLinkInd(r,'r_hand');
     obj.lhand_idx = findLinkInd(r,'l_hand');
     obj.pelvis_idx = findLinkInd(r,'pelvis');
-    obj.numq = getNumDOF(r);
     
     if obj.lcm_foot_contacts
       obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
@@ -445,11 +443,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
       %  min: quad(h_dot_des - Adot*qd - A*qdd) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
       if nc > 0
         Hqp = Iqdd'*A'*obj.W_hdot*A*Iqdd;
-        Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
+        Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + diag(obj.w_qdd);
 
         fqp = qd'*Adot'*obj.W_hdot*A*Iqdd;
         fqp = fqp - hdot_des'*obj.W_hdot*A*Iqdd;
-        fqp = fqp - obj.w*q_ddot_des'*Iqdd;
+        fqp = fqp - (obj.w_qdd.*q_ddot_des)'*Iqdd;
 
         % quadratic slack var cost 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
@@ -541,8 +539,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
         end
         valuecheck(y,y_mex,1e-2); 
         valuecheck(qdd,mex_qdd,1e-2); 
-        %valuecheck(Hqp(1:nq,1:nq),Hqp_mex,1e-6)
-        %valuecheck(fqp',fqp_mex,1e-6);
+        valuecheck(Hqp(1:nq,1:nq),Hqp_mex,1e-6);
+        valuecheck(fqp',fqp_mex,1e-6);
         valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6);
         valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
       end

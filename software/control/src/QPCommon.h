@@ -46,7 +46,8 @@ struct QPControllerData {
   MatrixXd Hqp;
   RowVectorXd fqp;
   MatrixXd Ag, Agdot; // centroidal momentum matrix
-  MatrixXd W; // quadratic cost for momentum control: (hdot_des - hdot)'*W*(hdot_des - hdot)
+  MatrixXd W_hdot; // quadratic cost for momentum control: (hdot_des - hdot)'*W*(hdot_des - hdot)
+  VectorXd w_qdd; 
   int num_spatial_accel_constraints;
   double Kp, Kd; // COM-z PD gains, for momentum controller
 };
