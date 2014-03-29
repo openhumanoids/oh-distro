@@ -46,7 +46,7 @@ class leg_estimate{
     ~leg_estimate(){
     }
     
-    void setPoseBDI(Eigen::Isometry3d world_to_body_bdi_in ){ world_to_body_bdi_ = world_to_body_bdi_in; }
+    void setPoseBDI(Eigen::Isometry3d bdi_to_body_in ){ bdi_to_body_ = bdi_to_body_in; }
 
     void setFootSensing(FootSensing lfoot_sensing_in, FootSensing rfoot_sensing_in ){ 
       lfoot_sensing_ = lfoot_sensing_in;
@@ -63,25 +63,30 @@ class leg_estimate{
     float updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime);
 
 
-    void getDeltaLegOdometry(Eigen::Isometry3d &delta_world_to_body, int64_t &current_utime, int64_t &previous_utime){
-      delta_world_to_body = delta_world_to_body_;
+    void getDeltaLegOdometry(Eigen::Isometry3d &delta_odom_to_body, int64_t &current_utime, int64_t &previous_utime){
+      delta_odom_to_body = delta_odom_to_body_;
       current_utime = current_utime_;
       previous_utime = previous_utime_;
     }
     
-    Eigen::Isometry3d getRunningEstimate(){ return world_to_body_; }
+    Eigen::Isometry3d getRunningEstimate(){ return odom_to_body_; }
     
     void setLegOdometryMode(std::string leg_odometry_mode_in ){ leg_odometry_mode_ = leg_odometry_mode_in; }
     void setInitializationMode(std::string initialization_mode_in ){ initialization_mode_ = initialization_mode_in; }
 
   private:
+    /// Utilites
     boost::shared_ptr<lcm::LCM> lcm_subscribe_, lcm_publish_;
     BotParam* botparam_;
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
     pointcloud_vis* pc_vis_;
+    // joint position filters, optionally used
+    LowPassFilter lpfilter_[28];  
+    
 
-    // params:
+    /// Parameters
+    int verbose_;
     std::string leg_odometry_mode_;
     // How the position will be initialized
     std::string initialization_mode_;
@@ -95,6 +100,7 @@ class leg_estimate{
     // Publish Debug Data e.g. kinematic velocities and foot contacts
     bool publish_diagnostics_;    
     
+    /// Foot Contact Classifiers
     // most recent measurements for the feet forces (typically synchronised with joints measurements
     FootSensing lfoot_sensing_, rfoot_sensing_; // unfiltered... check
     TwoLegs::FootContact* foot_contact_logic_; // dehann, conservative
@@ -106,12 +112,12 @@ class leg_estimate{
     int footTransition();
     // a more aggressive trigger with different logic
     int footTransitionAlt();
-    int standing_foot_; // result as output from the FootContact class(es)
+    // output from the FootContact class(es), not directly related to primary_foot_, but close
+    int standing_foot_; 
     
-    
+    /// Integration Methods:
     bool initializePose(Eigen::Isometry3d body_to_foot);
     bool prepInitialization(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
-    
     // Pure Leg Odometry, no IMU
     // return: true on initialization, else false
     bool leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
@@ -124,33 +130,30 @@ class leg_estimate{
     // return: true on initialization, else false    
     bool leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
     
+    /// State Variables
     // Current time from current input msg 
     int64_t current_utime_;
     int64_t previous_utime_;
-    Eigen::Isometry3d previous_world_to_body_;
     
-    // The incremental motion of the pelvis: transform between previous_world_to_body_ and world_to_body_
-    Eigen::Isometry3d delta_world_to_body_;
+    // Current position of pevis in nominal odometry frame
+    Eigen::Isometry3d odom_to_body_;
+    Eigen::Isometry3d previous_odom_to_body_;
+    // The incremental motion of the pelvis: transform between previous_odom_to_body_ and odom_to_body_
+    Eigen::Isometry3d delta_odom_to_body_;
+    bool leg_odo_init_; // has the leg odometry been initialized. (set to false when an anomoly is detected)
+    footid_alt primary_foot_; // the foot assumed to be fixed for the leg odometry
+    Eigen::Isometry3d odom_to_fixed_primary_foot_; // Position in the odom frame in which the fixed foot is kept
+    Eigen::Isometry3d odom_to_secondary_foot_; // Ditto for moving foot (entirely defined by kinematics)
+
+    // Pelvis Position Estimate produced by BDI. 
+    // Used to calculate position delta by defining pelvis and foot orientation
+    // TODO: use estimated state instead
+    Eigen::Isometry3d bdi_to_body_;
     
-    // Position Estimate produced by BDI:
-    Eigen::Isometry3d world_to_body_bdi_;
-    // Position Estimate produced by Vicon (if available):
-    Eigen::Isometry3d world_to_body_vicon_;
-    bool world_to_body_vicon_init_;
-    // has the leg odometry been initialized
-    bool leg_odo_init_;
-    Eigen::Isometry3d world_to_body_;
-    int primary_foot_;
-    Eigen::Isometry3d world_to_fixed_primary_foot_;
-    Eigen::Isometry3d world_to_secondary_foot_;
-    
-    Eigen::Isometry3d previous_body_to_l_foot_;
+    Eigen::Isometry3d previous_body_to_l_foot_; // previous FK positions. Only used in one of the integration methods
     Eigen::Isometry3d previous_body_to_r_foot_;
     
-    // joint position filters, optionally used
-    LowPassFilter lpfilter_[28];  
     
-    int verbose_;
 };    
 
 #endif
