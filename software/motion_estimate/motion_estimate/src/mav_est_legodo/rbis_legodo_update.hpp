@@ -73,8 +73,8 @@ public:
   Eigen::Isometry3d prev_worldvicon_to_body_vicon_;
   int64_t prev_vicon_utime_;
 
-  PoseT world_to_body_bdi_full_;  // POSE_BDI
-  bool body_bdi_init_; // Have we received POSE_BDI. TODO: add a constructor to PoseT to store this
+  PoseT bdi_to_body_full_;  // POSE_BDI
+  bool bdi_init_; // Have we received POSE_BDI. TODO: add a constructor to PoseT to store this
   
   PoseT world_to_body_full_;  // POSE_BODY NB: this is whats calculated by the
   bool body_init_; // Have we received POSE_BDI. TODO: add a constructor to PoseT to store this
