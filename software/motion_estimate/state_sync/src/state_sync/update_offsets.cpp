@@ -1,10 +1,3 @@
-// Start. collect 400 scans
-// exit callback
-// convert to octomap, blur and save to file.
-// Republish the octomap
-// se-create-octomap  -s 500 -b 0.5 -r 20 -w -u
-//
-// min range of 2m seems the right choice: culls self-observations but doesnt cull  ground in front of the robot
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 
