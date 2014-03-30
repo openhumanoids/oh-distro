@@ -50,7 +50,10 @@ class leg_estimate{
     }
     
     void setPoseBDI(Eigen::Isometry3d bdi_to_body_in ){ bdi_to_body_ = bdi_to_body_in; }
-    void setPoseBody(Eigen::Isometry3d world_to_body_in ){ world_to_body_ = world_to_body_in; }
+    void setPoseBody(Eigen::Isometry3d world_to_body_in ){ 
+      world_to_body_ = world_to_body_in; 
+      world_to_body_init_ = true;
+    }
     
     void setFootSensing(FootSensing lfoot_sensing_in, FootSensing rfoot_sensing_in ){ 
       lfoot_sensing_ = lfoot_sensing_in;
@@ -133,6 +136,8 @@ class leg_estimate{
     // The pelvis position is then backed out using this new foot positon and fk.
     // return: true on initialization, else false    
     bool leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, contact_status_id contact_status);
+    // related method to determine position constraint
+    void position_constraint_slaved_always(Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot);
     
     /// State Variables
     // Current time from current input msg 
@@ -157,17 +162,28 @@ class leg_estimate{
     // Pelvis Position produced by mav-estimator
     // TODO: this should be the same as the RBIS state, currently using LCM to provide this
     Eigen::Isometry3d world_to_body_;
+    bool world_to_body_init_;
     // Free running feet positions in world frame
     // HOWEVER: primary are NOT fixed as they are the positions after sensor fusion with INS+Lidar
     // hence these frames will slide around (by as much as 2cm) during a stride
     Eigen::Isometry3d world_to_primary_foot_slide_; 
     Eigen::Isometry3d world_to_secondary_foot_; 
     
-    // .. in contrast this frame is the position AT THE TIME OF TRANSITION
-    // If we assumed that a foot did not move after first contact, they shouldn't leave this position
-    // But it at least can be used as a measurement constraint.
-    // TODO: this position to be fed into a Filter to update it slowly
+    // .. in contrast this frame is the position of primary AT THE TIME OF TRANSITION
+    // If we assumed that a foot did not move after first contact, it shouldn't leave this position
+    // But it at least can be used as a measurement constraint on XYZ
+    // (TODO: this position to be fed into a Filter to update it slowly)
     Eigen::Isometry3d world_to_primary_foot_transition_; 
+    bool world_to_primary_foot_transition_init_;
+    // This is the position of the foot later on during the step
+    // if the kinematics was perfect this would be the same position foot.
+    // NB: the XYZ value of this position is the same as world_to_primary_foot_transition_
+    // This assumption is the basis of our position constraint
+    Eigen::Isometry3d world_to_primary_foot_constraint_; 
+    Eigen::Isometry3d world_to_secondary_foot_constraint_; 
+    // ... and finally the position the pelvis would have if no sliding had occured.
+    Eigen::Isometry3d world_to_body_constraint_; 
+    
     
     Eigen::Isometry3d previous_body_to_l_foot_; // previous FK positions. Only used in one of the integration methods
     Eigen::Isometry3d previous_body_to_r_foot_;

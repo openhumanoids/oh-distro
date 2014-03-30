@@ -54,11 +54,13 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1011,"Body Pose [world]",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1012,"Primary Foot [world] ",5,0) );
-  //pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1014,"Primary Contacts [world] ",1,0, 1012,1, { 0.0, 1.0, 0.0} ));  
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1013,"Secondary Foot [world] ",5,1) );
-  //pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1015,"Secondary Contacts [world] ",1,0, 1013,1, { 1.0, 0.0, 0.0} ));  
+
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1014,"Primary Foot transition [world] ",5,0) );
   
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1021,"Body Pose [const]",5,1) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1022,"Primary Foot [const] ",5,0) );
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1023,"Secondary Foot [const] ",5,1) );
   
   
   // actually more like 1540N when standing still in Jan 2014
@@ -85,29 +87,31 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   odom_to_body_.setIdentity();
   bdi_to_body_.setIdentity();
   world_to_body_.setIdentity();
+  world_to_body_init_ = false;
+  world_to_primary_foot_transition_init_ = false;
 }
 
 // Very Basic switch to determine FK of primary and secondary foot
 // By providing the id, I can use this flexiably
 // TODO: use this in the integration do reduce all the cases
-Eigen::Isometry3d getPrimaryFootPose(footid_alt main_id, Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot){
+Eigen::Isometry3d getPrimaryFootFK(footid_alt main_id, Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot){
   if (main_id == F_LEFT){
     return body_to_l_foot;
   }else if(main_id == F_RIGHT){
     return body_to_r_foot;
   }else{
-    std::cout << "ERROR: foot id out of range! getPrimaryFootPose\n";
+    std::cout << "ERROR: foot id out of range! getPrimaryFootFK\n";
     return Eigen::Isometry3d::Identity();
   }
 }
 
-Eigen::Isometry3d getSecondaryFootPose(footid_alt main_id, Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot){
+Eigen::Isometry3d getSecondaryFootFK(footid_alt main_id, Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot){
   if (main_id == F_RIGHT){
     return body_to_l_foot;
   }else if(main_id == F_LEFT){
     return body_to_r_foot;
   }else{
-    std::cout << "ERROR: foot id out of range! getSecondaryFootPose\n";
+    std::cout << "ERROR: foot id out of range! getSecondaryFootFK\n";
     return Eigen::Isometry3d::Identity();
   }
 }
@@ -374,42 +378,25 @@ bool leg_estimate::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
 }
 
 
-/*
-void leg_estimate::position_constraint_slaved_always(){
-  
-  
-  // Take the quaternion from [[POSE_BODY]], apply the pitch and roll to the primary foot 
-  // via fk. Then update the pelvis position
-  Eigen::Quaterniond q_prev( odom_to_body_.rotation() );
-  double rpy_prev[3];
-  quat_to_euler(q_prev, rpy_prev[0],rpy_prev[1],rpy_prev[2]);
 
-  Eigen::Quaterniond q_slaved( bdi_to_body_.rotation() );
-  double rpy_slaved[3];
-  quat_to_euler(q_slaved, rpy_slaved[0],rpy_slaved[1],rpy_slaved[2]);
+void leg_estimate::position_constraint_slaved_always(Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot){
+  // Take the CURRENT quaternion from [[[POSE_BODY]]] - via FK.
+  // Then update the pelvis position
+  Eigen::Isometry3d world_to_body_at_zero = Eigen::Isometry3d::Identity(); // ... Dont need to use the translation, so not filling it in
+  world_to_body_at_zero.rotate( Eigen::Quaterniond(world_to_body_.rotation()) );
   
-  // the slaved orientation of the pelvis
-  Eigen::Quaterniond q_combined = euler_to_quat( rpy_slaved[0], rpy_slaved[1], rpy_prev[2]);
-
-  Eigen::Isometry3d odom_to_body_at_zero;
-  odom_to_body_at_zero.setIdentity(); // ... Dont need to use the translation, so not filling it in
-  odom_to_body_at_zero.rotate(q_slaved);
+  Eigen::Isometry3d world_to_primary_at_zero = world_to_body_at_zero* getPrimaryFootFK(primary_foot_,body_to_l_foot, body_to_r_foot) ;
+  Eigen::Quaterniond q_foot_new( world_to_primary_at_zero.rotation() ); // assumed to be current foot orientation (in world)
+  Eigen::Vector3d foot_new_trans = world_to_primary_foot_transition_.translation();
   
-  Eigen::Isometry3d odom_to_r_foot_at_zero = odom_to_body_at_zero*body_to_r_foot;
-  Eigen::Quaterniond q_foot_new( odom_to_r_foot_at_zero.rotation() );
-  Eigen::Vector3d foot_new_trans = odom_to_primary_foot_fixed_.translation();
+  // the foot has now been rotated to agree with the pelvis orientation and translated to express the constraint
+  world_to_primary_foot_constraint_.setIdentity();
+  world_to_primary_foot_constraint_.translation() = foot_new_trans;
+  world_to_primary_foot_constraint_.rotate( q_foot_new ); 
   
-  // the foot has now been rotated to agree with the pelvis orientation:
-  odom_to_primary_foot_fixed_.setIdentity();
-  odom_to_primary_foot_fixed_.translation() = foot_new_trans;
-  odom_to_primary_foot_fixed_.rotate( q_foot_new ); 
-  
-  odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_r_foot.inverse() ;
-  odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;  
-  
-  
+  world_to_body_constraint_ = world_to_primary_foot_constraint_ * getPrimaryFootFK(primary_foot_,body_to_l_foot, body_to_r_foot).inverse() ;
+  world_to_secondary_foot_constraint_ = world_to_body_constraint_ * getSecondaryFootFK(primary_foot_,body_to_l_foot, body_to_r_foot);
 }
-*/
 
 
 contact_status_id leg_estimate::footTransition(){
@@ -523,16 +510,18 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
     exit(-1);
   }
     
-  // NB: the corresponding variables are send 
-  world_to_primary_foot_slide_ = world_to_body_*getPrimaryFootPose(primary_foot_, body_to_l_foot, body_to_r_foot);    
-  world_to_secondary_foot_ = world_to_body_*getSecondaryFootPose(primary_foot_, body_to_l_foot, body_to_r_foot);  
-  if ( (contact_status == F_LEFT_NEW) || (contact_status == F_RIGHT_NEW) ){
-    std::cout << "Lets hold this shit still\n";
-    world_to_primary_foot_transition_ = world_to_primary_foot_slide_;
-    Isometry3dTime world_to_primary_trans_T = Isometry3dTime(current_utime_ , world_to_primary_foot_transition_ ) ;
-    pc_vis_->pose_to_lcm_from_list(1014, world_to_primary_trans_T);
-  }
-  
+  // NB: the corresponding variables are sent
+  if (world_to_body_init_){
+    world_to_primary_foot_slide_ = world_to_body_*getPrimaryFootFK(primary_foot_, body_to_l_foot, body_to_r_foot);    
+    world_to_secondary_foot_ = world_to_body_*getSecondaryFootFK(primary_foot_, body_to_l_foot, body_to_r_foot);  
+    if ( (contact_status == F_LEFT_NEW) || (contact_status == F_RIGHT_NEW) ){
+      std::cout << "Lets hold this shit still\n";
+      world_to_primary_foot_transition_ = world_to_primary_foot_slide_;
+      world_to_primary_foot_transition_init_ = true;
+      Isometry3dTime world_to_primary_trans_T = Isometry3dTime(current_utime_ , world_to_primary_foot_transition_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1014, world_to_primary_trans_T);
+    }
+  }  
   
   
   
@@ -564,22 +553,35 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
 
     
     if (publish_diagnostics_){
-      Isometry3dTime odom_to_body_T = Isometry3dTime(current_utime_ , odom_to_body_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1001, odom_to_body_T);
-      Isometry3dTime odom_to_primary_T = Isometry3dTime(current_utime_ , odom_to_primary_foot_fixed_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1002, odom_to_primary_T);
-      Isometry3dTime odom_to_secondary_T = Isometry3dTime(current_utime_ , odom_to_secondary_foot_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1003, odom_to_secondary_T);
+      // TODO: pass Isometry3dTime by reference
+      Isometry3dTime isoT = Isometry3dTime(current_utime_ , Eigen::Isometry3d::Identity() );
+      isoT= Isometry3dTime(current_utime_ , odom_to_body_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1001, isoT);
+      isoT = Isometry3dTime(current_utime_ , odom_to_primary_foot_fixed_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1002, isoT);
+      isoT = Isometry3dTime(current_utime_ , odom_to_secondary_foot_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1003, isoT);
       // Primary (green) and Secondary (red) Contact points:
       pc_vis_->ptcld_to_lcm_from_list(1004, *foot_contact_classify_->getContactPoints() , current_utime_, current_utime_);
       pc_vis_->ptcld_to_lcm_from_list(1005, *foot_contact_classify_->getContactPoints() , current_utime_, current_utime_);
       
-      Isometry3dTime world_to_body_T = Isometry3dTime(current_utime_ , world_to_body_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1011, world_to_body_T);
-      Isometry3dTime world_to_primary_T = Isometry3dTime(current_utime_ , world_to_primary_foot_slide_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1012, world_to_primary_T);
-      Isometry3dTime world_to_secondary_T = Isometry3dTime(current_utime_ , world_to_secondary_foot_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1013, world_to_secondary_T);
+      if (world_to_body_init_ && world_to_primary_foot_transition_init_){
+      isoT = Isometry3dTime(current_utime_ , world_to_body_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1011, isoT);
+      isoT = Isometry3dTime(current_utime_ , world_to_primary_foot_slide_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1012, isoT);
+      isoT = Isometry3dTime(current_utime_ , world_to_secondary_foot_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1013, isoT);
+     
+      position_constraint_slaved_always(body_to_l_foot, body_to_r_foot);
+      isoT = Isometry3dTime(current_utime_ , world_to_body_constraint_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1021, isoT);
+      isoT = Isometry3dTime(current_utime_ , world_to_primary_foot_constraint_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1022, isoT);
+      isoT = Isometry3dTime(current_utime_ , world_to_secondary_foot_constraint_ ) ;
+      pc_vis_->pose_to_lcm_from_list(1023, isoT);
+      }
+      
       
     }
     
