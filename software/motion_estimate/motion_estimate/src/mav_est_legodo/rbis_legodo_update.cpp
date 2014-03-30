@@ -56,7 +56,7 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   local_counter_ = 0;
   local_prev_utime_=0;
   
-  body_bdi_init_ = false;
+  bdi_init_ = false;
   body_init_ = false;
   
   JointUtils* joint_utils = new JointUtils();
@@ -150,34 +150,40 @@ Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
 
 /// LCM Handlers ////////////////////////////////////
 void LegOdoHandler::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  world_to_body_bdi_full_ = getBotPoseAsPoseFull(msg);
-  body_bdi_init_ = true;
+  bdi_to_body_full_ = getBotPoseAsPoseFull(msg);
+  bdi_init_ = true;
 }
 
 void LegOdoHandler::poseBodyHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
   world_to_body_full_ = getBotPoseAsPoseFull(msg);
   body_init_ = true;  
-  // (typical latency is tiny 1-2ms)
-  
+  // (typical latency is tiny 1-2ms)  
 }
 
 
 RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *msg){
   
-  if (!body_bdi_init_){
+  if (!bdi_init_){
     std::cout << "POSE_BDI not received yet, not integrating leg odometry =========================\n";
+    return NULL;    
+  }
+  if (!body_init_){
+    std::cout << "POSE_BODY not received yet, not integrating leg odometry =========================\n";
     return NULL;    
   }
   
   // Disabling below will turn off all input of POSE_BDI to leg odom:
   // which is unused if using the "basic_mode"
   if (1==1){
-    leg_est_->setPoseBDI(  getPoseAsIsometry3d(world_to_body_bdi_full_)      );
+    leg_est_->setPoseBDI(  getPoseAsIsometry3d(bdi_to_body_full_)      );
   }
   if (republish_incoming_poses_){ // Don't publish when working live:
-    bot_core::pose_t bdipose = getPoseAsBotPoseFull(world_to_body_bdi_full_);
+    bot_core::pose_t bdipose = getPoseAsBotPoseFull(bdi_to_body_full_);
     lcm_pub->publish("POSE_BDI", &bdipose);
   }
+  
+  leg_est_->setPoseBody(  getPoseAsIsometry3d(world_to_body_full_)      );
+  
   
   // 1. Do the Leg Odometry Integration
   leg_est_->setFootSensing(  FootSensing( msg->force_torque.l_foot_force_z, msg->force_torque.l_foot_torque_x,  msg->force_torque.l_foot_torque_y),
