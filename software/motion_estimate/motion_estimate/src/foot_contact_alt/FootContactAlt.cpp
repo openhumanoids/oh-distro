@@ -6,7 +6,7 @@ using namespace std;
 FootContactAlt::FootContactAlt(bool _log_data_files,const float atlasWeight){
   cout << "A new FootContactAlt object was created" << endl;
 
-  // was 1400*0.65 for a long time, but this didn't work with up stepping
+  // was 1400*0.65 for a long time, but this didn't work with toe lift off stepping
   schmitt_level_ = 0.65; 
   transition_timeout_ = 4000;
   ////////////////////////////////////////////

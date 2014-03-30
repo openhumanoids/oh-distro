@@ -146,7 +146,7 @@ class leg_estimate{
     Eigen::Isometry3d delta_odom_to_body_;
     bool leg_odo_init_; // has the leg odometry been initialized. (set to false when an anomoly is detected)
     footid_alt primary_foot_; // the foot assumed to be fixed for the leg odometry. TODO: unify the foot ids
-    Eigen::Isometry3d odom_to_fixed_primary_foot_; // Position in the odom frame in which the fixed foot is kept
+    Eigen::Isometry3d odom_to_primary_foot_fixed_; // Position in the odom frame in which the fixed foot is kept
     Eigen::Isometry3d odom_to_secondary_foot_; // Ditto for moving foot (entirely defined by kinematics)
 
     // Pelvis Position Estimate produced by BDI. 
@@ -157,8 +157,17 @@ class leg_estimate{
     // Pelvis Position produced by mav-estimator
     // TODO: this should be the same as the RBIS state, currently using LCM to provide this
     Eigen::Isometry3d world_to_body_;
-    Eigen::Isometry3d world_to_fixed_primary_foot_; // as for odom, except in world frame
-    Eigen::Isometry3d world_to_secondary_foot_; // as for odom, except in world frame
+    // Free running feet positions in world frame
+    // HOWEVER: primary are NOT fixed as they are the positions after sensor fusion with INS+Lidar
+    // hence these frames will slide around (by as much as 2cm) during a stride
+    Eigen::Isometry3d world_to_primary_foot_slide_; 
+    Eigen::Isometry3d world_to_secondary_foot_; 
+    
+    // .. in contrast this frame is the position AT THE TIME OF TRANSITION
+    // If we assumed that a foot did not move after first contact, they shouldn't leave this position
+    // But it at least can be used as a measurement constraint.
+    // TODO: this position to be fed into a Filter to update it slowly
+    Eigen::Isometry3d world_to_primary_foot_transition_; 
     
     Eigen::Isometry3d previous_body_to_l_foot_; // previous FK positions. Only used in one of the integration methods
     Eigen::Isometry3d previous_body_to_r_foot_;

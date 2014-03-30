@@ -57,6 +57,7 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   //pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1014,"Primary Contacts [world] ",1,0, 1012,1, { 0.0, 1.0, 0.0} ));  
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1013,"Secondary Foot [world] ",5,1) );
   //pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(1015,"Secondary Contacts [world] ",1,0, 1013,1, { 1.0, 0.0, 0.0} ));  
+  pc_vis_->obj_cfg_list.push_back( obj_cfg(1014,"Primary Foot transition [world] ",5,0) );
   
   
   
@@ -123,16 +124,16 @@ bool leg_estimate::initializePose(Eigen::Isometry3d body_to_foot){
     odom_to_body_at_zero.rotate(q_slaved);
     Eigen::Isometry3d odom_to_r_foot_at_zero = odom_to_body_at_zero*body_to_foot;
     Eigen::Quaterniond q_foot_new( odom_to_r_foot_at_zero.rotation() );
-    odom_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
-    odom_to_fixed_primary_foot_.rotate( q_foot_new );     
+    odom_to_primary_foot_fixed_ = Eigen::Isometry3d::Identity();
+    odom_to_primary_foot_fixed_.rotate( q_foot_new );     
     
     // was...
-    //odom_to_fixed_primary_foot_ = Eigen::Isometry3d::Identity();
-    odom_to_body_ =odom_to_fixed_primary_foot_*body_to_foot.inverse();
+    //odom_to_primary_foot_fixed_ = Eigen::Isometry3d::Identity();
+    odom_to_body_ =odom_to_primary_foot_fixed_*body_to_foot.inverse();
   }else if (initialization_mode_ == "bdi"){
     // At the EST_ROBOT_STATE pose that was logged into the file
     odom_to_body_ = bdi_to_body_;
-    odom_to_fixed_primary_foot_ = odom_to_body_*body_to_foot;
+    odom_to_primary_foot_fixed_ = odom_to_body_*body_to_foot;
   }
   return true;
 }
@@ -173,28 +174,28 @@ bool leg_estimate::leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Is
   }else{
     if (contact_status == F_LEFT_FIXED && primary_foot_ == F_LEFT){
       if (verbose_>2) std::cout << "Using fixed Left foot, update pelvis position\n";
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_l_foot.inverse() ;
+      odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_l_foot.inverse() ;
       odom_to_secondary_foot_ = odom_to_body_ * body_to_r_foot;
     }else if (contact_status == F_RIGHT_NEW && primary_foot_ == F_LEFT){
       std::cout << "Transition Odometry to right foot. Fix foot, update pelvis position\n";
       // When transitioning, take the passive position of the other foot
       // from the previous iteration. this will now be the fixed foot
-      odom_to_fixed_primary_foot_ = odom_to_secondary_foot_;
+      odom_to_primary_foot_fixed_ = odom_to_secondary_foot_;
       
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_r_foot.inverse();
+      odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_r_foot.inverse();
       odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;
       primary_foot_ = F_RIGHT;
     }else if (contact_status == F_RIGHT_FIXED && primary_foot_ == F_RIGHT){
       if (verbose_>2) std::cout << "Using fixed Right foot, update pelvis position\n";
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_r_foot.inverse() ;
+      odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_r_foot.inverse() ;
       odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;
     }else if (contact_status == F_LEFT_NEW && primary_foot_ == F_RIGHT){
       std::cout << "Transition Odometry to left foot. Fix foot, update pelvis position\n";
       // When transitioning, take the passive position of the other foot
       // from the previous iteration. this will now be the fixed foot
-      odom_to_fixed_primary_foot_ = odom_to_secondary_foot_;
+      odom_to_primary_foot_fixed_ = odom_to_secondary_foot_;
       
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_l_foot.inverse();
+      odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_l_foot.inverse();
       odom_to_secondary_foot_ = odom_to_body_ * body_to_r_foot;
       primary_foot_ = F_LEFT;
     }else{
@@ -214,7 +215,7 @@ bool leg_estimate::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_
   }else{
     if (contact_status == F_LEFT_FIXED && primary_foot_ == F_LEFT){
       if (verbose_>2) std::cout << "Using fixed Left foot, update pelvis position\n";
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_l_foot.inverse() ;
+      odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_l_foot.inverse() ;
       odom_to_secondary_foot_ = odom_to_body_ * body_to_r_foot;
     }else if (contact_status == F_RIGHT_NEW && primary_foot_ == F_LEFT){
       std::cout << "Transition Odometry to right foot. Fix foot, update pelvis position\n";
@@ -240,14 +241,14 @@ bool leg_estimate::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_
       odom_to_body_switch.setIdentity();
       odom_to_body_switch.translation() = odom_to_body_.translation();
       odom_to_body_switch.rotate(q_combined);
-      odom_to_fixed_primary_foot_ = odom_to_body_switch * previous_body_to_r_foot_;
+      odom_to_primary_foot_fixed_ = odom_to_body_switch * previous_body_to_r_foot_;
       
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_r_foot.inverse();
+      odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_r_foot.inverse();
       odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;
       primary_foot_ = F_RIGHT;
     }else if (contact_status == F_RIGHT_FIXED && primary_foot_ == F_RIGHT){
       if (verbose_>2) std::cout << "Using fixed Right foot, update pelvis position\n";
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_r_foot.inverse() ;
+      odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_r_foot.inverse() ;
       odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;
     }else if (contact_status == F_LEFT_NEW && primary_foot_ == F_RIGHT){
       std::cout << "Transition Odometry to left foot. Fix foot, update pelvis position\n";
@@ -273,9 +274,9 @@ bool leg_estimate::leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_
       odom_to_body_switch.setIdentity();
       odom_to_body_switch.translation() = odom_to_body_.translation();
       odom_to_body_switch.rotate(q_combined);
-      odom_to_fixed_primary_foot_ = odom_to_body_switch * previous_body_to_l_foot_;      
+      odom_to_primary_foot_fixed_ = odom_to_body_switch * previous_body_to_l_foot_;      
       
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_l_foot.inverse();
+      odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_l_foot.inverse();
       odom_to_secondary_foot_ = odom_to_body_ * body_to_r_foot;
       primary_foot_ = F_LEFT;
     }else{
@@ -291,137 +292,124 @@ bool leg_estimate::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
   
   if (!leg_odo_init_){
     init_this_iteration = prepInitialization(body_to_l_foot, body_to_r_foot, contact_status);
+    return init_this_iteration;
+  }
+    
+  if (contact_status == F_LEFT_FIXED && primary_foot_ == F_LEFT){
+    if (verbose_>2) std::cout << "Using fixed Left foot, update pelvis position\n";
+
+    // Apply the quaternion from BDI to the primary foot 
+    // via fk. Then update the pelvis position
+    Eigen::Isometry3d odom_to_body_at_zero = Eigen::Isometry3d::Identity(); // ... Dont need to use the translation, so not filling it in
+    odom_to_body_at_zero.rotate( Eigen::Quaterniond(bdi_to_body_.rotation()) );
+    
+    Eigen::Isometry3d odom_to_r_foot_at_zero = odom_to_body_at_zero*body_to_l_foot;
+    Eigen::Quaterniond q_foot_new( odom_to_r_foot_at_zero.rotation() );
+    Eigen::Vector3d foot_new_trans = odom_to_primary_foot_fixed_.translation();
+    
+    // the foot has now been rotated to agree with the pelvis orientation:
+    odom_to_primary_foot_fixed_.setIdentity();
+    odom_to_primary_foot_fixed_.translation() = foot_new_trans;
+    odom_to_primary_foot_fixed_.rotate( q_foot_new );      
+    
+    odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_l_foot.inverse() ;
+    odom_to_secondary_foot_ = odom_to_body_ * body_to_r_foot;
+  }else if (contact_status == F_RIGHT_NEW && primary_foot_ == F_LEFT){
+    std::cout << "Transition Odometry to right foot. Fix foot, update pelvis position\n";
+    // When transitioning, take the passive position of the other foot
+    // from the previous iteration. this will now be the fixed foot
+    // At the instant of transition, slave the pelvis position to gravity:
+    // - retain the xyz position.
+    // - take the orientation from BDI
+    // Then do FK and fix that position as the foot position
+    Eigen::Isometry3d odom_to_body_switch = Eigen::Isometry3d::Identity();
+    odom_to_body_switch.translation() = odom_to_body_.translation();
+    odom_to_body_switch.rotate( Eigen::Quaterniond(bdi_to_body_.rotation()) );
+    odom_to_primary_foot_fixed_ = odom_to_body_switch * body_to_r_foot;
+    
+    odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_r_foot.inverse();
+    odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;
+    primary_foot_ = F_RIGHT;
+  }else if (contact_status == F_RIGHT_FIXED && primary_foot_ == F_RIGHT){
+    if (verbose_>2) std::cout << "Using fixed Right foot, update pelvis position\n";
+    
+    // Apply the quaternion from BDI to the primary foot 
+    // via fk. Then update the pelvis position
+    Eigen::Isometry3d odom_to_body_at_zero = Eigen::Isometry3d::Identity(); // ... Dont need to use the translation, so not filling it in
+    odom_to_body_at_zero.rotate( Eigen::Quaterniond(bdi_to_body_.rotation()) );
+    
+    Eigen::Isometry3d odom_to_r_foot_at_zero = odom_to_body_at_zero*body_to_r_foot;
+    Eigen::Quaterniond q_foot_new( odom_to_r_foot_at_zero.rotation() );
+    Eigen::Vector3d foot_new_trans = odom_to_primary_foot_fixed_.translation();
+    
+    // the foot has now been rotated to agree with the pelvis orientation:
+    odom_to_primary_foot_fixed_.setIdentity();
+    odom_to_primary_foot_fixed_.translation() = foot_new_trans;
+    odom_to_primary_foot_fixed_.rotate( q_foot_new ); 
+    
+    odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_r_foot.inverse() ;
+    odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;
+  }else if (contact_status == F_LEFT_NEW && primary_foot_ == F_RIGHT){
+    std::cout << "Transition Odometry to left foot. Fix foot, update pelvis position\n";
+    
+    // When transitioning, take the passive position of the other foot
+    // from the previous iteration. this will now be the fixed foot
+    // At the instant of transition, slave the pelvis position to gravity:
+    // - retain the xyz position.
+    // - take the orientation from BDI
+    // Then do FK and fix that position as the foot position
+    Eigen::Isometry3d odom_to_body_switch = Eigen::Isometry3d::Identity();
+    odom_to_body_switch.translation() = odom_to_body_.translation();
+    odom_to_body_switch.rotate( Eigen::Quaterniond(bdi_to_body_.rotation()) );
+    odom_to_primary_foot_fixed_ = odom_to_body_switch * body_to_l_foot;      
+    
+    odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_l_foot.inverse();
+    odom_to_secondary_foot_ = odom_to_body_ * body_to_r_foot;
+    primary_foot_ = F_LEFT;
   }else{
+    std::cout << "initialized but unknown update: " << contact_status << " and " << (int) primary_foot_ << "\n";
+  }
     
-    if (contact_status == F_LEFT_FIXED && primary_foot_ == F_LEFT){
-      if (verbose_>2) std::cout << "Using fixed Left foot, update pelvis position\n";
-      // Take the quaternion from BDI, apply the pitch and roll to the primary foot 
-      // via fk. Then update the pelvis position
-      
-      Eigen::Quaterniond q_prev( odom_to_body_.rotation() );
-      double rpy_prev[3];
-      quat_to_euler(q_prev, rpy_prev[0],rpy_prev[1],rpy_prev[2]);
-
-      Eigen::Quaterniond q_slaved( bdi_to_body_.rotation() );
-      double rpy_slaved[3];
-      quat_to_euler(q_slaved, rpy_slaved[0],rpy_slaved[1],rpy_slaved[2]);
-      
-      // the slaved orientation of the pelvis
-      Eigen::Quaterniond q_combined = euler_to_quat( rpy_slaved[0], rpy_slaved[1], rpy_prev[2]);
-
-      Eigen::Isometry3d odom_to_body_at_zero;
-      odom_to_body_at_zero.setIdentity(); // ... Dont need to use the translation, so not filling it in
-      odom_to_body_at_zero.rotate(q_slaved);
-      
-      Eigen::Isometry3d odom_to_r_foot_at_zero = odom_to_body_at_zero*body_to_l_foot;
-      Eigen::Quaterniond q_foot_new( odom_to_r_foot_at_zero.rotation() );
-      Eigen::Vector3d foot_new_trans = odom_to_fixed_primary_foot_.translation();
-      
-      // the foot has now been rotated to agree with the pelvis orientation:
-      odom_to_fixed_primary_foot_.setIdentity();
-      odom_to_fixed_primary_foot_.translation() = foot_new_trans;
-      odom_to_fixed_primary_foot_.rotate( q_foot_new );      
-      
-      
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_l_foot.inverse() ;
-      odom_to_secondary_foot_ = odom_to_body_ * body_to_r_foot;
-    }else if (contact_status == F_RIGHT_NEW && primary_foot_ == F_LEFT){
-      std::cout << "Transition Odometry to right foot. Fix foot, update pelvis position\n";
-      // When transitioning, take the passive position of the other foot
-      // from the previous iteration. this will now be the fixed foot
-      
-      // At the instant of transition, slave the pelvis position to gravity:
-      // - retain the xyz position.
-      // - take the pitch and roll from BDI
-      // - take the yaw from previously
-      // Then do FK and fix that position as the foot position
-  
-      Eigen::Quaterniond q_prev( odom_to_body_.rotation() );
-      double rpy_prev[3];
-      quat_to_euler(q_prev, rpy_prev[0],rpy_prev[1],rpy_prev[2]);
-
-      Eigen::Quaterniond q_slaved( bdi_to_body_.rotation() );
-      double rpy_slaved[3];
-      quat_to_euler(q_slaved, rpy_slaved[0],rpy_slaved[1],rpy_slaved[2]);
-      
-      Eigen::Quaterniond q_combined = euler_to_quat( rpy_slaved[0], rpy_slaved[1], rpy_prev[2]);
-      Eigen::Isometry3d odom_to_body_switch;
-      odom_to_body_switch.setIdentity();
-      odom_to_body_switch.translation() = odom_to_body_.translation();
-      odom_to_body_switch.rotate(q_slaved);
-      odom_to_fixed_primary_foot_ = odom_to_body_switch * body_to_r_foot;
-      
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_r_foot.inverse();
-      odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;
-      primary_foot_ = F_RIGHT;
-    }else if (contact_status == F_RIGHT_FIXED && primary_foot_ == F_RIGHT){
-      if (verbose_>2) std::cout << "Using fixed Right foot, update pelvis position\n";
-      
-      // Take the quaternion from BDI, apply the pitch and roll to the primary foot 
-      // via fk. Then update the pelvis position
-      Eigen::Quaterniond q_prev( odom_to_body_.rotation() );
-      double rpy_prev[3];
-      quat_to_euler(q_prev, rpy_prev[0],rpy_prev[1],rpy_prev[2]);
-
-      Eigen::Quaterniond q_slaved( bdi_to_body_.rotation() );
-      double rpy_slaved[3];
-      quat_to_euler(q_slaved, rpy_slaved[0],rpy_slaved[1],rpy_slaved[2]);
-      
-      // the slaved orientation of the pelvis
-      Eigen::Quaterniond q_combined = euler_to_quat( rpy_slaved[0], rpy_slaved[1], rpy_prev[2]);
-
-      Eigen::Isometry3d odom_to_body_at_zero;
-      odom_to_body_at_zero.setIdentity(); // ... Dont need to use the translation, so not filling it in
-      odom_to_body_at_zero.rotate(q_slaved);
-      
-      Eigen::Isometry3d odom_to_r_foot_at_zero = odom_to_body_at_zero*body_to_r_foot;
-      Eigen::Quaterniond q_foot_new( odom_to_r_foot_at_zero.rotation() );
-      Eigen::Vector3d foot_new_trans = odom_to_fixed_primary_foot_.translation();
-      
-      // the foot has now been rotated to agree with the pelvis orientation:
-      odom_to_fixed_primary_foot_.setIdentity();
-      odom_to_fixed_primary_foot_.translation() = foot_new_trans;
-      odom_to_fixed_primary_foot_.rotate( q_foot_new ); 
-      
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_r_foot.inverse() ;
-      odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;
-    }else if (contact_status == F_LEFT_NEW && primary_foot_ == F_RIGHT){
-      std::cout << "Transition Odometry to left foot. Fix foot, update pelvis position\n";
-      // When transitioning, take the passive position of the other foot
-      // from the previous iteration. this will now be the fixed foot
-
-      // At the instant of transition, slave the pelvis position to gravity:
-      // - retain the xyz position.
-      // - take the pitch and roll from BDI
-      // - take the yaw from previously
-      // Then do FK and fix that position as the foot position
-  
-      Eigen::Quaterniond q_prev( odom_to_body_.rotation() );
-      double rpy_prev[3];
-      quat_to_euler(q_prev, rpy_prev[0],rpy_prev[1],rpy_prev[2]);
-
-      Eigen::Quaterniond q_slaved( bdi_to_body_.rotation() );
-      double rpy_slaved[3];
-      quat_to_euler(q_slaved, rpy_slaved[0],rpy_slaved[1],rpy_slaved[2]);
-      
-      Eigen::Quaterniond q_combined = euler_to_quat( rpy_slaved[0], rpy_slaved[1], rpy_prev[2]);
-      Eigen::Isometry3d odom_to_body_switch;
-      odom_to_body_switch.setIdentity();
-      odom_to_body_switch.translation() = odom_to_body_.translation();
-      odom_to_body_switch.rotate(q_slaved);
-      odom_to_fixed_primary_foot_ = odom_to_body_switch * body_to_l_foot;      
-      
-      odom_to_body_ = odom_to_fixed_primary_foot_ * body_to_l_foot.inverse();
-      odom_to_secondary_foot_ = odom_to_body_ * body_to_r_foot;
-      primary_foot_ = F_LEFT;
-    }else{
-      std::cout << "initialized but unknown update: " << contact_status << " and " << (int) primary_foot_ << "\n";
-    }
-    
-  }  
-  
   return init_this_iteration;
 }
+
+
+/*
+void leg_estimate::position_constraint_slaved_always(){
+  
+  
+  // Take the quaternion from [[POSE_BODY]], apply the pitch and roll to the primary foot 
+  // via fk. Then update the pelvis position
+  Eigen::Quaterniond q_prev( odom_to_body_.rotation() );
+  double rpy_prev[3];
+  quat_to_euler(q_prev, rpy_prev[0],rpy_prev[1],rpy_prev[2]);
+
+  Eigen::Quaterniond q_slaved( bdi_to_body_.rotation() );
+  double rpy_slaved[3];
+  quat_to_euler(q_slaved, rpy_slaved[0],rpy_slaved[1],rpy_slaved[2]);
+  
+  // the slaved orientation of the pelvis
+  Eigen::Quaterniond q_combined = euler_to_quat( rpy_slaved[0], rpy_slaved[1], rpy_prev[2]);
+
+  Eigen::Isometry3d odom_to_body_at_zero;
+  odom_to_body_at_zero.setIdentity(); // ... Dont need to use the translation, so not filling it in
+  odom_to_body_at_zero.rotate(q_slaved);
+  
+  Eigen::Isometry3d odom_to_r_foot_at_zero = odom_to_body_at_zero*body_to_r_foot;
+  Eigen::Quaterniond q_foot_new( odom_to_r_foot_at_zero.rotation() );
+  Eigen::Vector3d foot_new_trans = odom_to_primary_foot_fixed_.translation();
+  
+  // the foot has now been rotated to agree with the pelvis orientation:
+  odom_to_primary_foot_fixed_.setIdentity();
+  odom_to_primary_foot_fixed_.translation() = foot_new_trans;
+  odom_to_primary_foot_fixed_.rotate( q_foot_new ); 
+  
+  odom_to_body_ = odom_to_primary_foot_fixed_ * body_to_r_foot.inverse() ;
+  odom_to_secondary_foot_ = odom_to_body_ * body_to_l_foot;  
+  
+  
+}
+*/
 
 
 contact_status_id leg_estimate::footTransition(){
@@ -513,7 +501,7 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
   // 5. Analyse signals to infer covariance
   // Classify/Detect Contact events: strike, break, swing, sway
   foot_contact_classify_->setFootSensing(lfoot_sensing_, rfoot_sensing_);
-  float contact_classification = foot_contact_classify_->update(current_utime_, odom_to_fixed_primary_foot_, 
+  float contact_classification = foot_contact_classify_->update(current_utime_, odom_to_primary_foot_fixed_, 
                                                        odom_to_secondary_foot_, standing_foot_);  
   contact_status_id contact_status = F_STATUS_UNKNOWN;
   if (1==0){
@@ -535,12 +523,22 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
     exit(-1);
   }
     
-  world_to_fixed_primary_foot_ = world_to_body_*getPrimaryFootPose(primary_foot_, body_to_l_foot, body_to_r_foot);    
+  // NB: the corresponding variables are send 
+  world_to_primary_foot_slide_ = world_to_body_*getPrimaryFootPose(primary_foot_, body_to_l_foot, body_to_r_foot);    
   world_to_secondary_foot_ = world_to_body_*getSecondaryFootPose(primary_foot_, body_to_l_foot, body_to_r_foot);  
+  if ( (contact_status == F_LEFT_NEW) || (contact_status == F_RIGHT_NEW) ){
+    std::cout << "Lets hold this shit still\n";
+    world_to_primary_foot_transition_ = world_to_primary_foot_slide_;
+    Isometry3dTime world_to_primary_trans_T = Isometry3dTime(current_utime_ , world_to_primary_foot_transition_ ) ;
+    pc_vis_->pose_to_lcm_from_list(1014, world_to_primary_trans_T);
+  }
+  
+  
+  
   
     
   // 4. Determine a valid kinematic delta
-  float estimate_status = -1.0; // if odometry is not valid, then
+  float estimate_status = -1.0; // if odometry is not valid, then use -1 to indicate it
   if (leg_odo_init_){
     if (!init_this_iteration){
       // Calculate and publish the position delta:
@@ -568,7 +566,7 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
     if (publish_diagnostics_){
       Isometry3dTime odom_to_body_T = Isometry3dTime(current_utime_ , odom_to_body_ ) ;
       pc_vis_->pose_to_lcm_from_list(1001, odom_to_body_T);
-      Isometry3dTime odom_to_primary_T = Isometry3dTime(current_utime_ , odom_to_fixed_primary_foot_ ) ;
+      Isometry3dTime odom_to_primary_T = Isometry3dTime(current_utime_ , odom_to_primary_foot_fixed_ ) ;
       pc_vis_->pose_to_lcm_from_list(1002, odom_to_primary_T);
       Isometry3dTime odom_to_secondary_T = Isometry3dTime(current_utime_ , odom_to_secondary_foot_ ) ;
       pc_vis_->pose_to_lcm_from_list(1003, odom_to_secondary_T);
@@ -578,7 +576,7 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
       
       Isometry3dTime world_to_body_T = Isometry3dTime(current_utime_ , world_to_body_ ) ;
       pc_vis_->pose_to_lcm_from_list(1011, world_to_body_T);
-      Isometry3dTime world_to_primary_T = Isometry3dTime(current_utime_ , world_to_fixed_primary_foot_ ) ;
+      Isometry3dTime world_to_primary_T = Isometry3dTime(current_utime_ , world_to_primary_foot_slide_ ) ;
       pc_vis_->pose_to_lcm_from_list(1012, world_to_primary_T);
       Isometry3dTime world_to_secondary_T = Isometry3dTime(current_utime_ , world_to_secondary_foot_ ) ;
       pc_vis_->pose_to_lcm_from_list(1013, world_to_secondary_T);
