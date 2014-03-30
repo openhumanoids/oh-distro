@@ -36,10 +36,10 @@ FootContactAlt::FootContactAlt(bool _log_data_files,const float atlasWeight){
   right_contact_state_strong_->forceHigh();
   
   verbose_ =1; // 3 lots, 2 some, 1 v.important
-
 }
 
-int FootContactAlt::DetectFootTransition(int64_t utime, float leftz, float rightz) {
+
+contact_status_id FootContactAlt::DetectFootTransition(int64_t utime, float leftz, float rightz) {
   bool lf_state_last = (bool) left_contact_state_strong_->getState();
   bool rf_state_last = (bool) right_contact_state_strong_->getState();
   
@@ -55,44 +55,44 @@ int FootContactAlt::DetectFootTransition(int64_t utime, float leftz, float right
   if (!lf_state_last && lf_state){
     if (verbose_ >= 1) std::cout << ss.str() << "Left has gone high\n"; 
     standing_foot = F_LEFT;
-    return 0;
+    return F_LEFT_NEW;
   }else if(!rf_state_last && rf_state){
     if (verbose_ >= 1) std::cout << ss.str() << "Right has gone high\n"; 
     standing_foot = F_RIGHT;
-    return 1;
+    return F_RIGHT_NEW;
   }else if(lf_state_last && !lf_state){
     if (verbose_ >= 3) std::cout << ss.str() << "Left has gone low\n"; 
     if (standing_foot==F_LEFT){
       if (verbose_ >= 1) std::cout << ss.str() << "Left has gone low when used as standing, force switch to right "<< leftz << " | "<<  rightz <<"\n"; 
       standing_foot = F_RIGHT;
-      return 1;
+      return F_RIGHT_NEW;
     }else{
       if (verbose_ >= 3) std::cout << ss.str() << "Left has gone low when used not used as standing. Continue with right\n"; 
-      return 3;
+      return F_RIGHT_FIXED;
     }
   }else if(rf_state_last && !rf_state){
     if (verbose_ >= 3) std::cout << ss.str() << "Right has gone low\n"; 
     if (standing_foot==F_RIGHT){
       if (verbose_ >= 1) std::cout << ss.str() << "Right has gone low when used as standing, force switch to left "<< leftz << " | "<<  rightz <<"\n"; 
       standing_foot = F_LEFT;
-      return 0;
+      return F_LEFT_NEW;
     }else{
       if (verbose_ >= 3) std::cout << ss.str() << "Right has gone low when used not used as standing. Continue with left\n"; 
-      return 2;
+      return F_LEFT_FIXED;
     }    
   }else{
     if (standing_foot==F_LEFT){
       if (verbose_ >= 3) std::cout << ss.str() << "Left No change\n";
-      return 2;
+      return F_LEFT_FIXED;
     }else if (standing_foot==F_RIGHT){
       if (verbose_ >= 3) std::cout << ss.str() << "Right No change\n";
-      return 3;
+      return F_RIGHT_FIXED;
     }
   }
   
   std::cout << ss.str() << "Situation unknown. Error\n";
   exit(-1);
-  return -1;
+  return F_STATUS_UNKNOWN;
 }
 
 void FootContactAlt::setStandingFoot(footid_alt foot) {

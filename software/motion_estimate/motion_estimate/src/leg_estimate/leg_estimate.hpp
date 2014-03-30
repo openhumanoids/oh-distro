@@ -37,6 +37,9 @@
 #include <leg_estimate/foot_contact_classify.hpp>
 #include <leg_estimate/common_conversions.hpp>
 
+
+
+
 ///////////////////////////////////////////////////////////////
 class leg_estimate{
   public:
@@ -47,7 +50,8 @@ class leg_estimate{
     }
     
     void setPoseBDI(Eigen::Isometry3d bdi_to_body_in ){ bdi_to_body_ = bdi_to_body_in; }
-
+    void setPoseBody(Eigen::Isometry3d world_to_body_in ){ world_to_body_ = world_to_body_in; }
+    
     void setFootSensing(FootSensing lfoot_sensing_in, FootSensing rfoot_sensing_in ){ 
       lfoot_sensing_ = lfoot_sensing_in;
       rfoot_sensing_ = rfoot_sensing_in;
@@ -109,26 +113,26 @@ class leg_estimate{
     foot_contact_classify* foot_contact_classify_;
     
     // original method from Dehann uses a very conservative Schmitt trigger
-    int footTransition();
+    contact_status_id footTransition();
     // a more aggressive trigger with different logic
-    int footTransitionAlt();
+    contact_status_id footTransitionAlt();
     // output from the FootContact class(es), not directly related to primary_foot_, but close
     int standing_foot_; 
     
     /// Integration Methods:
     bool initializePose(Eigen::Isometry3d body_to_foot);
-    bool prepInitialization(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    bool prepInitialization(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, contact_status_id contact_status);
     // Pure Leg Odometry, no IMU
     // return: true on initialization, else false
-    bool leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    bool leg_odometry_basic(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, contact_status_id contact_status);
     // At the moment a foot transition occurs: slave the pelvis pitch and roll and then fix foot using fk.
     // Dont move or rotate foot after that.
     // return: true on initialization, else false    
-    bool leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    bool leg_odometry_gravity_slaved_once(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, contact_status_id contact_status);
     // Foot position, as with above. For subsequent ticks, foot quaternion is updated using the pelvis quaternion
     // The pelvis position is then backed out using this new foot positon and fk.
     // return: true on initialization, else false    
-    bool leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, int contact_status);
+    bool leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, contact_status_id contact_status);
     
     /// State Variables
     // Current time from current input msg 
@@ -141,7 +145,7 @@ class leg_estimate{
     // The incremental motion of the pelvis: transform between previous_odom_to_body_ and odom_to_body_
     Eigen::Isometry3d delta_odom_to_body_;
     bool leg_odo_init_; // has the leg odometry been initialized. (set to false when an anomoly is detected)
-    footid_alt primary_foot_; // the foot assumed to be fixed for the leg odometry
+    footid_alt primary_foot_; // the foot assumed to be fixed for the leg odometry. TODO: unify the foot ids
     Eigen::Isometry3d odom_to_fixed_primary_foot_; // Position in the odom frame in which the fixed foot is kept
     Eigen::Isometry3d odom_to_secondary_foot_; // Ditto for moving foot (entirely defined by kinematics)
 
@@ -149,6 +153,12 @@ class leg_estimate{
     // Used to calculate position delta by defining pelvis and foot orientation
     // TODO: use estimated state instead
     Eigen::Isometry3d bdi_to_body_;
+    
+    // Pelvis Position produced by mav-estimator
+    // TODO: this should be the same as the RBIS state, currently using LCM to provide this
+    Eigen::Isometry3d world_to_body_;
+    Eigen::Isometry3d world_to_fixed_primary_foot_; // as for odom, except in world frame
+    Eigen::Isometry3d world_to_secondary_foot_; // as for odom, except in world frame
     
     Eigen::Isometry3d previous_body_to_l_foot_; // previous FK positions. Only used in one of the integration methods
     Eigen::Isometry3d previous_body_to_r_foot_;
