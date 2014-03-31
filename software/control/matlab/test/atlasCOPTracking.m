@@ -12,6 +12,7 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
+state_frame = AtlasState(r);
 state_plus_effort_frame = AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
@@ -61,7 +62,7 @@ q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
 T = 20;
-if 1
+if 0
   % create figure 8 zmp traj
   dt = 0.01;
   ts = 0:dt:T;
@@ -163,11 +164,6 @@ tt=-1;
 dt = 0.005;
 tt_prev = -1;
 
-process_noise = 0.01*ones(nq,1);
-observation_noise = 5e-4*ones(nq,1);
-kf = FirstOrderKalmanFilter(process_noise,observation_noise);
-kf_state = kf.getInitialState;
-
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
 resp = input('OK to send input to robot? (y/n): ','s');
@@ -179,6 +175,11 @@ xtraj = [];
 
 q_int = q0;
 qd_int = 0;
+
+alpha_lin = 0.2;
+alpha_ang = 0.2;
+pelvis_lin = zeros(3,1);
+pelvis_ang = zeros(3,1);
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -193,11 +194,18 @@ while tt<T
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-    % get estimated state
-    kf_state = kf.update(tt,kf_state,x(1:nq));
-    x = kf.output(tt,kf_state,x(1:nq));
+    x_raw=x;
 
-    xtraj = [xtraj x];
+    x(1:6) = x_raw(1:6);
+    x(7:nq) = x_raw(7:nq);
+    
+    pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x_raw(nq+(1:3));
+    pelvis_ang = (1-alpha_ang)*pelvis_ang + alpha_ang*x_raw(nq+(4:6));
+    x(nq+(1:3)) = pelvis_lin;
+    x(nq+(4:6)) = pelvis_ang;
+    x(nq+(7:nq)) = x_raw(nq+(7:nq));
+    
+    %xtraj = [xtraj x];
     q = x(1:nq);
     qd = x(nq+(1:nq));
   
@@ -219,6 +227,7 @@ while tt<T
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
+    %state_frame.publish(t,x,'EST_ROBOT_STATE_LP');
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
@@ -233,51 +242,51 @@ ref_frame.updateGains(gains);
 
 % move to fixed point configuration 
 qdes = xstar(1:nq);
-atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,6);
+atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-
-% plot tracking performance
-alpha = 0.01;
-zmpact = [];
-for i=1:size(xtraj,2)
-  x = xtraj(:,i);
-  q = x(1:nq);
-  qd = x(nq+(1:nq));  
-  
-  if i==1
-		qdd = 0*qd;
-	else
-		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/dt;
-  end
-  qd_prev = qd;
-	qdd_prev = qdd;  
-
-  kinsol = doKinematics(r,q,false,true);
-  [com,J] = getCOM(r,kinsol);
-	J = J(1:2,:); 
-	Jdot = forwardJacDot(r,kinsol,0);
-  Jdot = Jdot(1:2,:);
-	
-	% hardcoding D for ZMP output dynamics
-	D = -1.03./9.81*eye(2); 
-
-	comdd = Jdot * qd + J * qdd;
-	zmp = com(1:2) + D * comdd;
-	zmpact = [zmpact [zmp;0]];
-end
-
-nb = length(zmptraj.getBreaks());
-zmpknots = reshape(zmptraj.eval(zmptraj.getBreaks()),2,nb);
-zmpknots = [zmpknots; zeros(1,nb)];
-
-zmpact = R'*zmpact;
-zmpknots = R'*zmpknots;
-
-figure(11);
-plot(zmpact(2,:),zmpact(1,:),'r');
-hold on;
-plot(zmpknots(2,:),zmpknots(1,:),'g');
-hold off;
-axis equal;
+% 
+% % plot tracking performance
+% alpha = 0.01;
+% zmpact = [];
+% for i=1:size(xtraj,2)
+%   x = xtraj(:,i);
+%   q = x(1:nq);
+%   qd = x(nq+(1:nq));  
+%   
+%   if i==1
+% 		qdd = 0*qd;
+% 	else
+% 		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/dt;
+%   end
+%   qd_prev = qd;
+% 	qdd_prev = qdd;  
+% 
+%   kinsol = doKinematics(r,q,false,true);
+%   [com,J] = getCOM(r,kinsol);
+% 	J = J(1:2,:); 
+% 	Jdot = forwardJacDot(r,kinsol,0);
+%   Jdot = Jdot(1:2,:);
+% 	
+% 	% hardcoding D for ZMP output dynamics
+% 	D = -1.03./9.81*eye(2); 
+% 
+% 	comdd = Jdot * qd + J * qdd;
+% 	zmp = com(1:2) + D * comdd;
+% 	zmpact = [zmpact [zmp;0]];
+% end
+% 
+% nb = length(zmptraj.getBreaks());
+% zmpknots = reshape(zmptraj.eval(zmptraj.getBreaks()),2,nb);
+% zmpknots = [zmpknots; zeros(1,nb)];
+% 
+% zmpact = R'*zmpact;
+% zmpknots = R'*zmpknots;
+% 
+% figure(11);
+% plot(zmpact(2,:),zmpact(1,:),'r');
+% hold on;
+% plot(zmpknots(2,:),zmpknots(1,:),'g');
+% hold off;
+% axis equal;
 
 end
