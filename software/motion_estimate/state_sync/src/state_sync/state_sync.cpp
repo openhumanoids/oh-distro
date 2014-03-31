@@ -118,7 +118,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   pose_BDI_.utime =0; // use this to signify un-initalised
   pose_MIT_.utime =0; // use this to signify un-initalised
   
-  bool use_short_queue;
+  bool use_short_queue = true;
   if (use_short_queue){
     sub0->setQueueCapacity(1);
     sub1->setQueueCapacity(1); 
