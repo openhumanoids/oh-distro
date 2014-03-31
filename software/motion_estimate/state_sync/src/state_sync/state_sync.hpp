@@ -20,9 +20,14 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
+#include <bot_param/param_client.h>
+#include <bot_param/param_util.h>
+
+
 #include <pointcloud_tools/pointcloud_math.hpp>
 #include "atlas/AtlasControlTypes.h"
 #include "atlas/AtlasJointNames.h"
+#include <estimate_tools/kalman_filter.hpp>
 
 struct Joints { 
   std::vector<float> position;
@@ -38,15 +43,21 @@ class state_sync{
       bool standalone_head_, bool standalone_hand_,
       bool spoof_motion_estimation, bool simulation_mode_,
       bool use_encoder_joint_sensors_, std::string output_channel_,
-      bool publish_pose_body_);
+      bool publish_pose_body_, bool use_kalman_filtering_);
     
     ~state_sync(){
     }
     void Identity();
     
+    void setBotParam(BotParam* new_botparam){
+      botparam_ = new_botparam;
+    }
+    void setEncodersFromParam();
+    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
+    BotParam* botparam_;
     JointUtils joint_utils_;
     
     bool standalone_head_, standalone_hand_;
@@ -55,9 +66,10 @@ class state_sync{
     bool use_encoder_joint_sensors_;
     std::string output_channel_;
     bool publish_pose_body_;
+    bool use_kalman_filtering_;
 
     long utime_prev_;
-
+    
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg);
     void atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     void leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::hand_state_t* msg);
@@ -66,8 +78,10 @@ class state_sync{
     void poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg);
     void potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
-    void refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
-    void loadEncoderOffsetsFromFile();
+    
+    // Encoder now read from main cfg file and updates received via param server
+    //void refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
+    // void loadEncoderOffsetsFromFile();
     void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
     void enableEncoders(bool enable);
     
@@ -79,6 +93,12 @@ class state_sync{
 
     PoseT pose_BDI_;
     PoseT pose_MIT_;
+    
+    // Kalman Filters for joint angles:
+    void filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity);
+    std::vector<KalmanFilter*> joint_kf_;
+    std::vector<int> filter_idx_;
+    
     
     
     // Keep two different offset vectors, for clarity:
