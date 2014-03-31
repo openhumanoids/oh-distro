@@ -383,8 +383,8 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
     x_D(0) = joint_position[  filter_idx_[i] ];
     x_dot_D(0) = joint_velocity[ filter_idx_[i] ];
     joint_kf_[i]->processSample(t,x_D, x_dot_D, x_filtered, x_dot_filtered);
-    joint_position[ filter_idx_[i] ] = x_filtered(0);
-    joint_velocity[ filter_idx_[i] ] = x_dot_filtered(0);
+    joint_position[ filter_idx_[i] ] = x_filtered.data()[0];
+    joint_velocity[ filter_idx_[i] ] = x_dot_filtered.data()[0];
   }
   
   //int64_t toc = _timestamp_now();
@@ -447,10 +447,6 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
             }
 
             atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
-
-            // copy pot positions back into _out so we have them in the lcm log
-            atlas_joints_out_.position[i] = mod_positions[i];
-            atlas_joints_out_.position[i] = msg->joint_velocity[i];
           }
         }
       }
