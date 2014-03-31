@@ -454,22 +454,6 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
     }
   }
 
-  double eta;
-  for (int i=0; i<Atlas::NUM_JOINTS; i++) {
-    if (sign(atlas_joints_.velocity[i]) != qd_sign_[i]) {
-      qd_sign_time_[i] = msg->utime;
-    }
-    std::cout << msg->utime << std::endl;
-    std::cout << qd_sign_time_[i] << std::endl;
-    std::cout << (msg->utime-qd_sign_time_[i])/(0.1*1e6) << std::endl << std::endl;
-
-    eta = 1.0;// min(1.0,(msg->utime-qd_sign_time_[i])/(0.1*1e6));
-    qd_filt_[i] = 0.95*qd_filt_[i] + 0.05*atlas_joints_.velocity[i]*eta;
-    qd_sign_[i] = sign(atlas_joints_.velocity[i]);
-    atlas_joints_.velocity[i] = qd_filt_[i];
-  }
-  
-  
   if (use_kalman_filtering_){//  atlas_joints_ filtering here
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
   }
