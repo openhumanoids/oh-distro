@@ -68,7 +68,7 @@ void App::sendUpdate(){
 
   bot_param::entry_t entry;
   entry.is_array = true;
-  std::string key = "encoders.joint_index";
+  std::string key = "control.encoder_offsets.index";
   entry.key = key;
   entry.value = "1,2,3,4,5,6,7,8,9,10,11,12";
   char* val = NULL;
@@ -81,7 +81,7 @@ void App::sendUpdate(){
 
   bot_param::entry_t entry2;
   entry2.is_array = true;
-  key = "encoders.offsets";
+  key = "control.encoder_offsets.value";
   entry2.key = key;
   entry2.value = ".01,.02,.03,.04,.05,.06,.07,.08,.09,.10,.11,.12";
   char* val2 = NULL;

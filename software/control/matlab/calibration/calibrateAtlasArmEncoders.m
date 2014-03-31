@@ -135,7 +135,7 @@ end
     ex = ex(1:28); % just grab state off the robot
     enc_diff = calib_val(r.stateToBDIInd) - ex;
 
-    % note: using BDI's order (extra message uses this)
+    % note: using BDI's order, same as in common_components.cfg
     JOINT_L_ARM_USY   = 17;
     JOINT_L_ARM_SHX   = 18;
     JOINT_L_ARM_ELY   = 19;
@@ -149,7 +149,6 @@ end
     JOINT_R_ARM_UWY   = 27;
     JOINT_R_ARM_MWX   = 28;
 
-    
     msg = bot_param.set_t();
     msg.utime = bot_timestamp_now();
     msg.sequence_number = bot_param_get_seqno();
@@ -157,8 +156,9 @@ end
     
     joint_ind = bot_param.entry_t();
     joint_ind.is_array = true;
-    joint_ind.key = 'encoders.joint_index';
-    joint_ind.value = [num2str(JOINT_R_ARM_USY-1) ',' ...
+    joint_ind.key = 'control.encoder_offsets.index';
+    joint_ind.value = ['3,' ...
+                       num2str(JOINT_R_ARM_USY-1) ',' ...
                        num2str(JOINT_R_ARM_SHX-1) ',' ...
                        num2str(JOINT_R_ARM_ELY-1) ',' ...
                        num2str(JOINT_R_ARM_ELX-1) ',' ...
@@ -173,8 +173,9 @@ end
     
     offsets = bot_param.entry_t();
     offsets.is_array = true;
-    offsets.key = 'encoders.offsets';
-    offsets.value = [num2str(enc_diff(JOINT_R_ARM_USY)) ',' ...
+    offsets.key = 'control.encoder_offsets.value';
+    offsets.value = ['4.24,' ...
+                       num2str(enc_diff(JOINT_R_ARM_USY)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_SHX)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_ELY)) ',' ...
                        num2str(enc_diff(JOINT_R_ARM_ELX)) ',' ...
@@ -187,8 +188,10 @@ end
                        num2str(enc_diff(JOINT_L_ARM_UWY)) ',' ...
                        num2str(enc_diff(JOINT_L_ARM_MWX))];
     
-    msg.entries = [joint_ind,offsets];
     msg.numEntries = 2;
+    msg.entries = javaArray('bot_param.entry_t', msg.numEntries);
+    msg.entries(1) = joint_ind;
+    msg.entries(2) = offsets;
     lc.publish('PARAM_SET',msg);
     
     disp('Arm encoder calibration completed.');
