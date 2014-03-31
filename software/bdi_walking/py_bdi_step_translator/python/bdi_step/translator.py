@@ -1,14 +1,18 @@
 import lcm
 import drc
+import bot_core
 import time
 import numpy as np
 
 import py_drake_utils as ut
-import bdi_step.footsteps
+from bdi_step.footsteps import decode_footstep_plan, decode_deprecated_footstep_plan, encode_footstep_plan, FootGoal
 from bdi_step.plotting import draw_swing
 from bdi_step.utils import Behavior, gl, now_utime
 
 NUM_REQUIRED_WALK_STEPS = 4
+
+# Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot.
+ATLAS_FRAME_OFFSET = np.array([0.0400, 0.000, -0.0850])
 
 def blank_step_spec():
     msg = drc.atlas_behavior_step_spec_t()
@@ -26,22 +30,28 @@ class Mode:
     translating = 0
     plotting = 1
 
-class BDIStepTranslator:
-    def __init__(self, mode=Mode.translating, use_spec=True, safe=True):
+class BDIStepTranslator(object):
+    def __init__(self, mode=Mode.translating, safe=True):
         self.mode = mode
         self.safe = safe  # Don't send atlas behavior commands (to ensure that the robot never starts walking accidentally when running tests)
-        self.use_spec = use_spec  # Use update step specification format
-        if not self.use_spec:
-            print "Warning: Using deprecated step data interface. lift_height, knee_nominal, etc. are not supported in this mode."
         self.lc = lcm.LCM()
         if self.mode == Mode.plotting:
             self.gl = gl
         else:
             self.gl = None
-        self.bdi_step_queue = []
+        self.bdi_step_queue_in = []
         self.delivered_index = None
+        self.use_spec = True
         self.drift_from_plan = np.zeros((3,1))
         self.behavior = Behavior.BDI_STEPPING
+        self.T_local_to_bdi = bot_core.rigid_transform_t()
+        self.T_local_to_bdi.trans = np.zeros(3)
+        self.T_local_to_bdi.quat = ut.rpy2quat([0,0,0])
+
+    def handle_bdi_transform(self, channel, msg):
+        if isinstance(msg, str):
+            msg = bot_core.rigid_transform_t.decode(msg)
+        self.T_local_to_bdi = msg
 
     def handle_footstep_plan(self, channel, msg):
         print "Starting new footstep plan"
@@ -51,9 +61,9 @@ class BDIStepTranslator:
             except ValueError:
                 msg = drc.footstep_plan_t.decode(msg)
         if isinstance(msg, drc.deprecated_footstep_plan_t):
-            footsteps, opts = bdi_step.footsteps.decode_deprecated_footstep_plan(msg)
+            footsteps, opts = decode_deprecated_footstep_plan(msg)
         elif isinstance(msg, drc.footstep_plan_t):
-            footsteps, opts = bdi_step.footsteps.decode_footstep_plan(msg)
+            footsteps, opts = decode_footstep_plan(msg)
         else:
             raise ValueError("Can't decode footsteps: not a drc.footstep_plan_t or drc.deprecated_footstep_plan_t")
 
@@ -71,27 +81,28 @@ class BDIStepTranslator:
             ut.send_status(6,0,0,m)
             return
 
-        if self.use_spec:
-            # Use the new step spec interface
-            footsteps = [f.to_bdi_spec(behavior, j-1) for j,f in enumerate(footsteps)]
-        else:
-            # use the older, deprecated interface
-            footsteps = [f.to_step_data(j-1) for j, f in enumerate(footsteps)]
+        # if self.use_spec:
+        #     # Use the new step spec interface
+        #     footsteps = [f.to_bdi_spec(behavior, j-1) for j,f in enumerate(footsteps)]
+        # else:
+        #     # use the older, deprecated interface
+        #     footsteps = [f.to_step_data(j-1) for j, f in enumerate(footsteps)]
 
         self.behavior = behavior
 
         if self.mode == Mode.plotting:
             self.draw(footsteps)
         else:
-            self.bdi_step_queue = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
+            # self.bdi_step_queue_in = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
+            self.bdi_step_queue_in = footsteps
 
-            # Relative step heights
-            if self.use_spec:
-                for i in reversed(range(len(self.bdi_step_queue))):
-                    self.bdi_step_queue[i].foot.position[2] -= footsteps[i+1].foot.position[2]
-            else:
-                for i in reversed(range(len(self.bdi_step_queue))):
-                    self.bdi_step_queue[i].position[2] -= footsteps[i+1].position[2]
+            # # Relative step heights
+            # if self.use_spec:
+            #     for i in reversed(range(len(self.bdi_step_queue_in))):
+            #         self.bdi_step_queue_in[i].foot.position[2] -= footsteps[i+1].foot.position[2]
+            # else:
+            #     for i in reversed(range(len(self.bdi_step_queue_in))):
+            #         self.bdi_step_queue_in[i].position[2] -= footsteps[i+1].position[2]
 
             # self.send_walk_params(1)
             self.send_params(1)
@@ -107,6 +118,32 @@ class BDIStepTranslator:
                 print m
                 ut.send_status(6,0,0,m)
 
+    @property
+    def bdi_step_queue_out(self):
+        bdi_step_queue_out = [s.copy() for s in self.bdi_step_queue_in]
+
+        for step in bdi_step_queue_out:
+            # Transform to BDI coordinate frame
+            T1 = ut.mk_transform(step.pos[:3], step.pos[3:])
+            T2 = ut.mk_transform(self.T_local_to_bdi.trans, ut.quat2rpy(self.T_local_to_bdi.quat))
+            T = T2.dot(T1)
+            step.pos[:3] = T[:3,3]
+            step.pos[3:] = ut.rotmat2rpy(T[:3,:3])
+
+        self.lc.publish('BDI_ADJUSTED_FOOTSTEP_PLAN', encode_footstep_plan(bdi_step_queue_out).encode())
+
+        for step in bdi_step_queue_out:
+            # Express pos of the center of the foot, as expected by BDI
+            R = ut.rpy2rotmat(step.pos[3:])
+            offs = R.dot(ATLAS_FRAME_OFFSET)
+            # import pdb; pdb.set_trace()
+            step.pos[:3] += offs
+
+        for i in reversed(range(2, len(bdi_step_queue_out))):
+            bdi_step_queue_out[i].pos[2] -= bdi_step_queue_out[i-1].pos[2]
+
+        return [s.to_bdi_spec(self.behavior, j+1) for j, s in enumerate(bdi_step_queue_out[2:])]
+
     def handle_atlas_status(self, channel, msg):
         if self.delivered_index is None or self.mode != Mode.translating:
             return
@@ -114,27 +151,16 @@ class BDIStepTranslator:
             msg = drc.atlas_status_t.decode(msg)
         if self.behavior == Behavior.BDI_WALKING:
             index_needed = msg.walk_feedback.next_step_index_needed
-            if (self.delivered_index + 1) < index_needed <= len(self.bdi_step_queue) - 2:
+            if (self.delivered_index + 1) < index_needed <= len(self.bdi_step_queue_in) - 4:
                 print "Handling request for next step: {:d}".format(index_needed)
-                # self.update_drift(msg.walk_feedback.step_queue_saturated)
                 self.send_params(index_needed-1)
         else:
             index_needed = msg.step_feedback.next_step_index_needed
-            if self.delivered_index < index_needed <= len(self.bdi_step_queue):
+            if self.delivered_index < index_needed <= len(self.bdi_step_queue_in) - 2:
                 print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed)
 
-    # def update_drift(self,step_queue):
-    #     print "Updating drift calculation"
-    #     planned = np.reshape(self.bdi_step_queue[self.delivered_index-1].position,(3,1))
-    #     returned = np.reshape(step_queue[0].position,(3,1))
-    #     print "planned:", planned
-    #     print "returned:", returned
-    #     self.drift_from_plan = returned - planned
-    #     for s in self.bdi_step_queue[self.delivered_index:]:
-    #         s.position[:2,0] += self.drift_from_plan[:2,0]
-
-    def send_params(self,step_index):
+    def send_params(self,step_index,force_stop_walking=False):
         """
         Publish the next steppping footstep or up to the next 4 walking footsteps as needed.
         """
@@ -142,32 +168,28 @@ class BDIStepTranslator:
         if self.behavior == Behavior.BDI_WALKING:
             walk_param_msg = drc.atlas_behavior_walk_params_t()
             walk_param_msg.num_required_walk_steps = NUM_REQUIRED_WALK_STEPS
-            if self.use_spec:
-                walk_param_msg.walk_spec_queue = self.bdi_step_queue[step_index-1:step_index+3]
-                walk_param_msg.step_queue = [drc.atlas_step_data_t() for j in range(NUM_REQUIRED_WALK_STEPS)]  # Unused
-            else:
-                walk_param_msg.walk_spec_queue = [blank_walk_spec() for j in range(NUM_REQUIRED_WALK_STEPS)]  # Unused
-                walk_param_msg.step_queue = self.bdi_step_queue[step_index-1:step_index+3]
-            walk_param_msg.use_spec = self.use_spec;
+            walk_param_msg.walk_spec_queue = self.bdi_step_queue_out[step_index-1:step_index+3]
+            walk_param_msg.step_queue = [drc.atlas_step_data_t() for j in range(NUM_REQUIRED_WALK_STEPS)]  # Unused
+            walk_param_msg.use_spec = True
             walk_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
             walk_param_msg.use_demo_walk = 0
+            if force_stop_walking:
+                for step in walk_param_msg.walk_spec_queue:
+                    step.step_index = -1
             self.lc.publish('ATLAS_WALK_PARAMS', walk_param_msg.encode())
             self.delivered_index = walk_param_msg.walk_spec_queue[0].step_index
             print "Sent walk params for step indices {:d} through {:d}".format(walk_param_msg.walk_spec_queue[0].step_index, walk_param_msg.walk_spec_queue[-1].step_index)
         elif self.behavior == Behavior.BDI_STEPPING:
             step_param_msg = drc.atlas_behavior_step_params_t()
             step_param_msg.desired_step = drc.atlas_step_data_t()  # Unused
-            step_param_msg.desired_step_spec = self.bdi_step_queue[step_index-1]
+            step_param_msg.desired_step_spec = self.bdi_step_queue_out[step_index-1]
             step_param_msg.use_relative_step_height = 1  # as of Atlas 2.5.0 this flag is disabled and always acts as if it's set to 1
             step_param_msg.use_demo_walk = 0
-            step_param_msg.use_spec = self.use_spec
-            if self.use_spec:
-                step_param_msg.desired_step = drc.atlas_step_data_t()  # Unused
-                step_param_msg.desired_step_spec = self.bdi_step_queue[step_index-1]
-            else:
-                step_param_msg.desired_step = self.bdi_step_queue[step_index-1]
-                step_param_msg.desired_step_spec = blank_step_spec()  # Unused
-
+            step_param_msg.use_spec = True
+            step_param_msg.desired_step = drc.atlas_step_data_t()  # Unused
+            step_param_msg.desired_step_spec = self.bdi_step_queue_out[step_index-1]
+            if force_stop_walking:
+                step_param_msg.desired_step_spec.step_index = -1
             self.lc.publish('ATLAS_STEP_PARAMS', step_param_msg.encode())
             self.delivered_index = step_param_msg.desired_step_spec.step_index
             print "Sent step params for step index {:d}".format(step_param_msg.desired_step_spec.step_index)
@@ -190,10 +212,10 @@ class BDIStepTranslator:
         Generate a set of footsteps with -1 step indices, which will cause the BDI controller to switch to standing instead of continuing to walk
         """
         if self.behavior == Behavior.BDI_WALKING:
-            n_steps = 4
+            n_steps = 6
         else:
-            n_steps = 1
-        footsteps = [bdi_step.footsteps.FootGoal(pos=np.zeros((6,1)),
+            n_steps = 3
+        footsteps = [FootGoal(pos=np.zeros((6)),
                               step_speed=0,
                               step_height=0,
                               step_id=0,
@@ -211,10 +233,10 @@ class BDIStepTranslator:
                               bdi_step_end_dist=-1,
                               terrain_pts=np.matrix([]))] * n_steps
 
-        self.bdi_step_queue = [f.to_bdi_spec(self.behavior, -1) for f in footsteps]
-        self.send_params(1)
+        self.bdi_step_queue_in = footsteps
+        self.send_params(1, force_stop_walking=True)
 
-        self.bdi_step_queue = []  # to prevent infinite spewing of -1 step indices
+        self.bdi_step_queue_in = []  # to prevent infinite spewing of -1 step indices
         self.delivered_index = None
 
     def run(self):
@@ -226,6 +248,7 @@ class BDIStepTranslator:
             print "BDIStepTranslator running in base-side plotter mode"
             self.lc.subscribe('CANDIDATE_BDI_FOOTSTEP_PLAN', self.handle_footstep_plan)
         self.lc.subscribe('ATLAS_STATUS', self.handle_atlas_status)
+        self.lc.subscribe('LOCAL_TO_LOCAL_BDI', self.handle_bdi_transform)
         while True:
             self.lc.handle()
 
@@ -234,8 +257,8 @@ class BDIStepTranslator:
         Plot a rough guess of each swing foot trajectory, based on the BDI software manual's description of how swing_height and lift_height behave.
         """
         for j in range(len(footsteps)-2):
-            st0 = footsteps[j]
-            st1 = footsteps[j+2]
+            st0 = footsteps[j].to_bdi_spec(self.behavior, 0)
+            st1 = footsteps[j+2].to_bdi_spec(self.behavior, 0)
             is_stepping = self.behavior==Behavior.BDI_STEPPING
             if is_stepping:
                 lift_height = st1.action.lift_height
