@@ -517,12 +517,14 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   // TODO: rate limit this to something like 10Hz
   // TODO: this might need to be published only when pose_BDI_.utime and pose_MIT_.utime are very similar
   if ( pose_BDI_.utime > 0 ){
-    Eigen::Isometry3d world_to_body = getPoseAsIsometry3d(pose_MIT_);
-    Eigen::Isometry3d world_to_body_bdi = getPoseAsIsometry3d(pose_BDI_);
-    Eigen::Isometry3d body_to_body_bdi = world_to_body.inverse() * world_to_body_bdi;
+    Eigen::Isometry3d localmit_to_bodymit = getPoseAsIsometry3d(pose_MIT_);
+    Eigen::Isometry3d localmit_to_bodybdi = getPoseAsIsometry3d(pose_BDI_);
+// localmit_to_body.inverse() * localmit_to_body_bdi;
+    // Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodymit.inverse() * localmit_to_bodymit.inverse() * localmit_to_bodybdi;
+    Eigen::Isometry3d localmit_to_localbdi = localmit_to_bodybdi * localmit_to_bodymit.inverse();
 
-    bot_core::rigid_transform_t body_to_body_bdi_msg = getIsometry3dAsBotRigidTransform( body_to_body_bdi, pose_MIT_.utime );
-    lcm_->publish("BODY_TO_BODY_BDI", &body_to_body_bdi_msg);    
+    bot_core::rigid_transform_t localmit_to_localbdi_msg = getIsometry3dAsBotRigidTransform( localmit_to_localbdi, pose_MIT_.utime );
+    lcm_->publish("LOCAL_TO_LOCAL_BDI", &localmit_to_localbdi_msg);    
   }
 
 }
