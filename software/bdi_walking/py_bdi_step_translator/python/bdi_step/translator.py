@@ -44,14 +44,14 @@ class BDIStepTranslator(object):
         self.use_spec = True
         self.drift_from_plan = np.zeros((3,1))
         self.behavior = Behavior.BDI_STEPPING
-        self.T_local_to_bdi = bot_core.rigid_transform_t()
-        self.T_local_to_bdi.trans = np.zeros(3)
-        self.T_local_to_bdi.quat = ut.rpy2quat([0,0,0])
+        self.T_local_to_localbdi = bot_core.rigid_transform_t()
+        self.T_local_to_localbdi.trans = np.zeros(3)
+        self.T_local_to_localbdi.quat = ut.rpy2quat([0,0,0])
 
     def handle_bdi_transform(self, channel, msg):
         if isinstance(msg, str):
             msg = bot_core.rigid_transform_t.decode(msg)
-        self.T_local_to_bdi = msg
+        self.T_local_to_localbdi = msg
 
     def handle_footstep_plan(self, channel, msg):
         print "Starting new footstep plan"
@@ -81,30 +81,13 @@ class BDIStepTranslator(object):
             ut.send_status(6,0,0,m)
             return
 
-        # if self.use_spec:
-        #     # Use the new step spec interface
-        #     footsteps = [f.to_bdi_spec(behavior, j-1) for j,f in enumerate(footsteps)]
-        # else:
-        #     # use the older, deprecated interface
-        #     footsteps = [f.to_step_data(j-1) for j, f in enumerate(footsteps)]
-
         self.behavior = behavior
 
         if self.mode == Mode.plotting:
             self.draw(footsteps)
         else:
-            # self.bdi_step_queue_in = footsteps[2:]  # cut out the first two steps (which are just the current positions of the feet)
             self.bdi_step_queue_in = footsteps
 
-            # # Relative step heights
-            # if self.use_spec:
-            #     for i in reversed(range(len(self.bdi_step_queue_in))):
-            #         self.bdi_step_queue_in[i].foot.position[2] -= footsteps[i+1].foot.position[2]
-            # else:
-            #     for i in reversed(range(len(self.bdi_step_queue_in))):
-            #         self.bdi_step_queue_in[i].position[2] -= footsteps[i+1].position[2]
-
-            # self.send_walk_params(1)
             self.send_params(1)
 
             if not self.safe:
@@ -125,7 +108,7 @@ class BDIStepTranslator(object):
         for step in bdi_step_queue_out:
             # Transform to BDI coordinate frame
             T1 = ut.mk_transform(step.pos[:3], step.pos[3:])
-            T2 = ut.mk_transform(self.T_local_to_bdi.trans, ut.quat2rpy(self.T_local_to_bdi.quat))
+            T2 = ut.mk_transform(self.T_local_to_localbdi.trans, ut.quat2rpy(self.T_local_to_localbdi.quat))
             T = T2.dot(T1)
             step.pos[:3] = T[:3,3]
             step.pos[3:] = ut.rotmat2rpy(T[:3,:3])
