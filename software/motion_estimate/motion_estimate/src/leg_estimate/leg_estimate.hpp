@@ -69,11 +69,19 @@ class leg_estimate{
     // -1 unuseable/invalid - foot strikes
     float updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime);
 
-
-    void getDeltaLegOdometry(Eigen::Isometry3d &delta_odom_to_body, int64_t &current_utime, int64_t &previous_utime){
-      delta_odom_to_body = delta_odom_to_body_;
+    // returns a validity label, currently alaways true
+    bool getLegOdometryDelta(Eigen::Isometry3d &odom_to_body_delta, int64_t &current_utime, int64_t &previous_utime){
+      odom_to_body_delta = odom_to_body_delta_;
       current_utime = current_utime_;
       previous_utime = previous_utime_;
+      return true;
+    }
+    
+    // returns a validity label
+    bool getLegOdometryWorldConstraint(Eigen::Isometry3d &world_to_body_constraint, int64_t &current_utime){
+      world_to_body_constraint = world_to_body_constraint_;
+      current_utime = current_utime_;
+      return world_to_body_constraint_init_;
     }
     
     Eigen::Isometry3d getRunningEstimate(){ return odom_to_body_; }
@@ -137,7 +145,7 @@ class leg_estimate{
     // return: true on initialization, else false    
     bool leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_l_foot,Eigen::Isometry3d body_to_r_foot, contact_status_id contact_status);
     // related method to determine position constraint
-    void position_constraint_slaved_always(Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot);
+    void determine_position_constraint_slaved_always(Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot);
     
     /// State Variables
     // Current time from current input msg 
@@ -148,7 +156,7 @@ class leg_estimate{
     Eigen::Isometry3d odom_to_body_;
     Eigen::Isometry3d previous_odom_to_body_;
     // The incremental motion of the pelvis: transform between previous_odom_to_body_ and odom_to_body_
-    Eigen::Isometry3d delta_odom_to_body_;
+    Eigen::Isometry3d odom_to_body_delta_;
     bool leg_odo_init_; // has the leg odometry been initialized. (set to false when an anomoly is detected)
     footid_alt primary_foot_; // the foot assumed to be fixed for the leg odometry. TODO: unify the foot ids
     Eigen::Isometry3d odom_to_primary_foot_fixed_; // Position in the odom frame in which the fixed foot is kept
@@ -183,12 +191,10 @@ class leg_estimate{
     Eigen::Isometry3d world_to_secondary_foot_constraint_; 
     // ... and finally the position the pelvis would have if no sliding had occured.
     Eigen::Isometry3d world_to_body_constraint_; 
-    
+    bool world_to_body_constraint_init_; // is this constraint valid/up-to-date?
     
     Eigen::Isometry3d previous_body_to_l_foot_; // previous FK positions. Only used in one of the integration methods
     Eigen::Isometry3d previous_body_to_r_foot_;
-    
-    
 };    
 
 #endif

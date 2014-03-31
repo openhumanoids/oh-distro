@@ -89,6 +89,7 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   world_to_body_.setIdentity();
   world_to_body_init_ = false;
   world_to_primary_foot_transition_init_ = false;
+  world_to_body_constraint_init_ = false;
 }
 
 // Very Basic switch to determine FK of primary and secondary foot
@@ -379,7 +380,7 @@ bool leg_estimate::leg_odometry_gravity_slaved_always(Eigen::Isometry3d body_to_
 
 
 
-void leg_estimate::position_constraint_slaved_always(Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot){
+void leg_estimate::determine_position_constraint_slaved_always(Eigen::Isometry3d body_to_l_foot, Eigen::Isometry3d body_to_r_foot){
   // Take the CURRENT quaternion from [[[POSE_BODY]]] - via FK.
   // Then update the pelvis position
   Eigen::Isometry3d world_to_body_at_zero = Eigen::Isometry3d::Identity(); // ... Dont need to use the translation, so not filling it in
@@ -396,6 +397,7 @@ void leg_estimate::position_constraint_slaved_always(Eigen::Isometry3d body_to_l
   
   world_to_body_constraint_ = world_to_primary_foot_constraint_ * getPrimaryFootFK(primary_foot_,body_to_l_foot, body_to_r_foot).inverse() ;
   world_to_secondary_foot_constraint_ = world_to_body_constraint_ * getSecondaryFootFK(primary_foot_,body_to_l_foot, body_to_r_foot);
+  world_to_body_constraint_init_ = true;
 }
 
 
@@ -515,7 +517,7 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
     world_to_primary_foot_slide_ = world_to_body_*getPrimaryFootFK(primary_foot_, body_to_l_foot, body_to_r_foot);    
     world_to_secondary_foot_ = world_to_body_*getSecondaryFootFK(primary_foot_, body_to_l_foot, body_to_r_foot);  
     if ( (contact_status == F_LEFT_NEW) || (contact_status == F_RIGHT_NEW) ){
-      std::cout << "Lets hold this shit still\n";
+      std::cout << "Leg Estimate: Changing Foot Position Constraint\n";
       world_to_primary_foot_transition_ = world_to_primary_foot_slide_;
       world_to_primary_foot_transition_init_ = true;
       Isometry3dTime world_to_primary_trans_T = Isometry3dTime(current_utime_ , world_to_primary_foot_transition_ ) ;
@@ -531,12 +533,19 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
   if (leg_odo_init_){
     if (!init_this_iteration){
       // Calculate and publish the position delta:
-      delta_odom_to_body_ =  previous_odom_to_body_.inverse() * odom_to_body_; 
+      odom_to_body_delta_ =  previous_odom_to_body_.inverse() * odom_to_body_; 
       estimate_status = 0.0; // assume very accurate to begin with
       
+      if (world_to_body_init_ && world_to_primary_foot_transition_init_){
+        determine_position_constraint_slaved_always(body_to_l_foot, body_to_r_foot);
+      }else{
+        world_to_body_constraint_init_ = false;
+      }
+      
+      
       if (publish_diagnostics_){
-        Eigen::Vector3d motion_T = delta_odom_to_body_.translation();
-        Eigen::Quaterniond motion_R = Eigen::Quaterniond(delta_odom_to_body_.rotation());
+        Eigen::Vector3d motion_T = odom_to_body_delta_.translation();
+        Eigen::Quaterniond motion_R = Eigen::Quaterniond(odom_to_body_delta_.rotation());
         drc::pose_transform_t legodo_msg;
         legodo_msg.utime = current_utime_;
         legodo_msg.prev_utime = previous_utime_;
@@ -566,25 +575,21 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
       pc_vis_->ptcld_to_lcm_from_list(1005, *foot_contact_classify_->getContactPoints() , current_utime_, current_utime_);
       
       if (world_to_body_init_ && world_to_primary_foot_transition_init_){
-      isoT = Isometry3dTime(current_utime_ , world_to_body_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1011, isoT);
-      isoT = Isometry3dTime(current_utime_ , world_to_primary_foot_slide_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1012, isoT);
-      isoT = Isometry3dTime(current_utime_ , world_to_secondary_foot_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1013, isoT);
-     
-      position_constraint_slaved_always(body_to_l_foot, body_to_r_foot);
-      isoT = Isometry3dTime(current_utime_ , world_to_body_constraint_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1021, isoT);
-      isoT = Isometry3dTime(current_utime_ , world_to_primary_foot_constraint_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1022, isoT);
-      isoT = Isometry3dTime(current_utime_ , world_to_secondary_foot_constraint_ ) ;
-      pc_vis_->pose_to_lcm_from_list(1023, isoT);
+        isoT = Isometry3dTime(current_utime_ , world_to_body_ ) ;
+        pc_vis_->pose_to_lcm_from_list(1011, isoT);
+        isoT = Isometry3dTime(current_utime_ , world_to_primary_foot_slide_ ) ;
+        pc_vis_->pose_to_lcm_from_list(1012, isoT);
+        isoT = Isometry3dTime(current_utime_ , world_to_secondary_foot_ ) ;
+        pc_vis_->pose_to_lcm_from_list(1013, isoT);
+      
+        isoT = Isometry3dTime(current_utime_ , world_to_body_constraint_ ) ;
+        pc_vis_->pose_to_lcm_from_list(1021, isoT);
+        isoT = Isometry3dTime(current_utime_ , world_to_primary_foot_constraint_ ) ;
+        pc_vis_->pose_to_lcm_from_list(1022, isoT);
+        isoT = Isometry3dTime(current_utime_ , world_to_secondary_foot_constraint_ ) ;
+        pc_vis_->pose_to_lcm_from_list(1023, isoT);
       }
-      
-      
     }
-    
   }
  
   

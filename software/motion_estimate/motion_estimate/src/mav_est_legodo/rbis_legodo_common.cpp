@@ -8,76 +8,84 @@ LegOdoCommon::LegOdoCommon(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub, BotParam * pa
   
   char* mode_str = bot_param_get_str_or_fail(param, "state_estimator.legodo.mode");
   if (strcmp(mode_str, "lin_rot_rate") == 0) {
-    mode = MODE_LIN_AND_ROT_RATE;
+    mode_ = MODE_LIN_AND_ROT_RATE;
     std::cout << "LegOdo will provide velocity and rotation rates." << std::endl;
-  }
-  else if (strcmp(mode_str, "lin_rate") == 0){
-    mode = MODE_LIN_RATE;
+  }else if (strcmp(mode_str, "lin_rate") == 0){
+    mode_ = MODE_LIN_RATE;
     std::cout << "LegOdo will provide linear velocity rates but no rotation rates." << std::endl;
-  }
-  else{
-    // ... incomplete...
+  }else if (strcmp(mode_str, "pos_and_lin_rate") == 0){
+    mode_ = MODE_POSITION_AND_LIN_RATE;
+    std::cout << "LegOdo will provide positions as well as linear velocity rates." << std::endl;
+  }else{
+    std::cout << "Legodo not understood! [LegOdoCommon]." << std::endl;
   }
 
   free(mode_str);
+  
+  R_legodo_xyz_ = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_xyz");
+  
+  R_legodo_vxyz_ = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vxyz");
+  R_legodo_vang_ = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vang");
+  
+  R_legodo_vxyz_uncertain_ = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vxyz_uncertain");
+  R_legodo_vang_uncertain_ = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vang_uncertain");
+}  
+  
+void LegOdoCommon::getCovariance(LegOdoCommonMode mode_current, bool delta_certain,
+  Eigen::MatrixXd &cov_legodo, Eigen::VectorXi &z_indices){
+  
+  // Determine which velocity variance to use
+  double R_legodo_vxyz_current = R_legodo_vxyz_;
+  double R_legodo_vang_current = R_legodo_vang_;
+  if (!delta_certain){
+    R_legodo_vxyz_current = R_legodo_vxyz_uncertain_;
+    R_legodo_vang_current = R_legodo_vang_uncertain_;
+  }
+  
   Eigen::VectorXd R_legodo;
-  Eigen::VectorXd R_legodo_uncertain;
-
-  if (mode == MODE_LIN_AND_ROT_RATE) {
+  if (mode_current == MODE_LIN_AND_ROT_RATE) {
     z_indices.resize(6);
     R_legodo.resize(6);
-    R_legodo_uncertain.resize(6);
-  }
-  else if (mode == MODE_LIN_RATE){
+  }else if (mode_current == MODE_LIN_RATE){
     z_indices.resize(3);
     R_legodo.resize(3);
-    R_legodo_uncertain.resize(3);
+  }else if (mode_current == MODE_POSITION_AND_LIN_RATE){
+    z_indices.resize(6);
+    R_legodo.resize(6);
   }
-  else{
-    // ... incomplete...
-  }
-
 
   // Initialize covariance matrix based on mode.
-  if (mode == MODE_LIN_AND_ROT_RATE) {
-    double R_legodo_vxyz = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vxyz");
-    double R_legodo_vang = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vang");
-    R_legodo(0) = bot_sq(R_legodo_vxyz);
-    R_legodo(1) = bot_sq(R_legodo_vxyz);
-    R_legodo(2) = bot_sq(R_legodo_vxyz);
-    R_legodo(3) = bot_sq(R_legodo_vang);
-    R_legodo(4) = bot_sq(R_legodo_vang);
-    R_legodo(5) = bot_sq(R_legodo_vang);
-    
-    double R_legodo_vxyz_uncertain = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vxyz_uncertain");
-    double R_legodo_vang_uncertain = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vang_uncertain");
-    R_legodo_uncertain(0) = bot_sq(R_legodo_vxyz_uncertain);
-    R_legodo_uncertain(1) = bot_sq(R_legodo_vxyz_uncertain);
-    R_legodo_uncertain(2) = bot_sq(R_legodo_vxyz_uncertain);
-    R_legodo_uncertain(3) = bot_sq(R_legodo_vang_uncertain);
-    R_legodo_uncertain(4) = bot_sq(R_legodo_vang_uncertain);
-    R_legodo_uncertain(5) = bot_sq(R_legodo_vang_uncertain);
+  if (mode_current == MODE_LIN_AND_ROT_RATE) {
+    R_legodo(0) = bot_sq(R_legodo_vxyz_current);
+    R_legodo(1) = bot_sq(R_legodo_vxyz_current);
+    R_legodo(2) = bot_sq(R_legodo_vxyz_current);
+    R_legodo(3) = bot_sq(R_legodo_vang_current);
+    R_legodo(4) = bot_sq(R_legodo_vang_current);
+    R_legodo(5) = bot_sq(R_legodo_vang_current);
     
     z_indices.head<3>() = eigen_utils::RigidBodyState::velocityInds();
     z_indices.tail<3>() = eigen_utils::RigidBodyState::angularVelocityInds();
-  }else if (mode == MODE_LIN_RATE){
-    double R_legodo_vxyz = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vxyz");
-    R_legodo(0) = bot_sq(R_legodo_vxyz);
-    R_legodo(1) = bot_sq(R_legodo_vxyz);
-    R_legodo(2) = bot_sq(R_legodo_vxyz);
-    
-    double R_legodo_vxyz_uncertain = bot_param_get_double_or_fail(param, "state_estimator.legodo.r_vxyz_uncertain");
-    R_legodo_uncertain(0) = bot_sq(R_legodo_vxyz_uncertain);
-    R_legodo_uncertain(1) = bot_sq(R_legodo_vxyz_uncertain);
-    R_legodo_uncertain(2) = bot_sq(R_legodo_vxyz_uncertain);    
+  }else if (mode_current == MODE_LIN_RATE){
+    R_legodo(0) = bot_sq(R_legodo_vxyz_current);
+    R_legodo(1) = bot_sq(R_legodo_vxyz_current);
+    R_legodo(2) = bot_sq(R_legodo_vxyz_current);
     
     z_indices.head<3>() = eigen_utils::RigidBodyState::velocityInds();
-  }else{
-    // ..incomplete
+  }else if (mode_current == MODE_POSITION_AND_LIN_RATE){
+    R_legodo(0) = bot_sq(R_legodo_xyz_);
+    R_legodo(1) = bot_sq(R_legodo_xyz_);
+    R_legodo(2) = bot_sq(R_legodo_xyz_);
+    R_legodo(3) = bot_sq(R_legodo_vxyz_current);
+    R_legodo(4) = bot_sq(R_legodo_vxyz_current);
+    R_legodo(5) = bot_sq(R_legodo_vxyz_current);
+    
+    z_indices.head<3>() = eigen_utils::RigidBodyState::positionInds();
+    z_indices.tail<3>() = eigen_utils::RigidBodyState::velocityInds();    
   }
   
+  cov_legodo;
   cov_legodo = R_legodo.asDiagonal();
-  cov_legodo_uncertain = R_legodo_uncertain.asDiagonal();
+
 }
 
 
@@ -129,75 +137,57 @@ BotTrans LegOdoCommon::getTransAsVelocityTrans(BotTrans msgT, int64_t utime, int
 }
 
 
-RBISUpdateInterface * LegOdoCommon::createMeasurement(BotTrans &msgT, 
+RBISUpdateInterface * LegOdoCommon::createMeasurement(BotTrans &odo_positionT, BotTrans &odo_deltaT, 
                                                       int64_t utime, int64_t prev_utime, 
-                                                      float odometry_status){
-  BotTrans msgT_vel = getTransAsVelocityTrans(msgT, utime, prev_utime);
+                                                      int odo_position_status, float odo_delta_status){
+  BotTrans odo_velT = getTransAsVelocityTrans(odo_deltaT, utime, prev_utime);
   
   Eigen::MatrixXd cov_legodo_use;
-  if (odometry_status < 0.5){ // low variance, high reliable
-    cov_legodo_use = cov_legodo;
-  }else{ // high variance, low reliable e.g. breaking contact
-    cov_legodo_use = cov_legodo_uncertain;
+  
+  LegOdoCommonMode mode_current = mode_;
+  if ( (mode_current == MODE_POSITION_AND_LIN_RATE) && (!odo_position_status) ){
+    if (verbose) std::cout << "LegOdo Mode is MODE_POSITION_AND_LIN_RATE but position is not suitable\n";
+    if (verbose) std::cout << "Falling back to lin rate only for this iteration\n";
+    mode_current = MODE_LIN_RATE;
   }
   
+  bool delta_certain = true;
+  if (odo_delta_status < 0.5){ // low variance, high reliable
+    delta_certain = true;
+  }else{ // high variance, low reliable e.g. breaking contact
+    delta_certain = false;
+  }  
+  
+  Eigen::MatrixXd cov_legodo;
+  Eigen::VectorXi z_indices;
+  getCovariance(mode_current, delta_certain, cov_legodo, z_indices );  
+  
 
-  if (mode == MODE_LIN_AND_ROT_RATE) {
+  if (mode_current == MODE_LIN_AND_ROT_RATE) {
     // Working on this:
-
-    Eigen::VectorXd z_meas(6);
+    Eigen::VectorXd z_meas(3); // I think this should be 3, but was 6 (and unused code)
     Eigen::Quaterniond quat;
-    eigen_utils::botDoubleToQuaternion(quat, msgT_vel.rot_quat);
-    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msgT_vel.trans_vec);
-
-    //  eigen_utils::botDoubleToQuaternion(quat, msg->quat);
-    //  z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->trans);
-
-    return new RBISIndexedPlusOrientationMeasurement(z_indices, z_meas, cov_legodo_use, quat, RBISUpdateInterface::legodo,
-            utime);
-
-  }else if (mode == MODE_LIN_RATE) {
-
-    return new RBISIndexedMeasurement(eigen_utils::RigidBodyState::velocityInds(),
-        Eigen::Map<const Eigen::Vector3d>( msgT_vel.trans_vec ), cov_legodo_use, RBISUpdateInterface::legodo,
-        utime);
-    //RBISIndexedMeasurement(RBIS::velocity_inds(),
-    //VO_velocity_measurement_body_coords,VO_measurement_cov_body_coords,
-    //vo_sensor_id <you'll need to add this>, utime);
-
+    eigen_utils::botDoubleToQuaternion(quat, odo_velT.rot_quat);
+    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(odo_velT.trans_vec);
+    return new RBISIndexedPlusOrientationMeasurement(z_indices, z_meas, cov_legodo, quat, RBISUpdateInterface::legodo,
+           utime);
+  }else if (mode_current == MODE_LIN_RATE) {
+    return new RBISIndexedMeasurement(z_indices,
+           Eigen::Map<const Eigen::Vector3d>( odo_velT.trans_vec ), cov_legodo, RBISUpdateInterface::legodo,
+           utime);
+  }else if (mode_current == MODE_POSITION_AND_LIN_RATE) {
+    // Newly added mode
+    if (verbose) std::cout << "LegOdometry Mode update both xyz position and rate\n";
+    Eigen::VectorXd z_meas(6);
+    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(odo_positionT.trans_vec);
+    z_meas.tail<3>() = Eigen::Map<const Eigen::Vector3d>(odo_velT.trans_vec);
+    return new RBISIndexedMeasurement(z_indices, z_meas, cov_legodo, RBISUpdateInterface::legodo,
+           utime);
   }else{
     std::cout << "LegOdometry Mode not supported, exiting\n";
     return NULL;
   }
 
-
-    /*
-    if (mode == MODE_POSITION) {
-      return new RBISIndexedMeasurement(eigen_utils::RigidBodyState::positionInds(),
-          Eigen::Map<const Eigen::Vector3d>(msg->pos), cov_scan_match, RBISUpdateInterface::scan_matcher,
-          utime);
-    }
-  else if (mode == MODE_VELOCITY) {
-    return new RBISIndexedMeasurement(eigen_utils::RigidBodyState::velocityInds(),
-        Eigen::Map<const Eigen::Vector3d>(msg->vel), cov_legodo, RBISUpdateInterface::scan_matcher,
-        utime);
-  }
-  else if (mode == MODE_POSITION_YAW || mode == MODE_VELOCITY_YAW) {
-    Eigen::Vector4d z_meas;
-    Eigen::Quaterniond quat;
-    eigen_utils::botDoubleToQuaternion(quat, msg->orientation);
-
-    if (mode == MODE_POSITION_YAW) {
-      z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->pos);
-    }
-    else {
-      z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->vel);
-    }
-
-    return new RBISIndexedPlusOrientationMeasurement(z_indices, z_meas, cov_legodo, quat,
-        RBISUpdateInterface::scan_matcher, utime);
-  }
-  */
 }
 
 }
