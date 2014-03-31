@@ -92,7 +92,7 @@ usePlanning = True
 useAtlasDriver = True
 useLCMGL = True
 useDrakeVisualizer = True
-useNavigationPanel = False
+useNavigationPanel = True
 
 poseCollection = PythonQt.dd.ddSignalMap()
 costCollection = PythonQt.dd.ddSignalMap()

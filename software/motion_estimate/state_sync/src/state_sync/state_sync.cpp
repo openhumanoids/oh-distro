@@ -468,6 +468,33 @@ void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::st
 }
 
 
+
+bot_core::rigid_transform_t getIsometry3dAsBotRigidTransform(Eigen::Isometry3d pose, int64_t utime){
+  bot_core::rigid_transform_t tf;
+  tf.utime = utime;
+  tf.trans[0] = pose.translation().x();
+  tf.trans[1] = pose.translation().y();
+  tf.trans[2] = pose.translation().z();
+  Eigen::Quaterniond quat(pose.rotation());
+  tf.quat[0] = quat.w();
+  tf.quat[1] = quat.x();
+  tf.quat[2] = quat.y();
+  tf.quat[3] = quat.z();
+  return tf;
+
+}
+
+Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
+  Eigen::Isometry3d pose_iso;
+  pose_iso.setIdentity();
+  pose_iso.translation()  << pose.pos[0], pose.pos[1] , pose.pos[2];
+  Eigen::Quaterniond quat = Eigen::Quaterniond(pose.orientation[0], pose.orientation[1], 
+                                               pose.orientation[2], pose.orientation[3]);
+  pose_iso.rotate(quat);
+  return pose_iso;
+}
+
+
 void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
   pose_BDI_.utime = msg->utime;
   pose_BDI_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
@@ -484,6 +511,20 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
   pose_MIT_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
   pose_MIT_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
   pose_MIT_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
+
+  // If State sync has received POSE_BDI and POSE_BODY, we must be running our own estimator
+  // So there will be a difference between these, so publish this for things like walking footstep transformations
+  // TODO: rate limit this to something like 10Hz
+  // TODO: this might need to be published only when pose_BDI_.utime and pose_MIT_.utime are very similar
+  if ( pose_BDI_.utime > 0 ){
+    Eigen::Isometry3d world_to_body = getPoseAsIsometry3d(pose_MIT_);
+    Eigen::Isometry3d world_to_body_bdi = getPoseAsIsometry3d(pose_BDI_);
+    Eigen::Isometry3d body_to_body_bdi = world_to_body.inverse() * world_to_body_bdi;
+
+    bot_core::rigid_transform_t body_to_body_bdi_msg = getIsometry3dAsBotRigidTransform( body_to_body_bdi, pose_MIT_.utime );
+    lcm_->publish("BODY_TO_BODY_BDI", &body_to_body_bdi_msg);    
+  }
+
 }
 
 
