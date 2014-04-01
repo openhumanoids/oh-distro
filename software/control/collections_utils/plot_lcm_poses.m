@@ -1,4 +1,7 @@
-function plot_lcm(values , ypr, id, name, type, reset, draw_links, link_id)
+function plot_lcm(values , rpy, id, name, type, reset, draw_links, link_id)
+% this was ypr for no good reason. mfallon changed it to rpy (the
+% underlying order in march 2014)
+
 % Supported Pose Type Values
 % POSE=1, 
 % TREE=2, 
@@ -26,9 +29,9 @@ for i=1:size(values,1)
   msg2.x= values(i,1);
   msg2.y= values(i,2);
   msg2.z= values(i,3);
-  msg2.yaw= ypr(i,1);
-  msg2.pitch= ypr(i,2);
-  msg2.roll= ypr(i,3);
+  msg2.roll= rpy(i,1);
+  msg2.pitch= rpy(i,2);
+  msg2.yaw= rpy(i,3);
   m.objs(i) =msg2;
 end
 

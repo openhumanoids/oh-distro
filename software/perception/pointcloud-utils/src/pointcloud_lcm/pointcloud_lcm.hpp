@@ -96,6 +96,7 @@ convertLidar(const float * ranges, int numPoints, double thetaStart,
           //project to body centered coordinates
           cloud->points[count].x = ranges[i] * cos(theta);
           cloud->points[count].y = ranges[i] * sin(theta);
+          cloud->points[count].z = 0;
           count++;
       }
       theta += thetaStep;

@@ -8,9 +8,9 @@ namespace MavStateEst {
 
 class LegOdoCommon {
 public:
-  // Typical mode is MODE_LIN_AND_ROT_RATE
+  // Typical mode is MODE_LIN_RATE
   typedef enum {
-    MODE_LIN_RATE, MODE_ROT_RATE, MODE_LIN_AND_ROT_RATE
+    MODE_LIN_RATE, MODE_ROT_RATE, MODE_LIN_AND_ROT_RATE, MODE_POSITION_AND_LIN_RATE
   } LegOdoCommonMode;  
   
   LegOdoCommon(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub, BotParam * param);
@@ -20,18 +20,31 @@ public:
   BotTrans getTransAsVelocityTrans(BotTrans msgT,
            int64_t utime, int64_t prev_utime);
   
-  // Converts the Pelvis Translation into a RBIS measurement
+  
+  // Determine the relevent covariance:
+  void getCovariance(LegOdoCommonMode mode_current, bool delta_certain,
+           Eigen::MatrixXd &cov_legodo, Eigen::VectorXi &z_indices);
+  
+  // Converts the Pelvis Position and Delta Translation into a combined RBIS measurement
   // which is then passed to the estimator  
-  // odometry_status is a measure 0-1 of the reliability of the odometry
-  RBISUpdateInterface * createMeasurement(BotTrans &msgT,
-           int64_t utime, int64_t prev_utime, float odometry_status);
+  // odo_position_status is a position boolean validity flag
+  // odo_delta_status is a measure 0-1 of the reliability of the delta odometry
+  RBISUpdateInterface * createMeasurement(BotTrans &odo_positionT, BotTrans &delta_odoT,
+           int64_t utime, int64_t prev_utime, 
+           int odo_position_status, float odo_delta_status);
   
-  LegOdoCommonMode mode;
-  Eigen::VectorXi z_indices;
-  Eigen::MatrixXd cov_legodo;
-  
-  Eigen::MatrixXd cov_legodo_uncertain; // equivalent matrix, with higher variance with unreliable odometry
+  LegOdoCommonMode mode_;
+  //Eigen::VectorXi z_indices;
+  // Eigen::MatrixXd cov_legodo;
+  //Eigen::MatrixXd cov_legodo_uncertain; // equivalent matrix, with higher variance with unreliable odometry
   bool verbose;
+  
+  double R_legodo_xyz_;
+  double R_legodo_vxyz_;
+  double R_legodo_vang_;
+  double R_legodo_vxyz_uncertain_;
+  double R_legodo_vang_uncertain_;
+  
 };
 
 

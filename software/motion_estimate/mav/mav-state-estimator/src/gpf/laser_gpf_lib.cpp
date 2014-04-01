@@ -28,8 +28,21 @@ void LaserGPF::LaserGPFBaseConstructor(int num_samples, bool gpf_vis, LaserLikel
   this->param = param;
 
   this->verbose = false;
-  this->motion_project = true;
 
+  char* motion_project_str = bot_param_get_str_or_fail(param, "state_estimator.laser_gpf.projection_mode");
+  if (strcmp(motion_project_str, "motion_project") == 0) {
+    this->motion_mode= LaserGPF::motion_project;
+    std::cout << "LaserGpf will motion project lidar." << std::endl;
+  } else if (strcmp(motion_project_str, "motion_interpolate") == 0) {
+    this->motion_mode = LaserGPF::motion_interpolate;
+    std::cout << "LaserGpf will interpolate motion of the lidar." << std::endl;
+  } else {
+    this->motion_mode = LaserGPF::motion_none;
+    std::cout << "LaserGpf will not not project motion onto lidar returns." << std::endl;
+  }
+  
+  
+  
   this->num_samples = num_samples;
   this->laser_like_iface = likelihood_interface;
   this->gpf_substate_mode = gpf_orientation_mode;
@@ -195,6 +208,10 @@ double LaserGPF::likelihoodFunction(const RBIS & state)
   return likelihood;
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 bool LaserGPF::getMeasurement(const RBIS & state, const RBIM & cov, const bot_core::planar_lidar_t * laser_msg,
     Eigen::VectorXd & z_effective, Eigen::MatrixXd & R_effective)
 {
@@ -212,18 +229,20 @@ bool LaserGPF::getMeasurement(const RBIS & state, const RBIM & cov, const bot_co
   laser_msg_c->radstep = laser_msg->radstep;
   laser_msg_c->utime = laser_msg->utime;
 
-  if (this->motion_project) {
+  if (this->motion_mode == LaserGPF::motion_project) {
     Vector3d laser_omega = this->R_body_to_laser * state.angularVelocity();
     Vector3d laser_vel = this->R_body_to_laser * state.velocity();
     this->projected_laser_scan = laser_create_projected_scan_from_planar_lidar_with_motion(this->laser_projector,
         laser_msg_c, "body", laser_omega.data(), laser_vel.data());
-  }
-  else {
+  }else if (this->motion_mode == LaserGPF::motion_interpolate) {
+    this->projected_laser_scan = laser_create_projected_scan_from_planar_lidar_with_interpolation(this->laser_projector,
+        laser_msg_c, "body");
+  }else {
     this->projected_laser_scan = laser_create_projected_scan_from_planar_lidar(this->laser_projector, laser_msg_c,
         "body");
   }
   // BUG: projected_laser_scan is not checked for NULL
-  //      mfallon noted this can happen if thread is processing a lot (gpf_vis = true)
+  //      mfallon noted this can happen if thread is processing a lot (e.g. gpf_vis = true)
 
   bot_core_planar_lidar_t_destroy(laser_msg_c);
 

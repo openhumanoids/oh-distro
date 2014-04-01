@@ -10,8 +10,8 @@ lc.publish('UTIME_TWO', m);
 % 2. Plot a set of axes - and connect them:
 pos= rand(4,3) 
 pos(:,1) = pos(:,1) - 2
-ypr= rand(size(pos))/5
-plot_lcm_poses(pos, ypr, 8, 'Triads', 5, 1, 1, 9)
+rpy= rand(size(pos))/5
+plot_lcm_poses(pos, rpy, 8, 'Triads', 5, 1, 1, 9)
 
 
 
@@ -46,9 +46,9 @@ pos = [0.5  , 0 ,0;
        0.7, 5.9 ,0;
        0.15, 6.3,0       ];
 pos(:,1)= pos(:,1) + 2;
-ypr= zeros(size(pos))
-ypr(:,1) = ( 90-10 + 20*rand( size(pos,1) ,1) )*pi/180
-plot_lcm_poses(pos, ypr, 14, 'Foot Steps', 4, 1, 0, -1)
+rpy= zeros(size(pos))
+rpy(:,1) = ( 90-10 + 20*rand( size(pos,1) ,1) )*pi/180
+plot_lcm_poses(pos, rpy, 14, 'Foot Steps', 4, 1, 0, -1)
 
 
 % 5. A polygon:

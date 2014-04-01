@@ -40,7 +40,7 @@ class CloudAccumulate{
     bool getFinished(){ return finished_; }
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud(){ return combined_cloud_; }
     
-    void publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
+    void publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
@@ -112,8 +112,26 @@ CloudAccumulate::CloudAccumulate(boost::shared_ptr<lcm::LCM> &lcm_, const CloudA
 }
 
 
+
+bot_core_planar_lidar_t * convertPlanarLidarCppToC(std::shared_ptr<bot_core::planar_lidar_t> this_msg){
+
+  bot_core_planar_lidar_t * laser_msg_c = new bot_core_planar_lidar_t;
+  laser_msg_c->intensities = new float[this_msg->nintensities];
+  laser_msg_c->nintensities = this_msg->nintensities;
+  memcpy(laser_msg_c->intensities, &this_msg->intensities[0], this_msg->nintensities * sizeof(float));
+
+  laser_msg_c->ranges = new float[this_msg->nranges];
+  laser_msg_c->nranges = this_msg->nranges;
+  memcpy(laser_msg_c->ranges, &this_msg->ranges[0], this_msg->nranges * sizeof(float));
+
+  laser_msg_c->rad0 = this_msg->rad0;
+  laser_msg_c->radstep = this_msg->radstep;
+  laser_msg_c->utime = this_msg->utime;  
+  return laser_msg_c;
+}
+
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode1(std::shared_ptr<bot_core::planar_lidar_t> this_msg){
-  
+ 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_laser (new pcl::PointCloud<pcl::PointXYZRGB> ());
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_local (new pcl::PointCloud<pcl::PointXYZRGB> ());
     
@@ -211,19 +229,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode2(std::share
   body_to_scan_last_utime_ = this_msg->utime;  
   
   
-  
-  bot_core_planar_lidar_t * laser_msg_c = new bot_core_planar_lidar_t;
-  laser_msg_c->intensities = new float[this_msg->nintensities];
-  laser_msg_c->nintensities = this_msg->nintensities;
-  memcpy(laser_msg_c->intensities, &this_msg->intensities[0], this_msg->nintensities * sizeof(float));
-
-  laser_msg_c->ranges = new float[this_msg->nranges];
-  laser_msg_c->nranges = this_msg->nranges;
-  memcpy(laser_msg_c->ranges, &this_msg->ranges[0], this_msg->nranges * sizeof(float));
-
-  laser_msg_c->rad0 = this_msg->rad0;
-  laser_msg_c->radstep = this_msg->radstep;
-  laser_msg_c->utime = this_msg->utime;  
+  bot_core_planar_lidar_t * laser_msg_c = convertPlanarLidarCppToC(this_msg);
   
   double zeros_lin[3] = { 0 };
   double zeros_ang[3] = { 0 };
@@ -234,10 +240,14 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode2(std::share
   // 600 scans per rev = 15 sec per rev = 4rpm = 24 deg per second = 0.4189 rad/sec
   // 0.6 deg per scan.
   
+  // Old Buggy mode:
+  //projected_laser_scan_ = laser_create_projected_scan_from_planar_lidar_with_motion(laser_projector_,
+  //  laser_msg_c, "body", zeros_ang, zeros_lin);
+
+  projected_laser_scan_ = laser_create_projected_scan_from_planar_lidar_with_interpolation(laser_projector_,
+    laser_msg_c, "body");
   
   
-  projected_laser_scan_ = laser_create_projected_scan_from_planar_lidar_with_motion(laser_projector_,
-    laser_msg_c, "body", zeros_ang, zeros_lin);
   //projected_laser_scan_ = laser_create_projected_scan_from_planar_lidar_with_motion(laser_projector_,
   //   laser_msg_c, "body", rpy_rate_tf, lin_rate_tf);
   if (projected_laser_scan_ == NULL){
@@ -254,7 +264,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode2(std::share
   for (int i = 0; i < projected_laser_scan_->npoints; i++) {
     // std::cout << i << " " << projected_laser_scan_->points[i].x << "\n";
     // std::cout << i << " " << projected_laser_scan_->points[i].z << "\n";   
-    if (   projected_laser_scan_->rawScan->ranges[i] < 30){
+    if (( projected_laser_scan_->rawScan->ranges[i] < 30.0) && ( projected_laser_scan_->rawScan->ranges[i] > 2.0)){
       scan_body->points[n_valid].x = projected_laser_scan_->points[i].x;
       scan_body->points[n_valid].y = projected_laser_scan_->points[i].y;
       scan_body->points[n_valid].z = projected_laser_scan_->points[i].z;
@@ -305,26 +315,84 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode2(std::share
 }
 
 
+
+bool laser_create_projected_scan_from_planar_lidar_with_new(Laser_projector * projector, 
+      const bot_core_planar_lidar_t *msg, const char * dest_frame,
+      std::vector<Eigen::Vector3f>& oPoints){
+  
+  
+  int status;
+  BotTrans origin_end;
+  int64_t scan_end_utime = msg->utime  ; 
+  status = bot_frames_get_trans_with_utime( projector->bot_frames, "SCAN",  dest_frame, scan_end_utime, &origin_end);
+
+  BotTrans origin_start;
+  int64_t scan_start_utime = msg->utime -  1E6*3/(40*4) ; 
+  status = bot_frames_get_trans_with_utime( projector->bot_frames, "SCAN",  dest_frame, scan_start_utime, &origin_start);
+  
+
+  const int n = msg->nranges;
+  if (n < 2) return false;
+  const double tStep = 1.0/(n-1);
+  //Eigen::Quaterniond q0(iPose0.linear());
+  //Eigen::Quaterniond q1(iPose1.linear());
+  //Eigen::Vector3d pos0(iPose0.translation());
+  //Eigen::Vector3d pos1(iPose1.translation());
+  oPoints.resize(n);
+  double t = 0;
+  double theta = msg->rad0;
+  double s, c;
+  
+  BotTrans laser_hit_time_to_dest; // the location of the mirror when that point was captured
+  
+  for (int i = 0; i < n; ++i, t += tStep, theta += msg->radstep) {
+    // two methods for calculating trig:
+    //bot_fasttrig_sincos(theta, &s, &c); // used heavily in libbot
+    c = cos(theta);
+    s = sin(theta);
+    
+    double sensor_xyz[3];
+    sensor_xyz[0] = msg->ranges[i]*c;
+    sensor_xyz[1] = msg->ranges[i]*s;
+    sensor_xyz[2] = 0;
+    
+    double frame_xyz[3];
+    bot_trans_interpolate(&laser_hit_time_to_dest, &origin_start, &origin_end, t);  
+    bot_trans_apply_vec(&laser_hit_time_to_dest, sensor_xyz, frame_xyz);
+    
+    oPoints[i] = Eigen::Vector3f( frame_xyz[0], frame_xyz[1], frame_xyz[2] );
+  }  
+  
+}
+
+
+
+
+
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode3(std::shared_ptr<bot_core::planar_lidar_t> this_msg){
    pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_local (new pcl::PointCloud<pcl::PointXYZRGB> ());
 
 
   std::vector<Eigen::Vector3f> points;
-  Eigen::Isometry3d body_to_scan_start;
-  Eigen::Isometry3d body_to_scan_end;
-  // for old logs end_time suould be more positive   18750 = 0.75 of 1/40 sec
-  // for newer logs start_utime should be more negative (post-28 Marc 2014)
-  int64_t scan_start_utime = this_msg->utime ; 
-  int64_t scan_end_utime = this_msg->utime +  1E6*3/(40*4) ; // 
+  Eigen::Isometry3d local_to_scan_start;
+  Eigen::Isometry3d local_to_scan_end;
+  int64_t scan_start_utime = this_msg->utime ; // for old logs
+  int64_t scan_end_utime = this_msg->utime +  1E6*3/(40*4) ; // for old logs suould be 18750 = 0.75
 
   // std::cout << scan_start_utime << " and " << scan_end_utime << "\n";
   
-  botframes_cpp_->get_trans_with_utime( botframes_ , "SCAN","local"  , scan_start_utime, body_to_scan_start);  
-  botframes_cpp_->get_trans_with_utime( botframes_ , "SCAN", "local"  , scan_end_utime, body_to_scan_end);  
-  
-  lidar_utils_.interpolateScan(this_msg->ranges, this_msg->rad0, this_msg->radstep,
-              body_to_scan_start, body_to_scan_end, points);    
+  botframes_cpp_->get_trans_with_utime( botframes_ , "SCAN","local"  , scan_start_utime, local_to_scan_start);  
+  botframes_cpp_->get_trans_with_utime( botframes_ , "SCAN", "local"  , scan_end_utime, local_to_scan_end);  
+  //  lidar_utils_.interpolateScan(this_msg->ranges, this_msg->rad0, this_msg->radstep,
+  //          local_to_scan_start, local_to_scan_end, points);    
 
+  
+  bot_core_planar_lidar_t * laser_msg_c = convertPlanarLidarCppToC(this_msg);
+  std::string dest_frame_str = "local";// "body"
+  laser_create_projected_scan_from_planar_lidar_with_new( laser_projector_ , 
+      laser_msg_c, dest_frame_str.c_str(), points);
+  
+  
   
   scan_local->width   = points.size();
   scan_local->height   = 1;
@@ -332,7 +400,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode3(std::share
   
   int n_valid =0;
   for (int i = 0; i < points.size(); i++) {
-    if (   this_msg->ranges[i] < 30){
+    if ( (this_msg->ranges[i]<30.0)  && (this_msg->ranges[i]>2.0)  ){
       scan_local->points[n_valid].x = points[i](0);;
       scan_local->points[n_valid].y = points[i](1);;
       scan_local->points[n_valid].z = points[i](2);;
@@ -342,7 +410,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr  CloudAccumulate::convertMode3(std::share
   // Resize outgoing cloud
   scan_local->width   = n_valid;
   scan_local->points.resize (n_valid);    
-  
+
   Isometry3dTime null_T = Isometry3dTime(counter_, Eigen::Isometry3d::Identity()  );
   if (verbose_>=2) pc_vis_->pose_to_lcm_from_list(60010, null_T);
   if (verbose_>=2) pc_vis_->ptcld_to_lcm_from_list(60011, *scan_local, counter_, counter_);   
@@ -359,7 +427,13 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   
   std::shared_ptr<bot_core::planar_lidar_t>  this_msg;
   
-  if (1==1){  
+  int use_deque =1;
+  int convert_mode =2;
+  if (convert_mode ==2){ // deque fails with laser_create_projected_scan_from_planar_lidar_with_interpolation
+    use_deque =0;
+  }
+  
+  if (use_deque){  
     std::shared_ptr<bot_core::planar_lidar_t> data
         (new bot_core::planar_lidar_t(*msg));  
     
@@ -382,14 +456,13 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_local (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  int mode =3;
-  if (mode==1){  
+  
+  if (convert_mode==1){  
     scan_local = convertMode1( this_msg );
-  }else if (mode==2){
+  }else if (convert_mode==2){
     scan_local = convertMode2( this_msg );
   }else{
     scan_local = convertMode3( this_msg );
-    
   }
     
   // Accumulate
@@ -407,6 +480,7 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
     writer.write (s.str(), *combined_cloud_, true); // binary =true
     cout << "finished writing "<< combined_cloud_->points.size() <<" points to:\n" << s.str() <<"\n";
     
+    
     //stringstream ss2;
     //ss2 << "/tmp/sweep_cloud_"  << this_msg->utime << ".pcd";
     //
@@ -423,10 +497,10 @@ void CloudAccumulate::lidarHandler(const lcm::ReceiveBuffer* rbuf, const std::st
 }
 
 
-void CloudAccumulate::publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud){
-  Isometry3dTime null_T = Isometry3dTime(counter_, Eigen::Isometry3d::Identity()  );
+void CloudAccumulate::publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
+  Isometry3dTime null_T = Isometry3dTime(1, Eigen::Isometry3d::Identity()  );
   pc_vis_->pose_to_lcm_from_list(60010, null_T);
-  pc_vis_->ptcld_to_lcm_from_list(60012, *combined_cloud_, counter_, counter_);    
+  pc_vis_->ptcld_to_lcm_from_list(60012, *cloud, 1,1);    
 }
 
 
@@ -443,7 +517,9 @@ int main(int argc, char ** argv) {
   ca_cfg.min_range = 2.0; // remove all the short range points
   ca_cfg.max_range = 30.0;
  
-  std::string pcd_filename = "/home/mfallon/data/atlas/2014-01-21-vicon-walking/octomap/working_version/example_sweep_cloud_400scans.pcd";
+  std::stringstream s;
+  s <<  getDataPath() <<   "/octomap.pcd" ;
+  std::string pcd_filename = s.str();
   int input = 0; // 0 = lcm | 1 = file
   
   ConciseArgs opt(argc, (char**)argv);
@@ -458,7 +534,7 @@ int main(int argc, char ** argv) {
   opt.add(ca_cfg.min_range, "m", "min_range","Min Range to use");
   //
   opt.add(pcd_filename, "f", "pcd_filename","Process this PCD file");    
-  opt.add(input, "i", "input","Input mode: 0=lcm 1=file");    
+  opt.add(input, "i", "input","Input mode: 0=lcm 1=file 2=republish pcd only");    
   opt.parse();  
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
@@ -485,17 +561,29 @@ int main(int argc, char ** argv) {
     }      
   }
 
-
-  convert.doWork(cloud);
-
-
+  
   // LCM collections can only handle about 200k points:
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr sub_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  for (size_t i=0 ; i < 50000 ; i++){
+  for (size_t i=0 ; i < cloud->points.size() ; i=i+20){
     sub_cloud->points.push_back( cloud->points[i] );
+    if (sub_cloud->points.size() > 100000){ // reasonable upper limit in size
+      break;
+    }
   }
   sub_cloud->width = sub_cloud->points.size();
   sub_cloud->height = 1;  
+
+  if (input == 2){
+    std::cout << sub_cloud->points.size() << " sub_cloud\n";
+    std::cout << cloud->points.size() << " cloud\n";
+    std::cout << "Republishing pcd cloud only\n";
+    accu.publishCloud(sub_cloud);
+    return 0;
+  }
+  
+  convert.doWork(cloud);
+
+
   
 
   

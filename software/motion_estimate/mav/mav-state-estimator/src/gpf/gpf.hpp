@@ -144,7 +144,7 @@ void gpfMeasurement(GPFLikelihoodInterface<LikelihoodInterface> * likelihood_int
     z_resid_effective = K_effective.colPivHouseholderQr().solve(Sigma_sample_mean - Sigma_bar_sample_mean);
 
     z_effective.resize(m);
-    z_effective = x_measured + z_resid_effective;
+    z_effective = x_measured + z_resid_effective; // A posteriori update of relevent dimensions of the state
 
     //  eigen_dump(R_effective);
 
