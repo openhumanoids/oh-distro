@@ -15,7 +15,6 @@ pods_install_libraries(collision_detector)
 # uncomment these lines to link against another library via pkg-config
 set(REQUIRED_PACKAGES collision_object path-util bullet eigen3)
 pods_use_pkg_config_packages(collision_detector ${REQUIRED_PACKAGES})
-add_definitions( -DBT_USE_DOUBLE_PRECISION )   
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
