@@ -2,7 +2,7 @@ function atlasCOPTracking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-joint_str = {'leg'};% <---- cell array of (sub)strings  
+joint_str = {'leg','back'};% <---- cell array of (sub)strings  
 
 % load robot model
 r = Atlas();
@@ -12,6 +12,7 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
+state_frame = AtlasState(r);
 state_plus_effort_frame = AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
@@ -60,7 +61,7 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 25;
+T = 30;
 if 1
   % create figure 8 zmp traj
   dt = 0.01;
@@ -70,12 +71,20 @@ if 1
   zmpx = [radius*sin(4*pi/T * ts(1:nt/2)), radius*sin(4*pi/T * ts(1:nt/2+1))];
   zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
 else
-  % rectangle
-  h=0.02; % height/2
-  w=0.1; % width/2
-  zmpx = [0 h h -h -h 0];
-  zmpy = [0 w -w -w w 0];
-  ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
+  % back and forth
+  w=0.1; 
+  zmpx = [0 0  0 0  0 0  0 0  0  0  0 0];
+  zmpy = [0 w -w w -w w -w w -w  w -w 0];
+  
+  np=length(zmpy);
+  ts = linspace(0,T,np);
+
+%   % rectangle
+%   h=0.01; % height/2
+%   w=0.1; % width/2
+%   zmpx = [0 h h -h -h 0];
+%   zmpy = [0 w -w -w w 0];
+%   ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
 end
 
 zmpknots = [zmpx;zmpy;0*zmpx];
@@ -125,7 +134,7 @@ ctrl_data = SharedDataHandle(struct(...
   'comtraj',comtraj,...
   'mu',1,...
   'link_constraints',link_constraints,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
 
 leg_idx = findJointIndices(r,'leg');
@@ -181,6 +190,12 @@ xtraj = [];
 q_int = q0;
 qd_int = 0;
 
+% TEMP
+process_noise = 0.01*ones(6,1);
+observation_noise = 5e-4*ones(6,1);
+kf = FirstOrderKalmanFilter(process_noise,observation_noise);
+kf_state = kf.getInitialState;
+
 alpha_lin = 0.1;
 alpha_ang = 0.1;
 pelvis_lin = zeros(3,1);
@@ -199,15 +214,21 @@ while tt<T
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-    pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x(nq+(1:3));
+    % TEMP get estimated pelvis linear velocity
+    kf_state = kf.update(tt,kf_state,x(1:6));
+    x_p = kf.output(tt,kf_state,x(1:6));
+    
+    %pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x(nq+(1:3));
     pelvis_ang = (1-alpha_ang)*pelvis_ang + alpha_ang*x(nq+(4:6));
-    x(nq+(1:3)) = pelvis_lin;
+    %x(nq+(1:3)) = pelvis_lin;
     x(nq+(4:6)) = pelvis_ang;
+    x(nq+(1:3)) = x_p(6+(1:3));
+    %x(nq+(4:6)) = x_p(6+(4:6));
     
     xtraj = [xtraj x];
     q = x(1:nq);
     qd = x(nq+(1:nq));
-  
+ 
     u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+1:end);
@@ -226,6 +247,7 @@ while tt<T
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
+    state_frame.publish(t,x,'EST_ROBOT_STATE_KF');
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
@@ -244,7 +266,7 @@ atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 
 % plot tracking performance
-alpha = 0.01;
+alpha = 0.1;
 zmpact = [];
 for i=1:size(xtraj,2)
   x = xtraj(:,i);

@@ -2,7 +2,7 @@ function atlasSteppingMomentum
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-joint_str = {'leg'};% <---- cell array of (sub)strings  
+joint_str = {'leg','back'};% <---- cell array of (sub)strings  
 
 % load robot model
 r = Atlas();
@@ -12,6 +12,7 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
+state_frame = AtlasState(r);
 state_plus_effort_frame = AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
@@ -73,7 +74,7 @@ request.goal_pos = encodePosition3d(navgoal);
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
-request.params.max_num_steps = 3;
+request.params.max_num_steps = 1;
 request.params.min_num_steps = 0;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.24;
@@ -129,7 +130,7 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
 traj = PPTrajectory(spline(ts,walking_plan.xtraj));
 traj = traj.setOutputFrame(r.getStateFrame);
@@ -143,7 +144,7 @@ leg_idx = findJointIndices(r,'leg');
 options.slack_limit = 20;
 options.w_qdd = 1e-4*ones(nq,1);
 options.w_qdd(leg_idx) = 1e-6;
-options.W_hdot = diag([0;0;0;1000;1000;1000]);
+options.W_hdot = diag([0;0;0;100;100;100]);
 % options.Kp = 100;
 % options.Kd = 20;
 options.lcm_foot_contacts = false;
@@ -153,15 +154,15 @@ options.contact_threshold = 0.05;
 options.output_qdd = true;
 
 
-foot_opts.Kp = 0.1*[100; 100; 100; 150; 150; 150]; 
-foot_opts.Kd = 0.1*[10; 10; 10; 10; 10; 10];
+foot_opts.Kp = 0.5*[100; 100; 100; 150; 150; 150]; 
+foot_opts.Kd = 0.5*[10; 10; 10; 10; 10; 10];
 lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,foot_opts);
 rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,foot_opts);
 motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
 qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 % cascade PD block
-options.Kp = 30.0*ones(nq,1);
+options.Kp = 40.0*ones(nq,1);
 options.Kd = 6.0*ones(nq,1);
 pd = SimplePDBlock(r,ctrl_data,options);
 ins(1).system = 1;
@@ -226,10 +227,19 @@ end
 
 qd_int = 0;
 
+% TEMP
+process_noise = 0.01*ones(6,1);
+observation_noise = 5e-4*ones(6,1);
+kf = FirstOrderKalmanFilter(process_noise,observation_noise);
+kf_state = kf.getInitialState;
+
 alpha_lin = 0.1;
 alpha_ang = 0.1;
 pelvis_lin = zeros(3,1);
 pelvis_ang = zeros(3,1);
+
+qd_filt = 0;
+qd_prev = 0;
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -244,10 +254,16 @@ while tt<T
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-    pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x(nq+(1:3));
+    % TEMP get estimated pelvis linear velocity
+    kf_state = kf.update(tt,kf_state,x(1:6));
+    x_p = kf.output(tt,kf_state,x(1:6));
+    
+    %pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x(nq+(1:3));
     pelvis_ang = (1-alpha_ang)*pelvis_ang + alpha_ang*x(nq+(4:6));
-    x(nq+(1:3)) = pelvis_lin;
+    %x(nq+(1:3)) = pelvis_lin;
     x(nq+(4:6)) = pelvis_ang;
+    x(nq+(1:3)) = x_p(6+(1:3));
+    %x(nq+(4:6)) = x_p(6+(4:6));
     
     q = x(1:nq);
     qd = x(nq+(1:nq));
