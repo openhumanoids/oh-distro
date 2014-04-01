@@ -282,6 +282,7 @@ def showGrid(view, cellSize=0.5, numberOfCells=25, name='grid', parent='sensors'
     gridObj = showPolyData(grid.GetOutput(), 'grid', view=view, alpha=0.10, color=color, visible=True, parent=parent)
     gridObj.gridSource = grid
     gridObj.actor.GetProperty().LightingOff()
+    gridObj.actor.SetPickable(False)
     return gridObj
 
 
@@ -312,7 +313,11 @@ def updateFrame(frame, name, **kwargs):
     return obj
 
 
-def showFrame(frame, name, parent='segmentation', scale=0.35, visible=True):
+def showFrame(frame, name, view=None, parent='segmentation', scale=0.35, visible=True):
+
+    view = view or app.getCurrentRenderView()
+    assert view
+
     if isinstance(parent, str):
         parentObj = om.getOrCreateContainer(parent)
     else:
@@ -328,8 +333,7 @@ def showFrame(frame, name, parent='segmentation', scale=0.35, visible=True):
 def showPolyData(polyData, name, color=None, colorByName=None, colorByRange=None, alpha=1.0, visible=True, view=None, parent='segmentation', cls=None):
 
     view = view or app.getCurrentRenderView()
-    if view is None:
-        return
+    assert view
 
     cls = cls or om.PolyDataItem
     item = cls(name, polyData, view)
@@ -388,10 +392,7 @@ def showHandCloud(hand='left', view=None):
     return obj
 
 
-def pickImage(displayPoint, obj=None, view=None):
-
-    view = view or app.getCurrentRenderView()
-    assert view
+def pickImage(displayPoint, view, obj=None):
 
     picker = vtk.vtkCellPicker()
 
@@ -412,31 +413,69 @@ def pickImage(displayPoint, obj=None, view=None):
         return pickedDataset, picker.GetPointIJK()
 
 
-def pickPoint(displayPoint, obj=None, view=None, pickType='points', tolerance=0.01):
+def pickProp(displayPoint, view):
+
+    for tolerance in (0.0, 0.005, 0.01):
+        pickType = 'render' if tolerance == 0.0 else 'cells'
+        pickedPoint, pickedProp, pickedDataset = pickPoint(displayPoint, view, pickType=pickType, tolerance=tolerance)
+        if pickedProp is not None:
+            return pickedPoint, pickedProp, pickedDataset
+
+    return None, None, None
+
+
+def pickPoint(displayPoint, view, obj=None, pickType='points', tolerance=0.01, returnNormal=False):
+
+    assert pickType in ('points', 'cells', 'render')
 
     view = view or app.getCurrentRenderView()
     assert view
-
-    picker = vtk.vtkPointPicker() if pickType == 'points' else vtk.vtkCellPicker()
 
     if isinstance(obj, str):
         obj = om.findObjectByName(obj)
         assert obj
 
+
+    if pickType == 'render':
+        picker = vtk.vtkPropPicker()
+    else:
+        picker = vtk.vtkPointPicker() if pickType == 'points' else vtk.vtkCellPicker()
+        picker.SetTolerance(tolerance)
+
+
     if obj:
-        picker.AddPickList(obj.actor)
+        if isinstance(obj, list):
+            for o in obj:
+                picker.AddPickList(o.actor)
+            obj = None
+        else:
+            picker.AddPickList(obj.actor)
         picker.PickFromListOn()
 
-    picker.SetTolerance(tolerance)
     picker.Pick(displayPoint[0], displayPoint[1], 0, view.renderer())
-    pickPoints = picker.GetPickedPositions()
-    pickedPoint = np.array(pickPoints.GetPoint(0)) if pickPoints.GetNumberOfPoints() else None
-    pickedDataset = picker.GetDataSet()
+    pickedProp = picker.GetViewProp()
+    pickedPoint = np.array(picker.GetPickPosition())
+    pickedDataset = pickedProp.GetMapper().GetInput() if isinstance(pickedProp, vtk.vtkActor) else None
+
+    pickedNormal = np.zeros(3)
+
+    if returnNormal:
+        if pickType == 'cells':
+          pickedNormal = np.array(picker.GetPickNormal())
+        elif pickType == 'points' and pickedDataset:
+          pointId = picker.GetPointId()
+          normals = pickedDataset.GetPointData().GetNormals()
+          if normals:
+              pickedNormal = np.array(normals.GetTuple3(pointId))
+
 
     if obj:
-        return pickedPoint
+        if returnNormal:
+            return (pickedPoint, pickedNormal) if pickedProp else (None, None)
+        else:
+            return pickedPoint if pickedProp else None
     else:
-        return pickedDataset, pickedPoint
+        return (pickedPoint, pickedProp, pickedDataset, pickedNormal) if returnNormal else (pickedPoint, pickedProp, pickedDataset)
 
 
 def mapMousePosition(widget, mouseEvent):
@@ -448,12 +487,20 @@ def getObjectByDataSet(polyData):
     for item, obj in om.objects.iteritems():
         if isinstance(obj, om.PolyDataItem) and obj.polyData == polyData:
             return obj
+        elif isinstance(obj, om.RobotModelItem) and obj.model.getLinkNameForMesh(polyData):
+            return obj
 
 
-def findPickedObject(displayPoint, view=None):
+def getObjectByProp(prop):
+    for item, obj in om.objects.iteritems():
+        if isinstance(obj, FrameItem) and obj.widget.GetRepresentation() == prop:
+            return obj
+    if isinstance(prop, vtk.vtkActor):
+        return getObjectByDataSet(prop.GetMapper().GetInput())
 
-    view = view or app.getCurrentRenderView()
-    assert view
 
-    polyData, pickedPoint = pickPoint(displayPoint, view=view, pickType='cells')
-    return getObjectByDataSet(polyData), pickedPoint
+def findPickedObject(displayPoint, view):
+
+    pickedPoint, pickedProp, pickedDataset = pickProp(displayPoint, view)
+    obj = getObjectByProp(pickedProp)
+    return obj, pickedPoint
