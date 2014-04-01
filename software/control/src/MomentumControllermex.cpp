@@ -477,19 +477,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   if (nlhs>3) {
-    plhs[3] = eigenToMatlab(pdata->Hqp);
+    plhs[3] = mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
+    memcpy(mxGetData(plhs[3]),&info,sizeof(int));
   }
 
   if (nlhs>4) {
-    plhs[4] = eigenToMatlab(f);
+    plhs[4] = eigenToMatlab(pdata->Hqp);
   }
 
   if (nlhs>5) {
-    plhs[5] = eigenToMatlab(Aeq);
+    plhs[5] = eigenToMatlab(f);
   }
 
   if (nlhs>6) {
-    plhs[6] = eigenToMatlab(beq);
+    plhs[6] = eigenToMatlab(Aeq);
+  }
+
+  if (nlhs>7) {
+    plhs[7] = eigenToMatlab(beq);
   }
 
   if (model) { 
