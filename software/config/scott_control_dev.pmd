@@ -11,11 +11,11 @@ group "0.development" {
 
 group "1.drivers" {
     cmd "atlas-off" {
-        exec = "drc-atlas -p off";
+        exec = "drc-atlas -p off -s";
         host = "robot";
     }
     cmd "atlas-high" {
-        exec = "drc-atlas -p high";
+        exec = "drc-atlas -p high -s";
         host = "robot";
     }
     cmd "logger-robot" {
@@ -84,13 +84,20 @@ script "start pressure off" {
  }
 
 script "robot start" { 
+    stop cmd "atlas-high";
     stop cmd "atlas-off";
     wait ms 2000;
     start cmd "atlas-high";
 }
 
-script "launch state est" { 
+script "MIT state est" { 
     stop cmd "aa-sync";
     wait ms 1000;
     start group "4.state_est";
+}
+
+script "BDI state est" { 
+    stop group "4.state_est";
+    wait ms 1000;
+    start cmd "aa-sync";
 }
