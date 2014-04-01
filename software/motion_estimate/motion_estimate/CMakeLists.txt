@@ -29,7 +29,7 @@ add_subdirectory(src/fusion)
 
 
 
-add_subdirectory(src/create_octomap)
+#add_subdirectory(src/create_octomap)
 
 
 pods_install_python_script(se-bdi-imu-individually scripts/republish_bdi_imu_individually.py)

@@ -65,21 +65,35 @@
       <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008"/>
     </inertial>
     <visual>
-      <origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
       <geometry>
-        <box size="0.26 0.124887 0.05"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_foot_chull.wrl"
+          scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
-      <origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
       <geometry>
-        <box size="0.26 0.124887 0.05"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_foot_chull.wrl"
+          scale="1 1 1"/>
       </geometry>
     </collision>
-    <xacro:collision_point group="heel" xyz="-0.082 0.0624435 -0.081119" visualize="1"/>
-    <xacro:collision_point group="heel" xyz="-0.082 -0.0624435 -0.081119" visualize="1"/>
-    <xacro:collision_point group="toe" xyz="0.178 0.0624435 -0.081119" visualize="1"/>
-    <xacro:collision_point group="toe" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>
+    <!--<visual>-->
+      <!--<origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>-->
+      <!--<geometry>-->
+        <!--<box size="0.26 0.124887 0.05"/>-->
+      <!--</geometry>-->
+    <!--</visual>-->
+    <!--<collision>-->
+      <!--<origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>-->
+      <!--<geometry>-->
+        <!--<box size="0.26 0.124887 0.05"/>-->
+      <!--</geometry>-->
+    <!--</collision>-->
+    <!--<xacro:collision_point group="heel" xyz="-0.082 0.0624435 -0.081119" visualize="1"/>-->
+    <!--<xacro:collision_point group="heel" xyz="-0.082 -0.0624435 -0.081119" visualize="1"/>-->
+    <!--<xacro:collision_point group="toe" xyz="0.178 0.0624435 -0.081119" visualize="1"/>-->
+    <!--<xacro:collision_point group="toe" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>-->
     <!--<xacro:collision_point group="heel_mid" xyz="-0.082 0 -0.081119" visualize="1"/>-->
     <!--<xacro:collision_point group="toe_mid" xyz="0.178 0 -0.081119" visualize="1"/>-->
     <!--    <xacro:collision_point group="inner" xyz="-0.08 0.055 -0.081119" visualize="1"/>-->
@@ -362,21 +376,34 @@
       <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.007" iyz="0" izz="0.008"/>
     </inertial>
     <visual>
-      <origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>
       <geometry>
-        <box size="0.26 0.124887 0.05"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_foot_chull.wrl"
+          scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
-      <origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
       <geometry>
-        <box size="0.26 0.124887 0.05"/>
+        <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_foot_chull.wrl"
+          scale="1 1 1"/>
       </geometry>
     </collision>
-    <xacro:collision_point group="heel" xyz="-0.082 0.0624435 -0.081119" visualize="1"/>
-    <xacro:collision_point group="heel" xyz="-0.082 -0.0624435 -0.081119" visualize="1"/>
-    <xacro:collision_point group="toe" xyz="0.178 0.0624435 -0.081119" visualize="1"/>
-    <xacro:collision_point group="toe" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>
+    <!--<visual>-->
+      <!--<origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>-->
+      <!--<geometry>-->
+        <!--<box size="0.26 0.124887 0.05"/>-->
+      <!--</geometry>-->
+    <!--</visual>-->
+    <!--<collision>-->
+      <!--<origin xyz="0.048 0 -0.056119" rpy="0 0 0"/>-->
+      <!--<geometry>-->
+        <!--<box size="0.26 0.124887 0.05"/>-->
+      <!--</geometry>-->
+    <!--</collision>-->
+    <!--<xacro:collision_point group="heel" xyz="-0.082 0.0624435 -0.081119" visualize="1"/>-->
+    <!--<xacro:collision_point group="heel" xyz="-0.082 -0.0624435 -0.081119" visualize="1"/>-->
+    <!--<xacro:collision_point group="toe" xyz="0.178 0.0624435 -0.081119" visualize="1"/>-->
+    <!--<xacro:collision_point group="toe" xyz="0.178 -0.0624435 -0.081119" visualize="1"/>-->
     <!--<xacro:collision_point group="heel_mid" xyz="-0.082 0 -0.081119" visualize="1"/>-->
     <!--<xacro:collision_point group="toe_mid" xyz="0.178 0 -0.081119" visualize="1"/>-->
     <!--    <xacro:collision_point group="inner" xyz="-0.08 0.055 -0.081119" visualize="1"/>-->
