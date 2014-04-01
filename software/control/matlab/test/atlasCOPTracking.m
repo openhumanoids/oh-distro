@@ -61,13 +61,13 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 20;
-if 0
+T = 25;
+if 1
   % create figure 8 zmp traj
   dt = 0.01;
   ts = 0:dt:T;
   nt = T/dt;
-  radius = 0.05; % 8 loop radius
+  radius = 0.04; % 8 loop radius
   zmpx = [radius*sin(4*pi/T * ts(1:nt/2)), radius*sin(4*pi/T * ts(1:nt/2+1))];
   zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
 else
@@ -128,10 +128,16 @@ ctrl_data = SharedDataHandle(struct(...
   'link_constraints',link_constraints,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
+
+leg_idx = findJointIndices(r,'leg');
+
 % instantiate QP controller
 options.slack_limit = 20;
 options.w_qdd = 1e-4*ones(nq,1);
+options.w_qdd(leg_idx) = 1e-6;
 options.W_hdot = diag([0;0;0;1000;1000;1000]);
+% options.Kp = 100;
+% options.Kd = 20;
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -142,7 +148,7 @@ qp = MomentumControlBlock(r,{},ctrl_data,options);
 % cascade PD block
 options.Kp = 30.0*ones(nq,1);
 options.Kd = 6.0*ones(nq,1);
-pd = WalkingPDBlock(r,ctrl_data,options);
+pd = SimplePDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 1;
@@ -176,8 +182,8 @@ xtraj = [];
 q_int = q0;
 qd_int = 0;
 
-alpha_lin = 0.2;
-alpha_ang = 0.2;
+alpha_lin = 0.1;
+alpha_ang = 0.1;
 pelvis_lin = zeros(3,1);
 pelvis_ang = zeros(3,1);
 while tt<T
@@ -194,18 +200,12 @@ while tt<T
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-    x_raw=x;
-
-    x(1:6) = x_raw(1:6);
-    x(7:nq) = x_raw(7:nq);
-    
-    pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x_raw(nq+(1:3));
-    pelvis_ang = (1-alpha_ang)*pelvis_ang + alpha_ang*x_raw(nq+(4:6));
+    pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x(nq+(1:3));
+    pelvis_ang = (1-alpha_ang)*pelvis_ang + alpha_ang*x(nq+(4:6));
     x(nq+(1:3)) = pelvis_lin;
     x(nq+(4:6)) = pelvis_ang;
-    x(nq+(7:nq)) = x_raw(nq+(7:nq));
     
-    %xtraj = [xtraj x];
+    xtraj = [xtraj x];
     q = x(1:nq);
     qd = x(nq+(1:nq));
   
@@ -244,49 +244,49 @@ ref_frame.updateGains(gains);
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-% 
-% % plot tracking performance
-% alpha = 0.01;
-% zmpact = [];
-% for i=1:size(xtraj,2)
-%   x = xtraj(:,i);
-%   q = x(1:nq);
-%   qd = x(nq+(1:nq));  
-%   
-%   if i==1
-% 		qdd = 0*qd;
-% 	else
-% 		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/dt;
-%   end
-%   qd_prev = qd;
-% 	qdd_prev = qdd;  
-% 
-%   kinsol = doKinematics(r,q,false,true);
-%   [com,J] = getCOM(r,kinsol);
-% 	J = J(1:2,:); 
-% 	Jdot = forwardJacDot(r,kinsol,0);
-%   Jdot = Jdot(1:2,:);
-% 	
-% 	% hardcoding D for ZMP output dynamics
-% 	D = -1.03./9.81*eye(2); 
-% 
-% 	comdd = Jdot * qd + J * qdd;
-% 	zmp = com(1:2) + D * comdd;
-% 	zmpact = [zmpact [zmp;0]];
-% end
-% 
-% nb = length(zmptraj.getBreaks());
-% zmpknots = reshape(zmptraj.eval(zmptraj.getBreaks()),2,nb);
-% zmpknots = [zmpknots; zeros(1,nb)];
-% 
-% zmpact = R'*zmpact;
-% zmpknots = R'*zmpknots;
-% 
-% figure(11);
-% plot(zmpact(2,:),zmpact(1,:),'r');
-% hold on;
-% plot(zmpknots(2,:),zmpknots(1,:),'g');
-% hold off;
-% axis equal;
+
+% plot tracking performance
+alpha = 0.01;
+zmpact = [];
+for i=1:size(xtraj,2)
+  x = xtraj(:,i);
+  q = x(1:nq);
+  qd = x(nq+(1:nq));  
+  
+  if i==1
+		qdd = 0*qd;
+	else
+		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/dt;
+  end
+  qd_prev = qd;
+	qdd_prev = qdd;  
+
+  kinsol = doKinematics(r,q,false,true);
+  [com,J] = getCOM(r,kinsol);
+	J = J(1:2,:); 
+	Jdot = forwardJacDot(r,kinsol,0);
+  Jdot = Jdot(1:2,:);
+	
+	% hardcoding D for ZMP output dynamics
+	D = -1.03./9.81*eye(2); 
+
+	comdd = Jdot * qd + J * qdd;
+	zmp = com(1:2) + D * comdd;
+	zmpact = [zmpact [zmp;0]];
+end
+
+nb = length(zmptraj.getBreaks());
+zmpknots = reshape(zmptraj.eval(zmptraj.getBreaks()),2,nb);
+zmpknots = [zmpknots; zeros(1,nb)];
+
+zmpact = R'*zmpact;
+zmpknots = R'*zmpknots;
+
+figure(11);
+plot(zmpact(2,:),zmpact(1,:),'r');
+hold on;
+plot(zmpknots(2,:),zmpknots(1,:),'g');
+hold off;
+axis equal;
 
 end
