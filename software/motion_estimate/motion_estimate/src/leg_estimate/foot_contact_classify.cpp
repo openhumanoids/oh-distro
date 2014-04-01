@@ -51,11 +51,7 @@ foot_contact_classify::foot_contact_classify ( boost::shared_ptr<lcm::LCM> &lcm_
   foot_to_sole_.translation().z() = foot_to_sole_z_;  
 }
 
-std::string print_variables(int mode_, bool left_contact, bool right_contact, bool left_contact_break, bool right_contact_break){
-  std::stringstream ss;
-  ss << left_contact << "" << right_contact << "  " << left_contact_break << "" << right_contact_break << " | " << mode_;
-  return ss.str();
-}
+
 
 float foot_contact_classify::update (int64_t utime, Eigen::Isometry3d primary_foot, Eigen::Isometry3d secondary_foot,
   int standing_foot){
@@ -147,6 +143,12 @@ float foot_contact_classify::update (int64_t utime, Eigen::Isometry3d primary_fo
 }
 
 
+std::string print_variables(int mode_, bool left_contact, bool right_contact, bool left_contact_break, bool right_contact_break){
+  std::stringstream ss;
+  ss << left_contact << "" << right_contact << "  " << left_contact_break << "" << right_contact_break << " | " << mode_;
+  return ss.str();
+}
+
 int foot_contact_classify::updateWalkingPhase (int64_t utime, bool left_contact, bool right_contact,
   bool left_contact_strong, bool right_contact_strong){
   string pv = print_variables(mode_,left_contact,right_contact,left_contact_strong, right_contact_strong);
@@ -208,12 +210,16 @@ int foot_contact_classify::updateWalkingPhase (int64_t utime, bool left_contact,
   
   if (mode_ == LEFT_PRIME_RIGHT_SWING){
     if (left_contact  && !right_contact){
-      if (verbose_ >= 3) std::cout << pv << ">2 | primary left. right raised. still\n";
+      if (verbose_ >= 3) std::cout << pv << ">2 | primary left. right raised. still [LEFT_PRIME_RIGHT_SWING]\n";
       return 2;
     }else if (left_contact  && right_contact){
       if (verbose_ >= 2) std::cout << pv << ">3 | primary left. right now in contact [LEFT_PRIME_RIGHT_STRIKE]\n";
       mode_ = LEFT_PRIME_RIGHT_STRIKE;
       last_strike_utime_ = utime;
+      return 2;
+    // Corner Case of momentary "flight"
+    }else if (!left_contact  && !right_contact){
+      if (verbose_ >= 1) std::cout << pv << ">2 | Error: neither foot in contact! Staying in [LEFT_PRIME_RIGHT_SWING]\n";
       return 2;
     }else{
       std::cout << "Unknown LEFT_PRIME_RIGHT_SWING Transition: " << pv<< "\n";
@@ -287,6 +293,10 @@ int foot_contact_classify::updateWalkingPhase (int64_t utime, bool left_contact,
       if (verbose_ >= 2) std::cout << pv << ">7 | primary right. left now in contact [LEFT_STRIKE_RIGHT_PRIME]\n";
       mode_ = LEFT_STRIKE_RIGHT_PRIME;
       last_strike_utime_ = utime;
+      return 3;
+    // Corner Case of momentary "flight"
+    }else if (!left_contact  && !right_contact){
+      if (verbose_ >= 1) std::cout << pv << ">6 | Error: neither foot in contact! Staying in [LEFT_SWING_RIGHT_PRIME]\n";
       return 3;
     }else{
       std::cout << "Unknown LEFT_SWING_RIGHT_PRIME Transition: " << pv<< "\n";
