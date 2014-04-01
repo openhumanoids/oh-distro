@@ -31,6 +31,7 @@ pods_install_libraries(collision-detection)
 # uncomment these lines to link against another library via pkg-config
 set(REQUIRED_PACKAGES kinematics_model path-util bullet eigen3)
 pods_use_pkg_config_packages(collision-detection ${REQUIRED_PACKAGES})
+add_definitions( -DBT_USE_DOUBLE_PRECISION )   
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.
