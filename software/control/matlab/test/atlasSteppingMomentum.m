@@ -126,7 +126,7 @@ ctrl_data = SharedDataHandle(struct(...
   'supports',[walking_ctrl_data.supports{:}],...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'trans_drift',[0;0;0],...
-  'qtraj',x0(1:nq),...
+  'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
@@ -137,21 +137,28 @@ traj = traj.setOutputFrame(r.getStateFrame);
 v = r.constructVisualizer;
 playback(v,traj,struct('slider',true));
 
-qtraj = PPTrajectory(foh(ts,walking_plan.xtraj(1:nq,:)));
-qdtraj = fnder(qtraj,1);
-qddtraj = fnder(qtraj,2);
+leg_idx = findJointIndices(r,'leg');
 
 % instantiate QP controller
 options.slack_limit = 20;
-options.w_qdd = 1e-2*ones(nq,1);
-options.W_hdot = diag([0;0;0;100;100;100]);
+options.w_qdd = 1e-4*ones(nq,1);
+options.w_qdd(leg_idx) = 1e-6;
+options.W_hdot = diag([0;0;0;1000;1000;1000]);
+% options.Kp = 100;
+% options.Kd = 20;
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.05;
 options.output_qdd = true;
-qp = MomentumControlBlock(r,{},ctrl_data,options);
 
+
+foot_opts.Kp = 0.1*[100; 100; 100; 150; 150; 150]; 
+foot_opts.Kd = 0.1*[10; 10; 10; 10; 10; 10];
+lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,foot_opts);
+rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,foot_opts);
+motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
+qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 % cascade PD block
 options.Kp = 30.0*ones(nq,1);
@@ -163,12 +170,44 @@ ins(2).system = 1;
 ins(2).input = 2;
 ins(3).system = 2;
 ins(3).input = 1;
+ins(4).system = 2;
+ins(4).input = 3;
+ins(5).system = 2;
+ins(5).input = 4;
 outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
 outs(2).output = 2;
 sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins;
+
+% feedback body motion control blocks
+ins(1).system = 2;
+ins(1).input = 1;
+ins(2).system = 2;
+ins(2).input = 2;
+ins(3).system = 2;
+ins(3).input = 3;
+ins(4).system = 1;
+ins(4).input = 1;
+ins(5).system = 2;
+ins(5).input = 5;
+sys = mimoCascade(lfoot_motion,sys,[],ins,outs);
+clear ins;
+
+ins(1).system = 2;
+ins(1).input = 1;
+ins(2).system = 2;
+ins(2).input = 2;
+ins(3).system = 2;
+ins(3).input = 3;
+ins(4).system = 2;
+ins(4).input = 4;
+ins(5).system = 1;
+ins(5).input = 1;
+sys = mimoCascade(rfoot_motion,sys,[],ins,outs);
+clear ins;
+
 
 qddes = zeros(nu,1);
 udes = zeros(nu,1);
@@ -178,11 +217,6 @@ tt=-1;
 dt = 0.005;
 tt_prev = -1;
 
-% process_noise = 0.01*ones(nq,1);
-% observation_noise = 5e-4*ones(nq,1);
-% kf = FirstOrderKalmanFilter(process_noise,observation_noise);
-% kf_state = kf.getInitialState;
-
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
 resp = input('OK to send input to robot? (y/n): ','s');
@@ -191,6 +225,11 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 qd_int = 0;
+
+alpha_lin = 0.1;
+alpha_ang = 0.1;
+pelvis_lin = zeros(3,1);
+pelvis_ang = zeros(3,1);
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -199,21 +238,22 @@ while tt<T
     end
     tt=t-toffset;
     if tt_prev~=-1
-      dt = 0.99*dt + 0.01*(tt-tt_prev); 
+      dt = 0.99*dt + 0.01*(tt-tt_prev);
     end
     dt
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-%     % get estimated state
-%     kf_state = kf.update(tt,kf_state,x(1:nq));
-%     x = kf.output(tt,kf_state,x(1:nq));
-
+    pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x(nq+(1:3));
+    pelvis_ang = (1-alpha_ang)*pelvis_ang + alpha_ang*x(nq+(4:6));
+    x(nq+(1:3)) = pelvis_lin;
+    x(nq+(4:6)) = pelvis_ang;
+    
     q = x(1:nq);
     qd = x(nq+(1:nq));
-  
-    qt = fasteval(qtraj,tt);
-    u_and_qdd = output(sys,tt,[],[qt;q;qd;q;qd]);
+    
+ 
+    u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+1:end);
     udes(joint_act_ind) = u(joint_act_ind);
@@ -229,7 +269,7 @@ while tt<T
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
-    ref_frame.publish(t,[qt(act_idx_map);qd(act_idx_map);udes],'ATLAS_COMMAND');
+    ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
 
@@ -243,6 +283,6 @@ ref_frame.updateGains(gains);
 
 % move to fixed point configuration 
 qdes = xstar(1:nq);
-atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,6);
+atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 end
