@@ -134,28 +134,27 @@ public class RobotStateCoder implements drake.util.LCMCoder
     	omega[0] = msg.twist.angular_velocity.x;
     	omega[1] = msg.twist.angular_velocity.y;
     	omega[2] = msg.twist.angular_velocity.z;
-      // TEMPORARILY DISABLED SINCE BDI IS PUBLISHING RPYDOT
-    	//double[] rpydot = drake.util.Transform.angularvel2rpydot(rpy,omega);
+      double[] rpydot = drake.util.Transform.angularvel2rpydot(rpy,omega);
 
       j = m_floating_joint_map.get("base_roll");
       if (j!=null) {
         index = j.intValue();
         fdata.val[index] = rpy[0];
-        fdata.val[index+m_num_joints+m_num_floating_joints] = omega[0];
+        fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[0];
       }
 
       j = m_floating_joint_map.get("base_pitch");
       if (j!=null) {
         index = j.intValue();
         fdata.val[index] = rpy[1];
-        fdata.val[index+m_num_joints+m_num_floating_joints] = omega[1];
+        fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[1];
       }
 
       j = m_floating_joint_map.get("base_yaw");
       if (j!=null) {
         index = j.intValue();
         fdata.val[index] = rpy[2];
-        fdata.val[index+m_num_joints+m_num_floating_joints] = omega[2];
+        fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[2];
       }
 
       return fdata;
@@ -220,11 +219,10 @@ public class RobotStateCoder implements drake.util.LCMCoder
         msg.pose.rotation.y = (float) q[2];
         msg.pose.rotation.z = (float) q[3];
 
-        // TEMPORARILY DISABLED SINCE BDI IS PUBLISHING RPYDOT
-        //double[] omega = drake.util.Transform.rpydot2angularvel(rpy,rpydot);
-      	msg.twist.angular_velocity.x = (float) rpydot[0];
-      	msg.twist.angular_velocity.y = (float) rpydot[1];
-      	msg.twist.angular_velocity.z = (float) rpydot[2];
+        double[] omega = drake.util.Transform.rpydot2angularvel(rpy,rpydot);
+      	msg.twist.angular_velocity.x = (float) omega[0];
+      	msg.twist.angular_velocity.y = (float) omega[1];
+      	msg.twist.angular_velocity.z = (float) omega[2];
       }
       
       msg.force_torque =  new  drc.force_torque_t();
