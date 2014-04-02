@@ -77,10 +77,10 @@ struct Isometry3dTime{
 struct PoseT { 
   int64_t utime;
   Eigen::Vector3d pos;
-  Eigen::Vector3d vel;
+  Eigen::Vector3d vel;           // defined to be in the body frame. This corresponds to rigidbody_pose_t but NOT bot_core_pose_t
   Eigen::Vector4d orientation;
-  Eigen::Vector3d rotation_rate;
-  Eigen::Vector3d accel;
+  Eigen::Vector3d rotation_rate; // defined to be in the body frame. This corresponds to rigidbody_pose_t but NOT bot_core_pose_t
+  Eigen::Vector3d accel;         // TODO: define this frame
 }; 
 
 

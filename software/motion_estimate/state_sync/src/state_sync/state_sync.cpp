@@ -547,13 +547,20 @@ bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
   msg.pose.rotation.y = pose.orientation[2];
   msg.pose.rotation.z = pose.orientation[3];
 
-  msg.twist.linear_velocity.x = pose.vel[0];
-  msg.twist.linear_velocity.y = pose.vel[1];
-  msg.twist.linear_velocity.z = pose.vel[2];
+  // Both incoming velocities (from PoseT) are assumed to be in body frame, 
+  // convention is for EST_ROBOT_STATE to be in linear frame
+  // convert here:
+  Eigen::Matrix3d R = Eigen::Matrix3d( Eigen::Quaterniond( pose.orientation[0], pose.orientation[1], pose.orientation[2],pose.orientation[3] ));
+  Eigen::Vector3d lin_vel_local = R*Eigen::Vector3d ( pose.vel[0], pose.vel[1], pose.vel[2]);
+  Eigen::Vector3d rot_vel_local = R*Eigen::Vector3d ( pose.rotation_rate[0], pose.rotation_rate[1], pose.rotation_rate[2]);
   
-  msg.twist.angular_velocity.x = pose.rotation_rate[0];
-  msg.twist.angular_velocity.y = pose.rotation_rate[1];
-  msg.twist.angular_velocity.z = pose.rotation_rate[2];
+  msg.twist.linear_velocity.x = lin_vel_local[0];
+  msg.twist.linear_velocity.y = lin_vel_local[1];
+  msg.twist.linear_velocity.z = lin_vel_local[2];
+  
+  msg.twist.angular_velocity.x = rot_vel_local[0];
+  msg.twist.angular_velocity.y = rot_vel_local[1];
+  msg.twist.angular_velocity.z = rot_vel_local[2];
   
   return true;  
 }
