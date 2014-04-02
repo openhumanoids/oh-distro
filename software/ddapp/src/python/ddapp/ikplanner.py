@@ -29,12 +29,7 @@ import drc as lcmdrc
 
 from PythonQt import QtCore, QtGui
 
-
-def copyFrame(transform):
-    t = vtk.vtkTransform()
-    t.PostMultiply()
-    t.SetMatrix(transform.GetMatrix())
-    return t
+copyFrame = transformUtils.copyFrame
 
 
 class IKPlanner(object):
@@ -156,8 +151,11 @@ class IKPlanner(object):
 
     def updateHandModel(self):
         graspFrame = self.getAffordanceChild('desired grasp frame')
-        self.getHandModel().moveToGraspFrame(graspFrame.transform)
-
+        handMesh = self.findAffordanceChild('desired grasp hand')
+        if not handMesh:
+            handMesh = self.getHandModel().newPolyData('desired grasp hand', self.robotModel.views[0], parent=self.findAffordance())
+        handFrame = om.getObjectChildren(handMesh)[0]
+        handFrame.copyFrame(graspFrame.transform)
 
     def findAffordance(self):
         self.affordance = om.findObjectByName(self.affordanceName)
@@ -1027,6 +1025,7 @@ class IKPlanner(object):
 
         if enableSearch:
             om.removeFromObjectModel(self.findAffordanceChild('desired grasp frame'))
+            om.removeFromObjectModel(self.findAffordanceChild('desired grasp hand'))
 
         if not self.findAffordanceChild('desired grasp frame'):
             self.computeGraspFrameSamples()

@@ -264,7 +264,7 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
         // store away kin sols into Jp and Jpdot
         // NOTE: I'm cheating and using a slightly different ordering of J and Jdot here
         Jp.block(3*k,0,3,nq) = J;
-        pdata->r->forwardJacDot(iter->body_idx,tmp,0,J);
+        pdata->r->forwardJacDot(iter->body_idx,tmp,J);
         Jpdot.block(3*k,0,3,nq) = J;
         
         k++;
@@ -332,7 +332,7 @@ int contactConstraintsBV(struct QPControllerData* pdata, int nc, double mu, vect
         // store away kin sols into Jp and Jpdot
         // NOTE: I'm cheating and using a slightly different ordering of J and Jdot here
         Jp.block(3*k,0,3,nq) = J;
-        pdata->r->forwardJacDot(iter->body_idx,tmp,0,J);
+        pdata->r->forwardJacDot(iter->body_idx,tmp,J);
         Jpdot.block(3*k,0,3,nq) = J;
         
         k++;
