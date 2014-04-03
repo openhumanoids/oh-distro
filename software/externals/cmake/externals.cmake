@@ -91,16 +91,16 @@ set(apriltags_url https://svn.csail.mit.edu/apriltags)
 set(apriltags_revision 24)
 set(apriltags_depends opencv-drc)
 
-set(spotless_url https://svn.csail.mit.edu/locomotion/pods/spotless)
-set(spotless_revision 8053)
+set(spotless_url ssh://git@github.com/RobotLocomotion/spotless-pod.git)
+set(spotless_revision 464be854a1296d4726cb37d86f24d39742293ab6)
 set(spotless_depends)
 
-set(snopt_url https://svn.csail.mit.edu/locomotion/pods/snopt7.2-12)
-set(snopt_revision 7782)
+set(snopt_url ssh://git@github.com/RobotLocomotion/snopt.git)
+set(snopt_revision 26eb6145bfae4671cc86bd5c723b381fb8bd5ab6)
 set(snopt_depends)
 
-set(gurobi_url https://svn.csail.mit.edu/locomotion/pods/gurobi)
-set(gurobi_revision 8053)
+set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)
+set(gurobi_revision 46d1985d5a86f7bc660e363cb2d5ff76af4b6fd9)
 set(gurobi_depends)
 
 set(flycapture_url https://svn.csail.mit.edu/drc/trunk/software/externals/flycapture)
@@ -130,14 +130,14 @@ set(externals
   camunits-wrapper
   camunits-extra-wrapper
   apriltags
-  spotless
-  snopt
-  gurobi
   flycapture
   )
 
 set(git-externals
   bullet
+  spotless
+  snopt
+  gurobi
   )
 
 
