@@ -86,7 +86,7 @@ p = StatelessFootstepPlanner();
 plan = p.plan_footsteps(r, request);
 plan.toLCM();
 footsteps = plan.footsteps;
-assert(footsteps(3).pos(2) == 0.20);
+valuecheck(footsteps(3).pos(2), 0.2, 1e-4);
 assert(length(footsteps) == 12);
 assert(footsteps(3).infeasibility > 1e-6);
 assert(footsteps(4).infeasibility > 1e-6);

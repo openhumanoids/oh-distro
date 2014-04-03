@@ -11,7 +11,7 @@ classdef StatelessFootstepPlanner
       foot_orig = biped.feetPosition(q0);
 
       if request.params.ignore_terrain
-        biped = biped.setTerrain(KinematicTerrainMap(biped, q0));
+        biped = biped.setTerrain(KinematicTerrainMap(biped, q0, true));
       end
 
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
@@ -71,7 +71,9 @@ classdef StatelessFootstepPlanner
       plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
-      plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+      if ~request.params.ignore_terrain
+        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
+      end
       plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
       plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
       for j = 1:length(plan.footsteps)
