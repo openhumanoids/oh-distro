@@ -364,6 +364,21 @@ def applyLineFit(dataObj, distanceThreshold=0.02):
     return origin, direction, shallowCopy(f.GetOutput())
 
 
+def normalEstimation(dataObj, searchCloud=None, searchRadius=0.05, useVoxelGrid=False, voxelGridLeafSize=0.05):
+
+    f = pcl.vtkPCLNormalEstimation()
+    f.SetSearchRadius(searchRadius)
+    f.SetInput(dataObj)
+    if searchCloud:
+        f.SetInput(1, searchCloud)
+    elif useVoxelGrid:
+        f.SetInput(1, applyVoxelGrid(dataObj, voxelGridLeafSize))
+    f.Update()
+    dataObj = shallowCopy(f.GetOutput())
+    dataObj.GetPointData().SetNormals(dataObj.GetPointData().GetArray('normals'))
+    return dataObj
+
+
 def addCoordArraysToPolyData(polyData):
     polyData = shallowCopy(polyData)
     points = vtkNumpy.getNumpyFromVtk(polyData, 'Points')
@@ -1087,6 +1102,43 @@ def applyICP(source, target):
     t.SetMatrix(icp.GetMatrix())
     return t
 
+
+def applyDiskGlyphs(polyData):
+
+    voxelGridLeafSize = 0.03
+    normalEstimationSearchRadius = 0.05
+    diskRadius = 0.015
+    diskResolution = 12
+
+    scanInput = polyData
+
+    pd = applyVoxelGrid(scanInput, leafSize=voxelGridLeafSize)
+
+    pd = labelOutliers(pd, searchRadius=normalEstimationSearchRadius, neighborsInSearchRadius=3)
+    pd = thresholdPoints(pd, 'is_outlier', [0, 0])
+
+    pd = normalEstimation(pd, searchRadius=normalEstimationSearchRadius, searchCloud=scanInput)
+
+    disk = vtk.vtkDiskSource()
+    disk.SetOuterRadius(diskRadius)
+    disk.SetInnerRadius(0.0)
+    disk.SetRadialResolution(0)
+    disk.SetCircumferentialResolution(diskResolution)
+    disk.Update()
+
+    t = vtk.vtkTransform()
+    t.RotateY(90)
+    disk = transformPolyData(disk.GetOutput(), t)
+
+    glyph = vtk.vtkGlyph3D()
+    glyph.ScalingOff()
+    glyph.OrientOn()
+    glyph.SetSource(disk)
+    glyph.SetInput(pd)
+    glyph.SetVectorModeToUseNormal()
+    glyph.Update()
+
+    return shallowCopy(glyph.GetOutput())
 
 
 def segmentLeverValve(point1, point2):
@@ -2091,6 +2143,7 @@ class PointPicker(TimerCallback):
 
         self.annotationObj = updatePolyData(d.getPolyData(), 'annotation', parent=getDebugFolder())
         self.annotationObj.setProperty('Color', QtGui.QColor(0, 255, 0))
+        self.annotationObj.actor.SetPickable(False)
 
 
     def tick(self):
@@ -3306,7 +3359,7 @@ def orthoZ():
 
 def zoomToDisplayPoint(displayPoint, boundsRadius=0.5, view=None):
 
-    pickedPoint = pickPoint(displayPoint, obj='pointcloud snapshot')
+    pickedPoint = pickPoint(displayPoint, getSegmentationView(), obj='pointcloud snapshot')
     if pickedPoint is None:
         return
 

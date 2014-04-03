@@ -41,10 +41,16 @@ public:
     num_substates,
   } laser_gpf_substate;
 
+  typedef enum {
+    motion_project = 0,
+    motion_interpolate,
+    motion_none,
+  } motion_project_mode;  
+  
   static const std::string laser_gpf_substate_stings[num_substates];
 
   bool verbose; //defaults to false
-  bool motion_project; //defaults to true
+  motion_project_mode motion_mode; //default was typically motion_project
 
   int beam_skip;
   double spatial_decimation_min;

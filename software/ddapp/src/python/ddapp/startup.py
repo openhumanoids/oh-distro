@@ -74,6 +74,7 @@ view = app.getDRCView()
 camera = view.camera()
 tree = app.getMainWindow().objectTree()
 orbit = cameracontrol.OrbitController(view)
+flyer = cameracontrol.Flyer(view)
 showPolyData = segmentation.showPolyData
 updatePolyData = segmentation.updatePolyData
 
@@ -121,6 +122,7 @@ if useIk:
 
 if useAtlasDriver:
     atlasdriver.init(app.getOutputConsole())
+    atlasDriver = atlasdriver.driver
     atlasdriverpanel.init(atlasdriver.driver)
     atlasstatuspanel.init(atlasdriver.driver)
 
@@ -235,27 +237,21 @@ if usePlanning:
         om.findObjectByName('Multisense').model.showRevolutionCallback = None
 
 
+    handFactory = roboturdf.HandFactory(robotStateModel)
 
     ikPlanner = ikplanner.IKPlanner(ikServer, ikRobotModel, ikJointController,
                                         robotStateJointController, playPlans, showPose, playbackRobotModel)
 
 
+    leftHandType = 'left_%s' % ('robotiq' if 'LR' in roboturdf.defaultUrdfHands else 'irobot')
+    rightHandType = 'right_%s' % ('robotiq' if 'RR' in roboturdf.defaultUrdfHands else 'irobot')
 
-    if 'LI' in roboturdf.defaultUrdfHands:
-        lhandModel = roboturdf.HandLoader('left_irobot', robotStateModel, view)
-    else:
-        lhandModel = roboturdf.HandLoader('left_robotiq', robotStateModel, view)
 
-    if 'RI' in roboturdf.defaultUrdfHands:
-        rhandModel = roboturdf.HandLoader('right_irobot', robotStateModel, view)
-    else:
-        rhandModel = roboturdf.HandLoader('right_robotiq', robotStateModel, view)
+    ikPlanner.handModels.append(handFactory.getLoader(leftHandType))
+    ikPlanner.handModels.append(handFactory.getLoader(rightHandType))
 
-    ikPlanner.handModels.append(lhandModel)
-    ikPlanner.handModels.append(rhandModel)
-
-    lhandMesh = lhandModel.newPolyData()
-    rhandMesh = rhandModel.newPolyData()
+    lhandMesh = handFactory.newPolyData(leftHandType, view, parent='hands')
+    rhandMesh = handFactory.newPolyData(rightHandType, view, parent='hands')
 
 
 
@@ -281,6 +277,7 @@ if usePlanning:
                                                 sensorJointController = robotStateJointController,
                                                 playbackFunction = playPlans,
                                                 manipPlanner = manipPlanner,
+                                                ikPlanner = ikPlanner,
                                                 footstepPlanner = footstepsDriver,
                                                 handDriver = lHandDriver,
                                                 atlasDriver = atlasdriver.driver,
@@ -302,7 +299,7 @@ if usePlanning:
 
         playbackPanel.setPlan(posturePlan)
 
-    #lcmUtils.addSubscriber('POSTURE_GOAL', lcmdrc.joint_angles_t, onPostureGoal)
+    lcmUtils.addSubscriber('POSTURE_GOAL', lcmdrc.joint_angles_t, onPostureGoal)
 
 
 if useNavigationPanel:
@@ -315,6 +312,7 @@ app.resetCamera(viewDirection=[-1,0,0], view=view)
 
 def affUpdaterOn():
     vis.affup.updater.on()
+
 
 def affUpdaterOff():
     vis.affup.updater.off()
@@ -334,15 +332,11 @@ def showLinkFrame(linkName, model=None):
 
 def resetCameraToRobot():
     t = getLinkFrame('utorso')
-    focalPoint = [0.3, 0.0, 0.3]
+    focalPoint = [0.0, 0.0, 0.0]
     position = [-4.0, -2.0, 2.0]
     t.TransformPoint(focalPoint, focalPoint)
     t.TransformPoint(position, position)
-    c = view.camera()
-    c.SetFocalPoint(focalPoint)
-    c.SetPosition(position)
-    c.SetViewUp([0.0, 0.0, 1.0])
-    view.render()
+    flyer.zoomTo(focalPoint, position)
 
 
 def resetCameraToHeadView():
@@ -374,38 +368,17 @@ def sendEstRobotState(pose=None):
     lcmUtils.publish('EST_ROBOT_STATE', msg)
 
 
-tc = TimerCallback()
-tc.targetFps = 60
-tc.callback = resetCameraToHeadView
-
-
-class ViewEventFilter(object):
-
-    def __init__(self, view):
-        self.view = view
-        self.initEventFilter()
-        self.doubleClickCallback = None
-
-
-    def filterEvent(self, obj, event):
-        if event.type() == QtCore.QEvent.MouseButtonDblClick:
-            if self.doubleClickCallback:
-                result = self.doubleClickCallback(vis.mapMousePosition(obj, event), self.view)
-                self.eventFilter.setEventHandlerResult(result)
-
-    def initEventFilter(self):
-        self.eventFilter = PythonQt.dd.ddPythonEventFilter()
-        qvtkwidget = self.view.vtkWidget()
-        qvtkwidget.installEventFilter(self.eventFilter)
-        self.eventFilter.addFilteredEventType(QtCore.QEvent.MouseButtonDblClick)
-        self.eventFilter.connect('handleEvent(QObject*, QEvent*)', self.filterEvent)
+def zoomToPick(displayPoint, view):
+    pickedPoint, prop, _ = vis.pickProp(displayPoint, view)
+    if prop:
+        flyer.zoomTo(pickedPoint)
 
 
 def highlightSelectedLink(displayPoint, view):
 
     model = robotStateModel.model
+    pickedPoint, _, polyData = vis.pickProp(displayPoint, view)
 
-    polyData, pickedPoint = vis.pickPoint(displayPoint, view=view, pickType='cells')
     linkName = model.getLinkNameForMesh(polyData)
     if not linkName:
         return False
@@ -422,60 +395,156 @@ def highlightSelectedLink(displayPoint, view):
     return True
 
 
-def toggleChildFrameWidget(displayPoint, view):
+def toggleFrameWidget(displayPoint, view):
 
-    pickedObj, pickedPoint = vis.findPickedObject(displayPoint, view=view)
-    if not pickedObj:
+
+    def getChildFrame(obj):
+        if not obj:
+            return None
+
+        name = obj.getProperty('Name')
+        children = om.getObjectChildren(obj)
+        for child in children:
+            if isinstance(child, vis.FrameItem) and child.getProperty('Name') == name + ' frame':
+                return child
+
+
+    obj, _ = vis.findPickedObject(displayPoint, view)
+
+    if not isinstance(obj, vis.FrameItem):
+        obj = getChildFrame(obj)
+
+    if not obj:
         return False
 
-    name = pickedObj.getProperty('Name')
-    children = om.getObjectChildren(pickedObj)
+    edit = not obj.getProperty('Edit')
+    obj.setProperty('Edit', edit)
 
-    for child in children:
-        if isinstance(child, vis.FrameItem) and child.getProperty('Name') == name + ' frame':
-            edit = not child.getProperty('Edit')
-            child.setProperty('Edit', edit)
-            pickedObj.setProperty('Alpha', 0.5 if edit else 1.0)
-            return True
+    parent = om.getParentObject(obj)
+    if getChildFrame(parent) == obj:
+        parent.setProperty('Alpha', 0.5 if edit else 1.0)
 
-    return False
+    return True
 
 
-def selectHandWidget(displayPoint, view):
+def showRightClickMenu(displayPoint, view):
 
-    polyData, pickedPoint = vis.pickPoint(displayPoint, view=view, pickType='cells')
-
-    def toggleHandFrame(hand):
-        if ikPlanner.reachingSide not in hand.getProperty('Name'):
-            return
-        frame = ikPlanner.findAffordanceChild('desired grasp frame')
-        if frame:
-            edit = not frame.getProperty('Edit')
-            frame.setProperty('Edit', edit)
-            hand.setProperty('Alpha', 0.5 if edit else 1.0)
-
-    for model in ikPlanner.handModels:
-        if model.handModel.model.getLinkNameForMesh(polyData):
-            toggleHandFrame(model.handModel)
-            return True
-
-    return False
-
-
-def callbackSwitch(displayPoint, view):
-
-  if toggleChildFrameWidget(displayPoint, view):
-      return
-
-  #if highlightSelectedLink(displayPoint, view):
-  #    return
-
-  if selectHandWidget(displayPoint, view):
-      return
-
-  if segmentationpanel.activateSegmentationMode():
+    pickedObj, pickedPoint = vis.findPickedObject(displayPoint, view)
+    if not pickedObj:
         return
 
+    objectName = pickedObj.getProperty('Name')
+    if objectName == 'grid':
+        return
 
-ef = ViewEventFilter(view)
-ef.doubleClickCallback = callbackSwitch
+    displayPoint = displayPoint[0], view.height - displayPoint[1]
+
+    globalPos = view.mapToGlobal(QtCore.QPoint(*displayPoint))
+
+    menu = QtGui.QMenu(view)
+
+    actions = ['action 1', 'action 2', 'action 3']
+    actions = []
+
+    widgetAction = QtGui.QWidgetAction(menu)
+    label = QtGui.QLabel('  ' + objectName + '  ')
+    widgetAction.setDefaultWidget(label)
+    menu.addAction(widgetAction)
+    menu.addSeparator()
+
+    for actionName in actions:
+        if not actionName:
+            menu.addSeparator()
+        else:
+            menu.addAction(actionName)
+
+    selectedAction = menu.popup(globalPos)
+
+
+class ViewEventFilter(object):
+
+    def __init__(self, view):
+        self.view = view
+        self.mouseStart = None
+        self.initEventFilter()
+
+    def filterEvent(self, obj, event):
+
+        if event.type() == QtCore.QEvent.MouseButtonDblClick and event.button() == QtCore.Qt.LeftButton:
+            self.onLeftDoubleClick(event)
+
+        elif event.type() == QtCore.QEvent.MouseButtonPress and event.button() == QtCore.Qt.RightButton:
+            self.mouseStart = QtCore.QPoint(event.pos())
+
+        elif event.type() == QtCore.QEvent.MouseMove and self.mouseStart is not None:
+            delta = QtCore.QPoint(event.pos()) - self.mouseStart
+            if delta.manhattanLength() > 3:
+                self.mouseStart = None
+
+        elif event.type() == QtCore.QEvent.MouseButtonRelease and event.button() == QtCore.Qt.RightButton and self.mouseStart is not None:
+            self.mouseStart = None
+            self.onRightClick(event)
+
+    def consumeEvent(self):
+        self.eventFilter.setEventHandlerResult(True)
+
+    def onLeftDoubleClick(self, event):
+
+        displayPoint = vis.mapMousePosition(self.view, event)
+
+        if toggleFrameWidget(displayPoint, self.view):
+            return
+
+        #if highlightSelectedLink(displayPoint, self.view):
+        #    return
+
+        if segmentationpanel.activateSegmentationMode():
+            return
+
+    def onRightClick(self, event):
+        displayPoint = vis.mapMousePosition(self.view, event)
+        showRightClickMenu(displayPoint, self.view)
+
+    def initEventFilter(self):
+        self.eventFilter = PythonQt.dd.ddPythonEventFilter()
+        qvtkwidget = self.view.vtkWidget()
+        qvtkwidget.installEventFilter(self.eventFilter)
+        self.eventFilter.addFilteredEventType(QtCore.QEvent.MouseButtonDblClick)
+        self.eventFilter.addFilteredEventType(QtCore.QEvent.MouseButtonPress)
+        self.eventFilter.addFilteredEventType(QtCore.QEvent.MouseButtonRelease)
+        self.eventFilter.addFilteredEventType(QtCore.QEvent.MouseMove)
+        self.eventFilter.connect('handleEvent(QObject*, QEvent*)', self.filterEvent)
+
+
+class KeyEventFilter(object):
+
+    def __init__(self, view):
+        self.view = view
+        self.initEventFilter()
+
+    def filterEvent(self, obj, event):
+
+        if event.type() == QtCore.QEvent.KeyPress:
+            if str(event.text()).lower() == 'f':
+                self.eventFilter.setEventHandlerResult(True)
+                cursorPos = self.view.mapFromGlobal(QtGui.QCursor.pos())
+                displayPoint = cursorPos.x(), self.view.height - cursorPos.y()
+                zoomToPick(displayPoint, self.view)
+            elif str(event.text()).lower() == 'r':
+                self.eventFilter.setEventHandlerResult(True)
+                resetCameraToRobot()
+
+
+    def initEventFilter(self):
+        self.eventFilter = PythonQt.dd.ddPythonEventFilter()
+        qvtkwidget = self.view.vtkWidget()
+        qvtkwidget.installEventFilter(self.eventFilter)
+        self.eventFilter.addFilteredEventType(QtCore.QEvent.KeyPress)
+        self.eventFilter.connect('handleEvent(QObject*, QEvent*)', self.filterEvent)
+
+
+keyEventFilter = KeyEventFilter(view)
+mouseEventFilter = ViewEventFilter(view)
+
+
+

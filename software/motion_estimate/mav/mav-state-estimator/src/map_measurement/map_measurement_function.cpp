@@ -34,7 +34,8 @@ void MapMeasurementFunction::generateFromOctomap(const char * base_map_name, dou
 
   this->z_height = z_height;
   LaserGPF laser_gpf = LaserGPF(lcm, param, frames);
-  laser_gpf.motion_project = false;
+//  laser_gpf.motion_project = false;
+  laser_gpf.motion_mode = LaserGPF::motion_none;
 
   //set the number of ranges for the simulator to the number after decimation then reset decimation
   //FIXME also resest laser_gpf.spatial_decimation ?

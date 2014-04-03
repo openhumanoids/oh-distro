@@ -22,17 +22,24 @@ RBISUpdateInterface * LegOdoExternalHandler::processMessage(const drc::pose_tran
     std::cout << "LegOdoExternalHandler: received LegOdo delta msg\n";
 
 
-  BotTrans msgT;
-  memset(&msgT, 0, sizeof(msgT));
-  memcpy(msgT.trans_vec, msg->translation, 3 * sizeof(double));
-  memcpy(msgT.rot_quat,  msg->rotation   , 4 * sizeof(double));
+  BotTrans odo_positionT;
+  memset(&odo_positionT, 0, sizeof(odo_positionT));
+  
+  
+  BotTrans odo_deltaT;
+  memset(&odo_deltaT, 0, sizeof(odo_deltaT));
+  memcpy(odo_deltaT.trans_vec, msg->translation, 3 * sizeof(double));
+  memcpy(odo_deltaT.rot_quat,  msg->rotation   , 4 * sizeof(double));
   int64_t utime = msg->utime;
   int64_t prev_utime = msg->prev_utime;
 
   // TODO: the pose_transform_t doesn't provide any information about
   // the confidence of the estimate, this field needs to be added
-  float odometry_status =0.0; // by default assume accurate
-  return leg_odo_common_->createMeasurement(msgT, utime, prev_utime, odometry_status);
+  float odo_delta_status =0.0; // by default assume accurate
+  int odo_position_status = false; // unknown in this mode
+  return leg_odo_common_->createMeasurement(odo_positionT, odo_deltaT, 
+                                            utime, prev_utime, 
+                                            odo_position_status, odo_delta_status);
 
 }
 }
