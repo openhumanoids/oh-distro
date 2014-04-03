@@ -59,8 +59,8 @@ set(microstrain_comm_url https://svn.csail.mit.edu/rrg_pods/drivers/microstrain_
 set(microstrain_comm_revision 853)
 set(microstrain_comm_depends common_utils)
 
-set(bullet_url https://svn.csail.mit.edu/drc/trunk/software/externals/bullet)
-set(bullet_revision 8298)
+set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
+set(bullet_revision 029b5258ae08932d2a7edbf1d8de72d316042b8b)
 set(bullet_depends)
 
 set(fovis-git_url https://svn.csail.mit.edu/drc/trunk/software/externals/fovis-git)
@@ -123,7 +123,6 @@ set(externals
   velodyne
   kinect
   microstrain_comm
-  bullet
   fovis-git
   estimate-pose
   vicon
@@ -136,6 +135,11 @@ set(externals
   gurobi
   flycapture
   )
+
+set(git-externals
+  bullet
+  )
+
 
 set(svn_credentials)
 if(DRC_SVN_PASSWORD)
@@ -156,8 +160,25 @@ macro(add_svn_external proj)
     )
 endmacro()
 
+macro(add_git_external proj)
+  ExternalProject_Add(${proj}
+    GIT_REPOSITORY ${${proj}_url}
+    GIT_TAG ${${proj}_revision}
+    DEPENDS ${${proj}_depends}
+    CONFIGURE_COMMAND ""
+    INSTALL_COMMAND ""
+    BUILD_COMMAND $(MAKE) BUILD_PREFIX=${CMAKE_INSTALL_PREFIX} BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    BUILD_IN_SOURCE 1
+    SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
+    )
+endmacro()
+
 foreach(external ${externals})
   add_svn_external(${external})
+endforeach()
+
+foreach(git-external ${git-externals})
+  add_git_external(${git-external})
 endforeach()
 
 
