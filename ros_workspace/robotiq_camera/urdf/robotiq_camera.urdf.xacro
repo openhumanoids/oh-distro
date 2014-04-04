@@ -18,7 +18,7 @@
     <parent link="${parent}"/>
     <child link="${side_letter}_hand_camera_link"/>
     <!-- 9 degree inward angle-->
-    <origin xyz="${-0.09*reflect}  0.12 0.0" rpy=" ${-reflect*1.57079} 0  ${1.5708-reflect*0.15708}"/>
+    <origin xyz="${-0.096*reflect}  0.06 0.0" rpy=" ${-reflect*1.57079} 0  ${1.5708-reflect*0.0}"/>
   </joint>
   <joint name="${side_letter}_hand_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
