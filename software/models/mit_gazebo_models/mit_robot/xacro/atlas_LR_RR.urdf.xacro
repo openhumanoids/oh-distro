@@ -10,8 +10,7 @@
   
   <xacro:include filename="$(find robotiq_hand_description)/cfg/robotiq_hand.urdf.xacro" />
   <xacro:robotiq_hand side="left" parent="l_hand_force_torque" reflect="1">
-    <!--origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/-->
-    <origin rpy="0 -1.57079 0" xyz="0 0.21846 0.0"/>
+    <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
   </xacro:robotiq_hand>
   <xacro:robotiq_hand side="right" parent="r_hand_force_torque" reflect="1">
     <origin rpy="0 -1.57079 0" xyz="0 0.06566 0.0"/>
