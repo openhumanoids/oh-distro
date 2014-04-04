@@ -47,8 +47,8 @@ struct ImageWarper {
     float c10(mWarpFieldFrac10[iIndex]), c11(mWarpFieldFrac11[iIndex]);
     int pos = yInt*iImage.step+xInt;
     uint8_t* data = iImage.data;
-    float val00(data[pos]), val01(data[pos+1]);
-    float val10(data[pos+iImage.step]), val11(data[pos+iImage.step+1]);
+    float val00(data[pos]), val10(data[pos+1]);
+    float val01(data[pos+iImage.step]), val11(data[pos+iImage.step+1]);
     oBytes[iIndex] = (uint8_t)(c00*val00 + c01*val01 + c10*val10 + c11*val11);
   }
 
@@ -61,8 +61,8 @@ struct ImageWarper {
     uint8_t* data = iImage.data;
     int pos = yInt*iImage.step+xInt*3;
     for (int k = 0; k < 3; ++k, ++pos) {
-      float val00(data[pos]), val01(data[pos+3]);
-      float val10(data[pos+iImage.step]), val11(data[pos+iImage.step+3]);
+      float val00(data[pos]), val10(data[pos+3]);
+      float val01(data[pos+iImage.step]), val11(data[pos+iImage.step+3]);
       oBytes[iIndex*3+k] =
         (uint8_t)(c00*val00 + c01*val01 + c10*val10 + c11*val11);
     }
@@ -199,8 +199,8 @@ struct ImageWarper {
         }
         mWarpFieldIntX[pos] = (int)pix[0];
         mWarpFieldIntY[pos] = (int)pix[1];
-        float fracX = (float)pix[0] - mWarpFieldIntX[pos];
-        float fracY = (float)pix[1] - mWarpFieldIntY[pos];
+        double fracX = pix[0] - mWarpFieldIntX[pos];
+        double fracY = pix[1] - mWarpFieldIntY[pos];
         mWarpFieldFrac00[pos] = (1-fracX)*(1-fracY);
         mWarpFieldFrac01[pos] = (1-fracX)*fracY;
         mWarpFieldFrac10[pos] = fracX*(1-fracY);
