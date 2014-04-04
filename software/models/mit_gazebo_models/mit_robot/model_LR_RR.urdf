@@ -1368,7 +1368,8 @@
     </visual>
   </link>
   <joint name="l_hand_force_torque_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0.1245 0.0112"/>
+    <!--origin rpy="0 0 0" xyz="0 0.1245 0.0112"/-->
+    <origin rpy="0 0 0" xyz="0 0.2773 0.0112"/>
     <parent link="l_hand"/>
     <child link="l_hand_force_torque"/>
   </joint>
@@ -2057,7 +2058,7 @@
     <parent link="l_hand_force_torque"/>
     <child link="l_hand_camera_link"/>
     <!-- 9 degree inward angle-->
-    <origin rpy=" -1.57079 0  1.41372" xyz="-0.09  0.12 0.0"/>
+    <origin rpy=" -1.57079 0  1.5708" xyz="-0.096  0.06 0.0"/>
   </joint>
   <joint name="l_hand_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
@@ -2126,7 +2127,7 @@
     <parent link="r_hand_force_torque"/>
     <child link="r_hand_camera_link"/>
     <!-- 9 degree inward angle-->
-    <origin rpy=" 1.57079 0  1.72788" xyz="0.09  0.12 0.0"/>
+    <origin rpy=" 1.57079 0  1.5708" xyz="0.096  0.06 0.0"/>
   </joint>
   <joint name="r_hand_camera_optical_frame_joint" type="fixed">
     <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
