@@ -9,12 +9,17 @@ from ddapp import robotstate
 from ddapp import applogic as app
 from ddapp import vtkAll as vtk
 from ddapp.simpletimer import SimpleTimer
+from ddapp import roboturdf
 
 import os
 import numpy as np
+from ddapp import botpy
 import drc as lcmdrc
+from bot_core.pose_t import pose_t
 import functools
 
+
+import ddapp.applogic as app
 
 def loadFootMeshes():
     meshDir = os.path.join(app.getDRCBase(), 'software/models/mit_gazebo_models/mit_robot/meshes')
@@ -76,6 +81,12 @@ def getFootstepsFolder():
         #om.collapse(obj)
     return obj
 
+def getBDIAdjustedFootstepsFolder():
+    obj = om.findObjectByName('BDI adj footstep plan')
+    if obj is None:
+        obj = om.getOrCreateContainer('BDI adj footstep plan')
+        #om.collapse(obj)
+    return obj
 
 class FootstepsDriver(object):
     def __init__(self, jc):
@@ -87,20 +98,41 @@ class FootstepsDriver(object):
         self.lastWalkingPlan = None
         self.walkingPlanCallback = None
 
+        ### Stuff pertaining to rendering BDI-frame steps
+        self.pose_bdi = None
+        self.bdi_plan = None
+        self.bdi_plan_adjusted = None
 
+        view = app.getDRCView()
+        self.bdiRobotModel, self.bdiJointController = roboturdf.loadRobotModel('bdi model', view, parent='bdi model', color=roboturdf.getRobotOrangeColor(), visible=False)
+        self.bdiRobotModel.setProperty('Visible', False)
+        self.showBDIPlan = False # hide the BDI plans when created
+        
+
+        
     def _setupSubscriptions(self):
         lcmUtils.addSubscriber('FOOTSTEP_PLAN_RESPONSE', lcmdrc.footstep_plan_t, self.onFootstepPlan)
+        lcmUtils.addSubscriber('BDI_ADJUSTED_FOOTSTEP_PLAN', lcmdrc.footstep_plan_t, self.onBDIAdjustedFootstepPlan)
         lcmUtils.addSubscriber('WALKING_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
 
-    def clearFootstepPlan(self):
-        self.lastFootstepPlan = None
-        folder = getFootstepsFolder()
-        om.removeFromObjectModel(folder)
-
+        ### Related to BDI-frame adjustment:
+        sub1 = lcmUtils.addSubscriber('POSE_BDI', pose_t, self.onPoseBDI)
+        sub1.setSpeedLimit(60)
+        lcmUtils.addSubscriber('FOOTSTEP_PLAN_RESPONSE', lcmdrc.footstep_plan_t, self.onFootStepPlanResponse)
+        sub2 = lcmUtils.addSubscriber('BDI_ADJUSTED_FOOTSTEP_PLAN', lcmdrc.footstep_plan_t, self.onBDIAdjustedFootstepPlan)
+        sub2.setSpeedLimit(1) # was 5 but was slow rendering
+        
+    ##############################
     def onWalkingPlan(self, msg):
         self.lastWalkingPlan = msg
         if self.walkingPlanCallback:
             self.walkingPlanCallback()
+
+    def onBDIAdjustedFootstepPlan(self, msg):
+        folder = getBDIAdjustedFootstepsFolder()
+        om.removeFromObjectModel(folder)
+        folder = getBDIAdjustedFootstepsFolder()
+        self.drawFootstepPlan(msg, folder)
 
     def onFootstepPlan(self, msg):
         self.clearFootstepPlan()
@@ -108,6 +140,13 @@ class FootstepsDriver(object):
 
         planFolder = getFootstepsFolder()
         self.drawFootstepPlan(msg, planFolder)
+        
+        
+    def clearFootstepPlan(self):
+        self.lastFootstepPlan = None
+        folder = getFootstepsFolder()
+        om.removeFromObjectModel(folder)
+
 
     def drawFootstepPlan(self, msg, folder,left_color=None, right_color=None):
 
@@ -166,7 +205,7 @@ class FootstepsDriver(object):
         contact_pts[3,:] = [0.178,  -0.0624435, -0.081119]
         return contact_pts
 
-    def getFeetMidPoint(self, model):       
+    def getFeetMidPoint(self, model):
         contact_pts = self.getContactPts()
         contact_pts_mid = np.mean(contact_pts, axis=0) # mid point on foot relative to foot frame
 
@@ -345,3 +384,78 @@ class FootstepsDriver(object):
     def commitFootstepPlan(self, footstepPlan):
         footstepPlan.utime = getUtime()
         lcmUtils.publish('COMMITTED_FOOTSTEP_PLAN', footstepPlan)
+
+        
+    ####################### BDI Adjustment Logic and Visualization ##################
+    def onPoseBDI(self,msg):
+        self.pose_bdi = msg
+        # Set the xyzrpy of this pose to equal that estimated by BDI
+        rpy = botpy.quat_to_roll_pitch_yaw(msg.orientation)
+        pose = self.jointController.getPose(self.jointController.currentPoseName).copy()
+        pose[0:3] = msg.pos
+        pose[3:6] = rpy
+        self.bdiJointController.setPose("ERS BDI", pose)
+        
+    def onFootStepPlanResponse(self,msg):
+        self.transformPlanToBDIFrame(msg)
+
+    def onBDIAdjustedFootstepPlan(self,msg):
+        self.bdi_plan_adjusted = msg.decode( msg.encode() ) # decode and encode ensures deepcopy
+        if (self.showBDIPlan is True):
+            self.drawBDIFootstepPlanAdjusted()
+        #else:
+        #    print "not showing adjusted bdi plan"
+        
+    def transformPlanToBDIFrame(self, plan):
+        if (self.pose_bdi is None):
+            print "haven't received POSE_BDI"
+            return
+            
+        # TODO: This transformation should be rewritten using the LOCAL_TO_LOCAL_BDI frame
+        # instead of using FK here
+
+        t_bodybdi  = transformUtils.transformFromPose(self.pose_bdi.pos, self.pose_bdi.orientation)
+        t_bodybdi.PostMultiply()
+        
+        current_pose = self.jointController.q
+        t_bodymain = transformUtils.transformFromPose( current_pose[0:3]  , botpy.roll_pitch_yaw_to_quat(current_pose[3:6])   )
+        t_bodymain.PostMultiply()
+
+        # iterate and transform
+        self.bdi_plan = plan.decode( plan.encode() ) # decode and encode ensures deepcopy
+        for i, footstep in enumerate(self.bdi_plan.footsteps):
+            step = footstep.pos
+            
+            t_step = transformUtils.frameFromPositionMessage(step)
+            t_body_to_step = vtk.vtkTransform()
+            t_body_to_step.DeepCopy(t_step)
+            t_body_to_step.PostMultiply()
+            t_body_to_step.Concatenate(t_bodymain.GetLinearInverse())
+
+            t_stepbdi = vtk.vtkTransform()
+            t_stepbdi.DeepCopy(t_body_to_step)
+            t_stepbdi.PostMultiply()
+            t_stepbdi.Concatenate(t_bodybdi)
+            footstep.pos = transformUtils.positionMessageFromFrame(t_stepbdi)
+
+        if (self.showBDIPlan is True):
+            self.drawBDIFootstepPlan()
+        #else:
+        #    print "not showing bdi plan"
+
+    def drawBDIFootstepPlan(self):
+        if (self.bdi_plan is None):
+	    return
+	    
+        folder = om.getOrCreateContainer("BDI footstep plan")
+        om.removeFromObjectModel(folder)
+        self.drawFootstepPlan(self.bdi_plan, om.getOrCreateContainer("BDI footstep plan"), [0.0, 0.0, 1.0] , [1.0, 0.0, 0.0])
+
+    def drawBDIFootstepPlanAdjusted(self):
+        if (self.bdi_plan_adjusted is None):
+	    return
+	    
+        folder = om.getOrCreateContainer('BDI adj footstep plan')
+        om.removeFromObjectModel(folder)
+        self.drawFootstepPlan(self.bdi_plan_adjusted, om.getOrCreateContainer('BDI adj footstep plan'), [1.0, 1.0, 0.0] , [0.0, 1.0, 1.0])
+   
