@@ -135,9 +135,13 @@ classdef StatelessFootstepPlanner
         plan.footsteps(end) = goal_step;
       else
         for j = 1:request.num_goal_steps
-          k = nsteps - 3 + j;
+          k = nsteps - 2 + j;
           goal_step = Footstep.from_footstep_t(request.goal_steps(j));
-          assert(goal_step.is_right_foot == plan.footsteps(k).is_right_foot);
+          if j ~= 2
+            assert(goal_step.is_right_foot == plan.footsteps(end-1).is_right_foot);
+          else
+            assert(goal_step.is_right_foot == plan.footsteps(end).is_right_foot);
+          end
           goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
           plan.footsteps(k) = goal_step;
         end
