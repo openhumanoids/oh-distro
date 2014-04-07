@@ -240,11 +240,15 @@ def decode_footstep_plan(plan_msg):
         footsteps.append(FootGoal.from_footstep_msg(step))
     options = {'ignore_terrain': False,
                'mu': 1.0,
-               'behavior': Behavior.BDI_STEPPING}
+               'behavior': plan_msg.params.behavior}
     return footsteps, options
 
-def encode_footstep_plan(footsteps):
+def encode_footstep_plan(footsteps, params):
     plan = drc.footstep_plan_t()
     plan.num_steps = len(footsteps)
     plan.footsteps = [step.to_footstep_t() for step in footsteps]
+    if params is not None:
+        plan.params = params
+    else:
+        plan.params = drc.footstep_plan_params_t()
     return plan

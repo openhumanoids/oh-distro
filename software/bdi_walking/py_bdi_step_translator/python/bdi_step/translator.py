@@ -47,6 +47,7 @@ class BDIStepTranslator(object):
         self.T_local_to_localbdi = bot_core.rigid_transform_t()
         self.T_local_to_localbdi.trans = np.zeros(3)
         self.T_local_to_localbdi.quat = ut.rpy2quat([0,0,0])
+        self.last_params = None
 
     def handle_bdi_transform(self, channel, msg):
         if isinstance(msg, str):
@@ -64,6 +65,7 @@ class BDIStepTranslator(object):
             footsteps, opts = decode_deprecated_footstep_plan(msg)
         elif isinstance(msg, drc.footstep_plan_t):
             footsteps, opts = decode_footstep_plan(msg)
+            self.last_params = msg.params
         else:
             raise ValueError("Can't decode footsteps: not a drc.footstep_plan_t or drc.deprecated_footstep_plan_t")
 
@@ -113,7 +115,7 @@ class BDIStepTranslator(object):
             step.pos[:3] = T[:3,3]
             step.pos[3:] = ut.rotmat2rpy(T[:3,:3])
 
-        self.lc.publish('BDI_ADJUSTED_FOOTSTEP_PLAN', encode_footstep_plan(bdi_step_queue_out).encode())
+        self.lc.publish('BDI_ADJUSTED_FOOTSTEP_PLAN', encode_footstep_plan(bdi_step_queue_out, self.last_params).encode())
 
         for step in bdi_step_queue_out:
             # Express pos of the center of the foot, as expected by BDI
