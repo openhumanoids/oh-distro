@@ -163,7 +163,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     int filter_idx[n_filters];
     bot_param_get_int_array_or_fail(botparam_, "control.filtering.index", &filter_idx[0], n_filters);  
     for (size_t i=0;i < n_filters; i++){
-      KalmanFilter* a_kf = new KalmanFilter (1, process_noise, observation_noise);
+      EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (process_noise, observation_noise); // uses Eigen2d
       filter_idx_.push_back(filter_idx[i]);
       joint_kf_.push_back(a_kf) ;
     }
@@ -373,18 +373,14 @@ int64_t _timestamp_now(){
 void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity){
   //int64_t tic = _timestamp_now();
   double t = (double) utime*1E-6;
-
-  Eigen::VectorXf  x_D = Eigen::VectorXf(1);
-  Eigen::VectorXf  x_dot_D = Eigen::VectorXf(1);
-  Eigen::VectorXf x_filtered = Eigen::VectorXf ( 1);
-  Eigen::VectorXf x_dot_filtered = Eigen::VectorXf ( 1);
+  
   
   for (size_t i=0; i <  filter_idx_.size(); i++){
-    x_D(0) = joint_position[  filter_idx_[i] ];
-    x_dot_D(0) = joint_velocity[ filter_idx_[i] ];
-    joint_kf_[i]->processSample(t,x_D, x_dot_D, x_filtered, x_dot_filtered);
-    joint_position[ filter_idx_[i] ] = x_filtered.data()[0];
-    joint_velocity[ filter_idx_[i] ] = x_dot_filtered.data()[0];
+    double x_filtered;
+    double x_dot_filtered;
+    joint_kf_[i]->processSample(t,  joint_position[filter_idx_[i]] , joint_velocity[filter_idx_[i]] , x_filtered, x_dot_filtered);
+    joint_position[ filter_idx_[i] ] = x_filtered;
+    joint_velocity[ filter_idx_[i] ] = x_dot_filtered;
   }
   
   //int64_t toc = _timestamp_now();
