@@ -16,6 +16,7 @@
 #include <lcmtypes/drc/robot_state_t.hpp>
 
 #include <estimate_tools/kalman_filter.hpp>
+#include <estimate_tools/simple_kalman_filter.hpp>
 
 #include <Eigen/Core>
 
@@ -47,10 +48,15 @@ class App{
     void doFilter(double t, Eigen::VectorXf x, Eigen::VectorXf x_dot);
     const CommandLineConfig cl_cfg_;  
     
-    KalmanFilter* kf;
+    EstimateTools::KalmanFilter* kf;
     
-    std::vector<KalmanFilter*> joint_kf_;
+    std::vector<EstimateTools::KalmanFilter*> joint_kf_;
+    
+    std::vector<EstimateTools::SimpleKalmanFilter*> joint_skf_;
     std::vector<int> filter_idx_;
+    
+    int64_t dtime_running_;
+    int count_running_;
 };
 
 
@@ -63,19 +69,38 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
    // sub->setQueueCapacity(1);  
   
       
-  kf = new KalmanFilter( 41 );
   
   // all of atlas:
   filter_idx_ = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27};
   // legs
   //filter_idx_ = {4,5,6,7,8,9,10,11,12,13,14,15};
-  
   // std::cout << "filter_idx_ " << filter_idx_.size() << "\n";
-  for (size_t i=0;i < filter_idx_.size(); i++){
-    KalmanFilter* a_kf = new KalmanFilter (1);
-    joint_kf_.push_back(a_kf) ;
+
+  if (cl_cfg_.mode == 0){ // this mode is broken
+    kf = new EstimateTools::KalmanFilter( 41 );
+  
+  }else if (cl_cfg_.mode == 1){
+  
+    for (size_t i=0;i < filter_idx_.size(); i++){
+      EstimateTools::KalmanFilter* a_kf = new EstimateTools::KalmanFilter (1, 0.01, 5E-4);
+      joint_kf_.push_back(a_kf) ;
+    }
+    std::cout << "Created " << joint_kf_.size() << " Kalman Filters\n";
+
+  } else if (cl_cfg_.mode==2) {
+  
+    for (size_t i=0;i < filter_idx_.size(); i++){
+      EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (0.01, 5E-4);
+      joint_skf_.push_back(a_kf) ;
+    }
+    std::cout << "Created " << joint_skf_.size() << " Simple Kalman Filters\n";
+    
   }
-  std::cout << "Created " << joint_kf_.size() << " Kalman Filters\n";
+  
+  
+  
+  dtime_running_ =0;
+  count_running_ = 0;
 }
 
 
@@ -110,7 +135,6 @@ void App::doFilter(double t, Eigen::VectorXf x, Eigen::VectorXf x_dot){
 void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
   int64_t tic = _timestamp_now();
   
-  double t = (double) msg->utime*1E-6;
   
   std::vector<float> jp;
   jp = msg->joint_position;
@@ -123,9 +147,10 @@ void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
   jv_out.assign(41,0);
   
   
+  double t = (double) msg->utime*1E-6;
 
   
-  if (1==0){ // Single NxN array of filters
+  if ( cl_cfg_.mode==0 ){ // Single NxN array of filters
     Eigen::Map<Eigen::VectorXf>  x(   jp.data() ,  msg->joint_position.size());
     Eigen::Map<Eigen::VectorXf>  x_dot(  jv.data() ,  msg->joint_velocity.size());
     Eigen::VectorXf  x_D = x;
@@ -137,7 +162,7 @@ void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
     kf->processSample(t,x_D, x_dot_D, x_filtered, x_dot_filtered);
     Map<VectorXf>( jp_out.data(), msg->joint_position.size()) = x_filtered;
     Map<VectorXf>( jv_out.data(), msg->joint_velocity.size()) = x_dot_filtered;
-  }else{ // Single N 1x1 array of filters
+  }else if(  cl_cfg_.mode==1 ){ // Single N 1x1 array of filters
   
     Eigen::VectorXf  x_D = Eigen::VectorXf(1);
     Eigen::VectorXf  x_dot_D = Eigen::VectorXf(1);
@@ -152,8 +177,19 @@ void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
       jv_out[ filter_idx_[i] ] = x_dot_filtered(0);
     }
 
-  }
+  }else if (cl_cfg_.mode==2){
   
+    for (size_t i=0; i <  filter_idx_.size(); i++){
+      
+      double x_filtered;
+      double x_dot_filtered;
+      joint_skf_[i]->processSample(t,  jp[filter_idx_[i]] , jv_out[filter_idx_[i]] , x_filtered, x_dot_filtered);
+      jp_out[ filter_idx_[i] ] = x_filtered;
+      jv_out[ filter_idx_[i] ] = x_dot_filtered;
+    }
+
+  }
+
   
   
   
@@ -165,10 +201,19 @@ void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
   lcm_->publish( "TRUE_ROBOT_STATE" , &msg_out);     
 
   
-  
+
   int64_t toc = _timestamp_now();
-  double dtime = (toc-tic)*1E-6;
-  std::cout << dtime << " end\n"; 
+  int64_t dtime = (toc-tic);
+  //std::cout << dtime << " end\n"; 
+  
+  dtime_running_ +=  dtime;
+  count_running_ ++;
+  
+  if (count_running_ % 1000 ==0){
+    double dtime_mean =  dtime_running_*1E-6/count_running_;
+    std::cout << dtime_mean << " mean of " << count_running_ << "\n";
+  }
+  
   
 }
 
@@ -234,11 +279,11 @@ int main(int argc, char ** argv) {
   }
   
   App app(lcm, cl_cfg);
-  if (cl_cfg.mode ==1){
-    app.readFile();
-  }else{
+//  if (cl_cfg.mode ==1){
+//    app.readFile();
+//  }else{
     cout << "Tool ready1" << endl << "============================" << endl;
     while(0 == lcm->handle());
-  }
+//  }
   return 0;
 }
