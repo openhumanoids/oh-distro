@@ -219,6 +219,10 @@ classdef StatelessFootstepPlanner
         plan.footsteps(j).infeasibility = 0;
       end
       step_vect = encodeCollocationSteps([plan.footsteps(2:end).pos]);
+      step_vect = reshape(step_vect, 12, []);
+      right_steps = [plan.footsteps(2:end).is_right_foot];
+      step_vect(12,right_steps) = -1 * step_vect(12,right_steps);
+      step_vect = reshape(step_vect, [], 1);
       violation_ineq = A * step_vect - b;
       for j = 2:nsteps
         plan.footsteps(j+1).infeasibility = max(violation_ineq(step_map.ineq(j)));
