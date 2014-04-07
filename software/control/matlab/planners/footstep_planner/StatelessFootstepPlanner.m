@@ -45,7 +45,7 @@ classdef StatelessFootstepPlanner
           params.allow_odd_num_steps = true;
           params.allow_even_num_steps = true;
         else
-          if xor(request.goal_steps(end).is_right_foot, params.right_foot_lead)
+          if (request.num_goal_steps > 1)  == (request.goal_steps(1).is_right_foot == params.right_foot_lead)
             params.allow_even_num_steps = true;
             params.allow_odd_num_steps = false;
           else
@@ -71,9 +71,7 @@ classdef StatelessFootstepPlanner
       plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
-      if ~request.params.ignore_terrain
-        plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
-      end
+      plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
       plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
       plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
       for j = 1:length(plan.footsteps)
@@ -195,7 +193,11 @@ classdef StatelessFootstepPlanner
       if ismethod(terrain, 'setMapMode')
         biped.setTerrain(terrain.setMapMode(request.params.map_command));
       end
-      nsteps = length(plan.footsteps);
+      if request.params.ignore_terrain
+        nsteps = length(plan.footsteps) - request.num_goal_steps;
+      else
+        nsteps = length(plan.footsteps);
+      end
       for j = 1:nsteps
         plan.footsteps(j).pos = fitStepToTerrain(biped, plan.footsteps(j).pos, 'center');
       end
