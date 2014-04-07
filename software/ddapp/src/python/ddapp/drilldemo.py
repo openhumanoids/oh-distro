@@ -137,8 +137,8 @@ class DrillPlannerDemo(object):
         rpy = [1, 1, 1]
 
         # drill close to origin
-        #position = [0.65, 0.4, 0.9]
-        #rpy = [1, 1, 1]
+        position = [0.65, 0.4, 0.9]
+        rpy = [1, 1, 1]
 
         t = transformUtils.frameFromPositionAndRPY(position, rpy)
         t.Concatenate(self.computeGroundFrame(robotModel))
@@ -178,11 +178,12 @@ class DrillPlannerDemo(object):
         t.Concatenate(self.drillFrame.transform)
 
         self.graspFrame = vis.updateFrame(t, 'grasp frame', parent=self.drillAffordance, visible=True, scale=0.2)
-        vis.updateFrame(t, 'sample grasp frame 0', parent=self.drillAffordance, visible=False, scale=0.2)
+        self.sampleGraspFrame = vis.updateFrame(transformUtils.copyFrame(t), 'sample grasp frame 0', parent=self.drillAffordance, visible=False, scale=0.2)
 
-        #def updateFrame(frame):
-        #    self.computeGraspFrame()
-        #self.drillFrame.onTransformModifiedCallback = updateFrame
+        self.frameSync = vis.FrameSync()
+        self.frameSync.addFrame(self.graspFrame)
+        self.frameSync.addFrame(self.sampleGraspFrame)
+        self.frameSync.addFrame(self.drillFrame)
 
 
     def computeDrillTipFrame(self):
@@ -196,9 +197,8 @@ class DrillPlannerDemo(object):
 
         drillTipFrame = vis.updateFrame(t, 'drill tip frame', parent=self.drillAffordance, visible=False, scale=0.2)
 
-        #def updateFrame(frame):
-        #    self.computeDrillTipFrame()
-        #self.graspFrame.onTransformModifiedCallback = updateFrame
+        self.frameSync.addFrame(self.drillFrame)
+        self.frameSync.addFrame(drillTipFrame)
 
 
     def computeStanceFrame(self):
@@ -225,13 +225,16 @@ class DrillPlannerDemo(object):
         graspGroundFrame.PostMultiply()
         graspGroundFrame.Translate(graspPosition[0], graspPosition[1], groundHeight)
 
-        position = [-0.57, -0.4, 0.0]
+        position = [-0.67, -0.4, 0.0]
         rpy = [0, 0, 0]
 
         t = transformUtils.frameFromPositionAndRPY(position, rpy)
         t.Concatenate(graspGroundFrame)
 
         self.graspStanceFrame = vis.updateFrame(t, 'grasp stance', parent=self.drillAffordance, visible=False, scale=0.2)
+
+        self.frameSync.addFrame(self.drillFrame)
+        self.frameSync.addFrame(self.graspStanceFrame)
 
 
     def computeFootstepPlan(self):
@@ -332,11 +335,17 @@ class DrillPlannerDemo(object):
     def commitGraspPlan(self):
         self.manipPlanner.commitManipPlan(self.graspPlan)
 
+    def commitStandPlan(self):
+        self.manipPlanner.commitManipPlan(self.standPlan)
+
     def sendPelvisCrouch(self):
         self.atlasDriver.sendPelvisHeightCommand(0.7)
 
     def sendPelvisStand(self):
         self.atlasDriver.sendPelvisHeightCommand(0.8)
+
+    def computeStandPlan(self):
+        self.standPlan = self.ikPlanner.computeStand()
 
     def sendOpenHand(self):
         self.handDriver.sendOpen()
@@ -423,6 +432,10 @@ class DrillPlannerDemo(object):
     def playGraspPlan(self):
         self.planPlaybackFunction([self.graspPlan])
 
+
+    def playStandPlan(self):
+        self.planPlaybackFunction([self.standPlan])
+
     def computeNominalPlan(self):
 
         self.planFromCurrentRobotState = False
@@ -436,6 +449,9 @@ class DrillPlannerDemo(object):
         self.computeGraspPlan()
         self.playNominalPlan()
 
+    def sendPlanWithHeightMode(self):
+        self.atlasDriver.sendPlanUsingBdiHeight(True)
+
     def autonomousExecute(self):
 
         self.planFromCurrentRobotState = True
@@ -446,6 +462,7 @@ class DrillPlannerDemo(object):
         taskQueue.addTask(self.userPrompt('stand and open hand. continue? y/n: '))
         taskQueue.addTask(self.atlasDriver.sendStandCommand)
         taskQueue.addTask(self.sendOpenHand)
+        taskQueue.addTask(self.sendPlanWithHeightMode)
 
         # user prompt
         taskQueue.addTask(self.userPrompt('sending neck pitch forward. continue? y/n: '))
@@ -493,15 +510,36 @@ class DrillPlannerDemo(object):
         taskQueue.addTask(self.delay(1.0))
 
         # user prompt
-        taskQueue.addTask(self.userPrompt('crouching. continue? y/n: '))
+        #taskQueue.addTask(self.userPrompt('crouch. continue? y/n: '))
 
         # crouch
-        taskQueue.addTask(self.printAsync('send manip mode'))
+        #taskQueue.addTask(self.printAsync('send manip mode'))
+        #taskQueue.addTask(self.atlasDriver.sendManipCommand)
+        #taskQueue.addTask(self.delay(1.0))
+        #taskQueue.addTask(self.printAsync('crouching'))
+        #taskQueue.addTask(self.sendPelvisCrouch)
+        #taskQueue.addTask(self.delay(3.0))
+
+
+        # user prompt
+        taskQueue.addTask(self.userPrompt('plan pre grasp. continue? y/n: '))
+
+
+        # compute pre grasp plan
+        taskQueue.addTask(self.printAsync('computing pre grasp plan'))
+        taskQueue.addTask(self.computePreGraspPose)
+        taskQueue.addTask(self.playPreGraspPlan)
+
+        # user prompt
+        taskQueue.addTask(self.userPrompt('commit manip plan. continue? y/n: '))
+
+        # commit pre grasp plan
         taskQueue.addTask(self.atlasDriver.sendManipCommand)
         taskQueue.addTask(self.delay(1.0))
-        taskQueue.addTask(self.printAsync('crouching'))
-        taskQueue.addTask(self.sendPelvisCrouch)
-        taskQueue.addTask(self.delay(3.0))
+        taskQueue.addTask(self.printAsync('commit pre grasp plan'))
+        taskQueue.addTask(self.commitPreGraspPlan)
+        taskQueue.addTask(self.delay(10.0))
+
 
         # user prompt
         taskQueue.addTask(self.userPrompt('perception and fitting. continue? y/n: '))
@@ -518,18 +556,6 @@ class DrillPlannerDemo(object):
         taskQueue.addTask(self.printAsync('computing grasp frame'))
         taskQueue.addTask(self.computeGraspFrame)
 
-        # compute pre grasp plan
-        taskQueue.addTask(self.printAsync('computing pre grasp plan'))
-        taskQueue.addTask(self.computePreGraspPose)
-        taskQueue.addTask(self.playPreGraspPlan)
-
-        # user prompt
-        taskQueue.addTask(self.userPrompt('commit manip plan. continue? y/n: '))
-
-        # commit pre grasp plan
-        taskQueue.addTask(self.printAsync('commit pre grasp plan'))
-        taskQueue.addTask(self.commitPreGraspPlan)
-        taskQueue.addTask(self.delay(10.0))
 
         # compute grasp plan
         taskQueue.addTask(self.printAsync('computing grasp plan'))
@@ -566,26 +592,35 @@ class DrillPlannerDemo(object):
         taskQueue.addTask(self.sendCloseHand)
         taskQueue.addTask(self.delay(3.0))
 
+
+        taskQueue.addTask(self.userPrompt('send stand command. continue? y/n: '))
+        taskQueue.addTask(self.atlasDriver.sendStandCommand)
+        taskQueue.addTask(self.delay(5.0))
+        taskQueue.addTask(self.atlasDriver.sendManipCommand)
+        taskQueue.addTask(self.delay(1.0))
+
+        '''
         # user prompt
-        taskQueue.addTask(self.userPrompt('raise pelvis. continue? y/n: '))
+        taskQueue.addTask(self.userPrompt('compute stand plan. continue? y/n: '))
 
         # stand
-        taskQueue.addTask(self.printAsync('raise pelvis'))
-        taskQueue.addTask(self.sendPelvisStand)
-        taskQueue.addTask(self.delay(3.0))
+        taskQueue.addTask(self.computeStandPlan)
+        taskQueue.addTask(self.playStandPlan)
+
+        taskQueue.addTask(self.userPrompt('commit stand. continue? y/n: '))
 
         # compute pre grasp plan
-        taskQueue.addTask(self.printAsync('computing pre grasp plan'))
-        taskQueue.addTask(self.computePreGraspPose)
-        taskQueue.addTask(self.playPreGraspPlan)
+        taskQueue.addTask(self.commitStandPlan)
+        taskQueue.addTask(self.delay(10.0))
+        '''
 
         # user prompt
-        taskQueue.addTask(self.userPrompt('commit manip plan. continue? y/n: '))
+        #taskQueue.addTask(self.userPrompt('commit manip plan. continue? y/n: '))
 
         # commit pre grasp plan
-        taskQueue.addTask(self.printAsync('commit pre grasp plan'))
-        taskQueue.addTask(self.commitPreGraspPlan)
-        taskQueue.addTask(self.delay(10.0))
+        #taskQueue.addTask(self.printAsync('commit pre grasp plan'))
+        #taskQueue.addTask(self.commitPreGraspPlan)
+        #taskQueue.addTask(self.delay(10.0))
 
         taskQueue.addTask(self.printAsync('done!'))
 

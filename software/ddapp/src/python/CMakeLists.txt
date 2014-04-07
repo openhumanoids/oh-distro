@@ -11,6 +11,7 @@ set(python_files
   ddapp/atlasdriverpanel.py
   ddapp/atlasstatuspanel.py
   ddapp/botspy.py
+  ddapp/callbacks.py
   ddapp/cameracontrol.py
   ddapp/cameraview.py
   ddapp/colorize.py
@@ -52,6 +53,7 @@ set(python_files
   ddapp/segmentationpanel.py
   ddapp/shallowCopy.py
   ddapp/simpletimer.py
+  ddapp/splinewidget.py
   ddapp/spreadsheet.py
   ddapp/startup.py
   ddapp/statelistener.py
@@ -60,6 +62,7 @@ set(python_files
   ddapp/timercallback.py
   ddapp/transformUtils.py
   ddapp/utime.py
+  ddapp/viewbehaviors.py
   ddapp/visualization.py
   ddapp/vtkAll.py
   ddapp/vtkNumpy.py
