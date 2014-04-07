@@ -180,7 +180,9 @@ for nsteps = min_steps:max_steps
                  ObjAdd,ObjRow,A_sn(iAndx),iAfun,jAvar,...
                  iGfun,jGvar,'snoptUserfun');
     % toc
-    % exitflag
+    if debug
+      exitflag
+    end
   else
     % tic
     [xstar, fval, exitflag] = fmincon(@objfun, x0, sparse(A), b, sparse(Aeq), beq, lb, ub, @constraints, optimset('Algorithm', 'interior-point', 'DerivativeCheck', 'on', 'GradConstr', 'on', 'GradObj', 'on', 'OutputFcn',{}));
@@ -208,9 +210,9 @@ end
 
 for j = 2:output_nsteps
   R = rotmat(output_steps(6,j-1));
-  if mod(params.right_foot_lead+j,2)
-    output_steps_rel(6,j) = -1 * output_steps_rel(6,j);
-  end
+%   if mod(params.right_foot_lead+j,2)
+%     output_steps_rel(6,j) = -1 * output_steps_rel(6,j);
+%   end
   valuecheck(output_steps(:,j-1) + [R * output_steps_rel(1:2,j); output_steps_rel(3:6,j)], output_steps(:,j),1e-4);
 end
 % nsteps
