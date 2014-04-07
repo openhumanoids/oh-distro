@@ -17,7 +17,8 @@ using namespace Eigen;
 using namespace std;
 
 
-
+namespace EstimateTools {
+  
 KalmanFilter::KalmanFilter(int nq_, double process_noise_ , double observation_noise_ ): 
      nq_(nq_), process_noise_(process_noise_), observation_noise_(observation_noise_){
   init_ = false;
@@ -148,3 +149,5 @@ void KalmanFilter::processSample(double t,  Eigen::VectorXf& x,  Eigen::VectorXf
 // template void KalmanFilter::processSample(double t, MatrixBase< VectorXf > &x, MatrixBase< VectorXf > &x_dot, MatrixBase< VectorXf > &x_filtered, MatrixBase< VectorXf > &x_dot_filtered);
 
 //template void KalmanFilter::processSample(MatrixBase< MatrixXf > &,const set<int> &);
+
+}
