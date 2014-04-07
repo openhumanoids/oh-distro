@@ -210,9 +210,6 @@ end
 
 for j = 2:output_nsteps
   R = rotmat(output_steps(6,j-1));
-%   if mod(params.right_foot_lead+j,2)
-%     output_steps_rel(6,j) = -1 * output_steps_rel(6,j);
-%   end
   valuecheck(output_steps(:,j-1) + [R * output_steps_rel(1:2,j); output_steps_rel(3:6,j)], output_steps(:,j),1e-4);
 end
 % nsteps
