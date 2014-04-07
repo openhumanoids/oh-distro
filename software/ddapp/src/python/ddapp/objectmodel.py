@@ -4,13 +4,29 @@ from PythonQt import QtCore, QtGui
 from collections import namedtuple
 from collections import OrderedDict
 
+from ddapp.fieldcontainer import FieldContainer
 import vtk
 
 _objectTree = None
 _propertiesPanel = None
 
 objects = {}
-PropertyAttributes = namedtuple('PropertyAttributes', ['decimals', 'minimum', 'maximum', 'singleStep', 'hidden'])
+
+class PropertyAttributes(FieldContainer):
+
+    def __init__(self, **kwargs):
+
+        self._add_fields(
+          decimals    = 0,
+          minimum = 0,
+          maximum = 0,
+          singleStep = 0,
+          hidden = False,
+          enumNames = None,
+          readOnly = False,
+          )
+
+        self._set_fields(**kwargs)
 
 
 class Icons(object):
@@ -443,6 +459,8 @@ def setPropertyAttributes(p, attributes):
     p.setAttribute('minimum', attributes.minimum)
     p.setAttribute('maximum', attributes.maximum)
     p.setAttribute('singleStep', attributes.singleStep)
+    if attributes.enumNames:
+        p.setAttribute('enumNames', attributes.enumNames)
 
 
 def addProperty(panel, name, attributes, value):
@@ -454,6 +472,10 @@ def addProperty(panel, name, attributes, value):
             p = panel.addSubProperty(name, v, groupProp)
             setPropertyAttributes(p, attributes)
         return groupProp
+    elif attributes.enumNames:
+        p = panel.addEnumProperty(name, value)
+        setPropertyAttributes(p, attributes)
+        return p
     else:
         p = panel.addProperty(name, value)
         setPropertyAttributes(p, attributes)
