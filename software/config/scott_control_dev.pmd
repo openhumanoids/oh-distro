@@ -44,6 +44,10 @@ group "2.core" {
 }
 
 group "3.p_and_c" {
+    cmd "contact_monitor" {        
+    	exec = "drc-contact-monitor";
+        host = "robot";
+    }
 }
 
 
