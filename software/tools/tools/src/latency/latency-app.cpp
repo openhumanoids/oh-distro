@@ -51,9 +51,11 @@ App::App(boost::shared_ptr<lcm::LCM> &_lcm, int period_):
   lats_.push_back(a_lat2) ;
   Latency* a_lat3 = new Latency(period_);
   lats_.push_back(a_lat3) ;
+  Latency* a_lat4 = new Latency(period_);
+  lats_.push_back(a_lat4) ;
   
-  lat_time_ = {0.0, 0.0, 0.0};
-  lat_msgs_ = {0.0, 0.0, 0.0};
+  lat_time_ = {0.0, 0.0, 0.0, 0.0};
+  lat_msgs_ = {0.0, 0.0, 0.0, 0.0};
   
   _lcm->subscribe("ATLAS_STATE", &App::handleAtlasStateMsg, this);
   _lcm->subscribe("EST_ROBOT_STATE",&App::handleRobotStateMsg,this);
@@ -75,30 +77,34 @@ int64_t _timestamp_now(){
 
 void App::handleAtlasStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_state_t * msg){
   lats_[0]->add_from(msg->utime, _timestamp_now() );
-  lats_[2]->add_from(msg->utime, _timestamp_now() );  
+  lats_[3]->add_from(msg->utime, _timestamp_now() );
 }
 
 void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * msg){
   bool new_data = lats_[0]->add_to(msg->utime, _timestamp_now(), "SYNC", lat_time_[0], lat_msgs_[0] );
+  lats_[2]->add_from(msg->utime, _timestamp_now() );  
+  
   
   if (new_data){
+    if (counter_% 10==0){
+      std::cout << "AST-ERS | IMU-SE  | ERS-CMD | AST-CMD"
+                << "   ||   "
+                << "AST-ERS | IMU-SE  | ERS-CMD | AST-CMD\n";//   <msec|msg>\n";
+    }
+    
     std::cout.precision(5);
     std::cout.setf( std::ios::fixed, std:: ios::floatfield ); // floatfield set to fixed
-    std::cout << lat_time_[0] << " | " << lat_time_[1] << " | "  << lat_time_[2] << "   ||   "
-              << lat_msgs_[0] << " | " << lat_msgs_[1] << " | "  << lat_msgs_[2] << "\n";
+    std::cout << lat_time_[0] << " | " << lat_time_[1] << " | "  << lat_time_[2] << " | "  << lat_time_[3] << "   ||   "
+              << lat_msgs_[0] << " | " << lat_msgs_[1] << " | "  << lat_msgs_[2] << " | "  << lat_msgs_[3] << "\n";
               
-    if (counter_% 10==0){
-      std::cout << "AST-ERS | IMU-SE  | AST-CMD"
-                << "   ||   "
-                << "AST-ERS | IMU-SE  | AST-CMD\n";//   <msec|msg>\n";
-    }
               
     counter_++;
   }
 }
 
 void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg)  {
-  lats_[2]->add_to(msg->utime, _timestamp_now(), "FULL", lat_time_[2], lat_msgs_[2] );      
+  lats_[2]->add_to(msg->utime, _timestamp_now(), "CTRL", lat_time_[2], lat_msgs_[2] );   
+  lats_[3]->add_to(msg->utime, _timestamp_now(), "FULL", lat_time_[3], lat_msgs_[3] );      
 }
 
 
@@ -122,7 +128,8 @@ void App::handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& c
 int main (int argc, char ** argv){
   std::cout << "0:      ATLAS_STATE <-> EST_ROBOT_STATE\n";
   std::cout << "1:  ATLAS_IMU_BATCH <-> POSE_BODY\n";
-  std::cout << "2:      ATLAS_STATE <-> ATLAS_COMMAND\n";
+  std::cout << "2:  EST_ROBOT_STATE <-> ATLAS_COMMAND\n";  
+  std::cout << "3:      ATLAS_STATE <-> ATLAS_COMMAND\n";
   ConciseArgs parser(argc, argv, "latency-app");
   int period=200;
   parser.add(period, "p", "period", "Counting Period in samples");
