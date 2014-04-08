@@ -86,7 +86,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_05.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
         host = "robot";
     }
     cmd "aff_server" {
@@ -174,7 +174,7 @@ group "a.3.models" {
 
 group "b.1.core" {
     cmd "base_viewer" {
-        exec = "drc-viewer -c drc_robot_05.cfg"; 
+        exec = "drc-viewer -c drc_robot_02.cfg"; 
         host = "base";
     }
     cmd "aff_server" {
@@ -190,7 +190,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "param_server" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_05.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
         host = "base";
     }
     cmd "image-rx" {
@@ -337,7 +337,7 @@ group "m.state_est" {
         host = "robot";
     }
     cmd "viewer-plus" {
-        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_05.cfg";
+        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02.cfg";
         host = "robot";
     }
 }
