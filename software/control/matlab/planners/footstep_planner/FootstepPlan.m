@@ -1,11 +1,15 @@
 classdef FootstepPlan
   properties
     footsteps
+    params
   end
 
   methods
-    function obj = FootstepPlan(footsteps)
+    function obj = FootstepPlan(footsteps, params)
       obj.footsteps = footsteps;
+      if nargin > 1
+        obj.params = params;
+      end
     end
 
     function msg = to_footstep_plan_t(obj)
@@ -16,6 +20,7 @@ classdef FootstepPlan
         step_msgs(j) = obj.footsteps(j).to_footstep_t();
       end
       msg.footsteps = step_msgs;
+      msg.params = obj.params;
     end
 
     function msg = toLCM(obj)

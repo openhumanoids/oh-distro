@@ -4,6 +4,8 @@ from ddapp import lcmUtils
 from ddapp import applogic as app
 from ddapp.utime import getUtime
 from ddapp import objectmodel as om
+from ddapp import transformUtils
+from ddapp import visualization as vis
 from ddapp.timercallback import TimerCallback
 
 import numpy as np
@@ -16,27 +18,25 @@ def _makeButton(text, func):
     b.connect('clicked()', func)
     return b
 
-
-def getDefaultRobotModel():
-    return om.findObjectByName('robot state model')
-
 def addWidgetsToDict(widgets, d):
 
     for widget in widgets:
         if widget.objectName:
             d[str(widget.objectName)] = widget
         addWidgetsToDict(widget.children(), d)
-    
+
 class WidgetDict(object):
 
     def __init__(self, widgets):
-        addWidgetsToDict(widgets, self.__dict__)    
-    
+        addWidgetsToDict(widgets, self.__dict__)
+
 class FootstepsPanel(object):
 
-    def __init__(self, driver):
+    def __init__(self, driver, robotModel, jointController):
 
         self.driver = driver
+        self.robotModel = robotModel
+        self.jointController = jointController
 
         loader = QtUiTools.QUiLoader()
         uifile = QtCore.QFile(':/ui/ddFootsteps.ui')
@@ -44,34 +44,63 @@ class FootstepsPanel(object):
 
         self.widget = loader.load(uifile)
 
-        ui = WidgetDict(self.widget.children())
+        self.ui = WidgetDict(self.widget.children())
 
-        ui.walkingGoalButton.connect("clicked()", self.onNewWalkingGoal)
-        ui.goalStepsButton.connect("clicked()", self.onGoalSteps)
-        ui.executeButton.connect("clicked()", self.onExecute)
-        ui.stopButton.connect("clicked()", self.onStop)       
-        
-        ### BDI frame logic        
-        ui.hideBDIButton.connect("clicked()", self.onHideBDIButton)
-        ui.showBDIButton.connect("clicked()", self.onShowBDIButton)
+        self.ui.walkingGoalButton.connect("clicked()", self.onNewWalkingGoal)
+        self.ui.goalStepsButton.connect("clicked()", self.onGoalSteps)
+        self.ui.executeButton.connect("clicked()", self.onExecute)
+        self.ui.stopButton.connect("clicked()", self.onStop)
+
+        ### BDI frame logic
+        self.ui.hideBDIButton.connect("clicked()", self.onHideBDIButton)
+        self.ui.showBDIButton.connect("clicked()", self.onShowBDIButton)
+        self._setupPropertiesPanel()
+
+    def _setupPropertiesPanel(self):
+        l = QtGui.QVBoxLayout(self.ui.params_container)
+        self.params_panel = PythonQt.dd.ddPropertiesPanel()
+        self.params_panel.setBrowserModeToWidget()
+        om.addPropertiesToPanel(self.driver.params, self.params_panel)
+        l.addWidget(self.params_panel)
+        self.params_panel.connect('propertyValueChanged(QtVariantProperty*)', self.onPropertyChanged)
+
+    def onPropertyChanged(self, prop):
+        self.driver.params.setProperty(prop.propertyName(), prop.value())
+        self.driver.updateRequest()
+
+
+    def newWalkingGoalFrame(self, robotModel, distanceForward=1.0):
+        t = self.driver.getFeetMidPoint(robotModel)
+        t.PreMultiply()
+        t.Translate(distanceForward, 0.0, 0.0)
+        t.PostMultiply()
+        return t
 
 
     def onNewWalkingGoal(self):
-        model = getDefaultRobotModel()
-        self.driver.createWalkingGoal(model)
+
+        t = self.newWalkingGoalFrame(self.robotModel)
+        frameObj = vis.updateFrame(t, 'walking goal', parent='planning', scale=0.25)
+        frameObj.setProperty('Edit', True)
+        frameObj.connectFrameModified(self.onWalkingGoalModified)
+        self.onWalkingGoalModified(frameObj)
+
+    def onWalkingGoalModified(self, frame):
+
+        request = self.driver.constructFootstepPlanRequest(self.jointController.q, frame.transform)
+        self.driver.sendFootstepPlanRequest(request)
 
     def onGoalSteps(self):
-        model = getDefaultRobotModel()
-        self.driver.createGoalSteps(model)
+        self.driver.createGoalSteps(self.robotModel, self.jointController.q)
 
     def onExecute(self):
         self.driver.commitFootstepPlan(self.driver.lastFootstepPlan)
 
     def onStop(self):
         self.driver.sendStopWalking()
-        
-        
-    ### BDI frame logic    
+
+
+    ### BDI frame logic
     def onHideBDIButton(self):
         print "hide bdi"
         self.driver.showBDIPlan = False
@@ -86,7 +115,7 @@ class FootstepsPanel(object):
         self.driver.showBDIPlan = True
         self.driver.bdiRobotModel.setProperty('Visible', True)
         self.driver.drawBDIFootstepPlan()
-        self.driver.drawBDIFootstepPlanAdjusted()            
+        self.driver.drawBDIFootstepPlanAdjusted()
 
 def toggleWidgetShow():
 
@@ -95,12 +124,12 @@ def toggleWidgetShow():
     else:
         dock.show()
 
-def init(driver):
+def init(driver, robotModel, jointController):
 
     global panel
     global dock
 
-    panel = FootstepsPanel(driver)
+    panel = FootstepsPanel(driver, robotModel, jointController)
     dock = app.addWidgetToDock(panel.widget)
     dock.hide()
 

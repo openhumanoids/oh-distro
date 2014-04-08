@@ -79,6 +79,7 @@ classdef StatelessFootstepPlanner
       for j = 1:length(plan.footsteps)
         plan.footsteps(j).pos = biped.footContact2Orig(plan.footsteps(j).pos, 'center', plan.footsteps(j).is_right_foot);
       end
+      plan.params = request.params;
     end
 
     function plan = check_footstep_plan(biped, request)
