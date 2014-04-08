@@ -6,9 +6,12 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core.hpp"
+#include "lcmtypes/drc/atlas_state_t.hpp"
 #include "lcmtypes/drc/atlas_command_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/utime_two_t.hpp"
+#include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
+#include "lcmtypes/bot_core/pose_t.hpp"
 #include <latency/latency.hpp>
 
 #include <ConciseArgs>
@@ -17,48 +20,51 @@ using namespace std;
 class App
 {
 public:
-  App(boost::shared_ptr<lcm::LCM> &_lcm, int mode_);
+  App(boost::shared_ptr<lcm::LCM> &_lcm, int period_);
   ~App() {}
   boost::shared_ptr<lcm::LCM> _lcm;
+  void handleAtlasStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_state_t * msg);
   void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * msg);
   void handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg);
+
+  void handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_raw_imu_batch_t * msg);
+  void handPoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg);
+
   void handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_two_t * msg);
 
-  int mode_;
-  std::string message_;
+  int period_;
   
 private:
-  Latency* latency_;  
+  std::vector<Latency*> lats_;
+  
+  std::vector <float> lat_time_;
+  std::vector <float> lat_msgs_;
+  int counter_;
 };
 
-App::App(boost::shared_ptr<lcm::LCM> &_lcm, int mode_): _lcm(_lcm),mode_(mode_){
-  latency_ = new Latency();  
+App::App(boost::shared_ptr<lcm::LCM> &_lcm, int period_):
+    _lcm(_lcm),period_(period_){
+
+  Latency* a_lat = new Latency(period_); 
+  lats_.push_back(a_lat) ;
+  Latency* a_lat2 = new Latency(period_);
+  lats_.push_back(a_lat2) ;
+  Latency* a_lat3 = new Latency(period_);
+  lats_.push_back(a_lat3) ;
+  Latency* a_lat4 = new Latency(period_);
+  lats_.push_back(a_lat4) ;
   
-  if ( mode_==0){
-    _lcm->subscribe("TRUE_ROBOT_STATE", &App::handleRobotStateMsg, this); //
-    _lcm->subscribe("ATLAS_COMMAND",&App::handleCommandMsg,this);
-    message_ = "TRAN";
-  }else if(mode_==1){
-    _lcm->subscribe("EST_ROBOT_STATE", &App::handleRobotStateMsg, this); //
-    _lcm->subscribe("ATLAS_COMMAND",&App::handleCommandMsg,this);
-    message_ = "ESTM";
-  }else if(mode_==2){
-    _lcm->subscribe("EST_ROBOT_STATE", &App::handleRobotStateMsg, this); //
-    _lcm->subscribe("LATENCY_CONTROL_A",&App::handleUtimeTwoMsg,this);
-    message_ = "CNTA";
-  }else if(mode_==3){
-    _lcm->subscribe("EST_ROBOT_STATE", &App::handleRobotStateMsg, this); //
-    _lcm->subscribe("LATENCY_CONTROL_B",&App::handleUtimeTwoMsg,this);
-    message_ = "CNTB";
-  }else if(mode_==4){
-    _lcm->subscribe("EST_ROBOT_STATE", &App::handleRobotStateMsg, this); //
-    _lcm->subscribe("LATENCY_CONTROL_C",&App::handleUtimeTwoMsg,this);
-    message_ = "CNTC";
-  }else if(mode_==5){
-    _lcm->subscribe("EST_ROBOT_STATE", &App::handleRobotStateMsg, this); //
-    _lcm->subscribe("LATENCY_CONTROL_D",&App::handleUtimeTwoMsg,this);
-    message_ = "CNTD";
-  }
+  lat_time_ = {0.0, 0.0, 0.0, 0.0};
+  lat_msgs_ = {0.0, 0.0, 0.0, 0.0};
+  
+  _lcm->subscribe("ATLAS_STATE", &App::handleAtlasStateMsg, this);
+  _lcm->subscribe("EST_ROBOT_STATE",&App::handleRobotStateMsg,this);
+  _lcm->subscribe("ATLAS_COMMAND",&App::handleCommandMsg,this);
+  
+
+  _lcm->subscribe("ATLAS_IMU_BATCH", &App::handleIMUBatch, this);
+  _lcm->subscribe("POSE_BODY", &App::handPoseBody, this);  
+  counter_=0;
 }
 
 
@@ -69,39 +75,72 @@ int64_t _timestamp_now(){
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
+void App::handleAtlasStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_state_t * msg){
+  lats_[0]->add_from(msg->utime, _timestamp_now() );
+  lats_[3]->add_from(msg->utime, _timestamp_now() );
+}
+
 void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * msg){
-  latency_->add_from(msg->utime, _timestamp_now() );
+  bool new_data = lats_[0]->add_to(msg->utime, _timestamp_now(), "SYNC", lat_time_[0], lat_msgs_[0] );
+  lats_[2]->add_from(msg->utime, _timestamp_now() );  
+  
+  
+  if (new_data){
+    if (counter_% 10==0){
+      std::cout << "AST-ERS | IMU-SE  | ERS-CMD | AST-CMD"
+                << "   ||   "
+                << "AST-ERS | IMU-SE  | ERS-CMD | AST-CMD\n";//   <msec|msg>\n";
+    }
+    
+    std::cout.precision(5);
+    std::cout.setf( std::ios::fixed, std:: ios::floatfield ); // floatfield set to fixed
+    std::cout << lat_time_[0] << " | " << lat_time_[1] << " | "  << lat_time_[2] << " | "  << lat_time_[3] << "   ||   "
+              << lat_msgs_[0] << " | " << lat_msgs_[1] << " | "  << lat_msgs_[2] << " | "  << lat_msgs_[3] << "\n";
+              
+              
+    counter_++;
+  }
 }
 
 void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg)  {
-  latency_->add_to(msg->utime, _timestamp_now(), message_ );
+  lats_[2]->add_to(msg->utime, _timestamp_now(), "CTRL", lat_time_[2], lat_msgs_[2] );   
+  lats_[3]->add_to(msg->utime, _timestamp_now(), "FULL", lat_time_[3], lat_msgs_[3] );      
 }
 
+
+
+void App::handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_raw_imu_batch_t * msg){
+  lats_[1]->add_from(msg->utime, _timestamp_now() );
+}
+void App::handPoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg)  {
+  lats_[1]->add_to(msg->utime, _timestamp_now(), "SEST" , lat_time_[1], lat_msgs_[1]);      
+}
+
+
 void App::handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_two_t * msg)  {
-  latency_->add_to(msg->utime_sim, _timestamp_now(), message_ );
+  // latency_->add_to(msg->utime_sim, _timestamp_now(), "BLAH" );
+  
   // TODO: switch to use these this timing to use the time calculated within matlab:
   // NOT TESTED
   //latency_->add_to(msg->utime_sim, msg->utime_wall, message_ );
 }
 
 int main (int argc, char ** argv){
-  std::cout << "0: TRUE_ROBOT_STATE <-> ATLAS_COMMAND\n";
-  std::cout << "1:  EST_ROBOT_STATE <-> ATLAS_COMMAND\n";
-  std::cout << "2:  EST_ROBOT_STATE <-> LATENCY_CONTROL_A\n";
-  std::cout << "3:  EST_ROBOT_STATE <-> LATENCY_CONTROL_B\n";
-  std::cout << "4:  EST_ROBOT_STATE <-> LATENCY_CONTROL_C\n";
-  std::cout << "5:  EST_ROBOT_STATE <-> LATENCY_CONTROL_D\n";
-  ConciseArgs parser(argc, argv, "lidar-passthrough");
-  int mode=0;
-  parser.add(mode, "m", "mode", "Mode [0,1]");
+  std::cout << "0:      ATLAS_STATE <-> EST_ROBOT_STATE\n";
+  std::cout << "1:  ATLAS_IMU_BATCH <-> POSE_BODY\n";
+  std::cout << "2:  EST_ROBOT_STATE <-> ATLAS_COMMAND\n";  
+  std::cout << "3:      ATLAS_STATE <-> ATLAS_COMMAND\n";
+  ConciseArgs parser(argc, argv, "latency-app");
+  int period=200;
+  parser.add(period, "p", "period", "Counting Period in samples");
   parser.parse();
-  cout << "mode is: " << mode << "\n"; 
+  cout << "period is: " << period << " samples\n"; 
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good())
     return 1;
 
-  App app(lcm, mode);
+  App app(lcm, period);
   cout << "App ready"<< endl;
   while(0 == lcm->handle());
   return 0;
