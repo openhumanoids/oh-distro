@@ -38,6 +38,16 @@
 #include <leg_estimate/common_conversions.hpp>
 
 
+// These ids should match drc_controller_status_t.lcm
+enum control_mode { 
+  CONTROLLER_UNKNOWN  = 0,
+  CONTROLLER_STANDING = 1,
+  CONTROLLER_WALKING  = 2,
+  CONTROLLER_TOE_OFF  = 8, // not in drc_controller_status_t
+};
+
+
+
 
 
 ///////////////////////////////////////////////////////////////
@@ -129,6 +139,11 @@ class leg_estimate{
     contact_status_id footTransitionAlt();
     // output from the FootContact class(es), not directly related to primary_foot_, but close
     int standing_foot_; 
+    
+    /// Current High-level controller mode
+    // Used to determine certain classifiers to use
+    control_mode control_mode_;
+    
     
     /// Integration Methods:
     bool initializePose(Eigen::Isometry3d body_to_foot);

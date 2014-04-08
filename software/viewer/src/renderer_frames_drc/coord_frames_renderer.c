@@ -23,9 +23,9 @@
 
 //#define RENDERER_NAME "Coord Frames"
 
-#define PARAM_FRAME_SELECT_0 "Frame 1"
-#define PARAM_FRAME_SELECT_1 "Frame 2"
-#define PARAM_FRAME_SELECT_2 "Frame 3"
+#define PARAM_FRAME_SELECT_0 "Frame R"
+#define PARAM_FRAME_SELECT_1 "Frame G"
+#define PARAM_FRAME_SELECT_2 "Frame B"
 #define PARAM_FOLLOW_POS "Follow pos"
 #define PARAM_FOLLOW_YAW "yaw"
 #define PARAM_SHOW_FRAME "Draw Frame"
@@ -33,7 +33,8 @@
 #define PARAM_PATH_RENDER_MODE "Render Path"
 #define PARAM_MAXPOSES "Max Hist"
 #define PARAM_DECIMATE_PATH "Decimate Hist"
-#define PARAM_PATH_COLOR "Path Color"
+//#define PARAM_PATH_COLOR "Path Color"
+#define PARAM_FRAME_SIZE "Frame Size"
 
 #define MAX_HIST   10000
 
@@ -153,7 +154,7 @@ static void draw_axis(BotTrans * axis_to_local, float size, float lineThickness,
 
 }
 
-static void draw_path(RendererFrames *self, BotTrans *last_coord, BotPtrCircular *path)
+static void draw_path(RendererFrames *self, BotTrans *last_coord, BotPtrCircular *path, float jet_value)
 {
   int max_draw_poses = bot_gtk_param_widget_get_int(self->pw, PARAM_MAXPOSES);
   if (max_draw_poses == 0)
@@ -163,15 +164,17 @@ static void draw_path(RendererFrames *self, BotTrans *last_coord, BotPtrCircular
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_DEPTH_TEST);
 
-  float * path_color = bot_color_util_jet(bot_gtk_param_widget_get_double(self->pw, PARAM_PATH_COLOR));
+  // float * path_color = bot_color_util_jet(bot_gtk_param_widget_get_double(self->pw, PARAM_PATH_COLOR));
+  float * path_color = bot_color_util_jet( jet_value );
+
 
   switch (bot_gtk_param_widget_get_enum(self->pw, PARAM_PATH_RENDER_MODE)) {
   case PATH_MODE_AXES:
     {
-      draw_axis(last_coord, .5, 2, .4);
+      draw_axis(last_coord, bot_gtk_param_widget_get_double(self->pw, PARAM_FRAME_SIZE) , 2, .4);
       for (unsigned int i = 0; i < MIN(bot_ptr_circular_size(path), max_draw_poses); i++) {
         BotTrans * t = (BotTrans *) bot_ptr_circular_index(path, i);
-        draw_axis(t, .5, 2, .4);
+        draw_axis(t, bot_gtk_param_widget_get_double(self->pw, PARAM_FRAME_SIZE), 2, .4);
       }
       break;
     }
@@ -318,6 +321,7 @@ static void draw(BotViewer *viewer, BotRenderer *super)
 {
   RendererFrames *self = (RendererFrames*) super->user;
 
+
   for (int i=0; i <3 ; i++){
     int draw_frame_num;
     const char * draw_frame;
@@ -344,10 +348,11 @@ static void draw(BotViewer *viewer, BotRenderer *super)
 
     update_path_hist(self, &frame_to_root, path);
 
-    draw_path(self, &frame_to_root, path);
+    float jet_value = (float) (2-i) /2;
+    draw_path(self, &frame_to_root, path, jet_value);
 
     if (bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_FRAME)) {
-      draw_axis(&frame_to_root, 0.5, 4, .7); // was 1m, now 0.5
+      draw_axis(&frame_to_root, bot_gtk_param_widget_get_double(self->pw, PARAM_FRAME_SIZE), 4, .7); // was 1m, now set in ui
     }
 
     if (bot_gtk_param_widget_get_bool(self->pw, PARAM_SHOW_SHADOW)) {
@@ -484,7 +489,8 @@ void bot_frames_add_named_renderer_to_viewer(BotViewer *viewer, int render_prior
   bot_gtk_param_widget_add_enum(self->pw, PARAM_PATH_RENDER_MODE, BOT_GTK_PARAM_WIDGET_DEFAULTS, 0, "Line",
       PATH_MODE_NORMAL, "Line On floor", PATH_MODE_FLOOR, "Curtain", PATH_MODE_CURTAIN, "Axes", PATH_MODE_AXES, NULL);
 
-  bot_gtk_param_widget_add_double(self->pw, PARAM_PATH_COLOR, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, .01, .3);
+  //bot_gtk_param_widget_add_double(self->pw, PARAM_PATH_COLOR, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, .01, .3);
+  bot_gtk_param_widget_add_double(self->pw, PARAM_FRAME_SIZE, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, .01, .3);
   bot_gtk_param_widget_add_double(self->pw, PARAM_DECIMATE_PATH, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, 100, .01, .1);
 
   bot_gtk_param_widget_add_int(self->pw, PARAM_MAXPOSES, BOT_GTK_PARAM_WIDGET_SPINBOX, 0, MAX_HIST, 1, 1000);
