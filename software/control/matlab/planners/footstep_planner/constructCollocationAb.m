@@ -9,14 +9,14 @@ function [A, b, Aeq, beq, step_map] = constructCollocationAb(A_reach, b_reach, n
   A = zeros(nc*(nsteps-1), nv);
   b = zeros(nc*(nsteps-1), 1);
   if right_foot_lead 
-    A_reach = A_reach * diag([1,-1,1,1,1,1]);
+    A_reach = A_reach * diag([1,-1,1,1,1,-1]);
   end
   for j = 2:nsteps
     con_ndx = nc*(j-2)+1:nc*(j-1);
     var_ndx = (j-1)*12+7:j*12;
     A(con_ndx,var_ndx) = A_reach;
     b(con_ndx) = b_reach;
-    A_reach = A_reach * diag([1,-1,1,1,1,1]);
+    A_reach = A_reach * diag([1,-1,1,1,1,-1]);
     step_map.ineq(j) = con_ndx;
   end
 
@@ -29,11 +29,7 @@ function [A, b, Aeq, beq, step_map] = constructCollocationAb(A_reach, b_reach, n
     dx_ndx = (j-1)*12+(7:12);
     Aeq(con_ndx, x1_ndx(3:6)) = -diag(ones(4,1));
     Aeq(con_ndx, x2_ndx(3:6)) = diag(ones(4,1));
-    if ~mod(right_foot_lead+j, 2)
-      Aeq(con_ndx, dx_ndx(3:6)) = -diag(ones(4,1));
-    else
-      Aeq(con_ndx, dx_ndx(3:6)) = -diag([1,1,1,-1]);
-    end
+    Aeq(con_ndx, dx_ndx(3:6)) = -diag(ones(4,1));
     step_map.eq(j) = con_ndx;
   end
 end

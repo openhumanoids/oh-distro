@@ -2,7 +2,7 @@ function [zmptraj, foottraj, support_times, supports] = planZMPTraj(biped, q0, f
 
 if nargin < 4; options = struct(); end
 
-if ~isfield(footsteps(1), 'zmp'); 
+if ~isfield(footsteps(1), 'zmp');
   zmp_pts = [];
 else
   zmp_pts = [footsteps(2:end).zmp];
@@ -93,7 +93,7 @@ while 1
     step_knots(end+1).t = swing_ts(j) + t0;
     step_knots(end).(sw_foot).orig = biped.footContact2Orig(swing_poses.center(:,j), 'center', is_right_foot);
     step_knots(end).(st_foot).orig = st.pos.orig;
-    
+
     if ~sw1.walking_params.constrain_full_foot_pose && j >= 3 && j <= (length(swing_ts) - 4)
       % Release orientation constraints on the foot during the middle of the swing
       step_knots(end).(sw_foot).orig(4:5) = nan;
@@ -119,7 +119,7 @@ while 1
   zmp_knots(end+1) = struct('t', t0 + step_duration, 'zmp', zmp2, 'supp', supp2);
 
   istep.(sw_foot) = istep.(sw_foot) + 1;
-  
+
   is_right_foot = ~is_right_foot;
   if istep.left == length(steps.left) && istep.right == length(steps.right)
     break
@@ -143,8 +143,8 @@ end
 zmptraj = PPTrajectory(foh([zmp_knots.t], [zmp_knots.zmp]));
 
 % create support body trajectory
-rfoot_body_idx = biped.foot_bodies_idx(1);
-lfoot_body_idx = biped.foot_bodies_idx(2);
+rfoot_body_idx = biped.foot_bodies_idx.right;
+lfoot_body_idx = biped.foot_bodies_idx.left;
 support_times = [zmp_knots.t];
 supps = [zmp_knots.supp];
 foot_supports = [[supps.right] * rfoot_body_idx;

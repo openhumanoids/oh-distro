@@ -3,11 +3,12 @@
 using namespace TwoLegs;
 using namespace std;
 
-FootContact::FootContact(bool _log_data_files,const float atlasWeight){
+FootContact::FootContact(bool log_data_files_, float atlas_weight_, float schmitt_level_):
+     atlas_weight_(atlas_weight_), schmitt_level_(schmitt_level_){
   cout << "A new FootContact object was created" << endl;
 
-  // was 1400*0.65 for a long time, but this didn't work with up stepping
-  schmitt_level_ = 0.65; 
+  // was 1400*0.65 for a long time, but this didn't work with toe-off
+  //schmitt_level_ = 0.95;//0.65; 
   transition_timeout_ = 4000;
   ////////////////////////////////////////////
   
@@ -16,7 +17,6 @@ FootContact::FootContact(bool _log_data_files,const float atlasWeight){
   lcmutime = 0;
   deltautime = 0;
   
-  expectedweight = atlasWeight;
   
   foottransitionintermediateflag = true;
   
@@ -34,7 +34,7 @@ footid FootContact::DetectFootTransition(int64_t utime, float leftz, float right
 
   footid new_footstep = FOOT_UNKNOWN;
 
-  if (getSecondaryFootZforce() - schmitt_level_*expectedweight > getPrimaryFootZforce()) {
+  if (getSecondaryFootZforce() - schmitt_level_*atlas_weight_ > getPrimaryFootZforce()) {
     transition_timespan += deltautime;
   }else{
     transition_timespan = 0.;

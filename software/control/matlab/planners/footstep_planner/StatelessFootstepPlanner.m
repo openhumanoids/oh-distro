@@ -11,7 +11,7 @@ classdef StatelessFootstepPlanner
       foot_orig = biped.feetPosition(q0);
 
       if request.params.ignore_terrain
-        biped = biped.setTerrain(KinematicTerrainMap(biped, q0));
+        biped = biped.setTerrain(KinematicTerrainMap(biped, q0, true));
       end
 
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
@@ -45,7 +45,7 @@ classdef StatelessFootstepPlanner
           params.allow_odd_num_steps = true;
           params.allow_even_num_steps = true;
         else
-          if xor(request.goal_steps(end).is_right_foot, params.right_foot_lead)
+          if (request.num_goal_steps > 1)  == (request.goal_steps(1).is_right_foot == params.right_foot_lead)
             params.allow_even_num_steps = true;
             params.allow_odd_num_steps = false;
           else
@@ -77,6 +77,7 @@ classdef StatelessFootstepPlanner
       for j = 1:length(plan.footsteps)
         plan.footsteps(j).pos = biped.footContact2Orig(plan.footsteps(j).pos, 'center', plan.footsteps(j).is_right_foot);
       end
+      plan.params = request.params;
     end
 
     function plan = check_footstep_plan(biped, request)
@@ -132,9 +133,13 @@ classdef StatelessFootstepPlanner
         plan.footsteps(end) = goal_step;
       else
         for j = 1:request.num_goal_steps
-          k = nsteps - 3 + j;
+          k = nsteps - 2 + j;
           goal_step = Footstep.from_footstep_t(request.goal_steps(j));
-          assert(goal_step.is_right_foot == plan.footsteps(k).is_right_foot);
+          if j ~= 2
+            assert(goal_step.is_right_foot == plan.footsteps(end-1).is_right_foot);
+          else
+            assert(goal_step.is_right_foot == plan.footsteps(end).is_right_foot);
+          end
           goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', goal_step.is_right_foot);
           plan.footsteps(k) = goal_step;
         end
@@ -188,7 +193,11 @@ classdef StatelessFootstepPlanner
       if ismethod(terrain, 'setMapMode')
         biped.setTerrain(terrain.setMapMode(request.params.map_command));
       end
-      nsteps = length(plan.footsteps);
+      if request.params.ignore_terrain
+        nsteps = length(plan.footsteps) - request.num_goal_steps;
+      else
+        nsteps = length(plan.footsteps);
+      end
       for j = 1:nsteps
         plan.footsteps(j).pos = fitStepToTerrain(biped, plan.footsteps(j).pos, 'center');
       end

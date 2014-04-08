@@ -14,6 +14,7 @@ request.utime = 0;
 
 fp = load(strcat(getenv('DRC_PATH'), '/control/matlab/data/atlas_fp.mat'));
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, fp.xstar);
+request.initial_state.pose.translation.z = request.initial_state.pose.translation.z + 0.55;
 
 request.goal_pos = drc.position_3d_t();
 request.goal_pos.translation = drc.vector_3d_t();
@@ -73,7 +74,7 @@ request.default_step_params.constrain_full_foot_pose = false;
 request.default_step_params.bdi_step_duration = 0;
 request.default_step_params.bdi_sway_duration = 0;
 request.default_step_params.bdi_lift_height = 0;
-request.default_step_params.bdi_toe_off = drc.atlas_behavior_step_action_t.TOE_OFF_ENABLE; 
+request.default_step_params.bdi_toe_off = drc.atlas_behavior_step_action_t.TOE_OFF_ENABLE;
 request.default_step_params.bdi_knee_nominal = 0;
 request.default_step_params.bdi_max_body_accel = 0;
 request.default_step_params.bdi_max_foot_vel = 0;
@@ -85,8 +86,11 @@ request.default_step_params.mu = 1.0;
 p = StatelessFootstepPlanner();
 plan = p.plan_footsteps(r, request);
 plan.toLCM();
+lc = lcm.lcm.LCM.getSingleton();
+lc.publish('FOOTSTEP_PLAN_RESPONSE', plan.toLCM());
 footsteps = plan.footsteps;
-assert(footsteps(3).pos(2) == 0.20);
+valuecheck(footsteps(3).pos(2), 0.2, 1e-4);
+valuecheck(footsteps(3).pos(3), 0.55 + 0.0811, 1e-3);
 assert(length(footsteps) == 12);
 assert(footsteps(3).infeasibility > 1e-6);
 assert(footsteps(4).infeasibility > 1e-6);
@@ -147,7 +151,7 @@ goal_steps(3).pos = drc.position_3d_t();
 goal_steps(3).pos.translation = drc.vector_3d_t();
 goal_steps(3).pos.translation.x = 2.2;
 goal_steps(3).pos.translation.y = -0.15;
-goal_steps(3).pos.translation.z = 0;
+goal_steps(3).pos.translation.z = 0.2;
 goal_steps(3).pos.rotation = drc.quaternion_t();
 goal_steps(3).pos.rotation.w = 1.0;
 goal_steps(3).pos.rotation.x = 0;
@@ -158,9 +162,10 @@ goal_steps(3).is_right_foot = 1;
 request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
-foosteps = plan.footsteps;
+footsteps = plan.footsteps;
 assert(length(footsteps) == 12)
 assert(all([footsteps(1:2:end).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
+valuecheck(footsteps(end).pos(3), 0.2);
 
 request.num_goal_steps = 3;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);

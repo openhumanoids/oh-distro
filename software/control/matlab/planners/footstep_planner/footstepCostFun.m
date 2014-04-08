@@ -21,8 +21,9 @@ for j = nsteps-1:nsteps
   end
 end
 
-c = c + w_rot * sum(steps_rel(6,:));
-dc(12,1:nsteps) = w_rot;
+c = c + (-1) * w_rot * sum(steps_rel(6,r_ndx)) + w_rot * sum(steps_rel(6,l_ndx));
+dc(12,r_ndx) = -w_rot;
+dc(12,l_ndx) = w_rot;
 
 dc = reshape(dc, [], 1);
 end

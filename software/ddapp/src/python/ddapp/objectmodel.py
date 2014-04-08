@@ -1,16 +1,33 @@
 import os
+import re
 import PythonQt
 from PythonQt import QtCore, QtGui
 from collections import namedtuple
 from collections import OrderedDict
 
+from ddapp.fieldcontainer import FieldContainer
 import vtk
 
 _objectTree = None
 _propertiesPanel = None
 
 objects = {}
-PropertyAttributes = namedtuple('PropertyAttributes', ['decimals', 'minimum', 'maximum', 'singleStep', 'hidden'])
+
+class PropertyAttributes(FieldContainer):
+
+    def __init__(self, **kwargs):
+
+        self._add_fields(
+          decimals    = 0,
+          minimum = 0,
+          maximum = 0,
+          singleStep = 0,
+          hidden = False,
+          enumNames = None,
+          readOnly = False,
+          )
+
+        self._set_fields(**kwargs)
 
 
 class Icons(object):
@@ -22,6 +39,11 @@ class Icons(object):
   Robot = QtGui.QIcon(':/images/robot_icon.png')
   Laser = QtGui.QIcon(':/images/laser_icon.jpg')
 
+def cleanPropertyName(s):
+    """
+    Generate a valid python property name by replacing all non-alphanumeric characters with underscores and adding an initial underscore if the first character is a digit
+    """
+    return re.sub(r'\W|^(?=\d)','_',s).lower()  # \W matches non-alphanumeric, ^(?=\d) matches the first position if followed by a digit
 
 
 class ObjectModelItem(object):
@@ -30,6 +52,7 @@ class ObjectModelItem(object):
         self.properties = OrderedDict()
         self.propertyAttributes = {}
         self.icon = icon
+        self.alternateNames = {}
         self.addProperty('Name', name)
 
     def propertyNames(self):
@@ -43,6 +66,10 @@ class ObjectModelItem(object):
         return self.properties[propertyName]
 
     def addProperty(self, propertyName, propertyValue, attributes=None):
+        alternateName = cleanPropertyName(propertyName)
+        if propertyName not in self.properties and alternateName in self.alternateNames:
+            raise ValueError('Adding this property would conflict with a different existing property with alternate name {:s}'.format(alternateName))
+        self.alternateNames[alternateName] = propertyName
         self.properties[propertyName] = propertyValue
         if attributes is not None:
             self.propertyAttributes[propertyName] = attributes
@@ -83,6 +110,22 @@ class ObjectModelItem(object):
 
     def onRemoveFromObjectModel(self):
         pass
+
+    def children(self):
+        return getObjectChildren(self)
+
+    def findChild(self, name):
+        return findChildByName(self, name)
+
+    def __getattribute__(self, name):
+        try:
+            alternateNames = object.__getattribute__(self, 'alternateNames')
+            if name in alternateNames:
+                return object.__getattribute__(self, 'getProperty')(self.alternateNames[name])
+            else:
+                raise AttributeError()
+        except AttributeError:
+            return object.__getattribute__(self, name)
 
 
 class ContainerItem(ObjectModelItem):
@@ -126,6 +169,7 @@ class RobotModelItem(ObjectModelItem):
 
     def getLinkFrame(self, linkName):
         t = vtk.vtkTransform()
+        t.PostMultiply()
         if self.model.getLinkToWorld(linkName, t):
             return t
         else:
@@ -176,21 +220,20 @@ class PolyDataItem(ObjectModelItem):
 
         ObjectModelItem.__init__(self, name, Icons.Robot)
 
+        self.views = []
         self.polyData = polyData
-        self.view = view
-        self.views = [view]
         self.mapper = vtk.vtkPolyDataMapper()
         self.mapper.SetInput(self.polyData)
         self.actor = vtk.vtkActor()
         self.actor.SetMapper(self.mapper)
-        self.view.renderer().AddActor(self.actor)
 
         self.addProperty('Visible', True)
         self.addProperty('Point Size', self.actor.GetProperty().GetPointSize())
         self.addProperty('Alpha', 1.0)
         self.addProperty('Color', QtGui.QColor(255,255,255))
 
-        self._renderAllViews()
+        if view is not None:
+            self.addToView(view)
 
     def _renderAllViews(self):
         for view in self.views:
@@ -255,6 +298,9 @@ class PolyDataItem(ObjectModelItem):
         if self.getProperty('Visible'):
             self._renderAllViews()
 
+    def getChildFrame(self):
+        frameName = self.getProperty('Name') + ' frame'
+        return self.findChild(frameName)
 
     def addToView(self, view):
         if view in self.views:
@@ -443,6 +489,8 @@ def setPropertyAttributes(p, attributes):
     p.setAttribute('minimum', attributes.minimum)
     p.setAttribute('maximum', attributes.maximum)
     p.setAttribute('singleStep', attributes.singleStep)
+    if attributes.enumNames:
+        p.setAttribute('enumNames', attributes.enumNames)
 
 
 def addProperty(panel, name, attributes, value):
@@ -454,6 +502,10 @@ def addProperty(panel, name, attributes, value):
             p = panel.addSubProperty(name, v, groupProp)
             setPropertyAttributes(p, attributes)
         return groupProp
+    elif attributes.enumNames:
+        p = panel.addEnumProperty(name, value)
+        setPropertyAttributes(p, attributes)
+        return p
     else:
         p = panel.addProperty(name, value)
         setPropertyAttributes(p, attributes)

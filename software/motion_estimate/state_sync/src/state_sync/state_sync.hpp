@@ -27,7 +27,7 @@
 #include <pointcloud_tools/pointcloud_math.hpp>
 #include "atlas/AtlasControlTypes.h"
 #include "atlas/AtlasJointNames.h"
-#include <estimate_tools/kalman_filter.hpp>
+#include <estimate_tools/simple_kalman_filter.hpp>
 
 struct Joints { 
   std::vector<float> position;
@@ -96,7 +96,7 @@ class state_sync{
     
     // Kalman Filters for joint angles:
     void filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity);
-    std::vector<KalmanFilter*> joint_kf_;
+    std::vector<EstimateTools::SimpleKalmanFilter*> joint_kf_;
     std::vector<int> filter_idx_;
     
     

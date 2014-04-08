@@ -17,7 +17,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     next_step_id
     lc
   end
-  
+
   methods
     function obj = Biped(urdf,dt,options)
       if nargin < 3
@@ -52,9 +52,9 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       obj.foot_bodies = struct('right', getBody(obj, findLinkInd(obj, obj.r_foot_name)),...
                             'left', getBody(obj, findLinkInd(obj, obj.l_foot_name)));
       obj.foot_contact_offsets = obj.findContactOffsets();
-      obj.foot_bodies_idx = [findLinkInd(obj, obj.r_foot_name),findLinkInd(obj, obj.l_foot_name)];
+      obj.foot_bodies_idx = struct('right', findLinkInd(obj, obj.r_foot_name), 'left', findLinkInd(obj, obj.l_foot_name));
     end
-    
+
     function X = planFootsteps(obj, x0, navgoal, options)
       planner = FootstepPlanner(obj);
       X = planner.plan(navgoal, struct('x0', x0, 'plan_con', [], 'plan_commit', [], 'plan_reject', [], 'utime', 0));
@@ -67,8 +67,8 @@ classdef Biped < TimeSteppingRigidBodyManipulator
 
       kinsol = doKinematics(obj,q0);
 
-      rfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx(1),[0;0;0],true);
-      lfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx(2),[0;0;0],true);
+      rfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx.right,[0;0;0],true);
+      lfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx.left,[0;0;0],true);
 
       foot_orig = struct('right', rfoot0, 'left', lfoot0);
     end
@@ -174,7 +174,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
    end
 
     function [A, b] = getFootstepLinearCons(obj, p0_is_right_foot, options)
-      % Get the linear inequality constraints for Ax - b <= 0, where x is a column of relative step positions, as given by Biped.relativeSteps(). Automatically flips the y direction for left steps to make them equivalent to right steps. 
+      % Get the linear inequality constraints for Ax - b <= 0, where x is a column of relative step positions, as given by Biped.relativeSteps(). Automatically flips the y direction for left steps to make them equivalent to right steps.
 
       if nargin < 3
         options = struct();
@@ -241,7 +241,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
 
   methods (Static)
     function u = relativeSteps(p0, pf)
-      % For each final step in pf, compute its offset from the foot position given by p0. 
+      % For each final step in pf, compute its offset from the foot position given by p0.
 
       sizecheck(p0, [6, 1]);
       sizecheck(pf, [6, nan]);

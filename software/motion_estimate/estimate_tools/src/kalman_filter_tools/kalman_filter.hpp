@@ -7,6 +7,8 @@
 #include <Eigen/StdVector>
 #include <Eigen/Core>
 
+namespace EstimateTools {
+  
 class KalmanFilter{
   public:
     KalmanFilter(int nq_, double process_noise_= 0.01, double observation_noise_ = 5E-4);
@@ -44,5 +46,6 @@ class KalmanFilter{
     bool verbose_;    
 };
 
+}
 
 #endif

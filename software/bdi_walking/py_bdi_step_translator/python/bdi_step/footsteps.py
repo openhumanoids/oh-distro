@@ -1,21 +1,53 @@
 import drc
 import pylab as pl
 import numpy as np
-from collections import namedtuple
+# from collections import namedtuple
 
 import py_drake_utils as ut
 from bdi_step.utils import Behavior
 from py_drake_utils import quat2rpy
 
-# Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot.
-ATLAS_FRAME_OFFSET = np.matrix([[0.0400], [0.000], [-0.0850]])
-
 
 MAX_LIFT_HEIGHT = 0.40;
 
-BaseFootGoal = namedtuple('FootGoal', 'pos step_speed step_height step_id pos_fixed is_right_foot is_in_contact bdi_step_duration bdi_sway_duration bdi_lift_height bdi_toe_off bdi_knee_nominal bdi_max_body_accel bdi_max_foot_vel bdi_sway_end_dist bdi_step_end_dist terrain_pts')
 
-class FootGoal(BaseFootGoal):
+class FootGoal:
+    def __init__(self,
+                 pos,
+                 step_speed=1.0,
+                 step_height=0.05,
+                 step_id=0,
+                 pos_fixed=np.ones((6,1)),
+                 is_right_foot=True,
+                 is_in_contact=True,
+                 bdi_step_duration=0.0,
+                 bdi_sway_duration=0.0,
+                 bdi_lift_height=0.0,
+                 bdi_toe_off=drc.atlas_behavior_step_action_t.TOE_OFF_ENABLE,
+                 bdi_knee_nominal=0.0,
+                 bdi_max_body_accel=0.0,
+                 bdi_max_foot_vel=0.0,
+                 bdi_sway_end_dist=0.02,
+                 bdi_step_end_dist=0.02,
+                 terrain_pts=np.zeros((2,1))):
+        self.pos = pos
+        self.step_speed = step_speed
+        self.step_height = step_height
+        self.step_id = step_id
+        self.pos_fixed = pos_fixed
+        self.is_right_foot = is_right_foot
+        self.is_in_contact = is_in_contact
+        self.bdi_step_duration = bdi_step_duration
+        self.bdi_sway_duration = bdi_sway_duration
+        self.bdi_lift_height = bdi_lift_height
+        self.bdi_toe_off = bdi_toe_off
+        self.bdi_knee_nominal = bdi_knee_nominal
+        self.bdi_max_body_accel = bdi_max_body_accel
+        self.bdi_max_foot_vel = bdi_max_foot_vel
+        self.bdi_sway_end_dist = bdi_sway_end_dist
+        self.bdi_step_end_dist = bdi_step_end_dist
+        self.terrain_pts = terrain_pts
+
     def to_bdi_spec(self, behavior, step_index):
         if behavior == Behavior.BDI_STEPPING:
             return self.to_step_spec(step_index)
@@ -40,9 +72,10 @@ class FootGoal(BaseFootGoal):
 
     def to_bdi_foot_data(self):
         foot_data = drc.atlas_behavior_foot_data_t()
-        foot_data.position = self.to_atlas_frame(self.pos)[:3]
+        # foot_data.position = self.to_atlas_frame(self.pos)[:3]
+        foot_data.position = self.pos[:3]
         foot_data.yaw = self.pos[5]
-        foot_data.normal = ut.rpy2rotmat(self.pos[3:6,0]) * np.matrix([[0],[0],[1]])
+        foot_data.normal = ut.rpy2rotmat(self.pos[3:]).dot(np.array([0,0,1]))
         return foot_data
 
     def to_step_action(self):
@@ -71,32 +104,33 @@ class FootGoal(BaseFootGoal):
         action.swing_height = self.step_height
         return action
 
-    def to_step_data(self, step_index):
-        """
-        Deprecated in favor of to_bdi_spec, and no longer tested
-        """
-        step_data = drc.atlas_step_data_t()
-        step_data.step_index = step_index
-        step_data.foot_index = self.is_right_foot
-        step_data.duration = self.bdi_step_duration
-        # print "Footstep pos: ", self.pos
-        pos = self.to_atlas_frame(self.pos)
-        step_data.position = pos[:3]
-        # print "Transformed pos: ", step_data.position
-        step_data.yaw = self.pos[5]
-        step_data.normal = ut.rpy2rotmat(self.pos[3:6,0]) * np.matrix([[0],[0],[1]])
-        step_data.swing_height = self.step_height
-        return step_data
+    def to_footstep_t(self):
+        msg = drc.footstep_t()
+        msg.pos = drc.position_3d_t();
+        msg.pos.translation = drc.vector_3d_t();
+        msg.pos.translation.x, msg.pos.translation.y, msg.pos.translation.z = self.pos[:3]
+        msg.pos.rotation = drc.quaternion_t();
+        msg.pos.rotation.w, msg.pos.rotation.x, msg.pos.rotation.y, msg.pos.rotation.z = ut.rpy2quat(self.pos[3:])
+        msg.id = self.step_id
+        msg.is_right_foot = self.is_right_foot
+        msg.is_in_contact = self.is_in_contact
+        msg.fixed_x, msg.fixed_y, msg.fixed_z, msg.fixed_roll, msg.fixed_pitch, msg.fixed_yaw = self.pos_fixed
+        msg.num_terrain_pts = self.terrain_pts.shape[1]
+        if msg.num_terrain_pts > 0:
+            msg.terrain_path_dist = self.terrain_pts[0,:]
+            msg.terrain_height = self.terrain_pts[1,:]
+        msg.params = drc.footstep_params_t() # TODO: this should probably be filled in
+        return msg
 
-    @staticmethod
-    def to_atlas_frame(footpos):
-        """
-        Convert a foot position from our representation (foot orig) to what BDI's walker expects (the position of a point near the center of the sole)
-        """
-        R = ut.rpy2rotmat(footpos[3:,0])
-        offs = R * ATLAS_FRAME_OFFSET
-        footpos[:3] += offs
-        return footpos
+    # @staticmethod
+    # def to_atlas_frame(footpos):
+    #     """
+    #     Convert a foot position from our representation (foot orig) to what BDI's walker expects (the position of a point near the center of the sole)
+    #     """
+    #     R = ut.rpy2rotmat(footpos[3:,0])
+    #     offs = R * ATLAS_FRAME_OFFSET
+    #     footpos[:3] += offs
+    #     return footpos
 
     @staticmethod
     def from_goal_msg(goal_msg):
@@ -104,7 +138,7 @@ class FootGoal(BaseFootGoal):
                         goal_msg.pos.rotation.x,
                         goal_msg.pos.rotation.y,
                         goal_msg.pos.rotation.z])
-        goal = FootGoal(pos=pl.vstack([goal_msg.pos.translation.x,
+        goal = FootGoal(pos=pl.hstack([goal_msg.pos.translation.x,
                                        goal_msg.pos.translation.y,
                                        goal_msg.pos.translation.z,
                                        rpy]),
@@ -141,7 +175,7 @@ class FootGoal(BaseFootGoal):
                         goal_msg.pos.rotation.x,
                         goal_msg.pos.rotation.y,
                         goal_msg.pos.rotation.z])
-        goal = FootGoal(pos=pl.vstack([goal_msg.pos.translation.x,
+        goal = FootGoal(pos=pl.hstack([goal_msg.pos.translation.x,
                                        goal_msg.pos.translation.y,
                                        goal_msg.pos.translation.z,
                                        rpy]),
@@ -172,6 +206,25 @@ class FootGoal(BaseFootGoal):
             goal.pos[pl.find(pl.isnan(goal.pos))] = 0
         return goal
 
+    def copy(self):
+        return FootGoal(pos = np.copy(self.pos),
+                        step_speed = self.step_speed,
+                        step_height = self.step_height,
+                        step_id = self.step_id,
+                        pos_fixed = np.copy(self.pos_fixed),
+                        is_right_foot = self.is_right_foot,
+                        is_in_contact = self.is_in_contact,
+                        bdi_step_duration = self.bdi_step_duration,
+                        bdi_sway_duration = self.bdi_sway_duration,
+                        bdi_lift_height = self.bdi_lift_height,
+                        bdi_toe_off = self.bdi_toe_off,
+                        bdi_knee_nominal = self.bdi_knee_nominal,
+                        bdi_max_body_accel = self.bdi_max_body_accel,
+                        bdi_max_foot_vel = self.bdi_max_foot_vel,
+                        bdi_sway_end_dist = self.bdi_sway_end_dist,
+                        bdi_step_end_dist = self.bdi_step_end_dist,
+                        terrain_pts = np.copy(self.terrain_pts))
+
 def decode_deprecated_footstep_plan(plan_msg):
     footsteps = []
     for goal in plan_msg.footstep_goals:
@@ -187,5 +240,15 @@ def decode_footstep_plan(plan_msg):
         footsteps.append(FootGoal.from_footstep_msg(step))
     options = {'ignore_terrain': False,
                'mu': 1.0,
-               'behavior': Behavior.BDI_STEPPING}
+               'behavior': plan_msg.params.behavior}
     return footsteps, options
+
+def encode_footstep_plan(footsteps, params):
+    plan = drc.footstep_plan_t()
+    plan.num_steps = len(footsteps)
+    plan.footsteps = [step.to_footstep_t() for step in footsteps]
+    if params is not None:
+        plan.params = params
+    else:
+        plan.params = drc.footstep_plan_params_t()
+    return plan

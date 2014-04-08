@@ -56,7 +56,7 @@ classdef CombinedPlanner
       for j = 1:length(obj.monitors)
         obj.lc.subscribe(obj.request_channels{j}, obj.monitors{j});
       end
-
+      disp('Combined Planner: ready for plan requests');
       while true
         for j = 1:length(obj.monitors)
           msg = obj.monitors{j}.getNextMessage(5);
