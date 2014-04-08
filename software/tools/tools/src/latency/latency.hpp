@@ -1,5 +1,5 @@
-#ifndef AFFORDANCE_UTILS_
-#define AFFORDANCE_UTILS_
+#ifndef LATENCY_HPP_
+#define LATENCY_HPP_
 
 #include <stdio.h>
 #include <iostream>
