@@ -2,7 +2,7 @@ function atlasSteppingMomentum
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-joint_str = {'leg','back'};% <---- cell array of (sub)strings  
+joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % load robot model
 r = Atlas();
@@ -22,7 +22,7 @@ nu = getNumInputs(r);
 nq = getNumDOF(r);
 
 act_idx_map = getActuatedJoints(r);
-gains = getAtlasGains(input_frame); % change gains in this file
+gains = getAtlasGains(); % change gains in this file
 
 joint_ind = [];
 joint_act_ind = [];
@@ -42,7 +42,7 @@ ref_frame.updateGains(gains);
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-gains_copy = getAtlasGains(input_frame); 
+gains_copy = getAtlasGains(); 
 % reset force gains for joint being tuned
 gains.k_f_p(joint_act_ind) = gains_copy.k_f_p(joint_act_ind); 
 gains.ff_f_d(joint_act_ind) = gains_copy.ff_f_d(joint_act_ind);
@@ -62,7 +62,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[0;0;0];
+v = R*[0.2;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -74,12 +74,12 @@ request.goal_pos = encodePosition3d(navgoal);
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
-request.params.max_num_steps = 1;
-request.params.min_num_steps = 0;
+request.params.max_num_steps = 2;
+request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.24;
 request.params.max_step_width = 0.3;
-request.params.nom_forward_step = 0.2;
+request.params.nom_forward_step = 0.25;
 request.params.max_forward_step = 0.4;
 request.params.ignore_terrain = false;
 request.params.planning_mode = request.params.MODE_AUTO;
@@ -87,8 +87,8 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_RIGHT;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.01;
-request.default_step_params.step_height = 0.025;
+request.default_step_params.step_speed = 0.025;
+request.default_step_params.step_height = 0.1;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
 
@@ -130,13 +130,13 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
 
-traj = PPTrajectory(spline(ts,walking_plan.xtraj));
-traj = traj.setOutputFrame(r.getStateFrame);
+% traj = PPTrajectory(spline(ts,walking_plan.xtraj));
+% traj = traj.setOutputFrame(r.getStateFrame);
 
-v = r.constructVisualizer;
-playback(v,traj,struct('slider',true));
+% v = r.constructVisualizer;
+% playback(v,traj,struct('slider',true));
 
 leg_idx = findJointIndices(r,'leg');
 
@@ -144,15 +144,12 @@ leg_idx = findJointIndices(r,'leg');
 options.slack_limit = 20;
 options.w_qdd = 1e-4*ones(nq,1);
 options.w_qdd(leg_idx) = 1e-6;
-options.W_hdot = diag([0;0;0;100;100;100]);
-% options.Kp = 100;
-% options.Kd = 20;
-options.lcm_foot_contacts = false;
+options.W_hdot = diag([0;0;0;1000;1000;1000]);
+options.lcm_foot_contacts = true;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.05;
+options.contact_threshold = 0.005;
 options.output_qdd = true;
-
 
 foot_opts.Kp = 0.5*[100; 100; 100; 150; 150; 150]; 
 foot_opts.Kd = 0.5*[10; 10; 10; 10; 10; 10];
@@ -226,20 +223,11 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 qd_int = 0;
+qd_prev = -1;
 
-% TEMP
-process_noise = 0.01*ones(6,1);
-observation_noise = 5e-4*ones(6,1);
-kf = FirstOrderKalmanFilter(process_noise,observation_noise);
-kf_state = kf.getInitialState;
-
-alpha_lin = 0.1;
-alpha_ang = 0.1;
-pelvis_lin = zeros(3,1);
-pelvis_ang = zeros(3,1);
-
-qd_filt = 0;
-qd_prev = 0;
+% low pass filter for floating base velocities
+alpha_v = 0.1;
+float_v = 0;
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -254,20 +242,13 @@ while tt<T
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-    % TEMP get estimated pelvis linear velocity
-    kf_state = kf.update(tt,kf_state,x(1:6));
-    x_p = kf.output(tt,kf_state,x(1:6));
+    % low pass filter floating base velocities
+    float_v = (1-alpha_v)*float_v + alpha_v*x(nq+(1:6));
+    x(nq+(1:6)) = float_v;
     
-    %pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x(nq+(1:3));
-    pelvis_ang = (1-alpha_ang)*pelvis_ang + alpha_ang*x(nq+(4:6));
-    %x(nq+(1:3)) = pelvis_lin;
-    x(nq+(4:6)) = pelvis_ang;
-    x(nq+(1:3)) = x_p(6+(1:3));
-    %x(nq+(4:6)) = x_p(6+(4:6));
-    
+
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    
  
     u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
@@ -281,16 +262,27 @@ while tt<T
     
     % compute desired velocity
     qd_int = qd_int + qdd*dt;
+
+%     % filter out joint velocity spikes
+%     crossed = [];
+%     if qd_prev~=-1
+%       crossed=sign(qd_prev)~=sign(qd);
+%     end
+%     find(crossed)
+%     qd_prev = qd;
+%     qd(crossed) = 0;
+    
     qddes_state_frame = qd_int-qd;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
+    state_frame.publish(t,[q;qd],'EST_ROBOT_STATE_ECHO');
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
 
 disp('moving back to fixed point using position control.');
-gains = getAtlasGains(input_frame); 
+gains = getAtlasGains(); 
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);

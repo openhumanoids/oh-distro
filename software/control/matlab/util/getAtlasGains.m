@@ -1,185 +1,129 @@
-function gains = getAtlasGains(atlas_input_frame)
+function gains = getAtlasGains()
 %GETATLASGAINS Returns default Atlas control gains
 
-nq = 28; % fixed number
+% fixed input frame ordering
+back_bkz  = 1;
+back_bky  = 2;
+back_bkx  = 3;
+l_arm_elx = 4;
+l_arm_ely = 5;
+l_arm_mwx = 6;
+l_arm_shx = 7;
+l_arm_usy = 8;
+l_arm_uwy = 9;
+l_leg_kny = 10;
+l_leg_akx = 11;
+l_leg_hpy = 12;
+l_leg_hpx = 13;
+l_leg_aky = 14;
+l_leg_hpz = 15;
+neck_ay   = 16;
+r_arm_elx = 17;
+r_arm_ely = 18;
+r_arm_mwx = 19;
+r_arm_shx = 20;
+r_arm_usy = 21;
+r_arm_uwy = 22;
+r_leg_kny = 23;
+r_leg_akx = 24;
+r_leg_hpy = 25;
+r_leg_hpx = 26;
+r_leg_aky = 27;
+r_leg_hpz = 28;
 
-if atlas_input_frame.dim ~= nq
-  error('joint_names has incorrect number of elements.');
-end
+nu = 28;
+
+k_f_p    = zeros(nu,1);
+k_q_p    = zeros(nu,1);
+k_q_i    = zeros(nu,1);
+k_qd_p   = zeros(nu,1);
+ff_qd    = zeros(nu,1);
+ff_f_d   = zeros(nu,1);
+ff_const = zeros(nu,1);
+ff_qd_d  = zeros(nu,1);
+
+% position, proportunal
+k_q_p(back_bkz)  = 20.0;
+k_q_p(back_bky)  = 60.0;
+k_q_p(back_bkx)  = 60.0;
+k_q_p(neck_ay)   = 8.0;
+k_q_p(l_leg_hpz) = 45.0;
+k_q_p(l_leg_hpx) = 30.0;
+k_q_p(l_leg_hpy) = 50.0;
+k_q_p(l_leg_kny) = 30.0;
+k_q_p(l_leg_aky) = 1000.0;
+k_q_p(l_leg_akx) = 1000.0;
+k_q_p(l_arm_usy) = 4.0; 
+k_q_p(l_arm_shx) = 4.0;  
+k_q_p(l_arm_ely) = 4.0; 
+k_q_p(l_arm_elx) = 4.0; 
+k_q_p(l_arm_uwy) = 4.0; 
+k_q_p(l_arm_mwx) = 4.0; 
+k_q_p(r_leg_hpz) = k_q_p(l_leg_hpz);
+k_q_p(r_leg_hpx) = k_q_p(l_leg_hpx);
+k_q_p(r_leg_hpy) = k_q_p(l_leg_hpy);
+k_q_p(r_leg_kny) = k_q_p(l_leg_kny);
+k_q_p(r_leg_aky) = k_q_p(l_leg_aky);
+k_q_p(r_leg_akx) = k_q_p(l_leg_akx);
+k_q_p(r_arm_usy) = 4.0; 
+k_q_p(r_arm_shx) = 4.0;  
+k_q_p(r_arm_ely) = 4.0; 
+k_q_p(r_arm_elx) = 4.0; 
+k_q_p(r_arm_uwy) = 4.0; 
+k_q_p(r_arm_mwx) = 4.0; 
+
+
+% velocity, proportunal
+k_qd_p(back_bkz)  = 0.5;
+k_qd_p(back_bky)  = 1.0;
+k_qd_p(back_bkx)  = 1.0;
+k_qd_p(neck_ay)   = 0.1;
+
+
+% force, proportunal
+k_f_p(back_bkz)  = 0.005;
+k_f_p(back_bky)  = 0.02;
+k_f_p(back_bkx)  = 0.02;
+k_f_p(l_leg_hpz) = 0.02; % 02-03-14, f+v 
+k_f_p(l_leg_hpx) = 0.03; % 02-03-14, f+v 
+k_f_p(l_leg_hpy) = 0.02; % 02-03-14, f+v
+k_f_p(l_leg_kny) = 0.02; % 02-03-14, f+v
+k_f_p(l_leg_aky) = 0.6; % 02-03-14, f+v
+k_f_p(l_leg_akx) = 0.75; % 02-03-14, f+v 
+k_f_p(r_leg_hpz) = 0.02; % 02-03-14, f+v 
+k_f_p(r_leg_hpx) = 0.03; % 02-03-14, f+v 
+k_f_p(r_leg_hpy) = 0.02; % 02-03-14, f+v 
+k_f_p(r_leg_kny) = 0.02; % 02-03-14, f+v 
+k_f_p(r_leg_aky) = 0.6; % 02-03-14, f+v
+k_f_p(r_leg_akx) = 0.75; % 02-03-14, f+v 
+
+
+% velocity, feedforward
+ff_qd_d(back_bkz)  = 1.0;
+ff_qd_d(back_bky)  = 3.0;
+ff_qd_d(back_bkx)  = 3.0;
+ff_qd_d(l_leg_hpz) = 2.0; % 03-24-14, f+v 
+ff_qd_d(l_leg_hpx) = 4.0; % 03-24-14, f+v 
+ff_qd_d(l_leg_hpy) = 4.0; % 03-24-14, f+v
+ff_qd_d(l_leg_kny) = 4.0; % 03-24-14, f+v
+ff_qd_d(l_leg_aky) = 0.0; 
+ff_qd_d(l_leg_akx) = 0.0; 
+ff_qd_d(r_leg_hpz) = 2.0; % 03-24-14, f+v 
+ff_qd_d(r_leg_hpx) = 4.0; % 03-24-14, f+v  
+ff_qd_d(r_leg_hpy) = 4.0; % 03-24-14, f+v 
+ff_qd_d(r_leg_kny) = 4.0; % 03-24-14, f+v
+ff_qd_d(r_leg_aky) = 0.0; 
+ff_qd_d(r_leg_akx) = 0.0; 
+
 
 gains = struct();
-
-k_f_p = Point(atlas_input_frame,0);
-k_q_p = Point(atlas_input_frame,0);
-k_q_i = Point(atlas_input_frame,0);
-k_qd_p = Point(atlas_input_frame,0);
-ff_qd = Point(atlas_input_frame,0);
-ff_f_d = Point(atlas_input_frame,0);
-ff_const = Point(atlas_input_frame,0);
-ff_qd_d = Point(atlas_input_frame,0);
-
-% ff_const can always be zero now that we have a calibration routine
-% ff_const.neck_ay = 0.0;
-% ff_const.l_arm_usy = 0.1; % 9-19-13, fc
-% ff_const.r_arm_usy = -0.075; % 10-09-13, fc
-% ff_const.l_arm_shx = -0.01; % 9-17-13, fc
-% ff_const.r_arm_shx = 0.055; % 9-17-13, fc
-% ff_const.l_arm_ely = -0.045; % 9-17-13, fc
-% ff_const.r_arm_ely = -0.2; % 10-09-13, fc
-% ff_const.l_arm_elx = -0.01; % 9-17-13, fc
-% ff_const.r_arm_elx = -0.025; % 9-18-13, fc
-% ff_const.l_arm_uwy = -0.0875; % 9-17-13, fc
-% ff_const.r_arm_uwy = 0.035; % 9-17-13, fc
-% ff_const.l_arm_mwx = 0.025; % 9-17-13, fc
-% ff_const.r_arm_mwx = -0.3; % 9-18-13, fc
-% ff_const.l_leg_hpz = 0.27; % 10-03-13, fc
-% ff_const.l_leg_hpx = -0.0; % 10-07-13, fc
-% % ff_const.l_leg_hpx = -0.125; % 10-07-13, fc
-% % ff_const.l_leg_kny = 0.0; % 10-03-13, fc
-% ff_const.l_leg_kny = 0.05; % 10-09-13, fc
-% ff_const.l_leg_aky = 0.05; % 10-09-13, fc
-% ff_const.l_leg_akx = 0.135; % 10-03-13, fc
-% ff_const.r_leg_hpz = 0.0145; % 9-30-13, fc
-% ff_const.r_leg_hpy = -0.15; % 10-01-13, fc
-% ff_const.r_leg_hpx = 0.05; % 10-03-13, fc
-% %ff_const.r_leg_hpx = 0.32; % 10-03-13, fc
-% ff_const.r_leg_kny = 0.025; % 10-08-13, fc
-% %ff_const.r_leg_kny = 0.055; % 10-03-13, fc
-% ff_const.r_leg_aky = 0.0; % 10-09-13, fc
-% ff_const.r_leg_akx = -0.17; % 10-03-13, fc
-
-k_q_p.back_bkz  = 20.0;
-k_q_p.back_bky  = 60.0;
-k_q_p.back_bkx  = 60.0;
-k_q_p.neck_ay   = 8.0;
-k_q_p.l_leg_hpz = 45.0;
-k_q_p.l_leg_hpx = 30.0;
-k_q_p.l_leg_hpy = 50.0;
-k_q_p.l_leg_kny = 30.0;
-k_q_p.l_leg_aky = 1000.0;
-k_q_p.l_leg_akx = 1000.0;
-k_q_p.l_arm_usy = 4.0; 
-k_q_p.l_arm_shx = 4.0;  
-k_q_p.l_arm_ely = 4.0; 
-k_q_p.l_arm_elx = 4.0; 
-k_q_p.l_arm_uwy = 4.0; 
-k_q_p.l_arm_mwx = 4.0; 
-k_q_p.r_leg_hpz = k_q_p.l_leg_hpz;
-k_q_p.r_leg_hpx = k_q_p.l_leg_hpx;
-k_q_p.r_leg_hpy = k_q_p.l_leg_hpy;
-k_q_p.r_leg_kny = k_q_p.l_leg_kny;
-k_q_p.r_leg_aky = k_q_p.l_leg_aky;
-k_q_p.r_leg_akx = k_q_p.l_leg_akx;
-k_q_p.r_arm_usy = 4.0; 
-k_q_p.r_arm_shx = 4.0;  
-k_q_p.r_arm_ely = 4.0; 
-k_q_p.r_arm_elx = 4.0; 
-k_q_p.r_arm_uwy = 4.0; 
-k_q_p.r_arm_mwx = 4.0; 
-
-k_qd_p.back_bkz  = 0.5;
-k_qd_p.back_bky  = 1.0;
-k_qd_p.back_bkx  = 1.0;
-k_qd_p.neck_ay   = 0.1;
-% k_qd_p.l_leg_hpz = 0.1;
-% k_qd_p.l_leg_hpx = 0.1;
-% k_qd_p.l_leg_hpy = 0.2;
-% k_qd_p.l_leg_kny = 0.2;
-% k_qd_p.l_leg_aky = 2.5;
-% k_qd_p.l_leg_akx = 0.1;
-% k_qd_p.l_arm_usy = 0.85; % 11-14-13
-% k_qd_p.l_arm_shx = 2.7; % 11-14-13 
-% k_qd_p.l_arm_ely = 2.25; % 11-14-13
-% k_qd_p.l_arm_elx = 10.5; % 11-14-13--yikes
-% k_qd_p.l_arm_uwy = 0.5; % 11-14-13
-% k_qd_p.l_arm_mwx = 0.95;% 11-14-13
-% k_qd_p.r_leg_hpz = k_qd_p.l_leg_hpz;
-% k_qd_p.r_leg_hpx = k_qd_p.l_leg_hpx;
-% k_qd_p.r_leg_hpy = k_qd_p.l_leg_hpy;
-% k_qd_p.r_leg_kny = k_qd_p.l_leg_kny;
-% k_qd_p.r_leg_aky = k_qd_p.l_leg_aky;
-% k_qd_p.r_leg_akx = k_qd_p.l_leg_akx;
-% k_qd_p.r_arm_usy = 1.5; % 11-14-13
-% k_qd_p.r_arm_shx = 1.6; % 11-14-13
-% k_qd_p.r_arm_ely = 0.85; % 11-14-13
-% k_qd_p.r_arm_elx = 10.5; % 11-13-13--yikes
-% k_qd_p.r_arm_uwy = 0.5; % 11-13-13
-% k_qd_p.r_arm_mwx = 1.0; % 11-14-13
-
-
-
-
-k_f_p.back_bkz  = 0.005;
-k_f_p.back_bky  = 0.02;
-k_f_p.back_bkx  = 0.02;
-% k_f_p.l_arm_usy = 0.08; % 9-17-13
-% k_f_p.l_arm_shx = 0.125; % 9-17-13
-% k_f_p.l_arm_ely = 0.115; % 9-17-13
-% k_f_p.l_arm_elx = 0.135; % 9-17-13
-% k_f_p.l_arm_uwy = 0.085; % 9-17-13
-% k_f_p.l_arm_mwx = 0.125; % 9-17-13
-% k_f_p.r_arm_usy = 0.09; % 10-09-13
-% k_f_p.r_arm_shx = 0.125; % 9-17-13
-% k_f_p.r_arm_ely = 0.125; % 9-17-13
-% k_f_p.r_arm_elx = 0.125; % 9-17-13
-% k_f_p.r_arm_uwy = 0.085; % 9-17-13
-% k_f_p.r_arm_mwx = 0.125; % 9-17-13
-
-k_f_p.l_leg_hpz = 0.02; % 02-03-14, f+v 
-k_f_p.l_leg_hpx = 0.03; % 02-03-14, f+v 
-k_f_p.l_leg_hpy = 0.02; % 02-03-14, f+v
-k_f_p.l_leg_kny = 0.02; % 02-03-14, f+v
-k_f_p.l_leg_aky = 0.6; % 02-03-14, f+v
-k_f_p.l_leg_akx = 0.75; % 02-03-14, f+v 
-
-k_f_p.r_leg_hpz = 0.02; % 02-03-14, f+v 
-k_f_p.r_leg_hpx = 0.03; % 02-03-14, f+v 
-k_f_p.r_leg_hpy = 0.02; % 02-03-14, f+v 
-k_f_p.r_leg_kny = 0.02; % 02-03-14, f+v 
-k_f_p.r_leg_aky = 0.6; % 02-03-14, f+v
-k_f_p.r_leg_akx = 0.75; % 02-03-14, f+v 
-
-
-
-
-ff_qd_d.back_bkz  = 1.0;
-ff_qd_d.back_bky  = 3.0;
-ff_qd_d.back_bkx  = 3.0;
-% ff_qd_d.l_arm_usy = 0.0; 
-% ff_qd_d.l_arm_shx = 0.0;  
-% ff_qd_d.l_arm_ely = 0.0; 
-% ff_qd_d.l_arm_elx = 0.0; 
-% ff_qd_d.l_arm_uwy = 0.0; 
-% ff_qd_d.l_arm_mwx = 0.0;
-% ff_qd_d.r_arm_usy = 0.0; 
-% ff_qd_d.r_arm_shx = 0.0; 
-% ff_qd_d.r_arm_ely = 0.0; 
-% ff_qd_d.r_arm_elx = 0.0; 
-% ff_qd_d.r_arm_uwy = 0.0; 
-% ff_qd_d.r_arm_mwx = 0.0; 
-
-ff_qd_d.l_leg_hpz = 2.0; % 03-24-14, f+v 
-ff_qd_d.l_leg_hpx = 4.0; % 03-24-14, f+v 
-ff_qd_d.l_leg_hpy = 4.0; % 03-24-14, f+v
-ff_qd_d.l_leg_kny = 4.0; % 03-24-14, f+v
-ff_qd_d.l_leg_aky = 0.0; 
-ff_qd_d.l_leg_akx = 0.0; 
-
-ff_qd_d.r_leg_hpz = 2.0; % 03-24-14, f+v 
-ff_qd_d.r_leg_hpx = 4.0; % 03-24-14, f+v  
-ff_qd_d.r_leg_hpy = 4.0; % 03-24-14, f+v 
-ff_qd_d.r_leg_kny = 4.0; % 03-24-14, f+v
-ff_qd_d.r_leg_aky = 0.0; 
-ff_qd_d.r_leg_akx = 0.0; 
-
-
-gains.k_f_p = double(k_f_p);
-gains.k_q_p = double(k_q_p);
-gains.k_q_i = double(k_q_i);
-gains.k_qd_p = double(k_qd_p);
-gains.ff_f_d = double(ff_f_d);
-gains.ff_const = double(ff_const);
-gains.ff_qd = double(ff_qd);
-gains.ff_qd_d = double(ff_qd_d);
+gains.k_f_p = k_f_p;
+gains.k_q_p = k_q_p;
+gains.k_q_i = k_q_i;
+gains.k_qd_p = k_qd_p;
+gains.ff_f_d = ff_f_d;
+gains.ff_const = ff_const;
+gains.ff_qd = ff_qd;
+gains.ff_qd_d = ff_qd_d;
 
 end

@@ -1,4 +1,4 @@
-function drakeWalkingMomentum(use_mex)
+function drakeSteppingMomentum(use_mex)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -31,6 +31,8 @@ v.display_dt = 0.05;
 nq = getNumDOF(r);
 
 x0 = xstar;
+q0 = x0(1:nq); 
+
 
 % create footstep and ZMP trajectories
 footstep_planner = StatelessFootstepPlanner();
@@ -46,16 +48,16 @@ request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.24;
 request.params.max_step_width = 0.3;
-request.params.nom_forward_step = 0.25;
+request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.4;
-request.params.ignore_terrain = false;
+request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.75;
-request.default_step_params.step_height = 0.05;
+request.default_step_params.step_speed = 0.01;
+request.default_step_params.step_height = 0.025;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
 
@@ -65,6 +67,8 @@ walking_planner = StatelessWalkingPlanner();
 request = drc.walking_plan_request_t();
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
 request.footstep_plan = footstep_plan.toLCM();
+request.use_new_nominal_state = true;
+request.new_nominal_state = r.getStateFrame().lcmcoder.encode(0, x0);
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
@@ -84,27 +88,6 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-
-% compute angular momentum trajectory from kinematic plan
-% this would be replaced by dynamic plan
-% qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
-% qdtraj = fnder(qtraj,1);
-% k = zeros(3,length(ts));
-% comz = zeros(1,length(ts));
-% for i=1:length(ts)
-%   t=ts(i);
-%   q=qtraj.eval(t);
-%   qd=qdtraj.eval(t);
-%   kinsol = doKinematics(r,q,false,true);
-%   A = getCMM(r,kinsol);
-%   k(:,i) = A(1:3,:)*qd;
-%   com = getCOM(r,kinsol);
-%   comz(i) = com(3);
-% end
-% ktraj = PPTrajectory(spline(ts,k));
-%comztraj = PPTrajectory(spline(ts,comz));
-%dcomztraj = fnder(comztraj,1);
-
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
   'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
@@ -113,25 +96,31 @@ ctrl_data = SharedDataHandle(struct(...
   'supports',[walking_ctrl_data.supports{:}],...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'trans_drift',[0;0;0],...
-  'qtraj',x0(1:nq),...
+  'qtraj',q0,...
+  'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
+leg_idx = findJointIndices(r,'leg');
+
 % instantiate QP controller
-options.dt = 0.002;
-options.slack_limit = 10;
-options.w_qdd = 0.1*ones(nq,1);
-% options.w_qdd(findJointIndices(r,'leg'))=0;
+options.slack_limit = 20;
+options.w_qdd = 1e-2*ones(nq,1);
+options.w_qdd(leg_idx) = 1e-3;
+% options.W_hdot = diag([0;0;0;100;100;100]);
+% options.Kp = 100;
+% options.Kd = 20;
 options.lcm_foot_contacts = false;
 options.debug = false;
-options.contact_threshold = 0.001;
+options.use_mex = true;
+options.contact_threshold = 0.05;
 
-lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
-rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
-pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data);
-torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
-motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
-  pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+
+foot_opts.Kp = 0.5*[100; 100; 100; 150; 150; 150]; 
+foot_opts.Kd = 0.5*[10; 10; 10; 10; 10; 10];
+lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,foot_opts);
+rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,foot_opts);
+motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
 qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 % feedback QP controller with atlas
@@ -141,27 +130,21 @@ ins(2).system = 1;
 ins(2).input = 3;
 ins(3).system = 1;
 ins(3).input = 4;
-ins(4).system = 1;
-ins(4).input = 5;
-ins(5).system = 1;
-ins(5).input = 6;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
 clear ins outs;
 
 % feedback PD block 
-pd = SimplePDBlock(r);
+options.Kp = 160.0*ones(nq,1);
+options.Kd = 15.0*ones(nq,1);
+pd = SimplePDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 2;
 ins(2).input = 2;
 ins(3).system = 2;
 ins(3).input = 3;
-ins(4).system = 2;
-ins(4).input = 4;
-ins(5).system = 2;
-ins(5).input = 5;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
@@ -172,10 +155,6 @@ ins(1).system = 2;
 ins(1).input = 1;
 ins(2).system = 2;
 ins(2).input = 3;
-ins(3).system = 2;
-ins(3).input = 4;
-ins(4).system = 2;
-ins(4).input = 5;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(lfoot_motion,sys,[],[],ins,outs);
@@ -183,29 +162,9 @@ clear ins outs;
 
 ins(1).system = 2;
 ins(1).input = 1;
-ins(2).system = 2;
-ins(2).input = 3;
-ins(3).system = 2;
-ins(3).input = 4;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(rfoot_motion,sys,[],[],ins,outs);
-clear ins outs;
-
-ins(1).system = 2;
-ins(1).input = 1;
-ins(2).system = 2;
-ins(2).input = 3;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(pelvis_motion,sys,[],[],ins,outs);
-clear ins outs;
-
-ins(1).system = 2;
-ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(torso_motion,sys,[],[],ins,outs);
 clear ins outs;
 
 qt = QTrajEvalBlock(r,ctrl_data);

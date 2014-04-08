@@ -2,7 +2,7 @@ function atlasCOPTracking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-joint_str = {'leg','back'};% <---- cell array of (sub)strings  
+joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % load robot model
 r = Atlas();
@@ -22,7 +22,7 @@ nu = getNumInputs(r);
 nq = getNumDOF(r);
 
 act_idx_map = getActuatedJoints(r);
-gains = getAtlasGains(input_frame); % change gains in this file
+gains = getAtlasGains(); % change gains in this file
 
 joint_ind = [];
 joint_act_ind = [];
@@ -42,7 +42,7 @@ ref_frame.updateGains(gains);
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-gains_copy = getAtlasGains(input_frame); 
+gains_copy = getAtlasGains(); 
 % reset force gains for joint being tuned
 gains.k_f_p(joint_act_ind) = gains_copy.k_f_p(joint_act_ind); 
 gains.ff_f_d(joint_act_ind) = gains_copy.ff_f_d(joint_act_ind);
@@ -61,7 +61,7 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 30;
+T = 40;
 if 1
   % create figure 8 zmp traj
   dt = 0.01;
@@ -143,13 +143,13 @@ leg_idx = findJointIndices(r,'leg');
 options.slack_limit = 20;
 options.w_qdd = 1e-4*ones(nq,1);
 options.w_qdd(leg_idx) = 1e-6;
-options.W_hdot = diag([0;0;0;1000;1000;1000]);
+options.W_hdot = diag([1;1;1;1000;1000;1000]);
 % options.Kp = 100;
 % options.Kd = 20;
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.05;
+options.contact_threshold = 0.01;
 options.output_qdd = true;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
@@ -189,17 +189,11 @@ xtraj = [];
 
 q_int = q0;
 qd_int = 0;
+qd_prev=-1;
 
-% TEMP
-process_noise = 0.01*ones(6,1);
-observation_noise = 5e-4*ones(6,1);
-kf = FirstOrderKalmanFilter(process_noise,observation_noise);
-kf_state = kf.getInitialState;
-
-alpha_lin = 0.1;
-alpha_ang = 0.1;
-pelvis_lin = zeros(3,1);
-pelvis_ang = zeros(3,1);
+% low pass filter for floating base velocities
+alpha_v = 0.1;
+float_v = 0;
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -214,16 +208,9 @@ while tt<T
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-    % TEMP get estimated pelvis linear velocity
-    kf_state = kf.update(tt,kf_state,x(1:6));
-    x_p = kf.output(tt,kf_state,x(1:6));
-    
-    %pelvis_lin = (1-alpha_lin)*pelvis_lin + alpha_lin*x(nq+(1:3));
-    pelvis_ang = (1-alpha_ang)*pelvis_ang + alpha_ang*x(nq+(4:6));
-    %x(nq+(1:3)) = pelvis_lin;
-    x(nq+(4:6)) = pelvis_ang;
-    x(nq+(1:3)) = x_p(6+(1:3));
-    %x(nq+(4:6)) = x_p(6+(4:6));
+    % low pass filter floating base velocities
+    float_v = (1-alpha_v)*float_v + alpha_v*x(nq+(1:6));
+    x(nq+(1:6)) = float_v;
     
     xtraj = [xtraj x];
     q = x(1:nq);
@@ -242,18 +229,27 @@ while tt<T
     % compute desired velocity
     qd_int = qd_int + qdd*dt;
     q_int = q_int + qd_int*dt;
+
+%     % filter out joint velocity spikes
+%     crossed = [];
+%     if qd_prev~=-1
+%       crossed=sign(qd_prev)~=sign(qd);
+%     end
+%     find(crossed)
+%     qd_prev = qd;
+%     qd(crossed) = 0;
     
     qddes_state_frame = qd_int-qd;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     
-    state_frame.publish(t,x,'EST_ROBOT_STATE_KF');
+    state_frame.publish(t,[q;qd],'EST_ROBOT_STATE_ECHO');
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
 
 disp('moving back to fixed point using position control.');
-gains = getAtlasGains(input_frame); 
+gains = getAtlasGains(); 
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);

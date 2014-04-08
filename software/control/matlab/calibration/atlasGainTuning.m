@@ -106,7 +106,7 @@ if ~isfield(joint_index_map,joint)
   error ('unknown joint name');
 end
 
-gains = getAtlasGains(input_frame);
+gains = getAtlasGains();
 
 % zero out force gains to start --- move to nominal joint position
 gains.k_f_p = zeros(nu,1);
@@ -121,7 +121,7 @@ ref_frame.updateGains(gains);
 % move to desired pos
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
 
-gains2 = getAtlasGains(input_frame);
+gains2 = getAtlasGains();
 if any(strcmp(control_mode,{'force','force+velocity'}))
   % set joint position gains to 0
   gains.k_q_p(act_idx==joint_index_map.(joint)) = 0;

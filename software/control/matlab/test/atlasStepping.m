@@ -25,7 +25,7 @@ nu = getNumInputs(r);
 nq = getNumDOF(r);
 
 act_idx_map = getActuatedJoints(r);
-gains = getAtlasGains(input_frame); % change gains in this file
+gains = getAtlasGains(); % change gains in this file
 
 joint_ind = [];
 joint_act_ind = [];
@@ -45,7 +45,7 @@ ref_frame.updateGains(gains);
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-gains2 = getAtlasGains(input_frame); 
+gains2 = getAtlasGains(); 
 % reset force gains for joint being tuned
 gains.k_f_p(joint_act_ind) = gains2.k_f_p(joint_act_ind); 
 gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
@@ -232,7 +232,7 @@ while tt<T+2
 end
 
 disp('moving back to fixed point using position control.');
-gains = getAtlasGains(input_frame); % change gains in this file
+gains = getAtlasGains(); % change gains in this file
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);

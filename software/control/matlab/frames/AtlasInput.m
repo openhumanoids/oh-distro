@@ -17,7 +17,7 @@ classdef AtlasInput < LCMCoordinateFrame & Singleton
         input_frame = getInputFrame(r);
         input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
 
-        gains = getAtlasGains(input_frame);
+        gains = getAtlasGains();
 
         coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p*0,gains.k_q_i*0,...
           gains.k_qd_p*0,gains.k_f_p,gains.ff_qd,gains.ff_qd_d*0,gains.ff_f_d,gains.ff_const);
