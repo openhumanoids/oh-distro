@@ -4,14 +4,16 @@
 
 
 Latency::Latency() {
-  period_ = 200;
-  period_f_ = 200.0;
+  period_ = 100;
+  period_f_ = 100.0;
   
   latency_cumsum_ =0;
   latency_count_ =0;
   latency_step_cumsum_=0; 
       
   verbose_=false;
+  
+  verbose_useful_ = false; // to print out useful verbosity 
 }
 
 void Latency::add_from(int64_t js_time, int64_t js_walltime){
@@ -19,7 +21,7 @@ void Latency::add_from(int64_t js_time, int64_t js_walltime){
   js_walltime_.push_back(js_walltime);
 }
 
-void Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message ){
+bool Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message, float &latency, float &new_msgs ){
 
   if (verbose_){
     std::cout << "marker: " <<  jc_utime << " and " << jc_walltime << "\n";  
@@ -27,7 +29,7 @@ void Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message 
   
   std::vector<std::int64_t>::iterator it = std::find( js_utime_.begin(), js_utime_.end(), jc_utime );
   if( it == js_utime_.end() ){
-    return;
+    return false;
   }
   
   int idx = std::distance( js_utime_.begin(), it );
@@ -58,13 +60,22 @@ void Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message 
   latency_step_cumsum_ += step_latency;
   
   if (latency_count_ % period_  == 0 ){
-    std::cout << message << ": " << jc_utime 
-              << " | " << ( float(latency_step_cumsum_) / float(latency_count_) ) 
-              << " newer msgs | " << ( float(latency_cumsum_) *1E-6/ float(latency_count_))
-              << " sec delay [" << latency_count_  << "]\n";
+    
+    new_msgs = ( float(latency_step_cumsum_) / float(latency_count_) ) ;
+    latency = ( float(latency_cumsum_) *1E-3/ float(latency_count_));
+    
+    if (verbose_useful_)
+      std::cout << message << ": " << jc_utime 
+              << " | " << new_msgs
+              << " newer msgs | " << latency
+              << " msec delay [" << latency_count_  << "]\n";
     
     latency_count_ =0;
     latency_cumsum_ = 0;
     latency_step_cumsum_ = 0;
+    
+    return true;
   } 
+  
+  return false;
 }

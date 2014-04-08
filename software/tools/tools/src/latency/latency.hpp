@@ -11,7 +11,7 @@ class Latency {
     Latency ();
 
     void add_from(int64_t js_time, int64_t js_walltime);
-    void add_to(int64_t jc_time, int64_t jc_walltime, std::string message );
+    bool add_to(int64_t jc_time, int64_t jc_walltime, std::string message, float &latency, float &new_msgs  );
     
     std::vector < int64_t > js_utime_;
     std::vector < int64_t > js_walltime_;
@@ -25,6 +25,7 @@ class Latency {
     float period_f_;
     
     bool verbose_;
+    bool verbose_useful_;
 };
 
 
