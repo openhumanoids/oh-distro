@@ -1,10 +1,13 @@
 %% setup
-logfile1 = '/home/antone/data/logs/multisense_05_calib/lcmlog-2013-09-04.00';
-logfile2 = '/home/antone/data/logs/multisense_05_calib/lcmlog-2013-09-04.01';
+%logfile1 = '/home/antone/data/multisense_05_calib/lcmlog-2013-09-04.00';
+%logfile1 = '/home/antone/data/multisense_05_calib/lcmlog-2013-09-04.01';
+%logfile1 = '/home/antone/data/2013-11-15-multisense-02-calib/lcmlog-2013-11-15-15-39-robot';
+%logfile1 = '/home/antone/data/2013-11-15-multisense-02-calib/lcmlog-2013-11-15-15-32-robot';
+logfile1 = '/home/antone/data/2014-03-28_multisense-02-calib/lcmlog-2014-03-28.03';
 addpath('/home/antone/matlab/common');
 setup_lcm;
 
-%% stereo calib data and initial transforms
+%% stereo calib data and initial transforms (this is for sensor 05)
 fx = 588.7705688476562;
 fy = fx;
 cx = 512;
@@ -19,20 +22,50 @@ R = [0,0,1;1,0,0;0,1,0];
 T = [0;0;0];
 P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
 
+%% stereo calib data and initial transforms (this is for sensor 02)
+fx = 603.884948730468750;
+fy = fx;
+cx = 512.940734863281250;
+cy = 512.5943603515625000;
+baseline = 0.0700931567882511;
+K = [fx,0,cx;0,fy,cy;0,0,1];
+
+R = [0,1,0;-1,0,0;0,0,1]*[0,-1,0;1,0,0;0,0,1];
+T = [0;0;0];
+P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
+R = [0,0,1;1,0,0;0,1,0];
+T = [0;0;0];
+P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
+
+
 %% read data
 log_data1 = read_log_data(logfile1);
-log_data2 = read_log_data(logfile2);
+%log_data2 = read_log_data(logfile2);
 fprintf('done reading logs.\n');
 
 %% synchronize spindle pose with lidar scans (and interpolate)
 poses = synchronize_poses(log_data1.poses, cat(1,log_data1.scans.timestamp));
 
 %% get point cloud from depth maps
-camera_cloud = point_cloud_from_disparities(log_data1.disparities, K, baseline, [0.5, 3]);
+camera_cloud = point_cloud_from_disparities(log_data1.disparities, K, baseline, [0.5, 3], false);
 
 %% fit planes to points
+dist_thresh = 0.02;
 camera_pts_decimated = decimate_points(camera_cloud,0.01);
-camera_planes = fit_box_planes(camera_pts_decimated, 0.02);
+%camera_pts_decimated = chop_points(camera_pts_decimated,[-1,-1,1],[0.4,0.6,2.1]); % TODO: specific to one data set (02)
+camera_planes = fit_box_planes(camera_pts_decimated, dist_thresh);
+
+for i = 1:numel(camera_planes)
+    if (camera_planes(i).plane(4) < 0)
+        camera_planes(i).plane = -camera_planes(i).plane;
+    end
+end
+all_planes = cat(2,camera_planes.plane);
+for i = 1:numel(camera_planes)
+    p = camera_planes(i).pts;
+    dots = [p,ones(size(p,1),1)]*all_planes;
+    camera_planes(i).pts(any(dots<-dist_thresh,2),:) = [];
+end
 camera_pts = cat(1,camera_planes.pts);
 
 figure;
@@ -43,8 +76,9 @@ myplot3(camera_planes(3).pts,'b.');
 hold off;
 axis equal;
 view3d on
+xlabel('x'); ylabel('y'); zlabel('z');
 
-%% segment out the box
+%% segment out the box from the lidar
 scans = log_data1.scans;
 segs = cell(numel(scans),1);
 max_angle = 45;
@@ -64,7 +98,7 @@ for i = 1:numel(scans)
 
     segs{i} = s;
     
-    if (true)
+    if (false)
         figure(22);
         clf
         hold on;
@@ -175,12 +209,14 @@ result2 = optimize_poses(lidar_data2,poses,cat(2,camera_planes.plane),result.P_c
 
 %% iterative refinement loop using direct matches
 res = result2;
-for iter = 1:5
+max_iters = 5;
+for iter = 1:max_iters
     fprintf('starting iter %d...\n', iter);
-    matches = match_points(camera_pts_decimated,lidar_data2,poses,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,0.05);
+    matches = match_points(camera_pts_decimated,lidar_data2,poses,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,0.03);
     data = [lidar_data2(matches(:,1),1:3),camera_pts_decimated(matches(:,2),1:3),lidar_data2(matches(:,1),4)];
-    res = optimize_poses_using_matches(data,poses,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar);
+    res = optimize_poses_using_matches(data,poses,res.P_camera_to_pre_spindle,res.P_post_spindle_to_lidar,false);
 end
+result3 = res;
 
 
 %% animate
@@ -195,8 +231,11 @@ for i = 1:numel(scans)
     P = inv(res.P_post_spindle_to_lidar*P_pre_spindle_to_post_spindle*res.P_camera_to_pre_spindle);
     p = [scans(i).xy,zeros(size(scans(i).xy,1),1)];
     p = [p,ones(size(p,1),1)]*P(1:3,:)';
-    p(scans(i).ranges<0.25 | scans(i).ranges>3 | scans(i).thetas<-45*pi/180 | scans(i).thetas>45*pi/180,:) = [];
-    all_pts{i,1} = p;
+    bad_ind = scans(i).ranges<0.25 | scans(i).ranges>3 | scans(i).thetas<-45*pi/180 | scans(i).thetas>45*pi/180;
+    p(bad_ind,:) = [];
+    intensities = scans(i).intensities;
+    intensities(bad_ind,:) = [];
+    all_pts{i,1} = [p,intensities(:)];
     pix = p*K';
     pix = pix(:,1:2)./pix(:,[3,3]);
 
@@ -207,12 +246,34 @@ for i = 1:numel(scans)
         hold off;
         drawnow;
     end
+    %pause(0.1);
 end
 
 all_pts = cell2mat(all_pts);
-figure, plot3k(all_pts); axis equal; view3d
+pix = all_pts(:,1:3)*K';
+pix = pix(:,1:2)./pix(:,[3,3]);
+figure, plot3k(all_pts(:,1:3),'Marker',{'.',1}); axis equal; view3d
 
+%% output as pcl cloud
+rgb = impixel(imgs(1).img,pix(:,1),pix(:,2));
+xyzrgb = [all_pts(:,1:3),rgb/255];
+savepcd('/home/antone/xyzrgb_orig.pcd',xyzrgb');
 
+%% show all lidar points superimposed on image
+plot_points_on_image(all_pts(:,1:3),K,imgs(1).img);
+
+%% show all camera points superimposed on image
+plot_points_on_image(camera_cloud,K,imgs(1).img);
+
+%% set original values to compare
+translation = [ -0.000000, 0.018196, 0.000000 ];
+quat = [ 0.494188, -0.496592, -0.505789, -0.503341 ];
+P = [quat2rot(quat),translation(:);0,0,0,1];
+result_orig.P_post_spindle_to_lidar = inv(P);
+translation = [ 0.035, -0.0907, -0.0083];
+rpy = [0.2998, -1.3998, 88.5263];
+P = [rpy2rot(rpy*pi/180),translation(:);0,0,0,1];
+result_orig.P_camera_to_pre_spindle = inv(P);
 
 %%
 depth_range = [0.5,3];
@@ -254,11 +315,11 @@ P_camera_to_pre_spindle = inv([pose.R,pose.T(:);0,0,0,1]);
 P_lidar_to_post_spindle = inv(res.P_post_spindle_to_lidar);
 q = rot2quat(P_lidar_to_post_spindle(1:3,1:3));
 fprintf('lidar to post spindle:\n');
-fprintf('translation = [ %f, %f, %f ];\n', P_lidar_to_post_spindle(1:3,4));
-fprintf('quat = [ %f, %f, %f, %f ];\n', q);
+fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_lidar_to_post_spindle(1:3,4));
+fprintf('quat = [ %.15f, %.15f, %.15f, %.15f ];\n', q);
 
 P_pre_spindle_to_camera = inv(res.P_camera_to_pre_spindle);
 q = rot2quat(P_pre_spindle_to_camera(1:3,1:3));
 fprintf('\npre spindle to camera:\n');
-fprintf('translation = [ %f, %f, %f ];\n', P_pre_spindle_to_camera(1:3,4));
-fprintf('quat = [ %f, %f, %f, %f ];\n', q);
+fprintf('translation = [ %.15f, %.15f, %.15f ];\n', P_pre_spindle_to_camera(1:3,4));
+fprintf('quat = [ %.15f, %.15f, %.15f, %.15f ];\n', q);

@@ -73,17 +73,20 @@ struct Camera::ColorData {
   int64_t lcm_frame_id_;
   std::list<std::shared_ptr<bot_core::image_t> > img_queue_;
   std::string name_;
+  int width_;
+  int height_;
+  int npixels_;
 
-  static const int width_ = 1024;
-  static const int height_ = 544;
-
-  ColorData(Camera* cam, const int npixels, const std::string& name) {
+  ColorData(Camera* cam, const std::string& name) {
     cam_ = cam;
     name_ = name;
-    rgbP_ = (uint8_t*) malloc(npixels*3);
-    lumaP_ = (uint8_t*) malloc(npixels*3);
-    grayP_ = (uint8_t*) malloc(npixels);
-    rgbP_rect_ = (uint8_t*) malloc(npixels*3);
+    width_ = cam_->image_config_.width();
+    height_ = cam_->image_config_.height();
+    npixels_ = width_*height_;
+    rgbP_ = (uint8_t*) malloc(npixels_*3);
+    lumaP_ = (uint8_t*) malloc(npixels_*3);
+    grayP_ = (uint8_t*) malloc(npixels_);
+    rgbP_rect_ = (uint8_t*) malloc(npixels_*3);
     got_luma_ = false;
     luma_frame_id_ = 0;
     calibration_map_1_ = calibration_map_2_ = NULL;
@@ -96,21 +99,17 @@ struct Camera::ColorData {
     calibration_map_2_ = cvCreateMat(cam_->image_config_.height(),
                                      cam_->image_config_.width(), CV_32F);
 
-    // Calibration from sensor is for 2 Mpix, must adjust here (TODO: fix on firmware side, this
-    // will get messy when we support arbitrary resolutions.)
-    
     auto cal_data = in_cal_data;
-    if (width_ == cam_->image_config_.width()) {
-      cal_data.M[0][0] /= 2.0;
-      cal_data.M[0][2] /= 2.0;
-      cal_data.M[1][1] /= 2.0;
-      cal_data.M[1][2] /= 2.0;
-      cal_data.P[0][0] /= 2.0;
-      cal_data.P[0][2] /= 2.0;
-      cal_data.P[0][3] /= 2.0;
-      cal_data.P[1][1] /= 2.0;
-      cal_data.P[1][2] /= 2.0;
-    }
+    double factor = (double)width_ / cam_->calibrated_width_;
+    cal_data.M[0][0] *= factor;
+    cal_data.M[0][2] *= factor;
+    cal_data.M[1][1] *= factor;
+    cal_data.M[1][2] *= factor;
+    cal_data.P[0][0] *= factor;
+    cal_data.P[0][2] *= factor;
+    cal_data.P[0][3] *= factor;
+    cal_data.P[1][1] *= factor;
+    cal_data.P[1][2] *= factor;
 
     CvMat M1 = cvMat(3, 3, CV_32F, &cal_data.M);
     CvMat D1 = cvMat(1, 8, CV_32F, &cal_data.D);
@@ -322,31 +321,53 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     config_(config_)
 {
 
+    // all image streams off
+    stop();
+
+    // check lcm
     if(!lcm_publish_.good()){
       std::cerr <<"ERROR: lcm is not good()" <<std::endl;
     }
+
+    // set image size
+    std::vector<system::DeviceMode> modes;
+    system::DeviceMode bestMode;
+    int best_width_delta = 1000000;
+    calibrated_width_ = 0;
+    if (Status_Ok != driver_->getDeviceModes(modes)) {
+      printf("Failed to get device modes\n");
+      return;
+    }
+    else {
+      for (auto mode : modes) {
+        int delta = std::abs((int)mode.width - (int)config_.desired_width_);
+        if (delta < best_width_delta) {
+          bestMode.width = mode.width;
+          bestMode.height = mode.height;
+          best_width_delta = delta;
+        }
+        // this assumes that the largest image size was used for calibration
+        if (mode.width > calibrated_width_) {
+          calibrated_width_ = mode.width;
+          calibrated_height_ = mode.height;
+        }
+        printf("supported modes: %dx%d\n", mode.width, mode.height);
+      }
+      printf("selected mode %dx%d\n", bestMode.width, bestMode.height);
+    }
+
     // allocate space for zlib compressing depth data
-    depth_compress_buf_size_ = 1024 * 544 * sizeof(int16_t) * 4;
+    depth_compress_buf_size_ = bestMode.width * bestMode.height * sizeof(int16_t) * 4;
     depth_compress_buf_ = (uint8_t*) malloc(depth_compress_buf_size_);
+
     
-    int npixels = 1024*544;
-
-    left_data_.reset(new ColorData(this, npixels, "LEFT"));
-    right_data_.reset(new ColorData(this, npixels, "RIGHT"));
-    lcm_disp_frame_id_ = -1;
-    left_data_->lcm_frame_id_ = -2;
-    right_data_->lcm_frame_id_ = -3;
-    
-    //
-    // All image streams off
-
-    stop();
-
     //
     // Publish image calibration
 
-    if (Status_Ok != driver_->getImageCalibration(image_calibration_))
+    if (Status_Ok != driver_->getImageCalibration(image_calibration_)) {
         printf("Failed to query image calibration\n");
+        return;
+    }
 
 
     //
@@ -360,6 +381,23 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
             printf("failed to query sensor configuration\n");
             return;
         }
+        if ((image_config_.width() != bestMode.width) ||
+            (image_config_.height() != bestMode.height)) {
+          printf("current image size: %dx%d\n", image_config_.width(),
+                 image_config_.height());
+          image_config_.setResolution(bestMode.width, bestMode.height);
+          printf("  ...setting to %dx%d\n", bestMode.width, bestMode.height);
+          if (Status_Ok != driver_->setImageConfig(image_config_)) {
+            printf("failed to set proper resolution\n");
+            return;
+          }
+        }
+
+        left_data_.reset(new ColorData(this, "LEFT"));
+        right_data_.reset(new ColorData(this, "RIGHT"));
+        lcm_disp_frame_id_ = -1;
+        left_data_->lcm_frame_id_ = -2;
+        right_data_->lcm_frame_id_ = -3;
 
         // For local rectification of color images
         left_data_->createCalibMaps(image_calibration_.left);
