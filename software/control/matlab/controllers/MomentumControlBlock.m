@@ -223,6 +223,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
     if (ctrl_data.is_time_varying)
       % extract current supports
       supp_idx = find(ctrl_data.support_times<=t,1,'last');
+      
+      %if supp_idx<length(ctrl_data.support_times) && (length(ctrl_data.supports(supp_idx).bodies)<length(ctrl_data.supports(supp_idx+1).bodies))
+      %  supp_idx = find(ctrl_data.support_times<=t+1.5,1,'last'); % hack for early contact
+      %end
+      
       supp = ctrl_data.supports(supp_idx);
       y0 = fasteval(ctrl_data.K.y0,t); 
       K = fasteval(ctrl_data.K.D,t); % always constant for ZMP dynamics
@@ -449,6 +454,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         fqp = fqp - hdot_des'*obj.W_hdot*A*Iqdd;
         fqp = fqp - (obj.w_qdd.*q_ddot_des)'*Iqdd;
 
+        %Hqp(nq+(1:nf),nq+(1:nf)) = 0.005*eye(nf); 
         % quadratic slack var cost 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
       else
@@ -529,8 +535,26 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
       mu = 1.0;
       if (obj.use_mex==1)
-        [y,~,qdd,info] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end},condof, ...
+        [y,active_supports_mex,qdd,info] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end},condof, ...
           supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+        
+%         %% FOR DEBUGGING
+%         active_contacts_msg = drc.foot_contact_estimate_t();
+%         active_contacts_msg.detection_method = 0;
+%         active_contacts_msg.utime = t*1000000;
+%         if any(active_supports_mex==obj.lfoot_idx)
+%           active_contacts_msg.left_contact = 1;
+%         else
+%           active_contacts_msg.left_contact = 0;
+%         end
+%         if any(active_supports_mex==obj.rfoot_idx)
+%           active_contacts_msg.right_contact = 1;
+%         else
+%           active_contacts_msg.right_contact = 0;
+%         end
+%         obj.lc.publish('ACTIVE_CONTACTS', active_contacts_msg);
+        
+        
       else
         [y_mex,active_supports_mex,mex_qdd,info_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex] = MomentumControllermex(obj.mex_ptr.data,...
           1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);

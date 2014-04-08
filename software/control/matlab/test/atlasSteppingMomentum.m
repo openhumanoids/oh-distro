@@ -62,7 +62,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[0.2;0;0];
+v = R*[1.0;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -74,12 +74,12 @@ request.goal_pos = encodePosition3d(navgoal);
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
-request.params.max_num_steps = 2;
+request.params.max_num_steps = 3;
 request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
-request.params.nom_step_width = 0.24;
+request.params.nom_step_width = 0.25;
 request.params.max_step_width = 0.3;
-request.params.nom_forward_step = 0.25;
+request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.4;
 request.params.ignore_terrain = false;
 request.params.planning_mode = request.params.MODE_AUTO;
@@ -87,8 +87,8 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_RIGHT;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.025;
-request.default_step_params.step_height = 0.1;
+request.default_step_params.step_speed = 0.075;
+request.default_step_params.step_height = 0.075;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
 
@@ -119,6 +119,8 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
+qtraj = PPTrajectory(foh(ts,walking_plan.xtraj(1:nq,:)));
+
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
   'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
@@ -127,7 +129,7 @@ ctrl_data = SharedDataHandle(struct(...
   'supports',[walking_ctrl_data.supports{:}],...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'trans_drift',[0;0;0],...
-  'qtraj',q0,...
+  'qtraj',qtraj,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
@@ -138,29 +140,31 @@ ctrl_data = SharedDataHandle(struct(...
 % v = r.constructVisualizer;
 % playback(v,traj,struct('slider',true));
 
-leg_idx = findJointIndices(r,'leg');
-
 % instantiate QP controller
-options.slack_limit = 20;
-options.w_qdd = 1e-4*ones(nq,1);
-options.w_qdd(leg_idx) = 1e-6;
-options.W_hdot = diag([0;0;0;1000;1000;1000]);
+options.slack_limit = 50;
+options.w_qdd = 0.1*ones(nq,1);
+options.W_hdot = diag([0;0;0;200;200;200]);
+% options.w_qdd = 1e-4*ones(nq,1);
+% options.w_qdd(findJointIndices(r,'leg')) = 1e-6;
+% options.W_hdot = diag([0;0;0;1000;1000;1000]);
 options.lcm_foot_contacts = true;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.005;
+options.contact_threshold = 0.01;
 options.output_qdd = true;
 
-foot_opts.Kp = 0.5*[100; 100; 100; 150; 150; 150]; 
-foot_opts.Kd = 0.5*[10; 10; 10; 10; 10; 10];
-lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,foot_opts);
-rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,foot_opts);
-motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
-qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
+% foot_opts.Kp = 0.5*[100; 100; 100; 150; 150; 150]; 
+% foot_opts.Kd = 0.5*[10; 10; 10; 10; 10; 10];
+% lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,foot_opts);
+% rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,foot_opts);
+% motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
+% qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
+qp = MomentumControlBlock(r,{},ctrl_data,options);
+
 
 % cascade PD block
-options.Kp = 40.0*ones(nq,1);
-options.Kd = 6.0*ones(nq,1);
+options.Kp = 60.0*ones(nq,1);
+options.Kd = 8.0*ones(nq,1);
 pd = SimplePDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -168,10 +172,10 @@ ins(2).system = 1;
 ins(2).input = 2;
 ins(3).system = 2;
 ins(3).input = 1;
-ins(4).system = 2;
-ins(4).input = 3;
-ins(5).system = 2;
-ins(5).input = 4;
+% ins(4).system = 2;
+% ins(4).input = 3;
+% ins(5).system = 2;
+% ins(5).input = 4;
 outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
@@ -179,32 +183,32 @@ outs(2).output = 2;
 sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins;
 
-% feedback body motion control blocks
-ins(1).system = 2;
-ins(1).input = 1;
-ins(2).system = 2;
-ins(2).input = 2;
-ins(3).system = 2;
-ins(3).input = 3;
-ins(4).system = 1;
-ins(4).input = 1;
-ins(5).system = 2;
-ins(5).input = 5;
-sys = mimoCascade(lfoot_motion,sys,[],ins,outs);
-clear ins;
-
-ins(1).system = 2;
-ins(1).input = 1;
-ins(2).system = 2;
-ins(2).input = 2;
-ins(3).system = 2;
-ins(3).input = 3;
-ins(4).system = 2;
-ins(4).input = 4;
-ins(5).system = 1;
-ins(5).input = 1;
-sys = mimoCascade(rfoot_motion,sys,[],ins,outs);
-clear ins;
+% % feedback body motion control blocks
+% ins(1).system = 2;
+% ins(1).input = 1;
+% ins(2).system = 2;
+% ins(2).input = 2;
+% ins(3).system = 2;
+% ins(3).input = 3;
+% ins(4).system = 1;
+% ins(4).input = 1;
+% ins(5).system = 2;
+% ins(5).input = 5;
+% sys = mimoCascade(lfoot_motion,sys,[],ins,outs);
+% clear ins;
+% 
+% ins(1).system = 2;
+% ins(1).input = 1;
+% ins(2).system = 2;
+% ins(2).input = 2;
+% ins(3).system = 2;
+% ins(3).input = 3;
+% ins(4).system = 2;
+% ins(4).input = 4;
+% ins(5).system = 1;
+% ins(5).input = 1;
+% sys = mimoCascade(rfoot_motion,sys,[],ins,outs);
+% clear ins;
 
 
 qddes = zeros(nu,1);
@@ -224,6 +228,12 @@ end
 
 qd_int = 0;
 qd_prev = -1;
+
+contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
+lc = lcm.lcm.LCM.getSingleton();
+lc.subscribe('FOOT_CONTACT_ESTIMATE',contact_est_monitor);
+r_ankle = findJointIndices(r,'r_leg_ak');
+l_ankle = findJointIndices(r,'l_leg_ak');
 
 % low pass filter for floating base velocities
 alpha_v = 0.1;
@@ -246,11 +256,11 @@ while tt<T
     float_v = (1-alpha_v)*float_v + alpha_v*x(nq+(1:6));
     x(nq+(1:6)) = float_v;
     
-
     q = x(1:nq);
     qd = x(nq+(1:nq));
+    qt = fasteval(qtraj,tt);
  
-    u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd;q;qd;q;qd]);
+    u_and_qdd = output(sys,tt,[],[qt;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+1:end);
     udes(joint_act_ind) = u(joint_act_ind);
@@ -273,6 +283,21 @@ while tt<T
 %     qd(crossed) = 0;
     
     qddes_state_frame = qd_int-qd;
+
+    % gain scheduling hack 
+    contact_data = contact_est_monitor.getMessage();
+    if ~isempty(contact_data)
+      msg = drc.foot_contact_estimate_t(contact_data);
+      if msg.left_contact==1
+        qddes_state_frame(l_ankle) = 0;
+        qd_int(l_ankle)=0;
+      end
+      if msg.right_contact==1
+        qddes_state_frame(r_ankle) = 0;
+        qd_int(r_ankle)=0;
+      end
+    end
+
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
     

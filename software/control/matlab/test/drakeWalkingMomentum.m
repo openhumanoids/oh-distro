@@ -119,7 +119,7 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.dt = 0.002;
-options.slack_limit = 10;
+options.slack_limit = 50;
 options.w_qdd = 0.1*ones(nq,1);
 % options.w_qdd(findJointIndices(r,'leg'))=0;
 options.lcm_foot_contacts = false;

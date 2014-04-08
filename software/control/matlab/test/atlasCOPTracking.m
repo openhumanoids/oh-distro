@@ -61,7 +61,7 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 40;
+T = 30;
 if 1
   % create figure 8 zmp traj
   dt = 0.01;
