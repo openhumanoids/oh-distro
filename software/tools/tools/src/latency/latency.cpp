@@ -3,9 +3,9 @@
 #include "latency.hpp"
 
 
-Latency::Latency() {
-  period_ = 100;
-  period_f_ = 100.0;
+Latency::Latency(int period_):period_(period_) {
+  period_f_ = (float) period_;
+  std::cout << period_ << " \n";
   
   latency_cumsum_ =0;
   latency_count_ =0;

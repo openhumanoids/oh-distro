@@ -8,7 +8,7 @@
 
 class Latency {
   public:
-    Latency ();
+    Latency (int period_);
 
     void add_from(int64_t js_time, int64_t js_walltime);
     bool add_to(int64_t jc_time, int64_t jc_walltime, std::string message, float &latency, float &new_msgs  );
