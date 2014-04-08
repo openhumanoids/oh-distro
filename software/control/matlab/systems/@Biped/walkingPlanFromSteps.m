@@ -8,7 +8,7 @@ kinsol = doKinematics(biped,q0);
 zmptraj = setOutputFrame(zmptraj,desiredZMP);
 %% construct ZMP feedback controller
 com = getCOM(biped,kinsol);
-foot_pos = contactPositions(biped,kinsol,biped.foot_bodies_idx);
+foot_pos = contactPositions(biped,kinsol,[biped.foot_bodies_idx.right, biped.foot_bodies_idx.left]);
 zfeet = mean(foot_pos(3,:));
 
 % get COM traj from desired ZMP traj

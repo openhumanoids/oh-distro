@@ -6,12 +6,12 @@ classdef RecoveryPlanningBlock < DrakeSystem
     nq;
     lcmgl
   end
-  
+
   methods
     function obj = RecoveryPlanningBlock(r,controller_data,options)
       typecheck(r,'Atlas');
       typecheck(controller_data,'SharedDataHandle');
-            
+
       input_frame = getStateFrame(r);
       output_frame = getStateFrame(r);
       obj = obj@DrakeSystem(0,0,input_frame.dim,output_frame.dim,true,true);
@@ -25,7 +25,7 @@ classdef RecoveryPlanningBlock < DrakeSystem
       if nargin<3
         options = struct();
       end
-        
+
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
@@ -35,7 +35,7 @@ classdef RecoveryPlanningBlock < DrakeSystem
       end
       obj.robot = r;
     end
-    
+
     function y=output(obj,t,~,x)
       persistent last_plan_t
       persistent contact_state
@@ -59,24 +59,24 @@ classdef RecoveryPlanningBlock < DrakeSystem
         % check kinematic contact
         phi = contactConstraints(obj.robot,kinsol,supp.bodies(i),supp.contact_pts{i});
         contact_state_kin = any(phi<=contact_threshold);
-        if supp.bodies(i) == obj.robot.foot_bodies_idx(1)
+        if supp.bodies(i) == obj.robot.foot_bodies_idx.right
           cstate.right_contact = contact_state_kin;
-        elseif supp.bodies(i) == obj.robot.foot_bodies_idx(2)
+        elseif supp.bodies(i) == obj.robot.foot_bodies_idx.left
           cstate.left_contact = contact_state_kin;
         else
           error('bad supp body')
         end
         i=i+1;
       end
-      
+
       halfway = t - last_plan_t > period / 2;
       is_switching = isempty(footsteps) || (halfway && ((footsteps(1).is_right_foot && cstate.right_contact > contact_state.right_contact) ||...
                       (~footsteps(1).is_right_foot && cstate.left_contact > contact_state.left_contact)));
       if is_switching
       % if 1
-        
+
         contact_state = cstate;
-       
+
         if is_switching
           last_plan_t = t;
           dts = [period, period];
@@ -128,7 +128,7 @@ classdef RecoveryPlanningBlock < DrakeSystem
           obj.lcmgl.switchBuffers();
           footstep_opts = struct('ignore_terrain', 1, 'mu', 1, 'behavior', drc.footstep_opts_t.BEHAVIOR_WALKING,'t0',t);
           [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(obj.robot, x, footsteps, footstep_opts);
-          
+
           s1dot = fnder(V.s1,1);
           s2dot = fnder(V.s2,1);
           ts = 0:0.1:zmptraj.tspan(end);
@@ -153,5 +153,5 @@ classdef RecoveryPlanningBlock < DrakeSystem
       y=x;
     end
   end
-  
+
 end

@@ -28,7 +28,7 @@ end
 foot_centers = struct('right', biped.stepCenter2FootCenter(traj_poses, 1, params.nom_step_width),...
                       'left', biped.stepCenter2FootCenter(traj_poses, 0, params.nom_step_width));
 if params.check_feasibility
-  contacts = biped.getBody(biped.foot_bodies_idx(1)).contact_pts; % just use r foot for now
+  contacts = biped.getBody(biped.foot_bodies_idx.right).contact_pts; % just use r foot for now
   % feas_check is a function which we can call on a list of poses and which returns 1 for safe terrain and 0 for unsafe terrain
   feas_check = biped.getTerrain().getStepFeasibilityChecker(contacts, struct('debug', false));
 else
@@ -64,12 +64,12 @@ if debug
 end
 
 last_ndx = struct('right', 1, 'left', 1);
-  
+
 stall = struct('right', 0, 'left', 0);
 aborted = false;
 min_progress = [0.05;0.05;1;0.2;0.2;0.03];
 % n = 0;
-  
+
 while (1)
   is_right_foot = ~X(end).is_right_foot;
   if is_right_foot
@@ -130,7 +130,7 @@ while (1)
       end
       novalid = false;
       noprogress = all(abs(foot_centers.(m_foot)(:, next_ndx) - foot_centers.(m_foot)(:,last_ndx.(m_foot))) < min_progress);
-    end      
+    end
   end
 
   if (novalid || noprogress)
