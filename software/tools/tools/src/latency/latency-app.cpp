@@ -20,7 +20,7 @@ using namespace std;
 class App
 {
 public:
-  App(boost::shared_ptr<lcm::LCM> &_lcm, int mode_);
+  App(boost::shared_ptr<lcm::LCM> &_lcm, int period_);
   ~App() {}
   boost::shared_ptr<lcm::LCM> _lcm;
   void handleAtlasStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_state_t * msg);
@@ -32,7 +32,7 @@ public:
 
   void handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_two_t * msg);
 
-  int mode_;
+  int period_;
   
 private:
   std::vector<Latency*> lats_;
@@ -42,13 +42,14 @@ private:
   int counter_;
 };
 
-App::App(boost::shared_ptr<lcm::LCM> &_lcm, int mode_): _lcm(_lcm),mode_(mode_){
+App::App(boost::shared_ptr<lcm::LCM> &_lcm, int period_):
+    _lcm(_lcm),period_(period_){
 
-  Latency* a_lat = new Latency(); 
+  Latency* a_lat = new Latency(period_); 
   lats_.push_back(a_lat) ;
-  Latency* a_lat2 = new Latency();
+  Latency* a_lat2 = new Latency(period_);
   lats_.push_back(a_lat2) ;
-  Latency* a_lat3 = new Latency();
+  Latency* a_lat3 = new Latency(period_);
   lats_.push_back(a_lat3) ;
   
   lat_time_ = {0.0, 0.0, 0.0};
@@ -123,16 +124,16 @@ int main (int argc, char ** argv){
   std::cout << "1:  ATLAS_IMU_BATCH <-> POSE_BODY\n";
   std::cout << "2:      ATLAS_STATE <-> ATLAS_COMMAND\n";
   ConciseArgs parser(argc, argv, "latency-app");
-  int mode=0;
-  parser.add(mode, "m", "mode", "Mode [0,1]");
+  int period=200;
+  parser.add(period, "p", "period", "Counting Period in samples");
   parser.parse();
-  cout << "mode is: " << mode << "\n"; 
+  cout << "period is: " << period << " samples\n"; 
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good())
     return 1;
 
-  App app(lcm, mode);
+  App app(lcm, period);
   cout << "App ready"<< endl;
   while(0 == lcm->handle());
   return 0;
