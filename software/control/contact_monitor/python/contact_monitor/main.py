@@ -19,7 +19,6 @@ class ContactMonitor:
 		self.l_foot_contact = msg.force_torque.l_foot_force_z > self.fz_threshold
 		self.r_foot_contact = msg.force_torque.r_foot_force_z > self.fz_threshold
 
-		print msg.force_torque.r_foot_force_z
 		output = drc.foot_contact_estimate_t()
 		output.utime = msg.utime
 		output.detection_method = 0;
