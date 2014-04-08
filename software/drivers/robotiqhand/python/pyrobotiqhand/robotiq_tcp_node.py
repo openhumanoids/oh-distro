@@ -81,7 +81,7 @@ def publishJointStates(side, lcm, status):
     state.joint_position[9] = -0.002 * (status.positionS-137)
     state.joint_position[10] = 0.002 * (status.positionS-137)
 
-    if (side[0] == 'r'):
+    if (side.upper()[0] == 'R'):
         state.joint_name = r_names
         lcm.publish("ROBOTIQ_" + side.upper() + "_STATE", state.encode())
     else:
