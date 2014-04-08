@@ -13,6 +13,19 @@ using namespace std;
 using namespace boost;
 using namespace boost::assign;
 
+// TODO: Won't link if placed in header file. find out why!
+const char* control_mode_strings[] = {
+  "UNKNOWN",
+  "STANDING",
+  "WALKING",
+  "=====", // 3
+  "=====",
+  "=====", // 5
+  "=====",
+  "=====", // 7
+  "TOE_OFF",
+};
+
 leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   BotParam * botparam_, boost::shared_ptr<ModelClient> &model_):
   lcm_publish_(lcm_publish_),  botparam_(botparam_), model_(model_),
@@ -63,14 +76,18 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1023,"Secondary Foot [const] ",5,1) );
   
   
-  // actually more like 1540N when standing still in Jan 2014
+  // actually more like 1540N when standing still in Jan 2014, but don't change 
   float atlas_weight = 1400.0;
+  float standing_schmitt_level = bot_param_get_double_or_fail(botparam_, "state_estimator.legodo.standing_schmitt_level");
   // originally foot shift was when s_foot - 1400*0.65  > p_foot   ... typically s_foot = 1180 | p_foot =200 (~75%)
-  foot_contact_logic_ = new TwoLegs::FootContact(false, atlas_weight);
+  foot_contact_logic_ = new TwoLegs::FootContact(false, atlas_weight, standing_schmitt_level);
   foot_contact_logic_->setStandingFoot( FOOT_LEFT );
 
   foot_contact_logic_alt_ = new TwoLegs::FootContactAlt(false, atlas_weight);
   foot_contact_logic_alt_->setStandingFoot( F_LEFT );
+  
+  control_mode_ = CONTROLLER_STANDING;
+  std::cout << "Starting in: " << control_mode_strings[control_mode_] << " control mode\n";
   
   // these two variables are probably duplicate - need to clean this up...
   primary_foot_ = F_LEFT; // ie left
@@ -493,8 +510,8 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
   float contact_classification = foot_contact_classify_->update(current_utime_, odom_to_primary_foot_fixed_, 
                                                        odom_to_secondary_foot_, standing_foot_);  
   contact_status_id contact_status = F_STATUS_UNKNOWN;
-  if (1==0){
-    contact_status =footTransition(); // original method from Dehann
+  if (control_mode_ == CONTROLLER_STANDING){
+    contact_status =footTransition(); // original method from Dehann, now set to be very conservative
   }else{
     contact_status =  footTransitionAlt();
   }
