@@ -86,7 +86,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_05.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
         host = "robot";
     }
     cmd "aff_server" {
@@ -154,6 +154,10 @@ group "a.2.p_and_c" {
 }
 
 group "a.3.models" {   
+    cmd "model_LN_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+        host = "robot";
+    }
     cmd "model_LR_RR" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "robot";
@@ -174,7 +178,7 @@ group "a.3.models" {
 
 group "b.1.core" {
     cmd "base_viewer" {
-        exec = "drc-viewer -c drc_robot_05.cfg"; 
+        exec = "drc-viewer -c drc_robot_02.cfg"; 
         host = "base";
     }
     cmd "aff_server" {
@@ -190,7 +194,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "param_server" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_05.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
         host = "base";
     }
     cmd "image-rx" {
@@ -269,6 +273,10 @@ group "b.2.p_and_c_retired" {
 }
 
 group "b.3.models" {
+    cmd "base_model_LN_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+        host = "base";
+    }
     cmd "base_model_LR_RR" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "base";
@@ -337,7 +345,7 @@ group "m.state_est" {
         host = "robot";
     }
     cmd "viewer-plus" {
-        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_05.cfg";
+        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02.cfg";
         host = "robot";
     }
 }
@@ -354,6 +362,12 @@ script "prep_core" {
     start cmd "multisense";
     start cmd "sa-right";
     start cmd "sa-left";
+}
+
+script "prep_LN_RN" { 
+    start cmd "model_LN_RN";
+    start cmd "base_model_LN_RN";
+    run_script "prep_core";
 }
 
 script "prep_LR_RR" { 
