@@ -130,6 +130,7 @@ RgbdGPF::RgbdGPF(lcm_t * lcm, BotParam * param, BotFrames * frames)
 
   free(tmpstr);
 
+  max_weight_proportion = bot_param_get_double_or_fail(param, "state_estimator.rgbd_gpf.max_weight_proportion"); // added mfallon
   double unknown_loglike = bot_param_get_double_or_fail(param, "state_estimator.rgbd_gpf.unknown_loglike");
   double cov_scaling = bot_sq(bot_param_get_double_or_fail(param, "state_estimator.rgbd_gpf.sigma_scaling"));
   RgbdLikelihoodInterface * laser_like_iface_ = new RgbdOctomapLikelihoodInterface(map_name.c_str(), unknown_loglike, cov_scaling);
@@ -393,7 +394,7 @@ bool RgbdGPF::getMeasurement(const RBIS & state, const RBIM & cov, const kinect:
   //  laser_decimate_projected_scan(this->projected_laser_scan, this->beam_skip, this->spatial_decimation_min, this->spatial_decimation_max);
 
   gpfMeasurement(this, state, cov, this->rgbd_gpf_measurement_indices, z_effective, R_effective, this->num_samples,
-      this->lcmgl_particles_rgbd);
+      this->max_weight_proportion, this->lcmgl_particles_rgbd);
 
   laser_destroy_projected_scan(this->projected_laser_scan);
 
