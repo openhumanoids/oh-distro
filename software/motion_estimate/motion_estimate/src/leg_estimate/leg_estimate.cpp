@@ -48,7 +48,7 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   std::cout << "Leg Odometry Filter Contact Events: " << filter_contact_events_ << " \n";
   
   publish_diagnostics_ = bot_param_get_boolean_or_fail(botparam_, "state_estimator.legodo.publish_diagnostics");  
-  
+
   KDL::Tree tree;
   if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
     cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
@@ -86,8 +86,14 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   foot_contact_logic_alt_ = new TwoLegs::FootContactAlt(false, atlas_weight);
   foot_contact_logic_alt_->setStandingFoot( F_LEFT );
   
-  control_mode_ = CONTROLLER_UNKNOWN;
-  std::cout << "Starting in: " << control_mode_strings[control_mode_] << " control mode\n";
+  // Should I use a very heavy contact classifier (standing) or one that allows toe off (typical)?
+  char* init_control_mode_str = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.init_contact_mode");
+  if (strcmp(init_control_mode_str, "standing") == 0) {
+    control_mode_ = CONTROLLER_STANDING; // for mit control
+  }else{
+    control_mode_ = CONTROLLER_UNKNOWN; // for bdi control
+  }
+  std::cout << "Leg Odometry Contact Mode: " << control_mode_strings[control_mode_] << "\n";
   
   // these two variables are probably duplicate - need to clean this up...
   primary_foot_ = F_LEFT; // ie left
