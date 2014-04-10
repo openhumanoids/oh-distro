@@ -138,13 +138,13 @@ class BDIStepTranslator(object):
             index_needed = msg.walk_feedback.next_step_index_needed
             # if (self.delivered_index + 1) < index_needed <= len(self.bdi_step_queue_in) - 4:
             if index_needed <= len(self.bdi_step_queue_in) - 4:
-                print "Handling request for next step: {:d}".format(index_needed)
+                #print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed-1)
         else:
             index_needed = msg.step_feedback.next_step_index_needed
             # if self.delivered_index < index_needed <= len(self.bdi_step_queue_in) - 2:
             if index_needed <= len(self.bdi_step_queue_in) - 2:
-                print "Handling request for next step: {:d}".format(index_needed)
+                #print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed)
 
     def send_params(self,step_index,force_stop_walking=False):
@@ -165,7 +165,7 @@ class BDIStepTranslator(object):
                     step.step_index = -1
             self.lc.publish('ATLAS_WALK_PARAMS', walk_param_msg.encode())
             self.delivered_index = walk_param_msg.walk_spec_queue[0].step_index
-            print "Sent walk params for step indices {:d} through {:d}".format(walk_param_msg.walk_spec_queue[0].step_index, walk_param_msg.walk_spec_queue[-1].step_index)
+            #print "Sent walk params for step indices {:d} through {:d}".format(walk_param_msg.walk_spec_queue[0].step_index, walk_param_msg.walk_spec_queue[-1].step_index)
         elif self.behavior == Behavior.BDI_STEPPING:
             step_param_msg = drc.atlas_behavior_step_params_t()
             step_param_msg.desired_step = drc.atlas_step_data_t()  # Unused
@@ -179,7 +179,7 @@ class BDIStepTranslator(object):
                 step_param_msg.desired_step_spec.step_index = -1
             self.lc.publish('ATLAS_STEP_PARAMS', step_param_msg.encode())
             self.delivered_index = step_param_msg.desired_step_spec.step_index
-            print "Sent step params for step index {:d}".format(step_param_msg.desired_step_spec.step_index)
+            #print "Sent step params for step index {:d}".format(step_param_msg.desired_step_spec.step_index)
         else:
             raise ValueError("Bad behavior value: {:s}".format(self.behavior))
 

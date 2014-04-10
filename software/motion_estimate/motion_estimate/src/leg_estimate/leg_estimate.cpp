@@ -86,7 +86,7 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   foot_contact_logic_alt_ = new TwoLegs::FootContactAlt(false, atlas_weight);
   foot_contact_logic_alt_->setStandingFoot( F_LEFT );
   
-  control_mode_ = CONTROLLER_STANDING;
+  control_mode_ = CONTROLLER_UNKNOWN;
   std::cout << "Starting in: " << control_mode_strings[control_mode_] << " control mode\n";
   
   // these two variables are probably duplicate - need to clean this up...

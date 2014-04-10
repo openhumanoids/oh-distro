@@ -101,7 +101,9 @@ void gpfMeasurement(GPFLikelihoodInterface<LikelihoodInterface> * likelihood_int
 
   double weights_sum = weights.sum();
   const double min_weight_sum = m * 5;
-  const double max_weight_sum = .99 * num_samples;
+  // this disallows small corrections from being incorporated. it was .99, mfallon april 2014
+  // TODO: make this a parameter.
+  const double max_weight_sum = .999 * num_samples; 
 
   if (min_weight_sum < weights_sum && weights_sum < max_weight_sum) {
 
