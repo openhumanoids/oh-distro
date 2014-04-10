@@ -72,8 +72,6 @@ classdef DRCTerrainMap < RigidBodyTerrain
       obj.map_handle.setFillMissing(options.fill);
       obj.map_handle.setNormalRadius(options.normal_radius);
       obj.map_handle.setNormalMethod(options.normal_method);
-
-      obj.minval=nan;
     end
     
     function [z,normal] = getHeight(obj,xy)
@@ -82,10 +80,17 @@ classdef DRCTerrainMap < RigidBodyTerrain
       z=p(3,:);
       if ~obj.raw
         if any(isnan(z))  % temporary hack because the robot is initialized without knowing the ground under it's feet
-          disp('replacing footstep z nans with minval');
-          nn=sum(isnan(z)); 
-          normal(:,isnan(z)) = [zeros(2,nn);ones(1,nn)];
-          z(isnan(z))=obj.minval;
+          if isempty(obj.backup_terrain)
+            error('Received NaNs from heightmap, but no backup terrain is set');
+%             disp('replacing footstep z nans with minval');
+%             nn=sum(isnan(z)); 
+%             normal(:,isnan(z)) = [zeros(2,nn);ones(1,nn)];
+%             z(isnan(z))=obj.minval;
+          else
+%             disp('using backup kinematic terrain map');
+            nan_mask = isnan(z);
+            [z(nan_mask), normal(:,nan_mask)] = obj.backup_terrain.getHeight(xy(:,nan_mask));
+          end
         end     
       end
     end
@@ -181,6 +186,10 @@ classdef DRCTerrainMap < RigidBodyTerrain
         lcmgl.switchBuffers();
       end
     end
+    
+    function obj = setBackupTerrain(obj, biped, q0)
+      obj.backup_terrain = KinematicTerrainMap(biped, q0, false);
+    end
 
   end
 
@@ -228,7 +237,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
   
   properties
     map_handle = [];
-    minval = 0;  % only used for temporary hack
+    backup_terrain = [];
     raw = false; % hackish for footstep planner---probably going away
   end
 end

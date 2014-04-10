@@ -5,6 +5,7 @@ sizecheck(pos(:,1), [6,1]);
 if nargin < 3
   contact_grp = 'center';
 end
+
 needs_xform = ~strcmp(contact_grp, 'center');
 
 if needs_xform
@@ -16,9 +17,11 @@ closest_terrain_pos = pos(1:3,:);
 normal(3,normal(3,:) < 0) = -normal(3,normal(3,:) < 0);
 
 ground_pos = pos;
-non_nan_mask = ~any(isnan(closest_terrain_pos));
-ground_pos(1:3,non_nan_mask) = closest_terrain_pos(1:3,non_nan_mask);
-ground_pos(:,non_nan_mask) = fitPoseToNormal(ground_pos(:,non_nan_mask), normal(:,non_nan_mask));
+
+assert(~any(isnan(closest_terrain_pos)));
+
+ground_pos(1:3,:) = closest_terrain_pos(1:3,:);
+ground_pos(:,:) = fitPoseToNormal(ground_pos, normal);
 
 if needs_xform
   ground_pos = biped.footOrig2Contact(biped.footContact2Orig(ground_pos, 'center', 1), contact_grp, 1);
