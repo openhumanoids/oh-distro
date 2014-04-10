@@ -143,6 +143,7 @@ LaserGPF::LaserGPF(lcm_t * lcm, BotParam * param, BotFrames * frames)
   free(tmpstr);
 
   double blur_sigma = bot_param_get_double_or_fail(param, "state_estimator.laser_gpf.blur_sigma"); // added mfallon
+  max_weight_proportion = bot_param_get_double_or_fail(param, "state_estimator.laser_gpf.max_weight_proportion"); // added mfallon
   double unknown_loglike = bot_param_get_double_or_fail(param, "state_estimator.laser_gpf.unknown_loglike");
   double cov_scaling = bot_sq(bot_param_get_double_or_fail(param, "state_estimator.laser_gpf.sigma_scaling"));
   LaserLikelihoodInterface * laser_like_iface_ = new OctomapLikelihoodInterface(map_name.c_str(), unknown_loglike,
@@ -258,7 +259,7 @@ bool LaserGPF::getMeasurement(const RBIS & state, const RBIM & cov, const bot_co
       this->spatial_decimation_max);
 
   gpfMeasurement(this, state, cov, this->laser_gpf_measurement_indices, z_effective, R_effective, this->num_samples,
-      this->lcmgl_particles);
+      this->max_weight_proportion, this->lcmgl_particles);
 //
 //    gpfMeasurementRzx(this, state, cov, this->laser_gpf_measurement_indices, z_effective, R_effective, this->num_samples,
 //        NULL);

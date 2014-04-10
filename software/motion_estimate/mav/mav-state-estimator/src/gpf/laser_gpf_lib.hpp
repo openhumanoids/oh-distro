@@ -80,6 +80,7 @@ private:
   Eigen::Matrix3d R_body_to_laser; //used to transform body velocities into laser frame for motion projection
 
   int num_samples;
+  double max_weight_proportion;
 
   laser_projected_scan * projected_laser_scan;
   bot_lcmgl_t * lcmgl_laser;
