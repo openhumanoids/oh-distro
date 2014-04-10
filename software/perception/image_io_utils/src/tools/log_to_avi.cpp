@@ -30,6 +30,7 @@ struct CommandLineConfig
     int frames;
     string logfile;
     string outputfile;
+    int fps;
 };
 
 
@@ -102,7 +103,7 @@ void Tags::doEncode(){
     utime_init_ = img_.utime;
     
     cv::Size size2 = cv::Size( img_.width, img_.height);  
-    output_video = cv::VideoWriter( cl_cfg_.outputfile ,codec_val_,15.0,size2,true);  
+    output_video = cv::VideoWriter( cl_cfg_.outputfile ,codec_val_, ((float)cl_cfg_.fps) ,size2,true);  
     
     if (!output_video.isOpened()){
       cout  << "Could not open the output to write:" << endl;
@@ -158,6 +159,7 @@ int main( int argc, char** argv ){
   cl_cfg.camera_chan = "WEBCAM";  
   cl_cfg.frames = -1;
   cl_cfg.outputfile = "";
+  cl_cfg.fps = 60;
   
   cout << "Convert images within LCM log to avi\n";
   cout << "Example Usage:\n";
@@ -170,6 +172,7 @@ int main( int argc, char** argv ){
   parser.add(cl_cfg.frames, "f", "frames", "No. of Frames to process (-1 = all)");
   parser.add(cl_cfg.logfile, "l", "logfile", "Path to the LCM log");
   parser.add(cl_cfg.outputfile, "o", "outputfile", "Output AVI file (empty means use logfile.avi)");
+  parser.add(cl_cfg.fps, "s", "fps", "Frame rate of output video");
   parser.parse();
   cout << cl_cfg.codec << " is codec\n";
   cout << cl_cfg.camera_chan << " is camera_chan\n";
