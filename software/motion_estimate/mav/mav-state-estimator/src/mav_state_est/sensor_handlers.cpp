@@ -183,7 +183,8 @@ bool InsHandler::processMessageInitAtlas(const drc::atlas_raw_imu_batch_t * msg,
   RBISIMUProcessStep * update = dynamic_cast<RBISIMUProcessStep *>(processMessageAtlas(msg));
   
   if (update == NULL){
-    std::cout << "Didn't get a new Atlas packet during initialization, skipping\n";
+    // ... this happens regularly at 1000Hz, so nothing to worry about
+    //std::cout << "Didn't get a new Atlas packet during initialization, skipping\n";
     return false;
   }
 

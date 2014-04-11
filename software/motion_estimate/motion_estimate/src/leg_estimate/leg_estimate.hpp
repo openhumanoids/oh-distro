@@ -107,7 +107,7 @@ class leg_estimate{
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
     pointcloud_vis* pc_vis_;
     // joint position filters, optionally used
-    LowPassFilter lpfilter_[28];  
+    std::vector<LowPassFilter*> lpfilter_; // previously were not pointers
     
 
     /// Parameters

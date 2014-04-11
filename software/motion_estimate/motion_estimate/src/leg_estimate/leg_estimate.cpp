@@ -86,6 +86,13 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   foot_contact_logic_alt_ = new TwoLegs::FootContactAlt(false, atlas_weight);
   foot_contact_logic_alt_->setStandingFoot( F_LEFT );
   
+  for (size_t i=0;i < 28; i++){
+    LowPassFilter* a_filter = new LowPassFilter ();
+    lpfilter_.push_back(a_filter);
+  }
+  
+  
+  
   // Should I use a very heavy contact classifier (standing) or one that allows toe off (typical)?
   char* init_control_mode_str = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.init_contact_mode");
   if (strcmp(init_control_mode_str, "standing") == 0) {
@@ -469,8 +476,6 @@ contact_status_id leg_estimate::footTransitionAlt(){
 }
 
 
-
-
 float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime){
   previous_utime_ = current_utime_;
   previous_odom_to_body_ = odom_to_body_;
@@ -480,18 +485,18 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
     double odo_dt = (current_utime_ - previous_utime_)*1E-6;
     std::cout << "extended time since last update: " <<  odo_dt << "\n";
     std::cout << "resetting the leg odometry\n";
+    
     leg_odo_init_ = false;
   }
   
   
   // 0. Filter Joints
   if (filter_joint_positions_){
-    double scale = 1/1.0091; // TODO: correct none-unity coeff sum at source: (a bug in dehann's code)
-    for (size_t i=0 ; i < 28; i++){
-      joint_position[i]  = scale*lpfilter_[i].processSample( joint_position[i] );
+    for (size_t i=0 ; i <  12 ; i++){ // assumed same lengths
+      joint_position[i]  = lpfilter_[i]->processSample( joint_position[i] );
     }
   }  
-
+  
   // 1. Solve for Forward Kinematics:
   // call a routine that calculates the transforms the joint_state_t* msg.
   map<string, double> jointpos_in;
@@ -551,7 +556,7 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
   
   
     
-  // 4. Determine a valid kinematic delta
+  // 4. Determine a valid kinematic deltaodom_to_body_delta_
   float estimate_status = -1.0; // if odometry is not valid, then use -1 to indicate it
   if (leg_odo_init_){
     if (!init_this_iteration){
