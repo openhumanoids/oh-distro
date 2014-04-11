@@ -2,95 +2,75 @@
 #include <iostream>
 #include "Filter.hpp"
 
+LowPassFilter::LowPassFilter():firstsample(true) {
+  
 /*
-Filter::Filter() {
-	//std::cout << "A new filtering object has been created\n";
-	//samples = Eigen::MatrixXd(10,1);
-	//tap_size = size;
-	//_samples_buf = new boost::circular_buffer<double>
-	
-	std::cout << "Filter constructor did run\n";
-	samples_buf.set_capacity(FILTER_TAP_SIZE);
-	
-	for (int i = 0; i<(FILTER_TAP_SIZE);i++)
-	{
-		samples_buf.push_back(0);
-	}
-}
+ * Discrete-Time FIR Filter (real)
+ * -------------------------------
+ * Filter Structure  : Direct-Form FIR
+ * Filter Length     : 14
+ * Stable            : Yes
+ * Linear Phase      : Yes (Type 2)
+ */  
+  
+  tap_size_ = 14;
 
-Filter::~Filter() {
-	terminate();
-}
+  filter_coeffs_ = {
+    0.005271208909706,  0.05204636786996,  0.05315761628452,  0.07562063364867,
+    0.09406855250555,    0.108343855546,   0.1160610649931,   0.1160610649931,
+    0.108343855546,  0.09406855250555,  0.07562063364867,  0.05315761628452,
+    0.05204636786996, 0.005271208909706
+  };
+  
+  // the above values dont sum to 1, re-normalize here!
 
-void Filter::terminate() {
-	//delete _samples_buf;
-	
-	std::cout << "Terminating a Filter object\n";
-}
-*/
+  double  filter_sum = 0;
+  for (size_t i=0; i < filter_coeffs_.size() ; i ++){
+    filter_sum += filter_coeffs_[i];
+  }
 
+  for (size_t i=0; i < filter_coeffs_.size() ; i ++){
+    filter_coeffs_[i]  = filter_coeffs_[i] / filter_sum;
+  }
+  
+  // Initialize the filter memory states
+  samples_buf.set_capacity(tap_size_);
 
-LowPassFilter::LowPassFilter() {
-	
-	// Initialize the filter memory states
-	Init();
-
-
-	//std::cout << "A new LowPassFilter object has been created\n";
-}
-
-LowPassFilter::LowPassFilter(const LowPassFilter &original) {
-	Init(); // we can do this because we know exactly what the filter is -- it is defined in the coeff.h
-}
-
-void LowPassFilter::Init() {
-	firstsample = true;
-	samples_buf.set_capacity(FILTER_TAP_SIZE);
-
-	for (int i = 0; i<(FILTER_TAP_SIZE);i++)
-	{
-		samples_buf.push_back(0);
-	}
-}
-
-
-LowPassFilter& LowPassFilter::operator=(LowPassFilter org) {
-	// Need this operator, to ensure that when the push_back for drc std::vector of filter is done in a local scope, objects will be maintained that can be used safely
-	// This memory is cleared by the std::vector destructor and this destructor when the std::vector object moves out of scope
-
-	// We can do this because all the filters created here are going to be the same, as defined by the coeff.h file
-	Init();
-
-	return *this;
+  for (int i = 0; i<(tap_size_);i++)
+  {
+    samples_buf.push_back(0);
+  }
 }
 
 double LowPassFilter::processSample(double sample) {
-	if (firstsample) {
-		firstsample = false;
-		for (int i=0;i<FILTER_TAP_SIZE;i++) {
-			samples_buf.push_back(sample); // we force the first sample into all state memory as an initial guess of there the filter should be initialized
-		}
-	}
-	// put a new element in the buffer for processing
-	samples_buf.push_back(sample);
-	// The new sample has been added to the buffer, now we must use the values in the buffer with the coefficients to achieve the IR filtering capabibliy
-	
-	double accumulator = 0.;
-	//std::cout << "value in: " << sample << "\n";
-	// accumulate the new composite value from all the filter coefficient and history values
-	for (int i=0;i<FILTER_TAP_SIZE;i++) {
-		//std::cout << filter_coeffs[FILTER_TAP_SIZE-i-1]* samples_buf.at(i) << " | ";
-		accumulator += filter_coeffs[FILTER_TAP_SIZE-i-1] * samples_buf.at(i);
-	}
-	
-	return accumulator;
+  if (firstsample) {
+    firstsample = false;
+    for (int i=0;i<tap_size_;i++) {
+      samples_buf.push_back(sample); // we force the first sample into all state memory as an initial guess of there the filter should be initialized
+    }
+	  
+  }
+  // put a new element in the buffer for processing
+  samples_buf.push_back(sample);
+  // The new sample has been added to the buffer, now we must use the values in the buffer with the coefficients to achieve the IR filtering capabibliy
+  
+  double accumulator = 0.;
+  //std::cout << "value in: " << sample << "\n";
+  // accumulate the new composite value from all the filter coefficient and history values
+  
+  for (int i=0;i<tap_size_;i++) {
+    //std::cout << filter_coeffs_[tap_size_-i-1]* samples_buf.at(i) << " | ";
+    accumulator += filter_coeffs_[tap_size_-i-1] * samples_buf.at(i);
+  }
+  
+  return accumulator;
 }
 
 LowPassFilter::~LowPassFilter() {
-	samples_buf.clear();
-	//std::cout << "Closing out LowPassFilter object\n";
+  samples_buf.clear();
+  //std::cout << "Closing out LowPassFilter object\n";
 }
 
 int LowPassFilter::getTapSize() {
-	return FILTER_TAP_SIZE;
+  return tap_size_;
 }

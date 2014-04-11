@@ -1,54 +1,28 @@
-#ifndef FILTER_HPP_
-#define FILTER_HPP_
+#ifndef FILTER_HPP_MF_
+#define FILTER_HPP_MF_
 
-#include <Eigen/Dense>
+#include <vector>
 #include <boost/circular_buffer.hpp>
-
-//#include "fdacoefs_30Hz_10Hzcutoff.h"
-#include "fdacoefs_1000_10_100_-20dB.h"
-
-/*
-class Filter {
-protected:
-	boost::circular_buffer<double> samples_buf;
-	int tap_size;
-	
-	//Eigen::VectorXd samples;
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	
-	Filter();
-	~Filter();
-	
-	//virtual double processSample(double sample);
-	
-	void terminate();
-};
-*/
 
 class LowPassFilter {
 private:
-	boost::circular_buffer<double> samples_buf;
-	int tap_size;
-	bool firstsample;
-	
-	void initSamples();
+  
+  std::vector<double> filter_coeffs_;
+  bool firstsample;
+  int tap_size_;
 
+  boost::circular_buffer<double> samples_buf;	
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	
-	LowPassFilter();
-	~LowPassFilter();
-	
-	LowPassFilter(const LowPassFilter &original);
-
-	void Init();
-
-	LowPassFilter& operator=(LowPassFilter org);
-
-	double processSample(double sample);
-	
-	static int getTapSize();
+  
+  LowPassFilter();
+  ~LowPassFilter();
+  
+  double processSample(double sample);
+  
+  bool getInit(){
+    return firstsample; 
+  }
+  int getTapSize();
 
 };
 
