@@ -15,6 +15,7 @@ struct State {
   int mCompressionQuality;
   int mFrameRate;
   int mRotation;
+  int mEqualizeRadius;
   bool mTrigger;
   float mInitSeconds;
   float mDelaySeconds;
@@ -30,6 +31,8 @@ struct State {
   FlyCapture2::Camera mCamera;
   FlyCapture2::PGRGuid mCameraUid;
 
+  cv::Mat mEqualizeMask;
+
   State() {
     mPublishChannel = "DUMMY_CAMERA_CHANNEL";
     mCompressionQuality = 100;
@@ -39,6 +42,7 @@ struct State {
     mInitSeconds = 3;
     mDelaySeconds = 0;
     mDesiredSerial = -1;
+    mEqualizeRadius = -1;
     mLcm.reset(new lcm::LCM());
     mIsRunning = false;
     mBotSync = bot_timestamp_sync_init(8000, 128*8000, 1.001);
@@ -118,6 +122,93 @@ struct State {
     return true;
   }
 
+  void createEqualizeMask(const int iRows, const int iCols) {
+    int xCenter = iCols/2;
+    int yCenter = iRows/2;
+    int r2 = mEqualizeRadius*mEqualizeRadius;
+    mEqualizeMask = cv::Mat(iRows, iCols, CV_8UC1);
+    for (int i = 0; i < mEqualizeMask.rows; ++i) {
+      uint8_t* outPtr = mEqualizeMask.ptr<uint8_t>(i);
+      int y = i-yCenter;
+      int y2 = y*y;
+      for (int j = 0; j < mEqualizeMask.cols; ++j, ++outPtr) {
+        int x = j-xCenter;
+        int x2 = x*x;
+        *outPtr = (x2+y2 <= r2 ? 255 : 0);
+      }
+    }
+  }
+
+  void equalize(cv::Mat& ioImage) {
+    // create mask if it does not already exist
+    if (mEqualizeMask.rows == 0) {
+      createEqualizeMask(ioImage.rows, ioImage.cols);
+    }
+
+    // create and initialize histograms
+    const int numBins = 256;
+    int hist[3][numBins];
+    for (int i = 0; i < 3; ++i) {
+      std::fill(hist[i], hist[i]+numBins, 0);
+    }
+
+    // compute histograms
+    for (int i = 0; i < ioImage.rows; ++i) {
+      uint8_t* imgPtr = ioImage.ptr<uint8_t>(i);
+      uint8_t* maskPtr = mEqualizeMask.ptr<uint8_t>(i);
+      for (int j = 0; j < ioImage.cols; ++j, ++maskPtr) {
+        for (int k = 0; k < ioImage.channels(); ++k, ++imgPtr) {
+          if (*maskPtr > 0) ++hist[k][*imgPtr];
+        }
+      }
+    }
+
+    // compute cdfs
+    int cdf[3][numBins];
+    int total[3];
+    for (int i = 0; i < 3; ++i) {
+      cdf[i][0] = hist[i][0];
+      for (int j = 1; j < numBins; ++j) {
+        cdf[i][j] = cdf[i][j-1] + hist[i][j];
+      }
+      total[i] = cdf[i][numBins-1];
+    }
+
+    // desired cdf
+    float desired[3][numBins];
+    for (int i = 0; i < 3; ++i) {
+      desired[i][0] = 0.5*total[i]/numBins;
+      for (int j = 1; j < numBins; ++j) {
+        desired[i][j] = desired[i][j-1] + (float)total[i]/numBins;
+      }
+    }
+
+    // create and initialize lookup tables
+    int lut[3][numBins];
+    for (int i = 0; i < 3; ++i) {
+      std::fill(lut[i], lut[i] + numBins, 0);
+    }
+
+    // generate lookup tables
+    for (int i = 0; i < 3; ++i) {
+      int idx = 0;
+      for (int j = 0; j < numBins; ++j) {
+        while ((idx < numBins-1) && (desired[i][idx] < cdf[i][j])) ++idx;
+        lut[i][j] = idx;
+      }
+    }
+
+    // apply lookup table
+    for (int i = 0; i < ioImage.rows; ++i) {
+      uint8_t* imgPtr = ioImage.ptr<uint8_t>(i);
+      for (int j = 0; j < ioImage.cols; ++j) {
+        for (int k = 0; k < ioImage.channels(); ++k, ++imgPtr) {
+          *imgPtr = lut[k][*imgPtr];
+        }
+      }
+    }
+  }
+
   void convert(const FlyCapture2::Image& iImage, cv::Mat& oImage) {
     oImage = cv::Mat(iImage.GetRows(), iImage.GetCols(), CV_8UC3,
                      iImage.GetData(), iImage.GetStride());
@@ -126,6 +217,9 @@ struct State {
     case 270: cv::transpose(oImage, oImage); cv::flip(oImage, oImage, 0); break;
     case 180: cv::flip(oImage, oImage, -1); break;
     default: break;
+    }
+    if (mEqualizeRadius > 0) {
+      equalize(oImage);
     }
   }
 
@@ -441,6 +535,8 @@ int main(const int iArgc, const char** iArgv) {
   opt.add(state.mTrigger, "t", "trigger", "whether to use trigger mode");
   opt.add(state.mInitSeconds, "i", "init", "number of seconds for init");
   opt.add(state.mDelaySeconds, "d", "delay", "number of seconds before init");
+  opt.add(state.mEqualizeRadius, "e", "equalize",
+          "radius in pixels of equalization region");
   opt.add(maxAttempts, "a", "attempts", "number of tries to start up");
   opt.parse();
 
