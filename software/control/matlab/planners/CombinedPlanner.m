@@ -13,7 +13,7 @@ classdef CombinedPlanner
   methods
     function obj = CombinedPlanner()
       options.floating = true;
-      options.enable_terrainmaps = false;
+      options.enable_terrainmaps = true;
       options.dt = 0.001;
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
