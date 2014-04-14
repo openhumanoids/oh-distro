@@ -1,7 +1,10 @@
 %% clear memory, screen, and close all figures
 clear, clc, close all;
+addpath_drake;
+addpath_control;
 javaaddpath('/home/drc/drc/software/build/share/java/lcmtypes_trackers.jar');
 javaaddpath('/home/drc/drc/software/build/share/java/lcmtypes_vicon.jar');
+javaaddpath('/home/drc/drc/software/build/share/java/lcmtypes_bot2-frames.jar');
 javaaddpath('/home/drc/drc/software/build/share/java/lcmtypes_bot2-core.jar');
 
 javaaddpath('/usr/local/share/java/lcm.jar');
@@ -14,6 +17,8 @@ hbound = bound / 2;
 trueX = [0.1,0.1,0.1]';
 insim = false;
 
+%% which hand
+LR = 'R'
 nx = 3;
 ny = 2;
 sigma_u = 0.10; % system noise
@@ -26,7 +31,7 @@ campose = zeros(7,T);
 if insim
   campose(:,1) = [0,0,0,1,0,0,0]';
 else
-  campose(:,1) = getCamposefromLCM();
+  campose(:,1) = getCamposefromLCM(LR);
 end
 obs_error = deg2rad(5);
 
@@ -61,7 +66,7 @@ for k = 2:T
      y(:,k) = sim_generate_yk(campose(:,k), trueX);
    else
      
-     [y(:,k), campose(:,k)] = getBearingAndCamposefromLCM();
+     [y(:,k), campose(:,k)] = getBearingAndCamposefromLCM(LR);
      %yk = yk from tld bearing angles
    end
    
@@ -106,6 +111,8 @@ for k = 2:T
          dx = camUnitVec(:,1)' * delta * camUnitVec(:,1);  % dx on camera frame wrt world
          dy = camUnitVec(:,2)' * delta * camUnitVec(:,2);  % dy on camera frame wrt world if we want to use
          new_campose = [campose(1:3,k) + dx ; campose(4:7,k)];  % camera orient stay the same
+         
+         sendNewCampose(new_campose, LR);
          fprintf('old campose: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n', campose(1:7,k));
          fprintf('new campose: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n', new_campose(1:7));
          

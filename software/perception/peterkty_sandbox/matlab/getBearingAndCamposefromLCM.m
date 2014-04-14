@@ -1,4 +1,4 @@
-function [yk, camposek] = getBearingAndCamposefromLCM()
+function [yk, camposek] = getBearingAndCamposefromLCM(LR)
 
 lc = lcm.lcm.LCM.getSingleton();
 aggregator = lcm.lcm.MessageAggregator();
@@ -16,18 +16,18 @@ end
 
 lc.unsubscribe('OBJECT_BEARING', aggregator);
 
-
-lc.subscribe('BODY_TO_CAMERARHAND', aggregator);
+CHANNEL = sprintf('BODY_TO_CAMERA%sHAND', LR);
+lc.subscribe(CHANNEL, aggregator);
 
 while true
-    disp waiting_BODY_TO_CAMERARHAND
+    disp(sprintf('waiting_%s', CHANNEL));
     millis_to_wait = 1000;
     cammsg = aggregator.getNextMessage(millis_to_wait);
     if ~isempty(cammsg)
         break
     end
 end
-lc.unsubscribe('BODY_TO_CAMERARHAND', aggregator);
+lc.unsubscribe(sprintf('BODY_TO_CAMERA%sHAND', LR), aggregator);
 
 lc.subscribe('POSE_BODY', aggregator);
 
