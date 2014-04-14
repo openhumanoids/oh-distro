@@ -18,7 +18,7 @@ trueX = [0.1,0.1,0.1]';
 insim = false;
 
 %% which hand
-LR = 'R'
+LR = 'L'
 nx = 3;
 ny = 2;
 sigma_u = 0.10; % system noise
