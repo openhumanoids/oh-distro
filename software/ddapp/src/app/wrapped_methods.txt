@@ -29,6 +29,10 @@ int ddBotImageQueue::getTransform(const QString&, const QString&, quint64, vtkTr
 bool ddBotImageQueue::addCameraStream(const QString&);
 QList<double> ddBotImageQueue::getCameraFrustumBounds(const QString&);
 
+
+ddGroupBoxHider::ddGroupBoxHider(QGroupBox*);
+ddGroupBoxHider::~ddGroupBoxHider();
+
 ddDrakeModel::ddDrakeModel();
 ddDrakeModel::~ddDrakeModel();
 bool ddDrakeModel::loadFromFile(const QString&);
@@ -85,6 +89,8 @@ QTreeWidget* ddMainWindow::objectTree() const;
 QTextEdit* ddMainWindow::outputConsole() const;
 QMenu* ddMainWindow::toolsMenu() const;
 void ddMainWindow::addWidgetToViewMenu(QWidget*);
+void ddMainWindow::addWidgetToViewMenu(QWidget*, QAction*);
+QList<QAction*> ddMainWindow::toolBarActions() const;
 
 ddObjectTree::ddObjectTree();
 ddObjectTree::~ddObjectTree();

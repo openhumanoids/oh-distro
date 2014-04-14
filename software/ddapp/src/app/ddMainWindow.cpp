@@ -44,7 +44,7 @@ ddMainWindow::ddMainWindow()
   this->Internal->PropertiesPanel = new ddPropertiesPanel;
 
   this->setCentralWidget(this->Internal->ViewManager);
-  this->Internal->PropertiesDock->setWidget(this->Internal->PropertiesPanel);
+  this->Internal->PropertiesScrollArea->setWidget(this->Internal->PropertiesPanel);
 
   this->setWindowTitle("Drake Designer");
   this->connect(this->Internal->ActionQuit, SIGNAL(triggered()), QApplication::instance(), SLOT(quit()));
@@ -152,6 +152,27 @@ void ddMainWindow::addWidgetToViewMenu(QWidget* widget)
   }
 
   this->Internal->ViewMenuManager->addWidget(widget, widget->windowTitle());
+}
+
+//-----------------------------------------------------------------------------
+void ddMainWindow::addWidgetToViewMenu(QWidget* widget, QAction* action)
+{
+  this->Internal->ViewMenuManager->addWidget(widget, action);
+}
+
+//-----------------------------------------------------------------------------
+QList<QAction*> ddMainWindow::toolBarActions() const
+{
+  QList<QToolBar*> toolBars;
+  toolBars << this->Internal->MainToolBar << this->Internal->PanelToolBar;
+
+  QList<QAction*> actions;
+  foreach (QToolBar* toolBar, toolBars)
+  {
+    actions << toolBar->actions();
+  }
+
+  return actions;
 }
 
 //-----------------------------------------------------------------------------
