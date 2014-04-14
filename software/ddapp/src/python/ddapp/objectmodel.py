@@ -18,10 +18,10 @@ class PropertyAttributes(FieldContainer):
     def __init__(self, **kwargs):
 
         self._add_fields(
-          decimals    = 0,
-          minimum = 0,
-          maximum = 0,
-          singleStep = 0,
+          decimals    = 5,
+          minimum = -1e4,
+          maximum = 1e4,
+          singleStep = 1,
           hidden = False,
           enumNames = None,
           readOnly = False,
@@ -161,9 +161,18 @@ class RobotModelItem(ObjectModelItem):
         elif propertyName == 'Color':
             self.model.setColor(self.getProperty(propertyName))
 
+        self._renderAllViews()
+
+
     def onModelChanged(self):
         if self.modelChangedCallback:
             self.modelChangedCallback(self)
+
+        if self.getProperty('Visible'):
+            self._renderAllViews()
+
+
+    def _renderAllViews(self):
         for view in self.views:
             view.render()
 

@@ -47,7 +47,6 @@ class FootstepsPanel(object):
         self.ui = WidgetDict(self.widget.children())
 
         self.ui.walkingGoalButton.connect("clicked()", self.onNewWalkingGoal)
-        self.ui.goalStepsButton.connect("clicked()", self.onGoalSteps)
         self.ui.executeButton.connect("clicked()", self.onExecute)
         self.ui.stopButton.connect("clicked()", self.onStop)
 
@@ -57,12 +56,14 @@ class FootstepsPanel(object):
         self._setupPropertiesPanel()
 
     def _setupPropertiesPanel(self):
-        l = QtGui.QVBoxLayout(self.ui.params_container)
-        self.params_panel = PythonQt.dd.ddPropertiesPanel()
-        self.params_panel.setBrowserModeToWidget()
-        om.addPropertiesToPanel(self.driver.params, self.params_panel)
-        l.addWidget(self.params_panel)
-        self.params_panel.connect('propertyValueChanged(QtVariantProperty*)', self.onPropertyChanged)
+        l = QtGui.QVBoxLayout(self.ui.paramsContainer)
+        l.setMargin(0)
+        propertiesPanel = PythonQt.dd.ddPropertiesPanel()
+        propertiesPanel.setBrowserModeToWidget()
+        om.addPropertiesToPanel(self.driver.params, propertiesPanel)
+        l.addWidget(propertiesPanel)
+        propertiesPanel.connect('propertyValueChanged(QtVariantProperty*)', self.onPropertyChanged)
+        PythonQt.dd.ddGroupBoxHider(self.ui.paramsContainer)
 
     def onPropertyChanged(self, prop):
         self.driver.params.setProperty(prop.propertyName(), prop.value())
@@ -71,6 +72,7 @@ class FootstepsPanel(object):
 
     def newWalkingGoalFrame(self, robotModel, distanceForward=1.0):
         t = self.driver.getFeetMidPoint(robotModel)
+        t = transformUtils.frameFromPositionAndRPY(t.GetPosition(), [0.0, 0.0, t.GetOrientation()[2]])
         t.PreMultiply()
         t.Translate(distanceForward, 0.0, 0.0)
         t.PostMultiply()
@@ -89,9 +91,6 @@ class FootstepsPanel(object):
 
         request = self.driver.constructFootstepPlanRequest(self.jointController.q, frame.transform)
         self.driver.sendFootstepPlanRequest(request)
-
-    def onGoalSteps(self):
-        self.driver.createGoalSteps(self.robotModel, self.jointController.q)
 
     def onExecute(self):
         self.driver.commitFootstepPlan(self.driver.lastFootstepPlan)

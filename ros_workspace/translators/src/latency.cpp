@@ -48,7 +48,7 @@ private:
 
 App::App(ros::NodeHandle node_){
   ROS_INFO("Initializing Latency");
-  latency_ = new Latency();  
+  latency_ = new Latency(100);  
 
   joint_states_sub_ = node_.subscribe(string("/atlas/joint_states"), 1000, &App::joint_states_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
   atlas_command_sub_ = node_.subscribe(string("/atlas/atlas_command"), 1000, &App::atlas_command_cb,this, ros::TransportHints().unreliable().maxDatagramSize(1000).tcpNoDelay());
@@ -74,7 +74,9 @@ void App::joint_states_cb(const sensor_msgs::JointStateConstPtr& msg){
 }
 
 void App::atlas_command_cb(const atlas_msgs::AtlasCommandConstPtr& msg){
-  latency_->add_to(  (int64_t) floor(msg->header.stamp.toNSec()/1000)   , _timestamp_now(), message_ );
+  float lat_time;
+  float lat_msgs;
+  latency_->add_to(  (int64_t) floor(msg->header.stamp.toNSec()/1000)   , _timestamp_now(), message_, lat_time, lat_msgs );
 }
 
 

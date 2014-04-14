@@ -158,6 +158,10 @@ group "a.2.p_and_c" {
 }
 
 group "a.3.models" {   
+    cmd "model_LN_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+        host = "robot";
+    }
     cmd "model_LR_RR" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "robot";
@@ -229,6 +233,10 @@ group "b.2.p_and_c" {
 }
 
 group "b.3.models" {
+    cmd "base_model_LN_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+        host = "base";
+    }
     cmd "base_model_LR_RR" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "base";
@@ -301,6 +309,12 @@ script "prep_core" {
     start cmd "multisense";
     start cmd "sa-right";
     start cmd "sa-left";
+}
+
+script "prep_LN_RN" { 
+    start cmd "model_LN_RN";
+    start cmd "base_model_LN_RN";
+    run_script "prep_core";
 }
 
 script "prep_LR_RR" { 

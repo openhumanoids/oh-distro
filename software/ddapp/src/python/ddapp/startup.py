@@ -35,7 +35,6 @@ from ddapp import footstepsdriverpanel
 from ddapp import lcmgl
 from ddapp import atlasdriver
 from ddapp import atlasdriverpanel
-from ddapp import atlasstatuspanel
 from ddapp import multisensepanel
 from ddapp import navigationpanel
 from ddapp import handcontrolpanel
@@ -54,6 +53,7 @@ from ddapp.timercallback import TimerCallback
 from ddapp.pointpicker import PointPicker
 from ddapp import segmentationpanel
 from ddapp import lcmUtils
+from ddapp.utime import getUtime
 from ddapp.shallowCopy import shallowCopy
 
 from actionmanager import actionmanager
@@ -125,10 +125,8 @@ if useIk:
 
 
 if useAtlasDriver:
-    atlasdriver.init(app.getOutputConsole())
-    atlasDriver = atlasdriver.driver
+    atlasDriver = atlasdriver.init(app.getOutputConsole())
     atlasdriverpanel.init(atlasdriver.driver)
-    atlasstatuspanel.init(atlasdriver.driver)
 
 
 if useRobotState:
@@ -234,6 +232,21 @@ if usePlanning:
     #app.addToolbarMacro('play manip plan', playManipPlan)
     #app.addToolbarMacro('fit drill', fitDrillMultisense)
 
+    def sendSceneHeightRequest():
+
+      msg = lcmdrc.data_request_t()
+      msg.type = lcmdrc.data_request_t.HEIGHT_MAP_SCENE
+      msg.period = 0
+
+      msgList = lcmdrc.data_request_list_t()
+      msgList.utime = getUtime()
+      msgList.requests = [msg]
+      msgList.num_requests = len(msgList.requests)
+      lcmUtils.publish('DATA_REQUEST', msgList)
+
+    app.addToolbarMacro('scene height', sendSceneHeightRequest)
+
+
     def drillTrackerOn():
         om.findObjectByName('Multisense').model.showRevolutionCallback = fitDrillMultisense
 
@@ -305,7 +318,9 @@ if usePlanning:
 
 
 if useNavigationPanel:
-    navigationpanel.init(robotStateJointController, footstepsDriver, playbackRobotModel, playbackJointController)
+    thispanel = navigationpanel.init(robotStateJointController, footstepsDriver, playbackRobotModel, playbackJointController)
+    picker = PointPicker(view, callback=thispanel.pointPickerDemo, numberOfPoints=2)
+    #picker.start()
 
 
 def getLinkFrame(linkName, model=None):
@@ -330,6 +345,4 @@ def sendEstRobotState(pose=None):
 app.resetCamera(viewDirection=[-1,0,0], view=view)
 viewBehaviors = viewbehaviors.ViewBehaviors(view, handFactory, robotStateModel, footstepsDriver)
 
-#pd = io.readPolyData('/Users/pat/Desktop/scans/debris-scan.vtp')
-#o = vis.showPolyData(pd, 'scan')
 

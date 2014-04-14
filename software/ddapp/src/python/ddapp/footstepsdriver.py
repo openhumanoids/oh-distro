@@ -48,25 +48,8 @@ def getLeftFootColor():
 def getRightFootColor():
     return [0.33, 1.0, 0.0]
 
+
 _footMeshes = None
-
-
-def getDefaultStepParams():
-    default_step_params = lcmdrc.footstep_params_t()
-    default_step_params.step_speed = 1.0
-    default_step_params.step_height = 0.05
-    default_step_params.constrain_full_foot_pose = False
-    default_step_params.bdi_step_duration = 2.0
-    default_step_params.bdi_sway_duration = 0.0
-    default_step_params.bdi_lift_height = 0.05
-    default_step_params.bdi_toe_off = 1
-    default_step_params.bdi_knee_nominal = 0.0
-    default_step_params.bdi_max_foot_vel = 0.0
-    default_step_params.bdi_sway_end_dist = 0.02
-    default_step_params.bdi_step_end_dist = 0.02
-    default_step_params.mu = 1.0
-    return default_step_params
-
 
 def getFootMeshes():
     global _footMeshes
@@ -114,23 +97,47 @@ class FootstepsDriver(object):
     def _setupProperties(self):
         self.params = om.ObjectModelItem('Footstep Params')
         self.params.addProperty('Behavior', 0, attributes=om.PropertyAttributes(enumNames=['BDI Stepping', 'BDI Walking', 'Drake Walking']))
-        self.behavior_lcm_map = {0: lcmdrc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING,
-                             1: lcmdrc.footstep_plan_params_t.BEHAVIOR_BDI_WALKING,
-                             2: lcmdrc.footstep_plan_params_t.BEHAVIOR_WALKING}
+        self.params.addProperty('Map Command', 0, attributes=om.PropertyAttributes(enumNames=['Full Heightmap', 'Flat Ground', 'Z Normals']))
+        self.params.addProperty('Ignore Terrain', True)
+        self.params.addProperty('Nominal Step Width', 0.26, attributes=om.PropertyAttributes(decimals=2, minimum=0.21, maximum=0.4, singleStep=0.01))
+        self.behavior_lcm_map = {
+                              0: lcmdrc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING,
+                              1: lcmdrc.footstep_plan_params_t.BEHAVIOR_BDI_WALKING,
+                              2: lcmdrc.footstep_plan_params_t.BEHAVIOR_WALKING}
+
+        self.map_command_lcm_map = {
+                              0: lcmdrc.map_controller_command_t.FULL_HEIGHTMAP,
+                              1: lcmdrc.map_controller_command_t.FLAT_GROUND,
+                              2: lcmdrc.map_controller_command_t.Z_NORMALS}
 
     def _setupSubscriptions(self):
         lcmUtils.addSubscriber('FOOTSTEP_PLAN_RESPONSE', lcmdrc.footstep_plan_t, self.onFootstepPlan)
-        lcmUtils.addSubscriber('BDI_ADJUSTED_FOOTSTEP_PLAN', lcmdrc.footstep_plan_t, self.onBDIAdjustedFootstepPlan)
         lcmUtils.addSubscriber('WALKING_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
 
         ### Related to BDI-frame adjustment:
         sub1 = lcmUtils.addSubscriber('POSE_BDI', pose_t, self.onPoseBDI)
         sub1.setSpeedLimit(60)
-        lcmUtils.addSubscriber('FOOTSTEP_PLAN_RESPONSE', lcmdrc.footstep_plan_t, self.onFootStepPlanResponse)
         sub2 = lcmUtils.addSubscriber('BDI_ADJUSTED_FOOTSTEP_PLAN', lcmdrc.footstep_plan_t, self.onBDIAdjustedFootstepPlan)
         sub2.setSpeedLimit(1) # was 5 but was slow rendering
 
     ##############################
+    
+    def getDefaultStepParams(self):
+        default_step_params = lcmdrc.footstep_params_t()
+        default_step_params.step_speed = 1.0
+        default_step_params.step_height = 0.05
+        default_step_params.constrain_full_foot_pose = False
+        default_step_params.bdi_step_duration = 2.0
+        default_step_params.bdi_sway_duration = 0.0
+        default_step_params.bdi_lift_height = 0.05
+        default_step_params.bdi_toe_off = 1
+        default_step_params.bdi_knee_nominal = 0.0
+        default_step_params.bdi_max_foot_vel = 0.0
+        default_step_params.bdi_sway_end_dist = 0.02
+        default_step_params.bdi_step_end_dist = 0.02
+        default_step_params.mu = 1.0
+        return default_step_params    
+    
     def onWalkingPlan(self, msg):
         self.lastWalkingPlan = msg
         if self.walkingPlanCallback:
@@ -144,11 +151,11 @@ class FootstepsDriver(object):
 
     def onFootstepPlan(self, msg):
         self.clearFootstepPlan()
-        self.lastFootstepPlan = msg
+        self.lastFootstepPlan = msg.decode( msg.encode() ) # decode and encode ensures deepcopy
 
         planFolder = getFootstepsFolder()
-        self.drawFootstepPlan(msg, planFolder)
-
+        self.drawFootstepPlan( self.lastFootstepPlan , planFolder)
+        self.transformPlanToBDIFrame( self.lastFootstepPlan )
 
     def clearFootstepPlan(self):
         self.lastFootstepPlan = None
@@ -159,6 +166,7 @@ class FootstepsDriver(object):
     def drawFootstepPlan(self, msg, folder,left_color=None, right_color=None):
 
         allTransforms = []
+        
         for i, footstep in enumerate(msg.footsteps):
             trans = footstep.pos.translation
             trans = [trans.x, trans.y, trans.z]
@@ -198,7 +206,15 @@ class FootstepsDriver(object):
                 vis.showPolyData(d.getPolyData(), 'infeasibility %d -> %d' % (i-2, i-1), parent=folder, color=[1, 0.2, 0.2])
 
             stepName = 'step %d' % (i-1)
-            obj = vis.showPolyData(mesh, stepName, color=color, alpha=1.0, parent=folder)
+            
+            # add gradual shading to steps to indicate destination
+	    frac = float(i)/ float(msg.num_steps-1)
+	    this_color = [0,0,0]
+            this_color[0] = 0.25*color[0] + 0.75*frac*color[0]
+            this_color[1] = 0.25*color[1] + 0.75*frac*color[1]
+            this_color[2] = 0.25*color[2] + 0.75*frac*color[2]
+            
+            obj = vis.showPolyData(mesh, stepName, color=this_color, alpha=1.0, parent=folder)
             frameObj = vis.showFrame(footstepTransform, stepName + ' frame', parent=obj, scale=0.3, visible=False)
             obj.actor.SetUserTransform(footstepTransform)
 
@@ -255,7 +271,7 @@ class FootstepsDriver(object):
             step = lcmdrc.footstep_t()
             step.pos = transformUtils.positionMessageFromFrame(t)
             step.is_right_foot = is_right_foot
-            step.params = getDefaultStepParams()
+            step.params = self.getDefaultStepParams()
             self.goalSteps.append(step)
 
         request = self.constructFootstepPlanRequest(pose)
@@ -303,16 +319,16 @@ class FootstepsDriver(object):
         msg.params.max_num_steps = 30
         msg.params.min_num_steps = 0
         msg.params.min_step_width = 0.21
-        msg.params.nom_step_width = 0.25
+        msg.params.nom_step_width = self.params.nominal_step_width
         msg.params.max_step_width = 0.4
         msg.params.nom_forward_step = 0.15
         msg.params.max_forward_step = 0.45
-        msg.params.ignore_terrain = True
+        msg.params.ignore_terrain = self.params.ignore_terrain
         msg.params.planning_mode = msg.params.MODE_AUTO
         msg.params.behavior = self.behavior_lcm_map[self.params.behavior]
-        msg.params.map_command = 2
+        msg.params.map_command = self.map_command_lcm_map[self.params.map_command]
         msg.params.leading_foot = msg.params.LEAD_AUTO
-        msg.default_step_params = getDefaultStepParams()
+        msg.default_step_params = self.getDefaultStepParams()
         return msg
 
     def sendFootstepPlanRequest(self, request, waitForResponse=False, waitTimeout=5000):
@@ -376,9 +392,6 @@ class FootstepsDriver(object):
         pose[0:3] = msg.pos
         pose[3:6] = rpy
         self.bdiJointController.setPose("ERS BDI", pose)
-
-    def onFootStepPlanResponse(self,msg):
-        self.transformPlanToBDIFrame(msg)
 
     def onBDIAdjustedFootstepPlan(self,msg):
         self.bdi_plan_adjusted = msg.decode( msg.encode() ) # decode and encode ensures deepcopy

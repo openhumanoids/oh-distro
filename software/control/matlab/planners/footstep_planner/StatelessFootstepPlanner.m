@@ -7,11 +7,13 @@ classdef StatelessFootstepPlanner
   methods (Static=true)
     function plan = plan_footsteps(biped, request)
       x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
-      q0 = x0(1:end/2);
+      q0 = x0(1:biped.getNumDOF());
       foot_orig = biped.feetPosition(q0);
 
       if request.params.ignore_terrain
         biped = biped.setTerrain(KinematicTerrainMap(biped, q0, true));
+      else
+        biped = biped.setTerrain(biped.getTerrain().setBackupTerrain(biped, q0));
       end
 
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);

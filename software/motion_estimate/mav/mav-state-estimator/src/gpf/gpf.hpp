@@ -32,6 +32,7 @@ template<class LikelihoodInterface>
 void gpfMeasurement(GPFLikelihoodInterface<LikelihoodInterface> * likelihood_interface, const RBIS & state,
     const RBIM & cov,
     const Eigen::VectorXi & z_indices, Eigen::VectorXd & z_effective, Eigen::MatrixXd & R_effective, int num_samples,
+    double max_weight_proportion,
     bot_lcmgl_t * lcmgl = NULL);
 
 mav_indexed_measurement_t * gpfCreateLCMmsg(const Eigen::VectorXi & z_indices, const Eigen::VectorXd & z_effective,
@@ -44,6 +45,7 @@ template<class LikelihoodInterface>
 void gpfMeasurement(GPFLikelihoodInterface<LikelihoodInterface> * likelihood_interface, const RBIS & state,
     const RBIM & cov,
     const Eigen::VectorXi & z_indices, Eigen::VectorXd & z_effective, Eigen::MatrixXd & R_effective, int num_samples,
+    double max_weight_proportion,    
     bot_lcmgl_t * lcmgl = NULL)
 {
   using namespace Eigen;
@@ -101,7 +103,8 @@ void gpfMeasurement(GPFLikelihoodInterface<LikelihoodInterface> * likelihood_int
 
   double weights_sum = weights.sum();
   const double min_weight_sum = m * 5;
-  const double max_weight_sum = .99 * num_samples;
+  // max_weight_proportion disallows small corrections from being incorporated. it was .99, now .999 mfallon april 2014
+  const double max_weight_sum = max_weight_proportion * num_samples; 
 
   if (min_weight_sum < weights_sum && weights_sum < max_weight_sum) {
 

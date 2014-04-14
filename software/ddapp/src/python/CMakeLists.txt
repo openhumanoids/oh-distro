@@ -4,12 +4,10 @@ set(python_files
   ddapp/actionmanagerpanel.py
   ddapp/affordance.py
   ddapp/affordancelistener.py
-  ddapp/affordanceupdater.py
   ddapp/applogic.py
   ddapp/asynctaskqueue.py
   ddapp/atlasdriver.py
   ddapp/atlasdriverpanel.py
-  ddapp/atlasstatuspanel.py
   ddapp/botspy.py
   ddapp/callbacks.py
   ddapp/cameracontrol.py

@@ -21,7 +21,7 @@ classdef KinematicTerrainMap < RigidBodyTerrain
 
     function [height, normal] = getHeight(obj,xy)
       height = (obj.offset - obj.normal(1) * xy(1,:) - obj.normal(2) * xy(2,:)) / obj.normal(3);
-      normal = obj.normal;
+      normal = repmat(obj.normal,1,size(xy,2));
     end
   end
 end

@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="images/resources.qrc">
     <normaloff>:/images/drake_logo.png</normaloff>:/images/drake_logo.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget"/>
@@ -104,12 +104,6 @@
    <addaction name="ActionPythonConsole"/>
    <addaction name="ActionMatlabConsole"/>
    <addaction name="separator"/>
-   <addaction name="ActionMultisensePanel"/>
-   <addaction name="ActionAtlasStatusPanel"/>
-   <addaction name="ActionFootstepPanel"/>
-   <addaction name="ActionHandControlPanel"/>
-   <addaction name="ActionActionManagerPanel"/>
-   <addaction name="separator"/>
    <addaction name="ActionColorizeLidar"/>
    <addaction name="ActionToggleCameraTerrainMode"/>
    <addaction name="ActionResetCamera"/>
@@ -121,7 +115,36 @@
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2"/>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="margin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QScrollArea" name="PropertiesScrollArea">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="widgetResizable">
+        <bool>true</bool>
+       </property>
+       <widget class="QWidget" name="scrollAreaWidgetContents">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>256</width>
+          <height>96</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QDockWidget" name="OutputConsoleDock">
    <property name="windowTitle">
@@ -167,6 +190,22 @@
     <bool>false</bool>
    </attribute>
   </widget>
+  <widget class="QToolBar" name="PanelToolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>RightToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="ActionAtlasDriverPanel"/>
+   <addaction name="ActionMultisensePanel"/>
+   <addaction name="ActionFootstepPanel"/>
+   <addaction name="ActionHandControlPanel"/>
+   <addaction name="ActionActionManagerPanel"/>
+  </widget>
   <action name="ActionQuit">
    <property name="text">
     <string>&amp;Quit</string>
@@ -180,7 +219,7 @@
   </action>
   <action name="ActionPythonConsole">
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/python_logo.png</normaloff>:/images/python_logo.png</iconset>
    </property>
    <property name="text">
@@ -195,7 +234,7 @@
   </action>
   <action name="ActionMatlabConsole">
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/matlab_logo.png</normaloff>:/images/matlab_logo.png</iconset>
    </property>
    <property name="text">
@@ -210,7 +249,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/3d_glasses.png</normaloff>:/images/3d_glasses.png</iconset>
    </property>
    <property name="text">
@@ -222,7 +261,7 @@
   </action>
   <action name="ActionResetCamera">
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/reset_camera.png</normaloff>:/images/reset_camera.png</iconset>
    </property>
    <property name="text">
@@ -234,7 +273,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/camera_mode.png</normaloff>:/images/camera_mode.png</iconset>
    </property>
    <property name="text">
@@ -273,7 +312,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/paint_bucket.png</normaloff>:/images/paint_bucket.png</iconset>
    </property>
    <property name="text">
@@ -285,7 +324,7 @@
   </action>
   <action name="ActionMultisensePanel">
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/3d_scanner.png</normaloff>:/images/3d_scanner.png</iconset>
    </property>
    <property name="text">
@@ -297,7 +336,7 @@
   </action>
   <action name="ActionFootstepPanel">
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/feet.png</normaloff>:/images/feet.png</iconset>
    </property>
    <property name="text">
@@ -307,21 +346,24 @@
     <string>Ctrl+F</string>
    </property>
   </action>
-  <action name="ActionAtlasStatusPanel">
+  <action name="ActionAtlasDriverPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/gauge.png</normaloff>:/images/gauge.png</iconset>
    </property>
    <property name="text">
-    <string>AtlasStatusPanel</string>
+    <string>Atlas Driver</string>
    </property>
    <property name="toolTip">
-    <string>AtlasStatusPanel</string>
+    <string>Atlas Driver</string>
    </property>
   </action>
   <action name="ActionHandControlPanel">
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/claw.png</normaloff>:/images/claw.png</iconset>
    </property>
    <property name="text">
@@ -330,7 +372,7 @@
   </action>
   <action name="ActionActionManagerPanel">
    <property name="icon">
-    <iconset>
+    <iconset resource="images/resources.qrc">
      <normaloff>:/images/robot_icon.png</normaloff>:/images/robot_icon.png</iconset>
    </property>
    <property name="text">

@@ -45,13 +45,16 @@ def getOutputConsole():
     return getMainWindow().outputConsole()
 
 
-def addWidgetToDock(widget, dockArea=QtCore.Qt.RightDockWidgetArea):
+def addWidgetToDock(widget, dockArea=QtCore.Qt.RightDockWidgetArea, action=None):
 
     dock = QtGui.QDockWidget()
     dock.setWidget(widget)
     dock.setWindowTitle(widget.windowTitle)
     getMainWindow().addDockWidget(dockArea, dock)
-    getMainWindow().addWidgetToViewMenu(dock)
+    if action is None:
+        getMainWindow().addWidgetToViewMenu(dock)
+    else:
+        getMainWindow().addWidgetToViewMenu(dock, action)
     return dock
 
 
@@ -111,19 +114,19 @@ def toggleCameraTerrainMode(view = None):
 
 
 def getToolBarActions():
-    return getActions(getMainWindow().toolBar())
+    return getActionsDict(getMainWindow().toolBarActions())
 
 
 def getToolsMenuActions():
-    return getActions(getMainWindow().toolsMenu())
+    return getActionsDict(getMainWindow().toolsMenu().actions())
 
 
-def getActions(widget):
-    actions = {}
-    for action in widget.actions():
+def getActionsDict(actions):
+    actionsDict = {}
+    for action in actions:
         if action.name:
-            actions[action.name] = action
-    return actions
+            actionsDict[action.name] = action
+    return actionsDict
 
 
 def updateToggleTerrainAction(view):

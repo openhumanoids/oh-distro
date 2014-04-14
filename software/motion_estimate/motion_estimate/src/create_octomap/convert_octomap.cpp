@@ -12,7 +12,8 @@ OcTree* ConvertOctomap::convertPointCloudToOctree(pcl::PointCloud<pcl::PointXYZR
   //  Takes about 2.5 sec to convert 400scans or 400k points into an octree
   
   bool write_output_detailed = false;
-  double res = 0.1;
+  double res = 0.1; // used 0.1 and blur of 0.1 was too sharp
+  std::cout << "using a base resolution of " << res << "  ========================\n";
   double maxrange = -1;
   int max_scan_no = -1;
   unsigned char compression = 0;

@@ -4,6 +4,9 @@ echo "Generate Robot Model Configurations:"
 # Robot configurations:
 #echo "[I]Robot, [N]one, [S]andia, [H]ook, [P]ointer, [R]obotiq"
 
+echo "none/stumps"
+rosrun xacro xacro.py xacro/atlas_LN_RN.urdf.xacro > model_LN_RN.urdf
+
 echo "bdi hooks"
 rosrun xacro xacro.py xacro/atlas_LH_RH.urdf.xacro > model_LH_RH.urdf
 
