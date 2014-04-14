@@ -507,10 +507,10 @@ class CameraDeltaPlan(Action):
 
     def onEnter(self):
         # Start listening for a message with the desired camera transform
-        lcmUtils.captureMessageCallback(self.parsedArgs['Channel'], rigid_transform_t, self.setMessageReceived)
+        lcmUtils.captureMessageCallback(self.parsedArgs['Channel'], update_t, self.setMessageReceived)
 
         if self.container.vizMode:
-            self.message = rigid_transform_t()
+            self.message = update_t()
             self.message.trans = [-0.04, 0.0, 0.0]
             self.messageReceived = True
 
@@ -521,31 +521,41 @@ class CameraDeltaPlan(Action):
             linkMap = { 'left' : 'l_hand_face', 'right': 'r_hand_face'}
             linkName = linkMap[self.parsedArgs['Hand']]
 
-            if self.container.vizMode:
-                handToWorld = self.container.ikPlanner.getLinkFrameAtPose(linkName, self.inputState)
+            # local means the published topic is a full transform
+            if self.message.relative_to == 'local':
+                handFrame = transformUtils.frameFromPositionAndRPY([self.message.trans[0],
+                                                                    self.message.trans[1],
+                                                                    self.message.trans[2]],
+                                                                    [el for el in botpy.quat_to_roll_pitch_yaw(self.message.quat)])
+                goalFrame = vis.updateFrame(goalTransform, 'CameraAdjustFrame', parent=handFrame, visible=True, scale=0.25)
+
             else:
-                handToWorld = self.container.robotModel.getLinkFrame(linkName)
+                if self.container.vizMode:
+                    handToWorld = self.container.ikPlanner.getLinkFrameAtPose(linkName, self.inputState)
+                else:
+                    handToWorld = self.container.robotModel.getLinkFrame(linkName)
 
-            delta = transformUtils.frameFromPositionAndRPY([self.message.trans[0],
-                                                            self.message.trans[1],
-                                                            self.message.trans[2]],
-#                                                           [el for el in botpy.quat_to_roll_pitch_yaw(self.message.quat)])
-                                                           [0, 0, 0])
+                delta = transformUtils.frameFromPositionAndRPY([self.message.trans[0],
+                                                                self.message.trans[1],
+                                                                self.message.trans[2]],
+                                                                [0, 0, 0])
 
-            if self.parsedArgs['Style'] == 'Local':
-                goalTransform = vtkTransform()
-                goalTransform.PostMultiply()
-                goalTransform.Concatenate(delta)
-                goalTransform.Concatenate(handToWorld)
-            else:
-                goalTransform = vtkTransform()
-                goalTransform.PostMultiply()
-                goalTransform.Concatenate(handToWorld)
-                goalTransform.Concatenate(delta)
+                if self.parsedArgs['Style'] == 'Local':
+                    goalTransform = vtkTransform()
+                    goalTransform.PostMultiply()
+                    goalTransform.Concatenate(delta)
+                    goalTransform.Concatenate(handToWorld)
+                else:
+                    goalTransform = vtkTransform()
+                    goalTransform.PostMultiply()
+                    goalTransform.Concatenate(handToWorld)
+                    goalTransform.Concatenate(delta)
 
-            handFrame = self.container.om.findObjectByName(self.parsedArgs['TargetFrame'])
-            goalFrame = vis.updateFrame(goalTransform, 'CameraAdjustFrame', parent=handFrame, visible=True, scale=0.25)
+                handFrame = self.container.om.findObjectByName(self.parsedArgs['TargetFrame'])
+                goalFrame = vis.updateFrame(goalTransform, 'CameraAdjustFrame', parent=handFrame, visible=True, scale=0.25)
 
+
+            #call the planner
             self.manipPlan = self.container.ikPlanner.planEndEffectorGoal(self.inputState, self.parsedArgs['Hand'], goalFrame, planTraj=True)
 
             if self.manipPlan.plan_info[-1] > 10:
