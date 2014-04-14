@@ -85,6 +85,10 @@ group "a.1.core" {
         exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02.cfg";
         host = "robot";
     }
+    cmd "gpf-laser" {
+        exec = "gpf-laser";
+        host = "robot";
+    }
     cmd "viewer" {
         exec = "bash /home/drc/drake_designer_cmd.sh";
         host = "robot";
