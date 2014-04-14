@@ -34,7 +34,7 @@ class App{
     IMUStream imu_data_;
     
     LowPassFilter lpfilter[3];
-    HeavyFiltering::HeavyLowPassFilter hlpfilter[3];
+    HeavyLowPassFilter hlpfilter[3];
     
     // An cascade of 3 notch filters in xyz
     IIRNotch notchfilter_x[3];
@@ -67,10 +67,9 @@ void App::doFilter(IMUPacket &raw){
     raw.linear_acceleration[2]  = (double)lpfilter[2].processSample( raw.linear_acceleration[2] );
   }else if (cl_cfg_.filter_type ==1){ // reasonable high [ass gilter
     // "heavy low pass filter"
-    double scale = 1/  1.02653695819398;
-    raw.linear_acceleration[0]  = scale*hlpfilter[0].processSample( raw.linear_acceleration[0] );
-    raw.linear_acceleration[1]  = scale*hlpfilter[1].processSample( raw.linear_acceleration[1] );
-    raw.linear_acceleration[2]  = scale*hlpfilter[2].processSample( raw.linear_acceleration[2] );
+    raw.linear_acceleration[0]  = hlpfilter[0].processSample( raw.linear_acceleration[0] );
+    raw.linear_acceleration[1]  = hlpfilter[1].processSample( raw.linear_acceleration[1] );
+    raw.linear_acceleration[2]  = hlpfilter[2].processSample( raw.linear_acceleration[2] );
   }else if(cl_cfg_.filter_type==2){
     // notch 85Hz
     raw.linear_acceleration[0]  = notchfilter_x[0].processSample( raw.linear_acceleration[0] );

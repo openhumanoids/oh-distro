@@ -116,6 +116,7 @@ public:
   //filter
   MavStateEstimator * state_estimator;
 
+  bool exit_estimator; // mfallon added. when true, stops estimation
 };
 
 template<class lcmType, class SensorHandlerClass>

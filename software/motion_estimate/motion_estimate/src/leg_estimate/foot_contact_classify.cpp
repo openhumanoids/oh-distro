@@ -61,9 +61,8 @@ float foot_contact_classify::update (int64_t utime, Eigen::Isometry3d primary_fo
   float left_force_filtered  = lfoot_sensing_.force_z;
   float right_force_filtered  = rfoot_sensing_.force_z;
   if (1==0){ // low pass filter filtering?
-    double scale = 1/1.0091;
-    left_force_filtered  = scale*lpfilter_lfoot_.processSample( lfoot_sensing_.force_z );
-    right_force_filtered  = scale*lpfilter_rfoot_.processSample( rfoot_sensing_.force_z );
+    left_force_filtered  = lpfilter_lfoot_.processSample( lfoot_sensing_.force_z );
+    right_force_filtered  = lpfilter_rfoot_.processSample( rfoot_sensing_.force_z );
   }
   
   // 1. Determine Weak or Strong Contact:

@@ -13,6 +13,9 @@
 #include <path_util/path_util.h>
 
 
+#include <lcmtypes/drc/utime_t.hpp>
+
+
 #include <ConciseArgs>
 
 using namespace std;
@@ -24,6 +27,33 @@ static void shutdown_module(int unused __attribute__((unused)))
   bot_tictoc_print_stats(BOT_TICTOC_AVG);
   exit(1);
 }
+
+
+class StandingPrep{
+public:
+    StandingPrep(boost::shared_ptr<lcm::LCM> &lcm_):lcm_(lcm_){
+      lcm_->subscribe( "STATE_EST_READY" ,&StandingPrep::navReadyHandler,this);
+      ready_ =false;
+    }
+    ~StandingPrep(){}    
+    void listenForReady(){
+      std::cout << "Waiting for MAV_STATE_EST_READY before starting\n";
+      std::cout << "Send this message when the robot is standing still\n";
+      while(0 == lcm_->handle()  && (!ready_) );
+    } 
+private:
+    boost::shared_ptr<lcm::LCM> lcm_;
+    bool ready_;
+    void navReadyHandler(const lcm::ReceiveBuffer* rbuf, 
+                           const std::string& channel, const  drc::utime_t* msg){
+      std::cout << "Received Ready\n";
+      ready_ = true;
+    }
+};
+
+
+
+
 
 class App {
 public:
@@ -40,6 +70,7 @@ public:
     string begin_timestamp= "0";
     smooth_at_end = false;
     double processing_rate = 1; // real time
+    bool wait_for_viewer_ready = false;
 
     ConciseArgs opt(argc, argv);
     opt.add(in_log_fname, "L", "in_log_name", "Run state estimation directly on this log");
@@ -53,8 +84,16 @@ public:
     opt.add(begin_timestamp, "t", "begin_timestamp", "Run estimation from this timestamp"); // mfallon
     opt.add(urdf_file, "U", "urdf_file", "Pull params from this file instead of LCM"); // mfallon
     opt.add(processing_rate, "pr", "processing_rate","Processing Rate from a log [0=ASAP, 1=realtime]");        
+    opt.add(wait_for_viewer_ready, "v", "viewer_ready","Wait for trigger from Viewer to start");
     opt.parse();
 
+    
+    if (wait_for_viewer_ready){// Listen for a message from the v
+      boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
+      StandingPrep prep(lcm);
+      prep.listenForReady();
+    }
+    
     
     std::string param_file_full = std::string(getConfigPath()) +'/' + std::string(param_file);    
     
@@ -181,9 +220,21 @@ public:
       legodo_external_handler = new LegOdoExternalHandler(front_end->lcm_recv, front_end->lcm_pub, front_end->param);
       front_end->addSensor("legodo_external", &MavStateEst::LegOdoExternalHandler::processMessage, legodo_external_handler);
     }
+    
+    
+    
+    restart_sub =  front_end->lcm_recv->subscribe( "STATE_EST_RESTART" ,&App::restartHandler,this);
 
   }
 
+  void restartHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg){
+    // exit 
+    front_end->exit_estimator = true; 
+    
+    front_end->lcm_recv->unsubscribe( restart_sub );
+  }
+  
+  
   void run()
   {
     //initialization
@@ -231,14 +282,32 @@ public:
 
   string output_likelihood_filename;
   bool smooth_at_end;
+  
+  lcm::Subscription * restart_sub;
 };
+
+
+
+void launchApp(int argc, char **argv){
+  
+  App * app = new App(argc, argv);
+  app->run();
+  
+  delete app->front_end;
+  delete app;
+  
+}
+
+
 
 int main(int argc, char **argv)
 {
   signal(SIGINT, shutdown_module);
-
-  App * app = new App(argc, argv);
-  app->run();
+  
+  
+  while (1){ // mfallon: added infinite loop, application continually restarts
+    launchApp(argc, argv);
+  }
 
   shutdown_module(1);
   return 0;

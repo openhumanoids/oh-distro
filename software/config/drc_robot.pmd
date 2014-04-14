@@ -85,6 +85,10 @@ group "a.1.core" {
         exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02.cfg";
         host = "robot";
     }
+    cmd "gpf-laser" {
+        exec = "gpf-laser";
+        host = "robot";
+    }
     cmd "viewer" {
         exec = "bash /home/drc/drake_designer_cmd.sh";
         host = "robot";
@@ -283,7 +287,7 @@ group "m.misc" {
 
 
 group "m.state_est" {
-    cmd "state-sync-bdi-seperate" {
+    cmd "state-sync-bdi-separate" {
         exec = "drc-state-sync -b -e -o EST_ROBOT_STATE_BDI -p";
         host = "robot";
     }
@@ -291,8 +295,12 @@ group "m.state_est" {
         exec = "drc-state-sync -b -e -o EST_ROBOT_STATE";
         host = "robot";
     }
-    cmd "viewer-plus" {
+    cmd "old-viewer" {
         exec = "drc-viewer -a";
+        host = "robot";
+    }
+    cmd "build-octomap" {
+        exec = "se-create-octomap  -s 1500 -b 0.1 -r 20 -w -u";
         host = "robot";
     }
 }

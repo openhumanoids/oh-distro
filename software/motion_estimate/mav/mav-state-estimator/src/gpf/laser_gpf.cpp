@@ -17,6 +17,9 @@
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
 #include <lcmtypes/mav/indexed_measurement_t.hpp>
 
+#include <lcmtypes/drc/utime_t.hpp>
+#include <lcmtypes/drc/atlas_status_t.hpp>
+
 #include <Eigen/Dense>
 #include <eigen_utils/eigen_utils.hpp>
 #include <Eigen/StdVector>
@@ -63,7 +66,15 @@ public:
 
     lcm_front->lcm_recv->subscribe(laser_handler->laser_channel.c_str(), &app_t::laser_message_handler, this);
     lcm_front->lcm_recv->subscribe(lcm_front->filter_state_channel.c_str(), &app_t::filter_state_handler, this);
-
+    
+    // drc integration:
+    lcm_front->lcm_recv->subscribe("STATE_EST_LASER_DISABLE", &app_t::laser_disable_handler, this);
+    lcm_front->lcm_recv->subscribe("STATE_EST_LASER_ENABLE", &app_t::laser_enable_handler, this);
+    //
+    lcm_front->lcm_recv->subscribe("ATLAS_STATUS", &app_t::atlas_status_handler, this);
+    behavior_prev = drc::atlas_status_t::BEHAVIOR_NONE;
+    utime_standing_trans = 0;
+    
   }
 
   //--------------------LCM stuff-----------------------
@@ -85,6 +96,59 @@ public:
 
   LaserGPF *gpf;
 
+  // Modules to Bit flip the laser on or off, added by mfallon
+  int behavior_prev ;
+  int64_t utime_standing_trans;
+  
+  void laser_disable_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+      const drc::utime_t * msg)
+  {
+    gpf->laser_enabled = false;
+    //fprintf(stderr, "D\n");
+  }
+  
+  void laser_enable_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+      const drc::utime_t * msg)
+  {
+    gpf->laser_enabled = true;
+    //fprintf(stderr, "E\n");
+    
+    // this will allow the laser to function for 2 seconds:
+    fprintf(stderr, "Forcing enabling of laser from viewer\n");
+    utime_standing_trans = msg->utime;
+  }
+  
+  void atlas_status_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+      const drc::atlas_status_t * msg){
+    
+    if ( (msg->behavior != drc::atlas_status_t::BEHAVIOR_STAND) &&  (msg->behavior != drc::atlas_status_t::BEHAVIOR_MANIPULATE) ){
+      if ( !gpf->laser_enabled ){
+        fprintf(stderr, "\nNot Standing or Manipulating - enabling  laser\n");
+      }
+      gpf->laser_enabled = true;
+    }
+    
+    if ( (behavior_prev != drc::atlas_status_t::BEHAVIOR_STAND) &&  (behavior_prev != drc::atlas_status_t::BEHAVIOR_MANIPULATE) ){
+      if ( (msg->behavior == drc::atlas_status_t::BEHAVIOR_STAND) ||  (msg->behavior == drc::atlas_status_t::BEHAVIOR_MANIPULATE) ){
+	fprintf(stderr, "\nEntering stand\n");
+	utime_standing_trans = msg->utime;
+      }
+    }
+    
+    if ( (msg->behavior == drc::atlas_status_t::BEHAVIOR_STAND) ||  (msg->behavior == drc::atlas_status_t::BEHAVIOR_MANIPULATE) ){
+      if ( msg->utime - utime_standing_trans > 2E6){
+	if (gpf->laser_enabled){
+          fprintf(stderr, "\nBeen standing for some time %f - disabling laser\n", ( (double) (msg->utime - utime_standing_trans)*1E-6) );
+	}
+	gpf->laser_enabled = false;
+      }
+    }
+    behavior_prev = msg->behavior;
+  }
+  
+  
+  ////////////
+  
   void filter_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
       const mav::filter_state_t * msg)
   {

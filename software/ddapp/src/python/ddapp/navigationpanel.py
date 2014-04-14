@@ -1,5 +1,6 @@
 import PythonQt
 from PythonQt import QtCore, QtGui, QtUiTools
+import ddapp
 from ddapp import lcmUtils
 from ddapp import applogic as app
 from ddapp.utime import getUtime
@@ -7,6 +8,7 @@ from ddapp.timercallback import TimerCallback
 
 import numpy as np
 import math
+from time import sleep
 
 import vtkAll as vtk
 
@@ -18,7 +20,17 @@ import ddapp.objectmodel as om
 from ddapp import robotstate
 from ddapp import botpy
 
+
+from ddapp import ioUtils as io
+from ddapp import vtkNumpy as vnp
+from ddapp import segmentation
+
+
+# lcmtypes:
 import drc as lcmdrc
+from mav.indexed_measurement_t import indexed_measurement_t
+
+
 
 def addWidgetsToDict(widgets, d):
 
@@ -45,20 +57,27 @@ class NavigationPanel(object):
         loader = QtUiTools.QUiLoader()
         uifile = QtCore.QFile(':/ui/ddNavigation.ui')
         assert uifile.open(uifile.ReadOnly)
-
         self.widget = loader.load(uifile)
-
         self.ui = WidgetDict(self.widget.children())
-
         self.ui.captureButton.connect("clicked()", self.onCaptureButton)
         self.ui.visualizeButton.connect("clicked()", self.onVisualizeButton)
         self.ui.planButton.connect("clicked()", self.onPlanButton)
         self.ui.reversePlanButton.connect("clicked()", self.onReversePlanButton)
+        self.ui.initAtZeroButton.connect("clicked()", self.onInitAtZeroButton)
+        self.ui.restartNavButton.connect("clicked()", self.onRestartNavButton)
+        self.ui.showMapButton.connect("clicked()", self.onShowMapButton)
+        self.ui.hideMapButton.connect("clicked()", self.onHideMapButton)
+        self.ui.disableLaserButton.connect("clicked()", self.onDisableLaserButton)
+        self.ui.enableLaserButton.connect("clicked()", self.onEnableLaserButton)
 
-        self.goal = dict()
         
+        # Data Variables:
+        self.goal = dict()
+        self.init_frame = None
+        self.octomap_cloud = None
         
     ###############################
+    
     def getSelectedGoalName(self):
         goal_name = self.ui.comboBox.currentText
         return goal_name
@@ -125,23 +144,105 @@ class NavigationPanel(object):
           reversedPlan.footsteps[j] = footstep
         
         self.footstepDriver.onFootstepPlan(reversedPlan)
+
+    def onRestartNavButton(self):
+        ready_init = lcmdrc.utime_t()
+        ready_init.utime = lcmUtils.timestamp_now()
+        lcmUtils.publish('STATE_EST_RESTART', ready_init)
+
+
+        
+    def onInitAtZeroButton(self):
+        self.sendReadyMessage()
+        
+        p1 = [0,0,0.85]
+        init_frame = transformUtils.frameFromPositionAndRPY( p1 , [0,0,0] )
+        vis.updateFrame(init_frame, "init pose", parent="navigation")
+        self.sendInitMessage(p1, 0)        
+        
         
     def pointPickerDemo(self,p1, p2):
+        self.sendReadyMessage()
+      
+        yaw = math.atan2( p2[1] - p1[1] , p2[0] - p1[0] )
+        p1[2] = p1[2] + 0.85       
+        init_frame = transformUtils.frameFromPositionAndRPY(p1, [0,0,yaw*180/math.pi])
+        vis.updateFrame(init_frame, "init pose", parent="navigation")
+        self.sendInitMessage(p1, yaw)        
+
+        
+    def sendReadyMessage(self):
+        ready_init = lcmdrc.utime_t()
+        ready_init.utime = lcmUtils.timestamp_now()
+        lcmUtils.publish('STATE_EST_READY', ready_init)
+        sleep(1) # sleep needed to give SE time to restart
+        
+
+    def sendInitMessage(self, pos, yaw):
+        init = indexed_measurement_t()
+        init.utime = lcmUtils.timestamp_now()
+        init.state_utime = init.utime
+        init.measured_dim = 4
+        init.z_effective = [ pos[0], pos[1], pos[2] , yaw ]
+        init.z_indices = [9, 10, 11, 8]
+        
+        init.measured_cov_dim = init.measured_dim*init.measured_dim
+        init.R_effective= [0] * init.measured_cov_dim
+        init.R_effective[0]  = 0.25
+        init.R_effective[5]  = 0.25
+        init.R_effective[10] = 0.25
+        init.R_effective[15] =  math.pow( 5*math.pi/180 , 2 )
+        
+        lcmUtils.publish('MAV_STATE_EST_VIEWER_MEASUREMENT', init)
+        
+        
+    def onShowMapButton(self):
+        if (self.octomap_cloud is None):
+            filename = ddapp.getDRCBaseDir() + "/software/build/data/octomap.pcd"
+            self.octomap_cloud = io.readPolyData(filename) # c++ object called vtkPolyData
+            self.octomap_cloud = segmentation.cropToLineSegment(self.octomap_cloud, np.array([0,0,-10]), np.array([0,0,3]) )
+            # access to z values
+            #points= vnp.getNumpyFromVtk(self.octomap_cloud, 'Points')
+            #zvalues = points[:,2]
+
+        vis.showPolyData(self.octomap_cloud, 'prior map', alpha=1.0, color=[0,0,0.4])
+        
+        
+    def onHideMapButton(self):
+        folder = om.getOrCreateContainer("segmentation")
+        om.removeFromObjectModel(folder)
+
+        
+    def onEnableLaserButton(self):   
+        msg = lcmdrc.utime_t()
+        msg.utime = lcmUtils.timestamp_now()
+        lcmUtils.publish('STATE_EST_LASER_ENABLE', msg)
+        
+
+    def onDisableLaserButton(self):   
+        msg = lcmdrc.utime_t()
+        msg.utime = lcmUtils.timestamp_now()
+        lcmUtils.publish('STATE_EST_LASER_DISABLE', msg)
+    
+        
+    def pointPickerDemoOriginal(self,p1, p2):
         
         yaw = math.atan2( p2[1] - p1[1] , p2[0] - p1[0] )*180/math.pi + 90
-        
         frame_p1 = transformUtils.frameFromPositionAndRPY(p1, [0,0,yaw])
         
         blockl = 0.3937
         blockh = 0.142875
+        sep = 0.11
         
         frame_pt_to_centerline = transformUtils.frameFromPositionAndRPY( [0, -blockl/2, 0], [0,0,0])
          
         frame_pt_to_centerline.PostMultiply()
         frame_pt_to_centerline.Concatenate(frame_p1)
          
-        vis.updateFrame(frame_pt_to_centerline, "p1", parent="navigation")
+        vis.updateFrame(frame_pt_to_centerline, "corner", parent="navigation")
 
+        
+        
 # Original: 1 up/down
 #        flist = np.array( [[ blockl*-0.5 , .1  , 0      , 0 , 0 , 0] ,
 #                           [ blockl*-0.5 , -.1 , 0      , 0 , 0 , 0] ,
@@ -187,7 +288,6 @@ class NavigationPanel(object):
                            
 
 # 3 up and down
-        sep = 0.11
         r =1
         flist = np.array( [[ blockl*-0.5       , sep  , 0       , 0 , 0 , 0, 0],
                            [ blockl*-0.5       , -sep , 0       , 0 , 0 , 0, r],
@@ -234,7 +334,8 @@ class NavigationPanel(object):
             step.pos = transformUtils.positionMessageFromFrame(step_t)
             step.is_right_foot =  flist[i,6] # is_right_foot
             step.params = self.footstepDriver.getDefaultStepParams()
-            vis.updateFrame(step_t, str(i), parent="navigation")
+            # Visualization via triads
+            #vis.updateFrame(step_t, str(i), parent="navigation")
             self.goalSteps.append(step)
 
         startPose = self.jointController.q

@@ -121,6 +121,7 @@ void LaserGPF::LaserGPFBaseConstructor(int num_samples, bool gpf_vis, LaserLikel
     this->lcmgl_particles = NULL;
   }
 
+  
 }
 
 LaserGPF::LaserGPF(lcm_t * lcm, BotParam * param, BotFrames * frames)
@@ -165,6 +166,14 @@ LaserGPF::LaserGPF(lcm_t * lcm, BotParam * param, BotFrames * frames)
 
   LaserGPFBaseConstructor(num_samples_, gpf_vis, laser_like_iface_, gpf_substate_mode_, lcm, param, frames);
 
+  // By default, enable laser at launch: (added mfallon)
+  laser_enabled = bot_param_get_boolean_or_fail(param, "state_estimator.laser_gpf.enable_at_launch");
+  print_tic = 0;
+  if (laser_enabled){
+    fprintf(stderr,"LaserGPF enabled at launch\n"); 
+  }else{
+    fprintf(stderr,"LaserGPF disabled at launch\n"); 
+  }
 }
 
 LaserGPF::~LaserGPF()
@@ -216,6 +225,50 @@ double LaserGPF::likelihoodFunction(const RBIS & state)
 bool LaserGPF::getMeasurement(const RBIS & state, const RBIM & cov, const bot_core::planar_lidar_t * laser_msg,
     Eigen::VectorXd & z_effective, Eigen::MatrixXd & R_effective)
 {
+  // Periodically re-confirm enable/disable mode:
+  print_tic++;
+  if (!laser_enabled){
+    if (print_tic % 160 ==0)
+      fprintf(stderr, "d");
+
+    // Enforce a mild position measurement using the current xyz,yaw (8,9,10,11)
+    // hard coded assumption of the order of the indices
+    int m = 4;
+
+    Eigen::VectorXi z_indices;
+    z_indices.resize(m);
+    z_indices.tail(3) = RBIS::positionInds();
+    z_indices(0) = RBIS::chi_ind + 2;
+
+    z_effective.resize(m);
+    R_effective.resize(m, m);
+    R_effective << MatrixXd::Identity (m,m);
+
+    R_effective(0,0) = pow(5.0*M_PI/180.0,2); // this is taken from viewer UI
+    R_effective(1,1) = 0.15;
+    R_effective(2,2) = 0.15;
+    R_effective(3,3) = 0.15;
+
+    for (int k = 0; k < m; k++) {
+      z_effective(k) = state.vec(z_indices(k));
+    }
+    return true;
+    // state & cov: full input state
+    // z_effective and R_effective
+    // 0  1  2  3
+    // 4  5  6  7
+    // 8  9  10 11
+    // 12 13 14 15
+    //std::cout << z_indices.rows() <<  " idx\n";
+    //std::cout << m << " m\n";
+    //std::cout << z_effective.transpose() << " z_eff\n";
+    //std::cout << R_effective << " R_eff\n";
+
+    // return false;
+  }
+  if (print_tic % 160 ==0)
+    fprintf(stderr, "e");
+  
 
   bot_core_planar_lidar_t * laser_msg_c = new bot_core_planar_lidar_t;
   laser_msg_c->intensities = new float[laser_msg->nintensities];

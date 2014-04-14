@@ -211,7 +211,6 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   int64_t temp;
   bool odo_position_status = leg_est_->getLegOdometryWorldConstraint(odo_position,temp);
   
-  
   if (!local_integration_){ // typical case...
     BotTrans odo_deltaT = getPoseAsBotTrans(odo_delta);
     BotTrans odo_positionT = getPoseAsBotTrans(odo_position);
