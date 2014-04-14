@@ -73,6 +73,7 @@ classdef FootMotionControlBlock < DrakeSystem
       err = [foot_des(1:3)-p(1:3);angleDiff(p(4:end),foot_des(4:end))];
       
       foot_acc = obj.Kp.*err - obj.Kd.*(J*qd);
+		%	foot_acc(4:5) = NaN;
       y = [obj.foot_ind;foot_acc];
     end
   end

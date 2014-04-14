@@ -74,7 +74,7 @@ request.goal_pos = encodePosition3d(navgoal);
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
-request.params.max_num_steps = 3;
+request.params.max_num_steps = 20;
 request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.25;
@@ -85,7 +85,7 @@ request.params.ignore_terrain = false;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
-request.params.leading_foot = request.params.LEAD_RIGHT;
+request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
 request.default_step_params.step_speed = 0.075;
 request.default_step_params.step_height = 0.075;
@@ -104,7 +104,6 @@ walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
 
-% ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
 ts = walking_plan.ts;
 T = ts(end);
 
