@@ -32,7 +32,7 @@ static void shutdown_module(int unused __attribute__((unused)))
 class StandingPrep{
 public:
     StandingPrep(boost::shared_ptr<lcm::LCM> &lcm_):lcm_(lcm_){
-      lcm_->subscribe( "MAV_STATE_EST_READY" ,&StandingPrep::navReadyHandler,this);
+      lcm_->subscribe( "STATE_EST_READY" ,&StandingPrep::navReadyHandler,this);
       ready_ =false;
     }
     ~StandingPrep(){}    
@@ -220,9 +220,21 @@ public:
       legodo_external_handler = new LegOdoExternalHandler(front_end->lcm_recv, front_end->lcm_pub, front_end->param);
       front_end->addSensor("legodo_external", &MavStateEst::LegOdoExternalHandler::processMessage, legodo_external_handler);
     }
+    
+    
+    
+    restart_sub =  front_end->lcm_recv->subscribe( "STATE_EST_RESTART" ,&App::restartHandler,this);
 
   }
 
+  void restartHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg){
+    // exit 
+    front_end->exit_estimator = true; 
+    
+    front_end->lcm_recv->unsubscribe( restart_sub );
+  }
+  
+  
   void run()
   {
     //initialization
@@ -270,14 +282,32 @@ public:
 
   string output_likelihood_filename;
   bool smooth_at_end;
+  
+  lcm::Subscription * restart_sub;
 };
+
+
+
+void launchApp(int argc, char **argv){
+  
+  App * app = new App(argc, argv);
+  app->run();
+  
+  delete app->front_end;
+  delete app;
+  
+}
+
+
 
 int main(int argc, char **argv)
 {
   signal(SIGINT, shutdown_module);
   
-  App * app = new App(argc, argv);
-  app->run();
+  
+  while (1){ // mfallon: added infinite loop, application continually restarts
+    launchApp(argc, argv);
+  }
 
   shutdown_module(1);
   return 0;

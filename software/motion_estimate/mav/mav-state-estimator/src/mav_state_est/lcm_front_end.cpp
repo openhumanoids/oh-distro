@@ -87,6 +87,7 @@ LCMFrontEnd::LCMFrontEnd(const std::string & in_log_fname, const std::string & o
   publish_pose = bot_param_get_boolean_or_fail(param, "state_estimator.publish_pose");
   republish_sensors = bot_param_get_boolean_or_fail(param, "state_estimator.republish_sensors");
 
+  exit_estimator = false; // when this is true, we exit the estimator handlers, mfallon
 }
 
 LCMFrontEnd::~LCMFrontEnd()
@@ -197,7 +198,7 @@ void LCMFrontEnd::run()
     exit(1);
   }
 
-  while (true) {
+  while ( !exit_estimator ) { // mfallon added. when true, stops estimation instance
     int ret = lcm_recv->handle();
     if (ret != 0) {
       printf("log is done\n");
