@@ -59,8 +59,8 @@ set(microstrain_comm_url https://svn.csail.mit.edu/rrg_pods/drivers/microstrain_
 set(microstrain_comm_revision 853)
 set(microstrain_comm_depends common_utils)
 
-set(bullet_url https://svn.csail.mit.edu/drc/trunk/software/externals/bullet)
-set(bullet_revision 8298)
+set(bullet_url https://github.com/RobotLocomotion/bullet-pod.git)
+set(bullet_revision 8570175)
 set(bullet_depends)
 
 set(fovis-git_url https://svn.csail.mit.edu/drc/trunk/software/externals/fovis-git)
@@ -91,16 +91,16 @@ set(apriltags_url https://svn.csail.mit.edu/apriltags)
 set(apriltags_revision 24)
 set(apriltags_depends opencv-drc)
 
-set(spotless_url https://svn.csail.mit.edu/locomotion/pods/spotless)
-set(spotless_revision 8053)
+set(spotless_url ssh://git@github.com/RobotLocomotion/spotless-pod.git)
+set(spotless_revision 464be854a1296d4726cb37d86f24d39742293ab6)
 set(spotless_depends)
 
-set(snopt_url https://svn.csail.mit.edu/locomotion/pods/snopt7.2-12)
-set(snopt_revision 7782)
+set(snopt_url ssh://git@github.com/RobotLocomotion/snopt.git)
+set(snopt_revision 26eb6145bfae4671cc86bd5c723b381fb8bd5ab6)
 set(snopt_depends)
 
-set(gurobi_url https://svn.csail.mit.edu/locomotion/pods/gurobi)
-set(gurobi_revision 8053)
+set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)
+set(gurobi_revision 46d1985d5a86f7bc660e363cb2d5ff76af4b6fd9)
 set(gurobi_depends)
 
 set(flycapture_url https://svn.csail.mit.edu/drc/trunk/software/externals/flycapture)
@@ -123,7 +123,6 @@ set(externals
   velodyne
   kinect
   microstrain_comm
-  bullet
   fovis-git
   estimate-pose
   vicon
@@ -131,11 +130,16 @@ set(externals
   camunits-wrapper
   camunits-extra-wrapper
   apriltags
+  flycapture
+  )
+
+set(git-externals
+  bullet
   spotless
   snopt
   gurobi
-  flycapture
   )
+
 
 set(svn_credentials)
 if(DRC_SVN_PASSWORD)
@@ -156,8 +160,25 @@ macro(add_svn_external proj)
     )
 endmacro()
 
+macro(add_git_external proj)
+  ExternalProject_Add(${proj}
+    GIT_REPOSITORY ${${proj}_url}
+    GIT_TAG ${${proj}_revision}
+    DEPENDS ${${proj}_depends}
+    CONFIGURE_COMMAND ""
+    INSTALL_COMMAND ""
+    BUILD_COMMAND $(MAKE) BUILD_PREFIX=${CMAKE_INSTALL_PREFIX} BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    BUILD_IN_SOURCE 1
+    SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
+    )
+endmacro()
+
 foreach(external ${externals})
   add_svn_external(${external})
+endforeach()
+
+foreach(git-external ${git-externals})
+  add_git_external(${git-external})
 endforeach()
 
 
