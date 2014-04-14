@@ -17,6 +17,8 @@
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
 #include <lcmtypes/mav/indexed_measurement_t.hpp>
 
+#include <lcmtypes/drc/utime_t.hpp>
+
 #include <Eigen/Dense>
 #include <eigen_utils/eigen_utils.hpp>
 #include <Eigen/StdVector>
@@ -63,6 +65,8 @@ public:
 
     lcm_front->lcm_recv->subscribe(laser_handler->laser_channel.c_str(), &app_t::laser_message_handler, this);
     lcm_front->lcm_recv->subscribe(lcm_front->filter_state_channel.c_str(), &app_t::filter_state_handler, this);
+    lcm_front->lcm_recv->subscribe("STATE_EST_LASER_DISABLE", &app_t::laser_disable_handler, this);
+    lcm_front->lcm_recv->subscribe("STATE_EST_LASER_ENABLE", &app_t::laser_enable_handler, this);
 
   }
 
@@ -85,6 +89,22 @@ public:
 
   LaserGPF *gpf;
 
+  // Bit flip to turn laser on or off, added by mfallon
+  void laser_disable_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+      const drc::utime_t * msg)
+  {
+    gpf->laser_enabled = false;
+    fprintf(stderr, "D");
+  }
+  
+  void laser_enable_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+      const drc::utime_t * msg)
+  {
+    gpf->laser_enabled = true;
+    fprintf(stderr, "E");
+  }
+  ////////////
+  
   void filter_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
       const mav::filter_state_t * msg)
   {

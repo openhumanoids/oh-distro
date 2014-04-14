@@ -72,6 +72,10 @@ public:
 
   bool getMeasurement(const RBIS & state, const RBIM & cov, const bot_core::planar_lidar_t * laser_msg,
       Eigen::VectorXd & z_effective, Eigen::MatrixXd & R_effective);
+  
+  // Show the laser gpf be active? (added mfallon, disabled while standing)  
+  bool laser_enabled;
+  int print_tic;
 
 private:
   void LaserGPFBaseConstructor(int num_samples, bool gpf_vis, LaserLikelihoodInterface * likelihood_interface,

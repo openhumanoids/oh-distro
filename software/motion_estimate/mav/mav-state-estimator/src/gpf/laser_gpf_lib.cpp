@@ -121,6 +121,7 @@ void LaserGPF::LaserGPFBaseConstructor(int num_samples, bool gpf_vis, LaserLikel
     this->lcmgl_particles = NULL;
   }
 
+  
 }
 
 LaserGPF::LaserGPF(lcm_t * lcm, BotParam * param, BotFrames * frames)
@@ -165,6 +166,14 @@ LaserGPF::LaserGPF(lcm_t * lcm, BotParam * param, BotFrames * frames)
 
   LaserGPFBaseConstructor(num_samples_, gpf_vis, laser_like_iface_, gpf_substate_mode_, lcm, param, frames);
 
+  // By default, enable laser at launch: (added mfallon)
+  laser_enabled = bot_param_get_boolean_or_fail(param, "state_estimator.laser_gpf.enable_at_launch");
+  print_tic = 0;
+  if (laser_enabled){
+    fprintf(stderr,"LaserGPF enabled at launch\n"); 
+  }else{
+    fprintf(stderr,"LaserGPF disabled at launch\n"); 
+  }
 }
 
 LaserGPF::~LaserGPF()
@@ -216,6 +225,16 @@ double LaserGPF::likelihoodFunction(const RBIS & state)
 bool LaserGPF::getMeasurement(const RBIS & state, const RBIM & cov, const bot_core::planar_lidar_t * laser_msg,
     Eigen::VectorXd & z_effective, Eigen::MatrixXd & R_effective)
 {
+  // Periodically re-confirm enable/disable:
+  print_tic++;
+  if (!laser_enabled){
+    if (print_tic % 160 ==0)
+      fprintf(stderr, "d");
+    return false; 
+  }
+  if (print_tic % 160 ==0)
+    fprintf(stderr, "e");
+  
 
   bot_core_planar_lidar_t * laser_msg_c = new bot_core_planar_lidar_t;
   laser_msg_c->intensities = new float[laser_msg->nintensities];
