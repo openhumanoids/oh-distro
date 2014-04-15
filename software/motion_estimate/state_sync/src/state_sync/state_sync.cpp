@@ -174,11 +174,11 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
 void state_sync::setPoseToZero(PoseT &pose){
   pose.utime = 0; // use this to signify un-initalised
-  pose.pos = Eigen::Vector3d::Identity();
-  pose.vel = Eigen::Vector3d::Identity();
+  pose.pos << 0,0, 0.95;// for ease of use//Eigen::Vector3d::Identity();
+  pose.vel << 0,0,0;
   pose.orientation << 1.,0.,0.,0.;
-  pose.rotation_rate = Eigen::Vector3d::Identity();
-  pose.accel = Eigen::Vector3d::Identity();
+  pose.rotation_rate << 0,0,0;
+  pose.accel << 0,0,0;
 }
 
 void state_sync::setEncodersFromParam() {
@@ -537,10 +537,10 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
 // Returns false if the pose is old or hasn't appeared yet
 bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
   // TODO: add comparison of Atlas State utime and Pose's utime
-  if (pose.utime ==0){
-    std::cout << "haven't received pelvis pose, refusing to publish ERS\n";
-    return false;
-  }
+  //if (pose.utime ==0){
+  //  std::cout << "haven't received pelvis pose, refusing to publish ERS\n";
+  //  return false;
+  //}
   
   msg.pose.translation.x = pose.pos[0];
   msg.pose.translation.y = pose.pos[1];
