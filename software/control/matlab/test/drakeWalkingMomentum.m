@@ -11,7 +11,7 @@ options.ignore_friction = true;
 options.dt = 0.002;
 if (nargin>0); options.use_mex = use_mex;
 else options.use_mex = true; end
-if (nargin<2); use_ik = true; end
+if (nargin<2); use_ik = false; end
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')

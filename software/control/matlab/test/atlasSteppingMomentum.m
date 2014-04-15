@@ -87,7 +87,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.075;
+request.default_step_params.step_speed = 0.05;
 request.default_step_params.step_height = 0.075;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -140,7 +140,7 @@ ctrl_data = SharedDataHandle(struct(...
 % playback(v,traj,struct('slider',true));
 
 % instantiate QP controller
-options.slack_limit = 50;
+options.slack_limit = 100;
 options.w_qdd = 0.1*ones(nq,1);
 options.W_hdot = diag([0;0;0;200;200;200]);
 % options.w_qdd = 1e-4*ones(nq,1);
@@ -163,7 +163,7 @@ qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 % cascade PD block
 options.Kp = 50.0*ones(nq,1);
-options.Kd = 8.0*ones(nq,1);
+options.Kd = 5.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -247,7 +247,6 @@ while tt<T
     if tt_prev~=-1
       dt = 0.99*dt + 0.01*(tt-tt_prev);
     end
-    dt
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     

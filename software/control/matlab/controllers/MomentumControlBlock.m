@@ -209,6 +209,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
     
   function varargout=mimoOutput(obj,t,~,varargin)
     %out_tic = tic;
+    persistent infocount
+    
+    if isempty(infocount)
+      infocount = 0;
+    end
     ctrl_data = obj.controller_data.data;
       
     x = varargin{1};
@@ -537,6 +542,20 @@ classdef MomentumControlBlock < MIMODrakeSystem
       if (obj.use_mex==1)
         [y,active_supports_mex,qdd,info] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end},condof, ...
           supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+        
+        if info < 0 
+          infocount = infocount +1;
+        else
+          infocount = 0;
+        end
+        if infocount > 10
+          % kill atlas
+          disp('freezing atlas!');
+          behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
+          d.utime = 0;
+          d.command = 'freeze';
+          behavior_pub.publish(d);
+        end
         
 %         %% FOR DEBUGGING
 %         active_contacts_msg = drc.foot_contact_estimate_t();
