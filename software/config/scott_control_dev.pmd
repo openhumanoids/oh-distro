@@ -30,7 +30,7 @@ group "2.core" {
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_05.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
         host = "robot";
     }
     cmd "model_LH_RH" {
@@ -57,7 +57,7 @@ group "4.state_est" {
         host = "robot";
     }
     cmd "se-fusion" {
-        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_05.cfg";
+        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02_control.cfg";
         host = "robot";
     }
 }
