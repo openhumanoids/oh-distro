@@ -403,7 +403,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   lb.head(nq) = -1e3*VectorXd::Ones(nq);
   ub.head(nq) = 1e3*VectorXd::Ones(nq);
   lb.segment(nq,nf) = VectorXd::Zero(nf);
-  ub.segment(nq,nf) = 500*VectorXd::Ones(nf);
+  ub.segment(nq,nf) = 1e3*VectorXd::Ones(nf);
   lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 
@@ -421,8 +421,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
 	}
 
-  Qnfdiag = MatrixXd::Constant(nf,1,REG);
-  Qneps = MatrixXd::Constant(neps,1,0.001+REG);
+  Qnfdiag = MatrixXd::Constant(nf,1,0.005+REG);
+  Qneps = MatrixXd::Constant(neps,1,1.0+REG);
 
   QBlkDiag[0] = &pdata->Hqp;
   if (nc>0) {
@@ -496,6 +496,29 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (nlhs>7) {
     plhs[7] = eigenToMatlab(beq);
   }
+
+  if (nlhs>8) {
+    plhs[8] = eigenToMatlab(Ain_lb_ub);
+  }
+
+  if (nlhs>9) {
+    plhs[9] = eigenToMatlab(bin_lb_ub);
+  }
+
+  if (nlhs>10) {
+    plhs[10] = eigenToMatlab(Qnfdiag);
+  }
+
+  if (nlhs>11) {
+    plhs[11] = eigenToMatlab(Qneps);
+  }
+
+  if (nlhs>12) {
+    plhs[12] = eigenToMatlab(alpha);
+  }
+
+
+
 
   if (model) { 
     GRBfreemodel(model); 

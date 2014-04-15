@@ -375,7 +375,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       % Set up problem constraints ------------------------------------------
 
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
-      ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
+      ub = [ 1e3*ones(1,nq) 1e3*ones(1,nf) obj.slack_limit*ones(1,neps)]';
 
       Aeq_ = cell(1,length(varargin)+1);
       beq_ = cell(1,5);
@@ -459,9 +459,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
         fqp = fqp - hdot_des'*obj.W_hdot*A*Iqdd;
         fqp = fqp - (obj.w_qdd.*q_ddot_des)'*Iqdd;
 
-        %Hqp(nq+(1:nf),nq+(1:nf)) = 0.005*eye(nf); 
+        Hqp(nq+(1:nf),nq+(1:nf)) = 0.005*eye(nf); 
         % quadratic slack var cost 
-        Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
         fqp = -q_ddot_des'*Iqdd;
@@ -478,14 +478,21 @@ classdef MomentumControlBlock < MIMODrakeSystem
       bin_fqp = [bin; -lb(lbind); ub(ubind)];
 
       % call fastQPmex first
-      QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq),zeros(nf,1)+ REG*ones(nf,1),0.001*ones(neps,1)+ REG*ones(neps,1)};
+      QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq), ...
+									diag(Hqp(nq+(1:nf),nq+(1:nf)))+REG*ones(nf,1), ...
+									diag(Hqp(nparams-neps+1:end,nparams-neps+1:end))+REG*ones(neps,1)};
       Aeq_fqp = full(Aeq);
       % NOTE: model.obj is 2* f for fastQP!!!
       [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
 
+			if info_fqp<0
+				disp('fastqp failed, trying to reset the active set');
+				[alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,[]);
+			end
+
       if info_fqp<0
         % then call gurobi
-        disp('failed over to gurobi');
+        disp('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!failed over to gurobi');
         model.Q = sparse(Hqp + REG*eye(nparams));
         model.A = [Aeq; Ain];
         model.rhs = [beq; bin];
@@ -575,17 +582,20 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
         
       else
-        [y_mex,active_supports_mex,mex_qdd,info_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex] = MomentumControllermex(obj.mex_ptr.data,...
+        [y_mex,active_supports_mex,mex_qdd,info_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha_mex] = MomentumControllermex(obj.mex_ptr.data,...
           1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
         valuecheck(y,y_mex,1e-2); 
-        valuecheck(qdd,mex_qdd,1e-2); 
-        valuecheck(Hqp(1:nq,1:nq),Hqp_mex,1e-6);
+				valuecheck(qdd,mex_qdd,1e-2); 
+        valuecheck(Hqp,blkdiag(Hqp_mex,diag(Qf),diag(Qeps)),1e-6);
         valuecheck(fqp',fqp_mex,1e-6);
         valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6);
         valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
+        valuecheck(Ain,Ain_mex(1:length(bin),:),1e-6);
+        valuecheck(bin,bin_mex(1:length(bin)),1e-6); 
+				valuecheck([-lb;ub],bin_mex(length(bin)+1:end),1e-6);
       end
     end
 

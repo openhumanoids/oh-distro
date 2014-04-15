@@ -118,13 +118,13 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',x0(1:nq),...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');ankle_ind;findJointIndices(r,'neck')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
 
 % instantiate QP controller
 options.dt = 0.002;
 options.slack_limit = 100;
-options.w_qdd = 1.0*ones(nq,1);
+% options.w_qdd = 1.0*ones(nq,1);
 % options.w_qdd(findJointIndices(r,'leg'))=0;
 options.lcm_foot_contacts = false;
 options.debug = false;
