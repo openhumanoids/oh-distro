@@ -123,6 +123,31 @@ activation code:
 
 https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Installing\_MIT\_DRC#Install\_MATLAB\_and\_Drake
 
+After installing MATLAB, two of the symlinks for libraries need to be changed:
+
+::
+
+   cd /usr/local/MATLAB/R2012b/sys/os/glnxa64
+   ls -l
+
+The sym links for libstdc++.so.6 and libgfortran.so.3 should point to versions in /usr/lib, not local ones.
+
+Before changing this libraries, first make sure g++ 4.4 is installed:
+
+::
+
+   sudo apt-get install g++-4.4
+
+Now, modify the symlinks:
+
+::
+
+   sudo rm libgfortran.so.3
+   sudo ln -s /usr/lib/x86_64-linux-gnu/libgfortran.so.3.0.0 libgfortran.so.3
+   sudo rm libstdc++.so.6
+   sudo ln -s /usr/lib/gcc/x86_64-linux-gnu/4.4/libstdc++.so libstdc++.so.6
+
+
 GUROBI License
 --------------
 
