@@ -115,8 +115,9 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
   lcm::Subscription* sub5 = lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
   lcm::Subscription* sub6 =lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
-  pose_BDI_.utime =0; // use this to signify un-initalised
-  pose_MIT_.utime =0; // use this to signify un-initalised
+  
+  setPoseToZero(pose_BDI_);
+  setPoseToZero(pose_MIT_);
   
   bool use_short_queue = true;
   if (use_short_queue){
@@ -169,10 +170,16 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     }
     std::cout << "Created " << joint_kf_.size() << " Kalman Filters with noise "<< process_noise << ", " << observation_noise << "\n";
   }
-  
-  
 }
 
+void state_sync::setPoseToZero(PoseT &pose){
+  pose.utime = 0; // use this to signify un-initalised
+  pose.pos = Eigen::Vector3d::Identity();
+  pose.vel = Eigen::Vector3d::Identity();
+  pose.orientation << 1.,0.,0.,0.;
+  pose.rotation_rate = Eigen::Vector3d::Identity();
+  pose.accel = Eigen::Vector3d::Identity();
+}
 
 void state_sync::setEncodersFromParam() {
   
@@ -563,10 +570,10 @@ bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
 
 bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
   // TODO: add comparison of Atlas State utime and Pose's utime
-  if (pose.utime ==0){
-    std::cout << "haven't received pelvis pose, refusing to populated pose_t\n";
-    return false;
-  }
+  //if (pose.utime ==0){
+  //  std::cout << "haven't received pelvis pose, refusing to populated pose_t\n";
+  //  return false;
+  //}
   
   msg.utime = pose.utime;
   msg.pos[0] = pose.pos[0];

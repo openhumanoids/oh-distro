@@ -93,6 +93,7 @@ class state_sync{
 
     PoseT pose_BDI_;
     PoseT pose_MIT_;
+    void setPoseToZero(PoseT &pose);
     
     // Kalman Filters for joint angles:
     void filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity);
