@@ -176,10 +176,35 @@ void ConvertOctomap::publishOctree(OcTree* tree, std::string channel){
 }
 
 
+void backupFiles(){
+  std::string old_path = getDataPath();
+  
+  time_t rawtime;
+  struct tm * timeinfo;  
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );  
+  static char newdir_name[150];
+  sprintf(newdir_name, "backup-%d-%02d-%02d-%02d-%02d-%02d",
+    1900 + timeinfo->tm_year,
+    timeinfo->tm_mon,    
+    timeinfo->tm_mday, timeinfo->tm_hour,
+    timeinfo->tm_min, timeinfo->tm_sec);  
+  std::string new_path  = string( old_path + "/" +  newdir_name) ;
+  std::cout << new_path << "\n";
+  mkdir( new_path.c_str() , S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
+  
+  // if the files exist move them:
+  rename( string( old_path + "/octomap.pcd" ).c_str() , 
+          string( new_path + "/octomap.pcd" ).c_str() );  
+  rename( string( old_path + "/octomap.bt" ).c_str() , 
+          string( new_path + "/octomap.bt" ).c_str() );  
+  rename( string( old_path + "/octomap.bt_blurred" ).c_str() , 
+          string( new_path + "/octomap.bt_blurred" ).c_str() );     
+}
+
+
+
 void ConvertOctomap::doWork(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
-  std::string path = "/tmp/";
-  std::cout << "Processing cloud with " << cloud->width * cloud->height
-            << " points" << std::endl;  
             
   tree_ = convertPointCloudToOctree(cloud);
   publishOctree(tree_,"OCTOMAP");
@@ -200,16 +225,27 @@ void ConvertOctomap::doWork(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
     if (verbose_>=1) cout << "time to insert scans: " << time_to_blur << " sec" << endl;
     // publishOctree(tree_blurred,"OCTOMAP_BLURRED");
   
-    if (co_cfg_.write_output){
-      std::stringstream s;
-      s <<  getDataPath() <<   "/octomap.bt" ;
-      printf("Saving original map to: %s\n", s.str().c_str());
-      tree_->writeBinary(s.str().c_str());
-      s << "_blurred"; // " << co_cfg_.blur_sigma ;
-      std::cout << "Saving blurred map to: " << s.str() << " with blur sigma of " << co_cfg_.blur_sigma << "\n" ;
-      octomap_utils::saveOctomap(tree_blurred, s.str().c_str(), minNegLogLike);  
-    }
+    
+    // Backup  old octomaps and write new ones:
+    backupFiles();
+    
+    std::stringstream s1;
+    s1 <<  getDataPath() <<   "/octomap.pcd" ;
+    printf("Saving original point cloud to: %s\n", s1.str().c_str());
+    pcl::PCDWriter writer;
+    writer.write (s1.str(), *cloud, true); // binary =true
+    cout << "Finished writing "<< cloud->points.size() <<" points to:\n" << s1.str() <<"\n";
+    
+    std::stringstream s;
+    s <<  getDataPath() <<   "/octomap.bt" ;
+    printf("Saving original map to: %s\n", s.str().c_str());
+    tree_->writeBinary(s.str().c_str());
+    s << "_blurred"; // " << co_cfg_.blur_sigma ;
+    std::cout << "Saving blurred map to: " << s.str() << " with blur sigma of " << co_cfg_.blur_sigma << "\n" ;
+    octomap_utils::saveOctomap(tree_blurred, s.str().c_str(), minNegLogLike);  
+      
   }
+  
   
   
 }
