@@ -1,6 +1,10 @@
 #ifndef CONVERT_OCTOMAP_HPP_
 #define CONVERT_OCTOMAP_HPP_
 
+// file i-o
+#include <sys/types.h>
+#include <sys/stat.h>
+
 
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
@@ -18,8 +22,6 @@ using namespace octomap;
 struct ConvertOctomapConfig
 {
     double blur_sigma;
-    double repeat_period;
-    bool write_output;
     bool blur_map;
 };
 

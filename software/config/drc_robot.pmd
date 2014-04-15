@@ -89,6 +89,10 @@ group "a.1.core" {
         exec = "gpf-laser";
         host = "robot";
     }
+    cmd "create-octomap" {
+        exec = "se-create-octomap";
+        host = "robot";
+    }
     cmd "viewer" {
         exec = "bash /home/drc/drake_designer_cmd.sh";
         host = "robot";
@@ -297,10 +301,6 @@ group "m.state_est" {
     }
     cmd "old-viewer" {
         exec = "drc-viewer -a";
-        host = "robot";
-    }
-    cmd "build-octomap" {
-        exec = "se-create-octomap  -s 1500 -b 0.1 -r 20 -w -u";
         host = "robot";
     }
 }

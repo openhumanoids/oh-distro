@@ -72,6 +72,7 @@ public:
     lcm_front->lcm_recv->subscribe("STATE_EST_LASER_ENABLE", &app_t::laser_enable_handler, this);
     //
     lcm_front->lcm_recv->subscribe("ATLAS_STATUS", &app_t::atlas_status_handler, this);
+    lcm_front->lcm_recv->subscribe("STATE_EST_USE_NEW_MAP", &app_t::use_new_map_handler, this);
     behavior_prev = drc::atlas_status_t::BEHAVIOR_NONE;
     utime_standing_trans = 0;
     
@@ -117,6 +118,16 @@ public:
     fprintf(stderr, "Forcing enabling of laser from viewer\n");
     utime_standing_trans = msg->utime;
   }
+
+  void use_new_map_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
+      const drc::utime_t * msg){
+    std::cout << "Deleting current gpf and restarting\n";
+    delete laser_handler;
+    
+    laser_handler = new LaserGPFHandler(lcm_front->lcm_pub->getUnderlyingLCM(), lcm_front->param, lcm_front->frames);
+    
+        
+  } 
   
   void atlas_status_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
       const drc::atlas_status_t * msg){
@@ -145,7 +156,6 @@ public:
     }
     behavior_prev = msg->behavior;
   }
-  
   
   ////////////
   
