@@ -61,7 +61,7 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 30;
+T = 40;
 if 1
   % create figure 8 zmp traj
   dt = 0.01;
@@ -141,9 +141,9 @@ leg_idx = findJointIndices(r,'leg');
 
 % instantiate QP controller
 options.slack_limit = 20;
-options.w_qdd = 1e-4*ones(nq,1);
-options.w_qdd(leg_idx) = 1e-6;
-options.W_hdot = diag([1;1;1;1000;1000;1000]);
+options.w_qdd = 0.1*ones(nq,1);
+% options.w_qdd(leg_idx) = 1e-6;
+options.W_hdot = diag([0;0;0;100;100;100]);
 % options.Kp = 100;
 % options.Kd = 20;
 options.lcm_foot_contacts = false;
@@ -154,9 +154,9 @@ options.output_qdd = true;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 % cascade PD block
-options.Kp = 30.0*ones(nq,1);
-options.Kd = 6.0*ones(nq,1);
-pd = SimplePDBlock(r,ctrl_data,options);
+options.Kp = 50.0*ones(nq,1);
+options.Kd = 8.0*ones(nq,1);
+pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 1;

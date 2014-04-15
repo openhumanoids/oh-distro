@@ -74,7 +74,7 @@ request.goal_pos = encodePosition3d(navgoal);
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
-request.params.max_num_steps = 20;
+request.params.max_num_steps = 2;
 request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.25;
@@ -118,7 +118,7 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-qtraj = PPTrajectory(foh(ts,walking_plan.xtraj(1:nq,:)));
+%qtraj = PPTrajectory(foh(ts,walking_plan.xtraj(1:nq,:)));
 
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
@@ -128,7 +128,7 @@ ctrl_data = SharedDataHandle(struct(...
   'supports',[walking_ctrl_data.supports{:}],...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'trans_drift',[0;0;0],...
-  'qtraj',qtraj,...
+  'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
@@ -162,9 +162,9 @@ qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 
 % cascade PD block
-options.Kp = 60.0*ones(nq,1);
+options.Kp = 50.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
-pd = SimplePDBlock(r,ctrl_data,options);
+pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 1;
@@ -235,7 +235,7 @@ r_ankle = findJointIndices(r,'r_leg_ak');
 l_ankle = findJointIndices(r,'l_leg_ak');
 
 % low pass filter for floating base velocities
-alpha_v = 0.1;
+alpha_v = 0.08;
 float_v = 0;
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
@@ -257,9 +257,9 @@ while tt<T
     
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    qt = fasteval(qtraj,tt);
+    %qt = fasteval(qtraj,tt);
  
-    u_and_qdd = output(sys,tt,[],[qt;q;qd;q;qd]);
+    u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+1:end);
     udes(joint_act_ind) = u(joint_act_ind);
