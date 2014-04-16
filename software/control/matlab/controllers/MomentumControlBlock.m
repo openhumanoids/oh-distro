@@ -67,7 +67,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       sizecheck(options.W_hdot,[6 6]);
       obj.W_hdot = options.W_hdot;
     else
-      obj.W_hdot = diag([0.1;0.1;0.1;1.0;1.0;1.0]);
+      obj.W_hdot = diag([0.1;0.1;0.1;1;1;1]);
 		end
 		
 		% weight for the desired qddot objective term
@@ -567,8 +567,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
 				end
         %% FOR DEBUGGING
 				
-				%save(sprintf('momentum_dump_t=%d.mat',t*1e6),'y','active_supports','qdd','info','Hqp_mex','fqp_mex','Aeq_mex','beq_mex','Ain_mex','bin_mex','Qf','Qeps','alpha');
-				
+% 				save(sprintf('momentum_dump_t=%d.mat',t*1e6),'y','active_supports','qdd','info','Hqp_mex','fqp_mex','Aeq_mex','beq_mex','Ain_mex','bin_mex','Qf','Qeps','alpha');
+       % alpha(35:59)
 				
 				%% FOR DEBUGGING
 %         active_contacts_msg = drc.foot_contact_estimate_t();
@@ -588,7 +588,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
         
       else
-        [y_mex,active_supports_mex,mex_qdd,info_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha_mex] = MomentumControllermex(obj.mex_ptr.data,...
+        [y_mex,active_supports_mex,mex_qdd,~,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha_mex] = MomentumControllermex(obj.mex_ptr.data,...
           1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);

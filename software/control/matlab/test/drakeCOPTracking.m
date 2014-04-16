@@ -18,9 +18,9 @@ nq = getNumDOF(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 1*randn();
-xstar(2) = 1*randn();
-xstar(6) = pi/2*randn();
+xstar(1) = 0;%1*randn();
+xstar(2) = 0;%1*randn();
+xstar(6) = 0;%pi/2*randn();
 %xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
 
@@ -28,7 +28,7 @@ x0 = xstar;
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 10;
+T = 20;
 if 0
   % create figure 8 zmp traj
   dt = 0.01;
@@ -97,12 +97,12 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.slack_limit = 20;
-options.w_qdd = 1e-4*ones(nq,1);
-options.W_hdot = diag([0;0;0;100;100;100]);
+options.w_qdd = 0.1*ones(nq,1);
+options.W_hdot = diag([1;1;1;1;1;1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.05;
+options.contact_threshold = 0.01;
 options.output_qdd = true;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
