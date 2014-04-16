@@ -1,6 +1,5 @@
 pod-build/
 *.pyc
-data
 *.sublime-project
 *.sublime-workspace
 .viewer-prefs
