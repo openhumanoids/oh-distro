@@ -71,6 +71,7 @@ class pointcloud_lcm {
 
 
     uint8_t* rgb_buf_ ;
+    uint8_t* depth_buf_;
 };
 
 
