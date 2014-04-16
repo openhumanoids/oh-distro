@@ -13,7 +13,8 @@ classdef StatelessFootstepPlanner
       if request.params.ignore_terrain
         biped = biped.setTerrain(KinematicTerrainMap(biped, q0, true));
       else
-        biped = biped.setTerrain(biped.getTerrain().setBackupTerrain(biped, q0));
+%         biped = biped.setTerrain(biped.getTerrain().setBackupTerrain(biped, q0));
+        biped = biped.setTerrain(biped.getTerrain());
       end
 
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);

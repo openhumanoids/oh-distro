@@ -117,6 +117,11 @@ classdef WalkingPDBlock < MIMODrakeSystem
     end
    
     function y=mimoOutput(obj,t,~,varargin)
+      global infocount 
+      if isempty(infocount)
+        infocount = 0;
+      end
+      
       x = varargin{2};
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
@@ -171,7 +176,11 @@ classdef WalkingPDBlock < MIMODrakeSystem
 			end
 			
 			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
-
+      if infocount > 0
+  		  save(sprintf('pd_dump_t=%2.3f.mat',t),'q','q_des','err_q','y','compos','approx_args');
+      end
+      
+      
 		end
   end
   
