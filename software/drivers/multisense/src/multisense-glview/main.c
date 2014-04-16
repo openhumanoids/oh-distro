@@ -33,8 +33,9 @@ int window;
 
 // 800x800 - vrc
 // 1024x544 - drc (real sensor)
+// 1024x1024 - extended HFOV real sensor
 int width = 1024;
-int height = 544;
+int height = 1024;
 
 GLuint gl_leftpane_tex;
 int32_t left_color_format;
@@ -297,6 +298,7 @@ static void usage(const char* progname)
 	           "  -c channel  Subscribe channel name\n"
                    "  -h          This help message\n", 
         	   "  -o path     Save frames to PNG\n",
+                   "  -p          Use previous resolution (1024x544)\n",
                    g_path_get_basename(progname));
   exit(1);
 }
@@ -375,7 +377,37 @@ void write_png_file(char* file_name, int width, int height, png_bytep* row_point
 
 int main(int argc, char **argv)
 {
-  int res;
+
+  char channelName[512];
+  strcpy(channelName, "CAMERA");
+  char *lcm_url = NULL;
+
+  int c;
+  while ((c = getopt (argc, argv, "hl:c:o:p")) >= 0) {
+    switch (c) {
+    case 'l':
+      lcm_url = strdup(optarg);
+      printf("Using LCM URL \"%s\"\n", lcm_url);
+      break;
+    case 'c' :
+      strcpy(channelName, optarg);
+      printf("Listening to channel %s\n", channelName);
+      break;    
+    case 'o' :
+      strcpy(outputPath, optarg);
+      printf("Capturing PNGs to %s\n", outputPath);
+      doOutput = 1;
+      break;
+    case 'p' :
+      width = 1024;
+      height = 544;
+      break;
+    case 'h':
+    case '?':
+      usage(argv[0]);
+    }
+  }
+  lcm = lcm_create(lcm_url);  
   
   int npixels = width*height;
   
@@ -395,7 +427,8 @@ int main(int argc, char **argv)
   glutInit(&argc, argv);
   
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-  glutInitWindowSize(width*2, height);
+  //glutInitWindowSize(width*2, height);
+  glutInitWindowSize(width, height/2);
   glutInitWindowPosition(0, 0);
   
   window = glutCreateWindow("Multisense LCM viewer");
@@ -407,32 +440,6 @@ int main(int argc, char **argv)
 
   InitGL(width*2, height);
 
-  char channelName[512];
-  strcpy(channelName, "CAMERA");
-
-  int c;
-  char *lcm_url = NULL;
-  while ((c = getopt (argc, argv, "hl:c:o:")) >= 0) {
-    switch (c) {
-    case 'l':
-      lcm_url = strdup(optarg);
-      printf("Using LCM URL \"%s\"\n", lcm_url);
-      break;
-    case 'c' :
-      strcpy(channelName, optarg);
-      printf("Listening to channel %s\n", channelName);
-      break;    
-    case 'o' :
-      strcpy(outputPath, optarg);
-      printf("Capturing PNGs to %s\n", outputPath);
-      doOutput = 1;
-      break;
-    case 'h':
-    case '?':
-      usage(argv[0]);
-    }
-  }
-  lcm = lcm_create(lcm_url);
   
   multisense_images_t_subscribe(lcm, channelName, on_frame, NULL);
   
