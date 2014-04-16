@@ -5,6 +5,11 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % load robot model
+% load phat_lf_0p7_rmse_1p34_cm;
+% load phat_utorso_l_hand_only_lf_0p8_rmse_1p23_cm.mat;
+% r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_param_simplified.urdf'));
+% r = r.setParams(double(phat));
+
 r = Atlas();
 r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
@@ -141,8 +146,8 @@ leg_idx = findJointIndices(r,'leg');
 
 % instantiate QP controller
 options.slack_limit = 50;
-options.w_qdd = 1.0*ones(nq,1);
-options.W_hdot = diag([1;1;1;1;1;1]);
+options.w_qdd = 0.1*ones(nq,1);
+options.W_hdot = diag([1;1;1;10;10;10]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -151,7 +156,7 @@ options.output_qdd = true;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 % cascade PD block
-options.Kp = 50.0*ones(nq,1);
+options.Kp = 60.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
@@ -201,7 +206,7 @@ while tt<T
     if tt_prev~=-1
       dt = 0.99*dt + 0.01*(tt-tt_prev);
     end
-    dt
+    
     tt_prev=tt;
     tau = x(2*nq+(1:nq));
     

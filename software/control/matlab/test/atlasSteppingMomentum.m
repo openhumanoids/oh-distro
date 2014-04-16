@@ -142,7 +142,7 @@ ctrl_data = SharedDataHandle(struct(...
 % instantiate QP controller
 options.slack_limit = 100;
 options.w_qdd = 0.1*ones(nq,1);
-options.W_hdot = diag([0;0;0;200;200;200]);
+options.W_hdot = diag([0.1;0.1;0.1;10;10;10]);
 % options.w_qdd = 1e-4*ones(nq,1);
 % options.w_qdd(findJointIndices(r,'leg')) = 1e-6;
 % options.W_hdot = diag([0;0;0;1000;1000;1000]);

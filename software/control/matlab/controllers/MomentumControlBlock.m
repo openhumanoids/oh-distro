@@ -209,7 +209,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     
   function varargout=mimoOutput(obj,t,~,varargin)
     %out_tic = tic;
-    persistent infocount
+    global infocount
     
     if isempty(infocount)
       infocount = 0;
@@ -459,9 +459,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
         fqp = fqp - hdot_des'*obj.W_hdot*A*Iqdd;
         fqp = fqp - (obj.w_qdd.*q_ddot_des)'*Iqdd;
 
-        Hqp(nq+(1:nf),nq+(1:nf)) = 0.005*eye(nf); 
+        Hqp(nq+(1:nf),nq+(1:nf)) = 0.001*eye(nf); 
         % quadratic slack var cost 
-        Hqp(nparams-neps+1:end,nparams-neps+1:end) = eye(neps); 
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
         fqp = -q_ddot_des'*Iqdd;
@@ -554,22 +554,18 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
         if info < 0 
           infocount = infocount +1;
+  				save(sprintf('momentum_dump_t=%2.3f.mat',t),'x','q_ddot_des','y','active_supports','qdd','info','Hqp_mex','fqp_mex','Aeq_mex','beq_mex','Ain_mex','bin_mex','Qf','Qeps','alpha');
         else
           infocount = 0;
         end
-        if infocount > 10
+        if infocount > 2
           % kill atlas
           disp('freezing atlas!');
           behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
           d.utime = 0;
           d.command = 'freeze';
           behavior_pub.publish(d);
-				end
-        %% FOR DEBUGGING
-				
-% 				save(sprintf('momentum_dump_t=%d.mat',t*1e6),'y','active_supports','qdd','info','Hqp_mex','fqp_mex','Aeq_mex','beq_mex','Ain_mex','bin_mex','Qf','Qeps','alpha');
-       % alpha(35:59)
-				
+        end			
 				%% FOR DEBUGGING
 %         active_contacts_msg = drc.foot_contact_estimate_t();
 %         active_contacts_msg.detection_method = 0;

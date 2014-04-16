@@ -421,8 +421,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
 	}
 
-  Qnfdiag = MatrixXd::Constant(nf,1,0.005+REG);
-  Qneps = MatrixXd::Constant(neps,1,1.0+REG);
+  Qnfdiag = MatrixXd::Constant(nf,1,0.001+REG);
+  Qneps = MatrixXd::Constant(neps,1,0.001+REG);
 
   QBlkDiag[0] = &pdata->Hqp;
   if (nc>0) {
