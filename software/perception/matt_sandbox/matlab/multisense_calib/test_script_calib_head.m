@@ -23,10 +23,10 @@ T = [0;0;0];
 P_post_spindle_to_lidar = [R,T(:);0,0,0,1];
 
 %% stereo calib data and initial transforms (this is for sensor 02)
-fx = 603.884948730468750;
+fx = 591.909423828125;
 fy = fx;
-cx = 512.940734863281250;
-cy = 512.5943603515625000;
+cx = 512;
+cy = 512;
 baseline = 0.0700931567882511;
 K = [fx,0,cx;0,fy,cy;0,0,1];
 
