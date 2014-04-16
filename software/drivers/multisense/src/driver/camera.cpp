@@ -333,6 +333,7 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     std::vector<system::DeviceMode> modes;
     system::DeviceMode bestMode;
     int best_width_delta = 1000000;
+    int max_height = 0;
     calibrated_width_ = 0;
     if (Status_Ok != driver_->getDeviceModes(modes)) {
       printf("Failed to get device modes\n");
@@ -341,10 +342,12 @@ Camera::Camera(Channel* driver, CameraConfig& config_) :
     else {
       for (auto mode : modes) {
         int delta = std::abs((int)mode.width - (int)config_.desired_width_);
-        if (delta < best_width_delta) {
-          bestMode.width = mode.width;
-          bestMode.height = mode.height;
-          best_width_delta = delta;
+        if (delta <= best_width_delta) {
+          if (mode.height > max_height) {
+            bestMode.width = mode.width;
+            bestMode.height = mode.height;
+            best_width_delta = delta;
+          }
         }
         // this assumes that the largest image size was used for calibration
         if (mode.width > calibrated_width_) {

@@ -1,13 +1,13 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++0x -Wno-deprecated-declarations -Wreturn-type -Wuninitialized -Wunused-variable")
 
-add_library(multisense_lcm SHARED laser.cpp camera.cpp)
+add_library(multisense_lcm SHARED laser.cpp camera.cpp imu.cpp)
 
 pods_use_pkg_config_packages(multisense_lcm lcm 
   lcmtypes_bot2-core opencv kdl-parser 
   multisense_lib)
 
 set_target_properties(multisense_lcm PROPERTIES SOVERSION 1)
-pods_install_headers(camera.h laser.h DESTINATION multisense_lcm )
+pods_install_headers(camera.h laser.h imu.h DESTINATION multisense_lcm )
 
 pods_install_libraries(multisense_lcm)
 

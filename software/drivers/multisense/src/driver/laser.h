@@ -76,10 +76,6 @@ private:
     multisense::state_t lcm_state_;
     void publishLCMTransforms(int64_t utime_out, int32_t spindleAngle);
 
-    // Subscriptions
-    
-    boost::mutex sub_lock_;
-
 }; // class
 
 }// namespace
