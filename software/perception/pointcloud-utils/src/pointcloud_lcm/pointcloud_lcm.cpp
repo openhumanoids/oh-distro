@@ -34,9 +34,10 @@ pointcloud_lcm::pointcloud_lcm (lcm_t* publish_lcm):
   memcpy(kcal->depth_to_rgb_translation, depth_to_rgb_translation  , 3*sizeof(double));  
 
 
-  // Data buffer
+  // Data buffers
+  //rgb_buf_ = (uint8_t*) malloc(10*1024 * 1024 * sizeof(uint8_t)); // wasn't large enough for 1024x1024 decompression
   rgb_buf_ = (uint8_t*) malloc(10*1024 * 1024 * sizeof(uint8_t)); 
-
+  depth_buf_ = (uint8_t*) malloc( 4*1024*1204*sizeof(uint8_t));  // arbitary size chosen..
 
   decimate_ =32.0;
 }
@@ -262,7 +263,7 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 
 void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb){
-  // cout << msg->utime << " | "<< msg->images[0].width <<" | "<< msg->images[0].height <<" in unpack routine\n";
+  // cout << width <<" | "<< height <<" in unpack routine\n";
 
   int h = height;//msg->images[0].height;
   int w = width;//msg->images[0].width;
@@ -276,7 +277,6 @@ void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t*
   //          disparity_orig_temp.data);
   
   // disparity_orig_temp.data = msg->images[1].data.data();   // ... is a simple assignment possible?
-  
   cv::Mat_<float> disparity_orig(h, w);
   disparity_orig = disparity_orig_temp;
   
@@ -287,7 +287,7 @@ void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t*
   disparity_buf_.resize(h * w);
   cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
   disparity = disparity_orig / 16.0;
-    
+
   // Allocate buffer for reprojection output
   points_buf_.resize(h * w);
   cv::Mat_<cv::Vec3f> points(h, w, &(points_buf_[0]));
@@ -296,7 +296,7 @@ void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t*
   static const bool handle_missing_values = true;
   cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
   
-
+  
 /*  int vv =400; //l2r
   int uu =512; //t2b
   cout << vv <<" " << uu << " | " << disparity( vv, uu) << " | " << points(vv,uu)[0]
@@ -310,10 +310,11 @@ void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t*
   cloud->height   =(int) (h/ (double) decimate_);
   cloud->is_dense = true;
   cloud->points.resize (cloud->width * cloud->height);  
+  // std::cout << cloud->points.size() << " cldsize\n";
   int j2=0;
   for(int v=0; v<h; v=v+ decimate_) { // t2b
     for(int u=0; u<w; u=u+decimate_ ) {  //l2r
-        //cout <<  points(v,u)[0] << " " <<  points(v,u)[1] << " " <<  points(v,u)[1] << "\n";
+        // cout <<j2 << " " << v << " " << u << " | " <<  points(v,u)[0] << " " <<  points(v,u)[1] << " " <<  points(v,u)[1] << "\n";
         cloud->points[j2].x = points(v,u)[0];
         cloud->points[j2].y = points(v,u)[1];
         cloud->points[j2].z = points(v,u)[2];
@@ -362,7 +363,17 @@ void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<
     std::cout << "pointcloud_lcm::unpack_multisense | type not understood\n";
     exit(-1);
   }
-  unpack_multisense(msg->images[1].data, rgb_buf_, msg->images[0].height, msg->images[0].width, repro_matrix, 
+  
+  // TODO: support other modes (as in the renderer)
+  if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
+    unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
+    uncompress(depth_buf_ , &dlen, msg->images[1].data, msg->images[1].size);
+  } else{
+    std::cout << "pointcloud_lcm::unpack_multisense | depth type not understood\n";
+    exit(-1);
+  }  
+  
+  unpack_multisense(depth_buf_, rgb_buf_, msg->images[0].height, msg->images[0].width, repro_matrix, 
                                        cloud, is_rgb);
 }
 
@@ -383,9 +394,21 @@ void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_
     //        rgb_data, msg->image.width, msg->image.height, msg->image.width* 3);
     is_rgb = true;
   }else{
-    std::cout << "pointcloud_lcm::unpack_multisense | type not understood\n";
+    std::cout << "pointcloud_lcm::unpack_multisense | image type not understood\n";
     exit(-1);
   }
-  unpack_multisense(msg->images[1].data.data(), msg->images[0].data.data(), msg->images[0].height, msg->images[0].width, repro_matrix, 
+  
+  // TODO: support other modes (as in the renderer)
+  if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
+    unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
+    uncompress(depth_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
+  } else{
+    std::cout << "pointcloud_lcm::unpack_multisense | depth type not understood\n";
+    exit(-1);
+  }
+  
+  unpack_multisense(depth_buf_, rgb_buf_, msg->images[0].height, msg->images[0].width, repro_matrix, 
                                        cloud, is_rgb);
+  // unpack_multisense(msg->images[1].data.data(), msg->images[0].data.data(), msg->images[0].height, msg->images[0].width, repro_matrix, 
+  //                                     cloud, is_rgb);
 }

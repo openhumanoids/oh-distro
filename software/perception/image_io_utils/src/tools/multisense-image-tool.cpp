@@ -176,12 +176,18 @@ void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   }
   cout << counter_ << " @ "<< msg->utime << " | "<< msg->images[0].width <<" x "<< msg->images[0].height <<"\n";
 
+  //cout << msg->n_images << "\n";
+  //cout << "image 0: " << msg->image_types[0] << "\n";
+  //cout << "image 1: " << msg->image_types[1] << "\n";
+  //cout << "image 2: " << msg->image_types[2] << "\n";
+
   if (!output_pointcloud_)
     return;
   
   // Extract a point cloud:
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   pc_lcm_->unpack_multisense(msg,Q_,cloud);  
+  // cout << "size ptcd: " << cloud->points.size() << " " << cloud->width << " " << cloud->height << "\n";
   
   /// 2. Colorize point cloud using the image mask
   // TODO: add proper time checks ... or change change incoming messages
@@ -231,7 +237,7 @@ void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::str
       * Eigen::AngleAxisd ( 90*M_PI/180  , Eigen::Vector3d::UnitX ());
     ref_pose *= m;  
   }else{
-    botframes_cpp_->get_trans_with_utime( botframes_ ,  "CAMERA", "local", msg->utime, ref_pose);  
+    botframes_cpp_->get_trans_with_utime( botframes_ ,  "CAMERA_LEFT", "local", msg->utime, ref_pose);
   }
   Isometry3dTime ref_poseT = Isometry3dTime(msg->utime, ref_pose);
   pc_vis_->pose_to_lcm_from_list(3000, ref_poseT);    
