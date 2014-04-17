@@ -13,10 +13,12 @@
 
 #include <ConciseArgs>
 
+#include <lcmtypes/drc/atlas_state_t.hpp>
 #include <lcmtypes/drc/robot_state_t.hpp>
 
-#include <estimate_tools/kalman_filter.hpp>
-#include <estimate_tools/simple_kalman_filter.hpp>
+#include <estimate_tools/kalman_filter.hpp> // Eigen::VectorXf KF
+#include <estimate_tools/simple_kalman_filter.hpp> // Eigen::Vector2f KF
+#include <estimate_tools/Filter.hpp> // low pass f
 
 #include <Eigen/Core>
 
@@ -29,6 +31,7 @@ using namespace Eigen;
 struct CommandLineConfig
 {
     int mode;
+    std::string output_channel;
 };
 
 class App{
@@ -42,17 +45,19 @@ class App{
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    
-    void ersHandler(const lcm::ReceiveBuffer* rbuf, 
-                           const std::string& channel, const  drc::robot_state_t* msg); 
+
+    void atlasStateHandler(const lcm::ReceiveBuffer* rbuf, 
+                           const std::string& channel, const  drc::atlas_state_t* msg); 
+//    void ersHandler(const lcm::ReceiveBuffer* rbuf, 
+//                           const std::string& channel, const  drc::robot_state_t* msg); 
     void doFilter(double t, Eigen::VectorXf x, Eigen::VectorXf x_dot);
     const CommandLineConfig cl_cfg_;  
     
     EstimateTools::KalmanFilter* kf;
-    
     std::vector<EstimateTools::KalmanFilter*> joint_kf_;
-    
     std::vector<EstimateTools::SimpleKalmanFilter*> joint_skf_;
+    std::vector<LowPassFilter*> lpfilter_;
+    
     std::vector<int> filter_idx_;
     
     int64_t dtime_running_;
@@ -63,10 +68,10 @@ class App{
 App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
     lcm_(lcm_), cl_cfg_(cl_cfg_){
       
-      std::cout << "sub\n";
-      lcm_->subscribe( "EST_ROBOT_STATE" ,&App::ersHandler,this);
-    //lcm::Subscription* sub = 
-   // sub->setQueueCapacity(1);  
+  //lcm_->subscribe( "EST_ROBOT_STATE" ,&App::ersHandler,this);
+  lcm_->subscribe( "ATLAS_STATE" ,&App::atlasStateHandler,this);
+  //lcm::Subscription* sub = 
+  // sub->setQueueCapacity(1);  
   
       
   
@@ -78,23 +83,24 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
 
   if (cl_cfg_.mode == 0){ // this mode is broken
     kf = new EstimateTools::KalmanFilter( 41 );
-  
   }else if (cl_cfg_.mode == 1){
-  
     for (size_t i=0;i < filter_idx_.size(); i++){
       EstimateTools::KalmanFilter* a_kf = new EstimateTools::KalmanFilter (1, 0.01, 5E-4);
       joint_kf_.push_back(a_kf) ;
     }
     std::cout << "Created " << joint_kf_.size() << " Kalman Filters\n";
-
   } else if (cl_cfg_.mode==2) {
-  
     for (size_t i=0;i < filter_idx_.size(); i++){
       EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (0.01, 5E-4);
       joint_skf_.push_back(a_kf) ;
     }
     std::cout << "Created " << joint_skf_.size() << " Simple Kalman Filters\n";
-    
+  } else if (cl_cfg_.mode==3) {
+    for (size_t i=0;i < filter_idx_.size(); i++){
+      LowPassFilter* a_filter = new LowPassFilter ();
+      lpfilter_.push_back(a_filter);
+    }
+    std::cout << "Created " << lpfilter_.size() << " Low Pass Filters\n";
   }
   
   
@@ -132,7 +138,9 @@ void App::doFilter(double t, Eigen::VectorXf x, Eigen::VectorXf x_dot){
   
 }
 
-void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+
+//void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg){
+void App::atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){  
   int64_t tic = _timestamp_now();
   
   
@@ -150,7 +158,7 @@ void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
   double t = (double) msg->utime*1E-6;
 
   
-  if ( cl_cfg_.mode==0 ){ // Single NxN array of filters
+  if ( cl_cfg_.mode==0 ){ // Single NxN array of kalman filters
     Eigen::Map<Eigen::VectorXf>  x(   jp.data() ,  msg->joint_position.size());
     Eigen::Map<Eigen::VectorXf>  x_dot(  jv.data() ,  msg->joint_velocity.size());
     Eigen::VectorXf  x_D = x;
@@ -162,7 +170,7 @@ void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
     kf->processSample(t,x_D, x_dot_D, x_filtered, x_dot_filtered);
     Map<VectorXf>( jp_out.data(), msg->joint_position.size()) = x_filtered;
     Map<VectorXf>( jv_out.data(), msg->joint_velocity.size()) = x_dot_filtered;
-  }else if(  cl_cfg_.mode==1 ){ // Single N 1x1 array of filters
+  }else if(  cl_cfg_.mode==1 ){ // N 1x1 array of kalman filters - using Eigen::VectorXf
   
     Eigen::VectorXf  x_D = Eigen::VectorXf(1);
     Eigen::VectorXf  x_dot_D = Eigen::VectorXf(1);
@@ -177,28 +185,30 @@ void App::ersHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel,
       jv_out[ filter_idx_[i] ] = x_dot_filtered(0);
     }
 
-  }else if (cl_cfg_.mode==2){
-  
+  }else if (cl_cfg_.mode==2){ // N 1x1 array of kalman filters - using Eigen::Vector2f
     for (size_t i=0; i <  filter_idx_.size(); i++){
-      
       double x_filtered;
       double x_dot_filtered;
       joint_skf_[i]->processSample(t,  jp[filter_idx_[i]] , jv_out[filter_idx_[i]] , x_filtered, x_dot_filtered);
       jp_out[ filter_idx_[i] ] = x_filtered;
       jv_out[ filter_idx_[i] ] = x_dot_filtered;
     }
-
+  }else if (cl_cfg_.mode==3){ // N lowpass filters
+    for (size_t i=0; i <  filter_idx_.size(); i++){
+      jp_out[ filter_idx_[i] ] = lpfilter_[i]->processSample( jp[filter_idx_[i]] );
+    }
   }
 
   
   
   
   
-  drc::robot_state_t msg_out = *msg; 
+  //drc::robot_state_t msg_out = *msg;
+  drc::atlas_state_t msg_out = *msg; 
   msg_out.joint_position = jp_out; 
   msg_out.joint_velocity = jv_out;
  
-  lcm_->publish( "TRUE_ROBOT_STATE" , &msg_out);     
+  lcm_->publish( cl_cfg_.output_channel , &msg_out);     
 
   
 
@@ -269,8 +279,10 @@ void App::readFile(){
 int main(int argc, char ** argv) {
   CommandLineConfig cl_cfg;
   cl_cfg.mode = 0; 
+  cl_cfg.output_channel = "ATLAS_STATE_FILTERED";
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg.mode, "f", "mode","Filter Type");
+  opt.add(cl_cfg.output_channel, "o", "output_channel","Output Filter Channel");
   opt.parse();  
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
