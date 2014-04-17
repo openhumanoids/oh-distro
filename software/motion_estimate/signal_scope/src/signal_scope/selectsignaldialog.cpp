@@ -24,7 +24,8 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
   QStringList channels;
   channels << "ATLAS_COMMAND" << "ATLAS_FOOT_POS_EST"
            << "ATLAS_IMU_PACKET" << "ATLAS_IMU_PACKET_FILTERED"
-           << "ATLAS_STATE" << "ATLAS_STATE_EXTRA"
+           << "ATLAS_STATE" << "ATLAS_STATE_FILTERED" << "ATLAS_STATE_FILTERED_ALT"    
+           << "ATLAS_STATE_EXTRA"
            << "ATLAS_STATUS" << "EST_ROBOT_STATE" 
            << "FOOT_CONTACT_ESTIMATE" << "FOOT_CONTACT_CLASSIFY" 
            << "FORCE_PLATE_DATA" 
