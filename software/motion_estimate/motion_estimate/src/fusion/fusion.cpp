@@ -88,15 +88,17 @@ public:
     opt.parse();
 
     
-    if (wait_for_viewer_ready){// Listen for a message from the v
+    if (wait_for_viewer_ready){// Listen for a message from the viewer to start
       boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
       StandingPrep prep(lcm);
       prep.listenForReady();
     }
     
-    
     std::string param_file_full = std::string(getConfigPath()) +'/' + std::string(param_file);    
-    
+    if (param_file.empty()) { // get param from lcm
+      param_file_full = "";
+    }
+ 
     //create front end
     front_end = new LCMFrontEnd(in_log_fname, out_log_fname, param_file_full , 
                                 override_str,begin_timestamp, processing_rate);
@@ -210,8 +212,6 @@ public:
         model = new ModelClient( urdf_filename_full );
       }  
       legodo_handler = new LegOdoHandler(front_end->lcm_recv, front_end->lcm_pub, front_end->param, model, front_end->frames);
-
-
 
       front_end->addSensor("legodo", &MavStateEst::LegOdoHandler::processMessage, legodo_handler);
     }
