@@ -22,7 +22,7 @@ group "a.0.drivers" {
         host = "robot";
     }
     cmd "multisense" {
-        exec = "drc-multisense -o 3";
+        exec = "drc-multisense -o 2";
         host = "robot";
     }
     cmd "atlas-off" {
@@ -82,7 +82,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "fusion" {
-        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02.cfg";
+        exec = "se-fusion";
         host = "robot";
     }
     cmd "gpf-laser" {
