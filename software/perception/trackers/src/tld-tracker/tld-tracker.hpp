@@ -27,15 +27,22 @@ struct CameraParams {
     CameraParams (BotParam* param, const std::string key_prefix_str) { 
         width = bot_param_get_int_or_fail(param, (key_prefix_str+".width").c_str());
         height = bot_param_get_int_or_fail(param,(key_prefix_str+".height").c_str());
-        fx = bot_param_get_double_or_fail(param, (key_prefix_str+".fx").c_str());
-        fy = bot_param_get_double_or_fail(param, (key_prefix_str+".fy").c_str());
-        cx = bot_param_get_double_or_fail(param, (key_prefix_str+".cx").c_str());
-        cy = bot_param_get_double_or_fail(param, (key_prefix_str+".cy").c_str());
-        k1 = bot_param_get_double_or_fail(param, (key_prefix_str+".k1").c_str());
-        k2 = bot_param_get_double_or_fail(param, (key_prefix_str+".k2").c_str());
-        k3 = bot_param_get_double_or_fail(param, (key_prefix_str+".k3").c_str());
-        p1 = bot_param_get_double_or_fail(param, (key_prefix_str+".p1").c_str());
-        p2 = bot_param_get_double_or_fail(param, (key_prefix_str+".p2").c_str());
+  
+        double vals[5];
+        bot_param_get_double_array_or_fail(param, (key_prefix_str+".pinhole").c_str(), vals, 5);
+        fx = vals[0];
+        fy = vals[1];
+        cx = vals[3];
+        cy = vals[4];
+        if (3 == bot_param_get_double_array(param, (key_prefix_str+".distortion_k").c_str(), vals, 3)) {
+            k1 = vals[0];
+            k2 = vals[1];
+            k3 = vals[2];
+        }
+        if (2 == bot_param_get_double_array(param, (key_prefix_str+".distortion_p").c_str(), vals, 2)) {
+	        p1 = vals[0];
+	        p2 = vals[1];
+        }
     }
 };
 

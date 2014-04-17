@@ -80,7 +80,15 @@ struct state_t {
 
         // Camera Params
         camera_params = CameraParams(param, "cameras." + _options.vCHANNEL + ".intrinsic_cal");
-
+        cout << camera_params.fx << endl 
+             << camera_params.fy << endl
+             << camera_params.cx << endl
+             << camera_params.cy << endl
+             << camera_params.k1 << endl
+             << camera_params.k2 << endl
+             << camera_params.k3 << endl
+             << camera_params.p1 << endl
+             << camera_params.p2 << endl;
         // Initialize image IO utils
         imgutils_aff = new image_io_utils( lcm, camera_params.width, camera_params.height);
 
