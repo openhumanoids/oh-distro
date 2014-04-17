@@ -188,7 +188,8 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   // 1. Do the Leg Odometry Integration
   leg_est_->setFootSensing(  FootSensing( msg->force_torque.l_foot_force_z, msg->force_torque.l_foot_torque_x,  msg->force_torque.l_foot_torque_y),
                              FootSensing( msg->force_torque.r_foot_force_z, msg->force_torque.r_foot_torque_x,  msg->force_torque.r_foot_torque_y));
-  float odo_delta_status = leg_est_->updateOdometry(joint_names_, msg->joint_position, msg->utime);
+  float odo_delta_status = leg_est_->updateOdometry(joint_names_, msg->joint_position, 
+                                                    msg->joint_velocity, msg->utime);
   if (odo_delta_status<0){
     if (verbose_ >= 3) std::cout << "Leg Odometry is not valid not integrating =========================\n";
     

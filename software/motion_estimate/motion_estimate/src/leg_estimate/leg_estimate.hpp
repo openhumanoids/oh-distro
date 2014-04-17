@@ -32,6 +32,8 @@
 #include "lcmtypes/drc/pose_transform_t.hpp"
 
 #include <estimate_tools/Filter.hpp>
+#include <estimate_tools/simple_kalman_filter.hpp> // Eigen::Vector2f KF
+
 #include <foot_contact/FootContact.h>
 #include <foot_contact_alt/FootContactAlt.h>
 #include <leg_estimate/foot_contact_classify.hpp>
@@ -45,8 +47,6 @@ enum control_mode {
   CONTROLLER_WALKING  = 2,
   CONTROLLER_TOE_OFF  = 8, // not in drc_controller_status_t
 };
-
-
 
 
 
@@ -77,7 +77,9 @@ class leg_estimate{
     // 0 is very accurate   
     // 1 very inaccuracy    - foot breaks
     // -1 unuseable/invalid - foot strikes
-    float updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime);
+    float updateOdometry(std::vector<std::string> joint_name, 
+                         std::vector<float> joint_position, std::vector<float> joint_velocity,  
+                         int64_t utime);
 
     // returns a validity label, currently alaways true
     bool getLegOdometryDelta(Eigen::Isometry3d &odom_to_body_delta, int64_t &current_utime, int64_t &previous_utime){
@@ -106,8 +108,10 @@ class leg_estimate{
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
     pointcloud_vis* pc_vis_;
+    
     // joint position filters, optionally used
     std::vector<LowPassFilter*> lpfilter_; // previously were not pointers
+    std::vector<EstimateTools::SimpleKalmanFilter*> joint_kf_;
     
 
     /// Parameters

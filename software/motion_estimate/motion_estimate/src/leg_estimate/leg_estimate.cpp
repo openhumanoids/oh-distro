@@ -90,8 +90,13 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
     LowPassFilter* a_filter = new LowPassFilter ();
     lpfilter_.push_back(a_filter);
   }
-  
-  
+
+  double process_noise = 0.01; 
+  double observation_noise = 5E-4;
+  for (size_t i=0;i < 28; i++){
+    EstimateTools::SimpleKalmanFilter* a_filter = new EstimateTools::SimpleKalmanFilter (process_noise, observation_noise); // uses Eigen2d
+    joint_kf_.push_back(a_filter);
+  }
   
   // Should I use a very heavy contact classifier (standing) or one that allows toe off (typical)?
   char* init_control_mode_str = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.init_contact_mode");
@@ -476,7 +481,9 @@ contact_status_id leg_estimate::footTransitionAlt(){
 }
 
 
-float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vector<float> joint_position, int64_t utime){
+float leg_estimate::updateOdometry(std::vector<std::string> joint_name, 
+                                   std::vector<float> joint_position, std::vector<float> joint_velocity,  
+                                   int64_t utime){
   previous_utime_ = current_utime_;
   previous_odom_to_body_ = odom_to_body_;
   current_utime_ = utime;
@@ -492,8 +499,20 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name, std::vec
   
   // 0. Filter Joints
   if (filter_joint_positions_){
-    for (size_t i=0 ; i <  12 ; i++){ // assumed same lengths
-      joint_position[i]  = lpfilter_[i]->processSample( joint_position[i] );
+    // Two filter: low pass or kalman. low pass adds latency.
+    // KF should replace it when I can get a good set of testing logs
+    if (1==1){
+      for (size_t i=0 ; i <  28 ; i++){
+        joint_position[i]  = lpfilter_[i]->processSample( joint_position[i] );
+      }
+    }else{
+      for (size_t i=0 ; i <  28 ; i++){
+        double x_filtered;
+        double x_dot_filtered;
+        joint_kf_[i]->processSample( ((double) utime*1E-6) ,  joint_position[i] , joint_velocity[i] , x_filtered, x_dot_filtered);
+        joint_position[ i ] = x_filtered;
+        //joint_velocity[ i ] = x_dot_filtered;
+      }
     }
   }  
   
