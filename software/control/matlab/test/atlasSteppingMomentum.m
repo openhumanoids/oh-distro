@@ -62,7 +62,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[1.0;0;0];
+v = R*[0;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -74,12 +74,12 @@ request.goal_pos = encodePosition3d(navgoal);
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
-request.params.max_num_steps = 2;
-request.params.min_num_steps = 2;
+request.params.max_num_steps = 20;
+request.params.min_num_steps = 10;
 request.params.min_step_width = 0.2;
-request.params.nom_step_width = 0.25;
-request.params.max_step_width = 0.3;
-request.params.nom_forward_step = 0.2;
+request.params.nom_step_width = 0.28;
+request.params.max_step_width = 0.32;
+request.params.nom_forward_step = 0.1;
 request.params.max_forward_step = 0.4;
 request.params.ignore_terrain = false;
 request.params.planning_mode = request.params.MODE_AUTO;
@@ -87,8 +87,8 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.05;
-request.default_step_params.step_height = 0.075;
+request.default_step_params.step_speed = 0.025;
+request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
 
@@ -141,12 +141,9 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.slack_limit = 100;
-options.w_qdd = 0.1*ones(nq,1);
-options.W_hdot = diag([0.1;0.1;0.1;10;10;10]);
-% options.w_qdd = 1e-4*ones(nq,1);
-% options.w_qdd(findJointIndices(r,'leg')) = 1e-6;
-% options.W_hdot = diag([0;0;0;1000;1000;1000]);
-options.lcm_foot_contacts = true;
+options.w_qdd = 0.01*ones(nq,1);
+options.W_hdot = 1000*diag([1;1;1;10;10;10]);
+options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.01;
@@ -162,8 +159,8 @@ qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 
 % cascade PD block
-options.Kp = 50.0*ones(nq,1);
-options.Kd = 5.0*ones(nq,1);
+options.Kp = 80.0*ones(nq,1);
+options.Kd = 6.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -235,7 +232,7 @@ r_ankle = findJointIndices(r,'r_leg_ak');
 l_ankle = findJointIndices(r,'l_leg_ak');
 
 % low pass filter for floating base velocities
-alpha_v = 0.08;
+alpha_v = 0.1;
 float_v = 0;
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);

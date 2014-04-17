@@ -128,20 +128,18 @@ classdef WalkingPDBlock < MIMODrakeSystem
 
       obj.ikoptions.q_nom = varargin{1};
       cdata = obj.controller_data.data;
+
       
-      Kp = obj.Kp;
-      Kd = obj.Kd;
-      
-      % get foot contact state over LCM
-      contact_data = obj.contact_est_monitor.getMessage();
-      if isempty(contact_data)
-        lfoot_contact_state = 0;
-        rfoot_contact_state = 0;
-      else
-        msg = drc.foot_contact_estimate_t(contact_data);
-        lfoot_contact_state = msg.left_contact > 0.5;
-        rfoot_contact_state = msg.right_contact > 0.5;
-      end
+%       % get foot contact state over LCM
+%       contact_data = obj.contact_est_monitor.getMessage();
+%       if isempty(contact_data)
+%         lfoot_contact_state = 0;
+%         rfoot_contact_state = 0;
+%       else
+%         msg = drc.foot_contact_estimate_t(contact_data);
+%         lfoot_contact_state = msg.left_contact > 0.5;
+%         rfoot_contact_state = msg.right_contact > 0.5;
+%       end
       
 %       if lfoot_contact_state
 %         Kp(obj.l_ank,obj.l_ank) = 0*eye(2);
@@ -173,7 +171,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       nrmerr = norm(err_q,1);
       if nrmerr > obj.max_nrm_err
         err_q = obj.max_nrm_err * err_q / nrmerr;
-			end
+      end
 			
 			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
       if infocount > 0
