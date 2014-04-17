@@ -19,7 +19,7 @@ pods_install_libraries(leg_estimate)
 pods_install_headers( leg_estimate.hpp foot_contact_classify.hpp common_conversions.hpp
                DESTINATION leg_estimate)
 pods_install_pkg_config_file(leg_estimate
-  LIBS -lleg_estimate  -lpcl_io  -lfilter_tools
+  LIBS -lleg_estimate  -lpcl_io  -lfilter_tools -lkalman_filter_tools
   REQUIRES pcl_io-1.6
   VERSION 0.0.1)
 
