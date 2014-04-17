@@ -66,7 +66,7 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 40;
+T = 30;
 if 1
   % create figure 8 zmp traj
   dt = 0.01;
@@ -77,19 +77,19 @@ if 1
   zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
 else
   % back and forth
-  w=0.1; 
-  zmpx = [0 0  0 0  0 0  0 0  0  0  0 0];
-  zmpy = [0 w -w w -w w -w w -w  w -w 0];
-  
-  np=length(zmpy);
-  ts = linspace(0,T,np);
+%   w=0.1; 
+%   zmpx = [0 0  0 0  0 0  0 0  0  0  0 0];
+%   zmpy = [0 w -w w -w w -w w -w  w -w 0];
+%   
+%   np=length(zmpy);
+%   ts = linspace(0,T,np);
 
-%   % rectangle
-%   h=0.01; % height/2
-%   w=0.1; % width/2
-%   zmpx = [0 h h -h -h 0];
-%   zmpy = [0 w -w -w w 0];
-%   ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
+  % rectangle
+  h=0.015; % height/2
+  w=0.08; % width/2
+  zmpx = [0 h h -h -h 0];
+  zmpy = [0 w -w -w w 0];
+  ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
 end
 
 zmpknots = [zmpx;zmpy;0*zmpx];
@@ -108,6 +108,15 @@ com = getCOM(r,kinsol);
 options.com0 = com(1:2);
 zfeet = min(foot_pos(3,:));
 [K,~,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3)-zfeet,zmptraj,options);
+% 
+% % get COM traj from desired ZMP traj
+% options.com0 = com(1:2);
+% options.Qy = 
+% 
+% K = ZMPtracker(obj,dZMP,options)
+% 
+%     function [ct,Vt,comtraj] = ZMPtracker(obj,dZMP,options)
+
 
 
 
@@ -146,8 +155,8 @@ leg_idx = findJointIndices(r,'leg');
 
 % instantiate QP controller
 options.slack_limit = 50;
-options.w_qdd = 0.1*ones(nq,1);
-options.W_hdot = diag([1;1;1;10;10;10]);
+options.w_qdd = 0.01*ones(nq,1);
+options.W_hdot = 1000*diag([1;1;1;10;10;10]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
@@ -156,7 +165,7 @@ options.output_qdd = true;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 % cascade PD block
-options.Kp = 60.0*ones(nq,1);
+options.Kp = 50.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
@@ -186,6 +195,10 @@ resp = input('OK to send input to robot? (y/n): ','s');
 if ~strcmp(resp,{'y','yes'})
   return;
 end
+
+
+r_ankle = findJointIndices(r,'r_leg_ak');
+l_ankle = findJointIndices(r,'l_leg_ak');
 
 xtraj = [];
 
@@ -242,8 +255,11 @@ while tt<T
 %     qd(crossed) = 0;
     
     qddes_state_frame = qd_int-qd;
+    qddes_state_frame(l_ankle) = 0;
+    qddes_state_frame(r_ankle) = 0;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
+
     
     state_frame.publish(t,[q;qd],'EST_ROBOT_STATE_ECHO');
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
