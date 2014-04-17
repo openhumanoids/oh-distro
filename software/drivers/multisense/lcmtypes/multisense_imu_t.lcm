@@ -1,0 +1,11 @@
+package multisense;
+
+// Message to encode multisense imu data
+
+struct imu_t
+{
+  int64_t utime;
+  double gyro[3];    // rotational velocity in rad/sec
+  double accel[3];   // linear acceleration in m/sec^2
+  double mag[3];     // magnetometer in gauss
+}

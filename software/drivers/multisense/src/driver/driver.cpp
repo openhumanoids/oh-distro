@@ -6,6 +6,7 @@
 
 #include "laser.h"
 #include "camera.h"
+#include "imu.h"
 
 #include <lcm/lcm-cpp.hpp>
 #include <ConciseArgs>
@@ -14,10 +15,17 @@ using namespace crl::multisense;
 Channel *d;
 multisense_ros::Laser  *l;
 multisense_ros::Camera *camera ;
+multisense_ros::Imu    *imuObj;
+
+bool signal_caught = false;
 
 void signal_handler(int s){
+  if (signal_caught) return;
+  signal_caught = true;
   printf("Caught signal, stopping driver\n");
+  delete l;
   delete camera;
+  delete imuObj;
   Channel::Destroy(d);
   exit(1); 
 }
@@ -73,10 +81,12 @@ void Pass::commandHandler(const lcm::ReceiveBuffer* rbuf,
 int main(int    argc, char** argv){
   CameraConfig config;
   ConciseArgs opt(argc, (char**)argv);
+  bool use_imu = false;
   opt.add(config.do_jpeg_compress_, "j", "do_jpeg_compress","Do JPEG compression");
   opt.add(config.do_zlib_compress_, "z", "do_zlib_compress","Do Z compression");
   opt.add(config.output_mode_, "o", "output mode","modes: 0leftcolor&depth, 1leftgrey&rightgrey, 2leftcolor, 3leftcolor&depth&rightgray");
   opt.add(config.desired_width_, "w", "desired_width", "Desired image width");
+  opt.add(use_imu, "i", "use_imu", "Publish IMU data");
   opt.parse();
   
   
@@ -106,6 +116,7 @@ int main(int    argc, char** argv){
     
     l = new multisense_ros::Laser(d, robot_desc_string);
     camera = new multisense_ros::Camera(d, config );
+    imuObj = use_imu ? new multisense_ros::Imu(d) : NULL;
     
     while(1){
       // This is what I'm most unsure about in this driver:

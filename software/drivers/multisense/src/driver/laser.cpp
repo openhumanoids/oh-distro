@@ -309,7 +309,6 @@ Laser::Laser(Channel* driver,
 
 Laser::~Laser()
 {
-    boost::mutex::scoped_lock lock(sub_lock_);
     stop();
 }
 
@@ -418,14 +417,11 @@ void Laser::stop()
 
 void Laser::unsubscribe()
 {
-    boost::mutex::scoped_lock lock(sub_lock_);
-
     stop();
 }
 
 void Laser::subscribe()
 {
-    boost::mutex::scoped_lock lock(sub_lock_);
 
         //laser_diagnostics_.publish(SensorStatus::STARTING);
 
