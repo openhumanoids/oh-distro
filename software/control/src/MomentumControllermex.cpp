@@ -39,6 +39,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->W_hdot.resize(mxGetM(pm),mxGetN(pm));
     memcpy(pdata->W_hdot.data(),mxGetPr(pm),sizeof(double)*mxGetM(pm)*mxGetN(pm));
 
+    pm= myGetProperty(pobj,"w_grf");
+    pdata->w_grf = mxGetScalar(pm);    
+
+    pm= myGetProperty(pobj,"w_slack");
+    pdata->w_slack = mxGetScalar(pm);    
+
     pm= myGetProperty(pobj,"Kp");
     pdata->Kp = mxGetScalar(pm);    
 
@@ -423,8 +429,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
 	}
 
-  Qnfdiag = MatrixXd::Constant(nf,1,0.001+REG);
-  Qneps = MatrixXd::Constant(neps,1,0.001+REG);
+  Qnfdiag = MatrixXd::Constant(nf,1,pdata->w_grf+REG);
+  Qneps = MatrixXd::Constant(neps,1,pdata->w_slack+REG);
 
   QBlkDiag[0] = &pdata->Hqp;
   if (nc>0) {

@@ -79,7 +79,25 @@ classdef MomentumControlBlock < MIMODrakeSystem
     else
       obj.w_qdd = 0.1*ones(obj.numq,1);
 		end		
-		
+
+		% weight for grf coefficients
+		if isfield(options,'w_grf')
+      typecheck(options.w_grf,'double');
+      sizecheck(options.w_grf,1);
+      obj.w_grf = options.w_grf;
+    else
+      obj.w_grf = 0.001;
+		end		
+
+		% weight for slack vars
+		if isfield(options,'w_slack')
+      typecheck(options.w_slack,'double');
+      sizecheck(options.w_slack,1);
+      obj.w_slack = options.w_slack;
+    else
+      obj.w_slack = 0.001;
+		end		
+
     % com-z PD gains
     if isfield(options,'Kp')
       typecheck(options.Kp,'double');
@@ -460,9 +478,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
         fqp = fqp - hdot_des'*obj.W_hdot*A*Iqdd;
         fqp = fqp - (obj.w_qdd.*q_ddot_des)'*Iqdd;
 
-        Hqp(nq+(1:nf),nq+(1:nf)) = 0.001*eye(nf); 
-        % quadratic slack var cost 
-        Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
+        Hqp(nq+(1:nf),nq+(1:nf)) = obj.w_grf*eye(nf); 
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = obj.w_slack*eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
         fqp = -q_ddot_des'*Iqdd;
@@ -632,7 +649,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
     W_hdot; % angular momentum cost term weight matrix
     w_qdd; % qdd objective function weight vector
-    Kp; % com-z P gain
+    w_grf; % scalar ground reaction force weight
+		w_slack; % scalar slack var weight
+		Kp; % com-z P gain
     Kd; % com-z D gain
     slack_limit; % maximum absolute magnitude of acceleration slack variable values
     rfoot_idx;
