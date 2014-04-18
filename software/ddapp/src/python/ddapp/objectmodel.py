@@ -87,6 +87,9 @@ class ObjectModelItem(object):
         self._onPropertyChanged(propertyName)
         self.oldPropertyValue = None
 
+    def hasDataSet(self, dataSet):
+        return False
+
     def getActionNames(self):
         return []
 
@@ -168,6 +171,8 @@ class RobotModelItem(ObjectModelItem):
 
         self._renderAllViews()
 
+    def hasDataSet(self, dataSet):
+        return len(self.model.getLinkNameForMesh(dataSet)) != 0
 
     def onModelChanged(self):
         if self.modelChangedCallback:
@@ -252,6 +257,10 @@ class PolyDataItem(ObjectModelItem):
     def _renderAllViews(self):
         for view in self.views:
             view.render()
+
+    def hasDataSet(self, dataSet):
+        return dataSet == self.polyData
+
 
     def setPolyData(self, polyData):
 
@@ -402,6 +411,15 @@ def getActiveObject():
     item = getActiveItem()
     return objects[item] if item is not None else None
 
+
+def setActiveObject(obj):
+    item = getItemForObject(obj)
+    if item:
+        tree = getObjectTree()
+        #tree.clearSelection()
+        #item.setSelected(True)
+        tree.setCurrentItem(item)
+        tree.scrollToItem(item)
 
 def getItemForObject(obj):
     global objects
@@ -586,6 +604,13 @@ def collapse(obj):
     item = getItemForObject(obj)
     if item:
         getObjectTree().collapseItem(item)
+
+
+def expand(obj):
+    item = getItemForObject(obj)
+    if item:
+        getObjectTree().expandItem(item)
+
 
 def addContainer(name, parentObj=None):
     obj = ContainerItem(name)

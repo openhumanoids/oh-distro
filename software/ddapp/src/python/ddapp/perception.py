@@ -11,6 +11,7 @@ from ddapp.utime import getUtime
 import vtkDRCFiltersPython as drc
 from ddapp.debugVis import DebugData
 import ddapp.visualization as vis
+from ddapp import vtkNumpy as vnp
 import numpy as np
 
 import drc as lcmdrc
@@ -43,7 +44,7 @@ class MultisenseItem(om.ObjectModelItem):
 
         self.model = model
         self.scalarBarWidget = None
-        self.addProperty('Color By', 0, attributes=om.PropertyAttributes(enumNames=['Solid Color', 'Intensity', 'Z Coordinate', 'Range', 'Spindle Angle', 'Azimuth', 'Camera RGB']))
+        self.addProperty('Color By', 0, attributes=om.PropertyAttributes(enumNames=['Solid Color', 'Intensity', 'Z Coordinate', 'Range', 'Spindle Angle', 'Azimuth', 'Camera RGB', 'Scan Delta']))
         self.addProperty('Show Scalar Bar', False)
         self.addProperty('Updates Enabled', True)
         self.addProperty('Min Range', model.reader.GetDistanceRange()[0])
@@ -106,6 +107,7 @@ class MultisenseItem(om.ObjectModelItem):
           4 : 'spindle_angle',
           5 : 'azimuth',
           6 : 'rgb',
+          7 : 'scan_delta'
           }
 
         rangeMap = {
@@ -114,6 +116,7 @@ class MultisenseItem(om.ObjectModelItem):
             3 : (0.5, 4.0),
             4 : (0, 360),
             5 : (-2.5, 2.5),
+            7 : (0.0, 0.3)
         }
 
         colorBy = self.getProperty('Color By')
@@ -128,6 +131,9 @@ class MultisenseItem(om.ObjectModelItem):
             self.model.polyDataObj.colorBy(None)
 
         self._updateScalarBar()
+
+    def hasDataSet(self, dataSet):
+        return self.model.polyDataObj.hasDataSet(dataSet)
 
     def _updateScalarBar(self):
         barEnabled = self.getProperty('Show Scalar Bar')
@@ -183,7 +189,7 @@ class MultiSenseSource(TimerCallback):
         self.initScanLines()
 
         self.revPolyData = vtk.vtkPolyData()
-        self.polyDataObj = om.PolyDataItem('Multisense Scan', self.revPolyData, view)
+        self.polyDataObj = om.PolyDataItem('Multisense Sweep', self.revPolyData, view)
         self.polyDataObj.actor.SetPickable(1)
 
 
@@ -379,24 +385,48 @@ class MultiSenseSource(TimerCallback):
 
 class MapServerSource(TimerCallback):
 
-    def __init__(self, polyData=None, callbackFunc=None):
+    def __init__(self, view, callbackFunc=None):
         TimerCallback.__init__(self)
         self.reader = None
-        self.displayedMapId = -1
-        self.displayedViewId = lcmdrc.data_request_t.DEPTH_MAP_WORKSPACE
+        self.view = view
+        self.displayedMapIds = {}
+        self.polyDataObjects = {}
         self.targetFps = 10
-        self.polyData = polyData or vtk.vtkPolyData()
         self.callbackFunc = callbackFunc
         self.colorizeCallback = None
 
-    def showMap(self, mapId):
-        polyData = vtk.vtkPolyData()
-        self.reader.GetDataForMapId(self.displayedViewId, mapId, polyData)
-        self.polyData.ShallowCopy(polyData)
-        if self.colorizeCallback:
-            self.colorizeCallback()
+    def getNameForViewId(self, viewId):
 
-        self.displayedMapId = mapId
+        for typeName, typeValue in lcmdrc.data_request_t.__dict__.iteritems():
+            if typeValue == viewId:
+                return typeName
+
+        return 'Map View ' + str(viewId)
+
+    def updatePolyData(self, viewId, polyData):
+
+        obj = self.polyDataObjects.get(viewId)
+        if obj not in om.objects.values():
+            obj = None
+        if not obj:
+            obj = om.PolyDataItem(self.getNameForViewId(viewId), polyData, self.view)
+            obj.setProperty('Color', QtGui.QColor(0, 175, 255))
+            folder = om.findObjectByName('Map Server')
+            om.addToObjectModel(obj, folder)
+            om.expand(folder)
+            self.polyDataObjects[viewId] = obj
+        else:
+            obj.setPolyData(polyData)
+
+    def showMap(self, viewId, mapId):
+        polyData = vtk.vtkPolyData()
+        self.reader.GetDataForMapId(viewId, mapId, polyData)
+        self.updatePolyData(viewId, polyData)
+        self.displayedMapIds[viewId] = mapId
+
+        #if self.colorizeCallback:
+        #    self.colorizeCallback()
+
         if self.callbackFunc:
             self.callbackFunc()
 
@@ -408,9 +438,12 @@ class MapServerSource(TimerCallback):
         TimerCallback.start(self)
 
     def updateMap(self):
-        mapId = self.reader.GetCurrentMapId(self.displayedViewId)
-        if mapId != self.displayedMapId:
-            self.showMap(mapId)
+        viewIds = self.reader.GetViewIds()
+        viewIds = vnp.numpy_support.vtk_to_numpy(viewIds) if viewIds.GetNumberOfTuples() else []
+        for viewId in viewIds:
+            mapId = self.reader.GetCurrentMapId(viewId)
+            if viewId not in self.displayedMapIds or mapId != self.displayedMapIds[viewId]:
+                self.showMap(viewId, mapId)
 
     def tick(self):
         self.updateMap()
@@ -434,11 +467,11 @@ def init(view):
 
     useMapServer = hasattr(drc, 'vtkMapServerSource')
     if useMapServer:
-        mapServerSource = MapServerSource(callbackFunc=view.render)
-        mapServerObj = om.PolyDataItem('Map Server', mapServerSource.polyData, view)
-        mapServerObj.source = mapServerSource
+        mapServerSource = MapServerSource(view, callbackFunc=view.render)
+        mapsServerContainer = om.ObjectModelItem('Map Server', icon=om.Icons.Robot)
+        mapsServerContainer.source = mapServerSource
+        om.addToObjectModel(mapsServerContainer, parentObj=sensorsFolder)
         mapServerSource.start()
-        om.addToObjectModel(mapServerObj, sensorsFolder)
 
     return _multisenseItem
 
