@@ -84,8 +84,6 @@ class state_sync{
     // void loadEncoderOffsetsFromFile();
     void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
     void enableEncoders(bool enable);
-
-    int sign(float num);
     
     Joints head_joints_;
     Joints atlas_joints_;

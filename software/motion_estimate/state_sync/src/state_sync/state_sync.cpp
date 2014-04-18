@@ -4,7 +4,6 @@
 #include <limits>
 #include <vector>
 #include <fstream>
-#include <math.h>
 
 #include "state_sync.hpp"
 #include <ConciseArgs>
