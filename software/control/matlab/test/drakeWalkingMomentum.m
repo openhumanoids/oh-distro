@@ -3,7 +3,7 @@ function drakeWalkingMomentum(use_mex,use_ik)
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 %navgoal = [rand();randn();0;0;0;pi/2*randn()];
-navgoal = [1.0;0;0;0;0;0];
+navgoal = [1;0;0;0;0;0];
 
 % construct robot model
 options.floating = true;

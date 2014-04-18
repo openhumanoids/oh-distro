@@ -174,9 +174,9 @@ classdef WalkingPDBlock < MIMODrakeSystem
       end
 			
 			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
-      if infocount > 0
-  		  save(sprintf('pd_dump_t=%2.3f.mat',t),'q','q_des','err_q','y','compos','approx_args');
-      end
+%       if infocount > 0
+%   		  save(sprintf('pd_dump_t=%2.3f.mat',t),'q','q_des','err_q','y','compos','approx_args');
+%       end
       
       
 		end

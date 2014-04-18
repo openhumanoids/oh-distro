@@ -3,7 +3,8 @@ function drakeWalking(use_mex,use_bullet)
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 plot_comtraj = false;
-navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
+%navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
+navgoal = [1;0;0;0;0;0];
 
 % construct robot model
 options.floating = true;

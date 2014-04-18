@@ -552,10 +552,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
 %           supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         [y,active_supports,qdd,info,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha] = MomentumControllermex(obj.mex_ptr.data,...
           1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
-        
+
         if info < 0 
           infocount = infocount +1;
-  				save(sprintf('momentum_dump_t=%2.3f.mat',t),'x','q_ddot_des','y','active_supports','qdd','info','Hqp_mex','fqp_mex','Aeq_mex','beq_mex','Ain_mex','bin_mex','Qf','Qeps','alpha');
+  				%save(sprintf('momentum_dump_t=%2.3f.mat',t),'x','q_ddot_des','y','active_supports','qdd','info','Hqp_mex','fqp_mex','Aeq_mex','beq_mex','Ain_mex','bin_mex','Qf','Qeps','alpha');
         else
           infocount = 0;
         end
@@ -567,7 +567,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
           d.command = 'freeze';
           behavior_pub.publish(d);
         end			
-				%% FOR DEBUGGING
+				
 %         active_contacts_msg = drc.foot_contact_estimate_t();
 %         active_contacts_msg.detection_method = 0;
 %         active_contacts_msg.utime = t*1000000;
