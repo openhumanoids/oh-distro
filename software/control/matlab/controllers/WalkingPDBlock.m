@@ -39,7 +39,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
         obj.Kp = options.Kp;
         obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       else
-        obj.Kp = 170.0*ones(obj.nq,1);
+        obj.Kp = 160.0*ones(obj.nq,1);
         obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       end        
         
