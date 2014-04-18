@@ -87,7 +87,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.025;
+request.default_step_params.step_speed = 0.01;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -234,6 +234,13 @@ l_ankle = findJointIndices(r,'l_leg_ak');
 % low pass filter for floating base velocities
 alpha_v = 0.1;
 float_v = 0;
+
+legs = findJointIndices(r,'leg');
+
+
+right_contact_state = 0;
+left_contact_state = 0;
+
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -267,7 +274,7 @@ while tt<T
     
     % compute desired velocity
     qd_int = qd_int + qdd*dt;
-
+    
 %     % filter out joint velocity spikes
 %     crossed = [];
 %     if qd_prev~=-1
@@ -291,6 +298,15 @@ while tt<T
         qddes_state_frame(r_ankle) = 0;
         qd_int(r_ankle)=0;
       end
+      
+      if right_contact_state~=msg.right_contact || ...
+         left_contact_state~=msg.left_contact 
+        % contact state changed
+        qd_int(legs) = 0;
+      end
+      right_contact_state = msg.right_contact;
+      left_contact_state = msg.left_contact;
+      
     end
 
     qddes_input_frame = qddes_state_frame(act_idx_map);
