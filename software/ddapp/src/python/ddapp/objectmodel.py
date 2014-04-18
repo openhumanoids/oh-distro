@@ -38,6 +38,9 @@ class Icons(object):
   Matlab = QtGui.QIcon(':/images/matlab_logo.png')
   Robot = QtGui.QIcon(':/images/robot_icon.png')
   Laser = QtGui.QIcon(':/images/laser_icon.jpg')
+  Feet = QtGui.QIcon(':/images/feet.png')
+  Hand = QtGui.QIcon(':/images/claw.png')
+
 
 def cleanPropertyName(s):
     """
@@ -54,6 +57,12 @@ class ObjectModelItem(object):
         self.icon = icon
         self.alternateNames = {}
         self.addProperty('Name', name)
+
+    def setIcon(self, icon):
+        self.icon = icon
+        item = getItemForObject(self)
+        if item:
+            item.setIcon(0, icon)
 
     def propertyNames(self):
         return self.properties.keys()
