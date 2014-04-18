@@ -922,7 +922,7 @@
     <axis xyz="1 0 0"/>
     <parent link="l_uglut"/>
     <child link="l_lglut"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="5.0"/>
     <limit effort="250" effort_max="250" effort_min="-343" lower="-0.523599" upper="0.523599" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236"/>
   </joint>
@@ -931,7 +931,7 @@
     <axis xyz="0 1 0"/>
     <parent link="l_lglut"/>
     <child link="l_uleg"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="5.0"/>
     <limit effort="260" effort_max="353" effort_min="-260" lower="-1.72072" upper="0.524821" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7207" soft_upper_limit="10.5248"/>
   </joint>
@@ -940,7 +940,7 @@
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
     <child link="l_uglut"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="5.0"/>
     <limit effort="68" effort_max="68" effort_min="-105" lower="-0.174533" upper="1.22173" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.1745" soft_upper_limit="11.2217"/>
   </joint>
@@ -949,7 +949,7 @@
     <axis xyz="0 1 0"/>
     <parent link="l_uleg"/>
     <child link="l_lleg"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="5.0"/>
     <limit effort="220" effort_max="220" effort_min="-300" lower="0" upper="2.38569" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3857"/>
   </joint>
@@ -1039,7 +1039,7 @@
     <axis xyz="1 0 0"/>
     <parent link="r_uglut"/>
     <child link="r_lglut"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="5.0"/>
     <limit effort="250" effort_max="343" effort_min="-250" lower="-0.523599" upper="0.523599" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236"/>
   </joint>
@@ -1048,7 +1048,7 @@
     <axis xyz="0 1 0"/>
     <parent link="r_lglut"/>
     <child link="r_uleg"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="5.0"/>
     <limit effort="260" effort_max="353" effort_min="-260" lower="-1.72072" upper="0.524821" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7207" soft_upper_limit="10.5248"/>
   </joint>
@@ -1057,7 +1057,7 @@
     <axis xyz="0 0 1"/>
     <parent link="pelvis"/>
     <child link="r_uglut"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="5.0"/>
     <limit effort="68" effort_max="105" effort_min="-68" lower="-1.22173" upper="0.174533" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2217" soft_upper_limit="10.1745"/>
   </joint>
@@ -1066,14 +1066,14 @@
     <axis xyz="0 1 0"/>
     <parent link="r_uleg"/>
     <child link="r_lleg"/>
-    <dynamics damping="0.1" friction="0"/>
+    <dynamics coulomb_window="0.175" damping="0.5" friction="5.0"/>
     <limit effort="220" effort_max="220" effort_min="-300" lower="0" upper="2.38569" velocity="12"/>
     <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3857"/>
   </joint>
   <link name="l_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <mass value="5.131"/>
+      <mass value="6.131"/>
       <!--VRC value-->
       <origin xyz="0 0 0"/>
       <!--Changed inertias from 0.01 to 0.1. Temporary fix (Sisir)-->
@@ -1089,7 +1089,7 @@
   <link name="r_hand_point_mass">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <inertial>
-      <mass value="5.131"/>
+      <mass value="6.131"/>
       <!--VRC value-->
       <origin xyz="0 0 0"/>
       <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
