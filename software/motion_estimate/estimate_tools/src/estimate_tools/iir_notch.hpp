@@ -5,12 +5,14 @@
 
 class IIRNotch{
   public:
-    IIRNotch();
+    IIRNotch(double notch_freq_, double fs_);
     
     ~IIRNotch(){
     }    
     
-    void setCoeffs(int harmonic);
+    double fs_;
+    double notch_freq_;
+    
     // iir filter cooeffs
     Eigen::Vector3d b;
     Eigen::Vector3d a;
@@ -20,6 +22,9 @@ class IIRNotch{
     Eigen::VectorXd y;
     
     double processSample(double input);
+    
+    // Re-implementation of Matlab's IIR notch filter
+    void secondOrderNotch(double Wo, double BW, Eigen::Vector3d &num, Eigen::Vector3d &den );
 
   private:
 };

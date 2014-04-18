@@ -37,9 +37,9 @@ class App{
     HeavyLowPassFilter hlpfilter[3];
     
     // An cascade of 3 notch filters in xyz
-    IIRNotch notchfilter_x[3];
-    IIRNotch notchfilter_y[3];
-    IIRNotch notchfilter_z[3];
+    IIRNotch* notchfilter_x[3];
+    IIRNotch* notchfilter_y[3];
+    IIRNotch* notchfilter_z[3];
 };
 
 
@@ -49,16 +49,24 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
     lcm_(lcm_), cl_cfg_(cl_cfg_){
   lcm_->subscribe( "ATLAS_IMU_BATCH" ,&App::batchHandler,this);
   
-  for (size_t i=0; i < 3 ; i++){
-    notchfilter_x[i].setCoeffs(i+1);
-    notchfilter_y[i].setCoeffs(i+1);
-    notchfilter_z[i].setCoeffs(i+1);
+  double notch_freq = 87;
+  double fs = 1000;
+  
+  for (int i=0; i < 3 ; i++){
+    IIRNotch* x_filter = new IIRNotch ( notch_freq*pow(2,i) , fs );
+    notchfilter_x[i] = x_filter;
+    
+    IIRNotch* y_filter = new IIRNotch ( notch_freq*pow(2,i) , fs);
+    notchfilter_y[i] = y_filter;
+
+    IIRNotch* z_filter = new IIRNotch ( notch_freq*pow(2,i) , fs);
+    notchfilter_z[i] = z_filter;
   }
 }
 
 
 void App::doFilter(IMUPacket &raw){
-//  std::cout <<   raw.linear_acceleration[2] << "\n";
+  // std::cout <<   raw.linear_acceleration[2] << "\n";
 
   if (cl_cfg_.filter_type==0){
     // "light low pass filter"
@@ -72,22 +80,16 @@ void App::doFilter(IMUPacket &raw){
     raw.linear_acceleration[2]  = hlpfilter[2].processSample( raw.linear_acceleration[2] );
   }else if(cl_cfg_.filter_type==2){
     // notch 85Hz
-    raw.linear_acceleration[0]  = notchfilter_x[0].processSample( raw.linear_acceleration[0] );
-    raw.linear_acceleration[1]  = notchfilter_y[0].processSample( raw.linear_acceleration[1] );
-    raw.linear_acceleration[2]  = notchfilter_z[0].processSample( raw.linear_acceleration[2] );
+    raw.linear_acceleration[0]  = notchfilter_x[0]->processSample( raw.linear_acceleration[0] );
+    raw.linear_acceleration[1]  = notchfilter_y[0]->processSample( raw.linear_acceleration[1] );
+    raw.linear_acceleration[2]  = notchfilter_z[0]->processSample( raw.linear_acceleration[2] );
   }else{
     // notch 85Hz, 170, 340Hz in cascade
-    raw.linear_acceleration[0]  = notchfilter_x[0].processSample( raw.linear_acceleration[0] );
-    raw.linear_acceleration[1]  = notchfilter_y[0].processSample( raw.linear_acceleration[1] );
-    raw.linear_acceleration[2]  = notchfilter_z[0].processSample( raw.linear_acceleration[2] );
-    
-    raw.linear_acceleration[0]  = notchfilter_x[1].processSample( raw.linear_acceleration[0] );
-    raw.linear_acceleration[1]  = notchfilter_y[1].processSample( raw.linear_acceleration[1] );
-    raw.linear_acceleration[2]  = notchfilter_z[1].processSample( raw.linear_acceleration[2] );
-
-    raw.linear_acceleration[0]  = notchfilter_x[2].processSample( raw.linear_acceleration[0] );
-    raw.linear_acceleration[1]  = notchfilter_y[2].processSample( raw.linear_acceleration[1] );
-    raw.linear_acceleration[2]  = notchfilter_z[2].processSample( raw.linear_acceleration[2] );
+    for (int i=0; i <3; i++){
+      raw.linear_acceleration[0]  = notchfilter_x[i]->processSample( raw.linear_acceleration[0] );
+      raw.linear_acceleration[1]  = notchfilter_y[i]->processSample( raw.linear_acceleration[1] );
+      raw.linear_acceleration[2]  = notchfilter_z[i]->processSample( raw.linear_acceleration[2] );
+    }    
   }
 }
 

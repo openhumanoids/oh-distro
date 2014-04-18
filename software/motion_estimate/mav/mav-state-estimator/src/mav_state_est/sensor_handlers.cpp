@@ -20,9 +20,22 @@ InsHandler::InsHandler(BotParam * _param, BotFrames * _frames)
 
   dt = bot_param_get_double_or_fail(_param, "state_estimator.ins.timestep_dt"); // nominally dt = 0.01 for 100 Hz IMU messages
   
-  // added by mfallon for atlas:
+  // added by mfallon for atlas: 3 notch filters for the pump
   atlas_filter = bot_param_get_boolean_or_fail(_param, "state_estimator.ins.atlas_filter");
+  double notch_freq = bot_param_get_double_or_fail(_param, "state_estimator.ins.atlas_filter_freq");
+  double fs = 1000;
+  for (int i=0; i < 3 ; i++){
+    IIRNotch* x_filter = new IIRNotch ( notch_freq*pow(2,i) , fs );
+    notchfilter_x[i] = x_filter;
+    
+    IIRNotch* y_filter = new IIRNotch ( notch_freq*pow(2,i) , fs);
+    notchfilter_y[i] = y_filter;
 
+    IIRNotch* z_filter = new IIRNotch ( notch_freq*pow(2,i) , fs);
+    notchfilter_z[i] = z_filter;
+  }  
+  
+  
   char * ins_frame = bot_param_get_str_or_fail(_param, "state_estimator.ins.frame");
   bot_frames_get_trans(_frames, ins_frame, "body", &ins_to_body);
   free(ins_frame);
@@ -73,17 +86,11 @@ bool InsHandler::processMessageInit(const mav::ins_t * msg,
 ////////// Atlas KVH INS /////////////////
 void InsHandler::doFilter(IMUPacket &raw){
   // notch 85Hz, 170, 340Hz in cascade
-  raw.linear_acceleration[0]  = notchfilter_x[0].processSample( raw.linear_acceleration[0] );
-  raw.linear_acceleration[1]  = notchfilter_y[0].processSample( raw.linear_acceleration[1] );
-  raw.linear_acceleration[2]  = notchfilter_z[0].processSample( raw.linear_acceleration[2] );
-  
-  raw.linear_acceleration[0]  = notchfilter_x[1].processSample( raw.linear_acceleration[0] );
-  raw.linear_acceleration[1]  = notchfilter_y[1].processSample( raw.linear_acceleration[1] );
-  raw.linear_acceleration[2]  = notchfilter_z[1].processSample( raw.linear_acceleration[2] );
-
-  raw.linear_acceleration[0]  = notchfilter_x[2].processSample( raw.linear_acceleration[0] );
-  raw.linear_acceleration[1]  = notchfilter_y[2].processSample( raw.linear_acceleration[1] );
-  raw.linear_acceleration[2]  = notchfilter_z[2].processSample( raw.linear_acceleration[2] );
+  for (int i=0; i <3; i++){
+    raw.linear_acceleration[0]  = notchfilter_x[i]->processSample( raw.linear_acceleration[0] );
+    raw.linear_acceleration[1]  = notchfilter_y[i]->processSample( raw.linear_acceleration[1] );
+    raw.linear_acceleration[2]  = notchfilter_z[i]->processSample( raw.linear_acceleration[2] );
+  }
 }
 
 

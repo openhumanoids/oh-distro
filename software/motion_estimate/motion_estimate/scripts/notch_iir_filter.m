@@ -9,7 +9,8 @@ close all
 %fvtool(b,a);
 
 % z-vector accel:
-x =load('accel3.txt');
+%x =load('/home/mfallon/data/atlas/accel_signals/accel3.txt');
+x =load('/home/mfallon/data/atlas/accel_signals/accel_z.txt');
 
 
 
@@ -25,16 +26,20 @@ x =load('accel3.txt');
 %x2=0.2+ 0.07*sin(2*pi*84*(t+10) ) ;
 %plot(x2,'r')
 
+% was : 85
+main_freq = 87
+
+
 % a single notch filter
-harmonic_freq = 85*4;
+harmonic_freq = main_freq *4;
 wo = harmonic_freq/(1000/2); bw = wo;%wo/60;
 [b,a] = iirnotch(wo,bw);
 y_single=filter(b,a,x);
 
 
 % matlab and diy calculation:
-y = notch_cascade_matlab(x,85,3);
-y_mf = notch_cascade_diy(x,85,3);
+y = notch_cascade_matlab(x,main_freq ,3);
+y_mf = notch_cascade_diy(x,main_freq ,3);
 
 
 % comparison plot:
@@ -93,7 +98,7 @@ for j=1:size(x,1)
   for i=1:harmonic
     harmonic_freq = pump_freq*2^(i-1);
     wo = harmonic_freq/(1000/2); bw = wo;%wo/60;
-    [b,a] = iirnotch(wo,bw);
+    [b,a] = secondorderNotch_mfallon(wo,bw);
     [input, coeffs(i).xx, coeffs(i).yy]=filter_diy(b,a,input, coeffs(i).xx, coeffs(i).yy);  
   end
   
