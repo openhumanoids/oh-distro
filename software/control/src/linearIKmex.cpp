@@ -2,6 +2,7 @@
 // simple mex function for solving IK problems as equality constrained QPs 
 
 #include "QPCommon.h"
+#include <Eigen/StdVector>
 
 void angleDiff(VectorXd phi1, VectorXd phi2, VectorXd* d) {
   *d = phi2 - phi1;
@@ -70,7 +71,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   VectorXd q0vec = Map<VectorXd>(q0,nq);
 
-  std::vector<VectorXd> Aeq_ (nrhs*6); // nrhs*6 is an upper bound
+  std::vector<VectorXd,aligned_allocator<VectorXd>> Aeq_ (nrhs*6); // nrhs*6 is an upper bound
   VectorXd beq_ = VectorXd::Zero(nrhs*6); // nrhs*6 is an upper bound
   int eq_count = 0;
   
@@ -177,6 +178,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   for (int j = 0; j < eq_count; j++) {
     Aeq.row(j) = Aeq_[j];
   }
+
+  // todo: exploit diagonal Q and/or call fastqp :)
 
   MatrixXd A = MatrixXd::Zero(nq+eq_count,nq+eq_count);
   A.topLeftCorner(nq,nq) = Q;
