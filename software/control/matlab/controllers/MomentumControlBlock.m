@@ -35,6 +35,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj = setOutputFrame(obj,output_frame);
 
     obj.robot = r;
+		obj.mass = getMass(r);
     obj.numq = getNumDOF(r);
     obj.controller_data = controller_data;
 
@@ -441,7 +442,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       % compute desired linear momentum
       comddot_des = [ustar; obj.Kp*(comz_des-xcom(3)) + obj.Kd*(dcomz_des-z_com_dot) + ddcomz_des];
-      ldot_des = comddot_des * 161;
+      ldot_des = comddot_des * obj.mass;
       k = A(1:3,:)*qd;
   %     kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
       kdot_des = -5.0 *k; 
@@ -657,5 +658,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     jlmax;
     contact_threshold; % min height above terrain to be considered in contact
 		output_qdd = false;
-    end
+		mass; % total robot mass
+  end
 end

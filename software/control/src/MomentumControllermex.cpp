@@ -45,6 +45,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pm= myGetProperty(pobj,"Kd");
     pdata->Kd = mxGetScalar(pm);    
 
+    pm= myGetProperty(pobj,"mass");
+    pdata->mass = mxGetScalar(pm);    
+
     // get robot mex model ptr
     if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
       mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the third argument should be the robot mex ptr");
@@ -293,10 +296,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int nparams = nq+nf+neps;
 
   Vector3d ldot_des;
-  double robot_mass = 161; // TODO: take this from RBM
-  ldot_des << ustar[0]*robot_mass, 
-              ustar[1]*robot_mass, 
-              (pdata->Kp*(comz_des-xcom[2]) + pdata->Kd*(dcomz_des-pdata->J.row(2)*qdvec) + ddcomz_des)*robot_mass;
+  ldot_des << ustar[0]*pdata->mass, 
+              ustar[1]*pdata->mass, 
+              (pdata->Kp*(comz_des-xcom[2]) + pdata->Kd*(dcomz_des-pdata->J.row(2)*qdvec) + ddcomz_des)*pdata->mass;
 
   Vector3d k = pdata->Ag.topRows(3)*qdvec;
   Vector3d kdot_des = -5.0 *k; 

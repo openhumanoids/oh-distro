@@ -50,6 +50,7 @@ struct QPControllerData {
   VectorXd w_qdd; 
   int num_spatial_accel_constraints;
   double Kp, Kd; // COM-z PD gains, for momentum controller
+  double mass; // total robot mass
 };
 
 // helper function for shuffling debugging data back into matlab
