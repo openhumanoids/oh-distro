@@ -38,6 +38,9 @@ class Icons(object):
   Matlab = QtGui.QIcon(':/images/matlab_logo.png')
   Robot = QtGui.QIcon(':/images/robot_icon.png')
   Laser = QtGui.QIcon(':/images/laser_icon.jpg')
+  Feet = QtGui.QIcon(':/images/feet.png')
+  Hand = QtGui.QIcon(':/images/claw.png')
+
 
 def cleanPropertyName(s):
     """
@@ -54,6 +57,12 @@ class ObjectModelItem(object):
         self.icon = icon
         self.alternateNames = {}
         self.addProperty('Name', name)
+
+    def setIcon(self, icon):
+        self.icon = icon
+        item = getItemForObject(self)
+        if item:
+            item.setIcon(0, icon)
 
     def propertyNames(self):
         return self.properties.keys()
@@ -86,6 +95,9 @@ class ObjectModelItem(object):
         self.properties[propertyName] = propertyValue
         self._onPropertyChanged(propertyName)
         self.oldPropertyValue = None
+
+    def hasDataSet(self, dataSet):
+        return False
 
     def getActionNames(self):
         return []
@@ -168,6 +180,8 @@ class RobotModelItem(ObjectModelItem):
 
         self._renderAllViews()
 
+    def hasDataSet(self, dataSet):
+        return len(self.model.getLinkNameForMesh(dataSet)) != 0
 
     def onModelChanged(self):
         if self.modelChangedCallback:
@@ -252,6 +266,10 @@ class PolyDataItem(ObjectModelItem):
     def _renderAllViews(self):
         for view in self.views:
             view.render()
+
+    def hasDataSet(self, dataSet):
+        return dataSet == self.polyData
+
 
     def setPolyData(self, polyData):
 
@@ -402,6 +420,15 @@ def getActiveObject():
     item = getActiveItem()
     return objects[item] if item is not None else None
 
+
+def setActiveObject(obj):
+    item = getItemForObject(obj)
+    if item:
+        tree = getObjectTree()
+        #tree.clearSelection()
+        #item.setSelected(True)
+        tree.setCurrentItem(item)
+        tree.scrollToItem(item)
 
 def getItemForObject(obj):
     global objects
@@ -586,6 +613,13 @@ def collapse(obj):
     item = getItemForObject(obj)
     if item:
         getObjectTree().collapseItem(item)
+
+
+def expand(obj):
+    item = getItemForObject(obj)
+    if item:
+        getObjectTree().expandItem(item)
+
 
 def addContainer(name, parentObj=None):
     obj = ContainerItem(name)

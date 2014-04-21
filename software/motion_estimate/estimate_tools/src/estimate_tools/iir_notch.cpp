@@ -1,30 +1,36 @@
 #include <estimate_tools/iir_notch.hpp>
 
-IIRNotch::IIRNotch(){
-  // defaults for 85Hz notch
-  b << 0.7872805555, -1.3603002156, 0.7872805555;
-  a << 1.0000000000, -1.3603002156, 0.5745611110; 
+IIRNotch::IIRNotch(double notch_freq_, double fs_):notch_freq_(notch_freq_), fs_(fs_){
+  // as of april 2014:
+  // fs_ = 1000, notch_freq_ = 87 (fundemental freq)
+  double Wo = notch_freq_/(fs_/2); 
+  double Bw = Wo;
+  secondOrderNotch(Wo,Bw, b, a);  
   
   x = Eigen::VectorXd(2);
   x << 0,0;
   y = Eigen::VectorXd(2);
   y << 0,0;
 }
-  
-void IIRNotch::setCoeffs(int harmonic){
-  // which 85Hz harmonic to filter
-  if (harmonic==1){ //85Hz
-    b << 0.7872805555, -1.3603002156, 0.7872805555;
-    a << 1.0000000000, -1.3603002156, 0.5745611110;
-  }else if (harmonic==2){ // 170Hz
-    b << 0.6283781802, -0.6054469941,  0.6283781802;
-    a << 1.0000000000, -0.6054469941,  0.2567563604;
-  }else if (harmonic==3){ // 340Hz
-    b << 0.3547365716, 0.3801547205, 0.3547365716;
-    a << 1.0000000000,  0.3801547205, -0.2905268567;
-  }
-}
 
+
+void IIRNotch::secondOrderNotch(double Wo, double BW, Eigen::Vector3d &num, Eigen::Vector3d &den ){
+  double Ab = fabs(10*log10(.5));
+
+  // Inputs are normalized by pi.
+  BW = BW*M_PI;
+  Wo = Wo*M_PI;
+
+  double Gb   = pow(10, -Ab/20.);
+  double beta = (sqrt(1.0 - Gb*Gb)/Gb)*tan(BW/2.0);
+  double gain = 1/(1+beta);
+
+  // 1x3 vectors
+  num  = gain*Eigen::Vector3d( 1.0, -2.0*cos(Wo), 1 );
+  den  = Eigen::Vector3d( 1.0, -2*gain*cos(Wo), 2*gain-1  );  
+  
+}
+  
 double IIRNotch::processSample(double input){
   bool v = false;
   

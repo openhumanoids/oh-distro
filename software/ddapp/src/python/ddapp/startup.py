@@ -32,6 +32,7 @@ from ddapp import robotstate
 from ddapp import roboturdf
 from ddapp import footstepsdriver
 from ddapp import footstepsdriverpanel
+from ddapp import framevisualization
 from ddapp import lcmgl
 from ddapp import atlasdriver
 from ddapp import atlasdriverpanel
@@ -98,6 +99,8 @@ useAtlasDriver = True
 useLCMGL = True
 useDrakeVisualizer = True
 useNavigationPanel = True
+useImageWidget = False
+
 
 poseCollection = PythonQt.dd.ddSignalMap()
 costCollection = PythonQt.dd.ddSignalMap()
@@ -233,17 +236,26 @@ if usePlanning:
     #app.addToolbarMacro('play manip plan', playManipPlan)
     #app.addToolbarMacro('fit drill', fitDrillMultisense)
 
-    def sendSceneHeightRequest():
+    def sendDataRequest(requestType, repeatTime=0.0):
 
       msg = lcmdrc.data_request_t()
-      msg.type = lcmdrc.data_request_t.HEIGHT_MAP_SCENE
-      msg.period = 0
+      msg.type = requestType
+      msg.period = int(repeatTime*10) # period is specified in tenths of a second
 
       msgList = lcmdrc.data_request_list_t()
       msgList.utime = getUtime()
       msgList.requests = [msg]
       msgList.num_requests = len(msgList.requests)
       lcmUtils.publish('DATA_REQUEST', msgList)
+
+    def sendSceneHeightRequest(repeatTime=0.0):
+        sendDataRequest(lcmdrc.data_request_t.HEIGHT_MAP_SCENE, repeatTime)
+
+    def sendWorkspaceDepthRequest(repeatTime=0.0):
+        sendDataRequest(lcmdrc.data_request_t.DEPTH_MAP_WORKSPACE_C, repeatTime)
+
+    def sendSceneDepthRequest(repeatTime=0.0):
+        sendDataRequest(lcmdrc.data_request_t.DEPTH_MAP_SCENE, repeatTime)
 
     app.addToolbarMacro('scene height', sendSceneHeightRequest)
 
@@ -325,6 +337,7 @@ if useNavigationPanel:
 
 
 screengrabberpanel.init(view)
+framevisualization.init(view)
 
 
 def getLinkFrame(linkName, model=None):
@@ -348,3 +361,7 @@ def sendEstRobotState(pose=None):
 
 app.resetCamera(viewDirection=[-1,0,0], view=view)
 viewBehaviors = viewbehaviors.ViewBehaviors(view, handFactory, robotStateModel, footstepsDriver)
+
+
+if useImageWidget:
+    imageWidget = cameraview.ImageWidget(cameraview.imageManager, 'CAMERA_LEFT', view)

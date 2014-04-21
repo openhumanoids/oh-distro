@@ -44,9 +44,9 @@ protected:
   IMUStream imu_data_;  
   void doFilter(IMUPacket &raw);
   // An cascade of 3 notch filters in xyz
-  IIRNotch notchfilter_x[3];
-  IIRNotch notchfilter_y[3];
-  IIRNotch notchfilter_z[3];  
+  IIRNotch* notchfilter_x[3];
+  IIRNotch* notchfilter_y[3];
+  IIRNotch* notchfilter_z[3];  
   bool atlas_filter;
   ////////////
 
