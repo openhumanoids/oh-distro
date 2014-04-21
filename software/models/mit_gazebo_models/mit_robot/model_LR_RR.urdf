@@ -2056,11 +2056,11 @@
   <joint name="l_hand_camera_joint" type="fixed">
     <parent link="l_hand_force_torque"/>
     <child link="l_hand_camera_link"/>
-    <!-- 9 degree inward angle-->
-    <origin rpy=" -1.57079 0  1.41372" xyz="-0.09  0.12 0.0"/>
+    <!-- new camera has no inward angle, placeholder is still here in case it is later tilted-->
+    <origin rpy=" -1.57079 0  1.5708" xyz="-0.09892  0.01431 0.0"/>
   </joint>
   <joint name="l_hand_camera_optical_frame_joint" type="fixed">
-    <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
+    <origin rpy="-1.57079 0.0 -1.57079" xyz="0 0 0"/>
     <parent link="l_hand_camera_link"/>
     <child link="l_hand_camera_optical_frame"/>
   </joint>
@@ -2083,7 +2083,7 @@
         </clip>
         <noise>
           <type>gaussian</type>
-          <!-- Noise is sampled independently per pixel on each frame.  
+          <!-- Noise is sampled independently per pixel on each frame.
                That pixel's noise value is added to each of its color
                channels, which at that point lie in the range [0,1].
                The stddev value of 0.007 is based on experimental data 
@@ -2125,11 +2125,11 @@
   <joint name="r_hand_camera_joint" type="fixed">
     <parent link="r_hand_force_torque"/>
     <child link="r_hand_camera_link"/>
-    <!-- 9 degree inward angle-->
-    <origin rpy=" 1.57079 0  1.72788" xyz="0.09  0.12 0.0"/>
+    <!-- new camera has no inward angle, placeholder is still here in case it is later tilted-->
+    <origin rpy=" 1.57079 0  1.5708" xyz="0.09892  0.01431 0.0"/>
   </joint>
   <joint name="r_hand_camera_optical_frame_joint" type="fixed">
-    <origin rpy="-1.5708 0.0 -1.5708" xyz="0 0 0"/>
+    <origin rpy="-1.57079 0.0 -1.57079" xyz="0 0 0"/>
     <parent link="r_hand_camera_link"/>
     <child link="r_hand_camera_optical_frame"/>
   </joint>
@@ -2152,7 +2152,7 @@
         </clip>
         <noise>
           <type>gaussian</type>
-          <!-- Noise is sampled independently per pixel on each frame.  
+          <!-- Noise is sampled independently per pixel on each frame.
                That pixel's noise value is added to each of its color
                channels, which at that point lie in the range [0,1].
                The stddev value of 0.007 is based on experimental data 

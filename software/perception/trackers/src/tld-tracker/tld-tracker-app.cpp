@@ -80,7 +80,15 @@ struct state_t {
 
         // Camera Params
         camera_params = CameraParams(param, "cameras." + _options.vCHANNEL + ".intrinsic_cal");
-
+        cout << camera_params.fx << endl 
+             << camera_params.fy << endl
+             << camera_params.cx << endl
+             << camera_params.cy << endl
+             << camera_params.k1 << endl
+             << camera_params.k2 << endl
+             << camera_params.k3 << endl
+             << camera_params.p1 << endl
+             << camera_params.p2 << endl;
         // Initialize image IO utils
         imgutils_aff = new image_io_utils( lcm, camera_params.width, camera_params.height);
 
@@ -113,12 +121,13 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
       break;
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
       // for some reason msg->row_stride is 0, so we use msg->width instead.
-      jpeg_decompress_8u_gray(msg->data,
+      jpeg_decompress_8u_rgb(msg->data,
                               msg->size,
                               img.data,
                               msg->width,
                               msg->height,
-                              msg->width);
+                              msg->row_stride);  
+      cv::cvtColor(img, img, CV_RGB2BGR);
       break;
   case BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY:
       memcpy(img.data, msg->data, sizeof(uint8_t) * msg->width * msg->height);
@@ -156,7 +165,7 @@ static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *chann
                             void *user_data ) {
 
     std::cerr << "SEGMENTATION msg: " << msg->utime << " " << msg->roi.x << " " << msg->roi.y 
-	      << " " << msg->roi.width << " " << msg->roi.height << std::endl;
+              << " " << msg->roi.width << " " << msg->roi.height << std::endl;
 
     state_t* state = (state_t*) user_data; 
     float sw = state->camera_params.width, sh = state->camera_params.height;
@@ -247,12 +256,18 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         perception_pointing_vector_t_publish(state->lcm, "OBJECT_BEARING", &bearing_vec);
     }
 
-    // Viz
-    // cv::Mat display = state->img.clone();
+    // Viz    
+	cv::Mat dispimg = state->img.clone();
+    
     if (state->tracker->detection_valid) { 
         const cv::Rect& currBB = state->tracker->currBB;
         std::cerr << "TLD currBB: " << currBB.tl() << " " << currBB.br() << std::endl;
+        
+	    rectangle(dispimg, currBB, Scalar(0,0,255), 3, 8, 0);
     }
+    Mat scaleddispimg;
+    cv::resize(dispimg, scaleddispimg, Size(dispimg.cols/2,dispimg.rows/2), 0,0,INTER_LINEAR);
+	cv::imshow( "Display window", scaleddispimg );
 
     // Viz if not initialized
     if (!state->tracker->initialized && !state->aff_img.empty() && !state->img.empty()) { 
@@ -315,7 +330,7 @@ int main(int argc, char** argv)
     // Main lcm handle
     while(1) { 
         unsigned char c = cv::waitKey(1) & 0xff;
-	lcm_handle(state->lcm);
+        lcm_handle(state->lcm);
         if (c == 'q') { 
             break;      
         } else if ( c == 'c' ) { 
@@ -368,14 +383,14 @@ int main(int argc, char** argv)
     //         found = true;
 
     //         std::cerr << "Init TLD with " << cbuffer[j].first << std::endl;
-	    
+            
     //         Mat gray; 
     //         cvtColor(cbuffer[j].second, gray, CV_BGR2GRAY);
 
     //         // tld tracker selection
     //         Rect selection(msg->roi.x, msg->roi.y, msg->roi.width, msg->roi.height);
     //         tldtracker->selectObject(gray, &selection);
-	    
+            
     //         Mat img = cbuffer[j].second.clone();
     //         rectangle(img, selection, CV_RGB(255, 0, 0), 2); 
     //         opencv_utils::imshow("first frame", img);
@@ -424,9 +439,9 @@ int main(int argc, char** argv)
     //             std::pair<int64_t, Mat>& bufpair = cbuffer.back();
     //             // Track each of the remaining buffers before going live
     //             tld_track(bufpair.second);
-    // 		cbuffer.pop_back();
-    // 		std::cerr << "Pending frames : " << cbuffer.size() << std::endl;
-		
+    //                 cbuffer.pop_back();
+    //                 std::cerr << "Pending frames : " << cbuffer.size() << std::endl;
+                
     //         }
     //     } else if (cbuffer.size() == 1) { 
     //         std::cerr << "Live tracking " << msg->utime << std::endl;
@@ -444,7 +459,7 @@ int main(int argc, char** argv)
     //             else 
     //                 a = u*1.f/camera_params.fx, b = v*1.f/camera_params.fy;
     //             perception_pointing_vector_t bearing_vec;
-    //     	bearing_vec.utime = bufpair.first;
+    //             bearing_vec.utime = bufpair.first;
     //             bearing_vec.pos[0] = 0, 
     //                 bearing_vec.pos[1] = 0, 
     //                 bearing_vec.pos[2] = 0;
