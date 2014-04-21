@@ -1,0 +1,6 @@
+all:
+	gcc -I$(DRC_BASE)/software/build/include/ \
+	-I/usr/include/glib-2.0/ \
+	-I/usr/lib/x86_64-linux-gnu/glib-2.0/include/ \
+	-L/home/drc/drc/software/build/lib \
+	bot_frames_transform_vec.cpp -lbot2-core -lbot2-frames -lbot2-param-client -llcm
