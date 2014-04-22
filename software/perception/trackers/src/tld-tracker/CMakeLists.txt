@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 2.6.0)
 
+project(tld-tracker)
+set(PACKAGE_NAME tld-tracker)
+
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(EIGEN REQUIRED eigen3)
@@ -19,6 +22,35 @@ add_subdirectory(cvblobs)
 
 include_directories(tld tld/tracker)
 link_libraries(tld)
+
+# ======================================================
+# DRC tld-tracker library
+# ======================================================
+
+# Create a shared library
+add_library(
+  ${PACKAGE_NAME} SHARED
+  tld-tracker.cpp
+  )
+
+# make the header public and install it
+pods_install_headers(
+  tld-tracker.hpp
+  DESTINATION ${PACKAGE_NAME})
+
+# make the library public
+pods_install_libraries(${PACKAGE_NAME})
+
+set(REQUIRED_PACKAGES lcm glib-2.0 bot2-core image-utils bot2-lcmgl-client 
+  bot2-frames bot2-param-client opencv image_io_utils perception-opencv-utils)
+pods_use_pkg_config_packages ( ${PACKAGE_NAME} ${REQUIRED_PACKAGES})
+# create a pkg-config file for the library, to make it easier for other
+# software to use.
+pods_install_pkg_config_file(${PACKAGE_NAME}
+    CFLAGS
+    LIBS -l${PACKAGE_NAME}
+    REQUIRES ${REQUIRED_PACKAGES}
+    VERSION 0.0.1)
 
 # ======================================================
 # DRC tld-tracker test app

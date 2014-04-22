@@ -264,6 +264,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         std::cerr << "TLD currBB: " << currBB.tl() << " " << currBB.br() << std::endl;
         
 	    rectangle(dispimg, currBB, Scalar(0,0,255), 3, 8, 0);
+      
     }
     Mat scaleddispimg;
     cv::resize(dispimg, scaleddispimg, Size(dispimg.cols/2,dispimg.rows/2), 0,0,INTER_LINEAR);
