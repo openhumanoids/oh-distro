@@ -15,12 +15,12 @@
 
 
 
-  ImageWarper::ImageWarper(const std::string& iInputChannel) {
+  ImageWarper::ImageWarper(const std::string& iInputChannel, BotCamTrans** pOutputCamTrans) {
     mLcmWrapper.reset(new drc::LcmWrapper());
     mLcm = mLcmWrapper->get();
     mBotWrapper.reset(new drc::BotWrapper(mLcm));
     mSubscription = NULL;
-    setChannels(iInputChannel);
+    setChannels(iInputChannel, pOutputCamTrans);
   }
 
   void ImageWarper::interpolateGray(const cv::Mat& iImage, const int iIndex,
@@ -73,7 +73,7 @@
     }
   }
 
-  bool ImageWarper::setChannels(const std::string& iInputChannel) {
+  bool ImageWarper::setChannels(const std::string& iInputChannel, BotCamTrans** pOutputCamTrans) {
                      
     mInputChannel = iInputChannel;
     BotCamTrans* inputCamTrans =
@@ -89,6 +89,8 @@
     		bot_camtrans_get_focal_length_x(inputCamTrans), bot_camtrans_get_focal_length_y(inputCamTrans),
     		bot_camtrans_get_principal_x(inputCamTrans), bot_camtrans_get_principal_y(inputCamTrans),
     		bot_camtrans_get_skew(inputCamTrans), bot_null_distortion_create());
+
+    if(pOutputCamTrans != NULL) *pOutputCamTrans = outputCamTrans;
 
     int inputWidth = bot_camtrans_get_width(inputCamTrans);
     int inputHeight = bot_camtrans_get_height(inputCamTrans);

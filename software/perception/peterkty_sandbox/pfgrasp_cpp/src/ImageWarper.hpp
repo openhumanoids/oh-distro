@@ -12,6 +12,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/LcmWrapper.hpp>
 #include <drc_utils/BotWrapper.hpp>
+#include <bot_core/camtrans.h>
 
 struct ImageWarper {
   std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
@@ -31,7 +32,7 @@ struct ImageWarper {
   int mOutputHeight;
   int mJpegQuality;
 
-  ImageWarper(const std::string& iInputChannel) ;
+  ImageWarper(const std::string& iInputChannel, BotCamTrans** pOutputCamTrans = NULL) ;
 
   void interpolateGray(const cv::Mat& iImage, const int iIndex,
 		               uint8_t* oBytes) ;
@@ -41,7 +42,7 @@ struct ImageWarper {
 
   void unWarp(const cv::Mat& in, cv::Mat& out) ;
 
-  bool setChannels(const std::string& iInputChannel) ;
+  bool setChannels(const std::string& iInputChannel, BotCamTrans** pOutputCamTrans = NULL) ;
 
 };
 

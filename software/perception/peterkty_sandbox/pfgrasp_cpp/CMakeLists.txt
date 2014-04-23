@@ -16,8 +16,9 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 
-add_executable(drc-pfgrasp src/pfgrasp.cpp src/ImageWarper.cpp)
-pods_use_pkg_config_packages(drc-pfgrasp drc-utils bot2-core opencv bot2-frames tld-tracker)
-target_link_libraries(drc-pfgrasp)
+add_executable(drc-pfgrasp src/pfgrasp.cpp src/ImageWarper.cpp src/ImageWarper.cpp src/libparticle/particle_filter.cpp src/libparticle/particle.cpp
+               src/libparticle/rng.cpp)
+pods_use_pkg_config_packages(drc-pfgrasp drc-utils bot2-core opencv bot2-frames tld-tracker eigen3 gsl pointcloud_math pointcloud_vis)
+target_link_libraries(drc-pfgrasp gsl )
 pods_install_executables(drc-pfgrasp)
 

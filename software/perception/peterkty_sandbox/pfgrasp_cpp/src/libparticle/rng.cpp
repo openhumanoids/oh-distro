@@ -51,3 +51,18 @@ void rng::Multinomial(unsigned n, unsigned k, const double* w, unsigned* X){
 double rng::Normal(double dMean, double dStd){
     return dMean + gsl_ran_gaussian(pWorkspace, dStd);
 }
+
+///This function simply calls gsl_ran_gaussian_pdf with the specified standard deviation.
+///     \param dMean The mean of the distribution.
+///     \param dStd  The standard deviation of the distribution
+double rng::NormalPdf(double x, double dMean, double dStd){
+    return gsl_ran_gaussian_pdf(x-dMean, dStd);
+}
+
+
+///This function simply calls gsl_ran_flat with the specified lowerbound and upperbound.
+///     \param lbound lower bound
+///     \param ubound upper bound
+double rng::Uniform(double lbound, double ubound){
+    return gsl_ran_flat(pWorkspace, lbound, ubound);
+}

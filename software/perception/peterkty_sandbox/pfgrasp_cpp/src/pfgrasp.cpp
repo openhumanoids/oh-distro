@@ -1,94 +1,12 @@
 #include <memory>
 #include <string>
 
-#include <drc_utils/BotWrapper.hpp>
-#include <drc_utils/LcmWrapper.hpp>
-#include <bot_core/camtrans.h>
-#include <lcmtypes/bot_core/image_t.hpp>
-#include <lcmtypes/perception/pfgrasp_command_t.hpp>
-#include <lcmtypes/perception/image_roi_t.hpp>
-
+#include "pfgrasp.hpp"
 #include <opencv2/opencv.hpp>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <ConciseArgs>
+#include <bot_lcmgl_client/lcmgl.h>
 
-#include <tld-tracker/tld-tracker.hpp>
-#include "ImageWarper.hpp"
-#include "libparticle/particle_filter.hpp"
-
-struct PFGraspOptions
-{
-  bool debug;
-  float scale;
-  std::string cameraChannelName;
-  std::string segmenterChannelName;
-  std::string commandChannelName;
-
-  PFGraspOptions() :
-      cameraChannelName("CAMERALHAND"), scale(1.f), debug(false), segmenterChannelName(
-          "TLD_OBJECT_ROI"), commandChannelName("TLD_CMD")
-  {
-  }
-};
-
-class PFGrasp
-{
-public:
-  PFGrasp(PFGraspOptions options);
-  ~PFGrasp()
-  {
-  }
-
-  void
-  start()
-  {
-    lcmWrapper_->startHandleThread(true);
-  }
-private:
-  std::shared_ptr<drc::BotWrapper> botWrapper_;
-  std::shared_ptr<drc::LcmWrapper> lcmWrapper_;
-  std::shared_ptr<lcm::LCM> lcm_;
-  PFGraspOptions options_;
-
-  // Parameters for the camera
-  CameraParams cameraParams_;
-
-  // Img, and warped image
-  cv::Mat img_, wimg_;
-  int64_t img_utime_;
-
-  // TLD Tracker
-  TLDTracker* tracker_;
-
-  // Image warper
-  ImageWarper* warper_;
-
-  int counter_;
-
-  float bearing_a_,bearing_b_;
-
-  ParticleFilter pf;
-  // handle reset, run-one-iteration
-  void
-  commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-      const perception::pfgrasp_command_t* msg);
-
-  // get image from hand camera
-  void
-  imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-      const bot_core::image_t* msg);
-
-  // get segment from track segmenter
-  void
-  segmentHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-      const perception::image_roi_t* msg);
-
-  void
-  runOneIter();
-
-  void
-  initParticleFilter();
-};
 
 void
 decode_image(const bot_core::image_t* msg, cv::Mat& img)
@@ -130,6 +48,9 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
 {
   if (!msg->width || !msg->height) return;
 
+  BotTrans tmpBT;
+  bot_frames_get_trans_with_utime(botFrames_, "local", options_.cameraChannelName.c_str(),  msg->utime, &tmpBT);
+
   double tic = bot_timestamp_now();
   decode_image(msg, img_);
 
@@ -151,8 +72,11 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
   }
 
   // Update bearing vector, save the result for particle filter
-  img_utime_ = msg->utime;
+  // May need lock
   if (tracker_->detection_valid) {
+    img_utime_ = msg->utime;
+    localToCam_ = tmpBT;
+
     const cv::Rect& currBB = tracker_->currBB;
     float roix = currBB.x + currBB.width/2, roiy = currBB.y + currBB.height/2;
     float u = -(cameraParams_.cx - roix);
@@ -225,7 +149,7 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
   break;
   case perception::pfgrasp_command_t::START:  // start tracking, subscribe image, initialize particles
     initParticleFilter();
-  break;
+  //break;  // also run one iteration
   case perception::pfgrasp_command_t::RUN_ONE_ITER:
     runOneIter();
   break;
@@ -235,18 +159,48 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
 
 void
 PFGrasp::initParticleFilter(){
-  int rng_seed = 0;
-  double resample_threshold =0.5;
-  pf = new ParticleFilter(N_p, gen_x0, p_yk_given_xk, gen_sys_noise, rng_seed, resample_threshold);
+  pf = new ParticleFilter(N_p, rng_seed, resample_threshold, (void*)this);
+}
 
+void
+PFGrasp::runOneIter(){
+  pf->MoveParticles();
+  pf->UpdateWithLogLikelihoodParticles();
+  // use lcmgl to draw particles, and mean estimation
+
+  bot_lcmgl_color3f(lcmgl_, 1,0,1);
+  for (int i=0; i<N_p; i+=3 ){
+    Eigen::Vector3d xs = pf->GetParticleState(i).position;
+    double xss[3] = {xs[0], xs[1], xs[2]};
+
+    bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
+  }
+
+
+  Eigen::Vector3d xh = pf->Integrate().position;
+  double xhh[3] = {xh[0], xh[1], xh[2]};
+  bot_lcmgl_color3f(lcmgl_, 1,0,0);
+  bot_lcmgl_sphere(lcmgl_, xhh, 0.05, 100, 100);
+  bot_lcmgl_switch_buffer(lcmgl_);
+
+  // TODO: control
 }
 
 PFGrasp::PFGrasp(PFGraspOptions options) :
     options_(options)
 {
+  // should move into options
+  bound = 0.5;
+  rng_seed = 1;
+  resample_threshold = 0.5;
+  N_p = 1000;
+
+
   lcmWrapper_.reset(new drc::LcmWrapper());
   lcm_ = lcmWrapper_->get();
   botWrapper_.reset(new drc::BotWrapper(lcm_));
+  botFrames_ = botWrapper_->getBotFrames();
+  lcmgl_ = bot_lcmgl_init(lcm_->getUnderlyingLCM(), "pfgrasp");
 
   // Camera Params
   cameraParams_ = CameraParams(botWrapper_->getBotParam(),
@@ -267,7 +221,7 @@ PFGrasp::PFGrasp(PFGraspOptions options) :
       options_.scale);
 
   // Initialize Image warper
-  warper_ = new ImageWarper(options_.cameraChannelName);
+  warper_ = new ImageWarper(options_.cameraChannelName, &warpedCamTrans);
 
   counter_ = 0;
 }

@@ -32,7 +32,11 @@ class rng{
     void Multinomial(unsigned n, unsigned k, const double* w, unsigned* X);
     ///Return a random number generated from a normal distribution with a specified mean and standard deviation
     double Normal(double dMean, double dStd);
+
+    double NormalPdf(double x, double dMean, double dStd);
     
+    double Uniform(double lbound, double ubound);
+
 };
 
 
