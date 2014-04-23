@@ -22,3 +22,10 @@ pods_use_pkg_config_packages(drc-pfgrasp drc-utils bot2-core opencv bot2-frames 
 target_link_libraries(drc-pfgrasp gsl )
 pods_install_executables(drc-pfgrasp)
 
+
+
+add_executable(drc-pfgrasp-commander src/pfgraspTestSendCommand.cpp)
+pods_use_pkg_config_packages(drc-pfgrasp-commander bot2-core opencv )
+target_link_libraries(drc-pfgrasp-commander)
+pods_install_executables(drc-pfgrasp-commander)
+

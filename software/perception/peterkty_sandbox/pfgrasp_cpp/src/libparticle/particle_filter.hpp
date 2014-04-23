@@ -16,7 +16,7 @@ class ParticleFilter{
   public:
     ParticleFilter(long N_p,  int rng_seed,
           double resample_threshold_, const void* userdata):
-		      publish_lcm(publish_lcm),N_p(N_p),resample_threshold_(resample_threshold_){
+		      publish_lcm(publish_lcm),N_p(N_p),resample_threshold_(resample_threshold_), userdata_(userdata){
       pRng = new rng(gsl_rng_default,rng_seed); // type, seed
 
       for (int i=0;i<N_p;i++){
@@ -98,7 +98,7 @@ class ParticleFilter{
     //Most recent lhoods [local copy]:
     std::vector <float> loglikelihoods_;
 
-    const void* userdata;
+    const void* userdata_;
 };    
 
 

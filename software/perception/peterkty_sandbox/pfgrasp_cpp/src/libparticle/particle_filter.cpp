@@ -12,7 +12,7 @@ using namespace std;
 
 void ParticleFilter::ReinitializeComplete(){
   for (int i=0;i<N_p;i++){
-    particleset[i].InitializeState(pRng, log((double) 1/N_p), userdata);
+    particleset[i].InitializeState(pRng, log((double) 1/N_p), userdata_);
   }
 }
 
@@ -26,9 +26,11 @@ void ParticleFilter::MoveParticles(){
 
 void ParticleFilter::UpdateWithLogLikelihoodParticles(){
   std::vector<float> loglikelihoods(N_p);
+  std::cout << "dbg-UpdateWithLogLikelihoodParticles1" << std::endl;
   for(int i = 0; i < N_p; ++i) {
-    loglikelihoods[i] = particleset[i].GetLogLikelihood(pRng, userdata);
+    loglikelihoods[i] = particleset[i].GetLogLikelihood(pRng, userdata_);
   }
+  std::cout << "dbg-UpdateWithLogLikelihoodParticles2" << std::endl;
   LogLikelihoodParticles(loglikelihoods);
 }
 

@@ -170,6 +170,7 @@ static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *chann
     state_t* state = (state_t*) user_data; 
     float sw = state->camera_params.width, sh = state->camera_params.height;
     Rect selection(msg->roi.x * sw, msg->roi.y * sh, msg->roi.width * sw, msg->roi.height * sh);
+
     state->aff_utime = msg->utime; 
 
     if (msg->feature_id < 0) {

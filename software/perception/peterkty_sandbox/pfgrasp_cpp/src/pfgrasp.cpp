@@ -149,7 +149,7 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
   break;
   case perception::pfgrasp_command_t::START:  // start tracking, subscribe image, initialize particles
     initParticleFilter();
-  //break;  // also run one iteration
+  break;  // also run one iteration
   case perception::pfgrasp_command_t::RUN_ONE_ITER:
     runOneIter();
   break;
@@ -159,13 +159,30 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
 
 void
 PFGrasp::initParticleFilter(){
+  std::cout << "dbg-initParticleFilter1" << std::endl;
   pf = new ParticleFilter(N_p, rng_seed, resample_threshold, (void*)this);
+  std::cout << "dbg-initParticleFilter2" << std::endl;
+
+
+  bot_lcmgl_color3f(lcmgl_, 1,0,1);
+  for (int i=0; i<N_p; i+=3 ){
+    Eigen::Vector3d xs = pf->GetParticleState(i).position;
+    double xss[3] = {xs[0], xs[1], xs[2]};
+
+    bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
+  }
+  bot_lcmgl_switch_buffer(lcmgl_);
 }
 
 void
 PFGrasp::runOneIter(){
+  std::cout << "dbg-runOneIter1" << std::endl;
   pf->MoveParticles();
+  std::cout << "dbg-runOneIter2" << std::endl;
   pf->UpdateWithLogLikelihoodParticles();
+  std::cout << "dbg-runOneIter3" << std::endl;
+  double ESS = pf->ConsiderResample();
+  std::cout << "dbg-runOneIter3-1" << std::endl;
   // use lcmgl to draw particles, and mean estimation
 
   bot_lcmgl_color3f(lcmgl_, 1,0,1);
@@ -183,7 +200,67 @@ PFGrasp::runOneIter(){
   bot_lcmgl_sphere(lcmgl_, xhh, 0.05, 100, 100);
   bot_lcmgl_switch_buffer(lcmgl_);
 
+  std::cout << "dbg-runOneIter4" << std::endl;
   // TODO: control
+
+  // We've got xh
+  // get handface pose
+  double hpose_[16];
+  Eigen::Matrix4d hpose;
+  //Eigen::Matrix<double, 4, 4, RowMajor> hpose;
+  bot_frames_get_trans_mat_4x4(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", hpose.data());
+  hpose.transposeInPlace();  // eigen store matrix in column major by default
+  BotTrans bt;
+  bot_frames_get_trans(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", &bt);
+  cout << "dbg-mat:" << hpose;
+
+  typedef Eigen::Vector3d V;
+  typedef Eigen::Matrix3d M;
+  V hpos = hpose.block(0,3,3,1);  // location of hand
+  V delta = xh - hpos;
+  V ux = hpose.block(0,0,3,1);
+  V uy = hpose.block(0,1,3,1);
+  V uz = hpose.block(0,2,3,1);
+  V dz = uz.dot(delta) * uz;   // from the hand, z is horizontal, y points forward, x points downward
+  V dx = ux.dot(delta) * ux;   // so we want z, and x adjustment
+  V newhpos = hpos + dx + dz;
+
+  bot_lcmgl_color3f(lcmgl_, 1,1,0);
+  //bot_lcmgl_sphere(lcmgl_, newhpos.data(), 0.03, 100, 100);
+  bot_lcmgl_sphere(lcmgl_, newhpos.data(), 0.03, 100, 100);
+  bt.trans_vec[0] = newhpos[0];
+  bt.trans_vec[1] = newhpos[1];
+  bt.trans_vec[2] = newhpos[2];
+  publishHandReachGoal(bt);
+/*
+  delta = (xk - campose(1:3,k));
+           camUnitVec = inv(quat2dcm(campose(4:7,k)'));
+           dx = camUnitVec(:,1)' * delta * camUnitVec(:,1);  % dx on camera frame wrt world
+           dy = camUnitVec(:,2)' * delta * camUnitVec(:,2);  % dy on camera frame wrt world if we want to use
+           new_campose = [campose(1:3,k) + dx ; campose(4:7,k)];  % camera orient stay the same
+
+           sendNewCampose(new_campose, LR);
+           fprintf('old campose: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n', campose(1:7,k));
+           fprintf('new campose: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n', new_campose(1:7));
+
+           lcmgl.glColor3f(1,1,0);
+           lcmgl.sphere(new_campose,0.03,100,100);
+           */
+
+}
+
+
+void
+PFGrasp::publishHandReachGoal(const BotTrans& bt){
+
+  bot_frames::update_t msg;
+  msg.utime = bot_timestamp_now();
+  msg.frame = options_.reachGoalFrameName;
+  msg.relative_to = "local";
+  std::copy_n(bt.trans_vec, 3, msg.trans);
+  std::copy_n(bt.rot_quat, 4, msg.quat);
+
+  this->lcm_->publish(options_.reachGoalChannelName, &msg);
 }
 
 PFGrasp::PFGrasp(PFGraspOptions options) :
@@ -215,7 +292,7 @@ PFGrasp::PFGrasp(PFGraspOptions options) :
       this);
   sub1->setQueueCapacity(1);
   sub2->setQueueCapacity(1);
-  sub3->setQueueCapacity(1);
+  //sub3->setQueueCapacity(1);
   // Initialize TLD tracker
   tracker_ = new TLDTracker(cameraParams_.width, cameraParams_.height,
       options_.scale);
@@ -232,9 +309,11 @@ main(int argc, char** argv)
   PFGraspOptions options;
 
   ConciseArgs opt(argc, (char**) argv);
-  opt.add(options.cameraChannelName, "c", "camera-channel",
-      "Camera Channel [CAMERALHAND]");
-  opt.add(options.scale, "s", "scale", "Scale Factor");
+  opt.add(options.cameraChannelName, "c", "camera-channel",  "Camera Channel [CAMERALHAND]");
+  opt.add(options.scale, "s", "scale", "TLD tracker scale Factor");
+  opt.add(options.reachGoalFrameName, "g", "plan-frame", "Planning on what frame [LHAND_FACE]");
+  opt.add(options.commandChannelName, "m", "command", "Listen command from which channel [PFGRASP_CMD]");
+
   opt.add(options.debug, "d", "debug", "Debug");
   opt.parse();
 

@@ -17,6 +17,7 @@
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/perception/pfgrasp_command_t.hpp>
 #include <lcmtypes/perception/image_roi_t.hpp>
+#include <lcmtypes/bot_frames/update_t.hpp>
 
 #include "ImageWarper.hpp"
 #include "libparticle/particle_filter.hpp"
@@ -30,10 +31,13 @@ struct PFGraspOptions
   std::string cameraChannelName;
   std::string segmenterChannelName;
   std::string commandChannelName;
+  std::string reachGoalFrameName;
+  std::string reachGoalChannelName;
 
   PFGraspOptions() :
       cameraChannelName("CAMERALHAND"), scale(1.f), debug(false), segmenterChannelName(
-          "TLD_OBJECT_ROI"), commandChannelName("TLD_CMD")
+          "TLD_OBJECT_ROI"), commandChannelName("PFGRASP_CMD"), reachGoalFrameName("LHAND_FACE"),
+          reachGoalChannelName("REACH_TARGET_POSE")
   {
   }
 };
@@ -104,10 +108,13 @@ private:
       const perception::image_roi_t* msg);
 
   void
+  initParticleFilter();
+
+  void
   runOneIter();
 
   void
-  initParticleFilter();
+  publishHandReachGoal(const BotTrans& bt);
 };
 
 
