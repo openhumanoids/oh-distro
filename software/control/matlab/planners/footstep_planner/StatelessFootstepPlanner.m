@@ -17,11 +17,19 @@ classdef StatelessFootstepPlanner
         biped = biped.setTerrain(biped.getTerrain());
       end
 
+      terrain = biped.getTerrain();
+      if ismethod(terrain, 'setMapMode')
+        biped.setTerrain(terrain.setMapMode(request.params.map_command));
+      end
+
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
       if request.num_goal_steps > 2
         request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
         request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
       end
+      
+      %%%%%%% TODO: remove
+      request.params.leading_foot = drc.footstep_plan_params_t.LEAD_RIGHT;
 
       params_set = {struct(request.params)};
       if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
@@ -56,7 +64,9 @@ classdef StatelessFootstepPlanner
             params.allow_odd_num_steps = true;
           end
         end
-        footsteps = footstepCollocation(biped, foot_orig, goal_pos, params);
+        safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
+
+        footsteps = footstepCollocation(biped, foot_orig, goal_pos, params, safe_regions);
         step_vect = encodeCollocationSteps([footsteps(2:end).pos]);
         [steps, steps_rel] = decodeCollocationSteps(step_vect);
         l = length(footsteps);
@@ -192,10 +202,6 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = snapToTerrain(biped, plan, request)
-      terrain = biped.getTerrain();
-      if ismethod(terrain, 'setMapMode')
-        biped.setTerrain(terrain.setMapMode(request.params.map_command));
-      end
       if request.params.ignore_terrain
         nsteps = length(plan.footsteps) - request.num_goal_steps;
       else
@@ -234,6 +240,133 @@ classdef StatelessFootstepPlanner
         plan.footsteps(j+1).infeasibility = max(violation_ineq(step_map.ineq(j)));
       end
     end
+
+    function safe_regions = computeIRISRegions(biped, request, heights, px2world)
+      import iris.terrain_grid.component_boundary;
+      import iris.inflate_region;
+      import iris.cspace.cspace3;
+      import iris.cspace.project_c_space_region;
+      import iris.drawing.animate_results;
+
+      lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'terrain_planning');
+
+      if nargin < 4
+        [heights, px2world] = biped.getTerrain().map_handle.getRawHeights();
+      end
+
+      x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
+      goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
+
+      [grid, heights, px2world_2x3, world2px_2x3] = classifyTerrain(heights, px2world);
+      %% Make sure the area directly under the robot is marked feasible
+      corner1 = round(world2px_2x3 * [x0(1:2) - [0.35; 0.35]; 1]);
+      corner2 = round(world2px_2x3 * [x0(1:2) + [0.35; 0.35]; 1]);
+      box_min = min(corner1, corner2);
+      box_max = max(corner1, corner2);
+      grid(box_min(2):box_max(2), box_min(1):box_max(1)) = 1;
+      figure(1)
+      imshow(grid, 'InitialMagnification', 'fit')
+
+      %% Restrict the search to a box containing the robot and the goal pose
+      box_min = min([x0(1:2), goal_pos.center(1:2)],[], 2) - 1;
+      box_max = max([x0(1:2), goal_pos.center(1:2)],[], 2) + 1;
+      lb = [box_min; -pi];
+      ub = [box_max; pi];
+      A_bounds = [-1,0,0;
+                  0,-1,0;
+                  0,0,-1;
+                  1,0,0;
+                  0,1,0;
+                  0,0,1];
+      b_bounds = [-lb;ub];
+
+      %% Find the contact points describing the robot's foot (for c-space obstacle construction)
+      bot = 0.9 * bsxfun(@minus, biped.foot_bodies.right.contact_pts(1:2,:), ...
+                         biped.foot_contact_offsets.right.center(1:2));
+      safe_regions = {};
+
+      %%%%%%%%%%%%%%%
+      request.num_seed_clicks = 5;
+      load('example_terrain_clicks', 'clicks');
+      %%%%%%%%%%%%%%%
+
+      for j = 1:request.num_seed_clicks
+
+
+      %%%%%%%%%%%%%%%
+%         click_pos = decodePosition3d(request.seed_clicks(j));
+%         cr = world2px_2x3 * [click_pos(1:2); 1];
+%         r = round(cr(2)); c = round(cr(1));
+        rc = clicks(:,j);
+        r = round(rc(1)); c = round(rc(2));
+      %%%%%%%%%%%%%%%
+
+
+        black_edges = [];
+        [edge_r, edge_c] = ind2sub(size(grid), find(component_boundary(grid, [r;c])));
+        black_edges_xy = px2world_2x3 * [edge_c'; edge_r'; ones(1,length(edge_c))];
+        obs_mask = all(bsxfun(@minus, A_bounds([1,2,4,5],1:2) * black_edges_xy, b_bounds([1,2,4,5])) <= max(max(abs(bot))));
+        obstacles = mat2cell(black_edges_xy(:,obs_mask) , 2, ones(1,sum(obs_mask)));
+        obstacles = cspace3(obstacles, bot, 4);
+        for k = 1:size(black_edges_xy,2)
+          if obs_mask(k)
+            lcmgl.glColor3f(0,0,0);
+            lcmgl.sphere([black_edges_xy(:,k);0], 0.01, 20, 20);
+          end
+        end
+
+        %% Draw the chosen start point
+        lcmgl.glColor3f(0,1,0);
+        lcmgl.sphere([(px2world_2x3 * [c;r;1])', heights(r,c)], 0.05, 20, 20);
+
+        %% Actually run the convex segmentation algorithm
+        iris_opts = struct('require_containment', true);
+        [A,b,C,d,results] = inflate_region(obstacles, A_bounds, b_bounds, [px2world_2x3 * [c;r;1]; x0(6)], [], iris_opts);
+        %   animate_results(results);
+        safe_regions{end+1} = struct('A', A, 'b', b);
+
+        %% For debugging: Draw the inner and outer polygons of the segmented space
+        % The inner poly is the set of x,y points for which all yaw values are
+        % contained in the polytope described by A,b. The outer poly is the set
+        % of x,y points for which some yaw value is contained in the polytope.
+        [inner_poly, outer_poly] = project_c_space_region(A,b);
+
+        if ~isempty(inner_poly)
+          z = ones(size(inner_poly,2)) * heights(r,c) + 0.03;
+          world_xyz = [inner_poly; z];
+          figure(2)
+          patch(world_xyz(1,:), world_xyz(2,:), 'g', 'FaceAlpha', 0.5);
+          lcmgl.glColor3f(0,1,0);
+          lcmgl.glLineWidth(10);
+          lcmgl.glBegin(lcmgl.LCMGL_LINES);
+          for j = 1:size(world_xyz,2)-1
+            lcmgl.glVertex3d(world_xyz(1,j),world_xyz(2,j),world_xyz(3,j));
+            lcmgl.glVertex3d(world_xyz(1,j+1),world_xyz(2,j+1),world_xyz(3,j+1));
+          end
+          lcmgl.glVertex3d(world_xyz(1,end),world_xyz(2,end),world_xyz(3,end));
+          lcmgl.glVertex3d(world_xyz(1,1),world_xyz(2,1),world_xyz(3,1));
+          lcmgl.glEnd();
+        end
+
+        z = ones(size(outer_poly,2)) * heights(r,c) + 0.03;
+        world_xyz = [outer_poly; z];
+        figure(2)
+        patch(world_xyz(1,:), world_xyz(2,:), 'y', 'FaceAlpha', 0.5);
+        lcmgl.glColor3f(1,1,0);
+        lcmgl.glLineWidth(10);
+        lcmgl.glBegin(lcmgl.LCMGL_LINES);
+        for j = 1:size(world_xyz,2)-1
+          lcmgl.glVertex3d(world_xyz(1,j),world_xyz(2,j),world_xyz(3,j));
+          lcmgl.glVertex3d(world_xyz(1,j+1),world_xyz(2,j+1),world_xyz(3,j+1));
+        end
+        lcmgl.glVertex3d(world_xyz(1,end),world_xyz(2,end),world_xyz(3,end));
+        lcmgl.glVertex3d(world_xyz(1,1),world_xyz(2,1),world_xyz(3,1));
+        lcmgl.glEnd();
+
+      end
+      lcmgl.switchBuffers();
+    end
+
   end
 end
 

@@ -1,4 +1,8 @@
-function [X, foot_goals] = footstepCollocation(biped, foot_orig, goal_pos, params)
+function [X, foot_goals] = footstepCollocation(biped, foot_orig, goal_pos, params, safe_regions)
+
+if nargin < 5
+  safe_regions = {struct('A', [], 'b', [])};
+end
 
 debug = false;
 use_snopt = 1;
@@ -78,8 +82,12 @@ end
 
 params.forward_step = params.nom_forward_step;
 [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
+if length(safe_regions) > 1
+  params.max_num_steps = min(params.max_num_steps, length(safe_regions));
+end
 min_steps = max([params.min_num_steps+1,2]);
 max_steps = params.max_num_steps + 1;
+
 
 steps = [];
 
@@ -91,6 +99,11 @@ for nsteps = min_steps:max_steps
     r_ndx = 2:2:nsteps;
     l_ndx = 1:2:nsteps;
   end
+
+  % Initialize the step list as alternating right and left steps in place, or, if the
+  % optimization has already been run, seed the next round by adding a new step in the
+  % same location as the second-to-last step (we don't use the last step because it
+  % represents the position of the opposite foot).
   if isempty(steps)
     steps = repmat(st0, 1, nsteps);
     steps(:,2:2:end) = repmat(biped.stepCenter2FootCenter(biped.footCenter2StepCenter(st0,~params.right_foot_lead,params.nom_step_width), params.right_foot_lead, params.nom_step_width),1,floor(nsteps/2));
@@ -100,19 +113,36 @@ for nsteps = min_steps:max_steps
   nv = 12 * nsteps;
 
   [A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);
+  for j = 2:nsteps
+    x_ndx = (j-1)*12+(1:6);
+    if length(safe_regions) == 1
+      region_ndx = 1;
+    else
+      region_ndx = j-1;
+    end
+    region = safe_regions{region_ndx};
+    num_region_cons = length(region.b);
+    if num_region_cons > 0
+      expanded_A = zeros(num_region_cons, nv);
+      expanded_A(:,x_ndx([1,2,6])) = region.A;
+      A = [A; expanded_A];
+      b = [b; region.b];
+    end
+  end
+
 
   lb = -inf(12,nsteps);
   ub = inf(size(lb));
   lb([3,4,5,10,11],:) = 0;
   ub([3,4,5,10,11],:) = 0;
+
+  % Require that the first step be at the current stance foot pose
   lb(1:6,1) = st0;
   ub(1:6,1) = st0;
   lb(7:12,1) = st0;
   ub(7:12,1) = st0;
   lb(7,end) = -final_dx;
   ub(7,end) = final_dx;
-%   lb(7,end) = -0.03;
-%   ub(7,end) = 0.03;
 
   x0 = encodeCollocationSteps(steps);
 
@@ -208,9 +238,11 @@ for nsteps = min_steps:max_steps
   end
 end
 
-for j = 2:output_nsteps
-  R = rotmat(output_steps(6,j-1));
-  valuecheck(output_steps(:,j-1) + [R * output_steps_rel(1:2,j); output_steps_rel(3:6,j)], output_steps(:,j),1e-4);
+if exitflag ~= 13
+  for j = 2:output_nsteps
+    R = rotmat(output_steps(6,j-1));
+    valuecheck(output_steps(:,j-1) + [R * output_steps_rel(1:2,j); output_steps_rel(3:6,j)], output_steps(:,j),1e-4);
+  end
 end
 % nsteps
 
