@@ -1,0 +1,3 @@
+function drakeWalkingMomentumTestMex
+
+drakeWalkingMomentum(2)

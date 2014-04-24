@@ -23,13 +23,7 @@ ref_frame = AtlasPosTorqueRef(r);
 nq = getNumDOF(r);
 nu = getNumInputs(r);
 
-joints = find(~cellfun(@isempty,strfind(state_frame.coordinates(1:nq),jointstr)));
 joints_act = find(~cellfun(@isempty,strfind(input_frame.coordinates,jointstr)));
-
-joint_index_map = struct(); % maps joint names to indices
-for i=1:nq
-  joint_index_map.(state_frame.coordinates{i}) = i;
-end
 
 gains = getAtlasGains(input_frame); 
 % zero out force gains to start --- move to nominal joint position
@@ -60,7 +54,6 @@ ref_frame.updateGains(gains);
 udes = zeros(nu,1);
 
 toffset = -1;
-tt=-1;
 while 1
     [x,t] = getNextMessage(state_frame,1);
   if ~isempty(x)
@@ -80,7 +73,6 @@ while 1
     % send torque command
     udes(joints_act) = u(joints_act_fixed);
     ref_frame.publish(t,[qdes(act_idx);udes],'ATLAS_COMMAND');
-    tlast =tt;
   end
 end
 end

@@ -16,11 +16,11 @@ classdef AtlasPosVelTorqueRef < LCMCoordinateFrame & Singleton
         input_frame = getInputFrame(r);
         input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
       
-        gains = getAtlasGains(input_frame);
+        gains = getAtlasGains();
       
         coder = drc.control.AtlasCommandCoder(input_names,gains.k_q_p,gains.k_q_i,...
           gains.k_qd_p,gains.k_f_p,gains.ff_qd,gains.ff_qd_d,gains.ff_f_d,gains.ff_const);
-        obj = setLCMCoder(obj,JLCMCoder(coder));
+        setLCMCoder(obj,JLCMCoder(coder));
       
         coords = input_names;
         coords = vertcat(coords,cellfun(@(a) [a,'_dot'],input_names,'UniformOutput',false));

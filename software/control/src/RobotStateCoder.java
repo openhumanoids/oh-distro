@@ -134,14 +134,12 @@ public class RobotStateCoder implements drake.util.LCMCoder
     	omega[0] = msg.twist.angular_velocity.x;
     	omega[1] = msg.twist.angular_velocity.y;
     	omega[2] = msg.twist.angular_velocity.z;
-    	double[] rpydot = drake.util.Transform.angularvel2rpydot(rpy,omega);
+      double[] rpydot = drake.util.Transform.angularvel2rpydot(rpy,omega);
 
       j = m_floating_joint_map.get("base_roll");
       if (j!=null) {
         index = j.intValue();
         fdata.val[index] = rpy[0];
-//           if (fdata.val[index] > Math.PI)
-//             fdata.val[index] -= 2*Math.PI;
         fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[0];
       }
 
@@ -149,8 +147,6 @@ public class RobotStateCoder implements drake.util.LCMCoder
       if (j!=null) {
         index = j.intValue();
         fdata.val[index] = rpy[1];
-//           if (fdata.val[index] > Math.PI)
-//             fdata.val[index] -= 2*Math.PI;
         fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[1];
       }
 
@@ -158,8 +154,6 @@ public class RobotStateCoder implements drake.util.LCMCoder
       if (j!=null) {
         index = j.intValue();
         fdata.val[index] = rpy[2];
-//           if (fdata.val[index] > Math.PI)
-//             fdata.val[index] -= 2*Math.PI;
         fdata.val[index+m_num_joints+m_num_floating_joints] = rpydot[2];
       }
 
@@ -225,7 +219,7 @@ public class RobotStateCoder implements drake.util.LCMCoder
         msg.pose.rotation.y = (float) q[2];
         msg.pose.rotation.z = (float) q[3];
 
-      	double[] omega = drake.util.Transform.rpydot2angularvel(rpy,rpydot);
+        double[] omega = drake.util.Transform.rpydot2angularvel(rpy,rpydot);
       	msg.twist.angular_velocity.x = (float) omega[0];
       	msg.twist.angular_velocity.y = (float) omega[1];
       	msg.twist.angular_velocity.z = (float) omega[2];

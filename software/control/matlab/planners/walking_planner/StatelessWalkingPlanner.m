@@ -46,7 +46,7 @@ classdef StatelessWalkingPlanner
         fixed_links(end+1) = struct('link',r.findLinkInd('l_hand+l_hand_point_mass'),'pt',[0;0.1;0],'tolerance',0.05);
       end
 
-      [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(r, x0, footsteps);
+      [support_times, supports, comtraj, foottraj, V, zmptraj,c] = walkingPlanFromSteps(r, x0, footsteps);
       tf = comtraj.tspan(end); assert(abs(eval(V,tf,zeros(4,1)))<1e-4);  % relatively fast check to make sure i'm in the correct frame (x-zmp_tf)
 
       link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
@@ -67,7 +67,7 @@ classdef StatelessWalkingPlanner
         walking_plan = WalkingControllerData(V, support_times,...
                                            {supports}, comtraj, mu, t_offset,...
                                            link_constraints, zmptraj, qstar,...
-                                           ignore_terrain);
+                                           ignore_terrain,c);
       else
         [xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, qstar, zmptraj, comtraj, link_constraints);
         joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));

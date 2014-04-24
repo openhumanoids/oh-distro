@@ -14,13 +14,14 @@ classdef WalkingControllerData
     zmptraj
     qtraj
     ignore_terrain
+    K
   end
 
   methods
     function obj = WalkingControllerData(V, support_times,...
                                          supports, comtraj, mu, t_offset,...
                                          link_constraints, zmptraj, qtraj,...
-                                         ignore_terrain)
+                                         ignore_terrain,K)
       obj.S = V.S;
       obj.s1 = V.s1;
       obj.s2 = V.s2;
@@ -35,6 +36,7 @@ classdef WalkingControllerData
       obj.zmptraj = zmptraj;
       obj.qtraj = qtraj;
       obj.ignore_terrain = ignore_terrain;
+      obj.K = K;
     end
 
     function msg = toLCM(obj)

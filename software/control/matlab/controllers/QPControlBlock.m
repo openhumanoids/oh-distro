@@ -44,10 +44,21 @@ classdef QPControlBlock < MIMODrakeSystem
       dt = options.dt;
     else
       dt = 0.004;
-    end
+		end
     
-    output_frame = r.getInputFrame();
-    obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
+		if ~isfield(options,'output_qdd')
+			options.output_qdd = false;
+    else
+			typecheck(options.output_qdd,'logical');
+		end
+		
+		if options.output_qdd
+			output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
+		else
+			output_frame = r.getInputFrame();
+		end
+		
+		obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
     obj = setInputFrame(obj,input_frame);
     obj = setOutputFrame(obj,output_frame);
@@ -115,7 +126,7 @@ classdef QPControlBlock < MIMODrakeSystem
       sizecheck(options.use_mex,1);
       obj.use_mex = uint32(options.use_mex);
       rangecheck(obj.use_mex,0,2);
-      if (obj.use_mex && exist('QPControllermex')~=3)
+      if (obj.use_mex && exist('QPControllermex','file')~=3)
         error('can''t find QPControllermex.  did you build it?');
       end
     else
@@ -126,12 +137,6 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.use_hand_ft = options.use_hand_ft;
     else
       obj.use_hand_ft = false;
-    end
-
-    if isfield(options,'include_angular_momentum')
-      obj.include_angular_momentum = options.include_angular_momentum;
-    else
-      obj.include_angular_momentum = false;
     end
 
     if (isfield(options,'ignore_states'))
@@ -210,6 +215,7 @@ classdef QPControlBlock < MIMODrakeSystem
 
     [obj.jlmin, obj.jlmax] = getJointLimits(r);
         
+		obj.output_qdd = options.output_qdd;
   end
 
   end
@@ -265,8 +271,8 @@ classdef QPControlBlock < MIMODrakeSystem
   
   methods
     
-  function y=mimoOutput(obj,t,~,varargin)
-%    out_tic = tic;
+  function varargout=mimoOutput(obj,t,~,varargin)
+%     out_tic = tic;
     ctrl_data = obj.controller_data.data;
     
 %    QPControlBlock.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
@@ -429,14 +435,6 @@ classdef QPControlBlock < MIMODrakeSystem
 
       [xcom,J] = getCOM(r,kinsol);
       
-      if obj.include_angular_momentum
-        [Ag,Agdot] = getCMM(r,kinsol,qd);
-  
-        Ag_ang = Ag(1:3,:);
-        Agdot_ang = Agdot(1:3,:);
-        h_ang_dot_des = [0;0;0]; % regulate to zero for now
-        w2 = 0.0001; % QP objective function weight
-      end
       
       Jdot = forwardJacDot(r,kinsol,0);
       J = J(1:2,:); % only need COM x-y
@@ -541,9 +539,6 @@ classdef QPControlBlock < MIMODrakeSystem
       if nc > 0
         Hqp = Iqdd'*J'*R_DQyD_ls*J*Iqdd;
         Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
-        if obj.include_angular_momentum
-          Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + w2*Ag_ang'*Ag_ang;
-        end
         
         fqp = xlimp'*C_ls'*Qy*D_ls*J*Iqdd;
         fqp = fqp + qd'*Jdot'*R_DQyD_ls*J*Iqdd;
@@ -551,10 +546,6 @@ classdef QPControlBlock < MIMODrakeSystem
         fqp = fqp - u0'*R_ls*J*Iqdd;
         fqp = fqp - y0'*Qy*D_ls*J*Iqdd;
         fqp = fqp - obj.w*q_ddot_des'*Iqdd;
-        if obj.include_angular_momentum
-          fqp = fqp + w2*qd'*Agdot_ang'*Ag_ang*Iqdd;
-          fqp = fqp - w2*h_ang_dot_des'*Ag_ang*Iqdd;
-        end
         
         % quadratic slack var cost 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
@@ -652,7 +643,7 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdot,active_supports] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi, ...
+      [y,Vdot,active_supports,qdd] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi, ...
           supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu, ...
           contact_sensor,contact_thresh,height,obj.include_angular_momentum);
     end
@@ -838,7 +829,13 @@ classdef QPControlBlock < MIMODrakeSystem
       if mod(average_tictoc_n,50)==0
         fprintf('Average control output duration: %2.4f\n',average_tictoc);
       end
-    end
+		end
+		
+		if obj.output_qdd
+			varargout = {y,qdd};
+		else
+			varargout = {y};
+		end
   end
   end
 
@@ -872,5 +869,6 @@ classdef QPControlBlock < MIMODrakeSystem
     jlmin;
     jlmax;
     contact_threshold; % min height above terrain to be considered in contact
+		output_qdd = false;
     end
 end

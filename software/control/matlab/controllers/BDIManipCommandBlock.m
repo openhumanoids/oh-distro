@@ -1,5 +1,5 @@
 classdef BDIManipCommandBlock < MIMODrakeSystem
-  % kindof a bunk little block. passes the robot coordinates and converts
+  % passes the robot coordinates and converts
   % planned motions in the pelvis to commands to the BDI manip mode
   % controller. these are published directly in the output function.  
   

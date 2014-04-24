@@ -6,9 +6,7 @@ classdef SimplePDBlock < MIMODrakeSystem
     Kd;
     dt;
     robot;
-    use_qddtraj;
     ctrl_data;
-    use_kalman_est;
   end
   
   methods
@@ -32,56 +30,30 @@ classdef SimplePDBlock < MIMODrakeSystem
       
       if isfield(options,'Kp')
         typecheck(options.Kp,'double');
-        sizecheck(options.Kp,[obj.nq obj.nq]);
+        sizecheck(options.Kp,[obj.nq 1]);
         obj.Kp = options.Kp;
+%         obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       else
-        obj.Kp = 170.0*eye(obj.nq);
-%        obj.Kp([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
+        obj.Kp = 170.0*ones(obj.nq,1);
+%         obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       end        
         
       if isfield(options,'Kd')
         typecheck(options.Kd,'double');
-        sizecheck(options.Kd,[obj.nq obj.nq]);
+        sizecheck(options.Kd,[obj.nq 1]);
         obj.Kd = options.Kd;
+%         obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
       else
-        obj.Kd = 19.0*eye(obj.nq);
- %       obj.Kd([1,2,6],[1,2,6]) = zeros(3); % ignore x,y,yaw
+        obj.Kd = 19.0*ones(obj.nq,1);
+%         obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
       end
-      
-      if isfield(options,'soft_ankles')
-        typecheck(options.soft_ankles,'logical');
-        if options.soft_ankles
-          state_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-          lax_idx = find(~cellfun(@isempty,strfind(state_names,'lax')));
-          uay_idx = find(~cellfun(@isempty,strfind(state_names,'uay')));
-          obj.Kp(uay_idx,uay_idx) = 5*eye(2);
-          obj.Kp(lax_idx,lax_idx) = 5*eye(2);
-          obj.Kd(uay_idx,uay_idx) = 0.01*eye(2);
-          obj.Kd(lax_idx,lax_idx) = 0.01*eye(2);
-        end
-      end
-      
-      if isfield(options,'use_qddtraj')
-        typecheck(options.use_qddtraj,'logical');
-        if options.use_qddtraj && ~isfield(controller_data.data,'qddtraj')
-          error('SimplePDBlock: use_qddtraj set but qddtraj is not in shared data handle');
-        end
-        obj.use_qddtraj = options.use_qddtraj;
-      end
-
-      if isfield(options,'use_kalman_est')
-        typecheck(options.use_kalman_est,'logical');
-        obj.use_kalman_est = options.use_kalman_est;
-      else
-        obj.use_kalman_est = false;
-      end
-      
+            
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.003;
+        obj.dt = 0.001;
       end
       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
       
@@ -96,42 +68,9 @@ classdef SimplePDBlock < MIMODrakeSystem
       x = varargin{2};
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
-      persistent P x_est tlast;
-
-      if obj.use_kalman_est %TEMP!!
-
-        if isempty(P)
-          P = eye(2*obj.nq);
-          x_est=zeros(2*obj.nq,1);
-          tlast=t-0.003;
-        end
-
-        H = [eye(obj.nq) zeros(obj.nq)];
-        R = 5e-4*eye(obj.nq);
-
-        dt = t-tlast;
-        F = [eye(obj.nq) dt*eye(obj.nq); zeros(obj.nq) eye(obj.nq)];
-        Q = 0.3*[dt*eye(obj.nq) zeros(obj.nq); zeros(obj.nq) eye(obj.nq)];
-
-        % compute filtered velocity
-        jprior = F*x_est;
-        Pprior = F*P*F' + Q;
-        meas_resid = x(1:obj.nq) - H*jprior;
-        S = H*Pprior*H' + R;
-        K = (P*H')/S;
-        x_est = jprior + K*meas_resid;
-        P = (eye(2*obj.nq) - K*H)*Pprior;
-        tlast=t;
-
-        q = x_est(1:obj.nq);
-        qd = x_est(obj.nq+(1:obj.nq));
-      end      
       
 			err_q = [q_des(1:3)-q(1:3);angleDiff(q(4:end),q_des(4:end))];
-      y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp*err_q - obj.Kd*qd));
-      if obj.use_qddtraj
-        y = y+ fasteval(obj.ctrl_data.data.qddtraj,t);
-      end
+      y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
     end
   end
   
