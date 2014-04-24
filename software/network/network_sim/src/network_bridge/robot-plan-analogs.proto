@@ -1,4 +1,4 @@
-import "goby/acomms/protobuf/dccl_option_extensions.proto";
+import "dccl/protobuf/option_extensions.proto";
 import "robot-state-analogs.proto";
 
 package drc;
@@ -13,16 +13,14 @@ message MinimalRobotPlan
   required MinimalRobotState goal = 2;
   required MinimalRobotStateDiff goal_diff = 3;
 
-  required int32 num_grasp_transitions = 10 [(dccl.field) = { min: 0  max: 10 }];
-  repeated GraspTransition grasp = 11 [(dccl.field) = { max_repeat: 10 repeat_index: 10 }];
+  repeated GraspTransition grasp = 11 [(dccl.field) = { max_repeat: 10 }];
   
   required int32 left_arm_control_type = 20 [(dccl.field) = { min: 0  max: 4 }];
   optional int32 right_arm_control_type = 21 [(dccl.field) = { min: 0  max: 4 codec: "presence_bit" }];
   required int32 left_leg_control_type = 22 [(dccl.field) = { min: 0  max: 4 }];
   optional int32 right_leg_control_type = 23 [(dccl.field) = { min: 0  max: 4 codec: "presence_bit" }];
 
-  required int32 aff_num_states = 30 [(dccl.field) = { min: 0 max: 30 }];  
-  repeated AffordanceIndex aff_index = 31 [(dccl.field) = { max_repeat: 30 repeat_index: 30 }];
+  repeated AffordanceIndex aff_index = 31 [(dccl.field) = { max_repeat: 30 }];
   optional int32 aff_uid = 32 [(dccl.field) = { min: 0 max: 0x7FFFFFFE codec: "presence_bit" }];
 }
 

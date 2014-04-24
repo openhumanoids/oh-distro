@@ -1,4 +1,4 @@
-import "goby/acomms/protobuf/dccl_option_extensions.proto";
+import "dccl/protobuf/option_extensions.proto";
 
 package drc;
 
@@ -49,8 +49,7 @@ message PMDOrdersDiff
   // set to absolute value, if different
   optional string sheriff_name = 3 [(dccl.field) = { max_length: 64  codec: "presence_bit" } ];
 
-  required int32 ncmds = 4 [(dccl.field) = { min: 0 max: 100 } ];
-  repeated PMDSheriffCmdDiff cmds = 5 [(dccl.field) = { max_repeat: 100 repeat_index: 4 }];
+  repeated PMDSheriffCmdDiff cmds = 5 [(dccl.field) = { max_repeat: 100 }];
   message PMDSheriffCmdDiff
   {
     optional int32 index = 1 [(dccl.field) = { min: 0 max: 100 codec: "presence_bit" } ];
@@ -73,8 +72,7 @@ message PMDInfoDiff
   optional double utime = 2 [(dccl.field) = { min: 0 max: 7200e6 precision: -3 }];
 
 
-  required int32 ncmds = 8 [(dccl.field) = { min: 0 max: 100 } ];
-  repeated PMDDeputyCmdDiff cmds = 9 [(dccl.field) = { max_repeat: 100 repeat_index: 8 }];
+  repeated PMDDeputyCmdDiff cmds = 9 [(dccl.field) = { max_repeat: 100}];
   message PMDDeputyCmdDiff
   {
     optional int32 index = 1 [(dccl.field) = { min: 0 max: 100 codec: "presence_bit" } ];

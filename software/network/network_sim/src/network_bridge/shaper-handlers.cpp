@@ -945,8 +945,6 @@ void DRCShaper::load_pmd_custom_codecs()
             diff_cmd->mutable_cmd()->set_auto_respawn(false);
             
             
-            diff.set_ncmds(diff.cmds_size());
-            
             std::string bytes;
             dccl_->encode(&bytes, diff);
             
@@ -1046,13 +1044,11 @@ void DRCShaper::load_robot_plan_custom_codecs()
         rot_diff->add_dw(0);
 
         
-        plan.set_num_grasp_transitions(0);
         plan.set_left_arm_control_type(1);
         plan.set_left_leg_control_type(2);
         plan.set_right_arm_control_type(4);
         plan.set_right_leg_control_type(0);
 
-        plan.set_aff_num_states(0);
         
 //        std::cout << plan.DebugString() << std::endl;
         
@@ -1063,9 +1059,6 @@ void DRCShaper::load_robot_plan_custom_codecs()
         dccl_->decode(bytes, &plan_out);
 
 //        std::cout << plan_out.DebugString() << std::endl;
-
-        while(plan_out.grasp_size() > plan_out.num_grasp_transitions())
-            plan_out.mutable_grasp()->RemoveLast();
         
         assert(plan.SerializeAsString() == plan_out.SerializeAsString());
     }

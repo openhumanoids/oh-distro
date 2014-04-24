@@ -1,5 +1,7 @@
 #include "custom-codecs.h"
 
+#include "goby/acomms/acomms_constants.h"
+
 #include <iostream>
 
 int DRCEmptyIdentifierCodec::currently_decoded_id = 0;

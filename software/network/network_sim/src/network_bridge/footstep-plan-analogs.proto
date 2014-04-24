@@ -1,4 +1,4 @@
-import "goby/acomms/protobuf/dccl_option_extensions.proto";
+import "dccl/protobuf/option_extensions.proto";
 import "robot-state-analogs.proto";
 
 package drc;
