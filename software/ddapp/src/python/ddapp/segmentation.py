@@ -452,7 +452,7 @@ def applyVoxelGrid(polyData, leafSize=0.01):
 def segmentGroundPlanes():
 
     objs = []
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         name = obj.getProperty('Name')
         if name.startswith('pointcloud snapshot'):
             objs.append(obj)
@@ -833,12 +833,12 @@ def createLine(blockDimensions, p1, p2):
 
 def updateBlockAffordances(polyData=None):
 
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         if isinstance(obj, BlockAffordanceItem):
             if 'refit' in obj.getProperty('Name'):
                 om.removeFromObjectModel(obj)
 
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         if isinstance(obj, BlockAffordanceItem):
             updateBlockFit(obj, polyData)
 
@@ -2773,7 +2773,7 @@ def publishDebrisStanceFrame(aff):
 
 def segmentBlockByPlanes(blockDimensions):
 
-    planes = om.getObjectChildren(om.findObjectByName('selected planes'))[:2]
+    planes = om.findObjectByName('selected planes').children()[:2]
 
     viewPlaneNormal = getSegmentationView().camera().GetViewPlaneNormal()
     origin1, normal1, plane1 = getPlaneEquationFromPolyData(planes[0].polyData, expectedNormal=viewPlaneNormal)
@@ -3255,12 +3255,12 @@ def getDefaultAffordanceObject():
     if isinstance(obj, AffordanceItem):
         return obj
 
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         if isinstance(obj, AffordanceItem):
             return obj
 
 def getVisibleRobotModel():
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         if isinstance(obj, om.RobotModelItem) and obj.getProperty('Visible'):
             return obj
 
