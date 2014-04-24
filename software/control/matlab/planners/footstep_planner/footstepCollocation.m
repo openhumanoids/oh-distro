@@ -1,46 +1,43 @@
-function [X, foot_goals] = footstepCollocation(biped, foot_orig, goal_pos, params, safe_regions)
+function [X, exitflag] = footstepCollocation(biped, foot_orig, goal_pos, terrain, corridor_pts, params, safe_regions)
 
 if nargin < 5
   safe_regions = {struct('A', [], 'b', [])};
 end
 
-debug = false;
-use_snopt = 1;
-use_mex = 1;
-foot_orig.right(4:5) = 0;
-foot_orig.left(4:5) = 0;
+debug = true;
+USE_SNOPT = 1;
+USE_MEX = 1;
 
 params.right_foot_lead = logical(params.right_foot_lead);
 
 if ~isfield(params, 'nom_step_width'); params.nom_step_width = 0.26; end
-if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
 if ~isfield(params, 'allow_even_num_steps'); params.allow_even_num_steps = true; end
 if ~isfield(params, 'allow_odd_num_steps'); params.allow_odd_num_steps = true; end
 
 X = createOriginSteps(biped, foot_orig, params.right_foot_lead);
 
 st0 = X(2).pos;
-st0(3) = 0;
-c0 = biped.footCenter2StepCenter(st0, X(2).is_right_foot, params.nom_step_width);
 goal_pos.right(6) = st0(6) + angleDiff(st0(6), goal_pos.right(6));
 goal_pos.left(6) = goal_pos.right(6) + angleDiff(goal_pos.right(6), goal_pos.left(6));
 goal_pos.right(3) = st0(3);
 goal_pos.left(3) = st0(3);
-
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
-final_disp_rl = rotmat(-goal_pos.right(6)) * (goal_pos.left(1:2) - goal_pos.right(1:2));
-final_disp_lr = rotmat(-goal_pos.left(6)) * (goal_pos.right(1:2) - goal_pos.left(1:2));
-final_dx = max([abs(final_disp_rl(1)), abs(final_disp_lr(1))]) + 0.03;
-foot_goals = goal_pos;
 
 function [c, ceq, dc, dceq] = constraints(x)
-  cf = goal_pos.center;
-  if use_mex == 0 || use_mex == 2
-    [c, ceq, dc, dceq] = stepCollocationConstraints(x, c0, cf, params.max_line_deviation);
+  if USE_MEX == 0 || USE_MEX == 2
+    [c, ceq, dc, dceq] = stepCollocationConstraints(x);
+    [ceq_terrain, dceq_terrain] = stepCollocationTerrainConstraints(x, terrain);
+    ceq = [ceq; ceq_terrain];
+    dceq = [dceq, dceq_terrain];
   end
-  if use_mex
-    [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x, c0, cf, params.max_line_deviation);
-    if use_mex == 2
+  if USE_MEX
+    if isprop(terrain, 'map_handle')
+      map_ptr = terrain.map_handle.getPointerForMex();
+    else
+      map_ptr = 0;
+    end
+    [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x, map_ptr);
+    if USE_MEX == 2
       valuecheck(c, c_mex, 1e-8);
       valuecheck(ceq, ceq_mex, 1e-8);
       valuecheck(dc, dc_mex, 1e-8);
@@ -68,19 +65,10 @@ function [F,G] = collocation_userfun(x)
 end
 
 function stop = plotfun(x)
-  [steps, ~] = decodeCollocationSteps(x);
-  quiver(steps(1,r_ndx), steps(2,r_ndx), cos(steps(6,r_ndx)), sin(steps(6,r_ndx)), 'g');
-  hold on
-  plot(steps(1,r_ndx), steps(2,r_ndx), 'g:');
-  quiver(steps(1,l_ndx), steps(2,l_ndx), cos(steps(6,l_ndx)), sin(steps(6,l_ndx)), 'r');
-  plot(steps(1,l_ndx), steps(2,l_ndx), 'r:');
-  hold off
-  axis equal
-  drawnow();
-  stop = false;
+  stop = stepCollocationPlotfun(x, r_ndx, l_ndx, terrain, corridor_pts);
 end
 
-params.forward_step = params.nom_forward_step;
+params.forward_step = params.max_forward_step;
 [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
 if length(safe_regions) > 1
   params.max_num_steps = min(params.max_num_steps, length(safe_regions));
@@ -92,150 +80,164 @@ max_steps = params.max_num_steps + 1;
 steps = [];
 
 for nsteps = min_steps:max_steps
-  if ~params.right_foot_lead
-    r_ndx = 1:2:nsteps;
-    l_ndx = 2:2:nsteps;
+if ~params.right_foot_lead
+  r_ndx = 1:2:nsteps;
+  l_ndx = 2:2:nsteps;
+else
+  r_ndx = 2:2:nsteps;
+  l_ndx = 1:2:nsteps;
+end
+
+% Initialize the step list as alternating right and left steps in place, or, if the
+% optimization has already been run, seed the next round by adding a new step in the
+% same location as the second-to-last step (we don't use the last step because it
+% represents the position of the opposite foot).
+if isempty(steps)
+  steps = repmat(st0, 1, nsteps);
+  steps(:,2:2:end) = repmat(biped.stepCenter2FootCenter(biped.footCenter2StepCenter(st0,~params.right_foot_lead,params.nom_step_width), params.right_foot_lead, params.nom_step_width),1,floor(nsteps/2));
+else
+  steps(:,end+1) = steps(:,end-1);
+end
+nv = 12 * nsteps;
+
+[A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead, corridor_pts);
+
+lb = -inf(12,nsteps);
+ub = inf(size(lb));
+lb([4,5,10,11],:) = 0;
+ub([4,5,10,11],:) = 0;
+max_total_z_excursion = 10;
+lb(3,:) = st0(3) - max_total_z_excursion;
+ub(3,:) = st0(3) + max_total_z_excursion;
+% Require that the first step be at the current stance foot pose
+lb(1:6,1) = st0;
+ub(1:6,1) = st0;
+lb(7:12,1) = st0;
+ub(7:12,1) = st0;
+lb(7:11, :) = -2; % 2m maximum delta between steps
+ub(7:11, :) = 2;
+lb(12,:) = -pi;
+ub(12,:) = pi;
+
+x0 = encodeCollocationSteps(steps);
+
+for j = 2:nsteps
+  x_ndx = (j-1)*12+(1:6);
+  if length(safe_regions) == 1
+    region_ndx = 1;
   else
-    r_ndx = 2:2:nsteps;
-    l_ndx = 1:2:nsteps;
+    region_ndx = j-1;
+  end
+  region = safe_regions{region_ndx};
+  num_region_cons = length(region.b);
+  if num_region_cons > 0
+    expanded_A = zeros(num_region_cons, nv);
+    expanded_A(:,x_ndx([1,2,6])) = region.A;
+    A = [A; expanded_A];
+    b = [b; region.b];
+  end
+end
+
+
+if USE_SNOPT
+  snseti ('Major Iteration limit', 250);
+  if debug
+    snseti ('Verify level', 3);
+  else
+    snseti ('Verify level', 0);
   end
 
-  % Initialize the step list as alternating right and left steps in place, or, if the
-  % optimization has already been run, seed the next round by adding a new step in the
-  % same location as the second-to-last step (we don't use the last step because it
-  % represents the position of the opposite foot).
-  if isempty(steps)
-    steps = repmat(st0, 1, nsteps);
-    steps(:,2:2:end) = repmat(biped.stepCenter2FootCenter(biped.footCenter2StepCenter(st0,~params.right_foot_lead,params.nom_step_width), params.right_foot_lead, params.nom_step_width),1,floor(nsteps/2));
-  else
-    steps(:,end+1) = steps(:,end-1);
-  end
-  nv = 12 * nsteps;
+  snseti ('Superbasics limit', 2000);
+  n_obj = 1;
+  n_proj_cons = 2*nsteps;
+  n_terrain_cons = nsteps;
+  iG = boolean(zeros(nv, n_obj + n_proj_cons + n_terrain_cons));
+  iA = boolean(zeros(size(iG,2)+size(A,1)+size(Aeq,1),nv));
+  iG(:,1) = 1;
 
-  [A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);
+  x1_ndx = 1:6;
+  dx_ndx = 7:12;
+  con_ndx = (1:2)+1;
+  iG(x1_ndx(1:2),con_ndx) = diag([1,1]);
+  iG(dx_ndx(1:2),con_ndx) = diag([1,1]);
+
   for j = 2:nsteps
-    x_ndx = (j-1)*12+(1:6);
-    if length(safe_regions) == 1
-      region_ndx = 1;
-    else
-      region_ndx = j-1;
-    end
-    region = safe_regions{region_ndx};
-    num_region_cons = length(region.b);
-    if num_region_cons > 0
-      expanded_A = zeros(num_region_cons, nv);
-      expanded_A(:,x_ndx([1,2,6])) = region.A;
-      A = [A; expanded_A];
-      b = [b; region.b];
-    end
-  end
-
-
-  lb = -inf(12,nsteps);
-  ub = inf(size(lb));
-  lb([3,4,5,10,11],:) = 0;
-  ub([3,4,5,10,11],:) = 0;
-
-  % Require that the first step be at the current stance foot pose
-  lb(1:6,1) = st0;
-  ub(1:6,1) = st0;
-  lb(7:12,1) = st0;
-  ub(7:12,1) = st0;
-  lb(7,end) = -final_dx;
-  ub(7,end) = final_dx;
-
-  x0 = encodeCollocationSteps(steps);
-
-  if use_snopt
-    snseti ('Major Iteration limit', 250);
-    if debug
-      snseti ('Verify level', 3);
-    else
-      snseti ('Verify level', 0);
-    end
-
-    snseti ('Superbasics limit', 2000);
-    iG = boolean(zeros(nv, 1+2*nsteps+nsteps));
-    iA = boolean(zeros(size(iG,2)+size(A,1)+size(Aeq,1),nv));
-    iG(:,1) = 1;
-    x1_ndx = 1:6;
-    dx_ndx = 7:12;
-    con_ndx = (1:2)+1;
+    con_ndx = (j-1)*2+(1:2) + n_obj;
+    x1_ndx = (j-2)*12+(1:6);
+    dx_ndx = (j-1)*12+(7:12);
+    x2_ndx = (j-1)*12+(1:6);
+    iG(x2_ndx(1:2),con_ndx) = diag([1,1]);
     iG(x1_ndx(1:2),con_ndx) = diag([1,1]);
-    iG(dx_ndx(1:2),con_ndx) = diag([1,1]);
-
-    for j = 2:nsteps
-      con_ndx = (j-1)*2+(1:2)+1+nsteps;
-      x1_ndx = (j-2)*12+(1:6);
-      dx_ndx = (j-1)*12+(7:12);
-      x2_ndx = (j-1)*12+(1:6);
-      iG(x2_ndx(1:2),con_ndx) = diag([1,1]);
-      iG(x1_ndx(1:2),con_ndx) = diag([1,1]);
-      iG(x1_ndx(6),con_ndx) = [1,1];
-      iG(dx_ndx(1:2),con_ndx) = [1 1; 1 1];
-    end
-
-    for j = 1:nsteps
-      con_ndx = j+1;
-      x1_ndx = (j-1)*12+(1:6);
-      iG(x1_ndx(1:2),con_ndx) = [1;1];
-    end
-
-    iGndx = find(iG);
-    [jGvar, iGfun] = find(iG);
-
-    iA(size(iG,2)+(1:size(A,1)),:)= A ~= 0;
-    iA(size(iG,2)+size(A,1)+(1:size(Aeq,1)),:)= Aeq ~= 0;
-    iAndx = find(iA);
-    [iAfun, jAvar] = find(iA);
-    A_sn = [zeros(size(iG,2),nv); A; Aeq];
-
-    lb = reshape(lb, [],1);
-    ub = reshape(ub, [],1);
-    xlow = lb;
-    xupp = ub;
-    xmul = zeros(size(lb));
-    xstate = zeros(size(lb));
-    Flow = [-inf; -inf(nsteps,1); zeros(2*nsteps, 1); -inf(size(A,1),1); beq];
-    Fupp = [inf; zeros(nsteps,1); zeros(2*nsteps, 1); b; beq];
-    Fmul = zeros(size(Flow));
-    Fstate = Fmul;
-    ObjAdd = 0;
-    ObjRow = 1;
-    global SNOPT_USERFUN
-    SNOPT_USERFUN = @collocation_userfun;
-    % tic
-    [xstar, fval, ~, ~, exitflag] = snsolve(x0,xlow,xupp,xmul,xstate,    ...
-                 Flow,Fupp,Fmul,Fstate,      ...
-                 ObjAdd,ObjRow,A_sn(iAndx),iAfun,jAvar,...
-                 iGfun,jGvar,'snoptUserfun');
-    % toc
-    if debug
-      exitflag
-    end
-  else
-    % tic
-    [xstar, fval, exitflag] = fmincon(@objfun, x0, sparse(A), b, sparse(Aeq), beq, lb, ub, @constraints, optimset('Algorithm', 'interior-point', 'DerivativeCheck', 'on', 'GradConstr', 'on', 'GradObj', 'on', 'OutputFcn',{}));
-    % toc
+    iG(x1_ndx(6),con_ndx) = [1,1];
+    iG(dx_ndx(1:2),con_ndx) = [1 1; 1 1];
   end
 
-  % plotfun(xstar);
+  for j = 2:nsteps
+    con_ndx = j + n_obj + n_proj_cons;
+    x1_ndx = (j-1)*12+(1:6);
+    iG(x1_ndx(1:3), con_ndx) = 1;
+  end
 
-  [steps, steps_rel] = decodeCollocationSteps(xstar);
-  if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
-    continue
-  elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
-    continue
-  else
-    output_steps = steps;
-    output_steps_rel = steps_rel;
-    output_nsteps = nsteps;
+  iGndx = find(iG);
+  [jGvar, iGfun] = find(iG);
+
+  iA(size(iG,2)+(1:size(A,1)),:)= A ~= 0;
+  iA(size(iG,2)+size(A,1)+(1:size(Aeq,1)),:)= Aeq ~= 0;
+  iAndx = find(iA);
+  [iAfun, jAvar] = find(iA);
+  A_sn = [zeros(size(iG,2),nv); A; Aeq];
+
+  lb = reshape(lb, [],1);
+  ub = reshape(ub, [],1);
+  xlow = lb;
+  xupp = ub;
+  xmul = zeros(size(lb));
+  xstate = zeros(size(lb));
+  Flow = [-inf; zeros(n_terrain_cons, 1); zeros(n_proj_cons, 1); -inf(size(A,1),1); beq];
+  Fupp = [inf; zeros(n_terrain_cons, 1); zeros(n_proj_cons, 1); b; beq];
+  Fmul = zeros(size(Flow));
+  Fstate = Fmul;
+  ObjAdd = 0;
+  ObjRow = 1;
+  global SNOPT_USERFUN
+  SNOPT_USERFUN = @collocation_userfun;
+  % tic
+  [xstar, fval, ~, ~, exitflag] = snsolve(x0,xlow,xupp,xmul,xstate,    ...
+               Flow,Fupp,Fmul,Fstate,      ...
+               ObjAdd,ObjRow,A_sn(iAndx),iAfun,jAvar,...
+               iGfun,jGvar,'snoptUserfun');
+  % toc
+  if debug
+    exitflag
   end
-  diff_r = steps(:,r_ndx(end)) - goal_pos.right;
-  diff_l = steps(:,l_ndx(end)) - goal_pos.left;
-  if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;0.02;0.02;0.1;0.1;0.1])
-    break
-  end
+else
+  % tic
+  [xstar, fval, exitflag] = fmincon(@objfun, x0, sparse(A), b, ...
+                  sparse(Aeq), beq, lb, ub, @constraints, ...
+                  optimset('Algorithm', 'interior-point', ...
+                  'DerivativeCheck', 'on', ...
+                  'GradConstr', 'on', ...
+                  'GradObj', 'on', 'OutputFcn',{}));
+  % toc
+end
+
+% plotfun(xstar);
+
+[steps, steps_rel] = decodeCollocationSteps(xstar);
+if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
+  continue
+elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
+  continue
+else
+  output_steps = steps;
+  output_steps_rel = steps_rel;
+  output_nsteps = nsteps;
+end
+diff_r = steps(:,r_ndx(end)) - goal_pos.right;
+diff_l = steps(:,l_ndx(end)) - goal_pos.left;
+if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;0.02;0.02;0.1;0.1;0.1])
+  break
+end
 end
 
 if exitflag ~= 13

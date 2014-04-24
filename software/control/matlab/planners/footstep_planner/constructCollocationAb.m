@@ -1,4 +1,4 @@
-function [A, b, Aeq, beq, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead)
+function [A, b, Aeq, beq, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead, corridor_pts)
 
   nc = length(b_reach);
   nv = 12 * nsteps;
@@ -18,6 +18,21 @@ function [A, b, Aeq, beq, step_map] = constructCollocationAb(A_reach, b_reach, n
     b(con_ndx) = b_reach;
     A_reach = A_reach * diag([1,-1,1,1,1,-1]);
     step_map.ineq(j) = con_ndx;
+  end
+
+  if ~isempty(corridor_pts)
+    [A_corr, b_corr] = poly2lincon(corridor_pts(1,:), corridor_pts(2,:));
+    A_corr_full = zeros(length(b_corr) * (nsteps-1), nv);
+    b_corr_full = zeros(length(b_corr) * (nsteps-1), 1);
+    for j = 2:nsteps
+      con_ndx = length(b_corr)*(j-2)+(1:length(b_corr));
+      var_ndx = (j-1)*12+(1:6);
+      A_corr_full(con_ndx, var_ndx(1:2)) = A_corr;
+      b_corr_full(con_ndx) = b_corr;
+    end
+    A = [A;
+         A_corr_full];
+    b = [b; b_corr_full];
   end
 
   Aeq = zeros(4*(nsteps-1),nv);

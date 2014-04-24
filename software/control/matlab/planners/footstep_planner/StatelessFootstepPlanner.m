@@ -21,15 +21,21 @@ classdef StatelessFootstepPlanner
       if ismethod(terrain, 'setMapMode')
         biped.setTerrain(terrain.setMapMode(request.params.map_command));
       end
+      terrain = biped.getTerrain();
+      if isprop(terrain, 'map_handle')
+        safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
+      else
+        safe_regions = {struct('A', [], 'b', [])};
+      end
 
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
       if request.num_goal_steps > 2
         request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
         request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
       end
-      
+
       %%%%%%% TODO: remove
-      request.params.leading_foot = drc.footstep_plan_params_t.LEAD_RIGHT;
+      % request.params.leading_foot = drc.footstep_plan_params_t.LEAD_RIGHT;
 
       params_set = {struct(request.params)};
       if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
@@ -52,6 +58,7 @@ classdef StatelessFootstepPlanner
       for p = params_set
         params = struct(p{1});
         params.right_foot_lead = params.leading_foot; % for backwards compatibility
+        if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
         if request.num_goal_steps == 0
           params.allow_odd_num_steps = true;
           params.allow_even_num_steps = true;
@@ -64,9 +71,8 @@ classdef StatelessFootstepPlanner
             params.allow_odd_num_steps = true;
           end
         end
-        safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
-
-        footsteps = footstepCollocation(biped, foot_orig, goal_pos, params, safe_regions);
+        corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
+        footsteps = footstepCollocation(biped, foot_orig, goal_pos, terrain, corridor_pts, params, safe_regions);
         step_vect = encodeCollocationSteps([footsteps(2:end).pos]);
         [steps, steps_rel] = decodeCollocationSteps(step_vect);
         l = length(footsteps);
@@ -228,9 +234,11 @@ classdef StatelessFootstepPlanner
       params.right_foot_lead = logical(params.right_foot_lead);
       if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
       params.forward_step = params.max_forward_step;
+      params.nom_upward_step = 0.2; % TODO: don't hardcode this
+      params.nom_downward_step = 0.15;
       [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
       nsteps = length(plan.footsteps) - 1;
-      [A, b, ~, ~, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);
+      [A, b, ~, ~, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead,[]);
       for j = [1,2]
         plan.footsteps(j).infeasibility = 0;
       end
@@ -239,6 +247,20 @@ classdef StatelessFootstepPlanner
       for j = 2:nsteps
         plan.footsteps(j+1).infeasibility = max(violation_ineq(step_map.ineq(j)));
       end
+    end
+
+    function corridor_pts = corridorPoints(biped, foot_orig, goal_pos, params)
+      X = createOriginSteps(biped, foot_orig, params.right_foot_lead);
+      st0 = X(2).pos;
+      c0 = biped.footCenter2StepCenter(st0, X(2).is_right_foot, params.nom_step_width);
+      goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
+      dx_corridor = goal_pos.center(1:2) - c0(1:2);
+      dx_corridor = dx_corridor / norm(dx_corridor);
+      dy_corridor = rotmat(pi/2) * (dx_corridor);
+      corridor_pts = [c0(1:2) - params.max_line_deviation * dx_corridor + params.max_line_deviation * dy_corridor,...
+                      c0(1:2) - params.max_line_deviation * dx_corridor - params.max_line_deviation * dy_corridor,...
+                      goal_pos.center(1:2) + params.max_line_deviation * dx_corridor - params.max_line_deviation * dy_corridor,...
+                      goal_pos.center(1:2) + params.max_line_deviation * dx_corridor + params.max_line_deviation * dy_corridor];
     end
 
     function safe_regions = computeIRISRegions(biped, request, heights, px2world)

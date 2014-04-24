@@ -8,10 +8,6 @@ pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
 install(TARGETS RobotStateMonitor AtlasCommandPublisher DESTINATION matlab)
 
-add_mex(stepCollocationConstraintsMex stepCollocationConstraintsMex.cpp)
-set_target_properties(stepCollocationConstraintsMex PROPERTIES COMPILE_FLAGS "-std=c++0x")
-pods_use_pkg_config_packages(stepCollocationConstraintsMex eigen3)
-install(TARGETS stepCollocationConstraintsMex DESTINATION matlab)
 
 pods_find_pkg_config(maps)
 pods_find_pkg_config(opencv)
@@ -32,6 +28,10 @@ else()
 
   add_mex(HeightMapWrapper HeightMapWrapper.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
   pods_use_pkg_config_packages(HeightMapWrapper maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
+
+  add_mex(stepCollocationConstraintsMex stepCollocationConstraintsMex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
+  set_target_properties(stepCollocationConstraintsMex PROPERTIES COMPILE_FLAGS "-std=c++0x -DUSE_MAPS")
+  pods_use_pkg_config_packages(stepCollocationConstraintsMex maps eigen3 opencv)
 
   add_mex(BotParamClient BotParamClient.cpp)
   pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)
@@ -57,13 +57,13 @@ else()
   add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
   pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-  install(TARGETS HeightMapWrapper QPControllermex MomentumControllermex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id DESTINATION matlab)
+  install(TARGETS HeightMapWrapper stepCollocationConstraintsMex QPControllermex MomentumControllermex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id DESTINATION matlab)
 
 endif()
 
 pods_find_pkg_config(bullet)
 if (bullet_FOUND)
-  add_definitions( -DBULLET_COLLISION )   
+  add_definitions( -DBULLET_COLLISION )
 endif()
 
 
@@ -113,4 +113,4 @@ add_jar(drc_control ${java_src_files})
 
 install_jar(drc_control share/java)
 
-  
+
