@@ -31,7 +31,7 @@ classdef SupportState
         obj.contact_pts = contact_pts;
       else
         % use all points on body
-        obj.contact_pts = cell(length(obj.bodies),1);
+        obj.contact_pts = cell(1,length(obj.bodies));
         for i=1:length(obj.bodies)
           obj.contact_pts{i} = 1:size(getBodyContacts(r,obj.bodies(i)),2);
           obj.num_contact_pts(i)=length(obj.contact_pts{i});

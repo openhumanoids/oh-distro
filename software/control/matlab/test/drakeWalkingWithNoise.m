@@ -1,4 +1,5 @@
 function drakeWalkingWithNoise()
+%NOTEST
 % tests forward walking on flat terrain with state noise, actuator
 % delays, and inertial/damping errors
 

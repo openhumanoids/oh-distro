@@ -20,6 +20,14 @@ if (NOT maps_FOUND OR NOT opencv_FOUND)
   pods_use_pkg_config_packages(QPControllermex eigen3 gurobi drake-qp drake-rbm)
   install(TARGETS QPControllermex DESTINATION matlab)
 
+  add_mex(MomentumControllermex MomentumControllermex.cpp)
+  pods_use_pkg_config_packages(MomentumControllermex eigen3 gurobi drake-qp drake-rbm)
+  install(TARGETS MomentumControllermex DESTINATION matlab)
+
+  add_mex(linearIKmex linearIKmex.cpp)
+  pods_use_pkg_config_packages(linearIKmex eigen3 gurobi drake-qp drake-rbm)
+  install(TARGETS linearIKmex DESTINATION matlab)
+
 else()
 
   add_mex(HeightMapWrapper HeightMapWrapper.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
@@ -32,6 +40,14 @@ else()
   pods_use_pkg_config_packages(QPControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(QPControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
 
+  add_mex(MomentumControllermex MomentumControllermex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
+  pods_use_pkg_config_packages(MomentumControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
+  set_target_properties(MomentumControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
+
+  add_mex(linearIKmex linearIKmex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
+  pods_use_pkg_config_packages(linearIKmex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
+  set_target_properties(linearIKmex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
+
   add_mex(bot_timestamp_now bot_timestamp_now.cpp)
   pods_use_pkg_config_packages(bot_timestamp_now bot2-core)
 
@@ -41,7 +57,7 @@ else()
   add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
   pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-  install(TARGETS HeightMapWrapper QPControllermex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id DESTINATION matlab)
+  install(TARGETS HeightMapWrapper QPControllermex MomentumControllermex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id DESTINATION matlab)
 
 endif()
 

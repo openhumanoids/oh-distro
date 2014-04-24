@@ -410,7 +410,7 @@
     <!-- with backpack -->
     <link name="utorso">
         <inertial>
-            <mass value="52.007" />
+	        <mass value="52" />
             <origin xyz="-0.0923 0 0.3" rpy="0 -0 0" />
             <inertia ixx="1.466" ixy="0.00362" ixz="0.336" iyy="1.51" iyz="0.001" izz="1.3" />
         </inertial>
@@ -554,8 +554,8 @@
         <axis xyz="1 0 0" />
         <parent link="l_talus" />
         <child link="l_foot" />
-        <dynamics damping="0.5" friction="10.0" coulomb_window="0.175"/>
-        <limit effort="90" velocity="12" lower="-0.8" upper="0.8" />
+        <dynamics damping="1.0" friction="10.0" coulomb_window="0.175"/>
+        <limit effort="130" velocity="12" lower="-0.8" upper="0.8" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8" />
     </joint>
     <joint name="l_leg_aky" type="revolute">
@@ -563,8 +563,8 @@
         <axis xyz="0 1 0" />
         <parent link="l_lleg" />
         <child link="l_talus" />
-        <dynamics damping="0.5" friction="13.0" coulomb_window="0.175"/>
-        <limit effort="700" velocity="12" lower="-1" upper="0.7" />
+        <dynamics damping="1.0" friction="10.0" coulomb_window="0.175"/>
+        <limit effort="350" velocity="12" lower="-1" upper="0.7" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11" soft_upper_limit="10.7" />
     </joint>
     <joint name="l_leg_hpx" type="revolute">
@@ -572,8 +572,8 @@
         <axis xyz="1 0 0" />
         <parent link="l_uglut" />
         <child link="l_lglut" />
-        <dynamics damping="0.5" friction="12.0" coulomb_window="0.175"/>
-        <limit effort="180" velocity="12" lower="-0.523599" upper="0.523599" />
+        <dynamics damping="0.5" friction="5.0" coulomb_window="0.175"/>
+        <limit effort="250" effort_min="-343" effort_max="250" velocity="12" lower="-0.523599" upper="0.523599" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236" />
     </joint>
     <joint name="l_leg_hpy" type="revolute">
@@ -581,8 +581,8 @@
         <axis xyz="0 1 0" />
         <parent link="l_lglut" />
         <child link="l_uleg" />
-        <dynamics damping="0.5" friction="10.0" coulomb_window="0.175"/>
-        <limit effort="260" velocity="12" lower="-1.72072" upper="0.524821" />
+        <dynamics damping="0.5" friction="5.0" coulomb_window="0.175"/>
+        <limit effort="260" effort_min="-260" effort_max="353" velocity="12" lower="-1.72072" upper="0.524821" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7207" soft_upper_limit="10.5248" />
     </joint>
     <joint name="l_leg_hpz" type="revolute">
@@ -590,8 +590,8 @@
         <axis xyz="0 0 1" />
         <parent link="pelvis" />
         <child link="l_uglut" />
-        <dynamics damping="0.5" friction="10.0" coulomb_window="0.175"/>
-        <limit effort="110" velocity="12" lower="-0.174533" upper="1.22173" />
+        <dynamics damping="0.5" friction="5.0" coulomb_window="0.175"/>
+        <limit effort="68" effort_min="-105" effort_max="68" velocity="12" lower="-0.174533" upper="1.22173" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.1745" soft_upper_limit="11.2217" />
     </joint>
     <joint name="l_leg_kny" type="revolute">
@@ -599,8 +599,8 @@
         <axis xyz="0 1 0" />
         <parent link="l_uleg" />
         <child link="l_lleg" />
-        <dynamics damping="0.5" friction="11.0" coulomb_window="0.175"/>
-        <limit effort="220" velocity="12" lower="0" upper="2.38569" />
+        <dynamics damping="0.5" friction="5.0" coulomb_window="0.175"/>
+        <limit effort="220" effort_max="220" effort_min="-300" velocity="12" lower="0" upper="2.38569" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3857" />
     </joint>
     <joint name="neck_ay" type="revolute">
@@ -608,7 +608,7 @@
         <axis xyz="0 1 0" />
         <parent link="utorso" />
         <child link="head" />
-        <dynamics damping="0.1" friction="0" />
+        <dynamics damping="0.1" friction="0"/>
         <limit effort="5" velocity="12" lower="-0.602139" upper="1.14494" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.6021" soft_upper_limit="11.1449" />
     </joint>
@@ -671,8 +671,8 @@
         <axis xyz="1 0 0" />
         <parent link="r_talus" />
         <child link="r_foot" />
-        <dynamics damping="0.5" friction="10.0" coulomb_window="0.175"/>
-        <limit effort="90" velocity="12" lower="-0.8" upper="0.8" />
+        <dynamics damping="1.0" friction="10.0" coulomb_window="0.175"/>
+        <limit effort="130" velocity="12" lower="-0.8" upper="0.8" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.8" soft_upper_limit="10.8" />
     </joint>
     <joint name="r_leg_aky" type="revolute">
@@ -680,8 +680,8 @@
         <axis xyz="0 1 0" />
         <parent link="r_lleg" />
         <child link="r_talus" />
-        <dynamics damping="0.5" friction="13.0" coulomb_window="0.175"/>
-        <limit effort="700" velocity="12" lower="-1" upper="0.7" />
+        <dynamics damping="1.0" friction="10.0" coulomb_window="0.175"/>
+        <limit effort="350" velocity="12" lower="-1" upper="0.7" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11" soft_upper_limit="10.7" />
     </joint>
     <joint name="r_leg_hpx" type="revolute">
@@ -689,8 +689,8 @@
         <axis xyz="1 0 0" />
         <parent link="r_uglut" />
         <child link="r_lglut" />
-        <dynamics damping="0.5" friction="12.0" coulomb_window="0.175"/>
-        <limit effort="180" velocity="12" lower="-0.523599" upper="0.523599" />
+        <dynamics damping="0.5" friction="5.0" coulomb_window="0.175"/>
+        <limit effort="250" effort_min="-250" effort_max="343" velocity="12" lower="-0.523599" upper="0.523599" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.5236" soft_upper_limit="10.5236" />
     </joint>
     <joint name="r_leg_hpy" type="revolute">
@@ -698,8 +698,8 @@
         <axis xyz="0 1 0" />
         <parent link="r_lglut" />
         <child link="r_uleg" />
-        <dynamics damping="0.5" friction="10.0" coulomb_window="0.175"/>
-        <limit effort="260" velocity="12" lower="-1.72072" upper="0.524821" />
+        <dynamics damping="0.5" friction="5.0" coulomb_window="0.175"/>
+        <limit effort="260" effort_min="-260" effort_max="353" velocity="12" lower="-1.72072" upper="0.524821" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.7207" soft_upper_limit="10.5248" />
     </joint>
     <joint name="r_leg_hpz" type="revolute">
@@ -707,8 +707,8 @@
         <axis xyz="0 0 1" />
         <parent link="pelvis" />
         <child link="r_uglut" />
-        <dynamics damping="0.5" friction="10.0" coulomb_window="0.175"/>
-        <limit effort="110" velocity="12" lower="-1.22173" upper="0.174533" />
+        <dynamics damping="0.5" friction="5.0" coulomb_window="0.175"/>
+        <limit effort="68" effort_min="-68" effort_max="105" velocity="12" lower="-1.22173" upper="0.174533" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-11.2217" soft_upper_limit="10.1745" />
     </joint>
     <joint name="r_leg_kny" type="revolute">
@@ -716,8 +716,8 @@
         <axis xyz="0 1 0" />
         <parent link="r_uleg" />
         <child link="r_lleg" />
-        <dynamics damping="0.5" friction="12.0" coulomb_window="0.175"/>
-        <limit effort="220" velocity="11" lower="0" upper="2.38569" />
+        <dynamics damping="0.5" friction="5.0" coulomb_window="0.175"/>
+        <limit effort="220" effort_max="220" effort_min="-300" velocity="12" lower="0" upper="2.38569" />
         <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10" soft_upper_limit="12.3857" />
     </joint>
 </robot>

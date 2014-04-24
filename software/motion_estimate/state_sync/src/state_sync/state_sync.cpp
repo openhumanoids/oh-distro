@@ -30,8 +30,6 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
   sync.setEncodersFromParam();
 }
 
-
-
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
                        bool standalone_head_, bool standalone_hand_,  
                        bool bdi_motion_estimate_, bool simulation_mode_,
@@ -216,7 +214,6 @@ void state_sync::setEncodersFromParam() {
   }
   std::cout << "Finished updating encoder offsets (from param)\n";  
 }
-
 
 void state_sync::enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
   enableEncoders(msg->utime > 0); // sneakily use utime as a flag
@@ -455,8 +452,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
       }
     }
   }
-  
-  
+
   if (use_kalman_filtering_){//  atlas_joints_ filtering here
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
   }

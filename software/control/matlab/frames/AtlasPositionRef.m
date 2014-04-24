@@ -19,7 +19,7 @@ classdef AtlasPositionRef < LCMCoordinateFrame & Singleton
         input_frame.setCoordinateNames(input_names); % note: renaming input coordinates
 
         if nargin<2 % controlling robot
-          gains = getAtlasGains(input_frame);
+          gains = getAtlasGains();
         else
           typecheck(gains_id,'char');
           gains = struct();
