@@ -34,9 +34,6 @@ classdef StatelessFootstepPlanner
         request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
       end
 
-      %%%%%%% TODO: remove
-      % request.params.leading_foot = drc.footstep_plan_params_t.LEAD_RIGHT;
-
       params_set = {struct(request.params)};
       if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
         new_params_set = {};
@@ -289,47 +286,47 @@ classdef StatelessFootstepPlanner
       figure(1)
       imshow(grid, 'InitialMagnification', 'fit')
 
-      %% Restrict the search to a box containing the robot and the goal pose
-      box_min = min([x0(1:2), goal_pos.center(1:2)],[], 2) - 1;
-      box_max = max([x0(1:2), goal_pos.center(1:2)],[], 2) + 1;
-      lb = [box_min; -pi];
-      ub = [box_max; pi];
-      A_bounds = [-1,0,0;
-                  0,-1,0;
-                  0,0,-1;
-                  1,0,0;
-                  0,1,0;
-                  0,0,1];
-      b_bounds = [-lb;ub];
-
       %% Find the contact points describing the robot's foot (for c-space obstacle construction)
       bot = 0.9 * bsxfun(@minus, biped.foot_bodies.right.contact_pts(1:2,:), ...
                          biped.foot_contact_offsets.right.center(1:2));
       safe_regions = {};
 
-      %%%%%%%%%%%%%%%
+      %%%%%%%%%%%%%%% TODO: don't load this from file, but pull it from the request
       request.num_seed_clicks = 5;
       load('example_terrain_clicks', 'clicks');
       %%%%%%%%%%%%%%%
 
       for j = 1:request.num_seed_clicks
-
-
       %%%%%%%%%%%%%%%
 %         click_pos = decodePosition3d(request.seed_clicks(j));
 %         cr = world2px_2x3 * [click_pos(1:2); 1];
 %         r = round(cr(2)); c = round(cr(1));
+%         yaw0 = click_pos(6);
         rc = clicks(:,j);
         r = round(rc(1)); c = round(rc(2));
+        yaw0 = x0(6);
+%         yaw0 = 0;
       %%%%%%%%%%%%%%%
 
+        %% Restrict the search to a box containing the robot and the goal pose
+        box_min = min([x0(1:2), goal_pos.center(1:2)],[], 2) - 1;
+        box_max = max([x0(1:2), goal_pos.center(1:2)],[], 2) + 1;
+        lb = [box_min; yaw0-pi];
+        ub = [box_max; yaw0+pi];
+        A_bounds = [-1,0,0;
+                    0,-1,0;
+                    0,0,-1;
+                    1,0,0;
+                    0,1,0;
+                    0,0,1];
+        b_bounds = [-lb;ub];
 
         black_edges = [];
         [edge_r, edge_c] = ind2sub(size(grid), find(component_boundary(grid, [r;c])));
         black_edges_xy = px2world_2x3 * [edge_c'; edge_r'; ones(1,length(edge_c))];
         obs_mask = all(bsxfun(@minus, A_bounds([1,2,4,5],1:2) * black_edges_xy, b_bounds([1,2,4,5])) <= max(max(abs(bot))));
         obstacles = mat2cell(black_edges_xy(:,obs_mask) , 2, ones(1,sum(obs_mask)));
-        obstacles = cspace3(obstacles, bot, 4);
+        obstacles = cspace3(obstacles, bot, linspace(yaw0-pi, yaw0+pi, 6));
         for k = 1:size(black_edges_xy,2)
           if obs_mask(k)
             lcmgl.glColor3f(0,0,0);
@@ -343,7 +340,7 @@ classdef StatelessFootstepPlanner
 
         %% Actually run the convex segmentation algorithm
         iris_opts = struct('require_containment', true);
-        [A,b,C,d,results] = inflate_region(obstacles, A_bounds, b_bounds, [px2world_2x3 * [c;r;1]; x0(6)], [], iris_opts);
+        [A,b,C,d,results] = inflate_region(obstacles, A_bounds, b_bounds, [px2world_2x3 * [c;r;1]; yaw0], [], iris_opts);
         %   animate_results(results);
         safe_regions{end+1} = struct('A', A, 'b', b);
 
