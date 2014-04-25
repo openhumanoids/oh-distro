@@ -240,7 +240,7 @@ if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;
 end
 end
 
-if exitflag ~= 13
+if exitflag < 10
   for j = 2:output_nsteps
     R = rotmat(output_steps(6,j-1));
     valuecheck(output_steps(:,j-1) + [R * output_steps_rel(1:2,j); output_steps_rel(3:6,j)], output_steps(:,j),1e-4);
