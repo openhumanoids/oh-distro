@@ -2,17 +2,17 @@ classdef DRCTerrainMap < RigidBodyTerrain
 
   methods
     function obj = DRCTerrainMap(is_robot,options)
-     
+
       if nargin < 1
         is_robot = false;
       end
-      
+
       if is_robot
         private_channel = true;
       else
         private_channel = false;
       end
-      
+
       if nargin < 2
         options = struct();
       else
@@ -30,14 +30,14 @@ classdef DRCTerrainMap < RigidBodyTerrain
       else
         options.status_code = 3;
       end
-      
+
       if isfield(options,'raw');
         typecheck(options.raw,'logical');
       else
         options.raw = false;
       end
       obj.raw = options.raw;
-      
+
       if isfield(options,'fill')
           typecheck(options.fill,'logical');
       else
@@ -68,12 +68,12 @@ classdef DRCTerrainMap < RigidBodyTerrain
       else
           obj.map_handle = HeightMapHandle(@HeightMapWrapper,'false');
       end
-      
+
       obj.map_handle.setFillMissing(options.fill);
       obj.map_handle.setNormalRadius(options.normal_radius);
       obj.map_handle.setNormalMethod(options.normal_method);
     end
-    
+
     function [z,normal] = getHeight(obj,xy)
       z = ones(1,size(xy,2));  normal=repmat([0;0;1],1,size(xy,2));
       [p,normal] = obj.map_handle.getClosest([xy;0*xy(1,:)]);
@@ -82,25 +82,21 @@ classdef DRCTerrainMap < RigidBodyTerrain
         if any(isnan(z))  % temporary hack because the robot is initialized without knowing the ground under it's feet
           if isempty(obj.backup_terrain)
             error('Received NaNs from heightmap, but no backup terrain is set');
-%             disp('replacing footstep z nans with minval');
-%             nn=sum(isnan(z)); 
-%             normal(:,isnan(z)) = [zeros(2,nn);ones(1,nn)];
-%             z(isnan(z))=obj.minval;
           else
 %             disp('using backup kinematic terrain map');
             nan_mask = isnan(z);
             [z(nan_mask), normal(:,nan_mask)] = obj.backup_terrain.getHeight(xy(:,nan_mask));
           end
-        end     
+        end
       end
     end
 
     function obj = setMapMode(obj,mode)
       obj.map_handle.setMapMode(mode);
     end
-    
+
     function writeWRL(obj,fptr)
-      error('not implemented yet, but could be done using the getAsMesh() interface'); 
+      error('not implemented yet, but could be done using the getAsMesh() interface');
     end
 
     function feas_check = getStepFeasibilityChecker(obj, contact_pts, options)
@@ -119,7 +115,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       px2world = px2world * [1/mag 0 0 (1-1/mag); 0 1/mag 0 (1-1/mag ); 0 0 1 0; 0 0 0 1];
 
       world2px = inv(px2world);
-      world2px_2x3 = world2px(1:2,[1,2,4]);      
+      world2px_2x3 = world2px(1:2,[1,2,4]);
 
       %% Run simple edge detectors across the heightmap
       Q = imfilter(heights, [1, -1]) - 0.03 > 0;
@@ -186,7 +182,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
         lcmgl.switchBuffers();
       end
     end
-    
+
     function obj = setBackupTerrain(obj, biped, q0)
       obj.backup_terrain = KinematicTerrainMap(biped, q0, false);
     end
@@ -234,7 +230,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       Expanded = imfilter(Infeas, domain);
     end
   end
-  
+
   properties
     map_handle = [];
     backup_terrain = [];
