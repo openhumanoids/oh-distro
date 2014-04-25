@@ -13,6 +13,8 @@ struct footstep_plan_params_t
 	float max_step_width;
 	float nom_forward_step;
 	float max_forward_step;
+	float nom_upward_step;
+	float nom_downward_step;
 
 	boolean ignore_terrain;
 
