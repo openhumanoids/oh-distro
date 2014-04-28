@@ -137,7 +137,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.slack_limit = 10;
     end
     
-    if ~isfield(options,'lcm_foot_contacts')
+    if isfield(options,'lcm_foot_contacts')
       warning('lcm_foot_contacts option no longer supported, use input_foot_contacts instead');
     end
     

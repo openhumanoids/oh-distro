@@ -8,28 +8,33 @@ classdef FootContactBlock < MIMODrakeSystem
   methods
     function obj = FootContactBlock(r,options)
       typecheck(r,'Atlas');
-            
+      
+      if nargin<2
+        options = struct();
+      end
+      
       % num_outputs option specifies how many copies of the output to
       % return
       if isfield(options,'num_outputs')
         typecheck(options.num_outputs,'double');
         sizecheck(options.num_outputs,[1 1]);
+        rangecheck(options.num_outputs,1,inf);
       else
         options.num_outputs = 1;
       end
     
       input_frame = getStateFrame(r);
-      [outputs{1:options.num_outputs}] = deal(FootContactState);
-      output_frame = MultiCoordinateFrame(outputs);
+      if options.num_outputs > 1
+        [outputs{1:options.num_outputs}] = deal(FootContactState);
+        output_frame = MultiCoordinateFrame(outputs);
+      else
+        output_frame = FootContactState;
+      end
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
 			
-      if nargin<2
-        options = struct();
-      end
-      
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
@@ -57,7 +62,7 @@ classdef FootContactBlock < MIMODrakeSystem
         rfoot_contact_state = msg.right_contact > 0.5;
       end
       
-			y = [lfoot_contact_state; rfoot_contact_state]      
+			y = [lfoot_contact_state; rfoot_contact_state];
       if obj.num_outputs > 1
         varargout = cell(1,obj.num_outputs);
         for i=1:obj.num_outputs
@@ -65,7 +70,7 @@ classdef FootContactBlock < MIMODrakeSystem
           varargout{i} = y;
         end
       else
-        varargout = y;
+        varargout = {y};
       end
 		end
   end
