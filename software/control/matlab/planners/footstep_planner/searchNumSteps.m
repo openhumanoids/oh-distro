@@ -1,5 +1,5 @@
 function output_footsteps = searchNumSteps(biped, foot_orig, goal_pos, goal_steps, terrain, corridor_pts, params, safe_regions)
-
+profile on
 foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
 
@@ -42,7 +42,7 @@ while true
       region_idx = [plan_set(j).regions, new_region_idx(k)];
       [footsteps, exitflag, cost] = footstepCollocation(biped, seed_steps, goal_pos,...
         terrain, corridor_pts, params, safe_regions(region_idx));
-      if exitflag < 10
+      if exitflag < 10 || exitflag == 52 % TODO: this code 52 is due to bad terrain normals
         if footsteps(end).is_right_foot
           diff_r = footsteps(end).pos - goal_pos.right;
           diff_l = footsteps(end-1).pos - goal_pos.left;
@@ -60,6 +60,9 @@ while true
         else
           goal_reached = false;
         end
+
+        % TODO: don't compute total_diff if we're just throwing the result away
+        total_diff = cost;
         if total_diff < min([plan_set.cost])
           new_plan_set(end+1).steps = footsteps;
           new_plan_set(end).cost = total_diff;
@@ -100,5 +103,5 @@ end
 complete_plans = plan_set(completed_idx);
 [~, sort_idx] = sort([complete_plans.cost]);
 output_footsteps = complete_plans(sort_idx(1)).steps;
-
+profile viewer
 end
