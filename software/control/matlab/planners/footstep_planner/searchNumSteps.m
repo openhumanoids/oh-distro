@@ -5,6 +5,7 @@ foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
 
 GOAL_THRESHOLD = [0.02;0.02;0;0;0;0.1];
+BEAM_WIDTH = 5;
 
 plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {});
 if (params.leading_foot == drc.footstep_plan_params_t.LEAD_RIGHT) ...
@@ -90,6 +91,8 @@ while true
     break
   end
 
+  [~, sort_idx] = sort([plan_set.cost]);
+  plan_set = plan_set(sort_idx(1:min(BEAM_WIDTH, length(sort_idx))));
 end
 
 disp('done');
