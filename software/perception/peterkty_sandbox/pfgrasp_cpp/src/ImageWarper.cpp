@@ -21,6 +21,7 @@
     mBotWrapper.reset(new drc::BotWrapper(mLcm));
     mSubscription = NULL;
     setChannels(iInputChannel, pOutputCamTrans);
+    mJpegQuality = 90;
   }
 
   void ImageWarper::interpolateGray(const cv::Mat& iImage, const int iIndex,
@@ -71,6 +72,29 @@
         interpolateColor(in, i, bytes);
       }
     }
+
+    // do retransmit
+    // compress
+    bool do_retransmit = true;
+    //cv::Mat outtmp(out.clone());
+    if(do_retransmit){
+      bot_core::image_t msg;
+      std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, mJpegQuality };
+      //if (in.channels() == 3) cv::cvtColor(outtmp, outtmp, CV_RGB2BGR);
+      if (!cv::imencode(".jpg", out, msg.data, params)) {
+        std::cout << "error encoding jpeg image" << std::endl;
+      }
+      msg.size = msg.data.size();
+
+      // transmit
+      msg.utime = bot_timestamp_now();
+      msg.width = mOutputWidth;
+      msg.height = mOutputHeight;
+      msg.row_stride = rowStride;
+      msg.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG;
+      msg.nmetadata = 0;
+      mLcm->publish(mOutputChannel, &msg);
+    }
   }
 
   bool ImageWarper::setChannels(const std::string& iInputChannel, BotCamTrans** pOutputCamTrans) {
@@ -84,7 +108,8 @@
       return false;
     }
 
-    BotCamTrans* outputCamTrans = bot_camtrans_new((mInputChannel+"_WARP").c_str(),
+    mOutputChannel = mInputChannel+"_WARP";
+    BotCamTrans* outputCamTrans = bot_camtrans_new(mOutputChannel.c_str(),
     		bot_camtrans_get_width(inputCamTrans), bot_camtrans_get_height(inputCamTrans),
     		bot_camtrans_get_focal_length_x(inputCamTrans), bot_camtrans_get_focal_length_y(inputCamTrans),
     		bot_camtrans_get_principal_x(inputCamTrans), bot_camtrans_get_principal_y(inputCamTrans),

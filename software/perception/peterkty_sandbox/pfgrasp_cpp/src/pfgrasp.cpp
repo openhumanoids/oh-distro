@@ -73,6 +73,7 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
 
   // Update bearing vector, save the result for particle filter
   // May need lock
+
   if (tracker_->detection_valid) {
     img_utime_ = msg->utime;
     localToCam_ = tmpBT;
@@ -85,6 +86,23 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
       bearing_a_ = bearing_b_ = 0;
     else
       bearing_a_ = u*1.f/cameraParams_.fx, bearing_b_ = v*1.f/cameraParams_.fy;
+
+    perception::image_roi_t trackmsg;
+
+    float sw = cameraParams_.width, sh = cameraParams_.height;
+    trackmsg.roi.x = currBB.x / sw;
+    trackmsg.roi.y = currBB.y / sh;
+    trackmsg.roi.width = currBB.width / sw;
+    trackmsg.roi.height = currBB.height / sh;
+    lcm_->publish("TLD_OBJECT_ROI_RESULT", &trackmsg);
+  }
+  else {
+    perception::image_roi_t trackmsg;
+    trackmsg.roi.x = 0;
+    trackmsg.roi.y = 0;
+    trackmsg.roi.width = 0;
+    trackmsg.roi.height = 0;
+    lcm_->publish("TLD_OBJECT_ROI_RESULT", &trackmsg);
   }
 
   // Viz
@@ -130,11 +148,11 @@ PFGrasp::segmentHandler(const lcm::ReceiveBuffer* rbuf,
     }
 
   // Initialize with image and mask
-  tracker_->initialize(img_, selection);
+  tracker_->initialize(wimg_, selection);
 
   if (options_.debug)
     {
-      cv::Mat imgd = img_.clone();
+      cv::Mat imgd = wimg_.clone();
       rectangle(imgd, selection.tl(), selection.br(), CV_RGB(255, 0, 0), 2);
       cv::imshow("Captured Image ROI", imgd);
     }
@@ -195,13 +213,12 @@ PFGrasp::runOneIter(){
 
 
   Eigen::Vector3d xh = pf->Integrate().position;
+  std::cout << "dbg-runOneIter3-2 xh" << xh[0] << " " << xh[1] << " " << xh[2] << std::endl;
   double xhh[3] = {xh[0], xh[1], xh[2]};
   bot_lcmgl_color3f(lcmgl_, 1,0,0);
   bot_lcmgl_sphere(lcmgl_, xhh, 0.05, 100, 100);
-  bot_lcmgl_switch_buffer(lcmgl_);
 
   std::cout << "dbg-runOneIter4" << std::endl;
-  // TODO: control
 
   // We've got xh
   // get handface pose
@@ -212,7 +229,7 @@ PFGrasp::runOneIter(){
   hpose.transposeInPlace();  // eigen store matrix in column major by default
   BotTrans bt;
   bot_frames_get_trans(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", &bt);
-  cout << "dbg-mat:" << hpose;
+  cout << "dbg-mat:" << hpose << endl;
 
   typedef Eigen::Vector3d V;
   typedef Eigen::Matrix3d M;
@@ -225,12 +242,15 @@ PFGrasp::runOneIter(){
   V dx = ux.dot(delta) * ux;   // so we want z, and x adjustment
   V newhpos = hpos + dx + dz;
 
+  cout << "dbg-newhpos:" << newhpos << endl;
   bot_lcmgl_color3f(lcmgl_, 1,1,0);
-  //bot_lcmgl_sphere(lcmgl_, newhpos.data(), 0.03, 100, 100);
   bot_lcmgl_sphere(lcmgl_, newhpos.data(), 0.03, 100, 100);
+
   bt.trans_vec[0] = newhpos[0];
   bt.trans_vec[1] = newhpos[1];
   bt.trans_vec[2] = newhpos[2];
+
+  bot_lcmgl_switch_buffer(lcmgl_);
   publishHandReachGoal(bt);
 /*
   delta = (xk - campose(1:3,k));
@@ -291,8 +311,6 @@ PFGrasp::PFGrasp(PFGraspOptions options) :
   lcm::Subscription* sub3 = lcm_->subscribe(options_.commandChannelName.c_str(), &PFGrasp::commandHandler,
       this);
   sub1->setQueueCapacity(1);
-  sub2->setQueueCapacity(1);
-  //sub3->setQueueCapacity(1);
   // Initialize TLD tracker
   tracker_ = new TLDTracker(cameraParams_.width, cameraParams_.height,
       options_.scale);

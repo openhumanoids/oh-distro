@@ -37,6 +37,8 @@ void Particle::InitializeState(rng *pRng, double init_weight, const void* userda
   this->state.position(0) = x_world[0];
   this->state.position(1) = x_world[1];
   this->state.position(2) = x_world[2];
+
+  this->logweight = init_weight;
 }  
 
 double deg2rad(const double deg){
