@@ -10,14 +10,14 @@ if (params.leading_foot == drc.footstep_plan_params_t.LEAD_RIGHT) ...
    || (params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO)
   plan_set(end+1).steps = createOriginSteps(biped, foot_orig, true);
   plan_set(end).cost = inf;
-  plan_set(end).regions = {};
+  plan_set(end).regions = [];
   plan_set(end).goal_reached = false;
 end
 if (params.leading_foot == drc.footstep_plan_params_t.LEAD_LEFT) ...
    || (params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO)
   plan_set(end+1).steps = createOriginSteps(biped, foot_orig, false);
   plan_set(end).cost = inf;
-  plan_set(end).regions = {};
+  plan_set(end).regions = [];
   plan_set(end).goal_reached = false;
 end
 
@@ -37,10 +37,11 @@ while true
     seed_steps = plan_set(j).steps;
     seed_steps(end+1) = seed_steps(end-1);
     nsteps = length(seed_steps) - 1;
-    new_safe_regions = safe_regions;
-    for k = 1:length(new_safe_regions)
-      available_regions = [plan_set(j).regions, new_safe_regions{k}];
-      [footsteps, exitflag, cost] = footstepCollocation(biped, seed_steps, goal_pos, terrain, corridor_pts, params, available_regions);
+    new_region_idx = 1:length(safe_regions);
+    for k = 1:length(new_region_idx)
+      region_idx = [plan_set(j).regions, new_region_idx(k)];
+      [footsteps, exitflag, cost] = footstepCollocation(biped, seed_steps, goal_pos,...
+        terrain, corridor_pts, params, safe_regions(region_idx));
       if exitflag < 10
         if footsteps(end).is_right_foot
           diff_r = footsteps(end).pos - goal_pos.right;
@@ -62,7 +63,7 @@ while true
         if total_diff < min([plan_set.cost])
           new_plan_set(end+1).steps = footsteps;
           new_plan_set(end).cost = total_diff;
-          new_plan_set(end).regions = available_regions;
+          new_plan_set(end).regions = region_idx;
           new_plan_set(end).goal_reached = goal_reached;
         end
       end
@@ -74,8 +75,11 @@ while true
   end
 
   plan_set = new_plan_set;
+  for j = 1:length(plan_set)
+    plan_set(j).regions
+  end
 
-  for j = 1:length(new_plan_set)
+  for j = 1:length(plan_set)
     plan_set(j).nsteps = length(plan_set(j).steps);
   end
   completed_idx = find(([plan_set.nsteps] >= min_steps) & ([plan_set.goal_reached]));
