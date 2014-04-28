@@ -4,9 +4,15 @@ if nargin < 5
   safe_regions = {struct('A', [], 'b', [])};
 end
 
-debug = false;
+debug = true;
 USE_SNOPT = 1;
 USE_MEX = 1;
+
+if isprop(terrain, 'map_handle')
+  map_ptr = terrain.map_handle.getPointerForMex();
+else
+  map_ptr = 0;
+end
 
 right_foot_lead = seed_steps(1).is_right_foot;
 
@@ -27,11 +33,7 @@ function [c, ceq, dc, dceq] = constraints(x)
     dceq = [dceq, dceq_terrain];
   end
   if USE_MEX
-    if isprop(terrain, 'map_handle')
-      map_ptr = terrain.map_handle.getPointerForMex();
-    else
-      map_ptr = 0;
-    end
+
     [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x, map_ptr);
     if USE_MEX == 2
       valuecheck(c, c_mex, 1e-8);
@@ -49,7 +51,7 @@ end
 
 function [c, dc] = objfun(x)
   [steps, steps_rel] = decodeCollocationSteps(x);
-  [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, right_foot_lead);
+  [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, right_foot_lead, [params.nom_forward_step; params.nom_step_width]);
 end
 
 function [F,G] = collocation_userfun(x)
