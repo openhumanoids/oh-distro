@@ -28,8 +28,8 @@ end
 
 min_steps = max([params.min_num_steps+2,3]);
 % TODO: restore this
-max_steps = params.max_num_steps+2;
-% max_steps = 7;
+% max_steps = params.max_num_steps+2;
+max_steps = 12;
 
 while true
   new_plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {});
@@ -44,28 +44,28 @@ while true
       region_idx = [plan_set(j).regions, new_region_idx(k)];
       [footsteps, exitflag, cost] = footstepCollocation(biped, seed_steps, goal_pos,...
         terrain, corridor_pts, params, safe_regions(region_idx));
-      if exitflag ~= 13 % TODO: this code 52 is due to bad terrain normals
+      if exitflag < 10 % TODO: this code 52 is due to bad terrain normals
         if footsteps(end).is_right_foot
           diff_r = footsteps(end).pos - goal_pos.right;
           diff_l = footsteps(end-1).pos - goal_pos.left;
         else
-          diff_l = footsteps(end).pos - goal_pos.right;
-          diff_r = footsteps(end-1).pos - goal_pos.left;
+          diff_l = footsteps(end).pos - goal_pos.left;
+          diff_r = footsteps(end-1).pos - goal_pos.right;
         end
         diff_r = diff_r .* [1;1;0;0;0;1]; % don't count z, roll, and pitch
         diff_l = diff_l .* [1;1;0;0;0;1];
         diff_r = max(0, abs(diff_r) - GOAL_THRESHOLD);
         diff_l = max(0, abs(diff_l) - GOAL_THRESHOLD);
         total_diff = sum(diff_r + diff_l);
-        if total_diff <= 0
+        if total_diff <= 1e-3
           goal_reached = true;
         else
           goal_reached = false;
         end
 
-        if cost < min([plan_set.cost])
+        if total_diff < min([plan_set.cost])
           new_plan_set(end+1).steps = footsteps;
-          new_plan_set(end).cost = cost;
+          new_plan_set(end).cost = total_diff;
           new_plan_set(end).regions = region_idx;
           new_plan_set(end).goal_reached = goal_reached;
         end
