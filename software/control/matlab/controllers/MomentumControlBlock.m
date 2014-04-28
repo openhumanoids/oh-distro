@@ -16,13 +16,24 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     
     qddframe = AtlasCoordinates(r); % input frame for desired qddot, qdd constraints 
-    input_frame = MultiCoordinateFrame({r.getStateFrame,qddframe,body_motion_input_frames{:}});
+    
+		if ~isfield(options,'input_foot_contacts')
+			options.input_foot_contacts = false;
+    else
+			typecheck(options.input_foot_contacts,'logical');
+		end		
+		
+		if options.input_foot_contacts
+			input_frame = MultiCoordinateFrame({r.getStateFrame,qddframe,FootContactState,body_motion_input_frames{:}});
+		else
+			input_frame = MultiCoordinateFrame({r.getStateFrame,qddframe,body_motion_input_frames{:}});
+		end
 
-    if ~isfield(options,'output_qdd')
+		if ~isfield(options,'output_qdd')
 			options.output_qdd = false;
     else
 			typecheck(options.output_qdd,'logical');
-    end
+		end
 		
 		if options.output_qdd
 			output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
@@ -38,7 +49,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
 		obj.mass = getMass(r);
     obj.numq = getNumDOF(r);
     obj.controller_data = controller_data;
-
+		obj.input_foot_contacts = options.input_foot_contacts;
+		
     if isfield(options,'dt')
       % controller update rate
       typecheck(options.dt,'double');
@@ -126,10 +138,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     
     if ~isfield(options,'lcm_foot_contacts')
-      obj.lcm_foot_contacts=true; % listen for foot contacts over LCM
-    else
-      typecheck(options.lcm_foot_contacts,'logical');
-      obj.lcm_foot_contacts=options.lcm_foot_contacts;
+      warning('lcm_foot_contacts option no longer supported, use input_foot_contacts instead');
     end
     
     if isfield(options,'debug')
@@ -165,13 +174,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj.lfoot_idx = findLinkInd(r,'l_foot');
     obj.rhand_idx = findLinkInd(r,'r_hand');
     obj.lhand_idx = findLinkInd(r,'l_hand');
-    obj.pelvis_idx = findLinkInd(r,'pelvis');
-    
-    if obj.lcm_foot_contacts
-      obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
-      obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
-    end % else estimate contact via kinematics
-    
+    obj.pelvis_idx = findLinkInd(r,'pelvis');    
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
@@ -275,14 +278,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
     % contact_sensor = -1 (no info), 0 (info, no contact), 1 (info, yes contact)
     contact_sensor=-1+0*supp.bodies;  % initialize to -1 for all
-    if obj.lcm_foot_contacts
-      % get foot contact state over LCM
-      contact_data = obj.contact_est_monitor.getMessage();
-      if ~isempty(contact_data)
-        msg = drc.foot_contact_estimate_t(contact_data);
-        contact_sensor(supp.bodies==obj.lfoot_idx) = msg.left_contact;
-        contact_sensor(supp.bodies==obj.rfoot_idx) = msg.right_contact;
-      end
+    if obj.input_foot_contacts
+			% note: since changing this to input frame, always have 0 or 1
+      fc = varargin{3};
+			contact_sensor(supp.bodies==obj.lfoot_idx) = fc(1);
+      contact_sensor(supp.bodies==obj.rfoot_idx) = fc(2);
     end
     
   	if (obj.use_mex==0 || obj.use_mex==2)
@@ -427,7 +427,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         beq_{2} = -Jpdot*qd;
       end
 
-      eq_count=3;
+      eq_count=3+obj.input_foot_contacts*1;
       for ii=3:length(varargin)
         body_input = varargin{ii};
         body_ind = body_input(1);
@@ -562,13 +562,15 @@ classdef MomentumControlBlock < MIMODrakeSystem
         height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
       else
         height = 0;
-      end
+			end
+			body_motion_input_start=3+obj.input_foot_contacts*1;
       mu = 1.0;
       if (obj.use_mex==1)
-%         [y,active_supports_mex,qdd,info] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{3:end},condof, ...
+				 
+%         [y,active_supports_mex,qdd,info] = MomentumControllermex(obj.mex_ptr.data,1,q_ddot_des,x,varargin{body_motion_input_start:end},condof, ...
 %           supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         [y,active_supports,qdd,info,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha] = MomentumControllermex(obj.mex_ptr.data,...
-          1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+          1,q_ddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
 
         if info < 0 
           infocount = infocount +1;
@@ -603,7 +605,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
       else
         [y_mex,active_supports_mex,mex_qdd,~,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha_mex] = MomentumControllermex(obj.mex_ptr.data,...
-          1,q_ddot_des,x,varargin{3:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+          1,q_ddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
@@ -665,8 +667,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     use_hand_ft;
     mex_ptr;
     lc;
-    contact_est_monitor;
-    lcm_foot_contacts;  
+    input_foot_contacts;  
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
     num_body_contacts; % vector of num contacts for each body
