@@ -166,6 +166,7 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
   case perception::pfgrasp_command_t::STOP:   // stop tracking, unsubscribe image, release particles
   break;
   case perception::pfgrasp_command_t::RESTART:   // stop tracking, unsubscribe image, release particles
+    releaseParticleFilter();
     initParticleFilter();
   break;
   case perception::pfgrasp_command_t::START:  // start tracking, subscribe image, initialize particles
