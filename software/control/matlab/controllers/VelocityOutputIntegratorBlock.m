@@ -17,9 +17,8 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
       typecheck(r,'Atlas');
 
       num_q = getNumDOF(r);
-      coords = AtlasCoordinates(r);
-      input_frame = MultiCoordinateFrame({getStateFrame(r),coords,FootContactState});
-      output_frame = coords;      
+      input_frame = MultiCoordinateFrame({getStateFrame(r),AtlasCoordinates(r),FootContactState});
+      output_frame = AtlasVelocityRef(r);      
       obj = obj@MIMODrakeSystem(0,3+num_q,input_frame,output_frame,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
