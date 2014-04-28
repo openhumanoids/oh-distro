@@ -165,6 +165,10 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
   switch (msg->command) {
   case drc::pfgrasp_command_t::STOP:   // stop tracking, unsubscribe image, release particles
   break;
+  case drc::pfgrasp_command_t::RESTART:   // stop tracking, unsubscribe image, release particles
+    releaseParticleFilter();
+    initParticleFilter();
+  break;
   case drc::pfgrasp_command_t::START:  // start tracking, subscribe image, initialize particles
     initParticleFilter();
   break;  // also run one iteration
@@ -172,6 +176,14 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
     runOneIter();
   break;
   }
+}
+
+void
+PFGrasp::releaseParticleFilter(){
+  pf = new ParticleFilter(N_p, rng_seed, resample_threshold, (void*)this);
+  delete pf;
+
+  bot_lcmgl_switch_buffer(lcmgl_);
 }
 
 
@@ -194,6 +206,9 @@ PFGrasp::initParticleFilter(){
 
 void
 PFGrasp::runOneIter(){
+  if(this->bearing_a_ == 0 || this->bearing_b_ == 0)
+    return;
+
   std::cout << "dbg-runOneIter1" << std::endl;
   pf->MoveParticles();
   std::cout << "dbg-runOneIter2" << std::endl;
@@ -284,14 +299,13 @@ PFGrasp::publishHandReachGoal(const BotTrans& bt){
 }
 
 PFGrasp::PFGrasp(PFGraspOptions options) :
-    options_(options)
+    options_(options), pf(NULL), bearing_a_(0), bearing_b_(0)
 {
   // should move into options
   bound = 0.5;
   rng_seed = 1;
   resample_threshold = 0.5;
   N_p = 1000;
-
 
   lcmWrapper_.reset(new drc::LcmWrapper());
   lcm_ = lcmWrapper_->get();

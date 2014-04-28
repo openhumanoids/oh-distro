@@ -114,6 +114,9 @@ private:
   runOneIter();
 
   void
+  releaseParticleFilter();
+
+  void
   publishHandReachGoal(const BotTrans& bt);
 };
 
