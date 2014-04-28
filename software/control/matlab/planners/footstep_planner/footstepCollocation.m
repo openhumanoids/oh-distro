@@ -101,8 +101,8 @@ lb(1:6,1) = st0;
 ub(1:6,1) = st0;
 lb(7:12,1) = st0;
 ub(7:12,1) = st0;
-lb(7:11, :) = -2; % 2m maximum delta between steps
-ub(7:11, :) = 2;
+lb(7:9, :) = -2; % 2m maximum delta between steps
+ub(7:9, :) = 2;
 lb(12,:) = -pi;
 ub(12,:) = pi;
 
@@ -212,21 +212,6 @@ end
 
 [output_steps, output_steps_rel] = decodeCollocationSteps(xstar);
 output_cost = fval(1);
-% if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
-%   continue
-% elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
-%   continue
-% else
-%   output_steps = steps;
-%   output_steps_rel = steps_rel;
-%   output_nsteps = nsteps;
-% end
-% diff_r = steps(:,r_ndx(end)) - goal_pos.right;
-% diff_l = steps(:,l_ndx(end)) - goal_pos.left;
-% if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;0.02;0.02;0.1;0.1;0.1])
-%   break
-% end
-% end
 
 if exitflag < 10
   for j = 2:nsteps
