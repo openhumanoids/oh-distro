@@ -1,0 +1,29 @@
+cmd "play_a_log" {
+    exec = "lcm-logplayer-gui -f PARAM_UPDATE -f TLD_OBJECT_ROI -f LCMGL -f CAMERALHAND_WARP /home/drc/drcdata/pfgrasp/2014-04-16-xcentering/lcmlog-2014-04-16.10";
+    host = "localhost";
+}
+cmd "ddapp" {
+    exec = "/home/drc/drc/software/ddapp/pod-build/bin/drake-designer";
+    host = "localhost";
+}
+cmd "bot-spy" {
+    exec = "bot-spy";
+    host = "localhost";
+}
+cmd "pfgrasp-commander" {
+    exec = "drc-pfgrasp-commander";
+    host = "localhost";
+}
+cmd "tld-segmenter" {
+    exec = "drc-tld-segmenter";
+    host = "localhost";
+}
+cmd "pfgrasp" {
+    exec = "drc-pfgrasp -c CAMERALHAND -s 0.25";
+    host = "localhost";
+}
+cmd "botparam" {
+    exec = "bot-param-server /home/drc/drc/software/config/config_components/robot_main.cfg";
+    host = "localhost";
+}
+
