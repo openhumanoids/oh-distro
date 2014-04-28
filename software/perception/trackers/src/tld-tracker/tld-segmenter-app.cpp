@@ -397,7 +397,7 @@ int main(int argc, char** argv)
                 float sy = 1.f / WINDOW_HEIGHT;
                 
                 int width = state->img_selection.cols / (sx * state->img.cols);
-                int height = state->img_selection.rows / (sx * state->img.rows);
+                int height = state->img_selection.rows / (sy * state->img.rows);
 
                 int max_dim = fmax(width, height);
                 
