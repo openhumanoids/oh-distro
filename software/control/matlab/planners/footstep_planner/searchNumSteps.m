@@ -1,4 +1,4 @@
-function output_footsteps = searchNumSteps(biped, foot_orig, goal_pos, goal_steps, terrain, corridor_pts, params, safe_regions)
+function output_footsteps = searchNumSteps(biped, foot_orig, goal_pos, goal_steps, terrain, params, safe_regions)
 profile on
 tic
 foot_orig.right(4:5) = 0;
@@ -22,10 +22,6 @@ if (params.leading_foot == drc.footstep_plan_params_t.LEAD_LEFT) ...
   plan_set(end).goal_reached = false;
 end
 
-if isempty(safe_regions)
-  safe_regions = {struct('A', [], 'b', [])};
-end
-
 min_steps = max([params.min_num_steps+2,3]);
 % TODO: restore this
 % max_steps = params.max_num_steps+2;
@@ -43,7 +39,7 @@ while true
     for k = 1:length(new_region_idx)
       region_idx = [plan_set(j).regions, new_region_idx(k)];
       [footsteps, exitflag, cost] = footstepCollocation(biped, seed_steps, goal_pos,...
-        terrain, corridor_pts, params, safe_regions(region_idx));
+        terrain, params, safe_regions(region_idx));
       if exitflag < 10 % TODO: this code 52 is due to bad terrain normals
         if footsteps(end).is_right_foot
           diff_r = footsteps(end).pos - goal_pos.right;

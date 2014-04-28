@@ -21,15 +21,7 @@ classdef StatelessFootstepPlanner
       if ismethod(terrain, 'setMapMode')
         biped.setTerrain(terrain.setMapMode(request.params.map_command));
       end
-      terrain = biped.getTerrain();
-      if isprop(terrain, 'map_handle')
-%         safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
-        load('example_iris_regions', 'safe_regions');
-%         safe_regions = {struct('A', [], 'b', [])};
-      else
-        safe_regions = {struct('A', [], 'b', [])};
-      end
-
+      
       goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
       if request.num_goal_steps > 2
         request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
@@ -39,11 +31,24 @@ classdef StatelessFootstepPlanner
       params = struct(request.params);
 
       params.right_foot_lead = params.leading_foot; % for backwards compatibility
-      if ~isfield(params, 'max_line_deviation');
-        params.max_line_deviation = params.nom_step_width * 1.5;
+      
+      terrain = biped.getTerrain();
+      if isprop(terrain, 'map_handle')
+%         safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
+        load('example_iris_regions', 'safe_regions');
+%         safe_regions = {struct('A', [], 'b', [])};
+      else
+        if ~isfield(params, 'max_line_deviation');
+          params.max_line_deviation = params.nom_step_width * 1.5;
+        end
+        corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
+        [corr_A, corr_b] = poly2lincon(corridor_pts(1,:), corridor_pts(2,:));
+        corr_A = [corr_A, zeros(size(corr_A, 1), 1)]; % convert to polytope in x y yaw
+        [orig_z, orig_normal] = biped.getTerrainHeight(foot_orig.right);
+        safe_regions = {struct('A', corr_A, 'b', corr_b, 'pt', [foot_orig.right(1:2); orig_z], 'normal', orig_normal)};
       end
-      corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
-      footsteps = searchNumSteps(biped, foot_orig, goal_pos, request.goal_steps, terrain, corridor_pts, params, safe_regions);
+      
+      footsteps = searchNumSteps(biped, foot_orig, goal_pos, request.goal_steps, terrain, params, safe_regions);
       plan = FootstepPlan.from_collocation_results(footsteps);
 
       plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
@@ -303,9 +308,11 @@ classdef StatelessFootstepPlanner
 
         %% Actually run the convex segmentation algorithm
         iris_opts = struct('require_containment', true);
-        [A,b,C,d,results] = inflate_region(obstacles, A_bounds, b_bounds, [px2world_2x3 * [c;r;1]; yaw0], [], iris_opts);
+        start_xy = px2world_2x3 * [c;r;1];
+        [A,b,C,d,results] = inflate_region(obstacles, A_bounds, b_bounds, [start_xy; yaw0], [], iris_opts);
         %   animate_results(results);
-        safe_regions{end+1} = struct('A', A, 'b', b);
+        [start_z, start_normal] = biped.getTerrainHeight(start_xy);
+        safe_regions{end+1} = struct('A', A, 'b', b, 'pt', [start_xy; start_z], 'normal', start_normal);
 
         %% For debugging: Draw the inner and outer polygons of the segmented space
         % The inner poly is the set of x,y points for which all yaw values are

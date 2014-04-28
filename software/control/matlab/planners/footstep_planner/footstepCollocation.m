@@ -1,18 +1,16 @@
-function [X, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, terrain, corridor_pts, params, safe_regions)
-
-if nargin < 5
-  safe_regions = {struct('A', [], 'b', [])};
-end
+function [X, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, terrain, params, safe_regions)
 
 debug = true;
 USE_SNOPT = 1;
 USE_MEX = 1;
 
-if isprop(terrain, 'map_handle')
-  map_ptr = terrain.map_handle.getPointerForMex();
-else
-  map_ptr = 0;
-end
+% if isprop(terrain, 'map_handle')
+%   map_ptr = terrain.map_handle.getPointerForMex();
+% else
+%   map_ptr = 0;
+% end
+% TODO: remove mex maps dependence entirely
+map_ptr = 0;
 
 right_foot_lead = seed_steps(1).is_right_foot;
 
@@ -63,7 +61,7 @@ function [F,G] = collocation_userfun(x)
 end
 
 function stop = plotfun(x)
-  stop = stepCollocationPlotfun(x, r_ndx, l_ndx, terrain, corridor_pts);
+  stop = stepCollocationPlotfun(x, r_ndx, l_ndx, terrain, []);
 end
 
 params.forward_step = params.max_forward_step;
@@ -87,7 +85,7 @@ end
 
 nv = 12 * nsteps;
 
-[A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead, corridor_pts);
+[A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead, []);
 
 lb = -inf(12,nsteps);
 ub = inf(size(lb));
@@ -117,12 +115,15 @@ for j = 2:nsteps
   end
   region = safe_regions{region_ndx};
   num_region_cons = length(region.b);
-  if num_region_cons > 0
-    expanded_A = zeros(num_region_cons, nv);
-    expanded_A(:,x_ndx([1,2,6])) = region.A;
-    A = [A; expanded_A];
-    b = [b; region.b];
-  end
+  expanded_A = zeros(num_region_cons, nv);
+  expanded_A(1:length(region.b),x_ndx([1,2,6])) = region.A;
+  A = [A; expanded_A];
+  b = [b; region.b];
+  
+  expanded_Aeq = zeros(1, nv);
+  expanded_Aeq(1, x_ndx([1,2,3])) = region.normal;
+  Aeq = [Aeq; expanded_Aeq];
+  beq = [beq; region.normal' * region.pt];
 end
 
 
