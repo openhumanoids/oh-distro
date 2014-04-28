@@ -236,14 +236,14 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = checkReachInfeasibility(biped, plan, params)
-      params.right_foot_lead = logical(params.right_foot_lead);
+      right_foot_lead = plan.footsteps(1).is_right_foot;
       if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
       params.forward_step = params.max_forward_step;
       params.nom_upward_step = 0.2; % TODO: don't hardcode this
       params.nom_downward_step = 0.15;
       [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
       nsteps = length(plan.footsteps) - 1;
-      [A, b, ~, ~, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead,[]);
+      [A, b, ~, ~, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead,[]);
       for j = [1,2]
         plan.footsteps(j).infeasibility = 0;
       end
