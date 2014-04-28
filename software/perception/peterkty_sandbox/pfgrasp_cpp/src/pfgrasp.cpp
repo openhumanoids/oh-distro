@@ -161,14 +161,14 @@ PFGrasp::segmentHandler(const lcm::ReceiveBuffer* rbuf,
 
 void
 PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-    const perception::pfgrasp_command_t* msg){
+    const drc::pfgrasp_command_t* msg){
   switch (msg->command) {
-  case perception::pfgrasp_command_t::STOP:   // stop tracking, unsubscribe image, release particles
+  case drc::pfgrasp_command_t::STOP:   // stop tracking, unsubscribe image, release particles
   break;
-  case perception::pfgrasp_command_t::START:  // start tracking, subscribe image, initialize particles
+  case drc::pfgrasp_command_t::START:  // start tracking, subscribe image, initialize particles
     initParticleFilter();
   break;  // also run one iteration
-  case perception::pfgrasp_command_t::RUN_ONE_ITER:
+  case drc::pfgrasp_command_t::RUN_ONE_ITER:
     runOneIter();
   break;
   }

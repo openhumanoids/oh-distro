@@ -15,7 +15,7 @@
 #include <bot_core/camtrans.h>
 #include <bot_lcmgl_client/lcmgl.h>
 #include <lcmtypes/bot_core/image_t.hpp>
-#include <lcmtypes/perception/pfgrasp_command_t.hpp>
+#include <lcmtypes/drc/pfgrasp_command_t.hpp>
 #include <lcmtypes/perception/image_roi_t.hpp>
 #include <lcmtypes/bot_frames/update_t.hpp>
 
@@ -95,7 +95,7 @@ private:
   // handle reset, run-one-iteration
   void
   commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-      const perception::pfgrasp_command_t* msg);
+      const drc::pfgrasp_command_t* msg);
 
   // get image from hand camera
   void
