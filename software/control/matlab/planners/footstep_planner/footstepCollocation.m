@@ -1,22 +1,18 @@
-function [X, exitflag] = footstepCollocation(biped, foot_orig, goal_pos, terrain, corridor_pts, params, safe_regions)
+function [X, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, terrain, corridor_pts, params, safe_regions)
 
 if nargin < 5
   safe_regions = {struct('A', [], 'b', [])};
 end
 
-debug = true;
+debug = false;
 USE_SNOPT = 1;
 USE_MEX = 1;
 
-params.right_foot_lead = logical(params.right_foot_lead);
+right_foot_lead = seed_steps(1).is_right_foot;
 
 if ~isfield(params, 'nom_step_width'); params.nom_step_width = 0.26; end
-if ~isfield(params, 'allow_even_num_steps'); params.allow_even_num_steps = true; end
-if ~isfield(params, 'allow_odd_num_steps'); params.allow_odd_num_steps = true; end
 
-X = createOriginSteps(biped, foot_orig, params.right_foot_lead);
-
-st0 = X(2).pos;
+st0 = seed_steps(2).pos;
 goal_pos.right(6) = st0(6) + angleDiff(st0(6), goal_pos.right(6));
 goal_pos.left(6) = goal_pos.right(6) + angleDiff(goal_pos.right(6), goal_pos.left(6));
 goal_pos.right(3) = st0(3);
@@ -53,7 +49,7 @@ end
 
 function [c, dc] = objfun(x)
   [steps, steps_rel] = decodeCollocationSteps(x);
-  [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, params.right_foot_lead);
+  [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, right_foot_lead);
 end
 
 function [F,G] = collocation_userfun(x)
@@ -76,11 +72,10 @@ end
 min_steps = max([params.min_num_steps+1,2]);
 max_steps = params.max_num_steps + 1;
 
+steps = [seed_steps(2:end).pos];
+nsteps = size(steps,2);
 
-steps = [];
-
-for nsteps = min_steps:max_steps
-if ~params.right_foot_lead
+if ~right_foot_lead
   r_ndx = 1:2:nsteps;
   l_ndx = 2:2:nsteps;
 else
@@ -88,19 +83,9 @@ else
   l_ndx = 1:2:nsteps;
 end
 
-% Initialize the step list as alternating right and left steps in place, or, if the
-% optimization has already been run, seed the next round by adding a new step in the
-% same location as the second-to-last step (we don't use the last step because it
-% represents the position of the opposite foot).
-if isempty(steps)
-  steps = repmat(st0, 1, nsteps);
-  steps(:,2:2:end) = repmat(biped.stepCenter2FootCenter(biped.footCenter2StepCenter(st0,~params.right_foot_lead,params.nom_step_width), params.right_foot_lead, params.nom_step_width),1,floor(nsteps/2));
-else
-  steps(:,end+1) = steps(:,end-1);
-end
 nv = 12 * nsteps;
 
-[A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead, corridor_pts);
+[A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead, corridor_pts);
 
 lb = -inf(12,nsteps);
 ub = inf(size(lb));
@@ -223,35 +208,37 @@ end
 
 % plotfun(xstar);
 
-[steps, steps_rel] = decodeCollocationSteps(xstar);
-if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
-  continue
-elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
-  continue
-else
-  output_steps = steps;
-  output_steps_rel = steps_rel;
-  output_nsteps = nsteps;
-end
-diff_r = steps(:,r_ndx(end)) - goal_pos.right;
-diff_l = steps(:,l_ndx(end)) - goal_pos.left;
-if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;0.02;0.02;0.1;0.1;0.1])
-  break
-end
-end
+[output_steps, output_steps_rel] = decodeCollocationSteps(xstar);
+output_cost = fval(1);
+% if (mod(nsteps-1, 2) == 0) && (~params.allow_even_num_steps)
+%   continue
+% elseif (mod(nsteps-1, 2) == 1) && (~params.allow_odd_num_steps)
+%   continue
+% else
+%   output_steps = steps;
+%   output_steps_rel = steps_rel;
+%   output_nsteps = nsteps;
+% end
+% diff_r = steps(:,r_ndx(end)) - goal_pos.right;
+% diff_l = steps(:,l_ndx(end)) - goal_pos.left;
+% if all(abs(diff_r) <= [0.02;0.02;0.02;0.1;0.1;0.1]) && all(abs(diff_l) <= [0.02;0.02;0.02;0.1;0.1;0.1])
+%   break
+% end
+% end
 
 if exitflag < 10
-  for j = 2:output_nsteps
+  for j = 2:nsteps
     R = rotmat(output_steps(6,j-1));
     valuecheck(output_steps(:,j-1) + [R * output_steps_rel(1:2,j); output_steps_rel(3:6,j)], output_steps(:,j),1e-4);
   end
 end
 % nsteps
 
+X = seed_steps;
 valuecheck(output_steps([1,2,6],1), X(2).pos([1,2,6]),1e-8);
-for j = 2:output_nsteps
+for j = 2:nsteps
   X(j+1).pos = output_steps(:,j);
-  X(j+1).is_right_foot = logical(mod(params.right_foot_lead+j,2));
+  X(j+1).is_right_foot = logical(mod(right_foot_lead+j,2));
 end
 
 end

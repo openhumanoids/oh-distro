@@ -23,7 +23,8 @@ classdef StatelessFootstepPlanner
       end
       terrain = biped.getTerrain();
       if isprop(terrain, 'map_handle')
-        safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
+%         safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
+        load('example_iris_regions', 'safe_regions');
       else
         safe_regions = {struct('A', [], 'b', [])};
       end
@@ -34,55 +35,62 @@ classdef StatelessFootstepPlanner
         request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
       end
 
-      params_set = {struct(request.params)};
-      if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
-        new_params_set = {};
-        for p = params_set
-          rparams = p{1};
-          lparams = p{1};
-          rparams.leading_foot = drc.footstep_plan_params_t.LEAD_RIGHT;
-          % rparams.right_foot_lead = 1;
-          lparams.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
-          % lparams.right_foot_lead = 0;
-          new_params_set{end+1} = rparams;
-          new_params_set{end+1} = lparams;
-        end
-        params_set = new_params_set;
+      params = struct(request.params);
+      % params_set = {struct(request.params)};
+      % if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
+      %   new_params_set = {};
+      %   for p = params_set
+      %     rparams = p{1};
+      %     lparams = p{1};
+      %     rparams.leading_foot = drc.footstep_plan_params_t.LEAD_RIGHT;
+      %     % rparams.right_foot_lead = 1;
+      %     lparams.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
+      %     % lparams.right_foot_lead = 0;
+      %     new_params_set{end+1} = rparams;
+      %     new_params_set{end+1} = lparams;
+      %   end
+      %   params_set = new_params_set;
+      % end
+      % best_steps = [];
+      % best_length = inf;
+      % best_cost = inf;
+      % for p = params_set
+      %   params = struct(p{1});
+      %   params.right_foot_lead = params.leading_foot; % for backwards compatibility
+      %   if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
+      %   if request.num_goal_steps == 0
+      %     params.allow_odd_num_steps = true;
+      %     params.allow_even_num_steps = true;
+      %   else
+      %     if (request.num_goal_steps > 1)  == (request.goal_steps(1).is_right_foot == params.right_foot_lead)
+      %       params.allow_even_num_steps = true;
+      %       params.allow_odd_num_steps = false;
+      %     else
+      %       params.allow_even_num_steps = false;
+      %       params.allow_odd_num_steps = true;
+      %     end
+      %   end
+      %   corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
+      %   footsteps = footstepCollocation(biped, foot_orig, goal_pos, terrain, corridor_pts, params, safe_regions);
+      %   step_vect = encodeCollocationSteps([footsteps(2:end).pos]);
+      %   [steps, steps_rel] = decodeCollocationSteps(step_vect);
+      %   l = length(footsteps);
+      %   c = footstepCostFun(steps, steps_rel, goal_pos, logical(params.right_foot_lead));
+      %   if l < best_length || c < best_cost % always prefer fewer steps
+      %     best_steps = footsteps;
+      %     best_length = l;
+      %     best_cost = c;
+      %     best_params = params;
+      %   end
+      % end
+
+      params.right_foot_lead = params.leading_foot; % for backwards compatibility
+      if ~isfield(params, 'max_line_deviation');
+        params.max_line_deviation = params.nom_step_width * 1.5;
       end
-      best_steps = [];
-      best_length = inf;
-      best_cost = inf;
-      for p = params_set
-        params = struct(p{1});
-        params.right_foot_lead = params.leading_foot; % for backwards compatibility
-        if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
-        if request.num_goal_steps == 0
-          params.allow_odd_num_steps = true;
-          params.allow_even_num_steps = true;
-        else
-          if (request.num_goal_steps > 1)  == (request.goal_steps(1).is_right_foot == params.right_foot_lead)
-            params.allow_even_num_steps = true;
-            params.allow_odd_num_steps = false;
-          else
-            params.allow_even_num_steps = false;
-            params.allow_odd_num_steps = true;
-          end
-        end
-        corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
-        footsteps = footstepCollocation(biped, foot_orig, goal_pos, terrain, corridor_pts, params, safe_regions);
-        step_vect = encodeCollocationSteps([footsteps(2:end).pos]);
-        [steps, steps_rel] = decodeCollocationSteps(step_vect);
-        l = length(footsteps);
-        c = footstepCostFun(steps, steps_rel, goal_pos, logical(params.right_foot_lead));
-        if l < best_length || c < best_cost % always prefer fewer steps
-          best_steps = footsteps;
-          best_length = l;
-          best_cost = c;
-          best_params = params;
-        end
-      end
-      plan = FootstepPlan.from_collocation_results(best_steps);
-      params = best_params;
+      corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
+      footsteps = searchNumSteps(biped, foot_orig, goal_pos, request.goal_steps, terrain, corridor_pts, params, safe_regions);
+      plan = FootstepPlan.from_collocation_results(footsteps);
 
       plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
@@ -294,6 +302,7 @@ classdef StatelessFootstepPlanner
       %%%%%%%%%%%%%%% TODO: don't load this from file, but pull it from the request
       request.num_seed_clicks = 5;
       load('example_terrain_clicks', 'clicks');
+      clicks = clicks(:,1:request.num_seed_clicks);
       %%%%%%%%%%%%%%%
 
       for j = 1:request.num_seed_clicks
