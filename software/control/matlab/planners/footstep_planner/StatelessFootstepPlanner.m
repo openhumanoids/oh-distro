@@ -36,7 +36,6 @@ classdef StatelessFootstepPlanner
       if isprop(terrain, 'map_handle')
 %         safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
         load('example_iris_regions', 'safe_regions');
-%         safe_regions = {struct('A', [], 'b', [])};
       else
         if ~isfield(params, 'max_line_deviation');
           params.max_line_deviation = params.nom_step_width * 1.5;
