@@ -5,6 +5,7 @@ foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
 
 GOAL_THRESHOLD = [0.02;0.02;0;0;0;0.1];
+w_final = [1;1;0;0;0;0.1];
 BEAM_WIDTH = 5;
 
 plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {});
@@ -49,10 +50,10 @@ while true
           diff_l = footsteps(end).pos - goal_pos.left;
           diff_r = footsteps(end-1).pos - goal_pos.right;
         end
-        diff_r = diff_r .* [1;1;0;0;0;1]; % don't count z, roll, and pitch
-        diff_l = diff_l .* [1;1;0;0;0;1];
-        diff_r = max(0, abs(diff_r) - GOAL_THRESHOLD);
-        diff_l = max(0, abs(diff_l) - GOAL_THRESHOLD);
+        diff_r = diff_r .* w_final; % don't count z, roll, and pitch
+        diff_l = diff_l .* w_final;
+        diff_r = max(0, abs(diff_r) - GOAL_THRESHOLD .* w_final);
+        diff_l = max(0, abs(diff_l) - GOAL_THRESHOLD .* w_final);
         total_diff = sum(diff_r + diff_l);
         if total_diff <= 1e-3
           goal_reached = true;
