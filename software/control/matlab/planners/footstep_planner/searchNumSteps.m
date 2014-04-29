@@ -5,7 +5,7 @@ foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
 
 GOAL_THRESHOLD = [0.02;0.02;0;0;0;0.1];
-w_final = [1;1;0;0;0;0.1];
+w_final = [5;5;0;0;0;1];
 BEAM_WIDTH = 5;
 
 plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {});
@@ -28,6 +28,8 @@ min_steps = max([params.min_num_steps+2,3]);
 % TODO: restore this
 % max_steps = params.max_num_steps+2;
 max_steps = 12;
+
+best_costs = [];
 
 while true
   new_plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {});
@@ -61,7 +63,10 @@ while true
           goal_reached = false;
         end
 
-        if total_diff < min([plan_set.cost])
+%       if total_diff < min([plan_set.cost])
+        if length(best_costs) < 2 || total_diff < best_costs(end-1)
+          % Check improvement against the best plan we were able to produce
+          % with n-2 steps
           new_plan_set(end+1).steps = footsteps;
           new_plan_set(end).cost = total_diff;
           new_plan_set(end).regions = region_idx;
@@ -70,12 +75,14 @@ while true
       end
     end
   end
+  
 
   if isempty(new_plan_set)
     break
   end
 
   plan_set = new_plan_set;
+  best_costs(end+1) = min([plan_set.cost]);
 %   for j = 1:length(plan_set)
 %     plan_set(j).regions
 %   end
