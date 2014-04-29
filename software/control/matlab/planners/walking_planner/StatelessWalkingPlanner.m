@@ -19,6 +19,12 @@ classdef StatelessWalkingPlanner
         xstar = d.xstar;     
       end
 
+      if request.footstep_plan.params.ignore_terrain
+        r = r.setTerrain(KinematicTerrainMap(r, q0, true));
+      else
+        r = r.setTerrain(r.getTerrain().setBackupTerrain(r, q0));
+      end
+      
       r = r.setInitialState(xstar); % TODO: do we need this? -robin
       qstar = xstar(1:nq);
 
