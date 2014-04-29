@@ -22,6 +22,7 @@ goal_pos.left(6) = goal_pos.right(6) + angleDiff(goal_pos.right(6), goal_pos.lef
 goal_pos.right(3) = st0(3);
 goal_pos.left(3) = st0(3);
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
+dgoal = norm(goal_pos.center(1:2) - seed_steps(1).pos(1:2));
 
 function [c, ceq, dc, dceq] = constraints(x)
   if USE_MEX == 0 || USE_MEX == 2
@@ -49,7 +50,7 @@ end
 
 function [c, dc] = objfun(x)
   [steps, steps_rel] = decodeCollocationSteps(x);
-  [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, right_foot_lead, [params.nom_forward_step; params.nom_step_width]);
+  [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, right_foot_lead, dgoal, [params.nom_forward_step; params.nom_step_width]);
 end
 
 function [F,G] = collocation_userfun(x)
