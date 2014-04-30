@@ -1,4 +1,4 @@
-function atlasSteppingMomentum
+function atlasWalking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -12,7 +12,6 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
-state_frame = AtlasState(r);
 state_plus_effort_frame = AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
@@ -62,7 +61,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[0;0;0];
+v = R*[1.0;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -150,6 +149,7 @@ options.output_qdd = true;
 
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 vo = VelocityOutputIntegratorBlock(r,options);
+fcb = FootContactBlock(r);
 
 % cascade IK/PD block
 options.Kp = 80.0*ones(nq,1);
@@ -172,12 +172,8 @@ outs(2).output = 2;
 qp_sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins;
 
-fcb = FootContactBlock(r);
-
 toffset = -1;
 tt=-1;
-dt = 0.005;
-tt_prev = -1;
 
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
@@ -200,10 +196,6 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-    if tt_prev~=-1
-      dt = 0.99*dt + 0.01*(tt-tt_prev);
-    end
-    tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
     % low pass filter floating base velocities
@@ -231,7 +223,6 @@ while tt<T
     
     qddes(joint_act_ind) = qd_ref(joint_act_ind);
  
-    state_frame.publish(t,[q;qd],'EST_ROBOT_STATE_ECHO');
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
