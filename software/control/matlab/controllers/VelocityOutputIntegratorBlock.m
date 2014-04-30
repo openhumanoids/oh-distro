@@ -2,7 +2,7 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
   % integrates desired generalized accelerations and outputs a desired velocity
   %
   % input: x, qdd, foot_contact
-  % state: [fc_left; fc_right; t_prev; qd_int]
+  % state: [fc_left; fc_right; t_prev; lambda; qd_int]
   % output: qd_err (input frame)
   properties
 		nq;
@@ -19,7 +19,7 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
       num_q = getNumDOF(r);
       input_frame = MultiCoordinateFrame({getStateFrame(r),AtlasCoordinates(r),FootContactState});
       output_frame = AtlasVelocityRef(r);      
-      obj = obj@MIMODrakeSystem(0,3+num_q,input_frame,output_frame,true,true);
+      obj = obj@MIMODrakeSystem(0,4+num_q,input_frame,output_frame,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
 
@@ -52,51 +52,59 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			l_foot_contact = fc(1);
 			r_foot_contact = fc(2);
 			
-			% compute desired velocity
-			qd_int = state(4:end);
+			lambda = state(4);
+
+      % compute desired velocity
+			qd_int = state(5:end);
 
 			qd_err = qd_int-qd;
 
 			% do not velocity control ankles when in contact
-			if l_foot_contact>0.5
+      if l_foot_contact>0.5
         qd_err(obj.l_ankle_idx)=0;
-			end
-			if r_foot_contact>0.5
+      end
+      if r_foot_contact>0.5
         qd_err(obj.r_ankle_idx) = 0;
-			end
+      end
 			
-			y = qd_err(obj.act_idx_map);
+      delta_max = 2.0;
+      y = max(-delta_max,min(delta_max,lambda*qd_err(obj.act_idx_map)));
 		end
 		
 		function next_state=mimoUpdate(obj,t,state,varargin)
 			qdd = varargin{2};
 			fc = varargin{3};
-			
+
 			l_foot_contact = fc(1);
 			r_foot_contact = fc(2);
-			
-			qd_int = state(4:end);
+
+ 			lambda = state(4);
+
+			qd_int = state(5:end);
 			dt = t-state(3);
 			
-			qd_int = qd_int + qdd*dt;
+			qd_int = qd_int + qdd*dt; % leaky
 			
-			if l_foot_contact>0.5
+      if l_foot_contact>0.5
         qd_int(obj.l_ankle_idx)=0;
-			end
-			if r_foot_contact>0.5
+      end
+      if r_foot_contact>0.5
         qd_int(obj.r_ankle_idx)=0;
-			end
-			
-			if state(1)~=l_foot_contact || state(2)~=r_foot_contact
-        % contact state changed, reset integrated velocities
-        qd_int(obj.leg_idx) = 0;
-			end
+      end
 
 			next_state = state;
 			next_state(1) = fc(1);
 			next_state(2) = fc(2);
 			next_state(3) = t;
-			next_state(4:end) = qd_int;
+
+      lambda = min(1.0,lambda+dt); % linear ramp
+      if state(1)~=l_foot_contact || state(2)~=r_foot_contact
+        % contact state changed, reset integrated velocities
+        qd_int(obj.leg_idx) = 0;
+        lambda = 0;
+      end
+      next_state(4) = lambda;
+			next_state(5:end) = qd_int;
 		end
 	end
   

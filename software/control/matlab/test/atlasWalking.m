@@ -86,7 +86,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.01;
+request.default_step_params.step_speed = 0.02;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -130,7 +130,7 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'ak');findJointIndices(r,'back')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
 
 % traj = PPTrajectory(spline(ts,walking_plan.xtraj));
 % traj = traj.setOutputFrame(r.getStateFrame);
@@ -183,12 +183,12 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 % low pass filter for floating base velocities
-alpha_v = 0.1;
+alpha_v = 0.2;
 float_v = 0;
 
 udes = zeros(nu,1);
 qddes = zeros(nu,1);
-qd_int_state = zeros(nq+3,1);
+qd_int_state = zeros(nq+4,1);
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)

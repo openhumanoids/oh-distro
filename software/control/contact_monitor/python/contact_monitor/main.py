@@ -9,7 +9,7 @@ lc = lcm.LCM()
 
 class ContactMonitor:
     def __init__(self):
-		self.fz_threshold = 100 # newtons
+		self.fz_threshold = 200 # newtons
 		self.l_foot_contact = False
 		self.r_foot_contact = False
 

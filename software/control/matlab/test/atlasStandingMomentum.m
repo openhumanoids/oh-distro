@@ -301,12 +301,12 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 % low pass filter for floating base velocities
-alpha_v = 0.1;
+alpha_v = 0.2;
 float_v = 0;
 
 udes = zeros(nu,1);
 qddes = zeros(nu,1);
-qd_int_state = zeros(nq+3,1);
+qd_int_state = zeros(nq+4,1);
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)

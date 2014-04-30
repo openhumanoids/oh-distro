@@ -65,8 +65,8 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 30;
-if 1
+T = 120;
+if 0
   % create figure 8 zmp traj
   dt = 0.01;
   ts = 0:dt:T;
@@ -76,19 +76,19 @@ if 1
   zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
 else
   % back and forth
-%   w=0.1; 
-%   zmpx = [0 0  0 0  0 0  0 0  0  0  0 0];
-%   zmpy = [0 w -w w -w w -w w -w  w -w 0];
-%   
-%   np=length(zmpy);
-%   ts = linspace(0,T,np);
+  w=0.1; 
+  zmpx = [0 0  0 0  0 0  0 0  0 0];
+  zmpy = [0 w -w w -w w -w w -w 0];
+  
+  np=length(zmpy);
+  ts = linspace(0,T,np);
 
-  % rectangle
-  h=0.015; % height/2
-  w=0.08; % width/2
-  zmpx = [0 h h -h -h 0];
-  zmpy = [0 w -w -w w 0];
-  ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
+%   % rectangle
+%   h=0.015; % height/2
+%   w=0.08; % width/2
+%   zmpx = [0 h h -h -h 0];
+%   zmpy = [0 w -w -w w 0];
+%   ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
 end
 
 zmpknots = [zmpx;zmpy;0*zmpx];
@@ -198,12 +198,12 @@ end
 xtraj = [];
 
 % low pass filter for floating base velocities
-alpha_v = 0.1;
+alpha_v = 0.2;
 float_v = 0;
 
 udes = zeros(nu,1);
 qddes = zeros(nu,1);
-qd_int_state = zeros(nq+3,1);
+qd_int_state = zeros(nq+4,1);
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
