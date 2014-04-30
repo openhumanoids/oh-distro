@@ -76,6 +76,10 @@ group "5.debug" {
         exec = "signal-scope $DRC_BASE/software/config/signal_scope_configs/r_leg_scope.json";
         host = "robot";
     }
+    cmd "foot_contacts_scope" {
+        exec = "signal-scope $DRC_BASE/software/config/signal_scope_configs/foot_contacts.json";
+        host = "robot";
+    }
 }
 
 #################################################################
@@ -83,7 +87,7 @@ group "5.debug" {
 script "start pressure off" { 
     start group "0.development";
     start group "2.core";
-    start group "5.debug";
+    start group "3.p_and_c";
     start cmd "atlas-off";
  }
 
