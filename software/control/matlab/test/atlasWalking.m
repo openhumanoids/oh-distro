@@ -1,4 +1,4 @@
-function atlasSteppingMomentum
+function atlasWalking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -12,7 +12,6 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
-state_frame = AtlasState(r);
 state_plus_effort_frame = AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
@@ -62,7 +61,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[0;0;0];
+v = R*[1.0;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -87,7 +86,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.01;
+request.default_step_params.step_speed = 0.02;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -131,11 +130,10 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'ak');findJointIndices(r,'back')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
 
 % traj = PPTrajectory(spline(ts,walking_plan.xtraj));
 % traj = traj.setOutputFrame(r.getStateFrame);
-
 % v = r.constructVisualizer;
 % playback(v,traj,struct('slider',true));
 
@@ -143,22 +141,17 @@ ctrl_data = SharedDataHandle(struct(...
 options.slack_limit = 100;
 options.w_qdd = 0.01*ones(nq,1);
 options.W_hdot = 1000*diag([1;1;1;10;10;10]);
-options.lcm_foot_contacts = false;
+options.input_foot_contacts = true;
 options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.01;
 options.output_qdd = true;
 
-% foot_opts.Kp = 0.5*[100; 100; 100; 150; 150; 150]; 
-% foot_opts.Kd = 0.5*[10; 10; 10; 10; 10; 10];
-% lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,foot_opts);
-% rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,foot_opts);
-% motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
-% qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 qp = MomentumControlBlock(r,{},ctrl_data,options);
+vo = VelocityOutputIntegratorBlock(r,options);
+fcb = FootContactBlock(r);
 
-
-% cascade PD block
+% cascade IK/PD block
 options.Kp = 80.0*ones(nq,1);
 options.Kd = 6.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
@@ -166,54 +159,21 @@ ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 1;
 ins(2).input = 2;
-ins(3).system = 2;
-ins(3).input = 1;
-% ins(4).system = 2;
-% ins(4).input = 3;
-% ins(5).system = 2;
-% ins(5).input = 4;
+ins(3).system = 1;
+ins(3).input = 3;
+ins(4).system = 2;
+ins(4).input = 1;
+ins(5).system = 2;
+ins(5).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
 outs(2).output = 2;
-sys = mimoCascade(pd,qp,[],ins,outs);
+qp_sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins;
-
-% % feedback body motion control blocks
-% ins(1).system = 2;
-% ins(1).input = 1;
-% ins(2).system = 2;
-% ins(2).input = 2;
-% ins(3).system = 2;
-% ins(3).input = 3;
-% ins(4).system = 1;
-% ins(4).input = 1;
-% ins(5).system = 2;
-% ins(5).input = 5;
-% sys = mimoCascade(lfoot_motion,sys,[],ins,outs);
-% clear ins;
-% 
-% ins(1).system = 2;
-% ins(1).input = 1;
-% ins(2).system = 2;
-% ins(2).input = 2;
-% ins(3).system = 2;
-% ins(3).input = 3;
-% ins(4).system = 2;
-% ins(4).input = 4;
-% ins(5).system = 1;
-% ins(5).input = 1;
-% sys = mimoCascade(rfoot_motion,sys,[],ins,outs);
-% clear ins;
-
-
-qddes = zeros(nu,1);
-udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.005;
-tt_prev = -1;
 
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
@@ -222,25 +182,13 @@ if ~strcmp(resp,{'y','yes'})
   return;
 end
 
-qd_int = 0;
-qd_prev = -1;
-
-contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
-lc = lcm.lcm.LCM.getSingleton();
-lc.subscribe('FOOT_CONTACT_ESTIMATE',contact_est_monitor);
-r_ankle = findJointIndices(r,'r_leg_ak');
-l_ankle = findJointIndices(r,'l_leg_ak');
-
 % low pass filter for floating base velocities
-alpha_v = 0.1;
+alpha_v = 0.2;
 float_v = 0;
 
-legs = findJointIndices(r,'leg');
-
-
-right_contact_state = 0;
-left_contact_state = 0;
-
+udes = zeros(nu,1);
+qddes = zeros(nu,1);
+qd_int_state = zeros(nq+4,1);
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -248,10 +196,6 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-    if tt_prev~=-1
-      dt = 0.99*dt + 0.01*(tt-tt_prev);
-    end
-    tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
     % low pass filter floating base velocities
@@ -262,57 +206,23 @@ while tt<T
     qd = x(nq+(1:nq));
     %qt = fasteval(qtraj,tt);
  
-    u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd]);
+    fc = output(fcb,tt,[],[q;qd]);
+    
+    u_and_qdd = output(qp_sys,tt,[],[q0; q;qd; fc; q;qd; fc]);
     u=u_and_qdd(1:nu);
-    qdd=u_and_qdd(nu+1:end);
-    udes(joint_act_ind) = u(joint_act_ind);
+    qdd=u_and_qdd(nu+(1:nq));
+    
+    qd_int_state = mimoUpdate(vo,tt,qd_int_state,[q;qd],qdd,fc);
+    qd_ref = mimoOutput(vo,tt,qd_int_state,[q;qd],qdd,fc);
     
     % fade in desired torques to avoid spikes at the start
+    udes(joint_act_ind) = u(joint_act_ind);
     tau = tau(act_idx_map);
     alpha = min(1.0,tt/torque_fade_in);
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
-    % compute desired velocity
-    qd_int = qd_int + qdd*dt;
-    
-%     % filter out joint velocity spikes
-%     crossed = [];
-%     if qd_prev~=-1
-%       crossed=sign(qd_prev)~=sign(qd);
-%     end
-%     find(crossed)
-%     qd_prev = qd;
-%     qd(crossed) = 0;
-    
-    qddes_state_frame = qd_int-qd;
-
-    % gain scheduling hack 
-    contact_data = contact_est_monitor.getMessage();
-    if ~isempty(contact_data)
-      msg = drc.foot_contact_estimate_t(contact_data);
-      if msg.left_contact==1
-        qddes_state_frame(l_ankle) = 0;
-        qd_int(l_ankle)=0;
-      end
-      if msg.right_contact==1
-        qddes_state_frame(r_ankle) = 0;
-        qd_int(r_ankle)=0;
-      end
-      
-      if right_contact_state~=msg.right_contact || ...
-         left_contact_state~=msg.left_contact 
-        % contact state changed
-        qd_int(legs) = 0;
-      end
-      right_contact_state = msg.right_contact;
-      left_contact_state = msg.left_contact;
-      
-    end
-
-    qddes_input_frame = qddes_state_frame(act_idx_map);
-    qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
-    
-    state_frame.publish(t,[q;qd],'EST_ROBOT_STATE_ECHO');
+    qddes(joint_act_ind) = qd_ref(joint_act_ind);
+ 
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end

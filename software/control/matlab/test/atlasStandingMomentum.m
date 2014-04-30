@@ -1,6 +1,8 @@
 function atlasStandingMomentum
 %NOTEST
 
+error('Scott has to fix this script');
+
 % test function for standing atlas using the momentum-based QP controller. 
 % using the joint_str variable, the user can select a subset of leg joints with which
 % to do torque control.
@@ -13,14 +15,14 @@ function atlasStandingMomentum
 joint_str = {'leg'};% <---- cell array of (sub)strings  
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-dim = 2; % what dimension to move COM: x/y/z (1/2/3)
+dim = 3; % what dimension to move COM: x/y/z (1/2/3)
 T = 15;% <--- signal duration (sec)
 
 % chirp params
-amp = 0.04;% <---- meters, COM DELTA
+amp = 0.02;% <---- meters, COM DELTA
 chirp_f0 = 0.2;% <--- chirp starting frequency
 chirp_fT = 0.2;% <--- chirp ending frequency
-chirp_sign = 0;% <--- -1: negative, 1: positive, 0: centered about offset 
+chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
 
 % random pose params for sys id tests
 use_random_traj = false; % if true, ignores chirp params
@@ -44,7 +46,6 @@ r = removeCollisionGroupsExcept(r,{'toe','heel'});
 r = compile(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
-
 
 % setup frames
 state_plus_effort_frame = AtlasStateAndEffort(r);
@@ -76,12 +77,12 @@ ref_frame.updateGains(gains);
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-gains2 = getAtlasGains(); 
+gains_copy = getAtlasGains(); 
 % reset force gains for joint being tuned
-gains.k_f_p(joint_act_ind) = gains2.k_f_p(joint_act_ind); 
-gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
-gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
-gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
+gains.k_f_p(joint_act_ind) = gains_copy.k_f_p(joint_act_ind); 
+gains.ff_f_d(joint_act_ind) = gains_copy.ff_f_d(joint_act_ind);
+gains.ff_qd(joint_act_ind) = gains_copy.ff_qd(joint_act_ind);
+gains.ff_qd_d(joint_act_ind) = gains_copy.ff_qd_d(joint_act_ind);
 % set joint position gains to 0 for joint being tuned
 gains.k_q_p(joint_act_ind) = 0;
 gains.k_q_i(joint_act_ind) = 0;
@@ -111,12 +112,9 @@ if use_random_traj
   comztraj = zeros(1,length(ts));
   
   for i=1:length(ts)
-   
     kinsol = doKinematics(r,qtraj.eval(ts(i)));
     com = getCOM(r,kinsol);
     comztraj(i) = com(3);
-    
-   
   end
   comz_traj = PPTrajectory(foh(ts,comztraj));
   fnplt(comz_traj)
@@ -217,10 +215,7 @@ else
     end
   end
   
-  % visualize trajectory
   qtraj = PPTrajectory(spline(ts,q));
-  traj = [qtraj;0*qtraj];
-  traj = traj.setOutputFrame(r.getStateFrame);
   
   zmptraj = comtraj(1:2,:);
   zmptraj = zmptraj.setOutputFrame(desiredZMP);
@@ -257,24 +252,29 @@ else
     'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 end
 
-
-v = r.constructVisualizer;
-playback(v,traj,struct('slider',true));
+if 1 % visualize trajectory
+  traj = [qtraj;0*qtraj];
+  traj = traj.setOutputFrame(r.getStateFrame);  
+  v = r.constructVisualizer;
+  playback(v,traj,struct('slider',true));
+end
 
 % instantiate QP controller
-options.slack_limit = 20;
-options.w_qdd = 0.1*ones(nq,1);
-options.W_hdot = diag([0;0;0;1;1;1]);
-options.lcm_foot_contacts = false;
+options.slack_limit = 50;
+options.w_qdd = 0.01*ones(nq,1);
+options.W_hdot = diag([0;0;0;100;100;100]);
+options.input_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.05;
+options.contact_threshold = 0.01;
 options.output_qdd = true;
 
 qp = MomentumControlBlock(r,{},ctrl_data,options);
+vo = VelocityOutputIntegratorBlock(r,options);
+fcb = FootContactBlock(r);
 
 % cascade PD block
-options.Kp = 30.0*ones(nq,1);
+options.Kp = 50.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
 pd = SimplePDBlock(r,ctrl_data,options);
 ins(1).system = 1;
@@ -290,18 +290,8 @@ outs(2).output = 2;
 sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins;
 
-qddes = zeros(nu,1);
-udes = zeros(nu,1);
-
 toffset = -1;
 tt=-1;
-dt = 0.004;
-tt_prev = -1;
-
-process_noise = 0.01*ones(nq,1);
-observation_noise = 5e-4*ones(nq,1);
-kf = FirstOrderKalmanFilter(process_noise,observation_noise);
-kf_state = kf.getInitialState;
 
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
@@ -310,7 +300,13 @@ if ~strcmp(resp,{'y','yes'})
   return;
 end
 
-qd_int = 0;
+% low pass filter for floating base velocities
+alpha_v = 0.2;
+float_v = 0;
+
+udes = zeros(nu,1);
+qddes = zeros(nu,1);
+qd_int_state = zeros(nq+4,1);
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -318,52 +314,48 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-    if tt_prev~=-1
-      dt = 0.99*dt + 0.01*(tt-tt_prev);
-    end
-    dt
-    tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
-    % get estimated state
-    kf_state = kf.update(tt,kf_state,x(1:nq));
-    x = kf.output(tt,kf_state,x(1:nq));
-
+    % low pass filter floating base velocities
+    float_v = (1-alpha_v)*float_v + alpha_v*x(nq+(1:6));
+    x(nq+(1:6)) = float_v;
+    
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    
+    qt = fasteval(qtraj,tt);
+ 
     % get desired configuration
-    qt = qtraj.eval(tt);
     qdes = qt(act_idx_map);    
     u_and_qdd = output(sys,tt,[],[qt;q;qd;q;qd]);
     u=u_and_qdd(1:nu);
-    qdd=u_and_qdd(nu+1:end);
-    udes(joint_act_ind) = u(joint_act_ind);
+    qdd=u_and_qdd(nu+(1:nq));
+    
+    fc = output(fcb,tt,[],[q;qd]);
+    qd_int_state = mimoUpdate(vo,tt,qd_int_state,[q;qd],qdd,fc);
+    qd_ref = mimoOutput(vo,tt,qd_int_state,[q;qd],qdd,fc);
     
     % fade in desired torques to avoid spikes at the start
+    udes(joint_act_ind) = u(joint_act_ind);
     tau = tau(act_idx_map);
     alpha = min(1.0,tt/torque_fade_in);
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
-    % compute desired velocity
-    qd_int = qd_int + qdd*dt;
-    qddes_state_frame = qd_int-qd;
-    qddes_input_frame = qddes_state_frame(act_idx_map);
-    qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
-    
+    qddes(joint_act_ind) = qd_ref(joint_act_ind);
+ 
     ref_frame.publish(t,[qdes;qddes;udes],'ATLAS_COMMAND');
   end
 end
 
 disp('moving back to fixed point using position control.');
-gains = getAtlasGains(); % change gains in this file
+gains = getAtlasGains(); 
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
+gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % move to fixed point configuration 
 qdes = xstar(1:nq);
-atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,6);
+atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 end
