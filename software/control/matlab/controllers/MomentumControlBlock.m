@@ -233,7 +233,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     
   function varargout=mimoOutput(obj,t,~,varargin)
     %out_tic = tic;
-    global infocount
+    persistent infocount
     
     if isempty(infocount)
       infocount = 0;
@@ -566,7 +566,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         height = 0;
 			end
 			body_motion_input_start=3+obj.input_foot_contacts*1;
-      mu = 1.0;
+      mu = 0.7;
       if obj.use_mex==1
 				
         if obj.debug
@@ -574,7 +574,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
             1,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
 
           % publish debug 
-          debug_data.utime = t*10e6;
+          debug_data.utime = t*1e6;
           debug_data.alpha = alpha;
           debug_data.u = y;
           debug_data.active_supports = active_supports;

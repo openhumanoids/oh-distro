@@ -104,12 +104,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       obj.max_nrm_err = 1.5;      
     end
    
-    function y=mimoOutput(obj,t,~,varargin)
-%       global infocount 
-%       if isempty(infocount)
-%         infocount = 0;
-%       end
-      
+    function y=mimoOutput(obj,t,~,varargin)      
       obj.ikoptions.q_nom = varargin{1};
 
 			x = varargin{2};
@@ -126,12 +121,11 @@ classdef WalkingPDBlock < MIMODrakeSystem
 				if fc(2) > 0.5 % right foot in contact
 %         Kp(obj.r_ankle_idx,obj.r_ankle_idx) = 0*eye(2);
 %         Kd(obj.r_ankle_idx,obj.r_ankle_idx) = 0*eye(2);
-				end
-			end
+        end
+      end
 			
 			cdata = obj.controller_data.data;
 
-      
       approx_args = {};
       for j = 1:length(cdata.link_constraints)
         if ~isempty(cdata.link_constraints(j).traj)
@@ -156,10 +150,6 @@ classdef WalkingPDBlock < MIMODrakeSystem
       end
 			
 			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
-%       if infocount > 0
-%   		  save(sprintf('pd_dump_t=%2.3f.mat',t),'q','q_des','err_q','y','compos','approx_args');
-%       end
-     
 		end
   end
   
