@@ -20,6 +20,7 @@
 #include "lcmtypes/drc/ins_update_packet_t.hpp"
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
+#include "lcmtypes/drc/controller_debug_t.hpp"
 
 #include <cassert>
 
@@ -340,14 +341,17 @@ define_array_handler(AtlasFootPosEstRightPositionHandler, drc::atlas_foot_pos_es
 define_array_handler(ViconBodyTransHandler, vicon::body_t, trans, createIndexList(3));
 define_array_handler(ViconBodyQuatHandler, vicon::body_t, quat, createIndexList(4));
 
-// atlas_state_t
-
+// atlas_status_t
 define_field_handler(AtlasStatusPumpInletPressure, drc::atlas_status_t, pump_inlet_pressure);
 define_field_handler(AtlasStatusPumpSupplyPressure, drc::atlas_status_t, pump_supply_pressure);
 define_field_handler(AtlasStatusPumpReturnPressure, drc::atlas_status_t, pump_return_pressure);
 define_field_handler(AtlasStatusAirSumpPressure, drc::atlas_status_t, air_sump_pressure);
 define_field_handler(AtlasStatusPumpRPM, drc::atlas_status_t, current_pump_rpm);
 define_field_handler(AtlasStatusBehavior, drc::atlas_status_t, behavior);
+
+// controller_debug_t
+define_field_handler(ControllerDebugRightFoot, drc::controller_debug_t, r_foot_contact);
+define_field_handler(ControllerDebugLeftFoot, drc::controller_debug_t, l_foot_contact);
 
 /*
 define_field_array_handler(AtlasControlJointsPositionHandler, drc::atlas_control_data_t, joints, position, JointNames::jointNames());
@@ -561,6 +565,8 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<AtlasStatusAirSumpPressure>();
     factory.registerClass<AtlasStatusPumpRPM>();
     factory.registerClass<AtlasStatusBehavior>();
+    factory.registerClass<ControllerDebugRightFoot>();
+    factory.registerClass<ControllerDebugLeftFoot>();
     factory.registerClass<AtlasControlJointsPositionHandler>();
     factory.registerClass<AtlasControlJointsVelocityHandler>();
     factory.registerClass<AtlasControlJointsEffortHandler>();

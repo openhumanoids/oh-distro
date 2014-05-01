@@ -40,7 +40,7 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
            << "SE_INS_POSE_STATE" << "SE_MATLAB_DATAFUSION_REQ"
            << "STATE_ESTIMATOR_POSE"
            << "TRUE_ROBOT_STATE"
-           << "VICON_ATLAS"  ;
+           << "VICON_ATLAS" << "CONTROLLER_DEBUG"  ;
 
   QStringList messageTypes = SignalHandlerFactory::instance().messageTypes();
   QStringList messageFields;
