@@ -57,7 +57,6 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.slack_limit = 10;
-options.lcm_foot_contacts = false;
 options.contact_threshold = 0.002;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 

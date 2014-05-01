@@ -127,7 +127,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   int use_fast_qp = (int) mxGetScalar(prhs[narg++]);
   
-  Map< VectorXd > q_ddot_des(mxGetPr(prhs[narg++]),nq);
+  Map< VectorXd > qddot_des(mxGetPr(prhs[narg++]),nq);
   
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
@@ -298,7 +298,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       pdata->fqp += (S*x_bar + 0.5*s1).transpose()*B_ls*pdata->J_xy;
       pdata->fqp -= u0.transpose()*R_DQyD_ls*pdata->J_xy;
       pdata->fqp -= y0.transpose()*Qy*D_ls*pdata->J_xy;
-      pdata->fqp -= pdata->w*q_ddot_des.transpose();
+      pdata->fqp -= pdata->w*qddot_des.transpose();
       if (include_angular_momentum == 1) {
         pdata->fqp += w2*qdvec.transpose()*Agdot_ang.transpose()*Ag_ang;
         pdata->fqp -= w2*h_ang_dot_des.transpose()*Ag_ang;
@@ -308,7 +308,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       f.head(nq) = pdata->fqp.transpose();
      } else {
       // obj(1:nq) = -qddot_des
-      f.head(nq) = -q_ddot_des;
+      f.head(nq) = -qddot_des;
     } 
   }
   f.tail(nf+neps) = VectorXd::Zero(nf+neps);
