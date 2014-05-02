@@ -11,22 +11,31 @@ classdef StatelessFootstepPlanner
       foot_orig = biped.feetPosition(q0);
 
       biped = StatelessFootstepPlanner.configureTerrain(biped, request);
-
-      goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
-      if request.num_goal_steps > 2
-        request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
-        request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
-      end
-
       params = struct(request.params);
       params.right_foot_lead = params.leading_foot; % for backwards compatibility
+      
+      if request.num_existing_steps > 0
+        footsteps = Footstep.empty();
+        for j = 1:request.num_existing_steps
+          footsteps(j) = Footstep.from_footstep_t(request.existing_steps(j));
+          footsteps(j).pos = biped.footOrig2Contact(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
+        end
+        plan = FootstepPlan(footsteps);
+      else
 
-      safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, foot_orig, goal_pos);
+        goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
+        if request.num_goal_steps > 2
+          request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
+          request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
+        end
 
-      footsteps = searchNumSteps(biped, foot_orig, goal_pos, request.existing_steps, request.goal_steps, params, safe_regions);
-      plan = FootstepPlan.from_collocation_results(footsteps);
+        safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, foot_orig, goal_pos);
 
-      plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
+        footsteps = searchNumSteps(biped, foot_orig, goal_pos, request.existing_steps, request.goal_steps, params, safe_regions);
+        plan = FootstepPlan.from_collocation_results(footsteps);
+
+        plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
+      end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
       plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
       plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
@@ -92,7 +101,7 @@ classdef StatelessFootstepPlanner
       if ismethod(terrain, 'setMapMode')
         terrain = terrain.setMapMode(request.params.map_command);
       end
-      biped.setTerrain(terrain);
+      biped = biped.setTerrain(terrain);
     end
 
     function safe_regions = decodeSafeRegions(biped, request, foot_orig, goal_pos)

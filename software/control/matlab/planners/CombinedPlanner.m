@@ -40,10 +40,10 @@ classdef CombinedPlanner
       obj.handlers{end+1} = @obj.plan_footsteps;
       obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
 
-      obj.monitors{end+1} = drake.util.MessageMonitor(drc.footstep_check_request_t, 'utime');
-      obj.request_channels{end+1} = 'FOOTSTEP_CHECK_REQUEST';
-      obj.handlers{end+1} = @obj.check_footsteps;
-      obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
+%       obj.monitors{end+1} = drake.util.MessageMonitor(drc.footstep_check_request_t, 'utime');
+%       obj.request_channels{end+1} = 'FOOTSTEP_CHECK_REQUEST';
+%       obj.handlers{end+1} = @obj.check_footsteps;
+%       obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
 
       obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');
       obj.request_channels{end+1} = 'WALKING_TRAJ_REQUEST';
@@ -78,12 +78,7 @@ classdef CombinedPlanner
       msg = drc.footstep_plan_request_t(msg);
       plan = obj.footstep_planner.plan_footsteps(obj.biped, msg);
     end
-
-    function plan = check_footsteps(obj, msg)
-      msg = drc.footstep_check_request_t(msg);
-      plan = obj.footstep_planner.check_footsteps(obj.biped, msg);
-    end
-
+    
     function plan = plan_walking_traj(obj, msg)
       msg = drc.walking_plan_request_t(msg);
       plan = obj.walking_planner.plan_walking(obj.biped, msg, true);
