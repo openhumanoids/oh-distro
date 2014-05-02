@@ -1,5 +1,5 @@
 function output_footsteps = searchNumSteps(biped, foot_orig, goal_pos, existing_steps, goal_steps, params, safe_regions)
-profile on
+% profile on
 tic
 foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
@@ -145,7 +145,7 @@ step_vect = encodeCollocationSteps([output_footsteps(2:end).pos]);
 [steps, steps_rel] = decodeCollocationSteps(step_vect);
 steps_rel
 toc
-profile viewer
+% profile viewer
 end
 
 function total_diff = error_from_goal(footsteps, goal_pos, goal_threshold, w_final)

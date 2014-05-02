@@ -1,8 +1,8 @@
 function [X, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, params, safe_regions)
 
-debug = true;
+debug = false;
 USE_SNOPT = 1;
-USE_MEX = 2;
+USE_MEX = 1;
 
 right_foot_lead = seed_steps(1).is_right_foot;
 
