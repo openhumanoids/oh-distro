@@ -102,13 +102,15 @@ while 1
 
   step_duration = (swing_ts(end) - swing_ts(1));
   if isempty(zmp_pts)
-    instep_shift = [0.0;0.02;0];
-    if ~st.is_right_foot
-      instep_shift = [1;-1;1].*instep_shift;
-    end
-    R = rpy2rotmat(st.pos.center(4:6));
-    shift = R*instep_shift;
-    zmp1 = st.pos.center(1:2) + shift(1:2);
+    instep_shift = [0.0;0.025;0];
+    zmp1 = shift_step_inward(st, instep_shift);
+%     zmp2 = shift_step_inward(sw1, instep_shift);
+%     if ~st.is_right_foot
+%       instep_shift = [1;-1;1].*instep_shift;
+%     end
+%     R = rpy2rotmat(st.pos.center(4:6));
+%     shift = R*instep_shift;
+%     zmp1 = st.pos.center(1:2) + shift(1:2);
     zmp2 = feetCenter(sw1.pos.orig, st.pos.orig);
     zmp2 = zmp2(1:2);
   else
@@ -118,10 +120,12 @@ while 1
 
   supp1 = struct('right', ~is_right_foot, 'left', is_right_foot);
   supp2 = struct('right', 1, 'left', 1);
+  zmp_knots(end+1) = struct('t', t0 + 0.5 * takeoff_time, 'zmp', zmp1, 'supp', supp2);
   zmp_knots(end+1) = struct('t', t0 + takeoff_time, 'zmp', zmp1, 'supp', supp1);
   zmp_knots(end+1) = struct('t', t0 + mean([takeoff_time, landing_time]), 'zmp', zmp1, 'supp', supp1);
   zmp_knots(end+1) = struct('t', t0 + landing_time, 'zmp', zmp1, 'supp', supp2);
-  zmp_knots(end+1) = struct('t', t0 + landing_time + (2/3) * (step_duration - landing_time), 'zmp', zmp2, 'supp', supp2);
+%   zmp_knots(end+1) = struct('t', t0 + landing_time + (1/4) * (step_duration - landing_time), 'zmp', zmp1, 'supp', supp2);
+%   zmp_knots(end+1) = struct('t', t0 + landing_time + (2/3) * (step_duration - landing_time), 'zmp', zmp2, 'supp', supp2);
   zmp_knots(end+1) = struct('t', t0 + step_duration, 'zmp', zmp2, 'supp', supp2);
 
   istep.(sw_foot) = istep.(sw_foot) + 1;
@@ -179,4 +183,13 @@ if options.debug
   plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',2,true);
 end
 
+end
+
+function pos = shift_step_inward(step, instep_shift)
+  if ~step.is_right_foot
+    instep_shift = [1;-1;1].*instep_shift;
+  end
+  R = rpy2rotmat(step.pos.center(4:6));
+  shift = R*instep_shift;
+  pos = step.pos.center(1:2) + shift(1:2);
 end

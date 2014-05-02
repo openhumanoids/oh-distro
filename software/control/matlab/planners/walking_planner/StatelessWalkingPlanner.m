@@ -24,7 +24,7 @@ classdef StatelessWalkingPlanner
       else
         terrain = r.getTerrain();
         if ismethod(terrain, 'setBackupTerrain')
-          terrain = terrain.setBackupTerrain(biped, q0);
+          terrain = terrain.setBackupTerrain(r, q0);
           r = r.setTerrain(terrain);
         end
       end
