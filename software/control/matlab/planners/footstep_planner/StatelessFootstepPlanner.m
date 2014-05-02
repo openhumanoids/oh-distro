@@ -95,7 +95,10 @@ classdef StatelessFootstepPlanner
       if request.params.ignore_terrain
         terrain = KinematicTerrainMap(biped, q0, true);
       else
-        terrain = biped.getTerrain().setBackupTerrain(biped, q0);
+        terrain = biped.getTerrain();
+        if ismethod(terrain, 'setBackupTerrain')
+          terrain = terrain.setBackupTerrain(biped, q0);
+        end
       end
 
       if ismethod(terrain, 'setMapMode')
