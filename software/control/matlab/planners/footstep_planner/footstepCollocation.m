@@ -24,10 +24,16 @@ function [c, ceq, dc, dceq] = constraints(x)
   else
     [c, ceq, dc, dceq] = stepCollocationConstraints(x);
     [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x);
-    valuecheck(c_mat, c_mex, 1e-8);
-    valuecheck(ceq_mat, ceq_mex, 1e-8);
-    valuecheck(dc_mat, dc_mex, 1e-8);
-    valuecheck(dceq_mat, dceq_mex, 1e-8);
+    if isempty(c)
+      assert(isempty(c_mex));
+      assert(isempty(dc));
+      assert(isempty(dc_mex));
+    else
+      valuecheck(c, c_mex, 1e-8);
+      valuecheck(dc, dc_mex, 1e-8);
+    end
+    valuecheck(ceq, ceq_mex, 1e-8);
+    valuecheck(dceq, dceq_mex, 1e-8);
   end
 end
 
@@ -97,7 +103,7 @@ for j = 2:nsteps
   else
     region_ndx = j-1;
   end
-  region = safe_regions{region_ndx};
+  region = safe_regions(region_ndx);
   num_region_cons = length(region.b);
   expanded_A = zeros(num_region_cons, nv);
   expanded_A(1:length(region.b),x_ndx([1,2,6])) = region.A;
@@ -107,7 +113,7 @@ for j = 2:nsteps
   expanded_Aeq = zeros(1, nv);
   expanded_Aeq(1, x_ndx([1,2,3])) = region.normal;
   Aeq = [Aeq; expanded_Aeq];
-  beq = [beq; region.normal' * region.pt];
+  beq = [beq; region.normal' * region.point];
 end
 
 
@@ -143,11 +149,11 @@ if USE_SNOPT
     iG(dx_ndx(1:2),con_ndx) = [1 1; 1 1];
   end
 
-  for j = 2:nsteps
-    con_ndx = j + n_obj + n_proj_cons;
-    x1_ndx = (j-1)*12+(1:6);
-    iG(x1_ndx(1:3), con_ndx) = 1;
-  end
+%   for j = 2:nsteps
+%     con_ndx = j + n_obj + n_proj_cons;
+%     x1_ndx = (j-1)*12+(1:6);
+%     iG(x1_ndx(1:3), con_ndx) = 1;
+%   end
 
   iGndx = find(iG);
   [jGvar, iGfun] = find(iG);

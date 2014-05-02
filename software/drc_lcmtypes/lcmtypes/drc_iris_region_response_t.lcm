@@ -1,0 +1,9 @@
+package drc;
+
+struct iris_region_response_t
+{
+	int64_t utime;
+
+	int32_t num_iris_regions;
+	iris_region_t iris_regions[num_iris_regions];
+}

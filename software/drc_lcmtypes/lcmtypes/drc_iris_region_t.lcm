@@ -1,0 +1,11 @@
+package drc;
+
+struct iris_region_t
+{
+	int64_t utime;
+
+	lin_con_t lin_con;
+
+	double point[3];
+	double normal[3];
+}

@@ -15,8 +15,10 @@ request = drc.footstep_plan_request_t();
 request.utime = 0;
 
 fp = load(strcat(getenv('DRC_PATH'), '/control/matlab/data/atlas_fp.mat'));
+fp.xstar(3) = fp.xstar(3) + 0.50; % make sure we're not assuming z = 0
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, fp.xstar);
-request.initial_state.pose.translation.z = request.initial_state.pose.translation.z + 0.55;
+
+r = r.setTerrain(KinematicTerrainMap(r, fp.xstar(1:r.getNumDOF), true));
 
 request.goal_pos = drc.position_3d_t();
 request.goal_pos.translation = drc.vector_3d_t();
@@ -30,29 +32,29 @@ request.goal_pos.rotation.y = 0;
 request.goal_pos.rotation.z = 0;
 
 request.num_goal_steps = 0;
-
-request.num_existing_steps = 1;
-existing_steps = javaArray('drc.footstep_t', request.num_existing_steps);
-existing_steps(1) = drc.footstep_t();
-existing_steps(1).pos = drc.position_3d_t();
-existing_steps(1).pos.translation = drc.vector_3d_t();
-existing_steps(1).pos.translation.x = 0.2527;
-existing_steps(1).pos.translation.y = 0.20;
-existing_steps(1).pos.translation.z = 0;
-existing_steps(1).pos.rotation = drc.quaternion_t();
-existing_steps(1).pos.rotation.w = 1.0;
-existing_steps(1).pos.rotation.x = 0;
-existing_steps(1).pos.rotation.y = 0;
-existing_steps(1).pos.rotation.z = 0;
-existing_steps(1).id = 3;
-existing_steps(1).is_right_foot = 0;
-existing_steps(1).fixed_x = 1;
-existing_steps(1).fixed_y = 1;
-existing_steps(1).fixed_z = 1;
-existing_steps(1).fixed_roll = 1;
-existing_steps(1).fixed_pitch = 1;
-existing_steps(1).fixed_yaw = 1;
-request.existing_steps = existing_steps;
+request.num_existing_steps = 0;
+request.num_iris_regions = 0;
+% existing_steps = javaArray('drc.footstep_t', request.num_existing_steps);
+% existing_steps(1) = drc.footstep_t();
+% existing_steps(1).pos = drc.position_3d_t();
+% existing_steps(1).pos.translation = drc.vector_3d_t();
+% existing_steps(1).pos.translation.x = 0.2527;
+% existing_steps(1).pos.translation.y = 0.20;
+% existing_steps(1).pos.translation.z = 0;
+% existing_steps(1).pos.rotation = drc.quaternion_t();
+% existing_steps(1).pos.rotation.w = 1.0;
+% existing_steps(1).pos.rotation.x = 0;
+% existing_steps(1).pos.rotation.y = 0;
+% existing_steps(1).pos.rotation.z = 0;
+% existing_steps(1).id = 3;
+% existing_steps(1).is_right_foot = 0;
+% existing_steps(1).fixed_x = 1;
+% existing_steps(1).fixed_y = 1;
+% existing_steps(1).fixed_z = 1;
+% existing_steps(1).fixed_roll = 1;
+% existing_steps(1).fixed_pitch = 1;
+% existing_steps(1).fixed_yaw = 1;
+% request.existing_steps = existing_steps;
 
 request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 10;
@@ -93,16 +95,12 @@ plan.toLCM();
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish('FOOTSTEP_PLAN_RESPONSE', plan.toLCM());
 footsteps = plan.footsteps;
-valuecheck(footsteps(3).pos(2), 0.2, 1e-4);
-valuecheck(footsteps(3).pos(3), 0.55 + 0.0811, 1e-3);
+% valuecheck(footsteps(3).pos(2), 0.2, 1e-4);
+valuecheck(footsteps(3).pos(3), r.getTerrainHeight(footsteps(3).pos(1:2)) + 0.0811, 1e-3);
 assert(length(footsteps) == 12);
-assert(footsteps(3).infeasibility > 1e-6);
-assert(footsteps(4).infeasibility > 1e-6);
-assert(all([footsteps(5:end).infeasibility] < 1e-6))
-
-
-disp('WARNING: returning early')
-return
+% assert(footsteps(3).infeasibility > 1e-6);
+% assert(footsteps(4).infeasibility > 1e-6);
+assert(all([footsteps.infeasibility] < 1e-6))
 
 request.num_goal_steps = 1;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
