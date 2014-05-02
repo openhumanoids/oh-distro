@@ -10,48 +10,24 @@ classdef StatelessFootstepPlanner
       q0 = x0(1:biped.getNumDOF());
       foot_orig = biped.feetPosition(q0);
 
-      if request.params.ignore_terrain
-        biped = biped.setTerrain(KinematicTerrainMap(biped, q0, true));
-      else
-%         biped = biped.setTerrain(biped.getTerrain().setBackupTerrain(biped, q0));
-        biped = biped.setTerrain(biped.getTerrain());
-      end
+      biped = StatelessFootstepPlanner.configureTerrain(biped, request);
 
-      terrain = biped.getTerrain();
-      if ismethod(terrain, 'setMapMode')
-        biped.setTerrain(terrain.setMapMode(request.params.map_command));
-      end
-      
-      goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
+      goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
       if request.num_goal_steps > 2
         request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
         request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
       end
 
       params = struct(request.params);
-
       params.right_foot_lead = params.leading_foot; % for backwards compatibility
-      
-      terrain = biped.getTerrain();
-      if isprop(terrain, 'map_handle')
-%         safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
-        load('example_iris_regions', 'safe_regions');
-      else
-        if ~isfield(params, 'max_line_deviation');
-          params.max_line_deviation = params.nom_step_width * 1.5;
-        end
-        corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
-        [corr_A, corr_b] = poly2lincon(corridor_pts(1,:), corridor_pts(2,:));
-        corr_A = [corr_A, zeros(size(corr_A, 1), 1)]; % convert to polytope in x y yaw
-        [orig_z, orig_normal] = biped.getTerrainHeight(foot_orig.right);
-        safe_regions = {struct('A', corr_A, 'b', corr_b, 'pt', [foot_orig.right(1:2); orig_z], 'normal', orig_normal)};
-      end
-      
-      footsteps = searchNumSteps(biped, foot_orig, goal_pos, request.goal_steps, terrain, params, safe_regions);
+
+      safe_regions = StatelessFootstepPlanner.safeRegions(biped, request);
+
+      footsteps = searchNumSteps(biped, foot_orig, goal_pos, request.existing_steps, request.goal_steps, terrain, params, safe_regions);
       plan = FootstepPlan.from_collocation_results(footsteps);
 
       plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
-      plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
+      % plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
       plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
       plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
@@ -75,7 +51,7 @@ classdef StatelessFootstepPlanner
       end
     end
 
-    function goal_pos = compute_goal_pos(biped, request)
+    function goal_pos = computeGoalPos(biped, request)
       if request.num_goal_steps == 0
         pos = decodePosition3d(request.goal_pos);
         goal_pos.center = pos;
@@ -103,6 +79,40 @@ classdef StatelessFootstepPlanner
         goal_pos.center(4:6) = goal_pos.right(4:6) + 0.5 * angleDiff(goal_pos.right(4:6), goal_pos.left(4:6));
       end
     end
+
+    function biped = configureTerrain(biped, request)
+      x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
+      q0 = x0(1:biped.getNumDOF());
+
+      if request.params.ignore_terrain
+        terrain = KinematicTerrainMap(biped, q0, true);
+      else
+        terrain = biped.getTerrain().setBackupTerrain(biped, q0);
+      end
+
+      if ismethod(terrain, 'setMapMode')
+        terrain = terrain.setMapMode(request.params.map_command);
+      end
+      biped.setTerrain(terrain);
+    end
+
+    function safe_regions = computeSafeRegions(biped, request)
+      params = struct(request.params);
+      terrain = biped.getTerrain();
+      if isprop(terrain, 'map_handle')
+        safe_regions = StatelessFootstepPlanner.computeIRISRegions(biped, request);
+        % load('example_iris_regions', 'safe_regions');
+      else
+        if ~isfield(params, 'max_line_deviation');
+          params.max_line_deviation = params.nom_step_width * 1.5;
+        end
+        corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
+        [corr_A, corr_b] = poly2lincon(corridor_pts(1,:), corridor_pts(2,:));
+        corr_A = [corr_A, zeros(size(corr_A, 1), 1)]; % convert to polytope in x y yaw
+        [orig_z, orig_normal] = biped.getTerrainHeight(foot_orig.right);
+        safe_regions = {struct('A', corr_A, 'b', corr_b, 'pt', [foot_orig.right(1:2); orig_z], 'normal', orig_normal)};
+      end
+
 
     function plan = addGoalSteps(biped, plan, request)
       nsteps = length(plan.footsteps);

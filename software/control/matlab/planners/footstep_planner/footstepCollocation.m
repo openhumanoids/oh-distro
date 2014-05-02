@@ -1,16 +1,8 @@
-function [X, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, terrain, params, safe_regions)
+function [X, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, params, safe_regions)
 
 debug = true;
 USE_SNOPT = 1;
-USE_MEX = 1;
-
-% if isprop(terrain, 'map_handle')
-%   map_ptr = terrain.map_handle.getPointerForMex();
-% else
-%   map_ptr = 0;
-% end
-% TODO: remove mex maps dependence entirely
-map_ptr = 0;
+USE_MEX = 2;
 
 right_foot_lead = seed_steps(1).is_right_foot;
 
@@ -25,26 +17,17 @@ goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 dgoal = norm(goal_pos.center(1:2) - seed_steps(1).pos(1:2));
 
 function [c, ceq, dc, dceq] = constraints(x)
-  if USE_MEX == 0 || USE_MEX == 2
+  if USE_MEX == 0
     [c, ceq, dc, dceq] = stepCollocationConstraints(x);
-    [ceq_terrain, dceq_terrain] = stepCollocationTerrainConstraints(x, terrain);
-    ceq = [ceq; ceq_terrain];
-    dceq = [dceq, dceq_terrain];
-  end
-  if USE_MEX
-
-    [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x, map_ptr);
-    if USE_MEX == 2
-      valuecheck(c, c_mex, 1e-8);
-      valuecheck(ceq, ceq_mex, 1e-8);
-      valuecheck(dc, dc_mex, 1e-8);
-      valuecheck(dceq, dceq_mex, 1e-8);
-    else
-      c = c_mex;
-      dc = dc_mex;
-      ceq = ceq_mex;
-      dceq = dceq_mex;
-    end
+  elseif USE_MEX == 1
+    [c, ceq, dc, dceq] = stepCollocationConstraintsMex(x);
+  else
+    [c, ceq, dc, dceq] = stepCollocationConstraints(x);
+    [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x);
+    valuecheck(c_mat, c_mex, 1e-8);
+    valuecheck(ceq_mat, ceq_mex, 1e-8);
+    valuecheck(dc_mat, dc_mex, 1e-8);
+    valuecheck(dceq_mat, dceq_mex, 1e-8);
   end
 end
 
@@ -62,7 +45,7 @@ function [F,G] = collocation_userfun(x)
 end
 
 function stop = plotfun(x)
-  stop = stepCollocationPlotfun(x, r_ndx, l_ndx, terrain, []);
+  stop = stepCollocationPlotfun(x, r_ndx, l_ndx);
 end
 
 params.forward_step = params.max_forward_step;
@@ -120,7 +103,7 @@ for j = 2:nsteps
   expanded_A(1:length(region.b),x_ndx([1,2,6])) = region.A;
   A = [A; expanded_A];
   b = [b; region.b];
-  
+
   expanded_Aeq = zeros(1, nv);
   expanded_Aeq(1, x_ndx([1,2,3])) = region.normal;
   Aeq = [Aeq; expanded_Aeq];
@@ -139,8 +122,7 @@ if USE_SNOPT
   snseti ('Superbasics limit', 2000);
   n_obj = 1;
   n_proj_cons = 2*nsteps;
-  n_terrain_cons = nsteps;
-  iG = boolean(zeros(nv, n_obj + n_proj_cons + n_terrain_cons));
+  iG = boolean(zeros(nv, n_obj + n_proj_cons));
   iA = boolean(zeros(size(iG,2)+size(A,1)+size(Aeq,1),nv));
   iG(:,1) = 1;
 
@@ -182,8 +164,8 @@ if USE_SNOPT
   xupp = ub;
   xmul = zeros(size(lb));
   xstate = zeros(size(lb));
-  Flow = [-inf; zeros(n_terrain_cons, 1); zeros(n_proj_cons, 1); -inf(size(A,1),1); beq];
-  Fupp = [inf; zeros(n_terrain_cons, 1); zeros(n_proj_cons, 1); b; beq];
+  Flow = [-inf; zeros(n_proj_cons, 1); -inf(size(A,1),1); beq];
+  Fupp = [inf; zeros(n_proj_cons, 1); b; beq];
   Fmul = zeros(size(Flow));
   Fstate = Fmul;
   ObjAdd = 0;

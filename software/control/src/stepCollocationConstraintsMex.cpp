@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void constraints(mxArray* c_out, mxArray* ceq_out, mxArray* dc_out, mxArray* dceq_out, const Eigen::MatrixXd& x, void* map_ptr, size_t nc, size_t nceq, size_t nv, size_t nsteps)
+void constraints(mxArray* c_out, mxArray* ceq_out, mxArray* dc_out, mxArray* dceq_out, const Eigen::MatrixXd& x, size_t nc, size_t nceq, size_t nv, size_t nsteps)
 {
   Eigen::MatrixXd steps = x.block(0, 0, 6, nsteps);
   Eigen::MatrixXd rel_steps = x.block(6, 0, 6, nsteps);
@@ -59,32 +59,6 @@ void constraints(mxArray* c_out, mxArray* ceq_out, mxArray* dc_out, mxArray* dce
     dceq.block(dx_ndx+1,con_ndx,1,con_dndx) << si, -co;
   }
 
-  if (map_ptr) {
-    Eigen::Vector3f floatPos, floatNormal;
-    Eigen::Vector3d pos, normal, in_pos;
-    double fx, fy;
-    auto state = static_cast<mexmaps::MapHandle*>(map_ptr);
-    if (state != NULL) {
-      auto view = state->getView();
-      if (view != NULL) {
-        for (j=2; j <= nsteps; j++) {
-          con_ndx = 2*nsteps + j - 1;
-          x1_ndx = (j-1)*12;
-          in_pos = steps.block(0,j-1,3,1);
-          if (view->getClosest(in_pos.cast<float>(), floatPos, floatNormal)) {
-            pos = floatPos.cast<double>();
-            normal = floatNormal.cast<double>();
-            ceq(con_ndx) = pos(2) - in_pos(2);
-            fx = -normal(0) / normal(2);
-            fy = -normal(1) / normal(2);
-            dceq(x1_ndx, con_ndx) = fx;
-            dceq(x1_ndx+1, con_ndx) = fy;
-            dceq(x1_ndx+2, con_ndx) = -1;
-          }
-        }
-      }
-    }
-  }
   memcpy(mxGetPr(c_out), c.data(), sizeof(double)*c.rows()*c.cols());
   memcpy(mxGetPr(dc_out), dc.data(), sizeof(double)*dc.rows()*dc.cols());
   memcpy(mxGetPr(ceq_out), ceq.data(), sizeof(double)*ceq.rows()*ceq.cols());
@@ -96,18 +70,14 @@ void constraints(mxArray* c_out, mxArray* ceq_out, mxArray* dc_out, mxArray* dce
 void mexFunction( int nlhs, mxArray *plhs[],
                   int nrhs, const mxArray *prhs[] )
 {
-  // [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x, map_ptr);
+  // [c_mex, ceq_mex, dc_mex, dceq_mex] = stepCollocationConstraintsMex(x);
 
   size_t nv = mxGetM(prhs[0]);
   size_t nsteps = nv / 12;
-  size_t nceq = 3 * nsteps;
+  size_t nceq = 2 * nsteps;
   size_t nc = 0;
 
   Eigen::MatrixXd x = Eigen::Map<Eigen::MatrixXd>(mxGetPr(prhs[0]), 12, nsteps);
-
-  void* map_ptr;
-  memcpy(&map_ptr, mxGetPr(prhs[1]), sizeof(map_ptr));
-
 
   /* Create matrices for the return arguments. */
   plhs[0] = mxCreateDoubleMatrix((mwSize)nc, (mwSize)1, mxREAL); // c
@@ -121,5 +91,5 @@ void mexFunction( int nlhs, mxArray *plhs[],
   mxArray* dc = plhs[2];
   mxArray* dceq = plhs[3];
 
-  constraints(c, ceq, dc, dceq, x, map_ptr, nc, nceq, nv, nsteps);
+  constraints(c, ceq, dc, dceq, x, nc, nceq, nv, nsteps);
 }
