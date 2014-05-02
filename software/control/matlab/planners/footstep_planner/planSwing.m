@@ -25,7 +25,7 @@ debug = false;
 ignore_height = 0.5; % m, height above which we'll assume that our heightmap is giving us bad data (e.g. returns from an object the robot is carrying)
 
 hold_frac = 0.4; % fraction of leg swing time spent shifting weight to stance leg
-min_hold_time = 0.4; % s
+min_hold_time = 3; % s
 pre_contact_height = 0.005; % height above the ground to aim for when foot is landing
 foot_yaw_rate = 0.75; % rad/s
 
@@ -91,11 +91,11 @@ traj_ts = [0, cumsum(traj_dts)] ;
 if fixed_duration
   hold_time = 0.1;
   traj_ts = traj_ts * ((fixed_duration - 2*hold_time) / traj_ts(end));
-  traj_ts = [0, traj_ts+hold_time, traj_ts(end) + 2*hold_time];
+  traj_ts = [0, traj_ts+0.5*hold_time, traj_ts(end) + hold_time];
 else
   hold_time = traj_ts(end) * hold_frac;
-  hold_time = max([hold_time, min_hold_time]);
-  traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for weight shift
+  hold_time = max([hold_time, min_hold_time])
+  traj_ts = [0, traj_ts + 0.5 * hold_time, traj_ts(end) + hold_time]; % add time for weight shift
 end
 
 traj_pts_xyz = [last_pos(1:3), traj_pts_xyz, next_pos(1:3)];
@@ -124,20 +124,3 @@ if debug
 end
 
 end
-
-% function terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, nlambda, nrho)
-%   step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
-%   lambda_hat = (next_pos(1:2) - last_pos(1:2)) / step_dist_xy;
-
-%   rho_hat = [0, -1; 1, 0] * lambda_hat;
-
-%   terrain_pts = zeros(2, nlambda);
-%   lambdas = linspace(0, step_dist_xy, nlambda);
-%   rhos = linspace(-contact_width, contact_width, nrho);
-%   [R, L] = meshgrid(rhos, lambdas);
-%   xy = bsxfun(@plus, last_pos(1:2), bsxfun(@times, reshape(R, 1, []), rho_hat) + bsxfun(@times, reshape(L, 1, []), lambda_hat));
-%   z = medfilt2(reshape(biped.getTerrainHeight(xy), size(R)), 'symmetric');
-% %   plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
-%   terrain_pts(2, :) = max(z, [], 2);
-%   terrain_pts(1,:) = lambdas;
-% end

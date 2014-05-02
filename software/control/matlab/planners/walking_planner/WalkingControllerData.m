@@ -43,7 +43,7 @@ classdef WalkingControllerData
       msg = drc.walking_plan_t();
       
       msg.robot_name = 'atlas';
-      msg.utime = utime;
+      msg.utime = 0;
       tmp_fname = ['tmp_r_', num2str(feature('getpid')), '.mat'];
 
       % do we have to save to file to convert to byte stream?

@@ -130,7 +130,7 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
 
 % traj = PPTrajectory(spline(ts,walking_plan.xtraj));
 % traj = traj.setOutputFrame(r.getStateFrame);
@@ -148,7 +148,7 @@ options.Kd = 0; % com-z pd gains
 options.input_foot_contacts = true;
 options.debug = true;
 options.use_mex = true;
-options.contact_threshold = 0.015;
+options.contact_threshold = 0.02;
 options.output_qdd = true;
 
 qp = MomentumControlBlock(r,{},ctrl_data,options);
