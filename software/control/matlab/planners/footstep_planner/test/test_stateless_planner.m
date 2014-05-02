@@ -169,7 +169,6 @@ request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
-assert(length(footsteps) == 12)
 assert(all([footsteps(1:2:end).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
 valuecheck(footsteps(end).pos(3), 0.2);
 

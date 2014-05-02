@@ -60,7 +60,6 @@ end
 % max_steps = 12;
 
 best_costs = [];
-completed_idx = [];
 
 while true
   new_plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {});
@@ -108,13 +107,13 @@ while true
   for j = 1:length(plan_set)
     plan_set(j).nsteps = length(plan_set(j).steps);
   end
-  completed_idx = find(([plan_set.nsteps] >= min_steps) & ([plan_set.goal_reached]));
+  completed_mask = ([plan_set.nsteps] >= min_steps) & ([plan_set.goal_reached]);
   if length(goal_steps) > 0
     % We're only done if the handedness of the plan matches the goal steps
-    completed_idx = completed_idx & ([plan_set.last_foot_right] == goal_steps(min(2, length(goal_steps))).is_right_foot);
+    completed_mask = completed_mask & ([plan_set.last_foot_right] == goal_steps(min(2, length(goal_steps))).is_right_foot);
   end
 
-  if ~isempty(completed_idx)
+  if any(completed_mask)
     break
   end
 
@@ -127,18 +126,18 @@ while true
 end
 
 disp('done');
-if isempty(completed_idx)
-  completed_idx = true(1, length(plan_set));
+if ~any(completed_mask)
+  completed_mask = true(1, length(plan_set));
   if length(goal_steps) > 0
     % We're only done if the handedness of the plan matches the goal steps
-    completed_idx = completed_idx & ([plan_set.last_foot_right] == goal_steps(min(2, length(goal_steps))).is_right_foot);
-    if ~any(completed_idx)
+    completed_mask = completed_mask & ([plan_set.last_foot_right] == goal_steps(min(2, length(goal_steps))).is_right_foot);
+    if ~any(completed_mask)
       error('Discrete search could not find any footstep plans that were compatible with the goal steps given');
     end
   end
 end
 
-complete_plans = plan_set(completed_idx);
+complete_plans = plan_set(completed_mask);
 [~, sort_idx] = sort([complete_plans.cost]);
 output_footsteps = complete_plans(sort_idx(1)).steps;
 step_vect = encodeCollocationSteps([output_footsteps(2:end).pos]);
