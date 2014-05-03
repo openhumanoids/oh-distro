@@ -59,5 +59,6 @@ struct map_request_t
   // enum for time types
   const int8_t ABSOLUTE = 0;
   const int8_t RELATIVE = 1;
-  const int8_t ROLL_ANGLE = 2;
+  const int8_t ROLL_ANGLE_ABSOLUTE = 2;
+  const int8_t ROLL_ANGLE_RELATIVE = 3;
 }

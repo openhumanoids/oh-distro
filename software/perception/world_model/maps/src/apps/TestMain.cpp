@@ -26,6 +26,7 @@
 // TODO TEMP
 #include <bot_core/timestamp.h>
 #include <drc_utils/Clock.hpp>
+#include <drc_utils/LidarUtils.hpp>
 
 using namespace maps;
 using namespace std;
@@ -216,6 +217,26 @@ struct Helper {
 
 
 int main() {
+  const double kPi = 4*atan(1);
+  const double fov = 270;
+  const int numPoints = 1000;
+  std::vector<Eigen::Vector3f> pts;
+  Eigen::Isometry3d pose0 = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d pose1 = Eigen::Isometry3d::Identity();
+  pose1.translation() << 0,0,0;
+  pose1.linear() = Eigen::AngleAxisd(-fov/2*kPi/180,
+                                     Eigen::Vector3d(0,0,1)).matrix();
+  std::vector<float> ranges(numPoints);
+  for (int i = 0; i < ranges.size(); ++i) {
+    ranges[i] = 3;
+  }
+  drc::LidarUtils::interpolateScan(ranges, -fov/2*kPi/180,
+                                   fov/numPoints*kPi/180, pose0, pose1, pts);
+  for (auto pt : pts) {
+    std::cout << pt.transpose() << std::endl;
+  }
+  return -1;
+
   maps::ObjectPool<DepthImageView,5> pool;
   std::vector<std::shared_ptr<DepthImageView> > pointers;
   for (int i = 0; i < pool.getCapacity()+3; ++i) {

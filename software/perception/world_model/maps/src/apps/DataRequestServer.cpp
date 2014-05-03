@@ -164,7 +164,7 @@ struct Worker {
     msg.resolution = 0.01;
     msg.time_min = 0;
     msg.time_max = 180;
-    msg.time_mode = drc::map_request_t::ROLL_ANGLE;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
     msg.clip_planes[0][3] = 0.25;
     msg.clip_planes[1][3] = 2;
     msg.clip_planes[2][3] = 1;
@@ -190,7 +190,7 @@ struct Worker {
     msg.quantization_max = 0.01;
     msg.time_min = 0;
     msg.time_max = 180;
-    msg.time_mode = drc::map_request_t::ROLL_ANGLE;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
     msg.clip_planes[0][3] = 0.25;
     msg.clip_planes[1][3] = 2;
     msg.clip_planes[2][3] = 1;
@@ -225,7 +225,7 @@ struct Worker {
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
     msg.time_min = 0;
     msg.time_max = 185;
-    msg.time_mode = drc::map_request_t::ROLL_ANGLE;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
