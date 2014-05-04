@@ -139,8 +139,8 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.slack_limit = 100;
-options.w_qdd = 0.005*ones(nq,1);
-options.W_hdot = 1000*diag([10;10;10;10;10;10]);
+options.w_qdd = 0.01*ones(nq,1);
+options.W_hdot = diag([1;1;1;10;10;10]);
 options.w_grf = 0.0075;
 options.w_slack = 0.005;
 options.Kp = 0; % com-z pd gains
@@ -154,10 +154,11 @@ options.output_qdd = true;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 vo = VelocityOutputIntegratorBlock(r,options);
 fcb = FootContactBlock(r);
+fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
-options.Kp = 50.0*ones(nq,1);
-options.Kd = 8.0*ones(nq,1);
+options.Kp = 80.0*ones(nq,1);
+options.Kd = 12.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -187,7 +188,7 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 % low pass filter for floating base velocities
-alpha_v = 0.2;
+alpha_v = 0.75;
 float_v = 0;
 
 udes = zeros(nu,1);
@@ -211,6 +212,8 @@ while tt<T
     %qt = fasteval(qtraj,tt);
  
     fc = output(fcb,tt,[],[q;qd]);
+    
+    junk = output(fshift,tt,[],[q;qd]);
     
     u_and_qdd = output(qp_sys,tt,[],[q0; q;qd; fc; q;qd; fc]);
     u=u_and_qdd(1:nu);

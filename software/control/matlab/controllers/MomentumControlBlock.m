@@ -248,7 +248,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
 
-    x0 = ctrl_data.x0;
+    x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % for x-y plan adjustment
     if (ctrl_data.is_time_varying)
       % extract current supports
       supp_idx = find(ctrl_data.support_times<=t,1,'last');
@@ -258,7 +258,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       %end
       
       supp = ctrl_data.supports(supp_idx);
-      y0 = fasteval(ctrl_data.K.y0,t); 
+      y0 = fasteval(ctrl_data.K.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       K = fasteval(ctrl_data.K.D,t); % always constant for ZMP dynamics
     else
       supp = ctrl_data.supports;
@@ -566,7 +566,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         height = 0;
 			end
 			body_motion_input_start=3+obj.input_foot_contacts*1;
-      mu = 0.7;
+      mu = 0.5;
       if obj.use_mex==1
 				
         if obj.debug
