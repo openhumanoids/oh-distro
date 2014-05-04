@@ -13,16 +13,28 @@ classdef IRISPlanner
       import iris.cspace.cspace3;
       import iris.cspace.project_c_space_region;
       import iris.drawing.animate_results;
-      MAX_BOX_SIZE_M = 10;
+      MAX_BOX_SIZE_M = 4;
 
       x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
       q0 = x0(1:biped.getNumDOF());
       if nargin < 4
-        terrain = biped.getTerrain().setBackupTerrain(biped, q0);
-        [heights, px2world] = terrain.map_handle.getRawHeights();
+        terrain = biped.getTerrain();
+        if ismethod(terrain, 'setBackupTerrain')
+          terrain = terrain.setBackupTerrain(biped, q0);
+        end
+        if ismethod(terrain, 'setMapMode')
+          terrain = terrain.setMapMode(drc.map_controller_command_t.FULL_HEIGHTMAP);
+        end
+        biped = biped.setTerrain(terrain);
+        load('example_heights', 'heights', 'px2world');
+%         [heights, px2world] = terrain.map_handle.getRawHeights();
       end
       [grid, heights, px2world_2x3, world2px_2x3] = classifyTerrain(heights, px2world);
 
+      
+      %% Find the contact points describing the robot's foot (for c-space obstacle construction)
+      bot = 0.9 * bsxfun(@minus, biped.foot_bodies.right.contact_pts(1:2,:), ...
+                         biped.foot_contact_offsets.right.center(1:2));
       iris_regions = IRISRegion.empty();
 
       lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'terrain_planning');
@@ -46,8 +58,14 @@ classdef IRISPlanner
                     0,0,1];
         b_bounds = [-lb;ub];
 
-        black_edges = [];
-        [edge_r, edge_c] = ind2sub(size(grid), find(component_boundary(grid, [r;c])));
+        if ~grid(r,c) % if chosen point is inside an obstacle
+%           [edge_r, edge_c] = ind2sub(size(grid), find(~grid));
+          edge_r = r;
+          edge_c = c;
+          disp('Warning: selected point is inside an obstacle');
+        else
+          [edge_r, edge_c] = ind2sub(size(grid), find(component_boundary(grid, [r;c])));
+        end
         black_edges_xy = px2world_2x3 * [edge_c'; edge_r'; ones(1,length(edge_c))];
         obs_mask = all(bsxfun(@minus, A_bounds([1,2,4,5],1:2) * black_edges_xy, b_bounds([1,2,4,5])) <= max(max(abs(bot))));
         obstacles = mat2cell(black_edges_xy(:,obs_mask) , 2, ones(1,sum(obs_mask)));
@@ -64,7 +82,7 @@ classdef IRISPlanner
         lcmgl.sphere([(px2world_2x3 * [c;r;1])', heights(r,c)], 0.05, 20, 20);
 
         %% Actually run the convex segmentation algorithm
-        iris_opts = struct('require_containment', true);
+        iris_opts = struct('require_containment', false);
         start_xy = px2world_2x3 * [c;r;1];
         [A,b,C,d,results] = inflate_region(obstacles, A_bounds, b_bounds, [start_xy; yaw0], [], iris_opts);
         %   animate_results(results);
@@ -94,23 +112,27 @@ classdef IRISPlanner
           lcmgl.glEnd();
         end
 
-        z = ones(size(outer_poly,2)) * heights(r,c) + 0.03;
-        world_xyz = [outer_poly; z];
-        figure(2)
-        patch(world_xyz(1,:), world_xyz(2,:), 'y', 'FaceAlpha', 0.5);
-        lcmgl.glColor3f(1,1,0);
-        lcmgl.glLineWidth(10);
-        lcmgl.glBegin(lcmgl.LCMGL_LINES);
-        for j = 1:size(world_xyz,2)-1
-          lcmgl.glVertex3d(world_xyz(1,j),world_xyz(2,j),world_xyz(3,j));
-          lcmgl.glVertex3d(world_xyz(1,j+1),world_xyz(2,j+1),world_xyz(3,j+1));
+        if ~isempty(outer_poly)
+          z = ones(size(outer_poly,2)) * heights(r,c) + 0.03;
+          world_xyz = [outer_poly; z];
+          figure(2)
+          patch(world_xyz(1,:), world_xyz(2,:), 'y', 'FaceAlpha', 0.5);
+          lcmgl.glColor3f(1,1,0);
+          lcmgl.glLineWidth(10);
+          lcmgl.glBegin(lcmgl.LCMGL_LINES);
+          for j = 1:size(world_xyz,2)-1
+            lcmgl.glVertex3d(world_xyz(1,j),world_xyz(2,j),world_xyz(3,j));
+            lcmgl.glVertex3d(world_xyz(1,j+1),world_xyz(2,j+1),world_xyz(3,j+1));
+          end
+          lcmgl.glVertex3d(world_xyz(1,end),world_xyz(2,end),world_xyz(3,end));
+          lcmgl.glVertex3d(world_xyz(1,1),world_xyz(2,1),world_xyz(3,1));
+          lcmgl.glEnd();
         end
-        lcmgl.glVertex3d(world_xyz(1,end),world_xyz(2,end),world_xyz(3,end));
-        lcmgl.glVertex3d(world_xyz(1,1),world_xyz(2,1),world_xyz(3,1));
-        lcmgl.glEnd();
 
       end
       lcmgl.switchBuffers();
+      
+      response = IRISRegionList(iris_regions);
 
     end
   end
