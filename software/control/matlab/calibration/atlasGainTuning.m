@@ -24,22 +24,22 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'back_bkx';% <---- joint name 
+joint = 'l_leg_aky';% <---- joint name 
 input_mode = 'position';% <---- force, position
 control_mode = 'force+velocity';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 25;% <--- signal duration (sec)
+T = 120;% <--- signal duration (sec)
 
 % chirp specific
 amp = 0.15;% <----  Nm or radians
-chirp_f0 = 0.05;% <--- chirp starting frequency
-chirp_fT = 0.35;% <--- chirp ending frequency
+chirp_f0 = 0.01;% <--- chirp starting frequency
+chirp_fT = 0.5;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
-vals = 0.2*[0 1 1 -1 -1 0 0];% <----  Nm or radians
+vals = 15*[0 1];% <----  Nm or radians
 
 % inverse dynamics PD gains (only for input=position, control=force)
 Kp = 100;
@@ -67,7 +67,6 @@ r_fixed = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_mod
 % setup frames
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
-input_frame = getInputFrame(r);
 ref_frame = AtlasPosVelTorqueRef(r);
 
 nq = getNumDOF(r);
@@ -116,7 +115,7 @@ gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % setup desired pose based on joint being tuned
-[qdes,motion_sign] = getAtlasJointMotionConfig(r,joint,2);
+[qdes,motion_sign] = getAtlasJointMotionConfig(r,joint,1);
 
 % move to desired pos
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
