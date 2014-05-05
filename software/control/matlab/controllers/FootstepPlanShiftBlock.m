@@ -8,8 +8,6 @@ classdef FootstepPlanShiftBlock < DrakeSystem
     lfoot_idx;
     lc;
     contact_est_monitor;
-    lfoot_contact_state = 0; 
-    rfoot_contact_state = 0; 
   end
   
   methods
@@ -63,7 +61,7 @@ classdef FootstepPlanShiftBlock < DrakeSystem
           cdata = obj.controller_data.data;
           %t = t + cdata.t_offset;
 
-          if msg.left_contact>0.5 %&& ~lfoot_contact_state
+          if msg.left_contact>0.5
             % left foot coming into contact
             q = x(1:obj.nq); 
             kinsol = doKinematics(obj.robot,q,false,true);
@@ -75,7 +73,7 @@ classdef FootstepPlanShiftBlock < DrakeSystem
 
 %             fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
             obj.controller_data.setField('trans_drift', cdata.trans_drift);
-          elseif msg.right_contact>0.5% && ~rfoot_contact_state
+          elseif msg.right_contact>0.5
             % right foot coming into contact
             q = x(1:obj.nq); 
             kinsol = doKinematics(obj.robot,q,false,true);
