@@ -61,7 +61,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[0.5;0;0];
+v = R*[1;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -139,14 +139,14 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.slack_limit = 100;
-options.w_qdd = 0.01*ones(nq,1);
-options.W_hdot = diag([1;1;1;10;10;10]);
+options.w_qdd = 1.0*ones(nq,1);
+options.W_hdot = diag([10;10;10;10;10;10]);
 options.w_grf = 0.0075;
 options.w_slack = 0.005;
 options.Kp = 0; % com-z pd gains
 options.Kd = 0; % com-z pd gains
 options.input_foot_contacts = true;
-options.debug = true;
+options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.02;
 options.output_qdd = true;
