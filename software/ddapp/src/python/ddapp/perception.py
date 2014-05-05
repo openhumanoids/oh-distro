@@ -28,7 +28,7 @@ _debugItem = None
 def updateDebugItem(polyData):
     global _debugItem
     if not _debugItem:
-        _debugItem = om.PolyDataItem('spindle axis', polyData, getRenderView())
+        _debugItem = vis.PolyDataItem('spindle axis', polyData, getRenderView())
         _debugItem.setProperty('Color', QtGui.QColor(0, 255, 0))
         _debugItem.setProperty('Visible', False)
         om.addToObjectModel(_debugItem, om.findObjectByName('sensors'))
@@ -44,22 +44,29 @@ class MultisenseItem(om.ObjectModelItem):
 
         self.model = model
         self.scalarBarWidget = None
-        self.addProperty('Color By', 0, attributes=om.PropertyAttributes(enumNames=['Solid Color', 'Intensity', 'Z Coordinate', 'Range', 'Spindle Angle', 'Azimuth', 'Camera RGB', 'Scan Delta']))
+        self.addProperty('Color By', 0,
+                         attributes=om.PropertyAttributes(enumNames=['Solid Color', 'Intensity', 'Z Coordinate', 'Range', 'Spindle Angle', 'Azimuth', 'Camera RGB', 'Scan Delta']))
         self.addProperty('Show Scalar Bar', False)
         self.addProperty('Updates Enabled', True)
-        self.addProperty('Min Range', model.reader.GetDistanceRange()[0])
-        self.addProperty('Max Range', model.reader.GetDistanceRange()[1])
-        self.addProperty('Edge Filter Distance', model.reader.GetEdgeDistanceThreshold())
-        self.addProperty('Number of Scan Lines', model.numberOfScanLines)
+        self.addProperty('Min Range', model.reader.GetDistanceRange()[0],
+                         attributes=om.PropertyAttributes(decimals=2, minimum=0.0, maximum=100.0, singleStep=0.25, hidden=False))
+        self.addProperty('Max Range', model.reader.GetDistanceRange()[1],
+                         attributes=om.PropertyAttributes(decimals=2, minimum=0.0, maximum=100.0, singleStep=0.25, hidden=False))
+        self.addProperty('Edge Filter Distance', model.reader.GetEdgeDistanceThreshold(),
+                         attributes=om.PropertyAttributes(decimals=3, minimum=0.0, maximum=10.0, singleStep=0.01, hidden=False))
+        self.addProperty('Number of Scan Lines', model.numberOfScanLines,
+                         attributes=om.PropertyAttributes(decimals=0, minimum=0, maximum=100, singleStep=1, hidden=False))
         self.addProperty('Visible', model.visible)
-        self.addProperty('Point Size', model.pointSize)
-        self.addProperty('Alpha', model.alpha)
+        self.addProperty('Point Size', model.pointSize,
+                         attributes=om.PropertyAttributes(decimals=0, minimum=1, maximum=20, singleStep=1, hidden=False))
+        self.addProperty('Alpha', model.alpha,
+                         attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=1.0, singleStep=0.1, hidden=False))
 
         #self.addProperty('Color', QtGui.QColor(255,255,255))
         #self.addProperty('Scanline Color', QtGui.QColor(255,0,0))
 
-    def _onPropertyChanged(self, propertyName):
-        om.ObjectModelItem._onPropertyChanged(self, propertyName)
+    def _onPropertyChanged(self, propertySet, propertyName):
+        om.ObjectModelItem._onPropertyChanged(self, propertySet, propertyName)
 
         if propertyName == 'Updates Enabled':
             if self.getProperty('Updates Enabled'):
@@ -151,25 +158,11 @@ class MultisenseItem(om.ObjectModelItem):
             self.model.polyDataObj._renderAllViews()
 
     def _showScalarBar(self):
-        title = self.getPropertyAttributes('Color By').enumNames[self.getProperty('Color By')]
+        title = self.getPropertyAttribute('Color By', 'enumNames')[self.getProperty('Color By')]
         view = self.model.polyDataObj.views[0]
         lut = self.model.polyDataObj.mapper.GetLookupTable()
         self.scalarBarWidget = vis.createScalarBarWidget(view, lut, title)
         self.model.polyDataObj._renderAllViews()
-
-    def getPropertyAttributes(self, propertyName):
-
-        if propertyName == 'Point Size':
-            return om.PropertyAttributes(decimals=0, minimum=1, maximum=20, singleStep=1, hidden=False)
-
-        elif propertyName in ('Min Range', 'Max Range'):
-            return om.PropertyAttributes(decimals=2, minimum=0.0, maximum=100.0, singleStep=0.25, hidden=False)
-        elif propertyName == 'Edge Filter Distance':
-            return om.PropertyAttributes(decimals=3, minimum=0.0, maximum=10.0, singleStep=0.01, hidden=False)
-        elif propertyName == 'Number of Scan Lines':
-            return om.PropertyAttributes(decimals=0, minimum=0, maximum=100, singleStep=1, hidden=False)
-        else:
-            return om.ObjectModelItem.getPropertyAttributes(self, propertyName)
 
 
 class MultiSenseSource(TimerCallback):
@@ -189,7 +182,7 @@ class MultiSenseSource(TimerCallback):
         self.initScanLines()
 
         self.revPolyData = vtk.vtkPolyData()
-        self.polyDataObj = om.PolyDataItem('Multisense Sweep', self.revPolyData, view)
+        self.polyDataObj = vis.PolyDataItem('Multisense Sweep', self.revPolyData, view)
         self.polyDataObj.actor.SetPickable(1)
 
 
@@ -210,7 +203,7 @@ class MultiSenseSource(TimerCallback):
 
         for i in xrange(self.numberOfScanLines):
             polyData = vtk.vtkPolyData()
-            scanLine = om.PolyDataItem('scan line %d' % i, polyData, self.view)
+            scanLine = vis.PolyDataItem('scan line %d' % i, polyData, self.view)
             scanLine.actor.SetPickable(0)
             scanLine.setSolidColor((1,0,0))
             self.scanLines.append(scanLine)
@@ -409,7 +402,7 @@ class MapServerSource(TimerCallback):
         if obj not in om.getObjects():
             obj = None
         if not obj:
-            obj = om.PolyDataItem(self.getNameForViewId(viewId), polyData, self.view)
+            obj = vis.PolyDataItem(self.getNameForViewId(viewId), polyData, self.view)
             obj.setProperty('Color', QtGui.QColor(0, 175, 255))
             folder = om.findObjectByName('Map Server')
             om.addToObjectModel(obj, folder)

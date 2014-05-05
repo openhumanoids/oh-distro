@@ -1,29 +1,7 @@
 import os
-import re
 import PythonQt
 from PythonQt import QtCore, QtGui
-from collections import namedtuple
-from collections import OrderedDict
-
-from ddapp.fieldcontainer import FieldContainer
-import vtk
-
-class PropertyAttributes(FieldContainer):
-
-    def __init__(self, **kwargs):
-
-        self._add_fields(
-          decimals    = 5,
-          minimum = -1e4,
-          maximum = 1e4,
-          singleStep = 1,
-          hidden = False,
-          enumNames = None,
-          readOnly = False,
-          )
-
-        self._set_fields(**kwargs)
-
+from ddapp.propertyset import PropertySet, PropertyAttributes, PropertyPanelHelper
 
 class Icons(object):
 
@@ -37,22 +15,18 @@ class Icons(object):
   Hand = QtGui.QIcon(':/images/claw.png')
 
 
-def cleanPropertyName(s):
-    """
-    Generate a valid python property name by replacing all non-alphanumeric characters with underscores and adding an initial underscore if the first character is a digit
-    """
-    return re.sub(r'\W|^(?=\d)','_',s).lower()  # \W matches non-alphanumeric, ^(?=\d) matches the first position if followed by a digit
-
-
 class ObjectModelItem(object):
 
-    def __init__(self, name, icon=Icons.Robot, tree=None):
-        self.properties = OrderedDict()
-        self.propertyAttributes = {}
+    def __init__(self, name, icon=Icons.Robot, tree=None, properties=None):
+
+        self.properties = properties or PropertySet()
+        self.properties.connectPropertyChanged(self._onPropertyChanged)
+        self.properties.connectPropertyAdded(self._onPropertyAdded)
+        self.properties.connectPropertyAttributeChanged(self._onPropertyAttributeChanged)
+
         self.icon = icon
         self._tree = tree
-        self.alternateNames = {}
-        self.addProperty('Name', name)
+        self.addProperty('Name', name, attributes=PropertyAttributes(hidden=True))
 
     def setIcon(self, icon):
         self.icon = icon
@@ -60,36 +34,35 @@ class ObjectModelItem(object):
             self._tree.updateObjectIcon(self)
 
     def propertyNames(self):
-        return self.properties.keys()
+        return self.properties.propertyNames()
 
     def hasProperty(self, propertyName):
-        return propertyName in self.properties
+        return self.properties.hasProperty(propertyName)
 
     def getProperty(self, propertyName):
-        assert self.hasProperty(propertyName)
-        return self.properties[propertyName]
+        return self.properties.getProperty(propertyName)
 
     def addProperty(self, propertyName, propertyValue, attributes=None):
-        alternateName = cleanPropertyName(propertyName)
-        if propertyName not in self.properties and alternateName in self.alternateNames:
-            raise ValueError('Adding this property would conflict with a different existing property with alternate name {:s}'.format(alternateName))
-        self.alternateNames[alternateName] = propertyName
-        self.properties[propertyName] = propertyValue
-        if attributes is not None:
-            self.propertyAttributes[propertyName] = attributes
-        self._onPropertyAdded(propertyName)
+        self.properties.addProperty(propertyName, propertyValue, attributes)
 
     def setProperty(self, propertyName, propertyValue):
-        assert self.hasProperty(propertyName)
+        self.properties.setProperty(propertyName, propertyValue)
 
-        attributes = self.getPropertyAttributes(propertyName)
-        if attributes.enumNames and type(propertyValue) != int:
-            propertyValue = attributes.enumNames.index(propertyValue)
+    def getPropertyAttribute(self, propertyName, propertyAttribute):
+        self.properties.getPropertyAttribute(propertyname, propertyAttribute)
 
-        self.oldPropertyValue = (propertyName, self.getProperty(propertyName))
-        self.properties[propertyName] = propertyValue
-        self._onPropertyChanged(propertyName)
-        self.oldPropertyValue = None
+    def setPropertyAttribute(self, propertyName, propertyAttribute, value):
+        self.properties.setPropertyAttribute(propertyName, propertyAttribute, value)
+
+    def _onPropertyChanged(self, propertySet, propertyName):
+        if self._tree is not None:
+            self._tree._onPropertyValueChanged(self, propertyName)
+
+    def _onPropertyAdded(self, propertySet, propertyName):
+        pass
+
+    def _onPropertyAttributeChanged(self, propertySet, propertyName, propertyAttribute):
+        pass
 
     def hasDataSet(self, dataSet):
         return False
@@ -102,27 +75,6 @@ class ObjectModelItem(object):
 
     def getObjectTree(self):
         return self._tree
-
-    def getPropertyAttributes(self, propertyName):
-
-        if propertyName == 'Alpha':
-            return PropertyAttributes(decimals=2, minimum=0.0, maximum=1.0, singleStep=0.1, hidden=False)
-        elif propertyName == 'Name':
-            return PropertyAttributes(decimals=0, minimum=0, maximum=0, singleStep=0, hidden=True)
-        else:
-            attributes = PropertyAttributes(decimals=0, minimum=0, maximum=0, singleStep=0, hidden=False)
-            return self.propertyAttributes.setdefault(propertyName, attributes)
-
-    def _onPropertyChanged(self, propertyName):
-        if self._tree is not None:
-            self._tree.updatePropertyPanel(self, propertyName)
-            if propertyName == 'Visible':
-                self._tree.updateVisIcon(self)
-            if propertyName == 'Name':
-                self._tree.updateObjectName(self)
-
-    def _onPropertyAdded(self, propertyName):
-        pass
 
     def onRemoveFromObjectModel(self):
         pass
@@ -141,258 +93,11 @@ class ObjectModelItem(object):
         if self._tree is not None:
             return self._tree.findChildByName(self, name)
 
-    def __getattribute__(self, name):
-        try:
-            alternateNames = object.__getattribute__(self, 'alternateNames')
-            if name in alternateNames:
-                return object.__getattribute__(self, 'getProperty')(self.alternateNames[name])
-            else:
-                raise AttributeError()
-        except AttributeError:
-            return object.__getattribute__(self, name)
-
 
 class ContainerItem(ObjectModelItem):
 
     def __init__(self, name):
         ObjectModelItem.__init__(self, name, Icons.Directory)
-
-
-class RobotModelItem(ObjectModelItem):
-
-    def __init__(self, model):
-
-        modelName = os.path.basename(model.filename())
-        ObjectModelItem.__init__(self, modelName, Icons.Robot)
-
-        self.model = model
-        model.connect('modelChanged()', self.onModelChanged)
-        self.modelChangedCallback = None
-
-        self.addProperty('Filename', model.filename())
-        self.addProperty('Visible', model.visible())
-        self.addProperty('Alpha', model.alpha())
-        self.addProperty('Color', model.color())
-        self.views = []
-
-    def _onPropertyChanged(self, propertyName):
-        ObjectModelItem._onPropertyChanged(self, propertyName)
-
-        if propertyName == 'Alpha':
-            self.model.setAlpha(self.getProperty(propertyName))
-        elif propertyName == 'Visible':
-            self.model.setVisible(self.getProperty(propertyName))
-        elif propertyName == 'Color':
-            self.model.setColor(self.getProperty(propertyName))
-
-        self._renderAllViews()
-
-    def hasDataSet(self, dataSet):
-        return len(self.model.getLinkNameForMesh(dataSet)) != 0
-
-    def onModelChanged(self):
-        if self.modelChangedCallback:
-            self.modelChangedCallback(self)
-
-        if self.getProperty('Visible'):
-            self._renderAllViews()
-
-
-    def _renderAllViews(self):
-        for view in self.views:
-            view.render()
-
-    def getLinkFrame(self, linkName):
-        t = vtk.vtkTransform()
-        t.PostMultiply()
-        if self.model.getLinkToWorld(linkName, t):
-            return t
-        else:
-            return None
-
-    def setModel(self, model):
-        assert model is not None
-        if model == self.model:
-            return
-
-        views = list(self.views)
-        self.removeFromAllViews()
-        self.model = model
-        self.model.setAlpha(self.getProperty('Alpha'))
-        self.model.setVisible(self.getProperty('Visible'))
-        self.model.setColor(self.getProperty('Color'))
-        self.setProperty('Filename', model.filename())
-        model.connect('modelChanged()', self.onModelChanged)
-
-        for view in views:
-            self.addToView(view)
-        self.onModelChanged()
-
-    def addToView(self, view):
-        if view in self.views:
-            return
-        self.views.append(view)
-        self.model.addToRenderer(view.renderer())
-        view.render()
-
-    def onRemoveFromObjectModel(self):
-        self.removeFromAllViews()
-
-    def removeFromAllViews(self):
-        for view in list(self.views):
-            self.removeFromView(view)
-        assert len(self.views) == 0
-
-    def removeFromView(self, view):
-        assert view in self.views
-        self.views.remove(view)
-        self.model.removeFromRenderer(view.renderer())
-        view.render()
-
-class PolyDataItem(ObjectModelItem):
-
-    def __init__(self, name, polyData, view):
-
-        ObjectModelItem.__init__(self, name, Icons.Robot)
-
-        self.views = []
-        self.polyData = polyData
-        self.mapper = vtk.vtkPolyDataMapper()
-        self.mapper.SetInput(self.polyData)
-        self.actor = vtk.vtkActor()
-        self.actor.SetMapper(self.mapper)
-
-        self.addProperty('Visible', True)
-        self.addProperty('Point Size', self.actor.GetProperty().GetPointSize())
-        self.addProperty('Alpha', 1.0)
-        self.addProperty('Color', QtGui.QColor(255,255,255))
-
-        if view is not None:
-            self.addToView(view)
-
-    def _renderAllViews(self):
-        for view in self.views:
-            view.render()
-
-    def hasDataSet(self, dataSet):
-        return dataSet == self.polyData
-
-
-    def setPolyData(self, polyData):
-
-        arrayName = self.getColorByArrayName()
-
-        self.polyData = polyData
-        self.mapper.SetInput(polyData)
-        self.colorBy(arrayName, lut=self.mapper.GetLookupTable())
-
-        if self.getProperty('Visible'):
-            self._renderAllViews()
-
-    def getColorByArrayName(self):
-        if self.polyData:
-            scalars = self.polyData.GetPointData().GetScalars()
-            if scalars:
-                return scalars.GetName()
-
-    def getArrayNames(self):
-        pointData = self.polyData.GetPointData()
-        return [pointData.GetArrayName(i) for i in xrange(pointData.GetNumberOfArrays())]
-
-    def setSolidColor(self, color):
-
-        color = [component * 255 for component in color]
-        self.setProperty('Color', QtGui.QColor(*color))
-        self.colorBy(None)
-
-    def colorBy(self, arrayName, scalarRange=None, lut=None):
-
-        if not arrayName:
-            self.mapper.ScalarVisibilityOff()
-            self.polyData.GetPointData().SetActiveScalars(None)
-            return
-
-        array = self.polyData.GetPointData().GetArray(arrayName)
-        if not array:
-            print 'colorBy(%s): array not found' % arrayName
-            self.mapper.ScalarVisibilityOff()
-            self.polyData.GetPointData().SetActiveScalars(None)
-            return
-
-        self.polyData.GetPointData().SetActiveScalars(arrayName)
-
-
-        if not lut:
-            if scalarRange is None:
-                scalarRange = array.GetRange()
-
-            lut = vtk.vtkLookupTable()
-            lut.SetNumberOfColors(256)
-            lut.SetHueRange(0.667, 0)
-            lut.SetRange(scalarRange)
-            lut.Build()
-
-
-        #self.mapper.SetColorModeToMapScalars()
-        self.mapper.ScalarVisibilityOn()
-        self.mapper.SetUseLookupTableScalarRange(True)
-        self.mapper.SetLookupTable(lut)
-        self.mapper.InterpolateScalarsBeforeMappingOff()
-
-        if self.getProperty('Visible'):
-            self._renderAllViews()
-
-    def getChildFrame(self):
-        frameName = self.getProperty('Name') + ' frame'
-        return self.findChild(frameName)
-
-    def addToView(self, view):
-        if view in self.views:
-            return
-
-        self.views.append(view)
-        view.renderer().AddActor(self.actor)
-        view.render()
-
-    def _onPropertyChanged(self, propertyName):
-        ObjectModelItem._onPropertyChanged(self, propertyName)
-
-        if propertyName == 'Point Size':
-            self.actor.GetProperty().SetPointSize(self.getProperty(propertyName))
-
-        elif propertyName == 'Alpha':
-            self.actor.GetProperty().SetOpacity(self.getProperty(propertyName))
-
-        elif propertyName == 'Visible':
-            self.actor.SetVisibility(self.getProperty(propertyName))
-
-        elif propertyName == 'Color':
-            color = self.getProperty(propertyName)
-            color = [color.red()/255.0, color.green()/255.0, color.blue()/255.0]
-            self.actor.GetProperty().SetColor(color)
-
-        self._renderAllViews()
-
-    def getPropertyAttributes(self, propertyName):
-
-        if propertyName == 'Point Size':
-            return PropertyAttributes(decimals=0, minimum=1, maximum=20, singleStep=1, hidden=False)
-        else:
-            return ObjectModelItem.getPropertyAttributes(self, propertyName)
-
-    def onRemoveFromObjectModel(self):
-        self.removeFromAllViews()
-
-    def removeFromAllViews(self):
-        for view in list(self.views):
-            self.removeFromView(view)
-        assert len(self.views) == 0
-
-    def removeFromView(self, view):
-        assert view in self.views
-        self.views.remove(view)
-        view.renderer().RemoveActor(self.actor)
-        view.render()
 
 
 class ObjectModelTree(object):
@@ -467,27 +172,19 @@ class ObjectModelTree(object):
         obj = self.getActiveObject()
         obj.setProperty(prop.propertyName(), prop.value())
 
-    def addPropertiesToPanel(self, obj, p):
-        for propertyName in obj.propertyNames():
-            value = obj.getProperty(propertyName)
-            attributes = obj.getPropertyAttributes(propertyName)
-            if value is not None and not attributes.hidden:
-                self.addProperty(p, propertyName, attributes, value)
-
     def _onTreeSelectionChanged(self):
 
-        self._blockSignals = True
         panel = self.getPropertiesPanel()
+        self._blockSignals = True
         panel.clear()
         self._blockSignals = False
 
-        item = self.getActiveItem()
-        if not item:
+        obj = self.getActiveObject()
+        if not obj:
             return
 
-        obj = self._getObjectForItem(item)
         self._blockSignals = True
-        self.addPropertiesToPanel(obj, panel)
+        PropertyPanelHelper.addPropertiesToPanel(obj.properties, panel)
         self._blockSignals = False
 
     def updateVisIcon(self, obj):
@@ -508,19 +205,17 @@ class ObjectModelTree(object):
         item = self._getItemForObject(obj)
         item.setText(0, obj.getProperty('Name'))
 
-    def updatePropertyPanel(self, obj, propertyName):
+    def _onPropertyValueChanged(self, obj, propertyName):
 
-        if self.getActiveObject() != obj:
-            return
+        if propertyName == 'Visible':
+            self.updateVisIcon(obj)
+        elif propertyName == 'Name':
+            self.updateObjectName(obj)
 
-        p = self.getPropertiesPanel()
-        prop = p.findProperty(propertyName)
-        if prop is None:
-            return
-
-        self._blockSignals = True
-        prop.setValue(obj.getProperty(propertyName))
-        self._blockSignals = False
+        if obj == self.getActiveObject():
+            self._blockSignals = True
+            PropertyPanelHelper.onPropertyValueChanged(self.getPropertiesPanel(), obj.properties, propertyName)
+            self._blockSignals = False
 
     def _onItemClicked(self, item, column):
 
@@ -529,34 +224,6 @@ class ObjectModelTree(object):
         if column == 1 and obj.hasProperty('Visible'):
             obj.setProperty('Visible', not obj.getProperty('Visible'))
             self.updateVisIcon(obj)
-
-    def setPropertyAttributes(self, p, attributes):
-
-        p.setAttribute('decimals', attributes.decimals)
-        p.setAttribute('minimum', attributes.minimum)
-        p.setAttribute('maximum', attributes.maximum)
-        p.setAttribute('singleStep', attributes.singleStep)
-        if attributes.enumNames:
-            p.setAttribute('enumNames', attributes.enumNames)
-
-
-    def addProperty(self, panel, name, attributes, value):
-
-        if isinstance(value, list) and not isinstance(value[0], str):
-            groupName = '%s [%s]' % (name, ', '.join([str(v) for v in value]))
-            groupProp = panel.addGroup(groupName)
-            for v in value:
-                p = panel.addSubProperty(name, v, groupProp)
-                self.setPropertyAttributes(p, attributes)
-            return groupProp
-        elif attributes.enumNames:
-            p = panel.addEnumProperty(name, value)
-            self.setPropertyAttributes(p, attributes)
-            return p
-        else:
-            p = panel.addProperty(name, value)
-            self.setPropertyAttributes(p, attributes)
-            return p
 
 
     def _removeItemFromObjectModel(self, item):
@@ -725,9 +392,6 @@ def getObjects():
 
 def findObjectByName(name, parent=None):
     return _t.findObjectByName(name, parent)
-
-def addPropertiesToPanel(obj, p):
-    _t.addPropertiesToPanel(obj, p)
 
 def removeFromObjectModel(obj):
     _t.removeFromObjectModel(obj)
