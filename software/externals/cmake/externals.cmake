@@ -107,8 +107,8 @@ set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
 set(iris_revision 7ae8b0988d917211787effbbfe816c14c4fc2887)
 set(iris_depends)
 
-set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
-set(mosek_revision fab3ef0148ca1f565abf68fb73369e33fcc38cc4)
+set(mosek_url ssh://git@github.com/rdeits/mosek.git)
+set(mosek_revision 2cdb719539e7255d177b1c3cae25307f044aa908)
 set(mosek_depends)
 
 set(flycapture_url https://svn.csail.mit.edu/drc/trunk/software/externals/flycapture)
