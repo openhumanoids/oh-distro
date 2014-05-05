@@ -596,7 +596,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         else
           infocount = 0;
         end
-        if infocount > 2
+        if infocount > 4
           % kill atlas
           disp('freezing atlas!');
           behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
