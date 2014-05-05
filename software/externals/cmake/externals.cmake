@@ -103,6 +103,10 @@ set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)
 set(gurobi_revision 46d1985d5a86f7bc660e363cb2d5ff76af4b6fd9)
 set(gurobi_depends)
 
+set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
+set(iris_revision 8241ee28b05d4bcd0c456be3b446e81cce12bff7)
+set(iris_depends)
+
 set(flycapture_url https://svn.csail.mit.edu/drc/trunk/software/externals/flycapture)
 set(flycapture_revision 8298)
 set(flycapture_depends)
@@ -138,6 +142,7 @@ set(git-externals
   spotless
   snopt
   gurobi
+  iris
   )
 
 

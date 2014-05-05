@@ -6,7 +6,7 @@ if ~exist('pods_get_base_path')
   if ~exist('build/matlab')
     error('You must run make first (and/or add your pod build/matlab directory to the matlab path)');
   end
-  addpath(fullfile(pwd,'build','matlab'));  
+  addpath(fullfile(pwd,'build','matlab'));
 end
 
 % setup javaclasspath
@@ -33,6 +33,7 @@ rmpath(fullfile(pwd,'matlab','planners','drill_planner'));
 rmpath(fullfile(pwd,'matlab','planners','ladder_planner'));
 rmpath(fullfile(pwd,'matlab','planners','driving_planner'));
 rmpath(fullfile(pwd,'matlab','planners','footstep_planner'));
+rmpath(fullfile(pwd,'matlab','planners','footstep_planner','terrain'));
 rmpath(fullfile(pwd,'matlab','planners','walking_planner'));
 rmpath(fullfile(pwd,'matlab','planners','atlas_keyframe_planners'));
 rmpath(fullfile(pwd,'matlab','util'));

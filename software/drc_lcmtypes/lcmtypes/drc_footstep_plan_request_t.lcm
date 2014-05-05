@@ -18,6 +18,12 @@ struct footstep_plan_request_t
 	int32_t num_existing_steps;
 	footstep_t existing_steps[num_existing_steps];
 
+	// Results from the obstacle-free segmentation algorithm.
+	// The list can be empty (will default to seeding all steps around the robot's
+	// current location).
+	int32_t num_iris_regions;
+	iris_region_t iris_regions[num_iris_regions];
+
 	footstep_plan_params_t params;
 
 	footstep_params_t default_step_params;

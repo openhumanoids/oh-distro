@@ -1,0 +1,25 @@
+package drc;
+
+struct lin_con_t
+{
+	int64_t utime;
+
+	// A set of linear constraints, expressed by the matrix A which is
+	// an [m by n] matrix, and vector b of length m. These matrices produce
+	// the constrints:
+	//       Ax <= b
+	//
+	// Note: the A matrix must be stored in flattened form within this message
+	// (i.e. as an array of length m*n instead of an m x n matrix).
+
+	int32_t m;
+	int32_t n;
+
+	int32_t m_times_n; // this must be equal to m*n
+	// Ideally, we'd just store a 2d array in the lcmtype, but I can't figure
+	// out how to make that actually work through the Matlab/java interface, so
+	// we're stuck with this. -rdeits
+
+	double A[m_times_n];
+	double b[m];
+}
