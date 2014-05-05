@@ -67,7 +67,7 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
         qd_err(obj.r_ankle_idx)=0;
       end
 			
-      delta_max = 2.0;
+      delta_max = 1.0;
       %y = max(-delta_max,min(delta_max,lambda*qd_err(obj.act_idx_map)));
       y = max(-delta_max,min(delta_max,qd_err(obj.act_idx_map)));
 		end
@@ -99,11 +99,11 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			next_state(3) = t;
 
       lambda = min(1.0,lambda+dt); % linear ramp
-%       if state(1)~=l_foot_contact || state(2)~=r_foot_contact
-%         % contact state changed, reset integrated velocities
-%         qd_int(obj.leg_idx) = 0;
-%         lambda = 0;
-%       end
+      if state(1)~=l_foot_contact || state(2)~=r_foot_contact
+        % contact state changed, reset integrated velocities
+        qd_int(obj.leg_idx) = 0;
+        lambda = 0;
+      end
       next_state(4) = lambda;
 			next_state(5:end) = qd_int;
 		end
