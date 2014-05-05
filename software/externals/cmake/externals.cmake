@@ -104,8 +104,12 @@ set(gurobi_revision 46d1985d5a86f7bc660e363cb2d5ff76af4b6fd9)
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
-set(iris_revision 8241ee28b05d4bcd0c456be3b446e81cce12bff7)
+set(iris_revision 7ae8b0988d917211787effbbfe816c14c4fc2887)
 set(iris_depends)
+
+set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
+set(mosek_revision fab3ef0148ca1f565abf68fb73369e33fcc38cc4)
+set(mosek_depends)
 
 set(flycapture_url https://svn.csail.mit.edu/drc/trunk/software/externals/flycapture)
 set(flycapture_revision 8298)
@@ -143,6 +147,7 @@ set(git-externals
   snopt
   gurobi
   iris
+  mosek
   )
 
 

@@ -43,6 +43,7 @@ checkDependency('lcm');
 checkDependency('lcmgl');
 checkDependency('gurobi');
 checkDependency('snopt');
+pod_pkg_config('mosek');
 %checkDependency('bullet');
 
 addpath([pods_get_base_path,'/matlab']);
