@@ -47,7 +47,13 @@ classdef FootContactBlock < MIMODrakeSystem
       obj.num_outputs = options.num_outputs;
       obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
       lc = lcm.lcm.LCM.getSingleton();
-      lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);      
+      if isfield(options,'channel')
+        typecheck(options.channel,'char');
+      else
+        options.channel='FOOT_CONTACT_ESTIMATE';
+      end
+      lc.subscribe(options.channel,obj.contact_est_monitor);
+
     end
    
     function varargout=mimoOutput(obj,~,~,~)      
