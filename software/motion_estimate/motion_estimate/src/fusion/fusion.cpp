@@ -99,6 +99,13 @@ public:
       param_file_full = "";
     }
  
+
+    relaunch_app = false; // processing from log, exit at the end
+    if (in_log_fname.empty()) { 
+      relaunch_app = true; // listening live, relaunch at exit
+    }
+
+ 
     //create front end
     front_end = new LCMFrontEnd(in_log_fname, out_log_fname, param_file_full , 
                                 override_str,begin_timestamp, processing_rate);
@@ -284,18 +291,23 @@ public:
   bool smooth_at_end;
   
   lcm::Subscription * restart_sub;
+  
+  bool relaunch_app;
 };
 
 
 
-void launchApp(int argc, char **argv){
+bool launchApp(int argc, char **argv){
   
   App * app = new App(argc, argv);
   app->run();
   
+  bool relaunch_app = app->relaunch_app;
+  
   delete app->front_end;
   delete app;
   
+  return relaunch_app;
 }
 
 
@@ -304,9 +316,9 @@ int main(int argc, char **argv)
 {
   signal(SIGINT, shutdown_module);
   
-  
-  while (1){ // mfallon: added infinite loop, application continually restarts
-    launchApp(argc, argv);
+  bool relaunch_app = true;
+  while (relaunch_app){ // mfallon: added infinite loop, application continually restarts
+    relaunch_app = launchApp(argc, argv);
   }
 
   shutdown_module(1);

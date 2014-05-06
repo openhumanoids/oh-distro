@@ -7,24 +7,13 @@ bot_ = bot;
 % dyn1 129, dyn2 95, dyn3 50, dyn4 98, dyn5 80, dyn6 144
 %normals 86
 
-main_dir = '/home/mfallon/data/atlas/2014-01-21-vicon-walking/results/'
+main_dir = '/home/mfallon/data/atlas/2014-04-21-vicon-walking/results/'
 
 % 1 basic working version:
-%folder_path = [main_dir '2014-01-26-22-14-leg-odo-stand-alone' '/'];
+folder_path = [main_dir '2014-05-06-17-18-imu-leg-odo' '/'];
 
-% 2 first version width lidar:
-%folder_path = [main_dir '2014-02-12-19-33-imu-leg-odo' '/'];
-% folder_path = [main_dir '2014-02-12-19-50-imu-leg-odo-lidar' '/'];
-
-% 3 with/out classifier
-%folder_path = [main_dir '2014-02-19-19-23-imu-leg-odo-lidar' '/'];
-%folder_path = [main_dir '2014-02-19-19-28-imu-leg-odo' '/'];
-
-% 4 with/out alternative transitions
-%folder_path = [main_dir '2014-03-13-14-12-imu-leg-odo-older-transition' '/'];
-%folder_path = [main_dir '2014-03-13-14-25-imu-leg-odo-alt-transition' '/'];
-folder_path = [main_dir '2014-03-13-17-09-imu-leg-odo-lidar-alt-transition' '/'];
-
+% 2014-05-06-13-04-imu-leg-odo
+% 2014-05-06-13-50-imu-leg-odo-lidar
 
 logs = dir( [folder_path '*mat'])
 
@@ -40,13 +29,10 @@ for i=1:size(logs,1)
   disp([ num2str(i) ': ' logs(i).name])
 end
 
-
-
 % all:
 %which_process= 1:size(logs,1)
 % most interesting ones: [skip two 
-which_process=[1,2,3,4,7,8,9,10,11]
-%which_process=[7]
+which_process=[1,2,3,4,5,6,7,8]
 
 
 %%%%%%%%%%%%%%%% DO WORK %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -69,7 +55,7 @@ if (settings.do_sync_comparison)
 
     ylabel(num2str(summary(i).b.t, '%2.0f sec'))
     fname = logs(which_process(i) ).name;
-    title( fname(8:end-4)  )
+    title( fname(1:31) )
     set(gca,'XTick',[1,2,3]);set(gca,'XTickLabel',{'XYZ drift','XY drift','Z drift'})
   end
   subplot(3,3,8)
@@ -115,15 +101,6 @@ if (settings.plot_sync==1)
   handles_a=make_plots(s,log_filename);
   handles = [handles;handles_a];
 end
-if (settings.save_raw_plots)
-  % save plots to file:
-  for j=1:size(handles,1)
-    png_fname = [folder_path log_filename(1:end-4) '-' num2str(j) '.png'];
-    saveas( handles(j), png_fname,'png');
-  end
-  close all
-end
-
 
 if (settings.do_sync_comparison)
   s.b.rpy_drift =  s.v.rot_rpy(:,3)  - s.b.rel_v.rot_rpy(:,3);
@@ -147,6 +124,14 @@ if (settings.do_sync_comparison)
   summary.m.t = s.m.t(end);
 end
 
+if (settings.save_raw_plots)
+  % save plots to file:
+  for j=1:size(handles,1)
+    png_fname = [folder_path log_filename(1:end-4) '-' num2str(j) '.png'];
+    saveas( handles(j), png_fname,'png');
+  end
+  close all
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -367,3 +352,28 @@ estbody_zerotime_to_estbody_current = bot_.trans_apply_trans( current_est,temp  
 
 % ... applied to the initial vicon
 worldvicon_to_est = bot_.trans_apply_trans(estbody_zerotime_to_estbody_current, init_vicon );
+
+
+
+
+%%% Info From January Log Files
+% longstepping 180, typicalstep 455, manipmode 259, blocks 222
+% dyn1 129, dyn2 95, dyn3 50, dyn4 98, dyn5 80, dyn6 144
+%normals 86
+%main_dir = '/home/mfallon/data/atlas/2014-01-21-vicon-walking/results/'
+
+% 1 basic working version:
+%folder_path = [main_dir '2014-01-26-22-14-leg-odo-stand-alone' '/'];
+
+% 2 first version width lidar:
+%folder_path = [main_dir '2014-02-12-19-33-imu-leg-odo' '/'];
+% folder_path = [main_dir '2014-02-12-19-50-imu-leg-odo-lidar' '/'];
+
+% 3 with/out classifier
+%folder_path = [main_dir '2014-02-19-19-23-imu-leg-odo-lidar' '/'];
+%folder_path = [main_dir '2014-02-19-19-28-imu-leg-odo' '/'];
+
+% 4 with/out alternative transitions
+%folder_path = [main_dir '2014-03-13-14-12-imu-leg-odo-older-transition' '/'];
+%folder_path = [main_dir '2014-03-13-14-25-imu-leg-odo-alt-transition' '/'];
+%folder_path = [main_dir '2014-03-13-17-09-imu-leg-odo-lidar-alt-transition' '/'];
