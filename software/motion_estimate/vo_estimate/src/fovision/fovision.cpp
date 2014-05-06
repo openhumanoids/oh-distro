@@ -193,7 +193,7 @@ void FoVision::fovis_stats(){
       pose_msg.orientation[1] = rotation.x();
       pose_msg.orientation[2] = rotation.y();
       pose_msg.orientation[3] = rotation.z();
-      bot_core_pose_t_publish(lcm_->getUnderlyingLCM(), "POSE", &pose_msg);
+      bot_core_pose_t_publish(lcm_->getUnderlyingLCM(), "POSE_BODY", &pose_msg);
       //  printf("[%6.2f %6.2f %6.2f]\n", translation[0], translation[1], translation[2]);
   }  
   

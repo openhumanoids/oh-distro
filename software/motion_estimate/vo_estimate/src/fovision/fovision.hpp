@@ -80,6 +80,11 @@ public:
       delta_status = odom_.getMotionEstimateStatus();
     }
 
+    Eigen::Isometry3d getPose(){
+      return odom_.getPose();
+    }
+
+
 private:
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<fovis::StereoCalibration> kcal_;

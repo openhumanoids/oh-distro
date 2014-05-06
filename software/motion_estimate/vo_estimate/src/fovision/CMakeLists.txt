@@ -36,3 +36,14 @@ pods_use_pkg_config_packages(drc-fovision-odometry eigen3
   ${FK_PACKAGES})
 pods_install_executables(drc-fovision-odometry)
 
+
+##############################################
+add_executable (se-simple-vo fovision_simple_odometry.cpp)
+pods_use_pkg_config_packages(se-simple-vo eigen3 
+  lcm bot2-core bot2-frames   bot2-frames_cpp
+  lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain_comm
+  voconfig   vofeatures   voestimator   fovision
+  pointcloud_vis  
+  opencv image_io_utils
+  ${FK_PACKAGES})
+pods_install_executables(se-simple-vo)
