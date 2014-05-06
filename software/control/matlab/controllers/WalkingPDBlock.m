@@ -104,17 +104,12 @@ classdef WalkingPDBlock < MIMODrakeSystem
     end
    
     function y=mimoOutput(obj,t,~,varargin)      
-      %persistent qd_filt;      
       obj.ikoptions.q_nom = varargin{1};
 
 			x = varargin{2};
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
 
-      %if isempty(qd_filt)
-      %  qd_filt = 0*qd;
-      %end
-      
       if obj.input_foot_contacts
 				fc = varargin{3};
 				
@@ -152,9 +147,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       if nrmerr > obj.max_nrm_err
         err_q = obj.max_nrm_err * err_q / nrmerr;
       end
-			
-%       qd_filt = 0.8*qd_filt + 0.2*qd;
-      
+     
 			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
 		end
   end
