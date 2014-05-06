@@ -9,6 +9,7 @@ else
 end
 if ~isfield(options, 't0'); options.t0 = 0; end
 if ~isfield(options, 'debug'); options.debug = true; end
+if ~isfield(options, 'first_step_hold_s'); options.first_step_hold_s = 1; end
 
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
@@ -65,6 +66,7 @@ step_knots = struct('t', options.t0, 'right', struct('orig', steps.right(1).pos.
 zmp_knots = struct('t', options.t0, 'zmp', zmp0, 'supp', supp0);
 
 istep = struct('right', 1, 'left', 1);
+is_first_step = true;
 
 while 1
   if is_right_foot
@@ -86,6 +88,14 @@ while 1
   [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped,...
                 sw0.pos.center,...
                 sw1.pos.center, sw1.walking_params);
+  step_duration = (swing_ts(end) - swing_ts(1));
+  if is_first_step
+    swing_ts = swing_ts + options.first_step_hold_s;
+    takeoff_time = takeoff_time + options.first_step_hold_s;
+    landing_time = landing_time + options.first_step_hold_s;
+    step_duration = step_duration + options.first_step_hold_s;
+    is_first_step = false;
+  end
   % end
 
   t0 = step_knots(end).t;
@@ -100,7 +110,6 @@ while 1
     end
   end
 
-  step_duration = (swing_ts(end) - swing_ts(1));
   if isempty(zmp_pts)
     instep_shift = [0.0;0.025;0];
     zmp1 = shift_step_inward(st, instep_shift);
