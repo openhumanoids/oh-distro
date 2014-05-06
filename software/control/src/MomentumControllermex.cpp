@@ -458,6 +458,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	  int status; CGE ( GRBgetintattr(model, "Status", &status) , pdata->env);
 	  if (status!=2) mexPrintf("Gurobi reports non-optimal status = %d.\n", status);
   }
+  
+  // temp, for testing: 
+  //pdata->active.clear();
 
 
   //----------------------------------------------------------------------

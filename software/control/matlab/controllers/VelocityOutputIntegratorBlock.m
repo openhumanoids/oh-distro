@@ -73,6 +73,8 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 		end
 		
 		function next_state=mimoUpdate(obj,t,state,varargin)
+      x = varargin{1};
+      qd = x(obj.nq+1:end);
 			qdd = varargin{2};
 			fc = varargin{3};
 
@@ -84,7 +86,8 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			qd_int = state(5:end);
 			dt = t-state(3);
 			
-			qd_int = qd_int + qdd*dt; 
+      eta = 0.0;
+			qd_int = ((1-eta)*qd_int + eta*qd) + qdd*dt; 
 			
       if l_foot_contact>0.5
         qd_int(obj.l_ankle_idx)=0;

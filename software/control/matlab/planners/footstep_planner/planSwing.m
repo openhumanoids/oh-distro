@@ -94,7 +94,7 @@ if fixed_duration
   traj_ts = [0, traj_ts+0.5*hold_time, traj_ts(end) + hold_time];
 else
   hold_time = traj_ts(end) * hold_frac;
-  hold_time = max([hold_time, min_hold_time])
+  hold_time = max([hold_time, min_hold_time]);
   traj_ts = [0, traj_ts + 0.5 * hold_time, traj_ts(end) + hold_time]; % add time for weight shift
 end
 

@@ -566,7 +566,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         height = 0;
 			end
 			body_motion_input_start=3+obj.input_foot_contacts*1;
-      mu = 0.5;
+      mu = 0.75;
       if obj.use_mex==1
 				
         if obj.debug
