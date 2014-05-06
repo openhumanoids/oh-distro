@@ -1,4 +1,5 @@
 function test_terrain_planner()
+% NOTEST
 
 load('example_terrain_clicks', 'clicks');
 load('example_heights.mat','heights','px2world');
