@@ -1,4 +1,4 @@
-function [xtraj,info,infeasible_constraint] = collisionFreePlanner(r,tspan,varargin)
+function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = collisionFreePlanner(r,tspan,q_seed_traj,q_nom_traj,varargin)
   % [xtraj, info] = % collisionFreePlanner(r,tspan,q_seed_traj,q_nom_traj,options,constr1,constr2,...,ikoptions)
   % 
   % @param options - [OPTIONAL] Structure that may contain the following fields
@@ -24,9 +24,28 @@ function [xtraj,info,infeasible_constraint] = collisionFreePlanner(r,tspan,varar
   %   This is where code for paralellizing the knot point loop could go.
 
 
-  for nt = 2:7
+  if isstruct(varargin{1})
+    options = varargin{1};
+    varargin(1) = [];
+  else
+    options = struct();
+  end
+  options.seed_switch_threshold = 0.0;
+  options.position_cost = 0;
+  options.acceleration_cost = 0;
+  %q_seed_traj = ConstantTrajectory(q_seed_traj.eval(tspan(1)));
+  for nt = 3:7
     t = linspace(tspan(1),tspan(2),nt);
-    [xtraj,info,infeasible_constraint] = collisionFreeIKTraj(r,t,varargin{:});
-    if info < 10, break; end
+    [xtraj_feasible,info_feasible,infeasible_constraint,additional_t_samples] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,options,varargin{:});
+    if info_feasible < 10, break; end
   end
 
+  %xtraj = xtraj_feasible;
+  options.additional_t_samples = additional_t_samples;
+  options.acceleration_cost = 1e-6;
+  options.position_cost = 1e-4;
+  options.allow_ikoptions_modification = false;
+  q_seed_traj = xtraj_feasible(1:r.getNumDOF());
+  q_nom_traj = xtraj_feasible(1:r.getNumDOF());
+  [xtraj,info,infeasible_constraint] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,options,varargin{:});
+  if info > 10, xtraj = xtraj_feasible; info = info_feasible; end;

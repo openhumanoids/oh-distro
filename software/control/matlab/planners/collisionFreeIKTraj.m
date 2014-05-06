@@ -1,4 +1,4 @@
-function [xtraj, info, infeasible_constraint] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,varargin)
+function [xtraj, info, infeasible_constraint,additional_t_samples] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,varargin)
   % [xtraj, info] = % collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,options,constr1,constr2,...,ikoptions)
   % 
   % @param options - [OPTIONAL] Structure that may contain the following fields
@@ -34,6 +34,11 @@ function [xtraj, info, infeasible_constraint] = collisionFreeIKTraj(r,t,q_seed_t
   if ~isfield(options,'frozen_groups'),options.frozen_groups = {}; end;
   if ~isfield(options,'visualize'),options.visualize = false; end;
   if ~isfield(options,'quiet'),options.quiet = true; end;
+  if ~isfield(options,'seed_switch_threshold'),options.seed_switch_threshold = 0.01; end;
+  if ~isfield(options,'allow_ikoptions_modification'),options.allow_ikoptions_modification = true; end;
+  if ~isfield(options,'additional_t_samples'),options.additional_t_samples = []; end;
+  if ~isfield(options,'acceleration_cost'),options.acceleration_cost = 0; end;
+  if ~isfield(options,'position_cost'),options.position_cost = 0; end;
 
   constraints = varargin(1:end-1);
   ikoptions = varargin{end};
@@ -101,17 +106,19 @@ function [xtraj, info, infeasible_constraint] = collisionFreeIKTraj(r,t,q_seed_t
   end
 
   % Adust ikoptions
-  ikoptions = ikoptions.setMajorIterationsLimit(500);
-  ikoptions = ikoptions.setQa(1e-9*eye(nq));
-  ikoptions = ikoptions.setQ(0*ikoptions.Q);
-  ikoptions = ikoptions.setQv(0*ikoptions.Q);
+  if options.allow_ikoptions_modification
+    ikoptions = ikoptions.setMajorIterationsLimit(500);
+    ikoptions = ikoptions.setQ(options.position_cost*eye(nq));
+    ikoptions = ikoptions.setQa(options.acceleration_cost*eye(nq));
+    ikoptions = ikoptions.setQv(0*ikoptions.Q);
+  end
 
   %q_nom_traj = ConstantTrajectory(q_nom_traj.eval(t(1)));
 
   num_collision_check_samples = 500;
   t_fine = linspace(t(1), t(end), num_collision_check_samples);
 
-  additional_t_samples = [];
+  additional_t_samples = options.additional_t_samples;
   n_additional_t_samples = numel(additional_t_samples);
   info = NaN;
   planning_done = false;
@@ -132,13 +139,12 @@ function [xtraj, info, infeasible_constraint] = collisionFreeIKTraj(r,t,q_seed_t
     if (info > 10)
       % inverseKinTraj failed. Terminate and return info
       %q_seed_traj = q_nom_traj;
-      if (1 || info == last_info)
+      if (info == last_info)
         if ~options.quiet
           display(infeasibleConstraintMsg(infeasible_constraint));
         end
-        break;
+        return;
       end
-      return;
     else
       % inverseKinTraj succeeds. Proceed to collision checking
       %q_seed_traj = xtraj;
@@ -162,7 +168,7 @@ function [xtraj, info, infeasible_constraint] = collisionFreeIKTraj(r,t,q_seed_t
       % Then we either have collisions or inverseKinTraj failed.
       [max_penetration_distance,max_penetration_idx] = max(distance);
       if max_penetration_distance > 0
-        if max_penetration_distance < 0.01;
+        if max_penetration_distance < options.seed_switch_threshold;
           q_seed_traj = xtraj;
         end
         % The trajectory returned by inverseKinTraj contained collisions!
@@ -196,10 +202,10 @@ function [xtraj, info, infeasible_constraint] = collisionFreeIKTraj(r,t,q_seed_t
         %[~,unique_idx] = unique(round(additional_t_samples/0.01));
         %additional_t_samples = additional_t_samples(unique_idx);
         n_additional_t_samples = numel(additional_t_samples);
-        if options.visualize
-          figure(7);
-          plot(t_fine,distance,'-b',additional_t_samples,zeros(size(additional_t_samples)),'r.');
-        end
+        %if options.visualize
+          %figure(7);
+          %plot(t_fine,distance,'-b',additional_t_samples,zeros(size(additional_t_samples)),'r.');
+        %end
       end
     end
   end
