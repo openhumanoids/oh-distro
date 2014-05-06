@@ -19,7 +19,7 @@ classdef IRISRegion
       msg.lin_con = drc.lin_con_t();
       msg.lin_con.m = size(obj.A, 1);
       msg.lin_con.n = size(obj.A, 2);
-      msg.lin_con.m_time_n = m*n;
+      msg.lin_con.m_times_n = msg.lin_con.m*msg.lin_con.n;
       msg.lin_con.A = reshape(obj.A, [], 1);
       msg.lin_con.b = obj.b;
       msg.point = obj.point;
