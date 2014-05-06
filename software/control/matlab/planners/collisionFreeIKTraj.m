@@ -1,4 +1,4 @@
-function [xtraj, info] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,varargin)
+function [xtraj, info, infeasible_constraint] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,varargin)
   % [xtraj, info] = % collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,options,constr1,constr2,...,ikoptions)
   % 
   % @param options - [OPTIONAL] Structure that may contain the following fields
@@ -20,11 +20,9 @@ function [xtraj, info] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,varargin
   %     ***********************************************************************
   %     ***********************************************************************
   %   * visualize - Boolean indicating whether or not to draw debug visuals
-  
+
   assert(numel(varargin)>=2);
   typecheck(varargin{end},'IKoptions');
-
-  tspan = t([1,end]);
 
   if isstruct(varargin{1})
     options = varargin{1};
@@ -86,7 +84,7 @@ function [xtraj, info] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,varargin
 
   r = compile(r);
   nq = r.getNumDOF();
-  
+
   for i = 1:numel(constraints)
     if ~isa(constraints{i},'PostureConstraint')
       constraints{i} = updateRobot(constraints{i},r);
@@ -99,7 +97,7 @@ function [xtraj, info] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,varargin
     checkDependency('lcmgl');
     v = r.constructVisualizer(struct('use_contact_shapes',false));
     lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), ...
-                              'collisionFreeIKTraj');
+      'collisionFreeIKTraj');
   end
 
   % Adust ikoptions
@@ -108,110 +106,101 @@ function [xtraj, info] = collisionFreeIKTraj(r,t,q_seed_traj,q_nom_traj,varargin
   ikoptions = ikoptions.setQ(0*ikoptions.Q);
   ikoptions = ikoptions.setQv(0*ikoptions.Q);
 
-  %q_nom_traj = ConstantTrajectory(q_nom_traj.eval(tspan(1)));
+  %q_nom_traj = ConstantTrajectory(q_nom_traj.eval(t(1)));
 
   num_collision_check_samples = 500;
-  t_fine = linspace(tspan(1), tspan(end), num_collision_check_samples);
+  t_fine = linspace(t(1), t(end), num_collision_check_samples);
 
-  for nt = 2:1:7 % Knot point loop
+  additional_t_samples = [];
+  n_additional_t_samples = numel(additional_t_samples);
+  info = NaN;
+  planning_done = false;
 
-    t = linspace(tspan(1), tspan(end), nt);
+  while ~planning_done % Additional time samples loop
+    % Set additional t samples
+    ikoptions = ikoptions.setAdditionaltSamples(additional_t_samples);
 
-    additional_t_samples = [];
-    n_additional_t_samples = numel(additional_t_samples);
-    info = NaN;
-    planning_done = false;
-
-    while ~planning_done % Additional time samples loop
-      % Set additional t samples
-      ikoptions = ikoptions.setAdditionaltSamples(additional_t_samples);
-
-      if ~options.quiet
-        disp('Running inverseKinTraj...');
-        fprintf(['nt                     = %d\n', ...
-                 'n_additional_t_samples = %d\n\n'],nt, n_additional_t_samples);
-      end
-
-      last_info = info;
-      [xtraj, info, infeasible_constraint] = inverseKinTraj(r, t, q_seed_traj, q_nom_traj, constraints{:}, ikoptions);
-      disp(info);
-      if (info > 10)
-        % inverseKinTraj failed. Break out to knot point loop
-        planning_done = false;
-        %q_seed_traj = q_nom_traj;
-        if (1 || info == last_info)
-          if ~options.quiet
-            display(infeasibleConstraintMsg(infeasible_constraint));
-          end
-          break;
-        end
-      else
-        % inverseKinTraj succeeds. Proceed to collision checking
-        %q_seed_traj = xtraj;
-        planning_done = true;
-      end;
-
-      q_fine = xtraj.eval(t_fine);
-      q_fine = q_fine(1:nq,:);
-
-     % Check for collisions on a fine discretization of the trajectory
-      distance = zeros(1,size(q_fine,2));
-      for i = 1:size(q_fine,2)
-        [ptsA,ptsB] = r.allCollisions(q_fine(:,i));
-        planning_done = planning_done && isempty(ptsA);
-        if ~isempty(ptsA)
-          distance(i) = max(sum((ptsA-ptsB).^2,1));
-        end
-      end
-
-      if ~planning_done 
-        % Then we either have collisions or inverseKinTraj failed.
-        [max_penetration_distance,max_penetration_idx] = max(distance);
-        if max_penetration_distance > 0
-          if max_penetration_distance < 0.01;
-            q_seed_traj = xtraj;
-          end
-          % The trajectory returned by inverseKinTraj contained collisions!
-          % Add additional t_samples at the following points:
-          %   * time of first penetration
-          %   * time of maximum penetration
-          %   * time of last penetration
-          %   * halfway between t0 and time of first penetration
-          %   * halfway between time of last penetration and tf
-          if options.visualize
-            [ptsA,ptsB] = r.allCollisions(q_fine(:,max_penetration_idx));
-            for j = 1:size(ptsA,2), 
-              lcmgl.glColor3f(1,0,0);
-              lcmgl.sphere(ptsA(:,j),0.02,20,20);
-              lcmgl.glColor3f(0,0,1);
-              lcmgl.sphere(ptsB(:,j),0.02,20,20); 
-            end;
-            lcmgl.switchBuffers();
-            v.draw(0,[q_fine(:,max_penetration_idx);zeros(nq,1)]);
-            xtraj = xtraj.setOutputFrame(v.getInputFrame());
-            playback(v, xtraj);
-          end
-          first_penetration_idx = find(distance>0, 1, 'first');
-          last_penetration_idx = find(distance>0, 1, 'last');
-          additional_t_samples(end+1) = t_fine(floor(first_penetration_idx/2));
-          additional_t_samples(end+1) = t_fine(first_penetration_idx);
-          additional_t_samples(end+1) = t_fine(max_penetration_idx);
-          additional_t_samples(end+1) = t_fine(last_penetration_idx);
-          additional_t_samples(end+1) = t_fine(floor((num_collision_check_samples + last_penetration_idx)/2));
-          %n_additional_t_samples = numel(additional_t_samples);
-          %[~,unique_idx] = unique(round(additional_t_samples/0.01));
-          %additional_t_samples = additional_t_samples(unique_idx);
-          n_additional_t_samples = numel(additional_t_samples);
-          if options.visualize
-            figure(7);
-            plot(t_fine,distance,'-b',additional_t_samples,zeros(size(additional_t_samples)),'r.');
-          end
-        end
-      end;
+    if ~options.quiet
+      disp('Running inverseKinTraj...');
+      fprintf(['nt                     = %d\n', ...
+               'n_additional_t_samples = %d\n\n'],numel(t), n_additional_t_samples);
     end
 
-    if planning_done
-      break;
+    last_info = info;
+    [xtraj, info, infeasible_constraint] = inverseKinTraj(r, t, q_seed_traj, q_nom_traj, constraints{:}, ikoptions);
+    disp(info);
+    if (info > 10)
+      % inverseKinTraj failed. Terminate and return info
+      %q_seed_traj = q_nom_traj;
+      if (1 || info == last_info)
+        if ~options.quiet
+          display(infeasibleConstraintMsg(infeasible_constraint));
+        end
+        break;
+      end
+      return;
+    else
+      % inverseKinTraj succeeds. Proceed to collision checking
+      %q_seed_traj = xtraj;
+      planning_done = true;
+    end;
+
+    q_fine = xtraj.eval(t_fine);
+    q_fine = q_fine(1:nq,:);
+
+    % Check for collisions on a fine discretization of the trajectory
+    distance = zeros(1,size(q_fine,2));
+    for i = 1:size(q_fine,2)
+      [ptsA,ptsB] = r.allCollisions(q_fine(:,i));
+      planning_done = planning_done && isempty(ptsA);
+      if ~isempty(ptsA)
+        distance(i) = max(sum((ptsA-ptsB).^2,1));
+      end
     end
 
+    if ~planning_done 
+      % Then we either have collisions or inverseKinTraj failed.
+      [max_penetration_distance,max_penetration_idx] = max(distance);
+      if max_penetration_distance > 0
+        if max_penetration_distance < 0.01;
+          q_seed_traj = xtraj;
+        end
+        % The trajectory returned by inverseKinTraj contained collisions!
+        % Add additional t_samples at the following points:
+        %   * time of first penetration
+        %   * time of maximum penetration
+        %   * time of last penetration
+        %   * halfway between t0 and time of first penetration
+        %   * halfway between time of last penetration and tf
+        if options.visualize
+          [ptsA,ptsB] = r.allCollisions(q_fine(:,max_penetration_idx));
+          for j = 1:size(ptsA,2), 
+            lcmgl.glColor3f(1,0,0);
+            lcmgl.sphere(ptsA(:,j),0.02,20,20);
+            lcmgl.glColor3f(0,0,1);
+            lcmgl.sphere(ptsB(:,j),0.02,20,20); 
+          end;
+          lcmgl.switchBuffers();
+          v.draw(0,[q_fine(:,max_penetration_idx);zeros(nq,1)]);
+          xtraj = xtraj.setOutputFrame(v.getInputFrame());
+          playback(v, xtraj);
+        end
+        first_penetration_idx = find(distance>0, 1, 'first');
+        last_penetration_idx = find(distance>0, 1, 'last');
+        additional_t_samples(end+1) = t_fine(floor(first_penetration_idx/2));
+        additional_t_samples(end+1) = t_fine(first_penetration_idx);
+        additional_t_samples(end+1) = t_fine(max_penetration_idx);
+        additional_t_samples(end+1) = t_fine(last_penetration_idx);
+        additional_t_samples(end+1) = t_fine(floor((num_collision_check_samples + last_penetration_idx)/2));
+        %n_additional_t_samples = numel(additional_t_samples);
+        %[~,unique_idx] = unique(round(additional_t_samples/0.01));
+        %additional_t_samples = additional_t_samples(unique_idx);
+        n_additional_t_samples = numel(additional_t_samples);
+        if options.visualize
+          figure(7);
+          plot(t_fine,distance,'-b',additional_t_samples,zeros(size(additional_t_samples)),'r.');
+        end
+      end
+    end
   end
+end
