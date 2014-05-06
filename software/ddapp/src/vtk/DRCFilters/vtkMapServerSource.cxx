@@ -392,7 +392,7 @@ protected:
     if (itr == this->CurrentMapIds.end())
       {
         this->CurrentMapIds[viewId] = -1;
-        itr = this->CurrentMapIds.begin();
+        itr = this->CurrentMapIds.find(viewId);
       }
 
     return ++itr->second;
@@ -418,7 +418,7 @@ protected:
   vtkSmartPointer<vtkImageData> ConvertDepthImage(std::shared_ptr<maps::DepthImage> depthImage)
   {
     int width = depthImage->getWidth();
-    int height = depthImage->getWidth();
+    int height = depthImage->getHeight();
 
     vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
     image->SetWholeExtent(0, width-1, 0, height-1, 0, 0);
@@ -586,13 +586,13 @@ vtkIdType vtkMapServerSource::GetCurrentMapId(int viewId)
 //-----------------------------------------------------------------------------
 void vtkMapServerSource::GetDataForMapId(int viewId, vtkIdType mapId, vtkPolyData* polyData)
 {
-  return this->Internal->Listener->GetDataForMapId(viewId, mapId, polyData);
+  this->Internal->Listener->GetDataForMapId(viewId, mapId, polyData);
 }
 
 //-----------------------------------------------------------------------------
 void vtkMapServerSource::GetDataForMapId(int viewId, vtkIdType mapId, vtkImageData* imageData, vtkTransform* transform)
 {
-  return this->Internal->Listener->GetDataForMapId(viewId, mapId, imageData, transform);
+  this->Internal->Listener->GetDataForMapId(viewId, mapId, imageData, transform);
 }
 
 //-----------------------------------------------------------------------------
