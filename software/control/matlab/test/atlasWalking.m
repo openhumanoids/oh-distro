@@ -2,7 +2,7 @@ function atlasWalking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-joint_str = {'leg'};% <---- cell array of (sub)strings  
+joint_str = {'leg'};% <---- cell array of (sub)strings
 
 % load robot model
 r = Atlas();
@@ -37,13 +37,13 @@ gains.ff_qd = zeros(nu,1);
 gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
-% move to fixed point configuration 
+% move to fixed point configuration
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-gains_copy = getAtlasGains(); 
+gains_copy = getAtlasGains();
 % reset force gains for joint being tuned
-gains.k_f_p(joint_act_ind) = gains_copy.k_f_p(joint_act_ind); 
+gains.k_f_p(joint_act_ind) = gains_copy.k_f_p(joint_act_ind);
 gains.ff_f_d(joint_act_ind) = gains_copy.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains_copy.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains_copy.ff_qd_d(joint_act_ind);
@@ -56,8 +56,8 @@ ref_frame.updateGains(gains);
 
 % get current state
 [x,~] = getMessage(state_plus_effort_frame);
-x0 = x(1:2*nq); 
-q0 = x0(1:nq); 
+x0 = x(1:2*nq);
+q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
@@ -103,7 +103,9 @@ request.use_new_nominal_state = true;
 request.new_nominal_state = r.getStateFrame().lcmcoder.encode(0, x0);
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
-walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
+
+% No-op: just make sure we can cleanly encode and decode the plan as LCM
+walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
 
 ts = walking_plan.ts;
 T = ts(end);
@@ -115,7 +117,7 @@ for i=1:length(ts)
 	lcmgl.glColor3f(0, 0, 1);
 	lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
   lcmgl.glColor3f(0, 1, 0);
-	lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);  
+	lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
 end
 lcmgl.switchBuffers();
 
@@ -204,47 +206,47 @@ while tt<T
     end
     tt=t-toffset;
     tau = x(2*nq+(1:nq));
-    
+
     % low pass filter floating base velocities
     float_v = (1-alpha_v)*float_v + alpha_v*x(nq+(1:6));
     x(nq+(1:6)) = float_v;
-    
+
     q = x(1:nq);
     qd = x(nq+(1:nq));
     %qt = fasteval(qtraj,tt);
- 
+
     fc = output(fcb,tt,[],[q;qd]);
-    
+
     junk = output(fshift,tt,[],[q;qd]);
-    
+
     u_and_qdd = output(qp_sys,tt,[],[q0; q;qd; fc; q;qd; fc]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+(1:nq));
-    
+
     qd_int_state = mimoUpdate(vo,tt,qd_int_state,[q;qd],qdd,fc);
     qd_ref = mimoOutput(vo,tt,qd_int_state,[q;qd],qdd,fc);
-    
+
     % fade in desired torques to avoid spikes at the start
     udes(joint_act_ind) = u(joint_act_ind);
     tau = tau(act_idx_map);
     alpha = min(1.0,tt/torque_fade_in);
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
-    
+
     qddes(joint_act_ind) = qd_ref(joint_act_ind);
- 
+
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
 
 disp('moving back to fixed point using position control.');
-gains = getAtlasGains(); 
+gains = getAtlasGains();
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
 gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
-% move to fixed point configuration 
+% move to fixed point configuration
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
