@@ -25,7 +25,7 @@ nu = getNumInputs(r);
 
 joints_act = find(~cellfun(@isempty,strfind(input_frame.coordinates,jointstr)));
 
-gains = getAtlasGains(input_frame); 
+gains = getAtlasGains(); 
 % zero out force gains to start --- move to nominal joint position
 gains.k_f_p = zeros(nu,1);
 gains.ff_f_d = zeros(nu,1);
@@ -40,7 +40,7 @@ act_idx = getActuatedJoints(r);
 atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,4);
 
 % copy force control gains back in
-gains2 = getAtlasGains(input_frame); 
+gains2 = getAtlasGains(); 
 gains.k_f_p(joints_act) = gains2.k_f_p(joints_act);
 gains.ff_f_d(joints_act) = gains2.ff_f_d(joints_act);
 gains.ff_qd(joints_act) = gains2.ff_qd(joints_act);
