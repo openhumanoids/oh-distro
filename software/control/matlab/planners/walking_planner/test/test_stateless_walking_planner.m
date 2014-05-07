@@ -75,6 +75,16 @@ request.use_new_nominal_state = false;
 request.footstep_plan = plan_msg;
 
 wp = StatelessWalkingPlanner();
+% Compute walking trajectory
 walking_plan = wp.plan_walking(r, request, true);
 lc = lcm.lcm.LCM.getSingleton();
-lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+% lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+
+% Compute walking controller
+walking_plan = wp.plan_walking(r, request, false);
+lc = lcm.lcm.LCM.getSingleton();
+% lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+ts = linspace(walking_plan.zmptraj.tspan(1), walking_plan.zmptraj.tspan(2), 1000);
+zmps = walking_plan.zmptraj.eval(ts);
+plot(ts, zmps(1,:), ts, zmps(2,:))
+legend('x', 'y')

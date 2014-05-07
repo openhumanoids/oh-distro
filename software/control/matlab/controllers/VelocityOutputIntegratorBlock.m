@@ -64,14 +64,17 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
         qd_err(obj.l_ankle_idx)=0;
       end
       if r_foot_contact>0.5
-        qd_err(obj.r_ankle_idx) = 0;
+        qd_err(obj.r_ankle_idx)=0;
       end
 			
-      delta_max = 2.0;
-      y = max(-delta_max,min(delta_max,lambda*qd_err(obj.act_idx_map)));
+      delta_max = 1.0;
+      %y = max(-delta_max,min(delta_max,lambda*qd_err(obj.act_idx_map)));
+      y = max(-delta_max,min(delta_max,qd_err(obj.act_idx_map)));
 		end
 		
 		function next_state=mimoUpdate(obj,t,state,varargin)
+      x = varargin{1};
+      qd = x(obj.nq+1:end);
 			qdd = varargin{2};
 			fc = varargin{3};
 
@@ -83,7 +86,8 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			qd_int = state(5:end);
 			dt = t-state(3);
 			
-			qd_int = qd_int + qdd*dt; % leaky
+      eta = 0.0;
+			qd_int = ((1-eta)*qd_int + eta*qd) + qdd*dt; 
 			
       if l_foot_contact>0.5
         qd_int(obj.l_ankle_idx)=0;

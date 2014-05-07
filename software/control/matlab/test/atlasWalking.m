@@ -61,7 +61,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[1.0;0;0];
+v = R*[1;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -74,19 +74,21 @@ request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 20;
-request.params.min_num_steps = 10;
+request.params.min_num_steps = 1;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.28;
 request.params.max_step_width = 0.32;
-request.params.nom_forward_step = 0.1;
-request.params.max_forward_step = 0.4;
+request.params.nom_forward_step = 0.25;
+request.params.max_forward_step = 0.30;
+request.params.nom_upward_step = 0.2;
+request.params.nom_downward_step = 0.2;
 request.params.ignore_terrain = false;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.02;
+request.default_step_params.step_speed = 0.2;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -130,7 +132,7 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
 
 % traj = PPTrajectory(spline(ts,walking_plan.xtraj));
 % traj = traj.setOutputFrame(r.getStateFrame);
@@ -139,21 +141,26 @@ ctrl_data = SharedDataHandle(struct(...
 
 % instantiate QP controller
 options.slack_limit = 100;
-options.w_qdd = 0.01*ones(nq,1);
-options.W_hdot = 1000*diag([1;1;1;10;10;10]);
+options.w_qdd = 25.0*ones(nq,1);
+options.W_hdot = diag([10;10;10;10;10;10]);
+options.w_grf = 0.0075;
+options.w_slack = 0.005;
+options.Kp = 0; % com-z pd gains
+options.Kd = 0; % com-z pd gains
 options.input_foot_contacts = true;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.01;
+options.contact_threshold = 0.0075;
 options.output_qdd = true;
 
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 vo = VelocityOutputIntegratorBlock(r,options);
 fcb = FootContactBlock(r);
+fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
 options.Kp = 80.0*ones(nq,1);
-options.Kd = 6.0*ones(nq,1);
+options.Kd = 20.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -183,7 +190,7 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 % low pass filter for floating base velocities
-alpha_v = 0.2;
+alpha_v = 0.75;
 float_v = 0;
 
 udes = zeros(nu,1);
@@ -207,6 +214,8 @@ while tt<T
     %qt = fasteval(qtraj,tt);
  
     fc = output(fcb,tt,[],[q;qd]);
+    
+    junk = output(fshift,tt,[],[q;qd]);
     
     u_and_qdd = output(qp_sys,tt,[],[q0; q;qd; fc; q;qd; fc]);
     u=u_and_qdd(1:nu);

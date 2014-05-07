@@ -165,18 +165,18 @@ k_f_p(r_leg_akx) = 0.75; % 02-03-14, f+v
 ff_qd_d(back_bkz)  = 1.0;
 ff_qd_d(back_bky)  = 3.0;
 ff_qd_d(back_bkx)  = 3.0;
-ff_qd_d(l_leg_hpz) = 2.0; % 03-24-14, f+v 
+ff_qd_d(l_leg_hpz) = 1.0; % 03-24-14, f+v 
 ff_qd_d(l_leg_hpx) = 4.0; % 03-24-14, f+v 
 ff_qd_d(l_leg_hpy) = 4.0; % 03-24-14, f+v
 ff_qd_d(l_leg_kny) = 4.0; % 03-24-14, f+v
-ff_qd_d(l_leg_aky) = 60.0; 
-ff_qd_d(l_leg_akx) = 60.0; 
-ff_qd_d(r_leg_hpz) = 2.0; % 03-24-14, f+v 
+ff_qd_d(l_leg_aky) = 65.0; 
+ff_qd_d(l_leg_akx) = 65.0; 
+ff_qd_d(r_leg_hpz) = 1.0; % 03-24-14, f+v 
 ff_qd_d(r_leg_hpx) = 4.0; % 03-24-14, f+v  
 ff_qd_d(r_leg_hpy) = 4.0; % 03-24-14, f+v 
 ff_qd_d(r_leg_kny) = 4.0; % 03-24-14, f+v
-ff_qd_d(r_leg_aky) = 60.0; 
-ff_qd_d(r_leg_akx) = 60.0; 
+ff_qd_d(r_leg_aky) = 65.0; 
+ff_qd_d(r_leg_akx) = 65.0; 
 
 
 gains = struct();

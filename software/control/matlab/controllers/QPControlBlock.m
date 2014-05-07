@@ -277,7 +277,7 @@ classdef QPControlBlock < MIMODrakeSystem
     
 %    QPControlBlock.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
   
-    q_ddot_des = varargin{1};
+    qddot_des = varargin{1};
     ft = varargin{2};
     hand_ft = ft(6+(1:12));
     % IMPORTANT NOTE: I'm assuming the atlas state is always the first
@@ -545,13 +545,13 @@ classdef QPControlBlock < MIMODrakeSystem
         fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J*Iqdd;
         fqp = fqp - u0'*R_ls*J*Iqdd;
         fqp = fqp - y0'*Qy*D_ls*J*Iqdd;
-        fqp = fqp - obj.w*q_ddot_des'*Iqdd;
+        fqp = fqp - obj.w*qddot_des'*Iqdd;
         
         % quadratic slack var cost 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
-        fqp = -q_ddot_des'*Iqdd;
+        fqp = -qddot_des'*Iqdd;
       end
 
       %----------------------------------------------------------------------
@@ -643,7 +643,7 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdot,active_supports,qdd] = QPControllermex(obj.mex_ptr.data,1,q_ddot_des,x,q_multi, ...
+      [y,Vdot,active_supports,qdd] = QPControllermex(obj.mex_ptr.data,1,qddot_des,x,q_multi, ...
           supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu, ...
           contact_sensor,contact_thresh,height,obj.include_angular_momentum);
     end
@@ -667,7 +667,7 @@ classdef QPControlBlock < MIMODrakeSystem
         height = 0;
       end
       [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data, ...
-        0,q_ddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot, ...
+        0,qddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot, ...
         x0,u0,y0,mu,contact_sensor,contact_thresh,height,obj.include_angular_momentum);
       if (nc>0)
         valuecheck(active_supports_mex,active_supports);

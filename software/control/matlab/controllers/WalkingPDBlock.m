@@ -86,30 +86,24 @@ classdef WalkingPDBlock < MIMODrakeSystem
       cost.base_roll = 1000;
       cost.base_pitch = 1000;
       cost.base_yaw = 0;
-      cost.back_bkz = 1;
+      cost.back_bkz = 10;
       cost.back_bky = 10;
       cost.back_bkx = 10;
+      cost.l_leg_hpz = 10;
+      cost.r_leg_hpz = 10;
+      cost.l_leg_kny = 5;
+      cost.r_leg_kny = 5;
 
       cost = double(cost);
       
       obj.ikoptions = struct();
       obj.ikoptions.Q = diag(cost(1:obj.nq));
 
-      % Prevent the knee from locking
-      %[obj.ikoptions.jointLimitMin, obj.ikoptions.jointLimitMax] = r.getJointLimits();
-      %joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
-      %obj.ikoptions.jointLimitMin(~cellfun(@isempty,strfind(joint_names,'kny'))) = 0.6;
-
       obj.robot = r;
       obj.max_nrm_err = 1.5;      
     end
    
-    function y=mimoOutput(obj,t,~,varargin)
-%       global infocount 
-%       if isempty(infocount)
-%         infocount = 0;
-%       end
-      
+    function y=mimoOutput(obj,t,~,varargin)      
       obj.ikoptions.q_nom = varargin{1};
 
 			x = varargin{2};
@@ -119,19 +113,18 @@ classdef WalkingPDBlock < MIMODrakeSystem
       if obj.input_foot_contacts
 				fc = varargin{3};
 				
-				if fc(1) > 0.5 % left foot in contact
-%         Kp(obj.l_ankle_idx,obj.l_ankle_idx) = 0*eye(2);
-%         Kd(obj.l_ankle_idx,obj.l_ankle_idx) = 0*eye(2);
-				end
-				if fc(2) > 0.5 % right foot in contact
-%         Kp(obj.r_ankle_idx,obj.r_ankle_idx) = 0*eye(2);
-%         Kd(obj.r_ankle_idx,obj.r_ankle_idx) = 0*eye(2);
-				end
-			end
+        if fc(1) > 0.5 % left foot in contact
+          obj.Kp(obj.l_ankle_idx) = 20;
+          obj.Kd(obj.l_ankle_idx) = 3;
+        end
+        if fc(2) > 0.5 % right foot in contact
+          obj.Kp(obj.r_ankle_idx) = 20;
+          obj.Kd(obj.r_ankle_idx) = 3;
+        end
+      end
 			
 			cdata = obj.controller_data.data;
 
-      
       approx_args = {};
       for j = 1:length(cdata.link_constraints)
         if ~isempty(cdata.link_constraints(j).traj)
@@ -154,12 +147,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
       if nrmerr > obj.max_nrm_err
         err_q = obj.max_nrm_err * err_q / nrmerr;
       end
-			
-			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
-%       if infocount > 0
-%   		  save(sprintf('pd_dump_t=%2.3f.mat',t),'q','q_des','err_q','y','compos','approx_args');
-%       end
      
+			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
 		end
   end
   

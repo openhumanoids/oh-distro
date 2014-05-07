@@ -55,7 +55,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.75;
+request.default_step_params.step_speed = 0.5;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -126,7 +126,6 @@ options.dt = 0.002;
 options.slack_limit = 100;
 % options.w_qdd = 1.0*ones(nq,1);
 % options.w_qdd(findJointIndices(r,'leg'))=0;
-options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.001;
 

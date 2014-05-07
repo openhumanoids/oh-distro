@@ -65,8 +65,8 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 120;
-if 0
+T = 40;
+if 1
   % create figure 8 zmp traj
   dt = 0.01;
   ts = 0:dt:T;
@@ -151,13 +151,17 @@ ctrl_data = SharedDataHandle(struct(...
 
 
 % instantiate QP controller
-options.slack_limit = 50;
-options.w_qdd = 0.01*ones(nq,1);
-options.W_hdot = 1000*diag([1;1;1;10;10;10]);
+options.slack_limit = 100;
+options.w_qdd = 1.0*ones(nq,1);
+options.W_hdot = diag([10;10;10;10;10;10]);
+options.w_grf = 0.0075;
+options.w_slack = 0.005;
+options.Kp = 0; % com-z pd gains
+options.Kd = 0; % com-z pd gains
 options.input_foot_contacts = true;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.01;
+options.contact_threshold = 0.02;
 options.output_qdd = true;
 
 qp = MomentumControlBlock(r,{},ctrl_data,options);
@@ -166,7 +170,7 @@ fcb = FootContactBlock(r);
 
 % cascade IK/PD block
 options.Kp = 80.0*ones(nq,1);
-options.Kd = 6.0*ones(nq,1);
+options.Kd = 12.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
@@ -266,7 +270,7 @@ for i=1:size(xtraj,2)
   if i==1
 		qdd = 0*qd;
 	else
-		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/dt;
+		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/0.002;
   end
   qd_prev = qd;
 	qdd_prev = qdd;  

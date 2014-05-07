@@ -9,7 +9,7 @@ lc = lcm.LCM()
 
 class ContactMonitor:
     def __init__(self):
-		self.fz_threshold = 200 # newtons
+		self.fz_threshold = 100 # newtons
 		self.l_foot_contact = False
 		self.r_foot_contact = False
 
@@ -30,6 +30,7 @@ class ContactMonitor:
 def main():
 	c = ContactMonitor()
 	lc.subscribe("EST_ROBOT_STATE", c.state_handle)
+	print 'running contact monitor...'
 	while True:
 		lc.handle()
 

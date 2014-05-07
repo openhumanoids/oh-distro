@@ -153,7 +153,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   int use_fast_qp = (int) mxGetScalar(prhs[narg++]);
   
-  Map< VectorXd > q_ddot_des(mxGetPr(prhs[narg++]),nq);
+  Map< VectorXd > qddot_des(mxGetPr(prhs[narg++]),nq);
   
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
@@ -306,7 +306,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
               ustar[1]*pdata->mass, 
               (pdata->Kp*(comz_des-xcom[2]) + pdata->Kd*(dcomz_des-pdata->J.row(2)*qdvec) + ddcomz_des)*pdata->mass;
 
-  Vector3d k = pdata->Ag.topRows(3)*qdvec;
+  VectorXd h = pdata->Ag*qdvec;
+  Vector3d k = h.head(3);
   Vector3d kdot_des = -5.0 *k; 
 
   VectorXd hdot_des(6,1);
@@ -322,13 +323,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       // NOTE: moved Hqp calcs below, because I compute the inverse directly for FastQP (and sparse Hqp for gurobi)
       pdata->fqp = qdvec.transpose()*pdata->Agdot.transpose()*pdata->W_hdot*pdata->Ag;
       pdata->fqp -= hdot_des.transpose()*pdata->W_hdot*pdata->Ag;
-      pdata->fqp -= (pdata->w_qdd.array()*q_ddot_des.array()).matrix().transpose();
+      pdata->fqp -= (pdata->w_qdd.array()*qddot_des.array()).matrix().transpose();
   
       // obj(1:nq) = fqp
       f.head(nq) = pdata->fqp.transpose();
      } else {
       // obj(1:nq) = -qddot_des
-      f.head(nq) = -q_ddot_des;
+      f.head(nq) = -qddot_des;
     } 
   }
   f.tail(nf+neps) = VectorXd::Zero(nf+neps);
@@ -385,7 +386,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // add joint acceleration constraints
     for (int i=0; i<num_condof; i++) {
       Aeq(equality_ind,(int)condof[i]-1) = 1;
-      beq[equality_ind++] = q_ddot_des[(int)condof[i]-1];
+      beq[equality_ind++] = qddot_des[(int)condof[i]-1];
     }
   }  
   
@@ -449,14 +450,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (use_fast_qp > 0)
   { // set up and call fastqp
     info = fastQP(QBlkDiag, f, Aeq, beq, Ain_lb_ub, bin_lb_ub, pdata->active, alpha);
-    if (info<0)  	mexPrintf("fastQP info = %d.  Calling gurobi.\n", info);
+    if (info<0)  	mexPrintf("fastQP info=%d... calling Gurobi.\n", info);
   }
 
   if (info<0) {
 		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
 	  int status; CGE ( GRBgetintattr(model, "Status", &status) , pdata->env);
-	  if (status!=2) mexPrintf("gurobi reports non-optimal status = %d\n", status);
+	  if (status!=2) mexPrintf("Gurobi reports non-optimal status = %d.\n", status);
   }
+  
+  // temp, for testing: 
+  //pdata->active.clear();
 
 
   //----------------------------------------------------------------------
@@ -469,24 +473,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   y = pdata->B_act.transpose()*(pdata->H_act*qdd + pdata->C_act - D_act*beta);
   //y = pdata->B_act.jacobiSvd(ComputeThinU|ComputeThinV).solve(pdata->H_act*qdd + pdata->C_act - Jz_act.transpose()*lambda - D_act*beta);
   
-  if (nlhs>0) plhs[0] = eigenToMatlab(y);
-
+  if (nlhs>0) {
+    plhs[0] = eigenToMatlab(y);
+  }
+  
   if (nlhs>1) {
-      plhs[1] = mxCreateDoubleMatrix(1,active_supports.size(),mxREAL);
-      pr = mxGetPr(plhs[1]);
+    plhs[1] = eigenToMatlab(qdd);
+  }
+
+  if (nlhs>2) {
+    plhs[2] = mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
+    memcpy(mxGetData(plhs[2]),&info,sizeof(int));
+  }
+
+  if (nlhs>3) {
+      plhs[3] = mxCreateDoubleMatrix(1,active_supports.size(),mxREAL);
+      pr = mxGetPr(plhs[3]);
       int i=0;
       for (vector<SupportStateElement>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
           pr[i++] = (double) (iter->body_idx + 1);
       }
-  }
-
-  if (nlhs>2) {
-    plhs[2] = eigenToMatlab(qdd);
-  }
-
-  if (nlhs>3) {
-    plhs[3] = mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
-    memcpy(mxGetData(plhs[3]),&info,sizeof(int));
   }
 
   if (nlhs>4) {
@@ -523,6 +529,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   if (nlhs>12) {
     plhs[12] = eigenToMatlab(alpha);
+  }
+
+  if (nlhs>13) {
+    plhs[13] = mxCreateDoubleMatrix(1,pdata->active.size(),mxREAL);
+    pr = mxGetPr(plhs[13]);
+    int i=0;
+    for (set<int>::iterator iter = pdata->active.begin(); iter!=pdata->active.end(); iter++) {
+      pr[i++] = (double) (*iter);
+    }
+  }
+
+  if (nlhs>14) {
+    plhs[14] = eigenToMatlab(h);
+  }
+
+  if (nlhs>15) {
+    plhs[15] = eigenToMatlab(hdot_des);
   }
 
 
