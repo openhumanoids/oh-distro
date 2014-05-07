@@ -15,6 +15,7 @@ classdef SilentInitController < DRCController
       obj.robot = r;
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),'manip');
       obj = addLCMTransition(obj,'ATLAS_COMMAND_UNSAFE',drc.atlas_command_t(),'manip');  
+      obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
     end
 
     function msg = status_message(obj,t_sim,t_ctrl)
