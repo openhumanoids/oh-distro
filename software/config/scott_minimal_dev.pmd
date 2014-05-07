@@ -1,0 +1,111 @@
+group "0.development" {
+    cmd "robot_deputy" {
+        exec = "bot-procman-deputy -n robot";
+        host = "localhost";
+    }
+    cmd "base_deputy" {
+        exec = "bot-procman-deputy -n base";
+        host = "localhost";
+    }
+}
+
+group "1.drivers" {
+    cmd "atlas-off" {
+        exec = "drc-atlas -p off -s";
+        host = "robot";
+    }
+    cmd "atlas-high" {
+        exec = "drc-atlas -p high -s";
+        host = "robot";
+    }
+    cmd "logger-robot" {
+        exec = "drc-lcm-logger.sh robot";
+        host = "robot";
+    }
+}
+
+group "2.core" {
+    cmd "aa-sync" {
+        exec = "drc-state-sync -b -e -k";
+        host = "robot";
+    }
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
+        host = "robot";
+    }
+    cmd "model_LH_RH" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
+        host = "robot";
+    }
+    cmd "viewer" {
+        exec = "$DRC_BASE/software/ddapp/pod-build/bin/drake-designer";
+        host = "robot";
+    }
+}
+
+group "3.p_and_c" {
+    cmd "contact_monitor" {        
+    	exec = "drc-contact-monitor";
+        host = "robot";
+    }
+}
+
+
+group "4.state_est" {
+    cmd "state-sync-mit" {
+        exec = "drc-state-sync -e -k -o EST_ROBOT_STATE";
+        host = "robot";
+    }
+    cmd "se-fusion" {
+        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02_control.cfg";
+        host = "robot";
+    }
+}
+
+group "5.debug" {
+    cmd "AtlasVisualizer" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasVisualizer;\"";
+        host = "robot";
+        stop_signal = 15;
+    }
+    cmd "left_leg_scope" {
+        exec = "signal-scope $DRC_BASE/software/config/signal_scope_configs/l_leg_scope.json";
+        host = "robot";
+    }
+    cmd "right_leg_scope" {
+        exec = "signal-scope $DRC_BASE/software/config/signal_scope_configs/r_leg_scope.json";
+        host = "robot";
+    }
+    cmd "foot_contacts_scope" {
+        exec = "signal-scope $DRC_BASE/software/config/signal_scope_configs/foot_contacts.json";
+        host = "robot";
+    }
+}
+
+#################################################################
+
+script "start pressure off" { 
+    start group "0.development";
+    start group "2.core";
+    start group "3.p_and_c";
+    start cmd "atlas-off";
+ }
+
+script "robot start" { 
+    stop cmd "atlas-high";
+    stop cmd "atlas-off";
+    wait ms 2000;
+    start cmd "atlas-high";
+}
+
+script "MIT state est" { 
+    stop cmd "aa-sync";
+    wait ms 1000;
+    start group "4.state_est";
+}
+
+script "BDI state est" { 
+    stop group "4.state_est";
+    wait ms 1000;
+    start cmd "aa-sync";
+}

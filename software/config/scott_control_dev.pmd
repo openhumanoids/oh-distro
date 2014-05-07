@@ -8,14 +8,17 @@ group "0.development" {
         host = "localhost";
     }
 }
-
-group "1.drivers" {
+group "a.0.drivers" {
+    cmd "multisense" {
+        exec = "drc-multisense -o 2";
+        host = "robot";
+    }
     cmd "atlas-off" {
-        exec = "drc-atlas -p off -s";
+        exec = "drc-atlas -p off";
         host = "robot";
     }
     cmd "atlas-high" {
-        exec = "drc-atlas -p high -s";
+        exec = "drc-atlas -p high";
         host = "robot";
     }
     cmd "logger-robot" {
@@ -24,88 +27,158 @@ group "1.drivers" {
     }
 }
 
-group "2.core" {
+
+group "a.1.core" {
+    cmd "spin-lidar" {
+        exec = "spin-lidar-command";
+        host = "robot";
+    }
     cmd "aa-sync" {
-        exec = "drc-state-sync -b -e -k";
+        exec = "drc-state-sync -e -o EST_ROBOT_STATE";
+        host = "robot";
+    }
+    cmd "fusion" {
+        exec = "se-fusion";
+        host = "robot";
+    }
+    cmd "gpf-laser" {
+        exec = "gpf-laser";
+        host = "robot";
+    }
+    cmd "viewer" {
+        exec = "bash /home/drc/drake_designer_cmd.sh";
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
+        host = "robot";
+    }
+    cmd "j2f" {
+        exec = "drc-joints2frames -g -b";
+        host = "robot";
+    }
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "robot";
+    }
+    cmd "maps-registrar" {
+        exec = "maps-registrar";
+        host = "robot";
+    }
+    cmd "lidar-passthrough" {
+        exec = "drc-lidar-passthrough -c 0.06";
+        host = "robot";
+    }
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "robot";
+    }
+    cmd "utime-publisher" {
+        exec = "drc-utime-publisher -f 0";
+        host = "robot";
+    }
+    cmd "drc-frequency" {
+        exec = "drc-frequency";
+        host = "robot";
+    }
+    cmd "printf-cache" {
+        exec = "drc-printf-cache";
+        host = "robot";
+    }
+}
+
+group "a.2.p_and_c" {
+    cmd "BotBDIStepTranslator" {
+        exec = "drc-bdi-step-translator";
+        host = "robot";
+    }
+    cmd "AtlasManipController" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
+        host = "robot";
+        stop_signal = 15;
+    }
+    cmd "EncoderCalibration" {
+        exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders(true);\"";
+        host = "robot";
+        stop_signal = 15;
+    }
+}
+
+group "a.3.models" {   
+    cmd "model_LN_RN" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
+        host = "robot";
+    }
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "robot";
     }
     cmd "model_LH_RH" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
         host = "robot";
     }
-    cmd "viewer" {
-        exec = "$DRC_BASE/software/ddapp/pod-build/bin/drake-designer";
+    cmd "model_LP_RP" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RP.urdf";
+        host = "robot";
+    }
+    cmd "model_LI_RI" {
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
         host = "robot";
     }
 }
 
-group "3.p_and_c" {
-    cmd "contact_monitor" {        
-    	exec = "drc-contact-monitor";
-        host = "robot";
+group "b.2.p_and_c" {
+    cmd "BaseBDIStepTranslator" {
+       exec = "drc-bdi-step-translator -b";
+       host = "base";
+    }
+    cmd "FootstepPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners']); p=CombinedPlanner(); p.run;\"";
+       host = "base";
+       stop_signal = 15;
     }
 }
 
-
-group "4.state_est" {
-    cmd "state-sync-mit" {
-        exec = "drc-state-sync -e -k -o EST_ROBOT_STATE";
+group "m.state_est" {
+    cmd "state-sync-bdi-separate" {
+        exec = "drc-state-sync -b -e -o EST_ROBOT_STATE_BDI -p";
         host = "robot";
     }
-    cmd "se-fusion" {
-        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02_control.cfg";
+    cmd "state-sync-bdi-old" {
+        exec = "drc-state-sync -b -e -o EST_ROBOT_STATE";
         host = "robot";
     }
-}
-
-group "5.debug" {
-    cmd "AtlasVisualizer" {
-        exec = "matlab -nosplash -nodesktop -r \"addpath_control; atlasVisualizer;\"";
-        host = "robot";
-        stop_signal = 15;
-    }
-    cmd "left_leg_scope" {
-        exec = "signal-scope $DRC_BASE/software/config/signal_scope_configs/l_leg_scope.json";
-        host = "robot";
-    }
-    cmd "right_leg_scope" {
-        exec = "signal-scope $DRC_BASE/software/config/signal_scope_configs/r_leg_scope.json";
-        host = "robot";
-    }
-    cmd "foot_contacts_scope" {
-        exec = "signal-scope $DRC_BASE/software/config/signal_scope_configs/foot_contacts.json";
+    cmd "old-viewer" {
+        exec = "drc-viewer -a";
         host = "robot";
     }
 }
 
 #################################################################
 
-script "start pressure off" { 
+script "prep_core" { 
     start group "0.development";
-    start group "2.core";
-    start group "3.p_and_c";
+    start cmd "logger-robot";
+    start group "a.1.core";
+    start group "a.2.p_and_c";
+    start group "b.2.p_and_c";
     start cmd "atlas-off";
- }
+    start cmd "multisense";
+}
 
-script "robot start" { 
-    stop cmd "atlas-high";
+script "prep_LN_RN" { 
+    start cmd "model_LN_RN";
+    run_script "prep_core";
+}
+
+script "robot_start" { 
     stop cmd "atlas-off";
     wait ms 2000;
     start cmd "atlas-high";
 }
 
-script "MIT state est" { 
-    stop cmd "aa-sync";
-    wait ms 1000;
-    start group "4.state_est";
+script "kill_calibration_process" { 
+    stop cmd "EncoderCalibration";
 }
 
-script "BDI state est" { 
-    stop group "4.state_est";
-    wait ms 1000;
-    start cmd "aa-sync";
-}
+
