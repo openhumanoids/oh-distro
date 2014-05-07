@@ -67,7 +67,9 @@ request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
 request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
-walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
+
+% No-op: just make sure we can cleanly encode and decode the plan as LCM
+walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
 
 ts = walking_plan.ts;
 T = ts(end);
@@ -80,7 +82,7 @@ for i=1:length(ts)
 	lcmgl.glColor3f(0, 0, 1);
 	lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
   lcmgl.glColor3f(0, 1, 0);
-	lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);  
+	lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
 end
 lcmgl.switchBuffers();
 
@@ -141,7 +143,7 @@ if (use_ik)
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
 	clear ins outs;
 
-	% feedback PD block 
+	% feedback PD block
 % 	options.Kp = 270.0*ones(nq,1);
 % 	options.Kd = 30.0*ones(nq,1);
 % 	options.Kp(ankle_ind) = 80;
@@ -179,7 +181,7 @@ else
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
 	clear ins outs;
 
-	% feedback PD block 
+	% feedback PD block
 	pd = SimplePDBlock(r);
 	ins(1).system = 1;
 	ins(1).input = 1;
@@ -260,14 +262,14 @@ if 1%plot_comtraj
 
   lfoot = findLinkInd(r,'l_foot');
   rfoot = findLinkInd(r,'r_foot');
-  
+
   lstep_counter = 0;
   rstep_counter = 0;
 
   rms_zmp = 0;
   rms_com = 0;
   rms_foot = 0;
-  
+
   for i=1:length(ts)
     xt=traj.eval(ts(i));
     q=xt(1:nq);
@@ -284,10 +286,10 @@ if 1%plot_comtraj
 
     lfoot_cpos = contactPositions(r,kinsol,lfoot);
     rfoot_cpos = contactPositions(r,kinsol,rfoot);
-    
+
     lfoot_p = forwardKin(r,kinsol,lfoot,[0;0;0],1);
     rfoot_p = forwardKin(r,kinsol,rfoot,[0;0;0],1);
-    
+
 		lfoot_pos(:,i) = lfoot_p;
 		rfoot_pos(:,i) = lfoot_p;
 
@@ -299,14 +301,14 @@ if 1%plot_comtraj
       rstep_counter=rstep_counter+1;
       rfoot_steps(:,rstep_counter) = rfoot_p;
     end
-    
+
     rfoottraj = walking_ctrl_data.link_constraints(1).traj;
     lfoottraj = walking_ctrl_data.link_constraints(2).traj;
-    
+
     lfoot_des = eval(lfoottraj,ts(i));
     lfoot_des(3) = max(lfoot_des(3), 0.0811);     % hack to fix footstep planner bug
     rms_foot = rms_foot+norm(lfoot_des([1:3])-lfoot_p([1:3]))^2;
-  
+
     rfoot_des = eval(rfoottraj,ts(i));
     rfoot_des(3) = max(rfoot_des(3), 0.0811);     % hack to fix footstep planner bug
     rms_foot = rms_foot+norm(rfoot_des([1:3])-rfoot_p([1:3]))^2;
@@ -318,33 +320,33 @@ if 1%plot_comtraj
   rms_zmp = sqrt(rms_zmp/length(ts))
   rms_com = sqrt(rms_com/length(ts))
   rms_foot = sqrt(rms_foot/(lstep_counter+rstep_counter))
-  
-  figure(2); 
-  clf; 
+
+  figure(2);
+  clf;
   subplot(2,1,1);
   plot(ts,zmpdes(1,:),'b');
-  hold on;  
+  hold on;
   plot(ts,zmpact(1,:),'r.-');
   plot(ts,comdes(1,:),'g');
   plot(ts,com(1,:),'m.-');
-  hold off;  
-  
+  hold off;
+
   subplot(2,1,2);
   plot(ts,zmpdes(2,:),'b');
-  hold on;  
+  hold on;
   plot(ts,zmpact(2,:),'r.-');
   plot(ts,comdes(2,:),'g');
   plot(ts,com(2,:),'m.-');
-  hold off;  
+  hold off;
 
   figure(3)
   clf;
   plot(zmpdes(1,:),zmpdes(2,:),'b','LineWidth',3);
-  hold on;  
+  hold on;
   plot(zmpact(1,:),zmpact(2,:),'r.-','LineWidth',1);
   %plot(comdes(1,:),comdes(2,:),'g','LineWidth',3);
   %plot(com(1,:),com(2,:),'m.-','LineWidth',1);
- 
+
   left_foot_steps = eval(lfoottraj,lfoottraj.getBreaks);
   for i=1:size(left_foot_steps,2);
     cpos = rpy2rotmat(left_foot_steps(4:6,i)) * getBodyContacts(r,lfoot) + repmat(left_foot_steps(1:3,i),1,4);
@@ -356,7 +358,7 @@ if 1%plot_comtraj
       plot(cpos(1,[3,4]),cpos(2,[3,4]),'k-','LineWidth',2);
     end
   end
-  
+
   right_foot_steps = eval(rfoottraj,rfoottraj.getBreaks);
   for i=1:size(right_foot_steps,2);
     cpos = rpy2rotmat(right_foot_steps(4:6,i)) * getBodyContacts(r,rfoot) + repmat(right_foot_steps(1:3,i),1,4);
@@ -367,7 +369,7 @@ if 1%plot_comtraj
       plot(cpos(1,[3,4]),cpos(2,[3,4]),'k-','LineWidth',2);
     end
   end
-  
+
   for i=1:lstep_counter
     cpos = rpy2rotmat(lfoot_steps(4:6,i)) * getBodyContacts(r,lfoot) + repmat(lfoot_steps(1:3,i),1,4);
     plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
@@ -388,7 +390,7 @@ if 1%plot_comtraj
   plot(zmpact(1,:),zmpact(2,:),'r.-','LineWidth',1);
 
   axis equal;
-  
+
 if rms_com > length(footstep_plan.footsteps)*0.5
   error('drakeWalking unit test failed: error is too large');
   navgoal
