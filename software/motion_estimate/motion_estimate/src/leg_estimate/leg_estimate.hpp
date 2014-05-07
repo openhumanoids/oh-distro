@@ -54,6 +54,7 @@ enum filter_joint_mode {
   FILTER_JOINT_KALMAN  = 2,
 };
 
+const int NUM_FILT_JOINTS = 28;
 
 ///////////////////////////////////////////////////////////////
 class leg_estimate{

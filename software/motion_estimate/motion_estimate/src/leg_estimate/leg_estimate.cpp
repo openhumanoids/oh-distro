@@ -54,7 +54,7 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
     filter_joint_positions_ = FILTER_JOINT_KALMAN;
     double joint_process_noise  = bot_param_get_double_or_fail(botparam_, "state_estimator.legodo.joint_process_noise"); // 0.01; 
     double joint_observation_noise   = bot_param_get_double_or_fail(botparam_, "state_estimator.legodo.joint_observation_noise"); // 5E-4;
-    for (size_t i=0;i < 28; i++){
+    for (size_t i=0;i < NUM_FILT_JOINTS; i++){
       EstimateTools::SimpleKalmanFilter* a_filter = new EstimateTools::SimpleKalmanFilter (joint_process_noise, joint_observation_noise); // uses Eigen2d
       joint_kf_.push_back(a_filter);
     }      
@@ -507,11 +507,11 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name,
   // Two filters: low pass or kalman. low pass adds latency.
   // KF should replace it when I can get a good set of testing logs
   if (filter_joint_positions_ == FILTER_JOINT_LOWPASS){
-    for (size_t i=0 ; i <  28 ; i++){
+    for (size_t i=0 ; i <  NUM_FILT_JOINTS ; i++){
       joint_position[i]  = lpfilter_[i]->processSample( joint_position[i] );
     }
   }else if (filter_joint_positions_ == FILTER_JOINT_KALMAN){
-    for (size_t i=0 ; i <  28 ; i++){
+    for (size_t i=0 ; i <  NUM_FILT_JOINTS ; i++){
       double x_filtered;
       double x_dot_filtered;
       joint_kf_[i]->processSample( ((double) utime*1E-6) ,  joint_position[i] , joint_velocity[i] , x_filtered, x_dot_filtered);
