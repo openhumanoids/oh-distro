@@ -50,7 +50,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
         host = "robot";
     }
     cmd "j2f" {
@@ -92,7 +92,7 @@ group "a.2.p_and_c" {
         exec = "drc-bdi-step-translator";
         host = "robot";
     }
-    cmd "AtlasManipController" {
+    cmd "Controller" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
         host = "robot";
         stop_signal = 15;
@@ -180,5 +180,3 @@ script "robot_start" {
 script "kill_calibration_process" { 
     stop cmd "EncoderCalibration";
 }
-
-
