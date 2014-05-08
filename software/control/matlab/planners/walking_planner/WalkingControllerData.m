@@ -90,6 +90,7 @@ classdef WalkingControllerData
         msg.t_offset = 0;
       end
     end
+  end
 
   methods (Static = true)
     function obj = from_walking_plan_t(msg_data)
