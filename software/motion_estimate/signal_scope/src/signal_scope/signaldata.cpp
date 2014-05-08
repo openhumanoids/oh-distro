@@ -50,7 +50,7 @@ int SignalData::size() const
 {
   if (d_data->minIndex >= 0)
   {
-    return d_data->maxIndex - d_data->minIndex;
+    return (d_data->maxIndex - d_data->minIndex) + 1;
   }
 
   return d_data->xvalues.size();
