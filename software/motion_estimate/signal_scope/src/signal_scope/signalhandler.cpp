@@ -8,6 +8,7 @@
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/microstrain_comm.hpp>
 #include <lcmtypes/vicon.hpp>
+#include "lcmtypes/robotiqhand/status_t.hpp"
 #include "lcmtypes/drc/atlas_command_t.hpp"
 #include "lcmtypes/drc/atlas_foot_pos_est_t.hpp"
 #include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
@@ -21,7 +22,6 @@
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
 #include "lcmtypes/drc/controller_debug_t.hpp"
-
 #include "lcmtypes/mav/filter_state_t.hpp"
 
 #include <cassert>
@@ -460,8 +460,14 @@ define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexLi
 define_field_handler(FootContactLeft, drc::foot_contact_estimate_t, left_contact);
 define_field_handler(FootContactRight, drc::foot_contact_estimate_t, right_contact);
 
+
 // mav_filter_state_t
 define_array_handler(MavStateHandler, mav::filter_state_t, state, createIndexList(21));
+
+// robotiq_hand_status_t
+define_field_handler(RobotiqStatusCurrentA, robotiqhand::status_t, currentA);
+define_field_handler(RobotiqStatusCurrentB, robotiqhand::status_t, currentB);
+define_field_handler(RobotiqStatusCurrentC, robotiqhand::status_t, currentC);
 
 SignalHandler::SignalHandler(const SignalDescription* signalDescription, QObject* parent) : LCMSubscriber(parent)
 {
@@ -637,6 +643,9 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<FootContactLeft>();
     factory.registerClass<FootContactRight>();
     factory.registerClass<MavStateHandler>();
+    factory.registerClass<RobotiqStatusCurrentA>();
+    factory.registerClass<RobotiqStatusCurrentB>();
+    factory.registerClass<RobotiqStatusCurrentC>();
 
   }
 
