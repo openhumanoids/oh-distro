@@ -86,6 +86,11 @@ classdef CombinedPlanner
       obj.handlers{end+1} = @obj.plan_walking_controller;
       obj.response_channels{end+1} = 'WALKING_CONTROLLER_PLAN_RESPONSE';
 
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_t, 'utime');
+      obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN';
+      obj.handlers{end+1} = @obj.configuration_traj;
+      obj.response_channels{end+1} = 'CONFIGURATION_TRAJ';
+
     end
 
     function run(obj)
@@ -121,7 +126,16 @@ classdef CombinedPlanner
       msg = drc.walking_plan_request_t(msg);
       plan = obj.walking_planner.plan_walking(obj.biped, msg, false);
     end
-  end
+    
+    function plan = configuration_traj(obj, msg)
+      msg = drc.robot_plan_t(msg);
+      nq = getNumDOF(obj.biped);
+      joint_names = obj.biped.getStateFrame.coordinates(1:nq);
+      [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
+      qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
+      plan = ConfigurationTraj(qtraj_pp);
+    end
+end
 end
 
 

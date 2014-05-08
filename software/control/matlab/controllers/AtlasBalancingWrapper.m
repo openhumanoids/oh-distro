@@ -102,8 +102,8 @@ classdef AtlasBalancingWrapper < DrakeSystem
       if isa(qtraj,'double')
         q_des=qtraj;
       else
-        % pp trajectory
-        q_des = fasteval(qtraj,t);
+        % ppform
+        q_des = ppval(qtraj,min(t,qtraj.breaks(end)));
       end
       
       % IK/QP

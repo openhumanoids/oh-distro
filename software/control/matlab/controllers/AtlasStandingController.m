@@ -61,7 +61,8 @@ classdef AtlasStandingController < DRCController
       obj.controller_data.setField('firstplan',true);
 
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
-      obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
+      obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
+      obj = addLCMTransition(obj,'CONFIGURATION_TRAJ',drc.configuration_traj_t(),name); % for standing/reaching tasks
 
     end
     
@@ -75,59 +76,29 @@ classdef AtlasStandingController < DRCController
     end
     
     function obj = initialize(obj,data)
-       if isfield(data,'COMMITTED_ROBOT_PLAN')
+       if isfield(data,'CONFIGURATION_TRAJ')
         % standing and reaching plan
         try
-          msg = data.COMMITTED_ROBOT_PLAN;
-          joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
-          [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
-          
-%           if obj.controller_data.data.firstplan
-%             obj.controller_data.setField('firstplan',false);
-%           else
-%             qtraj_prev = obj.controller_data.data.qtraj;
-%             q0=xtraj(1:getNumDOF(obj.robot),1);
-% 
-%             if isa(qtraj_prev,'PPTrajectory') 
-%               qprev_end = fasteval(qtraj_prev,data.t);
-%             else
-%               qprev_end = qtraj_prev;
-%             end
-% 
-%             % smooth transition from end of previous trajectory by adding
-%             % difference to integral terms
-%             integ = obj.controller_data.data.integral;
-%             torso = (obj.arm_joints | obj.back_joints);
-%             integ(torso) = integ(torso) + qprev_end(torso) - q0(torso);
-%             obj.controller_data.setField('integral',integ);
-%           end
-          qtraj = PPTrajectory(spline(ts,[zeros(getNumDOF(obj.robot),1), xtraj(1:getNumDOF(obj.robot),:), zeros(getNumDOF(obj.robot),1)]));
-
-          obj.controller_data.setField('qtraj',qtraj);
+          msg = data.CONFIGURATION_TRAJ;
+          obj.controller_data.setField('qtraj',mxDeserialize(msg.qtraj));
         catch err
-          r = obj.robot;
-          x0 = data.AtlasState;
-          q0 = x0(1:getNumDOF(r));
-          kinsol = doKinematics(r,q0);
-          foot_pos = contactPositions(r,kinsol,obj.foot_idx);
-          comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
-          obj.controller_data.setField('qtraj',q0);
-          obj.controller_data.setField('x0',[comgoal;0;0]);
-          obj.controller_data.setField('y0',comgoal);
+          standAtCurrentState(obj,data.AtlasState);
         end
       elseif isfield(data,'AtlasState')
-        r = obj.robot;
-        x0 = data.AtlasState;
-        q0 = x0(1:getNumDOF(r));
-        kinsol = doKinematics(r,q0);
-        foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
-        comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
-        obj.controller_data.setField('qtraj',q0);
-        obj.controller_data.setField('x0',[comgoal;0;0]);
-        obj.controller_data.setField('y0',comgoal);
+        standAtCurrentState(obj,data.AtlasState);
       end
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
     
+    function standAtCurrentState(obj,x0)
+      r = obj.robot;
+      q0 = x0(1:getNumDOF(r));
+      kinsol = doKinematics(r,q0);
+      foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
+      comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
+      obj.controller_data.setField('qtraj',q0);
+      obj.controller_data.setField('x0',[comgoal;0;0]);
+      obj.controller_data.setField('y0',comgoal);
+    end
   end
 end
