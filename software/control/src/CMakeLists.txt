@@ -8,6 +8,8 @@ pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
 install(TARGETS RobotStateMonitor AtlasCommandPublisher DESTINATION matlab)
 
+add_mex(mxSerialize mxSerialize.c)
+add_mex(mxDeserialize mxDeserialize.c)
 
 pods_find_pkg_config(maps)
 pods_find_pkg_config(opencv)
@@ -65,7 +67,7 @@ else()
   add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
   pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-  install(TARGETS HeightMapWrapper stepCollocationConstraintsMex QPControllermex MomentumControllermex ContactDetectmex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id DESTINATION matlab)
+  install(TARGETS HeightMapWrapper stepCollocationConstraintsMex QPControllermex MomentumControllermex ContactDetectmex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
 
 endif()
 
