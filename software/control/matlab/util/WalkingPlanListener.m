@@ -1,4 +1,4 @@
-classdef WalkingPlanListener 
+classdef WalkingPlanListener
 	properties
 		monitor;
     channel;
@@ -22,90 +22,8 @@ classdef WalkingPlanListener
       else
         t = obj.monitor.getLastTimestamp();
         msg = drc.walking_plan_t(data);
-        x = decode(msg);
-			end
+        x = WalkingControllerData.from_walking_plan_t(msg);
+  	  end
     end
   end
-  
-  methods(Static)
-    function walking_data = decode(msg)
-        % do we have to save to file to convert a byte stream to a
-        % matlab binary?
-        tmp_fname = ['tmp_w_', num2str(feature('getpid')), '.mat'];
-
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.qtraj,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        qtraj=matdata.qtraj;
-
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.S,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        S=matdata.S;
- 
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.s1,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        s1=matdata.s1;
-
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.s1dot,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        s1dot=matdata.s1dot;
-
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.s2,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        s2=matdata.s2;
-
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.s2dot,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        s2dot=matdata.s2dot;
-
-        support_times=msg.support_times;
-
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.supports,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        supports=matdata.supports;
-        
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.comtraj,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        comtraj=matdata.comtraj;
-
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.zmptraj,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        zmptraj=matdata.zmptraj;
-
-        fid = fopen(tmp_fname,'w');
-        fwrite(fid,typecast(msg.link_constraints,'uint8'),'uint8');
-        fclose(fid);
-        matdata = load(tmp_fname);
-        link_constraints=matdata.link_constraints;
-        
-        mu = msg.mu;
-        ignore_terrain = msg.ignore_terrain;
-        t_offset = msg.t_offset;
-        
-        walking_data = struct('qtraj',qtraj,'mu',mu,'t_offset',t_offset,...
-          'comtraj',comtraj,'zmptraj',zmptraj,'link_constraints',link_constraints,...
-          'S',S,'s1',s1,'s2',s2,'s1dot',s1dot,'s2dot',s2dot,'ignore_terrain',ignore_terrain,...
-          'support_times',support_times,'supports',supports);
-        delete(tmp_fname);
-
-    end
-  end
-
 end
