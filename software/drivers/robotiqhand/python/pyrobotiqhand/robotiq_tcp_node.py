@@ -10,6 +10,7 @@ import lcm
 import select
 import drc
 from time import sleep, time
+from datetime import datetime
 from drc.hand_state_t import hand_state_t
 
 import pyrobotiqhand.baseSModel as baseSModel
@@ -88,6 +89,15 @@ def publishJointStates(side, lcm, status):
         state.joint_name = l_names
         lcm.publish("ROBOTIQ_" + side.upper() + "_STATE", state.encode())
 
+# Create a function for periodically publishing alive signal
+# Current rate is about once every 10 seconds
+count = 50
+def printAlive():
+    global count
+    count+=1
+    if count > 50:
+        count = 0
+        print "Gripper connected.", datetime.today()
 
 def mainLoop(side, address):
 
@@ -113,14 +123,6 @@ def mainLoop(side, address):
     timeout = 100
     p = select.poll()
     p.register(lc.fileno())
-
-    # Create a function for periodically publishing alive signal
-    count = 100
-    def printAlive():
-        count+=1
-        if count > 100:
-            count = 0
-            print "Gripper connected.  Alive and well."
 
     #We loop
     try:
