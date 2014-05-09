@@ -24,8 +24,6 @@ debug = false;
 
 ignore_height = 0.5; % m, height above which we'll assume that our heightmap is giving us bad data (e.g. returns from an object the robot is carrying)
 
-options.hold_frac = 0.4; % fraction of leg swing time spent shifting weight to stance leg
-options.drake_min_hold_time = 2; % s
 pre_contact_height = 0.005; % height above the ground to aim for when foot is landing
 foot_yaw_rate = 0.75; % rad/s
 
