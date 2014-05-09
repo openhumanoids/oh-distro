@@ -114,6 +114,14 @@ def mainLoop(side, address):
     p = select.poll()
     p.register(lc.fileno())
 
+    # Create a function for periodically publishing alive signal
+    count = 100
+    def printAlive():
+        count+=1
+        if count > 100:
+            count = 0
+            print "Gripper connected.  Alive and well."
+
     #We loop
     try:
         while True:
@@ -124,7 +132,9 @@ def mainLoop(side, address):
                     publishSystemStatus(side, lc, status)
                     publishJointStates(side, lc, status)
                     lc.publish(status_topic, status.encode())
-
+                    printAlive()
+                else:
+                    print "Gripper not found.  Trying to reconnect..."
             res = p.poll(timeout)
             if res:
                 lc.handle()

@@ -91,7 +91,10 @@ class communication:
       if not self.client:
          return []
 
-      response = self.client.read_input_registers(0, numRegs)
+      try:
+         response = self.client.read_input_registers(0, numRegs)
+      except AttributeError:
+         return []
 
       #Instantiate output as an empty list
       output = []
