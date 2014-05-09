@@ -32,49 +32,49 @@ def genCommand(char):
     if char == 'a':
         command.do_move = 0
 
-    if char == 'r':
+    elif char == 'r':
         command.activate = 0
         command.do_move = 0
 
-    if char == 'c':
+    elif char == 'c':
         command.position = 255
         command.force = forceLevel
         command.velocity = speedLevel
 
-    if char == 'o':
+    elif char == 'o':
         command.position = 0
         command.force = forceLevel
         command.velocity = speedLevel
 
-    if char == 'b':
+    elif char == 'b':
         command.do_move = 0
         command.mode = 0
         command.position = 0
         command.velocity = speedLevel
         command.force = forceLevel
 
-    if char == 'p':
+    elif char == 'p':
         command.do_move = 0
         command.mode = 1
         command.position = 0
         command.velocity = speedLevel
         command.force = forceLevel
 
-    if char == 'w':
+    elif char == 'w':
         command.do_move = 0
         command.mode = 2
         command.position = 0
         command.velocity = speedLevel
         command.force = forceLevel
 
-    if char == 's':
+    elif char == 's':
         command.do_move = 0
         command.mode = 3
         command.position = 0
         command.velocity = speedLevel
         command.force = forceLevel
 
-    if char == 'f':
+    elif char == 'f':
         command.do_move = 0
         speedLevel += 32
         if speedLevel > 255:
@@ -83,7 +83,7 @@ def genCommand(char):
         command.velocity = speedLevel
         command.force = forceLevel
 
-    if char == 'l':
+    elif char == 'l':
         command.do_move = 0
         speedLevel -= 32
         if speedLevel < 0:
@@ -92,7 +92,7 @@ def genCommand(char):
         command.velocity = speedLevel
         command.force = forceLevel
 
-    if char == 'i':
+    elif char == 'i':
         command.do_move = 0
         forceLevel += 32
         if forceLevel > 255:
@@ -101,7 +101,7 @@ def genCommand(char):
         command.velocity = speedLevel
         command.force = forceLevel
 
-    if char == 'd':
+    elif char == 'd':
         command.do_move = 0
         forceLevel -= 32
         if forceLevel < 0:
@@ -110,10 +110,14 @@ def genCommand(char):
         command.velocity = speedLevel
         command.force = forceLevel
 
-    if char in [str(x) for x in range(255)]:
+    elif char in [str(x) for x in range(255)]:
         command.position = int(char)
         command.force = forceLevel
         command.velocity = speedLevel
+
+    else:
+        # None of the individual commands were received, do nothing
+        return None
 
     return command
 
@@ -138,8 +142,10 @@ def askForCommand():
 
     strAskForCommand += '-->'
 
-    return raw_input(strAskForCommand)
-
+    try:
+        return raw_input(strAskForCommand)
+    except EOFError:
+        return ''
 
 def publisher(side):
     """Main loop which requests new commands and publish them on the
@@ -153,9 +159,11 @@ def publisher(side):
         while True:
             command = genCommand(askForCommand())
 
-            command.utime = (time() * 1000000)
-
-            lc.publish(command_topic, command.encode())
+            if command:
+                command.utime = (time() * 1000000)
+                lc.publish(command_topic, command.encode())
+            else:
+                print "ERROR: bad command"
 
             sleep(0.1)
 

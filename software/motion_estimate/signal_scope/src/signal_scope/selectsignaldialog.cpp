@@ -41,7 +41,8 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
            << "STATE_ESTIMATOR_POSE"
            << "STATE_ESTIMATOR_STATE"
            << "TRUE_ROBOT_STATE"
-           << "VICON_ATLAS" << "CONTROLLER_DEBUG"  ;
+           << "VICON_ATLAS" << "CONTROLLER_DEBUG"
+           << "ROBOTIQ_LEFT_STATUS" << "ROBOTIQ_RIGHT_STATUS" ;
 
 
   QStringList messageTypes = SignalHandlerFactory::instance().messageTypes();
