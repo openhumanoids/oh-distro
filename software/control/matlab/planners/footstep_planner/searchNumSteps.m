@@ -6,7 +6,7 @@ foot_orig.left(4:5) = 0;
 
 GOAL_THRESHOLD = [0.02;0.02;0;0;0;0.1];
 w_final = [5;5;0;0;0;1];
-BEAM_WIDTH = 5;
+BEAM_WIDTH = 2;
 
 plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {}, 'last_foot_right', {});
 if length(existing_steps) > 0
