@@ -5,12 +5,15 @@ struct footstep_params_t
 	int64_t utime;
 
 	// speed at which the foot should move while swinging (m/s)
-	float step_speed; 
+	float step_speed;
+
+	// minimum time to devote to weight shift (s)
+	float drake_min_hold_time;
 
 	// Minimum clearance of the step over the terrain (m)
 	float step_height;
 
-	// If true, constrains the foot's position and rotation at all times during swing. If false, allows the foot to roll and pitch while swinging. 
+	// If true, constrains the foot's position and rotation at all times during swing. If false, allows the foot to roll and pitch while swinging.
 	boolean constrain_full_foot_pose;
 
 	// BDI-specific parameters
