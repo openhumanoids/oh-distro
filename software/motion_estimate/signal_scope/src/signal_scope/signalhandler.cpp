@@ -22,6 +22,8 @@
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
 #include "lcmtypes/drc/controller_debug_t.hpp"
 
+#include "lcmtypes/mav/filter_state_t.hpp"
+
 #include <cassert>
 
 #include <QDebug>
@@ -458,6 +460,9 @@ define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexLi
 define_field_handler(FootContactLeft, drc::foot_contact_estimate_t, left_contact);
 define_field_handler(FootContactRight, drc::foot_contact_estimate_t, right_contact);
 
+// mav_filter_state_t
+define_array_handler(MavStateHandler, mav::filter_state_t, state, createIndexList(21));
+
 SignalHandler::SignalHandler(const SignalDescription* signalDescription, QObject* parent) : LCMSubscriber(parent)
 {
   assert(signalDescription != 0);
@@ -631,6 +636,7 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<DrillControlData>();
     factory.registerClass<FootContactLeft>();
     factory.registerClass<FootContactRight>();
+    factory.registerClass<MavStateHandler>();
 
   }
 
