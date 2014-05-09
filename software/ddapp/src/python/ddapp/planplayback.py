@@ -49,9 +49,8 @@ class PlanPlayback(object):
                 poses.append(pose)
             return np.array(poseTimes), poses
 
-
-    def getPlanElapsedTime(self, msg):
-
+    @staticmethod
+    def getPlanElapsedTime(msg):
         startTime = msg.plan[0].utime
         endTime = msg.plan[-1].utime
         return (endTime - startTime) / 1e6
@@ -150,6 +149,14 @@ class PlanPlayback(object):
     def picklePlan(self, filename, msg):
         poseTimes, poses = self.getPlanPoses(msg)
         pickle.dump((poseTimes, poses), open(filename, 'w'))
+
+
+    def getMovingJointNames(self, msg):
+        poseTimes, poses = self.getPlanPoses(msg)
+        diffs = np.diff(poses, axis=0)
+        jointIds =  np.unique(np.where(diffs != 0.0)[1])
+        jointNames = [robotstate.getDrakePoseJointNames()[jointId] for jointId in jointIds]
+        return jointNames
 
 
     def plotPlan(self, msg):

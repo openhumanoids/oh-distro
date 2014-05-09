@@ -12,6 +12,7 @@ from PythonQt import QtCore, QtGui
 
 from ddapp.affordancelistener import listener as affListener
 
+import os
 import weakref
 import itertools
 
@@ -636,6 +637,41 @@ def showHandCloud(hand='left', view=None):
     return obj
 
 
+def showClusterObjects(clusters, parent):
+
+    colors =  [ QtCore.Qt.red,
+                QtCore.Qt.blue,
+                QtCore.Qt.yellow,
+                QtCore.Qt.magenta,
+                QtCore.Qt.cyan,
+                QtCore.Qt.green,
+                QtCore.Qt.darkCyan,
+                QtCore.Qt.darkGreen,
+                QtCore.Qt.darkMagenta ]
+
+    colors = [QtGui.QColor(c) for c in colors]
+    colors = [(c.red()/255.0, c.green()/255.0, c.blue()/255.0) for c in colors]
+
+    objects = []
+
+    for i, cluster in enumerate(clusters):
+        name = 'object %d' % i
+        color = colors[i]
+        clusterObj = showPolyData(cluster.mesh, name, color=color, parent=parent, alpha=0.25)
+        clusterFrame = showFrame(cluster.frame, name + ' frame', scale=0.2, visible=False, parent=clusterObj)
+        clusterObj.actor.GetProperty().EdgeVisibilityOn()
+        clusterBox = showPolyData(cluster.box, name + ' box', color=color, parent=clusterObj, alpha=0.6)
+        clusterPoints = showPolyData(cluster.points, name + ' points', color=color, parent=clusterObj, visible=True, alpha=1.0)
+        clusterPoints.setProperty('Point Size', 7)
+        clusterPoints.colorBy(None)
+        objects.append(clusterObj)
+
+        for obj in [clusterObj, clusterBox, clusterPoints]:
+            obj.actor.SetUserTransform(cluster.frame)
+
+    return objects
+
+
 def pickImage(displayPoint, view, obj=None):
 
     picker = vtk.vtkCellPicker()
@@ -747,3 +783,19 @@ def findPickedObject(displayPoint, view):
     pickedPoint, pickedProp, pickedDataset = pickProp(displayPoint, view)
     obj = getObjectByProp(pickedProp)
     return obj, pickedPoint
+
+
+def showImage(filename):
+    '''
+    Returns a QLabel displaying the image contents of given filename.
+    Make sure to assign the label, it will destruct when it goes out
+    of scope.
+    '''
+    image = QtGui.QImage(filename)
+    assert not image.isNull()
+    imageLabel = QtGui.QLabel()
+    imageLabel.setPixmap(QtGui.QPixmap.fromImage(image))
+    imageLabel.setScaledContents(True)
+    imageLabel.resize(imageLabel.pixmap.size())
+    imageLabel.setWindowTitle(os.path.basename(filename))
+    imageLabel.show()
