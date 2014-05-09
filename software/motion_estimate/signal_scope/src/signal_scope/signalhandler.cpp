@@ -355,6 +355,8 @@ define_field_handler(AtlasStatusBehavior, drc::atlas_status_t, behavior);
 define_field_handler(ControllerDebugRightFoot, drc::controller_debug_t, r_foot_contact);
 define_field_handler(ControllerDebugLeftFoot, drc::controller_debug_t, l_foot_contact);
 define_field_handler(ControllerDebugSolverInfo, drc::controller_debug_t, info);
+define_array_handler(ControllerDebugQddDes, drc::controller_debug_t, qddot_des, createIndexList(34));
+define_array_handler(ControllerDebugHdotDes, drc::controller_debug_t, hdot_des, createIndexList(6));
 
 /*
 define_field_array_handler(AtlasControlJointsPositionHandler, drc::atlas_control_data_t, joints, position, JointNames::jointNames());
@@ -580,6 +582,8 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<ControllerDebugRightFoot>();
     factory.registerClass<ControllerDebugLeftFoot>();
     factory.registerClass<ControllerDebugSolverInfo>();
+    factory.registerClass<ControllerDebugQddDes>();
+    factory.registerClass<ControllerDebugHdotDes>();
     factory.registerClass<AtlasControlJointsPositionHandler>();
     factory.registerClass<AtlasControlJointsVelocityHandler>();
     factory.registerClass<AtlasControlJointsEffortHandler>();
