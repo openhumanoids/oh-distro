@@ -170,7 +170,6 @@ foot_supports = [[supps.right] * rfoot_body_idx;
                  [supps.left] * lfoot_body_idx];
 zmp_ts = [zmp_knots.t];
 supports = SupportState.empty(0,1);
-% supports = cell(length(zmp_ts),1);
 for i=1:length(zmp_ts)
   if all(foot_supports(:,i)~=0)
     cpts = {1:4,1:4};
