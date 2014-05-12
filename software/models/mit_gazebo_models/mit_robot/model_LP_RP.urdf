@@ -1449,6 +1449,21 @@
       <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.185"/>
     </visual>
   </link>
+  <collision>
+    <geometry>
+      <cylinder length="0.16" radius="0.02"/>
+    </geometry>
+    <origin rpy="0 0 0" xyz="0 0 0.1"/>
+  </collision>
+  <visual>
+    <geometry>
+      <cylinder length="0.16" radius="0.02"/>
+    </geometry>
+    <material name="darkgray">
+      <color rgba="0.2 0.2 0.2 1"/>
+    </material>
+    <origin rpy="0 0 0" xyz="0.01 0 0.1"/>
+  </visual>
   <joint name="left_hook_hand_joint" type="fixed">
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
     <parent link="l_hand"/>
@@ -1509,5 +1524,19 @@
       <origin rpy="0 1.571 1.571" xyz="0.00 -0.018 0.185"/>
     </visual>
   </link>
+  <collision>
+    <geometry>
+      <cylinder length="0.16" radius="0.02"/>
+    </geometry>
+    <origin rpy="0 0 0" xyz="0 0 0.1"/>
+  </collision>
+  <visual>
+    <geometry>
+      <cylinder length="0.16" radius="0.02"/>
+    </geometry>
+    <material name="darkgray">
+      <color rgba="0.2 0.2 0.2 1"/>
+    </material>
+    <origin rpy="0 0 0" xyz="0.01 0 0.1"/>
+  </visual>
 </robot>
-

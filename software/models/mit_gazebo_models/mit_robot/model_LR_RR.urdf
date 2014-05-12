@@ -1353,7 +1353,7 @@
       </contact>
     </sensor>
   </gazebo>
-  <!--  <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl_sim.urdf" /> -->
+  <!--  <xacro:include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl_sim.urdf" /> -->
   <link name="l_hand_force_torque">
     <inertial>
       <mass value="0.1"/>
@@ -2179,4 +2179,3 @@
     </sensor>
   </gazebo>
 </robot>
-

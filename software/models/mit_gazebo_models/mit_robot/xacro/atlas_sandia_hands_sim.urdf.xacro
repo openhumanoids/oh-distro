@@ -9,13 +9,13 @@
     <origin xyz="0.00179  0.13516 0.01176" rpy="0 0  1.57079"/>
   </xacro:sandia_hand>
 
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas_skeleton.urdf" />
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.gazebo" />
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
-  <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl_sim.urdf" />
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/mit_atlas.gazebo" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas_skeleton.urdf" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.gazebo" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl_sim.urdf" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/mit_atlas.gazebo" />
 
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/hand_force_torque.urdf" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/hand_force_torque.urdf" />
 
   <gazebo>
     <!-- include plugin for sandia hands -->

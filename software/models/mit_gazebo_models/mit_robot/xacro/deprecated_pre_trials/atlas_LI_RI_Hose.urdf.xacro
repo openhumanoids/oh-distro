@@ -1,8 +1,8 @@
 <robot xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" name="atlas_Hose" >
   
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas_skeleton.urdf" />
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
-  <include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl.urdf" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas_skeleton.urdf" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot/xacro/atlas.transmission" />
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/multisense_sl/multisense_sl.urdf" />
 
   <xacro:include filename="$(find handle_description)/src/irobot_hand_simple.urdf.xacro" />
 
