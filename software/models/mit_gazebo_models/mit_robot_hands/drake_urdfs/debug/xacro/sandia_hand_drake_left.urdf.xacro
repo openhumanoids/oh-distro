@@ -7,8 +7,8 @@
 <!-- derived from /usr/share/sandia-hand-5.1/ros/sandia_hand_description/robots/sandia_hand_left_on_box.urdf.xacro-->
 
   <!-- Commenting out urdf with meshes, using simple collision shapes instead -->
-  <!--<include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/visual_contact_spheres/xacro/sandia_hand_drake_w_contact_sphere_visuals.urdf.xacro" />-->
-  <include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/drake_urdfs/debug/xacro/sandia_hand_simplified_shapes_drake_w_contact_sphere_visuals.urdf.xacro" />
+  <!--<xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/visual_contact_spheres/xacro/sandia_hand_drake_w_contact_sphere_visuals.urdf.xacro" />-->
+  <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot_hands/drake_urdfs/debug/xacro/sandia_hand_simplified_shapes_drake_w_contact_sphere_visuals.urdf.xacro" />
   
   
   <link name="base">

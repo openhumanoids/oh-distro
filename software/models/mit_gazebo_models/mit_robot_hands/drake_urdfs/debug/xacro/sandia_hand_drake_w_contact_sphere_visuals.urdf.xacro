@@ -16,8 +16,8 @@
 <robot name="sandia_hand"
        xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.gazebo.xacro" />
-  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
+  <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand.gazebo.xacro" />
+  <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
 
   <xacro:macro name="finger" params="idx x y z r p yaw side">
     <link name="${side}_f${idx}_base">

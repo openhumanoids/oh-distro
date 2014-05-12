@@ -4,7 +4,7 @@
        xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
        name="robotiq_hand_left" >
        
-  <include filename="$(find robotiq_hand_description)/cfg/robotiq_hand.urdf.xacro" />
+  <xacro:include filename="$(find robotiq_hand_description)/cfg/robotiq_hand.urdf.xacro" />
   
   <link name="plane::xy::base">
     <inertial>
