@@ -7,11 +7,12 @@
 
   <xacro:include filename="$(find hook_description)/src/hook_hand_simple.urdf.xacro" />
 
-  <xacro:hook_hand side="right" parent="r_hand" reflect="1" hookflip="-1" noof30degoffset="0">
-    <origin rpy="1.57079 0 0" xyz="0 -0.11516 -0.015"/>
+  <xacro:hook_hand side="left" parent="l_hand_force_torque">
+    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.0 0.0"/>
   </xacro:hook_hand>
-  <xacro:hook_hand side="left" parent="l_hand" reflect="-1" hookflip="-1" noof30degoffset="0">
-    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
+
+  <xacro:hook_hand side="right" parent="r_hand_force_torque">
+    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.0 0.0"/>
   </xacro:hook_hand>
 
 

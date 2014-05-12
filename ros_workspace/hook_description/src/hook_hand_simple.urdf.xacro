@@ -13,7 +13,8 @@
 <!-- ########################################### -->
 
 
-<xacro:macro name="hook_hand" params="side parent reflect hookflip noof30degoffset *origin">
+<xacro:macro name="hook_hand" params="side parent *origin">
+
 <!--<xacro:flex_link side="${side}" finger_id="0" link_id="1"/>-->
 <!--<xacro:flex_link side="${side}" finger_id="0" link_id="2"/>-->
 <!--<xacro:flex_link side="${side}" finger_id="0" link_id="3"/>-->
@@ -94,7 +95,7 @@
       <geometry>
         <cylinder length="0.01" radius="0.045"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.025"/>
+      <origin rpy="0 0 0" xyz="0 0 0.005"/>
     </collision>
     <visual>
       <geometry>
@@ -103,7 +104,7 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0 0.025"/>
+      <origin rpy="0 0 0" xyz="0 0 0.005"/>
     </visual>
 
 <!-- MIT's pointer rod -->
@@ -111,7 +112,7 @@
       <geometry>
         <cylinder length="0.16" radius="0.006"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
     </collision>
     <visual>
       <geometry>
@@ -120,16 +121,17 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
     </visual>
 
 
-<!-- MIT's hook -->
+<!-- MIT's hook tip -->
+<!--
     <collision>
       <geometry>
         <cylinder length="0.044" radius="0.006"/>
       </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 ${0.018 * reflect} 0.185"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.16"/>
     </collision>
     <visual>
       <geometry>
@@ -138,10 +140,38 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 ${0.018 * reflect} 0.185"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.16"/>
     </visual>
+-->
+
+
+<!-- optional off center nub at base (to illustrate rotation) -->
+    <collision>
+      <geometry>
+        <cylinder length="0.044" radius="0.006"/>
+      </geometry>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.02"/>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder length="0.044" radius="0.006"/>
+      </geometry>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.02"/>
+    </visual>
+
   </link>
 
+
+<!-- Contact Point near the tip of the pointer -->
+  <joint name="${side}_pointer_tip_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.12 0"/>
+    <parent link="${parent}"/>
+    <child link="${side}_pointer_tip"/>
+  </joint>
+  <link name="${side}_pointer_tip"/>
 
 </xacro:macro>
 
