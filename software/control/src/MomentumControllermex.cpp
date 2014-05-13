@@ -96,10 +96,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     error = GRBloadenv(&(pdata->env),NULL);
 
     // set solver params (http://www.gurobi.com/documentation/5.5/reference-manual/node798#sec:Parameters)
-    mxArray* psolveropts = myGetProperty(pobj,"solver_options");
-    int method = (int) mxGetScalar(myGetField(psolveropts,"method"));
+    int method=0;
     CGE ( GRBsetintparam(pdata->env,"outputflag",0), pdata->env );
-    CGE ( GRBsetintparam(pdata->env,"method",2), pdata->env );
+    CGE ( GRBsetintparam(pdata->env,"method",method), pdata->env );
+    // CGE ( GRBsetintparam(pdata->env,"method",method), pdata->env );
     CGE ( GRBsetintparam(pdata->env,"presolve",0), pdata->env );
     if (method==2) {
     	CGE ( GRBsetintparam(pdata->env,"bariterlimit",20), pdata->env );
@@ -132,7 +132,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->fqp.resize(nq);
     pdata->Ag.resize(6,nq);
     pdata->Agdot.resize(6,nq);
+    
+
+    pdata->vbasis_len = 0;
+    pdata->cbasis_len = 0;
+    pdata->vbasis = NULL;
+    pdata->cbasis = NULL;
     return;
+
+
   }
   
   // first get the ptr back from matlab
@@ -452,10 +460,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     info = fastQP(QBlkDiag, f, Aeq, beq, Ain_lb_ub, bin_lb_ub, pdata->active, alpha);
     if (info<0)  	mexPrintf("fastQP info=%d... calling Gurobi.\n", info);
   }
+  else {
+    // use gurobi active set 
+    model = gurobiActiveSetQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->vbasis,pdata->vbasis_len,pdata->cbasis,pdata->cbasis_len,alpha);
+    CGE(GRBgetintattr(model,"NumVars",&pdata->vbasis_len), pdata->env);
+    CGE(GRBgetintattr(model,"NumConstrs",&pdata->cbasis_len), pdata->env);
+    info=66;
+  }
 
   if (info<0) {
-		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
-	  int status; CGE ( GRBgetintattr(model, "Status", &status) , pdata->env);
+    model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
+    int status; CGE(GRBgetintattr(model, "Status", &status), pdata->env);
 	  if (status!=2) mexPrintf("Gurobi reports non-optimal status = %d.\n", status);
   }
   
