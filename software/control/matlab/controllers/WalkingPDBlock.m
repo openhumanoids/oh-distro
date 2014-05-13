@@ -51,7 +51,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       else
         obj.Kp = 160.0*ones(obj.nq,1);
       end        
-      obj.Kp([1,2,4,5,6]) = 0; % ignore x,y,yaw
+      obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
         
       if isfield(options,'Kd')
         typecheck(options.Kd,'double');
@@ -60,7 +60,7 @@ classdef WalkingPDBlock < MIMODrakeSystem
       else
         obj.Kd = 19.0*ones(obj.nq,1);
       end
-      obj.Kd([1,2,4,5,6]) = 0; % ignore x,y,yaw
+      obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
             
       if isfield(options,'dt')
         typecheck(options.dt,'double');
@@ -106,11 +106,11 @@ classdef WalkingPDBlock < MIMODrakeSystem
     end
    
     function y=mimoOutput(obj,t,~,varargin)      
-      persistent qd_filt
+%       persistent qd_filt
       
-      if isempty(qd_filt)
-        qd_filt = 0;
-      end
+%       if isempty(qd_filt)
+%         qd_filt = 0;
+%       end
       
       obj.ikoptions.q_nom = varargin{1};
 
@@ -156,10 +156,10 @@ classdef WalkingPDBlock < MIMODrakeSystem
         err_q = obj.max_nrm_err * err_q / nrmerr;
       end
      
-      qd_filt = 0.9*qd_filt + 0.1*qd;
+%       qd_filt = 0.85*qd_filt + 0.15*qd;
       
-      qd(obj.hips) = qd_filt(obj.hips);
-      qd(obj.knees) = qd_filt(obj.knees);
+%       qd(obj.hips) = qd_filt(obj.hips);
+%       qd(obj.knees) = qd_filt(obj.knees);
       
 			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
 		end
