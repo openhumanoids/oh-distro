@@ -21,7 +21,7 @@ void CameraParams::setParams(BotParam *botparam_, std::string key_prefix ){
   }
   if (2 == bot_param_get_double_array(botparam_, (key_prefix+".intrinsic_cal.distortion_p").c_str(), vals, 2)) {
     p1 = vals[0];
-    p1 = vals[1];
+    p2 = vals[1];
   }
 }
 
