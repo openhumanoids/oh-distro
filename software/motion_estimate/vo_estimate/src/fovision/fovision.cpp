@@ -72,22 +72,15 @@ void FoVision::send_status_msg(std::string text){
 }
 
 
-void FoVision::fovis_stats(){
+void FoVision::send_delta_translation_msg(Eigen::Isometry3d motion_estimate,
+    Eigen::MatrixXd motion_cov, std::string channel_name){
   
-  Eigen::Isometry3d cam_to_local = odom_.getPose();
+  //Eigen::Isometry3d motion_estimate = odom_.getMotionEstimate();
+  //const Eigen::MatrixXd & motion_cov = odom_.getMotionEstimateCov();
+  const fovis::MotionEstimator* me = odom_.getMotionEstimator();
+  fovis::MotionEstimateStatusCode estim_status = odom_.getMotionEstimateStatus();
   
-  // rotate coordinate frame so that look vector is +X, and up is +Z
-  Eigen::Matrix3d M;
-  M <<  0,  0, 1,
-       -1,  0, 0,
-        0, -1, 0;
-
-  cam_to_local = M * cam_to_local;
-  Eigen::Vector3d translation(cam_to_local.translation());
-  Eigen::Quaterniond rotation(cam_to_local.rotation());
-  rotation = rotation * M.transpose();  
   
-  Eigen::Isometry3d motion_estimate = odom_.getMotionEstimate();
   fovis_update_t update_msg;
   update_msg.timestamp =  current_timestamp_;// msg->timestamp;//secs * 1E6 + nsecs/1E3;
   update_msg.prev_timestamp = prev_timestamp_;
@@ -100,17 +93,11 @@ void FoVision::fovis_stats(){
   update_msg.rotation[1] = motion_R.x();
   update_msg.rotation[2] = motion_R.y();
   update_msg.rotation[3] = motion_R.z();
-  
-  //get the cov
-  const Eigen::MatrixXd & motion_cov = odom_.getMotionEstimateCov();
+
   for (int i=0;i<6;i++)
     for (int j=0;j<6;j++)
       update_msg.covariance[i][j] =motion_cov(i,j);
     
-    
-  const fovis::MotionEstimator* me = odom_.getMotionEstimator();
-  fovis::MotionEstimateStatusCode estim_status = odom_.getMotionEstimateStatus();
-  
   // TODO: set this in the constructor:
   bool verbose=true;
   
@@ -120,28 +107,26 @@ void FoVision::fovis_stats(){
     case fovis::SUCCESS:
       update_msg.estimate_status = FOVIS_UPDATE_T_ESTIMATE_VALID;
       if (verbose){
-        /*
-	printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
-          me->getNumInliers(),
-          me->getNumReprojectionFailures(),
-          me->getNumMatches(),
-          (int) odom_.getTargetFrame()->getNumKeypoints(),
-          me->getMeanInlierReprojectionError());
-        */
+        //printf("Inliers: %4d  Rep. fail: %4d Matches: %4d Feats: %4d Mean err: %5.2f\n",
+        //  me->getNumInliers(),
+        //  me->getNumReprojectionFailures(),
+        //  me->getNumMatches(),
+        //  (int) odom_.getTargetFrame()->getNumKeypoints(),
+        //  me->getMeanInlierReprojectionError());
       }
       break;
     case fovis::INSUFFICIENT_INLIERS:
       update_msg.estimate_status = FOVIS_UPDATE_T_ESTIMATE_INSUFFICIENT_FEATURES;
       if (verbose){
         send_status_msg("Insufficient inliers");
-	printf("Insufficient inliers\n");
+        printf("Insufficient inliers\n");
       }
       break;
     case fovis::OPTIMIZATION_FAILURE:
       update_msg.estimate_status = FOVIS_UPDATE_T_ESTIMATE_DEGENERATE;
       if (verbose){
         send_status_msg("Unable to solve for rigid body transform");
-	printf("Unable to solve for rigid body transform\n");
+        printf("Unable to solve for rigid body transform\n");
       }
       break;
     case fovis::REPROJECTION_ERROR:
@@ -150,7 +135,7 @@ void FoVision::fovis_stats(){
         std::stringstream ss;
         ss << "Excessive reprojection error: " << me->getMeanInlierReprojectionError();
         send_status_msg(ss.str());
-	printf("Excessive reprojection error (%f).\n", me->getMeanInlierReprojectionError());
+        printf("Excessive reprojection error (%f).\n", me->getMeanInlierReprojectionError());
       }
       break;
     default:
@@ -162,13 +147,25 @@ void FoVision::fovis_stats(){
   
   if (estim_status !=  fovis::NO_DATA) {
     fovis_update_t_publish(lcm_->getUnderlyingLCM(), 
-                "FOVIS_REL_ODOMETRY", &update_msg);
-  }
+                channel_name.c_str(), &update_msg); //"FOVIS_REL_ODOMETRY"
+  }  
 
+}
+
+void FoVision::fovis_stats(){
+  
+  send_delta_translation_msg(odom_.getMotionEstimate(),
+          odom_.getMotionEstimateCov(), "VO_DELTA_CAMERA" );
+   
+  const fovis::MotionEstimator* me = odom_.getMotionEstimator();
+  fovis::MotionEstimateStatusCode estim_status = odom_.getMotionEstimateStatus();
+  
   bool publish_fovis_stats=0;
+  bool publish_pose=0;
+
   if (estim_status !=  fovis::NO_DATA && publish_fovis_stats) {
     fovis_stats_t stats_msg;
-    stats_msg.timestamp = update_msg.timestamp;
+    stats_msg.timestamp = current_timestamp_;
     stats_msg.num_matches = me->getNumMatches();
     stats_msg.num_inliers = me->getNumInliers();
     stats_msg.mean_reprojection_error = me->getMeanInlierReprojectionError();
@@ -181,60 +178,31 @@ void FoVision::fovis_stats(){
   }  
   
   // publish current pose
-  bool publish_pose=0;
   if (publish_pose) {
-      bot_core_pose_t pose_msg;
-      memset(&pose_msg, 0, sizeof(pose_msg));
-      pose_msg.utime =   0;// msg->timestamp;
-      pose_msg.pos[0] = translation[0];
-      pose_msg.pos[1] = translation[1];
-      pose_msg.pos[2] = translation[2];
-      pose_msg.orientation[0] = rotation.w();
-      pose_msg.orientation[1] = rotation.x();
-      pose_msg.orientation[2] = rotation.y();
-      pose_msg.orientation[3] = rotation.z();
-      bot_core_pose_t_publish(lcm_->getUnderlyingLCM(), "POSE_BODY", &pose_msg);
-      //  printf("[%6.2f %6.2f %6.2f]\n", translation[0], translation[1], translation[2]);
+    
+    // rotate coordinate frame so that look vector is +X, and up is +Z
+    Eigen::Matrix3d M;
+    M <<  0,  0, 1,
+          -1,  0, 0,
+          0, -1, 0;
+    Eigen::Isometry3d cam_to_local = odom_.getPose();
+    cam_to_local = M * cam_to_local;
+    Eigen::Vector3d translation(cam_to_local.translation());
+    Eigen::Quaterniond rotation(cam_to_local.rotation());
+    rotation = rotation * M.transpose();  
+  
+    bot_core_pose_t pose_msg;
+    memset(&pose_msg, 0, sizeof(pose_msg));
+    pose_msg.utime =   0;// msg->timestamp;
+    pose_msg.pos[0] = translation[0];
+    pose_msg.pos[1] = translation[1];
+    pose_msg.pos[2] = translation[2];
+    pose_msg.orientation[0] = rotation.w();
+    pose_msg.orientation[1] = rotation.x();
+    pose_msg.orientation[2] = rotation.y();
+    pose_msg.orientation[3] = rotation.z();
+    bot_core_pose_t_publish(lcm_->getUnderlyingLCM(), "POSE_BODY", &pose_msg);
   }  
-  
-  bool publish_frame_update=0;
-  if (publish_frame_update) {
-    //publish the frame update message as well
-    bot_core_rigid_transform_t iso_msg;
-    iso_msg.utime =0;/// msg->timestamp;
-    for (int i = 0; i < 3; i++)
-      iso_msg.trans[i] = translation[i];
-    iso_msg.quat[0] = rotation.w();
-    iso_msg.quat[1] = rotation.x();
-    iso_msg.quat[2] = rotation.y();
-    iso_msg.quat[3] = rotation.z();
-    bot_core_rigid_transform_t_publish(lcm_->getUnderlyingLCM(),
-               "BODY_TO_LOCAL", &iso_msg);
-  }
-  
-  
-  bool print_translation=0;
-  if (print_translation){
-    pose_ = pose_ * motion_estimate;
-    cam_to_local = pose_;
-
-    // rotate coordinate frame so that look vector is +X, and down is +Z
-    //Eigen::Matrix3d M;
-    //M <<  0,  0, 1,
-    //      1,  0, 0,
-    //      0,  1, 0;
-
-    Eigen::Vector3d rpy = (cam_to_local.rotation()*M.transpose()).eulerAngles(0, 1, 2);
-    std::cout << "xyz-rpy: " << translation(0) << " " << translation(1) << " " << translation(2) << " -- "
-                              << rpy(0)/M_PI*180.0 << " " << rpy(1)/M_PI*180.0 << " " << rpy(2)/M_PI*180.0 << " " << std::endl;
-  }
-  
-  prev_timestamp_ = update_msg.timestamp;
-
-  // leaving this in but it has noeffect:
-  //if (estim_status != fovis::SUCCESS) return;
-  //if (std::isnan(motion_estimate.translation().x())) return;
-  
   
 }
 

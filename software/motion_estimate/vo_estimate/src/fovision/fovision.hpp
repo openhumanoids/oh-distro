@@ -33,6 +33,10 @@ public:
     void doOdometry(uint8_t *left_buf,float *disparity_buf, int64_t utime);
 
     void send_status_msg(std::string text);
+    
+    void send_delta_translation_msg(Eigen::Isometry3d motion_estimate,
+      Eigen::MatrixXd motion_cov, std::string channel_name);
+    
     void fovis_stats();
     
     Eigen::Isometry3d getMotionEstimate(){ 

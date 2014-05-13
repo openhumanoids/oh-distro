@@ -1,9 +1,12 @@
 // Main VO module
 
+
+
 #include <zlib.h>
 #include <lcm/lcm-cpp.hpp>
 #include <bot_param/param_client.h>
 #include <bot_frames/bot_frames.h>
+#include <bot_frames_cpp/bot_frames_cpp.hpp>
 
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
@@ -13,7 +16,6 @@
 
 #include "drcvision/voconfig.hpp"
 #include "drcvision/vofeatures.hpp"
-#include "drcvision/voestimator.hpp"
 #include "fovision.hpp"
 
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
@@ -27,21 +29,15 @@
 #include <model-client/model-client.hpp>
 
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
-///
 
 #include <opencv/cv.h> // for disparity 
-
 using namespace std;
-
 using namespace cv; // for disparity ops
-
-// to be removed:
-bool zheight_clamp = false;
 
 class StereoOdom{
   public:
-    StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_,
-      string output_extension_);
+    StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, string camera_config_,
+      bool output_signal_);
     
     ~StereoOdom(){
       free (left_buf_);
@@ -75,8 +71,7 @@ class StereoOdom{
     Eigen::Isometry3d ref_camera_pose_; // [pose of the camera when the reference frames changed
     bool changed_ref_frames_;
 
-    //VoEstimator* estimator_;
-    string output_extension_;
+    bool output_signal_;
 
     void featureAnalysis();
     void updateMotion(int64_t utime);
@@ -92,7 +87,6 @@ class StereoOdom{
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
     
-    int fusion_mode_;
     bool pose_initialized_;
     int imu_counter_;
 
@@ -105,15 +99,16 @@ class StereoOdom{
     uint8_t* decompress_disparity_buf_;    
     
     Eigen::Isometry3d world_to_camera_;
+    Eigen::Isometry3d world_to_body_;
     
 };    
 
-StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, string camera_config_,
-       string output_extension_) : 
+StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, string camera_config_,
+       bool output_signal_) : 
        lcm_(lcm_), utime_cur_(0), utime_prev_(0), 
        ref_utime_(0), changed_ref_frames_(false), 
-       fusion_mode_( fusion_mode_ ), camera_config_(camera_config_),
-       output_extension_(output_extension_)
+       camera_config_(camera_config_),
+       output_signal_(output_signal_)
 {
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
@@ -139,7 +134,6 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, stri
   
   vo_ = new FoVision(lcm_ , stereo_calibration_);
   features_ = new VoFeatures(lcm_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
-  //estimator_ = new VoEstimator(lcm_ , botframes_, output_extension_ );
   
   // Assumes CAMERA is image_t type:
   //lcm_->subscribe("CAMERA",&StereoOdom::imageHandler,this);
@@ -147,10 +141,6 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, stri
   lcm_->subscribe("CAMERA",&StereoOdom::multisenseLDHandler,this);
   
   cout <<"StereoOdom Constructed\n";
-  //if (!zheight_clamp){
-  //  estimator_->setHeadPoseZInitialized();  
-  //  cout << "will not set the z-height from ground truth\n";
-  //}
   
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_calibration_->getWidth(), 2*stereo_calibration_->getHeight()); // extra space for stereo tasks
  
@@ -160,13 +150,16 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, int fusion_mode_, stri
   
   
   
+  // Initialise the nominal camera frame with the head pointing horizontally
   Eigen::Matrix3d M;
   M <<  0,  0, 1,
        -1,  0, 0,
         0, -1, 0;
 
   world_to_camera_ = M * Eigen::Isometry3d::Identity();
-  world_to_camera_.translation().z() = 1.65;
+  world_to_camera_.translation().x() = 0;
+  world_to_camera_.translation().y() = 0;
+  world_to_camera_.translation().z() = 1.65; // nominal head height
   
   /*
   Eigen::Vector3d translation(cam_to_local.translation());
@@ -195,25 +188,35 @@ void StereoOdom::publishPose(Eigen::Isometry3d pose, int64_t utime, std::string 
 
 
 void StereoOdom::updateMotion(int64_t utime){
+  
+  // Update the camera position in world frame
   Eigen::Isometry3d delta_camera;
-  Eigen::MatrixXd delta_cov;
+  Eigen::MatrixXd delta_camera_cov;
   fovis::MotionEstimateStatusCode delta_status;
-  vo_->getMotion(delta_camera, delta_cov, delta_status );
+  vo_->getMotion(delta_camera, delta_camera_cov, delta_status );
   vo_->fovis_stats();
-  
-  
   world_to_camera_  = world_to_camera_ * delta_camera;
   
-  publishPose(world_to_camera_, utime, "POSE_BODY_ALT");
-  
+  // Determine the body position in world frame:
   Eigen::Isometry3d camera_to_body;
   int status = botframes_cpp_->get_trans_with_utime( botframes_ ,  "body", "CAMERA_LEFT"  , utime, camera_to_body);
-  Eigen::Isometry3d world_to_body = world_to_camera_ * camera_to_body;  
-  publishPose(world_to_body, utime, "POSE_BODY");
+  Eigen::Isometry3d new_world_to_body = world_to_camera_ * camera_to_body;  
   
-  return; // full estimator VO disabled for VRC competition, 8 june 2013
+  // Find the resultant delta by comparing the body position estimate with its previous
+  Eigen::Isometry3d delta_body =  new_world_to_body * ( world_to_body_.inverse() );
+
+  if (output_signal_){
+    publishPose(world_to_camera_, utime, "POSE_BODY_ALT"); // same as CAMERA_LEFT frame solved by state-sync
+    publishPose(new_world_to_body, utime, "POSE_BODY");
+  }
   
-  //estimator_->voUpdate(utime_cur_, delta_camera);
+  // THIS IS NOT THE CORRECT COVARIANCE - ITS THE COVARIANCE IN THE CAMERA FRAME!!!!
+  vo_->send_delta_translation_msg(delta_body,
+          delta_camera_cov, "VO_DELTA_BODY" );  
+  
+  world_to_body_ = new_world_to_body;
+  
+  return; 
   
   
   /*
@@ -390,23 +393,18 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
 
 int main(int argc, char **argv){
   ConciseArgs parser(argc, argv, "fovision-odometry");
-  int fusion_mode=0;
   string camera_config = "CAMERA";
-  string output_extension = "";
-  parser.add(fusion_mode, "i", "fusion_mode", "0 none, 1 at init, 2 every second, 3 init from gt, then every second");
+  bool output_signal = FALSE;
   parser.add(camera_config, "c", "camera_config", "Camera Config block to use: CAMERA, stereo, stereo_with_letterbox");
-  parser.add(output_extension, "o", "output_extension", "Extension to pose channels (e.g. '_VO' ");
-  parser.add(zheight_clamp, "z", "zheight_clamp", "Clamp to GT height");
+  parser.add(output_signal, "o", "output_signal", "Output POSE_BODY and POSE_BODY_ALT signals");
   parser.parse();
-  cout << fusion_mode << " is fusion_mode\n"; 
   cout << camera_config << " is camera_config\n"; 
-  cout << zheight_clamp << " is zheight_clamp\n"; 
   
   
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
-  StereoOdom fo= StereoOdom(lcm, fusion_mode,camera_config, output_extension);    
+  StereoOdom fo= StereoOdom(lcm,camera_config, output_signal);    
   while(0 == lcm->handle());
 }
