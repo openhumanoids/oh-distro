@@ -18,7 +18,10 @@ classdef Atlas < Biped
       if ~isfield(options,'floating')
         options.floating = true;
       end
-
+      if ~isfield(options,'terrain')
+        options.terrain = RigidBodyFlatTerrain;
+      end
+      
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 
