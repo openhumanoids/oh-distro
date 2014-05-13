@@ -104,7 +104,7 @@ set(gurobi_revision 46d1985d5a86f7bc660e363cb2d5ff76af4b6fd9)
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
-set(iris_revision 094120d6716eb62a1e48f77114ea30b1db3f0c24)
+set(iris_revision a4fd4cd846db491c8e20f0bdf11f6b662a7e3caf)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/rdeits/mosek.git)
@@ -114,6 +114,10 @@ set(mosek_depends)
 set(flycapture_url https://svn.csail.mit.edu/drc/trunk/software/externals/flycapture)
 set(flycapture_revision 8298)
 set(flycapture_depends)
+
+set(pypolyhedron_url ssh://git@github.com/rdeits/pypolyhedron.git)
+set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
+set(pypolyhedron_depends)
 
 set(externals
   libbot-drc
@@ -148,6 +152,7 @@ set(git-externals
   gurobi
   iris
   mosek
+  pypolyhedron
   )
 
 
