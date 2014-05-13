@@ -10,7 +10,8 @@ struct lin_con_t
 	//       Ax <= b
 	//
 	// Note: the A matrix must be stored in flattened form within this message
-	// (i.e. as an array of length m*n instead of an m x n matrix).
+	// (i.e. as an array of length m*n instead of an m x n matrix). Column-major
+	// (Fortran-style) ordering should be used to generate the flattened A.
 
 	int32_t m;
 	int32_t n;

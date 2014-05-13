@@ -104,7 +104,7 @@ set(gurobi_revision 46d1985d5a86f7bc660e363cb2d5ff76af4b6fd9)
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
-set(iris_revision 7ae8b0988d917211787effbbfe816c14c4fc2887)
+set(iris_revision 094120d6716eb62a1e48f77114ea30b1db3f0c24)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/rdeits/mosek.git)

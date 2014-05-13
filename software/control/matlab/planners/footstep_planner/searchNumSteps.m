@@ -6,7 +6,7 @@ foot_orig.left(4:5) = 0;
 
 GOAL_THRESHOLD = [0.02;0.02;0;0;0;0.1];
 w_final = [5;5;0;0;0;1];
-BEAM_WIDTH = 5;
+BEAM_WIDTH = 2;
 
 plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {}, 'last_foot_right', {});
 if length(existing_steps) > 0
@@ -60,6 +60,7 @@ end
 % max_steps = 12;
 
 best_costs = [];
+completed_mask = [];
 
 while true
   new_plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {});
@@ -126,7 +127,7 @@ while true
 end
 
 disp('done');
-if ~any(completed_mask)
+if isempty(completed_mask) || ~any(completed_mask)
   completed_mask = true(1, length(plan_set));
   if length(goal_steps) > 0
     % We're only done if the handedness of the plan matches the goal steps
