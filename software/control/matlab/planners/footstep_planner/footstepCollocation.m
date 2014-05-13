@@ -89,8 +89,6 @@ lb(1:6,1) = st0;
 ub(1:6,1) = st0;
 lb(7:12,1) = st0;
 ub(7:12,1) = st0;
-lb(7:9, :) = -2; % 2m maximum delta between steps
-ub(7:9, :) = 2;
 lb(12,:) = -pi;
 ub(12,:) = pi;
 
