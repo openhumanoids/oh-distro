@@ -6,7 +6,7 @@ foot_orig.left(4:5) = 0;
 
 GOAL_THRESHOLD = [0.02;0.02;0;0;0;0.1];
 w_final = [5;5;0;0;0;1];
-BEAM_WIDTH = 4;
+BEAM_WIDTH = 2;
 
 plan_set = struct('steps', {}, 'cost', {}, 'regions', {}, 'goal_reached', {}, 'last_foot_right', {});
 if length(existing_steps) > 0
@@ -75,7 +75,6 @@ while true
       region_idx = [plan_set(j).regions, new_region_idx(k)];
       [footsteps, exitflag, cost] = footstepCollocation(biped, seed_steps, goal_pos,...
         params, safe_regions(region_idx));
-      exitflag
       if exitflag < 10
         total_diff = error_from_goal(footsteps, goal_pos, GOAL_THRESHOLD, w_final);
         if total_diff <= 1e-3
