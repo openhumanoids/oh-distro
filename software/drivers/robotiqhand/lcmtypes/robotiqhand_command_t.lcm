@@ -10,6 +10,14 @@ struct command_t
   // 0 - not active
   int8_t activate;
 
+  // flag perform an emergency release
+  // (if this flag is set, everything else is ignored
+  //  and the hand will do an auto release, which will
+  //  need a recalibration before resuming)
+  // 1 - active
+  // 0 - not active
+  int8_t emergency_release;
+
   // 1 - move the gripper this this command
   // 0 - don't move, just changing a mode or setting
   int8_t do_move;

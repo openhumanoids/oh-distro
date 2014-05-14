@@ -80,6 +80,8 @@ class commandLcmToModbusConverter(object):
 
         self.rACT = lcmCommand.activate
 
+        self.rATR = lcmCommand.emergency_release
+
         if lcmCommand.do_move == 1:
             self.position = lcmCommand.position
             self.force = lcmCommand.force

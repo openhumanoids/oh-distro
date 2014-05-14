@@ -115,6 +115,9 @@ def genCommand(char):
         command.force = forceLevel
         command.velocity = speedLevel
 
+    elif char == 'e':
+        command.emergency_release = 1
+
     else:
         # None of the individual commands were received, do nothing
         return None
@@ -128,6 +131,7 @@ def askForCommand():
     strAskForCommand  = '-----\nAvailable commands\n\n'
     strAskForCommand += 'r: Reset\n'
     strAskForCommand += 'a: Activate\n'
+    strAskForCommand += 'e: Emergency Release\n'
     strAskForCommand += 'c: Close\n'
     strAskForCommand += 'o: Open\n'
     strAskForCommand += 'b: Basic mode\n'
