@@ -1,7 +1,7 @@
 #ifndef SHAPERHANDLERS20130506H
 #define SHAPERHANDLERS20130506H
 
-#include "network-bridge.h"
+#include "shaper-app.h"
 #include "shaper-packet.pb.h"
 #include "drc_udp_driver.h"
 #include "ldpc/ldpc_wrapper.h"

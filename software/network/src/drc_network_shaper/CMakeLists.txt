@@ -28,7 +28,7 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_BINARY_DIR}
   grasp-analogs.proto
   ) 
 add_executable(drc-network-shaper 
-  network-bridge.cpp 
+  shaper-app.cpp 
   shaper-handlers.cpp 
   custom-codecs.cpp
   procman-codecs.cpp

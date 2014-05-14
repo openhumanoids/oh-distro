@@ -9,7 +9,7 @@
 // fingerprint_base = long = 4
 // 4 missing bytes = 4 (probably the channel OR that the fingerprint has be double counted here)
 
-#include "network-bridge.h"
+#include "shaper-app.h"
 #include <path_util/path_util.h>
 #include "goby/common/logger.h"
 
