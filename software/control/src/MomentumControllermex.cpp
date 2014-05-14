@@ -462,11 +462,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (info<0)  	mexPrintf("fastQP info=%d... calling Gurobi.\n", info);
   }
   else {
-    // use gurobi active set 
-    model = gurobiActiveSetQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->vbasis,pdata->vbasis_len,pdata->cbasis,pdata->cbasis_len,alpha);
-    CGE(GRBgetintattr(model,"NumVars",&pdata->vbasis_len), pdata->env);
-    CGE(GRBgetintattr(model,"NumConstrs",&pdata->cbasis_len), pdata->env);
-    info=66;
+    // temporarily disabled because drake is not up to date yet in DRC repo
+    // // use gurobi active set 
+    // model = gurobiActiveSetQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->vbasis,pdata->vbasis_len,pdata->cbasis,pdata->cbasis_len,alpha);
+    // CGE(GRBgetintattr(model,"NumVars",&pdata->vbasis_len), pdata->env);
+    // CGE(GRBgetintattr(model,"NumConstrs",&pdata->cbasis_len), pdata->env);
+    // info=66;
+    info = -1;
   }
 
   if (info<0) {
