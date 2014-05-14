@@ -233,6 +233,11 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
 
 }
 
+double PlotWidget::timeWindow() const
+{
+  return this->d_plot->timeWindow();
+}
+
 void PlotWidget::updateSignalInfoLabel()
 {
   mSignalInfoLabel->setText(QString());

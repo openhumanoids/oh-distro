@@ -46,6 +46,8 @@ public:
   QMap<QString, QVariant> saveSettings();
   QMap<QString, QVariant> saveSignalSettings(SignalHandler* signalHandler);
 
+  double timeWindow() const;
+
   QListWidgetItem* itemForSignal(SignalHandler* signalHandler);
   SignalHandler* signalForItem(QListWidgetItem* item);
 
