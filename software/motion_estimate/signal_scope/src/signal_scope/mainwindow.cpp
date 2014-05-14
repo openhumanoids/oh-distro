@@ -296,7 +296,6 @@ void MainWindow::onRedrawPlots()
     return;
   }
 
-
   QList<SignalData*> signalDataList;
   foreach (PlotWidget* plot, mPlots)
   {
@@ -316,13 +315,11 @@ void MainWindow::onRedrawPlots()
   foreach (SignalData* signalData, signalDataList)
   {
     signalData->updateValues();
-    if (signalData->size())
+    double signalMaxTime = signalData->lastSampleTime();
+
+    if (signalMaxTime > maxTime)
     {
-      double signalMaxTime = signalData->boundingRect().right();
-      if (signalMaxTime > maxTime)
-      {
-        maxTime = signalMaxTime;
-      }
+      maxTime = signalMaxTime;
     }
   }
 
@@ -333,6 +330,7 @@ void MainWindow::onRedrawPlots()
 
   foreach (PlotWidget* plot, mPlots)
   {
+    //plot->setEndTime(maxTime + (plot->timeWindow()/2.0) );
     plot->setEndTime(maxTime);
     plot->replot();
   }

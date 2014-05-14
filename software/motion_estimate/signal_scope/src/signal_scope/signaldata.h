@@ -16,6 +16,8 @@ public:
     int size() const;
     QPointF value(int index) const;
 
+    double lastSampleTime() const;
+
     QRectF boundingRect() const;
 
     void lock();
