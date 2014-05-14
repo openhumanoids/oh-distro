@@ -84,7 +84,7 @@ while true
         end
 
 %       if total_diff < min([plan_set.cost])
-        if length(best_costs) < 2 || total_diff < best_costs(end-1)
+        if length(best_costs) < 2 || total_diff < 0.95 * best_costs(end-1)
           % Check improvement against the best plan we were able to produce
           % with n-2 steps
           new_plan_set(end+1).steps = footsteps;

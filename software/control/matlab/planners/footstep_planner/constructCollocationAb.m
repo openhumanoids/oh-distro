@@ -35,10 +35,16 @@ function [A, b, Aeq, beq, step_map] = constructCollocationAb(A_reach, b_reach, n
     b = [b; b_corr_full];
   end
 
-  Aeq = zeros(4*(nsteps-1),nv);
-  beq = zeros(4*(nsteps-1),1);
+  Aeq = zeros(4*(nsteps),nv);
+  beq = zeros(4*(nsteps),1);
+  j = 1;
+  con_ndx = 1:4;
+  x1_ndx = 1:6;
+  dx_ndx = 7:12;
+  Aeq(con_ndx, x1_ndx([1,2,3,6])) = -diag(ones(4,1));
+  Aeq(con_ndx, dx_ndx([1,2,3,6])) = diag(ones(4,1));
   for j = 2:nsteps
-    con_ndx = (j-2)*4+(1:4);
+    con_ndx = (j-1)*4+(1:4);
     x1_ndx = (j-2)*12+(1:6);
     x2_ndx = (j-1)*12+(1:6);
     dx_ndx = (j-1)*12+(7:12);
