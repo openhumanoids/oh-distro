@@ -39,6 +39,8 @@ public:
 
     void setBackgroundColor(QString color);
 
+    void setMarkerEnabled(bool enabled);
+
     bool isStopped();
 
     void flagAxisSyncRequired();
@@ -62,6 +64,7 @@ private:
     void initBackground();
 
     QwtPlotMarker *d_origin;
+    QwtPlotMarker *d_marker;
     QwtPlotGrid *d_grid;
     MyMagnifier *mMagnifier;
 
