@@ -40,7 +40,6 @@ Resend(std::string channel, double max_freq, int buffer_size, int priority, bool
 
 struct CommandLineConfig
 {
-    std::string task;
     bool base_only;
     bool bot_only;
     std::string config_file;
@@ -109,7 +108,7 @@ class DRCShaperApp{
     std::string print_resend_list();
     void send_resend_list();
     
-    std::string parse_direction(std::string task, std::string direction, bool direction_bool);    
+    std::string parse_direction(std::string direction, bool direction_bool);    
     
     static const std::string B2R_CHANNEL;
     static const std::string R2B_CHANNEL;

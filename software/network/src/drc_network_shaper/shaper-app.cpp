@@ -58,12 +58,12 @@ DRCShaperApp::DRCShaperApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared
     }
   
     string direction = "robot_to_base";  
-    robot2base_subscription =  parse_direction(cl_cfg.task, direction, 1);
+    robot2base_subscription =  parse_direction(direction, 1);
     std::cout << robot2base_subscription<< " is robot2base_subscription string\n";
     std::cout << "========\n";  
   
     direction = "base_to_robot";
-    base2robot_subscription =  parse_direction(cl_cfg.task, direction, 0);
+    base2robot_subscription =  parse_direction(direction, 0);
     std::cout << base2robot_subscription << " is base2robot_subscription string\n";
     std::cout << "========\n";  
   
@@ -79,7 +79,7 @@ DRCShaperApp::DRCShaperApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared
 
 
 // Parse the message channels to be sent in a particular direction:
-std::string DRCShaperApp::parse_direction(string task, string direction, bool direction_bool){
+std::string DRCShaperApp::parse_direction(string direction, bool direction_bool){
     string subscription_string ="";
     std::vector <string> channels;
     std::vector<double> frequencys;
@@ -91,11 +91,11 @@ std::string DRCShaperApp::parse_direction(string task, string direction, bool di
     for(char c = 'a', end = 'd'; c <= end; ++c)
     {
         char channels_key[10000], frequency_key[10000];
-        std::string channel_key_name = std::string("network.%s.%s.channels_") + std::string(1, c);
-        std::string frequency_key_name = std::string("network.%s.%s.frequency_") + std::string(1,c);
+        std::string channel_key_name = std::string("network.%s.channels_") + std::string(1, c);
+        std::string frequency_key_name = std::string("network.%s.frequency_") + std::string(1,c);
         
-        sprintf(channels_key, channel_key_name.c_str(),task.c_str() , direction.c_str() );
-        sprintf(frequency_key, frequency_key_name.c_str(),task.c_str() , direction.c_str() );
+        sprintf(channels_key, channel_key_name.c_str(), direction.c_str() );
+        sprintf(frequency_key, frequency_key_name.c_str(), direction.c_str() );
 //        std::cout << channel_key_name << " ===========================\n";
         std::vector <string> channels_local;
         char **names = bot_param_get_str_array_alloc(bot_param, channels_key);
@@ -112,8 +112,8 @@ std::string DRCShaperApp::parse_direction(string task, string direction, bool di
 
         // buffer size
         char buffer_key[10000];
-        std::string buffer_key_name =  std::string("network.%s.%s.buffer_size_") + std::string(1,c);
-        sprintf(buffer_key, buffer_key_name.c_str(),task.c_str() , direction.c_str() );
+        std::string buffer_key_name =  std::string("network.%s.buffer_size_") + std::string(1,c);
+        sprintf(buffer_key, buffer_key_name.c_str(), direction.c_str() );
         std::vector<int> buffer_sizes_local;
         int buffer_size= bot_param_get_int_or_fail(bot_param, buffer_key);
         buffer_sizes_local.assign (channels_local.size(), buffer_size);
@@ -121,8 +121,8 @@ std::string DRCShaperApp::parse_direction(string task, string direction, bool di
 
         // priority
         char priority_key[10000];
-        std::string priority_key_name =  std::string("network.%s.%s.priority_") + std::string(1,c);
-        sprintf(priority_key, priority_key_name.c_str(),task.c_str() , direction.c_str() );
+        std::string priority_key_name =  std::string("network.%s.priority_") + std::string(1,c);
+        sprintf(priority_key, priority_key_name.c_str(), direction.c_str() );
         std::vector<int> priority_local;
         int priority= bot_param_get_double_or_fail(bot_param, priority_key);
         priority_local.assign (channels_local.size(), priority);
@@ -227,7 +227,6 @@ void DRCShaperApp::reset_stats_handler(const lcm::ReceiveBuffer* rbuf, const std
 }
 
 int main (int argc, char ** argv) {
-    string task = "driving";
 
     CommandLineConfig cl_cfg;
     cl_cfg.bot_only = true;
@@ -240,7 +239,6 @@ int main (int argc, char ** argv) {
     cl_cfg.log_path = ".";
   
     ConciseArgs opt(argc, (char**)argv);
-    opt.add(cl_cfg.task, "t", "task","Task: driving, walking, manipulation");
     opt.add(cl_cfg.config_file, "c", "config_file", "Config Filename");
     opt.add(cl_cfg.role, "r", "role", "Role: robot, base or both (local system mode)");
     opt.add(cl_cfg.enable_gui, "g", "gui", "Enable NCurses GUI (for debugging)");
@@ -249,7 +247,6 @@ int main (int argc, char ** argv) {
     opt.add(cl_cfg.log_path, "p", "logpath", "Path to directory in which to write log (requires -l)");
   
     opt.parse();
-    std::cout << "task: " << cl_cfg.task << "\n";
     std::cout << "config_file: " << cl_cfg.config_file<< "\n";
     std::cout << "role: " << cl_cfg.role << "\n";
     if (cl_cfg.role=="robot"){
