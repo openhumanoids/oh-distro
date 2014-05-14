@@ -39,7 +39,7 @@ void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void 
 //
 // from network_bridge.h
 //
-void robot2base(KMCLApp& app)
+void robot2base(DRCShaperApp& app)
 {
     if(app.cl_cfg.base_only == app.cl_cfg.bot_only)
         throw(std::runtime_error("Must choose only one of base only (-b) or robot only (-r) when running drc_network_shaper"));
@@ -51,7 +51,7 @@ void robot2base(KMCLApp& app)
     }
 }
 
-void base2robot(KMCLApp& app)
+void base2robot(DRCShaperApp& app)
 {
     if(!app.cl_cfg.bot_only)
     {
@@ -64,7 +64,7 @@ void base2robot(KMCLApp& app)
 // definition of DRCShaper
 //
 
-DRCShaper::DRCShaper(KMCLApp& app, Node node)
+DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     : app_(app),
       node_(node),
       partner_(node == BASE ? ROBOT : BASE),
@@ -921,7 +921,7 @@ void DRCShaper::run()
 }
 
 // changed to use wall time
-int64_t KMCLApp::get_current_utime()
+int64_t DRCShaperApp::get_current_utime()
 {
     return goby::common::goby_time<goby::uint64>();
 }

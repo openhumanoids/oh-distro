@@ -11,11 +11,11 @@
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>
 
-class KMCLApp;
+class DRCShaperApp;
 // thread for base to robot
-void base2robot(KMCLApp& app);
+void base2robot(DRCShaperApp& app);
 // thread for robot to base
-void robot2base(KMCLApp& app);
+void robot2base(DRCShaperApp& app);
 
 //void utime_handler(const lcm_recv_buf_t* rbuf, const char* channel,
 //                   const drc::utime_t* msg, void* user_data);
@@ -53,12 +53,12 @@ struct CommandLineConfig
 
 
 ///////////////////////////////////////////////////////////////
-class KMCLApp{
+class DRCShaperApp{
   public:
-    KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
+    DRCShaperApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
             const CommandLineConfig& cl_cfg);
     
-    ~KMCLApp(){
+    ~DRCShaperApp(){
     }
     
     boost::shared_ptr<lcm::LCM> robot_lcm;

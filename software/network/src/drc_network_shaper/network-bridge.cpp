@@ -18,13 +18,13 @@
 using namespace boost; 
 using namespace std;
 
-const std::string KMCLApp::B2R_CHANNEL = "TUNNEL_BASE_TO_ROBOT";
-const std::string KMCLApp::R2B_CHANNEL = "TUNNEL_ROBOT_TO_BASE";
+const std::string DRCShaperApp::B2R_CHANNEL = "TUNNEL_BASE_TO_ROBOT";
+const std::string DRCShaperApp::R2B_CHANNEL = "TUNNEL_ROBOT_TO_BASE";
 
     
 
 
-KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
+DRCShaperApp::DRCShaperApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
                  const CommandLineConfig& cl_cfg):
     robot_lcm(robot_lcm), base_lcm(base_lcm),
     cl_cfg(cl_cfg), reset_usage_stats(false){
@@ -79,7 +79,7 @@ KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::
 
 
 // Parse the message channels to be sent in a particular direction:
-std::string KMCLApp::parse_direction(string task, string direction, bool direction_bool){
+std::string DRCShaperApp::parse_direction(string task, string direction, bool direction_bool){
     string subscription_string ="";
     std::vector <string> channels;
     std::vector<double> frequencys;
@@ -143,7 +143,7 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
 }
 
 // Determine if a specific message is to be sent or not:
-bool KMCLApp::determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes, bool* on_demand /* = 0 */){
+bool DRCShaperApp::determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes, bool* on_demand /* = 0 */){
     if(on_demand) *on_demand = false;
     for (size_t i=0; i < resendlist_.size() ; i++){
         if ( resendlist_[i].channel.compare(channel) == 0){
@@ -177,7 +177,7 @@ bool KMCLApp::determine_resend_from_list(std::string channel, int64_t msg_utime,
 }
 
 
-std::string KMCLApp::print_resend_list(){
+std::string DRCShaperApp::print_resend_list(){
     stringstream ss;
   
     //cout << "0123456789012345678901234567890123456789\n";
@@ -197,7 +197,7 @@ std::string KMCLApp::print_resend_list(){
     return ss.str();
 }
 
-void KMCLApp::send_resend_list(){
+void DRCShaperApp::send_resend_list(){
     drc::bandwidth_stats_t stats;
     stats.utime = get_current_utime();
     stats.previous_utime = bw_init_utime;
@@ -215,13 +215,13 @@ void KMCLApp::send_resend_list(){
 
 
 // The clock/robot_utime message is used to timing:
-void KMCLApp::utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+void DRCShaperApp::utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                             const  drc::utime_t* msg){
     set_current_utime(msg->utime);
 //  std::cout << "got current time\n";
 }
 
-void KMCLApp::reset_stats_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+void DRCShaperApp::reset_stats_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                             const  drc::utime_t* msg){
     set_reset_usage_stats(true);
 }
@@ -299,16 +299,16 @@ int main (int argc, char ** argv) {
     }
 
   
-    KMCLApp* app= new KMCLApp(robot_lcm,base_lcm,cl_cfg);
+    DRCShaperApp* app= new DRCShaperApp(robot_lcm,base_lcm,cl_cfg);
     boost::thread_group thread_group;
 
     // Subscribe to robot time and use that to key the publishing of all messages in both directions:
     if(cl_cfg.base_only){
-        app->base_lcm->subscribe("ROBOT_UTIME", &KMCLApp::utime_handler, app);      
-	app->base_lcm->subscribe("RESET_SHAPER_STATS", &KMCLApp::reset_stats_handler, app);
+        app->base_lcm->subscribe("ROBOT_UTIME", &DRCShaperApp::utime_handler, app);      
+	app->base_lcm->subscribe("RESET_SHAPER_STATS", &DRCShaperApp::reset_stats_handler, app);
     }else{
-        app->robot_lcm->subscribe("ROBOT_UTIME", &KMCLApp::utime_handler, app);      
-	app->robot_lcm->subscribe("RESET_SHAPER_STATS", &KMCLApp::reset_stats_handler, app);
+        app->robot_lcm->subscribe("ROBOT_UTIME", &DRCShaperApp::utime_handler, app);      
+	app->robot_lcm->subscribe("RESET_SHAPER_STATS", &DRCShaperApp::reset_stats_handler, app);
     }
   
     thread_group.create_thread(boost::bind(robot2base, boost::ref( *app)));
