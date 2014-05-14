@@ -111,7 +111,7 @@ QList<QList<QString> > className::validArrayKeys() \
   arrayKeys << _arrayKeyFunction; \
   return arrayKeys; \
 } \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -143,7 +143,7 @@ QList<QList<QString> > className::validArrayKeys() \
   arrayKeys << _arrayKeyFunction1 << _arrayKeyFunction2; \
   return arrayKeys; \
 } \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -173,7 +173,7 @@ QList<QList<QString> > className::validArrayKeys() \
   arrayKeys << _arrayKeyFunction; \
   return arrayKeys; \
 } \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -194,7 +194,7 @@ QString className::description() { return QString("%1.%2.%3[%4]").arg(this->mess
 declare_signal_handler(className); \
 className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -215,7 +215,7 @@ QString className::description() { return QString("%1.%2").arg(this->messageType
 declare_signal_handler(className); \
 className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -235,7 +235,7 @@ QString className::description() { return QString("%1.%2").arg(this->messageType
 declare_signal_handler(className); \
 className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -483,8 +483,8 @@ SignalHandler::~SignalHandler()
 
 void SignalHandler::handleMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel)
 {
-  float timeNow;
-  float signalValue;
+  double timeNow;
+  double signalValue;
   (void)channel;
 
   bool valid = this->extractSignalData(rbuf, timeNow, signalValue);
