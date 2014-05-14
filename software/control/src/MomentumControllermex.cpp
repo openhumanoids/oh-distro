@@ -96,7 +96,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     error = GRBloadenv(&(pdata->env),NULL);
 
     // set solver params (http://www.gurobi.com/documentation/5.5/reference-manual/node798#sec:Parameters)
-    int method=0;
+    mxArray* psolveropts = myGetProperty(pobj,"gurobi_options");
+    int method = (int) mxGetScalar(myGetField(psolveropts,"method"));
     CGE ( GRBsetintparam(pdata->env,"outputflag",0), pdata->env );
     CGE ( GRBsetintparam(pdata->env,"method",method), pdata->env );
     // CGE ( GRBsetintparam(pdata->env,"method",method), pdata->env );

@@ -172,7 +172,18 @@ classdef MomentumControlBlock < MIMODrakeSystem
     if (isfield(options,'full_body_opt'))
       warning('full_body_opt option no longer supported --- controller is always full body.')
     end
-
+    
+    if isfield(options,'solver') 
+      % 0: fastqp, fallback to gurobi barrier (default)
+      % 1: gurobi primal simplex with active sets
+      typecheck(options.solver,'double');
+      sizecheck(options.solver,1);
+      assert(options.solver==0 || options.solver==1);
+    else
+      options.solver = 0;
+    end
+    obj.solver = options.solver;
+    
     obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
@@ -184,15 +195,19 @@ classdef MomentumControlBlock < MIMODrakeSystem
     %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       
-    obj.solver_options.outputflag = 0; % not verbose
-    obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
-    obj.solver_options.presolve = 0;
-    % obj.solver_options.prepasses = 1;
+    obj.gurobi_options.outputflag = 0; % not verbose
+    if options.solver==0
+      obj.gurobi_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
+    else
+      obj.gurobi_options.method = 0; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
+    end
+    obj.gurobi_options.presolve = 0;
+    % obj.gurobi_options.prepasses = 1;
 
-    if obj.solver_options.method == 2
-      obj.solver_options.bariterlimit = 20; % iteration limit
-      obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
-      obj.solver_options.barconvtol = 5e-4;
+    if obj.gurobi_options.method == 2
+      obj.gurobi_options.bariterlimit = 20; % iteration limit
+      obj.gurobi_options.barhomogeneous = 0; % 0 off, 1 on
+      obj.gurobi_options.barconvtol = 5e-4;
     end
     
     if (obj.use_mex>0)
@@ -521,7 +536,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         model.ub = ub;
 
         model.obj = fqp;
-        if obj.solver_options.method==2
+        if obj.gurobi_options.method==2
           % see drake/algorithms/QuadraticProgram.m solveWGUROBI
           model.Q = .5*model.Q;
         end
@@ -531,7 +546,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         end
 
   %         qp_tic = tic;
-        result = gurobi(model,obj.solver_options);
+        result = gurobi(model,obj.gurobi_options);
   %         qp_toc = toc(qp_tic);
   %         fprintf('QP solve: %2.4f\n',qp_toc);
 
@@ -566,12 +581,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
         height = 0;
 			end
 			body_motion_input_start=3+obj.input_foot_contacts*1;
-      mu = 0.75;
       if obj.use_mex==1
-				
+	      mu = 0.75;
         if obj.debug
           [y,qdd,info,active_supports,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha,active_constraints,h,hdot_des] = MomentumControllermex(obj.mex_ptr.data,...
-            1,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+            obj.solver==0,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
 
           % publish debug 
           debug_data.utime = t*1e6;
@@ -588,10 +602,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
           obj.debug_pub.publish(debug_data);
 
         else
-          [y,qdd,info] = MomentumControllermex(obj.mex_ptr.data,1,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+          [y,qdd,info] = MomentumControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         end
-
-        if info < 0 
+        
+        if info < 0
           infocount = infocount +1;
         else
           infocount = 0;
@@ -606,8 +620,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
         end			
         
       else
+        mu = 1.0;
         [y_mex,mex_qdd,~,active_supports_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha_mex] = MomentumControllermex(obj.mex_ptr.data,...
-          1,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+          obj.solver==0,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
@@ -663,7 +678,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     rhand_idx;
     lhand_idx;
     pelvis_idx;
-		solver_options = struct();
+		gurobi_options = struct();
+    solver=0;
     debug;
     debug_pub;
     use_mex;
