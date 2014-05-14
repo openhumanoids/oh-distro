@@ -2,6 +2,7 @@ classdef CombinedPlanner
   properties
     biped
     footstep_planner
+    iris_planner
     walking_planner
     monitors
     request_channels
@@ -28,6 +29,7 @@ classdef CombinedPlanner
 
       obj.biped = r;
       obj.footstep_planner = StatelessFootstepPlanner();
+      obj.iris_planner = IRISPlanner();
       obj.walking_planner = StatelessWalkingPlanner();
       obj.monitors = {};
       obj.request_channels = {};
@@ -39,6 +41,16 @@ classdef CombinedPlanner
       obj.request_channels{end+1} = 'FOOTSTEP_PLAN_REQUEST';
       obj.handlers{end+1} = @obj.plan_footsteps;
       obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
+
+%       obj.monitors{end+1} = drake.util.MessageMonitor(drc.footstep_check_request_t, 'utime');
+%       obj.request_channels{end+1} = 'FOOTSTEP_CHECK_REQUEST';
+%       obj.handlers{end+1} = @obj.check_footsteps;
+%       obj.response_channels{end+1} = 'FOOTSTEP_PLAN_RESPONSE';
+
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.iris_region_request_t, 'utime');
+      obj.request_channels{end+1} = 'IRIS_REGION_REQUEST';
+      obj.handlers{end+1} = @obj.iris_regions;
+      obj.response_channels{end+1} = 'IRIS_REGION_RESPONSE';
 
       obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');
       obj.request_channels{end+1} = 'WALKING_TRAJ_REQUEST';
@@ -73,7 +85,12 @@ classdef CombinedPlanner
       msg = drc.footstep_plan_request_t(msg);
       plan = obj.footstep_planner.plan_footsteps(obj.biped, msg);
     end
-
+    
+    function region_list = iris_regions(obj, msg)
+      msg = drc.iris_region_request_t(msg);
+      region_list = obj.iris_planner.find_safe_regions(obj.biped, msg);
+    end
+    
     function plan = plan_walking_traj(obj, msg)
       msg = drc.walking_plan_request_t(msg);
       plan = obj.walking_planner.plan_walking(obj.biped, msg, true);

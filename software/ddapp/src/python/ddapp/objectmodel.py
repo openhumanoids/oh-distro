@@ -1,34 +1,7 @@
 import os
-import re
 import PythonQt
 from PythonQt import QtCore, QtGui
-from collections import namedtuple
-from collections import OrderedDict
-
-from ddapp.fieldcontainer import FieldContainer
-import vtk
-
-_objectTree = None
-_propertiesPanel = None
-
-objects = {}
-
-class PropertyAttributes(FieldContainer):
-
-    def __init__(self, **kwargs):
-
-        self._add_fields(
-          decimals    = 5,
-          minimum = -1e4,
-          maximum = 1e4,
-          singleStep = 1,
-          hidden = False,
-          enumNames = None,
-          readOnly = False,
-          )
-
-        self._set_fields(**kwargs)
-
+from ddapp.propertyset import PropertySet, PropertyAttributes, PropertyPanelHelper
 
 class Icons(object):
 
@@ -42,59 +15,54 @@ class Icons(object):
   Hand = QtGui.QIcon(':/images/claw.png')
 
 
-def cleanPropertyName(s):
-    """
-    Generate a valid python property name by replacing all non-alphanumeric characters with underscores and adding an initial underscore if the first character is a digit
-    """
-    return re.sub(r'\W|^(?=\d)','_',s).lower()  # \W matches non-alphanumeric, ^(?=\d) matches the first position if followed by a digit
-
-
 class ObjectModelItem(object):
 
-    def __init__(self, name, icon=Icons.Robot):
-        self.properties = OrderedDict()
-        self.propertyAttributes = {}
+    def __init__(self, name, icon=Icons.Robot, tree=None, properties=None):
+
+        self.properties = properties or PropertySet()
+        self.properties.connectPropertyChanged(self._onPropertyChanged)
+        self.properties.connectPropertyAdded(self._onPropertyAdded)
+        self.properties.connectPropertyAttributeChanged(self._onPropertyAttributeChanged)
+
         self.icon = icon
-        self.alternateNames = {}
-        self.addProperty('Name', name)
+        self._tree = tree
+        self.addProperty('Name', name, attributes=PropertyAttributes(hidden=True))
 
     def setIcon(self, icon):
         self.icon = icon
-        item = getItemForObject(self)
-        if item:
-            item.setIcon(0, icon)
+        if self._tree:
+            self._tree.updateObjectIcon(self)
 
     def propertyNames(self):
-        return self.properties.keys()
+        return self.properties.propertyNames()
 
     def hasProperty(self, propertyName):
-        return propertyName in self.properties
+        return self.properties.hasProperty(propertyName)
 
     def getProperty(self, propertyName):
-        assert self.hasProperty(propertyName)
-        return self.properties[propertyName]
+        return self.properties.getProperty(propertyName)
 
     def addProperty(self, propertyName, propertyValue, attributes=None):
-        alternateName = cleanPropertyName(propertyName)
-        if propertyName not in self.properties and alternateName in self.alternateNames:
-            raise ValueError('Adding this property would conflict with a different existing property with alternate name {:s}'.format(alternateName))
-        self.alternateNames[alternateName] = propertyName
-        self.properties[propertyName] = propertyValue
-        if attributes is not None:
-            self.propertyAttributes[propertyName] = attributes
-        self._onPropertyAdded(propertyName)
+        self.properties.addProperty(propertyName, propertyValue, attributes)
 
     def setProperty(self, propertyName, propertyValue):
-        assert self.hasProperty(propertyName)
+        self.properties.setProperty(propertyName, propertyValue)
 
-        attributes = self.getPropertyAttributes(propertyName)
-        if attributes.enumNames and type(propertyValue) != int:
-            propertyValue = attributes.enumNames.index(propertyValue)
+    def getPropertyAttribute(self, propertyName, propertyAttribute):
+        self.properties.getPropertyAttribute(propertyname, propertyAttribute)
 
-        self.oldPropertyValue = (propertyName, self.getProperty(propertyName))
-        self.properties[propertyName] = propertyValue
-        self._onPropertyChanged(propertyName)
-        self.oldPropertyValue = None
+    def setPropertyAttribute(self, propertyName, propertyAttribute, value):
+        self.properties.setPropertyAttribute(propertyName, propertyAttribute, value)
+
+    def _onPropertyChanged(self, propertySet, propertyName):
+        if self._tree is not None:
+            self._tree._onPropertyValueChanged(self, propertyName)
+
+    def _onPropertyAdded(self, propertySet, propertyName):
+        pass
+
+    def _onPropertyAttributeChanged(self, propertySet, propertyName, propertyAttribute):
+        pass
 
     def hasDataSet(self, dataSet):
         return False
@@ -105,44 +73,25 @@ class ObjectModelItem(object):
     def onAction(self, action):
         pass
 
-    def getPropertyAttributes(self, propertyName):
-
-        if propertyName == 'Alpha':
-            return PropertyAttributes(decimals=2, minimum=0.0, maximum=1.0, singleStep=0.1, hidden=False)
-        elif propertyName == 'Name':
-            return PropertyAttributes(decimals=0, minimum=0, maximum=0, singleStep=0, hidden=True)
-        else:
-            attributes = PropertyAttributes(decimals=0, minimum=0, maximum=0, singleStep=0, hidden=False)
-            return self.propertyAttributes.setdefault(propertyName, attributes)
-
-    def _onPropertyChanged(self, propertyName):
-        updatePropertyPanel(self, propertyName)
-        if propertyName == 'Visible':
-            updateVisIcon(self)
-        if propertyName == 'Name':
-            getItemForObject(self).setText(0, self.getProperty('Name'))
-
-    def _onPropertyAdded(self, propertyName):
-        pass
+    def getObjectTree(self):
+        return self._tree
 
     def onRemoveFromObjectModel(self):
         pass
 
+    def parent(self):
+        if self._tree is not None:
+            return self._tree.getObjectParent(self)
+
     def children(self):
-        return getObjectChildren(self)
+        if self._tree is not None:
+            return self._tree.getObjectChildren(self)
+        else:
+            return []
 
     def findChild(self, name):
-        return findChildByName(self, name)
-
-    def __getattribute__(self, name):
-        try:
-            alternateNames = object.__getattribute__(self, 'alternateNames')
-            if name in alternateNames:
-                return object.__getattribute__(self, 'getProperty')(self.alternateNames[name])
-            else:
-                raise AttributeError()
-        except AttributeError:
-            return object.__getattribute__(self, name)
+        if self._tree is not None:
+            return self._tree.findChildByName(self, name)
 
 
 class ContainerItem(ObjectModelItem):
@@ -151,566 +100,316 @@ class ContainerItem(ObjectModelItem):
         ObjectModelItem.__init__(self, name, Icons.Directory)
 
 
-class RobotModelItem(ObjectModelItem):
+class ObjectModelTree(object):
 
-    def __init__(self, model):
+    def __init__(self):
+        self._treeWidget = None
+        self._propertiesPanel = None
+        self._objects = {}
+        self._blockSignals = False
 
-        modelName = os.path.basename(model.filename())
-        ObjectModelItem.__init__(self, modelName, Icons.Robot)
+    def getTreeWidget(self):
+        return self._treeWidget
 
-        self.model = model
-        model.connect('modelChanged()', self.onModelChanged)
-        self.modelChangedCallback = None
+    def getPropertiesPanel(self):
+        return self._propertiesPanel
 
-        self.addProperty('Filename', model.filename())
-        self.addProperty('Visible', model.visible())
-        self.addProperty('Alpha', model.alpha())
-        self.addProperty('Color', model.color())
-        self.views = []
+    def getActiveItem(self):
+        items = self.getTreeWidget().selectedItems()
+        return items[0] if len(items) == 1 else None
 
-    def _onPropertyChanged(self, propertyName):
-        ObjectModelItem._onPropertyChanged(self, propertyName)
+    def getObjectParent(self, obj):
+        item = self._getItemForObject(obj)
+        if item.parent():
+            return self._getObjectForItem(item.parent())
 
-        if propertyName == 'Alpha':
-            self.model.setAlpha(self.getProperty(propertyName))
-        elif propertyName == 'Visible':
-            self.model.setVisible(self.getProperty(propertyName))
-        elif propertyName == 'Color':
-            self.model.setColor(self.getProperty(propertyName))
+    def getObjectChildren(self, obj):
+        item = self._getItemForObject(obj)
+        return [self._getObjectForItem(item.child(i)) for i in xrange(item.childCount())]
 
-        self._renderAllViews()
+    def getActiveObject(self):
+        item = self.getActiveItem()
+        return self._objects[item] if item is not None else None
 
-    def hasDataSet(self, dataSet):
-        return len(self.model.getLinkNameForMesh(dataSet)) != 0
+    def setActiveObject(self, obj):
+        item = self._getItemForObject(obj)
+        if item:
+            tree = self.getTreeWidget()
+            tree.setCurrentItem(item)
+            tree.scrollToItem(item)
 
-    def onModelChanged(self):
-        if self.modelChangedCallback:
-            self.modelChangedCallback(self)
+    def getObjects(self):
+        return self._objects.values()
 
-        if self.getProperty('Visible'):
-            self._renderAllViews()
+    def _getItemForObject(self, obj):
+        for item, itemObj in self._objects.iteritems():
+            if itemObj == obj:
+                return item
+
+    def _getObjectForItem(self, item):
+        return self._objects[item]
+
+    def findObjectByName(self, name, parent=None):
+        if parent:
+            return self.findChildByName(parent, name)
+        for obj in self._objects.values():
+            if obj.getProperty('Name') == name:
+                return obj
+
+    def findChildByName(self, parent, name):
+        for child in self.getObjectChildren(parent):
+            if child.getProperty('Name') == name:
+                return child
+
+    def onPropertyChanged(self, prop):
+
+        if self._blockSignals:
+            return
+
+        if prop.isSubProperty():
+            return
+
+        obj = self.getActiveObject()
+        obj.setProperty(prop.propertyName(), prop.value())
+
+    def _onTreeSelectionChanged(self):
+
+        panel = self.getPropertiesPanel()
+        self._blockSignals = True
+        panel.clear()
+        self._blockSignals = False
+
+        obj = self.getActiveObject()
+        if not obj:
+            return
+
+        self._blockSignals = True
+        PropertyPanelHelper.addPropertiesToPanel(obj.properties, panel)
+        self._blockSignals = False
+
+    def updateVisIcon(self, obj):
+
+        if not obj.hasProperty('Visible'):
+            return
+
+        isVisible = obj.getProperty('Visible')
+        icon = Icons.Eye if isVisible else Icons.EyeOff
+        item = self._getItemForObject(obj)
+        item.setIcon(1, icon)
+
+    def updateObjectIcon(self, obj):
+        item = self._getItemForObject(obj)
+        item.setIcon(0, obj.icon)
+
+    def updateObjectName(self, obj):
+        item = self._getItemForObject(obj)
+        item.setText(0, obj.getProperty('Name'))
+
+    def _onPropertyValueChanged(self, obj, propertyName):
+
+        if propertyName == 'Visible':
+            self.updateVisIcon(obj)
+        elif propertyName == 'Name':
+            self.updateObjectName(obj)
+
+        if obj == self.getActiveObject():
+            self._blockSignals = True
+            PropertyPanelHelper.onPropertyValueChanged(self.getPropertiesPanel(), obj.properties, propertyName)
+            self._blockSignals = False
+
+    def _onItemClicked(self, item, column):
+
+        obj = self._objects[item]
+
+        if column == 1 and obj.hasProperty('Visible'):
+            obj.setProperty('Visible', not obj.getProperty('Visible'))
+            self.updateVisIcon(obj)
 
 
-    def _renderAllViews(self):
-        for view in self.views:
-            view.render()
+    def _removeItemFromObjectModel(self, item):
+        while item.childCount():
+            self._removeItemFromObjectModel(item.child(0))
 
-    def getLinkFrame(self, linkName):
-        t = vtk.vtkTransform()
-        t.PostMultiply()
-        if self.model.getLinkToWorld(linkName, t):
-            return t
+        try:
+            obj = self._getObjectForItem(item)
+        except KeyError:
+            return
+
+        obj.onRemoveFromObjectModel()
+        obj._tree = None
+
+        if item.parent():
+            item.parent().removeChild(item)
         else:
-            return None
+            tree = self.getTreeWidget()
+            tree.takeTopLevelItem(tree.indexOfTopLevelItem(item))
 
-    def setModel(self, model):
-        assert model is not None
-        if model == self.model:
+        del self._objects[item]
+
+
+    def removeFromObjectModel(self, obj):
+        if obj is None:
             return
 
-        views = list(self.views)
-        self.removeFromAllViews()
-        self.model = model
-        self.model.setAlpha(self.getProperty('Alpha'))
-        self.model.setVisible(self.getProperty('Visible'))
-        self.model.setColor(self.getProperty('Color'))
-        self.setProperty('Filename', model.filename())
-        model.connect('modelChanged()', self.onModelChanged)
-
-        for view in views:
-            self.addToView(view)
-        self.onModelChanged()
-
-    def addToView(self, view):
-        if view in self.views:
-            return
-        self.views.append(view)
-        self.model.addToRenderer(view.renderer())
-        view.render()
-
-    def onRemoveFromObjectModel(self):
-        self.removeFromAllViews()
-
-    def removeFromAllViews(self):
-        for view in list(self.views):
-            self.removeFromView(view)
-        assert len(self.views) == 0
-
-    def removeFromView(self, view):
-        assert view in self.views
-        self.views.remove(view)
-        self.model.removeFromRenderer(view.renderer())
-        view.render()
-
-class PolyDataItem(ObjectModelItem):
-
-    def __init__(self, name, polyData, view):
-
-        ObjectModelItem.__init__(self, name, Icons.Robot)
-
-        self.views = []
-        self.polyData = polyData
-        self.mapper = vtk.vtkPolyDataMapper()
-        self.mapper.SetInput(self.polyData)
-        self.actor = vtk.vtkActor()
-        self.actor.SetMapper(self.mapper)
-
-        self.addProperty('Visible', True)
-        self.addProperty('Point Size', self.actor.GetProperty().GetPointSize())
-        self.addProperty('Alpha', 1.0)
-        self.addProperty('Color', QtGui.QColor(255,255,255))
-
-        if view is not None:
-            self.addToView(view)
-
-    def _renderAllViews(self):
-        for view in self.views:
-            view.render()
-
-    def hasDataSet(self, dataSet):
-        return dataSet == self.polyData
+        item = self._getItemForObject(obj)
+        if item:
+            self._removeItemFromObjectModel(item)
 
 
-    def setPolyData(self, polyData):
+    def addToObjectModel(self, obj, parentObj=None):
+        assert obj._tree is None
 
-        arrayName = self.getColorByArrayName()
+        parentItem = self._getItemForObject(parentObj)
+        objName = obj.getProperty('Name')
 
-        self.polyData = polyData
-        self.mapper.SetInput(polyData)
-        self.colorBy(arrayName, lut=self.mapper.GetLookupTable())
+        item = QtGui.QTreeWidgetItem(parentItem, [objName])
+        item.setIcon(0, obj.icon)
 
-        if self.getProperty('Visible'):
-            self._renderAllViews()
+        obj._tree = self
 
-    def getColorByArrayName(self):
-        if self.polyData:
-            scalars = self.polyData.GetPointData().GetScalars()
-            if scalars:
-                return scalars.GetName()
+        self._objects[item] = obj
+        self.updateVisIcon(obj)
 
-    def getArrayNames(self):
-        pointData = self.polyData.GetPointData()
-        return [pointData.GetArrayName(i) for i in xrange(pointData.GetNumberOfArrays())]
+        if parentItem is None:
+            tree = self.getTreeWidget()
+            tree.addTopLevelItem(item)
+            tree.expandItem(item)
 
-    def setSolidColor(self, color):
 
-        color = [component * 255 for component in color]
-        self.setProperty('Color', QtGui.QColor(*color))
-        self.colorBy(None)
+    def collapse(self, obj):
+        item = self._getItemForObject(obj)
+        if item:
+            self.getTreeWidget().collapseItem(item)
 
-    def colorBy(self, arrayName, scalarRange=None, lut=None):
 
-        if not arrayName:
-            self.mapper.ScalarVisibilityOff()
-            self.polyData.GetPointData().SetActiveScalars(None)
+    def expand(self, obj):
+        item = self._getItemForObject(obj)
+        if item:
+            self.getTreeWidget().expandItem(item)
+
+
+    def addContainer(self, name, parentObj=None):
+        obj = ContainerItem(name)
+        self.addToObjectModel(obj, parentObj)
+        return obj
+
+
+    def getOrCreateContainer(self, name, parentObj=None):
+        containerObj = self.findObjectByName(name)
+        if not containerObj:
+            containerObj = self.addContainer(name, parentObj)
+        return containerObj
+
+
+    def _onShowContextMenu(self, clickPosition):
+
+        obj = self.getActiveObject()
+        if not obj:
             return
 
-        array = self.polyData.GetPointData().GetArray(arrayName)
-        if not array:
-            print 'colorBy(%s): array not found' % arrayName
-            self.mapper.ScalarVisibilityOff()
-            self.polyData.GetPointData().SetActiveScalars(None)
+        globalPos = self.getTreeWidget().viewport().mapToGlobal(clickPosition)
+
+        menu = QtGui.QMenu()
+
+        actions = obj.getActionNames()
+
+        for actionName in obj.getActionNames():
+            if not actionName:
+                menu.addSeparator()
+            else:
+                menu.addAction(actionName)
+
+        menu.addSeparator()
+        menu.addAction("Remove")
+
+        selectedAction = menu.exec_(globalPos)
+        if selectedAction is None:
             return
 
-        self.polyData.GetPointData().SetActiveScalars(arrayName)
-
-
-        if not lut:
-            if scalarRange is None:
-                scalarRange = array.GetRange()
-
-            lut = vtk.vtkLookupTable()
-            lut.SetNumberOfColors(256)
-            lut.SetHueRange(0.667, 0)
-            lut.SetRange(scalarRange)
-            lut.Build()
-
-
-        #self.mapper.SetColorModeToMapScalars()
-        self.mapper.ScalarVisibilityOn()
-        self.mapper.SetUseLookupTableScalarRange(True)
-        self.mapper.SetLookupTable(lut)
-        self.mapper.InterpolateScalarsBeforeMappingOff()
-
-        if self.getProperty('Visible'):
-            self._renderAllViews()
-
-    def getChildFrame(self):
-        frameName = self.getProperty('Name') + ' frame'
-        return self.findChild(frameName)
-
-    def addToView(self, view):
-        if view in self.views:
-            return
-
-        self.views.append(view)
-        view.renderer().AddActor(self.actor)
-        view.render()
-
-    def _onPropertyChanged(self, propertyName):
-        ObjectModelItem._onPropertyChanged(self, propertyName)
-
-        if propertyName == 'Point Size':
-            self.actor.GetProperty().SetPointSize(self.getProperty(propertyName))
-
-        elif propertyName == 'Alpha':
-            self.actor.GetProperty().SetOpacity(self.getProperty(propertyName))
-
-        elif propertyName == 'Visible':
-            self.actor.SetVisibility(self.getProperty(propertyName))
-
-        elif propertyName == 'Color':
-            color = self.getProperty(propertyName)
-            color = [color.red()/255.0, color.green()/255.0, color.blue()/255.0]
-            self.actor.GetProperty().SetColor(color)
-
-        self._renderAllViews()
-
-    def getPropertyAttributes(self, propertyName):
-
-        if propertyName == 'Point Size':
-            return PropertyAttributes(decimals=0, minimum=1, maximum=20, singleStep=1, hidden=False)
+        if selectedAction.text == "Remove":
+            self.removeFromObjectModel(obj)
         else:
-            return ObjectModelItem.getPropertyAttributes(self, propertyName)
-
-    def onRemoveFromObjectModel(self):
-        self.removeFromAllViews()
-
-    def removeFromAllViews(self):
-        for view in list(self.views):
-            self.removeFromView(view)
-        assert len(self.views) == 0
-
-    def removeFromView(self, view):
-        assert view in self.views
-        self.views.remove(view)
-        view.renderer().RemoveActor(self.actor)
-        view.render()
+            obj.onAction(selectedAction.text)
 
 
-def getObjectTree():
-    return _objectTree
+    def removeSelectedItems(self):
+        for item in self.getTreeWidget().selectedItems():
+            self._removeItemFromObjectModel(item)
 
 
-def getPropertiesPanel():
-    return _propertiesPanel
+    def _filterEvent(self, obj, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            if event.key() == QtCore.Qt.Key_Delete:
+                self._eventFilter.setEventHandlerResult(True)
+                self.removeSelectedItems()
 
+
+    def init(self, treeWidget, propertiesPanel):
+
+        self._treeWidget = treeWidget
+        self._propertiesPanel = propertiesPanel
+        propertiesPanel.clear()
+        propertiesPanel.setBrowserModeToWidget()
+        propertiesPanel.connect('propertyValueChanged(QtVariantProperty*)', self.onPropertyChanged)
+
+        treeWidget.setColumnCount(2)
+        treeWidget.setHeaderLabels(['Name', ''])
+        treeWidget.headerItem().setIcon(1, Icons.Eye)
+        treeWidget.header().setVisible(True)
+        treeWidget.header().setStretchLastSection(False)
+        treeWidget.header().setResizeMode(0, QtGui.QHeaderView.Stretch)
+        treeWidget.header().setResizeMode(1, QtGui.QHeaderView.Fixed)
+        treeWidget.setColumnWidth(1, 24)
+        treeWidget.connect('itemSelectionChanged()', self._onTreeSelectionChanged)
+        treeWidget.connect('itemClicked(QTreeWidgetItem*, int)', self._onItemClicked)
+        treeWidget.connect('customContextMenuRequested(const QPoint&)', self._onShowContextMenu)
+
+        self._eventFilter = PythonQt.dd.ddPythonEventFilter()
+        self._eventFilter.addFilteredEventType(QtCore.QEvent.KeyPress)
+        self._eventFilter.connect('handleEvent(QObject*, QEvent*)', self._filterEvent)
+        treeWidget.installEventFilter(self._eventFilter)
+
+
+#######################
+
+
+_t = ObjectModelTree()
+
+def getDefaultObjectModel():
+    return _t
 
 def getActiveItem():
-    items = getObjectTree().selectedItems()
-    return items[0] if len(items) == 1 else None
-
-
-def getParentObject(obj):
-    item = getItemForObject(obj)
-    if item and item.parent():
-        return getObjectForItem(item.parent())
-
-
-def getObjectChildren(obj):
-
-    item = getItemForObject(obj)
-    if not item:
-        return
-
-    return [getObjectForItem(item.child(i)) for i in xrange(item.childCount())]
-
+    return _t.getActiveItem()
 
 def getActiveObject():
-    item = getActiveItem()
-    return objects[item] if item is not None else None
-
+    return _t.getActiveObject()
 
 def setActiveObject(obj):
-    item = getItemForObject(obj)
-    if item:
-        tree = getObjectTree()
-        #tree.clearSelection()
-        #item.setSelected(True)
-        tree.setCurrentItem(item)
-        tree.scrollToItem(item)
+    _t.setActiveObject(obj)
 
-def getItemForObject(obj):
-    global objects
-    for item, itemObj in objects.iteritems():
-        if itemObj == obj:
-            return item
-
-
-def getObjectForItem(item):
-    return objects[item]
-
+def getObjects():
+    return _t.getObjects()
 
 def findObjectByName(name, parent=None):
-    if parent:
-        return findChildByName(parent, name)
-    for obj in objects.values():
-        if obj.getProperty('Name') == name:
-            return obj
-
-
-def findChildByName(parent, name):
-    for child in getObjectChildren(parent):
-        if child.getProperty('Name') == name:
-            return child
-
-
-_blockSignals = False
-def onPropertyChanged(prop):
-
-    if _blockSignals:
-        return
-
-    if prop.isSubProperty():
-        return
-
-    obj = getActiveObject()
-    obj.setProperty(prop.propertyName(), prop.value())
-
-
-def addPropertiesToPanel(obj, p):
-    for propertyName in obj.propertyNames():
-        value = obj.getProperty(propertyName)
-        attributes = obj.getPropertyAttributes(propertyName)
-        if value is not None and not attributes.hidden:
-            addProperty(p, propertyName, attributes, value)
-
-
-def onTreeSelectionChanged():
-
-    item = getActiveItem()
-    if not item:
-        return
-
-    obj = getObjectForItem(item)
-
-    global _blockSignals
-    _blockSignals = True
-
-    p = getPropertiesPanel()
-    p.clear()
-
-    addPropertiesToPanel(obj, p)
-
-    _blockSignals = False
-
-
-def updateVisIcon(obj):
-    item = getItemForObject(obj)
-    if not item or not obj.hasProperty('Visible'):
-        return
-
-    isVisible = obj.getProperty('Visible')
-    icon = Icons.Eye if isVisible else Icons.EyeOff
-    item.setIcon(1, icon)
-
-
-def updatePropertyPanel(obj, propertyName):
-    if getActiveObject() != obj:
-        return
-
-    p = getPropertiesPanel()
-    prop = p.findProperty(propertyName)
-    if prop is None:
-        return
-
-    global _blockSignals
-    _blockSignals = True
-    prop.setValue(obj.getProperty(propertyName))
-    _blockSignals = False
-
-
-def onItemClicked(item, column):
-
-    global objects
-    obj = objects[item]
-
-    if column == 1 and obj.hasProperty('Visible'):
-        obj.setProperty('Visible', not obj.getProperty('Visible'))
-        updateVisIcon(obj)
-
-
-def setPropertyAttributes(p, attributes):
-    p.setAttribute('decimals', attributes.decimals)
-    p.setAttribute('minimum', attributes.minimum)
-    p.setAttribute('maximum', attributes.maximum)
-    p.setAttribute('singleStep', attributes.singleStep)
-    if attributes.enumNames:
-        p.setAttribute('enumNames', attributes.enumNames)
-
-
-def addProperty(panel, name, attributes, value):
-
-    if isinstance(value, list) and not isinstance(value[0], str):
-        groupName = '%s [%s]' % (name, ', '.join([str(v) for v in value]))
-        groupProp = panel.addGroup(groupName)
-        for v in value:
-            p = panel.addSubProperty(name, v, groupProp)
-            setPropertyAttributes(p, attributes)
-        return groupProp
-    elif attributes.enumNames:
-        p = panel.addEnumProperty(name, value)
-        setPropertyAttributes(p, attributes)
-        return p
-    else:
-        p = panel.addProperty(name, value)
-        setPropertyAttributes(p, attributes)
-        return p
-
-
-def initProperties():
-    p = getPropertiesPanel()
-    p.clear()
-    p.connect('propertyValueChanged(QtVariantProperty*)', onPropertyChanged)
-
-
-def _removeItemFromObjectModel(item):
-
-    while item.childCount():
-        _removeItemFromObjectModel(item.child(0))
-
-    try:
-        obj = getObjectForItem(item)
-    except KeyError:
-        return
-
-    obj.onRemoveFromObjectModel()
-    if item.parent():
-        item.parent().removeChild(item)
-    else:
-        tree = getObjectTree()
-        tree.takeTopLevelItem(tree.indexOfTopLevelItem(item))
-
-    del objects[item]
-
+    return _t.findObjectByName(name, parent)
 
 def removeFromObjectModel(obj):
-
-    if obj is None:
-        return
-
-    item = getItemForObject(obj)
-    if item:
-        _removeItemFromObjectModel(item)
-
+    _t.removeFromObjectModel(obj)
 
 def addToObjectModel(obj, parentObj=None):
-
-    parentItem = getItemForObject(parentObj)
-    objName = obj.getProperty('Name')
-
-    item = QtGui.QTreeWidgetItem(parentItem, [objName])
-    item.setIcon(0, obj.icon)
-    objects[item] = obj
-    updateVisIcon(obj)
-
-    if parentItem is None:
-        tree = getObjectTree()
-        tree.addTopLevelItem(item)
-        tree.expandItem(item)
+    _t.addToObjectModel(obj, parentObj)
 
 def collapse(obj):
-    item = getItemForObject(obj)
-    if item:
-        getObjectTree().collapseItem(item)
-
+    _t.collapse(obj)
 
 def expand(obj):
-    item = getItemForObject(obj)
-    if item:
-        getObjectTree().expandItem(item)
-
+    _t.expand(obj)
 
 def addContainer(name, parentObj=None):
-    obj = ContainerItem(name)
-    addToObjectModel(obj, parentObj)
-    return obj
-
-def addRobotModel(model, parentObj):
-    obj = RobotModelItem(model)
-    addToObjectModel(obj, parentObj)
-    return obj
-
-def addPlaceholder(name, icon, parentObj):
-    obj = ObjectModelItem(name, icon)
-    addToObjectModel(obj, parentObj)
-    return obj
+    return _t.addContainer(name, parentObj)
 
 def getOrCreateContainer(name, parentObj=None):
-
-    containerObj = findObjectByName(name)
-    if not containerObj:
-        containerObj = addContainer(name, parentObj)
-    return containerObj
-
-def onShowContextMenu(clickPosition):
-
-    obj = getActiveObject()
-    if not obj:
-        return
-
-    globalPos = getObjectTree().viewport().mapToGlobal(clickPosition)
-
-    menu = QtGui.QMenu()
-
-    actions = obj.getActionNames()
-
-    for actionName in obj.getActionNames():
-        if not actionName:
-            menu.addSeparator()
-        else:
-            menu.addAction(actionName)
-
-    menu.addSeparator()
-    menu.addAction("Remove")
-
-    selectedAction = menu.exec_(globalPos)
-    if selectedAction is None:
-        return
-
-    if selectedAction.text == "Remove":
-        removeFromObjectModel(obj)
-    else:
-        obj.onAction(selectedAction.text)
-
-
-def onKeyPress(keyEvent):
-
-
-    if keyEvent.key() == QtCore.Qt.Key_Delete:
-
-        keyEvent.setAccepted(True)
-        tree = getObjectTree()
-        items = tree.selectedItems()
-        for item in items:
-            _removeItemFromObjectModel(item)
-
-
-def initObjectTree():
-
-    tree = getObjectTree()
-    tree.setColumnCount(2)
-    tree.setHeaderLabels(['Name', ''])
-    tree.headerItem().setIcon(1, Icons.Eye)
-    tree.header().setVisible(True)
-    tree.header().setStretchLastSection(False)
-    tree.header().setResizeMode(0, QtGui.QHeaderView.Stretch)
-    tree.header().setResizeMode(1, QtGui.QHeaderView.Fixed)
-    tree.setColumnWidth(1, 24)
-    tree.connect('itemSelectionChanged()', onTreeSelectionChanged)
-    tree.connect('itemClicked(QTreeWidgetItem*, int)', onItemClicked)
-    tree.connect('customContextMenuRequested(const QPoint&)', onShowContextMenu)
-    tree.connect('keyPressSignal(QKeyEvent*)', onKeyPress)
-
-
+    return _t.getOrCreateContainer(name, parentObj)
 
 def init(objectTree, propertiesPanel):
-
-    global _objectTree
-    global _propertiesPanel
-    _objectTree = objectTree
-    _propertiesPanel = propertiesPanel
-    propertiesPanel.setBrowserModeToWidget()
-
-    initProperties()
-    initObjectTree()
+    _t.init(objectTree, propertiesPanel)

@@ -7,8 +7,9 @@ if nargin < 6
   sign = 0; % sin wave centered at offset
 end
 
-freq = linspace(min_freq,max_freq,500);% <----  cycles per second
-ts = linspace(0,T,500);
+ts = 0:0.05:T;
+
+freq = linspace(min_freq,max_freq,length(ts));% <----  cycles per second
 
 if sign == 0
   traj = PPTrajectory(foh(ts, offset + amp*sin(ts.*freq*2*pi)));

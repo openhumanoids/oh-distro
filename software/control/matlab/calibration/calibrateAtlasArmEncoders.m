@@ -96,6 +96,7 @@ end
 
     switch_back_to_freeze = false;
     % get current atlas behavior
+    pause(0.25);
     behavior = behavior_lis.getMessage();
     if behavior == AtlasBehaviorModeListener.BEHAVIOR_FREEZE
       switch_back_to_freeze = true;

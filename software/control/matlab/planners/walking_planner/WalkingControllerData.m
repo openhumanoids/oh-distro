@@ -41,85 +41,47 @@ classdef WalkingControllerData
 
     function msg = toLCM(obj)
       msg = drc.walking_plan_t();
-      
+
       msg.robot_name = 'atlas';
-      msg.utime = utime;
-      tmp_fname = ['tmp_r_', num2str(feature('getpid')), '.mat'];
+      msg.utime = 0;
 
       % do we have to save to file to convert to byte stream?
-      qtraj = obj.qtraj;
-      save(tmp_fname,'qtraj');
-      fid = fopen(tmp_fname,'r');
-      msg.qtraj = fread(fid,inf,'*uint8'); % note: this will be stored as an int8 in the lcmtype
-      fclose(fid);
-      msg.n_qtraj_bytes = length(msg.qtraj); 
+      msg.qtraj = getByteStreamFromArray(obj.qtraj);
+      msg.n_qtraj_bytes = length(msg.qtraj);
 
-      S = obj.S;
-      save(tmp_fname,'S');
-      fid = fopen(tmp_fname,'r');
-      msg.S = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_S_bytes = length(msg.S); 
+      msg.K = getByteStreamFromArray(obj.K);
+      msg.n_qtraj_bytes = length(msg.K);
 
-      s1 = obj.s1;
-      save(tmp_fname,'s1');
-      fid = fopen(tmp_fname,'r');
-      msg.s1 = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_s1_bytes = length(msg.s1); 
+      msg.S = getByteStreamFromArray(obj.S);
+      msg.n_S_bytes = length(msg.S);
 
-      s1dot = obj.s1dot;
-      save(tmp_fname,'s1dot');
-      fid = fopen(tmp_fname,'r');
-      msg.s1dot = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_s1dot_bytes = length(msg.s1dot); 
+      msg.s1 = getByteStreamFromArray(obj.s1);
+      msg.n_s1_bytes = length(msg.s1);
 
-      s2 = obj.s2;
-      save(tmp_fname,'s2');
-      fid = fopen(tmp_fname,'r');
-      msg.s2 = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_s2_bytes = length(msg.s2); 
+      msg.s1dot = getByteStreamFromArray(obj.s1dot);
+      msg.n_s1dot_bytes = length(msg.s1dot);
 
-      s2dot = obj.s2dot;
-      save(tmp_fname,'s2dot');
-      fid = fopen(tmp_fname,'r');
-      msg.s2dot = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_s2dot_bytes = length(msg.s2dot); 
+      msg.s2 = getByteStreamFromArray(obj.s2);
+      msg.n_s2_bytes = length(msg.s2);
+
+      msg.s2dot = getByteStreamFromArray(obj.s2dot);
+      msg.n_s2dot_bytes = length(msg.s2dot);
 
       msg.n_support_times = length(obj.support_times);
       msg.support_times = obj.support_times;
-      
-      supports = obj.supports;
-      save(tmp_fname,'supports');
-      fid = fopen(tmp_fname,'r');
-      msg.supports = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_supports_bytes = length(msg.supports); 
 
-      comtraj = obj.comtraj;
-      save(tmp_fname,'comtraj');
-      fid = fopen(tmp_fname,'r');
-      msg.comtraj = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_comtraj_bytes = length(msg.comtraj); 
+      msg.supports = getByteStreamFromArray(obj.supports);
+      msg.n_supports_bytes = length(msg.supports);
 
-      zmptraj = obj.zmptraj;
-      save(tmp_fname,'zmptraj');
-      fid = fopen(tmp_fname,'r');
-      msg.zmptraj = fread(fid,inf,'*uint8');
-      fclose(fid);
-      msg.n_zmptraj_bytes = length(msg.zmptraj); 
+      msg.comtraj = getByteStreamFromArray(obj.comtraj);
+      msg.n_comtraj_bytes = length(msg.comtraj);
 
-      link_constraints = obj.link_constraints;
-      save(tmp_fname, 'link_constraints');
-      fid = fopen(tmp_fname, 'r');
-      msg.link_constraints = fread(fid,inf,'*uint8');
-      fclose(fid);
+      msg.zmptraj = getByteStreamFromArray(obj.zmptraj);
+      msg.n_zmptraj_bytes = length(msg.zmptraj);
+
+      msg.link_constraints = getByteStreamFromArray(obj.link_constraints);
       msg.n_link_constraints_bytes = length(msg.link_constraints);
-      
+
       msg.mu = obj.mu;
       msg.ignore_terrain = obj.ignore_terrain;
       if isfield(obj,'t_offset')
@@ -127,8 +89,57 @@ classdef WalkingControllerData
       else
         msg.t_offset = 0;
       end
+    end
+  end
 
-      delete(tmp_fname);
+  methods (Static = true)
+    function obj = from_walking_plan_t(msg_data)
+
+      S = getArrayFromByteStream(typecast(msg_data.S, 'uint8'));
+
+      if isa(S,'Trajectory')
+        S = eval(S,0); % S is always constant
+      end
+
+      s1 = getArrayFromByteStream(typecast(msg_data.s1, 'uint8'));
+
+      istv = ~(isnumeric(s1) || isa(s1,'ConstantTrajectory'));
+
+      s1dot = getArrayFromByteStream(typecast(msg_data.s1dot, 'uint8'));
+
+      s2 = getArrayFromByteStream(typecast(msg_data.s2, 'uint8'));
+
+      s2dot = getArrayFromByteStream(typecast(msg_data.s2dot, 'uint8'));
+
+      support_times = msg_data.support_times;
+
+      supports = getArrayFromByteStream(typecast(msg_data.supports, 'uint8'));
+      if iscell(supports)
+        warning('somebody sent me a cell array of supports.  don''t do that anymore!');
+        supports = [supports{:}];
+      end
+
+      comtraj = getArrayFromByteStream(typecast(msg_data.comtraj, 'uint8'));
+
+      zmptraj = getArrayFromByteStream(typecast(msg_data.zmptraj, 'uint8'));
+
+      link_constraints = getArrayFromByteStream(typecast(msg_data.link_constraints, 'uint8'));
+
+      qtraj = getArrayFromByteStream(typecast(msg_data.qtraj, 'uint8'));
+
+      K = getArrayFromByteStream(typecast(msg_data.K, 'uint8'));
+
+      mu = msg_data.mu;
+      ignore_terrain = msg_data.ignore_terrain;
+      t_offset = msg_data.t_offset;
+
+      V = struct('S', S, 's1', s1, 's2', s2);
+      obj = WalkingControllerData(V, support_times,...
+                                     supports, comtraj, mu, t_offset,...
+                                     link_constraints, zmptraj, qtraj,...
+                                     ignore_terrain,K);
+      obj.s1dot = s1dot;
+      obj.s2dot = s2dot;
     end
   end
 end

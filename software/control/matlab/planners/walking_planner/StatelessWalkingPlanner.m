@@ -7,7 +7,7 @@ classdef StatelessWalkingPlanner
   methods(Static=true)
     function walking_plan = plan_walking(r, request, compute_xtraj)
       debug = false;
-      
+
       x0 = r.getStateFrame().lcmcoder.decode(request.initial_state);
       q0 = x0(1:end/2);
       nq = getNumDOF(r);
@@ -16,7 +16,17 @@ classdef StatelessWalkingPlanner
         xstar = r.getStateFrame().lcmcoder.decode(request.new_nominal_state);
       else
         d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-        xstar = d.xstar;     
+        xstar = d.xstar;
+      end
+
+      if request.footstep_plan.params.ignore_terrain
+        r = r.setTerrain(KinematicTerrainMap(r, q0, true));
+      else
+        terrain = r.getTerrain();
+        if ismethod(terrain, 'setBackupTerrain')
+          terrain = terrain.setBackupTerrain(r, q0);
+          r = r.setTerrain(terrain);
+        end
       end
 
       r = r.setInitialState(xstar); % TODO: do we need this? -robin
@@ -54,7 +64,7 @@ classdef StatelessWalkingPlanner
       % % compute s1,s2 derivatives for controller Vdot computation
       % s1dot = fnder(V.s1,1);
       % s2dot = fnder(V.s2,1);
-      
+
       mus = zeros(length(footsteps), 1);
       for j = 1:length(footsteps)
         mus(j) = footsteps(j).walking_params.mu;
@@ -64,6 +74,7 @@ classdef StatelessWalkingPlanner
       ignore_terrain = false;
 
       if ~compute_xtraj
+        disp('Walk Plan: computing controller data')
         walking_plan = WalkingControllerData(V, support_times,...
                                            {supports}, comtraj, mu, t_offset,...
                                            link_constraints, zmptraj, qstar,...
@@ -75,6 +86,7 @@ classdef StatelessWalkingPlanner
 
         walking_plan = WalkingPlan(ts, xtraj, joint_names);
       end
+      disp('done')
     end
   end
 end

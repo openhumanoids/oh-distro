@@ -31,10 +31,10 @@ def main():
 
     panel = PythonQt.dd.ddPropertiesPanel()
     panel.setBrowserModeToWidget()
-    om.addPropertiesToPanel(obj, panel)
+    om.PropertyPanelHelper.addPropertiesToPanel(obj.properties, panel)
     panel.show()
 
-    startApplication(enableQuitTimer=False)
+    startApplication(enableQuitTimer=True)
 
 
 if __name__ == '__main__':

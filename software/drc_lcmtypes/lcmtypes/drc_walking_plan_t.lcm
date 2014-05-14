@@ -8,6 +8,9 @@ struct walking_plan_t
 	int32_t n_qtraj_bytes;
   byte qtraj[n_qtraj_bytes];
 
+  int32_t n_K_bytes;
+  byte K[n_K_bytes];
+
 	int32_t n_support_times;
   float support_times[n_support_times];
 
@@ -37,11 +40,11 @@ struct walking_plan_t
 
   int32_t n_link_constraints_bytes;
   byte link_constraints[n_link_constraints_bytes];
-  
+
   float mu; // friction coef
 
   float t_offset;
 
-  boolean ignore_terrain; 
+  boolean ignore_terrain;
 }
 

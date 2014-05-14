@@ -1,9 +1,9 @@
 classdef WalkingController < DRCController
-  
+
   properties (SetAccess=protected,GetAccess=protected)
     robot;
   end
-  
+
   methods
     function obj = WalkingController(name,r,options)
       typecheck(r,'Atlas');
@@ -40,7 +40,7 @@ classdef WalkingController < DRCController
       if(~isfield(options,'debug')) options.debug = false; end
       if ~isfield(options,'lcm_foot_contacts') options.lcm_foot_contacts = true; end
       if ~isfield(options,'bipedal') options.bipedal = true; end
-      
+
       if isfield(options,'use_walking_pd')
         typecheck(options.use_walking_pd, 'logical');
       else
@@ -52,9 +52,9 @@ classdef WalkingController < DRCController
       options.w = 0.001;
 			options.contact_threshold = 0.005;
       qp = QPControlBlock(r,ctrl_data,options);
-      
+
       if options.use_walking_pd
-        % cascade walking PD controller 
+        % cascade walking PD controller
         pd = WalkingPDBlock(r,ctrl_data);
         ins(1).system = 1;
         ins(1).input = 1;
@@ -80,7 +80,7 @@ classdef WalkingController < DRCController
         sys = mimoCascade(pd,qp,[],ins,outs);
       end
       clear connection ins outs;
-      
+
       % cascade neck pitch control block
       neck = NeckControlBlock(r,ctrl_data);
       ins(1).system = 1;
@@ -97,8 +97,8 @@ classdef WalkingController < DRCController
       connection(2).to_input = 2;
       sys = mimoCascade(neck,sys,connection,ins,outs);
       clear connection ins outs;
-      
-      % cascade footstep replanner 
+
+      % cascade footstep replanner
       fs = FootstepPlanShiftBlock(r,ctrl_data);
       ins(1).system = 1;
       ins(1).input = 1;
@@ -111,7 +111,7 @@ classdef WalkingController < DRCController
       connection.from_output = 1;
       connection.to_input = 2;
       sys = mimoCascade(fs,sys,connection,ins,outs);
-      
+
       obj = obj@DRCController(name,sys,AtlasState(r));
 
       obj.controller_data = ctrl_data;
@@ -122,7 +122,7 @@ classdef WalkingController < DRCController
         obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
       end
     end
-    
+
     function msg = status_message(obj,t_sim,t_ctrl)
         msg = drc.controller_status_t();
         msg.utime = t_sim * 1000000;
@@ -131,114 +131,54 @@ classdef WalkingController < DRCController
         msg.V = obj.controller_data.getField('V');
         msg.Vdot = obj.controller_data.getField('Vdot');
     end
-    
+
     function obj = initialize(obj,data)
-            
+
       % TODO: put some error handling in here
-      tmp_fname = ['tmp_w_', num2str(feature('getpid')), '.mat'];
-      
       msg_data = data.WALKING_PLAN;
-      % do we have to save to file to convert a byte stream to a
-      % matlab binary?
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.S,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-%       obj.controller_data.setField('S',matdata.S);
-      
-      if isa(matdata.S,'Trajectory')
-        obj.controller_data.setField('S',eval(matdata.S,0)); % S is always constant
-      else
-        obj.controller_data.setField('S',matdata.S); 
-      end
 
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.s1,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      obj.controller_data.setField('s1',matdata.s1);
+      walk_ctrl_data = WalkingControllerData.from_walking_plan_t(msg_data);
+      obj.controller_data.setField('S',walk_ctrl_data.S);
+      obj.controller_data.setField('s1',walk_ctrl_data.s1);
 
-      istv = ~(isnumeric(matdata.s1) || isa(matdata.s1,'ConstantTrajectory')); 
+      istv = ~(isnumeric(walk_ctrl_data.s1) || isa(walk_ctrl_data.s1,'ConstantTrajectory'));
       obj.controller_data.setField('is_time_varying',istv);
-      
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.s1dot,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      obj.controller_data.setField('s1dot',matdata.s1dot);
 
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.s2,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      obj.controller_data.setField('s2',matdata.s2);
+      obj.controller_data.setField('s1dot',walk_ctrl_data.s1dot);
 
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.s2dot,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      obj.controller_data.setField('s2dot',matdata.s2dot);
-      
+      obj.controller_data.setField('s2',walk_ctrl_data.s2);
+
+      obj.controller_data.setField('s2dot',walk_ctrl_data.s2dot);
+
       support_times = msg_data.support_times;
       obj.controller_data.setField('support_times',support_times);
 
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.supports,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      if iscell(matdata.supports) 
-        warning('somebody sent me a cell array of supports.  don''t do that anymore!');
-        matdata.supports = [matdata.supports{:}];
-      end
-      obj.controller_data.setField('supports',matdata.supports);
+      obj.controller_data.setField('supports',walk_ctrl_data.supports);
 
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.comtraj,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      obj.controller_data.setField('comtraj',matdata.comtraj);
+      obj.controller_data.setField('comtraj',walk_ctrl_data.comtraj);
 
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.zmptraj,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      obj.controller_data.setField('x0',[eval(matdata.zmptraj,matdata.zmptraj.tspan(2));0;0]);
+      obj.controller_data.setField('x0',[eval(walk_ctrl_data.zmptraj,walk_ctrl_data.zmptraj.tspan(2));0;0]);
       if ~istv
-        assert(isa(matdata.zmptraj,'ConstantTrajectory'));
-        obj.controller_data.setField('y0',eval(matdata.zmptraj,matdata.zmptraj.tspan(2)));
+        assert(isa(walk_ctrl_data.zmptraj,'ConstantTrajectory'));
+        obj.controller_data.setField('y0',eval(walk_ctrl_data.zmptraj,walk_ctrl_data.zmptraj.tspan(2)));
       else
-        obj.controller_data.setField('y0',matdata.zmptraj);
+        obj.controller_data.setField('y0',walk_ctrl_data.zmptraj);
       end
-      tspan_end = matdata.zmptraj.tspan(end);
+      tspan_end = walk_ctrl_data.zmptraj.tspan(end);
 
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.link_constraints,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      obj.controller_data.setField('link_constraints',matdata.link_constraints);
-      
-      fid = fopen(tmp_fname,'w');
-      fwrite(fid,typecast(msg_data.qtraj,'uint8'),'uint8');
-      fclose(fid);
-      matdata = load(tmp_fname);
-      obj.controller_data.setField('qtraj',matdata.qtraj);
-%       if isa(matdata.qtraj,'Trajectory')
-%         qdtraj = fnder(matdata.qtraj,1);
-%       else
-%         qdtraj = 0*matdata.qtraj;
-%       end
-%       obj.controller_data.setField('xtraj',[matdata.qtraj;qdtraj]);
-      
+      obj.controller_data.setField('link_constraints',walk_ctrl_data.link_constraints);
+
+      obj.controller_data.setField('qtraj',walk_ctrl_data.qtraj);
+
       obj.controller_data.setField('mu',msg_data.mu);
-%       obj.controller_data.setField('ignore_terrain',msg_data.ignore_terrain);
 
       % Reset the translational offset
       obj.controller_data.setField('trans_drift', [0;0;0]);
 
       obj = setDuration(obj,tspan_end,false); % set the controller timeout
-      
-      QPControlBlock.check_ctrl_data(obj.controller_data);  
+
+      QPControlBlock.check_ctrl_data(obj.controller_data);
       delete(tmp_fname);
     end
-  end  
+  end
 end

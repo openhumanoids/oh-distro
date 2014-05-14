@@ -67,7 +67,7 @@ Initialize the Drake submodule:
 ::
 
     cd drc
-    git submodule update --init
+    git submodule update --init --recursive
 
 Add the *sandbox* remote. The *sandbox* is the location where branches can be shared.
 

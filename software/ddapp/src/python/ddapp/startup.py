@@ -17,6 +17,7 @@ from ddapp import callbacks
 from ddapp import cameracontrol
 from ddapp import debrisdemo
 from ddapp import drilldemo
+from ddapp import tabledemo
 from ddapp import ik
 from ddapp import ikplanner
 from ddapp import objectmodel as om
@@ -115,13 +116,13 @@ if useIk:
     ikRobotModel, ikJointController = roboturdf.loadRobotModel('ik model', view, parent='IK Server', color=roboturdf.getRobotOrangeColor(), visible=False)
     ikJointController.addPose('q_end', ikJointController.getPose('q_nom'))
     ikJointController.addPose('q_start', ikJointController.getPose('q_nom'))
+    om.removeFromObjectModel(om.findObjectByName('IK Server'))
 
-    ikServer = ik.AsyncIKCommunicator(ikJointController)
+    ikServer = ik.AsyncIKCommunicator()
     ikServer.outputConsole = app.getOutputConsole()
     ikServer.infoFunc = app.displaySnoptInfo
 
     def startIkServer():
-        ikServer.start()
         ikServer.startServerAsync()
         #ikServer.comm.echoCommandsToStdOut = True
 
@@ -220,7 +221,7 @@ if usePlanning:
 
     def approveRefit():
 
-        for obj in om.objects.values():
+        for obj in om.getObjects():
             if isinstance(obj, vis.BlockAffordanceItem):
                 if 'refit' in obj.getProperty('Name'):
                     originalObj = om.findObjectByName(obj.getProperty('Name').replace(' refit', ''))
@@ -231,10 +232,6 @@ if usePlanning:
                         originalObj.actor.GetUserTransform().Modified()
                         obj.setProperty('Visible', False)
 
-
-    #app.addToolbarMacro('plot plan', plotManipPlan)
-    #app.addToolbarMacro('play manip plan', playManipPlan)
-    #app.addToolbarMacro('fit drill', fitDrillMultisense)
 
     def sendDataRequest(requestType, repeatTime=0.0):
 
@@ -268,34 +265,36 @@ if usePlanning:
 
 
     handFactory = roboturdf.HandFactory(robotStateModel)
+    handModels = [handFactory.getLoader(side) for side in ['left', 'right']]
 
-    ikPlanner = ikplanner.IKPlanner(ikServer, ikRobotModel, ikJointController,
-                                        robotStateJointController, playPlans, showPose, playbackRobotModel)
-
-
-
-
-
-    ikPlanner.handModels.append(handFactory.getLoader('left'))
-    ikPlanner.handModels.append(handFactory.getLoader('right'))
+    ikPlanner = ikplanner.IKPlanner(ikServer, ikRobotModel, ikJointController, handModels)
 
 
     playbackPanel = playbackpanel.init(planPlayback, playbackRobotModel, playbackJointController,
                                       robotStateModel, robotStateJointController, manipPlanner)
+
+    footstepsDriver.walkingPlanCallback = playbackPanel.setPlan
+    manipPlanner.manipPlanCallback = playbackPanel.setPlan
+
 
     teleoppanel.init(robotStateModel, robotStateJointController, teleopRobotModel, teleopJointController,
                      ikPlanner, manipPlanner, handFactory.getLoader('left'), handFactory.getLoader('right'), playbackPanel.setPlan)
 
 
 
-    debrisDemo = debrisdemo.DebrisPlannerDemo(robotStateModel, playbackRobotModel,
+    debrisDemo = debrisdemo.DebrisPlannerDemo(robotStateModel, robotStateJointController, playbackRobotModel,
                     ikPlanner, manipPlanner, atlasdriver.driver, lHandDriver,
                     perception.multisenseDriver, refitBlocks)
+
+    tableDemo = tabledemo.TableDemo(robotStateModel, playbackRobotModel,
+                    ikPlanner, manipPlanner, footstepsDriver, atlasdriver.driver, lHandDriver, rHandDriver,
+                    perception.multisenseDriver, view, robotStateJointController)
 
     drillDemo = drilldemo.DrillPlannerDemo(robotStateModel, footstepsDriver, manipPlanner, ikPlanner,
                                         lHandDriver, atlasdriver.driver, perception.multisenseDriver,
                                         fitDrillMultisense, robotStateJointController,
                                         playPlans, showPose)
+
 
     splinewidget.init(view, handFactory, robotStateModel)
 

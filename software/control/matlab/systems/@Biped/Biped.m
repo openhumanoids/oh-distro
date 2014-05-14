@@ -150,9 +150,13 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       options.backward_step = max([options.backward_step, 0.005]);
       options.max_step_width = max([options.max_step_width, options.nom_step_width + 0.005]);
       options.min_step_width = min([options.min_step_width, options.nom_step_width - 0.005]);
+      options.nom_upward_step = max(options.nom_upward_step, 0.01);
+      options.nom_downward_step = max(options.nom_downward_step, 0.01);
 
       [Axy, bxy] = poly2lincon([0, options.forward_step, 0, -options.backward_step], [options.min_step_width, options.nom_step_width, options.max_step_width, options.nom_step_width]);
+      [Axz, bxz] = poly2lincon([0, options.nom_forward_step, options.max_forward_step, options.nom_forward_step, 0, -options.backward_step], [options.nom_upward_step, options.nom_upward_step, 0, -options.nom_downward_step, -options.nom_downward_step, 0]);
       A = [Axy, zeros(4, 4);
+           Axz(:,1), zeros(size(Axz, 1), 1), Axz(:,2), zeros(size(Axz, 1), 3);
            0 0 1 0 0 0;
            0 0 -1 0 0 0;
            0 0 0 0 0 -1;
@@ -164,6 +168,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         A(:,6) = -A(:,6);
       end
       b = [bxy;
+           bxz;
            options.max_step_dz;
            options.max_step_dz;
            options.max_inward_step_rot;

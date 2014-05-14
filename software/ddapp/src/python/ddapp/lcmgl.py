@@ -21,8 +21,8 @@ class LCMGLObject(om.ObjectModelItem):
         self.addProperty('Visible', actor.GetVisibility())
         self.views = []
 
-    def _onPropertyChanged(self, propertyName):
-        om.ObjectModelItem._onPropertyChanged(self, propertyName)
+    def _onPropertyChanged(self, propertySet, propertyName):
+        om.ObjectModelItem._onPropertyChanged(self, propertySet, propertyName)
 
         if propertyName == 'Visible':
             self.actor.SetVisibility(self.getProperty(propertyName))
@@ -84,7 +84,7 @@ class LCMGLManager(object):
 
     def getDrawObject(self, name):
         parent = om.getOrCreateContainer('LCM GL')
-        return om.findChildByName(parent, name)
+        return parent.findChild(name)
 
     def addDrawObject(self, name, msgBytes):
         actor = vtk.vtkLCMGLProp()

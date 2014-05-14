@@ -47,7 +47,7 @@ setup_drc()
   export PKG_CONFIG_PATH=$DRC_BASE/software/build/lib/pkgconfig:$DRC_BASE/software/build/lib64/pkgconfig:$PKG_CONFIG_PATH
 
   # gurobi
-  export GUROBI_HOME=$DRC_BASE/software/externals/gurobi/gurobi550/linux64
+  export GUROBI_HOME=$DRC_BASE/software/externals/gurobi/gurobi562/linux64
   export PATH=$PATH:$GUROBI_HOME/bin
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GUROBI_HOME/lib
   export GRB_LICENSE_FILE=$HOME/gurobi.lic

@@ -17,7 +17,6 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 
 % setup frames
-state_frame = AtlasState(r);
 state_plus_effort_frame = AtlasStateAndEffort(r);
 state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
@@ -66,7 +65,7 @@ x0 = x(1:2*nq);
 q0 = x0(1:nq);
 kinsol = doKinematics(r,q0);
 
-T = 30;
+T = 40;
 if 1
   % create figure 8 zmp traj
   dt = 0.01;
@@ -77,19 +76,19 @@ if 1
   zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
 else
   % back and forth
-%   w=0.1; 
-%   zmpx = [0 0  0 0  0 0  0 0  0  0  0 0];
-%   zmpy = [0 w -w w -w w -w w -w  w -w 0];
-%   
-%   np=length(zmpy);
-%   ts = linspace(0,T,np);
+  w=0.1; 
+  zmpx = [0 0  0 0  0 0  0 0  0 0];
+  zmpy = [0 w -w w -w w -w w -w 0];
+  
+  np=length(zmpy);
+  ts = linspace(0,T,np);
 
-  % rectangle
-  h=0.015; % height/2
-  w=0.08; % width/2
-  zmpx = [0 h h -h -h 0];
-  zmpy = [0 w -w -w w 0];
-  ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
+%   % rectangle
+%   h=0.015; % height/2
+%   w=0.08; % width/2
+%   zmpx = [0 h h -h -h 0];
+%   zmpy = [0 w -w -w w 0];
+%   ts = [0 T/5 2*T/5 3*T/5 4*T/5 T];
 end
 
 zmpknots = [zmpx;zmpy;0*zmpx];
@@ -151,43 +150,47 @@ ctrl_data = SharedDataHandle(struct(...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
 
-leg_idx = findJointIndices(r,'leg');
-
 % instantiate QP controller
-options.slack_limit = 50;
-options.w_qdd = 0.01*ones(nq,1);
-options.W_hdot = 1000*diag([1;1;1;10;10;10]);
-options.lcm_foot_contacts = false;
+options.slack_limit = 100;
+options.w_qdd = 1.0*ones(nq,1);
+options.W_hdot = diag([10;10;10;10;10;10]);
+options.w_grf = 0.0075;
+options.w_slack = 0.005;
+options.Kp = 0; % com-z pd gains
+options.Kd = 0; % com-z pd gains
+options.input_foot_contacts = true;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.01;
+options.contact_threshold = 0.02;
 options.output_qdd = true;
-qp = MomentumControlBlock(r,{},ctrl_data,options);
 
-% cascade PD block
-options.Kp = 50.0*ones(nq,1);
-options.Kd = 8.0*ones(nq,1);
+qp = MomentumControlBlock(r,{},ctrl_data,options);
+vo = VelocityOutputIntegratorBlock(r,options);
+fcb = FootContactBlock(r);
+
+% cascade IK/PD block
+options.Kp = 80.0*ones(nq,1);
+options.Kd = 12.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 ins(2).system = 1;
 ins(2).input = 2;
-ins(3).system = 2;
-ins(3).input = 1;
+ins(3).system = 1;
+ins(3).input = 3;
+ins(4).system = 2;
+ins(4).input = 1;
+ins(5).system = 2;
+ins(5).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
 outs(2).output = 2;
-sys = mimoCascade(pd,qp,[],ins,outs);
+qp_sys = mimoCascade(pd,qp,[],ins,outs);
 clear ins;
-
-qddes = zeros(nu,1);
-udes = zeros(nu,1);
 
 toffset = -1;
 tt=-1;
-dt = 0.005;
-tt_prev = -1;
 
 torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
@@ -196,19 +199,15 @@ if ~strcmp(resp,{'y','yes'})
   return;
 end
 
-
-r_ankle = findJointIndices(r,'r_leg_ak');
-l_ankle = findJointIndices(r,'l_leg_ak');
-
 xtraj = [];
 
-q_int = q0;
-qd_int = 0;
-qd_prev=-1;
-
 % low pass filter for floating base velocities
-alpha_v = 0.1;
+alpha_v = 0.2;
 float_v = 0;
+
+udes = zeros(nu,1);
+qddes = zeros(nu,1);
+qd_int_state = zeros(nq+4,1);
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -216,11 +215,6 @@ while tt<T
       toffset=t;
     end
     tt=t-toffset;
-    if tt_prev~=-1
-      dt = 0.99*dt + 0.01*(tt-tt_prev);
-    end
-    
-    tt_prev=tt;
     tau = x(2*nq+(1:nq));
     
     % low pass filter floating base velocities
@@ -231,37 +225,23 @@ while tt<T
     q = x(1:nq);
     qd = x(nq+(1:nq));
  
-    u_and_qdd = output(sys,tt,[],[q0;q;qd;q;qd]);
+    fc = output(fcb,tt,[],[q;qd]);
+    
+    u_and_qdd = output(qp_sys,tt,[],[q0; q;qd; fc; q;qd; fc]);
     u=u_and_qdd(1:nu);
-    qdd=u_and_qdd(nu+1:end);
-    udes(joint_act_ind) = u(joint_act_ind);
+    qdd=u_and_qdd(nu+(1:nq));
+    
+    qd_int_state = mimoUpdate(vo,tt,qd_int_state,[q;qd],qdd,fc);
+    qd_ref = mimoOutput(vo,tt,qd_int_state,[q;qd],qdd,fc);
     
     % fade in desired torques to avoid spikes at the start
+    udes(joint_act_ind) = u(joint_act_ind);
     tau = tau(act_idx_map);
     alpha = min(1.0,tt/torque_fade_in);
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
     
-    % compute desired velocity
-    qd_int = qd_int + qdd*dt;
-    q_int = q_int + qd_int*dt;
-
-%     % filter out joint velocity spikes
-%     crossed = [];
-%     if qd_prev~=-1
-%       crossed=sign(qd_prev)~=sign(qd);
-%     end
-%     find(crossed)
-%     qd_prev = qd;
-%     qd(crossed) = 0;
-    
-    qddes_state_frame = qd_int-qd;
-    qddes_state_frame(l_ankle) = 0;
-    qddes_state_frame(r_ankle) = 0;
-    qddes_input_frame = qddes_state_frame(act_idx_map);
-    qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
-
-    
-    state_frame.publish(t,[q;qd],'EST_ROBOT_STATE_ECHO');
+    qddes(joint_act_ind) = qd_ref(joint_act_ind);
+ 
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
   end
 end
@@ -290,7 +270,7 @@ for i=1:size(xtraj,2)
   if i==1
 		qdd = 0*qd;
 	else
-		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/dt;
+		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/0.002;
   end
   qd_prev = qd;
 	qdd_prev = qdd;  

@@ -37,6 +37,8 @@ footstep_request.params.nom_step_width = 0.26;
 footstep_request.params.max_step_width = 0.35;
 footstep_request.params.nom_forward_step = 0.2;
 footstep_request.params.max_forward_step = 0.35;
+footstep_request.params.nom_upward_step = 0.25;
+footstep_request.params.nom_downward_step = 0.15;
 footstep_request.params.ignore_terrain = true;
 footstep_request.params.planning_mode = drc.footstep_plan_params_t.MODE_AUTO;
 footstep_request.params.behavior = drc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING;
@@ -45,13 +47,14 @@ footstep_request.params.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
 
 footstep_request.default_step_params = drc.footstep_params_t();
 footstep_request.default_step_params.utime = 0;
-footstep_request.default_step_params.step_speed = 1.0;
+footstep_request.default_step_params.step_speed = 0.2;
+footstep_request.default_step_params.drake_min_hold_time = 2.0;
 footstep_request.default_step_params.step_height = 0.05;
 footstep_request.default_step_params.constrain_full_foot_pose = false;
 footstep_request.default_step_params.bdi_step_duration = 0;
 footstep_request.default_step_params.bdi_sway_duration = 0;
 footstep_request.default_step_params.bdi_lift_height = 0;
-footstep_request.default_step_params.bdi_toe_off = drc.atlas_behavior_step_action_t.TOE_OFF_ENABLE; 
+footstep_request.default_step_params.bdi_toe_off = drc.atlas_behavior_step_action_t.TOE_OFF_ENABLE;
 footstep_request.default_step_params.bdi_knee_nominal = 0;
 footstep_request.default_step_params.bdi_max_body_accel = 0;
 footstep_request.default_step_params.bdi_max_foot_vel = 0;
@@ -73,6 +76,16 @@ request.use_new_nominal_state = false;
 request.footstep_plan = plan_msg;
 
 wp = StatelessWalkingPlanner();
+% Compute walking trajectory
 walking_plan = wp.plan_walking(r, request, true);
 lc = lcm.lcm.LCM.getSingleton();
-lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+% lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+
+% Compute walking controller
+walking_plan = wp.plan_walking(r, request, false);
+lc = lcm.lcm.LCM.getSingleton();
+% lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+ts = linspace(walking_plan.zmptraj.tspan(1), walking_plan.zmptraj.tspan(2), 1000);
+zmps = walking_plan.zmptraj.eval(ts);
+plot(ts, zmps(1,:), ts, zmps(2,:))
+legend('x', 'y')

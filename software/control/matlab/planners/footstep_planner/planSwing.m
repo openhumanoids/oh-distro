@@ -1,16 +1,16 @@
 function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, last_pos, next_pos, options)
 % Compute a collision-free swing trajectory for a single foot. Uses the biped's RigidBodyTerrain to compute a slice of terrain between the two poses.
 
-% TODO: These default options are incompatible with the current
-% implementation. The reason is that 'options' comes through as a
-% drc.footstep_params_t object, and calling isfield on a java object seems
-% to return false, regardless of whether that field really exists.
-% if ~isfield(options, 'step_speed')
-%   options.step_speed = 0.5; % m/s
-% end
-% if ~isfield(options, 'step_height')
-%   options.step_height = biped.nom_step_clearance; %m
-% end
+options = struct(options);
+if ~isfield(options, 'step_speed')
+  options.step_speed = 0.5; % m/s
+end
+if ~isfield(options, 'step_height')
+  options.step_height = biped.nom_step_clearance; %m
+end
+
+if ~isfield(options, 'hold_frac'); options.hold_frac = 0.4; end
+if ~isfield(options', 'drake_min_hold_time'); options.drake_min_hold_time = 2; end
 
 if options.step_speed < 0
   % negative step speed is an indicator to take a fast, fixed-duration step (e.g. for recovery)
@@ -24,8 +24,6 @@ debug = false;
 
 ignore_height = 0.5; % m, height above which we'll assume that our heightmap is giving us bad data (e.g. returns from an object the robot is carrying)
 
-hold_frac = 0.2; % fraction of leg swing time spent shifting weight to stance leg
-min_hold_time = 0.4; % s
 pre_contact_height = 0.005; % height above the ground to aim for when foot is landing
 foot_yaw_rate = 0.75; % rad/s
 
@@ -52,7 +50,7 @@ if (step_dist_xy > 0.01)
     % If we're getting extremely high terrain heights, then assume it's bad lidar data
     terrain_pts(2,:) = max([last_pos(3), next_pos(3)]);
   end
-  
+
   %% Expand terrain convex hull by the size of the foot
   expanded_terrain_pts = [[0;last_pos(3)], apex_pos_l, [step_dist_xy; next_pos(3) + pre_contact_height]];
   for j = 1:length(terrain_pts(1,:))
@@ -91,11 +89,11 @@ traj_ts = [0, cumsum(traj_dts)] ;
 if fixed_duration
   hold_time = 0.1;
   traj_ts = traj_ts * ((fixed_duration - 2*hold_time) / traj_ts(end));
-  traj_ts = [0, traj_ts+hold_time, traj_ts(end) + 2*hold_time];
+  traj_ts = [0, traj_ts+0.5*hold_time, traj_ts(end) + hold_time];
 else
-  hold_time = traj_ts(end) * hold_frac;
-  hold_time = max([hold_time, min_hold_time]);
-  traj_ts = [0, traj_ts + hold_time, traj_ts(end) + 2.5*hold_time]; % add time for weight shift
+  hold_time = traj_ts(end) * options.hold_frac;
+  hold_time = max([hold_time, options.drake_min_hold_time]);
+  traj_ts = [0, traj_ts + 0.5 * hold_time, traj_ts(end) + hold_time]; % add time for weight shift
 end
 
 traj_pts_xyz = [last_pos(1:3), traj_pts_xyz, next_pos(1:3)];
@@ -124,20 +122,3 @@ if debug
 end
 
 end
-
-% function terrain_pts = terrainSample(biped, last_pos, next_pos, contact_width, nlambda, nrho)
-%   step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
-%   lambda_hat = (next_pos(1:2) - last_pos(1:2)) / step_dist_xy;
-
-%   rho_hat = [0, -1; 1, 0] * lambda_hat;
-
-%   terrain_pts = zeros(2, nlambda);
-%   lambdas = linspace(0, step_dist_xy, nlambda);
-%   rhos = linspace(-contact_width, contact_width, nrho);
-%   [R, L] = meshgrid(rhos, lambdas);
-%   xy = bsxfun(@plus, last_pos(1:2), bsxfun(@times, reshape(R, 1, []), rho_hat) + bsxfun(@times, reshape(L, 1, []), lambda_hat));
-%   z = medfilt2(reshape(biped.getTerrainHeight(xy), size(R)), 'symmetric');
-% %   plot_lcm_points([xy; reshape(z, 1, [])]', repmat([1 0 1], size(xy, 2), 1), 101, 'Swing terrain pts', 1, 1);
-%   terrain_pts(2, :) = max(z, [], 2);
-%   terrain_pts(1,:) = lambdas;
-% end

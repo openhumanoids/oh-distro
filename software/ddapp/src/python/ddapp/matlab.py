@@ -6,6 +6,7 @@ import os
 
 from ddapp.simpletimer import SimpleTimer
 
+import numpy as np
 
 
 
@@ -31,6 +32,9 @@ class MatlabCommunicator(object):
         self.outputConsole = None
         self.echoToStdOut = True
         self.echoCommandsToStdOut = False
+        self.writeCommandsToLogFile = False
+        self.logFile = None
+        self.logFileName = 'matlab_commands.m'
         self.clearResult()
 
     def checkForResult(self):
@@ -40,6 +44,11 @@ class MatlabCommunicator(object):
             return self.outputLines
         else:
             return None
+
+    def getLogFile(self):
+        if self.logFile is None:
+            self.logFile = open(self.logFileName, 'w')
+        return self.logFile
 
     def isAlive(self):
         return (self.proc.poll() is None)
@@ -102,6 +111,9 @@ class MatlabCommunicator(object):
         self.proc.stdin.write(command + '\n')
         if self.echoCommandsToStdOut:
             print command
+        if self.writeCommandsToLogFile:
+            self.getLogFile().write(command + '\n')
+            self.getLogFile().flush()
 
     def sendCommands(self, commands, display=True):
 
@@ -148,7 +160,12 @@ class MatlabCommunicator(object):
 
     def assignFloatArray(self, array, arrayName):
 
-        arrayStr = '[%s]' % ';'.join([repr(float(x)) for x in array])
+        if np.ndim(array) == 1:
+            arrayStr = '[%s]' % ';'.join([repr(float(x)) for x in array])
+        else:
+            assert np.ndim(array) == 2
+            arrayStr = '[%s]' % '; '.join([', '.join([repr(x) for x in row]) for row in array])
+
         self.send('%s = %s;' % (arrayName, arrayStr))
         self.waitForResult()
 

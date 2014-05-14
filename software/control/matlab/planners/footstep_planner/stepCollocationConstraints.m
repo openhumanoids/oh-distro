@@ -1,4 +1,4 @@
-function [c, ceq, dc, dceq] = stepCollocationConstraints(x, c0, cf, max_line_deviation)
+function [c, ceq, dc, dceq] = stepCollocationConstraints(x)
   [steps, rel_steps] = decodeSteps(x);
   nsteps = size(steps, 2);
   nv = length(x);
@@ -25,28 +25,17 @@ function [c, ceq, dc, dceq] = stepCollocationConstraints(x, c0, cf, max_line_dev
     dceq(x1_ndx(1:2),con_ndx) = -diag(ones(2,1));
     dx = rel_steps(1,j);
     dy = rel_steps(2,j);
-    
+
     dceq(x1_ndx(6),con_ndx) = -[-dx*st - dy*ct, dx*ct - dy*st];
-    
+
     dceq(dx_ndx(1),con_ndx) = -[ct,st];
     dceq(dx_ndx(2),con_ndx) = -[-st,ct];
   end
-  
-  c = zeros(nsteps,1);
-  dc = zeros(nv, nsteps);
-  u = cf(1:2)-c0(1:2);
-  u = u / norm(u);
-  al = [-u(2); u(1)];
-  bl = al' * c0(1:2);
-  for j = 1:nsteps
-    g = (al' * steps(1:2,j) - bl);
-    c(j) = g^2 - max_line_deviation^2;
-    x1_ndx = (j-1)*12+(1:6);
-    dc(x1_ndx(1:2),j) = 2*g*al;
-  end
-  
   ceq = reshape(ceq, nceq, 1);
   dceq = sparse(dceq);
+
+  c = [];
+  dc = [];
 end
 
 function [steps, rel_steps] = decodeSteps(x)

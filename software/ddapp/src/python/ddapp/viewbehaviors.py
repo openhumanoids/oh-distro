@@ -3,6 +3,7 @@ from PythonQt import QtCore, QtGui
 import re
 import ddapp.objectmodel as om
 import ddapp.visualization as vis
+from ddapp import lcmUtils
 from ddapp import cameracontrol
 from ddapp import splinewidget
 from ddapp import transformUtils
@@ -64,7 +65,7 @@ def placeHandModel(displayPoint, view):
 
     obj, _ = vis.findPickedObject(displayPoint, view)
     if isinstance(obj, vis.FrameItem):
-        _, handFrame = handFactory.placeHandModelWithTransform(obj.transform, view, side=side, parent=om.getParentObject(obj))
+        _, handFrame = handFactory.placeHandModelWithTransform(obj.transform, view, side=side, parent=obj.parent())
         handFrame.frameSync = vis.FrameSync()
         handFrame.frameSync.addFrame(obj)
         handFrame.frameSync.addFrame(handFrame, ignoreIncoming=True)
@@ -83,7 +84,7 @@ def placeHandModel(displayPoint, view):
     zaxis = np.cross(xaxis, yaxis)
     zaxis /= np.linalg.norm(zaxis)
 
-    t = transformUtils.getTransformFromAxes(xaxis, yaxis, zaxis)
+    t = transformUtils.getTransformFromAxes(-zaxis, yaxis, xaxis)
     t.PostMultiply()
     t.Translate(pickedPoint)
     _, handFrame = handFactory.placeHandModelWithTransform(t, view, side=side, parent=obj)
@@ -129,7 +130,7 @@ def toggleFrameWidget(displayPoint, view):
     edit = not obj.getProperty('Edit')
     obj.setProperty('Edit', edit)
 
-    parent = om.getParentObject(obj)
+    parent = obj.parent()
     if getChildFrame(parent) == obj:
         parent.setProperty('Alpha', 0.5 if edit else 1.0)
 
@@ -238,6 +239,10 @@ def showRightClickMenu(displayPoint, view):
             obj = obj.model.polyDataObj
         except AttributeError:
             pass
+        try:
+            obj.polyData
+        except AttributeError:
+            return None
         if obj and obj.polyData.GetNumberOfPoints() and (obj.polyData.GetNumberOfCells() == obj.polyData.GetNumberOfVerts()):
             return obj
 
@@ -257,6 +262,17 @@ def showRightClickMenu(displayPoint, view):
         obj = vis.showPolyData(polyData, pointCloudObj.getProperty('Name') + ' copy', color=[0,1,0], parent='segmentation')
         om.setActiveObject(obj)
         pickedObj.setProperty('Visible', False)
+
+    def onSegmentTableScene():
+        data = segmentation.segmentTableScene(pointCloudObj.polyData, pickedPoint)
+        tableObj = vis.showPolyData(data.table.mesh, 'table', color=[0,1,0], parent='segmentation')
+        tableFrame = vis.showFrame(data.table.frame, 'table frame', scale=0.2, visible=False, parent=tableObj)
+        tableBox = vis.showPolyData(data.table.box, 'table box', color=[0,1,0], parent=tableObj, alpha=0.6)
+        tablePoints = vis.showPolyData(data.table.points, 'table points', color=[0,1,0], parent=tableObj, visible=False)
+        for obj in [tableObj, tableBox, tablePoints]:
+            obj.actor.SetUserTransform(data.table.frame)
+
+        vis.showClusterObjects(data.clusters, parent='segmentation')
 
 
     actions = [
@@ -278,6 +294,7 @@ def showRightClickMenu(displayPoint, view):
             (None, None),
             ('Copy Pointcloud', onCopyPointCloud),
             ('Segment Ground', onSegmentGround),
+            ('Segment Table', onSegmentTableScene)
             ])
 
     for actionName, func in actions:
@@ -379,6 +396,46 @@ class KeyEventFilter(object):
         self.eventFilter.connect('handleEvent(QObject*, QEvent*)', self.filterEvent)
 
 
+
+
+class KeyPressLogCommander(object):
+
+    def __init__(self, widget):
+        self.widget = widget
+        self.initEventFilter()
+        self.commander = lcmUtils.LogPlayerCommander()
+
+    def filterEvent(self, obj, event):
+
+        if event.type() == QtCore.QEvent.KeyPress:
+            key = str(event.text()).lower()
+            consumed = True
+
+            if key == 'p':
+                self.commander.togglePlay()
+            elif key == 'n':
+                self.commander.step()
+            elif key in ('+', '='):
+                self.commander.faster()
+            elif key in ('-', '_'):
+                self.commander.slower()
+            elif key == '[':
+                self.commander.back()
+            elif key == ']':
+                self.commander.forward()
+            else:
+                consumed = False
+
+            self.eventFilter.setEventHandlerResult(consumed)
+
+
+    def initEventFilter(self):
+        self.eventFilter = PythonQt.dd.ddPythonEventFilter()
+        self.widget.installEventFilter(self.eventFilter)
+        self.eventFilter.addFilteredEventType(QtCore.QEvent.KeyPress)
+        self.eventFilter.connect('handleEvent(QObject*, QEvent*)', self.filterEvent)
+
+
 def setupGlobals(handFactory_, robotModel_, footstepsDriver_, flyer_):
 
     global handFactory, robotModel, footstepsDriver, flyer
@@ -399,6 +456,7 @@ class ViewBehaviors(object):
         self.keyEventFilter = KeyEventFilter(view)
         self.mouseEventFilter = ViewEventFilter(view)
         self.flyer = cameracontrol.Flyer(view)
+        self.logCommander = KeyPressLogCommander(view.vtkWidget())
 
         setupGlobals(handFactory, robotModel, footstepsDriver, self.flyer)
 

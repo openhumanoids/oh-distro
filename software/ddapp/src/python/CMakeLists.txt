@@ -45,6 +45,7 @@ set(python_files
   ddapp/playbackpanel.py
   ddapp/pointCloudUtils.py
   ddapp/pointpicker.py
+  ddapp/propertyset.py
   ddapp/robotstate.py
   ddapp/robotplanlistener.py
   ddapp/roboturdf.py
@@ -57,6 +58,7 @@ set(python_files
   ddapp/spreadsheet.py
   ddapp/startup.py
   ddapp/statelistener.py
+  ddapp/tabledemo.py
   ddapp/tdx.py
   ddapp/teleoppanel.py
   ddapp/timercallback.py

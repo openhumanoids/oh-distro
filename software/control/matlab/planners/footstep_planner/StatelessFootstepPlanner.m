@@ -10,69 +10,32 @@ classdef StatelessFootstepPlanner
       q0 = x0(1:biped.getNumDOF());
       foot_orig = biped.feetPosition(q0);
 
-      if request.params.ignore_terrain
-        biped = biped.setTerrain(KinematicTerrainMap(biped, q0, true));
+      biped = StatelessFootstepPlanner.configureTerrain(biped, request);
+      params = struct(request.params);
+      params.right_foot_lead = params.leading_foot; % for backwards compatibility
+      
+      if request.num_existing_steps > 0
+        footsteps = Footstep.empty();
+        for j = 1:request.num_existing_steps
+          footsteps(j) = Footstep.from_footstep_t(request.existing_steps(j));
+          footsteps(j).pos = biped.footOrig2Contact(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
+        end
+        plan = FootstepPlan(footsteps);
       else
-%         biped = biped.setTerrain(biped.getTerrain().setBackupTerrain(biped, q0));
-        biped = biped.setTerrain(biped.getTerrain());
-      end
 
-      goal_pos = StatelessFootstepPlanner.compute_goal_pos(biped, request);
-      if request.num_goal_steps > 2
-        request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
-        request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
-      end
+        goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
+        if request.num_goal_steps > 2
+          request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
+          request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
+        end
 
-      params_set = {struct(request.params)};
-      if request.params.leading_foot == drc.footstep_plan_params_t.LEAD_AUTO
-        new_params_set = {};
-        for p = params_set
-          rparams = p{1};
-          lparams = p{1};
-          rparams.leading_foot = drc.footstep_plan_params_t.LEAD_RIGHT;
-          % rparams.right_foot_lead = 1;
-          lparams.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
-          % lparams.right_foot_lead = 0;
-          new_params_set{end+1} = rparams;
-          new_params_set{end+1} = lparams;
-        end
-        params_set = new_params_set;
-      end
-      best_steps = [];
-      best_length = inf;
-      best_cost = inf;
-      for p = params_set
-        params = struct(p{1});
-        params.right_foot_lead = params.leading_foot; % for backwards compatibility
-        if request.num_goal_steps == 0
-          params.allow_odd_num_steps = true;
-          params.allow_even_num_steps = true;
-        else
-          if (request.num_goal_steps > 1)  == (request.goal_steps(1).is_right_foot == params.right_foot_lead)
-            params.allow_even_num_steps = true;
-            params.allow_odd_num_steps = false;
-          else
-            params.allow_even_num_steps = false;
-            params.allow_odd_num_steps = true;
-          end
-        end
-        footsteps = footstepCollocation(biped, foot_orig, goal_pos, params);
-        step_vect = encodeCollocationSteps([footsteps(2:end).pos]);
-        [steps, steps_rel] = decodeCollocationSteps(step_vect);
-        l = length(footsteps);
-        c = footstepCostFun(steps, steps_rel, goal_pos, logical(params.right_foot_lead));
-        if l < best_length || c < best_cost % always prefer fewer steps
-          best_steps = footsteps;
-          best_length = l;
-          best_cost = c;
-          best_params = params;
-        end
-      end
-      plan = FootstepPlan.from_collocation_results(best_steps);
-      params = best_params;
+        safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, foot_orig, goal_pos);
 
-      plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
-      plan = StatelessFootstepPlanner.mergeExistingSteps(biped, plan, request);
+        footsteps = searchNumSteps(biped, foot_orig, goal_pos, request.existing_steps, request.goal_steps, params, safe_regions);
+        plan = FootstepPlan.from_collocation_results(footsteps);
+
+        plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
+      end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
       plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
       plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
@@ -96,7 +59,7 @@ classdef StatelessFootstepPlanner
       end
     end
 
-    function goal_pos = compute_goal_pos(biped, request)
+    function goal_pos = computeGoalPos(biped, request)
       if request.num_goal_steps == 0
         pos = decodePosition3d(request.goal_pos);
         goal_pos.center = pos;
@@ -125,6 +88,56 @@ classdef StatelessFootstepPlanner
       end
     end
 
+    function biped = configureTerrain(biped, request)
+      x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
+      q0 = x0(1:biped.getNumDOF());
+
+      if request.params.ignore_terrain
+        terrain = KinematicTerrainMap(biped, q0, true);
+      else
+        terrain = biped.getTerrain();
+        if ismethod(terrain, 'setBackupTerrain')
+          terrain = terrain.setBackupTerrain(biped, q0);
+        end
+      end
+
+      if ismethod(terrain, 'setMapMode')
+        terrain = terrain.setMapMode(request.params.map_command);
+      end
+      biped = biped.setTerrain(terrain);
+    end
+
+    function safe_regions = decodeSafeRegions(biped, request, foot_orig, goal_pos)
+      if request.num_iris_regions > 0
+        safe_regions = IRISRegion.empty();
+        for j = 1:request.num_iris_regions
+          safe_regions(end+1) = IRISRegion.from_iris_region_t(request.iris_regions(j));
+        end
+      else
+        params = struct(request.params);
+        if ~isfield(params, 'max_line_deviation');
+          params.max_line_deviation = params.nom_step_width * 1.5;
+        end
+        corridor_pts = StatelessFootstepPlanner.corridorPoints(biped, foot_orig, goal_pos, params);
+        [corr_A, corr_b] = poly2lincon(corridor_pts(1,:), corridor_pts(2,:));
+        corr_A = [corr_A, zeros(size(corr_A, 1), 1)]; % convert to polytope in x y yaw
+        [orig_z, orig_normal] = biped.getTerrainHeight(foot_orig.right);
+        safe_regions = [IRISRegion(corr_A, corr_b, [foot_orig.right(1:2); orig_z], orig_normal)];
+      end
+    end
+
+    function corridor_pts = corridorPoints(biped, foot_orig, goal_pos, params)
+      goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
+      c0 = mean([foot_orig.right, foot_orig.left], 2);
+      dx_corridor = goal_pos.center(1:2) - c0(1:2);
+      dx_corridor = dx_corridor / norm(dx_corridor);
+      dy_corridor = rotmat(pi/2) * (dx_corridor);
+      corridor_pts = [c0(1:2) - params.max_line_deviation * dx_corridor + params.max_line_deviation * dy_corridor,...
+                      c0(1:2) - params.max_line_deviation * dx_corridor - params.max_line_deviation * dy_corridor,...
+                      goal_pos.center(1:2) + params.max_line_deviation * dx_corridor - params.max_line_deviation * dy_corridor,...
+                      goal_pos.center(1:2) + params.max_line_deviation * dx_corridor + params.max_line_deviation * dy_corridor];
+    end
+    
     function plan = addGoalSteps(biped, plan, request)
       nsteps = length(plan.footsteps);
       if request.num_goal_steps == 0
@@ -192,10 +205,6 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = snapToTerrain(biped, plan, request)
-      terrain = biped.getTerrain();
-      if ismethod(terrain, 'setMapMode')
-        biped.setTerrain(terrain.setMapMode(request.params.map_command));
-      end
       if request.params.ignore_terrain
         nsteps = length(plan.footsteps) - request.num_goal_steps;
       else
@@ -219,12 +228,14 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = checkReachInfeasibility(biped, plan, params)
-      params.right_foot_lead = logical(params.right_foot_lead);
+      right_foot_lead = plan.footsteps(1).is_right_foot;
       if ~isfield(params, 'max_line_deviation'); params.max_line_deviation = params.nom_step_width * 1.5; end
       params.forward_step = params.max_forward_step;
+      params.nom_upward_step = 0.2; % TODO: don't hardcode this
+      params.nom_downward_step = 0.15;
       [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
       nsteps = length(plan.footsteps) - 1;
-      [A, b, ~, ~, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, params.right_foot_lead);
+      [A, b, ~, ~, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead,[]);
       for j = [1,2]
         plan.footsteps(j).infeasibility = 0;
       end

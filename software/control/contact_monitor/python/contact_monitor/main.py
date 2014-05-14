@@ -30,6 +30,7 @@ class ContactMonitor:
 def main():
 	c = ContactMonitor()
 	lc.subscribe("EST_ROBOT_STATE", c.state_handle)
+	print 'running contact monitor...'
 	while True:
 		lc.handle()
 

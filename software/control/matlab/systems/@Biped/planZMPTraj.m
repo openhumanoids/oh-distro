@@ -9,6 +9,7 @@ else
 end
 if ~isfield(options, 't0'); options.t0 = 0; end
 if ~isfield(options, 'debug'); options.debug = true; end
+if ~isfield(options, 'first_step_hold_s'); options.first_step_hold_s = 1; end
 
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
@@ -65,6 +66,7 @@ step_knots = struct('t', options.t0, 'right', struct('orig', steps.right(1).pos.
 zmp_knots = struct('t', options.t0, 'zmp', zmp0, 'supp', supp0);
 
 istep = struct('right', 1, 'left', 1);
+is_first_step = true;
 
 while 1
   if is_right_foot
@@ -86,6 +88,14 @@ while 1
   [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped,...
                 sw0.pos.center,...
                 sw1.pos.center, sw1.walking_params);
+  step_duration = (swing_ts(end) - swing_ts(1));
+  if is_first_step
+    swing_ts = swing_ts + options.first_step_hold_s;
+    takeoff_time = takeoff_time + options.first_step_hold_s;
+    landing_time = landing_time + options.first_step_hold_s;
+    step_duration = step_duration + options.first_step_hold_s;
+    is_first_step = false;
+  end
   % end
 
   t0 = step_knots(end).t;
@@ -100,15 +110,16 @@ while 1
     end
   end
 
-  step_duration = (swing_ts(end) - swing_ts(1));
   if isempty(zmp_pts)
-    instep_shift = [0.0;0.01;0];
-    if ~st.is_right_foot
-      instep_shift = [1;-1;1].*instep_shift;
-    end
-    R = rpy2rotmat(st.pos.center(4:6));
-    shift = R*instep_shift;
-    zmp1 = st.pos.center(1:2) + shift(1:2);
+    instep_shift = [0.0;0.025;0];
+    zmp1 = shift_step_inward(st, instep_shift);
+%     zmp2 = shift_step_inward(sw1, instep_shift);
+%     if ~st.is_right_foot
+%       instep_shift = [1;-1;1].*instep_shift;
+%     end
+%     R = rpy2rotmat(st.pos.center(4:6));
+%     shift = R*instep_shift;
+%     zmp1 = st.pos.center(1:2) + shift(1:2);
     zmp2 = feetCenter(sw1.pos.orig, st.pos.orig);
     zmp2 = zmp2(1:2);
   else
@@ -118,10 +129,12 @@ while 1
 
   supp1 = struct('right', ~is_right_foot, 'left', is_right_foot);
   supp2 = struct('right', 1, 'left', 1);
+  zmp_knots(end+1) = struct('t', t0 + 0.5 * takeoff_time, 'zmp', zmp1, 'supp', supp2);
   zmp_knots(end+1) = struct('t', t0 + takeoff_time, 'zmp', zmp1, 'supp', supp1);
   zmp_knots(end+1) = struct('t', t0 + mean([takeoff_time, landing_time]), 'zmp', zmp1, 'supp', supp1);
   zmp_knots(end+1) = struct('t', t0 + landing_time, 'zmp', zmp1, 'supp', supp2);
-  zmp_knots(end+1) = struct('t', t0 + landing_time + (2/3) * (step_duration - landing_time), 'zmp', zmp2, 'supp', supp2);
+%   zmp_knots(end+1) = struct('t', t0 + landing_time + (1/4) * (step_duration - landing_time), 'zmp', zmp1, 'supp', supp2);
+%   zmp_knots(end+1) = struct('t', t0 + landing_time + (2/3) * (step_duration - landing_time), 'zmp', zmp2, 'supp', supp2);
   zmp_knots(end+1) = struct('t', t0 + step_duration, 'zmp', zmp2, 'supp', supp2);
 
   istep.(sw_foot) = istep.(sw_foot) + 1;
@@ -156,14 +169,14 @@ supps = [zmp_knots.supp];
 foot_supports = [[supps.right] * rfoot_body_idx;
                  [supps.left] * lfoot_body_idx];
 zmp_ts = [zmp_knots.t];
-supports = cell(length(zmp_ts),1);
+supports = SupportState.empty(0,1);
 for i=1:length(zmp_ts)
   if all(foot_supports(:,i)~=0)
     cpts = {1:4,1:4};
   else
     cpts = {1:4};
   end
-  supports{i} = SupportState(biped,foot_supports(:,i),cpts);
+  supports(i) = SupportState(biped,foot_supports(:,i),cpts);
 end
 
 if options.debug
@@ -179,4 +192,13 @@ if options.debug
   plot_lcm_points(zmppoints',zeros(length(tt),3),67676,'ZMP location',2,true);
 end
 
+end
+
+function pos = shift_step_inward(step, instep_shift)
+  if ~step.is_right_foot
+    instep_shift = [1;-1;1].*instep_shift;
+  end
+  R = rpy2rotmat(step.pos.center(4:6));
+  shift = R*instep_shift;
+  pos = step.pos.center(1:2) + shift(1:2);
 end

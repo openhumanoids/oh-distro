@@ -12,12 +12,14 @@ import ddapp.applogic as app
 from ddapp import objectmodel as om
 from ddapp import perception
 from ddapp import lcmUtils
+from ddapp import roboturdf
 from ddapp import transformUtils
 from ddapp.transformUtils import getTransformFromAxes
 from ddapp.timercallback import TimerCallback
 from ddapp import mapsregistrar
 from ddapp.visualization import *
 from ddapp.filterUtils import *
+from ddapp.fieldcontainer import FieldContainer
 
 import numpy as np
 import vtkNumpy
@@ -452,7 +454,7 @@ def applyVoxelGrid(polyData, leafSize=0.01):
 def segmentGroundPlanes():
 
     objs = []
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         name = obj.getProperty('Name')
         if name.startswith('pointcloud snapshot'):
             objs.append(obj)
@@ -833,12 +835,12 @@ def createLine(blockDimensions, p1, p2):
 
 def updateBlockAffordances(polyData=None):
 
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         if isinstance(obj, BlockAffordanceItem):
             if 'refit' in obj.getProperty('Name'):
                 om.removeFromObjectModel(obj)
 
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         if isinstance(obj, BlockAffordanceItem):
             updateBlockFit(obj, polyData)
 
@@ -1662,6 +1664,148 @@ def segmentDrill(point1, point2, point3):
     aff.addToView(app.getDRCView())
 
 
+def computeDelaunay3D(polyData):
+    f = vtk.vtkDelaunay3D()
+    f.SetInput(polyData)
+    f.SetOffset(100.0)
+    f.Update()
+
+    surface = vtk.vtkGeometryFilter()
+    surface.SetInput(f.GetOutput())
+    surface.Update()
+
+    clean = vtk.vtkCleanPolyData()
+    clean.SetInput(surface.GetOutput())
+    clean.Update()
+
+    return shallowCopy(clean.GetOutput())
+
+
+def makePolyDataFields(pd):
+    mesh = computeDelaunay3D(pd)
+    origin, edges, wireframe = getOrientedBoundingBox(mesh)
+
+    edgeLengths = np.array([np.linalg.norm(edge) for edge in edges])
+    axes = [edge / np.linalg.norm(edge) for edge in edges]
+
+    boxCenter = computeCentroid(wireframe)
+
+    t = getTransformFromAxes(axes[0], axes[1], axes[2])
+    t.PostMultiply()
+    t.Translate(boxCenter)
+
+    pd = transformPolyData(pd, t.GetLinearInverse())
+    wireframe = transformPolyData(wireframe, t.GetLinearInverse())
+    mesh = transformPolyData(mesh, t.GetLinearInverse())
+
+    return FieldContainer(points=pd, box=wireframe, mesh=mesh, frame=t, dims=edgeLengths, axes=axes)
+
+
+def segmentTable(polyData, searchPoint):
+    '''
+    Segment a horizontal table surface (perpendicular to +Z) in the given polyData
+    using the given search point.
+
+    Returns polyData, tablePoints, origin, normal
+    polyData is the input polyData with a new 'dist_to_plane' attribute.
+    '''
+    expectedNormal = np.array([0.0, 0.0, 1.0])
+    tableNormalEpsilon = 0.4
+
+    polyData = applyVoxelGrid(polyData, leafSize=0.01)
+
+    polyData, origin, normal = applyPlaneFit(polyData, expectedNormal=expectedNormal, perpendicularAxis=expectedNormal, searchOrigin=searchPoint, searchRadius=0.3, angleEpsilon=tableNormalEpsilon, returnOrigin=True)
+    tablePoints = thresholdPoints(polyData, 'dist_to_plane', [-0.01, 0.01])
+
+    tablePoints = labelDistanceToPoint(tablePoints, searchPoint)
+    tablePointsClusters = extractClusters(tablePoints)
+    tablePointsClusters.sort(key=lambda x: vtkNumpy.getNumpyFromVtk(x, 'distance_to_point').min())
+
+    tablePoints = tablePointsClusters[0]
+
+    updatePolyData(tablePoints, 'table plane points', parent=getDebugFolder(), visible=False)
+    updatePolyData(tablePoints, 'table points', parent=getDebugFolder(), visible=False)
+
+    return polyData, tablePoints, origin, normal
+
+
+def filterClusterObjects(clusters):
+
+    result = []
+    for cluster in clusters:
+
+        if np.dot(cluster.axes[0], [0,0,1]) < 0.5:
+            continue
+
+        if cluster.dims[0] < 0.1:
+            continue
+
+        result.append(cluster)
+    return result
+
+
+def segmentTableScene(polyData, searchPoint):
+
+    polyData, tablePoints, origin, normal = segmentTable(polyData, searchPoint)
+
+    tableCentroid = computeCentroid(tablePoints)
+
+    searchRegion = thresholdPoints(polyData, 'dist_to_plane', [0.02, 0.5])
+    searchRegion = cropToSphere(searchRegion, tableCentroid, 0.50)
+
+    objectClusters = extractClusters(searchRegion, clusterTolerance=0.03, minClusterSize=10)
+
+    clusters = [makePolyDataFields(cluster) for cluster in objectClusters]
+    clusters = filterClusterObjects(clusters)
+
+    return FieldContainer(table=makePolyDataFields(tablePoints), clusters=clusters)
+
+
+def segmentTableEdge(polyData, searchPoint, edgePoint):
+
+
+    polyData, tablePoints, origin, normal = segmentTable(polyData, searchPoint)
+
+    tableMesh = computeDelaunay3D(tablePoints)
+    origin, edges, wireframe = getOrientedBoundingBox(tableMesh)
+    origin = origin + 0.5*np.sum(edges, axis=0)
+
+
+    edgeLengths = np.array([np.linalg.norm(edge) for edge in edges])
+    axes = [edge / np.linalg.norm(edge) for edge in edges]
+
+    def findAxis(referenceVector):
+        refAxis = referenceVector / np.linalg.norm(referenceVector)
+        axisProjections = np.array([np.abs(np.dot(axis, refAxis)) for axis in axes])
+        axisIndex = axisProjections.argmax()
+        axis = axes[axisIndex]
+        if np.dot(axis, refAxis) < 0:
+            axis = -axis
+        return axis, axisIndex
+
+    tableXAxis, tableXAxisIndex = findAxis(searchPoint - edgePoint)
+    tableZAxis, tableZAxisIndex = findAxis([0,0,1])
+    tableYAxis, tableYAxisIndex = findAxis(np.cross(tableZAxis, tableXAxis))
+    assert len(set([tableXAxisIndex, tableYAxisIndex, tableZAxisIndex])) == 3
+
+    axes = tableXAxis, tableYAxis, tableZAxis
+    edgeLengths = edgeLengths[tableXAxisIndex], edgeLengths[tableYAxisIndex], edgeLengths[tableZAxisIndex]
+
+    edgeCenter = origin - 0.5 * axes[0]*edgeLengths[0] + 0.5*axes[2]*edgeLengths[2]
+    edgeLeft = edgeCenter + 0.5 * axes[1]*edgeLengths[1]
+    edgeRight = edgeCenter - 0.5 * axes[1]*edgeLengths[1]
+
+    t = getTransformFromAxes(axes[0], axes[1], axes[2])
+    t.PostMultiply()
+    t.Translate(edgeRight)
+
+    tablePoints = transformPolyData(tablePoints, t.GetLinearInverse())
+    wireframe = transformPolyData(wireframe, t.GetLinearInverse())
+    tableMesh = transformPolyData(tableMesh, t.GetLinearInverse())
+
+    return FieldContainer(points=tablePoints, box=wireframe, mesh=tableMesh, frame=t, dims=edgeLengths, axes=axes)
+
+
 def segmentDrillAuto(point1):
 
 
@@ -1770,7 +1914,7 @@ def findAndFitDrillBarrel(polyData=None, robotFrame=None):
     for clusterId, cluster in enumerate(clusters):
         clusterObj = updatePolyData(cluster, 'surface cluster %d' % clusterId, color=[1,1,0], parent=getDebugFolder(), visible=False)
 
-        origin, edges = getOrientedBoundingBox(cluster)
+        origin, edges, _ = getOrientedBoundingBox(cluster)
         edgeLengths = [np.linalg.norm(edge) for edge in edges[:2]]
 
         skipCluster = False
@@ -2300,6 +2444,10 @@ def computeEdge(polyData, edgeAxis, perpAxis, binWidth=0.03):
     return np.array(edgePoints)
 
 
+def computeCentroid(polyData):
+    return np.average(vtkNumpy.getNumpyFromVtk(polyData, 'Points'), axis=0)
+
+
 def computeCentroids(polyData, axis, binWidth=0.025):
 
     polyData = pointCloudUtils.labelPointDistanceAlongAxis(polyData, axis, resultArrayName='dist_along_axis')
@@ -2370,7 +2518,9 @@ def showObbs(polyData):
 
 
 def getOrientedBoundingBox(polyData):
-
+    '''
+    returns origin, edges, and outline wireframe
+    '''
     nPoints = polyData.GetNumberOfPoints()
     assert nPoints
     polyData = shallowCopy(polyData)
@@ -2393,7 +2543,7 @@ def getOrientedBoundingBox(polyData):
     for i in xrange(3):
         f.GetBoundingBoxEdge(0, i, edges[i])
 
-    return origin, edges
+    return origin, edges, shallowCopy(f.GetOutput())
 
 
 def segmentBlockByAnnotation(blockDimensions, p1, p2, p3):
@@ -2773,7 +2923,7 @@ def publishDebrisStanceFrame(aff):
 
 def segmentBlockByPlanes(blockDimensions):
 
-    planes = om.getObjectChildren(om.findObjectByName('selected planes'))[:2]
+    planes = om.findObjectByName('selected planes').children()[:2]
 
     viewPlaneNormal = getSegmentationView().camera().GetViewPlaneNormal()
     origin1, normal1, plane1 = getPlaneEquationFromPolyData(planes[0].polyData, expectedNormal=viewPlaneNormal)
@@ -3255,13 +3405,13 @@ def getDefaultAffordanceObject():
     if isinstance(obj, AffordanceItem):
         return obj
 
-    for obj in om.objects.values():
+    for obj in om.getObjects():
         if isinstance(obj, AffordanceItem):
             return obj
 
 def getVisibleRobotModel():
-    for obj in om.objects.values():
-        if isinstance(obj, om.RobotModelItem) and obj.getProperty('Visible'):
+    for obj in om.getObjects():
+        if isinstance(obj, roboturdf.RobotModelItem) and obj.getProperty('Visible'):
             return obj
 
 def orthoX():
