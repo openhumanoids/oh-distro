@@ -356,6 +356,7 @@ define_field_handler(ControllerDebugRightFoot, drc::controller_debug_t, r_foot_c
 define_field_handler(ControllerDebugLeftFoot, drc::controller_debug_t, l_foot_contact);
 define_field_handler(ControllerDebugSolverInfo, drc::controller_debug_t, info);
 define_array_handler(ControllerDebugQddDes, drc::controller_debug_t, qddot_des, createIndexList(34));
+define_array_handler(ControllerDebugU, drc::controller_debug_t, u, createIndexList(28));
 define_array_handler(ControllerDebugHdotDes, drc::controller_debug_t, hdot_des, createIndexList(6));
 define_array_handler(ControllerDebugAlpha, drc::controller_debug_t, alpha, createIndexList(34));
 
@@ -584,6 +585,7 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<ControllerDebugLeftFoot>();
     factory.registerClass<ControllerDebugSolverInfo>();
     factory.registerClass<ControllerDebugQddDes>();
+    factory.registerClass<ControllerDebugU>();
     factory.registerClass<ControllerDebugHdotDes>();
     factory.registerClass<ControllerDebugAlpha>();
     factory.registerClass<AtlasControlJointsPositionHandler>();

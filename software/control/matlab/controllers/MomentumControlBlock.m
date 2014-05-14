@@ -478,8 +478,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
       % compute desired linear momentum
       comddot_des = [ustar; obj.Kp*(comz_des-xcom(3)) + obj.Kd*(dcomz_des-z_com_dot) + ddcomz_des];
       ldot_des = comddot_des * obj.mass;
-      k = A(1:3,:)*qd;
-  %     kdot_des = 10.0 * (ctrl_data.ktraj.eval(t) - k); 
+      h=A*qd;
+      k=h(1:3);
       kdot_des = -5.0 *k; 
       hdot_des = [kdot_des; ldot_des];
 
@@ -519,11 +519,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
       Aeq_fqp = full(Aeq);
       % NOTE: model.obj is 2* f for fastQP!!!
       [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
-
-			if info_fqp<0
-				disp('fastqp failed, trying to reset the active set');
-				[alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,[]);
-			end
 
       if info_fqp<0
         % then call gurobi
@@ -567,6 +562,25 @@ classdef MomentumControlBlock < MIMODrakeSystem
         u = B_act'*(H_act*qdd + C_act);
       end
       y = u;
+      
+      if obj.debug
+        % publish debug 
+        debug_data.utime = t*1e6;
+        debug_data.alpha = alpha;
+        debug_data.u = y;
+        debug_data.active_supports = active_supports;
+        debug_data.info = info_fqp;
+        debug_data.qddot_des = qddot_des;
+        debug_data.active_constraints = qp_active_set;
+        debug_data.h = h;
+        debug_data.hdot_des = hdot_des;
+        debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
+        debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
+        body_motion_input_start=3+obj.input_foot_contacts*1;
+        debug_data.body_acc_des = [];%[varargin{body_motion_input_start}; varargin{body_motion_input_start+1}];
+        obj.debug_pub.publish(debug_data);
+      end
+      
     end
   
     if (obj.use_mex==1 || obj.use_mex==2)
@@ -597,8 +611,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
           debug_data.active_constraints = active_constraints;
           debug_data.h = h;
           debug_data.hdot_des = hdot_des;
-					debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
-					debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
+          debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
+          debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
+          debug_data.body_acc_des = [];%[varargin{body_motion_input_start}; varargin{body_motion_input_start+1}];
           obj.debug_pub.publish(debug_data);
 
         else

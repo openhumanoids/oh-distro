@@ -36,5 +36,10 @@ struct controller_debug_t
   // redundant fields for foot contact, useful for plotting in scope
   float r_foot_contact;
   float l_foot_contact;
+
+  // qdd desired input to QP
+  int32_t n_body_acc_des;
+  float body_acc_des[n_body_acc_des];
+
 }
 

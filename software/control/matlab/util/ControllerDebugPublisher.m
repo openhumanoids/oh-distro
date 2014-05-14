@@ -35,9 +35,12 @@ classdef ControllerDebugPublisher
       % active set of inequality constraints
       msg.n_active_constraints = length(data.active_constraints);
       msg.active_constraints = data.active_constraints;
-			% redundant fields for foot contact, useful for plotting in scope
-			msg.l_foot_contact = data.l_foot_contact;
-			msg.r_foot_contact = data.r_foot_contact;
+      % redundant fields for foot contact, useful for plotting in scope
+      msg.l_foot_contact = data.l_foot_contact;
+      msg.r_foot_contact = data.r_foot_contact;
+      % desired body acceleration inputs
+      msg.n_body_acc_des = length(data.body_acc_des);
+      msg.body_acc_des = data.body_acc_des;
 
       obj.lc.publish(obj.channel, msg);
     end

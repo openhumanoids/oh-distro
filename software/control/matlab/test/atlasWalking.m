@@ -160,10 +160,11 @@ options.w_slack = 0.005;
 options.Kp = 0; % com-z pd gains
 options.Kd = 0; % com-z pd gains
 options.input_foot_contacts = true;
-options.debug = false;
+options.debug = true;
 options.use_mex = true;
 options.contact_threshold = 0.0075;
 options.output_qdd = true;
+options.solver = 1;
 
 if use_simple_pd
   motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
