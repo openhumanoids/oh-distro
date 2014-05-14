@@ -1389,69 +1389,9 @@
     <parent link="r_hand"/>
     <child link="r_hand_force_torque"/>
   </joint>
-  <joint name="right_hook_hand_joint" type="fixed">
-    <origin rpy="1.57079 0 0" xyz="0 -0.11516 -0.015"/>
-    <parent link="r_hand"/>
-    <child link="right_base_link"/>
-  </joint>
-  <link name="right_base_link">
-    <inertial>
-      <mass value="0.1"/>
-      <origin xyz="0 0 0"/>
-      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
-    </inertial>
-    <!-- MIT's own extension plate -->
-    <collision>
-      <geometry>
-        <cylinder length="0.01" radius="0.045"/>
-      </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.025"/>
-    </collision>
-    <visual>
-      <geometry>
-        <cylinder length="0.01" radius="0.045"/>
-      </geometry>
-      <material name="darkgray">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
-      <origin rpy="0 0 0" xyz="0 0 0.025"/>
-    </visual>
-    <!-- MIT's pointer rod -->
-    <collision>
-      <geometry>
-        <cylinder length="0.16" radius="0.006"/>
-      </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.1"/>
-    </collision>
-    <visual>
-      <geometry>
-        <cylinder length="0.16" radius="0.006"/>
-      </geometry>
-      <material name="darkgray">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
-      <origin rpy="0 0 0" xyz="0 0 0.1"/>
-    </visual>
-    <!-- MIT's hook -->
-    <collision>
-      <geometry>
-        <cylinder length="0.044" radius="0.006"/>
-      </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.185"/>
-    </collision>
-    <visual>
-      <geometry>
-        <cylinder length="0.044" radius="0.006"/>
-      </geometry>
-      <material name="darkgray">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.185"/>
-    </visual>
-  </link>
   <joint name="left_hook_hand_joint" type="fixed">
-    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.11516 0.015"/>
-    <parent link="l_hand"/>
+    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.0 0.0"/>
+    <parent link="l_hand_force_torque"/>
     <child link="left_base_link"/>
   </joint>
   <link name="left_base_link">
@@ -1465,7 +1405,7 @@
       <geometry>
         <cylinder length="0.01" radius="0.045"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.025"/>
+      <origin rpy="0 0 0" xyz="0 0 0.005"/>
     </collision>
     <visual>
       <geometry>
@@ -1474,14 +1414,14 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0 0.025"/>
+      <origin rpy="0 0 0" xyz="0 0 0.005"/>
     </visual>
     <!-- MIT's pointer rod -->
     <collision>
       <geometry>
         <cylinder length="0.16" radius="0.006"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
     </collision>
     <visual>
       <geometry>
@@ -1490,14 +1430,15 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
     </visual>
-    <!-- MIT's hook -->
+    <!-- MIT's hook tip -->
+    <!--
     <collision>
       <geometry>
         <cylinder length="0.044" radius="0.006"/>
       </geometry>
-      <origin rpy="0 1.571 1.571" xyz="0.00 -0.018 0.185"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.16"/>
     </collision>
     <visual>
       <geometry>
@@ -1506,8 +1447,114 @@
       <material name="darkgray">
         <color rgba="0.2 0.2 0.2 1"/>
       </material>
-      <origin rpy="0 1.571 1.571" xyz="0.00 -0.018 0.185"/>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.16"/>
+    </visual>
+-->
+    <!-- optional off center nub at base (to illustrate rotation) -->
+    <collision>
+      <geometry>
+        <cylinder length="0.044" radius="0.006"/>
+      </geometry>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.02"/>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder length="0.044" radius="0.006"/>
+      </geometry>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.02"/>
     </visual>
   </link>
+  <joint name="left_pointer_tip_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.12 0"/>
+    <parent link="l_hand_force_torque"/>
+    <child link="left_pointer_tip"/>
+  </joint>
+  <link name="left_pointer_tip"/>
+  <joint name="right_hook_hand_joint" type="fixed">
+    <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.0 0.0"/>
+    <parent link="r_hand_force_torque"/>
+    <child link="right_base_link"/>
+  </joint>
+  <link name="right_base_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+    <!-- MIT's own extension plate -->
+    <collision>
+      <geometry>
+        <cylinder length="0.01" radius="0.045"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0.005"/>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder length="0.01" radius="0.045"/>
+      </geometry>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 0 0" xyz="0 0 0.005"/>
+    </visual>
+    <!-- MIT's pointer rod -->
+    <collision>
+      <geometry>
+        <cylinder length="0.16" radius="0.006"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder length="0.16" radius="0.006"/>
+      </geometry>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
+    </visual>
+    <!-- MIT's hook tip -->
+    <!--
+    <collision>
+      <geometry>
+        <cylinder length="0.044" radius="0.006"/>
+      </geometry>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.16"/>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder length="0.044" radius="0.006"/>
+      </geometry>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.16"/>
+    </visual>
+-->
+    <!-- optional off center nub at base (to illustrate rotation) -->
+    <collision>
+      <geometry>
+        <cylinder length="0.044" radius="0.006"/>
+      </geometry>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.02"/>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder length="0.044" radius="0.006"/>
+      </geometry>
+      <material name="darkgray">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+      <origin rpy="0 1.571 1.571" xyz="0.00 0.018 0.02"/>
+    </visual>
+  </link>
+  <joint name="right_pointer_tip_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.12 0"/>
+    <parent link="r_hand_force_torque"/>
+    <child link="right_pointer_tip"/>
+  </joint>
+  <link name="right_pointer_tip"/>
 </robot>
-

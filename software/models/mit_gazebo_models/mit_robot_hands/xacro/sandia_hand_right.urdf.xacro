@@ -7,8 +7,8 @@
 <!--  derived from /usr/share/sandia-hand-5.1/ros/sandia_hand_description/robots/sandia_hand_right_on_box.urdf.xacro-->
   
   <!-- Commenting out urdf with meshes, using simple collision shapes instead -->
-  <!--<include filename="$(find sandia_hand_description)/urdf/sandia_hand.urdf.xacro" />-->
-  <include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
+  <!--<xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand.urdf.xacro" />-->
+  <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
 
   <link name="plane::xy::base">
     <inertial>

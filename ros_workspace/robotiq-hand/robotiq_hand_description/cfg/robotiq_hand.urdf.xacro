@@ -7,7 +7,7 @@
 <!-- ########################################### -->
 <!-- Custom MIT XACRO For Robotiq Hand -->
 <!-- ########################################### -->
-<include filename="$(find robotiq_hand_description)/cfg/s-model_articulated_macro.xacro" />
+<xacro:include filename="$(find robotiq_hand_description)/cfg/s-model_articulated_macro.xacro" />
 <xacro:macro name="robotiq_hand" params="side parent reflect *origin">
 <!-- joint to irobot hand -->
   <joint name="${side}_robotiq_hand_joint" type="fixed">
