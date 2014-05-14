@@ -16,7 +16,7 @@ set(pcl_dep_revision 8298)
 set(pcl_dep_depends)
 
 set(pcl_drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_drc)
-set(pcl_drc_revision 8298)
+set(pcl_drc_revision 8326)
 set(pcl_drc_depends Eigen_pod pcl_dep)
 
 set(octomap-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/octomap-drc)
