@@ -373,7 +373,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
             % use bullet collision between bodies
             [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
           end
-          Dbar = [Dbar, [JB{:}]];
+          Dbar = [Dbar, vertcat(JB{:})'];
           c_pre = c_pre + length(active_contact_pts{j});
 
         end
