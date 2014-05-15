@@ -3,11 +3,10 @@
 
 namespace MavStateEst {
 
-
 FovisHandler::FovisHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
-                           BotParam * param): lcm_recv(lcm_recv), lcm_pub(lcm_pub)
-{
-  
+                           BotParam * param): lcm_recv(lcm_recv), lcm_pub(lcm_pub){
+  verbose_ = true;
+  publish_diagnostics_ = true;
   
   char* mode_str = bot_param_get_str_or_fail(param, "state_estimator.fovis.mode");
 
@@ -22,33 +21,9 @@ FovisHandler::FovisHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   else{
     // ... incomplete...
   }
-
-  /*
-  if (strcmp(mode_str, "position") == 0) {
-    mode = FovisHandler::MODE_POSITION;
-    std::cout << "Scan matcher will provide position measurements." << std::endl;
-  }
-  else if (strcmp(mode_str, "position_yaw") == 0) {
-    mode = FovisHandler::MODE_POSITION_YAW;
-    std::cout << "Scan matcher will provide position and yaw measurements." << std::endl;
-  }
-  else if (strcmp(mode_str, "velocity") == 0) {
-    mode = FovisHandler::MODE_VELOCITY;
-    std::cout << "Scan matcher will provide velocity measurements." << std::endl;
-  }
-  else if (strcmp(mode_str, "velocity_yaw") == 0) {
-    mode = FovisHandler::MODE_VELOCITY_YAW;
-    std::cout << "Scan matcher will provide velocity and yaw measurements." << std::endl;
-  }
-  else {
-    mode = FovisHandler::MODE_VELOCITY;
-    std::cout << "Unrecognized scan matcher mode. Using velocity mode by default." << std::endl;
-  }
-  */
-
   free(mode_str);
+  
   Eigen::VectorXd R_fovis;
-
   if (mode == MODE_LIN_AND_ROT_RATE) {
     z_indices.resize(6);
     R_fovis.resize(6);
@@ -60,9 +35,6 @@ FovisHandler::FovisHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   else{
     // ... incomplete...
   }
-
-
-
 
   // Initialize covariance matrix based on mode.
   if (mode == MODE_LIN_AND_ROT_RATE) {
@@ -88,45 +60,14 @@ FovisHandler::FovisHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
     // ..incomplete
   }
 
-
-  /*
-  if (mode == MODE_POSITION || mode == MODE_POSITION_YAW) {
-    double r_scan_match_pxy = bot_param_get_double_or_fail(param, "state_estimator.fovis.r_pxy");
-    double r_scan_match_pz = bot_param_get_double_or_fail(param, "state_estimator.fovis.r_pz");
-    R_fovis(0) = bot_sq(r_scan_match_pxy); // Cleaner way?
-    R_fovis(1) = bot_sq(r_scan_match_pxy);
-    R_fovis(2) = bot_sq(r_scan_match_pz);
-    z_indices.head<3>() = eigen_utils::RigidBodyState::positionInds();
-  }
-  else {
-    double r_scan_match_vxy = bot_param_get_double_or_fail(param, "state_estimator.fovis.r_vxy");
-    double r_scan_match_vz = bot_param_get_double_or_fail(param, "state_estimator.fovis.r_vz");
-    R_fovis(0) = bot_sq(r_scan_match_vxy); // Cleaner way?
-    R_fovis(1) = bot_sq(r_scan_match_vxy);
-    R_fovis(2) = bot_sq(r_scan_match_vz);
-    z_indices.head<3>() = eigen_utils::RigidBodyState::velocityInds();
-  }
-
-  if (mode == MODE_POSITION_YAW || mode == MODE_VELOCITY_YAW) {
-    double r_scan_match_yaw = bot_param_get_double_or_fail(param, "state_estimator.fovis.r_yaw");
-    R_fovis(3) = bot_sq(bot_to_radians(r_scan_match_yaw));
-    z_indices(3) = RBIS::chi_ind + 2; // z component only
-  }
-  */
-
   cov_fovis = R_fovis.asDiagonal();
 }
 
 
-void printTrans(BotTrans bt, std::string message){
-  std::cout << message << ": "
-      << bt.trans_vec[0] << ", " << bt.trans_vec[1] << ", " << bt.trans_vec[2] << " | "
-      << bt.rot_quat[0] << ", " << bt.rot_quat[1] << ", " << bt.rot_quat[2] << ", " << bt.rot_quat[3] << "\n";
-}
-
 
 // NOTE: this inserts the BotTrans trans_vec 
 // as the velocity components in the pose 
+// [duplicated in rbis_legodo_common.cpp]
 bot_core::pose_t getBotTransAsBotPoseVelocity(BotTrans bt, int64_t utime ){
   bot_core::pose_t pose;
   pose.utime = utime;
@@ -146,11 +87,8 @@ bot_core::pose_t getBotTransAsBotPoseVelocity(BotTrans bt, int64_t utime ){
   return pose;
 }
 
-
-
-RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg)
-{
-  /// ... insert handling and special cases here.
+RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg){
+  
   if (msg->estimate_status == fovis::update_t::ESTIMATE_VALID){
     std::cout << "FovisHandler: FOVIS success\n";
   }else{
@@ -164,81 +102,31 @@ RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg)
     return NULL;
   }
   
+  BotTrans odo_deltaT;
+  memset(&odo_deltaT, 0, sizeof(odo_deltaT));
+  memcpy(odo_deltaT.trans_vec, msg->translation, 3 * sizeof(double));
+  memcpy(odo_deltaT.rot_quat,  msg->rotation   , 4 * sizeof(double));
 
-  // This scales the transformation by time
-  // I don't think this is a good way of doing this conversion
-
-  BotTrans msgT;
-  memset(&msgT, 0, sizeof(msgT));
-  memcpy(msgT.trans_vec, msg->translation, 3 * sizeof(double));
-  memcpy(msgT.rot_quat,  msg->rotation   , 4 * sizeof(double));
-
+  BotTrans odo_velT = getTransAsVelocityTrans(odo_deltaT, msg->timestamp, msg->prev_timestamp);
   
-  bool verbose_ = true;
-  if (verbose_){
-    std::cout << "\n\n";
-    std::stringstream ss2;
-    ss2 << " msgT: ";
-    printTrans(msgT, ss2.str() );
-  }  
-
-  double rpy[3];
-  bot_quat_to_roll_pitch_yaw(msgT.rot_quat,rpy);
-
-  double elapsed_time = ( (double) msg->timestamp -  msg->prev_timestamp)/1000000;
-  double rpy_rate[3];
-  rpy_rate[0] = rpy[0]/elapsed_time;
-  rpy_rate[1] = rpy[1]/elapsed_time;
-  rpy_rate[2] = rpy[2]/elapsed_time;
-  
-  if (verbose_){
-    std::stringstream ss;
-    ss << msg->timestamp << " msgT: ";
-    printTrans(msgT, ss.str() );  
-    std::cout << "Elapsed Time: " << elapsed_time  << " sec\n";
-    std::cout << "RPY: " << rpy[0] << ", "<<rpy[1] << ", "<<rpy[2] <<" rad\n";
-    std::cout << "RPY: " << rpy[0]*180/M_PI << ", "<<rpy[1]*180/M_PI << ", "<<rpy[2]*180/M_PI <<" deg\n";
-    std::cout << "RPY: " << rpy_rate[0] << ", "<<rpy_rate[1] << ", "<<rpy_rate[2] <<" rad/s | velocity scaled\n";
-    std::cout << "RPY: " << rpy_rate[0]*180/M_PI << ", "<<rpy_rate[1]*180/M_PI << ", "<<rpy_rate[2]*180/M_PI <<" deg/s | velocity scaled\n";
-  } 
-  BotTrans msgT_vel;
-  memset(&msgT_vel, 0, sizeof(msgT_vel));
-  // Convert to robot body frame from Camera Frame:
-  // TODO: properly do this with bot frames:
-  msgT_vel.trans_vec[0] = msgT.trans_vec[2]/elapsed_time;
-  msgT_vel.trans_vec[1] = -msgT.trans_vec[0]/elapsed_time;
-  msgT_vel.trans_vec[2] = -msgT.trans_vec[1]/elapsed_time;
-  bot_roll_pitch_yaw_to_quat (rpy_rate, msgT_vel.rot_quat);
-  
-  
-  if (verbose_){
-    std::stringstream ss2;
-    ss2 << " msgT_vel: ";
-    printTrans(msgT_vel, ss2.str() );
+  if (publish_diagnostics_){
+    // Get the velocity as a pose message:
+    bot_core::pose_t vel_pose = getBotTransAsBotPoseVelocity(odo_velT, msg->timestamp)  ;
+    lcm_pub->publish("POSE_BODY_FOVIS_VELOCITY", &vel_pose );      
   }
-
-  // Get the velocity as a pose message:
-  bot_core::pose_t vel_pose = getBotTransAsBotPoseVelocity(msgT_vel, msg->timestamp)  ;
-  lcm_pub->publish("POSE_BODY_FOVIS_VELOCITY", &vel_pose );   
-
-  if (mode == MODE_LIN_AND_ROT_RATE) {
-    // Working on this:
-
+  
+  if (mode == MODE_LIN_AND_ROT_RATE) { // Working on this:
     Eigen::VectorXd z_meas(6);
     Eigen::Quaterniond quat;
-    eigen_utils::botDoubleToQuaternion(quat, msgT_vel.rot_quat);
-    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msgT_vel.trans_vec);
-
+    eigen_utils::botDoubleToQuaternion(quat, odo_velT.rot_quat);
+    z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(odo_velT.trans_vec);
     //  eigen_utils::botDoubleToQuaternion(quat, msg->quat);
     //  z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->trans);
-
     return new RBISIndexedPlusOrientationMeasurement(z_indices, z_meas, cov_fovis, quat, RBISUpdateInterface::fovis,
             msg->timestamp);
-
   }else if (mode == MODE_LIN_RATE) {
-
     return new RBISIndexedMeasurement(eigen_utils::RigidBodyState::velocityInds(),
-        Eigen::Map<const Eigen::Vector3d>( msgT_vel.trans_vec ), cov_fovis, RBISUpdateInterface::fovis,
+        Eigen::Map<const Eigen::Vector3d>( odo_velT.trans_vec ), cov_fovis, RBISUpdateInterface::fovis,
         msg->timestamp);
     //RBISIndexedMeasurement(RBIS::velocity_inds(),
     //VO_velocity_measurement_body_coords,VO_measurement_cov_body_coords,
@@ -248,35 +136,70 @@ RBISUpdateInterface * FovisHandler::processMessage(const fovis::update_t * msg)
     std::cout << "FovisHandler Mode not supported, exiting\n";
     return NULL;
   }
-
-
-    /*
-    if (mode == MODE_POSITION) {
-      return new RBISIndexedMeasurement(eigen_utils::RigidBodyState::positionInds(),
-          Eigen::Map<const Eigen::Vector3d>(msg->pos), cov_scan_match, RBISUpdateInterface::scan_matcher,
-          msg->utime);
-    }
-  else if (mode == MODE_VELOCITY) {
-    return new RBISIndexedMeasurement(eigen_utils::RigidBodyState::velocityInds(),
-        Eigen::Map<const Eigen::Vector3d>(msg->vel), cov_fovis, RBISUpdateInterface::scan_matcher,
-        msg->utime);
-  }
-  else if (mode == MODE_POSITION_YAW || mode == MODE_VELOCITY_YAW) {
-    Eigen::Vector4d z_meas;
-    Eigen::Quaterniond quat;
-    eigen_utils::botDoubleToQuaternion(quat, msg->orientation);
-
-    if (mode == MODE_POSITION_YAW) {
-      z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->pos);
-    }
-    else {
-      z_meas.head<3>() = Eigen::Map<const Eigen::Vector3d>(msg->vel);
-    }
-
-    return new RBISIndexedPlusOrientationMeasurement(z_indices, z_meas, cov_fovis, quat,
-        RBISUpdateInterface::scan_matcher, msg->utime);
-  }
-  */
-
+  
 }
+
+
+/// Everything below is duplicated in rbis_legodo_common.cpp
+void printTrans(BotTrans bt, std::string message){
+  std::cout << message << ": "
+      << bt.trans_vec[0] << ", " << bt.trans_vec[1] << ", " << bt.trans_vec[2] << " | "
+      << bt.rot_quat[0] << ", " << bt.rot_quat[1] << ", " << bt.rot_quat[2] << ", " << bt.rot_quat[3] << "\n";
 }
+
+
+
+
+// Difference the transform and scale by elapsed time:
+
+BotTrans FovisHandler::getTransAsVelocityTrans(BotTrans msgT, int64_t utime, int64_t prev_utime){
+  BotTrans msgT_vel;
+  memset(&msgT_vel, 0, sizeof(msgT_vel));
+  
+  double rpy[3];
+  bot_quat_to_roll_pitch_yaw(msgT.rot_quat,rpy);
+  double elapsed_time = ( (double) utime -  prev_utime)/1000000;
+  double rpy_rate[3];
+  rpy_rate[0] = rpy[0]/elapsed_time;
+  rpy_rate[1] = rpy[1]/elapsed_time;
+  rpy_rate[2] = rpy[2]/elapsed_time;
+  
+  if (verbose_){
+    std::stringstream ss;
+    ss << utime << " msgT: ";
+    printTrans(msgT, ss.str() );  
+    std::cout << "Elapsed Time: " << elapsed_time  << " sec\n";
+    std::cout << "RPY: " << rpy[0] << ", "<<rpy[1] << ", "<<rpy[2] <<" rad\n";
+    std::cout << "RPY: " << rpy[0]*180/M_PI << ", "<<rpy[1]*180/M_PI << ", "<<rpy[2]*180/M_PI <<" deg\n";
+    std::cout << "RPY: " << rpy_rate[0] << ", "<<rpy_rate[1] << ", "<<rpy_rate[2] <<" rad/s | velocity scaled\n";
+    std::cout << "RPY: " << rpy_rate[0]*180/M_PI << ", "<<rpy_rate[1]*180/M_PI << ", "<<rpy_rate[2]*180/M_PI <<" deg/s | velocity scaled\n";
+    std::cout << "XYZ: " << msgT.trans_vec[0] << ", "  << msgT.trans_vec[1] << ", "  << msgT.trans_vec[2] << "\n";
+  }
+  
+  msgT_vel.trans_vec[0] = msgT.trans_vec[0]/elapsed_time;
+  msgT_vel.trans_vec[1] = msgT.trans_vec[1]/elapsed_time;
+  msgT_vel.trans_vec[2] = msgT.trans_vec[2]/elapsed_time;
+  bot_roll_pitch_yaw_to_quat (rpy_rate, msgT_vel.rot_quat);
+  
+  if (verbose_){
+    std::stringstream ss2;
+    ss2 << " msgT_vel: ";
+    printTrans(msgT_vel, ss2.str() );
+    std::cout << "\n\n";
+  }  
+  
+  return msgT_vel;
+}
+
+
+/// Publishing Functions 
+// Convert the delta position into a velocity 
+// as a bot_pose message for visualization with signal scope:
+// [duplicated in rbis_legodo_common.cpp]
+void FovisHandler::sendTransAsVelocityPose(BotTrans msgT, int64_t utime, int64_t prev_utime, std::string channel){
+  BotTrans msgT_vel = getTransAsVelocityTrans(msgT, utime, prev_utime);
+  bot_core::pose_t vel_pose = getBotTransAsBotPoseVelocity(msgT_vel, utime)  ;
+  lcm_pub->publish(channel, &vel_pose );
+}
+
+} // end of namespace

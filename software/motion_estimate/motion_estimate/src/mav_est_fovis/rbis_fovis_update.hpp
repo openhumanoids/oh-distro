@@ -32,6 +32,16 @@ public:
   lcm::LCM* lcm_pub;
   lcm::LCM* lcm_recv;
   
+// both duplicated in leg odom
+  BotTrans getTransAsVelocityTrans(BotTrans msgT,
+           int64_t utime, int64_t prev_utime);  
+  
+  void sendTransAsVelocityPose(BotTrans msgT, int64_t utime, int64_t prev_utime, std::string channel);
+  
+  // Publish Debug Data e.g. velocities
+  bool publish_diagnostics_;
+  bool verbose_;  
+  
 
 };
 
