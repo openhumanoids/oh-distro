@@ -25,7 +25,7 @@ VoFeatures::VoFeatures(boost::shared_ptr<lcm::LCM> &lcm_, int image_width_, int 
   pc_vis_->obj_cfg_list.push_back( obj_cfg(3000,"Reference Camera Pose",5,reset) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(3001,"Reference Features",1,1, 3000,1,colors_v_g));
   pc_vis_->obj_cfg_list.push_back( obj_cfg(3002,"Current Camera Pose",5,reset) );
-  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(3003,"Reference Camera Features",1,reset, 3002,1,colors_v_b));
+  pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(3003,"Current Features",1,reset, 3002,1,colors_v_b));
 }
 
 // TODO: remove fovis dependency entirely:
