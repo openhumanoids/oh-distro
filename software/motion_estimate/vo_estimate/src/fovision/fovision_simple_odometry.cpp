@@ -33,6 +33,7 @@ struct CommandLineConfig
   std::string camera_config; // which block from the cfg to read
   bool output_signal;
   bool feature_analysis;
+  bool vicon_init; // initializae off of vicon
 };
 
 class StereoOdom{
@@ -78,9 +79,9 @@ class StereoOdom{
     void updateMotion(int64_t utime);
     
     void unpack_multisense(const multisense::images_t *msg);
-    void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    void multisenseLRHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
     void multisenseLDHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    void viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg);      
+    
     void publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel);
     
     boost::shared_ptr<ModelClient> model_;
@@ -99,6 +100,8 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
        ref_utime_(0), changed_ref_frames_(false){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_= bot_frames_get_global(lcm_->getUnderlyingLCM(), botparam_);
+  botframes_cpp_ = new bot::frames(botframes_);
+  
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   KDL::Tree tree;
   if (!kdl_parser::treeFromString( model_->getURDFString() ,tree)){
@@ -122,23 +125,28 @@ StereoOdom::StereoOdom(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfi
   vo_ = new FoVision(lcm_ , stereo_calibration_);
   features_ = new VoFeatures(lcm_, stereo_calibration_->getWidth(), stereo_calibration_->getHeight() );
   
-  // Assumes CAMERA is image_t type:
-  //lcm_->subscribe("CAMERA",&StereoOdom::imageHandler,this);
-  //lcm_->subscribe("MULTISENSE_LR",&StereoOdom::multisenseLRHandler,this);
   lcm_->subscribe("CAMERA",&StereoOdom::multisenseLDHandler,this);
   
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_calibration_->getWidth(), 2*stereo_calibration_->getHeight()); // extra space for stereo tasks
  
-  // Initialise the nominal camera frame with the head pointing horizontally
-  Eigen::Matrix3d M;
-  M <<  0,  0, 1,
-       -1,  0, 0,
-        0, -1, 0;
+  pose_initialized_ = FALSE;
+  if (!cl_cfg_.vicon_init){
+    std::cout << "Init internal est using default\n";
+    // Initialise the nominal camera frame with the head pointing horizontally
+    Eigen::Matrix3d M;
+    M <<  0,  0, 1,
+        -1,  0, 0,
+          0, -1, 0;
 
-  world_to_camera_ = M * Eigen::Isometry3d::Identity();
-  world_to_camera_.translation().x() = 0;
-  world_to_camera_.translation().y() = 0;
-  world_to_camera_.translation().z() = 1.65; // nominal head height
+    world_to_camera_ = M * Eigen::Isometry3d::Identity();
+    world_to_camera_.translation().x() = 0;
+    world_to_camera_.translation().y() = 0;
+    world_to_camera_.translation().z() = 1.65; // nominal head height
+    pose_initialized_ = TRUE;
+  }else{
+    lcm_->subscribe("VICON_BODY|VICON_FRONTPLATE",&StereoOdom::viconHandler,this);
+  }
+  
   
   cout <<"StereoOdom Constructed\n";  
 }
@@ -187,8 +195,6 @@ void StereoOdom::featureAnalysis(){
   counter++;
 }
 
-
-
 void StereoOdom::publishPose(Eigen::Isometry3d pose, int64_t utime, std::string channel){
   bot_core::pose_t pose_msg;
   pose_msg.utime =   utime;
@@ -202,7 +208,6 @@ void StereoOdom::publishPose(Eigen::Isometry3d pose, int64_t utime, std::string 
   pose_msg.orientation[3] =  r_x.z();  
   lcm_->publish( channel, &pose_msg);
 }
-
 
 void StereoOdom::updateMotion(int64_t utime){
   
@@ -223,8 +228,8 @@ void StereoOdom::updateMotion(int64_t utime){
   Eigen::Isometry3d delta_body =  new_world_to_body * ( world_to_body_.inverse() );
 
   if (cl_cfg_.output_signal ){
-    publishPose(world_to_camera_, utime, "POSE_BODY_ALT"); // same as CAMERA_LEFT frame solved by state-sync
-    publishPose(new_world_to_body, utime, "POSE_BODY");
+    publishPose(world_to_camera_, utime, "POSE_CAMERA_LEFT_ALT"); // equivalent to CAMERA_LEFT frame solved by state-sync
+    publishPose(new_world_to_body, utime, "POSE_BODY_ALT");
   }
   
   // THIS IS NOT THE CORRECT COVARIANCE - ITS THE COVARIANCE IN THE CAMERA FRAME!!!!
@@ -232,9 +237,6 @@ void StereoOdom::updateMotion(int64_t utime){
           delta_camera_cov, "VO_DELTA_BODY" );  
   
   world_to_body_ = new_world_to_body;
-  
-  return; 
-  
   
   /*
   stringstream ss;
@@ -295,6 +297,10 @@ void StereoOdom::unpack_multisense(const multisense::images_t *msg){
 
 void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf, 
      const std::string& channel, const  multisense::images_t* msg){
+  if (!pose_initialized_){
+    return; 
+  }
+  
   int w = msg->images[0].width;
   int h = msg->images[0].height;
 
@@ -321,15 +327,66 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
   return;
 }
 
+
+
+static inline bot_core::pose_t getPoseAsBotPose(Eigen::Isometry3d pose, int64_t utime){
+  bot_core::pose_t pose_msg;
+  pose_msg.utime =   utime;
+  pose_msg.pos[0] = pose.translation().x();
+  pose_msg.pos[1] = pose.translation().y();
+  pose_msg.pos[2] = pose.translation().z();  
+  Eigen::Quaterniond r_x(pose.rotation());
+  pose_msg.orientation[0] =  r_x.w();  
+  pose_msg.orientation[1] =  r_x.x();  
+  pose_msg.orientation[2] =  r_x.y();  
+  pose_msg.orientation[3] =  r_x.z();  
+  return pose_msg;
+}
+
+
+void StereoOdom::viconHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::rigid_transform_t* msg){
+  
+  if ( cl_cfg_.vicon_init && !pose_initialized_ ){
+    std::cout << "Init internal est using Vicon\n";
+  
+    Eigen::Isometry3d worldvicon_to_frontplate_vicon;
+    worldvicon_to_frontplate_vicon.setIdentity();
+    worldvicon_to_frontplate_vicon.translation()  << msg->trans[0], msg->trans[1] , msg->trans[2];
+    Eigen::Quaterniond quat = Eigen::Quaterniond(msg->quat[0], msg->quat[1], 
+                                                msg->quat[2], msg->quat[3]);
+    worldvicon_to_frontplate_vicon.rotate(quat); 
+    
+    // Apply the body to frontplate transform
+    Eigen::Isometry3d frontplate_vicon_to_body_vicon = botframes_cpp_->get_trans_with_utime(botframes_, "body_vicon" , "frontplate_vicon", msg->utime);
+    Eigen::Isometry3d body_to_camera = botframes_cpp_->get_trans_with_utime(botframes_, "CAMERA_LEFT" , "body", msg->utime);
+
+    Eigen::Isometry3d worldvicon_to_camera = worldvicon_to_frontplate_vicon* frontplate_vicon_to_body_vicon * body_to_camera;
+    
+    bot_core::pose_t pose_msg = getPoseAsBotPose(worldvicon_to_camera, msg->utime);
+    lcm_->publish("POSE_BODY_ALT", &pose_msg );
+    
+    world_to_camera_ =  worldvicon_to_camera;
+    // prev_vicon_utime_ = msg->utime;
+    
+    pose_initialized_ = TRUE;
+  }
+}
+
+
+
+
+
 int main(int argc, char **argv){
   CommandLineConfig cl_cfg;
   cl_cfg.camera_config = "CAMERA";
   cl_cfg.output_signal = FALSE; 
   cl_cfg.feature_analysis = FALSE; 
+  cl_cfg.vicon_init = FALSE;
   ConciseArgs parser(argc, argv, "fovision-odometry");
   parser.add(cl_cfg.camera_config, "c", "camera_config", "Camera Config block to use: CAMERA, stereo, stereo_with_letterbox");
   parser.add(cl_cfg.output_signal, "o", "output_signal", "Output POSE_BODY and POSE_BODY_ALT signals");
   parser.add(cl_cfg.feature_analysis, "f", "feature_analysis", "Publish Feature Analysis Data");
+  parser.add(cl_cfg.vicon_init, "v", "vicon_init", "Bootstrap internal estimate using VICON_FRONTPLATE");
   parser.parse();
   cout << cl_cfg.camera_config << " is camera_config\n"; 
   
