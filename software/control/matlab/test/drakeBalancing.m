@@ -113,7 +113,7 @@ end
 xf = traj.eval(traj.tspan(2));
 
 err = norm(xf(1:6)-xstar(1:6))
-if err > 0.02
+if err > 0.03
   error('drakeBalancing unit test failed: error is too large');
 end
 

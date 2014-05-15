@@ -84,7 +84,7 @@ walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
 if use_bullet
   for i=1:length(walking_ctrl_data.supports)
-    walking_ctrl_data.supports{i}=walking_ctrl_data.supports{i}.setContactSurfaces(-ones(length(walking_ctrl_data.supports{i}.bodies),1));
+    walking_ctrl_data.supports{1}(i)=walking_ctrl_data.supports{1}(i).setContactSurfaces(-ones(length(walking_ctrl_data.supports{1}(i).bodies),1));
   end
 end
 
