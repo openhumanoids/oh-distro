@@ -22,6 +22,14 @@ public:
     Plot(QWidget * = NULL);
     virtual ~Plot();
 
+
+    enum AlignMode
+    {
+      RIGHT,
+      CENTER
+    };
+
+
     void start();
     void stop();
 
@@ -40,6 +48,7 @@ public:
     void setBackgroundColor(QString color);
 
     void setMarkerEnabled(bool enabled);
+    void setAlignMode(AlignMode mode);
 
     bool isStopped();
 
@@ -72,6 +81,7 @@ private:
     bool mAxisSyncRequired;
     int mColorMode;
     double mTimeWindow;
+    AlignMode mAlignMode;
 
     QMap<SignalData*, QwtPlotCurve*> mSignals;
 };

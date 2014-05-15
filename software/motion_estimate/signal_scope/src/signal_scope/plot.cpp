@@ -507,9 +507,23 @@ void Plot::setYScale(double scale)
   this->replot();
 }
 
+void Plot::setAlignMode(AlignMode mode)
+{
+  if (mode == this->mAlignMode)
+    return;
+
+  this->mAlignMode = mode;
+  this->setMarkerEnabled(mode == CENTER);
+}
 
 void Plot::setEndTime(double endTime)
 {
+
+  if (this->mAlignMode == CENTER)
+  {
+    endTime += this->timeWindow()/2.0;
+  }
+
   QwtInterval xinterval = this->axisInterval(QwtPlot::xBottom);
   if (xinterval.maxValue() == endTime)
   {

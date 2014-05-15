@@ -35,6 +35,7 @@ public:
   void setBackgroundColor(QString color);
   void setPointSize(double pointSize);
   void setCurveStyle(QwtPlotCurve::CurveStyle style);
+  void setAlignMode(QString mode);
 
   void loadSettings(const QMap<QString, QVariant>& plotSettings);
   void addSignal(const QMap<QString, QVariant>& signalSettings);

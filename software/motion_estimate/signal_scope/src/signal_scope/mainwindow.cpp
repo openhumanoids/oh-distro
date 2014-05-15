@@ -97,8 +97,17 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
   pointSizeSpin->setValue(1);
   mInternal->toolBar->addWidget(pointSizeSpin);
 
+
+  mInternal->toolBar->addWidget(new QLabel("    Align: "));
+  QComboBox* alignCombo = new QComboBox(this);
+  alignCombo->addItem("right");
+  alignCombo->addItem("center");
+  mInternal->toolBar->addWidget(alignCombo);
+
+
   this->connect(curveStyleCombo, SIGNAL(currentIndexChanged(const QString&)), SLOT(onCurveStyleChanged(QString)));
   this->connect(pointSizeSpin, SIGNAL(valueChanged(int)), SLOT(onPointSizeChanged(int)));
+  this->connect(alignCombo, SIGNAL(currentIndexChanged(const QString&)), SLOT(onAlignModeChanged(QString)));
 
   mRedrawTimer = new QTimer(this);
   //mRedrawTimer->setSingleShot(true);
@@ -207,6 +216,14 @@ void MainWindow::onCurveStyleChanged(QString style)
   foreach (PlotWidget* plot, mPlots)
   {
     plot->setCurveStyle(curveStyle);
+  }
+}
+
+void MainWindow::onAlignModeChanged(QString mode)
+{
+  foreach (PlotWidget* plot, mPlots)
+  {
+    plot->setAlignMode(mode);
   }
 }
 
@@ -333,7 +350,6 @@ void MainWindow::onRedrawPlots()
 
   foreach (PlotWidget* plot, mPlots)
   {
-    //plot->setEndTime(maxTime + (plot->timeWindow()/2.0) );
     plot->setEndTime(maxTime);
     plot->replot();
   }
