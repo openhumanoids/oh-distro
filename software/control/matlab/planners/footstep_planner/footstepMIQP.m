@@ -6,11 +6,6 @@ ns = (nsteps-1) * nr;
 nvar = nx + ns;
 x_ndx = reshape(1:nx, 4, nsteps);
 s_ndx = reshape(nx + (1:ns), nr, nsteps-1);
-if right_foot_lead
-  start = foot_orig.left;
-else
-  start = foot_orig.right;
-end
 
 if nargin < 8
   seed = [];
@@ -26,9 +21,15 @@ if ~isempty(seed)
     R{k} = [rotmat(-seed.steps(6,k-1)), zeros(2,2);
      zeros(2,2), eye(2)];
   end
+  start_pos = seed.steps(:,1);
 else
+  if right_foot_lead
+    start_pos = foot_orig.left;
+  else
+    start_pos = foot_orig.right;
+  end
   for k = 1:nsteps
-    R{k} = [rotmat(-start(6)), zeros(2,2);
+    R{k} = [rotmat(-start_pos(6)), zeros(2,2);
      zeros(2,2), eye(2)];
   end
 end
@@ -48,7 +49,7 @@ w_rel = 0.8 * [1/params.nom_forward_step^2;1;1;0;0;0];
 % Normalize the goal weight so that the plans don't stretch out as the goal
 % gets farther away
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
-dgoal = norm(goal_pos.center(1:2) - start(1:2));
+dgoal = norm(goal_pos.center(1:2) - start_pos(1:2));
 extra_distance = max(dgoal - (nsteps - 1) * params.nom_forward_step, 0.01);
 w_goal(1:2) = w_goal(1:2) * sqrt(1 / (extra_distance));
 
@@ -85,12 +86,11 @@ for j = 2:nsteps
 end
 
 w_goal = diag(w_goal([1,2,3,6]));
-Q(x_ndx(:,r_ndx(end)), x_ndx(:,r_ndx(end))) = w_goal * w_goal';
-xg = reshape(goal_pos.center([1,2,3,6]), [], 1);
-c(x_ndx(:,r_ndx(end))) = -2 * xg' * w_goal * w_goal';
-Q(x_ndx(:,l_ndx(end)), x_ndx(:,l_ndx(end))) = w_goal * w_goal';
-xg = reshape(goal_pos.center([1,2,3,6]), [], 1);
-c(x_ndx(:,l_ndx(end))) = -2 * xg' * w_goal * w_goal';
+for j = nsteps-1:nsteps
+  Q(x_ndx(:,j), x_ndx(:,j)) = w_goal * w_goal';
+  xg = reshape(goal_pos.center([1,2,3,6]), [], 1);
+  c(x_ndx(:,j)) = -2 * xg' * w_goal * w_goal';
+end
 
 w_rel = diag(w_rel([1,2,3,6]));
 for j = 2:nsteps
@@ -148,10 +148,10 @@ assert(offset == size(Ar, 1));
 A = [A; Ar];
 b = [b; br];
 
-lb(x_ndx(:,1)) = start([1,2,3,6]);
-lb(x_ndx(4,:)) = start(6);
-ub(x_ndx(:,1)) = start([1,2,3,6]);
-ub(x_ndx(4,:)) = start(6);
+lb(x_ndx(:,1)) = start_pos([1,2,3,6]);
+lb(x_ndx(4,:)) = start_pos(6);
+ub(x_ndx(:,1)) = start_pos([1,2,3,6]);
+ub(x_ndx(4,:)) = start_pos(6);
 if ~isempty(seed)
   lb(x_ndx(4,1:size(seed.steps,2))) = seed.steps(6,:) - 0.05;
   ub(x_ndx(4,1:size(seed.steps,2))) = seed.steps(6,:) + 0.05;
@@ -176,6 +176,7 @@ result = gurobi(model, params);
 xstar = result.x;
 steps = xstar(x_ndx);
 steps = [steps(1:3,:); zeros(2, size(steps, 2)); steps(4,:)];
+diff(steps, 1, 2)
 
 region_assignments = reshape(xstar(s_ndx), nr, nsteps-1);
 
