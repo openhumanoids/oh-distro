@@ -35,8 +35,8 @@ public:
 
   void onNewMessage(const QVariant& message)
   {
-    float timeNow;
-    float signalValue;
+    double timeNow;
+    double signalValue;
 
     bool valid = this->extractSignalData(message, timeNow, signalValue);
     if (valid)
@@ -49,7 +49,7 @@ public:
     }
   }
 
-  virtual bool extractSignalData(const QVariant& message, float& timeNow, float& signalValue)
+  virtual bool extractSignalData(const QVariant& message, double& timeNow, double& signalValue)
   {
     //printf("calling python handler...\n");
 
@@ -65,7 +65,7 @@ public:
 
       if (timeOffset == 0) timeOffset = msgUtime;
       timeNow = (msgUtime - timeOffset)/1e6;
-      signalValue = values[1].toFloat();
+      signalValue = values[1].toDouble();
 
       //printf("%f, %f\n", timeNow, signalValue);
       return true;
@@ -78,7 +78,7 @@ public:
     return true;
   }
 
-  virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue)
+  virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue)
   {
     return false;
   }

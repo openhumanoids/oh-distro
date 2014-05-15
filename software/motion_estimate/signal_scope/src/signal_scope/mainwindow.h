@@ -51,6 +51,7 @@ protected slots:
 
   void onPointSizeChanged(int size);
   void onCurveStyleChanged(QString style);
+  void onAlignModeChanged(QString mode);
 
 protected:
 
