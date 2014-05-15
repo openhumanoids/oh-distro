@@ -80,6 +80,8 @@ class commandLcmToModbusConverter(object):
 
         self.rACT = lcmCommand.activate
 
+        self.rATR = lcmCommand.emergency_release
+
         if lcmCommand.do_move == 1:
             self.position = lcmCommand.position
             self.force = lcmCommand.force
@@ -310,9 +312,11 @@ class robotiqBaseSModel(object):
         # this is done to trick the gripper into thinking all
         # commands are new
         # each sendCommand will send multiple times to try to overcome dropouts
-        self.client.sendCommand(self.message1)
-        self.client.sendCommand(self.message2)
-
+        try:
+            self.client.sendCommand(self.message1)
+            self.client.sendCommand(self.message2)
+        except AttributeError:
+            print "Client not available.  Not sending command."
 
     def getStatus(self):
         """Request the status from the gripper and return it in the SModel_robot_input msg type."""
