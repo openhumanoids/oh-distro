@@ -276,6 +276,9 @@ void MainWindow::setPlotBackgroundColor(QString color)
 
 void MainWindow::onSyncXAxis(double x0, double x1)
 {
+  if (mPlaying)
+    return;
+
   foreach (PlotWidget* plot, mPlots)
   {
     if (plot == this->sender())
