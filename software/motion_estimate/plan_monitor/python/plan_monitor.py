@@ -30,7 +30,7 @@ class State:
     
     # 0.1 lax 
     # 0.05 too tight
-    self.positionErrorThreshold = 0.05 
+    self.positionErrorThreshold = 20.10 
 
     self.activeFault = False
 
@@ -67,7 +67,7 @@ class State:
       #print self.activePlanSample , " " , next_utime , " ", ers.utime , " ", diff_time
       #print "i got ", self.activePlanSample
       
-      l_arm_idx = [16,17,18,19,21]
+      l_arm_idx = [16,17,18,19,20,21]
       all_position_plan = self.lastPlan.plan[self.activePlanSample].joint_position 
       
       l_arm_position_plan = np.asarray( [all_position_plan[i] for i in l_arm_idx] )
@@ -108,7 +108,8 @@ class State:
     m = system_status_t.decode(data)
     print "status, ",m.utime,m.value
     print "ers: \n", self.last_ers_utime
-    self.project_plan()
+    if (self.lastRawPlan is not None):
+      self.project_plan()
 
   def remapState(self, samp):
     samp_out = samp.decode( samp.encode() ) # decode and encode ensures deepcopy
