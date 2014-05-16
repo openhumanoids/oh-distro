@@ -247,7 +247,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
   methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
-    %out_tic = tic;
+    out_tic = tic;
     persistent infocount
     
     if isempty(infocount)
@@ -318,7 +318,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
         else
           % check kinematic contact
           if supp.contact_surfaces(i) == 0
-            phi = contactConstraints(r,kinsol,supp.bodies(i),supp.contact_pts{i});
+            %phi = contactConstraintsTerrainBV(r,kinsol,supp.contact_pts_struct(i));
+            phi = contactConstraints(r,kinsol,false,struct('body_idx',[1,supp.bodies(i)]));
+            %valuecheck(phi_new,phi);
           else
             % use bullet collision between bodies
             phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
@@ -337,6 +339,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       active_supports = (supp.bodies)';
       active_surfaces = supp.contact_surfaces;
       active_contact_pts = supp.contact_pts;
+      active_contact_pts_struct = supp.contact_pts_struct;
       num_active_contacts = supp.num_contact_pts;      
 
       %----------------------------------------------------------------------
@@ -368,7 +371,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
         Dbar = [];
         for j=1:length(active_supports)
           if active_surfaces(j) == 0
-            [~,~,JB] = contactConstraintsBV(r,kinsol,active_supports(j),active_contact_pts{j});
+            %[~,~,JB] = contactConstraintsTerrainBV(r,kinsol,active_contact_pts_struct(j));
+            [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('body_idx',[1,active_supports(j)]));
+            %if any(cellfun(@(x,y)~valuecheck(x,y),JB_new,JB))
+              %keyboard
+            %end
           else
             % use bullet collision between bodies
             [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
@@ -381,7 +388,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
 
-        [~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
+        %[~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_contact_pts_struct);
+        [~,~,~,~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,false,struct('terrain_only',true,'body_idx',active_supports));
+        %valuecheck(Jp_new,Jp);
+        %valuecheck(Jpdot_new,Jpdot);
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
 
@@ -513,9 +523,13 @@ classdef MomentumControlBlock < MIMODrakeSystem
       bin_fqp = [bin; -lb(lbind); ub(ubind)];
 
       % call fastQPmex first
-      QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq), ...
-									diag(Hqp(nq+(1:nf),nq+(1:nf)))+REG*ones(nf,1), ...
-									diag(Hqp(nparams-neps+1:end,nparams-neps+1:end))+REG*ones(neps,1)};
+      try
+        QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq), ...
+          diag(Hqp(nq+(1:nf),nq+(1:nf)))+REG*ones(nf,1), ...
+          diag(Hqp(nparams-neps+1:end,nparams-neps+1:end))+REG*ones(neps,1)};
+      catch ex
+        keyboard;
+      end
       Aeq_fqp = full(Aeq);
       % NOTE: model.obj is 2* f for fastQP!!!
       [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
@@ -653,7 +667,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
     end
 
-    if (0)     % simple timekeeping for performance optimization
+    if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
