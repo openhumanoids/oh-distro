@@ -11,6 +11,8 @@ classdef WalkingPDBlock < MIMODrakeSystem
 		input_foot_contacts;
 		r_ankle_idx;
 		l_ankle_idx;
+    hips
+    knees
   end
   
   methods
@@ -46,21 +48,19 @@ classdef WalkingPDBlock < MIMODrakeSystem
         typecheck(options.Kp,'double');
         sizecheck(options.Kp,[obj.nq 1]);
         obj.Kp = options.Kp;
-        obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       else
         obj.Kp = 160.0*ones(obj.nq,1);
-        obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
       end        
+      obj.Kp([1,2,6]) = 0; % ignore x,y,yaw
         
       if isfield(options,'Kd')
         typecheck(options.Kd,'double');
         sizecheck(options.Kd,[obj.nq 1]);
         obj.Kd = options.Kd;
-        obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
       else
         obj.Kd = 19.0*ones(obj.nq,1);
-        obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
       end
+      obj.Kd([1,2,6]) = 0; % ignore x,y,yaw
             
       if isfield(options,'dt')
         typecheck(options.dt,'double');
@@ -101,9 +101,17 @@ classdef WalkingPDBlock < MIMODrakeSystem
 
       obj.robot = r;
       obj.max_nrm_err = 1.5;      
+      obj.hips = findJointIndices(r,'leg_hp');
+      obj.knees = findJointIndices(r,'kny');
     end
    
     function y=mimoOutput(obj,t,~,varargin)      
+%       persistent qd_filt
+      
+%       if isempty(qd_filt)
+%         qd_filt = 0;
+%       end
+      
       obj.ikoptions.q_nom = varargin{1};
 
 			x = varargin{2};
@@ -148,6 +156,11 @@ classdef WalkingPDBlock < MIMODrakeSystem
         err_q = obj.max_nrm_err * err_q / nrmerr;
       end
      
+%       qd_filt = 0.85*qd_filt + 0.15*qd;
+      
+%       qd(obj.hips) = qd_filt(obj.hips);
+%       qd(obj.knees) = qd_filt(obj.knees);
+      
 			y = max(-100*ones(obj.nq,1),min(100*ones(obj.nq,1),obj.Kp.*err_q - obj.Kd.*qd));
 		end
   end

@@ -61,7 +61,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[1;0;0];
+v = R*[0;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -88,7 +88,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.2;
+request.default_step_params.step_speed = 0.1;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -141,39 +141,100 @@ ctrl_data = SharedDataHandle(struct(...
 % v = r.constructVisualizer;
 % playback(v,traj,struct('slider',true));
 
+
+use_simple_pd = true;
+
+if use_simple_pd
+  options.Kp = 5*ones(6,1);
+  options.Kd = 0*ones(6,1);
+  lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
+  rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
+end
+
 % instantiate QP controller
 options.slack_limit = 100;
-options.w_qdd = 25.0*ones(nq,1);
-options.W_hdot = diag([10;10;10;10;10;10]);
-options.w_grf = 0.0075;
+options.w_qdd = 0.0001*ones(nq,1);
+options.W_hdot = diag([1;1;1;100;100;100]);
+options.w_grf = 0.01;
 options.w_slack = 0.005;
 options.Kp = 0; % com-z pd gains
 options.Kd = 0; % com-z pd gains
 options.input_foot_contacts = true;
-options.debug = false;
+options.debug = true;
 options.use_mex = true;
 options.contact_threshold = 0.0075;
 options.output_qdd = true;
+options.solver = 1;
 
-qp = MomentumControlBlock(r,{},ctrl_data,options);
+if use_simple_pd
+  motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
+  qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
+  
+  ins(1).system = 1;
+  ins(1).input = 1;
+  ins(2).system = 2;
+  ins(2).input = 1;
+  ins(3).system = 2;
+  ins(3).input = 2;
+  ins(4).system = 2;
+  ins(4).input = 3;
+  ins(5).system = 2;
+  ins(5).input = 5;
+  outs(1).system = 2;
+  outs(1).output = 1;
+  outs(2).system = 2;
+  outs(2).output = 2;
+  qp = mimoCascade(lfoot_motion,qp,[],ins,outs);
+  clear ins;
+  ins(1).system = 1;
+  ins(1).input = 1;
+  ins(2).system = 2;
+  ins(2).input = 1;
+  ins(3).system = 2;
+  ins(3).input = 2;
+  ins(4).system = 2;
+  ins(4).input = 3;
+  ins(5).system = 2;
+  ins(5).input = 4;
+  qp = mimoCascade(rfoot_motion,qp,[],ins,outs);
+  
+else
+  qp = MomentumControlBlock(r,{},ctrl_data,options);
+end
 vo = VelocityOutputIntegratorBlock(r,options);
 fcb = FootContactBlock(r);
 fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
-options.Kp = 80.0*ones(nq,1);
-options.Kd = 20.0*ones(nq,1);
-pd = WalkingPDBlock(r,ctrl_data,options);
-ins(1).system = 1;
-ins(1).input = 1;
-ins(2).system = 1;
-ins(2).input = 2;
-ins(3).system = 1;
-ins(3).input = 3;
-ins(4).system = 2;
-ins(4).input = 1;
-ins(5).system = 2;
-ins(5).input = 3;
+options.Kp = 40.0*ones(nq,1);
+options.Kd = 12.0*ones(nq,1);
+if use_simple_pd
+  pd = SimplePDBlock(r,ctrl_data,options);
+  ins(1).system = 1;
+  ins(1).input = 1;
+  ins(2).system = 1;
+  ins(2).input = 2;
+  ins(3).system = 2;
+  ins(3).input = 1;
+  ins(4).system = 2;
+  ins(4).input = 2;
+  ins(5).system = 2;
+  ins(5).input = 3;
+  ins(6).system = 2;
+  ins(6).input = 5;
+else
+  pd = WalkingPDBlock(r,ctrl_data,options);
+  ins(1).system = 1;
+  ins(1).input = 1;
+  ins(2).system = 1;
+  ins(2).input = 2;
+  ins(3).system = 1;
+  ins(3).input = 3;
+  ins(4).system = 2;
+  ins(4).input = 1;
+  ins(5).system = 2;
+  ins(5).input = 3;
+end
 outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
@@ -184,7 +245,7 @@ clear ins;
 toffset = -1;
 tt=-1;
 
-torque_fade_in = 0.75; % sec, to avoid jumps at the start
+torque_fade_in = 0.1; % sec, to avoid jumps at the start
 
 resp = input('OK to send input to robot? (y/n): ','s');
 if ~strcmp(resp,{'y','yes'})
@@ -192,8 +253,14 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 % low pass filter for floating base velocities
-alpha_v = 0.75;
+alpha_v = 0.5;
 float_v = 0;
+
+l_foot_contact = 0;
+r_foot_contact = 0;
+qd_control = 0;
+qd_filt = 0;
+eta=1;
 
 udes = zeros(nu,1);
 qddes = zeros(nu,1);
@@ -216,15 +283,30 @@ while tt<T
     %qt = fasteval(qtraj,tt);
 
     fc = output(fcb,tt,[],[q;qd]);
+    if fc(1)~=l_foot_contact || fc(2)~=r_foot_contact
+      % contact changed
+      l_foot_contact = fc(1);
+      r_foot_contact = fc(2);
+      eta = 0;
+    end
+    qd_filt = 0.8*qd_filt + 0.2*qd;
+    qd_control = (1-eta)*qd_filt + eta*qd;
+    eta = min(1.0, eta+0.005);
+    
+    x_filt = [q;qd];
+    
+    junk = output(fshift,tt,[],x_filt);
 
-    junk = output(fshift,tt,[],[q;qd]);
-
-    u_and_qdd = output(qp_sys,tt,[],[q0; q;qd; fc; q;qd; fc]);
+    if use_simple_pd
+      u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; fc]);
+    else
+      u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; fc; x_filt; fc]);
+    end
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+(1:nq));
 
-    qd_int_state = mimoUpdate(vo,tt,qd_int_state,[q;qd],qdd,fc);
-    qd_ref = mimoOutput(vo,tt,qd_int_state,[q;qd],qdd,fc);
+    qd_int_state = mimoUpdate(vo,tt,qd_int_state,x_filt,qdd,fc);
+    qd_ref = mimoOutput(vo,tt,qd_int_state,x_filt,qdd,fc);
 
     % fade in desired torques to avoid spikes at the start
     udes(joint_act_ind) = u(joint_act_ind);

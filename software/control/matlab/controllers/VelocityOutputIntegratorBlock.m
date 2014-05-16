@@ -52,8 +52,6 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			l_foot_contact = fc(1);
 			r_foot_contact = fc(2);
 			
-			lambda = state(4);
-
       % compute desired velocity
 			qd_int = state(5:end);
 
@@ -68,7 +66,6 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
       end
 			
       delta_max = 1.0;
-      %y = max(-delta_max,min(delta_max,lambda*qd_err(obj.act_idx_map)));
       y = max(-delta_max,min(delta_max,qd_err(obj.act_idx_map)));
 		end
 		
@@ -81,12 +78,11 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			l_foot_contact = fc(1);
 			r_foot_contact = fc(2);
 
- 			lambda = state(4);
+ 			eta = state(4);
 
 			qd_int = state(5:end);
 			dt = t-state(3);
 			
-      eta = 0.0;
 			qd_int = ((1-eta)*qd_int + eta*qd) + qdd*dt; 
 			
       if l_foot_contact>0.5
@@ -101,13 +97,13 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			next_state(2) = fc(2);
 			next_state(3) = t;
 
-      lambda = min(1.0,lambda+dt); % linear ramp
-      if state(1)~=l_foot_contact || state(2)~=r_foot_contact
-        % contact state changed, reset integrated velocities
-        qd_int(obj.leg_idx) = 0;
-        lambda = 0;
-      end
-      next_state(4) = lambda;
+      eta = max(0.0,eta-dt); % linear ramp
+%       if state(1)~=l_foot_contact || state(2)~=r_foot_contact
+%         % contact state changed, reset integrated velocities
+%         qd_int(obj.leg_idx) = qd(obj.leg_idx);
+% %         eta = 0.3; % decay integrated velocity to actual
+%       end
+      next_state(4) = eta;
 			next_state(5:end) = qd_int;
 		end
 	end
