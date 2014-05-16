@@ -163,15 +163,23 @@ end
 
 function total_diff = error_from_goal(footsteps, goal_pos, goal_threshold, w_final)
   if footsteps(end).is_right_foot
-    diff_r = footsteps(end).pos - goal_pos.right;
-    diff_l = footsteps(end-1).pos - goal_pos.left;
+    total_diff = footsteps(end).pos - goal_pos.right;
   else
-    diff_l = footsteps(end).pos - goal_pos.left;
-    diff_r = footsteps(end-1).pos - goal_pos.right;
+    total_diff = footsteps(end).pos - goal_pos.left;
   end
-  diff_r = diff_r .* w_final; % don't count z, roll, and pitch
-  diff_l = diff_l .* w_final;
-  diff_r = max(0, abs(diff_r) - goal_threshold .* w_final);
-  diff_l = max(0, abs(diff_l) - goal_threshold .* w_final);
-  total_diff = sum(diff_r + diff_l);
+  total_diff = max(0, (abs(total_diff) - goal_threshold)' * w_final);
+
+
+%   if footsteps(end).is_right_foot
+%     diff_r = footsteps(end).pos - goal_pos.right;
+%     diff_l = footsteps(end-1).pos - goal_pos.left;
+%   else
+%     diff_l = footsteps(end).pos - goal_pos.left;
+%     diff_r = footsteps(end-1).pos - goal_pos.right;
+%   end
+%   diff_r = diff_r .* w_final; % don't count z, roll, and pitch
+%   diff_l = diff_l .* w_final;
+%   diff_r = max(0, abs(diff_r) - goal_threshold .* w_final);
+%   diff_l = max(0, abs(diff_l) - goal_threshold .* w_final);
+%   total_diff = sum(diff_r + diff_l);
 end
