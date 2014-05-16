@@ -1,11 +1,14 @@
-function [steps, region_assignments] = footstepMIQP(biped, foot_orig, goal_pos, nsteps, right_foot_lead, params, safe_regions, seed)
+function plan = footstepMIQP(biped, seed_steps, goal_pos, nsteps, right_foot_lead, params, safe_regions, seed)
 
 nr = length(safe_regions);
 nx = 4 * nsteps;
 ns = (nsteps-1) * nr;
+nf = 1;
+% nvar = nx + ns + nf;
 nvar = nx + ns;
 x_ndx = reshape(1:nx, 4, nsteps);
 s_ndx = reshape(nx + (1:ns), nr, nsteps-1);
+% f_ndx = nx + ns + 1;
 
 if nargin < 8
   seed = [];
@@ -33,7 +36,7 @@ else
      zeros(2,2), eye(2)];
   end
 end
-  
+
 [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
 assert(all(all(A_reach(:,4:5) == 0)), 'Linear constraints on roll and pitch are not supported yet');
 A_reach = A_reach(:,[1:3,6]);
@@ -49,7 +52,7 @@ w_rel = 0.8 * [1/params.nom_forward_step^2;1;1;0;0;0];
 % Normalize the goal weight so that the plans don't stretch out as the goal
 % gets farther away
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
-dgoal = norm(goal_pos.center(1:2) - start_pos(1:2));
+dgoal = norm(goal_pos.center(1:2) - mean([foot_orig.right(1:2), foot_orig.left(1:2)], 2));
 extra_distance = max(dgoal - (nsteps - 1) * params.nom_forward_step, 0.01);
 w_goal(1:2) = w_goal(1:2) * sqrt(1 / (extra_distance));
 
@@ -97,12 +100,12 @@ for j = 2:nsteps
 %   if j == nsteps
 %     w_rel = w_rel * diag([0,0,0,1]);
 %   end
-  
+
   Q(x_ndx(:,j), x_ndx(:,j)) = Q(x_ndx(:,j), x_ndx(:,j)) + R{j}' * w_rel * w_rel' * R{j};
   Q(x_ndx(:,j-1), x_ndx(:,j)) = Q(x_ndx(:,j-1), x_ndx(:,j)) - R{j}' * w_rel * w_rel' * R{j};
   Q(x_ndx(:,j), x_ndx(:,j-1)) = Q(x_ndx(:,j), x_ndx(:,j-1)) - R{j}' * w_rel * w_rel' * R{j};
   Q(x_ndx(:,j-1), x_ndx(:,j-1)) = Q(x_ndx(:,j-1), x_ndx(:,j-1)) + R{j}' * w_rel * w_rel' * R{j};
-  
+
   if ismember(j, r_ndx)
     nom = diag([1,-1,1,-1]) *nom_step;
   else
@@ -128,13 +131,13 @@ for j = 2:nsteps
   for r = 1:nr
     A_region = safe_regions(r).A;
     A_region = [A_region(:,1:2), zeros(size(A_region, 1), 1), A_region(:,3)];
-    A_region = [A_region; 
+    A_region = [A_region;
                 reshape(safe_regions(r).normal, 1, []), 0;
                 -reshape(safe_regions(r).normal, 1, []), 0];
-    b_region = [safe_regions(r).b; 
+    b_region = [safe_regions(r).b;
                 safe_regions(r).normal' * safe_regions(r).point;
                 -safe_regions(r).normal' * safe_regions(r).point];
-    
+
     Ai = zeros(size(A_region, 1), nvar);
     Ai(:,x_ndx(:,j)) = A_region;
     Ai(:,s_ndx(r,j-1)) = M;
@@ -179,6 +182,14 @@ steps = [steps(1:3,:); zeros(2, size(steps, 2)); steps(4,:)];
 diff(steps, 1, 2)
 
 region_assignments = reshape(xstar(s_ndx), nr, nsteps-1);
+[region_order, ~] = find(abs(region_assignments - 1) < 1e-2);
+assert(length(region_order) == size(region_assignments, 2));
+
+
+body_idx =
+if right_foot_lead
+
+plan = FootstepPlan(
 
 if 0
   figure(1);

@@ -2,7 +2,7 @@ classdef Footstep
   properties
     pos
     id
-    is_right_foot
+    body_idx
     is_in_contact
     pos_fixed
     terrain_pts
@@ -10,11 +10,15 @@ classdef Footstep
     walking_params
   end
 
+  properties(Constant)
+    atlas_foot_bodies_idx = struct('right', 28, 'left', 16);
+  end
+
   methods
-    function obj = Footstep(pos, id, is_right_foot, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params)
+    function obj = Footstep(pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params)
       obj.pos = pos;
       obj.id = id;
-      obj.is_right_foot = is_right_foot;
+      obj.body_idx = body_idx;
       obj.is_in_contact = is_in_contact;
       obj.pos_fixed = pos_fixed;
       obj.terrain_pts = terrain_pts;
@@ -26,7 +30,13 @@ classdef Footstep
       msg = drc.footstep_t();
       msg.pos = encodePosition3d(obj.pos);
       msg.id = obj.id;
-      msg.is_right_foot = obj.is_right_foot;
+      if obj.body_idx == Footstep.atlas_foot_bodies_idx.right
+        msg.is_right_foot = true;
+      elseif obj.body_idx == Footstep.atlas_foot_bodies_idx.left
+        msg.is_right_foot = false;
+      else
+        error('DRC:Footstep:InvalidBodyIdxForAtlas', 'Invalid body index for Atlas robot');
+      end
       msg.is_in_contact = obj.is_in_contact;
       msg.fixed_x = obj.pos_fixed(1);
       msg.fixed_y = obj.pos_fixed(2);
@@ -48,7 +58,11 @@ classdef Footstep
     function footstep = from_footstep_t(msg)
       pos = decodePosition3d(msg.pos);
       id = msg.id;
-      is_right_foot = msg.is_right_foot;
+      if msg.is_right_foot
+        body_idx = Footstep.atlas_foot_bodies_idx.right;
+      else
+        body_idx = Footstep.atlas_foot_bodies_idx.left;
+      end
       is_in_contact = msg.is_in_contact;
       pos_fixed = [msg.fixed_x;
                    msg.fixed_y;
@@ -60,7 +74,7 @@ classdef Footstep
                      reshape(msg.terrain_height, 1, []);];
       infeasibility = msg.infeasibility;
       walking_params = msg.params;
-      footstep = Footstep(pos, id, is_right_foot, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
+      footstep = Footstep(pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
     end
   end
 end

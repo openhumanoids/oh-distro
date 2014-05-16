@@ -1,4 +1,4 @@
-function [X, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, params, safe_regions)
+function [plan, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, params, safe_regions, region_order)
 
 debug = false;
 USE_SNOPT = 1;
@@ -59,8 +59,8 @@ end
 
 params.forward_step = params.max_forward_step;
 [A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
-if length(safe_regions) > 1
-  params.max_num_steps = min(params.max_num_steps, length(safe_regions));
+if length(region_order) > 1
+  params.max_num_steps = min(params.max_num_steps, length(region_order));
 end
 min_steps = max([params.min_num_steps+1,2]);
 max_steps = params.max_num_steps + 1;
@@ -99,12 +99,12 @@ x0 = encodeCollocationSteps(steps);
 
 for j = 2:nsteps
   x_ndx = (j-1)*12+(1:6);
-  if length(safe_regions) == 1
+  if length(region_order) == 1
     region_ndx = 1;
   else
     region_ndx = j-1;
   end
-  region = safe_regions(region_ndx);
+  region = safe_regions(region_order(region_ndx));
   num_region_cons = length(region.b);
   expanded_A = zeros(num_region_cons, nv);
   expanded_A(1:length(region.b),x_ndx([1,2,6])) = region.A;
@@ -216,7 +216,7 @@ X = seed_steps;
 valuecheck(output_steps([1,2,6],1), X(2).pos([1,2,6]),1e-8);
 for j = 2:nsteps
   X(j+1).pos = output_steps(:,j);
-  X(j+1).is_right_foot = logical(mod(right_foot_lead+j,2));
 end
+plan = FootstepPlan.from_collocation_results(X, params, safe_regions, region_order);
 
 end

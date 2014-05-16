@@ -2,14 +2,16 @@ classdef FootstepPlan
   properties
     footsteps
     params
+    safe_regions
+    region_order
   end
 
   methods
-    function obj = FootstepPlan(footsteps, params)
+    function obj = FootstepPlan(footsteps, params, safe_regions, region_order)
       obj.footsteps = footsteps;
-      if nargin > 1
-        obj.params = params;
-      end
+      obj.params = params;
+      obj.safe_regions = safe_regions;
+      obj.region_order = region_order;
     end
 
     function msg = to_footstep_plan_t(obj)
@@ -29,20 +31,20 @@ classdef FootstepPlan
   end
 
   methods(Static=true)
-    function plan = from_collocation_results(X)
+    function plan = from_collocation_results(X, params, safe_regions, region_order)
       footsteps = Footstep.empty();
       for j = 1:length(X)
         pos = X(j).pos;
         id = j;
-        is_right_foot = X(j).is_right_foot;
+        body_idx = X(j).body_idx;
         is_in_contact = true;
         pos_fixed = zeros(6,1);
         terrain_pts = [];
         infeasibility = nan;
         walking_params = [];
-        footsteps(j) = Footstep(pos, id, is_right_foot, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
+        footsteps(j) = Footstep(pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
       end
-      plan = FootstepPlan(footsteps);
+      plan = FootstepPlan(footsteps, params, safe_regions, region_order);
     end
 
     function plan = from_footstep_plan_t(msg)
@@ -52,5 +54,10 @@ classdef FootstepPlan
       end
       plan = FootstepPlan(footsteps);
     end
+
+    function plan = from_step_matrix(steps, params, safe_regions, region_order)
+      footsteps = Footstep.empty();
+      for j = 1:size(steps, 2)
+        footsteps(j) = Footstep.
   end
 end
