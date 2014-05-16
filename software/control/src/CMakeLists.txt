@@ -26,26 +26,26 @@ if (NOT maps_FOUND OR NOT opencv_FOUND)
 
 else()
 
-  add_mex(HeightMapWrapper HeightMapWrapper.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
-  pods_use_pkg_config_packages(HeightMapWrapper maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
+  add_mex(HeightMapWrapper HeightMapWrapper.cpp)
+  pods_use_pkg_config_packages(HeightMapWrapper terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
 
-  add_mex(stepCollocationConstraintsMex stepCollocationConstraintsMex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
+  add_mex(stepCollocationConstraintsMex stepCollocationConstraintsMex.cpp)
   set_target_properties(stepCollocationConstraintsMex PROPERTIES COMPILE_FLAGS "-std=c++0x -DUSE_MAPS")
-  pods_use_pkg_config_packages(stepCollocationConstraintsMex maps eigen3 opencv)
+  pods_use_pkg_config_packages(stepCollocationConstraintsMex eigen3 opencv)
 
   add_mex(BotParamClient BotParamClient.cpp)
   pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)
 
-  add_mex(QPControllermex QPControllermex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
-  pods_use_pkg_config_packages(QPControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
+  add_mex(QPControllermex QPControllermex.cpp)
+  pods_use_pkg_config_packages(QPControllermex terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(QPControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
 
-  add_mex(MomentumControllermex MomentumControllermex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
-  pods_use_pkg_config_packages(MomentumControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
+  add_mex(MomentumControllermex MomentumControllermex.cpp)
+  pods_use_pkg_config_packages(MomentumControllermex terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(MomentumControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
 
-  add_mex(linearIKmex linearIKmex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
-  pods_use_pkg_config_packages(linearIKmex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
+  add_mex(linearIKmex linearIKmex.cpp)
+  pods_use_pkg_config_packages(linearIKmex terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(linearIKmex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
 
   add_mex(bot_timestamp_now bot_timestamp_now.cpp)

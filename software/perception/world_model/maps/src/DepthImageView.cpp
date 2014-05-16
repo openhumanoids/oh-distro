@@ -10,7 +10,7 @@ DepthImageView::
 DepthImageView() {
   mImage.reset(new DepthImage());
   setNormalRadius(0);
-  setNormalMethod(NormalMethodLeastSquares);
+  setNormalMethod(NormalMethodTriangle);
 }
 
 DepthImageView::
@@ -248,7 +248,8 @@ getClosest(const Eigen::Vector3f& iPoint,
   if (!interpolate(proj[0], proj[1], proj[2])) return false;
 
   // do triangle-based interpolated point and normal
-  if ((mNormalRadius == 0) && (mNormalMethod != NormalMethodZ)) {
+  if ((mNormalMethod == NormalMethodTriangle) ||
+      ((mNormalRadius == 0) && (mNormalMethod != NormalMethodZ))) {
     return unproject(proj, oPoint, oNormal);
   }
 

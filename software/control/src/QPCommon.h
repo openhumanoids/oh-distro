@@ -10,8 +10,7 @@
 
 #ifdef USE_MAPS
 
-#include "mexmaps/MapLib.hpp"
-#include <maps/ViewBase.hpp>
+#include <terrain-map/TerrainMap.hpp>
 
 #endif
 
@@ -132,16 +131,15 @@ void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos,
   if (map_ptr) {
 #ifdef USE_MAPS    
     Vector3f floatPos, floatNormal;
-    auto state = static_cast<mexmaps::MapHandle*>(map_ptr);
-    if (state != NULL) {
-      auto view = state->getView();
-      if (view != NULL) {
-        if (view->getClosest(contact_pos.cast<float>(),floatPos,floatNormal)) {
-          pos = floatPos.cast<double>();
-          if (normal) *normal = floatNormal.cast<double>();
-          return;
-        }
-      }
+    auto terrainMap = static_cast<terrainmap::TerrainMap*>(map_ptr);
+    if (terrainMap != NULL) {
+      Vector3d normalVect;
+      pos[0] = contact_pos[0];
+      pos[1] = contact_pos[1];
+      terrainMap->getHeightAndNormal(contact_pos[0], contact_pos[1],
+                                     pos[2], normalVect);
+      if (normal) *normal = normalVect;
+      return;
     }
 #endif      
   } else {

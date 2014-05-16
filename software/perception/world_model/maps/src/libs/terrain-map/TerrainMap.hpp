@@ -5,7 +5,7 @@
 #include <string>
 #include <Eigen/Geometry>
 
-namespace maps {
+namespace drc {
   class BotWrapper;
 }
 
@@ -13,6 +13,14 @@ namespace terrainmap {
 
 class TerrainMap {
 public:
+  enum NormalMethod {
+    NormalMethodOverride,         // use fill plane for normals
+    NormalMethodTriangle,         // use triangular mesh facet normal
+    NormalMethodLeastSquares,     // least squares plane estimate
+    NormalMethodRobustKernel,     // iterative plane fit with robust kernel
+    NormalMethodSampleConsensus,  // ransac plane estimate
+  };
+
   struct TerrainData {
     std::vector<float> mHeights;
     int mWidth;
@@ -21,7 +29,7 @@ public:
   };
 
 public:
-  TerrainMap(const std::shared_ptr<maps::BotWrapper>& iBotWrapper);
+  TerrainMap(const std::shared_ptr<drc::BotWrapper>& iBotWrapper);
   ~TerrainMap();
 
   // view id and depth map channel to listen on
@@ -39,24 +47,36 @@ public:
   // whether to override all actual heights with fill plane
   void overrideHeights(const bool iVal);
 
-  // whether to override all actual normals with fill plane
-  void overrideNormals(const bool iVal);
+  // how to compute all actual normals
+  void setNormalMethod(const NormalMethod iMethod);
 
   // whether to fill in missing values in the height map
   void shouldFillMissing(const bool iVal);
+
+  // how to compute normals where there is data
+  void setNormalRadius(const double iRadius);
+  double getNormalRadius() const;
 
   // start and stop listening to new maps and other messages
   bool startListening();
   bool stopListening();
 
 
+  // send a height map request to the maps server
+  bool sendRequest(const Eigen::Vector3d& iBoxMin,
+                   const Eigen::Vector3d& iBoxMax,
+                   const double iResolutionMeters,
+                   const double iTimeWindowSeconds,
+                   const double iFrequencyHz);
+                   
 
   // get internal depth image data
   std::shared_ptr<TerrainData> getData() const;
 
   // get height and normal at a given (x,y) location
-  bool getHeightAndNormal(const double iX, const double iY,
-                          double& oHeight, Eigen::Vector3d& oNormal) const;
+  template <typename T>
+  bool getHeightAndNormal(const T iX, const T iY,
+                          T& oHeight, Eigen::Matrix<T,3,1>& oNormal) const;
   
 private:
   struct Helper;

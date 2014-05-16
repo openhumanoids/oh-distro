@@ -2,9 +2,6 @@
 #include <math.h>
 #include <Eigen/Dense>
 
-#include "mexmaps/MapLib.hpp"
-#include <maps/ViewBase.hpp>
-
 using namespace std;
 
 void constraints(mxArray* c_out, mxArray* ceq_out, mxArray* dc_out, mxArray* dceq_out, const Eigen::MatrixXd& x, size_t nc, size_t nceq, size_t nv, size_t nsteps)
