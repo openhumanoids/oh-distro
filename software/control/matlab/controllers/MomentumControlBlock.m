@@ -318,7 +318,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
         else
           % check kinematic contact
           if supp.contact_surfaces(i) == 0
-            %phi = contactConstraintsTerrainBV(r,kinsol,supp.contact_pts_struct(i));
             phi = contactConstraints(r,kinsol,false,struct('body_idx',[1,supp.bodies(i)]));
             %valuecheck(phi_new,phi);
           else
@@ -339,7 +338,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
       active_supports = (supp.bodies)';
       active_surfaces = supp.contact_surfaces;
       active_contact_pts = supp.contact_pts;
-      active_contact_pts_struct = supp.contact_pts_struct;
       num_active_contacts = supp.num_contact_pts;      
 
       %----------------------------------------------------------------------
@@ -371,7 +369,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
         Dbar = [];
         for j=1:length(active_supports)
           if active_surfaces(j) == 0
-            %[~,~,JB] = contactConstraintsTerrainBV(r,kinsol,active_contact_pts_struct(j));
             [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('body_idx',[1,active_supports(j)]));
             %if any(cellfun(@(x,y)~valuecheck(x,y),JB_new,JB))
               %keyboard
@@ -388,7 +385,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
 
-        %[~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_contact_pts_struct);
         [~,~,~,~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,false,struct('terrain_only',true,'body_idx',active_supports));
         %valuecheck(Jp_new,Jp);
         %valuecheck(Jpdot_new,Jpdot);
