@@ -9,7 +9,7 @@ else
 end
 if ~isfield(options, 't0'); options.t0 = 0; end
 if ~isfield(options, 'debug'); options.debug = true; end
-if ~isfield(options, 'first_step_hold_s'); options.first_step_hold_s = 1; end
+if ~isfield(options, 'first_step_hold_s'); options.first_step_hold_s = .5; end
 
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');

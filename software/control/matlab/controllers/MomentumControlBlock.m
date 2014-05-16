@@ -242,11 +242,26 @@ classdef MomentumControlBlock < MIMODrakeSystem
   methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
+    % global gtic t_prev
+    
+    % if ~isempty(gtic)
+    %   rate=toc(gtic)/(t-t_prev)
+    % end
+    % gtic = tic;
+    % t_prev=t;
+    
+
     %out_tic = tic;
-    persistent infocount
+    persistent infocount foot_force_fade fmax
     
     if isempty(infocount)
       infocount = 0;
+    end
+    if isempty(foot_force_fade)
+      foot_force_fade = [1; 1];
+    end
+    if isempty(fmax)
+      fmax = [1000; 1000];
     end
     ctrl_data = obj.controller_data.data;
       
@@ -262,12 +277,37 @@ classdef MomentumControlBlock < MIMODrakeSystem
     if (ctrl_data.is_time_varying)
       % extract current supports
       supp_idx = find(ctrl_data.support_times<=t,1,'last');
-      
-      %if supp_idx<length(ctrl_data.support_times) && (length(ctrl_data.supports(supp_idx).bodies)<length(ctrl_data.supports(supp_idx+1).bodies))
-      %  supp_idx = find(ctrl_data.support_times<=t+1.5,1,'last'); % hack for early contact
-      %end
-      
       supp = ctrl_data.supports(supp_idx);
+      supp_next = ctrl_data.supports(supp_idx+1);
+
+			% look ahead to see if we're going to break contact
+			t_lookahead = 0.3;
+      if ctrl_data.support_times(supp_idx+1)-t < t_lookahead 
+        if length(supp.bodies) > length(supp_next.bodies)
+          % we're going to break contact in less than t_lookahead secs
+					foot_to_break_contact = setdiff(supp.bodies,supp_next.bodies);
+					if foot_to_break_contact==obj.rfoot_idx
+						foot_force_fade(1) = -(1000/(t_lookahead/0.002));
+					elseif foot_to_break_contact==obj.lfoot_idx
+						foot_force_fade(2) = -(1000/(t_lookahead/0.002));
+					end
+				end
+			end
+			t_lookahead = 0.005;
+      if ctrl_data.support_times(supp_idx+1)-t < t_lookahead 
+				if length(supp.bodies) < length(supp_next.bodies)
+          % we're going to make contact in less than t_lookahead secs
+					foot_to_make_contact = setdiff(supp_next.bodies,supp.bodies);
+					if foot_to_make_contact==obj.rfoot_idx
+						foot_force_fade(1) = 5;
+					elseif foot_to_make_contact==obj.lfoot_idx
+						foot_force_fade(2) = 5;
+					end
+				end
+			end
+			
+			fmax = min(1000,max(0,fmax + foot_force_fade))
+			      
       y0 = fasteval(ctrl_data.K.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       K = fasteval(ctrl_data.K.D,t); % always constant for ZMP dynamics
     else
@@ -394,8 +434,19 @@ classdef MomentumControlBlock < MIMODrakeSystem
       %----------------------------------------------------------------------
       % Set up problem constraints ------------------------------------------
 
+			
+			force_max = 1000*ones(1,nf);
+			lfoot_ind = find(obj.lfoot_idx==active_supports);
+			if ~isempty(lfoot_ind)
+				force_max(16*(lfoot_ind-1)+1:16*(lfoot_ind))=fmax(2);
+			end
+			rfoot_ind = find(obj.rfoot_idx==active_supports);
+			if ~isempty(rfoot_ind)
+				force_max(16*(rfoot_ind-1)+1:16*(rfoot_ind))=fmax(1);
+			end
+			
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
-      ub = [ 1e3*ones(1,nq) 1e3*ones(1,nf) obj.slack_limit*ones(1,neps)]';
+      ub = [ 1e3*ones(1,nq) force_max obj.slack_limit*ones(1,neps)]';
 
       Aeq_ = cell(1,length(varargin)+1);
       beq_ = cell(1,5);
