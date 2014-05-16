@@ -5,15 +5,6 @@ classdef SupportState
   properties (SetAccess=protected)
     bodies; % array of supporting body indices
     contact_pts; % cell array of supporting contact point indices
-    contact_pts_struct; % n x 1 structure array, where n is the number
-                        % of bodies with points that can collide with
-                        % terrain. Each element has the following fields
-                        %   * idx - Index of a body in the
-                        %           RigidBodyManipulator
-                        %   * pts - 3 x k array containing points on the
-                        %            body specified by idx that can
-                        %            collide with non-flat terrain.
-
     num_contact_pts;  % convenience array containing the desired number of 
                       %             contact points for each support body
     contact_surfaces; % int IDs either: 0 (terrain), -1 (any body in bullet collision world)
@@ -36,9 +27,6 @@ classdef SupportState
           if any(contact_pts{i}>size(terrain_contact_point_struct.pts,2))
             error('SupportState: contact_pts indices exceed number of contact points');
           end
-          obj.contact_pts_struct(i).idx = obj.bodies(i);
-          obj.contact_pts_struct(i).pts = ...
-            terrain_contact_point_struct.pts(:,contact_pts{i});
           obj.num_contact_pts(i)=length(contact_pts{i});
         end
         obj.contact_pts = contact_pts;
@@ -46,7 +34,6 @@ classdef SupportState
         % use all points on body
         obj.contact_pts = cell(1,length(obj.bodies));
         for i=1:length(obj.bodies)
-          obj.contact_pts_struct(i) = getTerrainContactPoints(r,obj.bodies(i));
           obj.contact_pts{i} = 1:size(getBodyContacts(r,obj.bodies(i)),2);
           obj.num_contact_pts(i)=length(obj.contact_pts{i});
         end
@@ -68,8 +55,8 @@ classdef SupportState
     function pts = contactPositions(obj,r,kinsol)
       pts=[];
       for i=1:length(obj.bodies)
-        pts = [pts,forwardKin(r,kinsol,obj.contact_pts_struct(i).idx, ...
-                              obj.contact_pts_struct(i).pts)];
+        bp = getTerrainContactPoints(r,obj.bodies(i));
+        pts = [pts,forwardKin(r,kinsol,obj.bodies(i),bp.pts(:,obj.contact_pts{i}))];
       end
     end
     
@@ -78,7 +65,6 @@ classdef SupportState
       obj.contact_pts(index_into_bodies_not_body_idx)=[]; % note: this is correct, even though it's a cell array
       obj.num_contact_pts(index_into_bodies_not_body_idx)=[];
       obj.contact_surfaces(index_into_bodies_not_body_idx)=[];
-      obj.contact_pts_struct(index_into_bodies_not_body_idx) = [];
     end
     
     function obj = removeBodyIdx(obj,body_idx)
