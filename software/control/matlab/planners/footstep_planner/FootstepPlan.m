@@ -70,7 +70,7 @@ classdef FootstepPlan
       for j = 1:msg.num_steps
         footsteps(j) = Footstep.from_footstep_t(msg.footsteps(j));
       end
-      plan = FootstepPlan(footsteps);
+      plan = FootstepPlan(footsteps, msg.params, [], []);
     end
 
     function plan = blank_plan(nsteps, ordered_body_idx, params, safe_regions)

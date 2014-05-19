@@ -13,6 +13,9 @@ min_steps = max([params.min_num_steps+2,3]);
 max_steps = params.max_num_steps+2;
 miqp_plan = footstepMIQP(biped, seed_plan, goal_pos, min_steps, max_steps);
 plan = footstepCollocation(biped, miqp_plan, goal_pos);
+step_vect = encodeCollocationSteps([plan.footsteps(2:end).pos]);
+[steps, steps_rel] = decodeCollocationSteps(step_vect);
+steps_rel
 return;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

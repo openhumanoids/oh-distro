@@ -60,7 +60,7 @@ A_reach = A_reach(:,[1:3,6]);
 nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
 w_goal = [10;10;0;0;0;0];
 w_rel = 10 * [1;1;1;0;0;0];
-w_trim = w_rel(1)^2 * seed_plan.params.nom_forward_step^2;
+w_trim = 0.5 * w_rel(1)^2 * seed_plan.params.nom_forward_step^2;
 
 
 % % Normalize the goal weight so that the plans don't stretch out as the goal
@@ -237,6 +237,9 @@ plan.region_order = region_order;
 
 trim = xstar(t_ndx);
 final_steps = find(trim, 2);
+dtheta = abs(angleDiff(seed_plan.footsteps(1).pos(6), goal_pos.right(6)));
+% TODO: don't hardcode the turning rate here
+min_num_steps = max(min_num_steps, ceil(2 * dtheta / (pi/8) + 2));
 final_nsteps = min(max_num_steps, max(min_num_steps, final_steps(end)));
 plan = plan.slice(1:final_nsteps);
 % plan = plan.slice(1:final_steps(end));

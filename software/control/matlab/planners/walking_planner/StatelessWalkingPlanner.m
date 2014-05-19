@@ -37,7 +37,7 @@ classdef StatelessWalkingPlanner
 
       % Align the first two steps to the current feet poses
       feet_pos = feetPosition(r, q0);
-      if footsteps(1).is_right_foot
+      if footsteps(1).body_idx == r.foot_bodies_idx.right
         footsteps(1).pos = feet_pos.right; footsteps(2).pos = feet_pos.left;
       else
         footsteps(1).pos = feet_pos.left; footsteps(2).pos = feet_pos.right;
