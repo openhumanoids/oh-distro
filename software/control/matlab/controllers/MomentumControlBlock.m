@@ -61,16 +61,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
    
-    if ~isfield(obj.controller_data.data,'qp_active_set')
+		if ~isfield(obj.controller_data.data,'qp_active_set')
       obj.controller_data.setField('qp_active_set',[]);
-    end
-    
-    if isfield(options,'use_bullet')
-      obj.use_bullet = options.use_bullet;
-    else
-      obj.use_bullet = false;
-    end
-    
+	end
+		
     if isfield(options,'contact_threshold')
       % minimum height above terrain for points to be in contact
       typecheck(options.contact_threshold,'double');
@@ -197,9 +191,26 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj.lhand_idx = findLinkInd(r,'l_hand');
     obj.pelvis_idx = findLinkInd(r,'pelvis');    
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		if isfield(options,'smooth_contacts')
+      typecheck(options.smooth_contacts,'logical');
+			obj.smooth_contacts = options.smooth_contacts;
+		else
+			obj.smooth_contacts = false;
+		end
+		
+		if isfield(obj.controller_data.data,'contact_force_bounds')
+			% should be a struct with array fields 'force_bound', and 'force_delta'
+			typecheck(obj.controller_data.data.contact_force_bounds,'struct');
+			assert(isfield(obj.controller_data.data.contact_force_bounds,'force_bound'));
+			assert(isfield(obj.controller_data.data.contact_force_bounds,'force_delta'));
+		else
+			cfb = struct();
+			cfb.force_bound = zeros(r.getNumBodies,1);
+			cfb.force_bound(obj.lfoot_idx) = obj.fmax;
+			cfb.force_bound(obj.rfoot_idx) = obj.fmax;
+			cfb.force_delta = zeros(r.getNumBodies,1);
+			obj.controller_data.setField('contact_force_bounds',cfb);	
+		end
       
     obj.gurobi_options.outputflag = 0; % not verbose
     if options.solver==0
@@ -242,28 +253,13 @@ classdef MomentumControlBlock < MIMODrakeSystem
   methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
-    % global gtic t_prev
+    persistent infocount active_supports_prev
     
-    % if ~isempty(gtic)
-    %   rate=toc(gtic)/(t-t_prev)
-    % end
-    % gtic = tic;
-    % t_prev=t;
-    
-
-    %out_tic = tic;
-    persistent infocount foot_force_fade fmax
-    
-    if isempty(infocount)
+		if isempty(infocount)
       infocount = 0;
-    end
-    if isempty(foot_force_fade)
-      foot_force_fade = [1; 1];
-    end
-    if isempty(fmax)
-      fmax = [1000; 1000];
-    end
-    ctrl_data = obj.controller_data.data;
+		end
+		
+		ctrl_data = obj.controller_data.data;
       
     x = varargin{1};
     qddot_des = varargin{2};
@@ -278,36 +274,23 @@ classdef MomentumControlBlock < MIMODrakeSystem
       % extract current supports
       supp_idx = find(ctrl_data.support_times<=t,1,'last');
       supp = ctrl_data.supports(supp_idx);
-      supp_next = ctrl_data.supports(supp_idx+1);
-
-			% look ahead to see if we're going to break contact
-			t_lookahead = 0.3;
-      if ctrl_data.support_times(supp_idx+1)-t < t_lookahead 
-        if length(supp.bodies) > length(supp_next.bodies)
-          % we're going to break contact in less than t_lookahead secs
-					foot_to_break_contact = setdiff(supp.bodies,supp_next.bodies);
-					if foot_to_break_contact==obj.rfoot_idx
-						foot_force_fade(1) = -(1000/(t_lookahead/0.002));
-					elseif foot_to_break_contact==obj.lfoot_idx
-						foot_force_fade(2) = -(1000/(t_lookahead/0.002));
-					end
-				end
-			end
-			t_lookahead = 0.005;
-      if ctrl_data.support_times(supp_idx+1)-t < t_lookahead 
-				if length(supp.bodies) < length(supp_next.bodies)
-          % we're going to make contact in less than t_lookahead secs
-					foot_to_make_contact = setdiff(supp_next.bodies,supp.bodies);
-					if foot_to_make_contact==obj.rfoot_idx
-						foot_force_fade(1) = 5;
-					elseif foot_to_make_contact==obj.lfoot_idx
-						foot_force_fade(2) = 5;
+			
+			force_bound = ctrl_data.contact_force_bounds.force_bound;
+			force_delta = ctrl_data.contact_force_bounds.force_delta;
+			
+			if obj.smooth_contacts
+				% look ahead to see if we're going to break contact
+				t_lookahead = 0.3;
+				if ctrl_data.support_times(supp_idx+1)-t < t_lookahead 
+					supp_next = ctrl_data.supports(supp_idx+1);
+					if length(supp.bodies) > length(supp_next.bodies)
+						% we're going to break contact in less than t_lookahead secs
+						foot_to_break_contact = setdiff(supp.bodies,supp_next.bodies);
+						force_delta(foot_to_break_contact) = -(obj.fmax/(t_lookahead/0.002));
 					end
 				end
 			end
 			
-			fmax = min(1000,max(0,fmax + foot_force_fade))
-			      
       y0 = fasteval(ctrl_data.K.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       K = fasteval(ctrl_data.K.D,t); % always constant for ZMP dynamics
     else
@@ -316,15 +299,15 @@ classdef MomentumControlBlock < MIMODrakeSystem
       K = ctrl_data.K.D; % always constant for ZMP dynamics
     end
 
-     if isfield(ctrl_data,'comz_traj')
-       comz_des = fasteval(ctrl_data.comz_traj,t);
-       dcomz_des = fasteval(ctrl_data.dcomz_traj,t);
-       ddcomz_des = fasteval(ctrl_data.ddcomz_traj,t);
-     else
-       comz_des = 1.03;
-       dcomz_des = 0;
-       ddcomz_des = 0;
-     end
+    if isfield(ctrl_data,'comz_traj')
+      comz_des = fasteval(ctrl_data.comz_traj,t);
+      dcomz_des = fasteval(ctrl_data.dcomz_traj,t);
+      ddcomz_des = fasteval(ctrl_data.ddcomz_traj,t);
+    else
+      comz_des = 1.03;
+      dcomz_des = 0;
+      ddcomz_des = 0;
+    end
     
     condof = ctrl_data.constrained_dofs; % dof indices for which q_ddd_des is a constraint
         
@@ -368,6 +351,18 @@ classdef MomentumControlBlock < MIMODrakeSystem
       active_surfaces = supp.contact_surfaces;
       active_contact_pts = supp.contact_pts;
       num_active_contacts = supp.num_contact_pts;      
+			
+			if obj.smooth_contacts
+				if length(active_supports_prev) < length(active_supports)
+					% we just made contact
+					foot_to_make_contact = setdiff(active_supports,active_supports_prev);
+					force_delta(foot_to_make_contact) = (obj.fmax/(0.4/0.002));
+				end
+			end
+			
+			active_supports_prev = active_supports;
+			force_bound = min(obj.fmax,max(0,force_bound + force_delta));
+
 
       %----------------------------------------------------------------------
 
@@ -394,7 +389,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       if ~isempty(active_supports)
         nc = sum(num_active_contacts);
-        c_pre = 0;
+				fbound = zeros(1,nc*nd);
+				c_pre = 0;
         Dbar = [];
         for j=1:length(active_supports)
           [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,active_supports(j)]));
@@ -433,20 +429,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       %----------------------------------------------------------------------
       % Set up problem constraints ------------------------------------------
-
-			
-			force_max = 1000*ones(1,nf);
-			lfoot_ind = find(obj.lfoot_idx==active_supports);
-			if ~isempty(lfoot_ind)
-				force_max(16*(lfoot_ind-1)+1:16*(lfoot_ind))=fmax(2);
-			end
-			rfoot_ind = find(obj.rfoot_idx==active_supports);
-			if ~isempty(rfoot_ind)
-				force_max(16*(rfoot_ind-1)+1:16*(rfoot_ind))=fmax(1);
-			end
-			
+						
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
-      ub = [ 1e3*ones(1,nq) force_max obj.slack_limit*ones(1,neps)]';
+      ub = [ 1e3*ones(1,nq) fbound obj.slack_limit*ones(1,neps)]';
 
       Aeq_ = cell(1,length(varargin)+1);
       beq_ = cell(1,5);
@@ -634,8 +619,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
       if obj.use_mex==1
 	      mu = 0.75;
         if obj.debug
-          [y,qdd,info,active_supports,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha,active_constraints,h,hdot_des] = MomentumControllermex(obj.mex_ptr.data,...
-            obj.solver==0,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+          [y,qdd,info,active_supports,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha,...
+						active_constraints,h,hdot_des,force_bound,force_delta] = MomentumControllermex(obj.mex_ptr.data,...
+            obj.solver==0,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,...
+						dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height,ctrl_data.contact_force_bounds.force_bound,force_delta);
 
           % publish debug 
           debug_data.utime = t*1e6;
@@ -653,7 +640,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
           obj.debug_pub.publish(debug_data);
 
         else
-          [y,qdd,info] = MomentumControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
+          [y,qdd,info] = MomentumControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
+						varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,...
+						contact_sensor,contact_thresh,height,ctrl_data.contact_force_bounds.force_bound,force_delta);
         end
         
         if info < 0
@@ -690,6 +679,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
         catch err
           keyboard
         end
+        if (nc>0)
+          valuecheck(active_supports_mex,active_supports);
+				end
         valuecheck(fqp',fqp_mex,1e-6);
         % had to comment out equality constraints because the contact
         % jacobian rows can be permuted between matlab/mex
@@ -724,6 +716,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
 		else
 			varargout = {y};
 		end
+		
+		contact_force_bounds.force_bound = force_bound;
+		contact_force_bounds.force_delta = force_delta;
+		obj.controller_data.setField('contact_force_bounds',contact_force_bounds);
   end
   end
 
@@ -758,6 +754,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
     using_flat_terrain; % true if using DRCFlatTerrain
     jlmin;
     jlmax;
+		fmax = 1000; % N, global contact force maximum
+		smooth_contacts;
     contact_threshold; % min height above terrain to be considered in contact
 		output_qdd = false;
 		mass; % total robot mass

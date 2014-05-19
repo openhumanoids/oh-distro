@@ -137,6 +137,8 @@ options.slack_limit = 100;
 % options.w_qdd(findJointIndices(r,'leg'))=0;
 options.debug = true;
 options.contact_threshold = 0.001;
+options.smooth_contacts = true;
+options.solver = 0;
 
 
 if (use_ik)

@@ -33,7 +33,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pm = myGetProperty(pobj,"slack_limit");
     pdata->slack_limit = mxGetScalar(pm);
 
-
     pm = myGetProperty(pobj,"W_hdot");
     assert(mxGetM(pm)==6); assert(mxGetN(pm)==6);
     pdata->W_hdot.resize(mxGetM(pm),mxGetN(pm));
@@ -52,8 +51,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->Kd = mxGetScalar(pm);    
 
     pm= myGetProperty(pobj,"mass");
-    pdata->mass = mxGetScalar(pm);    
-
+    pdata->mass = mxGetScalar(pm); 
+		
+		pm= myGetProperty(pobj,"smooth_contacts");
+    pdata->smooth_contacts = mxGetLogicals(pm); 
+		
     // get robot mex model ptr
     if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
       mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the third argument should be the robot mex ptr");
@@ -152,7 +154,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   int nu = pdata->B.cols(), nq = pdata->r->num_dof;
   const int dim = 3, // 3D
-      nd = 2*m_surface_tangents; // for friction cone approx, hard coded for now
+  nd = 2*m_surface_tangents; // for friction cone approx, hard coded for now
   
   assert(nu+6 == nq);
 
@@ -221,12 +223,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   //   multi_robot->doKinematics(q_multi,false);
   // }
   #endif
-  
+
+	// get contact force bounds
+  VectorXd force_bound;
+	assert(mxGetN(prhs[narg])==1);
+	force_bound = VectorXd::Zero(mxGetM(prhs[narg]));
+  memcpy(force_bound.data(),mxGetPr(prhs[narg++]),sizeof(double)*mxGetM(prhs[narg]));
+
+	VectorXd force_delta;
+	assert(mxGetN(prhs[narg])==1);
+	force_delta = VectorXd::Zero(mxGetM(prhs[narg]));
+  memcpy(force_delta.data(),mxGetPr(prhs[narg++]),sizeof(double)*mxGetM(prhs[narg]));
+
   //---------------------------------------------------------------------
   // Compute active support from desired supports -----------------------
 
-  vector<SupportStateElement> active_supports;
-  int num_active_contact_pts=0;
+	vector<SupportStateElement> active_supports;
+	set<int> contact_bodies; // redundant, clean up later
+	int num_active_contact_pts=0;
   if (!mxIsEmpty(prhs[desired_support_argid])) {
     VectorXd phi;
     mxArray* mxBodies = mxGetProperty(prhs[desired_support_argid],0,"bodies");
@@ -256,12 +270,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         if (contact_sensor(i)!=0) { // no sensor info, or sensor says yes contact
           active_supports.push_back(se);
           num_active_contact_pts += nc;
+					contact_bodies.insert((int)se.body_idx); 
         }
       } else {
         contactPhi(pdata,se,phi,terrain_height);
         if (phi.minCoeff()<=contact_threshold || contact_sensor(i)==1) { // any contact below threshold (kinematically) OR contact sensor says yes contact
           active_supports.push_back(se);
           num_active_contact_pts += nc;
+					contact_bodies.insert((int)se.body_idx);
         }
       }
     }
@@ -414,12 +430,21 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   GRBmodel * model = NULL;
   int info=-1;
   
+	VectorXd f_ubound = VectorXd::Zero(nf);
+  int f_ind = 0;
+	for (vector<SupportStateElement>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
+		int nc = iter->contact_pt_inds.size();
+		for (int i=0; i<nc*nd; i++) {
+			f_ubound(f_ind++) = force_bound(iter->body_idx);
+		}
+	}
+	
   // set obj,lb,up
   VectorXd lb(nparams), ub(nparams);
   lb.head(nq) = -1e3*VectorXd::Ones(nq);
   ub.head(nq) = 1e3*VectorXd::Ones(nq);
   lb.segment(nq,nf) = VectorXd::Zero(nf);
-  ub.segment(nq,nf) = 1e3*VectorXd::Ones(nf);
+  ub.segment(nq,nf) = f_ubound;
   lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 
@@ -562,6 +587,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   if (nlhs>15) {
     plhs[15] = eigenToMatlab(hdot_des);
+  }
+
+	if (nlhs>16) {
+    plhs[16] = eigenToMatlab(force_bound);
+  }
+
+	if (nlhs>17) {
+    plhs[17] = eigenToMatlab(force_delta);
   }
 
 

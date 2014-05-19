@@ -55,7 +55,10 @@ struct QPControllerData {
   int num_spatial_accel_constraints;
   double Kp, Kd; // COM-z PD gains, for momentum controller
   double mass; // total robot mass
+	bool smooth_contacts;
+	set<int> previous_contact_bodies; // list of body indices
 
+	// gurobi active set params
   int *vbasis;
   int *cbasis;
   int vbasis_len;
