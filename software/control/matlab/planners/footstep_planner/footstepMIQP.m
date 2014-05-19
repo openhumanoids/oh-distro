@@ -27,6 +27,7 @@ x_ndx = reshape(1:nx, 4, nsteps);
 s_ndx = reshape(nx + (1:ns), nr, ns / nr);
 t_ndx = reshape(nx + ns + (1:nt), 1, nsteps);
 start_pos = seed_plan.footsteps(2).pos;
+goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 
 x0 = nan(1, nvar);
 R = cell(nsteps, 1);
@@ -57,14 +58,13 @@ assert(all(all(A_reach(:,4:5) == 0)), 'Linear constraints on roll and pitch are 
 A_reach = A_reach(:,[1:3,6]);
 
 nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
-% w_goal = [nan;nan;0;0;0;0];
+w_goal = [10;10;0;0;0;0];
 w_rel = 10 * [1;1;1;0;0;0];
 w_trim = 3;
 
 
 % % Normalize the goal weight so that the plans don't stretch out as the goal
 % % gets farther away
-% goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 % start_center = mean([seed_plan.footsteps(1).pos(1:2), seed_plan.footsteps(2).pos(1:2)], 2);
 % dgoal = norm(goal_pos.center(1:2) - start_center);
 % extra_distance = max(dgoal - (nsteps - 2) * seed_plan.params.nom_forward_step, 0.01);
@@ -126,12 +126,12 @@ for j = 3:nsteps
   c(t_ndx(j)) = -w_trim;
 end
 
-% w_goal = diag(w_goal([1,2,3,6]));
-% for j = nsteps-1:nsteps
-%   Q(x_ndx(:,j), x_ndx(:,j)) = w_goal * w_goal';
-%   xg = reshape(goal_pos.center([1,2,3,6]), [], 1);
-%   c(x_ndx(:,j)) = -2 * xg' * w_goal * w_goal';
-% end
+w_goal = diag(w_goal([1,2,3,6]));
+for j = nsteps-1:nsteps
+  Q(x_ndx(:,j), x_ndx(:,j)) = w_goal * w_goal';
+  xg = reshape(goal_pos.center([1,2,3,6]), [], 1);
+  c(x_ndx(:,j)) = -2 * xg' * w_goal * w_goal';
+end
 
 w_rel = diag(w_rel([1,2,3,6]));
 for j = 3:nsteps
@@ -197,12 +197,12 @@ lb(t_ndx(1:2)) = 0;
 ub(t_ndx(end)) = 1;
 lb(t_ndx(end)) = 1;
 
-if seed_plan.footsteps(end).body_idx == Footstep.atlas_foot_bodies_idx.right
-  lb(x_ndx(1:2,end)) = goal_pos.right(1:2);
-else
-  lb(x_ndx(1:2,end)) = goal_pos.left(1:2);
-end
-ub(x_ndx(1:2,end)) = lb(x_ndx(1:2,end));
+% if seed_plan.footsteps(end).body_idx == Footstep.atlas_foot_bodies_idx.right
+%   lb(x_ndx(1:2,end)) = goal_pos.right(1:2);
+% else
+%   lb(x_ndx(1:2,end)) = goal_pos.left(1:2);
+% end
+% ub(x_ndx(1:2,end)) = lb(x_ndx(1:2,end));
 
 clear model params
 model.A = sparse([A; Aeq]);

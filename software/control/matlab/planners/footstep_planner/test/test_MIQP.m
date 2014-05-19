@@ -45,8 +45,8 @@ else
   safe_regions(1) = struct('A', Ai, 'b', bi, 'point', [0;0;0], 'normal', [0;0;1]);
 end
 
-goal_pos = struct('right', [0;.5-0.15;0.1;0;0;0],...
-                  'left',  [0;.5+0.15;0.1;0;0;0]);
+goal_pos = struct('right', [2;-0.15;0.1;0;0;0],...
+                  'left',  [2;+0.15;0.1;0;0;0]);
 
 
 request.params = drc.footstep_plan_params_t();
