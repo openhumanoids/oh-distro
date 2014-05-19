@@ -1,4 +1,4 @@
-function plan = footstepMIQP(biped, seed_plan, goal_pos)
+function plan = footstepMIQP(biped, seed_plan, goal_pos, min_num_steps, max_num_steps)
 % Run the Mixed Integer Quadratic Program form of the footstep planning problem.
 % This form can efficiently choose the assignment of individual foot positions to
 % safe (obstacle-free) regions, but always keeps the yaw value of every foot
@@ -60,7 +60,7 @@ A_reach = A_reach(:,[1:3,6]);
 nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
 w_goal = [10;10;0;0;0;0];
 w_rel = 10 * [1;1;1;0;0;0];
-w_trim = 3;
+w_trim = w_rel(1)^2 * seed_plan.params.nom_forward_step^2;
 
 
 % % Normalize the goal weight so that the plans don't stretch out as the goal
@@ -235,7 +235,11 @@ for j = 1:nsteps
 end
 plan.region_order = region_order;
 
-trim = xstar(t_ndx)
+trim = xstar(t_ndx);
+final_steps = find(trim, 2);
+final_nsteps = min(max_num_steps, max(min_num_steps, final_steps(end)));
+plan = plan.slice(1:final_nsteps);
+% plan = plan.slice(1:final_steps(end));
 
 if 0
   right_foot_lead = plan.footsteps(1).body_idx == Footstep.atlas_foot_bodies_idx.right;

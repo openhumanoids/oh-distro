@@ -1,8 +1,21 @@
-function output_footsteps = searchNumSteps(biped, foot_orig, goal_pos, existing_steps, goal_steps, params, safe_regions)
+function plan = searchNumSteps(biped, foot_orig, goal_pos, existing_steps, goal_steps, params, safe_regions)
 % profile on
 tic
 foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
+
+
+start_steps = createOriginSteps(biped, foot_orig, true);
+seed_plan = FootstepPlan.blank_plan(20, [biped.foot_bodies_idx.right, biped.foot_bodies_idx.left], params, safe_regions);
+seed_plan.footsteps(1).pos = start_steps(1).pos;
+seed_plan.footsteps(2).pos = start_steps(2).pos;
+min_steps = max([params.min_num_steps+2,3]);
+max_steps = params.max_num_steps+2;
+miqp_plan = footstepMIQP(biped, seed_plan, goal_pos, min_steps, max_steps);
+plan = footstepCollocation(biped, miqp_plan, goal_pos);
+return;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 GOAL_THRESHOLD = [0.02;0.02;0;0;0;0.1];
 w_final = [5;5;0;0;0;1];
@@ -71,7 +84,7 @@ while true
     seed_steps = plan_set(j).steps;
     seed_steps(end+1).pos = seed_steps(end-1).pos;
     seed_steps(end).is_right_foot = ~seed_steps(end-1).is_right_foot;
-    
+
     nsteps = length(seed_steps)-1;
     region_assignments = zeros(length(safe_regions), nsteps-1);
     for k = 1:length(plan_set(j).regions)
@@ -90,7 +103,7 @@ while true
     for k = 2:length(seed_steps)
       seed_steps(k).pos = miqp_steps(:,k-1);
     end
-    
+
     [footsteps, exitflag, cost] = footstepCollocation(biped, seed_steps, goal_pos,...
         params, safe_regions(region_idx));
     if exitflag < 10
@@ -134,7 +147,7 @@ while true
   if plan_set(1).nsteps == max_steps
     break
   end
-% 
+%
 %   [~, sort_idx] = sort([plan_set.cost]);
 %   plan_set = plan_set(sort_idx(1:min(BEAM_WIDTH, length(sort_idx))));
 end

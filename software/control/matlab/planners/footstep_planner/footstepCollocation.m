@@ -1,10 +1,14 @@
-function [plan, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, params, safe_regions, region_order)
+function [plan, exitflag, output_cost] = footstepCollocation(biped, seed_plan, goal_pos)
 
 debug = false;
 USE_SNOPT = 1;
 USE_MEX = 1;
 
-right_foot_lead = seed_steps(1).is_right_foot;
+seed_steps = seed_plan.footsteps;
+region_order = seed_plan.region_order;
+params = seed_plan.params;
+safe_regions = seed_plan.safe_regions;
+right_foot_lead = seed_steps(1).body_idx == biped.foot_bodies_idx.right;
 
 if ~isfield(params, 'nom_step_width'); params.nom_step_width = 0.26; end
 
@@ -14,10 +18,10 @@ goal_pos.left(6) = goal_pos.right(6) + angleDiff(goal_pos.right(6), goal_pos.lef
 goal_pos.right(3) = st0(3);
 goal_pos.left(3) = st0(3);
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
-vgoal = rotmat(-seed_steps(1).pos(6)) * (goal_pos.center(1:2) - seed_steps(1).pos(1:2))
-dgoal = norm(vgoal)
-dstep =  abs((vgoal/dgoal)' * [params.nom_forward_step; (params.max_step_width - params.min_step_width)/2])
-d_extra = max(0.01, dgoal - (length(seed_steps) - 2) * dstep)
+vgoal = rotmat(-seed_steps(1).pos(6)) * (goal_pos.center(1:2) - seed_steps(1).pos(1:2));
+dgoal = norm(vgoal);
+dstep =  abs((vgoal/dgoal)' * [params.nom_forward_step; (params.max_step_width - params.min_step_width)/2]);
+d_extra = max(0.01, dgoal - (length(seed_steps) - 2) * dstep);
 
 function [c, ceq, dc, dceq] = constraints(x)
   if USE_MEX == 0
@@ -212,11 +216,10 @@ if exitflag < 10
 end
 % nsteps
 
-X = seed_steps;
-valuecheck(output_steps([1,2,6],1), X(2).pos([1,2,6]),1e-8);
+plan = seed_plan;
+valuecheck(output_steps([1,2,6],1), plan.footsteps(2).pos([1,2,6]),1e-8);
 for j = 2:nsteps
-  X(j+1).pos = output_steps(:,j);
+  plan.footsteps(j+1).pos = output_steps(:,j);
 end
-plan = FootstepPlan.from_collocation_results(X, params, safe_regions, region_order);
 
 end

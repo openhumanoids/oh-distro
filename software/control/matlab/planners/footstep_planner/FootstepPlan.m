@@ -29,6 +29,12 @@ classdef FootstepPlan
       msg = obj.to_footstep_plan_t();
     end
 
+    function plan = slice(obj, idx)
+      plan = obj;
+      plan.footsteps = obj.footsteps(idx);
+      plan.region_order = obj.region_order(idx);
+    end
+
     function varargout = sanity_check(obj)
       ok = true;
       body_idxs = [obj.footsteps.body_idx];

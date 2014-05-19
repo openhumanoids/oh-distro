@@ -32,7 +32,7 @@ stones = [0, 0.15, 0;
           1.5, 0.15, 0.06;
           2, 0, 0.07]';
 safe_regions = struct('A', {}, 'b', {}, 'point', {}, 'normal', {});
-if 0
+if 1
   for j = 1:size(stones, 2)
     [Ai, bi] = poly2lincon(stones(1,j) + [-.15, -.15, .15, .15],...
                            stones(2,j) + [-.1, .1, .1, -.1]);
@@ -67,15 +67,18 @@ request.params.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
 
 
 tic
-nsteps = 19;
+profile on
+nsteps = 30;
 seed_plan = FootstepPlan.blank_plan(nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 seed_plan.footsteps(1).pos = foot_orig.right;
 seed_plan.footsteps(2).pos = foot_orig.left;
-plan = footstepMIQP(r, seed_plan, goal_pos);
+plan = footstepMIQP(r, seed_plan, goal_pos, 3, 30);
+profile viewer
 toc
 
 figure(1);
 clf
+nsteps = length(plan.footsteps);
 r_ndx = 2:2:nsteps;
 l_ndx = 1:2:nsteps;
 steps = [plan.footsteps.pos];

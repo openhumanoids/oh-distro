@@ -1,10 +1,10 @@
 function [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, right_foot_lead, d_extra, nominal_dxy)
-w_goal = [1;1;0;0;0;10];
-w_rot = 1;
+w_goal = [10;10;0;0;0;10];
+w_rot = .1;
 w_rot_final = 100;
-w_rel = [10; 10];
+w_rel = [1; 10];
 w_rel_final = [100; 100];
-nominal_y_var = 0.05;
+% nominal_y_var = 0.05;
 
 nsteps = size(steps, 2);
 if ~right_foot_lead
@@ -18,7 +18,7 @@ end
 % Normalize the goal weight so that the plans don't stretch out as the goal
 % gets farther away
 % extra_distance = max(dgoal - (nsteps - 1) * nominal_dxy(1), 0.01);
-w_goal(1:2) = w_rel(1) * nominal_dxy(1) / d_extra;
+% w_goal(1:2) = w_rel(1) * nominal_dxy(1) / d_extra;
 
 c = 0;
 dc = zeros(12,nsteps);
@@ -45,10 +45,10 @@ for j = 2:nsteps
   end
   c = c + 0.5 * w_rel(1) * steps_rel(1,j).^2;
   dc(7,j) = w_rel(1) * steps_rel(1,j);
-  
+
   c = c + 0.5 * w_rel(2) * (steps_rel(2,j) - nominal_dxy(2,j)).^2;
   dc(8,j) = w_rel(2) * (steps_rel(2,j) - nominal_dxy(2,j));
-  
+
   c = c + w_rot * (rot_dir(j) * steps_rel(6,j));
   dc(12,j) = w_rot * rot_dir(j);
 
