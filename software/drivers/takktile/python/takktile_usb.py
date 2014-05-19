@@ -3,13 +3,15 @@
 # Written by Ian Daniher
 # Licensed under the terms of the GNU GPLv3+
 
-import lcm
-import takktile
-
 import usb
 import re
 import itertools
 import atexit
+
+# This driver was originally written by takktile inc, see note above
+# This version has had LCM publishing added for drc use
+import lcm
+import takktile
 
 _unTwos = lambda x, bitlen: x-(1<<bitlen) if (x&(1<<(bitlen-1))) else x
 _chunk = lambda l, x: [l[i:i+x] for i in xrange(0, len(l), x)]
@@ -162,13 +164,14 @@ if __name__ == "__main__":
     print tact.UID
     print tact.getAlive()
     try:
+        channel = str(args.side.upper())
         count = int(sys.argv[1])
     except:
-        count = 2
+        print "USAGE: takktile_usb <left/right>"
 
     #Start LCM
     lc = lcm.LCM()
-    dataChannel = 'TAKKTILE_RAW_LEFT' #+ args.side.upper()
+    dataChannel = 'TAKKTILE_RAW_' + channel
 
     import time
     tact.startSampling(200)
@@ -183,7 +186,10 @@ if __name__ == "__main__":
             stateMsg.force.append(data[key])
             stateMsg.temp.append(500)
         lc.publish(dataChannel, stateMsg.encode())
-	time.sleep(0.015)
+	time.sleep(0.015)  # just to slow things down
+                           # raw data alone seems to be about 150Hz+
+	                   # this should slow it down to about 60Hz
+
         #print(data)
 
     end = time.time()
