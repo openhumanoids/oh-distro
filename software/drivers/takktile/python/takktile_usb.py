@@ -161,13 +161,18 @@ class TakkTile:
 if __name__ == "__main__":
     import sys, pprint
     tact = TakkTile()
-    print tact.UID
-    print tact.getAlive()
+    print "UID:", tact.UID
+    print "Sensors Found:", tact.getAlive()
+
+    channel = ''
+    if not len(sys.argv) == 2:
+        print "USAGE: takktile_usb <left/right>"
+        sys.exit(1)
     try:
-        channel = str(args.side.upper())
-        count = int(sys.argv[1])
+        channel = str(sys.argv[1]).upper()
     except:
         print "USAGE: takktile_usb <left/right>"
+        sys.exit(1)
 
     #Start LCM
     lc = lcm.LCM()
@@ -175,8 +180,8 @@ if __name__ == "__main__":
 
     import time
     tact.startSampling(200)
-    start = time.time()
 
+    print 'Running...'
     while True:
         data = tact.getData()
         stateMsg = takktile.state_t()
@@ -192,6 +197,4 @@ if __name__ == "__main__":
 
         #print(data)
 
-    end = time.time()
     tact.stopSampling()
-    print (end-start)/int(count)
