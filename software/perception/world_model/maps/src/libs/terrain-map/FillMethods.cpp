@@ -130,3 +130,35 @@ fillHolesIterative(View& ioView) {
 
   return true;
 }
+
+bool FillMethods::
+fillMissing(View& ioView, const Eigen::Vector4d& iPlane) {
+  // get depth image array
+  auto type = maps::DepthImage::TypeDepth;
+  auto img = ioView->getDepthImage();
+  auto& depths = const_cast<std::vector<float>&>(img->getData(type));
+
+  // transform plane to depth image coords
+  const auto planeTransform =
+    ioView->getTransform().cast<double>().inverse().matrix().transpose();
+  auto plane = planeTransform*iPlane;
+  Eigen::Vector3d abd(plane[0], plane[1], plane[3]);
+  abd /= -plane[2];
+
+  // fill in according to plane
+  const float invalidValue = img->getInvalidValue(type);
+  const int w = img->getWidth();
+  const int h = img->getHeight();
+  for (int i = 0; i < h; ++i) {
+    for (int j = 0; j < w; ++j) {
+      int idx = i*w + j;
+      if (depths[idx] != invalidValue) continue;
+      depths[idx] = abd[0]*j + abd[1]*i + abd[2];
+    }
+  }
+
+  // put depth values back into view
+  img->setData(depths, type);
+
+  return true;
+}

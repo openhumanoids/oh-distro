@@ -25,6 +25,9 @@ public:
   static bool
   fillHolesIterative(View& ioView);
 
+  static bool
+  fillMissing(View& ioView, const Eigen::Vector4d& iPlane);
+
 };
 
 }

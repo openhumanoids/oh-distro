@@ -23,7 +23,7 @@ struct TerrainMap::Helper {
     Listener(Helper* iHelper) : mHelper(iHelper) {}
     void notifyCatalog(const bool iChanged) {}
     void notifyData(const int64_t iViewId) {
-      if (!mHelper->mListening) return;
+      if (!mHelper->mListening) return; 
       if (iViewId != mHelper->mViewId) return;
       auto view = std::dynamic_pointer_cast<maps::DepthImageView>
         (mHelper->mViewClient->getView(mHelper->mViewId));
@@ -70,6 +70,7 @@ struct TerrainMap::Helper {
     mViewClient->setBotWrapper(wrapper);
     mBotWrapper->getLcm()->subscribe("POSE_GROUND", &Helper::onGround, this);
     mListener.reset(new Listener(this));
+    mViewClient->addListener(mListener.get());
   }
 
   // TODO: need this? could also use bot-frames from ground to local
@@ -100,13 +101,13 @@ struct TerrainMap::Helper {
   }
 
   void computeNewDepths() {
-    if (mShouldFillMissing) {
-      auto view = mLatestView;
-      auto plane = mUseFootPose ? getLatestFootPlane() : mFillPlane;
-      if (mOverrideHeights) {
-        FillMethods::fillEntireView(view, plane);
-      }
-      else {
+    auto view = mLatestView;
+    auto plane = mUseFootPose ? getLatestFootPlane() : mFillPlane;
+    if (mOverrideHeights) {
+      FillMethods::fillEntireView(view, plane);
+    }
+    else {
+      if (mShouldFillMissing) {
         // fill 0.5m square area underneath robot
         // TODO: could use timestamp of latest view
         Eigen::Isometry3d groundToLocal;
@@ -116,6 +117,9 @@ struct TerrainMap::Helper {
 
         // fill holes in environment using neighbor values
         FillMethods::fillHolesIterative(view);
+
+        // fill remaining areas with selected plane
+        FillMethods::fillMissing(view, plane);
       }
     }
   }
@@ -135,6 +139,8 @@ void TerrainMap::
 setInfo(const int64_t iViewId, const std::string& iMapChannel) {
   mHelper->mViewId = iViewId;
   mHelper->mMapChannel = iMapChannel;
+  mHelper->mViewClient->removeAllViewChannels();
+  mHelper->mViewClient->addViewChannel(iMapChannel);
 }
 
 int64_t TerrainMap::
@@ -281,20 +287,21 @@ getHeightAndNormal(const T iX, const T iY,
       normalMethod = maps::DepthImageView::NormalMethodSampleConsensus; break;
     default: break;
     }
-    view->setNormalMethod(normalMethod);
-    if ((view == NULL) ||
-        !view->getClosest(Eigen::Vector3f(iX, iY, 0), pt, normal)) {
-      usePlaneForHeight = usePlaneForNormal = true;
+    if (view == NULL) usePlaneForHeight = usePlaneForNormal = true;
+    else {
+      view->setNormalMethod(normalMethod);
+      if (!view->getClosest(Eigen::Vector3f(iX, iY, 0), pt, normal)) {
+        usePlaneForHeight = usePlaneForNormal = true;
+      }
     }
     oHeight = pt[2];
     oNormal = normal.cast<T>();
   }
 
-  const typename Eigen::Matrix<T,4,1>& plane =
-    (mHelper->mUseFootPose ? mHelper->getLatestFootPlane() :
-     mHelper->mFillPlane).cast<T>();
+  const auto& plane = (mHelper->mUseFootPose ? mHelper->getLatestFootPlane() :
+                       mHelper->mFillPlane).cast<T>();
   if (usePlaneForHeight) {
-    oHeight -(plane[0]*iX + plane[1]*iY + plane[3])/plane[2];
+    oHeight = -(plane[0]*iX + plane[1]*iY + plane[3])/plane[2];
   }
   if (usePlaneForNormal) {
     oNormal << plane[0],plane[1],plane[2];

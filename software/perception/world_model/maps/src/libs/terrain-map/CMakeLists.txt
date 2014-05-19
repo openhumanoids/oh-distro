@@ -30,3 +30,8 @@ pods_install_pkg_config_file(${LIB_NAME}
     LIBS -l${LIB_NAME}
     REQUIRES ${REQUIRED_PACKAGES}
     VERSION 0.0.1)
+
+
+add_executable(terrain-map-test TestMain.cpp)
+pods_use_pkg_config_packages(terrain-map-test terrain-map)
+pods_install_executables(terrain-map-test)

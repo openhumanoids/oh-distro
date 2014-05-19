@@ -171,7 +171,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       terrainMap->startListening();
       if (terrainMap->getViewId() == kHeightMapViewId) {
         terrainMap->sendRequest(Eigen::Vector3d(-2,-5,-3),
-                                Eigen::Vector3d(5,5,0.3), 0.3, 5, 0.5);
+                                Eigen::Vector3d(5,5,0.3), 0.03, 5, 0.5);
       }
     }
 
@@ -306,7 +306,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     terrainMap->setFillPlane(fillPlane);
   }
 
-  /* TODO: deprecated?
+  /* TODO: deprecated
   else if (command == "setrawdepth") {
     if (nrhs != 3) {
       mexErrMsgTxt("MapWrapper: too many arguments to setrawdepth");
@@ -344,6 +344,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       for (int i = 0; i < 16; ++i) matx[i] = data->mTransform.data()[i];
     }
   }
+  */
 
   else if (command == "pointer") {
     if (nrhs != 2) {
@@ -354,7 +355,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     plhs[0] = mxCreateNumericMatrix(1,1,classId,mxREAL);
     memcpy(mxGetPr(plhs[0]), &ptr, sizeof(ptr));
   }
-  */
 
   else if (command == "property") {
     if (nrhs != 4) {

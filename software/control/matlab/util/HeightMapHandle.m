@@ -4,6 +4,16 @@ classdef HeightMapHandle < handle
         mHandle;   % pointer to the c++ object
     end
     
+    methods(Access=private)
+        function out = logicalToString(~,val)
+            if (val)
+                out = 'true';
+            else
+                out = 'false';
+            end
+        end
+    end
+    
     methods
         % constructor
         function this = HeightMapHandle(mexFunc,privateChannel)
@@ -23,12 +33,20 @@ classdef HeightMapHandle < handle
         end
         
         function this = setFillMissing(this,val)
-            if (val)
-                this.mMexFunc('property',this.mHandle,'fillmissing','true');
-            else
-                this.mMexFunc('property',this.mHandle,'fillmissing','false');
-            end
+            this.mMexFunc('property',this.mHandle,'fillmissing',this.logicalToString(val));
         end
+        
+        function overrideHeights(this,val)
+            this.mMexFunc('property',this.mHandle,'overrideheights',this.logicalToString(val));
+        end
+        
+        function setFillPlane(this,plane)
+            this.mMexFunc('fillplane',this.mHandle,plane);
+        end
+        
+        function setUseFootPose(this,val)
+            this.mMexFunc('property',this.mHandle,'usefootpose',this.logicalToString(val));
+        end            
         
         function [heights,normals] = getTerrain(this,xy)
             [heights,normals] = this.mMexFunc('terrain',this.mHandle,xy);
