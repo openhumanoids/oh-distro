@@ -55,10 +55,10 @@ struct QPControllerData {
   int num_spatial_accel_constraints;
   double Kp, Kd; // COM-z PD gains, for momentum controller
   double mass; // total robot mass
-	bool smooth_contacts;
-	set<int> previous_contact_bodies; // list of body indices
+  bool smooth_contacts;
+  set<int> previous_contact_bodies; // list of body indices
 
-	// gurobi active set params
+  // gurobi active set params
   int *vbasis;
   int *cbasis;
   int vbasis_len;
@@ -71,7 +71,7 @@ mxArray* eigenToMatlab(Matrix<double,Rows,Cols> &m)
 {
   mxArray* pm = mxCreateDoubleMatrix(m.rows(),m.cols(),mxREAL);
   if (m.rows()*m.cols()>0)
-  	memcpy(mxGetPr(pm),m.data(),sizeof(double)*m.rows()*m.cols());
+    memcpy(mxGetPr(pm),m.data(),sizeof(double)*m.rows()*m.cols());
   return pm;
 }
 
@@ -177,16 +177,16 @@ void surfaceTangents(const Vector3d & normal, Matrix<double,3,m_surface_tangents
 int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, VectorXd &phi, double terrain_height)
 {
   RigidBody* b = &(pdata->r->bodies[supp.body_idx]);
-	int nc = supp.contact_pt_inds.size();
-	phi.resize(nc);
+  int nc = supp.contact_pt_inds.size();
+  phi.resize(nc);
 
-	if (nc<1) return nc;
+  if (nc<1) return nc;
 
   Vector3d contact_pos,pos,posB,normal; Vector4d tmp;
 
   int i=0;
   for (set<int>::iterator pt_iter=supp.contact_pt_inds.begin(); pt_iter!=supp.contact_pt_inds.end(); pt_iter++) {
-  	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
+    if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
 
     #ifdef BULLET_COLLISION
     if (supp.contact_surface!=-1 && pdata->multi_robot) {
@@ -215,12 +215,12 @@ int contactPhi(struct QPControllerData* pdata, SupportStateElement& supp, Vector
     }
     #endif
   
-		phi(i) = pos.norm();
-		if (pos.dot(normal)>0)
-			phi(i)=-phi(i);
-		i++;
+    phi(i) = pos.norm();
+    if (pos.dot(normal)>0)
+      phi(i)=-phi(i);
+    i++;
   }
-	return nc;
+  return nc;
 }
 
 int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportStateElement>& supp, MatrixXd &n, MatrixXd &D, MatrixXd &Jp, MatrixXd &Jpdot,double terrain_height)
@@ -240,7 +240,7 @@ int contactConstraints(struct QPControllerData* pdata, int nc, vector<SupportSta
     RigidBody* b = &(pdata->r->bodies[iter->body_idx]);
     if (nc>0) {
       for (set<int>::iterator pt_iter=iter->contact_pt_inds.begin(); pt_iter!=iter->contact_pt_inds.end(); pt_iter++) {
-      	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
+        if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
         tmp = b->contact_pts.col(*pt_iter);
         pdata->r->forwardKin(iter->body_idx,tmp,0,contact_pos);
         pdata->r->forwardJac(iter->body_idx,tmp,0,J);
@@ -307,7 +307,7 @@ int contactConstraintsBV(struct QPControllerData* pdata, int nc, double mu, vect
     RigidBody* b = &(pdata->r->bodies[iter->body_idx]);
     if (nc>0) {
       for (set<int>::iterator pt_iter=iter->contact_pt_inds.begin(); pt_iter!=iter->contact_pt_inds.end(); pt_iter++) {
-      	if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
+        if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
         tmp = b->contact_pts.col(*pt_iter);
         pdata->r->forwardKin(iter->body_idx,tmp,0,contact_pos);
         pdata->r->forwardJac(iter->body_idx,tmp,0,J);
