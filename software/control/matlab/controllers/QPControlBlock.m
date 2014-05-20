@@ -198,12 +198,6 @@ classdef QPControlBlock < MIMODrakeSystem
       end
       obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
     end
-
-    obj.num_body_contacts=zeros(getNumBodies(r),1);
-    for i=1:getNumBodies(r)
-      obj.num_body_contacts(i) = length(getBodyContacts(r,i));
-    end
-    
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')
       obj.using_flat_terrain = true;      
@@ -859,7 +853,6 @@ classdef QPControlBlock < MIMODrakeSystem
     lcm_foot_contacts;  
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
-    num_body_contacts; % vector of num contacts for each body
     multi_robot;
     num_state_frames; % if there's a multi robot defined this is 1+ the number of other state frames
     using_flat_terrain; % true if using DRCFlatTerrain

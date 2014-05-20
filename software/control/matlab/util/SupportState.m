@@ -34,7 +34,8 @@ classdef SupportState
         % use all points on body
         obj.contact_pts = cell(1,length(obj.bodies));
         for i=1:length(obj.bodies)
-          obj.contact_pts{i} = 1:size(getBodyContacts(r,obj.bodies(i)),2);
+          terrain_contact_point_struct = getTerrainContactPoints(r,obj.bodies(i));
+          obj.contact_pts{i} = 1:size(terrain_contact_point_struct.pts,2);
           obj.num_contact_pts(i)=length(obj.contact_pts{i});
         end
       end

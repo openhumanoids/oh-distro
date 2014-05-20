@@ -224,12 +224,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
       obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),length(body_motion_input_frames),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
     end
-
-    obj.num_body_contacts=zeros(getNumBodies(r),1);
-    for i=1:getNumBodies(r)
-      obj.num_body_contacts(i) = length(getBodyContacts(r,i));
-    end
-    
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')
       obj.using_flat_terrain = true;      
@@ -714,7 +708,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     input_foot_contacts;  
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
-    num_body_contacts; % vector of num contacts for each body
     multi_robot;
     using_flat_terrain; % true if using DRCFlatTerrain
     jlmin;
