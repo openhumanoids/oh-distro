@@ -34,6 +34,7 @@ end
 
 nominal_dxy = repmat(nominal_dxy, 1, nsteps);
 nominal_dxy(2,r_ndx) = -nominal_dxy(2,r_ndx);
+nominal_dxy(1,end) = 0;
 rot_dir = ones(1, nsteps);
 rot_dir(r_ndx) = -1;
 
@@ -43,8 +44,8 @@ for j = 2:nsteps
     w_rot = w_rot_final;
     w_rel = w_rel_final;
   end
-  c = c + 0.5 * w_rel(1) * steps_rel(1,j).^2;
-  dc(7,j) = w_rel(1) * steps_rel(1,j);
+  c = c + 0.5 * w_rel(1) * (steps_rel(1,j) - nominal_dxy(1,j)).^2;
+  dc(7,j) = w_rel(1) * (steps_rel(1,j) - nominal_dxy(1,j));
 
   c = c + 0.5 * w_rel(2) * (steps_rel(2,j) - nominal_dxy(2,j)).^2;
   dc(8,j) = w_rel(2) * (steps_rel(2,j) - nominal_dxy(2,j));

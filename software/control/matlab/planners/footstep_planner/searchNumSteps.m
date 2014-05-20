@@ -6,18 +6,29 @@ foot_orig.left(4:5) = 0;
 
 
 start_steps = createOriginSteps(biped, foot_orig, true);
-seed_plan = FootstepPlan.blank_plan(20, [biped.foot_bodies_idx.right, biped.foot_bodies_idx.left], params, safe_regions);
-seed_plan.footsteps(1).pos = start_steps(1).pos;
-seed_plan.footsteps(2).pos = start_steps(2).pos;
+plan = FootstepPlan.blank_plan(30, [biped.foot_bodies_idx.right, biped.foot_bodies_idx.left], params, safe_regions);
+plan.footsteps(1).pos = start_steps(1).pos;
+plan.footsteps(2).pos = start_steps(2).pos;
 min_steps = max([params.min_num_steps+2,3]);
 max_steps = params.max_num_steps+2;
-miqp_plan = footstepMIQP(biped, seed_plan, goal_pos, min_steps, max_steps);
-plan = footstepCollocation(biped, miqp_plan, goal_pos);
+
+
+figure(1)
+clf
+for j = 1:2
+  plan = footstepMIQP(biped, plan, goal_pos, min_steps, max_steps);
+  clf
+  plot_plan(plan);
+  plan = footstepCollocation(biped, plan, goal_pos);
+  clf
+  plot_plan(plan);
+end
+
 step_vect = encodeCollocationSteps([plan.footsteps(2:end).pos]);
 [steps, steps_rel] = decodeCollocationSteps(step_vect);
+steps
 steps_rel
 return;
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 GOAL_THRESHOLD = [0.02;0.02;0;0;0;0.1];
@@ -199,3 +210,15 @@ function total_diff = error_from_goal(footsteps, goal_pos, goal_threshold, w_fin
 %   diff_l = max(0, abs(diff_l) - goal_threshold .* w_final);
 %   total_diff = sum(diff_r + diff_l);
 end
+
+function plot_plan(plan)
+  hold on
+  steps = [plan.footsteps.pos];
+  plot(steps(1,:), steps(2,:), 'k:')
+  quiver(steps(1,:), steps(2,:), cos(steps(6,:)), sin(steps(6,:)));
+  step_vect = encodeCollocationSteps([plan.footsteps(2:end).pos]);
+  [steps, steps_rel] = decodeCollocationSteps(step_vect);
+  steps
+  steps_rel
+end
+

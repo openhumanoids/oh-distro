@@ -57,10 +57,11 @@ end
 assert(all(all(A_reach(:,4:5) == 0)), 'Linear constraints on roll and pitch are not supported yet');
 A_reach = A_reach(:,[1:3,6]);
 
-nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
+% nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
+nom_step = [0; seed_plan.params.nom_step_width; 0; 0];
 w_goal = [10;10;0;0;0;0];
 w_rel = 10 * [1;1;1;0;0;0];
-w_trim = 0.5 * w_rel(1)^2 * seed_plan.params.nom_forward_step^2;
+w_trim = w_rel(1)^2 * seed_plan.params.nom_forward_step^2;
 
 
 % % Normalize the goal weight so that the plans don't stretch out as the goal
@@ -107,12 +108,12 @@ b = [b; bt];
 % appropriate.
 M = 1000;
 for j = 3:nsteps-2
-  Ati = zeros(4, nvar);
-  Ati(:,x_ndx(:,j)) = diag(ones(4, 1));
+  Ati = zeros(3, nvar);
+  Ati(:,x_ndx(1:3,j)) = diag(ones(3, 1));
   if mod(nsteps - j, 2)
-    Ati(:,x_ndx(:,end-1)) = diag(-ones(4,1));
+    Ati(:,x_ndx(1:3,end-1)) = diag(-ones(3,1));
   else
-    Ati(:,x_ndx(:,end)) = diag(-ones(4,1));
+    Ati(:,x_ndx(1:3,end)) = diag(-ones(3,1));
   end
   Ati = [Ati; -Ati];
 
@@ -222,8 +223,8 @@ params.outputflag = 1;
 result = gurobi(model, params);
 xstar = result.x;
 steps = xstar(x_ndx);
-steps = [steps(1:3,:); zeros(2, size(steps, 2)); steps(4,:)]
-diff(steps, 1, 2)
+steps = [steps(1:3,:); zeros(2, size(steps, 2)); steps(4,:)];
+% diff(steps, 1, 2)
 
 region_assignments = reshape(xstar(s_ndx), nr, nsteps);
 [region_order, ~] = find(abs(region_assignments - 1) < 1e-2);
@@ -237,12 +238,24 @@ plan.region_order = region_order;
 
 trim = xstar(t_ndx);
 final_steps = find(trim, 2);
-dtheta = abs(angleDiff(seed_plan.footsteps(1).pos(6), goal_pos.right(6)));
+if plan.footsteps(end).body_idx == biped.foot_bodies_idx.right
+  dtheta = abs(angleDiff(plan.footsteps(end).pos(6), goal_pos.right(6)));
+else
+  dtheta = abs(angleDiff(plan.footsteps(end).pos(6), goal_pos.left(6)));
+end
+final_step_idx = min(nsteps, final_steps(end) + ceil(2 * dtheta / (pi/8)));
+
+if plan.footsteps(1).body_idx == biped.foot_bodies_idx.right
+  dtheta = abs(angleDiff(plan.footsteps(1).pos(6), goal_pos.right(6)));
+else
+  dtheta = abs(angleDiff(plan.footsteps(1).pos(6), goal_pos.left(6)));
+end
 % TODO: don't hardcode the turning rate here
 min_num_steps = max(min_num_steps, ceil(2 * dtheta / (pi/8) + 2));
-final_nsteps = min(max_num_steps, max(min_num_steps, final_steps(end)));
+
+
+final_nsteps = min(max_num_steps, max(min_num_steps, final_step_idx));
 plan = plan.slice(1:final_nsteps);
-% plan = plan.slice(1:final_steps(end));
 
 if 0
   right_foot_lead = plan.footsteps(1).body_idx == Footstep.atlas_foot_bodies_idx.right;

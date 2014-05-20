@@ -82,8 +82,10 @@ classdef CombinedPlanner
     end
 
     function plan = plan_footsteps(obj, msg)
+%       profile on
       msg = drc.footstep_plan_request_t(msg);
       plan = obj.footstep_planner.plan_footsteps(obj.biped, msg);
+%       profile viewer
     end
     
     function region_list = iris_regions(obj, msg)
