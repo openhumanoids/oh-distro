@@ -7,7 +7,7 @@ foot_orig.left(4:5) = 0;
 weights = struct('relative', [10;50;10;0;0;.5],...
                  'relative_final', [1000;100;100;0;0;100],...
                  'goal', [100;100;0;0;0;10]);
-                
+
 
 start_steps = createOriginSteps(biped, foot_orig, true);
 plan = FootstepPlan.blank_plan(22, [biped.foot_bodies_idx.right, biped.foot_bodies_idx.left], params, safe_regions);
@@ -19,7 +19,7 @@ max_steps = params.max_num_steps+2;
 
 figure(1)
 clf
-for j = 1:2
+for j = 1:1
   plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
   clf
   plot_plan(plan);
