@@ -165,6 +165,7 @@ options.use_mex = true;
 options.contact_threshold = 0.0075;
 options.output_qdd = true;
 options.solver = 1;
+options.smooth_contacts = true;
 
 if use_simple_pd
   motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
