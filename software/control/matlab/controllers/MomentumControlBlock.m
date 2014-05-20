@@ -356,7 +356,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 				if length(active_supports_prev) < length(active_supports)
 					% we just made contact
 					foot_to_make_contact = setdiff(active_supports,active_supports_prev);
-					force_delta(foot_to_make_contact) = (obj.fmax/(0.4/0.002));
+					force_delta(foot_to_make_contact) = 0.5;
 				end
 			end
 			
