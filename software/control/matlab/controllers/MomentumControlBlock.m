@@ -254,7 +254,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     
   function varargout=mimoOutput(obj,t,~,varargin)
     persistent infocount active_supports_prev
-    
+%     out_tic = tic;
     if isempty(infocount)
       infocount = 0;
     end
@@ -599,6 +599,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
         debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
         body_motion_input_start=3+obj.input_foot_contacts*1;
         debug_data.body_acc_des = [];%[varargin{body_motion_input_start}; varargin{body_motion_input_start+1}];
+        debug_data.lb = lb;
+        debug_data.ub = ub;
         obj.debug_pub.publish(debug_data);
       end
       
@@ -636,7 +638,12 @@ classdef MomentumControlBlock < MIMODrakeSystem
           debug_data.hdot_des = hdot_des;
           debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
           debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
-          debug_data.body_acc_des = [];%[varargin{body_motion_input_start}; varargin{body_motion_input_start+1}];
+          debug_data.body_acc_des = [varargin{body_motion_input_start}; varargin{body_motion_input_start+1}; varargin{body_motion_input_start+2};];% varargin{body_motion_input_start+3}];
+          
+          np=length(alpha);
+          bounds = bin_mex((end-2*np+1):end);
+          debug_data.lb = -bounds(1:np);
+          debug_data.ub = bounds(np + (1:np));
           obj.debug_pub.publish(debug_data);
 
         else

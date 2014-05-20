@@ -41,6 +41,10 @@ classdef ControllerDebugPublisher
       % desired body acceleration inputs
       msg.n_body_acc_des = length(data.body_acc_des);
       msg.body_acc_des = data.body_acc_des;
+      % QP bounds
+      msg.nb = length(data.lb);
+      msg.lb = data.lb;
+      msg.ub = data.ub;
 
       obj.lc.publish(obj.channel, msg);
     end
