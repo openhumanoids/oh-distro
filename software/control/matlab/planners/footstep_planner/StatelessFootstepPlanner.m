@@ -18,9 +18,9 @@ classdef StatelessFootstepPlanner
         footsteps = Footstep.empty();
         for j = 1:request.num_existing_steps
           footsteps(j) = Footstep.from_footstep_t(request.existing_steps(j));
-          footsteps(j).pos = biped.footOrig2Contact(footsteps(j).pos, 'center', footsteps(j).is_right_foot);
+          footsteps(j).pos = biped.footOrig2Contact(footsteps(j).pos, 'center', true);
         end
-        plan = FootstepPlan(footsteps);
+        plan = FootstepPlan(footsteps, params, [], []);
       else
 
         goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
@@ -31,9 +31,9 @@ classdef StatelessFootstepPlanner
 
         safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, foot_orig, goal_pos);
 
-        profile on
+%         profile on
         plan = searchNumSteps(biped, foot_orig, goal_pos, request.existing_steps, request.goal_steps, params, safe_regions);
-        profile viewer
+%         profile viewer
 %         plan = FootstepPlan.from_collocation_results(footsteps);
 
         plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
