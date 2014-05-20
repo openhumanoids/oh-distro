@@ -1,8 +1,8 @@
 function [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, right_foot_lead, d_extra, nominal_dxy)
-w_goal = [10;10;0;0;0;10];
+w_goal = [100;100;0;0;0;10];
 w_rot = .1;
 w_rot_final = 100;
-w_rel = [1; 10];
+w_rel = [10; 100];
 w_rel_final = [100; 100];
 % nominal_y_var = 0.05;
 
