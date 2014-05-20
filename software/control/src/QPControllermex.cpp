@@ -106,6 +106,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->fqp.resize(nq);
     pdata->Ag.resize(6,nq);
     pdata->Agdot.resize(6,nq);
+    
+
+    pdata->vbasis_len = 0;
+    pdata->cbasis_len = 0;
+    pdata->vbasis = NULL;
+    pdata->cbasis = NULL;
     return;
   }
   
@@ -357,7 +363,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   lb.head(nq) = -1e3*VectorXd::Ones(nq);
   ub.head(nq) = 1e3*VectorXd::Ones(nq);
   lb.segment(nq,nf) = VectorXd::Zero(nf);
-  ub.segment(nq,nf) = 500*VectorXd::Ones(nf);
+  ub.segment(nq,nf) = 1e3*VectorXd::Ones(nf);
   lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 

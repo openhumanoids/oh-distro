@@ -369,13 +369,13 @@ classdef QPControlBlock < MIMODrakeSystem
         else
           % check kinematic contact
           if supp.contact_surfaces(i) == 0
-            phi = contactConstraints(r,kinsol,supp.bodies(i),supp.contact_pts{i});
+            phi = contactConstraints(r,kinsol,false,struct('body_idx',[1,supp.bodies(i)]));
           else
             % use bullet collision between bodies
             phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
           end
           contact_state_kin = any(phi<=obj.contact_threshold);
-          
+
           if (~contact_state_kin && contact_sensor(i)<1) 
             % no contact from kin, no contact (or no info) from sensor
             supp = removeBody(supp,i); 
@@ -389,7 +389,7 @@ classdef QPControlBlock < MIMODrakeSystem
       active_surfaces = supp.contact_surfaces;
       active_contact_pts = supp.contact_pts;
       num_active_contacts = supp.num_contact_pts;      
-        
+
       %----------------------------------------------------------------------
       % Disable hand force/torque contribution to dynamics as necessary
       if (~obj.use_hand_ft)
@@ -440,12 +440,12 @@ classdef QPControlBlock < MIMODrakeSystem
         Dbar = [];
         for j=1:length(active_supports)
           if active_surfaces(j) == 0
-            [~,~,JB] = contactConstraintsBV(r,kinsol,active_supports(j),active_contact_pts{j});
+            [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('body_idx',[1,active_supports(j)]));
           else
             % use bullet collision between bodies
             [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
           end
-          Dbar = [Dbar, [JB{:}]];
+          Dbar = [Dbar, vertcat(JB{:})'];
           c_pre = c_pre + length(active_contact_pts{j});
 
         end
@@ -453,10 +453,10 @@ classdef QPControlBlock < MIMODrakeSystem
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
 
-        [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
+        [~,~,~,~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,false,struct('terrain_only',true,'body_idx',active_supports));
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
-        
+
         xlimp = [xcom(1:2); J*qd]; % state of LIP model
         x_bar = xlimp - x0;      
       else
@@ -464,23 +464,23 @@ classdef QPControlBlock < MIMODrakeSystem
       end
       neps = nc*dim;
 
-         
+
       %----------------------------------------------------------------------
       % Build handy index matrices ------------------------------------------
-      
+
       nf = nc*nd; % number of contact force variables
       nparams = nq+nf+neps;
       Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
       Ibeta = zeros(nf,nparams); Ibeta(:,nq+(1:nf)) = eye(nf);
       Ieps = zeros(neps,nparams);
       Ieps(:,nq+nf+(1:neps)) = eye(neps);
-      
-      
+
+
       %----------------------------------------------------------------------
       % Set up problem constraints ------------------------------------------
-      
+
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
-      ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
+      ub = [ 1e3*ones(1,nq) 1e3*ones(1,nf) obj.slack_limit*ones(1,neps)]';
       
       % if at joint limit, disallow accelerations in that direction
       lb(q<=obj.jlmin+1e-4) = 0;
@@ -490,7 +490,7 @@ classdef QPControlBlock < MIMODrakeSystem
       beq_ = cell(1,2);
       Ain_ = cell(1,2);
       bin_ = cell(1,2);
-      
+
       % constrained dynamics
       if nc>0
         Aeq_{1} = H_float*Iqdd - Dbar_float*Ibeta;
@@ -520,7 +520,7 @@ classdef QPControlBlock < MIMODrakeSystem
       % linear equality constraints: Aeq*alpha = beq
       Aeq = sparse(vertcat(Aeq_{:}));
       beq = vertcat(beq_{:});
-      
+
       % linear inequality constraints: Ain*alpha <= bin
       Ain = sparse(vertcat(Ain_{:}));
       bin = vertcat(bin_{:});
@@ -667,13 +667,13 @@ classdef QPControlBlock < MIMODrakeSystem
         valuecheck(active_supports_mex,active_supports);
         valuecheck(Vdotmex,Vdot,1e-3);
       end
-      valuecheck(Q'+Q,model.Q'+model.Q,1e-12);
-      valuecheck(gobj,model.obj,1e-12);
-      valuecheck(A,model.A,1e-12);
-      valuecheck(rhs,model.rhs,1e-12);
+      valuecheck(Q'+Q,model.Q'+model.Q,1e-8);
+      valuecheck(gobj,model.obj,1e-8);
+      valuecheck(A,model.A,1e-8);
+      valuecheck(rhs,model.rhs,1e-8);
       valuecheck(sense',model.sense);
-      valuecheck(lb,model.lb,1e-12);
-      valuecheck(ub,model.ub,1e-12);
+      valuecheck(lb,model.lb,1e-8);
+      valuecheck(ub,model.ub,1e-8);
 %       valuecheck(y,des.y,0.5);
     end
     
@@ -823,7 +823,7 @@ classdef QPControlBlock < MIMODrakeSystem
       if mod(average_tictoc_n,50)==0
         fprintf('Average control output duration: %2.4f\n',average_tictoc);
       end
-		end
+	end
 		
 		if obj.output_qdd
 			varargout = {y,qdd};

@@ -313,7 +313,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
           % check kinematic contact
           if supp.contact_surfaces(i) == 0
             phi = contactConstraints(r,kinsol,false,struct('body_idx',[1,supp.bodies(i)]));
-            %valuecheck(phi_new,phi);
           else
             % use bullet collision between bodies
             phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
@@ -364,9 +363,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
         for j=1:length(active_supports)
           if active_surfaces(j) == 0
             [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('body_idx',[1,active_supports(j)]));
-            %if any(cellfun(@(x,y)~valuecheck(x,y),JB_new,JB))
-              %keyboard
-            %end
           else
             % use bullet collision between bodies
             [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
@@ -380,8 +376,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
         Dbar_act = Dbar(act_idx,:);
 
         [~,~,~,~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,false,struct('terrain_only',true,'body_idx',active_supports));
-        %valuecheck(Jp_new,Jp);
-        %valuecheck(Jpdot_new,Jpdot);
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
 
@@ -657,7 +651,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
     end
 
-    if (1)     % simple timekeeping for performance optimization
+    if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
@@ -671,7 +665,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       if mod(average_tictoc_n,50)==0
         fprintf('Average control output duration: %2.4f\n',average_tictoc);
       end
-    end
+	end
 		
 		if obj.output_qdd
 			varargout = {y,qdd};

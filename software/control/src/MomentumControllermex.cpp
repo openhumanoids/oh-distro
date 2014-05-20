@@ -140,8 +140,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->vbasis = NULL;
     pdata->cbasis = NULL;
     return;
-
-
   }
   
   // first get the ptr back from matlab
