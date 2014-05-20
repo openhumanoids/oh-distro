@@ -1,4 +1,4 @@
-function plan = footstepMIQP(biped, seed_plan, goal_pos, min_num_steps, max_num_steps)
+function plan = footstepMIQP(biped, seed_plan, weights, goal_pos, min_num_steps, max_num_steps)
 % Run the Mixed Integer Quadratic Program form of the footstep planning problem.
 % This form can efficiently choose the assignment of individual foot positions to
 % safe (obstacle-free) regions, but always keeps the yaw value of every foot
@@ -59,9 +59,7 @@ A_reach = A_reach(:,[1:3,6]);
 
 % nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
 nom_step = [0; seed_plan.params.nom_step_width; 0; 0];
-w_goal = [10;10;0;0;0;0];
-w_rel = 10 * [1;1;1;0;0;0];
-w_trim = w_rel(1)^2 * seed_plan.params.nom_forward_step^2;
+w_trim = weights.relative(1) * seed_plan.params.nom_forward_step^2;
 
 
 % % Normalize the goal weight so that the plans don't stretch out as the goal
@@ -127,27 +125,30 @@ for j = 3:nsteps
   c(t_ndx(j)) = -w_trim;
 end
 
-w_goal = diag(w_goal([1,2,3,6]));
+w_goal = diag(weights.goal([1,2,3,6]));
 for j = nsteps-1:nsteps
-  Q(x_ndx(:,j), x_ndx(:,j)) = w_goal * w_goal';
+  Q(x_ndx(:,j), x_ndx(:,j)) = w_goal;
   xg = reshape(goal_pos.center([1,2,3,6]), [], 1);
-  c(x_ndx(:,j)) = -2 * xg' * w_goal * w_goal';
+  c(x_ndx(:,j)) = -2 * xg' * w_goal;
 end
 
-w_rel = diag(w_rel([1,2,3,6]));
+w_rel = diag(weights.relative([1,2,3,6]));
 for j = 3:nsteps
-  Q(x_ndx(:,j), x_ndx(:,j)) = Q(x_ndx(:,j), x_ndx(:,j)) + R{j}' * (w_rel * w_rel') * R{j};
-  Q(x_ndx(:,j-1), x_ndx(:,j)) = Q(x_ndx(:,j-1), x_ndx(:,j)) - R{j}' * (w_rel * w_rel') * R{j};
-  Q(x_ndx(:,j), x_ndx(:,j-1)) = Q(x_ndx(:,j), x_ndx(:,j-1)) - R{j}' * (w_rel * w_rel') * R{j};
-  Q(x_ndx(:,j-1), x_ndx(:,j-1)) = Q(x_ndx(:,j-1), x_ndx(:,j-1)) + R{j}' * (w_rel * w_rel') * R{j};
+  if j == nsteps
+    w_rel = diag(weights.relative_final([1,2,3,6]));
+  end
+  Q(x_ndx(:,j), x_ndx(:,j)) = Q(x_ndx(:,j), x_ndx(:,j)) + R{j}' * w_rel * R{j};
+  Q(x_ndx(:,j-1), x_ndx(:,j)) = Q(x_ndx(:,j-1), x_ndx(:,j)) - R{j}' * w_rel * R{j};
+  Q(x_ndx(:,j), x_ndx(:,j-1)) = Q(x_ndx(:,j), x_ndx(:,j-1)) - R{j}' * w_rel * R{j};
+  Q(x_ndx(:,j-1), x_ndx(:,j-1)) = Q(x_ndx(:,j-1), x_ndx(:,j-1)) + R{j}' * w_rel * R{j};
 
   if seed_plan.footsteps(j).body_idx == Footstep.atlas_foot_bodies_idx.right
     nom = diag([1,-1,1,-1]) *nom_step;
   else
     nom = nom_step;
   end
-  c(x_ndx(:,j)) = c(x_ndx(:,j)) - (2 * nom' * (w_rel * w_rel') * R{j})';
-  c(x_ndx(:,j-1)) = c(x_ndx(:,j-1)) + (2 * nom' * (w_rel * w_rel') * R{j})';
+  c(x_ndx(:,j)) = c(x_ndx(:,j)) - (2 * nom' * w_rel * R{j})';
+  c(x_ndx(:,j-1)) = c(x_ndx(:,j-1)) + (2 * nom' * w_rel * R{j})';
 end
 
 for j = 3:nsteps

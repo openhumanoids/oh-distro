@@ -4,9 +4,13 @@ tic
 foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
 
+weights = struct('relative', [10;50;10;0;0;.5],...
+                 'relative_final', [1000;100;100;0;0;100],...
+                 'goal', [100;100;0;0;0;10]);
+                
 
 start_steps = createOriginSteps(biped, foot_orig, true);
-plan = FootstepPlan.blank_plan(30, [biped.foot_bodies_idx.right, biped.foot_bodies_idx.left], params, safe_regions);
+plan = FootstepPlan.blank_plan(22, [biped.foot_bodies_idx.right, biped.foot_bodies_idx.left], params, safe_regions);
 plan.footsteps(1).pos = start_steps(1).pos;
 plan.footsteps(2).pos = start_steps(2).pos;
 min_steps = max([params.min_num_steps+2,3]);
@@ -16,10 +20,10 @@ max_steps = params.max_num_steps+2;
 figure(1)
 clf
 for j = 1:2
-  plan = footstepMIQP(biped, plan, goal_pos, min_steps, max_steps);
+  plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
   clf
   plot_plan(plan);
-  plan = footstepCollocation(biped, plan, goal_pos);
+  plan = footstepCollocation(biped, plan, weights, goal_pos);
   clf
   plot_plan(plan);
 end
