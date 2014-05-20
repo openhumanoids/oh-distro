@@ -1,43 +1,39 @@
-function [A, b, Aeq, beq, step_map] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead, corridor_pts)
+function [A, b, Aeq, beq, step_map] = constructCollocationAb(biped, seed_plan, params)
 
-  nc = length(b_reach);
+  nsteps = length(seed_plan.footsteps) - 1;
   nv = 12 * nsteps;
 
   step_map.ineq = containers.Map('KeyType', 'int32', 'ValueType', 'any');
   step_map.eq = containers.Map('KeyType', 'int32', 'ValueType', 'any');
 
-  A = zeros(nc*(nsteps-1), nv);
-  b = zeros(nc*(nsteps-1), 1);
-  if right_foot_lead 
-    A_reach = A_reach * diag([1,-1,1,1,1,-1]);
-  end
+  A = [];
+  b = [];
+  offset = 0;
   for j = 2:nsteps
-    con_ndx = nc*(j-2)+1:nc*(j-1);
+    [A_reach, b_reach] = biped.getReachabilityPolytope(seed_plan.footsteps(j).body_idx, seed_plan.footsteps(j+1).body_idx, params);
+    A = [A; zeros(length(b_reach), nv)];
+    b = [b; b_reach];
+    con_ndx = offset + (1:length(b_reach));
     var_ndx = (j-1)*12+7:j*12;
-    A(con_ndx,var_ndx) = A_reach;
-    b(con_ndx) = b_reach;
-    A_reach = A_reach * diag([1,-1,1,1,1,-1]);
+    A(con_ndx, var_ndx) = A_reach;
     step_map.ineq(j) = con_ndx;
+    offset = offset + length(b_reach);
   end
 
-  if ~isempty(corridor_pts)
-    [A_corr, b_corr] = poly2lincon(corridor_pts(1,:), corridor_pts(2,:));
-    A_corr_full = zeros(length(b_corr) * (nsteps-1), nv);
-    b_corr_full = zeros(length(b_corr) * (nsteps-1), 1);
-    for j = 2:nsteps
-      con_ndx = length(b_corr)*(j-2)+(1:length(b_corr));
-      var_ndx = (j-1)*12+(1:6);
-      A_corr_full(con_ndx, var_ndx(1:2)) = A_corr;
-      b_corr_full(con_ndx) = b_corr;
-    end
-    A = [A;
-         A_corr_full];
-    b = [b; b_corr_full];
-  end
+  % if right_foot_lead
+  %   A_reach = A_reach * diag([1,-1,1,1,1,-1]);
+  % end
+  % for j = 2:nsteps
+  %   con_ndx = nc*(j-2)+1:nc*(j-1);
+  %   var_ndx = (j-1)*12+7:j*12;
+  %   A(con_ndx,var_ndx) = A_reach;
+  %   b(con_ndx) = b_reach;
+  %   A_reach = A_reach * diag([1,-1,1,1,1,-1]);
+  %   step_map.ineq(j) = con_ndx;
+  % end
 
   Aeq = zeros(4*(nsteps),nv);
   beq = zeros(4*(nsteps),1);
-  j = 1;
   con_ndx = 1:4;
   x1_ndx = 1:6;
   dx_ndx = 7:12;

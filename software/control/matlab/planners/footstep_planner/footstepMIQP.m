@@ -53,22 +53,9 @@ for j = 1:nsteps
   end
 end
 
-[A_reach, b_reach] = biped.getFootstepDiamondCons(true, seed_plan.params);
-assert(all(all(A_reach(:,4:5) == 0)), 'Linear constraints on roll and pitch are not supported yet');
-A_reach = A_reach(:,[1:3,6]);
-
 % nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
 nom_step = [0; seed_plan.params.nom_step_width; 0; 0];
 w_trim = weights.relative(1) * seed_plan.params.nom_forward_step^2;
-
-
-% % Normalize the goal weight so that the plans don't stretch out as the goal
-% % gets farther away
-% start_center = mean([seed_plan.footsteps(1).pos(1:2), seed_plan.footsteps(2).pos(1:2)], 2);
-% dgoal = norm(goal_pos.center(1:2) - start_center);
-% extra_distance = max(dgoal - (nsteps - 2) * seed_plan.params.nom_forward_step, 0.01);
-% % w_goal(1:2) = w_goal(1:2) * sqrt(1 / (extra_distance));
-% w_goal(1:2) = sqrt(w_rel(1) * seed_plan.params.nom_forward_step / extra_distance);
 
 A = [];
 b = [];
@@ -80,13 +67,10 @@ lb = -inf(nvar, 1);
 ub = inf(nvar, 1);
 
 for j = 3:nsteps
+  [A_reach, b_reach] = biped.getReachabilityPolytope(seed_plan.footsteps(j-1).body_idx, seed_plan.footsteps(j).body_idx, seed_plan.params);
+  A_reach = A_reach(:,[1:3,6]);
   Ai = zeros(size(A_reach, 1), nvar);
-  if seed_plan.footsteps(j).body_idx == Footstep.atlas_foot_bodies_idx.right
-    rA_reach = A_reach * diag([1,-1,1,-1]) * R{j};
-  else
-    assert(seed_plan.footsteps(j).body_idx == Footstep.atlas_foot_bodies_idx.left)
-    rA_reach = A_reach * R{j};
-  end
+  rA_reach = A_reach * R{j};
   Ai(:,x_ndx(:,j)) = rA_reach;
   Ai(:,x_ndx(:,j-1)) = -rA_reach;
   bi = b_reach;

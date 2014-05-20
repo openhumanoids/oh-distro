@@ -18,10 +18,6 @@ goal_pos.left(6) = goal_pos.right(6) + angleDiff(goal_pos.right(6), goal_pos.lef
 goal_pos.right(3) = st0(3);
 goal_pos.left(3) = st0(3);
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
-% vgoal = rotmat(-seed_steps(1).pos(6)) * (goal_pos.center(1:2) - seed_steps(1).pos(1:2));
-% dgoal = norm(vgoal);
-% dstep =  abs((vgoal/dgoal)' * [params.nom_forward_step; (params.max_step_width - params.min_step_width)/2]);
-% d_extra = max(0.01, dgoal - (length(seed_steps) - 2) * dstep);
 
 function [c, ceq, dc, dceq] = constraints(x)
   if USE_MEX == 0
@@ -57,40 +53,17 @@ function [F,G] = collocation_userfun(x)
   G = reshape(G(iGndx), [], 1);
 end
 
-function stop = plotfun(x)
-  stop = stepCollocationPlotfun(x, r_ndx, l_ndx);
-end
-
-params.forward_step = params.max_forward_step;
-[A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
-if length(region_order) > 1
-  params.max_num_steps = min(params.max_num_steps, length(region_order));
-end
-min_steps = max([params.min_num_steps+1,2]);
-max_steps = params.max_num_steps + 1;
-
 steps = [seed_steps(2:end).pos];
 nsteps = size(steps,2);
 
-if ~right_foot_lead
-  r_ndx = 1:2:nsteps;
-  l_ndx = 2:2:nsteps;
-else
-  r_ndx = 2:2:nsteps;
-  l_ndx = 1:2:nsteps;
-end
-
 nv = 12 * nsteps;
 
-[A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead, []);
+[A, b, Aeq, beq] = constructCollocationAb(biped, seed_plan, params);
 
 lb = -inf(12,nsteps);
 ub = inf(size(lb));
 lb([4,5,10,11],:) = 0;
 ub([4,5,10,11],:) = 0;
-max_total_z_excursion = 10;
-lb(3,:) = st0(3) - max_total_z_excursion;
-ub(3,:) = st0(3) + max_total_z_excursion;
 % Require that the first step be at the current stance foot pose
 lb(1:6,1) = st0;
 ub(1:6,1) = st0;
@@ -153,12 +126,6 @@ if USE_SNOPT
     iG(x1_ndx(6),con_ndx) = [1,1];
     iG(dx_ndx(1:2),con_ndx) = [1 1; 1 1];
   end
-
-%   for j = 2:nsteps
-%     con_ndx = j + n_obj + n_proj_cons;
-%     x1_ndx = (j-1)*12+(1:6);
-%     iG(x1_ndx(1:3), con_ndx) = 1;
-%   end
 
   iGndx = find(iG);
   [jGvar, iGfun] = find(iG);
