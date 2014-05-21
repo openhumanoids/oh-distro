@@ -16,13 +16,15 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.dt = 0.002;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = r.removeCollisionGroupsExcept({'heel','toe'});
+r = compile(r);
 
 nq = getNumDOF(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 1*randn();
-xstar(2) = 1*randn();
+xstar(1) = 10*randn();
+xstar(2) = 10*randn();
 xstar(6) = pi*randn();
 %xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
