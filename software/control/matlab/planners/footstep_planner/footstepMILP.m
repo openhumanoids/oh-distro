@@ -7,14 +7,12 @@ nr = length(seed_plan.safe_regions);
 nx = 4 * nsteps;
 ns = (nsteps) * nr;
 nt = nsteps;
-n_goal_obj = 2;
-n_rel_obj = 4 * nsteps;
-nvar = nx + ns + nt + n_goal_obj + n_rel_obj;
+n_goal_obj = 2 * nsteps;
+nvar = nx + ns + nt + n_goal_obj;
 x_ndx = reshape(1:nx, 4, nsteps);
 s_ndx = reshape(nx + (1:ns), nr, ns / nr);
 t_ndx = reshape(nx + ns + (1:nt), 1, nsteps);
-goal_obj_ndx = nx + ns + nt + (1:n_goal_obj);
-rel_obj_ndx = reshape(nx + ns + nt + n_goal_obj + (1:n_rel_obj), 4, nsteps);
+obj_ndx = reshape(nx + ns + nt + (1:n_goal_obj), 2, nsteps);
 start_pos = seed_plan.footsteps(2).pos;
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 
@@ -98,52 +96,46 @@ for j = 3:nsteps
   c(t_ndx(j)) = -w_trim;
 end
 
-A_goal_obj = zeros(2 * n_goal_obj, nvar);
-A_goal_obj(:, x_ndx(1:2,end)) = [eye(2); -eye(2)];
-A_goal_obj(:, goal_obj_ndx) = [-eye(2); -eye(2)];
-if seed_plan.footsteps(end).body_idx == biped.foot_bodies_idx.right
-  b_goal_obj = [goal_pos.right(1:2); -goal_pos.right(1:2)];
-else
-  b_goal_obj = [goal_pos.left(1:2); -goal_pos.left(1:2)];
+% w_goal = diag(weights.goal([1,2,3,6]));
+% for j = nsteps-1:nsteps
+%   Q(x_ndx(:,j), x_ndx(:,j)) = w_goal;
+%   xg = reshape(goal_pos.center([1,2,3,6]), [], 1);
+%   c(x_ndx(:,j)) = -2 * xg' * w_goal;
+% end
+for j = 3:nsteps
+  A_goal_obj = zeros(4, nvar);
+  A_goal_obj(:, x_ndx(1:2,j)) = [eye(2); -eye(2)];
+  A_goal_obj(:, obj_ndx(:,j)) = [-eye(2); -eye(2)];
+  if seed_plan.footsteps(end).body_idx == biped.foot_bodies_idx.right
+    b_goal_obj = [goal_pos.right(1:2); -goal_pos.right(1:2)];
+  else
+    b_goal_obj = [goal_pos.left(1:2); -goal_pos.left(1:2)];
+  end
+  A = [A; A_goal_obj];
+  b = [b; b_goal_obj];
+  c(obj_ndx(:,j)) = weights.goal(1:2);
 end
-A = [A; A_goal_obj];
-b = [b; b_goal_obj];
-c(goal_obj_ndx) = weights.goal(1:2);
 
 % w_rel = diag(weights.relative([1,2,3,6]));
-% for j = 3:nsteps
-%   if j == nsteps
-%     w_rel = diag(weights.relative_final([1,2,3,6]));
-%   end
-%   Q(x_ndx(:,j), x_ndx(:,j)) = Q(x_ndx(:,j), x_ndx(:,j)) + R{j}' * w_rel * R{j};
-%   Q(x_ndx(:,j-1), x_ndx(:,j)) = Q(x_ndx(:,j-1), x_ndx(:,j)) - R{j}' * w_rel * R{j};
-%   Q(x_ndx(:,j), x_ndx(:,j-1)) = Q(x_ndx(:,j), x_ndx(:,j-1)) - R{j}' * w_rel * R{j};
-%   Q(x_ndx(:,j-1), x_ndx(:,j-1)) = Q(x_ndx(:,j-1), x_ndx(:,j-1)) + R{j}' * w_rel * R{j};
-% 
-%   if seed_plan.footsteps(j).body_idx == Footstep.atlas_foot_bodies_idx.right
-%     nom = diag([1,-1,1,-1]) *nom_step;
-%   else
-%     nom = nom_step;
-%   end
-%   c(x_ndx(:,j)) = c(x_ndx(:,j)) - (2 * nom' * w_rel * R{j})';
-%   c(x_ndx(:,j-1)) = c(x_ndx(:,j-1)) + (2 * nom' * w_rel * R{j})';
-% end
-
-w_rel = weights.relative([1,2,3,6]);
 for j = 3:nsteps
+  if j == nsteps
+    nom_step(1) = 0;
+    w_rel = diag(weights.relative_final([1,2,3,6]));
+  else
+    w_rel = (nsteps - j) * diag(weights.relative([1,2,3,6]));
+  end
+  Q(x_ndx(:,j), x_ndx(:,j)) = Q(x_ndx(:,j), x_ndx(:,j)) + R{j}' * w_rel * R{j};
+  Q(x_ndx(:,j-1), x_ndx(:,j)) = Q(x_ndx(:,j-1), x_ndx(:,j)) - R{j}' * w_rel * R{j};
+  Q(x_ndx(:,j), x_ndx(:,j-1)) = Q(x_ndx(:,j), x_ndx(:,j-1)) - R{j}' * w_rel * R{j};
+  Q(x_ndx(:,j-1), x_ndx(:,j-1)) = Q(x_ndx(:,j-1), x_ndx(:,j-1)) + R{j}' * w_rel * R{j};
+
   if seed_plan.footsteps(j).body_idx == Footstep.atlas_foot_bodies_idx.right
     nom = diag([1,-1,1,-1]) *nom_step;
   else
     nom = nom_step;
   end
-  A_rel_obj = zeros(8, nvar);
-  A_rel_obj(:, x_ndx(:,j)) = [R{j}; -R{j}];
-  A_rel_obj(:, x_ndx(:,j-1)) = [-R{j}; R{j}];
-  A_rel_obj(:, rel_obj_ndx(:,j)) = [-eye(4); -eye(4)];
-  b_rel_obj = [nom; -nom];
-  A = [A; A_rel_obj];
-  b = [b; b_rel_obj];
-  c(rel_obj_ndx(:,j)) = w_rel;
+  c(x_ndx(:,j)) = c(x_ndx(:,j)) - (2 * nom' * w_rel * R{j})';
+  c(x_ndx(:,j-1)) = c(x_ndx(:,j-1)) + (2 * nom' * w_rel * R{j})';
 end
 
 for j = 3:nsteps
@@ -189,12 +181,10 @@ ub(x_ndx(:,1:2)) = seed_poses([1,2,3,6],1:2);
 ub(x_ndx(4,:)) = x0(x_ndx(4,:)) + 0.05;
 lb(s_ndx(:,1:2)) = [1, 1; zeros(nr-1, 2)];
 ub(s_ndx(:,1:2)) = lb(s_ndx(:,1:2));
-ub(t_ndx(1:2)) = 0;
-lb(t_ndx(1:2)) = 0;
+ub(t_ndx(1:end-1)) = 0;
+lb(t_ndx(1:end-1)) = 0;
 ub(t_ndx(end)) = 1;
 lb(t_ndx(end)) = 1;
-lb(rel_obj_ndx(:,1:2)) = 0;
-ub(rel_obj_ndx(:,1:2)) = 0;
 
 % if seed_plan.footsteps(end).body_idx == Footstep.atlas_foot_bodies_idx.right
 %   lb(x_ndx(1:2,end)) = goal_pos.right(1:2);
@@ -210,8 +200,8 @@ model.sense = [repmat('<', size(A,1), 1); repmat('=', size(Aeq, 1), 1)];
 model.rhs = [b; beq];
 model.lb = lb;
 model.ub = ub;
-model.vtype = [repmat('C', nx, 1); repmat('B', ns, 1); repmat('B', nt, 1); repmat('C', n_goal_obj + n_rel_obj, 1)];
-% model.Q = sparse(Q);
+model.vtype = [repmat('C', nx, 1); repmat('B', ns, 1); repmat('B', nt, 1); repmat('C', n_goal_obj, 1)];
+model.Q = sparse(Q);
 model.start = x0;
 params = struct();
 params.timelimit = 5;
