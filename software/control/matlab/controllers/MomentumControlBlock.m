@@ -312,7 +312,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         else
           % check kinematic contact
           if supp.contact_surfaces(i) == 0
-            phi = contactConstraints(r,kinsol,false,struct('body_idx',[1,supp.bodies(i)]));
+            phi = contactConstraints(r,kinsol,false,struct('terrain_only',true,'body_idx',supp.bodies(i)));
           else
             % use bullet collision between bodies
             phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
@@ -362,7 +362,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         Dbar = [];
         for j=1:length(active_supports)
           if active_surfaces(j) == 0
-            [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('body_idx',[1,active_supports(j)]));
+            [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',true,'body_idx',active_supports(j)));
           else
             % use bullet collision between bodies
             [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
@@ -639,8 +639,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
-        valuecheck(y,y_mex,1e-2); 
-				valuecheck(qdd,mex_qdd,1e-2); 
         valuecheck(Hqp,blkdiag(Hqp_mex,diag(Qf),diag(Qeps)),1e-6);
         valuecheck(fqp',fqp_mex,1e-6);
         valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6);
@@ -648,6 +646,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
         valuecheck(Ain,Ain_mex(1:length(bin),:),1e-6);
         valuecheck(bin,bin_mex(1:length(bin)),1e-6); 
 				valuecheck([-lb;ub],bin_mex(length(bin)+1:end),1e-6);
+        valuecheck(y,y_mex,1e-2); 
+				valuecheck(qdd,mex_qdd,1e-2); 
       end
     end
 

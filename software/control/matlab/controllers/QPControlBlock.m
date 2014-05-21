@@ -369,7 +369,7 @@ classdef QPControlBlock < MIMODrakeSystem
         else
           % check kinematic contact
           if supp.contact_surfaces(i) == 0
-            phi = contactConstraints(r,kinsol,false,struct('body_idx',[1,supp.bodies(i)]));
+            phi = contactConstraints(r,kinsol,false,struct('terrain_only',true,'body_idx',supp.bodies(i)));
           else
             % use bullet collision between bodies
             phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
@@ -440,7 +440,7 @@ classdef QPControlBlock < MIMODrakeSystem
         Dbar = [];
         for j=1:length(active_supports)
           if active_surfaces(j) == 0
-            [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('body_idx',[1,active_supports(j)]));
+            [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',true,'body_idx',active_supports(j)));
           else
             % use bullet collision between bodies
             [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
