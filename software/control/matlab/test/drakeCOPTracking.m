@@ -55,7 +55,7 @@ zmptraj = PPTrajectory(foh(ts,zmpknots(1:2,:)));
 
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
-foot_pos = contactPositions(r,q0, [rfoot_ind, lfoot_ind]);
+foot_pos = contactPositions(r,q0,false,struct('terrain_only',true,'body_idx',[rfoot_ind, lfoot_ind])); 
 foot_center = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 zmptraj = zmptraj + foot_center;
 zmptraj = zmptraj.setOutputFrame(desiredZMP);

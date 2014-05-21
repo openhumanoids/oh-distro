@@ -23,8 +23,8 @@ nq = getNumDOF(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp_zero_back.mat'));
-xstar(1) = 1*randn();
-xstar(2) = 1*randn();
+xstar(1) = 10*randn();
+xstar(2) = 10*randn();
 xstar(6) = pi/2*randn();
 %xstar(nq+1) = 0.1;
 r = r.setInitialState(xstar);
@@ -37,7 +37,7 @@ com = getCOM(r,kinsol);
 
 % build TI-ZMP controller 
 footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
-foot_pos = contactPositions(r,q0,footidx); 
+foot_pos = contactPositions(r,kinsol,false,struct('terrain_only',true,'body_idx',footidx)); 
 ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
 comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
 limp = LinearInvertedPendulum(com(3));
