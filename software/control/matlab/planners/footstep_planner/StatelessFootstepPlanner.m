@@ -12,7 +12,6 @@ classdef StatelessFootstepPlanner
 
       biped = StatelessFootstepPlanner.configureTerrain(biped, request);
       params = struct(request.params);
-      params.right_foot_lead = params.leading_foot; % for backwards compatibility
 
       if request.num_existing_steps > 0
         footsteps = Footstep.empty();

@@ -9,11 +9,6 @@ else
   l_ndx = 1:2:nsteps;
 end
 
-% Normalize the goal weight so that the plans don't stretch out as the goal
-% gets farther away
-% extra_distance = max(dgoal - (nsteps - 1) * nominal_dxy(1), 0.01);
-% w_goal(1:2) = w_rel(1) * nominal_dxy(1) / d_extra;
-
 c = 0;
 dc = zeros(12,nsteps);
 for j = nsteps:nsteps

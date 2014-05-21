@@ -20,18 +20,6 @@ function [A, b, Aeq, beq, step_map] = constructCollocationAb(biped, seed_plan, p
     offset = offset + length(b_reach);
   end
 
-  % if right_foot_lead
-  %   A_reach = A_reach * diag([1,-1,1,1,1,-1]);
-  % end
-  % for j = 2:nsteps
-  %   con_ndx = nc*(j-2)+1:nc*(j-1);
-  %   var_ndx = (j-1)*12+7:j*12;
-  %   A(con_ndx,var_ndx) = A_reach;
-  %   b(con_ndx) = b_reach;
-  %   A_reach = A_reach * diag([1,-1,1,1,1,-1]);
-  %   step_map.ineq(j) = con_ndx;
-  % end
-
   Aeq = zeros(4*(nsteps),nv);
   beq = zeros(4*(nsteps),1);
   con_ndx = 1:4;

@@ -10,7 +10,14 @@ weights = struct('relative', [10;10;10;0;0;.5],...
 
 
 start_steps = createOriginSteps(biped, foot_orig, true);
-plan = FootstepPlan.blank_plan(22, [biped.foot_bodies_idx.right, biped.foot_bodies_idx.left], params, safe_regions);
+if (params.leading_foot == drc.walking_goal_t.LEAD_RIGHT) ...
+  || (params.leading_foot == drc.walking_goal_t.LEAD_AUTO)
+  % right now, "auto" mode just also leads with the right foot
+  plan = FootstepPlan.blank_plan(22, [biped.foot_bodies_idx.right, biped.foot_bodies_idx.left], params, safe_regions);
+else
+  plan = FootstepPlan.blank_plan(22, [biped.foot_bodies_idx.left, biped.foot_bodies_idx.right], params, safe_regions);
+end
+
 plan.footsteps(1).pos = start_steps(1).pos;
 plan.footsteps(2).pos = start_steps(2).pos;
 min_steps = max([params.min_num_steps+2,3]);
