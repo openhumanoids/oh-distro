@@ -33,4 +33,19 @@ struct command_t
   int16_t position;
   int16_t force;
   int16_t velocity;
+
+  // Individual finger control
+  // 1 - active
+  // 0 - inactive
+  int8_t ifc;
+  int16_t positionA;
+  int16_t positionB;
+  int16_t positionC;
+
+  // Indiviual scissor control
+  // 1 - active
+  // 0 - inactive
+  int8_t isc;
+  int16_t positionS;
+
 }

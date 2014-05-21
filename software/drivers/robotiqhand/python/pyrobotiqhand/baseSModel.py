@@ -48,6 +48,15 @@ class commandLcmToModbusConverter(object):
         self.speed = 128
         self.force = 128
 
+        #State variables for individual control mode
+        self.ifc = 0
+        self.positionA = 0
+        self.positionB = 0
+        self.positionC = 0
+        self.isc = 0
+        self.positionS = 0
+
+
     def verifyCommand(self):
 
         fullBytes = ['rPRA', 'rSPA', 'rFRA',
@@ -89,20 +98,43 @@ class commandLcmToModbusConverter(object):
 
         self.rGTO = lcmCommand.do_move
 
-        self.rPRA = self.position
-        self.rPRB = self.position
-        self.rPRC = self.position
-        self.rPRS = self.position
+        self.rICF = lcmCommand.ifc
+        self.rICS = lcmCommand.isc
 
-        self.rSPA = self.speed
-        self.rSPB = self.speed
-        self.rSPC = self.speed
-        self.rSPS = self.speed
+        if lcmCommand.ifc == 0:
+            self.rPRA = self.position
+            self.rPRB = self.position
+            self.rPRC = self.position
 
-        self.rFRA = self.force
-        self.rFRB = self.force
-        self.rFRC = self.force
-        self.rFRS = self.force
+            self.rSPA = self.speed
+            self.rSPB = self.speed
+            self.rSPC = self.speed
+
+            self.rFRA = self.force
+            self.rFRB = self.force
+            self.rFRC = self.force
+
+            self.rPRS = self.position
+            self.rSPS = self.speed
+            self.rFRS = self.force
+
+        elif lcmCommand.ifc == 1:
+            self.rPRA = lcmCommand.positionA
+            self.rPRB = lcmCommand.positionB
+            self.rPRC = lcmCommand.positionC
+
+            self.rSPA = self.speed
+            self.rSPB = self.speed
+            self.rSPC = self.speed
+
+            self.rFRA = self.force
+            self.rFRB = self.force
+            self.rFRC = self.force
+
+        if lcmCommand.isc == 1:
+            self.rPRS = lcmCommand.positionS
+            self.rSPS = self.speed
+            self.rFRS = self.force
 
         #Data populated, now verify
         self.verifyCommand()
@@ -313,6 +345,7 @@ class robotiqBaseSModel(object):
         # commands are new
         # each sendCommand will send multiple times to try to overcome dropouts
         try:
+            print self.message1
             self.client.sendCommand(self.message1)
             self.client.sendCommand(self.message2)
         except AttributeError:
