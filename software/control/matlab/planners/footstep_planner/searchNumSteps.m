@@ -4,7 +4,7 @@ tic
 foot_orig.right(4:5) = 0;
 foot_orig.left(4:5) = 0;
 
-weights = struct('relative', [10;50;10;0;0;.5],...
+weights = struct('relative', [10;10;10;0;0;.5],...
                  'relative_final', [1000;100;100;0;0;100],...
                  'goal', [100;100;0;0;0;10]);
 
@@ -16,16 +16,21 @@ plan.footsteps(2).pos = start_steps(2).pos;
 min_steps = max([params.min_num_steps+2,3]);
 max_steps = params.max_num_steps+2;
 
-num_outer_iterations = 1;
+num_outer_iterations = 2;
 for j = 1:num_outer_iterations
-  plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
-  % figure(1)
-  % clf
-  % plot_plan(plan);
-  plan = footstepCollocation(biped, plan, weights, goal_pos);
-  % figure(1)
-  % clf
-  % plot_plan(plan);
+  miqp_plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
+  figure(1)
+  clf
+  plot_plan(miqp_plan);
+  plan = footstepCollocation(biped, miqp_plan, weights, goal_pos);
+  figure(1)
+  clf
+  plot_plan(plan);
+  miqp_steps = [miqp_plan.footsteps.pos];
+  nlp_steps = [plan.footsteps.pos];
+  if all(abs(miqp_steps(6,:) - nlp_steps(6,:)) <= pi/16)
+    break
+  end
 end
 
 step_vect = encodeCollocationSteps([plan.footsteps(2:end).pos]);

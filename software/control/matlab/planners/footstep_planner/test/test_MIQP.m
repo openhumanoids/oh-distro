@@ -75,7 +75,7 @@ nsteps = 30;
 seed_plan = FootstepPlan.blank_plan(nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 seed_plan.footsteps(1).pos = foot_orig.right;
 seed_plan.footsteps(2).pos = foot_orig.left;
-plan = footstepMILP(r, seed_plan, weights, goal_pos, 3, 30);
+plan = footstepMIQP(r, seed_plan, weights, goal_pos, 3, 30);
 profile viewer
 toc
 

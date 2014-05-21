@@ -28,7 +28,7 @@ end
 
 nominal_dxy = repmat(nominal_dxy, 1, nsteps);
 nominal_dxy(2,r_ndx) = -nominal_dxy(2,r_ndx);
-nominal_dxy(1,:) = 0;
+nominal_dxy(1,end) = 0;
 rot_dir = ones(1, nsteps);
 rot_dir(r_ndx) = -1;
 

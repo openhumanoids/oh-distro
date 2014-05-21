@@ -110,9 +110,13 @@ for j = 3:nsteps
 end
 
 w_goal = diag(weights.goal([1,2,3,6]));
-for j = nsteps-1:nsteps
+if seed_plan.footsteps(end).body_idx == biped.foot_bodies_idx.right
+  xg = reshape(goal_pos.right([1,2,3,6]), [], 1);
+else
+  xg = reshape(goal_pos.left([1,2,3,6]), [], 1);
+end
+for j = nsteps:nsteps
   Q(x_ndx(:,j), x_ndx(:,j)) = w_goal;
-  xg = reshape(goal_pos.center([1,2,3,6]), [], 1);
   c(x_ndx(:,j)) = -2 * xg' * w_goal;
 end
 
