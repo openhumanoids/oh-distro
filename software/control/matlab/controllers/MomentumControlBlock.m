@@ -65,6 +65,12 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.controller_data.setField('qp_active_set',[]);
     end
     
+    if isfield(options,'use_bullet')
+      obj.use_bullet = options.use_bullet;
+    else
+      obj.use_bullet = false;
+    end
+    
     if isfield(options,'contact_threshold')
       % minimum height above terrain for points to be in contact
       typecheck(options.contact_threshold,'double');
@@ -217,12 +223,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       else
         terrain_map_ptr = 0;
       end
-      if isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-        multi_robot_ptr = obj.multi_robot.getMexModelPtr.ptr;
-      else
-        multi_robot_ptr = 0;
-      end
-      obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),length(body_motion_input_frames),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
+      obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),length(body_motion_input_frames),r.umin,r.umax,terrain_map_ptr,0));
     end
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')
@@ -241,7 +242,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
   methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
-    out_tic = tic;
+    %out_tic = tic;
     persistent infocount
     
     if isempty(infocount)
@@ -311,12 +312,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
           end
         else
           % check kinematic contact
-          if supp.contact_surfaces(i) == 0
-            phi = contactConstraints(r,kinsol,false,struct('terrain_only',true,'body_idx',supp.bodies(i)));
-          else
-            % use bullet collision between bodies
-            phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
-          end
+          phi = contactConstraints(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,supp.bodies(i)]));
           contact_state_kin = any(phi<=obj.contact_threshold);
 
           if (~contact_state_kin && contact_sensor(i)<1) 
@@ -342,7 +338,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       [H,C,B] = manipulatorDynamics(r,q,qd);
 
-      H_float = H(float_idx,:);   
+      H_float = H(float_idx,:);
       C_float = C(float_idx);
 
       H_act = H(act_idx,:);
@@ -361,21 +357,15 @@ classdef MomentumControlBlock < MIMODrakeSystem
         c_pre = 0;
         Dbar = [];
         for j=1:length(active_supports)
-          if active_surfaces(j) == 0
-            [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',true,'body_idx',active_supports(j)));
-          else
-            % use bullet collision between bodies
-            [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
-          end
+          [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,active_supports(j)]));
           Dbar = [Dbar, vertcat(JB{:})'];
           c_pre = c_pre + length(active_contact_pts{j});
-
         end
 
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
 
-        [~,~,~,~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,false,struct('terrain_only',true,'body_idx',active_supports));
+        [~,~,~,~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,active_supports]));
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
 
@@ -507,13 +497,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
       bin_fqp = [bin; -lb(lbind); ub(ubind)];
 
       % call fastQPmex first
-      try
-        QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq), ...
-          diag(Hqp(nq+(1:nf),nq+(1:nf)))+REG*ones(nf,1), ...
-          diag(Hqp(nparams-neps+1:end,nparams-neps+1:end))+REG*ones(neps,1)};
-      catch ex
-        keyboard;
-      end
+      QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq), ...
+        obj.w_grf*ones(nf,1) + REG*ones(nf,1), ...
+        obj.w_slack*ones(neps,1) + REG*ones(neps,1)};
+      
       Aeq_fqp = full(Aeq);
       % NOTE: model.obj is 2* f for fastQP!!!
       [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
@@ -634,15 +621,29 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
       else
         mu = 1.0;
-        [y_mex,mex_qdd,~,active_supports_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha_mex] = MomentumControllermex(obj.mex_ptr.data,...
+        [y_mex,mex_qdd,info_mex,active_supports_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha_mex] = MomentumControllermex(obj.mex_ptr.data,...
           obj.solver==0,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
-        valuecheck(Hqp,blkdiag(Hqp_mex,diag(Qf),diag(Qeps)),1e-6);
+        if size(Hqp_mex,2)==1
+          Hqp_mex=diag(Hqp_mex);
+        end
+        if info_mex < 0
+          Hqp_mex=Hqp_mex*2;
+          Qf=Qf*2;
+          Qeps=Qeps*2;
+        end
+        try
+          valuecheck(Hqp,blkdiag(Hqp_mex,diag(Qf),diag(Qeps)),1e-6);
+        catch err
+          keyboard
+        end
         valuecheck(fqp',fqp_mex,1e-6);
-        valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6);
-        valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
+        % had to comment out equality constraints because the contact
+        % jacobian rows can be permuted between matlab/mex
+%         valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6); 
+%         valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
         valuecheck(Ain,Ain_mex(1:length(bin),:),1e-6);
         valuecheck(bin,bin_mex(1:length(bin)),1e-6); 
 				valuecheck([-lb;ub],bin_mex(length(bin)+1:end),1e-6);
@@ -702,7 +703,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     input_foot_contacts;  
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
-    multi_robot;
+    use_bullet;
     using_flat_terrain; % true if using DRCFlatTerrain
     jlmin;
     jlmax;

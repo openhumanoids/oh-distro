@@ -31,15 +31,6 @@ xstar(1) = 0*randn();
 xstar(2) = 0*randn();
 r = r.setInitialState(xstar);
 
-if use_bullet
-  r_bullet = RigidBodyManipulator();
-  r_bullet = addRobotFromURDF(r_bullet,strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),[0;0;0],[0;0;0],options);
-  r_bullet = addRobotFromURDF(r_bullet,strcat(fullfile(getDrakePath,'systems','plants','test'),'/ground_plane.urdf'),[xstar(1);xstar(2);0],zeros(3,1),struct('floating',false));
-  r_bullet = TimeSteppingRigidBodyManipulator(r_bullet,options.dt,options);
-  r_bullet = removeCollisionGroupsExcept(r_bullet,{'heel','toe'});
-  r_bullet = compile(r_bullet);
-end
-
 v = r.constructVisualizer;
 v.display_dt = 0.05;
 
@@ -84,12 +75,6 @@ request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
-if use_bullet
-  for i=1:length(walking_ctrl_data.supports)
-    walking_ctrl_data.supports{1}(i)=walking_ctrl_data.supports{1}(i).setContactSurfaces(-ones(length(walking_ctrl_data.supports{1}(i).bodies),1));
-  end
-end
-
 ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
 T = ts(end);
 
@@ -124,9 +109,7 @@ options.w = 0.001;
 options.lcm_foot_contacts = false;
 options.debug = false;
 
-if use_bullet
-  options.multi_robot = r_bullet;
-end
+options.use_bullet = use_bullet;
 qp = QPControlBlock(r,ctrl_data,options);
 
 % cascade footstep plan shift block
