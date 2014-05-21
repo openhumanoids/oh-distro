@@ -198,8 +198,8 @@ classdef ReachingPlanner < KeyframePlanner
              
             % get foot positions
             kinsol = doKinematics(obj.r,q0_bound);
-            r_foot_contact_pts = getContactPoints(getBody(obj.r,obj.r_foot_body));
-            l_foot_contact_pts = getContactPoints(getBody(obj.r,obj.l_foot_body));
+            r_foot_contact_pts = getTerrainContactPoints(getBody(obj.r,obj.r_foot_body));
+            l_foot_contact_pts = getTerrainContactPoints(getBody(obj.r,obj.l_foot_body));
             l_foot_pts = [0;0;0];
             r_foot_pts = [0;0;0];
             num_r_foot_pts = size(r_foot_pts,2);
