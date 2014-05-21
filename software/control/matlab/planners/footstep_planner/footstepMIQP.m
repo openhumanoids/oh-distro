@@ -207,7 +207,7 @@ model.start = x0;
 params = struct();
 params.timelimit = 5;
 params.mipgap = 3e-4;
-params.outputflag = 1;
+params.outputflag = 0;
 
 result = gurobi(model, params);
 xstar = result.x;

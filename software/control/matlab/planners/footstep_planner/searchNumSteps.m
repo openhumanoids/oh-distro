@@ -1,4 +1,4 @@
-function plan = searchNumSteps(biped, foot_orig, goal_pos, existing_steps, goal_steps, params, safe_regions)
+function plan = searchNumSteps(biped, foot_orig, goal_pos, params, safe_regions)
 % profile on
 tic
 foot_orig.right(4:5) = 0;
@@ -19,13 +19,13 @@ max_steps = params.max_num_steps+2;
 num_outer_iterations = 2;
 for j = 1:num_outer_iterations
   miqp_plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
-  figure(1)
-  clf
-  plot_plan(miqp_plan);
+%   figure(1)
+%   clf
+%   plot_plan(miqp_plan);
   plan = footstepCollocation(biped, miqp_plan, weights, goal_pos);
-  figure(1)
-  clf
-  plot_plan(plan);
+%   figure(1)
+%   clf
+%   plot_plan(plan);
   miqp_steps = [miqp_plan.footsteps.pos];
   nlp_steps = [plan.footsteps.pos];
   if all(abs(miqp_steps(6,:) - nlp_steps(6,:)) <= pi/16)
@@ -35,8 +35,8 @@ end
 
 step_vect = encodeCollocationSteps([plan.footsteps(2:end).pos]);
 [steps, steps_rel] = decodeCollocationSteps(step_vect);
-steps
-steps_rel
+% steps
+% steps_rel
 return;
 end
 

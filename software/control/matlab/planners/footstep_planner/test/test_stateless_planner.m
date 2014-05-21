@@ -169,7 +169,7 @@ request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
-assert(all([footsteps(1:2:end).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
+assert(all([footsteps(1:2:end-1).body_idx] ~= [footsteps(2:2:end).body_idx]))
 valuecheck(footsteps(end).pos(3), 0.2);
 
 request.num_goal_steps = 3;
@@ -217,5 +217,4 @@ request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
-assert(mod(length(footsteps), 2) == 1)
-assert(all([footsteps(1:2:end-1).is_right_foot] ~= [footsteps(2:2:end).is_right_foot]))
+assert(all([footsteps(1:2:end-1).body_idx] ~= [footsteps(2:2:end).body_idx]))

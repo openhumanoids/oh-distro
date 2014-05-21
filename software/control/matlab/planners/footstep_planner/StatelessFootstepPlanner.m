@@ -22,7 +22,6 @@ classdef StatelessFootstepPlanner
         end
         plan = FootstepPlan(footsteps, params, [], []);
       else
-
         goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
         if request.num_goal_steps > 2
           request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
@@ -32,10 +31,8 @@ classdef StatelessFootstepPlanner
         safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, foot_orig, goal_pos);
 
 %         profile on
-        plan = searchNumSteps(biped, foot_orig, goal_pos, request.existing_steps, request.goal_steps, params, safe_regions);
+        plan = searchNumSteps(biped, foot_orig, goal_pos, params, safe_regions);
 %         profile viewer
-%         plan = FootstepPlan.from_collocation_results(footsteps);
-
         plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
@@ -147,12 +144,20 @@ classdef StatelessFootstepPlanner
       elseif request.num_goal_steps == 1
         goal_step = Footstep.from_footstep_t(request.goal_steps(1));
         goal_step.pos = biped.footOrig2Contact(goal_step.pos, 'center', true);
+        if (goal_step.body_idx ~= plan.footsteps(end).body_idx)
+          plan.footsteps(end+1) = plan.footsteps(end-1);
+          plan.footsteps(end).id = plan.footsteps(end-1).id + 1;
+        end
         assert(goal_step.body_idx == plan.footsteps(end).body_idx);
         plan.footsteps(end) = goal_step;
       else
         for j = 1:request.num_goal_steps
           k = nsteps - 2 + j;
           goal_step = Footstep.from_footstep_t(request.goal_steps(j));
+          if j == 1 && (goal_step.body_idx ~= plan.footsteps(end-1).body_idx)
+            plan.footsteps(end+1) = plan.footsteps(end-1);
+            plan.footsteps(end).id = plan.footsteps(end-1).id + 1;
+          end
           if j ~= 2
             assert(goal_step.body_idx == plan.footsteps(end-1).body_idx);
           else
