@@ -15,6 +15,7 @@ fp.xstar(3) = fp.xstar(3) + 0.50; % make sure we're not assuming z = 0
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, fp.xstar);
 
 r = r.setTerrain(KinematicTerrainMap(r, fp.xstar(1:r.getNumDOF), true));
+r = compile(r);
 
 request.goal_pos = drc.position_3d_t();
 request.goal_pos.translation = drc.vector_3d_t();
