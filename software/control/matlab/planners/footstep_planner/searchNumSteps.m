@@ -16,16 +16,16 @@ plan.footsteps(2).pos = start_steps(2).pos;
 min_steps = max([params.min_num_steps+2,3]);
 max_steps = params.max_num_steps+2;
 
-
-figure(1)
-clf
-for j = 1:1
+num_outer_iterations = 1;
+for j = 1:num_outer_iterations
   plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
-  clf
-  plot_plan(plan);
+  % figure(1)
+  % clf
+  % plot_plan(plan);
   plan = footstepCollocation(biped, plan, weights, goal_pos);
-  clf
-  plot_plan(plan);
+  % figure(1)
+  % clf
+  % plot_plan(plan);
 end
 
 step_vect = encodeCollocationSteps([plan.footsteps(2:end).pos]);
