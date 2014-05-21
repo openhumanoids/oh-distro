@@ -65,6 +65,9 @@ request.params.behavior = drc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING;
 request.params.map_command = 0;
 request.params.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
 
+weights = struct('relative', [10;50;10;0;0;.5],...
+                 'relative_final', [1000;100;100;0;0;100],...
+                 'goal', [100;100;0;0;0;10]);
 
 tic
 profile on
@@ -72,7 +75,7 @@ nsteps = 30;
 seed_plan = FootstepPlan.blank_plan(nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 seed_plan.footsteps(1).pos = foot_orig.right;
 seed_plan.footsteps(2).pos = foot_orig.left;
-plan = footstepMIQP(r, seed_plan, goal_pos, 3, 30);
+plan = footstepMILP(r, seed_plan, weights, goal_pos, 3, 30);
 profile viewer
 toc
 
