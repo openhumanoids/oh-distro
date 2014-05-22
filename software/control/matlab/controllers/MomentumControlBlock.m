@@ -50,6 +50,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj.numq = getNumDOF(r);
     obj.controller_data = controller_data;
     obj.input_foot_contacts = options.input_foot_contacts;
+    obj.n_body_motion_inputs = length(body_motion_input_frames);
     
     if isfield(options,'dt')
       % controller update rate
@@ -135,6 +136,16 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.slack_limit = options.slack_limit;
     else
       obj.slack_limit = 10;
+    end
+
+    % array dictating whether body acceleration inputs should be
+    % constraints (val<0) or cost terms with weight in [0,inf]
+    if isfield(options,'body_motion_input_weights')
+      typecheck(options.body_motion_input_weights,'double');
+      sizecheck(options.body_motion_input_weights,obj.n_body_motion_inputs);
+      obj.body_motion_input_weights = options.body_motion_input_weights;
+    else
+      obj.body_motion_input_weights = -1*ones(obj.n_body_motion_inputs,1);
     end
     
     if isfield(options,'lcm_foot_contacts')
@@ -466,16 +477,18 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       eq_count=3+obj.input_foot_contacts*1;
       for ii=3:length(varargin)
-        body_input = varargin{ii};
-        body_ind = body_input(1);
-        body_vdot = body_input(2:7);
-        if ~any(active_supports==body_ind)
-          [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
-          Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
-          cidx = ~isnan(body_vdot);
-          Aeq_{eq_count} = J(cidx,:)*Iqdd;
-          beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
-          eq_count = eq_count+1;
+        if obj.body_motion_input_weights(ii-2) < 0
+          body_input = varargin{ii};
+          body_ind = body_input(1);
+          body_vdot = body_input(2:7);
+          if ~any(active_supports==body_ind)
+            [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
+            Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
+            cidx = ~isnan(body_vdot);
+            Aeq_{eq_count} = J(cidx,:)*Iqdd;
+            beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
+            eq_count = eq_count+1;
+          end
         end
       end
 
@@ -522,6 +535,23 @@ classdef MomentumControlBlock < MIMODrakeSystem
         fqp = -qddot_des'*Iqdd;
       end
 
+      for ii=1:obj.n_body_motion_inputs
+        w = obj.body_motion_input_weights(ii);
+        if w>0
+          body_input = varargin{ii+2};
+          body_ind = body_input(1);
+          body_vdot = body_input(2:7);
+          if ~any(active_supports==body_ind)
+            [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
+            Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
+            cidx = ~isnan(body_vdot);
+            Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + w*J(cidx,:)'*J(cidx,:);
+            fqp = fqp + w*(qd'*Jdot(cidx,:)'- body_vdot(cidx)')*J(cidx,:)*Iqdd;
+          end
+        end
+      end
+
+      
       %----------------------------------------------------------------------
       % Solve QP ------------------------------------------------------------
 
@@ -766,5 +796,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     contact_threshold; % min height above terrain to be considered in contact
     output_qdd = false;
     mass; % total robot mass
+    body_motion_input_weights; % array of doubles, negative values signal constraints
+    n_body_motion_inputs; % scalar
   end
 end

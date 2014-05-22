@@ -172,6 +172,8 @@ else
 	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
 		pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+
+%   options.body_motion_input_weights = [-1 -1 -1 -1];
 	qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 	% feedback QP controller with atlas
