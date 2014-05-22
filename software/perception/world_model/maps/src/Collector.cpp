@@ -175,7 +175,8 @@ getLatestFullSweep(int64_t& oStartTime, int64_t& oEndTime) const {
 
 bool Collector::
 getLatestSwath(const float iMinAngle, const float iMaxAngle,
-               int64_t& oStartTime, int64_t& oEndTime) const {
+               int64_t& oStartTime, int64_t& oEndTime,
+               const bool iRelative) const {
   PointDataBuffer::Ptr buf = mHelper->mMapManager->getPointData();
   std::vector<PointSet> pointSets = buf->getAll();
   if (pointSets.size() < 10) return false;
@@ -183,69 +184,77 @@ getLatestSwath(const float iMinAngle, const float iMaxAngle,
   // determine whether angle is increasing or decreasing
   double initAngle = mHelper->computeAngleFromHorizontal
     (pointSets.back().mCloud->sensor_orientation_);
-  int counter = 0;
   bool increasing = false;
-  for (auto iter = pointSets.rbegin(); iter != pointSets.rend(); ++iter) {
-    double angle = mHelper->
-      computeAngleFromHorizontal(iter->mCloud->sensor_orientation_);
-    increasing = angle-initAngle < 0;
-    ++counter;
-    if (counter > 10) break;
+  {
+    int counter = 0;
+    double prevAngle = initAngle;
+    double totalDelta = 0;
+    for (auto iter = pointSets.rbegin(); iter != pointSets.rend(); ++iter) {
+      double angle = mHelper->
+        computeAngleFromHorizontal(iter->mCloud->sensor_orientation_);
+      double delta = angle-prevAngle;
+      if (delta > Helper::kPi) delta -= 2*Helper::kPi;
+      else if (delta < -Helper::kPi) delta += 2*Helper::kPi;
+      totalDelta += delta;
+      prevAngle = angle;
+      ++counter;
+      if (counter > 10) break;
+    }
+    increasing = totalDelta<0;
   }
 
   double angleRange = iMaxAngle - iMinAngle;
   double maxAngle = iMaxAngle;
-  if (maxAngle >= Helper::kPi) {
-    maxAngle -= int(maxAngle/Helper::kPi)*Helper::kPi;
+  if (iRelative) {
+    maxAngle += initAngle;
   }
+  Eigen::Vector2d maxLine(sin(maxAngle), -cos(maxAngle));
 
-  // force angle range from -pi/2 to +pi/2
   // look for zero crossings of angle wrt max angle
-  // stage 0: not started (<0)
-  // stage 1: started (>0)
-  // stage 2: in range (<0)
-  // stage 3: done (travel >= delta angle)
+  // stage 0: looking for zero crossing
+  // stage 1: accumulating angle traveled
+  // stage 2: done (travel >= delta angle)
   int stage = 0;
-  double prevAngle = 0;
   double accumAngle = 0;
+  bool first = true;
+  Eigen::Vector2d prevVect;
   for (auto iter = pointSets.rbegin(); iter != pointSets.rend(); ++iter) {
     double angle = mHelper->
       computeAngleFromHorizontal(iter->mCloud->sensor_orientation_);
-    if (!increasing) angle = -angle;
-    angle -= maxAngle;
-    if (angle < 0) angle += 2*Helper::kPi;
-    if (angle >= Helper::kPi) angle -= Helper::kPi;
-    if (angle >= Helper::kPi/2) angle -= Helper::kPi;
+    Eigen::Vector2d vect(cos(angle),sin(angle));
 
+    // check for zero crossing
     if (stage == 0) {
-      if (angle >= 0) {
-        stage = 1;
+      double dot = maxLine.dot(vect);
+      if (!first) {
+        if (dot * maxLine.dot(prevVect) <= 0) {
+          oStartTime = oEndTime = iter->mTimestamp;
+          stage = 1;
+        }
       }
+      else first = false;
     }
+
+    // count angle traveled
     else if (stage == 1) {
-      if (angle < 0) {
+      double diffAngle = atan2(vect[1],vect[0]) -
+        atan2(prevVect[1],prevVect[0]);
+      if (diffAngle > Helper::kPi) diffAngle -= 2*Helper::kPi;
+      else if (diffAngle < -Helper::kPi) diffAngle += 2*Helper::kPi;
+      accumAngle += diffAngle;
+      if (accumAngle*(increasing ? -1 : 1) >= angleRange) {
         stage = 2;
-        oStartTime = oEndTime = iter->mTimestamp;
-        prevAngle = angle;
       }
+      else oStartTime = iter->mTimestamp;
     }
-    else if (stage == 2) {
-      double deltaAngle = prevAngle-angle;
-      if ((deltaAngle>0) && (deltaAngle > (Helper::kPi - deltaAngle))) {
-        deltaAngle -= Helper::kPi;
-      }
-      else if ((deltaAngle < 0) && (-deltaAngle > (deltaAngle + Helper::kPi))) {
-        deltaAngle += Helper::kPi;
-      }
-      accumAngle += deltaAngle;
-      if (accumAngle > angleRange) {
-        stage = 3;
-        break;
-      }
-      oStartTime = iter->mTimestamp;
-      prevAngle = angle;
-    }
+
+    // done, exit loop
+    else if (stage == 2) break;
+
+    // update previous vector
+    prevVect = vect;
   }
 
-  return (stage == 3);
+  // return true only if we got to stage 2
+  return (stage == 2);
 }

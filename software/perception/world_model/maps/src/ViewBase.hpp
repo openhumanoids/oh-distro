@@ -19,7 +19,8 @@ public:
   enum TimeMode {
     TimeModeAbsolute,
     TimeModeRelative,
-    TimeModeRollAngle,
+    TimeModeRollAngleAbsolute,
+    TimeModeRollAngleRelative,
   };
 
   struct Spec {

@@ -20,6 +20,22 @@
 
 using namespace maps;
 
+namespace {
+  void writeDepths(const DepthImageView& iView, const std::string& iFileName) {
+    DepthImage::Type imageType = DepthImage::TypeDepth;
+    DepthImage::Ptr depthImage = iView.getDepthImage();
+    std::vector<float> inDepths = depthImage->getData(imageType);
+    int width = depthImage->getWidth();
+    int height = depthImage->getHeight();
+
+    std::ofstream ofs(iFileName.c_str());
+    ofs.write((char*)(&width), sizeof(int));
+    ofs.write((char*)(&height), sizeof(int));
+    ofs.write((char*)inDepths.data(), inDepths.size()*sizeof(float));
+    ofs.close();
+  }
+}
+
 bool LcmTranslator::
 toLcm(const LocalMap::Spec& iSpec, drc::map_params_t& oMessage) {
   oMessage.map_id = iSpec.mId;
@@ -343,6 +359,16 @@ fromLcm(const drc::map_octree_t& iMessage, OctreeView& oView) {
 bool LcmTranslator::
 toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
       const float iQuantMax, const bool iCompress) {
+
+  // TODO
+#if 0
+  static int imageNum = 0;
+  char fileName[256];
+  sprintf(fileName, "/home/antone/depth_images/%.6d.depth", imageNum);
+  ++imageNum;
+  writeDepths(iView, fileName);
+#endif
+
   oMessage.view_id = iView.getId();
 
   // copy depth array
@@ -387,11 +413,6 @@ toLcm(const DepthImageView& iView, drc::map_image_t& oMessage,
     if (val == invalidValue) continue;
     outDepths[i] = (outDepths[i]-zOffset)/zScale + 0.5f;  // 0.5 for rounding
   }
-  std::ofstream ofs("/home/antone/test_depths.txt");
-  ofs << depthImage->getWidth() << " " << depthImage->getHeight() << std::endl;
-  for (int i = 0; i < numDepths; ++i) ofs << outDepths[i] << " ";
-  ofs << std::endl;
-  ofs.close();
 
   // store to blob
   DataBlob::Spec spec;

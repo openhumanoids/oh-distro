@@ -1029,9 +1029,9 @@ public:
     msg.quantization_max = 0.02;
     msg.width = 200;
     msg.height = 200;
-    msg.time_min = 0;
-    msg.time_max = 190;
-    msg.time_mode = drc::map_request_t::ROLL_ANGLE;
+    msg.time_min = -190;
+    msg.time_max = 0;
+    msg.time_mode = drc::map_request_t::ROLL_ANGLE_RELATIVE;
     msg.relative_location = true;
     msg.active = true;
 

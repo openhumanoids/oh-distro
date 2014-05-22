@@ -37,7 +37,8 @@ public:
   // convenience methods
   bool getLatestFullSweep(int64_t& oStartTime, int64_t& oEndTime) const;
   bool getLatestSwath(const float iMinAngle, const float iMaxAngle,
-                      int64_t& oStartTime, int64_t& oEndTime) const;
+                      int64_t& oStartTime, int64_t& oEndTime,
+                      const bool iRelative=false) const;
 
 protected:
   struct Helper;

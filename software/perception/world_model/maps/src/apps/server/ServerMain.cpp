@@ -466,10 +466,15 @@ struct ViewWorker {
             bounds.mTimeMin = spec.mTimeMin+curTime;
             bounds.mTimeMax = spec.mTimeMax+curTime;
             break;
-          case ViewBase::TimeModeRollAngle:
+          case ViewBase::TimeModeRollAngleAbsolute:
             mCollector->getLatestSwath(spec.mTimeMin*kPi/180,
                                        spec.mTimeMax*kPi/180,
                                        bounds.mTimeMin, bounds.mTimeMax);
+            break;
+          case ViewBase::TimeModeRollAngleRelative:
+            mCollector->getLatestSwath(spec.mTimeMin*kPi/180,
+                                       spec.mTimeMax*kPi/180,
+                                       bounds.mTimeMin, bounds.mTimeMax, true);
             break;
           case ViewBase::TimeModeAbsolute:
           default:
