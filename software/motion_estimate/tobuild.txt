@@ -25,3 +25,4 @@ state_estimate
 # TODO:
 # some modules in the estimators have shared class names
 # this is potentially conflicting
+plan_monitor

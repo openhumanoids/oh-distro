@@ -28,6 +28,7 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
            << "ATLAS_STATE_EXTRA"
            << "ATLAS_STATUS" << "EST_ROBOT_STATE" 
            << "EST_ROBOT_STATE_KF" << "EST_ROBOT_STATE_LP" << "EST_ROBOT_STATE_ECHO" 
+           << "EXPD_ROBOT_STATE"
            << "FOOT_CONTACT_ESTIMATE" << "FOOT_CONTACT_CLASSIFY" 
            << "FORCE_PLATE_DATA" 
            << "INS_ERR_UPDATE" << "MICROSTRAIN_INS"
