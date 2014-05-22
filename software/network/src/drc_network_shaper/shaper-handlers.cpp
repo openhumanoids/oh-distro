@@ -1,6 +1,8 @@
 #include <iostream>
 #include <queue>
 #include <map>
+#include <unistd.h>
+#include <cstdio>
 
 #include <boost/bimap.hpp>
 #include <boost/circular_buffer.hpp>
@@ -104,16 +106,28 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
 
         std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
 
-        flog_.open(goby_debug_file_name.c_str());
+        std::string goby_debug_latest_symlink = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + "latest.txt";
+        remove(goby_debug_latest_symlink.c_str());
+        
+        flog_.open(goby_debug_file_name.c_str());        
+        
         if(!flog_.is_open())
         {
             std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
             exit(EXIT_FAILURE);
         }
 
+        if(symlink(goby_debug_file_name.c_str(), goby_debug_latest_symlink.c_str()) != 0)
+        {
+            std::cerr << "Failed to create symlink: " << goby_debug_latest_symlink<< std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+
         goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
                               &flog_);
 
+        dccl::dlog.connect(dccl::logger::INFO_PLUS, &flog_, true);
 
         // data usage log
 	open_usage_log();
@@ -121,9 +135,15 @@ DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     
 
     if(app.cl_cfg.verbose)
+    {
         goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
+        dccl::dlog.connect(dccl::logger::INFO_PLUS, &std::cout, true);
+    }
     else
+    {
         goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::WARN), &std::cout);
+        dccl::dlog.connect(dccl::logger::WARN_PLUS, &std::cout, true);
+    }
     
 
     goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitStringCodec, google::protobuf::FieldDescriptor::TYPE_STRING>("presence_bit");
