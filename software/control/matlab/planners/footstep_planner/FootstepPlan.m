@@ -46,6 +46,19 @@ classdef FootstepPlan
       end
     end
 
+    function ts = compute_step_timing(obj)
+      % Compute the approximate step timing based on the distance each swing foot must travel.
+      % @retval ts a vector of times (in seconds) corresponding to the completion
+      %            (return to double support) of each step in the plan. The first
+      %            two entries of ts will always be zero, since the first two steps
+      %            in the plan correspond to the current locations of the feet.
+      ts = zeros(1, length(obj.footsteps));
+      for j = 3:length(obj.footsteps)
+        [swing_ts, ~, ~, ~] = planSwing(obj.footsteps(j-2), obj.footsteps(j));
+        ts(j) = ts(j-1) + swing_ts(end);
+      end
+    end
+
 
     function varargout = sanity_check(obj)
       ok = true;

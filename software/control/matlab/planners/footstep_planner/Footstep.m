@@ -35,8 +35,6 @@ classdef Footstep
       obj.terrain_pts = terrain_pts;
       obj.infeasibility = infeasibility;
       obj.walking_params = walking_params;
-
-
     end
 
     function msg = to_footstep_t(obj)

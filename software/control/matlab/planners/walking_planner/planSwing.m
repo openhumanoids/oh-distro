@@ -1,4 +1,4 @@
-function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, step1, step2)
+function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(step1, step2)
 % Compute a collision-free swing trajectory for a single foot.
 
 assert(step1.body_idx == step2.body_idx, 'planSwing expects to plan a swing trajcectory between two positions of the /same/ foot body')

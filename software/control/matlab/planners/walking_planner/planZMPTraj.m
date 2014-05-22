@@ -17,7 +17,6 @@ sizecheck(q0,[biped.getNumDOF,1]);
 
 is_right_foot = footsteps(1).body_idx == biped.foot_bodies_idx.right;
 
-com0 = getCOM(biped,q0);
 foot0 = feetPosition(biped, q0);
 foot0.right(6) = foot0.left(6) + angleDiff(foot0.left(6), foot0.right(6));
 
@@ -32,8 +31,7 @@ for f = {'left', 'right'}
     p1 = steps.(foot)(k).pos.inFrame(steps.(foot)(k).frames.orig).double();
     p2 = steps.(foot)(k+1).pos.inFrame(steps.(foot)(k+1).frames.orig).double();
     steps.(foot)(k+1).pos = Point(steps.(foot)(k+1).frames.orig,...
-      [p2(1:3); p1(4:6) + angleDiff(p1(4:6), p2(4:6))]); 
-%     steps.(foot)(k+1).pos(4:6) = steps.(foot)(k).pos(4:6) + angleDiff(steps.(foot)(k).pos(4:6), steps.(foot)(k+1).pos(4:6));
+      [p2(1:3); p1(4:6) + angleDiff(p1(4:6), p2(4:6))]);
   end
 end
 
@@ -80,12 +78,7 @@ while 1
   sw1 = steps.(sw_foot)(istep.(sw_foot)+1);
   st = steps.(st_foot)(istep.(st_foot));
 
-  % if options.step_speed < 0
-  %   [swing_ts, swing_poses, takeoff_time, landing_time] = planFixedDurationSwing(biped,...
-  %               sw0.center,...
-  %               sw1.center, options);
-  % else
-  [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, sw0, sw1);
+  [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(sw0, sw1);
   step_duration = (swing_ts(end) - swing_ts(1));
   if is_first_step
     swing_ts = swing_ts + options.first_step_hold_s;
@@ -94,7 +87,6 @@ while 1
     step_duration = step_duration + options.first_step_hold_s;
     is_first_step = false;
   end
-  % end
 
   t0 = step_knots(end).t;
   for j = 1:length(swing_ts)

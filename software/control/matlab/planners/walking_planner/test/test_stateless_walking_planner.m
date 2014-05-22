@@ -65,6 +65,7 @@ footstep_request.default_step_params.mu = 1.0;
 
 fp = StatelessFootstepPlanner();
 plan = fp.plan_footsteps(r, footstep_request);
+tstep = plan.compute_step_timing();
 plan_msg = plan.toLCM();
 
 request = drc.walking_plan_request_t();
