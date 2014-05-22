@@ -37,12 +37,18 @@ def genCommand(char):
         command.do_move = 0
 
     elif char == 'c':
-        command.position = 255
+        command.ifc = 1
+        command.positionA = 254
+        command.positionB = 254
+        command.positionC = 254
         command.force = forceLevel
         command.velocity = speedLevel
 
     elif char == 'o':
-        command.position = 0
+        command.ifc = 1
+        command.positionA = 0
+        command.positionB = 0
+        command.positionC = 0
         command.force = forceLevel
         command.velocity = speedLevel
 
@@ -111,7 +117,10 @@ def genCommand(char):
         command.force = forceLevel
 
     elif char in [str(x) for x in range(254)]:
-        command.position = int(char)
+        command.ifc = 1
+        command.positionA = int(char)
+        command.positionB = int(char)
+        command.positionC = int(char)
         command.force = forceLevel
         command.velocity = speedLevel
 

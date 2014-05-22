@@ -13,4 +13,5 @@ pods_install_python_packages(${CMAKE_CURRENT_SOURCE_DIR}/python)
 
 pods_install_python_script(robotiq_tcp_node python/pyrobotiqhand/robotiq_tcp_node.py)
 pods_install_python_script(robotiq_command python/pyrobotiqhand/robotiq_command.py)
+pods_install_python_script(robotiq_command_indiv python/pyrobotiqhand/robotiq_command_indiv.py)
 

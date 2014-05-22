@@ -10,5 +10,6 @@ include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
 pods_install_python_script(takktile_node python/takktile_node.py)
+pods_install_python_script(takktile_usb python/takktile_usb.py)
 
 
