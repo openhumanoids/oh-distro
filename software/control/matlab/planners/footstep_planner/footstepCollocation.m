@@ -53,10 +53,8 @@ function [F,G] = collocation_userfun(x)
   G = reshape(G(iGndx), [], 1);
 end
 
-steps = zeros(6, length(seed_steps)-1);
-for j = 2:length(seed_steps)
-  steps(:,j-1) = seed_steps(j).pos.inFrame(seed_steps(j).frames.center);
-end
+steps = seed_plan.step_matrix();
+steps = steps(:,2:end);
 nsteps = size(steps,2);
 
 nv = 12 * nsteps;
