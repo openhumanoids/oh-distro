@@ -20,13 +20,19 @@ classdef Footstep
       obj.frames = struct('orig', CoordinateFrame('orig', 6, 'o', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}),...
                           'center', CoordinateFrame('center', 6, 'c', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}));
 
-      % TODO: this assumes that the foot contact offsets are the same for right and left feet
+      if body_idx == biped.foot_bodies_idx.right
+        offset = biped.foot_contact_offsets.right.center;
+      elseif body_idx == biped.foot_bodies_idx.left
+        offset = biped.foot_contact_offsets.left.center;
+      else
+        error('Don''t know how to handle body indices other than right/left feet');
+      end
       obj.frames.orig.addTransform(FootstepContactTransform(obj.frames.orig, ...
                                                             obj.frames.center,...
-                                                            biped.foot_contact_offsets.right.center));
+                                                            offset));
       obj.frames.center.addTransform(FootstepContactTransform(obj.frames.center, ...
                                                             obj.frames.orig,...
-                                                            -biped.foot_contact_offsets.right.center));
+                                                            -offset));
       obj.pos = Point(obj.frames.orig, pos);
       obj.id = id;
       obj.body_idx = body_idx;
