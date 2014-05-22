@@ -1,10 +1,14 @@
-function [X, exitflag, output_cost] = footstepCollocation(biped, seed_steps, goal_pos, params, safe_regions)
+function [plan, exitflag, output_cost] = footstepCollocation(biped, seed_plan, weights, goal_pos)
 
 debug = false;
 USE_SNOPT = 1;
 USE_MEX = 1;
 
-right_foot_lead = seed_steps(1).is_right_foot;
+seed_steps = seed_plan.footsteps;
+region_order = seed_plan.region_order;
+params = seed_plan.params;
+safe_regions = seed_plan.safe_regions;
+right_foot_lead = seed_steps(1).body_idx == biped.foot_bodies_idx.right;
 
 if ~isfield(params, 'nom_step_width'); params.nom_step_width = 0.26; end
 
@@ -14,7 +18,6 @@ goal_pos.left(6) = goal_pos.right(6) + angleDiff(goal_pos.right(6), goal_pos.lef
 goal_pos.right(3) = st0(3);
 goal_pos.left(3) = st0(3);
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
-dgoal = norm(goal_pos.center(1:2) - seed_steps(1).pos(1:2));
 
 function [c, ceq, dc, dceq] = constraints(x)
   if USE_MEX == 0
@@ -39,7 +42,7 @@ end
 
 function [c, dc] = objfun(x)
   [steps, steps_rel] = decodeCollocationSteps(x);
-  [c, dc] = footstepCostFun(steps, steps_rel, goal_pos, right_foot_lead, dgoal, [params.nom_forward_step; params.nom_step_width]);
+  [c, dc] = footstepCostFun(steps, steps_rel, weights, goal_pos, right_foot_lead, [params.nom_forward_step; params.nom_step_width]);
 end
 
 function [F,G] = collocation_userfun(x)
@@ -50,40 +53,17 @@ function [F,G] = collocation_userfun(x)
   G = reshape(G(iGndx), [], 1);
 end
 
-function stop = plotfun(x)
-  stop = stepCollocationPlotfun(x, r_ndx, l_ndx);
-end
-
-params.forward_step = params.max_forward_step;
-[A_reach, b_reach] = biped.getFootstepDiamondCons(true, params);
-if length(safe_regions) > 1
-  params.max_num_steps = min(params.max_num_steps, length(safe_regions));
-end
-min_steps = max([params.min_num_steps+1,2]);
-max_steps = params.max_num_steps + 1;
-
 steps = [seed_steps(2:end).pos];
 nsteps = size(steps,2);
 
-if ~right_foot_lead
-  r_ndx = 1:2:nsteps;
-  l_ndx = 2:2:nsteps;
-else
-  r_ndx = 2:2:nsteps;
-  l_ndx = 1:2:nsteps;
-end
-
 nv = 12 * nsteps;
 
-[A, b, Aeq, beq] = constructCollocationAb(A_reach, b_reach, nsteps, right_foot_lead, []);
+[A, b, Aeq, beq] = constructCollocationAb(biped, seed_plan, params);
 
 lb = -inf(12,nsteps);
 ub = inf(size(lb));
 lb([4,5,10,11],:) = 0;
 ub([4,5,10,11],:) = 0;
-max_total_z_excursion = 10;
-lb(3,:) = st0(3) - max_total_z_excursion;
-ub(3,:) = st0(3) + max_total_z_excursion;
 % Require that the first step be at the current stance foot pose
 lb(1:6,1) = st0;
 ub(1:6,1) = st0;
@@ -96,12 +76,12 @@ x0 = encodeCollocationSteps(steps);
 
 for j = 2:nsteps
   x_ndx = (j-1)*12+(1:6);
-  if length(safe_regions) == 1
+  if length(region_order) == 1
     region_ndx = 1;
   else
     region_ndx = j-1;
   end
-  region = safe_regions(region_ndx);
+  region = safe_regions(region_order(region_ndx));
   num_region_cons = length(region.b);
   expanded_A = zeros(num_region_cons, nv);
   expanded_A(1:length(region.b),x_ndx([1,2,6])) = region.A;
@@ -146,12 +126,6 @@ if USE_SNOPT
     iG(x1_ndx(6),con_ndx) = [1,1];
     iG(dx_ndx(1:2),con_ndx) = [1 1; 1 1];
   end
-
-%   for j = 2:nsteps
-%     con_ndx = j + n_obj + n_proj_cons;
-%     x1_ndx = (j-1)*12+(1:6);
-%     iG(x1_ndx(1:3), con_ndx) = 1;
-%   end
 
   iGndx = find(iG);
   [jGvar, iGfun] = find(iG);
@@ -209,11 +183,10 @@ if exitflag < 10
 end
 % nsteps
 
-X = seed_steps;
-valuecheck(output_steps([1,2,6],1), X(2).pos([1,2,6]),1e-8);
+plan = seed_plan;
+valuecheck(output_steps([1,2,6],1), plan.footsteps(2).pos([1,2,6]),1e-8);
 for j = 2:nsteps
-  X(j+1).pos = output_steps(:,j);
-  X(j+1).is_right_foot = logical(mod(right_foot_lead+j,2));
+  plan.footsteps(j+1).pos = output_steps(:,j);
 end
 
 end

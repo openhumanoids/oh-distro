@@ -15,14 +15,14 @@ typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
 sizecheck(q0,[biped.getNumDOF,1]);
 
-is_right_foot = footsteps(1).is_right_foot;
+is_right_foot = footsteps(1).body_idx == biped.foot_bodies_idx.right;
 
 com0 = getCOM(biped,q0);
 foot0 = feetPosition(biped, q0);
 foot0.right(6) = foot0.left(6) + angleDiff(foot0.left(6), foot0.right(6));
 
-steps.right = footsteps([footsteps.is_right_foot]);
-steps.left = footsteps(~[footsteps.is_right_foot]);
+steps.right = footsteps([footsteps.body_idx] == biped.foot_bodies_idx.right);
+steps.left = footsteps([footsteps.body_idx] == biped.foot_bodies_idx.left);
 steps.right(1).pos = foot0.right;
 steps.left(1).pos = foot0.left;
 
@@ -112,7 +112,7 @@ while 1
 
   if isempty(zmp_pts)
     instep_shift = [0.0;0.025;0];
-    zmp1 = shift_step_inward(st, instep_shift);
+    zmp1 = shift_step_inward(biped, st, instep_shift);
 %     zmp2 = shift_step_inward(sw1, instep_shift);
 %     if ~st.is_right_foot
 %       instep_shift = [1;-1;1].*instep_shift;
@@ -194,8 +194,8 @@ end
 
 end
 
-function pos = shift_step_inward(step, instep_shift)
-  if ~step.is_right_foot
+function pos = shift_step_inward(biped, step, instep_shift)
+  if step.body_idx == biped.foot_bodies_idx.left
     instep_shift = [1;-1;1].*instep_shift;
   end
   R = rpy2rotmat(step.pos.center(4:6));
