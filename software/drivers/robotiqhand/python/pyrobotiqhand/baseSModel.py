@@ -345,7 +345,6 @@ class robotiqBaseSModel(object):
         # commands are new
         # each sendCommand will send multiple times to try to overcome dropouts
         try:
-            print self.message1
             self.client.sendCommand(self.message1)
             self.client.sendCommand(self.message2)
         except AttributeError:
