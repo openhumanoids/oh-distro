@@ -21,16 +21,16 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     end
 
     % function [pos, width] = feetPosition(obj, q0)
-    function foot_orig = feetPosition(obj, q0)
+    function foot_center = feetPosition(obj, q0)
       typecheck(q0,'numeric');
       sizecheck(q0,[obj.getNumDOF,1]);
 
       kinsol = doKinematics(obj,q0);
 
-      rfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx.right,[0;0;0],true);
-      lfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx.left,[0;0;0],true);
+      rfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx.right,obj.foot_contact_offsets.right.center,true);
+      lfoot0 = forwardKin(obj,kinsol,obj.foot_bodies_idx.left,obj.foot_contact_offsets.left.center,true);
 
-      foot_orig = struct('right', rfoot0, 'left', lfoot0);
+      foot_center = struct('right', rfoot0, 'left', lfoot0);
     end
   end
 

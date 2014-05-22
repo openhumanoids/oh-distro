@@ -1,7 +1,10 @@
-function terrain_pts = sampleSwingTerrain(biped, last_pos, next_pos, contact_width, options)
+function terrain_pts = sampleSwingTerrain(biped, step1, step2, contact_width, options)
 
 if nargin < 5; options = struct(); end
 if ~isfield(options, 'nrho'); options.nrho = 10; end
+
+last_pos = step1.pos.inFrame(step1.frames.center);
+next_pos = step2.pos.inFrame(step2.frames.center);
 
 step_dist_xy = sqrt(sum((next_pos(1:2) - last_pos(1:2)).^2));
 if ~isfield(options, 'nlambda'); options.nlambda = max([ceil(step_dist_xy / 0.02),3]); end

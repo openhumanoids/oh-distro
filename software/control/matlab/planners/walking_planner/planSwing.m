@@ -1,21 +1,19 @@
-function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, last_pos, next_pos, options)
-% Compute a collision-free swing trajectory for a single foot. Uses the biped's RigidBodyTerrain to compute a slice of terrain between the two poses.
+function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, step1, step2)
+% Compute a collision-free swing trajectory for a single foot.
 
-options = struct(options);
-if ~isfield(options, 'step_speed')
-  options.step_speed = 0.5; % m/s
-end
-if ~isfield(options, 'step_height')
-  options.step_height = biped.nom_step_clearance; %m
-end
+assert(step1.body_idx == step2.body_idx, 'planSwing expects to plan a swing trajcectory between two positions of the /same/ foot body')
 
-if ~isfield(options, 'hold_frac'); options.hold_frac = 0.4; end
-if ~isfield(options', 'drake_min_hold_time'); options.drake_min_hold_time = 2; end
+params = struct(step2.walking_params);
+last_pos = step1.pos.inFrame(step1.frames.center).double();
+next_pos = step2.pos.inFrame(step2.frames.center).double();
 
-if options.step_speed < 0
+if ~isfield(params, 'hold_frac'); params.hold_frac = 0.4; end
+if ~isfield(params', 'drake_min_hold_time'); params.drake_min_hold_time = 2; end
+
+if params.step_speed < 0
   % negative step speed is an indicator to take a fast, fixed-duration step (e.g. for recovery)
-  fixed_duration = -options.step_speed;
-  options.step_speed = 1;
+  fixed_duration = -params.step_speed;
+  params.step_speed = 1;
 else
   fixed_duration = 0;
 end
@@ -37,15 +35,12 @@ end
 
 next_pos(4:6) = last_pos(4:6) + angleDiff(last_pos(4:6), next_pos(4:6));
 apex_pos = interp1([0, 1], [last_pos, next_pos]', apex_fracs)';
-apex_pos(3,:) = last_pos(3) + options.step_height + max([next_pos(3) - last_pos(3), 0]);
+apex_pos(3,:) = last_pos(3) + params.step_height + max([next_pos(3) - last_pos(3), 0]);
 
 apex_pos_l = [apex_fracs * step_dist_xy; apex_pos(3,:)];
 
 if (step_dist_xy > 0.01)
-  [contact_length, contact_width, contact_height] = contactVolume(biped, last_pos, next_pos, struct('nom_z_clearance', options.step_height, 'planar_clearance', 0.05));
-
-  %% Grab the max height of the terrain across the width of the foot from last_pos to next_pos
-  terrain_pts = sampleSwingTerrain(biped, last_pos, next_pos, contact_width, struct('nrho', 10, 'nlambda', max([ceil(step_dist_xy / 0.02),3])));
+  terrain_pts = step2.terrain_pts;
   if any(terrain_pts(2,:) > (max([last_pos(3), next_pos(3)]) + ignore_height))
     % If we're getting extremely high terrain heights, then assume it's bad lidar data
     terrain_pts(2,:) = max([last_pos(3), next_pos(3)]);
@@ -54,7 +49,7 @@ if (step_dist_xy > 0.01)
   %% Expand terrain convex hull by the size of the foot
   expanded_terrain_pts = [[0;last_pos(3)], apex_pos_l, [step_dist_xy; next_pos(3) + pre_contact_height]];
   for j = 1:length(terrain_pts(1,:))
-    if terrain_pts(2, j) > (j / length(terrain_pts(1,:))) * (next_pos(3) - last_pos(3)) + last_pos(3) + (options.step_height / 2)
+    if terrain_pts(2, j) > (j / length(terrain_pts(1,:))) * (next_pos(3) - last_pos(3)) + last_pos(3) + (params.step_height / 2)
       expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [-contact_length; contact_height];
       expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [contact_length; contact_height];
     end
@@ -81,7 +76,7 @@ traj_pts_xyz = [last_pos(1) + (next_pos(1) - last_pos(1)) * traj_pts(1,:) / step
 %% Compute time required for swing from cartesian distance of poses as well as yaw distance
 d_dist = sqrt(sum(diff(traj_pts_xyz, 1, 2).^2, 1));
 total_dist_traveled = sum(d_dist);
-traj_dts = max([d_dist / options.step_speed;
+traj_dts = max([d_dist / params.step_speed;
                 (d_dist / total_dist_traveled) .* (abs(angleDiff(next_pos(6), last_pos(6))) / foot_yaw_rate)],[],1);
 traj_ts = [0, cumsum(traj_dts)] ;
 
@@ -91,8 +86,8 @@ if fixed_duration
   traj_ts = traj_ts * ((fixed_duration - 2*hold_time) / traj_ts(end));
   traj_ts = [0, traj_ts+0.5*hold_time, traj_ts(end) + hold_time];
 else
-  hold_time = traj_ts(end) * options.hold_frac;
-  hold_time = max([hold_time, options.drake_min_hold_time]);
+  hold_time = traj_ts(end) * params.hold_frac;
+  hold_time = max([hold_time, params.drake_min_hold_time]);
   traj_ts = [0, traj_ts + 0.5 * hold_time, traj_ts(end) + hold_time]; % add time for weight shift
 end
 

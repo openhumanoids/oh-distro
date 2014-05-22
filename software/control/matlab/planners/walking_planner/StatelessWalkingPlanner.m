@@ -32,15 +32,17 @@ classdef StatelessWalkingPlanner
       r = r.setInitialState(xstar); % TODO: do we need this? -robin
       qstar = xstar(1:nq);
 
-      footstep_plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan);
+      footstep_plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, r);
       footsteps = footstep_plan.footsteps;
 
       % Align the first two steps to the current feet poses
-      feet_pos = feetPosition(r, q0);
+      feet_centers = feetPosition(r, q0);
       if footsteps(1).body_idx == r.foot_bodies_idx.right
-        footsteps(1).pos = feet_pos.right; footsteps(2).pos = feet_pos.left;
+        footsteps(1).pos = Point(footsteps(1).frames.center, feet_centers.right);
+        footsteps(2).pos = Point(footsteps(2).frames.center, feet_centers.left);
       else
-        footsteps(1).pos = feet_pos.left; footsteps(2).pos = feet_pos.right;
+        footsteps(1).pos = Point(footsteps(1).frames.center, feet_centers.left);
+        footsteps(2).pos = Point(footsteps(2).frames.center, feet_centers.right);
       end
 
       % Slow down the first and last steps, if necessary

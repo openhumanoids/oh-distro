@@ -10,7 +10,7 @@ classdef KinematicTerrainMap < RigidBodyTerrain
         always_level = false;
       end
       feet_position = biped.feetPosition(q);
-      r_center = biped.footOrig2Contact(feet_position.right, 'center', true);
+      r_center = feet_position.right;
       if always_level
         obj.normal = [0;0;1];
       else

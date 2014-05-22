@@ -35,6 +35,18 @@ classdef FootstepPlan
       plan.region_order = obj.region_order(idx);
     end
 
+    function steps = step_matrix(obj, frame_name)
+      % Return the footstep plan poses as a [6 x nsteps] matrix
+      if nargin < 2
+        frame_name = 'center';
+      end
+      steps = zeros(6, length(obj.footsteps));
+      for j = 1:length(obj.footsteps)
+        steps(:,j) = obj.footsteps(j).pos.inFrame(obj.footsteps(j).frames.(frame_name)).double();
+      end
+    end
+
+
     function varargout = sanity_check(obj)
       ok = true;
       body_idxs = [obj.footsteps.body_idx];
@@ -49,31 +61,15 @@ classdef FootstepPlan
   end
 
   methods(Static=true)
-    function plan = from_collocation_results(X, params, safe_regions, region_order)
-      footsteps = Footstep.empty();
-      for j = 1:length(X)
-        pos = X(j).pos;
-        id = j;
-        body_idx = X(j).body_idx;
-        is_in_contact = true;
-        pos_fixed = zeros(6,1);
-        terrain_pts = [];
-        infeasibility = nan;
-        walking_params = [];
-        footsteps(j) = Footstep(pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
-      end
-      plan = FootstepPlan(footsteps, params, safe_regions, region_order);
-    end
-
-    function plan = from_footstep_plan_t(msg)
+    function plan = from_footstep_plan_t(msg, biped)
       footsteps = Footstep.empty();
       for j = 1:msg.num_steps
-        footsteps(j) = Footstep.from_footstep_t(msg.footsteps(j));
+        footsteps(j) = Footstep.from_footstep_t(msg.footsteps(j), biped);
       end
       plan = FootstepPlan(footsteps, msg.params, [], []);
     end
 
-    function plan = blank_plan(nsteps, ordered_body_idx, params, safe_regions)
+    function plan = blank_plan(biped, nsteps, ordered_body_idx, params, safe_regions)
       footsteps = Footstep.empty();
       for j = 1:nsteps
         pos = nan(6,1);
@@ -84,7 +80,7 @@ classdef FootstepPlan
         terrain_pts = [];
         infeasibility = nan;
         walking_params = [];
-        footsteps(j) = Footstep(pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
+        footsteps(j) = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
       end
       region_order = nan(1, nsteps);
       plan = FootstepPlan(footsteps, params, safe_regions, region_order);

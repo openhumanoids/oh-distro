@@ -26,14 +26,15 @@ nvar = nx + ns + nt;
 x_ndx = reshape(1:nx, 4, nsteps);
 s_ndx = reshape(nx + (1:ns), nr, ns / nr);
 t_ndx = reshape(nx + ns + (1:nt), 1, nsteps);
-start_pos = seed_plan.footsteps(2).pos;
+start_pos = seed_plan.footsteps(2).pos.inFrame(seed_plan.footsteps(2).frames.center);
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 
 x0 = nan(1, nvar);
 R = cell(nsteps, 1);
 for j = 1:nsteps
-  if ~any(isnan(seed_plan.footsteps(j).pos))
-    x0(x_ndx(:,j)) = seed_plan.footsteps(j).pos([1,2,3,6]);
+  if ~any(isnan(seed_plan.footsteps(j).pos.double()))
+    p0 = seed_plan.footsteps(j).pos.inFrame(seed_plan.footsteps(j).frames.center);
+    x0(x_ndx(:,j)) = p0([1,2,3,6]);
     if j > 2
       R{j} = [rotmat(-seed_plan.footsteps(j-1).pos(6)), zeros(2,2);
            zeros(2,2), eye(2)];
@@ -175,10 +176,12 @@ assert(offset == size(Ar, 1));
 A = [A; Ar];
 b = [b; br];
 
-seed_poses = [seed_plan.footsteps.pos];
-lb(x_ndx(:,1:2)) = seed_poses([1,2,3,6],1:2);
+step1 = seed_plan.footsteps(1).pos.inFrame(seed_plan.footsteps(1).frames.center);
+step2 = seed_plan.footsteps(2).pos.inFrame(seed_plan.footsteps(2).frames.center);
+lb(x_ndx(:,1)) = step1([1,2,3,6]);
+lb(x_ndx(:,2)) = step2([1,2,3,6]);
+ub(x_ndx(:,1:2)) = lb(x_ndx(:,1:2));
 lb(x_ndx(4,:)) = x0(x_ndx(4,:)) - 0.05;
-ub(x_ndx(:,1:2)) = seed_poses([1,2,3,6],1:2);
 ub(x_ndx(4,:)) = x0(x_ndx(4,:)) + 0.05;
 lb(s_ndx(:,1:2)) = [1, 1; zeros(nr-1, 2)];
 ub(s_ndx(:,1:2)) = lb(s_ndx(:,1:2));
@@ -186,13 +189,6 @@ ub(t_ndx(1:2)) = 0;
 lb(t_ndx(1:2)) = 0;
 ub(t_ndx(end)) = 1;
 lb(t_ndx(end)) = 1;
-
-% if seed_plan.footsteps(end).body_idx == Footstep.atlas_foot_bodies_idx.right
-%   lb(x_ndx(1:2,end)) = goal_pos.right(1:2);
-% else
-%   lb(x_ndx(1:2,end)) = goal_pos.left(1:2);
-% end
-% ub(x_ndx(1:2,end)) = lb(x_ndx(1:2,end));
 
 clear model params
 model.A = sparse([A; Aeq]);
@@ -221,7 +217,7 @@ assert(length(region_order) == size(region_assignments, 2));
 
 plan = seed_plan;
 for j = 1:nsteps
-  plan.footsteps(j).pos = steps(:,j);
+  plan.footsteps(j).pos = Point(plan.footsteps(j).frames.center, steps(:,j));
 end
 plan.region_order = region_order;
 
