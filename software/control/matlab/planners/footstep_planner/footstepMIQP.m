@@ -208,6 +208,11 @@ params.mipgap = 3e-4;
 params.outputflag = 1;
 
 result = gurobi(model, params);
+if ~strcmp(result.status, 'OPTIMAL')
+  warning('DRC:footstepMIQP:InfeasibleProblem', 'The footstep planning problem is infeasible. This often occurs when the robot cannot reach from its current pose into any of the safe regions');
+  plan = seed_plan.slice(1:2);
+  return
+end
 xstar = result.x;
 steps = xstar(x_ndx);
 steps = [steps(1:3,:); zeros(2, size(steps, 2)); steps(4,:)];
