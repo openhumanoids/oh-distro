@@ -1,12 +1,12 @@
 On Robot and Extra machines:
 ROBOT:
-drc-network-shaper -t manipulation -r robot -c drc_robot_02.cfg -l -p /media/logs/raw/shaper &> /media/logs/raw/shaper/shaper_printf &
+drc-network-shaper -r robot -c drc_robot_02.cfg -l -p /media/logs/raw/shaper &> /media/logs/raw/shaper/shaper_printf &
 bot-procman-deputy -n robot &> /media/logs/raw/shaper/deputy_printf &
 [[[[[ LOG OUT ]]]]
 
 BASE:
 bot-procman-deputy -n base
-drc-network-shaper -t manipulation -r base -c drc_robot_02.cfg -l -p /media/logs/raw/shaper
+drc-network-shaper -r base -c drc_robot_02.cfg -l -p /media/logs/raw/shaper
 bot-procman-sheriff ~/drc/software/config/drc_robot.pmd
 
 
