@@ -56,6 +56,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pm= myGetProperty(pobj,"smooth_contacts");
     pdata->smooth_contacts = mxGetLogicals(pm); 
     
+    pm= myGetProperty(pobj,"n_body_accel_inputs");
+    pdata->n_body_accel_inputs = mxGetScalar(pm); 
+
+    pm = myGetProperty(pobj,"body_accel_input_weights");
+    pdata->body_accel_input_weights.resize(pdata->n_body_accel_inputs);
+    memcpy(pdata->body_accel_input_weights.data(),mxGetPr(pm),sizeof(double)*pdata->n_body_accel_inputs);
+
+    pdata->n_body_accel_constraints = 0;
+    for (int i=0; i<pdata->n_body_accel_inputs; i++) {
+      if (pdata->body_accel_input_weights(i) < 0)
+        pdata->n_body_accel_constraints++;
+    }
+
     // get robot mex model ptr
     if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
       mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the third argument should be the robot mex ptr");
@@ -70,29 +83,27 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->w_qdd.resize(nq);
     memcpy(pdata->w_qdd.data(),mxGetPr(pm),sizeof(double)*nq);
 
-    pdata->num_spatial_accel_constraints = mxGetScalar(prhs[4]);
-
     pdata->umin.resize(nu);
     pdata->umax.resize(nu);
-    memcpy(pdata->umin.data(),mxGetPr(prhs[5]),sizeof(double)*nu);
-    memcpy(pdata->umax.data(),mxGetPr(prhs[6]),sizeof(double)*nu);
+    memcpy(pdata->umin.data(),mxGetPr(prhs[4]),sizeof(double)*nu);
+    memcpy(pdata->umax.data(),mxGetPr(prhs[5]),sizeof(double)*nu);
 
     pdata->B_act.resize(nu,nu);
     pdata->B_act = pdata->B.bottomRows(nu);
 
      // get the map ptr back from matlab
-     if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
+     if (!mxIsNumeric(prhs[6]) || mxGetNumberOfElements(prhs[6])!=1)
      mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the seventh argument should be the map ptr");
-     memcpy(&pdata->map_ptr,mxGetPr(prhs[7]),sizeof(pdata->map_ptr));
+     memcpy(&pdata->map_ptr,mxGetPr(prhs[6]),sizeof(pdata->map_ptr));
     
 //    pdata->map_ptr = NULL;
     if (!pdata->map_ptr)
       mexWarnMsgTxt("Map ptr is NULL.  Assuming flat terrain at z=0");
     
     // get the multi-robot ptr back from matlab
-    if (!mxIsNumeric(prhs[8]) || mxGetNumberOfElements(prhs[8])!=1)
+    if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
     mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the eigth argument should be the multi_robot ptr");
-    memcpy(&pdata->multi_robot,mxGetPr(prhs[8]),sizeof(pdata->multi_robot));
+    memcpy(&pdata->multi_robot,mxGetPr(prhs[7]),sizeof(pdata->multi_robot));
 
     // create gurobi environment
     error = GRBloadenv(&(pdata->env),NULL);
@@ -168,12 +179,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double *qd = &q[nq];
 //  double *q_multi = mxGetPr(prhs[narg++]);
 
-  vector<VectorXd> spatial_accel_constraints;
-  for (int i=0; i<pdata->num_spatial_accel_constraints; i++) {
+  vector<VectorXd> body_accel_inputs;
+  for (int i=0; i<pdata->n_body_accel_inputs; i++) {
     assert(mxGetM(prhs[narg])==7); assert(mxGetN(prhs[narg])==1);
     VectorXd v = VectorXd::Zero(7,1);
     memcpy(v.data(),mxGetPr(prhs[narg++]),sizeof(double)*7);
-    spatial_accel_constraints.push_back(v);
+    body_accel_inputs.push_back(v);
   }
   
   int num_condof;
@@ -348,17 +359,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       pdata->fqp -= hdot_des.transpose()*pdata->W_hdot*pdata->Ag;
       pdata->fqp -= (pdata->w_qdd.array()*qddot_des.array()).matrix().transpose();
   
-      // obj(1:nq) = fqp
       f.head(nq) = pdata->fqp.transpose();
      } else {
-      // obj(1:nq) = -qddot_des
       f.head(nq) = -qddot_des;
     } 
   }
   f.tail(nf+neps) = VectorXd::Zero(nf+neps);
   
-
-  int neq = 6+neps+6*pdata->num_spatial_accel_constraints+num_condof;
+  int neq = 6+neps+6*pdata->n_body_accel_constraints+num_condof;
   MatrixXd Aeq = MatrixXd::Zero(neq,nparams);
   VectorXd beq = VectorXd::Zero(neq);
   
@@ -387,19 +395,21 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int equality_ind = 6+neps;
   MatrixXd Jb(6,nq);
   MatrixXd Jbdot(6,nq);
-  for (int i=0; i<pdata->num_spatial_accel_constraints; i++) {
-    
-    body_vdot = spatial_accel_constraints[i].bottomRows(6);
-    body_idx = (int)(spatial_accel_constraints[i][0])-1;
+  for (int i=0; i<pdata->n_body_accel_inputs; i++) {
+    if (pdata->body_accel_input_weights(i) < 0) {
+      // negative implies constraint
+      body_vdot = body_accel_inputs[i].bottomRows(6);
+      body_idx = (int)(body_accel_inputs[i][0])-1;
 
-    if (!inSupport(active_supports,body_idx)) {
-      pdata->r->forwardJac(body_idx,orig,1,Jb);
-      pdata->r->forwardJacDot(body_idx,orig,1,Jbdot);
+      if (!inSupport(active_supports,body_idx)) {
+        pdata->r->forwardJac(body_idx,orig,1,Jb);
+        pdata->r->forwardJacDot(body_idx,orig,1,Jbdot);
 
-      for (int j=0; j<6; j++) {
-        if (!std::isnan(body_vdot[j])) {
-          Aeq.block(equality_ind,0,1,nq) = Jb.row(j);
-          beq[equality_ind++] = -Jbdot.row(j)*qdvec + body_vdot[j];
+        for (int j=0; j<6; j++) {
+          if (!std::isnan(body_vdot[j])) {
+            Aeq.block(equality_ind,0,1,nq) = Jb.row(j);
+            beq[equality_ind++] = -Jbdot.row(j)*qdvec + body_vdot[j];
+          }
         }
       }
     }
@@ -460,6 +470,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->Hqp += w.asDiagonal();
   } else {
     pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
+  }
+
+  // add in body spatial acceleration cost terms
+  int w_i;
+  for (int i=0; i<pdata->n_body_accel_inputs; i++) {
+    w_i=pdata->body_accel_input_weights(i);
+    if (w_i > 0) {
+      body_vdot = body_accel_inputs[i].bottomRows(6);
+      body_idx = (int)(body_accel_inputs[i][0])-1;
+      
+      if (!inSupport(active_supports,body_idx)) {
+        pdata->r->forwardJac(body_idx,orig,1,Jb);
+        pdata->r->forwardJacDot(body_idx,orig,1,Jbdot);
+
+        for (int j=0; j<6; j++) {
+          if (!std::isnan(body_vdot[j])) {
+            pdata->Hqp += w_i*(Jb.row(j)).transpose()*Jb.row(j);
+            f.head(nq) += w_i*(qdvec.transpose()*Jbdot.row(j).transpose() - body_vdot[j])*Jb.row(j).transpose();
+          }
+        }
+      }
+    }
   }
 
   Qnfdiag = MatrixXd::Constant(nf,1,pdata->w_grf+REG);
