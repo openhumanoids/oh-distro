@@ -72,9 +72,9 @@ weights = struct('relative', [10;50;10;0;0;.5],...
 tic
 % profile on
 nsteps = 30;
-seed_plan = FootstepPlan.blank_plan(nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
-seed_plan.footsteps(1).pos = foot_orig.right;
-seed_plan.footsteps(2).pos = foot_orig.left;
+seed_plan = FootstepPlan.blank_plan(r, nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
+seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
+seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);
 plan = footstepMIQP(r, seed_plan, weights, goal_pos, 3, 30);
 % profile viewer
 toc
@@ -84,7 +84,7 @@ clf
 nsteps = length(plan.footsteps);
 r_ndx = 2:2:nsteps;
 l_ndx = 1:2:nsteps;
-steps = [plan.footsteps.pos];
+steps = plan.step_matrix();
 plot(steps(1,r_ndx), steps(2, r_ndx), 'bo')
 hold on
 plot(steps(1,l_ndx), steps(2,l_ndx), 'ro')

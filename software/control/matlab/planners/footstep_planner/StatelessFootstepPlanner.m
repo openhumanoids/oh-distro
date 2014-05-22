@@ -64,11 +64,11 @@ classdef StatelessFootstepPlanner
         goal_pos.left = Biped.stepCenter2FootCenter(pos, false, request.params.nom_step_width);
       else
         for j = 1:(min([2, request.num_goal_steps]))
-          pos = decodePosition3d(request.goal_steps(j).pos);
+          goal_step = Footstep.from_footstep_t(request.goal_steps(j), biped);
           if request.goal_steps(j).is_right_foot
-            goal_pos.right = biped.footOrig2Contact(pos, 'center', true);
+            goal_pos.right = goal_step.pos.inFrame(goal_step.frames.center).double();
           else
-            goal_pos.left = biped.footOrig2Contact(pos, 'center', false);
+            goal_pos.left = goal_step.pos.inFrame(goal_step.frames.center).double();
           end
         end
         if ~isfield(goal_pos, 'right')
