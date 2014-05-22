@@ -126,10 +126,12 @@ class commandLcmToModbusConverter(object):
             self.rSPA = self.speed
             self.rSPB = self.speed
             self.rSPC = self.speed
+            self.rSPS = self.speed
 
             self.rFRA = self.force
             self.rFRB = self.force
             self.rFRC = self.force
+            self.rFRS = self.force
 
         if lcmCommand.isc == 1:
             self.rPRS = lcmCommand.positionS
