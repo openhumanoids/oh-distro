@@ -126,10 +126,12 @@ class commandLcmToModbusConverter(object):
             self.rSPA = self.speed
             self.rSPB = self.speed
             self.rSPC = self.speed
+            self.rSPS = self.speed
 
             self.rFRA = self.force
             self.rFRB = self.force
             self.rFRC = self.force
+            self.rFRS = self.force
 
         if lcmCommand.isc == 1:
             self.rPRS = lcmCommand.positionS
@@ -345,7 +347,6 @@ class robotiqBaseSModel(object):
         # commands are new
         # each sendCommand will send multiple times to try to overcome dropouts
         try:
-            print self.message1
             self.client.sendCommand(self.message1)
             self.client.sendCommand(self.message2)
         except AttributeError:
