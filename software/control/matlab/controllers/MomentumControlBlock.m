@@ -668,7 +668,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
           debug_data.hdot_des = hdot_des;
           debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
           debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
-          debug_data.body_acc_des = [varargin{body_accel_input_start}; varargin{body_accel_input_start+1}; varargin{body_accel_input_start+2};];% varargin{body_accel_input_start+3}];
+          debug_data.body_acc_des = [];%[varargin{body_accel_input_start}; varargin{body_accel_input_start+1}; varargin{body_accel_input_start+2}; varargin{body_accel_input_start+3}];
           
           np=length(alpha);
           bounds = bin_mex((end-2*np+1):end);

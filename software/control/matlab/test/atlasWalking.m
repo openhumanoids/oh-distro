@@ -2,7 +2,7 @@ function atlasWalking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-joint_str = {'leg','back_bkz'};% <---- cell array of (sub)strings
+joint_str = {'leg','back'};% <---- cell array of (sub)strings
 
 % load robot model
 r = Atlas();
@@ -134,7 +134,7 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back_bkx');findJointIndices(r,'back_bky')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 %   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
 
 % traj = PPTrajectory(spline(ts,walking_plan.xtraj));
@@ -143,27 +143,33 @@ ctrl_data = SharedDataHandle(struct(...
 % playback(v,traj,struct('slider',true));
 
 
-use_simple_pd = true;
+use_simple_pd = false;
 constrain_torso = true;
 
 if use_simple_pd
-  options.Kp = 50*ones(6,1);
-  options.Kd = 3*ones(6,1);
+  
+  options.Kp = 30*ones(6,1);
+  options.Kd = 8*ones(6,1);
   lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
   rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
-  options.Kp = 50*[0; 0; 1; 1; 1; 1];
-  options.Kd = 3*[0; 0; 1; 1; 1; 1];
+  
+  options.Kp = 30*[0; 0; 1; 1; 1; 0];
+  options.Kd = 8*[0; 0; 1; 1; 1; 0];
   pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data,options);
-%   options.Kp = 50*[0; 0; 0; 1; 0; 1];
-%   options.Kd = 3*[0; 0; 0; 1; 0; 1];
-%   torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
-	options.w_qdd = 0.0001*ones(nq,1);
-  options.W_hdot = diag([1;1;1;100;100;100]);
+  
+  options.Kp = 40*[0; 0; 0; 1; 1; 1];
+  options.Kd = 3*[0; 0; 0; 1; 1; 1];
+  torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
+	
+  options.w_qdd = 0.0001*ones(nq,1);
+  options.W_hdot = diag([1;1;1;10000;10000;10000]);
   options.w_grf = 0.01;
   options.Kp = 0; % com-z pd gains
   options.Kd = 0; % com-z pd gains
+  options.body_accel_input_weights = [1 1 1 0];
 else
   options.w_qdd = 10*ones(nq,1);
+  options.w_qdd(findJointIndices(r,'leg')) = 0.1;
   options.W_hdot = diag([10;10;10;10;10;10]);
   options.w_grf = 0.0075;
   options.Kp = 0; % com-z pd gains
@@ -174,7 +180,7 @@ end
 options.slack_limit = 100;
 options.w_slack = 0.005;
 options.input_foot_contacts = true;
-options.debug = true;
+options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.0075;
 options.output_qdd = true;
@@ -183,8 +189,7 @@ options.smooth_contacts = false;
 
 if use_simple_pd
   if constrain_torso
-%     motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
-    motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,pelvis_motion.getOutputFrame};
+    motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
   else
     motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
   end
@@ -204,8 +209,8 @@ if use_simple_pd
   if constrain_torso
     ins(6).system = 2;
     ins(6).input = 6;
-%     ins(7).system = 2;
-%     ins(7).input = 7;
+    ins(7).system = 2;
+    ins(7).input = 7;
   end
   outs(1).system = 2;
   outs(1).output = 1;
@@ -226,8 +231,8 @@ if use_simple_pd
   if constrain_torso
     ins(6).system = 2;
     ins(6).input = 6;
-%     ins(7).system = 2;
-%     ins(7).input = 7;
+    ins(7).system = 2;
+    ins(7).input = 7;
   end
   qp = mimoCascade(rfoot_motion,qp,[],ins,outs);
   if constrain_torso
@@ -244,25 +249,25 @@ if use_simple_pd
     ins(5).input = 4;
     ins(6).system = 2;
     ins(6).input = 5;
-%     ins(7).system = 2;
-%     ins(7).input = 7;
+    ins(7).system = 2;
+    ins(7).input = 7;
     qp = mimoCascade(pelvis_motion,qp,[],ins,outs);
     clear ins;
-%     ins(1).system = 1;
-%     ins(1).input = 1;
-%     ins(2).system = 2;
-%     ins(2).input = 1;
-%     ins(3).system = 2;
-%     ins(3).input = 2;
-%     ins(4).system = 2;
-%     ins(4).input = 3;
-%     ins(5).system = 2;
-%     ins(5).input = 4;
-%     ins(6).system = 2;
-%     ins(6).input = 5;
-%     ins(7).system = 2;
-%     ins(7).input = 6;
-%     qp = mimoCascade(torso_motion,qp,[],ins,outs);
+    ins(1).system = 1;
+    ins(1).input = 1;
+    ins(2).system = 2;
+    ins(2).input = 1;
+    ins(3).system = 2;
+    ins(3).input = 2;
+    ins(4).system = 2;
+    ins(4).input = 3;
+    ins(5).system = 2;
+    ins(5).input = 4;
+    ins(6).system = 2;
+    ins(6).input = 5;
+    ins(7).system = 2;
+    ins(7).input = 6;
+    qp = mimoCascade(torso_motion,qp,[],ins,outs);
   end
 else
   qp = MomentumControlBlock(r,{},ctrl_data,options);
@@ -273,7 +278,7 @@ fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
 options.Kp = 40.0*ones(nq,1);
-options.Kd = 12.0*ones(nq,1);
+options.Kd = 18.0*ones(nq,1);
 if use_simple_pd
   pd = SimplePDBlock(r,ctrl_data,options);
   ins(1).system = 1;
@@ -290,18 +295,16 @@ if use_simple_pd
     ins(6).system = 2;
     ins(6).input = 4;
     ins(7).system = 2;
-    ins(7).input = 6;
-%     ins(6).system = 2;
-%     ins(6).input = 4;
-%     ins(7).system = 2;
-%     ins(7).input = 5;
-%     ins(8).system = 2;
-%     ins(8).input = 7;
+    ins(7).input = 5;
+    ins(8).system = 2;
+    ins(8).input = 7;
   else
     ins(6).system = 2;
     ins(6).input = 5;
   end
 else
+  options.Kp(findJointIndices(r,'leg')) = 30.0;
+  options.Kd(findJointIndices(r,'leg')) = 8.0;
   pd = WalkingPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
@@ -378,8 +381,7 @@ while tt<T
 
     if use_simple_pd
       if constrain_torso
-%         u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; x_filt; x_filt; fc]);
-        u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; x_filt; fc]);
+        u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; x_filt; x_filt; fc]);
       else
         u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; fc]);
       end
