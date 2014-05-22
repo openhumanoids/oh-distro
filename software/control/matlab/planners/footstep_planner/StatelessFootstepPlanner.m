@@ -165,40 +165,6 @@ classdef StatelessFootstepPlanner
       end
     end
 
-    % function plan = mergeExistingSteps(biped, plan, request)
-    %   for j = 1:request.num_existing_steps
-    %     if request.existing_steps(j).id <= 2
-    %       continue
-    %     end
-    %     ndx = request.existing_steps(j).id;
-    %     if plan.footsteps(ndx).is_right_foot ~= request.existing_steps(j).is_right_foot
-    %       fprintf(1, 'Error: Right/left foot doesn''t match at ID %d', ndx);
-    %       break
-    %     end
-    %     existing_step = Footstep.from_footstep_t(request.existing_steps(j));
-    %     existing_step.pos = biped.footOrig2Contact(existing_step.pos, 'center', existing_step.is_right_foot);
-    %     if request.existing_steps(j).fixed_x
-    %       plan.footsteps(ndx).pos(1) = existing_step.pos(1);
-    %     end
-    %     if request.existing_steps(j).fixed_y
-    %       plan.footsteps(ndx).pos(2) = existing_step.pos(2);
-    %     end
-    %     if request.existing_steps(j).fixed_z
-    %       plan.footsteps(ndx).pos(3) = existing_step.pos(3);
-    %     end
-    %     if request.existing_steps(j).fixed_roll
-    %       plan.footsteps(ndx).pos(4) = existing_step.pos(4);
-    %     end
-    %     if request.existing_steps(j).fixed_pitch
-    %       plan.footsteps(ndx).pos(5) = existing_step.pos(5);
-    %     end
-    %     if request.existing_steps(j).fixed_yaw
-    %       plan.footsteps(ndx).pos(6) = existing_step.pos(6);
-    %     end
-    %     plan.footsteps(ndx).pos_fixed = existing_step.pos_fixed;
-    %   end
-    % end
-
     function plan = setStepParams(plan, request)
       for j = 1:length(plan.footsteps)
         plan.footsteps(j).id = j;
