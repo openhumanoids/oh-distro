@@ -149,12 +149,13 @@ classdef StatelessFootstepPlanner
         plan.footsteps(end) = goal_step;
       else
         for j = 1:request.num_goal_steps
-          k = nsteps - 2 + j;
-          goal_step = Footstep.from_footstep_t(request.goal_steps(j));
+          goal_step = Footstep.from_footstep_t(request.goal_steps(j), biped);
           if j == 1 && (goal_step.body_idx ~= plan.footsteps(end-1).body_idx)
             plan.footsteps(end+1) = plan.footsteps(end-1);
             plan.footsteps(end).id = plan.footsteps(end-1).id + 1;
+            nsteps = length(plan.footsteps);
           end
+          k = nsteps - 2 + j;
           if j ~= 2
             assert(goal_step.body_idx == plan.footsteps(end-1).body_idx);
           else
