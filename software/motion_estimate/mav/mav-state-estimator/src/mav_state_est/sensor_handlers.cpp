@@ -56,12 +56,9 @@ RBISUpdateInterface * InsHandler::processMessage(const mav::ins_t * msg)
   Eigen::Map<Eigen::Vector3d> accelerometer(body_accel);
 
   double body_gyro[3];
-  // was this. mfallon thinks this is incorrect as the addition of the trans seems wrong:
-  // experimentally the bias estimator estimates the body-imu translation (fixed may 2014)
-  //bot_trans_apply_vec(&ins_to_body, msg->gyro, body_gyro);
-  bot_quat_rotate_to(ins_to_body.rot_quat, msg->gyro, body_gyro);
+  bot_trans_apply_vec(&ins_to_body, msg->gyro, body_gyro);
   Eigen::Map<Eigen::Vector3d> gyro(body_gyro);
-  
+
   return new RBISIMUProcessStep(gyro, accelerometer, cov_gyro, cov_accel, cov_gyro_bias, cov_accel_bias, dt, msg->utime);
 }
 
@@ -163,10 +160,7 @@ RBISUpdateInterface * InsHandler::processMessageAtlas(const drc::atlas_raw_imu_b
   Eigen::Map<Eigen::Vector3d> accelerometer(body_accel);  
   
   double body_gyro[3];
-  // was this. mfallon thinks this is incorrect as the addition of the trans seems wrong:
-  // experimentally the bias estimator estimates the body-imu translation (fixed may 2014)
-  //bot_trans_apply_vec(&ins_to_body, sensor_gyro, body_gyro);
-  bot_quat_rotate_to(ins_to_body.rot_quat, sensor_gyro, body_gyro);
+  bot_trans_apply_vec(&ins_to_body, sensor_gyro, body_gyro);
   Eigen::Map<Eigen::Vector3d> gyro(body_gyro);
 
   // Use message timestamp for dt after initialization

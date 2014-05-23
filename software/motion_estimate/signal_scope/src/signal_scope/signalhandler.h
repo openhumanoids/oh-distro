@@ -36,7 +36,7 @@ public:
   QString channel() { return mDescription.mChannel; }
   SignalDescription* signalDescription() { return &mDescription; }
 
-  virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) = 0;
+  virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) = 0;
 
   virtual void subscribe(lcm::LCM* lcmInstance);
 
@@ -87,7 +87,7 @@ class className : public SignalHandler \
 { \
 public: \
   className(const SignalDescription* desc); \
-  virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue); \
+  virtual bool extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue); \
   static QString messageType(); \
   static QString fieldName(); \
   static QList<QList<QString> > validArrayKeys(); \

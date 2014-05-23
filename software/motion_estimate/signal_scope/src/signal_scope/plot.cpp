@@ -204,7 +204,6 @@ Plot::Plot(QWidget *parent):
   QwtPlot(parent),
   d_origin(0),
   d_grid(0),
-  d_marker(0),
   mStopped(true),
   mAxisSyncRequired(false),
   mColorMode(0),
@@ -405,13 +404,6 @@ void Plot::initBackground()
     d_origin->attach(this);
   }
 
-  if (!d_marker)
-  {
-    d_marker = new QwtPlotMarker();
-    d_marker->setLineStyle(QwtPlotMarker::VLine);
-    d_marker->setValue(0.0, 0.0);
-  }
-
   QColor backgroundColor = Qt::white;
   QColor gridColor = Qt::gray;
   if (mColorMode == 1)
@@ -426,15 +418,6 @@ void Plot::initBackground()
 
   d_grid->setPen(QPen(gridColor, 0.0, Qt::DotLine));
   d_origin->setLinePen(QPen(gridColor, 0.0, Qt::DashLine));
-  d_marker->setLinePen(QPen(gridColor, 0.0, Qt::DashLine));
-}
-
-void Plot::setMarkerEnabled(bool enabled)
-{
-  if (enabled)
-    d_marker->attach(this);
-  else
-    d_marker->detach();
 }
 
 void Plot::start()
@@ -507,23 +490,9 @@ void Plot::setYScale(double scale)
   this->replot();
 }
 
-void Plot::setAlignMode(AlignMode mode)
-{
-  if (mode == this->mAlignMode)
-    return;
-
-  this->mAlignMode = mode;
-  this->setMarkerEnabled(mode == CENTER);
-}
 
 void Plot::setEndTime(double endTime)
 {
-
-  if (this->mAlignMode == CENTER)
-  {
-    endTime += this->timeWindow()/2.0;
-  }
-
   QwtInterval xinterval = this->axisInterval(QwtPlot::xBottom);
   if (xinterval.maxValue() == endTime)
   {
@@ -532,8 +501,6 @@ void Plot::setEndTime(double endTime)
 
   xinterval = QwtInterval(endTime - xinterval.width(), endTime);
   this->setAxisScale(QwtPlot::xBottom, xinterval.minValue(), xinterval.maxValue());
-
-  d_marker->setValue((xinterval.minValue() + xinterval.maxValue())/2.0, 0.0);
 }
 
 void Plot::updateTicks()

@@ -33,10 +33,6 @@ public:
     void doOdometry(uint8_t *left_buf,float *disparity_buf, int64_t utime);
 
     void send_status_msg(std::string text);
-    
-    void send_delta_translation_msg(Eigen::Isometry3d motion_estimate,
-      Eigen::MatrixXd motion_cov, std::string channel_name);
-    
     void fovis_stats();
     
     Eigen::Isometry3d getMotionEstimate(){ 
@@ -83,11 +79,6 @@ public:
       delta_cov =  odom_.getMotionEstimateCov();
       delta_status = odom_.getMotionEstimateStatus();
     }
-
-    Eigen::Isometry3d getPose(){
-      return odom_.getPose();
-    }
-
 
 private:
     boost::shared_ptr<lcm::LCM> lcm_;

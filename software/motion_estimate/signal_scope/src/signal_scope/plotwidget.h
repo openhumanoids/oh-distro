@@ -35,7 +35,6 @@ public:
   void setBackgroundColor(QString color);
   void setPointSize(double pointSize);
   void setCurveStyle(QwtPlotCurve::CurveStyle style);
-  void setAlignMode(QString mode);
 
   void loadSettings(const QMap<QString, QVariant>& plotSettings);
   void addSignal(const QMap<QString, QVariant>& signalSettings);
@@ -46,8 +45,6 @@ public:
 
   QMap<QString, QVariant> saveSettings();
   QMap<QString, QVariant> saveSignalSettings(SignalHandler* signalHandler);
-
-  double timeWindow() const;
 
   QListWidgetItem* itemForSignal(SignalHandler* signalHandler);
   SignalHandler* signalForItem(QListWidgetItem* item);

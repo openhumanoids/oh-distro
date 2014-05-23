@@ -26,7 +26,6 @@ const char* control_mode_strings[] = {
   "TOE_OFF",
 };
 
-
 leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   BotParam * botparam_, boost::shared_ptr<ModelClient> &model_):
   lcm_publish_(lcm_publish_),  botparam_(botparam_), model_(model_),
@@ -42,25 +41,8 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   l_standing_link_ = "l_" + standing_link;
   r_standing_link_ = "r_" + standing_link;
   
-  char* filter_joint_positions_str = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.filter_joint_positions");
-  std::cout << "Leg Odometry Filter Joints: " << filter_joint_positions_str << " \n";
-  if (strcmp(filter_joint_positions_str, "lowpass") == 0) {
-    filter_joint_positions_ = FILTER_JOINT_LOWPASS;
-    for (size_t i=0;i < 28; i++){
-      LowPassFilter* a_filter = new LowPassFilter ();
-      lpfilter_.push_back(a_filter);
-    }
-  }else if (strcmp(filter_joint_positions_str, "kalman") == 0) {
-    filter_joint_positions_ = FILTER_JOINT_KALMAN;
-    double joint_process_noise  = bot_param_get_double_or_fail(botparam_, "state_estimator.legodo.joint_process_noise"); // 0.01; 
-    double joint_observation_noise   = bot_param_get_double_or_fail(botparam_, "state_estimator.legodo.joint_observation_noise"); // 5E-4;
-    for (size_t i=0;i < NUM_FILT_JOINTS; i++){
-      EstimateTools::SimpleKalmanFilter* a_filter = new EstimateTools::SimpleKalmanFilter (joint_process_noise, joint_observation_noise); // uses Eigen2d
-      joint_kf_.push_back(a_filter);
-    }      
-  }else{
-    filter_joint_positions_ = FILTER_JOINT_NONE;    
-  }
+  filter_joint_positions_ = bot_param_get_boolean_or_fail(botparam_, "state_estimator.legodo.filter_joint_positions");
+  std::cout << "Leg Odometry Filter Joints: " << filter_joint_positions_ << " \n";
   
   filter_contact_events_ = bot_param_get_boolean_or_fail(botparam_, "state_estimator.legodo.filter_contact_events");
   std::cout << "Leg Odometry Filter Contact Events: " << filter_contact_events_ << " \n";
@@ -103,6 +85,18 @@ leg_estimate::leg_estimate( boost::shared_ptr<lcm::LCM> &lcm_publish_,
 
   foot_contact_logic_alt_ = new TwoLegs::FootContactAlt(false, atlas_weight);
   foot_contact_logic_alt_->setStandingFoot( F_LEFT );
+  
+  for (size_t i=0;i < 28; i++){
+    LowPassFilter* a_filter = new LowPassFilter ();
+    lpfilter_.push_back(a_filter);
+  }
+
+  double process_noise = 0.01; 
+  double observation_noise = 5E-4;
+  for (size_t i=0;i < 28; i++){
+    EstimateTools::SimpleKalmanFilter* a_filter = new EstimateTools::SimpleKalmanFilter (process_noise, observation_noise); // uses Eigen2d
+    joint_kf_.push_back(a_filter);
+  }
   
   // Should I use a very heavy contact classifier (standing) or one that allows toe off (typical)?
   char* init_control_mode_str = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo.init_contact_mode");
@@ -504,21 +498,23 @@ float leg_estimate::updateOdometry(std::vector<std::string> joint_name,
   
   
   // 0. Filter Joints
-  // Two filters: low pass or kalman. low pass adds latency.
-  // KF should replace it when I can get a good set of testing logs
-  if (filter_joint_positions_ == FILTER_JOINT_LOWPASS){
-    for (size_t i=0 ; i <  NUM_FILT_JOINTS ; i++){
-      joint_position[i]  = lpfilter_[i]->processSample( joint_position[i] );
+  if (filter_joint_positions_){
+    // Two filter: low pass or kalman. low pass adds latency.
+    // KF should replace it when I can get a good set of testing logs
+    if (1==1){
+      for (size_t i=0 ; i <  28 ; i++){
+        joint_position[i]  = lpfilter_[i]->processSample( joint_position[i] );
+      }
+    }else{
+      for (size_t i=0 ; i <  28 ; i++){
+        double x_filtered;
+        double x_dot_filtered;
+        joint_kf_[i]->processSample( ((double) utime*1E-6) ,  joint_position[i] , joint_velocity[i] , x_filtered, x_dot_filtered);
+        joint_position[ i ] = x_filtered;
+        //joint_velocity[ i ] = x_dot_filtered;
+      }
     }
-  }else if (filter_joint_positions_ == FILTER_JOINT_KALMAN){
-    for (size_t i=0 ; i <  NUM_FILT_JOINTS ; i++){
-      double x_filtered;
-      double x_dot_filtered;
-      joint_kf_[i]->processSample( ((double) utime*1E-6) ,  joint_position[i] , joint_velocity[i] , x_filtered, x_dot_filtered);
-      joint_position[ i ] = x_filtered;
-      //joint_velocity[ i ] = x_dot_filtered; // not used
-    }
-  } // else no filtering
+  }  
   
   // 1. Solve for Forward Kinematics:
   // call a routine that calculates the transforms the joint_state_t* msg.

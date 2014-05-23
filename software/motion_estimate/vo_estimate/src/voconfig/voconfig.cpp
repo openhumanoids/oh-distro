@@ -215,48 +215,39 @@ KmclConfiguration::load_stereo_calibration() const {
 
   for (int i=0; i < 2; ++i) {
     if (i == 0) {
-      key_prefix_str = std::string(key_prefix_) + "_LEFT"; // change mfallon april 2014 was .left
+      key_prefix_str = std::string(key_prefix_) + ".left";
       params = &(stereo_params.left_parameters);
     } else {
-      key_prefix_str = std::string(key_prefix_) + "_RIGHT"; // change mfallon april 2014 was .left
+      key_prefix_str = std::string(key_prefix_) + ".right";
       params = &(stereo_params.right_parameters);
     }
-    params->width = bot_param_get_int_or_fail(bot_param_, (key_prefix_str+".intrinsic_cal.width").c_str());
-    params->height = bot_param_get_int_or_fail(bot_param_,(key_prefix_str+".intrinsic_cal.height").c_str());
-    
-    double vals[5];
-    bot_param_get_double_array_or_fail(bot_param_, (key_prefix_str+".intrinsic_cal.pinhole").c_str(), vals, 5);
-    params->fx = vals[0];
-    params->fy = vals[1];
-    params->cx = vals[3];
-    params->cy = vals[4];
-    
-    if (3 == bot_param_get_double_array(bot_param_, (key_prefix_str+".intrinsic_cal.distortion_k").c_str(), vals, 3)) {
-      params->k1 = vals[0];
-      params->k2 = vals[1];
-      params->k3 = vals[2];
-    }
-    if (2 == bot_param_get_double_array(bot_param_, (key_prefix_str+".intrinsic_cal.distortion_p").c_str(), vals, 2)) {
-      params->p1 = vals[0];
-      params->p2 = vals[1];
-    }    
-
+    params->width = bot_param_get_int_or_fail(bot_param_, (key_prefix_str+".width").c_str());
+    params->height = bot_param_get_int_or_fail(bot_param_,(key_prefix_str+".height").c_str());
+    params->fx = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".fx").c_str());
+    params->fy = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".fy").c_str());
+    params->cx = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".cx").c_str());
+    params->cy = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".cy").c_str());
+    params->k1 = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".k1").c_str());
+    params->k2 = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".k2").c_str());
+    params->k3 = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".k3").c_str());
+    params->p1 = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".p1").c_str());
+    params->p2 = bot_param_get_double_or_fail(bot_param_, (key_prefix_str+".p2").c_str());
   }
 
   // We assume rotation is a rotation matrix
-  std::string main_key_prefix_str = std::string(key_prefix_);
   double rotation[9], translation[3];
   bot_param_get_double_array_or_fail(bot_param_,
-                                     (main_key_prefix_str+".rotation").c_str(),
+                                     (key_prefix_str+".rotation").c_str(),
                                      &rotation[0],
                                      9);
   bot_param_get_double_array_or_fail(bot_param_,
-                                     (main_key_prefix_str+".translation").c_str(),
+                                     (key_prefix_str+".translation").c_str(),
                                      &translation[0],
                                      3);
 
   bot_matrix_to_quat(rotation, stereo_params.right_to_left_rotation);
   std::copy(translation, translation+3, stereo_params.right_to_left_translation);
+
   return boost::shared_ptr<fovis::StereoCalibration>(new fovis::StereoCalibration(stereo_params));
 }
 

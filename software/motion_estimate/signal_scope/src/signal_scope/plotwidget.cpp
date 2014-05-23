@@ -233,11 +233,6 @@ void PlotWidget::onShowSignalContextMenu(const QPoint& pos)
 
 }
 
-double PlotWidget::timeWindow() const
-{
-  return this->d_plot->timeWindow();
-}
-
 void PlotWidget::updateSignalInfoLabel()
 {
   mSignalInfoLabel->setText(QString());
@@ -366,17 +361,6 @@ void PlotWidget::setPointSize(double pointSize)
 void PlotWidget::setCurveStyle(QwtPlotCurve::CurveStyle style)
 {
   d_plot->setCurveStyle(style);
-}
-
-void PlotWidget::setAlignMode(QString mode)
-{
-  if (mode != "center" && mode != "right")
-  {
-    printf("unsupported align mode: %s\n", qPrintable(mode));
-    return;
-  }
-
-  d_plot->setAlignMode(mode == "center" ? Plot::CENTER : Plot::RIGHT);
 }
 
 void PlotWidget::addSignal(const QMap<QString, QVariant>& signalSettings)

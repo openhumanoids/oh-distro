@@ -4,7 +4,6 @@
 #include <qmutex.h>
 #include <qreadwritelock.h>
 
-#include <limits>
 
 #include "fpscounter.h"
 
@@ -15,7 +14,8 @@ public:
   PrivateData()
   {
     messageError = false;
-    this->lastSampleTime = -std::numeric_limits<float>::max();
+    minIndex = -1;
+    maxIndex = -1;
   }
 
   bool messageError;
@@ -30,12 +30,10 @@ public:
   QVector<double> pendingxvalues;
   QVector<double> pendingyvalues;
 
-  QVector<double> intervalxvalues;
-  QVector<double> intervalyvalues;
-
-  double lastSampleTime;
-
   FPSCounter fpsCounter;
+
+  qint64 minIndex;
+  qint64 maxIndex;
 };
 
 SignalData::SignalData()
@@ -50,17 +48,22 @@ SignalData::~SignalData()
 
 int SignalData::size() const
 {
-  return d_data->intervalxvalues.size();
+  if (d_data->minIndex >= 0)
+  {
+    return d_data->maxIndex - d_data->minIndex;
+  }
+
+  return d_data->xvalues.size();
 }
 
 QPointF SignalData::value(int index) const
 {
-  return QPointF(d_data->intervalxvalues[index], d_data->intervalyvalues[index]);
-}
+  if (d_data->minIndex >= 0)
+  {
+    index = d_data->minIndex + index;
+  }
 
-double SignalData::lastSampleTime() const
-{
-  return d_data->lastSampleTime;
+  return QPointF(d_data->xvalues[index], d_data->yvalues[index]);
 }
 
 QRectF SignalData::boundingRect() const
@@ -92,12 +95,9 @@ void SignalData::clear()
   d_data->mutex.lock();
   d_data->xvalues.clear();
   d_data->yvalues.clear();
-  d_data->intervalxvalues.clear();
-  d_data->intervalyvalues.clear();
   d_data->pendingxvalues.clear();
   d_data->pendingyvalues.clear();
   d_data->boundingRect = QRectF();
-  d_data->lastSampleTime = -std::numeric_limits<float>::max();
   d_data->mutex.unlock();
 }
 
@@ -122,21 +122,32 @@ double SignalData::messageFrequency() const
 void SignalData::updateInterval(double minTime, double maxTime)
 {
   //printf("update interval: %.3f,  %.3f\n", minTime, maxTime);
-
-  d_data->intervalxvalues.clear();
-  d_data->intervalyvalues.clear();
-
   const size_t nvalues = d_data->xvalues.size();
+  if (!nvalues)
+  {
+    d_data->minIndex = -1;
+    d_data->maxIndex = -1;
+    return;
+  }
+
+  qint64 minIndex = 0;
+  qint64 maxIndex = 0;
+
   for (int i = 0; i < nvalues; ++i)
   {
     double sampleX = d_data->xvalues[i];
 
-    if (sampleX >= minTime && sampleX <= maxTime)
-    {
-      d_data->intervalxvalues.append(sampleX);
-      d_data->intervalyvalues.append(d_data->yvalues[i]);
-    }
+    if (sampleX <= minTime)
+      minIndex = i;
+
+    if (sampleX <= maxTime)
+      maxIndex = i;
   }
+
+  //printf("  set indices: %d %d\n", minIndex, maxIndex);
+
+  d_data->minIndex = minIndex;
+  d_data->maxIndex = maxIndex;
 }
 
 void SignalData::updateValues()
@@ -157,7 +168,7 @@ void SignalData::updateValues()
   }
 
   // All values that are older than five minutes will expire
-  double expireTime = xvalues.back() - 60*5;
+  float expireTime = xvalues.back() - 60*5;
 
   int idx = 0;
   while (idx < xvalues.size() && xvalues[idx] < expireTime)
@@ -169,5 +180,43 @@ void SignalData::updateValues()
   xvalues.erase(xvalues.begin(), xvalues.begin()+idx);
   yvalues.erase(yvalues.begin(), yvalues.begin()+idx);
 
-  d_data->lastSampleTime = xvalues.back();
+
+  // recompute bounding rect
+  if (xvalues.size() > 1)
+  {
+    double minY = yvalues.front();
+    double maxY = minY;
+
+    double minX = xvalues.front();
+    double maxX = minX;
+
+    for (int i = 0; i < yvalues.size(); ++i)
+    {
+      double sampleY = yvalues[i];
+      double sampleX = xvalues[i];
+
+      if (sampleY < minY)
+        minY = sampleY;
+
+      if (sampleY > maxY)
+        maxY = sampleY;
+
+      if (sampleX < minX)
+        minX = sampleX;
+
+      if (sampleX > maxX)
+        maxX = sampleX;
+    }
+
+    d_data->boundingRect.setLeft(minX);
+    d_data->boundingRect.setRight(maxX);
+
+    d_data->boundingRect.setTop(maxY);
+    d_data->boundingRect.setBottom(minY);
+  }
+  else
+  {
+    d_data->boundingRect = QRectF();
+  }
+
 }

@@ -97,17 +97,8 @@ MainWindow::MainWindow(QWidget* parent): QMainWindow(parent)
   pointSizeSpin->setValue(1);
   mInternal->toolBar->addWidget(pointSizeSpin);
 
-
-  mInternal->toolBar->addWidget(new QLabel("    Align: "));
-  QComboBox* alignCombo = new QComboBox(this);
-  alignCombo->addItem("right");
-  alignCombo->addItem("center");
-  mInternal->toolBar->addWidget(alignCombo);
-
-
   this->connect(curveStyleCombo, SIGNAL(currentIndexChanged(const QString&)), SLOT(onCurveStyleChanged(QString)));
   this->connect(pointSizeSpin, SIGNAL(valueChanged(int)), SLOT(onPointSizeChanged(int)));
-  this->connect(alignCombo, SIGNAL(currentIndexChanged(const QString&)), SLOT(onAlignModeChanged(QString)));
 
   mRedrawTimer = new QTimer(this);
   //mRedrawTimer->setSingleShot(true);
@@ -219,14 +210,6 @@ void MainWindow::onCurveStyleChanged(QString style)
   }
 }
 
-void MainWindow::onAlignModeChanged(QString mode)
-{
-  foreach (PlotWidget* plot, mPlots)
-  {
-    plot->setAlignMode(mode);
-  }
-}
-
 
 void MainWindow::onPointSizeChanged(int pointSize)
 {
@@ -293,9 +276,6 @@ void MainWindow::setPlotBackgroundColor(QString color)
 
 void MainWindow::onSyncXAxis(double x0, double x1)
 {
-  if (mPlaying)
-    return;
-
   foreach (PlotWidget* plot, mPlots)
   {
     if (plot == this->sender())
@@ -316,6 +296,7 @@ void MainWindow::onRedrawPlots()
     return;
   }
 
+
   QList<SignalData*> signalDataList;
   foreach (PlotWidget* plot, mPlots)
   {
@@ -330,16 +311,18 @@ void MainWindow::onRedrawPlots()
     return;
   }
 
-  double maxTime = -std::numeric_limits<float>::max();
+  float maxTime = -std::numeric_limits<float>::max();
 
   foreach (SignalData* signalData, signalDataList)
   {
     signalData->updateValues();
-    double signalMaxTime = signalData->lastSampleTime();
-
-    if (signalMaxTime > maxTime)
+    if (signalData->size())
     {
-      maxTime = signalMaxTime;
+      float signalMaxTime = signalData->boundingRect().right();
+      if (signalMaxTime > maxTime)
+      {
+        maxTime = signalMaxTime;
+      }
     }
   }
 
