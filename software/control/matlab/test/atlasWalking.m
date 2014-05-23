@@ -168,7 +168,6 @@ if use_simple_pd
   options.body_accel_input_weights = [1 1 1 0];
 else
   options.w_qdd = 25*ones(nq,1);
-  options.w_qdd(findJointIndices(r,'leg')) = 0.1;
   options.W_hdot = diag([10;10;10;10;10;10]);
   options.w_grf = 0.0075;
   options.Kp = 0; % com-z pd gains
@@ -183,7 +182,7 @@ options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.0075;
 options.output_qdd = true;
-options.solver = 1;
+options.solver = 0;
 options.smooth_contacts = false;
 
 if use_simple_pd
@@ -326,7 +325,7 @@ clear ins;
 toffset = -1;
 tt=-1;
 
-torque_fade_in = 0.1; % sec, to avoid jumps at the start
+torque_fade_in = 0.75; % sec, to avoid jumps at the start
 
 resp = input('OK to send input to robot? (y/n): ','s');
 if ~strcmp(resp,{'y','yes'})
