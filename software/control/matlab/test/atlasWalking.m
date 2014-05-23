@@ -78,7 +78,7 @@ request.params.min_num_steps = 1;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.28;
 request.params.max_step_width = 0.32;
-request.params.nom_forward_step = 0.25;
+request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.30;
 request.params.nom_upward_step = 0.2;
 request.params.nom_downward_step = 0.2;
@@ -88,7 +88,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.2;
+request.default_step_params.step_speed = 0.15;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -168,7 +168,7 @@ if use_simple_pd
   options.Kd = 0; % com-z pd gains
   options.body_accel_input_weights = [1 1 1 0];
 else
-  options.w_qdd = 25*ones(nq,1);
+  options.w_qdd = 20*ones(nq,1);
   options.W_hdot = diag([10;10;10;10;10;10]);
   options.w_grf = 0.0075;
   options.Kp = 0; % com-z pd gains
@@ -176,7 +176,7 @@ else
 end
 
 % instantiate QP controller
-options.slack_limit = 100;
+options.slack_limit = 50;
 options.w_slack = 0.005;
 options.input_foot_contacts = true;
 options.debug = false;
@@ -302,8 +302,12 @@ if use_simple_pd
     ins(6).input = 5;
   end
 else
-  options.Kp = 80.0*ones(nq,1);
-  options.Kd = 20.0*ones(nq,1);
+  options.Kp = 60.0*ones(nq,1);
+  options.Kd = 16.0*ones(nq,1);
+  options.Kp(3) = 30.0;
+  options.Kd(3) = 12.0;
+  options.Kp(4:6) = 30.0;
+  options.Kd(4:6) = 12.0;
   pd = WalkingPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
@@ -326,7 +330,7 @@ clear ins;
 toffset = -1;
 tt=-1;
 
-torque_fade_in = 0.75; % sec, to avoid jumps at the start
+torque_fade_in = 0.1; % sec, to avoid jumps at the start
 
 resp = input('OK to send input to robot? (y/n): ','s');
 if ~strcmp(resp,{'y','yes'})
