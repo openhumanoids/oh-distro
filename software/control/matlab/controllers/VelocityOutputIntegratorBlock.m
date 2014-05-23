@@ -98,11 +98,11 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			next_state(3) = t;
 
       eta = max(0.0,eta-dt); % linear ramp
-%       if state(1)~=l_foot_contact || state(2)~=r_foot_contact
-%         % contact state changed, reset integrated velocities
-%         qd_int(obj.leg_idx) = qd(obj.leg_idx);
-% %         eta = 0.3; % decay integrated velocity to actual
-%       end
+      if state(1)~=l_foot_contact || state(2)~=r_foot_contact
+        % contact state changed, reset integrated velocities
+        qd_int(obj.leg_idx) = 0;%qd(obj.leg_idx);
+%         eta = 0.3; % decay integrated velocity to actual
+      end
       next_state(4) = eta;
 			next_state(5:end) = qd_int;
 		end
