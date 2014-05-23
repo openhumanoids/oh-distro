@@ -61,7 +61,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[0.5;0;0];
+v = R*[1;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -92,6 +92,7 @@ request.default_step_params.step_speed = 0.2;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
+request.default_step_params.drake_min_hold_time = 2; %sec
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
 
