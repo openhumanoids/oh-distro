@@ -2,7 +2,7 @@ function atlasWalking
 %NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-joint_str = {'leg','back'};% <---- cell array of (sub)strings
+joint_str = {'leg'};% <---- cell array of (sub)strings
 
 % load robot model
 r = Atlas();
@@ -88,7 +88,7 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.1;
+request.default_step_params.step_speed = 0.2;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -134,8 +134,7 @@ ctrl_data = SharedDataHandle(struct(...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
   'K',walking_ctrl_data.K,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
-%   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
 
 % traj = PPTrajectory(spline(ts,walking_plan.xtraj));
 % traj = traj.setOutputFrame(r.getStateFrame);
@@ -144,7 +143,7 @@ ctrl_data = SharedDataHandle(struct(...
 
 
 use_simple_pd = false;
-constrain_torso = true;
+constrain_torso = false;
 
 if use_simple_pd
   
@@ -168,7 +167,7 @@ if use_simple_pd
   options.Kd = 0; % com-z pd gains
   options.body_accel_input_weights = [1 1 1 0];
 else
-  options.w_qdd = 10*ones(nq,1);
+  options.w_qdd = 25*ones(nq,1);
   options.w_qdd(findJointIndices(r,'leg')) = 0.1;
   options.W_hdot = diag([10;10;10;10;10;10]);
   options.w_grf = 0.0075;
@@ -277,9 +276,9 @@ fcb = FootContactBlock(r);
 fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
-options.Kp = 40.0*ones(nq,1);
-options.Kd = 18.0*ones(nq,1);
 if use_simple_pd
+  options.Kp = 40.0*ones(nq,1);
+  options.Kd = 18.0*ones(nq,1);
   pd = SimplePDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
@@ -303,8 +302,8 @@ if use_simple_pd
     ins(6).input = 5;
   end
 else
-  options.Kp(findJointIndices(r,'leg')) = 30.0;
-  options.Kd(findJointIndices(r,'leg')) = 8.0;
+  options.Kp = 80.0*ones(nq,1);
+  options.Kd = 20.0*ones(nq,1);
   pd = WalkingPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
@@ -335,14 +334,14 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 % low pass filter for floating base velocities
-alpha_v = 0.5;
+alpha_v = 0.75;
 float_v = 0;
 
-l_foot_contact = 0;
-r_foot_contact = 0;
-qd_control = 0;
-qd_filt = 0;
-eta=1;
+% l_foot_contact = 0;
+% r_foot_contact = 0;
+% qd_control = 0;
+% qd_filt = 0;
+% eta=1;
 
 udes = zeros(nu,1);
 qddes = zeros(nu,1);
@@ -365,15 +364,15 @@ while tt<T
     %qt = fasteval(qtraj,tt);
 
     fc = output(fcb,tt,[],[q;qd]);
-    if fc(1)~=l_foot_contact || fc(2)~=r_foot_contact
-      % contact changed
-      l_foot_contact = fc(1);
-      r_foot_contact = fc(2);
-      eta = 0;
-    end
-    qd_filt = 0.8*qd_filt + 0.2*qd;
-    qd_control = (1-eta)*qd_filt + eta*qd;
-    eta = min(1.0, eta+0.005);
+%     if fc(1)~=l_foot_contact || fc(2)~=r_foot_contact
+%       % contact changed
+%       l_foot_contact = fc(1);
+%       r_foot_contact = fc(2);
+%       eta = 0;
+%     end
+%     qd_filt = 0.8*qd_filt + 0.2*qd;
+%     qd_control = (1-eta)*qd_filt + eta*qd;
+%     eta = min(1.0, eta+0.005);
     
     x_filt = [q;qd];
     
