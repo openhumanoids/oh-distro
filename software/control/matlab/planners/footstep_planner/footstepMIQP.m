@@ -40,18 +40,19 @@ for j = 1:nsteps
            zeros(2,2), eye(2)];
     end
   else
-    if j > 2
-      R{j} = [rotmat(-start_pos(6)), zeros(2,2);
-       zeros(2,2), eye(2)];
-    end
-    x0(x_ndx(4,j)) = start_pos(6);
+    p0 = seed_plan.footsteps(mod(j-1, 2)+1).pos.inFrame(seed_plan.footsteps(mod(j-1, 2)+1).frames.center);
+    x0(x_ndx(:,j)) = p0([1,2,3,6]);
+    R{j} = [rotmat(-p0(6)), zeros(2,2);
+     zeros(2,2), eye(2)];
   end
 
-  if j > 2 && ~isnan(seed_plan.region_order(j))
-    ra = false(nr, 1);
+  ra = false(nr, 1);
+  if ~isnan(seed_plan.region_order(j))
     ra(seed_plan.region_order(j)) = true;
-    x0(s_ndx(:,j)) = ra;
+  else
+    ra(1) = true;
   end
+  x0(s_ndx(:,j)) = ra;
 end
 
 % nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
@@ -125,6 +126,7 @@ w_rel = diag(weights.relative([1,2,3,6]));
 for j = 3:nsteps
   if j == nsteps
     w_rel = diag(weights.relative_final([1,2,3,6]));
+    nom_step(1) = 0;
   end
   Q(x_ndx(:,j), x_ndx(:,j)) = Q(x_ndx(:,j), x_ndx(:,j)) + R{j}' * w_rel * R{j};
   Q(x_ndx(:,j-1), x_ndx(:,j)) = Q(x_ndx(:,j-1), x_ndx(:,j)) - R{j}' * w_rel * R{j};
@@ -203,7 +205,7 @@ model.start = x0;
 params = struct();
 params.timelimit = 5;
 params.mipgap = 3e-4;
-params.outputflag = 0;
+params.outputflag = 1;
 
 result = gurobi(model, params);
 xstar = result.x;
