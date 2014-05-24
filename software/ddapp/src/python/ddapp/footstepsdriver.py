@@ -109,7 +109,6 @@ class FootstepsDriver(object):
         self.lastWalkingPlan = None
         self.walkingPlanCallback = None
         self.default_step_params = DEFAULT_STEP_PARAMS
-        self.safe_terrain_regions = []
         self._setupProperties()
         self.contact_slices = {}
         self.show_contact_slices = False
@@ -218,17 +217,16 @@ class FootstepsDriver(object):
             quat = [quat.w, quat.x, quat.y, quat.z]
             footstepTransform = transformUtils.transformFromPose(trans, quat)
 
-            if self.show_contact_slices:
-                for zs, xy in self.contact_slices.iteritems():
-                    points0 = np.vstack((xy, zs[0] + np.zeros((1,xy.shape[1]))))
-                    points1 = np.vstack((xy, zs[1] + np.zeros((1,xy.shape[1]))))
-                    points = np.hstack((points0, points1))
-                    points = points + np.array([[0.05],[0],[-0.0811]])
-                    points = points.T
-                    polyData = vnp.getVtkPolyDataFromNumpyPoints(points.copy())
-                    mesh = segmentation.computeDelaunay3D(polyData)
-                    obj = vis.showPolyData(mesh, 'walking volume', parent=volFolder, alpha=0.5)
-                    obj.actor.SetUserTransform(footstepTransform)
+            for zs, xy in self.contact_slices.iteritems():
+                points0 = np.vstack((xy, zs[0] + np.zeros((1,xy.shape[1]))))
+                points1 = np.vstack((xy, zs[1] + np.zeros((1,xy.shape[1]))))
+                points = np.hstack((points0, points1))
+                points = points + np.array([[0.05],[0],[-0.0811]])
+                points = points.T
+                polyData = vnp.getVtkPolyDataFromNumpyPoints(points.copy())
+                mesh = segmentation.computeDelaunay3D(polyData)
+                obj = vis.showPolyData(mesh, 'walking volume', parent=volFolder, alpha=0.5, visible=self.show_contact_slices)
+                obj.actor.SetUserTransform(footstepTransform)
 
             allTransforms.append(footstepTransform)
 
@@ -393,8 +391,14 @@ class FootstepsDriver(object):
         return msg
 
     def applySafeRegions(self, msg):
-        msg.num_iris_regions = len(self.safe_terrain_regions)
-        for r in self.safe_terrain_regions:
+        safe_regions_folder = om.findObjectByName('Safe terrain regions')
+        safe_terrain_regions = []
+        if safe_regions_folder:
+            for obj in safe_regions_folder.children():
+                if obj.getProperty('Enabled for Walking'):
+                    safe_terrain_regions.append(obj.safe_region)
+        msg.num_iris_regions = len(safe_terrain_regions)
+        for r in safe_terrain_regions:
             msg.iris_regions.append(r.to_iris_region_t())
         return msg
 
