@@ -84,6 +84,16 @@ classdef FootstepPlan
 
     function plan = blank_plan(biped, nsteps, ordered_body_idx, params, safe_regions)
       footsteps = Footstep.empty();
+      
+      frames = struct('orig', CoordinateFrame('orig', 6, 'o', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}),...
+                            'center', CoordinateFrame('center', 6, 'c', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}));
+      offset = biped.foot_contact_offsets.right.center;
+      frames.orig.addTransform(FootstepContactTransform(frames.orig, ...
+                                                            frames.center,...
+                                                            offset));
+      frames.center.addTransform(FootstepContactTransform(frames.center, ...
+                                                            frames.orig,...
+                                                            -offset));
       for j = 1:nsteps
         pos = nan(6,1);
         id = j;
@@ -93,7 +103,7 @@ classdef FootstepPlan
         terrain_pts = [];
         infeasibility = nan;
         walking_params = [];
-        footsteps(j) = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
+        footsteps(j) = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params, frames);
       end
       region_order = nan(1, nsteps);
       plan = FootstepPlan(footsteps, params, safe_regions, region_order);

@@ -16,23 +16,26 @@ classdef Footstep
   end
 
   methods
-    function obj = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params)
-      obj.frames = struct('orig', CoordinateFrame('orig', 6, 'o', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}),...
-                          'center', CoordinateFrame('center', 6, 'c', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}));
-
-      if body_idx == biped.foot_bodies_idx.right
-        offset = biped.foot_contact_offsets.right.center;
-      elseif body_idx == biped.foot_bodies_idx.left
-        offset = biped.foot_contact_offsets.left.center;
+    function obj = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params, frames)
+      if nargin < 10
+        obj.frames = struct('orig', CoordinateFrame('orig', 6, 'o', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}),...
+                            'center', CoordinateFrame('center', 6, 'c', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}));
+        if body_idx == biped.foot_bodies_idx.right
+          offset = biped.foot_contact_offsets.right.center;
+        elseif body_idx == biped.foot_bodies_idx.left
+          offset = biped.foot_contact_offsets.left.center;
+        else
+          error('Don''t know how to handle body indices other than right/left feet');
+        end
+        obj.frames.orig.addTransform(FootstepContactTransform(obj.frames.orig, ...
+                                                              obj.frames.center,...
+                                                              offset));
+        obj.frames.center.addTransform(FootstepContactTransform(obj.frames.center, ...
+                                                              obj.frames.orig,...
+                                                              -offset));
       else
-        error('Don''t know how to handle body indices other than right/left feet');
+        obj.frames = frames;
       end
-      obj.frames.orig.addTransform(FootstepContactTransform(obj.frames.orig, ...
-                                                            obj.frames.center,...
-                                                            offset));
-      obj.frames.center.addTransform(FootstepContactTransform(obj.frames.center, ...
-                                                            obj.frames.orig,...
-                                                            -offset));
       obj.pos = Point(obj.frames.orig, pos);
       obj.id = id;
       obj.body_idx = body_idx;
