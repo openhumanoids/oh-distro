@@ -40,9 +40,14 @@ function [c, ceq, dc, dceq] = constraints(x)
   end
 end
 
+nominal_dxy = [params.nom_forward_step; params.nom_step_width];
+[cost_Q, cost_c] = footstepQuadraticCost(biped, seed_plan.slice(2:length(seed_plan.footsteps)), weights, goal_pos, nominal_dxy);
+
 function [c, dc] = objfun(x)
-  [steps, steps_rel] = decodeCollocationSteps(x);
-  [c, dc] = footstepCostFun(steps, steps_rel, weights, goal_pos, right_foot_lead, [params.nom_forward_step; params.nom_step_width]);
+%   [steps, steps_rel] = decodeCollocationSteps(x);
+%   [c, dc] = footstepCostFun(steps, steps_rel, weights, goal_pos, right_foot_lead, nominal_dxy);
+  c = x' * cost_Q * x + cost_c' * x;
+  dc = 2 * cost_Q * x + cost_c;
 end
 
 function [F,G] = collocation_userfun(x)

@@ -100,7 +100,7 @@ valuecheck(pos3(3), r.getTerrainHeight(pos3(1:2)) + 0.0811, 1e-3);
 assert(length(footsteps) == 12);
 % assert(footsteps(3).infeasibility > 1e-6);
 % assert(footsteps(4).infeasibility > 1e-6);
-assert(all([footsteps.infeasibility] < 1e-6))
+assert(all([footsteps.infeasibility] < 1e-4))
 
 request.num_goal_steps = 1;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
