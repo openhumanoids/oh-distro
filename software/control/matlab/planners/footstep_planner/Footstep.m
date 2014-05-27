@@ -8,6 +8,7 @@ classdef Footstep
     terrain_pts
     infeasibility
     walking_params
+    frames
   end
 
   properties(Constant)
@@ -15,8 +16,27 @@ classdef Footstep
   end
 
   methods
-    function obj = Footstep(pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params)
-      obj.pos = pos;
+    function obj = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params, frames)
+      if nargin < 10
+        obj.frames = struct('orig', CoordinateFrame('orig', 6, 'o', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}),...
+                            'center', CoordinateFrame('center', 6, 'c', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}));
+        if body_idx == biped.foot_bodies_idx.right
+          offset = biped.foot_contact_offsets.right.center;
+        elseif body_idx == biped.foot_bodies_idx.left
+          offset = biped.foot_contact_offsets.left.center;
+        else
+          error('Don''t know how to handle body indices other than right/left feet');
+        end
+        obj.frames.orig.addTransform(FootstepContactTransform(obj.frames.orig, ...
+                                                              obj.frames.center,...
+                                                              offset));
+        obj.frames.center.addTransform(FootstepContactTransform(obj.frames.center, ...
+                                                              obj.frames.orig,...
+                                                              -offset));
+      else
+        obj.frames = frames;
+      end
+      obj.pos = Point(obj.frames.orig, pos);
       obj.id = id;
       obj.body_idx = body_idx;
       obj.is_in_contact = is_in_contact;
@@ -28,7 +48,7 @@ classdef Footstep
 
     function msg = to_footstep_t(obj)
       msg = drc.footstep_t();
-      msg.pos = encodePosition3d(obj.pos);
+      msg.pos = encodePosition3d(obj.pos.inFrame(obj.frames.orig));
       msg.id = obj.id;
       if obj.body_idx == Footstep.atlas_foot_bodies_idx.right
         msg.is_right_foot = true;
@@ -55,7 +75,7 @@ classdef Footstep
   end
 
   methods(Static=true)
-    function footstep = from_footstep_t(msg)
+    function footstep = from_footstep_t(msg, biped)
       pos = decodePosition3d(msg.pos);
       id = msg.id;
       if msg.is_right_foot
@@ -74,7 +94,7 @@ classdef Footstep
                      reshape(msg.terrain_height, 1, []);];
       infeasibility = msg.infeasibility;
       walking_params = msg.params;
-      footstep = Footstep(pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
+      footstep = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params);
     end
   end
 end

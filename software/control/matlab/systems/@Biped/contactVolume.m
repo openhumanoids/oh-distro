@@ -1,4 +1,7 @@
-function [contact_length, contact_width, contact_height] = contactVolume(biped, last_pos, next_pos, options)
+function [contact_length, contact_width, contact_height] = contactVolume(biped, step1, step2, options)
+
+last_pos = step1.pos.inFrame(step1.frames.center);
+next_pos = step2.pos.inFrame(step2.frames.center);
 
 if nargin < 4; options = struct(); end
 if ~isfield(options, 'planar_clearance'); options.planar_clearance = 0.05; end
@@ -13,7 +16,7 @@ phi.next = next_pos(6) - swing_angle;
 foot_bodies = struct('right', biped.manip.body(biped.foot_bodies_idx.right),...
                        'left', biped.manip.body(biped.foot_bodies_idx.left));
 contact_pts.last = quat2rotmat(axis2quat([0;0;1;phi.last])) * foot_bodies.right.contact_pts;
-contact_pts.next = quat2rotmat(axis2quat([0;0;1;phi.next])) * foot_bodies.right.contact_pts; 
+contact_pts.next = quat2rotmat(axis2quat([0;0;1;phi.next])) * foot_bodies.right.contact_pts;
 effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),...
                        max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...

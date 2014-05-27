@@ -95,12 +95,12 @@ plan.toLCM();
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish('FOOTSTEP_PLAN_RESPONSE', plan.toLCM());
 footsteps = plan.footsteps;
-% valuecheck(footsteps(3).pos(2), 0.2, 1e-4);
-valuecheck(footsteps(3).pos(3), r.getTerrainHeight(footsteps(3).pos(1:2)) + 0.0811, 1e-3);
+pos3 = footsteps(3).pos.inFrame(footsteps(3).frames.orig);
+valuecheck(pos3(3), r.getTerrainHeight(pos3(1:2)) + 0.0811, 1e-3);
 assert(length(footsteps) == 12);
 % assert(footsteps(3).infeasibility > 1e-6);
 % assert(footsteps(4).infeasibility > 1e-6);
-assert(all([footsteps.infeasibility] < 1e-6))
+assert(all([footsteps.infeasibility] < 1e-4))
 
 request.num_goal_steps = 1;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
@@ -121,8 +121,8 @@ request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
-s = Footstep.from_footstep_t(goal_steps(1));
-assert(all(footsteps(end).pos == s.pos));
+s = Footstep.from_footstep_t(goal_steps(1), r);
+valuecheck(footsteps(end).pos.inFrame(footsteps(end).frames.center).double(), s.pos.inFrame(s.frames.center).double());
 
 request.num_goal_steps = 3;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);

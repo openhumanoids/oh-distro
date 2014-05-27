@@ -12,7 +12,7 @@ right_foot_lead = seed_steps(1).body_idx == biped.foot_bodies_idx.right;
 
 if ~isfield(params, 'nom_step_width'); params.nom_step_width = 0.26; end
 
-st0 = seed_steps(2).pos;
+st0 = seed_steps(2).pos.inFrame(seed_steps(2).frames.center).double();
 goal_pos.right(6) = st0(6) + angleDiff(st0(6), goal_pos.right(6));
 goal_pos.left(6) = goal_pos.right(6) + angleDiff(goal_pos.right(6), goal_pos.left(6));
 goal_pos.right(3) = st0(3);
@@ -40,9 +40,14 @@ function [c, ceq, dc, dceq] = constraints(x)
   end
 end
 
+nominal_dxy = [params.nom_forward_step; params.nom_step_width];
+[cost_Q, cost_c] = footstepQuadraticCost(biped, seed_plan.slice(2:length(seed_plan.footsteps)), weights, goal_pos, nominal_dxy);
+
 function [c, dc] = objfun(x)
-  [steps, steps_rel] = decodeCollocationSteps(x);
-  [c, dc] = footstepCostFun(steps, steps_rel, weights, goal_pos, right_foot_lead, [params.nom_forward_step; params.nom_step_width]);
+%   [steps, steps_rel] = decodeCollocationSteps(x);
+%   [c, dc] = footstepCostFun(steps, steps_rel, weights, goal_pos, right_foot_lead, nominal_dxy);
+  c = x' * cost_Q * x + cost_c' * x;
+  dc = 2 * cost_Q * x + cost_c;
 end
 
 function [F,G] = collocation_userfun(x)
@@ -53,7 +58,8 @@ function [F,G] = collocation_userfun(x)
   G = reshape(G(iGndx), [], 1);
 end
 
-steps = [seed_steps(2:end).pos];
+steps = seed_plan.step_matrix();
+steps = steps(:,2:end);
 nsteps = size(steps,2);
 
 nv = 12 * nsteps;
@@ -186,7 +192,7 @@ end
 plan = seed_plan;
 valuecheck(output_steps([1,2,6],1), plan.footsteps(2).pos([1,2,6]),1e-8);
 for j = 2:nsteps
-  plan.footsteps(j+1).pos = output_steps(:,j);
+  plan.footsteps(j+1).pos = Point(plan.footsteps(j+1).frames.center, output_steps(:,j));
 end
 
 end
