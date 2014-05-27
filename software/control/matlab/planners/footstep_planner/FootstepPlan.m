@@ -34,7 +34,36 @@ classdef FootstepPlan
       plan.footsteps = obj.footsteps(idx);
       plan.region_order = obj.region_order(idx);
     end
-
+    
+    function plan = extend(obj, final_length, n)
+      % Extend a footstep plan by replicating its final n footsteps. Useful for
+      % generating seeds for later optimization.
+      % @param final_length desired number of footsteps in the extended plan
+      % @option n how many final steps to consider (the last n steps will be
+      %          repeatedly appended to the footstep plan until the final
+      %          length is achieved). Optional. Default: 2
+      % @retval plan the extended plan
+      if nargin < 3
+        n = 2;
+      end
+      if n > length(obj.footsteps)
+        error('DRC:FootstepPlan:NotEnoughStepsToExtend', 'Not enough steps in the plan to extend in the requested manner');
+      end
+      if final_length <= length(obj.footsteps)
+        plan = plan.slice(1:final_length);
+      else
+        plan = obj;
+        j = 1;
+        source_ndx = (length(obj.footsteps) - n) + (1:n);
+        for k = (length(obj.footsteps) + 1):final_length
+          plan.footsteps(k) = plan.footsteps(source_ndx(j));
+          plan.region_order(k) = plan.region_order(source_ndx(j));
+          plan.footsteps(k).id = plan.footsteps(k-1).id + 1;
+          j = mod(j, length(source_ndx)) + 1;
+        end
+      end
+    end
+    
     function steps = step_matrix(obj, frame_name)
       % Return the footstep plan poses as a [6 x nsteps] matrix
       if nargin < 2
