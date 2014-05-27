@@ -50,6 +50,12 @@ if(GOBY_VERSION_MAJOR GREATER "1")
 #  find_goby_library(GOBY_MOOS_LIBRARY goby_moos ${GOBY_DIR})
   find_goby_library(GOBY_UTIL_LIBRARY goby_util ${GOBY_DIR})
 
+  if(NOT (GOBY_VERSION_MAJOR EQUAL "2" AND GOBY_VERSION_MINOR EQUAL "0"))
+    find_package(DCCL)
+    include_directories("${DCCL_INCLUDE_DIR}")
+    protobuf_include_dirs("${DCCL_INCLUDE_DIR}")
+    set(DCCL_LIBRARIES dccl)
+  endif()
 
   #
   # Standard find_package portion
@@ -81,67 +87,6 @@ if(GOBY_VERSION_MAJOR GREATER "1")
     set(GOBY_FIELD_EXAMPLE "(goby.field).example")
 
     set(GOBY_ROOT_DIR "${GOBY_DIR}" CACHE STRING "Path to the root of Goby, e.g. /home/me/goby" FORCE)
-  else()
-
   endif()
-
-else()
-  find_goby_library(GOBY_AMAC_LIBRARY goby_amac ${GOBY_DIR})
-  find_goby_library(GOBY_LOGGER_LIBRARY goby_logger ${GOBY_DIR})
-  find_goby_library(GOBY_DCCL_LIBRARY goby_dccl ${GOBY_DIR})
-  find_goby_library(GOBY_MODEMDRIVER_LIBRARY goby_modemdriver ${GOBY_DIR})
-  find_goby_library(GOBY_QUEUE_LIBRARY goby_queue ${GOBY_DIR})
-  find_goby_library(GOBY_CORE_LIBRARY goby_core ${GOBY_DIR})
-  #find_goby_library(GOBY_DBO_LIBRARY goby_dbo ${GOBY_DIR})
-  find_goby_library(GOBY_LINEBASEDCOMMS_LIBRARY goby_linebasedcomms ${GOBY_DIR})
-  find_goby_library(GOBY_MOOSUTIL_LIBRARY goby_moos_util ${GOBY_DIR})
-  find_goby_library(GOBY_PROTOBUF_LIBRARY goby_protobuf ${GOBY_DIR})
-
-  #
-  # Standard find_package portion
-  #
-
-  include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(Goby "Could NOT find Goby. Set GOBY_ROOT_DIR to the path where Goby is on your system (e.g. > cmake -DGOBY_ROOT_DIR=/home/me/goby .)"
-    GOBY_DIR 
-    GOBY_INCLUDE_DIR
-    GOBY_AMAC_LIBRARY 
-    GOBY_DCCL_LIBRARY
-    GOBY_MODEMDRIVER_LIBRARY
-    GOBY_QUEUE_LIBRARY 
-    GOBY_CORE_LIBRARY
-    #GOBY_DBO_LIBRARY
-    GOBY_LOGGER_LIBRARY 
-    GOBY_LINEBASEDCOMMS_LIBRARY
-    GOBY_MOOSUTIL_LIBRARY
-    GOBY_PROTOBUF_LIBRARY
-    )
-
-  if(GOBY_FOUND)
-    set(GOBY_INCLUDE_DIRS ${GOBY_INCLUDE_DIR})
-    set(GOBY_LIBRARIES 
-      ${GOBY_AMAC_LIBRARY}
-      ${GOBY_DCCL_LIBRARY} 
-      ${GOBY_MODEMDRIVER_LIBRARY}
-      ${GOBY_QUEUE_LIBRARY} 
-      ${GOBY_CORE_LIBRARY}
-      #${GOBY_DBO_LIBRARY} 
-      ${GOBY_LOGGER_LIBRARY}
-      ${GOBY_LINEBASEDCOMMS_LIBRARY} 
-      ${GOBY_MOOSUTIL_LIBRARY}
-      ${GOBY_PROTOBUF_LIBRARY}
-      )
-    
-    set(GOBY_MOOS_APP_PROTO "goby/moos/libmoos_util/tes_moos_app.proto")
-    set(GOBY_OPTION_EXTENSIONS_PROTO "goby/protobuf/option_extensions.proto")
-    set(GOBY_MOOS_APP_NAME "TesMoosApp")
-    set(GOBY_FIELD_DESCRIPTION "(description)")
-    set(GOBY_FIELD_EXAMPLE "(example)")
-
-    set(GOBY_ROOT_DIR "${GOBY_DIR}" CACHE STRING "Path to the root of Goby, e.g. /home/me/goby" FORCE)
-  else()
-
-  endif()
-
 endif()
 

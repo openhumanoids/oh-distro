@@ -11,11 +11,11 @@
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>
 
-class KMCLApp;
+class DRCShaperApp;
 // thread for base to robot
-void base2robot(KMCLApp& app);
+void base2robot(DRCShaperApp& app);
 // thread for robot to base
-void robot2base(KMCLApp& app);
+void robot2base(DRCShaperApp& app);
 
 //void utime_handler(const lcm_recv_buf_t* rbuf, const char* channel,
 //                   const drc::utime_t* msg, void* user_data);
@@ -40,7 +40,6 @@ Resend(std::string channel, double max_freq, int buffer_size, int priority, bool
 
 struct CommandLineConfig
 {
-    std::string task;
     bool base_only;
     bool bot_only;
     std::string config_file;
@@ -53,12 +52,12 @@ struct CommandLineConfig
 
 
 ///////////////////////////////////////////////////////////////
-class KMCLApp{
+class DRCShaperApp{
   public:
-    KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
+    DRCShaperApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
             const CommandLineConfig& cl_cfg);
     
-    ~KMCLApp(){
+    ~DRCShaperApp(){
     }
     
     boost::shared_ptr<lcm::LCM> robot_lcm;
@@ -109,7 +108,7 @@ class KMCLApp{
     std::string print_resend_list();
     void send_resend_list();
     
-    std::string parse_direction(std::string task, std::string direction, bool direction_bool);    
+    std::string parse_direction(std::string direction, bool direction_bool);    
     
     static const std::string B2R_CHANNEL;
     static const std::string R2B_CHANNEL;

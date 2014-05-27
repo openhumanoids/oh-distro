@@ -1,6 +1,8 @@
 #include <iostream>
 #include <queue>
 #include <map>
+#include <unistd.h>
+#include <cstdio>
 
 #include <boost/bimap.hpp>
 #include <boost/circular_buffer.hpp>
@@ -39,7 +41,7 @@ void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void 
 //
 // from network_bridge.h
 //
-void robot2base(KMCLApp& app)
+void robot2base(DRCShaperApp& app)
 {
     if(app.cl_cfg.base_only == app.cl_cfg.bot_only)
         throw(std::runtime_error("Must choose only one of base only (-b) or robot only (-r) when running drc_network_shaper"));
@@ -51,7 +53,7 @@ void robot2base(KMCLApp& app)
     }
 }
 
-void base2robot(KMCLApp& app)
+void base2robot(DRCShaperApp& app)
 {
     if(!app.cl_cfg.bot_only)
     {
@@ -64,7 +66,7 @@ void base2robot(KMCLApp& app)
 // definition of DRCShaper
 //
 
-DRCShaper::DRCShaper(KMCLApp& app, Node node)
+DRCShaper::DRCShaper(DRCShaperApp& app, Node node)
     : app_(app),
       node_(node),
       partner_(node == BASE ? ROBOT : BASE),
@@ -104,16 +106,28 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
 
         std::string goby_debug_file_name = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + to_iso_string(second_clock::universal_time()) + ".txt";
 
-        flog_.open(goby_debug_file_name.c_str());
+        std::string goby_debug_latest_symlink = app_.cl_cfg.log_path + "/drc-network-shaper-" + (node_ == BASE ? "base-" : "robot-") + "latest.txt";
+        remove(goby_debug_latest_symlink.c_str());
+        
+        flog_.open(goby_debug_file_name.c_str());        
+        
         if(!flog_.is_open())
         {
             std::cerr << "Failed to open requested debug log file: " << goby_debug_file_name << ". Check value and permissions on --logpath" << std::endl;
             exit(EXIT_FAILURE);
         }
 
+        if(symlink(goby_debug_file_name.c_str(), goby_debug_latest_symlink.c_str()) != 0)
+        {
+            std::cerr << "Failed to create symlink: " << goby_debug_latest_symlink<< std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+
         goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE),
                               &flog_);
 
+        dccl::dlog.connect(dccl::logger::INFO_PLUS, &flog_, true);
 
         // data usage log
 	open_usage_log();
@@ -121,9 +135,15 @@ DRCShaper::DRCShaper(KMCLApp& app, Node node)
     
 
     if(app.cl_cfg.verbose)
+    {
         goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::VERBOSE), &std::cout);
+        dccl::dlog.connect(dccl::logger::INFO_PLUS, &std::cout, true);
+    }
     else
+    {
         goby::glog.add_stream(static_cast<goby::common::logger::Verbosity>(goby::common::protobuf::GLogConfig::WARN), &std::cout);
+        dccl::dlog.connect(dccl::logger::WARN_PLUS, &std::cout, true);
+    }
     
 
     goby::acomms::DCCLFieldCodecManager::add<DRCPresenceBitStringCodec, google::protobuf::FieldDescriptor::TYPE_STRING>("presence_bit");
@@ -921,7 +941,7 @@ void DRCShaper::run()
 }
 
 // changed to use wall time
-int64_t KMCLApp::get_current_utime()
+int64_t DRCShaperApp::get_current_utime()
 {
     return goby::common::goby_time<goby::uint64>();
 }
@@ -944,8 +964,6 @@ void DRCShaper::load_pmd_custom_codecs()
             diff_cmd->set_pid(263);
             diff_cmd->mutable_cmd()->set_auto_respawn(false);
             
-            
-            diff.set_ncmds(diff.cmds_size());
             
             std::string bytes;
             dccl_->encode(&bytes, diff);
@@ -1046,13 +1064,11 @@ void DRCShaper::load_robot_plan_custom_codecs()
         rot_diff->add_dw(0);
 
         
-        plan.set_num_grasp_transitions(0);
         plan.set_left_arm_control_type(1);
         plan.set_left_leg_control_type(2);
         plan.set_right_arm_control_type(4);
         plan.set_right_leg_control_type(0);
 
-        plan.set_aff_num_states(0);
         
 //        std::cout << plan.DebugString() << std::endl;
         
@@ -1063,9 +1079,6 @@ void DRCShaper::load_robot_plan_custom_codecs()
         dccl_->decode(bytes, &plan_out);
 
 //        std::cout << plan_out.DebugString() << std::endl;
-
-        while(plan_out.grasp_size() > plan_out.num_grasp_transitions())
-            plan_out.mutable_grasp()->RemoveLast();
         
         assert(plan.SerializeAsString() == plan_out.SerializeAsString());
     }

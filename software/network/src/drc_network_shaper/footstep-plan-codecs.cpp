@@ -1,13 +1,12 @@
 #include "footstep-plan-codecs.h"
 #include "robot-state-codecs.h"
-#include "goby/acomms/dccl/dccl_field_codec_arithmetic.h"
+#include "dccl/arithmetic/field_codec_arithmetic.h"
 
 FootStepPlanCodec::FootStepPlanCodec(const std::string loopback_channel)
     : CustomChannelCodec(loopback_channel),
       dccl_(goby::acomms::DCCLCodec::get())
 {
 
-    goby_dccl_load(dccl_);    
 
     using goby::glog;
     using namespace goby::common::logger;
@@ -16,7 +15,7 @@ FootStepPlanCodec::FootStepPlanCodec(const std::string loopback_channel)
 //    const float RP_MIN = -MAX;    
     const int RP_PRECISION = drc::RotationRPYDiff::descriptor()->FindFieldByName("droll")->options().GetExtension(dccl::field).precision();
     
-    goby::acomms::protobuf::ArithmeticModel rp_model;
+    dccl::protobuf::ArithmeticModel rp_model;
     
     glog.is(VERBOSE) && glog << "Making rollpitch model" << std::endl;
         
@@ -67,7 +66,7 @@ FootStepPlanCodec::FootStepPlanCodec(const std::string loopback_channel)
     
     rp_model.set_name("rollpitch");
     glog.is(VERBOSE) && glog << "Setting rollpitch model" << std::endl;
-    goby::acomms::ModelManager::set_model(rp_model);        
+    dccl::ModelManager::set_model(rp_model);        
 //        std::cout << pb_to_short_string(rp_model) << std::endl;
 
     dccl_->validate<drc::MinimalFootStepPlan>();

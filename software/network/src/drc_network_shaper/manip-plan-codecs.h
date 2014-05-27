@@ -158,7 +158,6 @@ bool to_minimal_robot_plan(const LCMRobotPlan& lcm_object, drc::MinimalRobotPlan
         previous_goal = present_goal;
     }
 
-    dccl_plan.set_num_grasp_transitions(lcm_object.num_grasp_transitions);
     for(int i = 0, n = lcm_object.grasps.size(); i < n; ++i)
     {
         const drc::grasp_transition_state_t& present_grasp = lcm_object.grasps[i];
@@ -376,8 +375,8 @@ bool from_minimal_robot_plan(LCMRobotPlan& lcm_object, const drc::MinimalRobotPl
     }
     
     
-    lcm_object.num_grasp_transitions = dccl_plan.num_grasp_transitions();
-    for(int i = 0, n = dccl_plan.num_grasp_transitions(); i < n; ++i)
+    lcm_object.num_grasp_transitions = dccl_plan.grasp_size();
+    for(int i = 0, n = dccl_plan.grasp_size(); i < n; ++i)
     {
         drc::grasp_transition_state_t present_grasp;
         const drc::GraspTransition& dccl_grasp = dccl_plan.grasp(i);

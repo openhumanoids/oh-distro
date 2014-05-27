@@ -9,7 +9,7 @@
 // fingerprint_base = long = 4
 // 4 missing bytes = 4 (probably the channel OR that the fingerprint has be double counted here)
 
-#include "network-bridge.h"
+#include "shaper-app.h"
 #include <path_util/path_util.h>
 #include "goby/common/logger.h"
 
@@ -18,13 +18,13 @@
 using namespace boost; 
 using namespace std;
 
-const std::string KMCLApp::B2R_CHANNEL = "TUNNEL_BASE_TO_ROBOT";
-const std::string KMCLApp::R2B_CHANNEL = "TUNNEL_ROBOT_TO_BASE";
+const std::string DRCShaperApp::B2R_CHANNEL = "TUNNEL_BASE_TO_ROBOT";
+const std::string DRCShaperApp::R2B_CHANNEL = "TUNNEL_ROBOT_TO_BASE";
 
     
 
 
-KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
+DRCShaperApp::DRCShaperApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::LCM> &base_lcm,
                  const CommandLineConfig& cl_cfg):
     robot_lcm(robot_lcm), base_lcm(base_lcm),
     cl_cfg(cl_cfg), reset_usage_stats(false){
@@ -58,12 +58,12 @@ KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::
     }
   
     string direction = "robot_to_base";  
-    robot2base_subscription =  parse_direction(cl_cfg.task, direction, 1);
+    robot2base_subscription =  parse_direction(direction, 1);
     std::cout << robot2base_subscription<< " is robot2base_subscription string\n";
     std::cout << "========\n";  
   
     direction = "base_to_robot";
-    base2robot_subscription =  parse_direction(cl_cfg.task, direction, 0);
+    base2robot_subscription =  parse_direction(direction, 0);
     std::cout << base2robot_subscription << " is base2robot_subscription string\n";
     std::cout << "========\n";  
   
@@ -79,7 +79,7 @@ KMCLApp::KMCLApp(boost::shared_ptr<lcm::LCM> &robot_lcm, boost::shared_ptr<lcm::
 
 
 // Parse the message channels to be sent in a particular direction:
-std::string KMCLApp::parse_direction(string task, string direction, bool direction_bool){
+std::string DRCShaperApp::parse_direction(string direction, bool direction_bool){
     string subscription_string ="";
     std::vector <string> channels;
     std::vector<double> frequencys;
@@ -91,11 +91,11 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
     for(char c = 'a', end = 'd'; c <= end; ++c)
     {
         char channels_key[10000], frequency_key[10000];
-        std::string channel_key_name = std::string("network.%s.%s.channels_") + std::string(1, c);
-        std::string frequency_key_name = std::string("network.%s.%s.frequency_") + std::string(1,c);
+        std::string channel_key_name = std::string("network.%s.channels_") + std::string(1, c);
+        std::string frequency_key_name = std::string("network.%s.frequency_") + std::string(1,c);
         
-        sprintf(channels_key, channel_key_name.c_str(),task.c_str() , direction.c_str() );
-        sprintf(frequency_key, frequency_key_name.c_str(),task.c_str() , direction.c_str() );
+        sprintf(channels_key, channel_key_name.c_str(), direction.c_str() );
+        sprintf(frequency_key, frequency_key_name.c_str(), direction.c_str() );
 //        std::cout << channel_key_name << " ===========================\n";
         std::vector <string> channels_local;
         char **names = bot_param_get_str_array_alloc(bot_param, channels_key);
@@ -112,8 +112,8 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
 
         // buffer size
         char buffer_key[10000];
-        std::string buffer_key_name =  std::string("network.%s.%s.buffer_size_") + std::string(1,c);
-        sprintf(buffer_key, buffer_key_name.c_str(),task.c_str() , direction.c_str() );
+        std::string buffer_key_name =  std::string("network.%s.buffer_size_") + std::string(1,c);
+        sprintf(buffer_key, buffer_key_name.c_str(), direction.c_str() );
         std::vector<int> buffer_sizes_local;
         int buffer_size= bot_param_get_int_or_fail(bot_param, buffer_key);
         buffer_sizes_local.assign (channels_local.size(), buffer_size);
@@ -121,8 +121,8 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
 
         // priority
         char priority_key[10000];
-        std::string priority_key_name =  std::string("network.%s.%s.priority_") + std::string(1,c);
-        sprintf(priority_key, priority_key_name.c_str(),task.c_str() , direction.c_str() );
+        std::string priority_key_name =  std::string("network.%s.priority_") + std::string(1,c);
+        sprintf(priority_key, priority_key_name.c_str(), direction.c_str() );
         std::vector<int> priority_local;
         int priority= bot_param_get_double_or_fail(bot_param, priority_key);
         priority_local.assign (channels_local.size(), priority);
@@ -143,7 +143,7 @@ std::string KMCLApp::parse_direction(string task, string direction, bool directi
 }
 
 // Determine if a specific message is to be sent or not:
-bool KMCLApp::determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes, bool* on_demand /* = 0 */){
+bool DRCShaperApp::determine_resend_from_list(std::string channel, int64_t msg_utime, bool &robot2base, int msg_bytes, bool* on_demand /* = 0 */){
     if(on_demand) *on_demand = false;
     for (size_t i=0; i < resendlist_.size() ; i++){
         if ( resendlist_[i].channel.compare(channel) == 0){
@@ -177,7 +177,7 @@ bool KMCLApp::determine_resend_from_list(std::string channel, int64_t msg_utime,
 }
 
 
-std::string KMCLApp::print_resend_list(){
+std::string DRCShaperApp::print_resend_list(){
     stringstream ss;
   
     //cout << "0123456789012345678901234567890123456789\n";
@@ -197,7 +197,7 @@ std::string KMCLApp::print_resend_list(){
     return ss.str();
 }
 
-void KMCLApp::send_resend_list(){
+void DRCShaperApp::send_resend_list(){
     drc::bandwidth_stats_t stats;
     stats.utime = get_current_utime();
     stats.previous_utime = bw_init_utime;
@@ -215,19 +215,18 @@ void KMCLApp::send_resend_list(){
 
 
 // The clock/robot_utime message is used to timing:
-void KMCLApp::utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+void DRCShaperApp::utime_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                             const  drc::utime_t* msg){
     set_current_utime(msg->utime);
 //  std::cout << "got current time\n";
 }
 
-void KMCLApp::reset_stats_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
+void DRCShaperApp::reset_stats_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                             const  drc::utime_t* msg){
     set_reset_usage_stats(true);
 }
 
 int main (int argc, char ** argv) {
-    string task = "driving";
 
     CommandLineConfig cl_cfg;
     cl_cfg.bot_only = true;
@@ -240,7 +239,6 @@ int main (int argc, char ** argv) {
     cl_cfg.log_path = ".";
   
     ConciseArgs opt(argc, (char**)argv);
-    opt.add(cl_cfg.task, "t", "task","Task: driving, walking, manipulation");
     opt.add(cl_cfg.config_file, "c", "config_file", "Config Filename");
     opt.add(cl_cfg.role, "r", "role", "Role: robot, base or both (local system mode)");
     opt.add(cl_cfg.enable_gui, "g", "gui", "Enable NCurses GUI (for debugging)");
@@ -249,7 +247,6 @@ int main (int argc, char ** argv) {
     opt.add(cl_cfg.log_path, "p", "logpath", "Path to directory in which to write log (requires -l)");
   
     opt.parse();
-    std::cout << "task: " << cl_cfg.task << "\n";
     std::cout << "config_file: " << cl_cfg.config_file<< "\n";
     std::cout << "role: " << cl_cfg.role << "\n";
     if (cl_cfg.role=="robot"){
@@ -299,16 +296,16 @@ int main (int argc, char ** argv) {
     }
 
   
-    KMCLApp* app= new KMCLApp(robot_lcm,base_lcm,cl_cfg);
+    DRCShaperApp* app= new DRCShaperApp(robot_lcm,base_lcm,cl_cfg);
     boost::thread_group thread_group;
 
     // Subscribe to robot time and use that to key the publishing of all messages in both directions:
     if(cl_cfg.base_only){
-        app->base_lcm->subscribe("ROBOT_UTIME", &KMCLApp::utime_handler, app);      
-	app->base_lcm->subscribe("RESET_SHAPER_STATS", &KMCLApp::reset_stats_handler, app);
+        app->base_lcm->subscribe("ROBOT_UTIME", &DRCShaperApp::utime_handler, app);      
+	app->base_lcm->subscribe("RESET_SHAPER_STATS", &DRCShaperApp::reset_stats_handler, app);
     }else{
-        app->robot_lcm->subscribe("ROBOT_UTIME", &KMCLApp::utime_handler, app);      
-	app->robot_lcm->subscribe("RESET_SHAPER_STATS", &KMCLApp::reset_stats_handler, app);
+        app->robot_lcm->subscribe("ROBOT_UTIME", &DRCShaperApp::utime_handler, app);      
+	app->robot_lcm->subscribe("RESET_SHAPER_STATS", &DRCShaperApp::reset_stats_handler, app);
     }
   
     thread_group.create_thread(boost::bind(robot2base, boost::ref( *app)));

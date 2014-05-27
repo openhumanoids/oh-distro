@@ -3,14 +3,7 @@ project(network_bridge)
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-
-add_executable(drc-network-bridge network-bridge.cpp bridge-handlers.cpp)
-target_link_libraries (drc-network-bridge boost_system boost_thread)
-pods_use_pkg_config_packages(drc-network-bridge lcm 
-             bot2-param-client path-util
-	     lcmtypes_drc_lcmtypes eigen3)
-#	    lcmtypes_bot2-core 
-pods_install_executables(drc-network-bridge)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
 set(ldpc_sources 
@@ -25,7 +18,6 @@ set(ldpc_sources
     ldpc/tools.cpp
     )
 
-
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_BINARY_DIR}
   shaper-packet.proto
@@ -36,7 +28,7 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_BINARY_DIR}
   grasp-analogs.proto
   ) 
 add_executable(drc-network-shaper 
-  network-bridge.cpp 
+  shaper-app.cpp 
   shaper-handlers.cpp 
   custom-codecs.cpp
   procman-codecs.cpp
@@ -47,11 +39,12 @@ add_executable(drc-network-shaper
   drc_udp_driver.cpp
   ${ldpc_sources}
   ${PROTO_SRCS} ${PROTO_HDRS})
-target_link_libraries (drc-network-shaper boost_system boost_thread boost_date_time goby_acomms goby_common goby_dccl_arithmetic protobuf boost_signals)
+
+target_link_libraries (drc-network-shaper boost_system boost_thread boost_date_time goby_acomms goby_common dccl_arithmetic protobuf boost_signals)
 pods_use_pkg_config_packages(drc-network-shaper lcm 
              bot2-param-client path-util
 	     lcmtypes_drc_lcmtypes eigen3)
-#	    lcmtypes_bot2-core 
+
 pods_install_executables(drc-network-shaper)
 
 add_executable(drc-network-test network-test.cpp)

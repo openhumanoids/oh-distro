@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6.0)
 
 # pull in the pods macros. See cmake/pods.cmake for documentation
-set(POD_NAME network_sim)
+set(POD_NAME network)
 include(cmake/pods.cmake)
 
 # automatically build LCM types.  This also defines a number of CMake
@@ -25,7 +25,7 @@ protobuf_include_dirs(${PROTOBUF_INCLUDE_DIR})
 protobuf_include_dirs(${GOBY_INCLUDE_DIR})
 
 # simple network simulator:
-add_subdirectory(src/network_bridge)
+add_subdirectory(src/drc_network_shaper)
 add_subdirectory(src/log_vrcscore)
 add_subdirectory(src/analyze_network_score)
 

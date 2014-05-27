@@ -1,7 +1,7 @@
 #ifndef SHAPERHANDLERS20130506H
 #define SHAPERHANDLERS20130506H
 
-#include "network-bridge.h"
+#include "shaper-app.h"
 #include "shaper-packet.pb.h"
 #include "drc_udp_driver.h"
 #include "ldpc/ldpc_wrapper.h"
@@ -94,7 +94,7 @@ namespace drc
 class DRCShaper
 {
   public:
-    DRCShaper(KMCLApp& app, Node node);
+    DRCShaper(DRCShaperApp& app, Node node);
     void run();
 
   private:
@@ -146,7 +146,7 @@ class DRCShaper
     
     friend void lcm_outgoing_handler(const lcm_recv_buf_t *rbuf, const char *channel, void *user_data);
   private:
-    KMCLApp& app_;
+    DRCShaperApp& app_;
     boost::asio::io_service udp_service_;
     boost::shared_ptr<DRCUDPDriver> udp_driver_;
     goby::acomms::MACManager mac_;

@@ -8,6 +8,8 @@
 
 #include "procman-analogs.pb.h"
 
+#include "goby/common/time.h"
+
 enum { RESEND_SECONDS = 5 };
 enum { NO_CHANGE_PERIOD = 5 }; // seconds between no-change messages
     

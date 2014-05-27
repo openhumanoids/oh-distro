@@ -1,5 +1,5 @@
 #include "manip-plan-codecs.h"
-#include "goby/acomms/dccl/dccl_field_codec_arithmetic.h"
+#include "dccl/arithmetic/field_codec_arithmetic.h"
 
 ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
     : CustomChannelCodec(loopback_channel),
@@ -31,7 +31,7 @@ ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
     
         for(int j = 0; j < 28; ++j)
         {
-            goby::acomms::protobuf::ArithmeticModel model;
+            dccl::protobuf::ArithmeticModel model;
 
             glog.is(VERBOSE) && glog << "Making joint_pos_" << j << " model" << std::endl;
 
@@ -66,7 +66,7 @@ ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
         
             model.set_name("joint_pos_" + goby::util::as<std::string>(j));
             glog.is(VERBOSE) && glog << "Setting joint_pos_" << j << " model" << std::endl;
-            goby::acomms::ModelManager::set_model(model);        
+            dccl::ModelManager::set_model(model);        
 //        std::cout << pb_to_short_string(model) << std::endl;
     
         }
@@ -92,7 +92,6 @@ bool ManipPlanCodec::encode(const std::vector<unsigned char>& lcm_data, std::vec
     if(!to_minimal_robot_plan_control_type_new(lcm_object, dccl_plan))
         return false;
     
-    dccl_plan.set_aff_num_states(0);
     
     std::string encoded;
     dccl_->encode(&encoded, dccl_plan);
@@ -155,7 +154,6 @@ bool ManipMapCodec::encode(const std::vector<unsigned char>& lcm_data, std::vect
     if(!to_minimal_robot_plan_control_type_old(lcm_object, dccl_plan))
         return false;
 
-    dccl_plan.set_aff_num_states(lcm_object.num_states);    
 
     for(int i = 0, n = lcm_object.aff_index.size(); i < n; ++i)
     {
@@ -212,7 +210,7 @@ bool ManipMapCodec::decode(std::vector<unsigned char>* lcm_data, const std::vect
     if(!from_minimal_robot_plan_control_type_old(lcm_object, dccl_plan))
         return false;
     
-    for(int i = 0, n = dccl_plan.aff_num_states(); i < n; ++i)
+    for(int i = 0, n = dccl_plan.aff_index_size(); i < n; ++i)
     {
         drc::affordance_index_t lcm_aff_index;
         const drc::AffordanceIndex& dccl_aff_index = dccl_plan.aff_index(i);

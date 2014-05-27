@@ -113,7 +113,6 @@ bool PMDOrdersCodec::make_diff(const bot_procman::orders2_t& orders, const bot_p
         else
             diff->mutable_cmds()->RemoveLast();
     }
-    diff->set_ncmds(diff->cmds_size());
             
     glog.is(VERBOSE) && glog << "Made PMD_ORDERS diff: " << pb_to_short_string(*diff,true) << std::endl;
     return true;
@@ -133,17 +132,17 @@ bool PMDOrdersCodec::reverse_diff(bot_procman::orders2_t* orders, const bot_proc
     orders->utime = reference.utime + diff.utime();
     orders->host = reference.host;
     orders->sheriff_name = diff.has_sheriff_name() ? diff.sheriff_name() : reference.sheriff_name;
-    orders->ncmds = diff.ncmds() > 0 ? std::max(reference.ncmds, diff.cmds(diff.ncmds()-1).index()) : reference.ncmds;
+    orders->ncmds = diff.cmds_size() > 0 ? std::max(reference.ncmds, diff.cmds(diff.cmds_size()-1).index()) : reference.ncmds;
 
     int j = 0;
     for(int i = 0, n = orders->ncmds; i < n; ++i)
     {
         bot_procman::sheriff_cmd2_t cmd;
 
-        if(j < diff.ncmds() && diff.cmds(j).index() < i)
+        if(j < diff.cmds_size() && diff.cmds(j).index() < i)
             ++j;
         
-        drc::PMDOrdersDiff::PMDSheriffCmdDiff diff_cmd = (j < diff.ncmds() && diff.cmds(j).index() == i) ?
+        drc::PMDOrdersDiff::PMDSheriffCmdDiff diff_cmd = (j < diff.cmds_size() && diff.cmds(j).index() == i) ?
             diff.cmds(j) : drc::PMDOrdersDiff::PMDSheriffCmdDiff();
         // 
         bool has_ref_cmd = i < static_cast<int>(reference.cmds.size());
@@ -214,7 +213,6 @@ bool PMDInfoCodec::make_diff(const bot_procman::info2_t& info, const bot_procman
         
         
     }       
-    diff->set_ncmds(diff->cmds_size());
     glog.is(VERBOSE) && glog << "Made PMD_INFO diff: " << pb_to_short_string(*diff,true) << std::endl;
     
     return true;
@@ -238,17 +236,17 @@ bool PMDInfoCodec::reverse_diff(bot_procman::info2_t* info, const bot_procman::i
     info->swap_free_bytes = -1;
     info->num_options = 0;
     
-    info->ncmds = diff.ncmds() > 0 ? std::max(reference.ncmds, diff.cmds(diff.ncmds()-1).index()) : reference.ncmds;
+    info->ncmds = diff.cmds_size() > 0 ? std::max(reference.ncmds, diff.cmds(diff.cmds_size()-1).index()) : reference.ncmds;
 
     int j = 0;
     for(int i = 0, n = info->ncmds; i < n; ++i)
     {
         bot_procman::deputy_cmd2_t cmd;
 
-        if(j < diff.ncmds() && diff.cmds(j).index() < i)
+        if(j < diff.cmds_size() && diff.cmds(j).index() < i)
             ++j;
         
-        drc::PMDInfoDiff::PMDDeputyCmdDiff diff_cmd = (j < diff.ncmds() && diff.cmds(j).index() == i) ?
+        drc::PMDInfoDiff::PMDDeputyCmdDiff diff_cmd = (j < diff.cmds_size() && diff.cmds(j).index() == i) ?
             diff.cmds(j) : drc::PMDInfoDiff::PMDDeputyCmdDiff();
         // 
 
