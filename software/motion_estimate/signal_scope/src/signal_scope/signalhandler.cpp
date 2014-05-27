@@ -359,6 +359,7 @@ define_array_handler(ControllerDebugQddDes, drc::controller_debug_t, qddot_des, 
 define_array_handler(ControllerDebugU, drc::controller_debug_t, u, createIndexList(28));
 define_array_handler(ControllerDebugHdotDes, drc::controller_debug_t, hdot_des, createIndexList(6));
 define_array_handler(ControllerDebugAlpha, drc::controller_debug_t, alpha, createIndexList(90));
+define_array_handler(ControllerDebugZMPerr, drc::controller_debug_t, zmp_err, createIndexList(2));
 
 /*
 define_field_array_handler(AtlasControlJointsPositionHandler, drc::atlas_control_data_t, joints, position, JointNames::jointNames());
@@ -588,6 +589,7 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<ControllerDebugU>();
     factory.registerClass<ControllerDebugHdotDes>();
     factory.registerClass<ControllerDebugAlpha>();
+    factory.registerClass<ControllerDebugZMPerr>();
     factory.registerClass<AtlasControlJointsPositionHandler>();
     factory.registerClass<AtlasControlJointsVelocityHandler>();
     factory.registerClass<AtlasControlJointsEffortHandler>();
