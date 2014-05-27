@@ -6,7 +6,6 @@ estimate_tools
 
 
 state_sync
-signal_scope
 hand_estimate
 
 
@@ -26,3 +25,5 @@ state_estimate
 # some modules in the estimators have shared class names
 # this is potentially conflicting
 plan_monitor
+
+signal_scope
