@@ -8,6 +8,7 @@
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/microstrain_comm.hpp>
 #include <lcmtypes/vicon.hpp>
+#include "lcmtypes/robotiqhand/status_t.hpp"
 #include "lcmtypes/drc/atlas_command_t.hpp"
 #include "lcmtypes/drc/atlas_foot_pos_est_t.hpp"
 #include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
@@ -21,6 +22,7 @@
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
 #include "lcmtypes/drc/controller_debug_t.hpp"
+#include "lcmtypes/mav/filter_state_t.hpp"
 
 #include <cassert>
 
@@ -109,7 +111,7 @@ QList<QList<QString> > className::validArrayKeys() \
   arrayKeys << _arrayKeyFunction; \
   return arrayKeys; \
 } \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -141,7 +143,7 @@ QList<QList<QString> > className::validArrayKeys() \
   arrayKeys << _arrayKeyFunction1 << _arrayKeyFunction2; \
   return arrayKeys; \
 } \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -171,7 +173,7 @@ QList<QList<QString> > className::validArrayKeys() \
   arrayKeys << _arrayKeyFunction; \
   return arrayKeys; \
 } \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -192,7 +194,7 @@ QString className::description() { return QString("%1.%2.%3[%4]").arg(this->mess
 declare_signal_handler(className); \
 className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -213,7 +215,7 @@ QString className::description() { return QString("%1.%2").arg(this->messageType
 declare_signal_handler(className); \
 className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -233,7 +235,7 @@ QString className::description() { return QString("%1.%2").arg(this->messageType
 declare_signal_handler(className); \
 className::className(const SignalDescription* desc) : SignalHandler(desc) { } \
 default_array_keys_function(className) \
-bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, float& timeNow, float& signalValue) \
+bool className::extractSignalData(const lcm::ReceiveBuffer* rbuf, double& timeNow, double& signalValue) \
 { \
   _messageType msg; \
   if (msg.decode(rbuf->data, 0, 1000000) < 0) \
@@ -353,6 +355,10 @@ define_field_handler(AtlasStatusBehavior, drc::atlas_status_t, behavior);
 define_field_handler(ControllerDebugRightFoot, drc::controller_debug_t, r_foot_contact);
 define_field_handler(ControllerDebugLeftFoot, drc::controller_debug_t, l_foot_contact);
 define_field_handler(ControllerDebugSolverInfo, drc::controller_debug_t, info);
+define_array_handler(ControllerDebugQddDes, drc::controller_debug_t, qddot_des, createIndexList(34));
+define_array_handler(ControllerDebugU, drc::controller_debug_t, u, createIndexList(28));
+define_array_handler(ControllerDebugHdotDes, drc::controller_debug_t, hdot_des, createIndexList(6));
+define_array_handler(ControllerDebugAlpha, drc::controller_debug_t, alpha, createIndexList(90));
 
 /*
 define_field_array_handler(AtlasControlJointsPositionHandler, drc::atlas_control_data_t, joints, position, JointNames::jointNames());
@@ -458,6 +464,15 @@ define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexLi
 define_field_handler(FootContactLeft, drc::foot_contact_estimate_t, left_contact);
 define_field_handler(FootContactRight, drc::foot_contact_estimate_t, right_contact);
 
+
+// mav_filter_state_t
+define_array_handler(MavStateHandler, mav::filter_state_t, state, createIndexList(21));
+
+// robotiq_hand_status_t
+define_field_handler(RobotiqStatusCurrentA, robotiqhand::status_t, currentA);
+define_field_handler(RobotiqStatusCurrentB, robotiqhand::status_t, currentB);
+define_field_handler(RobotiqStatusCurrentC, robotiqhand::status_t, currentC);
+
 SignalHandler::SignalHandler(const SignalDescription* signalDescription, QObject* parent) : LCMSubscriber(parent)
 {
   assert(signalDescription != 0);
@@ -472,8 +487,8 @@ SignalHandler::~SignalHandler()
 
 void SignalHandler::handleMessage(const lcm::ReceiveBuffer* rbuf, const std::string& channel)
 {
-  float timeNow;
-  float signalValue;
+  double timeNow;
+  double signalValue;
   (void)channel;
 
   bool valid = this->extractSignalData(rbuf, timeNow, signalValue);
@@ -569,6 +584,10 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<ControllerDebugRightFoot>();
     factory.registerClass<ControllerDebugLeftFoot>();
     factory.registerClass<ControllerDebugSolverInfo>();
+    factory.registerClass<ControllerDebugQddDes>();
+    factory.registerClass<ControllerDebugU>();
+    factory.registerClass<ControllerDebugHdotDes>();
+    factory.registerClass<ControllerDebugAlpha>();
     factory.registerClass<AtlasControlJointsPositionHandler>();
     factory.registerClass<AtlasControlJointsVelocityHandler>();
     factory.registerClass<AtlasControlJointsEffortHandler>();
@@ -631,6 +650,10 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<DrillControlData>();
     factory.registerClass<FootContactLeft>();
     factory.registerClass<FootContactRight>();
+    factory.registerClass<MavStateHandler>();
+    factory.registerClass<RobotiqStatusCurrentA>();
+    factory.registerClass<RobotiqStatusCurrentB>();
+    factory.registerClass<RobotiqStatusCurrentC>();
 
   }
 

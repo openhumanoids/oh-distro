@@ -628,9 +628,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[17] = eigenToMatlab(force_delta);
   }
 
-
-
-
+  if (nlhs>18) {
+    Vector2d zmp = xcom.head(2) - 0.89/9.81*(pdata->J_xy*qdd + pdata->Jdot_xy*qdvec);
+    plhs[18] = eigenToMatlab(zmp);
+  }
   if (model) { 
     GRBfreemodel(model); 
   } 

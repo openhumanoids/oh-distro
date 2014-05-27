@@ -26,14 +26,17 @@ struct controller_debug_t
   // centroidal momentum
   float h[6];
 
+  // ZMP error
+  float zmp_err[2];
+
   // desired centroidal momentum rate of change
   float hdot_des[6];
 
   // QP bounds
   int32_t nb;
   float lb[nb];
-  float ub[nb];
-
+  float ub[nb]
+;
   // active set of inequality constraints
   int32_t n_active_constraints;
   float active_constraints[n_active_constraints];   

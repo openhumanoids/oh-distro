@@ -22,6 +22,14 @@ public:
     Plot(QWidget * = NULL);
     virtual ~Plot();
 
+
+    enum AlignMode
+    {
+      RIGHT,
+      CENTER
+    };
+
+
     void start();
     void stop();
 
@@ -38,6 +46,9 @@ public:
     void moveCanvas(int dx, int dy);
 
     void setBackgroundColor(QString color);
+
+    void setMarkerEnabled(bool enabled);
+    void setAlignMode(AlignMode mode);
 
     bool isStopped();
 
@@ -62,6 +73,7 @@ private:
     void initBackground();
 
     QwtPlotMarker *d_origin;
+    QwtPlotMarker *d_marker;
     QwtPlotGrid *d_grid;
     MyMagnifier *mMagnifier;
 
@@ -69,6 +81,7 @@ private:
     bool mAxisSyncRequired;
     int mColorMode;
     double mTimeWindow;
+    AlignMode mAlignMode;
 
     QMap<SignalData*, QwtPlotCurve*> mSignals;
 };

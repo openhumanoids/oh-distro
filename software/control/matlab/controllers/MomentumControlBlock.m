@@ -305,6 +305,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       
       y0 = fasteval(ctrl_data.K.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
       K = fasteval(ctrl_data.K.D,t); % always constant for ZMP dynamics
+      zmp_des = fasteval(ctrl_data.zmptraj,t);
     else
       supp = ctrl_data.supports;
       y0 = [0;0]; 
@@ -631,6 +632,8 @@ classdef MomentumControlBlock < MIMODrakeSystem
         debug_data.body_acc_des = [];%[varargin{body_accel_input_start}; varargin{body_accel_input_start+1}];
         debug_data.lb = lb;
         debug_data.ub = ub;
+        debug_data.zmp_err = 0;
+
         obj.debug_pub.publish(debug_data);
       end
       
@@ -652,10 +655,12 @@ classdef MomentumControlBlock < MIMODrakeSystem
         mu = 0.75;
         if obj.debug
           [y,qdd,info,active_supports,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,alpha,...
-            active_constraints,h,hdot_des,force_bound,force_delta] = MomentumControllermex(obj.mex_ptr.data,...
+            active_constraints,h,hdot_des,force_bound,force_delta,zmp_out] = MomentumControllermex(obj.mex_ptr.data,...
             obj.solver==0,qddot_des,x,varargin{body_accel_input_start:end},condof,supp,K,x0,y0,comz_des,...
             dcomz_des,ddcomz_des,mu,contact_sensor,contact_thresh,height,ctrl_data.contact_force_bounds.force_bound,force_delta);
 
+          zmp_err = zmp_des - zmp_out;
+          
           % publish debug 
           debug_data.utime = t*1e6;
           debug_data.alpha = alpha;
@@ -665,6 +670,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
           debug_data.qddot_des = qddot_des;
           debug_data.active_constraints = active_constraints;
           debug_data.h = h;
+          debug_data.zmp_err = zmp_err;
           debug_data.hdot_des = hdot_des;
           debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
           debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);

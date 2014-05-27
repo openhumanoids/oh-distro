@@ -45,6 +45,7 @@ classdef ControllerDebugPublisher
       msg.nb = length(data.lb);
       msg.lb = data.lb;
       msg.ub = data.ub;
+      msg.zmp_err = data.zmp_err;
 
       obj.lc.publish(obj.channel, msg);
     end
