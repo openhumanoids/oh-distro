@@ -52,8 +52,10 @@ if(GOBY_VERSION_MAJOR GREATER "1")
 
   if(NOT (GOBY_VERSION_MAJOR EQUAL "2" AND GOBY_VERSION_MINOR EQUAL "0"))
     find_package(DCCL)
-    include_directories("${DCCL_INCLUDE_DIR}")
-    protobuf_include_dirs("${DCCL_INCLUDE_DIR}")
+    if(DEFINED DCCL_INCLUDE_DIR)
+      include_directories("${DCCL_INCLUDE_DIR}")
+      protobuf_include_dirs("${DCCL_INCLUDE_DIR}")
+      endif()
     set(DCCL_LIBRARIES dccl)
   endif()
 
