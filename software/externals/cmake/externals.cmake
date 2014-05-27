@@ -100,7 +100,7 @@ set(snopt_revision 26eb6145bfae4671cc86bd5c723b381fb8bd5ab6)
 set(snopt_depends)
 
 set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)
-set(gurobi_revision 46d1985d5a86f7bc660e363cb2d5ff76af4b6fd9)
+set(gurobi_revision b95a186b4d988db00ada55bd8efb08c651a83fe7)
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
