@@ -22,8 +22,7 @@ r = r.setTerrain(KinematicTerrainMap(r, fp.xstar(1:r.getNumDOF), true));
 
 foot_orig = struct('right', [0;-0.15;0;0;0;0], 'left', [0;0.15;0;0;0;0]);
 
-stones = [0, 0, 0;
-          0, -0.15, 0.005;
+stones = [0, -0.15, 0.005;
           0.5, 0.15, 0.01;
           0.5, -0.15, 0.02;
           1, 0.15, 0.03;
@@ -32,24 +31,29 @@ stones = [0, 0, 0;
           1.5, 0.15, 0.06;
           2, 0, 0.07]';
 safe_regions = struct('A', {}, 'b', {}, 'point', {}, 'normal', {});
+n_regions = 20;
+lb = [0;-.2;-0.05];
+ub = [2;.2;0.05];
+stone_scale = 0.08;
 if 1
-  for j = 1:size(stones, 2)
-    [Ai, bi] = poly2lincon(stones(1,j) + [-.15, -.15, .15, .15],...
-                           stones(2,j) + [-.15, .15, .15, -.15]);
+  for j = 1:n_regions
+    stone = rand(3,1) .* (ub - lb) + lb;
+    [Ai, bi] = poly2lincon(stone(1) + stone_scale*[-1, -1, 1, 1],...
+                           stone(2) + stone_scale*[-1, 1, 1, -1]);
     Ai = [Ai, zeros(size(Ai, 1), 1)];
-    safe_regions(end+1) = struct('A', Ai, 'b', bi, 'point', [0;0;stones(3,j)], 'normal', [0;0;1]);
+    safe_regions(end+1) = struct('A', Ai, 'b', bi, 'point', [0;0;stone(3)], 'normal', [0;0;1]);
   end
-  [Ai, bi] = poly2lincon([2, 7, 7, 2], [.3, .3, -.3, -.3]);
-  Ai = [Ai, zeros(size(Ai, 1), 1)];
-  safe_regions(end+1) = struct('A', Ai, 'b', bi, 'point', [0;0;stones(3,j)], 'normal', [0;0;1]);
+%   [Ai, bi] = poly2lincon([2, 7, 7, 2], [.3, .3, -.3, -.3]);
+%   Ai = [Ai, zeros(size(Ai, 1), 1)];
+%   safe_regions(end+1) = struct('A', Ai, 'b', bi, 'point', [0;0;stones(3)], 'normal', [0;0;1]);
 else
   [Ai, bi] = poly2lincon([-.2, -.2, 5,5], [-2, 2, 2, -2]);
   Ai = [Ai, zeros(size(Ai, 1), 1)];
   safe_regions(1) = struct('A', Ai, 'b', bi, 'point', [0;0;0], 'normal', [0;0;1]);
 end
 
-goal_pos = struct('right', [6;-0.15;0.1;0;0;0],...
-                  'left',  [6;+0.15;0.1;0;0;0]);
+goal_pos = struct('right', [2;-0.15;0.1;0;0;0],...
+                  'left',  [2;+0.15;0.1;0;0;0]);
 
 
 request.params = drc.footstep_plan_params_t();
@@ -72,14 +76,25 @@ weights = struct('relative', [10;50;10;0;0;.5],...
                  'relative_final', [1000;100;100;0;0;100],...
                  'goal', [100;100;0;0;0;10]);
 
+% seed_plan = FootstepPlan.blank_plan(r, 4, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
+% seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
+% seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);
+% tic
+% % profile on
+% plan = footstepMIQP(r, seed_plan, weights, goal_pos, 3, 30);
+% for k = [8,16,30]
+%   plan = plan.extend(k);
+%   plan = footstepMIQP(r, plan, weights, goal_pos, 3, 30);
+% end
+% % profile viewer
+% toc
+
 tic
-% profile on
 nsteps = 30;
 seed_plan = FootstepPlan.blank_plan(r, nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
 seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);
 plan = footstepMIQP(r, seed_plan, weights, goal_pos, 3, 30);
-% profile viewer
 toc
 
 figure(1);
@@ -98,9 +113,3 @@ for j = 1:length(safe_regions)
   patch(V(k,1), V(k,2), 'k', 'FaceAlpha', 0.2);
 end
 axis equal
-
-% profile on
-% tic
-% plan = footstepMIQP(r, plan, goal_pos);
-% toc
-% profile viewer

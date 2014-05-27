@@ -26,34 +26,51 @@ nvar = nx + ns + nt;
 x_ndx = reshape(1:nx, 4, nsteps);
 s_ndx = reshape(nx + (1:ns), nr, ns / nr);
 t_ndx = reshape(nx + ns + (1:nt), 1, nsteps);
-start_pos = seed_plan.footsteps(2).pos.inFrame(seed_plan.footsteps(2).frames.center);
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 
 x0 = nan(1, nvar);
 R = cell(nsteps, 1);
+seed_steps = seed_plan.step_matrix();
+start_pos = seed_steps(:,2);
 for j = 1:nsteps
-  if ~any(isnan(seed_plan.footsteps(j).pos.double()))
-    p0 = seed_plan.footsteps(j).pos.inFrame(seed_plan.footsteps(j).frames.center);
+  if ~any(isnan(seed_steps(:,j)))
+    p0 = seed_steps(:,j);
     x0(x_ndx(:,j)) = p0([1,2,3,6]);
     if j > 2
-      R{j} = [rotmat(-seed_plan.footsteps(j-1).pos(6)), zeros(2,2);
+      R{j} = [rotmat(-seed_steps(6,j-1)), zeros(2,2);
            zeros(2,2), eye(2)];
     end
   else
-    p0 = seed_plan.footsteps(mod(j-1, 2)+1).pos.inFrame(seed_plan.footsteps(mod(j-1, 2)+1).frames.center);
+    p0 = seed_steps(:,mod(j-1, 2)+1);
     x0(x_ndx(:,j)) = p0([1,2,3,6]);
     R{j} = [rotmat(-p0(6)), zeros(2,2);
      zeros(2,2), eye(2)];
   end
 
-  ra = false(nr, 1);
+  si = false(nr, 1);
   if ~isnan(seed_plan.region_order(j))
-    ra(seed_plan.region_order(j)) = true;
+    si(seed_plan.region_order(j)) = true;
   else
-    ra(1) = true;
+    si(1) = true;
   end
-  x0(s_ndx(:,j)) = ra;
+  x0(s_ndx(:,j)) = si;
 end
+
+% Set the initial seed for the t_i, which indicate that step i is fixed to
+% take the same pose as the final step (and thus can be trimmed off later)
+for j = 1:nsteps-2
+  if mod(nsteps-j, 2)
+    last_step = nsteps-1;
+  else
+    last_step = nsteps;
+  end
+  if all(seed_steps(:,j) == seed_steps(:,last_step))
+    x0(t_ndx(j)) = true;
+  else
+    x0(t_ndx(j)) = false;
+  end
+end
+x0(t_ndx(end-1:end)) = true;
 
 % nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
 nom_step = [0; seed_plan.params.nom_step_width; 0; 0];
@@ -90,7 +107,7 @@ b = [b; bt];
 
 % If t(j) is true, then require that step(i) == step(end) or step(end-1) as
 % appropriate.
-M = 1000;
+M = 100;
 for j = 3:nsteps-2
   Ati = zeros(3, nvar);
   Ati(:,x_ndx(1:3,j)) = diag(ones(3, 1));
@@ -150,7 +167,7 @@ for j = 3:nsteps
   beq = [beq; beqi];
 end
 
-M = 1000;
+M = 100;
 Ar = zeros((nsteps-2) * sum(cellfun(@(x) size(x, 1), {seed_plan.safe_regions.A})), nvar);
 br = zeros(size(Ar, 1), 1);
 offset = 0;
@@ -204,11 +221,12 @@ model.Q = sparse(Q);
 model.start = x0;
 params = struct();
 params.timelimit = 5;
-params.mipgap = 3e-4;
+% params.mipgap = 3e-4;
+params.mipgap = 1e-3;
 params.outputflag = 1;
 
 result = gurobi(model, params);
-if ~strcmp(result.status, 'OPTIMAL')
+if strcmp(result.status, 'INFEASIBLE') || strcmp(result.status, 'INF_OR_UNBD')
   warning('DRC:footstepMIQP:InfeasibleProblem', 'The footstep planning problem is infeasible. This often occurs when the robot cannot reach from its current pose into any of the safe regions');
   plan = seed_plan.slice(1:2);
   return
