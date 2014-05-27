@@ -82,7 +82,7 @@ request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.30;
 request.params.nom_upward_step = 0.2;
 request.params.nom_downward_step = 0.2;
-request.params.ignore_terrain = false;
+request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
@@ -91,7 +91,7 @@ request.default_step_params = drc.footstep_params_t();
 request.default_step_params.step_speed = 0.15;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
-request.default_step_params.constrain_full_foot_pose = true;
+request.default_step_params.constrain_full_foot_pose = false;
 request.default_step_params.drake_min_hold_time = 2; %sec
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
@@ -103,6 +103,8 @@ request.footstep_plan = footstep_plan.toLCM();
 request.use_new_nominal_state = true;
 request.new_nominal_state = r.getStateFrame().lcmcoder.encode(0, x0);
 walking_plan = walking_planner.plan_walking(r, request, true);
+lc = lcm.lcm.LCM.getSingleton();
+lc.publish('WALKING_TRAJ_RESPONSE', walking_plan.toLCM());
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
 % No-op: just make sure we can cleanly encode and decode the plan as LCM
@@ -122,7 +124,14 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-%qtraj = PPTrajectory(foh(ts,walking_plan.xtraj(1:nq,:)));
+%qs = walking_plan.xtraj(1:nq,:);
+%qdot = 0*qs;
+%for i=2:length(ts)-1
+%  qdot(i) = (qdot(i+1)-qdot(i-1))/2;
+%end
+%
+%qtraj = PPTrajectory(pchipDeriv(ts,qs,qdot));
+%qdtraj = fnder(qtraj,1);
 
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
@@ -134,6 +143,7 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
+  'zmptraj',walking_ctrl_data.zmptraj,...
   'K',walking_ctrl_data.K,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
 
@@ -179,7 +189,7 @@ end
 options.slack_limit = 50;
 options.w_slack = 0.005;
 options.input_foot_contacts = true;
-options.debug = false;
+options.debug = true;
 options.use_mex = true;
 options.contact_threshold = 0.0075;
 options.output_qdd = true;
@@ -303,7 +313,7 @@ if use_simple_pd
   end
 else
   options.Kp = 60.0*ones(nq,1);
-  options.Kd = 16.0*ones(nq,1);
+  options.Kd = 14.5*ones(nq,1);
   options.Kp(3) = 30.0;
   options.Kd(3) = 12.0;
   options.Kp(4:6) = 30.0;
