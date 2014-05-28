@@ -1,0 +1,13 @@
+package drc;
+
+struct pfgrasp_command_t 
+{
+  int64_t utime;
+  int8_t command; 
+
+  const int8_t STOP      = 0;
+  const int8_t START     = 1;
+  const int8_t RESTART   = 2;
+  const int8_t RUN_ONE_ITER = 3;  
+}
+

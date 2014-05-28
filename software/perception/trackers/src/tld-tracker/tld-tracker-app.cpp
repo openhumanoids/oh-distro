@@ -170,6 +170,7 @@ static void on_segmentation_frame (const lcm_recv_buf_t *rbuf, const char *chann
     state_t* state = (state_t*) user_data; 
     float sw = state->camera_params.width, sh = state->camera_params.height;
     Rect selection(msg->roi.x * sw, msg->roi.y * sh, msg->roi.width * sw, msg->roi.height * sh);
+
     state->aff_utime = msg->utime; 
 
     if (msg->feature_id < 0) {
@@ -264,6 +265,7 @@ static void on_image_frame (const lcm_recv_buf_t *rbuf, const char *channel,
         std::cerr << "TLD currBB: " << currBB.tl() << " " << currBB.br() << std::endl;
         
 	    rectangle(dispimg, currBB, Scalar(0,0,255), 3, 8, 0);
+      
     }
     Mat scaleddispimg;
     cv::resize(dispimg, scaleddispimg, Size(dispimg.cols/2,dispimg.rows/2), 0,0,INTER_LINEAR);

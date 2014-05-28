@@ -177,6 +177,11 @@ static void onMouse(int event, int x, int y, int flags, void* userdata) {
             state->img_selection = state->img(cv::Rect(x_s, y_s, width_s, height_s)).clone();                       
          
         } 
+
+        // don't display the selection after publish
+        state->selection.width = 0;  state->selection.height = 0;
+        state->selection.x = 0;  state->selection.y = 0;
+
         // destroyWindow(WINDOW_NAME);
         // state->img = cv::Mat();
 
@@ -278,11 +283,11 @@ static void on_result_frame (const lcm_recv_buf_t *rbuf, const char *channel,
     }
     state->tracking_result = perception_image_roi_t_copy(msg);
 
-    state->tld_result.x = msg->roi.x; //MIN(msg->roi.x, state->origin.x);
-    state->tld_result.y = msg->roi.y;//MIN(msg->roi.y, state->origin.y);
+    state->tld_result.x = msg->roi.x * WINDOW_WIDTH; //MIN(msg->roi.x, state->origin.x);
+    state->tld_result.y = msg->roi.y * WINDOW_HEIGHT;//MIN(msg->roi.y, state->origin.y);
 
-    state->tld_result.width = msg->roi.width;
-    state->tld_result.height = msg->roi.height;
+    state->tld_result.width = msg->roi.width * WINDOW_WIDTH;
+    state->tld_result.height = msg->roi.height * WINDOW_HEIGHT;
     state->tld_result &= Rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     pthread_mutex_unlock(&state->img_mutex);
@@ -298,6 +303,14 @@ struct TLDSegmenterOptions {
 };
 
 TLDSegmenterOptions options;
+
+void cross(Mat& disp, Rect rec, const Scalar& color, int thickness=1){
+  Point p1((rec.x+rec.width/2) - 10, rec.y+rec.height/2), p2((rec.x+rec.width/2) + 10, rec.y+rec.height/2);
+  Point p3(rec.x+rec.width/2, (rec.y+rec.height/2) -10), p4(rec.x+rec.width/2, (rec.y+rec.height/2)+10);
+  line(disp, p1, p2, color, thickness);
+  line(disp, p3, p4, color, thickness);
+
+}
 
 int main(int argc, char** argv)
 {
@@ -355,9 +368,11 @@ int main(int argc, char** argv)
             cv::Mat display;
             cv::resize(state->img.clone(), display, cv::Size(WINDOW_WIDTH,WINDOW_HEIGHT)); 
             if (state->selection.width > 0 && state->selection.height > 0) {
-                
+
                 cv::Mat roi(display, state->selection);
                 rectangle(display, state->selection, cv::Scalar(0,255,255), 2);
+                cross(display, state->selection, cv::Scalar(0,255,255), 1);
+
                 // bitwise_not(roi, roi);
             }
             if (state->selection_virtual.width > 0 && state->selection_virtual.height > 0) {
@@ -370,6 +385,7 @@ int main(int argc, char** argv)
             if (state->tld_result.width > 0 && state->tld_result.height > 0) {
                 cv::Mat roi(display, state->tld_result);
                 rectangle(display, state->tld_result, cv::Scalar(0,0,255), 2);
+                cross(display, state->tld_result, cv::Scalar(0,0,255), 1);
                 // bitwise_not(roi, roi);
             }
 
@@ -381,7 +397,7 @@ int main(int argc, char** argv)
                 float sy = 1.f / WINDOW_HEIGHT;
                 
                 int width = state->img_selection.cols / (sx * state->img.cols);
-                int height = state->img_selection.rows / (sx * state->img.rows);
+                int height = state->img_selection.rows / (sy * state->img.rows);
 
                 int max_dim = fmax(width, height);
                 
