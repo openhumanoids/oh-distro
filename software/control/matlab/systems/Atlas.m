@@ -106,8 +106,9 @@ classdef Atlas < Biped
 
     function foot_z = getFootHeight(obj,q)
       kinsol = doKinematics(obj,q);
-      rfoot_cpos = contactPositions(obj,kinsol,false,struct('terrain_only',true,'body_idx',obj.foot_bodies_idx.right));
-      lfoot_cpos = contactPositions(obj,kinsol,false,struct('terrain_only',true,'body_idx',obj.foot_bodies_idx.left));
+      rfoot_cpos = terrainContactPointsInWorld(obj,kinsol,obj.foot_bodies_idx.right);
+      lfoot_cpos = terrainContactPointsInWorld(obj,kinsol,obj.foot_bodies_idx.left);
+>>>>>>> Re-update files that called contactPositions
       foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
     end
 

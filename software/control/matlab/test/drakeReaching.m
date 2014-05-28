@@ -45,7 +45,7 @@ com = getCOM(r,kinsol);
 
 % build TI-ZMP controller 
 footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
-foot_pos = contactPositions(r,kinsol,false,struct('terrain_only',true,'body_idx',footidx)); 
+foot_pos = terrainContactPointsInWorld(r,kinsol,footidx); 
 ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
 comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
 limp = LinearInvertedPendulum(com(3));

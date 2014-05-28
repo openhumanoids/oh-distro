@@ -83,7 +83,7 @@ while true
     qdd_prev = qdd;
     
     kinsol = doKinematics(r,q_kf,false,true);
-    cpos = contactPositions(r,kinsol,false,struct('terrain_only',true,'body_idx',[rfoot_ind, lfoot_ind])); 
+    cpos = terrainContactPointsInWorld(r,kinsol,[rfoot_ind, lfoot_ind]); 
 
     ground_z = min(cpos(3,:));
     
