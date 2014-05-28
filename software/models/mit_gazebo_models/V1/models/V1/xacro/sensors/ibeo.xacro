@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/ibeo">
+  <!-- 
+  IBEO LUX 8L
+    Specs from:
+    http://www.ibeo-as.com/index.php/en/sensorsv
+  -->
+
+
+  <xacro:property name="IbeoWidth" value="0.1645"/>
+  <xacro:property name="IbeoHeight" value="0.0932"/>
+  <xacro:property name="IbeoDepth" value="0.088"/>
+  <xacro:property name="IbeoMass" value="1.0"/>
+
+  <xacro:property name="IbeoMinDistance" value="0.08"/>
+  <xacro:property name="IbeoMaxDistance" value="10"/>
+  <xacro:property name="IbeoUpdateRate" value="40"/>
+  <xacro:property name="IbeoRangeResolution" value="0.01"/>
+
+  <xacro:property name="IbeoHorizontalSamples" value="880"/>
+  <xacro:property name="IbeoHorizontalMinAngle" value="-1.0472"/>
+  <xacro:property name="IbeoHorizontalMaxAngle" value="0.8727"/>
+  <xacro:property name="IbeoVerticalSamples" value="8"/>
+  <xacro:property name="IbeoVerticalMinAngle" value="-0.055851"/>
+  <xacro:property name="IbeoVerticalMaxAngle" value="0.055851"/>
+
+  <xacro:macro name="ibeo_sensor" params="sensorName parentLink origin_xyz origin_rpy">
+    <xacro:virtual_link name="${sensorName}_Frame" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="0 0 0"/>
+
+    <gazebo reference="${sensorName}_Frame">
+      <sensor name="${sensorName}_sensor" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>${IbeoUpdateRate}</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>${IbeoHorizontalSamples}</samples>
+            <min_angle>${IbeoHorizontalMinAngle}</min_angle>
+            <max_angle>${IbeoHorizontalMaxAngle}</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>${IbeoVerticalSamples}</samples>
+            <min_angle>${IbeoVerticalMinAngle}</min_angle>
+            <max_angle>${IbeoVerticalMaxAngle}</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>${IbeoMinDistance}</min>
+          <max>${IbeoMaxDistance}</max>
+          <resolution>${IbeoRangeResolution}</resolution>
+        </range>
+      </ray>
+      <plugin filename="libgazebo_ros_laser.so" name="${sensorName}_controller">
+        <gaussianNoise>0.005</gaussianNoise>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>${IbeoUpdateRate}</updateRate>
+        <topicName>${sensorName}/scan</topicName>
+        <frameName>${sensorName}_Frame</frameName>
+      </plugin>
+      </sensor>
+    </gazebo>
+
+    <xacro:fixed_joint jointName="${sensorName}_Offset"
+                       parent="${parentLink}" child="${sensorName}_Frame"
+                       origin_rpy="${origin_rpy}"
+                       origin_xyz="${origin_xyz}"/>
+  </xacro:macro>
+</robot>

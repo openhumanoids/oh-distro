@@ -1,0 +1,192 @@
+<ui>
+    <parameters>
+        <parameter name="j1NodePath" value="/pelvis/wj1"/>
+        <parameter name="j2NodePath" value="/trunk/wj2"/>
+        <parameter name="j3NodePath" value="/trunk/wj3"/>
+        <parameter name="limb" value="Trunk"/>
+        <parameter name="resources" value="JointAPS_Angle_Rad\,JointAPS_Angle_Rad"/>
+    </parameters>
+
+    <objects>
+        <object name="j1" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="${j1NodePath}"/>
+        <object name="j2" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4_linear" member="TurbodriverAPI_DRCv4_linear" args="${j2NodePath}"/>
+        <object name="j3" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4_linear" member="TurbodriverAPI_DRCv4_linear" args="${j3NodePath}"/>
+
+        <object name="WaistRotator"         rospackage="drc_hardware_interface" module="SharedMemoryJointSubsciber" member="JointSubscriber" args="WaistRotator"/>
+        <object name="WaistExtensor"        rospackage="drc_hardware_interface" module="SharedMemoryJointSubsciber" member="JointSubscriber" args="WaistExtensor"/>
+        <object name="WaistLateralExtensor" rospackage="drc_hardware_interface" module="SharedMemoryJointSubsciber" member="JointSubscriber" args="WaistLateralExtensor"/>
+
+        <object name="rotary_batch" rospackage="ui_builder" module="ui_utils" member="ObjectBatch" args="j1"/>
+        <object name="linear_batch" rospackage="ui_builder" module="ui_utils" member="ObjectBatch" args="j2 j3"/>
+
+        <object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager"/>
+        <object name="utils" rospackage="ui_builder" module="ui_utils" member="ui_utils"/>
+
+        <object name="wj2_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/trunk/wj2/JointAPS_Angle_Rad" argTypes="str"/>
+        <object name="wj3_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/trunk/wj3/JointAPS_Angle_Rad" argTypes="str"/>
+    </objects>
+
+    <widgets>
+        <widget row="0" col="0" type="GroupBox" name="Actions" blank="1">
+            <widget row="0" col="0" name="Safe" type="GroupBox">
+                <widget name="&amp;Park+" type="PushButton">
+                    <object name="rotary_batch" method="callSelected" args="SendModeCmd,Park" argTypes="str,str"/>
+                    <object name="linear_batch" method="callSelected" args="SendModeCmd,Park" argTypes="str,str"/>
+                </widget>
+
+                <widget name="&amp;Clear Faults+" type="PushButton">
+                    <object name="rotary_batch" method="callSelected" args="SendModeCmd,Reset" argTypes="str,str"/>
+                    <object name="linear_batch" method="callSelected" args="SendModeCmd,Reset" argTypes="str,str"/>
+                </widget>
+            </widget>
+
+            <widget row="2" col="0" name="Config" type="GroupBox">
+                <widget name="&amp;Load Coeffs" type="PushButton">
+                    <object name="manager" method="startProgram" args="rosrun nasa_configuration cfgLoader.py -c `rospack find drc_coeffs`/V1A/v1_config.yaml -n -j ${limb},loadCoeffs" argTypes="str,str"/>
+                </widget>
+
+                <widget name="InitializeWaist" type="PushButton">
+                    <object name="manager" method="startProgram" args="rosrun transmission_library initializeWaist.py,initializeWaist" argTypes="str,str"/>
+                </widget>
+            </widget>
+
+            <widget row="3" col="0" name="Action" type="GroupBox">
+                <widget name="Zero &amp;DesTorq+" type="PushButton">
+                    <object name="rotary_batch" method="callSelected" args="zeroEffortCommand" argTypes="str"/>
+                    <object name="linear_batch" method="callSelected" args="zeroEffortCommand" argTypes="str"/>
+                </widget>
+
+                <widget row="5" col="0" name="Tare &amp;Des&#10;Pos and Torque+" type="PushButton">
+                    <object name="rotary_batch" method="callSelected" args="zeroEffortCommand" argTypes="str"/>
+                    <!-- Should we be calling zeroEffortCommand on linears also? -->
+                    <object name="linear_batch" method="callSelected" args="zeroEffortCommand" argTypes="str"/>
+                    <object name="rotary_batch" method="callSelected" args="tarePositionCommand" argTypes="str"/>
+                    <object name="linear_batch" method="callSelected" args="tarePositionCommand" argTypes="str"/>
+                </widget>
+            </widget>
+
+            <widget row="4" col="0" name="Unsafe" type="GroupBox">
+
+                <widget name="Servo P&amp;osition+" type="PushButton" color="darkBlue" textColor="white">
+                    <!-- <object name="rotary_batch" method="callSelected" args="tarePositionCommand" argTypes="str,str"/> -->
+                    <object name="rotary_batch" method="callSelected" args="SendModeCmd,ServoPosition" argTypes="str,str"/>
+                    <!-- <object name="linear_batch" method="callSelected" args="tarePositionCommand" argTypes="str,str"/> -->
+                    <object name="linear_batch" method="callSelected" args="SendModeCmd,ServoPosition" argTypes="str,str"/>
+                </widget>
+            </widget>
+
+            <widget row="5" col="0" name="Unsafe (Debug)" type="GroupBox">
+                <widget name="Servo &amp;Impedance+" type="PushButton">
+                    <object name="rotary_batch" method="callSelected" args="SendModeCmd,ServoImpedance" argTypes="str,str"/>
+                    <object name="linear_batch" method="callSelected" args="SendModeCmd,ServoImpedance" argTypes="str,str"/>
+                </widget>
+            </widget>
+
+        <widget row="6" col="0" name="joint ui's" type="ToggleButton">
+            <check label="joint ui's">
+                <object name="self" method="AddTabsConfigFile" args="/ui/trunk_joints.uic,V1" argTypes="str,str"/>
+            </check>
+            <uncheck label="joint ui's">
+                <object name="self" method="CloseTabByName" args="WJ1" argTypes="str"/>
+                <object name="self" method="CloseTabByName" args="WJ2" argTypes="str"/>
+                <object name="self" method="CloseTabByName" args="WJ3" argTypes="str"/>
+            </uncheck>
+        </widget>
+        </widget>
+
+        <widget row="0" col="1" type="GroupBox" name="+Batches" blank="1">
+            <widget row="0" col="0" name="+Rotary" type="ObjectBatchWidget" batch="rotary_batch"/>
+            <widget row="1" col="0" name="+Linear" type="ObjectBatchWidget" batch="linear_batch"/>
+        </widget>
+
+
+        <widget row="0" col="2" name="Status" type="TableViewDisplay">
+            <header value="modeCmd,enableState,modeState,Heartbeat,InitRotor,Update"/>
+            <row label="J1">
+                <object name="j1" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j1" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+                <object name="j1" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j1" method="getProcHeartbeat" args="val" argTypes="str"/>
+                <object name="j1" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="yellow,green"/>
+                <object name="j1" method="Update"/>
+            </row>
+            <row label="J2">
+                <object name="j2" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j2" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+                <object name="j2" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j2" method="getProcHeartbeat" args="val" argTypes="str"/>
+                <object name="j2" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="yellow,green"/>
+                <object name="j2" method="Update"/>
+            </row>
+            <row label="J3">
+                <object name="j3" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j3" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+                <object name="j3" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j3" method="getProcHeartbeat" args="val" argTypes="str"/>
+                <object name="j3" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="yellow,green"/>
+                <object name="j3" method="Update"/>
+            </row>
+        </widget>
+
+        <widget row="1" col="2" name="Joint Data" type="TableViewDisplay">
+            <header value="position(rad), velocity(rad/s), effort(Nm), posCom(rad), effortCom(Nm)"/>
+            <row label="Waist Rotator">
+                <object name="WaistRotator" method="getPosition" />
+                <object name="WaistRotator" method="getVelocity" />
+                <object name="WaistRotator" method="getEffort" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="WaistRotator" method="getPositionCommand" />
+                <object name="WaistRotator" method="getEffortCommand" thresholds="-5,5" colors="yellow,green,yellow"/>
+            </row>
+            <row label="Waist Extensor (pitch)">
+                <object name="WaistExtensor" method="getPosition" />
+                <object name="WaistExtensor" method="getVelocity" />
+                <object name="WaistExtensor" method="getEffort" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="WaistExtensor" method="getPositionCommand"/>
+                <object name="WaistExtensor" method="getEffortCommand" thresholds="-5,5" colors="yellow,green,yellow"/>
+            </row>
+            <row label="Waist Lat Ext (roll)">
+                <object name="WaistLateralExtensor" method="getPosition" />
+                <object name="WaistLateralExtensor" method="getVelocity" />
+                <object name="WaistLateralExtensor" method="getEffort" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="WaistLateralExtensor" method="getPositionCommand"/>
+                <object name="WaistLateralExtensor" method="getEffortCommand" thresholds="-5,5" colors="yellow,green,yellow"/>
+            </row>
+        </widget>
+
+        <widget row="2" col="2" name="Actuator Data" type="TableViewDisplay">
+            <header value="position,velocity, effort, posCom, effortCom"/>
+            <row label="J1">
+                <object name="j1" method="getPosition" args="val" argTypes="str"/>
+                <object name="j1" method="getVelocity" args="val" argTypes="str"/>
+                <object name="j1" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="j1" method="getPositionCommand" args="val" argTypes="str"/>
+                <object name="j1" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+            </row>
+            <row label="J2 (right ab)">
+                <object name="j2" method="getEncoderPosition" args="val" argTypes="str"/>
+                <object name="j2" method="getVelocity" args="val" argTypes="str"/>
+                <object name="j2" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="j2" method="getPositionCommand" args="val" argTypes="str"/>
+                <object name="j2" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+            </row>
+            <row label="J3 (left ab)">
+                <object name="j3" method="getEncoderPosition" args="val" argTypes="str"/>
+                <object name="j3" method="getVelocity" args="val" argTypes="str"/>
+                <object name="j3" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="j3" method="getPositionCommand" args="val" argTypes="str"/>
+                <object name="j3" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+            </row>
+        </widget>
+
+        <widget row="3" col="2" name="Other Sensors" type="TableViewDisplay">
+            <header value="APS position(rad)"/>
+            <row label="WJ2 (pitch)">
+                <object name="wj2_aps" method="__call__" />
+            </row>
+            <row label="WJ3 (roll)">
+                <object name="wj3_aps" method="__call__" />
+            </row>
+        </widget>
+
+    </widgets>
+</ui>

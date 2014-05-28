@@ -1,0 +1,158 @@
+- {name: BOARDID, offset: 0, read: true, type: uint16_t, api: bms_api, apitype: BOARDID}
+- {name: BOARD_ID2, offset: 1, read: true, type: uint16_t}
+- {name: LV_TET_I_0, offset: 146, read: true, type: uint16_t}
+- {name: LV_TET_I_3, offset: 148, read: true, type: uint16_t}
+- {name: HV_TET_I_0, offset: 147, read: true, type: uint16_t}
+- {name: HV_TET_I_3, offset: 149, read: true, type: uint16_t}
+- {name: LOGIC_CARD_TEMP, offset: 2, read: true, type: uint16_t}
+- {name: ADC_HV_BAT_CURRENT, offset: 14, read: true, type: uint16_t}
+- {name: ADC_HV_BAT_VOLTAGE, offset: 18, read: true, type: uint16_t}
+- {name: ADC_HV_OUT_VOLTAGE, offset: 16, read: true, type: uint16_t}
+- {name: ADC_HV_TET_CURRENT, offset: 13, read: true, type: uint16_t}
+- {name: ADC_HV_TET_VOLTAGE, offset: 17, read: true, type: uint16_t}
+- {name: ADC_LV_BAT_CURRENT, offset: 12, read: true, type: uint16_t}
+- {name: ADC_LV_BAT_VOLTAGE, offset: 11, read: true, type: uint16_t}
+- {name: ADC_LV_TET_CURRENT, offset: 15, read: true, type: uint16_t}
+- {name: ADC_LV_TET_VOLTAGE, offset: 8, read: true, type: uint16_t}
+- {name: ADC_V12_OUT_VOLTAGE, offset: 9, read: true, type: uint16_t}
+- {name: ADC_V24_CURRENT, offset: 19, read: true, type: uint16_t}
+- {name: ADC_V24_TEMP, offset: 10, read: true, type: uint16_t}
+- {name: MAX0_CH0, offset: 24, read: true, type: uint16_t}
+- {name: MAX0_CH1, offset: 25, read: true, type: uint16_t}
+- {name: MAX0_CH2, offset: 26, read: true, type: uint16_t}
+- {name: MAX0_CH3, offset: 27, read: true, type: uint16_t}
+- {name: MAX0_CH4, offset: 28, read: true, type: uint16_t}
+- {name: MAX0_CH5, offset: 29, read: true, type: uint16_t}
+- {name: MAX0_CH6, offset: 30, read: true, type: uint16_t}
+- {name: MAX0_CH7, offset: 31, read: true, type: uint16_t}
+- {name: MAX0_CH8, offset: 32, read: true, type: uint16_t}
+- {name: MAX0_CH9, offset: 33, read: true, type: uint16_t}
+- {name: MAX0_CH10, offset: 34, read: true, type: uint16_t}
+- {name: MAX0_CH11, offset: 35, read: true, type: uint16_t}
+- {name: LV_TEMP_0, offset: 62, read: true, type: uint16_t}
+- {name: LV_TEMP_1, offset: 63, read: true, type: uint16_t}
+- {name: LV_TEMP_2, offset: 64, read: true, type: uint16_t}
+- {name: LV_TEMP_3, offset: 65, read: true, type: uint16_t}
+- {name: LV_TEMP_4, offset: 66, read: true, type: uint16_t}
+- {name: LV_TEMP_5, offset: 67, read: true, type: uint16_t}
+- {name: LV_TEMP_6, offset: 68, read: true, type: uint16_t}
+- {name: LV_TEMP_7, offset: 69, read: true, type: uint16_t}
+- {name: LV_TEMP_8, offset: 70, read: true, type: uint16_t}
+- {name: LV_TEMP_9, offset: 71, read: true, type: uint16_t}
+- {name: LV_TEMP_10, offset: 72, read: true, type: uint16_t}
+- {name: LV_TEMP_11, offset: 73, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH0, offset: 74, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH1, offset: 77, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH2, offset: 80, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH3, offset: 83, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH4, offset: 86, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH5, offset: 89, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH6, offset: 92, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH7, offset: 95, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH8, offset: 98, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH9, offset: 101, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH10, offset: 104, read: true, type: uint16_t}
+- {name: HV_SLAVE1_CH11, offset: 107, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH0, offset: 75, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH1, offset: 78, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH2, offset: 81, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH3, offset: 84, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH4, offset: 87, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH5, offset: 90, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH6, offset: 93, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH7, offset: 96, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH8, offset: 99, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH9, offset: 102, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH10, offset: 105, read: true, type: uint16_t}
+- {name: HV_SLAVE2_CH11, offset: 108, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH0, offset: 76, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH1, offset: 79, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH2, offset: 82, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH3, offset: 85, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH4, offset: 88, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH5, offset: 91, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH6, offset: 94, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH7, offset: 97, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH8, offset: 100, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH9, offset: 103, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH10, offset: 106, read: true, type: uint16_t}
+- {name: HV_SLAVE3_CH11, offset: 109, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_0, offset: 110, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_1, offset: 111, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_2, offset: 112, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_3, offset: 113, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_4, offset: 114, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_5, offset: 115, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_6, offset: 116, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_7, offset: 117, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_8, offset: 118, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_9, offset: 119, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_10, offset: 120, read: true, type: uint16_t}
+- {name: HV_SLAVE1_TEMP_11, offset: 121, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_0, offset: 122, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_1, offset: 123, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_2, offset: 124, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_3, offset: 125, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_4, offset: 126, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_5, offset: 127, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_6, offset: 128, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_7, offset: 129, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_8, offset: 130, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_9, offset: 131, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_10, offset: 132, read: true, type: uint16_t}
+- {name: HV_SLAVE2_TEMP_11, offset: 133, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_0, offset: 134, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_1, offset: 135, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_2, offset: 136, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_3, offset: 137, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_4, offset: 138, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_5, offset: 139, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_6, offset: 140, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_7, offset: 141, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_8, offset: 142, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_9, offset: 143, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_10, offset: 144, read: true, type: uint16_t}
+- {name: HV_SLAVE3_TEMP_11, offset: 145, read: true, type: uint16_t}
+- {name: TET_INSTALL, offset: 40, read: true, type: uint16_t}
+- {name: LBOn_HVTET, offset: 41, read: true, type: uint16_t}
+- {name: LBOn_LVTET, offset: 42, read: true, type: uint16_t}
+- {name: LBOn_HVBAT, offset: 43, read: true, type: uint16_t}
+- {name: LBOn_LVBAT, offset: 44, read: true, type: uint16_t}
+- {name: LBOn_12VOR, offset: 45, read: true, type: uint16_t}
+- {name: LV_SM, offset: 46, read: true, type: uint16_t}
+- {name: HV_SM, offset: 49, read: true, type: uint16_t}
+- {name: CYCLICCOUNTER, offset: 61, read: true, type: uint16_t}
+- {name: LV_FAULT_COUNTER, offset: 151, read: true, type: uint16_t}
+- {name: HV_FAULT_COUNTER, offset: 152, read: true, type: uint16_t}
+- {name: LV_FAULT_THRESH, offset: 153, read: true, type: uint16_t}
+- {name: HV_FAULT_THRESH, offset: 154, read: true, type: uint16_t}
+- {name: LVONOFF, offset: 47, read: true, type: uint16_t, api: bms_api, apitype: LVONOFF}
+- {name: CPUsON, offset: 48, read: true, type: uint16_t, api: bms_api, apitype: CPUsON}
+- {name: HVONOFF, offset: 50, read: true, type: uint16_t, api: bms_api, apitype: HVONOFF}
+- {name: LVSTATUS1, offset: 56, read: true, type: uint16_t, api: bms_api, apitype: LVSTATUS1}
+- {name: LVSTATUS2, offset: 57, read: true, type: uint16_t, api: bms_api, apitype: LVSTATUS2}
+- {name: V24STATUS, offset: 58, read: true, type: uint16_t, api: bms_api, apitype: V24STATUS}
+- {name: HVSTATUS1, offset: 59, read: true, type: uint16_t, api: bms_api, apitype: HVSTATUS1}
+- {name: HVSTATUS2, offset: 60, read: true, type: uint16_t, api: bms_api, apitype: HVSTATUS2}
+- {name: LVCTRLREG1, offset: 224, read: false, type: uint16_t, api: bms_api, apitype: LVCTRLREG1}
+- {name: HVCTRLREG, offset: 225, read: false, type: uint16_t, api: bms_api, apitype: HVCTRLREG}
+- {name: CMDCTRLREG, offset: 226, read: false, type: uint16_t, api: bms_api, apitype: CMDCTRLREG}
+- {name: RSTCTRLREG1, offset: 227, read: false, type: uint16_t, api: bms_api, apitype: RSTCTRLREG1}
+- {name: RSTCTRLREG2, offset: 228, read: false, type: uint16_t, api: bms_api, apitype: RSTCTRLREG2}
+- {name: RSTCTRLREG3, offset: 229, read: false, type: uint16_t, api: bms_api, apitype: RSTCTRLREG3}
+- {name: RSTCTRLREG4, offset: 230, read: false, type: uint16_t, api: bms_api, apitype: RSTCTRLREG4}
+- {name: PWRCTRLREG, offset: 232, read: false, type: uint16_t, api: bms_api, apitype: PWRCTRLREG}
+- {name: SPARESCTRLREG, offset: 233, read: false, type: uint16_t, api: bms_api, apitype: SPARESCTRLREG} 
+- {name: SAFETYCHECKSREG, offset: 150, read: true, type: uint16_t, api: bms_api, apitype: SAFETYCHECKSREG} 
+- {name: THRESHHIGHCELLV, offset: 243, read: false, type: uint16_t} 
+- {name: THRESHHIGHTEMP, offset: 241, read: false, type: uint16_t} 
+- {name: THRESHHVHIGHI, offset: 248, read: false, type: uint16_t} 
+- {name: THRESHHVHIGHV, offset: 247, read: false, type: uint16_t} 
+- {name: THRESHHVLOWV, offset: 246, read: false, type: uint16_t} 
+- {name: THRESHLOWCELLV, offset: 242, read: false, type: uint16_t} 
+- {name: THRESHLOWTEMP, offset: 240, read: false, type: uint16_t} 
+- {name: THRESHLVHIGHI, offset: 249, read: false, type: uint16_t} 
+- {name: THRESHLVHIGHV, offset: 245, read: false, type: uint16_t}
+- {name: THRESHLVLOWV, offset: 244, read: false, type: uint16_t}
+- {name: HVFAULTTIME, offset: 250, read: false, type: uint16_t}
+- {name: LVFAULTTIME, offset: 251, read: false, type: uint16_t}

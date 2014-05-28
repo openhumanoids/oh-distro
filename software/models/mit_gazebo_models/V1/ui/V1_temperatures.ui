@@ -1,0 +1,192 @@
+<ui>
+	<parameters>
+		<parameter name="turbo_temps" value="BridgeTemp_C\,LogicCardTemp_C\,MotorTemp_C"/>
+		<parameter name="min_temp" value="0"/>
+
+		<parameter name="max_bride_temp" value="125"/>
+		<parameter name="max_logic_temp" value="125"/>
+		<parameter name="max_motor_temp" value="125"/>
+
+		<parameter name="bridge_thresholds" value="100,110"/>
+		<parameter name="logic_thresholds"  value="100,110"/>
+		<parameter name="motor_thresholds"  value="100,110"/>
+
+		<parameter name="bridge_colors" value="green,orange,red"/>
+		<parameter name="logic_colors"  value="green,orange,red"/>
+		<parameter name="motor_colors"  value="green,orange,red"/>
+
+		<parameter name="period_in_ms" value="1000" />
+
+	</parameters>
+
+	<objects>
+		<object name="laj1" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/trunk/laj1,${turbo_temps}" argTypes="str,str"/>
+		<object name="laj2" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_arm/j2,${turbo_temps}" argTypes="str,str"/>
+		<object name="laj3" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_arm/j3,${turbo_temps}" argTypes="str,str"/>
+		<object name="laj4" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_arm/j4,${turbo_temps}" argTypes="str,str"/>
+		<object name="laj5" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_arm/j5,${turbo_temps}" argTypes="str,str"/>
+
+		<object name="raj1" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/trunk/raj1,${turbo_temps}" argTypes="str,str"/>
+		<object name="raj2" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_arm/j2,${turbo_temps}" argTypes="str,str"/>
+		<object name="raj3" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_arm/j3,${turbo_temps}" argTypes="str,str"/>
+		<object name="raj4" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_arm/j4,${turbo_temps}" argTypes="str,str"/>
+		<object name="raj5" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_arm/j5,${turbo_temps}" argTypes="str,str"/>
+
+		<object name="llj1" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/pelvis/lj1,${turbo_temps}" argTypes="str,str"/>
+		<object name="llj2" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_leg/j2,${turbo_temps}" argTypes="str,str"/>
+		<object name="llj3" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_leg/j3,${turbo_temps}" argTypes="str,str"/>
+		<object name="llj4" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_leg/j4,${turbo_temps}" argTypes="str,str"/>
+		<object name="llj5" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_leg/j5,${turbo_temps}" argTypes="str,str"/>
+		<object name="llj6" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/left_leg/j6,${turbo_temps}" argTypes="str,str"/>
+
+		<object name="rlj1" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/pelvis/rj1,${turbo_temps}" argTypes="str,str"/>
+		<object name="rlj2" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_leg/j2,${turbo_temps}" argTypes="str,str"/>
+		<object name="rlj3" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_leg/j3,${turbo_temps}" argTypes="str,str"/>
+		<object name="rlj4" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_leg/j4,${turbo_temps}" argTypes="str,str"/>
+		<object name="rlj5" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_leg/j5,${turbo_temps}" argTypes="str,str"/>
+		<object name="rlj6" rospackage="nasa_ros_shm" module="resource_bundle" member="ResourceBundle" args="/right_leg/j6,${turbo_temps}" argTypes="str,str"/>
+
+	</objects>
+
+	<widgets>
+<!-- 		<widget name="laj1" row="0" col="0" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="laj1" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="laj1" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="laj1" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="laj2" row="1" col="0" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="laj2" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="laj2" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="laj2" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="laj3" row="2" col="0" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="laj3" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="laj3" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="laj3" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="laj4" row="3" col="0" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="laj4" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="laj4" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="laj4" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="laj5" row="4" col="0" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="laj5" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="laj5" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="laj5" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+
+
+		<widget name="raj1" row="0" col="1" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="raj1" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="raj1" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="raj1" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="raj2" row="1" col="1" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="raj2" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="raj2" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="raj2" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="raj3" row="2" col="1" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="raj3" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="raj3" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="raj3" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="raj4" row="3" col="1" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="raj4" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="raj4" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="raj4" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="raj5" row="4" col="1" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="raj5" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="raj5" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="raj5" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+ -->
+
+
+
+		<widget name="llj1" row="0" col="0" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="llj1" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="llj1" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="llj1" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="llj2" row="0" col="1" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="llj2" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="llj2" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="llj2" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="llj3" row="0" col="2" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="llj3" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="llj3" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="llj3" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="llj4" row="0" col="3" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="llj4" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="llj4" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="llj4" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="llj5" row="0" col="4" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="llj5" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="llj5" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="llj5" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="llj6" row="0" col="5" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="llj6" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="llj6" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="llj6" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+
+
+		<widget name="rlj1" row="1" col="0" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="rlj1" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="rlj1" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="rlj1" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="rlj2" row="1" col="1" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="rlj2" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="rlj2" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="rlj2" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="rlj3" row="1" col="2" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="rlj3" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="rlj3" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="rlj3" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="rlj4" row="1" col="3" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="rlj4" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="rlj4" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="rlj4" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="rlj5" row="1" col="4" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="rlj5" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="rlj5" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="rlj5" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+		<widget name="rlj6" row="1" col="5" type="HorizontalGroupBox">
+			<widget name="bridge" col="0" type="ColorBarDisplay" vertical="True"><object name="rlj6" method="getResource" args="BridgeTemp_C"    argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_bride_temp}" thresholds="${bridge_thresholds}" colors="${bridge_colors}"/></widget>
+			<!--<widget name="logic"  col="1" type="ColorBarDisplay" vertical="True"><object name="rlj6" method="getResource" args="LogicCardTemp_C" argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_logic_temp}" thresholds="${logic_thresholds}"  colors="${logic_colors}"/></widget>-->
+			<widget name="motor"  col="2" type="ColorBarDisplay" vertical="True"><object name="rlj6" method="getResource" args="MotorTemp_C"     argTypes="str" period="${period_in_ms}" min="${min_temp}" max="${max_motor_temp}" thresholds="${motor_thresholds}"  colors="${motor_colors}"/></widget>
+		</widget>
+
+	</widgets>
+</ui>

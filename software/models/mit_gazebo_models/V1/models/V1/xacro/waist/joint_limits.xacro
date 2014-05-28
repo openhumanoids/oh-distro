@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/waist/joint_limits">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:property name="WJ1_Torque_Limit" value="190" />
+  <xacro:property name="WJ2_Torque_Limit" value="150" />
+  <xacro:property name="WJ3_Torque_Limit" value="150" />
+    
+  <xacro:property name="WJ1_Lower_Limit" value="${-40 * DEG2RAD}" />
+  <xacro:property name="WJ2_Lower_Limit" value="${-40 * DEG2RAD}" />
+  <xacro:property name="WJ3_Lower_Limit" value="${-15 * DEG2RAD}" />
+  
+  <xacro:property name="WJ1_Upper_Limit" value="${40 * DEG2RAD}" />
+  <xacro:property name="WJ2_Upper_Limit" value="${5 * DEG2RAD}" />
+  <xacro:property name="WJ3_Upper_Limit" value="${15 * DEG2RAD}" />
+  
+  <xacro:property name="WJ1_Speed_Limit" value="5.89" />
+  <xacro:property name="WJ2_Speed_Limit" value="9" />
+  <xacro:property name="WJ3_Speed_Limit" value="9" />
+</robot>

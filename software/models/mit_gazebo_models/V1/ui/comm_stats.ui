@@ -1,0 +1,15 @@
+<ui>
+    <objects>
+		<object name="comm"  rospackage="robonet_master_utils" module="print_comm_stats" member="CommStats"/>
+	</objects>
+
+	<widgets>
+		<widget row="0" col="1" name="Right Arm Status" type="TableViewDisplay">
+            <header value="Comm rate"/>
+			<row label="J1"><object name="comm"  method="getNodeCommStats" args="0,1" argTypes="int,int" thresholds="0.0, 0.25, 0.90" colors="gray,red,yellow,green"/></row>
+			<row label="J2"><object name="comm"  method="getNodeCommStats" args="0,2" argTypes="int,int" thresholds="0.0, 0.25, 0.90" colors="gray,red,yellow,green"/></row>
+			<row label="J3"><object name="comm"  method="getNodeCommStats" args="0,3" argTypes="int,int" thresholds="0.0, 0.25, 0.90" colors="gray,red,yellow,green"/></row>
+			<row label="J4"><object name="comm"  method="getNodeCommStats" args="0,4" argTypes="int,int" thresholds="0.0, 0.25, 0.90" colors="gray,red,yellow,green"/></row>
+		</widget>
+	</widgets>
+</ui>

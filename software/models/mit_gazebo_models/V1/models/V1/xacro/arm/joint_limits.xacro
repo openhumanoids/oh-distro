@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm/joint_limits">
+  <!--
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+      Note: Some joint limits are set ~5 degrees smaller than the corresponding coeff
+  -->
+  <xacro:property name="AJ1_Torque_Limit" value="190" />
+  <xacro:property name="AJ2_Torque_Limit" value="190" />
+  <xacro:property name="AJ3_Torque_Limit" value="65" />
+  <xacro:property name="AJ4_Torque_Limit" value="65" />
+  <xacro:property name="AJ5_Torque_Limit" value="26" />
+  <xacro:property name="AJ6_Torque_Limit" value="14" />
+  <xacro:property name="AJ7_Torque_Limit" value="14" />
+
+  <xacro:property name="AJ1_Lower_Limit" value="${-180 * DEG2RAD}" />
+  <xacro:property name="AJ2_Lower_Limit" value="${-175 * DEG2RAD}" />
+  <xacro:property name="AJ3_Lower_Limit" value="${-90 * DEG2RAD}" />
+  <xacro:property name="AJ4_Lower_Limit" value="${-110 * DEG2RAD}" />
+  <xacro:property name="AJ5_Lower_Limit" value="${-135 * DEG2RAD}" />
+  <xacro:property name="AJ6_Lower_Limit" value="${-50 * DEG2RAD}" />
+  <xacro:property name="AJ7_Lower_Limit" value="${-30 * DEG2RAD}" />
+
+  <xacro:property name="AJ1_Upper_Limit" value="${180 * DEG2RAD}" />
+  <xacro:property name="AJ2_Upper_Limit" value="${-10 * DEG2RAD}" />
+  <xacro:property name="AJ3_Upper_Limit" value="${90 * DEG2RAD}" />
+  <xacro:property name="AJ4_Upper_Limit" value="${-5 * DEG2RAD}" />
+  <xacro:property name="AJ5_Upper_Limit" value="${135 * DEG2RAD}" />
+  <xacro:property name="AJ6_Upper_Limit" value="${40 * DEG2RAD}" />
+  <xacro:property name="AJ7_Upper_Limit" value="${25 * DEG2RAD}" />
+
+  <xacro:property name="AJ1_Speed_Limit" value="5.89" />
+  <xacro:property name="AJ2_Speed_Limit" value="5.89" />
+  <xacro:property name="AJ3_Speed_Limit" value="11.5" />
+  <xacro:property name="AJ4_Speed_Limit" value="11.5" />
+  <xacro:property name="AJ5_Speed_Limit" value="5" />
+  <xacro:property name="AJ6_Speed_Limit" value="1" />
+  <xacro:property name="AJ7_Speed_Limit" value="1" />
+</robot>

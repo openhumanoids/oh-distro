@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg default="gazebo" name="gzname" />
+  <param name="/use_sim_time" type="bool" value="true"/>
+  <arg name="robot" default="V1"/>
+  <arg name="find_cmd" default="$(find V1)"/>
+  <arg name="pin_link" default="/v1/Trunk"/>
+  <arg name="world" default="models/$(arg robot)/worlds/$(arg robot).world" />
+
+  <!--Load gazebo robot xacro into parameter robot_description_sim for gazebo plugins-->
+  <param name="robot_description_sim" command="$(find xacro)/xacro.py $(arg find_cmd)/models/$(arg robot)/xacro/$(arg robot)_gazebo.xacro"/>
+
+  <!-- Pin the arm_base -->
+  <param name="/pin_plugin/yaml" value="fixed: [$(arg pin_link)]"/>
+
+  <!-- Start the simulator -->
+  <node name="gzserver" pkg="drc_common" type="ros-strip.py" args="gdbserver localhost:9999 gzserver -s libgazebo_ros_api_plugin.so -u $(arg find_cmd)/$(arg world)" output="screen" />
+  <node name="gzclient" pkg="drc_common" type="ros-strip.py" args="gzclient" />
+</launch>

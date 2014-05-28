@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<ui>
+	<parameters>
+        <parameter name="robot" value="V1"/>
+        <parameter name="pin_link" value=""/>
+        <parameter name="world" value="models/${robot}/worlds/${robot}.world" />
+        <parameter name="static_transform" value="0 0 0 0 0 0" />
+        <parameter name="static_transform_frame_id" value="/v1/Pelvis" />
+	</parameters>
+
+	<objects>
+		<object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager" args="terminator -e"/>
+		<object name="ui_utils" rospackage="ui_builder" module="ui_utils" member="ui_utils"/>
+	</objects>
+
+	<widgets>
+		<widget col="0" row="0"  name="${robot}" type="GroupBox">
+			<widget name="RTC" type="ToggleButton">
+				<check label="Robot Task&#10;Commander">
+					<object name="manager" method="startProgram" args="rosrun robot_task_commander commander.py,rtc_gui" argTypes="str,str"/>
+				</check>
+				<uncheck label="Robot Task&#10;Commander">
+					<object name="manager" method="stopProgram" args="rtc_gui" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="WBC Gravity&#10;Adjustment" type="PushButton">
+					<object name="ui_utils" method="systemCall" args="roslaunch wbc_V1 loadTwoFeetConstraintSetForGravityComp.launch," argTypes="str"/>
+			</widget>
+
+			<widget name="Marker Template Server" type="ToggleButton">
+				<check label="Marker Template Server">
+					<object name="manager" method="startProgram" args="rosrun marker_templates_server server.py,template" argTypes="str,str"/>
+				</check>
+				<uncheck label="Marker Template Server">
+					<object name="manager" method="stopProgram" args="template" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="RViz" type="ToggleButton">
+				<check label="RViz">
+					<object name="manager" method="startProgram" args="rosrun rviz rviz,rviz" argTypes="str,str"/>
+					<object name="ui_utils" method="systemCall" args="roslaunch rviz_navigation_panel load_service_names.launch" argTypes="str"/>
+				</check>
+				<uncheck label="RViz">
+					<object name="manager" method="stopProgram" args="rviz" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Sensor_GUI" type="ToggleButton">
+				<check label="Sensor GUI">
+					<object name="self" method="AddTabsConfigFile" args="/ui/V1_sensors.uic,perception_gui" argTypes="str,str"/>
+				</check>
+				<uncheck label="Sensor GUI">
+					<object name="self" method="CloseTabByName" args="Left Hand" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Right Hand" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Left Leg" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Right Leg" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Head" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Trunk" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Octomap/Ellipse" argTypes="str"/>
+				</uncheck>
+			</widget>
+		</widget>
+
+		<widget col="1" row="0"  name="Utilities (optional)" type="GroupBox">
+			<widget name="Config Editor" type="ToggleButton">
+				<check label="Config Editor">
+					<object name="manager" method="startProgram" args="rosrun nasa_configuration config_editor.py,config_editor" argTypes="str,str"/>
+				</check>
+				<uncheck label="Config Editor">
+					<object name="manager" method="stopProgram" args="config_editor" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Probe" type="ToggleButton">
+				<check label="Probe">
+					<object name="manager" method="startProgram" args="rosrun robonet_master_utils probe.py,probe" argTypes="str,str"/>
+				</check>
+				<uncheck label="Probe">
+					<object name="manager" method="stopProgram" args="probe" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Plotter" type="ToggleButton">
+				<check label="Plotter">
+					<object name="manager" method="startProgram" args="rosrun drc_common plotter.py,plotter" argTypes="str,str"/>
+				</check>
+				<uncheck label="Plotter">
+					<object name="manager" method="stopProgram" args="plotter" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Dynamic Reconfigure" type="ToggleButton">
+				<check label="Dynamic Reconfigure">
+					<object name="manager" method="startProgram" args="rosrun rqt_reconfigure rqt_reconfigure,reconfigure" argTypes="str,str"/>
+				</check>
+				<uncheck label="Dynamic Reconfigure">
+					<object name="manager" method="stopProgram" args="reconfigure" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="RQT" type="ToggleButton">
+				<check label="RQT">
+					<object name="manager" method="startProgram" args="rosrun rqt_gui rqt_gui,rqt" argTypes="str,str"/>
+				</check>
+				<uncheck label="RQT">
+					<object name="manager" method="stopProgram" args="rqt" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Midi" type="GroupBox">
+				<widget name="Midi Controller" type="ToggleButton">
+					<check label="Neck">
+						<object name="manager" method="startProgram" args="rosrun bcf2000 joint_state_synch_publisher.py `rospack find V1`/config/midi_neck.xml /joint_states,midi_neck" argTypes="str,str"/>
+					</check>
+					<uncheck label="Neck">
+						<object name="manager" method="stopProgram" args="midi_neck" argTypes="str"/>
+					</uncheck>
+				</widget>
+
+				<widget name="Midi Controller" type="ToggleButton">
+					<check label="Fingers">
+						<object name="manager" method="startProgram" args="rosrun bcf2000 bcf2000_node.py `rospack find V1`/config/midi_fingers.xml,midi_fingers" argTypes="str,str"/>
+					</check>
+					<uncheck label="Fingers">
+						<object name="manager" method="stopProgram" args="midi_fingers" argTypes="str"/>
+					</uncheck>
+				</widget>
+			</widget>
+
+			<widget name="Time Sync" type="ToggleButton">
+				<check label="Time Sync">
+					<object name="manager" method="startProgram" args="rosrun V1 ethernetInterface.py,time_sync" argTypes="str,str"/>
+				</check>
+				<uncheck>
+					<object name="manager" method="stopProgram" args="time_sync" argTypes="str,str"/>
+					<object name="manager" method="startProgram" args="sudo killall -9 ptpd,kill_ptpd" argTypes="str,str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="UNSAFE" type="GroupBox">
+				<widget name="SHUTDOWN" type="ToggleButton">
+					<check label="Shutdown&#47;Reboot&#10;Brainstem" color="red" textColor="white">
+						<object name="manager" method="startProgram" args="rosrun ui_builder ui_builder.py -c `rospack find V1`/ui/shutdown.uic,shutdown_brainstem" argTypes="str,str"/>
+					</check>
+					<uncheck label="Shutdown&#47;Reboot&#10;Brainstem" color="darkRed" textColor="white">
+						<object name="manager" method="stopProgram" args="shutdown_brainstem" argTypes="str"/>
+					</uncheck>
+				</widget>
+			</widget>
+
+		</widget>
+
+
+		<widget col="2" row="0"  name="Simulation" type="GroupBox">
+			<widget name="Load Robot&#10;Description : Sim" type="PushButton">
+				<object name="ui_utils" method="systemCall" args="roslaunch V1 V1_hardware.launch urdf:='$(find ${robot})/models/${robot}/urdf/${robot}_sim.urdf'" argTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch valkyrie_cop valkyrie_right_cop.launch" argTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch valkyrie_cop valkyrie_left_cop.launch" argTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch imu_sensor_mpu6000 RightLegMPU6000.launch" argsTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch imu_sensor_mpu6000 LeftLegMPU6000.launch" argsTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch amber_controller_library ik_upper_body.launch" argsTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch rviz_navigation_panel load_service_names.launch" argTypes="str"/>
+			</widget>
+			<widget name="SHM: Sim" type="ToggleButton">
+				<check label="SHM: Sim">
+					<object name="ui_utils" method="systemCall" args="rosparam set /use_sim_time true" argTypes="str"/>
+					<object name="manager" method="startProgram" args="roslaunch robonet_master_utils V1_sim.launch,control.py" argTypes="str,str"/>
+				</check>
+				<uncheck label="SHM: Sim">
+					<object name="manager" method="stopProgram" args="control.py" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Reset SHM: Sim" type="PushButton">
+				<object name="ui_utils" method="systemCall" args="rosrun V1 shm_sim_zero.py" argTypes="str" />
+			</widget>
+
+			<widget name="use_sim_time" type="GroupBox">
+				<widget name="True" type="PushButton">
+					<object name="ui_utils" method="systemCall" args="rosparam set /use_sim_time true" argTypes="str"/>
+				</widget>
+				<widget name="False" type="PushButton">
+					<object name="ui_utils" method="systemCall" args="rosparam set /use_sim_time false" argTypes="str"/>
+				</widget>
+			</widget>
+
+			<widget name="Shared memory&#10;loopback" type="ToggleButton">
+				<check>
+					<object name="manager" method="startProgram" args="rosrun drc_common ros-wall-pub.py,wallpub" argTypes="str,str"/>
+					<object name="manager" method="startProgram" args="rosrun V1 sync_actual_to_desired.py,loopback" argTypes="str,str"/>
+				</check>
+				<uncheck>
+					<object name="manager" method="stopProgram" args="wallpub" argTypes="str"/>
+					<object name="manager" method="stopProgram" args="loopback" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Gazebo" type="ToggleButton">
+				<check>
+					<object name="manager" method="startProgram" args="roslaunch V1 V1_gazebo.launch robot:=${robot} find_cmd:='$(find ${robot})' pin_link:=${pin_link} world:=${world},gazeebo" argTypes="str,str"/>
+				</check>
+				<uncheck>
+					<object name="manager" method="stopProgram" args="gazeebo" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="world static&#10;transform" type="ToggleButton">
+				<check>
+					<object name="manager" method="startProgram" args="rosrun tf static_transform_publisher ${static_transform} world ${static_transform_frame_id} 100,static_transform" argTypes="str,str"/>
+				</check>
+				<uncheck>
+					<object name="manager" method="stopProgram" args="static_transform" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="tf odometry&#10;transform" type="ToggleButton">
+				<check>
+					<object name="manager" method="startProgram" args="rosrun nasa_spm_core tfOdometryPublisher.py,tf_odom" argTypes="str,str"/>
+				</check>
+				<uncheck>
+					<object name="manager" method="stopProgram" args="tf_odom" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="RViz Sim" type="ToggleButton">
+				<check>
+					<object name="manager" method="startProgram" args="roslaunch V1 rviz_sim.launch urdf:='$(find ${robot})/models/${robot}/urdf/${robot}_hw.urdf',rviz" argTypes="str,str"/>
+					<object name="ui_utils" method="systemCall" args="roslaunch rviz_navigation_panel load_service_names.launch" argTypes="str"/>
+				</check>
+				<uncheck>
+					<object name="manager" method="stopProgram" args="rviz" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Gazebo&#10;gdbserver" type="ToggleButton">
+				<check>
+					<object name="manager" method="startProgram" args="roslaunch V1 V1_gazebo_debug.launch robot:=${robot} find_cmd:='$(find ${robot})' pin_link:=${pin_link} world:=${world},gazeebug" argTypes="str,str"/>
+				</check>
+				<uncheck>
+					<object name="manager" method="stopProgram" args="gazeebug" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Kill Gazebo" type="PushButton">
+				<object name="ui_utils"
+					method="systemCall"
+					args="rosrun drc_common run-alias.bash gz-kill $(rospack find drc_common)/setup/functions.sh"
+					argTypes="str" />
+			</widget>
+		</widget>
+	</widgets>
+</ui>

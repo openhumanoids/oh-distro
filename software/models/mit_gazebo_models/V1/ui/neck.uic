@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<window>
+    <title>Neck</title>
+    <size>0,0</size>
+    <position>10,10</position>
+    <style>CleanLooks</style>
+    <tabs>
+        <tab>
+            <ui_file>$(find V1)/ui/neck.ui</ui_file>
+            <tabname>Neck</tabname>
+            <parameters>
+                <parameter name="nj1NodePath" value="/neck/j1"/>
+                <parameter name="nj2NodePath" value="/neck/j2"/>
+                <parameter name="nj3NodePath" value="/neck/j3"/>
+            </parameters>
+        </tab>
+    </tabs>
+</window>

@@ -1,0 +1,45 @@
+<ui>
+    <parameters>
+        <parameter name="robot" value="V1"/>
+    </parameters>
+
+    <objects>
+        <object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager" args="terminator -e"/>
+        <object name="sysid" rospackage="nasa_sysid" module="nasa_sysid" member="ServiceManager" args="${robot}"/>
+    </objects>
+
+    <widgets>
+        <widget col="2" row="1" name="Sys ID" type="GroupBox">
+            <widget name="Load On Start" type="ToggleButton">
+                <check label="Enable Load On Start">
+                    <object name="sysid" method="loadOnStartEnable" args="1" argTypes="int"/>
+                </check>
+                <uncheck label="Disable Load On Start">
+                    <object name="sysid" method="loadOnStartEnable" args="0" argTypes="int"/>
+                </uncheck>
+            </widget>
+            <widget name="Launch" type="ToggleButton">
+                <check label="Launch">
+                    <object name="manager" method="startProgram" args="roslaunch nasa_sysid sysid.launch,sysid" argTypes="str,str"/>
+                </check>
+                <uncheck label="Kill">
+                    <object name="manager" method="stopProgram" args="sysid" argTypes="str"/>
+                </uncheck>
+            </widget>
+            <widget name="Start / Stop" type="ToggleButton">
+                <check label="Pause">
+                    <object name="sysid" method="stop"/>
+                </check>
+                <uncheck label="Unpause">
+                    <object name="sysid" method="start"/>
+                </uncheck>
+            </widget>
+            <widget name="Load Model Data" type="PushButton">
+                <object name="sysid" method="load"/>
+            </widget>
+            <widget name="Save Model Data" type="PushButton">
+                <object name="sysid" method="save"/>
+            </widget>
+        </widget>
+    </widgets>
+</ui>

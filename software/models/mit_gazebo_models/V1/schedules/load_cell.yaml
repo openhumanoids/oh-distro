@@ -1,0 +1,9 @@
+read:
+    - {type: int16_t, name: Six_Axis_1}
+    - {type: int16_t, name: Six_Axis_2}
+    - {type: int16_t, name: Six_Axis_3}
+    - {type: int16_t, name: Six_Axis_4}
+    - {type: int16_t, name: Six_Axis_5}
+    - {type: int16_t, name: Six_Axis_6}
+    - {type: int16_t, name: Six_Axis_CRC}
+

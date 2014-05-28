@@ -1,0 +1,57 @@
+<?xml version="1.0" ?>
+<window>
+    <title>Left Leg</title>
+    <size>0,0</size>
+    <position>10,10</position>
+    <style>CleanLooks</style>
+    <tabs>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LLJ1</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/pelvis/lj1"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LLJ2</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_leg/j2"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LLJ3</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_leg/j3"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LLJ4</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_leg/j4"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver_linear.ui</ui_file>
+            <tabname>LLJ5</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_leg/j5"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4_linear"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver_linear.ui</ui_file>
+            <tabname>LLJ6</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_leg/j6"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4_linear"/>
+            </parameters>
+        </tab>
+    </tabs>
+</window>

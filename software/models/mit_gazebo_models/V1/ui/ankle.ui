@@ -1,0 +1,78 @@
+<ui>
+    <parameters>
+        <parameter name="j5NodePath" value="/left_leg/j5"/>
+        <parameter name="j6NodePath" value="/left_leg/j6"/>
+    </parameters>
+
+    <objects>
+        <object name="j5" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv3" member="TurbodriverAPI_DRCv3" args="${j5NodePath}"/>
+        <object name="j6" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv3" member="TurbodriverAPI_DRCv3" args="${j6NodePath}"/>
+        <object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager"/>
+    </objects>
+
+    <widgets>
+        <widget row="0" col="0" name="Mode Cmd" type="GroupBox">
+            <widget name="Park" type="PushButton">
+                <object name="j5" method="SendModeCmd" args="Park" argTypes="str"/>
+                <object name="j6" method="SendModeCmd" args="Park" argTypes="str"/>
+            </widget>
+
+            <widget name="Servo Torque" type="PushButton">
+                <object name="j5" method="SendModeCmd" args="ServoTorque" argTypes="str"/>
+                <object name="j6" method="SendModeCmd" args="ServoTorque" argTypes="str"/>
+            </widget>
+
+            <widget name="Clear Faults" type="PushButton">
+                <object name="j5" method="SendModeCmd" args="Reset" argTypes="str"/>
+                <object name="j6" method="SendModeCmd" args="Reset" argTypes="str"/>
+            </widget>
+        </widget>
+
+        <widget row="3" col="0" name="load coeffs" type="PushButton">
+            <object name="manager" method="startProgram" args="rosrun nasa_configuration cfgLoader.py -c `rospack find drc_coeffs`/V1A/v1_config.yaml -n,loadCoeffs" argTypes="str,str"/>
+        </widget>
+
+        <widget row="4" col="0" name="Zero DesTorq" type="PushButton">
+            <object name="j5" method="zeroEffortCommand"/>
+            <object name="j6" method="zeroEffortCommand"/>
+        </widget>
+
+        <widget row="1" col="1" name="Data" type="TableViewDisplay">
+            <header value="jointAps(rad),torque(Nm),torqDes(Nm),distTorq(Nm)"/>
+            <row label="J5">
+                <object name="j5" method="getPosition" args="val" argTypes="str"/>
+                <object name="j5" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="j5" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="j5" method="getTorqueControl_distTorque_Nm" args="val" argTypes="str"/>
+            </row>
+            <row label="J6">
+                <object name="j6" method="getPosition" args="val" argTypes="str"/>
+                <object name="j6" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="j6" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/>
+                <object name="j6" method="getTorqueControl_distTorque_Nm" args="val" argTypes="str"/>
+            </row>
+        </widget>
+
+        <widget row="0" col="1" name="Status" type="TableViewDisplay">
+            <header value="modeCmd,enableState,modeState,Heartbeat,InitRotor"/>
+            <row label="J5">
+                <object name="j5" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j5" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+                <object name="j5" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j5" method="getProcHeartbeat" args="val" argTypes="str"/>
+                <object name="j5" method="getInitRotorPosDone" args="val" argTypes="str" thresholds="1" colors="yellow,green"/>
+                <object name="j5" method="Update"/>
+                <object name="j5" method="publishJointStateMessage"/>
+            </row>
+            <row label="J6">
+                <object name="j6" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j6" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+                <object name="j6" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+                <object name="j6" method="getProcHeartbeat" args="val" argTypes="str"/>
+                <object name="j6" method="getInitRotorPosDone" args="val" argTypes="str" thresholds="1" colors="yellow,green"/>
+                <object name="j6" method="Update"/>
+                <object name="j6" method="publishJointStateMessage"/>
+            </row>
+        </widget>
+    </widgets>
+</ui>

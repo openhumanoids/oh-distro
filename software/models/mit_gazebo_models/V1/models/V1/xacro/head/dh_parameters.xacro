@@ -1,0 +1,64 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/head/dh_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <!--     
+    Joint_Offset (d): offset along previous z to the common normal
+    Joint_Angle (theta): angle about previous z, from old x to new x
+    Joint_Radius (a): length of the common normal. Assuming a revolute joint, this is the radius about previous z.
+    Joint_Twist (alpha): angle about common normal, from old z axis to new z axis
+  -->
+
+  <!-- NJ1 -->
+  <!-- DH Parameters -->
+  <xacro:property name="NJ1_Joint_Offset" value="0.0519" />
+  <xacro:property name="NJ1_Joint_Angle" value="0" />
+  <xacro:property name="NJ1_Joint_Radius" value="0.33845" />
+  <xacro:property name="NJ1_Joint_Twist" value="${-1 * pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="NJ1_Origin_X" value="0.3383"/>
+  <xacro:property name="NJ1_Origin_Y" value="0"/>
+  <xacro:property name="NJ1_Origin_Z" value="0.0519"/>
+
+  <xacro:property name="NJ1_Orientation_Roll" value="${-1 * pi_2}"/>
+  <xacro:property name="NJ1_Orientation_Pitch" value="0"/>
+  <xacro:property name="NJ1_Orientation_Yaw" value="0"/>
+
+  <!-- NJ2 -->
+  <!-- DH Parameters -->
+  <xacro:property name="NJ2_Joint_Offset" value="0" />
+  <xacro:property name="NJ2_Joint_Angle" value="${pi_2}" />
+  <xacro:property name="NJ2_Joint_Radius" value="0.0519" />
+  <xacro:property name="NJ2_Joint_Twist" value="${pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="NJ2_Origin_X" value="0"/>
+  <xacro:property name="NJ2_Origin_Y" value="0.0519"/>
+  <xacro:property name="NJ2_Origin_Z" value="0"/>
+
+  <xacro:property name="NJ2_Orientation_Roll" value="${pi_2}"/>
+  <xacro:property name="NJ2_Orientation_Pitch" value="0"/>
+  <xacro:property name="NJ2_Orientation_Yaw" value="${pi_2}"/>
+
+  <!-- NJ3 -->
+  <!-- DH Parameters -->
+  <xacro:property name="NJ3_Joint_Offset" value="0.196" />
+  <xacro:property name="NJ3_Joint_Angle" value="0" />
+  <xacro:property name="NJ3_Joint_Radius" value="0.06" />
+  <xacro:property name="NJ3_Joint_Twist" value="${-1 * pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="NJ3_Origin_X" value="0.06"/>
+  <xacro:property name="NJ3_Origin_Y" value="0"/>
+  <xacro:property name="NJ3_Origin_Z" value="0.196"/>
+
+  <xacro:property name="NJ3_Orientation_Roll" value="${-1 * pi_2}"/>
+  <xacro:property name="NJ3_Orientation_Pitch" value="0"/>
+  <xacro:property name="NJ3_Orientation_Yaw" value="0"/>
+
+</robot>

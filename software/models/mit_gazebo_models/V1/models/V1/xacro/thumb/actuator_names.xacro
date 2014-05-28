@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm/thumb/actuator_names">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:property name="RTA1_Actuator_Name" value="/right_arm/forearm_driver1/thumb_roll" />
+  <xacro:property name="RTA2_Actuator_Name" value="/right_arm/forearm_driver1/thumb_proximal" />
+  <xacro:property name="RTA3_Actuator_Name" value="/right_arm/forearm_driver2/thumb_distal" />
+
+  <xacro:property name="LTA1_Actuator_Name" value="/left_arm/forearm_driver1/thumb_roll" />
+  <xacro:property name="LTA2_Actuator_Name" value="/left_arm/forearm_driver1/thumb_proximal" />
+  <xacro:property name="LTA3_Actuator_Name" value="/left_arm/forearm_driver2/thumb_distal" />
+
+</robot>

@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/little_finger/dh_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <!--     
+    Joint_Offset (d): offset along previous z to the common normal
+    Joint_Angle (theta): angle about previous z, from old x to new x
+    Joint_Radius (a): length of the common normal. Assuming a revolute joint, this is the radius about previous z.
+    Joint_Twist (alpha): angle about common normal, from old z axis to new z axis
+  -->
+
+  <!-- LFJ1 -->
+  <!-- DH Parameters -->
+  <xacro:property name="LFJ1_Joint_Offset" value="$​{reflect * -0.007747}" />
+  <xacro:property name="LFJ1_Joint_Angle" value="0.690626785" />
+  <xacro:property name="LFJ1_Joint_Radius" value="0.055403" />
+  <xacro:property name="LFJ1_Joint_Twist" value="${reflect * -1 * pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="LFJ1_Origin_X" value="0.0427072303336"/>
+  <xacro:property name="LFJ1_Origin_Y" value="0.0352928446888"/>
+  <xacro:property name="LFJ1_Origin_Z" value="${reflect * -0.007747}"/>
+
+  <xacro:property name="LFJ1_Orientation_Roll" value="${reflect * -1 * pi_2}"/>
+  <xacro:property name="LFJ1_Orientation_Pitch" value="0"/>
+  <xacro:property name="LFJ1_Orientation_Yaw" value="0.690626785"/>
+
+  <!-- LFJ2 -->
+  <!-- DH Parameters -->
+  <xacro:property name="LFJ2_Joint_Offset" value="${reflect * -0.071327}" />
+  <xacro:property name="LFJ2_Joint_Angle" value="${reflect * -1 * pi_2}" />
+  <xacro:property name="LFJ2_Joint_Radius" value="{reflect * 0.010287}" />
+  <xacro:property name="LFJ2_Joint_Twist" value="-0.690626785" />
+
+  <!-- Derived -->
+  <xacro:property name="LFJ2_Origin_X" value="0"/>
+  <xacro:property name="LFJ2_Origin_Y" value="-0.010287"/>
+  <xacro:property name="LFJ2_Origin_Z" value="${reflect * -0.071327}"/>
+
+  <xacro:property name="LFJ2_Orientation_Roll" value="-0.690626785"/>
+  <xacro:property name="LFJ2_Orientation_Pitch" value="0"/>
+  <xacro:property name="LFJ2_Orientation_Yaw" value="${reflect * -1 * pi_2}"/>
+
+  <!-- LFJ3 -->
+  <!-- DH Parameters -->
+  <xacro:property name="LFJ3_Joint_Offset" value="${reflect * 0.050169}" />
+  <xacro:property name="LFJ3_Joint_Angle" value="${reflect * pi_2}" />
+  <xacro:property name="LFJ3_Joint_Radius" value="0.0381" />
+  <xacro:property name="LFJ3_Joint_Twist" value="0" />
+
+  <!-- Derived -->
+  <xacro:property name="LFJ3_Origin_X" value="0"/>
+  <xacro:property name="LFJ3_Origin_Y" value="${reflect * 0.0381}"/>
+  <xacro:property name="LFJ3_Origin_Z" value="${reflect * 0.050169}"/>
+
+  <xacro:property name="LFJ3_Orientation_Roll" value="0"/>
+  <xacro:property name="LFJ3_Orientation_Pitch" value="0"/>
+  <xacro:property name="LFJ3_Orientation_Yaw" value="${reflect * pi_2}"/>
+
+  <!-- LFJ4 -->
+  <!-- DH Parameters -->
+  <xacro:property name="LFJ4_Joint_Offset" value="0" />
+  <xacro:property name="LFJ4_Joint_Angle" value="0" />
+  <xacro:property name="LFJ4_Joint_Radius" value="0.02286" />
+  <xacro:property name="LFJ4_Joint_Twist" value="0" />
+
+  <!-- Derived -->
+  <xacro:property name="LFJ4_Origin_X" value="0.02286"/>
+  <xacro:property name="LFJ4_Origin_Y" value="0"/>
+  <xacro:property name="LFJ4_Origin_Z" value="0"/>
+
+  <xacro:property name="LFJ4_Orientation_Roll" value="0"/>
+  <xacro:property name="LFJ4_Orientation_Pitch" value="0"/>
+  <xacro:property name="LFJ4_Orientation_Yaw" value="0"/>
+
+</robot>

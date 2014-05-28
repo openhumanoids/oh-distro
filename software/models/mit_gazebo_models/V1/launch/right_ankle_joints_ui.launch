@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="ui_file" default="
+  							   $(find V1)/ui/turbodriver.ui
+  							   $(find V1)/ui/turbodriver.ui" />
+  <arg name="tabnames" default="J5 J6"/>
+  <arg name="params" value="'nodepath=/right_leg/j5','nodepath=/right_leg/j6'"/>
+  <arg name="title" default="'Right Ankle Joints'"/>
+  <arg name="position" default="10,10"/>
+  <node name="right_ankle_joints" pkg="ui_builder" type="ui_builder.py" args="-u $(arg ui_file) 
+  																		--tabnames $(arg tabnames) 
+  																		--parameters $(arg params) 
+  																		-t $(arg title) 
+  																		--position $(arg position) 
+  																		--" output="screen"/>
+</launch>

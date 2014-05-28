@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/head/joint_names">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="NJ1_Joint_Name" value="LowerNeckExtensor" />
+  <xacro:property name="NJ2_Joint_Name" value="NeckRotator" />
+  <xacro:property name="NJ3_Joint_Name" value="UpperNeckExtensor" />
+
+</robot>

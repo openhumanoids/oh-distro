@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="default">
+
+    <!-- FROM ATLAS -->
+    <physics type="ode">
+      <gravity>0 0 -9.81</gravity>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>100</iters>
+          <sor>1.4</sor>
+        </solver>
+        <constraints>
+          <!-- <cfm>0.0000001</cfm>
+          <erp>0.6</erp>
+          <contact_max_correcting_vel>0.001</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer> -->
+          <cfm>0.0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>0.0</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer>
+        </constraints>
+      </ode>
+      <real_time_update_rate>10000</real_time_update_rate>
+      <max_step_size>0.0001</max_step_size>
+    </physics>
+
+    <!-- <physics type="ode">
+      <gravity>0 0 -9.81</gravity>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>300</iters>
+          <sor>1.3</sor>
+        </solver>
+        <constraints>
+          <cfm>0.0000001</cfm>
+          <erp>0.6</erp>
+          <contact_max_correcting_vel>0.001</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer>
+        </constraints>
+      </ode>
+      <real_time_update_rate>1000</real_time_update_rate>
+      <max_step_size>0.0001</max_step_size>
+    </physics> -->
+
+    <scene>
+      <shadows>0</shadows>
+    </scene>
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!-- A ground plane -->
+        <include>
+      <uri>model://jsc_ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://V1</uri>
+      <pose>0 0 1.17 0 0 0</pose>
+    </include>
+    <!-- <plugin filename="libRobotSetSingleJointPluginRos.so" name="robot_set_joints">
+      <robotName>V1_POSER_20130306</robotName>
+      <topicName>/v1/set_joints</topicName>
+    </plugin> -->
+    <!--     <plugin filename="libPinPluginRos.so" name="pin_arm_base">
+      <serviceName>/pin_arm_base</serviceName>
+    </plugin> -->
+  </world>
+</sdf>

@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/leg/joint_names">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="LJ1_Joint_Name" value="${prefix}HipRotator" />
+  <xacro:property name="LJ2_Joint_Name" value="${prefix}HipAdductor" />
+  <xacro:property name="LJ3_Joint_Name" value="${prefix}HipExtensor" />
+  <xacro:property name="LJ4_Joint_Name" value="${prefix}KneeExtensor" />
+  <xacro:property name="LJ5_Joint_Name" value="${prefix}AnkleExtensor" />
+  <xacro:property name="LJ6_Joint_Name" value="${prefix}Ankle" />
+
+</robot>

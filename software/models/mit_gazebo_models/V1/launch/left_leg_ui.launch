@@ -1,0 +1,34 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="ui_file" default="$(find V1)/ui/leg.ui
+                               $(find V1)/ui/turbodriver.ui
+                               $(find V1)/ui/turbodriver.ui 
+                               $(find V1)/ui/turbodriver.ui 
+                               $(find V1)/ui/turbodriver.ui
+                               $(find V1)/ui/turbodriver_linear.ui
+                               $(find V1)/ui/turbodriver_linear.ui"/>
+  <arg name="tabnames" default="'Left Leg' LLJ1 LLJ2 LLJ3 LLJ4 LLJ5 LLJ6 LLJ7"/>
+  <arg name="params" value="'j1NodePath=/pelvis/lj1
+                             j2NodePath=/left_leg/j2
+                             j3NodePath=/left_leg/j3
+                             j4NodePath=/left_leg/j4
+                             j5NodePath=/left_leg/j5
+                             j6NodePath=/left_leg/j6
+                             side=Left
+                             limb=LeftLeg'
+                             'nodepath=/pelvis/lj1'
+                             'nodepath=/left_leg/j2'
+                             'nodepath=/left_leg/j3'
+                             'nodepath=/left_leg/j4'
+                             'nodepath=/left_leg/j5'
+                             'nodepath=/left_leg/j6'"/>
+  <arg name="title" default="'Left Leg'"/>
+  <arg name="position" default="10,10"/>
+  <node name="left_leg" pkg="ui_builder" type="ui_builder.py" args="-u $(arg ui_file) 
+  																		--tabnames $(arg tabnames) 
+                                      -t $(arg title) 
+                                      --position $(arg position) 
+  																		--parameters $(arg params) 
+  																		--" output="screen"/>
+</launch>

@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/head/mass_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+<!--   <xacro:property name="NJ1_Link_Mass" value="1.08" />
+  <xacro:property name="NJ2_Link_Mass" value="1.08" />
+  <xacro:property name="NJ3_Link_Mass" value="4.34" /> -->
+<!--  <xacro:property name="NJ3_Link_Mass" value="3.58" /> -->
+  
+  <!-- The following were taken from Christopher McQuin's DRC Master Spreadsheet sept.xlsx, 10/7/13-->
+  <xacro:property name="NJ1_Link_Mass" value="0.471" />
+  <xacro:property name="NJ2_Link_Mass" value="1.4" />
+  <xacro:property name="NJ3_Link_Mass" value="3.842" />
+
+</robot>

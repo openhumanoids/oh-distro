@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/little_finger/mass_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="LFJ1_Joint_Name" value="${prefix}LittleMPYaw" />
+  <xacro:property name="LFJ2_Joint_Name" value="${prefix}LittleMPExtensor" />
+  <xacro:property name="LFJ3_Joint_Name" value="${prefix}LittlePIPExtensor" />
+  <xacro:property name="LFJ4_Joint_Name" value="${prefix}LittleDIPExtensor" />
+
+</robot>

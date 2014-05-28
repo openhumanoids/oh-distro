@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<launch>
+    <arg name="gui" default="False" />
+    <arg name="urdf" default="$(find V1)/models/V1/urdf/V1_hw.urdf"/>
+    <param name="robot_description" textfile="$(arg urdf)"/>
+
+    <param name="use_gui" value="$(arg gui)"/>
+    <param name="use_sim_time" value="true"/>
+
+<!--     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" /> -->
+    <node name="rviz" pkg="rviz" type="rviz"/>
+</launch>

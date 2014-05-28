@@ -1,0 +1,47 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="actuator_names">
+    <xacro:property name="leftarm_name1" value="/trunk/laj1"/>
+    <xacro:property name="leftarm_name2" value="/left_arm/j2" />
+    <xacro:property name="leftarm_name3" value="/left_arm/j3" />
+    <xacro:property name="leftarm_name4" value="/left_arm/j4" />
+    <xacro:property name="leftarm_name5" value="/left_arm/j5" />
+    <xacro:property name="leftarm_name6" value="/left_arm/forearm_driver1/wrist_left" />
+    <xacro:property name="leftarm_name7" value="/left_arm/forearm_driver1/wrist_right" />
+
+    <xacro:property name="rightarm_name1" value="/trunk/raj1"/>
+    <xacro:property name="rightarm_name2" value="/right_arm/j2" />
+    <xacro:property name="rightarm_name3" value="/right_arm/j3" />
+    <xacro:property name="rightarm_name4" value="/right_arm/j4" />
+    <xacro:property name="rightarm_name5" value="/right_arm/j5" />
+    <xacro:property name="rightarm_name6" value="/right_arm/forearm_driver1/wrist_right" />
+    <xacro:property name="rightarm_name7" value="/right_arm/forearm_driver1/wrist_left" />
+
+    <xacro:property name="waist_name1" value="/pelvis/wj1"/>
+    <xacro:property name="waist_name2" value="/trunk/wj2" />
+    <xacro:property name="waist_name3" value="/trunk/wj3" />
+
+    <xacro:property name="neck_name1" value="/neck/j1"/>
+    <xacro:property name="neck_name2" value="/neck/j2"/>
+    <xacro:property name="neck_name3" value="/neck/j3"/>
+
+    <xacro:property name="rightleg_name1" value="/pelvis/rj1"/>
+    <xacro:property name="rightleg_name2" value="/right_leg/j2"/>
+    <xacro:property name="rightleg_name3" value="/right_leg/j3"/>
+    <xacro:property name="rightleg_name4" value="/right_leg/j4"/>
+    <xacro:property name="rightleg_name5" value="/right_leg/j5"/>
+    <xacro:property name="rightleg_name6" value="/right_leg/j6"/>
+    <xacro:property name="rightleg_hermes" value="/right_leg/hermes"/>
+    <xacro:property name="rightleg_ati" value="/right_leg/j6"/>
+    <xacro:property name="rightleg_cop" value="/right_leg/cop"/>
+    <xacro:property name="rightleg_mpu2000" value="/right_leg/hermes"/>
+
+    <xacro:property name="leftleg_name1" value="/pelvis/lj1"/>
+    <xacro:property name="leftleg_name2" value="/left_leg/j2"/>
+    <xacro:property name="leftleg_name3" value="/left_leg/j3"/>
+    <xacro:property name="leftleg_name4" value="/left_leg/j4"/>
+    <xacro:property name="leftleg_name5" value="/left_leg/j5"/>
+    <xacro:property name="leftleg_name6" value="/left_leg/j6"/>
+    <xacro:property name="leftleg_hermes" value="/left_leg/hermes"/>
+    <xacro:property name="leftleg_ati" value="/left_leg/j6"/>
+    <xacro:property name="leftleg_cop" value="/left_leg/cop"/>
+    <xacro:property name="leftleg_mpu2000" value="/left_leg/hermes"/>
+</robot>

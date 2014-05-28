@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/hw_sensors">
+
+  <xacro:macro name="imu_sensor" params="sensorName nodePath type">
+    <imuSensor name="${sensorName}" frame="${sensorName}_Frame" nodePath="${nodePath}" type="${type}"/>
+  </xacro:macro>
+
+  <xacro:macro name="cop_sensor" params="sensorName nodePath type">
+    <copSensor name="${sensorName}" frame="${sensorName}_Frame" nodePath="${nodePath}" type="${type}"/>
+  </xacro:macro>
+
+</robot>

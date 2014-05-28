@@ -1,0 +1,32 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="sim_actuator_types">
+    <!-- ======================================================= -->
+    <!-- DO NOT MODIFY URDF BY HAND! YOU ARE A FOOL IF YOU DO! -->
+    <!-- ======================================================= -->
+    <xacro:property name="arm_type1" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="arm_type2" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="arm_type3" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="arm_type4" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="arm_type5" value="turbodriver_api/TurbodriverSimAPI_DRCv3"/>
+    <xacro:property name="arm_type6" value="forearm_api/WristSimAPI_DRCv1"/>
+    <xacro:property name="arm_type7" value="forearm_api/WristSimAPI_DRCv1"/>
+
+    <xacro:property name="leg_type1" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="leg_type2" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="leg_type3" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="leg_type4" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="leg_type5" value="turbodriver_api/TurbodriverSimAPI_DRCv4_linear"/>
+    <xacro:property name="leg_type6" value="turbodriver_api/TurbodriverSimAPI_DRCv4_linear"/>
+    
+    <xacro:property name="finger_api" value="forearm_api/FingerSimAPI_DRCv1"/>
+
+    <xacro:property name="neck_type1" value="turbodriver_api/TurbodriverSimAPI_DRCv3"/>
+    <xacro:property name="neck_type2" value="turbodriver_api/TurbodriverSimAPI_DRCv3"/>
+    <xacro:property name="neck_type3" value="turbodriver_api/TurbodriverSimAPI_DRCv3"/>
+
+    <xacro:property name="waist_type1" value="turbodriver_api/TurbodriverSimAPI_DRCv4"/>
+    <xacro:property name="waist_type2" value="turbodriver_api/TurbodriverSimAPI_DRCv4_linear"/>
+    <xacro:property name="waist_type3" value="turbodriver_api/TurbodriverSimAPI_DRCv4_linear"/>
+
+</robot>
+
+    

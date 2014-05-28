@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg default="gazebo" name="gzname" />
+  <param name="/use_sim_time" type="bool" value="true"/>
+  <arg name="robot" default="V1"/>
+  <arg name="find_cmd" default="$(find V1)"/>
+  <arg name="pin_link" default=""/>
+  <arg name="world" default="models/$(arg robot)/worlds/$(arg robot).world" />
+
+  <!--Load gazebo robot xacro into parameter robot_description_sim for gazebo plugins-->
+  <param name="robot_description_sim" command="$(find xacro)/xacro.py $(arg find_cmd)/models/$(arg robot)/xacro/$(arg robot)_gazebo.xacro"/>
+
+  <!--Load the hw robot xacro into parameter robot_description -->
+  <!-- <param name="robot_description" command="$(find xacro)/xacro.py $(arg find_cmd)/models/$(arg robot)/xacro/$(arg robot)_hw.xacro"/> -->
+
+  <!-- Zero out the shared memory to prevent robot from initially blowing up -->
+<!--  <node name="zero_states" pkg="drc_common" type="ros-strip.py" args="$(find wbc_config_files)/testwbc_v1_arm/scripts/ResetSHM_V1_arm.py"/> -->
+
+  <!-- Pin the arm_base -->
+  <param name="/pin_plugin/yaml" value="fixed: [$(arg pin_link)]"/>
+
+  <!-- Start the simulator -->
+  <node args="$(arg find_cmd)/$(arg world)" name="gazebo" pkg="nasa_drc_simulator" type="run_$(arg gzname)" output="screen"/>
+</launch>

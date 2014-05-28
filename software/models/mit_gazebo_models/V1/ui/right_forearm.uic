@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<window>
+    <title>Right Forearm</title>
+    <size>0,0</size>
+    <position>10,10</position>
+    <style>CleanLooks</style>
+    <tabs>
+        <tab>
+            <ui_file>$(find V1)/ui/forearm.ui</ui_file>
+            <tabname>Right Forearm</tabname>
+            <parameters>
+                <parameter name="j5NodePath" value="/right_arm/j5"/>
+                <parameter name="j6NodePath" value="/right_arm/forearm_driver1/wrist_left" />
+                <parameter name="j7NodePath" value="/right_arm/forearm_driver1/wrist_right" />
+                <parameter name="thumbRollNodePath" value="/right_arm/forearm_driver1/thumb_roll" />
+                <parameter name="thumbProxNodePath" value="/right_arm/forearm_driver1/thumb_proximal" />
+                <parameter name="thumbDistalNodePath" value="/right_arm/forearm_driver2/thumb_distal" />
+                <parameter name="indexNodePath" value="/right_arm/forearm_driver2/index" />
+                <parameter name="middleNodePath" value="/right_arm/forearm_driver2/middle" />
+                <parameter name="pinkyNodePath" value="/right_arm/forearm_driver2/pinky" />
+            </parameters>
+        </tab>
+    </tabs>
+</window>

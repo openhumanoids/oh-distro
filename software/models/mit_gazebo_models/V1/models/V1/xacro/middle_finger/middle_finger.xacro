@@ -1,0 +1,212 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/middle_finger">
+  <!-- 
+        Reference for kinematic and dynamic parameters comes from:
+
+            http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:include filename="$(find V1)/models/V1/xacro/middle_finger/joint_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/middle_finger/actuator_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/middle_finger/link_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/middle_finger/joint_limits.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/middle_finger/dh_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/middle_finger/mass_parameters.xacro"/>
+  
+  <!-- Link properties. -->
+  <xacro:property name="MFJ1_Link_Width" value="0.054"/>
+  <xacro:property name="MFJ1_Link_Height" value="0.019"/>
+  <xacro:property name="MFJ1_Link_Length" value="0.026"/>
+
+  <xacro:property name="MFJ1_Link_Origin_X" value="0.017"/>
+  <xacro:property name="MFJ1_Link_Origin_Y" value="0"/>
+  <xacro:property name="MFJ1_Link_Origin_Z" value="0"/>
+
+
+  <xacro:property name="MFJ2_Link_Width" value="0.034"/>
+  <xacro:property name="MFJ2_Link_Height" value="0.013"/>
+  <xacro:property name="MFJ2_Link_Length" value="0.022"/>
+
+  <xacro:property name="MFJ2_Link_Origin_X" value="0.011"/>
+  <xacro:property name="MFJ2_Link_Origin_Y" value="0"/>
+  <xacro:property name="MFJ2_Link_Origin_Z" value="0"/>
+
+
+  <xacro:property name="MFJ3_Link_Width" value="0.027"/>
+  <xacro:property name="MFJ3_Link_Height" value="0.012"/>
+  <xacro:property name="MFJ3_Link_Length" value="0.019"/>
+
+  <xacro:property name="MFJ3_Link_Origin_X" value="0.0086"/>
+  <xacro:property name="MFJ3_Link_Origin_Y" value="0"/>
+  <xacro:property name="MFJ3_Link_Origin_Z" value="0"/>
+
+
+  <xacro:macro name="make_middle_finger" params="prefix reflect middle_finger_root_link">
+    <!-- LINKS -->
+    <xacro:box_link name="${MFJ1_Distal_Link}" 
+                    width="${MFJ1_Link_Width}" height="${MFJ1_Link_Height}" depth="${MFJ1_Link_Length}" mass="${MFJ1_Link_Mass}" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="${MFJ1_Link_Origin_X} ${MFJ1_Link_Origin_Y} ${MFJ1_Link_Origin_Z}"
+                    visual_mesh="${mesh_root}/sf1.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/sf1.stl"/>
+
+    <xacro:box_link name="${MFJ2_Distal_Link}" 
+                    width="${MFJ2_Link_Width}" height="${MFJ2_Link_Height}" depth="${MFJ2_Link_Length}" mass="${MFJ2_Link_Mass}" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="${MFJ2_Link_Origin_X} ${MFJ2_Link_Origin_Y} ${MFJ2_Link_Origin_Z}"
+                    visual_mesh="${mesh_root}/sf2_ssf3.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/sf2_ssf3.stl"/>
+
+    <xacro:box_link name="${MFJ3_Distal_Link}" 
+                    width="${MFJ3_Link_Width}" height="${MFJ3_Link_Height}" depth="${MFJ3_Link_Length}" mass="${MFJ3_Link_Mass}" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="${MFJ3_Link_Origin_X} ${MFJ3_Link_Origin_Y} ${MFJ3_Link_Origin_Z}"
+                    visual_mesh="${mesh_root}/sf3_ssf4.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/sf3_ssf4.stl"/>
+
+    <!-- MFJ1 -->
+    <xacro:revolute_joint jointName="${MFJ1_Joint_Name}" 
+                          parent="${MFJ1_Proximal_Link}" child="${MFJ1_Distal_Link}"
+                          origin_xyz="${MFJ1_Origin_X} ${MFJ1_Origin_Y} ${MFJ1_Origin_Z}" 
+                          origin_rpy="${MFJ1_Orientation_Roll} ${MFJ1_Orientation_Pitch} ${MFJ1_Orientation_Yaw}">
+        <limit effort="${MFJ1_Torque_Limit}" lower="${MFJ1_Lower_Limit}" upper="${MFJ1_Upper_Limit}" velocity="${MFJ1_Speed_Limit}"/>
+    </xacro:revolute_joint>
+    
+    <!-- MFJ2 -->
+    <xacro:revolute_joint jointName="${MFJ2_Joint_Name}" 
+                          parent="${MFJ2_Proximal_Link}" child="${MFJ2_Distal_Link}"
+                          origin_xyz="${MFJ2_Origin_X} ${MFJ2_Origin_Y} ${MFJ2_Origin_Z}" 
+                          origin_rpy="${MFJ2_Orientation_Roll} ${MFJ2_Orientation_Pitch} ${MFJ2_Orientation_Yaw}">
+        <limit effort="${MFJ2_Torque_Limit}" lower="${MFJ2_Lower_Limit}" upper="${MFJ2_Upper_Limit}" velocity="${MFJ2_Speed_Limit}"/>
+    </xacro:revolute_joint>
+
+    <!-- MFJ3 -->
+    <xacro:revolute_joint jointName="${MFJ3_Joint_Name}" 
+                          parent="${MFJ3_Proximal_Link}" child="${MFJ3_Distal_Link}"
+                          origin_xyz="${MFJ3_Origin_X} ${MFJ3_Origin_Y} ${MFJ3_Origin_Z}" 
+                          origin_rpy="${MFJ3_Orientation_Roll} ${MFJ3_Orientation_Pitch} ${MFJ3_Orientation_Yaw}">
+        <limit effort="${MFJ3_Torque_Limit}" lower="${MFJ3_Lower_Limit}" upper="${MFJ3_Upper_Limit}" velocity="${MFJ3_Speed_Limit}"/>
+    </xacro:revolute_joint>
+  </xacro:macro>
+
+  <xacro:macro name="make_middle_finger_fixed" params="prefix reflect middle_finger_root_link">
+    <!-- LINKS -->
+    <xacro:box_link name="${MFJ1_Distal_Link}" 
+                    width="${MFJ1_Link_Width}" height="${MFJ1_Link_Height}" depth="${MFJ1_Link_Length}" mass="${MFJ1_Link_Mass}" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="${MFJ1_Link_Origin_X} ${MFJ1_Link_Origin_Y} ${MFJ1_Link_Origin_Z}"
+                    visual_mesh="${mesh_root}/sf1.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/sf1.stl"/>
+
+    <xacro:box_link name="${MFJ2_Distal_Link}" 
+                    width="${MFJ2_Link_Width}" height="${MFJ2_Link_Height}" depth="${MFJ2_Link_Length}" mass="${MFJ2_Link_Mass}" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="${MFJ2_Link_Origin_X} ${MFJ2_Link_Origin_Y} ${MFJ2_Link_Origin_Z}"
+                    visual_mesh="${mesh_root}/sf2_ssf3.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/sf2_ssf3.stl"/>
+
+    <xacro:box_link name="${MFJ3_Distal_Link}" 
+                    width="${MFJ3_Link_Width}" height="${MFJ3_Link_Height}" depth="${MFJ3_Link_Length}" mass="${MFJ3_Link_Mass}" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="${MFJ3_Link_Origin_X} ${MFJ3_Link_Origin_Y} ${MFJ3_Link_Origin_Z}"
+                    visual_mesh="${mesh_root}/sf3_ssf4.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/sf3_ssf4.stl"/>
+
+    <!-- MFJ1 -->
+    <xacro:fixed_joint jointName="${MFJ1_Joint_Name}" 
+                          parent="${MFJ1_Proximal_Link}" child="${MFJ1_Distal_Link}"
+                          origin_xyz="${MFJ1_Origin_X} ${MFJ1_Origin_Y} ${MFJ1_Origin_Z}" 
+                          origin_rpy="${MFJ1_Orientation_Roll} ${MFJ1_Orientation_Pitch} ${MFJ1_Orientation_Yaw}"/>
+    
+    <!-- MFJ2 -->
+    <xacro:fixed_joint jointName="${MFJ2_Joint_Name}" 
+                          parent="${MFJ2_Proximal_Link}" child="${MFJ2_Distal_Link}"
+                          origin_xyz="${MFJ2_Origin_X} ${MFJ2_Origin_Y} ${MFJ2_Origin_Z}" 
+                          origin_rpy="${MFJ2_Orientation_Roll} ${MFJ2_Orientation_Pitch} ${MFJ2_Orientation_Yaw}"/>
+
+    <!-- MFJ3 -->
+    <xacro:fixed_joint jointName="${MFJ3_Joint_Name}" 
+                          parent="${MFJ3_Proximal_Link}" child="${MFJ3_Distal_Link}"
+                          origin_xyz="${MFJ3_Origin_X} ${MFJ3_Origin_Y} ${MFJ3_Origin_Z}" 
+                          origin_rpy="${MFJ3_Orientation_Roll} ${MFJ3_Orientation_Pitch} ${MFJ3_Orientation_Yaw}"/>
+  </xacro:macro>
+
+  <!-- Actuators -->
+  <xacro:macro name="v1_right_middle_finger_actuators" params="prefix api">
+    <xacro:v1_actuator name="${RMFA_Actuator_Name}" api="${api}" />
+  </xacro:macro>
+
+  <xacro:macro name="v1_left_middle_finger_actuators" params="prefix api">
+    <xacro:v1_actuator name="${LMFA_Actuator_Name}" api="${api}" />
+  </xacro:macro>
+
+  <!-- Transmissions -->
+  <xacro:macro name="v1_right_middle_finger_transmissions" params="prefix">
+    <xacro:finger3_transmission tranName="${prefix}MiddleFingerTransmission" 
+                                joint1="${MFJ1_Joint_Name}"
+                                joint2="${MFJ2_Joint_Name}"
+                                joint3="${MFJ3_Joint_Name}"
+                                actuator="${RMFA_Actuator_Name}" />
+  </xacro:macro>
+
+  <xacro:macro name="v1_left_middle_finger_transmissions" params="prefix">
+    <xacro:finger3_transmission tranName="${prefix}MiddleFingerTransmission" 
+                                joint1="${MFJ1_Joint_Name}"
+                                joint2="${MFJ2_Joint_Name}"
+                                joint3="${MFJ3_Joint_Name}"
+                                actuator="${LMFA_Actuator_Name}" />
+  </xacro:macro>
+
+  <xacro:macro name="v1_right_middle_finger_transmissions_simple" params="prefix">
+    <xacro:simple_transmission jointName="${MFJ1_Joint_Name}" actuatorName="${RMFA_Actuator_Name}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_left_middle_finger_transmissions_simple" params="prefix">
+    <xacro:simple_transmission jointName="${MFJ1_Joint_Name}" actuatorName="${LMFA_Actuator_Name}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <!-- Modes -->
+  <xacro:macro name="v1_right_middle_finger_modes" params="prefix">
+    <xacro:v1_modes jointName="${MFJ1_Joint_Name}" actuatorName="${RMFA_Actuator_Name}" />
+    <xacro:v1_modes jointName="${MFJ2_Joint_Name}" actuatorName="${RMFA_Actuator_Name}" />
+    <xacro:v1_modes jointName="${MFJ3_Joint_Name}" actuatorName="${RMFA_Actuator_Name}" />
+  </xacro:macro>
+
+  <xacro:macro name="v1_left_middle_finger_modes" params="prefix">
+    <xacro:v1_modes jointName="${MFJ1_Joint_Name}" actuatorName="${LMFA_Actuator_Name}" />
+    <xacro:v1_modes jointName="${MFJ2_Joint_Name}" actuatorName="${LMFA_Actuator_Name}" />
+    <xacro:v1_modes jointName="${MFJ3_Joint_Name}" actuatorName="${LMFA_Actuator_Name}" />
+  </xacro:macro>
+
+  <!-- Complete interface -->
+  <xacro:macro name="make_right_middle_finger_interface" params="api">
+    <xacro:v1_right_middle_finger_actuators prefix="Right" api="${api}" />
+    <xacro:v1_right_middle_finger_transmissions prefix="Right" />
+    <xacro:v1_right_middle_finger_modes prefix="Right" />
+  </xacro:macro>
+
+  <xacro:macro name="make_left_middle_finger_interface" params="api">
+    <xacro:v1_left_middle_finger_actuators prefix="Left" api="${api}" />
+    <xacro:v1_left_middle_finger_transmissions prefix="Left" />
+    <xacro:v1_left_middle_finger_modes prefix="Left" />
+  </xacro:macro>
+
+  <!-- Simple interface -->
+  <xacro:macro name="make_right_middle_finger_interface_simple" params="api">
+    <xacro:v1_right_middle_finger_actuators prefix="Right" api="${api}" />
+    <xacro:v1_right_middle_finger_transmissions_simple prefix="Right" />
+    <xacro:v1_right_middle_finger_modes prefix="Right" />
+  </xacro:macro>
+
+  <xacro:macro name="make_left_middle_finger_interface_simple" params="api">
+    <xacro:v1_left_middle_finger_actuators prefix="Left" api="${api}" />
+    <xacro:v1_left_middle_finger_transmissions_simple prefix="Left" />
+    <xacro:v1_left_middle_finger_modes prefix="Left" />
+  </xacro:macro>
+
+</robot>

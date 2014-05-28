@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/leg/link_names">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="LJ1_Proximal_Link" value="${leg_root_link}" />
+  <xacro:property name="LJ1_Distal_Link" value="/v1/${prefix}HipRotator" />
+
+  <xacro:property name="LJ2_Proximal_Link" value="/v1/${prefix}HipRotator" />
+  <xacro:property name="LJ2_Distal_Link" value="/v1/${prefix}HipAdductor" />
+
+  <xacro:property name="LJ3_Proximal_Link" value="/v1/${prefix}HipAdductor" />
+  <xacro:property name="LJ3_Distal_Link" value="/v1/${prefix}Leg" />
+
+  <xacro:property name="LJ4_Proximal_Link" value="/v1/${prefix}Leg" />
+  <xacro:property name="LJ4_Distal_Link_Box" value="/v1/${prefix}ShankStructure" />
+  <xacro:property name="LJ4_Distal_Link_Cylinder1" value="/v1/${prefix}MedialAnkleActuator" />
+  <xacro:property name="LJ4_Distal_Link_Cylinder2" value="/v1/${prefix}LateralAnkleActuator" />
+
+  <xacro:property name="LJ5_Proximal_Link" value="/v1/${prefix}ShankStructure" />
+  <xacro:property name="LJ5_Distal_Link" value="/v1/${prefix}AnkleYoke" />
+
+  <xacro:property name="LJ6_Proximal_Link" value="/v1/${prefix}AnkleYoke" />
+  <xacro:property name="LJ6_Distal_Link" value="/v1/${prefix}UpperFoot" />
+
+</robot>

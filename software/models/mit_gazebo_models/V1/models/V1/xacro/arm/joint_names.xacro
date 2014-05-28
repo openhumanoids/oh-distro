@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm/joint_names">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:property name="AJ1_Joint_Name" value="${prefix}ShoulderExtensor" />
+  <xacro:property name="AJ2_Joint_Name" value="${prefix}ShoulderAdductor" />
+  <xacro:property name="AJ3_Joint_Name" value="${prefix}ShoulderSupinator" />
+  <xacro:property name="AJ4_Joint_Name" value="${prefix}ElbowExtensor" />
+  <xacro:property name="AJ5_Joint_Name" value="${prefix}ForearmSupinator" />
+  <xacro:property name="AJ6_Joint_Name" value="${prefix}WristExtensor" />
+  <xacro:property name="AJ7_Joint_Name" value="${prefix}Wrist" />
+</robot>

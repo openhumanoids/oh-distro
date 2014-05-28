@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm/joint_names">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:property name="AJ1_Actuator_Name" value="/Trunk/${prefix}ArmActuator" />
+  <xacro:property name="AJ2_Actuator_Name" value="/${prefix}Arm/Actuator2" />
+  <xacro:property name="AJ3_Actuator_Name" value="/${prefix}Arm/Actuator3" />
+  <xacro:property name="AJ4_Actuator_Name" value="/${prefix}Arm/Actuator4" />
+  <xacro:property name="AJ5_Actuator_Name" value="/${prefix}Arm/Actuator5" />
+  <xacro:property name="RAJ6_Actuator_Name" value="/RightArm/ForearmDriver1/RightWristActuator" />
+  <xacro:property name="RAJ7_Actuator_Name" value="/RightArm/ForearmDriver1/LeftWristActuator" />
+  <xacro:property name="LAJ6_Actuator_Name" value="/LeftArm/ForearmDriver1/LeftWristActuator" />
+  <xacro:property name="LAJ7_Actuator_Name" value="/LeftArm/ForearmDriver1/RightWristActuator" />
+</robot>

@@ -1,0 +1,1779 @@
+<ui>
+	<parameters>
+		<parameter name="linear_low_effortError" value="-200"/>
+		<parameter name="linear_high_effortError" value="200"/>
+ 		<parameter name="low_effortError" value="-10"/>
+		<parameter name="high_effortError" value="10"/>
+		<parameter name="low_positionError" value="-0.01"/>
+		<parameter name="high_positionError" value="0.01"/>
+		<parameter name="motor_thresholds" value="60,95,110,125"/>
+		<parameter name="bridge_thresholds" value="60,80,95,110"/>
+		<parameter name="logic_thresholds" value="55,80,90,100"/>
+		<parameter name="color_modes" value="green,yellow,orange,red,black"/>
+		<parameter name="pos_colors" value="red,yellow,green,yellow,red"/>
+		<parameter name="pos_error_colors" value="red,yellow,green,yellow,red"/>
+		<parameter name="pos_error_thresholds"  value="-0.01,-0.001,0.001,0.01"/>
+		<parameter name="rotor_init_colors" value="red,green"/>
+		<parameter name="motor_power_colors" value="green,yellow"/>
+		<parameter name="effort_colors" value="yellow,green,yellow"/>
+		<parameter name="effort_cmd_colors" value="yellow,green,yellow"/>
+
+		<!-- neck limits -->
+		<parameter name="nj_soft_poslimit" value="0.2"/>
+		<parameter name="nj1_posLowerLimit" value="-1.5707"/>
+		<parameter name="nj1_posUpperLimit" value="0.1"/>
+		<parameter name="nj2_posLowerLimit" value="-1.5707"/>
+		<parameter name="nj2_posUpperLimit" value="1.5707"/>
+		<parameter name="nj3_posLowerLimit" value="-0.1"/>
+		<parameter name="nj3_posUpperLimit" value="0.65"/>
+
+		<!-- arm limits -->
+		<parameter name="aj_soft_poslimit" value="0.2"/>
+		<parameter name="aj1_posLowerLimit" value="-3.1415"/>
+		<parameter name="aj1_posUpperLimit" value="3.1415"/>
+		<parameter name="aj2_posLowerLimit" value="-3.1415"/>
+		<parameter name="aj2_posUpperLimit" value="3.1415"/>
+		<parameter name="aj3_posLowerLimit" value="-3.1415"/>
+		<parameter name="aj3_posUpperLimit" value="3.1415"/>
+		<parameter name="aj4_posLowerLimit" value="-2.0"/>
+		<parameter name="aj4_posUpperLimit" value="0.0"/>
+		<parameter name="aj5_posLowerLimit" value="-2.356"/>
+		<parameter name="aj5_posUpperLimit" value="2.356"/>
+		<parameter name="aj6_posLowerLimit" value="-0.87"/>
+		<parameter name="aj6_posUpperLimit" value="0.7"/>
+		<parameter name="aj7_posLowerLimit" value="-0.52"/>
+		<parameter name="aj7_posUpperLimit" value="0.44"/>
+
+		<!-- leg limits -->
+		<parameter name="lj1_soft_poslimit" value="0.1"/>
+		<parameter name="lj1_posLowerLimit" value="-1.0471"/>
+		<parameter name="lj1_posUpperLimit" value="0.524"/>
+		<parameter name="lj2_soft_poslimit" value="0.02"/>
+		<parameter name="lj2_posLowerLimit" value="-0.49"/>
+		<parameter name="lj2_posUpperLimit" value="0.25"/>
+		<parameter name="lj3_soft_poslimit" value="0.1"/>
+		<parameter name="lj3_posLowerLimit" value="-2.05"/>
+		<parameter name="lj3_posUpperLimit" value="1.11"/>
+		<parameter name="lj4_soft_poslimit" value="0.03"/>
+		<parameter name="lj4_posLowerLimit" value="-1.9"/>
+		<parameter name="lj4_posUpperLimit" value="0.07"/>
+		<parameter name="lj56_soft_poslimit" value="0.003"/>
+		<parameter name="lj56_posLowerLimit" value="-0.027"/>
+		<parameter name="lj56_posUpperLimit" value="0.03"/>
+
+		<!-- trunk limits -->
+		<parameter name="wj1_soft_poslimit" value="0.1"/>
+		<parameter name="wj1_posLowerLimit" value="-0.490873813629"/>
+		<parameter name="wj1_posUpperLimit" value="0.488572835922"/>
+		<parameter name="wj23_soft_poslimit" value="0.0"/>
+		<parameter name="wj2_posLowerLimit" value="-1.5"/>
+		<parameter name="wj2_posUpperLimit" value="1.5"/>
+		<parameter name="wj3_posLowerLimit" value="-1.5"/>
+		<parameter name="wj3_posUpperLimit" value="1.5"/>
+
+		<parameter name="setEstopClear" value="10"/>
+		<parameter name="unsetEstopClear" value="0"/>
+	</parameters>
+
+	<objects>
+		<object name="laj1" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/trunk/laj1"/>
+		<object name="laj2" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/left_arm/j2"/>
+		<object name="laj3" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/left_arm/j3"/>
+		<object name="laj4" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/left_arm/j4"/>
+		<object name="laj5" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv3" member="TurbodriverAPI_DRCv3" args="/left_arm/j5"/>
+		<object name="laj6" rospackage="forearm_api" module="WristAPI_DRCv1" member="WristAPI_DRCv1" args="/left_arm/forearm_driver1/wrist_left"/>
+		<object name="laj7" rospackage="forearm_api" module="WristAPI_DRCv1" member="WristAPI_DRCv1" args="/left_arm/forearm_driver1/wrist_right"/>
+
+		<object name="left_thumb_roll" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/left_arm/forearm_driver1/thumb_roll"/>
+		<object name="left_thumb_proximal" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/left_arm/forearm_driver1/thumb_proximal"/>
+		<object name="left_thumb_distal" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/left_arm/forearm_driver2/thumb_distal"/>
+		<object name="left_index" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/left_arm/forearm_driver2/index"/>
+		<object name="left_middle" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/left_arm/forearm_driver2/middle"/>
+		<object name="left_pinky" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/left_arm/forearm_driver2/pinky"/>
+
+		<object name="llj1" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/pelvis/lj1"/>
+		<object name="llj2" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/left_leg/j2"/>
+		<object name="llj3" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/left_leg/j3"/>
+		<object name="llj4" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/left_leg/j4"/>
+		<object name="llj5" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4_linear" member="TurbodriverAPI_DRCv4_linear" args="/left_leg/j5"/>
+		<object name="llj6" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4_linear" member="TurbodriverAPI_DRCv4_linear" args="/left_leg/j6"/>
+
+		<object name="raj1" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/trunk/raj1"/>
+		<object name="raj2" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/right_arm/j2"/>
+		<object name="raj3" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/right_arm/j3"/>
+		<object name="raj4" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/right_arm/j4"/>
+		<object name="raj5" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv3" member="TurbodriverAPI_DRCv3" args="/right_arm/j5"/>
+		<object name="raj6" rospackage="forearm_api" module="WristAPI_DRCv1" member="WristAPI_DRCv1" args="/right_arm/forearm_driver1/wrist_left"/>
+		<object name="raj7" rospackage="forearm_api" module="WristAPI_DRCv1" member="WristAPI_DRCv1" args="/right_arm/forearm_driver1/wrist_right"/>
+
+		<object name="right_thumb_roll" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/right_arm/forearm_driver1/thumb_roll"/>
+		<object name="right_thumb_proximal" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/right_arm/forearm_driver1/thumb_proximal"/>
+		<object name="right_thumb_distal" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/right_arm/forearm_driver2/thumb_distal"/>
+		<object name="right_index" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/right_arm/forearm_driver2/index"/>
+		<object name="right_middle" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/right_arm/forearm_driver2/middle"/>
+		<object name="right_pinky" rospackage="forearm_api" module="FingerAPI_DRCv1" member="FingerAPI_DRCv1" args="/right_arm/forearm_driver2/pinky"/>
+
+		<object name="rlj1" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/pelvis/rj1"/>
+		<object name="rlj2" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/right_leg/j2"/>
+		<object name="rlj3" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/right_leg/j3"/>
+		<object name="rlj4" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/right_leg/j4"/>
+		<object name="rlj5" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4_linear" member="TurbodriverAPI_DRCv4_linear" args="/right_leg/j5"/>
+		<object name="rlj6" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4_linear" member="TurbodriverAPI_DRCv4_linear" args="/right_leg/j6"/>
+
+		<object name="nj1" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv3" member="TurbodriverAPI_DRCv3" args="/neck/j1"/>
+		<object name="nj2" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv3" member="TurbodriverAPI_DRCv3" args="/neck/j2"/>
+		<object name="nj3" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv3" member="TurbodriverAPI_DRCv3" args="/neck/j3"/>
+
+		<object name="wj1" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4" member="TurbodriverAPI_DRCv4" args="/pelvis/wj1"/>
+		<object name="wj2" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4_linear" member="TurbodriverAPI_DRCv4_linear" args="/trunk/wj2"/>
+		<object name="wj3" rospackage="turbodriver_api" module="TurbodriverAPI_DRCv4_linear" member="TurbodriverAPI_DRCv4_linear" args="/trunk/wj3"/>
+
+
+		<object name="ll_ankle_pitch_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/left_leg/j5/JointAPS_Angle_Rad" argTypes="str"/>
+        <object name="ll_ankle_roll_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/left_leg/j6/JointAPS_Angle_Rad" argTypes="str"/>
+        <object name="ll_ankle_pitch_error" rospackage="nasa_ros_shm" module="resource_operator" member="ResourceOperator" args="/left_leg/j5/JointAPS_Angle_Rad,/hardware/LeftAnkleExtensor/state/position" argTypes="str,str"/>
+        <object name="ll_ankle_roll_error"  rospackage="nasa_ros_shm" module="resource_operator" member="ResourceOperator" args="/left_leg/j6/JointAPS_Angle_Rad,/hardware/LeftAnkle/state/position" argTypes="str,str"/>
+
+		<object name="rl_ankle_pitch_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/right_leg/j5/JointAPS_Angle_Rad" argTypes="str"/>
+        <object name="rl_ankle_roll_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/right_leg/j6/JointAPS_Angle_Rad" argTypes="str"/>
+        <object name="rl_ankle_pitch_error" rospackage="nasa_ros_shm" module="resource_operator" member="ResourceOperator" args="/right_leg/j5/JointAPS_Angle_Rad,/hardware/RightAnkleExtensor/state/position" argTypes="str,str"/>
+        <object name="rl_ankle_roll_error"  rospackage="nasa_ros_shm" module="resource_operator" member="ResourceOperator" args="/right_leg/j6/JointAPS_Angle_Rad,/hardware/RightAnkle/state/position" argTypes="str,str"/>
+
+		<object name="la_wrist_pitch_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/left_arm/forearm_driver1/wrist_joint_pitchRad" argTypes="str"/>
+		<object name="la_wrist_yaw_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/left_arm/forearm_driver1/wrist_joint_yawRad" argTypes="str"/>
+
+		<object name="ra_wrist_pitch_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/right_arm/forearm_driver1/wrist_joint_pitchRad" argTypes="str"/>
+		<object name="ra_wrist_yaw_aps" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/right_arm/forearm_driver1/wrist_joint_yawRad" argTypes="str"/>
+
+        <object name="la_wrist_driver1_estop_reset" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/left_arm/forearm_driver1/estop_reset" argTypes="str"/>
+        <object name="la_wrist_driver2_estop_reset" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/left_arm/forearm_driver2/estop_reset" argTypes="str"/>
+
+        <object name="ra_wrist_driver1_estop_reset" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/right_arm/forearm_driver1/estop_reset" argTypes="str"/>
+        <object name="ra_wrist_driver2_estop_reset" rospackage="nasa_ros_shm" module="resource_bundle" member="Resource" args="/right_arm/forearm_driver2/estop_reset" argTypes="str"/>
+
+		<object name="bms" rospackage="bms_api" module="bms_voltage" member="BMS" args="/power/BMS" argsTypes="str"/>
+		<object name="utils" rospackage="ui_builder" module="ui_utils" member="ui_utils"/>
+		<object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager" args="terminator -e"/>
+	</objects>
+
+	<widgets>
+
+		<widget row="0" col="0" name="Status" type="TableViewDisplay">
+			<header value="cmd,enable,mode,hb,init,HV,position,posCmd,posErr,effort,effortCmd,LogicTemp,BridgeTemp,MotorTemp,Up" width="80,80,80,60,30,30,100,100,100,100,100,60,60,60,15"/>
+			<row label="NJ1">
+				<object name="nj1" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="nj1" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="nj1" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="nj1" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="nj1" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="nj1" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="nj1" method="getPosition" args="val" argTypes="str" thresholds="${nj1_posLowerLimit},${nj1_posLowerLimit}+${nj_soft_poslimit},${nj1_posUpperLimit}-${nj_soft_poslimit},${nj1_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="nj1" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="nj1" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="nj1" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="nj1" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="nj1" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="nj1" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="nj1" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="nj1" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="nj1" method="Update"/>
+			</row>
+			<row label="NJ2">
+				<object name="nj2" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="nj2" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="nj2" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="nj2" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="nj2" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="nj2" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="nj2" method="getPosition" args="val" argTypes="str" thresholds="${nj2_posLowerLimit},${nj2_posLowerLimit}+${nj_soft_poslimit},${nj2_posUpperLimit}-${nj_soft_poslimit},${nj2_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="nj2" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="nj2" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="nj2" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="nj2" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="nj2" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="nj2" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="nj2" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="nj2" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="nj2" method="Update"/>
+			</row>
+			<row label="NJ3">
+				<object name="nj3" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="nj3" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="nj3" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="nj3" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="nj3" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="nj3" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="nj3" method="getPosition" args="val" argTypes="str" thresholds="${nj3_posLowerLimit},${nj3_posLowerLimit}+${nj_soft_poslimit},${nj3_posUpperLimit}-${nj_soft_poslimit},${nj3_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="nj3" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="nj3" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="nj3" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="nj3" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="nj3" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="nj3" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="nj3" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="nj3" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="nj3" method="Update"/>
+			</row>
+			<row label="---">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="WJ1">
+				<object name="wj1" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="wj1" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="wj1" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="wj1" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="wj1" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="wj1" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="wj1" method="getPosition" args="val" argTypes="str" thresholds="${wj1_posLowerLimit},${wj1_posLowerLimit}+${wj1_soft_poslimit},${wj1_posUpperLimit}-${wj1_soft_poslimit},${wj1_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="wj1" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="wj1" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="wj1" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="wj1" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="wj1" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="wj1" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="wj1" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="wj1" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="wj1" method="Update"/>
+			</row>
+			<row label="WJ2">
+				<object name="wj2" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="wj2" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="wj2" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="wj2" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="wj2" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="wj2" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="wj2" method="getPosition" args="val" argTypes="str" thresholds="${wj2_posLowerLimit},${wj2_posLowerLimit}+${wj23_soft_poslimit},${wj2_posUpperLimit}-${wj23_soft_poslimit},${wj2_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="wj2" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="wj2" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="wj2" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="wj2" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="wj2" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="wj2" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="wj2" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="wj2" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="wj2" method="Update"/>
+			</row>
+			<row label="WJ3">
+				<object name="wj3" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="wj3" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="wj3" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="wj3" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="wj3" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="wj3" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="wj3" method="getPosition" args="val" argTypes="str" thresholds="${wj3_posLowerLimit},${wj3_posLowerLimit}+${wj23_soft_poslimit},${wj3_posUpperLimit}-${wj23_soft_poslimit},${wj3_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="wj3" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="wj3" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="wj3" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="wj3" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="wj3" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="wj3" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="wj3" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="wj3" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="wj3" method="Update"/>
+			</row>
+			<row label="---">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="LAJ1">
+				<object name="laj1" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj1" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="laj1" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj1" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="laj1" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="laj1" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="laj1" method="getPosition" args="val" argTypes="str" thresholds="${aj1_posLowerLimit},${aj1_posLowerLimit}+${aj_soft_poslimit},${aj1_posUpperLimit}-${aj_soft_poslimit},${aj1_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="laj1" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="laj1" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="laj1" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="laj1" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="laj1" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="laj1" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="laj1" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="laj1" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="laj1" method="Update"/>
+			</row>
+			<row label="LAJ2">
+				<object name="laj2" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj2" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="laj2" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj2" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="laj2" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="laj2" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="laj2" method="getPosition" args="val" argTypes="str" thresholds="${aj2_posLowerLimit},${aj2_posLowerLimit}+${aj_soft_poslimit},${aj2_posUpperLimit}-${aj_soft_poslimit},${aj2_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="laj2" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="laj2" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="laj2" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="laj2" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="laj2" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="laj2" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="laj2" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="laj2" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="laj2" method="Update"/>
+			</row>
+			<row label="LAJ3">
+				<object name="laj3" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj3" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="laj3" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj3" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="laj3" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="laj3" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="laj3" method="getPosition" args="val" argTypes="str" thresholds="${aj3_posLowerLimit},${aj3_posLowerLimit}+${aj_soft_poslimit},${aj3_posUpperLimit}-${aj_soft_poslimit},${aj3_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="laj3" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="laj3" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="laj3" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="laj3" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="laj3" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="laj3" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="laj3" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="laj3" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="laj3" method="Update"/>
+			</row>
+			<row label="LAJ4">
+				<object name="laj4" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj4" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="laj4" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj4" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="laj4" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="laj4" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="laj4" method="getPosition" args="val" argTypes="str" thresholds="${aj4_posLowerLimit},${aj4_posLowerLimit}+${aj_soft_poslimit},${aj4_posUpperLimit}-${aj_soft_poslimit},${aj4_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="laj4" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="laj4" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="laj4" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="laj4" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="laj4" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="laj4" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="laj4" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="laj4" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="laj4" method="Update"/>
+			</row>
+			<row label="LAJ5">
+				<object name="laj5" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj5" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="laj5" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="laj5" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="laj5" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="laj5" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="laj5" method="getPosition" args="val" argTypes="str" thresholds="${aj5_posLowerLimit},${aj5_posLowerLimit}+${aj_soft_poslimit},${aj5_posUpperLimit}-${aj_soft_poslimit},${aj5_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="laj5" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="laj5" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="laj5" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="laj5" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="laj5" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="laj5" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="laj5" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="laj5" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="laj5" method="Update"/>
+			</row>
+			<row label="LAJ6">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="laj6" method="getModeState" thresholds="undefined,disabled,enabled" colors="gray,gray,green,yellow"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="laj6" method="getPosition" args="val" argTypes="str" thresholds="${aj6_posLowerLimit},${aj6_posLowerLimit}+${aj_soft_poslimit},${aj6_posUpperLimit}-${aj_soft_poslimit},${aj6_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="laj6" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="laj6" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="laj6" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="laj6" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="laj5" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="laj6" method="Update"/>
+			</row>
+			<row label="LAJ7">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="laj7" method="getModeState" thresholds="undefined,disabled,enabled" colors="gray,gray,green,yellow"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="laj7" method="getPosition" args="val" argTypes="str" thresholds="${aj7_posLowerLimit},${aj7_posLowerLimit}+${aj_soft_poslimit},${aj7_posUpperLimit}-${aj_soft_poslimit},${aj7_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="laj7" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="laj7" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="laj7" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="laj7" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="laj5" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="laj7" method="Update"/>
+			</row>
+			<row label="LWrP">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="la_wrist_pitch_aps" method="__call__"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="LWrY">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="la_wrist_yaw_aps" method="__call__"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="---">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="RAJ1">
+				<object name="raj1" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj1" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="raj1" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj1" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="raj1" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="raj1" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="raj1" method="getPosition" args="val" argTypes="str" thresholds="${aj1_posLowerLimit},${aj1_posLowerLimit}+${aj_soft_poslimit},${aj1_posUpperLimit}-${aj_soft_poslimit},${aj1_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="raj1" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="raj1" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="raj1" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="raj1" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="raj1" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="raj1" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="raj1" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="raj1" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="raj1" method="Update"/>
+			</row>
+			<row label="RAJ2">
+				<object name="raj2" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj2" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="raj2" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj2" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="raj2" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="raj2" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="raj2" method="getPosition" args="val" argTypes="str" thresholds="${aj2_posLowerLimit},${aj2_posLowerLimit}+${aj_soft_poslimit},${aj2_posUpperLimit}-${aj_soft_poslimit},${aj2_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="raj2" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="raj2" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="raj2" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="raj2" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="raj2" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="raj2" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="raj2" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="raj2" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="raj2" method="Update"/>
+			</row>
+			<row label="RAJ3">
+				<object name="raj3" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj3" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="raj3" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj3" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="raj3" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="raj3" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="raj3" method="getPosition" args="val" argTypes="str" thresholds="${aj3_posLowerLimit},${aj3_posLowerLimit}+${aj_soft_poslimit},${aj3_posUpperLimit}-${aj_soft_poslimit},${aj3_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="raj3" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="raj3" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="raj3" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="raj3" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="raj3" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="raj3" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="raj3" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="raj3" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="raj3" method="Update"/>
+			</row>
+			<row label="RAJ4">
+				<object name="raj4" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj4" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="raj4" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj4" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="raj4" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="raj4" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="raj4" method="getPosition" args="val" argTypes="str" thresholds="${aj4_posLowerLimit},${aj4_posLowerLimit}+${aj_soft_poslimit},${aj4_posUpperLimit}-${aj_soft_poslimit},${aj4_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="raj4" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="raj4" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="raj4" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="raj4" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="raj4" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="raj4" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="raj4" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="raj4" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="raj4" method="Update"/>
+			</row>
+			<row label="RAJ5">
+				<object name="raj5" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj5" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="raj5" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="raj5" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="raj5" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="raj5" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="raj5" method="getPosition" args="val" argTypes="str" thresholds="${aj5_posLowerLimit},${aj5_posLowerLimit}+${aj_soft_poslimit},${aj5_posUpperLimit}-${aj_soft_poslimit},${aj5_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="raj5" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="raj5" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="raj5" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="raj5" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="raj5" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="raj5" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="raj5" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="raj5" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="raj5" method="Update"/>
+			</row>
+			<row label="RAJ6">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="raj6" method="getModeState" thresholds="undefined,disabled,enabled" colors="gray,gray,green,yellow"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="raj6" method="getPosition" args="val" argTypes="str" thresholds="${aj6_posLowerLimit},${aj6_posLowerLimit}+${aj_soft_poslimit},${aj6_posUpperLimit}-${aj_soft_poslimit},${aj6_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="raj6" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="raj6" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="raj6" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="raj6" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="raj5" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="raj6" method="Update"/>
+			</row>
+			<row label="RAJ7">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="raj7" method="getModeState" thresholds="undefined,disabled,enabled" colors="gray,gray,green,yellow"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="raj7" method="getPosition" args="val" argTypes="str" thresholds="${aj7_posLowerLimit},${aj7_posLowerLimit}+${aj_soft_poslimit},${aj7_posUpperLimit}-${aj_soft_poslimit},${aj7_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="raj7" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="raj7" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="raj7" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="raj7" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="raj5" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="raj7" method="Update"/>
+			</row>
+			<row label="RWrP">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="ra_wrist_pitch_aps" method="__call__"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="RWrY">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="ra_wrist_yaw_aps" method="__call__"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="---">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="LLJ1">
+				<object name="llj1" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj1" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="llj1" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj1" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="llj1" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="llj1" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="llj1" method="getPosition" args="val" argTypes="str" thresholds="${lj1_posLowerLimit},${lj1_posLowerLimit}+${lj1_soft_poslimit},${lj1_posUpperLimit}-${lj1_soft_poslimit},${lj1_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="llj1" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="llj1" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="llj1" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="llj1" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="llj1" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="llj1" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="llj1" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="llj1" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="llj1" method="Update"/>
+			</row>
+			<row label="LLJ2">
+				<object name="llj2" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj2" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="llj2" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj2" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="llj2" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="llj2" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="llj2" method="getPosition" args="val" argTypes="str" thresholds="${lj2_posLowerLimit},${lj2_posLowerLimit}+${lj2_soft_poslimit},${lj2_posUpperLimit}-${lj2_soft_poslimit},${lj2_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="llj2" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="llj2" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="llj2" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="llj2" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="llj2" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="llj2" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="llj2" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="llj2" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="llj2" method="Update"/>
+			</row>
+			<row label="LLJ3">
+				<object name="llj3" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj3" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="llj3" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj3" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="llj3" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="llj3" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="llj3" method="getPosition" args="val" argTypes="str" thresholds="${lj3_posLowerLimit},${lj3_posLowerLimit}+${lj3_soft_poslimit},${lj3_posUpperLimit}-${lj3_soft_poslimit},${lj3_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="llj3" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="llj3" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="llj3" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="llj3" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="llj3" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="llj3" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="llj3" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="llj3" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="llj3" method="Update"/>
+			</row>
+			<row label="LLJ4">
+				<object name="llj4" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj4" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="llj4" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj4" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="llj4" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="llj4" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="llj4" method="getPosition" args="val" argTypes="str" thresholds="${lj4_posLowerLimit},${lj4_posLowerLimit}+${lj4_soft_poslimit},${lj4_posUpperLimit}-${lj4_soft_poslimit},${lj4_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="llj4" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="llj4" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="llj4" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="llj4" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="llj4" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="llj4" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="llj4" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="llj4" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="llj4" method="Update"/>
+			</row>
+			<row label="LLJ5">
+				<object name="llj5" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj5" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="llj5" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj5" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="llj5" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="llj5" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="llj5" method="getPosition" args="val" argTypes="str" thresholds="${lj56_posLowerLimit},${lj56_posLowerLimit}+${lj56_soft_poslimit},${lj56_posUpperLimit}-${lj56_soft_poslimit},${lj56_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="llj5" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="llj5" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="llj5" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="llj5" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="llj5" method="getEffortError" thresholds="${linear_low_effortError},${linear_high_effortError}" colors="yellow,green,green"/>-->
+				<object name="llj5" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="llj5" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="llj5" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="llj5" method="Update"/>
+			</row>
+			<row label="LLJ6">
+				<object name="llj6" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj6" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="llj6" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="llj6" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="llj6" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="llj6" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="llj6" method="getPosition" args="val" argTypes="str" thresholds="${lj56_posLowerLimit},${lj56_posLowerLimit}+${lj56_soft_poslimit},${lj56_posUpperLimit}-${lj56_soft_poslimit},${lj56_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="llj6" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="llj6" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="llj6" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="llj6" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="llj6" method="getEffortError" thresholds="${linear_low_effortError},${linear_high_effortError}" colors="yellow,green,green"/>-->
+				<object name="llj6" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="llj6" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="llj6" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="llj6" method="Update"/>
+			</row>
+			<row label="---">
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+				<object name="utils" method="getString" args="---" argTypes="str"/>
+			</row>
+			<row label="RLJ1">
+				<object name="rlj1" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj1" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="rlj1" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj1" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="rlj1" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="rlj1" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="rlj1" method="getPosition" args="val" argTypes="str" thresholds="${lj1_posLowerLimit},${lj1_posLowerLimit}+${lj1_soft_poslimit},${lj1_posUpperLimit}-${lj1_soft_poslimit},${lj1_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="rlj1" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="rlj1" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="rlj1" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="rlj1" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="rlj1" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="rlj1" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="rlj1" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="rlj1" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="rlj1" method="Update"/>
+			</row>
+			<row label="RLJ2">
+				<object name="rlj2" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj2" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="rlj2" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj2" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="rlj2" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="rlj2" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="rlj2" method="getPosition" args="val" argTypes="str" thresholds="${lj2_posLowerLimit},${lj2_posLowerLimit}+${lj2_soft_poslimit},${lj2_posUpperLimit}-${lj2_soft_poslimit},${lj2_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="rlj2" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="rlj2" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="rlj2" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="rlj2" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="rlj2" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="rlj2" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="rlj2" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="rlj2" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="rlj2" method="Update"/>
+			</row>
+			<row label="RLJ3">
+				<object name="rlj3" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj3" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="rlj3" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj3" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="rlj3" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="rlj3" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="rlj3" method="getPosition" args="val" argTypes="str" thresholds="${lj3_posLowerLimit},${lj3_posLowerLimit}+${lj3_soft_poslimit},${lj3_posUpperLimit}-${lj3_soft_poslimit},${lj3_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="rlj3" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="rlj3" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="rlj3" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="rlj3" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="rlj3" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="rlj3" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="rlj3" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="rlj3" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="rlj3" method="Update"/>
+			</row>
+			<row label="RLJ4">
+				<object name="rlj4" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj4" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="rlj4" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj4" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="rlj4" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="rlj4" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="rlj4" method="getPosition" args="val" argTypes="str" thresholds="${lj4_posLowerLimit},${lj4_posLowerLimit}+${lj4_soft_poslimit},${lj4_posUpperLimit}-${lj4_soft_poslimit},${lj4_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="rlj4" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="rlj4" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="rlj4" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="rlj4" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="rlj4" method="getEffortError" thresholds="${low_effortError},${high_effortError}" colors="yellow,green,green"/>-->
+				<object name="rlj4" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="rlj4" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="rlj4" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="rlj4" method="Update"/>
+			</row>
+			<row label="RLJ5">
+				<object name="rlj5" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj5" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="rlj5" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj5" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="rlj5" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="rlj5" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="rlj5" method="getPosition" args="val" argTypes="str" thresholds="${lj56_posLowerLimit},${lj56_posLowerLimit}+${lj56_soft_poslimit},${lj56_posUpperLimit}-${lj56_soft_poslimit},${lj56_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="rlj5" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="rlj5" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="rlj5" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="rlj5" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="rlj5" method="getEffortError" thresholds="${linear_low_effortError},${linear_high_effortError}" colors="yellow,green,green"/>-->
+				<object name="rlj5" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="rlj5" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="rlj5" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="rlj5" method="Update"/>
+			</row>
+			<row label="RLJ6">
+				<object name="rlj6" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj6" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/>
+				<object name="rlj6" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode"  colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/>
+				<object name="rlj6" method="getProcHeartbeat" args="val" argTypes="str"/>
+				<object name="rlj6" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="${rotor_init_colors}"/>
+				<object name="rlj6" method="getMotorPowerDetected" args="val" argTypes="str" thresholds="1" colors="${motor_power_colors}"/>
+				<object name="rlj6" method="getPosition" args="val" argTypes="str" thresholds="${lj56_posLowerLimit},${lj56_posLowerLimit}+${lj56_soft_poslimit},${lj56_posUpperLimit}-${lj56_soft_poslimit},${lj56_posUpperLimit}" colors="${pos_colors}"/>
+				<object name="rlj6" method="getPositionCommand" args="val" argTypes="str"/>
+				<object name="rlj6" method="getPositionError" thresholds="${pos_error_thresholds}" colors="${pos_error_colors}"/>
+				<object name="rlj6" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="${effort_colors}"/>
+				<object name="rlj6" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="${effort_cmd_colors}"/>
+				<!--<object name="rlj6" method="getEffortError" thresholds="${linear_low_effortError},${linear_high_effortError}" colors="yellow,green,green"/>-->
+				<object name="rlj6" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="${logic_thresholds}" colors="${color_modes}"/>
+				<object name="rlj6" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="${bridge_thresholds}" colors="${color_modes}"/>
+				<object name="rlj6" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="${motor_thresholds}" colors="${color_modes}"/>
+				<object name="rlj6" method="Update"/>
+			</row>
+		</widget>
+
+		<widget row="1" col="0" name="Ankle Data" type="TableViewDisplay">
+			<header value="data, error"/>
+			<row label="Left Ankle Pitch">
+				<object name="ll_ankle_pitch_aps"   method="__call__"/>
+				<object name="ll_ankle_pitch_error" method="subtract"/>
+			</row>
+			<row label="Left Ankle Roll">
+				<object name="ll_ankle_roll_aps"    method="__call__"/>
+				<object name="ll_ankle_roll_error"  method="subtract"/>
+			</row>
+			<row label="Right Ankle Pitch">
+				<object name="rl_ankle_pitch_aps"   method="__call__"/>
+				<object name="rl_ankle_pitch_error" method="subtract"/>
+			</row>
+			<row label="Right Ankle Roll">
+				<object name="rl_ankle_roll_aps"    method="__call__"/>
+				<object name="rl_ankle_roll_error"  method="subtract"/>
+			</row>
+		</widget>
+
+		<widget row="0" col="1" name="Controls" type="GridGroupBox">
+			<widget row="0" col="0" name="Robot:" type="PushButton"/>
+			<widget row="0" col="1" name="Park" type="PushButton">
+					<object name="wj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="wj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="wj3" method="SendModeCmd" args="Park" argTypes="str"/>
+
+					<object name="nj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="nj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="nj3" method="SendModeCmd" args="Park" argTypes="str"/>
+
+					<object name="laj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj3" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj4" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj5" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj6" method="park" />
+					<object name="laj7" method="park" />
+
+					<object name="left_thumb_roll" method="park"/>
+					<object name="left_thumb_proximal" method="park"/>
+					<object name="left_thumb_distal" method="park"/>
+					<object name="left_index" method="park"/>
+					<object name="left_middle" method="park"/>
+					<object name="left_pinky" method="park"/>
+
+					<object name="raj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj3" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj4" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj5" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj6" method="park" />
+					<object name="raj7" method="park" />
+
+					<object name="right_thumb_roll" method="park"/>
+					<object name="right_thumb_proximal" method="park"/>
+					<object name="right_thumb_distal" method="park"/>
+					<object name="right_index" method="park"/>
+					<object name="right_middle" method="park"/>
+					<object name="right_pinky" method="park"/>
+
+					<object name="llj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj3" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj4" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj5" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj6" method="SendModeCmd" args="Park" argTypes="str"/>
+
+					<object name="rlj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj3" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj4" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj5" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj6" method="SendModeCmd" args="Park" argTypes="str"/>
+			</widget>
+			<widget row="0" col="2" name="Clear Faults" type="PushButton">
+					<object name="wj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="wj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="wj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="nj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="nj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="nj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+
+					<object name="laj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj6" method="clearFault" />
+					<object name="laj7" method="clearFault" />
+
+					<object name="raj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj6" method="clearFault" />
+					<object name="raj7" method="clearFault" />
+
+					<object name="llj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj6" method="SendModeCmd" args="Reset" argTypes="str"/>
+
+					<object name="rlj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj6" method="SendModeCmd" args="Reset" argTypes="str"/>
+			</widget>
+			<widget row="0" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+					<object name="wj1" method="zeroEffortCommand" />
+					<object name="wj2" method="zeroEffortCommand" />
+					<object name="wj3" method="zeroEffortCommand" />
+					<object name="wj1" method="tarePositionCommand" />
+					<object name="wj2" method="tarePositionCommand" />
+					<object name="wj3" method="tarePositionCommand" />
+
+					<object name="nj1" method="zeroEffortCommand" />
+					<object name="nj2" method="zeroEffortCommand" />
+					<object name="nj3" method="zeroEffortCommand" />
+					<object name="nj1" method="tarePositionCommand" />
+					<object name="nj2" method="tarePositionCommand" />
+					<object name="nj3" method="tarePositionCommand" />
+
+					<object name="laj1" method="zeroEffortCommand" />
+					<object name="laj2" method="zeroEffortCommand" />
+					<object name="laj3" method="zeroEffortCommand" />
+					<object name="laj4" method="zeroEffortCommand" />
+					<object name="laj5" method="zeroEffortCommand" />
+					<object name="laj1" method="tarePositionCommand" />
+					<object name="laj2" method="tarePositionCommand" />
+					<object name="laj3" method="tarePositionCommand" />
+					<object name="laj4" method="tarePositionCommand" />
+					<object name="laj5" method="tarePositionCommand" />
+
+					<object name="raj1" method="zeroEffortCommand" />
+					<object name="raj2" method="zeroEffortCommand" />
+					<object name="raj3" method="zeroEffortCommand" />
+					<object name="raj4" method="zeroEffortCommand" />
+					<object name="raj5" method="zeroEffortCommand" />
+					<object name="raj1" method="tarePositionCommand" />
+					<object name="raj2" method="tarePositionCommand" />
+					<object name="raj3" method="tarePositionCommand" />
+					<object name="raj4" method="tarePositionCommand" />
+					<object name="raj5" method="tarePositionCommand" />
+
+					<object name="llj1" method="zeroEffortCommand" />
+					<object name="llj2" method="zeroEffortCommand" />
+					<object name="llj3" method="zeroEffortCommand" />
+					<object name="llj4" method="zeroEffortCommand" />
+					<object name="llj5" method="zeroEffortCommand" />
+					<object name="llj6" method="zeroEffortCommand" />
+					<object name="llj1" method="tarePositionCommand" />
+					<object name="llj2" method="tarePositionCommand" />
+					<object name="llj3" method="tarePositionCommand" />
+					<object name="llj4" method="tarePositionCommand" />
+					<object name="llj5" method="tarePositionCommand" />
+					<object name="llj6" method="tarePositionCommand" />
+
+					<object name="rlj1" method="zeroEffortCommand" />
+					<object name="rlj2" method="zeroEffortCommand" />
+					<object name="rlj3" method="zeroEffortCommand" />
+					<object name="rlj4" method="zeroEffortCommand" />
+					<object name="rlj5" method="zeroEffortCommand" />
+					<object name="rlj6" method="zeroEffortCommand" />
+					<object name="rlj1" method="tarePositionCommand" />
+					<object name="rlj2" method="tarePositionCommand" />
+					<object name="rlj3" method="tarePositionCommand" />
+					<object name="rlj4" method="tarePositionCommand" />
+					<object name="rlj5" method="tarePositionCommand" />
+					<object name="rlj6" method="tarePositionCommand" />
+			</widget>
+			<widget row="0" col="4" name="Servo" type="PushButton">
+					<object name="wj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="wj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="wj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+
+					<!-- <object name="nj1" method="tarePositionCommand"/> -->
+					<object name="nj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<!-- <object name="nj2" method="tarePositionCommand"/> -->
+					<object name="nj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<!-- <object name="nj3" method="tarePositionCommand"/> -->
+					<object name="nj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+
+					<object name="laj1" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="laj2" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="laj3" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="laj4" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<!-- <object name="laj5" method="tarePositionCommand"/> -->
+					<object name="laj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="laj6" method="positionMode" />
+					<object name="laj7" method="positionMode" />
+
+					<object name="left_thumb_roll" method="positionMode"/>
+					<object name="left_thumb_proximal" method="positionMode"/>
+					<object name="left_thumb_distal" method="positionMode"/>
+					<object name="left_index" method="positionMode"/>
+					<object name="left_middle" method="positionMode"/>
+					<object name="left_pinky" method="positionMode"/>
+
+					<object name="raj1" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="raj2" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="raj3" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="raj4" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<!-- <object name="raj5" method="tarePositionCommand"/> -->
+					<object name="raj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="raj6" method="positionMode" />
+					<object name="raj7" method="positionMode" />
+
+					<object name="right_thumb_roll" method="positionMode"/>
+					<object name="right_thumb_proximal" method="positionMode"/>
+					<object name="right_thumb_distal" method="positionMode"/>
+					<object name="right_index" method="positionMode"/>
+					<object name="right_middle" method="positionMode"/>
+					<object name="right_pinky" method="positionMode"/>
+
+					<object name="llj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj4" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj6" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+
+					<object name="rlj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj4" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj6" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+			</widget>
+
+
+			<widget row="1" col="0" name="Upper Body:" type="PushButton"/>
+			<widget row="1" col="1" name="Park" type="PushButton">
+
+					<object name="nj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="nj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="nj3" method="SendModeCmd" args="Park" argTypes="str"/>
+
+					<object name="laj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj3" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj4" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj5" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="laj6" method="park" />
+					<object name="laj7" method="park" />
+
+					<object name="left_thumb_roll" method="park"/>
+					<object name="left_thumb_proximal" method="park"/>
+					<object name="left_thumb_distal" method="park"/>
+					<object name="left_index" method="park"/>
+					<object name="left_middle" method="park"/>
+					<object name="left_pinky" method="park"/>
+
+					<object name="raj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj3" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj4" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj5" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="raj6" method="park" />
+					<object name="raj7" method="park" />
+
+					<object name="right_thumb_roll" method="park"/>
+					<object name="right_thumb_proximal" method="park"/>
+					<object name="right_thumb_distal" method="park"/>
+					<object name="right_index" method="park"/>
+					<object name="right_middle" method="park"/>
+					<object name="right_pinky" method="park"/>
+
+			</widget>
+			<widget row="1" col="2" name="Clear Faults" type="PushButton">
+					<object name="nj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="nj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="nj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+
+					<object name="laj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="laj6" method="clearFault" />
+					<object name="laj7" method="clearFault" />
+
+					<object name="raj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="raj6" method="clearFault" />
+					<object name="raj7" method="clearFault" />
+			</widget>
+			<widget row="1" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+					<object name="nj1" method="zeroEffortCommand" />
+					<object name="nj2" method="zeroEffortCommand" />
+					<object name="nj3" method="zeroEffortCommand" />
+					<object name="nj1" method="tarePositionCommand" />
+					<object name="nj2" method="tarePositionCommand" />
+					<object name="nj3" method="tarePositionCommand" />
+
+					<object name="laj1" method="zeroEffortCommand" />
+					<object name="laj2" method="zeroEffortCommand" />
+					<object name="laj3" method="zeroEffortCommand" />
+					<object name="laj4" method="zeroEffortCommand" />
+					<object name="laj5" method="zeroEffortCommand" />
+					<object name="laj1" method="tarePositionCommand" />
+					<object name="laj2" method="tarePositionCommand" />
+					<object name="laj3" method="tarePositionCommand" />
+					<object name="laj4" method="tarePositionCommand" />
+					<object name="laj5" method="tarePositionCommand" />
+
+					<object name="raj1" method="zeroEffortCommand" />
+					<object name="raj2" method="zeroEffortCommand" />
+					<object name="raj3" method="zeroEffortCommand" />
+					<object name="raj4" method="zeroEffortCommand" />
+					<object name="raj5" method="zeroEffortCommand" />
+					<object name="raj1" method="tarePositionCommand" />
+					<object name="raj2" method="tarePositionCommand" />
+					<object name="raj3" method="tarePositionCommand" />
+					<object name="raj4" method="tarePositionCommand" />
+					<object name="raj5" method="tarePositionCommand" />
+			</widget>
+			<widget row="1" col="4" name="Servo" type="PushButton">
+					<object name="nj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="nj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="nj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+
+					<object name="laj1" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="laj2" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="laj3" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="laj4" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="laj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="laj6" method="positionMode" />
+					<object name="laj7" method="positionMode" />
+
+					<object name="left_thumb_roll" method="positionMode"/>
+					<object name="left_thumb_proximal" method="positionMode"/>
+					<object name="left_thumb_distal" method="positionMode"/>
+					<object name="left_index" method="positionMode"/>
+					<object name="left_middle" method="positionMode"/>
+					<object name="left_pinky" method="positionMode"/>
+
+					<object name="raj1" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="raj2" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="raj3" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="raj4" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+					<object name="raj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="raj6" method="positionMode" />
+					<object name="raj7" method="positionMode" />
+
+					<object name="right_thumb_roll" method="positionMode"/>
+					<object name="right_thumb_proximal" method="positionMode"/>
+					<object name="right_thumb_distal" method="positionMode"/>
+					<object name="right_index" method="positionMode"/>
+					<object name="right_middle" method="positionMode"/>
+					<object name="right_pinky" method="positionMode"/>
+			</widget>
+
+			<widget row="2" col="0" name="Lower Body:" type="PushButton"/>
+			<widget row="2" col="1" name="Park" type="PushButton">
+					<object name="wj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="wj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="wj3" method="SendModeCmd" args="Park" argTypes="str"/>
+
+					<object name="llj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj3" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj4" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj5" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="llj6" method="SendModeCmd" args="Park" argTypes="str"/>
+
+					<object name="rlj1" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj2" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj3" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj4" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj5" method="SendModeCmd" args="Park" argTypes="str"/>
+					<object name="rlj6" method="SendModeCmd" args="Park" argTypes="str"/>
+			</widget>
+			<widget row="2" col="2" name="Clear Faults" type="PushButton">
+					<object name="wj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="wj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="wj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+
+					<object name="llj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="llj6" method="SendModeCmd" args="Reset" argTypes="str"/>
+
+					<object name="rlj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+					<object name="rlj6" method="SendModeCmd" args="Reset" argTypes="str"/>
+			</widget>
+			<widget row="2" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+					<object name="wj1" method="zeroEffortCommand" />
+					<object name="wj2" method="zeroEffortCommand" />
+					<object name="wj3" method="zeroEffortCommand" />
+					<object name="wj1" method="tarePositionCommand" />
+					<object name="wj2" method="tarePositionCommand" />
+					<object name="wj3" method="tarePositionCommand" />
+
+					<object name="llj1" method="zeroEffortCommand" />
+					<object name="llj2" method="zeroEffortCommand" />
+					<object name="llj3" method="zeroEffortCommand" />
+					<object name="llj4" method="zeroEffortCommand" />
+					<object name="llj5" method="zeroEffortCommand" />
+					<object name="llj6" method="zeroEffortCommand" />
+					<object name="llj1" method="tarePositionCommand" />
+					<object name="llj2" method="tarePositionCommand" />
+					<object name="llj3" method="tarePositionCommand" />
+					<object name="llj4" method="tarePositionCommand" />
+					<object name="llj5" method="tarePositionCommand" />
+					<object name="llj6" method="tarePositionCommand" />
+
+					<object name="rlj1" method="zeroEffortCommand" />
+					<object name="rlj2" method="zeroEffortCommand" />
+					<object name="rlj3" method="zeroEffortCommand" />
+					<object name="rlj4" method="zeroEffortCommand" />
+					<object name="rlj5" method="zeroEffortCommand" />
+					<object name="rlj6" method="zeroEffortCommand" />
+					<object name="rlj1" method="tarePositionCommand" />
+					<object name="rlj2" method="tarePositionCommand" />
+					<object name="rlj3" method="tarePositionCommand" />
+					<object name="rlj4" method="tarePositionCommand" />
+					<object name="rlj5" method="tarePositionCommand" />
+					<object name="rlj6" method="tarePositionCommand" />
+			</widget>
+			<widget row="2" col="4" name="Servo" type="PushButton">
+					<object name="wj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="wj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="wj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+
+					<object name="llj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj4" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="llj6" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+
+					<object name="rlj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj4" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+					<object name="rlj6" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+			</widget>
+
+
+			<widget row="3" col="0" name="Neck:" type="ToggleButton">
+				<check label="Neck">
+					<object name="self" method="AddTabsConfigFile" args="/ui/neck.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Neck">
+					<object name="self" method="CloseTabByName" args="Neck" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="NJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="NJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="NJ3" argTypes="str"/>
+				</uncheck>
+			</widget>
+			<widget row="3" col="1" name="Park" type="PushButton">
+				<object name="nj1" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="nj2" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="nj3" method="SendModeCmd" args="Park" argTypes="str"/>
+			</widget>
+			<widget row="3" col="2" name="Clear Faults" type="PushButton">
+				<object name="nj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="nj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="nj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+			</widget>
+			<widget row="3" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+				<object name="nj1" method="zeroEffortCommand" />
+				<object name="nj2" method="zeroEffortCommand" />
+				<object name="nj3" method="zeroEffortCommand" />
+				<object name="nj1" method="tarePositionCommand" />
+				<object name="nj2" method="tarePositionCommand" />
+				<object name="nj3" method="tarePositionCommand" />
+			</widget>
+			<widget row="3" col="4" name="Servo" type="PushButton">
+				<object name="nj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="nj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="nj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+			</widget>
+
+			<widget row="4" col="0" name="Waist" type="ToggleButton">
+				<check label="Trunk">
+					<object name="self" method="AddTabsConfigFile" args="/ui/trunk.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Trunk">
+					<object name="self" method="CloseTabByName" args="Trunk" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="WJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="WJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="WJ3" argTypes="str"/>
+				</uncheck>
+			</widget>
+			<widget row="4" col="1" name="Park" type="PushButton">
+				<object name="wj1" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="wj2" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="wj3" method="SendModeCmd" args="Park" argTypes="str"/>
+			</widget>
+			<widget row="4" col="2" name="Clear Faults" type="PushButton">
+				<object name="wj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="wj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="wj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+			</widget>
+			<widget row="4" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+				<object name="wj1" method="zeroEffortCommand" />
+				<object name="wj2" method="zeroEffortCommand" />
+				<object name="wj3" method="zeroEffortCommand" />
+				<object name="wj1" method="tarePositionCommand" />
+				<object name="wj2" method="tarePositionCommand" />
+				<object name="wj3" method="tarePositionCommand" />
+			</widget>
+			<widget row="4" col="4" name="Servo" type="PushButton">
+				<object name="wj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="wj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="wj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+			</widget>
+
+			<widget row="5" col="0" name="Left Arm:" type="ToggleButton">
+				<check label="Left Arm">
+					<object name="self" method="AddTabsConfigFile" args="/ui/left_arm.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Left Arm">
+					<object name="self" method="CloseTabByName" args="Left Arm" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ3" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ4" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ5" argTypes="str"/>
+				</uncheck>
+			</widget>
+			<widget row="5" col="1" name="Park" type="PushButton">
+				<object name="laj1" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="laj2" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="laj3" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="laj4" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="laj5" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="laj6" method="park" />
+				<object name="laj7" method="park" />
+
+				<object name="left_thumb_roll" method="park"/>
+				<object name="left_thumb_proximal" method="park"/>
+				<object name="left_thumb_distal" method="park"/>
+				<object name="left_index" method="park"/>
+				<object name="left_middle" method="park"/>
+				<object name="left_pinky" method="park"/>
+			</widget>
+			<widget row="5" col="2" name="Clear Faults" type="PushButton">
+				<object name="laj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="laj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="laj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="laj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="laj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="laj6" method="clearFault" />
+				<object name="laj7" method="clearFault" />
+			</widget>
+			<widget row="5" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+				<object name="laj1" method="zeroEffortCommand" />
+				<object name="laj2" method="zeroEffortCommand" />
+				<object name="laj3" method="zeroEffortCommand" />
+				<object name="laj4" method="zeroEffortCommand" />
+				<object name="laj5" method="zeroEffortCommand" />
+				<object name="laj1" method="tarePositionCommand" />
+				<object name="laj2" method="tarePositionCommand" />
+				<object name="laj3" method="tarePositionCommand" />
+				<object name="laj4" method="tarePositionCommand" />
+				<object name="laj5" method="tarePositionCommand" />
+			</widget>
+			<widget row="5" col="4" name="Servo" type="PushButton">
+				<object name="laj1" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+				<object name="laj2" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+				<object name="laj3" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+				<object name="laj4" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+				<object name="laj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="laj6" method="positionMode" />
+				<object name="laj7" method="positionMode" />
+
+				<object name="left_thumb_roll" method="positionMode"/>
+				<object name="left_thumb_proximal" method="positionMode"/>
+				<object name="left_thumb_distal" method="positionMode"/>
+				<object name="left_index" method="positionMode"/>
+				<object name="left_middle" method="positionMode"/>
+				<object name="left_pinky" method="positionMode"/>
+			</widget>
+
+			<widget row="6" col="0" name="Right Arm:" type="ToggleButton">
+				<check label="Right Arm">
+					<object name="self" method="AddTabsConfigFile" args="/ui/right_arm.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Right Arm">
+					<object name="self" method="CloseTabByName" args="Right Arm" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ3" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ4" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ5" argTypes="str"/>
+				</uncheck>
+			</widget>
+			<widget row="6" col="1" name="Park" type="PushButton">
+				<object name="raj1" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="raj2" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="raj3" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="raj4" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="raj5" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="raj6" method="park" />
+				<object name="raj7" method="park" />
+
+				<object name="right_thumb_roll" method="park"/>
+				<object name="right_thumb_proximal" method="park"/>
+				<object name="right_thumb_distal" method="park"/>
+				<object name="right_index" method="park"/>
+				<object name="right_middle" method="park"/>
+				<object name="right_pinky" method="park"/>
+			</widget>
+			<widget row="6" col="2" name="Clear Faults" type="PushButton">
+				<object name="raj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="raj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="raj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="raj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="raj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="raj6" method="clearFault" />
+				<object name="raj7" method="clearFault" />
+			</widget>
+			<widget row="6" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+				<object name="raj1" method="zeroEffortCommand" />
+				<object name="raj2" method="zeroEffortCommand" />
+				<object name="raj3" method="zeroEffortCommand" />
+				<object name="raj4" method="zeroEffortCommand" />
+				<object name="raj5" method="zeroEffortCommand" />
+				<object name="raj1" method="tarePositionCommand" />
+				<object name="raj2" method="tarePositionCommand" />
+				<object name="raj3" method="tarePositionCommand" />
+				<object name="raj4" method="tarePositionCommand" />
+				<object name="raj5" method="tarePositionCommand" />
+			</widget>
+			<widget row="6" col="4" name="Servo" type="PushButton">
+				<object name="raj1" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+				<object name="raj2" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+				<object name="raj3" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+				<object name="raj4" method="SendModeCmd" args="ServoImpedance" argTypes="str"/>
+				<object name="raj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="raj6" method="positionMode" />
+				<object name="raj7" method="positionMode" />
+
+				<object name="right_thumb_roll" method="positionMode"/>
+				<object name="right_thumb_proximal" method="positionMode"/>
+				<object name="right_thumb_distal" method="positionMode"/>
+				<object name="right_index" method="positionMode"/>
+				<object name="right_middle" method="positionMode"/>
+				<object name="right_pinky" method="positionMode"/>
+			</widget>
+
+			<widget row="7" col="0" name="Left Leg:" type="ToggleButton">
+				<check label="Left Leg">
+					<object name="self" method="AddTabsConfigFile" args="/ui/left_leg.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Left Leg">
+					<object name="self" method="CloseTabByName" args="Left Leg" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ3" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ4" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ5" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ6" argTypes="str"/>
+				</uncheck>
+			</widget>
+			<widget row="7" col="1" name="Park" type="PushButton">
+				<object name="llj1" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="llj2" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="llj3" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="llj4" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="llj5" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="llj6" method="SendModeCmd" args="Park" argTypes="str"/>
+			</widget>
+			<widget row="7" col="2" name="Clear Faults" type="PushButton">
+				<object name="llj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="llj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="llj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="llj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="llj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="llj6" method="SendModeCmd" args="Reset" argTypes="str"/>
+			</widget>
+			<widget row="7" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+				<object name="llj1" method="zeroEffortCommand" />
+				<object name="llj2" method="zeroEffortCommand" />
+				<object name="llj3" method="zeroEffortCommand" />
+				<object name="llj4" method="zeroEffortCommand" />
+				<object name="llj5" method="zeroEffortCommand" />
+				<object name="llj6" method="zeroEffortCommand" />
+				<object name="llj1" method="tarePositionCommand" />
+				<object name="llj2" method="tarePositionCommand" />
+				<object name="llj3" method="tarePositionCommand" />
+				<object name="llj4" method="tarePositionCommand" />
+				<object name="llj5" method="tarePositionCommand" />
+				<object name="llj6" method="tarePositionCommand" />
+			</widget>
+			<widget row="7" col="4" name="Servo" type="PushButton">
+				<object name="llj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="llj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="llj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="llj4" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="llj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="llj6" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+			</widget>
+
+			<widget row="8" col="0" name="Right Leg:" type="ToggleButton">
+				<check label="Right Leg">
+					<object name="self" method="AddTabsConfigFile" args="/ui/right_leg.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Right Leg">
+					<object name="self" method="CloseTabByName" args="Right Leg" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ3" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ4" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ5" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ6" argTypes="str"/>
+				</uncheck>
+			</widget>
+			<widget row="8" col="1" name="Park" type="PushButton">
+				<object name="rlj1" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="rlj2" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="rlj3" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="rlj4" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="rlj5" method="SendModeCmd" args="Park" argTypes="str"/>
+				<object name="rlj6" method="SendModeCmd" args="Park" argTypes="str"/>
+			</widget>
+			<widget row="8" col="2" name="Clear Faults" type="PushButton">
+				<object name="rlj1" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="rlj2" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="rlj3" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="rlj4" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="rlj5" method="SendModeCmd" args="Reset" argTypes="str"/>
+				<object name="rlj6" method="SendModeCmd" args="Reset" argTypes="str"/>
+			</widget>
+			<widget row="8" col="3" name="Tare &amp;Des&#10;Pos and Torque" type="PushButton">
+				<object name="rlj1" method="zeroEffortCommand" />
+				<object name="rlj2" method="zeroEffortCommand" />
+				<object name="rlj3" method="zeroEffortCommand" />
+				<object name="rlj4" method="zeroEffortCommand" />
+				<object name="rlj5" method="zeroEffortCommand" />
+				<object name="rlj6" method="zeroEffortCommand" />
+				<object name="rlj1" method="tarePositionCommand" />
+				<object name="rlj2" method="tarePositionCommand" />
+				<object name="rlj3" method="tarePositionCommand" />
+				<object name="rlj4" method="tarePositionCommand" />
+				<object name="rlj5" method="tarePositionCommand" />
+				<object name="rlj6" method="tarePositionCommand" />
+			</widget>
+			<widget row="8" col="4" name="Servo" type="PushButton">
+				<object name="rlj1" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="rlj2" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="rlj3" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="rlj4" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="rlj5" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+				<object name="rlj6" method="SendModeCmd" args="ServoPosition" argTypes="str"/>
+			</widget>
+
+		</widget>
+
+		<widget row="1" col="1" name="Initialize Linear Actuators" type="HorizontalGroupBox">
+			<widget col="0" name="InitializeAll" type="PushButton">
+				<object name="manager" method="startProgram" args="rosrun transmission_library initializeWaist.py,initializeWaist" argTypes="str,str"/>
+				<object name="manager" method="startProgram" args="rosrun transmission_library initializeAnkles.py,initializeAnkles" argTypes="str,str"/>
+				<object name="manager" method="startProgram" args="rosservice call /calibrate_right_wrist,cal_right_wrist" argTypes="str,str"/>
+				<object name="manager" method="startProgram" args="rosservice call /calibrate_left_wrist,cal_left_wrist" argTypes="str,str"/>
+			</widget>
+			<widget col="1" name="InitializeWaist" type="PushButton">
+				<object name="manager" method="startProgram" args="rosrun transmission_library initializeWaist.py,initializeWaist" argTypes="str,str"/>
+			</widget>
+			<widget col="2" name="Initiali&amp;zeAnkles" type="PushButton">
+				<object name="manager" method="startProgram" args="rosrun transmission_library initializeAnkles.py,initializeAnkles" argTypes="str,str"/>
+			</widget>
+			<widget col="3" name="InitializeWrists" type="PushButton">
+				<object name="manager" method="startProgram" args="rosservice call /calibrate_right_wrist,cal_right_wrist" argTypes="str,str"/>
+				<object name="manager" method="startProgram" args="rosservice call /calibrate_left_wrist,cal_left_wrist" argTypes="str,str"/>
+			</widget>
+		</widget>
+
+		<widget row="2" col="1" name="Power" type="GroupBox">
+		<widget name="" type="GridGroupBox">
+			<widget col="0" row="0" name="Power:" type="ToggleButton">
+				<check label="Power GUI">
+					<object name="self" method="AddTabsConfigFile" args="/ui/power_control.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Power GUI">
+					<object name="self" method="CloseTabByName" args="Power" argTypes="str,str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="1" row="0" type="ToggleButton" name="ESTOP RESET">
+				<check label="Reset E-Stop" color="green" textColor="white">
+					<object name="bms" method="CPU_READY_On"/>
+					<object name="manager" method="startProgram" args="rosrun drc_turbodriver turboCmd.py -c $(rospack find drc_coeffs)/V1A/v1_config.yaml estop -r, loadCoeffs" argTypes="str,str"/>
+					<object name="la_wrist_driver1_estop_reset" method="__call__" args="${setEstopClear}" argTypes="int"/>
+					<object name="la_wrist_driver2_estop_reset" method="__call__" args="${setEstopClear}" argTypes="int"/>
+					<object name="ra_wrist_driver1_estop_reset" method="__call__" args="${setEstopClear}" argTypes="int"/>
+					<object name="ra_wrist_driver2_estop_reset" method="__call__" args="${setEstopClear}" argTypes="int"/>
+				</check>
+				<uncheck label="Reset E-Stop" color="red" textColor="white">
+					<object name="bms" method="CPU_READY_Off"/>
+					<object name="la_wrist_driver1_estop_reset" method="__call__" args="${unsetEstopClear}" argTypes="int"/>
+					<object name="la_wrist_driver2_estop_reset" method="__call__" args="${unsetEstopClear}" argTypes="int"/>
+					<object name="ra_wrist_driver1_estop_reset" method="__call__" args="${unsetEstopClear}" argTypes="int"/>
+					<object name="ra_wrist_driver2_estop_reset" method="__call__" args="${unsetEstopClear}" argTypes="int"/>
+				</uncheck>
+			</widget>
+
+			<widget col="2" row="0" name="Logic Power" type="ToggleButton">
+				<check label="Logic Power On" color="green" textColor="white">
+					<object name="bms" method="LEFT_ARM_Power_On"/>
+					<object name="bms" method="LEFT_LEG_Power_On"/>
+					<object name="bms" method="LVSPARE2_Power_On"/>
+					<object name="bms" method="ABDOMEN_Power_On"/>
+					<object name="bms" method="RIGHT_ARM_Power_On"/>
+					<object name="bms" method="RIGHT_LEG_Power_On"/>
+                    <object name="bms" method="LVSPARE1_Power_On"/>
+				</check>
+				<uncheck label="Logic Power Off" color="red" textColor="white">
+					<object name="bms" method="LEFT_ARM_Power_Off"/>
+					<object name="bms" method="LEFT_LEG_Power_Off"/>
+					<object name="bms" method="LVSPARE2_Power_Off"/>
+					<object name="bms" method="ABDOMEN_Power_Off"/>
+					<object name="bms" method="RIGHT_ARM_Power_Off"/>
+					<object name="bms" method="RIGHT_LEG_Power_Off"/>
+                    <object name="bms" method="LVSPARE1_Power_Off"/>
+				</uncheck>
+			</widget>
+
+			<widget col="3" row="0" name="Motor Power" type="ToggleButton">
+				<check label="Motor Power On" color="green" textColor="white">
+					<object name="bms" method="HV_LEFT_ARM_Power_On"/>
+					<object name="bms" method="LEFT_ARM_24V_Power_On"/>
+					<object name="bms" method="HV_LEFT_LEG_Power_On"/>
+					<object name="bms" method="NECK_24V_Power_On"/>
+					<object name="bms" method="HV_PELVIS_Power_On"/>
+					<object name="bms" method="HV_RIGHT_ARM_Power_On"/>
+					<object name="bms" method="RIGHT_ARM_24V_Power_On"/>
+					<object name="bms" method="HV_RIGHT_LEG_Power_On"/>
+				</check>
+				<uncheck label="Motor Power Off" color="red" textColor="white">
+					<object name="bms" method="HV_LEFT_ARM_Power_Off"/>
+					<object name="bms" method="LEFT_ARM_24V_Power_Off"/>
+					<object name="bms" method="HV_LEFT_LEG_Power_Off"/>
+					<object name="bms" method="NECK_24V_Power_Off"/>
+					<object name="bms" method="HV_PELVIS_Power_Off"/>
+					<object name="bms" method="HV_RIGHT_ARM_Power_Off"/>
+					<object name="bms" method="RIGHT_ARM_24V_Power_Off"/>
+					<object name="bms" method="HV_RIGHT_LEG_Power_Off"/>
+				</uncheck>
+			</widget>
+		</widget>
+			<widget col="0" row="1"  type="TableViewDisplay" name="Output Voltages (V)">
+                <header value="data"/>
+                <row label="LV OUT">  <object name="bms" method="getADC_V12_OUT_VOLTAGE" args="val" argTypes="str" /></row>
+                <row label="HV OUT">  <object name="bms" method="getADC_HV_OUT_VOLTAGE" args="val" argTypes="str" /></row>
+            </widget>
+		</widget>
+
+		<widget row="3" col="1" name="Load Coeffs" type="PushButton">
+			<object name="manager" method="startProgram" args="rosrun nasa_configuration cfgLoader.py -c `rospack find drc_coeffs`/V1A/v1_config.yaml -n,loadCoeffs" argTypes="str,str"/>
+		</widget>
+
+		<widget row="4" col="1" type="ToggleButton" name="Estop Status">
+			<status name="bms" method="getEstopStatus" args="arg" argTypes="str" threshold="1"/>
+			<check label="Estop Cleared" color="green" textColor="white">
+			</check>
+			<uncheck label="ESTOP PRESSED!!!" color="red" textColor="white">
+			</uncheck>
+
+		</widget>
+
+		<widget row="5" col="1" name="Init Rotors" type="PushButton">
+			<object name="manager" method="startProgram" args="rosrun drc_turbodriver turboCmd.py -c `rospack find drc_coeffs`/V1A/v1_config.yaml init,initRotors" argTypes="str,str"/>
+		</widget>
+
+
+	</widgets>
+</ui>

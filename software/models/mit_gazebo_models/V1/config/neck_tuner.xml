@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<midiboard>
+	<message name="DeltaQ/Kd" topic="/JPos/DeltaQ/Kd" package="std_msgs.msg" msgType="Float64MultiArray">
+		<field name="data" type="float" offset="7" midi="knob4" value="0" lowValue="0" highValue="1000"/>
+		<field name="data" type="float" offset="8" midi="knob5" value="0" lowValue="0" highValue="1000"/>
+		<field name="data" type="float" offset="9" midi="knob6" value="0" lowValue="0" highValue="1000"/>
+		<field name="data" type="float" offset="16" value="0"/>
+	</message>
+
+	<message name="DeltaQ/Kp" topic="/JPos/DeltaQ/Kp" package="std_msgs.msg" msgType="Float64MultiArray">
+		<field name="data" type="float" offset="7" midi="slider4" value="0" lowValue="0" highValue="10000"/>
+		<field name="data" type="float" offset="8" midi="slider5" value="0" lowValue="0" highValue="10000"/>
+		<field name="data" type="float" offset="9" midi="slider6" value="0" lowValue="0" highValue="10000"/>
+		<field name="data" type="float" offset="16" value="0"/>
+	</message>
+
+	<message name="Kd" topic="/JPos/Kd" package="std_msgs.msg" msgType="Float64MultiArray">
+		<field name="data" type="float" offset="7" midi="knob1" value="0" lowValue="0" highValue="5000"/>
+		<field name="data" type="float" offset="8" midi="knob2" value="0" lowValue="0" highValue="5000"/>
+		<field name="data" type="float" offset="9" midi="knob3" value="0" lowValue="0" highValue="5000"/>
+		<field name="data" type="float" offset="16" value="0"/>
+	</message>
+
+	<message name="Kp" topic="/JPos/Kp" package="std_msgs.msg" msgType="Float64MultiArray">
+		<field name="data" type="float" offset="7" midi="slider1" value="0" lowValue="0" highValue="100000"/>
+		<field name="data" type="float" offset="8" midi="slider2" value="0" lowValue="0" highValue="100000"/>
+		<field name="data" type="float" offset="9" midi="slider3" value="0" lowValue="0" highValue="100000"/>
+		<field name="data" type="float" offset="16" value="0"/>
+	</message>
+	
+</midiboard>

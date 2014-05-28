@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/little_finger/dh_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="LFJ1_Proximal_Link" value="${little_finger_root_link}" />
+  <xacro:property name="LFJ1_Distal_Link" value="/v1/${prefix}MedialMetacarpal" />
+
+  <xacro:property name="LFJ2_Proximal_Link" value="/v1/${prefix}MedialMetacarpal" />
+  <xacro:property name="LFJ2_Distal_Link" value="/v1/${prefix}LittleProximalPhalanx" />
+
+  <xacro:property name="LFJ3_Proximal_Link" value="/v1/${prefix}LittleProximalPhalanx" />
+  <xacro:property name="LFJ3_Distal_Link" value="/v1/${prefix}LittleMedialPhalanx" />
+
+  <xacro:property name="LFJ4_Proximal_Link" value="/v1/${prefix}LittleMedialPhalanx" />
+  <xacro:property name="LFJ4_Distal_Link" value="/v1/${prefix}LittleDistalPhalanx" />
+  
+</robot>

@@ -1,0 +1,76 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="sim/utility_macros">
+  <xacro:macro name="make_waist_interface" params="name1 type1 name2 type2 name3 type3">
+    <xacro:v1_waist_actuators name1="${name1}" type1="${type1}" name2="${name2}" type2="${type2}" name3="${name3}" type3="${type3}"/>
+    <xacro:v1_waist_transmissions actuator1="${name1}" actuator2="${name2}" actuator3="${name3}" />
+    <xacro:v1_waist_modes actuator1="${name1}" actuator2="${name2}" actuator3="${name3}" />
+    <xacro:v1_trunk_sensors/>
+  </xacro:macro>
+
+  <xacro:macro name="make_head_interface" params="name1 type1 name2 type2 name3 type3">
+    <xacro:v1_head_actuators name1="${name1}" type1="${type1}" name2="${name2}" type2="${type2}" name3="${name3}" type3="${type3}"/>
+    <xacro:v1_head_transmissions actuator1="${name1}" actuator2="${name2}" actuator3="${name3}" />
+    <xacro:v1_head_modes actuator1="${name1}" actuator2="${name2}" actuator3="${name3}" />
+    <xacro:v1_head_sensors/>
+  </xacro:macro>
+
+  <xacro:macro name="make_arm_interface" params="prefix name1 type1 name2 type2 name3 type3 name4 type4 name5 type5 name6 type6 name7 type7">
+    <xacro:v1_arm_actuators name1="${name1}" type1="${type1}"
+			    name2="${name2}" type2="${type2}"
+			    name3="${name3}" type3="${type3}"
+			    name4="${name4}" type4="${type4}" 
+			    name5="${name5}" type5="${type5}"
+			    name6="${name6}" type6="${type6}"
+			    name7="${name7}" type7="${type7}"/>
+    <xacro:v1_arm_transmissions prefix="${prefix}" actuator1="${name1}" actuator2="${name2}" actuator3="${name3}" actuator4="${name4}" actuator5="${name5}" actuator6="${name6}" actuator7="${name7}"/>
+    <xacro:v1_arm_modes prefix="${prefix}" actuator1="${name1}" actuator2="${name2}" actuator3="${name3}" actuator4="${name4}" actuator5="${name5}" actuator6="${name6}" actuator7="${name7}"/>
+  </xacro:macro>
+
+  <!-- 	<xacro:macro name="make_thumb_interface" params="prefix channel">
+       <xacro:v1_thumb_actuators channel="${channel}" />
+       <xacro:v1_thumb_transmissions prefix="${prefix}" channel="${channel}" />
+       <xacro:v1_thumb_modes prefix="${prefix}" channel="${channel}" />
+       </xacro:macro>
+  -->
+  <!-- 	<xacro:macro name="make_primary_finger_interface" params="prefix channel">
+       <xacro:v1_primary_finger_actuators channel="${channel}" />
+       <xacro:v1_primary_finger_transmissions prefix="${prefix}" channel="${channel}" />
+       <xacro:v1_primary_finger_modes prefix="${prefix}" channel="${channel}" />
+       </xacro:macro> -->
+
+  <!-- 	<xacro:macro name="make_middle_finger_interface" params="prefix channel">
+       <xacro:v1_middle_finger_actuators channel="${channel}" />
+       <xacro:v1_middle_finger_transmissions prefix="${prefix}" channel="${channel}" />
+       <xacro:v1_middle_finger_modes prefix="${prefix}" channel="${channel}" />
+       </xacro:macro>
+
+<xacro:macro name="make_little_finger_interface" params="prefix channel">
+<xacro:v1_little_finger_actuators channel="${channel}" />
+<xacro:v1_little_finger_transmissions prefix="${prefix}" channel="${channel}" />
+<xacro:v1_little_finger_modes prefix="${prefix}" channel="${channel}" />
+</xacro:macro> -->
+
+  <xacro:macro name="make_leg_interface" params="prefix reflect name1 type1 name2 type2 name3 type3 name4 type4 name5 type5 name6 type6">
+    <xacro:v1_leg_actuators name1="${name1}" type1="${type1}"
+			    name2="${name2}" type2="${type2}"
+			    name3="${name3}" type3="${type3}"
+			    name4="${name4}" type4="${type4}" 
+			    name5="${name5}" type5="${type5}"
+			    name6="${name6}" type6="${type6}"/>
+    <xacro:v1_leg_transmissions prefix="${prefix}" 
+				reflect="${reflect}"
+				actuator1="${name1}" 
+				actuator2="${name2}" 
+				actuator3="${name3}" 
+				actuator4="${name4}" 
+				actuator5="${name5}" 
+				actuator6="${name6}" />
+    <xacro:v1_leg_modes prefix="${prefix}" 
+			actuator1="${name1}" 
+			actuator2="${name2}" 
+			actuator3="${name3}" 
+			actuator4="${name4}" 
+			actuator5="${name5}" 
+			actuator6="${name6}" />
+    <xacro:v1_leg_sensors prefix="${prefix}" reflect="${reflect}" />
+  </xacro:macro>
+</robot>

@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/waist/mass_parameters">
+  <!--
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+
+  <!-- Below measured on 9/22/13-->
+  <!-- <xacro:property name="WJ3_Link_Mass" value="37" /> -->
+
+  <!-- The following was taken from Christopher McQuin's DRC Master Spreadsheet sept.xlsx, 10/7/13 -->
+  <!-- <xacro:property name="WJ3_Link_Mass" value="39.8" /> -->
+
+  <xacro:property name="WJ3_Link_Mass_No_Battery_No_Neck" value="23.9" />
+  <xacro:property name="Battery_Mass" value="14.4" />
+
+  <!-- Battery + WJ3(no NJ1) -->
+  <xacro:property name="WJ3_Link_Mass" value="38.3" />
+
+  <!-- WJ3_Link_Mass_No_Battery_No_Neck + NJ1_Link_Mass -->
+  <xacro:property name="WJ3_Link_Mass_No_Battery" value="24.371" />
+
+</robot>

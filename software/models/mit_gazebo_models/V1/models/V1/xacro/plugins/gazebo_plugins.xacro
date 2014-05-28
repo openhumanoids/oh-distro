@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="nasa_drc_pluginss">
+
+  <xacro:macro name="plugin_sm_interface" params="robot_description update_rate">
+    <plugin filename="libSMInterface.so" name="SharedMemoryInterface">
+      <updateRate>${update_rate}</updateRate>
+      <robotDescriptionParam>${robot_description}</robotDescriptionParam>
+    </plugin>
+  </xacro:macro>
+
+  <xacro:macro name="plugin_joint_state_publisher" params="update_rate">
+    <plugin filename="libJointStatePublisher.so" name="JointStatePublisher">
+      <updateRate>1000.0</updateRate>
+      <topicName>joint_states_sim</topicName>
+    </plugin>
+  </xacro:macro>
+  
+  <xacro:macro name="plugin_pin_link" params="topic_name">
+    <plugin filename="libPinPlugin.so" name="PinPlugin">
+      <node>${topic_name}</node>
+    </plugin>
+  </xacro:macro>
+
+  <xacro:macro name="joint_wrench_plugin" params="joint_name topic_name report_child">
+      <gazebo>
+      <plugin filename="libJointWrenchPluginRos.so" name="${joint_name}_wrench">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <jointName>${joint_name}</jointName>
+        <topicName>${topic_name}</topicName>
+        <reportChild>${report_child}</reportChild>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+</robot>

@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="urdf" default="$(find V1)/models/V1/urdf/V1_hw.urdf" />
+  <include file="$(find transmission_library)/launch/v1_ankle_lookuptables.launch" />
+  <include file="$(find transmission_library)/launch/v1_wrist_lookuptables.launch" />
+  <include file="$(find transmission_library)/launch/v1_waist_lookuptables.launch" />
+
+  <!--Load the hw robot urdf into parameter robot_description -->
+  <param name="robot_description" textfile="$(arg urdf)"/>
+</launch>
