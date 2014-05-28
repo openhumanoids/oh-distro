@@ -99,8 +99,8 @@ def sendRobotStateMsg():
     msg.num_joints = 28
     msg.utime = timestamp_now ()
   else:
-    msg = getRobotStateMsg()
-    quat_out = euler_to_quat(0.0,0.0, goal_yaw)
+    msg = u.getRobotStateMsg()
+    quat_out = u.euler_to_quat(0.0,0.0, goal_yaw)
     msg.pose.rotation.w = quat_out[0]
     msg.pose.rotation.x = quat_out[1]
     msg.pose.rotation.y = quat_out[2]
@@ -110,23 +110,23 @@ def sendRobotStateMsg():
     print "Pelvis Height: " , goal_pelvis_height
     if (goal_pelvis_roll > 0.1):
       print "Using Leaning Pitch and Reach"
-      msg = setStateAtHeight65BackAndPelvisPitchedAndArmExtended(msg)
+      msg = u.setStateAtHeight65BackAndPelvisPitchedAndArmExtended(msg)
     elif (goal_pelvis_pitch > 0.1):
       print "Using Leaning Pitch"
       if (goal_pelvis_height >  0.75 ):
-        msg = setStateAtHeight85BackAndPelvisPitched(msg)
+        msg = u.setStateAtHeight85BackAndPelvisPitched(msg)
       else:
-        msg = setStateAtHeight65BackAndPelvisPitched(msg)
+        msg = u.setStateAtHeight65BackAndPelvisPitched(msg)
     elif (goal_pelvis_height >  0.83 ):
-      msg = setStateAtHeight86(msg)
+      msg = u.setStateAtHeight86(msg)
     elif (goal_pelvis_height >  0.775 ):
-      msg = setStateAtHeight80(msg)
+      msg = u.setStateAtHeight80(msg)
     elif (goal_pelvis_height >  0.725 ):
-      msg = setStateAtHeight75(msg)
+      msg = u.setStateAtHeight75(msg)
     elif (goal_pelvis_height >  0.68 ):
-      msg = setStateAtHeight70(msg)
+      msg = u.setStateAtHeight70(msg)
     else:
-      msg = setStateAtHeight66(msg)
+      msg = u.setStateAtHeight66(msg)
 
   # Add the required joints:
   msg = appendJoints(msg, jnames.head)
