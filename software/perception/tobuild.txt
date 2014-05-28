@@ -37,6 +37,7 @@ affordance-tags
 # some quick start examples:
 #tutorials
 
+pfgrasp
 
 # i think these are deprecated
 # maurice's sandbox:
