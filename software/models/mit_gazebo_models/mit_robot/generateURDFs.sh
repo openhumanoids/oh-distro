@@ -19,6 +19,9 @@ rosrun xacro xacro.py xacro/atlas_LI_RI.urdf.xacro > model_LI_RI.urdf
 echo "Robotiq"
 rosrun xacro xacro.py xacro/atlas_LR_RR.urdf.xacro > model_LR_RR.urdf
 
+echo "Robotiq / pointer"
+rosrun xacro xacro.py xacro/atlas_LP_RR.urdf.xacro > model_LP_RR.urdf
+
 
  
 # the simulated robot configuration - LCM facing and ROS/gazbo facing versions
