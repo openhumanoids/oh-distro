@@ -123,7 +123,7 @@ if use_random_traj
   ddcomz_traj= ConstantTrajectory(0);
   
   % build TI-ZMP controller
-  foot_pos = terrainContactPointsInWorld(r,q0,[rfoot_ind, lfoot_ind]); 
+  foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]); 
   ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
   comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';%mean(foot_pos(1:2,ch(1:end-1)),2);
   

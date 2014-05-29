@@ -411,7 +411,7 @@ classdef QPControlBlock < MIMODrakeSystem
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
 
-        [~,~,~,~,Jp,Jpdot] = contactPositionsJdot(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,active_supports]));
+        [~,Jp,Jpdot] = terrainContactPositions(r,kinsol,[1,active_supports],true);
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
 

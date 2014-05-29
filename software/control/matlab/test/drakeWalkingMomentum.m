@@ -291,8 +291,8 @@ if plot_comtraj
     zmpdes(:,i)=walking_ctrl_data.zmptraj.eval(ts(i));
     zmpact(:,i)=com(1:2,i) - com(3,i)/9.81 * (J(1:2,:)*qdd + Jdot(1:2,:)*qd);
 
-    lfoot_cpos = terrainContactPointsInWorld(r,kinsol,lfoot);
-    rfoot_cpos = terrainContactPointsInWorld(r,kinsol,rfoot);
+    lfoot_cpos = terrainContactPositions(r,kinsol,lfoot);
+    rfoot_cpos = terrainContactPositions(r,kinsol,rfoot);
 
     lfoot_p = forwardKin(r,kinsol,lfoot,[0;0;0],1);
     rfoot_p = forwardKin(r,kinsol,rfoot,[0;0;0],1);
