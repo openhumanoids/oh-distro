@@ -2993,47 +2993,53 @@
       <material name="White"/>
     </visual>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.082 0.0624435 -0.081119"/>
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 0.07"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <visual>
-      <origin rpy="0 0 0" xyz="-0.082 0.0624435 -0.081119"/>
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 0.07"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="heel">
-      <origin rpy="0 0 0" xyz="-0.082 -0.0624435 -0.081119"/>
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 0.07"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <visual>
-      <origin rpy="0 0 0" xyz="-0.082 -0.0624435 -0.081119"/>
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 0.07"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.081119"/>
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 -0.21"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
     <visual>
-      <origin rpy="0 0 0" xyz="0.178 0.0624435 -0.081119"/>
+      <origin rpy="0 0 0" xyz="0.082 0.0624435 -0.21"/>
       <geometry>
         <sphere radius="0.01"/>
       </geometry>
     </visual>
     <collision group="toe">
-      <origin rpy="0 0 0" xyz="0.178 -0.0624435 -0.081119"/>
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 -0.21"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.082 -0.0624435 -0.21"/>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
   </link>
   <gazebo reference="l_foot">
     <material>Gazebo/White</material>
