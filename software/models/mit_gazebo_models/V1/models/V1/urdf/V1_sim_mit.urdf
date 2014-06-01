@@ -1018,7 +1018,7 @@
   <gazebo reference="r_farm">
     <material>Gazebo/White</material>
   </gazebo>
-  <link name="r_hand">
+  <link name="r_uhand">
     <inertial>
       <mass value="0.1"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1038,7 +1038,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="right_palm">
+  <link name="r_hand">
     <inertial>
       <mass value="0.712"/>
       <origin rpy="0 0 0" xyz="0.0425 0 0"/>
@@ -1060,7 +1060,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="right_palm">
+  <gazebo reference="r_hand">
     <material>Gazebo/Gold</material>
   </gazebo>
   <joint name="r_arm_uwy" type="revolute">
@@ -1079,7 +1079,7 @@
     <origin rpy="-1.57079632679 0 1.57079632679" xyz="0 0 -0.287"/>
     <axis xyz="0 0 1"/>
     <parent link="r_farm"/>
-    <child link="r_hand"/>
+    <child link="r_uhand"/>
     <limit effort="14" lower="-0.8726646255" upper="0.6981317004" velocity="1"/>
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
@@ -1090,8 +1090,8 @@
   <joint name="r_arm_lwz" type="revolute">
     <origin rpy="1.57079632679 0 1.57079632679" xyz="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="r_hand"/>
-    <child link="right_palm"/>
+    <parent link="r_uhand"/>
+    <child link="r_hand"/>
     <limit effort="14" lower="-0.5235987753" upper="0.43633231275" velocity="1"/>
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
@@ -1770,7 +1770,7 @@
     <parent link="/v1/RightPrimaryMedialPhalanx"/>
     <child link="/v1/RightPrimaryDistalPhalanx"/>
   </joint>
-  <link name="r_hand_face">
+  <link name="/v1/RightMiddleProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0.017 0 0"/>
@@ -1792,7 +1792,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="r_hand_face">
+  <gazebo reference="/v1/RightMiddleProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <link name="/v1/RightMiddleMedialPhalanx">
@@ -1849,12 +1849,12 @@
     <origin rpy="-1.57079632679 0 0" xyz="0.09767 0 0.00254"/>
     <axis xyz="0 0 1"/>
     <parent link="right_palm"/>
-    <child link="r_hand_face"/>
+    <child link="/v1/RightMiddleProximalPhalanx"/>
   </joint>
   <joint name="RightMiddlePIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="r_hand_face"/>
+    <parent link="/v1/RightMiddleProximalPhalanx"/>
     <child link="/v1/RightMiddleMedialPhalanx"/>
   </joint>
   <joint name="RightMiddleDIPExtensor" type="fixed">
@@ -1863,7 +1863,7 @@
     <parent link="/v1/RightMiddleMedialPhalanx"/>
     <child link="/v1/RightMiddleDistalPhalanx"/>
   </joint>
-  <link name="r_hand_force_torque">
+  <link name="/v1/RightMedialMetacarpal">
     <inertial>
       <mass value="0.047"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1885,7 +1885,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="r_hand_force_torque">
+  <gazebo reference="/v1/RightMedialMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
   <link name="/v1/RightLittleProximalPhalanx">
@@ -1967,12 +1967,12 @@
     <origin rpy="-1.57079632679 0 0.690626785" xyz="0.0427072303336 0.0352928446888 -0.007747"/>
     <axis xyz="0 0 1"/>
     <parent link="right_palm"/>
-    <child link="r_hand_force_torque"/>
+    <child link="/v1/RightMedialMetacarpal"/>
   </joint>
   <joint name="RightLittleMPExtensor" type="fixed">
     <origin rpy="-0.690626785 0 -1.57079632679" xyz="0 -0.010287 -0.071327"/>
     <axis xyz="0 0 1"/>
-    <parent link="r_hand_force_torque"/>
+    <parent link="/v1/RightMedialMetacarpal"/>
     <child link="/v1/RightLittleProximalPhalanx"/>
   </joint>
   <joint name="RightLittlePIPExtensor" type="fixed">
@@ -2160,7 +2160,7 @@
   <gazebo reference="l_farm">
     <material>Gazebo/White</material>
   </gazebo>
-  <link name="l_hand">
+  <link name="l_uhand">
     <inertial>
       <mass value="0.1"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2180,7 +2180,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <link name="left_palm">
+  <link name="l_hand">
     <inertial>
       <mass value="0.712"/>
       <origin rpy="0 0 0" xyz="0.0425 0 0"/>
@@ -2202,9 +2202,129 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="left_palm">
+  <gazebo reference="l_hand">
     <material>Gazebo/Gold</material>
   </gazebo>
+  <!-- mfallon extra stuff left hand-->
+  <link name="l_hand_force_torque">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="l_hand"/>
+    <child link="l_hand_force_torque"/>
+  </joint>
+  <link name="left_palm">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_valkyrie_hand_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="l_hand_force_torque"/>
+    <child link="left_palm"/>
+  </joint>
+  <link name="l_hand_face">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="l_hand_face_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="l_hand_force_torque"/>
+    <child link="l_hand_face"/>
+  </joint>
+  <!-- end mfallon extra stuff left hand-->
+
+
+
+
+  <!-- mfallon extra stuff right hand-->
+  <link name="r_hand_force_torque">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="r_hand_force_torque_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="r_hand"/>
+    <child link="r_hand_force_torque"/>
+  </joint>
+  <link name="right_palm">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_valkyrie_hand_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="r_hand_force_torque"/>
+    <child link="right_palm"/>
+  </joint>
+  <link name="r_hand_face">
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="r_hand_face_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="r_hand_force_torque"/>
+    <child link="r_hand_face"/>
+  </joint>
+  <!-- end mfallon extra stuff right hand-->
+
+
+
+
   <joint name="l_arm_uwy" type="revolute">
     <origin rpy="-1.57079632679 0 3.14159265359" xyz="0.0254 0 0"/>
     <axis xyz="0 0 1"/>
@@ -2221,7 +2341,7 @@
     <origin rpy="-1.57079632679 0 -1.57079632679" xyz="0 0 0.287"/>
     <axis xyz="0 0 1"/>
     <parent link="l_farm"/>
-    <child link="l_hand"/>
+    <child link="l_uhand"/>
     <limit effort="14" lower="-0.8726646255" upper="0.6981317004" velocity="1"/>
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
@@ -2232,12 +2352,16 @@
   <joint name="l_arm_lwz" type="revolute">
     <origin rpy="-1.57079632679 0 -1.57079632679" xyz="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="l_hand"/>
-    <child link="left_palm"/>
+    <parent link="l_uhand"/>
+    <child link="l_hand"/>
     <limit effort="14" lower="-0.5235987753" upper="0.43633231275" velocity="1"/>
     <controller_gains Kd="400" Kp="20000"/>
     <dynamics damping="1.0" friction="0.0"/>
   </joint>
+
+
+
+
   <gazebo reference="l_arm_lwz">
     <provideFeedback>1</provideFeedback>
   </gazebo>
@@ -2798,7 +2922,7 @@
     <parent link="/v1/LeftPrimaryMedialPhalanx"/>
     <child link="/v1/LeftPrimaryDistalPhalanx"/>
   </joint>
-  <link name="l_hand_face">
+  <link name="/v1/LeftMiddleProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0.017 0 0"/>
@@ -2820,7 +2944,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="l_hand_face">
+  <gazebo reference="/v1/LeftMiddleProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <link name="/v1/LeftMiddleMedialPhalanx">
@@ -2877,12 +3001,12 @@
     <origin rpy="1.57079632679 0 0" xyz="0.09767 0 -0.00254"/>
     <axis xyz="0 0 1"/>
     <parent link="left_palm"/>
-    <child link="l_hand_face"/>
+    <child link="/v1/LeftMiddleProximalPhalanx"/>
   </joint>
   <joint name="LeftMiddlePIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="l_hand_face"/>
+    <parent link="/v1/LeftMiddleProximalPhalanx"/>
     <child link="/v1/LeftMiddleMedialPhalanx"/>
   </joint>
   <joint name="LeftMiddleDIPExtensor" type="fixed">
@@ -2891,7 +3015,7 @@
     <parent link="/v1/LeftMiddleMedialPhalanx"/>
     <child link="/v1/LeftMiddleDistalPhalanx"/>
   </joint>
-  <link name="l_hand_force_torque">
+  <link name="/v1/LeftMedialMetacarpal">
     <inertial>
       <mass value="0.047"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2913,7 +3037,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="l_hand_force_torque">
+  <gazebo reference="/v1/LeftMedialMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
   <link name="/v1/LeftLittleProximalPhalanx">
@@ -2995,12 +3119,12 @@
     <origin rpy="1.57079632679 0 0.690626785" xyz="0.0427072303336 0.0352928446888 0.007747"/>
     <axis xyz="0 0 1"/>
     <parent link="left_palm"/>
-    <child link="l_hand_force_torque"/>
+    <child link="/v1/LeftMedialMetacarpal"/>
   </joint>
   <joint name="LeftLittleMPExtensor" type="fixed">
     <origin rpy="-0.690626785 0 1.57079632679" xyz="0 -0.010287 0.071327"/>
     <axis xyz="0 0 1"/>
-    <parent link="l_hand_force_torque"/>
+    <parent link="/v1/LeftMedialMetacarpal"/>
     <child link="/v1/LeftLittleProximalPhalanx"/>
   </joint>
   <joint name="LeftLittlePIPExtensor" type="fixed">

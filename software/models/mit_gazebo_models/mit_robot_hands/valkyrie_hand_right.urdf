@@ -589,7 +589,7 @@
     <parent link="/v1/RightPrimaryMedialPhalanx"/>
     <child link="/v1/RightPrimaryDistalPhalanx"/>
   </joint>
-  <link name="r_hand_face">
+  <link name="/v1/RightMiddleProximalPhalanx">
     <inertial>
       <mass value="0.02"/>
       <origin rpy="0 0 0" xyz="0.017 0 0"/>
@@ -610,7 +610,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="r_hand_face">
+  <gazebo reference="/v1/RightMiddleProximalPhalanx">
     <material>Gazebo/Gold</material>
   </gazebo>
   <link name="/v1/RightMiddleMedialPhalanx">
@@ -665,12 +665,12 @@
     <origin rpy="-1.57079632679 0 0" xyz="0.09767 0 0.00254"/>
     <axis xyz="0 0 1"/>
     <parent link="right_palm"/>
-    <child link="r_hand_face"/>
+    <child link="/v1/RightMiddleProximalPhalanx"/>
   </joint>
   <joint name="RightMiddlePIPExtensor" type="fixed">
     <origin rpy="0 0 0" xyz="0.0381 0 0"/>
     <axis xyz="0 0 1"/>
-    <parent link="r_hand_face"/>
+    <parent link="/v1/RightMiddleProximalPhalanx"/>
     <child link="/v1/RightMiddleMedialPhalanx"/>
   </joint>
   <joint name="RightMiddleDIPExtensor" type="fixed">
@@ -679,7 +679,7 @@
     <parent link="/v1/RightMiddleMedialPhalanx"/>
     <child link="/v1/RightMiddleDistalPhalanx"/>
   </joint>
-  <link name="r_hand_force_torque">
+  <link name="/v1/RightMedialMetacarpal">
     <inertial>
       <mass value="0.047"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -700,7 +700,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
   </link>
-  <gazebo reference="r_hand_force_torque">
+  <gazebo reference="/v1/RightMedialMetacarpal">
     <material>Gazebo/Gold</material>
   </gazebo>
   <link name="/v1/RightLittleProximalPhalanx">
@@ -779,12 +779,12 @@
     <origin rpy="-1.57079632679 0 0.690626785" xyz="0.0427072303336 0.0352928446888 -0.007747"/>
     <axis xyz="0 0 1"/>
     <parent link="right_palm"/>
-    <child link="r_hand_force_torque"/>
+    <child link="/v1/RightMedialMetacarpal"/>
   </joint>
   <joint name="RightLittleMPExtensor" type="fixed">
     <origin rpy="-0.690626785 0 -1.57079632679" xyz="0 -0.010287 -0.071327"/>
     <axis xyz="0 0 1"/>
-    <parent link="r_hand_force_torque"/>
+    <parent link="/v1/RightMedialMetacarpal"/>
     <child link="/v1/RightLittleProximalPhalanx"/>
   </joint>
   <joint name="RightLittlePIPExtensor" type="fixed">
