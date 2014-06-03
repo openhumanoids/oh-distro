@@ -27,7 +27,7 @@ for j = 2:nsteps
   end
   Q(rel_ndx(:,j), rel_ndx(:,j)) = Q(rel_ndx(:,j), rel_ndx(:,j)) + w_rel;
 
-  if seed_plan.footsteps(j).body_idx == Footstep.atlas_foot_bodies_idx.right
+  if seed_plan.footsteps(j).body_idx == biped.foot_bodies_idx.right
     nom = diag([1,-1,1,1,1,-1]) *nom_step;
   else
     nom = nom_step;

@@ -11,7 +11,7 @@ classdef SimplePDBlock < MIMODrakeSystem
   
   methods
     function obj = SimplePDBlock(r,controller_data,options)
-      typecheck(r,'Atlas');
+      typecheck(r,'Biped');
       if nargin > 1
         typecheck(controller_data,'SharedDataHandle');
       end

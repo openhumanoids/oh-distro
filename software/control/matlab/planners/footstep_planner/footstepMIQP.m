@@ -150,7 +150,7 @@ for j = 3:nsteps
   Q(x_ndx(:,j), x_ndx(:,j-1)) = Q(x_ndx(:,j), x_ndx(:,j-1)) - R{j}' * w_rel * R{j};
   Q(x_ndx(:,j-1), x_ndx(:,j-1)) = Q(x_ndx(:,j-1), x_ndx(:,j-1)) + R{j}' * w_rel * R{j};
 
-  if seed_plan.footsteps(j).body_idx == Footstep.atlas_foot_bodies_idx.right
+  if seed_plan.footsteps(j).body_idx == biped.foot_bodies_idx.right
     nom = diag([1,-1,1,-1]) *nom_step;
   else
     nom = nom_step;
@@ -268,7 +268,7 @@ final_nsteps = min(max_num_steps, max(min_num_steps, final_step_idx));
 plan = plan.slice(1:final_nsteps);
 
 if 0
-  right_foot_lead = plan.footsteps(1).body_idx == Footstep.atlas_foot_bodies_idx.right;
+  right_foot_lead = plan.footsteps(1).body_idx == biped.foot_bodies_idx.right;
   if ~right_foot_lead
     r_ndx = 1:2:nsteps;
     l_ndx = 2:2:nsteps;

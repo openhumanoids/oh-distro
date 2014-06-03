@@ -1,13 +1,13 @@
 <robot name="drc_skeleton" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <xacro:macro name="collision_point" params="group xyz visualize">
-    <collision group="${group}"> 
+    <collision group="${group}">
       <origin rpy="0 0 0" xyz="${xyz}"/>
       <geometry>
         <sphere radius="0"/>
       </geometry>
     </collision>
-    <visual> 
+    <visual>
       <origin rpy="0 0 0" xyz="${xyz}"/>
       <geometry>
         <sphere radius="${visualize*0.01}"/>
@@ -64,6 +64,7 @@
     <!--    <xacro:collision_point group="inner" xyz="0.06 0.055 -0.081119" visualize="1"/>-->
     <!--    <xacro:collision_point group="inner" xyz="0.06 -0.055 -0.081119" visualize="1"/>-->
     </link>
+    <frame name="l_foot_sole" xyz="0.0480 0 -0.081119" rpy="0 0 0" link="l_foot"/>
     <link name="l_hand">
         <inertial>
             <mass value="2.509" />
@@ -183,8 +184,8 @@
                 <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/l_uleg.wrl" scale="1 1 1" />
             </geometry>
         </visual>
-        <xacro:collision_point group="hamstring" xyz="-0.1179 0.02085 -0.18" visualize="1"/>    
-        <xacro:collision_point group="hamstring" xyz="-0.1179 0.02085 -0.08" visualize="1"/> 
+        <xacro:collision_point group="hamstring" xyz="-0.1179 0.02085 -0.18" visualize="1"/>
+        <xacro:collision_point group="hamstring" xyz="-0.1179 0.02085 -0.08" visualize="1"/>
     </link>
     <link name="ltorso">
         <inertial>
@@ -233,7 +234,7 @@
         <xacro:collision_point group="back" xyz="-0.15 0.042 0.065" visualize="1"/>
         <xacro:collision_point group="back" xyz="-0.15 -0.042 0.065" visualize="1"/>
         <xacro:collision_point group="butt" xyz="-0.15 0.075 -0.15" visualize="1"/>
-        <xacro:collision_point group="butt" xyz="-0.15 -0.075 -0.15" visualize="1"/>    
+        <xacro:collision_point group="butt" xyz="-0.15 -0.075 -0.15" visualize="1"/>
     </link>
     <link name="r_clav">
         <inertial>
@@ -283,8 +284,9 @@
     <!--    <xacro:collision_point group="inner" xyz="-0.08 0.055 -0.081119" visualize="1"/>-->
     <!--    <xacro:collision_point group="inner" xyz="-0.08 -0.055 -0.081119" visualize="1"/>-->
     <!--    <xacro:collision_point group="inner" xyz="0.06 0.055 -0.081119" visualize="1"/>-->
-    <!--    <xacro:collision_point group="inner" xyz="0.06 -0.055 -0.081119" visualize="1"/>-->    
+    <!--    <xacro:collision_point group="inner" xyz="0.06 -0.055 -0.081119" visualize="1"/>-->
     </link>
+    <frame name="r_foot_sole" xyz="0.0480 0 -0.081119" rpy="0 0 0" link="r_foot"/>
     <link name="r_hand">
         <inertial>
             <mass value="2.509" />
@@ -404,8 +406,8 @@
                 <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/r_uleg.wrl" scale="1 1 1" />
             </geometry>
         </visual>
-        <xacro:collision_point group="hamstring" xyz="-0.1179 -0.02085 -0.18" visualize="1"/>    
-        <xacro:collision_point group="hamstring" xyz="-0.1179 -0.02085 -0.08" visualize="1"/>    
+        <xacro:collision_point group="hamstring" xyz="-0.1179 -0.02085 -0.18" visualize="1"/>
+        <xacro:collision_point group="hamstring" xyz="-0.1179 -0.02085 -0.08" visualize="1"/>
     </link>
     <!-- with backpack -->
     <link name="utorso">

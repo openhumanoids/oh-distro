@@ -34,7 +34,7 @@ classdef FootstepPlan
       plan.footsteps = obj.footsteps(idx);
       plan.region_order = obj.region_order(idx);
     end
-    
+
     function plan = extend(obj, final_length, n)
       % Extend a footstep plan by replicating its final n footsteps. Useful for
       % generating seeds for later optimization.
@@ -63,7 +63,7 @@ classdef FootstepPlan
         end
       end
     end
-    
+
     function steps = step_matrix(obj, frame_name)
       % Return the footstep plan poses as a [6 x nsteps] matrix
       if nargin < 2
@@ -113,16 +113,19 @@ classdef FootstepPlan
 
     function plan = blank_plan(biped, nsteps, ordered_body_idx, params, safe_regions)
       footsteps = Footstep.empty();
-      
-      frames = struct('orig', CoordinateFrame('orig', 6, 'o', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}),...
-                            'center', CoordinateFrame('center', 6, 'c', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}));
-      offset = biped.foot_contact_offsets.right.center;
-      frames.orig.addTransform(FootstepContactTransform(frames.orig, ...
-                                                            frames.center,...
-                                                            offset));
-      frames.center.addTransform(FootstepContactTransform(frames.center, ...
-                                                            frames.orig,...
-                                                            -offset));
+
+      for f = {'right', 'left'}
+        foot = f{1};
+        frames.(foot) = struct('orig', CoordinateFrame('orig', 6, 'o', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}),...
+                              'center', CoordinateFrame('center', 6, 'c', {'x', 'y', 'z', 'roll', 'pitch', 'yaw'}));
+        T = biped.foot_sole_transforms.(foot);
+        frames.(foot).orig.addTransform(FootstepContactTransform(frames.(foot).orig, ...
+                                                              frames.(foot).center,...
+                                                              T));
+        frames.(foot).center.addTransform(FootstepContactTransform(frames.(foot).center, ...
+                                                              frames.(foot).orig,...
+                                                              inv(T)));
+      end
       for j = 1:nsteps
         pos = nan(6,1);
         id = j;
@@ -132,7 +135,14 @@ classdef FootstepPlan
         terrain_pts = [];
         infeasibility = nan;
         walking_params = [];
-        footsteps(j) = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params, frames);
+        if body_idx == biped.foot_bodies_idx.right
+          fr = frames.right;
+        elseif body_idx == biped.foot_bodies_idx.left
+          fr = frames.left;
+        else
+          error('DRC:FootstepPlan:UnknownBodyIdx', 'Unknown body index');
+        end
+        footsteps(j) = Footstep(biped, pos, id, body_idx, is_in_contact, pos_fixed, terrain_pts, infeasibility, walking_params, fr);
       end
       region_order = nan(1, nsteps);
       plan = FootstepPlan(footsteps, params, safe_regions, region_order);

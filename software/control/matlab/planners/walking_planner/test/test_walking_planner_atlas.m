@@ -1,20 +1,14 @@
-options.floating = true;
-options.dt = 0.001;
-
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
-options.visual = false; % loads faster
-r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = Atlas();
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
-
 
 footstep_request = drc.footstep_plan_request_t();
 footstep_request.utime = 0;
 
-fixed_pt = load(strcat(getenv('DRC_PATH'), '/control/matlab/data/atlas_fp.mat'));
-footstep_request.initial_state = r.getStateFrame().lcmcoder.encode(0, fixed_pt.xstar);
+fixed_pt = r.loadFixedPoint();
+footstep_request.initial_state = r.getStateFrame().lcmcoder.encode(0, fixed_pt);
 
 footstep_request.goal_pos = drc.position_3d_t();
 footstep_request.goal_pos.translation = drc.vector_3d_t();
@@ -71,7 +65,7 @@ plan_msg = plan.toLCM();
 request = drc.walking_plan_request_t();
 request.utime = 0;
 
-request.initial_state = r.getStateFrame().lcmcoder.encode(0, fixed_pt.xstar);
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, fixed_pt);
 request.new_nominal_state = request.initial_state;
 request.use_new_nominal_state = false;
 request.footstep_plan = plan_msg;
@@ -80,7 +74,15 @@ wp = StatelessWalkingPlanner();
 % Compute walking trajectory
 walking_plan = wp.plan_walking(r, request, true);
 lc = lcm.lcm.LCM.getSingleton();
-% lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+
+% disp('Playing back plan at 10X speed');
+% r = r.setTerrain(RigidBodyTerrain());
+% v = r.constructVisualizer();
+% xt = PPTrajectory(spline(walking_plan.ts/10, walking_plan.xtraj));
+% xt = xt.setOutputFrame(r.getStateFrame());
+% v.draw(0, fixed_pt);
+% v.playback(xt);
 
 % Compute walking controller
 walking_plan = wp.plan_walking(r, request, false);

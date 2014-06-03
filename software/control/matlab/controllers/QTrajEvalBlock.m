@@ -10,7 +10,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
   
   methods
     function obj = QTrajEvalBlock(r,controller_data,options)
-      typecheck(r,'Atlas');
+      typecheck(r,'Biped');
       typecheck(controller_data,'SharedDataHandle');
       
       ctrl_data = getData(controller_data);

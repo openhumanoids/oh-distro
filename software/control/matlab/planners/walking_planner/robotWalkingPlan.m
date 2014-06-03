@@ -54,7 +54,7 @@ for i=1:length(ts)
 %     [q(:,i),info] = approximateIK(biped,q(:,i-1),0,[comtraj.eval(t);nan],approx_args{:},options);
     [q(:,i),info] = approximateIKmex(biped.getMexModelPtr,q(:,i-1),qstar,kc_com,approx_args{:},ikoptions.mex_ptr);
     if info
-      full_IK_calls = full_IK_calls + 1
+      full_IK_calls = full_IK_calls + 1;
       q(:,i) = inverseKin(biped,q(:,i-1),qstar,kc_com,approx_args{:},ikoptions);
     end
 
@@ -64,6 +64,10 @@ for i=1:length(ts)
   com = getCOM(biped,q(:,i));
   htraj = [htraj com(3)];
 %   v.draw(t,q(:,i));
+end
+
+if full_IK_calls > 0
+  fprintf(1, 'Called inverseKin due to failure of approximateIK %d times.\n', full_IK_calls);
 end
 qtraj = PPTrajectory(spline(ts,q));
 htraj = PPTrajectory(spline(ts,htraj));
