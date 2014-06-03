@@ -6,7 +6,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     % @param controller_data shared data handle containing ZMP-LQR solution, etc
     % @param options structure for specifying objective weight (w), slack
     % variable limits (slack_limit)
-    typecheck(r,'Atlas');
+    typecheck(r,'Biped');
     typecheck(controller_data,'SharedDataHandle');
     
     if nargin>3
