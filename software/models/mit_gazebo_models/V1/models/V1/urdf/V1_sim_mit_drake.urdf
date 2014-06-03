@@ -62,7 +62,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pelvis.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pelvis.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -71,7 +71,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pelvis.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pelvis.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -87,7 +87,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/wj3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/wj3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -96,7 +96,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/wj3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/wj3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -353,7 +353,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/nj1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/nj1.wrl"/>
       </geometry>
       <material name="gold">
         <color rgba="1 0.67 0 1"/>
@@ -362,7 +362,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/nj1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/nj1.wrl"/>
       </geometry>
     </collision>
   </link>
@@ -376,7 +376,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/nj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/nj2.wrl"/>
       </geometry>
       <material name="gold">
         <color rgba="1 0.67 0 1"/>
@@ -385,7 +385,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/nj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/nj2.wrl"/>
       </geometry>
     </collision>
   </link>
@@ -399,7 +399,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!-- <origin rpy="${origin_rpy}" xyz="${origin_xyz}"/> -->
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/head.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/head.wrl"/>
         <!-- <sphere radius="${radius}"/> -->
       </geometry>
       <material name="White"/>
@@ -407,7 +407,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/head.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/head.wrl"/>
       </geometry>
     </collision>
   </link>
@@ -657,7 +657,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj1_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj1_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -666,7 +666,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj1_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj1_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -682,7 +682,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -691,7 +691,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -707,7 +707,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj3_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj3_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -716,7 +716,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj3_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj3_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -732,7 +732,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -741,7 +741,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -805,7 +805,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj5_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj5_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -814,7 +814,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj5_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj5_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -850,7 +850,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/palm_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -859,7 +859,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/palm_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1102,7 +1102,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf1_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1111,7 +1111,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf1_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1127,7 +1127,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1136,7 +1136,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1152,7 +1152,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1161,7 +1161,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1177,7 +1177,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1186,7 +1186,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1226,7 +1226,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf1.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1235,7 +1235,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf1.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1251,7 +1251,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1260,7 +1260,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1276,7 +1276,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1285,7 +1285,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1301,7 +1301,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1310,7 +1310,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1350,7 +1350,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf1.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1359,7 +1359,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf1.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1375,7 +1375,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1384,7 +1384,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1400,7 +1400,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1409,7 +1409,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1443,7 +1443,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/ssf1_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1452,7 +1452,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/ssf1_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1468,7 +1468,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/ssf2_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1477,7 +1477,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/ssf2_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1493,7 +1493,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1502,7 +1502,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1518,7 +1518,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1527,7 +1527,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1567,7 +1567,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj1_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj1_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1576,7 +1576,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj1_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj1_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1592,7 +1592,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1601,7 +1601,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1617,7 +1617,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj3_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj3_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1626,7 +1626,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj3_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj3_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1642,7 +1642,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1651,7 +1651,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1715,7 +1715,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj5_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj5_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1724,7 +1724,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/aj5_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/aj5_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -1760,7 +1760,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/palm_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -1769,7 +1769,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/palm_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/palm_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2010,7 +2010,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf1_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2019,7 +2019,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf1_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf1_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2035,7 +2035,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2044,7 +2044,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2060,7 +2060,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2069,7 +2069,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2085,7 +2085,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2094,7 +2094,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/tf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/tf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2134,7 +2134,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf1.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2143,7 +2143,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf1.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2159,7 +2159,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2168,7 +2168,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2184,7 +2184,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2193,7 +2193,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2209,7 +2209,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2218,7 +2218,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/pf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/pf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2258,7 +2258,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf1.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2267,7 +2267,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf1.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf1.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2283,7 +2283,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2292,7 +2292,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2308,7 +2308,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2317,7 +2317,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2351,7 +2351,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/ssf1_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2360,7 +2360,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf1_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/ssf1_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2376,7 +2376,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/ssf2_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2385,7 +2385,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/ssf2_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/ssf2_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2401,7 +2401,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2410,7 +2410,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf2_ssf3.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2426,7 +2426,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2435,7 +2435,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/sf3_ssf4.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2475,7 +2475,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj1_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj1_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2484,7 +2484,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj1_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj1_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2500,7 +2500,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2509,7 +2509,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2525,7 +2525,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj3_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj3_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2534,7 +2534,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj3_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj3_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2550,7 +2550,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj4_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj4_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2559,7 +2559,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj4_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj4_Right.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -2595,7 +2595,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj6_Right.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj6_Right.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2651,6 +2651,7 @@
       </geometry>
     </visual>
   </link>
+  <frame name="r_foot_sole" xyz="0.082 0 0.14" rpy="0 -1.5708 0" link="r_foot"/>
   <gazebo reference="r_foot">
     <material>Gazebo/White</material>
   </gazebo>
@@ -2977,7 +2978,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj1_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj1_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -2986,7 +2987,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj1_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj1_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3002,7 +3003,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj2.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3011,7 +3012,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj2.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj2.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3027,7 +3028,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj3_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj3_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3036,7 +3037,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj3_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj3_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3052,7 +3053,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj4_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj4_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3061,7 +3062,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj4_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj4_Left.wrl"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -3097,7 +3098,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://V1/models/V1/meshes/2013_05_16/lj6_Left.wrl"/>
+        <mesh filename="package://mit_drcsim_scripts/models/V1/models/V1/meshes/2013_05_16/lj6_Left.wrl"/>
         <!-- <box size="${width} ${height} ${depth}"/> -->
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -3153,6 +3154,7 @@
       </geometry>
     </visual>
   </link>
+  <frame name="l_foot_sole" xyz="0.082 0 -0.14" rpy="3.1416 1.5708 0" link="l_foot"/>
   <gazebo reference="l_foot">
     <material>Gazebo/White</material>
   </gazebo>
