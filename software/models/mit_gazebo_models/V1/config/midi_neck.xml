@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<midiboard>
+	<message name="PosComs" topic="/joint_state_neck" package="sensor_msgs.msg" msgType="JointState">
+		<field name="name"     type="str"   offset="0" value="LowerNeckExtensor"/>
+		<field name="name"     type="str"   offset="1" value="NeckRotator"/>
+		<field name="name"     type="str"   offset="2" value="UpperNeckExtensor"/>
+		<field name="position" type="float" offset="0" midi="slider1" lowValue="-1.2" highValue="0.0" /> <!-- "LowerNeckExtensor"/>-->
+		<field name="position" type="float" offset="1" midi="knob1" lowValue="1.57" highValue="-1.57" /> <!-- "NeckRotator"/>-->\
+		<field name="position" type="float" offset="2" midi="slider2" lowValue="0.0" highValue="0.6" /> <!-- "UpperNeckExtensor"/>-->
+	</message>	
+</midiboard>

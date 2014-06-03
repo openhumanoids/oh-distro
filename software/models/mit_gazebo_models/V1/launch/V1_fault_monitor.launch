@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="turbos" default="/trunk/laj1
+  							  /left_arm/j2
+  							  /left_arm/j3
+  							  /left_arm/j4
+  							  /left_arm/j5
+  							  /trunk/raj1
+  							  /right_arm/j2
+  							  /right_arm/j3
+  							  /right_arm/j4
+  							  /right_arm/j5
+  							  /pelvis/lj1
+  							  /left_leg/j2
+  							  /left_leg/j3
+  							  /left_leg/j4
+  							  /left_leg/j5
+  							  /left_leg/j6
+  							  /pelvis/rj1
+  							  /right_leg/j2
+  							  /right_leg/j3
+  							  /right_leg/j4
+  							  /right_leg/j5
+  							  /right_leg/j6
+  							  /neck/j1
+  							  /neck/j2
+  							  /neck/j3"/>
+  <node name="FaultMonitor" pkg="turbodriver_api" type="fault_monitor.py" args="--nodes $(arg turbos) --" output="screen"/>
+</launch>

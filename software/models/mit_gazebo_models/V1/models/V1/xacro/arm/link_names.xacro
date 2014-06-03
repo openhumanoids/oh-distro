@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm/link_names">
+  <!--
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+
+  <xacro:property name="AJ1_Proximal_Link" value="${arm_root_link}" />
+  <xacro:property name="AJ1_Distal_Link" value="/v1/${prefix}ShoulderExtensor" />
+
+  <xacro:property name="AJ2_Proximal_Link" value="/v1/${prefix}ShoulderExtensor" />
+  <xacro:property name="AJ2_Distal_Link" value="/v1/${prefix}ShoulderAdductor" />
+
+  <xacro:property name="AJ3_Proximal_Link" value="/v1/${prefix}ShoulderAdductor" />
+  <xacro:property name="AJ3_Distal_Link" value="/v1/${prefix}ShoulderRotator" />
+
+  <xacro:property name="AJ4_Proximal_Link" value="/v1/${prefix}ShoulderRotator" />
+  <xacro:property name="AJ4_Distal_Link" value="/v1/${prefix}ElbowExtensor" />
+
+  <xacro:property name="AJ5_Proximal_Link" value="/v1/${prefix}ElbowExtensor" />
+  <xacro:property name="AJ5_Distal_Link" value="/v1/${prefix}Forearm" />
+
+  <xacro:property name="AJ6_Proximal_Link" value="/v1/${prefix}Forearm" />
+  <xacro:property name="AJ6_Distal_Link" value="/v1/${prefix}WristYoke" />
+
+  <xacro:property name="AJ7_Proximal_Link" value="/v1/${prefix}WristYoke" />
+  <xacro:property name="AJ7_Distal_Link" value="/v1/${prefix}Palm" />
+
+</robot>

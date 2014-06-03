@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="ui_file" default="$(find V1)/ui/arm.ui 
+                               $(find V1)/ui/turbodriver.ui 
+                               $(find V1)/ui/turbodriver.ui 
+                               $(find V1)/ui/turbodriver.ui 
+                               $(find V1)/ui/turbodriver.ui
+                               $(find V1)/ui/leonidas.ui" />
+  <arg name="coeff5" default="$(find drc_coeffs)/V1A/LeftArm/v1_aj5_03.xml"/>
+  <arg name="j5_low_lim"  default="-2.36"/>
+  <arg name="j5_high_lim" default="2.36"/>
+  <arg name="tabnames" default="LeftArm LAJ1 LAJ2 LAJ3 LAJ4 LAJ5"/>
+  <arg name="params" value="'j1NodePath=/trunk/laj1
+                             j2NodePath=/left_arm/j2
+                             j3NodePath=/left_arm/j3
+                             j4NodePath=/left_arm/j4
+                             j5NodePath=/left_arm/j5
+                             j6NodePath=/left_arm/forearm_driver1/wrist_right
+                             j7NodePath=/left_arm/forearm_driver1/wrist_left
+                             side=Left
+                             limb=LeftArm
+                             channel=left_arm
+                             node=j5
+                             coeff=$(arg coeff5)'
+                            'nodepath=/trunk/laj1'
+                            'nodepath=/left_arm/j2'
+                            'nodepath=/left_arm/j3'
+                            'nodepath=/left_arm/j4'
+                            'nodepath=/left_arm/j5 channel=left_arm node=j5 coeff=$(arg coeff5) poscom_low_lim=$(arg j5_low_lim) poscom_high_lim=$(arg j5_high_lim)'"/>
+  <arg name="title" default="'Left Arm'"/>
+  <arg name="position" default="10,10"/>
+  <node name="left_arm_joints" pkg="ui_builder" type="ui_builder.py" args="-u $(arg ui_file) 
+                                      --tabnames $(arg tabnames) 
+                                      -t $(arg title) 
+                                      --position $(arg position) 
+                                      --parameters $(arg params) 
+                                      --" output="screen"/>
+</launch>

@@ -1,0 +1,527 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/leg">
+  <!--
+        Reference for kinematic and dynamic parameters comes from:
+
+            http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:include filename="$(find V1)/models/V1/xacro/leg/joint_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/leg/link_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/leg/joint_limits.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/leg/dh_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/leg/mass_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/camboard.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/hokuyo.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/hw_sensors.xacro"/>
+
+  <!-- Link properties. -->
+  <xacro:property name="LJ1_Link_Width" value="0.149"/>
+  <xacro:property name="LJ1_Link_Height" value="0.185"/>
+  <xacro:property name="LJ1_Link_Length" value="0.229"/>
+  <!-- The following were taken from Christopher McQuin's e-mail on 07/07/2013-->
+  <xacro:property name="LJ1_Link_Origin_X" value="1.3078570e-03"/>
+  <xacro:property name="LJ1_Link_Origin_Y" value="2.1764163e-02"/>
+  <xacro:property name="LJ1_Link_Origin_Z" value="3.8670367e-02"/>
+  <!-- <xacro:property name="LJ1_Link_Origin_X" value="-0.0083"/>
+  <xacro:property name="LJ1_Link_Origin_Y" value="0.028"/>
+  <xacro:property name="LJ1_Link_Origin_Z" value="-0.044"/> -->
+
+  <xacro:property name="LJ2_Link_Width" value="0.131"/>
+  <xacro:property name="LJ2_Link_Height" value="0.185"/>
+  <xacro:property name="LJ2_Link_Length" value="0.123"/>
+  <!-- The following were taken from Christopher McQuin's e-mail on 07/07/2013-->
+  <xacro:property name="LJ2_Link_Origin_X" value="2.4260044e-02"/>
+  <xacro:property name="LJ2_Link_Origin_Y" value="1.9261751e-02"/>
+  <xacro:property name="LJ2_Link_Origin_Z" value="-1.8458616e-03"/>
+  <!-- <xacro:property name="LJ2_Link_Origin_X" value="0.0033"/>
+  <xacro:property name="LJ2_Link_Origin_Y" value="0.041"/> -->
+
+  <xacro:property name="LJ3_Link_Width" value="0.604"/>
+  <xacro:property name="LJ3_Link_Height" value="0.263"/>
+  <xacro:property name="LJ3_Link_Length" value="0.202"/>
+  <!-- The following were taken from Christopher McQuin's e-mail on 07/07/2013-->
+  <xacro:property name="LJ3_Link_Origin_X" value="2.5533364e-01"/>
+  <!-- <xacro:property name="LJ3_Link_Origin_X" value="2.0533364e-01"/> -->
+  <xacro:property name="LJ3_Link_Origin_Y" value="-1.6460667e-02"/>
+  <xacro:property name="LJ3_Link_Origin_Z" value="-.035"/>
+  <!-- <xacro:property name="LJ3_Link_Origin_Z" value="-9.3894600e-02"/> -->
+
+  <!-- <xacro:property name="LJ3_Link_Origin_X" value="0.192"/>
+  <xacro:property name="LJ3_Link_Origin_Y" value="-0.015"/>
+  <xacro:property name="LJ3_Link_Origin_Z" value="-0.069"/> -->
+
+  <xacro:property name="LJ4_Link_Box_Width" value="0.414"/>
+  <xacro:property name="LJ4_Link_Box_Height" value="0.192"/>
+  <xacro:property name="LJ4_Link_Box_Length" value="0.197"/>
+
+  <!-- The following were taken from Christopher McQuin's e-mail on 07/07/2013-->
+  <xacro:property name="LJ4_Link_Box_Origin_X" value="1.2342688e-01"/>
+  <!-- <xacro:property name="LJ4_Link_Box_Origin_X" value="1.5342688e-01"/> -->
+  <xacro:property name="LJ4_Link_Box_Origin_Y" value="-8.7741035e-03"/>
+  <xacro:property name="LJ4_Link_Box_Origin_Z" value="6.6140930e-03"/>
+  <!-- <xacro:property name="LJ4_Link_Box_Origin_X" value="0.177"/>
+  <xacro:property name="LJ4_Link_Box_Origin_Y" value="-0.0067"/>
+  <xacro:property name="LJ4_Link_Box_Origin_Z" value="0.0081"/> -->
+
+  <!-- <xacro:property name="LJ4_Link_Cylinder_Radius" value="0.037"/>
+  <xacro:property name="LJ4_Link_Cylinder_Length" value="0.123"/>
+  <xacro:property name="LJ4_Link_Cylinder_Origin_X" value="0.142"/>
+  <xacro:property name="LJ4_Link_Cylinder_Origin_Y" value="-0.015"/>
+  <xacro:property name="LJ4_Link_Cylinder_Origin_Z" value="0.042"/> -->
+
+  <xacro:property name="LJ5_Link_Width" value="0.033"/>
+  <xacro:property name="LJ5_Link_Height" value="0.076"/>
+  <xacro:property name="LJ5_Link_Length" value="0.025"/>
+  <!-- The following were taken from Christopher McQuin's e-mail on 07/07/2013-->
+  <xacro:property name="LJ5_Link_Box_Origin_X" value="5.7963439e-03"/>
+  <xacro:property name="LJ5_Link_Box_Origin_Y" value="2.0433211e-03"/>
+  <xacro:property name="LJ5_Link_Box_Origin_Z" value="9.0424431e-05"/>
+  <!-- <xacro:property name="LJ5_Link_Box_Origin_X" value="0.006"/>
+  <xacro:property name="LJ5_Link_Box_Origin_Y" value="-0.004"/>
+  <xacro:property name="LJ5_Link_Box_Origin_Z" value="0"/> -->
+
+  <!-- These values were used when the foot is split into segments-->
+  <!-- <xacro:property name="LJ6_Link_Width" value="0.082"/>
+  <xacro:property name="LJ6_Link_Height" value="0.058"/>
+  <xacro:property name="LJ6_Link_Length" value="0.100"/> -->
+  <xacro:property name="LJ6_Link_Width" value="0.082"/>
+  <xacro:property name="LJ6_Link_Height" value="0.128"/>
+  <xacro:property name="LJ6_Link_Length" value="0.300"/>
+  <!-- The following were taken from Christopher McQuin's e-mail on 07/07/2013-->
+  <xacro:property name="LJ6_Link_Box_Origin_X" value="4.8263578e-02"/>
+  <xacro:property name="LJ6_Link_Box_Origin_Y" value="-3.1591183e-05"/>
+  <xacro:property name="LJ6_Link_Box_Origin_Z" value="7.7849126e-02"/>
+  <!-- <xacro:property name="LJ6_Link_Box_Origin_X" value="0.018"/>
+  <xacro:property name="LJ6_Link_Box_Origin_Y" value="0"/>
+  <xacro:property name="LJ6_Link_Box_Origin_Z" value="0"/> -->
+
+  <!-- <xacro:property name="Foot_Segment_Width" value="0.075" />
+  <xacro:property name="Foot_Segment_Height" value="0.04" />
+  <xacro:property name="Foot_Segment_Depth" value="0.125" />
+
+  <xacro:property name="Foot_Segment_Mass" value="0.4" />
+  <xacro:property name="Foot_Segment_Origin_X" value="0.05" />
+
+  <xacro:property name="Foot_Segment1_Origin_X" value="${Foot_Segment_Origin_X}" />
+  <xacro:property name="Foot_Segment1_Origin_Y" value="-0.0375" />
+  <xacro:property name="Foot_Segment1_Origin_Z" value="0.125" />
+
+  <xacro:property name="Foot_Segment2_Origin_X" value="${Foot_Segment_Origin_X}" />
+  <xacro:property name="Foot_Segment2_Origin_Y" value="0.0375" />
+  <xacro:property name="Foot_Segment2_Origin_Z" value="0.125" />
+
+  <xacro:property name="Foot_Segment3_Origin_X" value="${Foot_Segment_Origin_X}" />
+  <xacro:property name="Foot_Segment3_Origin_Y" value="0" />
+  <xacro:property name="Foot_Segment3_Origin_Z" value="0.0613" /> -->
+
+<!--   <xacro:property name="Foot_Segment4_Origin_X" value="0.1192" />
+  <xacro:property name="Foot_Segment4_Origin_Y" value="0.0375" />
+  <xacro:property name="Foot_Segment4_Origin_Z" value="-0.125" /> -->
+
+  <!-- <xacro:property name="Foot_Segment5_Origin_X" value="${Foot_Segment_Origin_X}" />
+  <xacro:property name="Foot_Segment5_Origin_Y" value="0.0375" />
+  <xacro:property name="Foot_Segment5_Origin_Z" value="0.0050" />
+
+  <xacro:property name="Foot_Segment6_Origin_X" value="${Foot_Segment_Origin_X}" />
+  <xacro:property name="Foot_Segment6_Origin_Y" value="-0.0375" />
+  <xacro:property name="Foot_Segment6_Origin_Z" value="0.0050" /> -->
+
+  <xacro:macro name="make_leg_links" params="prefix reflect leg_root_link">
+    <!-- LINKS -->
+    <xacro:box_link name="${LJ1_Distal_Link}"
+                    width="${LJ1_Link_Width}" height="${LJ1_Link_Height}" depth="${LJ1_Link_Length}" mass="${LJ1_Link_Mass}"
+                    origin_xyz="${LJ1_Link_Origin_X} ${LJ1_Link_Origin_Y} ${reflect * LJ1_Link_Origin_Z}" origin_rpy="0 0 0"
+                    visual_mesh="${mesh_root}/lj1_${prefix}.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/lj1_${prefix}.stl"/>
+
+    <xacro:box_link name="${LJ2_Distal_Link}"
+                    width="${LJ2_Link_Width}" height="${LJ2_Link_Height}" depth="${LJ2_Link_Length}" mass="${LJ2_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${LJ2_Link_Origin_X} ${LJ2_Link_Origin_Y} ${LJ2_Link_Origin_Z}"
+                    visual_mesh="${mesh_root}/lj2.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/lj2.stl"/>
+
+    <xacro:box_link name="${LJ3_Distal_Link}"
+                    width="${LJ3_Link_Width}" height="${LJ3_Link_Height}" depth="${LJ3_Link_Length}" mass="${LJ3_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${LJ3_Link_Origin_X} ${LJ3_Link_Origin_Y} ${reflect * LJ3_Link_Origin_Z}"
+                    visual_mesh="${mesh_root}/lj3_${prefix}.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/lj3_${prefix}.stl"/>
+
+    <xacro:box_link name="${LJ4_Distal_Link_Box}"
+                    width="${LJ4_Link_Box_Width}" height="${LJ4_Link_Box_Height}" depth="${LJ4_Link_Box_Length}" mass="${LJ4_Link_Box_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${LJ4_Link_Box_Origin_X} ${LJ4_Link_Box_Origin_Y} ${reflect * LJ4_Link_Box_Origin_Z}"
+                    visual_mesh="${mesh_root}/lj4_${prefix}.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/lj4_${prefix}.stl"/>
+
+    <!-- <xacro:cylinder_link_no_mesh name="${LJ4_Distal_Link_Cylinder1}"
+                                 radius="${LJ4_Link_Cylinder_Radius}" length="${LJ4_Link_Cylinder_Length}" mass="${LJ4_Link_Cylinder_Mass}"
+                                 origin_xyz="${LJ4_Link_Cylinder_Origin_X} ${LJ4_Link_Cylinder_Origin_Y} ${LJ4_Link_Cylinder_Origin_Z}"
+                                 origin_rpy="0 ${pi_2} 0"/>
+
+    <xacro:cylinder_link_no_mesh name="${LJ4_Distal_Link_Cylinder2}"
+                                 radius="${LJ4_Link_Cylinder_Radius}" length="${LJ4_Link_Cylinder_Length}" mass="${LJ4_Link_Cylinder_Mass}"
+                                 origin_xyz="${LJ4_Link_Cylinder_Origin_X} ${LJ4_Link_Cylinder_Origin_Y} ${-1 * LJ4_Link_Cylinder_Origin_Z}"
+                                 origin_rpy="0 ${pi_2} 0"/> -->
+
+    <xacro:box_link_no_mesh name="${LJ5_Distal_Link}"
+                    width="${LJ5_Link_Width}" height="${LJ5_Link_Height}" depth="${LJ5_Link_Length}" mass="${LJ5_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${LJ5_Link_Box_Origin_X} ${LJ5_Link_Box_Origin_Y} ${LJ5_Link_Box_Origin_Z}"/>
+
+    <xacro:box_link_primitive_collision name="${LJ6_Distal_Link}"
+                    width="${LJ6_Link_Width}" height="${LJ6_Link_Height}" depth="${LJ6_Link_Length}" mass="${LJ6_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${LJ6_Link_Box_Origin_X} ${LJ6_Link_Box_Origin_Y} ${reflect * LJ6_Link_Box_Origin_Z}"
+                    visual_mesh="${mesh_root}/lj6_${prefix}.stl"
+                    material="White"/>
+
+    <!-- From Atlas URDF -->
+    <gazebo reference="${LJ6_Distal_Link}">
+      <kp>100000.0</kp>
+      <kd>1000.0</kd>
+      <mu1>1.5</mu1>
+      <mu2>1.5</mu2>
+      <fdir1>0 0 1</fdir1>
+      <maxVel>1.0</maxVel>
+      <minDepth>0.00</minDepth>
+    </gazebo>
+
+    <!-- <xacro:box_link_no_mesh name="v1/${prefix}_Foot_Segment1"
+                    width="${Foot_Segment_Width}" height="${Foot_Segment_Height}" depth="${Foot_Segment_Depth}" mass="${Foot_Segment_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${Foot_Segment1_Origin_X} ${reflect * Foot_Segment1_Origin_Y} ${reflect * Foot_Segment1_Origin_Z}"/>
+
+    <xacro:box_link_no_mesh name="v1/${prefix}_Foot_Segment2"
+                    width="${Foot_Segment_Width}" height="${Foot_Segment_Height}" depth="${Foot_Segment_Depth}" mass="${Foot_Segment_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${Foot_Segment2_Origin_X} ${reflect * Foot_Segment2_Origin_Y} ${reflect * Foot_Segment2_Origin_Z}"/>
+
+    <xacro:box_link_no_mesh name="v1/${prefix}_Foot_Segment3"
+                    width="${Foot_Segment_Width}" height="${Foot_Segment_Height}" depth="${Foot_Segment_Depth}" mass="${Foot_Segment_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${Foot_Segment3_Origin_X} ${reflect * Foot_Segment3_Origin_Y} ${reflect * Foot_Segment3_Origin_Z}"/> -->
+
+<!--     <xacro:box_link_no_mesh name="v1/${prefix}_Foot_Segment4"
+                    width="${Foot_Segment_Width}" height="${Foot_Segment_Height}" depth="${Foot_Segment_Depth}" mass="${Foot_Segment_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${Foot_Segment4_Origin_X} ${reflect * Foot_Segment4_Origin_Y} ${reflect * Foot_Segment4_Origin_Z}"/> -->
+
+    <!-- <xacro:box_link_no_mesh name="v1/${prefix}_Foot_Segment5"
+                    width="${Foot_Segment_Width}" height="${Foot_Segment_Height}" depth="${Foot_Segment_Depth}" mass="${Foot_Segment_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${Foot_Segment5_Origin_X} ${reflect * Foot_Segment5_Origin_Y} ${reflect * Foot_Segment5_Origin_Z}"/>
+
+    <xacro:box_link_no_mesh name="v1/${prefix}_Foot_Segment6"
+                    width="${Foot_Segment_Width}" height="${Foot_Segment_Height}" depth="${Foot_Segment_Depth}" mass="${Foot_Segment_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${Foot_Segment6_Origin_X} ${reflect * Foot_Segment6_Origin_Y} ${reflect * Foot_Segment6_Origin_Z}"/> -->
+
+
+
+  </xacro:macro>
+
+  <xacro:macro name="make_leg_joints" params="prefix reflect leg_root_link">
+    <!-- LJ1 -->
+    <xacro:revolute_joint_ex jointName="${LJ1_Joint_Name}"
+                          parent="${LJ1_Proximal_Link}" child="${LJ1_Distal_Link}"
+                          origin_xyz="${LJ1_Origin_X} ${LJ1_Origin_Y} ${LJ1_Origin_Z}"
+                          origin_rpy="${LJ1_Orientation_Roll} ${LJ1_Orientation_Pitch} ${LJ1_Orientation_Yaw}">
+        <limit effort="${LJ1_Torque_Limit}" lower="${LJ1_Lower_Limit}" upper="${LJ1_Upper_Limit}" velocity="${LJ1_Speed_Limit}"/>
+        <controller_gains Kp="15000" Kd="500"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- LJ2 -->
+    <xacro:revolute_joint_ex jointName="${LJ2_Joint_Name}"
+                          parent="${LJ2_Proximal_Link}" child="${LJ2_Distal_Link}"
+                          origin_xyz="${LJ2_Origin_X} ${LJ2_Origin_Y} ${LJ2_Origin_Z}"
+                          origin_rpy="${LJ2_Orientation_Roll} ${LJ2_Orientation_Pitch} ${LJ2_Orientation_Yaw}">
+        <limit effort="${LJ2_Torque_Limit}" lower="${LJ2_Lower_Limit}" upper="${LJ2_Upper_Limit}" velocity="${LJ2_Speed_Limit}"/>
+        <controller_gains Kp="15000" Kd="500"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- LJ3 -->
+    <xacro:revolute_joint_ex jointName="${LJ3_Joint_Name}"
+                          parent="${LJ3_Proximal_Link}" child="${LJ3_Distal_Link}"
+                          origin_xyz="${LJ3_Origin_X} ${LJ3_Origin_Y} ${LJ3_Origin_Z}"
+                          origin_rpy="${LJ3_Orientation_Roll} ${LJ3_Orientation_Pitch} ${LJ3_Orientation_Yaw}">
+        <limit effort="${LJ3_Torque_Limit}" lower="${LJ3_Lower_Limit}" upper="${LJ3_Upper_Limit}" velocity="${LJ3_Speed_Limit}"/>
+        <controller_gains Kp="15000" Kd="500"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- LJ4 -->
+    <xacro:revolute_joint_ex jointName="${LJ4_Joint_Name}"
+                          parent="${LJ4_Proximal_Link}" child="${LJ4_Distal_Link_Box}"
+                          origin_xyz="${LJ4_Origin_X} ${LJ4_Origin_Y} ${LJ4_Origin_Z}"
+                          origin_rpy="${LJ4_Orientation_Roll} ${LJ4_Orientation_Pitch} ${LJ4_Orientation_Yaw}">
+        <limit effort="${LJ4_Torque_Limit}" lower="${LJ4_Lower_Limit}" upper="${LJ4_Upper_Limit}" velocity="${LJ4_Speed_Limit}"/>
+        <controller_gains Kp="15000" Kd="500"/>
+    </xacro:revolute_joint_ex>
+  </xacro:macro>
+
+  <xacro:macro name="make_leg_joints_fixed" params="prefix reflect leg_root_link">
+    <!-- LJ1 -->
+    <xacro:fixed_joint jointName="${LJ1_Joint_Name}"
+                          parent="${LJ1_Proximal_Link}" child="${LJ1_Distal_Link}"
+                          origin_xyz="${LJ1_Origin_X} ${LJ1_Origin_Y} ${LJ1_Origin_Z}"
+                          origin_rpy="${LJ1_Orientation_Roll} ${LJ1_Orientation_Pitch} ${LJ1_Orientation_Yaw}">
+        <limit effort="${LJ1_Torque_Limit}" lower="${LJ1_Lower_Limit}" upper="${LJ1_Upper_Limit}" velocity="${LJ1_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+    <!-- LJ2 -->
+    <xacro:fixed_joint jointName="${LJ2_Joint_Name}"
+                          parent="${LJ2_Proximal_Link}" child="${LJ2_Distal_Link}"
+                          origin_xyz="${LJ2_Origin_X} ${LJ2_Origin_Y} ${LJ2_Origin_Z}"
+                          origin_rpy="${LJ2_Orientation_Roll} ${LJ2_Orientation_Pitch} ${LJ2_Orientation_Yaw}">
+        <limit effort="${LJ2_Torque_Limit}" lower="${LJ2_Lower_Limit}" upper="${LJ2_Upper_Limit}" velocity="${LJ2_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+    <!-- LJ3 -->
+    <xacro:fixed_joint jointName="${LJ3_Joint_Name}"
+                          parent="${LJ3_Proximal_Link}" child="${LJ3_Distal_Link}"
+                          origin_xyz="${LJ3_Origin_X} ${LJ3_Origin_Y} ${LJ3_Origin_Z}"
+                          origin_rpy="${LJ3_Orientation_Roll} ${LJ3_Orientation_Pitch} ${LJ3_Orientation_Yaw}">
+        <limit effort="${LJ3_Torque_Limit}" lower="${LJ3_Lower_Limit}" upper="${LJ3_Upper_Limit}" velocity="${LJ3_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+    <!-- LJ4 -->
+    <xacro:fixed_joint jointName="${LJ4_Joint_Name}"
+                          parent="${LJ4_Proximal_Link}" child="${LJ4_Distal_Link_Box}"
+                          origin_xyz="${LJ4_Origin_X} ${LJ4_Origin_Y} ${LJ4_Origin_Z}"
+                          origin_rpy="${LJ4_Orientation_Roll} ${LJ4_Orientation_Pitch} ${LJ4_Orientation_Yaw}">
+        <limit effort="${LJ4_Torque_Limit}" lower="${LJ4_Lower_Limit}" upper="${LJ4_Upper_Limit}" velocity="${LJ4_Speed_Limit}"/>
+    </xacro:fixed_joint>
+  </xacro:macro>
+
+  <xacro:macro name="make_ankle_joints" params="prefix reflect leg_root_link">
+    <!--     <xacro:fixed_joint jointName="${prefix}MedialAnkleActuatorOffset"
+                       parent="${LJ4_Distal_Link_Box}" child="${LJ4_Distal_Link_Cylinder1}"
+                       origin_xyz="0 0 0"
+                       origin_rpy="0 0 0"/><controller_gains Kp="15000" Kd="2<controller_gains Kp="15000" Kd="500"/>
+    <xacro:fixed_joint jointName="${prefix}LateralAnkleActuatorOffset"
+                       parent="${LJ4_Distal_Link_Box}" child="${LJ4_Distal_Link_Cylinder2}"
+                       origin_xyz="0 0 0"
+                       origin_rpy="0 0 0"/> -->
+
+    <!-- LJ5 -->
+    <xacro:revolute_joint_ex jointName="${LJ5_Joint_Name}"
+                          parent="${LJ5_Proximal_Link}" child="${LJ5_Distal_Link}"
+                          origin_xyz="${LJ5_Origin_X} ${LJ5_Origin_Y} ${LJ5_Origin_Z}"
+                          origin_rpy="${LJ5_Orientation_Roll} ${LJ5_Orientation_Pitch} ${LJ5_Orientation_Yaw}">
+        <limit effort="${LJ5_Torque_Limit}" lower="${LJ5_Lower_Limit}" upper="${LJ5_Upper_Limit}" velocity="${LJ5_Speed_Limit}"/>
+        <controller_gains Kp="15000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- LJ6 -->
+    <xacro:revolute_joint_ex jointName="${LJ6_Joint_Name}"
+                          parent="${LJ6_Proximal_Link}" child="${LJ6_Distal_Link}"
+                          origin_xyz="${LJ6_Origin_X} ${LJ6_Origin_Y} ${LJ6_Origin_Z}"
+                          origin_rpy="${LJ6_Orientation_Roll} ${LJ6_Orientation_Pitch} ${LJ6_Orientation_Yaw}">
+        <limit effort="${LJ6_Torque_Limit}" lower="${LJ6_Lower_Limit}" upper="${LJ6_Upper_Limit}" velocity="${LJ6_Speed_Limit}"/>
+        <controller_gains Kp="15000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+  </xacro:macro>
+
+  <xacro:macro name="make_ankle_joints_fixed" params="prefix reflect leg_root_link">
+    <!-- LJ5 -->
+    <xacro:fixed_joint jointName="${LJ5_Joint_Name}"
+                       parent="${LJ5_Proximal_Link}" child="${LJ5_Distal_Link}"
+                       origin_xyz="${LJ5_Origin_X} ${LJ5_Origin_Y} ${LJ5_Origin_Z}"
+                       origin_rpy="${LJ5_Orientation_Roll} ${LJ5_Orientation_Pitch} ${LJ5_Orientation_Yaw}">
+    </xacro:fixed_joint>
+
+    <!-- LJ6 -->
+    <xacro:fixed_joint jointName="${LJ6_Joint_Name}"
+                          parent="${LJ6_Proximal_Link}" child="${LJ6_Distal_Link}"
+                          origin_xyz="${LJ6_Origin_X} ${LJ6_Origin_Y} ${LJ6_Origin_Z}"
+                          origin_rpy="${LJ6_Orientation_Roll} ${LJ6_Orientation_Pitch} ${LJ6_Orientation_Yaw}">
+    </xacro:fixed_joint>
+  </xacro:macro>
+
+  <xacro:macro name="make_foot_joints" params="prefix reflect leg_root_link">
+
+    <!-- JOINTS -->
+    <!-- <xacro:fixed_joint jointName="${prefix}FootSegment1Offset"
+                       parent="${LJ6_Distal_Link}" child="v1/${prefix}_Foot_Segment1"
+                       origin_rpy="0 0 0"
+                       origin_xyz="0 0 0"/>
+
+    <xacro:fixed_joint jointName="${prefix}FootSegment2Offset"
+                       parent="${LJ6_Distal_Link}" child="v1/${prefix}_Foot_Segment2"
+                       origin_rpy="0 0 0"
+                       origin_xyz="0 0 0"/>
+
+    <xacro:fixed_joint jointName="${prefix}FootSegment3Offset"
+                       parent="${LJ6_Distal_Link}" child="v1/${prefix}_Foot_Segment3"
+                       origin_rpy="0 0 0"
+                       origin_xyz="0 0 0"/> -->
+<!--
+    <xacro:fixed_joint jointName="${prefix}FootSegment4Offset"
+                       parent="${LJ6_Distal_Link}" child="v1/${prefix}_Foot_Segment4"
+                       origin_rpy="0 0 0"
+                       origin_xyz="0 0 0"/> -->
+
+    <!-- <xacro:fixed_joint jointName="${prefix}FootSegment5Offset"
+                       parent="${LJ6_Distal_Link}" child="v1/${prefix}_Foot_Segment5"
+                       origin_rpy="0 0 0"
+                       origin_xyz="0 0 0"/>
+
+    <xacro:fixed_joint jointName="${prefix}FootSegmen65Offset"
+                       parent="${LJ6_Distal_Link}" child="v1/${prefix}_Foot_Segment6"
+                       origin_rpy="0 0 0"
+                       origin_xyz="0 0 0"/> -->
+  </xacro:macro>
+
+  <xacro:macro name="make_leg" params="prefix reflect leg_root_link">
+    <xacro:make_leg_links prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_leg_joints prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_ankle_joints prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_foot_joints prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+  </xacro:macro>
+
+  <xacro:macro name="make_leg_fixed_ankle" params="prefix reflect leg_root_link">
+    <xacro:make_leg_links prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_leg_joints prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_ankle_joints_fixed prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_foot_joints prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+  </xacro:macro>
+
+  <xacro:macro name="make_leg_fixed_upper_leg" params="prefix reflect leg_root_link">
+    <xacro:make_leg_links prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_leg_joints_fixed prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_ankle_joints prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+    <xacro:make_foot_joints prefix="${prefix}" reflect="${reflect}" leg_root_link="${leg_root_link}" />
+  </xacro:macro>
+
+
+  <!-- Sensors -->
+  <xacro:macro name="v1_leg_sensors" params="prefix reflect">
+    <xacro:hokuyo_sensor sensorName="/v1/${prefix}LegHokuyo"
+                         parentLink="${LJ3_Distal_Link}"
+                         origin_xyz="0.350849 -0.098349 ${reflect * -0.036021}"
+                         origin_rpy="${pi_2} 0 -0.38394"/>
+
+    <xacro:camboard_sensor sensorName="/v1/${prefix}LegCamBoard"
+                       parentLink="${LJ4_Distal_Link_Box}"
+                       origin_xyz="0.344887 0.069118 ${reflect * -0.008500}"
+                       origin_rpy="-${pi_2} 0 1.3"/>
+
+    <xacro:virtual_fixed_frame_offset name="/v1/${prefix}COP"
+                       parentLink="${LJ6_Distal_Link}"
+                       origin_xyz="0.0845 0 0"
+                       origin_rpy="${pi_2 + reflect * -pi_2} ${reflect * -pi_2} 0"/>
+
+    <xacro:virtual_fixed_frame_offset name="/v1/${prefix}Leg6Axis"
+                       parentLink="${LJ6_Distal_Link}"
+                       origin_xyz="0.0551839 0 ${reflect * 0.0291731}"
+                       origin_rpy="${reflect * -pi_2 + 0.15} ${reflect * -0.518666} ${reflect * -1.64601}"/>
+
+    <xacro:virtual_fixed_frame_offset name="/v1/${prefix}LegHermes"
+                       parentLink="${LJ6_Distal_Link}"
+                       origin_xyz="0.0845 0 0"
+                       origin_rpy="${pi_2 + reflect * -pi_2} ${reflect * -pi_2} 0"/>
+
+    <xacro:virtual_fixed_frame_offset name="/v1/${prefix}MPU6000"
+                       parentLink="${LJ6_Distal_Link}"
+                       origin_xyz="0.0471 ${reflect * 0.00722} ${reflect * 0.0843}"
+                       origin_rpy="0 ${reflect * pi_2 - 0.13} ${pi_2 + reflect * pi_2}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_hw_sensors" params="prefix cop_node hermes_node atidaq_node mpu6000_node">
+    <xacro:cop_sensor sensorName="/v1/${prefix}ValkyrieCOP" nodePath="${cop_node}" type="ValkyrieCOPSensor"/>
+<!--     <xacro:cop_sensor sensorName="/v1/${prefix}LegHermes" nodePath="${hermes_node}" type="COPSensorHermes"/>
+    <xacro:cop_sensor sensorName="/v1/${prefix}Leg6Axis" nodePath="${atidaq_node}" type="COPSensorAti"/> -->
+    <xacro:imu_sensor sensorName="/v1/${prefix}MPU6000" nodePath="${mpu6000_node}" type="IMUSensorMPU6000"/>
+  </xacro:macro>
+
+  <!-- Actuators -->
+  <xacro:macro name="v1_leg_actuators" params="name1 type1 name2 type2 name3 type3 name4 type4 name5 type5 name6 type6">
+    <actuator name="${name1}" type="${type1}"/>
+    <actuator name="${name2}" type="${type2}"/>
+    <actuator name="${name3}" type="${type3}"/>
+    <actuator name="${name4}" type="${type4}"/>
+    <actuator name="${name5}" type="${type5}"/>
+    <actuator name="${name6}" type="${type6}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_leg_actuators_no_ankle" params="name1 type1 name2 type2 name3 type3 name4 type4">
+    <actuator name="${name1}" type="${type1}"/>
+    <actuator name="${name2}" type="${type2}"/>
+    <actuator name="${name3}" type="${type3}"/>
+    <actuator name="${name4}" type="${type4}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_ankle_actuators" params="name5 type5 name6 type6">
+    <actuator name="${name5}" type="${type5}"/>
+    <actuator name="${name6}" type="${type6}"/>
+  </xacro:macro>
+
+  <!-- Transmissions -->
+  <!-- Note that the transmission requires the convention of [roll, pitch] and [inner_shin_motor, outer_shin_motor] -->
+  <xacro:macro name="v1_leg_transmissions" params="prefix reflect actuator1 actuator2 actuator3 actuator4 actuator5 actuator6">
+    <xacro:simple_transmission jointName="${LJ1_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ2_Joint_Name}" actuatorName="${actuator2}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ3_Joint_Name}" actuatorName="${actuator3}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ4_Joint_Name}" actuatorName="${actuator4}" reduction="1" offset="0"/>
+    <xacro:pushrod_transmission tranName="${prefix}_Ankle" namespace="v1_ankle"
+                                joint1="${LJ5_Joint_Name}" joint2="${LJ6_Joint_Name}"
+                                actuator1="${actuator5}"   actuator2="${actuator6}"
+                                reflect="${reflect}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_leg_transmissions_simple" params="prefix actuator1 actuator2 actuator3 actuator4 actuator5 actuator6">
+    <xacro:simple_transmission jointName="${LJ1_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ2_Joint_Name}" actuatorName="${actuator2}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ3_Joint_Name}" actuatorName="${actuator3}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ4_Joint_Name}" actuatorName="${actuator4}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ5_Joint_Name}" actuatorName="${actuator5}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ6_Joint_Name}" actuatorName="${actuator6}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_upper_leg_transmissions" params="prefix actuator1 actuator2 actuator3 actuator4">
+    <xacro:simple_transmission jointName="${LJ1_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ2_Joint_Name}" actuatorName="${actuator2}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ3_Joint_Name}" actuatorName="${actuator3}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ4_Joint_Name}" actuatorName="${actuator4}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_ankle_transmissions" params="prefix reflect actuator5 actuator6">
+    <xacro:pushrod_transmission tranName="${prefix}_Ankle" namespace="v1_ankle"
+                                joint1="${LJ5_Joint_Name}" joint2="${LJ6_Joint_Name}"
+                                actuator1="${actuator5}"   actuator2="${actuator6}"
+                                reflect="${reflect}" />
+  </xacro:macro>
+
+  <xacro:macro name="v1_ankle_transmissions_simple" params="prefix actuator5 actuator6">
+    <xacro:simple_transmission jointName="${LJ5_Joint_Name}" actuatorName="${actuator5}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${LJ6_Joint_Name}" actuatorName="${actuator6}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <!-- Modes -->
+  <xacro:macro name="v1_leg_modes" params="prefix actuator1 actuator2 actuator3 actuator4 actuator5 actuator6">
+    <xacro:v1_modes jointName="${LJ1_Joint_Name}" actuatorName="${actuator1}"/>
+    <xacro:v1_modes jointName="${LJ2_Joint_Name}" actuatorName="${actuator2}"/>
+    <xacro:v1_modes jointName="${LJ3_Joint_Name}" actuatorName="${actuator3}"/>
+    <xacro:v1_modes jointName="${LJ4_Joint_Name}" actuatorName="${actuator4}"/>
+    <xacro:v1_modes jointName="${LJ5_Joint_Name}" actuatorName="${actuator5}"/>
+    <xacro:v1_modes jointName="${LJ6_Joint_Name}" actuatorName="${actuator6}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_leg_modes_no_ankle" params="prefix actuator1 actuator2 actuator3 actuator4">
+    <xacro:v1_modes jointName="${LJ1_Joint_Name}" actuatorName="${actuator1}"/>
+    <xacro:v1_modes jointName="${LJ2_Joint_Name}" actuatorName="${actuator2}"/>
+    <xacro:v1_modes jointName="${LJ3_Joint_Name}" actuatorName="${actuator3}"/>
+    <xacro:v1_modes jointName="${LJ4_Joint_Name}" actuatorName="${actuator4}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_ankle_modes" params="prefix actuator5 actuator6">
+    <xacro:v1_modes jointName="${LJ5_Joint_Name}" actuatorName="${actuator5}"/>
+    <xacro:v1_modes jointName="${LJ6_Joint_Name}" actuatorName="${actuator6}"/>
+  </xacro:macro>
+
+</robot>

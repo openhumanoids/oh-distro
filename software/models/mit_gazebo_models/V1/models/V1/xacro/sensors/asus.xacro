@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/asus">
+  <!-- 
+  ASUS Xtion PRO LIVE
+    Specs from:
+    http://www.asus.com/Multimedia/Xtion_PRO_LIVE/#specifications
+  -->
+
+  <xacro:property name="AsusWidth" value="0.018"/>
+  <xacro:property name="AsusHeight" value="0.035"/>
+  <xacro:property name="AsusDepth" value="0.05"/>
+
+  <xacro:property name="AsusMass" value="0.25"/>
+
+  <xacro:property name="AsusImageWidth" value="640"/>
+  <xacro:property name="AsusImageHeight" value="480"/>
+  <xacro:property name="AsusFieldOfView" value="1.01229097"/>
+  <xacro:property name="AsusMinDistance" value="0.2"/>
+  <xacro:property name="AsusMaxDistance" value="5"/>
+  <xacro:property name="AsusFrameRate" value="30"/>
+  
+  <xacro:macro name="asus_sensor" params="sensorName parentLink origin_xyz origin_rpy">
+    <xacro:virtual_link name="${sensorName}_Frame" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="0 0 0"/>
+
+    <gazebo reference="${sensorName}_Frame">
+      <sensor name="asus/ir" type="depth">
+        <camera>
+          <image>
+            <width>${AsusImageWidth}</width>
+            <height>${AsusImageHeight}</height>
+            <format>R8G8B8</format>
+          </image>
+          <horizontal_fov>${AsusFieldOfView}</horizontal_fov>
+          <clip>
+            <near>${AsusMinDistance}</near>
+            <far>${AsusMaxDistance}</far>
+          </clip>
+        </camera>
+        <update_rate>${AsusFrameRate}</update_rate>
+        <plugin filename="libAsusXtionPluginRos.so" name="${sensorName}_Controller">
+          <updateRate>${AsusFrameRate}</updateRate>
+          <cameraName>${sensorName}</cameraName>
+          <imageTopicName>rgb/image_raw</imageTopicName>
+          <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+          <depthImageTopicName>depth/image_raw</depthImageTopicName>
+          <depthCameraInfoTopicName>depth/camera_info</depthCameraInfoTopicName>
+          <pointCloudTopicName>depth/points</pointCloudTopicName>
+          <frameName>${sensorName}IR_Frame</frameName>
+          <pointCloudCutoff>0.2</pointCloudCutoff>
+          <hack_baseline>0.2</hack_baseline>
+        </plugin>
+      </sensor>
+    </gazebo>
+
+    <xacro:fixed_joint jointName="${sensorName}_Offset"
+                       parent="${parentLink}" child="${sensorName}_Frame"
+                       origin_rpy="${origin_rpy}"
+                       origin_xyz="${origin_xyz}"/>
+
+    <xacro:virtual_link name="${sensorName}IR_Frame"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 0 0"/>
+
+    <xacro:fixed_joint jointName="${sensorName}IR_Offset"
+                       parent="${sensorName}_Frame" child="${sensorName}IR_Frame"
+                       origin_rpy="-${pi_2} 0 -${pi_2}"
+                       origin_xyz="0 0 0"/>
+  </xacro:macro>
+</robot>

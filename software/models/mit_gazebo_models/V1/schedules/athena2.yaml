@@ -1,0 +1,90 @@
+#- {name: ActualHalls, offset: 4, read: true, type: uint16_t}
+- {name: index/ActualDuty, offset: 22, read: true, type: int16_t}
+- {name: index/Aps1_Raw, offset: 6, read: true, type: int16_t}
+- {name: index/Aps2_Raw, offset: 7, read: true, type: int16_t}
+#- {name: index/APSOffset, offset: 131, read: false, type: int16_t}
+- {name: index/CalcDuty, offset: 20, read: true, type: float}
+- {name: index/Controlmode, offset: 159, read: false, type: int16_t}
+#- {name: index/currentPosRad, offset: 142, read: false, type: float}
+#- {name: index/Des_APSRemap, offset: 136, read: true, type: float} #
+#- {name: index/DesiredPos, offset: 132, read: false, type: int16_t}    # !!!!!!!
+- {name: index/desiredPosRad, offset: 162, read: false, type: float}
+#- {name: index/elecOffset, offset: 162, read: false, type: int16_t}
+- {name: index/MotCom, offset: 160, read: false, type: float}
+#- {name: index/MotEn, offset: 128, read: false, type: int16_t, api: forearm_api, apitype: CtrlReg}
+- {name: index/MotEn, offset: 158, read: false, type: uint16_t} ##
+- {name: index/Mot_tempC, offset: 10, read: true, type: int16_t}
+#- {name: index/NegPosLimit, offset: 133, read: false, type: int16_t}
+#- {name: index/Pos_dutylimit, offset: 146, read: false, type: uint16_t}
+#- {name: index/PosKD, offset: 142, read: false, type: float}
+#- {name: index/PosKP, offset: 138, read: false, type: float}
+#- {name: index/PosPosLimit, offset: 134, read: false, type: int16_t}
+- {name: middle/ActualDuty, offset: 112, read: true, type: int16_t}
+- {name: middle/Aps1_Raw, offset: 96, read: true, type: int16_t}
+- {name: middle/Aps2_Raw, offset: 97, read: true, type: int16_t}
+#- {name: middle/APSOffset, offset: 215, read: false, type: int16_t}
+- {name: middle/CalcDuty, offset: 110, read: true, type: float}
+- {name: middle/Controlmode, offset: 177, read: false, type: int16_t}
+#- {name: middle/currentPosRad, offset: 178, read: false, type: float}
+#- {name: middle/DesiredPos, offset: 216, read: false, type: int16_t}
+#- {name: middle/Des_APSRemap, offset: 220, read: true, type: float} ##
+- {name: middle/desiredPosRad, offset: 180, read: false, type: float}
+#- {name: middle/elecOffset, offset: 235, read: false, type: int16_t}
+- {name: middle/MotCom, offset: 178, read: false, type: float}
+#- {name: middle/MotEn, offset: 212, read: false, type: int16_t, api: forearm_api, apitype: CtrlReg}
+- {name: middle/MotEn, offset: 176, read: false, type: uint16_t} ##
+- {name: middle/Mot_tempC, offset: 100, read: true, type: int16_t}
+#- {name: middle/NegPosLimit, offset: 217, read: false, type: int16_t}
+#- {name: middle/Pos_dutylimit, offset: 230, read: false, type: uint16_t}
+#- {name: middle/PosKD, offset: 226, read: false, type: float}
+#- {name: middle/PosKP, offset: 222, read: false, type: float}
+#- {name: middle/PosPosLimit, offset: 218, read: false, type: int16_t}
+- {name: OT_STATUS, offset: 113, read: true, type: uint16_t, api: forearm_api, apitype: Athena2OTSTATUS}
+- {name: estop_reset, offset: 182, read: false, type: uint16_t}
+- {name: pinky/ActualDuty, offset: 52, read: true, type: int16_t}
+- {name: pinky/Aps1_Raw, offset: 36, read: true, type: int16_t}
+- {name: pinky/Aps2_Raw, offset: 37, read: true, type: int16_t}
+#- {name: pinky/APSOffset, offset: 167, read: false, type: int16_t}
+- {name: pinky/CalcDuty, offset: 50, read: true, type: float}
+- {name: pinky/Controlmode, offset: 165, read: false, type: int16_t}
+#- {name: pinky/currentPosRad, offset: 202, read: false, type: float}
+#- {name: pinky/DesiredPos, offset: 168, read: false, type: int16_t}
+#- {name: pinky/Des_APSRemap, offset: 172, read: true, type: float} ##
+- {name: pinky/desiredPosRad, offset: 168, read: false, type: float}
+#- {name: pinky/elecOffset, offset: 187, read: false, type: int16_t}
+- {name: pinky/MotCom, offset: 166, read: false, type: float}
+#- {name: pinky/MotEn, offset: 164, read: false, type: int16_t, api: forearm_api, apitype: CtrlReg}
+- {name: pinky/MotEn, offset: 164, read: false, type: uint16_t} ##
+- {name: pinky/Mot_tempC, offset: 40, read: true, type: int16_t}
+#- {name: pinky/NegPosLimit, offset: 169, read: false, type: int16_t}
+#- {name: pinky/Pos_dutylimit, offset: 182, read: false, type: uint16_t}
+#- {name: pinky/PosKD, offset: 178, read: false, type: float}
+#- {name: pinky/PosKP, offset: 174, read: false, type: float}
+#- {name: pinky/PosPosLimit, offset: 170, read: false, type: int16_t}
+- {name: thumb_distal/ActualDuty, offset: 82, read: true, type: int16_t}
+- {name: thumb_distal/Aps1_Raw, offset: 66, read: true, type: int16_t}
+- {name: thumb_distal/Aps2_Raw, offset: 67, read: true, type: int16_t}
+#- {name: thumb_distal/APSOffset, offset: 191, read: false, type: int16_t}
+- {name: thumb_distal/CalcDuty, offset: 80, read: true, type: float}
+- {name: thumb_distal/Controlmode, offset: 171, read: false, type: int16_t}
+#- {name: thumb_distal/currentPosRad, offset: 226, read: false, type: float}
+#- {name: thumb_distal/DesiredPos, offset: 192, read: false, type: int16_t}
+#- {name: thumb_distal/Des_APSRemap, offset: 196, read: true, type: float} ##
+- {name: thumb_distal/desiredPosRad, offset: 174, read: false, type: float}
+#- {name: thumb_distal/elecOffset, offset: 211, read: false, type: int16_t}
+- {name: thumb_distal/MotCom, offset: 172, read: false, type: float}
+#- {name: thumb_distal/MotEn, offset: 188, read: false, type: int16_t, api: forearm_api, apitype: CtrlReg}
+- {name: thumb_distal/MotEn, offset: 170, read: false, type: uint16_t} ##
+- {name: thumb_distal/Mot_tempC, offset: 70, read: true, type: int16_t}
+#- {name: thumb_distal/NegPosLimit, offset: 193, read: false, type: int16_t}
+#- {name: thumb_distal/Pos_dutylimit, offset: 206, read: false, type: uint16_t}
+#- {name: thumb_distal/PosKD, offset: 202, read: false, type: float}
+#- {name: thumb_distal/PosKP, offset: 198, read: false, type: float}
+#- {name: thumb_distal/PosPosLimit, offset: 194, read: false, type: int16_t}
+#- {name: index/Volt_Meas_Raw, offset: 8, read: true, type: ??????????}
+#- {name: middle/Volt_Meas_Raw, offset: 112, read: true, type: ??????????}
+#- {name: pinky/DesiredPos, offset: 168, read: false  #OLD?, type: ??????????}
+#- {name: pinky/Volt_Meas_Raw, offset: 65, read: true, type: ??????????}
+#- {name: thumb_distal/Volt_Meas_Raw, offset: 88, read: true, type: ??????????}
+
+

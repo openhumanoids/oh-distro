@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<ui>
+	<objects>
+		<object name="joint" rospackage="turbodriver_api" module="TurbodriverJointAPI" member="TurbodriverJoint" args="/left_leg/joint1"/>
+	</objects>
+
+	<widgets>
+		<widget row="0" col="0" name="EnableJoint"   type="PushButton"><object name="joint" method="EnableJoint"/></widget>
+		<widget row="0" col="1" name="DisableJoint"  type="PushButton"><object name="joint" method="DisableJoint"/></widget>
+		<widget row="1" col="0" name="PowerGood"     type="PushButton"><object name="joint" method="SetPowerState" args="1" argTypes="int"/></widget>
+		<widget row="1" col="1" name="PowerBad"      type="PushButton"><object name="joint" method="SetPowerState" args="0" argTypes="int"/>/></widget>
+		<widget row="2" col="0" name="SetSwEstopOn"  type="PushButton"><object name="joint" method="SetSwEstopState" args="1" argTypes="int"/>/></widget>
+		<widget row="2" col="1" name="SetSwEstopOff" type="PushButton"><object name="joint" method="SetSwEstopState" args="0" argTypes="int"/>/></widget>
+
+		<widget row="3" col="0" name="Park"          type="PushButton"><object name="joint" method="SendModeCmd" args="Park" argTypes="str"/></widget>
+		<widget row="4" col="0" name="Reset"         type="PushButton"><object name="joint" method="SendModeCmd" args="Reset" argTypes="str"/></widget>
+		<widget row="5" col="0" name="ReleaseBrake"  type="PushButton"><object name="joint" method="SendModeCmd" args="ReleaseBrake" argTypes="str"/></widget>
+		<widget row="6" col="0" name="MotorMode"     type="PushButton"><object name="joint" method="SendModeCmd" args="MotorMode" argTypes="str"/></widget>
+		<widget row="7" col="0" name="ServoPosition" type="PushButton"><object name="joint" method="SendModeCmd" args="ServoPosition" argTypes="str"/></widget>
+		<widget row="8" col="0" name="ServoTorque"   type="PushButton"><object name="joint" method="SendModeCmd" args="ServoTorque" argTypes="str"/></widget>
+		<widget row="9" col="0" name="Update"        type="PushButton"><object name="joint" method="Update"/></widget>
+
+		<widget row="0" col="2" name="State" type="TableViewDisplay">
+			<header value="value"/>
+			<row label="enableState"><object name="joint" method="getEnableState"/></row>
+			<row label="modeState">  <object name="joint" method="getModeState"/></row>
+			<row label="SwEstop">    <object name="joint" method="getSwEstop"/></row>
+			<row label="PowerGood">  <object name="joint" method="getPowerGood"/></row>
+			<row label="Update"><object name="joint" method="Update"/></row>
+		</widget>
+	</widgets>
+</ui>

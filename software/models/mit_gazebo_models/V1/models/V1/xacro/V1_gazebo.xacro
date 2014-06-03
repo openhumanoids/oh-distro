@@ -1,0 +1,10 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="V1">
+    <!-- ======================================================= -->
+    <!-- DO NOT MODIFY URDF BY HAND! YOU ARE A FOOL IF YOU DO! -->
+    <!-- ======================================================= -->
+    <xacro:property name="mesh_root" value="model://V1/meshes/2013_05_16"/>
+    <xacro:include filename="$(find common_xacro)/xacro/mode_setup_sim.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/common/sim_actuator_types.xacro"/>
+    <xacro:include filename="$(find V1)/models/V1/xacro/V1_sim_base.xacro"/>
+
+</robot>

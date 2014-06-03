@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/pos3d">
+
+   <!-- Gazebo ROS P3D xacro -->
+  <xacro:macro name="v1_absolute_pose" params="parentLink topicName origin_xyz origin_rpy">
+    <gazebo>
+        <plugin name="pos_plugin_ros" filename="libgazebo_ros_p3d.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>1000.0</updateRate>
+            <bodyName>${parentLink}</bodyName>
+            <topicName>${topicName}</topicName>
+            <frameName>world</frameName>
+            <rpyOffset>${origin_rpy}</rpyOffset>
+            <xyzOffset>${origin_xyz}</xyzOffset>
+        </plugin>
+    </gazebo>
+  </xacro:macro>
+</robot>

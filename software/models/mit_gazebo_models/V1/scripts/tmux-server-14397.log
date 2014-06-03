@@ -1,0 +1,632 @@
+server started, pid 14397
+socket path /tmp/tmux-1000/default
+new client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 14 from client 7
+got 6 from client 7
+got 19 from client 7
+got 18 from client 7
+got 0 from client 7
+new term: xterm
+xterm override: XT 
+xterm override: Ms ]52;%p1%s;%p2%s
+xterm override: Cc ]12;%p1%s
+xterm override: Cr ]112
+xterm override: Cs [%p1%d q
+xterm override: Csr [2 q
+new key Oo: 0x1021 (KP/)
+new key Oj: 0x1022 (KP*)
+new key Om: 0x1023 (KP-)
+new key Ow: 0x1024 (KP7)
+new key Ox: 0x1025 (KP8)
+new key Oy: 0x1026 (KP9)
+new key Ok: 0x1027 (KP+)
+new key Ot: 0x1028 (KP4)
+new key Ou: 0x1029 (KP5)
+new key Ov: 0x102a (KP6)
+new key Oq: 0x102b (KP1)
+new key Or: 0x102c (KP2)
+new key Os: 0x102d (KP3)
+new key OM: 0x102e (KPEnter)
+new key Op: 0x102f (KP0)
+new key On: 0x1030 (KP.)
+new key OA: 0x101d (Up)
+new key OB: 0x101e (Down)
+new key OC: 0x1020 (Right)
+new key OD: 0x101f (Left)
+new key [A: 0x101d (Up)
+new key [B: 0x101e (Down)
+new key [C: 0x1020 (Right)
+new key [D: 0x101f (Left)
+new key Oa: 0x501d (C-Up)
+new key Ob: 0x501e (C-Down)
+new key Oc: 0x5020 (C-Right)
+new key Od: 0x501f (C-Left)
+new key [a: 0x901d (S-Up)
+new key [b: 0x901e (S-Down)
+new key [c: 0x9020 (S-Right)
+new key [d: 0x901f (S-Left)
+new key [11^: 0x5002 (C-F1)
+new key [12^: 0x5003 (C-F2)
+new key [13^: 0x5004 (C-F3)
+new key [14^: 0x5005 (C-F4)
+new key [15^: 0x5006 (C-F5)
+new key [17^: 0x5007 (C-F6)
+new key [18^: 0x5008 (C-F7)
+new key [19^: 0x5009 (C-F8)
+new key [20^: 0x500a (C-F9)
+new key [21^: 0x500b (C-F10)
+new key [23^: 0x500c (C-F11)
+new key [24^: 0x500d (C-F12)
+new key [25^: 0x500e (C-F13)
+new key [26^: 0x500f (C-F14)
+new key [28^: 0x5010 (C-F15)
+new key [29^: 0x5011 (C-F16)
+new key [31^: 0x5012 (C-F17)
+new key [32^: 0x5013 (C-F18)
+new key [33^: 0x5014 (C-F19)
+new key [34^: 0x5015 (C-F20)
+new key [2^: 0x5016 (C-IC)
+new key [3^: 0x5017 (C-DC)
+new key [7^: 0x5018 (C-Home)
+new key [8^: 0x5019 (C-End)
+new key [6^: 0x501a (C-NPage)
+new key [5^: 0x501b (C-PPage)
+new key [11$: 0x9002 (S-F1)
+new key [12$: 0x9003 (S-F2)
+new key [13$: 0x9004 (S-F3)
+new key [14$: 0x9005 (S-F4)
+new key [15$: 0x9006 (S-F5)
+new key [17$: 0x9007 (S-F6)
+new key [18$: 0x9008 (S-F7)
+new key [19$: 0x9009 (S-F8)
+new key [20$: 0x900a (S-F9)
+new key [21$: 0x900b (S-F10)
+new key [23$: 0x900c (S-F11)
+new key [24$: 0x900d (S-F12)
+new key [25$: 0x900e (S-F13)
+new key [26$: 0x900f (S-F14)
+new key [28$: 0x9010 (S-F15)
+new key [29$: 0x9011 (S-F16)
+new key [31$: 0x9012 (S-F17)
+new key [32$: 0x9013 (S-F18)
+new key [33$: 0x9014 (S-F19)
+new key [34$: 0x9015 (S-F20)
+new key [2$: 0x9016 (S-IC)
+new key [3$: 0x9017 (S-DC)
+new key [7$: 0x9018 (S-Home)
+new key [8$: 0x9019 (S-End)
+new key [6$: 0x901a (S-NPage)
+new key [5$: 0x901b (S-PPage)
+new key [11@: 0xd002 (C-S-F1)
+new key [12@: 0xd003 (C-S-F2)
+new key [13@: 0xd004 (C-S-F3)
+new key [14@: 0xd005 (C-S-F4)
+new key [15@: 0xd006 (C-S-F5)
+new key [17@: 0xd007 (C-S-F6)
+new key [18@: 0xd008 (C-S-F7)
+new key [19@: 0xd009 (C-S-F8)
+new key [20@: 0xd00a (C-S-F9)
+new key [21@: 0xd00b (C-S-F10)
+new key [23@: 0xd00c (C-S-F11)
+new key [24@: 0xd00d (C-S-F12)
+new key [25@: 0xd00e (C-S-F13)
+new key [26@: 0xd00f (C-S-F14)
+new key [28@: 0xd010 (C-S-F15)
+new key [29@: 0xd011 (C-S-F16)
+new key [31@: 0xd012 (C-S-F17)
+new key [32@: 0xd013 (C-S-F18)
+new key [33@: 0xd014 (C-S-F19)
+new key [34@: 0xd015 (C-S-F20)
+new key [2@: 0xd016 (C-S-IC)
+new key [3@: 0xd017 (C-S-DC)
+new key [7@: 0xd018 (C-S-Home)
+new key [8@: 0xd019 (C-S-End)
+new key [6@: 0xd01a (C-S-NPage)
+new key [5@: 0xd01b (C-S-PPage)
+new key OP: 0x1002 (F1)
+new key OQ: 0x1003 (F2)
+new key OR: 0x1004 (F3)
+new key OS: 0x1005 (F4)
+new key [15~: 0x1006 (F5)
+new key [17~: 0x1007 (F6)
+new key [18~: 0x1008 (F7)
+new key [19~: 0x1009 (F8)
+new key [20~: 0x100a (F9)
+new key [21~: 0x100b (F10)
+new key [23~: 0x100c (F11)
+new key [24~: 0x100d (F12)
+new key [1;2P: 0x100e (F13)
+new key [1;2Q: 0x100f (F14)
+new key [1;2R: 0x1010 (F15)
+new key [1;2S: 0x1011 (F16)
+new key [15;2~: 0x1012 (F17)
+new key [17;2~: 0x1013 (F18)
+new key [18;2~: 0x1014 (F19)
+new key [19;2~: 0x1015 (F20)
+new key [2~: 0x1016 (IC)
+new key [3~: 0x1017 (DC)
+new key OH: 0x1018 (Home)
+new key OF: 0x1019 (End)
+new key [6~: 0x101a (NPage)
+new key [5~: 0x101b (PPage)
+new key [Z: 0x101c (BTab)
+replacing key OA: 0x101d (Up)
+replacing key OB: 0x101e (Down)
+replacing key OD: 0x101f (Left)
+replacing key OC: 0x1020 (Right)
+new key [3;2~: 0x9017 (S-DC)
+new key [3;3~: 0x3017 (M-DC)
+new key [3;4~: 0xb017 (M-S-DC)
+new key [3;5~: 0x5017 (C-DC)
+new key [3;6~: 0xd017 (C-S-DC)
+new key [3;7~: 0x7017 (C-M-DC)
+new key [1;2B: 0x901e (S-Down)
+new key [1;3B: 0x301e (M-Down)
+new key [1;4B: 0xb01e (M-S-Down)
+new key [1;5B: 0x501e (C-Down)
+new key [1;6B: 0xd01e (C-S-Down)
+new key [1;7B: 0x701e (C-M-Down)
+new key [1;2F: 0x9019 (S-End)
+new key [1;3F: 0x3019 (M-End)
+new key [1;4F: 0xb019 (M-S-End)
+new key [1;5F: 0x5019 (C-End)
+new key [1;6F: 0xd019 (C-S-End)
+new key [1;7F: 0x7019 (C-M-End)
+new key [1;2H: 0x9018 (S-Home)
+new key [1;3H: 0x3018 (M-Home)
+new key [1;4H: 0xb018 (M-S-Home)
+new key [1;5H: 0x5018 (C-Home)
+new key [1;6H: 0xd018 (C-S-Home)
+new key [1;7H: 0x7018 (C-M-Home)
+new key [2;2~: 0x9016 (S-IC)
+new key [2;3~: 0x3016 (M-IC)
+new key [2;4~: 0xb016 (M-S-IC)
+new key [2;5~: 0x5016 (C-IC)
+new key [2;6~: 0xd016 (C-S-IC)
+new key [2;7~: 0x7016 (C-M-IC)
+new key [1;2D: 0x901f (S-Left)
+new key [1;3D: 0x301f (M-Left)
+new key [1;4D: 0xb01f (M-S-Left)
+new key [1;5D: 0x501f (C-Left)
+new key [1;6D: 0xd01f (C-S-Left)
+new key [1;7D: 0x701f (C-M-Left)
+new key [6;2~: 0x901a (S-NPage)
+new key [6;3~: 0x301a (M-NPage)
+new key [6;4~: 0xb01a (M-S-NPage)
+new key [6;5~: 0x501a (C-NPage)
+new key [6;6~: 0xd01a (C-S-NPage)
+new key [6;7~: 0x701a (C-M-NPage)
+new key [5;2~: 0x901b (S-PPage)
+new key [5;3~: 0x301b (M-PPage)
+new key [5;4~: 0xb01b (M-S-PPage)
+new key [5;5~: 0x501b (C-PPage)
+new key [5;6~: 0xd01b (C-S-PPage)
+new key [5;7~: 0x701b (C-M-PPage)
+new key [1;2C: 0x9020 (S-Right)
+new key [1;3C: 0x3020 (M-Right)
+new key [1;4C: 0xb020 (M-S-Right)
+new key [1;5C: 0x5020 (C-Right)
+new key [1;6C: 0xd020 (C-S-Right)
+new key [1;7C: 0x7020 (C-M-Right)
+new key [1;2A: 0x901d (S-Up)
+new key [1;3A: 0x301d (M-Up)
+new key [1;4A: 0xb01d (M-S-Up)
+new key [1;5A: 0x501d (C-Up)
+new key [1;6A: 0xd01d (C-S-Up)
+new key [1;7A: 0x701d (C-M-Up)
+session 0 created
+writing 8 to client 7
+input_parse: 'R' ground
+input_parse: 'O' ground
+input_parse: 'S' ground
+input_parse: '_' ground
+input_parse: 'M' ground
+input_parse: 'A' ground
+input_parse: 'S' ground
+input_parse: 'T' ground
+input_parse: 'E' ground
+input_parse: 'R' ground
+input_parse: '_' ground
+input_parse: 'U' ground
+input_parse: 'R' ground
+input_parse: 'I' ground
+input_parse: ':' ground
+input_parse: ' ' ground
+input_parse: 'h' ground
+input_parse: 't' ground
+input_parse: 't' ground
+input_parse: 'p' ground
+input_parse: ':' ground
+input_parse: '/' ground
+input_parse: '/' ground
+input_parse: '1' ground
+input_parse: '3' ground
+input_parse: '9' ground
+input_parse: '.' ground
+input_parse: '1' ground
+input_parse: '6' ground
+input_parse: '9' ground
+input_parse: '.' ground
+input_parse: '4' ground
+input_parse: '4' ground
+input_parse: '.' ground
+input_parse: '1' ground
+input_parse: '8' ground
+input_parse: '1' ground
+input_parse: ':' ground
+input_parse: '1' ground
+input_parse: '1' ground
+input_parse: '3' ground
+input_parse: '1' ground
+input_parse: '1' ground
+input_parse: '' ground
+input_c0_dispatch: '
+input_parse: '
+' ground
+input_c0_dispatch: '
+
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '1' csi_enter
+input_parse: ';' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: '2' csi_parameter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "1"
+input_parse: 'v' ground
+input_parse: 'a' ground
+input_parse: 'l' ground
+input_parse: '@' ground
+input_parse: 's' ground
+input_parse: 'p' ground
+input_parse: 'a' ground
+input_parse: 'c' ground
+input_parse: 'e' ground
+input_parse: 'c' ground
+input_parse: 'a' ground
+input_parse: 't' ground
+input_parse: '-' ground
+input_parse: '4' ground
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '1' csi_enter
+input_parse: ';' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: '4' csi_parameter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "1"
+input_parse: ' ' ground
+input_parse: '~' ground
+input_parse: '/' ground
+input_parse: 'r' ground
+input_parse: 'e' ground
+input_parse: 'l' ground
+input_parse: 'e' ground
+input_parse: 'a' ground
+input_parse: 's' ground
+input_parse: 'e' ground
+input_parse: '_' ground
+input_parse: '1' ground
+input_parse: '3' ground
+input_parse: '.' ground
+input_parse: '1' ground
+input_parse: '2' ground
+input_parse: '/' ground
+input_parse: 'd' ground
+input_parse: 'r' ground
+input_parse: 'c' ground
+input_parse: '_' ground
+input_parse: 'c' ground
+input_parse: 'o' ground
+input_parse: 'n' ground
+input_parse: 'f' ground
+input_parse: 'i' ground
+input_parse: 'g' ground
+input_parse: 'u' ground
+input_parse: 'r' ground
+input_parse: 'a' ground
+input_parse: 't' ground
+input_parse: 'i' ground
+input_parse: 'o' ground
+input_parse: 'n' ground
+input_parse: '/' ground
+input_parse: 'V' ground
+input_parse: '1' ground
+input_parse: '/' ground
+input_parse: 's' ground
+input_parse: 'c' ground
+input_parse: 'r' ground
+input_parse: 'i' ground
+input_parse: 'p' ground
+input_parse: 't' ground
+input_parse: 's' ground
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '1' csi_enter
+input_parse: ';' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "1"
+input_parse: '(' ground
+input_parse: 'd' ground
+input_parse: 'e' ground
+input_parse: 't' ground
+input_parse: 'a' ground
+input_parse: 'c' ground
+input_parse: 'h' ground
+input_parse: 'e' ground
+input_parse: 'd' ground
+input_parse: '*' ground
+input_parse: ')' ground
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '0' csi_enter
+input_parse: ';' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: '6' csi_parameter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "0"
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '0' csi_enter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "0"
+input_parse: '$' ground
+input_parse: ' ' ground
+keys are 1 (:)
+input_parse: ':' ground
+keys are 1 (q)
+input_parse: 'q' ground
+keys are 1 ()
+input_parse: '' ground
+input_c0_dispatch: '
+input_parse: '
+' ground
+input_c0_dispatch: '
+
+input_parse: ':' ground
+input_parse: 'q' ground
+input_parse: ':' ground
+input_parse: ' ' ground
+input_parse: 'c' ground
+input_parse: 'o' ground
+input_parse: 'm' ground
+input_parse: 'm' ground
+input_parse: 'a' ground
+input_parse: 'n' ground
+input_parse: 'd' ground
+input_parse: ' ' ground
+input_parse: 'n' ground
+input_parse: 'o' ground
+input_parse: 't' ground
+input_parse: ' ' ground
+input_parse: 'f' ground
+input_parse: 'o' ground
+input_parse: 'u' ground
+input_parse: 'n' ground
+input_parse: 'd' ground
+input_parse: '' ground
+input_c0_dispatch: '
+input_parse: '
+' ground
+input_c0_dispatch: '
+
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '1' csi_enter
+input_parse: ';' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: '2' csi_parameter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "1"
+input_parse: 'v' ground
+input_parse: 'a' ground
+input_parse: 'l' ground
+input_parse: '@' ground
+input_parse: 's' ground
+input_parse: 'p' ground
+input_parse: 'a' ground
+input_parse: 'c' ground
+input_parse: 'e' ground
+input_parse: 'c' ground
+input_parse: 'a' ground
+input_parse: 't' ground
+input_parse: '-' ground
+input_parse: '4' ground
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '1' csi_enter
+input_parse: ';' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: '4' csi_parameter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "1"
+input_parse: ' ' ground
+input_parse: '~' ground
+input_parse: '/' ground
+input_parse: 'r' ground
+input_parse: 'e' ground
+input_parse: 'l' ground
+input_parse: 'e' ground
+input_parse: 'a' ground
+input_parse: 's' ground
+input_parse: 'e' ground
+input_parse: '_' ground
+input_parse: '1' ground
+input_parse: '3' ground
+input_parse: '.' ground
+input_parse: '1' ground
+input_parse: '2' ground
+input_parse: '/' ground
+input_parse: 'd' ground
+input_parse: 'r' ground
+input_parse: 'c' ground
+input_parse: '_' ground
+input_parse: 'c' ground
+input_parse: 'o' ground
+input_parse: 'n' ground
+input_parse: 'f' ground
+input_parse: 'i' ground
+input_parse: 'g' ground
+input_parse: 'u' ground
+input_parse: 'r' ground
+input_parse: 'a' ground
+input_parse: 't' ground
+input_parse: 'i' ground
+input_parse: 'o' ground
+input_parse: 'n' ground
+input_parse: '/' ground
+input_parse: 'V' ground
+input_parse: '1' ground
+input_parse: '/' ground
+input_parse: 's' ground
+input_parse: 'c' ground
+input_parse: 'r' ground
+input_parse: 'i' ground
+input_parse: 'p' ground
+input_parse: 't' ground
+input_parse: 's' ground
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '1' csi_enter
+input_parse: ';' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "1"
+input_parse: '(' ground
+input_parse: 'd' ground
+input_parse: 'e' ground
+input_parse: 't' ground
+input_parse: 'a' ground
+input_parse: 'c' ground
+input_parse: 'h' ground
+input_parse: 'e' ground
+input_parse: 'd' ground
+input_parse: '*' ground
+input_parse: ')' ground
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '0' csi_enter
+input_parse: ';' csi_parameter
+input_parse: '3' csi_parameter
+input_parse: '6' csi_parameter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "0"
+input_parse: '' ground
+input_parse: '[' esc_enter
+input_parse: '0' csi_enter
+input_parse: 'm' csi_parameter
+input_csi_dispatch: 'm' "" "0"
+input_parse: '$' ground
+input_parse: ' ' ground
+keys are 1 (e)
+input_parse: 'e' ground
+keys are 1 (x)
+input_parse: 'x' ground
+keys are 1 (i)
+input_parse: 'i' ground
+keys are 1 (t)
+input_parse: 't' ground
+keys are 1 ()
+input_parse: '' ground
+input_c0_dispatch: '
+input_parse: '
+' ground
+input_c0_dispatch: '
+
+input_parse: 'l' ground
+input_parse: 'o' ground
+input_parse: 'g' ground
+input_parse: 'o' ground
+input_parse: 'u' ground
+input_parse: 't' ground
+input_parse: '' ground
+input_c0_dispatch: '
+input_parse: '
+' ground
+input_c0_dispatch: '
+
+session 0 destroyed
+writing 3 to client 7
+got 5 from client 7
+writing 4 to client 7
+lost client 7

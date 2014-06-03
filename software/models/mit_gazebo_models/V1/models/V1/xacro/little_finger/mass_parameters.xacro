@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/little_finger/mass_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="LFJ1_Link_Mass" value="0.047" />
+  <xacro:property name="LFJ2_Link_Mass" value="0.02" />
+  <xacro:property name="LFJ3_Link_Mass" value="0.011" />
+  <xacro:property name="LFJ4_Link_Mass" value="0.006" />
+  
+</robot>

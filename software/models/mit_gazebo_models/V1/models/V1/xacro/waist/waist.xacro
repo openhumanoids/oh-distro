@@ -1,0 +1,271 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/waist">
+  <!--
+      Reference for kinematic and dynamic parameters comes from:
+
+          http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+
+  <!-- Properties -->
+  <xacro:include filename="$(find V1)/models/V1/xacro/waist/joint_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/waist/link_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/waist/joint_limits.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/waist/dh_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/waist/mass_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/microstrain.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/virtual_sensor.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/flea.xacro"/>
+
+  <!-- TODO: Get waist approximation correct -->
+  <xacro:property name="Trunk_Width" value="0.477"/>
+  <xacro:property name="Trunk_Height" value="0.401"/>
+  <xacro:property name="Trunk_Length" value="0.424"/>
+
+  <xacro:macro name="make_waist_common" params="waist_root_link">
+    <!-- Links -->
+    <xacro:virtual_link name="${WJ1_Distal_Link}" origin_xyz="0 0 0" origin_rpy="0 0 0"/>
+
+    <xacro:virtual_link name="${WJ2_Distal_Link}" origin_xyz="0 0 0" origin_rpy="0 0 0"/>
+
+    <!-- WJ1 -->
+    <xacro:revolute_joint_ex jointName="${WJ1_Joint_Name}"
+                          parent="${WJ1_Proximal_Link}" child="${WJ1_Distal_Link}"
+                          origin_xyz="${WJ1_Origin_X} ${WJ1_Origin_Y} ${WJ1_Origin_Z}"
+                          origin_rpy="${WJ1_Orientation_Roll} ${WJ1_Orientation_Pitch} ${WJ1_Orientation_Yaw}">
+        <limit effort="${WJ1_Torque_Limit}" lower="${WJ1_Lower_Limit}" upper="${WJ1_Upper_Limit}" velocity="${WJ1_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- WJ2 -->
+    <xacro:revolute_joint_ex jointName="${WJ2_Joint_Name}"
+                          parent="${WJ2_Proximal_Link}" child="${WJ2_Distal_Link}"
+                          origin_xyz="${WJ2_Origin_X} ${WJ2_Origin_Y} ${WJ2_Origin_Z}"
+                          origin_rpy="${WJ2_Orientation_Roll} ${WJ2_Orientation_Pitch} ${WJ2_Orientation_Yaw}">
+        <limit effort="${WJ2_Torque_Limit}" lower="${WJ2_Lower_Limit}" upper="${WJ2_Upper_Limit}" velocity="${WJ2_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+
+
+    <!-- WJ3 -->
+    <xacro:revolute_joint_ex jointName="${WJ3_Joint_Name}"
+                          parent="${WJ3_Proximal_Link}" child="${WJ3_Distal_Link}"
+                          origin_xyz="${WJ3_Origin_X} ${WJ3_Origin_Y} ${WJ3_Origin_Z}"
+                          origin_rpy="${WJ3_Orientation_Roll} ${WJ3_Orientation_Pitch} ${WJ3_Orientation_Yaw}">
+        <limit effort="${WJ3_Torque_Limit}" lower="${WJ3_Lower_Limit}" upper="${WJ3_Upper_Limit}" velocity="${WJ3_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+  </xacro:macro>
+
+  <xacro:macro name="make_waist" params="waist_root_link">
+    <xacro:box_link name="${WJ3_Distal_Link}"
+                    width="${Trunk_Width}" height="${Trunk_Height}" depth="${Trunk_Length}" mass="${WJ3_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0.255 0 -0.0981"
+                    visual_mesh="${mesh_root}/wj3.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/wj3.stl" />
+    <xacro:make_waist_common waist_root_link="${waist_root_link}"/>
+  </xacro:macro>
+
+  <xacro:macro name="make_waist_no_battery_no_nj1" params="waist_root_link">
+    <xacro:box_link name="${WJ3_Distal_Link}"
+                    width="${Trunk_Width}" height="${Trunk_Height}" depth="${Trunk_Length}" mass="${WJ3_Link_Mass_No_Battery_No_Neck}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0.239 0 -0.060"
+                    visual_mesh="${mesh_root}/wj3.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/wj3.stl" />
+    <xacro:make_waist_common waist_root_link="${waist_root_link}"/>
+  </xacro:macro>
+
+  <xacro:macro name="make_waist_no_battery" params="waist_root_link">
+    <xacro:box_link name="${WJ3_Distal_Link}"
+                    width="${Trunk_Width}" height="${Trunk_Height}" depth="${Trunk_Length}" mass="${WJ3_Link_Mass_No_Battery_No_Neck + NJ1_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0.239 0 -0.060"
+                    visual_mesh="${mesh_root}/wj3.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/wj3.stl" />
+    <xacro:make_waist_common waist_root_link="${waist_root_link}"/>
+  </xacro:macro>
+
+  <xacro:macro name="make_fixed_waist" params="waist_root_link">
+    <!-- Links -->
+    <xacro:virtual_link name="${WJ1_Distal_Link}" origin_xyz="0 0 0" origin_rpy="0 0 0"/>
+
+    <xacro:virtual_link name="${WJ2_Distal_Link}" origin_xyz="0 0 0" origin_rpy="0 0 0"/>
+
+    <xacro:box_link name="${WJ3_Distal_Link}"
+                    width="${Trunk_Width}" height="${Trunk_Height}" depth="${Trunk_Length}" mass="${WJ3_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0.226 0 -0.078"
+                    visual_mesh="${mesh_root}/wj3.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/wj3.stl" />
+
+    <!-- WJ1 -->
+    <xacro:fixed_joint jointName="${WJ1_Joint_Name}"
+                          parent="${WJ1_Proximal_Link}" child="${WJ1_Distal_Link}"
+                          origin_xyz="${WJ1_Origin_X} ${WJ1_Origin_Y} ${WJ1_Origin_Z}"
+                          origin_rpy="${WJ1_Orientation_Roll} ${WJ1_Orientation_Pitch} ${WJ1_Orientation_Yaw}">
+        <limit effort="${WJ1_Torque_Limit}" lower="${WJ1_Lower_Limit}" upper="${WJ1_Upper_Limit}" velocity="${WJ1_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+    <!-- WJ2 -->
+    <xacro:fixed_joint jointName="${WJ2_Joint_Name}"
+                          parent="${WJ2_Proximal_Link}" child="${WJ2_Distal_Link}"
+                          origin_xyz="${WJ2_Origin_X} ${WJ2_Origin_Y} ${WJ2_Origin_Z}"
+                          origin_rpy="${WJ2_Orientation_Roll} ${WJ2_Orientation_Pitch} ${WJ2_Orientation_Yaw}">
+        <limit effort="${WJ2_Torque_Limit}" lower="${WJ2_Lower_Limit}" upper="${WJ2_Upper_Limit}" velocity="${WJ2_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+
+    <!-- WJ3 -->
+    <xacro:fixed_joint jointName="${WJ3_Joint_Name}"
+                          parent="${WJ3_Proximal_Link}" child="${WJ3_Distal_Link}"
+                          origin_xyz="${WJ3_Origin_X} ${WJ3_Origin_Y} ${WJ3_Origin_Z}"
+                          origin_rpy="${WJ3_Orientation_Roll} ${WJ3_Orientation_Pitch} ${WJ3_Orientation_Yaw}">
+        <limit effort="${WJ3_Torque_Limit}" lower="${WJ3_Lower_Limit}" upper="${WJ3_Upper_Limit}" velocity="${WJ3_Speed_Limit}"/>
+    </xacro:fixed_joint>
+  </xacro:macro>
+
+  <xacro:macro name="make_no_waist">
+    <!-- Links -->
+    <xacro:box_link name="${WJ3_Distal_Link}"
+                    width="${Trunk_Width}" height="${Trunk_Height}" depth="${Trunk_Length}" mass="${WJ3_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 0 0"
+                    visual_mesh="${mesh_root}/wj3.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/wj3.stl" />
+  </xacro:macro>
+
+  <xacro:macro name="make_waist_fixed_wj2_wj3" params="waist_root_link">
+    <!-- Links -->
+    <!-- <xacro:virtual_link name="${WJ1_Distal_Link}" origin_xyz="0 0 0" origin_rpy="0 0 0"/> -->
+    <!--NOTE : This is for lower body testbed setup-->
+    <xacro:link_no_mesh
+      name="${WJ1_Distal_Link}"
+      width="0.01" height="0.01" depth="0.01"
+      mass="2.858"
+      origin_xyz="0.0008 0.0002 0.0221"
+      origin_rpy="0 0 0"
+      ixx="0.0085" ixy="-7.86e-6" ixz="1.875e-5"
+      iyy="1.12e-2" iyz="1.07e-5"
+      izz="1.181e-2"/>
+
+
+
+    <xacro:virtual_link name="${WJ2_Distal_Link}" origin_xyz="0 0 0" origin_rpy="0 0 0"/>
+
+    <xacro:virtual_link name="${WJ3_Distal_Link}" origin_rpy="0 0 0" origin_xyz="0.226 0 -0.078" />
+
+    <!-- WJ1 -->
+    <xacro:revolute_joint_ex jointName="${WJ1_Joint_Name}"
+                          parent="${WJ1_Proximal_Link}" child="${WJ1_Distal_Link}"
+                          origin_xyz="${WJ1_Origin_X} ${WJ1_Origin_Y} ${WJ1_Origin_Z}"
+                          origin_rpy="${WJ1_Orientation_Roll} ${WJ1_Orientation_Pitch} ${WJ1_Orientation_Yaw}">
+        <limit effort="${WJ1_Torque_Limit}" lower="${WJ1_Lower_Limit}" upper="${WJ1_Upper_Limit}" velocity="${WJ1_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- WJ2 -->
+    <xacro:fixed_joint jointName="${WJ2_Joint_Name}"
+                          parent="${WJ2_Proximal_Link}" child="${WJ2_Distal_Link}"
+                          origin_xyz="${WJ2_Origin_X} ${WJ2_Origin_Y} ${WJ2_Origin_Z}"
+                          origin_rpy="${WJ2_Orientation_Roll} ${WJ2_Orientation_Pitch} ${WJ2_Orientation_Yaw}">
+        <limit effort="${WJ2_Torque_Limit}" lower="${WJ2_Lower_Limit}" upper="${WJ2_Upper_Limit}" velocity="${WJ2_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+
+    <!-- WJ3 -->
+    <xacro:fixed_joint jointName="${WJ3_Joint_Name}"
+                          parent="${WJ3_Proximal_Link}" child="${WJ3_Distal_Link}"
+                          origin_xyz="${WJ3_Origin_X} ${WJ3_Origin_Y} ${WJ3_Origin_Z}"
+                          origin_rpy="${WJ3_Orientation_Roll} ${WJ3_Orientation_Pitch} ${WJ3_Orientation_Yaw}">
+        <limit effort="${WJ3_Torque_Limit}" lower="${WJ3_Lower_Limit}" upper="${WJ3_Upper_Limit}" velocity="${WJ3_Speed_Limit}"/>
+    </xacro:fixed_joint>
+  </xacro:macro>
+
+  <!-- Actuators -->
+  <xacro:macro name="v1_waist_actuators"  params="name1 type1 name2 type2 name3 type3">
+    <actuator name="${name1}" type="${type1}"/>
+    <actuator name="${name2}" type="${type2}"/>
+    <actuator name="${name3}" type="${type3}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_trunk_sensors">
+    <!-- Note: The RPY values, particularly the yaw values do NOT reflect the mounting axes shown on the sensor!
+    This is because some knuckle-head (one Chad Rockey [chadrockey@gmail.com]) decided that all IMU sensors
+    shall be mounted on robots in a certain way. So the ROS package/driver we are using (that he wrote)
+    applies a fixed transform to the orientation data from the sensor. Therefore we counter-act his silliness
+    here in the xacro file.
+
+      http://wiki.ros.org/microstrain_3dmgx2_imu
+     -->
+    <xacro:microstrain_sensor sensorName="/v1/RightIMU"
+                              parentLink="${WJ3_Distal_Link}"
+                              origin_xyz="0.363038 0.134239 -0.0468630"
+                              origin_rpy="-${pi_2} ${pi_2} 0" />
+
+    <xacro:microstrain_sensor sensorName="/v1/LeftIMU"
+                              parentLink="${WJ3_Distal_Link}"
+                              origin_xyz="0.363038 -0.134239  -0.0468630"
+                              origin_rpy="${pi_2} ${pi_2} 0" />
+
+    <xacro:flea3_camera sensorName="/v1/RightHazardCamera"
+                        parentLink="${WJ3_Distal_Link}"
+                        origin_xyz="0.0446987 0.0406146 0.0182674"
+                        origin_rpy="0 0 0"
+                        imageFormat="R8G8B8"
+                        frameRate="60"/>
+
+    <xacro:flea3_camera sensorName="/v1/LeftHazardCamera"
+                        parentLink="${WJ3_Distal_Link}"
+                        origin_xyz="0.0446987 -0.0406146 0.0182674"
+                        origin_rpy="0 0 0"
+                        imageFormat="R8G8B8"
+                        frameRate="60"/>
+
+    <xacro:virtual_sensor sensorName="/v1/StereoHazardCamera"
+                          parentLink="${WJ3_Distal_Link}"
+                          origin_xyz=".1723 -0.04535 0.0344"
+                          origin_rpy="0 0 1.57" />
+   </xacro:macro>
+
+
+  <!-- Transmissions -->
+  <xacro:macro name="v1_waist_transmissions" params="actuator1 actuator2 actuator3">
+    <xacro:simple_transmission jointName="${WJ1_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:pushrod_transmission tranName="Waist" namespace="v1_waist"
+                                joint1="${WJ2_Joint_Name}" joint2="${WJ3_Joint_Name}"
+                                actuator1="${actuator2}"   actuator2="${actuator3}"
+                                reflect="1"/>
+                                <!-- because of the hardware configuration, wrist and waist transmissions should always have reflection=1 -->
+  </xacro:macro>
+
+  <xacro:macro name="v1_waist_transmissions_simple" params="actuator1 actuator2 actuator3">
+    <xacro:simple_transmission jointName="${WJ1_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${WJ2_Joint_Name}" actuatorName="${actuator2}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${WJ3_Joint_Name}" actuatorName="${actuator3}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <!-- Modes -->
+  <xacro:macro name="v1_waist_modes" params="actuator1 actuator2 actuator3">
+    <xacro:v1_modes jointName="${WJ1_Joint_Name}" actuatorName="${actuator1}" />
+    <xacro:v1_modes jointName="${WJ2_Joint_Name}" actuatorName="${actuator2}" />
+    <xacro:v1_modes jointName="${WJ3_Joint_Name}" actuatorName="${actuator3}" />
+  </xacro:macro>
+
+  <!-- Battery -->
+  <!-- TODO: Get better numbers for battery center from mech team -->
+  <!-- <xacro:fixed_joint jointName="battery_offset"
+                     parent="/v1/trunk" child="/v1/battery"
+                     origin_xyz=".3 0 -0.2"
+                     origin_rpy="0 0 0" /> -->
+
+  <!-- TODO: Get better approximation for battery -->
+  <!-- <xacro:link_box name="/v1/battery"
+                  width=".2" height="0.2" depth="0.2" mass="15.0"
+                  origin_rpy="0 0 0"
+                  origin_xyz="0 0 0" /> -->
+</robot>

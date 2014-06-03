@@ -1,0 +1,49 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm/mass_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <!-- AJ1 -->
+<!--   <xacro:property name="AJ1_Link_Mass" value="2.65" />
+  <xacro:property name="AJ2_Link_Mass" value="3.5" />
+  <xacro:property name="AJ3_Link_Mass" value="2.3" /> -->
+
+<!-- cdr -->
+<!--
+  <xacro:property name="AJ4_Link_Mass" value="1.05" />
+  <xacro:property name="AJ5_Link_Mass" value="0.95" />
+  <xacro:property name="AJ6_Link_Mass" value="0.58" />
+  <xacro:property name="AJ7_Link_Mass" value="0.06" />
+ --> 
+
+<!--    default xacro
+ -->  <!--
+  <xacro:property name="AJ4_Link_Mass" value="2.3" />
+  <xacro:property name="AJ5_Link_Mass" value="2.95" />
+  <xacro:property name="AJ6_Link_Mass" value="0.73" />
+  <xacro:property name="AJ7_Link_Mass" value="0.06" /> -->
+
+<!-- wiki --> 
+<!--  <xacro:property name="AJ4_Link_Mass" value="2.52" />
+  <xacro:property name="AJ5_Link_Mass" value="2.95" />
+  <xacro:property name="AJ6_Link_Mass" value="0.06" />
+  <xacro:property name="AJ7_Link_Mass" value="0.73" />
+ --><!-- 
+ <xacro:property name="AJ4_Link_Mass" value="1.05" />
+  <xacro:property name="AJ5_Link_Mass" value="2.95" />
+  <xacro:property name="AJ6_Link_Mass" value="0.06" />
+  <xacro:property name="AJ7_Link_Mass" value="0.73" /> -->
+
+  <!-- The following were taken from Christopher McQuin's DRC Master Spreadsheet sept.xlsx, 10/7/13-->
+  <xacro:property name="AJ1_Link_Mass" value="2.45" />
+  <xacro:property name="AJ2_Link_Mass" value="3.67" />
+  <xacro:property name="AJ3_Link_Mass" value="2.575" />
+  <xacro:property name="AJ4_Link_Mass" value="1.367" />
+  <xacro:property name="AJ5_Link_Mass" value="2.703" />
+  <xacro:property name="AJ6_Link_Mass" value="0.1" />
+  <xacro:property name="AJ7_Link_Mass" value="0.712" />
+
+</robot>

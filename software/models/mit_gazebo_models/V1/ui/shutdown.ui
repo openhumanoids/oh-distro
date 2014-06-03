@@ -1,0 +1,55 @@
+<ui>
+    <parameters>
+        <parameter name="robot" value="V1"/>
+    </parameters>
+
+    <objects>
+        <object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager" args="terminator -e"/>
+        <object name="ui_utils" rospackage="ui_builder" module="ui_utils" member="ui_utils"/>
+    </objects>
+
+    <widgets>
+        <widget col="0" row="0" name="All" type="GroupBox">
+            <widget name="Shutdown" type="PushButton" color="red" textColor="white">
+                <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh shutdown" argTypes="str"/>
+            </widget>
+            <widget name="Reboot" type="PushButton" color="yellow" textColor="black">
+                <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh reboot" argTypes="str"/>
+            </widget>
+        </widget>
+        <widget col="0" row="1" name="" type="HorizontalGroupBox">
+            <widget name="cyberdisc-1" type="GroupBox" col="0" row="0">
+                <widget name="Shutdown" type="PushButton" color="red" textColor="white">
+                    <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh -b cyberdisc-1.local shutdown" argTypes="str"/>
+                </widget>
+                <widget name="Reboot" type="PushButton" color="yellow" textColor="black">
+                    <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh -b cyberdisc-1.local reboot" argTypes="str"/>
+                </widget>
+            </widget>
+            <widget name="cyberdisc-2" type="GroupBox" col="1" row="0">
+                <widget name="Shutdown" type="PushButton" color="red" textColor="white">
+                    <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh -b cyberdisc-2.local shutdown" argTypes="str"/>
+                </widget>
+                <widget name="Reboot" type="PushButton" color="yellow" textColor="black">
+                    <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh -b cyberdisc-2.local reboot" argTypes="str"/>
+                </widget>
+            </widget>
+            <widget name="cyberdisc-3" type="GroupBox" col="2" row="0">
+                <widget name="Shutdown" type="PushButton" color="red" textColor="white">
+                    <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh -b cyberdisc-3.local shutdown" argTypes="str"/>
+                </widget>
+                <widget name="Reboot" type="PushButton" color="yellow" textColor="black">
+                    <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh -b cyberdisc-3.local reboot" argTypes="str"/>
+                </widget>
+            </widget>
+            <widget name="cyberdisc-4" type="GroupBox" col="2" row="0">
+                <widget name="Shutdown" type="PushButton" color="red" textColor="white">
+                    <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh -b cyberdisc-4.local shutdown" argTypes="str"/>
+                </widget>
+                <widget name="Reboot" type="PushButton" color="yellow" textColor="black">
+                    <object name="ui_utils" method="systemCall" args="rosrun V1 manage_cyberdiscs.sh -b cyberdisc-4.local reboot" argTypes="str"/>
+                </widget>
+            </widget>
+        </widget>
+    </widgets>
+</ui>

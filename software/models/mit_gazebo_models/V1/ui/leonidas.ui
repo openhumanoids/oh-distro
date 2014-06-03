@@ -1,0 +1,124 @@
+
+<ui>
+    <parameters>
+        <parameter name="channel" value="left_leg"/>
+        <parameter name="node" value="j1"/>
+        <parameter name="version" value="TurbodriverAPI_DRCv3"/>
+        <parameter name="coeff" value="`rospack find drc_coeffs`/V1A/LeftLeg/v1_aj1_05.xml"/>
+        <parameter name="poscom_low_lim" value="-3.14159"/>
+        <parameter name="poscom_high_lim" value="3.14159"/>
+    </parameters>
+	<objects>
+		<object name="j" rospackage="turbodriver_api" module="${version}" member="${version}" args="/${channel}/${node}"/>
+		<object name="utils" rospackage="ui_builder" module="ui_utils" member="ui_utils"/>
+        <object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager"/>
+	</objects>
+
+	<widgets>
+        <widget row="0" col="0" name="Safe" type="GroupBox">
+            <widget name="&amp;Park" type="PushButton">
+                <object name="j" method="park"/>
+                <object name="utils" method="printStringWithTime" args="/${channel}/${node}: park" argTypes="str"/>
+            </widget>
+            <widget name="Clear &amp;Faults" type="PushButton">
+                <object name="j" method="clearFault"/>
+                <object name="utils" method="printStringWithTime" args="/${channel}/${node}: clearFault" argTypes="str"/>
+            </widget>
+        </widget>
+
+        <widget row="7" col="0" name="Config" type="GroupBox">
+            <widget name="Load Coeff (new hotness)" type="PushButton">
+                <object name="manager" method="startProgram" args="rosrun nasa_configuration cfgLoader.py -c `rospack find drc_coeffs`/V1A/v1_config.yaml -n -j /${channel}/${node},loadCoeffs" argTypes="str,str"/>
+            </widget>
+
+            <widget name="Disable &amp;Embedded Faults" type="CheckBox">
+                <check>
+                    <object name="j" method="disableFaults"/>
+                </check>
+                <uncheck>
+                    <object name="j" method="enableFaults"/>
+                </uncheck>
+            </widget>
+        </widget>
+
+        <widget row="8" col="0" name="Action" type="GroupBox">
+            <widget row="8" col="0" name="Zero &amp;DesTorq" type="PushButton">
+                <object name="j" method="zeroEffortCommand"/>
+            </widget>
+            <widget name="PosCom" type="SliderControl" bottom="${poscom_low_lim}" top="${poscom_high_lim}" value="0">
+                <object name="j" method="setPositionCommand"/>
+            </widget>
+        </widget>
+
+        <widget row="9" col="0" name="Unsafe" type="GroupBox">
+            <widget name="Servo P&amp;osition" type="PushButton" color="darkBlue" textColor="white">
+                <object name="j" method="positionMode"/>
+                <object name="utils" method="printStringWithTime" args="/${channel}/${node}: positionMode" argTypes="str"/>
+            </widget>
+        </widget>
+
+        <widget row="10" col="0" name="Unsafe (Debug)" type="GroupBox">
+            <widget name="Servo &amp;Torque" type="PushButton">
+                <object name="j" method="torqueMode"/>
+                <object name="utils" method="printStringWithTime" args="/${channel}/${node}: positionMode" argTypes="str"/>
+            </widget>
+        </widget>
+
+
+		<widget row="0" col="1" name="State" type="TableViewDisplay">
+            <header value="value"/>
+            <row label="modeCmd"><object name="j" method="getModeCmd" thresholds="undefined,Park,Reset,ReleaseBrake,MotorMode,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/></row>
+            <row label="enableState"><object name="j" method="getEnableState" thresholds="disabled,faulted,ready,notReady" colors="gray,gray,red,green,yellow"/></row>
+            <row label="modeState">  <object name="j" method="getModeState" thresholds="undefined,parked,resetting,brakeReleased,motCom,current mode,torque mode,position mode" colors="gray,gray,green,yellow,yellow,yellow,yellow,yellow,yellow"/></row>
+            <row label="SwEstop">    <object name="j" method="getSwEstop" thresholds="1" colors="green,red"/></row>
+            <row label="PowerGood">  <object name="j" method="getPowerGood" thresholds="1" colors="red,green"/></row>
+            <row label="Update"><object name="j" method="Update"/></row>
+        </widget>
+
+        <widget row="1" col="1" name="Faults" type="TableViewDisplay">
+            <header value="data"/>
+            <row label="JointFault">       <object name="j" method="getJointFault"       args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="OverTempFault">    <object name="j" method="getOverTempFault"    args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="SpringDefFault">   <object name="j" method="getSpringDefFault"   args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="ApsFault">         <object name="j" method="getApsFault"         args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="LimitFault">       <object name="j" method="getLimitFault"       args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="TorqueLimitFault"> <object name="j" method="getTorqueLimitFault" args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="EncDriftFault">    <object name="j" method="getEncDriftFault"    args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="JerkFault">        <object name="j" method="getJerkFault"        args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="ChecksumFault">    <object name="j" method="getChecksumFault"    args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="CommFault">        <object name="j" method="getCommFault"        args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="VelocityFault">    <object name="j" method="getVelocityFault"    args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="Aps1TolFault">     <object name="j" method="getAps1TolFault"     args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+            <row label="Aps2TolFault">     <object name="j" method="getAps2TolFault"     args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+        </widget>
+
+        <widget row="0" col="2" name="ActuatorState" type="TableViewDisplay">
+        	<header value="value"/>
+			<row label="Position">        <object name="j" method="getPosition" args="val" argTypes="str"/></row>
+			<row label="Effort">          <object name="j" method="getEffort" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/></row>
+			<row label="EffortCmd">       <object name="j" method="getEffortCommand" args="val" argTypes="str" thresholds="-5,5" colors="yellow,green,yellow"/></row>
+		</widget>
+
+		<widget row="1" col="2" name="status" type="TableViewDisplay">
+            <header value="data"/>
+            <row label="RotorInit"><object name="j" method="getRotorInitDone" args="val" argTypes="str" thresholds="1" colors="yellow,green"/></row>
+            <row label="ProcHeartbeat">   <object name="j" method="getProcHeartbeat" args="val" argTypes="str"/></row>
+            <row label="BridgeEnable"><object name="j" method="getBridgeEnable" args="val" argTypes="str" thresholds="1" colors="yellow,green"/></row>
+            <row label="MotorEnable" ><object name="j" method="getMotorEnable"  args="val" argTypes="str" thresholds="1" colors="green,yellow"/></row>
+            <row label="BrakeRelease"><object name="j" method="getBrakeRelease" args="val" argTypes="str" thresholds="1" colors="green,yellow"/></row>
+            <row label="ProcReset"   ><object name="j" method="getProcReset"    args="val" argTypes="str" thresholds="1" colors="green,yellow"/></row>
+            <row label="BootloaderMode"  ><object name="j" method="getBootloaderMode"   args="val" argTypes="str" thresholds="1" colors="green,yellow"/></row>
+            <row label="CalibrationMode" ><object name="j" method="getCalibrationMode"  args="val" argTypes="str" thresholds="1" colors="green,yellow"/></row>
+            <row label="ControlModeCmd" ><object name="j" method="getControlModeCmd"  args="val" argTypes="str" thresholds="1" colors="green,yellow"/></row>
+            <row label="DisableFaults"><object name="j" method="getDisableFaults" args="val" argTypes="str" thresholds="1" colors="green,red"/></row>
+        </widget>
+
+        <widget row="2" col="2" name="temp" type="TableViewDisplay">
+            <header value="Temp"/>
+            <row label="Logic Card"><object name="j" method="getLogicCardTemp_C" args="val" argTypes="str" thresholds="75,90,100" colors="green,yellow,orange,red"/></row>
+            <row label="Bridge"    ><object name="j" method="getBridgeTemp_C"    args="val" argTypes="str" thresholds="75,90,100" colors="green,yellow,orange,red"/></row>
+            <row label="Motor"     ><object name="j" method="getMotorTemp_C"     args="val" argTypes="str" thresholds="75,90,100" colors="green,yellow,orange,red"/></row>
+        </widget>
+        
+	</widgets>
+</ui>

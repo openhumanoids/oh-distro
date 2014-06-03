@@ -1,0 +1,317 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm">
+  <!--
+        Reference for kinematic and dynamic parameters comes from:
+
+            http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:include filename="$(find V1)/models/V1/xacro/arm/joint_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/arm/link_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/arm/joint_limits.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/arm/dh_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/arm/mass_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/camboard.xacro"/>
+
+  <!-- Link properties. -->
+  <!-- <xacro:property name="AJ1_Link_Radius" value="0.080" />
+  <xacro:property name="AJ1_Link_Length" value="0.201" /> -->
+  <xacro:property name="AJ1_Link_Width" value="0.162"/>
+  <xacro:property name="AJ1_Link_Height" value="0.202"/>
+  <xacro:property name="AJ1_Link_Length" value="0.146"/>
+
+  <!-- <xacro:property name="AJ2_Link_Radius" value="0.07" />
+  <xacro:property name="AJ2_Link_Length" value="0.143 " /> -->
+  <xacro:property name="AJ2_Link_Width" value="0.191"/>
+  <xacro:property name="AJ2_Link_Height" value="0.141"/>
+  <xacro:property name="AJ2_Link_Length" value="0.134"/>
+
+  <xacro:property name="AJ3_Link_Width" value="0.136"/>
+  <xacro:property name="AJ3_Link_Height" value="0.158"/>
+  <xacro:property name="AJ3_Link_Length" value="0.285"/>
+
+  <xacro:property name="AJ4_Link_Width" value="0.149"/>
+  <xacro:property name="AJ4_Link_Height" value="0.156"/>
+  <xacro:property name="AJ4_Link_Length" value="0.138"/>
+
+  <xacro:property name="AJ5_Link_Width" value="0.127"/>
+  <xacro:property name="AJ5_Link_Height" value="0.116"/>
+  <xacro:property name="AJ5_Link_Length" value="0.243"/>
+
+  <xacro:property name="AJ6_Link_Width" value="0.03"/>
+  <xacro:property name="AJ6_Link_Height" value="0.01"/>
+  <xacro:property name="AJ6_Link_Length" value="0.051"/>
+
+  <xacro:property name="AJ7_Link_Width" value="0.085"/>
+  <xacro:property name="AJ7_Link_Height" value="0.1"/>
+  <xacro:property name="AJ7_Link_Length" value="0.038"/>
+
+
+  <xacro:macro name="make_upper_arm" params="prefix reflect upper_arm_root_link">
+    <!-- LINKS -->
+    <xacro:box_link name="${AJ1_Distal_Link}"
+                    width="${AJ1_Link_Width}" height="${AJ1_Link_Height}" depth="${AJ1_Link_Length}" mass="${AJ1_Link_Mass}"
+                    origin_xyz="0 -0.01204 ${reflect * -0.251}" origin_rpy="0 0 0"
+                    visual_mesh="${mesh_root}/aj1_${prefix}.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/aj1_${prefix}.stl" />
+
+    <xacro:box_link name="${AJ2_Distal_Link}"
+                    width="${AJ2_Link_Width}" height="${AJ2_Link_Height}" depth="${AJ2_Link_Length}" mass="${AJ2_Link_Mass}"
+                    origin_xyz="0.044 -0.0034 0" origin_rpy="0 0 0"
+                    visual_mesh="${mesh_root}/aj2.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/aj2.stl" />
+
+    <xacro:box_link name="${AJ3_Distal_Link}"
+                    width="${AJ3_Link_Width}" height="${AJ3_Link_Height}" depth="${AJ3_Link_Length}" mass="${AJ3_Link_Mass}"
+                    origin_xyz="0 ${reflect * 0.006} ${reflect * -0.236}" origin_rpy="0 0 0"
+                    visual_mesh="${mesh_root}/aj3_${prefix}.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/aj3_${prefix}.stl" />
+
+    <xacro:box_link name="${AJ4_Distal_Link}"
+                    width="${AJ4_Link_Width}" height="${AJ4_Link_Height}" depth="${AJ4_Link_Length}" mass="${AJ4_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0.0270 0.0302 0"
+                    visual_mesh="${mesh_root}/aj4.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/aj4.stl" />
+
+    <!-- AJ1 -->
+    <xacro:revolute_joint_ex jointName="${AJ1_Joint_Name}"
+                          parent="${upper_arm_root_link}" child="${AJ1_Distal_Link}"
+                          origin_xyz="${AJ1_Origin_X} ${AJ1_Origin_Y} ${AJ1_Origin_Z}"
+                          origin_rpy="${AJ1_Orientation_Roll} ${AJ1_Orientation_Pitch} ${AJ1_Orientation_Yaw}">
+        <limit effort="${AJ1_Torque_Limit}" lower="${AJ1_Lower_Limit}" upper="${AJ1_Upper_Limit}" velocity="${AJ1_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- AJ2 -->
+    <xacro:revolute_joint_ex jointName="${AJ2_Joint_Name}"
+                          parent="${AJ2_Proximal_Link}" child="${AJ2_Distal_Link}"
+                          origin_xyz="${AJ2_Origin_X} ${AJ2_Origin_Y} ${AJ2_Origin_Z}"
+                          origin_rpy="${AJ2_Orientation_Roll} ${AJ2_Orientation_Pitch} ${AJ2_Orientation_Yaw}">
+        <limit effort="${AJ2_Torque_Limit}" lower="${AJ2_Lower_Limit}" upper="${AJ2_Upper_Limit}" velocity="${AJ2_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- AJ3 -->
+    <xacro:revolute_joint_ex jointName="${AJ3_Joint_Name}"
+                          parent="${AJ3_Proximal_Link}" child="${AJ3_Distal_Link}"
+                          origin_xyz="${AJ3_Origin_X} ${AJ3_Origin_Y} ${AJ3_Origin_Z}"
+                          origin_rpy="${AJ3_Orientation_Roll} ${AJ3_Orientation_Pitch} ${AJ3_Orientation_Yaw}">
+        <limit effort="${AJ3_Torque_Limit}" lower="${AJ3_Lower_Limit}" upper="${AJ3_Upper_Limit}" velocity="${AJ3_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- AJ4 -->
+    <xacro:revolute_joint_ex jointName="${AJ4_Joint_Name}"
+                          parent="${AJ4_Proximal_Link}" child="${AJ4_Distal_Link}"
+                          origin_xyz="${AJ4_Origin_X} ${AJ4_Origin_Y} ${AJ4_Origin_Z}"
+                          origin_rpy="${AJ4_Orientation_Roll} ${AJ4_Orientation_Pitch} ${AJ4_Orientation_Yaw}">
+        <limit effort="${AJ4_Torque_Limit}" lower="${AJ4_Lower_Limit}" upper="${AJ4_Upper_Limit}" velocity="${AJ4_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+  </xacro:macro>
+
+
+  <xacro:macro name="make_lower_arm" params="prefix reflect lower_arm_root_link">
+    <!-- LINKS -->
+    <xacro:box_link name="${AJ5_Distal_Link}"
+                    width="${AJ5_Link_Width}" height="${AJ5_Link_Height}" depth="${AJ5_Link_Length}" mass="${AJ5_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 ${reflect * 0.0006} ${reflect * -0.12}"
+                    visual_mesh="${mesh_root}/aj5_${prefix}.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/aj5_${prefix}.stl" />
+
+    <xacro:box_link_no_mesh name="${AJ6_Distal_Link}"
+                    width="${AJ6_Link_Width}" height="${AJ6_Link_Height}" depth="${AJ6_Link_Length}" mass="${AJ6_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 0 0"/>
+
+    <xacro:box_link name="${AJ7_Distal_Link}"
+                    width="${AJ7_Link_Width}" height="${AJ7_Link_Height}" depth="${AJ7_Link_Length}" mass="${AJ7_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${AJ7_Link_Width/2} 0 0"
+                    visual_mesh="${mesh_root}/palm_${prefix}.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/palm_${prefix}.stl"/>
+
+    <!-- AJ5 -->
+    <xacro:revolute_joint_ex jointName="${AJ5_Joint_Name}"
+                          parent="${lower_arm_root_link}" child="${AJ5_Distal_Link}"
+                          origin_xyz="${AJ5_Origin_X} ${AJ5_Origin_Y} ${AJ5_Origin_Z}"
+                          origin_rpy="${AJ5_Orientation_Roll} ${AJ5_Orientation_Pitch} ${AJ5_Orientation_Yaw}">
+        <limit effort="${AJ5_Torque_Limit}" lower="${AJ5_Lower_Limit}" upper="${AJ5_Upper_Limit}" velocity="${AJ5_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="0"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- AJ6 -->
+    <xacro:revolute_joint_ex jointName="${AJ6_Joint_Name}"
+                          parent="${AJ6_Proximal_Link}" child="${AJ6_Distal_Link}"
+                          origin_xyz="${AJ6_Origin_X} ${AJ6_Origin_Y} ${AJ6_Origin_Z}"
+                          origin_rpy="${AJ6_Orientation_Roll} ${AJ6_Orientation_Pitch} ${AJ6_Orientation_Yaw}">
+        <limit effort="${AJ6_Torque_Limit}" lower="${AJ6_Lower_Limit}" upper="${AJ6_Upper_Limit}" velocity="${AJ6_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- AJ7 -->
+    <xacro:revolute_joint_ex jointName="${AJ7_Joint_Name}"
+                          parent="${AJ7_Proximal_Link}" child="${AJ7_Distal_Link}"
+                          origin_xyz="${AJ7_Origin_X} ${AJ7_Origin_Y} ${AJ7_Origin_Z}"
+                          origin_rpy="${AJ7_Orientation_Roll} ${AJ7_Orientation_Pitch} ${AJ7_Orientation_Yaw}">
+        <limit effort="${AJ7_Torque_Limit}" lower="${AJ7_Lower_Limit}" upper="${AJ7_Upper_Limit}" velocity="${AJ7_Speed_Limit}"/>
+        <controller_gains Kp="20000" Kd="400"/>
+    </xacro:revolute_joint_ex>
+  </xacro:macro>
+
+  <xacro:macro name="make_lower_arm_fixed" params="prefix reflect lower_arm_root_link">
+    <!-- LINKS -->
+    <xacro:box_link name="${AJ5_Distal_Link}"
+                    width="${AJ5_Link_Width}" height="${AJ5_Link_Height}" depth="${AJ5_Link_Length}" mass="${AJ5_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 ${reflect * 0.0006} ${reflect * -0.14}"
+                    visual_mesh="${mesh_root}/aj5_${prefix}.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/aj5_${prefix}.stl" />
+
+<!--     <xacro:box_link name="${AJ5_Distal_Link}"
+                    width="${AJ5_Link_Width}" height="${AJ5_Link_Height}" depth="${AJ5_Link_Length}" mass="${AJ5_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 ${reflect * 0.0006} ${reflect * -0.176}"
+                    visual_mesh="${mesh_root}/aj5_${prefix}.stl"
+                    material="White"
+                    collision_mesh="${mesh_root}/aj5_${prefix}.stl" />
+
+ -->    <xacro:box_link_no_mesh name="${AJ6_Distal_Link}"
+                    width="${AJ6_Link_Width}" height="${AJ6_Link_Height}" depth="${AJ6_Link_Length}" mass="${AJ6_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 0 0"/>
+
+    <xacro:box_link name="${AJ7_Distal_Link}"
+                    width="${AJ7_Link_Width}" height="${AJ7_Link_Height}" depth="${AJ7_Link_Length}" mass="${AJ7_Link_Mass}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${AJ7_Link_Width/2} 0 0"
+                    visual_mesh="${mesh_root}/palm_${prefix}.stl"
+                    material="Gold"
+                    collision_mesh="${mesh_root}/palm_${prefix}.stl"/>
+
+    <!-- AJ5 -->
+    <xacro:fixed_joint jointName="${AJ5_Joint_Name}"
+                          parent="${lower_arm_root_link}" child="${AJ5_Distal_Link}"
+                          origin_xyz="${AJ5_Origin_X} ${AJ5_Origin_Y} ${AJ5_Origin_Z}"
+                          origin_rpy="${AJ5_Orientation_Roll} ${AJ5_Orientation_Pitch} ${AJ5_Orientation_Yaw}">
+        <limit effort="${AJ5_Torque_Limit}" lower="${AJ5_Lower_Limit}" upper="${AJ5_Upper_Limit}" velocity="${AJ5_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+    <!-- AJ6 -->
+    <xacro:fixed_joint jointName="${AJ6_Joint_Name}"
+                          parent="${AJ6_Proximal_Link}" child="${AJ6_Distal_Link}"
+                          origin_xyz="${AJ6_Origin_X} ${AJ6_Origin_Y} ${AJ6_Origin_Z}"
+                          origin_rpy="${AJ6_Orientation_Roll} ${AJ6_Orientation_Pitch} ${AJ6_Orientation_Yaw}">
+        <limit effort="${AJ6_Torque_Limit}" lower="${AJ6_Lower_Limit}" upper="${AJ6_Upper_Limit}" velocity="${AJ6_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+    <!-- AJ7 -->
+    <xacro:fixed_joint jointName="${AJ7_Joint_Name}"
+                          parent="${AJ7_Proximal_Link}" child="${AJ7_Distal_Link}"
+                          origin_xyz="${AJ7_Origin_X} ${AJ7_Origin_Y} ${AJ7_Origin_Z}"
+                          origin_rpy="${AJ7_Orientation_Roll} ${AJ7_Orientation_Pitch} ${AJ7_Orientation_Yaw}">
+        <limit effort="${AJ7_Torque_Limit}" lower="${AJ7_Lower_Limit}" upper="${AJ7_Upper_Limit}" velocity="${AJ7_Speed_Limit}"/>
+    </xacro:fixed_joint>
+  </xacro:macro>
+
+  <xacro:macro name="make_arm" params="prefix reflect arm_root_link">
+    <xacro:make_upper_arm prefix="${prefix}" reflect="${reflect}" upper_arm_root_link="${arm_root_link}" />
+    <xacro:make_lower_arm prefix="${prefix}" reflect="${reflect}" lower_arm_root_link="${AJ5_Proximal_Link}" />
+  </xacro:macro>
+
+  <!-- Sensors -->
+  <!-- Why is this not symmetric?? -->
+  <xacro:macro name="v1_right_arm_sensor">
+    <xacro:camboard_sensor sensorName="/v1/RightCamBoard"
+                           parentLink="/v1/RightForearm"
+                           origin_xyz="0.049237 0.006877 -0.250708"
+                           origin_rpy="${pi} ${pi_2} ${pi}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_left_arm_sensor">
+    <xacro:camboard_sensor sensorName="/v1/LeftCamBoard"
+                           parentLink="/v1/LeftForearm"
+                           origin_xyz="0.045536 -0.0085 0.250708"
+                           origin_rpy="${pi} -${pi_2} 0"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_arm_sensors">
+    <xacro:v1_right_arm_sensor />
+    <xacro:v1_left_arm_sensor />
+  </xacro:macro>
+
+  <!-- Actuators -->
+  <xacro:macro name="v1_upper_arm_actuators" params="name1 type1 name2 type2 name3 type3 name4 type4">
+    <actuator name="${name1}" type="${type1}"/>
+    <actuator name="${name2}" type="${type2}"/>
+    <actuator name="${name3}" type="${type3}"/>
+    <actuator name="${name4}" type="${type4}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_lower_arm_actuators" params="name1 type1 name2 type2 name3 type3">
+    <actuator name="${name1}" type="${type1}"/>
+    <actuator name="${name2}" type="${type2}"/>
+    <actuator name="${name3}" type="${type3}"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_arm_actuators" params="name1 type1 name2 type2 name3 type3 name4 type4 name5 type5 name6 type6 name7 type7">
+    <xacro:v1_upper_arm_actuators name1="${name1}" type1="${type1}" name2="${name2}" type2="${type2}" name3="${name3}" type3="${type3}" name4="${name4}" type4="${type4}"/>
+    <xacro:v1_lower_arm_actuators name1="${name5}" type1="${type5}" name2="${name6}" type2="${type6}" name3="${name7}" type3="${type7}" />
+  </xacro:macro>
+
+  <!-- Transmissions -->
+  <xacro:macro name="v1_upper_arm_transmissions" params="prefix actuator1 actuator2 actuator3 actuator4">
+    <xacro:simple_transmission jointName="${AJ1_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${AJ2_Joint_Name}" actuatorName="${actuator2}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${AJ3_Joint_Name}" actuatorName="${actuator3}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${AJ4_Joint_Name}" actuatorName="${actuator4}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_lower_arm_transmissions" params="prefix actuator1 actuator2 actuator3">
+    <xacro:simple_transmission jointName="${AJ5_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:pushrod_transmission tranName="${prefix}_Wrist" namespace="v1_wrist"
+                                joint1="${AJ6_Joint_Name}" joint2="${AJ7_Joint_Name}"
+                                actuator1="${actuator2}"   actuator2="${actuator3}"
+                                reflect="1"/>
+                                <!-- because of the hardware configuration, wrist and waist transmissions should always have reflection=1 -->
+  </xacro:macro>
+
+  <xacro:macro name="v1_lower_arm_transmissions_simple" params="prefix actuator1 actuator2 actuator3">
+    <xacro:simple_transmission jointName="${AJ5_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${AJ6_Joint_Name}" actuatorName="${actuator2}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${AJ7_Joint_Name}" actuatorName="${actuator3}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <xacro:macro name="v1_arm_transmissions" params="prefix actuator1 actuator2 actuator3 actuator4 actuator5 actuator6 actuator7">
+    <xacro:v1_upper_arm_transmissions prefix="${prefix}" actuator1="${actuator1}" actuator2="${actuator2}" actuator3="${actuator3}" actuator4="${actuator4}"/>
+    <xacro:v1_lower_arm_transmissions prefix="${prefix}" actuator1="${actuator5}" actuator2="${actuator6}" actuator3="${actuator7}"/>
+  </xacro:macro>
+
+  <!-- Modes -->
+  <xacro:macro name="v1_upper_arm_modes" params="prefix actuator1 actuator2 actuator3 actuator4">
+    <xacro:v1_modes jointName="${AJ1_Joint_Name}" actuatorName="${actuator1}" />
+    <xacro:v1_modes jointName="${AJ2_Joint_Name}" actuatorName="${actuator2}" />
+    <xacro:v1_modes jointName="${AJ3_Joint_Name}" actuatorName="${actuator3}" />
+    <xacro:v1_modes jointName="${AJ4_Joint_Name}" actuatorName="${actuator4}" />
+  </xacro:macro>
+
+  <xacro:macro name="v1_lower_arm_modes" params="prefix actuator1 actuator2 actuator3">
+    <xacro:v1_modes jointName="${AJ5_Joint_Name}" actuatorName="${actuator1}" />
+    <xacro:v1_modes jointName="${AJ6_Joint_Name}" actuatorName="${actuator2}" />
+    <xacro:v1_modes jointName="${AJ7_Joint_Name}" actuatorName="${actuator3}" />
+  </xacro:macro>
+
+  <xacro:macro name="v1_arm_modes" params="prefix actuator1 actuator2 actuator3 actuator4 actuator5 actuator6 actuator7">
+    <xacro:v1_upper_arm_modes prefix="${prefix}" actuator1="${actuator1}" actuator2="${actuator2}" actuator3="${actuator3}" actuator4="${actuator4}"/>
+    <xacro:v1_lower_arm_modes prefix="${prefix}" actuator1="${actuator5}" actuator2="${actuator6}" actuator3="${actuator7}"/>
+  </xacro:macro>
+
+</robot>

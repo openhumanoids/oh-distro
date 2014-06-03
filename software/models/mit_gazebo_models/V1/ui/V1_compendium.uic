@@ -1,0 +1,175 @@
+<?xml version="1.0" ?>
+<window>
+    <title>V1 Upper Body</title>
+    <size>0,0</size>
+    <position>10,10</position>
+    <style>CleanLooks</style>
+    <tabs>
+    	<tab>
+            <ui_file>$(find V1)/ui/V1_launcher.ui</ui_file>
+            <tabname>Launcher</tabname>
+            <parameters>
+                <parameter name="robot" value="V1_upperbody_testbed"/>
+                <parameter name="pin_link" value="testbed_base"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/arm.ui</ui_file>
+            <tabname>Right Arm</tabname>
+            <parameters>
+                <parameter name="j1NodePath" value="/trunk/raj1"/>
+                <parameter name="j2NodePath" value="/right_arm/j2"/>
+                <parameter name="j3NodePath" value="/right_arm/j3"/>
+                <parameter name="j4NodePath" value="/right_arm/j4"/>
+                <parameter name="j5NodePath" value="/right_arm/j5"/>
+                <parameter name="j6NodePath" value="/right_arm/forearm_driver1/wrist_right"/>
+                <parameter name="j7NodePath" value="/right_arm/forearm_driver1/wrist_left"/>
+                <parameter name="side" value="Right"/>
+                <parameter name="limb" value="RightArm"/>
+                <parameter name="channel" value="right_arm"/>
+                <parameter name="node" value="j5"/>
+                <parameter name="coeff" value="$(find drc_coeffs)/V1A/RightArm/v1_aj5_02.xml"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>RAJ1</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/trunk/laj1"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>RAJ2</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/right_arm/j2"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>RAJ3</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/right_arm/j3"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>RAJ4</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/right_arm/j4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/leonidas.ui</ui_file>
+            <tabname>RAJ5</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/right_arm/j5"/>
+                <parameter name="channel" value="right_arm"/>
+                <parameter name="node" value="j5"/>
+                <parameter name="coeff" value="$(find drc_coeffs)/V1A/RightArm/v1_aj5_02.xml"/>
+                <parameter name="poscom_low_lim" value="-2.36"/>
+                <parameter name="poscom_high_lim" value="2.36"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/arm.ui</ui_file>
+            <tabname>Left Arm</tabname>
+            <parameters>
+                <parameter name="j1NodePath" value="/trunk/laj1"/>
+                <parameter name="j2NodePath" value="/left_arm/j2"/>
+                <parameter name="j3NodePath" value="/left_arm/j3"/>
+                <parameter name="j4NodePath" value="/left_arm/j4"/>
+                <parameter name="j5NodePath" value="/left_arm/j5"/>
+                <parameter name="j6NodePath" value="/left_arm/forearm_driver1/wrist_right"/>
+                <parameter name="j7NodePath" value="/left_arm/forearm_driver1/wrist_left"/>
+                <parameter name="side" value="Left"/>
+                <parameter name="limb" value="LeftArm"/>
+                <parameter name="channel" value="left_arm"/>
+                <parameter name="node" value="j5"/>
+                <parameter name="coeff" value="$(find drc_coeffs)/V1A/LeftArm/v1_aj5_03.xml"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LAJ1</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/trunk/laj1"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LAJ2</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_arm/j2"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LAJ3</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_arm/j3"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LAJ4</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_arm/j4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/leonidas.ui</ui_file>
+            <tabname>LAJ5</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_arm/j5"/>
+                <parameter name="channel" value="left_arm"/>
+                <parameter name="node" value="j5"/>
+                <parameter name="coeff" value="$(find drc_coeffs)/V1A/LeftArm/v1_aj5_03.xml"/>
+                <parameter name="poscom_low_lim" value="-2.36"/>
+                <parameter name="poscom_high_lim" value="2.36"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/neck.ui</ui_file>
+            <tabname>Neck</tabname>
+            <parameters>
+                <parameter name="j1NodePath" value="/pelvis/rj1"/>
+                <parameter name="j2NodePath" value="/right_leg/j2"/>
+                <parameter name="j3NodePath" value="/right_leg/j3"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/leonidas.ui</ui_file>
+            <tabname>NJ1</tabname>
+            <parameters>
+                <parameter name="channel" value="neck"/>
+                <parameter name="node" value="j1"/>
+                <parameter name="coeff" value="$(find drc_coeffs)/V1A/Neck/v1_njx_01.xml"/>
+                <parameter name="poscom_low_lim" value="-1.57"/>
+                <parameter name="poscom_high_lim" value="0"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/leonidas.ui</ui_file>
+            <tabname>NJ2</tabname>
+            <parameters>
+                <parameter name="channel" value="neck"/>
+                <parameter name="node" value="j2"/>
+                <parameter name="coeff" value="$(find drc_coeffs)/V1A/Neck/v1_njx_02.xml"/>
+                <parameter name="poscom_low_lim" value="-1.57"/>
+                <parameter name="poscom_high_lim" value="1.57"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/leonidas.ui</ui_file>
+            <tabname>NJ3</tabname>
+            <parameters>
+                <parameter name="channel" value="neck"/>
+                <parameter name="node" value="j3"/>
+                <parameter name="coeff" value="$(find drc_coeffs)/V1A/Neck/v1_njx_03.xml"/>
+                <parameter name="poscom_low_lim" value="0"/>
+                <parameter name="poscom_high_lim" value="0.70"/>
+            </parameters>
+        </tab>
+    </tabs>
+</window>

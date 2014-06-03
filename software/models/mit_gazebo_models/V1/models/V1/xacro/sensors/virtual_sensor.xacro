@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/virtual_sensor">
+  <!--
+  Vritual sensor frame
+  -->
+
+  <xacro:macro name="virtual_sensor" params="sensorName parentLink origin_xyz origin_rpy">
+    <xacro:virtual_link name="${sensorName}_Frame"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 0 0"/>
+
+    <xacro:fixed_joint jointName="${sensorName}_Offset"
+                       parent="${parentLink}" child="${sensorName}_Frame"
+                       origin_rpy="${origin_rpy}"
+                       origin_xyz="${origin_xyz}"/>
+  </xacro:macro>
+</robot>

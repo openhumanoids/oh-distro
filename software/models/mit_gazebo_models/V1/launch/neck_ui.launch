@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="ui_file" default="$(find V1)/ui/neck.ui
+                               $(find V1)/ui/leonidas.ui 
+                               $(find V1)/ui/leonidas.ui
+                               $(find V1)/ui/leonidas.ui" />
+
+  <arg name="coeff1" default="$(find drc_coeffs)/V1A/Neck/v1_njx_01.xml"/>
+  <arg name="coeff2" default="$(find drc_coeffs)/V1A/Neck/v1_njx_02.xml"/>
+  <arg name="coeff3" default="$(find drc_coeffs)/V1A/Neck/v1_njx_03.xml"/>
+  <arg name="j1_low_lim"  default="-1.57"/>
+  <arg name="j1_high_lim" default="0"/>
+  <arg name="j2_low_lim"  default="-1.57"/>
+  <arg name="j2_high_lim" default="1.57"/>
+  <arg name="j3_low_lim"  default="0"/>
+  <arg name="j3_high_lim" default="0.70"/>
+
+  <arg name="tabnames" default="Neck NJ1 NJ2 NJ3"/>
+  <arg name="params" value="'j1NodePath=/neck/j1 j2NodePath=/neck/j2 j3NodePath=/neck/j3'
+                             'channel=neck node=j1 coeff=$(arg coeff1) poscom_low_lim=$(arg j1_low_lim) poscom_high_lim=$(arg j1_high_lim)'
+                             'channel=neck node=j2 coeff=$(arg coeff2) poscom_low_lim=$(arg j2_low_lim) poscom_high_lim=$(arg j2_high_lim)'
+                             'channel=neck node=j3 coeff=$(arg coeff3) poscom_low_lim=$(arg j3_low_lim) poscom_high_lim=$(arg j3_high_lim)'"/>
+  <arg name="title" default="Neck"/>
+  <arg name="position" default="10,10"/>
+  <node name="neck_ui" pkg="ui_builder" type="ui_builder.py" args="-u $(arg ui_file) 
+                                                                        --tabnames $(arg tabnames) 
+                                                                        -t $(arg title) 
+                                                                        --position $(arg position) 
+                                                                        --parameters $(arg params) 
+                                                                        --" output="screen"/>
+</launch>

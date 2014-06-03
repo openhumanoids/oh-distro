@@ -1,0 +1,167 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/head">
+  <!--
+      Reference for kinematic and dynamic parameters comes from:
+
+          http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <!-- Properties -->
+  <xacro:include filename="$(find V1)/models/V1/xacro/head/joint_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/head/link_names.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/head/joint_limits.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/head/dh_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/head/mass_parameters.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/camboard.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/flea.xacro"/>
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/ibeo.xacro"/>
+  <!-- <xacro:include filename="$(find V1)/models/V1/xacro/sensors/asus.xacro"/> -->
+  <xacro:include filename="$(find V1)/models/V1/xacro/sensors/ensenso.xacro"/>
+  <!-- Link properties. -->
+  <xacro:property name="NJ3_Link_Radius" value="0.14"/>
+
+  <xacro:macro name="make_head" params="head_root_link">
+    <!-- LINKS -->
+    <xacro:virtual_link_with_visual name="${NJ1_Distal_Link}"
+                                    origin_xyz="0 0 0"
+                                    origin_rpy="0 0 0"
+                                    mesh_filename="${mesh_root}/nj1.stl"/>
+
+    <xacro:virtual_link_with_visual name="${NJ2_Distal_Link}"
+                                    origin_xyz="0 0 0"
+                                    origin_rpy="0 0 0"
+                                    mesh_filename="${mesh_root}/nj2.stl"/>
+
+    <xacro:sphere_link name="${NJ3_Distal_Link}"
+                       radius="${NJ3_Link_Radius}" mass="${NJ3_Link_Mass}"
+                       origin_xyz="-0.079 0.009 0" origin_rpy="0 0 0"
+                       visual_mesh="${mesh_root}/head.stl"
+                       material="White"
+                       collision_mesh="${mesh_root}/head.stl"/>
+
+    <!-- NJ1 -->
+    <xacro:revolute_joint_ex jointName="${NJ1_Joint_Name}"
+                          parent="${NJ1_Proximal_Link}" child="${NJ1_Distal_Link}"
+                          origin_xyz="${NJ1_Origin_X} ${NJ1_Origin_Y} ${NJ1_Origin_Z}"
+                          origin_rpy="${NJ1_Orientation_Roll} ${NJ1_Orientation_Pitch} ${NJ1_Orientation_Yaw}">
+      <limit effort="${NJ1_Torque_Limit}" lower="${NJ1_Lower_Limit}" upper="${NJ1_Upper_Limit}" velocity="${NJ1_Speed_Limit}"/>
+      <controller_gains Kp="20000" Kd="0"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- NJ2 -->
+    <xacro:revolute_joint_ex jointName="${NJ2_Joint_Name}"
+                          parent="${NJ2_Proximal_Link}" child="${NJ2_Distal_Link}"
+                          origin_xyz="${NJ2_Origin_X} ${NJ2_Origin_Y} ${NJ2_Origin_Z}"
+                          origin_rpy="${NJ2_Orientation_Roll} ${NJ2_Orientation_Pitch} ${NJ2_Orientation_Yaw}">
+      <limit effort="${NJ2_Torque_Limit}" lower="${NJ2_Lower_Limit}" upper="${NJ2_Upper_Limit}" velocity="${NJ2_Speed_Limit}"/>
+      <controller_gains Kp="20000" Kd="0"/>
+    </xacro:revolute_joint_ex>
+
+    <!-- NJ3 -->
+    <xacro:revolute_joint_ex jointName="${NJ3_Joint_Name}"
+                          parent="${NJ3_Proximal_Link}" child="${NJ3_Distal_Link}"
+                          origin_xyz="${NJ3_Origin_X} ${NJ3_Origin_Y} ${NJ3_Origin_Z}"
+                          origin_rpy="${NJ3_Orientation_Roll} ${NJ3_Orientation_Pitch} ${NJ3_Orientation_Yaw}">
+      <limit effort="${NJ3_Torque_Limit}" lower="${NJ3_Lower_Limit}" upper="${NJ3_Upper_Limit}" velocity="${NJ3_Speed_Limit}"/>
+      <controller_gains Kp="20000" Kd="0"/>
+    </xacro:revolute_joint_ex>
+  </xacro:macro>
+
+  <xacro:macro name="make_head_fixed" params="head_root_link">
+    <!-- LINKS -->
+    <xacro:virtual_link_with_visual name="${NJ1_Distal_Link}"
+                                    origin_xyz="0 0 0"
+                                    origin_rpy="0 0 0"
+                                    mesh_filename="${mesh_root}/nj1.stl"/>
+
+    <xacro:virtual_link_with_visual name="${NJ2_Distal_Link}"
+                                    origin_xyz="0 0 0"
+                                    origin_rpy="0 0 0"
+                                    mesh_filename="${mesh_root}/nj2.stl"/>
+
+    <xacro:sphere_link name="${NJ3_Distal_Link}"
+                       radius="${NJ3_Link_Radius}" mass="${NJ3_Link_Mass}"
+                       origin_xyz="-0.079 0.009 0" origin_rpy="0 0 0"
+                       visual_mesh="${mesh_root}/head.stl"
+                       material="White"
+                       collision_mesh="${mesh_root}/head.stl"/>
+
+    <!-- NJ1 -->
+    <xacro:fixed_joint jointName="${NJ1_Joint_Name}"
+                          parent="${NJ1_Proximal_Link}" child="${NJ1_Distal_Link}"
+                          origin_xyz="${NJ1_Origin_X} ${NJ1_Origin_Y} ${NJ1_Origin_Z}"
+                          origin_rpy="${NJ1_Orientation_Roll} ${NJ1_Orientation_Pitch} ${NJ1_Orientation_Yaw}">
+      <limit effort="${NJ1_Torque_Limit}" lower="${NJ1_Lower_Limit}" upper="${NJ1_Upper_Limit}" velocity="${NJ1_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+    <!-- NJ2 -->
+    <xacro:fixed_joint jointName="${NJ2_Joint_Name}"
+                          parent="${NJ2_Proximal_Link}" child="${NJ2_Distal_Link}"
+                          origin_xyz="${NJ2_Origin_X} ${NJ2_Origin_Y} ${NJ2_Origin_Z}"
+                          origin_rpy="${NJ2_Orientation_Roll} ${NJ2_Orientation_Pitch} ${NJ2_Orientation_Yaw}">
+      <limit effort="${NJ2_Torque_Limit}" lower="${NJ2_Lower_Limit}" upper="${NJ2_Upper_Limit}" velocity="${NJ2_Speed_Limit}"/>
+    </xacro:fixed_joint>
+
+    <!-- NJ3 -->
+    <xacro:fixed_joint jointName="${NJ3_Joint_Name}"
+                          parent="${NJ3_Proximal_Link}" child="${NJ3_Distal_Link}"
+                          origin_xyz="${NJ3_Origin_X} ${NJ3_Origin_Y} ${NJ3_Origin_Z}"
+                          origin_rpy="${NJ3_Orientation_Roll} ${NJ3_Orientation_Pitch} ${NJ3_Orientation_Yaw}">
+      <limit effort="${NJ3_Torque_Limit}" lower="${NJ3_Lower_Limit}" upper="${NJ3_Upper_Limit}" velocity="${NJ3_Speed_Limit}"/>
+    </xacro:fixed_joint>
+  </xacro:macro>
+
+  <!-- Sensors -->
+  <xacro:macro name="v1_head_sensors">
+
+    <xacro:camboard_sensor sensorName="/v1/HeadCamBoard"
+                           parentLink="${NJ3_Distal_Link}"
+                           origin_xyz="-0.186861111 0.085358875 -0.008499998"
+                           origin_rpy="${pi_2} ${pi} -.61"/>
+
+    <xacro:ibeo_sensor sensorName="/v1/Ibeo"
+                       parentLink="${NJ3_Distal_Link}"
+                       origin_xyz="-0.133 0.0065 -0.02325"
+                       origin_rpy="-${pi_2} 0 -${pi}"/>
+
+    <!-- Are both Asus frames/plugins needed?? -->
+    <!--<xacro:asus_sensor sensorName="/v1/AsusCameraDepth"
+                       parentLink="${NJ3_Distal_Link}"
+                       origin_xyz="-0.159588685 -0.080406011 -0.048221000"
+                       origin_rpy="-${pi_2} 0 ${pi}"/>
+
+    <xacro:asus_sensor sensorName="/v1/AsusCameraRGB"
+                       parentLink="${NJ3_Distal_Link}"
+                       origin_xyz="-0.164922685 -0.080406011 0.026709000"
+                       origin_rpy="-${pi_2} 0 ${pi}"/> -->
+
+    <xacro:ensenso_sensor sensorName="/v1/Ensenso"
+                        parentLink="${NJ3_Distal_Link}"
+                        origin_xyz="-.1836 -.0645 -.00311"
+                        origin_rpy="0 -${pi_2} 0"/>
+
+    <xacro:microstrain_sensor sensorName="/v1/HeadIMU"
+                              parentLink="${NJ3_Distal_Link}"
+                              origin_xyz="-0.103 -0.05239 0.00022730"
+                              origin_rpy="-${pi_2} 0  0" />
+  </xacro:macro>
+
+  <!-- Actuators -->
+  <xacro:macro name="v1_head_actuators" params="name1 type1 name2 type2 name3 type3">
+    <actuator name="${name1}" type="${type1}"/>
+    <actuator name="${name2}" type="${type2}"/>
+    <actuator name="${name3}" type="${type3}"/>
+  </xacro:macro>
+
+  <!-- Transmissions -->
+  <xacro:macro name="v1_head_transmissions" params="actuator1 actuator2 actuator3">
+    <xacro:simple_transmission jointName="${NJ1_Joint_Name}" actuatorName="${actuator1}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${NJ2_Joint_Name}" actuatorName="${actuator2}" reduction="1" offset="0"/>
+    <xacro:simple_transmission jointName="${NJ3_Joint_Name}" actuatorName="${actuator3}" reduction="1" offset="0"/>
+  </xacro:macro>
+
+  <!-- Modes -->
+  <xacro:macro name="v1_head_modes" params="actuator1 actuator2 actuator3">
+    <xacro:v1_modes jointName="${NJ1_Joint_Name}" actuatorName="${actuator1}" />
+    <xacro:v1_modes jointName="${NJ2_Joint_Name}" actuatorName="${actuator2}" />
+    <xacro:v1_modes jointName="${NJ3_Joint_Name}" actuatorName="${actuator3}" />
+  </xacro:macro>
+</robot>

@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<ui>
+	<parameters>
+        <parameter name="robot" value="V1"/>
+        <parameter name="pin_link" value=""/>
+        <parameter name="world" value="models/${robot}/worlds/${robot}.world" />
+	</parameters>
+
+	<objects>
+		<object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager" args="terminator -e"/>
+		<object name="ui_utils" rospackage="ui_builder" module="ui_utils" member="ui_utils"/>
+	</objects>
+
+	<widgets>
+		<widget col="0" row="0"  name="${robot}" type="GroupBox">
+			<widget name="Build xacros" type="PushButton">
+				<object name="ui_utils" method="printStringWithTime" args="Remaking models.  Please wait..." argTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="rosrun ${robot} make_${robot}_models.sh" argTypes="str"/>
+				<object name="ui_utils" method="printStringWithTime" args="Done!" argTypes="str"/>
+			</widget>
+			<widget name="Load Robot&#10;Description : HW" type="PushButton">
+				<object name="ui_utils" method="systemCall" args="roslaunch V1 V1_hardware.launch urdf:='$(find ${robot})/models/${robot}/urdf/${robot}_hw.urdf'" argTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch valkyrie_cop valkyrie_right_cop.launch" argTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch valkyrie_cop valkyrie_left_cop.launch" argTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch imu_sensor_mpu6000 RightLegMPU6000.launch" argsTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch imu_sensor_mpu6000 LeftLegMPU6000.launch" argsTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch amber_controller_library ik_upper_body.launch" argsTypes="str"/>
+				<object name="ui_utils" method="systemCall" args="roslaunch rviz_navigation_panel load_service_names.launch" argTypes="str"/>
+			</widget>
+
+			<widget col="0" row="1"  name="HW Shared Memory" type="ToggleButton">
+				<check label="Shared memory">
+					<object name="manager" method="startProgram" args="roslaunch robonet_master_utils V1.launch,control.py" argTypes="str,str"/>
+				</check>
+				<uncheck label="Shared memory">
+					<object name="manager" method="stopProgram" args="control.py" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="0" row="2" name="Power" type="GroupBox">
+				<widget name="Robot Checkout" type="ToggleButton">
+					<check label="Robot Checkout">
+						<!--<object name="manager" method="startProgram" args="rosrun ui_builder ui_builder.py -u `rospack find bms_api`/ui/robot_checkout.ui -t BMS_gui,bms_gui" argTypes="str,str"/>-->
+						<object name="self" method="AddTabsConfigFile" args="/ui/power_control.uic,V1" argTypes="str,str"/>
+					</check>
+					<uncheck label="Robot Checkout">
+						<object name="self" method="CloseTabByName" args="Power" argTypes="str,str"/>
+					</uncheck>
+				</widget>
+
+				<widget name="Power Lite" type="ToggleButton">
+					<check label="Power Lite">
+						<object name="manager" method="startProgram" args="rosrun ui_builder ui_builder.py -u `rospack find V1`/ui/power_lite.ui -t BMS_gui,power_lite" argTypes="str,str"/>
+					</check>
+					<uncheck label="Power Lite">
+						<object name="manager" method="stopProgram" args="power_lite" argTypes="str"/>
+					</uncheck>
+				</widget>
+			</widget>
+
+			<!-- Taken out for two reasons,
+			1. Violates SLAP principles.
+			2. Coeff loading now done in practice from the 'Control Tab' -->
+			<!-- <widget name="Load Coeffs" type="PushButton">
+                <object name="manager" method="startProgram" args="rosrun nasa_configuration cfgLoader.py -c `rospack find drc_coeffs`/V1A/v1_config.yaml -n,loadCoeffs" argTypes="str,str"/>
+            </widget> -->
+
+			<widget name="Controller Exec" type="ToggleButton">
+				<check label="Controller Exec">
+					<object name="manager" method="startProgram" args="rosrun robot_state_publisher robot_state_publisher,robot_state_publisher" argTypes="str,str"/>
+					<object name="manager" method="startProgram" args="roslaunch controller_exec robot_control_system.launch,controller_exec" argTypes="str,str"/>
+				</check>
+				<uncheck label="Controller Exec">
+					<object name="manager" method="stopProgram" args="robot_state_publisher" argTypes="str"/>
+					<object name="manager" method="stopProgram" args="controller_exec" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Servo Controller" type="ToggleButton">
+				<check label="ServoController">
+					<object name="ui_utils" method="systemCall" args="rosparam set /ServoController/type mode_controller/ServoController"/>
+					<object name="ui_utils" method="systemCall" args="rosservice call /controller_manager/load_controller ServoController"/>
+					<object name="ui_utils" method="systemCall" args="rosservice call /controller_manager/switch_controller [ServoController] [] 1"/>
+				</check>
+				<uncheck label="ServoController">
+					<object name="ui_utils" method="systemCall" args="rosservice call /controller_manager/switch_controller [] [ServoController] 1"/>
+					<object name="ui_utils" method="systemCall" args="rosservice call /controller_manager/unload_controller ServoController"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Odometry" type="ToggleButton">
+				<check label="Odometry">
+					<object name="manager" method="startProgram" args="roslaunch nasa_spm_core head_imu.launch,head_imu" argTypes="str,str"/>
+					<object name="manager" method="startProgram" args="rosrun nasa_spm_core head_imu_rotation.py,head_imu_rotation" argTypes="str,str"/>
+				</check>
+				<uncheck label="Odometry">
+					<object name="manager" method="stopProgram"  args="head_imu" argTypes="str"/>
+					<object name="manager" method="stopProgram"  args="head_imu_rotation" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="PelvisOdometry" type="ToggleButton">
+				<check label="PelvisOdometry"> 
+					<object name="manager" method="startProgram" args="roslaunch nasa_spm_core two_leg_testbed.launch,two_leg_testbed" argTypes="str,str"/>
+					<object name="manager" method="startProgram" args="rosrun nasa_spm_core two_leg_testbed_rotation.py,two_leg_testbed_rotation" argTypes="str,str"/>
+				</check> 
+				<uncheck label="PelvisOdometry">
+					<object name="manager" method="stopProgram"  args="two_leg_testbed" argTypes="str"/>
+					<object name="manager" method="stopProgram"  args="two_leg_testbed_rotation" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="WBC Supervisor" type="ToggleButton">
+				<check label="WBC Supervisor">
+					<object name="manager" method="startProgram" args="rosrun wbc_supervisor supervisor.py,wbc_supervisor" argTypes="str,str"/>
+				</check>
+				<uncheck label="WBC Supervisor">
+					<object name="manager" method="stopProgram" args="wbc_supervisor" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Script Engine" type="ToggleButton">
+				<check label="Script Engine">
+					<object name="manager" method="startProgram" args="rosrun robot_task_commander ScriptEngine.py,script_engine" argTypes="str,str"/>
+					<!-- <object name="manager" method="startProgram" args="rosrun robot_task_commander commander.py,rtc_gui" argTypes="str,str"/> -->
+				</check>
+				<uncheck label="Script Engine">
+					<object name="manager" method="stopProgram" args="script_engine" argTypes="str"/>
+					<!-- <object name="manager" method="stopProgram" args="rtc_gui" argTypes="str"/> -->
+				</uncheck>
+			</widget>
+
+			<widget name="Turbo Fault Monitors" type="ToggleButton">
+				<check label="Fault Monitor">
+					<object name="manager" method="startProgram" args="roslaunch V1 V1_fault_monitor.launch,fault_monitor" argTypes="str,str"/>
+				</check>
+				<uncheck label="Fault Monitor">
+					<object name="manager" method="stopProgram" args="fault_monitor" argTypes="str"/>
+				</uncheck>
+			</widget>
+		</widget>
+
+		<widget col="2" row="0" name="Sub-ui's" type="GridGroupBox">
+		<!-- <widget col="1" row="0" name="Sub-ui's" type="GridGroupBox"> -->
+			<widget col="0" row="0" name="Left Arm" type="ToggleButton">
+				<check label="Left Arm">
+					<object name="self" method="AddTabsConfigFile" args="/ui/left_arm.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Left Arm">
+					<object name="self" method="CloseTabByName" args="Left Arm" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ3" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ4" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LAJ5" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="0" row="1"  name="Left Leg" type="ToggleButton">
+				<check label="Left Leg">
+					<object name="self" method="AddTabsConfigFile" args="/ui/left_leg.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Left Leg">
+					<object name="self" method="CloseTabByName" args="Left Leg" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ3" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ4" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ5" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="LLJ6" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="0" row="2"  name="Neck" type="ToggleButton">
+				<check label="Neck">
+					<object name="self" method="AddTabsConfigFile" args="/ui/neck.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Neck">
+					<object name="self" method="CloseTabByName" args="Neck" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="NJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="NJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="NJ3" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="1" row="2"  name="Trunk" type="ToggleButton">
+				<check label="Trunk">
+					<object name="self" method="AddTabsConfigFile" args="/ui/trunk.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Trunk">
+					<object name="self" method="CloseTabByName" args="Trunk" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="WJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="WJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="WJ3" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="1" row="0"  name="Right Arm" type="ToggleButton">
+				<check label="Right Arm">
+					<object name="self" method="AddTabsConfigFile" args="/ui/right_arm.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Right Arm">
+					<object name="self" method="CloseTabByName" args="Right Arm" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ3" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ4" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RAJ5" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="1" row="1"  name="Right Leg" type="ToggleButton">
+				<check label="Right Leg">
+					<object name="self" method="AddTabsConfigFile" args="/ui/right_leg.uic,V1" argTypes="str,str"/>
+				</check>
+				<uncheck label="Right Leg">
+					<object name="self" method="CloseTabByName" args="Right Leg" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ1" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ2" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ3" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ4" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ5" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="RLJ6" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="0" row="3" name="Full V1" type="ToggleButton">
+				<check name="UI">
+					<object name="self" method="AddTabsConfigFile" args="/ui/full_ui.uic,V1" argTypes="str,str" />
+				</check>
+				<uncheck name="UI">
+					<object name="self" method="CloseTabByName" args="Power" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Neck" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Left Arm" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Right Arm" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Left Leg" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Right Leg" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Trunk" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget col="1" row="3" name="Control" type="ToggleButton">
+				<check>
+					<object name="self" method="AddTabsConfigFile" args="/ui/control.uic,V1" argTypes="str,str" />
+				</check>
+				<uncheck>
+					<object name="self" method="CloseTabByName" args="Control" argTypes="str"/>
+					<object name="self" method="CloseTabByName" args="Safety" argTypes="str"/>
+				</uncheck>
+			</widget>
+		</widget>
+
+		<widget col="3" row="0"  name="Utilities (optional)" type="GroupBox">
+		<!-- <widget col="2" row="0"  name="Utilities (optional)" type="GroupBox"> -->
+			<widget name="SHM Editor" type="ToggleButton">
+				<check label="SHM Editor">
+					<object name="manager" method="startProgram" args="rosrun robonet_master_utils editor.py,editor" argTypes="str,str"/>
+				</check>
+				<uncheck label="SHM Editor">
+					<object name="manager" method="stopProgram" args="editor" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<!-- Moved to operator UI -->
+			<!-- <widget name="Config Editor" type="ToggleButton">
+				<check label="Config Editor">
+					<object name="manager" method="startProgram" args="rosrun nasa_configuration config_editor.py,config_editor" argTypes="str,str"/>
+				</check>
+				<uncheck label="Config Editor">
+					<object name="manager" method="stopProgram" args="config_editor" argTypes="str"/>
+				</uncheck>
+			</widget> -->
+
+			<!-- Probe moved to operator UI -->
+			<widget name="Probe Publisher" type="ToggleButton">
+				<check label="Probe Publisher">
+					<object name="manager" method="startProgram" args="rosrun robonet_master_utils shm_probe_publisher.py,probe_publisher" argTypes="str,str"/>
+				</check>
+				<uncheck label="Probe Publisher">
+					<object name="manager" method="stopProgram" args="probe_publisher" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Coeff Editor" type="ToggleButton">
+				<check label="Coeff Editor">
+					<object name="manager" method="startProgram" args="rosrun nasa_configuration coeff_editor.py,coeff_editor" argTypes="str,str"/>
+				</check>
+				<uncheck label="Coeff Editor">
+					<object name="manager" method="stopProgram" args="coeff_editor" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Left Hand Barometers" type="ToggleButton">
+				<check label="Left Hand Barometers">
+					<object name="manager" method="startProgram" args="rosrun hand_barometers barometers_raw_server.py all left,left_barometers" argTypes="str,str,str,str"/>
+				</check>
+				<uncheck label="Left Hand Barometers">
+					<object name="manager" method="stopProgram" args="left_barometers" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Right Hand Barometers" type="ToggleButton">
+				<check label="Right Hand Barometers">
+					<object name="manager" method="startProgram" args="rosrun hand_barometers barometers_raw_server.py all right,right_barometers" argTypes="str,str,str,str"/>
+				</check>
+				<uncheck label="Right Hand Barometers">
+					<object name="manager" method="stopProgram" args="right_barometers" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+
+			<!-- <widget name="Probe" type="GroupBox" >
+				<widget name="Probe Publisher" type="ToggleButton">
+					<check label="Probe Publisher">
+						<object name="manager" method="startProgram" args="rosrun robonet_master_utils shm_probe_publisher.py,probe_publisher" argTypes="str,str"/>
+					</check>
+					<uncheck label="Probe Publisher">
+						<object name="manager" method="stopProgram" args="probe_publisher" argTypes="str"/>
+					</uncheck>
+				</widget>
+				<widget name="Probe" type="ToggleButton">
+					<check label="Probe">
+						<object name="manager" method="startProgram" args="rosrun robonet_master_utils probe.py,probe" argTypes="str,str"/>
+					</check>
+					<uncheck label="Probe">
+						<object name="manager" method="stopProgram" args="probe" argTypes="str"/>
+					</uncheck>
+				</widget>
+			</widget> -->
+
+			<!-- Moved to Operator UI -->
+			<!-- <widget name="Plotter" type="ToggleButton">
+				<check label="Plotter">
+					<object name="manager" method="startProgram" args="rosrun drc_common plotter.py,plotter" argTypes="str,str"/>
+				</check>
+				<uncheck label="Plotter">
+					<object name="manager" method="stopProgram" args="plotter" argTypes="str"/>
+				</uncheck>
+			</widget> -->
+
+			<widget name="Midi Controller" type="ToggleButton">
+				<check label="Midi">
+					<object name="manager" method="startProgram" args="rosrun bcf2000 bcf2000_node.py `rospack find V1`/config/midi_fingers.xml,midi" argTypes="str,str"/>
+				</check>
+				<uncheck label="Midi">
+					<object name="manager" method="stopProgram" args="midi" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<!-- <widget name="Kill Gazebo" type="PushButton">
+				<object name="ui_utils"
+					method="systemCall"
+					args="rosrun drc_common run-alias.bash gz-kill $(rospack find drc_common)/setup/functions.sh"
+					argTypes="str" />
+			</widget> -->
+
+			<widget name="Sys Id" type="ToggleButton">
+				<check label="Sys Id">
+					<object name="manager" method="startProgram" args="rosrun ui_builder ui_builder.py -t 'Sys Id' -u $(rospack find V1)/ui/sysid.ui --parameters robot=${robot},sysid" argTypes="str,str"/>
+					<!-- Cannot pass parameters to *.uic files -->
+					<!-- <object name="self" method="AddTabsConfigFile" args="/ui/sysid.uic,V1" argTypes="str,str"/> -->
+				</check>
+				<uncheck label="Sys Id">
+					<object name="manager" method="stopProgram" args="sysid" argTypes="str"/>
+					<!-- <object name="self" method="CloseTabByName" args="Sys Id" argTypes="str"/> -->
+				</uncheck>
+			</widget>
+
+			<widget name="Node Launcher" type="ToggleButton">
+				<check label="Node Launcher">
+					<object name="manager" method="startProgram" args="rosrun node_launcher launcher.py,node_launcher" argTypes="str,str"/>
+				</check>
+				<uncheck label="Node Launcher">
+					<object name="manager" method="stopProgram" args="node_launcher" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Comm Stats" type="ToggleButton">
+				<check label="Comm Stats">
+					<object name="manager" method="startProgram" args="rosrun robonet_master_utils print_comm_stats.py,comm_stats" argTypes="str,str"/>
+				</check>
+				<uncheck label="Comm Stats">
+					<object name="manager" method="stopProgram" args="comm_stats" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Temperature&#10;Monitor" type="ToggleButton">
+				<check label="Temperature&#10;Monitor">
+					<object name="manager" method="startProgram" args="rosrun ui_builder ui_builder.py -c `rospack find V1`/ui/V1_temperatures.uic,temps" argTypes="str,str"/>
+					<!-- <object name="self" method="AddTabsConfigFile" args="/ui/V1_temperatures.uic,V1" argTypes="str,str"/> -->
+				</check>
+				<uncheck label="Temperature&#10;Monitor">
+					<!-- <object name="self" method="CloseTabByName" args="V1 Temps" argTypes="str"/> -->
+					<object name="manager" method="stopProgram" args="temps" argTypes="str"/>
+				</uncheck>
+			</widget>
+
+			<widget name="Debug" type="GroupBox">
+				<widget name="Controller Exec&#10;in gdb" type="ToggleButton">
+					<check>
+						<object name="manager" method="startProgram" args="gdb -ex run --args `rospack find ocl`/bin/rttlua-gnulinux -i `rospack find controller_exec`/scripts/deploy_ControllerExec.lua,controller_exec" argTypes="str,str"/>
+						<object name="manager" method="startProgram" args="rosrun robot_state_publisher robot_state_publisher,robot_state_publisher" argTypes="str,str"/>
+					</check>
+					<uncheck>
+						<object name="manager" method="stopProgram" args="controller_exec" argTypes="str"/>
+						<object name="manager" method="stopProgram" args="robot_state_publisher" argTypes="str"/>
+					</uncheck>
+				</widget>
+
+				<widget name="Controller Exec&#10;in gdbServer" type="ToggleButton">
+					<check>
+						<object name="manager" method="startProgram" args="gdbserver localhost:9999 `rospack find ocl`/bin/rttlua-gnulinux -i `rospack find controller_exec`/scripts/deploy_ControllerExec.lua,controller_exec_gdb" argTypes="str,str"/>
+						<object name="manager" method="startProgram" args="rosrun robot_state_publisher robot_state_publisher,robot_state_publisher" argTypes="str,str"/>
+					</check>
+					<uncheck>
+						<object name="manager" method="stopProgram" args="controller_exec_gdb" argTypes="str"/>
+						<object name="manager" method="stopProgram" args="robot_state_publisher" argTypes="str"/>
+					</uncheck>
+				</widget>
+			</widget>
+		</widget>
+
+
+<!--	<widget col="2" row="0"  name="Program Status" type="TableViewDisplay">
+			<header value="status"/>
+			<row label="editor">
+				<object name="manager" method="getProgramStatus" args="editor" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="config_editor">
+				<object name="manager" method="getProgramStatus" args="config_editor" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="full_ui">
+				<object name="manager" method="getProgramStatus" args="full_ui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="neck_joints_ui">
+				<object name="manager" method="getProgramStatus" args="neck_joints_ui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="trunk_joints_ui">
+				<object name="manager" method="getProgramStatus" args="trunk_joints_ui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="left_arm_joints_ui">
+				<object name="manager" method="getProgramStatus" args="left_arm_joints_ui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="left_leg_joints_ui">
+				<object name="manager" method="getProgramStatus" args="left_leg_joints_ui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="neck_joints_ui">
+				<object name="manager" method="getProgramStatus" args="neck_joints_ui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="right_arm_joints_ui">
+				<object name="manager" method="getProgramStatus" args="right_arm_joints_ui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="right_leg_joints_ui">
+				<object name="manager" method="getProgramStatus" args="right_leg_joints_ui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="script_engine">
+				<object name="manager" method="getProgramStatus" args="script_engine" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+			<row label="rtc_gui">
+				<object name="manager" method="getProgramStatus" args="rtc_gui" argTypes="str" thresholds="not_found,dead,alive" colors="white,darkGray,lightGray,green"/>
+			</row>
+		</widget>
+-->
+
+	</widgets>
+</ui>

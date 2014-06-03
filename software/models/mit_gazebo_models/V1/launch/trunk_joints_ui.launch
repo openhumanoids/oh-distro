@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="ui_file" default="$(find V1)/ui/turbodriver.ui 
+  							   $(find V1)/ui/turbodriver_linear.ui 
+  							   $(find V1)/ui/turbodriver_linear.ui" />
+  <arg name="tabnames" default="J1 J2 J3"/>
+  <arg name="params" value="'nodepath=/pelvis/wj1','nodepath=/trunk/wj2','nodepath=/trunk/wj3'"/>
+  <arg name="title" default="'Trunk Joints'"/>
+  <arg name="position" default="10,10"/>
+  <node name="trunk_joints" pkg="ui_builder" type="ui_builder.py" args="-u $(arg ui_file) 
+  																		--tabnames $(arg tabnames) 
+  																		--parameters $(arg params) 
+  																		-t $(arg title) 
+  																		--position $(arg position) 
+  																		--" output="screen"/>
+</launch>

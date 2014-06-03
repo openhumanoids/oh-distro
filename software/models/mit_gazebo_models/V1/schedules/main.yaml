@@ -1,0 +1,62 @@
+power:
+    address: 0
+    nodes:
+        BMS: {address: 1, tokens: !include BMS.yaml}
+left_arm:
+    address: 1
+    nodes:
+        forearm_sensors: {address: 1, tokens: !include midas.yaml}
+        j2: {address: 2}
+        j3: {address: 3}
+        j4: {address: 4}
+        j5: {address: 5}
+        forearm_driver1: {address: 6, tokens: !include athena1.yaml}
+        forearm_driver2: {address: 7, tokens: !include athena2.yaml}
+right_arm:
+    address: 2
+    nodes:
+        forearm_sensors: {address: 1, tokens: !include midas.yaml}
+        j2: {address: 2}
+        j3: {address: 3}
+        j4: {address: 4}
+        j5: {address: 5}
+        forearm_driver1: {address: 6, tokens: !include athena1.yaml}
+        forearm_driver2: {address: 7, tokens: !include athena2.yaml}
+trunk:
+    address: 3
+    nodes:
+        raj1: {address: 1}
+        wj2: {address: 2}
+        wj3: {address: 3}
+        laj1: {address: 4}
+right_leg:
+    address: 4
+    nodes:
+        j2: {address: 2}
+        j3: {address: 3}
+        j4: {address: 4}
+        j5: {address: 5}
+        j6: {address: 6}
+        hermes: {address: 7, tokens: !include hermes.yaml}
+pelvis:
+    address: 5
+    nodes:
+        wj1: {address: 1}
+        lj1: {address: 2}
+        rj1: {address: 3}
+left_leg:
+    address: 6
+    nodes:
+        j2: {address: 2}
+        j3: {address: 3}
+        j4: {address: 4}
+        j5: {address: 5}
+        j6: {address: 6}
+        hermes: {address: 7, tokens: !include hermes.yaml}
+neck:
+    address: 7
+    nodes:
+        j1: {address: 1}
+        j2: {address: 2}
+        j3: {address: 3}
+

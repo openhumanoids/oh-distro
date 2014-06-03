@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/leg/joint_limits">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:property name="LJ1_Torque_Limit" value="190" />
+  <xacro:property name="LJ2_Torque_Limit" value="350" />
+  <xacro:property name="LJ3_Torque_Limit" value="350" />
+  <xacro:property name="LJ4_Torque_Limit" value="350" />
+  <xacro:property name="LJ5_Torque_Limit" value="205" />
+  <xacro:property name="LJ6_Torque_Limit" value="205" />
+
+  <xacro:property name="LJ1_Lower_Limit" value="${-60 * DEG2RAD}" />
+  <xacro:property name="LJ2_Lower_Limit" value="${-30 * DEG2RAD}" />
+  <xacro:property name="LJ3_Lower_Limit" value="${-135 * DEG2RAD}" />
+  <xacro:property name="LJ4_Lower_Limit" value="${-109 * DEG2RAD}" />
+  <xacro:property name="LJ5_Lower_Limit" value="${-50 * DEG2RAD}" />
+  <xacro:property name="LJ6_Lower_Limit" value="${-20 * DEG2RAD}" />
+
+  <xacro:property name="LJ1_Upper_Limit" value="${30 * DEG2RAD}" />
+  <xacro:property name="LJ2_Upper_Limit" value="${15 * DEG2RAD}" />
+  <xacro:property name="LJ3_Upper_Limit" value="${98 * DEG2RAD}" />
+  <xacro:property name="LJ4_Upper_Limit" value="${12.5 * DEG2RAD}" />
+  <xacro:property name="LJ5_Upper_Limit" value="${50 * DEG2RAD}" />
+  <xacro:property name="LJ6_Upper_Limit" value="${20 * DEG2RAD}" />
+
+  <xacro:property name="LJ1_Speed_Limit" value="5.89" />
+  <xacro:property name="LJ2_Speed_Limit" value="7" />
+  <xacro:property name="LJ3_Speed_Limit" value="6.11" />
+  <xacro:property name="LJ4_Speed_Limit" value="6.11" />
+  <xacro:property name="LJ5_Speed_Limit" value="11" />
+  <xacro:property name="LJ6_Speed_Limit" value="11" />
+</robot>

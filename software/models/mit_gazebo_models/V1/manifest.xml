@@ -1,0 +1,15 @@
+<package>
+  <description brief="V1">
+
+     V1
+
+  </description>
+  <author>Phil Strawser</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/V1</url>
+
+  <depend package="nasa_drc_simulator"/>
+  <depend package="V1_core_build"/>
+
+</package>

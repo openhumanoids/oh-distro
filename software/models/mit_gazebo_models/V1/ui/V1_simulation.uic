@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<window>
+    <title>V1 Simulation</title>
+    <size>0,0</size>
+    <position>10,10</position>
+    <style>Cleanlooks</style>
+    <tabs>
+        <tab>
+            <ui_file>$(find V1)/ui/V1_launcher.ui</ui_file>
+            <tabname>Robot</tabname>
+            <parameters>
+                <parameter name="robot" value="V1"/>
+                <parameter name="pin_link" value="/v1/Trunk"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/V1_operator.ui</ui_file>
+            <tabname>Operator</tabname>
+            <parameters>
+                <parameter name="robot" value="V1"/>
+                <parameter name="pin_link" value=""/>
+            </parameters>
+        </tab>
+	</tabs>
+</window>

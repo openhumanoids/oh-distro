@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/middle_finger/joint_limits">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:property name="MFJ1_Torque_Limit" value="10" />
+  <xacro:property name="MFJ2_Torque_Limit" value="10" />
+  <xacro:property name="MFJ3_Torque_Limit" value="10" />
+  
+  <xacro:property name="MFJ1_Lower_Limit" value="${-95 * DEG2RAD}" />
+  <xacro:property name="MFJ2_Lower_Limit" value="${-110 * DEG2RAD}" />
+  <xacro:property name="MFJ3_Lower_Limit" value="${-90 * DEG2RAD}" />
+  
+  <xacro:property name="MFJ1_Upper_Limit" value="${10 * DEG2RAD}" />
+  <xacro:property name="MFJ2_Upper_Limit" value="0" />
+  <xacro:property name="MFJ3_Upper_Limit" value="${10 * DEG2RAD}" />
+  
+  <xacro:property name="MFJ1_Speed_Limit" value="1" />
+  <xacro:property name="MFJ2_Speed_Limit" value="1" />
+  <xacro:property name="MFJ3_Speed_Limit" value="1" />
+</robot>

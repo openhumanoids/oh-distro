@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/thumb/mass_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="TJ1_Joint_Name" value="${prefix}ThumbMPYaw" />
+  <xacro:property name="TJ2_Joint_Name" value="${prefix}ThumbMPExtensor" />
+  <xacro:property name="TJ3_Joint_Name" value="${prefix}ThumbPIPExtensor" />
+  <xacro:property name="TJ4_Joint_Name" value="${prefix}ThumbDIPExtensor" />
+
+</robot>

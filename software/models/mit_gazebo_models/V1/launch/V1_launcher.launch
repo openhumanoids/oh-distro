@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="uic_file" default="$(find V1)/ui/V1_launcher.uic"/>
+  <node name="V1_launcher" pkg="ui_builder" type="ui_builder.py" args="-c $(arg uic_file) --" output="screen"/>
+
+</launch>

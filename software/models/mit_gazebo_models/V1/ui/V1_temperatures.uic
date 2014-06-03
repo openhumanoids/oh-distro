@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<window>
+    <title>V1 Temps</title>
+    <size>0,0</size>
+    <position>10,10</position>
+    <style>Cleanlooks</style>
+    <tabs>
+<!--         <tab>
+            <ui_file>$(find V1)/ui/V1_temperatures.ui</ui_file>
+            <tabname>V1 Leg Temps (Bridge/Motor)</tabname>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/V1_temperatures2.ui</ui_file>
+            <tabname>V1 Arm/Leg Temps (All)</tabname>
+        </tab> -->
+        <tab>
+            <ui_file>$(find V1)/ui/V1_temperatures3.ui</ui_file>
+            <tabname>V1 Temps</tabname>
+        </tab>
+	</tabs>
+</window>

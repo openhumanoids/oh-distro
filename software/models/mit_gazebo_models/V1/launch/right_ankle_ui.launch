@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the Ankle UI -->
+  <arg name="ui_file" default="$(find V1)/ui/ankle.ui" />
+  <arg name="tabnames" default="'Right Ankle'"/>
+  <arg name="params" value="'j5NodePath=/right_leg/j5 j6NodePath=/right_leg/j6'"/>
+  <arg name="title" default="'Right Ankle'"/>
+  <arg name="position" default="10,10"/>
+  <node name="right_ankle_ui" pkg="ui_builder" type="ui_builder.py" args="-u $(arg ui_file) 
+  																		--tabnames $(arg tabnames) 
+  																		--parameters $(arg params) 
+  																		-t $(arg title) 
+  																		--position $(arg position) 
+  																		--" output="screen"/>
+</launch>

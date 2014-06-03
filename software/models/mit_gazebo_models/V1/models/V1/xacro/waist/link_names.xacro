@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/waist/dh_parameters">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="WJ1_Proximal_Link" value="${waist_root_link}" />
+  <xacro:property name="WJ1_Distal_Link" value="/v1/WaistRotator" />
+
+  <xacro:property name="WJ2_Proximal_Link" value="/v1/WaistRotator" />
+  <xacro:property name="WJ2_Distal_Link" value="/v1/WaistExtensor" />
+
+  <xacro:property name="WJ3_Proximal_Link" value="/v1/WaistExtensor" />
+  <xacro:property name="WJ3_Distal_Link" value="/v1/Trunk" />
+
+</robot>

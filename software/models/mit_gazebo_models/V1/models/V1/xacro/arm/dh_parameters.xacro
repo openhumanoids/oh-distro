@@ -1,0 +1,128 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm/dh_parameters">
+  <!--
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+
+  <!--
+    Joint_Offset (d): offset along previous z to the common normal
+    Joint_Angle (theta): angle about previous z, from old x to new x
+    Joint_Radius (a): length of the common normal. Assuming a revolute joint, this is the radius about previous z.
+    Joint_Twist (alpha): angle about common normal, from old z axis to new z axis
+  -->
+
+  <!-- AJ1 -->
+  <!-- DH Parameters -->
+  <xacro:property name="AJ1_Joint_Offset" value="-0.03157" />
+  <xacro:property name="AJ1_Joint_Angle" value="0" />
+  <xacro:property name="AJ1_Joint_Radius" value="0.29842" />
+  <xacro:property name="AJ1_Joint_Twist" value="${pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="AJ1_Origin_X" value="0.29842"/>
+  <xacro:property name="AJ1_Origin_Y" value="0"/>
+  <xacro:property name="AJ1_Origin_Z" value="-0.03157"/>
+
+  <xacro:property name="AJ1_Orientation_Roll" value="${pi_2}"/>
+  <xacro:property name="AJ1_Orientation_Pitch" value="0"/>
+  <xacro:property name="AJ1_Orientation_Yaw" value="0"/>
+
+  <!-- AJ2 -->
+  <!-- DH Parameters -->
+  <xacro:property name="AJ2_Joint_Offset" value="${reflect * -0.246}" />
+  <xacro:property name="AJ2_Joint_Angle" value="${pi}" />
+  <xacro:property name="AJ2_Joint_Radius" value="0" />
+  <xacro:property name="AJ2_Joint_Twist" value="${reflect * (pi_2)}" />
+
+  <!-- Derived -->
+  <xacro:property name="AJ2_Origin_X" value="0"/>
+  <xacro:property name="AJ2_Origin_Y" value="0"/>
+  <xacro:property name="AJ2_Origin_Z" value="${reflect * -0.246}"/>
+
+  <xacro:property name="AJ2_Orientation_Roll" value="${reflect * (pi_2)}"/>
+  <xacro:property name="AJ2_Orientation_Pitch" value="0"/>
+  <xacro:property name="AJ2_Orientation_Yaw" value="${pi}"/>
+
+  <!-- AJ3 -->
+  <!-- DH Parameters -->
+  <xacro:property name="AJ3_Joint_Offset" value="0" />
+  <xacro:property name="AJ3_Joint_Angle" value="${reflect * pi_2}" />
+  <xacro:property name="AJ3_Joint_Radius" value="0" />
+  <xacro:property name="AJ3_Joint_Twist" value="${-1 * pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="AJ3_Origin_X" value="0"/>
+  <xacro:property name="AJ3_Origin_Y" value="0"/>
+  <xacro:property name="AJ3_Origin_Z" value="0"/>
+
+  <xacro:property name="AJ3_Orientation_Roll" value="${-1 * pi_2}"/>
+  <xacro:property name="AJ3_Orientation_Pitch" value="0"/>
+  <xacro:property name="AJ3_Orientation_Yaw" value="${reflect * pi_2}"/>
+
+  <!-- AJ4 -->
+  <!-- DH Parameters -->
+  <xacro:property name="AJ4_Joint_Offset" value="${reflect * -0.330}" />
+  <xacro:property name="AJ4_Joint_Angle" value="${reflect * pi_2}" />
+  <xacro:property name="AJ4_Joint_Radius" value="-0.0254" />
+  <xacro:property name="AJ4_Joint_Twist" value="${reflect * pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="AJ4_Origin_X" value="0"/>
+  <xacro:property name="AJ4_Origin_Y" value="${reflect * -0.0254}"/>
+  <xacro:property name="AJ4_Origin_Z" value="${reflect * -0.330}"/>
+
+  <xacro:property name="AJ4_Orientation_Roll" value="${reflect * pi_2}"/>
+  <xacro:property name="AJ4_Orientation_Pitch" value="0"/>
+  <xacro:property name="AJ4_Orientation_Yaw" value="${reflect * pi_2}"/>
+
+  <!-- AJ5 -->
+  <!-- DH Parameters -->
+  <xacro:property name="AJ5_Joint_Offset" value="0" />
+  <xacro:property name="AJ5_Joint_Angle" value="${pi}" />
+  <xacro:property name="AJ5_Joint_Radius" value="-0.0254" />
+  <xacro:property name="AJ5_Joint_Twist" value="${reflect * pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="AJ5_Origin_X" value="0.0254"/>
+  <xacro:property name="AJ5_Origin_Y" value="0"/>
+  <xacro:property name="AJ5_Origin_Z" value="0"/>
+
+  <xacro:property name="AJ5_Orientation_Roll" value="${reflect * pi_2}"/>
+  <xacro:property name="AJ5_Orientation_Pitch" value="0"/>
+  <xacro:property name="AJ5_Orientation_Yaw" value="${pi}"/>
+
+  <!-- AJ6 -->
+  <!-- DH Parameters -->
+  <xacro:property name="AJ6_Joint_Offset" value="${reflect * -0.287}" />
+  <xacro:property name="AJ6_Joint_Angle" value="${reflect * pi_2}" />
+  <xacro:property name="AJ6_Joint_Radius" value="0" />
+  <xacro:property name="AJ6_Joint_Twist" value="${reflect * -1 * pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="AJ6_Origin_X" value="0"/>
+  <xacro:property name="AJ6_Origin_Y" value="0"/>
+  <xacro:property name="AJ6_Origin_Z" value="${reflect * -0.287}"/>
+
+  <xacro:property name="AJ6_Orientation_Roll" value="${-1 * pi_2}"/>
+  <xacro:property name="AJ6_Orientation_Pitch" value="0"/>
+  <xacro:property name="AJ6_Orientation_Yaw" value="${reflect * pi_2}"/>
+
+  <!-- AJ7 -->
+  <!-- DH Parameters -->
+  <xacro:property name="AJ7_Joint_Offset" value="0" />
+  <xacro:property name="AJ7_Joint_Angle" value="${reflect * pi_2}" />
+  <xacro:property name="AJ7_Joint_Radius" value="0" />
+  <xacro:property name="AJ7_Joint_Twist" value="${reflect * pi_2}" />
+
+  <!-- Derived -->
+  <xacro:property name="AJ7_Origin_X" value="0"/>
+  <xacro:property name="AJ7_Origin_Y" value="0"/>
+  <xacro:property name="AJ7_Origin_Z" value="0"/>
+
+  <xacro:property name="AJ7_Orientation_Roll" value="${reflect * pi_2}"/>
+  <xacro:property name="AJ7_Orientation_Pitch" value="0"/>
+  <xacro:property name="AJ7_Orientation_Yaw" value="${reflect * pi_2}"/>
+
+</robot>

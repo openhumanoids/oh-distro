@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/arm/middle_finger/actuator_names">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  <xacro:property name="RMFA_Actuator_Name" value="/right_arm/forearm_driver2/middle" />
+
+  <xacro:property name="LMFA_Actuator_Name" value="/left_arm/forearm_driver2/middle" />
+
+</robot>

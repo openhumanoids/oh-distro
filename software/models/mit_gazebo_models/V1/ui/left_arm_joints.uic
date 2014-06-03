@@ -1,0 +1,53 @@
+<?xml version="1.0" ?>
+<window>
+    <title>Left Arm</title>
+    <size>0,0</size>
+    <position>10,10</position>
+    <style>CleanLooks</style>
+    <tabs>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LAJ1</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/trunk/laj1"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LAJ2</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_arm/j2"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LAJ3</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_arm/j3"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/turbodriver.ui</ui_file>
+            <tabname>LAJ4</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_arm/j4"/>
+                <parameter name="version" value="TurbodriverAPI_DRCv4"/>
+            </parameters>
+        </tab>
+        <tab>
+            <ui_file>$(find V1)/ui/leonidas.ui</ui_file>
+            <tabname>LAJ5</tabname>
+            <parameters>
+                <parameter name="nodepath" value="/left_arm/j5"/>
+                <parameter name="channel" value="left_arm"/>
+                <parameter name="node" value="j5"/>
+                <parameter name="coeff" value="$(find drc_coeffs)/V1A/LeftArm/v1_aj5_03.xml"/>
+                <parameter name="poscom_low_lim" value="-2.36"/>
+                <parameter name="poscom_high_lim" value="2.36"/>
+            </parameters>
+        </tab>
+    </tabs>
+</window>

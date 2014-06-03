@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/leg/mass_parameters">
+  <!--
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+
+<!--   <xacro:property name="LJ1_Link_Mass" value="2.65" />
+  <xacro:property name="LJ2_Link_Mass" value="3.5" />
+  <xacro:property name="LJ3_Link_Mass" value="2.3" />
+  <xacro:property name="LJ4_Link_Box_Mass" value="1" />
+  <xacro:property name="LJ4_Link_Cylinder_Mass" value="2.5" />
+  <xacro:property name="LJ5_Link_Mass" value="2.95" />
+  <xacro:property name="LJ6_Link_Mass" value="0.06" /> -->
+
+  <!-- The following were taken from Christopher McQuin's DRC Master Spreadsheet sept.xlsx, 10/7/13-->
+  <xacro:property name="LJ1_Link_Mass" value="2.39" />
+  <xacro:property name="LJ2_Link_Mass" value="5.15" />
+  <xacro:property name="LJ3_Link_Mass" value="7.14" />
+
+  <xacro:property name="LJ4_Link_Box_Mass" value="6.902" />
+  <!-- <xacro:property name="LJ5_Link_Mass" value="0.105" /> -->
+  <!-- 0.29 kg added to ankle after replacing springs -->
+  <xacro:property name="LJ5_Link_Mass" value="0.395" />
+
+
+  <!-- To debug the ankle, we're simplifying the model to McQuin's original specification-->
+  <xacro:property name="LJ6_Link_Mass" value="1.888" />
+
+</robot>

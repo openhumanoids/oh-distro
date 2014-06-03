@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="ui_file" default="$(find V1)/ui/forearm.ui" />
+  <arg name="tabnames" default="'Right Forearm'"/>
+  <arg name="params" value="'j5NodePath=/right_arm/j5 j6NodePath=/right_arm/forearm_driver1/wrist_right j7NodePath=/right_arm/forearm_driver1/wrist_left'"/>
+  <arg name="title" default="'Right Forearm'"/>
+  <arg name="position" default="10,10"/>
+  <node name="right_forearm_ui" pkg="ui_builder" type="ui_builder.py" args="-u $(arg ui_file) 
+  																		--tabnames $(arg tabnames) 
+  																		--parameters $(arg params) 
+  																		-t $(arg title) 
+  																		--position $(arg position) 
+  																		--" output="screen"/>
+</launch>

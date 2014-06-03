@@ -1,0 +1,70 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/camboard">
+  <!-- 
+  CAMBOARD
+    Specs from:
+    http://www.pmdtec.com/products_services/reference_design.php
+  -->
+  <xacro:property name="CamBoardWidth" value="0.037"/>
+  <xacro:property name="CamBoardHeight" value="0.030"/>
+  <xacro:property name="CamBoardDepth" value="0.025"/>
+
+  <xacro:property name="CamBoardMass" value="0.034"/>
+
+  <xacro:property name="CamBoardImageWidth" value="160"/>
+  <xacro:property name="CamBoardImageHeight" value="120"/>
+  <xacro:property name="CamBoardFieldOfView" value="${pi_2}"/>
+  <xacro:property name="CamBoardMinDistance" value="0.01"/>
+  <xacro:property name="CamBoardMaxDistance" value="1"/>
+  <xacro:property name="CamBoardFrameRate" value="30"/>
+  
+  <xacro:macro name="camboard_sensor" params="sensorName parentLink origin_xyz origin_rpy">
+    <xacro:virtual_link name="${sensorName}_Frame" 
+                    origin_rpy="0 0 0" 
+                    origin_xyz="0 0 0"/>
+
+    <gazebo reference="${sensorName}_Frame">
+      <sensor name="asus/ir" type="depth">
+        <camera>
+          <image>
+            <width>${CamBoardImageWidth}</width>
+            <height>${CamBoardImageHeight}</height>
+            <format>L8</format>
+          </image>
+          <horizontal_fov>${CamBoardFieldOfView}</horizontal_fov>
+          <clip>
+            <near>${CamBoardMinDistance}</near>
+            <far>${CamBoardMaxDistance}</far>
+          </clip>
+        </camera>
+        <update_rate>${CamBoardFrameRate}</update_rate>
+        <plugin filename="libAsusXtionPluginRos.so" name="${sensorName}_Controller">
+          <updateRate>${CamBoardFrameRate}</updateRate>
+          <cameraName>${sensorName}</cameraName>
+          <imageTopicName>rgb/image_raw</imageTopicName>
+          <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+          <depthImageTopicName>depth/image_raw</depthImageTopicName>
+          <depthCameraInfoTopicName>depth/camera_info</depthCameraInfoTopicName>
+          <pointCloudTopicName>depth/points</pointCloudTopicName>
+          <frameName>${sensorName}IR_Frame</frameName>
+          <pointCloudCutoff>0.2</pointCloudCutoff>
+          <hack_baseline>0.2</hack_baseline>
+        </plugin>
+      </sensor>
+    </gazebo>
+
+    <xacro:fixed_joint jointName="${sensorName}_Offset"
+                       parent="${parentLink}" child="${sensorName}_Frame"
+                       origin_rpy="${origin_rpy}"
+                       origin_xyz="${origin_xyz}"/>
+
+    <xacro:virtual_link name="${sensorName}IR_Frame"
+                    origin_rpy="0 0 0"
+                    origin_xyz="0 0 0"/>
+
+    <xacro:fixed_joint jointName="${sensorName}IR_Offset"
+                       parent="${sensorName}_Frame" child="${sensorName}IR_Frame"
+                       origin_rpy="-1.4279169 0.057186 -1.603747"
+                       origin_xyz="-0.05180 -0.0013 0.030237"/>
+  </xacro:macro>
+</robot>

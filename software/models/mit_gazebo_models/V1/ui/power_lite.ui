@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<ui>
+    <objects>
+        <object name="bms" rospackage="bms_api" module="bms_voltage" member="BMS" args="/power/BMS"/>
+        <object name="manager" rospackage="ui_builder" module="ProgramManager" member="ProgramManager"/>
+    </objects>
+
+    <widgets>
+        <widget row="0" col="0" name="Logic Power" type="ToggleButton">
+            <check label="Logic Power On" color="green" textColor="white">
+                <object name="bms" method="LEFT_ARM_Power_On"/>
+                <object name="bms" method="LEFT_LEG_Power_On"/>
+                <object name="bms" method="LVSPARE2_Power_On"/>
+                <object name="bms" method="ABDOMEN_Power_On"/>
+                <object name="bms" method="RIGHT_ARM_Power_On"/>
+                <object name="bms" method="RIGHT_LEG_Power_On"/>
+            </check>
+            <uncheck label="Logic Power Off" color="red" textColor="white">
+                <object name="bms" method="LEFT_ARM_Power_Off"/>
+                <object name="bms" method="LEFT_LEG_Power_Off"/>
+                <object name="bms" method="LVSPARE2_Power_Off"/>
+                <object name="bms" method="ABDOMEN_Power_Off"/>
+                <object name="bms" method="RIGHT_ARM_Power_Off"/>
+                <object name="bms" method="RIGHT_LEG_Power_Off"/>
+            </uncheck>
+        </widget>
+
+        <widget row="1" col="0" name="Motor Power" type="ToggleButton">
+            <check label="Motor Power On" color="green" textColor="white">
+                <object name="bms" method="HV_LEFT_ARM_Power_On"/>
+                <object name="bms" method="LEFT_ARM_24V_Power_On"/>
+                <object name="bms" method="HV_LEFT_LEG_Power_On"/>
+                <object name="bms" method="NECK_24V_Power_On"/>
+                <object name="bms" method="HV_PELVIS_Power_On"/>
+                <object name="bms" method="HV_RIGHT_ARM_Power_On"/>
+                <object name="bms" method="RIGHT_ARM_24V_Power_On"/>
+                <object name="bms" method="HV_RIGHT_LEG_Power_On"/>
+            </check>
+            <uncheck label="Motor Power Off" color="red" textColor="white">
+                <object name="bms" method="HV_LEFT_ARM_Power_Off"/>
+                <object name="bms" method="LEFT_ARM_24V_Power_Off"/>
+                <object name="bms" method="HV_LEFT_LEG_Power_Off"/>
+                <object name="bms" method="NECK_24V_Power_Off"/>
+                <object name="bms" method="HV_PELVIS_Power_Off"/>
+                <object name="bms" method="HV_RIGHT_ARM_Power_Off"/>
+                <object name="bms" method="RIGHT_ARM_24V_Power_Off"/>
+                <object name="bms" method="HV_RIGHT_LEG_Power_Off"/>
+            </uncheck>
+        </widget>
+
+        <widget row="2" col="0" name="Misc Power" type="ToggleButton">
+            <check label="Misc On" color="green" textColor="white">
+                <object name="bms" method="IBEO_Power_On"/>
+                <object name="bms" method="ROUTER_Power_On"/>
+                <object name="bms" method="ESLOOP_Power_On"/>
+                <object name="bms" method="SENSOR_24V_Power_On"/>
+            </check>
+            <uncheck label="Misc Off" color="red" textColor="white">
+                <object name="bms" method="IBEO_Power_Off"/>
+                <object name="bms" method="ROUTER_Power_Off"/>
+                <object name="bms" method="ESLOOP_Power_Off"/>
+                <object name="bms" method="SENSOR_24V_Power_Off"/>
+            </uncheck>
+        </widget>
+
+        <widget row="3" col="0" type="ToggleButton" name="ESTOP RESET">
+            <check label="Reset E-Stop">
+                <object name="bms" method="CPU_READY_On"/>
+                <object name="manager" method="startProgram" args="rosrun drc_turbodriver turboCmd.py -c $(rospack find drc_coeffs)/V1A/v1_config.yaml estop -r, loadCoeffs" argTypes="str,str"/>
+            </check>
+            <uncheck label="Reset E-Stop">
+                <object name="bms" method="CPU_READY_Off"/>
+            </uncheck>
+        </widget>
+
+        <widget row="0" col="2" name="BMS Telemetry" type="GroupBox">
+            <widget type="TableViewDisplay" name="Info">
+                <header value="data"/>
+                <row label="Cyclic Counter">  <object name="bms" method="getCYCLICCOUNTER" args="val" argTypes="str"/></row>
+                <row label="LV State Machine"><object name="bms" method="getLV_SM" args="val" argTypes="str" thresholds="4" colors="red,green"/></row>
+                <row label="HV State Machine"><object name="bms" method="getHV_SM" args="val" argTypes="str" thresholds="4" colors="red,green"/></row>
+            </widget>
+        </widget>
+
+        <widget row="0" col="3" name="Logic Power Status" type="HorizontalGroupBox">
+            <widget row="0" col="0" type="TableViewDisplay" name="LVSTATUS">
+                <header value="data"/>
+                <row label="IBEO Power">             <object name="bms" method="getLV_STATUS0"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Router Power">           <object name="bms" method="getLV_STATUS1"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Neck Power">             <object name="bms" method="getLVSPARE_CTRL2" args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Left Arm Power">         <object name="bms" method="getLV_STATUS2"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Right Arm Power">        <object name="bms" method="getLV_STATUS3"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Abdomen Power">          <object name="bms" method="getLV_STATUS4"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Right Leg Power">        <object name="bms" method="getLV_STATUS5"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Left Leg Power">         <object name="bms" method="getLV_STATUS6"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Pelvis Power">           <object name="bms" method="getLV_STATUS7"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+            </widget>
+
+            <widget row="0" col="1" type="TableViewDisplay" name="LVSPARES">
+                <header value="data"/>
+                <row label="LV SPARE1 Power">         <object name="bms" method="getLV_CPU4"          args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="LV SPARE3 Power">         <object name="bms" method="getLVSPARE_CTRL3"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="LV SPARE4 Power">         <object name="bms" method="getLVSPARE_CTRL4"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+            </widget>
+        </widget>
+
+        <widget row="0" col="4" name="Motor Power Status" type="HorizontalGroupBox">
+            <widget type="TableViewDisplay" name="V24V">
+                <header value="data"/>
+                <row label="TETHER Main Bus Power">   <object name="bms" method="getMAIN_BUS_POWER"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="BATTERY Main Bus Power">  <object name="bms" method="getMAIN_BUS_POWER_BAT"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Neck 24V Power">          <object name="bms" method="getV24V_STATUS0"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Right Arm 24V Power">     <object name="bms" method="getV24V_RIGHT_LEG"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Left Arm 24V Power">      <object name="bms" method="getV24V_LEFT_LEG"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="Sensor 24V Power">        <object name="bms" method="getV24V_STATUS3"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+            </widget>
+
+            <widget type="TableViewDisplay" name="HVSTATUS">
+                <header value="data"/>
+                <row label="HV Abdomen Power">       <object name="bms" method="getHV_PELVIS"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="HV Pelvis Power">        <object name="bms" method="getHV_PELVIS"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="HV Right Arm Power">     <object name="bms" method="getHV_RIGHT_LEG"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="HV Left Arm Power">      <object name="bms" method="getHV_LEFT_LEG"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="HV Right Leg Power">     <object name="bms" method="getHV_STATUS4"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+                <row label="HV Left Leg Power">      <object name="bms" method="getHV_STATUS5"    args="val" argTypes="str" thresholds="1" colors="white,yellow"/></row>
+            </widget>
+        </widget>
+   
+
+        
+
+    </widgets>
+</ui>

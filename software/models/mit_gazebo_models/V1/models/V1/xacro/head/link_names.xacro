@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/head/link_names">
+  <!-- 
+    Reference for kinematic and dynamic parameters comes from:
+
+      http://bender.jsc.nasa.gov/confluence/pages/viewpage.action?pageId=16417593
+  -->
+  
+  <xacro:property name="NJ1_Proximal_Link" value="${head_root_link}" />
+  <xacro:property name="NJ1_Distal_Link" value="/v1/LowerNeckExtensor" />
+
+  <xacro:property name="NJ2_Proximal_Link" value="/v1/LowerNeckExtensor" />
+  <xacro:property name="NJ2_Distal_Link" value="/v1/NeckRotator" />
+
+  <xacro:property name="NJ3_Proximal_Link" value="/v1/NeckRotator" />
+  <xacro:property name="NJ3_Distal_Link" value="/v1/Head" />
+
+</robot>

@@ -1,0 +1,14 @@
+<robot xmlns:xacro="http://ros.orgt/wiki/xacro" name="v1/common_bodies">
+    <!-- ======================================================= -->
+    <!-- DO NOT MODIFY URDF BY HAND! YOU ARE A FOOL IF YOU DO! -->
+    <!-- ======================================================= -->
+    <xacro:include filename="$(find V1)/models/V1/xacro/pelvis/pelvis.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/waist/waist.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/head/head.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/arm/arm.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/leg/leg.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/thumb/thumb.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/primary_finger/primary_finger.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/middle_finger/middle_finger.xacro" />
+    <xacro:include filename="$(find V1)/models/V1/xacro/little_finger/little_finger.xacro" />
+</robot>

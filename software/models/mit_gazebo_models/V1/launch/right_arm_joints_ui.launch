@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<launch>
+  <!-- Start the arm testbed launcher -->
+  <arg name="ui_file" default="$(find V1)/ui/turbodriver.ui 
+  							   $(find V1)/ui/turbodriver.ui 
+  							   $(find V1)/ui/turbodriver.ui 
+  							   $(find V1)/ui/turbodriver.ui
+                   $(find V1)/ui/leonidas.ui" />
+  <arg name="coeff5" default="$(find drc_coeffs)/V1A/RightArm/v1_aj5_02.xml"/>
+  <arg name="j5_low_lim"  default="-2.36"/>
+  <arg name="j5_high_lim" default="2.36"/>
+  <arg name="tabnames" default="J1 J2 J3 J4 J5"/>
+  <arg name="params" value="'nodepath=/trunk/raj1','nodepath=/right_arm/j2','nodepath=/right_arm/j3','nodepath=/right_arm/j4','nodepath=/right_arm/j5 channel=right_arm node=j5 coeff=$(arg coeff5) poscom_low_lim=$(arg j5_low_lim) poscom_high_lim=$(arg j5_high_lim)'"/>
+  <arg name="title" default="'Right Arm Joints'"/>
+  <arg name="position" default="10,10"/>
+  <node name="right_arm_joints" pkg="ui_builder" type="ui_builder.py" args="-u $(arg ui_file) 
+  																		--tabnames $(arg tabnames) 
+  																		--parameters $(arg params) 
+  																		-t $(arg title) 
+  																		--position $(arg position) 
+  																		--" output="screen"/>
+</launch>

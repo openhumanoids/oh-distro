@@ -1,0 +1,14 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="v1/Pelvis">
+    <xacro:property name="Pelvis_Link_Name" value="/v1/Pelvis" />
+
+  <!-- Mass updated - taken from Christopher McQuin's DRC Master Spreadsheet sept.xlsx, 10/7/13 -->
+
+    <xacro:macro name="make_pelvis">
+        <xacro:box_link name="${Pelvis_Link_Name}"
+                        width="0.283" height="0.344" depth="0.369" mass="5.15"
+                        origin_xyz="0.0005 -0.0009 -0.0704"
+                        origin_rpy="0 0 0"
+                        visual_mesh="${mesh_root}/pelvis.stl" material="White"
+                        collision_mesh="${mesh_root}/pelvis.stl"/>
+    </xacro:macro>
+</robot>

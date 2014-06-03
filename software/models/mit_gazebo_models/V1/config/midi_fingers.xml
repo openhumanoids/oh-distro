@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<midiboard>
+
+	<message name="LeftLittleFinger" topic="/LeftLittleFinger/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider1" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="LeftMiddleFinger" topic="/LeftMiddleFinger/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider2" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="LeftPrimaryFinger" topic="/LeftPrimaryFinger/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider3" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="LeftThumbProximal" topic="/LeftThumbProximal/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider4" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="LeftThumbDistal" topic="/LeftThumbDistal/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider4" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="LeftThumbRoll" topic="/LeftThumbRoll/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="knob4" value="0" lowValue="0" highValue="4"/>
+	</message>
+
+	<message name="RightThumbRoll" topic="/RightThumbRoll/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="knob5" value="0" lowValue="0" highValue="4"/>
+	</message>
+
+	<message name="RightThumbDistal" topic="/RightThumbDistal/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider5" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="RightThumbProximal" topic="/RightThumbProximal/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider5" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="RightPrimaryFinger" topic="/RightPrimaryFinger/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider6" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="RightMiddleFinger" topic="/RightMiddleFinger/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider7" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+	<message name="RightLittleFinger" topic="/RightLittleFinger/command" package="std_msgs.msg" msgType="Float64">
+		<field name="data" type="float" midi="slider8" value="0" lowValue="0" highValue="-4"/>
+	</message>
+
+
+
+</midiboard>
