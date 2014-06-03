@@ -43,30 +43,11 @@ end
 nominal_dxy = [params.nom_forward_step; params.nom_step_width];
 [cost_Q, cost_c] = footstepQuadraticCost(biped, seed_plan.slice(2:length(seed_plan.footsteps)), weights, goal_pos, nominal_dxy);
 
-% w_angle = 1;
 
 function [c, dc] = objfun(x)
 %   [c, dc] = footstepCostFun(steps, steps_rel, weights, goal_pos, right_foot_lead, nominal_dxy);
   c = x' * cost_Q * x + cost_c' * x;
   dc = 2 * cost_Q * x + cost_c;
-  
-%   [steps, steps_rel] = decodeCollocationSteps(x);
-%   dc = reshape(dc, 12, []);
-%   for j = 3:size(steps, 2)
-%     v = steps(1:2,j) - steps(1:2,j-2);
-%     theta = steps(6,j-2);
-% %     phi = atan2(v(2), v(1)) - theta;
-% %     c = c + w_angle * (cos(phi) + sin(phi));
-%     z = (v(2) * cos(theta) - v(1) * sin(theta) + v(1) * cos(theta) + v(2) * sin(theta));
-% 
-%     c = c + w_angle * 1/norm(v) * z;
-%     dc(1,j) = dc(1,j) + w_angle * (1/norm(v) * (cos(theta) - sin(theta)) + -0.5 * sum(v.^2)^(-3/2) * 2 * v(1) * z);
-%     dc(1,j-2) = dc(1,j-2) + w_angle * (1/norm(v) * -1 * (cos(theta) - sin(theta)) + -0.5 * sum(v.^2)^(-3/2) * 2 * -v(1) * z);
-%     dc(2,j) = dc(2,j) + w_angle * (1/norm(v) * (cos(theta) + sin(theta)) + -0.5 * sum(v.^2)^(-3/2) * 2 * v(2) * z);
-%     dc(2,j-2) = dc(2,j-2) + w_angle * (1/norm(v) * -1 * (cos(theta) + sin(theta)) + -0.5 * sum(v.^2)^(-3/2) * 2 * -v(2) * z);
-%     dc(6,j-2) = dc(6,j-2) + w_angle * 1/norm(v) * (-v(2) * sin(theta) - v(1) * cos(theta) - v(1) * sin(theta) + v(2) * cos(theta));
-%   end
-%   dc = reshape(dc, [], 1);
 end
 
 function [F,G] = collocation_userfun(x)
