@@ -1,7 +1,7 @@
 classdef Valkyrie < Biped
   methods
     function obj = Valkyrie(urdf, options)
-      if nargin < 1
+      if nargin < 1 || isempty(urdf)
         urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/V1/models/V1/urdf/V1_sim_mit_drake.urdf');
       else
         typecheck(urdf,'char');
@@ -42,7 +42,7 @@ classdef Valkyrie < Biped
       % input_frame = ValkyrieInput(obj);
       % obj = obj.setInputFrame(input_frame);
     end
-    
+
     function xstar = loadFixedPoint(obj)
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/valkyrie_fp.mat'));
       xstar = d.xstar;

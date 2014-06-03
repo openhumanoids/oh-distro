@@ -11,24 +11,53 @@ classdef CombinedPlanner
     lc
   end
 
-  methods
-    function obj = CombinedPlanner()
+  methods (Static)
+    function r = constructAtlas()
       options.floating = true;
       options.enable_terrainmaps = true;
       options.dt = 0.001;
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-      warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
       options.visual = false; % loads faster
-      %r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
-      r = Valkyrie();
+      r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
       r = removeCollisionGroupsExcept(r,{'heel','toe'});
       if options.enable_terrainmaps
         r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'fill', true,'normal_radius',2,'normal_method','ransac','auto_request',true)));
       end
       r = compile(r);
+    end
 
-      obj.biped = r;
+    function obj = withAtlas()
+      obj = CombinedPlanner(CombinedPlanner.constructAtlas());
+    end
+
+    function r = constructValkyrie()
+      options.floating = true;
+      options.enable_terrainmaps = true;
+      options.dt = 0.001;
+      warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+      warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+      options.visual = false; % loads faster
+      r = Valkyrie([], options);
+      r = removeCollisionGroupsExcept(r,{'heel','toe'});
+      if options.enable_terrainmaps
+        r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'fill', true,'normal_radius',2,'normal_method','ransac','auto_request',true)));
+      end
+      r = compile(r);
+    end
+
+    function obj = withValkyrie()
+      obj = CombinedPlanner(CombinedPlanner.constructValkyrie());
+    end
+  end
+
+  methods
+    function obj = CombinedPlanner(biped)
+      if nargin < 1
+        biped = CombinedPlanner.constructAtlas();
+      end
+
+      obj.biped = biped;
       obj.footstep_planner = StatelessFootstepPlanner();
       obj.walking_planner = StatelessWalkingPlanner();
       obj.monitors = {};
@@ -82,7 +111,7 @@ classdef CombinedPlanner
       plan = obj.footstep_planner.plan_footsteps(obj.biped, msg);
 %       profile viewer
     end
-    
+
     function plan = plan_walking_traj(obj, msg)
       msg = drc.walking_plan_request_t(msg);
       plan = obj.walking_planner.plan_walking(obj.biped, msg, true);

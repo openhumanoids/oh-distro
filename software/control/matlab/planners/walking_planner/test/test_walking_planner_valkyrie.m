@@ -68,12 +68,13 @@ walking_plan = wp.plan_walking(r, request, true);
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
 
-r = r.setTerrain(RigidBodyTerrain());
-v = r.constructVisualizer();
-xt = PPTrajectory(spline(walking_plan.ts, walking_plan.xtraj));
-xt = xt.setOutputFrame(r.getStateFrame());
-v.draw(0, fixed_pt);
-v.playback(xt);
+% disp('Playing back plan at 10X speed');
+% r = r.setTerrain(RigidBodyTerrain());
+% v = r.constructVisualizer();
+% xt = PPTrajectory(spline(walking_plan.ts/10, walking_plan.xtraj));
+% xt = xt.setOutputFrame(r.getStateFrame());
+% v.draw(0, fixed_pt);
+% v.playback(xt);
 
 % Compute walking controller
 walking_plan = wp.plan_walking(r, request, false);
