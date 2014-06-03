@@ -13,7 +13,7 @@ classdef SupportState
   
   methods
     function obj = SupportState(r,bodies,contact_pts,contact_surfaces)
-      typecheck(r,'Atlas');
+      typecheck(r,'Biped');
       typecheck(bodies,'double');
       obj.bodies = bodies(bodies~=0);
       

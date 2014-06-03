@@ -1,6 +1,6 @@
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-r = Atlas();
+r = Valkyrie();
 r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = compile(r);
 
@@ -27,11 +27,11 @@ footstep_request.num_existing_steps = 0;
 footstep_request.params = drc.footstep_plan_params_t();
 footstep_request.params.max_num_steps = 10;
 footstep_request.params.min_num_steps = 0;
-footstep_request.params.min_step_width = 0.18;
-footstep_request.params.nom_step_width = 0.26;
-footstep_request.params.max_step_width = 0.35;
-footstep_request.params.nom_forward_step = 0.2;
-footstep_request.params.max_forward_step = 0.35;
+footstep_request.params.min_step_width = 0.25;
+footstep_request.params.nom_step_width = 0.3;
+footstep_request.params.max_step_width = 0.44;
+footstep_request.params.nom_forward_step = 0.15;
+footstep_request.params.max_forward_step = 0.3;
 footstep_request.params.nom_upward_step = 0.25;
 footstep_request.params.nom_downward_step = 0.15;
 footstep_request.params.ignore_terrain = true;
@@ -45,16 +45,7 @@ footstep_request.default_step_params.utime = 0;
 footstep_request.default_step_params.step_speed = 0.2;
 footstep_request.default_step_params.drake_min_hold_time = 2.0;
 footstep_request.default_step_params.step_height = 0.05;
-footstep_request.default_step_params.constrain_full_foot_pose = false;
-footstep_request.default_step_params.bdi_step_duration = 0;
-footstep_request.default_step_params.bdi_sway_duration = 0;
-footstep_request.default_step_params.bdi_lift_height = 0;
-footstep_request.default_step_params.bdi_toe_off = drc.atlas_behavior_step_action_t.TOE_OFF_ENABLE;
-footstep_request.default_step_params.bdi_knee_nominal = 0;
-footstep_request.default_step_params.bdi_max_body_accel = 0;
-footstep_request.default_step_params.bdi_max_foot_vel = 0;
-footstep_request.default_step_params.bdi_sway_end_dist = 0.02;
-footstep_request.default_step_params.bdi_step_end_dist = 0.02;
+footstep_request.default_step_params.constrain_full_foot_pose = true;
 footstep_request.default_step_params.mu = 1.0;
 
 
@@ -66,7 +57,7 @@ plan_msg = plan.toLCM();
 request = drc.walking_plan_request_t();
 request.utime = 0;
 
-request.initial_state = r.getStateFrame().lcmcoder.encode(0, fixed_pt.xstar);
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, fixed_pt);
 request.new_nominal_state = request.initial_state;
 request.use_new_nominal_state = false;
 request.footstep_plan = plan_msg;
@@ -76,6 +67,13 @@ wp = StatelessWalkingPlanner();
 walking_plan = wp.plan_walking(r, request, true);
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+
+r = r.setTerrain(RigidBodyTerrain());
+v = r.constructVisualizer();
+xt = PPTrajectory(spline(walking_plan.ts, walking_plan.xtraj));
+xt = xt.setOutputFrame(r.getStateFrame());
+v.draw(0, fixed_pt);
+v.playback(xt);
 
 % Compute walking controller
 walking_plan = wp.plan_walking(r, request, false);

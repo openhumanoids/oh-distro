@@ -15,8 +15,7 @@ classdef StatelessWalkingPlanner
       if request.use_new_nominal_state
         xstar = r.getStateFrame().lcmcoder.decode(request.new_nominal_state);
       else
-        d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-        xstar = d.xstar;
+        xstar = r.loadFixedPoint();
       end
 
       if request.footstep_plan.params.ignore_terrain
@@ -29,7 +28,7 @@ classdef StatelessWalkingPlanner
         end
       end
 
-      r = r.setInitialState(xstar); % TODO: do we need this? -robin
+%       r = r.setInitialState(xstar); % TODO: do we need this? -robin
       qstar = xstar(1:nq);
 
       footstep_plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, r);

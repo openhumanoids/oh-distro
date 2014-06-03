@@ -55,95 +55,6 @@ classdef Atlas < Biped
       obj = obj.setInputFrame(input_frame);
     end
 
-    function obj = setInitialState(obj,x0)
-      if isa(x0,'Point')
-        obj.x0 = double(x0); %.inFrame(obj.getStateFrame));
-      else
-        typecheck(x0,'double');
-        sizecheck(x0,obj.getNumStates());
-        obj.x0 = x0;
-      end
-    end
-
-    function x0 = getInitialState(obj)
-      x0 = obj.x0;
-    end
-
-    function [xstar,ustar,zstar] = getFixedPoint(obj,options)
-      if nargin < 2 || ~isfield(options,'visualize')
-        options.visualize = false;
-      end
-
-      x0 = Point(obj.getStateFrame());
-      x0 = resolveConstraints(obj,x0);
-      u0 = zeros(obj.getNumInputs(),1);
-
-      nq = obj.getNumDOF();
-      nu = obj.getNumInputs();
-      nz = obj.getNumContacts()*3;
-      z0 = zeros(nz,1);
-      q0 = x0(1:nq);
-
-      problem.x0 = [q0;u0;z0];
-      problem.objective = @(quz) 0; % feasibility problem
-      problem.nonlcon = @(quz) mycon(quz);
-      problem.solver = 'fmincon';
-
-      if options.visualize
-        v = obj.constructVisualizer;
-        %problem.options=optimset('DerivativeCheck','on','GradConstr','on','Algorithm','interior-point','Display','iter','OutputFcn',@drawme,'TolX',1e-14,'MaxFunEvals',5000);
-        problem.options=optimset('GradConstr','on','Algorithm','interior-point','Display','iter','OutputFcn',@drawme,'TolX',1e-14,'MaxFunEvals',5000);
-      else
-        problem.options=optimset('GradConstr','on','Algorithm','interior-point','TolX',1e-14,'MaxFunEvals',5000);
-      end
-
-      lb_z = -1e6*ones(nz,1);
-      lb_z(3:3:end) = 0; % normal forces must be >=0
-      ub_z = 1e6*ones(nz,1);
-
-      [jl_min,jl_max] = obj.getJointLimits();
-      % force search to be close to starting position
-      problem.lb = [max(q0-0.05,jl_min+0.01); obj.umin; lb_z];
-      problem.ub = [min(q0+0.05,jl_max-0.01); obj.umax; ub_z];
-      %problem.lb(2) = 0.0; % body z
-
-      [quz_sol,~,exitflag] = fmincon(problem);
-      success=(exitflag==1);
-      xstar = [quz_sol(1:nq); zeros(nq,1)];
-      ustar = quz_sol(nq+(1:nu));
-      zstar = quz_sol(nq+nu+(1:nz));
-      if (~success)
-        error('failed to find fixed point');
-      end
-
-      function stop=drawme(quz,optimValues,state)
-        stop=false;
-        v.draw(0,[quz(1:nq); zeros(nq,1)]);
-      end
-
-      function [c,ceq,GC,GCeq] = mycon(quz)
-        q=quz(1:nq);
-        u=quz(nq+(1:nu));
-        z=quz(nq+nu+(1:nz));
-
-        [~,C,B,~,dC,~] = obj.manip.manipulatorDynamics(q,zeros(nq,1));
-        [phiC,JC] = obj.contactConstraints(q);
-        [~,J,dJ] = obj.contactPositions(q);
-
-        % ignore friction constraints for now
-        c = 0;
-        GC = zeros(nq+nu+nz,1);
-
-        dJz = zeros(nq,nq);
-        for i=1:nq
-            dJz(:,i) = dJ(:,(i-1)*nq+1:i*nq)'*z;
-        end
-
-        ceq = [C-B*u-J'*z; phiC];
-        GCeq = [[dC(1:nq,1:nq)-dJz,-B,-J']',[JC'; zeros(nu+nz,length(phiC))]];
-      end
-    end
-
     function [u,obj] = inverseDynamics(obj,q,qdot,qddot_des,active_supports)
       if isempty(obj.inverse_dyn_qp_controller)
         ctrl_data = SharedDataHandle(struct(...
@@ -192,8 +103,8 @@ classdef Atlas < Biped
 
     function foot_z = getFootHeight(obj,q)
       kinsol = doKinematics(obj,q);
-      rfoot_cpos = contactPositions(obj,kinsol,findLinkInd(obj,'r_foot'));
-      lfoot_cpos = contactPositions(obj,kinsol,findLinkInd(obj,'l_foot'));
+      rfoot_cpos = contactPositions(obj,kinsol,obj.foot_bodies_idx.right);
+      lfoot_cpos = contactPositions(obj,kinsol,obj.foot_bodies_idx.left);
       foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
     end
 
@@ -203,71 +114,25 @@ classdef Atlas < Biped
       zmax = q(3) + (obj.pelvis_max_height-z_above_feet);
     end
 
-    function [A, b] = getReachabilityPolytope(obj, static_body_idx, swing_body_idx, params)
-
-      bodies = [static_body_idx, swing_body_idx];
-      if ~ (all(bodies == [obj.foot_bodies_idx.right, obj.foot_bodies_idx.left]) ||...
-            all(bodies == [obj.foot_bodies_idx.left, obj.foot_bodies_idx.right]))
-        error('DRC:Atlas:BadBodyIdx', 'Feasibility polytope not defined for this pairing of body indices.');
-      end
-      params = struct(params);
-      fields = {'max_forward_step',...
-                'nom_forward_step',...
-                'nom_step_width',...
-                'max_step_width',...
-                'min_step_width',...
-                'max_outward_angle',...
-                'max_inward_angle',...
-                'max_upward_step',...
-                'max_downward_step'};
-      for f = fields
-        field = f{1};
-        if ~isfield(params, field)
-          params.(field) = obj.default_footstep_params.(field);
-        end
-      end
-      [Axy, bxy] = poly2lincon([0, params.max_forward_step, 0, -params.max_forward_step],...
-                               [params.min_step_width, params.nom_step_width, params.max_step_width, params.nom_step_width]);
-      [Axz, bxz] = poly2lincon([0, params.nom_forward_step, params.max_forward_step, params.nom_forward_step, 0, -params.max_forward_step], ...
-                               [params.max_upward_step, params.max_upward_step, 0, -params.max_downward_step, -params.max_downward_step, 0]);
-      A = [Axy, zeros(4, 4);
-           Axz(:,1), zeros(size(Axz, 1), 1), Axz(:,2), zeros(size(Axz, 1), 3);
-           0 0 0 0 0 -1;
-           0 0 0 0 0 1;
-           0, 1/(params.max_step_width-params.nom_step_width), 0, 0, 0, 1/params.max_outward_angle;
-           0, 1/(params.min_step_width-params.nom_step_width), 0, 0, 0, 1/params.max_outward_angle];
-
-      if bodies(1) == obj.foot_bodies_idx.left
-        A(:,2) = -A(:,2);
-        A(:,6) = -A(:,6);
-      end
-      b = [bxy;
-           bxz;
-           params.max_inward_angle;
-           params.max_outward_angle;
-           1 + params.nom_step_width/(params.max_step_width-params.nom_step_width);
-           1 + params.nom_step_width/(params.min_step_width-params.nom_step_width)
-           ];
+    function xstar = loadFixedPoint(obj)
+      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+      xstar = d.xstar;
     end
-
-
   end
   properties (SetAccess = protected, GetAccess = public)
-    x0;
     inverse_dyn_qp_controller;
     pelvis_min_height = 0.65; % [m] above feet, for hardware
     pelvis_max_height = 0.92; % [m] above feet, for hardware
-    floating = true;
     stateToBDIInd;
     BDIToStateInd;
     default_footstep_params = struct('nom_forward_step', 0.15,... %m
                                       'max_forward_step', 0.3,...%m
                                       'max_step_width', 0.40,...%m
                                       'min_step_width', 0.21,...%m
-                                      'nom_step_width', 0.26,...%m (nominal step width)
+                                      'nom_step_width', 0.26,...%m
                                       'max_outward_angle', pi/8,... % rad
                                       'max_inward_angle', 0.01,... % rad
-                                      'max_upward_step', 0.2,...
-                                      'max_downward_step', 0.2);
+                                      'max_upward_step', 0.2,... % m
+                                      'max_downward_step', 0.2); % m
   end
 end
