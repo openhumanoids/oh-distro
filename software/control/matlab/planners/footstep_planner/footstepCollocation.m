@@ -85,7 +85,7 @@ for j = 2:nsteps
   if length(region_order) == 1
     region_ndx = 1;
   else
-    region_ndx = j-1;
+    region_ndx = j+1;
   end
   region = safe_regions(region_order(region_ndx));
   num_region_cons = length(region.b);
