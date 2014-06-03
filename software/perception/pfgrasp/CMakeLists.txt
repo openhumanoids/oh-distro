@@ -18,14 +18,14 @@ lcmtypes_build()
 
 add_executable(drc-pfgrasp src/pfgrasp.cpp src/ImageWarper.cpp src/ImageWarper.cpp src/libparticle/particle_filter.cpp src/libparticle/particle.cpp
                src/libparticle/rng.cpp)
-pods_use_pkg_config_packages(drc-pfgrasp drc-utils bot2-core opencv bot2-frames tld-tracker eigen3 gsl pointcloud_math pointcloud_vis)
+pods_use_pkg_config_packages(drc-pfgrasp drc-utils bot2-core opencv bot2-frames tld-tracker eigen3 gsl pointcloud_math pointcloud_vis lcmtypes_drc_lcmtypes)
 target_link_libraries(drc-pfgrasp gsl )
 pods_install_executables(drc-pfgrasp)
 
 
 
 add_executable(drc-pfgrasp-commander src/pfgraspTestSendCommand.cpp)
-pods_use_pkg_config_packages(drc-pfgrasp-commander bot2-core opencv )
+pods_use_pkg_config_packages(drc-pfgrasp-commander bot2-core opencv lcmtypes_drc_lcmtypes)
 target_link_libraries(drc-pfgrasp-commander)
 pods_install_executables(drc-pfgrasp-commander)
 
