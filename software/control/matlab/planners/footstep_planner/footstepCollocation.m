@@ -43,8 +43,8 @@ end
 nominal_dxy = [params.nom_forward_step; params.nom_step_width];
 [cost_Q, cost_c] = footstepQuadraticCost(biped, seed_plan.slice(2:length(seed_plan.footsteps)), weights, goal_pos, nominal_dxy);
 
+
 function [c, dc] = objfun(x)
-%   [steps, steps_rel] = decodeCollocationSteps(x);
 %   [c, dc] = footstepCostFun(steps, steps_rel, weights, goal_pos, right_foot_lead, nominal_dxy);
   c = x' * cost_Q * x + cost_c' * x;
   dc = 2 * cost_Q * x + cost_c;
@@ -85,7 +85,7 @@ for j = 2:nsteps
   if length(region_order) == 1
     region_ndx = 1;
   else
-    region_ndx = j-1;
+    region_ndx = j+1;
   end
   region = safe_regions(region_order(region_ndx));
   num_region_cons = length(region.b);
