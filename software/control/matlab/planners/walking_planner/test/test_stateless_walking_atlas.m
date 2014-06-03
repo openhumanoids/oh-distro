@@ -66,7 +66,7 @@ plan_msg = plan.toLCM();
 request = drc.walking_plan_request_t();
 request.utime = 0;
 
-request.initial_state = r.getStateFrame().lcmcoder.encode(0, fixed_pt.xstar);
+request.initial_state = r.getStateFrame().lcmcoder.encode(0, fixed_pt);
 request.new_nominal_state = request.initial_state;
 request.use_new_nominal_state = false;
 request.footstep_plan = plan_msg;
@@ -76,6 +76,13 @@ wp = StatelessWalkingPlanner();
 walking_plan = wp.plan_walking(r, request, true);
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish('CANDIDATE_ROBOT_PLAN', walking_plan.toLCM());
+
+r = r.setTerrain(RigidBodyTerrain());
+v = r.constructVisualizer();
+xt = PPTrajectory(spline(walking_plan.ts/10, walking_plan.xtraj));
+xt = xt.setOutputFrame(r.getStateFrame());
+v.draw(0, fixed_pt);
+v.playback(xt);
 
 % Compute walking controller
 walking_plan = wp.plan_walking(r, request, false);
