@@ -55,7 +55,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
       bodies = [static_body_idx, swing_body_idx];
       if ~ (all(bodies == [obj.foot_bodies_idx.right, obj.foot_bodies_idx.left]) ||...
             all(bodies == [obj.foot_bodies_idx.left, obj.foot_bodies_idx.right]))
-        error('DRC:Atlas:BadBodyIdx', 'Feasibility polytope not defined for this pairing of body indices.');
+        error('DRC:Biped:BadBodyIdx', 'Feasibility polytope not defined for this pairing of body indices.');
       end
       params = struct(params);
       fields = {'max_forward_step',...
@@ -73,11 +73,20 @@ classdef Biped < TimeSteppingRigidBodyManipulator
           params.(field) = obj.default_footstep_params.(field);
         end
       end
+      if params.max_step_width <= params.nom_step_width
+        warning('DRC:Biped:BadNominalStepWidth', 'Nominal step width should be less than max step width');
+        params.max_step_width = params.nom_step_width * 1.01;
+      end
+      if params.min_step_width >= params.nom_step_width
+        warning('DRC:Biped:BadNominalStepWidth', 'Nominal step width should be greater than min step width');
+        params.min_step_width = params.nom_step_width * 99;
+      end
+      
       [Axy, bxy] = poly2lincon([0, params.max_forward_step, 0, -params.max_forward_step],...
                                [params.min_step_width, params.nom_step_width, params.max_step_width, params.nom_step_width]);
       [Axz, bxz] = poly2lincon([0, params.nom_forward_step, params.max_forward_step, params.nom_forward_step, 0, -params.max_forward_step], ...
                                [params.max_upward_step, params.max_upward_step, 0, -params.max_downward_step, -params.max_downward_step, 0]);
-      A = [Axy, zeros(4, 4);
+      A = [Axy, zeros(size(Axy, 1), 4);
            Axz(:,1), zeros(size(Axz, 1), 1), Axz(:,2), zeros(size(Axz, 1), 3);
            0 0 0 0 0 -1;
            0 0 0 0 0 1;
