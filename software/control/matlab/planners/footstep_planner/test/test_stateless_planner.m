@@ -16,6 +16,21 @@ request.initial_state = r.getStateFrame().lcmcoder.encode(0, fp.xstar);
 
 r = r.setTerrain(KinematicTerrainMap(r, fp.xstar(1:r.getNumDOF), true));
 
+request = construct_default_request(request);
+
+p = StatelessFootstepPlanner();
+
+test_bad_step_width(p, r, request.copy())
+
+test_terrain_height(p, r, request.copy())
+
+test_single_goal_step(p, r, request.copy());
+
+test_multi_goal_step(p, r, request.copy());
+
+end
+
+function request = construct_default_request(request)
 request.goal_pos = drc.position_3d_t();
 request.goal_pos.translation = drc.vector_3d_t();
 request.goal_pos.translation.x = 2.0;
@@ -30,27 +45,6 @@ request.goal_pos.rotation.z = 0;
 request.num_goal_steps = 0;
 request.num_existing_steps = 0;
 request.num_iris_regions = 0;
-% existing_steps = javaArray('drc.footstep_t', request.num_existing_steps);
-% existing_steps(1) = drc.footstep_t();
-% existing_steps(1).pos = drc.position_3d_t();
-% existing_steps(1).pos.translation = drc.vector_3d_t();
-% existing_steps(1).pos.translation.x = 0.2527;
-% existing_steps(1).pos.translation.y = 0.20;
-% existing_steps(1).pos.translation.z = 0;
-% existing_steps(1).pos.rotation = drc.quaternion_t();
-% existing_steps(1).pos.rotation.w = 1.0;
-% existing_steps(1).pos.rotation.x = 0;
-% existing_steps(1).pos.rotation.y = 0;
-% existing_steps(1).pos.rotation.z = 0;
-% existing_steps(1).id = 3;
-% existing_steps(1).is_right_foot = 0;
-% existing_steps(1).fixed_x = 1;
-% existing_steps(1).fixed_y = 1;
-% existing_steps(1).fixed_z = 1;
-% existing_steps(1).fixed_roll = 1;
-% existing_steps(1).fixed_pitch = 1;
-% existing_steps(1).fixed_yaw = 1;
-% request.existing_steps = existing_steps;
 
 request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 10;
@@ -83,9 +77,24 @@ request.default_step_params.bdi_max_foot_vel = 0;
 request.default_step_params.bdi_sway_end_dist = 0.02;
 request.default_step_params.bdi_step_end_dist = 0.02;
 request.default_step_params.mu = 1.0;
+end
 
+function test_bad_step_width(planner, biped, request)
 
-p = StatelessFootstepPlanner();
+warning('off', 'DRC:Biped:BadNominalStepWidth');
+request.params.nom_step_width = request.params.max_step_width;
+planner.plan_footsteps(biped, request);
+
+request.params.nom_step_width = request.params.min_step_width;
+planner.plan_footsteps(biped, request);
+
+request.params.max_step_width = request.params.min_step_width;
+planner.plan_footsteps(biped, request);
+
+end
+
+function test_terrain_height(p, r, request)
+
 plan = p.plan_footsteps(r, request);
 plan.toLCM();
 lc = lcm.lcm.LCM.getSingleton();
@@ -94,9 +103,10 @@ footsteps = plan.footsteps;
 pos3 = footsteps(3).pos.inFrame(footsteps(3).frames.orig);
 valuecheck(pos3(3), r.getTerrainHeight(pos3(1:2)) + 0.0811, 1e-3);
 assert(length(footsteps) == 12);
-% assert(footsteps(3).infeasibility > 1e-6);
-% assert(footsteps(4).infeasibility > 1e-6);
 assert(all([footsteps.infeasibility] < 1e-4))
+end
+
+function test_single_goal_step(p, r, request)
 
 request.num_goal_steps = 1;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
@@ -119,7 +129,9 @@ plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
 s = Footstep.from_footstep_t(goal_steps(1), r);
 valuecheck(footsteps(end).pos.inFrame(footsteps(end).frames.center).double(), s.pos.inFrame(s.frames.center).double());
+end
 
+function test_multi_goal_step(p, r, request)
 request.num_goal_steps = 3;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
 goal_steps(1) = drc.footstep_t();
@@ -214,3 +226,4 @@ request.goal_steps = goal_steps;
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
 assert(all([footsteps(1:2:end-1).body_idx] ~= [footsteps(2:2:end).body_idx]))
+end
