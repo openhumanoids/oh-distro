@@ -147,6 +147,14 @@ class BDIStepTranslator(object):
                 #print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed)
 
+            # Report progress through the footstep plan execution (only when stepping)
+            progress_msg = drc.footstep_plan_progress_t()
+            progress_msg.utime = msg.utime
+            progress_msg.num_steps = len(self.bdi_step_queue_in) - 2
+            progress_msg.current_step = index_needed - 1
+            self.lc.publish('FOOTSTEP_PLAN_PROGRESS', progress_msg.encode())
+
+
     def send_params(self,step_index,force_stop_walking=False):
         """
         Publish the next steppping footstep or up to the next 4 walking footsteps as needed.
