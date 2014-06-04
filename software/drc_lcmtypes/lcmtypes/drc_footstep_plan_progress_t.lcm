@@ -1,0 +1,12 @@
+package drc;
+
+struct footstep_plan_progress_t
+{
+	int64_t utime;
+
+	// Total number of steps to be taken in the current plan
+	int32_t num_steps;
+
+	// 0-based index of the step whose pose is currently being sent to the BDI controller
+	int32_t current_step;
+}
