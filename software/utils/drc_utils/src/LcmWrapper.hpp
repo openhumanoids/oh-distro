@@ -14,6 +14,9 @@ namespace drc {
   
 class LcmWrapper {
 public:
+  typedef std::shared_ptr<LcmWrapper> Ptr;
+
+public:
   // creates new lcm
   LcmWrapper();
 

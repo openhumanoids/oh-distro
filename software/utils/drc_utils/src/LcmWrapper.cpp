@@ -10,11 +10,13 @@ using namespace drc;
 
 struct LcmWrapper::Helper {
   bool mIsRunning;
+  bool mIsJoined;
   std::thread mHandleThread;
   std::shared_ptr<lcm::LCM> mLcm;
 
   Helper() {
     mIsRunning = false;
+    mIsJoined = false;
   }
 
   void operator()() {
@@ -67,6 +69,7 @@ bool LcmWrapper::
 startHandleThread(const bool iJoined) {
   if (mHelper->mIsRunning) return false;
   mHelper->mIsRunning = true;
+  mHelper->mIsJoined = iJoined;
   mHelper->mHandleThread = std::thread(std::ref(*mHelper));
   std::cout << "Started lcm handle loop" << std::endl;
   if (iJoined) mHelper->mHandleThread.join();
@@ -77,7 +80,9 @@ bool LcmWrapper::
 stopHandleThread() {
   if (!mHelper->mIsRunning) return false;
   mHelper->mIsRunning = false;
-  if (mHelper->mHandleThread.joinable()) mHelper->mHandleThread.join();
+  if (!mHelper->mIsJoined && mHelper->mHandleThread.joinable()) {
+    mHelper->mHandleThread.join();
+  }
   return true;
 }
 

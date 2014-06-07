@@ -17,6 +17,7 @@ pods_install_headers(
   BotWrapper.hpp
   LidarUtils.hpp
   PointerUtils.hpp
+  ThreadSafeQueue.hpp
   PointConvert.h
   DESTINATION drc_utils)
 
