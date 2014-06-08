@@ -25,7 +25,7 @@ public:
   bool stop();
   bool isRunning() const;
 
-  bool getPointCloud(const float iRevolutions,
+  bool getPointCloud(const double iRevolutions, const double iStartAngle,
                      std::vector<Eigen::Vector3f>& oCloud);
 
 protected:

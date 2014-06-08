@@ -160,7 +160,7 @@ public:
     return mIsRunning;
   }
 
-  bool getPointCloud(const float iRevolutions,
+  bool getPointCloud(const double iRevolutions, const double iStartAngle,
                      std::vector<Eigen::Vector3f>& oCloud) {
     oCloud.clear();
 
@@ -169,25 +169,37 @@ public:
     std::list<Scan::Ptr> scans;
     bool foundAllRequestedRevolutions = false;
 
+    bool started = (iStartAngle < 0);
+    
     {
       std::unique_lock<std::mutex> lock(mScansMutex);
-      std::cout << "THERE ARE " << mScans.size() << " SCANS" << std::endl;
       if (mScans.size() == 0) return false;
       double prevAngle = mScans.back()->mSpindleAngle;
+      int signInit = computeSign(prevAngle,iStartAngle);
       double targetAngle = iRevolutions*2*kPi;
       double totalAngle = 0;
       for (auto iter = mScans.rbegin(); iter != mScans.rend(); ++iter) {
-        if (!(*iter)->mVoPoseGood) return false;
         double angle = (*iter)->mSpindleAngle;
-        double deltaAngle = std::abs(angle-prevAngle);
-        prevAngle = angle;
-        if (deltaAngle > kPi) deltaAngle = 2*kPi - deltaAngle;
-        totalAngle += deltaAngle;
-        scans.push_back(*iter);
-        totalPoints += (*iter)->mRanges.size();
-        if (totalAngle >= targetAngle) {
-          foundAllRequestedRevolutions = true;
-          break;
+
+        // if not started yet, check for change of sign
+        if (!started) {
+          int signCur = computeSign(angle,iStartAngle);
+          if (signCur != signInit) started = true;
+        }
+
+        // otherwise start accumulating
+        else {
+          if (!(*iter)->mVoPoseGood) return false;
+          double deltaAngle = std::abs(angle-prevAngle);
+          prevAngle = angle;
+          if (deltaAngle > kPi) deltaAngle = 2*kPi - deltaAngle;
+          totalAngle += deltaAngle;
+          scans.push_back(*iter);
+          totalPoints += (*iter)->mRanges.size();
+          if (totalAngle >= targetAngle) {
+            foundAllRequestedRevolutions = true;
+            break;
+          }
         }
       }
     }
@@ -206,7 +218,7 @@ public:
       auto pose1 = voReferenceToLocal*scan->mPoseBeginToVoReference;
       auto pose2 = voReferenceToLocal*scan->mPoseEndToVoReference;
 
-      // loop over returns in scan
+      // interpolate returns in scan
       const int n = scan->mRanges.size();
       for (int j = 0; j < n; ++j) {
         double r = scan->mRanges[j];
@@ -222,6 +234,15 @@ public:
 
     // TODO: make this a pcl cloud?
     return true;
+  }
+
+  int computeSign(const double iAngle, const double iRefAngle) {
+    double delta = iAngle - iRefAngle;
+    while (std::abs(delta) > kPi) {
+      if (delta < 0) delta += kPi;
+      else delta -= kPi;
+    }
+    return (delta>0) ? 1 : ((delta<0) ? -1 : 0);
   }
 
   void onScan(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
@@ -272,7 +293,7 @@ public:
     Eigen::Isometry3d spindleTransform;
     mBotWrapper->getTransform("POST_SPINDLE", "PRE_SPINDLE",spindleTransform,
                               iMessage->utime);
-    scan->mSpindleAngle = acos(spindleTransform(0,0));
+    scan->mSpindleAngle = std::atan2(spindleTransform(1,0),spindleTransform(0,0));
 
     // add to scan work queue
     {
@@ -537,7 +558,7 @@ isRunning() const {
 }
 
 bool LidarAccumulator::
-getPointCloud(const float iRevolutions,
+getPointCloud(const double iRevolutions, const double iStartAngle,
               std::vector<Eigen::Vector3f>& oCloud) {
-  return mHelper->getPointCloud(iRevolutions, oCloud);
+  return mHelper->getPointCloud(iRevolutions, iStartAngle, oCloud);
 }

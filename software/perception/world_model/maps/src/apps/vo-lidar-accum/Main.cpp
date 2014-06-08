@@ -9,6 +9,11 @@
 #include <drc_utils/BotWrapper.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/drc/footstep_plan_progress_t.hpp>
+#include <lcmtypes/drc/map_pointcloud_request_t.hpp>
+#include <lcmtypes/drc/map_cloud_t.hpp>
+
+#include <maps/PointCloudView.hpp>
+#include <maps/LcmTranslator.hpp>
 
 struct State {
   drc::LcmWrapper::Ptr mLcmWrapper;
@@ -22,12 +27,13 @@ struct State {
     mAccum.reset(new maps::LidarAccumulator());
     mAccum->setBotWrapper(mBotWrapper);
     auto lcm = mLcmWrapper->get();
-    lcm->subscribe("FOOTSTEP_PLAN_PROGRESS", &State::onFootstepProgress,this);
+    lcm->subscribe("FOOTSTEP_PLAN_PROGRESS", &State::onFootstepProgress, this);
+    lcm->subscribe("MAP_POINTCLOUD_REQUEST", &State::onRequest, this);
   }
 
   void start() {
     if (mRunContinuously) mAccum->start();
-    mLcmWrapper->startHandleThread(false);  // TODO
+    mLcmWrapper->startHandleThread(true);
   }
 
   void onFootstepProgress(const lcm::ReceiveBuffer* iBuf,
@@ -40,6 +46,48 @@ struct State {
       std::cout << "last footstep reached; starting accumulator" << std::endl;
       mAccum->start();
     }
+  }
+
+  void onRequest(const lcm::ReceiveBuffer* iBuf,
+                 const std::string& iChannel,
+                 const drc::map_pointcloud_request_t* iMessage) {
+    std::thread thread(&State::sendPointCloud, this, *iMessage);
+    thread.detach();
+  }
+
+  void sendPointCloud(const drc::map_pointcloud_request_t& iMessage) {
+
+    // integrate points
+    std::vector<Eigen::Vector3f> points;
+    mAccum->setRangeLimits(iMessage.min_range, iMessage.max_range);
+    bool success =  mAccum->getPointCloud(iMessage.num_revolutions,
+                                          iMessage.spindle_angle_start, points);
+
+    // convert to pcl cloud
+    maps::PointCloud::Ptr cloud(new maps::PointCloud());
+    cloud->reserve(points.size());
+    for (auto p : points) {
+      maps::PointType pclPt;
+      pclPt.getVector3fMap() = p;
+      cloud->push_back(pclPt);
+    }
+
+    // set view
+    maps::PointCloudView view;
+    view.setResolution(iMessage.resolution);
+    view.set(cloud);
+    view.setId(iMessage.view_id);
+
+    // get lcm message and publish
+    drc::map_cloud_t msg;
+    msg.utime = iMessage.utime;
+    msg.map_id = 1;
+    maps::LcmTranslator::toLcm(view, msg, 0.00001);
+    mLcmWrapper->get()->publish("MAP_CLOUD", &msg);
+    std::cout << "sent " << cloud->size() << " points" << std::endl;
+
+    // stop collecting
+    if (success && !mRunContinuously) mAccum->stop();
   }
 };
 
@@ -54,21 +102,6 @@ int main(const int iArgc, const char** iArgv) {
   state.mRunContinuously = runContinuously;
   state.setup();
   state.start();
-
-
-
-  // TODO: debug
-  state.mAccum->setRangeLimits(0.3,3.0);
-  std::this_thread::sleep_for(std::chrono::seconds(44));
-  std::vector<Eigen::Vector3f> points;
-  state.mAccum->getPointCloud(1,points);
-  std::cout << "GOT " << points.size() << " POINTS" << std::endl;
-
-  std::ofstream ofs("/home/antone/temp/cloud.txt");
-  for (auto pt : points) {
-    ofs << pt[0] << " " << pt[1] << " " << pt[2] << std::endl;
-  }
-  ofs.close();
 
   return 1;
 }

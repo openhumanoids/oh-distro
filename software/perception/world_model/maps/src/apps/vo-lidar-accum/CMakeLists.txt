@@ -9,5 +9,6 @@ pods_use_pkg_config_packages(${APP_NAME}
   drc-utils
   opencv
   voconfig
-  fovision)
+  fovision
+  maps)
 pods_install_executables(${APP_NAME})
