@@ -191,16 +191,16 @@ public:
         else {
           if (!(*iter)->mVoPoseGood) return false;
           double deltaAngle = std::abs(angle-prevAngle);
-          prevAngle = angle;
           if (deltaAngle > kPi) deltaAngle = 2*kPi - deltaAngle;
           totalAngle += deltaAngle;
           scans.push_back(*iter);
           totalPoints += (*iter)->mRanges.size();
-          if (totalAngle >= targetAngle) {
+          if (totalAngle > targetAngle) {
             foundAllRequestedRevolutions = true;
             break;
           }
         }
+        prevAngle = angle;
       }
     }
     if (!foundAllRequestedRevolutions) return false;
