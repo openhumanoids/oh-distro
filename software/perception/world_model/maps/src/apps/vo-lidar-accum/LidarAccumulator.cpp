@@ -389,10 +389,6 @@ public:
         }
       }
     }
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::cout << "decoded image " <<
-      std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count()/1e6 <<
-      " sec" << std::endl;
 
     // do fovis
     Pose pose;
@@ -411,8 +407,8 @@ public:
     pose.mTransform = mVo->getPose();
 
     // store camera pose
-    auto t3 = std::chrono::high_resolution_clock::now();
-    auto num = std::chrono::duration_cast<std::chrono::microseconds>(t3-t2);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto num = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1);
     {
       std::unique_lock<std::mutex> lock(mVoPosesMutex);
       mVoPoses.push_back(pose);

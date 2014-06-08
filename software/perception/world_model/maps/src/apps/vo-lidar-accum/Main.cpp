@@ -1,6 +1,5 @@
 #include "LidarAccumulator.hpp"
 
-#include <fstream>
 #include <chrono>
 #include <thread>
 

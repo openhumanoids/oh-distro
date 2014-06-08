@@ -144,12 +144,11 @@ struct ViewClient::Worker {
       int64_t hash;
       int len = __int64_t_decode_array(buf, 0, 8, &hash, 1);
       if (len < 0) continue;
-      const int maxBufferSize = 1000000;
 
       // handle catalog
       if (hash == drc::map_catalog_t::getHash()) {
         drc::map_catalog_t catalog;
-        catalog.decode(buf, 0, maxBufferSize);
+        catalog.decode(buf, 0, msg->mBytes.size());
         bool changed = false;
         std::set<int64_t> catalogIds;
         for (int i = 0; i < catalog.views.size(); ++i) {
@@ -192,7 +191,7 @@ struct ViewClient::Worker {
       // handle octree
       if (hash == drc::map_octree_t::getHash()) {
         drc::map_octree_t octree;
-        octree.decode(buf, 0, maxBufferSize);
+        octree.decode(buf, 0, msg->mBytes.size());
         auto octreeView = mOctreeViewPool.get();
         if (octreeView == NULL) {
           std::cout << "Warning: no objects in octree pool" << std::endl;
@@ -206,7 +205,7 @@ struct ViewClient::Worker {
       // handle cloud
       else if (hash == drc::map_cloud_t::getHash()) {
         drc::map_cloud_t cloud;
-        cloud.decode(buf, 0, maxBufferSize);
+        cloud.decode(buf, 0, msg->mBytes.size());
         auto cloudView = mPointCloudViewPool.get();
         if (cloudView == NULL) {
           std::cout << "Warning: no objects in pointcloud pool" << std::endl;
@@ -220,7 +219,7 @@ struct ViewClient::Worker {
       // handle depth image
       else if (hash == drc::map_image_t::getHash()) {
         drc::map_image_t image;
-        image.decode(buf, 0, maxBufferSize);
+        image.decode(buf, 0, msg->mBytes.size());
         auto depthView = mDepthImageViewPool.get();
         if (depthView == NULL) {
           std::cout << "Warning: no objects in depthimage pool" << std::endl;
