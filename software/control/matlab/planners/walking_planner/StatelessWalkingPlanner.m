@@ -18,17 +18,8 @@ classdef StatelessWalkingPlanner
         xstar = r.loadFixedPoint();
       end
 
-      if request.footstep_plan.params.ignore_terrain
-        r = r.setTerrain(KinematicTerrainMap(r, q0, true));
-      else
-        terrain = r.getTerrain();
-        if ismethod(terrain, 'setBackupTerrain')
-          terrain = terrain.setBackupTerrain(r, q0);
-          r = r.setTerrain(terrain);
-        end
-      end
+      r = r.configureDRCTerrain(request.footstep_plan.params.map_mode, q0);
 
-%       r = r.setInitialState(xstar); % TODO: do we need this? -robin
       qstar = xstar(1:nq);
 
       footstep_plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, r);

@@ -10,7 +10,7 @@ classdef StatelessFootstepPlanner
       q0 = x0(1:biped.getNumDOF());
       feet_centers = biped.feetPosition(q0);
 
-      biped = StatelessFootstepPlanner.configureTerrain(biped, request);
+      biped = biped.configureDRCTerrain(request.params.map_mode, q0);
       params = struct(request.params);
 
       if request.num_existing_steps > 0
@@ -35,7 +35,7 @@ classdef StatelessFootstepPlanner
       end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
       plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
-      plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
+      plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan);
       plan = StatelessFootstepPlanner.checkReachInfeasibility(biped, plan, params);
       % for j = 1:length(plan.footsteps)
       %   plan.footsteps(j).pos = biped.footContact2Orig(plan.footsteps(j).pos, 'center', true);
@@ -44,10 +44,13 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = check_footstep_plan(biped, request)
+      x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
+      q0 = x0(1:biped.getNumDOF());
+      biped = biped.configureDRCTerrain(request.params.map_mode, q0);
       plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan);
       if request.snap_to_terrain
         plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
-        plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
+        plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan);
       end
       if request.compute_infeasibility
         params = struct(request.footstep_params);
@@ -83,25 +86,6 @@ classdef StatelessFootstepPlanner
         goal_pos.center = mean([goal_pos.right, goal_pos.left], 2);
         goal_pos.center(4:6) = goal_pos.right(4:6) + 0.5 * angleDiff(goal_pos.right(4:6), goal_pos.left(4:6));
       end
-    end
-
-    function biped = configureTerrain(biped, request)
-      x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
-      q0 = x0(1:biped.getNumDOF());
-
-      if request.params.ignore_terrain
-        terrain = KinematicTerrainMap(biped, q0, true);
-      else
-        terrain = biped.getTerrain();
-        if ismethod(terrain, 'setBackupTerrain')
-          terrain = terrain.setBackupTerrain(biped, q0);
-        end
-      end
-
-      if ismethod(terrain, 'setMapMode')
-        terrain = terrain.setMapMode(request.params.map_command);
-      end
-      biped = biped.setTerrain(terrain);
     end
 
     function safe_regions = decodeSafeRegions(biped, request, feet_centers, goal_pos)
@@ -175,21 +159,15 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = snapToTerrain(biped, plan, request)
-      if request.params.ignore_terrain
-        nsteps = length(plan.footsteps) - request.num_goal_steps;
-      else
-        nsteps = length(plan.footsteps);
-      end
+      nsteps = length(plan.footsteps);
       for j = 1:nsteps
-        plan.footsteps(j) = fitStepToTerrain(biped, plan.footsteps(j));
+        if ~plan.footsteps(j).pos_fixed(3)
+          plan.footsteps(j) = fitStepToTerrain(biped, plan.footsteps(j));
+        end
       end
     end
 
-    function plan = applySwingTerrain(biped, plan, request)
-      terrain = biped.getTerrain();
-      if ismethod(terrain, 'setMapMode')
-        biped.setTerrain(terrain.setMapMode(request.params.map_command));
-      end
+    function plan = applySwingTerrain(biped, plan)
       nsteps = length(plan.footsteps);
       for j = 3:nsteps
         [contact_width, ~, ~] = contactVolume(biped, ...

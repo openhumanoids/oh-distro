@@ -34,10 +34,9 @@ footstep_request.params.nom_forward_step = 0.15;
 footstep_request.params.max_forward_step = 0.3;
 footstep_request.params.nom_upward_step = 0.25;
 footstep_request.params.nom_downward_step = 0.15;
-footstep_request.params.ignore_terrain = true;
 footstep_request.params.planning_mode = drc.footstep_plan_params_t.MODE_AUTO;
 footstep_request.params.behavior = drc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING;
-footstep_request.params.map_command = 0;
+footstep_request.params.map_mode = drc.footstep_plan_params_t.FOOT_PLANE;
 footstep_request.params.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
 
 footstep_request.default_step_params = drc.footstep_params_t();

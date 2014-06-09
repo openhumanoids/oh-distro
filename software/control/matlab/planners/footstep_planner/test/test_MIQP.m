@@ -66,10 +66,9 @@ request.params.nom_forward_step = 0.15;
 request.params.max_forward_step = 0.4;
 request.params.nom_upward_step = 0.25;
 request.params.nom_downward_step = 0.15;
-request.params.ignore_terrain = true;
 request.params.planning_mode = drc.footstep_plan_params_t.MODE_AUTO;
 request.params.behavior = drc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING;
-request.params.map_command = 0;
+request.params.map_mode = drc.footstep_plan_params_t.FOOT_PLANE;
 request.params.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
 
 weights = struct('relative', [10;50;10;0;0;.5],...

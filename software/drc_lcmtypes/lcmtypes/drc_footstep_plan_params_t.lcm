@@ -16,8 +16,6 @@ struct footstep_plan_params_t
 	float nom_upward_step;
 	float nom_downward_step;
 
-	boolean ignore_terrain;
-
 	int8_t planning_mode;
 	const int8_t MODE_AUTO = 0;
 	const int8_t MODE_SPLINE = 1;
@@ -29,8 +27,11 @@ struct footstep_plan_params_t
     const int8_t BEHAVIOR_BDI_WALKING = 2;
     const int8_t BEHAVIOR_BDI_STEPPING = 3;
 
-	int8_t map_command;
-
+    int8_t map_mode;
+    const int8_t TERRAIN_HEIGHTS_AND_NORMALS = 0;
+    const int8_t TERRAIN_HEIGHTS_Z_NORMALS = 1;
+    const int8_t FOOT_PLANE = 2;
+    const int8_t HORIZONTAL_PLANE = 3;
 
 	int8_t leading_foot;
 	const int8_t LEAD_RIGHT = 1;

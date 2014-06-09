@@ -14,7 +14,7 @@ fp = load(strcat(getenv('DRC_PATH'), '/control/matlab/data/atlas_fp.mat'));
 fp.xstar(3) = fp.xstar(3) + 0.50; % make sure we're not assuming z = 0
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, fp.xstar);
 
-r = r.setTerrain(KinematicTerrainMap(r, fp.xstar(1:r.getNumDOF), true));
+r = r.setTerrain(DRCTerrainMap(false));
 
 request = construct_default_request(request);
 
@@ -56,10 +56,9 @@ request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.35;
 request.params.nom_upward_step = 0.25;
 request.params.nom_downward_step = 0.15;
-request.params.ignore_terrain = true;
 request.params.planning_mode = drc.footstep_plan_params_t.MODE_AUTO;
 request.params.behavior = drc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING;
-request.params.map_command = 0;
+request.params.map_mode = drc.footstep_plan_params_t.FOOT_PLANE;
 request.params.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
 
 request.default_step_params = drc.footstep_params_t();
@@ -123,6 +122,7 @@ goal_steps(1).pos.rotation.y = 0;
 goal_steps(1).pos.rotation.z = 0;
 goal_steps(1).id = -1;
 goal_steps(1).is_right_foot = 1;
+goal_steps(1).fixed_z = true;
 request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
@@ -173,6 +173,7 @@ goal_steps(3).pos.rotation.y = 0;
 goal_steps(3).pos.rotation.z = 0;
 goal_steps(3).id = -1;
 goal_steps(3).is_right_foot = 1;
+goal_steps(3).fixed_z = true;
 request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
