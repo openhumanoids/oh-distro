@@ -57,21 +57,43 @@ ctrl_data = SharedDataHandle(struct(...
   'mu',1,...
   'constrained_dofs',[]));
 
-% instantiate QP controller
+% feedback QP controller with atlas
 options.slack_limit = 10;
-options.contact_threshold = 0.002;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
-% feedback QP controller with atlas
 ins(1).system = 1;
 ins(1).input = 2;
+ins(2).system = 1;
+ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
 clear ins outs;
 
+% feedback foot contact detector with QP/atlas
+options.use_lcm=false;
+options.contact_threshold = 0.002;
+fc = FootContactBlock(r,ctrl_data,options);
+
+ins(1).system = 2;
+ins(1).input = 1;
+outs(1).system = 2;
+outs(1).output = 1;
+sys = mimoFeedback(fc,sys,[],[],ins,outs);
+clear ins outs;
+
+% ins(1).system = 2;
+% ins(1).input = 1;
+% ins(2).system = 1;
+% ins(2).input = 1;
+% outs(1).system = 2;
+% outs(1).output = 1;
+% sys = mimoCascade(fc,sys,[],ins,outs);
+% clear ins outs;
+
 % feedback PD trajectory controller 
 pd = SimplePDBlock(r);
+
 ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;
@@ -93,7 +115,7 @@ if visualize
   sys = mimoCascade(sys,v,[],[],output_select);
   warning(S);
 end
-x0(3) = 1.0; % drop it a bit
+x0(3) = 0.9; % drop it a bit
 
 traj = simulate(sys,[0 3],x0);
 if visualize

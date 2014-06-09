@@ -55,9 +55,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pm= myGetProperty(pobj,"mass");
     pdata->mass = mxGetScalar(pm); 
     
-    pm= myGetProperty(pobj,"smooth_contacts");
-    pdata->smooth_contacts = mxGetLogicals(pm); 
-    
     pm= myGetProperty(pobj,"n_body_accel_inputs");
     pdata->n_body_accel_inputs = mxGetScalar(pm); 
 
@@ -219,26 +216,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double ddcomz_des = mxGetScalar(prhs[narg++]);
 
   double mu = mxGetScalar(prhs[narg++]);
-
-  double* double_contact_sensor = mxGetPr(prhs[narg]); int len = mxGetNumberOfElements(prhs[narg++]);
-  VectorXi contact_sensor(len);  
-  for (i=0; i<len; i++)
-    contact_sensor(i)=(int)double_contact_sensor[i];
-  double contact_threshold = mxGetScalar(prhs[narg++]);
   double terrain_height = mxGetScalar(prhs[narg++]); // nonzero if we're using DRCFlatTerrainMap
   
   pdata->r->doKinematics(q,false,qd);
-
-  // get contact force bounds
-  VectorXd force_bound;
-  assert(mxGetN(prhs[narg])==1);
-  force_bound = VectorXd::Zero(mxGetM(prhs[narg]));
-  memcpy(force_bound.data(),mxGetPr(prhs[narg++]),sizeof(double)*mxGetM(prhs[narg]));
-
-  VectorXd force_delta;
-  assert(mxGetN(prhs[narg])==1);
-  force_delta = VectorXd::Zero(mxGetM(prhs[narg]));
-  memcpy(force_delta.data(),mxGetPr(prhs[narg++]),sizeof(double)*mxGetM(prhs[narg]));
 
   //---------------------------------------------------------------------
   // Compute active support from desired supports -----------------------
@@ -266,29 +246,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       se.body_idx = (int) pBodies[i]-1;
       pr = mxGetPr(mxBodyContactPts); 
       for (j=0; j<nc; j++) {
-//        mexPrintf("adding pt %d to body %d\n", (int)pr[j]-1, se.body_idx);
         se.contact_pt_inds.insert((int)pr[j]-1);
       }
       se.contact_surface = (int) pContactSurfaces[i]-1;
       
-      if (contact_threshold == -1) { // ignore terrain
-        if (contact_sensor(i)!=0) { // no sensor info, or sensor says yes contact
-          active_supports.push_back(se);
-          num_active_contact_pts += nc;
-          contact_bodies.insert((int)se.body_idx); 
-        }
-      } else {
-        contactPhi(pdata->r,se,pdata->map_ptr,phi,terrain_height);
-        if (phi.minCoeff()<=contact_threshold || contact_sensor(i)==1) { // any contact below threshold (kinematically) OR contact sensor says yes contact
-          active_supports.push_back(se);
-          num_active_contact_pts += nc;
-          contact_bodies.insert((int)se.body_idx);
-        }
-      }
+      active_supports.push_back(se);
+      num_active_contact_pts += nc;
+      contact_bodies.insert((int)se.body_idx); 
     }
   }
-
+  
   pdata->r->HandC(q,qd,(MatrixXd*)NULL,pdata->H,pdata->C,(MatrixXd*)NULL,(MatrixXd*)NULL,(MatrixXd*)NULL);
+
   pdata->H_float = pdata->H.topRows(6);
   pdata->H_act = pdata->H.bottomRows(nu);
   pdata->C_float = pdata->C.head(6);
@@ -434,21 +403,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   GRBmodel * model = NULL;
   int info=-1;
   
-  VectorXd f_ubound = VectorXd::Zero(nf);
-  int f_ind = 0;
-  for (vector<SupportStateElement>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
-    int nc = iter->contact_pt_inds.size();
-    for (int i=0; i<nc*nd; i++) {
-      f_ubound(f_ind++) = force_bound(iter->body_idx);
-    }
-  }
-  
   // set obj,lb,up
   VectorXd lb(nparams), ub(nparams);
   lb.head(nq) = -1e3*VectorXd::Ones(nq);
   ub.head(nq) = 1e3*VectorXd::Ones(nq);
   lb.segment(nq,nf) = VectorXd::Zero(nf);
-  ub.segment(nq,nf) = f_ubound;
+  ub.segment(nq,nf) = 1e3*VectorXd::Ones(nf);
   lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 
@@ -615,17 +575,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   if (nlhs>16) {
-    plhs[16] = eigenToMatlab(force_bound);
-  }
-
-  if (nlhs>17) {
-    plhs[17] = eigenToMatlab(force_delta);
-  }
-
-  if (nlhs>18) {
     Vector2d zmp = xcom.head(2) - 0.89/9.81*(pdata->J_xy*qdd + pdata->Jdot_xy*qdvec);
-    plhs[18] = eigenToMatlab(zmp);
+    plhs[16] = eigenToMatlab(zmp);
   }
+
   if (model) { 
     GRBfreemodel(model); 
   } 
