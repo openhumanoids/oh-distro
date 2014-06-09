@@ -1,4 +1,4 @@
-function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(step1, step2)
+function [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, step1, step2)
 % Compute a collision-free swing trajectory for a single foot.
 
 assert(step1.body_idx == step2.body_idx, 'planSwing expects to plan a swing trajcectory between two positions of the /same/ foot body')
@@ -48,6 +48,7 @@ if (step_dist_xy > 0.01)
 
   %% Expand terrain convex hull by the size of the foot
   expanded_terrain_pts = [[0;last_pos(3)], apex_pos_l, [step_dist_xy; next_pos(3) + pre_contact_height]];
+  [contact_length, ~, contact_height] = contactVolume(biped, step1, step2, struct('nom_z_clearance', params.step_height));
   for j = 1:length(terrain_pts(1,:))
     if terrain_pts(2, j) > (j / length(terrain_pts(1,:))) * (next_pos(3) - last_pos(3)) + last_pos(3) + (params.step_height / 2)
       expanded_terrain_pts(:, end+1) = terrain_pts(:, j) + [-contact_length; contact_height];

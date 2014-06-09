@@ -78,7 +78,7 @@ while 1
   sw1 = steps.(sw_foot)(istep.(sw_foot)+1);
   st = steps.(st_foot)(istep.(st_foot));
 
-  [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(sw0, sw1);
+  [swing_ts, swing_poses, takeoff_time, landing_time] = planSwing(biped, sw0, sw1);
   step_duration = (swing_ts(end) - swing_ts(1));
   if is_first_step
     swing_ts = swing_ts + options.first_step_hold_s;
