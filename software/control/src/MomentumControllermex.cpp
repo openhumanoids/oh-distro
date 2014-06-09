@@ -12,6 +12,8 @@
 
 #include "QPCommon.h"
 
+using namespace std;
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
   int error;
@@ -71,7 +73,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     // get robot mex model ptr
     if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
-      mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the third argument should be the robot mex ptr");
+      mexErrMsgIdAndTxt("DRC:MomentumControllermex:BadInputs","the third argument should be the robot mex ptr");
     memcpy(&(pdata->r),mxGetData(prhs[2]),sizeof(pdata->r));
     
     pdata->B.resize(mxGetM(prhs[3]),mxGetN(prhs[3]));
@@ -93,7 +95,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
      // get the map ptr back from matlab
      if (!mxIsNumeric(prhs[6]) || mxGetNumberOfElements(prhs[6])!=1)
-     mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the seventh argument should be the map ptr");
+     mexErrMsgIdAndTxt("DRC:MomentumControllermex:BadInputs","the seventh argument should be the map ptr");
      memcpy(&pdata->map_ptr,mxGetPr(prhs[6]),sizeof(pdata->map_ptr));
     
 //    pdata->map_ptr = NULL;
@@ -102,7 +104,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     // get the multi-robot ptr back from matlab
     if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
-    mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the eigth argument should be the multi_robot ptr");
+    mexErrMsgIdAndTxt("DRC:MomentumControllermex:BadInputs","the eigth argument should be the multi_robot ptr");
     memcpy(&pdata->multi_robot,mxGetPr(prhs[7]),sizeof(pdata->multi_robot));
 
     // create gurobi environment
@@ -157,7 +159,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   // first get the ptr back from matlab
   if (!mxIsNumeric(prhs[0]) || mxGetNumberOfElements(prhs[0])!=1)
-    mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the first argument should be the ptr");
+    mexErrMsgIdAndTxt("DRC:MomentumControllermex:BadInputs","the first argument should be the ptr");
   memcpy(&pdata,mxGetData(prhs[0]),sizeof(pdata));
 
 //  for (i=0; i<pdata->r->num_bodies; i++)
@@ -177,7 +179,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
-//  double *q_multi = mxGetPr(prhs[narg++]);
 
   vector<VectorXd> body_accel_inputs;
   for (int i=0; i<pdata->n_body_accel_inputs; i++) {
@@ -228,13 +229,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   pdata->r->doKinematics(q,false,qd);
 
-  #ifdef BULLET_COLLISION
-  // if (pdata->multi_robot) {
-  //   auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
-  //   multi_robot->doKinematics(q_multi,false);
-  // }
-  #endif
-
   // get contact force bounds
   VectorXd force_bound;
   assert(mxGetN(prhs[narg])==1);
@@ -284,7 +278,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
           contact_bodies.insert((int)se.body_idx); 
         }
       } else {
-        contactPhi(pdata,se,phi,terrain_height);
+        contactPhi(pdata->r,se,pdata->map_ptr,phi,terrain_height);
         if (phi.minCoeff()<=contact_threshold || contact_sensor(i)==1) { // any contact below threshold (kinematically) OR contact sensor says yes contact
           active_supports.push_back(se);
           num_active_contact_pts += nc;
@@ -316,7 +310,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map<VectorXd> qdvec(qd,nq);
   
   MatrixXd Jz,Jp,Jpdot,D;
-  int nc = contactConstraintsBV(pdata,num_active_contact_pts,mu,active_supports,Jz,D,Jp,Jpdot,terrain_height);
+  int nc = contactConstraintsBV(pdata->r,num_active_contact_pts,mu,active_supports,pdata->map_ptr,Jz,D,Jp,Jpdot,terrain_height);
   int neps = nc*dim;
 
   Vector2d ustar = Vector2d::Zero();

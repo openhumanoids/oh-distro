@@ -11,6 +11,8 @@
 
 #include "QPCommon.h"
 
+using namespace std;
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
   int error;
@@ -236,7 +238,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
           num_active_contact_pts += nc;
         }
       } else {
-        contactPhi(pdata,se,phi,terrain_height);
+        contactPhi(pdata->r,se,pdata->map_ptr,phi,terrain_height);
         if (phi.minCoeff()<=contact_threshold || contact_sensor(i)==1) { // any contact below threshold (kinematically) OR contact sensor says yes contact
           active_supports.push_back(se);
           num_active_contact_pts += nc;
@@ -274,7 +276,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map<VectorXd> qdvec(qd,nq);
   
   MatrixXd Jz,Jp,Jpdot,D;
-  int nc = contactConstraintsBV(pdata,num_active_contact_pts,mu,active_supports,Jz,D,Jp,Jpdot,terrain_height);
+  int nc = contactConstraintsBV(pdata->r,num_active_contact_pts,mu,active_supports,pdata->map_ptr,Jz,D,Jp,Jpdot,terrain_height);
   int neps = nc*dim;
 
   Vector4d x_bar,xlimp;
