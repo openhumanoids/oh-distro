@@ -52,8 +52,8 @@ else
   safe_regions(1) = struct('A', Ai, 'b', bi, 'point', [0;0;0], 'normal', [0;0;1]);
 end
 
-goal_pos = struct('right', [2;-0.15;0.1;0;0;0],...
-                  'left',  [2;+0.15;0.1;0;0;0]);
+goal_pos = struct('right', [2;-0.15;0.1;0;0;pi/2],...
+                  'left',  [2;+0.15;0.1;0;0;pi/2]);
 
 
 request.params = drc.footstep_plan_params_t();
@@ -103,9 +103,9 @@ nsteps = length(plan.footsteps);
 r_ndx = 2:2:nsteps;
 l_ndx = 1:2:nsteps;
 steps = plan.step_matrix();
-plot(steps(1,r_ndx), steps(2, r_ndx), 'bo')
+quiver(steps(1,r_ndx), steps(2, r_ndx), cos(steps(6,r_ndx)), sin(steps(6,r_ndx)), 'b', 'AutoScaleFactor', 0.2)
 hold on
-plot(steps(1,l_ndx), steps(2,l_ndx), 'ro')
+quiver(steps(1,l_ndx), steps(2,l_ndx), cos(steps(6,r_ndx)), sin(steps(6,r_ndx)), 'r', 'AutoScaleFactor', 0.2)
 plot(steps(1,:), steps(2,:), 'k:')
 for j = 1:length(safe_regions)
   V = iris.thirdParty.polytopes.lcon2vert(safe_regions(j).A(:,1:2), safe_regions(j).b);
