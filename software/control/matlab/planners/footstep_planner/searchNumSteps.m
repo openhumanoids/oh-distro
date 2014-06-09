@@ -4,7 +4,7 @@ tic
 feet_centers.right(4:5) = 0;
 feet_centers.left(4:5) = 0;
 
-weights = struct('relative', [10;10;10;0;0;10],...
+weights = struct('relative', [10;10;10;0;0;0.2],...
                  'relative_final', [1000;100;100;0;0;100],...
                  'goal', [100;100;0;0;0;10]);
 
@@ -45,11 +45,11 @@ for j = 1:num_outer_iterations
   end
 end
 
-steps = plan.step_matrix();
-step_vect = encodeCollocationSteps(steps(:,2:end));
-[steps, steps_rel] = decodeCollocationSteps(step_vect);
-steps
-steps_rel
+% steps = plan.step_matrix();
+% step_vect = encodeCollocationSteps(steps(:,2:end));
+% [steps, steps_rel] = decodeCollocationSteps(step_vect);
+% steps
+% steps_rel
 return;
 end
 
