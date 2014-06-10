@@ -3,19 +3,27 @@ close all
 global bot_
 bot_ = bot;
 
+
 % longstepping 180, typicalstep 455, manipmode 259, blocks 222
 % dyn1 129, dyn2 95, dyn3 50, dyn4 98, dyn5 80, dyn6 144
 %normals 86
 
 main_dir = '/home/mfallon/data/atlas/2014-04-21-vicon-walking/results/'
 
-% 1 basic working version:
-folder_path = [main_dir '2014-05-06-16-54-imu-leg-odo-lidar' '/'];
+folder_path = [main_dir '2014-06-06-14-15-imu-leg-odo-for-paper' '/'];
 
 % 2014-05-06-13-04-imu-leg-odo
 % 2014-05-06-16-54-imu-leg-odo-lidar
 % 2014-05-06-19-10-imu-leg-odo-kalman-joint-filters
 
+
+% paper:
+% 2014-06-06-11-28-imu-leg-odo-blocks3-for-paper
+% 2014-06-06-09-28-imu-leg-odo-blocks3-lidar-for-paper
+
+% 2014-06-06-14-15-imu-leg-odo-for-paper
+% 2014-06-06-14-46-imu-leg-odo-lidar-for-paper
+  
 logs = dir( [folder_path '*mat'])
 
 
@@ -35,16 +43,20 @@ end
 % all:
 which_process= 1:size(logs,1)
 % most interesting ones: [skip two 
-%which_process=[1,2,3,4,5,6,7,8]
-%which_process = [6]
+% which_process=[1,2,3,4,5,6,7,8]
+% which_process = [6]
 
 
 %%%%%%%%%%%%%%%% DO WORK %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for i = 1:size(which_process,2)
   disp(num2str(i))
-  summary(i) = file_analysis( folder_path, logs( which_process(i) ).name , settings );
+  settings.folder_path  = folder_path
+  settings.log_filename = logs( which_process(i) ).name
+  summary(i) = file_analysis( settings  );
 end
 
+
+%save summary summary
 
 if (settings.do_sync_comparison)
   h=figure('Position', [1, 1, 1700, 1200]);
@@ -52,25 +64,89 @@ if (settings.do_sync_comparison)
     a = [summary(i).b.xyz_drift  summary(i).m.xyz_drift ];
     b = [summary(i).b.xy_drift  summary(i).m.xy_drift ];
     c = [summary(i).b.z_drift  summary(i).m.z_drift ];
+    d = [summary(i).b.rpy_drift  summary(i).m.rpy_drift ];
     
-    log_summary = [a;b;c];
+    log_summary = [a;b;c;d];
     subplot(3,3,i); hold on; bar(log_summary,.75,'grouped')
     set(gca,'fontSize',7)
 
     ylabel(num2str(summary(i).b.t, '%2.0f sec'))
     fname = logs(which_process(i) ).name;
     title( fname(1:31) )
-    set(gca,'XTick',[1,2,3]);set(gca,'XTickLabel',{'XYZ drift','XY drift','Z drift'})
+    set(gca,'XTick',[1,2,3,4]);set(gca,'XTickLabel',{'XYZ drift','XY drift','Z drift','Yaw drift'})
   end
   subplot(3,3,8)
   xlabel('BDI: Blue, MIT: Magenta | Drift in dimensions')
 end
 png_fname = [folder_path 'summary.png'];
 saveas( h, png_fname,'png');
-%system(
 
-function summary = file_analysis(folder_path,log_filename,settings)
-load([folder_path log_filename]);
+
+function summary = file_analysis(settings)
+[a,s] = do_pre_process(settings)
+
+%keyboard
+%save run_summary a s settings
+
+summary = do_plotting(a,s,settings)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [summary] = do_plotting(a,s,settings)
+%%%% Plotting  %%%%%%%%%%%%%%%%%%
+handles=[];
+if (settings.plot_async==1)
+  make_plots(a,settings.log_filename)
+end
+if (settings.plot_sync==1)
+  handles_a=make_plots(s,settings.log_filename);
+  handles = [handles;handles_a];
+end
+
+if (settings.do_sync_comparison)
+  s.b.rpy_drift =  s.v.rot_rpy(:,3)  - s.b.rel_v.rot_rpy(:,3);
+  s.m.rpy_drift =  s.v.rot_rpy(:,3)  - s.m.rel_v.rot_rpy(:,3);
+  s.b.xyz_drift =  sqrt(sum((s.v.trans_vec - s.b.rel_v.trans_vec).^2,2));
+  s.m.xyz_drift =  sqrt(sum((s.v.trans_vec - s.m.rel_v.trans_vec).^2,2));
+  s.b.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.b.rel_v.trans_vec(:,1:2) ).^2,2));
+  s.m.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.m.rel_v.trans_vec(:,1:2) ).^2,2));
+  s.b.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.b.rel_v.trans_vec(:,3) ).^2,2));
+  s.m.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.m.rel_v.trans_vec(:,3) ).^2,2));
+  
+  handles_b=make_plots_synced(s, settings.log_filename);
+  handles = [handles;handles_b];
+  
+  
+  summary.b.xy_drift  = s.b.xy_drift(end);
+  summary.b.xyz_drift = s.b.xyz_drift(end);
+  summary.b.z_drift   = s.b.z_drift(end);
+  summary.b.rpy_drift = s.b.rpy_drift(end);
+  summary.b.t         = s.b.t(end);
+  summary.m.xy_drift  = s.m.xy_drift(end);
+  summary.m.xyz_drift = s.m.xyz_drift(end);
+  summary.m.z_drift   = s.m.z_drift(end);
+  summary.m.rpy_drift = s.m.rpy_drift(end);
+  summary.m.t         = s.m.t(end);
+  
+end
+
+
+
+if (settings.save_raw_plots)
+  % save plots to file:
+  for j=1:size(handles,1)
+    png_fname = [settings.folder_path settings.log_filename(1:end-4) '-' num2str(j) '.png'];
+    saveas( handles(j), png_fname,'png');
+  end
+  close all
+  
+end
+
+
+
+function [a,s] = do_pre_process(settings)
+a=[], b=[]
+load([settings.folder_path settings.log_filename]);
 raw = [ 0*ones(size(POSE_VICON,1),1) , POSE_VICON ];
 raw = [raw; 1*ones(size(POSE_BDI,1),1) , POSE_BDI];
 raw = [raw; 2*ones(size(POSE_BODY,1),1) , POSE_BODY]; % usedto used POSE_BODY_ALT
@@ -140,49 +216,8 @@ if (settings.vicon_median_filter)
 end
 
 
-%%%% Plotting  %%%%%%%%%%%%%%%%%%
-handles=[];
-if (settings.plot_async==1)
-  make_plots(a,log_filename)
-end
-if (settings.plot_sync==1)
-  handles_a=make_plots(s,log_filename);
-  handles = [handles;handles_a];
-end
-
-if (settings.do_sync_comparison)
-  s.b.rpy_drift =  s.v.rot_rpy(:,3)  - s.b.rel_v.rot_rpy(:,3);
-  s.m.rpy_drift =  s.v.rot_rpy(:,3)  - s.m.rel_v.rot_rpy(:,3);
-  s.b.xyz_drift =  sqrt(sum((s.v.trans_vec - s.b.rel_v.trans_vec).^2,2));
-  s.m.xyz_drift =  sqrt(sum((s.v.trans_vec - s.m.rel_v.trans_vec).^2,2));
-  s.b.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.b.rel_v.trans_vec(:,1:2) ).^2,2));
-  s.m.xy_drift =  sqrt(sum((s.v.trans_vec(:,1:2) - s.m.rel_v.trans_vec(:,1:2) ).^2,2));
-  s.b.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.b.rel_v.trans_vec(:,3) ).^2,2));
-  s.m.z_drift =  sqrt(sum((s.v.trans_vec(:,3) - s.m.rel_v.trans_vec(:,3) ).^2,2));
-  
-  handles_b=make_plots_synced(s, log_filename);
-  handles = [handles;handles_b];
-  
-  summary.b.xy_drift = s.b.xy_drift(end);
-  summary.b.xyz_drift = s.b.xyz_drift(end);
-  summary.b.z_drift = s.b.z_drift(end);
-  summary.b.t = s.b.t(end);
-  summary.m.xy_drift = s.m.xy_drift(end);
-  summary.m.xyz_drift = s.m.xyz_drift(end);
-  summary.m.z_drift = s.m.z_drift(end);
-  summary.m.t = s.m.t(end);
-end
 
 
-
-if (settings.save_raw_plots)
-  % save plots to file:
-  for j=1:size(handles,1)
-    png_fname = [folder_path log_filename(1:end-4) '-' num2str(j) '.png'];
-    saveas( handles(j), png_fname,'png');
-  end
-  close all
-end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

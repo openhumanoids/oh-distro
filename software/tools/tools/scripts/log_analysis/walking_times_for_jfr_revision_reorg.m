@@ -64,7 +64,7 @@ plot ( [1  2  3 4 5 6]' ,  [ 18.5 23 27.5 32 36.5 41 ]' ,'r--','LineWidth',2)
 plot ( [ (d(plan,4)-0.0)  , (d(plan,4)+0.0)]' ,  [ d(plan,3)  , d(plan,3) ]' ,'b.')
 xlabel('Number of Steps')
 ylabel('Seconds Taken')
-axis( [0.5 6.5 -inf 40])
+axis( [0.5 6.5 0 45])
 box on
 
 subplot(1,2,2)
