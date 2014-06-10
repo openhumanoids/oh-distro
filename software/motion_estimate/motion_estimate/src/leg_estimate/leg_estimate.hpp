@@ -48,7 +48,13 @@ enum control_mode {
   CONTROLLER_TOE_OFF  = 8, // not in drc_controller_status_t
 };
 
+enum filter_joint_mode { 
+  FILTER_JOINT_NONE    = 0,
+  FILTER_JOINT_LOWPASS = 1,
+  FILTER_JOINT_KALMAN  = 2,
+};
 
+const int NUM_FILT_JOINTS = 28;
 
 ///////////////////////////////////////////////////////////////
 class leg_estimate{
@@ -123,7 +129,7 @@ class leg_estimate{
     std::string l_standing_link_;
     std::string r_standing_link_;
     // use a heavy low pass filter on the input joints
-    bool filter_joint_positions_;
+    filter_joint_mode filter_joint_positions_;
     // detect and filter kinematics when contact occurs
     bool filter_contact_events_;
     // Publish Debug Data e.g. kinematic velocities and foot contacts

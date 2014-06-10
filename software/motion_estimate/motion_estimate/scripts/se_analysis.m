@@ -8,10 +8,13 @@ bot_ = bot;
 % dyn1 129, dyn2 95, dyn3 50, dyn4 98, dyn5 80, dyn6 144
 %normals 86
 
-main_dir = '/home/mfallon/data/atlas/2014-01-21-vicon-walking/results/'
+main_dir = '/home/mfallon/data/atlas/2014-04-21-vicon-walking/results/'
 
 folder_path = [main_dir '2014-06-06-14-15-imu-leg-odo-for-paper' '/'];
 
+% 2014-05-06-13-04-imu-leg-odo
+% 2014-05-06-16-54-imu-leg-odo-lidar
+% 2014-05-06-19-10-imu-leg-odo-kalman-joint-filters
 
 
 % paper:
@@ -30,15 +33,15 @@ settings.parse_sync = 1;
 settings.plot_sync = 1;
 settings.save_raw_plots = 1;
 settings.do_sync_comparison=1;
+settings.vicon_median_filter =1;
+settings.vicon_invalid_filter =1;
 
 for i=1:size(logs,1)
   disp([ num2str(i) ': ' logs(i).name])
 end
 
-
-
 % all:
-%which_process= 1:size(logs,1)
+which_process= 1:size(logs,1)
 % most interesting ones: [skip two 
 % which_process=[1,2,3,4,5,6,7,8]
 % which_process = [6]
@@ -168,6 +171,50 @@ if (settings.parse_sync)
   [s] = parse_sync(res);
 end
 
+% filter out invalid points.
+% 'filtering' is just setting them to the most recent values
+% but removing the samples entirely would be a better approach ;) of course
+if (settings.vicon_invalid_filter)
+  s.v.invalid = (s.v.trans_vec(:,3)  < 0.2);
+
+  %velocity_spikes = sqrt(sum(diff(s.v.trans_vec).^2 , 2)) > 0.1;
+  %velocity_spikes =[ velocity_spikes ; 0>1]
+  %temp = s.v.invalid ;
+  %s.v.invalid( velocity_spikes ) = 1;  
+  
+  good_idx = 1;
+  for i=1:size(s.v.invalid,1)
+    if (s.v.invalid(i) ~= 1)
+      good_idx = i;
+    end  
+    use_idx(i) = good_idx;
+  end
+  
+  temp = s.v.trans_vec(use_idx,:);
+  s.v.trans_vec = temp;
+  
+  %figure; hold on
+  %plot( s.v.trans_vec(:,1))
+  %plot(temp,'r')
+end
+
+% filtering required for april 2014 logs. median w/ 40 samples seems
+% like a reasonable choice
+% also need to fold in the edge samples here due to panning.
+% ot sure if end samples needed
+if (settings.vicon_median_filter)
+  filt_size = 40;  
+  temp = s.v.trans_vec;
+  s.v.trans_vec = medfilt1( temp ,  filt_size);
+  s.v.trans_vec(1:filt_size,:) = temp(1:filt_size,:);
+  s.v.trans_vec(end-filt_size:end,:)= temp(end-filt_size:end,:);  
+  
+  temp2 = s.v.rot_rpy;
+  s.v.rot_rpy = medfilt1( temp2,  filt_size);
+  s.v.rot_rpy(1:filt_size,:) = temp2(1:filt_size,:);
+  s.v.rot_rpy(end-filt_size:end,:)= temp2(end-filt_size:end,:);  
+end
+
 
 
 
@@ -228,6 +275,8 @@ s.b = split_data(res_sync.b , 1:size(res_sync.b,1));
 s.m = split_data(res_sync.m , 1:size(res_sync.m,1));
 s.v = split_data(res_sync.v , 1:size(res_sync.v,1));
 
+
+
 % Transform the Synchronous Log into the vicon frame
 s.v.init.trans_vec =s.v.trans_vec(1,:);
 s.v.init.rot_quat = s.v.rot_quat(1,:);
@@ -242,8 +291,8 @@ function handles= make_plots_synced(s,log_filename)
 handles=figure('Position', [1, 1, 1700, 900]);
 
 subplot(2,3,1); hold on
-plot(s.b.t,s.b.rpy_drift*180/pi,'b')
-plot(s.m.t,s.m.rpy_drift*180/pi,'m')
+plot(s.b.t,s.b.rpy_drift*180/pi,'b','MarkerSize',2)
+plot(s.m.t,s.m.rpy_drift*180/pi,'m','MarkerSize',2)
 title('Yaw Drift [deg]')
 
 
@@ -391,3 +440,28 @@ estbody_zerotime_to_estbody_current = bot_.trans_apply_trans( current_est,temp  
 
 % ... applied to the initial vicon
 worldvicon_to_est = bot_.trans_apply_trans(estbody_zerotime_to_estbody_current, init_vicon );
+
+
+
+
+%%% Info From January Log Files
+% longstepping 180, typicalstep 455, manipmode 259, blocks 222
+% dyn1 129, dyn2 95, dyn3 50, dyn4 98, dyn5 80, dyn6 144
+%normals 86
+%main_dir = '/home/mfallon/data/atlas/2014-01-21-vicon-walking/results/'
+
+% 1 basic working version:
+%folder_path = [main_dir '2014-01-26-22-14-leg-odo-stand-alone' '/'];
+
+% 2 first version width lidar:
+%folder_path = [main_dir '2014-02-12-19-33-imu-leg-odo' '/'];
+% folder_path = [main_dir '2014-02-12-19-50-imu-leg-odo-lidar' '/'];
+
+% 3 with/out classifier
+%folder_path = [main_dir '2014-02-19-19-23-imu-leg-odo-lidar' '/'];
+%folder_path = [main_dir '2014-02-19-19-28-imu-leg-odo' '/'];
+
+% 4 with/out alternative transitions
+%folder_path = [main_dir '2014-03-13-14-12-imu-leg-odo-older-transition' '/'];
+%folder_path = [main_dir '2014-03-13-14-25-imu-leg-odo-alt-transition' '/'];
+%folder_path = [main_dir '2014-03-13-17-09-imu-leg-odo-lidar-alt-transition' '/'];

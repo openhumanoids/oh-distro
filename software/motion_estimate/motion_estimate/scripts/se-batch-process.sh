@@ -5,28 +5,28 @@
 
 date_str=$(date +"%Y-%m-%d-%H-%M")
 echo 'Output to directory '$date_str
-file="lcmlog-2014-01-21-16-40-robot-manip-mode"
+#file="lcmlog-2014-01-21-16-40-robot-manip-mode"
 
 #
-path="/home/mfallon/data/atlas/2014-01-21-vicon-walking/"
+path="/home/mfallon/data/atlas/2014-04-21-vicon-walking/"
 #path_out=$path"results/"$date_str
 path_out='/home/mfallon/Desktop/results/'
 
 unset files
 files[0]='test' 
 files=(
-       'lcmlog-2014-01-21-16-19-robot-typical-stepping'
-       'lcmlog-2014-01-21-16-19-robot-long-stepping'
-       'lcmlog-2014-01-21-18-24-robot-wrong-normals'
-       'lcmlog-2014-01-21-16-40-robot-manip-mode'
-       'lcmlog-2014-01-21-17-48-robot-blocks-continously'
-       'lcmlog-2014-01-21-17-00-robot-dynamic1'
-       'lcmlog-2014-01-21-17-00-robot-dynamic2'
-       'lcmlog-2014-01-21-17-00-robot-dynamic3'
-       'lcmlog-2014-01-21-17-00-robot-dynamic4-turning'
-       'lcmlog-2014-01-21-17-00-robot-dynamic5-turning-in-place'
-       'lcmlog-2014-01-21-17-00-robot-dynamic6-extended-turning'
+       'blocks1-lcmlog-2014-04-21-18-24-robot'
+       'blocks2-lcmlog-2014-04-21-18-34-robot'
+       'blocks3-lcmlog-2014-04-21-18-40-robot'
+       'fwdbkwd-lcmlog-2014-04-21-15-29-robot'
+       'longstp-lcmlog-2014-04-21-16-12-robot'
+       'manip01-lcmlog-2014-04-21-15-43-robot'
+       'manip02-lcmlog-2014-04-21-15-51-robot'
+       'typical-lcmlog-2014-04-21-15-13-robot'
       )
+
+
+
 
 
 process_log(){
@@ -74,3 +74,15 @@ do
 done
 
 
+
+#       'lcmlog-2014-01-21-16-19-robot-typical-stepping'
+#       'lcmlog-2014-01-21-16-19-robot-long-stepping'
+#       'lcmlog-2014-01-21-18-24-robot-wrong-normals'
+#       'lcmlog-2014-01-21-16-40-robot-manip-mode'
+#       'lcmlog-2014-01-21-17-48-robot-blocks-continously'
+#       'lcmlog-2014-01-21-17-00-robot-dynamic1'
+#       'lcmlog-2014-01-21-17-00-robot-dynamic2'
+#       'lcmlog-2014-01-21-17-00-robot-dynamic3'
+#       'lcmlog-2014-01-21-17-00-robot-dynamic4-turning'
+#       'lcmlog-2014-01-21-17-00-robot-dynamic5-turning-in-place'
+#       'lcmlog-2014-01-21-17-00-robot-dynamic6-extended-turning'

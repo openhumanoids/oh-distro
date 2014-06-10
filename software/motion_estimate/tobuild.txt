@@ -11,9 +11,9 @@ hand_estimate
 
 # Maurice's estimator
 # dependent on imu filter in estimate_tools
+vo_estimate
 mav
 motion_estimate
-#vo_estimate
 
 
 # Dehann's estimator:
