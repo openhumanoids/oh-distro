@@ -88,10 +88,10 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.15;
-request.default_step_params.step_height = 0.05;
+request.default_step_params.step_speed = 0.1;
+request.default_step_params.step_height = 0.06;
 request.default_step_params.mu = 1.0;
-request.default_step_params.constrain_full_foot_pose = false;
+request.default_step_params.constrain_full_foot_pose = true;
 request.default_step_params.drake_min_hold_time = 2; %sec
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
@@ -104,7 +104,8 @@ request.use_new_nominal_state = true;
 request.new_nominal_state = r.getStateFrame().lcmcoder.encode(0, x0);
 walking_plan = walking_planner.plan_walking(r, request, true);
 lc = lcm.lcm.LCM.getSingleton();
-lc.publish('WALKING_TRAJ_RESPONSE', walking_plan.toLCM());
+lc.publish('FOOTSTEP_PLAN_RESPONSE', footstep_plan.toLCM());
+% lc.publish('WALKING_TRAJ_RESPONSE', walking_plan.toLCM());
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
 % No-op: just make sure we can cleanly encode and decode the plan as LCM
@@ -178,7 +179,7 @@ if use_simple_pd
   options.Kd = 0; % com-z pd gains
   options.body_accel_input_weights = [1 1 1 0];
 else
-  options.w_qdd = 20*ones(nq,1);
+  options.w_qdd = 10*ones(nq,1);
   options.W_hdot = diag([10;10;10;10;10;10]);
   options.w_grf = 0.0075;
   options.Kp = 0; % com-z pd gains
@@ -191,7 +192,7 @@ options.w_slack = 0.005;
 options.input_foot_contacts = true;
 options.debug = true;
 options.use_mex = true;
-options.contact_threshold = 0.0075;
+options.contact_threshold = 0.015;
 options.output_qdd = true;
 options.solver = 0;
 options.smooth_contacts = false;
@@ -282,7 +283,8 @@ else
   qp = MomentumControlBlock(r,{},ctrl_data,options);
 end
 vo = VelocityOutputIntegratorBlock(r,options);
-fcb = FootContactBlock(r);
+options.use_lcm = true;
+fcb = FootContactBlock(r,ctrl_data,options);
 fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
@@ -312,12 +314,17 @@ if use_simple_pd
     ins(6).input = 5;
   end
 else
-  options.Kp = 60.0*ones(nq,1);
+  options.Kp = 65.0*ones(nq,1);
   options.Kd = 14.5*ones(nq,1);
+  options.Kp(findJointIndices(r,'hpz')) = 70.0;
+  options.Kd(findJointIndices(r,'hpz')) = 14.0;
+  options.Kd(findJointIndices(r,'kny')) = 13.0;
   options.Kp(3) = 30.0;
   options.Kd(3) = 12.0;
-  options.Kp(4:6) = 30.0;
-  options.Kd(4:6) = 12.0;
+  options.Kp(4:5) = 30.0;
+  options.Kd(4:5) = 12.0;
+  options.Kp(6) = 40.0;
+  options.Kd(6) = 12.0;
   pd = WalkingPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;

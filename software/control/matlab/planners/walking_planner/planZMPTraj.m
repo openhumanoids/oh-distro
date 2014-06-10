@@ -102,7 +102,7 @@ while 1
   end
 
   if isempty(zmp_pts)
-    instep_shift = [0.0;0.025;0];
+    instep_shift = [0.0;0.03;0];
     zmp1 = shift_step_inward(biped, st, instep_shift);
     zmp2 = feetCenter(sw1, st);
     zmp2 = zmp2(1:2);
