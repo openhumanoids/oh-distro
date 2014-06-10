@@ -83,7 +83,6 @@ void LegOdoCommon::getCovariance(LegOdoCommonMode mode_current, bool delta_certa
     z_indices.tail<3>() = eigen_utils::RigidBodyState::velocityInds();    
   }
   
-  cov_legodo;
   cov_legodo = R_legodo.asDiagonal();
 
 }
@@ -97,6 +96,7 @@ void printTrans(BotTrans bt, std::string message){
 
 
 // Difference the transform and scale by elapsed time:
+// [duplicated in rbis_fovis_common.cpp]
 BotTrans LegOdoCommon::getTransAsVelocityTrans(BotTrans msgT, int64_t utime, int64_t prev_utime){
   BotTrans msgT_vel;
   memset(&msgT_vel, 0, sizeof(msgT_vel));
