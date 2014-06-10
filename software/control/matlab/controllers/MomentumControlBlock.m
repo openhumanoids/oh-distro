@@ -527,7 +527,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         debug_data.body_acc_des = [];%[varargin{body_accel_input_start}; varargin{body_accel_input_start+1}];
         debug_data.lb = lb;
         debug_data.ub = ub;
-        debug_data.zmp_err = 0;
+        debug_data.zmp_err = [0;0];
 
         obj.debug_pub.publish(debug_data);
       end
@@ -544,9 +544,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
       if obj.use_mex==1
         mu = 0.75;
         if obj.debug
-          [y,qdd,info,active_supports,~,~,~,~,~,~,~,~,alpha,...
+          [y,qdd,info,active_supports,~,~,~,~,~,bin_mex,~,~,alpha,...
             active_constraints,h,hdot_des] = MomentumControllermex(obj.mex_ptr.data,...
-            obj.solver==0,qddot_des,x,varargin{body_motion_input_start:end},condof,supp,K,x0,y0,comz_des,...
+            obj.solver==0,qddot_des,x,varargin{body_accel_input_start:end},condof,supp,K,x0,y0,comz_des,...
             dcomz_des,ddcomz_des,mu,height);
 
 %           zmp_err = zmp_des - zmp_out;
@@ -560,7 +560,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
           debug_data.qddot_des = qddot_des;
           debug_data.active_constraints = active_constraints;
           debug_data.h = h;
-          debug_data.zmp_err = 0;% zmp_err;
+          debug_data.zmp_err = [0;0];% zmp_err;
           debug_data.hdot_des = hdot_des;
           debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
           debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
