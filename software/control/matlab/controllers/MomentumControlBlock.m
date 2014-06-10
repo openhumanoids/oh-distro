@@ -252,7 +252,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     
     condof = ctrl_data.constrained_dofs; % dof indices for which q_ddd_des is a constraint
         
-    fc = varargin{3}
+    fc = varargin{3};
     
     % TODO: generalize this again to arbitrary body contacts
     support_bodies = [];
@@ -270,7 +270,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     if (obj.use_mex==0 || obj.use_mex==2)
       kinsol = doKinematics(r,q,false,true,qd);
 
-      active_supports = (supp.bodies)';
+      active_supports = supp.bodies;
       active_surfaces = supp.contact_surfaces;
       active_contact_pts = supp.contact_pts;
       num_active_contacts = supp.num_contact_pts;      
@@ -592,12 +592,13 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
       else
         mu = 1.0;
-        [y_mex,mex_qdd,~,active_supports_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,~,...
+        [y_mex,mex_qdd,info_mex,active_supports_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,~,...
           ~,~,~] = MomentumControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
           varargin{body_accel_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,height);
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
+        
         if size(Hqp_mex,2)==1
           Hqp_mex=diag(Hqp_mex);
         end
@@ -606,11 +607,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
           Qf=Qf*2;
           Qeps=Qeps*2;
         end
-        try
-          valuecheck(Hqp,blkdiag(Hqp_mex,diag(Qf),diag(Qeps)),1e-6);
-        catch err
-          keyboard
-        end
+        valuecheck(Hqp,blkdiag(Hqp_mex,diag(Qf),diag(Qeps)),1e-6);        
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
 				end
@@ -621,9 +618,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
 %         valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
         valuecheck(Ain,Ain_mex(1:length(bin),:),1e-6);
         valuecheck(bin,bin_mex(1:length(bin)),1e-6); 
-				valuecheck([-lb;ub],bin_mex(length(bin)+1:end),1e-6);
-        valuecheck(y,y_mex,1e-2); 
-				valuecheck(qdd,mex_qdd,1e-2); 
+        valuecheck([-lb;ub],bin_mex(length(bin)+1:end),1e-6);
+        valuecheck(y,y_mex,1e-2);
+        valuecheck(qdd,mex_qdd,1e-2); 
       end
     end
 

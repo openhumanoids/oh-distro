@@ -104,35 +104,43 @@ options.W_hdot = diag([1;1;1;1;1;1]);
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.01;
+options.contact_threshold = 0.002;
 options.output_qdd = true;
-qp = MomentumControlBlock(r,{},ctrl_data,options);
-
 
 % feedback QP controller with atlas
+qp = MomentumControlBlock(r,{},ctrl_data,options);
+
 ins(1).system = 1;
 ins(1).input = 2;
+ins(2).system = 1;
+ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
-clear ins outs;
+clear ins;
+
+% feedback foot contact detector with QP/atlas
+options.use_lcm=false;
+options.contact_threshold = 0.002;
+fc = FootContactBlock(r,ctrl_data,options);
+
+ins(1).system = 2;
+ins(1).input = 1;
+sys = mimoFeedback(fc,sys,[],[],ins,outs);
+clear ins;
 
 % feedback PD trajectory controller 
 options.Kp = 80.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
 pd = WalkingPDBlock(r,ctrl_data,options);
+
 ins(1).system = 1;
 ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
 qt = QTrajEvalBlock(r,ctrl_data);
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(qt,sys,[],[],[],outs);
-
 
 v = r.constructVisualizer;
 v.display_dt = 0.05;
