@@ -68,7 +68,7 @@ ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
 % feedback foot contact detector with QP/atlas
 options.use_lcm=false;
@@ -77,33 +77,18 @@ fc = FootContactBlock(r,ctrl_data,options);
 
 ins(1).system = 2;
 ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(fc,sys,[],[],ins,outs);
-clear ins outs;
-
-% ins(1).system = 2;
-% ins(1).input = 1;
-% ins(2).system = 1;
-% ins(2).input = 1;
-% outs(1).system = 2;
-% outs(1).output = 1;
-% sys = mimoCascade(fc,sys,[],ins,outs);
-% clear ins outs;
+clear ins;
 
 % feedback PD trajectory controller 
 pd = SimplePDBlock(r);
 
 ins(1).system = 1;
 ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
 qt = QTrajEvalBlock(r,ctrl_data);
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(qt,sys,[],[],[],outs);
 
 if visualize
