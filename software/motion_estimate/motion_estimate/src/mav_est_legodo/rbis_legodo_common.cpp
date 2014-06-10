@@ -83,7 +83,6 @@ void LegOdoCommon::getCovariance(LegOdoCommonMode mode_current, bool delta_certa
     z_indices.tail<3>() = eigen_utils::RigidBodyState::velocityInds();    
   }
   
-  //cov_legodo;
   cov_legodo = R_legodo.asDiagonal();
 
 }
