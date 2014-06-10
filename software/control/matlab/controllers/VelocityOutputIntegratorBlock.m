@@ -9,6 +9,8 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 		r_ankle_idx;
 		l_ankle_idx;
 		leg_idx;
+		r_leg_idx;
+		l_leg_idx;
 		act_idx_map;
   end
   
@@ -41,6 +43,8 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			obj.r_ankle_idx = findJointIndices(r,'r_leg_ak');
 			obj.l_ankle_idx = findJointIndices(r,'l_leg_ak');
 			obj.leg_idx = findJointIndices(r,'leg');
+			obj.r_leg_idx = findJointIndices(r,'r_leg');
+			obj.l_leg_idx = findJointIndices(r,'l_leg');
 			obj.act_idx_map = getActuatedJoints(r);
 		end
    
@@ -98,10 +102,13 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			next_state(3) = t;
 
       eta = max(0.0,eta-dt); % linear ramp
-      if state(1)~=l_foot_contact || state(2)~=r_foot_contact
+      if state(1)~=l_foot_contact
         % contact state changed, reset integrated velocities
-        qd_int(obj.leg_idx) = 0;%qd(obj.leg_idx);
-%         eta = 0.3; % decay integrated velocity to actual
+        qd_int(obj.l_leg_idx) = qd(obj.l_leg_idx);
+      end
+      if state(2)~=r_foot_contact
+        % contact state changed, reset integrated velocities
+        qd_int(obj.r_leg_idx) = qd(obj.r_leg_idx);
       end
       next_state(4) = eta;
 			next_state(5:end) = qd_int;
