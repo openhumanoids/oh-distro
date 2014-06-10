@@ -372,10 +372,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
         beq_{2} = -Jpdot*qd;
       end
 
-      eq_count=4;
-      for ii=eq_count:length(varargin)
-        if obj.body_accel_input_weights(ii-2) < 0
-          body_input = varargin{ii};
+      eq_count=3;
+      
+      for ii=1:obj.n_body_accel_inputs
+        if obj.body_accel_input_weights(ii) < 0
+          body_input = varargin{ii+3};
           body_ind = body_input(1);
           body_vdot = body_input(2:7);
           if ~any(active_supports==body_ind)
@@ -435,7 +436,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       for ii=1:obj.n_body_accel_inputs
         w = obj.body_accel_input_weights(ii);
         if w>0
-          body_input = varargin{ii+2};
+          body_input = varargin{ii+3};
           body_ind = body_input(1);
           body_vdot = body_input(2:7);
           if ~any(active_supports==body_ind)
