@@ -708,7 +708,7 @@
   <link name="utorso">
     <inertial>
       <mass value="52"/>
-      <origin rpy="0 -0 0" xyz="-0.0923 0 0.3"/>
+      <origin rpy="0 -0 0" xyz="-0.11 0 0.3"/>
       <inertia ixx="1.466" ixy="0.00362" ixz="0.336" iyy="1.51" iyz="0.001" izz="1.3"/>
     </inertial>
     <visual>
@@ -4379,3 +4379,4 @@
     </visual>
   </link>
 </robot>
+
