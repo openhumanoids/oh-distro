@@ -31,10 +31,10 @@ stones = [0, -0.15, 0.005;
           1.5, 0.15, 0.06;
           2, 0, 0.07]';
 safe_regions = struct('A', {}, 'b', {}, 'point', {}, 'normal', {});
-n_regions = 20;
+n_regions = 10;
 lb = [0;-.2;-0.05];
-ub = [2;.2;0.05];
-stone_scale = 0.08;
+ub = [2;2.2;0.05];
+stone_scale = 0.3;
 if 0
   for j = 1:n_regions
     stone = rand(3,1) .* (ub - lb) + lb;
@@ -52,16 +52,16 @@ else
   safe_regions(1) = struct('A', Ai, 'b', bi, 'point', [0;0;0], 'normal', [0;0;1]);
 end
 
-goal_pos = struct('right', [2;2-0.15;0.1;0;0;0],...
-                  'left',  [2;2+0.15;0.1;0;0;0]);
+goal_pos = struct('right', [1;-0.15;0.1;0;0;0],...
+                  'left',  [1;+0.15;0.1;0;0;0]);
 
 
 request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 10;
 request.params.min_num_steps = 0;
-request.params.min_step_width = 0.18;
+request.params.min_step_width = 0.25;
 request.params.nom_step_width = 0.26;
-request.params.max_step_width = 0.30;
+request.params.max_step_width = 0.27;
 request.params.nom_forward_step = 0.15;
 request.params.max_forward_step = 0.4;
 request.params.nom_upward_step = 0.25;
@@ -72,9 +72,9 @@ request.params.behavior = drc.footstep_plan_params_t.BEHAVIOR_BDI_STEPPING;
 request.params.map_command = 0;
 request.params.leading_foot = drc.footstep_plan_params_t.LEAD_LEFT;
 
-weights = struct('relative', [10;50;10;0;0;.5],...
-                 'relative_final', [1000;100;100;0;0;100],...
-                 'goal', [100;100;0;0;0;10]);
+weights = struct('relative', [10;10;10;0;0;.5],...
+                 'relative_final', [100;100;100;0;0;100],...
+                 'goal', [100;100;0;0;0;1000]);
 
 % seed_plan = FootstepPlan.blank_plan(r, 4, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 % seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
@@ -90,7 +90,7 @@ weights = struct('relative', [10;50;10;0;0;.5],...
 % toc
 
 tic
-nsteps = 20;
+nsteps = 10;
 seed_plan = FootstepPlan.blank_plan(r, nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
 seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);

@@ -95,16 +95,30 @@ M = 100;
 for j = 3:nsteps
   [A_reach, b_reach] = biped.getReachabilityPolytope(seed_plan.footsteps(j-1).body_idx, seed_plan.footsteps(j).body_idx, seed_plan.params);
   A_reach = A_reach(:,[1:3,6]);
-  for k = 1:yaw_slots
-    yaw = x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2));
+  
+  if j > 3
+    for k = 1:yaw_slots
+      yaw = x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2));
+      rmat = [rotmat(-yaw), zeros(2,2);
+             zeros(2,2), eye(2)];
+      Ai = zeros(size(A_reach, 1), nvar);
+      rA_reach = A_reach * rmat;
+      Ai(:,x_ndx(:,j)) = rA_reach;
+      Ai(:,x_ndx(:,j-1)) = -rA_reach;
+      Ai(:,rot_ndx(k,j-1)) = M;
+      bi = b_reach + M;
+      A = [A; Ai];
+      b = [b; bi];
+    end
+  else
+    yaw = x0(x_ndx(4,2));
     rmat = [rotmat(-yaw), zeros(2,2);
-           zeros(2,2), eye(2)];
+             zeros(2,2), eye(2)];
     Ai = zeros(size(A_reach, 1), nvar);
     rA_reach = A_reach * rmat;
     Ai(:,x_ndx(:,j)) = rA_reach;
     Ai(:,x_ndx(:,j-1)) = -rA_reach;
-    Ai(:,rot_ndx(k,j-1)) = M;
-    bi = b_reach + M;
+    bi = b_reach;
     A = [A; Ai];
     b = [b; bi];
   end

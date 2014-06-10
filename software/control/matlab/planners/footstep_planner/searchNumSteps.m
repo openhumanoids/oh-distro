@@ -1,7 +1,7 @@
 function plan = searchNumSteps(biped, feet_centers, goal_pos, params, safe_regions)
 % profile on
 
-DEBUG = false;
+DEBUG = true;
 
 tic
 feet_centers.right(4:5) = 0;
@@ -39,6 +39,9 @@ for j = 1:num_outer_iterations
     clf
     plot_plan(miqp_plan);
   end
+  plan = miqp_plan;
+  break
+  
   plan = footstepCollocation(biped, miqp_plan, weights, goal_pos);
   if DEBUG
     figure(1)
