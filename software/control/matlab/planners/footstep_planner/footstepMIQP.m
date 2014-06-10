@@ -79,7 +79,8 @@ end
 x0(t_ndx(end-1:end)) = true;
 
 % nom_step = [seed_plan.params.nom_forward_step; seed_plan.params.nom_step_width; 0; 0]
-nom_step = [0; seed_plan.params.nom_step_width; 0; 0];
+% nom_step = [0; seed_plan.params.nom_step_width; 0; 0];
+nom_step = zeros(4,1);
 w_trim = weights.relative(1) * seed_plan.params.nom_forward_step^2;
 
 A = [];
@@ -186,14 +187,13 @@ for j = 3:nsteps
   c(x_ndx(:,j-1)) = c(x_ndx(:,j-1)) + (2 * nom' * w_rel * R{j})';
 end
 
-for j = 3:nsteps
-  Aeqi = zeros(1, nvar);
-  Aeqi(1, s_ndx(:,j)) = 1;
-  beqi = 1;
-  Aeq = [Aeq; Aeqi];
-  beq = [beq; beqi];
-end
 
+% The s_ndx variables are binary selectors on the safe terrain regions
+% If x(s_ndx(r,j)) == 1, then step j must be in region r, and thus
+% safe_regions(r).A * x(x_ndx(:,j)) <= safe_regions(r).b
+% 
+% Additionally, each safe region has a point and vector defining a plane
+% and any steps in that region must live in that plane. 
 M = 100;
 Ar = zeros((nsteps-2) * sum(cellfun(@(x) size(x, 1), {seed_plan.safe_regions.A})), nvar);
 br = zeros(size(Ar, 1), 1);
@@ -221,6 +221,15 @@ end
 assert(offset == size(Ar, 1));
 A = [A; Ar];
 b = [b; br];
+
+% Each step must be in exactly one safe region
+for j = 3:nsteps
+  Aeqi = zeros(1, nvar);
+  Aeqi(1, s_ndx(:,j)) = 1;
+  beqi = 1;
+  Aeq = [Aeq; Aeqi];
+  beq = [beq; beqi];
+end
 
 % The rot_ndx variables are binary selectors on rotation bins.
 % Require that if x(rot_ndx(k,j)) is 1, then x(x_ndx(4,j)) == x0(x_ndx(4,1) + pi/8 * (k - 5)
@@ -261,7 +270,6 @@ Aeq = [Aeq; Aeq_rot];
 beq = [beq; beq_rot];
 
 % Rotation can never change by more than one slot per step
-
 % a - b <= 1
 % a - b >= -1
 A_rot = zeros((nsteps - 3) * 2, nvar);
