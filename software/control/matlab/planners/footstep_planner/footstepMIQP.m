@@ -22,10 +22,16 @@ nr = length(seed_plan.safe_regions);
 nx = 4 * nsteps;
 ns = (nsteps) * nr;
 nt = nsteps;
-nvar = nx + ns + nt;
+
+yaw_slots = 9;
+yaw_increment = pi/8;
+
+nrot = yaw_slots * nsteps;
+nvar = nx + ns + nt + nrot;
 x_ndx = reshape(1:nx, 4, nsteps);
 s_ndx = reshape(nx + (1:ns), nr, ns / nr);
 t_ndx = reshape(nx + ns + (1:nt), 1, nsteps);
+rot_ndx = reshape(nx + ns + nt + (1:nrot), [], nsteps);
 goal_pos.center = mean([goal_pos.right, goal_pos.left],2);
 
 x0 = nan(1, nvar);
@@ -85,16 +91,23 @@ c = zeros(nvar, 1);
 lb = -inf(nvar, 1);
 ub = inf(nvar, 1);
 
+M = 100;
 for j = 3:nsteps
   [A_reach, b_reach] = biped.getReachabilityPolytope(seed_plan.footsteps(j-1).body_idx, seed_plan.footsteps(j).body_idx, seed_plan.params);
   A_reach = A_reach(:,[1:3,6]);
-  Ai = zeros(size(A_reach, 1), nvar);
-  rA_reach = A_reach * R{j};
-  Ai(:,x_ndx(:,j)) = rA_reach;
-  Ai(:,x_ndx(:,j-1)) = -rA_reach;
-  bi = b_reach;
-  A = [A; Ai];
-  b = [b; bi];
+  for k = 1:yaw_slots
+    yaw = x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2));
+    rmat = [rotmat(-yaw), zeros(2,2);
+           zeros(2,2), eye(2)];
+    Ai = zeros(size(A_reach, 1), nvar);
+    rA_reach = A_reach * rmat;
+    Ai(:,x_ndx(:,j)) = rA_reach;
+    Ai(:,x_ndx(:,j-1)) = -rA_reach;
+    Ai(:,rot_ndx(k,j-1)) = M;
+    bi = b_reach + M;
+    A = [A; Ai];
+    b = [b; bi];
+  end
 end
 
 % Require that t(j) <= t(j+1)
@@ -195,6 +208,63 @@ assert(offset == size(Ar, 1));
 A = [A; Ar];
 b = [b; br];
 
+% The rot_ndx variables are binary selectors on rotation bins.
+% Require that if x(rot_ndx(k,j)) is 1, then x(x_ndx(4,j)) == x0(x_ndx(4,1) + pi/8 * (k - 5)
+% x_4j + M * rot_kj <= M + x0_4 + pi/8 * (k-5)
+% x_4j - M * rot_kj >= -M + x0_4 + pi/8 * (k-5)
+%
+% x_4j + M * rot_kj <= M + x0_4 + pi/8 * (k-5)
+% -x_4j + M * rot_kj <= M - (x0_4 + pi/8 * (k-5))
+A_rot = zeros((nsteps-2) * yaw_slots * 2, nvar);
+b_rot = zeros(size(A_rot, 1), 1);
+con_ndx = 1;
+M = 4 * pi;
+for j = 3:nsteps
+  for k = 1:yaw_slots
+    A_rot(con_ndx, rot_ndx(k,j)) = M;
+    A_rot(con_ndx, x_ndx(4,j)) = 1;
+    b_rot(con_ndx) = M + x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2));
+    con_ndx = con_ndx + 1;
+    
+    A_rot(con_ndx, rot_ndx(k,j)) = M;
+    A_rot(con_ndx, x_ndx(4,j)) = -1;
+    b_rot(con_ndx) = M -  (x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2)));
+    con_ndx = con_ndx + 1;
+  end
+end
+A = [A; A_rot];
+b = [b; b_rot];
+
+% Exactly one rotation slot can be occupied per step
+Aeq_rot = zeros(nsteps - 2, nvar);
+beq_rot = zeros(size(Aeq_rot, 1), 1);
+for j = 3:nsteps
+  con_ndx = j - 2;
+  Aeq_rot(con_ndx, rot_ndx(:,j)) = 1;
+  beq_rot(con_ndx) = 1;
+end
+Aeq = [Aeq; Aeq_rot];
+beq = [beq; beq_rot];
+
+% Rotation can never change by more than one slot per step
+
+% a - b <= 1
+% a - b >= -1
+A_rot = zeros((nsteps - 3) * 2, nvar);
+b_rot = zeros(size(A_rot, 1), 1);
+con_ndx = 1;
+for j = 4:nsteps
+  A_rot(con_ndx, x_ndx(4,j)) = 1;
+  A_rot(con_ndx, x_ndx(4,j-1)) = -1;
+  b_rot(con_ndx) = 1;
+  con_ndx = con_ndx + 1;
+  
+  A_rot(con_ndx, x_ndx(4,j)) = -1;
+  A_rot(con_ndx, x_ndx(4,j-1)) = 1;
+  b_rot(con_ndx) = 1;
+  con_ndx = con_ndx + 1;
+end
+
 step1 = seed_plan.footsteps(1).pos.inFrame(seed_plan.footsteps(1).frames.center);
 step2 = seed_plan.footsteps(2).pos.inFrame(seed_plan.footsteps(2).frames.center);
 lb(x_ndx(:,1)) = step1([1,2,3,6]);
@@ -216,13 +286,13 @@ model.sense = [repmat('<', size(A,1), 1); repmat('=', size(Aeq, 1), 1)];
 model.rhs = [b; beq];
 model.lb = lb;
 model.ub = ub;
-model.vtype = [repmat('C', nx, 1); repmat('B', ns, 1); repmat('B', nt, 1)];
+model.vtype = [repmat('C', nx, 1); repmat('B', ns, 1); repmat('B', nt, 1); repmat('B', nrot, 1)];
 model.Q = sparse(Q);
 model.start = x0;
 params = struct();
-params.timelimit = 5;
+params.timelimit = 20;
 % params.mipgap = 3e-4;
-params.mipgap = 1e-3;
+params.mipgap = 1e-2;
 params.outputflag = 1;
 
 result = gurobi(model, params);
@@ -262,6 +332,16 @@ else
 end
 % TODO: don't hardcode the turning rate here
 min_num_steps = max(min_num_steps, ceil(2 * dtheta / (pi/8) + 2));
+
+rot = xstar(rot_ndx);
+for j = 3:nsteps
+  assert(abs(sum(rot(:,j)) - 1) < 1e-2);
+  for k = 1:yaw_slots
+    if rot(k,j) > (1 - 1e-2);
+      assert(abs(xstar(x_ndx(4,j)) - (x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2)))) < 1e-2);
+    end
+  end
+end
 
 
 final_nsteps = min(max_num_steps, max(min_num_steps, final_step_idx));
