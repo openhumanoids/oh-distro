@@ -186,7 +186,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
 
         [~,C,B,~,dC,~] = obj.manip.manipulatorDynamics(q,zeros(nq,1));
         [phiC,JC] = obj.contactConstraints(q);
-        [~,J,dJ] = obj.contactPositions(q);
+        [~,J,dJ] = terrainContactPositions(obj,q,[obj.foot_bodies_idx.left, obj.foot_bodies_idx.right]);
 
         % ignore friction constraints for now
         c = 0;

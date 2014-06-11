@@ -102,6 +102,7 @@ classdef StatelessFootstepPlanner
         terrain = terrain.setMapMode(request.params.map_command);
       end
       biped = biped.setTerrain(terrain);
+      biped = compile(biped);
     end
 
     function safe_regions = decodeSafeRegions(biped, request, feet_centers, goal_pos)
@@ -189,6 +190,7 @@ classdef StatelessFootstepPlanner
       terrain = biped.getTerrain();
       if ismethod(terrain, 'setMapMode')
         biped.setTerrain(terrain.setMapMode(request.params.map_command));
+        biped = compile(biped);
       end
       nsteps = length(plan.footsteps);
       for j = 3:nsteps

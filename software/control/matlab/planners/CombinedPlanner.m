@@ -14,7 +14,7 @@ classdef CombinedPlanner
   methods (Static)
     function r = constructAtlas()
       options.floating = true;
-      options.enable_terrainmaps = true;
+      options.enable_terrainmaps = false;
       options.dt = 0.001;
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')

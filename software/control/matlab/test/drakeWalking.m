@@ -22,21 +22,14 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = r.removeCollisionGroupsExcept({'heel','toe'});
+r = compile(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 0*randn();
 xstar(2) = 0*randn();
 r = r.setInitialState(xstar);
-
-if use_bullet
-  r_bullet = RigidBodyManipulator();
-  r_bullet = addRobotFromURDF(r_bullet,strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),[0;0;0],[0;0;0],options);
-  r_bullet = addRobotFromURDF(r_bullet,strcat(fullfile(getDrakePath,'systems','plants','test'),'/ground_plane.urdf'),[xstar(1);xstar(2);0],zeros(3,1),struct('floating',false));
-  r_bullet = TimeSteppingRigidBodyManipulator(r_bullet,options.dt,options);
-  r_bullet = removeCollisionGroupsExcept(r_bullet,{'heel','toe'});
-  r_bullet = compile(r_bullet);
-end
 
 v = r.constructVisualizer;
 v.display_dt = 0.05;
@@ -79,14 +72,8 @@ walking_planner = StatelessWalkingPlanner();
 request = drc.walking_plan_request_t();
 request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
 request.footstep_plan = footstep_plan.toLCM();
-walking_planner.plan_walking(r, request, true);
+walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
-
-if use_bullet
-  for i=1:length(walking_ctrl_data.supports)
-    walking_ctrl_data.supports{1}(i)=walking_ctrl_data.supports{1}(i).setContactSurfaces(-ones(length(walking_ctrl_data.supports{1}(i).bodies),1));
-  end
-end
 
 ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
 T = ts(end);
@@ -122,9 +109,7 @@ options.w = 0.001;
 options.lcm_foot_contacts = false;
 options.debug = false;
 
-if use_bullet
-  options.multi_robot = r_bullet;
-end
+options.use_bullet = use_bullet;
 qp = QPControlBlock(r,ctrl_data,options);
 
 % cascade footstep plan shift block
@@ -164,8 +149,7 @@ playback(v,traj,struct('slider',true));
 if plot_comtraj
   dt = 0.001;
   tts = 0:dt:T;
-  qdd = zeros(nq,T/dt);
-  xtraj_smooth=smoothts(eval(traj,tts),'e',150);
+  xtraj_smooth=smoothts(traj.eval(tts),'e',150);
   dtraj = fnder(PPTrajectory(spline(tts,xtraj_smooth)));
   qddtraj = dtraj(nq+(1:nq));
 
@@ -193,26 +177,32 @@ if plot_comtraj
     zmpdes(:,i)=walking_ctrl_data.zmptraj.eval(ts(i));
     zmpact(:,i)=com(1:2,i) - com(3,i)/9.81 * (J(1:2,:)*qdd + Jdot(1:2,:)*qd);
 
-    lfoot_cpos = contactPositions(r,kinsol,lfoot);
-    rfoot_cpos = contactPositions(r,kinsol,rfoot);
+    lfoot_cpos = terrainContactPositions(r,kinsol,lfoot);
+    rfoot_cpos = terrainContactPositions(r,kinsol,rfoot);
 
     lfoot_p = forwardKin(r,kinsol,lfoot,[0;0;0],1);
     rfoot_p = forwardKin(r,kinsol,rfoot,[0;0;0],1);
 
-    if any(lfoot_cpos(3,:) < 1e-4)
+		lfoot_pos(:,i) = lfoot_p;
+		rfoot_pos(:,i) = lfoot_p;
+
+		if any(lfoot_cpos(3,:) < 1e-4)
       lstep_counter=lstep_counter+1;
-      lfoot_pos(:,lstep_counter) = lfoot_p;
-    end
+      lfoot_steps(:,lstep_counter) = lfoot_p;
+		end
     if any(rfoot_cpos(3,:) < 1e-4)
       rstep_counter=rstep_counter+1;
-      rfoot_pos(:,rstep_counter) = rfoot_p;
+      rfoot_steps(:,rstep_counter) = rfoot_p;
     end
 
-    lfoot_des = eval(foottraj.left.orig,ts(i));
+    rfoottraj = walking_ctrl_data.link_constraints(1).traj;
+    lfoottraj = walking_ctrl_data.link_constraints(2).traj;
+
+    lfoot_des = eval(lfoottraj,ts(i));
     lfoot_des(3) = max(lfoot_des(3), 0.0811);     % hack to fix footstep planner bug
     rms_foot = rms_foot+norm(lfoot_des([1:3])-lfoot_p([1:3]))^2;
 
-    rfoot_des = eval(foottraj.right.orig,ts(i));
+    rfoot_des = eval(rfoottraj,ts(i));
     rfoot_des(3) = max(rfoot_des(3), 0.0811);     % hack to fix footstep planner bug
     rms_foot = rms_foot+norm(rfoot_des([1:3])-rfoot_p([1:3]))^2;
 
@@ -250,9 +240,11 @@ if plot_comtraj
   %plot(comdes(1,:),comdes(2,:),'g','LineWidth',3);
   %plot(com(1,:),com(2,:),'m.-','LineWidth',1);
 
-  left_foot_steps = eval(foottraj.left.orig,foottraj.left.orig.getBreaks);
+  left_foot_steps = eval(lfoottraj,lfoottraj.getBreaks);
+  tc_lfoot = getTerrainContactPoints(r,lfoot);
+  tc_rfoot = getTerrainContactPoints(r,rfoot);
   for i=1:size(left_foot_steps,2);
-    cpos = rpy2rotmat(left_foot_steps(4:6,i)) * getBodyContacts(r,lfoot) + repmat(left_foot_steps(1:3,i),1,4);
+    cpos = rpy2rotmat(left_foot_steps(4:6,i)) * tc_lfoot.pts + repmat(left_foot_steps(1:3,i),1,4);
     if all(cpos(3,:)<=0.001)
       plot(cpos(1,[1,2]),cpos(2,[1,2]),'k-','LineWidth',2);
       plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',2);
@@ -262,9 +254,9 @@ if plot_comtraj
     end
   end
 
-  right_foot_steps = eval(foottraj.right.orig,foottraj.right.orig.getBreaks);
+  right_foot_steps = eval(rfoottraj,rfoottraj.getBreaks);
   for i=1:size(right_foot_steps,2);
-    cpos = rpy2rotmat(right_foot_steps(4:6,i)) * getBodyContacts(r,rfoot) + repmat(right_foot_steps(1:3,i),1,4);
+    cpos = rpy2rotmat(right_foot_steps(4:6,i)) * tc_rfoot.pts + repmat(right_foot_steps(1:3,i),1,4);
     if all(cpos(3,:)<=0.001)
       plot(cpos(1,[1,2]),cpos(2,[1,2]),'k-','LineWidth',2);
       plot(cpos(1,[1,3]),cpos(2,[1,3]),'k-','LineWidth',2);
@@ -274,7 +266,7 @@ if plot_comtraj
   end
 
   for i=1:lstep_counter
-    cpos = rpy2rotmat(lfoot_pos(4:6,i)) * getBodyContacts(r,lfoot) + repmat(lfoot_pos(1:3,i),1,4);
+    cpos = rpy2rotmat(lfoot_steps(4:6,i)) * tc_lfoot.pts + repmat(lfoot_steps(1:3,i),1,4);
     plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
     plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',1.65);
     plot(cpos(1,[2,4]),cpos(2,[2,4]),'g-','LineWidth',1.65);
@@ -282,7 +274,7 @@ if plot_comtraj
   end
 
   for i=1:rstep_counter
-    cpos = rpy2rotmat(rfoot_pos(4:6,i)) * getBodyContacts(r,rfoot) + repmat(rfoot_pos(1:3,i),1,4);
+    cpos = rpy2rotmat(rfoot_steps(4:6,i)) * tc_rfoot.pts + repmat(rfoot_steps(1:3,i),1,4);
     plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
     plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',1.65);
     plot(cpos(1,[2,4]),cpos(2,[2,4]),'g-','LineWidth',1.65);
@@ -294,7 +286,7 @@ if plot_comtraj
 
   axis equal;
 
-if rms_com > length(footsteps)*0.5
+if rms_com > length(footstep_plan.footsteps)*0.5
   error('drakeWalking unit test failed: error is too large');
   navgoal
 end

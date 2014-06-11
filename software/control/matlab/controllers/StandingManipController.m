@@ -103,8 +103,8 @@ classdef StandingManipController < DRCController
       kinsol = doKinematics(obj.robot,q0);
       com = getCOM(obj.robot,kinsol);
 
-      % build TI-ZMP controller 
-      foot_pos = contactPositions(obj.robot,kinsol); 
+      % build TI-ZMP controller
+      foot_pos = terrainContactPositions(obj.robot,kinsol,[lfoot,rfoot]); 
       ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
       comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
       limp = LinearInvertedPendulum(com(3));
@@ -161,7 +161,7 @@ classdef StandingManipController < DRCController
         kinsol = doKinematics(r,q0);
 %         com = getCOM(r,kinsol);
 
-        foot_pos = contactPositions(r,kinsol,obj.foot_idx([rfoot_contact_state lfoot_contact_state])); 
+        foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx([rfoot_contact_state lfoot_contact_state]));
         ch = convhull(foot_pos(1:2,:)');
         comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
 %         foot_pos = contactPositions(r,kinsol,obj.foot_idx);
@@ -193,7 +193,7 @@ classdef StandingManipController < DRCController
           q0 = x0(1:getNumDOF(r));
           kinsol = doKinematics(r,q0);
 
-          foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
+          foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
           ch = convhull(foot_pos(1:2,:)');
           comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
           obj.controller_data.setField('qtraj',q0);
@@ -212,7 +212,7 @@ classdef StandingManipController < DRCController
         kinsol = doKinematics(r,q0);
 %         com = getCOM(r,kinsol);
 
-        foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
+        foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
         ch = convhull(foot_pos(1:2,:)');
         comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
 %         foot_pos = contactPositions(r,kinsol,obj.foot_idx);

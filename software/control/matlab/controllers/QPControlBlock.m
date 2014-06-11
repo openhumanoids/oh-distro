@@ -20,22 +20,7 @@ classdef QPControlBlock < MIMODrakeSystem
     qddframe = AtlasCoordinates(r); % input frame for desired qddot 
     ft_frame = AtlasForceTorque();
 
-    if isfield(options,'multi_robot')
-      typecheck(options.multi_robot,'TimeSteppingRigidBodyManipulator');
-      fr = options.multi_robot.getStateFrame;
-      % IMPORTANT NOTE: I'm assuming the atlas state is always the first
-      % frame in a multi coordinate frame
-      if typecheck(fr,'MultiCoordinateFrame')
-        input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame,fr.frame{2:end}});
-        num_state_fr = length(options.multi_robot.getStateFrame.frame);
-      else
-        input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame});
-        num_state_fr = 1;
-      end
-    else
-      input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame});
-      num_state_fr = 1;
-    end
+    input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame});
     
     if isfield(options,'dt')
       % controller update rate
@@ -65,12 +50,11 @@ classdef QPControlBlock < MIMODrakeSystem
 
     obj.robot = r;
     obj.controller_data = controller_data;
-    obj.num_state_frames = num_state_fr;
     
-    if isfield(options,'multi_robot')
-      obj.multi_robot = options.multi_robot;
+    if isfield(options,'use_bullet')
+      obj.use_bullet = options.use_bullet;
     else
-      obj.multi_robot = 0;
+      obj.use_bullet = false;
     end
     
     if isfield(options,'contact_threshold')
@@ -191,19 +175,8 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         terrain_map_ptr = 0;
       end
-      if isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-        multi_robot_ptr = obj.multi_robot.getMexModelPtr.ptr;
-      else
-        multi_robot_ptr = 0;
-      end
-      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,0));
     end
-
-    obj.num_body_contacts=zeros(getNumBodies(r),1);
-    for i=1:getNumBodies(r)
-      obj.num_body_contacts(i) = length(getBodyContacts(r,i));
-    end
-    
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')
       obj.using_flat_terrain = true;      
@@ -293,12 +266,6 @@ classdef QPControlBlock < MIMODrakeSystem
     nq = obj.nq; 
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
-
-    q_multi = q;
-    for i=1:obj.num_state_frames-1
-      xi = varargin{3+i};
-      q_multi = [q_multi; xi(1:end/2)];
-    end
             
     %----------------------------------------------------------------------
     % Linear system stuff for zmp/com control -----------------------------
@@ -357,10 +324,6 @@ classdef QPControlBlock < MIMODrakeSystem
       % says 'contact', but force sensors do not. when both agree, allow full
       % forces on the feet
       kinsol = doKinematics(r,q,false,true);
-
-      if any(supp.contact_surfaces~=0) && isa(obj.multi_robot,'TimeSteppingRigidBodyManipulator')
-        kinsol_multi = doKinematics(obj.multi_robot,q_multi,false,true); % for now assume the same state frame
-      end
       
       % get active contacts
       i=1;
@@ -374,14 +337,9 @@ classdef QPControlBlock < MIMODrakeSystem
           end
         else
           % check kinematic contact
-          if supp.contact_surfaces(i) == 0
-            phi = contactConstraints(r,kinsol,supp.bodies(i),supp.contact_pts{i});
-          else
-            % use bullet collision between bodies
-            phi = pairwiseContactConstraints(obj.multi_robot,kinsol_multi,supp.bodies(i),supp.contact_surfaces(i),supp.contact_pts{i});
-          end
+          phi = contactConstraints(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,supp.bodies(i)]));
           contact_state_kin = any(phi<=obj.contact_threshold);
-          
+
           if (~contact_state_kin && contact_sensor(i)<1) 
             % no contact from kin, no contact (or no info) from sensor
             supp = removeBody(supp,i); 
@@ -395,7 +353,7 @@ classdef QPControlBlock < MIMODrakeSystem
       active_surfaces = supp.contact_surfaces;
       active_contact_pts = supp.contact_pts;
       num_active_contacts = supp.num_contact_pts;      
-        
+
       %----------------------------------------------------------------------
       % Disable hand force/torque contribution to dynamics as necessary
       if (~obj.use_hand_ft)
@@ -445,24 +403,18 @@ classdef QPControlBlock < MIMODrakeSystem
         c_pre = 0;
         Dbar = [];
         for j=1:length(active_supports)
-          if active_surfaces(j) == 0
-            [~,~,JB] = contactConstraintsBV(r,kinsol,active_supports(j),active_contact_pts{j});
-          else
-            % use bullet collision between bodies
-            [~,~,JB] = pairwiseContactConstraintsBV(obj.multi_robot,kinsol_multi,active_supports(j),active_surfaces(j),active_contact_pts{j});
-          end
-          Dbar = [Dbar, [JB{:}]];
+          [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,active_supports(j)]));
+          Dbar = [Dbar, vertcat(JB{:})'];
           c_pre = c_pre + length(active_contact_pts{j});
-
         end
 
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
 
-        [cpos,Jp,Jpdot] = contactPositionsJdot(r,kinsol,active_supports,active_contact_pts);
+        [~,Jp,Jpdot] = terrainContactPositions(r,kinsol,[1,active_supports],true);
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
-        
+
         xlimp = [xcom(1:2); J*qd]; % state of LIP model
         x_bar = xlimp - x0;      
       else
@@ -470,23 +422,23 @@ classdef QPControlBlock < MIMODrakeSystem
       end
       neps = nc*dim;
 
-         
+
       %----------------------------------------------------------------------
       % Build handy index matrices ------------------------------------------
-      
+
       nf = nc*nd; % number of contact force variables
       nparams = nq+nf+neps;
       Iqdd = zeros(nq,nparams); Iqdd(:,1:nq) = eye(nq);
       Ibeta = zeros(nf,nparams); Ibeta(:,nq+(1:nf)) = eye(nf);
       Ieps = zeros(neps,nparams);
       Ieps(:,nq+nf+(1:neps)) = eye(neps);
-      
-      
+
+
       %----------------------------------------------------------------------
       % Set up problem constraints ------------------------------------------
-      
+
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
-      ub = [ 1e3*ones(1,nq) 500*ones(1,nf) obj.slack_limit*ones(1,neps)]';
+      ub = [ 1e3*ones(1,nq) 1e3*ones(1,nf) obj.slack_limit*ones(1,neps)]';
       
       % if at joint limit, disallow accelerations in that direction
       lb(q<=obj.jlmin+1e-4) = 0;
@@ -496,7 +448,7 @@ classdef QPControlBlock < MIMODrakeSystem
       beq_ = cell(1,2);
       Ain_ = cell(1,2);
       bin_ = cell(1,2);
-      
+
       % constrained dynamics
       if nc>0
         Aeq_{1} = H_float*Iqdd - Dbar_float*Ibeta;
@@ -526,7 +478,7 @@ classdef QPControlBlock < MIMODrakeSystem
       % linear equality constraints: Aeq*alpha = beq
       Aeq = sparse(vertcat(Aeq_{:}));
       beq = vertcat(beq_{:});
-      
+
       % linear inequality constraints: Ain*alpha <= bin
       Ain = sparse(vertcat(Ain_{:}));
       bin = vertcat(bin_{:});
@@ -643,7 +595,7 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         height = 0;
       end
-      [y,Vdot,active_supports,qdd] = QPControllermex(obj.mex_ptr.data,1,qddot_des,x,q_multi, ...
+      [y,Vdot,active_supports,qdd] = QPControllermex(obj.mex_ptr.data,1,qddot_des,x,q, ...
           supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu, ...
           contact_sensor,contact_thresh,height,obj.include_angular_momentum);
     end
@@ -667,19 +619,21 @@ classdef QPControlBlock < MIMODrakeSystem
         height = 0;
       end
       [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data, ...
-        0,qddot_des,x,q_multi,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot, ...
+        0,qddot_des,x,q,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot, ...
         x0,u0,y0,mu,contact_sensor,contact_thresh,height,obj.include_angular_momentum);
       if (nc>0)
         valuecheck(active_supports_mex,active_supports);
         valuecheck(Vdotmex,Vdot,1e-3);
       end
-      valuecheck(Q'+Q,model.Q'+model.Q,1e-12);
-      valuecheck(gobj,model.obj,1e-12);
-      valuecheck(A,model.A,1e-12);
-      valuecheck(rhs,model.rhs,1e-12);
+      valuecheck(Q'+Q,model.Q'+model.Q,1e-8);
+      valuecheck(gobj,model.obj,1e-8);
+      % had to comment out equality constraints because the contact
+      % jacobian rows can be permuted between matlab/mex
+      %valuecheck(A,model.A,1e-8);
+      %valuecheck(rhs,model.rhs,1e-8);
       valuecheck(sense',model.sense);
-      valuecheck(lb,model.lb,1e-12);
-      valuecheck(ub,model.ub,1e-12);
+      valuecheck(lb,model.lb,1e-8);
+      valuecheck(ub,model.ub,1e-8);
 %       valuecheck(y,des.y,0.5);
     end
     
@@ -829,7 +783,7 @@ classdef QPControlBlock < MIMODrakeSystem
       if mod(average_tictoc_n,50)==0
         fprintf('Average control output duration: %2.4f\n',average_tictoc);
       end
-		end
+	end
 		
 		if obj.output_qdd
 			varargout = {y,qdd};
@@ -859,8 +813,7 @@ classdef QPControlBlock < MIMODrakeSystem
     lcm_foot_contacts;  
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
-    num_body_contacts; % vector of num contacts for each body
-    multi_robot;
+    use_bullet;
     num_state_frames; % if there's a multi robot defined this is 1+ the number of other state frames
     using_flat_terrain; % true if using DRCFlatTerrain
     ignore_states; % array if state indices we want to ignore (and substitute with planned values)

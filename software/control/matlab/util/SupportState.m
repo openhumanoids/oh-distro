@@ -23,7 +23,8 @@ classdef SupportState
         sizecheck(contact_pts,length(obj.bodies));
         for i=1:length(obj.bodies)
           % verify that contact point indices are valid
-          if any(contact_pts{i}>size(getBodyContacts(r,obj.bodies(i)),2))
+          terrain_contact_point_struct = getTerrainContactPoints(r,obj.bodies(i));
+          if any(contact_pts{i}>size(terrain_contact_point_struct.pts,2))
             error('SupportState: contact_pts indices exceed number of contact points');
           end
           obj.num_contact_pts(i)=length(contact_pts{i});
@@ -33,7 +34,8 @@ classdef SupportState
         % use all points on body
         obj.contact_pts = cell(1,length(obj.bodies));
         for i=1:length(obj.bodies)
-          obj.contact_pts{i} = 1:size(getBodyContacts(r,obj.bodies(i)),2);
+          terrain_contact_point_struct = getTerrainContactPoints(r,obj.bodies(i));
+          obj.contact_pts{i} = 1:size(terrain_contact_point_struct.pts,2);
           obj.num_contact_pts(i)=length(obj.contact_pts{i});
         end
       end
@@ -54,8 +56,8 @@ classdef SupportState
     function pts = contactPositions(obj,r,kinsol)
       pts=[];
       for i=1:length(obj.bodies)
-        bp = getBodyContacts(r,obj.bodies(i));
-        pts = [pts,forwardKin(r,kinsol,obj.bodies(i),bp(:,obj.contact_pts{i}))];
+        bp = getTerrainContactPoints(r,obj.bodies(i));
+        pts = [pts,forwardKin(r,kinsol,obj.bodies(i),bp.pts(:,obj.contact_pts{i}))];
       end
     end
     

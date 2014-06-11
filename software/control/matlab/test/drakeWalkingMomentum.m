@@ -2,6 +2,8 @@ function drakeWalkingMomentum(use_mex,use_ik)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
+plot_comtraj = true;
+
 %navgoal = [rand();randn();0;0;0;pi/2*randn()];
 navgoal = [1;0;0;0;0;0];
 
@@ -19,6 +21,8 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = r.removeCollisionGroupsExcept({'heel','toe'});
+r = compile(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp_zero_back.mat'));
@@ -256,7 +260,7 @@ warning(S);
 traj = simulate(sys,[0 T],x0);
 playback(v,traj,struct('slider',true));
 
-if 1%plot_comtraj
+if plot_comtraj
   dt = 0.001;
   tts = 0:dt:T;
   xtraj_smooth=smoothts(traj.eval(tts),'e',150);
@@ -287,8 +291,8 @@ if 1%plot_comtraj
     zmpdes(:,i)=walking_ctrl_data.zmptraj.eval(ts(i));
     zmpact(:,i)=com(1:2,i) - com(3,i)/9.81 * (J(1:2,:)*qdd + Jdot(1:2,:)*qd);
 
-    lfoot_cpos = contactPositions(r,kinsol,lfoot);
-    rfoot_cpos = contactPositions(r,kinsol,rfoot);
+    lfoot_cpos = terrainContactPositions(r,kinsol,lfoot);
+    rfoot_cpos = terrainContactPositions(r,kinsol,rfoot);
 
     lfoot_p = forwardKin(r,kinsol,lfoot,[0;0;0],1);
     rfoot_p = forwardKin(r,kinsol,rfoot,[0;0;0],1);
@@ -351,8 +355,10 @@ if 1%plot_comtraj
   %plot(com(1,:),com(2,:),'m.-','LineWidth',1);
 
   left_foot_steps = eval(lfoottraj,lfoottraj.getBreaks);
+  tc_lfoot = getTerrainContactPoints(r,lfoot);
+  tc_rfoot = getTerrainContactPoints(r,rfoot);
   for i=1:size(left_foot_steps,2);
-    cpos = rpy2rotmat(left_foot_steps(4:6,i)) * getBodyContacts(r,lfoot) + repmat(left_foot_steps(1:3,i),1,4);
+    cpos = rpy2rotmat(left_foot_steps(4:6,i)) * tc_lfoot.pts + repmat(left_foot_steps(1:3,i),1,4);
     if all(cpos(3,:)<=0.001)
       plot(cpos(1,[1,2]),cpos(2,[1,2]),'k-','LineWidth',2);
       plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',2);
@@ -364,7 +370,7 @@ if 1%plot_comtraj
 
   right_foot_steps = eval(rfoottraj,rfoottraj.getBreaks);
   for i=1:size(right_foot_steps,2);
-    cpos = rpy2rotmat(right_foot_steps(4:6,i)) * getBodyContacts(r,rfoot) + repmat(right_foot_steps(1:3,i),1,4);
+    cpos = rpy2rotmat(right_foot_steps(4:6,i)) * tc_rfoot.pts + repmat(right_foot_steps(1:3,i),1,4);
     if all(cpos(3,:)<=0.001)
       plot(cpos(1,[1,2]),cpos(2,[1,2]),'k-','LineWidth',2);
       plot(cpos(1,[1,3]),cpos(2,[1,3]),'k-','LineWidth',2);
@@ -374,7 +380,7 @@ if 1%plot_comtraj
   end
 
   for i=1:lstep_counter
-    cpos = rpy2rotmat(lfoot_steps(4:6,i)) * getBodyContacts(r,lfoot) + repmat(lfoot_steps(1:3,i),1,4);
+    cpos = rpy2rotmat(lfoot_steps(4:6,i)) * tc_lfoot.pts + repmat(lfoot_steps(1:3,i),1,4);
     plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
     plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',1.65);
     plot(cpos(1,[2,4]),cpos(2,[2,4]),'g-','LineWidth',1.65);
@@ -382,7 +388,7 @@ if 1%plot_comtraj
   end
 
   for i=1:rstep_counter
-    cpos = rpy2rotmat(rfoot_steps(4:6,i)) * getBodyContacts(r,rfoot) + repmat(rfoot_steps(1:3,i),1,4);
+    cpos = rpy2rotmat(rfoot_steps(4:6,i)) * tc_rfoot.pts + repmat(rfoot_steps(1:3,i),1,4);
     plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
     plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',1.65);
     plot(cpos(1,[2,4]),cpos(2,[2,4]),'g-','LineWidth',1.65);

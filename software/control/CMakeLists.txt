@@ -6,7 +6,7 @@ include(cmake/pods.cmake)
 
 # set up matlab build
 include(cmake/mex.cmake)
-mex_setup()
+#mex_setup()
 
 find_file(ROS_MODEL_PKG mit_drcsim_scripts PATHS ${CMAKE_INSTALL_PREFIX}/.. $ENV{HOME} $ENV{DRC_BASE}/ros_workspace)
 if (NOT ROS_MODEL_PKG)

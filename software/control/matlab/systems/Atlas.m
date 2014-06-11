@@ -18,7 +18,10 @@ classdef Atlas < Biped
       if ~isfield(options,'floating')
         options.floating = true;
       end
-
+      if ~isfield(options,'terrain')
+        options.terrain = RigidBodyFlatTerrain;
+      end
+      
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 
@@ -103,8 +106,8 @@ classdef Atlas < Biped
 
     function foot_z = getFootHeight(obj,q)
       kinsol = doKinematics(obj,q);
-      rfoot_cpos = contactPositions(obj,kinsol,obj.foot_bodies_idx.right);
-      lfoot_cpos = contactPositions(obj,kinsol,obj.foot_bodies_idx.left);
+      rfoot_cpos = terrainContactPositions(obj,kinsol,findLinkInd(obj,'r_foot'));
+      lfoot_cpos = terrainContactPositions(obj,kinsol,findLinkInd(obj,'l_foot'));
       foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
     end
 

@@ -15,8 +15,8 @@ phi.next = next_pos(6) - swing_angle;
 
 foot_bodies = struct('right', biped.manip.body(biped.foot_bodies_idx.right),...
                        'left', biped.manip.body(biped.foot_bodies_idx.left));
-contact_pts.last = quat2rotmat(axis2quat([0;0;1;phi.last])) * foot_bodies.right.contact_pts;
-contact_pts.next = quat2rotmat(axis2quat([0;0;1;phi.next])) * foot_bodies.right.contact_pts;
+contact_pts.last = quat2rotmat(axis2quat([0;0;1;phi.last])) * foot_bodies.right.getTerrainContactPoints();
+contact_pts.next = quat2rotmat(axis2quat([0;0;1;phi.next])) * foot_bodies.right.getTerrainContactPoints(); 
 effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),...
                        max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...

@@ -20,11 +20,13 @@ classdef StatelessWalkingPlanner
 
       if request.footstep_plan.params.ignore_terrain
         r = r.setTerrain(KinematicTerrainMap(r, q0, true));
+        r = compile(r);
       else
         terrain = r.getTerrain();
         if ismethod(terrain, 'setBackupTerrain')
           terrain = terrain.setBackupTerrain(r, q0);
           r = r.setTerrain(terrain);
+          r = compile(r);
         end
       end
 

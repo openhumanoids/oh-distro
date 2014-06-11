@@ -14,6 +14,8 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.dt = 0.002;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = r.removeCollisionGroupsExcept({'heel','toe'});
+r = compile(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
@@ -43,7 +45,7 @@ com = getCOM(r,kinsol);
 
 % build TI-ZMP controller 
 footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
-foot_pos = contactPositions(r,q0,footidx); 
+foot_pos = terrainContactPositions(r,kinsol,footidx); 
 ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
 comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
 limp = LinearInvertedPendulum(com(3));
