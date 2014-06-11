@@ -93,29 +93,6 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-
-% compute angular momentum trajectory from kinematic plan
-% this would be replaced by dynamic plan
-% qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
-% qdtraj = fnder(qtraj,1);
-% k = zeros(3,length(ts));
-% comz = zeros(1,length(ts));
-% for i=1:length(ts)
-%   t=ts(i);
-%   q=qtraj.eval(t);
-%   qd=qdtraj.eval(t);
-%   kinsol = doKinematics(r,q,false,true);
-%   A = getCMM(r,kinsol);
-%   k(:,i) = A(1:3,:)*qd;
-%   com = getCOM(r,kinsol);
-%   comz(i) = com(3);
-% end
-% ktraj = PPTrajectory(spline(ts,k));
-%comztraj = PPTrajectory(spline(ts,comz));
-%dcomztraj = fnder(comztraj,1);
-
-ankle_ind = findJointIndices(r,'ak');
-
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
   'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
@@ -179,9 +156,9 @@ else
 	pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data);
 	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
-		pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+	pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
 
-%   options.body_motion_input_weights = [-1 -1 -1 -1];
+%   options.body_accel_input_weights = [10 10 -1 -1];
 	qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 	% feedback QP controller with atlas

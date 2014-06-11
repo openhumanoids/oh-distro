@@ -54,6 +54,12 @@ classdef MomentumControlBlock < MIMODrakeSystem
     if ~isfield(obj.controller_data.data,'qp_active_set')
       obj.controller_data.setField('qp_active_set',[]);
     end
+    
+    if isfield(options,'use_bullet')
+      obj.use_bullet = options.use_bullet;
+    else
+      obj.use_bullet = false;
+    end
         
     % weight for the hdot objective term
     if isfield(options,'W_hdot')
@@ -195,7 +201,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         terrain_map_ptr = 0;
       end
 
-      obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,multi_robot_ptr));
+      obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,0));
     end
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')
