@@ -28,14 +28,14 @@ mxArray* eigenToMatlab(Matrix<double,Rows,Cols> &m)
 mxArray* myGetProperty(const mxArray* pobj, const char* propname)
 {
   mxArray* pm = mxGetProperty(pobj,0,propname);
-  if (!pm) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","QPControllermex is trying to load object property '%s', but failed.", propname);
+  if (!pm) mexErrMsgIdAndTxt("DRC:ControlUtil:BadInput","ControlUtil is trying to load object property '%s', but failed.", propname);
   return pm;
 }
 
 mxArray* myGetField(const mxArray* pobj, const char* propname)
 {
   mxArray* pm = mxGetField(pobj,0,propname);
-  if (!pm) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","QPControllermex is trying to load object field '%s', but failed.", propname);
+  if (!pm) mexErrMsgIdAndTxt("DRC:ControlUtil:BadInput","ControlUtil is trying to load object field '%s', but failed.", propname);
   return pm;
 }
 
@@ -137,7 +137,7 @@ int contactPhi(RigidBodyManipulator* r, SupportStateElement& supp, void *map_ptr
   int i=0;
   for (std::set<int>::iterator pt_iter=supp.contact_pt_inds.begin(); pt_iter!=supp.contact_pt_inds.end(); pt_iter++) {
     if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) 
-      mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
+      mexErrMsgIdAndTxt("DRC:ControlUtil:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
     
     tmp = b->contact_pts.col(*pt_iter);
     r->forwardKin(supp.body_idx,tmp,0,contact_pos);
@@ -169,7 +169,7 @@ int contactConstraints(RigidBodyManipulator *r, int nc, std::vector<SupportState
     RigidBody* b = &(r->bodies[iter->body_idx]);
     if (nc>0) {
       for (std::set<int>::iterator pt_iter=iter->contact_pt_inds.begin(); pt_iter!=iter->contact_pt_inds.end(); pt_iter++) {
-        if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
+        if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:ControlUtil:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
         tmp = b->contact_pts.col(*pt_iter);
         r->forwardKin(iter->body_idx,tmp,0,contact_pos);
         r->forwardJac(iter->body_idx,tmp,0,J);
@@ -216,7 +216,7 @@ int contactConstraintsBV(RigidBodyManipulator *r, int nc, double mu, std::vector
     RigidBody* b = &(r->bodies[iter->body_idx]);
     if (nc>0) {
       for (std::set<int>::iterator pt_iter=iter->contact_pt_inds.begin(); pt_iter!=iter->contact_pt_inds.end(); pt_iter++) {
-        if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:QPControllermex:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
+        if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) mexErrMsgIdAndTxt("DRC:ControlUtil:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
         tmp = b->contact_pts.col(*pt_iter);
         r->forwardKin(iter->body_idx,tmp,0,contact_pos);
         r->forwardJac(iter->body_idx,tmp,0,J);

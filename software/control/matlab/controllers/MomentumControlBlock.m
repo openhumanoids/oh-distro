@@ -262,16 +262,26 @@ classdef MomentumControlBlock < MIMODrakeSystem
     
     % TODO: generalize this again to arbitrary body contacts
     support_bodies = [];
+    contact_pts = {};
+    n_contact_pts = [];
     ind = 1;
     if fc(1)>0
       support_bodies(ind) = obj.lfoot_idx;
+      contact_pts{ind} = 1:4;
+      n_contact_pts(ind) = 4;
       ind=ind+1;
     end
     if fc(2)>0
       support_bodies(ind) = obj.rfoot_idx;
+      contact_pts{ind} = 1:4;
+      n_contact_pts(ind) = 4;
     end
     
-    supp = SupportState(r,support_bodies);
+%    supp = SupportState(r,support_bodies,contact_pts);
+    supp.bodies = support_bodies;
+    supp.contact_surfaces = 0*support_bodies;
+    supp.contact_pts = contact_pts;
+    supp.num_contact_pts = n_contact_pts;
     
     if (obj.use_mex==0 || obj.use_mex==2)
       kinsol = doKinematics(r,q,false,true,qd);

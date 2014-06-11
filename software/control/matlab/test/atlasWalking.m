@@ -190,7 +190,7 @@ end
 options.slack_limit = 50;
 options.w_slack = 0.005;
 options.input_foot_contacts = true;
-options.debug = true;
+options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.015;
 options.output_qdd = true;
