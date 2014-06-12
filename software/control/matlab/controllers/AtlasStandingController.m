@@ -3,6 +3,7 @@ classdef AtlasStandingController < DRCController
   properties (SetAccess=protected,GetAccess=protected)
     robot;
     foot_idx;
+    controller_state_dim;
   end
   
   methods
@@ -19,6 +20,9 @@ classdef AtlasStandingController < DRCController
       for i=1:length(force_control_joint_str)
         force_controlled_joints = union(force_controlled_joints,find(~cellfun(@isempty,strfind(r.getInputFrame.coordinates,force_control_joint_str{i}))));
       end
+
+      act_ind = (1:r.getNumInputs)';
+      position_controlled_joints = setdiff(act_ind,force_controlled_joints);
       
       ctrl_data = SharedDataHandle(struct(...
         'is_time_varying',false,...
@@ -30,11 +34,13 @@ classdef AtlasStandingController < DRCController
         'ignore_terrain',false,...
         'qtraj',zeros(getNumDOF(r),1),...
         'force_controlled_joints', force_controlled_joints,...
+        'position_controlled_joints', position_controlled_joints,...
         'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
  
       sys = AtlasBalancingWrapper(r,ctrl_data,options);
       obj = obj@DRCController(name,sys,AtlasState(r));
  
+      obj.controller_state_dim = sys.velocity_int_block.getStateFrame.dim;
       obj.robot = r;
       obj.controller_data = ctrl_data;
       obj.foot_idx = [r.findLinkInd('r_foot'),r.findLinkInd('l_foot')];
@@ -88,6 +94,10 @@ classdef AtlasStandingController < DRCController
         standAtCurrentState(obj,data.AtlasState);
       end
       obj = setDuration(obj,inf,false); % set the controller timeout
+      controller_state = obj.controller_data.data.qd_int_state;
+      controller_state(3) = 0; % reset time
+      controller_state(4) = 0; % reset eta
+      obj.controller_data.setField('qd_int_state',controller_state);
     end
     
     function standAtCurrentState(obj,x0)

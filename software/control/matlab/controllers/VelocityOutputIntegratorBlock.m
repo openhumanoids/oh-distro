@@ -2,7 +2,7 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
   % integrates desired generalized accelerations and outputs a desired velocity
   %
   % input: x, qdd, foot_contact
-  % state: [fc_left; fc_right; t_prev; lambda; qd_int]
+  % state: [fc_left; fc_right; t_prev; eta; qd_int]
   % output: qd_err (input frame)
   properties
 		nq;

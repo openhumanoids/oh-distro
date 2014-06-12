@@ -18,6 +18,21 @@ classdef AtlasBalancingWrapper < DrakeSystem
       
       input_frame = getStateFrame(r);
       output_frame = AtlasPosVelTorqueRef(r);
+      
+      force_controlled_joints = controller_data.data.force_controlled_joints;
+      position_controlled_joints = controller_data.data.position_controlled_joints;
+
+      gains = getAtlasGains();
+      gains.k_q_p(force_controlled_joints) = 0;
+      gains.k_q_i(force_controlled_joints) = 0;
+      gains.k_qd_p(force_controlled_joints) = 0;
+      gains.k_f_p(position_controlled_joints) = 0;
+      gains.ff_f_d(position_controlled_joints) = 0;
+      gains.ff_qd(position_controlled_joints) = 0;
+      gains.ff_qd_d(position_controlled_joints) = 0;
+
+      output_frame.updateGains(gains);
+      
       obj = obj@DrakeSystem(0,0,input_frame.dim,output_frame.dim,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
@@ -54,7 +69,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       qp = MomentumControlBlock(r,{},controller_data,options);
      
       % cascade IK/PD block
-      options.Kp = 80.0*ones(obj.nq,1);
+      options.Kp = 65.0*ones(obj.nq,1);
       options.Kd = 12.0*ones(obj.nq,1);
       ankles = findJointIndices(r,'ak');
       options.Kp(ankles) = 20;

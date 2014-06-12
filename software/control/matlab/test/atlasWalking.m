@@ -42,12 +42,12 @@ qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 gains_copy = getAtlasGains();
-% reset force gains for joint being tuned
+% reset force gains 
 gains.k_f_p(joint_act_ind) = gains_copy.k_f_p(joint_act_ind);
 gains.ff_f_d(joint_act_ind) = gains_copy.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains_copy.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains_copy.ff_qd_d(joint_act_ind);
-% set joint position gains to 0 for joint being tuned
+% set joint position gains to 0 
 gains.k_q_p(joint_act_ind) = 0;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;

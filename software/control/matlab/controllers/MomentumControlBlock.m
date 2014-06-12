@@ -287,7 +287,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
       kinsol = doKinematics(r,q,false,true,qd);
 
       active_supports = supp.bodies;
-      active_surfaces = supp.contact_surfaces;
       active_contact_pts = supp.contact_pts;
       num_active_contacts = supp.num_contact_pts;      
 
