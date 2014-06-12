@@ -28,6 +28,7 @@ max_steps = params.max_num_steps+2;
 
 num_outer_iterations = 2;
 for j = 1:num_outer_iterations
+%   miqp_plan = footstepMISOCP(biped, plan, weights, goal_pos, min_steps, max_steps);
   miqp_plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
   if length(miqp_plan.footsteps) <= 2
     % No feasible solution was found
