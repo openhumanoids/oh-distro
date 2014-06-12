@@ -22,14 +22,6 @@ r = r.setTerrain(KinematicTerrainMap(r, fp.xstar(1:r.getNumDOF), true));
 
 foot_orig = struct('right', [0;-0.15;0;0;0;0], 'left', [0;0.15;0;0;0;0]);
 
-stones = [0, -0.15, 0.005;
-          0.5, 0.15, 0.01;
-          0.5, -0.15, 0.02;
-          1, 0.15, 0.03;
-          1, -0.15, 0.04;
-          1.5, -0.15, 0.05;
-          1.5, 0.15, 0.06;
-          2, 0, 0.07]';
 safe_regions = struct('A', {}, 'b', {}, 'point', {}, 'normal', {});
 n_regions = 10;
 lb = [0;-.2;-0.05];
