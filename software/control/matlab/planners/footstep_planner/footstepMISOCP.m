@@ -61,13 +61,13 @@ for j = 3:nsteps
   if seed_plan.footsteps(j).body_idx == biped.foot_bodies_idx.left
     rel_foci = [foci(1,:); -foci(2,:)];
     Constraints = [Constraints, 0 <= yaw(j) - yaw(j-1) <= pi/8];
-    for k = 1:size(sector, 2) - 1
+    for k = 1:size(sector, 1) - 1
       Constraints = [Constraints, implies(sector(k, j-1), sector(k,j) | sector(k+1,j))];
     end
   else
     rel_foci = foci;
     Constraints = [Constraints, -pi/8 <= yaw(j) - yaw(j-1) <= 0];
-    for k = 2:size(sector, 2)
+    for k = 2:size(sector, 1)
       Constraints = [Constraints, implies(sector(k, j-1), sector(k-1,j) | sector(k,j))];
     end
   end
@@ -143,44 +143,45 @@ final_step_idx = min(nsteps, final_steps(end) + ceil(2 * dtheta / (pi/8)));
 final_nsteps = min(max_num_steps, max(min_num_steps, final_step_idx));
 plan = plan.slice(1:final_nsteps);
 
-
-figure(2)
-clf
-hold on
-for j = 1:nsteps
-  if seed_plan.footsteps(j).body_idx ~= biped.foot_bodies_idx.left
-    rel_foci = [foci(1,:); -foci(2,:)];
-  else
-    rel_foci = foci;
+if 0
+  figure(2)
+  clf
+  hold on
+  for j = 1:nsteps
+    if seed_plan.footsteps(j).body_idx ~= biped.foot_bodies_idx.left
+      rel_foci = [foci(1,:); -foci(2,:)];
+    else
+      rel_foci = foci;
+    end
+    R = [cos_yaw(j), -sin_yaw(j); sin_yaw(j), cos_yaw(j)];
+    step_foci = bsxfun(@plus, R * rel_foci, steps(1:2,j));
+    [X, Y] = meshgrid(linspace(min(step_foci(1,:) - 0.5), max(step_foci(1,:) + 0.5)),...
+                      linspace(min(step_foci(2,:) - 0.5), max(step_foci(2,:) + 0.5)));
+    Z = zeros(1, size(X,1) * size(X,2));
+    for k = 1:size(step_foci, 2)
+      Z = Z + sqrt(sum(bsxfun(@minus, [reshape(X, 1, []); reshape(Y, 1, [])], step_foci(:,k)).^2, 1));
+    end
+    Z = reshape(Z, size(X));
+    contour(X,Y,Z,[ellipse_l, ellipse_l]);
+    plot(step_foci(1,[1:end, 1]), step_foci(2,[1:end, 1]), 'b.-')
   end
-  R = [cos_yaw(j), -sin_yaw(j); sin_yaw(j), cos_yaw(j)];
-  step_foci = bsxfun(@plus, R * rel_foci, steps(1:2,j));
-  [X, Y] = meshgrid(linspace(min(step_foci(1,:) - 0.5), max(step_foci(1,:) + 0.5)),...
-                    linspace(min(step_foci(2,:) - 0.5), max(step_foci(2,:) + 0.5)));
-  Z = zeros(1, size(X,1) * size(X,2));
-  for k = 1:size(step_foci, 2)
-    Z = Z + sqrt(sum(bsxfun(@minus, [reshape(X, 1, []); reshape(Y, 1, [])], step_foci(:,k)).^2, 1));
+
+  plot(steps(1,:), steps(2,:), 'k:')
+
+  r_ndx = find([plan.footsteps.body_idx] == biped.foot_bodies_idx.right);
+  l_ndx = find([plan.footsteps.body_idx] == biped.foot_bodies_idx.left);
+  plot(steps(1,l_ndx), steps(2,l_ndx), 'ro')
+  plot(steps(1,r_ndx), steps(2,r_ndx), 'go')
+  quiver(steps(1,l_ndx), steps(2,l_ndx), cos(steps(6,l_ndx)), sin(steps(6,l_ndx)), 'r', 'AutoScaleFactor', 0.2);
+  quiver(steps(1,r_ndx), steps(2,r_ndx), cos(steps(6,r_ndx)), sin(steps(6,r_ndx)), 'g', 'AutoScaleFactor', 0.2);
+  quiver(steps(1,:), steps(2,:), cos_yaw, sin_yaw, 'k', 'AutoScaleFactor', 0.2);
+
+  for j = 1:length(seed_plan.safe_regions)
+    V = iris.thirdParty.polytopes.lcon2vert(seed_plan.safe_regions(j).A(:,1:2), seed_plan.safe_regions(j).b);
+    k = convhull(V(:,1), V(:,2));
+    patch(V(k,1), V(k,2), 'k', 'FaceAlpha', 0.2);
   end
-  Z = reshape(Z, size(X));
-  contour(X,Y,Z,[ellipse_l, ellipse_l]);
-  plot(step_foci(1,[1:end, 1]), step_foci(2,[1:end, 1]), 'b.-')
+
+  axis equal
 end
-
-plot(steps(1,:), steps(2,:), 'k:')
-
-r_ndx = find([plan.footsteps.body_idx] == biped.foot_bodies_idx.right);
-l_ndx = find([plan.footsteps.body_idx] == biped.foot_bodies_idx.left);
-plot(steps(1,l_ndx), steps(2,l_ndx), 'ro')
-plot(steps(1,r_ndx), steps(2,r_ndx), 'go')
-quiver(steps(1,l_ndx), steps(2,l_ndx), cos(steps(6,l_ndx)), sin(steps(6,l_ndx)), 'r', 'AutoScaleFactor', 0.2);
-quiver(steps(1,r_ndx), steps(2,r_ndx), cos(steps(6,r_ndx)), sin(steps(6,r_ndx)), 'g', 'AutoScaleFactor', 0.2);
-quiver(steps(1,:), steps(2,:), cos_yaw, sin_yaw, 'k', 'AutoScaleFactor', 0.2);
-
-for j = 1:length(seed_plan.safe_regions)
-  V = iris.thirdParty.polytopes.lcon2vert(seed_plan.safe_regions(j).A(:,1:2), seed_plan.safe_regions(j).b);
-  k = convhull(V(:,1), V(:,2));
-  patch(V(k,1), V(k,2), 'k', 'FaceAlpha', 0.2);
-end
-
-axis equal
 
