@@ -270,22 +270,34 @@ Aeq = [Aeq; Aeq_rot];
 beq = [beq; beq_rot];
 
 % Rotation can never change by more than one slot per step
-% a - b <= 1
-% a - b >= -1
-A_rot = zeros((nsteps - 3) * 2, nvar);
+A_rot = zeros((nsteps - 3) * yaw_slots, nvar);
 b_rot = zeros(size(A_rot, 1), 1);
 con_ndx = 1;
 for j = 4:nsteps
-  A_rot(con_ndx, x_ndx(4,j)) = 1;
-  A_rot(con_ndx, x_ndx(4,j-1)) = -1;
-  b_rot(con_ndx) = 1;
-  con_ndx = con_ndx + 1;
-  
-  A_rot(con_ndx, x_ndx(4,j)) = -1;
-  A_rot(con_ndx, x_ndx(4,j-1)) = 1;
-  b_rot(con_ndx) = 1;
-  con_ndx = con_ndx + 1;
+  if seed_plan.footsteps(j).body_idx == biped.foot_bodies_idx.left
+    for k = 1:yaw_slots
+      A_rot(con_ndx, rot_ndx(k,j-1)) = 1;
+      A_rot(con_ndx, rot_ndx(k,j)) = -1;
+      if k < yaw_slots
+        A_rot(con_ndx, rot_ndx(k+1,j)) = -1;
+      end
+      b_rot(con_ndx) = 0;
+      con_ndx = con_ndx + 1;
+    end
+  else
+    for k = 1:yaw_slots
+      A_rot(con_ndx, rot_ndx(k,j-1)) = 1;
+      A_rot(con_ndx, rot_ndx(k,j)) = -1;
+      if k > 1
+        A_rot(con_ndx, rot_ndx(k-1,j)) = -1;
+      end
+      b_rot(con_ndx) = 0;
+    end
+    con_ndx = con_ndx + 1;
+  end
 end
+A = [A; A_rot];
+b = [b; b_rot];
 
 step1 = seed_plan.footsteps(1).pos.inFrame(seed_plan.footsteps(1).frames.center);
 step2 = seed_plan.footsteps(2).pos.inFrame(seed_plan.footsteps(2).frames.center);
@@ -312,7 +324,7 @@ model.vtype = [repmat('C', nx, 1); repmat('B', ns, 1); repmat('B', nt, 1); repma
 model.Q = sparse(Q);
 model.start = x0;
 params = struct();
-params.timelimit = 20;
+% params.timelimit = 20;
 % params.mipgap = 3e-4;
 params.mipgap = 1e-2;
 params.outputflag = 1;
