@@ -75,7 +75,8 @@ classdef AtlasBalancingWrapper < DrakeSystem
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
       
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
-      obj.foot_contact_block = FootContactBlock(r);
+      options.use_lcm = true;
+      obj.foot_contact_block = FootContactBlock(r,controller_data,options);
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
 
       if ~isfield(controller_data.data,'qtraj')

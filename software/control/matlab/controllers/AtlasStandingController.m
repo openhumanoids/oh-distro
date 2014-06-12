@@ -46,7 +46,7 @@ classdef AtlasStandingController < DRCController
       com = getCOM(obj.robot,kinsol);
 
       % build TI-ZMP controller 
-      foot_pos = contactPositions(obj.robot,kinsol); 
+      foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
       comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
       limp = LinearInvertedPendulum(com(3));
       K = lqr(limp,comgoal);
@@ -94,7 +94,7 @@ classdef AtlasStandingController < DRCController
       r = obj.robot;
       q0 = x0(1:getNumDOF(r));
       kinsol = doKinematics(r,q0);
-      foot_pos = contactPositions(r,kinsol,obj.foot_idx); 
+      foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
       comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
       obj.controller_data.setField('qtraj',q0);
       obj.controller_data.setField('x0',[comgoal;0;0]);
