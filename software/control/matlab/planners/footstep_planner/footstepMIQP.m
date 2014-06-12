@@ -23,7 +23,7 @@ nx = 4 * nsteps;
 ns = (nsteps) * nr;
 nt = nsteps;
 
-yaw_slots = 9;
+yaw_slots = 17;
 yaw_increment = pi/8;
 
 nrot = yaw_slots * nsteps;
