@@ -12,6 +12,7 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 		r_leg_idx;
 		l_leg_idx;
 		act_idx_map;
+		zero_ankles_on_contact;
   end
   
   methods
@@ -30,7 +31,15 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
       if nargin<2
         options = struct();
       end
-                  
+      
+      if isfield(options,'zero_ankles_on_contact')
+        typecheck(options.zero_ankles_on_contact,'logical');
+        sizecheck(options.zero_ankles_on_contact,[1 1]);
+        obj.zero_ankles_on_contact = options.zero_ankles_on_contact;
+      else
+        obj.zero_ankles_on_contact = true;
+      end
+      
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
@@ -62,10 +71,10 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			qd_err = qd_int-qd;
 
 			% do not velocity control ankles when in contact
-      if l_foot_contact>0.5
+      if obj.zero_ankles_on_contact && l_foot_contact>0.5
         qd_err(obj.l_ankle_idx)=0;
       end
-      if r_foot_contact>0.5
+      if obj.zero_ankles_on_contact && r_foot_contact>0.5
         qd_err(obj.r_ankle_idx)=0;
       end
 			
@@ -89,10 +98,10 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			
 			qd_int = ((1-eta)*qd_int + eta*qd) + qdd*dt; 
 			
-      if l_foot_contact>0.5
+      if obj.zero_ankles_on_contact && l_foot_contact>0.5
         qd_int(obj.l_ankle_idx)=0;
       end
-      if r_foot_contact>0.5
+      if obj.zero_ankles_on_contact && r_foot_contact>0.5
         qd_int(obj.r_ankle_idx)=0;
       end
 

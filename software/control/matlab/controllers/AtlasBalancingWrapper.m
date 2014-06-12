@@ -69,11 +69,11 @@ classdef AtlasBalancingWrapper < DrakeSystem
       qp = MomentumControlBlock(r,{},controller_data,options);
      
       % cascade IK/PD block
-      options.Kp = 65.0*ones(obj.nq,1);
+      options.Kp = 75.0*ones(obj.nq,1);
       options.Kd = 12.0*ones(obj.nq,1);
-      ankles = findJointIndices(r,'ak');
-      options.Kp(ankles) = 20;
-      options.Kd(ankles) = 3;
+%       ankles = findJointIndices(r,'ak');
+%       options.Kp(ankles) = 20;
+%       options.Kd(ankles) = 3;
       pd = SimplePDBlock(r,controller_data,options);
       ins(1).system = 1;
       ins(1).input = 1;
@@ -92,6 +92,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       options.use_lcm = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
+      options.zero_ankles_on_contact = false;
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
 
       if ~isfield(controller_data.data,'qtraj')
