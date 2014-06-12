@@ -124,8 +124,7 @@ if use_random_traj
   
   % build TI-ZMP controller
   foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]); 
-  ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-  comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';%mean(foot_pos(1:2,ch(1:end-1)),2);
+  comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
   
   limp = LinearInvertedPendulum(com0(3));
   K = lqr(limp,comgoal);
