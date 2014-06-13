@@ -52,8 +52,8 @@ classdef AtlasStandingController < DRCController
       com = getCOM(obj.robot,kinsol);
 
       % build TI-ZMP controller 
-      foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
-      comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
+      foot_cpos = terrainContactPositions(r,kinsol,obj.foot_idx);
+      comgoal = mean([mean(foot_cpos(1:2,1:4)');mean(foot_cpos(1:2,5:8)')])';
       limp = LinearInvertedPendulum(com(3));
       K = lqr(limp,comgoal);
       
@@ -65,6 +65,14 @@ classdef AtlasStandingController < DRCController
       obj.controller_data.setField('y0',comgoal);
       obj.controller_data.setField('supports',supports);
       obj.controller_data.setField('firstplan',true);
+      
+      link_constraints(1).link_ndx = obj.foot_idx(1);
+      link_constraints(1).pt = [0;0;0];
+      link_constraints(1).pos = forwardKin(r,kinsol,obj.foot_idx(1),[0;0;0],1);
+      link_constraints(2).link_ndx = obj.foot_idx(2);
+      link_constraints(2).pt = [0;0;0];
+      link_constraints(2).pos = forwardKin(r,kinsol,obj.foot_idx(2),[0;0;0],1);
+      obj.controller_data.setField('link_constraints',link_constraints);
 
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
@@ -104,11 +112,20 @@ classdef AtlasStandingController < DRCController
       r = obj.robot;
       q0 = x0(1:getNumDOF(r));
       kinsol = doKinematics(r,q0);
-      foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
-      comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
+      foot_cpos = terrainContactPositions(r,kinsol,obj.foot_idx);
+      comgoal = mean([mean(foot_cpos(1:2,1:4)');mean(foot_cpos(1:2,5:8)')])';
       obj.controller_data.setField('qtraj',q0);
       obj.controller_data.setField('x0',[comgoal;0;0]);
       obj.controller_data.setField('y0',comgoal);
+      obj.controller_data.setField('comtraj',comgoal);
+
+      link_constraints(1).link_ndx = obj.foot_idx(1);
+      link_constraints(1).pt = [0;0;0];
+      link_constraints(1).pos = forwardKin(r,kinsol,obj.foot_idx(1),[0;0;0],1);
+      link_constraints(2).link_ndx = obj.foot_idx(2);
+      link_constraints(2).pt = [0;0;0];
+      link_constraints(2).pos = forwardKin(r,kinsol,obj.foot_idx(2),[0;0;0],1);
+      obj.controller_data.setField('link_constraints',link_constraints);
     end
   end
 end

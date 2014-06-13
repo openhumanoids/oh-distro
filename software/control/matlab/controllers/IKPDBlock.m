@@ -146,16 +146,23 @@ classdef IKPDBlock < MIMODrakeSystem
         cdata = obj.controller_data.data;
         approx_args = {};
         for j = 1:length(cdata.link_constraints)
-          if ~isempty(cdata.link_constraints(j).traj)
+          if cdata.is_time_varying && ~isempty(cdata.link_constraints(j).traj)
             pos = fasteval(cdata.link_constraints(j).traj,t);
             pos(1:3) = pos(1:3) - cdata.trans_drift;
+            approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, pos};
+          elseif ~isempty(cdata.link_constraints(j).pos)
+            pos = cdata.link_constraints(j).pos;
             approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, pos};
           end
         end
         
         % note: we should really only try to control COM position when in
         % contact with the environment
-        com = fasteval(cdata.comtraj,t);
+        if cdata.is_time_varying
+          com = fasteval(cdata.comtraj,t);
+        else
+          com = cdata.comtraj;
+        end
         compos = [com(1:2) - cdata.trans_drift(1:2);nan];
 
         q_des = linearIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);

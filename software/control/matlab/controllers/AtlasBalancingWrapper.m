@@ -69,12 +69,14 @@ classdef AtlasBalancingWrapper < DrakeSystem
       qp = MomentumControlBlock(r,{},controller_data,options);
      
       % cascade IK/PD block
-      options.Kp = 75.0*ones(obj.nq,1);
+      options.Kp = 65.0*ones(obj.nq,1);
       options.Kd = 12.0*ones(obj.nq,1);
 %       ankles = findJointIndices(r,'ak');
 %       options.Kp(ankles) = 20;
 %       options.Kd(ankles) = 3;
-      pd = SimplePDBlock(r,controller_data,options);
+      options.use_ik=true;
+      options.fixed_dofs = [findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')];
+      pd = IKPDBlock(r,controller_data,options);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
