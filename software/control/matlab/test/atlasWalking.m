@@ -325,7 +325,7 @@ else
   options.Kd(4:5) = 12.0;
   options.Kp(6) = 40.0;
   options.Kd(6) = 12.0;
-  pd = WalkingPDBlock(r,ctrl_data,options);
+  pd = IKPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
   ins(2).system = 1;

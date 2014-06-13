@@ -132,7 +132,7 @@ clear ins;
 % feedback PD trajectory controller 
 options.Kp = 80.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
-pd = WalkingPDBlock(r,ctrl_data,options);
+pd = IKPDBlock(r,ctrl_data,options);
 
 ins(1).system = 1;
 ins(1).input = 1;

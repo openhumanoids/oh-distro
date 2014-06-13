@@ -310,7 +310,7 @@ if use_simple_pd
     ins(6).input = 5;
   end
 else
-  pd = WalkingPDBlock(r,ctrl_data,options);
+  pd = IKPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
   ins(2).system = 1;

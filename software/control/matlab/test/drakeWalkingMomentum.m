@@ -142,7 +142,7 @@ if (use_ik)
 % 	options.Kd = 30.0*ones(nq,1);
 % 	options.Kp(ankle_ind) = 80;
 % 	options.Kd(ankle_ind) = 10;
-	pd = WalkingPDBlock(r,ctrl_data,options);
+	pd = IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;
 	outs(1).system = 2;

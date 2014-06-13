@@ -125,7 +125,7 @@ sys = mimoFeedback(qp,sys,[],[],ins,outs);
 clear ins outs;
 
 % feedback PD block
-pd = WalkingPDBlock(r,ctrl_data);
+pd = IKPDBlock(r,ctrl_data);
 ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;
