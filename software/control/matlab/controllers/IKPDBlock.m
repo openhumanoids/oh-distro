@@ -11,7 +11,7 @@ classdef IKPDBlock < MIMODrakeSystem
     input_foot_contacts;
     r_ankle_idx;
     l_ankle_idx;
-    use_ik;
+    use_ik; % if false, just does PD on q_nom input
   end
   
   methods
@@ -102,12 +102,19 @@ classdef IKPDBlock < MIMODrakeSystem
       cost.r_leg_hpz = 10;
       cost.l_leg_kny = 5;
       cost.r_leg_kny = 5;
-
       cost = double(cost);
       
       obj.ikoptions = struct();
       obj.ikoptions.Q = diag(cost(1:obj.nq));
 
+      % dofs to constrain to q_nom 
+      if isfield(options,'fixed_dofs')
+        typecheck(options.fixed_dofs,'double');
+        obj.ikoptions.fixed_dofs = options.fixed_dofs;
+      else
+        obj.ikoptions.fixed_dofs = [];
+      end
+      
       obj.robot = r;
       obj.max_nrm_err = 1.5;      
     end
