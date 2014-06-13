@@ -47,7 +47,8 @@ classdef StandingManipController < DRCController
       qp = QPControlBlock(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-			pd = SimplePDBlock(r,ctrl_data);
+      options.use_ik = false;
+      pd = IKPDBlock(r,ctrl_data,options);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;

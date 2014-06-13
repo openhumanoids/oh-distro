@@ -291,7 +291,8 @@ fshift = FootstepPlanShiftBlock(r,ctrl_data);
 if use_simple_pd
   options.Kp = 40.0*ones(nq,1);
   options.Kd = 18.0*ones(nq,1);
-  pd = SimplePDBlock(r,ctrl_data,options);
+  options.use_ik = false;
+  pd = IKPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
   ins(2).system = 1;

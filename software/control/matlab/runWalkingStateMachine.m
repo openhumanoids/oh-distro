@@ -1,5 +1,5 @@
 function runWalkingStateMachine(options,state_channel)
-
+% SIMULATION ONLY
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 options.namesuffix = '';
@@ -27,19 +27,17 @@ if nargin > 1
   r.getStateFrame.setDefaultChannel(state_channel);
 end
 
-harness_controller = HarnessController('harnessed',r,9);
 standing_controller = StandingManipController('standing',r,options);
 walking_controller = WalkingController('walking',r,options);
 bracing_controller = BracingController('bracing',r,options);
 dummy_controller = DummyController('dummy',r,options);
 
-controllers = struct(harness_controller.name,harness_controller,...
-                     standing_controller.name,standing_controller,...
+controllers = struct(standing_controller.name,standing_controller,...
                      walking_controller.name,walking_controller,...     
                      bracing_controller.name,bracing_controller,...
                      dummy_controller.name,dummy_controller);
 
-state_machine = DRCStateMachine(controllers,harness_controller.name);
+state_machine = DRCStateMachine(controllers,standing_controller.name);
 
 state_machine.run(options.backup_mode);
 
