@@ -161,7 +161,7 @@ final_step_idx = min(nsteps, final_steps(end) + ceil(2 * dtheta / (pi/8)));
 final_nsteps = min(max_num_steps, max(min_num_steps, final_step_idx));
 plan = plan.slice(1:final_nsteps);
 
-if 1
+if 0
   figure(2)
   clf
   hold on
