@@ -368,6 +368,12 @@ float_v = 0;
 udes = zeros(nu,1);
 qddes = zeros(nu,1);
 qd_int_state = zeros(nq+4,1);
+
+qd_prev = zeros(nq,1);
+qd_filt = zeros(nq,1);
+eta = 0.1;
+beta = ones(nq,1);
+
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -383,21 +389,19 @@ while tt<T
 
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    %qt = fasteval(qtraj,tt);
-
-    fc = output(fcb,tt,[],[q;qd]);
-%     if fc(1)~=l_foot_contact || fc(2)~=r_foot_contact
-%       % contact changed
-%       l_foot_contact = fc(1);
-%       r_foot_contact = fc(2);
-%       eta = 0;
-%     end
-%     qd_filt = 0.8*qd_filt + 0.2*qd;
-%     qd_control = (1-eta)*qd_filt + eta*qd;
-%     eta = min(1.0, eta+0.005);
     
+    
+%     zero_cross = sign(qd_prev) ~= sign(qd);
+%     qd_prev = qd;
+%     beta(zero_cross) = 0;
+%     qd_filt = 0.1*(1-beta).*qd_filt + beta.*qd;
+%     beta = min(1.0,beta+0.33);
+%     
+%     x_filt = [q;qd_filt];
     x_filt = [q;qd];
-    
+
+    fc = output(fcb,tt,[],x_filt);
+  
     junk = output(fshift,tt,[],x_filt);
 
     if use_simple_pd
@@ -424,6 +428,7 @@ while tt<T
     qddes(joint_act_ind) = qd_ref(joint_act_ind);
 
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
+    %ref_frame.publish(t,[q(act_idx_map);qd_filt(act_idx_map);zeros(28,1)],'EST_ROBOT_STATE_KF');
   end
 end
 
