@@ -34,7 +34,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "aa-sync" {
-        exec = "drc-state-sync -e -o -k EST_ROBOT_STATE";
+        exec = "drc-state-sync -e -k -o EST_ROBOT_STATE";
         host = "robot";
     }
     cmd "fusion" {
@@ -137,11 +137,11 @@ group "b.2.p_and_c" {
 
 group "m.state_est" {
     cmd "state-sync-bdi-separate" {
-        exec = "drc-state-sync -b -e -o -k EST_ROBOT_STATE_BDI -p";
+        exec = "drc-state-sync -b -e -k -o EST_ROBOT_STATE_BDI -p";
         host = "robot";
     }
     cmd "state-sync-bdi-old" {
-        exec = "drc-state-sync -b -e -o -k EST_ROBOT_STATE";
+        exec = "drc-state-sync -b -e -k -o EST_ROBOT_STATE";
         host = "robot";
     }
     cmd "old-viewer" {
