@@ -26,7 +26,7 @@ end
 min_steps = max([params.min_num_steps+2,3]);
 max_steps = params.max_num_steps+2;
 
-num_outer_iterations = 2;
+num_outer_iterations = 1;
 for j = 1:num_outer_iterations
   miqp_plan = footstepMISOCP_conservative(biped, plan, weights, goal_pos, min_steps, max_steps);
 %   miqp_plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);

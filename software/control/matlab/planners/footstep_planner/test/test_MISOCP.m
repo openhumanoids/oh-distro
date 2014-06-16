@@ -69,7 +69,7 @@ weights = struct('relative', [10;10;10;0;0;.5],...
                  'goal', [100;100;0;0;0;1000]);
 
 tic
-nsteps = 20;
+nsteps = 10;
 seed_plan = FootstepPlan.blank_plan(r, nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
 seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);
