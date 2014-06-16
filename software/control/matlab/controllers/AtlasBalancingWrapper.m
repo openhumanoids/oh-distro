@@ -117,13 +117,8 @@ classdef AtlasBalancingWrapper < DrakeSystem
       fc = output(obj.foot_contact_block,t,[],x);
       
       % qtraj eval
-      qtraj = obj.ctrl_data.data.qtraj;
-      if isa(qtraj,'double')
-        q_des=qtraj;
-      else
-        % ppform
-        q_des = ppval(qtraj,min(t,qtraj.breaks(end)));
-      end
+      q_des_and_x = output(obj.qtraj_eval_block,t,[],x);
+      q_des = q_des_and_x(1:obj.nq);
       
       % IK/QP
       u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; x; fc]);
