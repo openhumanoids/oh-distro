@@ -91,6 +91,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       outs(2).output = 2;
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
       
+      options.use_error_integrator = true; % while we're still using positoin control in upper body
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       options.use_lcm = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);

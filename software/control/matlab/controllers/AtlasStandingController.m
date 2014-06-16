@@ -4,6 +4,7 @@ classdef AtlasStandingController < DRCController
     robot;
     foot_idx;
     controller_state_dim;
+    nq;
   end
   
   methods
@@ -23,6 +24,18 @@ classdef AtlasStandingController < DRCController
 
       act_ind = (1:r.getNumInputs)';
       position_controlled_joints = setdiff(act_ind,force_controlled_joints);
+
+      % integral gains for position controlled joints
+      integral_gains = zeros(getNumDOF(r),1);
+      integral_clamps = zeros(getNumDOF(r),1);
+      arm_ind = findJointIndices(r,'arm');
+      back_ind = findJointIndices(r,'back');
+      back_y_ind = findJointIndices(r,'back_bky');
+      integral_gains(arm_ind) = 1.0; % TODO: generalize this
+      integral_gains(back_ind) = 0.2;
+      integral_clamps(arm_ind) = 0.3;
+      integral_clamps(back_ind) = 0.2;
+      integral_clamps(back_y_ind) = 0.1;
       
       ctrl_data = SharedDataHandle(struct(...
         'is_time_varying',false,...
@@ -35,6 +48,9 @@ classdef AtlasStandingController < DRCController
         'qtraj',zeros(getNumDOF(r),1),...
         'force_controlled_joints', force_controlled_joints,...
         'position_controlled_joints', position_controlled_joints,...
+        'integral',zeros(getNumDOF(r),1),...
+        'integral_gains',integral_gains,...
+        'integral_clamps',integral_clamps,...
         'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
  
       sys = AtlasBalancingWrapper(r,ctrl_data,options);
@@ -44,7 +60,8 @@ classdef AtlasStandingController < DRCController
       obj.robot = r;
       obj.controller_data = ctrl_data;
       obj.foot_idx = [r.findLinkInd('r_foot'),r.findLinkInd('l_foot')];
-
+      obj.nq = getNumDOF(r);
+      
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
@@ -94,10 +111,38 @@ classdef AtlasStandingController < DRCController
         % standing and reaching plan
         try
           msg = data.CONFIGURATION_TRAJ;
-          obj.controller_data.setField('qtraj',mxDeserialize(msg.qtraj));
+          qtraj = mxDeserialize(msg.qtraj);
+          if obj.controller_data.data.firstplan
+            obj.controller_data.setField('firstplan',false);
+          else
+            q0=ppval(qtraj,0);
+            qtraj_prev = obj.controller_data.data.qtraj;
+
+            if isa(qtraj_prev,'double')  
+              qprev_end = qtraj_prev;
+            else
+              qprev_end = ppval(qtraj_prev,min(data.t,qtraj_prev.breaks(end)));
+            end
+            
+            % smooth transition from end of previous trajectory by adding
+            % difference to integral terms
+            integ = obj.controller_data.data.integral;
+            pos_ctrl_joints = obj.controller_data.data.position_controlled_joints;
+            integ(pos_ctrl_joints) = integ(pos_ctrl_joints) + qprev_end(pos_ctrl_joints) - q0(pos_ctrl_joints);
+            obj.controller_data.setField('integral',integ);
+          end
+          obj.controller_data.setField('qtraj',qtraj);
         catch err
+          disp(err);
           standAtCurrentState(obj,data.AtlasState);
         end
+      elseif isfield(data,'COMMITTED_PLAN_PAUSE')
+        % set plan to current desired state
+        qtraj = obj.controller_data.data.qtraj;
+        if ~isa(qtraj,'double') 
+           qtraj = ppval(qtraj,min(data.t,qtraj.breaks(end)));
+        end        
+        obj.controller_data.setField('qtraj',qtraj);
       elseif isfield(data,'AtlasState')
         standAtCurrentState(obj,data.AtlasState);
       end
