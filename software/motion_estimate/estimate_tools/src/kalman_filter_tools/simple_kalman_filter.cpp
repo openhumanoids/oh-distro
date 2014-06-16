@@ -8,8 +8,8 @@ using namespace std;
 
 namespace EstimateTools {
 
-SimpleKalmanFilter::SimpleKalmanFilter(double process_noise_ , double observation_noise_ ): 
-     process_noise_(process_noise_), observation_noise_(observation_noise_){
+SimpleKalmanFilter::SimpleKalmanFilter(double process_noise_pos_ ,double process_noise_vel_ , double observation_noise_ ):
+     process_noise_pos_(process_noise_pos_), process_noise_vel_(process_noise_vel_), observation_noise_(observation_noise_){
   init_ = false;
   verbose_ = false;
 
@@ -35,7 +35,7 @@ void SimpleKalmanFilter::processSample(double t,  double x,  double x_dot,
   double dt = t - tlast_;
   
   F << 1 , dt , 0, 1;
-  Q << process_noise_*dt , 0, 0, process_noise_;
+  Q << process_noise_pos_*dt , 0, 0, process_noise_vel_/dt;
   jprior = F*x_est;
   Pprior = F*P*F.transpose() + Q;
   meas_resid = x - Hk.transpose()*jprior;

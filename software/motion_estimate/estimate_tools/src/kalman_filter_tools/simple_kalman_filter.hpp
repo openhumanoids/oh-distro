@@ -11,7 +11,7 @@ namespace EstimateTools {
 
 class SimpleKalmanFilter{
   public:
-    SimpleKalmanFilter(double process_noise_= 0.01, double observation_noise_ = 5E-4);
+    SimpleKalmanFilter(double process_noise_pos_= 0.01, double process_noise_vel_= 0.01, double observation_noise_ = 5E-4);
     
     ~SimpleKalmanFilter(){
     }    
@@ -35,7 +35,7 @@ class SimpleKalmanFilter{
     Eigen::Vector2d K; // 2x1
     Eigen::Vector2d jprior;
     
-    float process_noise_;
+    float process_noise_pos_, process_noise_vel_;
     float observation_noise_;
     
     // last time stamp in seconds
