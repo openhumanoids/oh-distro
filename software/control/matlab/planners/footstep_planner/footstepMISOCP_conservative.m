@@ -20,8 +20,10 @@ trim = binvar(1, nsteps, 'full');
 region = binvar(length(seed_plan.safe_regions), nsteps, 'full');
 
 
-foci = [[.35;-0.26], [-.25;-0.26]];
-ellipse_l = sum(sqrt(sum(diff(foci, [], 2).^2))) * 1.125;
+foci = [[0.05; 0.1], [0.05; -0.6]];
+ellipse_l = 0.45;
+% foci = [[.35;-0.26], [-.25;-0.26]];
+% ellipse_l = sum(sqrt(sum(diff(foci, [], 2).^2))) * 1.125;
 
 seed_steps = seed_plan.step_matrix();
 Constraints = [x(:,1) == seed_steps([1,2,3,6],1),...
@@ -91,10 +93,12 @@ for j = 3:nsteps
   end
   expr = 0;
   for k = 1:size(rel_foci, 2)
-    expr = expr + norm(x(1:2,j-1) + [cos_yaw(j-1), -sin_yaw(j-1); sin_yaw(j-1), cos_yaw(j-1)] * rel_foci(:,k) - x(1:2,j));
+    Constraints = [Constraints, ...
+      norm(x(1:2,j-1) + [cos_yaw(j-1), -sin_yaw(j-1); sin_yaw(j-1), cos_yaw(j-1)] * rel_foci(:,k) - x(1:2,j)) <= ellipse_l];
+%     expr = expr + norm(x(1:2,j-1) + [cos_yaw(j-1), -sin_yaw(j-1); sin_yaw(j-1), cos_yaw(j-1)] * rel_foci(:,k) - x(1:2,j));
   end
   Constraints = [Constraints,...
-                 expr <= ellipse_l, ...
+%                  expr <= ellipse_l, ...
                  trim(j) >= trim(j-1)];
   
 end
@@ -125,6 +129,9 @@ else
 end
 Objective = (x(:,nsteps) - goal)' * w_goal * (x(:,nsteps) - goal);
 for j = 2:nsteps
+  if j == nsteps
+    w_rel = diag(weights.relative_final([1,2,3,6]));
+  end
   Objective = Objective + (x(:,j) - x(:,j-1))' * w_rel * (x(:,j) - x(:,j-1)) + -1 * w_trim * trim(j);
 end
   
@@ -161,28 +168,28 @@ final_step_idx = min(nsteps, final_steps(end) + ceil(2 * dtheta / (pi/8)));
 final_nsteps = min(max_num_steps, max(min_num_steps, final_step_idx));
 plan = plan.slice(1:final_nsteps);
 
-if 0
-  figure(2)
-  clf
-  hold on
-  for j = 1:nsteps
-    if seed_plan.footsteps(j).body_idx ~= biped.foot_bodies_idx.left
-      rel_foci = [foci(1,:); -foci(2,:)];
-    else
-      rel_foci = foci;
-    end
-    R = [cos_yaw(j), -sin_yaw(j); sin_yaw(j), cos_yaw(j)];
-    step_foci = bsxfun(@plus, R * rel_foci, steps(1:2,j));
-    [X, Y] = meshgrid(linspace(min(step_foci(1,:) - 0.5), max(step_foci(1,:) + 0.5)),...
-                      linspace(min(step_foci(2,:) - 0.5), max(step_foci(2,:) + 0.5)));
-    Z = zeros(1, size(X,1) * size(X,2));
-    for k = 1:size(step_foci, 2)
-      Z = Z + sqrt(sum(bsxfun(@minus, [reshape(X, 1, []); reshape(Y, 1, [])], step_foci(:,k)).^2, 1));
-    end
-    Z = reshape(Z, size(X));
-    contour(X,Y,Z,[ellipse_l, ellipse_l]);
-    plot(step_foci(1,[1:end, 1]), step_foci(2,[1:end, 1]), 'b.-')
-  end
+% if 0
+%   figure(2)
+%   clf
+%   hold on
+%   for j = 1:nsteps
+%     if seed_plan.footsteps(j).body_idx ~= biped.foot_bodies_idx.left
+%       rel_foci = [foci(1,:); -foci(2,:)];
+%     else
+%       rel_foci = foci;
+%     end
+%     R = [cos_yaw(j), -sin_yaw(j); sin_yaw(j), cos_yaw(j)];
+%     step_foci = bsxfun(@plus, R * rel_foci, steps(1:2,j));
+%     [X, Y] = meshgrid(linspace(min(step_foci(1,:) - 0.5), max(step_foci(1,:) + 0.5)),...
+%                       linspace(min(step_foci(2,:) - 0.5), max(step_foci(2,:) + 0.5)));
+%     Z = zeros(1, size(X,1) * size(X,2));
+%     for k = 1:size(step_foci, 2)
+%       Z = Z + sqrt(sum(bsxfun(@minus, [reshape(X, 1, []); reshape(Y, 1, [])], step_foci(:,k)).^2, 1));
+%     end
+%     Z = reshape(Z, size(X));
+%     contour(X,Y,Z,[ellipse_l, ellipse_l]);
+%     plot(step_foci(1,[1:end, 1]), step_foci(2,[1:end, 1]), 'b.-')
+%   end
 
   plot(steps(1,:), steps(2,:), 'k:')
 
