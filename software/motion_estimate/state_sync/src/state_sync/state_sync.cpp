@@ -155,18 +155,19 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   
   if (use_kalman_filtering_){
 
-    double process_noise = bot_param_get_double_or_fail(botparam_, "control.filtering.process_noise" );
+    double process_noise_pos = bot_param_get_double_or_fail(botparam_, "control.filtering.process_noise_pos" );
+    double process_noise_vel = bot_param_get_double_or_fail(botparam_, "control.filtering.process_noise_vel" );
     double observation_noise = bot_param_get_double_or_fail(botparam_, "control.filtering.observation_noise" );
     
     int n_filters = bot_param_get_array_len (botparam_, "control.filtering.index");  
     int filter_idx[n_filters];
     bot_param_get_int_array_or_fail(botparam_, "control.filtering.index", &filter_idx[0], n_filters);  
     for (size_t i=0;i < n_filters; i++){
-      EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (process_noise, observation_noise); // uses Eigen2d
+      EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (process_noise_pos, process_noise_vel, observation_noise); // uses Eigen2d
       filter_idx_.push_back(filter_idx[i]);
       joint_kf_.push_back(a_kf) ;
     }
-    std::cout << "Created " << joint_kf_.size() << " Kalman Filters with noise "<< process_noise << ", " << observation_noise << "\n";
+    std::cout << "Created " << joint_kf_.size() << " Kalman Filters with noise "<< process_noise_pos << ", " << process_noise_vel << " | " << observation_noise << "\n";
   }
 }
 
