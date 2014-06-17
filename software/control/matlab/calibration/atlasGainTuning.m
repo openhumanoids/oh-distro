@@ -24,18 +24,18 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_kny';% <---- joint name 
+joint = 'r_arm_usy';% <---- joint name 
 input_mode = 'position';% <---- force, position
-control_mode = 'force+velocity';% <---- force, force+velocity, position
+control_mode = 'position';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
 T = 20;% <--- signal duration (sec)
 
 % chirp specific
-amp = 0.35;% <----  Nm or radians
+amp = 0.5;% <----  Nm or radians
 chirp_f0 = 0.1;% <--- chirp starting frequency
-chirp_fT = 1;% <--- chirp ending frequency
+chirp_fT = 0.4;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
@@ -118,7 +118,7 @@ ref_frame.updateGains(gains);
 [qdes,motion_sign] = getAtlasJointMotionConfig(r,joint,1);
 
 % move to desired pos
-atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
+atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,1);
 
 gains2 = getAtlasGains();
 if any(strcmp(control_mode,{'force','force+velocity'}))
