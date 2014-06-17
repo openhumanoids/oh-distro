@@ -1,7 +1,7 @@
 function plan = searchNumSteps(biped, feet_centers, goal_pos, params, safe_regions)
 % profile on
 
-DEBUG = true;
+DEBUG = false;
 
 tic
 feet_centers.right(4:5) = 0;
@@ -26,10 +26,10 @@ end
 min_steps = max([params.min_num_steps+2,3]);
 max_steps = params.max_num_steps+2;
 
-num_outer_iterations = 1;
+num_outer_iterations = 2;
 for j = 1:num_outer_iterations
-  miqp_plan = footstepMISOCP_conservative(biped, plan, weights, goal_pos, min_steps, max_steps);
-%   miqp_plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
+%   miqp_plan = footstepMISOCP(biped, plan, weights, goal_pos, min_steps, max_steps);
+  miqp_plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
   if length(miqp_plan.footsteps) <= 2
     % No feasible solution was found
     plan = miqp_plan;
