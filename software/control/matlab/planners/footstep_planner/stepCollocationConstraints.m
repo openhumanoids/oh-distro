@@ -6,10 +6,6 @@ function [c, ceq, dc, dceq] = stepCollocationConstraints(x)
   ceq = zeros(2, nsteps);
   dceq = zeros(nv, nceq);
 
-%   ceq([1:2,6],1) = steps([1:2,6],1) - rel_steps([1:2,6],1);
-%   dceq([1:2,6],[1:3]) = diag(ones(3,1));
-%   dceq([7,8,12],[1:3]) = diag(-ones(3,1));
-
   for j = 2:nsteps
     con_ndx = (j-1)*2+1:j*2;
     R = rotmat(steps(6,j-1));

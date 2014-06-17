@@ -35,9 +35,9 @@ else()
   add_mex(HeightMapWrapper HeightMapWrapper.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
   pods_use_pkg_config_packages(HeightMapWrapper maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
 
-  add_mex(stepCollocationConstraintsMex stepCollocationConstraintsMex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
+  add_mex(stepCollocationConstraintsMex stepCollocationConstraintsMex.cpp)
   set_target_properties(stepCollocationConstraintsMex PROPERTIES COMPILE_FLAGS "-std=c++0x -DUSE_MAPS")
-  pods_use_pkg_config_packages(stepCollocationConstraintsMex maps eigen3 opencv)
+  pods_use_pkg_config_packages(stepCollocationConstraintsMex eigen3 opencv)
 
   add_mex(BotParamClient BotParamClient.cpp)
   pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)

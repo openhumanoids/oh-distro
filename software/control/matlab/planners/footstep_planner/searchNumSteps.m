@@ -28,7 +28,9 @@ max_steps = params.max_num_steps+2;
 
 num_outer_iterations = 2;
 for j = 1:num_outer_iterations
+%   miqp_plan = footstepMISOCP(biped, plan, weights, goal_pos, min_steps, max_steps);
   miqp_plan = footstepMIQP(biped, plan, weights, goal_pos, min_steps, max_steps);
+%   miqp_plan = footstepMIQPWRotation(biped, plan, weights, goal_pos, min_steps, max_steps);
   if length(miqp_plan.footsteps) <= 2
     % No feasible solution was found
     plan = miqp_plan;
@@ -39,6 +41,7 @@ for j = 1:num_outer_iterations
     clf
     plot_plan(miqp_plan);
   end
+  
   plan = footstepCollocation(biped, miqp_plan, weights, goal_pos);
   if DEBUG
     figure(1)

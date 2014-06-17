@@ -1,4 +1,5 @@
-function test_MIQP()
+function test_MISOCP()
+%NOTEST
 
 options.floating = true;
 options.dt = 0.001;
@@ -27,8 +28,13 @@ n_regions = 10;
 lb = [0;-.2;-0.05];
 ub = [2;2.2;0.05];
 stone_scale = 0.3;
-if 0
-  for j = 1:n_regions
+if 1
+  stone = [0;-0.15;0];
+  [Ai, bi] = poly2lincon(stone(1) + stone_scale*[-1, -1, 1, 1],...
+                         stone(2) + stone_scale*[-1, 1, 1, -1]);
+  Ai = [Ai, zeros(size(Ai, 1), 1)];
+  safe_regions(end+1) = struct('A', Ai, 'b', bi, 'point', [0;0;stone(3)], 'normal', [0;0;1]);
+  for j = 2:n_regions
     stone = rand(3,1) .* (ub - lb) + lb;
     [Ai, bi] = poly2lincon(stone(1) + stone_scale*[-1, -1, 1, 1],...
                            stone(2) + stone_scale*[-1, 1, 1, -1]);
@@ -44,8 +50,8 @@ else
   safe_regions(1) = struct('A', Ai, 'b', bi, 'point', [0;0;0], 'normal', [0;0;1]);
 end
 
-goal_pos = struct('right', [1;-0.15;0.1;0;0;0],...
-                  'left',  [1;+0.15;0.1;0;0;0]);
+goal_pos = struct('right', [1;1-0.15;0.1;0;0;pi/2],...
+                  'left',  [1;1+0.15;0.1;0;0;pi/2]);
 
 
 request.params = drc.footstep_plan_params_t();
@@ -54,7 +60,7 @@ request.params.min_num_steps = 0;
 request.params.min_step_width = 0.25;
 request.params.nom_step_width = 0.26;
 request.params.max_step_width = 0.27;
-request.params.nom_forward_step = 0.15;
+request.params.nom_forward_step = 0.25;
 request.params.max_forward_step = 0.4;
 request.params.nom_upward_step = 0.25;
 request.params.nom_downward_step = 0.15;
@@ -68,26 +74,19 @@ weights = struct('relative', [10;10;10;0;0;.5],...
                  'relative_final', [100;100;100;0;0;100],...
                  'goal', [100;100;0;0;0;1000]);
 
-% seed_plan = FootstepPlan.blank_plan(r, 4, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
-% seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
-% seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);
-% tic
-% % profile on
-% plan = footstepMIQP(r, seed_plan, weights, goal_pos, 3, 30);
-% for k = [8,16,30]
-%   plan = plan.extend(k);
-%   plan = footstepMIQP(r, plan, weights, goal_pos, 3, 30);
-% end
-% % profile viewer
-% toc
-
 tic
-nsteps = 10;
+nsteps = 12;
 seed_plan = FootstepPlan.blank_plan(r, nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
 seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);
-plan = footstepMIQP(r, seed_plan, weights, goal_pos, 3, 30);
+plan = footstepMISOCP(r, seed_plan, weights, goal_pos, 3, 30);
 toc
+
+steps = plan.step_matrix();
+step_vect = encodeCollocationSteps(steps(:,2:end));
+[steps, steps_rel] = decodeCollocationSteps(step_vect);
+steps
+steps_rel
 
 figure(1);
 try
