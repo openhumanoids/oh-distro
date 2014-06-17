@@ -41,8 +41,6 @@ for j = 1:num_outer_iterations
     clf
     plot_plan(miqp_plan);
   end
-  plan = miqp_plan;
-  break
   
   plan = footstepCollocation(biped, miqp_plan, weights, goal_pos);
   if DEBUG
