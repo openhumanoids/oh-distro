@@ -90,6 +90,11 @@ plan = footstepMIQP(r, seed_plan, weights, goal_pos, 3, 30);
 toc
 
 figure(1);
+try
+  iris.callback_silent();
+catch
+  addpath_iris;
+end
 clf
 nsteps = length(plan.footsteps);
 r_ndx = 2:2:nsteps;

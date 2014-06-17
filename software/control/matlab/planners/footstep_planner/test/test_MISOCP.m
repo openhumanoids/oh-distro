@@ -1,4 +1,5 @@
-function test_MIQP()
+function test_MISOCP()
+
 
 options.floating = true;
 options.dt = 0.001;
@@ -49,8 +50,8 @@ else
   safe_regions(1) = struct('A', Ai, 'b', bi, 'point', [0;0;0], 'normal', [0;0;1]);
 end
 
-goal_pos = struct('right', [1;1-0.15;0.1;0;0;0],...
-                  'left',  [1;1+0.15;0.1;0;0;0]);
+goal_pos = struct('right', [1;1-0.15;0.1;0;0;pi/2],...
+                  'left',  [1;1+0.15;0.1;0;0;pi/2]);
 
 
 request.params = drc.footstep_plan_params_t();
@@ -74,7 +75,7 @@ weights = struct('relative', [10;10;10;0;0;.5],...
                  'goal', [100;100;0;0;0;1000]);
 
 tic
-nsteps = 15;
+nsteps = 12;
 seed_plan = FootstepPlan.blank_plan(r, nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
 seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
 seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);
@@ -88,6 +89,11 @@ steps
 steps_rel
 
 figure(1);
+try
+  iris.callback_silent();
+catch
+  addpath_iris;
+end
 clf
 nsteps = length(plan.footsteps);
 r_ndx = 2:2:nsteps;
