@@ -1,5 +1,5 @@
 function test_MISOCP()
-
+%NOTEST
 
 options.floating = true;
 options.dt = 0.001;
