@@ -72,6 +72,11 @@ classdef TorsoMotionControlBlock < DrakeSystem
       lfoot = forwardKin(obj.robot,kinsol,obj.lfoot_ind,[0;0;0],1);
       rfoot = forwardKin(obj.robot,kinsol,obj.rfoot_ind,[0;0;0],1);
       
+     % if obj.body_ind==2
+     %   body_des = [nan;nan;0.86;0;0;nan];
+     % else
+     %   body_des = [nan;nan;nan;0;0;nan];
+     % end
       body_des = [nan;nan;nan;0;0;mean([lfoot(6) rfoot(6)])]; 
       err = [body_des(1:3)-p(1:3);angleDiff(p(4:end),body_des(4:end))];
 

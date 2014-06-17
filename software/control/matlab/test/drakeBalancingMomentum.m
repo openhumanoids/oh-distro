@@ -38,8 +38,7 @@ com = getCOM(r,kinsol);
 % build TI-ZMP controller 
 footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
 foot_pos = terrainContactPositions(r,kinsol,footidx); 
-ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 limp = LinearInvertedPendulum(com(3));
 K = lqr(limp,comgoal);
 
@@ -57,31 +56,39 @@ ctrl_data = SharedDataHandle(struct(...
   'mu',1,...
   'constrained_dofs',[]));
 
-% instantiate QP controller
+% feedback QP controller with atlas
 options.slack_limit = 10;
-options.contact_threshold = 0.002;
 qp = MomentumControlBlock(r,{},ctrl_data,options);
 
-% feedback QP controller with atlas
 ins(1).system = 1;
 ins(1).input = 2;
+ins(2).system = 1;
+ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
-clear ins outs;
+clear ins;
+
+% feedback foot contact detector with QP/atlas
+options.use_lcm=false;
+options.contact_threshold = 0.002;
+fc = FootContactBlock(r,ctrl_data,options);
+
+ins(1).system = 2;
+ins(1).input = 1;
+sys = mimoFeedback(fc,sys,[],[],ins,outs);
+clear ins;
 
 % feedback PD trajectory controller 
-pd = SimplePDBlock(r);
+options.use_ik = false;
+pd = IKPDBlock(r,ctrl_data,options);
+
 ins(1).system = 1;
 ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
 qt = QTrajEvalBlock(r,ctrl_data);
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(qt,sys,[],[],[],outs);
 
 if visualize
@@ -93,7 +100,7 @@ if visualize
   sys = mimoCascade(sys,v,[],[],output_select);
   warning(S);
 end
-x0(3) = 1.0; % drop it a bit
+x0(3) = 0.9; % drop it a bit
 
 traj = simulate(sys,[0 3],x0);
 if visualize

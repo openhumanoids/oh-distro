@@ -2,14 +2,17 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
   % integrates desired generalized accelerations and outputs a desired velocity
   %
   % input: x, qdd, foot_contact
-  % state: [fc_left; fc_right; t_prev; lambda; qd_int]
+  % state: [fc_left; fc_right; t_prev; eta; qd_int]
   % output: qd_err (input frame)
   properties
 		nq;
 		r_ankle_idx;
 		l_ankle_idx;
 		leg_idx;
+		r_leg_idx;
+		l_leg_idx;
 		act_idx_map;
+		zero_ankles_on_contact;
   end
   
   methods
@@ -28,7 +31,15 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
       if nargin<2
         options = struct();
       end
-                  
+      
+      if isfield(options,'zero_ankles_on_contact')
+        typecheck(options.zero_ankles_on_contact,'logical');
+        sizecheck(options.zero_ankles_on_contact,[1 1]);
+        obj.zero_ankles_on_contact = options.zero_ankles_on_contact;
+      else
+        obj.zero_ankles_on_contact = true;
+      end
+      
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
@@ -41,6 +52,8 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			obj.r_ankle_idx = findJointIndices(r,'r_leg_ak');
 			obj.l_ankle_idx = findJointIndices(r,'l_leg_ak');
 			obj.leg_idx = findJointIndices(r,'leg');
+			obj.r_leg_idx = findJointIndices(r,'r_leg');
+			obj.l_leg_idx = findJointIndices(r,'l_leg');
 			obj.act_idx_map = getActuatedJoints(r);
 		end
    
@@ -58,10 +71,10 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			qd_err = qd_int-qd;
 
 			% do not velocity control ankles when in contact
-      if l_foot_contact>0.5
+      if obj.zero_ankles_on_contact && l_foot_contact>0.5
         qd_err(obj.l_ankle_idx)=0;
       end
-      if r_foot_contact>0.5
+      if obj.zero_ankles_on_contact && r_foot_contact>0.5
         qd_err(obj.r_ankle_idx)=0;
       end
 			
@@ -85,10 +98,10 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			
 			qd_int = ((1-eta)*qd_int + eta*qd) + qdd*dt; 
 			
-      if l_foot_contact>0.5
+      if obj.zero_ankles_on_contact && l_foot_contact>0.5
         qd_int(obj.l_ankle_idx)=0;
       end
-      if r_foot_contact>0.5
+      if obj.zero_ankles_on_contact && r_foot_contact>0.5
         qd_int(obj.r_ankle_idx)=0;
       end
 
@@ -98,11 +111,14 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			next_state(3) = t;
 
       eta = max(0.0,eta-dt); % linear ramp
-%       if state(1)~=l_foot_contact || state(2)~=r_foot_contact
-%         % contact state changed, reset integrated velocities
-%         qd_int(obj.leg_idx) = qd(obj.leg_idx);
-% %         eta = 0.3; % decay integrated velocity to actual
-%       end
+      if state(1)~=l_foot_contact
+        % contact state changed, reset integrated velocities
+        qd_int(obj.l_leg_idx) = qd(obj.l_leg_idx);
+      end
+      if state(2)~=r_foot_contact
+        % contact state changed, reset integrated velocities
+        qd_int(obj.r_leg_idx) = qd(obj.r_leg_idx);
+      end
       next_state(4) = eta;
 			next_state(5:end) = qd_int;
 		end

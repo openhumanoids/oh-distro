@@ -47,7 +47,8 @@ classdef StandingManipController < DRCController
       qp = QPControlBlock(r,ctrl_data,options);
 
       % cascade PD qtraj controller 
-			pd = SimplePDBlock(r,ctrl_data);
+      options.use_ik = false;
+      pd = IKPDBlock(r,ctrl_data,options);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -105,8 +106,7 @@ classdef StandingManipController < DRCController
 
       % build TI-ZMP controller
       foot_pos = terrainContactPositions(obj.robot,kinsol,[lfoot,rfoot]); 
-      ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-      comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+      comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
       limp = LinearInvertedPendulum(com(3));
       [~,V] = lqr(limp,comgoal);
 
@@ -162,8 +162,7 @@ classdef StandingManipController < DRCController
 %         com = getCOM(r,kinsol);
 
         foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx([rfoot_contact_state lfoot_contact_state]));
-        ch = convhull(foot_pos(1:2,:)');
-        comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+        comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';  
 %         foot_pos = contactPositions(r,kinsol,obj.foot_idx);
 %         zfeet = mean(foot_pos(3,:));
 %         robot_z = com(3)-zfeet;
@@ -194,8 +193,7 @@ classdef StandingManipController < DRCController
           kinsol = doKinematics(r,q0);
 
           foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
-          ch = convhull(foot_pos(1:2,:)');
-          comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+          comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
           obj.controller_data.setField('qtraj',q0);
           obj.controller_data.setField('x0',[comgoal;0;0]);
           obj.controller_data.setField('y0',comgoal);
@@ -213,8 +211,7 @@ classdef StandingManipController < DRCController
 %         com = getCOM(r,kinsol);
 
         foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
-        ch = convhull(foot_pos(1:2,:)');
-        comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+        comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';  
 %         foot_pos = contactPositions(r,kinsol,obj.foot_idx);
 %         zfeet = mean(foot_pos(3,:));
 %         robot_z = com(3)-zfeet;

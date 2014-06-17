@@ -46,8 +46,7 @@ com = getCOM(r,kinsol);
 % build TI-ZMP controller 
 footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
 foot_pos = terrainContactPositions(r,kinsol,footidx); 
-ch = convhull(foot_pos(1:2,:)'); % assumes foot-only contact model
-comgoal = mean(foot_pos(1:2,ch(1:end-1)),2);
+comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 limp = LinearInvertedPendulum(com(3));
 [~,V] = lqr(limp,comgoal);
 
@@ -214,7 +213,8 @@ sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
 clear ins outs;
 
 % feedback PD trajectory controller 
-pd = SimplePDBlock(rctrl,ctrl_data);
+options.use_ik = false;
+pd = IKPDBlock(rctrl,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
 outs(1).system = 2;

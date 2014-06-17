@@ -8,6 +8,8 @@ pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
 install(TARGETS RobotStateMonitor AtlasCommandPublisher DESTINATION matlab)
 
+add_mex(mxSerialize mxSerialize.c)
+add_mex(mxDeserialize mxDeserialize.c)
 
 pods_find_pkg_config(maps)
 pods_find_pkg_config(opencv)
@@ -19,6 +21,10 @@ if (NOT maps_FOUND OR NOT opencv_FOUND)
   add_mex(MomentumControllermex MomentumControllermex.cpp)
   pods_use_pkg_config_packages(MomentumControllermex eigen3 gurobi drake-qp drake-rbm)
   install(TARGETS MomentumControllermex DESTINATION matlab)
+
+  add_mex(ContactDetectmex ContactDetectmex.cpp)
+  pods_use_pkg_config_packages(ContactDetectmex eigen3 drake-rbm)
+  install(TARGETS ContactDetectmex DESTINATION matlab)
 
   add_mex(linearIKmex linearIKmex.cpp)
   pods_use_pkg_config_packages(linearIKmex eigen3 gurobi drake-qp drake-rbm)
@@ -44,6 +50,10 @@ else()
   pods_use_pkg_config_packages(MomentumControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(MomentumControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
 
+  add_mex(ContactDetectmex ContactDetectmex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
+  pods_use_pkg_config_packages(ContactDetectmex maps eigen3 lcm opencv drake-rbm)
+  set_target_properties(ContactDetectmex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
+
   add_mex(linearIKmex linearIKmex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
   pods_use_pkg_config_packages(linearIKmex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(linearIKmex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
@@ -57,7 +67,7 @@ else()
   add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
   pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-  install(TARGETS HeightMapWrapper stepCollocationConstraintsMex QPControllermex MomentumControllermex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id DESTINATION matlab)
+  install(TARGETS HeightMapWrapper stepCollocationConstraintsMex QPControllermex MomentumControllermex ContactDetectmex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
 
 endif()
 

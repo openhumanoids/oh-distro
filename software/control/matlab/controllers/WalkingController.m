@@ -55,7 +55,7 @@ classdef WalkingController < DRCController
 
       if options.use_walking_pd
         % cascade walking PD controller
-        pd = WalkingPDBlock(r,ctrl_data);
+        pd = IKPDBlock(r,ctrl_data);
         ins(1).system = 1;
         ins(1).input = 1;
         ins(2).system = 1;
@@ -68,7 +68,8 @@ classdef WalkingController < DRCController
       else
         if ~isfield(options,'soft_ankles') options.soft_ankles = false; end
         % cascade simple PD controller
-        pd = SimplePDBlock(r,ctrl_data,options);
+        options.use_ik = false;
+        pd = IKPDBlock(r,ctrl_data,options);
         ins(1).system = 1;
         ins(1).input = 1;
         ins(2).system = 1;

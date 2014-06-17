@@ -50,7 +50,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.003;
+        obj.dt = 0.001;
       end
       obj = setSampleTime(obj,[obj.dt;0]);
       
@@ -63,6 +63,9 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       qtraj = obj.controller_data.data.qtraj;
       if isa(qtraj,'double')
         qdes=qtraj;
+      elseif isa(qtraj,'struct')
+        % ppform
+        qdes = ppval(qtraj,min(t,qtraj.breaks(end)));
       else
         % pp trajectory
         qdes = fasteval(qtraj,t);

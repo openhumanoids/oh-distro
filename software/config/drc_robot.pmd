@@ -85,10 +85,6 @@ group "a.1.core" {
         exec = "se-fusion";
         host = "robot";
     }
-    cmd "gpf-laser" {
-        exec = "gpf-laser";
-        host = "robot";
-    }
     cmd "create-octomap" {
         exec = "se-create-octomap";
         host = "robot";
@@ -98,7 +94,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
         host = "robot";
     }
     cmd "aff_server" {
@@ -148,18 +144,13 @@ group "a.2.p_and_c" {
         exec = "drc-bdi-step-translator";
         host = "robot";
     }
-    cmd "AtlasManipController" {
+    cmd "Controller" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; runAtlasStateMachine;\"";
         host = "robot";
         stop_signal = 15;
     }
     cmd "EncoderCalibration" {
         exec = "matlab -nosplash -nodesktop -r \"addpath_control; calibrateAtlasArmEncoders(true);\"";
-        host = "robot";
-        stop_signal = 15;
-    }
-    cmd "NeckPitchControl" {
-        exec = "drc-neck-control";
         host = "robot";
         stop_signal = 15;
     }
@@ -190,7 +181,7 @@ group "a.3.models" {
 
 group "b.1.core" {
     cmd "base_viewer" {
-        exec = "drc-viewer -c drc_robot_02.cfg"; 
+        exec = "drc-viewer -c drc_robot_02_control.cfg"; 
         host = "base";
     }
     cmd "aff_server" {
@@ -206,7 +197,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "param_server" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
         host = "base";
     }
     cmd "image-rx" {

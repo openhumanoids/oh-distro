@@ -93,29 +93,6 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-
-% compute angular momentum trajectory from kinematic plan
-% this would be replaced by dynamic plan
-% qtraj = PPTrajectory(spline(ts,walking_plan.xtraj(1:nq,:)));
-% qdtraj = fnder(qtraj,1);
-% k = zeros(3,length(ts));
-% comz = zeros(1,length(ts));
-% for i=1:length(ts)
-%   t=ts(i);
-%   q=qtraj.eval(t);
-%   qd=qdtraj.eval(t);
-%   kinsol = doKinematics(r,q,false,true);
-%   A = getCMM(r,kinsol);
-%   k(:,i) = A(1:3,:)*qd;
-%   com = getCOM(r,kinsol);
-%   comz(i) = com(3);
-% end
-% ktraj = PPTrajectory(spline(ts,k));
-%comztraj = PPTrajectory(spline(ts,comz));
-%dcomztraj = fnder(comztraj,1);
-
-ankle_ind = findJointIndices(r,'ak');
-
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
   'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
@@ -137,25 +114,35 @@ options.slack_limit = 100;
 % options.w_qdd(findJointIndices(r,'leg'))=0;
 options.debug = false;
 options.contact_threshold = 0.001;
-
+options.solver = 0;
 
 if (use_ik)
 	qp = MomentumControlBlock(r,{},ctrl_data,options);
 
 	% feedback QP controller with atlas
-	ins(1).system = 1;
-	ins(1).input = 2;
-	outs(1).system = 2;
-	outs(1).output = 1;
+  ins(1).system = 1;
+  ins(1).input = 2;
+  ins(2).system = 1;
+  ins(2).input = 3;
+  outs(1).system = 2;
+  outs(1).output = 1;
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
 	clear ins outs;
 
+  % feedback foot contact detector with QP/atlas
+  options.use_lcm=false;
+  fc = FootContactBlock(r,ctrl_data,options);
+  ins(1).system = 2;
+  ins(1).input = 1;
+  sys = mimoFeedback(fc,sys,[],[],ins,outs);
+  clear ins outs;  
+  
 	% feedback PD block
 % 	options.Kp = 270.0*ones(nq,1);
 % 	options.Kd = 30.0*ones(nq,1);
 % 	options.Kp(ankle_ind) = 80;
 % 	options.Kd(ankle_ind) = 10;
-	pd = WalkingPDBlock(r,ctrl_data,options);
+	pd = IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;
 	outs(1).system = 2;
@@ -169,7 +156,9 @@ else
 	pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data);
 	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
-		pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+	pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+
+%   options.body_accel_input_weights = [10 10 -1 -1];
 	qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
 
 	% feedback QP controller with atlas
@@ -183,13 +172,34 @@ else
 	ins(4).input = 5;
 	ins(5).system = 1;
 	ins(5).input = 6;
+	ins(6).system = 1;
+	ins(6).input = 7;
 	outs(1).system = 2;
 	outs(1).output = 1;
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
 	clear ins outs;
-
+  
+  % feedback foot contact detector with QP/atlas
+  options.use_lcm=false;
+  fc = FootContactBlock(r,ctrl_data,options);
+  ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	ins(4).system = 2;
+	ins(4).input = 5;
+	ins(5).system = 2;
+	ins(5).input = 6;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(fc,sys,[],[],ins,outs);
+  clear ins outs;  
+  
 	% feedback PD block
-	pd = SimplePDBlock(r);
+  options.use_ik = false;
+	pd = IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;
 	ins(2).system = 2;

@@ -10,14 +10,15 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.visual = false; % loads faster
 options.floating = true;
-% options.floating = false;
+options.ignore_friction = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 
 options.controller_type = controller_type;
 init_controller = SilentInitController('init',r);
 manip_controller = AtlasManipController('manip',r,options);
+standing_controller = AtlasStandingController('stand',r,options);
 state_machine = DRCStateMachine(struct(manip_controller.name,manip_controller,...
-  init_controller.name,init_controller),init_controller.name);
+  init_controller.name,init_controller,standing_controller.name,standing_controller),init_controller.name);
 
 state_machine.run();
 

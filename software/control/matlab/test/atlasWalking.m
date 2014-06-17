@@ -42,12 +42,12 @@ qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 gains_copy = getAtlasGains();
-% reset force gains for joint being tuned
+% reset force gains 
 gains.k_f_p(joint_act_ind) = gains_copy.k_f_p(joint_act_ind);
 gains.ff_f_d(joint_act_ind) = gains_copy.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains_copy.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains_copy.ff_qd_d(joint_act_ind);
-% set joint position gains to 0 for joint being tuned
+% set joint position gains to 0 
 gains.k_q_p(joint_act_ind) = 0;
 gains.k_q_i(joint_act_ind) = 0;
 gains.k_qd_p(joint_act_ind) = 0;
@@ -61,7 +61,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[0;0;0];
+v = R*[1;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -78,20 +78,21 @@ request.params.min_num_steps = 1;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.28;
 request.params.max_step_width = 0.32;
-request.params.nom_forward_step = 0.25;
+request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.30;
 request.params.nom_upward_step = 0.2;
 request.params.nom_downward_step = 0.2;
-request.params.ignore_terrain = false;
+request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
 request.default_step_params.step_speed = 0.1;
-request.default_step_params.step_height = 0.05;
+request.default_step_params.step_height = 0.06;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
+request.default_step_params.drake_min_hold_time = 2; %sec
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
 
@@ -102,6 +103,9 @@ request.footstep_plan = footstep_plan.toLCM();
 request.use_new_nominal_state = true;
 request.new_nominal_state = r.getStateFrame().lcmcoder.encode(0, x0);
 walking_plan = walking_planner.plan_walking(r, request, true);
+lc = lcm.lcm.LCM.getSingleton();
+lc.publish('FOOTSTEP_PLAN_RESPONSE', footstep_plan.toLCM());
+% lc.publish('WALKING_TRAJ_RESPONSE', walking_plan.toLCM());
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
 % No-op: just make sure we can cleanly encode and decode the plan as LCM
@@ -121,7 +125,14 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-%qtraj = PPTrajectory(foh(ts,walking_plan.xtraj(1:nq,:)));
+%qs = walking_plan.xtraj(1:nq,:);
+%qdot = 0*qs;
+%for i=2:length(ts)-1
+%  qdot(i) = (qdot(i+1)-qdot(i-1))/2;
+%end
+%
+%qtraj = PPTrajectory(pchipDeriv(ts,qs,qdot));
+%qdtraj = fnder(qtraj,1);
 
 ctrl_data = SharedDataHandle(struct(...
   'is_time_varying',true,...
@@ -133,6 +144,7 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'qtraj',q0,...
   'comtraj',walking_ctrl_data.comtraj,...
+  'zmptraj',walking_ctrl_data.zmptraj,...
   'K',walking_ctrl_data.K,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
 
@@ -142,32 +154,56 @@ ctrl_data = SharedDataHandle(struct(...
 % playback(v,traj,struct('slider',true));
 
 
-use_simple_pd = true;
+use_simple_pd = false;
+constrain_torso = false;
 
 if use_simple_pd
-  options.Kp = 5*ones(6,1);
-  options.Kd = 0*ones(6,1);
+  
+  options.Kp = 30*ones(6,1);
+  options.Kd = 8*ones(6,1);
   lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
   rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
+  
+  options.Kp = 30*[0; 0; 1; 1; 1; 0];
+  options.Kd = 8*[0; 0; 1; 1; 1; 0];
+  pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data,options);
+  
+  options.Kp = 40*[0; 0; 0; 1; 1; 1];
+  options.Kd = 3*[0; 0; 0; 1; 1; 1];
+  torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
+	
+  options.w_qdd = 0.0001*ones(nq,1);
+  options.W_hdot = diag([1;1;1;10000;10000;10000]);
+  options.w_grf = 0.01;
+  options.Kp = 0; % com-z pd gains
+  options.Kd = 0; % com-z pd gains
+  options.body_accel_input_weights = [1 1 1 0];
+else
+  options.w_qdd = 10*ones(nq,1);
+  options.W_hdot = diag([10;10;10;10;10;10]);
+  options.w_grf = 0.0075;
+  options.Kp = 0; % com-z pd gains
+  options.Kd = 0; % com-z pd gains
 end
 
 % instantiate QP controller
-options.slack_limit = 100;
-options.w_qdd = 0.0001*ones(nq,1);
-options.W_hdot = diag([1;1;1;100;100;100]);
-options.w_grf = 0.01;
+options.slack_limit = 50;
 options.w_slack = 0.005;
-options.Kp = 0; % com-z pd gains
-options.Kd = 0; % com-z pd gains
 options.input_foot_contacts = true;
-options.debug = true;
+options.debug = false;
 options.use_mex = true;
-options.contact_threshold = 0.0075;
+options.contact_threshold = 0.015;
 options.output_qdd = true;
-options.solver = 1;
+options.solver = 0;
+options.smooth_contacts = false;
 
 if use_simple_pd
-  motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
+  if constrain_torso
+    motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+  else
+    motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
+  end
+  
   qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
   
   ins(1).system = 1;
@@ -180,6 +216,12 @@ if use_simple_pd
   ins(4).input = 3;
   ins(5).system = 2;
   ins(5).input = 5;
+  if constrain_torso
+    ins(6).system = 2;
+    ins(6).input = 6;
+    ins(7).system = 2;
+    ins(7).input = 7;
+  end
   outs(1).system = 2;
   outs(1).output = 1;
   outs(2).system = 2;
@@ -196,20 +238,61 @@ if use_simple_pd
   ins(4).input = 3;
   ins(5).system = 2;
   ins(5).input = 4;
+  if constrain_torso
+    ins(6).system = 2;
+    ins(6).input = 6;
+    ins(7).system = 2;
+    ins(7).input = 7;
+  end
   qp = mimoCascade(rfoot_motion,qp,[],ins,outs);
-  
+  if constrain_torso
+    clear ins;
+    ins(1).system = 1;
+    ins(1).input = 1;
+    ins(2).system = 2;
+    ins(2).input = 1;
+    ins(3).system = 2;
+    ins(3).input = 2;
+    ins(4).system = 2;
+    ins(4).input = 3;
+    ins(5).system = 2;
+    ins(5).input = 4;
+    ins(6).system = 2;
+    ins(6).input = 5;
+    ins(7).system = 2;
+    ins(7).input = 7;
+    qp = mimoCascade(pelvis_motion,qp,[],ins,outs);
+    clear ins;
+    ins(1).system = 1;
+    ins(1).input = 1;
+    ins(2).system = 2;
+    ins(2).input = 1;
+    ins(3).system = 2;
+    ins(3).input = 2;
+    ins(4).system = 2;
+    ins(4).input = 3;
+    ins(5).system = 2;
+    ins(5).input = 4;
+    ins(6).system = 2;
+    ins(6).input = 5;
+    ins(7).system = 2;
+    ins(7).input = 6;
+    qp = mimoCascade(torso_motion,qp,[],ins,outs);
+  end
 else
   qp = MomentumControlBlock(r,{},ctrl_data,options);
 end
 vo = VelocityOutputIntegratorBlock(r,options);
-fcb = FootContactBlock(r);
+options.use_lcm = true;
+fcb = FootContactBlock(r,ctrl_data,options);
 fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
-options.Kp = 40.0*ones(nq,1);
-options.Kd = 12.0*ones(nq,1);
 if use_simple_pd
-  pd = SimplePDBlock(r,ctrl_data,options);
+  options.Kp = 40.0*ones(nq,1);
+  options.Kd = 18.0*ones(nq,1);
+  options.use_ik = false;
+  pd = IKPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
   ins(2).system = 1;
@@ -220,10 +303,30 @@ if use_simple_pd
   ins(4).input = 2;
   ins(5).system = 2;
   ins(5).input = 3;
-  ins(6).system = 2;
-  ins(6).input = 5;
+  if constrain_torso
+    ins(6).system = 2;
+    ins(6).input = 4;
+    ins(7).system = 2;
+    ins(7).input = 5;
+    ins(8).system = 2;
+    ins(8).input = 7;
+  else
+    ins(6).system = 2;
+    ins(6).input = 5;
+  end
 else
-  pd = WalkingPDBlock(r,ctrl_data,options);
+  options.Kp = 65.0*ones(nq,1);
+  options.Kd = 14.5*ones(nq,1);
+  options.Kp(findJointIndices(r,'hpz')) = 70.0;
+  options.Kd(findJointIndices(r,'hpz')) = 14.0;
+  options.Kd(findJointIndices(r,'kny')) = 13.0;
+  options.Kp(3) = 30.0;
+  options.Kd(3) = 12.0;
+  options.Kp(4:5) = 30.0;
+  options.Kd(4:5) = 12.0;
+  options.Kp(6) = 40.0;
+  options.Kd(6) = 12.0;
+  pd = IKPDBlock(r,ctrl_data,options);
   ins(1).system = 1;
   ins(1).input = 1;
   ins(2).system = 1;
@@ -253,18 +356,24 @@ if ~strcmp(resp,{'y','yes'})
 end
 
 % low pass filter for floating base velocities
-alpha_v = 0.5;
+alpha_v = 0.75;
 float_v = 0;
 
-l_foot_contact = 0;
-r_foot_contact = 0;
-qd_control = 0;
-qd_filt = 0;
-eta=1;
+% l_foot_contact = 0;
+% r_foot_contact = 0;
+% qd_control = 0;
+% qd_filt = 0;
+% eta=1;
 
 udes = zeros(nu,1);
 qddes = zeros(nu,1);
 qd_int_state = zeros(nq+4,1);
+
+qd_prev = zeros(nq,1);
+qd_filt = zeros(nq,1);
+eta = 0.1;
+beta = ones(nq,1);
+
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
   if ~isempty(x)
@@ -280,25 +389,27 @@ while tt<T
 
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    %qt = fasteval(qtraj,tt);
-
-    fc = output(fcb,tt,[],[q;qd]);
-    if fc(1)~=l_foot_contact || fc(2)~=r_foot_contact
-      % contact changed
-      l_foot_contact = fc(1);
-      r_foot_contact = fc(2);
-      eta = 0;
-    end
-    qd_filt = 0.8*qd_filt + 0.2*qd;
-    qd_control = (1-eta)*qd_filt + eta*qd;
-    eta = min(1.0, eta+0.005);
     
+    
+%     zero_cross = sign(qd_prev) ~= sign(qd);
+%     qd_prev = qd;
+%     beta(zero_cross) = 0;
+%     qd_filt = 0.1*(1-beta).*qd_filt + beta.*qd;
+%     beta = min(1.0,beta+0.33);
+%     
+%     x_filt = [q;qd_filt];
     x_filt = [q;qd];
-    
+
+    fc = output(fcb,tt,[],x_filt);
+  
     junk = output(fshift,tt,[],x_filt);
 
     if use_simple_pd
-      u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; fc]);
+      if constrain_torso
+        u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; x_filt; x_filt; fc]);
+      else
+        u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; fc]);
+      end
     else
       u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; fc; x_filt; fc]);
     end
@@ -317,6 +428,7 @@ while tt<T
     qddes(joint_act_ind) = qd_ref(joint_act_ind);
 
     ref_frame.publish(t,[q0(act_idx_map);qddes;udes],'ATLAS_COMMAND');
+    %ref_frame.publish(t,[q(act_idx_map);qd_filt(act_idx_map);zeros(28,1)],'EST_ROBOT_STATE_KF');
   end
 end
 

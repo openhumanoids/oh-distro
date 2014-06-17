@@ -69,17 +69,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double *q0 = mxGetPr(prhs[1]);
   model->doKinematics(q0);
   
+  int n_fixed_dofs = mxGetM(prhs[4]);
+  Map<VectorXd> fixed_dofs(mxGetPr(prhs[4]),n_fixed_dofs);
+
   VectorXd q0vec = Map<VectorXd>(q0,nq);
 
-  std::vector<VectorXd,aligned_allocator<VectorXd>> Aeq_ (nrhs*6); // nrhs*6 is an upper bound
-  VectorXd beq_ = VectorXd::Zero(nrhs*6); // nrhs*6 is an upper bound
+  std::vector<VectorXd,aligned_allocator<VectorXd>> Aeq_ (nrhs*6+nq); // nrhs*6+nq is an upper bound
+  VectorXd beq_ = VectorXd::Zero(nrhs*6+nq); // nrhs*6+nq is an upper bound
   int eq_count = 0;
   
   MatrixXd body_pos;
   body_pos.resize(4,1); 
   VectorXd world_pos;
   
-  int i=4;
+  int i=5;
   while (i<nrhs) {
     int rows;
   	int body_ind = mxGetScalar(prhs[i]) - 1;
@@ -172,6 +175,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       mexErrMsgIdAndTxt("linearIKmex:BadInputs", "only equality constraints are supported");
     }
   }
+
+  MatrixXd zero_row = MatrixXd::Zero(1,nq);
+  MatrixXd tmp;
+  for (int j = 0; j < n_fixed_dofs; j++) {
+    tmp = zero_row;
+    tmp(0,(int)fixed_dofs(j)-1) = 1;
+    Aeq_[eq_count] = tmp;
+    beq_(eq_count++) = q_nom(fixed_dofs(j)-1);   
+  } 
   
   MatrixXd Aeq = MatrixXd::Zero(eq_count,nq);
   VectorXd beq = beq_.head(eq_count);

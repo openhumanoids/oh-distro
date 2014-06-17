@@ -1,0 +1,11 @@
+package drc;
+
+struct configuration_traj_t
+{
+  int64_t utime;
+
+  int32_t n_qtraj_bytes;
+  byte qtraj[n_qtraj_bytes]; // serialized matlab ppform
+}
+
+

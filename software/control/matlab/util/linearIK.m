@@ -11,8 +11,9 @@ else
 end
 
 if isfield(options,'q_nom') q_nom = options.q_nom; else q_nom = q0; end
-if isfield(options,'Q') Q = options.Q; else Q = eye(obj.num_q); end
+if isfield(options,'Q') Q = options.Q; else Q = eye(getNumDOF(r)); end
 if ~isfield(options,'use_mex') options.use_mex = true; end
+if ~isfield(options,'fixed_dofs') options.fixed_dofs = []; end
 
 i=1;
 while i<=length(varargin)
@@ -26,7 +27,7 @@ while i<=length(varargin)
 end
 
 if options.use_mex
-  q = linearIKmex(getMexModelPtr(r),q0,q_nom,Q,varargin{:});
+  q = linearIKmex(getMexModelPtr(r),q0,q_nom,Q,options.fixed_dofs,varargin{:});
   return;
 end
 
@@ -90,7 +91,13 @@ while i<=length(varargin)
     b{neq} = world_pos(idx) - x(idx) + J(idx,:)*q0;
     neq=neq+1;
   end
-    
+end
+
+nfd = length(options.fixed_dofs);
+if nfd>1
+  A{neq} = zeros(nfd,getNumDOF(r));
+  A{neq}(1:nfd,options.fixed_dofs) = eye(nfd);
+  b{neq} = q_nom(options.fixed_dofs);
 end
 
 Aeq = sparse(vertcat(A{:}));

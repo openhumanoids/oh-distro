@@ -24,26 +24,26 @@ function atlasGainTuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint = 'l_leg_aky';% <---- joint name 
+joint = 'r_arm_usy';% <---- joint name 
 input_mode = 'position';% <---- force, position
-control_mode = 'force+velocity';% <---- force, force+velocity, position
+control_mode = 'position';% <---- force, force+velocity, position
 signal = 'chirp';% <----  zoh, foh, chirp
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
-T = 120;% <--- signal duration (sec)
+T = 20;% <--- signal duration (sec)
 
 % chirp specific
-amp = 0.15;% <----  Nm or radians
-chirp_f0 = 0.01;% <--- chirp starting frequency
-chirp_fT = 0.5;% <--- chirp ending frequency
+amp = 0.5;% <----  Nm or radians
+chirp_f0 = 0.1;% <--- chirp starting frequency
+chirp_fT = 0.4;% <--- chirp ending frequency
 chirp_sign = 0;% <--- -1: below offset, 1: above offset, 0: centered about offset 
 
 % z/foh
 vals = 15*[0 1];% <----  Nm or radians
 
 % inverse dynamics PD gains (only for input=position, control=force)
-Kp = 100;
-Kd = 8;
+Kp = 110;
+Kd = 21;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,7 +118,7 @@ ref_frame.updateGains(gains);
 [qdes,motion_sign] = getAtlasJointMotionConfig(r,joint,1);
 
 % move to desired pos
-atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,3);
+atlasLinearMoveToPos(qdes,state_frame,ref_frame,act_idx,1);
 
 gains2 = getAtlasGains();
 if any(strcmp(control_mode,{'force','force+velocity'}))
@@ -193,8 +193,8 @@ while tt<T
         qd = x(nq_fixed+12+(1:nq_fixed));
         [H,C,B] = manipulatorDynamics(r_fixed,q,qd);
 
-        jddes = inputd_traj.eval(tt)*0;
-        jdddes = inputdd_traj.eval(tt)*0;
+        jddes = inputd_traj.eval(tt);
+        jdddes = inputdd_traj.eval(tt);
 
         qddot_des = zeros(nq_fixed,1);
         fidx = joint_index_map_fixed.(joint);
