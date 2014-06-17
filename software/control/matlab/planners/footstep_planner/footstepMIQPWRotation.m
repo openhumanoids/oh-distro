@@ -1,4 +1,4 @@
-function plan = footstepMIQP(biped, seed_plan, weights, goal_pos, min_num_steps, max_num_steps)
+function plan = footstepMIQPWRotation(biped, seed_plan, weights, goal_pos, min_num_steps, max_num_steps)
 % Run the Mixed Integer Quadratic Program form of the footstep planning problem.
 % This form can efficiently choose the assignment of individual foot positions to
 % safe (obstacle-free) regions, but always keeps the yaw value of every foot
@@ -96,7 +96,7 @@ M = 100;
 for j = 3:nsteps
   [A_reach, b_reach] = biped.getReachabilityPolytope(seed_plan.footsteps(j-1).body_idx, seed_plan.footsteps(j).body_idx, seed_plan.params);
   A_reach = A_reach(:,[1:3,6]);
-  
+
   if j > 3
     for k = 1:yaw_slots
       yaw = x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2));
@@ -191,9 +191,9 @@ end
 % The s_ndx variables are binary selectors on the safe terrain regions
 % If x(s_ndx(r,j)) == 1, then step j must be in region r, and thus
 % safe_regions(r).A * x(x_ndx(:,j)) <= safe_regions(r).b
-% 
+%
 % Additionally, each safe region has a point and vector defining a plane
-% and any steps in that region must live in that plane. 
+% and any steps in that region must live in that plane.
 M = 100;
 Ar = zeros((nsteps-2) * sum(cellfun(@(x) size(x, 1), {seed_plan.safe_regions.A})), nvar);
 br = zeros(size(Ar, 1), 1);
@@ -248,7 +248,7 @@ for j = 3:nsteps
     A_rot(con_ndx, x_ndx(4,j)) = 1;
     b_rot(con_ndx) = M + x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2));
     con_ndx = con_ndx + 1;
-    
+
     A_rot(con_ndx, rot_ndx(k,j)) = M;
     A_rot(con_ndx, x_ndx(4,j)) = -1;
     b_rot(con_ndx) = M -  (x0(x_ndx(4,1)) + yaw_increment * (k - ceil(yaw_slots / 2)));
