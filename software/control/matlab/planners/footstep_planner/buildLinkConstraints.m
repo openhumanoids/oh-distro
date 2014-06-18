@@ -1,0 +1,46 @@
+function link_constraints = buildLinkConstraints(biped, q0, foottraj, fixed_links)
+
+kinsol = doKinematics(biped,q0);
+
+%% Convert the foottraj to an easier format to hand to IK
+link_constraints(1) = struct('link_ndx', biped.foot_bodies_idx.right, 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', foottraj.right.orig);
+link_constraints(2) = struct('link_ndx', biped.foot_bodies_idx.left, 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', foottraj.left.orig);
+foot_bodies = struct('right', biped.manip.body(biped.foot_bodies_idx.right),...
+                       'left', biped.manip.body(biped.foot_bodies_idx.left));
+for f = {'right', 'left'}
+  foot = f{1};
+  for g = {'toe', 'heel'}
+    grp = g{1};
+    if isfield(foottraj.(foot), grp)
+      for pt_ndx = foot_bodies.(foot).collision_group{strcmp(foot_bodies.(foot).collision_group_name, grp)}
+        if (~isempty(foottraj.(foot).(grp).min) && ~isempty(foottraj.(foot).(grp).max))
+          link_constraints(end+1) = struct('link_ndx', biped.foot_bodies_idx.(foot), ...
+                                           'pt', foot_bodies.(foot).contact_pts(:,pt_ndx), ...
+                                           'min_traj', foottraj.(foot).(grp).min, ...
+                                           'max_traj', foottraj.(foot).(grp).max, 'traj', []);
+        end
+      end
+    end
+  end
+end
+
+
+if nargin > 3
+  %% Allow the user to fix the current position of some links (useful for walking while holding the hand still, e.g.)
+  for j = 1:length(fixed_links)
+    if isa(fixed_links(j).link, 'RigidBody')
+      link_ndx = find(strcmp(biped.getLinkNames(), fixed_links(j).link.linkname),1);
+    else
+      link_ndx = fixed_links(j).link;
+    end
+    pos = biped.forwardKin(kinsol, link_ndx, fixed_links(j).pt,2);
+    pos_min = pos;
+    pos_max = pos;
+    pos_min(1:3) = pos(1:3) - fixed_links(j).tolerance;
+    pos_max(1:3) = pos(1:3) + fixed_links(j).tolerance;
+    link_constraints(end+1) = struct('link_ndx', link_ndx, 'pt',fixed_links(j).pt, ...
+                                     'min_traj', ConstantTrajectory(pos_min),...
+                                     'max_traj', ConstantTrajectory(pos_max), 'traj', []);
+  end
+end
+
