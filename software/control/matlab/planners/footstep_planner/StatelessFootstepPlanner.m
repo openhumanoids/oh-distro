@@ -28,9 +28,7 @@ classdef StatelessFootstepPlanner
 
         safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, feet_centers, goal_pos);
 
-%         profile on
-        plan = searchNumSteps(biped, feet_centers, goal_pos, params, safe_regions);
-%         profile viewer
+        plan = biped.planFootsteps(feet_centers, goal_pos, safe_regions, struct('step_params', params));
         plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);

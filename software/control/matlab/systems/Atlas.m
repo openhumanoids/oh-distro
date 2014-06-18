@@ -1,4 +1,4 @@
-classdef Atlas < Biped
+classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
   methods
 
     function obj=Atlas(urdf,options)
