@@ -86,6 +86,11 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   // r_hpz
   //filter_idx_ = {10};
   
+
+  double process_noise_pos = 0.02;
+  double process_noise_vel = 0.0005;
+  double observation_noise = 0.0002;
+
   if (cl_cfg_.mode == 0){ // this mode is broken
     kf = new EstimateTools::KalmanFilter( 41 );
   }else if (cl_cfg_.mode == 1){
@@ -96,10 +101,11 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
     std::cout << "Created " << joint_kf_.size() << " Kalman Filters\n";
   } else if (cl_cfg_.mode==2) {
     for (size_t i=0;i < filter_idx_.size(); i++){
-      EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (0.01, 0.0005, 0.0005);
+      EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (process_noise_pos, process_noise_vel, observation_noise);
       joint_skf_.push_back(a_kf) ;
     }
     std::cout << "Created " << joint_skf_.size() << " Simple Kalman Filters\n";
+    std::cout << process_noise_pos << " " << process_noise_vel << " | " << observation_noise << "\n";
   } else if (cl_cfg_.mode==3) {
     for (size_t i=0;i < filter_idx_.size(); i++){
       LowPassFilter* a_filter = new LowPassFilter ();
@@ -108,10 +114,11 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
     std::cout << "Created " << lpfilter_.size() << " Low Pass Filters\n";
   } else if (cl_cfg_.mode==4) {
     for (size_t i=0;i < filter_idx_.size(); i++){
-      EstimateTools::BacklashFilter* a_filter = new EstimateTools::BacklashFilter (0.01, 0.0005, 0.0005);
+      EstimateTools::BacklashFilter* a_filter = new EstimateTools::BacklashFilter (process_noise_pos, process_noise_vel, observation_noise);
       backlashfilter_.push_back(a_filter);
     }
     std::cout << "Created " << backlashfilter_.size() << " Backlash Filters\n";
+    std::cout << process_noise_pos << " " << process_noise_vel << " | " << observation_noise << "\n";
   }
   
   

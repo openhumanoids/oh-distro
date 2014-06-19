@@ -17,8 +17,8 @@ BacklashFilter::BacklashFilter(double process_noise_pos_ ,double process_noise_v
 
   simple_kf_ = new EstimateTools::SimpleKalmanFilter (process_noise_pos_, process_noise_vel_, observation_noise_);
   
-  // Parameters:
-  alpha_ = 0.9042; // Sylvian: "computed to get a 16Hz break freq", value from Scott
+  // Default Parameters:
+  alpha_ =0.5;// 0.9042; // Sylvian: "computed to get a 16Hz break freq", value from Scott
   t_crossing_max_ = 0.05; // expiry time of crossing fix (sec), IHMC said they used 30msec
   
   // Initial value of t_crossing was long ago
@@ -74,8 +74,9 @@ void BacklashFilter::processSample(double t,  double x,  double x_dot,
      
   // 4. Set outputs
   // Velocity is a combination of the previous value and a weight numerical difference
+  //double x_dot_diff = (x - x_prev_ )/(t- t_prev_);
   x_filtered =  x_filtered_kf;
-  x_dot_filtered = alpha_*x_dot_filtered_prev_  + (1.0 - alpha_)*eta*(x - x_prev_ )/(t- t_prev_); // velocity
+  x_dot_filtered = alpha_*x_dot_filtered_prev_  + (1.0 - alpha_)*eta*x_dot_filtered_kf; // velocity
 
   
   x_prev_ = x;

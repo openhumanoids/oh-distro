@@ -147,27 +147,38 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   
   
   if (cl_cfg_.use_kalman_filtering || cl_cfg_.use_backlash_filtering){
-
+    // Shared params:
     double process_noise_pos = bot_param_get_double_or_fail(botparam_, "control.filtering.process_noise_pos" );
     double process_noise_vel = bot_param_get_double_or_fail(botparam_, "control.filtering.process_noise_vel" );
     double observation_noise = bot_param_get_double_or_fail(botparam_, "control.filtering.observation_noise" );
-    
+
     int n_filters = bot_param_get_array_len (botparam_, "control.filtering.index");  
     int filter_idx[n_filters];
     bot_param_get_int_array_or_fail(botparam_, "control.filtering.index", &filter_idx[0], n_filters);  
-    for (size_t i=0;i < n_filters; i++){
-      
-      if (cl_cfg_.use_kalman_filtering){
+
+    if (cl_cfg_.use_kalman_filtering){
+      for (size_t i=0;i < n_filters; i++){
         EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (process_noise_pos, process_noise_vel, observation_noise); // uses Eigen2d
         filter_idx_.push_back(filter_idx[i]);
         joint_kf_.push_back(a_kf) ;
-      }else if(cl_cfg_.use_backlash_filtering){
+      }
+      std::cout << "Created " << joint_kf_.size() << " Kalman Filters with noise "<< process_noise_pos << ", " << process_noise_vel << " | " << observation_noise << "\n";
+
+    }else if(cl_cfg_.use_backlash_filtering){
+      double backlash_alpha = bot_param_get_double_or_fail(botparam_, "control.filtering.backlash_alpha" );
+      double backlash_crossing_time_max = bot_param_get_double_or_fail(botparam_, "control.filtering.backlash_crossing_time_max" );
+
+      for (size_t i=0;i < n_filters; i++){
         EstimateTools::BacklashFilter* a_kf = new EstimateTools::BacklashFilter (process_noise_pos, process_noise_vel, observation_noise); // uses Eigen2d
+        a_kf->setAlpha( backlash_alpha );
+        a_kf->setCrossingTimeMax( backlash_crossing_time_max );
         filter_idx_.push_back(filter_idx[i]);
         joint_backlashfilter_.push_back(a_kf) ;
       }
+      std::cout << "Created " << joint_backlashfilter_.size() << " Backlash Filters with noise "<< process_noise_pos << ", " << process_noise_vel << " | " << observation_noise << "\n";
+      std::cout << "Backlash alpha: " << backlash_alpha << " crossing_time_max: " << backlash_crossing_time_max << "\n";
     }
-    std::cout << "Created " << joint_kf_.size() << " Kalman Filters with noise "<< process_noise_pos << ", " << process_noise_vel << " | " << observation_noise << "\n";
+
   }
 }
 

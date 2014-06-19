@@ -17,6 +17,9 @@ class BacklashFilter{
     ~BacklashFilter(){
     }    
     
+    void setAlpha(double alpha_in){ alpha_ = alpha_in; }
+    void setCrossingTimeMax(double t_crossing_max_in){ t_crossing_max_ = t_crossing_max_in; }
+
     void processSample(double t,  double x,  double x_dot,
                        double &x_filtered, double &x_dot_filtered);
 
