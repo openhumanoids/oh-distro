@@ -25,8 +25,8 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 
-%       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
-      obj = obj@Biped(urdf,options.dt,options);
+      obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
+      obj = obj@Biped('r_foot_sole', 'l_foot_sole');
 
       obj.floating =options.floating;
 
@@ -43,6 +43,20 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         %obj = obj.setInitialState(zeros(obj.getNumStates(),1));
       end
       warning(S);
+    end
+
+    function obj = setInitialState(obj,x0)
+      if isa(x0,'Point')
+        obj.x0 = double(x0); %.inFrame(obj.getStateFrame));
+      else
+        typecheck(x0,'double');
+        sizecheck(x0,obj.getNumStates());
+        obj.x0 = x0;
+      end
+    end
+
+    function x0 = getInitialState(obj)
+      x0 = obj.x0;
     end
 
     function obj = compile(obj)
@@ -116,13 +130,13 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       zmin = q(3) - (z_above_feet-obj.pelvis_min_height);
       zmax = q(3) + (obj.pelvis_max_height-z_above_feet);
     end
-
-    function xstar = loadFixedPoint(obj)
-      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-      xstar = d.xstar;
-    end
+  end
+  properties
+    fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat');
   end
   properties (SetAccess = protected, GetAccess = public)
+    x0
+    floating
     inverse_dyn_qp_controller;
     pelvis_min_height = 0.65; % [m] above feet, for hardware
     pelvis_max_height = 0.92; % [m] above feet, for hardware
@@ -137,5 +151,12 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
                                       'max_inward_angle', 0.01,... % rad
                                       'max_upward_step', 0.2,... % m
                                       'max_downward_step', 0.2); % m
+    default_walking_params = struct('step_speed', 0.5,... % speed of the swing foot (m/s)
+                                    'step_height', 0.05,... % approximate clearance over terrain (m)
+                                    'hold_frac', 0.4,... % fraction of the swing time spent in double support
+                                    'drake_min_hold_time', 1.0,... % minimum time in double support (s)
+                                    'mu', 1.0,... % friction coefficient
+                                    'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
+
   end
 end

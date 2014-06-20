@@ -75,18 +75,14 @@ weights = struct('relative', [10;10;10;0;0;.5],...
                  'goal', [100;100;0;0;0;1000]);
 
 tic
-nsteps = 12;
-seed_plan = FootstepPlan.blank_plan(r, nsteps, [r.foot_bodies_idx.right, r.foot_bodies_idx.left], request.params, safe_regions);
-seed_plan.footsteps(1).pos = Point(seed_plan.footsteps(1).frames.center, foot_orig.right);
-seed_plan.footsteps(2).pos = Point(seed_plan.footsteps(2).frames.center, foot_orig.left);
-plan = footstepMISOCP(r, seed_plan, weights, goal_pos, 3, 30);
+nsteps = request.params.max_num_steps + 2;
+seed_plan = FootstepPlan.blank_plan(nsteps, [r.foot_frame_id.right, r.foot_frame_id.left], request.params, safe_regions);
+seed_plan.footsteps(1).pos = foot_orig.right;
+seed_plan.footsteps(2).pos = foot_orig.left;
+plan = footstepMISOCP(r, seed_plan, weights, goal_pos);
 toc
 
-steps = plan.step_matrix();
-step_vect = encodeCollocationSteps(steps(:,2:end));
-[steps, steps_rel] = decodeCollocationSteps(step_vect);
-steps
-steps_rel
+steps_rel = plan.relative_step_offsets()
 
 figure(1);
 try
