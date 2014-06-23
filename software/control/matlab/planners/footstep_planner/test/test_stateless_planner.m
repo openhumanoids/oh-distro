@@ -82,7 +82,7 @@ end
 
 function test_bad_step_width(planner, biped, request)
 
-warning('off', 'DRC:Biped:BadNominalStepWidth');
+warning('off', 'Drake:Biped:BadNominalStepWidth');
 request.params.nom_step_width = request.params.max_step_width;
 planner.plan_footsteps(biped, request);
 
@@ -101,8 +101,8 @@ plan.toLCM();
 lc = lcm.lcm.LCM.getSingleton();
 lc.publish('FOOTSTEP_PLAN_RESPONSE', plan.toLCM());
 footsteps = plan.footsteps;
-pos3 = footsteps(3).pos.inFrame(footsteps(3).frames.orig);
-valuecheck(pos3(3), r.getTerrainHeight(pos3(1:2)) + 0.0811, 1e-3);
+pos3 = footsteps(3).pos;
+valuecheck(pos3(3), r.getTerrainHeight(pos3(1:2)), 1e-3);
 assert(length(footsteps) == 12);
 assert(all([footsteps.infeasibility] < 1e-4))
 end
@@ -129,7 +129,7 @@ request.goal_steps = goal_steps;
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
 s = Footstep.from_footstep_t(goal_steps(1), r);
-valuecheck(footsteps(end).pos.inFrame(footsteps(end).frames.center).double(), s.pos.inFrame(s.frames.center).double());
+valuecheck(footsteps(end).pos, s.pos);
 end
 
 function test_multi_goal_step(p, r, request)
@@ -178,8 +178,8 @@ request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
-assert(all([footsteps(1:2:end-1).body_idx] ~= [footsteps(2:2:end).body_idx]))
-valuecheck(footsteps(end).pos(3), 0.2);
+assert(all([footsteps(1:2:end-1).frame_id] ~= [footsteps(2:2:end).frame_id]))
+valuecheck(footsteps(end).pos(3), 0.2 - 0.0811, 1e-3);
 
 request.num_goal_steps = 3;
 goal_steps = javaArray('drc.footstep_t', request.num_goal_steps);
@@ -226,5 +226,5 @@ request.goal_steps = goal_steps;
 
 plan = p.plan_footsteps(r, request);
 footsteps = plan.footsteps;
-assert(all([footsteps(1:2:end-1).body_idx] ~= [footsteps(2:2:end).body_idx]))
+assert(all([footsteps(1:2:end-1).frame_id] ~= [footsteps(2:2:end).frame_id]))
 end
