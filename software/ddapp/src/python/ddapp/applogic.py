@@ -10,6 +10,7 @@ from ddapp import getDRCBaseDir as getDRCBase
 from ddapp import botspy
 
 _mainWindow = None
+_defaultRenderView = None
 
 def getMainWindow():
     return _mainWindow
@@ -24,7 +25,7 @@ def getViewManager():
 
 
 def getDRCView():
-    return getMainWindow().viewManager().findView('DRC View')
+    return _defaultRenderView or getMainWindow().viewManager().findView('DRC View')
 
 
 def getSpreadsheetView():
@@ -32,7 +33,7 @@ def getSpreadsheetView():
 
 
 def getCurrentView():
-    return getMainWindow().viewManager().currentView()
+    return _defaultRenderView or getMainWindow().viewManager().currentView()
 
 
 def getCurrentRenderView():
@@ -43,6 +44,14 @@ def getCurrentRenderView():
 
 def getOutputConsole():
     return getMainWindow().outputConsole()
+
+
+def getPythonConsole():
+    return PythonQt.dd._pythonManager.consoleWidget()
+
+
+def showPythonConsole():
+    getPythonConsole().show()
 
 
 def addWidgetToDock(widget, dockArea=QtCore.Qt.RightDockWidgetArea, action=None):
@@ -147,6 +156,12 @@ def addToolbarMacro(name, func):
     toolbar = getMainWindow().macrosToolBar()
     action = toolbar.addAction(name)
     action.connect('triggered()', func)
+
+
+def addShortcut(widget, keySequence, func):
+    shortcut = QtGui.QShortcut(QtGui.QKeySequence(keySequence), widget)
+    shortcut.connect('activated()', func)
+    return shortcut
 
 
 def setupActions():

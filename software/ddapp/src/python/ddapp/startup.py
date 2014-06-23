@@ -104,7 +104,7 @@ useLightColorScheme = False
 useDrakeVisualizer = True
 useNavigationPanel = True
 useImageWidget = False
-useImageViewDemo = False
+useImageViewDemo = True
 
 
 poseCollection = PythonQt.dd.ddSignalMap()
@@ -158,7 +158,6 @@ if usePerception:
 
 if useGrid:
     vis.showGrid(view, color=[0,0,0] if useLightColorScheme else [1,1,1])
-    view.connect('computeBoundsRequest(ddQVTKWidgetView*)', vis.computeViewBoundsNoGrid)
     app.toggleCameraTerrainMode(view)
 
 
@@ -365,8 +364,8 @@ def sendEstRobotState(pose=None):
 
 
 app.resetCamera(viewDirection=[-1,0,0], view=view)
-viewBehaviors = viewbehaviors.ViewBehaviors(view, handFactory, robotStateModel, footstepsDriver)
-
+viewBehaviors = viewbehaviors.ViewBehaviors(view)
+viewbehaviors.ViewBehaviors.addRobotBehaviors(robotStateModel, handFactory, footstepsDriver)
 
 if useImageWidget:
     imageWidget = cameraview.ImageWidget(cameraview.imageManager, 'CAMERA_LEFT', view)
@@ -375,16 +374,25 @@ if useImageWidget:
 if useImageViewDemo:
     imageView = cameraview.views['CAMERA_LEFT']
     #imageView = cameraview.cameraView
-    imageView.view.hide()
-    imageView.view.setParent(view)
-    imageView.view.resize(600, 600)
-    imageView.view.move(0,0)
-    imageView.view.show()
     imageView.rayCallback = segmentation.extractPointsAlongClickRay
+    imagePicker = ImagePointPicker(imageView)
 
-    p = ImagePointPicker(imageView)
-    p.start()
+    _prevParent = imageView.view.parent()
+    def showImageOverlay(size=400):
+        imageView.view.hide()
+        imageView.view.setParent(view)
+        imageView.view.resize(size, size)
+        imageView.view.move(0,0)
+        imageView.view.show()
+        imagePicker.start()
 
+    def hideImageOverlay():
+        imageView.view.hide()
+        imageView.view.setParent(_prevParent)
+        imageView.view.show()
+        imagePicker.stop()
+
+    #showImageOverlay()
 
 
 def onFootContact(msg):

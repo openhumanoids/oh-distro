@@ -5,13 +5,18 @@ endif()
 include(python-coverage/setup.cmake)
 
 set(python_tests
+  testConsoleApp.py
   testFrameSync.py
   testObjectModel.py
   testPythonConsole.py
   testPropertiesPanel.py
+  testRobotSystem.py
+  testTaskQueue.py
+  testValveFit.py
 )
 
-set(python_test args
+set(python_test_args
+  --testing --data-dir ${CMAKE_SOURCE_DIR}/../../../drc-testing-data --output-dir ${CMAKE_BINARY_DIR}/Testing/Temporary
 )
 
 set(python_exe ${CMAKE_BINARY_DIR}/bin/ddConsoleApp)

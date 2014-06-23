@@ -23,11 +23,11 @@ defaultUrdfHands = 'LR_RR'
 
 
 def getRobotGrayColor():
-    return QtGui.QColor(190, 190, 190)
+    return QtGui.QColor(177, 180, 190)
 
 
 def getRobotOrangeColor():
-    return QtGui.QColor(255, 180, 0)
+    return QtGui.QColor(255, 190, 0)
 
 
 class RobotModelItem(om.ObjectModelItem):
@@ -72,6 +72,9 @@ class RobotModelItem(om.ObjectModelItem):
 
     def connectModelChanged(self, func):
         return self.callbacks.connect(self.MODEL_CHANGED_SIGNAL, func)
+
+    def disconnectModelChanged(self, callbackId):
+        self.callbacks.disconnect(callbackId)
 
     def onModelChanged(self):
         self.callbacks.process(self.MODEL_CHANGED_SIGNAL, self)
@@ -149,10 +152,12 @@ def loadRobotModel(name, view=None, parent='planning', urdfFile=None, color=None
     if not urdfFile:
         urdfFile = os.path.join(getRobotModelDir(), 'model_%s.urdf' % defaultUrdfHands)
 
-    folder = om.getOrCreateContainer(parent)
+    if isinstance(parent, str):
+        parent = om.getOrCreateContainer(parent)
+
     model = loadRobotModelFromFile(urdfFile)
     obj = RobotModelItem(model)
-    om.addToObjectModel(obj, folder)
+    om.addToObjectModel(obj, parent)
 
     obj.setProperty('Visible', visible)
     obj.setProperty('Name', name)
