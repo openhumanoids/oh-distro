@@ -82,7 +82,7 @@ classdef WalkingControllerData
       msg.link_constraints = getByteStreamFromArray(obj.link_constraints);
       msg.n_link_constraints_bytes = length(msg.link_constraints);
 
-      msg.mu = obj.mu;
+      msg.mu = mean(obj.mu);
       msg.ignore_terrain = obj.ignore_terrain;
       if isfield(obj,'t_offset')
         msg.t_offset = obj.t_offset;
@@ -93,6 +93,12 @@ classdef WalkingControllerData
   end
 
   methods (Static = true)
+    function obj = from_drake_walking_data(data, qstar)
+      t_offset = 0;
+      ignore_terrain = false;
+      obj = WalkingControllerData(data.V, data.support_times, {data.supports}, data.comtraj, data.mu, t_offset, data.link_constraints, data.zmptraj, qstar, ignore_terrain, data.c);
+    end
+
     function obj = from_walking_plan_t(msg_data)
 
       S = getArrayFromByteStream(typecast(msg_data.S, 'uint8'));
