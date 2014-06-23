@@ -43,15 +43,15 @@ kinsol = doKinematics(r,q0);
 
 com = getCOM(r,kinsol);
 
-% build TI-ZMP controller 
+% build TI-ZMP controller
 footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
-foot_pos = terrainContactPositions(r,kinsol,footidx); 
+foot_pos = terrainContactPositions(r,kinsol,footidx);
 comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 limp = LinearInvertedPendulum(com(3));
 [~,V] = lqr(limp,comgoal);
 
-foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-  
+foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+
 % generate manip plan
 rhand_ind = findLinkInd(r,'r_hand');
 %rhand_ee = EndEffector(r,'atlas',rhand_ind,[0;0;0],'RHAND_OBS',false);
@@ -107,7 +107,7 @@ for i=1:length(ts)
     ikoptions = ikoptions.setQ(options.Q);
     q(:,i) = inverseKin(r,q(:,i-1),q(:,i-1), ...
       rfoot_cnst{:},lfoot_cnst{:},rhand_cnst{:},lhand_cnst{:},ikoptions);
-      
+
 %     q(:,i) = inverseKin(r,q(:,i-1), ...
 %       rfoot_ind,[0;0;0],rfoot_pos, ...
 %       lfoot_ind,[0;0;0],lfoot_pos, ...
@@ -140,7 +140,7 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'support_times',0,...
   't_offset',0,...
-  'supports',foot_support));           
+  'supports',foot_support));
 
 % instantiate QP controller
 options.slack_limit = 30.0;
@@ -161,7 +161,7 @@ delayblk = DelayBlock(r,options);
 sys = cascade(qp,delayblk);
 
 if noisy
-  options.deadband = 0.01 * r.umax; 
+  options.deadband = 0.01 * r.umax;
 else
   options.deadband = 0;
 end
@@ -176,11 +176,11 @@ arm_joints = find(~cellfun(@isempty,strfind(joint_names,'arm')));
 upper_joints = find(~cellfun(@isempty,strfind(joint_names,'arm')) | ...
     ~cellfun(@isempty,strfind(joint_names,'back')) | ...
     ~cellfun(@isempty,strfind(joint_names,'neck')));
-options.noise_model(1).ind = upper_joints'; 
+options.noise_model(1).ind = upper_joints';
 options.noise_model(1).type = 'white_noise';
-options.noise_model(2).ind = arm_joints'; 
+options.noise_model(2).ind = arm_joints';
 options.noise_model(2).type = 'fixed_bias';
-options.noise_model(3).ind = arm_joints'; 
+options.noise_model(3).ind = arm_joints';
 options.noise_model(3).type = 'motion_bias';
 if noisy
   options.noise_model(1).params = struct('std',0.001);
@@ -212,7 +212,7 @@ outs(1).output = 1;
 sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
 clear ins outs;
 
-% feedback PD trajectory controller 
+% feedback PD trajectory controller
 options.use_ik = false;
 pd = IKPDBlock(rctrl,ctrl_data,options);
 ins(1).system = 1;
@@ -238,7 +238,7 @@ warning(S);
 traj = simulate(sys,[0 1.25*T],[x0;0*x0;zeros((options.delay_steps+1)*nu,1)]);
 
 x=traj.eval(traj.tspan(end));
-q=x(1:getNumDOF(r)); 
+q=x(1:getNumDOF(r));
 kinsol = doKinematics(r,q);
 rhand_pos = forwardKin(r,kinsol,rhand_ind,[0;0;0]);
 lhand_pos = forwardKin(r,kinsol,lhand_ind,[0;0;0]);

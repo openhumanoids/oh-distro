@@ -39,14 +39,14 @@ cost.back_bkx = 100;
 cost = double(cost);
 options = struct();
 options.Q = diag(cost(1:r.getNumDOF));
-  
+
 rhand_body = r.findLink('r_hand');
 lhand_body = r.findLink('l_hand');
 rhand_pos = forwardKin(r,kinsol,rhand_body,[0;0;0],false);
 lhand_pos = forwardKin(r,kinsol,lhand_body,[0;0;0],false);
 
 % pelvis_body = r.findLink('pelvis');
-% pelvis_pos = forwardKin(r,kinsol,pelvis_body,[0;0;0],true);  
+% pelvis_pos = forwardKin(r,kinsol,pelvis_body,[0;0;0],true);
 
 % q_nom(1:6) = pelvis_pos;
 options.q_nom = q_nom;
@@ -96,15 +96,15 @@ warning(S);
 [~,V] = tvlqr(ltisys,x0traj,u0traj,Q,R,V,options);
 
 support_times = 0;
-supports = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+supports = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
 link_constraints(1) = struct('link_ndx', r.findLinkInd('r_foot'), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', rfoot_pos);
 link_constraints(2) = struct('link_ndx', r.findLinkInd('l_foot'), 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', lfoot_pos);
-      
+
 mu=1.0;
 data = struct('S',V.S.eval(0),'s1',V.s1,'s2',V.s2,'ignore_terrain',false,...
         'support_times',support_times,'supports',{supports},'comtraj',comtraj,'qtraj',qtraj,'mu',mu,...
         'link_constraints',link_constraints,'zmptraj',[]);
-    
+
 pub=WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN'); % hijacking walking plan type for now
 pub.publish(0,data);
 

@@ -1,13 +1,13 @@
 classdef StandingManipController < DRCController
-  
+
   properties (SetAccess=protected,GetAccess=protected)
     robot;
     foot_idx;
     contact_est_monitor;
   end
-  
+
   methods
-  
+
     function obj = StandingManipController(name,r,options)
       typecheck(r,'Atlas');
 
@@ -34,7 +34,7 @@ classdef StandingManipController < DRCController
         'Vdot',0,...
         'r_arm_control_type',drc.robot_plan_t.NONE,...
         'l_arm_control_type',drc.robot_plan_t.NONE));
-      
+
       % instantiate QP controller
       options.slack_limit = 30.0;
       options.w = 0.001;
@@ -42,11 +42,11 @@ classdef StandingManipController < DRCController
 			options.contact_threshold = 0.005;
       if(~isfield(options,'use_mex')) options.use_mex = false; end
       if(~isfield(options,'debug')) options.debug = false; end
-      
+
       options.lcm_foot_contacts = true;
       qp = QPControlBlock(r,ctrl_data,options);
 
-      % cascade PD qtraj controller 
+      % cascade PD qtraj controller
       options.use_ik = false;
       pd = IKPDBlock(r,ctrl_data,options);
       ins(1).system = 1;
@@ -59,7 +59,7 @@ classdef StandingManipController < DRCController
       outs(1).output = 1;
       sys = mimoCascade(pd,qp,[],ins,outs);
       clear connection ins outs;
-      
+
       % cascade neck pitch control block
       neck = NeckControlBlock(r,ctrl_data);
       ins(1).system = 1;
@@ -91,35 +91,35 @@ classdef StandingManipController < DRCController
 % 			sys = mimoCascade(sys,ee_control,[],ins,outs);
 
       obj = obj@DRCController(name,sys,AtlasState(r));
- 
+
       obj.robot = r;
       obj.controller_data = ctrl_data;
-      
+
       obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
       obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
-      
-      % use saved nominal pose 
+
+      % use saved nominal pose
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
       kinsol = doKinematics(obj.robot,q0);
       com = getCOM(obj.robot,kinsol);
 
       % build TI-ZMP controller
-      foot_pos = terrainContactPositions(obj.robot,kinsol,[lfoot,rfoot]); 
+      foot_pos = terrainContactPositions(obj.robot,kinsol,[lfoot,rfoot]);
       comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
       limp = LinearInvertedPendulum(com(3));
       [~,V] = lqr(limp,comgoal);
 
       obj.foot_idx = [r.findLinkInd('r_foot'),r.findLinkInd('l_foot')];
-      supports = SupportState(r,obj.foot_idx);
-      
+      supports = RigidBodySupportState(r,obj.foot_idx);
+
       obj.controller_data.setField('S',V.S);
       obj.controller_data.setField('D',-com(3)/9.81*eye(2));
       obj.controller_data.setField('qtraj',q0);
       obj.controller_data.setField('x0',[comgoal;0;0]);
       obj.controller_data.setField('y0',comgoal);
       obj.controller_data.setField('supports',supports);
-      
+
       obj = addLCMTransition(obj,'WALKING_PLAN',drc.walking_plan_t(),'walking');
       obj = addLCMTransition(obj,'BRACE_FOR_FALL',drc.utime_t(),'bracing');
 
@@ -128,7 +128,7 @@ classdef StandingManipController < DRCController
       obj = addLCMTransition(obj,'RECOVERY_CMD',drc.recovery_t(),'dummy'); % for recovery procedure
 
     end
-    
+
     function msg = status_message(obj,t_sim,t_ctrl)
         msg = drc.controller_status_t();
         msg.utime = t_sim * 1000000;
@@ -137,10 +137,10 @@ classdef StandingManipController < DRCController
         msg.V = obj.controller_data.getField('V');
         msg.Vdot = obj.controller_data.getField('Vdot');
     end
-    
+
     function obj = initialize(obj,data)
 
-      
+
       if isfield(data,'STOP_WALKING')
         % transition from walking:
         % take in new nominal pose and compute standing controller
@@ -155,30 +155,30 @@ classdef StandingManipController < DRCController
           lfoot_contact_state = msg.left_contact > 0.5;
           rfoot_contact_state = msg.right_contact > 0.5;
         end
-        
+
         r = obj.robot;
         q0 = data.AtlasState(1:getNumDOF(r));
         kinsol = doKinematics(r,q0);
 %         com = getCOM(r,kinsol);
 
         foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx([rfoot_contact_state lfoot_contact_state]));
-        comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';  
+        comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 %         foot_pos = contactPositions(r,kinsol,obj.foot_idx);
 %         zfeet = mean(foot_pos(3,:));
 %         robot_z = com(3)-zfeet;
-  
+
 %         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('y0',comgoal);
-        
+
       elseif isfield(data,'COMMITTED_ROBOT_PLAN')
         % standing and reaching plan
         %sprintf('standing controller on\n');
         try
           msg = data.COMMITTED_ROBOT_PLAN;
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
-          [xtraj,ts,~,control_type] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
+          [xtraj,ts,~,control_type] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names);
           qtraj = PPTrajectory(spline(ts,xtraj(1:getNumDOF(obj.robot),:)));
 
           obj.controller_data.setField('qtraj',qtraj);
@@ -197,9 +197,9 @@ classdef StandingManipController < DRCController
           obj.controller_data.setField('qtraj',q0);
           obj.controller_data.setField('x0',[comgoal;0;0]);
           obj.controller_data.setField('y0',comgoal);
- 
+
         end
-        
+
       elseif isfield(data,'AtlasState')
         % transition from walking:
         % take in new nominal pose and compute standing controller
@@ -211,17 +211,17 @@ classdef StandingManipController < DRCController
 %         com = getCOM(r,kinsol);
 
         foot_pos = terrainContactPositions(r,kinsol,obj.foot_idx);
-        comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';  
+        comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 %         foot_pos = contactPositions(r,kinsol,obj.foot_idx);
 %         zfeet = mean(foot_pos(3,:));
 %         robot_z = com(3)-zfeet;
-  
+
 %         obj.controller_data.setField('D',-robot_z/9.81*eye(2));
         obj.controller_data.setField('qtraj',q0);
         obj.controller_data.setField('x0',[comgoal;0;0]);
         obj.controller_data.setField('y0',comgoal);
-     
-      
+
+
       else
         % first initialization should come here... wait for state
         state_frame = getStateFrame(obj.robot);
@@ -236,9 +236,9 @@ classdef StandingManipController < DRCController
         end
         obj = initialize(obj,data);
       end
-     
-      QPControlBlock.check_ctrl_data(obj.controller_data);  
+
+      QPControlBlock.check_ctrl_data(obj.controller_data);
       obj = setDuration(obj,inf,false); % set the controller timeout
     end
-  end  
+  end
 end

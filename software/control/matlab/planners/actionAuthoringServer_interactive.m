@@ -28,11 +28,11 @@ if(~isfield(action_options,'run_once')) action_options.run_once = false; end
 if(~isfield(action_options,'ignore_q0')) action_options.ignore_q0 = false; end
 if(~isfield(action_options,'generate_implicit_constraints_from_q0')) action_options.generate_implicit_constraints_from_q0 = true; end
 if(~isfield(action_options,'use_inverseKinSequence')) action_options.use_inverseKinSequence = false; end
-if(~isfield(action_options,'channel_in')) 
+if(~isfield(action_options,'channel_in'))
   if(action_options.IK)
-    action_options.channel_in = 'REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE'; 
+    action_options.channel_in = 'REQUEST_IK_SOLUTION_AT_TIME_FOR_ACTION_SEQUENCE';
   else
-    action_options.channel_in = 'REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE'; 
+    action_options.channel_in = 'REQUEST_MOTION_PLAN_FOR_ACTION_SEQUENCE';
   end
 end
 
@@ -72,12 +72,12 @@ options.q_traj_nom = ConstantTrajectory(q);
 
 joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
 robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateConstraintCheckedCoder(joint_names)),'x');
-%robot_plan_publisher =  drc.control.RobotPlanConstraintCheckedPublisher(joint_names,true, ...  
+%robot_plan_publisher =  drc.control.RobotPlanConstraintCheckedPublisher(joint_names,true, ...
   %'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
-robot_plan_publisher =  drc.control.RobotPlanPublisher(joint_names,true, ...  
+robot_plan_publisher =  drc.control.RobotPlanPublisher(joint_names,true, ...
   'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
 %robot_plan_publisher_viewer =  WalkingPlanPublisher('QUASISTATIC_ROBOT_PLAN');
-robot_plan_publisher_viewer = drc.control.RobotPlanPublisher(joint_names,true, ...  
+robot_plan_publisher_viewer = drc.control.RobotPlanPublisher(joint_names,true, ...
   'CANDIDATE_ROBOT_PLAN');
 %%
 
@@ -229,9 +229,9 @@ while (1)
         %if(~isempty(body_contact_pts))
           %above_ground_constraint = ActionKinematicConstraint.groundConstraint(r,body_idx,body_contact_pts,tspan,[r.body(body_idx).linkname,'_above_ground_from_',num2str(tspan(1)),'_to_',num2str(tspan(2))]);
           %action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
-        %end 
+        %end
       %end
-      
+
       % Solve the IK sequentially in time for each key time
       %if action_sequence.key_time_samples(1) > eps
         %action_sequence.tspan(1) = 0;
@@ -253,13 +253,13 @@ while (1)
       end
 
       key_time_IK_failed = false;
-      
+
       support_times = action_sequence.key_time_samples;
       support_body_idx = zeros(size(support_times));
       support_body_idx = [];
       contact_surface_idx = [];
       support_states = [];
-      for i = 1:num_key_time_samples 
+      for i = 1:num_key_time_samples
         if(i==num_key_time_samples)
           for j=1:length(action_sequence.kincons)
               %         if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
@@ -338,9 +338,9 @@ while (1)
           support_point_idx_unique{j} = unique(vertcat(support_point_idx{ic==j}));
         end
         surface_body_idx = surface_body_idx(ia);
-        support_states = [support_states; SupportState(r_Atlas,support_body_idx_unique,support_point_idx_unique,surface_body_idx)];
-        
-        
+        support_states = [support_states; RigidBodySupportState(r_Atlas,support_body_idx_unique,support_point_idx_unique,surface_body_idx)];
+
+
         kinsol = doKinematics(r,q_key_time_samples(:,i));
         com_key_time_samples(:,i) = getCOM(r,kinsol);
       end
@@ -426,7 +426,7 @@ while (1)
         options.quasiStaticFlag = true;
         options = rmfield(options,'q_nom');
         foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
-        
+
         % Compute support at t0
         for i = 1:numel(t_qs_breaks)
           ikargs = action_sequence.getIKArguments(t_qs_breaks(i));
@@ -496,7 +496,7 @@ while (1)
           support_vert_pos{i} = zeros(2,num_sample_support_vertices(i));
           for j = 1:length(body_idx{i})
             if(body_idx{i}(j) ~= 0)
-              [x,J] = forwardKin(r,kinsol,body_idx{i}(j),body_pos{i}{j},0); 
+              [x,J] = forwardKin(r,kinsol,body_idx{i}(j),body_pos{i}{j},0);
               support_vert_pos{i}(:,total_body_support_vert+(1:num_sequence_support_vertices{i}(j)))...
                 = x(1:2,support_polygon_flags{i}{j});
               total_body_support_vert = total_body_support_vert+num_sequence_support_vertices{i}(j);
@@ -515,7 +515,7 @@ while (1)
         %constraints_satisfied);
         publish(robot_plan_publisher, t_qs_breaks, ...
           [q_qs_plan; 0*q_qs_plan]);
-        
+
         key = input('Enter ''y''to send the plan to the robot. Press any other key to listen for new action sequence.','s');
         if ~strcmp(key,'y')
           continue;
@@ -591,8 +591,8 @@ while (1)
       % planning and IK for the whole sequence.
       if(action_options.ZMP)
           action_sequence_ZMP = action_sequence;
-        
-        
+
+
           dt = 0.02;
           window_size = ceil((action_sequence_ZMP.tspan(end)-action_sequence_ZMP.tspan(1))/dt);
           zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81);
@@ -632,11 +632,11 @@ while (1)
           comdot_height_plan = com_height_traj.deriv(t_breaks);
           comdot_plan = [planar_comdot_plan;comdot_height_plan];
           com_traj = PPTrajectory(pchipDeriv(t_breaks,com_plan,comdot_plan));
-          
+
           com_constraint = ActionKinematicConstraint(r,0,zeros(3,1),com_traj, ...
                               action_sequence_ZMP.tspan,'com');
           action_sequence = action_sequence.addKinematicConstraint(com_constraint);
-          
+
           options.qtraj0 = PPTrajectory(spline(action_sequence.key_time_samples,q_key_time_samples));
           options.quasiStaticFlag = false;
           options.nSample = length(t_breaks)-1;
@@ -687,13 +687,13 @@ while (1)
     end
   end
 
-end 
+end
 
 function fprintfVerb(options,varargin)
   if(options.verbose) fprintf(varargin{:}); end
 end
 
-%function body = findLinkContaining(r,linkname,robot,throw_error)  
+%function body = findLinkContaining(r,linkname,robot,throw_error)
   %% @param robot can be the robot number or the name of a robot
   %% robot=0 means look at all robots
   %if nargin<3 || isempty(robot), robot=0; end
@@ -706,13 +706,13 @@ end
       %body = r.body(ind(1));
       %warning('Couldn''t find unique link %s. Returning first match: %s', ...
         %linkname,body.linkname);
-    %else 
+    %else
       %body=[];
     %end
   %elseif (length(ind)<1)
     %if (nargin<4 || throw_error)
       %error(['couldn''t find link ' ,linkname]);
-    %else 
+    %else
       %body=[];
     %end
   %else

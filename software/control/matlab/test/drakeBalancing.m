@@ -35,15 +35,15 @@ kinsol = doKinematics(r,q0);
 
 com = getCOM(r,kinsol);
 
-% build TI-ZMP controller 
+% build TI-ZMP controller
 footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
 foot_pos = terrainContactPositions(r,kinsol,footidx);
 comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 limp = LinearInvertedPendulum(com(3));
 [~,V] = lqr(limp,comgoal);
 
-foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-    
+foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+
 ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
   'B',[zeros(2); eye(2)],...
@@ -64,7 +64,7 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'support_times',0,...
   't_offset',0,...
-  'supports',foot_support));           
+  'supports',foot_support));
 
 % instantiate QP controller
 options.slack_limit = 30.0;
@@ -81,7 +81,7 @@ outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
 clear ins outs;
 
-% feedback PD trajectory controller 
+% feedback PD trajectory controller
 options.use_ik = false;
 pd = IKPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
