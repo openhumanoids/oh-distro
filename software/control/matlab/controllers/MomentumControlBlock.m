@@ -201,7 +201,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
         terrain_map_ptr = 0;
       end
 
-      obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,0));
+      obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr));
     end
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')

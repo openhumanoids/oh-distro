@@ -99,11 +99,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (!pdata->map_ptr)
       mexWarnMsgTxt("Map ptr is NULL.  Assuming flat terrain at z=0");
     
-    // get the multi-robot ptr back from matlab
-    if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
-    mexErrMsgIdAndTxt("DRC:MomentumControllermex:BadInputs","the eigth argument should be the multi_robot ptr");
-    memcpy(&pdata->multi_robot,mxGetPr(prhs[7]),sizeof(pdata->multi_robot));
-
     // create gurobi environment
     error = GRBloadenv(&(pdata->env),NULL);
 

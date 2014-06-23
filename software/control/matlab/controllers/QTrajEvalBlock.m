@@ -6,6 +6,9 @@ classdef QTrajEvalBlock < MIMODrakeSystem
     controller_data;
     dt;
     use_error_integrator;
+    jlmin;
+    jlmax;
+    nq;
   end
   
   methods
@@ -57,6 +60,9 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       obj.robot = r;
       obj.controller_data = controller_data;
       obj.use_error_integrator = options.use_error_integrator;
+      [obj.jlmin,obj.jlmax] = getJointLimits(obj.robot);
+      obj.nq = getNumDOF(r);
+
     end
        
     function [qdes,x]=mimoOutput(obj,t,~,x)
@@ -71,14 +77,13 @@ classdef QTrajEvalBlock < MIMODrakeSystem
         qdes = fasteval(qtraj,t);
       end
       if obj.use_error_integrator
-        q = x(1:end/2);
+        q = x(1:obj.nq);
         i_clamp = obj.controller_data.data.integral_clamps;
         newintg = obj.controller_data.data.integral + obj.controller_data.data.integral_gains.*(qdes-q)*obj.dt;
         newintg = max(-i_clamp,min(i_clamp,newintg));
         setField(obj.controller_data,'integral', newintg);
         qdes = qdes + newintg;
-        [jlmin,jlmax] = getJointLimits(obj.robot);
-        qdes = max(jlmin-i_clamp,min(jlmax+i_clamp,qdes)); % allow it to go delta above and below jlims
+        qdes = max(obj.jlmin-i_clamp,min(obj.jlmax+i_clamp,qdes)); % allow it to go delta above and below jlims
       end
     end
   end
