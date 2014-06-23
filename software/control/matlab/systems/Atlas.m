@@ -21,14 +21,14 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       if ~isfield(options,'terrain')
         options.terrain = RigidBodyFlatTerrain;
       end
-      
+
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped('r_foot_sole', 'l_foot_sole');
 
-      obj.floating =options.floating;
+      obj.floating = options.floating;
 
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
       obj.BDIToStateInd = 6*obj.floating+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
@@ -43,20 +43,6 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         %obj = obj.setInitialState(zeros(obj.getNumStates(),1));
       end
       warning(S);
-    end
-
-    function obj = setInitialState(obj,x0)
-      if isa(x0,'Point')
-        obj.x0 = double(x0); %.inFrame(obj.getStateFrame));
-      else
-        typecheck(x0,'double');
-        sizecheck(x0,obj.getNumStates());
-        obj.x0 = x0;
-      end
-    end
-
-    function x0 = getInitialState(obj)
-      x0 = obj.x0;
     end
 
     function obj = compile(obj)
@@ -129,6 +115,20 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       z_above_feet = getPelvisHeightAboveFeet(obj,q);
       zmin = q(3) - (z_above_feet-obj.pelvis_min_height);
       zmax = q(3) + (obj.pelvis_max_height-z_above_feet);
+    end
+
+    function obj = setInitialState(obj,x0)
+      if isa(x0,'Point')
+        obj.x0 = double(x0); %.inFrame(obj.getStateFrame));
+      else
+        typecheck(x0,'double');
+        sizecheck(x0,obj.getNumStates());
+        obj.x0 = x0;
+      end
+    end
+
+    function x0 = getInitialState(obj)
+      x0 = obj.x0;
     end
   end
   properties

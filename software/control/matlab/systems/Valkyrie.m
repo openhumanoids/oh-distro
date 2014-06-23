@@ -1,4 +1,4 @@
-classdef Valkyrie < Biped
+classdef Valkyrie < TimeSteppingRigidBodyManipulator & Biped
   methods
     function obj = Valkyrie(urdf, options)
       if nargin < 1 || isempty(urdf)
@@ -19,9 +19,8 @@ classdef Valkyrie < Biped
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 
-      obj = obj@Biped(urdf,options.dt,options);
-
-      obj.floating =options.floating;
+      obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
+      obj = obj@Biped('r_foot_sole', 'l_foot_sole');
 
       if options.floating
         % could also do fixed point search here
@@ -43,13 +42,27 @@ classdef Valkyrie < Biped
       % obj = obj.setInputFrame(input_frame);
     end
 
-    function xstar = loadFixedPoint(obj)
-      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/valkyrie_fp.mat'));
-      xstar = d.xstar;
+    function obj = setInitialState(obj,x0)
+      if isa(x0,'Point')
+        obj.x0 = double(x0); %.inFrame(obj.getStateFrame));
+      else
+        typecheck(x0,'double');
+        sizecheck(x0,obj.getNumStates());
+        obj.x0 = x0;
+      end
+    end
+
+    function x0 = getInitialState(obj)
+      x0 = obj.x0;
     end
   end
 
   properties
+    fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/valkyrie_fp.mat');
+  end
+
+  properties (SetAccess = protected, GetAccess = public)
+    x0
     default_footstep_params = struct('nom_forward_step', 0.15,... %m
                                   'max_forward_step', 0.3,...%m
                                   'max_step_width', 0.40,...%m
@@ -59,6 +72,13 @@ classdef Valkyrie < Biped
                                   'max_inward_angle', 0.01,... % rad
                                   'max_upward_step', 0.2,... % m
                                   'max_downward_step', 0.2); % m
+    default_walking_params = struct('step_speed', 0.5,... % speed of the swing foot (m/s)
+                                    'step_height', 0.05,... % approximate clearance over terrain (m)
+                                    'hold_frac', 0.4,... % fraction of the swing time spent in double support
+                                    'drake_min_hold_time', 1.0,... % minimum time in double support (s)
+                                    'mu', 1.0,... % friction coefficient
+                                    'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
+
   end
 end
 
