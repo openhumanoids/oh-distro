@@ -14,12 +14,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
   methods
     function obj = QTrajEvalBlock(r,controller_data,options)
       typecheck(r,'Biped');
-      typecheck(controller_data,'SharedDataHandle');
-      
-      ctrl_data = getData(controller_data);
-      if ~isfield(ctrl_data,'qtraj')
-        error('QTrajEvalBlock: controller_data must contain qtraj field');
-      end
+      typecheck(controller_data,'QPControllerData');
       
       if nargin<3
         options = struct();
@@ -66,7 +61,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
     end
        
     function [qdes,x]=mimoOutput(obj,t,~,x)
-      qtraj = obj.controller_data.data.qtraj;
+      qtraj = obj.controller_data.qtraj;
       if isa(qtraj,'double')
         qdes=qtraj;
       elseif isa(qtraj,'struct')

@@ -15,7 +15,7 @@ classdef FootContactBlock < MIMODrakeSystem
   methods
     function obj = FootContactBlock(r,controller_data,options)
       typecheck(r,'Biped');
-      typecheck(controller_data,'SharedDataHandle');
+      typecheck(controller_data,'QPControllerData');
        
       if nargin<3
         options = struct();
@@ -108,7 +108,7 @@ classdef FootContactBlock < MIMODrakeSystem
     end
    
     function varargout=mimoOutput(obj,t,~,x)      
-      ctrl_data = obj.controller_data.data;
+      ctrl_data = obj.controller_data;
 
       if (ctrl_data.is_time_varying)
         % extract current desired supports

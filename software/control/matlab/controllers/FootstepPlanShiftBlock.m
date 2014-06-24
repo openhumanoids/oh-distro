@@ -13,7 +13,7 @@ classdef FootstepPlanShiftBlock < DrakeSystem
   methods
     function obj = FootstepPlanShiftBlock(r,controller_data,options)
       typecheck(r,'Atlas');
-      typecheck(controller_data,'SharedDataHandle');
+      typecheck(controller_data,'QPControllerData');
             
       input_frame = getStateFrame(r);
       output_frame = getStateFrame(r);

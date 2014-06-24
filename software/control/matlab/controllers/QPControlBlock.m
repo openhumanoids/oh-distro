@@ -7,9 +7,7 @@ classdef QPControlBlock < MIMODrakeSystem
     % @param options structure for specifying objective weight (w), slack
     % variable limits (slack_limit), and input cost (R)
     typecheck(r,'Biped');
-    typecheck(controller_data,'SharedDataHandle');
-
-    QPControlBlock.check_ctrl_data(controller_data)
+    typecheck(controller_data,'QPControllerData');
     
     if nargin>3
       typecheck(options,'struct');
@@ -52,10 +50,6 @@ classdef QPControlBlock < MIMODrakeSystem
     end
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
    
-    if ~isfield(obj.controller_data.data,'qp_active_set')
-      obj.controller_data.setField('qp_active_set',[]);
-    end
-    
     if isfield(options,'use_bullet')
       obj.use_bullet = options.use_bullet;
     else
@@ -190,59 +184,6 @@ classdef QPControlBlock < MIMODrakeSystem
         
     obj.output_qdd = options.output_qdd;
   end
-
-  end
-  
-  methods (Static)
-    function check_ctrl_data(ctrl_data)
-      if ~isfield(ctrl_data.data,'D')
-        % assumed  ZMP system
-        hddot = 0; % could use estimated comddot here
-        ctrl_data.setField('D',-0.89/(hddot+9.81)*eye(2)); % TMP hard coding height here. Could be replaced with htraj from planner
-        % or current height above height map;
-      end
-      if ~isfield(ctrl_data.data,'qp_active_set')
-        ctrl_data.setField('qp_active_set',[]);
-      end
-      
-      ctrl_data = ctrl_data.data;
-      
-      % i've made the following assumptions to make things fast.  we can soften
-      % them later as desired.  - Russ
-      assert(isnumeric(ctrl_data.Qy));
-%       sizecheck(ctrl_data.Qy,[2 2]); % commented out by sk--some of the
-%       quasistatic systems pass 4x4 Qs
-      assert(isnumeric(ctrl_data.R));
-      sizecheck(ctrl_data.R,[2 2]);
-      assert(isnumeric(ctrl_data.C));
-      
-      assert(isnumeric(ctrl_data.S));
-      sizecheck(ctrl_data.S,[4 4]);
-      assert(isnumeric(ctrl_data.x0));
-      sizecheck(ctrl_data.x0,[4 1]);
-      assert(isnumeric(ctrl_data.u0));
-      if ctrl_data.is_time_varying
-        assert(isa(ctrl_data.s1,'Trajectory'));
-        assert(isa(ctrl_data.s2,'Trajectory'));
-        assert(isa(ctrl_data.s1dot,'Trajectory'));
-        assert(isa(ctrl_data.s2dot,'Trajectory'));
-        assert(isa(ctrl_data.y0,'Trajectory'));
-      else
-        assert(isnumeric(ctrl_data.s1));
-        assert(isnumeric(ctrl_data.s2));
-        assert(isnumeric(ctrl_data.y0));
-%        sizecheck(ctrl_data.supports,1);  % this gets initialized to zero
-%        in constructors.. but doesn't get used.  would be better to
-%        enforce it.
-      end       
-      sizecheck(ctrl_data.s1,[4 1]);
-      sizecheck(ctrl_data.s2,1);
-      assert(isnumeric(ctrl_data.mu));
-      assert(islogical(ctrl_data.ignore_terrain));
-    end
-  end
-  
-  methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
     persistent infocount
@@ -252,7 +193,7 @@ classdef QPControlBlock < MIMODrakeSystem
 
     out_tic = tic;
 
-    ctrl_data = obj.controller_data.data;
+    ctrl_data = obj.controller_data;
       
     x = varargin{1};
     qddot_des = varargin{2};
@@ -272,20 +213,20 @@ classdef QPControlBlock < MIMODrakeSystem
     D_ls = ctrl_data.D;
     S = ctrl_data.S;
     Sdot = 0*S; % constant for ZMP/double integrator dynamics
-    x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % for x-y plan adjustment
+    x0 = ctrl_data.x0 - [ctrl_data.plan_shift(1:2);0;0]; % for x-y plan adjustment
     u0 = ctrl_data.u0;
     if (ctrl_data.is_time_varying)
       s1 = fasteval(ctrl_data.s1,t);
 %       s2 = fasteval(ctrl_data.s2,t);
       s1dot = fasteval(ctrl_data.s1dot,t);
       s2dot = fasteval(ctrl_data.s2dot,t);
-      y0 = fasteval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
+      y0 = fasteval(ctrl_data.y0,t) - ctrl_data.plan_shift(1:2); % for x-y plan adjustment
     else
       s1 = ctrl_data.s1;
 %       s2 = ctrl_data.s2;
       s1dot = 0*s1;
       s2dot = 0;
-      y0 = ctrl_data.y0 - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
+      y0 = ctrl_data.y0 - ctrl_data.plan_shift(1:2); % for x-y plan adjustment
     end
     mu = ctrl_data.mu;
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
@@ -542,7 +483,7 @@ classdef QPControlBlock < MIMODrakeSystem
       end
 
       qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-      setField(obj.controller_data,'qp_active_set',qp_active_set);
+      obj.controller_data.qp_active_set = qp_active_set;
 
       %----------------------------------------------------------------------
       % Solve for inputs ----------------------------------------------------
@@ -581,11 +522,11 @@ classdef QPControlBlock < MIMODrakeSystem
           S,s1,s1dot,s2dot,x0,u0,y0,mu,height);
     end
 
-    if ~isempty(active_supports)
-      setVdot(obj.controller_data,Vdot);
-    else
-      setVdot(obj.controller_data,0);
-    end
+%     if ~isempty(active_supports)
+%       setVdot(obj.controller_data,Vdot);
+%     else
+%       setVdot(obj.controller_data,0);
+%     end
     
     if (obj.use_mex==2)
       % note: this only works when using gurobi
