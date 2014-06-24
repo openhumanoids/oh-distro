@@ -221,11 +221,12 @@ classdef MomentumControlBlock < MIMODrakeSystem
     
   function varargout=mimoOutput(obj,t,~,varargin)
     persistent infocount
-    
     if isempty(infocount)
       infocount = 0;
     end
-    
+
+    out_tic = tic;
+
     ctrl_data = obj.controller_data.data;
       
     x = varargin{1};
@@ -352,7 +353,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       %----------------------------------------------------------------------
       % Set up problem constraints ------------------------------------------
-            
+
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
       ub = [ 1e3*ones(1,nq) 1e3*ones(1,nf) obj.slack_limit*ones(1,neps)]';
 
@@ -640,7 +641,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
     end
 
-    if (0)     % simple timekeeping for performance optimization
+    if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
