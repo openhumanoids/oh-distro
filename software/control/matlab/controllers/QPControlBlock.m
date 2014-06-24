@@ -1,26 +1,46 @@
 classdef QPControlBlock < MIMODrakeSystem
 
   methods
-  function obj = QPControlBlock(r,controller_data,options)
+  function obj = QPControlBlock(r,body_accel_input_frames,controller_data,options)
     % @param r atlas instance
     % @param controller_data shared data handle containing linear system, zmp trajectories, Riccati solution, etc
     % @param options structure for specifying objective weight (w), slack
     % variable limits (slack_limit), and input cost (R)
-    typecheck(r,'Atlas');
+    typecheck(r,'Biped');
     typecheck(controller_data,'SharedDataHandle');
 
     QPControlBlock.check_ctrl_data(controller_data)
     
-    if nargin>2
+    if nargin>3
       typecheck(options,'struct');
     else
       options = struct();
     end
     
-    qddframe = AtlasCoordinates(r); % input frame for desired qddot 
-    ft_frame = AtlasForceTorque();
+    qddframe = AtlasCoordinates(r); % input frame for desired qddot, qdd constraints 
+        
+    input_frame = MultiCoordinateFrame({r.getStateFrame,qddframe,FootContactState,body_accel_input_frames{:}});
+    
+    if ~isfield(options,'output_qdd')
+      options.output_qdd = false;
+    else
+      typecheck(options.output_qdd,'logical');
+    end
+    
+    if options.output_qdd
+      output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
+    else
+      output_frame = r.getInputFrame();
+    end
 
-    input_frame = MultiCoordinateFrame({qddframe,ft_frame,r.getStateFrame});
+    obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
+    obj = setInputFrame(obj,input_frame);
+    obj = setOutputFrame(obj,output_frame);
+
+    obj.robot = r;
+    obj.numq = getNumDOF(r);
+    obj.controller_data = controller_data;
+    obj.n_body_accel_inputs = length(body_accel_input_frames);
     
     if isfield(options,'dt')
       % controller update rate
@@ -28,42 +48,18 @@ classdef QPControlBlock < MIMODrakeSystem
       sizecheck(options.dt,[1 1]);
       dt = options.dt;
     else
-      dt = 0.004;
-		end
-    
-		if ~isfield(options,'output_qdd')
-			options.output_qdd = false;
-    else
-			typecheck(options.output_qdd,'logical');
-		end
-		
-		if options.output_qdd
-			output_frame = MultiCoordinateFrame({r.getInputFrame(),qddframe});
-		else
-			output_frame = r.getInputFrame();
-		end
-		
-		obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
+      dt = 0.001;
+    end
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
-    obj = setInputFrame(obj,input_frame);
-    obj = setOutputFrame(obj,output_frame);
-
-    obj.robot = r;
-    obj.controller_data = controller_data;
+   
+    if ~isfield(obj.controller_data.data,'qp_active_set')
+      obj.controller_data.setField('qp_active_set',[]);
+    end
     
     if isfield(options,'use_bullet')
       obj.use_bullet = options.use_bullet;
     else
       obj.use_bullet = false;
-    end
-    
-    if isfield(options,'contact_threshold')
-      % minimum height above terrain for points to be in contact
-      typecheck(options.contact_threshold,'double');
-      sizecheck(options.contact_threshold,[1 1]);
-      obj.contact_threshold = options.contact_threshold;
-    else
-      obj.contact_threshold = 0.001;
     end
     
     % weight for desired qddot objective term
@@ -74,6 +70,24 @@ classdef QPControlBlock < MIMODrakeSystem
     else
       obj.w = 0.1;
     end
+
+    % weight for grf coefficients
+    if isfield(options,'w_grf')
+      typecheck(options.w_grf,'double');
+      sizecheck(options.w_grf,1);
+      obj.w_grf = options.w_grf;
+    else
+      obj.w_grf = 0.0;
+    end    
+
+    % weight for slack vars
+    if isfield(options,'w_slack')
+      typecheck(options.w_slack,'double');
+      sizecheck(options.w_slack,1);
+      obj.w_slack = options.w_slack;
+    else
+      obj.w_slack = 0.001;
+    end    
     
     % hard bound on slack variable values
     if isfield(options,'slack_limit')
@@ -83,16 +97,15 @@ classdef QPControlBlock < MIMODrakeSystem
     else
       obj.slack_limit = 10;
     end
-    
-    if isfield(options,'R')
-      warning('input cost no longer supported');
-    end
-    
-    if ~isfield(options,'lcm_foot_contacts')
-      obj.lcm_foot_contacts=true; % listen for foot contacts over LCM
+
+    % array dictating whether body acceleration inputs should be
+    % constraints (val<0) or cost terms with weight in [0,inf]
+    if isfield(options,'body_accel_input_weights')
+      typecheck(options.body_accel_input_weights,'double');
+      sizecheck(options.body_accel_input_weights,obj.n_body_accel_inputs);
+      obj.body_accel_input_weights = options.body_accel_input_weights;
     else
-      typecheck(options.lcm_foot_contacts,'logical');
-      obj.lcm_foot_contacts=options.lcm_foot_contacts;
+      obj.body_accel_input_weights = -1*ones(obj.n_body_accel_inputs,1);
     end
     
     if isfield(options,'debug')
@@ -103,6 +116,21 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.debug = false;
     end
 
+    if obj.debug
+      obj.debug_pub = ControllerDebugPublisher('CONTROLLER_DEBUG');
+    end
+
+    if isfield(options,'solver') 
+      % 0: fastqp, fallback to gurobi barrier (default)
+      % 1: gurobi primal simplex with active sets
+      typecheck(options.solver,'double');
+      sizecheck(options.solver,1);
+      assert(options.solver==0 || options.solver==1);
+    else
+      options.solver = 0;
+    end
+    obj.solver = options.solver;
+    
     if isfield(options,'use_mex')
       % 0 - no mex
       % 1 - use mex
@@ -113,59 +141,33 @@ classdef QPControlBlock < MIMODrakeSystem
       if (obj.use_mex && exist('QPControllermex','file')~=3)
         error('can''t find QPControllermex.  did you build it?');
       end
+      if (obj.use_mex==2 && obj.solver~=1)
+        error('must use gurobi when using use_mex=2 (todo: generalize)');
+      end
     else
       obj.use_mex = 1;
     end
-
-    if isfield(options,'use_hand_ft')
-      obj.use_hand_ft = options.use_hand_ft;
-    else
-      obj.use_hand_ft = false;
-    end
-
-    if (isfield(options,'ignore_states'))
-      % specifies what dimensions of the state we should ignore 
-      assert(isnumeric(options.ignore_states));
-      rangecheck(options.ignore_states,1,getNumStates(r));
-      assert(isfield(controller_data.data,'xtraj'));
-      assert(isa(controller_data.data.xtraj,'Trajectory'));
-      obj.ignore_states = options.ignore_states;
-    else
-      obj.ignore_states = [];
-    end
     
-    % specifies whether or not to solve QP for all DOFs or just the
-    % important subset
-    if (isfield(options,'full_body_opt'))
-      warning('full_body_opt option no longer supported --- controller is always full body.')
-    end
-
     obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
     obj.rhand_idx = findLinkInd(r,'r_hand');
     obj.lhand_idx = findLinkInd(r,'l_hand');
-    obj.nq = getNumDOF(r);
-    
-    if obj.lcm_foot_contacts
-      obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
-      obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
-    end % else estimate contact via kinematics
-    
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% NOTE: these parameters need to be set in QPControllermex.cpp, too %%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    obj.pelvis_idx = findLinkInd(r,'pelvis');    
       
-    obj.solver_options.outputflag = 0; % not verbose
-    obj.solver_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
-    obj.solver_options.presolve = 0;
-    % obj.solver_options.prepasses = 1;
+    obj.gurobi_options.outputflag = 0; % not verbose
+    if options.solver==0
+      obj.gurobi_options.method = 2; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
+    else
+      obj.gurobi_options.method = 0; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
+    end
+    obj.gurobi_options.presolve = 0;
+    % obj.gurobi_options.prepasses = 1;
 
-    if obj.solver_options.method == 2
-      obj.solver_options.bariterlimit = 20; % iteration limit
-      obj.solver_options.barhomogeneous = 0; % 0 off, 1 on
-      obj.solver_options.barconvtol = 5e-4;
+    if obj.gurobi_options.method == 2
+      obj.gurobi_options.bariterlimit = 20; % iteration limit
+      obj.gurobi_options.barhomogeneous = 0; % 0 off, 1 on
+      obj.gurobi_options.barconvtol = 5e-4;
     end
     
     if (obj.use_mex>0)
@@ -175,7 +177,7 @@ classdef QPControlBlock < MIMODrakeSystem
       else
         terrain_map_ptr = 0;
       end
-      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr,0));
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr));
     end
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')
@@ -184,11 +186,9 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.using_flat_terrain = false;
     end
     
-    obj.lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'qp-control-block-debug');
-
     [obj.jlmin, obj.jlmax] = getJointLimits(r);
         
-		obj.output_qdd = options.output_qdd;
+    obj.output_qdd = options.output_qdd;
   end
 
   end
@@ -245,25 +245,20 @@ classdef QPControlBlock < MIMODrakeSystem
   methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
-%     out_tic = tic;
-    ctrl_data = obj.controller_data.data;
-    
-%    QPControlBlock.check_ctrl_data(ctrl_data);  % todo: remove this after all of the DRC Controllers call it reliably on their initialize method
-  
-    qddot_des = varargin{1};
-    ft = varargin{2};
-    hand_ft = ft(6+(1:12));
-    % IMPORTANT NOTE: I'm assuming the atlas state is always the first
-    % frame in a multi coordinate frame 
-    x = varargin{3};
-    
-    if ~isempty(obj.ignore_states)
-      xt=fasteval(ctrl_data.xtraj,t);
-      x(obj.ignore_states) = xt(obj.ignore_states);
+    persistent infocount
+    if isempty(infocount)
+      infocount = 0;
     end
-    
+
+    out_tic = tic;
+
+    ctrl_data = obj.controller_data.data;
+      
+    x = varargin{1};
+    qddot_des = varargin{2};
+       
     r = obj.robot;
-    nq = obj.nq; 
+    nq = obj.numq; 
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
             
@@ -285,105 +280,57 @@ classdef QPControlBlock < MIMODrakeSystem
       s1dot = fasteval(ctrl_data.s1dot,t);
       s2dot = fasteval(ctrl_data.s2dot,t);
       y0 = fasteval(ctrl_data.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
-      
-      %----------------------------------------------------------------------
-      % extract current supports
-      supp_idx = find(ctrl_data.support_times<=t,1,'last');
-      supp = ctrl_data.supports(supp_idx);
     else
       s1 = ctrl_data.s1;
 %       s2 = ctrl_data.s2;
       s1dot = 0*s1;
       s2dot = 0;
       y0 = ctrl_data.y0 - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
-      
-      supp = ctrl_data.supports;
     end
     mu = ctrl_data.mu;
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
-
-    % contact_sensor = -1 (no info), 0 (info, no contact), 1 (info, yes contact)
-    contact_sensor=-1+0*supp.bodies;  % initialize to -1 for all
-    if obj.lcm_foot_contacts
-      % get foot contact state over LCM
-      contact_data = obj.contact_est_monitor.getMessage();
-      if ~isempty(contact_data)
-        msg = drc.foot_contact_estimate_t(contact_data);
-        contact_sensor(find(supp.bodies==obj.lfoot_idx)) = msg.left_contact;
-        contact_sensor(find(supp.bodies==obj.rfoot_idx)) = msg.right_contact;
-      end
+    
+    condof = ctrl_data.constrained_dofs; % dof indices for which q_ddd_des is a constraint
+        
+    fc = varargin{3};
+    
+    % TODO: generalize this again to arbitrary body contacts
+    support_bodies = [];
+    contact_pts = {};
+    n_contact_pts = [];
+    ind = 1;
+    if fc(1)>0
+      support_bodies(ind) = obj.lfoot_idx;
+      contact_pts{ind} = 1:4;
+      n_contact_pts(ind) = 4;
+      ind=ind+1;
+    end
+    if fc(2)>0
+      support_bodies(ind) = obj.rfoot_idx;
+      contact_pts{ind} = 1:4;
+      n_contact_pts(ind) = 4;
     end
     
+%    supp = SupportState(r,support_bodies,contact_pts);
+    supp.bodies = support_bodies;
+    supp.contact_surfaces = 0*support_bodies;
+    supp.contact_pts = contact_pts;
+    supp.num_contact_pts = n_contact_pts;
+    
     if (obj.use_mex==0 || obj.use_mex==2)
+      kinsol = doKinematics(r,q,false,true,qd);
 
-      % Change in logic here due to recent tests with heightmap noise
-      % for now, we will do a logical OR of the force-based sensor and the
-      % kinematic criterion for foot contacts
-      %
-      % another option would be to limit forces on the feet when kinematics
-      % says 'contact', but force sensors do not. when both agree, allow full
-      % forces on the feet
-      kinsol = doKinematics(r,q,false,true);
-      
-      % get active contacts
-      i=1;
-      while i<=length(supp.bodies)
-        if ctrl_data.ignore_terrain
-          % use all desired supports UNLESS we have sensor information saying no contact
-          if (contact_sensor(i)==0) 
-            supp = removeBody(supp,i); 
-            contact_sensor(i)=[];
-            i=i-1;
-          end
-        else
-          % check kinematic contact
-          phi = contactConstraints(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,supp.bodies(i)]));
-          contact_state_kin = any(phi<=obj.contact_threshold);
-
-          if (~contact_state_kin && contact_sensor(i)<1) 
-            % no contact from kin, no contact (or no info) from sensor
-            supp = removeBody(supp,i); 
-            contact_sensor(i)=[];
-            i=i-1;
-          end
-        end
-        i=i+1;
-      end
-      active_supports = (supp.bodies)';
-      active_surfaces = supp.contact_surfaces;
+      active_supports = supp.bodies;
       active_contact_pts = supp.contact_pts;
       num_active_contacts = supp.num_contact_pts;      
 
-      %----------------------------------------------------------------------
-      % Disable hand force/torque contribution to dynamics as necessary
-      if (~obj.use_hand_ft)
-        hand_ft=0*hand_ft;
-      else
-        if any(active_supports==obj.lhand_idx)
-          hand_ft(1:6)=0;
-        end
-        if any(active_supports==obj.rhand_idx)
-          hand_ft(7:12)=0;
-        end
-      end
-          
-      %----------------------------------------------------------------------
-      
-      nu = getNumInputs(r);
-      nq = getNumDOF(r);
       dim = 3; % 3D
       nd = 4; % for friction cone approx, hard coded for now
       float_idx = 1:6; % indices for floating base dofs
       act_idx = 7:nq; % indices for actuated dofs
 
-      kinsol = doKinematics(r,q,false,true,qd);
-      
       [H,C,B] = manipulatorDynamics(r,q,qd);
 
-      [~,Jlhand] = forwardKin(r,kinsol,obj.lhand_idx,zeros(3,1),1);
-      [~,Jrhand] = forwardKin(r,kinsol,obj.rhand_idx,zeros(3,1),1);
-      C = C + Jlhand'*hand_ft(1:6) + Jrhand'*hand_ft(7:12);
-      
       H_float = H(float_idx,:);
       C_float = C(float_idx);
 
@@ -393,11 +340,10 @@ classdef QPControlBlock < MIMODrakeSystem
 
       [xcom,J] = getCOM(r,kinsol);
       
-      
       Jdot = forwardJacDot(r,kinsol,0);
       J = J(1:2,:); % only need COM x-y
       Jdot = Jdot(1:2,:);
-      
+
       if ~isempty(active_supports)
         nc = sum(num_active_contacts);
         c_pre = 0;
@@ -411,7 +357,7 @@ classdef QPControlBlock < MIMODrakeSystem
         Dbar_float = Dbar(float_idx,:);
         Dbar_act = Dbar(act_idx,:);
 
-        [~,Jp,Jpdot] = terrainContactPositions(r,kinsol,[1,active_supports],true);
+        [~,Jp,Jpdot] = terrainContactPositions(r,kinsol,active_supports,true);
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
 
@@ -439,13 +385,9 @@ classdef QPControlBlock < MIMODrakeSystem
 
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
       ub = [ 1e3*ones(1,nq) 1e3*ones(1,nf) obj.slack_limit*ones(1,neps)]';
-      
-      % if at joint limit, disallow accelerations in that direction
-      lb(q<=obj.jlmin+1e-4) = 0;
-      ub(q>=obj.jlmax-1e-4) = 0;
-      
-      Aeq_ = cell(1,2);
-      beq_ = cell(1,2);
+
+      Aeq_ = cell(1,length(varargin)+1);
+      beq_ = cell(1,5);
       Ain_ = cell(1,2);
       bin_ = cell(1,2);
 
@@ -474,7 +416,33 @@ classdef QPControlBlock < MIMODrakeSystem
         Aeq_{2} = Jp*Iqdd + Ieps;
         beq_{2} = -Jpdot*qd - 1.0*Jp*qd;
       end
+
+      eq_count=3;
       
+      for ii=1:obj.n_body_accel_inputs
+        if obj.body_accel_input_weights(ii) < 0
+          body_input = varargin{ii+3};
+          body_ind = body_input(1);
+          body_vdot = body_input(2:7);
+          if ~any(active_supports==body_ind)
+            [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
+            Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
+            cidx = ~isnan(body_vdot);
+            Aeq_{eq_count} = J(cidx,:)*Iqdd;
+            beq_{eq_count} = -Jdot(cidx,:)*qd + body_vdot(cidx);
+            eq_count = eq_count+1;
+          end
+        end
+      end
+
+      if ~isempty(ctrl_data.constrained_dofs)
+        % add joint acceleration constraints
+        conmap = zeros(length(condof),nq);
+        conmap(:,condof) = eye(length(condof));
+        Aeq_{eq_count} = conmap*Iqdd;
+        beq_{eq_count} = qddot_des(condof);
+      end
+
       % linear equality constraints: Aeq*alpha = beq
       Aeq = sparse(vertcat(Aeq_{:}));
       beq = vertcat(beq_{:});
@@ -499,37 +467,55 @@ classdef QPControlBlock < MIMODrakeSystem
         fqp = fqp - y0'*Qy*D_ls*J*Iqdd;
         fqp = fqp - obj.w*qddot_des'*Iqdd;
         
-        % quadratic slack var cost 
-        Hqp(nparams-neps+1:end,nparams-neps+1:end) = 0.001*eye(neps); 
+        Hqp(nq+(1:nf),nq+(1:nf)) = obj.w_grf*eye(nf); 
+        Hqp(nparams-neps+1:end,nparams-neps+1:end) = obj.w_slack*eye(neps); 
       else
         Hqp = Iqdd'*Iqdd;
         fqp = -qddot_des'*Iqdd;
       end
 
+      for ii=1:obj.n_body_accel_inputs
+        w = obj.body_accel_input_weights(ii);
+        if w>0
+          body_input = varargin{ii+3};
+          body_ind = body_input(1);
+          body_vdot = body_input(2:7);
+          if ~any(active_supports==body_ind)
+            [~,J] = forwardKin(r,kinsol,body_ind,[0;0;0],1);
+            Jdot = forwardJacDot(r,kinsol,body_ind,[0;0;0],1);
+            cidx = ~isnan(body_vdot);
+            Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + w*J(cidx,:)'*J(cidx,:);
+            fqp = fqp + w*(qd'*Jdot(cidx,:)'- body_vdot(cidx)')*J(cidx,:)*Iqdd;
+          end
+        end
+      end
+      
       %----------------------------------------------------------------------
       % Solve QP ------------------------------------------------------------
-      
+
       REG = 1e-8;
-      
+
       IR = eye(nparams);  
       lbind = lb>-999;  ubind = ub<999;  % 1e3 was used like inf above... right?
       Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
       bin_fqp = [bin; -lb(lbind); ub(ubind)];
 
       if obj.use_mex ~= 2
-        % call fastQPmex first
-        QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq),zeros(nf,1)+ REG*ones(nf,1),0.001*ones(neps,1)+ REG*ones(neps,1)};
-        Aeq_fqp = full(Aeq);
+      % call fastQPmex first
+      QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq), ...
+                  obj.w_grf*ones(nf,1) + REG*ones(nf,1), ...
+                  obj.w_slack*ones(neps,1) + REG*ones(neps,1)};
+      Aeq_fqp = full(Aeq);
 
-        %% NOTE: model.obj is 2* f for fastQP!!!
-        [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
+      % NOTE: model.obj is 2* f for fastQP!!!
+      [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
       else
         info_fqp = -1;
       end
       
       if info_fqp<0
         % then call gurobi
-        
+%         disp('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!failed over to gurobi');
         model.Q = sparse(Hqp + REG*eye(nparams));
         model.A = [Aeq; Ain];
         model.rhs = [beq; bin];
@@ -538,7 +524,7 @@ classdef QPControlBlock < MIMODrakeSystem
         model.ub = ub;
 
         model.obj = fqp;
-        if obj.solver_options.method==2
+        if obj.gurobi_options.method==2
           % see drake/algorithms/QuadraticProgram.m solveWGUROBI
           model.Q = .5*model.Q;
         end
@@ -547,17 +533,17 @@ classdef QPControlBlock < MIMODrakeSystem
           keyboard;
         end
 
-%         qp_tic = tic;
-        result = gurobi(model,obj.solver_options);
-%         qp_toc = toc(qp_tic);
-%         fprintf('QP solve: %2.4f\n',qp_toc);
-      
+  %         qp_tic = tic;
+        result = gurobi(model,obj.gurobi_options);
+  %         qp_toc = toc(qp_tic);
+  %         fprintf('QP solve: %2.4f\n',qp_toc);
+
         alpha = result.x;
       end
-        
+
       qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
       setField(obj.controller_data,'qp_active_set',qp_active_set);
-      
+
       %----------------------------------------------------------------------
       % Solve for inputs ----------------------------------------------------
 
@@ -585,19 +571,14 @@ classdef QPControlBlock < MIMODrakeSystem
     end
   
     if (obj.use_mex==1)
-      if ctrl_data.ignore_terrain
-        contact_thresh =-1;       
-      else
-        contact_thresh = obj.contact_threshold;
-      end
       if obj.using_flat_terrain
         height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
       else
         height = 0;
       end
-      [y,Vdot,active_supports,qdd] = QPControllermex(obj.mex_ptr.data,1,qddot_des,x,q, ...
-          supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot,x0,u0,y0,mu, ...
-          contact_sensor,contact_thresh,height,obj.include_angular_momentum);
+      [y,qdd,info,active_supports,Vdot] = QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
+          varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,...
+          S,s1,s1dot,s2dot,x0,u0,y0,mu,height);
     end
 
     if ~isempty(active_supports)
@@ -608,168 +589,33 @@ classdef QPControlBlock < MIMODrakeSystem
     
     if (obj.use_mex==2)
       % note: this only works when using gurobi
-      if ctrl_data.ignore_terrain
-        contact_thresh=-1;       
-      else
-        contact_thresh = obj.contact_threshold;
-      end
       if obj.using_flat_terrain
         height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
       else
         height = 0;
       end
-      [y,Vdotmex,active_supports_mex,Q,gobj,A,rhs,sense,lb,ub] = QPControllermex(obj.mex_ptr.data, ...
-        0,qddot_des,x,q,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,s1dot,s2dot, ...
-        x0,u0,y0,mu,contact_sensor,contact_thresh,height,obj.include_angular_momentum);
+      [y,qdd,info,active_supports_mex,Vdotmex,Q,gobj,A,rhs,sense,lb,ub] = ...
+          QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
+          varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,...
+          S,s1,s1dot,s2dot,x0,u0,y0,mu,height);
       if (nc>0)
         valuecheck(active_supports_mex,active_supports);
-        valuecheck(Vdotmex,Vdot,1e-3);
+        % TODO: fix this
+        %valuecheck(Vdotmex,Vdot,1e-3);
       end
-      valuecheck(Q'+Q,model.Q'+model.Q,1e-8);
-      valuecheck(gobj,model.obj,1e-8);
+%       valuecheck(Q'+Q,model.Q'+model.Q,1e-8);
+%       valuecheck(gobj,model.obj,1e-8);
       % had to comment out equality constraints because the contact
       % jacobian rows can be permuted between matlab/mex
       %valuecheck(A,model.A,1e-8);
       %valuecheck(rhs,model.rhs,1e-8);
-      valuecheck(sense',model.sense);
-      valuecheck(lb,model.lb,1e-8);
-      valuecheck(ub,model.ub,1e-8);
-%       valuecheck(y,des.y,0.5);
-    end
-    
-   
-    if obj.debug && (obj.use_mex==0 || obj.use_mex==2) && nc > 0
-      xcomdd = Jdot * qd + J * qdd;
-      zmppos = xcom(1:2) + D_ls * xcomdd;
-      zmp = [zmppos', mean(cpos(3,:))];
-      convh = convhull(cpos(1,:), cpos(2,:));
-      zmp_ok = inpolygon(zmppos(1), zmppos(2), cpos(1,convh), cpos(2,convh));
-      if zmp_ok
-        color = [0 1 0];
-      else
-        color = [1 0 0];
-      end
-      obj.lcmgl.glColor3f(color(1), color(2), color(3));
-      obj.lcmgl.sphere(zmp, 0.015, 20, 20);
-
-      obj.lcmgl.glColor3f(0, 0, 0);
-      obj.lcmgl.sphere([xcom(1:2)', mean(cpos(3,:))], 0.015, 20, 20);
-
-      % plot Vdot indicator
-      headpos = forwardKin(r,kinsol,findLinkInd(r,'head'),[0;0;0]);
-      obj.lcmgl.glLineWidth(3);
-      obj.lcmgl.glPushMatrix();
-      obj.lcmgl.glTranslated(headpos(1),headpos(2),headpos(3)+0.3);
-      obj.lcmgl.glRotated(90, 0, 1, 0);
-      if Vdot < 0
-        obj.lcmgl.glColor3f(0, 1, 0);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0.025, -0.055, 0.01);
-        obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
-        obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
-        obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
-        obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
-        obj.lcmgl.glVertex3f(0.025, 0.055, 0.01);
-        obj.lcmgl.glEnd();
-      elseif Vdot < 0.1
-        obj.lcmgl.glColor3f(1, 1, 0);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0.045, -0.055, 0.01);
-        obj.lcmgl.glVertex3f(0.045, 0.055, 0.01);
-        obj.lcmgl.glEnd();
-      elseif Vdot < 0.25
-        obj.lcmgl.glColor3f(1, 0.5, 0);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0.045, -0.055, 0.01);
-        obj.lcmgl.glVertex3f(0.045, 0.055, 0.01);
-        obj.lcmgl.glEnd();
-      else
-        obj.lcmgl.glColor3f(1, 0, 0);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0.065, -0.055, 0.01);
-        obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
-        obj.lcmgl.glVertex3f(0.045, -0.035, 0.01);
-        obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
-        obj.lcmgl.glVertex3f(0.045, 0.035, 0.01);
-        obj.lcmgl.glVertex3f(0.065, 0.055, 0.01);
-        obj.lcmgl.glEnd();
-      end
-      obj.lcmgl.circle(0,0,0, 0.1);
-      obj.lcmgl.circle(-0.03,-0.035,0.005, 0.01);
-      obj.lcmgl.circle(-0.03,0.035,0.005, 0.01);
-      obj.lcmgl.glPopMatrix();
+%       valuecheck(sense',model.sense);
+%       valuecheck(lb,model.lb,1e-8);
+%       valuecheck(ub,model.ub,1e-8);
+      valuecheck(y,des.y,0.5);
+    end   
       
-      [~,B] = contactConstraintsBV(r,kinsol,active_supports,active_contact_pts);
-      beta = Ibeta*alpha;
-      nd=size(B{1},2); 
-      for j=1:nc
-        beta_j = beta((j-1)*nd+(1:nd),:);
-        b=0.1*B{j}; % scale for drawing
-        obj.lcmgl.glLineWidth(2);
-        obj.lcmgl.glPushMatrix();
-        obj.lcmgl.glTranslated(cpos(1,j),cpos(2,j),cpos(3,j));
-        obj.lcmgl.glColor3f(0, 0, 1);
-        fvec = zeros(3,1);
-        for k=1:nd
-          obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-          obj.lcmgl.glVertex3f(0, 0, 0);
-          obj.lcmgl.glVertex3f(b(1,k), b(2,k), b(3,k)); 
-          obj.lcmgl.glEnd();
-          fvec = fvec + beta_j(k)*b(:,k);
-        end
-        obj.lcmgl.glLineWidth(3);
-        obj.lcmgl.glColor3f(1, 0, 0);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0, 0, 0);
-        obj.lcmgl.glVertex3f(0.025*fvec(1), 0.025*fvec(2), 0.025*fvec(3)); 
-        obj.lcmgl.glEnd();
-        obj.lcmgl.glPopMatrix();
-      end
-      
-      if 0 % plot individual body COMs
-        for jj=1:getNumBodies(r)
-          b = getBody(r,jj);
-          if ~isempty(b.com)
-            bpos = forwardKin(r,kinsol,jj,[0;0;0],1);
-            obj.lcmgl.glColor3f(1, 0, 0);
-            obj.lcmgl.glPushMatrix();
-            obj.lcmgl.glTranslated(bpos(1),bpos(2),bpos(3));
-            ax = rpy2axis(bpos(4:6));
-            obj.lcmgl.glRotated(ax(4)*180/pi, ax(1), ax(2), ax(3));
-            obj.lcmgl.sphere(b.com, b.mass*0.005, 20, 20);
-            obj.lcmgl.glPopMatrix();
-          end
-       end
-        
-      end
-      
-      if obj.include_angular_momentum
-        % plot momentum vectors
-        h = Ag*qd;
-        obj.lcmgl.glLineWidth(3);
-
-        obj.lcmgl.glPushMatrix();
-        obj.lcmgl.glTranslated(xcom(1),xcom(2),xcom(3));
-        obj.lcmgl.glColor3f(0.5, 0.25, 0);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0, 0, 0);
-        obj.lcmgl.glVertex3f(0.05*h(4), 0.05*h(5), 0.05*h(6)); % scale for drawing
-        obj.lcmgl.glEnd();
-
-        aa_h = rpy2axis(h(1:3));
-        obj.lcmgl.glColor3f(0, 0.25, 0.5);
-        obj.lcmgl.glBegin(obj.lcmgl.LCMGL_LINES);
-        obj.lcmgl.glVertex3f(0, 0, 0);
-        obj.lcmgl.glVertex3f(0.2*aa_h(1), 0.2*aa_h(2), 0.2*aa_h(3)); % scale for drawing
-        obj.lcmgl.glEnd();
-        obj.lcmgl.glPopMatrix();
-      end
-      
-      obj.lcmgl.glLineWidth(1);
-      obj.lcmgl.switchBuffers();
-    end
-
-    if (0)     % simple timekeeping for performance optimization
+    if (1)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
@@ -783,45 +629,45 @@ classdef QPControlBlock < MIMODrakeSystem
       if mod(average_tictoc_n,50)==0
         fprintf('Average control output duration: %2.4f\n',average_tictoc);
       end
-	end
-		
-		if obj.output_qdd
-			varargout = {y,qdd};
-		else
-			varargout = {y};
-		end
+    end
+    
+    if obj.output_qdd
+      varargout = {y,qdd};
+    else
+      varargout = {y};
+    end
   end
   end
 
   properties (SetAccess=private)
     robot; % to be controlled
-    nq;
+    numq;
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
     w; % objective function weight
+    w_grf; % scalar ground reaction force weight
+    w_slack; % scalar slack var weight
     slack_limit; % maximum absolute magnitude of acceleration slack variable values
     rfoot_idx;
     lfoot_idx;
     rhand_idx;
     lhand_idx;
-    solver_options = struct();
+    pelvis_idx;
+    gurobi_options = struct();
+    solver=0;
     debug;
+    debug_pub;
     use_mex;
     use_hand_ft;
     mex_ptr;
     lc;
-    contact_est_monitor;
-    lcm_foot_contacts;  
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
     ineq_array = repmat('<',100,1); % so we can avoid using repmat in the loop
     use_bullet;
-    num_state_frames; % if there's a multi robot defined this is 1+ the number of other state frames
     using_flat_terrain; % true if using DRCFlatTerrain
-    ignore_states; % array if state indices we want to ignore (and substitute with planned values)
-    lcmgl;
-    include_angular_momentum; % tmp flag for testing out angular momentum control
     jlmin;
     jlmax;
-    contact_threshold; % min height above terrain to be considered in contact
-		output_qdd = false;
-    end
+    output_qdd = false;
+    body_accel_input_weights; % array of doubles, negative values signal constraints
+    n_body_accel_inputs; % scalar
+  end
 end

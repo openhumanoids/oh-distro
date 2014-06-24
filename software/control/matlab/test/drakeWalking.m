@@ -75,8 +75,26 @@ request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
-ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
+% No-op: just make sure we can cleanly encode and decode the plan as LCM
+tic
+walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
+fprintf(1, 'control data lcm code/decode time: %f\n', toc);
+
+ts = walking_plan.ts;
 T = ts(end);
+
+if plot_comtraj
+  % plot walking traj in drake viewer
+  lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
+
+  for i=1:length(ts)
+    lcmgl.glColor3f(0, 0, 1);
+    lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+    lcmgl.glColor3f(0, 1, 0);
+    lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+  end
+  lcmgl.switchBuffers();
+end
 
 ctrl_data = SharedDataHandle(struct(...
   'A',[zeros(2),eye(2); zeros(2,4)],...
@@ -85,7 +103,7 @@ ctrl_data = SharedDataHandle(struct(...
   'Qy',eye(2),...
   'R',zeros(2),...
   'is_time_varying',true,...
-  'S',walking_ctrl_data.S.eval(0),... % always a constant
+  'S',walking_ctrl_data.S,... % always a constant
   's1',walking_ctrl_data.s1,...
   's2',walking_ctrl_data.s2,...
   's1dot',walking_ctrl_data.s1dot,...
@@ -100,7 +118,8 @@ ctrl_data = SharedDataHandle(struct(...
   't_offset',0,...
   'mu',walking_ctrl_data.mu,...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
-  'y0',walking_ctrl_data.zmptraj));
+  'y0',walking_ctrl_data.zmptraj,...
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
 % instantiate QP controller
 options.dt = 0.003;
@@ -108,9 +127,15 @@ options.slack_limit = 30.0;
 options.w = 0.001;
 options.lcm_foot_contacts = false;
 options.debug = false;
+options.contact_threshold = 0.005;
+if options.use_mex==2
+  options.solver = 1;
+else
+  options.solver = 0;
+end
 
 options.use_bullet = use_bullet;
-qp = QPControlBlock(r,ctrl_data,options);
+qp = QPControlBlock(r,{},ctrl_data,options);
 
 % cascade footstep plan shift block
 fs = FootstepPlanShiftBlock(r,ctrl_data,options);
@@ -118,20 +143,32 @@ sys = cascade(r,fs);
 
 % feedback QP controller with atlas
 ins(1).system = 1;
-ins(1).input = 1;
+ins(1).input = 2;
+ins(2).system = 1;
+ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,sys,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
+% feedback foot contact detector with QP/atlas
+options.use_lcm=false;
+fc = FootContactBlock(r,ctrl_data,options);
+ins(1).system = 2;
+ins(1).input = 1;
+sys = mimoFeedback(fc,sys,[],[],ins,outs);
+clear ins;  
+  
 % feedback PD block
-pd = IKPDBlock(r,ctrl_data);
+% 	options.Kp = 270.0*ones(nq,1);
+% 	options.Kd = 30.0*ones(nq,1);
+% 	options.Kp(ankle_ind) = 80;
+% 	options.Kd(ankle_ind) = 10;
+pd = IKPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
 qt = QTrajEvalBlock(r,ctrl_data);
 outs(1).system = 2;

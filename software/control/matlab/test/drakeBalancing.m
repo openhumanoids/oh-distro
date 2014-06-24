@@ -64,32 +64,42 @@ ctrl_data = SharedDataHandle(struct(...
   'trans_drift',[0;0;0],...
   'support_times',0,...
   't_offset',0,...
-  'supports',foot_support));           
+  'supports',foot_support,...
+  'constrained_dofs',[]));
 
 % instantiate QP controller
 options.slack_limit = 30.0;
 options.w = 0.001;
 options.lcm_foot_contacts = false;
-qp = QPControlBlock(r,ctrl_data,options);
+options.debug = false;
+options.contact_threshold = 0.005;
+qp = QPControlBlock(r,{},ctrl_data,options);
 clear options;
 
 % feedback QP controller with atlas
 ins(1).system = 1;
-ins(1).input = 1;
+ins(1).input = 2;
+ins(2).system = 1;
+ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(qp,r,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
-% feedback PD trajectory controller 
+% feedback foot contact detector with QP/atlas
+options.use_lcm=false;
+fc = FootContactBlock(r,ctrl_data,options);
+ins(1).system = 2;
+ins(1).input = 1;
+sys = mimoFeedback(fc,sys,[],[],ins,outs);
+clear ins;  
+  
 options.use_ik = false;
 pd = IKPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
 qt = QTrajEvalBlock(r,ctrl_data);
 outs(1).system = 2;

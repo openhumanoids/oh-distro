@@ -24,6 +24,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double* pr;
   int i,j;
 
+
   if (mxGetScalar(prhs[0])==0) { // then construct the data object and return
     pdata = new struct QPControllerData;
     
@@ -35,7 +36,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     pm = myGetProperty(pobj,"slack_limit");
     pdata->slack_limit = mxGetScalar(pm);
-    
+
+    pm= myGetProperty(pobj,"w_grf");
+    pdata->w_grf = mxGetScalar(pm);    
+
+    pm= myGetProperty(pobj,"w_slack");
+    pdata->w_slack = mxGetScalar(pm);    
+   
+    pm= myGetProperty(pobj,"n_body_accel_inputs");
+    pdata->n_body_accel_inputs = mxGetScalar(pm); 
+
+    pm = myGetProperty(pobj,"body_accel_input_weights");
+    pdata->body_accel_input_weights.resize(pdata->n_body_accel_inputs);
+    memcpy(pdata->body_accel_input_weights.data(),mxGetPr(pm),sizeof(double)*pdata->n_body_accel_inputs);
+
+    pdata->n_body_accel_constraints = 0;
+    for (int i=0; i<pdata->n_body_accel_inputs; i++) {
+      if (pdata->body_accel_input_weights(i) < 0)
+        pdata->n_body_accel_constraints++;
+    }
+
     // get robot mex model ptr
     if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
       mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the third argument should be the robot mex ptr");
@@ -63,24 +83,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (!pdata->map_ptr)
       mexWarnMsgTxt("Map ptr is NULL.  Assuming flat terrain at z=0");
     
-    // get the multi-robot ptr back from matlab
-    if (!mxIsNumeric(prhs[7]) || mxGetNumberOfElements(prhs[7])!=1)
-    mexErrMsgIdAndTxt("DRC:QPControllermex:BadInputs","the eigth argument should be the multi_robot ptr");
-    memcpy(&pdata->multi_robot,mxGetPr(prhs[7]),sizeof(pdata->multi_robot));
-
     // create gurobi environment
     error = GRBloadenv(&(pdata->env),NULL);
 
     // set solver params (http://www.gurobi.com/documentation/5.5/reference-manual/node798#sec:Parameters)
-    mxArray* psolveropts = myGetProperty(pobj,"solver_options");
+    mxArray* psolveropts = myGetProperty(pobj,"gurobi_options");
     int method = (int) mxGetScalar(myGetField(psolveropts,"method"));
     CGE ( GRBsetintparam(pdata->env,"outputflag",0), pdata->env );
-    CGE ( GRBsetintparam(pdata->env,"method",2), pdata->env );
+    CGE ( GRBsetintparam(pdata->env,"method",method), pdata->env );
+    // CGE ( GRBsetintparam(pdata->env,"method",method), pdata->env );
     CGE ( GRBsetintparam(pdata->env,"presolve",0), pdata->env );
     if (method==2) {
-    	CGE ( GRBsetintparam(pdata->env,"bariterlimit",20), pdata->env );
-    	CGE ( GRBsetintparam(pdata->env,"barhomogeneous",0), pdata->env );
-    	CGE ( GRBsetdblparam(pdata->env,"barconvtol",0.0005), pdata->env );
+      CGE ( GRBsetintparam(pdata->env,"bariterlimit",20), pdata->env );
+      CGE ( GRBsetintparam(pdata->env,"barhomogeneous",0), pdata->env );
+      CGE ( GRBsetdblparam(pdata->env,"barconvtol",0.0005), pdata->env );
     }
 
     mxClassID cid;
@@ -123,11 +139,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   memcpy(&pdata,mxGetData(prhs[0]),sizeof(pdata));
 
 //  for (i=0; i<pdata->r->num_bodies; i++)
-//  	mexPrintf("body %d (%s) has %d contact points\n", i, pdata->r->bodies[i].linkname.c_str(), pdata->r->bodies[i].contact_pts.cols());
+//    mexPrintf("body %d (%s) has %d contact points\n", i, pdata->r->bodies[i].linkname.c_str(), pdata->r->bodies[i].contact_pts.cols());
 
   int nu = pdata->B.cols(), nq = pdata->r->num_dof;
   const int dim = 3, // 3D
-      nd = 2*m_surface_tangents; // for friction cone approx, hard coded for now
+  nd = 2*m_surface_tangents; // for friction cone approx, hard coded for now
   
   assert(nu+6 == nq);
 
@@ -139,8 +155,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
-  double *q_multi = mxGetPr(prhs[narg++]);
+
+  vector<VectorXd> body_accel_inputs;
+  for (int i=0; i<pdata->n_body_accel_inputs; i++) {
+    assert(mxGetM(prhs[narg])==7); assert(mxGetN(prhs[narg])==1);
+    VectorXd v = VectorXd::Zero(7,1);
+    memcpy(v.data(),mxGetPr(prhs[narg++]),sizeof(double)*7);
+    body_accel_inputs.push_back(v);
+  }
   
+  int num_condof;
+  VectorXd condof;
+  if (!mxIsEmpty(prhs[narg])) {
+    assert(mxGetN(prhs[narg])==1);
+    num_condof=mxGetM(prhs[narg]);
+    condof = VectorXd::Zero(num_condof);
+    memcpy(condof.data(),mxGetPr(prhs[narg++]),sizeof(double)*num_condof);
+  }
+  else {
+    num_condof=0;
+    narg++; // skip over empty vector
+  }
+
   int desired_support_argid = narg++;
   
   assert(mxGetM(prhs[narg])==4); assert(mxGetN(prhs[narg])==4);
@@ -182,39 +218,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Map< Vector2d > y0(mxGetPr(prhs[narg++]));
 
   double mu = mxGetScalar(prhs[narg++]);
-
-  double* double_contact_sensor = mxGetPr(prhs[narg]); int len = mxGetNumberOfElements(prhs[narg++]);
-  VectorXi contact_sensor(len);  
-  for (i=0; i<len; i++)
-    contact_sensor(i)=(int)double_contact_sensor[i];
-  double contact_threshold = mxGetScalar(prhs[narg++]);
   double terrain_height = mxGetScalar(prhs[narg++]); // nonzero if we're using DRCFlatTerrainMap
-  int include_angular_momentum = (int) mxGetScalar(prhs[narg++]); 
 
   Matrix2d R_DQyD_ls = R_ls + D_ls.transpose()*Qy*D_ls;
   
   pdata->r->doKinematics(q,false,qd);
 
-  #ifdef BULLET_COLLISION
-  if (pdata->multi_robot) {
-    auto multi_robot = static_cast<RigidBodyManipulator*>(pdata->multi_robot);
-    multi_robot->doKinematics(q_multi,false);
-  }
-  #endif
-  
   //---------------------------------------------------------------------
   // Compute active support from desired supports -----------------------
 
   vector<SupportStateElement> active_supports;
+  set<int> contact_bodies; // redundant, clean up later
   int num_active_contact_pts=0;
   if (!mxIsEmpty(prhs[desired_support_argid])) {
     VectorXd phi;
-    mxArray* mxBodies = mxGetProperty(prhs[desired_support_argid],0,"bodies");
+    mxArray* mxBodies = myGetField(prhs[desired_support_argid],"bodies");
     if (!mxBodies) mexErrMsgTxt("couldn't get bodies");
     double* pBodies = mxGetPr(mxBodies);
-    mxArray* mxContactPts = mxGetProperty(prhs[desired_support_argid],0,"contact_pts");
+    mxArray* mxContactPts = myGetField(prhs[desired_support_argid],"contact_pts");
     if (!mxContactPts) mexErrMsgTxt("couldn't get contact points");
-    mxArray* mxContactSurfaces = mxGetProperty(prhs[desired_support_argid],0,"contact_surfaces");
+    mxArray* mxContactSurfaces = myGetField(prhs[desired_support_argid],"contact_surfaces");
     if (!mxContactSurfaces) mexErrMsgTxt("couldn't get contact surfaces");
     double* pContactSurfaces = mxGetPr(mxContactSurfaces);
     
@@ -227,41 +250,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       se.body_idx = (int) pBodies[i]-1;
       pr = mxGetPr(mxBodyContactPts); 
       for (j=0; j<nc; j++) {
-//      	mexPrintf("adding pt %d to body %d\n", (int)pr[j]-1, se.body_idx);
         se.contact_pt_inds.insert((int)pr[j]-1);
       }
       se.contact_surface = (int) pContactSurfaces[i]-1;
       
-      if (contact_threshold == -1) { // ignore terrain
-        if (contact_sensor(i)!=0) { // no sensor info, or sensor says yes contact
-          active_supports.push_back(se);
-          num_active_contact_pts += nc;
-        }
-      } else {
-        contactPhi(pdata->r,se,pdata->map_ptr,phi,terrain_height);
-        if (phi.minCoeff()<=contact_threshold || contact_sensor(i)==1) { // any contact below threshold (kinematically) OR contact sensor says yes contact
-          active_supports.push_back(se);
-          num_active_contact_pts += nc;
-        }
-      }
+      active_supports.push_back(se);
+      num_active_contact_pts += nc;
+      contact_bodies.insert((int)se.body_idx); 
     }
   }
 
   pdata->r->HandC(q,qd,(MatrixXd*)NULL,pdata->H,pdata->C,(MatrixXd*)NULL,(MatrixXd*)NULL,(MatrixXd*)NULL);
+
   pdata->H_float = pdata->H.topRows(6);
   pdata->H_act = pdata->H.bottomRows(nu);
   pdata->C_float = pdata->C.head(6);
   pdata->C_act = pdata->C.tail(nu);
  
-  MatrixXd Ag_ang,Agdot_ang;
-  Vector3d h_ang_dot_des; 
-  double w2 = 0.0001; // QP angular momentum objective weight
-  if (include_angular_momentum == 1) {
-    pdata->r->getCMM(q,qd,pdata->Ag,pdata->Agdot);
-    Ag_ang = pdata->Ag.topRows(3);
-    Agdot_ang = pdata->Agdot.topRows(3);
-    h_ang_dot_des = Vector3d::Zero(); // regulate to zero for now
-  }
   
   Vector3d xcom;
   // consider making all J's into row-major
@@ -307,11 +312,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       pdata->fqp -= u0.transpose()*R_DQyD_ls*pdata->J_xy;
       pdata->fqp -= y0.transpose()*Qy*D_ls*pdata->J_xy;
       pdata->fqp -= pdata->w*qddot_des.transpose();
-      if (include_angular_momentum == 1) {
-        pdata->fqp += w2*qdvec.transpose()*Agdot_ang.transpose()*Ag_ang;
-        pdata->fqp -= w2*h_ang_dot_des.transpose()*Ag_ang;
-      }
-     
+
       // obj(1:nq) = fqp
       f.head(nq) = pdata->fqp.transpose();
      } else {
@@ -320,10 +321,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     } 
   }
   f.tail(nf+neps) = VectorXd::Zero(nf+neps);
-
-  MatrixXd Aeq(6+neps,nparams);
-  Aeq.topRightCorner(6+neps,neps) = MatrixXd::Zero(6+neps,neps);  // note: obvious sparsity here
-  VectorXd beq(6+neps);
+  
+  int neq = 6+neps+6*pdata->n_body_accel_constraints+num_condof;
+  MatrixXd Aeq = MatrixXd::Zero(neq,nparams);
+  VectorXd beq = VectorXd::Zero(neq);
   
   // constrained floating base dynamics
   //  H_float*qdd - J_float'*lambda - Dbar_float*beta = -C_float
@@ -341,7 +342,42 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Aeq.block(6,nq+nf,neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
     beq.segment(6,neps) = (-Jpdot - 1.0*Jp)*qdvec;
   }    
+  
+  // add in body spatial equality constraints
+  VectorXd body_vdot;
+  MatrixXd orig = MatrixXd::Zero(4,1);
+  orig(3,0) = 1;
+  int body_idx;
+  int equality_ind = 6+neps;
+  MatrixXd Jb(6,nq);
+  MatrixXd Jbdot(6,nq);
+  for (int i=0; i<pdata->n_body_accel_inputs; i++) {
+    if (pdata->body_accel_input_weights(i) < 0) {
+      // negative implies constraint
+      body_vdot = body_accel_inputs[i].bottomRows(6);
+      body_idx = (int)(body_accel_inputs[i][0])-1;
 
+      if (!inSupport(active_supports,body_idx)) {
+        pdata->r->forwardJac(body_idx,orig,1,Jb);
+        pdata->r->forwardJacDot(body_idx,orig,1,Jbdot);
+
+        for (int j=0; j<6; j++) {
+          if (!std::isnan(body_vdot[j])) {
+            Aeq.block(equality_ind,0,1,nq) = Jb.row(j);
+            beq[equality_ind++] = -Jbdot.row(j)*qdvec + body_vdot[j];
+          }
+        }
+      }
+    }
+  }
+
+  if (num_condof>0) {
+    // add joint acceleration constraints
+    for (int i=0; i<num_condof; i++) {
+      Aeq(equality_ind,(int)condof[i]-1) = 1;
+      beq[equality_ind++] = qddot_des[(int)condof[i]-1];
+    }
+  }  
   
   MatrixXd Ain = MatrixXd::Zero(2*nu,nparams);  // note: obvious sparsity here
   VectorXd bin = VectorXd::Zero(2*nu);
@@ -369,20 +405,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   lb.tail(neps) = -pdata->slack_limit*VectorXd::Ones(neps);
   ub.tail(neps) = pdata->slack_limit*VectorXd::Ones(neps);
 
-  for (int jj=0; jj<pdata->r->num_dof; jj++) {
-    // set acceleration limit to zero if at joint limit
-    if (q[jj] >= pdata->r->joint_limit_max[jj]-1e-4)
-      ub(jj) = 0;
-    if (q[jj] <= pdata->r->joint_limit_min[jj]+1e-4)
-      lb(jj) = 0;
-  }
-  
   VectorXd alpha(nparams);
 
   MatrixXd Qnfdiag(nf,1), Qneps(neps,1);
   vector< MatrixXd* > QBlkDiag( nc>0 ? 3 : 1 );  // nq, nf, neps   // this one is for gurobi
 
-  if (use_fast_qp > 0 && include_angular_momentum == 0)
+  if (use_fast_qp > 0)
   { // set up and call fastqp
 
   	//    We want Hqp inverse, which I can compute efficiently using the
@@ -399,11 +427,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     	pdata->Hqp = MatrixXd::Constant(nq,1,1/(1+REG));
   	}
 
-	#ifdef TEST_FAST_QP
-  	MatrixXd Hqp_test(nq,nq) = (pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy + (pdata->w+REG)*MatrixXd::Identity(nq,nq)).inverse();
-  	if (((Hqp_test-pdata->Hqp).abs()).maxCoeff() > 1e-6)
-  		mexErrMsgIdAndTxt("Q submatrix inverse from matrix inversion lemma does not match direct Q inverse.");
-	#endif
+	  #ifdef TEST_FAST_QP
+  	  MatrixXd Hqp_test(nq,nq) = (pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy + (pdata->w+REG)*MatrixXd::Identity(nq,nq)).inverse();
+  	  if (((Hqp_test-pdata->Hqp).abs()).maxCoeff() > 1e-6)
+  		  mexErrMsgIdAndTxt("Q submatrix inverse from matrix inversion lemma does not match direct Q inverse.");
+	  #endif
 
     Qnfdiag = MatrixXd::Constant(nf,1,1/REG);
     Qneps = MatrixXd::Constant(neps,1,1/(.001+REG));
@@ -431,9 +459,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (nc > 0) {
       pdata->Hqp = pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy;          // note: only needed for gurobi call (could pull it down)
       pdata->Hqp += (pdata->w+REG)*MatrixXd::Identity(nq,nq);
-      if (include_angular_momentum == 1)
-        pdata->Hqp += w2*Ag_ang.transpose()*Ag_ang;
-                 
     } else {
       // Q(1:nq,1:nq) = eye(nq)
     	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
@@ -448,10 +473,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     	QBlkDiag[2] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
     }
 
-		model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
-
-	  int status; CGE ( GRBgetintattr(model, "Status", &status) , pdata->env);
-	  if (status!=2) mexPrintf("gurobi reports non-optimal status = %d\n", status);
+    model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
+    int status; CGE(GRBgetintattr(model, "Status", &status), pdata->env);
+    if (status!=2) mexPrintf("Gurobi reports non-optimal status = %d\n", status);
   }
 
 
@@ -465,88 +489,74 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   y = pdata->B_act.transpose()*(pdata->H_act*qdd + pdata->C_act - D_act*beta);
   //y = pdata->B_act.jacobiSvd(ComputeThinU|ComputeThinV).solve(pdata->H_act*qdd + pdata->C_act - Jz_act.transpose()*lambda - D_act*beta);
   
-  if (nlhs>0) plhs[0] = eigenToMatlab(y);
-
+  if (nlhs>0) {
+    plhs[0] = eigenToMatlab(y);
+  }
+  
   if (nlhs>1) {
-    double Vdot;
-    if (nc>0) 
-      // note: Sdot is 0 for ZMP/double integrator dynamics, so we omit that term here
-      Vdot = ((2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot_xy*qdvec + pdata->J_xy*qdd)) + s1dot.transpose()*x_bar)(0) + s2dot;
-    else
-      Vdot = 0;
-    plhs[1] = mxCreateDoubleScalar(Vdot);
+    plhs[1] = eigenToMatlab(qdd);
   }
 
   if (nlhs>2) {
-      plhs[2] = mxCreateDoubleMatrix(1,active_supports.size(),mxREAL);
-      pr = mxGetPr(plhs[2]);
+    plhs[2] = mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
+    memcpy(mxGetData(plhs[2]),&info,sizeof(int));
+  }
+
+  if (nlhs>3) {
+      plhs[3] = mxCreateDoubleMatrix(1,active_supports.size(),mxREAL);
+      pr = mxGetPr(plhs[3]);
       int i=0;
       for (vector<SupportStateElement>::iterator iter = active_supports.begin(); iter!=active_supports.end(); iter++) {
           pr[i++] = (double) (iter->body_idx + 1);
       }
   }
 
-  if (nlhs>3) {
-    plhs[3] = eigenToMatlab(qdd);
+  if (nlhs>4) {
+    double Vdot;
+    if (nc>0) 
+      // note: Sdot is 0 for ZMP/double integrator dynamics, so we omit that term here
+      Vdot = ((2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot_xy*qdvec + pdata->J_xy*qdd)) + s1dot.transpose()*x_bar)(0) + s2dot;
+    else
+      Vdot = 0;
+    plhs[4] = mxCreateDoubleScalar(Vdot);
   }
 
-  if (model) {  // todo: return more info for fastQP
-
-		if (nlhs>3) {  // return model.Q (for unit testing)
-			int qnz;
-			CGE (GRBgetintattr(model,"NumQNZs",&qnz), pdata->env);
-			int *qrow = new int[qnz], *qcol = new int[qnz];
-			double* qval = new double[qnz];
-			CGE (GRBgetq(model,&qnz,qrow,qcol,qval), pdata->env);
-			plhs[3] = mxCreateDoubleMatrix(nparams,nparams,mxREAL);
-			double* pm = mxGetPr(plhs[3]);
-			memset(pm,0,sizeof(double)*nparams*nparams);
-			for (i=0; i<qnz; i++)
-				pm[qrow[i]+nparams*qcol[i]] = qval[i];
-			delete[] qrow;
-			delete[] qcol;
-			delete[] qval;
-
-			if (nlhs>4) {  // return model.obj (for unit testing)
-				plhs[4] = mxCreateDoubleMatrix(1,nparams,mxREAL);
-				CGE (GRBgetdblattrarray(model, "Obj", 0, nparams, mxGetPr(plhs[4])), pdata->env);
-
-				if (nlhs>5) {  // return model.A (for unit testing)
-					int numcon;
-					CGE (GRBgetintattr(model,"NumConstrs",&numcon), pdata->env);
-					plhs[5] = mxCreateDoubleMatrix(numcon,nparams,mxREAL);
-					double *pm = mxGetPr(plhs[5]);
-					for (i=0; i<numcon; i++)
-						for (j=0; j<nparams; j++)
-							CGE (GRBgetcoeff(model,i,j,&pm[i+j*numcon]), pdata->env);
-
-					if (nlhs>6) {  // return model.rhs (for unit testing)
-						plhs[6] = mxCreateDoubleMatrix(numcon,1,mxREAL);
-						CGE (GRBgetdblattrarray(model,"RHS",0,numcon,mxGetPr(plhs[6])), pdata->env);
-					}
-
-					if (nlhs>7) { // return model.sense
-						char* sense = new char[numcon+1];
-						CGE (GRBgetcharattrarray(model,"Sense",0,numcon,sense), pdata->env);
-						sense[numcon]='\0';
-						plhs[7] = mxCreateString(sense);
-						// delete[] sense;  // it seems that I'm not supposed to free this
-					}
-
-					if (nlhs>8) {
-						plhs[8] = mxCreateDoubleMatrix(nparams,1,mxREAL);
-						CGE (GRBgetdblattrarray(model, "LB", 0, nparams, mxGetPr(plhs[8])), pdata->env);
-					}
-					if (nlhs>9) {
-						plhs[9] = mxCreateDoubleMatrix(nparams,1,mxREAL);
-						CGE (GRBgetdblattrarray(model, "UB", 0, nparams, mxGetPr(plhs[9])), pdata->env);
-					}
-				}
-			}
-		}
-
-		GRBfreemodel(model);
+  if (nlhs>5) {
+    plhs[5] = eigenToMatlab(pdata->Hqp);
   }
-  
+
+  if (nlhs>6) {
+    plhs[6] = eigenToMatlab(f);
+  }
+
+  if (nlhs>7) {
+    plhs[7] = eigenToMatlab(Aeq);
+  }
+
+  if (nlhs>8) {
+    plhs[8] = eigenToMatlab(beq);
+  }
+
+  if (nlhs>9) {
+    plhs[9] = eigenToMatlab(alpha);
+  }
+
+  if (nlhs>10) {
+    plhs[10] = mxCreateDoubleMatrix(1,pdata->active.size(),mxREAL);
+    pr = mxGetPr(plhs[10]);
+    int i=0;
+    for (set<int>::iterator iter = pdata->active.begin(); iter!=pdata->active.end(); iter++) {
+      pr[i++] = (double) (*iter);
+    }
+  }
+
+  if (nlhs>11) {
+    Vector2d zmp = xcom.head(2) - 0.89/9.81*(pdata->J_xy*qdd + pdata->Jdot_xy*qdvec);
+    plhs[11] = eigenToMatlab(zmp);
+  }
+
+  if (model) { 
+    GRBfreemodel(model); 
+  } 
   //  GRBfreeenv(env);
 } 

@@ -127,7 +127,7 @@ if (use_ik)
   outs(1).system = 2;
   outs(1).output = 1;
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
-	clear ins outs;
+	clear ins;
 
   % feedback foot contact detector with QP/atlas
   options.use_lcm=false;
@@ -135,7 +135,7 @@ if (use_ik)
   ins(1).system = 2;
   ins(1).input = 1;
   sys = mimoFeedback(fc,sys,[],[],ins,outs);
-  clear ins outs;  
+  clear ins;  
   
 	% feedback PD block
 % 	options.Kp = 270.0*ones(nq,1);
@@ -145,10 +145,8 @@ if (use_ik)
 	pd = IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;
-	outs(1).system = 2;
-	outs(1).output = 1;
 	sys = mimoFeedback(pd,sys,[],[],ins,outs);
-	clear ins outs;
+	clear ins;
 
 else
 	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
