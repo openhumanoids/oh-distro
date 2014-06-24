@@ -61,6 +61,7 @@ from ddapp import lcmUtils
 from ddapp.utime import getUtime
 from ddapp.shallowCopy import shallowCopy
 
+from ddapp import segmentationroutines
 
 import drc as lcmdrc
 
@@ -218,7 +219,7 @@ if usePlanning:
     def fitDrillMultisense():
         pd = om.findObjectByName('Multisense').model.revPolyData
         om.removeFromObjectModel(om.findObjectByName('debug'))
-        segmentation.findAndFitDrillBarrel(pd,  getLinkFrame('utorso'))
+        segmentation.findAndFitDrillBarrel(pd)
 
     def refitBlocks(autoApprove=True):
         polyData = om.findObjectByName('Multisense').model.revPolyData
@@ -408,4 +409,7 @@ def onFootContact(msg):
 
 sub = lcmUtils.addSubscriber('FOOT_CONTACT_ESTIMATE', lcmdrc.foot_contact_estimate_t, onFootContact)
 sub.setSpeedLimit(60)
+
+
+segmentationroutines.SegmentationContext.initWithRobot(robotStateModel)
 
