@@ -25,6 +25,25 @@ classdef IRISRegion
       msg.point = obj.point;
       msg.normal = obj.normal;
     end
+
+    function draw_lcmgl(obj, lcmgl)
+      % Draw the xy projection of the x,y,yaw region
+      H = struct('A', obj.A, 'B', reshape(obj.b, [], 1));
+      res = cddmex('extreme', H);
+      V = res.V';
+      V = V(1:2,convhull(V(1,:), V(2,:)));
+
+      lcmgl.glColor3f(0,0,0)
+      lcmgl.glBegin(lcmgl.LCMGL_LINES)
+      for j = 1:size(V, 2)-1
+        lcmgl.glVertex3f(V(1,j), V(2,j), obj.point(3)+0.01);
+        lcmgl.glVertex3f(V(1,j+1), V(2,j+1), obj.point(3)+0.01);
+      end
+      lcmgl.glVertex3f(V(1,end), V(2,end), obj.point(3)+0.01);
+      lcmgl.glVertex3f(V(1,1), V(2,1), obj.point(3)+0.01);
+      lcmgl.glEnd();
+    end
+
   end
 
   methods (Static=true)
