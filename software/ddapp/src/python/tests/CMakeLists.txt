@@ -5,17 +5,20 @@ endif()
 include(python-coverage/setup.cmake)
 
 set(python_tests
+  testAtlasDriver.py
+  testCameraView.py
   testConsoleApp.py
   testFrameSync.py
+  testImageView.py
   testObjectModel.py
-  testPythonConsole.py
   testPropertiesPanel.py
+  testPythonConsole.py
   testRobotSystem.py
+  testTableFit.py
+  testTableFitStereo.py
   testTaskQueue.py
   testValveFit.py
-  testTableFit.py
   testValveFitStereo.py
-  testTableFitStereo.py
 )
 
 set(python_test_args
