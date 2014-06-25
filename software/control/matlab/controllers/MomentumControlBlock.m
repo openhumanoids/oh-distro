@@ -7,7 +7,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
     % @param options structure for specifying objective weight (w), slack
     % variable limits (slack_limit)
     typecheck(r,'Biped');
-    typecheck(controller_data,'SharedDataHandle');
+    typecheck(controller_data,'QPControllerData');
     
     if nargin>3
       typecheck(options,'struct');
@@ -50,11 +50,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       dt = 0.001;
     end
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
-   
-    if ~isfield(obj.controller_data.data,'qp_active_set')
-      obj.controller_data.setField('qp_active_set',[]);
-    end
-    
+       
     if isfield(options,'use_bullet')
       obj.use_bullet = options.use_bullet;
     else
@@ -227,7 +223,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
     out_tic = tic;
 
-    ctrl_data = obj.controller_data.data;
+    ctrl_data = obj.controller_data;
       
     x = varargin{1};
     qddot_des = varargin{2};
@@ -237,9 +233,9 @@ classdef MomentumControlBlock < MIMODrakeSystem
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
 
-    x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % for x-y plan adjustment
+    x0 = ctrl_data.x0 - [ctrl_data.plan_shift(1:2);0;0]; % for x-y plan adjustment
     if (ctrl_data.is_time_varying)      
-      y0 = fasteval(ctrl_data.K.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
+      y0 = fasteval(ctrl_data.K.y0,t) - ctrl_data.plan_shift(1:2); % for x-y plan adjustment
       K = fasteval(ctrl_data.K.D,t); % always constant for ZMP dynamics
 %       zmp_des = fasteval(ctrl_data.zmptraj,t);
     else
@@ -257,7 +253,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       ddcomz_des = 0;
     end
     
-    condof = ctrl_data.constrained_dofs; % dof indices for which q_ddd_des is a constraint
+    condof = ctrl_data.constrained_dofs; % dof indices for which qdd_des is a constraint
         
     fc = varargin{3};
     
@@ -512,7 +508,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
 
       qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-      setField(obj.controller_data,'qp_active_set',qp_active_set);
+      obj.controller_data.qp_active_set = qp_active_set;
 
       %----------------------------------------------------------------------
       % Solve for inputs ----------------------------------------------------

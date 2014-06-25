@@ -15,7 +15,7 @@ classdef TorsoMotionControlBlock < DrakeSystem
   methods
     function obj = TorsoMotionControlBlock(r,name,controller_data,options)
       typecheck(r,'Biped');
-      typecheck(controller_data,'SharedDataHandle');
+      typecheck(controller_data,'QPControllerData');
       
       input_frame = getStateFrame(r);
       output_frame = BodySpatialAcceleration(r,name);

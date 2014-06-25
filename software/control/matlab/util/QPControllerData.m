@@ -73,14 +73,10 @@ classdef QPControllerData < handle
       obj.qtraj = data.qtraj;
       
       if obj.is_time_varying
-        assert(isa(data.y0,'Trajectory'));
         assert(isa(data.comtraj,'Trajectory'));
         obj.comtraj = data.comtraj;
-      else
-        assert(isnumeric(data.y0));
       end
-      obj.y0 = data.y0;
-
+  
       if isfield(data,'link_constraints')
         assert(isstruct(data.link_constraints));
         obj.link_constraints = data.link_constraints;
@@ -98,6 +94,10 @@ classdef QPControllerData < handle
         obj.constrained_dofs = [];
       end
       
+      assert(isnumeric(data.x0));
+      sizecheck(data.x0,[4 1]);
+      obj.x0 = data.x0;
+        
       assert(isnumeric(data.mu));
       obj.mu = data.mu;
 
@@ -125,9 +125,6 @@ classdef QPControllerData < handle
         assert(isnumeric(data.S));
         sizecheck(data.S,[4 4]);
         obj.S = data.S;
-        assert(isnumeric(data.x0));
-        sizecheck(data.x0,[4 1]);
-        obj.x0 = data.x0;
         if isfield(data,'u0')
           assert(isnumeric(data.u0));
           obj.u0 = data.u0;
@@ -135,6 +132,7 @@ classdef QPControllerData < handle
           obj.u0 = zeros(2,1);
         end
         if obj.is_time_varying
+          assert(isa(data.y0,'Trajectory'));
           assert(isa(data.s1,'Trajectory'));
           assert(isa(data.s2,'Trajectory'));
           assert(isa(data.s1dot,'Trajectory'));
@@ -142,6 +140,7 @@ classdef QPControllerData < handle
           assert(isa(data.s2dot,'Trajectory'));
           obj.s2dot = data.s2dot;
         else
+          assert(isnumeric(data.y0));
           assert(isnumeric(data.s1));
           assert(isnumeric(data.s2));
         end
@@ -149,10 +148,24 @@ classdef QPControllerData < handle
         sizecheck(data.s2,1);
         obj.s1 = data.s1;
         obj.s2 = data.s2;
-
+        obj.y0 = data.y0;
+  
       elseif control_type==1 % ZMP + angular momentum, using LQR controller output
         typecheck(data.K,'AffineSystem');
         obj.K = data.K;
+        
+        if isfield(data,'comz_des')
+          assert(isa(data.comz_des,'Trajectory'));
+          obj.comz_des = data.comz_traj;
+        end
+        if isfield(data,'dcomz_des')
+          assert(isa(data.dcomz_des,'Trajectory'));
+          obj.dcomz_des = data.dcomz_traj;
+        end
+        if isfield(data,'ddcomz_des')
+          assert(isa(data.ddcomz_des,'Trajectory'));
+          obj.ddcomz_des = data.ddcomz_traj;
+        end       
       end
     end
 
