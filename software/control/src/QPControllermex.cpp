@@ -11,7 +11,7 @@
  */
 
 #include "QPCommon.h"
-#define TEST_FAST_QP
+//#define TEST_FAST_QP
 
 using namespace std;
 
@@ -50,13 +50,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pm= myGetProperty(pobj,"n_body_accel_inputs");
     pdata->n_body_accel_inputs = mxGetScalar(pm); 
 
-    cout << n_body_accel_inputs << endl;
-
     pm = myGetProperty(pobj,"body_accel_input_weights");
     pdata->body_accel_input_weights.resize(pdata->n_body_accel_inputs);
     memcpy(pdata->body_accel_input_weights.data(),mxGetPr(pm),sizeof(double)*pdata->n_body_accel_inputs);
-
-    cout << pdata->body_accel_input_weights << endl;
 
     pdata->n_body_accel_constraints = 0;
     for (int i=0; i<pdata->n_body_accel_inputs; i++) {
@@ -437,10 +433,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   vector< MatrixXd* > QBlkDiag( nc>0 ? 3 : 1 );  // nq, nf, neps   // this one is for gurobi
 
   VectorXd w = (pdata->w_qdd.array() + REG).matrix();
-  if (use_fast_qp > 0 && !include_angular_momentum && pdata->body_accel_input_weights.array().maxCoeff() > 1e-10)
+  bool include_body_accel_cost_terms = pdata->n_body_accel_inputs > 0 && pdata->body_accel_input_weights.array().maxCoeff() > 1e-10;
+  if (use_fast_qp > 0 && !include_angular_momentum && !include_body_accel_cost_terms)
   { 
-    cout << "blah blah" << endl;
-    // TODO: update to include angular momentum, body accel objectives
+    // TODO: update to include angular momentum, body accel objectives.
 
   	//    We want Hqp inverse, which I can compute efficiently using the
   	//    matrix inversion lemma (see wikipedia):
