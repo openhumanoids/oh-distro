@@ -1,0 +1,11 @@
+package drc;
+
+// Generic data structure for a double array with a utime
+// mostly used for ease of analysis - e.g. plotting
+struct vector_double_t
+{
+ int64_t utime;
+ int32_t n;
+ double data[n];
+}
+

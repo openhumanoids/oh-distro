@@ -11,6 +11,7 @@
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/utime_two_t.hpp"
 #include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
+#include "lcmtypes/drc/vector_double_t.hpp"
 #include "lcmtypes/bot_core/pose_t.hpp"
 #include <latency/latency.hpp>
 
@@ -76,16 +77,18 @@ int64_t _timestamp_now(){
 }
 
 void App::handleAtlasStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_state_t * msg){
-  lats_[0]->add_from(msg->utime, _timestamp_now() );
-  lats_[3]->add_from(msg->utime, _timestamp_now() );
+  lats_[0]->add_from(msg->utime, _timestamp_now(), msg->seq_id );
+  lats_[3]->add_from(msg->utime, _timestamp_now(), msg->seq_id );
 }
 
 void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * msg){
-  bool new_data = lats_[0]->add_to(msg->utime, _timestamp_now(), "SYNC", lat_time_[0], lat_msgs_[0] );
-  lats_[2]->add_from(msg->utime, _timestamp_now() );  
+  int64_t utime_now = _timestamp_now();
+  bool new_data = lats_[0]->add_to(msg->utime, utime_now, msg->seq_id, "SYNC", lat_time_[0], lat_msgs_[0] );
+  lats_[2]->add_from(msg->utime, utime_now, msg->seq_id );
   
   
   if (new_data){
+    /*
     if (counter_% 10==0){
       std::cout << "AST-ERS | IMU-SE  | ERS-CMD | AST-CMD"
                 << "   ||   "
@@ -96,24 +99,30 @@ void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string&
     std::cout.setf( std::ios::fixed, std:: ios::floatfield ); // floatfield set to fixed
     std::cout << lat_time_[0] << " | " << lat_time_[1] << " | "  << lat_time_[2] << " | "  << lat_time_[3] << "   ||   "
               << lat_msgs_[0] << " | " << lat_msgs_[1] << " | "  << lat_msgs_[2] << " | "  << lat_msgs_[3] << "\n";
-              
-              
+      */
+
+    drc::vector_double_t msgout;
+    msgout.utime = utime_now;
+    msgout.n = 4;
+    msgout.data = { lat_time_[0],  lat_time_[1], lat_time_[2], lat_time_[3]};
+    _lcm->publish( ("LATENCY") , &msgout);
+
     counter_++;
   }
 }
 
 void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg)  {
-  lats_[2]->add_to(msg->utime, _timestamp_now(), "CTRL", lat_time_[2], lat_msgs_[2] );   
-  lats_[3]->add_to(msg->utime, _timestamp_now(), "FULL", lat_time_[3], lat_msgs_[3] );      
+  lats_[2]->add_to(msg->utime, _timestamp_now(), msg->seq_id, "CTRL", lat_time_[2], lat_msgs_[2] );
+  lats_[3]->add_to(msg->utime, _timestamp_now(), msg->seq_id, "FULL", lat_time_[3], lat_msgs_[3] );
 }
 
 
 
 void App::handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_raw_imu_batch_t * msg){
-  lats_[1]->add_from(msg->utime, _timestamp_now() );
+  lats_[1]->add_from(msg->utime, _timestamp_now(), 0 );
 }
 void App::handPoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg)  {
-  lats_[1]->add_to(msg->utime, _timestamp_now(), "SEST" , lat_time_[1], lat_msgs_[1]);      
+  lats_[1]->add_to(msg->utime, _timestamp_now(), 0, "SEST" , lat_time_[1], lat_msgs_[1]);
 }
 
 

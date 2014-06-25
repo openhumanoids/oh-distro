@@ -25,6 +25,8 @@ package drc;
 struct atlas_command_t 
 {
   int64_t utime;
+  int64_t seq_id;
+
   int32_t num_joints;
   
   string joint_names [num_joints];

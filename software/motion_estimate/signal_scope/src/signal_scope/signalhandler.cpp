@@ -16,6 +16,7 @@
 #include "lcmtypes/drc/atlas_state_extra_t.hpp"
 #include "lcmtypes/drc/atlas_status_t.hpp"
 #include "lcmtypes/drc/drill_control_t.hpp"
+#include "lcmtypes/drc/vector_double_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/ins_update_request_t.hpp"
 #include "lcmtypes/drc/ins_update_packet_t.hpp"
@@ -461,10 +462,12 @@ define_field_field_handler(INSUpdatePacketDPosZ, drc::ins_update_packet_t, dPos_
 // drill_control_t
 define_array_handler(DrillControlData, drc::drill_control_t, data, createIndexList(100));
 
+// generic vector of doubles
+define_array_handler(VectorDoubleData, drc::vector_double_t, data, createIndexList(100));
+
 // foot_contact_estimate_t
 define_field_handler(FootContactLeft, drc::foot_contact_estimate_t, left_contact);
 define_field_handler(FootContactRight, drc::foot_contact_estimate_t, right_contact);
-
 
 // mav_filter_state_t
 define_array_handler(MavStateHandler, mav::filter_state_t, state, createIndexList(21));
@@ -652,6 +655,7 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<INSUpdatePacketDPosY>();
     factory.registerClass<INSUpdatePacketDPosZ>();
     factory.registerClass<DrillControlData>();
+    factory.registerClass<VectorDoubleData>();
     factory.registerClass<FootContactLeft>();
     factory.registerClass<FootContactRight>();
     factory.registerClass<MavStateHandler>();

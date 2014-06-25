@@ -6,6 +6,7 @@ package drc;
 struct atlas_state_t
 {
   int64_t utime;
+  int64_t seq_id;
 
   int16_t num_joints;
   // Removed Oct 2013:

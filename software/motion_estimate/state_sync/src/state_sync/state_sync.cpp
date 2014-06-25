@@ -311,7 +311,7 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   
   if (cl_cfg_->standalone_head){
     drc::force_torque_t force_torque_msg;
-    publishRobotState(msg->utime, force_torque_msg);
+    publishRobotState(msg->utime, force_torque_msg, -1);
   }
   
 }
@@ -327,7 +327,7 @@ void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   
   if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
     drc::force_torque_t force_torque_msg;
-    publishRobotState(msg->utime, force_torque_msg);
+    publishRobotState(msg->utime, force_torque_msg, -1);
   }  
 }
 
@@ -342,7 +342,7 @@ void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   
   if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
     drc::force_torque_t force_torque_msg;
-    publishRobotState(msg->utime, force_torque_msg);
+    publishRobotState(msg->utime, force_torque_msg, -1);
   }    
 }
 
@@ -444,6 +444,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   }
 
   publishRobotState(msg->utime, msg->force_torque);
+  
 }
 
 void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg){
@@ -592,10 +593,11 @@ bool insertPoseInBotState(bot_core::pose_t& msg, PoseT pose){
 }
 
 
-void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t& force_torque_msg){
+void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t& force_torque_msg, int64_t seq_id){
   
   drc::robot_state_t robot_state_msg;
   robot_state_msg.utime = utime_in;
+  robot_state_msg.seq_id = seq_id;
   
   // Pelvis Pose:
   robot_state_msg.pose.translation.x =0;
