@@ -55,15 +55,24 @@ classdef QPControlBlock < MIMODrakeSystem
     else
       obj.use_bullet = false;
     end
-    
-    % weight for desired qddot objective term
-    if isfield(options,'w')
-      typecheck(options.w,'double');
-      sizecheck(options.w,1);
-      obj.w = options.w;
+
+    % weight for the hdot objective term
+    if isfield(options,'W_kdot')
+      typecheck(options.W_kdot,'double');
+      sizecheck(options.W_kdot,[3 3]);
+      obj.W_kdot = options.W_kdot;
     else
-      obj.w = 0.1;
+      obj.W_kdot = zeros(3);
     end
+    
+    % weight for the desired qddot objective term
+    if isfield(options,'w_qdd')
+      typecheck(options.w_qdd,'double');
+      sizecheck(options.w_qdd,[obj.numq 1]); % assume diagonal cost
+      obj.w_qdd = options.w_qdd;
+    else
+      obj.w_qdd = 0.1*ones(obj.numq,1);
+    end    
 
     % weight for grf coefficients
     if isfield(options,'w_grf')
@@ -81,8 +90,8 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.w_slack = options.w_slack;
     else
       obj.w_slack = 0.001;
-    end    
-    
+    end       
+
     % hard bound on slack variable values
     if isfield(options,'slack_limit')
       typecheck(options.slack_limit,'double');
@@ -230,8 +239,17 @@ classdef QPControlBlock < MIMODrakeSystem
     end
     mu = ctrl_data.mu;
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
-    
-    condof = ctrl_data.constrained_dofs; % dof indices for which q_ddd_des is a constraint
+
+    if isfield(ctrl_data,'comz_traj')
+      comz_des = fasteval(ctrl_data.comz_traj,t);
+      dcomz_des = fasteval(ctrl_data.dcomz_traj,t);
+      ddcomz_des = fasteval(ctrl_data.ddcomz_traj,t);
+    else
+      comz_des = 1.03;
+      dcomz_des = 0;
+      ddcomz_des = 0;
+    end
+    condof = ctrl_data.constrained_dofs; % dof indices for which qdd_des is a constraint
         
     fc = varargin{3};
     
@@ -281,6 +299,12 @@ classdef QPControlBlock < MIMODrakeSystem
 
       [xcom,J] = getCOM(r,kinsol);
       
+      include_angular_momentum = any(any(obj.W_kdot));
+      
+      if include_angular_momentum
+        [A,Adot] = getCMM(r,kinsol,qd);
+      end
+      
       Jdot = forwardJacDot(r,kinsol,0);
       J = J(1:2,:); % only need COM x-y
       Jdot = Jdot(1:2,:);
@@ -303,7 +327,7 @@ classdef QPControlBlock < MIMODrakeSystem
         Jpdot = sparse(Jpdot);
 
         xlimp = [xcom(1:2); J*qd]; % state of LIP model
-        x_bar = xlimp - x0;      
+        x_bar = xlimp - x0;
       else
         nc = 0;
       end
@@ -355,7 +379,7 @@ classdef QPControlBlock < MIMODrakeSystem
       if nc > 0
         % relative acceleration constraint
         Aeq_{2} = Jp*Iqdd + Ieps;
-        beq_{2} = -Jpdot*qd - 1.0*Jp*qd;
+        beq_{2} = -Jpdot*qd - 1.0*Jp*qd; % TODO: parameterize
       end
 
       eq_count=3;
@@ -392,21 +416,35 @@ classdef QPControlBlock < MIMODrakeSystem
       Ain = sparse(vertcat(Ain_{:}));
       bin = vertcat(bin_{:});
 
-    
+      if include_angular_momentum
+        Ak = A(1:3,:);
+        Akdot = Adot(1:3,:);
+        k=Ak*qd;
+        kdot_des = -5.0 *k; 
+      end
+      
       %----------------------------------------------------------------------
       % QP cost function ----------------------------------------------------
       %
+      % TODO: update this comment
       %  min: quad(Jdot*qd + J*qdd,R_ls) + quad(C*x_bar+D*(Jdot*qd + J*qdd),Q) + (2*x_bar'*S + s1')*(A*x_bar + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
       if nc > 0
         Hqp = Iqdd'*J'*R_DQyD_ls*J*Iqdd;
-        Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + obj.w*eye(nq);
+        Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + diag(obj.w_qdd);
+        if include_angular_momentum
+          Hqp = Hqp + Iqdd'*Ak'*obj.W_kdot*Ak*Iqdd;
+        end
         
         fqp = xlimp'*C_ls'*Qy*D_ls*J*Iqdd;
         fqp = fqp + qd'*Jdot'*R_DQyD_ls*J*Iqdd;
         fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J*Iqdd;
         fqp = fqp - u0'*R_ls*J*Iqdd;
         fqp = fqp - y0'*Qy*D_ls*J*Iqdd;
-        fqp = fqp - obj.w*qddot_des'*Iqdd;
+        fqp = fqp - (obj.w_qdd.*qddot_des)'*Iqdd;
+        if include_angular_momentum
+          fqp = fqp + qd'*Akdot'*obj.W_kdot*Ak*Iqdd;
+          fqp = fqp - kdot_des'*obj.W_kdot*Ak*Iqdd;
+        end
         
         Hqp(nq+(1:nf),nq+(1:nf)) = obj.w_grf*eye(nf); 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = obj.w_slack*eye(neps); 
@@ -441,22 +479,17 @@ classdef QPControlBlock < MIMODrakeSystem
       Ain_fqp = full([Ain; -IR(lbind,:); IR(ubind,:)]);
       bin_fqp = [bin; -lb(lbind); ub(ubind)];
 
-      if obj.use_mex ~= 2
       % call fastQPmex first
       QblkDiag = {Hqp(1:nq,1:nq) + REG*eye(nq), ...
                   obj.w_grf*ones(nf,1) + REG*ones(nf,1), ...
                   obj.w_slack*ones(neps,1) + REG*ones(neps,1)};
       Aeq_fqp = full(Aeq);
-
       % NOTE: model.obj is 2* f for fastQP!!!
       [alpha,info_fqp] = fastQPmex(QblkDiag,fqp,Ain_fqp,bin_fqp,Aeq_fqp,beq,ctrl_data.qp_active_set);
-      else
-        info_fqp = -1;
-      end
-      
+
       if info_fqp<0
         % then call gurobi
-%         disp('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!failed over to gurobi');
+        disp('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!failed over to gurobi');
         model.Q = sparse(Hqp + REG*eye(nparams));
         model.A = [Aeq; Ain];
         model.rhs = [beq; bin];
@@ -584,7 +617,8 @@ classdef QPControlBlock < MIMODrakeSystem
     robot; % to be controlled
     numq;
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
-    w; % objective function weight
+    W_kdot; % angular momentum cost term weight matrix
+    w_qdd; % qdd objective function weight vector
     w_grf; % scalar ground reaction force weight
     w_slack; % scalar slack var weight
     slack_limit; % maximum absolute magnitude of acceleration slack variable values

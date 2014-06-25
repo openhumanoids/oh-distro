@@ -18,10 +18,6 @@ if (NOT maps_FOUND OR NOT opencv_FOUND)
   pods_use_pkg_config_packages(QPControllermex eigen3 gurobi drake-qp drake-rbm)
   install(TARGETS QPControllermex DESTINATION matlab)
 
-  add_mex(MomentumControllermex MomentumControllermex.cpp)
-  pods_use_pkg_config_packages(MomentumControllermex eigen3 gurobi drake-qp drake-rbm)
-  install(TARGETS MomentumControllermex DESTINATION matlab)
-
   add_mex(ContactDetectmex ContactDetectmex.cpp)
   pods_use_pkg_config_packages(ContactDetectmex eigen3 drake-rbm)
   install(TARGETS ContactDetectmex DESTINATION matlab)
@@ -46,10 +42,6 @@ else()
   pods_use_pkg_config_packages(QPControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
   set_target_properties(QPControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
 
-  add_mex(MomentumControllermex MomentumControllermex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
-  pods_use_pkg_config_packages(MomentumControllermex maps eigen3 lcm opencv gurobi drake-qp drake-rbm)
-  set_target_properties(MomentumControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
-
   add_mex(ContactDetectmex ContactDetectmex.cpp mexmaps/ViewClientWrapper.cpp mexmaps/FillMethods.cpp mexmaps/MapLib.cpp)
   pods_use_pkg_config_packages(ContactDetectmex maps eigen3 lcm opencv drake-rbm)
   set_target_properties(ContactDetectmex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
@@ -67,7 +59,7 @@ else()
   add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
   pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-  install(TARGETS HeightMapWrapper stepCollocationConstraintsMex QPControllermex MomentumControllermex ContactDetectmex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
+  install(TARGETS HeightMapWrapper stepCollocationConstraintsMex QPControllermex ContactDetectmex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
 
 endif()
 

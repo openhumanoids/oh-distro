@@ -2,6 +2,7 @@
  * A c++ version of (significant pieces of) the QPController.m mimoOutput method. 
  *
  * Todo:
+ *   switch to spatial accelerations in motion constraints
  *   handle the no supports case (arguments into mex starting with B_ls will currently fail)
  *   use fixed-size matrices (or at least pre-allocated)
  *       for instance: #define nq 
@@ -10,6 +11,7 @@
  */
 
 #include "QPCommon.h"
+#define TEST_FAST_QP
 
 using namespace std;
 
@@ -31,11 +33,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // get control object properties
     const mxArray* pobj = prhs[1];
     
-    pm= myGetProperty(pobj,"w");
-    pdata->w = mxGetScalar(pm);    
-    
     pm = myGetProperty(pobj,"slack_limit");
     pdata->slack_limit = mxGetScalar(pm);
+
+    pm = myGetProperty(pobj,"W_kdot");
+    assert(mxGetM(pm)==3); assert(mxGetN(pm)==3);
+    pdata->W_kdot.resize(mxGetM(pm),mxGetN(pm));
+    memcpy(pdata->W_kdot.data(),mxGetPr(pm),sizeof(double)*mxGetM(pm)*mxGetN(pm));
 
     pm= myGetProperty(pobj,"w_grf");
     pdata->w_grf = mxGetScalar(pm);    
@@ -46,9 +50,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pm= myGetProperty(pobj,"n_body_accel_inputs");
     pdata->n_body_accel_inputs = mxGetScalar(pm); 
 
+    cout << n_body_accel_inputs << endl;
+
     pm = myGetProperty(pobj,"body_accel_input_weights");
     pdata->body_accel_input_weights.resize(pdata->n_body_accel_inputs);
     memcpy(pdata->body_accel_input_weights.data(),mxGetPr(pm),sizeof(double)*pdata->n_body_accel_inputs);
+
+    cout << pdata->body_accel_input_weights << endl;
 
     pdata->n_body_accel_constraints = 0;
     for (int i=0; i<pdata->n_body_accel_inputs; i++) {
@@ -66,6 +74,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     int nq = pdata->r->num_dof, nu = pdata->B.cols();
     
+    pm = myGetProperty(pobj,"w_qdd");
+    pdata->w_qdd.resize(nq);
+    memcpy(pdata->w_qdd.data(),mxGetPr(pm),sizeof(double)*nq);
+
     pdata->umin.resize(nu);
     pdata->umax.resize(nu);
     memcpy(pdata->umin.data(),mxGetPr(prhs[4]),sizeof(double)*nu);
@@ -124,7 +136,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     pdata->fqp.resize(nq);
     pdata->Ag.resize(6,nq);
     pdata->Agdot.resize(6,nq);
-    
+    pdata->Ak.resize(3,nq);
+    pdata->Akdot.resize(3,nq);
 
     pdata->vbasis_len = 0;
     pdata->cbasis_len = 0;
@@ -266,8 +279,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   pdata->H_act = pdata->H.bottomRows(nu);
   pdata->C_float = pdata->C.head(6);
   pdata->C_act = pdata->C.tail(nu);
- 
-  
+
+  bool include_angular_momentum = (pdata->W_kdot.array().maxCoeff() > 1e-10);
+
+  if (include_angular_momentum) {
+    pdata->r->getCMM(q,qd,pdata->Ag,pdata->Agdot);
+    pdata->Ak = pdata->Ag.topRows(3);
+    pdata->Akdot = pdata->Agdot.topRows(3);
+  }
   Vector3d xcom;
   // consider making all J's into row-major
   
@@ -296,6 +315,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
   int nf = nc*nd; // number of contact force variables
   int nparams = nq+nf+neps;
+
+  Vector3d kdot_des; 
+  if (include_angular_momentum) {
+    VectorXd k = pdata->Ak*qdvec;
+    kdot_des = -5.0 *k; // TODO: parameterize
+  }
   
   //----------------------------------------------------------------------
   // QP cost function ----------------------------------------------------
@@ -311,12 +336,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       pdata->fqp += (S*x_bar + 0.5*s1).transpose()*B_ls*pdata->J_xy;
       pdata->fqp -= u0.transpose()*R_DQyD_ls*pdata->J_xy;
       pdata->fqp -= y0.transpose()*Qy*D_ls*pdata->J_xy;
-      pdata->fqp -= pdata->w*qddot_des.transpose();
-
-      // obj(1:nq) = fqp
+      pdata->fqp -= (pdata->w_qdd.array()*qddot_des.array()).matrix().transpose();
+      if (include_angular_momentum) {
+        pdata->fqp = qdvec.transpose()*pdata->Akdot.transpose()*pdata->W_kdot*pdata->Ak;
+        pdata->fqp -= kdot_des.transpose()*pdata->W_kdot*pdata->Ak;
+      }
       f.head(nq) = pdata->fqp.transpose();
      } else {
-      // obj(1:nq) = -qddot_des
       f.head(nq) = -qddot_des;
     } 
   }
@@ -340,7 +366,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Aeq.block(6,0,neps,nq) = Jp;
     Aeq.block(6,nq,neps,nf) = MatrixXd::Zero(neps,nf);  // note: obvious sparsity here
     Aeq.block(6,nq+nf,neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
-    beq.segment(6,neps) = (-Jpdot - 1.0*Jp)*qdvec;
+    beq.segment(6,neps) = (-Jpdot - 1.0*Jp)*qdvec; // TODO: parameterize
   }    
   
   // add in body spatial equality constraints
@@ -410,27 +436,34 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   MatrixXd Qnfdiag(nf,1), Qneps(neps,1);
   vector< MatrixXd* > QBlkDiag( nc>0 ? 3 : 1 );  // nq, nf, neps   // this one is for gurobi
 
-  if (use_fast_qp > 0)
-  { // set up and call fastqp
+  VectorXd w = (pdata->w_qdd.array() + REG).matrix();
+  if (use_fast_qp > 0 && !include_angular_momentum && pdata->body_accel_input_weights.array().maxCoeff() > 1e-10)
+  { 
+    cout << "blah blah" << endl;
+    // TODO: update to include angular momentum, body accel objectives
 
   	//    We want Hqp inverse, which I can compute efficiently using the
   	//    matrix inversion lemma (see wikipedia):
   	//    inv(A + U'CV) = inv(A) - inv(A)*U* inv([ inv(C)+ V*inv(A)*U ]) V inv(A)
-  	//     but inv(A) is 1/w*eye(nq), so I can reduce this to:
-  	//        = 1/w ( eye(nq) - 1/w*U* inv[ inv(C) + 1/w*V*U ] * V
   	if (nc>0) {
-  		double wi = 1/(pdata->w + REG);
-			pdata->Hqp = wi*MatrixXd::Identity(nq,nq);
-  		if (R_DQyD_ls.trace()>1e-15) // R_DQyD_ls is not zero
-  			pdata->Hqp -=  wi*wi*pdata->J_xy.transpose()*(R_DQyD_ls.inverse() + wi*pdata->J_xy*pdata->J_xy.transpose()).inverse()*pdata->J_xy;
-  	} else {
+      MatrixXd Wi = ((1/(pdata->w_qdd.array() + REG)).matrix()).asDiagonal();
+  		if (R_DQyD_ls.trace()>1e-15) { // R_DQyD_ls is not zero
+  			pdata->Hqp = Wi - Wi*pdata->J_xy.transpose()*(R_DQyD_ls.inverse() + pdata->J_xy*Wi*pdata->J_xy.transpose()).inverse()*pdata->J_xy*Wi;
+      }
+  	} 
+    else {
     	pdata->Hqp = MatrixXd::Constant(nq,1,1/(1+REG));
   	}
 
 	  #ifdef TEST_FAST_QP
-  	  MatrixXd Hqp_test(nq,nq) = (pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy + (pdata->w+REG)*MatrixXd::Identity(nq,nq)).inverse();
-  	  if (((Hqp_test-pdata->Hqp).abs()).maxCoeff() > 1e-6)
-  		  mexErrMsgIdAndTxt("Q submatrix inverse from matrix inversion lemma does not match direct Q inverse.");
+  	  if (nc>0) {
+        MatrixXd Hqp_test(nq,nq);
+        MatrixXd W = w.asDiagonal();
+        Hqp_test = (pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy + W).inverse();
+    	  if (((Hqp_test-pdata->Hqp).array().abs()).maxCoeff() > 1e-6) {
+    		  mexErrMsgTxt("Q submatrix inverse from matrix inversion lemma does not match direct Q inverse.");
+        }
+      }
 	  #endif
 
     Qnfdiag = MatrixXd::Constant(nf,1,1/REG);
@@ -453,31 +486,80 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     if (info<0)  	mexPrintf("fastQP info = %d.  Calling gurobi.\n", info);
   }
+  else {
 
-  if (info<0) {
-		// now set up gurobi:
-    if (nc > 0) {
-      pdata->Hqp = pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy;          // note: only needed for gurobi call (could pull it down)
-      pdata->Hqp += (pdata->w+REG)*MatrixXd::Identity(nq,nq);
+    if (nc>0) {
+      VectorXd w = (pdata->w_qdd.array() + REG).matrix();
+      pdata->Hqp = pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy;
+      if (include_angular_momentum) {
+        pdata->Hqp = pdata->Ak.transpose()*pdata->W_kdot*pdata->Ak;
+      }
+      pdata->Hqp += w.asDiagonal();
     } else {
-      // Q(1:nq,1:nq) = eye(nq)
-    	pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
+      pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
     }
 
-    Qnfdiag = MatrixXd::Constant(nf,1,REG);
-    Qneps = MatrixXd::Constant(neps,1,.001+REG);
+
+    // add in body spatial acceleration cost terms
+    int w_i;
+    for (int i=0; i<pdata->n_body_accel_inputs; i++) {
+      w_i=pdata->body_accel_input_weights(i);
+      if (w_i > 0) {
+        body_vdot = body_accel_inputs[i].bottomRows(6);
+        body_idx = (int)(body_accel_inputs[i][0])-1;
+        
+        if (!inSupport(active_supports,body_idx)) {
+          pdata->r->forwardJac(body_idx,orig,1,Jb);
+          pdata->r->forwardJacDot(body_idx,orig,1,Jbdot);
+
+          for (int j=0; j<6; j++) {
+            if (!std::isnan(body_vdot[j])) {
+              pdata->Hqp += w_i*(Jb.row(j)).transpose()*Jb.row(j);
+              f.head(nq) += w_i*(qdvec.transpose()*Jbdot.row(j).transpose() - body_vdot[j])*Jb.row(j).transpose();
+            }
+          }
+        }
+      }
+    }
+
+    Qnfdiag = MatrixXd::Constant(nf,1,pdata->w_grf+REG);
+    Qneps = MatrixXd::Constant(neps,1,pdata->w_slack+REG);
 
     QBlkDiag[0] = &pdata->Hqp;
     if (nc>0) {
-    	QBlkDiag[1] = &Qnfdiag;
-    	QBlkDiag[2] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
+      QBlkDiag[1] = &Qnfdiag;
+      QBlkDiag[2] = &Qneps;     // quadratic slack var cost, Q(nparams-neps:end,nparams-neps:end)=eye(neps)
     }
 
-    model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
-    int status; CGE(GRBgetintattr(model, "Status", &status), pdata->env);
-    if (status!=2) mexPrintf("Gurobi reports non-optimal status = %d\n", status);
-  }
 
+    MatrixXd Ain_lb_ub(2*nu+2*nparams,nparams);
+    VectorXd bin_lb_ub(2*nu+2*nparams);
+    Ain_lb_ub << Ain,            // note: obvious sparsity here
+        -MatrixXd::Identity(nparams,nparams),
+        MatrixXd::Identity(nparams,nparams);
+    bin_lb_ub << bin, -lb, ub;
+
+
+    if (use_fast_qp > 0)
+    { // set up and call fastqp
+      info = fastQP(QBlkDiag, f, Aeq, beq, Ain_lb_ub, bin_lb_ub, pdata->active, alpha);
+      if (info<0)    mexPrintf("fastQP info=%d... calling Gurobi.\n", info);
+    }
+    else {
+      // use gurobi active set 
+      model = gurobiActiveSetQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->vbasis,pdata->vbasis_len,pdata->cbasis,pdata->cbasis_len,alpha);
+      CGE(GRBgetintattr(model,"NumVars",&pdata->vbasis_len), pdata->env);
+      CGE(GRBgetintattr(model,"NumConstrs",&pdata->cbasis_len), pdata->env);
+      info=66;
+      //info = -1;
+    }
+
+    if (info<0) {
+      model = gurobiQP(pdata->env,QBlkDiag,f,Aeq,beq,Ain,bin,lb,ub,pdata->active,alpha);
+      int status; CGE(GRBgetintattr(model, "Status", &status), pdata->env);
+      if (status!=2) mexPrintf("Gurobi reports non-optimal status = %d\n", status);
+    }
+  }
 
   //----------------------------------------------------------------------
   // Solve for inputs ----------------------------------------------------
