@@ -553,7 +553,7 @@ classdef QPControlBlock < MIMODrakeSystem
 %       valuecheck(sense',model.sense);
 %       valuecheck(lb,model.lb,1e-8);
 %       valuecheck(ub,model.ub,1e-8);
-      valuecheck(y,des.y,0.5);
+%       valuecheck(y,des.y,0.5);
     end   
       
     if (1)     % simple timekeeping for performance optimization
