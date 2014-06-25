@@ -28,10 +28,9 @@ classdef IRISRegion
 
     function draw_lcmgl(obj, lcmgl)
       % Draw the xy projection of the x,y,yaw region
-      H = struct('A', obj.A, 'B', reshape(obj.b, [], 1));
-      res = cddmex('extreme', H);
-      V = res.V';
-      V = V(1:2,convhull(V(1,:), V(2,:)));
+      V = iris.thirdParty.polytopes.lcon2vert(obj.A, obj.b);
+      V = V';
+      V = V(1:2, convhull(V(1,:), V(2,:)));
 
       lcmgl.glColor3f(0,0,0)
       lcmgl.glBegin(lcmgl.LCMGL_LINES)
