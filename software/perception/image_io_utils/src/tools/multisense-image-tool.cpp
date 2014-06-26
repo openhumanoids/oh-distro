@@ -26,7 +26,7 @@
 #include <bot_frames/bot_frames.h>
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 
-#include <pointcloud_tools/pointcloud_lcm.hpp> // create point clouds
+#include <multisense_utils/multisense_utils.hpp> // create point clouds
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <image_io_utils/image_io_utils.hpp>   // to simplify jpeg/zlib compression and decompression
 #include <camera_params/camera_params.hpp>     // (Stereo) Camera Parameters
@@ -69,7 +69,7 @@ class image_tool{
     int decimate_;
     
     pointcloud_vis* pc_vis_;  
-    pointcloud_lcm* pc_lcm_;     
+    multisense_utils* ms_utils_;     
     image_io_utils*  imgutils_;
 
     bot_core::image_t last_mask_;    
@@ -103,42 +103,6 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
   Q_(2,3) =  stereo_params_.right.fx;
   Q_(3,3) = (stereo_params_.right.cx - stereo_params_.left.cx ) / baseline;  
   
-  /* 
-  // This can be removed:
-  if (1==0){ // real device with letterboxes
-    Q_(0,0) = Q_(1,1) = 1.0;  
-    //double Tx = baseline();
-    Q_(3,2) = 14.2914745276283;//1.0 / Tx;
-    Q_(0,3) = -512;//-right_.cx();
-    Q_(1,3) = -544;//-right_.cy();
-    Q_(2,3) = 606.0344848632812;//right_.fx();
-    Q_(3,3) = 0;//(right_.cx() - left_.cx()) / Tx;  
-  }else if (1==1){   // real device without letterboxes
-    Q_(0,0) = Q_(1,1) = 1.0;  
-    //double Tx = baseline();
-    Q_(3,2) = 14.2914745276283;//1.0 / Tx;
-    Q_(0,3) = -512.0;//-right_.cx();
-    Q_(1,3) = -272.0;//-right_.cy();
-    Q_(2,3) = 606.0344848632812;//right_.fx();
-    Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx;  
-  }else if(1==0){ // simulated 1024x544
-    Q_(0,0) = Q_(1,1) = 1.0;  
-    //double Tx = baseline();
-    Q_(3,2) = 14.2914745276283;//1.0 / Tx;
-    Q_(0,3) = -512.5;//-right_.cx();
-    Q_(1,3) = -272.5;//-right_.cy();
-    Q_(2,3) = 610.1778;//right_.fx();
-    Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx;      
-  }else{ // simulated 800x800
-    Q_(0,0) = Q_(1,1) = 1.0;  
-    //double Tx = baseline();
-    Q_(3,2) = 14.2914745276283;//1.0 / Tx;
-    Q_(0,3) = -400.5;//-right_.cx();
-    Q_(1,3) = -400.5;//-right_.cy();
-    Q_(2,3) = 476.7014;//right_.fx();
-    Q_(3,3) = 0;// (400.5 - 400.5)/0.07;//(right_.cx() - left_.cx()) / Tx;      
-  }
-  */
   std::cout << Q_ << " is reprojectionMatrix\n";  
   
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_params_.left.width, stereo_params_.left.height);
@@ -151,8 +115,8 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(3000,"Pose",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(3001,"Pts",1,1, 3000,0,colors_v_r));
-  pc_lcm_ = new pointcloud_lcm(lcm_->getUnderlyingLCM());
-  pc_lcm_->set_decimate( decimate_ );
+  ms_utils_ = new multisense_utils();
+  ms_utils_->set_decimate( decimate_ );
   
   last_mask_.utime =0; // use this number to determine initial image
   counter_=0;  
@@ -186,7 +150,7 @@ void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   
   // Extract a point cloud:
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-  pc_lcm_->unpack_multisense(msg,Q_,cloud);  
+  ms_utils_->unpack_multisense(msg,Q_,cloud);  
   // cout << "size ptcd: " << cloud->points.size() << " " << cloud->width << " " << cloud->height << "\n";
   
   /// 2. Colorize point cloud using the image mask
@@ -249,6 +213,18 @@ void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::str
     pcd_fname << "/tmp/multisense_" << counter_ << ".pcd";
     std::cout << pcd_fname.str() << " written\n";
     writer.write (pcd_fname.str() , *cloud, false);  
+    
+    
+    Eigen::Isometry3f ref_pose_f = ref_pose.cast<float>();
+    Eigen::Quaternionf ref_pose_f_quat(ref_pose_f.rotation());
+    pcl::transformPointCloud (*cloud, *cloud,
+                              ref_pose_f.translation(), ref_pose_f_quat);      
+    
+    std::stringstream pcd_fname2;
+    pcd_fname2 << "/tmp/multisense_" << counter_ << "_local.pcd";
+    std::cout << pcd_fname2.str() << " written\n";
+    writer.write (pcd_fname2.str() , *cloud, false);  
+    
   }
 }
 
