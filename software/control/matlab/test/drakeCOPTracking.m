@@ -105,7 +105,6 @@ options.w_qdd = 0.001*ones(nq,1);
 options.W_kdot = zeros(3); 
 options.w_grf = 0;
 options.w_slack = 0.001;
-options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = use_mex;
 options.contact_threshold = 0.002;

@@ -126,7 +126,6 @@ options.dt = 0.003;
 options.slack_limit = 30;
 options.use_bullet = use_bullet;
 options.w_grf = 0;
-options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.005;
 options.solver = 0; % 0 fastqp, 1 gurobi

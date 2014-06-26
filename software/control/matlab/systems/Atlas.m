@@ -84,7 +84,6 @@ classdef Atlas < Biped
         options.slack_limit = 30.0;
         options.w = 0.01;
         options.R = 1e-12*eye(getNumInputs(obj));
-        options.lcm_foot_contacts = false;
         options.debug = false;
         options.use_mex = 1;
 

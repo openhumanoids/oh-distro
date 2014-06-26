@@ -252,7 +252,6 @@ end
 % instantiate QP controller
 options.slack_limit = 30.0;
 options.w = 0.001;
-options.lcm_foot_contacts = false;
 options.use_mex = true;
 options.contact_threshold = 0.05;
 options.output_qdd = true;

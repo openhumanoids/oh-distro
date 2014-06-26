@@ -67,7 +67,6 @@ options.slack_limit = 30.0;
 options.w_qdd = 0.001*ones(nq,1);
 options.w_grf = 0;
 options.w_slack = 0.001;
-options.lcm_foot_contacts = false;
 options.debug = false;
 options.use_mex = use_mex;
 
