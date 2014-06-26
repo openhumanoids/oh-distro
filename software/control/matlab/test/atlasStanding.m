@@ -1,6 +1,6 @@
 function atlasStanding
 %NOTEST
-
+error('Scott has to fix this script');
 % test function for standing atlas using the QP controller. using the
 % joint_str variable, the user can select a subset of leg joints with which
 % to do torque control.
