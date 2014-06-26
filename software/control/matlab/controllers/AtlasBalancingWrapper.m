@@ -14,7 +14,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
   methods
     function obj = AtlasBalancingWrapper(r,controller_data,options)
       typecheck(r,'Atlas');
-      typecheck(controller_data,'SharedDataHandle');
+      typecheck(controller_data,'QPControllerData');
       
       input_frame = getStateFrame(r);
       output_frame = AtlasPosVelTorqueRef(r);
@@ -53,27 +53,24 @@ classdef AtlasBalancingWrapper < DrakeSystem
       end
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
       
+      
       % instantiate QP controller
-      options.slack_limit = 100;
-      options.w_qdd = 10.0*ones(obj.nq,1);
-      options.W_hdot = diag([10;10;10;10;10;10]);
-      options.w_grf = 0.0075;
-      options.w_slack = 0.005;
-      options.Kp = 0; % com-z pd gains
-      options.Kd = 0; % com-z pd gains
-      options.input_foot_contacts = true;
+      options.slack_limit = 30.0;
+      options.w_qdd = 0.001*ones(obj.nq,1);
+      options.w_grf = 0;
+      options.w_slack = 0.001;
       options.debug = false;
       options.use_mex = true;
+      options.W_kdot = zeros(3);
+      options.input_foot_contacts = true;
       options.contact_threshold = 0.01;
       options.output_qdd = true;
-      qp = MomentumControlBlock(r,{},controller_data,options);
+
+      qp = QPControlBlock(r,{},controller_data,options);
      
       % cascade IK/PD block
       options.Kp = 65.0*ones(obj.nq,1);
       options.Kd = 12.0*ones(obj.nq,1);
-%       ankles = findJointIndices(r,'ak');
-%       options.Kp(ankles) = 20;
-%       options.Kd(ankles) = 3;
       options.use_ik=true;
       options.fixed_dofs = [findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')];
       pd = IKPDBlock(r,controller_data,options);
@@ -102,10 +99,10 @@ classdef AtlasBalancingWrapper < DrakeSystem
         error('AtlasBalancingWrapper: controller_data must contain qtraj field');
       end
       
-      if ~isfield(controller_data.data,'qd_int_state')
-        setField(controller_data,'qd_int_state',zeros(obj.velocity_int_block.getStateFrame.dim,1));
+      if ~isfield(controller_data.optional_data,'qd_int_state')
+        controller_data.optional_data.qd_int_state = zeros(obj.velocity_int_block.getStateFrame.dim,1);
       else
-        sizecheck(controller_data.qd_int_state,obj.velocity_int_block.getStateFrame.dim);
+        sizecheck(controller_data.optional_data.qd_int_state,obj.velocity_int_block.getStateFrame.dim);
       end
       
       obj.robot = r;
@@ -129,7 +126,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       % velocity integrator
       qd_int_state = obj.ctrl_data.data.qd_int_state;
       qd_int_state = mimoUpdate(obj.velocity_int_block,t,qd_int_state,x,qdd,fc);
-      setField(obj.ctrl_data,'qd_int_state',qd_int_state);
+      obj.ctrl_data.optional_data.qd_int_state = qd_int_state;
       qd_err = mimoOutput(obj.velocity_int_block,t,qd_int_state,x,qdd,fc);
     
       force_ctrl_joints = obj.ctrl_data.data.force_controlled_joints;

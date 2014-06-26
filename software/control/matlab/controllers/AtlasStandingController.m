@@ -36,60 +36,65 @@ classdef AtlasStandingController < DRCController
       integral_clamps(arm_ind) = 0.3;
       integral_clamps(back_ind) = 0.2;
       integral_clamps(back_y_ind) = 0.1;
+
+      % use saved nominal pose 
+      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
+      q0 = d.xstar(1:getNumDOF(r));
+      kinsol = doKinematics(r,q0);
+      com = getCOM(r,kinsol);
+
+      % build TI-ZMP controller 
+      fidx = [r.findLinkInd('r_foot'),r.findLinkInd('l_foot')];
+      foot_cpos = terrainContactPositions(r,kinsol,fidx);
+      comgoal = mean([mean(foot_cpos(1:2,1:4)');mean(foot_cpos(1:2,5:8)')])';
+      limp = LinearInvertedPendulum(com(3));
+      [~,V] = lqr(limp,comgoal);
       
-      ctrl_data = SharedDataHandle(struct(...
-        'is_time_varying',false,...
-        'x0',zeros(4,1),...
+      foot_support = SupportState(r,fidx);
+      
+      link_constraints(1).link_ndx = fidx(1);
+      link_constraints(1).pt = [0;0;0];
+      link_constraints(1).pos = forwardKin(r,kinsol,fidx(1),[0;0;0],1);
+      link_constraints(2).link_ndx = fidx(2);
+      link_constraints(2).pt = [0;0;0];
+      link_constraints(2).pos = forwardKin(r,kinsol,fidx(2),[0;0;0],1);
+      
+      optional_data.force_controlled_joints = force_controlled_joints;
+      optional_data.position_controlled_joints = position_controlled_joints;
+      optional_data.integral = zeros(getNumDOF(r),1);
+      optional_data.integral_gains = integral_gains;
+      optional_data.integral_clamps = integral_clamps;
+      optional_data.firstplan = firstplan;
+      
+      ctrl_data = QPControllerData(false,struct(...
+        'acceleration_input_frame',AtlasCoordinates(r),...
+        'D',-com(3)/9.81*eye(2),...
+        'Qy',eye(2),...
+        'S',V.S,...
+        's1',zeros(4,1),...
+        's2',0,...
+        'x0',[comgoal;0;0],...
+        'u0',zeros(2,1),...
+        'y0',comgoal,...
+        'qtraj',q0,...
         'support_times',0,...
-        'supports',[],...
+        'supports',foot_support,...
         'mu',1.0,...
-        'trans_drift',[0;0;0],...
         'ignore_terrain',false,...
-        'qtraj',zeros(getNumDOF(r),1),...
-        'force_controlled_joints', force_controlled_joints,...
-        'position_controlled_joints', position_controlled_joints,...
-        'integral',zeros(getNumDOF(r),1),...
-        'integral_gains',integral_gains,...
-        'integral_clamps',integral_clamps,...
+        'link_constraints',link_constraints,...
+        'optional_data',optional_data,...
         'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
- 
+      
       sys = AtlasBalancingWrapper(r,ctrl_data,options);
       obj = obj@DRCController(name,sys,AtlasState(r));
  
       obj.controller_state_dim = sys.velocity_int_block.getStateFrame.dim;
       obj.robot = r;
       obj.controller_data = ctrl_data;
-      obj.foot_idx = [r.findLinkInd('r_foot'),r.findLinkInd('l_foot')];
+      obj.foot_idx = fidx;
       obj.nq = getNumDOF(r);
       
-      % use saved nominal pose 
-      d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-      q0 = d.xstar(1:getNumDOF(obj.robot));
-      kinsol = doKinematics(obj.robot,q0);
-      com = getCOM(obj.robot,kinsol);
-
-      % build TI-ZMP controller 
-      foot_cpos = terrainContactPositions(r,kinsol,obj.foot_idx);
-      comgoal = mean([mean(foot_cpos(1:2,1:4)');mean(foot_cpos(1:2,5:8)')])';
-      limp = LinearInvertedPendulum(com(3));
-      K = lqr(limp,comgoal);
-      
-      supports = SupportState(r,[r.findLinkInd('r_foot'),r.findLinkInd('l_foot')]);
-      
-      obj.controller_data.setField('K',K);
-      obj.controller_data.setField('qtraj',q0);
-      obj.controller_data.setField('x0',[comgoal;0;0]);
-      obj.controller_data.setField('y0',comgoal);
-      obj.controller_data.setField('supports',supports);
-      obj.controller_data.setField('firstplan',true);
-      
-      link_constraints(1).link_ndx = obj.foot_idx(1);
-      link_constraints(1).pt = [0;0;0];
-      link_constraints(1).pos = forwardKin(r,kinsol,obj.foot_idx(1),[0;0;0],1);
-      link_constraints(2).link_ndx = obj.foot_idx(2);
-      link_constraints(2).pt = [0;0;0];
-      link_constraints(2).pos = forwardKin(r,kinsol,obj.foot_idx(2),[0;0;0],1);
-      obj.controller_data.setField('link_constraints',link_constraints);
+    
 
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
@@ -112,11 +117,11 @@ classdef AtlasStandingController < DRCController
         try
           msg = data.CONFIGURATION_TRAJ;
           qtraj = mxDeserialize(msg.qtraj);
-          if obj.controller_data.data.firstplan
-            obj.controller_data.setField('firstplan',false);
+          if obj.controller_data.optional_data.firstplan
+            obj.controller_data.optional_data.firstplan = false;
           else
             q0=ppval(qtraj,0);
-            qtraj_prev = obj.controller_data.data.qtraj;
+            qtraj_prev = obj.controller_data.qtraj;
 
             if isa(qtraj_prev,'double')  
               qprev_end = qtraj_prev;
@@ -126,31 +131,31 @@ classdef AtlasStandingController < DRCController
             
             % smooth transition from end of previous trajectory by adding
             % difference to integral terms
-            integ = obj.controller_data.data.integral;
-            pos_ctrl_joints = obj.controller_data.data.position_controlled_joints;
+            integ = obj.controller_data.optional_data.integral;
+            pos_ctrl_joints = obj.controller_data.optional_data.position_controlled_joints;
             integ(pos_ctrl_joints) = integ(pos_ctrl_joints) + qprev_end(pos_ctrl_joints) - q0(pos_ctrl_joints);
-            obj.controller_data.setField('integral',integ);
+            obj.controller_data.optional_data.integral = integ;
           end
-          obj.controller_data.setField('qtraj',qtraj);
+          obj.controller_data.qtraj = qtraj;
         catch err
           disp(err);
           standAtCurrentState(obj,data.AtlasState);
         end
       elseif isfield(data,'COMMITTED_PLAN_PAUSE')
         % set plan to current desired state
-        qtraj = obj.controller_data.data.qtraj;
+        qtraj = obj.controller_data.qtraj;
         if ~isa(qtraj,'double') 
            qtraj = ppval(qtraj,min(data.t,qtraj.breaks(end)));
         end        
-        obj.controller_data.setField('qtraj',qtraj);
+        obj.controller_data.qtraj = qtraj;
       elseif isfield(data,'AtlasState')
         standAtCurrentState(obj,data.AtlasState);
       end
       obj = setDuration(obj,inf,false); % set the controller timeout
-      controller_state = obj.controller_data.data.qd_int_state;
+      controller_state = obj.controller_data.optional_data.qd_int_state;
       controller_state(3) = 0; % reset time
       controller_state(4) = 0; % reset eta
-      obj.controller_data.setField('qd_int_state',controller_state);
+      obj.controller_data.optional_data.qd_int_state = controller_state;
     end
     
     function standAtCurrentState(obj,x0)
@@ -159,10 +164,10 @@ classdef AtlasStandingController < DRCController
       kinsol = doKinematics(r,q0);
       foot_cpos = terrainContactPositions(r,kinsol,obj.foot_idx);
       comgoal = mean([mean(foot_cpos(1:2,1:4)');mean(foot_cpos(1:2,5:8)')])';
-      obj.controller_data.setField('qtraj',q0);
-      obj.controller_data.setField('x0',[comgoal;0;0]);
-      obj.controller_data.setField('y0',comgoal);
-      obj.controller_data.setField('comtraj',comgoal);
+      obj.controller_data.qtraj = q0;
+      obj.controller_data.x0 = [comgoal;0;0];
+      obj.controller_data.y0 = comgoal;
+      obj.controller_data.comtraj = comgoal;
 
       link_constraints(1).link_ndx = obj.foot_idx(1);
       link_constraints(1).pt = [0;0;0];
@@ -170,7 +175,7 @@ classdef AtlasStandingController < DRCController
       link_constraints(2).link_ndx = obj.foot_idx(2);
       link_constraints(2).pt = [0;0;0];
       link_constraints(2).pos = forwardKin(r,kinsol,obj.foot_idx(2),[0;0;0],1);
-      obj.controller_data.setField('link_constraints',link_constraints);
+      obj.controller_data.link_constraints = link_constraints;
     end
   end
 end
