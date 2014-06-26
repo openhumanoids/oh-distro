@@ -14,7 +14,7 @@ pods_use_pkg_config_packages(object-tracker   particle
   gsl  bot2-core lcmtypes_visualization  lcmtypes_bot2-core
   bot2-param-client
   bot2-frames  bot2-frames_cpp
-  pointcloud_vis pointcloud_math pointcloud_lcm
+  pointcloud_vis pointcloud_math multisense_utils
   opencv image_io_utils
   major-plane-detect rgbd_primitives
   color-tracker histogram-tracker icp-tracker

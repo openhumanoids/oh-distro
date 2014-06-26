@@ -11,7 +11,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include <pointcloud_tools/pointcloud_lcm.hpp> // create point clouds
+#include <multisense_utils/multisense_utils.hpp> // create point clouds
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
 #include "stereo-bm.hpp"
@@ -33,7 +33,7 @@ class Pass{
     std::string image_channel_;
     StereoB*  stereob_;
 
-    pointcloud_lcm* pc_lcm_;      
+    multisense_utils* ms_utils_;      
     image_io_utils*  imgutils_;
     pointcloud_vis* pc_vis_;
 
@@ -110,8 +110,8 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, float 
   }
 
   int decimate_ =4;
-  pc_lcm_ = new pointcloud_lcm( lcm_->getUnderlyingLCM() );
-  pc_lcm_->set_decimate( decimate_ );  
+  ms_utils_ = new multisense_utils( );//lcm_->getUnderlyingLCM() );
+  ms_utils_->set_decimate( decimate_ );  
   
   
   // Vis Config:
@@ -144,7 +144,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   //stereob_->sendRangeImage(msg->utime);
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-  pc_lcm_->unpack_multisense(stereob_->getDisparity(), stereob_->getColor(), h, w, Q_, cloud);
+  ms_utils_->unpack_multisense(stereob_->getDisparity(), stereob_->getColor(), h, w, Q_, cloud);
   cout << "points: " << cloud->points.size() << "\n";
   
   Eigen::Isometry3d camera_pose_;
