@@ -8,7 +8,7 @@ if (nargin<1); use_mex = true; end
 if (nargin<2); use_ik = false; end
 if (nargin<3); use_bullet = false; end
 if (nargin<4); use_angular_momentum = false; end
-if (nargin<4); random_navgoal = false; end
+if (nargin<5); random_navgoal = false; end
 
 if random_navgoal
   navgoal = [rand();randn();0;0;0;pi/2*randn()];
