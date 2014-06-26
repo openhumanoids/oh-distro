@@ -46,6 +46,9 @@ classdef QPControllerData < handle
     ignore_terrain %
     plan_shift=[0;0;0]; % linear translation to apply to walking plan (applied to 
     % COM and ZMP trajectories)  
+    
+    acceleration_input_frame; % input coordinate frame for desired 
+    % generalized accelerations
   end
   
   methods 
@@ -58,6 +61,9 @@ classdef QPControllerData < handle
     end
  
     function obj = checkAndUpdateQPData(obj,data)
+      
+      assert(isa(data.acceleration_input_frame,'CoordinateFrame'));
+      obj.acceleration_input_frame = data.acceleration_input_frame;
       
       if isfield(data,'qp_active_set')
         obj.qp_active_set = data.qp_active_set;
