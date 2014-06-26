@@ -11,7 +11,10 @@
  */
 
 #include "QPCommon.h"
+#include <Eigen/StdVector>
+
 //#define TEST_FAST_QP
+//#define USE_MATRIX_INVERSION_LEMMA
 
 using namespace std;
 
@@ -46,7 +49,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     pm= myGetProperty(pobj,"w_slack");
     pdata->w_slack = mxGetScalar(pm);    
-   
+
+    pm = myGetProperty(pobj,"Kp_ang");
+    pdata->Kp_ang = mxGetScalar(pm);
+
     pm= myGetProperty(pobj,"n_body_accel_inputs");
     pdata->n_body_accel_inputs = mxGetScalar(pm); 
 
@@ -165,7 +171,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   double *q = mxGetPr(prhs[narg++]);
   double *qd = &q[nq];
 
-  vector<VectorXd> body_accel_inputs;
+  vector<VectorXd,aligned_allocator<VectorXd>> body_accel_inputs;
   for (int i=0; i<pdata->n_body_accel_inputs; i++) {
     assert(mxGetM(prhs[narg])==7); assert(mxGetN(prhs[narg])==1);
     VectorXd v = VectorXd::Zero(7,1);
@@ -315,7 +321,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   Vector3d kdot_des; 
   if (include_angular_momentum) {
     VectorXd k = pdata->Ak*qdvec;
-    kdot_des = -5.0 *k; // TODO: parameterize
+    kdot_des = -pdata->Kp_ang*k; // TODO: parameterize
   }
   
   //----------------------------------------------------------------------
@@ -334,7 +340,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       pdata->fqp -= y0.transpose()*Qy*D_ls*pdata->J_xy;
       pdata->fqp -= (pdata->w_qdd.array()*qddot_des.array()).matrix().transpose();
       if (include_angular_momentum) {
-        pdata->fqp = qdvec.transpose()*pdata->Akdot.transpose()*pdata->W_kdot*pdata->Ak;
+        pdata->fqp += qdvec.transpose()*pdata->Akdot.transpose()*pdata->W_kdot*pdata->Ak;
         pdata->fqp -= kdot_des.transpose()*pdata->W_kdot*pdata->Ak;
       }
       f.head(nq) = pdata->fqp.transpose();
@@ -431,9 +437,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   VectorXd alpha(nparams);
 
   MatrixXd Qnfdiag(nf,1), Qneps(neps,1);
-  vector< MatrixXd* > QBlkDiag( nc>0 ? 3 : 1 );  // nq, nf, neps   // this one is for gurobi
+  vector<MatrixXd*> QBlkDiag( nc>0 ? 3 : 1 );  // nq, nf, neps   // this one is for gurobi
 
   VectorXd w = (pdata->w_qdd.array() + REG).matrix();
+  #ifdef USE_MATRIX_INVERSION_LEMMA
   bool include_body_accel_cost_terms = pdata->n_body_accel_inputs > 0 && pdata->body_accel_input_weights.array().maxCoeff() > 1e-10;
   if (use_fast_qp > 0 && !include_angular_momentum && !include_body_accel_cost_terms)
   { 
@@ -484,14 +491,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (info<0)  	mexPrintf("fastQP info = %d.  Calling gurobi.\n", info);
   }
   else {
-
+  #endif
     if (nc>0) {
-      VectorXd w = (pdata->w_qdd.array() + REG).matrix();
       pdata->Hqp = pdata->J_xy.transpose()*R_DQyD_ls*pdata->J_xy;
       if (include_angular_momentum) {
-        pdata->Hqp = pdata->Ak.transpose()*pdata->W_kdot*pdata->Ak;
+        pdata->Hqp += pdata->Ak.transpose()*pdata->W_kdot*pdata->Ak;
       }
-      pdata->Hqp += w.asDiagonal();
+      pdata->Hqp += pdata->w_qdd.asDiagonal();
+      pdata->Hqp += REG*MatrixXd::Identity(nq,nq);
     } else {
       pdata->Hqp = MatrixXd::Constant(nq,1,1+REG);
     }
@@ -556,7 +563,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       int status; CGE(GRBgetintattr(model, "Status", &status), pdata->env);
       if (status!=2) mexPrintf("Gurobi reports non-optimal status = %d\n", status);
     }
+  #ifdef USE_MATRIX_INVERSION_LEMMA
   }
+  #endif
 
   //----------------------------------------------------------------------
   // Solve for inputs ----------------------------------------------------
@@ -568,6 +577,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   y = pdata->B_act.transpose()*(pdata->H_act*qdd + pdata->C_act - D_act*beta);
   //y = pdata->B_act.jacobiSvd(ComputeThinU|ComputeThinV).solve(pdata->H_act*qdd + pdata->C_act - Jz_act.transpose()*lambda - D_act*beta);
   
+
   if (nlhs>0) {
     plhs[0] = eigenToMatlab(y);
   }
@@ -591,47 +601,45 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   if (nlhs>4) {
+    plhs[4] = eigenToMatlab(pdata->Hqp);
+  }
+
+  if (nlhs>5) {
+    plhs[5] = eigenToMatlab(f);
+  }
+
+  if (nlhs>6) {
+    plhs[6] = eigenToMatlab(Aeq);
+  }
+
+  if (nlhs>7) {
+    plhs[7] = eigenToMatlab(beq);
+  }
+
+  if (nlhs>8) {
+    plhs[8] = eigenToMatlab(Ain_lb_ub);
+  }
+
+  if (nlhs>9) {
+    plhs[9] = eigenToMatlab(bin_lb_ub);
+  }
+
+  if (nlhs>10) {
+    plhs[10] = eigenToMatlab(Qnfdiag);
+  }
+
+  if (nlhs>11) {
+    plhs[11] = eigenToMatlab(Qneps);
+  }
+
+  if (nlhs>12) {
     double Vdot;
     if (nc>0) 
       // note: Sdot is 0 for ZMP/double integrator dynamics, so we omit that term here
       Vdot = ((2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot_xy*qdvec + pdata->J_xy*qdd)) + s1dot.transpose()*x_bar)(0) + s2dot;
     else
       Vdot = 0;
-    plhs[4] = mxCreateDoubleScalar(Vdot);
-  }
-
-  if (nlhs>5) {
-    plhs[5] = eigenToMatlab(pdata->Hqp);
-  }
-
-  if (nlhs>6) {
-    plhs[6] = eigenToMatlab(f);
-  }
-
-  if (nlhs>7) {
-    plhs[7] = eigenToMatlab(Aeq);
-  }
-
-  if (nlhs>8) {
-    plhs[8] = eigenToMatlab(beq);
-  }
-
-  if (nlhs>9) {
-    plhs[9] = eigenToMatlab(alpha);
-  }
-
-  if (nlhs>10) {
-    plhs[10] = mxCreateDoubleMatrix(1,pdata->active.size(),mxREAL);
-    pr = mxGetPr(plhs[10]);
-    int i=0;
-    for (set<int>::iterator iter = pdata->active.begin(); iter!=pdata->active.end(); iter++) {
-      pr[i++] = (double) (*iter);
-    }
-  }
-
-  if (nlhs>11) {
-    Vector2d zmp = xcom.head(2) - 0.89/9.81*(pdata->J_xy*qdd + pdata->Jdot_xy*qdvec);
-    plhs[11] = eigenToMatlab(zmp);
+    plhs[12] = mxCreateDoubleScalar(Vdot);
   }
 
   if (model) { 

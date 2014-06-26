@@ -1,20 +1,21 @@
-function drakeWalking(use_mex,use_ik,use_bullet)
+function drakeWalking(use_mex,use_ik,use_bullet,use_angular_momentum)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 plot_comtraj = true;
 
-%navgoal = [rand();randn();0;0;0;pi/2*randn()];
-navgoal = [1;0;0;0;0;0];
+navgoal = [rand();randn();0;0;0;pi/2*randn()];
+%navgoal = [1;0;0;0;0;0];
 
 % construct robot model
 options.floating = true;
 options.ignore_friction = true;
-options.dt = 0.002;
-if (nargin>0); options.use_mex = use_mex;
-else options.use_mex = true; end
+options.dt = 0.001;
+if (nargin<1); options.use_mex = true;
+else options.use_mex = use_mex; end
 if (nargin<2); use_ik = false; end
 if (nargin<3) use_bullet = false; end
+if (nargin<4) use_angular_momentum = false; end
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -50,10 +51,10 @@ request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 30;
 request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
-request.params.nom_step_width = 0.26;
-request.params.max_step_width = 0.39;
+request.params.nom_step_width = 0.24;
+request.params.max_step_width = 0.3;
 request.params.nom_forward_step = 0.2;
-request.params.max_forward_step = 0.45;
+request.params.max_forward_step = 0.4;
 request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
@@ -76,7 +77,7 @@ walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
 % No-op: just make sure we can cleanly encode and decode the plan as LCM
-tic
+tic;
 walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
 fprintf(1, 'control data lcm code/decode time: %f\n', toc);
 
@@ -98,7 +99,7 @@ end
 
 
 ctrl_data = QPControllerData(0,true,struct(...
-  'D',-0.89/9.81*eye(2),...
+  'D',-0.89/9.81*eye(2),... % assumed COM height
   'Qy',eye(2),...
   'S',walking_ctrl_data.S,... % always a constant
   's1',walking_ctrl_data.s1,...
@@ -118,13 +119,20 @@ ctrl_data = QPControllerData(0,true,struct(...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
 options.dt = 0.002;
-options.slack_limit = 20;
+options.slack_limit = 30;
 options.use_bullet = use_bullet;
 options.w_grf = 0;
-options.W_kdot = 0.0*eye(3); % angular momentum weight
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.005;
+options.solver = 0; % 0 fastqp, 1 gurobi
+
+if use_angular_momentum
+  options.Kp_ang = 1.0; % angular momentum proportunal feedback gain
+  options.W_kdot = 1e-5*eye(3); % angular momentum weight
+else
+  options.W_kdot = zeros(3); 
+end
 
 if use_ik
   options.w_qdd = 0.001*ones(nq,1);
@@ -132,11 +140,6 @@ else
   options.w_qdd = 0.00001*ones(nq,1);
 end
 
-if options.use_mex==2
-  options.solver = 1;
-else
-  options.solver = 0;
-end
 
 if (use_ik)
   % instantiate QP controller
@@ -161,10 +164,7 @@ if (use_ik)
   clear ins;  
   
 	% feedback PD block
-% 	options.Kp = 270.0*ones(nq,1);
-% 	options.Kd = 30.0*ones(nq,1);
-% 	options.Kp(ankle_ind) = 80;
-% 	options.Kd(ankle_ind) = 10;
+
 	pd = IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;

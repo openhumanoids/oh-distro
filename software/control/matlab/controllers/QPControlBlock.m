@@ -92,6 +92,15 @@ classdef QPControlBlock < MIMODrakeSystem
       obj.w_slack = 0.001;
     end       
 
+    % proportunal gain for angular momentum 
+    if isfield(options,'Kp_ang')
+      typecheck(options.Kp_ang,'double');
+      sizecheck(options.Kp_ang,1);
+      obj.Kp_ang = options.Kp_ang;
+    else
+      obj.Kp_ang = 1.0;
+    end       
+
     % hard bound on slack variable values
     if isfield(options,'slack_limit')
       typecheck(options.slack_limit,'double');
@@ -144,19 +153,13 @@ classdef QPControlBlock < MIMODrakeSystem
       if (obj.use_mex && exist('QPControllermex','file')~=3)
         error('can''t find QPControllermex.  did you build it?');
       end
-      if (obj.use_mex==2 && obj.solver~=1)
-        error('must use gurobi when using use_mex=2 (todo: generalize)');
-      end
     else
       obj.use_mex = 1;
     end
     
-    obj.lc = lcm.lcm.LCM.getSingleton();
+    %obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
-    obj.rhand_idx = findLinkInd(r,'r_hand');
-    obj.lhand_idx = findLinkInd(r,'l_hand');
-    obj.pelvis_idx = findLinkInd(r,'pelvis');    
       
     obj.gurobi_options.outputflag = 0; % not verbose
     if options.solver==0
@@ -195,12 +198,7 @@ classdef QPControlBlock < MIMODrakeSystem
   end
     
   function varargout=mimoOutput(obj,t,~,varargin)
-    persistent infocount
-    if isempty(infocount)
-      infocount = 0;
-    end
-
-    out_tic = tic;
+    %out_tic = tic;
 
     ctrl_data = obj.controller_data;
       
@@ -420,7 +418,7 @@ classdef QPControlBlock < MIMODrakeSystem
         Ak = A(1:3,:);
         Akdot = Adot(1:3,:);
         k=Ak*qd;
-        kdot_des = -5.0 *k; 
+        kdot_des = -obj.Kp_ang*k; 
       end
       
       %----------------------------------------------------------------------
@@ -534,62 +532,85 @@ classdef QPControlBlock < MIMODrakeSystem
         des.y = y;
       end
       
-      % compute V,Vdot for controller status updates
-%       if (nc>0)
-%         %V = x_bar'*S*x_bar + s1'*x_bar + s2;
-%         %Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*Sdot*x_bar + x_bar'*s1dot + s2dot;
-%         % note for ZMP dynamics, S is constant so Sdot=0
-%       
-%         Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*s1dot + s2dot;
-%       end
+      % % compute V,Vdot
+      % if (nc>0)
+      %   %V = x_bar'*S*x_bar + s1'*x_bar + s2;
+      %   %Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*Sdot*x_bar + x_bar'*s1dot + s2dot;
+      %   % note for ZMP dynamics, S is constant so Sdot=0
+      %   Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*s1dot + s2dot;
+      % end
     end
   
-    if (obj.use_mex==1)
-      if obj.using_flat_terrain
-        height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
-      else
-        height = 0;
-      end
-      [y,qdd,info,active_supports,Vdot] = QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
-          varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,...
-          S,s1,s1dot,s2dot,x0,u0,y0,mu,height);
-    end
 
-%     if ~isempty(active_supports)
-%       setVdot(obj.controller_data,Vdot);
-%     else
-%       setVdot(obj.controller_data,0);
-%     end
-    
-    if (obj.use_mex==2)
-      % note: this only works when using gurobi
+    if (obj.use_mex==1 || obj.use_mex==2)
       if obj.using_flat_terrain
         height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
       else
         height = 0;
       end
-      [y,qdd,info,active_supports_mex,Vdotmex,Q,gobj,A,rhs,sense,lb,ub] = ...
+
+      if (obj.use_mex==1)
+        [y,qdd] = QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
+            varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,...
+            S,s1,s1dot,s2dot,x0,u0,y0,mu,height);
+        
+        if info < 0
+          ctrl_data.infocount = ctrl_data.infocount+1;
+        else
+          ctrl_data.infocount = 0;
+        end
+        if ctrl_data.infocount > 4
+          % kill atlas
+          disp('freezing atlas!');
+          behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
+          d.utime = 0;
+          d.command = 'freeze';
+          behavior_pub.publish(d);
+        end    
+        
+      else 
+        [y_mex,mex_qdd,info_mex,active_supports_mex,Hqp_mex,fqp_mex,...
+          Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps] = ...
           QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
-          varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,...
-          S,s1,s1dot,s2dot,x0,u0,y0,mu,height);
-      if (nc>0)
-        valuecheck(active_supports_mex,active_supports);
-        % TODO: fix this
-        %valuecheck(Vdotmex,Vdot,1e-3);
+          varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,...
+          s1dot,s2dot,x0,u0,y0,mu,height);
+
+        if (nc>0)
+          valuecheck(active_supports_mex,active_supports);
+        end
+        
+        if size(Hqp_mex,2)==1
+          Hqp_mex=diag(Hqp_mex);
+        end
+        if info_mex < 0
+          Hqp_mex=Hqp_mex*2;
+          Qf=Qf*2;
+          Qeps=Qeps*2;
+        end
+        valuecheck(Hqp,blkdiag(Hqp_mex,diag(Qf),diag(Qeps)),1e-6);        
+        if (nc>0)
+          valuecheck(active_supports_mex,active_supports);
+        end
+        valuecheck(fqp',fqp_mex,1e-6);
+        if ~obj.use_bullet
+          % contact jacobian rows can be permuted between matlab/mex when
+          % using bullet
+          valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6); 
+          valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
+          valuecheck(Ain,Ain_mex(1:length(bin),:),1e-6);
+          valuecheck(bin,bin_mex(1:length(bin)),1e-6); 
+        end
+        valuecheck([-lb;ub],bin_mex(length(bin)+1:end),1e-6);
+        if info_mex >= 0 && info_fqp >= 0 && ~obj.use_bullet
+          % matlab/mex are using different gurobi fallback options, so
+          % solutions can be slightly different
+          valuecheck(y,y_mex,1e-3);
+          valuecheck(qdd,mex_qdd,1e-3);
+        end
       end
-%       valuecheck(Q'+Q,model.Q'+model.Q,1e-8);
-%       valuecheck(gobj,model.obj,1e-8);
-      % had to comment out equality constraints because the contact
-      % jacobian rows can be permuted between matlab/mex
-      %valuecheck(A,model.A,1e-8);
-      %valuecheck(rhs,model.rhs,1e-8);
-%       valuecheck(sense',model.sense);
-%       valuecheck(lb,model.lb,1e-8);
-%       valuecheck(ub,model.ub,1e-8);
-%       valuecheck(y,des.y,0.5);
     end   
       
-    if (1)     % simple timekeeping for performance optimization
+    if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
       persistent average_tictoc average_tictoc_n;
@@ -622,17 +643,14 @@ classdef QPControlBlock < MIMODrakeSystem
     w_grf; % scalar ground reaction force weight
     w_slack; % scalar slack var weight
     slack_limit; % maximum absolute magnitude of acceleration slack variable values
+    Kp_ang; % proportunal gain for angular momentum feedback
     rfoot_idx;
     lfoot_idx;
-    rhand_idx;
-    lhand_idx;
-    pelvis_idx;
     gurobi_options = struct();
     solver=0;
     debug;
     debug_pub;
     use_mex;
-    use_hand_ft;
     mex_ptr;
     lc;
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop

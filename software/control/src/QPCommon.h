@@ -12,7 +12,6 @@ struct QPControllerData {
   double slack_limit; // maximum absolute magnitude of acceleration slack variable values
   VectorXd umin,umax;
   void* map_ptr;
-  double Kp_k; // angular momentum (k) PD gains 
   std::set<int> active;
 
   // preallocate memory
@@ -31,6 +30,7 @@ struct QPControllerData {
   VectorXd w_qdd; 
   double w_grf; 
   double w_slack; 
+  double Kp_ang; // angular momentum (k) P gain 
   int n_body_accel_inputs;
   int n_body_accel_constraints;
   VectorXd body_accel_input_weights;
