@@ -260,7 +260,7 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
 }
 
 
-
+/*
 void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb){
   // cout << width <<" | "<< height <<" in unpack routine\n";
@@ -297,13 +297,6 @@ void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t*
   cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
   
   
-/*  int vv =400; //l2r
-  int uu =512; //t2b
-  cout << vv <<" " << uu << " | " << disparity( vv, uu) << " | " << points(vv,uu)[0]
-              << " " << points(vv,uu)[1]
-              << " " << points(vv,uu)[2]
-              << "\n";
-*/  
   
   //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   cloud->width    =(int) (w/ (double) decimate_) ;
@@ -412,3 +405,5 @@ void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_
   // unpack_multisense(msg->images[1].data.data(), msg->images[0].data.data(), msg->images[0].height, msg->images[0].width, repro_matrix, 
   //                                     cloud, is_rgb);
 }
+
+*/
