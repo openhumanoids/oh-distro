@@ -1,8 +1,12 @@
-function atlasWalking
+function atlasWalking(use_ik,use_angular_momentum)
 %NOTEST
+
+if (nargin<1); use_ik = true; end
+if (nargin<2); use_angular_momentum = false; end
+
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-joint_str = {'leg'};% <---- cell array of (sub)strings
+joint_str = {'leg'};% <---- force controlled joints, cell array of (sub)strings 
 
 % load robot model
 r = Atlas();
@@ -125,39 +129,32 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
-%qs = walking_plan.xtraj(1:nq,:);
-%qdot = 0*qs;
-%for i=2:length(ts)-1
-%  qdot(i) = (qdot(i+1)-qdot(i-1))/2;
-%end
-%
-%qtraj = PPTrajectory(pchipDeriv(ts,qs,qdot));
-%qdtraj = fnder(qtraj,1);
 
-ctrl_data = SharedDataHandle(struct(...
-  'is_time_varying',true,...
+ctrl_data = QPControllerData(true,struct(...
+  'acceleration_input_frame',AtlasCoordinates(r),...
+  'D',-0.89/9.81*eye(2),... % assumed COM height
+  'Qy',eye(2),...
+  'S',walking_ctrl_data.S,... % always a constant
+  's1',walking_ctrl_data.s1,...
+  's2',walking_ctrl_data.s2,...
+  's1dot',walking_ctrl_data.s1dot,...
+  's2dot',walking_ctrl_data.s2dot,...
   'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
+  'u0',zeros(2,1),...
+	'qtraj',q0,...
+  'comtraj',walking_ctrl_data.comtraj,...
   'link_constraints',walking_ctrl_data.link_constraints, ...
   'support_times',walking_ctrl_data.support_times,...
   'supports',walking_ctrl_data.supports,...
+  'mu',walking_ctrl_data.mu,...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
-  'trans_drift',[0;0;0],...
-  'qtraj',q0,...
-  'comtraj',walking_ctrl_data.comtraj,...
-  'zmptraj',walking_ctrl_data.zmptraj,...
-  'K',walking_ctrl_data.K,...
+  'y0',walking_ctrl_data.zmptraj,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
 
-% traj = PPTrajectory(spline(ts,walking_plan.xtraj));
-% traj = traj.setOutputFrame(r.getStateFrame);
-% v = r.constructVisualizer;
-% playback(v,traj,struct('slider',true));
 
-
-use_simple_pd = false;
 constrain_torso = false;
 
-if use_simple_pd
+if ~use_ik
   
   options.Kp = 30*ones(6,1);
   options.Kd = 8*ones(6,1);
@@ -173,15 +170,15 @@ if use_simple_pd
   torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
 	
   options.w_qdd = 0.0001*ones(nq,1);
-  options.W_hdot = diag([1;1;1;10000;10000;10000]);
+  options.W_kdot = eye(3);
   options.w_grf = 0.01;
   options.Kp = 0; % com-z pd gains
   options.Kd = 0; % com-z pd gains
   options.body_accel_input_weights = [1 1 1 0];
 else
   options.w_qdd = 10*ones(nq,1);
-  options.W_hdot = diag([10;10;10;10;10;10]);
-  options.w_grf = 0.0075;
+  options.W_kdot = 0*eye(3);
+  options.w_grf = 0.001;
   options.Kp = 0; % com-z pd gains
   options.Kd = 0; % com-z pd gains
 end
@@ -189,15 +186,14 @@ end
 % instantiate QP controller
 options.slack_limit = 50;
 options.w_slack = 0.005;
-options.input_foot_contacts = true;
 options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.015;
 options.output_qdd = true;
-options.solver = 0;
-options.smooth_contacts = false;
+options.solver = 0; % 0 fastqp, 1 gurobi
+options.lcm_foot_contacts = true;
 
-if use_simple_pd
+if ~use_ik
   if constrain_torso
     motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
   else
@@ -288,7 +284,7 @@ fcb = FootContactBlock(r,ctrl_data,options);
 fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
-if use_simple_pd
+if ~use_ik
   options.Kp = 40.0*ones(nq,1);
   options.Kd = 18.0*ones(nq,1);
   options.use_ik = false;
@@ -359,20 +355,9 @@ end
 alpha_v = 0.75;
 float_v = 0;
 
-% l_foot_contact = 0;
-% r_foot_contact = 0;
-% qd_control = 0;
-% qd_filt = 0;
-% eta=1;
-
 udes = zeros(nu,1);
 qddes = zeros(nu,1);
 qd_int_state = zeros(nq+4,1);
-
-qd_prev = zeros(nq,1);
-qd_filt = zeros(nq,1);
-eta = 0.1;
-beta = ones(nq,1);
 
 while tt<T
   [x,t] = getNextMessage(state_plus_effort_frame,1);
@@ -389,22 +374,14 @@ while tt<T
 
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    
-    
-%     zero_cross = sign(qd_prev) ~= sign(qd);
-%     qd_prev = qd;
-%     beta(zero_cross) = 0;
-%     qd_filt = 0.1*(1-beta).*qd_filt + beta.*qd;
-%     beta = min(1.0,beta+0.33);
-%     
-%     x_filt = [q;qd_filt];
+  
     x_filt = [q;qd];
 
     fc = output(fcb,tt,[],x_filt);
   
     junk = output(fshift,tt,[],x_filt);
 
-    if use_simple_pd
+    if ~use_ik
       if constrain_torso
         u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; x_filt; x_filt; fc]);
       else
