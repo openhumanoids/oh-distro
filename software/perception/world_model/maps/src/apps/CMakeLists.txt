@@ -25,3 +25,6 @@ pods_install_executables(maps-registrar)
 add_executable(maps-affordance-updater AffordanceUpdater.cpp)
 pods_use_pkg_config_packages(maps-affordance-updater affordance drc-utils)
 pods_install_executables(maps-affordance-updater)
+
+add_subdirectory(vo-lidar-accum)
+
