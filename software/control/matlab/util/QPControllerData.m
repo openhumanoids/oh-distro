@@ -34,7 +34,6 @@ classdef QPControllerData < handle
     Sdot % cost-to-go derivatives
     s1dot
     s2dot
-    K % optimal linear LQR controller (AffineSystem)
     is_time_varying
 
     % motion planning ------------------------------------------------------------
@@ -50,18 +49,15 @@ classdef QPControllerData < handle
   end
   
   methods 
-    function obj = QPControllerData(control_type,is_time_varying,data)
-      sizecheck(control_type,1);
-      control_type = uint32(control_type);
-      rangecheck(control_type,0,1);
+    function obj = QPControllerData(is_time_varying,data)
       typecheck(is_time_varying,'logical');
       typecheck(data,'struct');
   
       obj.is_time_varying = is_time_varying;
-      obj=checkAndUpdateQPData(obj,control_type,data);
+      obj=checkAndUpdateQPData(obj,data);
     end
  
-    function obj = checkAndUpdateQPData(obj,control_type,data)
+    function obj = checkAndUpdateQPData(obj,data)
       
       if isfield(data,'qp_active_set')
         obj.qp_active_set = data.qp_active_set;
@@ -104,70 +100,59 @@ classdef QPControllerData < handle
       assert(islogical(data.ignore_terrain));
       obj.ignore_terrain = data.ignore_terrain;
 
-      if control_type==0 % ZMP-LQR using cost-to-go
-        assert(isnumeric(data.D));
-        sizecheck(data.D,[2 2]);
-        obj.D = data.D;
-        assert(isnumeric(data.Qy));
-        obj.Qy = data.Qy;       
-        if isfield(data,'R')
-          assert(isnumeric(data.R));
-          sizecheck(data.R,[2 2]);
-          obj.R = data.R;
-        else
-           % note: it's OK to have R be non-PSD since input cost is added through Qy
-          obj.R = zeros(2);
-        end
-        if isfield(data,'C')
-          assert(isnumeric(data.C));
-          obj.C = data.C;
-        end
-        assert(isnumeric(data.S));
-        sizecheck(data.S,[4 4]);
-        obj.S = data.S;
-        if isfield(data,'u0')
-          assert(isnumeric(data.u0));
-          obj.u0 = data.u0;
-        else
-          obj.u0 = zeros(2,1);
-        end
-        if obj.is_time_varying
-          assert(isa(data.y0,'Trajectory'));
-          assert(isa(data.s1,'Trajectory'));
-          assert(isa(data.s2,'Trajectory'));
-          assert(isa(data.s1dot,'Trajectory'));
-          obj.s1dot = data.s1dot;
-          assert(isa(data.s2dot,'Trajectory'));
-          obj.s2dot = data.s2dot;
-        else
-          assert(isnumeric(data.y0));
-          assert(isnumeric(data.s1));
-          assert(isnumeric(data.s2));
-        end
-        sizecheck(data.s1,[4 1]);
-        sizecheck(data.s2,1);
-        obj.s1 = data.s1;
-        obj.s2 = data.s2;
-        obj.y0 = data.y0;
-  
-      elseif control_type==1 % ZMP + angular momentum, using LQR controller output
-        typecheck(data.K,'AffineSystem');
-        obj.K = data.K;
-        
-        if isfield(data,'comz_des')
-          assert(isa(data.comz_des,'Trajectory'));
-          obj.comz_des = data.comz_traj;
-        end
-        if isfield(data,'dcomz_des')
-          assert(isa(data.dcomz_des,'Trajectory'));
-          obj.dcomz_des = data.dcomz_traj;
-        end
-        if isfield(data,'ddcomz_des')
-          assert(isa(data.ddcomz_des,'Trajectory'));
-          obj.ddcomz_des = data.ddcomz_traj;
-        end       
+      assert(isnumeric(data.D));
+      sizecheck(data.D,[2 2]);
+      obj.D = data.D;
+      assert(isnumeric(data.Qy));
+      obj.Qy = data.Qy;       
+      if isfield(data,'R')
+        assert(isnumeric(data.R));
+        sizecheck(data.R,[2 2]);
+        obj.R = data.R;
+      else
+         % note: it's OK to have R be non-PSD since input cost is added through Qy
+        obj.R = zeros(2);
       end
-    end
+      if isfield(data,'C')
+        assert(isnumeric(data.C));
+        obj.C = data.C;
+      end
+      assert(isnumeric(data.S));
+      sizecheck(data.S,[4 4]);
+      obj.S = data.S;
+      if isfield(data,'u0')
+        assert(isnumeric(data.u0));
+        obj.u0 = data.u0;
+      else
+        obj.u0 = zeros(2,1);
+      end
+      if obj.is_time_varying
+        assert(isa(data.y0,'Trajectory'));
+        assert(isa(data.s1,'Trajectory'));
+        assert(isa(data.s2,'Trajectory'));
+        if isfield(data,'s1dot')
+          assert(isa(data.s1dot,'Trajectory'));
+        else
+          data.s1dot = fnder(data.s1,1);
+        end
+        obj.s1dot = data.s1dot;
 
+        if isfield(data,'s2dot')
+          assert(isa(data.s2dot,'Trajectory'));
+        else
+          data.s2dot = fnder(data.s2,1);
+        end
+        obj.s2dot = data.s2dot;
+      else
+        assert(isnumeric(data.y0));
+        assert(isnumeric(data.s1));
+        assert(isnumeric(data.s2));
+      end
+      sizecheck(data.s1,[4 1]);
+      sizecheck(data.s2,1);
+      obj.s1 = data.s1;
+      obj.s2 = data.s2;
+      obj.y0 = data.y0;
+    end
   end
 end

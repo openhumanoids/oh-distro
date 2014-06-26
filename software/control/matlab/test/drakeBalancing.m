@@ -1,12 +1,12 @@
-function drakeBalancing(use_mex)
+function drakeBalancing(use_mex,use_angular_momentum)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 % put robot in a random x,y,yaw position and balance for 3 seconds
 visualize = true;
 
-if (nargin>0) options.use_mex = use_mex;
-else options.use_mex = true; end
+if (nargin<1); use_mex = true; end
+if (nargin<2); use_angular_momentum = false; end
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -45,7 +45,7 @@ limp = LinearInvertedPendulum(com(3));
 foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
     
 
-ctrl_data = QPControllerData(0,false,struct(...
+ctrl_data = QPControllerData(false,struct(...
   'D',-com(3)/9.81*eye(2),...
   'Qy',eye(2),...
   'R',zeros(2),...
@@ -67,10 +67,17 @@ options.slack_limit = 30.0;
 options.w_qdd = 0.001*ones(nq,1);
 options.w_grf = 0;
 options.w_slack = 0.001;
-options.W_kdot = 0*eye(3);
 options.lcm_foot_contacts = false;
 options.debug = false;
-options.contact_threshold = 0.005;
+options.use_mex = use_mex;
+
+if use_angular_momentum
+  options.Kp_ang = 1.0; % angular momentum proportunal feedback gain
+  options.W_kdot = 1e-5*eye(3); % angular momentum weight
+else
+  options.W_kdot = zeros(3); 
+end
+
 qp = QPControlBlock(r,{},ctrl_data,options);
 clear options;
 
@@ -86,12 +93,14 @@ clear ins;
 
 % feedback foot contact detector with QP/atlas
 options.use_lcm=false;
+options.contact_threshold = 0.002;
 fc = FootContactBlock(r,ctrl_data,options);
 ins(1).system = 2;
 ins(1).input = 1;
 sys = mimoFeedback(fc,sys,[],[],ins,outs);
-clear ins;  
-  
+clear ins;
+
+% feedback PD trajectory controller 
 options.use_ik = false;
 pd = IKPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
@@ -100,8 +109,6 @@ sys = mimoFeedback(pd,sys,[],[],ins,outs);
 clear ins;
 
 qt = QTrajEvalBlock(r,ctrl_data);
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(qt,sys,[],[],[],outs);
 
 if visualize
@@ -123,7 +130,7 @@ end
 xf = traj.eval(traj.tspan(2));
 
 err = norm(xf(1:6)-xstar(1:6))
-if err > 0.03
+if err > 0.02
   error('drakeBalancing unit test failed: error is too large');
 end
 

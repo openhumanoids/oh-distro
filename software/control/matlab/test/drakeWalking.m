@@ -1,27 +1,30 @@
-function drakeWalking(use_mex,use_ik,use_bullet,use_angular_momentum)
-
+function drakeWalking(use_mex,use_ik,use_bullet,use_angular_momentum,random_navgoal)
+%NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 plot_comtraj = true;
 
-navgoal = [rand();randn();0;0;0;pi/2*randn()];
-%navgoal = [1;0;0;0;0;0];
-
-% construct robot model
-options.floating = true;
-options.ignore_friction = true;
-options.dt = 0.001;
-if (nargin<1); options.use_mex = true;
-else options.use_mex = use_mex; end
+if (nargin<1); use_mex = true; end
 if (nargin<2); use_ik = false; end
-if (nargin<3) use_bullet = false; end
-if (nargin<4) use_angular_momentum = false; end
+if (nargin<3); use_bullet = false; end
+if (nargin<4); use_angular_momentum = false; end
+if (nargin<4); random_navgoal = false; end
+
+if random_navgoal
+  navgoal = [rand();randn();0;0;0;pi/2*randn()];
+else
+  navgoal = [1;0;0;0;0;0]; % straight forward 1m
+end
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
+% construct robot model
+options.floating = true;
+options.ignore_friction = true;
+options.dt = 0.001;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
@@ -98,7 +101,7 @@ if plot_comtraj
 end
 
 
-ctrl_data = QPControllerData(0,true,struct(...
+ctrl_data = QPControllerData(true,struct(...
   'D',-0.89/9.81*eye(2),... % assumed COM height
   'Qy',eye(2),...
   'S',walking_ctrl_data.S,... % always a constant
@@ -118,7 +121,7 @@ ctrl_data = QPControllerData(0,true,struct(...
   'y0',walking_ctrl_data.zmptraj,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
-options.dt = 0.002;
+options.dt = 0.003;
 options.slack_limit = 30;
 options.use_bullet = use_bullet;
 options.w_grf = 0;
@@ -126,6 +129,7 @@ options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.005;
 options.solver = 0; % 0 fastqp, 1 gurobi
+options.use_mex = use_mex;
 
 if use_angular_momentum
   options.Kp_ang = 1.0; % angular momentum proportunal feedback gain
