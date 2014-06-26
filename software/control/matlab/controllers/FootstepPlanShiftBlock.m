@@ -58,7 +58,7 @@ classdef FootstepPlanShiftBlock < DrakeSystem
         contact_data = obj.contact_est_monitor.getNextMessage(0);
         if ~isempty(contact_data)
           msg = drc.foot_contact_estimate_t(contact_data);
-          cdata = obj.controller_data.data;
+          cdata = obj.controller_data;
           %t = t + cdata.t_offset;
 
           if msg.left_contact>0.5
@@ -69,10 +69,10 @@ classdef FootstepPlanShiftBlock < DrakeSystem
             constraint_ndx = [cdata.link_constraints.link_ndx] == obj.lfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
             lfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
             lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
-            cdata.trans_drift = lfoot_des(1:3) - lfoot_act(1:3);
+            cdata.plan_shift = lfoot_des(1:3) - lfoot_act(1:3);
 
-%             fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
-            obj.controller_data.setField('trans_drift', cdata.trans_drift);
+%             fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.plan_shift);
+            obj.controller_data.plan_shift = cdata.plan_shift;
           elseif msg.right_contact>0.5
             % right foot coming into contact
             q = x(1:obj.nq); 
@@ -81,10 +81,10 @@ classdef FootstepPlanShiftBlock < DrakeSystem
             constraint_ndx = [cdata.link_constraints.link_ndx] == obj.rfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
             rfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
             rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
-            cdata.trans_drift = rfoot_des(1:3) - rfoot_act(1:3);
+            cdata.plan_shift = rfoot_des(1:3) - rfoot_act(1:3);
 
-%             fprintf('RF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.trans_drift);
-            obj.controller_data.setField('trans_drift', cdata.trans_drift);
+%             fprintf('RF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.plan_shift);
+            obj.controller_data.plan_shift = cdata.plan_shift;
           end
         end
       end

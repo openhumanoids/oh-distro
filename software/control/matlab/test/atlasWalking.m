@@ -1,8 +1,5 @@
-function atlasWalking(use_ik,use_angular_momentum)
+function atlasWalking()
 %NOTEST
-
-if (nargin<1); use_ik = true; end
-if (nargin<2); use_angular_momentum = false; end
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -65,7 +62,7 @@ q0 = x0(1:nq);
 
 % create navgoal
 R = rpy2rotmat([0;0;x0(6)]);
-v = R*[1;0;0];
+v = R*[-1;0;0];
 navgoal = [x0(1)+v(1);x0(2)+v(2);0;0;0;x0(6)];
 
 % create footstep and ZMP trajectories
@@ -93,7 +90,7 @@ request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
 request.default_step_params.step_speed = 0.1;
-request.default_step_params.step_height = 0.06;
+request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
 request.default_step_params.drake_min_hold_time = 2; %sec
@@ -151,189 +148,51 @@ ctrl_data = QPControllerData(true,struct(...
   'y0',walking_ctrl_data.zmptraj,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
 
-
-constrain_torso = false;
-
-if ~use_ik
-  
-  options.Kp = 30*ones(6,1);
-  options.Kd = 8*ones(6,1);
-  lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
-  rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
-  
-  options.Kp = 30*[0; 0; 1; 1; 1; 0];
-  options.Kd = 8*[0; 0; 1; 1; 1; 0];
-  pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data,options);
-  
-  options.Kp = 40*[0; 0; 0; 1; 1; 1];
-  options.Kd = 3*[0; 0; 0; 1; 1; 1];
-  torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
-	
-  options.w_qdd = 0.0001*ones(nq,1);
-  options.W_kdot = eye(3);
-  options.w_grf = 0.01;
-  options.Kp = 0; % com-z pd gains
-  options.Kd = 0; % com-z pd gains
-  options.body_accel_input_weights = [1 1 1 0];
-else
-  options.w_qdd = 10*ones(nq,1);
-  options.W_kdot = 0*eye(3);
-  options.w_grf = 0.001;
-  options.Kp = 0; % com-z pd gains
-  options.Kd = 0; % com-z pd gains
-end
-
 % instantiate QP controller
 options.slack_limit = 50;
+options.w_qdd = 0.0025*ones(nq,1);
+options.W_kdot = 0*eye(3);
+options.w_grf = 0.0;
 options.w_slack = 0.005;
 options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.015;
 options.output_qdd = true;
 options.solver = 0; % 0 fastqp, 1 gurobi
-options.lcm_foot_contacts = true;
+options.input_foot_contacts = true;
 
-if ~use_ik
-  if constrain_torso
-    motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
-  else
-    motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
-  end
-  
-  qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
-  
-  ins(1).system = 1;
-  ins(1).input = 1;
-  ins(2).system = 2;
-  ins(2).input = 1;
-  ins(3).system = 2;
-  ins(3).input = 2;
-  ins(4).system = 2;
-  ins(4).input = 3;
-  ins(5).system = 2;
-  ins(5).input = 5;
-  if constrain_torso
-    ins(6).system = 2;
-    ins(6).input = 6;
-    ins(7).system = 2;
-    ins(7).input = 7;
-  end
-  outs(1).system = 2;
-  outs(1).output = 1;
-  outs(2).system = 2;
-  outs(2).output = 2;
-  qp = mimoCascade(lfoot_motion,qp,[],ins,outs);
-  clear ins;
-  ins(1).system = 1;
-  ins(1).input = 1;
-  ins(2).system = 2;
-  ins(2).input = 1;
-  ins(3).system = 2;
-  ins(3).input = 2;
-  ins(4).system = 2;
-  ins(4).input = 3;
-  ins(5).system = 2;
-  ins(5).input = 4;
-  if constrain_torso
-    ins(6).system = 2;
-    ins(6).input = 6;
-    ins(7).system = 2;
-    ins(7).input = 7;
-  end
-  qp = mimoCascade(rfoot_motion,qp,[],ins,outs);
-  if constrain_torso
-    clear ins;
-    ins(1).system = 1;
-    ins(1).input = 1;
-    ins(2).system = 2;
-    ins(2).input = 1;
-    ins(3).system = 2;
-    ins(3).input = 2;
-    ins(4).system = 2;
-    ins(4).input = 3;
-    ins(5).system = 2;
-    ins(5).input = 4;
-    ins(6).system = 2;
-    ins(6).input = 5;
-    ins(7).system = 2;
-    ins(7).input = 7;
-    qp = mimoCascade(pelvis_motion,qp,[],ins,outs);
-    clear ins;
-    ins(1).system = 1;
-    ins(1).input = 1;
-    ins(2).system = 2;
-    ins(2).input = 1;
-    ins(3).system = 2;
-    ins(3).input = 2;
-    ins(4).system = 2;
-    ins(4).input = 3;
-    ins(5).system = 2;
-    ins(5).input = 4;
-    ins(6).system = 2;
-    ins(6).input = 5;
-    ins(7).system = 2;
-    ins(7).input = 6;
-    qp = mimoCascade(torso_motion,qp,[],ins,outs);
-  end
-else
-  qp = MomentumControlBlock(r,{},ctrl_data,options);
-end
+qp = QPControlBlock(r,{},ctrl_data,options);
+
 vo = VelocityOutputIntegratorBlock(r,options);
 options.use_lcm = true;
 fcb = FootContactBlock(r,ctrl_data,options);
 fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
 % cascade IK/PD block
-if ~use_ik
-  options.Kp = 40.0*ones(nq,1);
-  options.Kd = 18.0*ones(nq,1);
-  options.use_ik = false;
-  pd = IKPDBlock(r,ctrl_data,options);
-  ins(1).system = 1;
-  ins(1).input = 1;
-  ins(2).system = 1;
-  ins(2).input = 2;
-  ins(3).system = 2;
-  ins(3).input = 1;
-  ins(4).system = 2;
-  ins(4).input = 2;
-  ins(5).system = 2;
-  ins(5).input = 3;
-  if constrain_torso
-    ins(6).system = 2;
-    ins(6).input = 4;
-    ins(7).system = 2;
-    ins(7).input = 5;
-    ins(8).system = 2;
-    ins(8).input = 7;
-  else
-    ins(6).system = 2;
-    ins(6).input = 5;
-  end
-else
-  options.Kp = 65.0*ones(nq,1);
-  options.Kd = 14.5*ones(nq,1);
-  options.Kp(findJointIndices(r,'hpz')) = 70.0;
-  options.Kd(findJointIndices(r,'hpz')) = 14.0;
-  options.Kd(findJointIndices(r,'kny')) = 13.0;
-  options.Kp(3) = 30.0;
-  options.Kd(3) = 12.0;
-  options.Kp(4:5) = 30.0;
-  options.Kd(4:5) = 12.0;
-  options.Kp(6) = 40.0;
-  options.Kd(6) = 12.0;
-  pd = IKPDBlock(r,ctrl_data,options);
-  ins(1).system = 1;
-  ins(1).input = 1;
-  ins(2).system = 1;
-  ins(2).input = 2;
-  ins(3).system = 1;
-  ins(3).input = 3;
-  ins(4).system = 2;
-  ins(4).input = 1;
-  ins(5).system = 2;
-  ins(5).input = 3;
-end
+
+options.Kp = 50.0*ones(nq,1);
+options.Kd = 10*ones(nq,1);
+% options.Kp(findJointIndices(r,'hpz')) = 70.0;
+% options.Kd(findJointIndices(r,'hpz')) = 14.0;
+% options.Kd(findJointIndices(r,'kny')) = 13.0;
+% options.Kp(3) = 30.0;
+% options.Kd(3) = 12.0;
+% options.Kp(4:5) = 30.0;
+% options.Kd(4:5) = 12.0;
+% options.Kp(6) = 40.0;
+% options.Kd(6) = 12.0;
+
+pd = IKPDBlock(r,ctrl_data,options);
+ins(1).system = 1;
+ins(1).input = 1;
+ins(2).system = 1;
+ins(2).input = 2;
+ins(3).system = 1;
+ins(3).input = 3;
+ins(4).system = 2;
+ins(4).input = 1;
+ins(5).system = 2;
+ins(5).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
@@ -381,15 +240,7 @@ while tt<T
   
     junk = output(fshift,tt,[],x_filt);
 
-    if ~use_ik
-      if constrain_torso
-        u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; x_filt; x_filt; fc]);
-      else
-        u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; x_filt; x_filt; x_filt; fc]);
-      end
-    else
-      u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; fc; x_filt; fc]);
-    end
+    u_and_qdd = output(qp_sys,tt,[],[q0; x_filt; fc; x_filt; fc]);
     u=u_and_qdd(1:nu);
     qdd=u_and_qdd(nu+(1:nq));
 
