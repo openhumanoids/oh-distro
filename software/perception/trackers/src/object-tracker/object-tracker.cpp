@@ -45,7 +45,7 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
-#include <pointcloud_tools/pointcloud_lcm.hpp> // create point clouds
+#include <multisense_utils/multisense_utils.hpp> // create point clouds
 #include <stereo-bm/stereo-bm.hpp>
 
 
@@ -98,7 +98,7 @@ class Pass{
     BotFrames* botframes_;
     bot::frames* frames_cpp_;
     pointcloud_vis* pc_vis_;
-    pointcloud_lcm* pc_lcm_;      
+    multisense_utils* ms_utils_;      
     image_io_utils*  imgutils_;
 
     // unique id of this tracker instance. Plane=0, otherwise above that
@@ -247,9 +247,9 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   float bm_scale = 0.5f;//0.25f; // scaling factor of Stereo Block Matching
   stereob_ = new StereoB(lcm_);
   stereob_->setScale(bm_scale);
-  pc_lcm_ = new pointcloud_lcm( lcm_->getUnderlyingLCM() );
+  ms_utils_ = new multisense_utils();// lcm_->getUnderlyingLCM() );
   stereo_decimate_ = 1; // factor by which i reduce the point cloud
-  pc_lcm_->set_decimate( stereo_decimate_ );  
+  ms_utils_->set_decimate( stereo_decimate_ );  
   
   
   // Plane Detection:
@@ -478,7 +478,7 @@ void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf,
   Q_(3,3) = 0;// (512.0 - 272.0)/0.07;//(right_.cx() - left_.cx()) / Tx; 
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud_orig (new pcl::PointCloud<pcl::PointXYZRGB>);
-  pc_lcm_->unpack_multisense(stereob_->getDisparity(), stereob_->getColor(), h, w, Q_, new_cloud_orig);
+  ms_utils_->unpack_multisense(stereob_->getDisparity(), stereob_->getColor(), h, w, Q_, new_cloud_orig);
   
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());

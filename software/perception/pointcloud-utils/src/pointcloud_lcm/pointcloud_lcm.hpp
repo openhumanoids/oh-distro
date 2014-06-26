@@ -46,6 +46,7 @@ class pointcloud_lcm {
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
     ////////////////////////////////////////////////////////////////////////
+    /* moved to multisense_utils
     void unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb = true);
     
@@ -55,7 +56,7 @@ class pointcloud_lcm {
     // CPP:
     void unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
-    
+    */
     // an integer decimation factor:
     void set_decimate(int decimate_in){ decimate_ = decimate_in; };
 

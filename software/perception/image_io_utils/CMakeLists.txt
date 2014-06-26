@@ -9,6 +9,7 @@ include(cmake/pods.cmake)
 include(cmake/lcmtypes.cmake)
 lcmtypes_build()
 
+add_subdirectory(src/multisense_utils)
 
 add_subdirectory(src/image_io_utils)
 add_subdirectory(src/camera_params)
