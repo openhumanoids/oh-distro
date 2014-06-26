@@ -31,8 +31,6 @@ struct QPControllerData {
   VectorXd w_qdd; 
   double w_grf; 
   double w_slack; 
-  double Kp, Kd; // COM-z PD gains, for momentum controller
-  double mass; // total robot mass
   int n_body_accel_inputs;
   int n_body_accel_constraints;
   VectorXd body_accel_input_weights;

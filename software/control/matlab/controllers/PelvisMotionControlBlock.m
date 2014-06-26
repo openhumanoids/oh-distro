@@ -1,4 +1,4 @@
-classdef TorsoMotionControlBlock < DrakeSystem
+classdef PelvisMotionControlBlock < DrakeSystem
 
   properties
     nq;
@@ -13,7 +13,7 @@ classdef TorsoMotionControlBlock < DrakeSystem
   end
   
   methods
-    function obj = TorsoMotionControlBlock(r,name,controller_data,options)
+    function obj = PelvisMotionControlBlock(r,name,controller_data,options)
       typecheck(r,'Biped');
       typecheck(controller_data,'QPControllerData');
       
@@ -35,7 +35,7 @@ classdef TorsoMotionControlBlock < DrakeSystem
         sizecheck(options.Kp,[6 1]);
         obj.Kp = options.Kp;
       else
-        obj.Kp = [0; 0; 0; 100; 100; 100];
+        obj.Kp = [0; 0; 150; 200; 200; 200];
       end        
 
       if isfield(options,'Kd')
@@ -43,7 +43,7 @@ classdef TorsoMotionControlBlock < DrakeSystem
         sizecheck(options.Kd,[6 1]);
         obj.Kd = options.Kd;
       else
-        obj.Kd = [0; 0; 0; 30; 30; 30];
+        obj.Kd = [0; 0; 50; 70; 70; 70];
       end        
         
       if isfield(options,'dt')
@@ -71,8 +71,9 @@ classdef TorsoMotionControlBlock < DrakeSystem
       % terrible hack
       lfoot = forwardKin(obj.robot,kinsol,obj.lfoot_ind,[0;0;0],1);
       rfoot = forwardKin(obj.robot,kinsol,obj.rfoot_ind,[0;0;0],1);
-
-      body_des = [nan;nan;nan;0;0;mean([lfoot(6) rfoot(6)])]; 
+      z_des = 0.5*(lfoot(3)+rfoot(3))+.80; % X cm above feet
+      
+      body_des = [nan;nan;z_des;0;0;mean([lfoot(6) rfoot(6)])]; 
       err = [body_des(1:3)-p(1:3);angleDiff(p(4:end),body_des(4:end))];
 
       body_vdot = obj.Kp.*err - obj.Kd.*(J*qd);

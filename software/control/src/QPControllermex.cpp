@@ -362,7 +362,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Aeq.block(6,0,neps,nq) = Jp;
     Aeq.block(6,nq,neps,nf) = MatrixXd::Zero(neps,nf);  // note: obvious sparsity here
     Aeq.block(6,nq+nf,neps,neps) = MatrixXd::Identity(neps,neps);             // note: obvious sparsity here
-    beq.segment(6,neps) = (-Jpdot - 1.0*Jp)*qdvec; // TODO: parameterize
+    // beq.segment(6,neps) = (-Jpdot - 1.0*Jp)*qdvec; // TODO: parameterize
+    beq.segment(6,neps) = -Jpdot*qdvec; // TODO: parameterize
   }    
   
   // add in body spatial equality constraints

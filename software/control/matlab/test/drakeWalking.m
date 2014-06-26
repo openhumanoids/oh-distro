@@ -1,9 +1,10 @@
-function drakeWalking(use_mex,use_bullet)
+function drakeWalking(use_mex,use_ik,use_bullet)
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-plot_comtraj = false;
-%navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
+plot_comtraj = true;
+
+%navgoal = [rand();randn();0;0;0;pi/2*randn()];
 navgoal = [1;0;0;0;0;0];
 
 % construct robot model
@@ -12,9 +13,8 @@ options.ignore_friction = true;
 options.dt = 0.002;
 if (nargin>0); options.use_mex = use_mex;
 else options.use_mex = true; end
-if (nargin<2)
-  use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
-end
+if (nargin<2); use_ik = false; end
+if (nargin<3) use_bullet = false; end
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -96,6 +96,7 @@ if plot_comtraj
   lcmgl.switchBuffers();
 end
 
+
 ctrl_data = QPControllerData(0,true,struct(...
   'D',-0.89/9.81*eye(2),...
   'Qy',eye(2),...
@@ -116,57 +117,166 @@ ctrl_data = QPControllerData(0,true,struct(...
   'y0',walking_ctrl_data.zmptraj,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
-% instantiate QP controller
-options.dt = 0.003;
-options.slack_limit = 30.0;
-options.w_qdd = 0.001*ones(nq,1);
+options.dt = 0.002;
+options.slack_limit = 20;
+options.use_bullet = use_bullet;
 options.w_grf = 0;
-options.w_slack = 0.001;
-options.W_kdot = 0*eye(3);
+options.W_kdot = 0.0*eye(3); % angular momentum weight
 options.lcm_foot_contacts = false;
 options.debug = false;
 options.contact_threshold = 0.005;
+
+if use_ik
+  options.w_qdd = 0.001*ones(nq,1);
+else
+  options.w_qdd = 0.00001*ones(nq,1);
+end
+
 if options.use_mex==2
   options.solver = 1;
 else
   options.solver = 0;
 end
 
-options.use_bullet = use_bullet;
-qp = QPControlBlock(r,{},ctrl_data,options);
+if (use_ik)
+  % instantiate QP controller
+	qp = QPControlBlock(r,{},ctrl_data,options);
 
-% cascade footstep plan shift block
-fs = FootstepPlanShiftBlock(r,ctrl_data,options);
-sys = cascade(r,fs);
+	% feedback QP controller with atlas
+  ins(1).system = 1;
+  ins(1).input = 2;
+  ins(2).system = 1;
+  ins(2).input = 3;
+  outs(1).system = 2;
+  outs(1).output = 1;
+	sys = mimoFeedback(qp,r,[],[],ins,outs);
+	clear ins;
 
-% feedback QP controller with atlas
-ins(1).system = 1;
-ins(1).input = 2;
-ins(2).system = 1;
-ins(2).input = 3;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(qp,sys,[],[],ins,outs);
-clear ins;
-
-% feedback foot contact detector with QP/atlas
-options.use_lcm=false;
-fc = FootContactBlock(r,ctrl_data,options);
-ins(1).system = 2;
-ins(1).input = 1;
-sys = mimoFeedback(fc,sys,[],[],ins,outs);
-clear ins;  
+  % feedback foot contact detector with QP/atlas
+  options.use_lcm=false;
+  fc = FootContactBlock(r,ctrl_data,options);
+  ins(1).system = 2;
+  ins(1).input = 1;
+  sys = mimoFeedback(fc,sys,[],[],ins,outs);
+  clear ins;  
   
-% feedback PD block
+	% feedback PD block
 % 	options.Kp = 270.0*ones(nq,1);
 % 	options.Kd = 30.0*ones(nq,1);
 % 	options.Kp(ankle_ind) = 80;
 % 	options.Kd(ankle_ind) = 10;
-pd = IKPDBlock(r,ctrl_data,options);
-ins(1).system = 1;
-ins(1).input = 1;
-sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins;
+	pd = IKPDBlock(r,ctrl_data,options);
+	ins(1).system = 1;
+	ins(1).input = 1;
+	sys = mimoFeedback(pd,sys,[],[],ins,outs);
+	clear ins;
+
+else
+	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
+	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
+	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data);
+	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
+	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
+	pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+
+%   options.body_accel_input_weights = [10 10 -1 -1];
+	qp = QPControlBlock(r,motion_frames,ctrl_data,options);
+
+	% feedback QP controller with atlas
+	ins(1).system = 1;
+	ins(1).input = 2;
+	ins(2).system = 1;
+	ins(2).input = 3;
+	ins(3).system = 1;
+	ins(3).input = 4;
+	ins(4).system = 1;
+	ins(4).input = 5;
+	ins(5).system = 1;
+	ins(5).input = 6;
+	ins(6).system = 1;
+	ins(6).input = 7;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(qp,r,[],[],ins,outs);
+	clear ins outs;
+  
+  % feedback foot contact detector with QP/atlas
+  options.use_lcm=false;
+  fc = FootContactBlock(r,ctrl_data,options);
+  ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	ins(4).system = 2;
+	ins(4).input = 5;
+	ins(5).system = 2;
+	ins(5).input = 6;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(fc,sys,[],[],ins,outs);
+  clear ins outs;  
+  
+	% feedback PD block
+  options.use_ik = false;
+	pd = IKPDBlock(r,ctrl_data,options);
+	ins(1).system = 1;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 2;
+	ins(3).system = 2;
+	ins(3).input = 3;
+	ins(4).system = 2;
+	ins(4).input = 4;
+	ins(5).system = 2;
+	ins(5).input = 5;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(pd,sys,[],[],ins,outs);
+	clear ins outs;
+
+	% feedback body motion control blocks
+	ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	ins(4).system = 2;
+	ins(4).input = 5;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(lfoot_motion,sys,[],[],ins,outs);
+	clear ins outs;
+
+	ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(rfoot_motion,sys,[],[],ins,outs);
+	clear ins outs;
+
+	ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(pelvis_motion,sys,[],[],ins,outs);
+	clear ins outs;
+
+	ins(1).system = 2;
+	ins(1).input = 1;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(torso_motion,sys,[],[],ins,outs);
+	clear ins outs;
+end
 
 qt = QTrajEvalBlock(r,ctrl_data);
 outs(1).system = 2;

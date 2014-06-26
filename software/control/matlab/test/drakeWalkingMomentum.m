@@ -81,42 +81,57 @@ fprintf(1, 'control data lcm code/decode time: %f\n', toc);
 ts = walking_plan.ts;
 T = ts(end);
 
+if plot_comtraj
+  % plot walking traj in drake viewer
+  lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
 
-% plot walking traj in drake viewer
-lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
-
-for i=1:length(ts)
-	lcmgl.glColor3f(0, 0, 1);
-	lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
-  lcmgl.glColor3f(0, 1, 0);
-	lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+  for i=1:length(ts)
+    lcmgl.glColor3f(0, 0, 1);
+    lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+    lcmgl.glColor3f(0, 1, 0);
+    lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+  end
+  lcmgl.switchBuffers();
 end
-lcmgl.switchBuffers();
 
-ctrl_data = QPControllerData(1,true,struct(...
+
+ctrl_data = QPControllerData(0,true,struct(...
+  'D',-0.89/9.81*eye(2),...
+  'Qy',eye(2),...
+  'S',walking_ctrl_data.S,... % always a constant
+  's1',walking_ctrl_data.s1,...
+  's2',walking_ctrl_data.s2,...
+  's1dot',walking_ctrl_data.s1dot,...
+  's2dot',walking_ctrl_data.s2dot,...
   'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
+  'u0',zeros(2,1),...
+	'qtraj',x0(1:nq),...
+	'comtraj',walking_ctrl_data.comtraj,...
   'link_constraints',walking_ctrl_data.link_constraints, ...
   'support_times',walking_ctrl_data.support_times,...
   'supports',walking_ctrl_data.supports,...
-  'ignore_terrain',walking_ctrl_data.ignore_terrain,...
-  'qtraj',x0(1:nq),...
-  'comtraj',walking_ctrl_data.comtraj,...
-  'K',walking_ctrl_data.K,...
   'mu',walking_ctrl_data.mu,...
+  'ignore_terrain',walking_ctrl_data.ignore_terrain,...
+  'y0',walking_ctrl_data.zmptraj,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
-
 
 % instantiate QP controller
 options.dt = 0.002;
-options.slack_limit = 100;
-% options.w_qdd = 1.0*ones(nq,1);
-% options.w_qdd(findJointIndices(r,'leg'))=0;
+options.slack_limit = 20;
+options.w_qdd = 0.00001*ones(nq,1);
+options.w_grf = 0;
+options.W_kdot = 0.0*eye(3); % angular momentum weight
+options.lcm_foot_contacts = false;
 options.debug = false;
-options.contact_threshold = 0.001;
-options.solver = 0;
+options.contact_threshold = 0.005;
+if options.use_mex==2
+  options.solver = 1;
+else
+  options.solver = 0;
+end
 
 if (use_ik)
-	qp = MomentumControlBlock(r,{},ctrl_data,options);
+	qp = QPControlBlock(r,{},ctrl_data,options);
 
 	% feedback QP controller with atlas
   ins(1).system = 1;
@@ -150,13 +165,13 @@ if (use_ik)
 else
 	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
 	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
-	pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data);
+	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data);
 	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
 	pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
 
 %   options.body_accel_input_weights = [10 10 -1 -1];
-	qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
+	qp = QPControlBlock(r,motion_frames,ctrl_data,options);
 
 	% feedback QP controller with atlas
 	ins(1).system = 1;
@@ -411,16 +426,5 @@ if rms_com > length(footstep_plan.footsteps)*0.5
   error('drakeWalking unit test failed: error is too large');
   navgoal
 end
-
-
-% for i=1:6
-% 	figure;
-% 	fnplt(walking_ctrl_data.link_constraints(2).traj(i))
-% 	hold on;
-% 	plot(ts,lfoot_pos(i,:));
-% 	hold off;
-% end
-
-% keyboard;
 
 end

@@ -297,7 +297,7 @@ classdef QPControlBlock < MIMODrakeSystem
       C_act = C(act_idx);
       B_act = B(act_idx,:);
 
-      [xcom,J] = getCOM(r,kinsol);
+      [xcom,Jcom] = getCOM(r,kinsol);
       
       include_angular_momentum = any(any(obj.W_kdot));
       
@@ -305,9 +305,9 @@ classdef QPControlBlock < MIMODrakeSystem
         [A,Adot] = getCMM(r,kinsol,qd);
       end
       
-      Jdot = forwardJacDot(r,kinsol,0);
-      J = J(1:2,:); % only need COM x-y
-      Jdot = Jdot(1:2,:);
+      Jcomdot = forwardJacDot(r,kinsol,0);
+      Jcom = Jcom(1:2,:); % only need COM x-y
+      Jcomdot = Jcomdot(1:2,:);
 
       if ~isempty(active_supports)
         nc = sum(num_active_contacts);
@@ -326,7 +326,7 @@ classdef QPControlBlock < MIMODrakeSystem
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
 
-        xlimp = [xcom(1:2); J*qd]; % state of LIP model
+        xlimp = [xcom(1:2); Jcom*qd]; % state of LIP model
         x_bar = xlimp - x0;
       else
         nc = 0;
@@ -379,7 +379,7 @@ classdef QPControlBlock < MIMODrakeSystem
       if nc > 0
         % relative acceleration constraint
         Aeq_{2} = Jp*Iqdd + Ieps;
-        beq_{2} = -Jpdot*qd - 1.0*Jp*qd; % TODO: parameterize
+        beq_{2} = -Jpdot*qd - 0.0*Jp*qd; % TODO: parameterize
       end
 
       eq_count=3;
@@ -429,17 +429,17 @@ classdef QPControlBlock < MIMODrakeSystem
       % TODO: update this comment
       %  min: quad(Jdot*qd + J*qdd,R_ls) + quad(C*x_bar+D*(Jdot*qd + J*qdd),Q) + (2*x_bar'*S + s1')*(A*x_bar + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
       if nc > 0
-        Hqp = Iqdd'*J'*R_DQyD_ls*J*Iqdd;
+        Hqp = Iqdd'*Jcom'*R_DQyD_ls*Jcom*Iqdd;
         Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + diag(obj.w_qdd);
         if include_angular_momentum
           Hqp = Hqp + Iqdd'*Ak'*obj.W_kdot*Ak*Iqdd;
         end
         
-        fqp = xlimp'*C_ls'*Qy*D_ls*J*Iqdd;
-        fqp = fqp + qd'*Jdot'*R_DQyD_ls*J*Iqdd;
-        fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*J*Iqdd;
-        fqp = fqp - u0'*R_ls*J*Iqdd;
-        fqp = fqp - y0'*Qy*D_ls*J*Iqdd;
+        fqp = xlimp'*C_ls'*Qy*D_ls*Jcom*Iqdd;
+        fqp = fqp + qd'*Jcomdot'*R_DQyD_ls*Jcom*Iqdd;
+        fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*Jcom*Iqdd;
+        fqp = fqp - u0'*R_ls*Jcom*Iqdd;
+        fqp = fqp - y0'*Qy*D_ls*Jcom*Iqdd;
         fqp = fqp - (obj.w_qdd.*qddot_des)'*Iqdd;
         if include_angular_momentum
           fqp = fqp + qd'*Akdot'*obj.W_kdot*Ak*Iqdd;
@@ -535,13 +535,13 @@ classdef QPControlBlock < MIMODrakeSystem
       end
       
       % compute V,Vdot for controller status updates
-      if (nc>0)
-        %V = x_bar'*S*x_bar + s1'*x_bar + s2;
-        %Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*Sdot*x_bar + x_bar'*s1dot + s2dot;
-        % note for ZMP dynamics, S is constant so Sdot=0
-      
-        Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*s1dot + s2dot;
-      end
+%       if (nc>0)
+%         %V = x_bar'*S*x_bar + s1'*x_bar + s2;
+%         %Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*Sdot*x_bar + x_bar'*s1dot + s2dot;
+%         % note for ZMP dynamics, S is constant so Sdot=0
+%       
+%         Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*s1dot + s2dot;
+%       end
     end
   
     if (obj.use_mex==1)

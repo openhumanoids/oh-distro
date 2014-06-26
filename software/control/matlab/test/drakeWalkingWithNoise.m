@@ -121,7 +121,10 @@ ctrl_data = SharedDataHandle(struct(...
 % *************************************************************************
 options.dt = 0.003;
 options.slack_limit = 30.0;
-options.w = 0.001;
+options.w_qdd = 0.001*ones(nq,1);
+options.w_grf = 0;
+options.w_slack = 0.001;
+options.W_kdot = 0*eye(3);
 options.lcm_foot_contacts = false;
 options.contact_threshold = 0.005;
 options.debug = false;
