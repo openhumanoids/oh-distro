@@ -33,13 +33,13 @@ classdef AtlasManipController < DRCController
         integral_clamps(back_y_ind) = 0.1;
       end
       
-      ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1),...
-                        'qddtraj',zeros(getNumDOF(r),1),...
-                        'integral',zeros(getNumDOF(r),1),...
-                        'integral_gains',integral_gains,...
-                        'integral_clamps',integral_clamps,...
-                        'enable_bdi_manip',true,...
-                        'firstplan',true)); 
+      data = struct('qtraj',zeros(getNumDOF(r),1),...
+                    'integral',zeros(getNumDOF(r),1),...
+                    'integral_gains',integral_gains,...
+                    'integral_clamps',integral_clamps,...
+                    'enable_bdi_manip',true,...
+                    'firstplan',true);
+      ctrl_data = AtlasManipControllerData(data);
 
       options.use_error_integrator = true;
       qt = QTrajEvalBlock(r,ctrl_data,options);
@@ -165,8 +165,8 @@ classdef AtlasManipController < DRCController
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       q0 = d.xstar(1:getNumDOF(obj.robot));
-      obj.controller_data.setField('qtraj',q0((1+~obj.robot.floating*6):end));
-      obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(r),1)));
+      obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
+      obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumDOF(r),1));
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
       obj = addLCMTransition(obj,'COMMITTED_PLAN_PAUSE',drc.plan_control_t(),name); % stop plan execution
@@ -193,10 +193,10 @@ classdef AtlasManipController < DRCController
           joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
           [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,obj.robot.floating,joint_names); 
           
-          if obj.controller_data.data.firstplan
-            obj.controller_data.setField('firstplan',false);
+          if obj.controller_data.firstplan
+            obj.controller_data.firstplan = false;
           else
-            qtraj_prev = obj.controller_data.data.qtraj;
+            qtraj_prev = obj.controller_data.qtraj;
             q0=xtraj(1:getNumDOF(obj.robot),1);
 
             if isa(qtraj_prev,'PPTrajectory') 
@@ -207,36 +207,36 @@ classdef AtlasManipController < DRCController
 
             % smooth transition from end of previous trajectory by adding
             % difference to integral terms
-            integ = obj.controller_data.data.integral;
+            integ = obj.controller_data.integral;
             torso = (obj.arm_joints | obj.back_joints);
             integ(torso) = integ(torso) + qprev_end(torso) - q0(torso);
-            obj.controller_data.setField('integral',integ);
+            obj.controller_data.integral = integ;
           end
           
           qtraj = PPTrajectory(spline(ts,[zeros(getNumDOF(obj.robot),1), xtraj(1:getNumDOF(obj.robot),:), zeros(getNumDOF(obj.robot),1)]));
 
-          obj.controller_data.setField('qtraj',qtraj);
-          obj.controller_data.setField('qddtraj',fnder(qtraj,2));
+          obj.controller_data.qtraj = qtraj;
+          obj.controller_data.qddtraj = fnder(qtraj,2);
         catch err
           disp(err);
           disp('error recieving plan, setting desired to current');
 
           x0 = data.AtlasState; % should always have an atlas state
           q0 = x0(1:getNumDOF(obj.robot));
-          obj.controller_data.setField('qtraj',q0((1+~obj.robot.floating*6):end));
-          obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
+          obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
+          obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumDOF(obj.robot),1));
         end
         
       elseif isfield(data,'COMMITTED_PLAN_PAUSE')
         % set plan to current desired state
-        qtraj = obj.controller_data.data.qtraj;
+        qtraj = obj.controller_data.qtraj;
 
         if isa(qtraj,'PPTrajectory') 
           qtraj = fasteval(qtraj,data.t);
         end
         
-        obj.controller_data.setField('qtraj',qtraj);
-        obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
+        obj.controller_data.qtraj = qtraj;
+        obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumDOF(obj.robot),1));
 
       elseif isfield(data,'ATLAS_COMMAND_UNSAFE')
 
@@ -245,8 +245,8 @@ classdef AtlasManipController < DRCController
 
         x0 = data.AtlasState; % should always have an atlas state
         q0 = x0(1:getNumDOF(obj.robot));
-        obj.controller_data.setField('qtraj',q0((1+~obj.robot.floating*6):end));
-        obj.controller_data.setField('qddtraj',ConstantTrajectory(zeros(getNumDOF(obj.robot),1)));
+        obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
+        obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumDOF(obj.robot),1));
 
         % get current desired pos on robot
         msg = data.ATLAS_COMMAND_UNSAFE;
@@ -258,10 +258,10 @@ classdef AtlasManipController < DRCController
         % during normal operation)
         
         % set integral terms to be des-cur
-        integ = obj.controller_data.data.integral;
+        integ = obj.controller_data.integral;
         torso = (obj.arm_joints | obj.back_joints);
         integ(torso) = qdes(torso) - q0(torso);
-        obj.controller_data.setField('integral',integ);      
+        obj.controller_data.integral = integ;      
 
       end
       obj = setDuration(obj,inf,false); % set the controller timeout

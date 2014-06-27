@@ -19,8 +19,8 @@ classdef AtlasBalancingWrapper < DrakeSystem
       input_frame = getStateFrame(r);
       output_frame = AtlasPosVelTorqueRef(r);
       
-      force_controlled_joints = controller_data.data.force_controlled_joints;
-      position_controlled_joints = controller_data.data.position_controlled_joints;
+      force_controlled_joints = controller_data.force_controlled_joints;
+      position_controlled_joints = controller_data.position_controlled_joints;
 
       gains = getAtlasGains();
       gains.k_q_p(force_controlled_joints) = 0;
@@ -72,7 +72,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       options.Kp = 65.0*ones(obj.nq,1);
       options.Kd = 12.0*ones(obj.nq,1);
       options.use_ik=true;
-      options.fixed_dofs = [findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')];
+      options.fixed_dofs = controller_data.constrained_dofs;
       pd = IKPDBlock(r,controller_data,options);
       ins(1).system = 1;
       ins(1).input = 1;
@@ -95,15 +95,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       options.zero_ankles_on_contact = false;
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
 
-      if ~isfield(controller_data.data,'qtraj')
-        error('AtlasBalancingWrapper: controller_data must contain qtraj field');
-      end
-      
-      if ~isfield(controller_data.optional_data,'qd_int_state')
-        controller_data.optional_data.qd_int_state = zeros(obj.velocity_int_block.getStateFrame.dim,1);
-      else
-        sizecheck(controller_data.optional_data.qd_int_state,obj.velocity_int_block.getStateFrame.dim);
-      end
+      controller_data.qd_int_state = zeros(obj.velocity_int_block.getStateFrame.dim,1);
       
       obj.robot = r;
       obj.input_map = getActuatedJoints(r);
@@ -126,7 +118,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       % velocity integrator
       qd_int_state = obj.ctrl_data.data.qd_int_state;
       qd_int_state = mimoUpdate(obj.velocity_int_block,t,qd_int_state,x,qdd,fc);
-      obj.ctrl_data.optional_data.qd_int_state = qd_int_state;
+      obj.ctrl_data.qd_int_state = qd_int_state;
       qd_err = mimoOutput(obj.velocity_int_block,t,qd_int_state,x,qdd,fc);
     
       force_ctrl_joints = obj.ctrl_data.data.force_controlled_joints;

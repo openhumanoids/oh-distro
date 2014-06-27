@@ -14,7 +14,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
   methods
     function obj = QTrajEvalBlock(r,controller_data,options)
       typecheck(r,'Biped');
-      typecheck(controller_data,'QPControllerData');
+      typecheck(controller_data,'ControllerData');
       
       if nargin<3
         options = struct();
@@ -23,13 +23,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       if isfield(options,'use_error_integrator')
         typecheck(options.use_error_integrator,'logical');
         if options.use_error_integrator
-          if ~isfield(ctrl_data,'integral') || ~isfield(ctrl_data,'integral_gains')
-            error('controller_data must contain integral and integral_gains variables');
-          else
-            typecheck(ctrl_data.integral,'double');
-            typecheck(ctrl_data.integral_gains,'double');
-            sizecheck(ctrl_data.integral_gains,[getNumDOF(r) 1]);
-          end
+          sizecheck(controller_data.integral_gains,[getNumDOF(r) 1]);
         end
       else
         options.use_error_integrator = false;

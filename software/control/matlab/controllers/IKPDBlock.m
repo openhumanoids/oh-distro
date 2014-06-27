@@ -20,7 +20,7 @@ classdef IKPDBlock < MIMODrakeSystem
       if nargin > 1
         typecheck(controller_data,'QPControllerData');
       else
-        controller_data = SharedDataHandle(struct());
+        controller_data = [];
       end
       
       if nargin<3

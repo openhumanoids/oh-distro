@@ -58,15 +58,8 @@ classdef AtlasStandingController < DRCController
       link_constraints(2).link_ndx = fidx(2);
       link_constraints(2).pt = [0;0;0];
       link_constraints(2).pos = forwardKin(r,kinsol,fidx(2),[0;0;0],1);
-      
-      optional_data.force_controlled_joints = force_controlled_joints;
-      optional_data.position_controlled_joints = position_controlled_joints;
-      optional_data.integral = zeros(getNumDOF(r),1);
-      optional_data.integral_gains = integral_gains;
-      optional_data.integral_clamps = integral_clamps;
-      optional_data.firstplan = firstplan;
-      
-      ctrl_data = QPControllerData(false,struct(...
+            
+      ctrl_data = AtlasQPControllerData(false,struct(...
         'acceleration_input_frame',AtlasCoordinates(r),...
         'D',-com(3)/9.81*eye(2),...
         'Qy',eye(2),...
@@ -82,7 +75,12 @@ classdef AtlasStandingController < DRCController
         'mu',1.0,...
         'ignore_terrain',false,...
         'link_constraints',link_constraints,...
-        'optional_data',optional_data,...
+        'force_controlled_joints',force_controlled_joints,...
+        'position_controlled_joints',position_controlled_joints,...
+        'integral',zeros(getNumDOF(r),1),...
+        'integral_gains',integral_gains,...
+        'integral_clamps',integral_clamps,...
+        'firstplan',true,...
         'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
       
       sys = AtlasBalancingWrapper(r,ctrl_data,options);
@@ -117,8 +115,8 @@ classdef AtlasStandingController < DRCController
         try
           msg = data.CONFIGURATION_TRAJ;
           qtraj = mxDeserialize(msg.qtraj);
-          if obj.controller_data.optional_data.firstplan
-            obj.controller_data.optional_data.firstplan = false;
+          if obj.controller_data.firstplan
+            obj.controller_data.firstplan = false;
           else
             q0=ppval(qtraj,0);
             qtraj_prev = obj.controller_data.qtraj;
@@ -131,10 +129,10 @@ classdef AtlasStandingController < DRCController
             
             % smooth transition from end of previous trajectory by adding
             % difference to integral terms
-            integ = obj.controller_data.optional_data.integral;
-            pos_ctrl_joints = obj.controller_data.optional_data.position_controlled_joints;
+            integ = obj.controller_data.integral;
+            pos_ctrl_joints = obj.controller_data.position_controlled_joints;
             integ(pos_ctrl_joints) = integ(pos_ctrl_joints) + qprev_end(pos_ctrl_joints) - q0(pos_ctrl_joints);
-            obj.controller_data.optional_data.integral = integ;
+            obj.controller_data.integral = integ;
           end
           obj.controller_data.qtraj = qtraj;
         catch err
@@ -152,10 +150,10 @@ classdef AtlasStandingController < DRCController
         standAtCurrentState(obj,data.AtlasState);
       end
       obj = setDuration(obj,inf,false); % set the controller timeout
-      controller_state = obj.controller_data.optional_data.qd_int_state;
+      controller_state = obj.controller_data.qd_int_state;
       controller_state(3) = 0; % reset time
       controller_state(4) = 0; % reset eta
-      obj.controller_data.optional_data.qd_int_state = controller_state;
+      obj.controller_data.qd_int_state = controller_state;
     end
     
     function standAtCurrentState(obj,x0)
