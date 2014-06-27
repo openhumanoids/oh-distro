@@ -2,7 +2,7 @@
 
 using namespace std;
 
-struct ContactDetectData {
+struct SupportDetectData {
   RigidBodyManipulator* r;
   void* map_ptr;
 };
@@ -10,25 +10,25 @@ struct ContactDetectData {
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
   int error;
-  if (nrhs<1) mexErrMsgTxt("usage: ptr = ContactDetectmex(0,robot_obj,...); alpha=ContactDetectmex(ptr,...,...)");
+  if (nrhs<1) mexErrMsgTxt("usage: ptr = supportDetectmex(0,robot_obj,...); alpha=supportDetectmex(ptr,...,...)");
   if (nlhs<1) mexErrMsgTxt("take at least one output... please.");
   
-  struct ContactDetectData* pdata;
+  struct SupportDetectData* pdata;
 //   mxArray* pm;
   double* pr;
   int i,j;
 
   if (mxGetScalar(prhs[0])==0) { // then construct the data object and return
-    pdata = new struct ContactDetectData;
+    pdata = new struct SupportDetectData;
     
     // get robot mex model ptr
     if (!mxIsNumeric(prhs[1]) || mxGetNumberOfElements(prhs[1])!=1)
-      mexErrMsgIdAndTxt("DRC:ContactDetectmex:BadInputs","the second argument should be the robot mex ptr");
+      mexErrMsgIdAndTxt("DRC:supportDetectmex:BadInputs","the second argument should be the robot mex ptr");
     memcpy(&(pdata->r),mxGetData(prhs[1]),sizeof(pdata->r));
         
      // get the map ptr back from matlab
      if (!mxIsNumeric(prhs[2]) || mxGetNumberOfElements(prhs[2])!=1)
-     mexErrMsgIdAndTxt("DRC:ContactDetectmex:BadInputs","the third argument should be the map ptr");
+     mexErrMsgIdAndTxt("DRC:supportDetectmex:BadInputs","the third argument should be the map ptr");
      memcpy(&(pdata->map_ptr),mxGetPr(prhs[2]),sizeof(pdata->map_ptr));
     
     if (!pdata->map_ptr)
@@ -38,7 +38,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mxClassID cid;
     if (sizeof(pdata)==4) cid = mxUINT32_CLASS;
     else if (sizeof(pdata)==8) cid = mxUINT64_CLASS;
-    else mexErrMsgIdAndTxt("Drake:ContactDetectmex:PointerSize","Are you on a 32-bit machine or 64-bit machine??");
+    else mexErrMsgIdAndTxt("Drake:supportDetectmex:PointerSize","Are you on a 32-bit machine or 64-bit machine??");
      
     plhs[0] = mxCreateNumericMatrix(1,1,cid,mxREAL);
     memcpy(mxGetData(plhs[0]),&pdata,sizeof(pdata));
@@ -48,7 +48,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   
   // first get the ptr back from matlab
   if (!mxIsNumeric(prhs[0]) || mxGetNumberOfElements(prhs[0])!=1)
-    mexErrMsgIdAndTxt("DRC:ContactDetectmex:BadInputs","the first argument should be the ptr");
+    mexErrMsgIdAndTxt("DRC:supportDetectmex:BadInputs","the first argument should be the ptr");
   memcpy(&pdata,mxGetData(prhs[0]),sizeof(pdata));
 
   int nq = pdata->r->num_dof;
