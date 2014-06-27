@@ -156,19 +156,15 @@ group "m.state_est" {
 
 #################################################################
 
-script "prep_core" { 
+script "prep_LN_RN" { 
     start group "0.development";
+    start cmd "model_LN_RN";
     start cmd "logger-robot";
     start group "a.1.core";
     start group "a.2.p_and_c";
     start group "b.2.p_and_c";
     start cmd "atlas-off";
     start cmd "multisense";
-}
-
-script "prep_LN_RN" { 
-    start cmd "model_LN_RN";
-    run_script "prep_core";
 }
 
 script "robot_start" { 
