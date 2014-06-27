@@ -8,7 +8,8 @@ use_bullet = false;
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 plot_comtraj = false;
-navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
+%navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
+navgoal = [1;0;0;0;0;0];
 
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
@@ -43,7 +44,6 @@ nq = getNumDOF(r);
 nu = getNumInputs(r);
 
 x0 = xstar;
-q0 = x0(1:nq);
 
 % create footstep and ZMP trajectories
 footstep_planner = StatelessFootstepPlanner();
@@ -57,10 +57,10 @@ request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 30;
 request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
-request.params.nom_step_width = 0.26;
-request.params.max_step_width = 0.39;
+request.params.nom_step_width = 0.24;
+request.params.max_step_width = 0.3;
 request.params.nom_forward_step = 0.2;
-request.params.max_forward_step = 0.45;
+request.params.max_forward_step = 0.4;
 request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
@@ -68,6 +68,7 @@ request.params.map_command = 0;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
 request.default_step_params.step_speed = 0.5;
+request.default_step_params.drake_min_hold_time = 2.0;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = false;
@@ -80,55 +81,55 @@ request.initial_state = r.getStateFrame().lcmcoder.encode(0, x0);
 request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
-walking_ctrl_data.supports = walking_ctrl_data.supports{1}; % TODO: fix this
 
-if use_bullet
-  for i=1:length(walking_ctrl_data.supports)
-    walking_ctrl_data.supports{i}=walking_ctrl_data.supports{i}.setContactSurfaces(-ones(length(walking_ctrl_data.supports{i}.bodies),1));
-  end
-end
+% No-op: just make sure we can cleanly encode and decode the plan as LCM
+tic;
+walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
+fprintf(1, 'control data lcm code/decode time: %f\n', toc);
 
-ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
+ts = walking_plan.ts;
 T = ts(end);
 
-ctrl_data = SharedDataHandle(struct(...
-  'A',[zeros(2),eye(2); zeros(2,4)],...
-  'B',[zeros(2); eye(2)],...
-  'C',[eye(2),zeros(2)],...
+ctrl_data = QPControllerData(true,struct(...
+  'acceleration_input_frame',AtlasCoordinates(r),...
+  'D',-0.89/9.81*eye(2),... % assumed COM height
   'Qy',eye(2),...
-  'R',zeros(2),...
-  'is_time_varying',true,...
-  'S',walking_ctrl_data.S.eval(0),... % always a constant
+  'S',walking_ctrl_data.S,... % always a constant
   's1',walking_ctrl_data.s1,...
   's2',walking_ctrl_data.s2,...
   's1dot',walking_ctrl_data.s1dot,...
   's2dot',walking_ctrl_data.s2dot,...
   'x0',[walking_ctrl_data.zmptraj.eval(T);0;0],...
   'u0',zeros(2,1),...
-  'qtraj',x0(1:nq),...
-  'comtraj',walking_ctrl_data.comtraj,...
+	'qtraj',x0(1:nq),...
+	'comtraj',walking_ctrl_data.comtraj,...
   'link_constraints',walking_ctrl_data.link_constraints, ...
   'support_times',walking_ctrl_data.support_times,...
-  'supports',[walking_ctrl_data.supports{:}],...
-  't_offset',0,...
+  'supports',walking_ctrl_data.supports,...
   'mu',walking_ctrl_data.mu,...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
-  'qp_active_set',0,...
-  'y0',walking_ctrl_data.zmptraj));
+  'y0',walking_ctrl_data.zmptraj,...
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
+
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
 options.dt = 0.003;
 options.slack_limit = 30.0;
-options.w = 0.001;
-options.lcm_foot_contacts = false;
+options.w_qdd = 0.001*ones(nq,1);
+options.w_grf = 0;
+options.w_slack = 0.001;
+options.W_kdot = 0*eye(3);
 options.contact_threshold = 0.005;
 options.debug = false;
 options.use_mex = true;
+options.solver = 0;
+options.use_bullet = use_bullet;
+
 % ******************* END ADJUSTABLE **************************************
 
 % instantiate QP controller
-qp = QPControlBlock(rctrl,ctrl_data,options);
+qp = QPController(rctrl,{},ctrl_data,options);
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************
@@ -163,24 +164,29 @@ rnoisy = cascade(rnoisy,fs);
 
 % feedback QP controller with atlas
 ins(1).system = 1;
-ins(1).input = 1;
+ins(1).input = 2;
+ins(2).system = 1;
+ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
-% feedback PD block
-pd = IKPDBlock(rctrl,ctrl_data,options);
+% feedback foot contact detector with QP/atlas
+options.use_lcm=false;
+fc = FootContactBlock(r,ctrl_data,options);
+ins(1).system = 2;
+ins(1).input = 1;
+sys = mimoFeedback(fc,sys,[],[],ins,outs);
+clear ins;  
+
+pd = IKPDBlock(r,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
 qt = QTrajEvalBlock(rctrl,ctrl_data,options);
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(qt,sys,[],[],[],outs);
 
 S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');

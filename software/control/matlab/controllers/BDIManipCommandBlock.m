@@ -14,19 +14,8 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
   methods
     function obj = BDIManipCommandBlock(r,controller_data,options)
       typecheck(r,'Atlas');
-      typecheck(controller_data,'SharedDataHandle');
+      typecheck(controller_data,'AtlasManipControllerData');
   
-      ctrl_data = getData(controller_data);
-      if ~isfield(ctrl_data,'qtraj')
-        error('BDIManipCommandBlock: controller_data must contain qtraj field');
-      end
-      
-      if ~isfield(ctrl_data,'enable_bdi_manip')
-        error('BDIManipCommandBlock: controller_data must contain enable_bdi_manip field');
-      else
-        typecheck(ctrl_data.enable_bdi_manip,'logical');
-      end
-      
       if nargin<3
         options = struct();
       else
@@ -59,20 +48,20 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
     function y=mimoOutput(obj,t,~,varargin)
       q_des=varargin{1};
       x=varargin{2};
-      qtraj = obj.controller_data.data.qtraj;
+      qtraj = obj.controller_data.qtraj;
 
       plan_adjust = obj.plan_adjust_listener.getNextMessage(0);
       if ~isempty(plan_adjust)
         if plan_adjust.mode == 1
-          obj.controller_data.setField('enable_bdi_manip',true);
+          obj.controller_data.enable_bdi_manip = true;
           send_status(3, 0, 0, 'Atlas controller will stream BDI manip parameters.');
         else
-          obj.controller_data.setField('enable_bdi_manip',false);
+          obj.controller_data.enable_bdi_manip = false;
           send_status(3, 0, 0, 'Atlas controller will NOT stream BDI manip parameters.');
         end
       end
       
-      if obj.controller_data.data.enable_bdi_manip && isa(qtraj,'PPTrajectory') && t<=qtraj.tspan(end)
+      if obj.controller_data.enable_bdi_manip && isa(qtraj,'PPTrajectory') && t<=qtraj.tspan(end)
         cur_params = obj.params_listener.getMessage();
         
         % only support pelvis height for the time being

@@ -1,13 +1,13 @@
-classdef MomentumControlBlock < MIMODrakeSystem
+classdef QPController < MIMODrakeSystem
 
   methods
-  function obj = MomentumControlBlock(r,body_accel_input_frames,controller_data,options)
-    % @param r atlas instance
-    % @param controller_data shared data handle containing ZMP-LQR solution, etc
+  function obj = QPController(r,body_accel_input_frames,controller_data,options)
+    % @param r rigid body manipulator instance
+    % @param controller_data shared data handle containing linear system, zmp trajectories, Riccati solution, etc
     % @param options structure for specifying objective weight (w), slack
-    % variable limits (slack_limit)
+    % variable limits (slack_limit), and input cost (R)
     typecheck(r,'Biped');
-    typecheck(controller_data,'SharedDataHandle');
+    typecheck(controller_data,'QPControllerData');
     
     if nargin>3
       typecheck(options,'struct');
@@ -15,7 +15,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       options = struct();
     end
     
-    qddframe = AtlasCoordinates(r); % input frame for desired qddot, qdd constraints 
+    qddframe = controller_data.acceleration_input_frame; % input frame for desired qddot 
         
     input_frame = MultiCoordinateFrame({r.getStateFrame,qddframe,FootContactState,body_accel_input_frames{:}});
     
@@ -36,7 +36,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     obj = setOutputFrame(obj,output_frame);
 
     obj.robot = r;
-    obj.mass = getMass(r);
     obj.numq = getNumDOF(r);
     obj.controller_data = controller_data;
     obj.n_body_accel_inputs = length(body_accel_input_frames);
@@ -51,23 +50,19 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     obj = setSampleTime(obj,[dt;0]); % sets controller update rate
    
-    if ~isfield(obj.controller_data.data,'qp_active_set')
-      obj.controller_data.setField('qp_active_set',[]);
-    end
-    
     if isfield(options,'use_bullet')
       obj.use_bullet = options.use_bullet;
     else
       obj.use_bullet = false;
     end
-        
+
     % weight for the hdot objective term
-    if isfield(options,'W_hdot')
-      typecheck(options.W_hdot,'double');
-      sizecheck(options.W_hdot,[6 6]);
-      obj.W_hdot = options.W_hdot;
+    if isfield(options,'W_kdot')
+      typecheck(options.W_kdot,'double');
+      sizecheck(options.W_kdot,[3 3]);
+      obj.W_kdot = options.W_kdot;
     else
-      obj.W_hdot = diag([0.1;0.1;0.1;1;1;1]);
+      obj.W_kdot = zeros(3);
     end
     
     % weight for the desired qddot objective term
@@ -85,7 +80,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       sizecheck(options.w_grf,1);
       obj.w_grf = options.w_grf;
     else
-      obj.w_grf = 0.001;
+      obj.w_grf = 0.0;
     end    
 
     % weight for slack vars
@@ -95,25 +90,16 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.w_slack = options.w_slack;
     else
       obj.w_slack = 0.001;
-    end    
+    end       
 
-    % com-z PD gains
-    if isfield(options,'Kp')
-      typecheck(options.Kp,'double');
-      sizecheck(options.Kp,1);
-      obj.Kp = options.Kp;
+    % proportunal gain for angular momentum 
+    if isfield(options,'Kp_ang')
+      typecheck(options.Kp_ang,'double');
+      sizecheck(options.Kp_ang,1);
+      obj.Kp_ang = options.Kp_ang;
     else
-      obj.Kp = 100;
-    end    
-
-    % com-z PD gains
-    if isfield(options,'Kd')
-      typecheck(options.Kd,'double');
-      sizecheck(options.Kd,1);
-      obj.Kd = options.Kd;
-    else
-      obj.Kd = 20;
-    end    
+      obj.Kp_ang = 1.0;
+    end       
 
     % hard bound on slack variable values
     if isfield(options,'slack_limit')
@@ -146,20 +132,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
       obj.debug_pub = ControllerDebugPublisher('CONTROLLER_DEBUG');
     end
 
-    if isfield(options,'use_mex')
-      % 0 - no mex
-      % 1 - use mex
-      % 2 - run mex and non-mex and valuecheck the result
-      sizecheck(options.use_mex,1);
-      obj.use_mex = uint32(options.use_mex);
-      rangecheck(obj.use_mex,0,2);
-      if (obj.use_mex && exist('MomentumControllermex','file')~=3)
-        error('can''t find MomentumControllermex.  did you build it?');
-      end
-    else
-      obj.use_mex = 1;
-    end
-    
     if isfield(options,'solver') 
       % 0: fastqp, fallback to gurobi barrier (default)
       % 1: gurobi primal simplex with active sets
@@ -171,12 +143,23 @@ classdef MomentumControlBlock < MIMODrakeSystem
     end
     obj.solver = options.solver;
     
-    obj.lc = lcm.lcm.LCM.getSingleton();
+    if isfield(options,'use_mex')
+      % 0 - no mex
+      % 1 - use mex
+      % 2 - run mex and non-mex and valuecheck the result
+      sizecheck(options.use_mex,1);
+      obj.use_mex = uint32(options.use_mex);
+      rangecheck(obj.use_mex,0,2);
+      if (obj.use_mex && exist('QPControllermex','file')~=3)
+        error('can''t find QPControllermex.  did you build it?');
+      end
+    else
+      obj.use_mex = 1;
+    end
+    
+    %obj.lc = lcm.lcm.LCM.getSingleton();
     obj.rfoot_idx = findLinkInd(r,'r_foot');
     obj.lfoot_idx = findLinkInd(r,'l_foot');
-    obj.rhand_idx = findLinkInd(r,'r_hand');
-    obj.lhand_idx = findLinkInd(r,'l_hand');
-    obj.pelvis_idx = findLinkInd(r,'pelvis');    
       
     obj.gurobi_options.outputflag = 0; % not verbose
     if options.solver==0
@@ -200,8 +183,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       else
         terrain_map_ptr = 0;
       end
-
-      obj.mex_ptr = SharedDataHandle(MomentumControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr));
+      obj.mex_ptr = SharedDataHandle(QPControllermex(0,obj,obj.robot.getMexModelPtr.ptr,getB(obj.robot),r.umin,r.umax,terrain_map_ptr));
     end
     
     if isa(getTerrain(r),'DRCFlatTerrainMap')
@@ -214,19 +196,11 @@ classdef MomentumControlBlock < MIMODrakeSystem
         
     obj.output_qdd = options.output_qdd;
   end
-
-  end
-  
-  methods
     
   function varargout=mimoOutput(obj,t,~,varargin)
-    persistent infocount
-    
-    if isempty(infocount)
-      infocount = 0;
-    end
-    
-    ctrl_data = obj.controller_data.data;
+    %out_tic = tic;
+
+    ctrl_data = obj.controller_data;
       
     x = varargin{1};
     qddot_des = varargin{2};
@@ -235,16 +209,34 @@ classdef MomentumControlBlock < MIMODrakeSystem
     nq = obj.numq; 
     q = x(1:nq); 
     qd = x(nq+(1:nq)); 
-
-    x0 = ctrl_data.x0 - [ctrl_data.trans_drift(1:2);0;0]; % for x-y plan adjustment
-    if (ctrl_data.is_time_varying)      
-      y0 = fasteval(ctrl_data.K.y0,t) - ctrl_data.trans_drift(1:2); % for x-y plan adjustment
-      K = fasteval(ctrl_data.K.D,t); % always constant for ZMP dynamics
-%       zmp_des = fasteval(ctrl_data.zmptraj,t);
+            
+    %----------------------------------------------------------------------
+    % Linear system stuff for zmp/com control -----------------------------
+    A_ls = ctrl_data.A; % always TI
+    B_ls = ctrl_data.B; % always TI
+    Qy = ctrl_data.Qy;
+    R_ls = ctrl_data.R;
+    C_ls = ctrl_data.C;
+    D_ls = ctrl_data.D;
+    S = ctrl_data.S;
+    Sdot = 0*S; % constant for ZMP/double integrator dynamics
+    x0 = ctrl_data.x0 - [ctrl_data.plan_shift(1:2);0;0]; % for x-y plan adjustment
+    u0 = ctrl_data.u0;
+    if (ctrl_data.is_time_varying)
+      s1 = fasteval(ctrl_data.s1,t);
+%       s2 = fasteval(ctrl_data.s2,t);
+      s1dot = fasteval(ctrl_data.s1dot,t);
+      s2dot = fasteval(ctrl_data.s2dot,t);
+      y0 = fasteval(ctrl_data.y0,t) - ctrl_data.plan_shift(1:2); % for x-y plan adjustment
     else
-      y0 = [0;0]; 
-      K = ctrl_data.K.D; % always constant for ZMP dynamics
+      s1 = ctrl_data.s1;
+%       s2 = ctrl_data.s2;
+      s1dot = 0*s1;
+      s2dot = 0;
+      y0 = ctrl_data.y0 - ctrl_data.plan_shift(1:2); % for x-y plan adjustment
     end
+    mu = ctrl_data.mu;
+    R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
 
     if isfield(ctrl_data,'comz_traj')
       comz_des = fasteval(ctrl_data.comz_traj,t);
@@ -255,8 +247,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       dcomz_des = 0;
       ddcomz_des = 0;
     end
-    
-    condof = ctrl_data.constrained_dofs; % dof indices for which q_ddd_des is a constraint
+    condof = ctrl_data.constrained_dofs; % dof indices for which qdd_des is a constraint
         
     fc = varargin{3};
     
@@ -304,12 +295,17 @@ classdef MomentumControlBlock < MIMODrakeSystem
       C_act = C(act_idx);
       B_act = B(act_idx,:);
 
-      [xcom,J] = getCOM(r,kinsol);
-      [A,Adot] = getCMM(r,kinsol,qd);
-
-      com_dot = J*qd;
-      z_com_dot = com_dot(3);
-      J = J(1:2,:); % only need COM x-y
+      [xcom,Jcom] = getCOM(r,kinsol);
+      
+      include_angular_momentum = any(any(obj.W_kdot));
+      
+      if include_angular_momentum
+        [A,Adot] = getCMM(r,kinsol,qd);
+      end
+      
+      Jcomdot = forwardJacDot(r,kinsol,0);
+      Jcom = Jcom(1:2,:); % only need COM x-y
+      Jcomdot = Jcomdot(1:2,:);
 
       if ~isempty(active_supports)
         nc = sum(num_active_contacts);
@@ -328,13 +324,10 @@ classdef MomentumControlBlock < MIMODrakeSystem
         Jp = sparse(Jp);
         Jpdot = sparse(Jpdot);
 
-        xlimp = [xcom(1:2); J*qd]; % state of LIP model
+        xlimp = [xcom(1:2); Jcom*qd]; % state of LIP model
         x_bar = xlimp - x0;
-
-        ustar = K*x_bar + y0; % ustar==u_bar since u_nom=0
       else
         nc = 0;
-        ustar = zeros(2,1);
       end
       neps = nc*dim;
 
@@ -352,7 +345,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
 
       %----------------------------------------------------------------------
       % Set up problem constraints ------------------------------------------
-            
+
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
       ub = [ 1e3*ones(1,nq) 1e3*ones(1,nf) obj.slack_limit*ones(1,neps)]';
 
@@ -384,7 +377,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       if nc > 0
         % relative acceleration constraint
         Aeq_{2} = Jp*Iqdd + Ieps;
-        beq_{2} = -Jpdot*qd;
+        beq_{2} = -Jpdot*qd - 0.0*Jp*qd; % TODO: parameterize
       end
 
       eq_count=3;
@@ -421,26 +414,36 @@ classdef MomentumControlBlock < MIMODrakeSystem
       Ain = sparse(vertcat(Ain_{:}));
       bin = vertcat(bin_{:});
 
-      % compute desired linear momentum
-      comddot_des = [ustar; obj.Kp*(comz_des-xcom(3)) + obj.Kd*(dcomz_des-z_com_dot) + ddcomz_des];
-      ldot_des = comddot_des * obj.mass;
-      h=A*qd;
-      k=h(1:3);
-      kdot_des = -5.0 *k; 
-      hdot_des = [kdot_des; ldot_des];
-
+      if include_angular_momentum
+        Ak = A(1:3,:);
+        Akdot = Adot(1:3,:);
+        k=Ak*qd;
+        kdot_des = -obj.Kp_ang*k; 
+      end
+      
       %----------------------------------------------------------------------
       % QP cost function ----------------------------------------------------
       %
-      %  min: quad(h_dot_des - Adot*qd - A*qdd) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
+      % TODO: update this comment
+      %  min: quad(Jdot*qd + J*qdd,R_ls) + quad(C*x_bar+D*(Jdot*qd + J*qdd),Q) + (2*x_bar'*S + s1')*(A*x_bar + B*(Jdot*qd + J*qdd)) + w*quad(qddot_ref - qdd) + 0.001*quad(epsilon)
       if nc > 0
-        Hqp = Iqdd'*A'*obj.W_hdot*A*Iqdd;
+        Hqp = Iqdd'*Jcom'*R_DQyD_ls*Jcom*Iqdd;
         Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + diag(obj.w_qdd);
-
-        fqp = qd'*Adot'*obj.W_hdot*A*Iqdd;
-        fqp = fqp - hdot_des'*obj.W_hdot*A*Iqdd;
+        if include_angular_momentum
+          Hqp = Hqp + Iqdd'*Ak'*obj.W_kdot*Ak*Iqdd;
+        end
+        
+        fqp = xlimp'*C_ls'*Qy*D_ls*Jcom*Iqdd;
+        fqp = fqp + qd'*Jcomdot'*R_DQyD_ls*Jcom*Iqdd;
+        fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*Jcom*Iqdd;
+        fqp = fqp - u0'*R_ls*Jcom*Iqdd;
+        fqp = fqp - y0'*Qy*D_ls*Jcom*Iqdd;
         fqp = fqp - (obj.w_qdd.*qddot_des)'*Iqdd;
-
+        if include_angular_momentum
+          fqp = fqp + qd'*Akdot'*obj.W_kdot*Ak*Iqdd;
+          fqp = fqp - kdot_des'*obj.W_kdot*Ak*Iqdd;
+        end
+        
         Hqp(nq+(1:nf),nq+(1:nf)) = obj.w_grf*eye(nf); 
         Hqp(nparams-neps+1:end,nparams-neps+1:end) = obj.w_slack*eye(neps); 
       else
@@ -511,7 +514,7 @@ classdef MomentumControlBlock < MIMODrakeSystem
       end
 
       qp_active_set = find(abs(Ain_fqp*alpha - bin_fqp)<1e-6);
-      setField(obj.controller_data,'qp_active_set',qp_active_set);
+      obj.controller_data.qp_active_set = qp_active_set;
 
       %----------------------------------------------------------------------
       % Solve for inputs ----------------------------------------------------
@@ -524,93 +527,54 @@ classdef MomentumControlBlock < MIMODrakeSystem
         u = B_act'*(H_act*qdd + C_act);
       end
       y = u;
-      
-      if obj.debug
-        % publish debug 
-        debug_data.utime = t*1e6;
-        debug_data.alpha = alpha;
-        debug_data.u = y;
-        debug_data.active_supports = active_supports;
-        debug_data.info = info_fqp;
-        debug_data.qddot_des = qddot_des;
-        debug_data.active_constraints = qp_active_set;
-        debug_data.h = h;
-        debug_data.hdot_des = hdot_des;
-        debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
-        debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
-%         body_accel_input_start=4;
-        debug_data.body_acc_des = [];%[varargin{body_accel_input_start}; varargin{body_accel_input_start+1}];
-        debug_data.lb = lb;
-        debug_data.ub = ub;
-        debug_data.zmp_err = [0;0];
-
-        obj.debug_pub.publish(debug_data);
+ 
+      if (obj.use_mex==2)
+        des.y = y;
       end
       
+      % % compute V,Vdot
+      % if (nc>0)
+      %   %V = x_bar'*S*x_bar + s1'*x_bar + s2;
+      %   %Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*Sdot*x_bar + x_bar'*s1dot + s2dot;
+      %   % note for ZMP dynamics, S is constant so Sdot=0
+      %   Vdot = (2*x_bar'*S + s1')*(A_ls*x_bar + B_ls*(Jdot*qd + J*qdd)) + x_bar'*s1dot + s2dot;
+      % end
     end
   
+
     if (obj.use_mex==1 || obj.use_mex==2)
       if obj.using_flat_terrain
         height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
       else
         height = 0;
       end
-      body_accel_input_start=4;
-      if obj.use_mex==1
-        mu = 0.75;
-        if obj.debug
-          [y,qdd,info,active_supports,~,~,~,~,~,bin_mex,~,~,alpha,...
-            active_constraints,h,hdot_des] = MomentumControllermex(obj.mex_ptr.data,...
-            obj.solver==0,qddot_des,x,varargin{body_accel_input_start:end},condof,supp,K,x0,y0,comz_des,...
-            dcomz_des,ddcomz_des,mu,height);
 
-%           zmp_err = zmp_des - zmp_out;
-          
-          % publish debug 
-          debug_data.utime = t*1e6;
-          debug_data.alpha = alpha;
-          debug_data.u = y;
-          debug_data.active_supports = active_supports;
-          debug_data.info = info;
-          debug_data.qddot_des = qddot_des;
-          debug_data.active_constraints = active_constraints;
-          debug_data.h = h;
-          debug_data.zmp_err = [0;0];% zmp_err;
-          debug_data.hdot_des = hdot_des;
-          debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
-          debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
-          debug_data.body_acc_des = [];%[varargin{body_accel_input_start}; varargin{body_accel_input_start+1}; varargin{body_accel_input_start+2}; varargin{body_accel_input_start+3}];
-          
-          np=length(alpha);
-          bounds = bin_mex((end-2*np+1):end);
-          debug_data.lb = -bounds(1:np);
-          debug_data.ub = bounds(np + (1:np));
-          obj.debug_pub.publish(debug_data);
-
-        else
-          [y,qdd,info] = MomentumControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
-            varargin{body_accel_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,height);
-        end
+      if (obj.use_mex==1)
+        [y,qdd,info_fqp,active_supports,alpha] = QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
+            varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,...
+            S,s1,s1dot,s2dot,x0,u0,y0,mu,height);
         
-        if info < 0
-          infocount = infocount +1;
+        if info_fqp < 0
+          ctrl_data.infocount = ctrl_data.infocount+1;
         else
-          infocount = 0;
+          ctrl_data.infocount = 0;
         end
-        if infocount > 4
+        if ctrl_data.infocount > 4
           % kill atlas
           disp('freezing atlas!');
           behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
           d.utime = 0;
           d.command = 'freeze';
           behavior_pub.publish(d);
-        end      
+        end    
         
-      else
-        mu = 1.0;
-        [y_mex,mex_qdd,info_mex,active_supports_mex,Hqp_mex,fqp_mex,Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps,~,...
-          ~,~,~] = MomentumControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
-          varargin{body_accel_input_start:end},condof,supp,K,x0,y0,comz_des,dcomz_des,ddcomz_des,mu,height);
+      else 
+        [y_mex,mex_qdd,info_mex,active_supports_mex,~,Hqp_mex,fqp_mex,...
+          Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps] = ...
+          QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
+          varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,...
+          s1dot,s2dot,x0,u0,y0,mu,height);
+
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
         end
@@ -626,20 +590,51 @@ classdef MomentumControlBlock < MIMODrakeSystem
         valuecheck(Hqp,blkdiag(Hqp_mex,diag(Qf),diag(Qeps)),1e-6);        
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
-				end
+        end
         valuecheck(fqp',fqp_mex,1e-6);
-        % had to comment out equality constraints because the contact
-        % jacobian rows can be permuted between matlab/mex
-%         valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6); 
-%         valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
-        valuecheck(Ain,Ain_mex(1:length(bin),:),1e-6);
-        valuecheck(bin,bin_mex(1:length(bin)),1e-6); 
+        if ~obj.use_bullet
+          % contact jacobian rows can be permuted between matlab/mex when
+          % using bullet
+          valuecheck(Aeq,Aeq_mex(1:length(beq),:),1e-6); 
+          valuecheck(beq,beq_mex(1:length(beq)),1e-6); 
+          valuecheck(Ain,Ain_mex(1:length(bin),:),1e-6);
+          valuecheck(bin,bin_mex(1:length(bin)),1e-6); 
+        end
         valuecheck([-lb;ub],bin_mex(length(bin)+1:end),1e-6);
-        valuecheck(y,y_mex,1e-2);
-        valuecheck(qdd,mex_qdd,1e-2); 
+        if info_mex >= 0 && info_fqp >= 0 && ~obj.use_bullet
+          % matlab/mex are using different gurobi fallback options, so
+          % solutions can be slightly different
+          valuecheck(y,y_mex,1e-3);
+          valuecheck(qdd,mex_qdd,1e-3);
+        end
       end
+    end   
+    
+    if obj.debug
+      % publish debug
+      debug_data.utime = t*1e6;
+      debug_data.alpha = alpha;
+      debug_data.u = y;
+      debug_data.active_supports = active_supports;
+      debug_data.info = info_fqp;
+      debug_data.qddot_des = qddot_des;
+      if obj.use_mex==0 % TODO: update this
+        debug_data.active_constraints = qp_active_set;
+      else
+        debug_data.active_constraints = [];
+      end
+      debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
+      debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
+      if obj.n_body_accel_inputs > 0
+        acc_mat = [varargin{3+(1:obj.n_body_accel_inputs)}];
+        debug_data.body_acc_des = reshape(acc_mat,numel(acc_mat),1);
+      else
+        debug_data.body_acc_des = [];
+      end
+      debug_data.zmp_err = [0;0];
+      obj.debug_pub.publish(debug_data);
     end
-
+      
     if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method
       out_toc=toc(out_tic);
@@ -668,24 +663,19 @@ classdef MomentumControlBlock < MIMODrakeSystem
     robot; % to be controlled
     numq;
     controller_data; % shared data handle that holds S, h, foot trajectories, etc.
-    W_hdot; % angular momentum cost term weight matrix
+    W_kdot; % angular momentum cost term weight matrix
     w_qdd; % qdd objective function weight vector
     w_grf; % scalar ground reaction force weight
     w_slack; % scalar slack var weight
-    Kp; % com-z P gain
-    Kd; % com-z D gain
     slack_limit; % maximum absolute magnitude of acceleration slack variable values
+    Kp_ang; % proportunal gain for angular momentum feedback
     rfoot_idx;
     lfoot_idx;
-    rhand_idx;
-    lhand_idx;
-    pelvis_idx;
     gurobi_options = struct();
     solver=0;
     debug;
     debug_pub;
     use_mex;
-    use_hand_ft;
     mex_ptr;
     lc;
     eq_array = repmat('=',100,1); % so we can avoid using repmat in the loop
@@ -695,7 +685,6 @@ classdef MomentumControlBlock < MIMODrakeSystem
     jlmin;
     jlmax;
     output_qdd = false;
-    mass; % total robot mass
     body_accel_input_weights; % array of doubles, negative values signal constraints
     n_body_accel_inputs; % scalar
   end
