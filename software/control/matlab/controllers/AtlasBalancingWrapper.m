@@ -4,7 +4,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
     nu;
     robot;
     input_map;
-    ctrl_data;
+    controller_data;
     foot_contact_block;
     pd_plus_qp_block;
     velocity_int_block;
@@ -53,24 +53,24 @@ classdef AtlasBalancingWrapper < DrakeSystem
       end
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
       
-      
       % instantiate QP controller
       options.slack_limit = 30.0;
-      options.w_qdd = 0.001*ones(obj.nq,1);
+      options.w_qdd = 0.0005*ones(obj.nq,1);
       options.w_grf = 0;
       options.w_slack = 0.001;
-      options.debug = false;
+      options.debug = true;
       options.use_mex = true;
       options.W_kdot = zeros(3);
       options.input_foot_contacts = true;
       options.contact_threshold = 0.01;
       options.output_qdd = true;
-
+      options.solver = 0;
+      
       qp = QPControlBlock(r,{},controller_data,options);
      
       % cascade IK/PD block
-      options.Kp = 65.0*ones(obj.nq,1);
-      options.Kd = 12.0*ones(obj.nq,1);
+      options.Kp = 55.0*ones(obj.nq,1);
+      options.Kd = 8.0*ones(obj.nq,1);
       options.use_ik=true;
       options.fixed_dofs = controller_data.constrained_dofs;
       pd = IKPDBlock(r,controller_data,options);
@@ -99,10 +99,21 @@ classdef AtlasBalancingWrapper < DrakeSystem
       
       obj.robot = r;
       obj.input_map = getActuatedJoints(r);
-      obj.ctrl_data = controller_data;
+      obj.controller_data = controller_data;
     end
    
     function y=output(obj,t,~,x)
+      persistent pelvis_angv_filt
+      
+      if isempty(pelvis_angv_filt)
+        pelvis_angv_filt = zeros(3,1);
+      end
+      
+      % TODO: THIS IS TEMPORARY UNTIL MAURICE PUTS IT IN STATE SYNC
+      alpha = 0.8;
+      pelvis_angv_filt = alpha*pelvis_angv_filt + (1-alpha)*x(obj.nq+(4:6));
+      x(obj.nq+(4:6)) = pelvis_angv_filt;
+      
       % foot contact
       fc = output(obj.foot_contact_block,t,[],x);
       
@@ -116,12 +127,12 @@ classdef AtlasBalancingWrapper < DrakeSystem
       qdd=u_and_qdd(obj.nu+(1:obj.nq));
 
       % velocity integrator
-      qd_int_state = obj.ctrl_data.data.qd_int_state;
+      qd_int_state = obj.controller_data.qd_int_state;
       qd_int_state = mimoUpdate(obj.velocity_int_block,t,qd_int_state,x,qdd,fc);
-      obj.ctrl_data.qd_int_state = qd_int_state;
+      obj.controller_data.qd_int_state = qd_int_state;
       qd_err = mimoOutput(obj.velocity_int_block,t,qd_int_state,x,qdd,fc);
     
-      force_ctrl_joints = obj.ctrl_data.data.force_controlled_joints;
+      force_ctrl_joints = obj.controller_data.force_controlled_joints;
       qddes = 0*qd_err;
       qddes(force_ctrl_joints) = qd_err(force_ctrl_joints);
       udes = 0*u;

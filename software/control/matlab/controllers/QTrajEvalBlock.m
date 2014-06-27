@@ -24,6 +24,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
         typecheck(options.use_error_integrator,'logical');
         if options.use_error_integrator
           sizecheck(controller_data.integral_gains,[getNumDOF(r) 1]);
+          typecheck(controller_data,{'AtlasManipControllerData','AtlasQPControllerData'});
         end
       else
         options.use_error_integrator = false;
@@ -67,10 +68,10 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       end
       if obj.use_error_integrator
         q = x(1:obj.nq);
-        i_clamp = obj.controller_data.data.integral_clamps;
-        newintg = obj.controller_data.data.integral + obj.controller_data.data.integral_gains.*(qdes-q)*obj.dt;
+        i_clamp = obj.controller_data.integral_clamps;
+        newintg = obj.controller_data.integral + obj.controller_data.integral_gains.*(qdes-q)*obj.dt;
         newintg = max(-i_clamp,min(i_clamp,newintg));
-        setField(obj.controller_data,'integral', newintg);
+        obj.controller_data.integral = newintg;
         qdes = qdes + newintg;
         qdes = max(obj.jlmin-i_clamp,min(obj.jlmax+i_clamp,qdes)); % allow it to go delta above and below jlims
       end
