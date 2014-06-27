@@ -27,3 +27,5 @@ state_estimate
 plan_monitor
 
 signal_scope
+
+vo_lidar_accum
