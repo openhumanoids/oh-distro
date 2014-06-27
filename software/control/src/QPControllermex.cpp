@@ -601,45 +601,49 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   }
 
   if (nlhs>4) {
-    plhs[4] = eigenToMatlab(pdata->Hqp);
+    plhs[4] = eigenToMatlab(alpha);
   }
 
   if (nlhs>5) {
-    plhs[5] = eigenToMatlab(f);
+    plhs[5] = eigenToMatlab(pdata->Hqp);
   }
 
   if (nlhs>6) {
-    plhs[6] = eigenToMatlab(Aeq);
+    plhs[6] = eigenToMatlab(f);
   }
 
   if (nlhs>7) {
-    plhs[7] = eigenToMatlab(beq);
+    plhs[7] = eigenToMatlab(Aeq);
   }
 
   if (nlhs>8) {
-    plhs[8] = eigenToMatlab(Ain_lb_ub);
+    plhs[8] = eigenToMatlab(beq);
   }
 
   if (nlhs>9) {
-    plhs[9] = eigenToMatlab(bin_lb_ub);
+    plhs[9] = eigenToMatlab(Ain_lb_ub);
   }
 
   if (nlhs>10) {
-    plhs[10] = eigenToMatlab(Qnfdiag);
+    plhs[10] = eigenToMatlab(bin_lb_ub);
   }
 
   if (nlhs>11) {
-    plhs[11] = eigenToMatlab(Qneps);
+    plhs[11] = eigenToMatlab(Qnfdiag);
   }
 
   if (nlhs>12) {
+    plhs[12] = eigenToMatlab(Qneps);
+  }
+
+  if (nlhs>13) {
     double Vdot;
     if (nc>0) 
       // note: Sdot is 0 for ZMP/double integrator dynamics, so we omit that term here
       Vdot = ((2*x_bar.transpose()*S + s1.transpose())*(A_ls*x_bar + B_ls*(pdata->Jdot_xy*qdvec + pdata->J_xy*qdd)) + s1dot.transpose()*x_bar)(0) + s2dot;
     else
       Vdot = 0;
-    plhs[12] = mxCreateDoubleScalar(Vdot);
+    plhs[13] = mxCreateDoubleScalar(Vdot);
   }
 
   if (model) { 

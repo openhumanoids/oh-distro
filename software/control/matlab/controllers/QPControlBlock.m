@@ -550,11 +550,11 @@ classdef QPControlBlock < MIMODrakeSystem
       end
 
       if (obj.use_mex==1)
-        [y,qdd,info] = QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
+        [y,qdd,info_fqp,active_supports,alpha] = QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
             varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,...
             S,s1,s1dot,s2dot,x0,u0,y0,mu,height);
         
-        if info < 0
+        if info_fqp < 0
           ctrl_data.infocount = ctrl_data.infocount+1;
         else
           ctrl_data.infocount = 0;
@@ -569,7 +569,7 @@ classdef QPControlBlock < MIMODrakeSystem
         end    
         
       else 
-        [y_mex,mex_qdd,info_mex,active_supports_mex,Hqp_mex,fqp_mex,...
+        [y_mex,mex_qdd,info_mex,active_supports_mex,~,Hqp_mex,fqp_mex,...
           Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps] = ...
           QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
           varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,...
@@ -609,6 +609,31 @@ classdef QPControlBlock < MIMODrakeSystem
         end
       end
     end   
+    
+    if obj.debug
+      % publish debug
+      debug_data.utime = t*1e6;
+      debug_data.alpha = alpha;
+      debug_data.u = y;
+      debug_data.active_supports = active_supports;
+      debug_data.info = info_fqp;
+      debug_data.qddot_des = qddot_des;
+      if obj.use_mex==0 % TODO: update this
+        debug_data.active_constraints = qp_active_set;
+      else
+        debug_data.active_constraints = [];
+      end
+      debug_data.r_foot_contact = any(obj.rfoot_idx==active_supports);
+      debug_data.l_foot_contact = any(obj.lfoot_idx==active_supports);
+      if obj.n_body_accel_inputs > 0
+        acc_mat = [varargin{3+(1:obj.n_body_accel_inputs)}];
+        debug_data.body_acc_des = reshape(acc_mat,numel(acc_mat),1);
+      else
+        debug_data.body_acc_des = [];
+      end
+      debug_data.zmp_err = [0;0];
+      obj.debug_pub.publish(debug_data);
+    end
       
     if (0)     % simple timekeeping for performance optimization
       % note: also need to uncomment tic at very top of this method

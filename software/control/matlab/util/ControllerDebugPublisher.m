@@ -28,10 +28,6 @@ classdef ControllerDebugPublisher
       % qdd desired input to QP
       msg.n_q = length(data.qddot_des);
       msg.qddot_des = data.qddot_des;
-      % centroidal momentum
-      msg.h = data.h;
-      % desired centroidal momentum rate of change
-      msg.hdot_des = data.hdot_des;
       % active set of inequality constraints
       msg.n_active_constraints = length(data.active_constraints);
       msg.active_constraints = data.active_constraints;
@@ -41,10 +37,7 @@ classdef ControllerDebugPublisher
       % desired body acceleration inputs
       msg.n_body_acc_des = length(data.body_acc_des);
       msg.body_acc_des = data.body_acc_des;
-      % QP bounds
-      msg.nb = length(data.lb);
-      msg.lb = data.lb;
-      msg.ub = data.ub;
+      % ZMP tracking error
       msg.zmp_err = data.zmp_err;
 
       obj.lc.publish(obj.channel, msg);
