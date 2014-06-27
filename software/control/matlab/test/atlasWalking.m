@@ -161,7 +161,7 @@ options.output_qdd = true;
 options.solver = 0; % 0 fastqp, 1 gurobi
 options.input_foot_contacts = true;
 
-qp = QPControlBlock(r,{},ctrl_data,options);
+qp = QPController(r,{},ctrl_data,options);
 
 vo = VelocityOutputIntegratorBlock(r,options);
 options.use_lcm = true;

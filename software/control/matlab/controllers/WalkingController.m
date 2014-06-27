@@ -51,7 +51,7 @@ classdef WalkingController < DRCController
       options.slack_limit = 30.0;
       options.w = 0.001;
 			options.contact_threshold = 0.005;
-      qp = QPControlBlock(r,ctrl_data,options);
+      qp = QPController(r,ctrl_data,options);
 
       if options.use_walking_pd
         % cascade walking PD controller
@@ -178,7 +178,7 @@ classdef WalkingController < DRCController
 
       obj = setDuration(obj,tspan_end,false); % set the controller timeout
 
-      QPControlBlock.check_ctrl_data(obj.controller_data);
+      QPController.check_ctrl_data(obj.controller_data);
       delete(tmp_fname);
     end
   end

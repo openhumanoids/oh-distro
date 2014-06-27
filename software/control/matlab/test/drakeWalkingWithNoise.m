@@ -129,7 +129,7 @@ options.use_bullet = use_bullet;
 % ******************* END ADJUSTABLE **************************************
 
 % instantiate QP controller
-qp = QPControlBlock(rctrl,{},ctrl_data,options);
+qp = QPController(rctrl,{},ctrl_data,options);
 
 % ******************* BEGIN ADJUSTABLE ************************************
 % *************************************************************************

@@ -147,7 +147,7 @@ end
 
 if (use_ik)
   % instantiate QP controller
-	qp = QPControlBlock(r,{},ctrl_data,options);
+	qp = QPController(r,{},ctrl_data,options);
 
 	% feedback QP controller with atlas
   ins(1).system = 1;
@@ -184,7 +184,7 @@ else
 	pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
 
 %   options.body_accel_input_weights = [10 10 -1 -1];
-	qp = QPControlBlock(r,motion_frames,ctrl_data,options);
+	qp = QPController(r,motion_frames,ctrl_data,options);
 
 	% feedback QP controller with atlas
 	ins(1).system = 1;

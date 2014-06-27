@@ -146,7 +146,7 @@ options.W_kdot = 0*eye(3);
 options.use_mex = true;
 options.solver = 0;
 
-qp = QPControlBlock(rctrl,{},ctrl_data,options);
+qp = QPController(rctrl,{},ctrl_data,options);
 clear options;
 
 if noisy

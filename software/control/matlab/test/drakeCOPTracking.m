@@ -111,7 +111,7 @@ options.contact_threshold = 0.002;
 options.output_qdd = true;
 
 % feedback QP controller with atlas
-qp = QPControlBlock(r,{},ctrl_data,options);
+qp = QPController(r,{},ctrl_data,options);
 
 ins(1).system = 1;
 ins(1).input = 2;

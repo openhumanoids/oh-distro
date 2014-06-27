@@ -3,7 +3,6 @@
  *
  * Todo:
  *   switch to spatial accelerations in motion constraints
- *   handle the no supports case (arguments into mex starting with B_ls will currently fail)
  *   use fixed-size matrices (or at least pre-allocated)
  *       for instance: #define nq 
  *       set MaxRowsAtCompileTime (http://eigen.tuxfamily.org/dox/TutorialMatrixClass.html)
@@ -28,7 +27,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   mxArray* pm;
   double* pr;
   int i,j;
-
 
   if (mxGetScalar(prhs[0])==0) { // then construct the data object and return
     pdata = new struct QPControllerData;

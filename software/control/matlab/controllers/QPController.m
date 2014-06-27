@@ -1,7 +1,7 @@
-classdef QPControlBlock < MIMODrakeSystem
+classdef QPController < MIMODrakeSystem
 
   methods
-  function obj = QPControlBlock(r,body_accel_input_frames,controller_data,options)
+  function obj = QPController(r,body_accel_input_frames,controller_data,options)
     % @param r rigid body manipulator instance
     % @param controller_data shared data handle containing linear system, zmp trajectories, Riccati solution, etc
     % @param options structure for specifying objective weight (w), slack

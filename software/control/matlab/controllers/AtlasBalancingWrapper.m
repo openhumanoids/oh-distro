@@ -66,7 +66,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       options.output_qdd = true;
       options.solver = 0;
       
-      qp = QPControlBlock(r,{},controller_data,options);
+      qp = QPController(r,{},controller_data,options);
      
       % cascade IK/PD block
       options.Kp = 55.0*ones(obj.nq,1);
