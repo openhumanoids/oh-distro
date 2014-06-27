@@ -10,8 +10,8 @@
 #include <image_utils/jpeg.h>
 
 // Multisense Requires:
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <lcmtypes/multisense.h>
 #include <lcmtypes/multisense.hpp>
 
