@@ -26,11 +26,11 @@ group "1.drivers" {
 
 group "2.core" {
     cmd "aa-sync" {
-        exec = "drc-state-sync -b -e -k";
+        exec = "drc-state-sync -b";
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_mit.cfg";
         host = "robot";
     }
     cmd "model_LH_RH" {
@@ -53,11 +53,11 @@ group "3.p_and_c" {
 
 group "4.state_est" {
     cmd "state-sync-mit" {
-        exec = "drc-state-sync -e -k -o EST_ROBOT_STATE";
+        exec = "drc-state-sync";
         host = "robot";
     }
     cmd "se-fusion" {
-        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02_control.cfg";
+        exec = "se-fusion -U model_LH_RH.urdf -P drc_robot_02_mit.cfg";
         host = "robot";
     }
 }
