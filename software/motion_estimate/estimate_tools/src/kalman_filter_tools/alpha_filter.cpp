@@ -22,6 +22,10 @@ void AlphaFilter::processSample(Eigen::VectorXd& x,
   }
 
   x_filtered <<  alpha_*x_filtered_prev_  + (1.0 - alpha_)*x;
+  //std::cout << "pre: " << x.transpose()
+  //          << " | post: " << x_filtered.transpose()
+  //          << "\n";
+
   x_filtered_prev_ = x_filtered;
 }
 

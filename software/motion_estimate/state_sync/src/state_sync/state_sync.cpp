@@ -31,7 +31,7 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
 }
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
-                       const CommandLineConfig& cl_cfg_):
+                       boost::shared_ptr<CommandLineConfig> &cl_cfg_):
                        lcm_(lcm_), cl_cfg_(cl_cfg_){
 
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
@@ -40,7 +40,8 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   bot_param_add_update_subscriber(botparam_,
                                   onParamChangeSync, this);
    
-  // Get the Joint names and determine the correct configuration:
+  ////////////////////////////////////////////////////////////////////////////////////////
+  /// 1. Get the Joint names and determine the correct configuration:
   std::vector<std::string> joint_names = model_->getJointNames();
   
   if(find(joint_names.begin(), joint_names.end(), "left_f0_j0" ) != joint_names.end()){
@@ -84,8 +85,6 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     std::cout << "Robot fitted with a single head joint\n";
     head_joints_.name = joint_utils_.simple_head_joint_names;
   }
-  lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);
-  
   
   assignJointsStruct( atlas_joints_ );
   assignJointsStruct( head_joints_ );
@@ -97,7 +96,9 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
       << head_joints_.position.size() << " head, "
       << left_hand_joints_.position.size() << " left, "
       << right_hand_joints_.position.size() << " right\n";
-  
+
+
+  /// 2. Subscribe to required signals
   lcm::Subscription* sub0 = lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub1 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);  
@@ -105,10 +106,8 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   //lcm::Subscription* sub3 = lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
   lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
   lcm::Subscription* sub5 = lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
-  lcm::Subscription* sub6 =lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
-  
-  setPoseToZero(pose_BDI_);
-  setPoseToZero(pose_MIT_);
+  lcm::Subscription* sub6 = lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
+  lcm::Subscription* sub7 = lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);
   
   bool use_short_queue = true;
   if (use_short_queue){
@@ -119,10 +118,17 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     sub4->setQueueCapacity(1); 
     sub5->setQueueCapacity(1); 
     sub6->setQueueCapacity(1); 
+    sub7->setQueueCapacity(1);
   }
+
+  setPoseToZero(pose_BDI_);
+  setPoseToZero(pose_MIT_);
  
   
-  /// Pots and Encoders:
+  /// 3. Using Pots or Encoders:
+  cl_cfg_->use_encoder_joint_sensors = bot_param_get_boolean_or_fail(botparam_, "control.encoder_offsets.active" );
+  std::cout << "use_encoder_joint_sensors: " << cl_cfg_->use_encoder_joint_sensors << "\n";
+
   // pot offsets if pots are used, currently uncalibrated
   pot_joint_offsets_.assign(28,0.0);
   // encoder offsets if encoders are used
@@ -143,20 +149,27 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   use_encoder_.assign(28,false);
   enableEncoders(true);
 
-  utime_prev_ = 0;
+
+  /// 4. Joint Filtering
+  string joint_filter_type = bot_param_get_str_or_fail(botparam_, "control.filtering.joints.type" );
+  if (joint_filter_type == "kalman"){
+    cl_cfg_->use_joint_kalman_filter = true;
+  }else if(joint_filter_type == "backlash"){
+    cl_cfg_->use_joint_backlash_filter = true;
+  }// else none
   
   
-  if (cl_cfg_.use_kalman_filtering || cl_cfg_.use_backlash_filtering){
+  if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter){
     // Shared params:
-    double process_noise_pos = bot_param_get_double_or_fail(botparam_, "control.filtering.process_noise_pos" );
-    double process_noise_vel = bot_param_get_double_or_fail(botparam_, "control.filtering.process_noise_vel" );
-    double observation_noise = bot_param_get_double_or_fail(botparam_, "control.filtering.observation_noise" );
+    double process_noise_pos = bot_param_get_double_or_fail(botparam_, "control.filtering.joints.process_noise_pos" );
+    double process_noise_vel = bot_param_get_double_or_fail(botparam_, "control.filtering.joints.process_noise_vel" );
+    double observation_noise = bot_param_get_double_or_fail(botparam_, "control.filtering.joints.observation_noise" );
 
-    int n_filters = bot_param_get_array_len (botparam_, "control.filtering.index");  
+    int n_filters = bot_param_get_array_len (botparam_, "control.filtering.joints.index");
     int filter_idx[n_filters];
-    bot_param_get_int_array_or_fail(botparam_, "control.filtering.index", &filter_idx[0], n_filters);  
+    bot_param_get_int_array_or_fail(botparam_, "control.filtering.joints.index", &filter_idx[0], n_filters);
 
-    if (cl_cfg_.use_kalman_filtering){
+    if (cl_cfg_->use_joint_kalman_filter){
       for (size_t i=0;i < n_filters; i++){
         EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (process_noise_pos, process_noise_vel, observation_noise); // uses Eigen2d
         filter_idx_.push_back(filter_idx[i]);
@@ -164,9 +177,9 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
       }
       std::cout << "Created " << joint_kf_.size() << " Kalman Filters with noise "<< process_noise_pos << ", " << process_noise_vel << " | " << observation_noise << "\n";
 
-    }else if(cl_cfg_.use_backlash_filtering){
-      double backlash_alpha = bot_param_get_double_or_fail(botparam_, "control.filtering.backlash_alpha" );
-      double backlash_crossing_time_max = bot_param_get_double_or_fail(botparam_, "control.filtering.backlash_crossing_time_max" );
+    }else if(cl_cfg_->use_joint_backlash_filter){
+      double backlash_alpha = bot_param_get_double_or_fail(botparam_, "control.filtering.joints.backlash_alpha" );
+      double backlash_crossing_time_max = bot_param_get_double_or_fail(botparam_, "control.filtering.joints.backlash_crossing_time_max" );
 
       for (size_t i=0;i < n_filters; i++){
         EstimateTools::BacklashFilter* a_kf = new EstimateTools::BacklashFilter (process_noise_pos, process_noise_vel, observation_noise); // uses Eigen2d
@@ -181,12 +194,16 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
   }
   
-
-  if (1==0){// alpha filter on rotation rates
+  /// 5. Floating Base Filtering
+  string rotation_rate_filter_type = bot_param_get_str_or_fail(botparam_, "control.filtering.rotation_rate.type" );
+  if (rotation_rate_filter_type == "alpha" ){// alpha filter on rotation rates
+    cl_cfg_->use_rotation_rate_alpha_filter = true;
     double alpha_rotation_rate = bot_param_get_double_or_fail(botparam_, "control.filtering.rotation_rate.alpha" );
     rotation_rate_alpha_filter_ = new EstimateTools::AlphaFilter (alpha_rotation_rate);
+    std::cout << "Using Rotation Rate Alpha filter with " << alpha_rotation_rate << "\n";
   }
   
+  utime_prev_ = 0;
 }
 
 void state_sync::setPoseToZero(PoseT &pose){
@@ -348,7 +365,7 @@ void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   head_joints_.velocity = msg->joint_velocity;
   head_joints_.effort = msg->joint_effort;
   
-  if (cl_cfg_.standalone_head){
+  if (cl_cfg_->standalone_head){
     drc::force_torque_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }
@@ -364,7 +381,7 @@ void state_sync::leftHandHandler(const lcm::ReceiveBuffer* rbuf, const std::stri
   left_hand_joints_.velocity = msg->joint_velocity;
   left_hand_joints_.effort = msg->joint_effort;
   
-  if (cl_cfg_.standalone_hand){ // assumes only one hand is actively publishing state
+  if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
     drc::force_torque_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }  
@@ -379,7 +396,7 @@ void state_sync::rightHandHandler(const lcm::ReceiveBuffer* rbuf, const std::str
   right_hand_joints_.velocity = msg->joint_velocity;
   right_hand_joints_.effort = msg->joint_effort;
   
-  if (cl_cfg_.standalone_hand){ // assumes only one hand is actively publishing state
+  if (cl_cfg_->standalone_hand){ // assumes only one hand is actively publishing state
     drc::force_torque_t force_torque_msg;
     publishRobotState(msg->utime, force_torque_msg);
   }    
@@ -401,9 +418,9 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
   for (size_t i=0; i <  filter_idx_.size(); i++){
     double x_filtered;
     double x_dot_filtered;
-    if ( cl_cfg_.use_kalman_filtering ){
+    if ( cl_cfg_->use_joint_kalman_filter ){
       joint_kf_[i]->processSample(t,  joint_position[filter_idx_[i]] , joint_velocity[filter_idx_[i]] , x_filtered, x_dot_filtered);
-    }else if( cl_cfg_.use_backlash_filtering ){
+    }else if( cl_cfg_->use_joint_backlash_filter ){
       joint_backlashfilter_[i]->processSample(t,  joint_position[filter_idx_[i]] , joint_velocity[filter_idx_[i]] , x_filtered, x_dot_filtered);
     }
     joint_position[ filter_idx_[i] ] = x_filtered;
@@ -434,7 +451,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   // Overwrite the actuator joint positions and velocities with the after-transmission 
   // sensor values for the ARMS ONLY (first exposed in v2.7.0 of BDI's API)
   // NB: this assumes that they are provided at the same rate as ATLAS_STATE
-  if (cl_cfg_.use_encoder_joint_sensors ){
+  if (cl_cfg_->use_encoder_joint_sensors ){
     if (atlas_joints_.position.size() == atlas_joints_out_.position.size()   ){
       if (atlas_joints_.velocity.size() == atlas_joints_out_.velocity.size()   ){
         for (int i=0; i < atlas_joints_out_.position.size() ; i++ ) { 
@@ -476,7 +493,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
     }
   }
 
-  if (cl_cfg_.use_kalman_filtering || cl_cfg_.use_backlash_filtering ){//  atlas_joints_ filtering here
+  if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
   }
   
@@ -574,21 +591,22 @@ bool state_sync::insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
   // convert here:
   Eigen::Matrix3d R = Eigen::Matrix3d( Eigen::Quaterniond( pose.orientation[0], pose.orientation[1], pose.orientation[2],pose.orientation[3] ));
   Eigen::Vector3d lin_vel_local = R*Eigen::Vector3d ( pose.vel[0], pose.vel[1], pose.vel[2]);
+  msg.twist.linear_velocity.x = lin_vel_local[0];
+  msg.twist.linear_velocity.y = lin_vel_local[1];
+  msg.twist.linear_velocity.z = lin_vel_local[2];
+
   
-  // convert to Xd and filter:
+  ///////////// Rotation Rate Alpha Filter ///////////////////////////////
   Eigen::VectorXd rr_prefiltered(3), rr_filtered(3);
-  rr_filtered << pose.rotation_rate[0], pose.rotation_rate[1], pose.rotation_rate[2] ;
-  if (1==0){
+  rr_prefiltered << pose.rotation_rate[0], pose.rotation_rate[1], pose.rotation_rate[2] ;
+  if ( cl_cfg_->use_rotation_rate_alpha_filter){
     rotation_rate_alpha_filter_->processSample(rr_prefiltered, rr_filtered    );
   }else{
     rr_filtered = rr_prefiltered; 
   }
+  ////////////////////////////////////////////////////////
+  
   Eigen::Vector3d rot_vel_local = R*Eigen::Vector3d ( rr_filtered[0], rr_filtered[1], rr_filtered[2] );
-  
-  msg.twist.linear_velocity.x = lin_vel_local[0];
-  msg.twist.linear_velocity.y = lin_vel_local[1];
-  msg.twist.linear_velocity.z = lin_vel_local[2];
-  
   msg.twist.angular_velocity.x = rot_vel_local[0];
   msg.twist.angular_velocity.y = rot_vel_local[1];
   msg.twist.angular_velocity.z = rot_vel_local[2];
@@ -664,22 +682,22 @@ void state_sync::publishRobotState(int64_t utime_in,  const  drc::force_torque_t
   
   // std::cout << "sending " << robot_state_msg.num_joints << " joints\n";
 
-  if (cl_cfg_.simulation_mode){ // to be deprecated..
+  if (cl_cfg_->simulation_mode){ // to be deprecated..
     lcm_->publish("TRUE_ROBOT_STATE", &robot_state_msg);    
   }
   
-  if (cl_cfg_.bdi_motion_estimate){
+  if (cl_cfg_->bdi_motion_estimate){
     if ( insertPoseInRobotState(robot_state_msg, pose_BDI_) ){
       bot_core::pose_t pose_body;
       insertPoseInBotState(pose_body, pose_BDI_);
-      if (cl_cfg_.publish_pose_body) lcm_->publish("POSE_BODY", &pose_body);
-      lcm_->publish( cl_cfg_.output_channel  , &robot_state_msg);
+      if (cl_cfg_->publish_pose_body) lcm_->publish("POSE_BODY", &pose_body);
+      lcm_->publish( cl_cfg_->output_channel  , &robot_state_msg);
     }
-  }else if(cl_cfg_.standalone_head || cl_cfg_.standalone_hand ){
-    lcm_->publish( cl_cfg_.output_channel , &robot_state_msg);
+  }else if(cl_cfg_->standalone_head || cl_cfg_->standalone_hand ){
+    lcm_->publish( cl_cfg_->output_channel , &robot_state_msg);
   }else{ // typical motion estimation
     if ( insertPoseInRobotState(robot_state_msg, pose_MIT_) ){
-      lcm_->publish( cl_cfg_.output_channel, &robot_state_msg);
+      lcm_->publish( cl_cfg_->output_channel, &robot_state_msg);
     }
   }
 }
@@ -695,36 +713,18 @@ void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
 
 int
 main(int argc, char ** argv){
-  CommandLineConfig cl_cfg;
-  cl_cfg.standalone_head = false;
-  cl_cfg.standalone_hand = false;
-  cl_cfg.bdi_motion_estimate = false;
-  cl_cfg.simulation_mode = false;
-  cl_cfg.use_encoder_joint_sensors = false;
-  cl_cfg.publish_pose_body = true;
-  cl_cfg.use_kalman_filtering = false;
-  cl_cfg.output_channel = "EST_ROBOT_STATE";
+  boost::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig() );  
   ConciseArgs opt(argc, (char**)argv);
-  opt.add(cl_cfg.standalone_head, "l", "standalone_head","Standalone Head");
-  opt.add(cl_cfg.standalone_hand, "f", "standalone_hand","Standalone Hand");
-  opt.add(cl_cfg.bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
-  opt.add(cl_cfg.simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
-  opt.add(cl_cfg.use_encoder_joint_sensors, "e", "encoder","Use the encoder joint sensors (in the arms)");
-  opt.add(cl_cfg.output_channel, "o", "output_channel","Output Channel for robot state msg");
-  opt.add(cl_cfg.publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
-  opt.add(cl_cfg.use_kalman_filtering, "k", "kalman_filter","Use Kalman filtering on joints");
-  opt.add(cl_cfg.use_backlash_filtering,"B", "backlash_filter","Use special Backlash crossing filter");
+  opt.add(cl_cfg->standalone_head, "l", "standalone_head","Standalone Head");
+  opt.add(cl_cfg->standalone_hand, "f", "standalone_hand","Standalone Hand");
+  opt.add(cl_cfg->bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
+  opt.add(cl_cfg->simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
+  opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
+  opt.add(cl_cfg->publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
   opt.parse();
   
-  std::cout << "standalone_head: " << cl_cfg.standalone_head << "\n";
-  std::cout << "publish_pose_body: " << cl_cfg.publish_pose_body << "\n";
-  std::cout << "Use transmission joint sensors: " << cl_cfg.use_encoder_joint_sensors << " (arms only)\n";
-  std::cout << "Use kalman filters: " << cl_cfg.use_kalman_filtering << "\n";
-  std::cout << "Use kalman use_backlash_filtering: " << cl_cfg.use_backlash_filtering << "\n";
-  if ( cl_cfg.use_backlash_filtering && cl_cfg.use_kalman_filtering){
-    std::cout << "cannot use backlash_filter and kalman_filter. choose one\n"; 
-    exit(-1);
-  }
+  std::cout << "standalone_head: " << cl_cfg->standalone_head << "\n";
+  std::cout << "publish_pose_body: " << cl_cfg->publish_pose_body << "\n";
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
   if(!lcm->good())
