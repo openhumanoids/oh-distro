@@ -28,6 +28,7 @@
 #include "atlas/AtlasControlTypes.h"
 #include "atlas/AtlasJointNames.h"
 #include <estimate_tools/simple_kalman_filter.hpp>
+#include <estimate_tools/backlash_filter.hpp>
 
 struct Joints { 
   std::vector<float> position;
@@ -36,14 +37,24 @@ struct Joints {
   std::vector<std::string> name;
 };
 
+
+/////////////////////////////////////
+struct CommandLineConfig
+{
+  bool standalone_head, standalone_hand;
+  bool bdi_motion_estimate;
+  bool simulation_mode;
+  bool use_encoder_joint_sensors;
+  std::string output_channel;
+  bool publish_pose_body;
+  bool use_kalman_filtering;
+  bool use_backlash_filtering;
+};
+
 ///////////////////////////////////////////////////////////////
 class state_sync{
   public:
-    state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
-      bool standalone_head_, bool standalone_hand_,
-      bool spoof_motion_estimation, bool simulation_mode_,
-      bool use_encoder_joint_sensors_, std::string output_channel_,
-      bool publish_pose_body_, bool use_kalman_filtering_);
+    state_sync(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_);
     
     ~state_sync(){
     }
@@ -55,19 +66,12 @@ class state_sync{
     void setEncodersFromParam();
     
   private:
+    const CommandLineConfig cl_cfg_;
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
     BotParam* botparam_;
     JointUtils joint_utils_;
     
-    bool standalone_head_, standalone_hand_;
-    bool bdi_motion_estimate_;
-    bool simulation_mode_;
-    bool use_encoder_joint_sensors_;
-    std::string output_channel_;
-    bool publish_pose_body_;
-    bool use_kalman_filtering_;
-
     long utime_prev_;
     
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg);
@@ -95,10 +99,11 @@ class state_sync{
     PoseT pose_MIT_;
     void setPoseToZero(PoseT &pose);
     
-    // Kalman Filters for joint angles:
+    // Kalman/Backlash Filters for joint angles:
     void filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity);
-    std::vector<EstimateTools::SimpleKalmanFilter*> joint_kf_;
     std::vector<int> filter_idx_;
+    std::vector<EstimateTools::SimpleKalmanFilter*> joint_kf_;
+    std::vector<EstimateTools::BacklashFilter*> joint_backlashfilter_;
     
     
     

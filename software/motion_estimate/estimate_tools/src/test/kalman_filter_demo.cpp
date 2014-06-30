@@ -19,8 +19,11 @@
 #include <estimate_tools/kalman_filter.hpp> // Eigen::VectorXf KF
 #include <estimate_tools/simple_kalman_filter.hpp> // Eigen::Vector2f KF
 #include <estimate_tools/Filter.hpp> // low pass f
+#include <estimate_tools/backlash_filter.hpp> // Eigen::VectorXf KF
 
 #include <Eigen/Core>
+
+#include <drc_utils/joint_utils.hpp>
 
 using namespace std;
 using namespace boost::assign; // bring 'operator+()' into scope
@@ -45,6 +48,7 @@ class App{
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
+    JointUtils joint_utils_;
 
     void atlasStateHandler(const lcm::ReceiveBuffer* rbuf, 
                            const std::string& channel, const  drc::atlas_state_t* msg); 
@@ -57,6 +61,7 @@ class App{
     std::vector<EstimateTools::KalmanFilter*> joint_kf_;
     std::vector<EstimateTools::SimpleKalmanFilter*> joint_skf_;
     std::vector<LowPassFilter*> lpfilter_;
+    std::vector<EstimateTools::BacklashFilter*> backlashfilter_;
     
     std::vector<int> filter_idx_;
     
@@ -68,18 +73,23 @@ class App{
 App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
     lcm_(lcm_), cl_cfg_(cl_cfg_){
       
-  //lcm_->subscribe( "EST_ROBOT_STATE" ,&App::ersHandler,this);
-  lcm_->subscribe( "ATLAS_STATE" ,&App::atlasStateHandler,this);
-  //lcm::Subscription* sub = 
-  // sub->setQueueCapacity(1);  
+  lcm::Subscription* sub = lcm_->subscribe( "ATLAS_STATE" ,&App::atlasStateHandler,this);
+  sub->setQueueCapacity(1);
   
       
   
   // all of atlas:
-  filter_idx_ = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27};
+  // filter_idx_ = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27};
   // legs
-  //filter_idx_ = {4,5,6,7,8,9,10,11,12,13,14,15};
+  filter_idx_ = {4,5,6,7,8,9,10,11,12,13,14,15};
   // std::cout << "filter_idx_ " << filter_idx_.size() << "\n";
+  // r_hpz
+  //filter_idx_ = {10};
+  
+
+  double process_noise_pos = 0.02;
+  double process_noise_vel = 0.0005;
+  double observation_noise = 0.0002;
 
   if (cl_cfg_.mode == 0){ // this mode is broken
     kf = new EstimateTools::KalmanFilter( 41 );
@@ -91,16 +101,24 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
     std::cout << "Created " << joint_kf_.size() << " Kalman Filters\n";
   } else if (cl_cfg_.mode==2) {
     for (size_t i=0;i < filter_idx_.size(); i++){
-      EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (0.01, 5E-4);
+      EstimateTools::SimpleKalmanFilter* a_kf = new EstimateTools::SimpleKalmanFilter (process_noise_pos, process_noise_vel, observation_noise);
       joint_skf_.push_back(a_kf) ;
     }
     std::cout << "Created " << joint_skf_.size() << " Simple Kalman Filters\n";
+    std::cout << process_noise_pos << " " << process_noise_vel << " | " << observation_noise << "\n";
   } else if (cl_cfg_.mode==3) {
     for (size_t i=0;i < filter_idx_.size(); i++){
       LowPassFilter* a_filter = new LowPassFilter ();
       lpfilter_.push_back(a_filter);
     }
     std::cout << "Created " << lpfilter_.size() << " Low Pass Filters\n";
+  } else if (cl_cfg_.mode==4) {
+    for (size_t i=0;i < filter_idx_.size(); i++){
+      EstimateTools::BacklashFilter* a_filter = new EstimateTools::BacklashFilter (process_noise_pos, process_noise_vel, observation_noise);
+      backlashfilter_.push_back(a_filter);
+    }
+    std::cout << "Created " << backlashfilter_.size() << " Backlash Filters\n";
+    std::cout << process_noise_pos << " " << process_noise_vel << " | " << observation_noise << "\n";
   }
   
   
@@ -151,8 +169,10 @@ void App::atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
   
   std::vector<float> jp_out;
   std::vector<float> jv_out;
-  jp_out.assign(41,0);
-  jv_out.assign(41,0);
+  jp_out = jp;
+  jv_out = jv;
+  //jp_out.assign(41,0);
+  //jv_out.assign(41,0);
   
   
   double t = (double) msg->utime*1E-6;
@@ -197,31 +217,60 @@ void App::atlasStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& c
     for (size_t i=0; i <  filter_idx_.size(); i++){
       jp_out[ filter_idx_[i] ] = lpfilter_[i]->processSample( jp[filter_idx_[i]] );
     }
+  }else if (cl_cfg_.mode==4){ // N 1x1 array of backlash velocity filters with a kalman on position
+    for (size_t i=0; i <  filter_idx_.size(); i++){
+      double x_filtered;
+      double x_dot_filtered;
+      backlashfilter_[i]->processSample(t,  jp[filter_idx_[i]] , jv_out[filter_idx_[i]] , x_filtered, x_dot_filtered);
+      jp_out[ filter_idx_[i] ] = x_filtered;
+      jv_out[ filter_idx_[i] ] = x_dot_filtered;
+    }
   }
 
   
   
   
   
-  //drc::robot_state_t msg_out = *msg;
-  drc::atlas_state_t msg_out = *msg; 
-  msg_out.joint_position = jp_out; 
-  msg_out.joint_velocity = jv_out;
- 
-  lcm_->publish( cl_cfg_.output_channel , &msg_out);     
 
-  
+  drc::robot_state_t robot_state_msg;
+  robot_state_msg.utime = msg->utime;
+  // Pelvis Pose:
+  robot_state_msg.pose.translation.x =0;
+  robot_state_msg.pose.translation.y =0;
+  robot_state_msg.pose.translation.z =0;
+  robot_state_msg.pose.rotation.w = 1;
+  robot_state_msg.pose.rotation.x = 0;
+  robot_state_msg.pose.rotation.y = 0;
+  robot_state_msg.pose.rotation.z = 0;
+  robot_state_msg.twist.linear_velocity.x  = 0;
+  robot_state_msg.twist.linear_velocity.y  = 0;
+  robot_state_msg.twist.linear_velocity.z  = 0;
+  robot_state_msg.twist.angular_velocity.x = 0;
+  robot_state_msg.twist.angular_velocity.y = 0;
+  robot_state_msg.twist.angular_velocity.z = 0;
+
+  for (size_t i = 0; i < msg->joint_position.size(); i++)  {
+    robot_state_msg.joint_position.push_back( jp_out[i] );
+    robot_state_msg.joint_velocity.push_back( jv_out[i]);
+    robot_state_msg.joint_effort.push_back( msg->joint_effort[i] ); // not filtered
+  }
+  robot_state_msg.joint_name = joint_utils_.atlas_joint_names;
+  robot_state_msg.num_joints = robot_state_msg.joint_position.size();
+
+  lcm_->publish(cl_cfg_.output_channel , &robot_state_msg);
+
+
+
+
 
   int64_t toc = _timestamp_now();
   int64_t dtime = (toc-tic);
   //std::cout << dtime << " end\n"; 
-  
   dtime_running_ +=  dtime;
   count_running_ ++;
-  
   if (count_running_ % 1000 ==0){
     double dtime_mean =  dtime_running_*1E-6/count_running_;
-    std::cout << dtime_mean << " mean of " << count_running_ << "\n";
+    //std::cout << dtime_mean << " mean of " << count_running_ << "\n";
   }
   
   
@@ -279,7 +328,7 @@ void App::readFile(){
 int main(int argc, char ** argv) {
   CommandLineConfig cl_cfg;
   cl_cfg.mode = 0; 
-  cl_cfg.output_channel = "ATLAS_STATE_FILTERED";
+  cl_cfg.output_channel = "EST_ROBOT_STATE";
   ConciseArgs opt(argc, (char**)argv);
   opt.add(cl_cfg.mode, "f", "mode","Filter Type");
   opt.add(cl_cfg.output_channel, "o", "output_channel","Output Filter Channel");

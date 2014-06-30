@@ -1,5 +1,5 @@
 #ifndef __SIMPLE_KALMAN_FILTER_HPP__
-#define __IMPLE_KALMAN_FILTER_HPP__
+#define __SIMPLE_KALMAN_FILTER_HPP__
 
 #include <iostream>
 #include <inttypes.h>
