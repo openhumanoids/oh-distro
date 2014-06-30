@@ -189,7 +189,7 @@ qdtraj = fnder(qtraj,1);
 qddtraj = fnder(qtraj,2);
 
 % set up QP controller params
-foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
 
 if use_zmp
   % build TI-ZMP controller

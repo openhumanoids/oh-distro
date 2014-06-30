@@ -99,7 +99,7 @@ rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
 
 % set up QP controller params
-foot_support = SupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
+foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
 
 if use_random_traj
   [xposes,info,~,~,~,constraints,ikoptions] = randomPose(r_ch,x0,num_random_pose);

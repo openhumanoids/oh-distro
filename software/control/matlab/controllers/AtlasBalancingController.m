@@ -1,4 +1,4 @@
-classdef AtlasStandingController < DRCController
+classdef AtlasBalancingController < DRCController
   
   properties (SetAccess=protected,GetAccess=protected)
     robot;
@@ -9,7 +9,7 @@ classdef AtlasStandingController < DRCController
   
   methods
   
-    function obj = AtlasStandingController(name,r,options)
+    function obj = AtlasBalancingController(name,r,options)
       typecheck(r,'Atlas');
 
       if nargin < 3
@@ -50,7 +50,7 @@ classdef AtlasStandingController < DRCController
       limp = LinearInvertedPendulum(com(3));
       [~,V] = lqr(limp,comgoal);
       
-      foot_support = SupportState(r,fidx);
+      foot_support = RigidBodySupportState(r,fidx);
       
       link_constraints(1).link_ndx = fidx(1);
       link_constraints(1).pt = [0;0;0];
@@ -92,12 +92,11 @@ classdef AtlasStandingController < DRCController
       obj.foot_idx = fidx;
       obj.nq = getNumDOF(r);
       
-    
-
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
       obj = addLCMTransition(obj,'CONFIGURATION_TRAJ',drc.configuration_traj_t(),name); % for standing/reaching tasks
-
+      obj = addLCMTransition(obj,'WALKING_CONTROLLER_PLAN_RESPONSE',drc.walking_plan_t(),'walk');
+      
     end
     
     function msg = status_message(obj,t_sim,t_ctrl)

@@ -331,7 +331,7 @@ while (1)
           support_point_ind_unique{j} = unique(vertcat(support_point_ind{ic==j}));
         end
         surface_body_ind = surface_body_ind(ia);
-        support_states = [support_states; {SupportState(r_Atlas,support_body_ind_unique,support_point_ind_unique,surface_body_ind)}];
+        support_states = [support_states; {RigidBodySupportState(r_Atlas,support_body_ind_unique,support_point_ind_unique,surface_body_ind)}];
         
         
         kinsol = doKinematics(r,q_key_time_samples(:,i));
