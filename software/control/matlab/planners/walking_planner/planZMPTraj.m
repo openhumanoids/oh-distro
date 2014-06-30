@@ -160,7 +160,7 @@ for i=1:length(zmp_ts)
   else
     cpts = {1:4};
   end
-  supports(i) = SupportState(biped,foot_supports(:,i),cpts);
+  supports(i) = RigidBodySupportState(biped,foot_supports(:,i),cpts);
 end
 
 if options.debug
