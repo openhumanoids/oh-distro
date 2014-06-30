@@ -78,7 +78,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "aa-sync" {
-        exec = "drc-state-sync -e -o EST_ROBOT_STATE";
+        exec = "drc-state-sync";
         host = "robot";
     }
     cmd "fusion" {
@@ -94,7 +94,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_mit.cfg";
         host = "robot";
     }
     cmd "aff_server" {
@@ -181,7 +181,7 @@ group "a.3.models" {
 
 group "b.1.core" {
     cmd "base_viewer" {
-        exec = "drc-viewer -c drc_robot_02_control.cfg"; 
+        exec = "drc-viewer -c drc_robot_02_mit.cfg"; 
         host = "base";
     }
     cmd "aff_server" {
@@ -197,7 +197,7 @@ group "b.1.core" {
         host = "base";
     }
     cmd "param_server" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_mit.cfg";
         host = "base";
     }
     cmd "image-rx" {
@@ -280,21 +280,6 @@ group "m.misc" {
     }
 }
 
-
-group "m.state_est" {
-    cmd "state-sync-bdi-separate" {
-        exec = "drc-state-sync -b -e -o EST_ROBOT_STATE_BDI -p";
-        host = "robot";
-    }
-    cmd "state-sync-bdi-old" {
-        exec = "drc-state-sync -b -e -o EST_ROBOT_STATE";
-        host = "robot";
-    }
-    cmd "old-viewer" {
-        exec = "drc-viewer -a";
-        host = "robot";
-    }
-}
 
 #################################################################
 

@@ -29,6 +29,8 @@
 #include "atlas/AtlasJointNames.h"
 #include <estimate_tools/simple_kalman_filter.hpp>
 #include <estimate_tools/backlash_filter.hpp>
+#include <estimate_tools/alpha_filter.hpp>
+
 
 struct Joints { 
   std::vector<float> position;
@@ -39,22 +41,41 @@ struct Joints {
 
 
 /////////////////////////////////////
-struct CommandLineConfig
-{
-  bool standalone_head, standalone_hand;
-  bool bdi_motion_estimate;
-  bool simulation_mode;
-  bool use_encoder_joint_sensors;
-  std::string output_channel;
-  bool publish_pose_body;
-  bool use_kalman_filtering;
-  bool use_backlash_filtering;
+class CommandLineConfig{
+  public:
+    CommandLineConfig(){
+      // Read from command line:
+      standalone_head = false;
+      standalone_hand = false;
+      bdi_motion_estimate = false;
+      simulation_mode = false;
+      publish_pose_body = true;
+      output_channel = "EST_ROBOT_STATE";
+
+      // Defaults - not read from command line:
+      use_encoder_joint_sensors = false;
+      use_joint_kalman_filter = false;
+      use_joint_backlash_filter = false;
+      use_rotation_rate_alpha_filter = false;
+    }
+    ~CommandLineConfig(){};
+
+    bool standalone_head, standalone_hand;
+    bool bdi_motion_estimate;
+    bool simulation_mode;
+    bool publish_pose_body;
+    std::string output_channel;
+
+    bool use_encoder_joint_sensors;
+    bool use_joint_kalman_filter;
+    bool use_joint_backlash_filter;
+    bool use_rotation_rate_alpha_filter;
 };
 
 ///////////////////////////////////////////////////////////////
 class state_sync{
   public:
-    state_sync(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_);
+    state_sync(boost::shared_ptr<lcm::LCM> &lcm_, boost::shared_ptr<CommandLineConfig> &cl_cfg_);
     
     ~state_sync(){
     }
@@ -66,7 +87,7 @@ class state_sync{
     void setEncodersFromParam();
     
   private:
-    const CommandLineConfig cl_cfg_;
+    boost::shared_ptr<CommandLineConfig> cl_cfg_;
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
     BotParam* botparam_;
@@ -105,6 +126,8 @@ class state_sync{
     std::vector<EstimateTools::SimpleKalmanFilter*> joint_kf_;
     std::vector<EstimateTools::BacklashFilter*> joint_backlashfilter_;
     
+    // Alpha Filters:
+    EstimateTools::AlphaFilter* rotation_rate_alpha_filter_;
     
     
     // Keep two different offset vectors, for clarity:
@@ -115,6 +138,8 @@ class state_sync{
 
     void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
     void appendJoints(drc::robot_state_t& msg_out, Joints joints);
+    
+    bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose);
 };    
 
 #endif
