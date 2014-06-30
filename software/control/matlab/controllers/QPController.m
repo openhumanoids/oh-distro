@@ -219,14 +219,14 @@ classdef QPController < MIMODrakeSystem
     C_ls = ctrl_data.C;
     D_ls = ctrl_data.D;
     S = ctrl_data.S;
-    Sdot = 0*S; % constant for ZMP/double integrator dynamics
+%     Sdot = 0*S; % constant for ZMP/double integrator dynamics
     x0 = ctrl_data.x0 - [ctrl_data.plan_shift(1:2);0;0]; % for x-y plan adjustment
     u0 = ctrl_data.u0;
     if (ctrl_data.is_time_varying)
       s1 = fasteval(ctrl_data.s1,t);
 %       s2 = fasteval(ctrl_data.s2,t);
-      s1dot = fasteval(ctrl_data.s1dot,t);
-      s2dot = fasteval(ctrl_data.s2dot,t);
+      s1dot = [0;0;0;0]; %fasteval(ctrl_data.s1dot,t);
+      s2dot = 0; %fasteval(ctrl_data.s2dot,t);
       y0 = fasteval(ctrl_data.y0,t) - ctrl_data.plan_shift(1:2); % for x-y plan adjustment
     else
       s1 = ctrl_data.s1;

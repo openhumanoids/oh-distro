@@ -9,6 +9,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
     pd_plus_qp_block;
     velocity_int_block;
     qtraj_eval_block;
+    footstep_plan_shift_block;
   end
   
   methods
@@ -56,22 +57,22 @@ classdef AtlasWalkingWrapper < DrakeSystem
 
       % instantiate QP controller
       options.slack_limit = 30;
-      options.w_qdd = 0.0025*ones(nq,1);
+      options.w_qdd = 0.001*ones(obj.nq,1);
       options.W_kdot = 0*eye(3);
       options.w_grf = 0.0;
       options.w_slack = 0.005;
-      options.debug = false;
+      options.debug = true;
       options.use_mex = true;
-      options.contact_threshold = 0.015;
+      options.contact_threshold = 0.01;
       options.output_qdd = true;
       options.solver = 0; % 0 fastqp, 1 gurobi
       options.input_foot_contacts = true;
 
-      qp = QPController(r,{},ctrl_data,options);
+      qp = QPController(r,{},controller_data,options);
 
       % cascade IK/PD block
-      options.Kp = 50.0*ones(nq,1);
-      options.Kd = 10*ones(nq,1);
+      options.Kp = 50.0*ones(obj.nq,1);
+      options.Kd = 8*ones(obj.nq,1);
       % options.Kp(findJointIndices(r,'hpz')) = 70.0;
       % options.Kd(findJointIndices(r,'hpz')) = 14.0;
       % options.Kd(findJointIndices(r,'kny')) = 13.0;
@@ -82,7 +83,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       % options.Kp(6) = 40.0;
       % options.Kd(6) = 12.0;
 
-      pd = IKPDBlock(r,ctrl_data,options);
+      pd = IKPDBlock(r,controller_data,options);
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -104,9 +105,9 @@ classdef AtlasWalkingWrapper < DrakeSystem
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       options.use_lcm = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
-      options.zero_ankles_on_contact = false;
+      options.zero_ankles_on_contact = true;
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
-      obj.footstep_plan_shift_block = FootstepPlanShiftBlock(r,ctrl_data);
+      obj.footstep_plan_shift_block = FootstepPlanShiftBlock(r,controller_data);
 
       controller_data.qd_int_state = zeros(obj.velocity_int_block.getStateFrame.dim,1);
       
@@ -123,7 +124,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       end
       
       % TODO: THIS IS TEMPORARY UNTIL MAURICE PUTS IT IN STATE SYNC
-      alpha = 0.8;
+      alpha = 0.75;
       pelvis_angv_filt = alpha*pelvis_angv_filt + (1-alpha)*x(obj.nq+(4:6));
       x(obj.nq+(4:6)) = pelvis_angv_filt;
       
@@ -132,14 +133,13 @@ classdef AtlasWalkingWrapper < DrakeSystem
 
       % footstep plan shift
       junk = output(obj.footstep_plan_shift_block,t,[],x);
-
       
       % qtraj eval
       q_des_and_x = output(obj.qtraj_eval_block,t,[],x);
       q_des = q_des_and_x(1:obj.nq);
       
       % IK/QP
-      u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; x; fc]);
+      u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; fc; x; fc]);
       u=u_and_qdd(1:obj.nu);
       qdd=u_and_qdd(obj.nu+(1:obj.nq));
 
