@@ -180,6 +180,13 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
     }
 
   }
+  
+
+  if (1==0){// alpha filter on rotation rates
+    double alpha_rotation_rate = bot_param_get_double_or_fail(botparam_, "control.filtering.rotation_rate.alpha" );
+    rotation_rate_alpha_filter_ = new EstimateTools::AlphaFilter (alpha_rotation_rate);
+  }
+  
 }
 
 void state_sync::setPoseToZero(PoseT &pose){
@@ -547,7 +554,7 @@ void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::strin
 
 
 // Returns false if the pose is old or hasn't appeared yet
-bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
+bool state_sync::insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
   // TODO: add comparison of Atlas State utime and Pose's utime
   //if (pose.utime ==0){
   //  std::cout << "haven't received pelvis pose, refusing to publish ERS\n";
@@ -563,11 +570,20 @@ bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose){
   msg.pose.rotation.z = pose.orientation[3];
 
   // Both incoming velocities (from PoseT) are assumed to be in body frame, 
-  // convention is for EST_ROBOT_STATE to be in linear frame
+  // convention is for EST_ROBOT_STATE to be in local frame
   // convert here:
   Eigen::Matrix3d R = Eigen::Matrix3d( Eigen::Quaterniond( pose.orientation[0], pose.orientation[1], pose.orientation[2],pose.orientation[3] ));
   Eigen::Vector3d lin_vel_local = R*Eigen::Vector3d ( pose.vel[0], pose.vel[1], pose.vel[2]);
-  Eigen::Vector3d rot_vel_local = R*Eigen::Vector3d ( pose.rotation_rate[0], pose.rotation_rate[1], pose.rotation_rate[2]);
+  
+  // convert to Xd and filter:
+  Eigen::VectorXd rr_prefiltered(3), rr_filtered(3);
+  rr_filtered << pose.rotation_rate[0], pose.rotation_rate[1], pose.rotation_rate[2] ;
+  if (1==0){
+    rotation_rate_alpha_filter_->processSample(rr_prefiltered, rr_filtered    );
+  }else{
+    rr_filtered = rr_prefiltered; 
+  }
+  Eigen::Vector3d rot_vel_local = R*Eigen::Vector3d ( rr_filtered[0], rr_filtered[1], rr_filtered[2] );
   
   msg.twist.linear_velocity.x = lin_vel_local[0];
   msg.twist.linear_velocity.y = lin_vel_local[1];

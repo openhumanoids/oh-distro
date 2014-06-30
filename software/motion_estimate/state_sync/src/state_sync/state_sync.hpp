@@ -29,6 +29,8 @@
 #include "atlas/AtlasJointNames.h"
 #include <estimate_tools/simple_kalman_filter.hpp>
 #include <estimate_tools/backlash_filter.hpp>
+#include <estimate_tools/alpha_filter.hpp>
+
 
 struct Joints { 
   std::vector<float> position;
@@ -105,6 +107,8 @@ class state_sync{
     std::vector<EstimateTools::SimpleKalmanFilter*> joint_kf_;
     std::vector<EstimateTools::BacklashFilter*> joint_backlashfilter_;
     
+    // Alpha Filters:
+    EstimateTools::AlphaFilter* rotation_rate_alpha_filter_;
     
     
     // Keep two different offset vectors, for clarity:
@@ -115,6 +119,8 @@ class state_sync{
 
     void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
     void appendJoints(drc::robot_state_t& msg_out, Joints joints);
+    
+    bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose);
 };    
 
 #endif
