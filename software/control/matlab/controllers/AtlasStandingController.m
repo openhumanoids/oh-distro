@@ -50,7 +50,7 @@ classdef AtlasStandingController < DRCController
       limp = LinearInvertedPendulum(com(3));
       [~,V] = lqr(limp,comgoal);
       
-      foot_support = SupportState(r,fidx);
+      foot_support = RigidBodySupportState(r,fidx);
       
       link_constraints(1).link_ndx = fidx(1);
       link_constraints(1).pt = [0;0;0];

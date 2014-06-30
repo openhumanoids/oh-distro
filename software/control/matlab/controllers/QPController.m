@@ -268,7 +268,7 @@ classdef QPController < MIMODrakeSystem
       n_contact_pts(ind) = 4;
     end
     
-%    supp = SupportState(r,support_bodies,contact_pts);
+%    supp = RigidBodySupportState(r,support_bodies,contact_pts);
     supp.bodies = support_bodies;
     supp.contact_surfaces = 0*support_bodies;
     supp.contact_pts = contact_pts;
