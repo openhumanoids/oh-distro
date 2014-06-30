@@ -14,7 +14,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
   methods
     function obj = AtlasBalancingWrapper(r,controller_data,options)
       typecheck(r,'Atlas');
-      typecheck(controller_data,'QPControllerData');
+      typecheck(controller_data,'AtlasQPControllerData');
       
       input_frame = getStateFrame(r);
       output_frame = AtlasPosVelTorqueRef(r);
@@ -58,9 +58,9 @@ classdef AtlasBalancingWrapper < DrakeSystem
       options.w_qdd = 0.0005*ones(obj.nq,1);
       options.w_grf = 0;
       options.w_slack = 0.001;
-      options.debug = true;
+      options.debug = false;
       options.use_mex = true;
-      options.W_kdot = zeros(3);
+      options.W_kdot = zeros(3); % angular momentum cost
       options.input_foot_contacts = true;
       options.contact_threshold = 0.01;
       options.output_qdd = true;
@@ -88,7 +88,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       outs(2).output = 2;
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
       
-      options.use_error_integrator = true; % while we're still using positoin control in upper body
+      options.use_error_integrator = true; % while we're still using position control in upper body
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       options.use_lcm = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);

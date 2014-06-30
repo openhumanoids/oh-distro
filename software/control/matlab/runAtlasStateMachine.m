@@ -16,9 +16,11 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 options.controller_type = controller_type;
 init_controller = SilentInitController('init',r);
 manip_controller = AtlasManipController('manip',r,options);
-standing_controller = AtlasStandingController('stand',r,options);
+standing_controller = AtlasBalancingController('stand',r,options);
+walking_controller = AtlasBalancingController('walk',r,options);
 state_machine = DRCStateMachine(struct(manip_controller.name,manip_controller,...
-  init_controller.name,init_controller,standing_controller.name,standing_controller),init_controller.name);
+  init_controller.name,init_controller,standing_controller.name,standing_controller,...
+  walking_controller.name,walking_controller),init_controller.name);
 
 state_machine.run();
 

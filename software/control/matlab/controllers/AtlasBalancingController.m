@@ -1,4 +1,4 @@
-classdef AtlasStandingController < DRCController
+classdef AtlasBalancingController < DRCController
   
   properties (SetAccess=protected,GetAccess=protected)
     robot;
@@ -9,7 +9,7 @@ classdef AtlasStandingController < DRCController
   
   methods
   
-    function obj = AtlasStandingController(name,r,options)
+    function obj = AtlasBalancingController(name,r,options)
       typecheck(r,'Atlas');
 
       if nargin < 3
@@ -92,8 +92,6 @@ classdef AtlasStandingController < DRCController
       obj.foot_idx = fidx;
       obj.nq = getNumDOF(r);
       
-    
-
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
       obj = addLCMTransition(obj,'CONFIGURATION_TRAJ',drc.configuration_traj_t(),name); % for standing/reaching tasks
