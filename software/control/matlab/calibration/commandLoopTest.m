@@ -1,11 +1,18 @@
+% the loop test uses the robot state and atlas command
+% coders that are (partly) implemented in c++
+% other coders are typically all in Java
 
-tmp_state = LoopTestListener('EST_ROBOT_STATE');
-tmp_cmd = LoopTestPublisher('ATLAS_COMMAND');
+% load robot model
+r = Atlas();
 
+% setup frames
+state_frame = r.getStateFrame();
+state_frame.subscribe('EST_ROBOT_STATE');
+input_frame = getInputFrame(r);
+udes = zeros(getNumInputs(r),1);
 while 1
-  [t] = getNextMessage(tmp_state,5);
-  if ~isempty(t)
-    pause(3.5/1000)
-    publish(tmp_cmd,t);
+  [x,t] = getNextMessage(state_frame,5);
+  if ~isempty(x)
+    input_frame.publish(t,udes,'ATLAS_COMMAND');
   end
 end

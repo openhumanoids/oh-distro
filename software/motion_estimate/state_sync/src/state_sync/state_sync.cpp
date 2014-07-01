@@ -380,6 +380,27 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
   
+//  // TEMP - store time of received ATLAS_STATE
+//  const int NUM_UTIMES = .30000;
+//  static std::vector<uint64_t> recv_time(NUM_UTIMES, 0);
+//  static std::vector<uint64_t> handler_time(NUM_UTIMES, 0);
+//  static int time_index = 0;
+//  if(time_index < NUM_UTIMES)
+//  {
+//    recv_time[time_index] = rbuf->recv_utime;
+//    handler_time[time_index] = _timestamp_now();
+//    ++time_index;
+//  }
+//  else
+//  {
+//    // dump these all to a file
+//    std::ofstream fout("/home/drc/Desktop/latency_test/atlas_state_rx.txt");
+//    for(int i =0; i < NUM_UTIMES; ++i)
+//       fout << recv_time[i] << "," << handler_time[i] << std::endl;
+//      exit(1);  
+//  }
+//  // end TEMP
+
 
   std::vector <float> mod_positions;
   //mod_positions.assign(28,0.0);

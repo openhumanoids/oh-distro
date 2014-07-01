@@ -1,0 +1,148 @@
+sudo ionice -c 2 -n 0  nice -n -19 drc-state-sync -e -k -o EST_ROBOT_STATE
+
+default nice level is 10
+lower is better, -20 is most favorable
+nice level below 0 requires root permissions
+
+ionice - set program io scheduling class and priority
+-c class: 0 none, 1 RT, 2 best effort, 3 idel
+-n classdata/level: 0-7 priority levels
+-p pid process id
+
+====
+
+with no computation at all, but with ttl=1, 
+- 60% replies are revieved in 300nsec  (-/+ 200nsec)
+- 39% replies are revieved in 1300nsec (-/+200nsec)
+- a few replies have latency up to 5-6msec (about ~0.02%)
+
+
+ttl=0, 2,3 spikes above 1.3msec in 35seconds
+
+
+=======
+with ttl=0 and nothing else operating
+I see regular missed tics (1 per second).
+the 
+
+
+earlier I saw that the LCM publishing from the driver was taking alot of time
+
+
+"no load:" static matlab, kdevelop, gedit, lots of terminals
+1. with no load, occasional tic dropped: 1 per minute
+but did see 2, 4 tics dropped occasionally.
+sometimes because lcm publish took time, sometime nothing going on
+
+bot spy clearly shows 999 or 1000 Hz
+(no disk io either)
+
+2. taking 1. and adding in drc-latency-echo which replies with an empty
+ATLAS_COMMAND.
+transmit sees only the occasional dropped tic. same 1000Hz frequency I think
+
+typical reply latency: 
+- typically 1.15msec (95%+ near this value)
+- some tics took 3.000 msec
+
+3. moving the latency check tool to the lcm reply 
+0.2 msec latency mean
+2% greater than 1000
+
+
+with a dummy controller at 260Hz or so (initially), 3.5msec sleep
+state sync: 0.23msec
+[time that pose_body is held in state sync:] 1.12msec
+echo controller 4msec
+combined latency 4.3msec -/+ 0.5msec variance of noise. few outliers outside 5msec
+
+adding ~8 signal scopes, increases mean latency to about 5msec.
+pushes the outliers up to 10msec much more frequently
+
+
+inside the driver, at the reciever location, latency rises from 4 -/+1msec
+to 10-11msec during the above
+in discrite 0.5msec bands
+
+
+
+http://how-to.linuxcareer.com/learning-linux-commands-nice
+http://friedcpu.wordpress.com/2007/07/17/why-arent-you-using-ionice-yet/
+
+
+
+installed cpufrequtils and edited
+/etc/init.d/cpufrequtils
+governor = "performance"
+governor = "ondemand"
+
+sudo -E chrt --rr  99 ./drc-atlas -p off -s
+sudo -E chrt --rr 99  ./drc-state-sync -b -k
+
+for matlab not using chrt not 99
+sudo -E chrt --rr 50 /usr/local/bin/matlab -nodesktop -nosplash
+
+sudo -E chrt --rr 99 ./drc-latency -p 1
+
+addpath_control
+cd matlab/calibration
+commandLoopTest.m
+
+disabled X/lightdm
+
+typical:
+0.20msec AS -> ERT (includes Kalman filtering)
+0.15msec ERS -> AC (c++ handlers for messages, nothing elsE)
+0.35msec AS -> AC
+
+occasional (1 per 30 sec about 0.5msec. very rarely something more than 1msec)
+
+tt0=1, monitor on a second machine with signal scope
+
+
+all changes reverted:
+0.60msec AS -> ERT (includes Kalman filtering)
+0.40msec ERS -> AC (c++ handlers for messages, nothing elsE)
+1.00msec AS -> AC
+
+(using sudo -E chrt --rr 99 ./drc-latency -p 1)
+
+
+
+to permentantly disable, create this file
+sudo sh -c "echo 'manual' > /etc/init/lightdm.override"
+to reenable , remove this file
+
+
+
+
+
+Others:
+drc-latency-source
+drc-latency-echo
+drc-latency -p 1 
+
+with chrt 99 , an gui
+1 tic per sec above 6msec
+
+with chrt 99 , no gui
+occasional tics about 6msec but only just, def better
+
+
+apache
+X?
+init.d
+
+====== RESULT 1 ======
+with chrt the driver (drc-atlas) never seems to miss a tic.
+BUT: jrf-client is still active when process is killed
+
+
+4msec
+4.3msec
+with gui: a few of outliers pers second above 6msec
+
+
+current limitation:
+in addpath_control.m comment out 
+%checkDependency('gurobi')
