@@ -18,15 +18,14 @@ Latency::Latency(int period_):period_(period_) {
   write_tics_ = false;
   tic_filename_ = "/tmp/latency_tics.txt";
 
-  last_seq_id_ = 0;
 }
 
-void Latency::add_from(int64_t js_time, int64_t js_walltime, int64_t seq_id){
+void Latency::add_from(int64_t js_time, int64_t js_walltime){
   js_utime_.push_back(js_time);
   js_walltime_.push_back(js_walltime);
 }
 
-bool Latency::add_to(int64_t jc_utime, int64_t jc_walltime, int64_t seq_id, std::string message, float &latency, float &new_msgs ){
+bool Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message, float &latency, float &new_msgs ){
 
   if (verbose_){
     std::cout << "marker: " <<  jc_utime << " and " << jc_walltime << "\n";  
@@ -44,7 +43,6 @@ bool Latency::add_to(int64_t jc_utime, int64_t jc_walltime, int64_t seq_id, std:
   if (write_tics_){
     tic_file_ << jc_utime
               << ", " << jc_walltime
-              << ", " << seq_id
               << ", " << elapsed_walltime << std::endl;
   }
 

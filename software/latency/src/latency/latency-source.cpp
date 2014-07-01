@@ -40,7 +40,6 @@ for (int j =0 ; j < 1000000 ; j++){
   //// Main Joint State Message:
   drc::atlas_state_t msg;
   msg.utime = _timestamp_now()	;
-  msg.seq_id = j;
   for (size_t i=0; i <n_q ; i++){
     // msg.joint_position.push_back(s_data_from_robot.j[i].q);
     // msg.joint_velocity.push_back(s_data_from_robot.j[i].qd);

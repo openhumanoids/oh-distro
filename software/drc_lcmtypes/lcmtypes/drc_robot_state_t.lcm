@@ -6,8 +6,6 @@ package drc;
 struct robot_state_t
 {
   int64_t utime;
-  int64_t seq_id;
-
   position_3d_t pose;
   twist_t twist;
 

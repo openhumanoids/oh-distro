@@ -1,4 +1,4 @@
-classdef TEMPAtlasCommandPublisher
+classdef LoopTestPublisher
 
 	properties
 		lc;
@@ -6,15 +6,14 @@ classdef TEMPAtlasCommandPublisher
 	end
 
 	methods
-		function obj = TEMPAtlasCommandPublisher(channel)
+		function obj = LoopTestPublisher(channel)
 			obj.channel = channel;
 			obj.lc = lcm.lcm.LCM.getSingleton();
 		end
 
-		function publish(obj, utime, seq_id)
+		function publish(obj, utime)
       msg = drc.atlas_command_t();
       msg.utime = utime;
-      msg.seq_id = seq_id;
 
       msg.num_joints = 28;
   

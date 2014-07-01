@@ -11,8 +11,8 @@ class Latency {
   public:
     Latency (int period_);
 
-    void add_from(int64_t js_time, int64_t js_walltime, int64_t seq_id);
-    bool add_to(int64_t jc_time, int64_t jc_walltime, int64_t seq_id, std::string message, float &latency, float &new_msgs  );
+    void add_from(int64_t js_time, int64_t js_walltime);
+    bool add_to(int64_t jc_time, int64_t jc_walltime, std::string message, float &latency, float &new_msgs  );
     
     std::vector < int64_t > js_utime_;
     std::vector < int64_t > js_walltime_;
@@ -42,7 +42,6 @@ class Latency {
       tic_file_.close();
     }
 
-    int64_t last_seq_id_;
 };
 
 

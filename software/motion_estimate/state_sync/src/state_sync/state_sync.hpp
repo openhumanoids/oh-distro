@@ -135,7 +135,7 @@ class state_sync{
     std::vector<float> max_encoder_wrap_angle_;
     std::vector<bool> use_encoder_;
 
-    void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg, int64_t seq_id);
+    void publishRobotState(int64_t utime_in, const  drc::force_torque_t& msg);
     void appendJoints(drc::robot_state_t& msg_out, Joints joints);
     
     bool insertPoseInRobotState(drc::robot_state_t& msg, PoseT pose);

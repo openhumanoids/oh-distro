@@ -36,8 +36,6 @@ private:
   
   drc::atlas_command_t cmd_msg_;
   
-  int64_t last_seq_id_;
-  
   double sum_total_;
   int64_t tic_prev_;
 };
@@ -79,7 +77,6 @@ App::App(boost::shared_ptr<lcm::LCM> &_lcm, std::string channel_from_, std::stri
   
   cmd_msg_ = cmd_msg_here;
   
-  last_seq_id_ = 0;
   sum_total_=0;
 }
 
@@ -114,7 +111,6 @@ void App::RobotStateMsgHandler(const lcm::ReceiveBuffer* rbuf, const std::string
 //  std::this_thread::sleep_for(std::chrono::milliseconds(2));
   
   cmd_msg_.utime = msg->utime;
-  cmd_msg_.seq_id = msg->seq_id;
   _lcm->publish( ("ATLAS_COMMAND") , 	&cmd_msg_);
   
   int64_t b = (_timestamp_now() - tic0);
@@ -140,14 +136,8 @@ void App::MsgHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chan, co
   //std::this_thread::sleep_for(std::chrono::milliseconds(3));
   
   cmd_msg_.utime = msg->utime;
-  cmd_msg_.seq_id = msg->seq_id;
   _lcm->publish( ("ATLAS_COMMAND") , 	&cmd_msg_);
   
-  if ( msg->seq_id != last_seq_id_+1){
-//    std::cout << "missed "<< (msg->seq_id - last_seq_id_-1 ) <<" tic(s) from " << last_seq_id_ << " to " << msg->seq_id <<"\n";    
-    //std::cout << "missed tic(s) before "<< msg->seq_id <<"\n";
-  }
-  last_seq_id_ = msg->seq_id;
 }
 
 int main (int argc, char ** argv){

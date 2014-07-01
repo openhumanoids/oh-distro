@@ -1,4 +1,4 @@
-classdef TEMPRobotStateListener
+classdef LoopTestListener
 	properties
 		monitor;
     channel;
@@ -7,14 +7,14 @@ classdef TEMPRobotStateListener
 	end
 
 	methods
-		function obj = TEMPRobotStateListener(channel)
+		function obj = LoopTestListener(channel)
       obj.channel = channel;
 		  obj.monitor = drake.util.MessageMonitor(drc.robot_state_t,'utime');
       lc = lcm.lcm.LCM.getSingleton();
       lc.subscribe(channel,obj.monitor);
     end
 
-		function [x,t] = getNextMessage(obj, t_ms)
+		function [t] = getNextMessage(obj, t_ms)
 			data = obj.monitor.getNextMessage(t_ms);
       if isempty(data)
 				x = [];
@@ -22,7 +22,7 @@ classdef TEMPRobotStateListener
       else
         t = obj.monitor.getLastTimestamp();
         msg = drc.robot_state_t(data);
-        x = msg.seq_id;
+				x = [];
   	  end
     end
   end

@@ -77,14 +77,14 @@ int64_t _timestamp_now(){
 }
 
 void App::handleAtlasStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_state_t * msg){
-  lats_[0]->add_from(msg->utime, _timestamp_now(), msg->seq_id );
-  lats_[3]->add_from(msg->utime, _timestamp_now(), msg->seq_id );
+  lats_[0]->add_from(msg->utime, _timestamp_now() );
+  lats_[3]->add_from(msg->utime, _timestamp_now() );
 }
 
 void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * msg){
   int64_t utime_now = _timestamp_now();
-  bool new_data = lats_[0]->add_to(msg->utime, utime_now, msg->seq_id, "SYNC", lat_time_[0], lat_msgs_[0] );
-  lats_[2]->add_from(msg->utime, utime_now, msg->seq_id );
+  bool new_data = lats_[0]->add_to(msg->utime, utime_now, "SYNC", lat_time_[0], lat_msgs_[0] );
+  lats_[2]->add_from(msg->utime, utime_now );
   
   
   if (new_data){
@@ -112,17 +112,17 @@ void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string&
 }
 
 void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg)  {
-  lats_[2]->add_to(msg->utime, _timestamp_now(), msg->seq_id, "CTRL", lat_time_[2], lat_msgs_[2] );
-  lats_[3]->add_to(msg->utime, _timestamp_now(), msg->seq_id, "FULL", lat_time_[3], lat_msgs_[3] );
+  lats_[2]->add_to(msg->utime, _timestamp_now(), "CTRL", lat_time_[2], lat_msgs_[2] );
+  lats_[3]->add_to(msg->utime, _timestamp_now(), "FULL", lat_time_[3], lat_msgs_[3] );
 }
 
 
 
 void App::handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_raw_imu_batch_t * msg){
-  lats_[1]->add_from(msg->utime, _timestamp_now(), 0 );
+  lats_[1]->add_from(msg->utime, _timestamp_now() );
 }
 void App::handPoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg)  {
-  lats_[1]->add_to(msg->utime, _timestamp_now(), 0, "SEST" , lat_time_[1], lat_msgs_[1]);
+  lats_[1]->add_to(msg->utime, _timestamp_now(),  "SEST" , lat_time_[1], lat_msgs_[1]);
 }
 
 
