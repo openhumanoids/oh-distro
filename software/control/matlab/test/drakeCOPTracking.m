@@ -76,9 +76,13 @@ end
 lcmgl.switchBuffers();
 
 foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-foottraj.right.orig = ConstantTrajectory(forwardKin(r,kinsol,rfoot_ind,[0;0;0],1));
-foottraj.left.orig = ConstantTrajectory(forwardKin(r,kinsol,lfoot_ind,[0;0;0],1));
-link_constraints = buildLinkConstraints(r, q0, foottraj);
+link_constraints = struct('link_ndx',{}, 'pt', {}, 'min_traj', {}, 'max_traj', {}, 'traj', {});
+for f = {'right', 'left'}
+  foot = f{1};
+  frame_id = r.foot_frame_id.(foot);
+  body_ind = r.getFrame(frame_id).body_ind;
+  link_constraints(end+1) = struct('link_ndx', body_ind, 'pt', [0;0;0], 'min_traj', [], 'max_traj', [], 'traj', ConstantTrajectory(forwardKin(r, kinsol, body_ind, [0;0;0], 1)));
+end
 
 ctrl_data = QPControllerData(true,struct(...
   'acceleration_input_frame',AtlasCoordinates(r),...
@@ -102,7 +106,7 @@ ctrl_data = QPControllerData(true,struct(...
 % instantiate QP controller
 options.slack_limit = 20;
 options.w_qdd = 0.001*ones(nq,1);
-options.W_kdot = zeros(3); 
+options.W_kdot = zeros(3);
 options.w_grf = 0;
 options.w_slack = 0.001;
 options.debug = false;
