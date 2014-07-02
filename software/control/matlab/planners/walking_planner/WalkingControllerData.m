@@ -89,7 +89,7 @@ classdef WalkingControllerData
     function obj = from_drake_walking_data(data, qstar)
       t_offset = 0;
       ignore_terrain = false;
-      obj = WalkingControllerData(data.V, data.support_times, data.supports, data.comtraj, data.mu, t_offset, data.link_constraints, data.zmptraj, qstar, ignore_terrain, data.c);
+      obj = WalkingControllerData(data.V, data.support_times, data.supports, data.comtraj, data.mu, t_offset, data.link_constraints, data.zmptraj, qstar, ignore_terrain);
     end
 
     function obj = from_walking_plan_t(msg_data)
