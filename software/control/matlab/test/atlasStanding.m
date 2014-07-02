@@ -1,6 +1,6 @@
 function atlasStanding
 %NOTEST
-
+error('Scott has to fix this script');
 % test function for standing atlas using the QP controller. using the
 % joint_str variable, the user can select a subset of leg joints with which
 % to do torque control.
@@ -252,11 +252,10 @@ end
 % instantiate QP controller
 options.slack_limit = 30.0;
 options.w = 0.001;
-options.lcm_foot_contacts = false;
 options.use_mex = true;
 options.contact_threshold = 0.05;
 options.output_qdd = true;
-qp = QPControlBlock(r,ctrl_data,options);
+qp = QPController(r,ctrl_data,options);
 
 qddes = zeros(nu,1);
 udes = zeros(nu,1);

@@ -14,12 +14,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
   methods
     function obj = QTrajEvalBlock(r,controller_data,options)
       typecheck(r,'Biped');
-      typecheck(controller_data,'SharedDataHandle');
-      
-      ctrl_data = getData(controller_data);
-      if ~isfield(ctrl_data,'qtraj')
-        error('QTrajEvalBlock: controller_data must contain qtraj field');
-      end
+      typecheck(controller_data,'ControllerData');
       
       if nargin<3
         options = struct();
@@ -28,13 +23,8 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       if isfield(options,'use_error_integrator')
         typecheck(options.use_error_integrator,'logical');
         if options.use_error_integrator
-          if ~isfield(ctrl_data,'integral') || ~isfield(ctrl_data,'integral_gains')
-            error('controller_data must contain integral and integral_gains variables');
-          else
-            typecheck(ctrl_data.integral,'double');
-            typecheck(ctrl_data.integral_gains,'double');
-            sizecheck(ctrl_data.integral_gains,[getNumDOF(r) 1]);
-          end
+          sizecheck(controller_data.integral_gains,[getNumDOF(r) 1]);
+          typecheck(controller_data,{'AtlasManipControllerData','AtlasQPControllerData'});
         end
       else
         options.use_error_integrator = false;
@@ -66,7 +56,7 @@ classdef QTrajEvalBlock < MIMODrakeSystem
     end
        
     function [qdes,x]=mimoOutput(obj,t,~,x)
-      qtraj = obj.controller_data.data.qtraj;
+      qtraj = obj.controller_data.qtraj;
       if isa(qtraj,'double')
         qdes=qtraj;
       elseif isa(qtraj,'struct')
@@ -78,10 +68,10 @@ classdef QTrajEvalBlock < MIMODrakeSystem
       end
       if obj.use_error_integrator
         q = x(1:obj.nq);
-        i_clamp = obj.controller_data.data.integral_clamps;
-        newintg = obj.controller_data.data.integral + obj.controller_data.data.integral_gains.*(qdes-q)*obj.dt;
+        i_clamp = obj.controller_data.integral_clamps;
+        newintg = obj.controller_data.integral + obj.controller_data.integral_gains.*(qdes-q)*obj.dt;
         newintg = max(-i_clamp,min(i_clamp,newintg));
-        setField(obj.controller_data,'integral', newintg);
+        obj.controller_data.integral = newintg;
         qdes = qdes + newintg;
         qdes = max(obj.jlmin-i_clamp,min(obj.jlmax+i_clamp,qdes)); % allow it to go delta above and below jlims
       end

@@ -13,7 +13,7 @@ classdef FootMotionControlBlock < DrakeSystem
   methods
     function obj = FootMotionControlBlock(r,name,controller_data,options)
       typecheck(r,'Biped');
-      typecheck(controller_data,'SharedDataHandle');
+      typecheck(controller_data,'QPControllerData');
       
       input_frame = getStateFrame(r);
       output_frame = BodySpatialAcceleration(r,name);
@@ -62,7 +62,7 @@ classdef FootMotionControlBlock < DrakeSystem
       kinsol = doKinematics(obj.robot,q,false,true,qd);
 
       % TODO: this must be updated to use quaternions/spatial velocity
-      ctrl_data = obj.controller_data.data;
+      ctrl_data = obj.controller_data;
       [p,J] = forwardKin(obj.robot,kinsol,obj.foot_ind,[0;0;0],1); 
       
       % TODO: generate smooth footstep trajectories so we can incorporate

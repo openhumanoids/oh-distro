@@ -1,19 +1,19 @@
-function drakeWalking(use_mex,use_bullet)
-
+function drakeWalking(use_mex,use_ik,use_bullet,use_angular_momentum,random_navgoal)
+%NOTEST
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
-plot_comtraj = false;
-%navgoal = [0.5*randn();0.5*randn();0;0;0;pi/2*randn()];
-navgoal = [1;0;0;0;0;0];
+plot_comtraj = true;
 
-% construct robot model
-options.floating = true;
-options.ignore_friction = true;
-options.dt = 0.002;
-if (nargin>0); options.use_mex = use_mex;
-else options.use_mex = true; end
-if (nargin<2)
-  use_bullet = false; % test walking with the controller computing pairwise contacts using bullet
+if (nargin<1); use_mex = true; end
+if (nargin<2); use_ik = true; end
+if (nargin<3); use_bullet = false; end
+if (nargin<4); use_angular_momentum = false; end
+if (nargin<5); random_navgoal = false; end
+
+if random_navgoal
+  navgoal = [rand();randn();0;0;0;pi/2*randn()];
+else
+  navgoal = [1;0;0;0;0;0]; % straight forward 1m
 end
 
 % silence some warnings
@@ -21,6 +21,10 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
+% construct robot model
+options.floating = true;
+options.ignore_friction = true;
+options.dt = 0.001;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
@@ -50,10 +54,10 @@ request.params = drc.footstep_plan_params_t();
 request.params.max_num_steps = 30;
 request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
-request.params.nom_step_width = 0.26;
-request.params.max_step_width = 0.39;
+request.params.nom_step_width = 0.24;
+request.params.max_step_width = 0.3;
 request.params.nom_forward_step = 0.2;
-request.params.max_forward_step = 0.45;
+request.params.max_forward_step = 0.4;
 request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
@@ -75,17 +79,33 @@ request.footstep_plan = footstep_plan.toLCM();
 walking_plan = walking_planner.plan_walking(r, request, true);
 walking_ctrl_data = walking_planner.plan_walking(r, request, false);
 
-ts = 0:0.1:walking_ctrl_data.zmptraj.tspan(end);
+% No-op: just make sure we can cleanly encode and decode the plan as LCM
+tic;
+walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
+fprintf(1, 'control data lcm code/decode time: %f\n', toc);
+
+ts = walking_plan.ts;
 T = ts(end);
 
-ctrl_data = SharedDataHandle(struct(...
-  'A',[zeros(2),eye(2); zeros(2,4)],...
-  'B',[zeros(2); eye(2)],...
-  'C',[eye(2),zeros(2)],...
+if plot_comtraj
+  % plot walking traj in drake viewer
+  lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
+
+  for i=1:length(ts)
+    lcmgl.glColor3f(0, 0, 1);
+    lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+    lcmgl.glColor3f(0, 1, 0);
+    lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+  end
+  lcmgl.switchBuffers();
+end
+
+
+ctrl_data = QPControllerData(true,struct(...
+  'acceleration_input_frame',AtlasCoordinates(r),...
+  'D',-0.89/9.81*eye(2),... % assumed COM height
   'Qy',eye(2),...
-  'R',zeros(2),...
-  'is_time_varying',true,...
-  'S',walking_ctrl_data.S.eval(0),... % always a constant
+  'S',walking_ctrl_data.S,... % always a constant
   's1',walking_ctrl_data.s1,...
   's2',walking_ctrl_data.s2,...
   's1dot',walking_ctrl_data.s1dot,...
@@ -97,41 +117,170 @@ ctrl_data = SharedDataHandle(struct(...
   'link_constraints',walking_ctrl_data.link_constraints, ...
   'support_times',walking_ctrl_data.support_times,...
   'supports',walking_ctrl_data.supports,...
-  't_offset',0,...
   'mu',walking_ctrl_data.mu,...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
-  'y0',walking_ctrl_data.zmptraj));
+  'y0',walking_ctrl_data.zmptraj,...
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
 
-% instantiate QP controller
 options.dt = 0.003;
-options.slack_limit = 30.0;
-options.w = 0.001;
-options.lcm_foot_contacts = false;
-options.debug = false;
-
+options.slack_limit = 30;
 options.use_bullet = use_bullet;
-qp = QPControlBlock(r,ctrl_data,options);
+options.w_grf = 0;
+options.debug = false;
+options.contact_threshold = 0.005;
+options.solver = 0; % 0 fastqp, 1 gurobi
+options.use_mex = use_mex;
 
-% cascade footstep plan shift block
-fs = FootstepPlanShiftBlock(r,ctrl_data,options);
-sys = cascade(r,fs);
+if use_angular_momentum
+  options.Kp_ang = 1.0; % angular momentum proportunal feedback gain
+  options.W_kdot = 1e-5*eye(3); % angular momentum weight
+else
+  options.W_kdot = zeros(3); 
+end
 
-% feedback QP controller with atlas
-ins(1).system = 1;
-ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(qp,sys,[],[],ins,outs);
-clear ins outs;
+if use_ik
+  options.w_qdd = 0.001*ones(nq,1);
+else
+  options.w_qdd = 0.00001*ones(nq,1);
+end
 
-% feedback PD block
-pd = IKPDBlock(r,ctrl_data);
-ins(1).system = 1;
-ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
+
+if (use_ik)
+  % instantiate QP controller
+	qp = QPController(r,{},ctrl_data,options);
+
+	% feedback QP controller with atlas
+  ins(1).system = 1;
+  ins(1).input = 2;
+  ins(2).system = 1;
+  ins(2).input = 3;
+  outs(1).system = 2;
+  outs(1).output = 1;
+	sys = mimoFeedback(qp,r,[],[],ins,outs);
+	clear ins;
+
+  % feedback foot contact detector with QP/atlas
+  options.use_lcm=false;
+  fc = FootContactBlock(r,ctrl_data,options);
+  ins(1).system = 2;
+  ins(1).input = 1;
+  sys = mimoFeedback(fc,sys,[],[],ins,outs);
+  clear ins;  
+  
+	% feedback PD block
+
+	pd = IKPDBlock(r,ctrl_data,options);
+	ins(1).system = 1;
+	ins(1).input = 1;
+	sys = mimoFeedback(pd,sys,[],[],ins,outs);
+	clear ins;
+
+else
+	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
+	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
+	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data);
+	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
+	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
+	pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+
+%   options.body_accel_input_weights = [10 10 -1 -1];
+	qp = QPController(r,motion_frames,ctrl_data,options);
+
+	% feedback QP controller with atlas
+	ins(1).system = 1;
+	ins(1).input = 2;
+	ins(2).system = 1;
+	ins(2).input = 3;
+	ins(3).system = 1;
+	ins(3).input = 4;
+	ins(4).system = 1;
+	ins(4).input = 5;
+	ins(5).system = 1;
+	ins(5).input = 6;
+	ins(6).system = 1;
+	ins(6).input = 7;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(qp,r,[],[],ins,outs);
+	clear ins outs;
+  
+  % feedback foot contact detector with QP/atlas
+  options.use_lcm=false;
+  fc = FootContactBlock(r,ctrl_data,options);
+  ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	ins(4).system = 2;
+	ins(4).input = 5;
+	ins(5).system = 2;
+	ins(5).input = 6;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(fc,sys,[],[],ins,outs);
+  clear ins outs;  
+  
+	% feedback PD block
+  options.use_ik = false;
+	pd = IKPDBlock(r,ctrl_data,options);
+	ins(1).system = 1;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 2;
+	ins(3).system = 2;
+	ins(3).input = 3;
+	ins(4).system = 2;
+	ins(4).input = 4;
+	ins(5).system = 2;
+	ins(5).input = 5;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(pd,sys,[],[],ins,outs);
+	clear ins outs;
+
+	% feedback body motion control blocks
+	ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	ins(4).system = 2;
+	ins(4).input = 5;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(lfoot_motion,sys,[],[],ins,outs);
+	clear ins outs;
+
+	ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(rfoot_motion,sys,[],[],ins,outs);
+	clear ins outs;
+
+	ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(pelvis_motion,sys,[],[],ins,outs);
+	clear ins outs;
+
+	ins(1).system = 2;
+	ins(1).input = 1;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(torso_motion,sys,[],[],ins,outs);
+	clear ins outs;
+end
 
 qt = QTrajEvalBlock(r,ctrl_data);
 outs(1).system = 2;

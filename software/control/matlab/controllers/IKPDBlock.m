@@ -18,9 +18,9 @@ classdef IKPDBlock < MIMODrakeSystem
     function obj = IKPDBlock(r,controller_data,options)
       typecheck(r,'Biped');
       if nargin > 1
-        typecheck(controller_data,'SharedDataHandle');
+        typecheck(controller_data,'QPControllerData');
       else
-        controller_data = SharedDataHandle(struct());
+        controller_data = [];
       end
       
       if nargin<3
@@ -83,10 +83,6 @@ classdef IKPDBlock < MIMODrakeSystem
       obj.r_ankle_idx = findJointIndices(r,'r_leg_ak');
       obj.l_ankle_idx = findJointIndices(r,'l_leg_ak');
             
-      if ~isfield(obj.controller_data,'trans_drift')
-        obj.controller_data.setField('trans_drift',[0;0;0]);
-      end
-      
       % setup IK parameters
       cost = Point(r.getStateFrame,1);
       cost.base_x = 0;
@@ -143,12 +139,12 @@ classdef IKPDBlock < MIMODrakeSystem
           end
         end
         
-        cdata = obj.controller_data.data;
+        cdata = obj.controller_data;
         approx_args = {};
         for j = 1:length(cdata.link_constraints)
           if cdata.is_time_varying && ~isempty(cdata.link_constraints(j).traj)
             pos = fasteval(cdata.link_constraints(j).traj,t);
-            pos(1:3) = pos(1:3) - cdata.trans_drift;
+            pos(1:3) = pos(1:3) - cdata.plan_shift;
             approx_args(end+1:end+3) = {cdata.link_constraints(j).link_ndx, cdata.link_constraints(j).pt, pos};
           elseif ~isempty(cdata.link_constraints(j).pos)
             pos = cdata.link_constraints(j).pos;
@@ -163,7 +159,7 @@ classdef IKPDBlock < MIMODrakeSystem
         else
           com = cdata.comtraj;
         end
-        compos = [com(1:2) - cdata.trans_drift(1:2);nan];
+        compos = [com(1:2) - cdata.plan_shift(1:2);nan];
 
         q_des = linearIK(obj.robot,q,0,compos,approx_args{:},obj.ikoptions);
         

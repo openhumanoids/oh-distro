@@ -70,37 +70,6 @@ classdef StatelessWalkingPlanner
       else
         walking_plan = WalkingControllerData.from_drake_walking_data(walking_plan_data, qstar);
       end
-
-      % [support_times, supports, comtraj, foottraj, V, zmptraj,c] = walkingPlanFromSteps(r, x0, footsteps);
-      % tf = comtraj.tspan(end); assert(abs(eval(V,tf,zeros(4,1)))<1e-4);  % relatively fast check to make sure i'm in the correct frame (x-zmp_tf)
-
-      % link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
-
-      % % % compute s1,s2 derivatives for controller Vdot computation
-      % % s1dot = fnder(V.s1,1);
-      % % s2dot = fnder(V.s2,1);
-
-      % mus = zeros(length(footsteps), 1);
-      % for j = 1:length(footsteps)
-      %   mus(j) = footsteps(j).walking_params.mu;
-      % end
-      % mu = mean(mus); % TODO: controller should accept step-specific mu
-      % t_offset = 0;
-      % ignore_terrain = false;
-
-      % if ~compute_xtraj
-      %   disp('Walk Plan: computing controller data')
-      %   walking_plan = WalkingControllerData(V, support_times,...
-      %                                      {supports}, comtraj, mu, t_offset,...
-      %                                      link_constraints, zmptraj, qstar,...
-      %                                      ignore_terrain,c);
-      % else
-      %   [xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, qstar, zmptraj, comtraj, link_constraints);
-      %   joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
-      %   joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-
-      %   walking_plan = WalkingPlan(ts, xtraj, joint_names);
-      % end
       disp('done')
     end
   end

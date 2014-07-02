@@ -4,19 +4,14 @@
 #include "drake/fastQP.h"
 #include "drake/gurobiQP.h"
 
-//#define TEST_FAST_QP
-
 const double REG = 1e-8;
 
 struct QPControllerData {
   GRBenv *env;
   RigidBodyManipulator* r;
-  void* multi_robot; // optional multi rigid body system
-  double w; // objective function weight
   double slack_limit; // maximum absolute magnitude of acceleration slack variable values
   VectorXd umin,umax;
   void* map_ptr;
-  double Kp_com,Kd_com,Kp_k; // COM-z and angular momentum (k) PD gains 
   std::set<int> active;
 
   // preallocate memory
@@ -30,14 +25,12 @@ struct QPControllerData {
   
   // momentum controller-specific
   MatrixXd Ag, Agdot; // centroidal momentum matrix
-  MatrixXd W_hdot; // quadratic cost for momentum control: (hdot_des - hdot)'*W*(hdot_des - hdot)
+  MatrixXd Ak, Akdot; // centroidal angular momentum matrix
+  MatrixXd W_kdot; // quadratic cost for angular momentum rate: (kdot_des - kdot)'*W*(kdot_des - kdot)
   VectorXd w_qdd; 
   double w_grf; 
   double w_slack; 
-  double Kp, Kd; // COM-z PD gains, for momentum controller
-  double mass; // total robot mass
-  bool smooth_contacts;
-  std::set<int> previous_contact_bodies; // list of body indices
+  double Kp_ang; // angular momentum (k) P gain 
   int n_body_accel_inputs;
   int n_body_accel_constraints;
   VectorXd body_accel_input_weights;

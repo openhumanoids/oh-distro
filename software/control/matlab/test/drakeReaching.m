@@ -43,15 +43,15 @@ kinsol = doKinematics(r,q0);
 
 com = getCOM(r,kinsol);
 
-% build TI-ZMP controller
+% build TI-ZMP controller 
 footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
-foot_pos = terrainContactPositions(r,kinsol,footidx);
+foot_pos = terrainContactPositions(r,kinsol,footidx); 
 comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 limp = LinearInvertedPendulum(com(3));
 [~,V] = lqr(limp,comgoal);
 
 foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-
+  
 % generate manip plan
 rhand_ind = findLinkInd(r,'r_hand');
 %rhand_ee = EndEffector(r,'atlas',rhand_ind,[0;0;0],'RHAND_OBS',false);
@@ -107,7 +107,7 @@ for i=1:length(ts)
     ikoptions = ikoptions.setQ(options.Q);
     q(:,i) = inverseKin(r,q(:,i-1),q(:,i-1), ...
       rfoot_cnst{:},lfoot_cnst{:},rhand_cnst{:},lhand_cnst{:},ikoptions);
-
+      
 %     q(:,i) = inverseKin(r,q(:,i-1), ...
 %       rfoot_ind,[0;0;0],rfoot_pos, ...
 %       lfoot_ind,[0;0;0],lfoot_pos, ...
@@ -120,13 +120,10 @@ end
 
 qtraj = PPTrajectory(spline(ts,q));
 
-ctrl_data = SharedDataHandle(struct(...
-  'A',[zeros(2),eye(2); zeros(2,4)],...
-  'B',[zeros(2); eye(2)],...
-  'C',[eye(2),zeros(2)],...
+ctrl_data = QPControllerData(false,struct(...
+  'acceleration_input_frame',AtlasCoordinates(r),...
   'D',-com(3)/9.81*eye(2),...
   'Qy',eye(2),...
-  'R',zeros(2),...
   'S',V.S,...
   's1',zeros(4,1),...
   's2',0,...
@@ -134,20 +131,22 @@ ctrl_data = SharedDataHandle(struct(...
   'u0',zeros(2,1),...
   'y0',comgoal,...
   'qtraj',qtraj,...
-  'mu',1,...
-  'ignore_terrain',true,...
-  'is_time_varying',false,...
-  'trans_drift',[0;0;0],...
   'support_times',0,...
-  't_offset',0,...
-  'supports',foot_support));
+  'supports',foot_support,...
+  'mu',1.0,...
+  'ignore_terrain',false,...
+  'constrained_dofs',[]));
 
 % instantiate QP controller
 options.slack_limit = 30.0;
-options.w = 0.01;
-options.lcm_foot_contacts = false;
+options.w_qdd = 0.001*ones(nq,1);
+options.w_grf = 0;
+options.w_slack = 0.001;
+options.W_kdot = 0*eye(3);
 options.use_mex = true;
-qp = QPControlBlock(rctrl,ctrl_data,options);
+options.solver = 0;
+
+qp = QPController(rctrl,{},ctrl_data,options);
 clear options;
 
 if noisy
@@ -161,7 +160,7 @@ delayblk = DelayBlock(r,options);
 sys = cascade(qp,delayblk);
 
 if noisy
-  options.deadband = 0.01 * r.umax;
+  options.deadband = 0.01 * r.umax; 
 else
   options.deadband = 0;
 end
@@ -176,11 +175,11 @@ arm_joints = find(~cellfun(@isempty,strfind(joint_names,'arm')));
 upper_joints = find(~cellfun(@isempty,strfind(joint_names,'arm')) | ...
     ~cellfun(@isempty,strfind(joint_names,'back')) | ...
     ~cellfun(@isempty,strfind(joint_names,'neck')));
-options.noise_model(1).ind = upper_joints';
+options.noise_model(1).ind = upper_joints'; 
 options.noise_model(1).type = 'white_noise';
-options.noise_model(2).ind = arm_joints';
+options.noise_model(2).ind = arm_joints'; 
 options.noise_model(2).type = 'fixed_bias';
-options.noise_model(3).ind = arm_joints';
+options.noise_model(3).ind = arm_joints'; 
 options.noise_model(3).type = 'motion_bias';
 if noisy
   options.noise_model(1).params = struct('std',0.001);
@@ -206,21 +205,29 @@ rnoisy = cascade(r,noiseblk);
 
 % feedback QP controller with atlas
 ins(1).system = 1;
-ins(1).input = 1;
+ins(1).input = 2;
+ins(2).system = 1;
+ins(2).input = 3;
 outs(1).system = 2;
 outs(1).output = 1;
 sys = mimoFeedback(sys,rnoisy,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
-% feedback PD trajectory controller
+% feedback foot contact detector with QP/atlas
+options.use_lcm=false;
+fc = FootContactBlock(r,ctrl_data,options);
+ins(1).system = 2;
+ins(1).input = 1;
+sys = mimoFeedback(fc,sys,[],[],ins,outs);
+clear ins;  
+
+% feedback PD trajectory controller 
 options.use_ik = false;
 pd = IKPDBlock(rctrl,ctrl_data,options);
 ins(1).system = 1;
 ins(1).input = 1;
-outs(1).system = 2;
-outs(1).output = 1;
 sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins outs;
+clear ins;
 
 qt = QTrajEvalBlock(rctrl,ctrl_data);
 outs(1).system = 2;
@@ -238,7 +245,7 @@ warning(S);
 traj = simulate(sys,[0 1.25*T],[x0;0*x0;zeros((options.delay_steps+1)*nu,1)]);
 
 x=traj.eval(traj.tspan(end));
-q=x(1:getNumDOF(r));
+q=x(1:getNumDOF(r)); 
 kinsol = doKinematics(r,q);
 rhand_pos = forwardKin(r,kinsol,rhand_ind,[0;0;0]);
 lhand_pos = forwardKin(r,kinsol,lhand_ind,[0;0;0]);

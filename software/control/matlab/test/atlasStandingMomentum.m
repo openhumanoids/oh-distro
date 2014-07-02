@@ -1,6 +1,5 @@
 function atlasStandingMomentum
 %NOTEST
-
 error('Scott has to fix this script');
 
 % test function for standing atlas using the momentum-based QP controller.

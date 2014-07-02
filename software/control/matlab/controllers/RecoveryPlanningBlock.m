@@ -10,7 +10,7 @@ classdef RecoveryPlanningBlock < DrakeSystem
   methods
     function obj = RecoveryPlanningBlock(r,controller_data,options)
       typecheck(r,'Atlas');
-      typecheck(controller_data,'SharedDataHandle');
+      typecheck(controller_data,'ControllerData');
 
       input_frame = getStateFrame(r);
       output_frame = getStateFrame(r);

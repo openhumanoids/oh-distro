@@ -23,20 +23,9 @@ struct controller_debug_t
   int32_t n_q;
   float qddot_des[n_q];
 
-  // centroidal momentum
-  float h[6];
-
   // ZMP error
   float zmp_err[2];
 
-  // desired centroidal momentum rate of change
-  float hdot_des[6];
-
-  // QP bounds
-  int32_t nb;
-  float lb[nb];
-  float ub[nb]
-;
   // active set of inequality constraints
   int32_t n_active_constraints;
   float active_constraints[n_active_constraints];   
@@ -45,9 +34,8 @@ struct controller_debug_t
   float r_foot_contact;
   float l_foot_contact;
 
-  // qdd desired input to QP
+  // desired boy acceleration input to QP
   int32_t n_body_acc_des;
   float body_acc_des[n_body_acc_des];
-
 }
 

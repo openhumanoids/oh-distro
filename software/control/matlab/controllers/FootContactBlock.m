@@ -15,7 +15,7 @@ classdef FootContactBlock < MIMODrakeSystem
   methods
     function obj = FootContactBlock(r,controller_data,options)
       typecheck(r,'Biped');
-      typecheck(controller_data,'SharedDataHandle');
+      typecheck(controller_data,'QPControllerData');
        
       if nargin<3
         options = struct();
@@ -91,10 +91,10 @@ classdef FootContactBlock < MIMODrakeSystem
         terrain_map_ptr = 0;
       end
       
-      if exist('ContactDetectmex','file')~=3
-        error('can''t find ContactDetectmex.  did you build it?');
+      if exist('supportDetectmex','file')~=3
+        error('can''t find supportDetectmex.  did you build it?');
       end      
-      obj.mex_ptr = SharedDataHandle(ContactDetectmex(0,r.getMexModelPtr.ptr,terrain_map_ptr));
+      obj.mex_ptr = SharedDataHandle(supportDetectmex(0,r.getMexModelPtr.ptr,terrain_map_ptr));
   
       obj.rfoot_idx = findLinkInd(r,'r_foot');
       obj.lfoot_idx = findLinkInd(r,'l_foot');
@@ -108,7 +108,7 @@ classdef FootContactBlock < MIMODrakeSystem
     end
    
     function varargout=mimoOutput(obj,t,~,x)      
-      ctrl_data = obj.controller_data.data;
+      ctrl_data = obj.controller_data;
 
       if (ctrl_data.is_time_varying)
         % extract current desired supports
@@ -142,7 +142,7 @@ classdef FootContactBlock < MIMODrakeSystem
         height = 0;
       end
       
-      active_supports = ContactDetectmex(obj.mex_ptr.data,x,supp,contact_sensor,contact_thresh,height);
+      active_supports = supportDetectmex(obj.mex_ptr.data,x,supp,contact_sensor,contact_thresh,height);
 
       y = [1.0*any(active_supports==obj.lfoot_idx); 1.0*any(active_supports==obj.rfoot_idx)];
       if obj.num_outputs > 1

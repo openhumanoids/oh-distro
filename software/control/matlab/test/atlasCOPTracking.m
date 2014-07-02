@@ -1,5 +1,6 @@
 function atlasCOPTracking
 %NOTEST
+error('Scott has to fix this script');
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
 joint_str = {'leg','back'};% <---- cell array of (sub)strings

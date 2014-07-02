@@ -34,7 +34,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "aa-sync" {
-        exec = "drc-state-sync -e -k -o EST_ROBOT_STATE";
+        exec = "drc-state-sync";
         host = "robot";
     }
     cmd "fusion" {
@@ -46,7 +46,7 @@ group "a.1.core" {
         host = "robot";
     }
     cmd "pserver" {
-        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_control.cfg";
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_mit.cfg";
         host = "robot";
     }
     cmd "j2f" {
@@ -135,29 +135,11 @@ group "b.2.p_and_c" {
     }
 }
 
-group "m.state_est" {
-    cmd "state-sync-bdi-separate" {
-        exec = "drc-state-sync -b -e -k -o EST_ROBOT_STATE_BDI -p";
-        host = "robot";
-    }
-    cmd "state-sync-bdi-old" {
-        exec = "drc-state-sync -b -e -k -o EST_ROBOT_STATE";
-        host = "robot";
-    }
-    cmd "old-viewer" {
-        exec = "drc-viewer -a";
-        host = "robot";
-    }
-    cmd "gpf-laser" {
-        exec = "gpf-laser";
-        host = "robot";
-    }
-}
-
 #################################################################
 
-script "prep_core" { 
+script "prep_LN_RN" { 
     start group "0.development";
+    start cmd "model_LN_RN";
     start cmd "logger-robot";
     start group "a.1.core";
     start group "a.2.p_and_c";
@@ -166,15 +148,21 @@ script "prep_core" {
     start cmd "multisense";
 }
 
-script "prep_LN_RN" { 
-    start cmd "model_LN_RN";
-    run_script "prep_core";
-}
-
 script "robot_start" { 
+    stop cmd "atlas-high";
     stop cmd "atlas-off";
     wait ms 2000;
     start cmd "atlas-high";
+}
+
+script "reset_est_and_control" { 
+    stop cmd "Controller";
+    stop cmd "aa-sync";
+    stop cmd "fusion";
+    wait ms 1000;
+    start cmd "aa-sync";
+    start cmd "fusion";
+    start cmd "Controller";
 }
 
 script "kill_calibration_process" { 
