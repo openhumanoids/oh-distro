@@ -81,7 +81,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         warning('DRC:Biped:BadNominalStepWidth', 'Nominal step width should be greater than min step width');
         params.min_step_width = params.nom_step_width * 99;
       end
-      
+
       [Axy, bxy] = poly2lincon([0, params.max_forward_step, 0, -params.max_forward_step],...
                                [params.min_step_width, params.nom_step_width, params.max_step_width, params.nom_step_width]);
       [Axz, bxz] = poly2lincon([0, params.nom_forward_step, params.max_forward_step, params.nom_forward_step, 0, -params.max_forward_step], ...
@@ -122,7 +122,7 @@ classdef Biped < TimeSteppingRigidBodyManipulator
     function x0 = getInitialState(obj)
       x0 = obj.x0;
     end
-    
+
     function xstar = loadFixedPoint(obj)
       error('DRC:Biped:NotImplemented', 'Biped subclasses should implement this.');
     end
@@ -200,6 +200,30 @@ classdef Biped < TimeSteppingRigidBodyManipulator
         ceq = [C-B*u-J'*z; phiC];
         GCeq = [[dC(1:nq,1:nq)-dJz,-B,-J']',[JC'; zeros(nu+nz,length(phiC))]];
       end
+    end
+
+    function obj = configureDRCTerrain(obj, map_mode, q0)
+      terrain = obj.getTerrain();
+      if isa(terrain, 'DRCTerrainMap')
+        if map_mode == drc.footstep_plan_params_t.HORIZONTAL_PLANE
+          terrain = terrain.setFillPlaneFromConfiguration(obj, q0, true);
+          terrain = terrain.overrideNormals(true);
+          terrain = terrain.overrideHeights(true);
+        elseif map_mode == drc.footstep_plan_params_t.FOOT_PLANE
+          terrain = terrain.setFillPlaneFromConfiguration(obj, q0, false);
+          terrain = terrain.overrideNormals(true);
+          terrain = terrain.overrideHeights(true);
+        elseif map_mode == drc.footstep_plan_params_t.TERRAIN_HEIGHTS_Z_NORMALS
+          terrain = terrain.setFillPlaneFromConfiguration(obj, q0, true);
+          terrain = terrain.overrideNormals(true);
+          terrain = terrain.overrideHeights(false);
+        elseif map_mode == drc.footstep_plan_params_t.TERRAIN_HEIGHTS_AND_NORMALS
+          terrain = terrain.setFillPlaneFromConfiguration(obj, q0, false);
+          terrain = terrain.overrideNormals(false);
+          terrain = terrain.overrideHeights(false);
+        end
+      end
+      obj = obj.setTerrain(terrain);
     end
 
   end

@@ -7,8 +7,9 @@
 #include <Eigen/Dense>
 
 #ifdef USE_MAPS
-#include "mexmaps/MapLib.hpp"
-#include <maps/ViewBase.hpp>
+
+#include <terrain-map/TerrainMap.hpp>
+
 #endif
 
 #include "drake/RigidBodyManipulator.h"
@@ -59,10 +60,10 @@ template <typename DerivedA, typename DerivedB>
 void getRows(std::set<int> &rows, MatrixBase<DerivedA> const &M, MatrixBase<DerivedB> &Msub)
 {
   if (rows.size()==M.rows()) {
-    Msub = M; 
+    Msub = M;
     return;
   }
-  
+
   int i=0;
   for (std::set<int>::iterator iter=rows.begin(); iter!=rows.end(); iter++)
     Msub.row(i++) = M.row(*iter);
@@ -83,22 +84,21 @@ void getCols(std::set<int> &cols, MatrixBase<DerivedA> const &M, MatrixBase<Deri
 void collisionDetect(void* map_ptr, Vector3d const & contact_pos, Vector3d &pos, Vector3d *normal, double terrain_height)
 {
   if (map_ptr) {
-#ifdef USE_MAPS    
+#ifdef USE_MAPS
     Vector3f floatPos, floatNormal;
-    auto state = static_cast<mexmaps::MapHandle*>(map_ptr);
-    if (state != NULL) {
-      auto view = state->getView();
-      if (view != NULL) {
-        if (view->getClosest(contact_pos.cast<float>(),floatPos,floatNormal)) {
-          pos = floatPos.cast<double>();
-          if (normal) *normal = floatNormal.cast<double>();
-          return;
-        }
-      }
+    auto terrainMap = static_cast<terrainmap::TerrainMap*>(map_ptr);
+    if (terrainMap != NULL) {
+      Vector3d normalVect;
+      pos[0] = contact_pos[0];
+      pos[1] = contact_pos[1];
+      terrainMap->getHeightAndNormal(contact_pos[0], contact_pos[1],
+                                     pos[2], normalVect);
+      if (normal) *normal = normalVect;
+      return;
     }
-#endif      
+#endif
   } else {
-//    mexPrintf("Warning: using 0,0,1 as normal\n");
+// mexPrintf("Warning: using 0,0,1 as normal\n");
     pos << contact_pos.topRows(2), terrain_height;
     if (normal) *normal << 0,0,1;
   }
@@ -108,16 +108,16 @@ void surfaceTangents(const Vector3d & normal, Matrix<double,3,m_surface_tangents
 {
   Vector3d t1,t2;
   double theta;
-  
+
   if (1 - normal(2) < 10e-8) { // handle the unit-normal case (since it's unit length, just check z)
     t1 << 1,0,0;
   } else { // now the general case
     t1 << normal(2), -normal(1), 0; // normal.cross([0;0;1])
     t1 /= sqrt(normal(1)*normal(1) + normal(2)*normal(2));
   }
-      
+
   t2 = t1.cross(normal);
-      
+
   for (int k=0; k<m_surface_tangents; k++) {
     theta = k*M_PI/m_surface_tangents;
     d.col(k)=cos(theta)*t1 + sin(theta)*t2;
@@ -136,14 +136,14 @@ int contactPhi(RigidBodyManipulator* r, SupportStateElement& supp, void *map_ptr
 
   int i=0;
   for (std::set<int>::iterator pt_iter=supp.contact_pt_inds.begin(); pt_iter!=supp.contact_pt_inds.end(); pt_iter++) {
-    if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols()) 
+    if (*pt_iter<0 || *pt_iter>=b->contact_pts.cols())
       mexErrMsgIdAndTxt("DRC:ControlUtil:BadInput","requesting contact pt %d but body only has %d pts",*pt_iter,b->contact_pts.cols());
-    
+
     tmp = b->contact_pts.col(*pt_iter);
     r->forwardKin(supp.body_idx,tmp,0,contact_pos);
     collisionDetect(map_ptr,contact_pos,pos,NULL,terrain_height);
     pos -= contact_pos;  // now -rel_pos in matlab version
-    
+
     phi(i) = pos.norm();
     if (pos.dot(normal)>0)
       phi(i)=-phi(i);
@@ -160,11 +160,11 @@ int contactConstraints(RigidBodyManipulator *r, int nc, std::vector<SupportState
   D.resize(nq,nc*2*m_surface_tangents);
   Jp.resize(3*nc,nq);
   Jpdot.resize(3*nc,nq);
-  
+
   Vector3d contact_pos,pos,posB,normal; Vector4d tmp;
   MatrixXd J(3,nq);
   Matrix<double,3,m_surface_tangents> d;
-  
+
   for (std::vector<SupportStateElement>::iterator iter = supp.begin(); iter!=supp.end(); iter++) {
     RigidBody* b = &(r->bodies[iter->body_idx]);
     if (nc>0) {
@@ -188,12 +188,12 @@ int contactConstraints(RigidBodyManipulator *r, int nc, std::vector<SupportState
         Jp.block(3*k,0,3,nq) = J;
         r->forwardJacDot(iter->body_idx,tmp,0,J);
         Jpdot.block(3*k,0,3,nq) = J;
-        
+
         k++;
       }
     }
   }
-  
+
   return k;
 }
 
@@ -206,12 +206,12 @@ int contactConstraintsBV(RigidBodyManipulator *r, int nc, double mu, std::vector
   JB.resize(nq,nc*2*m_surface_tangents);
   Jp.resize(3*nc,nq);
   Jpdot.resize(3*nc,nq);
-  
+
   Vector3d contact_pos,pos,posB,normal; Vector4d tmp;
   MatrixXd J(3,nq);
   Matrix<double,3,m_surface_tangents> d;
   double norm = sqrt(1+mu*mu); // because normals and ds are orthogonal, the norm has a simple form
-  
+
   for (std::vector<SupportStateElement>::iterator iter = supp.begin(); iter!=supp.end(); iter++) {
     RigidBody* b = &(r->bodies[iter->body_idx]);
     if (nc>0) {
@@ -224,9 +224,9 @@ int contactConstraintsBV(RigidBodyManipulator *r, int nc, double mu, std::vector
         collisionDetect(map_ptr,contact_pos,pos,&normal,terrain_height);
         surfaceTangents(normal,d);
         for (j=0; j<m_surface_tangents; j++) {
-          B.col(2*k*m_surface_tangents+j) = (normal + mu*d.col(j)) / norm; 
-          B.col((2*k+1)*m_surface_tangents+j) = (normal - mu*d.col(j)) / norm; 
-    
+          B.col(2*k*m_surface_tangents+j) = (normal + mu*d.col(j)) / norm;
+          B.col((2*k+1)*m_surface_tangents+j) = (normal - mu*d.col(j)) / norm;
+
           JB.col(2*k*m_surface_tangents+j) = J.transpose()*B.col(2*k*m_surface_tangents+j);
           JB.col((2*k+1)*m_surface_tangents+j) = J.transpose()*B.col((2*k+1)*m_surface_tangents+j);
         }
@@ -236,11 +236,11 @@ int contactConstraintsBV(RigidBodyManipulator *r, int nc, double mu, std::vector
         Jp.block(3*k,0,3,nq) = J;
         r->forwardJacDot(iter->body_idx,tmp,0,J);
         Jpdot.block(3*k,0,3,nq) = J;
-        
+
         k++;
       }
     }
   }
-  
+
   return k;
 }

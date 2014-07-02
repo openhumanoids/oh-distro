@@ -1,4 +1,4 @@
-function atlasWalking()
+function atlasWalking
 %NOTEST
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
@@ -83,10 +83,9 @@ request.params.nom_forward_step = 0.2;
 request.params.max_forward_step = 0.30;
 request.params.nom_upward_step = 0.2;
 request.params.nom_downward_step = 0.2;
-request.params.ignore_terrain = true;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
-request.params.map_command = 0;
+request.params.map_mode = drc.footstep_plan_params_t.HORIZONTAL_PLANE;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
 request.default_step_params.step_speed = 0.1;
