@@ -18,7 +18,7 @@ classdef StatelessWalkingPlanner
         xstar = r.loadFixedPoint();
       end
 
-      r = r.configureDRCTerrain(request.footstep_plan.params.map_mode, q0);
+      r = configureDRCTerrain(r, request.footstep_plan.params.map_mode, q0);
 
       qstar = xstar(1:nq);
 

@@ -10,7 +10,7 @@ classdef StatelessFootstepPlanner
       q0 = x0(1:biped.getNumDOF());
       feet_centers = biped.feetPosition(q0);
 
-      biped = biped.configureDRCTerrain(request.params.map_mode, q0);
+      biped = configureDRCTerrain(biped, request.params.map_mode, q0);
       params = struct(request.params);
 
       if request.num_existing_steps > 0
@@ -44,7 +44,7 @@ classdef StatelessFootstepPlanner
     function plan = check_footstep_plan(biped, request)
       x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
       q0 = x0(1:biped.getNumDOF());
-      biped = biped.configureDRCTerrain(request.params.map_mode, q0);
+      biped = configureDRCTerrain(biped, request.params.map_mode, q0);
       plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, biped);
       if request.snap_to_terrain
         plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
