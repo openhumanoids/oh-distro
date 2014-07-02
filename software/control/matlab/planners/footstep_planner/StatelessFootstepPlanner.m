@@ -18,7 +18,7 @@ classdef StatelessFootstepPlanner
         for j = 1:request.num_existing_steps
           footsteps(j) = Footstep.from_footstep_t(request.existing_steps(j), biped);
         end
-        plan = FootstepPlan(footsteps, params, [], []);
+        plan = FootstepPlan(footsteps, biped, params, [], []);
       else
         goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
         if request.num_goal_steps > 2
