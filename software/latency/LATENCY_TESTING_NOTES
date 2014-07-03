@@ -90,22 +90,20 @@ commandLoopTest.m
 
 disabled X/lightdm
 
-typical:
+typical behaviour after improvementas:
 0.20msec AS -> ERT (includes Kalman filtering)
 0.15msec ERS -> AC (c++ handlers for messages, nothing elsE)
 0.35msec AS -> AC
+occasional outliers (1 per 30 sec about 0.5msec. very rarely something more than 1msec)
 
-occasional (1 per 30 sec about 0.5msec. very rarely something more than 1msec)
-
-tt0=1, monitor on a second machine with signal scope
+ttl=1, monitoring on a second machine with signal scope
 
 
 all changes reverted:
 0.60msec AS -> ERT (includes Kalman filtering)
 0.40msec ERS -> AC (c++ handlers for messages, nothing elsE)
 1.00msec AS -> AC
-
-(using sudo -E chrt --rr 99 ./drc-latency -p 1)
+(monitoring with sudo -E chrt --rr 99 ./drc-latency -p 1)
 
 
 
