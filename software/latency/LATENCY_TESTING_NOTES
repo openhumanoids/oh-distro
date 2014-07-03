@@ -146,3 +146,28 @@ with gui: a few of outliers pers second above 6msec
 current limitation:
 in addpath_control.m comment out 
 %checkDependency('gurobi')
+
+
+
+
+
+//  // TEMP - store time of received ATLAS_STATE
+//  const int NUM_UTIMES = .30000;
+//  static std::vector<uint64_t> recv_time(NUM_UTIMES, 0);
+//  static std::vector<uint64_t> handler_time(NUM_UTIMES, 0);
+//  static int time_index = 0;
+//  if(time_index < NUM_UTIMES)
+//  {
+//    recv_time[time_index] = rbuf->recv_utime;
+//    handler_time[time_index] = _timestamp_now();
+//    ++time_index;
+//  }
+//  else
+//  {
+//    // dump these all to a file
+//    std::ofstream fout("/home/drc/Desktop/latency_test/atlas_state_rx.txt");
+//    for(int i =0; i < NUM_UTIMES; ++i)
+//       fout << recv_time[i] << "," << handler_time[i] << std::endl;
+//      exit(1);  
+//  }
+//  // end TEMP

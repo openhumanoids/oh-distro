@@ -6,7 +6,6 @@
 #include <fstream>
 
 #include "state_sync.hpp"
-#include <ConciseArgs>
 #include <sys/time.h>
 
 
@@ -22,6 +21,24 @@ void assignJointsStruct( Joints &joints ){
   joints.effort.assign( joints.name.size(), 0);  
 }
 
+void setPoseToZero(PoseT &pose){
+  pose.utime = 0; // use this to signify un-initalised
+  pose.pos << 0,0, 0.95;// for ease of use//Eigen::Vector3d::Identity();
+  pose.vel << 0,0,0;
+  pose.orientation << 1.,0.,0.,0.;
+  pose.rotation_rate << 0,0,0;
+  pose.accel << 0,0,0;
+}
+
+// Quick check that the incoming and previous joint sets are the same size
+// TODO: perhaps make this more careful with more checks?
+void checkJointLengths(size_t previous_size , size_t incoming_size, std::string channel){
+  if ( incoming_size != previous_size ){
+    std::cout << "ERROR: Number of joints in " << channel << "[" << incoming_size 
+              << "] does not match previous [" << previous_size << "]\n"; 
+    exit(-1);
+  }  
+}
 
 void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
                      int64_t utime, void* user) {  
@@ -31,7 +48,7 @@ void onParamChangeSync(BotParam* old_botparam, BotParam* new_botparam,
 }
 
 state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_, 
-                       boost::shared_ptr<CommandLineConfig> &cl_cfg_):
+                       boost::shared_ptr<StateSyncConfig> &cl_cfg_):
                        lcm_(lcm_), cl_cfg_(cl_cfg_){
 
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));     
@@ -103,7 +120,6 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub1 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);
   lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
-  lcm::Subscription* sub5 = lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
   lcm::Subscription* sub6 = lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
   lcm::Subscription* sub7 = lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);
   
@@ -204,14 +220,37 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   utime_prev_ = 0;
 }
 
-void state_sync::setPoseToZero(PoseT &pose){
-  pose.utime = 0; // use this to signify un-initalised
-  pose.pos << 0,0, 0.95;// for ease of use//Eigen::Vector3d::Identity();
-  pose.vel << 0,0,0;
-  pose.orientation << 1.,0.,0.,0.;
-  pose.rotation_rate << 0,0,0;
-  pose.accel << 0,0,0;
+
+//////////////////////////////////////////////////////////////////////////////////////
+////////////////// Data Derived entirely from BDI and drc-atlas //////////////////////
+void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
+  checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
+  if (cl_cfg_->use_encoder_joint_sensors ){
+    applyEncoderJointSensors(msg->utime,  msg->joint_position,
+       msg->joint_velocity,  msg->joint_effort);
+  }
+  if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
+    filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
+  }
+  publishRobotState(msg->utime,  msg->force_torque);    
 }
+
+void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg){
+  atlas_joints_out_.position = msg->joint_position_out;
+  atlas_joints_out_.velocity = msg->joint_velocity_out;
+}
+
+void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  pose_BDI_.utime = msg->utime;
+  pose_BDI_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  pose_BDI_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  pose_BDI_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  pose_BDI_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
+}
+////////////////// End Data Derived entirely from BDI and drc-atlas //////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
 
 void state_sync::setEncodersFromParam() {
   
@@ -289,6 +328,7 @@ void state_sync::enableEncoders(bool enable) {
 }
 
 
+<<<<<<< HEAD
 // Quick check that the incoming and previous joint sets are the same size
 // TODO: perhaps make this more careful with more checks?
 void checkJointLengths(size_t previous_size , size_t incoming_size, std::string channel){
@@ -300,6 +340,18 @@ void checkJointLengths(size_t previous_size , size_t incoming_size, std::string 
 }
 
 
+=======
+void state_sync::potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
+  std::cout << "got potOffsetHandler\n";
+  pot_joint_offsets_ = msg->joint_position;
+  
+  for (size_t i=0; i < pot_joint_offsets_.size(); i++){
+    std::cout << pot_joint_offsets_[i] << ", ";
+  }
+  std::cout << "\n";
+}
+
+>>>>>>> adding app seperate from sync library
 void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg){
   checkJointLengths( head_joints_.position.size(),  msg->joint_position.size(), channel);
   
@@ -376,33 +428,17 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
   //std::cout << dtime << " end\n";   
 }
 
+<<<<<<< HEAD
 
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
+=======
+void state_sync::applyEncoderJointSensors(int64_t msg_utime_, std::vector<float> joint_position,
+     std::vector<float> joint_velocity, std::vector<float> joint_effort){  
+>>>>>>> adding app seperate from sync library
   
-//  // TEMP - store time of received ATLAS_STATE
-//  const int NUM_UTIMES = .30000;
-//  static std::vector<uint64_t> recv_time(NUM_UTIMES, 0);
-//  static std::vector<uint64_t> handler_time(NUM_UTIMES, 0);
-//  static int time_index = 0;
-//  if(time_index < NUM_UTIMES)
-//  {
-//    recv_time[time_index] = rbuf->recv_utime;
-//    handler_time[time_index] = _timestamp_now();
-//    ++time_index;
-//  }
-//  else
-//  {
-//    // dump these all to a file
-//    std::ofstream fout("/home/drc/Desktop/latency_test/atlas_state_rx.txt");
-//    for(int i =0; i < NUM_UTIMES; ++i)
-//       fout << recv_time[i] << "," << handler_time[i] << std::endl;
-//      exit(1);  
-//  }
-//  // end TEMP
-
-
   std::vector <float> mod_positions;
+<<<<<<< HEAD
   //mod_positions.assign(28,0.0);
   mod_positions = msg->joint_position;
 
@@ -410,70 +446,60 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   atlas_joints_.velocity = msg->joint_velocity;
   atlas_joints_.effort = msg->joint_effort;
   
+=======
+  mod_positions.assign(28,0.0);
+  for (size_t i=0; i < pot_joint_offsets_.size(); i++){
+    mod_positions[i] = joint_position[i] + pot_joint_offsets_[i]; 
+    ///std::cout << pot_joint_offsets_[i] << ", ";
+  }  
+  atlas_joints_.position = mod_positions;
+  atlas_joints_.velocity = joint_velocity;
+  atlas_joints_.effort = joint_effort;  
+>>>>>>> adding app seperate from sync library
   
   // Overwrite the actuator joint positions and velocities with the after-transmission 
   // sensor values for the ARMS ONLY (first exposed in v2.7.0 of BDI's API)
   // NB: this assumes that they are provided at the same rate as ATLAS_STATE
-  if (cl_cfg_->use_encoder_joint_sensors ){
-    if (atlas_joints_.position.size() == atlas_joints_out_.position.size()   ){
-      if (atlas_joints_.velocity.size() == atlas_joints_out_.velocity.size()   ){
-        for (int i=0; i < atlas_joints_out_.position.size() ; i++ ) { 
+  if (atlas_joints_.position.size() == atlas_joints_out_.position.size()   ){
+    if (atlas_joints_.velocity.size() == atlas_joints_out_.velocity.size()   ){
+      for (int i=0; i < atlas_joints_out_.position.size() ; i++ ) { 
 
-          if (use_encoder_[i]) {
-            atlas_joints_.position[i] = atlas_joints_out_.position[i];
-            if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
-              atlas_joints_.position[i] -= 2*M_PI;
-            atlas_joints_.position[i] += encoder_joint_offsets_[i];
+        if (use_encoder_[i]) {
+          atlas_joints_.position[i] = atlas_joints_out_.position[i];
+          if (atlas_joints_.position[i] > max_encoder_wrap_angle_[i])
+            atlas_joints_.position[i] -= 2*M_PI;
+          atlas_joints_.position[i] += encoder_joint_offsets_[i];
 
-            // check for wonky encoder initialization :(
-            while (atlas_joints_.position[i] - mod_positions[i] > 0.5)
-              atlas_joints_.position[i] -= 2*M_PI/3;
-            while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
-              atlas_joints_.position[i] += 2*M_PI/3;
+          // check for wonky encoder initialization :(
+          while (atlas_joints_.position[i] - mod_positions[i] > 0.5)
+            atlas_joints_.position[i] -= 2*M_PI/3;
+          while (atlas_joints_.position[i] - mod_positions[i] < -0.5)
+            atlas_joints_.position[i] += 2*M_PI/3;
 
-            if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.11 && (msg->utime - utime_prev_ > 5000000)) {
-              utime_prev_ = msg->utime;
+          if (abs(atlas_joints_.position[i] - mod_positions[i]) > 0.11 && (msg_utime_ - utime_prev_ > 5000000)) {
+            utime_prev_ = msg_utime_;
 
-              // display system status message in viewer
-              drc::system_status_t stat_msg;
-              stat_msg.utime = msg->utime;
-              stat_msg.system = stat_msg.MOTION_ESTIMATION;
-              stat_msg.importance = stat_msg.VERY_IMPORTANT;
-              stat_msg.frequency = stat_msg.LOW_FREQUENCY;
+            // display system status message in viewer
+            drc::system_status_t stat_msg;
+            stat_msg.utime = msg_utime_;
+            stat_msg.system = stat_msg.MOTION_ESTIMATION;
+            stat_msg.importance = stat_msg.VERY_IMPORTANT;
+            stat_msg.frequency = stat_msg.LOW_FREQUENCY;
 
-              std::stringstream message;
-              message << "State Sync: Joint '" << ATLAS_JOINT_NAMES[i] << "' encoder might need calibration :)";
-              stat_msg.value = message.str();
+            std::stringstream message;
+            message << "State Sync: Joint '" << ATLAS_JOINT_NAMES[i] << "' encoder might need calibration :)";
+            stat_msg.value = message.str();
 
-              lcm_->publish(("SYSTEM_STATUS"), &stat_msg); 
-              std::cout << message.str() << std::endl; 
-            }
-
-            atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
+            lcm_->publish(("SYSTEM_STATUS"), &stat_msg); 
+            std::cout << message.str() << std::endl; 
           }
+
+          atlas_joints_.velocity[i] = atlas_joints_out_.velocity[i];
         }
       }
     }
   }
-
-  if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
-    filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
-  }
-
-  if (cl_cfg_->use_torque_adjustment){
-    torque_adjustment_.processSample(atlas_joints_.position, atlas_joints_.effort );
-  }
-
-  publishRobotState(msg->utime, msg->force_torque);
-  
 }
-
-void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg){
-  //std::cout << "got atlasExtraHandler\n";
-  atlas_joints_out_.position = msg->joint_position_out;
-  atlas_joints_out_.velocity = msg->joint_velocity_out;
-}
-
 
 
 bot_core::rigid_transform_t getIsometry3dAsBotRigidTransform(Eigen::Isometry3d pose, int64_t utime){
@@ -488,7 +514,6 @@ bot_core::rigid_transform_t getIsometry3dAsBotRigidTransform(Eigen::Isometry3d p
   tf.quat[2] = quat.y();
   tf.quat[3] = quat.z();
   return tf;
-
 }
 
 Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
@@ -499,16 +524,6 @@ Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
                                                pose.orientation[2], pose.orientation[3]);
   pose_iso.rotate(quat);
   return pose_iso;
-}
-
-
-void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  pose_BDI_.utime = msg->utime;
-  pose_BDI_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
-  pose_BDI_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
-  pose_BDI_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
-  pose_BDI_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
-  pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
 }
 
 void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
@@ -677,29 +692,5 @@ void state_sync::appendJoints(drc::robot_state_t& msg_out, Joints joints){
     msg_out.joint_velocity.push_back( joints.velocity[i]);
     msg_out.joint_effort.push_back( joints.effort[i] );
   }
-}
-
-int
-main(int argc, char ** argv){
-  boost::shared_ptr<CommandLineConfig> cl_cfg(new CommandLineConfig() );  
-  ConciseArgs opt(argc, (char**)argv);
-  opt.add(cl_cfg->standalone_head, "l", "standalone_head","Standalone Head");
-  opt.add(cl_cfg->standalone_hand, "f", "standalone_hand","Standalone Hand");
-  opt.add(cl_cfg->bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make EST_ROBOT_STATE");
-  opt.add(cl_cfg->simulation_mode, "s", "simulation","Simulation mode - output TRUE RS");
-  opt.add(cl_cfg->output_channel, "o", "output_channel","Output Channel for robot state msg");
-  opt.add(cl_cfg->publish_pose_body, "p", "publish_pose_body","Publish POSE_BODY when in BDI mode");
-  opt.parse();
-  
-  std::cout << "standalone_head: " << cl_cfg->standalone_head << "\n";
-  std::cout << "publish_pose_body: " << cl_cfg->publish_pose_body << "\n";
-
-  boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM() );
-  if(!lcm->good())
-    return 1;  
-  
-  state_sync app(lcm, cl_cfg);
-  while(0 == lcm->handle());
-  return 0;
 }
 
