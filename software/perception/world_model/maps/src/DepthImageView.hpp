@@ -12,6 +12,7 @@ public:
   typedef std::shared_ptr<DepthImageView> Ptr;
 
   enum NormalMethod {
+    NormalMethodTriangle,
     NormalMethodLeastSquares,
     NormalMethodRobustKernel,
     NormalMethodSampleConsensus,

@@ -4,6 +4,16 @@ classdef HeightMapHandle < handle
         mHandle;   % pointer to the c++ object
     end
     
+    methods(Access=private)
+        function out = logicalToString(~,val)
+            if (val)
+                out = 'true';
+            else
+                out = 'false';
+            end
+        end
+    end
+    
     methods
         % constructor
         function this = HeightMapHandle(mexFunc,privateChannel)
@@ -23,19 +33,23 @@ classdef HeightMapHandle < handle
         end
         
         function this = setFillMissing(this,val)
-            if (val)
-                this.mMexFunc('property',this.mHandle,'fill','true');
-            else
-                this.mMexFunc('property',this.mHandle,'fill','false');
-            end
+            this.mMexFunc('property',this.mHandle,'fillmissing',this.logicalToString(val));
         end
         
-        function pts = getPointCloud(this)
-            pts = this.mMexFunc('pointcloud',this.mHandle);
+        function overrideHeights(this,val)
+            this.mMexFunc('property',this.mHandle,'overrideheights',this.logicalToString(val));
         end
         
-        function [pts,normals] = getClosest(this,pts)
-            [pts,normals] = this.mMexFunc('closest',this.mHandle,pts);
+        function setFillPlane(this,plane)
+            this.mMexFunc('fillplane',this.mHandle,plane);
+        end
+        
+        function setUseFootPose(this,val)
+            this.mMexFunc('property',this.mHandle,'usefootpose',this.logicalToString(val));
+        end            
+        
+        function [heights,normals] = getTerrain(this,xy)
+            [heights,normals] = this.mMexFunc('terrain',this.mHandle,xy);
         end
         
         function setNormalRadius(this,radius)
@@ -43,27 +57,25 @@ classdef HeightMapHandle < handle
         end
 
         function setNormalMethod(this,method)
-            if (strcmpi(method,'leastsquares'))
+            if (strcmpi(method,'override'))
                 this.mMexFunc('property',this.mHandle,'normalmethod','0');
-            elseif (strcmpi(method,'robust'))
-                this.mMexFunc('property',this.mHandle,'normalmethod','1');
-            elseif (strcmpi(method,'ransac'))
+            elseif (strcmpi(method,'leastsquares'))
                 this.mMexFunc('property',this.mHandle,'normalmethod','2');
+            elseif (strcmpi(method,'robust'))
+                this.mMexFunc('property',this.mHandle,'normalmethod','3');
+            elseif (strcmpi(method,'ransac'))
+                this.mMexFunc('property',this.mHandle,'normalmethod','4');
             else
                 error('invalid normal method');
             end
         end
 
-        function setMapMode(this,mode)
-            this.mMexFunc('property',this.mHandle,'mapmode',sprintf('%d',mode));
-        end
-        
         function ptr = getPointerForMex(this)
-            ptr = this.mMexFunc('wrapper',this.mHandle);
+            ptr = this.mMexFunc('pointer',this.mHandle);
         end
         
-        function [heights,xform] = getRawHeights(this)
-            [heights,xform] = this.mMexFunc('getrawdepth',this.mHandle);
+        function [heights,xform] = getHeightData(this)
+            [heights,xform] = this.mMexFunc('heightdata',this.mHandle);
             xform = inv(xform);
             [x,y] = meshgrid(1:size(heights,2),1:size(heights,1));
             pts = [x(:),y(:),heights(:)];

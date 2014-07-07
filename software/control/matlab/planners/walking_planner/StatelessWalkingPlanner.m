@@ -10,7 +10,6 @@ classdef StatelessWalkingPlanner
 
       x0 = r.getStateFrame().lcmcoder.decode(request.initial_state);
       q0 = x0(1:end/2);
-      kinsol = doKinematics(r, q0);
       nq = getNumDOF(r);
 
       if request.use_new_nominal_state
@@ -19,19 +18,8 @@ classdef StatelessWalkingPlanner
         xstar = r.loadFixedPoint();
       end
 
-      if request.footstep_plan.params.ignore_terrain
-        r = r.setTerrain(KinematicTerrainMap(r, q0, true));
-        r = compile(r);
-      else
-        terrain = r.getTerrain();
-        if ismethod(terrain, 'setBackupTerrain')
-          terrain = terrain.setBackupTerrain(r, q0);
-          r = r.setTerrain(terrain);
-          r = compile(r);
-        end
-      end
+      r = configureDRCTerrain(r, request.footstep_plan.params.map_mode, q0);
 
-%       r = r.setInitialState(xstar); % TODO: do we need this? -robin
       qstar = xstar(1:nq);
 
       footstep_plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, r);

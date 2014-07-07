@@ -8,33 +8,37 @@
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/Clock.hpp>
 #include <drc_utils/LcmWrapper.hpp>
+#include <drc_utils/BotWrapper.hpp>
 
 #include <lcmtypes/drc/data_request_t.hpp>
 
-#include <maps/DepthImageView.hpp>
-#include <maps/DepthImage.hpp>
+#include <terrain-map/TerrainMap.hpp>
 
-#include "mexmaps/MapLib.hpp"
-#include "mexmaps/ViewClientWrapper.hpp"
+using terrainmap::TerrainMap;
 
 namespace mexmaps {
 
-struct WrapperCollection {
-  typedef std::unordered_map<int,std::shared_ptr<ViewClientWrapper> > WrapperGroup;
-  WrapperGroup mWrappers;
+const std::string kHeightMapChannel = "MAP_CONTROL_HEIGHT";
+const int kHeightMapViewId = 1000;
+
+struct MapCollection {
+  typedef std::unordered_map<int,std::shared_ptr<TerrainMap> > MapGroup;
+  MapGroup mMaps;
   int mNextId;
   std::shared_ptr<lcm::LCM> mLcm;
   std::shared_ptr<drc::LcmWrapper> mLcmWrapper;
+  std::shared_ptr<drc::BotWrapper> mBotWrapper;
 
-  WrapperCollection() {
+  MapCollection() {
     mLcm.reset(new lcm::LCM());
     drc::Clock::instance()->setLcm(mLcm);
     drc::Clock::instance()->setVerbose(false);
     mLcmWrapper.reset(new drc::LcmWrapper(mLcm));
+    mBotWrapper.reset(new drc::BotWrapper(mLcm, NULL, NULL));
     mNextId = 1;
   }
 
-  ~WrapperCollection() {
+  ~MapCollection() {
     cleanupAll();
 
     // TODO: don't know why, but segfaults on exit without this line
@@ -46,39 +50,44 @@ struct WrapperCollection {
 
   void cleanupAll() {
     mLcmWrapper->stopHandleThread();
-    if (mWrappers.size() > 0) {
+    if (mMaps.size() > 0) {
       mexPrintf("destroying all map instances\n"); mexEvalString("drawnow");
       mexPrintf("WARNING: all handles now invalid\n"); mexEvalString("drawnow");
     }
-    mWrappers.clear();
-    //if (mexIsLocked()) mexUnlock();
+    mMaps.clear();
   }
 
-  std::shared_ptr<ViewClientWrapper> createWrapper() {
-    std::shared_ptr<ViewClientWrapper> wrapper(new ViewClientWrapper(mNextId, mLcm));
+  std::shared_ptr<TerrainMap> createMap() {
+    std::shared_ptr<TerrainMap> terrainMap(new TerrainMap(mBotWrapper));
+    terrainMap->setInfo(kHeightMapViewId, kHeightMapChannel);
+    mMaps[mNextId] = terrainMap;
     ++mNextId;
-    mWrappers[wrapper->mId] = wrapper;
-    // TODO TEMP? if (!mexIsLocked()) mexLock();
     mLcmWrapper->startHandleThread();
-    return wrapper;
+    return terrainMap;
   }
 
-  std::shared_ptr<ViewClientWrapper> getWrapper(const int iId) {
-    WrapperGroup::const_iterator item = mWrappers.find(iId);
-    if (item == mWrappers.end()) return std::shared_ptr<ViewClientWrapper>();
+  std::shared_ptr<TerrainMap> getMap(const int iId) const {
+    MapGroup::const_iterator item = mMaps.find(iId);
+    if (item == mMaps.end()) return std::shared_ptr<TerrainMap>();
     return item->second;
   }
 
-  void destroyWrapper(const int iId) {
-    mWrappers.erase(iId);
-    if (mWrappers.size() == 0) {
-      //if (mexIsLocked()) mexUnlock();
+  void destroyMap(const int iId) {
+    mMaps.erase(iId);
+    if (mMaps.size() == 0) {
       mLcmWrapper->stopHandleThread();
     }
   }
 
-  static WrapperCollection& instance() {
-    static WrapperCollection theCollection;
+  int getMapId(const std::shared_ptr<TerrainMap>& iMap) const {
+    for (auto m : mMaps) {
+      if (m.second == iMap) return m.first;
+    }
+    return -1;
+  }
+
+  static MapCollection& instance() {
+    static MapCollection theCollection;
     return theCollection;
   }
 
@@ -129,7 +138,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   // create instance
   if (command == "create") {
-    auto wrapper = WrapperCollection::instance().createWrapper();
+    auto terrainMap = MapCollection::instance().createMap();
     if (nrhs > 1) {
       if ((nrhs % 2) != 1) {
         mexErrMsgTxt("MapWrapper: wrong number of parameter args");
@@ -148,38 +157,40 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         if (key == "privatechannel") {
           bool isPrivate = Utils::getBool(value);
           if (isPrivate) {
-            wrapper->setHeightMapChannel(MapHandle::kHeightMapChannel,
-                                         MapHandle::kHeightMapViewId);
+            terrainMap->setInfo(kHeightMapViewId, kHeightMapChannel);
           }
           else {
-            wrapper->setHeightMapChannel
-              ("MAP_DEPTH", drc::data_request_t::HEIGHT_MAP_SCENE);
+            terrainMap->setInfo(drc::data_request_t::HEIGHT_MAP_SCENE,
+                                "MAP_DEPTH");
           }
         }
         else {
           mexErrMsgTxt("MapWrapper: invalid property");
         }
-      }  
+      }
+      terrainMap->startListening();
+      if (terrainMap->getViewId() == kHeightMapViewId) {
+        terrainMap->sendRequest(Eigen::Vector3d(-2,-5,-3),
+                                Eigen::Vector3d(5,5,0.3), 0.03, 5, 0.5);
+      }
     }
 
-    wrapper->start();
-
-    // return index of wrapper object
+    // return index of terrainmap object
     plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
-    double id = wrapper->mId;
+    double id = MapCollection::instance().getMapId(terrainMap);
     memcpy(mxGetData(plhs[0]),&id,sizeof(double));
     return;
   }
 
-  // get wrapper object from static collection
+  // get terrainmap object from static collection
   if ((nrhs < 2) || (mxGetNumberOfElements(prhs[1]) != 1)) {
     mexErrMsgTxt("MapWrapper: second argument must be handle id");
   }
   double val;
   memcpy(&val, mxGetData(prhs[1]), sizeof(double));
-  int wrapperId = (int)(val+0.5);
-  auto wrapper = WrapperCollection::instance().getWrapper(wrapperId);
-  if (wrapper == NULL) {
+  int mapId = (int)(val+0.5);
+  auto terrainMap = MapCollection::instance().getMap(mapId);
+  if (terrainMap == NULL) {
     mexErrMsgTxt("MapWrapper: handle is invalid; did you clear mex?");
   }
 
@@ -188,9 +199,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if (nrhs != 2) {
       mexErrMsgTxt("MapWrapper: too many arguments to destroy");
     }
-    WrapperCollection::instance().destroyWrapper(wrapper->mId);
+    MapCollection::instance().destroyMap(mapId);
   }
 
+  /* TODO: deprecated
   // get point cloud
   else if (command == "pointcloud") {
     if (nrhs != 2) {
@@ -211,42 +223,35 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       ptr[i*3+2] = pt.z;
     }
   }
+  */
 
-  // get closest points and normals
-  else if (command == "closest") {
+  // get heights and normals at specified xy positions
+  else if (command == "terrain") {
     if (nrhs != 3) {
-      mexErrMsgTxt("MapWrapper: too many arguments to closest");
+      mexErrMsgTxt("MapWrapper: too many arguments to terrain");
     }
-    if (mxGetM(prhs[2]) != 3) {
-      mexErrMsgTxt("MapWrapper: points must be 3xn");
+    int m = mxGetM(prhs[2]);
+    if (m < 2) {
+      mexErrMsgTxt("MapWrapper: points must be at least 2xn");
     }
     if (nlhs > 2) {
       mexErrMsgTxt("MapWrapper: too many output arguments");
     }
 
     int n = mxGetN(prhs[2]);
-    plhs[0] = mxCreateDoubleMatrix(3,n,mxREAL);
+    plhs[0] = mxCreateDoubleMatrix(1,n,mxREAL);
     mxArray* pmxNormal = mxCreateDoubleMatrix(3,n,mxREAL);
     
     double* posPtr = mxGetPr(prhs[2]);
-    double* closestPtr = mxGetPr(plhs[0]);
+    double* heightPtr = mxGetPr(plhs[0]);
     double* normalPtr = mxGetPr(pmxNormal);
-    Eigen::Vector3f pos, closest, normal;
+    Eigen::Vector3d normal;
 
-    auto view = wrapper->getView();
     for (int i = 0; i < n; ++i) {
-      pos << posPtr[3*i], posPtr[3*i+1], posPtr[3*i+2];
-      if ((view != NULL) && view->getClosest(pos,closest,normal)) {
-        for (int j = 0; j < 3; ++j) {
-          closestPtr[3*i+j] = closest[j];
-          normalPtr[3*i+j] = normal[j];
-        }
-      }
-      else { // invalid view or off grid
-        for (int j = 0; j < 3; ++j) {
-          closestPtr[3*i+j] = NAN;
-          normalPtr[3*i+j] = NAN;
-        }
+      terrainMap->getHeightAndNormal(posPtr[m*i], posPtr[m*i+1],
+                                     heightPtr[i], normal);
+      for (int j = 0; j < 3; ++j) {
+        normalPtr[3*i+j] = normal[j];
       }
     }
 
@@ -254,31 +259,30 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     else mxDestroyArray(pmxNormal);
   }
 
-  else if (command == "getrawdepth") {
+  else if (command == "heightdata") {
     if (nrhs != 2) {
-      mexErrMsgTxt("MapWrapper: too many arguments to getrawdepth");
+      mexErrMsgTxt("MapWrapper: too many arguments to heightdata");
     }
-    auto view = std::dynamic_pointer_cast<maps::DepthImageView>
-      (wrapper->getView());
-    if (view == NULL) {
+    auto data = terrainMap->getData();
+    if (data == NULL) {
       plhs[0] = mxCreateDoubleMatrix(0,0,mxREAL);
     }
-    auto img = view->getDepthImage();
-    int w(img->getWidth()), h(img->getHeight());
-    plhs[0] = mxCreateDoubleMatrix(h,w,mxREAL);
-    auto vals = img->getData(maps::DepthImage::TypeDepth);
-    float* inPtr = vals.data();
-    double* outPtr = mxGetPr(plhs[0]);
-    for (int i = 0; i < h; ++i) {
-      for (int j = 0; j < w; ++j, ++inPtr) {
-        outPtr[j*h+i] = *inPtr;
+    else {
+      int w(data->mWidth), h(data->mHeight);
+      plhs[0] = mxCreateDoubleMatrix(h,w,mxREAL);
+      float* inPtr = data->mHeights.data();
+      double* outPtr = mxGetPr(plhs[0]);
+      for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j, ++inPtr) {
+          outPtr[j*h+i] = *inPtr;
+        }
       }
     }
-
     if (nlhs > 1) {
+      auto transform = (data == NULL) ? Eigen::Projective3d::Identity() :
+        data->mTransform;
       plhs[1] = mxCreateDoubleMatrix(4,4,mxREAL);
-      outPtr = mxGetPr(plhs[1]);
-      Eigen::Projective3f transform = view->getTransform();
+      double* outPtr = mxGetPr(plhs[1]);
       for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
           outPtr[j*4+i] = transform(i,j);
@@ -287,6 +291,22 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
   }
 
+  else if (command == "fillplane") {
+    if (nlhs > 0) {
+      mexErrMsgTxt("MapWrapper: too many output arguments to fillplane");
+    }
+    if (nrhs != 3) {
+      mexErrMsgTxt("MapWrapper: need to specify fillplane");
+    }
+    if (mxGetNumberOfElements(prhs[2]) != 4) {
+      mexErrMsgTxt("MapWrapper: fillplane must be 4-vector");
+    }
+    double* ptr = mxGetPr(prhs[2]);
+    Eigen::Vector4d fillPlane(ptr[0], ptr[1], ptr[2], ptr[3]);
+    terrainMap->setFillPlane(fillPlane);
+  }
+
+  /* TODO: deprecated
   else if (command == "setrawdepth") {
     if (nrhs != 3) {
       mexErrMsgTxt("MapWrapper: too many arguments to setrawdepth");
@@ -314,24 +334,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   else if (command == "transform") {
     if (nrhs != 2) {
-      mexErrMsgTxt("MapWrapper: too many arguments to setrawdepth");
+      mexErrMsgTxt("MapWrapper: too many arguments to transform");
     }
-    auto view = wrapper->getView();
     plhs[0] = mxCreateDoubleMatrix(4,4,mxREAL);
     double* matx = mxGetPr(plhs[0]);
-    if (view == NULL) {
-      for (int i = 0; i < 16; ++i) matx[i] = 0;
-      return;
+    memset(matx, 16*sizeof(double), 0);
+    auto data = terrainMap->getData();
+    if (data != NULL) {
+      for (int i = 0; i < 16; ++i) matx[i] = data->mTransform.data()[i];
     }
-    Eigen::Projective3f transform = view->getTransform();
-    for (int i = 0; i < 16; ++i) matx[i] = transform.data()[i];
   }
+  */
 
-  else if (command == "wrapper") {
+  else if (command == "pointer") {
     if (nrhs != 2) {
-      mexErrMsgTxt("MapWrapper: too many arguments to wrapper");
+      mexErrMsgTxt("MapWrapper: too many arguments to pointer");
     }
-    auto ptr = wrapper->mHandle.get();
+    auto ptr = terrainMap.get();
     mxClassID classId = (sizeof(ptr)==4) ? mxUINT32_CLASS : mxUINT64_CLASS;
     plhs[0] = mxCreateNumericMatrix(1,1,classId,mxREAL);
     memcpy(mxGetPr(plhs[0]), &ptr, sizeof(ptr));
@@ -352,22 +371,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
     std::string value = Utils::getString(prhs[3]);
 
-    if (key == "normalradius") {
-      std::istringstream(value) >> wrapper->mNormalRadius;
+    if (key == "fillmissing") {
+      terrainMap->shouldFillMissing(Utils::getBool(value));
     }
-    else if (key == "fill") {
-      wrapper->mShouldFill = Utils::getBool(value);
+    else if (key == "overrideheights") {
+      terrainMap->overrideHeights(Utils::getBool(value));
     }
     else if (key == "normalmethod") {
       int method;
       std::istringstream(value) >> method;
-      wrapper->mNormalMethod = method;
+      terrainMap->setNormalMethod((TerrainMap::NormalMethod)method);
     }
-    else if (key == "mapmode") {
-      int mode;
-      std::istringstream(value) >> mode;
-      wrapper->setMapMode(mode);
+    else if (key == "usefootpose") {
+      terrainMap->useFootPose(Utils::getBool(value));
     }
+    else if (key == "normalradius") {
+      double normalRadius;
+      std::istringstream(value) >> normalRadius;
+      terrainMap->setNormalRadius(normalRadius);
+    }
+
     else {
       mexErrMsgTxt("MapWrapper: invalid property");
     }
