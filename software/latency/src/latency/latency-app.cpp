@@ -13,6 +13,9 @@
 #include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
 #include "lcmtypes/drc/vector_double_t.hpp"
 #include "lcmtypes/bot_core/pose_t.hpp"
+
+#include "lcmtypes/mav_estimator.hpp"
+
 #include <latency/latency.hpp>
 
 #include <ConciseArgs>
@@ -29,9 +32,12 @@ public:
   void handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_command_t * msg);
 
   void handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_raw_imu_batch_t * msg);
-  void handPoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg);
+  void handlePoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg);
 
-  void handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_two_t * msg);
+  // GPF:
+  void handleSES(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  mav::filter_state_t * msg);
+  void handleGPF(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  mav::indexed_measurement_t * msg);
+  void handleLidar(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const bot_core::planar_lidar_t * msg);
 
   int period_;
   
@@ -41,31 +47,54 @@ private:
   std::vector <float> lat_time_;
   std::vector <float> lat_msgs_;
   int counter_;
+
+  bool measure_gpf_;
 };
 
 App::App(boost::shared_ptr<lcm::LCM> &_lcm, int period_):
     _lcm(_lcm),period_(period_){
 
-  Latency* a_lat = new Latency(period_); 
-  lats_.push_back(a_lat) ;
+  // 0 AS  ERS
+  // 1 IMU POSE_BODY
+  // 2 ERS AC
+  // 3 AS  ERS
+  // 4 AS  STATE_EST_STATE
+  // 5 AS  GPF
+  // 6 SCN GPF
+
+  Latency* a_lat0 = new Latency(period_);
+  lats_.push_back(a_lat0) ; //
+  Latency* a_lat1 = new Latency(period_);
+  lats_.push_back(a_lat1) ;
   Latency* a_lat2 = new Latency(period_);
   lats_.push_back(a_lat2) ;
   Latency* a_lat3 = new Latency(period_);
   lats_.push_back(a_lat3) ;
   Latency* a_lat4 = new Latency(period_);
   lats_.push_back(a_lat4) ;
+  Latency* a_lat5 = new Latency(period_);
+  lats_.push_back(a_lat5) ;
+  Latency* a_lat6 = new Latency(period_);
+  lats_.push_back(a_lat6) ;
   
-  lat_time_ = {0.0, 0.0, 0.0, 0.0};
-  lat_msgs_ = {0.0, 0.0, 0.0, 0.0};
+  lat_time_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  lat_msgs_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   
   _lcm->subscribe("ATLAS_STATE", &App::handleAtlasStateMsg, this);
   _lcm->subscribe("EST_ROBOT_STATE",&App::handleRobotStateMsg,this);
   _lcm->subscribe("ATLAS_COMMAND",&App::handleCommandMsg,this);
-  
-
   _lcm->subscribe("ATLAS_IMU_BATCH", &App::handleIMUBatch, this);
-  _lcm->subscribe("POSE_BODY", &App::handPoseBody, this);  
+  _lcm->subscribe("POSE_BODY", &App::handlePoseBody, this);
+
+  measure_gpf_ = false;
+  if (measure_gpf_){
+    _lcm->subscribe("STATE_ESTIMATOR_STATE", &App::handleSES, this);
+    _lcm->subscribe("GPF_MEASUREMENT", &App::handleGPF, this);
+    _lcm->subscribe("SCAN", &App::handleLidar, this);
+  }
+
   counter_=0;
+
 }
 
 
@@ -77,8 +106,14 @@ int64_t _timestamp_now(){
 }
 
 void App::handleAtlasStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_state_t * msg){
-  lats_[0]->add_from(msg->utime, _timestamp_now() );
-  lats_[3]->add_from(msg->utime, _timestamp_now() );
+  int64_t utime_now = _timestamp_now();
+  lats_[0]->add_from(msg->utime,  utime_now);
+  lats_[3]->add_from(msg->utime,  utime_now);
+  lats_[4]->add_from(msg->utime,  utime_now);
+
+  if (measure_gpf_){
+  lats_[5]->add_from(msg->utime,  utime_now);
+  }
 }
 
 void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::robot_state_t * msg){
@@ -103,8 +138,8 @@ void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string&
 
     drc::vector_double_t msgout;
     msgout.utime = utime_now;
-    msgout.n = 4;
-    msgout.data = { lat_time_[0],  lat_time_[1], lat_time_[2], lat_time_[3]};
+    msgout.n = 7;
+    msgout.data = { lat_time_[0],  lat_time_[1], lat_time_[2], lat_time_[3], lat_time_[4], lat_time_[5], lat_time_[6]};
     _lcm->publish( ("LATENCY") , &msgout);
 
     counter_++;
@@ -116,22 +151,27 @@ void App::handleCommandMsg(const lcm::ReceiveBuffer* rbuf, const std::string& ch
   lats_[3]->add_to(msg->utime, _timestamp_now(), "FULL", lat_time_[3], lat_msgs_[3] );
 }
 
-
-
 void App::handleIMUBatch(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const drc::atlas_raw_imu_batch_t * msg){
   lats_[1]->add_from(msg->utime, _timestamp_now() );
 }
-void App::handPoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg)  {
+void App::handlePoseBody(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t * msg)  {
   lats_[1]->add_to(msg->utime, _timestamp_now(),  "SEST" , lat_time_[1], lat_msgs_[1]);
 }
 
 
-void App::handleUtimeTwoMsg(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_two_t * msg)  {
-  // latency_->add_to(msg->utime_sim, _timestamp_now(), "BLAH" );
-  
-  // TODO: switch to use these this timing to use the time calculated within matlab:
-  // NOT TESTED
-  //latency_->add_to(msg->utime_sim, msg->utime_wall, message_ );
+
+/// Measure GPF:
+void App::handleSES(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  mav::filter_state_t * msg)  {
+  lats_[4]->add_to(msg->utime, _timestamp_now(),  "GPFI" , lat_time_[4], lat_msgs_[4]);
+}
+void App::handleGPF(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  mav::indexed_measurement_t * msg)  {
+  // utime is paired with lidar i.e. SCAN
+  // state_utime is paired with STATE_ESTIMATE_STATE
+  lats_[5]->add_to(msg->state_utime, _timestamp_now(),  "GPFO" , lat_time_[5], lat_msgs_[5]);
+  lats_[6]->add_to(msg->utime, _timestamp_now(),  "LIDR" , lat_time_[6], lat_msgs_[6]);
+}
+void App::handleLidar(const lcm::ReceiveBuffer* rbuf, const std::string& chan, const bot_core::planar_lidar_t * msg){
+  lats_[6]->add_from(msg->utime, _timestamp_now() );
 }
 
 int main (int argc, char ** argv){
