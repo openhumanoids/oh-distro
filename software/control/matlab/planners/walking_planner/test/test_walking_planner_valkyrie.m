@@ -1,3 +1,4 @@
+%NOTEST
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 r = Valkyrie();

@@ -77,10 +77,10 @@ if 0
   zmpy = [radius-radius*cos(4*pi/T * ts(1:nt/2)), -radius+radius*cos(4*pi/T * ts(1:nt/2+1))];
 else
 %   % back and forth
-%   w=0.1; 
+%   w=0.1;
 %   zmpx = [0 0  0 0  0 0  0 0  0 0];
 %   zmpy = [0 w -w w -w w -w w -w 0];
-%   
+%
 %   np=length(zmpy);
 %   ts = linspace(0,T,np);
 
@@ -99,7 +99,7 @@ zmptraj = PPTrajectory(foh(ts,zmpknots(1:2,:)));
 
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
-foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]); 
+foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]);
 foot_center = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 zmptraj = zmptraj + foot_center;
 zmptraj = zmptraj.setOutputFrame(desiredZMP);
@@ -108,13 +108,13 @@ com = getCOM(r,kinsol);
 options.com0 = com(1:2);
 zfeet = min(foot_pos(3,:));
 [K,~,comtraj] = LinearInvertedPendulum.ZMPtrackerClosedForm(com(3)-zfeet,zmptraj,options);
-% 
+%
 % % get COM traj from desired ZMP traj
 % options.com0 = com(1:2);
-% options.Qy = 
-% 
+% options.Qy =
+%
 % K = ZMPtracker(obj,dZMP,options)
-% 
+%
 %     function [ct,Vt,comtraj] = ZMPtracker(obj,dZMP,options)
 
 
@@ -125,9 +125,9 @@ lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'zmp-traj');
 ts = 0:0.1:T;
 for i=1:length(ts)
   lcmgl.glColor3f(0, 1, 0);
-	lcmgl.sphere([zmptraj.eval(ts(i));0], 0.01, 20, 20);  
+	lcmgl.sphere([zmptraj.eval(ts(i));0], 0.01, 20, 20);
   lcmgl.glColor3f(1, 1, 0);
-	lcmgl.sphere([comtraj.eval(ts(i));0], 0.01, 20, 20);  
+	lcmgl.sphere([comtraj.eval(ts(i));0], 0.01, 20, 20);
 end
 lcmgl.switchBuffers();
 
@@ -154,20 +154,20 @@ use_simple_pd = true;
 constrain_torso = true;
 
 if use_simple_pd
-  
+
   options.Kp = 30*ones(6,1);
   options.Kd = 10*ones(6,1);
   lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
   rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
-  
+
   options.Kp = 40*[0; 0; 1; 1; 1; 1];
   options.Kd = 10*[0; 0; 1; 1; 1; 1];
   pelvis_motion = TorsoMotionControlBlock(r,'pelvis',ctrl_data,options);
-  
+
   options.Kp = 40*[0; 0; 0; 1; 1; 1];
   options.Kd = 10*[0; 0; 0; 1; 1; 1];
   torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
-	
+
   options.w_qdd = 0.0001*ones(nq,1);
   options.w_qdd(1:6) = 0;
   options.w_qdd(findJointIndices(r,'hpz')) = 1.0;
@@ -200,9 +200,9 @@ if use_simple_pd
   else
     motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame};
   end
-  
+
   qp = MomentumControlBlock(r,motion_frames,ctrl_data,options);
-  
+
   ins(1).system = 1;
   ins(1).input = 1;
   ins(2).system = 2;
@@ -362,13 +362,13 @@ while tt<T
     % low pass filter floating base velocities
     float_v = (1-alpha_v)*float_v + alpha_v*x(nq+(1:6));
     x(nq+(1:6)) = float_v;
-    
+
     xtraj = [xtraj x];
     q = x(1:nq);
     qd = x(nq+(1:nq));
- 
+
     fc = output(fcb,tt,[],[q;qd]);
-    
+
     x_filt = [q;qd];
     if use_simple_pd
       if constrain_torso
@@ -416,24 +416,24 @@ zmpact = [];
 for i=1:size(xtraj,2)
   x = xtraj(:,i);
   q = x(1:nq);
-  qd = x(nq+(1:nq));  
-  
+  qd = x(nq+(1:nq));
+
   if i==1
 		qdd = 0*qd;
 	else
 		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/0.01;
   end
   qd_prev = qd;
-	qdd_prev = qdd;  
+	qdd_prev = qdd;
 
   kinsol = doKinematics(r,q,false,true);
   [com,J] = getCOM(r,kinsol);
-	J = J(1:2,:); 
+	J = J(1:2,:);
 	Jdot = forwardJacDot(r,kinsol,0);
   Jdot = Jdot(1:2,:);
-	
+
 	% hardcoding D for ZMP output dynamics
-	D = -1.03./9.81*eye(2); 
+	D = -1.03./9.81*eye(2);
 
 	comdd = Jdot * qd + J * qdd;
 	zmp = com(1:2) + D * comdd;

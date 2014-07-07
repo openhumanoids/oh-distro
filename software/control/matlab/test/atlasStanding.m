@@ -10,7 +10,7 @@ error('Scott has to fix this script');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET JOINT/MOVEMENT PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-joint_str = {'leg'};% <---- cell array of (sub)strings  
+joint_str = {'leg'};% <---- cell array of (sub)strings
 
 % INPUT SIGNAL PARAMS %%%%%%%%%%%%%
 dim = 3; % what dimension to move COM: x/y/z (1/2/3)
@@ -20,7 +20,7 @@ T = 10;% <--- signal duration (sec)
 amp = 0.05;% <---- meters, COM DELTA
 chirp_f0 = 0.1;% <--- chirp starting frequency
 chirp_fT = 0.2;% <--- chirp ending frequency
-chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset 
+chirp_sign = -1;% <--- -1: negative, 1: positive, 0: centered about offset
 
 % inverse dynamics PD gains (only for input=position, control=force)
 Kp = 20;
@@ -78,13 +78,13 @@ gains.ff_qd = zeros(nu,1);
 gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
-% move to fixed point configuration 
+% move to fixed point configuration
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
-gains2 = getAtlasGains(); 
+gains2 = getAtlasGains();
 % reset force gains for joint being tuned
-gains.k_f_p(joint_act_ind) = gains2.k_f_p(joint_act_ind); 
+gains.k_f_p(joint_act_ind) = gains2.k_f_p(joint_act_ind);
 gains.ff_f_d(joint_act_ind) = gains2.ff_f_d(joint_act_ind);
 gains.ff_qd(joint_act_ind) = gains2.ff_qd(joint_act_ind);
 gains.ff_qd_d(joint_act_ind) = gains2.ff_qd_d(joint_act_ind);
@@ -97,7 +97,7 @@ ref_frame.updateGains(gains);
 
 % get current state
 [x,~] = getMessage(state_plus_effort_frame);
-x0 = x(1:2*nq); 
+x0 = x(1:2*nq);
 q0 = x0(1:nq);
 com0 = getCOM(r,q0);
 
@@ -111,12 +111,12 @@ if use_random_traj
   qtraj = traj(1:nq);
 else
   comtraj = ConstantTrajectory(com0);
-  
+
   input_traj = chirpTraj(amp,chirp_f0,chirp_fT,T,0,chirp_sign);
   fade_window = 2; % sec
   fader = PPTrajectory(foh([0 fade_window T-fade_window T],[0 1 1 0]));
   input_traj = fader*input_traj;
-  
+
 if dim==1
     traj_in_robot_frame = [input_traj;0;0];
   elseif dim==2
@@ -124,15 +124,15 @@ if dim==1
   else
     traj_in_robot_frame = [0;0;input_traj];
   end
-  
+
   R = rpy2rotmat([0;0;x0(6)]);
   comtraj = comtraj + R*traj_in_robot_frame;
-  
+
   % get foot positions
   kinsol = doKinematics(r,q0);
   rfoot0 = forwardKin(r,kinsol,rfoot_ind,[0;0;0],1);
   lfoot0 = forwardKin(r,kinsol,lfoot_ind,[0;0;0],1);
-  
+
   cost = Point(r.getStateFrame,1);
   cost.base_x = 0;
   cost.base_y = 0;
@@ -155,15 +155,15 @@ if dim==1
   cost.l_arm_elx = 10;
   cost.l_arm_uwy = 10;
   cost.l_arm_mwx = 10;
-  
+
   cost = double(cost);
   ikoptions = IKoptions(r);
   ikoptions = ikoptions.setQ(diag(cost(1:nq)));
-  
+
   for i=1:length(ts)
     t = ts(i);
     if (i>1)
-      
+
       kc_com = constructRigidBodyConstraint(RigidBodyConstraint.WorldCoMConstraintType,true,r,comtraj.eval(t),comtraj.eval(t));
       rfarg = {constructRigidBodyConstraint(RigidBodyConstraint.WorldPositionConstraintType,true,r,rfoot_ind,[0;0;0],rfoot0(1:3),rfoot0(1:3)),...
         constructRigidBodyConstraint(RigidBodyConstraint.WorldEulerConstraintType,true,r,rfoot_ind,rfoot0(4:end),rfoot0(4:end))};
@@ -174,7 +174,7 @@ if dim==1
       q = q0;
     end
   end
-  
+
   % visualize trajectory
   qtraj = PPTrajectory(spline(ts,q));
   traj = [qtraj;0*qtraj];
@@ -193,15 +193,15 @@ foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkN
 
 if use_zmp
   % build TI-ZMP controller
-  foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]); 
+  foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]);
   comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 
   % plot com/zmp goal in drake viewer
   lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'standing-zmp-goal');
   lcmgl.glColor3f(.5, .5, 0);
-	lcmgl.sphere([comgoal;0], 0.01, 20, 20);  
+	lcmgl.sphere([comgoal;0], 0.01, 20, 20);
   lcmgl.switchBuffers();
-  
+
   limp = LinearInvertedPendulum(com0(3));
   [~,V] = lqr(limp,comgoal);
 
@@ -286,37 +286,37 @@ while tt<T+2
 
     tau = x(2*nq+(1:nq));
     tau = tau(act_idx_map);
-    
+
     % get estimated state
     kf_state = kf.update(tt,kf_state,x(1:nq));
     x = kf.output(tt,kf_state,x(1:nq));
 
     q = x(1:nq);
     qd = x(nq+(1:nq));
-    
+
     % get desired configuration
     qt = qtraj.eval(tt);
     qdes = qt(act_idx_map);
 
     qt(6) = q(6); % ignore yaw
-    
+
     % get desired acceleration, open loop + PD
     qdtraj_t = qdtraj.eval(tt);
     pd = Kp*(qt-q) + Kd*(qdtraj_t-qd);
     qdddes = qddtraj.eval(tt) + pd;
-    
+
     [u,qdd] = mimoOutput(qp,tt,[],qdddes,zeros(18,1),[q;qd]);
     udes(joint_act_ind) = u(joint_act_ind);
-    
+
     % fade in desired torques to avoid spikes at the start
     alpha = min(1.0,tt/torque_fade_in);
     udes(joint_act_ind) = (1-alpha)*tau(joint_act_ind) + alpha*udes(joint_act_ind);
-    
+
     % compute desired velocity
     qddes_state_frame = qdtraj_t + qdd*dt;
     qddes_input_frame = qddes_state_frame(act_idx_map);
     qddes(joint_act_ind) = qddes_input_frame(joint_act_ind);
-    
+
     ref_frame.publish(t,[qdes;qddes;udes],'ATLAS_COMMAND');
   end
 end
@@ -328,7 +328,7 @@ gains.ff_f_d = zeros(nu,1);
 gains.ff_qd = zeros(nu,1);
 ref_frame.updateGains(gains);
 
-% move to fixed point configuration 
+% move to fixed point configuration
 qdes = xstar(1:nq);
 atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,6);
 

@@ -54,7 +54,7 @@ zmptraj = PPTrajectory(foh(ts,zmpknots(1:2,:)));
 
 rfoot_ind = r.findLinkInd('r_foot');
 lfoot_ind = r.findLinkInd('l_foot');
-foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]); 
+foot_pos = terrainContactPositions(r,q0,[rfoot_ind, lfoot_ind]);
 foot_center = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 zmptraj = zmptraj + foot_center;
 zmptraj = zmptraj.setOutputFrame(desiredZMP);
@@ -69,9 +69,9 @@ lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'zmp-traj');
 ts = 0:0.1:T;
 for i=1:length(ts)
   lcmgl.glColor3f(0, 1, 0);
-	lcmgl.sphere([zmptraj.eval(ts(i));0], 0.01, 20, 20);  
+	lcmgl.sphere([zmptraj.eval(ts(i));0], 0.01, 20, 20);
   lcmgl.glColor3f(1, 1, 0);
-	lcmgl.sphere([comtraj.eval(ts(i));0], 0.01, 20, 20);  
+	lcmgl.sphere([comtraj.eval(ts(i));0], 0.01, 20, 20);
 end
 lcmgl.switchBuffers();
 
@@ -132,7 +132,7 @@ ins(1).input = 1;
 sys = mimoFeedback(fc,sys,[],[],ins,outs);
 clear ins;
 
-% feedback PD trajectory controller 
+% feedback PD trajectory controller
 options.Kp = 80.0*ones(nq,1);
 options.Kd = 8.0*ones(nq,1);
 pd = IKPDBlock(r,ctrl_data,options);
@@ -165,24 +165,24 @@ zmpact = [];
 for i=1:length(ts)
   x = xtraj.eval(ts(i));
   q = x(1:nq);
-  qd = x(nq+(1:nq));  
-  
+  qd = x(nq+(1:nq));
+
   if i==1
 		qdd = 0*qd;
 	else
 		qdd = (1-alpha)*qdd_prev + alpha*(qd-qd_prev)/0.01;
   end
   qd_prev = qd;
-	qdd_prev = qdd;  
+	qdd_prev = qdd;
 
   kinsol = doKinematics(r,q,false,true);
   [com,J] = getCOM(r,kinsol);
-	J = J(1:2,:); 
+	J = J(1:2,:);
 	Jdot = forwardJacDot(r,kinsol,0);
   Jdot = Jdot(1:2,:);
-	
+
 	% hardcoding D for ZMP output dynamics
-	D = -1.04./9.81*eye(2); 
+	D = -1.04./9.81*eye(2);
 
 	comdd = Jdot * qd + J * qdd;
 	zmp = com(1:2) + D * comdd;

@@ -8,7 +8,11 @@ classdef WalkingPlan
   methods
     function obj = WalkingPlan(ts, xtraj, joint_names)
       obj.ts = ts;
-      obj.xtraj = xtraj;
+      if isa(xtraj, 'Trajectory')
+        obj.xtraj = xtraj.eval(xtraj.getBreaks());
+      else
+        obj.xtraj = xtraj;
+      end
       obj.joint_names = joint_names;
     end
 

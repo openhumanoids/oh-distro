@@ -187,7 +187,7 @@ while (1)
             status_msg.server_status = status_msg.SERVER_READY;
             % other fields dont matter
             lc.publish(status_channel, status_msg);
-        end 
+        end
         data = getNextMessage(monitor,timeout);
     end
     if ~isempty(data)
@@ -216,7 +216,7 @@ while (1)
                 fprintfVerb(action_options,'Added constraint %d: %s\n',numel(action_sequence.kincons),action_sequence.kincons{i}.name);
             end
             n_kincons = length(action_sequence.kincons);
-            
+
             if (~action_options.IK)
                 for i=1:length(action_sequence.kincons)
                     %         if(action_sequence.kincons{i}.tspan(1) == action_sequence.tspan(1))
@@ -264,8 +264,8 @@ while (1)
                     end
                     n_kincons = n_kincons_new;
                 end
-                
-                
+
+
                 % Above ground constraints
                 %tspan = action_sequence.tspan;
                 %for body_idx = 1:length(r.body)
@@ -275,7 +275,7 @@ while (1)
                 %action_sequence = action_sequence.addKinematicConstraint(above_ground_constraint);
                 %end
                 %end
-                
+
                 % Solve the IK sequentially in time for each key time
                 %if action_sequence.key_time_samples(1) > eps
                 %action_sequence.tspan(1) = 0;
@@ -295,9 +295,9 @@ while (1)
                 else
                     ind_first_time = 2;
                 end
-                
+
                 key_time_IK_failed = false;
-                
+
                 support_times = action_sequence.key_time_samples;
                 support_body_idx = zeros(size(support_times));
                 support_body_idx = [];
@@ -388,11 +388,11 @@ while (1)
                     end
                     surface_body_idx = surface_body_idx(ia);
                     support_states = [support_states; RigidBodySupportState(r_Atlas,support_body_idx_unique,support_point_idx_unique,surface_body_idx)];
-                    
-                    
+
+
                     kinsol = doKinematics(r,q_key_time_samples(:,i));
                     com_key_time_samples(:,i) = getCOM(r,kinsol);
-                    
+
                     %% Publish status
                     status_msg.utime = plan_index;
                     status_msg.server_status = status_msg.SERVER_PLANNING;
@@ -474,7 +474,7 @@ while (1)
                 end
                 q_qs_traj = PPTrajectory(pchipDeriv(t_qs_breaks,q_qs_plan,qdot_qs_plan));
                 com_qs_traj = PPTrajectory(pchipDeriv(t_qs_breaks,com_qs_plan,zeros(size(com_qs_plan))));
-                
+
                 % Refine
                 if(action_options.verbose)
                     disp('Refining trajectory')
@@ -492,7 +492,7 @@ while (1)
                 options.quasiStaticFlag = true;
                 options = rmfield(options,'q_nom');
                 foot_support_qs = zeros(length(r.body),numel(t_qs_breaks));
-                
+
                 % Compute support at t0
                 highres_had_warnings = false;
                 for i = 1:numel(t_qs_breaks)
@@ -575,7 +575,7 @@ while (1)
                             total_body_support_vert = total_body_support_vert+num_sequence_support_vertices{i}(j);
                         end
                     end
-                    
+
                     %% Publish status ever 8 steps as well as at critical
                     %% steps (start, end)
                     if (i==1 || i==numel(t_qs_breaks) || ...
@@ -594,29 +594,29 @@ while (1)
                     continue
                 end
                 %options.q_traj_nom = PPTrajectory(spline(t_qs_breaks,q_qs_plan));
-                
+
                 % publish t_breaks, q_qs_plan with RobotPlanPublisher.java
                 constraints_satisfied = ones(max(1,msg.num_contact_goals), ...
                     size(q_qs_plan,2));
-                
+
                 %publish(robot_plan_publisher, t_qs_breaks, ...
                 %[q_qs_plan; 0*q_qs_plan], ...
                 %constraints_satisfied);
                 publish(robot_plan_publisher, t_qs_breaks, ...
                     [q_qs_plan; 0*q_qs_plan]);
-                
+
                 %        key = input('Enter ''y''to send the plan to the robot. Press any other key to listen for new action sequence.','s');
                 %        if ~strcmp(key,'y')
                 %          continue;
                 %        end
-                
+
                 % Publish plan to viewer
                 Q = 1*eye(4);
                 R = 0.001*eye(2);
                 comgoal = com_qs_plan(1:2,end);
                 ltisys = LinearSystem([zeros(2),eye(2); zeros(2,4)],[zeros(2); eye(2)],[],[],[],[]);
                 [~,V] = tilqr(ltisys,Point(getStateFrame(ltisys),[comgoal;0*comgoal]),Point(getInputFrame(ltisys)),Q,R);
-                
+
                 % compute TVLQR
                 options.tspan = linspace(com_qs_traj.tspan(1),com_qs_traj.tspan(2),10);
                 options.sqrtmethod = false;
@@ -625,12 +625,12 @@ while (1)
                 S = warning('off','Drake:TVLQR:NegativeS');  % i expect to have some zero eigenvalues, which numerically fluctuate below 0
                 warning(S);
                 [~,V] = tvlqr(ltisys,x0traj,u0traj,Q,R,V,options);
-                
+
                 mu=0.5;
                 data = struct('S',V.S,'s1',V.s1,'s2',V.s2,...
                     'support_times',support_times,'supports',support_states,'comtraj',com_qs_traj,'qtraj',q_qs_traj,'mu',mu,...
                     'link_constraints',[],'zmptraj',[],'qnom',[]);
-                
+
                 %if(action_options.debug)
                 %uisave('data','data/aa_plan.mat');
                 %else
@@ -638,7 +638,7 @@ while (1)
                 %end
                 %publish(robot_plan_publisher_viewer, t_qs_breaks, ...
                 %  [q_qs_plan; 0*q_qs_plan]);
-                
+
                 % Drake gui playback
                 if(action_options.drake_vis)
                     xtraj = PPTrajectory(pchip(t_qs_breaks,[q_qs_plan;0*q_qs_plan]));
@@ -677,14 +677,14 @@ while (1)
                     end
                 end
             end
-            
+
             % If the action sequence is specified, we need to solve the ZMP
             % planning and IK for the whole sequence.
             if(action_options.ZMP)
                 action_sequence_ZMP = action_sequence;
-                
+
                 %TODO: status messages here?
-                
+
                 dt = 0.02;
                 window_size = ceil((action_sequence_ZMP.tspan(end)-action_sequence_ZMP.tspan(1))/dt);
                 zmp_planner = ZMPplanner(window_size,r.num_contacts,dt,9.81);
@@ -719,31 +719,31 @@ while (1)
                 [com_plan,planar_comdot_plan,~,zmp_plan] = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,com_height,t_breaks,zmp_options);
                 %           q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
                 %           q_zmp_plan(:,1) = q0;
-                
+
                 % Add com constraints to action_sequence
                 comdot_height_plan = com_height_traj.deriv(t_breaks);
                 comdot_plan = [planar_comdot_plan;comdot_height_plan];
                 com_traj = PPTrajectory(pchipDeriv(t_breaks,com_plan,comdot_plan));
-                
+
                 com_constraint = ActionKinematicConstraint(r,0,zeros(3,1),com_traj, ...
                     action_sequence_ZMP.tspan,'com');
                 action_sequence = action_sequence.addKinematicConstraint(com_constraint);
-                
+
                 options.qtraj0 = PPTrajectory(spline(action_sequence.key_time_samples,q_key_time_samples));
                 options.quasiStaticFlag = false;
                 options.nSample = length(t_breaks)-1;
                 options.considerStaticContacts = false;
                 [t_zmp_breaks, q_zmp_plan, qdot_zmp_plan, qddot_zmp_plan, inverse_kin_sequence_info] = inverseKinSequence(r, q0, qdot0, action_sequence,options);
-                
+
                 % Drake gui playback
                 xtraj = PPTrajectory(pchipDeriv(t_zmp_breaks,[q_zmp_plan;qdot_zmp_plan],[qdot_zmp_plan;0*qdot_zmp_plan]));
                 xtraj = xtraj.setOutputFrame(r.getStateFrame());
                 v.playback(xtraj,struct('slider',true));
-                
+
                 % publish t_breaks, q_zmp_plan with RobotPlanPublisher.java
                 constraints_satisfied = ones(max(1,msg.num_contact_goals), ...
                     size(q_zmp_plan,2));
-                
+
                 publish(robot_plan_publisher, t_zmp_breaks, ...
                     [q_zmp_plan; qdot_zmp_plan], ...
                     constraints_satisfied);
@@ -759,7 +759,7 @@ while (1)
                 %    ikargs = action_sequence.getIKArguments(ik_time);
                 %    [q_ik,info] = inverseKin(r,q,ikargs{:},options);
                 %end
-                
+
                 % publish robot state message
                 ikargs = action_sequence.getIKArguments(ik_time);
                 options.quasiStaticFlag = true;
@@ -794,7 +794,7 @@ while (1)
                 lc.publish(status_channel, status_msg);
                 toc
             end
-            
+
         catch ex
             warning on
             warning( [ex.message '\n\nOriginal error message:\n\n\t%s'], ...
@@ -967,7 +967,7 @@ else
     end
     contact_distance{1}.min = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
     contact_distance{1}.max = ConstantTrajectory(zeros(1,size(collision_group_pts,2)));
-    
+
     %contact_distance{1}.max = ConstantTrajectory(inf(1,size(r.body_pts,2)));
     kc = ActionKinematicConstraint(r,body_idx,collision_group_pts,pos,tspan,kc_name,contact_state0,contact_statei, contact_statef,contact_aff,contact_distance,collision_group_name);
 end

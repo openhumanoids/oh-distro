@@ -18,7 +18,7 @@ classdef StatelessFootstepPlanner
         for j = 1:request.num_existing_steps
           footsteps(j) = Footstep.from_footstep_t(request.existing_steps(j), biped);
         end
-        plan = FootstepPlan(footsteps, params, [], []);
+        plan = FootstepPlan(footsteps, biped, params, [], []);
       else
         goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
         if request.num_goal_steps > 2
@@ -28,9 +28,7 @@ classdef StatelessFootstepPlanner
 
         safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, feet_centers, goal_pos);
 
-%         profile on
-        plan = searchNumSteps(biped, feet_centers, goal_pos, params, safe_regions);
-%         profile viewer
+        plan = biped.planFootsteps(feet_centers, goal_pos, safe_regions, struct('step_params', params));
         plan = StatelessFootstepPlanner.addGoalSteps(biped, plan, request);
       end
       plan = StatelessFootstepPlanner.setStepParams(plan, request);
@@ -44,7 +42,7 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = check_footstep_plan(biped, request)
-      plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan);
+      plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, biped);
       if request.snap_to_terrain
         plan = StatelessFootstepPlanner.snapToTerrain(biped, plan, request);
         plan = StatelessFootstepPlanner.applySwingTerrain(biped, plan, request);
@@ -60,25 +58,27 @@ classdef StatelessFootstepPlanner
       if request.num_goal_steps == 0
         pos = decodePosition3d(request.goal_pos);
         goal_pos.center = pos;
-        goal_pos.right = Biped.stepCenter2FootCenter(pos, true, request.params.nom_step_width);
-        goal_pos.left = Biped.stepCenter2FootCenter(pos, false, request.params.nom_step_width);
+        offs = [0; request.params.nom_step_width/2; 0];
+        M = rpy2rotmat(pos(4:6));
+        goal_pos.left = [pos(1:3) + M * offs; pos(4:6)];
+        goal_pos.right = [pos(1:3) - M * offs; pos(4:6)];
       else
         for j = 1:(min([2, request.num_goal_steps]))
           goal_step = Footstep.from_footstep_t(request.goal_steps(j), biped);
           if request.goal_steps(j).is_right_foot
-            goal_pos.right = goal_step.pos.inFrame(goal_step.frames.center).double();
+            goal_pos.right = goal_step.pos;
           else
-            goal_pos.left = goal_step.pos.inFrame(goal_step.frames.center).double();
+            goal_pos.left = goal_step.pos;
           end
         end
         if ~isfield(goal_pos, 'right')
-          goal_pos.right = Biped.stepCenter2FootCenter(...
-                                   Biped.footCenter2StepCenter(goal_pos.left, false, request.params.nom_step_width),...
-                                   true, request.params.nom_step_width);
+          offs = [0; -request.params.nom_step_width; 0];
+          M = rpy2rotmat(goal_pos.left(4:6));
+          goal_pos.right = [goal_pos.left(1:3) + M * offs; goal_pos.left(4:6)];
         elseif ~isfield(goal_pos, 'left')
-          goal_pos.left = Biped.stepCenter2FootCenter(...
-                                   Biped.footCenter2StepCenter(goal_pos.right, true, request.params.nom_step_width),...
-                                   false, request.params.nom_step_width);
+          offs = [0; request.params.nom_step_width; 0];
+          M = rpy2rotmat(goal_pos.right(4:6));
+          goal_pos.left = [goal_pos.right(1:3) + M * offs; goal_pos.right(4:6)];
         end
         goal_pos.center = mean([goal_pos.right, goal_pos.left], 2);
         goal_pos.center(4:6) = goal_pos.right(4:6) + 0.5 * angleDiff(goal_pos.right(4:6), goal_pos.left(4:6));
@@ -142,25 +142,25 @@ classdef StatelessFootstepPlanner
         return;
       elseif request.num_goal_steps == 1
         goal_step = Footstep.from_footstep_t(request.goal_steps(1), biped);
-        if (goal_step.body_idx ~= plan.footsteps(end).body_idx)
+        if (goal_step.frame_id ~= plan.footsteps(end).frame_id)
           plan.footsteps(end+1) = plan.footsteps(end-1);
           plan.footsteps(end).id = plan.footsteps(end-1).id + 1;
         end
-        assert(goal_step.body_idx == plan.footsteps(end).body_idx);
+        assert(goal_step.frame_id == plan.footsteps(end).frame_id);
         plan.footsteps(end) = goal_step;
       else
         for j = 1:request.num_goal_steps
           goal_step = Footstep.from_footstep_t(request.goal_steps(j), biped);
-          if j == 1 && (goal_step.body_idx ~= plan.footsteps(end-1).body_idx)
+          if j == 1 && (goal_step.frame_id ~= plan.footsteps(end-1).frame_id)
             plan.footsteps(end+1) = plan.footsteps(end-1);
             plan.footsteps(end).id = plan.footsteps(end-1).id + 1;
             nsteps = length(plan.footsteps);
           end
           k = nsteps - 2 + j;
           if j ~= 2
-            assert(goal_step.body_idx == plan.footsteps(end-1).body_idx);
+            assert(goal_step.frame_id == plan.footsteps(end-1).frame_id);
           else
-            assert(goal_step.body_idx == plan.footsteps(end).body_idx);
+            assert(goal_step.frame_id == plan.footsteps(end).frame_id);
           end
           plan.footsteps(k) = goal_step;
         end
@@ -203,19 +203,34 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = checkReachInfeasibility(biped, plan, params)
+      params = biped.applyDefaultFootstepParams(params);
       [A, b, ~, ~, step_map] = constructCollocationAb(biped, plan, params);
       for j = [1,2]
         plan.footsteps(j).infeasibility = 0;
       end
       steps = plan.step_matrix();
       if length(plan.footsteps) > 2
-        step_vect = encodeCollocationSteps(steps(:,2:end));
+        step_vect = StatelessFootstepPlanner.encodeCollocationSteps(steps(:,2:end));
         violation_ineq = A * step_vect - b;
         for j = 3:length(plan.footsteps)
           plan.footsteps(j).infeasibility = max(violation_ineq(step_map.ineq(j-1)));
         end
       end
     end
+
+    function x = encodeCollocationSteps(steps)
+      nsteps = size(steps, 2);
+      x = zeros(12,nsteps);
+      x(1:6,:) = steps;
+      x(7:12,1) = steps(:,1);
+      for j = 2:nsteps
+        R = rotmat(-steps(6,j-1));
+        x(7:12,j) = [R * (steps(1:2,j) - steps(1:2,j-1));
+                    steps(3:6,j) - steps(3:6,j-1)];
+      end
+      x = reshape(x, [], 1);
+    end
+
   end
 end
 
