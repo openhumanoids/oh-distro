@@ -148,6 +148,14 @@ in addpath_control.m comment out
 
 
 
+Without inv of matrix, matlab shows:
+.05/.075  msec variance
+With inv of matrix of fixed size:
+1msec variance
+
+
+
+
 
 //  // TEMP - store time of received ATLAS_STATE
 //  const int NUM_UTIMES = .30000;
