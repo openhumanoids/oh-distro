@@ -12,11 +12,10 @@ classdef AtlasManipControllerData < ControllerData
       firstplan = true
     end
   
-  methods 
+  methods
     function obj = AtlasManipControllerData(data)
       typecheck(data,'struct');
-      data=verifyControllerData(obj,data);
-      updateControllerData(obj,data);
+      obj = obj@ControllerData(data);
     end
  
     function data=verifyControllerData(~,data)
