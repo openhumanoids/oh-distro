@@ -45,7 +45,7 @@ qd_prev=-1;
 qdd_prev=0;
 alpha=0.05;
 while true
-  [x,t] = getNextMessage(state_plus_effort_frame,0);
+  [x,t] = getNextMessage(state_plus_effort_frame,5);
   if ~isempty(x)
     if t_prev==-1
       dt=0.003;
@@ -98,6 +98,7 @@ while true
     drawCOP(force_torque,kinsol,lcmgl_cop);
     
 %     v.draw(t,[q_kf;qd_kf]);
+    pause(0.025);
   end
 end
 
