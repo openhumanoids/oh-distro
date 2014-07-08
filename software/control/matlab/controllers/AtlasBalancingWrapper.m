@@ -103,17 +103,6 @@ classdef AtlasBalancingWrapper < DrakeSystem
     end
    
     function y=output(obj,t,~,x)
-      persistent pelvis_angv_filt
-      
-      if isempty(pelvis_angv_filt)
-        pelvis_angv_filt = zeros(3,1);
-      end
-      
-      % TODO: THIS IS TEMPORARY UNTIL MAURICE PUTS IT IN STATE SYNC
-      alpha = 0.8;
-      pelvis_angv_filt = alpha*pelvis_angv_filt + (1-alpha)*x(obj.nq+(4:6));
-      x(obj.nq+(4:6)) = pelvis_angv_filt;
-      
       % foot contact
       fc = output(obj.foot_contact_block,t,[],x);
       

@@ -71,7 +71,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       qp = QPController(r,{},controller_data,options);
 
       % cascade IK/PD block
-      options.Kp = 50.0*ones(obj.nq,1);
+      options.Kp = 60.0*ones(obj.nq,1);
       options.Kd = 8*ones(obj.nq,1);
       % options.Kp(findJointIndices(r,'hpz')) = 70.0;
       % options.Kd(findJointIndices(r,'hpz')) = 14.0;
@@ -117,17 +117,6 @@ classdef AtlasWalkingWrapper < DrakeSystem
     end
    
     function y=output(obj,t,~,x)
-      persistent pelvis_angv_filt
-      
-      if isempty(pelvis_angv_filt)
-        pelvis_angv_filt = zeros(3,1);
-      end
-      
-      % TODO: THIS IS TEMPORARY UNTIL MAURICE PUTS IT IN STATE SYNC
-      alpha = 0.75;
-      pelvis_angv_filt = alpha*pelvis_angv_filt + (1-alpha)*x(obj.nq+(4:6));
-      x(obj.nq+(4:6)) = pelvis_angv_filt;
-      
       % foot contact
       fc = output(obj.foot_contact_block,t,[],x);
 
