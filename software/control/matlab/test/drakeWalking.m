@@ -167,7 +167,6 @@ if (use_ik)
   clear ins;  
   
 	% feedback PD block
-
 	pd = IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;
