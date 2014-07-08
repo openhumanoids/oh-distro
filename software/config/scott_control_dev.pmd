@@ -101,24 +101,8 @@ group "a.2.p_and_c" {
 }
 
 group "a.3.models" {   
-    cmd "model_LN_RN" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LN_RN.urdf";
-        host = "robot";
-    }
     cmd "model_LR_RR" {
         exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
-        host = "robot";
-    }
-    cmd "model_LH_RH" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
-        host = "robot";
-    }
-    cmd "model_LP_RP" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LP_RP.urdf";
-        host = "robot";
-    }
-    cmd "model_LI_RI" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LI_RI.urdf";
         host = "robot";
     }
 }
@@ -137,15 +121,25 @@ group "b.2.p_and_c" {
 
 #################################################################
 
-script "prep_LN_RN" { 
+script "prep_LR_RR" { 
     start group "0.development";
-    start cmd "model_LN_RN";
+    start cmd "model_LR_RR";
     start cmd "logger-robot";
-    start group "a.1.core";
     start group "a.2.p_and_c";
     start group "b.2.p_and_c";
     start cmd "atlas-off";
     start cmd "multisense";
+}
+
+script "prep_minimal" { 
+    start group "0.development";
+    start cmd "model_LR_RR";
+    start cmd "pserver";
+    start cmd "aa-sync";
+    start cmd "fusion";
+    start group "a.2.p_and_c";
+    start cmd "CombinedPlanner";
+    start cmd "atlas-off";
 }
 
 script "robot_start" { 

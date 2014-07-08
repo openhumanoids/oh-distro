@@ -34,7 +34,7 @@ group "2.core" {
         host = "robot";
     }
     cmd "model_LH_RH" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LH_RH.urdf";
+        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "robot";
     }
     cmd "viewer" {
