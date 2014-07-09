@@ -257,7 +257,7 @@ while tt<T
 
     fc = output(fcb,tt,[],x);
   
-    junk = output(fshift,tt,[],x);
+    junk = mimoOutput(fshift,tt,[],x,fc);
 
     if use_foot_pd
       lfoot_ddot = output(lfoot_motion,tt,[],x);

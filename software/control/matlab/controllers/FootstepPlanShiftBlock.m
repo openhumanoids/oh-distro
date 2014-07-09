@@ -1,4 +1,4 @@
-classdef FootstepPlanShiftBlock < DrakeSystem
+classdef FootstepPlanShiftBlock < MIMODrakeSystem
   properties
     dt;
     controller_data; % pointer to shared data handle containing foot trajectories
@@ -6,8 +6,6 @@ classdef FootstepPlanShiftBlock < DrakeSystem
     nq;
     rfoot_idx;
     lfoot_idx;
-    lc;
-    contact_est_monitor;
   end
   
   methods
@@ -15,9 +13,10 @@ classdef FootstepPlanShiftBlock < DrakeSystem
       typecheck(r,'Atlas');
       typecheck(controller_data,'QPControllerData');
             
-      input_frame = getStateFrame(r);
+      input_frame = MultiCoordinateFrame({getStateFrame(r),FootContactState});
       output_frame = getStateFrame(r);
-      obj = obj@DrakeSystem(0,0,input_frame.dim,output_frame.dim,true,true);
+      
+      obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
 
@@ -33,63 +32,51 @@ classdef FootstepPlanShiftBlock < DrakeSystem
         sizecheck(options.dt,[1 1]);
         obj.dt = options.dt;
       else
-        obj.dt = 0.2;
+        obj.dt = 0.1;
       end
-      
 %       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
-      obj.lc = lcm.lcm.LCM.getSingleton();
       obj.rfoot_idx = findLinkInd(r,'r_foot');
       obj.lfoot_idx = findLinkInd(r,'l_foot');
-
-      obj.contact_est_monitor = drake.util.MessageMonitor(drc.foot_contact_estimate_t,'utime');
-      obj.lc.subscribe('FOOT_CONTACT_ESTIMATE',obj.contact_est_monitor);
-      
       obj.robot = r;
     end
     
-    function y=output(obj,t,~,x)
+    function y=mimoOutput(obj,t,~,varargin)
+      x = varargin{1};
+      fc = varargin{2};
+      
       persistent last_t;
       if (isempty(last_t) || last_t > t)
         last_t = 0;
       end
       if (t - last_t >= obj.dt)
         last_t = t;
-        contact_data = obj.contact_est_monitor.getNextMessage(0);
-        if ~isempty(contact_data)
-          msg = drc.foot_contact_estimate_t(contact_data);
-          cdata = obj.controller_data;
-          %t = t + cdata.t_offset;
+        cdata = obj.controller_data;
+        if fc(1) > 0.5 % left foot in contact
+          q = x(1:obj.nq); 
+          kinsol = doKinematics(obj.robot,q,false,true);
 
-          if msg.left_contact>0.5
-            % left foot coming into contact
-            q = x(1:obj.nq); 
-            kinsol = doKinematics(obj.robot,q,false,true);
+          constraint_ndx = [cdata.link_constraints.link_ndx] == obj.lfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
+          lfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
+          lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
+          plan_shift = lfoot_des(1:3) - lfoot_act(1:3);
+          % fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',plan_shift);
+          obj.controller_data.plan_shift = plan_shift;
 
-            constraint_ndx = [cdata.link_constraints.link_ndx] == obj.lfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
-            lfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
-            lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
-            cdata.plan_shift = lfoot_des(1:3) - lfoot_act(1:3);
+        elseif fc(2) > 0.5 % right foot in contact
+          q = x(1:obj.nq); 
+          kinsol = doKinematics(obj.robot,q,false,true);
 
-%             fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.plan_shift);
-            obj.controller_data.plan_shift = cdata.plan_shift;
-          elseif msg.right_contact>0.5
-            % right foot coming into contact
-            q = x(1:obj.nq); 
-            kinsol = doKinematics(obj.robot,q,false,true);
+          constraint_ndx = [cdata.link_constraints.link_ndx] == obj.rfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
+          rfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
+          rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
+          plan_shift = rfoot_des(1:3) - rfoot_act(1:3);
 
-            constraint_ndx = [cdata.link_constraints.link_ndx] == obj.rfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
-            rfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
-            rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
-            cdata.plan_shift = rfoot_des(1:3) - rfoot_act(1:3);
-
-%             fprintf('RF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',cdata.plan_shift);
-            obj.controller_data.plan_shift = cdata.plan_shift;
-          end
+          % fprintf('RF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',plan_shift);
+          obj.controller_data.plan_shift = plan_shift;
         end
       end
       y=x;
     end
-  end
-  
+  end  
 end

@@ -67,7 +67,7 @@ request.default_step_params.step_speed = 0.5;
 request.default_step_params.drake_min_hold_time = 2.0;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
-request.default_step_params.constrain_full_foot_pose = false;
+request.default_step_params.constrain_full_foot_pose = true;
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
 

@@ -57,13 +57,13 @@ classdef AtlasWalkingWrapper < DrakeSystem
 
       % instantiate QP controller
       options.slack_limit = 30;
-      options.w_qdd = 0.001*ones(obj.nq,1);
+      options.w_qdd = 0.00075*ones(obj.nq,1);
       options.W_kdot = 0*eye(3);
       options.w_grf = 0.0;
       options.w_slack = 0.005;
       options.debug = true;
       options.use_mex = true;
-      options.contact_threshold = 0.01;
+      options.contact_threshold = 0.005;
       options.output_qdd = true;
       options.solver = 0; % 0 fastqp, 1 gurobi
       options.input_foot_contacts = true;
@@ -121,7 +121,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       fc = output(obj.foot_contact_block,t,[],x);
 
       % footstep plan shift
-      junk = output(obj.footstep_plan_shift_block,t,[],x);
+      junk = mimoOutput(obj.footstep_plan_shift_block,t,[],x,fc);
       
       % qtraj eval
       q_des_and_x = output(obj.qtraj_eval_block,t,[],x);
