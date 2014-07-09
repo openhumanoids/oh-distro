@@ -14,6 +14,7 @@ from ddapp import perception
 from ddapp import lcmUtils
 from ddapp import roboturdf
 from ddapp import transformUtils
+from ddapp import visualization as vis
 from ddapp.transformUtils import getTransformFromAxes
 from ddapp.timercallback import TimerCallback
 from ddapp import mapsregistrar
@@ -21,6 +22,7 @@ from ddapp.visualization import *
 from ddapp.filterUtils import *
 from ddapp.fieldcontainer import FieldContainer
 from ddapp.segmentationroutines import *
+from ddapp import cameraview
 
 import numpy as np
 import vtkNumpy
@@ -143,6 +145,56 @@ def lockToHandOff():
 
     handAffUpdater.stop()
     aff.handToAffT = None
+
+
+
+class DisparityPointCloudItem(vis.PolyDataItem):
+
+    def __init__(self, name, imageManager):
+        vis.PolyDataItem.__init__(self, name, vtk.vtkPolyData(), view=None)
+
+        self.addProperty('Decimation', 2, attributes=om.PropertyAttributes(enumNames=['1', '2', '4', '8', '16']))
+        self.addProperty('Remove outliers', False)
+
+        self.timer = TimerCallback()
+        self.timer.callback = self.update
+        self.lastUtime = 0
+        self.imageManager = imageManager
+        self.cameraName = 'CAMERA_LEFT'
+        self.setProperty('Visible', False)
+
+    def _onPropertyChanged(self, propertySet, propertyName):
+        vis.PolyDataItem._onPropertyChanged(self, propertySet, propertyName)
+
+        if propertyName == 'Visible':
+            if self.getProperty(propertyName):
+                self.timer.start()
+            else:
+                self.timer.stop()
+
+        elif propertyName in ('Decimation', 'Remove outliers'):
+            self.lastUtime = 0
+
+
+    def onRemoveFromObjectModel(self):
+        vis.PolyDataItem.onRemoveFromObjectModel(self)
+        self.timer.stop()
+
+    def update(self):
+
+        utime = self.imageManager.queue.getCurrentImageTime(self.cameraName)
+        if utime == self.lastUtime:
+            return
+
+        decimation = int(self.properties.getPropertyEnumValue('Decimation'))
+        removeOutliers = self.getProperty('Remove outliers')
+        polyData = getDisparityPointCloud(decimation, removeOutliers=removeOutliers)
+        self.setPolyData(polyData)
+
+        if not self.lastUtime:
+            self.setProperty('Color By', 'rgb_colors')
+
+        self.lastUtime = utime
 
 
 def getRandomColor():
@@ -439,6 +491,19 @@ def getCurrentRevolutionData():
         revPolyData = applyVoxelGrid(revPolyData, leafSize=0.015)
 
     return addCoordArraysToPolyData(revPolyData)
+
+
+def getDisparityPointCloud(decimation=4, removeOutliers=True):
+
+    p = cameraview.getStereoPointCloud(decimation)
+    if not p:
+      return None
+
+    if removeOutliers:
+        p = labelOutliers(p)
+        p = thresholdPoints(p, 'is_outlier', [0.0, 0.0])
+
+    return p
 
 
 def getCurrentMapServerData():
@@ -1097,10 +1162,31 @@ def segmentValveByWallPlane(expectedValveRadius, point1, point2):
     t.PostMultiply()
     t.Translate(origin)
 
-    zwidth = 0.02
+
+    # Spoke angle fitting:
+    if (1==1):
+        # extract the relative positon of the points to the valve axis:
+        searchRegionSpokes = labelDistanceToLine(searchRegionSpokes, origin, [origin + circleNormal])
+        searchRegionSpokes = thresholdPoints(searchRegionSpokes, 'distance_to_line', [0.05, radius-0.04])
+        updatePolyData(searchRegionSpokes, 'valve spoke search', parent=getDebugFolder(), visible=False)
+        searchRegionSpokesLocal = transformPolyData(searchRegionSpokes, t.GetLinearInverse() )
+        points = vtkNumpy.getNumpyFromVtk(searchRegionSpokesLocal , 'Points')
+
+        spoke_angle = findValveSpokeAngle(points)
+        spokeAngleTransform = transformUtils.frameFromPositionAndRPY([0,0,0], [0,0,spoke_angle])
+
+        spokeTransform = transformUtils.copyFrame(t)
+        spokeAngleTransform.Concatenate(spokeTransform)
+        spokeObj = showFrame(spokeAngleTransform, 'spoke frame', parent=getDebugFolder(), visible=False, scale=radius)
+        spokeObj.addToView(app.getDRCView())
+        t = spokeAngleTransform
+
+    zwidth = 0.0175
 
     d = DebugData()
-    d.addLine(np.array([0,0,-zwidth/2.0]), np.array([0,0,zwidth/2.0]), radius=radius)
+    #d.addLine(np.array([0,0,-zwidth/2.0]), np.array([0,0,zwidth/2.0]), radius=radius)
+    d.addTorus(radius, 0.1)
+    d.addLine(np.array([0,0,0]), np.array([radius-zwidth,0,0]), radius=zwidth) # main bar
 
     name = 'valve'
     obj = showPolyData(d.getPolyData(), name, cls=CylinderAffordanceItem, parent='affordances', color=[0,1,0])
@@ -1119,25 +1205,10 @@ def segmentValveByWallPlane(expectedValveRadius, point1, point2):
     frameObj.addToView(app.getDRCView())
 
 
-    # Spoke angle fitting:
-    if (1==1):
-        # extract the relative positon of the points to the valve axis:
-        searchRegionSpokes = labelDistanceToLine(searchRegionSpokes, origin, [origin + circleNormal])
-        searchRegionSpokes = thresholdPoints(searchRegionSpokes, 'distance_to_line', [0.05, radius-0.04])
-        updatePolyData(searchRegionSpokes, 'valve spoke search', parent=getDebugFolder(), visible=False)
-        searchRegionSpokesLocal = transformPolyData(searchRegionSpokes, t.GetLinearInverse() )
-        points = vtkNumpy.getNumpyFromVtk(searchRegionSpokesLocal , 'Points')
 
-        spoke_angle = findValveSpokeAngle(points)
-        spokeAngleTransform = transformUtils.frameFromPositionAndRPY([0,0,0], [0,0,spoke_angle])
 
-        spokeTransform = transformUtils.copyFrame(t)
-        spokeAngleTransform.Concatenate(spokeTransform)
 
-        #spokeObj = showFrame(spokeAngleTransform, 'spoke frame', parent=getDebugFolder(), visible=True)
-        #spokeObj.addToView(app.getDRCView())
-        spokeObj = showFrame(spokeAngleTransform, 'spoke frame', parent=obj, visible=True, scale=radius)
-        spokeObj.addToView(app.getDRCView())
+
 
 
 def findValveSpokeAngle(points):
@@ -1160,12 +1231,11 @@ def findValveSpokeAngle(points):
     freq, bins = np.histogram(angle, bins)
     amax = np.argmax(freq)
     spoke_angle = bins[amax] + 5 # correct for 5deg offset
-    print spoke_angle
 
     return spoke_angle
 
 
-def segmentValveWallAuto(expectedValveRadius, mode='both', removeGroundMethod=removeGround ):
+def segmentValveWallAuto(expectedValveRadius=.195, mode='both', removeGroundMethod=removeGround ):
     '''
     Segment the valve wall where the left hand side has a valve and right has a lever
     '''
@@ -2196,6 +2266,9 @@ def segmentDrillAuto(point1):
 
 
 def findAndFitDrillBarrel(polyData=None):
+    ''' Find the horizontal surfaces
+    on the horizontal surfaces, find all the drills
+    '''
 
     inputObj = om.findObjectByName('pointcloud snapshot')
     polyData = polyData or inputObj.polyData
@@ -2239,6 +2312,7 @@ def findAndFitDrillBarrel(polyData=None):
 
     #print 'robot origin:', robotOrigin
     #print 'robot forward:', robotForward
+    centroid =[]
 
     for clusterId, cluster in enumerate(clusters):
         clusterObj = updatePolyData(cluster, 'surface cluster %d' % clusterId, color=[1,1,0], parent=getDebugFolder(), visible=False)
@@ -2269,6 +2343,11 @@ def findAndFitDrillBarrel(polyData=None):
     if not fitResults:
         return
 
+    sortFittedDrills(fitResults, robotOrigin, robotForward)
+
+    return centroid
+
+def sortFittedDrills(fitResults, robotOrigin, robotForward):
 
     angleToFitResults = []
 
@@ -2297,7 +2376,7 @@ def findAndFitDrillBarrel(polyData=None):
             drill.actor.SetUserTransform(drillFrame.transform)
 
             drill.setSolidColor([0, 1, 0])
-            cluster.setProperty('Visible', True)
+            #cluster.setProperty('Visible', True)
 
         else:
 
