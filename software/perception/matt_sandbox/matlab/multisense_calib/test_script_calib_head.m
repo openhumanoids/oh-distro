@@ -3,19 +3,20 @@
 %logfile1 = '/home/antone/data/multisense_05_calib/lcmlog-2013-09-04.01';
 %logfile1 = '/home/antone/data/2013-11-15-multisense-02-calib/lcmlog-2013-11-15-15-39-robot';
 %logfile1 = '/home/antone/data/2013-11-15-multisense-02-calib/lcmlog-2013-11-15-15-32-robot';
-logfile1 = '/home/antone/data/2014-03-28_multisense-02-calib/lcmlog-2014-03-28.03';
+%logfile1 = '/home/antone/data/2014-03-28_multisense-02-calib/lcmlog-2014-03-28.03';
+logfile1 = '/home/antone/data/2014-07-09_multisense-05-calib/lcmlog-2014-07-09.02';
 addpath('/home/antone/matlab/common');
 setup_lcm;
 
 %% stereo calib data and initial transforms (this is for sensor 05)
-fx = 588.7705688476562;
+fx = 555.223083496093750;
 fy = fx;
 cx = 512;
-cy = 272;
-baseline = 0.070069553;
+cy = 512;
+baseline = 0.0694900734051353;
 K = [fx,0,cx;0,fy,cy;0,0,1];
 
-R = [0,1,0;-1,0,0;0,0,1];
+R = axisangle2rot([0;0;1],-90*pi/180);
 T = [0;0;0];
 P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
 R = [0,0,1;1,0,0;0,1,0];
@@ -30,7 +31,7 @@ cy = 512;
 baseline = 0.0700931567882511;
 K = [fx,0,cx;0,fy,cy;0,0,1];
 
-R = [0,1,0;-1,0,0;0,0,1]*[0,-1,0;1,0,0;0,0,1];
+R = eye(3);
 T = [0;0;0];
 P_camera_to_pre_spindle = [R,T(:);0,0,0,1];
 R = [0,0,1;1,0,0;0,1,0];
