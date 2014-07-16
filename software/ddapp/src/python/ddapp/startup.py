@@ -26,6 +26,7 @@ from ddapp import objectmodel as om
 from ddapp import spreadsheet
 from ddapp import transformUtils
 from ddapp import tdx
+from ddapp import skybox
 from ddapp import perception
 from ddapp import segmentation
 from ddapp import cameraview
@@ -109,6 +110,7 @@ useFootContactVis = True
 useImageWidget = False
 useImageViewDemo = True
 useControllerRate = True
+useSkybox = False
 
 
 poseCollection = PythonQt.dd.ddSignalMap()
@@ -167,11 +169,11 @@ if usePerception:
 
 
 if useGrid:
-    vis.showGrid(view, color=[0,0,0] if useLightColorScheme else [1,1,1])
+    vis.showGrid(view, color=[0,0,0] if useLightColorScheme else [1,1,1], useSurface=useLightColorScheme)
 
 
 if useLightColorScheme:
-    app.setBackgroundColor([0.3, 0.3, 0.35], [1,1,1])
+    app.setBackgroundColor([0.3, 0.3, 0.35], [0.95,0.95,1])
 
 
 if useHands:
@@ -371,6 +373,17 @@ if useControllerRate:
             self.label.text = 'Controller rate: %.2f hz' % self.sub.getMessageRate()
 
     rateComputer = LCMMessageRateDisplay('ATLAS_COMMAND', 'Controller rate: %.2 hz', app.getMainWindow().statusBar())
+
+
+if useSkybox:
+
+    skyboxDataDir = os.path.expanduser('~/Downloads/skybox')
+    imageMap = skybox.getSkyboxImages(skyboxDataDir)
+    skyboxObjs = skybox.createSkybox(imageMap, view)
+    skybox.createTextureGround(os.path.join(skyboxDataDir, 'Dirt_seamless.jpg'), view)
+    skybox.connectSkyboxCamera(view)
+    view.camera().SetViewAngle(60)
+    om.findObjectByName('grid').setProperty('Visible', False)
 
 
 if useFootContactVis:
