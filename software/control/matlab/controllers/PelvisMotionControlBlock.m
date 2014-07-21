@@ -71,7 +71,7 @@ classdef PelvisMotionControlBlock < DrakeSystem
       % terrible hack
       lfoot = forwardKin(obj.robot,kinsol,obj.lfoot_ind,[0;0;0],1);
       rfoot = forwardKin(obj.robot,kinsol,obj.rfoot_ind,[0;0;0],1);
-      z_des = 0.5*(lfoot(3)+rfoot(3))+.78; % X cm above feet
+      z_des = min([lfoot(3),rfoot(3)])+.75; % X cm above feet
       
       body_des = [nan;nan;z_des;0;0;mean([lfoot(6) rfoot(6)])]; 
       err = [body_des(1:3)-p(1:3);angleDiff(p(4:end),body_des(4:end))];
