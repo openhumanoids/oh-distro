@@ -44,6 +44,20 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
     function y=mimoOutput(obj,t,~,varargin)
       x = varargin{1};
       fc = varargin{2};
+    
+      ctrl_data = obj.controller_data;
+
+      supp_idx = find(ctrl_data.support_times<=t,1,'last');
+      supp = ctrl_data.supports(supp_idx);      
+      while length(supp.bodies) > 1 && supp_idx < length(ctrl_data.support_times)
+        supp_idx = supp_idx + 1;
+        supp = ctrl_data.supports(supp_idx);      
+      end
+      if length(supp.bodies)==2
+        loading_foot = obj.rfoot_idx; % arbitrarily pick the right foot
+      else
+        loading_foot = supp.bodies;
+      end 
       
       persistent last_t;
       if (isempty(last_t) || last_t > t)
@@ -52,7 +66,7 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
       if (t - last_t >= obj.dt)
         last_t = t;
         cdata = obj.controller_data;
-        if fc(1) > 0.5 % left foot in contact
+        if fc(1) > 0.5 && loading_foot==obj.lfoot_idx % left foot in contact
           q = x(1:obj.nq); 
           kinsol = doKinematics(obj.robot,q,false,true);
 
@@ -63,7 +77,7 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
           % fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',plan_shift);
           obj.controller_data.plan_shift = plan_shift;
 
-        elseif fc(2) > 0.5 % right foot in contact
+        elseif fc(2) > 0.5 && loading_foot==obj.rfoot_idx % right foot in contact
           q = x(1:obj.nq); 
           kinsol = doKinematics(obj.robot,q,false,true);
 
