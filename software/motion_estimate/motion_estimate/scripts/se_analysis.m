@@ -9,8 +9,14 @@ bot_ = bot;
 %normals 86
 
 main_dir = '/home/mfallon/data/atlas/2014-04-21-vicon-walking/results/'
+run_dir = '2014-06-06-14-15-imu-leg-odo-for-paper'
 
-folder_path = [main_dir '2014-06-06-14-15-imu-leg-odo-for-paper' '/'];
+%main_dir = '/media/passport4/atlas/2014-01-21-vicon-walking/results/'
+%run_dir = '2014-03-13-17-09-imu-leg-odo-lidar-alt-transition'
+%run_dir = '2014-03-13-14-25-imu-leg-odo-alt-transition'
+%run_dir = '2014-03-13-14-12-imu-leg-odo-older-transition'
+
+folder_path = [main_dir run_dir '/'];
 
 % 2014-05-06-13-04-imu-leg-odo
 % 2014-05-06-16-54-imu-leg-odo-lidar
@@ -23,7 +29,7 @@ folder_path = [main_dir '2014-06-06-14-15-imu-leg-odo-for-paper' '/'];
 
 % 2014-06-06-14-15-imu-leg-odo-for-paper
 % 2014-06-06-14-46-imu-leg-odo-lidar-for-paper
-  
+
 logs = dir( [folder_path '*mat'])
 
 
@@ -313,13 +319,15 @@ plot(s.b.t,s.b.z_drift,'b')
 plot(s.m.t,s.m.z_drift,'m')
 title('Z Drift')
 
+diff_val = 10; % time between samples of distance travelled from vicon
+% 100 is 1Hz | 10 is 10Hz
 cum_dist = cumsum(sqrt(sum((diff ( s.v.trans_vec(1:10:end,:)  )).^2,2)));
 time_temp = s.v.t(1:10:end);
 t_cum_dist = time_temp(2:end);
 
 subplot(2,3,5); hold on
 plot(t_cum_dist, cum_dist)
-title('Distance Travelled')
+title('Distance Travelled [samples at 10Hz]')
 xlabel(log_filename)
 
 drawnow
