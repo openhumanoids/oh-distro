@@ -1,7 +1,7 @@
 function atlasWalking
 %NOTEST
 
-use_foot_pd = false;
+use_foot_pd = true;
 
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 
@@ -82,7 +82,7 @@ request.params.min_num_steps = 1;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.28;
 request.params.max_step_width = 0.32;
-request.params.nom_forward_step = 0.15;
+request.params.nom_forward_step = 0.13;
 request.params.max_forward_step = 0.30;
 request.params.nom_upward_step = 0.2;
 request.params.nom_downward_step = 0.2;
@@ -128,6 +128,32 @@ for i=1:length(ts)
 end
 lcmgl.switchBuffers();
 
+% compute smooth polynomial footstep trajectories
+for i=1:length(walking_ctrl_data.link_constraints)
+  traj = walking_ctrl_data.link_constraints(i).traj;
+  breaks = unique(traj.getBreaks());
+  points = traj.eval(breaks);
+  zpoints = points(3, :);
+  change_indices = [true diff(diff(zpoints)) ~= 0 true];
+  
+%   new_points = zeros(size(points));
+%   for j = 1 : size(points, 1)
+% %     new_points(j, :) = filtfilt(b, a, points(j, :));
+%     new_points(j, :) = smooth(points(j, :), 3, 'moving');
+%   end
+  
+  
+%   rough_velocities = diff(zpoints) ./ diff(breaks);
+%   similar_velocity_indices = [true abs(diff(rough_velocities)) < 0.01 true];
+%   indices = change_indices & ~similar_velocity_indices;
+  new_traj = PPTrajectory(pchip(breaks(change_indices), points(:, change_indices)));
+%   ndiff = diff(points')';
+%   new_traj = PPTrajectory(pchipDeriv(breaks,points,ndiff));
+  walking_ctrl_data.link_constraints(i).traj = new_traj;
+  walking_ctrl_data.link_constraints(i).dtraj = fnder(new_traj);
+  walking_ctrl_data.link_constraints(i).ddtraj = fnder(new_traj,2);  
+end
+
 
 ctrl_data = QPControllerData(true,struct(...
   'acceleration_input_frame',AtlasCoordinates(r),...
@@ -148,17 +174,16 @@ ctrl_data = QPControllerData(true,struct(...
   'mu',walking_ctrl_data.mu,...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'y0',walking_ctrl_data.zmptraj,...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
 
 
 % instantiate QP controller
-options.slack_limit = 50;
-options.w_qdd = 0.001*ones(nq,1);
-%options.w_qdd(1:6) = 0.005;
+options.slack_limit = 30;
+options.w_qdd = 0*ones(nq,1);
 options.W_kdot = 0*eye(3);
 options.w_grf = 0.0;
 options.w_slack = 0.005;
-options.debug = false;
+options.debug = true;
 options.use_mex = true;
 options.contact_threshold = 0.005;
 options.output_qdd = true;
@@ -166,16 +191,17 @@ options.solver = 0; % 0 fastqp, 1 gurobi
 options.input_foot_contacts = true;
 
 if use_foot_pd
-  options.Kp = [50; 50; 50; 55; 55; 55];
-  options.Kd = 4.0*ones(6,1);
+  options.Kp = 20*[1; 1; 1; 1; 1; 1];
+  options.Kd = getDampingGain(options.Kp,0.5);
   lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
 	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
-  options.Kp = [0; 0; 35; 40; 40; 40];
-  options.Kd = [0; 0; 3; 3; 3; 3];
-	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data);
+
+  options.Kp = 20*[0; 0; 1; 1; 1; 1];
+  options.Kd = getDampingGain(options.Kp,1);
+	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data,options);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
     pelvis_motion.getOutputFrame};
-  options.body_accel_input_weights = [-1 -1 -1];
+  options.body_accel_input_weights = [1 1 1];
 	qp = QPController(r,motion_frames,ctrl_data,options);
 else
   qp = QPController(r,{},ctrl_data,options);
@@ -185,6 +211,10 @@ vo = VelocityOutputIntegratorBlock(r,options);
 options.use_lcm = true;
 fcb = FootContactBlock(r,ctrl_data,options);
 fshift = FootstepPlanShiftBlock(r,ctrl_data);
+
+if use_foot_pd
+  options.use_ik = false;
+end
 
 % cascade IK/PD block
 options.Kp = 50.0*ones(nq,1);

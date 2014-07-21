@@ -71,8 +71,8 @@ classdef FootMotionControlBlock < DrakeSystem
       link_con_ind = [ctrl_data.link_constraints.link_ndx]==obj.foot_ind;
       foot_des = fasteval(ctrl_data.link_constraints(link_con_ind).traj,t);
       err = [foot_des(1:3)-p(1:3);angleDiff(p(4:end),foot_des(4:end))];
-      
-      foot_acc = obj.Kp.*err - obj.Kd.*(J*qd);
+
+      foot_acc = obj.Kp.*err + obj.Kd.*(fasteval(ctrl_data.link_constraints(link_con_ind).dtraj,t)-J*qd);% + fasteval(ctrl_data.link_constraints(link_con_ind).ddtraj,t); 
 		%	foot_acc(4:5) = NaN;
       y = [obj.foot_ind;foot_acc];
     end
