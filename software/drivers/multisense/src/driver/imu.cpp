@@ -93,22 +93,12 @@ dataCallback(const imu::Header& header) {
   const double accel_factor = 9.81;   // convert to m/s^2 from g
   const double gyro_factor = pi/180;  // convert to rad/sec from deg/sec
   const double mag_factor = 1.0;      // no conversion
-
-  // compute time offset between current wall clock and latest sample
-  int64_t wall_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-  int64_t last_sample_time;
-  {
-    auto samp = header.samples.back();
-    last_sample_time = samp.timeSeconds*1000000 + samp.timeMicroSeconds;
-  }
-  int64_t time_offset = wall_time - last_sample_time;
   
   // publish each sample (no interpolation, just sample-and-hold)
   for (auto samp : header.samples) {
 
     // account for time offset
-    int64_t raw_time = samp.timeSeconds*1000000 + samp.timeMicroSeconds;
-    int64_t utime = raw_time + time_offset;
+    int64_t utime = int64_t(samp.timeSeconds)*1000000 + samp.timeMicroSeconds;
 
     // populate message
     multisense::imu_t& msg = latest_msg_;
