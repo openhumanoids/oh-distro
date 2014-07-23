@@ -97,12 +97,9 @@ dataCallback(const imu::Header& header) {
   // publish each sample (no interpolation, just sample-and-hold)
   for (auto samp : header.samples) {
 
-    // account for time offset
-    int64_t utime = int64_t(samp.timeSeconds)*1000000 + samp.timeMicroSeconds;
-
     // populate message
     multisense::imu_t& msg = latest_msg_;
-    msg.utime = utime;
+    msg.utime = int64_t(samp.timeSeconds)*1000000 + samp.timeMicroSeconds;
     switch (samp.type) {
     case imu::Sample::Type_Accelerometer:
       msg.accel[0] = samp.x*accel_factor;
