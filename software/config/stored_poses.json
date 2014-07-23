@@ -1165,6 +1165,34 @@
       }, 
       "name": "pre-grasp high and tight", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - 2014", 
+      "joints": {
+        "l_arm_elx": 2.277007579803467, 
+        "l_arm_ely": 1.7231732606887817, 
+        "l_arm_mwx": -0.4178050458431244, 
+        "l_arm_shx": -0.017506087198853493, 
+        "l_arm_usy": -0.252936989068985, 
+        "l_arm_uwy": 0.0015456664841622114
+      }, 
+      "name": "drill in camera - 2014", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - 2014 pointer", 
+      "joints": {
+        "r_arm_elx": -2.2095110416412354, 
+        "r_arm_ely": 1.8581303358078003, 
+        "r_arm_mwx": -0.3955312669277191, 
+        "r_arm_shx": 0.7973434925079346, 
+        "r_arm_usy": -0.4103423058986664, 
+        "r_arm_uwy": 2.1640777587890625
+      }, 
+      "name": "drill in camera - 2014 pointer", 
+      "nominal_handedness": "right"
     }
   ], 
   "hose": [

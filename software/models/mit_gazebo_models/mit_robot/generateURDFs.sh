@@ -21,6 +21,7 @@ rosrun xacro xacro.py xacro/atlas_LR_RR.urdf.xacro > model_LR_RR.urdf
 
 echo "Robotiq / pointer"
 rosrun xacro xacro.py xacro/atlas_LP_RR.urdf.xacro > model_LP_RR.urdf
+rosrun xacro xacro.py xacro/atlas_LR_RP.urdf.xacro > model_LR_RP.urdf
 
 
  
