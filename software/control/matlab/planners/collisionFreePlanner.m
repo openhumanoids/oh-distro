@@ -27,8 +27,9 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
   typecheck(varargin{end},'IKoptions');
 
   tspan = t([1,end]);
-  % Ignoring the user supplied time for now.
-  t = linspace(tspan(1),tspan(2),4);
+
+  % uncomment to overwrite user supplied time.
+  %t = linspace(tspan(1),tspan(2),4);
 
   if isstruct(varargin{1})
     options = varargin{1};
@@ -40,11 +41,11 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
   if ~isfield(options,'frozen_groups'),options.frozen_groups = {}; end;
   if ~isfield(options,'visualize'),options.visualize = false; end;
   if ~isfield(options,'quiet'),options.quiet = true; end;
-  if ~isfield(options,'allow_ikoptions_modification'),options.allow_ikoptions_modification = true; end;
+  if ~isfield(options,'allow_ikoptions_modification'),options.allow_ikoptions_modification = false; end;
   if ~isfield(options,'additional_t_samples'),options.additional_t_samples = []; end;
-  if ~isfield(options,'acceleration_cost'),options.acceleration_cost = 0; end;
-  if ~isfield(options,'position_cost'),options.position_cost = 0; end;
-  if ~isfield(options,'collision_constraint_type'), options.collision_constraint_type = 'integrated_mex'; end
+  if ~isfield(options,'acceleration_cost'),options.acceleration_cost = 1e-3; end;
+  if ~isfield(options,'position_cost'),options.position_cost = 1e0; end;
+  if ~isfield(options,'collision_constraint_type'), options.collision_constraint_type = 'single'; end
   if ~isfield(options,'min_distance'), options.min_distance = 0.05; end;
 
   constraints = varargin(1:end-1);
@@ -114,9 +115,10 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
   % Adust ikoptions
   if options.allow_ikoptions_modification
     ikoptions = ikoptions.setDebug(true);
-    ikoptions = ikoptions.setMajorIterationsLimit(1000);
-    ikoptions = ikoptions.setQ(options.position_cost*eye(nq));
-    ikoptions = ikoptions.setQa(options.acceleration_cost*eye(nq));
+    ikoptions = ikoptions.setMajorIterationsLimit(500);
+    ikoptions = ikoptions.setIterationsLimit(1e5);
+    ikoptions = ikoptions.setQ(options.position_cost*ikoptions.Q);
+    ikoptions = ikoptions.setQa(options.acceleration_cost*ikoptions.Qa);
     ikoptions = ikoptions.setQv(0*ikoptions.Q);
     ikoptions = ikoptions.setqdf(zeros(nq,1),zeros(nq,1));
   end
@@ -143,7 +145,7 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
       end
     case 'single'
       iktraj_collision_constraint = MinDistanceConstraint(r, options.min_distance);      
-      ikoptions = ikoptions.setAdditionaltSamples(linspace(tspan(1),tspan(2),40));
+      ikoptions = ikoptions.setAdditionaltSamples(linspace(tspan(1),tspan(2),50));
     case 'abcdc'
       iktraj_collision_constraint = AllBodiesClosestDistanceConstraint(r, options.min_distance, 1e3);    
     otherwise
@@ -156,7 +158,12 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
   if ~options.quiet, fprintf('IKTraj took %f seconds\n',toc(time)); end
 
   % Constraints are actually checking the linear interpolation.
-  xtraj = PPTrajectory(foh(xtraj_spline.getBreaks(),xtraj_spline.eval(xtraj_spline.getBreaks())));
+  switch options.collision_constraint_type
+    case {'integrated','integrated_mex','interpolated','interpolated_mex'}
+      xtraj = PPTrajectory(foh(xtraj_spline.getBreaks(),xtraj_spline.eval(xtraj_spline.getBreaks())));
+    otherwise
+      xtraj = xtraj_spline;
+  end
 
   % Only checking for feasibility now.
   xtraj_feasible = xtraj;
