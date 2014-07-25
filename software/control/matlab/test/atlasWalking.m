@@ -176,16 +176,17 @@ ctrl_data = QPControllerData(true,struct(...
   'y0',walking_ctrl_data.zmptraj,...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
 
+save('walking_ctrl_data.mat','walking_ctrl_data');
 
 % instantiate QP controller
 options.slack_limit = 30;
 options.w_qdd = 0*ones(nq,1);
 options.W_kdot = 0*eye(3);
 options.w_grf = 0.0;
-options.w_slack = 0.005;
+options.w_slack = 0.05;
 options.debug = true;
 options.use_mex = true;
-options.contact_threshold = 0.005;
+options.contact_threshold = 0.01;
 options.output_qdd = true;
 options.solver = 0; % 0 fastqp, 1 gurobi
 options.input_foot_contacts = true;
@@ -325,7 +326,7 @@ gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % move to fixed point configuration
-% qdes = xstar(1:nq);
-% atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
+qdes = xstar(1:nq);
+atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 end
