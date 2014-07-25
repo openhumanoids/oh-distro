@@ -128,9 +128,6 @@ end
     lcmgl.glColor3f(color(1), color(2), color(3));
     lcmgl.sphere(zmp, 0.015, 20, 20);
 
-    lcmgl.glColor3f(0, 0, 0);
-    lcmgl.sphere([com(1:2)', min(cpos(3,:))], 0.015, 20, 20);
-
     lcmgl.switchBuffers();
   end
 
