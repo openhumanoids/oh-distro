@@ -42,8 +42,8 @@ gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % move to fixed point configuration
-qdes = xstar(1:nq);
-atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
+% qdes = xstar(1:nq);
+% atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 gains_copy = getAtlasGains();
 % reset force gains 
@@ -197,11 +197,11 @@ if use_foot_pd
 	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
 
   options.Kp = 20*[0; 0; 1; 1; 1; 1];
-  options.Kd = getDampingGain(options.Kp,1);
+  options.Kd = getDampingGain(options.Kp,0.4);
 	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data,options);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
     pelvis_motion.getOutputFrame};
-  options.body_accel_input_weights = [1 1 1];
+  options.body_accel_input_weights = 0.35*[1 1 1];
 	qp = QPController(r,motion_frames,ctrl_data,options);
 else
   qp = QPController(r,{},ctrl_data,options);
@@ -325,7 +325,7 @@ gains.ff_qd_d = zeros(nu,1);
 ref_frame.updateGains(gains);
 
 % move to fixed point configuration
-qdes = xstar(1:nq);
-atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
+% qdes = xstar(1:nq);
+% atlasLinearMoveToPos(qdes,state_plus_effort_frame,ref_frame,act_idx_map,5);
 
 end
