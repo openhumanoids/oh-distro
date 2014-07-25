@@ -202,7 +202,7 @@ if use_foot_pd
 	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data,options);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
     pelvis_motion.getOutputFrame};
-  options.body_accel_input_weights = 0.35*[1 1 1];
+  options.body_accel_input_weights = 0.25*[1 1 1];
 	qp = QPController(r,motion_frames,ctrl_data,options);
 else
   qp = QPController(r,{},ctrl_data,options);
