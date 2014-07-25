@@ -377,7 +377,7 @@ classdef QPController < MIMODrakeSystem
       if nc > 0
         % relative acceleration constraint
         Aeq_{2} = Jp*Iqdd + Ieps;
-        beq_{2} = -Jpdot*qd - 0.0*Jp*qd; % TODO: parameterize
+        beq_{2} = -Jpdot*qd - 1.0*Jp*qd; % TODO: parameterize
       end
 
       eq_count=3;
