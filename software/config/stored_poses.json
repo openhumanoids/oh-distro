@@ -1193,6 +1193,23 @@
       }, 
       "name": "drill in camera - 2014 pointer", 
       "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true, 
+      "description": "drill near target - 2014", 
+      "joints": {
+        "back_bkx": 0.00, 
+        "back_bky": 0.00, 
+        "back_bkz": 0.00, 
+        "l_arm_elx": 1.6365846395492554, 
+        "l_arm_ely": 2.546053647994995, 
+        "l_arm_mwx": 0.8582467436790466, 
+        "l_arm_shx": -1.2967355251312256, 
+        "l_arm_usy": 0.5850000381469727, 
+        "l_arm_uwy": 0.10304810106754303
+      }, 
+      "name": "drill near target - 2014", 
+      "nominal_handedness": "left"
     }
   ], 
   "hose": [
