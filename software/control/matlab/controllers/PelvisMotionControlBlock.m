@@ -61,17 +61,24 @@ classdef PelvisMotionControlBlock < DrakeSystem
     end
    
     function y=output(obj,t,~,x)
+      persistent z_prev
       q = x(1:obj.nq);
       qd = x(obj.nq+1:end);
       kinsol = doKinematics(obj.robot,q,false,true,qd); 
     
       % TODO: this must be updated to use quaternions/spatial velocity
       [p,J] = forwardKin(obj.robot,kinsol,obj.body_ind,[0;0;0],1); 
-            
+      
       % terrible hack
       lfoot = forwardKin(obj.robot,kinsol,obj.lfoot_ind,[0;0;0],1);
       rfoot = forwardKin(obj.robot,kinsol,obj.rfoot_ind,[0;0;0],1);
-      z_des = min([lfoot(3),rfoot(3)])+.75; % X cm above feet
+      
+      if t==0
+        z_prev = p(3);
+      end
+      alpha = 0.9;
+      z_des = alpha*z_prev + (1-alpha)*(min([lfoot(3),rfoot(3)])+.75); % X cm above feet
+      z_prev = z_des;
       
       body_des = [nan;nan;z_des;0;0;mean([lfoot(6) rfoot(6)])]; 
       err = [body_des(1:3)-p(1:3);angleDiff(p(4:end),body_des(4:end))];
