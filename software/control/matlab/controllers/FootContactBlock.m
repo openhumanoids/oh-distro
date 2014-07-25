@@ -110,11 +110,17 @@ classdef FootContactBlock < MIMODrakeSystem
     function varargout=mimoOutput(obj,t,~,x)      
       ctrl_data = obj.controller_data;
 
+      contact_logic_AND = true;
       if (ctrl_data.is_time_varying)
         % extract current desired supports
         supp_idx = find(ctrl_data.support_times<=t,1,'last');
         supp = ctrl_data.supports(supp_idx);      
-      else
+        if supp_idx > 1
+          supp_prev = ctrl_data.supports(supp_idx-1);
+          breaking_contact = length(supp_prev.bodies)>length(supp.bodies);
+          contact_logic_AND = breaking_contact;
+        end  
+      else      
         supp = ctrl_data.supports;
       end
       
@@ -142,7 +148,7 @@ classdef FootContactBlock < MIMODrakeSystem
         height = 0;
       end
       
-      active_supports = supportDetectmex(obj.mex_ptr.data,x,supp,contact_sensor,contact_thresh,height);
+      active_supports = supportDetectmex(obj.mex_ptr.data,x,supp,contact_sensor,contact_thresh,height,contact_logic_AND);
 
       y = [1.0*any(active_supports==obj.lfoot_idx); 1.0*any(active_supports==obj.rfoot_idx)];
       if obj.num_outputs > 1
