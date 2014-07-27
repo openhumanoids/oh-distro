@@ -10,6 +10,7 @@ classdef FootContactBlock < MIMODrakeSystem
     using_flat_terrain; % true if using DRCFlatTerrain
     contact_threshold; % min height above terrain to be considered in contact
     use_lcm;
+    use_contact_logic_OR;
   end
   
   methods
@@ -61,6 +62,17 @@ classdef FootContactBlock < MIMODrakeSystem
         obj.use_lcm = true;
       end
 
+      if isfield(options,'use_contact_logic_OR')
+        % false: always do a logical AND with planned support and sensed support
+        % true: do logical OR with planned support and sensed support
+        % except when breaking contact
+        typecheck(options.use_contact_logic_OR,'logical');
+        sizecheck(options.use_contact_logic_OR,[1 1]);
+        obj.use_contact_logic_OR = options.use_contact_logic_OR;
+      else
+        obj.use_contact_logic_OR = false;
+      end
+      
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
@@ -115,7 +127,7 @@ classdef FootContactBlock < MIMODrakeSystem
         % extract current desired supports
         supp_idx = find(ctrl_data.support_times<=t,1,'last');
         supp = ctrl_data.supports(supp_idx);      
-        if supp_idx > 1
+        if obj.use_contact_logic_OR && supp_idx > 1
           supp_prev = ctrl_data.supports(supp_idx-1);
           breaking_contact = length(supp_prev.bodies)>length(supp.bodies);
           contact_logic_AND = breaking_contact;

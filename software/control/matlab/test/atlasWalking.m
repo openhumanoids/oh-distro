@@ -210,6 +210,7 @@ end
 
 vo = VelocityOutputIntegratorBlock(r,options);
 options.use_lcm = true;
+options.use_contact_logic_OR = true;
 fcb = FootContactBlock(r,ctrl_data,options);
 fshift = FootstepPlanShiftBlock(r,ctrl_data);
 
