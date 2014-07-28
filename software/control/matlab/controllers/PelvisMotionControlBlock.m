@@ -76,7 +76,7 @@ classdef PelvisMotionControlBlock < DrakeSystem
       if t==0
         z_prev = p(3);
       end
-      alpha = 0.9;
+      alpha = 0.95;
       z_des = alpha*z_prev + (1-alpha)*(min([lfoot(3),rfoot(3)])+.75); % X cm above feet
       z_prev = z_des;
       
