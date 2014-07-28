@@ -55,8 +55,8 @@ classdef AtlasWalkingController < DRCController
         'integral',zeros(getNumDOF(r),1),...
         'integral_gains',integral_gains,...
         'integral_clamps',integral_clamps,...
-        'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back');findJointIndices(r,'ak')]));
-
+        'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
+      
       if ~isfield(options,'use_mex') options.use_mex = true; end
       if ~isfield(options,'debug') options.debug = false; end
       if ~isfield(options,'lcm_foot_contacts') options.lcm_foot_contacts = true; end
