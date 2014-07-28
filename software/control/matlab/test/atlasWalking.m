@@ -82,8 +82,8 @@ request.params.min_num_steps = 1;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.28;
 request.params.max_step_width = 0.32;
-request.params.nom_forward_step = 0.2;
-request.params.max_forward_step = 0.30;
+request.params.nom_forward_step = 0.18;
+request.params.max_forward_step = 0.20;
 request.params.nom_upward_step = 0.2;
 request.params.nom_downward_step = 0.2;
 request.params.planning_mode = request.params.MODE_AUTO;
@@ -91,11 +91,11 @@ request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_mode = drc.footstep_plan_params_t.HORIZONTAL_PLANE;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.2;
+request.default_step_params.step_speed = 0.15;
 request.default_step_params.step_height = 0.065;
 request.default_step_params.mu = 0.8;
 request.default_step_params.constrain_full_foot_pose = true;
-request.default_step_params.drake_min_hold_time = 1.0; %sec
+request.default_step_params.drake_min_hold_time = 1.25; %sec
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
 
@@ -184,7 +184,8 @@ options.w_qdd = 0*ones(nq,1);
 options.W_kdot = 0*eye(3);
 options.w_grf = 0.0;
 options.w_slack = 0.05;
-options.debug = true;
+options.Kp_accel = 0.0;
+options.debug = false;
 options.use_mex = true;
 options.contact_threshold = 0.01;
 options.output_qdd = true;
@@ -193,7 +194,7 @@ options.input_foot_contacts = true;
 
 if use_foot_pd 
   options.Kp = [20; 20; 20; 10; 20; 10];
-  options.Kd = getDampingGain(options.Kp,0.4);
+  options.Kd = getDampingGain(options.Kp,0.6);
   lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
 	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
 
