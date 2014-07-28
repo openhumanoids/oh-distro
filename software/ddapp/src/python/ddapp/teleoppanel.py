@@ -140,8 +140,15 @@ class EndEffectorTeleopPanel(object):
     def generatePlan(self):
 
         self.updateConstraints()
-        #plan = self.constraintSet.runIkTraj()
-        plan = self.constraintSet.planEndPoseGoal()
+        if not self.ui.interactiveCheckbox.checked:
+            self.updateIk()
+
+        # todo- need an option here
+        if ikplanner.getIkOptions().getProperty('Use collision'):
+            plan = self.constraintSet.runIkTraj()
+        else:
+            plan = self.constraintSet.planEndPoseGoal()
+
         self.panel.showPlan(plan)
 
     def teleopButtonClicked(self):
