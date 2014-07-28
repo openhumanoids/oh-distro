@@ -568,7 +568,7 @@ classdef QPController < MIMODrakeSystem
         else
           ctrl_data.infocount = 0;
         end
-        if ctrl_data.infocount > 4
+        if ctrl_data.infocount > 10
           % kill atlas
           disp('freezing atlas!');
           behavior_pub = AtlasBehaviorModePublisher('ATLAS_BEHAVIOR_COMMAND');
