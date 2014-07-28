@@ -13,6 +13,16 @@ add_mex(mxDeserialize mxDeserialize.c)
 
 pods_find_pkg_config(maps)
 pods_find_pkg_config(opencv)
+
+add_mex(linearIKmex linearIKmex.cpp)
+pods_use_pkg_config_packages(linearIKmex eigen3 gurobi drake-qp drake-rbm)
+install(TARGETS linearIKmex DESTINATION matlab)
+
+add_mex(pelvisMotionControlmex pelvisMotionControlmex.cpp)
+pods_use_pkg_config_packages(pelvisMotionControlmex eigen3 drake-rbm)
+install(TARGETS pelvisMotionControlmex DESTINATION matlab)
+
+
 if (NOT maps_FOUND OR NOT opencv_FOUND)
   add_mex(QPControllermex QPControllermex.cpp)
   pods_use_pkg_config_packages(QPControllermex eigen3 gurobi drake-qp drake-rbm)
@@ -22,9 +32,9 @@ if (NOT maps_FOUND OR NOT opencv_FOUND)
   pods_use_pkg_config_packages(supportDetectmex eigen3 drake-rbm)
   install(TARGETS supportDetectmex DESTINATION matlab)
 
-  add_mex(linearIKmex linearIKmex.cpp)
-  pods_use_pkg_config_packages(linearIKmex eigen3 gurobi drake-qp drake-rbm)
-  install(TARGETS linearIKmex DESTINATION matlab)
+  add_mex(pelvisMotionControlmex pelvisMotionControlmex.cpp)
+  pods_use_pkg_config_packages(pelvisMotionControlmex eigen3 drake-rbm)
+  install(TARGETS pelvisMotionControlmex DESTINATION matlab)
 
 else()
 
@@ -42,10 +52,6 @@ else()
   pods_use_pkg_config_packages(supportDetectmex terrain-map eigen3 lcm opencv drake-rbm)
   set_target_properties(supportDetectmex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
 
-  add_mex(linearIKmex linearIKmex.cpp)
-  pods_use_pkg_config_packages(linearIKmex terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
-  set_target_properties(linearIKmex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
-
   add_mex(bot_timestamp_now bot_timestamp_now.cpp)
   pods_use_pkg_config_packages(bot_timestamp_now bot2-core)
 
@@ -55,7 +61,7 @@ else()
   add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
   pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-  install(TARGETS HeightMapWrapper QPControllermex supportDetectmex linearIKmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
+  install(TARGETS HeightMapWrapper QPControllermex supportDetectmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
 
 endif()
 
