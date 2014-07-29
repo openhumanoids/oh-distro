@@ -45,8 +45,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (nlhs<1) mexErrMsgTxt("take at least one output... please.");
   
   struct PelvisMotionControlData* pdata;
-  double* pr;
-
 
   if (mxGetScalar(prhs[0])==0) { // then construct the data object and return
     pdata = new struct PelvisMotionControlData;
@@ -61,15 +59,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     memcpy(&(pdata->alpha),mxGetPr(prhs[2]),sizeof(pdata->alpha));
 
     if (!mxIsNumeric(prhs[3]) || mxGetNumberOfElements(prhs[3])!=1)
-    mexErrMsgIdAndTxt("DRC:pelvisMotionControlmex:BadInputs","the third argument should be nominal_pelvis_height");
+    mexErrMsgIdAndTxt("DRC:pelvisMotionControlmex:BadInputs","the fourth argument should be nominal_pelvis_height");
     memcpy(&(pdata->nominal_pelvis_height),mxGetPr(prhs[3]),sizeof(pdata->nominal_pelvis_height));
 
     if (!mxIsNumeric(prhs[4]) || mxGetM(prhs[4])!=6 || mxGetN(prhs[4])!=1)
-    mexErrMsgIdAndTxt("DRC:pelvisMotionControlmex:BadInputs","the fourth argument should be Kp");
+    mexErrMsgIdAndTxt("DRC:pelvisMotionControlmex:BadInputs","the fifth argument should be Kp");
     memcpy(&(pdata->Kp),mxGetPr(prhs[4]),sizeof(pdata->Kp));
 
     if (!mxIsNumeric(prhs[5]) || mxGetM(prhs[5])!=6 || mxGetN(prhs[5])!=1)
-    mexErrMsgIdAndTxt("DRC:pelvisMotionControlmex:BadInputs","the fifth argument should be Kd");
+    mexErrMsgIdAndTxt("DRC:pelvisMotionControlmex:BadInputs","the sixth argument should be Kd");
     memcpy(&(pdata->Kd),mxGetPr(prhs[5]),sizeof(pdata->Kd));
 
     
@@ -130,7 +128,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   error.head<3>()= body_des.head<3>()-pelvis_pose.head<3>();
 
   Vector3d error_rpy;
-  angleDiff(body_des.tail<3>(),pelvis_pose.tail<3>(),error_rpy);
+  angleDiff(pelvis_pose.tail<3>(),body_des.tail<3>(),error_rpy);
   error.tail(3) = error_rpy;
 
   Matrix<double,6,1> body_vdot = (pdata->Kp.array()*error.array()).matrix() - (pdata->Kd.array()*(Jpelvis*qdvec).array()).matrix();
