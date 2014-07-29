@@ -22,6 +22,10 @@ add_mex(pelvisMotionControlmex pelvisMotionControlmex.cpp)
 pods_use_pkg_config_packages(pelvisMotionControlmex eigen3 drake-rbm)
 install(TARGETS pelvisMotionControlmex DESTINATION matlab)
 
+add_mex(bodyMotionControlmex bodyMotionControlmex.cpp)
+pods_use_pkg_config_packages(bodyMotionControlmex eigen3 drake-rbm)
+install(TARGETS bodyMotionControlmex DESTINATION matlab)
+
 
 if (NOT maps_FOUND OR NOT opencv_FOUND)
   add_mex(QPControllermex QPControllermex.cpp)
