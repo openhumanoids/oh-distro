@@ -75,7 +75,6 @@ classdef FootMotionControlBlock < DrakeSystem
     end
    
     function y=output(obj,t,~,x)
-      tic;
       ctrl_data = obj.controller_data;
       link_con_ind = [ctrl_data.link_constraints.link_ndx]==obj.foot_ind;
       foot_des = fasteval(ctrl_data.link_constraints(link_con_ind).traj,t)-[ctrl_data.plan_shift;0;0;0];
@@ -105,7 +104,6 @@ classdef FootMotionControlBlock < DrakeSystem
         foot_vdot = bodyMotionControlmex(obj.mex_ptr.data,x,foot_des,foot_v_des,foot_vdot_des);  
       end
       y = [obj.foot_ind;foot_vdot];
-      toc;
     end
   end
   
