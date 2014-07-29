@@ -98,7 +98,7 @@ classdef PelvisMotionControlBlock < DrakeSystem
         lfoot = forwardKin(obj.robot,kinsol,obj.lfoot_ind,[0;0;0],1);
         rfoot = forwardKin(obj.robot,kinsol,obj.rfoot_ind,[0;0;0],1);
         
-        if t==0
+        if isempty(z_prev)
           z_prev = p(3);
         end
         z_des = obj.alpha*z_prev + (1-obj.alpha)*(min([lfoot(3),rfoot(3)])+obj.nominal_pelvis_height); % X cm above feet
