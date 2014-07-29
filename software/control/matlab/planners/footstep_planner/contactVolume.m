@@ -18,7 +18,16 @@ effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),.
                        max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
 effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
                         max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
-effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame
+
+
+% NOTE: this is a bit dangerous, and introduces some possibility of the
+% robot's toe colliding with an obstacle as we try to step over it, but it
+% seems to be performing well in practice. A more permanent solution is on
+% my to-do list, but I haven't gotten around to it yet. For now, this line
+% should fix the problem of ridiculously high footsteps. -rdeits
+effective_height = 0; 
+% effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame
+
 
 % % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
 contact_length = effective_length / 2 + options.planar_clearance;

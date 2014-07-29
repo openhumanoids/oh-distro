@@ -22,14 +22,16 @@ from bot_core.pose_t import pose_t
 import functools
 
 DEFAULT_PARAM_SET = 'BDI'
-DEFAULT_STEP_PARAMS = {'BDI': {'Nominal Step Width': 0.26,
+DEFAULT_STEP_PARAMS = {'BDI': {'Max Num Steps': 10,
+                               'Nominal Step Width': 0.26,
                                'Nominal Forward Step': 0.15,
                                'Max Forward Step': 0.40,
                                'Max Step Width': 0.4,
                                'Behavior': 0,
                                'Drake Swing Speed': 0.2,
                                'Drake Min Hold Time': 2.0},
-                       'drake': {'Nominal Step Width': 0.28,
+                       'drake': {'Max Num Steps': 10,
+                                 'Nominal Step Width': 0.28,
                                  'Nominal Forward Step': 0.18,
                                  'Max Forward Step': 0.2,
                                  'Max Step Width': 0.32,
@@ -46,7 +48,11 @@ def loadFootMeshes():
         d = DebugData()
         d.addPolyData(ioUtils.readPolyData(os.path.join(meshDir, '%s_talus.stl' % foot), computeNormals=True))
         d.addPolyData(ioUtils.readPolyData(os.path.join(meshDir, '%s_foot.stl' % foot), computeNormals=True))
-        meshes.append(d.getPolyData())
+
+        t = vtk.vtkTransform()
+        t.Scale(0.98, 0.98, 0.98)
+        pd = filterUtils.transformPolyData(d.getPolyData(), t)
+        meshes.append(pd)
     return meshes
 
 
@@ -136,6 +142,7 @@ class FootstepsDriver(object):
                              ]
         # self.params.addProperty('Heights Source', attributes=om.PropertyAttributes(enumNames=['Map Data', 'Foot Plane']))
         # self.params.addProperty('Normals Source', attributes=om.PropertyAttributes(enumNames=['Map Data', 'Foot Plane']))
+        self.params.addProperty('Max Num Steps', None, attributes=om.PropertyAttributes(decimals=0, minimum=1, maximum=30, singleStep=1))
         self.params.addProperty('Nominal Step Width', None, attributes=om.PropertyAttributes(decimals=2, minimum=0.21, maximum=0.4, singleStep=0.01))
         self.params.addProperty('Nominal Forward Step', None, attributes=om.PropertyAttributes(decimals=2, minimum=0, maximum=0.5, singleStep=0.01))
         self.params.addProperty('Max Step Width', None, attributes=om.PropertyAttributes(decimals=2, minimum=0.22, maximum=0.5, singleStep=0.01))
@@ -220,17 +227,6 @@ class FootstepsDriver(object):
             quat = [quat.w, quat.x, quat.y, quat.z]
             footstepTransform = transformUtils.transformFromPose(trans, quat)
 
-            for zs, xy in self.contact_slices.iteritems():
-                points0 = np.vstack((xy, zs[0] + np.zeros((1,xy.shape[1]))))
-                points1 = np.vstack((xy, zs[1] + np.zeros((1,xy.shape[1]))))
-                points = np.hstack((points0, points1))
-                points = points + np.array([[0.05],[0],[-0.0811]])
-                points = points.T
-                polyData = vnp.getVtkPolyDataFromNumpyPoints(points.copy())
-                mesh = filterUtils.computeDelaunay3D(polyData)
-                obj = vis.showPolyData(mesh, 'walking volume', parent=volFolder, alpha=0.5, visible=self.show_contact_slices)
-                obj.actor.SetUserTransform(footstepTransform)
-
             allTransforms.append(footstepTransform)
 
             if i < 2:
@@ -249,18 +245,24 @@ class FootstepsDriver(object):
                 else:
                     color = left_color
 
+            for zs, xy in self.contact_slices.iteritems():
+                points0 = np.vstack((xy, zs[0] + np.zeros((1,xy.shape[1]))))
+                points1 = np.vstack((xy, zs[1] + np.zeros((1,xy.shape[1]))))
+                points = np.hstack((points0, points1))
+                points = points + np.array([[0.05],[0],[-0.0811]])
+                points = points.T
+                polyData = vnp.getVtkPolyDataFromNumpyPoints(points.copy())
+                vol_mesh = filterUtils.computeDelaunay3D(polyData)
+                obj = vis.showPolyData(vol_mesh, 'walking volume', parent=volFolder, alpha=0.5, visible=self.show_contact_slices, color=color)
+                obj.actor.SetUserTransform(footstepTransform)
+
             if footstep.infeasibility > 1e-6:
                 d = DebugData()
-                # normal = np.array(allTransforms[i-1].GetPosition()) - np.array(footstepTransform.GetPosition())
-                # normal = normal / np.linalg.norm(normal)
                 start = allTransforms[i-1].GetPosition()
                 end = footstepTransform.GetPosition()
                 d.addArrow(start, end, 0.02, 0.005,
                            startHead=True,
                            endHead=True)
-                # d.addCone(start, normal, 0.02, 0.02)
-                # d.addCone(end, -normal, 0.02, 0.02)
-                # d.addLine(start, end,radius=0.005)
                 vis.showPolyData(d.getPolyData(), 'infeasibility %d -> %d' % (i-2, i-1), parent=folder, color=[1, 0.2, 0.2])
 
             stepName = 'step %d' % (i-1)
@@ -404,7 +406,7 @@ class FootstepsDriver(object):
 
     def applyParams(self, msg):
         msg.params = lcmdrc.footstep_plan_params_t()
-        msg.params.max_num_steps = 20
+        msg.params.max_num_steps = self.params.properties.max_num_steps
         msg.params.min_num_steps = 0
         msg.params.min_step_width = 0.20
         msg.params.nom_step_width = self.params.properties.nominal_step_width
