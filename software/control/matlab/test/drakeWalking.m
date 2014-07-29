@@ -67,7 +67,7 @@ request.default_step_params.step_speed = 0.5;
 request.default_step_params.drake_min_hold_time = 2.0;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
-request.default_step_params.constrain_full_foot_pose = false;
+request.default_step_params.constrain_full_foot_pose = true;
 
 footstep_plan = footstep_planner.plan_footsteps(r, request);
 
@@ -167,7 +167,6 @@ if (use_ik)
   clear ins;  
   
 	% feedback PD block
-
 	pd = IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;
@@ -175,10 +174,10 @@ if (use_ik)
 	clear ins;
 
 else
-	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data);
-	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data);
-	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data);
-	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data);
+	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
+	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
+	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data,options);
+	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
 	pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
 

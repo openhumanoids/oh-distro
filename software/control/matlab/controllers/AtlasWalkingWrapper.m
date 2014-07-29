@@ -10,6 +10,9 @@ classdef AtlasWalkingWrapper < DrakeSystem
     velocity_int_block;
     qtraj_eval_block;
     footstep_plan_shift_block;
+    pelvis_motion_block;
+    lfoot_motion_block;
+    rfoot_motion_block;
   end
   
   methods
@@ -57,20 +60,33 @@ classdef AtlasWalkingWrapper < DrakeSystem
 
       % instantiate QP controller
       options.slack_limit = 30;
-      options.w_qdd = 0.001*ones(obj.nq,1);
+      options.w_qdd = 0*ones(obj.nq,1);
       options.W_kdot = 0*eye(3);
       options.w_grf = 0.0;
-      options.w_slack = 0.005;
-      options.debug = true;
+      options.w_slack = 0.05;
+      options.Kp_accel = 0.0;
+      options.debug = false;
       options.use_mex = true;
       options.contact_threshold = 0.01;
       options.output_qdd = true;
       options.solver = 0; % 0 fastqp, 1 gurobi
       options.input_foot_contacts = true;
 
-      qp = QPController(r,{},controller_data,options);
-
+      options.Kp = [20; 20; 20; 10; 20; 10];
+      options.Kd = getDampingGain(options.Kp,0.6);
+      obj.lfoot_motion_block = FootMotionControlBlock(r,'l_foot',controller_data,options);
+      obj.rfoot_motion_block = FootMotionControlBlock(r,'r_foot',controller_data,options);
+      
+      options.Kp = 20*[0; 0; 1; 1; 1; 1];
+      options.Kd = getDampingGain(options.Kp,0.4);
+      obj.pelvis_motion_block = PelvisMotionControlBlock(r,'pelvis',controller_data,options);
+      motion_frames = {obj.lfoot_motion_block.getOutputFrame,obj.rfoot_motion_block.getOutputFrame,...
+        obj.pelvis_motion_block.getOutputFrame};
+      options.body_accel_input_weights = 0.25*[1 1 1];
+      qp = QPController(r,motion_frames,controller_data,options);
+      
       % cascade IK/PD block
+      options.use_ik = false;
       options.Kp = 50.0*ones(obj.nq,1);
       options.Kd = 8*ones(obj.nq,1);
       % options.Kp(findJointIndices(r,'hpz')) = 70.0;
@@ -84,6 +100,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       % options.Kd(6) = 12.0;
 
       pd = IKPDBlock(r,controller_data,options);
+      
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -94,6 +111,12 @@ classdef AtlasWalkingWrapper < DrakeSystem
       ins(4).input = 1;
       ins(5).system = 2;
       ins(5).input = 3;
+      ins(6).system = 2;
+      ins(6).input = 4;
+      ins(7).system = 2;
+      ins(7).input = 5;
+      ins(8).system = 2;
+      ins(8).input = 6;
       outs(1).system = 2;
       outs(1).output = 1;
       outs(2).system = 2;
@@ -104,6 +127,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       options.use_error_integrator = true; % while we're still using position control in upper body
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       options.use_lcm = true;
+      options.use_contact_logic_OR = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
       options.zero_ankles_on_contact = true;
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
@@ -117,29 +141,21 @@ classdef AtlasWalkingWrapper < DrakeSystem
     end
    
     function y=output(obj,t,~,x)
-      persistent pelvis_angv_filt
-      
-      if isempty(pelvis_angv_filt)
-        pelvis_angv_filt = zeros(3,1);
-      end
-      
-      % TODO: THIS IS TEMPORARY UNTIL MAURICE PUTS IT IN STATE SYNC
-      alpha = 0.75;
-      pelvis_angv_filt = alpha*pelvis_angv_filt + (1-alpha)*x(obj.nq+(4:6));
-      x(obj.nq+(4:6)) = pelvis_angv_filt;
-      
       % foot contact
       fc = output(obj.foot_contact_block,t,[],x);
 
       % footstep plan shift
-      junk = output(obj.footstep_plan_shift_block,t,[],x);
+      junk = mimoOutput(obj.footstep_plan_shift_block,t,[],x,fc);
       
       % qtraj eval
       q_des_and_x = output(obj.qtraj_eval_block,t,[],x);
       q_des = q_des_and_x(1:obj.nq);
       
       % IK/QP
-      u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; fc; x; fc]);
+      lfoot_ddot = output(obj.lfoot_motion_block,t,[],x);
+      rfoot_ddot = output(obj.rfoot_motion_block,t,[],x);
+      pelvis_ddot = output(obj.pelvis_motion_block,t,[],x);
+      u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; fc; x; fc; lfoot_ddot; rfoot_ddot; pelvis_ddot]);
       u=u_and_qdd(1:obj.nu);
       qdd=u_and_qdd(obj.nu+(1:obj.nq));
 

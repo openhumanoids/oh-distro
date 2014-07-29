@@ -496,7 +496,27 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
   }
-  
+
+
+  // // tmp testing
+  // int JOINT_L_LEG_HPZ   = 4;
+  // int JOINT_L_LEG_HPX   = 5;
+  // int JOINT_L_LEG_HPY   = 6;
+  // int JOINT_L_LEG_KNY   = 7;
+  // int JOINT_L_LEG_AKY   = 8;
+  // int JOINT_L_LEG_AKX   = 9;
+  // int JOINT_R_LEG_HPZ   = 10;
+  // int JOINT_R_LEG_HPX   = 11;
+  // int JOINT_R_LEG_HPY   = 12;
+  // int JOINT_R_LEG_KNY   = 13;
+  // int JOINT_R_LEG_AKY   = 14;
+  // int JOINT_R_LEG_AKX   = 15;
+
+  // atlas_joints_.position[JOINT_L_LEG_HPY] -= 0.000*atlas_joints_.effort[JOINT_L_LEG_HPY];
+  // atlas_joints_.position[JOINT_L_LEG_HPX] += 0.0001*atlas_joints_.effort[JOINT_L_LEG_HPX];
+  // atlas_joints_.position[JOINT_R_LEG_HPY] -= 0.000*atlas_joints_.effort[JOINT_R_LEG_HPY];
+  // atlas_joints_.position[JOINT_R_LEG_HPX] += 0.0001*atlas_joints_.effort[JOINT_R_LEG_HPX];
+
   publishRobotState(msg->utime, msg->force_torque);
 }
 

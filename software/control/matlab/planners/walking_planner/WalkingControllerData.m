@@ -31,6 +31,20 @@ classdef WalkingControllerData
       obj.comtraj = comtraj;
       obj.mu = mu;
       obj.t_offset = t_offset;
+      
+      % compute smooth polynomial footstep trajectories
+      for i=1:length(link_constraints)
+        traj = link_constraints(i).traj;
+        breaks = unique(traj.getBreaks());
+        points = traj.eval(breaks);
+        zpoints = points(3, :);
+        change_indices = [true diff(diff(zpoints)) ~= 0 true];
+        new_traj = PPTrajectory(pchip(breaks(change_indices), points(:, change_indices)));
+        link_constraints(i).traj = new_traj;
+        link_constraints(i).dtraj = fnder(new_traj);
+        link_constraints(i).ddtraj = fnder(new_traj,2);
+      end
+      
       obj.link_constraints = link_constraints;
       obj.zmptraj = zmptraj;
       obj.qtraj = qtraj;

@@ -49,6 +49,21 @@ classdef StatelessWalkingPlanner
         walking_plan_data = walking_plan_data.fix_link(r, kinsol, r.findLinkInd('l_hand+l_hand_point_mass'), [0; 0.1; 0], 0.05, 0);
       end
 
+      
+      walking_plan = WalkingControllerData.from_drake_walking_data(walking_plan_data, qstar);
+      ts = linspace(0,walking_plan.comtraj.tspan(2),150);
+
+      lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
+
+      for i=1:length(ts)
+%         lcmgl.glColor3f(0, 0, 1);
+%         lcmgl.sphere([walking_plan.comtraj.eval(ts(i));0], 0.01, 20, 20);
+        lcmgl.glColor3f(0, 1, 0);
+        lcmgl.sphere([walking_plan.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+      end
+      lcmgl.switchBuffers();
+
+      
       if compute_xtraj
         [xtraj, ~, ts] = planWalkingStateTraj(r, walking_plan_data, xstar);
         joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
