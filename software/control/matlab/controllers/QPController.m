@@ -279,6 +279,10 @@ classdef QPController < MIMODrakeSystem
       y0 = ctrl_data.y0;
       u0 = ctrl_data.u0;
     end
+    % plan shifting for ZMP sys --- TODO: generalize
+    x0 = x0 - [ctrl_data.plan_shift(1:2);0;0];
+    y0 = y0 - ctrl_data.plan_shift(1:2);
+
     mu = ctrl_data.mu;
     R_DQyD_ls = R_ls + D_ls'*Qy*D_ls;
 
