@@ -70,6 +70,8 @@ classdef PelvisMotionControlBlock < DrakeSystem
       else
         obj.use_mex = 1;
       end
+      % TEMP: avoid using mex until I can test it more --sk
+      obj.use_mex = 0;
 
       obj.alpha = 0.95;
       obj.nominal_pelvis_height = 0.75;
