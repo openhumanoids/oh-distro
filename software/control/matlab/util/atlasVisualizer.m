@@ -32,6 +32,10 @@ lfoot_ind = r.findLinkInd('l_foot');
 lcmgl_com = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'center-of-mass');
 lcmgl_cop = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'measured-cop');
 lcmgl_zmp = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'filtered-zmp');
+lcmgl_individual_cops = cell(2, 1);
+for i = 1 : length(lcmgl_individual_cops)
+  lcmgl_individual_cops{i} = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), ['individual-cop-' num2str(i)]);
+end
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -44,6 +48,10 @@ t_prev=-1;
 qd_prev=-1;
 qdd_prev=0;
 alpha=0.05;
+
+msg_timeout = 5; % ms
+listener = ControllerDebugListener('CONTROLLER_DEBUG');
+
 while true
   [x,t] = getNextMessage(state_plus_effort_frame,5);
   if ~isempty(x)
@@ -96,10 +104,25 @@ while true
   
     force_torque = getMessage(force_torque_frame);
     drawCOP(force_torque,kinsol,lcmgl_cop);
-    
+   
 %     v.draw(t,[q_kf;qd_kf]);
-    pause(0.025);
   end
+  
+  % individual foot cops
+  individual_cops = listener.getNextMessage(msg_timeout);
+  if ~isempty(individual_cops)
+    ncopvisualizers = length(lcmgl_individual_cops);
+    ncops = length(individual_cops) / 3;
+    for i = 1 : min(ncopvisualizers, ncops)
+      individual_cop = individual_cops((i-1) * 3 + (1:3));
+      lcmgl = lcmgl_individual_cops{i};
+      lcmgl.glColor3f(1, 0, 1);
+      lcmgl.sphere(individual_cop, 0.015, 20, 20);
+      lcmgl.switchBuffers();
+    end
+  end
+  
+  pause(0.025);
 end
 
   function drawCOM(com,ground_z,lcmgl)

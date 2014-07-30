@@ -39,6 +39,9 @@ classdef ControllerDebugPublisher
       msg.body_acc_des = data.body_acc_des;
       % ZMP tracking error
       msg.zmp_err = data.zmp_err;
+      % individual contact body cops
+      msg.n_individual_cops = length(data.individual_cops);
+      msg.individual_cops = data.individual_cops;
 
       obj.lc.publish(obj.channel, msg);
     end
