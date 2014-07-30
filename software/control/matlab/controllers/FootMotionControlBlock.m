@@ -67,8 +67,6 @@ classdef FootMotionControlBlock < DrakeSystem
       else
         obj.use_mex = 1;
       end
-      % TEMP: avoid using mex until I can test it more --sk
-      obj.use_mex = 0;
 
       if (obj.use_mex>0)
         obj.mex_ptr = SharedDataHandle(bodyMotionControlmex(0,obj.robot.getMexModelPtr.ptr,obj.Kp,obj.Kd,obj.foot_ind));
