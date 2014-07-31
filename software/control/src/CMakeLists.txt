@@ -26,46 +26,26 @@ add_mex(bodyMotionControlmex bodyMotionControlmex.cpp)
 pods_use_pkg_config_packages(bodyMotionControlmex eigen3 drake-rbm)
 install(TARGETS bodyMotionControlmex DESTINATION matlab)
 
+add_mex(BotParamClient BotParamClient.cpp)
+pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)
 
-if (NOT maps_FOUND OR NOT opencv_FOUND)
-  add_mex(QPControllermex QPControllermex.cpp)
-  pods_use_pkg_config_packages(QPControllermex eigen3 gurobi drake-qp drake-rbm)
-  install(TARGETS QPControllermex DESTINATION matlab)
+add_mex(bot_timestamp_now bot_timestamp_now.cpp)
+pods_use_pkg_config_packages(bot_timestamp_now bot2-core)
 
-  add_mex(supportDetectmex supportDetectmex.cpp)
-  pods_use_pkg_config_packages(supportDetectmex eigen3 drake-rbm)
-  install(TARGETS supportDetectmex DESTINATION matlab)
+add_mex(bot_param_get_seqno bot_param_get_seqno.cpp)
+pods_use_pkg_config_packages(bot_param_get_seqno bot2-param-client)
 
-  add_mex(pelvisMotionControlmex pelvisMotionControlmex.cpp)
-  pods_use_pkg_config_packages(pelvisMotionControlmex eigen3 drake-rbm)
-  install(TARGETS pelvisMotionControlmex DESTINATION matlab)
+add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
+pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-else()
+install(TARGETS pelvisMotionControlmex bodyMotionControlmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
+
+
+if (maps_FOUND AND opencv_FOUND)
 
   add_mex(HeightMapWrapper HeightMapWrapper.cpp)
   pods_use_pkg_config_packages(HeightMapWrapper terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
-
-  add_mex(BotParamClient BotParamClient.cpp)
-  pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)
-
-  add_mex(QPControllermex QPControllermex.cpp)
-  pods_use_pkg_config_packages(QPControllermex terrain-map eigen3 lcm opencv gurobi drake-qp drake-rbm)
-  set_target_properties(QPControllermex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
-
-  add_mex(supportDetectmex supportDetectmex.cpp)
-  pods_use_pkg_config_packages(supportDetectmex terrain-map eigen3 lcm opencv drake-rbm)
-  set_target_properties(supportDetectmex PROPERTIES COMPILE_FLAGS "-DUSE_MAPS")
-
-  add_mex(bot_timestamp_now bot_timestamp_now.cpp)
-  pods_use_pkg_config_packages(bot_timestamp_now bot2-core)
-
-  add_mex(bot_param_get_seqno bot_param_get_seqno.cpp)
-  pods_use_pkg_config_packages(bot_param_get_seqno bot2-param-client)
-
-  add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
-  pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
-
-  install(TARGETS HeightMapWrapper QPControllermex supportDetectmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
+  install(TARGETS HeightMapWrapper DESTINATION matlab)
 
 endif()
 

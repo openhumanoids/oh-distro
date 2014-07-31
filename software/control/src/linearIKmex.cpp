@@ -1,30 +1,30 @@
 
 // simple mex function for solving IK problems as equality constrained QPs 
 
-#include "QPCommon.h"
+#include <mex.h>
+#include <Eigen/Dense>
 #include <Eigen/StdVector>
-
-void angleDiff(VectorXd phi1, VectorXd phi2, VectorXd* d) {
-  *d = phi2 - phi1;
-  
-  for (int i = 0; i < phi1.size(); i++) {
-    if ((*d)(i) < -M_PI) {
-      (*d)(i) = fmod((*d)(i) + M_PI,2*M_PI) + M_PI;
-    } else {
-      (*d)(i) = fmod((*d)(i) + M_PI, 2*M_PI) - M_PI;
-    }
-  }
+#include "drake/RigidBodyManipulator.h"
+ 
+template <int Rows, int Cols>
+mxArray* eigenToMatlab(Matrix<double,Rows,Cols> &m)
+{
+ mxArray* pm = mxCreateDoubleMatrix(m.rows(),m.cols(),mxREAL);
+ if (m.rows()*m.cols()>0)
+   memcpy(mxGetPr(pm),m.data(),sizeof(double)*m.rows()*m.cols());
+ return pm;
 }
 
-void angleDiff(MatrixXd phi1, MatrixXd phi2, MatrixXd* d) {
-  *d = phi2 - phi1;
+template <typename DerivedPhi1, typename DerivedPhi2, typename DerivedD>
+void angleDiff(const MatrixBase<DerivedPhi1>& phi1, const MatrixBase<DerivedPhi2>& phi2, MatrixBase<DerivedD>& d) {
+  d = phi2 - phi1;
   
   for (int i = 0; i < phi1.rows(); i++) {
     for (int j = 0; j < phi1.cols(); j++) {
-      if ((*d)(i,j) < -M_PI) {
-        (*d)(i,j) = fmod((*d)(i,j) + M_PI, 2*M_PI) + M_PI;
+      if (d(i,j) < -M_PI) {
+        d(i,j) = fmod(d(i,j) + M_PI, 2*M_PI) + M_PI;
       } else {
-        (*d)(i,j) = fmod((*d)(i,j) + M_PI, 2*M_PI) - M_PI;
+        d(i,j) = fmod(d(i,j) + M_PI, 2*M_PI) - M_PI;
       }
     }
   }
@@ -158,7 +158,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
       if (rows == 6 && min == NULL && max == NULL) {
         VectorXd delta;
-        angleDiff(x.block(3,0,3,1), world_pos.block(3,0,3,1), &delta);
+        angleDiff(x.block(3,0,3,1), world_pos.block(3,0,3,1), delta);
         world_pos.block(3,0,3,1) = x.block(3,0,3,1)+delta;
       }
     }

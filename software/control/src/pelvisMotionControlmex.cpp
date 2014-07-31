@@ -1,9 +1,21 @@
-#include "ControlUtil.h"
+#include <mex.h>
 #include <algorithm>
 #include <limits>
 #include <cmath>
-
+#include <math.h>
+#include <Eigen/Dense>
+#include <Eigen/StdVector>
+#include "drake/RigidBodyManipulator.h"
+ 
 using namespace std;
+template <int Rows, int Cols>
+mxArray* eigenToMatlab(Matrix<double,Rows,Cols> &m)
+{
+ mxArray* pm = mxCreateDoubleMatrix(m.rows(),m.cols(),mxREAL);
+ if (m.rows()*m.cols()>0)
+   memcpy(mxGetPr(pm),m.data(),sizeof(double)*m.rows()*m.cols());
+ return pm;
+}
 
 typedef Matrix<double, 6,1> Vector6d;
 

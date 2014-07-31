@@ -20,11 +20,11 @@ classdef AtlasQPControllerData < QPControllerData
   end
   
   methods 
-    function obj = AtlasQPControllerData(is_time_varying,data)
-      typecheck(is_time_varying,'logical');
+    function obj = AtlasQPControllerData(lqr_is_time_varying,data)
+      typecheck(lqr_is_time_varying,'logical');
       typecheck(data,'struct');
    
-      obj@QPControllerData(is_time_varying,data);
+      obj@QPControllerData(lqr_is_time_varying,data);
       
       data=verifyAtlasControllerData(obj,data);
       updateAtlasControllerData(obj,data);
