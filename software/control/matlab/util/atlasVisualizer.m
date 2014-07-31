@@ -33,12 +33,7 @@ nq = getNumDOF(r);
 lcmgl_com = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'center-of-mass');
 lcmgl_cop = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'measured-cop');
 lcmgl_zmp = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'filtered-zmp');
-
-ncopvisualizers = 2;
-lcmgl_individual_cops = cell(ncopvisualizers, 1);
-for i = 1 : length(lcmgl_individual_cops)
-  lcmgl_individual_cops{i} = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), ['individual-cop-' num2str(i)]);
-end
+lcmgl_individual_cops = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'individual-cops');
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -173,16 +168,12 @@ lcmgl.sphere(zmp, 0.015, 20, 20);
 lcmgl.switchBuffers();
 end
 
-function drawIndividualCOPs(individual_cops, lcmgl_individual_cops)
-ncopvisualizers = length(lcmgl_individual_cops);
+function drawIndividualCOPs(individual_cops, lcmgl)
 ncops = length(individual_cops) / 3;
-for i = 1 : ncopvisualizers
-  lcmgl = lcmgl_individual_cops{i};
-  if i <= ncops
-    individual_cop = individual_cops((i-1) * 3 + (1:3));
-    lcmgl.glColor3f(1, 0, 1);
-    lcmgl.sphere(individual_cop, 0.015, 20, 20);
-  end
-  lcmgl.switchBuffers();
+for i = 1 : ncops
+  individual_cop = individual_cops((i-1) * 3 + (1:3));
+  lcmgl.glColor3f(1, 0, 1);
+  lcmgl.sphere(individual_cop, 0.015, 20, 20);
 end
+lcmgl.switchBuffers();
 end
