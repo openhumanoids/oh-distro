@@ -59,17 +59,17 @@ using namespace std;
 using namespace visualization_utils;
 
 // NOTE (Sisir, 8th Jul 13): We dont want to have individual keyboard event handlers in renderers
-// as designed in lib-bot as the key events can be non-unique and the key handlers can conflict. 
-// Using boost::signals to create a global keyboard signal. Each renderer creates a corresponding 
+// as designed in lib-bot as the key events can be non-unique and the key handlers can conflict.
+// Using boost::signals to create a global keyboard signal. Each renderer creates a corresponding
 // slot to handle global key events. Using a shared ptr to the boost signal. Renderers that require access
 // to keyboard signals will receive the signal ref as an argument in their setup function.
-KeyboardSignalRef _keyboardSignalRef = KeyboardSignalRef(new KeyboardSignal()); 
-AffTriggerSignalsRef _affTriggerSignalsRef = AffTriggerSignalsRef(new AffTriggerSignals()); 
-RendererFoviationSignalRef _rendererFoviationSignalRef  = RendererFoviationSignalRef(new RendererFoviationSignal()); 
+KeyboardSignalRef _keyboardSignalRef = KeyboardSignalRef(new KeyboardSignal());
+AffTriggerSignalsRef _affTriggerSignalsRef = AffTriggerSignalsRef(new AffTriggerSignals());
+RendererFoviationSignalRef _rendererFoviationSignalRef  = RendererFoviationSignalRef(new RendererFoviationSignal());
 boost::shared_ptr<RendererFoviationSignalHandler> foviationSignalHndlr;
 
 static void foviationSignalCallback(void *user_data, string renderer_name, bool toggle)
-{            
+{
 }
 
 
@@ -79,10 +79,10 @@ logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
 {
     int keyval = event->keyval;
     //std::cout << "keyval: " << keyval << "\n";
-    
+
     // emit global keyboard signal, second argument indicates that it is a keypress (if true)
-    (*_keyboardSignalRef)(keyval,true); 
-    
+    (*_keyboardSignalRef)(keyval,true);
+
     switch (keyval)
     {
       case 'P':
@@ -114,7 +114,7 @@ logplayer_remote_on_key_press(BotViewer *viewer, BotEventHandler *ehandler,
       default:
           break;
     }
- 
+
   return 0;
 }
 
@@ -209,30 +209,32 @@ destroy_renderers (BotViewer *viewer)
 int main(int argc, char *argv[])
 {
   setlinebuf(stdout);
-  
-  string config_file = "";
-  int network_debug = 0; 
+
+  string config_file = "drc_robot_02_mit.cfg";
+  int network_debug = 0;
   bool use_additional_renderers = false;
   bool use_multisense_renderer = false;
+  bool use_depreciated_renderers = false; // use renderers from trials that have been depreciated
   ConciseArgs opt(argc, (char**)argv);
   opt.add(config_file, "c", "config_file","Robot cfg file");
   opt.add(network_debug, "n", "network_debug","Network Debug [0 nothing, 1 feet, 2 plan, 3 state]");
   opt.add(use_multisense_renderer, "m", "multisense","Add multisense renderers");
   opt.add(use_additional_renderers, "a", "additional","Add additional renderers: bot_frames");
+  opt.add(use_depreciated_renderers, "d", "depreciated","Add use_depreciated_renderers renderers: maps");
   opt.parse();
   std::cout << "config_file: " << config_file << "\n";
   std::cout << "network_debug: " << (int) network_debug << "\n";
   string viewer_title = "MIT DRC Viewer";
   string vis_config_file = ".bot-plugin-robot-drc-viewer";
-  
+
   //todo: comment this section
   gtk_init(&argc, &argv);
   glutInit(&argc, argv);
   g_thread_init(NULL);
-  
+
   lcm_t * lcm;
   lcm= lcm_create("");// bot_lcm_get_global(lcm_url.c_str());
-  
+
   bot_glib_mainloop_attach_lcm(lcm);
   BotParam * bot_param;
   if(config_file.size()) {
@@ -274,10 +276,13 @@ int main(int argc, char *argv[])
   collections_add_renderer_to_viewer(viewer, 1, lcm);
   setup_renderer_robot_state(viewer, 0, lcm,0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   maps_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+
+  if (use_depreciated_renderers){
+    data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
+  }
   //atlas_camera_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_affordances(viewer, 0, lcm, bot_frames,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
   setup_renderer_robot_plan(viewer, 0, lcm, 0,_keyboardSignalRef,_affTriggerSignalsRef,_rendererFoviationSignalRef);
-  data_control_renderer_setup(viewer, 0, lcm, bot_param, bot_frames);
   setup_renderer_walking(viewer, 0,lcm,bot_param,bot_frames);
   setup_renderer_sticky_feet(viewer, 0, lcm,bot_param,bot_frames,0);
   setup_renderer_controller_options(viewer, 0, lcm, bot_param, bot_frames);
@@ -313,7 +318,7 @@ int main(int argc, char *argv[])
   gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(top_view_button), 3);
   gtk_widget_show(top_view_button);
   g_signal_connect(G_OBJECT(top_view_button), "clicked", G_CALLBACK(on_top_view_clicked), viewer);
-  on_top_view_clicked(NULL, (void *) viewer);  
+  on_top_view_clicked(NULL, (void *) viewer);
 
   // add custom START SPY button
   GtkWidget *start_spy_button;
@@ -323,8 +328,8 @@ int main(int argc, char *argv[])
   gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(start_spy_button), 3);
   gtk_widget_show(start_spy_button);
   g_signal_connect(G_OBJECT(start_spy_button), "clicked", G_CALLBACK(on_start_spy_clicked), viewer);
-  on_start_spy_clicked(NULL, (void *) viewer);    
-  
+  on_start_spy_clicked(NULL, (void *) viewer);
+
   // add custom POSE UTIL button
   GtkWidget *start_pose_util_button;
   start_pose_util_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_ORIENTATION_PORTRAIT);
@@ -333,8 +338,8 @@ int main(int argc, char *argv[])
   gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(start_pose_util_button), 3);
   gtk_widget_show(start_pose_util_button);
   g_signal_connect(G_OBJECT(start_pose_util_button), "clicked", G_CALLBACK(on_pose_util_clicked), viewer);
-  on_pose_util_clicked(NULL, (void *) viewer);   
-  
+  on_pose_util_clicked(NULL, (void *) viewer);
+
   // add custom stop manipulation button
   GtkWidget *stop_manipulation_button;
   stop_manipulation_button = (GtkWidget *) gtk_tool_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
@@ -343,8 +348,8 @@ int main(int argc, char *argv[])
   gtk_toolbar_insert(GTK_TOOLBAR(viewer->toolbar), GTK_TOOL_ITEM(stop_manipulation_button), 5);
   gtk_widget_show(stop_manipulation_button);
   g_signal_connect(G_OBJECT(stop_manipulation_button), "clicked", G_CALLBACK(on_stop_manipulation_clicked), lcm);
-  on_stop_manipulation_clicked(NULL, (void *) lcm);      
-  
+  on_stop_manipulation_clicked(NULL, (void *) lcm);
+
   // add custom "collapse all" button
   GtkToolItem *item = gtk_tool_button_new_from_stock (GTK_STOCK_CLEAR);
   gtk_tool_button_set_label (GTK_TOOL_BUTTON (item), "Collapse All");
@@ -353,13 +358,13 @@ int main(int argc, char *argv[])
                              "Collapse all visible renderers", NULL);
   gtk_toolbar_insert (GTK_TOOLBAR (viewer->toolbar), item, 5);
   gtk_widget_show (GTK_WIDGET (item));
-  g_signal_connect (G_OBJECT (item), "clicked", 
+  g_signal_connect (G_OBJECT (item), "clicked",
                     G_CALLBACK (on_collapse_all_clicked), viewer);
-                  
+
   // add custom renderer groups menu
   RendererGroupUtil groupUtil(viewer, bot_param);
   groupUtil.setup();
-  
+
   // load the renderer params from the config file.
   char *fname = g_build_filename(g_get_user_config_dir(), vis_config_file.c_str() , NULL);
   bot_viewer_load_preferences(viewer, fname);
