@@ -17,21 +17,23 @@ state_plus_effort_frame.subscribe('EST_ROBOT_STATE');
 force_torque_frame = AtlasForceTorque();
 force_torque_frame.subscribe('EST_ROBOT_STATE');
 
-l_foot_fz_idx = find(strcmp('l_foot_fz',force_torque_frame.coordinates));
-l_foot_tx_idx = find(strcmp('l_foot_tx',force_torque_frame.coordinates));
-l_foot_ty_idx = find(strcmp('l_foot_ty',force_torque_frame.coordinates));
-r_foot_fz_idx = find(strcmp('r_foot_fz',force_torque_frame.coordinates));
-r_foot_tx_idx = find(strcmp('r_foot_tx',force_torque_frame.coordinates));
-r_foot_ty_idx = find(strcmp('r_foot_ty',force_torque_frame.coordinates));
+foot_indices_struct.l_foot_fz_idx = find(strcmp('l_foot_fz',force_torque_frame.coordinates));
+foot_indices_struct.l_foot_tx_idx = find(strcmp('l_foot_tx',force_torque_frame.coordinates));
+foot_indices_struct.l_foot_ty_idx = find(strcmp('l_foot_ty',force_torque_frame.coordinates));
+foot_indices_struct.r_foot_fz_idx = find(strcmp('r_foot_fz',force_torque_frame.coordinates));
+foot_indices_struct.r_foot_tx_idx = find(strcmp('r_foot_tx',force_torque_frame.coordinates));
+foot_indices_struct.r_foot_ty_idx = find(strcmp('r_foot_ty',force_torque_frame.coordinates));
+
+foot_indices_struct.rfoot_ind = r.findLinkInd('r_foot');
+foot_indices_struct.lfoot_ind = r.findLinkInd('l_foot');
 
 nq = getNumDOF(r);
-rfoot_ind = r.findLinkInd('r_foot');
-lfoot_ind = r.findLinkInd('l_foot');
 
 % v = r.constructVisualizer;
 lcmgl_com = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'center-of-mass');
 lcmgl_cop = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'measured-cop');
 lcmgl_zmp = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'filtered-zmp');
+lcmgl_individual_cops = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'individual-cops');
 
 process_noise = 0.01*ones(nq,1);
 observation_noise = 5e-4*ones(nq,1);
@@ -44,6 +46,10 @@ t_prev=-1;
 qd_prev=-1;
 qdd_prev=0;
 alpha=0.05;
+
+msg_timeout = 5; % ms
+listener = ControllerDebugListener('CONTROLLER_DEBUG');
+
 while true
   [x,t] = getNextMessage(state_plus_effort_frame,5);
   if ~isempty(x)
@@ -83,7 +89,7 @@ while true
     qdd_prev = qdd;
     
     kinsol = doKinematics(r,q_kf,false,true);
-    cpos = terrainContactPositions(r,kinsol,[rfoot_ind, lfoot_ind]); 
+    cpos = terrainContactPositions(r,kinsol,[foot_indices_struct.rfoot_ind, foot_indices_struct.lfoot_ind]); 
 
     ground_z = min(cpos(3,:));
     
@@ -95,62 +101,79 @@ while true
     drawCOM(com,ground_z,lcmgl_com);
   
     force_torque = getMessage(force_torque_frame);
-    drawCOP(force_torque,kinsol,lcmgl_cop);
-    
+    drawCOP(force_torque,r,kinsol,foot_indices_struct,lcmgl_cop);
+   
 %     v.draw(t,[q_kf;qd_kf]);
-    pause(0.025);
   end
+  
+  % individual foot cops
+  individual_cops = listener.getNextMessage(msg_timeout);
+  if ~isempty(individual_cops)
+    drawIndividualCOPs(individual_cops, lcmgl_individual_cops)
+  end
+  
+  pause(0.025);
 end
 
-  function drawCOM(com,ground_z,lcmgl)
-    lcmgl.glColor3f(1, 1, 1);
-    lcmgl.sphere([com(1:2)', ground_z], 0.015, 20, 20);
-    lcmgl.switchBuffers();
-  end
+end
 
-  function drawZMP(kinsol,qd,qdd,com,J,cpos,lcmgl)
-    Jdot = forwardJacDot(r,kinsol,0);
-    Jdot = Jdot(1:2,:);
-    
-    % hardcoding D for ZMP output dynamics
-    D = -1.04./9.81*eye(2); 
+function drawCOP(force_torque,r,kinsol,foot_indices_struct,lcmgl)
+fz_l = force_torque(foot_indices_struct.l_foot_fz_idx);
+tx_l = force_torque(foot_indices_struct.l_foot_tx_idx);
+ty_l = force_torque(foot_indices_struct.l_foot_ty_idx);
+l_foot_pt = [-ty_l/fz_l; tx_l/fz_l; 0];
 
-    comdd = Jdot * qd + J * qdd;
-    zmp = com(1:2) + D * comdd;
-    zmp = [zmp', min(cpos(3,:))];
-    convh = convhull(cpos(1,:), cpos(2,:));
-    zmp_ok = inpolygon(zmp(1), zmp(2), cpos(1,convh), cpos(2,convh));
-    if zmp_ok
-      color = [0 1 0];
-    else
-      color = [1 0 0];
-    end
-    lcmgl.glColor3f(color(1), color(2), color(3));
-    lcmgl.sphere(zmp, 0.015, 20, 20);
+fz_r = force_torque(foot_indices_struct.r_foot_fz_idx);
+tx_r = force_torque(foot_indices_struct.r_foot_tx_idx);
+ty_r = force_torque(foot_indices_struct.r_foot_ty_idx);
+r_foot_pt = [-ty_r/fz_r; tx_r/fz_r; 0];
 
-    lcmgl.switchBuffers();
-  end
+lfoot_pos = forwardKin(r,kinsol, foot_indices_struct.lfoot_ind, l_foot_pt);
+rfoot_pos = forwardKin(r,kinsol, foot_indices_struct.rfoot_ind, r_foot_pt);
 
-  function drawCOP(force_torque,kinsol,lcmgl)
-    fz_l = force_torque(l_foot_fz_idx);
-    tx_l = force_torque(l_foot_tx_idx);
-    ty_l = force_torque(l_foot_ty_idx);
-    l_foot_pt = [-ty_l/fz_l; tx_l/fz_l; 0];
-    
-    fz_r = force_torque(r_foot_fz_idx);
-    tx_r = force_torque(r_foot_tx_idx);
-    ty_r = force_torque(r_foot_ty_idx);
-    r_foot_pt = [-ty_r/fz_r; tx_r/fz_r; 0];
-
-    lfoot_pos = forwardKin(r,kinsol, lfoot_ind, l_foot_pt);
-    rfoot_pos = forwardKin(r,kinsol, rfoot_ind, r_foot_pt);
-
-    cop = (fz_l*lfoot_pos + fz_r*rfoot_pos)/(fz_l+fz_r);
-    cop(3) = cop(3)-0.081;
-    lcmgl.glColor3f(0,0,1);
-    lcmgl.sphere(cop,0.015,20,20);
-    lcmgl.switchBuffers();
-  end
+cop = (fz_l*lfoot_pos + fz_r*rfoot_pos)/(fz_l+fz_r);
+cop(3) = cop(3)-0.081;
+lcmgl.glColor3f(0,0,1);
+lcmgl.sphere(cop,0.015,20,20);
+lcmgl.switchBuffers();
+end
 
 
+function drawCOM(com,ground_z,lcmgl)
+lcmgl.glColor3f(1, 1, 1);
+lcmgl.sphere([com(1:2)', ground_z], 0.015, 20, 20);
+lcmgl.switchBuffers();
+end
+
+function drawZMP(kinsol,qd,qdd,com,J,cpos,lcmgl)
+Jdot = forwardJacDot(r,kinsol,0);
+Jdot = Jdot(1:2,:);
+
+% hardcoding D for ZMP output dynamics
+D = -1.04./9.81*eye(2);
+
+comdd = Jdot * qd + J * qdd;
+zmp = com(1:2) + D * comdd;
+zmp = [zmp', min(cpos(3,:))];
+convh = convhull(cpos(1,:), cpos(2,:));
+zmp_ok = inpolygon(zmp(1), zmp(2), cpos(1,convh), cpos(2,convh));
+if zmp_ok
+  color = [0 1 0];
+else
+  color = [1 0 0];
+end
+lcmgl.glColor3f(color(1), color(2), color(3));
+lcmgl.sphere(zmp, 0.015, 20, 20);
+
+lcmgl.switchBuffers();
+end
+
+function drawIndividualCOPs(individual_cops, lcmgl)
+ncops = length(individual_cops) / 3;
+for i = 1 : ncops
+  individual_cop = individual_cops((i-1) * 3 + (1:3));
+  lcmgl.glColor3f(1, 0, 1);
+  lcmgl.sphere(individual_cop, 0.015, 20, 20);
+end
+lcmgl.switchBuffers();
 end
