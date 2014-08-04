@@ -175,8 +175,8 @@ if (use_ik)
 	clear ins;
 
 else
-	lfoot_motion = BodyMotionControlBlock(r,'l_foot',ctrl_data,options);
-	rfoot_motion = BodyMotionControlBlock(r,'r_foot',ctrl_data,options);
+	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
+	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
 	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data,options);
 	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...

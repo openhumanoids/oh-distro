@@ -196,8 +196,8 @@ options.input_foot_contacts = true;
 if use_foot_pd 
   options.Kp = [20; 20; 20; 10; 20; 10];
   options.Kd = getDampingGain(options.Kp,0.6);
-  lfoot_motion = BodyMotionControlBlock(r,'l_foot',ctrl_data,options);
-	rfoot_motion = BodyMotionControlBlock(r,'r_foot',ctrl_data,options);
+  lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
+	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
 
   options.Kp = 20*[0; 0; 1; 1; 1; 1];
   options.Kd = getDampingGain(options.Kp,0.4);
