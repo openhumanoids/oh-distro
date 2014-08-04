@@ -635,7 +635,7 @@ class MainWindow(QtGui.QWidget):
         return True
 
     def getPoseConfigFile(self):
-        return os.path.join(os.environ['DRC_BASE'], 'software/config/task_config/stored_poses.json')
+        return os.path.join(os.environ['DRC_BASE'], 'software/config/stored_poses.json')
 
     def loadConfigFile(self):
         if not self.checkConfigFile():
