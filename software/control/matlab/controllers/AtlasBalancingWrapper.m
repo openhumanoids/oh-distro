@@ -69,11 +69,11 @@ classdef AtlasBalancingWrapper < DrakeSystem
       options.input_foot_contacts = true;
       
      
-      options.Kp = 20*[1; 1; 1; 1; 1; 1];
-      options.Kd = getDampingGain(options.Kp,0.4);
+      options.Kp = 22*[1; 1; 1; 1; 1; 1];
+      options.Kd = getDampingGain(options.Kp,0.6);
       obj.pelvis_motion_block = BodyMotionControlBlock(r,'pelvis',controller_data,options);
       motion_frames = {obj.pelvis_motion_block.getOutputFrame};
-      options.body_accel_input_weights = 0.25;
+      options.body_accel_input_weights = 0.025;
       qp = QPController(r,motion_frames,controller_data,options);
       
       % cascade IK/PD block
