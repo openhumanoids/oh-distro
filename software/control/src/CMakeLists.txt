@@ -18,14 +18,6 @@ add_mex(linearIKmex linearIKmex.cpp)
 pods_use_pkg_config_packages(linearIKmex eigen3 gurobi drake-qp drake-rbm)
 install(TARGETS linearIKmex DESTINATION matlab)
 
-add_mex(pelvisMotionControlmex pelvisMotionControlmex.cpp)
-pods_use_pkg_config_packages(pelvisMotionControlmex eigen3 drake-rbm)
-install(TARGETS pelvisMotionControlmex DESTINATION matlab)
-
-add_mex(bodyMotionControlmex bodyMotionControlmex.cpp)
-pods_use_pkg_config_packages(bodyMotionControlmex eigen3 drake-rbm)
-install(TARGETS bodyMotionControlmex DESTINATION matlab)
-
 add_mex(BotParamClient BotParamClient.cpp)
 pods_use_pkg_config_packages(BotParamClient lcm drc-utils bot2-param-client)
 
@@ -38,7 +30,7 @@ pods_use_pkg_config_packages(bot_param_get_seqno bot2-param-client)
 add_mex(bot_param_get_server_id bot_param_get_server_id.cpp)
 pods_use_pkg_config_packages(bot_param_get_server_id bot2-param-client)
 
-install(TARGETS pelvisMotionControlmex bodyMotionControlmex bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
+install(TARGETS bot_timestamp_now bot_param_get_seqno bot_param_get_server_id mxSerialize mxDeserialize DESTINATION matlab)
 
 
 if (maps_FOUND AND opencv_FOUND)

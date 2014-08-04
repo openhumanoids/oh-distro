@@ -157,8 +157,8 @@ if use_simple_pd
 
   options.Kp = 30*ones(6,1);
   options.Kd = 10*ones(6,1);
-  lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
-  rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
+  lfoot_motion = BodyMotionControlBlock(r,'l_foot',ctrl_data,options);
+  rfoot_motion = BodyMotionControlBlock(r,'r_foot',ctrl_data,options);
 
   options.Kp = 40*[0; 0; 1; 1; 1; 1];
   options.Kd = 10*[0; 0; 1; 1; 1; 1];

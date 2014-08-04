@@ -74,8 +74,8 @@ classdef AtlasWalkingWrapper < DrakeSystem
 
       options.Kp = [20; 20; 20; 10; 20; 10];
       options.Kd = getDampingGain(options.Kp,0.6);
-      obj.lfoot_motion_block = FootMotionControlBlock(r,'l_foot',controller_data,options);
-      obj.rfoot_motion_block = FootMotionControlBlock(r,'r_foot',controller_data,options);
+      obj.lfoot_motion_block = BodyMotionControlBlock(r,'l_foot',controller_data,options);
+      obj.rfoot_motion_block = BodyMotionControlBlock(r,'r_foot',controller_data,options);
       
       options.Kp = 20*[0; 0; 1; 1; 1; 1];
       options.Kd = getDampingGain(options.Kp,0.4);
