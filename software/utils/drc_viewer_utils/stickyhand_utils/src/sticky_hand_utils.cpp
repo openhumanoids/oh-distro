@@ -171,13 +171,13 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
     int type = link_geom->type;
 //    if(type == SPHERE)
 //    {
-//      boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(link_geom));	
+//      boost::shared_ptr<otdf::Sphere> sphere(boost::dynamic_pointer_cast<otdf::Sphere>(link_geom));	
 //      double radius = sphere->radius;
 //    }
 //    else 
     if(type == BOX)
     {
-      boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(link_geom));
+      boost::shared_ptr<otdf::Box> box(boost::dynamic_pointer_cast<otdf::Box>(link_geom));
       double xDim = box->dim.x;
       double yDim = box->dim.y;
       double zDim = box->dim.z;
@@ -186,7 +186,7 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
     }      
     else if(type == CYLINDER)
     {
-      boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(link_geom));
+      boost::shared_ptr<otdf::Cylinder> cyl(boost::dynamic_pointer_cast<otdf::Cylinder>(link_geom));
       double radius = cyl->radius;
       double length = cyl->length;
       if(length<radius)
@@ -194,7 +194,7 @@ bool is_sticky_hand_condition_active(const StickyHandStruc &hand_struc,boost::sh
     }  
     else if(type == TORUS)
     {
-      boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link_geom));
+      boost::shared_ptr<otdf::Torus> torus(boost::dynamic_pointer_cast<otdf::Torus>(link_geom));
       double innerRadius = torus->tube_radius;
       double outerRadius = torus->radius;
       if(innerRadius<outerRadius)

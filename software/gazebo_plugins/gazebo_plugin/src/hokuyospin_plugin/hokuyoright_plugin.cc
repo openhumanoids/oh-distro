@@ -71,7 +71,7 @@ class HokuyoRightPlugin : public ModelPlugin
     
   // assert that the body by link_name_ exists
     std::string link_name = "head_rightedhokuyo";
-  this->link = boost::shared_dynamic_cast<physics::Link>(this->world->GetEntity(link_name));
+  this->link = boost::dynamic_pointer_cast<physics::Link>(this->world->GetEntity(link_name));
   if (!this->link)
   {
     gzerr << "plugin error: "<<  link_name <<" does not exist\n";

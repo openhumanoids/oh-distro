@@ -46,7 +46,7 @@ void printTree(boost::shared_ptr<const BaseEntity> entity,int level = 0)
   int count = 0;
   std::string type = entity->getEntityType();
   if (type == "Link"){
-    boost::shared_ptr<const Link> downcasted_entity(boost::shared_dynamic_cast<const Link>(entity)); 
+    boost::shared_ptr<const Link> downcasted_entity(boost::dynamic_pointer_cast<const Link>(entity)); 
       
   for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
   {
@@ -66,7 +66,7 @@ void printTree(boost::shared_ptr<const BaseEntity> entity,int level = 0)
     
   } 
   else if (type == "Bounding_volume"){
-    boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::shared_dynamic_cast<const Bounding_volume>(entity));  
+    boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::dynamic_pointer_cast<const Bounding_volume>(entity));  
     
       
   for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
@@ -122,13 +122,13 @@ int main(int argc, char** argv)
   
  std::string type = root_entity->getEntityType();
   if (type == "Link"){
-    boost::shared_ptr<const Link> downcasted_root_entity(boost::shared_dynamic_cast<const Link>(root_entity)); 
+    boost::shared_ptr<const Link> downcasted_root_entity(boost::dynamic_pointer_cast<const Link>(root_entity)); 
       
   std::cout << "root_entity: " << downcasted_root_entity->name << " has " << downcasted_root_entity->child_links.size() << " child(ren)" << std::endl;
 
   }
   else if(type == "Bounding_volume"){
-    boost::shared_ptr<const Bounding_volume> downcasted_root_entity(boost::shared_dynamic_cast<const Bounding_volume>(root_entity)); 
+    boost::shared_ptr<const Bounding_volume> downcasted_root_entity(boost::dynamic_pointer_cast<const Bounding_volume>(root_entity)); 
       
   std::cout << "root_entity: " << downcasted_root_entity->name << " has " << downcasted_root_entity->child_links.size() << " child(ren)" << std::endl;
 
@@ -149,13 +149,13 @@ int main(int argc, char** argv)
     
     type = root_entity->getEntityType();
     if (type == "Link"){
-      boost::shared_ptr<const Link> downcasted_root_entity(boost::shared_dynamic_cast<const Link>(root_entity)); 
+      boost::shared_ptr<const Link> downcasted_root_entity(boost::dynamic_pointer_cast<const Link>(root_entity)); 
 	
     std::cout << "root_entity: " << downcasted_root_entity->name << " has " << downcasted_root_entity->child_links.size() << " child(ren)" << std::endl;
 
     }
     else if(type == "Bounding_volume"){
-      boost::shared_ptr<const Bounding_volume> downcasted_root_entity(boost::shared_dynamic_cast<const Bounding_volume>(root_entity)); 
+      boost::shared_ptr<const Bounding_volume> downcasted_root_entity(boost::dynamic_pointer_cast<const Bounding_volume>(root_entity)); 
 	
     std::cout << "root_entity: " << downcasted_root_entity->name << " has " << downcasted_root_entity->child_links.size() << " child(ren)" << std::endl;
     }

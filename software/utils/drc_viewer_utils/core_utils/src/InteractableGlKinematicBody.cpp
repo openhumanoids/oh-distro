@@ -124,7 +124,7 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
 
           if  (type == SPHERE)
           {
-            shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(visuals[iv]->geometry));	
+            shared_ptr<urdf::Sphere> sphere(dynamic_pointer_cast<urdf::Sphere>(visuals[iv]->geometry));	
             double radius = sphere->radius;
      
             shared_ptr<Collision_Object> object_ptr(new Collision_Object_Sphere(oss.str(), radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
@@ -135,7 +135,7 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
           }
           else if  (type == BOX)
           {
-            shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(visuals[iv]->geometry));
+            shared_ptr<urdf::Box> box(dynamic_pointer_cast<urdf::Box>(visuals[iv]->geometry));
             Eigen::Vector3f dims;
             dims<< box->dim.x,box->dim.y,box->dim.z;
             shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
@@ -145,7 +145,7 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
           }
           else if  (type == CYLINDER)
           {
-            shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(visuals[iv]->geometry));
+            shared_ptr<urdf::Cylinder> cyl(dynamic_pointer_cast<urdf::Cylinder>(visuals[iv]->geometry));
             double radius = cyl->radius;
             double length = cyl->length;
             shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
@@ -160,7 +160,7 @@ void InteractableGlKinematicBody::init_urdf_collision_objects()
           else if  (type == MESH)
           //if  (type == MESH)
           {
-            shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(visuals[iv]->geometry));
+            shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>(visuals[iv]->geometry));
 
             //typedef std::map<std::string, MeshStruct > mesh_map_type_;
 	          typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_map_type_;
@@ -229,7 +229,7 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
           //TODO: create collision objects for cylinder,sphere and torus.
           if  (type == SPHERE)
           {
-            shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(visuals[iv]->geometry));	
+            shared_ptr<otdf::Sphere> sphere(dynamic_pointer_cast<otdf::Sphere>(visuals[iv]->geometry));	
             double radius = sphere->radius;
             shared_ptr<Collision_Object> object_ptr(new Collision_Object_Sphere(oss.str(), radius, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
             _collision_object_map.insert(make_pair(oss.str(), object_ptr));         
@@ -238,7 +238,7 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
           }
           else if  (type == BOX)
           {
-            shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(visuals[iv]->geometry));
+            shared_ptr<otdf::Box> box(dynamic_pointer_cast<otdf::Box>(visuals[iv]->geometry));
             Eigen::Vector3f dims;
             dims<< box->dim.x,box->dim.y,box->dim.z;
             shared_ptr<Collision_Object> object_ptr(new Collision_Object_Box(oss.str(), dims, Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
@@ -248,7 +248,7 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
           }
           else if  (type == CYLINDER)
           {
-            shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(visuals[iv]->geometry));
+            shared_ptr<otdf::Cylinder> cyl(dynamic_pointer_cast<otdf::Cylinder>(visuals[iv]->geometry));
             double radius = cyl->radius;
             double length = cyl->length;
             shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
@@ -264,7 +264,7 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
           }
           else if  (type == TORUS)
           {
-            shared_ptr<otdf::Torus> tor(shared_dynamic_cast<otdf::Torus>(visuals[iv]->geometry));
+            shared_ptr<otdf::Torus> tor(dynamic_pointer_cast<otdf::Torus>(visuals[iv]->geometry));
             double radius = tor->radius;
             double length = tor->tube_radius;       
           //shared_ptr<Collision_Object> object_ptr(new Collision_Object_Cylinder(oss.str(),radius,length,Eigen::Vector3f( 0.0, 0.0, 0.0 ), Eigen::Vector4f( 0.0, 0.0, 0.0, 1.0 ) ));
@@ -278,7 +278,7 @@ void InteractableGlKinematicBody::init_otdf_collision_objects()
           else if  (type == MESH)
           //if  (type == MESH)
           {
-            shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(visuals[iv]->geometry));
+            shared_ptr<otdf::Mesh> mesh(dynamic_pointer_cast<otdf::Mesh>(visuals[iv]->geometry));
 
             //typedef std::map<std::string, MeshStruct > mesh_map_type_;
   	    typedef std::map<std::string, shared_ptr<MeshStruct> > mesh_map_type_;
@@ -423,18 +423,18 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
             q << x, y, z, w;
             if  (type == SPHERE)
             {
-              shared_ptr<Collision_Object_Sphere> downcasted_object(shared_dynamic_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Sphere> downcasted_object(dynamic_pointer_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
             }
             else if  (type == BOX)
             {
-              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
             }
             else if  (type == CYLINDER)
             {
-              shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
-              //shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Cylinder> downcasted_object(dynamic_pointer_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
+              //shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
 
             }
@@ -466,7 +466,7 @@ void InteractableGlKinematicBody::update_urdf_collision_objects(void)
               Eigen::Vector4f q;
               q << x, y, z, w;
 
-              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q); 
               
             } // end if MESH
@@ -557,25 +557,25 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
             q << x, y, z, w;
             if  (type == SPHERE)
             {
-              shared_ptr<Collision_Object_Sphere> downcasted_object(shared_dynamic_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Sphere> downcasted_object(dynamic_pointer_cast<Collision_Object_Sphere>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
             }
             else if  (type == BOX)
             {
-              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
             }
             else if  (type == CYLINDER)
             {
-              shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
-              //shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Cylinder> downcasted_object(dynamic_pointer_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
+              //shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
 
             }
             else if  (type == TORUS)
             {
-              //shared_ptr<Collision_Object_Cylinder> downcasted_object(shared_dynamic_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
-              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              //shared_ptr<Collision_Object_Cylinder> downcasted_object(dynamic_pointer_cast<Collision_Object_Cylinder>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q);
             }
             else if  (type == MESH)
@@ -607,7 +607,7 @@ void InteractableGlKinematicBody::update_otdf_collision_objects(void)
               Eigen::Vector4f q;
               q << x, y, z, w;
 
-              shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
+              shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_collision_object_map.find(oss.str())->second));
               downcasted_object->set_transform(p,q); 
               
             } // end if MESH
@@ -869,13 +869,13 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
     (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_TRANS))
   {   
     //if(!x_plane_active){
-      shared_ptr<Collision_Object_Box> downcasted_object1(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_x")->second));
+      shared_ptr<Collision_Object_Box> downcasted_object1(dynamic_pointer_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_x")->second));
       p_markerframe=p0_markerframe; p_markerframe[0]+=_marker_dir_flip[0]*trans_marker_length;
       rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object1->set_transform(p,q0);
     //} 
     //if(!y_plane_active){
-      shared_ptr<Collision_Object_Box> downcasted_object2(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_y")->second));
+      shared_ptr<Collision_Object_Box> downcasted_object2(dynamic_pointer_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_y")->second));
       p_markerframe=p0_markerframe; p_markerframe[1]+=_marker_dir_flip[1]*trans_marker_length;
       rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object2->set_transform(p,q0);
@@ -886,7 +886,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
      (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_TRANS))
   {  
     //if(!z_plane_active)  {      
-      shared_ptr<Collision_Object_Box> downcasted_object3(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_z")->second));
+      shared_ptr<Collision_Object_Box> downcasted_object3(dynamic_pointer_cast<Collision_Object_Box>(_markers_collision_object_map.find("markers::base_z")->second));
       p_markerframe=p0_markerframe; p_markerframe[2]+=_marker_dir_flip[2]*trans_marker_length;
       rotate_eigen_vector_given_kdl_frame(p_markerframe,T_world_marker,p);
       downcasted_object3->set_transform(p,q0);
@@ -897,7 +897,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
   {
     std::stringstream oss;
     oss << "markers::" <<"plane::base_" << plane_name;
-    shared_ptr<Collision_Object_Box> downcasted_object3(shared_dynamic_cast<Collision_Object_Box>(_markers_collision_object_map.find(oss.str())->second));
+    shared_ptr<Collision_Object_Box> downcasted_object3(dynamic_pointer_cast<Collision_Object_Box>(_markers_collision_object_map.find(oss.str())->second));
     Eigen::Vector3f plane_axis,axis,uz;
     double theta;
     uz<<0,0,1;
@@ -920,7 +920,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
   if((bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D)||
     (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT))
   {      
-    shared_ptr<Collision_Object_Torus> downcasted_object4(shared_dynamic_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_roll")->second));
+    shared_ptr<Collision_Object_Torus> downcasted_object4(dynamic_pointer_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_roll")->second));
     axis[0] = 0; axis[1] = 1; axis[2] = 0;
     bot_angle_axis_to_quat(M_PI/2, axis,q_temp);
     q_markerframe << q_temp[1],q_temp[2],q_temp[3],q_temp[0];
@@ -928,7 +928,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
     downcasted_object4->set_transform(p0,q); 
     
     
-    shared_ptr<Collision_Object_Torus> downcasted_object5(shared_dynamic_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_pitch")->second));
+    shared_ptr<Collision_Object_Torus> downcasted_object5(dynamic_pointer_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_pitch")->second));
     axis[0] = 1; axis[1] = 0; axis[2] = 0;
     bot_angle_axis_to_quat (M_PI/2, axis,q_temp);
     q_markerframe   << q_temp[1],q_temp[2],q_temp[3],q_temp[0];
@@ -942,7 +942,7 @@ void InteractableGlKinematicBody::update_floatingbase_marker_collision_objects()
       (bodypose_adjustment_type == InteractableGlKinematicBody::THREE_D_ROT)||
       (bodypose_adjustment_type == InteractableGlKinematicBody::TWO_D_ROT))
   {          
-    shared_ptr<Collision_Object_Torus> downcasted_object6(shared_dynamic_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_yaw")->second));
+    shared_ptr<Collision_Object_Torus> downcasted_object6(dynamic_pointer_cast<Collision_Object_Torus>(_markers_collision_object_map.find("markers::base_yaw")->second));
     downcasted_object6->set_transform(p0,q0);
   }  
 }
@@ -1216,7 +1216,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
               string separator  = "::";
               size_t found = jointInfo.name.find_last_of(separator);
               oss << "markers::" <<  jointInfo.name.substr(0,found-1) << "::translate";
-               shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_dofmarkers_collision_object_map.find(oss.str())->second));
+               shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_dofmarkers_collision_object_map.find(oss.str())->second));
                KDL::Frame JointAxisFrame;
                JointAxisFrame.p[0] =pos[0]; JointAxisFrame.p[1] =pos[1]; JointAxisFrame.p[2] =pos[2];
                KDL::Vector axis_temp;
@@ -1233,7 +1233,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
           {
             std::stringstream oss;
             oss << "markers::" <<  jointInfo.name;
-            shared_ptr<Collision_Object_Box> downcasted_object(shared_dynamic_cast<Collision_Object_Box>(_dofmarkers_collision_object_map.find(oss.str())->second));
+            shared_ptr<Collision_Object_Box> downcasted_object(dynamic_pointer_cast<Collision_Object_Box>(_dofmarkers_collision_object_map.find(oss.str())->second));
             downcasted_object->set_transform(p,q);
           }
           
@@ -1298,7 +1298,7 @@ void InteractableGlKinematicBody::update_jointdof_marker_collision_objects()
           
           std::stringstream oss;
           oss << "markers::" <<  jointInfo.name;
-          shared_ptr<Collision_Object_Torus> downcasted_object(shared_dynamic_cast<Collision_Object_Torus>(_dofmarkers_collision_object_map.find(oss.str())->second));
+          shared_ptr<Collision_Object_Torus> downcasted_object(dynamic_pointer_cast<Collision_Object_Torus>(_dofmarkers_collision_object_map.find(oss.str())->second));
           downcasted_object->set_transform(p,q);        
        }//end if revolute or continuous joints
        
@@ -1610,7 +1610,7 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ot
   //enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
   if (type == otdf::Geometry::SPHERE)
   {
-    boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(_link_shape));	
+    boost::shared_ptr<otdf::Sphere> sphere(boost::dynamic_pointer_cast<otdf::Sphere>(_link_shape));	
     float radius = sphere->radius;
     float dims[3] = {radius+2*markersize,radius+2*markersize,radius+2*markersize};
     float maxdim= max(dims[2],max(dims[0],dims[1]));
@@ -1618,14 +1618,14 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ot
   }
   else if  (type == otdf::Geometry::BOX)
   {
-    boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(_link_shape));
+    boost::shared_ptr<otdf::Box> box(boost::dynamic_pointer_cast<otdf::Box>(_link_shape));
     float dims[3] = {0.5*box->dim.x+2*markersize,0.5*box->dim.y+2*markersize,0.5*box->dim.z+2*markersize};
     float maxdim= max(dims[2],max(dims[0],dims[1]));
     draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
   }
   else if  (type == otdf::Geometry::CYLINDER)
   {
-    boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(_link_shape));
+    boost::shared_ptr<otdf::Cylinder> cyl(boost::dynamic_pointer_cast<otdf::Cylinder>(_link_shape));
     float dims[3] = {cyl->radius+2*markersize,cyl->radius+2*markersize,0.5*cyl->length+2*markersize};
     float maxdim= max(dims[2],max(dims[0],dims[1]));
     draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
@@ -1660,7 +1660,7 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ot
   }
   else if  (type == otdf::Geometry::TORUS)
   {
-    boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(_link_shape));
+    boost::shared_ptr<otdf::Torus> torus(boost::dynamic_pointer_cast<otdf::Torus>(_link_shape));
     float dims[3] = {torus->radius+2*markersize,torus->radius+2*markersize,torus->tube_radius+2*markersize};
     float maxdim= max(dims[2],max(dims[0],dims[1]));
     draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);   
@@ -1678,7 +1678,7 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ur
   //enum {SPHERE, BOX, CYLINDER, MESH}; 
   if (type == urdf::Geometry::SPHERE)
   {
-    boost::shared_ptr<urdf::Sphere> sphere(boost::shared_dynamic_cast<urdf::Sphere>(_link_shape));	
+    boost::shared_ptr<urdf::Sphere> sphere(boost::dynamic_pointer_cast<urdf::Sphere>(_link_shape));	
     float radius = sphere->radius;
     float dims[3] = {radius+2*markersize,radius+2*markersize,radius+2*markersize};
     float maxdim= max(dims[2],max(dims[0],dims[1]));
@@ -1686,14 +1686,14 @@ void InteractableGlKinematicBody::draw_interactable_markers(boost::shared_ptr<ur
   }
   else if  (type == urdf::Geometry::BOX)
   {
-    boost::shared_ptr<urdf::Box> box(boost::shared_dynamic_cast<urdf::Box>(_link_shape));
+    boost::shared_ptr<urdf::Box> box(boost::dynamic_pointer_cast<urdf::Box>(_link_shape));
     float dims[3] = {0.5*box->dim.x+2*markersize,0.5*box->dim.y+2*markersize,0.5*box->dim.z+2*markersize};
     float maxdim= max(dims[2],max(dims[0],dims[1]));
     draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);  
   }
   else if  (type == urdf::Geometry::CYLINDER)
   {
-    boost::shared_ptr<urdf::Cylinder> cyl(boost::shared_dynamic_cast<urdf::Cylinder>(_link_shape));
+    boost::shared_ptr<urdf::Cylinder> cyl(boost::dynamic_pointer_cast<urdf::Cylinder>(_link_shape));
     float dims[3] = {cyl->radius+2*markersize,cyl->radius+2*markersize,0.5*cyl->length+2*markersize};
     float maxdim= max(dims[2],max(dims[0],dims[1]));
     draw_markers(pos,markersize,maxdim+markersize,maxdim+1.8*markersize);   

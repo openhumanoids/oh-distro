@@ -204,7 +204,7 @@ void Pass::prepareModel(){
         Eigen::Isometry3d visual_origin = URDFPoseToEigen( visuals[iv]->origin );
         
         if  (geom->type == urdf::Geometry::MESH){
-          shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>( geom ));
+          shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>( geom ));
           // TODO: Verify the existance of the file:
           std::string file_path = gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_);
 
@@ -219,15 +219,15 @@ void Pass::prepareModel(){
           simexample->mergePolygonMesh(mesh_ptr, this_mesh );
           
         }else if(geom->type == urdf::Geometry::BOX){
-          shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>( geom ));
+          shared_ptr<urdf::Box> box(dynamic_pointer_cast<urdf::Box>( geom ));
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getCubeWithTransform(visual_origin, box->dim.x, box->dim.y, box->dim.z) );
         }else if(geom->type == urdf::Geometry::CYLINDER){
-          shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>( geom ));
+          shared_ptr<urdf::Cylinder> cyl(dynamic_pointer_cast<urdf::Cylinder>( geom ));
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getCylinderWithTransform(visual_origin, cyl->radius, cyl->radius, cyl->length) );
         }else if(geom->type == urdf::Geometry::SPHERE){
-          shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(geom)); 
+          shared_ptr<urdf::Sphere> sphere(dynamic_pointer_cast<urdf::Sphere>(geom)); 
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getSphereWithTransform(visual_origin, sphere->radius) );
         }else{

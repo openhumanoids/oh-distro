@@ -172,16 +172,16 @@ _load_collision_objects( void ){
   for( unsigned int i = 0; i < links.size(); i++ ){
     if( links[ i ]->collision != NULL ){
       if( links[ i ]->collision->geometry->type == Geometry::SPHERE ){
-        shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->collision->geometry );
+        shared_ptr< Sphere > sphere = dynamic_pointer_cast< Sphere >( links[ i ]->collision->geometry );
         _collision_objects.push_back( new Collision_Object_Sphere( links[ i ]->name, sphere->radius ) );
       } else if ( links[ i ]->collision->geometry->type == Geometry::BOX ){
-        shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->collision->geometry );
+        shared_ptr< Box > box = dynamic_pointer_cast< Box >( links[ i ]->collision->geometry );
         _collision_objects.push_back( new Collision_Object_Box( links[ i ]->name, Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
       } else if ( links[ i ]->collision->geometry->type == Geometry::CYLINDER ){
-        shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->collision->geometry );
+        shared_ptr< Cylinder > cylinder = dynamic_pointer_cast< Cylinder >( links[ i ]->collision->geometry );
         _collision_objects.push_back( new Collision_Object_Cylinder( links[ i ]->name, cylinder->radius, cylinder->length ) );
       } else if ( links[ i ]->collision->geometry->type == Geometry::MESH ){
-        shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->collision->geometry );
+        shared_ptr< Mesh > mesh = dynamic_pointer_cast< Mesh >( links[ i ]->collision->geometry );
         std::string model_filename = mesh->filename;
         model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
         model_filename.erase( model_filename.end() - 4, model_filename.end() );

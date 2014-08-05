@@ -455,7 +455,7 @@ public:
 	    } // Cannot have a pattern as a root link
      
       //else if(l->second->getEntityType()=="Link_pattern"){
-      //boost::shared_ptr<Link_pattern> downcasted_entity(boost::shared_dynamic_cast<Link_pattern>(l->second)); 
+      //boost::shared_ptr<Link_pattern> downcasted_entity(boost::dynamic_pointer_cast<Link_pattern>(l->second)); 
 
       //for (unsigned int i=0; i < downcasted_entity->link_set.size(); i++)
       //{
@@ -508,11 +508,11 @@ public:
     
 
     if(this->root_link_->getEntityType()=="Link"){
-      boost::shared_ptr<Link> downcasted_entity(boost::shared_dynamic_cast<Link>(this->root_link_)); 
+      boost::shared_ptr<Link> downcasted_entity(boost::dynamic_pointer_cast<Link>(this->root_link_)); 
       downcasted_entity->update();
     }
     else if(this->root_link_->getEntityType()=="Bounding_volume"){
-      boost::shared_ptr<Bounding_volume> downcasted_entity(boost::shared_dynamic_cast<Bounding_volume>(this->root_link_)); 
+      boost::shared_ptr<Bounding_volume> downcasted_entity(boost::dynamic_pointer_cast<Bounding_volume>(this->root_link_)); 
       downcasted_entity->update();
     }
 
