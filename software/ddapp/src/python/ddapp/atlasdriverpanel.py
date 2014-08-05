@@ -33,18 +33,22 @@ class AtlasDriverPanel(object):
         self.widget.setWindowTitle('Atlas Driver Panel')
         self.ui = WidgetDict(self.widget.children())
 
+        # Main Panel
+        self.ui.calibrateEncodersButton.connect('clicked()', self.onCalibrateEncoders)
         self.ui.prepButton.connect('clicked()', self.onPrep)
-        self.ui.standButton.connect('clicked()', self.onStand)
-        self.ui.mitStandButton.connect('clicked()', self.onMITStand)
-
-        self.ui.userButton.connect('clicked()', self.onUser)
-        self.ui.manipButton.connect('clicked()', self.onManip)
-
+        self.ui.combinedStandButton.connect('clicked()', self.onCombinedStand)
         self.ui.stopButton.connect('clicked()', self.onStop)
         self.ui.freezeButton.connect('clicked()', self.onFreeze)
 
-        self.ui.calibrateEncodersButton.connect('clicked()', self.onCalibrateEncoders)
+
         self.ui.calibrateBdiButton.connect('clicked()', self.onCalibrateBdi)
+        self.ui.initNavButton.connect('clicked()', self.onInitNav)
+        self.ui.standButton.connect('clicked()', self.onStand)
+        self.ui.mitStandButton.connect('clicked()', self.onMITStand)
+        self.ui.userButton.connect('clicked()', self.onUser)
+        self.ui.manipButton.connect('clicked()', self.onManip)
+
+
 
         PythonQt.dd.ddGroupBoxHider(self.ui.calibrationGroupBox)
         PythonQt.dd.ddGroupBoxHider(self.ui.statusGroupBox)
@@ -58,6 +62,8 @@ class AtlasDriverPanel(object):
         self.updateBehaviorLabel()
         self.updateStatus()
         self.updateButtons()
+        self.driver.updateCombinedStandLogic()
+
 
     def updateBehaviorLabel(self):
         self.ui.behaviorLabel.text = self.driver.getCurrentBehaviorName() or '<unknown>'
@@ -94,11 +100,17 @@ class AtlasDriverPanel(object):
     def onCalibrateBdi(self):
         self.driver.sendCalibrateCommand()
 
+    def onInitNav(self):
+        self.driver.sendInitAtZero()
+
     def onPrep(self):
         self.driver.sendPrepCommand()
 
     def onStand(self):
         self.driver.sendStandCommand()
+
+    def onCombinedStand(self):
+        self.driver.sendCombinedStandCommand()
 
     def onMITStand(self):
         self.driver.sendMITStandCommand()
