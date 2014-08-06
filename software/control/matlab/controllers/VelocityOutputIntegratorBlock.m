@@ -5,14 +5,15 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
   % state: [fc_left; fc_right; t_prev; eta; qd_int]
   % output: qd_err (input frame)
   properties
-		nq;
-		r_ankle_idx;
-		l_ankle_idx;
-		leg_idx;
-		r_leg_idx;
-		l_leg_idx;
-		act_idx_map;
-		zero_ankles_on_contact;
+    nq;
+    r_ankle_idx;
+    l_ankle_idx;
+    leg_idx;
+    r_leg_idx;
+    l_leg_idx;
+    act_idx_map;
+    zero_ankles_on_contact;
+    eta; % gain for leaky integrator
   end
   
   methods
@@ -40,6 +41,14 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
         obj.zero_ankles_on_contact = true;
       end
       
+      if isfield(options,'eta')
+        typecheck(options.eta,'double');
+        sizecheck(options.eta,[1 1]);
+        obj.eta = options.eta;
+      else
+        obj.eta = 0.0;
+      end
+
       if isfield(options,'dt')
         typecheck(options.dt,'double');
         sizecheck(options.dt,[1 1]);
@@ -91,7 +100,7 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			l_foot_contact = fc(1);
 			r_foot_contact = fc(2);
 
- 			eta = state(4);
+ 			eta = obj.eta;%state(4);
 
 			qd_int = state(5:end);
 			dt = t-state(3);
@@ -110,7 +119,7 @@ classdef VelocityOutputIntegratorBlock < MIMODrakeSystem
 			next_state(2) = fc(2);
 			next_state(3) = t;
 
-      eta = max(0.0,eta-dt); % linear ramp
+      % eta = max(0.0,eta-dt); % linear ramp
       if state(1)~=l_foot_contact
         % contact state changed, reset integrated velocities
         qd_int(obj.l_leg_idx) = qd(obj.l_leg_idx);
