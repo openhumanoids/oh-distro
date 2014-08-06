@@ -10,6 +10,8 @@ classdef AtlasBalancingWrapper < DrakeSystem
     velocity_int_block;
     qtraj_eval_block;
     pelvis_motion_block;
+    lfoot_motion_block;
+    rfoot_motion_block;
   end
   
   methods
@@ -60,7 +62,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       options.W_kdot = 0*eye(3);
       options.w_grf = 0.0;
       options.w_slack = 0.05;
-      options.Kp_accel = 0.0;
+      options.Kp_accel = 1.0;
       options.debug = false;
       options.use_mex = true;
       options.contact_threshold = 0.01;
@@ -69,13 +71,20 @@ classdef AtlasBalancingWrapper < DrakeSystem
       options.input_foot_contacts = true;
       
      
+      options.Kp = [20; 20; 20; 10; 20; 10];
+      options.Kd = getDampingGain(options.Kp,0.6);
+      obj.lfoot_motion_block = BodyMotionControlBlock(r,'l_foot',controller_data,options);
+      obj.rfoot_motion_block = BodyMotionControlBlock(r,'r_foot',controller_data,options);
+
       options.Kp = 22*[1; 1; 1; 1; 1; 1];
       options.Kd = getDampingGain(options.Kp,0.6);
       obj.pelvis_motion_block = BodyMotionControlBlock(r,'pelvis',controller_data,options);
-      motion_frames = {obj.pelvis_motion_block.getOutputFrame};
-      options.body_accel_input_weights = 0.025;
+      motion_frames = {obj.lfoot_motion_block.getOutputFrame,obj.rfoot_motion_block.getOutputFrame,...
+        obj.pelvis_motion_block.getOutputFrame};
+      options.body_accel_input_weights = [0.025; 0.25; 0.25];
       qp = QPController(r,motion_frames,controller_data,options);
       
+
       % cascade IK/PD block
       options.use_ik = false;
       options.Kp = 50.0*ones(obj.nq,1);
@@ -92,17 +101,23 @@ classdef AtlasBalancingWrapper < DrakeSystem
       ins(4).input = 3;
       ins(5).system = 2;
       ins(5).input = 4;
+      ins(6).system = 2;
+      ins(6).input = 5;
+      ins(7).system = 2;
+      ins(7).input = 6;
       outs(1).system = 2;
       outs(1).output = 1;
       outs(2).system = 2;
       outs(2).output = 2;
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
+      clear ins;
       
       options.use_error_integrator = true; % while we're still using position control in upper body
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       options.use_lcm = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
       options.zero_ankles_on_contact = false;
+      options.eta = 0.001;
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
 
       controller_data.qd_int_state = zeros(obj.velocity_int_block.getStateFrame.dim,1);
@@ -121,8 +136,10 @@ classdef AtlasBalancingWrapper < DrakeSystem
       q_des = q_des_and_x(1:obj.nq);
       
       % IK/QP
+      lfoot_ddot = output(obj.lfoot_motion_block,t,[],x);
+      rfoot_ddot = output(obj.rfoot_motion_block,t,[],x);
       pelvis_ddot = output(obj.pelvis_motion_block,t,[],x);
-      u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; x; fc; pelvis_ddot]);
+      u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; x; fc; lfoot_ddot; rfoot_ddot; pelvis_ddot]);
       u=u_and_qdd(1:obj.nu);
       qdd=u_and_qdd(obj.nu+(1:obj.nq));
 

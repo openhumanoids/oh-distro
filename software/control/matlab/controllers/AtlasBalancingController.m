@@ -58,6 +58,12 @@ classdef AtlasBalancingController < DRCController
       link_constraints(1).link_ndx = pelvis_idx;
       link_constraints(1).pt = [0;0;0];
       link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,pelvis_idx,[0;0;0],1));
+      link_constraints(2).link_ndx = fidx(1);
+      link_constraints(2).pt = [0;0;0];
+      link_constraints(2).traj = ConstantTrajectory(forwardKin(r,kinsol,fidx(1),[0;0;0],1));
+      link_constraints(3).link_ndx = fidx(2);
+      link_constraints(3).pt = [0;0;0];
+      link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,fidx(2),[0;0;0],1));
             
       ctrl_data = AtlasQPControllerData(false,struct(...
         'acceleration_input_frame',AtlasCoordinates(r),...
@@ -173,6 +179,12 @@ classdef AtlasBalancingController < DRCController
       link_constraints(1).link_ndx = obj.pelvis_idx;
       link_constraints(1).pt = [0;0;0];
       link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,obj.pelvis_idx,[0;0;0],1));
+      link_constraints(2).link_ndx = obj.foot_idx(1);
+      link_constraints(2).pt = [0;0;0];
+      link_constraints(2).traj = ConstantTrajectory(forwardKin(r,kinsol,obj.foot_idx(1),[0;0;0],1));
+      link_constraints(3).link_ndx = obj.foot_idx(2);
+      link_constraints(3).pt = [0;0;0];
+      link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,obj.foot_idx(2),[0;0;0],1));
       obj.controller_data.link_constraints = link_constraints;
     end
   end
