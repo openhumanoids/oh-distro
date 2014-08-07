@@ -16,10 +16,12 @@ pods_use_pkg_config_packages(drc-ply-filter ${REQUIRED_LIBS} ${PCL_LIBRARIES})
 pods_install_executables(drc-ply-filter)
 
 add_executable(drc-box-filter box_filter.cpp)
+target_link_libraries (drc-box-filter boost_system boost_thread)
 pods_use_pkg_config_packages(drc-box-filter ${REQUIRED_LIBS} ${PCL_LIBRARIES})
 pods_install_executables(drc-box-filter)
 
 add_executable(drc-car-clouds car-clouds.cpp)
+target_link_libraries (drc-car-clouds boost_system boost_thread)
 pods_use_pkg_config_packages(drc-car-clouds ${REQUIRED_LIBS} ${PCL_LIBRARIES})
 pods_install_executables(drc-car-clouds)
 

@@ -62,7 +62,7 @@ add_executable(drc-tld-tracker
   tld-tracker.cpp
 )
 
-pods_use_pkg_config_packages ( drc-tld-tracker lcm glib-2.0 lcmtypes_kinect bot2-core image-utils bot2-lcmgl-client 
+pods_use_pkg_config_packages ( drc-tld-tracker lcm glib-2.0 bot2-core image-utils bot2-lcmgl-client 
   bot2-frames
   bot2-param-client opencv image_io_utils perception-opencv-utils)
 
@@ -84,7 +84,7 @@ add_executable(drc-tld-segmenter
   tld-segmenter-app.cpp
 )
 
-pods_use_pkg_config_packages ( drc-tld-segmenter lcm glib-2.0 lcmtypes_kinect bot2-core image-utils bot2-lcmgl-client 
+pods_use_pkg_config_packages ( drc-tld-segmenter lcm glib-2.0 bot2-core image-utils bot2-lcmgl-client 
   bot2-frames
   bot2-param-client opencv perception-opencv-utils)
 
@@ -113,7 +113,7 @@ add_executable(drc-driving-tracker
   tld-tracker.cpp
 )
 
-pods_use_pkg_config_packages ( drc-driving-tracker lcm glib-2.0 lcmtypes_kinect bot2-core image-utils bot2-lcmgl-client 
+pods_use_pkg_config_packages ( drc-driving-tracker lcm glib-2.0 bot2-core image-utils bot2-lcmgl-client 
   bot2-frames bot2-frames_cpp
   bot2-param-client opencv perception-opencv-utils)
 
