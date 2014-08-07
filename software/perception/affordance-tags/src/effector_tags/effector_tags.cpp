@@ -29,6 +29,7 @@
 #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 #include <pointcloud_tools/pointcloud_lcm.hpp> // unpack lidar to xyz
 #include <lcmtypes/bot_core.hpp>
+#include <lcmtypes/multisense.hpp>
 #include "lcmtypes/drc/ee_goal_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
 
