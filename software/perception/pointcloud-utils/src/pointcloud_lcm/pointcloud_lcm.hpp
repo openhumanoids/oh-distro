@@ -14,8 +14,8 @@
 #include "pcl/kdtree/kdtree_flann.h"
 
 #include <image_utils/jpeg.h>
-#include <kinect/kinect-utils.h>
-#include <lcmtypes/kinect_frame_msg_t.h>
+//#include <kinect/kinect-utils.h>
+//#include <lcmtypes/kinect_frame_msg_t.h>
 
 #include <lcm/lcm.h>
 #include <bot_core/bot_core.h>
@@ -26,8 +26,8 @@
 // Multisense Requires:
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include <lcmtypes/multisense.h>
-#include <lcmtypes/multisense.hpp>
+//#include <lcmtypes/multisense.h>
+//#include <lcmtypes/multisense.hpp>
 
 using namespace pcl;
 using namespace pcl::io;
@@ -42,8 +42,9 @@ class pointcloud_lcm {
     void unpack_pointcloud2(const ptools::pointcloud2_t *msg,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
-    void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
-          pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+    // removed to remove kinect dependency
+    //void unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
+    //      pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
     ////////////////////////////////////////////////////////////////////////
     /* moved to multisense_utils
@@ -63,7 +64,8 @@ class pointcloud_lcm {
   private:
     lcm_t *publish_lcm_; 
 
-    KinectCalibration* kcal;
+    // removed to remove kinect dependency
+    //KinectCalibration* kcal;
     int decimate_;
     
     // Multisense Compress:
