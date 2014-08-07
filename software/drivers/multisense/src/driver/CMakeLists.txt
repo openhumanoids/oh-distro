@@ -19,7 +19,7 @@ pods_install_pkg_config_file(multisense_lcm
 
 #############################################################3                                     
 add_executable(drc-multisense driver.cpp )
-target_link_libraries(drc-multisense multisense_lcm )
+target_link_libraries(drc-multisense multisense_lcm boost_system)
 pods_use_pkg_config_packages(drc-multisense lcm   kdl-parser urdf urdf_dom
                              lcmtypes_bot2-core  opencv lcm multisense_lib
                              lcmtypes_multisense) 
