@@ -112,10 +112,12 @@ pods_install_pkg_config_file(inertial-odometry
 ############## Define executables
 
 add_executable(drc-legged-odometry src/test_driver.cpp)
+target_link_libraries(drc-legged-odometry boost_system)
 pods_use_pkg_config_packages(drc-legged-odometry ${REQUIRED_PACKAGES} leg-odometry inertial-odometry)
 pods_install_executables(drc-legged-odometry)
 
 add_executable(drc-foot-state src/foot_contact_classifier_main.cpp)
+target_link_libraries(drc-foot-state boost_system)
 pods_use_pkg_config_packages(drc-foot-state ${REQUIRED_PACKAGES} leg-odometry inertial-odometry)
 pods_install_executables(drc-foot-state)
 
@@ -124,6 +126,7 @@ add_executable(drc-test-cppkf src/test_kalman_filter.cpp)
 pods_use_pkg_config_packages(drc-test-cppkf ${REQUIRED_PACKAGES} leg-odometry kalman-filter inertial-odometry)
 
 add_executable(OrientationComputerUnitTest src/OrientationComputerUnitTest.cpp)
+target_link_libraries(OrientationComputerUnitTest boost_system)
 # This should not be depending on leg-odometry -- need to clear this up this issue
 pods_use_pkg_config_packages(OrientationComputerUnitTest ${REQUIRED_PACKAGES} inertial-odometry leg-odometry)
 
