@@ -67,7 +67,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       options.Kp_accel = 2.0;
       options.debug = false;
       options.use_mex = true;
-      options.contact_threshold = 0.01;
+      options.contact_threshold = 0.001;
       options.output_qdd = true;
       options.solver = 0; % 0 fastqp, 1 gurobi
       options.input_foot_contacts = true;
