@@ -21,7 +21,7 @@ add_executable(stereo-bm-orig
   src/stereo_match.cc
 )
 
-pods_use_pkg_config_packages ( stereo-bm-orig lcm glib-2.0 lcmtypes_kinect bot2-core image-utils bot2-lcmgl-client 
+pods_use_pkg_config_packages ( stereo-bm-orig lcm glib-2.0 bot2-core image-utils bot2-lcmgl-client 
   bot2-frames jpeg-utils
   bot2-param-client opencv perception-opencv-utils lcmtypes_multisense lcmtypes_visualization )
 
