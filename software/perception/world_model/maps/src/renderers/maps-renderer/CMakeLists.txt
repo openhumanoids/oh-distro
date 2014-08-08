@@ -1,6 +1,8 @@
 find_package(PkgConfig REQUIRED)
 add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
-  -Wreturn-type -Wuninitialized -Wunused-variable -std=c++0x)
+  -Wno-unused-local-typedefs -Wno-attributes
+  -Wreturn-type -Wuninitialized -Wunused-variable
+  -std=c++0x)
 
 set(LIBRARY_NAME maps-renderer)
 add_library(${LIBRARY_NAME} SHARED

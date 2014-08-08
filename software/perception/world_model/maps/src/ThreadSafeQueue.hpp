@@ -3,6 +3,8 @@
 
 #include <deque>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 template <typename T>
 class ThreadSafeQueue {

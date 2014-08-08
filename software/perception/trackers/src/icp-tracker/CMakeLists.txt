@@ -44,6 +44,7 @@ pods_install_pkg_config_file(icp-tracker
 ################ APPS ###############################
 
 add_executable(drc-icp-tracker-standalone-app icp-tracker-standalone-app.cpp)
+target_link_libraries (drc-icp-tracker-standalone-app boost_system)
 pods_use_pkg_config_packages(drc-icp-tracker-standalone-app 
   icp-tracker
   bot2-param-client bot2-lcmgl-client

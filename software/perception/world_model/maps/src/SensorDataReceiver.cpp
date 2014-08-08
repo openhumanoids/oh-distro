@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <list>
 #include <thread>
+#include <mutex>
 #include <lcm/lcm-cpp.hpp>
 
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>

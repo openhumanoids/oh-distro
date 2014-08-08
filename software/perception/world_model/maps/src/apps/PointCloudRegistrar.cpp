@@ -1,6 +1,8 @@
 #include <iostream>
 #include <unordered_set>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include <drc_utils/LcmWrapper.hpp>
 #include <ConciseArgs>

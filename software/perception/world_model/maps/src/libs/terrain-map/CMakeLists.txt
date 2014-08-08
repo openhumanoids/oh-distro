@@ -21,7 +21,7 @@ set(REQUIRED_PACKAGES
 )
 pods_use_pkg_config_packages(${LIB_NAME} ${REQUIRED_PACKAGES})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations -Wreturn-type -Wuninitialized -Wunused-variable")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations -Wno-attributes -Wreturn-type -Wuninitialized -Wunused-variable")
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.

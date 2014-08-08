@@ -20,7 +20,7 @@ set(pcl_drc_revision 8326)
 set(pcl_drc_depends Eigen_pod pcl_dep)
 
 set(octomap-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/octomap-drc)
-set(octomap-drc_revision 8298)
+set(octomap-drc_revision 8327)
 set(octomap-drc_depends)
 
 set(occ-map_url https://svn.csail.mit.edu/rrg_pods/Isam_Slam/occ-map)
