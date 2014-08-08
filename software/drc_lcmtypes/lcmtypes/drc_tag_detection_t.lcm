@@ -1,0 +1,17 @@
+package drc;
+
+struct tag_detection_t
+{
+  int64_t utime;
+  int32_t id;
+
+  // world to tag position
+  double pos[3];
+  double orientation[4];
+
+  // pixel coords of tag center
+  float cxy[2];
+
+  // pixel coords of tag corners
+  float p[4][2]; 
+}
