@@ -1,6 +1,8 @@
 #include "LidarAccumulator.hpp"
 
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <bot_param/param_client.h>
 #include <lcm/lcm-cpp.hpp>
 #include <opencv2/opencv.hpp>
