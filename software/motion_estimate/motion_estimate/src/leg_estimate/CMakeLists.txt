@@ -26,6 +26,7 @@ pods_install_pkg_config_file(leg_estimate
 
 ################
 add_executable(se-leg-odometry main.cpp LegOdoWrapper.cpp)
+target_link_libraries(se-leg-odometry boost_system)
 pods_use_pkg_config_packages(se-leg-odometry leg_estimate path-util
    bot2-param-client model-client pointcloud_math bot2-frames_cpp
    )
@@ -37,6 +38,7 @@ pods_install_executables(se-leg-odometry )
 
 ################
 add_executable(se-convert-bdi-into-vicon-frame convert_bdi_into_vicon_frame.cpp )
+target_link_libraries(se-convert-bdi-into-vicon-frame boost_system)
 pods_use_pkg_config_packages(se-convert-bdi-into-vicon-frame  bot2-frames_cpp
     path-util ${REQUIRED_PACKAGES}
     pointcloud_vis  )
@@ -50,6 +52,7 @@ pods_install_executables(se-convert-bdi-into-vicon-frame )
 
 ################
 add_executable(se-init-from-bdi init_from_bdi.cpp )
+target_link_libraries(se-init-from-bdi boost_system)
 pods_use_pkg_config_packages(se-init-from-bdi  bot2-frames_cpp
     path-util ${REQUIRED_PACKAGES}
     pointcloud_vis  )
