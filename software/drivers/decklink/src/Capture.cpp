@@ -41,6 +41,9 @@
 #include <lcm/lcm-cpp.hpp>
 #include <bot_core/timestamp.h>
 #include <jpeg-utils/jpeg-utils.h>
+#include <boost/thread/thread.hpp>
+#include <boost/shared_ptr.hpp>
+#include <queue>
 
 static pthread_mutex_t	g_sleepMutex;
 static pthread_cond_t	g_sleepCond;
@@ -95,6 +98,94 @@ ULONG DeckLinkCaptureDelegate::Release(void)
 }
 
 
+//----------------------------------------------------------------------------
+namespace
+{
+
+template<typename T>
+class SynchronizedQueue
+{
+  public:
+
+    SynchronizedQueue () :
+      queue_(), mutex_(), cond_(), request_to_end_(false), enqueue_data_(true) { }
+
+    void
+    enqueue (const T& data)
+    {
+      boost::unique_lock<boost::mutex> lock (mutex_);
+
+      if (enqueue_data_)
+      {
+        queue_.push (data);
+        cond_.notify_one ();
+      }
+    }
+
+    bool
+    dequeue (T& result)
+    {
+      boost::unique_lock<boost::mutex> lock (mutex_);
+
+      while (queue_.empty () && (!request_to_end_))
+      {
+        cond_.wait (lock);
+      }
+
+      if (request_to_end_)
+      {
+        doEndActions ();
+        return false;
+      }
+
+      result = queue_.front ();
+      queue_.pop ();
+
+      return true;
+    }
+
+    void
+    stopQueue ()
+    {
+      boost::unique_lock<boost::mutex> lock (mutex_);
+      request_to_end_ = true;
+      cond_.notify_one ();
+    }
+
+    unsigned int
+    size ()
+    {
+      boost::unique_lock<boost::mutex> lock (mutex_);
+      return static_cast<unsigned int> (queue_.size ());
+    }
+
+    bool
+    isEmpty () const
+    {
+      boost::unique_lock<boost::mutex> lock (mutex_);
+      return (queue_.empty ());
+    }
+
+  private:
+    void
+    doEndActions ()
+    {
+      enqueue_data_ = false;
+
+      while (!queue_.empty ())
+      {
+        queue_.pop ();
+      }
+    }
+
+    std::queue<T> queue_;              // Use STL queue to store data
+    mutable boost::mutex mutex_;       // The mutex to synchronise on
+    boost::condition_variable cond_;   // The condition to wait for
+
+    bool request_to_end_;
+    bool enqueue_data_;
+};
+
 void convert(IDeckLinkMutableVideoFrame* videoFrame, bot_core::image_t& oImage) {
 
   oImage.width = videoFrame->GetWidth();
@@ -135,6 +226,76 @@ void convert(IDeckLinkMutableVideoFrame* videoFrame, bot_core::image_t& oImage) 
     oImage.data.resize(oImage.size);
     std::copy(data, data + oImage.size, oImage.data.begin());
   }
+}
+
+class FrameData
+{
+public:
+  FrameData()
+  {
+    timestamp = 0;
+    outputFrame = NULL;
+  }
+
+  FrameData(IDeckLinkMutableVideoFrame* frame, int64_t t) : timestamp(t), outputFrame(frame)
+  {
+  }
+  int64_t timestamp;
+  IDeckLinkMutableVideoFrame* outputFrame;
+};
+
+
+class FrameConsumer
+{
+public:
+
+  FrameConsumer()
+  {
+  }
+
+  void Start()
+  {
+    this->Thread = boost::shared_ptr<boost::thread>(
+      new boost::thread(boost::bind(&FrameConsumer::ThreadLoop, this)));
+
+    this->Thread2 = boost::shared_ptr<boost::thread>(
+      new boost::thread(boost::bind(&FrameConsumer::ThreadLoop, this)));
+  }
+
+  void Stop()
+  {
+    this->Queue.stopQueue();
+  }
+
+  void ThreadLoop()
+  {
+    FrameData frameData;
+
+    while (this->Queue.dequeue(frameData))
+    {
+      bot_core::image_t msg;
+      msg.utime = frameData.timestamp;
+
+      double latencyWarningTime = 0.25;
+      double latencyTime = (bot_timestamp_now() - frameData.timestamp)*1e-6;
+      if (latencyTime > latencyWarningTime)
+      {
+        printf("%.3f seconds behind.  %u frames in queue\n", latencyTime, this->Queue.size());
+      }
+      convert(frameData.outputFrame, msg);
+      g_lcm->publish(g_config.m_lcmChannelName, &msg);
+      frameData.outputFrame->Release();
+    }
+  }
+
+  SynchronizedQueue<FrameData> Queue;
+  boost::shared_ptr<boost::thread> Thread;
+  boost::shared_ptr<boost::thread> Thread2;
+};
+
+
+FrameConsumer frameConsumer;
+
 }
 
 
@@ -189,12 +350,7 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
         g_deckLinkOutput->CreateVideoFrame(videoFrame->GetWidth(), videoFrame->GetHeight(), videoFrame->GetWidth()*4, bmdFormat8BitBGRA, bmdFrameFlagDefault, &outputFrame);
         HRESULT convertResult = conversionInst->ConvertFrame(videoFrame, outputFrame);
 
-        bot_core::image_t msg;
-        msg.utime = timestampNow;
-        convert(outputFrame, msg);
-        g_lcm->publish(g_config.m_lcmChannelName, &msg);
-
-        outputFrame->Release();
+        frameConsumer.Queue.enqueue(FrameData(outputFrame, timestampNow));
       }
 
       static int64_t baseTime = timestampNow;
@@ -478,6 +634,9 @@ int main(int argc, char *argv[])
 		if (result != S_OK)
 			goto bail;
 
+
+    frameConsumer.Start();
+
 		result = g_deckLinkInput->StartStreams();
 		if (result != S_OK)
 			goto bail;
@@ -490,6 +649,7 @@ int main(int argc, char *argv[])
 		pthread_mutex_unlock(&g_sleepMutex);
 
 		fprintf(stderr, "Stopping Capture\n");
+    frameConsumer.Stop();
 		g_deckLinkInput->StopStreams();
 		g_deckLinkInput->DisableAudioInput();
 		g_deckLinkInput->DisableVideoInput();
