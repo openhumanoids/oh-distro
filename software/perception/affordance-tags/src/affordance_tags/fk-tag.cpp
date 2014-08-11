@@ -56,13 +56,17 @@ public:
 
 class Tags{
   public:
-    Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_);
+    Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_, int64_t detection_period_);
 
     ~Tags(){
     }
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     bool verbose_;
+
+    int64_t detection_period_;
+    int64_t prev_detection_utime_;
+
     std::string camera_frame_, camera_channel_;
     int width_, height_;
     double fx_, fy_, cx_, cy_;
@@ -85,8 +89,8 @@ class Tags{
     std::map<int,AffTag> tags_; // map of tag details
 };
 
-Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
-    lcm_(lcm_), verbose_(verbose_){
+Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_, int64_t detection_period_):
+    lcm_(lcm_), verbose_(verbose_), detection_period_(detection_period_){
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   botframes_cpp_ = new bot::frames( lcm_ , botparam_ );
 
@@ -120,6 +124,10 @@ Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_):
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), width_, height_); // extra space for stereo tasks
 
   Tags::getTagList();
+
+
+  prev_detection_utime_ = 0;
+
 }
 
 void Tags::getTagList(){
@@ -186,6 +194,20 @@ void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
 
 
 void Tags::processTag(int64_t utime_in){
+  int64_t elapsed_utime = utime_in - prev_detection_utime_;
+
+  if (elapsed_utime < 0){
+    std::cout << "Negative time, reset: " <<  elapsed_utime << "\n";
+    prev_detection_utime_ = 0;
+    elapsed_utime = utime_in - prev_detection_utime_;
+  }
+
+  if (elapsed_utime   <  detection_period_ ){
+    std::cout << "Too recent: " <<  elapsed_utime << "\n";
+    return;
+  }
+  prev_detection_utime_ = utime_in;
+
 
   // TODO: support jpeg compression
 
@@ -276,16 +298,22 @@ void Tags::processTag(int64_t utime_in){
 int main( int argc, char** argv ){
   ConciseArgs parser(argc, argv, "drc-tags");
   bool verbose=FALSE;
+  double period= 0.0001;
   parser.add(verbose, "v", "verbose", "Verbosity");
+  parser.add(period, "p", "period", "[Min] period between detections in sec");
   parser.parse();
   cout << verbose << " is verbose\n";
+  cout << period << " is period between detections\n";
+  int64_t detection_period = period*1E6;
+  cout << detection_period << " is period between detections [usec]\n";
+
 
   boost::shared_ptr<lcm::LCM> lcm(new lcm::LCM);
   if(!lcm->good()){
     std::cerr <<"ERROR: lcm is not good()" <<std::endl;
   }
 
-  Tags app(lcm,verbose);
+  Tags app(lcm,verbose, detection_period);
   cout << "Ready to find tags" << endl << "============================" << endl;
   while(0 == lcm->handle());
   return 0;
