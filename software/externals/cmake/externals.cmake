@@ -65,7 +65,7 @@ set(bullet_depends)
 
 set(fovis-git_url https://svn.csail.mit.edu/drc/trunk/software/externals/fovis-git)
 set(fovis-git_revision 8298)
-set(fovis-git_depends libbot-drc Eigen_pod kinect)
+set(fovis-git_depends libbot-drc Eigen_pod )
 
 set(estimate-pose_url https://svn.csail.mit.edu/rrg_pods/estimate-pose)
 set(estimate-pose_revision 827)
@@ -128,19 +128,19 @@ set(externals
   octomap-drc
   occ-map
   common_utils
-  scanmatch
+  #scanmatch
   jpeg-utils
   isam_include
   visualization
-  velodyne
-  kinect
+  #velodyne
+  #kinect
   microstrain_comm
   fovis-git
   estimate-pose
   vicon
-  vicon-drc
-  camunits-wrapper
-  camunits-extra-wrapper
+  #vicon-drc
+  #camunits-wrapper
+  #camunits-extra-wrapper
   apriltags
   flycapture
   )
