@@ -1473,6 +1473,12 @@
     <child link="left_pointer_tip"/>
   </joint>
   <link name="left_pointer_tip"/>
+  <joint name="left_pointer_end_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.16 0"/>
+    <parent link="l_hand_force_torque"/>
+    <child link="left_pointer_end"/>
+  </joint>
+  <link name="left_pointer_end"/>
   <joint name="right_hook_hand_joint" type="fixed">
     <origin rpy="1.57079 3.14159 3.14159" xyz="0 0.0 0.0"/>
     <parent link="r_hand_force_torque"/>
@@ -1557,4 +1563,10 @@
     <child link="right_pointer_tip"/>
   </joint>
   <link name="right_pointer_tip"/>
+  <joint name="right_pointer_end_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.16 0"/>
+    <parent link="r_hand_force_torque"/>
+    <child link="right_pointer_end"/>
+  </joint>
+  <link name="right_pointer_end"/>
 </robot>
