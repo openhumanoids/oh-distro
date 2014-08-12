@@ -17,12 +17,12 @@
 // BENCHMARK as of jan 2013:
 // - with convex hull models: (about 20Hz, sending mesh as GL_POLYGONS)
 //   component solve fk  , createScene  render  , sendOutput
-//   fraction: 0.00564941, 0.0688681  , 0.185647, 0.739836, 
+//   fraction: 0.00564941, 0.0688681  , 0.185647, 0.739836,
 //   time sec: 0.00031   , 0.003779   , 0.010187, 0.040597,
 // - with original models: (including complex head model) (about 5Hz)
 //   component solve fk  , createScene  render  , sendOutput
-//   fraction: 0.0086486 , 0.799919   , 0.072785, 0.118647, 
-//   time sec: 0.001635  , 0.151223   , 0.01376 , 0.02243, 
+//   fraction: 0.0086486 , 0.799919   , 0.072785, 0.118647,
+//   time sec: 0.001635  , 0.151223   , 0.01376 , 0.02243,
 // - These numbers are for RGB. Outputing Gray reduces sendOutput by half
 //   so sending convex works at about 35Hz
 
@@ -30,18 +30,18 @@
 // BENCHMARK as of feb 2013: (1024x544pixels, Greyscale)
 // - with convex hull models: (excluding complex head model) (about 33Hz, rendering mesh as GL_TRIANGLES, also adding 5 affordances)
 //   component solve fk  , createScene  render  , sendOutput
-//   fraction: 0.0154348, 0.116463, 0.324849, 0.543253, 
-//   time sec: 0.000473, 0.003569, 0.009955, 0.016648, 
+//   fraction: 0.0154348, 0.116463, 0.324849, 0.543253,
+//   time sec: 0.000473, 0.003569, 0.009955, 0.016648,
 // - with original models: (excluding complex head model) (about 20Hz, rendering mesh as GL_TRIANGLES, also adding 5 affordances)
 //   component solve fk, createScene, render, sendOutput
-//   fraction: 0.0103196 0.331993 0.230543 0.427145, 
+//   fraction: 0.0103196 0.331993 0.230543 0.427145,
 //   time sec: 0.000526 0.016922 0.011751 0.021772,   ... creating Scene is much quicker
 //
 // BENCHMARK as of feb 2013: (1024x544pixels, Greyscale and ZLIB compression)
 // - with convex hull models: (about 50Hz)
 // - with original models: (excluding complex head model) (about 40Hz, rendering mesh as GL_TRIANGLES, also adding 5 affordances)
 //   component solve fk, createScene, render, sendOutput
-//   fraction: 0, 0.0146542, 0.459086, 0.384564, 0.141696, 
+//   fraction: 0, 0.0146542, 0.459086, 0.384564, 0.141696,
 //   time sec: 0, 0.000375, 0.011748, 0.009841, 0.003626, ... creating Scene is much quicker AND transmission as zip images is quick
 /*
 #include <iostream>
@@ -82,33 +82,33 @@ using namespace boost::assign; // bring 'operator+()' into scope
 #define LINK_OFFSET 128
 
 
-Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, 
-           std::string camera_channel_, int output_color_mode_, 
+Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_,
+           std::string camera_channel_, int output_color_mode_,
            bool use_convex_hulls_, string camera_frame_,
-           CameraParams camera_params_, bool verbose_):          
-           lcm_(lcm_), output_color_mode_(output_color_mode_), 
+           CameraParams camera_params_, bool verbose_):
+           lcm_(lcm_), output_color_mode_(output_color_mode_),
            use_convex_hulls_(use_convex_hulls_),
-           init_rstate_(false), camera_channel_(camera_channel_), 
+           init_rstate_(false), camera_channel_(camera_channel_),
            camera_frame_(camera_frame_), camera_params_(camera_params_),
            update_robot_state_(true), renderer_robot_(true),
            verbose_(verbose_){
 
   // Construct the simulation method:
   std::string path_to_shaders = string(getBasePath()) + "/bin/";
-  simexample = SimExample::Ptr (new SimExample (argc, argv, 
-                                                camera_params_.height, camera_params_.width , 
+  simexample = SimExample::Ptr (new SimExample (argc, argv,
+                                                camera_params_.height, camera_params_.width ,
                                                 lcm_, output_color_mode_, path_to_shaders));
-  simexample->setCameraIntrinsicsParameters (camera_params_.width, camera_params_.height, 
-                                             camera_params_.fx, camera_params_.fy, 
-                                             camera_params_.cx, camera_params_.cy);             
-             
+  simexample->setCameraIntrinsicsParameters (camera_params_.width, camera_params_.height,
+                                             camera_params_.fx, camera_params_.fy,
+                                             camera_params_.cx, camera_params_.cy);
+
   model_ = boost::shared_ptr<ModelClient>(new ModelClient(lcm_->getUnderlyingLCM(), 0));
   urdf_xml_string_ = model_->getURDFString();
   prepareModel();
-             
+
   // LCM subscriptions:
-  lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);  
-  lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this);  
+  lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);
+  lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordancePlusHandler,this);
 
   // Visual I-O:
   float colors_b[] ={0.0,0.0,0.0};
@@ -130,7 +130,7 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_,
 
   // Keep a mesh for the affordances:
   pcl::PolygonMesh::Ptr combined_aff_mesh_ptr_temp(new pcl::PolygonMesh());
-  combined_aff_mesh_ = combined_aff_mesh_ptr_temp;   
+  combined_aff_mesh_ = combined_aff_mesh_ptr_temp;
   aff_mesh_filled_=false;
 }
 
@@ -147,21 +147,20 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
   pcl::PolygonMesh mesh;
   pcl::io::loadPolygonFile(  filename    ,mesh);
   pcl::PolygonMesh::Ptr mesh_ptr (new pcl::PolygonMesh(mesh));
-  cout << "read in :" << filename << "\n"; 
-  //state->model = mesh_ptr;  
+  //state->model = mesh_ptr;
   return mesh_ptr;
 }
 
 Eigen::Isometry3d URDFPoseToEigen(urdf::Pose& pose_in){
   Eigen::Isometry3d pose_out = Eigen::Isometry3d::Identity();
-  
+
   pose_out.translation()  << pose_in.position.x,
                           pose_in.position.y,
                           pose_in.position.z;
-  pose_out.rotate( Eigen::Quaterniond(pose_in.rotation.w, 
+  pose_out.rotate( Eigen::Quaterniond(pose_in.rotation.w,
                                     pose_in.rotation.x,
                                     pose_in.rotation.y,
-                                    pose_in.rotation.z) );   
+                                    pose_in.rotation.z) );
   return pose_out;
 }
 
@@ -187,14 +186,14 @@ void Pass::prepareModel(){
   typedef map<string, boost::shared_ptr<urdf::Link> > links_mapType;
   
   int i =0;
-  for(links_mapType::const_iterator it =  links_map_.begin(); it!= links_map_.end(); it++){ 
+  for(links_mapType::const_iterator it =  links_map_.begin(); it!= links_map_.end(); it++){
     cout << it->first << endl;
     if(it->second->visual){
       std::cout << it->first<< " link" << it->second->visual->geometry->type << " type\n"; // visual type
-        
+
       Eigen::Isometry3d origin = Eigen::Isometry3d::Identity();
       pcl::PolygonMesh::Ptr mesh_ptr(new pcl::PolygonMesh());
-      
+
       // For each visual element within the link geometry:
       typedef map<string, boost::shared_ptr<vector<boost::shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
       visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
@@ -202,7 +201,7 @@ void Pass::prepareModel(){
         vector<boost::shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
         boost::shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
         Eigen::Isometry3d visual_origin = URDFPoseToEigen( visuals[iv]->origin );
-        
+
         if  (geom->type == urdf::Geometry::MESH){
           boost::shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>( geom ));
           // TODO: Verify the existance of the file:
@@ -217,7 +216,7 @@ void Pass::prepareModel(){
           pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, visual_origin_f.translation(), visual_origin_quat);  
           pcl::toPCLPointCloud2 (mesh_cloud_1st, this_mesh->cloud);  
           simexample->mergePolygonMesh(mesh_ptr, this_mesh );
-          
+
         }else if(geom->type == urdf::Geometry::BOX){
           boost::shared_ptr<urdf::Box> box(dynamic_pointer_cast<urdf::Box>( geom ));
           simexample->mergePolygonMesh(mesh_ptr, 
@@ -244,22 +243,22 @@ void Pass::prepareModel(){
         simexample->setPolygonMeshColor(mesh_ptr, LINK_OFFSET + (int) i, 0, 0 );
       }else{ // black or white
         simexample->setPolygonMeshColor(mesh_ptr, 255,0,0 ); // last two are not used
-      }          
-      
+      }
+
 
       PolygonMeshStruct mesh_struct;
-      mesh_struct.origin = origin;          
+      mesh_struct.origin = origin;
       mesh_struct.link_name = it->first ;
       mesh_struct.polygon_mesh = mesh_ptr;
       simexample->polymesh_map_.insert(make_pair( it->first , mesh_struct));
-      
+
       i++;
     }
   }
-  
+
   //////////////////////////////////////////////////////////////////
   // Get a urdf Model from the xml string and get all the joint names.
-  urdf::Model robot_model; 
+  urdf::Model robot_model;
   if (!robot_model.initString( urdf_xml_string_)){
     cerr << "ERROR: Could not generate robot model" << endl;
   }
@@ -273,7 +272,7 @@ void Pass::prepareModel(){
 }
 
 
-void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){ 
+void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, pcl::PolygonMesh::Ptr &mesh_out){
     std::map<string,double> am;
     for (size_t j=0; j< affplus.aff.nparams; j++){
       am[ affplus.aff.param_names[j] ] = affplus.aff.params[j];
@@ -281,10 +280,9 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
 
     //Eigen::Isometry3d transform = affutils.getPose(affplus.aff.param_names, affplus.aff.params);
     Eigen::Isometry3d transform = affutils.getPose(affplus.aff.origin_xyz, affplus.aff.origin_rpy );
-    
 
     string otdf_type = affplus.aff.otdf_type;
-    
+
     if (otdf_type == "box"){
       //cout  << aff_uid << " is a box\n";
       mesh_out = prim_->getCubeWithTransform(transform,am.find("lX")->second, am.find("lY")->second, am.find("lZ")->second);
@@ -303,23 +301,48 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
     }else if(otdf_type == "plane"){
       //cout  << aff_uid << " is a plane ["<< affplus.points.size() << " pts and " << affplus.triangles.size() << " tri]\n";
       mesh_out = affutils.getMeshFromAffordance(affplus.points, affplus.triangles,transform);
-    }else if(otdf_type == "firehose"){ 
+    }else if(otdf_type == "firehose"){
       // the simple two cylinder model maurice used in dec 2013
       // NB: I don't support otdf - so this is hard coded here for now
       // cout  << aff_uid << " is a firehose\n";
       mesh_out = prim_->getCylinderWithTransform(transform, 0.0266, 0.0266, 0.042 );
       Eigen::Isometry3d trans_2nd = Eigen::Isometry3d::Identity();
-      trans_2nd.translation()  << 0,0, 0.033;      
+      trans_2nd.translation()  << 0,0, 0.033;
       trans_2nd = transform * trans_2nd;
       simexample->mergePolygonMesh(mesh_out, prim_->getCylinderWithTransform(trans_2nd, 0.031, 0.031, 0.024 ) );
-    }else if (otdf_type == "wye"){ // temporary door handle wye in nov 2013
-      //cout  << aff_uid << " is a box\n";
-      mesh_out = prim_->getCubeWithTransform(transform,0.01, 0.13, 0.005);
-    }else if(otdf_type == "wye_mesh"){ 
+    }else if(otdf_type == "dewalt_button"){
+      //cout  << aff_uid << " is a wye_mesh\n";
+      std::string fname = string(getenv( "DRC_BASE" )) + string( "/software/models/mit_gazebo_models/otdf/dewalt_button.obj");
+      mesh_out = getPolygonMesh(fname);
+
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+
+      // If the mesh is only XYZ, then manually copy into XYZRGB
+      if (mesh_out->cloud.fields.size() == 3){
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz (new pcl::PointCloud<pcl::PointXYZ> ());
+        pcl::fromROSMsg(mesh_out->cloud, *cloud_xyz);
+        cloud->points.resize(cloud_xyz->points.size());
+        for (size_t i = 0; i < cloud_xyz->points.size(); i++) {
+          cloud->points[i].x = cloud_xyz->points[i].x;
+          cloud->points[i].y = cloud_xyz->points[i].y;
+          cloud->points[i].z = cloud_xyz->points[i].z;
+        }
+      }else{
+        pcl::fromROSMsg(mesh_out->cloud, *cloud);
+      }
+
+      // Apply transform to polymesh:
+      Eigen::Isometry3f pose_f = transform.cast<float>();
+      Eigen::Quaternionf quat_f(pose_f.rotation());
+      pcl::transformPointCloud (*cloud, *cloud,
+      pose_f.translation(), quat_f); // !! modifies cloud
+      pcl::toROSMsg(*cloud, mesh_out->cloud);
+    }else if(otdf_type == "wye_mesh"){
       //cout  << aff_uid << " is a wye_mesh\n";
       std::string fname = string(getenv( "DRC_BASE" )) + string( "/software/models/mit_gazebo_models/otdf/wye.obj");
       mesh_out = getPolygonMesh(fname);
-      
+      std::cout << "more stuff\n";
+
       // Apply transform to polymesh:
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
       pcl::fromPCLPointCloud2(mesh_out->cloud, *cloud);  
@@ -332,7 +355,7 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
     }else{
       cout  << aff_uid << " is a not recognised ["<< otdf_type <<"] not supported yet\n";
     }
-    
+
     // demo of bounding boxes: (using radius as x and y dimensions
     //combined_mesh_ptr_temp = prim_->getCubeWithTransform(transform,am.find("radius")->second, am.find("radius")->second, am.find("length")->second);
 
@@ -341,12 +364,12 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
       int j =aff_uid%(simexample->colors_.size()/3);
       simexample->setPolygonMeshColor(mesh_out, simexample->colors_[j*3], simexample->colors_[j*3+1], simexample->colors_[j*3+2] );
     }else if(output_color_mode_==1){
-      simexample->setPolygonMeshColor(mesh_out, 
+      simexample->setPolygonMeshColor(mesh_out,
                                       AFFORDANCE_OFFSET + aff_uid,0,0 ); // using red field as gray, last digits ignored
     }else{
       simexample->setPolygonMeshColor(mesh_out, 255,0,0 ); // white (last digits ignored
     }
-}    
+}
 
 
 
@@ -354,14 +377,14 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
 // Receive affordances and creates a combined mesh in world frame
 // TODO: properly parse the affordances
 void Pass::affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg){
-  
+
   if (msg->naffs ==0){
-    cout << "got "<< msg->naffs <<" affs [won't add anything]\n"; 
+    cout << "got "<< msg->naffs <<" affs [won't add anything]\n";
     aff_mesh_filled_=false;
     return;
   }
-  cout << "got "<< msg->naffs <<" affs @ "<< msg->utime <<"\n"; 
-  
+  cout << "got "<< msg->naffs <<" affs @ "<< msg->utime <<"\n";
+
   pcl::PolygonMesh::Ptr combined_aff_mesh_temp(new pcl::PolygonMesh());
   combined_aff_mesh_ = combined_aff_mesh_temp;
   for (size_t i=0; i < msg->affs_plus.size(); i++){
@@ -379,32 +402,32 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
     std::cout << "skipping robot state update\n";
     return;
   }
-  
-  // Extract World to Body TF:  
+
+  // Extract World to Body TF:
   world_to_body_.setIdentity();
   world_to_body_.translation()  << msg->pose.translation.x, msg->pose.translation.y, msg->pose.translation.z;
-  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x, 
+  Eigen::Quaterniond quat = Eigen::Quaterniond(msg->pose.rotation.w, msg->pose.rotation.x,
                                                msg->pose.rotation.y, msg->pose.rotation.z);
-  world_to_body_.rotate(quat);   
+  world_to_body_.rotate(quat);
 
   jointpos_.clear();
   for (int i=0; i< msg->num_joints; i++) //cast to uint to suppress compiler warning
-    jointpos_.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));  
-  
+    jointpos_.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
+
   init_rstate_=true; // first robot state handled... ready to handle data
-}  
-  
+}
+
 bool Pass::createMask(int64_t msg_time){
   if (!init_rstate_){
     std::cout << "Either ROBOT_MODEL or EST_ROBOT_STATE has not been received, ignoring image\n";
     return false;
-  }  
-  
+  }
+
   #if DO_TIMING_PROFILE
     std::vector<int64_t> tic_toc;
     tic_toc.push_back(_timestamp_now());
   #endif
-  
+
 
   // 1. Determine the Camera in World Frame:
   // 1a. Solve for Forward Kinematics
@@ -417,8 +440,8 @@ bool Pass::createMask(int64_t msg_time){
   }else{
     cerr << "Error: could not calculate forward kinematics!" <<endl;
     return false;
-  }    
-  
+  }
+
   // 1b. Determine World to Camera Pose:
   Eigen::Isometry3d world_to_camera;
   map<string, drc::transform_t>::const_iterator transform_it;
@@ -429,18 +452,18 @@ bool Pass::createMask(int64_t msg_time){
     body_to_camera.translation()  << transform_it->second.translation.x, transform_it->second.translation.y, transform_it->second.translation.z;
     Eigen::Quaterniond quat = Eigen::Quaterniond( transform_it->second.rotation.w, transform_it->second.rotation.x,
                               transform_it->second.rotation.y, transform_it->second.rotation.z );
-    body_to_camera.rotate(quat);    
+    body_to_camera.rotate(quat);
     world_to_camera = world_to_body_*body_to_camera;
   }
-  
+
   // 2. Determine all Body-to-Link transforms for Visual elements:
   gl_robot_->set_state( EigenToKDL(world_to_body_), jointpos_);
   std::vector<visualization_utils::LinkFrameStruct> link_tfs= gl_robot_->get_link_tfs();
-  
-  
+
+
   // Loop through joints and extract world positions:
   std::vector<Eigen::Isometry3d> link_tfs_e;
-  int counter =msg_time;  
+  int counter =msg_time;
   std::vector<Isometry3dTime> world_to_jointTs;
   std::vector< int64_t > world_to_joint_utimes;
   std::vector< std::string > link_names;
@@ -449,56 +472,56 @@ bool Pass::createMask(int64_t msg_time){
     body_to_joint.setIdentity();
     body_to_joint.translation() << link_tfs[i].frame.p[0] , link_tfs[i].frame.p[1] ,link_tfs[i].frame.p[2]; // 0.297173
     double x,y,z,w;
-    link_tfs[i].frame.M.GetQuaternion(x,y,z,w);    
+    link_tfs[i].frame.M.GetQuaternion(x,y,z,w);
     Eigen::Quaterniond m;
     m  = Eigen::Quaterniond(w,x,y,z);
     body_to_joint.rotate(m);
-    
+
     link_names.push_back( link_tfs[i].name  );
     link_tfs_e.push_back( body_to_joint);
-    
+
     // For visualization only:
     world_to_joint_utimes.push_back( counter);
     Isometry3dTime body_to_jointT(counter, body_to_joint);
     world_to_jointTs.push_back(body_to_jointT);
     counter++;
   }
-  
+
   if(verbose_){
     pc_vis_->pose_collection_to_lcm_from_list(9998, world_to_jointTs); // all joints in world frame
-    pc_vis_->text_collection_to_lcm(9997, 9998, "IPass - Frames [Labels]", link_names, world_to_joint_utimes );    
+    pc_vis_->text_collection_to_lcm(9997, 9998, "IPass - Frames [Labels]", link_names, world_to_joint_utimes );
 
     cout << "link_tfs size: " << link_tfs.size() <<"\n";
     for (size_t i=0; i < link_tfs.size() ; i ++){
       double x,y,z,w;
-      link_tfs[i].frame.M.GetQuaternion(x,y,z,w);    
-      cout << i << ": " <<link_tfs[i].name << ": " 
+      link_tfs[i].frame.M.GetQuaternion(x,y,z,w);
+      cout << i << ": " <<link_tfs[i].name << ": "
         << link_tfs[i].frame.p[0]<< " " << link_tfs[i].frame.p[1] << " " << link_tfs[i].frame.p[2]
         << " | " << w << " " << x << " " << y << " " << z << "\n";
     }
     for (size_t i=0; i < link_tfs_e.size() ; i ++){
       std::stringstream ss;
       print_Isometry3d(link_tfs_e[i], ss);
-      cout << i << ": " << link_names[i] << ": " << ss.str() << "\n";  
-    }    
+      cout << i << ": " << link_names[i] << ": " << ss.str() << "\n";
+    }
   }
-  
+
   if (verbose_){
     Isometry3dTime world_to_cameraTorig = Isometry3dTime( msg_time, world_to_camera);
     pc_vis_->pose_to_lcm_from_list(9995, world_to_cameraTorig);
   }
-  
-  
+
+
   // NBNB I supply camera poses with x forward.
   // This rotates typical camera (z forward) to the camera into correct frame:
   // TODO: Fix this or determine the cause:
   Eigen::Isometry3d fixrotation_pose;
   fixrotation_pose.setIdentity();
-  fixrotation_pose.translation() << 0,0,0;    
+  fixrotation_pose.translation() << 0,0,0;
   Eigen::Quaterniond fix_r = euler_to_quat(90.0*M_PI/180.0, -90.0*M_PI/180.0, 0.0*M_PI/180.0 );
-  fixrotation_pose.rotate(fix_r);    
+  fixrotation_pose.rotate(fix_r);
   world_to_camera = world_to_camera*fixrotation_pose;
-  
+
   if (verbose_){
     std::stringstream ss;
     print_Isometry3d(world_to_camera, ss);
@@ -507,11 +530,11 @@ bool Pass::createMask(int64_t msg_time){
     Isometry3dTime world_to_cameraT = Isometry3dTime(msg_time, world_to_camera);
     pc_vis_->pose_to_lcm_from_list(9999, world_to_cameraT);
   }
-    
+
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
   #endif
-  
+
   simexample->resetScene();
   if(renderer_robot_){ // Pull the trigger and render scene:
     simexample->createScene(link_names, link_tfs_e);
@@ -522,29 +545,29 @@ bool Pass::createMask(int64_t msg_time){
   if (verbose_){ // Visualize the entire world thats about to be renderered: NBNB THIS IS REALLY USEFUL FOR DEBUGGING
     Eigen::Isometry3d null_pose;
     null_pose.setIdentity();
-    Isometry3dTime null_poseT = Isometry3dTime(msg_time, null_pose);  
+    Isometry3dTime null_poseT = Isometry3dTime(msg_time, null_pose);
     pc_vis_->pose_to_lcm_from_list(9994, null_poseT);
     pc_vis_->mesh_to_lcm_from_list(9993, simexample->getCombinedMesh() , msg_time , msg_time);
   }
   simexample->addScene();
-  
+
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
   #endif
-  
+
   simexample->doSim(world_to_camera);
-  
+
   #if DO_TIMING_PROFILE
     tic_toc.push_back(_timestamp_now());
     display_tic_toc(tic_toc,"createMask");
-  #endif  
-    
+  #endif
+
   return true;
 }
 
 
 // Output the simulated output to file/lcm:
-void Pass::sendOutput(int64_t utime){ 
+void Pass::sendOutput(int64_t utime){
   bool do_timing=false;
   std::vector<int64_t> tic_toc;
   if (do_timing){
@@ -554,16 +577,16 @@ void Pass::sendOutput(int64_t utime){
   //imgutils_->sendImage( simexample->getDepthBufferAsColor(), utime, camera_params_.width, camera_params_.height, 3, string( camera_channel_ +  "_DEPTH") );
   if (output_color_mode_==0){
     // Zipping assumes gray for now - so don't zup for color (which will not be primarily be used:
-    imgutils_->sendImage( simexample->getColorBuffer(3), utime, 
-                          camera_params_.width, camera_params_.height, 3, 
+    imgutils_->sendImage( simexample->getColorBuffer(3), utime,
+                          camera_params_.width, camera_params_.height, 3,
                           string( camera_channel_ +  "_MASK") );
   }else{
     //imgutils_->sendImage( simexample->getColorBuffer(1), utime, camera_params_.width, camera_params_.height, 1, string( camera_channel_ +  "_MASK")  );
-    imgutils_->sendImageZipped( simexample->getColorBuffer(1), utime, 
-                                camera_params_.width, camera_params_.height, 1, 
+    imgutils_->sendImageZipped( simexample->getColorBuffer(1), utime,
+                                camera_params_.width, camera_params_.height, 1,
                                 string( camera_channel_ +  "_MASKZIPPED")  );
   }
-  
+
   if (do_timing==1){
     tic_toc.push_back(_timestamp_now());
     display_tic_toc(tic_toc,"sendOutput");
@@ -571,7 +594,7 @@ void Pass::sendOutput(int64_t utime){
 }
 
 // Blend the simulated output with the input image:
-void Pass::sendOutputOverlay(int64_t utime, uint8_t* img_buf){ 
+void Pass::sendOutputOverlay(int64_t utime, uint8_t* img_buf){
 
   float blend = 0.5;
   if (1==1){
@@ -582,23 +605,23 @@ void Pass::sendOutputOverlay(int64_t utime, uint8_t* img_buf){
       img_buf[i*3+2] =int( blend*img_buf[i*3+2] + (1.0-blend)*mask_buf[i] );
     }
   }else{
-    
-    
-    
+
+
+
     uint8_t* mask_buf = simexample->getColorBuffer(3);
     for (size_t i=0; i < camera_params_.width * camera_params_.height; i++){
       img_buf[i*3]   = int( blend*img_buf[i*3]   + (1.0-blend)*mask_buf[i*3]   );
       img_buf[i*3+1] = int( blend*img_buf[i*3+1] + (1.0-blend)*mask_buf[i*3+1] );
       img_buf[i*3+2] = int( blend*img_buf[i*3+2] + (1.0-blend)*mask_buf[i*3+2] );
-    }    
+    }
   }
-  
-  
+
+
   // Zipping assumes gray for now - so don't zup for color (which will not be primarily be used:
-  imgutils_->sendImage( img_buf, utime, 
-                          camera_params_.width, camera_params_.height, 3, 
+  imgutils_->sendImage( img_buf, utime,
+                          camera_params_.width, camera_params_.height, 3,
                           string( camera_channel_ +  "_OVERLAY") );
-  
-  
+
+
 
 }
