@@ -101,6 +101,7 @@ set(snopt_depends)
 
 set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)
 set(gurobi_revision b95a186b4d988db00ada55bd8efb08c651a83fe7)
+set(gurobi_environment_args GUROBI_DISTRO=${CMAKE_CURRENT_SOURCE_DIR}/cmake/gurobi5.6.2_linux64.tar.gz)
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
@@ -169,7 +170,7 @@ macro(add_svn_external proj)
     DEPENDS ${${proj}_depends}
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
-    BUILD_COMMAND $(MAKE) BUILD_PREFIX=${CMAKE_INSTALL_PREFIX} BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    BUILD_COMMAND $(MAKE) BUILD_PREFIX=${CMAKE_INSTALL_PREFIX} BUILD_TYPE=${CMAKE_BUILD_TYPE}  ${${proj}_environment_args}
     BUILD_IN_SOURCE 1
     SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
     )
@@ -182,7 +183,7 @@ macro(add_git_external proj)
     DEPENDS ${${proj}_depends}
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
-    BUILD_COMMAND $(MAKE) BUILD_PREFIX=${CMAKE_INSTALL_PREFIX} BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    BUILD_COMMAND $(MAKE) BUILD_PREFIX=${CMAKE_INSTALL_PREFIX} BUILD_TYPE=${CMAKE_BUILD_TYPE} ${${proj}_environment_args}
     BUILD_IN_SOURCE 1
     SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
     )

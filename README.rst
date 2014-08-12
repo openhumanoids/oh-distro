@@ -114,25 +114,13 @@ following commands.
 Install Matlab
 --------------
 
-Install Matlab r2014a
-
-CURRENTLY OUT OF DATE r2012b 64bit from TIG:
-CURRENTLY OUT OF DATE https://tig.csail.mit.edu/software-distribution/Linux/MathWorks/R2012b/R2012b-linux64.zip
-
-Unzip the file you just downloaded (e.g., unzip ./R2014a-linux64.zip)
+Download Matlab r2014a from Mathworks.com. Unzip the file you just downloaded (e.g., unzip ./R2014a-linux64.zip)
 cd into the resulting directory
 sudo ./install
 When prompted for how to install, choose "Log in with a MathWorks Account."
 
 Choose a "Typical" install and click next through the rest of the process. You will need to enter your Mathworks username and password during the install process, and you should see a single license that you can use for the install (this comes from a lookup of the activation key).
 You should have a functional MATLAB in /usr/local/MATLAB/R2014a/bin now. You can either add this directory to your PATH environment variable (e.g. in ~/.bashrc) or you can make a symlink in /usr/local/bin/ that points to the MATLAB binary - sudo ln -s /usr/local/MATLAB/R2014a/bin/matlab /usr/local/bin/matlab. If you put it in .bashrc, you'll need to source that file before matlab will be in your path (or, just start a new shell) 
-
-
-
-Follow the instructions on the DRC wiki for Matlab install with
-activation code:
-
-https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Installing\_MIT\_DRC#Install\_MATLAB\_and\_Drake
 
 After installing MATLAB, two of the symlinks for libraries need to be changed:
 
@@ -157,6 +145,14 @@ Now, modify the symlinks:
    sudo ln -s /usr/lib/x86_64-linux-gnu/libgfortran.so.3.0.0 libgfortran.so.3
    sudo rm libstdc++.so.6
    sudo ln -s /usr/lib/gcc/x86_64-linux-gnu/4.4/libstdc++.so libstdc++.so.6
+
+Obtain License for Mosek
+------------------------
+
+Mosek is used in the footstep planner. Obtain an academic licence from 
+http://license.mosek.com/academic
+Check your email and place your license in ~/mosek/mosek.lic
+The Mosek code is checked out as part of the project externasl
 
 
 Build Instructions
@@ -218,16 +214,6 @@ Run make to build externals and then the main codebase:
 Additional Optional Modules
 ===========================
 
-GUROBI License
---------------
-
-Follow the install instructions on the wiki. The wiki page includes
-instructions for setting gurobi related environment variables in
-~/.bashrc. You should skip these steps. Instead, follow the steps in
-this README under Environment Setup.
-
-https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Installing\_GUROBI
-
 Simulation Dependencies
 ----------------
 
@@ -245,3 +231,17 @@ After you have installed ros packages you should run these commands:::
 
     sudo rosdep init
     rosdep update
+
+
+Out of Date Instructions
+========================
+
+GUROBI License
+--------------
+
+Follow the install instructions on the wiki. The wiki page includes
+instructions for setting gurobi related environment variables in
+~/.bashrc. You should skip these steps. Instead, follow the steps in
+this README under Environment Setup.
+
+https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Installing\_GUROBI
