@@ -90,10 +90,9 @@ installing packages on Ubuntu. Install with the following commands:
 
     sudo add-apt-repository ppa:goby-dev/ppa
     sudo add-apt-repository ppa:tes/drc
-    sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
     sudo apt-get update
 
-    sudo apt-get install build-essential cmake debhelper freeglut3-dev gtk-doc-tools libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-random-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libfreeimage-dev libgoby2-dev libglew-dev libgtkmm-2.4-dev libltdl-dev libgsl0-dev libportmidi-dev libprotobuf-dev libprotoc-dev libqt4-dev libqwt-dev libtar-dev libtbb-dev libtinyxml-dev libxml2-dev ncurses-dev openni-dev pkg-config protobuf-compiler python-matplotlib libvtk5.8 libvtk5-dev libvtk5-qt4-dev libqhull-dev python-pygame doxygen mercurial libglib2.0-dev openjdk-6-jdk python-dev gfortran f2c libf2c2-dev spacenavd libspnav-dev python-numpy python-scipy python-vtk python-pip libgmp3-dev libblas-dev liblapack-dev libv4l-dev
+    sudo apt-get install build-essential cmake debhelper freeglut3-dev gtk-doc-tools libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-random-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libfreeimage-dev libgoby2-dev libglew-dev libgtkmm-2.4-dev libltdl-dev libgsl0-dev libportmidi-dev libprotobuf-dev libprotoc-dev libqt4-dev libqwt-dev libtar-dev libtbb-dev libtinyxml-dev libxml2-dev ncurses-dev pkg-config protobuf-compiler python-matplotlib libvtk5.8 libvtk5-dev libvtk5-qt4-dev libqhull-dev python-pygame doxygen mercurial libglib2.0-dev openjdk-6-jdk python-dev gfortran f2c libf2c2-dev spacenavd libspnav-dev python-numpy python-scipy python-vtk python-pip libgmp3-dev libblas-dev liblapack-dev libv4l-dev
 
     sudo pip install --upgrade scipy
 
@@ -101,14 +100,13 @@ installing packages on Ubuntu. Install with the following commands:
 LCM Dependency
 --------------
 
-LCM is a required dependency. Install LCM v0.9 from source with the
-following commands:
+LCM (v1.1.0) is a required dependency which must be installed from source. First download lcm-1.1.0.tar.gz from https//lcm.googlecode.com. Then install LCM with the
+following commands.
 
 ::
 
-    wget https://lcm.googlecode.com/files/lcm-0.9.1.tar.gz
-    tar -xzf lcm-0.9.1.tar.gz
-    cd lcm-0.9.1
+    tar -xzf lcm-1.1.0.tar.gz
+    cd lcm-1.1.0
     ./configure
     make
     sudo make install
@@ -116,9 +114,20 @@ following commands:
 Install Matlab
 --------------
 
-Install Matlab r2012b 64bit from TIG:
+Install Matlab r2014a
 
-https://tig.csail.mit.edu/software-distribution/Linux/MathWorks/R2012b/R2012b-linux64.zip
+CURRENTLY OUT OF DATE r2012b 64bit from TIG:
+CURRENTLY OUT OF DATE https://tig.csail.mit.edu/software-distribution/Linux/MathWorks/R2012b/R2012b-linux64.zip
+
+Unzip the file you just downloaded (e.g., unzip ./R2014a-linux64.zip)
+cd into the resulting directory
+sudo ./install
+When prompted for how to install, choose "Log in with a MathWorks Account."
+
+Choose a "Typical" install and click next through the rest of the process. You will need to enter your Mathworks username and password during the install process, and you should see a single license that you can use for the install (this comes from a lookup of the activation key).
+You should have a functional MATLAB in /usr/local/MATLAB/R2014a/bin now. You can either add this directory to your PATH environment variable (e.g. in ~/.bashrc) or you can make a symlink in /usr/local/bin/ that points to the MATLAB binary - sudo ln -s /usr/local/MATLAB/R2014a/bin/matlab /usr/local/bin/matlab. If you put it in .bashrc, you'll need to source that file before matlab will be in your path (or, just start a new shell) 
+
+
 
 Follow the instructions on the DRC wiki for Matlab install with
 activation code:
@@ -148,35 +157,6 @@ Now, modify the symlinks:
    sudo ln -s /usr/lib/x86_64-linux-gnu/libgfortran.so.3.0.0 libgfortran.so.3
    sudo rm libstdc++.so.6
    sudo ln -s /usr/lib/gcc/x86_64-linux-gnu/4.4/libstdc++.so libstdc++.so.6
-
-
-GUROBI License
---------------
-
-Follow the install instructions on the wiki. The wiki page includes
-instructions for setting gurobi related environment variables in
-~/.bashrc. You should skip these steps. Instead, follow the steps in
-this README under Environment Setup.
-
-https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Installing\_GUROBI
-
-Simulation Dependencies
-----------------
-
-Gazebo (http://gazebosim.org/wiki/2.2/install#Install_Required_Dependencies)
-
-In addition to above packages, run:
-
-::
-
-    sudo apt-get install libboost-all-dev libcegui-mk2-dev libopenal-dev  libswscale-dev libavformat-dev libavcodec-dev libogre-dev libgts-dev libltdl3-dev playerc++ libplayerwkb3.0-dev
-
-DRCSIM requires ROS dependencies listed here: http://gazebosim.org/wiki/DRC/Install#Ubuntu_and_ROS_Groovy
-
-After you have installed ros packages you should run these commands:::
-
-    sudo rosdep init
-    rosdep update
 
 
 Build Instructions
@@ -233,3 +213,35 @@ Run make to build externals and then the main codebase:
     cd ..
     make
 
+
+
+Additional Optional Modules
+===========================
+
+GUROBI License
+--------------
+
+Follow the install instructions on the wiki. The wiki page includes
+instructions for setting gurobi related environment variables in
+~/.bashrc. You should skip these steps. Instead, follow the steps in
+this README under Environment Setup.
+
+https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Installing\_GUROBI
+
+Simulation Dependencies
+----------------
+
+Gazebo (http://gazebosim.org/wiki/2.2/install#Install_Required_Dependencies)
+
+In addition to above packages, run:
+
+::
+
+    sudo apt-get install libboost-all-dev libcegui-mk2-dev libopenal-dev  libswscale-dev libavformat-dev libavcodec-dev libogre-dev libgts-dev libltdl3-dev playerc++ libplayerwkb3.0-dev
+
+DRCSIM requires ROS dependencies listed here: http://gazebosim.org/wiki/DRC/Install#Ubuntu_and_ROS_Groovy
+
+After you have installed ros packages you should run these commands:::
+
+    sudo rosdep init
+    rosdep update
