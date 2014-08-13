@@ -23,7 +23,7 @@ Background
 System Requirements
 -------------------
 
-These instructions are written for Ubuntu 12.04 64-bit.
+These instructions are written for Ubuntu 14.04 64-bit.
 
 
 Download Instructions
@@ -146,13 +146,25 @@ Now, modify the symlinks:
    sudo rm libstdc++.so.6
    sudo ln -s /usr/lib/gcc/x86_64-linux-gnu/4.4/libstdc++.so libstdc++.so.6
 
-Obtain License for Mosek
-------------------------
+Instructions for MOSEK
+----------------------
 
-Mosek is used in the footstep planner. Obtain an academic licence from 
+Mosek is a solver used in the footstep planner. Obtain an academic licence from 
 http://license.mosek.com/academic
 Check your email and place your license in ~/mosek/mosek.lic
 The Mosek code is checked out as part of the project externasl
+
+Instructions for GUROBI
+-----------------------
+
+Gurobi is a solver used in our walking controller. Install its dependencies with the following commands:
+
+::
+
+    apt-get install curl libwww-perl libterm-readkey-perl
+
+Note that the tarball for Gurobi is part of our tree. The Gurobi pod uses it
+to avoid needing to download it from Gurobi.
 
 
 Build Instructions
@@ -214,8 +226,11 @@ Run make to build externals and then the main codebase:
 Additional Optional Modules
 ===========================
 
-Simulation Dependencies
-----------------
+Neither ROS or Gazebo are currently required. These instructions are likely to be broken
+as a result. If ROS is to be supported we will use ROS Indigo.
+
+Gazebo
+------
 
 Gazebo (http://gazebosim.org/wiki/2.2/install#Install_Required_Dependencies)
 
@@ -231,17 +246,3 @@ After you have installed ros packages you should run these commands:::
 
     sudo rosdep init
     rosdep update
-
-
-Out of Date Instructions
-========================
-
-GUROBI License
---------------
-
-Follow the install instructions on the wiki. The wiki page includes
-instructions for setting gurobi related environment variables in
-~/.bashrc. You should skip these steps. Instead, follow the steps in
-this README under Environment Setup.
-
-https://groups.csail.mit.edu/rvsn/wiki/index.php?title=Installing\_GUROBI
