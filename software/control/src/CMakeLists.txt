@@ -8,8 +8,8 @@ pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
 install(TARGETS RobotStateMonitor AtlasCommandPublisher DESTINATION matlab)
 
-add_mex(mxSerialize mxSerialize.c)
-add_mex(mxDeserialize mxDeserialize.c)
+add_mex(mxSerialize mxSerialize.cpp)
+add_mex(mxDeserialize mxDeserialize.cpp)
 
 pods_find_pkg_config(maps)
 pods_find_pkg_config(opencv)

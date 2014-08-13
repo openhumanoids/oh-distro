@@ -1,8 +1,8 @@
-/* 
- * mxSerialize wrapper
+/*
+ * mxDeserialize wrapper
  *
- * Converts any matlab object into a uint8 array suitable for passing 
- * down a comms channel to be reconstructed at the other end.
+ * Converts a uint8 array to a matlab object, assuming the array has
+ * first been created using mxSerialize.
  *
  * Copyright (C) 2005, Brad Phelan         http://xtargets.com
  * Copyright (C) 2007, Robert Oostenveld   http://www.fcdonders.ru.nl
@@ -40,26 +40,26 @@
  */
 
 #include "mex.h"
-
-/* Only define EXTERN_C if it hasn't been defined already. This allows
- * individual modules to have more control over managing their exports.
- */
-#ifndef EXTERN_C
-#ifdef __cplusplus
-  #define EXTERN_C extern "C"
-#else
+ 
+// MX_API_VER has unfortunately not changed between R2013b and R2014a, so we
+// use the new MATRIX_DLL_EXPORT_SYM as an ugly hack instead
+#if defined(__cplusplus) && defined(MATRIX_DLL_EXPORT_SYM)
   #define EXTERN_C extern
-#endif
+  namespace matrix{ namespace detail{ namespace noninlined{ namespace mx_array_api{
 #endif
 
-EXTERN_C mxArray* mxSerialize(const mxArray*);
-EXTERN_C mxArray* mxDeserialize(const void*, size_t);
+EXTERN_C mxArray* mxSerialize(mxArray const *);
+EXTERN_C mxArray* mxDeserialize(const void *, size_t);
+// and so on, for any other MEX C functions that migrated to C++ in R2014a
+
+#if defined(__cplusplus) && defined(MATRIX_DLL_EXPORT_SYM)
+  }}}}
+  using namespace matrix::detail::noninlined::mx_array_api;
+#endif
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-   /* mxSerialize is an undocumented Matlab function and should be
-    * used assuming the Mathworks may change or remove this function
-    * completely from future version of matlab */
-  if (nlhs && nrhs)
-    plhs[0] = (mxArray *) mxSerialize(prhs[0]);
+  if (nlhs && nrhs) {
+    plhs[0] = (mxArray *) mxDeserialize(mxGetData(prhs[0]), mxGetNumberOfElements(prhs[0]));
+  }
 }
