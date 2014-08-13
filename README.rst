@@ -92,7 +92,7 @@ installing packages on Ubuntu. Install with the following commands:
     sudo add-apt-repository ppa:tes/drc
     sudo apt-get update
 
-    sudo apt-get install build-essential cmake debhelper freeglut3-dev gtk-doc-tools libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-random-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libfreeimage-dev libgoby2-dev libglew-dev libgtkmm-2.4-dev libltdl-dev libgsl0-dev libportmidi-dev libprotobuf-dev libprotoc-dev libqt4-dev libqwt-dev libtar-dev libtbb-dev libtinyxml-dev libxml2-dev ncurses-dev pkg-config protobuf-compiler python-matplotlib libvtk5.8 libvtk5-dev libvtk5-qt4-dev libqhull-dev python-pygame doxygen mercurial libglib2.0-dev openjdk-6-jdk python-dev gfortran f2c libf2c2-dev spacenavd libspnav-dev python-numpy python-scipy python-vtk python-pip libgmp3-dev libblas-dev liblapack-dev libv4l-dev subversion libxmu-dev
+    sudo apt-get install build-essential cmake debhelper freeglut3-dev gtk-doc-tools libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-random-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libcurl4-openssl-dev libfreeimage-dev libgoby2-dev libglew-dev libgtkmm-2.4-dev libltdl-dev libgsl0-dev libportmidi-dev libprotobuf-dev libprotoc-dev libqt4-dev libqwt-dev libtar-dev libtbb-dev libtinyxml-dev libxml2-dev ncurses-dev pkg-config protobuf-compiler python-matplotlib libvtk5.8 libvtk5-dev libvtk5-qt4-dev libqhull-dev python-pygame doxygen mercurial libglib2.0-dev openjdk-6-jdk python-dev gfortran f2c libf2c2-dev spacenavd libspnav-dev python-numpy python-scipy python-vtk python-pip libgmp3-dev libblas-dev liblapack-dev libv4l-dev subversion libxmu-dev libusb-1.0-0-dev
 
     sudo pip install --upgrade scipy
 
@@ -199,6 +199,17 @@ Create a file ~/Documents/MATLAB/startup.m that contains the line:
 
     run([getenv('DRC_BASE'), '/software/build/config/drc_control_setup.m'])
 
+
+Subversion Setup
+----------------
+Building the DRC Externals requires you to check out copies of several libraries from SVN repositories. You'll need to make sure you've set up your access to those repositories beforehand, or the SVN checkout will fail with a rather obscure error. The easiest way make sure your SVN access is properly set up is to do the following:
+
+::
+
+    svn info https://svn.csail.mit.edu/drc
+    svn info https://svn.csail.mit.edu/rrg_pods
+
+Enter your username and password for those repos (which may be different from your CSAIL username/password--ask us if you need access). SVN will remember those credentials for you, although on some systems it will do so by storing them in a plaintext file. Verify that SVN remembers your password by running the commands again and noting that it does not ask you for a username or password. 
 
 Compiling
 ---------
