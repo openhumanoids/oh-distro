@@ -7,7 +7,6 @@ drc_lcmtypes
 retired_lcmtypes
 
 
-models
 robot_model
 
 object_template_model
@@ -37,3 +36,4 @@ ddapp
 #action_authoring
 #segmentation
 #authoring
+#models
