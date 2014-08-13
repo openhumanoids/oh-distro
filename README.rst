@@ -100,7 +100,7 @@ installing packages on Ubuntu. Install with the following commands:
 LCM Dependency
 --------------
 
-LCM (v1.1.0) is a required dependency which must be installed from source. First download lcm-1.1.0.tar.gz from https//lcm.googlecode.com. Then install LCM with the
+LCM (v1.1.0) is a required dependency which must be installed from source. First download lcm-1.1.0.tar.gz from https://lcm.googlecode.com. Then install LCM with the
 following commands.
 
 ::
