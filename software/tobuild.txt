@@ -20,7 +20,7 @@ gfe
 perception
 motion_estimate
 viewer
-network
+#network
 gazebo_plugins
 
 # various scripts and tools e.g. BW plotting
