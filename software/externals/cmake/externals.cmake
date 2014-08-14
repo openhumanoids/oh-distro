@@ -121,6 +121,7 @@ set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
 set(pypolyhedron_depends)
 
 set(externals
+  Eigen_pod
   libbot-drc
   opencv-drc
   pcl_dep
@@ -143,10 +144,6 @@ set(externals
   #camunits-extra-wrapper
   apriltags
   flycapture
-  )
-
-set(git-externals
-  #Eigen_pod
   bullet
   spotless
   snopt
@@ -161,6 +158,14 @@ set(svn_credentials)
 if(DRC_SVN_PASSWORD)
   set(svn_credentials SVN_USERNAME drc SVN_PASSWORD ${DRC_SVN_PASSWORD})
 endif()
+
+macro(add_external proj)
+  if (${${proj}_url} MATCHES "\\.git$")
+    add_git_external(${proj})
+  else()
+    add_svn_external(${proj})
+  endif()
+endmacro()
 
 macro(add_svn_external proj)
   ExternalProject_Add(${proj}
@@ -189,14 +194,9 @@ macro(add_git_external proj)
     )
 endmacro()
 
-add_git_external(Eigen_pod)
 
 foreach(external ${externals})
-  add_svn_external(${external})
-endforeach()
-
-foreach(git-external ${git-externals})
-  add_git_external(${git-external})
+  add_external(${external})
 endforeach()
 
 
