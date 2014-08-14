@@ -48,7 +48,6 @@ pods_install_headers(
   LCMThread.h
   Macros.h
   QueueTypes.h
-  SharedPtrMacros.h
   StateEstimateApplication.h
   StateEstimator.h
   SynchronizedQueue.h
