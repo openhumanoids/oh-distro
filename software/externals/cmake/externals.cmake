@@ -4,7 +4,7 @@ set(libbot-drc_revision 8325)
 set(libbot-drc_depends)
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
-set(Eigen_pod_revision 0f940b6e763369fc04f52c1f2affd7c8cb5f8db1)
+set(Eigen_pod_revision 0f940b6)
 set(Eigen_pod_depends)
 
 set(opencv-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/opencv-drc)
@@ -18,6 +18,16 @@ set(pcl_dep_depends)
 set(pcl_drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_drc)
 set(pcl_drc_revision 8326)
 set(pcl_drc_depends Eigen_pod pcl_dep)
+
+set(pcl_url http://github.com/pointcloudlibrary/pcl.git)
+set(pcl_revision pcl-1.7.1)
+set(pcl_depends pcl_dep Eigen_pod)
+set(pcl_external_args
+  CMAKE_CACHE_ARGS
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+  )
 
 set(octomap-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/octomap-drc)
 set(octomap-drc_revision 8327)
@@ -125,7 +135,8 @@ set(externals
   libbot-drc
   opencv-drc
   pcl_dep
-  pcl_drc
+  #pcl_drc
+  pcl
   octomap-drc
   occ-map
   common_utils
@@ -182,16 +193,27 @@ macro(add_svn_external proj)
 endmacro()
 
 macro(add_git_external proj)
-  ExternalProject_Add(${proj}
-    GIT_REPOSITORY ${${proj}_url}
-    GIT_TAG ${${proj}_revision}
-    DEPENDS ${${proj}_depends}
-    CONFIGURE_COMMAND ""
-    INSTALL_COMMAND ""
-    BUILD_COMMAND $(MAKE) BUILD_PREFIX=${CMAKE_INSTALL_PREFIX} BUILD_TYPE=${CMAKE_BUILD_TYPE} ${${proj}_environment_args}
-    BUILD_IN_SOURCE 1
-    SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
-    )
+
+  if (DEFINED ${proj}_external_args)
+    ExternalProject_Add(${proj}
+      GIT_REPOSITORY ${${proj}_url}
+      GIT_TAG ${${proj}_revision}
+      DEPENDS ${${proj}_depends}
+      SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
+      ${${proj}_external_args}
+      )
+  else()
+    ExternalProject_Add(${proj}
+      GIT_REPOSITORY ${${proj}_url}
+      GIT_TAG ${${proj}_revision}
+      DEPENDS ${${proj}_depends}
+      CONFIGURE_COMMAND ""
+      INSTALL_COMMAND ""
+      BUILD_COMMAND $(MAKE) BUILD_PREFIX=${CMAKE_INSTALL_PREFIX} BUILD_TYPE=${CMAKE_BUILD_TYPE} ${${proj}_environment_args}
+      BUILD_IN_SOURCE 1
+      SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
+      )
+    endif()
 endmacro()
 
 

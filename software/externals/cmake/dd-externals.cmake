@@ -114,9 +114,9 @@ ExternalProject_Add(PointCloudLibraryPlugin
     ${DRCExternals_DEFAULT_ARGS}
     ${DRCExternals_THIRDPARTYLIBS_ARGS}
     ${vtk_args}
-    -DPCL_REQUIRED_VERSION:STRING=1.6
+    -DPCL_REQUIRED_VERSION:STRING=1.7
   DEPENDS
-    pcl_drc
+    pcl
     ${vtk_depends}
   )
 
