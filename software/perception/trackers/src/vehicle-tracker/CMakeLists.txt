@@ -1,7 +1,7 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 
 
-set(PCL_LIBRARIES  pcl_filters-1.6)
+set(PCL_LIBRARIES  pcl_filters-1.7)
 
 
 add_executable(drc-vehicle-tracker vehicle-tracker.cpp)

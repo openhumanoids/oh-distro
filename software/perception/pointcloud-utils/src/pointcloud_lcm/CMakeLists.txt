@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(pointcloud_lcm)
 
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 
 add_library(pointcloud_lcm SHARED pointcloud_lcm.cpp)
 
@@ -20,7 +20,7 @@ target_link_libraries(pointcloud_lcm
     z)
 pods_install_pkg_config_file(pointcloud_lcm
     LIBS -lpointcloud_lcm -lz
-    REQUIRES bot2-vis  image-utils eigen3 pcl_io-1.6 flann
+    REQUIRES bot2-vis  image-utils eigen3 pcl_io-1.7 flann
     VERSION 0.0.1)
 # kinect-utils
 

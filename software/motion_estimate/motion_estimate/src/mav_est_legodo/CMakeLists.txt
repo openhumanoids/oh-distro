@@ -23,7 +23,7 @@ pods_install_libraries(mav-est-legodo)
 pods_install_pkg_config_file(mav-est-legodo
     CFLAGS
     LIBS -lmav-est-legodo -lpcl_io
-    REQUIRES 	${REQUIRED_LIBS} pcl_io-1.6
+    REQUIRES 	${REQUIRED_LIBS} pcl_io-1.7
     VERSION 0.0.1)
 
 

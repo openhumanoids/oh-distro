@@ -5,8 +5,8 @@ add_library(pointcloud_filters SHARED filter_planes.cpp grow_cloud.cpp
 #    filter_cloudtolaser.cpp)
 
 pods_use_pkg_config_packages(pointcloud_filters   eigen3  
-	pcl_common-1.6   pcl_io-1.6      pcl_surface-1.6   pcl_segmentation-1.6 
-	pcl_filters-1.6  pcl_surface-1.6 pcl_io-1.6 	   pcl_kdtree-1.6  pcl_search-1.6)
+	pcl_common-1.7   pcl_io-1.7      pcl_surface-1.7   pcl_segmentation-1.7 
+	pcl_filters-1.7  pcl_surface-1.7 pcl_io-1.7 	   pcl_kdtree-1.7  pcl_search-1.7)
 
 target_link_libraries(pointcloud_filters)
 # kmcl_utils qhull ${LCMTYPES_LIBS} pcl_common pcl_octree)

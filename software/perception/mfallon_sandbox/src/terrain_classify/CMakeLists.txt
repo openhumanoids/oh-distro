@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(local_map)
 
 
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 
 add_executable(drc-terrain-classify terrain-classify.cpp  )
 pods_use_pkg_config_packages(drc-terrain-classify

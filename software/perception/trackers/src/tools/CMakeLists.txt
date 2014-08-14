@@ -1,7 +1,7 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 
 
-set(PCL_LIBRARIES  pcl_filters-1.6 pcl_features-1.6 pcl_surface-1.6   pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_filters-1.7 pcl_features-1.7 pcl_surface-1.7   pcl_io-1.7)
 ### needed to read obj:
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})

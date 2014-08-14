@@ -6,7 +6,7 @@ find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 set(REQUIRED_LIBS ${VTK_IO_TARGET_LINK_LIBRARIES} ${GLEW_LIBRARIES}    
        ${GLUT_LIBRARIES} vtkCommon vtkIO vtkHybrid)
-set(PKG_CONFIG_DEPS eigen3 rgbd_simulation pcl_visualization-1.6 pcl_io-1.6)
+set(PKG_CONFIG_DEPS eigen3 rgbd_simulation pcl_visualization-1.7 pcl_io-1.7)
 include_directories(${VTK_INCLUDE_DIRS} ${GLEW_INCLUDE_DIR} ${GLUT_INCLUDE_DIR})
 
 
@@ -60,5 +60,5 @@ target_link_libraries(drc-image-passthrough-ncurses boost_system
            image_io_utils camera_params model-client pointcloud_math ncurses
            ${REQUIRED_LIBS})
 pods_use_pkg_config_packages(drc-image-passthrough-ncurses  bot2-param-client
-       image-passthrough-app lcm ${REQUIRED_PACKAGES} pcl_io-1.6)
+       image-passthrough-app lcm ${REQUIRED_PACKAGES} pcl_io-1.7)
 pods_install_executables(drc-image-passthrough-ncurses)

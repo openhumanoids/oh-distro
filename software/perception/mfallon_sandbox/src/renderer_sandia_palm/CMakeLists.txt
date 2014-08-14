@@ -10,12 +10,12 @@ find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 set(REQUIRED_LIBS ${VTK_IO_TARGET_LINK_LIBRARIES} ${GLEW_LIBRARIES}    
        ${GLUT_LIBRARIES} vtkCommon vtkIO vtkHybrid)
-set(PKG_CONFIG_DEPS eigen3 rgbd_simulation pcl_visualization-1.6 pcl_io-1.6)
+set(PKG_CONFIG_DEPS eigen3 rgbd_simulation pcl_visualization-1.7 pcl_io-1.7)
 include_directories(${VTK_INCLUDE_DIRS} ${GLEW_INCLUDE_DIR} ${GLUT_INCLUDE_DIR})
 
 
 
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 
 add_executable(drc-renderer-sandia-palm renderer_sandia_palm.cpp  )

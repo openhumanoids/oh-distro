@@ -1,4 +1,4 @@
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 
 add_executable(drc-multisense-image-tool multisense-image-tool.cpp  )
 pods_use_pkg_config_packages(drc-multisense-image-tool
