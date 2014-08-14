@@ -2,6 +2,7 @@
 #define _maps_Types_hpp_
 
 #include <memory>
+#include <pcl/pcl_base.h>
 #include <pcl/point_types.h>
 #include <Eigen/Geometry>
 

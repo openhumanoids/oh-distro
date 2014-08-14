@@ -10,7 +10,7 @@ int
 main (int argc, char** argv)
 {
   ConciseArgs parser(argc, argv, "lidar-passthrough");
-  string filename = "bun0.pcd";
+  std::string filename = "bun0.pcd";
   parser.add(filename, "f", "filename", "filename");
   parser.parse();  
   

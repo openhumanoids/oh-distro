@@ -36,7 +36,7 @@ pods_use_pkg_config_packages(drc-triangulation ${REQUIRED_LIBS} ${PCL_LIBRARIES}
 pods_install_executables(drc-triangulation)
 
 add_executable(drc-triangulation-smoothing triangulation_smoothing.cpp)
-target_link_libraries(drc-triangulation boost_system)
+target_link_libraries(drc-triangulation-smoothing boost_system)
 pods_use_pkg_config_packages(drc-triangulation-smoothing ${REQUIRED_LIBS}
   ${PCL_LIBRARIES}  )
 pods_install_executables(drc-triangulation-smoothing)

@@ -206,7 +206,7 @@ void Pass::doWork( ){
   
 
   //pcl::PointCloud<pcl::PointXYZRGB>::Ptr mesh_cloud;
-  //pcl::fromROSMsg(mesh.cloud, *mesh_cloud);
+  //pcl::fromPCLPointCloud2(mesh.cloud, *mesh_cloud);
   
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr mesh_cloud =prim_->sampleMesh(mesh_ptr, 100000); // NB: disc sampled for both top and bottom lid - givine twice the density

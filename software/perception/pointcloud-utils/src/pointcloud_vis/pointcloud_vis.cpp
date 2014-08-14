@@ -388,7 +388,7 @@ void pointcloud_vis::mesh_to_lcm(ptcld_cfg pcfg, pcl::PolygonMesh::Ptr mesh,
   vs_point3d_list_t point_list[N_polygons];
 
   pcl::PointCloud<pcl::PointXYZRGB> newcloud;
-  pcl::fromROSMsg(mesh->cloud, newcloud);
+  pcl::fromPCLPointCloud2(mesh->cloud, newcloud);
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygons; i++){ // each triangle/polygon
     size_t k;
@@ -464,9 +464,9 @@ void pointcloud_vis::ptcld_collection_reset(int id, std::string name){
 
 void pointcloud_vis::pointcloud2_to_lcm(pcl::PointCloud<pcl::PointXYZRGB> &cloud, std::string channel, int64_t cloud_utime){
 
-  sensor_msgs::PointCloud2 senor_cloud;
-  //pcl::fromROSMsg (*msg, cloud);
-  pcl::toROSMsg(cloud, senor_cloud);
+  pcl::PCLPointCloud2 senor_cloud;
+  //pcl::fromPCLPointCloud2 (*msg, cloud);
+  pcl::toPCLPointCloud2(cloud, senor_cloud);
   
   ptools_pointcloud2_t pc;
   pc.utime = cloud_utime;//(int64_t) floor(msg->header.stamp.toSec()  * 1E6);
@@ -516,7 +516,7 @@ bool pointcloud_vis::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::Polygon
   //        Failed to find match for field 'rgb'.  
   // Instead dont try to copy if empty...
   if ( meshA->cloud.fields.size()  !=0){
-    pcl::fromROSMsg(meshA->cloud, cloudA);
+    pcl::fromPCLPointCloud2(meshA->cloud, cloudA);
   }
   int original_size = cloudA.points.size() ;
 
@@ -525,7 +525,7 @@ bool pointcloud_vis::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::Polygon
   
   int N_polygonsB = meshB->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
-  pcl::fromROSMsg(meshB->cloud, cloudB);
+  pcl::fromPCLPointCloud2(meshB->cloud, cloudB);
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon
     pcl::Vertices apoly_in = meshB->polygons[i];//[i];
@@ -537,7 +537,7 @@ bool pointcloud_vis::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::Polygon
     meshA->polygons.push_back(apoly_in);
   } 
   cloudA += cloudB;
-  pcl::toROSMsg (cloudA, meshA->cloud);
+  pcl::toPCLPointCloud2 (cloudA, meshA->cloud);
   //cout <<  meshA->polygons.size () << "polygons after\n";
   //cout << cloudA.points.size() << " is the cloud inside size\n";
   return true;
@@ -622,7 +622,7 @@ void read_poses_csv(std::string poses_files, std::vector<Isometry3dTime>& poses)
 
 void savePLYFile(pcl::PolygonMesh::Ptr model,string fname){
   pcl::PointCloud<pcl::PointXYZRGB> bigcloud;  
-  pcl::fromROSMsg(model->cloud, bigcloud);
+  pcl::fromPCLPointCloud2(model->cloud, bigcloud);
   Eigen::Vector4f tmp;
   
   FILE * fid;
@@ -677,7 +677,7 @@ void savePLYFile(pcl::PolygonMesh::Ptr model,string fname){
 void remove_colored_polygons(pcl::PolygonMesh::Ptr meshin_ptr,vector<int> &color ){
   int N_polygons = meshin_ptr->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> bigcloud;  
-  pcl::fromROSMsg(meshin_ptr->cloud, bigcloud);
+  pcl::fromPCLPointCloud2(meshin_ptr->cloud, bigcloud);
   
   vector<int> polygon_indices;
   
@@ -721,7 +721,7 @@ void get_MeshInBoxIndices(pcl::PolygonMesh::Ptr meshin_ptr,
 		   vector<int> &polygon_in_box_indices){
   int N_polygons = meshin_ptr->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> bigcloud;  
-  pcl::fromROSMsg(meshin_ptr->cloud, bigcloud);
+  pcl::fromPCLPointCloud2(meshin_ptr->cloud, bigcloud);
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygons; i++){ // each triangle/polygon
     pcl::Vertices apoly_in = meshin_ptr->polygons[i];
@@ -748,7 +748,7 @@ void get_MeshInCircleIndices(pcl::PolygonMesh::Ptr meshin_ptr,
 		   vector<int> &polygon_in_circle_indices){
   int N_polygons = meshin_ptr->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> bigcloud;  
-  pcl::fromROSMsg(meshin_ptr->cloud, bigcloud);
+  pcl::fromPCLPointCloud2(meshin_ptr->cloud, bigcloud);
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygons; i++){ // each triangle/polygon
     pcl::Vertices apoly_in = meshin_ptr->polygons[i];
@@ -777,7 +777,7 @@ void get_MeshInBox(pcl::PolygonMesh::Ptr meshin_ptr,
 		   pcl::PolygonMesh::Ptr &minimesh_ptr){
   int N_polygons = meshin_ptr->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> bigcloud;  
-  pcl::fromROSMsg(meshin_ptr->cloud, bigcloud);
+  pcl::fromPCLPointCloud2(meshin_ptr->cloud, bigcloud);
   Eigen::Vector4f tmp;
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr minicloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -820,7 +820,7 @@ void get_MeshInBox(pcl::PolygonMesh::Ptr meshin_ptr,
   minicloud->points.resize (minicloud->width * minicloud->height); // is this necessary?
   cout << minicloud->points.size() << " is the cloud size\n";
   cout << minimesh_ptr->polygons.size() << " is the polygon size\n";
-  pcl::toROSMsg (*minicloud, minimesh_ptr->cloud);
+  pcl::toPCLPointCloud2 (*minicloud, minimesh_ptr->cloud);
 }
 
 
@@ -829,7 +829,7 @@ bool merge_PolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB
   cout << "DEPRECATED: CONSIDER USING VERSION ABOVE\n";
 
   pcl::PointCloud<pcl::PointXYZRGB> cloudA;  
-  pcl::fromROSMsg(meshA->cloud, cloudA);
+  pcl::fromPCLPointCloud2(meshA->cloud, cloudA);
   int original_size = cloudA.points.size() ;
 
   //cout << original_size << " is the cloud before (insize) size\n";
@@ -837,7 +837,7 @@ bool merge_PolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB
   
   int N_polygonsB = meshB->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
-  pcl::fromROSMsg(meshB->cloud, cloudB);
+  pcl::fromPCLPointCloud2(meshB->cloud, cloudB);
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon
     pcl::Vertices apoly_in = meshB->polygons[i];//[i];
@@ -850,7 +850,7 @@ bool merge_PolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB
   } 
   
   cloudA += cloudB;
-  pcl::toROSMsg (cloudA, meshA->cloud);
+  pcl::toPCLPointCloud2 (cloudA, meshA->cloud);
   
   //cout <<  meshA->polygons.size () << "polygons after\n";
   //cout << cloudA.points.size() << " is the cloud inside size\n";
@@ -881,7 +881,7 @@ bool PolygonMesh_to_lcm(lcm_t *lcm, Ptcoll_cfg ptcoll_cfg,pcl::PolygonMesh::Ptr 
   vs_point3d_list_t point_list[N_polygons];  
   
   pcl::PointCloud<pcl::PointXYZRGB> newcloud;  
-  pcl::fromROSMsg(mesh->cloud, newcloud);
+  pcl::fromPCLPointCloud2(mesh->cloud, newcloud);
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygons; i++){ // each triangle/polygon
     size_t k;

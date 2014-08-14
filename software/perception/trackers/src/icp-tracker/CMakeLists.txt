@@ -4,7 +4,7 @@ find_package(VTK REQUIRED)
 
 include_directories(${VTK_INCLUDE_DIRS})
 
-set(REQUIRED_LIBS vtkCommon vtkFiltering)
+set(REQUIRED_LIBS vtkCommon vtkFiltering vtkRendering boost_system)
 #${VTK_IO_TARGET_LINK_LIBRARIES} )
 # vtkIO vtkHybrid)
 

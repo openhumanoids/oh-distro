@@ -58,7 +58,7 @@ _matrix_vector_multiply_3x4_4d (const double m[12], const double v[4],
 void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
-  // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
+  // 1. Copy fields - this duplicates /pcl/conversions.h for "fromROSmsg"
   cloud->width   = msg->width;
   cloud->height   = msg->height;
   uint32_t num_points = msg->width * msg->height;
@@ -73,17 +73,17 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
   // in RGB data whose offset is not correctly understood
   // Instead of an offset of 12bytes, its offset is set to be 16
   // this fix corrects for the issue:
-  sensor_msgs::PointCloud2 msg_cld;
-  pcl::toROSMsg(*cloud, msg_cld);
+  pcl::PCLPointCloud2 msg_cld;
+  pcl::toPCLPointCloud2(*cloud, msg_cld);
   msg_cld.fields[3].offset = 12;
-  pcl::fromROSMsg (msg_cld, *cloud);
+  pcl::fromPCLPointCloud2 (msg_cld, *cloud);
 }
 
 
 void pointcloud_lcm::unpack_pointcloud2(const ptools::pointcloud2_t *msg,
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
-  // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
+  // 1. Copy fields - this duplicates /pcl/conversions.h for "fromROSmsg"
   cloud->width   = msg->width;
   cloud->height   = msg->height;
   uint32_t num_points = msg->width * msg->height;
@@ -98,10 +98,10 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools::pointcloud2_t *msg,
   // in RGB data whose offset is not correctly understood
   // Instead of an offset of 12bytes, its offset is set to be 16
   // this fix corrects for the issue:
-  sensor_msgs::PointCloud2 msg_cld;
-  pcl::toROSMsg(*cloud, msg_cld);
+  pcl::PCLPointCloud2 msg_cld;
+  pcl::toPCLPointCloud2(*cloud, msg_cld);
   msg_cld.fields[3].offset = 16; // was 12 // 16 works for PCL Streaming
-  pcl::fromROSMsg (msg_cld, *cloud);
+  pcl::fromPCLPointCloud2 (msg_cld, *cloud);
 }
 
 /*

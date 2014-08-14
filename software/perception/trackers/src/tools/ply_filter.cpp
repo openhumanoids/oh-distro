@@ -131,7 +131,7 @@ void StatePub::doMeshWork(){
   pc_vis_->mesh_to_lcm_from_list(2002, mesh_ptr, null_poseT_.utime, null_poseT_.utime);
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(mesh_ptr->cloud, *cloud_ptr);  
+  pcl::fromPCLPointCloud2(mesh_ptr->cloud, *cloud_ptr);  
 
   // DO WORK HERE:
   //boxFilter(&newcloud);
@@ -139,7 +139,7 @@ void StatePub::doMeshWork(){
   mirrorModel(cloud_ptr);
   
   
-  pcl::toROSMsg(*cloud_ptr, mesh_ptr->cloud);
+  pcl::toPCLPointCloud2(*cloud_ptr, mesh_ptr->cloud);
   
   pc_vis_->mesh_to_lcm_from_list(2001, mesh_ptr, null_poseT_.utime, null_poseT_.utime);
 

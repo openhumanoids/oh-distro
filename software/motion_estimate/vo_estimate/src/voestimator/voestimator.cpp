@@ -33,7 +33,7 @@ void VoEstimator::voUpdate(int64_t utime, Eigen::Isometry3d delta_camera){
   int status = botframes_cpp_->get_trans_with_utime( botframes_ ,  "body", "head", utime, head_to_body_cur);
   local_to_body_ = local_to_head_ * head_to_body_cur;  
   if (head_to_body_cur.translation().z()==0 ){
-    cout << "head to body is zero - this shouldnt happen=======================\n";  
+    std::cout << "head to body is zero - this shouldnt happen=======================\n";  
   }
   
   // Evaluate Rates:
@@ -273,7 +273,7 @@ void VoEstimator::publishUpdateRobotState(const drc::robot_state_t * TRUE_state_
   int status = botframes_cpp_->get_trans_with_utime( botframes_ ,  "body", "head", TRUE_state_msg->utime , head_to_body_cur);
   Eigen::Isometry3d current_local_to_body = current_local_to_head* head_to_body_cur;  
   if (head_to_body_cur.translation().z()==0 ){
-    cout << "head to body is zero - this shouldnt happen=======================\n";  
+    std::cout << "head to body is zero - this shouldnt happen=======================\n";  
   }  
   
   // Publish to Bot Frames:

@@ -16,6 +16,7 @@
 #include <lcmtypes/drc/map_octree_t.hpp>
 #include <lcmtypes/drc/map_image_t.hpp>
 
+#include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
 
 using namespace maps;

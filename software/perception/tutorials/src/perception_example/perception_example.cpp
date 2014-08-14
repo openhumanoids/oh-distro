@@ -79,7 +79,7 @@ bool pcdXYZRGB_to_lcm(lcm_t *lcm, pcl::PointCloud<pcl::PointXYZRGB> &cloud,
 
 
 static void on_pointcloud(const lcm_recv_buf_t *rbuf, const char * channel, const drc_pointcloud2_t * msg, void * user){
-  // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
+  // 1. Copy fields - this duplicates /pcl/conversions.h for "fromROSmsg"
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
   cloud->width   = msg->width;
   cloud->height   = msg->height;
@@ -96,10 +96,10 @@ static void on_pointcloud(const lcm_recv_buf_t *rbuf, const char * channel, cons
   // in RGB data whose offset is not correctly understood
   // Instead of an offset of 12bytes, its offset is set to be 16
   // this fix corrects for the issue:
-  sensor_msgs::PointCloud2 msg_cld;
-  pcl::toROSMsg(*cloud, msg_cld);
+  pcl::PCLPointCloud2 msg_cld;
+  pcl::toPCLPointCloud2(*cloud, msg_cld);
   msg_cld.fields[3].offset = 12;
-  pcl::fromROSMsg (msg_cld, *cloud);
+  pcl::fromPCLPointCloud2 (msg_cld, *cloud);
 
   std::cerr << "Received Cloud with " << cloud->points.size () << " data points." << std::endl;
 

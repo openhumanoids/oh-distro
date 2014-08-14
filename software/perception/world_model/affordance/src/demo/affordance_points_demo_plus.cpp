@@ -96,14 +96,14 @@ bool getMeshAsLists(std::string filename,
 
   pcl::PointCloud<pcl::PointXYZRGB> newcloud;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(mesh->cloud, *cloud_ptr );  
+  pcl::fromPCLPointCloud2(mesh->cloud, *cloud_ptr );  
 
   /*
   moveCloud(cloud_ptr);
   scaleCloud(cloud_ptr);
   
   
-  pcl::toROSMsg (*cloud_ptr, mesh->cloud);
+  pcl::toPCLPointCloud2 (*cloud_ptr, mesh->cloud);
   pcl::io::savePolygonFile("drill_pclio.ply", *mesh);
   savePLYFile(mesh, "drill_mfallonio.ply");
   */
