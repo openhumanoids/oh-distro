@@ -3,8 +3,8 @@ set(libbot-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/libbot
 set(libbot-drc_revision 8325)
 set(libbot-drc_depends)
 
-set(Eigen_pod_url https://svn.csail.mit.edu/Eigen_pod)
-set(Eigen_pod_revision 13)
+set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
+set(Eigen_pod_revision 0f940b6e763369fc04f52c1f2affd7c8cb5f8db1)
 set(Eigen_pod_depends)
 
 set(opencv-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/opencv-drc)
@@ -122,7 +122,6 @@ set(pypolyhedron_depends)
 
 set(externals
   libbot-drc
-  Eigen_pod
   opencv-drc
   pcl_dep
   pcl_drc
@@ -147,6 +146,7 @@ set(externals
   )
 
 set(git-externals
+  #Eigen_pod
   bullet
   spotless
   snopt
@@ -188,6 +188,8 @@ macro(add_git_external proj)
     SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
     )
 endmacro()
+
+add_git_external(Eigen_pod)
 
 foreach(external ${externals})
   add_svn_external(${external})
