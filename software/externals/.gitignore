@@ -12,12 +12,14 @@ gurobi
 isam_include
 jpeg-utils
 kinect
+lcm_pod
 libbot-drc
 microstrain_comm
 mosek
 occ-map
 octomap-drc
 opencv-drc
+pcl
 pcl_dep
 pcl_drc
 pod-build
@@ -30,4 +32,4 @@ vicon
 visualization
 pod-build
 iris
-pypolyhedron/
+pypolyhedron
