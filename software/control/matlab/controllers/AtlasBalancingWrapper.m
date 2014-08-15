@@ -71,17 +71,17 @@ classdef AtlasBalancingWrapper < DrakeSystem
       options.input_foot_contacts = true;
       
      
-      options.Kp = [20; 20; 20; 10; 20; 10];
+      options.Kp = [20; 20; 20; 20; 20; 20];
       options.Kd = getDampingGain(options.Kp,0.6);
       obj.lfoot_motion_block = BodyMotionControlBlock(r,'l_foot',controller_data,options);
       obj.rfoot_motion_block = BodyMotionControlBlock(r,'r_foot',controller_data,options);
 
-      options.Kp = 22*[1; 1; 1; 1; 1; 1];
+      options.Kp = 20*[1; 1; 1; 0.8; 0.8; 0.8];
       options.Kd = getDampingGain(options.Kp,0.6);
       obj.pelvis_motion_block = BodyMotionControlBlock(r,'pelvis',controller_data,options);
       motion_frames = {obj.lfoot_motion_block.getOutputFrame,obj.rfoot_motion_block.getOutputFrame,...
         obj.pelvis_motion_block.getOutputFrame};
-      options.body_accel_input_weights = [0.025; 0.25; 0.25];
+      options.body_accel_input_weights = [0.25; 0.25; 0.01];
       qp = QPController(r,motion_frames,controller_data,options);
       
 

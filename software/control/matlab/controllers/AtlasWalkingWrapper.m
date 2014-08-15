@@ -72,7 +72,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       options.solver = 0; % 0 fastqp, 1 gurobi
       options.input_foot_contacts = true;
 
-      options.Kp = [20; 20; 20; 10; 20; 10];
+      options.Kp = [20; 20; 20; 20; 20; 20];
       options.Kd = getDampingGain(options.Kp,0.6);
       obj.lfoot_motion_block = FootMotionControlBlock(r,'l_foot',controller_data,options);
       obj.rfoot_motion_block = FootMotionControlBlock(r,'r_foot',controller_data,options);
@@ -82,7 +82,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       obj.pelvis_motion_block = PelvisMotionControlBlock(r,'pelvis',controller_data,options);
       motion_frames = {obj.lfoot_motion_block.getOutputFrame,obj.rfoot_motion_block.getOutputFrame,...
         obj.pelvis_motion_block.getOutputFrame};
-      options.body_accel_input_weights = 0.25*[1 1 1];
+      options.body_accel_input_weights = [0.3 0.3 0.1];
       qp = QPController(r,motion_frames,controller_data,options);
       
       % cascade IK/PD block
