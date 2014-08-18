@@ -59,7 +59,7 @@ class pointcloud_vis {
     // assumes that you want to connect it to the collection specified in Ptcoll_cfg
     //void pcdXYZRGB_to_lcm(Ptcoll_cfg ptcoll_cfg,pcl::PointCloud<pcl::PointXYZRGB> &cloud);
     void text_collection_to_lcm(int text_collection_id,
-                            int object_collection_id, string text_collection_name,
+                            int object_collection_id, std::string text_collection_name,
                             std::vector<std::string >& labels, 
                             std::vector<int64_t>& object_ids);
 

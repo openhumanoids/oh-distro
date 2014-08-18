@@ -11,9 +11,9 @@ find_package(PkgConfig REQUIRED)
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
-set(PCL_LIBRARIES pcl_io-1.6 pcl_filters-1.6
-    pcl_segmentation-1.6 pcl_sample_consensus-1.6
-    pcl_features-1.6)
+set(PCL_LIBRARIES pcl_io-1.7 pcl_filters-1.7
+    pcl_segmentation-1.7 pcl_sample_consensus-1.7
+    pcl_features-1.7)
 
 #####################################################################
 add_library(renderer_affordances SHARED 

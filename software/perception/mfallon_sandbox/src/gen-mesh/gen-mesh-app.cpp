@@ -48,9 +48,9 @@ void gen_mesh_app::do_app(){
   Eigen::Vector3f world_trans(0 , 0 , 10); 
   Eigen::Quaternionf world_rot = euler_to_quat_f(0, 0, -1.4);
   pcl::PointCloud<pcl::PointXYZRGB> temp_cloud;
-  pcl::fromROSMsg(mesh_ptr->cloud, temp_cloud);
+  pcl::fromPCLPointCloud2(mesh_ptr->cloud, temp_cloud);
   pcl::transformPointCloud (temp_cloud, temp_cloud,world_trans, world_rot);  
-  pcl::toROSMsg (temp_cloud, mesh_ptr->cloud);
+  pcl::toPCLPointCloud2 (temp_cloud, mesh_ptr->cloud);
 
   send_cylinder(mesh_ptr);
 
@@ -78,7 +78,7 @@ void gen_mesh_app::send_cylinder(pcl::PolygonMesh::Ptr &mesh){
   pc_vis_->pose_to_lcm_from_list(1000, null_poseT);
 
   pcl::PointCloud<pcl::PointXYZRGB> cloudA;
-  pcl::fromROSMsg(mesh->cloud, cloudA);
+  pcl::fromPCLPointCloud2(mesh->cloud, cloudA);
   pc_vis_->ptcld_to_lcm_from_list(1001, cloudA, null_poseT.utime, null_poseT.utime);
 
   pc_vis_->mesh_to_lcm_from_list(1002, mesh, null_poseT.utime, null_poseT.utime );

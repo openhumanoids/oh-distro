@@ -224,7 +224,7 @@ void VoFeatures::sendImage(std::string channel, int which_image ){
 
 void VoFeatures::writeReferenceImages(){
   //cout << "images written to file @ " << utime_ << "\n";
-  stringstream ss;
+  std::stringstream ss;
   char buff[10];
   sprintf(buff,"%0.4d",output_counter_);
   ss << buff << "_" << utime_;
@@ -238,7 +238,7 @@ void VoFeatures::writeReferenceImages(){
 }
 
 void VoFeatures::writeFeatures(std::vector<ImageFeature> features){
-  stringstream ss;
+  std::stringstream ss;
   char buff[10];
   sprintf(buff,"%0.4d",output_counter_);
   ss << buff << "_" << utime_;
@@ -250,7 +250,7 @@ void VoFeatures::writeFeatures(std::vector<ImageFeature> features){
   feat_file << "#i,track_id,uv,base_uv,uvd,xyz,xyzw,color\n";
   for (size_t i = 0; i < features.size(); i++) {
     ImageFeature f = features[i];
-    ostringstream temp2;
+    std::ostringstream temp2;
     temp2 << i << ","
         << f.track_id << ","
         << f.uv[0] << "," << f.uv[1] << "," // actual pixel locations of features
@@ -266,7 +266,7 @@ void VoFeatures::writeFeatures(std::vector<ImageFeature> features){
 
 
 void VoFeatures::writePose(){
-  stringstream ss;
+  std::stringstream ss;
   char buff[10];
   sprintf(buff,"%0.4d",output_counter_);
   ss << buff << "_" << utime_;

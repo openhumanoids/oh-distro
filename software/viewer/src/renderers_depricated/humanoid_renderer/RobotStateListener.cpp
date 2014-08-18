@@ -343,7 +343,7 @@ namespace fk
 
           if  (type == MESH)
           {
-            shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
+            shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>(it->second->visual->geometry));
 
             // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
             string file_path = evalMeshFilePath(mesh->filename);

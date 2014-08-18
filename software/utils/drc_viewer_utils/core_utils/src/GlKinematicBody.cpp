@@ -147,8 +147,8 @@ _T_world_com(KDL::Frame::Identity()),_T_world_com_future(KDL::Frame::Identity())
 
         if  (type == urdf::Geometry::MESH)
         {
-          //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
-          shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(visuals[iv]->geometry));
+          //shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>(it->second->visual->geometry));
+          shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>(visuals[iv]->geometry));
           
           // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
           string file_path = evalMeshFilePath(mesh->filename);
@@ -373,7 +373,7 @@ void GlKinematicBody::re_init(boost::shared_ptr<otdf::ModelInterface> otdf_insta
         //enum {SPHERE, BOX, CYLINDER, MESH};
         if  (type == otdf::Geometry::MESH)
         {
-           shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(visuals[iv]->geometry));
+           shared_ptr<otdf::Mesh> mesh(dynamic_pointer_cast<otdf::Mesh>(visuals[iv]->geometry));
 
           // READ AND STORE DISPLAY LISTS IN MEMORY ONCE
           string file_path = evalMeshFilePath(mesh->filename);
@@ -1665,7 +1665,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
   //enum {SPHERE, BOX, CYLINDER, MESH}; 
   if (type == urdf::Geometry::SPHERE)
     {
-      shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(link));	
+      shared_ptr<urdf::Sphere> sphere(dynamic_pointer_cast<urdf::Sphere>(link));	
       double radius = sphere->radius;
        glPushMatrix();
        glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
@@ -1679,7 +1679,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
     }
   else if  (type == urdf::Geometry::BOX)
     {
-    shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(link));
+    shared_ptr<urdf::Box> box(dynamic_pointer_cast<urdf::Box>(link));
     double xDim = box->dim.x;
     double yDim = box->dim.y;
     double zDim = box->dim.z;
@@ -1703,7 +1703,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
   
 
   }else if  (type == urdf::Geometry::CYLINDER){
-    shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(link));
+    shared_ptr<urdf::Cylinder> cyl(dynamic_pointer_cast<urdf::Cylinder>(link));
 
     glPushMatrix();
     double v[] = {0,0, -cyl->length/2.0};
@@ -1770,7 +1770,7 @@ void GlKinematicBody::draw_link(shared_ptr<urdf::Geometry> link, const std::stri
   else if  (type == urdf::Geometry::MESH)
     {
     
-    //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(link));
+    //shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>(link));
     
      /* size_t found1;
       found1=nextTf.link_name.find("r_");
@@ -1867,7 +1867,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
  //enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
   if (type == otdf::Geometry::SPHERE)
     {
-      shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(link));	
+      shared_ptr<otdf::Sphere> sphere(dynamic_pointer_cast<otdf::Sphere>(link));	
       double radius = sphere->radius;
        glPushMatrix();
        glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
@@ -1881,7 +1881,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
     }
   else if  (type == otdf::Geometry::BOX)
     {
-    shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(link));
+    shared_ptr<otdf::Box> box(dynamic_pointer_cast<otdf::Box>(link));
     double xDim = box->dim.x;
     double yDim = box->dim.y;
     double zDim = box->dim.z;
@@ -1904,7 +1904,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
     glPopMatrix();
 
   }else if  (type == otdf::Geometry::CYLINDER){
-    shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(link));
+    shared_ptr<otdf::Cylinder> cyl(dynamic_pointer_cast<otdf::Cylinder>(link));
 
     glPushMatrix();
     double v[] = {0,0, -cyl->length/2.0};
@@ -1971,7 +1971,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
   else if  (type == otdf::Geometry::MESH)
     {
     //cout << "MESH: " << nextTfname << endl;
-    //shared_ptr<otdf::Mesh> mesh(shared_dynamic_cast<otdf::Mesh>(link));
+    //shared_ptr<otdf::Mesh> mesh(dynamic_pointer_cast<otdf::Mesh>(link));
     
      /* size_t found1;
       found1=nextTf.link_name.find("r_");
@@ -2036,7 +2036,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
     //NOTE: this is now drawn by renderer_affordances.cpp
     
     /*
-    boost::shared_ptr<otdf::DynamicMesh> dm(boost::shared_dynamic_cast<otdf::DynamicMesh>(link));
+    boost::shared_ptr<otdf::DynamicMesh> dm(boost::dynamic_pointer_cast<otdf::DynamicMesh>(link));
     glPushMatrix();
     glTranslatef(nextTfframe.p[0], nextTfframe.p[1], nextTfframe.p[2]);
     glRotatef(theta * 180/M_PI, axis[0], axis[1], axis[2]); 
@@ -2050,7 +2050,7 @@ void GlKinematicBody::draw_link(shared_ptr<otdf::Geometry> link,const std::strin
   }
   else if  (type == otdf::Geometry::TORUS)
   {
-    boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link));
+    boost::shared_ptr<otdf::Torus> torus(boost::dynamic_pointer_cast<otdf::Torus>(link));
     double innerRadius = torus->tube_radius;
     double outerRadius = torus->radius;
    
@@ -2202,20 +2202,20 @@ void GlKinematicBody::get_whole_body_span_dims(Eigen::Vector3f &whole_body_span_
 
       if (type == urdf::Geometry::SPHERE)
       {
-        boost::shared_ptr<urdf::Sphere> sphere(boost::shared_dynamic_cast<urdf::Sphere>(_link_shapes[i]));	
+        boost::shared_ptr<urdf::Sphere> sphere(boost::dynamic_pointer_cast<urdf::Sphere>(_link_shapes[i]));	
         double radius = sphere->radius;
         min_x = -radius; min_y = -radius; min_z = -radius;
         max_x =  radius; max_y =  radius; max_z =  radius;
       }
       else if  (type == urdf::Geometry::BOX)
       {
-        boost::shared_ptr<urdf::Box> box(boost::shared_dynamic_cast<urdf::Box>(_link_shapes[i]));
+        boost::shared_ptr<urdf::Box> box(boost::dynamic_pointer_cast<urdf::Box>(_link_shapes[i]));
         min_x = -0.5*box->dim.x; min_y = -0.5*box->dim.y; min_z = -0.5*box->dim.z;
         max_x =  0.5*box->dim.x; max_y =  0.5*box->dim.y; max_z =  0.5*box->dim.z;
       }
       else if  (type == urdf::Geometry::CYLINDER)
       {
-        boost::shared_ptr<urdf::Cylinder> cyl(boost::shared_dynamic_cast<urdf::Cylinder>(_link_shapes[i]));
+        boost::shared_ptr<urdf::Cylinder> cyl(boost::dynamic_pointer_cast<urdf::Cylinder>(_link_shapes[i]));
         min_x = -cyl->radius; min_y = -cyl->radius; min_z = -0.5*cyl->length;
         max_x =  cyl->radius; max_y =  cyl->radius; max_z =  0.5*cyl->length;
       }
@@ -2250,20 +2250,20 @@ void GlKinematicBody::get_whole_body_span_dims(Eigen::Vector3f &whole_body_span_
       
       if (type == otdf::Geometry::SPHERE)
       {
-        boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(_otdf_link_shapes[i]));	
+        boost::shared_ptr<otdf::Sphere> sphere(boost::dynamic_pointer_cast<otdf::Sphere>(_otdf_link_shapes[i]));	
         double radius = sphere->radius;
         min_x = -radius; min_y = -radius; min_z = -radius;
         max_x =  radius; max_y =  radius; max_z =  radius;
       }
       else if  (type == otdf::Geometry::BOX)
       {
-        boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(_otdf_link_shapes[i]));
+        boost::shared_ptr<otdf::Box> box(boost::dynamic_pointer_cast<otdf::Box>(_otdf_link_shapes[i]));
         min_x = -0.5*box->dim.x; min_y = -0.5*box->dim.y; min_z = -0.5*box->dim.z;
         max_x =  0.5*box->dim.x; max_y =  0.5*box->dim.y; max_z =  0.5*box->dim.z;
       }
       else if  (type == otdf::Geometry::CYLINDER)
       {
-        boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(_otdf_link_shapes[i]));
+        boost::shared_ptr<otdf::Cylinder> cyl(boost::dynamic_pointer_cast<otdf::Cylinder>(_otdf_link_shapes[i]));
         min_x = -cyl->radius; min_y = -cyl->radius; min_z = -0.5*cyl->length;
         max_x =  cyl->radius; max_y =  cyl->radius; max_z =  0.5*cyl->length;
       }
@@ -2293,7 +2293,7 @@ void GlKinematicBody::get_whole_body_span_dims(Eigen::Vector3f &whole_body_span_
       }
       else if  (type == otdf::Geometry::TORUS)
       {
-        boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(_otdf_link_shapes[i]));
+        boost::shared_ptr<otdf::Torus> torus(boost::dynamic_pointer_cast<otdf::Torus>(_otdf_link_shapes[i]));
         min_x = -torus->radius; min_y = -torus->radius; min_z = -torus->tube_radius;
         max_x =  torus->radius; max_y =  torus->radius; max_z =  torus->tube_radius;
       }
@@ -2366,20 +2366,20 @@ bool GlKinematicBody::get_link_geometry_span_dims(std::string &link_geometry_nam
 
     if (type == urdf::Geometry::SPHERE)
     {
-      boost::shared_ptr<urdf::Sphere> sphere(boost::shared_dynamic_cast<urdf::Sphere>(_link_shapes[i]));	
+      boost::shared_ptr<urdf::Sphere> sphere(boost::dynamic_pointer_cast<urdf::Sphere>(_link_shapes[i]));	
       double radius = sphere->radius;
       min_x = -radius; min_y = -radius; min_z = -radius;
       max_x =  radius; max_y =  radius; max_z =  radius;
     }
     else if  (type == urdf::Geometry::BOX)
     {
-      boost::shared_ptr<urdf::Box> box(boost::shared_dynamic_cast<urdf::Box>(_link_shapes[i]));
+      boost::shared_ptr<urdf::Box> box(boost::dynamic_pointer_cast<urdf::Box>(_link_shapes[i]));
       min_x = -0.5*box->dim.x; min_y = -0.5*box->dim.y; min_z = -0.5*box->dim.z;
       max_x =  0.5*box->dim.x; max_y =  0.5*box->dim.y; max_z =  0.5*box->dim.z;
     }
     else if  (type == urdf::Geometry::CYLINDER)
     {
-      boost::shared_ptr<urdf::Cylinder> cyl(boost::shared_dynamic_cast<urdf::Cylinder>(_link_shapes[i]));
+      boost::shared_ptr<urdf::Cylinder> cyl(boost::dynamic_pointer_cast<urdf::Cylinder>(_link_shapes[i]));
       min_x = -cyl->radius; min_y = -cyl->radius; min_z = -0.5*cyl->length;
       max_x =  cyl->radius; max_y =  cyl->radius; max_z =  0.5*cyl->length;
     }
@@ -2414,20 +2414,20 @@ bool GlKinematicBody::get_link_geometry_span_dims(std::string &link_geometry_nam
     
     if (type == otdf::Geometry::SPHERE)
     {
-      boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(_otdf_link_shapes[i]));	
+      boost::shared_ptr<otdf::Sphere> sphere(boost::dynamic_pointer_cast<otdf::Sphere>(_otdf_link_shapes[i]));	
       double radius = sphere->radius;
       min_x = -radius; min_y = -radius; min_z = -radius;
       max_x =  radius; max_y =  radius; max_z =  radius;
     }
     else if  (type == otdf::Geometry::BOX)
     {
-      boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(_otdf_link_shapes[i]));
+      boost::shared_ptr<otdf::Box> box(boost::dynamic_pointer_cast<otdf::Box>(_otdf_link_shapes[i]));
       min_x = -0.5*box->dim.x; min_y = -0.5*box->dim.y; min_z = -0.5*box->dim.z;
       max_x =  0.5*box->dim.x; max_y =  0.5*box->dim.y; max_z =  0.5*box->dim.z;
     }
     else if  (type == otdf::Geometry::CYLINDER)
     {
-      boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(_otdf_link_shapes[i]));
+      boost::shared_ptr<otdf::Cylinder> cyl(boost::dynamic_pointer_cast<otdf::Cylinder>(_otdf_link_shapes[i]));
       min_x = -cyl->radius; min_y = -cyl->radius; min_z = -0.5*cyl->length;
       max_x =  cyl->radius; max_y =  cyl->radius; max_z =  0.5*cyl->length;
     }
@@ -2457,7 +2457,7 @@ bool GlKinematicBody::get_link_geometry_span_dims(std::string &link_geometry_nam
     }
     else if  (type == otdf::Geometry::TORUS)
     {
-      boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(_otdf_link_shapes[i]));
+      boost::shared_ptr<otdf::Torus> torus(boost::dynamic_pointer_cast<otdf::Torus>(_otdf_link_shapes[i]));
       min_x = -torus->radius; min_y = -torus->radius; min_z = -torus->tube_radius;
       max_x =  torus->radius; max_y =  torus->radius; max_z =  torus->tube_radius;
     }

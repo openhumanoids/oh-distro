@@ -125,7 +125,7 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_,
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9993,"iPass - World "     ,7,1, 9994,0, colors_v ));
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), 
                                   camera_params_.width, 
-                                  camera_params_.height ); // Actually outputs the Mask Image:
+                                  camera_params_.height ); // Actually outputs the Mask PCLImage:
 
 
   // Keep a mesh for the affordances:
@@ -204,30 +204,30 @@ void Pass::prepareModel(){
         Eigen::Isometry3d visual_origin = URDFPoseToEigen( visuals[iv]->origin );
         
         if  (geom->type == urdf::Geometry::MESH){
-          shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>( geom ));
+          shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>( geom ));
           // TODO: Verify the existance of the file:
           std::string file_path = gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_);
 
           // Read the Mesh, transform by the visual component origin:
           pcl::PolygonMesh::Ptr this_mesh = getPolygonMesh(file_path);
           pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
-          pcl::fromROSMsg(this_mesh->cloud, mesh_cloud_1st);
+          pcl::fromPCLPointCloud2(this_mesh->cloud, mesh_cloud_1st);
           Eigen::Isometry3f visual_origin_f= visual_origin.cast<float>();
           Eigen::Quaternionf visual_origin_quat(visual_origin_f.rotation());
           pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, visual_origin_f.translation(), visual_origin_quat);  
-          pcl::toROSMsg (mesh_cloud_1st, this_mesh->cloud);  
+          pcl::toPCLPointCloud2 (mesh_cloud_1st, this_mesh->cloud);  
           simexample->mergePolygonMesh(mesh_ptr, this_mesh );
           
         }else if(geom->type == urdf::Geometry::BOX){
-          shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>( geom ));
+          shared_ptr<urdf::Box> box(dynamic_pointer_cast<urdf::Box>( geom ));
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getCubeWithTransform(visual_origin, box->dim.x, box->dim.y, box->dim.z) );
         }else if(geom->type == urdf::Geometry::CYLINDER){
-          shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>( geom ));
+          shared_ptr<urdf::Cylinder> cyl(dynamic_pointer_cast<urdf::Cylinder>( geom ));
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getCylinderWithTransform(visual_origin, cyl->radius, cyl->radius, cyl->length) );
         }else if(geom->type == urdf::Geometry::SPHERE){
-          shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(geom)); 
+          shared_ptr<urdf::Sphere> sphere(dynamic_pointer_cast<urdf::Sphere>(geom)); 
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getSphereWithTransform(visual_origin, sphere->radius) );
         }else{
@@ -322,12 +322,12 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
       
       // Apply transform to polymesh:
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-      pcl::fromROSMsg(mesh_out->cloud, *cloud);  
+      pcl::fromPCLPointCloud2(mesh_out->cloud, *cloud);  
       Eigen::Isometry3f pose_f = transform.cast<float>();
       Eigen::Quaternionf quat_f(pose_f.rotation());
       pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
-      pcl::toROSMsg(*cloud, mesh_out->cloud);       
+      pcl::toPCLPointCloud2(*cloud, mesh_out->cloud);       
       
     }else{
       cout  << aff_uid << " is a not recognised ["<< otdf_type <<"] not supported yet\n";

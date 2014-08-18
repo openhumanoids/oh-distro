@@ -2,6 +2,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <mutex>
 
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/LcmWrapper.hpp>

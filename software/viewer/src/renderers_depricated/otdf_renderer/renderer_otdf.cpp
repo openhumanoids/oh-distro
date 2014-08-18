@@ -103,7 +103,7 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
   if (type == SPHERE)
     {
   glPushMatrix();
-      boost::shared_ptr<otdf::Sphere> sphere(boost::shared_dynamic_cast<otdf::Sphere>(link));	
+      boost::shared_ptr<otdf::Sphere> sphere(boost::dynamic_pointer_cast<otdf::Sphere>(link));	
       double radius = sphere->radius;
       glPointSize(radius);
       //glColor3ub(0,1,0);
@@ -114,7 +114,7 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
     }
   else if  (type == BOX)
     {
-    boost::shared_ptr<otdf::Box> box(boost::shared_dynamic_cast<otdf::Box>(link));
+    boost::shared_ptr<otdf::Box> box(boost::dynamic_pointer_cast<otdf::Box>(link));
     double xDim = box->dim.x;
     double yDim = box->dim.y;
     double zDim = box->dim.z;
@@ -138,7 +138,7 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
   }
   else if  (type == CYLINDER)
     {
-    boost::shared_ptr<otdf::Cylinder> cyl(boost::shared_dynamic_cast<otdf::Cylinder>(link));
+    boost::shared_ptr<otdf::Cylinder> cyl(boost::dynamic_pointer_cast<otdf::Cylinder>(link));
 
      glPushMatrix();
      double v[] = {0,0, -cyl->length/2.0};
@@ -207,12 +207,12 @@ static void link_draw(boost::shared_ptr<otdf::Geometry> link, const drc::link_tr
   else if  (type == MESH)
     {
     //cout << "MESH"<< endl;
-    //boost::shared_ptr<otdf::Mesh> mesh(boost::shared_dynamic_cast<otdf::Mesh>(it->second->visual->geometry));
+    //boost::shared_ptr<otdf::Mesh> mesh(boost::dynamic_pointer_cast<otdf::Mesh>(it->second->visual->geometry));
     //renderMesh(mesh->filename)
   }
   else if  (type == TORUS)
   {
-    boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link));
+    boost::shared_ptr<otdf::Torus> torus(boost::dynamic_pointer_cast<otdf::Torus>(link));
     double innerRadius = torus->tube_radius;
     double outerRadius = torus->radius;
    

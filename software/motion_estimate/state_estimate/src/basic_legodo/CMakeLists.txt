@@ -3,7 +3,7 @@ project(basiclegodo)
 
 
 ################
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 
 
@@ -19,7 +19,7 @@ pods_install_libraries(basiclegodo)
 pods_install_headers( leg_odometry.hpp LegOdoWrapper.hpp common_conversions.hpp DESTINATION basiclegodo)
 pods_install_pkg_config_file(basiclegodo
   LIBS -lbasiclegodo -lleg-odometry -linertial-odometry -lpcl_io
-  REQUIRES pcl_io-1.6
+  REQUIRES pcl_io-1.7
   VERSION 0.0.1)
 
 

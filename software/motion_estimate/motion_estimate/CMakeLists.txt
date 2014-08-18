@@ -17,7 +17,7 @@ add_subdirectory(src/foot_contact_alt)
 add_subdirectory(src/leg_estimate)
 
 # RGBD as a GPF
-add_subdirectory(src/gpf-rgbd-lib)
+#add_subdirectory(src/gpf-rgbd-lib)
 
 # mav modules :
 add_subdirectory(src/mav_est_fovis)

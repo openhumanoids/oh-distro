@@ -23,7 +23,7 @@ class image_tool{
     boost::shared_ptr<lcm::LCM> lcm_;
     
     void disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg); 
-    mutable sensor_msgs::PointCloud2 cloud_out;
+    mutable pcl::PCLPointCloud2 cloud_out;
     
     cv::Mat_<double> Q_;
     int decimate_;

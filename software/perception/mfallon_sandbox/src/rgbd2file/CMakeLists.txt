@@ -7,9 +7,9 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(rgbd2file)
 
 
-set(PCL_LIBRARIES  pcl_search-1.6 pcl_filters-1.6 pcl_features-1.6
-	pcl_segmentation-1.6 pcl_sample_consensus-1.6
-	pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_search-1.7 pcl_filters-1.7 pcl_features-1.7
+	pcl_segmentation-1.7 pcl_sample_consensus-1.7
+	pcl_io-1.7)
 
 
 add_executable(drc-rgbd2file rgbd2file.cpp  )

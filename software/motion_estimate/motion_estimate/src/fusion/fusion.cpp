@@ -4,7 +4,7 @@
 #include <mav_state_est/mav_state_est.hpp>
 #include <mav_state_est/gpf/rbis_gpf_update.hpp>
 
-#include <mav_state_est/gpf-rgbd-lib/rbis_gpf_update.hpp>
+// #include <mav_state_est/gpf-rgbd-lib/rbis_gpf_update.hpp>
 #include <mav_state_est/mav-est-fovis/rbis_fovis_update.hpp>
 #include <mav_state_est/mav-est-legodo/rbis_legodo_update.hpp>
 #include <mav_state_est/mav-est-legodo/rbis_legodo_external_update.hpp>
@@ -117,7 +117,7 @@ public:
     gps_handler = NULL;
     scan_matcher_handler = NULL;
     laser_gpf_handler = NULL;
-    rgbd_gpf_handler = NULL;
+    //rgbd_gpf_handler = NULL;
     indexed_measurement_handler = new IndexedMeasurementHandler();
     optical_flow_handler = NULL;
     init_message_handler = NULL;
@@ -193,11 +193,11 @@ public:
           indexed_measurement_handler);
     }
 
-    if (front_end->isActive("rgbd_gpf")) {
-      rgbd_gpf_handler = new RgbdGPFHandler(front_end->lcm_pub->getUnderlyingLCM(), front_end->param,
-          front_end->frames);
-      front_end->addSensor("rgbd_gpf", &MavStateEst::RgbdGPFHandler::processMessage, rgbd_gpf_handler);
-    }
+    //if (front_end->isActive("rgbd_gpf")) {
+    //  rgbd_gpf_handler = new RgbdGPFHandler(front_end->lcm_pub->getUnderlyingLCM(), front_end->param,
+    //      front_end->frames);
+    //  front_end->addSensor("rgbd_gpf", &MavStateEst::RgbdGPFHandler::processMessage, rgbd_gpf_handler);
+    //}
 
 
     if (front_end->isActive("fovis")) {
@@ -274,7 +274,7 @@ public:
   InsHandler * ins_handler;
   GpsHandler * gps_handler;
   LaserGPFHandler * laser_gpf_handler;
-  RgbdGPFHandler * rgbd_gpf_handler;
+  //RgbdGPFHandler * rgbd_gpf_handler;
   FovisHandler * fovis_handler;
   LegOdoHandler * legodo_handler;
   LegOdoExternalHandler * legodo_external_handler;

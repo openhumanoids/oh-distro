@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations 
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
-set(PCL_LIBRARIES   pcl_io-1.6)
+set(PCL_LIBRARIES   pcl_io-1.7)
 
 ################ LIBRARIES ###############################
   add_library(affordance-utils  SHARED AffordanceUtils.cpp)

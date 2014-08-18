@@ -2,7 +2,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations"
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(local_map)
 
-set(PCL_LIBRARIES  pcl_segmentation-1.6 pcl_sample_consensus-1.6  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_segmentation-1.7 pcl_sample_consensus-1.7  pcl_io-1.7)
 
 # create an executable, and make it public
 add_executable(drc-wheel-estimator car-wheel-estimation-app.cpp)

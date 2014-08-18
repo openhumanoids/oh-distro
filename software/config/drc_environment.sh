@@ -27,7 +27,11 @@ set_drc_base()
 
 setup_drcsim()
 {
-  source /usr/local/share/drcsim/setup.sh # this will also source setup.sh for ROS and Gazebo
+  drcsim_setup_file=/usr/local/share/drcsim/setup.sh
+  if [ -f $drcsim_setup_file ]; then
+    source $drcsim_setup_file # this will also source setup.sh for ROS and Gazebo
+  fi
+
   export ROS_PACKAGE_PATH=$DRC_BASE/ros_workspace:$ROS_PACKAGE_PATH
   export GAZEBO_PLUGIN_PATH=$DRC_BASE/software/build/lib:$GAZEBO_PLUGIN_PATH
   export GAZEBO_PLUGIN_PATH=$DRC_BASE/ros_workspace/mit_drcsim_plugins/lib:$GAZEBO_PLUGIN_PATH

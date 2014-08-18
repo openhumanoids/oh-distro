@@ -10,7 +10,7 @@ find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 set(REQUIRED_LIBS ${VTK_IO_TARGET_LINK_LIBRARIES} ${GLEW_LIBRARIES}    
        ${GLUT_LIBRARIES} vtkCommon vtkIO vtkHybrid)
-set(PCL_LIBRARIES  pcl_io-1.6 )
+set(PCL_LIBRARIES  pcl_io-1.7 )
 
 add_executable(mf-fisheye-meshproject fisheye-meshproject.cpp)
 pods_use_pkg_config_packages(mf-fisheye-meshproject lcm image_io_utils

@@ -16,6 +16,7 @@ using namespace cv;
 pointcloud_lcm::pointcloud_lcm (lcm_t* publish_lcm):
         publish_lcm_(publish_lcm){
 
+  /*
   kcal = kinect_calib_new();
   kcal->intrinsics_depth.fx = 576.09757860;
   kcal->intrinsics_depth.cx = 321.06398107;
@@ -32,7 +33,7 @@ pointcloud_lcm::pointcloud_lcm (lcm_t* publish_lcm):
   double depth_to_rgb_translation[] ={ -0.015756, -0.000923, 0.002316};
   memcpy(kcal->depth_to_rgb_rot, rotation, 9*sizeof(double)); 
   memcpy(kcal->depth_to_rgb_translation, depth_to_rgb_translation  , 3*sizeof(double));  
-
+  */
 
   // Data buffers
   //rgb_buf_ = (uint8_t*) malloc(10*1024 * 1024 * sizeof(uint8_t)); // wasn't large enough for 1024x1024 decompression
@@ -57,7 +58,7 @@ _matrix_vector_multiply_3x4_4d (const double m[12], const double v[4],
 void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
-  // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
+  // 1. Copy fields - this duplicates /pcl/conversions.h for "fromROSmsg"
   cloud->width   = msg->width;
   cloud->height   = msg->height;
   uint32_t num_points = msg->width * msg->height;
@@ -72,17 +73,17 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools_pointcloud2_t *msg,
   // in RGB data whose offset is not correctly understood
   // Instead of an offset of 12bytes, its offset is set to be 16
   // this fix corrects for the issue:
-  sensor_msgs::PointCloud2 msg_cld;
-  pcl::toROSMsg(*cloud, msg_cld);
+  pcl::PCLPointCloud2 msg_cld;
+  pcl::toPCLPointCloud2(*cloud, msg_cld);
   msg_cld.fields[3].offset = 12;
-  pcl::fromROSMsg (msg_cld, *cloud);
+  pcl::fromPCLPointCloud2 (msg_cld, *cloud);
 }
 
 
 void pointcloud_lcm::unpack_pointcloud2(const ptools::pointcloud2_t *msg,
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
 
-  // 1. Copy fields - this duplicates /pcl/ros/conversions.h for "fromROSmsg"
+  // 1. Copy fields - this duplicates /pcl/conversions.h for "fromROSmsg"
   cloud->width   = msg->width;
   cloud->height   = msg->height;
   uint32_t num_points = msg->width * msg->height;
@@ -97,12 +98,13 @@ void pointcloud_lcm::unpack_pointcloud2(const ptools::pointcloud2_t *msg,
   // in RGB data whose offset is not correctly understood
   // Instead of an offset of 12bytes, its offset is set to be 16
   // this fix corrects for the issue:
-  sensor_msgs::PointCloud2 msg_cld;
-  pcl::toROSMsg(*cloud, msg_cld);
+  pcl::PCLPointCloud2 msg_cld;
+  pcl::toPCLPointCloud2(*cloud, msg_cld);
   msg_cld.fields[3].offset = 16; // was 12 // 16 works for PCL Streaming
-  pcl::fromROSMsg (msg_cld, *cloud);
+  pcl::fromPCLPointCloud2 (msg_cld, *cloud);
 }
 
+/*
 
 void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t* rgb_data,
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
@@ -257,153 +259,6 @@ void pointcloud_lcm::unpack_kinect_frame(const kinect_frame_msg_t *msg, uint8_t*
   if(msg->depth.compression != KINECT_DEPTH_MSG_T_COMPRESSION_NONE) {
     free(uncompress_buffer); // memory leak bug fixed
   }
-}
-
-
-/*
-void pointcloud_lcm::unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
-                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb){
-  // cout << width <<" | "<< height <<" in unpack routine\n";
-
-  int h = height;//msg->images[0].height;
-  int w = width;//msg->images[0].width;
-  
-  // Convert Carnegie disparity format into floating point disparity. Store in local buffer
-  Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
-//  const uint8_t* raw_data= stereob_->getDisparity();//= 3;//msg->images[1].data.data();
-  disparity_orig_temp.data = (uchar*) depth_data;   // ... is a simple assignment possible?
-
-  //std::copy(msg->images[1].data.data()             , msg->images[1].data.data() + (msg->images[1].size) ,
-  //          disparity_orig_temp.data);
-  
-  // disparity_orig_temp.data = msg->images[1].data.data();   // ... is a simple assignment possible?
-  cv::Mat_<float> disparity_orig(h, w);
-  disparity_orig = disparity_orig_temp;
-  
-  //std::stringstream disparity_fname;
-  //disparity_fname << "crl_disparity_lcm_" << msg->utime << ".png";
-  //imwrite(disparity_fname.str(),disparity_orig_temp); 
-  
-  disparity_buf_.resize(h * w);
-  cv::Mat_<float> disparity(h, w, &(disparity_buf_[0]));
-  disparity = disparity_orig / 16.0;
-
-  // Allocate buffer for reprojection output
-  points_buf_.resize(h * w);
-  cv::Mat_<cv::Vec3f> points(h, w, &(points_buf_[0]));
-
-  // Do the reprojection in open space
-  static const bool handle_missing_values = true;
-  cv::reprojectImageTo3D(disparity, points, repro_matrix, handle_missing_values);
-  
-  
-  
-  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-  cloud->width    =(int) (w/ (double) decimate_) ;
-  cloud->height   =(int) (h/ (double) decimate_);
-  cloud->is_dense = true;
-  cloud->points.resize (cloud->width * cloud->height);  
-  // std::cout << cloud->points.size() << " cldsize\n";
-  int j2=0;
-  for(int v=0; v<h; v=v+ decimate_) { // t2b
-    for(int u=0; u<w; u=u+decimate_ ) {  //l2r
-        // cout <<j2 << " " << v << " " << u << " | " <<  points(v,u)[0] << " " <<  points(v,u)[1] << " " <<  points(v,u)[1] << "\n";
-        cloud->points[j2].x = points(v,u)[0];
-        cloud->points[j2].y = points(v,u)[1];
-        cloud->points[j2].z = points(v,u)[2];
-        
-        int pixel =v*w + u;
-        if (1==0){//color_provided){ // Assumed gray:
-          cloud->points[j2].r =color_data[pixel];
-          cloud->points[j2].g =color_data[pixel];
-          cloud->points[j2].b =color_data[pixel];
-        }else{ // RGB:
-          cloud->points[j2].r =color_data[pixel*3];
-          cloud->points[j2].g =color_data[pixel*3 +1];
-          cloud->points[j2].b =color_data[pixel*3 +2];
-        }
-        j2++;
-    }
-  }
-//  cout << "points: " << cloud->points.size() << "\n";
-//  pcl::io::savePCDFileASCII ("test_pcd.pcd", *cloud);
-}
-
-
-// msg - raw input data
-// repro_matrix is reprojection matrix e.g. this was the loan unit in feb 2013:
-//   [1, 0, 0, -512.5;
-//    0, 1, 0, -272.5;
-//    0, 0, 0, 606.034;
-//    0, 0, 14.2914745276283, 0]
-// cloud - output pcl cloud
-void pointcloud_lcm::unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix, 
-                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
-  bool is_rgb=false;
-  if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB ){
-    rgb_buf_ = msg->images[0].data;
-    is_rgb = true;
-  }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY ){
-    rgb_buf_ = msg->images[0].data;
-    is_rgb = false;
-  }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG ){
-    jpeg_decompress_8u_rgb (msg->images[0].data, msg->images[0].size,
-        rgb_buf_, msg->images[0].width, msg->images[0].height, msg->images[0].width* 3);
-    //jpegijg_decompress_8u_rgb(msg->image.image_data, msg->image.image_data_nbytes,
-    //        rgb_data, msg->image.width, msg->image.height, msg->image.width* 3);
-    is_rgb = true;
-  }else{
-    std::cout << "pointcloud_lcm::unpack_multisense | type not understood\n";
-    exit(-1);
-  }
-  
-  // TODO: support other modes (as in the renderer)
-  if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
-    unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
-    uncompress(depth_buf_ , &dlen, msg->images[1].data, msg->images[1].size);
-  } else{
-    std::cout << "pointcloud_lcm::unpack_multisense | depth type not understood\n";
-    exit(-1);
-  }  
-  
-  unpack_multisense(depth_buf_, rgb_buf_, msg->images[0].height, msg->images[0].width, repro_matrix, 
-                                       cloud, is_rgb);
-}
-
-
-void pointcloud_lcm::unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
-                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
-  bool is_rgb=true;
-  if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB ){
-    rgb_buf_ = (uint8_t*) msg->images[0].data.data();
-    is_rgb = true;
-  }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_GRAY ){
-    rgb_buf_ = (uint8_t*) msg->images[0].data.data();
-    is_rgb = false;
-  }else if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG ){
-    jpeg_decompress_8u_rgb ( msg->images[0].data.data(), msg->images[0].size,
-        rgb_buf_, msg->images[0].width, msg->images[0].height, msg->images[0].width* 3);
-    //jpegijg_decompress_8u_rgb(msg->image.image_data, msg->image.image_data_nbytes,
-    //        rgb_data, msg->image.width, msg->image.height, msg->image.width* 3);
-    is_rgb = true;
-  }else{
-    std::cout << "pointcloud_lcm::unpack_multisense | image type not understood\n";
-    exit(-1);
-  }
-  
-  // TODO: support other modes (as in the renderer)
-  if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
-    unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
-    uncompress(depth_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
-  } else{
-    std::cout << "pointcloud_lcm::unpack_multisense | depth type not understood\n";
-    exit(-1);
-  }
-  
-  unpack_multisense(depth_buf_, rgb_buf_, msg->images[0].height, msg->images[0].width, repro_matrix, 
-                                       cloud, is_rgb);
-  // unpack_multisense(msg->images[1].data.data(), msg->images[0].data.data(), msg->images[0].height, msg->images[0].width, repro_matrix, 
-  //                                     cloud, is_rgb);
 }
 
 */

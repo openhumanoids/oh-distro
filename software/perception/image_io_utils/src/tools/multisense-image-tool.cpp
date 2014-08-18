@@ -63,7 +63,7 @@ class image_tool{
 
     mutable std::vector<float> disparity_buff_;
     mutable std::vector<cv::Vec3f> points_buff_;
-    mutable sensor_msgs::PointCloud2 cloud_out;
+    mutable pcl::PCLPointCloud2 cloud_out;
     
     cv::Mat_<double> Q_;
     int decimate_;

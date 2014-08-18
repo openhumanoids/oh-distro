@@ -56,7 +56,7 @@ class joints2frames{
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
     pointcloud_vis* pc_vis_;
     
-    map<string, FrequencyLimit > pub_frequency_;
+    std::map<std::string, FrequencyLimit > pub_frequency_;
     bool show_labels_, show_triads_, ground_height_;
     bool standalone_head_, bdi_motion_estimate_;
 

@@ -86,7 +86,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   if (type == SPHERE)
     {
 
-      shared_ptr<urdf::Sphere> sphere(shared_dynamic_cast<urdf::Sphere>(link));	
+      shared_ptr<urdf::Sphere> sphere(dynamic_pointer_cast<urdf::Sphere>(link));	
       double radius = sphere->radius;
       
 //        glPushMatrix();
@@ -104,7 +104,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
     }
   else if  (type == BOX)
     {
-    shared_ptr<urdf::Box> box(shared_dynamic_cast<urdf::Box>(link));
+    shared_ptr<urdf::Box> box(dynamic_pointer_cast<urdf::Box>(link));
     double xDim = box->dim.x;
     double yDim = box->dim.y;
     double zDim = box->dim.z;
@@ -131,7 +131,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
 
 
 
-      shared_ptr<urdf::Cylinder> cyl(shared_dynamic_cast<urdf::Cylinder>(link));
+      shared_ptr<urdf::Cylinder> cyl(dynamic_pointer_cast<urdf::Cylinder>(link));
       /*glPointSize(10.0f);
       glColor3ub(0,1,0);
       glBegin(GL_POINTS);
@@ -212,7 +212,7 @@ static void draw(shared_ptr<urdf::Geometry> link, const drc::link_transform_t &n
   else if  (type == MESH)
     {
     //cout << "MESH"<< endl;
-    //shared_ptr<urdf::Mesh> mesh(shared_dynamic_cast<urdf::Mesh>(it->second->visual->geometry));
+    //shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>(it->second->visual->geometry));
     //renderMesh(mesh->filename)
   }
   else {

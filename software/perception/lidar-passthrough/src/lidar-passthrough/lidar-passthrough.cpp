@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <iostream>
+#include <mutex>
+#include <condition_variable>
 #include <thread>
 #include <Eigen/Dense>
 #include <boost/shared_ptr.hpp>

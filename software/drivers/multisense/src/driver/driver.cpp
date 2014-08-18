@@ -120,7 +120,10 @@ int main(int    argc, char** argv){
     
     while(1){
       // This is what I'm most unsure about in this driver:
-      nanosleep((struct timespec[]){{0, 10000000}}, NULL);
+      struct timespec tim;
+      tim.tv_sec = 0;
+      tim.tv_nsec = 10000000;
+      nanosleep(&tim, NULL);
       lcm->handle();
     }
   }

@@ -77,5 +77,5 @@ void gen_mesh::gen_cylinder(pcl::PolygonMesh::Ptr &mesh,double radius,double len
   cloud->width    = 1;
   cloud->height   = cloud->points.size();
   cloud->is_dense = false;
-  pcl::toROSMsg (*cloud, mesh->cloud);
+  pcl::toPCLPointCloud2 (*cloud, mesh->cloud);
 }

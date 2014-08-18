@@ -6,6 +6,7 @@ pods_use_pkg_config_packages(drc-lidar-plancheck collision_object_gfe collision_
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp
   pointcloud_vis pointcloud_lcm)
+target_link_libraries (drc-lidar-plancheck boost_system boost_thread)
 pods_install_executables(drc-lidar-plancheck)
 
 # Simple scan-by-scan filtering:
@@ -13,4 +14,5 @@ add_executable(drc-lidar-filter lidar-filter.cpp)
 pods_use_pkg_config_packages(drc-lidar-filter lcm
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp)
+target_link_libraries (drc-lidar-filter boost_system boost_thread)
 pods_install_executables(drc-lidar-filter)

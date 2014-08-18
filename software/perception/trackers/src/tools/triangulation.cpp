@@ -22,7 +22,7 @@ int
 main (int argc, char** argv)
 {
   ConciseArgs parser(argc, argv, "lidar-passthrough");
-  string filename = "bun0.pcd";
+  std::string filename = "bun0.pcd";
   parser.add(filename, "f", "filename", "filename");
   parser.parse();
   
@@ -30,9 +30,9 @@ main (int argc, char** argv)
   
   // Load input file into a PointCloud<T> with an appropriate type
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
-  sensor_msgs::PointCloud2 cloud_blob;
+  pcl::PCLPointCloud2 cloud_blob;
   pcl::io::loadPCDFile (filename, cloud_blob);
-  pcl::fromROSMsg (cloud_blob, *cloud_in);
+  pcl::fromPCLPointCloud2 (cloud_blob, *cloud_in);
   //* the data should be available in cloud
   
   

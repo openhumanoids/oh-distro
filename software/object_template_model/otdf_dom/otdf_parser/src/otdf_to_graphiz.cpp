@@ -48,14 +48,14 @@ void addChildLinkNames(boost::shared_ptr<const BaseEntity> entity, ofstream& os)
    std::string type = entity->getEntityType();
   if (type == "Link"){
        os << "\"" << entity->name << "\" [label=\"" << entity->name << "\"];" << endl;
-    boost::shared_ptr<const Link> downcasted_entity(boost::shared_dynamic_cast<const Link>(entity)); 
+    boost::shared_ptr<const Link> downcasted_entity(boost::dynamic_pointer_cast<const Link>(entity)); 
    
   for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
     addChildLinkNames(*child, os);
     
   }
   else if (type == "Bounding_volume"){
-  boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::shared_dynamic_cast<const Bounding_volume>(entity));  
+  boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::dynamic_pointer_cast<const Bounding_volume>(entity));  
     
   for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
     addChildLinkNames(*child, os);
@@ -67,7 +67,7 @@ void addChildBoundingVolumeNames(boost::shared_ptr<const BaseEntity> entity, ofs
   
    std::string type = entity->getEntityType();
   if (type == "Link"){
-    boost::shared_ptr<const Link> downcasted_entity(boost::shared_dynamic_cast<const Link>(entity)); 
+    boost::shared_ptr<const Link> downcasted_entity(boost::dynamic_pointer_cast<const Link>(entity)); 
    
   for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
     addChildBoundingVolumeNames(*child, os);
@@ -75,7 +75,7 @@ void addChildBoundingVolumeNames(boost::shared_ptr<const BaseEntity> entity, ofs
   }
   else if (type == "Bounding_volume"){
    os << "\"" << entity->name << "\" [label=\"" << entity->name << "\"];" << endl;
-  boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::shared_dynamic_cast<const Bounding_volume>(entity));  
+  boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::dynamic_pointer_cast<const Bounding_volume>(entity));  
     
   for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
     addChildBoundingVolumeNames(*child, os);
@@ -86,7 +86,7 @@ void addChildBoundingVolumeNames(boost::shared_ptr<const BaseEntity> entity, ofs
 void printChildJointNames(boost::shared_ptr<const BaseEntity> entity, boost::shared_ptr<const BaseEntity> child, ofstream& os, double &r, double &p, double &y)
 {
 	  if((child)->getEntityType() == "Link") {
-	      boost::shared_ptr<const Link> downcasted_child(boost::shared_dynamic_cast<const Link>((child))); 
+	      boost::shared_ptr<const Link> downcasted_child(boost::dynamic_pointer_cast<const Link>((child))); 
 	      (downcasted_child)->parent_joint->parent_to_joint_origin_transform.rotation.getRPY(r,p,y);
 	      os << "\"" << entity->name << "\" -> \"" << (downcasted_child)->parent_joint->name 
 		<< "\" [label=\"xyz: "
@@ -97,7 +97,7 @@ void printChildJointNames(boost::shared_ptr<const BaseEntity> entity, boost::sha
 	      os << "\"" << (downcasted_child)->parent_joint->name << "\" -> \"" << (downcasted_child)->name << "\"" << endl;
 	  }
 	  else if ((child)->getEntityType() == "Bounding_volume") {
-	      boost::shared_ptr<const Bounding_volume> downcasted_child(boost::shared_dynamic_cast<const Bounding_volume>((child))); 
+	      boost::shared_ptr<const Bounding_volume> downcasted_child(boost::dynamic_pointer_cast<const Bounding_volume>((child))); 
 	      (downcasted_child)->parent_joint->parent_to_joint_origin_transform.rotation.getRPY(r,p,y);
 	      os << "\"" << entity->name << "\" -> \"" << (downcasted_child)->parent_joint->name 
 		<< "\" [label=\"xyz: "
@@ -116,7 +116,7 @@ void addChildJointNames(boost::shared_ptr<const BaseEntity> entity, ofstream& os
     double r, p, y;
   std::string type = entity->getEntityType();
   if (type == "Link"){
-   boost::shared_ptr<const Link> downcasted_entity(boost::shared_dynamic_cast<const Link>(entity)); 
+   boost::shared_ptr<const Link> downcasted_entity(boost::dynamic_pointer_cast<const Link>(entity)); 
 	
       for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
       {
@@ -125,7 +125,7 @@ void addChildJointNames(boost::shared_ptr<const BaseEntity> entity, ofstream& os
       }
   }
   else if (type == "Bounding_volume"){
-    boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::shared_dynamic_cast<const Bounding_volume>(entity));  
+    boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::dynamic_pointer_cast<const Bounding_volume>(entity));  
       
       for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
       {

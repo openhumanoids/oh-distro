@@ -5,6 +5,7 @@
 #include <set>
 #include <thread>
 #include <memory>
+#include <mutex>
 #include <Eigen/Geometry>
 
 #include "Types.hpp"

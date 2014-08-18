@@ -5,7 +5,7 @@ add_definitions(
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-set(PCL_LIBRARIES pcl_common-1.6 pcl_io-1.6 pcl_visualization-1.6)
+set(PCL_LIBRARIES pcl_common-1.7 pcl_io-1.7 pcl_visualization-1.7)
 
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})

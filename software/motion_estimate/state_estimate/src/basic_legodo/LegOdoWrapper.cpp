@@ -46,7 +46,7 @@ void LegOdoWrapper::setupLegOdo() {
 	}
 
 	leg_odo_ = new leg_odometry(lcm_publish_, botparam_, model_);
-	string leg_odo_mode = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo_driven_process.integration_mode");
+	std::string leg_odo_mode = bot_param_get_str_or_fail(botparam_, "state_estimator.legodo_driven_process.integration_mode");
 	std::cout << "Overwriting the leg odom mode:: " << leg_odo_mode << "\n";
 	leg_odo_->setLegOdometryMode( leg_odo_mode );
 }

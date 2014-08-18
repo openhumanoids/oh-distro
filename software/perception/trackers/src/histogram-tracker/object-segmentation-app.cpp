@@ -408,9 +408,9 @@ void  INThandler(int sig) {
 
 
 int main(int argc, char ** argv) {
-    cout << "============= QUICK MODES ===================\n";
-    cout << "drc-object-segmentation -c CAMERALEFT\n";
-    cout << "=============================================\n";
+    std::cout << "============= QUICK MODES ===================\n";
+    std::cout << "drc-object-segmentation -c CAMERALEFT\n";
+    std::cout << "=============================================\n";
 
     ConciseArgs opt(argc, (char**)argv);
     opt.add(options.vCHANNEL, "c", "camera-channel","Camera Channel [CAMERALEFT]");
@@ -442,7 +442,7 @@ int main(int argc, char ** argv) {
         if (c == 'q') { 
             break;
         } else if ( c == 'c' ) { 
-            cerr << "Capturing image" << endl;
+            std::cerr << "Capturing image" << std::endl;
             cv::imwrite("capture.png", state->img);
         } else if ( c == 'r' ) { 
             state->fg_pts.clear(); 

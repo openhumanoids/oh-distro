@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(rgbd_primitives)
 
 
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 
 add_library(rgbd_primitives SHARED rgbd_primitives.cpp)
 
@@ -18,7 +18,7 @@ pods_install_headers(rgbd_primitives.hpp DESTINATION rgbd_simulation)
 #    z)
 pods_install_pkg_config_file(rgbd_primitives
     LIBS -lrgbd_primitives
-    REQUIRES eigen3 pcl_io-1.6
+    REQUIRES eigen3 pcl_io-1.7
     VERSION 0.0.1)
 
     

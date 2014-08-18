@@ -114,7 +114,7 @@ static AffPtr geometryToAff(shared_ptr<otdf::Geometry> g,
   Eigen::Vector3f color(1,0,0); //todo
   if(g->type == otdf::Geometry::SPHERE )
     {                  
-      shared_ptr< otdf::Sphere > sphere = shared_dynamic_cast< otdf::Sphere >(g);
+      shared_ptr< otdf::Sphere > sphere = dynamic_pointer_cast< otdf::Sphere >(g);
       AffPtr s (new AffordanceState());
       s->setToSphere(sphere->radius,
                      0,0, //uid, mapid
@@ -125,7 +125,7 @@ static AffPtr geometryToAff(shared_ptr<otdf::Geometry> g,
     } 
   if (g->type == otdf::Geometry::BOX )
     {
-      shared_ptr< otdf::Box > box = shared_dynamic_cast< otdf::Box >(g);
+      shared_ptr< otdf::Box > box = dynamic_pointer_cast< otdf::Box >(g);
       AffPtr b (new AffordanceState());
       b->setToBox(box->dim.x, //length
                   box->dim.y, //width
@@ -138,7 +138,7 @@ static AffPtr geometryToAff(shared_ptr<otdf::Geometry> g,
     } 
   if (g->type == otdf::Geometry::CYLINDER )
     {
-      shared_ptr< otdf::Cylinder > cylinder = shared_dynamic_cast< otdf::Cylinder >(g);
+      shared_ptr< otdf::Cylinder > cylinder = dynamic_pointer_cast< otdf::Cylinder >(g);
       AffPtr c (new AffordanceState());
       c->setToCylinder(cylinder->length,
                        cylinder->radius, 

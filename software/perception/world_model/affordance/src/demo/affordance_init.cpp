@@ -32,7 +32,7 @@ using namespace boost::assign; // bring 'operator+()' into scope
 using namespace boost;
 
 char* pDRC_BASE = getenv("DRC_BASE");  
-string drc_base = string(pDRC_BASE);
+std::string drc_base = std::string(pDRC_BASE);
 
 
 // Raw details read from affordance text file
@@ -40,7 +40,7 @@ class AffRaw {
 public:
   AffRaw(std::string friendly_name_, Eigen::Isometry3d position_, std::vector<double> params_):
     friendly_name_ (friendly_name_), position_(position_), params_(params_){};
-  string friendly_name_;
+  std::string friendly_name_;
   Eigen::Isometry3d position_ ; // position of the affordance
   std::vector<double> params_;
   
@@ -155,7 +155,7 @@ drc::affordance_plus_t Pass::getDynamicMeshAffordancePlus(std::string filename, 
     p.npoints=0; 
     p.ntriangles =0;
   }else{
-    string filename_full = string(drc_base + "/software/models/otdf/" + filename);
+    std::string filename_full = std::string(drc_base + "/software/models/otdf/" + filename);
     std::vector< std::vector< float > > points;
     std::vector< std::vector< int > > triangles;
     affutils.getModelAsLists(filename_full, points, triangles);
@@ -201,7 +201,7 @@ drc::affordance_plus_t Pass::getDynamicMeshCylinderAffordancePlus(std::string fi
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
+  std::string filename_full = std::string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -253,7 +253,7 @@ drc::affordance_plus_t Pass::getDynamicMeshTwoCylinderAffordancePlus(std::string
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
+  std::string filename_full = std::string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -297,7 +297,7 @@ drc::affordance_plus_t Pass::getDynamicMeshSteeringCylAffordancePlus(std::string
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
+  std::string filename_full = std::string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -334,7 +334,7 @@ drc::affordance_plus_t Pass::getCarAffordancePlus(std::string filename, std::vec
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
+  std::string filename_full = std::string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -370,7 +370,7 @@ drc::affordance_plus_t Pass::getPlaneAffordancePlus(std::string filename, std::v
   
   std::vector< std::vector< float > > points;
   std::vector< std::vector< int > > triangles;
-  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
+  std::string filename_full = std::string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -445,7 +445,7 @@ drc::affordance_plus_t Pass::getAffordancePlusForFirehoseMatableStandpipe(std::s
   std::vector< std::vector< int > > triangles;
 
 
-  string filename_full = string(drc_base + "/software/models/otdf/" + filename);
+  std::string filename_full = std::string(drc_base + "/software/models/otdf/" + filename);
   affutils.getModelAsLists(filename_full, points, triangles);
   p.points =points;
   p.npoints=points.size(); 
@@ -463,7 +463,7 @@ std::vector<AffRaw> Pass::readAffordanceFile(std::string filename){
   
   ifstream fileinput (filename);
   if (fileinput.is_open()){
-    string message;
+    std::string message;
     while ( getline (fileinput,message) ) { // for each line
       std::string letter1 = message.substr (0,1);   // "generalities"
       if (letter1 == "#"){
@@ -514,7 +514,7 @@ void Pass::readStandingPositionsFile(std::string filename, std::vector<AffRaw> &
   
   ifstream fileinput (filename);
   if (fileinput.is_open()){
-    string message;
+    std::string message;
     while ( getline (fileinput,message) ) { // for each line
       std::string letter1 = message.substr (0,1);   // "generalities"
       if (letter1 == "#"){
@@ -610,7 +610,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
-    string filename0 = "skil.ply";
+    std::string filename0 = "skil.ply";
     drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
     a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
     a0.aff.otdf_type = "skil";
@@ -623,7 +623,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_mfallonio.ply");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill.pcd");
     //string filename = string(drc_base+ "/software/models/mit_gazebo_models/mesh_otdf/meshes/drill_sensed_smoothed.pcd");
-    string filename0 = "skil.ply"; //string(drc_base+ "/software/models/otdf/drill.ply");
+    std::string filename0 = "skil.ply"; //string(drc_base+ "/software/models/otdf/drill.ply");
     drc::affordance_plus_t a0 = getDynamicMeshCylinderAffordancePlus(filename0, xyzrpy0, uid0);
     a0.aff.bounding_lwh[0]=0.36;       a0.aff.bounding_lwh[1]=0.33;      a0.aff.bounding_lwh[2]=0.3; 
     a0.aff.otdf_type = "skil";
@@ -635,7 +635,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     std::vector<double> xyzrpy0 = {0.51, 0.2, 1.213, 0, 0, 3.1415};
     
     std::vector<double> lengths = { 0.0795, 0.0795, 0.0795};
-    string friendly_name = "april_box";
+    std::string friendly_name = "april_box";
 
     Eigen::Isometry3d null_pose;
     null_pose.setIdentity();    
@@ -655,7 +655,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     //std::vector<double> xyzrpy1 = {-2.5 , -3.36 , 1.2 , -M_PI/2 , 0 , 0};  //ground truth
     //std::vector<double> xyzrpy1 = {1.202 , -2.628 , 0.265 , -M_PI/2 , 0 , M_PI};  //with state estimation, starting close to table for dev
     std::vector<double> xyzrpy1 = {4.512, 11.640, 0.252, -M_PI/2, 0, 0}; //for comp
-    string filename1 = "standpipe.ply";
+    std::string filename1 = "standpipe.ply";
     //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
     //set_param(a1,"radius",0.055);
     //set_param(a1,"length",0.025);
@@ -680,7 +680,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     //std::vector<double> xyzrpy1 = {1.95 , -0.65 , 1.3 , M_PI/2 , 0 , 0}; // vrc - ground truth
     std::vector<double> xyzrpy1 = {1.95 , -0.65 , 0.18 , -M_PI/2 , 0 , 0}; // vrc - state estimation
     // std::vector<double> xyzrpy1 = {-2.2 , -4.7 , 1.1 , M_PI/2 , 0 , 0};  
-    string filename1 = "firehose.ply";
+    std::string filename1 = "firehose.ply";
     //drc::affordance_plus_t a1 = getDynamicMeshCylinderAffordancePlus(filename1, xyzrpy1, uid1);
     drc::affordance_plus_t a1 =getDynamicMeshTwoCylinderAffordancePlus(filename1, xyzrpy1, uid1);
     set_param(a1,"radius2",0.019);
@@ -704,7 +704,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     // std::vector<double> xyzrpy1 = {-3.0, -3.214, 1.2, 0, 0, -M_PI};  //ground truth
     //std::vector<double> xyzrpy1 = {1.696, -2.785, 0.277, 0, 0, -M_PI};  //with state estimation, starting close to table for dev
     std::vector<double> xyzrpy1 = {4.024, 11.785, 0.251, 0, 0, 0}; //for comp
-    string filename1 = "valve.ply";
+    std::string filename1 = "valve.ply";
     drc::affordance_plus_t a1 = getDynamicMeshSteeringCylAffordancePlus(filename1, xyzrpy1, uid1);
     set_param(a1,"radius",0.15);
     set_param(a1,"length",0.03);
@@ -887,8 +887,8 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
   }     
     
 
-  string debris_filename_full = string(drc_base + "/software/config/task_config/debris/debrisPositions.csv");
-  string standing_filename_full = string(drc_base + "/software/config/task_config/debris/debrisStandXYZYaw.csv");
+  std::string debris_filename_full = std::string(drc_base + "/software/config/task_config/debris/debrisPositions.csv");
+  std::string standing_filename_full = std::string(drc_base + "/software/config/task_config/debris/debrisStandXYZYaw.csv");
   std::cout << debris_filename_full << "\n";
   std::vector<AffRaw> affraw_list = readAffordanceFile(debris_filename_full);
   std:: cout << affraw_list.size() << " affordances read\n";
@@ -903,7 +903,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
       std::vector<double> xyzrpy = { affraw.params_[0], affraw.params_[1], affraw.params_[2], affraw.params_[3], affraw.params_[4], affraw.params_[5] };
       std::vector<double> lengths = { affraw.params_[6], affraw.params_[7], affraw.params_[8]};
       int uid = i+1;
-      string friendly_name = affraw.friendly_name_;
+      std::string friendly_name = affraw.friendly_name_;
       drc::affordance_plus_t a1 = affutils.getBoxAffordancePlus(uid,friendly_name, affraw.position_ , lengths);
       lcm_->publish("AFFORDANCE_FIT",&a1);
       
@@ -917,7 +917,7 @@ void Pass::doDemo(int which_publish, bool add_filename, int which_publish_single
     std::vector<double> xyzrpy = { affraw.params_[0], affraw.params_[1], affraw.params_[2], affraw.params_[3], affraw.params_[4], affraw.params_[5] };
     std::vector<double> lengths = { affraw.params_[6], affraw.params_[7], affraw.params_[8]};
     int uid = which_publish_single;
-    string friendly_name = affraw.friendly_name_;
+    std::string friendly_name = affraw.friendly_name_;
     std::cout << friendly_name << "\n";
       
     drc::affordance_plus_t a1 = affutils.getBoxAffordancePlus(uid,friendly_name, affraw.position_ , lengths);

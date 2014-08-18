@@ -11,6 +11,3 @@ include(cmake/pods.cmake)
 #lcmtypes_build()
 
 add_subdirectory(src/lidar-plancheck)
-
-add_subdirectory(src/lidar-depth-image)
-add_subdirectory(src/stream)

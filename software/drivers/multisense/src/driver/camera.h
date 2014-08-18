@@ -27,6 +27,8 @@
 #include <thread>
 #include <memory>
 #include <list>
+#include <mutex>
+#include <condition_variable>
 //#include <multisense_ros/state_publisher.h>
 
 #include <MultiSenseChannel.hh>

@@ -57,11 +57,11 @@ pods_install_libraries(maps)
 
 set(REQUIRED_PACKAGES
   eigen3
-  pcl_common-1.6
-  pcl_filters-1.6
-  pcl_features-1.6
-  pcl_io-1.6
-  pcl_surface-1.6
+  pcl_common-1.7
+  pcl_filters-1.7
+  pcl_features-1.7
+  pcl_io-1.7
+  pcl_surface-1.7
   octomap
   glib-2.0
   bot2-frames
@@ -71,7 +71,7 @@ set(REQUIRED_PACKAGES
 )
 pods_use_pkg_config_packages(maps ${REQUIRED_PACKAGES})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations -Wreturn-type -Wuninitialized -Wunused-variable")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations -Wno-attributes -Wreturn-type -Wuninitialized -Wunused-variable")
 
 # create a pkg-config file for the library, to make it easier for other
 # software to use.

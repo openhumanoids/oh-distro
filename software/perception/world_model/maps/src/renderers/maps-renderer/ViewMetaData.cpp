@@ -274,7 +274,7 @@ struct ViewMetaData::Helper {
     labels = { "Flat", "Height", "Range", "Normal", "Camera" };
     Gtk::ComboBox* combo = 
       gtkmm::RendererBase::createCombo(mAttributes.mColorMode, labels, ids);
-    combo->signal_changed().connect([mRenderer]{mRenderer->requestDraw();});
+    combo->signal_changed().connect([this]{this->mRenderer->requestDraw();});
     box->pack_start(*combo, false, false);
 
     ids = { MeshRenderer::MeshModePoints, MeshRenderer::MeshModeWireframe,
@@ -282,12 +282,12 @@ struct ViewMetaData::Helper {
     labels = { "Points", "Wireframe", "Filled" };
     combo =
       gtkmm::RendererBase::createCombo(mAttributes.mMeshMode, labels, ids);
-    combo->signal_changed().connect([mRenderer]{mRenderer->requestDraw();});
+    combo->signal_changed().connect([this]{this->mRenderer->requestDraw();});
     box->pack_start(*combo, false, false);
     
     Gtk::HScale* slider =
       gtkmm::RendererBase::createSlider(mAttributes.mPointSize, 0.1, 10, 0.1);
-    slider->signal_value_changed().connect([mRenderer]{mRenderer->requestDraw();});
+    slider->signal_value_changed().connect([this]{this->mRenderer->requestDraw();});
     box->pack_start(*slider, true, true);
 
     mBox->pack_start(*box, false, false);
@@ -296,10 +296,10 @@ struct ViewMetaData::Helper {
     label = Gtk::manage(new Gtk::Label("Z Rng"));
     box->pack_start(*label,false,false);
     slider = gtkmm::RendererBase::createSlider(mAttributes.mMinZ, -1, 2, 0.01);
-    slider->signal_value_changed().connect([mRenderer]{mRenderer->requestDraw();});
+    slider->signal_value_changed().connect([this]{this->mRenderer->requestDraw();});
     box->pack_start(*slider, true, true);
     slider = gtkmm::RendererBase::createSlider(mAttributes.mMaxZ, -1, 2, 0.01);
-    slider->signal_value_changed().connect([mRenderer]{mRenderer->requestDraw();});
+    slider->signal_value_changed().connect([this]{this->mRenderer->requestDraw();});
     box->pack_start(*slider, true, true);
 
     mBox->pack_start(*box, false, false);

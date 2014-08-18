@@ -309,7 +309,7 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
 void setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, int r,int g, int b ){
   pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
   pcl::PointCloud<pcl::PointXYZ> cloudXYZ;  
-  pcl::fromROSMsg(mesh->cloud, cloudXYZ);
+  pcl::fromPCLPointCloud2(mesh->cloud, cloudXYZ);
 
   // this was pcl::PointXYZRGB omly until recently
   for (size_t i=0;i< cloudXYZ.points.size() ; i++){
@@ -324,7 +324,7 @@ void setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, int r,int g, int b ){
   }
       
   // transform
-  pcl::toROSMsg (mesh_cloud_1st, mesh->cloud);      
+  pcl::toPCLPointCloud2 (mesh_cloud_1st, mesh->cloud);      
 }
 
 
@@ -375,12 +375,12 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, float aff_uid
       
       // Apply transform to polymesh:
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-      pcl::fromROSMsg(mesh_out->cloud, *cloud);  
+      pcl::fromPCLPointCloud2(mesh_out->cloud, *cloud);  
       Eigen::Isometry3f pose_f = transform.cast<float>();
       Eigen::Quaternionf quat_f(pose_f.rotation());
       pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
-      pcl::toROSMsg(*cloud, mesh_out->cloud);       
+      pcl::toPCLPointCloud2(*cloud, mesh_out->cloud);       
       
     }else{
       cout  << aff_uid << " is a not recognised ["<< otdf_type <<"] not supported yet\n";

@@ -1,6 +1,8 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/LcmWrapper.hpp>
@@ -109,8 +111,8 @@ struct ImageAnaglyphFuser {
     while (mIsRunning) {
       std::unique_lock<std::mutex> lock(mConditionMutex);
       mCondition.wait_for(lock, std::chrono::milliseconds(100));
-      typedef std::shared_ptr<bot_core::image_t> Image;
-      std::vector<std::pair<Image,Image> > pairs;
+      typedef std::shared_ptr<bot_core::image_t> PCLImage;
+      std::vector<std::pair<PCLImage,PCLImage> > pairs;
       {
         std::unique_lock<std::mutex> dataLock(mDataMutex);
         auto left = mLeftQueue.begin();

@@ -36,7 +36,7 @@ bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB)
   //        Failed to find match for field 'rgb'.  
   // Instead dont try to copy if empty...
   if ( meshA->cloud.fields.size()  !=0){
-    pcl::fromROSMsg(meshA->cloud, cloudA);
+    pcl::fromPCLPointCloud2(meshA->cloud, cloudA);
   }
   int original_size = cloudA.points.size() ;
 
@@ -45,7 +45,7 @@ bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB)
   
   int N_polygonsB = meshB->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
-  pcl::fromROSMsg(meshB->cloud, cloudB);
+  pcl::fromPCLPointCloud2(meshB->cloud, cloudB);
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon
     pcl::Vertices apoly_in = meshB->polygons[i];//[i];
@@ -57,7 +57,7 @@ bool mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh::Ptr meshB)
     meshA->polygons.push_back(apoly_in);
   } 
   cloudA += cloudB;
-  pcl::toROSMsg (cloudA, meshA->cloud);
+  pcl::toPCLPointCloud2 (cloudA, meshA->cloud);
   //cout <<  meshA->polygons.size () << "polygons after\n";
   //cout << cloudA.points.size() << " is the cloud inside size\n";
   return true;
@@ -91,7 +91,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinderWithTransform(Eigen::Isometry3
   }
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(mesh_cylinder->cloud, *cloud);  
+  pcl::fromPCLPointCloud2(mesh_cylinder->cloud, *cloud);  
   
   // Adjust object to be centered on z-axis (standard used by URDF)
   pcl::transformPointCloud (*cloud, *cloud,
@@ -102,7 +102,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinderWithTransform(Eigen::Isometry3
   pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
   
-  pcl::toROSMsg(*cloud, mesh_cylinder->cloud);
+  pcl::toPCLPointCloud2(*cloud, mesh_cylinder->cloud);
     
   return mesh_cylinder;
 }
@@ -112,7 +112,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCubeWithTransform(Eigen::Isometry3d tr
 
   pcl::PolygonMesh::Ptr mesh_cylinder = getCube(xdim, ydim, zdim);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(mesh_cylinder->cloud, *cloud);  
+  pcl::fromPCLPointCloud2(mesh_cylinder->cloud, *cloud);  
   
   // Adjust object to be centered on z-axis (standard used by URDF)
   pcl::transformPointCloud (*cloud, *cloud,
@@ -123,7 +123,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCubeWithTransform(Eigen::Isometry3d tr
   pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
   
-  pcl::toROSMsg(*cloud, mesh_cylinder->cloud);
+  pcl::toPCLPointCloud2(*cloud, mesh_cylinder->cloud);
     
   return mesh_cylinder;
 }
@@ -133,14 +133,14 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getSphereWithTransform(Eigen::Isometry3d 
 
   pcl::PolygonMesh::Ptr mesh_cylinder = getSphere( radius);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(mesh_cylinder->cloud, *cloud);  
+  pcl::fromPCLPointCloud2(mesh_cylinder->cloud, *cloud);  
   
   Eigen::Isometry3f pose_f = IsometryDoubleToFloat(transform);
   Eigen::Quaternionf quat_f(pose_f.rotation());
   pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
   
-  pcl::toROSMsg(*cloud, mesh_cylinder->cloud);
+  pcl::toPCLPointCloud2(*cloud, mesh_cylinder->cloud);
     
   return mesh_cylinder;
   
@@ -198,7 +198,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCylinder(double base, double top, doub
   std::cout << pts->points[0] << " pts\n";
   */  
   mesh_ptr->polygons = verts;
-  pcl::toROSMsg (*pts, mesh_ptr->cloud);  
+  pcl::toPCLPointCloud2 (*pts, mesh_ptr->cloud);  
   //std::cout << *mesh_ptr << "\n";
   return mesh_ptr;
 }
@@ -282,7 +282,7 @@ pcl::PolygonMesh::Ptr rgbd_primitives::getCube(double xdim, double ydim, double 
   std::cout << pts->points[0] << " pts\n";
   */  
   mesh_ptr->polygons = verts;
-  pcl::toROSMsg (*pts, mesh_ptr->cloud);  
+  pcl::toPCLPointCloud2 (*pts, mesh_ptr->cloud);  
   //std::cout << *mesh_ptr << "\n";
   return mesh_ptr;
 }
@@ -327,7 +327,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgbd_primitives::sampleMesh(pcl::PolygonM
   
   int N_polygonsB = mesh->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
-  pcl::fromROSMsg(mesh->cloud, cloudB);
+  pcl::fromPCLPointCloud2(mesh->cloud, cloudB);
   Eigen::Vector4f tmp;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pts (new pcl::PointCloud<pcl::PointXYZRGB> ());
   for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon N_polygonsB

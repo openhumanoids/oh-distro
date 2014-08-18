@@ -213,9 +213,9 @@ void  INThandler(int sig) {
 
 
 int main(int argc, char ** argv) {
-    cout << "============= QUICK MODES ===================\n";
-    cout << "drc-histogram-tracker -s 0.25 -c CAMERALEFT\n";
-    cout << "=============================================\n";
+    std::cout << "============= QUICK MODES ===================\n";
+    std::cout << "drc-histogram-tracker -s 0.25 -c CAMERALEFT\n";
+    std::cout << "=============================================\n";
 
     ConciseArgs opt(argc, (char**)argv);
     opt.add(options.vCHANNEL, "c", "camera-channel","Camera Channel [CAMERALEFT]");

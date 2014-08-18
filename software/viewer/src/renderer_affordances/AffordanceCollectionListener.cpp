@@ -1,4 +1,11 @@
 
+// boost/thread.hpp must be included first here.  This is because further
+// down one of the headers includes a file that #defines F1, which will
+// make a conflict with boost/thread.hpp if it comes afterward.
+// This change was required when upgrading from pcl-1.6 to pcl-1.7, because
+// one of the common pcl headers now includes boodt/thread.hpp.
+#include <boost/thread.hpp>
+
 #include <iostream>
 
 #include <lcm/lcm-cpp.hpp>

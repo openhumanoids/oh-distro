@@ -6,7 +6,7 @@ set(INCS
   camera.h model.h
   range_likelihood.h scene.h
   glsl_shader.h sum_reduce.h )
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 
 add_library(rgbd_simulation  SHARED ${SRCS})
 target_link_libraries(rgbd_simulation)

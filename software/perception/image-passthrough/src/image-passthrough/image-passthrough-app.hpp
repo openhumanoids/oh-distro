@@ -38,7 +38,7 @@ class Pass{
     
     Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &publish_lcm, 
          std::string camera_channel_, int output_color_mode_, 
-         bool use_convex_hulls_, string camera_frame_,
+         bool use_convex_hulls_, std::string camera_frame_,
          CameraParams camera_params_, bool verbose_);
     
     ~Pass(){
@@ -70,7 +70,7 @@ class Pass{
     void setUpdateRobotState(bool update_robot_state_in){
       update_robot_state_ = update_robot_state_in; 
     };
-    void setRobotState(Eigen::Isometry3d & world_to_body_in, map<string, double> & jointpos_in){
+    void setRobotState(Eigen::Isometry3d & world_to_body_in, std::map<std::string, double> & jointpos_in){
       world_to_body_ = world_to_body_in;
       jointpos_ = jointpos_in;
       init_rstate_ = true;
@@ -116,7 +116,7 @@ class Pass{
     std::string urdf_xml_string_; 
     bool init_rstate_; // have we received a robot state?    
     Eigen::Isometry3d world_to_body_; // Current Position of the Robot:
-    map<string, double> jointpos_;
+    std::map<std::string, double> jointpos_;
     
     
     std::map<std::string, boost::shared_ptr<urdf::Link> > links_map_;

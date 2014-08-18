@@ -1,7 +1,7 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 
 
-set(PCL_LIBRARIES  pcl_filters-1.6 pcl_features-1.6 pcl_surface-1.6   pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_filters-1.7 pcl_features-1.7 pcl_surface-1.7   pcl_io-1.7)
 ### needed to read obj:
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
@@ -16,10 +16,12 @@ pods_use_pkg_config_packages(drc-ply-filter ${REQUIRED_LIBS} ${PCL_LIBRARIES})
 pods_install_executables(drc-ply-filter)
 
 add_executable(drc-box-filter box_filter.cpp)
+target_link_libraries (drc-box-filter boost_system boost_thread)
 pods_use_pkg_config_packages(drc-box-filter ${REQUIRED_LIBS} ${PCL_LIBRARIES})
 pods_install_executables(drc-box-filter)
 
 add_executable(drc-car-clouds car-clouds.cpp)
+target_link_libraries (drc-car-clouds boost_system boost_thread)
 pods_use_pkg_config_packages(drc-car-clouds ${REQUIRED_LIBS} ${PCL_LIBRARIES})
 pods_install_executables(drc-car-clouds)
 
@@ -34,7 +36,7 @@ pods_use_pkg_config_packages(drc-triangulation ${REQUIRED_LIBS} ${PCL_LIBRARIES}
 pods_install_executables(drc-triangulation)
 
 add_executable(drc-triangulation-smoothing triangulation_smoothing.cpp)
-target_link_libraries(drc-triangulation boost_system)
+target_link_libraries(drc-triangulation-smoothing boost_system)
 pods_use_pkg_config_packages(drc-triangulation-smoothing ${REQUIRED_LIBS}
   ${PCL_LIBRARIES}  )
 pods_install_executables(drc-triangulation-smoothing)

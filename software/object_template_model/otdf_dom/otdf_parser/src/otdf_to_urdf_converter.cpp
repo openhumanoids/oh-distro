@@ -56,13 +56,13 @@ namespace otdf{
     element->LinkEndChild(geometry); // not recognised in urdf
 
   if(geom->type== (const int) otdf::Geometry::SPHERE){
-   boost::shared_ptr<const Sphere> downcasted_geom(boost::shared_dynamic_cast<const Sphere>(geom)); 
+   boost::shared_ptr<const Sphere> downcasted_geom(boost::dynamic_pointer_cast<const Sphere>(geom)); 
    TiXmlElement * sphere = new TiXmlElement( "sphere" );
    sphere->SetDoubleAttribute("radius", downcasted_geom->radius);
    geometry->LinkEndChild(sphere); 
   }
   else if (geom->type==(const int) otdf::Geometry::BOX){
-    boost::shared_ptr<const Box> downcasted_geom(boost::shared_dynamic_cast<const Box>(geom)); 
+    boost::shared_ptr<const Box> downcasted_geom(boost::dynamic_pointer_cast<const Box>(geom)); 
     TiXmlElement * box = new TiXmlElement( "box" );
     std::ostringstream stm; 
     stm << downcasted_geom->dim.x << " " << downcasted_geom->dim.y << " " << downcasted_geom->dim.z << " ";
@@ -70,14 +70,14 @@ namespace otdf{
     geometry->LinkEndChild(box);  
   }
    else if (geom->type==(const int) otdf::Geometry::CYLINDER){
-  boost::shared_ptr<const Cylinder> downcasted_geom(boost::shared_dynamic_cast<const Cylinder>(geom)); 
+  boost::shared_ptr<const Cylinder> downcasted_geom(boost::dynamic_pointer_cast<const Cylinder>(geom)); 
    TiXmlElement * cyl = new TiXmlElement( "cylinder" );
    cyl->SetDoubleAttribute("length",downcasted_geom->length);
    cyl->SetDoubleAttribute("radius",downcasted_geom->radius);
    geometry->LinkEndChild(cyl); 
   }
   else if (geom->type==(const int) otdf::Geometry::MESH){
-   boost::shared_ptr<const Mesh> downcasted_geom(boost::shared_dynamic_cast<const Mesh>(geom)); 
+   boost::shared_ptr<const Mesh> downcasted_geom(boost::dynamic_pointer_cast<const Mesh>(geom)); 
    TiXmlElement * mesh = new TiXmlElement( "mesh" );
    mesh->SetAttribute("filename",downcasted_geom->filename);
    std::ostringstream stm; 
@@ -86,7 +86,7 @@ namespace otdf{
    geometry->LinkEndChild(mesh); 
   }
   else if (geom->type==(const int) otdf::Geometry::TORUS){
-   boost::shared_ptr<const Torus> downcasted_geom(boost::shared_dynamic_cast<const Torus>(geom)); 
+   boost::shared_ptr<const Torus> downcasted_geom(boost::dynamic_pointer_cast<const Torus>(geom)); 
      if(compliant==false){
      TiXmlElement * torus = new TiXmlElement( "torus" );
      torus->SetDoubleAttribute("radius", downcasted_geom->radius);
@@ -101,7 +101,7 @@ namespace otdf{
     }    
   }
   else if (geom->type==(const int) otdf::Geometry::DYNAMIC_MESH){
-   boost::shared_ptr<const DynamicMesh> downcasted_geom(boost::shared_dynamic_cast<const DynamicMesh>(geom)); 
+   boost::shared_ptr<const DynamicMesh> downcasted_geom(boost::dynamic_pointer_cast<const DynamicMesh>(geom)); 
      if(compliant==false){
      TiXmlElement * dynamic_mesh = new TiXmlElement( "dynamic_mesh" );
      geometry->LinkEndChild(dynamic_mesh);
@@ -232,7 +232,7 @@ void addChildEntities(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* r
   
   std::string type = entity->getEntityType();
   if (type == "Link"){
-    boost::shared_ptr<const Link> downcasted_entity(boost::shared_dynamic_cast<const Link>(entity)); 
+    boost::shared_ptr<const Link> downcasted_entity(boost::dynamic_pointer_cast<const Link>(entity)); 
   
     TiXmlElement * link_element = new TiXmlElement( "link" );
      link_element->SetAttribute("name", entity->name);
@@ -254,7 +254,7 @@ void addChildEntities(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* r
     
   }
   else if (type == "Bounding_volume"){
-  boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::shared_dynamic_cast<const Bounding_volume>(entity));  
+  boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::dynamic_pointer_cast<const Bounding_volume>(entity));  
    
 //   TiXmlElement * link_element = new TiXmlElement( "bounding_volume" );
    TiXmlElement * link_element = new TiXmlElement( "link" );
@@ -276,7 +276,7 @@ void addChildEntities(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* r
 void addParentJoint(boost::shared_ptr<const BaseEntity> entity, boost::shared_ptr<const BaseEntity> child, double &r, double &p, double &y,TiXmlElement* robot)
 {
   if((child)->getEntityType() == "Link") {
-    boost::shared_ptr<const Link> downcasted_child(boost::shared_dynamic_cast<const Link>((child))); 
+    boost::shared_ptr<const Link> downcasted_child(boost::dynamic_pointer_cast<const Link>((child))); 
     TiXmlElement * joint_element = new TiXmlElement( "joint" );
     joint_element->SetAttribute("name", (downcasted_child)->parent_joint->name);
     int type =  (downcasted_child)->parent_joint->type;
@@ -346,7 +346,7 @@ void addParentJoint(boost::shared_ptr<const BaseEntity> entity, boost::shared_pt
     
   }
   else if ((child)->getEntityType() == "Bounding_volume") {
-    boost::shared_ptr<const Bounding_volume> downcasted_child(boost::shared_dynamic_cast<const Bounding_volume>((child))); 
+    boost::shared_ptr<const Bounding_volume> downcasted_child(boost::dynamic_pointer_cast<const Bounding_volume>((child))); 
     TiXmlElement * joint_element = new TiXmlElement( "joint" );
     joint_element->SetAttribute("name", (downcasted_child)->parent_joint->name);
     int type =  (downcasted_child)->parent_joint->type;
@@ -423,7 +423,7 @@ void addChildJoints(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* rob
   double r, p, y;
   std::string type = entity->getEntityType();
   if (type == "Link"){
-   boost::shared_ptr<const Link> downcasted_entity(boost::shared_dynamic_cast<const Link>(entity)); 
+   boost::shared_ptr<const Link> downcasted_entity(boost::dynamic_pointer_cast<const Link>(entity)); 
 	
       for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
       {
@@ -432,7 +432,7 @@ void addChildJoints(boost::shared_ptr<const BaseEntity> entity,TiXmlElement* rob
       }
   }
   else if (type == "Bounding_volume"){
-    boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::shared_dynamic_cast<const Bounding_volume>(entity));  
+    boost::shared_ptr<const Bounding_volume> downcasted_entity(boost::dynamic_pointer_cast<const Bounding_volume>(entity));  
       
       for (std::vector<boost::shared_ptr<BaseEntity> >::const_iterator child = downcasted_entity->child_links.begin(); child != downcasted_entity->child_links.end(); child++)
       {

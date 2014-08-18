@@ -24,7 +24,7 @@ pods_install_pkg_config_file(registeration
 
 ################
 add_executable(drc-registeration registeration-app.cpp)
-target_link_libraries(drc-registeration)
+target_link_libraries(drc-registeration boost_system)
 pods_use_pkg_config_packages(drc-registeration
   bot2-vis visualization-utils
   pointcloud_vis opencv
@@ -36,7 +36,7 @@ pods_install_executables(drc-registeration)
 
 ################
 add_executable(drc-registeration-batch registeration-batch.cpp)
-target_link_libraries(drc-registeration-batch)
+target_link_libraries(drc-registeration-batch boost_system)
 pods_use_pkg_config_packages(drc-registeration-batch
   bot2-vis visualization-utils
   pointcloud_vis opencv

@@ -2,14 +2,14 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(pointcloud_lcm)
 
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 
 add_library(pointcloud_lcm SHARED pointcloud_lcm.cpp)
 
 pods_use_pkg_config_packages(pointcloud_lcm ${PCL_LIBRARIES} lcm eigen3
-   bot2-core  glib-2.0  kinect-utils opencv
-   lcmtypes_kinect)
-#   lcmtypes_multisense)
+   bot2-core  glib-2.0   opencv
+   )
+#kinect-utils lcmtypes_kinect  lcmtypes_multisense)
 
 # set the library API version.  Increment this every time the public API changes.
 set_target_properties(pointcloud_lcm PROPERTIES SOVERSION 1)
@@ -20,6 +20,7 @@ target_link_libraries(pointcloud_lcm
     z)
 pods_install_pkg_config_file(pointcloud_lcm
     LIBS -lpointcloud_lcm -lz
-    REQUIRES bot2-vis kinect-utils image-utils eigen3 pcl_io-1.6 flann
+    REQUIRES bot2-vis  image-utils eigen3 pcl_io-1.7 flann
     VERSION 0.0.1)
+# kinect-utils
 

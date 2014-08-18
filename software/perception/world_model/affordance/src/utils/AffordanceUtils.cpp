@@ -72,7 +72,7 @@ pcl::PolygonMesh::Ptr AffordanceUtils::getMeshFromAffordance(std::vector< std::v
   pcl::PolygonMesh::Ptr mesh = getMeshFromAffordance(points, triangles);
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(mesh->cloud, *cloud);  
+  pcl::fromPCLPointCloud2(mesh->cloud, *cloud);  
   
   // Adjust object to be centered on z-axis (standard used by URDF)
 //  pcl::transformPointCloud (*cloud, *cloud,
@@ -83,7 +83,7 @@ pcl::PolygonMesh::Ptr AffordanceUtils::getMeshFromAffordance(std::vector< std::v
   pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
   
-  pcl::toROSMsg(*cloud, mesh->cloud);  
+  pcl::toPCLPointCloud2(*cloud, mesh->cloud);  
   return mesh;
 }
 
@@ -100,7 +100,7 @@ pcl::PolygonMesh::Ptr AffordanceUtils::getMeshFromAffordance(std::vector< std::v
     pt.z = points[i][2];
     pts->points.push_back(pt);
   }
-  pcl::toROSMsg (*pts, mesh_ptr->cloud);
+  pcl::toPCLPointCloud2 (*pts, mesh_ptr->cloud);
   
   vector <pcl::Vertices> verts;
   for(size_t i=0; i<  triangles.size (); i++){ // each triangle/polygon
@@ -286,14 +286,14 @@ bool AffordanceUtils::getMeshAsLists(std::string filename,
 
   pcl::PointCloud<pcl::PointXYZRGB> newcloud;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(mesh->cloud, *cloud_ptr );  
+  pcl::fromPCLPointCloud2(mesh->cloud, *cloud_ptr );  
 
   /*
   moveCloud(cloud_ptr);
   scaleCloud(cloud_ptr);
   
   
-  pcl::toROSMsg (*cloud_ptr, mesh->cloud);
+  pcl::toPCLPointCloud2 (*cloud_ptr, mesh->cloud);
   pcl::io::savePolygonFile("drill_pclio.ply", *mesh);
   savePLYFile(mesh, "drill_mfallonio.ply");
   */

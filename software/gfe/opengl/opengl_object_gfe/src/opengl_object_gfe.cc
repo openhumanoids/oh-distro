@@ -177,7 +177,7 @@ _load_opengl_objects( void ){
       for( unsigned int j = 0; j < it->second->size(); j++ ){
         if( (*it->second)[ j ] != NULL ){
           if( (*it->second)[ j ]->geometry->type == Geometry::SPHERE ){
-            shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( (*it->second)[j]->geometry );
+            shared_ptr< Sphere > sphere = dynamic_pointer_cast< Sphere >( (*it->second)[j]->geometry );
             _opengl_objects.push_back( new OpenGL_Object_Sphere( links[i]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), sphere->radius ) );
             KDL::Frame offset;
             offset.p[0] = (*it->second)[j]->origin.position.x;
@@ -189,7 +189,7 @@ _load_opengl_objects( void ){
                                           (*it->second)[j]->origin.rotation.w );
             _opengl_objects.back()->set_offset( offset );
           } else if ( (*it->second)[ j ]->geometry->type == Geometry::BOX ){
-            shared_ptr< Box > box = shared_dynamic_cast< Box >( (*it->second)[j]->geometry );
+            shared_ptr< Box > box = dynamic_pointer_cast< Box >( (*it->second)[j]->geometry );
             _opengl_objects.push_back( new OpenGL_Object_Box( links[i]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
             KDL::Frame offset;
             offset.p[0] = (*it->second)[j]->origin.position.x;
@@ -202,7 +202,7 @@ _load_opengl_objects( void ){
             _opengl_objects.back()->set_offset( offset );
 
           } else if ( (*it->second)[ j ]->geometry->type == Geometry::CYLINDER ){
-            shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( (*it->second)[j]->geometry );
+            shared_ptr< Cylinder > cylinder = dynamic_pointer_cast< Cylinder >( (*it->second)[j]->geometry );
             _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector2f( cylinder->radius, cylinder->length ) ) );
             KDL::Frame offset;
             offset.p[0] = (*it->second)[j]->origin.position.x;
@@ -219,7 +219,7 @@ _load_opengl_objects( void ){
     }
     if( links[ i ]->visual != NULL ){
       if( links[ i ]->visual->geometry->type == Geometry::SPHERE ){
-        shared_ptr< Sphere > sphere = shared_dynamic_cast< Sphere >( links[ i ]->visual->geometry );
+        shared_ptr< Sphere > sphere = dynamic_pointer_cast< Sphere >( links[ i ]->visual->geometry );
         _opengl_objects.push_back( new OpenGL_Object_Sphere( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), sphere->radius ) );
         KDL::Frame offset;
         offset.p[0] = links[ i ]->visual->origin.position.x;
@@ -234,7 +234,7 @@ _load_opengl_objects( void ){
           _opengl_objects.back()->set_color( Vector3f( links[ i ]->visual->material->color.r, links[ i ]->visual->material->color.g, links[ i ]->visual->material->color.b ) );
         }
       } else if ( links[ i ]->visual->geometry->type == Geometry::BOX ){
-        shared_ptr< Box > box = shared_dynamic_cast< Box >( links[ i ]->visual->geometry );
+        shared_ptr< Box > box = dynamic_pointer_cast< Box >( links[ i ]->visual->geometry );
         _opengl_objects.push_back( new OpenGL_Object_Box( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector3f( box->dim.x, box->dim.y, box->dim.z ) ) );
         KDL::Frame offset;
         offset.p[0] = links[ i ]->visual->origin.position.x;
@@ -249,7 +249,7 @@ _load_opengl_objects( void ){
           _opengl_objects.back()->set_color( Vector3f( links[ i ]->visual->material->color.r, links[ i ]->visual->material->color.g, links[ i ]->visual->material->color.b ) );
         }
       } else if ( links[ i ]->visual->geometry->type == Geometry::CYLINDER ){
-        shared_ptr< Cylinder > cylinder = shared_dynamic_cast< Cylinder >( links[ i ]->visual->geometry );
+        shared_ptr< Cylinder > cylinder = dynamic_pointer_cast< Cylinder >( links[ i ]->visual->geometry );
         _opengl_objects.push_back( new OpenGL_Object_Cylinder( links[ i ]->name, KDL::Frame::Identity(), KDL::Frame::Identity(), Vector2f( cylinder->radius, cylinder->length ) ) );
         KDL::Frame offset;
         offset.p[0] = links[ i ]->visual->origin.position.x;
@@ -264,7 +264,7 @@ _load_opengl_objects( void ){
           _opengl_objects.back()->set_color( Vector3f( links[ i ]->visual->material->color.r, links[ i ]->visual->material->color.g, links[ i ]->visual->material->color.b ) );
         }
       } else if ( links[ i ]->visual->geometry->type == Geometry::MESH ){
-        shared_ptr< Mesh > mesh = shared_dynamic_cast< Mesh >( links[ i ]->visual->geometry );
+        shared_ptr< Mesh > mesh = dynamic_pointer_cast< Mesh >( links[ i ]->visual->geometry );
         std::string model_filename = mesh->filename;
         model_filename.erase( model_filename.begin(), model_filename.begin() + 9 );
         model_filename.erase( model_filename.end()-3, model_filename.end() );

@@ -168,7 +168,7 @@ App::App(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, CommandlineCo
   rpy_.assign(3,0);
   
   
-  //////////////////////// Image Passthrough Stuff:
+  //////////////////////// PCLImage Passthrough Stuff:
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
   camera_params_.setParams(botparam_, string("cameras." + cfg.camera_channel) );
       
@@ -308,14 +308,14 @@ void App::publishCorrection(){
   
   
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::fromROSMsg(palm_mesh_copy_->cloud, *cloud);  
+  pcl::fromPCLPointCloud2(palm_mesh_copy_->cloud, *cloud);  
   Eigen::Isometry3f pose_f = world_to_palm.cast<float>();
   
   
   Eigen::Quaternionf quat_f(pose_f.rotation());
   pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
-  pcl::toROSMsg(*cloud, palm_mesh_copy_->cloud);    
+  pcl::toPCLPointCloud2(*cloud, palm_mesh_copy_->cloud);    
   
   pass->setAffordanceMesh(palm_mesh_copy_);
   

@@ -75,14 +75,14 @@ namespace renderer_affordances
       enum {SPHERE, BOX, CYLINDER, MESH, TORUS}; 
       
       if(type==SPHERE)  {
-        boost::shared_ptr<otdf::Sphere> sphere(shared_dynamic_cast<otdf::Sphere>(link_geom));	
+        boost::shared_ptr<otdf::Sphere> sphere(dynamic_pointer_cast<otdf::Sphere>(link_geom));	
         msg.geometry_type = msg.SPHERE;
         msg.num_dims = 1;
         msg.dims.push_back(dilation*sphere->radius);
 
       }
       else if(type==BOX)  {
-        boost::shared_ptr<otdf::Box> box(shared_dynamic_cast<otdf::Box>(link_geom));
+        boost::shared_ptr<otdf::Box> box(dynamic_pointer_cast<otdf::Box>(link_geom));
         msg.geometry_type = msg.BOX;
         msg.num_dims = 3;
         msg.dims.push_back(dilation*box->dim.x);
@@ -91,7 +91,7 @@ namespace renderer_affordances
       }
       else if(type==CYLINDER) {
    
-        boost::shared_ptr<otdf::Cylinder> cyl(shared_dynamic_cast<otdf::Cylinder>(link_geom));
+        boost::shared_ptr<otdf::Cylinder> cyl(dynamic_pointer_cast<otdf::Cylinder>(link_geom));
    
         msg.geometry_type = msg.CYLINDER;
         msg.num_dims = 2;
@@ -111,7 +111,7 @@ namespace renderer_affordances
         }
       }
       else if(type==TORUS)  {
-       boost::shared_ptr<otdf::Torus> torus(boost::shared_dynamic_cast<otdf::Torus>(link_geom));
+       boost::shared_ptr<otdf::Torus> torus(boost::dynamic_pointer_cast<otdf::Torus>(link_geom));
         msg.geometry_type = msg.TORUS;
         msg.num_dims = 2;
         msg.dims.push_back(dilation*torus->radius);

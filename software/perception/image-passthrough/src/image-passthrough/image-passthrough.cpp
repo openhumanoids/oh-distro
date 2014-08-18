@@ -163,7 +163,7 @@ pcl::PolygonMesh::Ptr getPolygonMesh(std::string filename){
 void SimExample::setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, int r,int g, int b ){
   pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
   pcl::PointCloud<pcl::PointXYZ> cloudXYZ;  
-  pcl::fromROSMsg(mesh->cloud, cloudXYZ);
+  pcl::fromPCLPointCloud2(mesh->cloud, cloudXYZ);
 
   // this was pcl::PointXYZRGB omly until recently
   for (size_t i=0;i< cloudXYZ.points.size() ; i++){
@@ -178,7 +178,7 @@ void SimExample::setPolygonMeshColor( pcl::PolygonMesh::Ptr &mesh, int r,int g, 
   }
       
   // transform
-  pcl::toROSMsg (mesh_cloud_1st, mesh->cloud);      
+  pcl::toPCLPointCloud2 (mesh_cloud_1st, mesh->cloud);      
 }
 
 // This duplicates a function in pointcloud_vis
@@ -194,7 +194,7 @@ bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh
   //        Failed to find match for field 'rgb'.  
   // Instead dont try to copy if empty...
   if ( meshA->cloud.fields.size()  !=0){
-    pcl::fromROSMsg(meshA->cloud, cloudA);
+    pcl::fromPCLPointCloud2(meshA->cloud, cloudA);
   }
   int original_size = cloudA.points.size() ;
 
@@ -204,7 +204,7 @@ bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh
   int N_polygonsB = meshB->polygons.size ();
   pcl::PointCloud<pcl::PointXYZRGB> cloudB;  
   
-  pcl::fromROSMsg(meshB->cloud, cloudB);
+  pcl::fromPCLPointCloud2(meshB->cloud, cloudB);
   
   Eigen::Vector4f tmp;
   for(size_t i=0; i< N_polygonsB; i++){ // each triangle/polygon
@@ -217,7 +217,7 @@ bool SimExample::mergePolygonMesh(pcl::PolygonMesh::Ptr &meshA, pcl::PolygonMesh
     meshA->polygons.push_back(apoly_in);
   } 
   cloudA += cloudB;
-  pcl::toROSMsg (cloudA, meshA->cloud);
+  pcl::toPCLPointCloud2 (cloudA, meshA->cloud);
   //cout <<  meshA->polygons.size () << "polygons after\n";
   //cout << cloudA.points.size() << " is the cloud inside size\n";
   
@@ -260,7 +260,7 @@ pcl::PolygonMesh::Ptr setSampleMesh(){
   verts.push_back(vertB);    
 
   mesh_ptr->polygons = verts;
-  pcl::toROSMsg (*pts, mesh_ptr->cloud);  
+  pcl::toPCLPointCloud2 (*pts, mesh_ptr->cloud);  
   return mesh_ptr;    
 }
 
@@ -336,14 +336,14 @@ SimExample::createScene (std::vector<std::string> object_names,
     
     pcl::PolygonMesh::Ptr mesh_ptr_1st_transformed(new pcl::PolygonMesh( *(polymesh_map_.find( object_names[i] )->second.polygon_mesh)  ));
     pcl::PointCloud<pcl::PointXYZRGB> mesh_cloud_1st;  
-    pcl::fromROSMsg(mesh_ptr_1st_transformed->cloud, mesh_cloud_1st);
+    pcl::fromPCLPointCloud2(mesh_ptr_1st_transformed->cloud, mesh_cloud_1st);
 
     // transform mesh to location on robot:
     // Added August 2013: support for non-zero origin mesh offsets:
     Eigen::Isometry3f pose_f_1st = ( object_tfs[i] * polymesh_map_.find( object_names[i] )->second.origin ).cast<float>();
     Eigen::Quaternionf pose_quat_1st(pose_f_1st.rotation());
     pcl::transformPointCloud (mesh_cloud_1st, mesh_cloud_1st, pose_f_1st.translation(), pose_quat_1st);  
-    pcl::toROSMsg (mesh_cloud_1st, mesh_ptr_1st_transformed->cloud);  
+    pcl::toPCLPointCloud2 (mesh_cloud_1st, mesh_ptr_1st_transformed->cloud);  
     
     mergePolygonMesh(combined_mesh_ptr_,mesh_ptr_1st_transformed);
   }  

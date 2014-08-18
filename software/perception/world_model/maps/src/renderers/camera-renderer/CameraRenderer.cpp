@@ -153,7 +153,7 @@ protected:
         { ViewTargetNone, ViewTargetLeftHand, ViewTargetRightHand };
       Gtk::ComboBox* combo =
         gtkmm::RendererBase::createCombo(mViewTarget, labels, ids);
-      combo->signal_changed().connect([mRenderer]{mRenderer->requestDraw();});
+      combo->signal_changed().connect([this]{this->mRenderer->requestDraw();});
       Gtk::Label* label = Gtk::manage(new Gtk::Label(mLabel,Gtk::ALIGN_RIGHT));
       unsigned int xCur, yCur;
       mRenderer->mViewTargetTable->get_size(yCur,xCur);

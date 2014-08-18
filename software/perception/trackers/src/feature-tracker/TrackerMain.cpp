@@ -5,6 +5,7 @@
 #include <list>
 #include <unordered_map>
 #include <limits>
+#include <mutex>
 
 #include <opencv2/opencv.hpp>
 #include <zlib.h>

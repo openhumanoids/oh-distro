@@ -2,9 +2,9 @@
 #define __LCMSubscriber_h
 
 #include "Macros.h"
-#include "SharedPtrMacros.h"
 
 #include <lcm/lcm-cpp.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace StateEstimate
 {

@@ -1,4 +1,4 @@
-set(PCL_LIBRARIES  pcl_io-1.6)
+set(PCL_LIBRARIES  pcl_io-1.7)
 
 add_executable(drc-multisense-image-tool multisense-image-tool.cpp  )
 pods_use_pkg_config_packages(drc-multisense-image-tool
@@ -7,6 +7,7 @@ pods_use_pkg_config_packages(drc-multisense-image-tool
   multisense_utils   bot2-core
   bot2-frames  bot2-frames_cpp
   image_io_utils  camera_params  opencv)
+target_link_libraries(drc-multisense-image-tool boost_system)
 pods_install_executables(drc-multisense-image-tool )
 
 
@@ -15,6 +16,7 @@ pods_use_pkg_config_packages(drc-multisense-image-tool-basic lcm
   lcmtypes_bot2-core lcmtypes_multisense
   ${PCL_LIBRARIES} pointcloud_vis
   multisense_utils opencv )
+target_link_libraries(drc-multisense-image-tool-basic boost_system)
 pods_install_executables(drc-multisense-image-tool-basic )
 
 

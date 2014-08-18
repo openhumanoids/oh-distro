@@ -37,11 +37,11 @@ pods_use_pkg_config_packages(${TARGET_NAME} ${REQUIRED_PACKAGES})
 
 set(TARGET_NAME align-point-clouds)
 set(REQUIRED_PACKAGES
-  pcl_common-1.6
-  pcl_filters-1.6
-  pcl_features-1.6
-  pcl_io-1.6
-  pcl_surface-1.6
+  pcl_common-1.7
+  pcl_filters-1.7
+  pcl_features-1.7
+  pcl_io-1.7
+  pcl_surface-1.7
 )
 add_executable(${TARGET_NAME} src/${TARGET_NAME}.cpp)
 pods_install_executables(${TARGET_NAME})
