@@ -8,6 +8,9 @@ function set-git-author() {
     then
         export GIT_AUTHOR_NAME="`cat $AUTHORS_FILE | grep $1 | sed 's/.*=\s*//' | sed 's/\s*<.*$//'`"
         export GIT_AUTHOR_EMAIL=`cat $AUTHORS_FILE | grep $1 | sed 's/^.*<//' | sed 's/>.*$//'`
+        export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
+        export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
+
         echo "Welcome, $1"
         echo "Your git authorship has been automatically set as follows:"
         git var GIT_AUTHOR_IDENT
@@ -21,6 +24,8 @@ function set-git-author() {
 function clear-git-author() {
     unset GIT_AUTHOR_EMAIL
     unset GIT_AUTHOR_NAME
+    unset GIT_COMMITTER_EMAIL
+    unset GIT_COMMITTER_NAME
 	echo "Goodbye. Git authorship reset to default values:"
 	git var GIT_AUTHOR_IDENT
 }
