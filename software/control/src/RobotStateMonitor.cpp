@@ -17,9 +17,9 @@
 #include <chrono>
 
 //#ifdef __APPLE__
-	#include <atomic>
+  #include <atomic>
 //#else
-//	#include <cstdatomic>
+//  #include <cstdatomic>
 //#endif
 
 
@@ -106,27 +106,29 @@ private:
   string m_robot_name;
   int m_num_joints;
   int m_num_floating_joints;
-	map<string,int> m_joint_map;
-	map<string,int> m_floating_joint_map;
+  map<string,int> m_joint_map;
+  map<string,int> m_floating_joint_map;
   //  drc::robot_state_t msg; // kaess: doesn't seem to be needed
-
+  
+  int m_min_usec_between_msg; // us, min time between messages (useful for setting a maximum rate)
   atomic_long m_last_timestamp; // us
   long m_time_of_last_message; // ms
   const static long m_reset_time=1000; // ms
   atomic_long m_has_new_message;  // atomic_bool was not available on mac clang
 
   int m_num_x;
-	double* m_x;
+  double* m_x;
 
-	mutex m_mutex;
-  //	mutex m_received_mutex;
-  //	condition_variable m_received;
+  mutex m_mutex;
+  //  mutex m_received_mutex;
+  //  condition_variable m_received;
 
 public:
 
-  RobotStateMonitor(string robot_name, vector<string> joint_name) : m_has_new_message(false), m_num_x(0), m_x(NULL)
-	{
+  RobotStateMonitor(string robot_name, vector<string> joint_name, int min_usec_between_msg) : m_has_new_message(false), m_num_x(0), m_x(NULL)
+  {
     m_robot_name = robot_name;
+    m_min_usec_between_msg = min_usec_between_msg;
 
     m_num_joints = 0;
     m_num_floating_joints = 0;
@@ -142,30 +144,10 @@ public:
       }
     }
 
-#if 0 // doesn't seem to be needed      
-    if (m_num_floating_joints == 0) {
-      // Atlas specific stuff
-      msg.pose.rotation.w = 1.0;
-      msg.pose.translation.z = 0.927;
-    }
-
-    msg.num_joints = m_num_joints;
-    msg.joint_name.resize(m_num_joints);
-    int j=0;
-    for (int i=0; i<joint_name.size(); i++) {
-      if (joint_name[i].compare(0, prefix.size(), prefix) == 0) {
-        msg.joint_name[j++] = joint_name[i];
-      }
-    }
-    msg.joint_position.resize(m_num_joints);
-    msg.joint_velocity.resize(m_num_joints);
-    msg.joint_effort.resize(m_num_joints);
-#endif
-
     // local stuff
     m_num_x = 2*(m_num_joints+m_num_floating_joints);
     m_x = new double[m_num_x];
-	}
+  }
 
   virtual ~RobotStateMonitor(void)
   {
@@ -177,13 +159,12 @@ public:
           const string& chan,
           const drc::robot_state_t* msg)
   {
-//  	cout << "message received." << endl;
     long systime = get_systime_ms();
 
-  	m_mutex.lock();
+    m_mutex.lock();
     // include a 1 second timeout
     // NOTE: utime/timestamp is in microseconds, systime/time_of_last_message in ms
-    if (msg->utime >= m_last_timestamp || systime-m_time_of_last_message >= m_reset_time) {
+    if (msg->utime >= (m_last_timestamp+m_min_usec_between_msg) || systime-m_time_of_last_message >= m_reset_time) {
 
       m_last_timestamp = msg->utime;
       for (int i=0; i<msg->num_joints; i++) {
@@ -191,8 +172,6 @@ public:
         if (it!=m_joint_map.end()) {
           int index = it->second;
           m_x[index] = msg->joint_position[i];
-          //             if (fdata.val[index] > Math.PI)
-          //               fdata.val[index] -= 2*Math.PI;
           m_x[index+m_num_joints+m_num_floating_joints] = msg->joint_velocity[i];
         }
       }
@@ -236,8 +215,6 @@ public:
       if (it!=m_floating_joint_map.end()) {
         int index = it->second;
         m_x[index] = rpy[0];
-        //           if (m_x[index] > Math.PI)
-        //             m_x[index] -= 2*Math.PI;
         m_x[index+m_num_joints+m_num_floating_joints] = rpydot[0];
       }
 
@@ -245,8 +222,6 @@ public:
       if (it!=m_floating_joint_map.end()) {
         int index = it->second; 
         m_x[index] = rpy[1];
-        //           if (m_x[index] > Math.PI)
-        //             m_x[index] -= 2*Math.PI;
         m_x[index+m_num_joints+m_num_floating_joints] = rpydot[1];
       }
 
@@ -254,8 +229,6 @@ public:
       if (it!=m_floating_joint_map.end()) {
         int index = it->second; 
         m_x[index] = rpy[2];
-        //           if (m_x[index] > Math.PI)
-        //             m_x[index] -= 2*Math.PI;
         m_x[index+m_num_joints+m_num_floating_joints] = rpydot[2];
       }
 
@@ -264,8 +237,8 @@ public:
     }
 
     m_time_of_last_message = systime;
-  	m_mutex.unlock();
-    //  	m_received.notify_all();
+    m_mutex.unlock();
+    //    m_received.notify_all();
   }
 
 #if 1
@@ -296,7 +269,7 @@ public:
     unique_lock<mutex> lk(m_received_mutex);
     if (m_received.wait_for(lk, chrono::milliseconds(timeout_ms)) == 0) {
       // time out
-  		px = mxCreateDoubleMatrix(0,0,mxREAL);
+      px = mxCreateDoubleMatrix(0,0,mxREAL);
       return px;
     } else {
       return getState();
@@ -306,9 +279,9 @@ public:
 
   mxArray* getState(void)
   {
-  	mxArray* px = mxCreateDoubleMatrix(m_num_x,1,mxREAL);
+    mxArray* px = mxCreateDoubleMatrix(m_num_x,1,mxREAL);
     m_mutex.lock();
-  	memcpy(mxGetPr(px),m_x,m_num_x*sizeof(double));
+    memcpy(mxGetPr(px),m_x,m_num_x*sizeof(double));
     m_has_new_message = false;
     m_mutex.unlock();
     return px;
@@ -317,7 +290,7 @@ public:
   double getTime(void)
   {
     //atomic    m_mutex.lock();
-  	double time = (double)m_last_timestamp / 1000000.0;
+    double time = (double)m_last_timestamp / 1000000.0;
     //    m_mutex.unlock();
     return time;
   }
@@ -346,43 +319,45 @@ vector<string> get_strings(const mxArray *rhs) {
 }
 
 static void cleanupLCM(void) {
-//	mexPrintf("interrupting thread\n"); mexEvalString("drawnow");
-	//    pdata->lcm_thread->interrupt();
-	b_interrupt_lcm = true;
-//	mexPrintf("joining thread\n"); mexEvalString("drawnow");
-	lcm_thread->join();
-//	mexPrintf("destroying thread\n"); mexEvalString("drawnow");
-	delete lcm_thread;
-//	mexPrintf("done.\n"); mexEvalString("drawnow");
+//  mexPrintf("interrupting thread\n"); mexEvalString("drawnow");
+  //    pdata->lcm_thread->interrupt();
+  b_interrupt_lcm = true;
+//  mexPrintf("joining thread\n"); mexEvalString("drawnow");
+  lcm_thread->join();
+//  mexPrintf("destroying thread\n"); mexEvalString("drawnow");
+  delete lcm_thread;
+//  mexPrintf("done.\n"); mexEvalString("drawnow");
 }
 
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-	// combines the functionality of MessageMonitor.java and RobotStateCoder.java (decoding only)
+  // combines the functionality of MessageMonitor.java and RobotStateCoder.java (decoding only)
 
   const char usage[] = "Usage:\n"
-  		"  ptr  = RobotStateMonitor(robot_name,joint_names)  - initialize\n"
-  		"         RobotStateMonitor(ptr)     - free\n"
-  		"         RobotStateMonitor(ptr,0,channel) - subscribe\n"
-  		" (t,x) = RobotStateMonitor(ptr,1,timeout) - get next message\n"
-  		" (t,x) = RobotStateMonitor(ptr,2) - get current message\n"
-  		"   t   = RobotStateMonitor(ptr,3) - get last timestamp\n"
-  		"         RobotStateMonitor(ptr,4[,timestamp]) - mark as read\n";
+      "  ptr  = RobotStateMonitor(robot_name,joint_names,min_usec_between_msg)  - initialize\n"
+      "         RobotStateMonitor(ptr)     - free\n"
+      "         RobotStateMonitor(ptr,0,channel) - subscribe\n"
+      " (t,x) = RobotStateMonitor(ptr,1,timeout) - get next message\n"
+      " (t,x) = RobotStateMonitor(ptr,2) - get current message\n"
+      "   t   = RobotStateMonitor(ptr,3) - get last timestamp\n"
+      "         RobotStateMonitor(ptr,4[,timestamp]) - mark as read\n";
 
   RobotStateMonitor* rsm = NULL;
 
   if (nrhs<1) mexErrMsgIdAndTxt("DRC:RobotStateMonitor:BadInputs",usage);
 
-  if (mxIsChar(prhs[0])) { // ptr  = RobotStateMonitor(robot_name,joint_names)  - initialize
+  if (mxIsChar(prhs[0])) { // ptr  = RobotStateMonitor(robot_name,joint_names,min_ms_between_msg)  - initialize
     char* str = mxArrayToString(prhs[0]);
     string robot_name(str);
     mxFree(str);
 
-  	vector<string> joint_names = get_strings(prhs[1]);
+    vector<string> joint_names = get_strings(prhs[1]);
+
+    int min_usec_between_msg = (int) mxGetScalar(prhs[2]);
 
     mexLock();
-  	rsm = new RobotStateMonitor(robot_name, joint_names);
+    rsm = new RobotStateMonitor(robot_name, joint_names, min_usec_between_msg);
 
     // return a pointer to the model
     mxClassID cid;
@@ -404,7 +379,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       mexAtExit(cleanupLCM);
     }
 
-
     return;
   }
 
@@ -422,37 +396,37 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int command = (int) mxGetScalar(prhs[1]);
   switch (command) {
   case 0:  // subscribe
-		{
-	    char* channel = mxArrayToString(prhs[2]);
-			mylcm.subscribe(channel, &RobotStateMonitor::handleMessage, rsm);
-	    mxFree(channel);
-		}
-		break;
+    {
+      char* channel = mxArrayToString(prhs[2]);
+      mylcm.subscribe(channel, &RobotStateMonitor::handleMessage, rsm);
+      mxFree(channel);
+    }
+    break;
   case 1:  // get next message
-		{
+    {
       long timeout = (long)mxGetScalar(prhs[2]);
-			if (nlhs>0) plhs[0] = rsm->getNextState(timeout);
-			if (nlhs>1) plhs[1] = mxCreateDoubleScalar(rsm->getTime());
-		}
-		break;
+      if (nlhs>0) plhs[0] = rsm->getNextState(timeout);
+      if (nlhs>1) plhs[1] = mxCreateDoubleScalar(rsm->getTime());
+    }
+    break;
   case 2:  // get current message
-		{
-			if (nlhs>0) plhs[0] = rsm->getState();
-			if (nlhs>1) plhs[1] = mxCreateDoubleScalar(rsm->getTime());
-		}
-		break;
+    {
+      if (nlhs>0) plhs[0] = rsm->getState();
+      if (nlhs>1) plhs[1] = mxCreateDoubleScalar(rsm->getTime());
+    }
+    break;
   case 3:  // get last timestamp
-		{
-			if (nlhs>0) plhs[0] = mxCreateDoubleScalar(rsm->getTime());
-		}
-		break;
+    {
+      if (nlhs>0) plhs[0] = mxCreateDoubleScalar(rsm->getTime());
+    }
+    break;
   case 4:  // mark as read
-		{
-			rsm->markAsRead();
-		}
-		break;
+    {
+      rsm->markAsRead();
+    }
+    break;
   default:
-  	mexErrMsgIdAndTxt("DRC:RobotStateMonitor:UnknownCommand","Don't know command %d", command);
-	}
+    mexErrMsgIdAndTxt("DRC:RobotStateMonitor:UnknownCommand","Don't know command %d", command);
+  }
 
 }

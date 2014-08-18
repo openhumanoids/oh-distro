@@ -1,8 +1,16 @@
 classdef AtlasState < LCMCoordinateFrame & Singleton
   
   methods
-    function obj=AtlasState(r)
+    function obj=AtlasState(r,max_rate)
       typecheck(r,'TimeSteppingRigidBodyManipulator');
+      if nargin > 1
+        % max_rate in Hz
+        rangecheck(max_rate,[0 inf]);
+        s = 1.0/max_rate;
+        min_usec = s*1e6;
+      else 
+        min_usec = 0;    
+      end
 
       obj = obj@LCMCoordinateFrame('AtlasState',r.getNumStates(),'x');
       obj = obj@Singleton();
@@ -17,7 +25,7 @@ classdef AtlasState < LCMCoordinateFrame & Singleton
       end
 
       if (obj.mex_ptr==0)
-        obj.mex_ptr = SharedDataHandle(RobotStateMonitor('atlas',joint_names));
+        obj.mex_ptr = SharedDataHandle(RobotStateMonitor('atlas',joint_names,min_usec));
       end
     end
 
