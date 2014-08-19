@@ -179,12 +179,12 @@ KDL::Frame EigenToKDL(Eigen::Isometry3d tf){
 void Pass::prepareModel(){
   cout<< "URDF handler"<< endl;
   // Received robot urdf string. Store it internally and get all available joints.
-  gl_robot_ = shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(urdf_xml_string_));
+  gl_robot_ = boost::shared_ptr<visualization_utils::GlKinematicBody>(new visualization_utils::GlKinematicBody(urdf_xml_string_));
   cout<< "Number of Joints: " << gl_robot_->get_num_joints() <<endl;
   links_map_ = gl_robot_->get_links_map();
   cout<< "Size of Links Map: " << links_map_.size() <<endl;
   
-  typedef map<string, shared_ptr<urdf::Link> > links_mapType;
+  typedef map<string, boost::shared_ptr<urdf::Link> > links_mapType;
   
   int i =0;
   for(links_mapType::const_iterator it =  links_map_.begin(); it!= links_map_.end(); it++){ 
@@ -196,15 +196,15 @@ void Pass::prepareModel(){
       pcl::PolygonMesh::Ptr mesh_ptr(new pcl::PolygonMesh());
       
       // For each visual element within the link geometry:
-      typedef map<string, shared_ptr<vector<shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
+      typedef map<string, boost::shared_ptr<vector<boost::shared_ptr<urdf::Visual> > > >  visual_groups_mapType;
       visual_groups_mapType::iterator v_grp_it = it->second->visual_groups.find("default");
       for (size_t iv = 0;iv < v_grp_it->second->size();iv++){  // 
-        vector<shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
-        shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
+        vector<boost::shared_ptr<urdf::Visual> > visuals = (*v_grp_it->second);
+        boost::shared_ptr<urdf::Geometry> geom =  visuals[iv]->geometry;
         Eigen::Isometry3d visual_origin = URDFPoseToEigen( visuals[iv]->origin );
         
         if  (geom->type == urdf::Geometry::MESH){
-          shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>( geom ));
+          boost::shared_ptr<urdf::Mesh> mesh(dynamic_pointer_cast<urdf::Mesh>( geom ));
           // TODO: Verify the existance of the file:
           std::string file_path = gl_robot_->evalMeshFilePath(mesh->filename, use_convex_hulls_);
 
@@ -219,15 +219,15 @@ void Pass::prepareModel(){
           simexample->mergePolygonMesh(mesh_ptr, this_mesh );
           
         }else if(geom->type == urdf::Geometry::BOX){
-          shared_ptr<urdf::Box> box(dynamic_pointer_cast<urdf::Box>( geom ));
+          boost::shared_ptr<urdf::Box> box(dynamic_pointer_cast<urdf::Box>( geom ));
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getCubeWithTransform(visual_origin, box->dim.x, box->dim.y, box->dim.z) );
         }else if(geom->type == urdf::Geometry::CYLINDER){
-          shared_ptr<urdf::Cylinder> cyl(dynamic_pointer_cast<urdf::Cylinder>( geom ));
+          boost::shared_ptr<urdf::Cylinder> cyl(dynamic_pointer_cast<urdf::Cylinder>( geom ));
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getCylinderWithTransform(visual_origin, cyl->radius, cyl->radius, cyl->length) );
         }else if(geom->type == urdf::Geometry::SPHERE){
-          shared_ptr<urdf::Sphere> sphere(dynamic_pointer_cast<urdf::Sphere>(geom)); 
+          boost::shared_ptr<urdf::Sphere> sphere(dynamic_pointer_cast<urdf::Sphere>(geom)); 
           simexample->mergePolygonMesh(mesh_ptr, 
                                       prim_->getSphereWithTransform(visual_origin, sphere->radius) );
         }else{
@@ -269,7 +269,7 @@ void Pass::prepareModel(){
     cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
     return;
   }
-  fksolver_ = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
+  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
 }
 
 

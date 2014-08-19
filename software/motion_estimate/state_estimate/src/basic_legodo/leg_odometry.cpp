@@ -25,7 +25,7 @@ leg_odometry::leg_odometry( boost::shared_ptr<lcm::LCM> &lcm_publish_,
     cerr << "ERROR: Failed to extract kdl tree from xml robot description" << endl;
     exit(-1);
   }
-  fksolver_ = shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
+  fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
   
   // Vis Config:
   pc_vis_ = new pointcloud_vis( lcm_publish_->getUnderlyingLCM());
