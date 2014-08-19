@@ -20,8 +20,6 @@ javarmpath([pods_get_base_path,'/share/java/lcmtypes_scanmatch.jar']);
 javarmpath([pods_get_base_path,'/share/java/bot2-lcmgl.jar']);
 
 rmpath_drake;
-%rmpath_eigen_utils;
-%rmpath_matlab_utils;
 
 % remove the drake control matlab util directory into the matlab path:
 rmpath(fullfile(pwd,'matlab'));
@@ -42,6 +40,6 @@ rmpath(fullfile(pwd,'matlab','test'));
 rmpath(fullfile(pwd,'matlab','systems'));
 rmpath(fullfile(pwd,'collections_utils'));
 rmpath(fullfile(pwd,'..','drake','examples','ZMP'));
-
+rmpath(fullfile(pwd,'..','drake','examples','Atlas','controllers'));
 
 end

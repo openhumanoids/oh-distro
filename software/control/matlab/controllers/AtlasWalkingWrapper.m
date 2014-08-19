@@ -64,40 +64,31 @@ classdef AtlasWalkingWrapper < DrakeSystem
       options.W_kdot = 0*eye(3);
       options.w_grf = 0.0;
       options.w_slack = 0.05;
-      options.Kp_accel = 0.0;
+      options.Kp_accel = 2.0;
       options.debug = false;
       options.use_mex = true;
-      options.contact_threshold = 0.01;
+      options.contact_threshold = 0.001;
       options.output_qdd = true;
       options.solver = 0; % 0 fastqp, 1 gurobi
       options.input_foot_contacts = true;
 
-      options.Kp = [20; 20; 20; 10; 20; 10];
+      options.Kp = [20; 20; 20; 20; 20; 20];
       options.Kd = getDampingGain(options.Kp,0.6);
       obj.lfoot_motion_block = FootMotionControlBlock(r,'l_foot',controller_data,options);
       obj.rfoot_motion_block = FootMotionControlBlock(r,'r_foot',controller_data,options);
       
       options.Kp = 20*[0; 0; 1; 1; 1; 1];
-      options.Kd = getDampingGain(options.Kp,0.4);
+      options.Kd = getDampingGain(options.Kp,0.6);
       obj.pelvis_motion_block = PelvisMotionControlBlock(r,'pelvis',controller_data,options);
       motion_frames = {obj.lfoot_motion_block.getOutputFrame,obj.rfoot_motion_block.getOutputFrame,...
         obj.pelvis_motion_block.getOutputFrame};
-      options.body_accel_input_weights = 0.25*[1 1 1];
+      options.body_accel_input_weights = [0.3 0.3 0.1];
       qp = QPController(r,motion_frames,controller_data,options);
       
       % cascade IK/PD block
       options.use_ik = false;
       options.Kp = 50.0*ones(obj.nq,1);
       options.Kd = 8*ones(obj.nq,1);
-      % options.Kp(findJointIndices(r,'hpz')) = 70.0;
-      % options.Kd(findJointIndices(r,'hpz')) = 14.0;
-      % options.Kd(findJointIndices(r,'kny')) = 13.0;
-      % options.Kp(3) = 30.0;
-      % options.Kd(3) = 12.0;
-      % options.Kp(4:5) = 30.0;
-      % options.Kd(4:5) = 12.0;
-      % options.Kp(6) = 40.0;
-      % options.Kd(6) = 12.0;
 
       pd = IKPDBlock(r,controller_data,options);
       
@@ -129,7 +120,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       options.use_lcm = true;
       options.use_contact_logic_OR = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
-      options.zero_ankles_on_contact = true;
+      options.zero_ankles_on_contact = false;
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
       obj.footstep_plan_shift_block = FootstepPlanShiftBlock(r,controller_data);
 

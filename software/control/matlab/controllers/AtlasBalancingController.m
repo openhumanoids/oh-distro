@@ -3,6 +3,7 @@ classdef AtlasBalancingController < DRCController
   properties (SetAccess=protected,GetAccess=protected)
     robot;
     foot_idx;
+    pelvis_idx;
     controller_state_dim;
     nq;
   end
@@ -52,16 +53,21 @@ classdef AtlasBalancingController < DRCController
       
       foot_support = RigidBodySupportState(r,fidx);
       
-      link_constraints(1).link_ndx = fidx(1);
+      pelvis_idx = findLinkInd(r,'pelvis');
+
+      link_constraints(1).link_ndx = pelvis_idx;
       link_constraints(1).pt = [0;0;0];
-      link_constraints(1).pos = forwardKin(r,kinsol,fidx(1),[0;0;0],1);
-      link_constraints(2).link_ndx = fidx(2);
+      link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,pelvis_idx,[0;0;0],1));
+      link_constraints(2).link_ndx = fidx(1);
       link_constraints(2).pt = [0;0;0];
-      link_constraints(2).pos = forwardKin(r,kinsol,fidx(2),[0;0;0],1);
+      link_constraints(2).traj = ConstantTrajectory(forwardKin(r,kinsol,fidx(1),[0;0;0],1));
+      link_constraints(3).link_ndx = fidx(2);
+      link_constraints(3).pt = [0;0;0];
+      link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,fidx(2),[0;0;0],1));
             
       ctrl_data = AtlasQPControllerData(false,struct(...
         'acceleration_input_frame',AtlasCoordinates(r),...
-        'D',-com(3)/9.81*eye(2),...
+        'D',-getAtlasNominalCOMHeight()/9.81*eye(2),...
         'Qy',eye(2),...
         'S',V.S,...
         's1',zeros(4,1),...
@@ -91,6 +97,7 @@ classdef AtlasBalancingController < DRCController
       obj.robot = r;
       obj.controller_data = ctrl_data;
       obj.foot_idx = fidx;
+      obj.pelvis_idx = pelvis_idx;
       obj.nq = getNumDOF(r);
       
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
@@ -115,6 +122,7 @@ classdef AtlasBalancingController < DRCController
         try
           msg = data.CONFIGURATION_TRAJ;
           qtraj = mxDeserialize(msg.qtraj);
+          link_constraints = mxDeserialize(msg.link_constraints);
           if obj.controller_data.firstplan
             obj.controller_data.firstplan = false;
           else
@@ -135,6 +143,7 @@ classdef AtlasBalancingController < DRCController
             obj.controller_data.integral = integ;
           end
           obj.controller_data.qtraj = qtraj;
+          obj.controller_data.link_constraints = link_constraints;
         catch err
           disp(err);
           standAtCurrentState(obj,data.AtlasState);
@@ -167,12 +176,15 @@ classdef AtlasBalancingController < DRCController
       obj.controller_data.y0 = comgoal;
       obj.controller_data.comtraj = comgoal;
 
-      link_constraints(1).link_ndx = obj.foot_idx(1);
+      link_constraints(1).link_ndx = obj.pelvis_idx;
       link_constraints(1).pt = [0;0;0];
-      link_constraints(1).pos = forwardKin(r,kinsol,obj.foot_idx(1),[0;0;0],1);
-      link_constraints(2).link_ndx = obj.foot_idx(2);
+      link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,obj.pelvis_idx,[0;0;0],1));
+      link_constraints(2).link_ndx = obj.foot_idx(1);
       link_constraints(2).pt = [0;0;0];
-      link_constraints(2).pos = forwardKin(r,kinsol,obj.foot_idx(2),[0;0;0],1);
+      link_constraints(2).traj = ConstantTrajectory(forwardKin(r,kinsol,obj.foot_idx(1),[0;0;0],1));
+      link_constraints(3).link_ndx = obj.foot_idx(2);
+      link_constraints(3).pt = [0;0;0];
+      link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,obj.foot_idx(2),[0;0;0],1));
       obj.controller_data.link_constraints = link_constraints;
     end
   end

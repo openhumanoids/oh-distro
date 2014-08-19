@@ -696,42 +696,44 @@ classdef QPController < MIMODrakeSystem
       end
       debug_data.zmp_err = [0;0];
       
-      beta = alpha(nq + (1 : nc * nd));
-      if ~isempty(active_supports)
-        debug_data.individual_cops = zeros(3 * length(active_supports), 1);
-        for j=1:length(active_supports)
-          [~,Bj,~,~,normalj] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,active_supports(j)]));
-          normals_identical = ~any(any(bsxfun(@minus, normalj, normalj(:,1))));
-          if normals_identical % otherwise computing a COP doesn't make sense
-            normalj = normalj(:,1);
-            betaj = beta((j - 1) * nd + (1 : nd * supp.num_contact_pts(j)));
-            contact_positionsj = r.getBody(active_supports(j)).getTerrainContactPoints();
-            forcej = zeros(3, 1);
-            torquej = zeros(3, 1);
-            min_contact_position_z = inf;
-            for k = 1 : supp.num_contact_pts(j)
-              Bjk = Bj{k};
-              betajk = betaj((k - 1) * nd + (1:nd));
-              contact_positionjk = contact_positionsj(:, k);
-              forcejk = Bjk * betajk;
-              forcej = forcej + forcejk;
-              torquejk = cross(contact_positionjk, forcejk);
-              torquej = torquej + torquejk;
-              if normalj' * contact_positionjk < min_contact_position_z
-                min_contact_position_z = normalj' * contact_positionjk;
+      debug_data.individual_cops = zeros(3 * length(active_supports), 1);
+      if obj.use_mex==0 % TODO: update this
+        beta = alpha(nq + (1 : nc * nd));
+        if ~isempty(active_supports)
+          for j=1:length(active_supports)
+            [~,Bj,~,~,normalj] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',~obj.use_bullet,'body_idx',[1,active_supports(j)]));
+            normals_identical = ~any(any(bsxfun(@minus, normalj, normalj(:,1))));
+            if normals_identical % otherwise computing a COP doesn't make sense
+              normalj = normalj(:,1);
+              betaj = beta((j - 1) * nd + (1 : nd * supp.num_contact_pts(j)));
+              contact_positionsj = r.getBody(active_supports(j)).getTerrainContactPoints();
+              forcej = zeros(3, 1);
+              torquej = zeros(3, 1);
+              min_contact_position_z = inf;
+              for k = 1 : supp.num_contact_pts(j)
+                Bjk = Bj{k};
+                betajk = betaj((k - 1) * nd + (1:nd));
+                contact_positionjk = contact_positionsj(:, k);
+                forcejk = Bjk * betajk;
+                forcej = forcej + forcejk;
+                torquejk = cross(contact_positionjk, forcejk);
+                torquej = torquej + torquejk;
+                if normalj' * contact_positionjk < min_contact_position_z
+                  min_contact_position_z = normalj' * contact_positionjk;
+                end
               end
+              fzj = normalj' * forcej; % in body frame
+              if abs(fzj) > 1e-7
+                normal_torquej = normalj' * torquej; % in body frame
+                tangential_torquej = torquej - normalj * normal_torquej; % in body frame
+                cop_bodyj = cross(normalj, tangential_torquej) / fzj; % in body frame
+                cop_bodyj = cop_bodyj + min_contact_position_z * normalj;
+                cop_worldj = r.forwardKin(kinsol, active_supports(j), cop_bodyj,0);
+              else
+                cop_worldj = nan(3, 1);
+              end
+              debug_data.individual_cops((j - 1) * 3 + (1 : 3)) = cop_worldj;
             end
-            fzj = normalj' * forcej; % in body frame
-            if abs(fzj) > 1e-7
-              normal_torquej = normalj' * torquej; % in body frame
-              tangential_torquej = torquej - normalj * normal_torquej; % in body frame
-              cop_bodyj = cross(normalj, tangential_torquej) / fzj; % in body frame
-              cop_bodyj = cop_bodyj + min_contact_position_z * normalj;
-              cop_worldj = r.forwardKin(kinsol, active_supports(j), cop_bodyj,0);
-            else
-              cop_worldj = nan(3, 1);
-            end
-            debug_data.individual_cops((j - 1) * 3 + (1 : 3)) = cop_worldj;
           end
         end
       end

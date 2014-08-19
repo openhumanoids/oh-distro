@@ -44,7 +44,6 @@ checkDependency('lcmgl');
 checkDependency('gurobi');
 checkDependency('snopt');
 addpath_mosek;
-%checkDependency('bullet');
 
 addpath([pods_get_base_path,'/matlab']);
 
@@ -66,6 +65,7 @@ addpath(fullfile(pwd,'matlab','test'));
 addpath(fullfile(pwd,'matlab','systems'));
 addpath(fullfile(pwd,'collections_utils'));
 addpath(fullfile(pwd,'..','drake','examples','ZMP'));
+addpath(fullfile(pwd,'..','drake','examples','Atlas','controllers'));
 
 
 end

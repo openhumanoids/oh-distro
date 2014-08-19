@@ -127,7 +127,29 @@ classdef CombinedPlanner
       joint_names = obj.biped.getStateFrame.coordinates(1:nq);
       [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);
-      plan = ConfigurationTraj(qtraj_pp);
+      % compute link_constraints for pelvis
+      pelvis_ind = findLinkInd(obj.biped,'pelvis');
+      lfoot_ind = findLinkInd(obj.biped,'l_foot');
+      rfoot_ind = findLinkInd(obj.biped,'r_foot');
+      pelvis_pose = zeros(6,length(ts));
+      for i=1:length(ts)
+        kinsol = doKinematics(obj.biped,ppval(qtraj_pp,ts(i)));
+        pelvis_pose(:,i) = forwardKin(obj.biped,kinsol,pelvis_ind,[0;0;0],1);
+      end
+      link_constraints(1).link_ndx = pelvis_ind;
+      link_constraints(1).pt = [0;0;0];
+      link_constraints(1).traj = PPTrajectory(pchip(ts,pelvis_pose));
+      link_constraints(1).dtraj = fnder(link_constraints.traj);
+%       link_constraints.ddtraj = fnder(link_constraints.dtraj);
+      kinsol = doKinematics(obj.biped,ppval(qtraj_pp,ts(1)));
+      link_constraints(2).link_ndx = lfoot_ind;
+      link_constraints(2).pt = [0;0;0];
+      link_constraints(2).traj = ConstantTrajectory(forwardKin(obj.biped,kinsol,lfoot_ind,[0;0;0],1));
+      link_constraints(3).link_ndx = rfoot_ind;
+      link_constraints(3).pt = [0;0;0];
+      link_constraints(3).traj = ConstantTrajectory(forwardKin(obj.biped,kinsol,rfoot_ind,[0;0;0],1));
+
+      plan = ConfigurationTraj(qtraj_pp,link_constraints);
     end
 end
 end

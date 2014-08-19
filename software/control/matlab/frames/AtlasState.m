@@ -28,6 +28,16 @@ classdef AtlasState < LCMCoordinateFrame & Singleton
 %         RobotStateMonitor(obj.mex_ptr.data);
 %       end
     end
+    
+    function setMaxRate(obj,max_rate)
+      % max_rate in Hz
+      rangecheck(max_rate,0,inf);
+      s = 1.0/max_rate;
+      min_usec = s*1e6 - 200; % subtract a fraction of a tic
+      if (obj.mex_ptr ~= 0)
+        RobotStateMonitor(obj.mex_ptr.data,5,min_usec);
+      end
+    end
      
     function obj = subscribe(obj,channel)
       chash = java.lang.String(channel).hashCode();
