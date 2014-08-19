@@ -59,8 +59,8 @@ group "2.plan_and_control" {
         host = "robot";
     }
 
-    cmd "FootstepPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; cd([getenv('DRC_PATH'),'/control/matlab/planners/footstep_planner']); p = CombinedPlanner(); p.run();\"";
+    cmd "CombinedPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
        host = "base";
     }
 
