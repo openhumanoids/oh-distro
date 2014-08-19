@@ -298,8 +298,8 @@ getHeightAndNormal(const T iX, const T iY,
     oNormal = normal.cast<T>();
   }
 
-  const auto& plane = (mHelper->mUseFootPose ? mHelper->getLatestFootPlane() :
-                       mHelper->mFillPlane).cast<T>();
+  const auto plane = (mHelper->mUseFootPose ? mHelper->getLatestFootPlane() :
+                      mHelper->mFillPlane).cast<T>();
   if (usePlaneForHeight) {
     oHeight = -(plane[0]*iX + plane[1]*iY + plane[3])/plane[2];
   }
