@@ -125,10 +125,10 @@ private:
 
 public:
 
-  RobotStateMonitor(string robot_name, vector<string> joint_name, int min_usec_between_msg) : m_has_new_message(false), m_num_x(0), m_x(NULL)
+  RobotStateMonitor(string robot_name, vector<string> joint_name) : m_has_new_message(false), m_num_x(0), m_x(NULL)
   {
     m_robot_name = robot_name;
-    m_min_usec_between_msg = min_usec_between_msg;
+    m_min_usec_between_msg = 0;
 
     m_num_joints = 0;
     m_num_floating_joints = 0;
@@ -155,6 +155,10 @@ public:
     if (m_x) delete m_x;
   }
 
+  void setMinMicrosecBetweenMsg(int min_usec_between_msg) {
+    m_min_usec_between_msg = min_usec_between_msg;
+  }
+
   void handleMessage(const lcm::ReceiveBuffer* rbuf,
           const string& chan,
           const drc::robot_state_t* msg)
@@ -164,6 +168,7 @@ public:
     m_mutex.lock();
     // include a 1 second timeout
     // NOTE: utime/timestamp is in microseconds, systime/time_of_last_message in ms
+
     if (msg->utime >= (m_last_timestamp+m_min_usec_between_msg) || systime-m_time_of_last_message >= m_reset_time) {
 
       m_last_timestamp = msg->utime;
@@ -354,10 +359,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     vector<string> joint_names = get_strings(prhs[1]);
 
-    int min_usec_between_msg = (int) mxGetScalar(prhs[2]);
-
     mexLock();
-    rsm = new RobotStateMonitor(robot_name, joint_names, min_usec_between_msg);
+    rsm = new RobotStateMonitor(robot_name, joint_names);
 
     // return a pointer to the model
     mxClassID cid;
@@ -423,6 +426,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   case 4:  // mark as read
     {
       rsm->markAsRead();
+    }
+    break;
+  case 5: // set msg rate
+    {
+      int min_usec_between_msg = (int) mxGetScalar(prhs[2]);
+      rsm->setMinMicrosecBetweenMsg(min_usec_between_msg);    
     }
     break;
   default:

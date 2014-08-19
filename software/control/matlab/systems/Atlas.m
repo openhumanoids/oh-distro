@@ -21,6 +21,10 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       if ~isfield(options,'terrain')
         options.terrain = RigidBodyFlatTerrain;
       end
+      
+      if ~isfield(options,'control_rate')
+        options.control_rate = 250;
+      end
 
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
@@ -28,6 +32,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped('r_foot_sole', 'l_foot_sole');
 
+      obj.control_rate = options.control_rate;
+      obj.getStateFrame().setMaxRate(obj.control_rate);
+      
       obj.floating = options.floating;
 
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
@@ -118,6 +125,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
   properties (SetAccess = protected, GetAccess = public)
     x0
     floating
+    control_rate
     inverse_dyn_qp_controller;
     pelvis_min_height = 0.65; % [m] above feet, for hardware
     pelvis_max_height = 0.92; % [m] above feet, for hardware
