@@ -37,6 +37,9 @@ classdef WalkingControllerData
         traj = link_constraints(i).traj;
         breaks = unique(traj.getBreaks());
         points = traj.eval(breaks);
+        points(4,:) = unwrap(points(4,:));
+        points(5,:) = unwrap(points(5,:));
+        points(6,:) = unwrap(points(6,:));
         zpoints = points(3, :);
         change_indices = [true diff(diff(zpoints)) ~= 0 true];
         new_traj = PPTrajectory(pchip(breaks(change_indices), points(:, change_indices)));
