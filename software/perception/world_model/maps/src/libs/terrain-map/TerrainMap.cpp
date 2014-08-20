@@ -290,6 +290,7 @@ getHeightAndNormal(const T iX, const T iY,
     if (view == NULL) usePlaneForHeight = usePlaneForNormal = true;
     else {
       view->setNormalMethod(normalMethod);
+      view->setNormalRadius(mHelper->mNormalRadius);
       if (!view->getClosest(Eigen::Vector3f(iX, iY, 0), pt, normal)) {
         usePlaneForHeight = usePlaneForNormal = true;
       }
