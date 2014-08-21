@@ -320,7 +320,7 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
       // If the mesh is only XYZ, then manually copy into XYZRGB
       if (mesh_out->cloud.fields.size() == 3){
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz (new pcl::PointCloud<pcl::PointXYZ> ());
-        pcl::fromROSMsg(mesh_out->cloud, *cloud_xyz);
+        pcl::fromPCLPointCloud2(mesh_out->cloud, *cloud_xyz);
         cloud->points.resize(cloud_xyz->points.size());
         for (size_t i = 0; i < cloud_xyz->points.size(); i++) {
           cloud->points[i].x = cloud_xyz->points[i].x;
@@ -328,7 +328,7 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
           cloud->points[i].z = cloud_xyz->points[i].z;
         }
       }else{
-        pcl::fromROSMsg(mesh_out->cloud, *cloud);
+        pcl::fromPCLPointCloud2(mesh_out->cloud, *cloud);
       }
 
       // Apply transform to polymesh:
@@ -336,7 +336,7 @@ void Pass::affordancePlusInterpret(drc::affordance_plus_t affplus, int aff_uid, 
       Eigen::Quaternionf quat_f(pose_f.rotation());
       pcl::transformPointCloud (*cloud, *cloud,
       pose_f.translation(), quat_f); // !! modifies cloud
-      pcl::toROSMsg(*cloud, mesh_out->cloud);
+      pcl::toPCLPointCloud2(*cloud, mesh_out->cloud);
     }else if(otdf_type == "wye_mesh"){
       //cout  << aff_uid << " is a wye_mesh\n";
       std::string fname = string(getenv( "DRC_BASE" )) + string( "/software/models/mit_gazebo_models/otdf/wye.obj");
