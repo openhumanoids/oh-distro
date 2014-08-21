@@ -114,9 +114,17 @@ recompute_frame_data(MultisenseRenderer* self)
     // Do the reprojection in open space
     static const bool handle_missing_values = true;
     cv::reprojectImageTo3D(disparity, points, Q_, handle_missing_values);
-  }else if( self->msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM){
-    std::cout << "msg got\n";
-    uint16_t* depths =(uint16_t*)   self->msg->images[1].data;
+  }else if( (self->msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM) ||
+            (self->msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM_ZIPPED) ){
+    uint16_t* depths;
+    if(self->msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM) {
+      depths =(uint16_t*)   self->msg->images[1].data;
+    }else if (self->msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM_ZIPPED ) {
+      unsigned long dlen = w*h*2 ;//msg->depth.uncompressed_size;
+      uncompress(self->depth_uncompress_buffer, &dlen, self->msg->images[1].data, self->msg->images[1].size);
+      depths =(uint16_t*) self->depth_uncompress_buffer;
+    }
+
     for(int v=0; v<h; v++) {
       for(int u=0; u<w; u++) {
         int pixel = v*w +u;
@@ -229,6 +237,7 @@ static void _draw(BotViewer *viewer, BotRenderer *renderer){
     recompute_frame_data(self);
   
   glPushMatrix();
+
   if (self->frames==NULL || !bot_frames_have_trans(self->frames,self->camera_frame,bot_frames_get_root_name(self->frames))){
     // rotate so that X is forward and Z is up
     glRotatef(-90, 0, 0, 1);

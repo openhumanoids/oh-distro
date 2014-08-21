@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 {
   setlinebuf(stdout);
 
-  string config_file = "drc_robot_02_mit.cfg";
+  string config_file = "";//drc_robot_02_mit.cfg";
   int network_debug = 0;
   bool use_additional_renderers = false;
   bool use_multisense_renderer = false;
@@ -292,6 +292,7 @@ int main(int argc, char *argv[])
 
   if (use_multisense_renderer) {
     multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA", bot_param);
+    multisense_add_renderer_to_viewer(viewer, 0,lcm,bot_frames,"CAMERA_LEFT","CAMERA_FUSED", bot_param);
   }
   if (use_additional_renderers) {
     //bot_frames_add_renderer_to_viewer(viewer, 1, bot_frames );

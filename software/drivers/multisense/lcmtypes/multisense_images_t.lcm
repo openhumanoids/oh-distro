@@ -17,7 +17,8 @@ struct images_t
   const int16_t RIGHT=1;
   const int16_t DISPARITY=2;         // 16bit as in the multisense
   const int16_t MASK_ZIPPED=3;       // gray scale mask of left image, zipped with zlib
-  const int16_t DEPTH_MM=4;          // values this is similar to the OpenNI format
+  const int16_t DEPTH_MM=4;          // z depth, values similar to the OpenNI format
   const int16_t DISPARITY_ZIPPED=5;  // 16bit as in the multisense, zipped with zlib 
+  const int16_t DEPTH_MM_ZIPPED=6;   // z depth, values similar to the OpenNI format, zipped with zlib
   
 }

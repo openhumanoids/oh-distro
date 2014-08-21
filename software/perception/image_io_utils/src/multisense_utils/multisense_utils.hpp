@@ -24,7 +24,7 @@ class multisense_utils {
 
     ////////////////////////////////////////////////////////////////////////
     void unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
-                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb = true);
+                                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb = true, bool is_disparity = true);
     
     void unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
