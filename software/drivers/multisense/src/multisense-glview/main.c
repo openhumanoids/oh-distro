@@ -194,23 +194,30 @@ on_frame(const lcm_recv_buf_t* lcm, const char* channel, const multisense_images
       printf("Second Image Format Not Understood\n");
     }    
     
-  }else if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY || 
-        msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ){
+  }else if ( (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY || msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED) ||
+             (msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM  || msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM_ZIPPED) ){
     rightpane_is_depth = 1;
     
     int i;
     const uint16_t* depth = NULL;
-    
+    int scaling=10;
     if(msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY) {
       depth = (uint16_t*) msg->images[1].data;
     }else if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
       unsigned long dlen = width*height*2 ;//msg->depth.uncompressed_size;
       uncompress(depth_uncompress_buffer, &dlen, msg->images[1].data, msg->images[1].size);
       depth = (uint16_t*) depth_uncompress_buffer;
+    }else if (msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM ) {
+      depth = (uint16_t*) msg->images[1].data;
+      scaling=2;
+    }else if (msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM_ZIPPED ) {
+      unsigned long dlen = width*height*2 ;//msg->depth.uncompressed_size;
+      uncompress(depth_uncompress_buffer, &dlen, msg->images[1].data, msg->images[1].size);
+      depth = (uint16_t*) depth_uncompress_buffer;
+      scaling=2;
     }else{
       printf("Second Image Format Not Understood [B]\n");
     }
-    int scaling=3;
 
     pthread_mutex_lock( &mutex1 );
     int npixels = width * height;
@@ -221,47 +228,47 @@ on_frame(const lcm_recv_buf_t* lcm, const char* channel, const multisense_images
         depth_img_data[3*i+0] = 0;
         depth_img_data[3*i+1] = 0;
         depth_img_data[3*i+2] = 0;
-	continue;
+        continue;
       }
 
       int pval = t_gamma[scaling*depth[i]];
       int lb = pval & 0xff;
       switch (pval>>8) {
       case 0:
-	depth_img_data[3*i+0] = 255;
-	depth_img_data[3*i+1] = 255-lb;
-	depth_img_data[3*i+2] = 255-lb;
-	break;
-      case 1:
-	depth_img_data[3*i+0] = 255;
-	depth_img_data[3*i+1] = lb;
-	depth_img_data[3*i+2] = 0;
-	break;
-      case 2:
-	depth_img_data[3*i+0] = 255-lb;
-	depth_img_data[3*i+1] = 255;
-	depth_img_data[3*i+2] = 0;
-	break;
-      case 3:
-	depth_img_data[3*i+0] = 0;
-	depth_img_data[3*i+1] = 255;
-	depth_img_data[3*i+2] = lb;
-	break;
-      case 4:
-	depth_img_data[3*i+0] = 0;
-	depth_img_data[3*i+1] = 255-lb;
-	depth_img_data[3*i+2] = 255;
-	break;
-      case 5:
-	depth_img_data[3*i+0] = 0;
-	depth_img_data[3*i+1] = 0;
-	depth_img_data[3*i+2] = 255-lb;
-	break;
-      default:
-	depth_img_data[3*i+0] = 0;
-	depth_img_data[3*i+1] = 0;
-	depth_img_data[3*i+2] = 0;
-	break;
+        depth_img_data[3*i+0] = 255;
+        depth_img_data[3*i+1] = 255-lb;
+        depth_img_data[3*i+2] = 255-lb;
+        break;
+            case 1:
+        depth_img_data[3*i+0] = 255;
+        depth_img_data[3*i+1] = lb;
+        depth_img_data[3*i+2] = 0;
+        break;
+            case 2:
+        depth_img_data[3*i+0] = 255-lb;
+        depth_img_data[3*i+1] = 255;
+        depth_img_data[3*i+2] = 0;
+        break;
+            case 3:
+        depth_img_data[3*i+0] = 0;
+        depth_img_data[3*i+1] = 255;
+        depth_img_data[3*i+2] = lb;
+        break;
+            case 4:
+        depth_img_data[3*i+0] = 0;
+        depth_img_data[3*i+1] = 255-lb;
+        depth_img_data[3*i+2] = 255;
+        break;
+            case 5:
+        depth_img_data[3*i+0] = 0;
+        depth_img_data[3*i+1] = 0;
+        depth_img_data[3*i+2] = 255-lb;
+        break;
+            default:
+        depth_img_data[3*i+0] = 0;
+        depth_img_data[3*i+1] = 0;
+        depth_img_data[3*i+2] = 0;
+        break;
       }
     }
     
@@ -285,7 +292,7 @@ on_frame(const lcm_recv_buf_t* lcm, const char* channel, const multisense_images
     pthread_mutex_unlock( &mutex1 );
     //exit(-1);
   }else{
-      printf("Second Image Format Not Understood\n");    
+      printf("Second Image Format Not Understood [C]\n");
   }
 }
 
