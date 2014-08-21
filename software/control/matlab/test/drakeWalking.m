@@ -5,13 +5,17 @@ addpath(fullfile(getDrakePath,'examples','ZMP'));
 plot_comtraj = true;
 
 if (nargin<1); use_mex = true; end
-if (nargin<2); use_ik = true; end
+if (nargin<2); use_ik = false; end
 if (nargin<3); use_bullet = false; end
 if (nargin<4); use_angular_momentum = false; end
-if (nargin<5); random_navgoal = false; end
+if (nargin<5); random_navgoal = true; end
 
+load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 if random_navgoal
-  navgoal = [rand();randn();0;0;0;pi/2*randn()];
+  xstar(1) = randn();
+  xstar(2) = randn();
+  xstar(6) = pi*randn();
+  navgoal = [xstar(1)+rand();xstar(2)+randn();0;0;0;pi*randn()];
 else
   navgoal = [1;0;0;0;0;0]; % straight forward 1m
 end
@@ -30,9 +34,6 @@ r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
 % set initial state to fixed point
-load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-xstar(1) = 0*randn();
-xstar(2) = 0*randn();
 r = r.setInitialState(xstar);
 
 v = r.constructVisualizer;
@@ -56,15 +57,15 @@ request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.24;
 request.params.max_step_width = 0.3;
-request.params.nom_forward_step = 0.2;
-request.params.max_forward_step = 0.4;
+request.params.nom_forward_step = 0.17;
+request.params.max_forward_step = 0.2;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_mode = drc.footstep_plan_params_t.HORIZONTAL_PLANE;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.5;
-request.default_step_params.drake_min_hold_time = 2.0;
+request.default_step_params.step_speed = 0.2;
+request.default_step_params.drake_min_hold_time = 1.5;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -120,7 +121,7 @@ ctrl_data = QPControllerData(true,struct(...
   'ignore_terrain',walking_ctrl_data.ignore_terrain,...
   'y0',walking_ctrl_data.zmptraj,...
   'plan_shift',zeros(3,1),...
-  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck')]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
 options.dt = 0.003;
 options.slack_limit = 30;
@@ -141,7 +142,7 @@ end
 if use_ik
   options.w_qdd = 0.001*ones(nq,1);
 else
-  options.w_qdd = 0.00001*ones(nq,1);
+  options.w_qdd = 0.0*ones(nq,1);
 end
 
 
@@ -178,11 +179,10 @@ else
 	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
 	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
 	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data,options);
-	torso_motion = TorsoMotionControlBlock(r,'utorso',ctrl_data,options);
 	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
-	pelvis_motion.getOutputFrame,torso_motion.getOutputFrame};
+	pelvis_motion.getOutputFrame};
 
-%   options.body_accel_input_weights = [10 10 -1 -1];
+  options.body_accel_input_weights = [10 10 -1];
 	qp = QPController(r,motion_frames,ctrl_data,options);
 
 	% feedback QP controller with atlas
@@ -196,8 +196,6 @@ else
 	ins(4).input = 5;
 	ins(5).system = 1;
 	ins(5).input = 6;
-	ins(6).system = 1;
-	ins(6).input = 7;
 	outs(1).system = 2;
 	outs(1).output = 1;
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
@@ -214,8 +212,6 @@ else
 	ins(3).input = 4;
 	ins(4).system = 2;
 	ins(4).input = 5;
-	ins(5).system = 2;
-	ins(5).input = 6;
 	outs(1).system = 2;
 	outs(1).output = 1;
 	sys = mimoFeedback(fc,sys,[],[],ins,outs);
@@ -232,8 +228,6 @@ else
 	ins(3).input = 3;
 	ins(4).system = 2;
 	ins(4).input = 4;
-	ins(5).system = 2;
-	ins(5).input = 5;
 	outs(1).system = 2;
 	outs(1).output = 1;
 	sys = mimoFeedback(pd,sys,[],[],ins,outs);
@@ -246,8 +240,6 @@ else
 	ins(2).input = 3;
 	ins(3).system = 2;
 	ins(3).input = 4;
-	ins(4).system = 2;
-	ins(4).input = 5;
 	outs(1).system = 2;
 	outs(1).output = 1;
 	sys = mimoFeedback(lfoot_motion,sys,[],[],ins,outs);
@@ -257,8 +249,6 @@ else
 	ins(1).input = 1;
 	ins(2).system = 2;
 	ins(2).input = 3;
-	ins(3).system = 2;
-	ins(3).input = 4;
 	outs(1).system = 2;
 	outs(1).output = 1;
 	sys = mimoFeedback(rfoot_motion,sys,[],[],ins,outs);
@@ -266,18 +256,9 @@ else
 
 	ins(1).system = 2;
 	ins(1).input = 1;
-	ins(2).system = 2;
-	ins(2).input = 3;
 	outs(1).system = 2;
 	outs(1).output = 1;
 	sys = mimoFeedback(pelvis_motion,sys,[],[],ins,outs);
-	clear ins outs;
-
-	ins(1).system = 2;
-	ins(1).input = 1;
-	outs(1).system = 2;
-	outs(1).output = 1;
-	sys = mimoFeedback(torso_motion,sys,[],[],ins,outs);
 	clear ins outs;
 end
 
