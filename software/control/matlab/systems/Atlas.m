@@ -94,14 +94,14 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         obj.x0 = x0;
       end
     end
-    
+
     function weights = getFootstepOptimizationWeights(obj)
       % Return a reasonable set of default weights for the footstep planner
       % optimization. The weights describe the following quantities:
-      % 'relative': the contribution to the cost function of the 
-      %             displacement from one step to the next 
+      % 'relative': the contribution to the cost function of the
+      %             displacement from one step to the next
       % 'relative_final': the cost contribution of the displacement of the
-      %                   displacement of the very last step (this can be 
+      %                   displacement of the very last step (this can be
       %                   larger than the normal 'relative' cost in
       %                   order to encourage the feet to be close together
       %                   at the end of a plan)
@@ -109,7 +109,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       %         footsteps to their respective goal poses.
       % Each weight is a 6 element vector, describing the weights on
       % [x, y, z, roll, pitch, yaw]
-      
+
       weights = struct('relative', [1;1;1;0;0;0.5],...
                        'relative_final', [10;10;10;0;0;1],...
                        'goal', [100;100;0;0;0;10]);
@@ -117,6 +117,40 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
 
     function x0 = getInitialState(obj)
       x0 = obj.x0;
+    end
+
+    function [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,options] = constructQPBalancingController(obj,controller_data,options)
+      if nargin < 3
+        options = struct();
+      end
+      options = ifNotIsFieldThenVal(options,'slack_limit',30);
+      options = ifNotIsFieldThenVal(options,'w_qdd',0.0*ones(obj.nq,1));
+      options = ifNotIsFieldThenVal(options,'W_kdot',0.0*eye(3));
+      options = ifNotIsFieldThenVal(options,'w_grf',0.0);
+      options = ifNotIsFieldThenVal(options,'w_slack',0.05);
+      options = ifNotIsFieldThenVal(options,'Kp_accel',1.0);
+      options = ifNotIsFieldThenVal(options,'debug',false);
+      options = ifNotIsFieldThenVal(options,'use_mex',true);
+      options = ifNotIsFieldThenVal(options,'contact_threshold',0.01);
+      options = ifNotIsFieldThenVal(options,'output_qdd',true);
+      options = ifNotIsFieldThenVal(options,'solver',0);  % 0 fastqp, 1 gurobi
+      options = ifNotIsFieldThenVal(options,'Kp_foot',[20; 20; 20; 20; 20; 20]);
+      options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.6);
+      options = ifNotIsFieldThenVal(options,'Kp_pelvis',20*[1; 1; 1; 0.6; 0.6; 0.6]);
+      options = ifNotIsFieldThenVal(options,'pelvis_damping_ratio',0.7);
+      options = ifNotIsFieldThenVal(options,'body_accel_input_weights',[0.25; 0.25; 0.01]);
+
+      options.Kp = options.Kp_foot;
+      options.Kd = getDampingGain(options.Kp,options.foot_damping_ratio);
+      lfoot_control_block = BodyMotionControlBlock(r,'l_foot',controller_data,options);
+      rfoot_control_block = BodyMotionControlBlock(r,'r_foot',controller_data,options);
+
+      options.Kp = options.Kp_pelvis;
+      options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);
+      pelvis_control_block = BodyMotionControlBlock(r,'pelvis',controller_data,options);
+      motion_frames = {obj.lfoot_control_block.getOutputFrame,obj.rfoot_control_block.getOutputFrame,...
+        obj.pelvis_control_block.getOutputFrame};
+      qp = QPController(r,motion_frames,controller_data,options);
     end
   end
   properties
