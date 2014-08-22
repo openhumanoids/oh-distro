@@ -33,9 +33,15 @@ classdef AtlasQPControllerData < QPControllerData
     function data=verifyAtlasControllerData(~,data)
       assert(isnumeric(data.force_controlled_joints));
       assert(isnumeric(data.position_controlled_joints));
-      assert(isnumeric(data.integral));
-      assert(isnumeric(data.integral_gains));
-      assert(isnumeric(data.integral_clamps));
+      if isfield(data,'integral')
+        assert(isnumeric(data.integral));
+      end
+      if isfield(data,'integral_gains')
+        assert(isnumeric(data.integral_gains));
+      end
+      if isfield(data,'integral_clamps')
+        assert(isnumeric(data.integral_clamps));
+      end
       if isfield(data,'qd_int_state')
         assert(isnumeric(data.qd_int_state));      
       end
