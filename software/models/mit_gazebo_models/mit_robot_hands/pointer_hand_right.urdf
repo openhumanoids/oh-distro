@@ -95,4 +95,10 @@
     <child link="right_pointer_tip"/>
   </joint>
   <link name="right_pointer_tip"/>
+  <joint name="right_pointer_end_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.16 0"/>
+    <parent link="plane::xy::base"/>
+    <child link="right_pointer_end"/>
+  </joint>
+  <link name="right_pointer_end"/>
 </robot>

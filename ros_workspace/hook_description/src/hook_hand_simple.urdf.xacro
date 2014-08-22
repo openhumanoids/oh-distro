@@ -173,6 +173,15 @@
   </joint>
   <link name="${side}_pointer_tip"/>
 
+
+<!-- Contact Point AT the tip of the pointer. these were poorly named -->
+  <joint name="${side}_pointer_end_joint" type="fixed">
+    <origin rpy="0.0 0.0 0.0" xyz="0 0.16 0"/>
+    <parent link="${parent}"/>
+    <child link="${side}_pointer_end"/>
+  </joint>
+  <link name="${side}_pointer_end"/>
+
 </xacro:macro>
 
 </robot>

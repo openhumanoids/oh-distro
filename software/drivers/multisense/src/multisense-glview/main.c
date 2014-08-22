@@ -302,10 +302,10 @@ static void usage(const char* progname)
                    "\n"
                    "Options:\n"
                    "  -l URL      Specify LCM URL\n"
-	           "  -c channel  Subscribe channel name\n"
-                   "  -h          This help message\n", 
-        	   "  -o path     Save frames to PNG\n",
+	              "  -c channel  Subscribe channel name\n"
+        	         "  -o path     Save frames to PNG\n",
                    "  -p          Use previous resolution (1024x544)\n",
+                   "  -h          This help message\n", 
                    g_path_get_basename(progname));
   exit(1);
 }

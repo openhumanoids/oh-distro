@@ -82,20 +82,6 @@ group "4.perception_drivers" {
         host = "robot";
     }
 
-    cmd "sa-left" {
-        exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_LEFT -s 12502221 -r 270 --equalize 400";
-        host = "robot";
-    }
-
-    cmd "sa-right" {
-        exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90 --equalize 400";
-        host = "robot";
-    }
-
-    cmd "camera-lhand" {
-        exec = "ptgrey-gige -t -f 10 -q 50 -c CAMERALHAND -s 123";
-        host = "robot";
-    }
 }
 
 group "5.maps" {
@@ -129,6 +115,24 @@ group "6.hands_robotiq" {
         host = "robot";
     }
 
+}
+
+group "7.other_drivers" {
+
+    cmd "sa-left" {
+        exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_LEFT -s 12502221 -r 270 --equalize 400";
+        host = "robot";
+    }
+
+    cmd "sa-right" {
+        exec = "ptgrey-gige -t -f 2 -q 50 -c CAMERACHEST_RIGHT -s 12502233 -r 90 --equalize 400";
+        host = "robot";
+    }
+
+    cmd "camera-lhand" {
+        exec = "ptgrey-gige -t -f 10 -q 50 -c CAMERALHAND -s 123";
+        host = "robot";
+    }
 }
 
 

@@ -1,0 +1,6 @@
+{"plots":
+[{
+"pythonScript":"software/motion_estimate/signal_scope/src/signal_scope/userSignals.py",
+"signals":[],"timeWindow":10,"ymax":4,"ymin":-4}],
+
+"windowHeight":874,"windowWidth":1280}

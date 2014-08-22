@@ -115,21 +115,7 @@
       }, 
       "name": "handsdown both", 
       "nominal_handedness": "none"
-    }, 
-    {
-      "allow_mirror": true, 
-      "description": "arm up pregrasp", 
-      "joints": {
-        "l_arm_elx": 1.6806644201278687, 
-        "l_arm_ely": 1.1180667877197266, 
-        "l_arm_mwx": 1.0353000164031982, 
-        "l_arm_shx": -0.6718600988388062, 
-        "l_arm_usy": 0.6663981080055237, 
-        "l_arm_uwy": 0.548896312713623
-      }, 
-      "name": "arm up pregrasp", 
-      "nominal_handedness": "left"
-    }, 
+    },
     {
       "allow_mirror": true, 
       "description": "bdi nominal", 
@@ -193,6 +179,20 @@
         "l_arm_uwy": 1.5549284219741821
       }, 
       "name": "pre drop 2", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "arm up pregrasp", 
+      "joints": {
+        "l_arm_elx": 1.3917903900146484, 
+        "l_arm_ely": 1.2329540252685547, 
+        "l_arm_mwx": 1.145113229751587, 
+        "l_arm_shx": -0.36679500341415405, 
+        "l_arm_usy": 0.7571236491203308, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "arm up pregrasp", 
       "nominal_handedness": "left"
     }
   ], 
@@ -1164,6 +1164,82 @@
         "l_arm_uwy": 3.1689999103546143
       }, 
       "name": "pre-grasp high and tight", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - 2014", 
+      "joints": {
+        "l_arm_elx": 2.277007579803467, 
+        "l_arm_ely": 1.7231732606887817, 
+        "l_arm_mwx": -0.4178050458431244, 
+        "l_arm_shx": -0.017506087198853493, 
+        "l_arm_usy": -0.252936989068985, 
+        "l_arm_uwy": 0.0015456664841622114
+      }, 
+      "name": "drill in camera - 2014", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - 2014 pointer", 
+      "joints": {
+        "r_arm_elx": -2.2095110416412354, 
+        "r_arm_ely": 1.8581303358078003, 
+        "r_arm_mwx": -0.3955312669277191, 
+        "r_arm_shx": 0.7973434925079346, 
+        "r_arm_usy": -0.4103423058986664, 
+        "r_arm_uwy": 2.1640777587890625
+      }, 
+      "name": "drill in camera - 2014 pointer", 
+      "nominal_handedness": "right"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill near target - 2014", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0, 
+        "l_arm_elx": 1.6365846395492554, 
+        "l_arm_ely": 2.546053647994995, 
+        "l_arm_mwx": 0.8582467436790466, 
+        "l_arm_shx": -1.2967355251312256, 
+        "l_arm_usy": 0.5850000381469727, 
+        "l_arm_uwy": 0.10304810106754303
+      }, 
+      "name": "drill near target - 2014", 
+      "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true, 
+      "description": "one hand down - 2014", 
+      "joints": {
+        "r_arm_elx": -0.5, 
+        "r_arm_ely": 2.0999999046325684, 
+        "r_arm_mwx": -1.1102230246251565e-16, 
+        "r_arm_shx": 1.3300000429153442, 
+        "r_arm_usy": 0.27000001072883606, 
+        "r_arm_uwy": 0.0
+      }, 
+      "name": "one hand down - 2014", 
+      "nominal_handedness": "right"
+    },
+    {
+      "allow_mirror": true, 
+      "description": "one hand down with drill - 2014", 
+      "joints": {
+        "back_bkx": 0.0, 
+        "back_bky": 0.0, 
+        "back_bkz": 0.0, 
+        "l_arm_elx": 0.5, 
+        "l_arm_ely": 2.0999999046325684, 
+        "l_arm_mwx": 1.1102230246251565e-16, 
+        "l_arm_shx": -1.1027015447616577, 
+        "l_arm_usy": 0.27000001072883606, 
+        "l_arm_uwy": 0.0
+      }, 
+      "name": "one hand down with drill - 2014", 
       "nominal_handedness": "left"
     }
   ], 
