@@ -32,7 +32,7 @@ if use_java
     parser.addChannel('drc_vicon',vicon_coder);
     
     if nargout > 8
-      parser.addChannel('ATLAS_STATE_EXTRA',drc.control.AtlasStateExtraCoder(34));
+      parser.addChannel('ATLAS_STATE_EXTRA',drc.control.AtlasStateExtraCoder(28));
     end
     parser.parseLog(logfile);  
     t_x = parser.getT('EST_ROBOT_STATE');

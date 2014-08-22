@@ -79,6 +79,7 @@ set(java_src_files
   SandiaJointCommandCoder.java
   HandStateListener.java
   LCMGLLineBuffer.java
+  ViconBodyPointCoder.java
   )
 
 pods_find_pkg_config(lcmtypes_vicon-drc)
