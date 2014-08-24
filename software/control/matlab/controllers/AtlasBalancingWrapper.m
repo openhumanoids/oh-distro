@@ -56,16 +56,17 @@ classdef AtlasBalancingWrapper < DrakeSystem
       end
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
 
-      [qp,lfoot_block,rfoot_block,pelvis_block,options] = constructQPBalancingController(obj,controller_data);
+      % construct QP controller and related control blocks
+      [qp,lfoot_block,rfoot_block,pelvis_block,pd,options] = constructQPBalancingController(obj,controller_data);
       obj.lfoot_control_block = lfoot_block;
       obj.rfoot_control_block = rfoot_block;
       obj.pelvis_control_block = pelvis_block;
 
-      % cascade IK/PD block
-      options.use_ik = false;
-      options.Kp = 50.0*ones(obj.nq,1);
-      options.Kd = 8*ones(obj.nq,1);
-      pd = IKPDBlock(r,controller_data,options);
+      % velocity integrator
+      options.zero_ankles_on_contact = false;
+      options.eta = 0.001; % leaky integration decay rate
+      obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
+      controller_data.qd_int_state = zeros(obj.velocity_int_block.getStateFrame.dim,1);
 
       ins(1).system = 1;
       ins(1).input = 1;
@@ -90,13 +91,9 @@ classdef AtlasBalancingWrapper < DrakeSystem
 
       options.use_error_integrator = true; % while we're still using position control in upper body
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
+
       options.use_lcm = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
-      options.zero_ankles_on_contact = false;
-      options.eta = 0.001;
-      obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
-
-      controller_data.qd_int_state = zeros(obj.velocity_int_block.getStateFrame.dim,1);
 
       obj.robot = r;
       obj.input_map = getActuatedJoints(r);

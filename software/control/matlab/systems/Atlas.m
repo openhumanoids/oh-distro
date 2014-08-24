@@ -21,7 +21,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       if ~isfield(options,'terrain')
         options.terrain = RigidBodyFlatTerrain;
       end
-      
+
       if ~isfield(options,'control_rate')
         options.control_rate = 250;
       end
@@ -34,7 +34,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
 
       obj.control_rate = options.control_rate;
       obj.getStateFrame().setMaxRate(obj.control_rate);
-      
+
       obj.floating = options.floating;
 
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
@@ -119,7 +119,20 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       x0 = obj.x0;
     end
 
-    function [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,options] = constructQPBalancingController(obj,controller_data,options)
+    function [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,pd,options] = constructQPWalkingController(obj,controller_data,options)
+      if nargin < 3
+        options = struct();
+      end
+      options.input_foot_contacts = true;
+      options.Kp_pelvis = [0; 0; 20; 20; 20; 20];
+      options.pelvis_damping_ratio = 0.6;
+      options.body_accel_input_weights = [0.3 0.3 0.1];
+
+      [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,pd,options] = ...
+        constructQPBalancingController(obj,controller_data,options);
+    end
+
+    function [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,pd,options] = constructQPBalancingController(obj,controller_data,options)
       if nargin < 3
         options = struct();
       end
@@ -131,7 +144,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'Kp_accel',1.0);
       options = ifNotIsFieldThenVal(options,'debug',false);
       options = ifNotIsFieldThenVal(options,'use_mex',true);
-      options = ifNotIsFieldThenVal(options,'contact_threshold',0.01);
+      options = ifNotIsFieldThenVal(options,'contact_threshold',0.001);
       options = ifNotIsFieldThenVal(options,'output_qdd',true);
       options = ifNotIsFieldThenVal(options,'solver',0);  % 0 fastqp, 1 gurobi
       options = ifNotIsFieldThenVal(options,'Kp_foot',[20; 20; 20; 20; 20; 20]);
@@ -139,6 +152,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'Kp_pelvis',20*[1; 1; 1; 0.6; 0.6; 0.6]);
       options = ifNotIsFieldThenVal(options,'pelvis_damping_ratio',0.7);
       options = ifNotIsFieldThenVal(options,'body_accel_input_weights',[0.25; 0.25; 0.01]);
+      options = ifNotIsFieldThenVal(options,'use_ik',false);
+      options = ifNotIsFieldThenVal(options,'Kp_q',50.0*ones(obj.nq,1));
+      options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.6);
 
       options.Kp = options.Kp_foot;
       options.Kd = getDampingGain(options.Kp,options.foot_damping_ratio);
@@ -151,6 +167,10 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       motion_frames = {obj.lfoot_control_block.getOutputFrame,obj.rfoot_control_block.getOutputFrame,...
         obj.pelvis_control_block.getOutputFrame};
       qp = QPController(r,motion_frames,controller_data,options);
+
+      options.Kp = options.Kp_q;
+      options.Kd = getDampingGain(options.Kp,options.q_damping_ratio);
+      pd = IKPDBlock(r,controller_data,options);
     end
   end
   properties
