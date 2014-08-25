@@ -104,6 +104,8 @@ struct Worker {
         sendDenseCloudRightHandRequest(); break;
       case drc::data_request_t::TERRAIN_COST:
         sendTerrainCostRequest(); break;
+      case drc::data_request_t::FUSED_DEPTH:
+        sendFusedDepthRequest(); break;
       default:
         cout << "Unknown request type" << endl; break;
       }
@@ -386,6 +388,14 @@ struct Worker {
     msg.channel = "TERRAIN_DIST_MAP";
     msg.priority = 1;
     mLcm->publish("SHAPER_DATA_REQUEST", &msg);
+  }
+
+  void sendFusedDepthRequest() {
+    drc::map_request_t msg = prepareRequestMessage();
+    msg.view_id = drc::data_request_t::FUSED_DEPTH;
+    msg.type = drc::map_request_t::DEPTH_IMAGE;
+    msg.clip_planes.clear();
+    mLcm->publish("MAP_REQUEST", &msg);
   }
 
   Eigen::Projective3f createProjector(const float iHorzFovDegrees,

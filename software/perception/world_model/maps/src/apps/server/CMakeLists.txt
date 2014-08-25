@@ -4,6 +4,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++0x -Wno-deprecated-declaratio
 
 add_executable(${LIBRARY_NAME}
   LidarFilters.cpp
+  FusedDepthHandler.cpp
   ServerMain.cpp)
 pods_use_pkg_config_packages(${LIBRARY_NAME} maps opencv stereo-bm)
 pods_install_executables(${LIBRARY_NAME})
