@@ -159,8 +159,8 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
 
       options.Kp = options.Kp_foot;
       options.Kd = getDampingGain(options.Kp,options.foot_damping_ratio);
-      lfoot_control_block = BodyMotionControlBlock(obj,'l_foot',controller_data,options);
-      rfoot_control_block = BodyMotionControlBlock(obj,'r_foot',controller_data,options);
+      lfoot_control_block = FootMotionControlBlock(obj,'l_foot',controller_data,options);
+      rfoot_control_block = FootMotionControlBlock(obj,'r_foot',controller_data,options);
 
       options.Kp = options.Kp_pelvis;
       options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);
