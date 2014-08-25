@@ -8,7 +8,7 @@ echo 'Output to directory '$date_str
 #file="lcmlog-2014-01-21-16-40-robot-manip-mode"
 
 #
-path="/home/mfallon/data/atlas/2014-04-21-vicon-walking/"
+path="/home/mfallon/logs/atlas/2014-04-21-vicon-walking/"
 #path_out=$path"results/"$date_str
 path_out='/home/mfallon/Desktop/results/'
 
@@ -55,7 +55,7 @@ process_log(){
   #se-leg-odometry -U model_LH_RH.urdf -P drc_robot_02.cfg -L $log_in -pr 0 -r -l $log_out_legodo
   #bot-log2mat  $log_out_legodo  -c "POSE_BDI|POSE_VICON|POSE_BODY_ALT" -o $log_out_legodo_mat
 
-  se-fusion       -U model_LH_RH.urdf -P drc_robot_02.cfg -L $log_in -pr 0    -l $log_out_fusion
+  se-fusion       -U model_LH_RH.urdf -P drc_robot_02_mit.cfg -L $log_in -pr 0    -l $log_out_fusion
   bot-log2mat  $log_out_fusion  -c "POSE_BDI|POSE_VICON|POSE_BODY_ALT|POSE_BODY|POSE_MIT" -o $log_out_fusion_mat
 
   echo $log_out_legodo_mat

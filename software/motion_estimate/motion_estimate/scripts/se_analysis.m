@@ -8,8 +8,8 @@ bot_ = bot;
 % dyn1 129, dyn2 95, dyn3 50, dyn4 98, dyn5 80, dyn6 144
 %normals 86
 
-main_dir = '/home/mfallon/data/atlas/2014-04-21-vicon-walking/results/'
-run_dir = '2014-06-06-14-15-imu-leg-odo-for-paper'
+main_dir = '/home/mfallon/logs/atlas/2014-04-21-vicon-walking/results/'
+run_dir = '2014-08-25-16-39-torque-adjustment-toe-off-mode'
 
 %main_dir = '/media/passport4/atlas/2014-01-21-vicon-walking/results/'
 %run_dir = '2014-03-13-17-09-imu-leg-odo-lidar-alt-transition'
@@ -29,6 +29,10 @@ folder_path = [main_dir run_dir '/'];
 
 % 2014-06-06-14-15-imu-leg-odo-for-paper
 % 2014-06-06-14-46-imu-leg-odo-lidar-for-paper
+
+% torque adjustment
+% '2014-08-25-16-39-torque-adjustment'
+% '2014-08-25-16-39-without-torque-adjustment'
 
 logs = dir( [folder_path '*mat'])
 
