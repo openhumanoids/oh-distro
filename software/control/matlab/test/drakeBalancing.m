@@ -36,14 +36,26 @@ kinsol = doKinematics(r,q0);
 com = getCOM(r,kinsol);
 
 % build TI-ZMP controller 
-footidx = [findLinkInd(r,'r_foot'), findLinkInd(r,'l_foot')];
+footidx = [findLinkInd(r,'l_foot'), findLinkInd(r,'r_foot')];
 foot_pos = terrainContactPositions(r,kinsol,footidx);
 comgoal = mean([mean(foot_pos(1:2,1:4)');mean(foot_pos(1:2,5:8)')])';
 limp = LinearInvertedPendulum(com(3));
 [~,V] = lqr(limp,comgoal);
 
 foot_support = RigidBodySupportState(r,find(~cellfun(@isempty,strfind(r.getLinkNames(),'foot'))));
-    
+
+pelvis_idx = findLinkInd(r,'pelvis');
+
+link_constraints(1).link_ndx = pelvis_idx;
+link_constraints(1).pt = [0;0;0];
+link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,pelvis_idx,[0;0;0],1));
+link_constraints(2).link_ndx = footidx(1);
+link_constraints(2).pt = [0;0;0];
+link_constraints(2).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(1),[0;0;0],1));
+link_constraints(3).link_ndx = footidx(2);
+link_constraints(3).pt = [0;0;0];
+link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(2),[0;0;0],1));
+
 
 ctrl_data = QPControllerData(false,struct(...
   'acceleration_input_frame',AtlasCoordinates(r),...
@@ -58,58 +70,35 @@ ctrl_data = QPControllerData(false,struct(...
   'qtraj',x0(1:nq),...
   'support_times',0,...
   'supports',foot_support,...
+  'link_constraints',link_constraints,...
   'mu',1.0,...
   'ignore_terrain',false,...
   'plan_shift',zeros(3,1),...
-  'constrained_dofs',[]));
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
 % instantiate QP controller
-options.slack_limit = 30.0;
-options.w_qdd = 0.001*ones(nq,1);
-options.w_grf = 0;
-options.w_slack = 0.001;
 options.debug = false;
 options.use_mex = use_mex;
 
 if use_angular_momentum
   options.Kp_ang = 1.0; % angular momentum proportunal feedback gain
   options.W_kdot = 1e-5*eye(3); % angular momentum weight
-else
-  options.W_kdot = zeros(3); 
 end
 
-qp = QPController(r,{},ctrl_data,options);
-clear options;
+options.Kp_foot = [100; 100; 100; 150; 150; 150];
+options.foot_damping_ratio = 0.5;
+options.Kp_pelvis = [0; 0; 150; 200; 200; 200];
+options.pelvis_damping_ratio = 0.6;
 
-% feedback QP controller with atlas
-ins(1).system = 1;
-ins(1).input = 2;
-ins(2).system = 1;
-ins(2).input = 3;
-outs(1).system = 2;
-outs(1).output = 1;
-sys = mimoFeedback(qp,r,[],[],ins,outs);
-clear ins;
+% construct QP controller and related control blocks
+[qp,lfoot_controller,rfoot_controller,pelvis_controller,pd,options] = constructQPBalancingController(r,ctrl_data);
 
-% feedback foot contact detector with QP/atlas
 options.use_lcm=false;
 options.contact_threshold = 0.002;
 fc = FootContactBlock(r,ctrl_data,options);
-ins(1).system = 2;
-ins(1).input = 1;
-sys = mimoFeedback(fc,sys,[],[],ins,outs);
-clear ins;
-
-% feedback PD trajectory controller 
-options.use_ik = false;
-pd = IKPDBlock(r,ctrl_data,options);
-ins(1).system = 1;
-ins(1).input = 1;
-sys = mimoFeedback(pd,sys,[],[],ins,outs);
-clear ins;
-
 qt = QTrajEvalBlock(r,ctrl_data);
-sys = mimoFeedback(qt,sys,[],[],[],outs);
+
+sys = constructQPFeedbackCombination(r,qp,fc,pd,qt,lfoot_controller,rfoot_controller,pelvis_controller);
 
 if visualize
   v = r.constructVisualizer;
