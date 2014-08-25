@@ -15,6 +15,7 @@
 #include <leg_estimate/leg_estimate.hpp>
 #include <pointcloud_tools/pointcloud_lcm.hpp>
 #include <drc_utils/joint_utils.hpp>
+#include <estimate_tools/torque_adjustment.hpp>
 
 #include <lcmtypes/drc/atlas_state_t.hpp>
 
@@ -68,6 +69,10 @@ public:
   bool publish_diagnostics_;
   int verbose_; 
   
+  // Torque Adjustment:
+  bool use_torque_adjustment_;
+  EstimateTools::TorqueAdjustment torque_adjustment_;
+
   
   // Vicon state (just used for republishing):
   Eigen::Isometry3d prev_worldvicon_to_body_vicon_;

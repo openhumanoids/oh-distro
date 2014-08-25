@@ -23,6 +23,13 @@ LegOdoHandler::LegOdoHandler(lcm::LCM* lcm_recv,  lcm::LCM* lcm_pub,
   leg_est_ = new leg_estimate(lcm_pub_boost, param, model_boost );
   leg_odo_common_ = new LegOdoCommon(lcm_recv, lcm_pub, param);
 
+  use_torque_adjustment_ = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.torque_adjustment");
+  if (use_torque_adjustment_){
+    std::cout << "Torque-based joint angle adjustment: Using\n";
+  }else{
+    std::cout << "Torque-based joint angle adjustment: Not Using\n";
+  }
+
   publish_diagnostics_ = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.publish_diagnostics");  
   republish_incoming_poses_ = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.republish_incoming_poses");  
   bool republish_cameras = bot_param_get_boolean_or_fail(param, "state_estimator.legodo.republish_cameras");    
@@ -188,7 +195,17 @@ RBISUpdateInterface * LegOdoHandler::processMessage(const drc::atlas_state_t *ms
   // 1. Do the Leg Odometry Integration
   leg_est_->setFootSensing(  FootSensing( msg->force_torque.l_foot_force_z, msg->force_torque.l_foot_torque_x,  msg->force_torque.l_foot_torque_y),
                              FootSensing( msg->force_torque.r_foot_force_z, msg->force_torque.r_foot_torque_x,  msg->force_torque.r_foot_torque_y));
-  float odo_delta_status = leg_est_->updateOdometry(joint_names_, msg->joint_position, 
+
+  // 1.1 Apply the joint torque-to-angle adjustment
+  // TODO: this should probably be done inside the leg_est class and not here
+  std::vector <float> mod_position, mod_effort;
+  mod_position = msg->joint_position;
+  mod_effort = msg->joint_effort;
+  if (use_torque_adjustment_){
+    torque_adjustment_.processSample(mod_position, mod_effort );
+  }
+
+  float odo_delta_status = leg_est_->updateOdometry(joint_names_, mod_position, // msg->joint_position,
                                                     msg->joint_velocity, msg->utime);
   if (odo_delta_status<0){
     if (verbose_ >= 3) std::cout << "Leg Odometry is not valid not integrating =========================\n";

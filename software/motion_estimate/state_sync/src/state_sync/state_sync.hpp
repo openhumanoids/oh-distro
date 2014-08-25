@@ -30,7 +30,7 @@
 #include <estimate_tools/simple_kalman_filter.hpp>
 #include <estimate_tools/backlash_filter.hpp>
 #include <estimate_tools/alpha_filter.hpp>
-
+#include <estimate_tools/torque_adjustment.hpp>
 
 struct Joints { 
   std::vector<float> position;
@@ -57,6 +57,7 @@ class CommandLineConfig{
       use_joint_kalman_filter = false;
       use_joint_backlash_filter = false;
       use_rotation_rate_alpha_filter = false;
+      use_torque_adjustment = false;
     }
     ~CommandLineConfig(){};
 
@@ -70,6 +71,7 @@ class CommandLineConfig{
     bool use_joint_kalman_filter;
     bool use_joint_backlash_filter;
     bool use_rotation_rate_alpha_filter;
+    bool use_torque_adjustment;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -102,11 +104,7 @@ class state_sync{
     void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg);
-    void potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     
-    // Encoder now read from main cfg file and updates received via param server
-    //void refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
-    // void loadEncoderOffsetsFromFile();
     void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
     void enableEncoders(bool enable);
     
@@ -129,9 +127,10 @@ class state_sync{
     // Alpha Filters:
     EstimateTools::AlphaFilter* rotation_rate_alpha_filter_;
     
+    // Torque Adjustment:
+    EstimateTools::TorqueAdjustment torque_adjustment_;
     
-    // Keep two different offset vectors, for clarity:
-    std::vector<float> pot_joint_offsets_;
+    // Upper Body Encoder Calibrations:
     std::vector<float> encoder_joint_offsets_;
     std::vector<float> max_encoder_wrap_angle_;
     std::vector<bool> use_encoder_;
