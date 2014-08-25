@@ -137,7 +137,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         options = struct();
       end
       options = ifNotIsFieldThenVal(options,'slack_limit',30);
-      options = ifNotIsFieldThenVal(options,'w_qdd',0.0*ones(obj.nq,1));
+      options = ifNotIsFieldThenVal(options,'w_qdd',0.0*ones(obj.getNumVelocities(),1));
       options = ifNotIsFieldThenVal(options,'W_kdot',0.0*eye(3));
       options = ifNotIsFieldThenVal(options,'w_grf',0.0);
       options = ifNotIsFieldThenVal(options,'w_slack',0.05);
@@ -153,24 +153,24 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'pelvis_damping_ratio',0.7);
       options = ifNotIsFieldThenVal(options,'body_accel_input_weights',[0.25; 0.25; 0.01]);
       options = ifNotIsFieldThenVal(options,'use_ik',false);
-      options = ifNotIsFieldThenVal(options,'Kp_q',50.0*ones(obj.nq,1));
+      options = ifNotIsFieldThenVal(options,'Kp_q',50.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.6);
 
       options.Kp = options.Kp_foot;
       options.Kd = getDampingGain(options.Kp,options.foot_damping_ratio);
-      lfoot_control_block = BodyMotionControlBlock(r,'l_foot',controller_data,options);
-      rfoot_control_block = BodyMotionControlBlock(r,'r_foot',controller_data,options);
+      lfoot_control_block = BodyMotionControlBlock(obj,'l_foot',controller_data,options);
+      rfoot_control_block = BodyMotionControlBlock(obj,'r_foot',controller_data,options);
 
       options.Kp = options.Kp_pelvis;
       options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);
-      pelvis_control_block = BodyMotionControlBlock(r,'pelvis',controller_data,options);
-      motion_frames = {obj.lfoot_control_block.getOutputFrame,obj.rfoot_control_block.getOutputFrame,...
-        obj.pelvis_control_block.getOutputFrame};
-      qp = QPController(r,motion_frames,controller_data,options);
+      pelvis_control_block = BodyMotionControlBlock(obj,'pelvis',controller_data,options);
+      motion_frames = {lfoot_control_block.getOutputFrame,rfoot_control_block.getOutputFrame,...
+        pelvis_control_block.getOutputFrame};
+      qp = QPController(obj,motion_frames,controller_data,options);
 
       options.Kp = options.Kp_q;
       options.Kd = getDampingGain(options.Kp,options.q_damping_ratio);
-      pd = IKPDBlock(r,controller_data,options);
+      pd = IKPDBlock(obj,controller_data,options);
     end
   end
   properties

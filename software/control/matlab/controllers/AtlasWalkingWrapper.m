@@ -10,9 +10,9 @@ classdef AtlasWalkingWrapper < DrakeSystem
     velocity_int_block;
     qtraj_eval_block;
     footstep_plan_shift_block;
-    pelvis_motion_block;
-    lfoot_motion_block;
-    rfoot_motion_block;
+    pelvis_control_block;
+    lfoot_control_block;
+    rfoot_control_block;
   end
 
   methods
@@ -58,7 +58,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
 
       % construct QP controller and related control blocks
-      [qp,lfoot_block,rfoot_block,pelvis_block,pd,options] = constructQPWalkingController(obj,controller_data);
+      [qp,lfoot_block,rfoot_block,pelvis_block,pd,options] = constructQPWalkingController(r,controller_data);
       obj.lfoot_control_block = lfoot_block;
       obj.rfoot_control_block = rfoot_block;
       obj.pelvis_control_block = pelvis_block;
@@ -118,9 +118,9 @@ classdef AtlasWalkingWrapper < DrakeSystem
       q_des = q_des_and_x(1:obj.nq);
 
       % IK/QP
-      lfoot_ddot = output(obj.lfoot_motion_block,t,[],x);
-      rfoot_ddot = output(obj.rfoot_motion_block,t,[],x);
-      pelvis_ddot = output(obj.pelvis_motion_block,t,[],x);
+      lfoot_ddot = output(obj.lfoot_control_block,t,[],x);
+      rfoot_ddot = output(obj.rfoot_control_block,t,[],x);
+      pelvis_ddot = output(obj.pelvis_control_block,t,[],x);
       u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; fc; x; fc; lfoot_ddot; rfoot_ddot; pelvis_ddot]);
       u=u_and_qdd(1:obj.nu);
       qdd=u_and_qdd(obj.nu+(1:obj.nq));
