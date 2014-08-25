@@ -104,11 +104,7 @@ class state_sync{
     void poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg);
     void atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg);
-    void potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg);
     
-    // Encoder now read from main cfg file and updates received via param server
-    //void refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
-    // void loadEncoderOffsetsFromFile();
     void enableEncoderHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg);
     void enableEncoders(bool enable);
     
@@ -134,8 +130,7 @@ class state_sync{
     // Torque Adjustment:
     EstimateTools::TorqueAdjustment torque_adjustment_;
     
-    // Keep two different offset vectors, for clarity:
-    std::vector<float> pot_joint_offsets_;
+    // Upper Body Encoder Calibrations:
     std::vector<float> encoder_joint_offsets_;
     std::vector<float> max_encoder_wrap_angle_;
     std::vector<bool> use_encoder_;

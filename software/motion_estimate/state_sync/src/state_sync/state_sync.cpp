@@ -101,9 +101,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   /// 2. Subscribe to required signals
   lcm::Subscription* sub0 = lcm_->subscribe("ATLAS_STATE",&state_sync::atlasHandler,this);
   ///////////////////////////////////////////////////////////////
-  lcm::Subscription* sub1 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);  
-  lcm::Subscription* sub2 = lcm_->subscribe("ATLAS_POT_OFFSETS",&state_sync::potOffsetHandler,this);  
-  //lcm::Subscription* sub3 = lcm_->subscribe("REFRESH_ENCODER_OFFSETS",&state_sync::refreshEncoderCalibrationHandler,this);  
+  lcm::Subscription* sub1 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);
   lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
   lcm::Subscription* sub5 = lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
   lcm::Subscription* sub6 = lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
@@ -113,8 +111,6 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   if (use_short_queue){
     sub0->setQueueCapacity(1);
     sub1->setQueueCapacity(1); 
-    sub2->setQueueCapacity(1); 
-    //sub3->setQueueCapacity(1); 
     sub4->setQueueCapacity(1); 
     sub5->setQueueCapacity(1); 
     sub6->setQueueCapacity(1); 
@@ -129,15 +125,10 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   cl_cfg_->use_encoder_joint_sensors = bot_param_get_boolean_or_fail(botparam_, "control.encoder_offsets.active" );
   std::cout << "use_encoder_joint_sensors: " << cl_cfg_->use_encoder_joint_sensors << "\n";
 
-  // pot offsets if pots are used, currently uncalibrated
-  pot_joint_offsets_.assign(28,0.0);
   // encoder offsets if encoders are used
   encoder_joint_offsets_.assign(28,0.0);
-
   // Encoder now read from main cfg file and updates received via param server
   setEncodersFromParam();
-  //loadEncoderOffsetsFromFile();
-  //encoder_joint_offsets_[Atlas::JOINT_NECK_AY] = 4.24;  // robot software v1.10
 
   //maximum encoder angle before wrapping.  if q > max_angle, use q - 2*pi
   // if q < min_angle, use q + 2*pi
@@ -297,60 +288,6 @@ void state_sync::enableEncoders(bool enable) {
   use_encoder_[Atlas::JOINT_NECK_AY] = enable;
 }
 
-/*
-void state_sync::loadEncoderOffsetsFromFile() {
-  // load encoder offsets from file
-
-  std::string str = "State Sync: refreshing offsets";
-  std::cout << str << std::endl;
-
-  // display system status message in viewer
-  drc::system_status_t stat_msg;
-  stat_msg.utime = 0;
-  stat_msg.system = stat_msg.MOTION_ESTIMATION;
-  stat_msg.importance = stat_msg.VERY_IMPORTANT;
-  stat_msg.frequency = stat_msg.LOW_FREQUENCY;
-  stat_msg.value = str;
-  lcm_->publish(("SYSTEM_STATUS"), &stat_msg);   
-
-  char* drcpath = getenv("DRC_BASE");
-  if (drcpath==NULL) {
-    std::cout << "State Sync: error reading DRC_BASE environment variable..." << std::endl;
-  }
-  else {
-    std::ifstream file;
-    std::string filename = std::string(drcpath) + "/software/config/encoder_offsets.cfg";
-    file.open(filename.c_str());
-    std::string value;
-    double offset;
-    int jindex;
-    while (file.good()) {
-      getline (file, value, ','); // read a string until next comma
-      jindex = ::atoi(value.c_str());
-      // std::cout << "joint index: " << jindex << std::endl;
-      getline (file, value, ',');
-      offset = ::atof(value.c_str());
-      // std::cout << "offset: " <<  offset << std::endl;
-      encoder_joint_offsets_[jindex] = offset;
-    }
-    file.close();
-  }
-}
-*/
-
-//void state_sync::refreshEncoderCalibrationHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::utime_t* msg) {
-//  loadEncoderOffsetsFromFile();
-//}
-
-void state_sync::potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
-  std::cout << "got potOffsetHandler\n";
-  pot_joint_offsets_ = msg->joint_position;
-  
-  for (size_t i=0; i < pot_joint_offsets_.size(); i++){
-    std::cout << pot_joint_offsets_[i] << ", ";
-  }
-  std::cout << "\n";
-}
 
 // Quick check that the incoming and previous joint sets are the same size
 // TODO: perhaps make this more careful with more checks?
@@ -439,20 +376,18 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
   //std::cout << dtime << " end\n";   
 }
 
+
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
   
 
   std::vector <float> mod_positions;
-  mod_positions.assign(28,0.0);
-  for (size_t i=0; i < pot_joint_offsets_.size(); i++){
-    mod_positions[i] = msg->joint_position[i] + pot_joint_offsets_[i]; 
-    ///std::cout << pot_joint_offsets_[i] << ", ";
-  }  
+  //mod_positions.assign(28,0.0);
+  mod_positions = msg->joint_position;
+
   atlas_joints_.position = mod_positions;
   atlas_joints_.velocity = msg->joint_velocity;
   atlas_joints_.effort = msg->joint_effort;
-  // atlas_joints_.name = atlas_joint_names_;
   
   
   // Overwrite the actuator joint positions and velocities with the after-transmission 
