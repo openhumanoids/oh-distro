@@ -18,4 +18,16 @@ pods_install_pkg_config_file(backlash_filter_tools
   VERSION 0.0.1)
 
 
+################
+add_library(torque_adjustment_tools  SHARED torque_adjustment.cpp)
+pods_use_pkg_config_packages(torque_adjustment_tools  ${PKG_CONFIG_DEPS}
+  eigen3 atlas)
+set_target_properties(torque_adjustment_tools PROPERTIES SOVERSION 1)
+pods_install_libraries(torque_adjustment_tools)
+pods_install_headers( torque_adjustment.hpp
+              DESTINATION estimate_tools)
+pods_install_pkg_config_file(torque_adjustment_tools
+  LIBS -ltorque_adjustment_tools
+  REQUIRES
+  VERSION 0.0.1)
 
