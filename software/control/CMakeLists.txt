@@ -37,7 +37,6 @@ endif()
 
 add_subdirectory(src)
 add_subdirectory(contact_monitor)
-add_subdirectory(neck_control)
 add_subdirectory(fall_detector)
 add_subdirectory(joint_monitor)
 

@@ -48,12 +48,6 @@ group "2.plan_and_control" {
         stop_signal = 15;
     }
 
-    cmd "NeckPitchControl" {
-        exec = "drc-neck-control";
-        host = "base";
-        stop_signal = 15;
-    }
-
     cmd "contact_monitor" {        
     	exec = "drc-contact-monitor";
         host = "robot";
@@ -176,13 +170,11 @@ script "1.power_on" {
 script "2.stop_clean" {
     stop cmd "atlas-off";
     stop cmd "atlas-high";
-    stop cmd "NeckPitchControl";
     stop cmd "AtlasController";
     stop cmd "fusion";
     stop cmd "state-sync";
     wait ms 2000;
     start cmd "atlas-off";
-    start cmd "NeckPitchControl";
     start cmd "state-sync";
     start cmd "fusion";
     start cmd "AtlasController";
