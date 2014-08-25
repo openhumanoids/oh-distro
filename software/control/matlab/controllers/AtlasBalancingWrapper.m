@@ -57,7 +57,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
 
       % construct QP controller and related control blocks
-      [qp,lfoot_block,rfoot_block,pelvis_block,pd,options] = constructQPBalancingController(r,controller_data);
+      [qp,lfoot_block,rfoot_block,pelvis_block,pd,options] = constructQPBalancingController(r,controller_data,options);
       obj.lfoot_control_block = lfoot_block;
       obj.rfoot_control_block = rfoot_block;
       obj.pelvis_control_block = pelvis_block;

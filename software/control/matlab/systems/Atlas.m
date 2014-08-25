@@ -128,6 +128,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options.pelvis_damping_ratio = 0.6;
       options.body_accel_input_weights = [0.3 0.3 0.1];
       options.use_walking_pelvis_block = true;
+      options.Kp_accel = 2.0;
       [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,pd,options] = ...
         constructQPBalancingController(obj,controller_data,options);
     end
