@@ -127,7 +127,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options.Kp_pelvis = [0; 0; 20; 20; 20; 20];
       options.pelvis_damping_ratio = 0.6;
       options.body_accel_input_weights = [0.3 0.3 0.1];
-
+      options.use_walking_pelvis_block = true;
       [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,pd,options] = ...
         constructQPBalancingController(obj,controller_data,options);
     end
@@ -163,7 +163,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
 
       options.Kp = options.Kp_pelvis;
       options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);
-      pelvis_control_block = BodyMotionControlBlock(obj,'pelvis',controller_data,options);
+      if isfield(options,'use_walking_pelvis_block') && options.use_walking_pelvis_block
+        pelvis_control_block = PelvisMotionControlBlock(obj,'pelvis',controller_data,options);
+      else
+        pelvis_control_block = BodyMotionControlBlock(obj,'pelvis',controller_data,options);
+      end
       motion_frames = {lfoot_control_block.getOutputFrame,rfoot_control_block.getOutputFrame,...
         pelvis_control_block.getOutputFrame};
       qp = QPController(obj,motion_frames,controller_data,options);

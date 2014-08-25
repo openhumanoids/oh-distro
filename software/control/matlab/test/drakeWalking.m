@@ -124,29 +124,17 @@ ctrl_data = QPControllerData(true,struct(...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
 
 options.dt = 0.003;
-options.slack_limit = 30;
 options.use_bullet = use_bullet;
-options.w_grf = 0;
 options.debug = false;
-options.contact_threshold = 0.005;
-options.solver = 0; % 0 fastqp, 1 gurobi
 options.use_mex = use_mex;
 
 if use_angular_momentum
   options.Kp_ang = 1.0; % angular momentum proportunal feedback gain
   options.W_kdot = 1e-5*eye(3); % angular momentum weight
-else
-  options.W_kdot = zeros(3); 
 end
-
-if use_ik
-  options.w_qdd = 0.001*ones(nq,1);
-else
-  options.w_qdd = 0.0*ones(nq,1);
-end
-
 
 if (use_ik)
+  options.w_qdd = 0.001*ones(nq,1);
   % instantiate QP controller
 	qp = QPController(r,{},ctrl_data,options);
 
@@ -176,14 +164,14 @@ if (use_ik)
 	clear ins;
 
 else
-	lfoot_motion = FootMotionControlBlock(r,'l_foot',ctrl_data,options);
-	rfoot_motion = FootMotionControlBlock(r,'r_foot',ctrl_data,options);
-	pelvis_motion = PelvisMotionControlBlock(r,'pelvis',ctrl_data,options);
-	motion_frames = {lfoot_motion.getOutputFrame,rfoot_motion.getOutputFrame,...
-	pelvis_motion.getOutputFrame};
+  
+  options.Kp_foot = [100; 100; 100; 150; 150; 150];
+  options.foot_damping_ratio = 0.5;
+  options.Kp_pelvis = [0; 0; 150; 200; 200; 200];
+  options.pelvis_damping_ratio = 0.6;
 
-  options.body_accel_input_weights = [10 10 -1];
-	qp = QPController(r,motion_frames,ctrl_data,options);
+  % construct QP controller and related control blocks
+  [qp,lfoot_controller,rfoot_controller,pelvis_controller,pd,options] = constructQPWalkingController(r,ctrl_data);
 
 	% feedback QP controller with atlas
 	ins(1).system = 1;
@@ -218,8 +206,6 @@ else
   clear ins outs;  
   
 	% feedback PD block
-  options.use_ik = false;
-	pd = IKPDBlock(r,ctrl_data,options);
 	ins(1).system = 1;
 	ins(1).input = 1;
 	ins(2).system = 2;
@@ -242,7 +228,7 @@ else
 	ins(3).input = 4;
 	outs(1).system = 2;
 	outs(1).output = 1;
-	sys = mimoFeedback(lfoot_motion,sys,[],[],ins,outs);
+	sys = mimoFeedback(lfoot_controller,sys,[],[],ins,outs);
 	clear ins outs;
 
 	ins(1).system = 2;
@@ -251,14 +237,14 @@ else
 	ins(2).input = 3;
 	outs(1).system = 2;
 	outs(1).output = 1;
-	sys = mimoFeedback(rfoot_motion,sys,[],[],ins,outs);
+	sys = mimoFeedback(rfoot_controller,sys,[],[],ins,outs);
 	clear ins outs;
 
 	ins(1).system = 2;
 	ins(1).input = 1;
 	outs(1).system = 2;
 	outs(1).output = 1;
-	sys = mimoFeedback(pelvis_motion,sys,[],[],ins,outs);
+	sys = mimoFeedback(pelvis_controller,sys,[],[],ins,outs);
 	clear ins outs;
 end
 
