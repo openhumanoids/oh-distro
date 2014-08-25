@@ -151,6 +151,13 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
 
   /// 4. Joint Filtering
+  cl_cfg_->use_torque_adjustment = bot_param_get_boolean_or_fail(botparam_, "control.filtering.joints.torque_adjustment" );
+  if (cl_cfg_->use_torque_adjustment){
+    std::cout << "Torque-based joint angle adjustment: Using\n";
+  }else{
+    std::cout << "Torque-based joint angle adjustment: Not Using\n";
+  }
+
   string joint_filter_type = bot_param_get_str_or_fail(botparam_, "control.filtering.joints.type" );
   if (joint_filter_type == "kalman"){
     cl_cfg_->use_joint_kalman_filter = true;
@@ -497,25 +504,9 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
     filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
   }
 
-
-  // // tmp testing
-  // int JOINT_L_LEG_HPZ   = 4;
-  // int JOINT_L_LEG_HPX   = 5;
-  // int JOINT_L_LEG_HPY   = 6;
-  // int JOINT_L_LEG_KNY   = 7;
-  // int JOINT_L_LEG_AKY   = 8;
-  // int JOINT_L_LEG_AKX   = 9;
-  // int JOINT_R_LEG_HPZ   = 10;
-  // int JOINT_R_LEG_HPX   = 11;
-  // int JOINT_R_LEG_HPY   = 12;
-  // int JOINT_R_LEG_KNY   = 13;
-  // int JOINT_R_LEG_AKY   = 14;
-  // int JOINT_R_LEG_AKX   = 15;
-
-  // atlas_joints_.position[JOINT_L_LEG_HPY] -= 0.000*atlas_joints_.effort[JOINT_L_LEG_HPY];
-  // atlas_joints_.position[JOINT_L_LEG_HPX] += 0.0001*atlas_joints_.effort[JOINT_L_LEG_HPX];
-  // atlas_joints_.position[JOINT_R_LEG_HPY] -= 0.000*atlas_joints_.effort[JOINT_R_LEG_HPY];
-  // atlas_joints_.position[JOINT_R_LEG_HPX] += 0.0001*atlas_joints_.effort[JOINT_R_LEG_HPX];
+  if (cl_cfg_->use_torque_adjustment){
+    torque_adjustment_.processSample(atlas_joints_.position, atlas_joints_.effort );
+  }
 
   publishRobotState(msg->utime, msg->force_torque);
 }
