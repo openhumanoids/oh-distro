@@ -10,9 +10,9 @@ classdef AtlasWalkingWrapper < DrakeSystem
     velocity_int_block;
     qtraj_eval_block;
     footstep_plan_shift_block;
-    pelvis_motion_block;
-    lfoot_motion_block;
-    rfoot_motion_block;
+    pelvis_control_block;
+    lfoot_control_block;
+    rfoot_control_block;
   end
   
   methods
@@ -57,41 +57,12 @@ classdef AtlasWalkingWrapper < DrakeSystem
       end
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
       
+      % construct QP controller and related control blocks
+      [qp,lfoot_block,rfoot_block,pelvis_block,pd,options] = constructQPWalkingController(r,controller_data,options);
+      obj.lfoot_control_block = lfoot_block;
+      obj.rfoot_control_block = rfoot_block;
+      obj.pelvis_control_block = pelvis_block;
 
-      % instantiate QP controller
-      options.slack_limit = 30;
-      options.w_qdd = 0*ones(obj.nq,1);
-      options.W_kdot = 0*eye(3);
-      options.w_grf = 0.0;
-      options.w_slack = 0.05;
-      options.Kp_accel = 2.0;
-      options.debug = false;
-      options.use_mex = true;
-      options.contact_threshold = 0.001;
-      options.output_qdd = true;
-      options.solver = 0; % 0 fastqp, 1 gurobi
-      options.input_foot_contacts = true;
-
-      options.Kp = [20; 20; 20; 20; 20; 20];
-      options.Kd = getDampingGain(options.Kp,0.6);
-      obj.lfoot_motion_block = FootMotionControlBlock(r,'l_foot',controller_data,options);
-      obj.rfoot_motion_block = FootMotionControlBlock(r,'r_foot',controller_data,options);
-      
-      options.Kp = 20*[0; 0; 1; 1; 1; 1];
-      options.Kd = getDampingGain(options.Kp,0.6);
-      obj.pelvis_motion_block = PelvisMotionControlBlock(r,'pelvis',controller_data,options);
-      motion_frames = {obj.lfoot_motion_block.getOutputFrame,obj.rfoot_motion_block.getOutputFrame,...
-        obj.pelvis_motion_block.getOutputFrame};
-      options.body_accel_input_weights = [0.3 0.3 0.1];
-      qp = QPController(r,motion_frames,controller_data,options);
-      
-      % cascade IK/PD block
-      options.use_ik = false;
-      options.Kp = 50.0*ones(obj.nq,1);
-      options.Kd = 8*ones(obj.nq,1);
-
-      pd = IKPDBlock(r,controller_data,options);
-      
       ins(1).system = 1;
       ins(1).input = 1;
       ins(2).system = 1;
@@ -114,7 +85,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       outs(2).output = 2;
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
       clear ins;
-      
+    
       options.use_error_integrator = true; % while we're still using position control in upper body
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       options.use_lcm = true;
@@ -143,9 +114,9 @@ classdef AtlasWalkingWrapper < DrakeSystem
       q_des = q_des_and_x(1:obj.nq);
       
       % IK/QP
-      lfoot_ddot = output(obj.lfoot_motion_block,t,[],x);
-      rfoot_ddot = output(obj.rfoot_motion_block,t,[],x);
-      pelvis_ddot = output(obj.pelvis_motion_block,t,[],x);
+      lfoot_ddot = output(obj.lfoot_control_block,t,[],x);
+      rfoot_ddot = output(obj.rfoot_control_block,t,[],x);
+      pelvis_ddot = output(obj.pelvis_control_block,t,[],x);
       u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; fc; x; fc; lfoot_ddot; rfoot_ddot; pelvis_ddot]);
       u=u_and_qdd(1:obj.nu);
       qdd=u_and_qdd(obj.nu+(1:obj.nq));

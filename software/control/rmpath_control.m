@@ -16,7 +16,7 @@ javarmpath([pods_get_base_path,'/share/java/lcmtypes_bot2-param.jar']);
 javarmpath([pods_get_base_path,'/share/java/lcmtypes_vicon-drc.jar']);
 javarmpath([pods_get_base_path,'/share/java/drc_control.jar']);
 javarmpath([pods_get_base_path,'/share/java/lcmtypes_visualization.jar']);
-javarmpath([pods_get_base_path,'/share/java/lcmtypes_scanmatch.jar']);
+% javarmpath([pods_get_base_path,'/share/java/lcmtypes_scanmatch.jar']);
 javarmpath([pods_get_base_path,'/share/java/bot2-lcmgl.jar']);
 
 rmpath_drake;
