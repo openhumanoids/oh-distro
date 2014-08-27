@@ -8,6 +8,7 @@
 #include <bot_param/param_util.h>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/multisense/images_t.hpp>
+#include <lcmtypes/drc/map_request_t.hpp>
 
 #include <mutex>
 
@@ -107,26 +108,65 @@ struct FusedDepthHandler::Imp {
       bytes = img.data;
     }
 
-    // convert from uint16 to float
-    std::vector<float> depths(img.width*img.height);
-    uint16_t* raw = (uint16_t*)bytes.data();
-    for (int i = 0; i < (int)depths.size(); ++i) {
-      depths[i] = raw[i]/1e3f;
-    }
-
     // create depth image
     DepthImage depthImage;
     depthImage.setSize(img.width, img.height);
     depthImage.setOrthographic(false);
     depthImage.setPose(pose.cast<float>());
     depthImage.setCalib(mCalibMatrix.cast<float>());
+
+    // convert from uint16 to float and set data in depth image
+    std::vector<float> depths(img.width*img.height);
+    uint16_t* raw = (uint16_t*)bytes.data();
+    for (int i = 0; i < (int)depths.size(); ++i) {
+      depths[i] = (raw[i] == 0) ?
+        depthImage.getInvalidValue(DepthImage::TypeDepth) : raw[i]/1e3f;
+    }
     depthImage.setData(depths, DepthImage::TypeDepth);
 
     // create and return wrapper view
     DepthImageView::Ptr view(new DepthImageView());
     view->set(depthImage);
+    view->setUpdateTime(img.utime);
     return view;
   }
+
+  DepthImageView::Ptr getLatest(const drc::map_request_t& iRequest) {
+    // get latest fused depth map as view
+    DepthImageView::Ptr depthView = getLatest();
+    if (depthView == NULL) return depthView;
+
+    // convert to point cloud in local frame
+    maps::PointCloud::Ptr cloud = depthView->getAsPointCloud();
+
+    // set up transformation
+    Eigen::Projective3f projector;
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        projector(i,j) = iRequest.transform[i][j];
+      }
+    }
+    Eigen::Isometry3f headToLocal, torsoToLocal;
+    if (mBotWrapper->getTransform("utorso", "local", torsoToLocal) &&
+        mBotWrapper->getTransform("head", "local", headToLocal)) {
+      float theta = atan2(torsoToLocal(1,0), torsoToLocal(0,0));
+      Eigen::Matrix3f rotation;
+      rotation = Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ());
+      headToLocal.linear() = rotation;
+      projector = projector*headToLocal.inverse();
+    }
+
+    // reproject to depth map according to given specifications
+    DepthImageView::Ptr view(new DepthImageView());
+    view->setSize(iRequest.width, iRequest.height);
+    view->getDepthImage()->setAccumulationMethod
+      (DepthImage::AccumulationMethodMean);
+    view->setTransform(projector);
+    view->set(cloud);
+
+    return view;
+  }
+  
 };
 
 FusedDepthHandler::
@@ -163,4 +203,9 @@ stop() {
 DepthImageView::Ptr FusedDepthHandler::
 getLatest() const {
   return mImp->getLatest();
+}
+
+DepthImageView::Ptr FusedDepthHandler::
+getLatest(const drc::map_request_t& iRequest) const {
+  return mImp->getLatest(iRequest);
 }

@@ -106,6 +106,8 @@ struct Worker {
         sendTerrainCostRequest(); break;
       case drc::data_request_t::FUSED_DEPTH:
         sendFusedDepthRequest(); break;
+      case drc::data_request_t::FUSED_HEIGHT:
+        sendFusedHeightRequest(); break;
       default:
         cout << "Unknown request type" << endl; break;
       }
@@ -395,6 +397,17 @@ struct Worker {
     msg.view_id = drc::data_request_t::FUSED_DEPTH;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.clip_planes.clear();
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendFusedHeightRequest() {
+    const Eigen::Vector3f minPt(-1, -2, -3);
+    const Eigen::Vector3f maxPt(5, 2, 0.3);
+    auto msg = prepareHeightRequestMessage(minPt, maxPt, 0.01, 0.01);
+    Eigen::Vector4f plane(0.1, 0, -1, -0.4);
+    plane /= plane.head<3>().norm();
+    for (int k = 0; k < 4; ++k) msg.clip_planes[5][k] = plane[k];
+    msg.view_id = drc::data_request_t::FUSED_HEIGHT;
     mLcm->publish("MAP_REQUEST", &msg);
   }
 

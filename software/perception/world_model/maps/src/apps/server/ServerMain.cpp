@@ -452,13 +452,23 @@ struct ViewWorker {
       }
 
       // fused depth
-      else if (mRequest.view_id == drc::data_request_t::FUSED_DEPTH) {
-        DepthImageView::Ptr view = mFusedDepthHandler->getLatest();
+      else if ((mRequest.view_id == drc::data_request_t::FUSED_DEPTH) ||
+               (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT)) {
+        DepthImageView::Ptr view;
+        if (mRequest.view_id == drc::data_request_t::FUSED_DEPTH) {
+          view = mFusedDepthHandler->getLatest();
+        }
+        else if (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) {
+          view = mFusedDepthHandler->getLatest(mRequest);
+        }
         if (view == NULL) {
           std::cout << "No fused depth view available" << std::endl;
         }
         else {
           view->setId(mRequest.view_id);
+          if (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) {
+            view->setId(drc::data_request_t::HEIGHT_MAP_SCENE);
+          }
           drc::map_image_t msg;
           LcmTranslator::toLcm(*view, msg);
           msg.utime = drc::Clock::instance()->getCurrentTime();
