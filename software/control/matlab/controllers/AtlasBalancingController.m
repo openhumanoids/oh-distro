@@ -103,6 +103,7 @@ classdef AtlasBalancingController < DRCController
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
       obj = addLCMTransition(obj,'CONFIGURATION_TRAJ',drc.configuration_traj_t(),name); % for standing/reaching tasks
+      obj = addLCMTransition(obj,'COMMITTED_PLAN_PAUSE',drc.plan_control_t(),name); % stop plan execution
       obj = addLCMTransition(obj,'WALKING_CONTROLLER_PLAN_RESPONSE',drc.walking_plan_t(),'walk');
       
     end
