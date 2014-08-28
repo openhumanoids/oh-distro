@@ -40,6 +40,7 @@
 #include <zlib.h>
 
 #include "LidarFilters.hpp"
+#include "FusedDepthHandler.hpp"
 
 using namespace std;
 using namespace maps;
@@ -360,6 +361,7 @@ struct ViewWorker {
   std::shared_ptr<StereoHandler> mStereoHandlerHead;
   std::shared_ptr<StereoHandler> mStereoHandlerLeft;
   std::shared_ptr<StereoHandler> mStereoHandlerRight;
+  std::shared_ptr<FusedDepthHandler> mFusedDepthHandler;
   std::thread mThread;
   Eigen::Isometry3f mInitialPose;
 
@@ -449,6 +451,39 @@ struct ViewWorker {
         }
       }
 
+      // fused depth
+      else if ((mRequest.view_id == drc::data_request_t::FUSED_DEPTH) ||
+               (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT)) {
+        DepthImageView::Ptr view;
+        if (mRequest.view_id == drc::data_request_t::FUSED_DEPTH) {
+          view = mFusedDepthHandler->getLatest();
+        }
+        else if (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) {
+          view = mFusedDepthHandler->getLatest(mRequest);
+        }
+        if (view == NULL) {
+          std::cout << "No fused depth view available" << std::endl;
+        }
+        else {
+          view->setId(mRequest.view_id);
+          if (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) {
+            view->setId(drc::data_request_t::HEIGHT_MAP_SCENE);
+          }
+          drc::map_image_t msg;
+          LcmTranslator::toLcm(*view, msg);
+          msg.utime = drc::Clock::instance()->getCurrentTime();
+          msg.map_id = mRequest.map_id;
+          msg.blob.utime = msg.utime;
+          std::string chan =
+            mRequest.channel.size()>0 ? mRequest.channel : "MAP_DEPTH";
+          lcm->publish(chan, &msg);
+          std::cout << "Sent fused depth image on " << chan << " at " <<
+            msg.blob.num_bytes << " bytes (view " << view->getId() <<
+            ")" << std::endl;
+        }
+      }
+
+      // all other types
       else if (localMap != NULL) {
         // do not send if there is not enough data
         // TODO: should make this cleaner; for now, 3 seconds
@@ -607,6 +642,7 @@ public:
   std::shared_ptr<StereoHandler> mStereoHandlerHead;
   std::shared_ptr<StereoHandler> mStereoHandlerLeft;
   std::shared_ptr<StereoHandler> mStereoHandlerRight;
+  std::shared_ptr<FusedDepthHandler> mFusedDepthHandler;
 
   lcm::Subscription* mRequestSubscription;
   lcm::Subscription* mMapParamsSubscription;
@@ -634,6 +670,11 @@ public:
     mStereoHandlerRight.reset(new StereoHandler(mBotWrapper, "CAMERARHAND"));
     if (mStereoHandlerRight->mCamTrans == NULL) mStereoHandlerRight.reset();
     */
+    mFusedDepthHandler.reset(new FusedDepthHandler(mBotWrapper));
+    // TODO: can we avoid hard-coding these?
+    mFusedDepthHandler->setCameraChannel("CAMERA_LEFT");
+    mFusedDepthHandler->setDepthChannel("CAMERA_FUSED");
+    mFusedDepthHandler->start();
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;
     mMapCommandSubscription = NULL;
@@ -724,6 +765,7 @@ public:
       worker->mStereoHandlerHead = mStereoHandlerHead;
       worker->mStereoHandlerLeft = mStereoHandlerLeft;
       worker->mStereoHandlerRight = mStereoHandlerRight;
+      worker->mFusedDepthHandler = mFusedDepthHandler;
       worker->mRequest = iRequest;
       worker->mInitialPose = Eigen::Isometry3f::Identity();
       mBotWrapper->getTransform("head", "local", worker->mInitialPose,
