@@ -2,7 +2,7 @@ function testForwardKin
 
 options.floating = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
-q=zeros(getNumDOF(r),1);
+q=zeros(getNumPositions(r),1);
 pelvis = findLinkInd(r,'pelvis');
 
 for i=1:100

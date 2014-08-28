@@ -9,7 +9,7 @@ classdef BracingController < DRCController
         function obj = BracingController(name,r,options)
             typecheck(r,'Atlas');
             
-            ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumDOF(r),1)));
+            ctrl_data = SharedDataHandle(struct('qtraj',zeros(getNumPositions(r),1)));
             
             refpub = PositionRefFeedthroughBlock(r,struct('gains_id','bracing'));
             
@@ -49,11 +49,11 @@ classdef BracingController < DRCController
           % Scott's code
           % use saved nominal pose 
           % d = load('data/atlas_bracing.mat');
-          % q_nom = d.xstar(1:getNumDOF(obj.robot));
+          % q_nom = d.xstar(1:getNumPositions(obj.robot));
           
           %           if isfield(data,'AtlasState')
 %             x0 = data.AtlasState;
-%             q0 = x0(1:getNumDOF(obj.robot));
+%             q0 = x0(1:getNumPositions(obj.robot));
 % 
 %             qtraj = PPTrajectory(spline([0 1],[q0 q_nom]));
 %           else
@@ -67,7 +67,7 @@ classdef BracingController < DRCController
           % Ani's code
           % Get torso position and velocities
           x0 = data.AtlasState;
-          numq = getNumDOF(obj.robot);
+          numq = getNumPositions(obj.robot);
           q0 = x0(1:numq);
           % pos = x0(1:3);
           % torso_dot = x0(numq+1:numq+6);
@@ -103,9 +103,9 @@ classdef BracingController < DRCController
           % Load Scott's file (I'm fixing the lower body joint angles to Scott's joint
           % angles)
           datfile = load('data/atlas_bracing.mat');
-          qstar = datfile.xstar(1:getNumDOF(obj.robot)); % Scott's qnom
+          qstar = datfile.xstar(1:getNumPositions(obj.robot)); % Scott's qnom
           
-          nq = obj.robot.getNumDOF();
+          nq = obj.robot.getNumPositions();
           coordinates = obj.robot.getStateFrame.coordinates;
           leg_ind = ~cellfun(@isempty,strfind(coordinates(1:nq),'leg'));
           options = struct();

@@ -4,7 +4,7 @@ q0 = x0(1:end/2);
 %% covert ZMP plan into COM plan using LIMP model
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 [com,Jcom] = getCOM(biped,q0);
-comdot = Jcom*x0(getNumDOF(biped)+(1:getNumDOF(biped)));
+comdot = Jcom*x0(getNumPositions(biped)+(1:getNumPositions(biped)));
 limp = LinearInvertedPendulum(com(3,1));
 
 comtraj = [ ZMPplanner(limp,com(1:2),comdot(1:2),setOutputFrame(zmptraj,desiredZMP)); ...
@@ -26,7 +26,7 @@ cost.back_bky = 100;
 cost.back_bkx = 100;
 cost = double(cost);
 options = struct();
-options.Q = diag(cost(1:biped.getNumDOF));
+options.Q = diag(cost(1:biped.getNumPositions));
 options.q_nom = q0;
 
 visualizer = biped.constructVisualizer();

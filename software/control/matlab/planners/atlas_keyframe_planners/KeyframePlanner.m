@@ -170,8 +170,8 @@ classdef KeyframePlanner < handle
             for i = 1:length(rhand_frame.coordinates)
               obj.rhand2robotFrameIndMap(i) = find(strcmp(rhand_frame.coordinates{i},obj.r.getStateFrame.coordinates));
             end
-            joint_ind = (1:obj.r.getNumDOF)';
-            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+            joint_ind = (1:obj.r.getNumPositions)';
+            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
             obj.l_arm_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'l_arm')),coords));
             obj.r_arm_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'r_arm')),coords));
             obj.lower_joint_ind = joint_ind(cellfun(@(s) ~isempty(strfind(s,'leg')) | ~isempty(strfind(s,'base')),coords));
@@ -346,7 +346,7 @@ classdef KeyframePlanner < handle
         function Tmax_joints=getTMaxForMaxJointSpeed(obj)
             dqtraj=fnder(obj.plan_cache.qtraj,1); 
             sfine = linspace(0,1,50);
-            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
             neck_idx = strcmp(coords,'neck_ay');
             qdot_breaks = dqtraj.eval(sfine);
             weighted_qdot_breaks = qdot_breaks(~neck_idx,:);
@@ -492,8 +492,8 @@ classdef KeyframePlanner < handle
           % Check if q is outside of the robot default joint limits
           [lb,ub] = obj.r.getJointLimits();
           coords = obj.r.getStateFrame.coordinates;
-          coords = coords(1:obj.r.getNumDOF);
-          joint_idx = (1:obj.r.getNumDOF)';
+          coords = coords(1:obj.r.getNumPositions);
+          joint_idx = (1:obj.r.getNumPositions)';
           lb_err = lb-q;
           ub_err = q-ub;
           lb_err_idx = joint_idx(lb_err>0);
@@ -515,7 +515,7 @@ classdef KeyframePlanner < handle
         function setDefaultJointConstraint(obj)
           obj.joint_constraint = PostureConstraint(obj.r);
           [joint_min,joint_max] = obj.joint_constraint.bounds([]);
-          coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+          coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
           back_bky_ind = find(strcmp(coords,'back_bky'));
           back_bkx_ind = find(strcmp(coords,'back_bkx'));
           l_leg_kny_ind = find(strcmp(coords,'l_leg_kny'));
@@ -533,8 +533,8 @@ classdef KeyframePlanner < handle
         
         function BDI_joint_constraint = setBDIJointLimits(obj,joint_constraint,q0)
           % Fix the floating base and lower body joints to q0
-          coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
-          joint_idx = (1:obj.r.getNumDOF)';
+          coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
+          joint_idx = (1:obj.r.getNumPositions)';
           lower_joint_idx = joint_idx(cellfun(@(s) ~isempty(strfind(s,'leg')),coords));
           fixed_joint_idx = [(1:6)';lower_joint_idx];
           BDI_joint_constraint = joint_constraint;

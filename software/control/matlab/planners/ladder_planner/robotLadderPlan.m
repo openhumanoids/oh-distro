@@ -5,7 +5,7 @@ red = {1,0,0};
 blue = {0,0,1};
 gray = {0.5,0.5,0.5};
 black = {0,0,0};
-nq = r.getNumDOF();
+nq = r.getNumPositions();
 
 use_quasistatic_constraint =  true;
 use_com_constraint =          true;
@@ -87,7 +87,7 @@ cost.back_bky = 1e2;
 cost.back_bkx = 1e2;
 cost = double(cost);
 ikoptions = IKoptions(r);
-ikoptions = ikoptions.setQ(diag(cost(1:r.getNumDOF)));
+ikoptions = ikoptions.setQ(diag(cost(1:r.getNumPositions)));
 ikoptions = ikoptions.setDebug(true);
 %ikoptions = ikoptions.setSequentialSeedFlag(true);
  %ikoptions = ikoptions.setMex(false);
@@ -540,7 +540,7 @@ for i = 1:size(q_data,2)
 end
 lcmgl.switchBuffers();
 %x_data = zeros(2*nq,size(q_data,2));
-%x_data(1:getNumDOF(r),:) = q_data;
+%x_data(1:getNumPositions(r),:) = q_data;
 display(err_segments);
 t = t(1:n:end);
 x_data = zeros(2*nq,length(t));

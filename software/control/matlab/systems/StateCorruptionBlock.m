@@ -79,7 +79,7 @@ classdef StateCorruptionBlock < DrakeSystem
     function pert = motion_bias(obj,x,ind,bias)
       % hack to get something like backlash error--not at all ideal
       % (doesn't take joint loading into account, purely velocity based)
-      nq = getNumDOF(obj.robot);
+      nq = getNumPositions(obj.robot);
       qd = x(nq+(1:nq));
       qdi = qd(ind);
       db = 0.05; % linear bias scaling range

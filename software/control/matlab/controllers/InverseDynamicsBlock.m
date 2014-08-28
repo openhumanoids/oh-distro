@@ -43,7 +43,7 @@ classdef InverseDynamicsBlock < MIMODrakeSystem
     obj.robot = r;
     obj.output_qdd = options.output_qdd;
     obj.nu = getNumInputs(r);
-    obj.nq = getNumDOF(r);
+    obj.nq = getNumPositions(r);
   end
     
   function varargout=mimoOutput(obj,t,~,varargin)

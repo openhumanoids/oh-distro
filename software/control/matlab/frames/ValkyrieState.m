@@ -5,7 +5,7 @@ classdef ValkyrieState < LCMCoordinateFrame & Singleton
 
       obj = obj@LCMCoordinateFrame('ValkyrieState',r.getNumStates(),'x');
       obj = obj@Singleton();
-      joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+      joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
       if isempty(obj.lcmcoder)  % otherwise I had a singleton
 
         coder = drc.control.RobotStateCoder(joint_names);

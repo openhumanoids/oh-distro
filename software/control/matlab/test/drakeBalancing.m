@@ -19,7 +19,7 @@ r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/m
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 
 % set initial state to fixed point
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));

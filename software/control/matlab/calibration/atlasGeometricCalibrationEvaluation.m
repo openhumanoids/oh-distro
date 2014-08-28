@@ -2,7 +2,7 @@ options.floating = true;
 robot = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 rand('twister', 1253);
 
-nq = getNumDOF(robot);
+nq = getNumPositions(robot);
 
 base_name = 'utorso';
 base_index = robot.findLinkInd(base_name);

@@ -4,7 +4,7 @@ q0 = x0(1:end/2);
 %% covert ZMP plan into COM plan using LIMP model
 addpath(fullfile(getDrakePath,'examples','ZMP'));
 [com,Jcom] = getCOM(biped.manip,q0);
-comdot = Jcom*x0(getNumDOF(biped.manip)+(1:getNumDOF(biped.manip)));
+comdot = Jcom*x0(getNumPositions(biped.manip)+(1:getNumPositions(biped.manip)));
 limp = LinearInvertedPendulum(com(3,1));
 
 comtraj = [ ZMPplanner(limp,com(1:2),comdot(1:2),setOutputFrame(zmptraj,desiredZMP)); ...
@@ -27,7 +27,7 @@ cost.back_bky = 100;
 cost.back_bkx = 100;
 cost = double(cost);
 options = struct();
-options.Q = diag(cost(1:biped.manip.getNumDOF));
+options.Q = diag(cost(1:biped.manip.getNumPositions));
 options.q_nom = q0;
 
 disp('computing ik...')

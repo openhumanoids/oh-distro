@@ -210,7 +210,7 @@ trajoptconstraint_listener = TrajOptConstraintListener('DESIRED_MANIP_PLAN_EE_LO
 indexed_trajoptconstraint_listener = AffIndexedTrajOptConstraintListener('DESIRED_MANIP_MAP_EE_LOCI');
 wholebodytrajoptconstraint_listener = TrajOptConstraintListener('DESIRED_WHOLE_BODY_PLAN_EE_GOAL_SEQUENCE');
 
-joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
+joint_names = atlas.getStateFrame.coordinates(1:getNumPositions(atlas));
 joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_ROBOT_PLAN');
 % committed_plan_listener = RobotPlanListener('atlas',joint_names,true,'COMMITTED_ROBOT_PLAN');
@@ -387,7 +387,7 @@ while(1)
         rpy = nan(3,1);
         h_ee_goal = [p(:); rpy(:)];
         ee_goal_type_flags.h = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
     end
     
     hep_lidar_gaze = getNextMessage(lidar_ee_gaze,msg_timeout);
@@ -397,7 +397,7 @@ while(1)
         rpy = nan(3,1);
         lidar_ee_goal = [p(:); rpy(:)];
         ee_goal_type_flags.lidar = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
     end
     
     lep_gaze = getNextMessage(lh_ee_gaze,msg_timeout);
@@ -407,7 +407,7 @@ while(1)
         rpy = nan(3,1);
         lh_ee_goal = [p(:); rpy(:)];
         ee_goal_type_flags.lh = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
     end
     
     rep_gaze = getNextMessage(rh_ee_gaze,msg_timeout);
@@ -417,7 +417,7 @@ while(1)
         rpy = nan(3,1);
         rh_ee_goal = [p(:); rpy(:)];
         ee_goal_type_flags.rh = 2; % 0-POSE_GOAL, 1-ORIENTATION_GOAL, 2-GAZE_GOAL
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
     end
     
     [x,ts] = getNextMessage(atlas_state_frame,msg_timeout);
@@ -484,7 +484,7 @@ while(1)
         else
             disp('Keyframe adjustment engine currently expects one constraint at a time') ;
         end
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
         keyframe_adjustment_engine.adjustAndPublishCachedPlan(x0,rh_ee_constraint,lh_ee_constraint,lf_ee_constraint,rf_ee_constraint,h_ee_constraint,pelvis_constraint,com_constraint,ee_goal_type_flags);
         
         % clear old constraints (currently we maintain a buffer of h constraint, it persists)
@@ -573,7 +573,7 @@ while(1)
             (~isempty(rep_gaze))|| (~isempty(lep_gaze))||...
             (~isempty(rh_ee_traj))||(~isempty(lh_ee_traj))||...
             (~isempty(rf_ee_traj))||(~isempty(lf_ee_traj)))
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
         reaching_planner.generateAndPublishReachingPlan(x0,rh_ee_goal,lh_ee_goal,rf_ee_goal,lf_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
         cache = reaching_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
@@ -597,7 +597,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
         manip_planner.generateAndPublishManipulationPlan(x0,ee_names,ee_loci,timestamps,postureconstraint,ee_goal_type_flags);
         cache = manip_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
@@ -619,7 +619,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
         manip_planner.generateAndPublishManipulationMap(x0,ee_names,ee_loci,affIndices,ee_goal_type_flags);
         % NO KEYFRAME ADJUSTMENT FOR MANIP MAP
     end
@@ -643,7 +643,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
         wholebody_planner.generateAndPublishWholeBodyPlan(x0,ee_names,ee_loci,timestamps,postureconstraint,ee_goal_type_flags);
         cache = wholebody_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
@@ -696,7 +696,7 @@ while(1)
           d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'));
           useIK_state = 7;
         end
-        q_desired = d.xstar(1:getNumDOF(robot));
+        q_desired = d.xstar(1:getNumPositions(robot));
         if(useIK_state ==1||useIK_state == 3|| useIK_state == 4) % correct pelvis
             q_desired([1 2 6]) = x0([1 2 6]); % For stand hands up/down, change the pelvis orientation to the nominal one
         elseif(useIK_state == 5 || useIK_state == 6)
@@ -719,7 +719,7 @@ while(1)
     end
     if(~isempty(posture_goal))
         disp('Posture goal received .');
-        q0 = x0(1:getNumDOF(robot));
+        q0 = x0(1:getNumPositions(robot));
         q_desired =q0;
         joint_names = {posture_goal.joint_name};
         joint_positions = [posture_goal.joint_position];
@@ -755,7 +755,7 @@ while(1)
             rpy = quat2rpy(q);
             ee_loci(:,i)=[p(:);rpy(:)];
         end
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
         endpose_planner.generateAndPublishCandidateRobotEndPose(x0,ee_names,ee_loci,timestamps,postureconstraint,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,ee_goal_type_flags);
         cache = endpose_planner.getPlanCache();
         keyframe_adjustment_engine.setPlanCache(cache);
@@ -842,7 +842,7 @@ while(1)
         lidar_ee_goal = [];
         ee_goal_type_flags.h = -1;
         ee_goal_type_flags.lidar = -1;
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
     end
     
     p = getNextMessage (lh_ee_clear, msg_timeout);
@@ -850,7 +850,7 @@ while(1)
         disp ('Clearing left hand goal pose');
         lh_ee_goal = [];
         ee_goal_type_flags.lh = -1;
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
     end
     
     p = getNextMessage (rh_ee_clear, msg_timeout);
@@ -858,7 +858,7 @@ while(1)
         disp ('Clearing right hand  goal pose');
         rh_ee_goal = [];
         ee_goal_type_flags.rh = -1;
-        displayGazeConstraint(robot,x0(1:robot.getNumDOF),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
+        displayGazeConstraint(robot,x0(1:robot.getNumPositions),ee_goal_type_flags,h_ee_goal,lidar_ee_goal,rh_ee_goal,lh_ee_goal);
     end
     
     cmd = getNextMessage(hose_cmd_listener,msg_timeout);
@@ -907,7 +907,7 @@ end
 %    ee_teleop_msg = drc.ee_cartesian_adjust_t(ee_teleop_data);
 %    ee_delta_pos = [ee_teleop_msg.pos_delta.x;ee_teleop_msg.pos_delta.y;ee_teleop_msg.pos_delta.z];
 %    ee_delta_rpy = [ee_teleop_msg.rpy_delta.x;ee_teleop_msg.rpy_delta.y;ee_teleop_msg.rpy_delta.z];
-%    q0 = x0(1:getNumDOF(r));
+%    q0 = x0(1:getNumPositions(r));
 %    if(isempty(aff2hand_offset)||isempty(mate_axis))
 %      warning('The teleop transformation is not set yet');
 %    else

@@ -7,7 +7,7 @@ function lcmglDrawRelativeEndEffectorPose(ee_name,ee_pose_relative,x0,r,lcmgl,sw
     switch_buffers = false;
   end
   ee_idx = r.findLinkInd(ee_name);
-  nq = r.getNumDOF();
+  nq = r.getNumPositions();
   [ee_pose,ee_pose_0] = relativeEEPoseToWorldEEPose(ee_name,ee_pose_relative,x0,r);
   xyz = ee_pose(1:3);
   quat = ee_pose(4:7);

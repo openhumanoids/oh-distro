@@ -1,5 +1,5 @@
 function [q_data, t_data, ee_info,idx_t_infeasible] = ladderIK(r,ts,q0,qstar,ee_info,ladder_opts,ikoptions)
-  nq = r.getNumDOF();
+  nq = r.getNumPositions();
 
   pelvis = r.findLinkInd('pelvis');
   utorso = r.findLinkInd('utorso');

@@ -17,7 +17,7 @@ classdef ManipulationPlanner < KeyframePlanner
       function obj = ManipulationPlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
         obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class 
         obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-        joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
+        joint_names = atlas.getStateFrame.coordinates(1:getNumPositions(atlas));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
         obj.num_breaks = 0; % keyframe adjustment doesn't make any sense.
         obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
@@ -79,7 +79,7 @@ classdef ManipulationPlanner < KeyframePlanner
             disp('Generating manip plan...');
             send_status(3,0,0,'Generating manip plan...');
         end
-        q0 = x0(1:getNumDOF(obj.r));
+        q0 = x0(1:getNumPositions(obj.r));
         q0 = obj.checkPosture(q0);
 
         T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
@@ -134,7 +134,7 @@ classdef ManipulationPlanner < KeyframePlanner
 
         ikoptions = IKoptions(obj.r);
         ikoptions = ikoptions.setDebug(true);
-        ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+        ikoptions = ikoptions.setQ(diag(cost(1:getNumPositions(obj.r))));
         ik_qnom = q0;
         ikoptions = ikoptions.setMajorIterationsLimit(100);
         qsc = QuasiStaticConstraint(obj.r);
@@ -157,7 +157,7 @@ classdef ManipulationPlanner < KeyframePlanner
 
         lhand_constraint = {};
         rhand_constraint = {};
-        q = zeros(obj.r.getNumDOF,length(timeIndices));
+        q = zeros(obj.r.getNumPositions,length(timeIndices));
         snopt_info_vector = zeros(1,length(timeIndices));
         for i=1:length(timeIndices),
             %l_hand_pose0= [nan;nan;nan;nan;nan;nan;nan];
@@ -314,7 +314,7 @@ classdef ManipulationPlanner < KeyframePlanner
               fixed_base_ind = [1;2;3;4;5;6];
               manip_joint_cnst = manip_joint_cnst.setJointLimits(fixed_base_ind,q0(fixed_base_ind),q0(fixed_base_ind));
             end
-            ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+            ikoptions = ikoptions.setQ(diag(cost(1:getNumPositions(obj.r))));
             ik_qnom = q_guess;
             if(obj.planning_mode == 4)
               if(isempty(rhand_constraint))
@@ -541,15 +541,15 @@ classdef ManipulationPlanner < KeyframePlanner
           % update plan cache
           obj.plan_cache.s = s;
           obj.plan_cache.s_breaks = s_breaks;
-            qdot0=zeros(obj.r.getNumDOF,1);
-            qdotf=zeros(obj.r.getNumDOF,1);
+            qdot0=zeros(obj.r.getNumPositions,1);
+            qdotf=zeros(obj.r.getNumPositions,1);
          
            %obj.plan_cache.qtraj = PPTrajectory(spline(s, q));
           obj.plan_cache.qtraj = PPTrajectory(spline(s,[qdot0 q qdotf]));
           obj.cachePelvisPose([0 1],pelvis_pose0);
           obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
 
-          nq = obj.r.getNumDOF();
+          nq = obj.r.getNumPositions();
           s_breaks=linspace(0,1,10); % just to evaluate arc length
           q_breaks = zeros(nq,length(s_breaks));
           for brk =1:length(s_breaks),

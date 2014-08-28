@@ -11,7 +11,7 @@ else
 end
 
 if isfield(options,'q_nom') q_nom = options.q_nom; else q_nom = q0; end
-if isfield(options,'Q') Q = options.Q; else Q = eye(getNumDOF(r)); end
+if isfield(options,'Q') Q = options.Q; else Q = eye(getNumPositions(r)); end
 if ~isfield(options,'use_mex') options.use_mex = true; end
 if ~isfield(options,'fixed_dofs') options.fixed_dofs = []; end
 
@@ -95,7 +95,7 @@ end
 
 nfd = length(options.fixed_dofs);
 if nfd>1
-  A{neq} = zeros(nfd,getNumDOF(r));
+  A{neq} = zeros(nfd,getNumPositions(r));
   A{neq}(1:nfd,options.fixed_dofs) = eye(nfd);
   b{neq} = q_nom(options.fixed_dofs);
 end
@@ -108,6 +108,6 @@ f = -q_nom'*Q;
 A = [Q Aeq'; Aeq zeros(size(Aeq,1))];
 b = [-f'; beq];
 y = A\b;
-q = y(1:getNumDOF(r));
+q = y(1:getNumPositions(r));
 
 end

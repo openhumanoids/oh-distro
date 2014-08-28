@@ -22,7 +22,7 @@ classdef ReachingPlanner < KeyframePlanner
         function obj = ReachingPlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
             obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-            joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
+            joint_names = atlas.getStateFrame.coordinates(1:getNumPositions(atlas));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             
             obj.num_breaks = 4;
@@ -111,7 +111,7 @@ classdef ReachingPlanner < KeyframePlanner
                 rf_des =rf_cmd;
             end
             
-            qcur = x0(1:getNumDOF(obj.r));
+            qcur = x0(1:getNumPositions(obj.r));
             kinsol_meas = doKinematics(obj.r,qcur);
             % get measured ee positions
             
@@ -192,7 +192,7 @@ classdef ReachingPlanner < KeyframePlanner
             r_palm_pt = obj.T_hand_palm_r(1:3,4);
             l_palm_pt = obj.T_hand_palm_l(1:3,4);
             
-            q0 = x0(1:getNumDOF(obj.r));
+            q0 = x0(1:getNumPositions(obj.r));
             q0_bound = obj.checkPosture(q0);
             T_world_body = HT(q0_bound(1:3),q0_bound(4),q0_bound(5),q0_bound(6));
              
@@ -326,7 +326,7 @@ classdef ReachingPlanner < KeyframePlanner
             cost = getCostVector(obj);
             
             ikoptions = IKoptions(obj.r);
-            ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+            ikoptions = ikoptions.setQ(diag(cost(1:getNumPositions(obj.r))));
             ik_qnom = q0_bound;
             qsc = QuasiStaticConstraint(obj.r);
             qsc = qsc.setActive(true);
@@ -439,8 +439,8 @@ classdef ReachingPlanner < KeyframePlanner
               end
             end
 
-            hand_joint_idx = [obj.lhand2robotFrameIndMap(obj.lhand2robotFrameIndMap <= obj.r.getNumDOF);...
-              obj.rhand2robotFrameIndMap(obj.rhand2robotFrameIndMap <= obj.r.getNumDOF)];
+            hand_joint_idx = [obj.lhand2robotFrameIndMap(obj.lhand2robotFrameIndMap <= obj.r.getNumPositions);...
+              obj.rhand2robotFrameIndMap(obj.rhand2robotFrameIndMap <= obj.r.getNumPositions)];
             obj.setDefaultJointConstraint();
             reaching_joint_cnst = obj.joint_constraint;
             reaching_joint_cnst = reaching_joint_cnst.setJointLimits(hand_joint_idx,...
@@ -519,17 +519,17 @@ classdef ReachingPlanner < KeyframePlanner
               %============================
 
 
-              qtraj_guess = PPTrajectory(spline([s(1) s(end)],[zeros(obj.r.getNumDOF,1) q0_bound q_final_guess zeros(obj.r.getNumDOF,1)]));
+              qtraj_guess = PPTrajectory(spline([s(1) s(end)],[zeros(obj.r.getNumPositions,1) q0_bound q_final_guess zeros(obj.r.getNumPositions,1)]));
   %             collision_constraint = AllBodiesClosestDistanceConstraint(obj.r,0.01,1e3,[s(1) 0.01*s(1)+0.99*s(end)]);
               iktraj_tbreaks = linspace(s(1),s(end),obj.plan_cache.num_breaks);
               if(obj.planning_mode == 1 || obj.planning_mode == 4)
                 % PERFORM inverseKinTraj OPT
                 iktraj_options = IKoptions(obj.r);
                 iktraj_options = iktraj_options.setDebug(true);
-                iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-                iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-                iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
-                iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1)); % upper and lower bnd on velocity.
+                iktraj_options = iktraj_options.setQ(diag(cost(1:getNumPositions(obj.r))));
+                iktraj_options = iktraj_options.setQa(0.05*eye(getNumPositions(obj.r)));
+                iktraj_options = iktraj_options.setQv(0*eye(getNumPositions(obj.r)));
+                iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumPositions(),1),zeros(obj.r.getNumPositions(),1)); % upper and lower bnd on velocity.
                 if(~obj.isBDIManipMode()) % Ignore Feet In BDI Manip Mode
                     qsc = qsc.setActive(true);
                 else
@@ -557,15 +557,15 @@ classdef ReachingPlanner < KeyframePlanner
 
                 s_breaks = iktraj_tbreaks;
                 x_breaks = xtraj.eval(s_breaks);
-                q_breaks = x_breaks(1:obj.r.getNumDOF,:);
-                qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
-                qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
+                q_breaks = x_breaks(1:obj.r.getNumPositions,:);
+                qdot0 = x_breaks(obj.r.getNumPositions+(1:obj.r.getNumPositions),1);
+                qdotf = x_breaks(obj.r.getNumPositions+(1:obj.r.getNumPositions),end);
                 qtraj_guess = PPTrajectory(spline(s_breaks,[qdot0 q_breaks qdotf]));
               elseif(obj.planning_mode == 2 || obj.planning_mode == 3)
                 s_breaks = iktraj_tbreaks;
                 q_breaks = qtraj_guess.eval(s_breaks);
-                qdot0 = zeros(obj.r.getNumDOF,1);
-                qdotf = zeros(obj.r.getNumDOF,1);
+                qdot0 = zeros(obj.r.getNumPositions,1);
+                qdotf = zeros(obj.r.getNumPositions,1);
               end
               if(not_found_solution)
                 ik_trial = ik_trial+1;

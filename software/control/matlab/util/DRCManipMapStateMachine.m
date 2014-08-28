@@ -27,13 +27,13 @@ classdef DRCManipMapStateMachine< handle
         obj.robot = robot;
         obj.coord_map = c_map;
         obj.manip_map_received=false;
-        obj.qcurrent=zeros(getNumDOF(obj.robot),1);
+        obj.qcurrent=zeros(getNumPositions(obj.robot),1);
     end
    
    function setMap(obj,xmap,affinds)
         obj.affinds = affinds;
         float_offset=6;
-        obj.qbreaks =xmap(1:getNumDOF(obj.robot),:);
+        obj.qbreaks =xmap(1:getNumPositions(obj.robot),:);
         obj.mapindices =  linspace(0,1,length(obj.affinds));
         l_hand_body = findLinkInd(obj.robot,'l_hand+l_hand_point_mass');
         r_hand_body = findLinkInd(obj.robot,'r_hand+r_hand_point_mass');
@@ -341,7 +341,7 @@ classdef DRCManipMapStateMachine< handle
                 
          %q_nominal = obj.qmap.eval(0);
          q_nominal = obj.qcurrent;
-         %q0 = zeros(getNumDOF(obj.robot),1);  %
+         %q0 = zeros(getNumPositions(obj.robot),1);  %
          qtraj = repmat(q_nominal,1,plan_length); % initialize to current state
          %qtraj2 = qtraj;
          %qtrajbak = qtraj;

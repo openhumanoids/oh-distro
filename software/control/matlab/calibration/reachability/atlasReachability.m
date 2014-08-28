@@ -15,7 +15,7 @@ rhand_ind = findLinkInd(r,'r_hand');
 
 x = r.getInitialState();
 x(3) = 0.0;
-q = x(1:getNumDOF(r));
+q = x(1:getNumPositions(r));
 
 kinsol = doKinematics(r,q);
 utorso_pos = forwardKin(r,kinsol,utorso_ind,[0;0;0]);

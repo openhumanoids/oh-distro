@@ -65,7 +65,7 @@ classdef BDIManipCommandBlock < MIMODrakeSystem
         cur_params = obj.params_listener.getMessage();
         
         % only support pelvis height for the time being
-        foot_z = getFootHeight(obj.robot,x(1:getNumDOF(obj.robot)));
+        foot_z = getFootHeight(obj.robot,x(1:getNumPositions(obj.robot)));
         params.pelvis_height = max(obj.robot.pelvis_min_height, ...
           min(obj.robot.pelvis_max_height,q_des(3)-foot_z));
         params.pelvis_yaw = cur_params.pelvis_yaw;

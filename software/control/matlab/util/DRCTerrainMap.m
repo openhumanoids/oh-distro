@@ -90,7 +90,7 @@ classdef DRCTerrainMap < RigidBodyTerrain
       if nargin < 5
         frame_name = 'r_foot_sole';
       end
-      sizecheck(q, [biped.getNumDOF, 1]);
+      sizecheck(q, [biped.getNumPositions, 1]);
       fid = biped.findFrameId(frame_name);
       kinsol = doKinematics(biped, q);
       fpos = forwardKin(biped, kinsol, fid, [0;0;0], true);

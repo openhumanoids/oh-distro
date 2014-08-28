@@ -123,7 +123,7 @@ classdef CombinedPlanner
     
     function plan = configuration_traj(obj, msg)
       msg = drc.robot_plan_t(msg);
-      nq = getNumDOF(obj.biped);
+      nq = getNumPositions(obj.biped);
       joint_names = obj.biped.getStateFrame.coordinates(1:nq);
       [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,true,joint_names); 
       qtraj_pp = spline(ts,[zeros(nq,1), xtraj(1:nq,:), zeros(nq,1)]);

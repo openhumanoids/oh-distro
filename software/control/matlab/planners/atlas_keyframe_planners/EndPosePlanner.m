@@ -28,8 +28,8 @@ classdef EndPosePlanner < KeyframePlanner
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
             
             
-            joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
-            %joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+            joint_names = atlas.getStateFrame.coordinates(1:getNumPositions(atlas));
+            %joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names);
             obj.shrinkfactor = 0.4;
@@ -70,7 +70,7 @@ classdef EndPosePlanner < KeyframePlanner
             send_status(3,0,0,'Generating candidate endpose given EE Loci...');
             
             
-            q0 = x0(1:getNumDOF(obj.r));
+            q0 = x0(1:getNumPositions(obj.r));
             T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
             
             % get current hand and foot positions
@@ -250,10 +250,10 @@ classdef EndPosePlanner < KeyframePlanner
           cost = getCostVector(obj);
           iktraj_options = IKoptions(obj.r);
           iktraj_options = iktraj_options.setDebug(true);
-          iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-          iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-          iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
-          iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));
+          iktraj_options = iktraj_options.setQ(diag(cost(1:getNumPositions(obj.r))));
+          iktraj_options = iktraj_options.setQa(0.05*eye(getNumPositions(obj.r)));
+          iktraj_options = iktraj_options.setQv(0*eye(getNumPositions(obj.r)));
+          iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumPositions(),1),zeros(obj.r.getNumPositions(),1));
           iktraj_options = iktraj_options.setFixInitialState(false);
           iktraj_options = iktraj_options.setMajorIterationsLimit(10000);
           iktraj_options = iktraj_options.setIterationsLimit(50000);
@@ -264,7 +264,7 @@ classdef EndPosePlanner < KeyframePlanner
           qsc = qsc.setShrinkFactor(obj.shrinkfactor); % search for a conservative pose
           iktraj_options = iktraj_options.setMajorIterationsLimit(1000);
           nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-          qstar = nomdata.xstar(1:obj.r.getNumDOF());
+          qstar = nomdata.xstar(1:obj.r.getNumPositions());
           iktraj_tbreaks = s_breaks;
           %iktraj_qseed_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 repmat(qstar,1,NBreaks-1)]));
           
@@ -274,7 +274,7 @@ classdef EndPosePlanner < KeyframePlanner
           iktraj_qnom_traj = PPTrajectory(foh(iktraj_tbreaks,repmat(qstar,1,NBreaks)));           
           
           joint_constraint = PostureConstraint(obj.r);
-          joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumDOF)',obj.joint_constraint.lb,obj.joint_constraint.ub);
+          joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumPositions)',obj.joint_constraint.lb,obj.joint_constraint.ub);
           coords = obj.r.getStateFrame.coordinates;
           % urf limits are lower="-0.523599" upper="0.523599" 
           l_leg_hpx_ind = find(strcmp(coords,'l_leg_hpx'));      r_leg_hpx_ind = find(strcmp(coords,'r_leg_hpx'));
@@ -308,9 +308,9 @@ classdef EndPosePlanner < KeyframePlanner
           xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
           s_breaks = iktraj_tbreaks;
           x_breaks = xtraj.eval(s_breaks);
-          q_breaks = x_breaks(1:obj.r.getNumDOF,:);    
-          qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
-          qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
+          q_breaks = x_breaks(1:obj.r.getNumPositions,:);    
+          qdot0 = x_breaks(obj.r.getNumPositions+(1:obj.r.getNumPositions),1);
+          qdotf = x_breaks(obj.r.getNumPositions+(1:obj.r.getNumPositions),end);
           qtraj = PPTrajectory(spline(s_breaks,[qdot0 q_breaks qdotf]));
 
           s = linspace(0,1,10);
@@ -338,7 +338,7 @@ classdef EndPosePlanner < KeyframePlanner
             disp('Generating candidate endpose...');
             send_status(3,0,0,'Generating candidate endpose via IK...');
             
-            q0 = x0(1:getNumDOF(obj.r));
+            q0 = x0(1:getNumPositions(obj.r));
             
             T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
             
@@ -479,7 +479,7 @@ classdef EndPosePlanner < KeyframePlanner
       
             cost = getCostVector(obj);
             ikoptions = IKoptions(obj.r);
-            ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+            ikoptions = ikoptions.setQ(diag(cost(1:getNumPositions(obj.r))));
             ikoptions = ikoptions.setDebug(true);
             %ik_qnom = q0;
             ikoptions = ikoptions.setMajorIterationsLimit(1000);
@@ -488,9 +488,9 @@ classdef EndPosePlanner < KeyframePlanner
             qsc = qsc.setShrinkFactor(obj.shrinkfactor);
             qsc = qsc.addContact(obj.r_foot_body,r_foot_contact_pts,obj.l_foot_body,l_foot_contact_pts);        
             
-            ikoptions = ikoptions.setQ( diag(cost(1:getNumDOF(obj.r))));
+            ikoptions = ikoptions.setQ( diag(cost(1:getNumPositions(obj.r))));
             nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-            qstar = nomdata.xstar(1:obj.r.getNumDOF());
+            qstar = nomdata.xstar(1:obj.r.getNumPositions());
             ik_qnom = qstar;            
             %  			ikoptions.q_nom = qstar;
             
@@ -501,7 +501,7 @@ classdef EndPosePlanner < KeyframePlanner
             %arm_loci_flag=(arm_loci_flag)&(Indices==Indices(ind(k)));
             if(sum(arm_loci_flag) == 2)
                 nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_two_hands_reaching.mat'));
-                qstar = nomdata.xstar(1:obj.r.getNumDOF());
+                qstar = nomdata.xstar(1:obj.r.getNumPositions());
                 ik_qnom = qstar;
                 tspan = [Indices(ind(k)) Indices(ind(k))];
                 rhand_constraint = parse2PosQuatConstraint(obj.r,obj.r_hand_body,[0;0;0],r_hand_pose,1e-4,sind(2).^2,tspan);
@@ -514,7 +514,7 @@ classdef EndPosePlanner < KeyframePlanner
                 NSamples = 20;
                 yaw_samples_bnd = 60;
             end
-            q_sample = zeros(obj.r.getNumDOF,NSamples);
+            q_sample = zeros(obj.r.getNumPositions,NSamples);
             sample_cost = zeros(1,NSamples);
             z_bnd = 0.5;
            
@@ -539,7 +539,7 @@ classdef EndPosePlanner < KeyframePlanner
                 %  else
                 
                 joint_constraint = PostureConstraint(obj.r);
-                joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumDOF)',obj.joint_constraint.lb,obj.joint_constraint.ub);
+                joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumPositions)',obj.joint_constraint.lb,obj.joint_constraint.ub);
                 coords = obj.r.getStateFrame.coordinates;
                 % urf limits are lower="-0.523599" upper="0.523599" 
 

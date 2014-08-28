@@ -9,7 +9,7 @@ state_frame = r.getStateFrame();
 state_frame.subscribe('EST_ROBOT_STATE');
 
 x0 = getInitialState(r);
-q0 = x0(1:getNumDOF(r));
+q0 = x0(1:getNumPositions(r));
 
 hardware_mode = 2; % 1-sim mode
 l_issandia = true;

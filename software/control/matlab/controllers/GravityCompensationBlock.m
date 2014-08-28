@@ -30,7 +30,7 @@ classdef GravityCompensationBlock < DrakeSystem
     obj.robot = r;
     
     obj.nu = getNumInputs(r);
-    obj.nq = getNumDOF(r);
+    obj.nq = getNumPositions(r);
   end
     
   function y=output(obj,t,~,x)

@@ -4,7 +4,7 @@ red = {1,0,0};
 blue = {0,0,1};
 gray = {0.5,0.5,0.5};
 black = {0,0,0};
-nq = r.getNumDOF();
+nq = r.getNumPositions();
 F_hand_max = 25; %lbs
 r_idx = findJointIndices(r,'r_');
 l_idx = findJointIndices(r,'l_');
@@ -602,7 +602,7 @@ if ladder_opts.use_final_com_constraint
   idx_t_infeasible = [idx_t_infeasible,false(size(t_end))];
 end
 %x_data = zeros(2*nq,size(q_data,2));
-%x_data(1:getNumDOF(r),:) = q_data;
+%x_data(1:getNumPositions(r),:) = q_data;
 display(err_segments);
 if ladder_opts.smooth_output
   for i = 1:nq

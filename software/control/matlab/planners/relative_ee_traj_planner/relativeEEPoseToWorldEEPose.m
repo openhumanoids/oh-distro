@@ -1,6 +1,6 @@
 function [ee_pose,ref_pose] = relativeEEPoseToWorldEEPose(ref_link_name,ee_pose_relative,x0,r)
   if nargin < 4, r = Atlas(); end
-  nq = r.getNumDOF();
+  nq = r.getNumPositions();
   kinsol = doKinematics(r,x0(1:nq));
   ref_idx = r.findLinkInd(ref_link_name);
   ref_pose = forwardKin(r,kinsol,ref_idx,[0;0;0],2);

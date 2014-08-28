@@ -48,6 +48,8 @@ addpath_mosek;
 addpath([pods_get_base_path,'/matlab']);
 
 % add the drake control matlab util directory into the matlab path:
+addpath(fullfile(pwd,'..','drake','examples','ZMP'));
+addpath(fullfile(pwd,'..','drake','examples','Atlas','controllers'));
 addpath(fullfile(pwd,'matlab'));
 addpath(fullfile(pwd,'matlab','calibration'));
 addpath(fullfile(pwd,'matlab','controllers'));
@@ -64,8 +66,5 @@ addpath(fullfile(pwd,'matlab','frames'));
 addpath(fullfile(pwd,'matlab','test'));
 addpath(fullfile(pwd,'matlab','systems'));
 addpath(fullfile(pwd,'collections_utils'));
-addpath(fullfile(pwd,'..','drake','examples','ZMP'));
-addpath(fullfile(pwd,'..','drake','examples','Atlas','controllers'));
-
 
 end

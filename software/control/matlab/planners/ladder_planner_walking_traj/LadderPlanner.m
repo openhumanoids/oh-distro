@@ -25,9 +25,9 @@ function LadderPlanner(options)
   r = removeCollisionGroupsExcept(r,{'toe','heel'});
   r = compile(r);
   r = r.setInitialState(xstar);
-  joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+  joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
   
-  nq = getNumDOF(r);
+  nq = getNumPositions(r);
   
   l_hand = r.findLinkInd('l_hand');
   r_hand = r.findLinkInd('r_hand');
@@ -46,7 +46,7 @@ function LadderPlanner(options)
   qnom_state = '';
   fixed_links = [];
 
-  joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+  joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
   robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateCoder(joint_names)),'x');
   robot_state_coder.subscribe('EST_ROBOT_STATE');
 

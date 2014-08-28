@@ -88,7 +88,7 @@ function [xtraj, info, infeasible_constraint,additional_t_samples] = collisionFr
   end
 
   r = compile(r);
-  nq = r.getNumDOF();
+  nq = r.getNumPositions();
 
   for i = 1:numel(constraints)
     if ~isa(constraints{i},'PostureConstraint')

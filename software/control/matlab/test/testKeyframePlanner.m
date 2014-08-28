@@ -7,8 +7,8 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 options.floating = true;
 robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model.urdf'),options);
 atlas = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
-nq = robot.getNumDOF;
-nq_atlas = atlas.getNumDOF();
+nq = robot.getNumPositions;
+nq_atlas = atlas.getNumPositions();
 coords_atlas = atlas.getStateFrame.coordinates(1:nq_atlas);
 nomdata = load (strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
 q_star = nomdata.xstar(1:nq);
@@ -118,7 +118,7 @@ end
 % Check PosturePlanner
 data = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_standing_larm_inhead_view.mat'));
 useIK_state = 3; 
-q_desired = data.xstar(1:getNumDOF(robot));
+q_desired = data.xstar(1:getNumPositions(robot));
 [xtraj,info] = posture_planner.generateAndPublishPosturePlan(x0,q_desired,useIK_state);
 
 % Check EndPosePlanner

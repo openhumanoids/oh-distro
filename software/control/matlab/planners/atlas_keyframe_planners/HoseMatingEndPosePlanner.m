@@ -26,7 +26,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
     
     function [lfoot_constraint,rfoot_constraint,pelvis_constraint,head_constraint,dist_constraint,qsc,joint_constraint] ...
         = parseFixedConstraint(obj,x0)
-      q0 = x0(1:getNumDOF(obj.r));
+      q0 = x0(1:getNumPositions(obj.r));
       T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
 
       % get current hand and foot positions
@@ -91,10 +91,10 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       
       
       joint_constraint = PostureConstraint(obj.r);
-      joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumDOF)',obj.joint_constraint.lb,obj.joint_constraint.ub);
-      coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+      joint_constraint = joint_constraint.setJointLimits((1:obj.r.getNumPositions)',obj.joint_constraint.lb,obj.joint_constraint.ub);
+      coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
       back_z_ind = strcmp(coords,'back_bkz');
-      joint_ind = (1:obj.r.getNumDOF)';
+      joint_ind = (1:obj.r.getNumPositions)';
       l_leg_kny = joint_ind(strcmp(coords,'l_leg_kny'));
       r_leg_kny = joint_ind(strcmp(coords,'r_leg_kny'));
 %       joint_constraint = joint_constraint.setJointLimits(joint_ind(back_z_ind),-pi/18,pi/18);
@@ -110,7 +110,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
     function [xtraj_atlas,snopt_info] = runPoseOptimizationViaMultitimeIKtraj(obj,x0,ee_names,ee_loci,Indices,rh_ee_goal,lh_ee_goal,h_ee_goal,lidar_ee_goal,goal_type_flags)
       disp('Generating candidate hose mating endpose via IKtraj Given EE loci...')
       send_status(3,0,0,'Generating candidate endpose given EE Loci...');
-      q0 = x0(1:getNumDOF(obj.r));
+      q0 = x0(1:getNumPositions(obj.r));
       [iktraj_lfoot_constraint,iktraj_rfoot_constraint,iktraj_pelvis_constraint,iktraj_head_constraint,iktraj_dist_constraint,qsc,joint_constraint] = ...
         obj.parseFixedConstraint(x0);
       
@@ -187,10 +187,10 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       cost = getCostVector(obj);
       iktraj_options = IKoptions(obj.r);
       iktraj_options = iktraj_options.setDebug(true);
-      iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-      iktraj_options = iktraj_options.setQa(0.0005*eye(getNumDOF(obj.r)));
-      iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
-      iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));
+      iktraj_options = iktraj_options.setQ(diag(cost(1:getNumPositions(obj.r))));
+      iktraj_options = iktraj_options.setQa(0.0005*eye(getNumPositions(obj.r)));
+      iktraj_options = iktraj_options.setQv(0*eye(getNumPositions(obj.r)));
+      iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumPositions(),1),zeros(obj.r.getNumPositions(),1));
       iktraj_options = iktraj_options.setFixInitialState(false);
       iktraj_options = iktraj_options.setMajorIterationsLimit(1000);
       iktraj_options = iktraj_options.setIterationsLimit(50000);
@@ -198,15 +198,15 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       
       iktraj_options = iktraj_options.setMajorIterationsLimit(1000);
       nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
-      qstar = nomdata.xstar(1:obj.r.getNumDOF());
+      qstar = nomdata.xstar(1:obj.r.getNumPositions());
       iktraj_tbreaks = s_breaks;
       iktraj_qseed_traj = PPTrajectory(foh(iktraj_tbreaks,[q0 repmat(qstar,1,NBreaks-1)]));
       iktraj_qnom_traj = PPTrajectory(foh(iktraj_tbreaks,repmat(qstar,1,NBreaks)));           
 
      
-      coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+      coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
      
-      joint_ind = (1:obj.r.getNumDOF)';
+      joint_ind = (1:obj.r.getNumPositions)';
       lower_joint_idx = joint_ind(cellfun(@(s) ~isempty(strfind(s,'leg')),coords));
       pc_fixed = PostureChangeConstraint(obj.r,[1;2;4;5;6],[0;0;0;0;0],[0;0;0;0;0]);
           
@@ -240,9 +240,9 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
       xtraj = xtraj.setOutputFrame(obj.r.getStateFrame()); %#ok<*NASGU>
       s_breaks = iktraj_tbreaks;
       x_breaks = xtraj.eval(s_breaks);
-      q_breaks = x_breaks(1:obj.r.getNumDOF,:);    
-      qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
-      qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
+      q_breaks = x_breaks(1:obj.r.getNumPositions,:);    
+      qdot0 = x_breaks(obj.r.getNumPositions+(1:obj.r.getNumPositions),1);
+      qdotf = x_breaks(obj.r.getNumPositions+(1:obj.r.getNumPositions),end);
       qtraj = PPTrajectory(spline(s_breaks,[qdot0 q_breaks qdotf]));
 
       s = linspace(0,1,10);
@@ -262,7 +262,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
          
       if(snopt_info<10)
         x_start = xtraj.eval(s_breaks(1));
-        q_start = obj.checkPosture(x_start(1:obj.r.getNumDOF));
+        q_start = obj.checkPosture(x_start(1:obj.r.getNumPositions));
         xstar = [q_start;zeros(size(q_start))];
         save([getenv('DRC_PATH'),'/control/matlab/data/atlas_hose_mating.mat'],'xstar');
       end
@@ -274,7 +274,7 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
     function [xtraj_atlas,snopt_info] = runPoseOptimizationViaSingleTimeIK(obj,x0)
       disp('Generating candidate hose mating endpose via IK Given EE loci...')
       send_status(3,0,0,'Generating candidate hose mating endpose given EE Loci...');
-      q0 = x0(1:getNumDOF(obj.r));
+      q0 = x0(1:getNumPositions(obj.r));
       [lfoot_constraint,rfoot_constraint,pelvis_constraint,head_constraint,dist_constraint,qsc,joint_constraint] = ...
         obj.parseFixedConstraint(x0);
       
@@ -337,13 +337,13 @@ classdef HoseMatingEndPosePlanner < EndPosePlanner
 
       cost = getCostVector(obj);
       ikoptions = IKoptions(obj.r);
-      ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+      ikoptions = ikoptions.setQ(diag(cost(1:getNumPositions(obj.r))));
       ikoptions = ikoptions.setDebug(true);
 
       joint_constraint = joint_constraint.setJointLimits(nozzle_mwx,0,0);
       qseed = q0;
       nomdata = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
-      qnom = nomdata.xstar(1:obj.r.getNumDOF());
+      qnom = nomdata.xstar(1:obj.r.getNumPositions());
       [q,snopt_info,infeasible_constraint] = inverseKin(obj.r,...
         qseed,qnom,...
         rfoot_constraint{:},lfoot_constraint{:},...

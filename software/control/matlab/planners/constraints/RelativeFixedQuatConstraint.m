@@ -44,7 +44,7 @@ classdef RelativeFixedQuatConstraint < MultipleTimeKinematicConstraint
     
     function [c,dc_valid] = eval_valid(obj,valid_t,valid_q)
       num_valid_t = size(valid_t,2);
-      nq = obj.robot.getNumDOF();
+      nq = obj.robot.getNumPositions();
       sizecheck(valid_q,[nq,num_valid_t]);
       quat_rel = zeros(4,num_valid_t);
       if(nargout == 2)

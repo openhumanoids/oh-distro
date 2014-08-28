@@ -29,7 +29,7 @@ end
 r = compile(r);
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
-nq = getNumDOF(r);
+nq = getNumPositions(r);
   
 lc = lcm.lcm.LCM.getSingleton();
 qnom_mon = drake.util.MessageMonitor(drc.robot_posture_preset_t,'utime');
@@ -158,7 +158,7 @@ while true
   mu = footstep_opts.mu;
   [support_times, supports, comtraj, foottraj, V, zmptraj] = walkingPlanFromSteps(r, x0, footsteps, footstep_opts);
   tf = comtraj.tspan(end); assert(abs(eval(V,tf,zeros(4,1)))<1e-4);  % relatively fast check to make sure i'm in the correct frame (x-zmp_tf)
-  nq = getNumDOF(r);
+  nq = getNumPositions(r);
   q0 = x0(1:nq);
   link_constraints = buildLinkConstraints(r, q0, foottraj, fixed_links);
 
@@ -177,7 +177,7 @@ while true
     [xtraj, ~, ~, ts] = robotWalkingPlan(r, q0, qstar, zmptraj, comtraj, link_constraints);
     % publish robot plan
     msg =['Walk Plan (', location, '): Publishing robot plan...']; disp(msg); send_status(status_code,0,0,msg);
-    joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+    joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
     joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
     plan_pub = drc.control.RobotPlanPublisher(joint_names,true,'CANDIDATE_ROBOT_PLAN');
     plan_pub.publish(ts,xtraj);

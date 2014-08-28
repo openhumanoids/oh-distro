@@ -59,7 +59,7 @@ input_frame = getInputFrame(r);
 ref_frame = AtlasPosVelTorqueRef(r);
 
 nu = getNumInputs(r);
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 
 act_idx_map = getActuatedJoints(r);
 gains = getAtlasGains(); % change gains in this file
