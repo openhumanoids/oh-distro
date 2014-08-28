@@ -5,7 +5,7 @@ function ee_pose_relative = extractRelativeEndEffectorMotion(ee_name,X,r,ref_lin
   if nargin < 4
     ref_link_name = ee_name;
   end
-  nq = r.getNumDOF();
+  nq = r.getNumPositions();
   ee_idx = r.findLinkInd(ee_name);
   ref_link_idx = r.findLinkInd(ref_link_name);
   nt = size(X,2);

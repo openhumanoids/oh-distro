@@ -29,7 +29,7 @@ classdef HandWorkspace
       options.floating = true;
       robot = RigidBodyManipulator(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact.urdf'),options);
       nomdata = load([getenv('DRC_PATH'),'/control/matlab/data/aa_atlas_fp.mat']);
-      nq = robot.getNumDOF();
+      nq = robot.getNumPositions();
       qstar = nomdata.xstar(1:nq);
       coords = robot.getStateFrame.coordinates;
       coords = coords(1:nq);

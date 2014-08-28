@@ -69,9 +69,9 @@ state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 ref_frame = AtlasPosVelTorqueRef(r);
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 nu = getNumInputs(r);
-nq_fixed = getNumDOF(r_fixed);
+nq_fixed = getNumPositions(r_fixed);
 
 joint_index_map = cell2struct(num2cell(1:nq),state_frame.coordinates(1:nq),2);
 joint_index_map_fixed = cell2struct(num2cell(1:nq),r_fixed.getStateFrame.coordinates(1:nq),2);

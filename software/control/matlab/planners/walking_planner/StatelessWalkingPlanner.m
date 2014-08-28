@@ -10,7 +10,7 @@ classdef StatelessWalkingPlanner
 
       x0 = r.getStateFrame().lcmcoder.decode(request.initial_state);
       q0 = x0(1:end/2);
-      nq = getNumDOF(r);
+      nq = getNumPositions(r);
 
       if request.use_new_nominal_state
         xstar = r.getStateFrame().lcmcoder.decode(request.new_nominal_state);
@@ -66,7 +66,7 @@ classdef StatelessWalkingPlanner
       
       if compute_xtraj
         [xtraj, ~, ts] = planWalkingStateTraj(r, walking_plan_data, xstar);
-        joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+        joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 
         walking_plan = WalkingPlan(ts, xtraj, joint_names);

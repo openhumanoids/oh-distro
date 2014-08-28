@@ -27,8 +27,8 @@ classdef AtlasBalancingController < DRCController
       position_controlled_joints = setdiff(act_ind,force_controlled_joints);
 
       % integral gains for position controlled joints
-      integral_gains = zeros(getNumDOF(r),1);
-      integral_clamps = zeros(getNumDOF(r),1);
+      integral_gains = zeros(getNumPositions(r),1);
+      integral_clamps = zeros(getNumPositions(r),1);
       arm_ind = findJointIndices(r,'arm');
       back_ind = findJointIndices(r,'back');
       back_y_ind = findJointIndices(r,'back_bky');
@@ -40,7 +40,7 @@ classdef AtlasBalancingController < DRCController
 
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-      q0 = d.xstar(1:getNumDOF(r));
+      q0 = d.xstar(1:getNumPositions(r));
       kinsol = doKinematics(r,q0);
       com = getCOM(r,kinsol);
 
@@ -83,7 +83,7 @@ classdef AtlasBalancingController < DRCController
         'link_constraints',link_constraints,...
         'force_controlled_joints',force_controlled_joints,...
         'position_controlled_joints',position_controlled_joints,...
-        'integral',zeros(getNumDOF(r),1),...
+        'integral',zeros(getNumPositions(r),1),...
         'integral_gains',integral_gains,...
         'integral_clamps',integral_clamps,...
         'firstplan',true,...
@@ -98,7 +98,7 @@ classdef AtlasBalancingController < DRCController
       obj.controller_data = ctrl_data;
       obj.foot_idx = fidx;
       obj.pelvis_idx = pelvis_idx;
-      obj.nq = getNumDOF(r);
+      obj.nq = getNumPositions(r);
       
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');  
       obj = addLCMTransition(obj,'ATLAS_BEHAVIOR_COMMAND',drc.atlas_behavior_command_t(),'init'); 
@@ -168,7 +168,7 @@ classdef AtlasBalancingController < DRCController
     
     function standAtCurrentState(obj,x0)
       r = obj.robot;
-      q0 = x0(1:getNumDOF(r));
+      q0 = x0(1:getNumPositions(r));
       kinsol = doKinematics(r,q0);
       foot_cpos = terrainContactPositions(r,kinsol,obj.foot_idx);
       comgoal = mean([mean(foot_cpos(1:2,1:4)');mean(foot_cpos(1:2,5:8)')])';

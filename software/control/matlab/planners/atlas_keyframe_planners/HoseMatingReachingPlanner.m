@@ -19,7 +19,7 @@ classdef HoseMatingReachingPlanner < ReachingPlanner
       obj.planning_mode = 4;
       obj.plan_cache.clearCache();
       obj.plan_cache.num_breaks = obj.num_breaks;
-      q0 = x0(1:obj.r.getNumDOF);
+      q0 = x0(1:obj.r.getNumPositions);
       obj.updateWyePose();
       T_world_wye = HT(obj.wye_pose(1:3),obj.wye_pose(4),obj.wye_pose(5),obj.wye_pose(6));
       head_constraint = {WorldGazeTargetConstraint(obj.r,obj.head_body,obj.head_gaze_axis,obj.wye_pose(1:3),obj.h_camera_origin,obj.head_gaze_tol)};
@@ -70,13 +70,13 @@ classdef HoseMatingReachingPlanner < ReachingPlanner
       ikoptions = IKoptions(obj.r);
       [q_final_guess,info] = inverseKin(obj.r,q0,q0,nozzle_hand_constraintT{:},head_constraint{:},joint_constraint,ikoptions);
       
-      qtraj_guess = PPTrajectory(spline([0 1],[zeros(obj.r.getNumDOF,1) q0 q_final_guess zeros(obj.r.getNumDOF,1)]));
+      qtraj_guess = PPTrajectory(spline([0 1],[zeros(obj.r.getNumPositions,1) q0 q_final_guess zeros(obj.r.getNumPositions,1)]));
       cost = getCostVector(obj);
       iktraj_options = IKoptions(obj.r);
-      iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-      iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-      iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
-      iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1)); % upper and lower bnd on velocity.
+      iktraj_options = iktraj_options.setQ(diag(cost(1:getNumPositions(obj.r))));
+      iktraj_options = iktraj_options.setQa(0.05*eye(getNumPositions(obj.r)));
+      iktraj_options = iktraj_options.setQv(0*eye(getNumPositions(obj.r)));
+      iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumPositions(),1),zeros(obj.r.getNumPositions(),1)); % upper and lower bnd on velocity.
       iktraj_options = iktraj_options.setMajorIterationsLimit(500);
       iktraj_options = iktraj_options.setDebug(true);
 %       iktraj_options = iktraj_options.setAdditionaltSamples(linspace(0,1,5));
@@ -94,8 +94,8 @@ classdef HoseMatingReachingPlanner < ReachingPlanner
       
       s_breaks = iktraj_tbreaks;
       x_breaks = xtraj.eval(s_breaks);
-      q_breaks = x_breaks(1:obj.r.getNumDOF,:);
-      qtraj_guess = PPTrajectory(spline(s_breaks,[zeros(obj.r.getNumDOF,1) q_breaks zeros(obj.r.getNumDOF,1)]));
+      q_breaks = x_breaks(1:obj.r.getNumPositions,:);
+      qtraj_guess = PPTrajectory(spline(s_breaks,[zeros(obj.r.getNumPositions,1) q_breaks zeros(obj.r.getNumPositions,1)]));
       
       Tmax_ee=obj.getTMaxForMaxEEArcSpeed(s_breaks,q_breaks);
       s_total = Tmax_ee*obj.plan_cache.v_desired;

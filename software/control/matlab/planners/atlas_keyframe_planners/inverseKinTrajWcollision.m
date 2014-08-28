@@ -10,7 +10,7 @@ function [xtraj,info,infeasible_constraint,joint_limit_flag] = inverseKinTrajWco
 % @param joint_limit_flag             - The flag of whether the joint are at the joint limit in the
 %                                       xtraj
 t_verify = sort([t_verify t_breaks]);
-nq = obj.getNumDOF();
+nq = obj.getNumPositions();
 [joint_lb,joint_ub] = obj.getJointLimits();
 joint_max = bsxfun(@times,joint_ub,ones(1,length(t_breaks)));
 joint_min = bsxfun(@times,joint_lb,ones(1,length(t_breaks)));

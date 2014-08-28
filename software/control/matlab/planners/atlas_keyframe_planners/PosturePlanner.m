@@ -13,7 +13,7 @@ classdef PosturePlanner < KeyframePlanner
         function obj = PosturePlanner(r,atlas,lhand_frame,rhand_frame,hardware_mode)
             obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class 
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-            joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
+            joint_names = atlas.getStateFrame.coordinates(1:getNumPositions(atlas));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);            
             obj.num_breaks = 4;
@@ -44,9 +44,9 @@ classdef PosturePlanner < KeyframePlanner
           obj.plan_cache.num_breaks = obj.num_breaks;
                       
           disp('Generating posture plan...');
-          q0 = x0(1:getNumDOF(obj.r));
+          q0 = x0(1:getNumPositions(obj.r));
           s = [0 1];
-          nq = obj.r.getNumDOF();
+          nq = obj.r.getNumPositions();
 
           if(useIK_state == 1)
             kinsol_des = doKinematics(obj.r,q_desired);
@@ -65,8 +65,8 @@ classdef PosturePlanner < KeyframePlanner
 
             joint_constraint = PostureConstraint(obj.r);
             coords = obj.r.getStateFrame.coordinates();
-            coords = coords(1:obj.r.getNumDOF());
-            joint_ind = (1:obj.r.getNumDOF())';
+            coords = coords(1:obj.r.getNumPositions());
+            joint_ind = (1:obj.r.getNumPositions())';
             lower_joint_ind = joint_ind(~cellfun(@isempty,strfind(coords,'leg'))&cellfun(@isempty,strfind(coords,'mhx'))&cellfun(@isempty,strfind(coords,'lhy')));
             upper_joint_ind = joint_ind(cellfun(@isempty,strfind(coords,'leg'))&cellfun(@isempty,strfind(coords,'pelvis'))&cellfun(@isempty,strfind(coords,'base')));
             knee_joint_ind = joint_ind(~cellfun(@isempty,strfind(coords,'kny')));
@@ -97,7 +97,7 @@ classdef PosturePlanner < KeyframePlanner
             ikoptions = IKoptions(obj.r);
             joint_constraint = PostureConstraint(obj.r);
             q_desired = obj.checkPosture(q_desired);
-            joint_constraint = joint_constraint.setJointLimits((7:obj.r.getNumDOF)',q_desired(7:end),q_desired(7:end));
+            joint_constraint = joint_constraint.setJointLimits((7:obj.r.getNumPositions)',q_desired(7:end),q_desired(7:end));
             qsc = QuasiStaticConstraint(obj.r);
             qsc = qsc.setShrinkFactor(0.9);
             qsc = qsc.addContact(obj.r_foot_body,obj.r.getBody(obj.r_foot_body).getContactPoints,...
@@ -122,8 +122,8 @@ classdef PosturePlanner < KeyframePlanner
             end
             
           elseif(useIK_state == 3) % copy the left arm joint angles from the mat file
-            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
-            joint_ind = (1:obj.r.getNumDOF())';
+            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
+            joint_ind = (1:obj.r.getNumPositions())';
             l_arm_ind = joint_ind(~cellfun(@isempty,strfind(coords,'l_arm')));
             r_arm_ind = joint_ind(~cellfun(@isempty,strfind(coords,'r_arm')));
             knee_joint_ind = joint_ind(~cellfun(@isempty,strfind(coords,'kny')));
@@ -159,7 +159,7 @@ classdef PosturePlanner < KeyframePlanner
             end
             ikoptions = IKoptions(obj.r);
             cost = diag(obj.getCostVector());
-            ikoptions = ikoptions.setQ(cost(1:obj.r.getNumDOF,1:obj.r.getNumDOF));
+            ikoptions = ikoptions.setQ(cost(1:obj.r.getNumPositions,1:obj.r.getNumPositions));
             ik_constr = [{joint_constraint},ik_constr,pelvis_constraint];
             [q_desired,info,infeasible_constr] = inverseKin(obj.r,q0,q0,ik_constr{:},ikoptions);
             if(info>10)
@@ -168,8 +168,8 @@ classdef PosturePlanner < KeyframePlanner
             end
 
           elseif(useIK_state == 4) % copy the right arm joint angles from the mat file
-            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
-            joint_ind = (1:obj.r.getNumDOF)';
+            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
+            joint_ind = (1:obj.r.getNumPositions)';
             l_arm_ind = joint_ind(~cellfun(@isempty,strfind(coords,'l_arm')));
             r_arm_ind = joint_ind(~cellfun(@isempty,strfind(coords,'r_arm')));
             knee_joint_ind = joint_ind(~cellfun(@isempty,strfind(coords,'kny')));
@@ -205,7 +205,7 @@ classdef PosturePlanner < KeyframePlanner
             end
             ikoptions = IKoptions(obj.r);
             cost = diag(obj.getCostVector());
-            ikoptions = ikoptions.setQ(cost(1:obj.r.getNumDOF,1:obj.r.getNumDOF));
+            ikoptions = ikoptions.setQ(cost(1:obj.r.getNumPositions,1:obj.r.getNumPositions));
             ik_constr = [{joint_constraint},ik_constr,pelvis_constraint];
             [q_desired,info,infeasible_constr] = inverseKin(obj.r,q0,q0,ik_constr{:},ikoptions);
             if(info>10)
@@ -229,7 +229,7 @@ classdef PosturePlanner < KeyframePlanner
             % change the whole body joints to q_desired
             info = 1;
           elseif(useIK_state ==7) % copy the lower body joints and floating base from current, copy the upper body joints from q_desired
-            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumDOF);
+            coords = obj.r.getStateFrame.coordinates(1:obj.r.getNumPositions);
             lower_joint_ind = cellfun(@(s) ~isempty(strfind(s,'leg')),coords);
             lower_joint_ind(1:6) = true(6,1);
             upper_joint_ind = ~lower_joint_ind;
@@ -237,8 +237,8 @@ classdef PosturePlanner < KeyframePlanner
             info = 1;
           end
           
-          qdot0 = zeros(obj.r.getNumDOF,1);
-          qdotf = zeros(obj.r.getNumDOF,1);
+          qdot0 = zeros(obj.r.getNumPositions,1);
+          qdotf = zeros(obj.r.getNumPositions,1);
           qtraj_guess = PPTrajectory(spline([s(1) s(end)],[qdot0 q0 q_desired qdotf]));
      
           s_breaks = linspace(0,1,obj.plan_cache.num_breaks);

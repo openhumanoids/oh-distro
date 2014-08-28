@@ -39,7 +39,7 @@ r = r.setInitialState(xstar);
 v = r.constructVisualizer;
 v.display_dt = 0.05;
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 
 x0 = xstar;
 

@@ -20,7 +20,7 @@ function [xstar,info,r,ustar,x0,constraints,ikoptions] = randomPose(r,x0,n,v)
     n = 1;
   end
   rbm = r.getManipulator();
-  nq = rbm.getNumDOF();
+  nq = rbm.getNumPositions();
 
   [joint_limits_min,joint_limits_max] = rbm.getJointLimits();
   ikoptions = IKoptions(rbm);

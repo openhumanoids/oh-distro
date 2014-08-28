@@ -27,7 +27,7 @@ foot_indices_struct.r_foot_ty_idx = find(strcmp('r_foot_ty',force_torque_frame.c
 foot_indices_struct.rfoot_ind = r.findLinkInd('r_foot');
 foot_indices_struct.lfoot_ind = r.findLinkInd('l_foot');
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 
 % v = r.constructVisualizer;
 lcmgl_com = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'center-of-mass');

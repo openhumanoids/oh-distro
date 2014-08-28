@@ -16,7 +16,7 @@ classdef IRISPlanner
       MAX_BOX_SIZE_M = 4;
 
       x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
-      q0 = x0(1:biped.getNumDOF());
+      q0 = x0(1:biped.getNumPositions());
       if nargin < 4
         terrain = biped.getTerrain();
         if ismethod(terrain, 'setBackupTerrain')

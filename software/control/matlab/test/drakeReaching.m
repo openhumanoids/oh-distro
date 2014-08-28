@@ -34,7 +34,7 @@ else
   rctrl = r;
 end
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 nu = getNumInputs(r);
 
 x0 = xstar;
@@ -78,7 +78,7 @@ cost.back_bky = 100;
 cost.back_bkx = 100;
 cost = double(cost);
 options = struct();
-options.Q = diag(cost(1:r.getNumDOF));
+options.Q = diag(cost(1:r.getNumPositions));
 options.quastiStaticFlag = true;
 
 % time spacing of samples for IK
@@ -87,7 +87,7 @@ ts = 0:0.1:T;
 
 rhand_traj = PPTrajectory(spline([0 T],[rhand_pos(1:3) rhand_goal]));
 lhand_traj = PPTrajectory(spline([0 T],[lhand_pos(1:3) lhand_goal]));
-q = zeros(r.getNumDOF,length(ts));
+q = zeros(r.getNumPositions,length(ts));
 for i=1:length(ts)
   t = ts(i);
   if (i>1)
@@ -246,7 +246,7 @@ warning(S);
 traj = simulate(sys,[0 1.25*T],[x0;0*x0;zeros((options.delay_steps+1)*nu,1)]);
 
 x=traj.eval(traj.tspan(end));
-q=x(1:getNumDOF(r)); 
+q=x(1:getNumPositions(r)); 
 kinsol = doKinematics(r,q);
 rhand_pos = forwardKin(r,kinsol,rhand_ind,[0;0;0]);
 lhand_pos = forwardKin(r,kinsol,lhand_ind,[0;0;0]);

@@ -5,7 +5,7 @@ r = removeCollisionGroupsExcept(r,{'heel','toe'});
 r = setTerrain(r,DRCTerrainMap());
 r = compile(r);
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');

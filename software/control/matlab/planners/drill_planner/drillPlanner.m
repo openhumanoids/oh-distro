@@ -55,7 +55,7 @@ classdef drillPlanner
 
       obj.allowPelvisHeight = allowPelvisHeight;
 
-      joint_names = obj.atlas.getStateFrame.coordinates(1:getNumDOF(obj.atlas));
+      joint_names = obj.atlas.getStateFrame.coordinates(1:getNumPositions(obj.atlas));
       joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 
       obj.doPublish = doPublish;
@@ -118,10 +118,10 @@ classdef drillPlanner
 
       iktraj_options = IKoptions(obj.r);
       iktraj_options = iktraj_options.setDebug(true);
-      iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
+      iktraj_options = iktraj_options.setQ(diag(cost(1:getNumPositions(obj.r))));
       iktraj_options = iktraj_options.setQa(diag(vel_cost));
       iktraj_options = iktraj_options.setQv(diag(accel_cost));
-      iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1)); % upper and lower bnd on velocity.
+      iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumPositions(),1),zeros(obj.r.getNumPositions(),1)); % upper and lower bnd on velocity.
       iktraj_options = iktraj_options.setMajorIterationsLimit(3000);
       iktraj_options = iktraj_options.setMex(true);
       iktraj_options = iktraj_options.setMajorOptimalityTolerance(1e-5);

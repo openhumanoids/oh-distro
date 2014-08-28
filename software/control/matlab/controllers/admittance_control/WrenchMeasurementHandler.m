@@ -195,7 +195,7 @@ classdef WrenchMeasurementHandler < handle
             % in world orientation.
             % 3) convert wrench in world frame back to sensor frame.
             
-            q0 = x0(1:getNumDOF(obj.r));
+            q0 = x0(1:getNumPositions(obj.r));
             %T_world_body = obj.HT(x0(1:3),x0(4),x0(5),x0(6));
             
             % get hand positions

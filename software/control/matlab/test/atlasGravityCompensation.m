@@ -20,7 +20,7 @@ state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = getInputFrame(r);
 ref_frame = AtlasPosTorqueRef(r);
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 nu = getNumInputs(r);
 
 joints_act = find(~cellfun(@isempty,strfind(input_frame.coordinates,jointstr)));
@@ -66,7 +66,7 @@ while 1
     qd = x(nq+(1:nq));
     
     % do inverse dynamics on fixed base model
-    nq_fixed = getNumDOF(r_fixed);
+    nq_fixed = getNumPositions(r_fixed);
     [~,C,B] = manipulatorDynamics(r_fixed,q(6+(1:nq_fixed)),qd(6+(1:nq_fixed)));    
     u = B\C;
        

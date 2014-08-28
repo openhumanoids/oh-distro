@@ -7,11 +7,11 @@ function runRelativeEndEffectorTrajPlanner(channel,delim,options)
   waiting = true;
 
   r = Atlas();
-  nq = r.getNumDOF();
+  nq = r.getNumPositions();
   load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_bdi_fp.mat'));
   qstar = xstar(1:nq);
   q0 = qstar;
-  joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+  joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
   robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateCoder(joint_names)),'x');
   robot_state_coder.subscribe('EST_ROBOT_STATE');
 

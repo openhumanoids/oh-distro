@@ -16,7 +16,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           if(obj.isBDIManipMode())
               warning('WholeBodyPlanner:: only relevant in BDI_USER_MODE and SIM_MODE, not in BDI_MANIP_MODE.')
           end
-          joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
+          joint_names = atlas.getStateFrame.coordinates(1:getNumPositions(atlas));
           joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
 
           obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
@@ -53,7 +53,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           disp('Generating whole body plan...');
           send_status(3,0,0,'Generating whole body plan...');
 
-          q0 = x0(1:getNumDOF(obj.r));
+          q0 = x0(1:getNumPositions(obj.r));
 
           T_world_body = HT(x0(1:3),x0(4),x0(5),x0(6));
 
@@ -72,7 +72,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           cost = getCostVector(obj);
 
           ikoptions = IKoptions(obj.r);
-          ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+          ikoptions = ikoptions.setQ(diag(cost(1:getNumPositions(obj.r))));
           ik_qnom = q0;
           qsc = QuasiStaticConstraint(obj.r);
           ikoptions = ikoptions.setMajorIterationsLimit(200);
@@ -94,7 +94,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           rh_in_contact=false;
           lh_in_contact=false;
 
-          q = zeros(obj.r.getNumDOF,length(timeIndices));
+          q = zeros(obj.r.getNumPositions,length(timeIndices));
           snopt_info_vector = zeros(1,length(timeIndices));
           for i=1:length(timeIndices),
 
@@ -239,7 +239,7 @@ classdef WholeBodyPlanner < KeyframePlanner
 
             ikoptions = IKoptions(obj.r);
             ikoptions = ikoptions.setDebug(true);
-            ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+            ikoptions = ikoptions.setQ(diag(cost(1:getNumPositions(obj.r))));
             ik_qnom = q_guess;    
             qsc = qsc.setActive(true);
               
@@ -288,7 +288,7 @@ classdef WholeBodyPlanner < KeyframePlanner
           obj.plan_cache.s_breaks = s_breaks;
           obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
 
-          nq = obj.r.getNumDOF();
+          nq = obj.r.getNumPositions();
           q_breaks = zeros(nq,length(s_breaks));
           % calculate end effectors breaks via FK.
           for brk =1:length(s_breaks),

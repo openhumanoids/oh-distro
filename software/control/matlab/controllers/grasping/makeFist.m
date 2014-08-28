@@ -14,13 +14,13 @@ q = [0 pi/2 pi/2   0 pi/2 pi/2  0 pi/2 pi/2  0 1.3 0];
 ff = zeros(1,12);
 data = [Kp,Kd,q,ff];
 
-nq = getNumDOF(r_left);
+nq = getNumPositions(r_left);
 joint_names = r_left.getStateFrame.coordinates(1:nq);
 coder_left = JLCMCoder(drc.control.SandiaJointCommandCoder('atlas',false,'left',joint_names));
 msg = coder_left.encode(t,data);
 lc.publish('L_HAND_JOINT_COMMANDS',msg);
 
-nq = getNumDOF(r_right);
+nq = getNumPositions(r_right);
 joint_names = r_right.getStateFrame.coordinates(1:nq);
 coder_right = JLCMCoder(drc.control.SandiaJointCommandCoder('atlas',false,'right',joint_names));
 msg = coder_right.encode(t,data);

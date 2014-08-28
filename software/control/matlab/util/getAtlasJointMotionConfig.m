@@ -4,7 +4,7 @@ function [qdes,motion_direction]=getAtlasJointMotionConfig(r,joint_name,config_i
 % function for producing joint motions in position control mode to generate
 % data for gain tuning and model fitting
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 
 % setup frames
 state_frame = getStateFrame(r);

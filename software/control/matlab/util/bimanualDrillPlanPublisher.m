@@ -49,17 +49,17 @@ classdef bimanualDrillPlanPublisher
       else
         obj.doPublish = doPublish;
       end
-      joint_names = obj.atlas.getStateFrame.coordinates(1:getNumDOF(obj.atlas));
+      joint_names = obj.atlas.getStateFrame.coordinates(1:getNumPositions(obj.atlas));
       joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
       obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
       cost = ones(34,1);
       
       iktraj_options = IKoptions(obj.r);
       iktraj_options = iktraj_options.setDebug(true);
-      iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-      iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-      iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
-      iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1)); % upper and lower bnd on velocity.
+      iktraj_options = iktraj_options.setQ(diag(cost(1:getNumPositions(obj.r))));
+      iktraj_options = iktraj_options.setQa(0.05*eye(getNumPositions(obj.r)));
+      iktraj_options = iktraj_options.setQv(0*eye(getNumPositions(obj.r)));
+      iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumPositions(),1),zeros(obj.r.getNumPositions(),1)); % upper and lower bnd on velocity.
       iktraj_options = iktraj_options.setMajorIterationsLimit(50);
       iktraj_options = iktraj_options.setMex(false);
       

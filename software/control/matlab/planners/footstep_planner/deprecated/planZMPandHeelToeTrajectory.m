@@ -8,7 +8,7 @@ end
 
 typecheck(biped,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
-sizecheck(q0,[biped.getNumDOF,1]);
+sizecheck(q0,[biped.getNumPositions,1]);
 sizecheck(step_time,1);
 
 step_locations = struct('right', Xright(1:6,:), 'left', Xleft(1:6,:));

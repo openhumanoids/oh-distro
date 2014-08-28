@@ -10,7 +10,7 @@ state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');
 input_frame = AtlasPositionRef(r);
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 qstar = xstar(1:nq);
 neck_idx = ~cellfun(@isempty,strfind(state_frame.coordinates(1:nq),'neck_ay'));

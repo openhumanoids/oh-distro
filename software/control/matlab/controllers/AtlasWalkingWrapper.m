@@ -41,7 +41,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
 
-      obj.nq = getNumDOF(r);
+      obj.nq = getNumPositions(r);
       obj.nu = getNumInputs(r);
 
       if nargin<3

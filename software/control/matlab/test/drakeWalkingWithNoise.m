@@ -40,7 +40,7 @@ load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 r = r.setInitialState(xstar);
 rctrl = rctrl.setInitialState(xstar);
 
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 nu = getNumInputs(r);
 
 x0 = xstar;
@@ -206,7 +206,7 @@ rfoottraj = walking_ctrl_data.link_constraints(1).traj;
 lfoottraj = walking_ctrl_data.link_constraints(2).traj;
 for i=1:length(ts)
   x=traj.eval(ts(i));
-  q=x(1:getNumDOF(r));
+  q=x(1:getNumPositions(r));
   kinsol = doKinematics(r,q);
   com(:,i)=getCOM(r,q);
   com_err = com_err + norm(walking_ctrl_data.comtraj.eval(ts(i)) - com(1:2,i))^2;

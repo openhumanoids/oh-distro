@@ -19,12 +19,12 @@ classdef AtlasManipController < DRCController
         options.controller_type = 2;
       end
       
-      arm_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'arm'));
-      back_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'back'));
-      back_y_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumDOF(r)),'back_bky'));
+      arm_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumPositions(r)),'arm'));
+      back_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumPositions(r)),'back'));
+      back_y_ind = ~cellfun(@isempty,strfind(r.getStateFrame.coordinates(1:getNumPositions(r)),'back_bky'));
   
-      integral_gains = zeros(getNumDOF(r),1);
-      integral_clamps = zeros(getNumDOF(r),1);
+      integral_gains = zeros(getNumPositions(r),1);
+      integral_clamps = zeros(getNumPositions(r),1);
       if options.controller_type == 1 || options.controller_type == 2 % use PID control
         integral_gains(arm_ind) = 1.0;
         integral_gains(back_ind) = 0.2;
@@ -33,8 +33,8 @@ classdef AtlasManipController < DRCController
         integral_clamps(back_y_ind) = 0.1;
       end
       
-      data = struct('qtraj',zeros(getNumDOF(r),1),...
-                    'integral',zeros(getNumDOF(r),1),...
+      data = struct('qtraj',zeros(getNumPositions(r),1),...
+                    'integral',zeros(getNumPositions(r),1),...
                     'integral_gains',integral_gains,...
                     'integral_clamps',integral_clamps,...
                     'enable_bdi_manip',true,...
@@ -109,8 +109,8 @@ classdef AtlasManipController < DRCController
         clear ins outs;
         
         % cascade PD block
-        options.Kp = 50.0*ones(getNumDOF(r),1);
-        options.Kd = 12.0*ones(getNumDOF(r),1);
+        options.Kp = 50.0*ones(getNumPositions(r),1);
+        options.Kd = 12.0*ones(getNumPositions(r),1);
         options.use_qddtraj = true;
         options.use_ik = false;
         pd = IKPDBlock(r,ctrl_data,options);
@@ -164,9 +164,9 @@ classdef AtlasManipController < DRCController
       
       % use saved nominal pose 
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-      q0 = d.xstar(1:getNumDOF(obj.robot));
+      q0 = d.xstar(1:getNumPositions(obj.robot));
       obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
-      obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumDOF(r),1));
+      obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumPositions(r),1));
       
       obj = addLCMTransition(obj,'COMMITTED_ROBOT_PLAN',drc.robot_plan_t(),name); % for standing/reaching tasks
       obj = addLCMTransition(obj,'COMMITTED_PLAN_PAUSE',drc.plan_control_t(),name); % stop plan execution
@@ -190,14 +190,14 @@ classdef AtlasManipController < DRCController
         % standing and reaching plan
         try
           msg = data.COMMITTED_ROBOT_PLAN;
-          joint_names = obj.robot.getStateFrame.coordinates(1:getNumDOF(obj.robot));
+          joint_names = obj.robot.getStateFrame.coordinates(1:getNumPositions(obj.robot));
           [xtraj,ts] = RobotPlanListener.decodeRobotPlan(msg,obj.robot.floating,joint_names); 
           
           if obj.controller_data.firstplan
             obj.controller_data.firstplan = false;
           else
             qtraj_prev = obj.controller_data.qtraj;
-            q0=xtraj(1:getNumDOF(obj.robot),1);
+            q0=xtraj(1:getNumPositions(obj.robot),1);
 
             if isa(qtraj_prev,'PPTrajectory') 
               qprev_end = fasteval(qtraj_prev,data.t);
@@ -213,7 +213,7 @@ classdef AtlasManipController < DRCController
             obj.controller_data.integral = integ;
           end
           
-          qtraj = PPTrajectory(spline(ts,[zeros(getNumDOF(obj.robot),1), xtraj(1:getNumDOF(obj.robot),:), zeros(getNumDOF(obj.robot),1)]));
+          qtraj = PPTrajectory(spline(ts,[zeros(getNumPositions(obj.robot),1), xtraj(1:getNumPositions(obj.robot),:), zeros(getNumPositions(obj.robot),1)]));
 
           obj.controller_data.qtraj = qtraj;
           obj.controller_data.qddtraj = fnder(qtraj,2);
@@ -222,9 +222,9 @@ classdef AtlasManipController < DRCController
           disp('error recieving plan, setting desired to current');
 
           x0 = data.AtlasState; % should always have an atlas state
-          q0 = x0(1:getNumDOF(obj.robot));
+          q0 = x0(1:getNumPositions(obj.robot));
           obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
-          obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumDOF(obj.robot),1));
+          obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumPositions(obj.robot),1));
         end
         
       elseif isfield(data,'COMMITTED_PLAN_PAUSE')
@@ -236,7 +236,7 @@ classdef AtlasManipController < DRCController
         end
         
         obj.controller_data.qtraj = qtraj;
-        obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumDOF(obj.robot),1));
+        obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumPositions(obj.robot),1));
 
       elseif isfield(data,'ATLAS_COMMAND_UNSAFE')
 
@@ -244,9 +244,9 @@ classdef AtlasManipController < DRCController
         % between desired and current to integrators
 
         x0 = data.AtlasState; % should always have an atlas state
-        q0 = x0(1:getNumDOF(obj.robot));
+        q0 = x0(1:getNumPositions(obj.robot));
         obj.controller_data.qtraj = q0((1+~obj.robot.floating*6):end);
-        obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumDOF(obj.robot),1));
+        obj.controller_data.qddtraj = ConstantTrajectory(zeros(getNumPositions(obj.robot),1));
 
         % get current desired pos on robot
         msg = data.ATLAS_COMMAND_UNSAFE;

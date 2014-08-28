@@ -1,7 +1,7 @@
 function [x_data, t_data] = robotLadderPlanLeanBack(r, q0, qstar, comtraj, ee_info, support_times,ladder_opts)
 
 lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'robotLadderPlan');
-nq = r.getNumDOF();
+nq = r.getNumPositions();
 
 
 if ~exist('ladder_opts','var')

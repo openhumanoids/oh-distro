@@ -19,7 +19,7 @@ classdef RecoveryPlanningBlock < DrakeSystem
       obj = setOutputFrame(obj,output_frame);
 
       obj.controller_data = controller_data;
-      obj.nq = getNumDOF(r);
+      obj.nq = getNumPositions(r);
       obj.lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), 'recovery_planner');
 
       if nargin<3

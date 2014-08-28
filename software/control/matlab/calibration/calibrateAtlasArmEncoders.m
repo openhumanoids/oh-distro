@@ -12,7 +12,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 % must run this with encoders disabled in the state sync process
 r = Atlas();
-nq = getNumDOF(r);
+nq = getNumPositions(r);
 
 state_frame = getStateFrame(r);
 state_frame.subscribe('EST_ROBOT_STATE');

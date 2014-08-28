@@ -16,7 +16,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
         function obj = KeyframeAdjustmentEngine(r,atlas,lhand_frame,rhand_frame,hardware_mode)
             obj = obj@KeyframePlanner(r,atlas,lhand_frame,rhand_frame); % initialize the base class
             obj.hardware_mode = hardware_mode;  % 1 for sim mode, 2 BDI_Manip_Mode(upper body only), 3 for BDI_User
-            joint_names = atlas.getStateFrame.coordinates(1:getNumDOF(atlas));
+            joint_names = atlas.getStateFrame.coordinates(1:getNumPositions(atlas));
             joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
             obj.plan_pub = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,joint_names);
             obj.pose_pub = CandidateRobotPosePublisher('CANDIDATE_ROBOT_ENDPOSE',true,joint_names); % if endpose flag is set
@@ -45,7 +45,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
           end    
           
           % Decide if a posture plan needs to prepended if the current robot state is not the same as the first frame in the cached plan.
-          q0 = x0(1:getNumDOF(obj.r));
+          q0 = x0(1:getNumPositions(obj.r));
           q_start = obj.plan_cache.qtraj.eval(0);
         end
        
@@ -64,11 +64,11 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             
             % delete all pelvis constraints
             % Add the new pelvis constraint for all of time.
-            q0 = x0(1:getNumDOF(obj.r));
+            q0 = x0(1:getNumPositions(obj.r));
             kinsol_tmp = doKinematics(obj.r,q0);
             pelvis_pose = forwardKin(obj.r,kinsol_tmp,obj.pelvis_body,[0;0;0],2);
             
-            q_samples = zeros(obj.r.getNumDOF(),length(obj.plan_cache.s));
+            q_samples = zeros(obj.r.getNumPositions(),length(obj.plan_cache.s));
             for i =1:length(obj.plan_cache.s)
                 q_samples(:,i) = obj.plan_cache.qtraj.eval(obj.plan_cache.s(i));
             end
@@ -144,7 +144,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 cost = getCostVector(obj);
                 ikoptions = IKoptions(obj.r);
                 ikoptions = ikoptions.setDebug(true);
-                ikoptions = ikoptions.setQ(diag(cost(1:getNumDOF(obj.r))));
+                ikoptions = ikoptions.setQ(diag(cost(1:getNumPositions(obj.r))));
                 ik_qnom = q0;
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(false);
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setShrinkFactor(0.85);
@@ -162,7 +162,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
                 %============================
                 % have to adjust the q at time 0 with a IK manually to the desired pelvis pose.
                 % Ik Sequence by design does not modify the first posture at time zero.
-                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,[zeros(obj.r.getNumDOF,1) q_samples zeros(obj.r.getNumDOF,1)]));
+                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,[zeros(obj.r.getNumPositions,1) q_samples zeros(obj.r.getNumPositions,1)]));
             end
             
             % delete old and add new
@@ -226,7 +226,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.grasp_transition_breaks = grasp_transition_breaks;
             obj.plan_cache.num_grasp_transitions = size(grasptransitions,2);%sum(logictraj(2,:));
             obj.plan_cache.grasp_transition_states = grasptransitions;
-            obj.plan_cache.qtraj = PPTrajectory(spline(s,[zeros(obj.r.getNumDOF,1) xtraj(1:getNumDOF(obj.r),:) zeros(obj.r.getNumDOF,1)]));
+            obj.plan_cache.qtraj = PPTrajectory(spline(s,[zeros(obj.r.getNumPositions,1) xtraj(1:getNumPositions(obj.r),:) zeros(obj.r.getNumPositions,1)]));
             if(~obj.isBDIManipMode()) 
                 obj.plan_cache.qsc = obj.plan_cache.qsc.setActive(true);
             else
@@ -237,7 +237,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             if(obj.plan_cache.isPointWiseIK==true)
                 s_breaks = s;
             end
-            nq = obj.r.getNumDOF();
+            nq = obj.r.getNumPositions();
             q_breaks = zeros(nq,length(s_breaks));
             rhand_breaks = zeros(7,length(s_breaks));
             lhand_breaks = zeros(7,length(s_breaks));
@@ -290,7 +290,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             send_status(3,0,0,'Adjusting plan...');
             
 
-            q0 = x0(1:getNumDOF(obj.r));
+            q0 = x0(1:getNumPositions(obj.r));
             
             % get foot positions
             kinsol = doKinematics(obj.r,q0);
@@ -302,14 +302,14 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             num_l_foot_pts = size(l_foot_pts,2);
             %======================================================================================================
             if(obj.plan_cache.inTeleopMode)
-                q_samples = zeros(obj.r.getNumDOF(),length(obj.plan_cache.s));
+                q_samples = zeros(obj.r.getNumPositions(),length(obj.plan_cache.s));
                 for i =1:length(obj.plan_cache.s)
                     q_samples(:,i) = obj.plan_cache.qtraj.eval(obj.plan_cache.s(i));
                 end           
                 q_samples(:,1) =  q0; % use current pose
                 %============================
                 % have to adjust the q at time 0 IK manually
-                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,[zeros(obj.r.getNumDOF,1) q_samples zeros(obj.r.getNumDOF,1)]));            
+                obj.plan_cache.qtraj = PPTrajectory(spline(obj.plan_cache.s,[zeros(obj.r.getNumPositions,1) q_samples zeros(obj.r.getNumPositions,1)]));            
             end
             
             
@@ -659,10 +659,10 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             cost = getCostVector(obj);
             iktraj_options = IKoptions(obj.r);
             iktraj_options = iktraj_options.setDebug(true);
-            iktraj_options = iktraj_options.setQ(diag(cost(1:getNumDOF(obj.r))));
-            iktraj_options = iktraj_options.setQa(0.05*eye(getNumDOF(obj.r)));
-            iktraj_options = iktraj_options.setQv(0*eye(getNumDOF(obj.r)));
-            iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumDOF(),1),zeros(obj.r.getNumDOF(),1));            
+            iktraj_options = iktraj_options.setQ(diag(cost(1:getNumPositions(obj.r))));
+            iktraj_options = iktraj_options.setQa(0.05*eye(getNumPositions(obj.r)));
+            iktraj_options = iktraj_options.setQv(0*eye(getNumPositions(obj.r)));
+            iktraj_options = iktraj_options.setqdf(zeros(obj.r.getNumPositions(),1),zeros(obj.r.getNumPositions(),1));            
             iktraj_options = iktraj_options.setMajorIterationsLimit(400);
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -733,7 +733,7 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             %============================
             
             s_breaks = iktraj_tbreaks;
-            q_breaks = x_breaks(1:obj.r.getNumDOF,:);
+            q_breaks = x_breaks(1:obj.r.getNumPositions,:);
             %s_total = Tmax_ee*obj.plan_cache.v_desired;
             %s = linspace(0,1,max(ceil(s_total/obj.plan_arc_res)+1,15)); % Must have two points atleast
             
@@ -742,11 +742,11 @@ classdef KeyframeAdjustmentEngine < KeyframePlanner
             obj.plan_cache.s_breaks = linspace(0,1,obj.plan_cache.num_breaks);
             s = unique([s(:);obj.plan_cache.s_breaks(:);grasp_transition_breaks(:)]);
             obj.plan_cache.s = s;
-            qdot0 = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),1);
-            qdotf = x_breaks(obj.r.getNumDOF+(1:obj.r.getNumDOF),end);
+            qdot0 = x_breaks(obj.r.getNumPositions+(1:obj.r.getNumPositions),1);
+            qdotf = x_breaks(obj.r.getNumPositions+(1:obj.r.getNumPositions),end);
             qtraj_guess = PPTrajectory(spline(iktraj_tbreaks,[qdot0 q_breaks qdotf]));
             % fine grained sampling of plan.
-            q = zeros(obj.r.getNumDOF,length(s));
+            q = zeros(obj.r.getNumPositions,length(s));
             q(:,1) = q_breaks(:,1);
             for i=2:length(s)
                 si = s(i);
@@ -890,14 +890,14 @@ end% end classdef
 %  end        
 
 %  % Decide if a posture plan needs to prepended if the current robot state is not the same as the first frame in the cached plan.
-%  q0 = x0(1:getNumDOF(obj.r));
+%  q0 = x0(1:getNumPositions(obj.r));
 %  s = [0 1];
-%  nq = obj.r.getNumDOF();
+%  nq = obj.r.getNumPositions();
 %  q_start = obj.plan_cache.qtraj.eval(0);
 %  
 %  s_breaks = linspace(0,1,4);
 %  cost = getCostVector(obj);
-%  Q = diag(cost(1:getNumDOF(obj.r)));
+%  Q = diag(cost(1:getNumPositions(obj.r)));
 %  cost = (q0-q_start)'* Q*(q0-q_start); 
 %  cost_TOL = 1e-4;
 %  if(cost>cost_TOL)

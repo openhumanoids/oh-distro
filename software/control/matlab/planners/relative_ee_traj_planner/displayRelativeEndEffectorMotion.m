@@ -7,7 +7,7 @@ function displayRelativeEndEffectorMotion(ee_name,ee_pose_relative,x0,r,lcmgl)
     local_lcmgl = false;
   end
   nt = size(ee_pose_relative,2);
-  %nq = r.getNumDOF();
+  %nq = r.getNumPositions();
   %kinsol = doKinematics(r,x0(1:nq));
   %ee_idx = r.findLinkInd(ee_name);
   %ee_pose_0 = forwardKin(r,kinsol,ee_idx,[0;0;0],2);

@@ -7,7 +7,7 @@ classdef StatelessFootstepPlanner
   methods (Static=true)
     function plan = plan_footsteps(biped, request)
       x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
-      q0 = x0(1:biped.getNumDOF());
+      q0 = x0(1:biped.getNumPositions());
       feet_centers = biped.feetPosition(q0);
 
       biped = configureDRCTerrain(biped, request.params.map_mode, q0);
@@ -43,7 +43,7 @@ classdef StatelessFootstepPlanner
 
     function plan = check_footstep_plan(biped, request)
       x0 = biped.getStateFrame().lcmcoder.decode(request.initial_state);
-      q0 = x0(1:biped.getNumDOF());
+      q0 = x0(1:biped.getNumPositions());
       biped = configureDRCTerrain(biped, request.params.map_mode, q0);
       plan = FootstepPlan.from_footstep_plan_t(request.footstep_plan, biped);
       if request.snap_to_terrain

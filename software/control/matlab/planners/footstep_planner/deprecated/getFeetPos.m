@@ -2,7 +2,7 @@ function [pos, width] = getFeetPos(r, q0)
 
 typecheck(r,{'RigidBodyManipulator','TimeSteppingRigidBodyManipulator'});
 typecheck(q0,'numeric');
-sizecheck(q0,[r.getNumDOF,1]);
+sizecheck(q0,[r.getNumPositions,1]);
 
 kinsol = doKinematics(r,q0);
 rfoot_body = findLink(r,'r_foot');

@@ -10,7 +10,7 @@ load('walking_ctrl_data.mat');
 
 [t_x,x_data,t_u,u_data,state_frame,input_frame] = parseAtlasLog(r,'/home/drc/logs/raw/lcmlog-2014-07-25.60');
 
-nq = r.getNumDOF();
+nq = r.getNumPositions();
 
 
 N = length(t_u);

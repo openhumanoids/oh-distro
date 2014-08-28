@@ -23,7 +23,7 @@ classdef StepRecoveryPlanner < DRCPlanner
       else
         contact_state = struct('right_contact', true, 'left_contact', true);
       end
-      nq = getNumDOF(obj.biped);
+      nq = getNumPositions(obj.biped);
       q = data.x0(1:nq);
 
       footsteps = recoverySteps(obj.biped, data.x0, contact_state);

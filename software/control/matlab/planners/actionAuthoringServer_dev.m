@@ -63,7 +63,7 @@ r_Atlas = Atlas('../../models/mit_gazebo_models/mit_robot_drake/model_minimal_co
 r = r.addRobotFromURDF('../../models/mit_gazebo_objects/mit_vehicle/model_drake.urdf',[0;0;0],[0;0;0]);
 warning(s);
 
-nq = r.getNumDOF();
+nq = r.getNumPositions();
 % load the "zero position"
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 q_standing = xstar(1:nq);
@@ -72,7 +72,7 @@ options.q_traj_nom = ConstantTrajectory(q);
 
 %r.getStateFrame.subscribe('EST_ROBOT_STATE');
 
-joint_names = r.getStateFrame.coordinates(1:getNumDOF(r));
+joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
 robot_state_coder = LCMCoordinateFrame('AtlasState',JLCMCoder(drc.control.RobotStateConstraintCheckedCoder( joint_names)),'x');
 %robot_plan_publisher =  drc.control.RobotPlanConstraintCheckedPublisher(joint_names,true, ...
   %'RESPONSE_MOTION_PLAN_FOR_ACTION_SEQUENCE');
@@ -106,9 +106,9 @@ cost.back_bkx = 100;
 cost = double(cost);
 options = struct();
 options.q_nom = q_standing;
-options.Q = diag(cost(1:r.getNumDOF));
+options.Q = diag(cost(1:r.getNumPositions));
 [jointLimitMin, jointLimitMax] = r.getJointLimits();
-joint_names = r.getStateFrame.coordinates(1:r.getNumDOF());
+joint_names = r.getStateFrame.coordinates(1:r.getNumPositions());
 knee_ind = find(~cellfun(@isempty,strfind(joint_names,'kny')));
 elbow_ind = find(~cellfun(@isempty,strfind(joint_names,'elx')));
 back_ind = find(~cellfun(@isempty,strfind(joint_names,'ubx')) | ~cellfun(@isempty,strfind(joint_names,'mby')));
@@ -158,7 +158,7 @@ while (1)
     msg.q0.robot_name = 'atlas'; % To match robot_state_coder.lcmcoder
     x0 = robot_state_coder.lcmcoder.jcoder.decode(msg.q0).val;
     if any(x0 > eps)
-      q = x0(1:getNumDOF(r));
+      q = x0(1:getNumPositions(r));
       fprintfVerb(action_options,'Taking initial state from action sequence message\n');
     else
       fprintfVerb(action_options,'Using default standing pose for intial state\n');
@@ -611,7 +611,7 @@ while (1)
           zmp_options.useQP = true;
           zmp_options.penalizeZMP = true;
           [com_plan,planar_comdot_plan,~,zmp_plan] = zmp_planner.planning(com0(1:2),comdot0(1:2),contact_pos,com_height,t_breaks,zmp_options);
-%           q_zmp_plan = zeros(r.getNumDOF,length(t_breaks));
+%           q_zmp_plan = zeros(r.getNumPositions,length(t_breaks));
 %           q_zmp_plan(:,1) = q0;
 
           % Add com constraints to action_sequence
