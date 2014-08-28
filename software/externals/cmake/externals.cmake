@@ -3,7 +3,7 @@ set(lcm_pod_revision c43ae7d)
 set(lcm_pod_depends)
 
 set(libbot-drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/libbot-drc)
-set(libbot-drc_revision 8325)
+set(libbot-drc_revision 8329)
 set(libbot-drc_depends)
 
 set(Eigen_pod_url https://github.com/RobotLocomotion/eigen-pod.git)
