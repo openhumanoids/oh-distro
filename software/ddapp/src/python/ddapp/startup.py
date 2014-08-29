@@ -504,3 +504,78 @@ app.setCameraTerrainModeEnabled(view, True)
 app.resetCamera(viewDirection=[-1,0,0], view=view)
 viewBehaviors = viewbehaviors.ViewBehaviors(view)
 viewbehaviors.ViewBehaviors.addRobotBehaviors(robotStateModel, handFactory, footstepsDriver)
+
+
+# Drill Demo Functions for in-image rendering:
+def spawnHandAtCurrentLocation(side='left'):
+    if (side is 'left'):
+        tf = transformUtils.copyFrame( getLinkFrame( 'l_hand_face') )
+        handFactory.placeHandModelWithTransform( tf , app.getCurrentView(), 'left')
+    else:
+        tf = transformUtils.copyFrame( getLinkFrame( 'right_pointer_tip') )
+        handFactory.placeHandModelWithTransform( tf , app.getCurrentView(), 'right')
+
+def drawFrameInCamera(t, frameName='new frame',visible=True):
+
+    v = imageView.view
+    q = cameraview.imageManager.queue
+    localToCameraT = vtk.vtkTransform()
+    q.getTransform('local', 'CAMERA_LEFT', localToCameraT)
+
+    res = vis.showFrame( vtk.vtkTransform() , 'temp',view=v, visible=True, scale = 0.2)
+    om.removeFromObjectModel(res)
+    pd = res.polyData
+    pd = filterUtils.transformPolyData(pd, t)
+    pd = filterUtils.transformPolyData(pd, localToCameraT)
+    q.projectPoints('CAMERA_LEFT', pd )
+    vis.showPolyData(pd, ('overlay ' + frameName), view=v, colorByName='Axes',parent='camera overlay',visible=visible)
+
+def drawObjectInCamera(objectName,visible=True):
+    v = imageView.view
+    q = cameraview.imageManager.queue
+    localToCameraT = vtk.vtkTransform()
+    q.getTransform('local', 'CAMERA_LEFT', localToCameraT)
+
+    obj = om.findObjectByName(objectName)
+    if obj is None:
+        return
+    objToLocalT = transformUtils.copyFrame(obj.actor.GetUserTransform() or vtk.vtkTransform())
+    objPolyDataOriginal = obj.polyData
+    pd = objPolyDataOriginal
+    pd = filterUtils.transformPolyData(pd, objToLocalT)
+    pd = filterUtils.transformPolyData(pd, localToCameraT)
+    q.projectPoints('CAMERA_LEFT', pd)
+    vis.showPolyData(pd, ('overlay ' + objectName), view=v, color=[0,1,0],parent='camera overlay',visible=visible)
+
+def projectDrillDemoInCamera():
+    q = om.findObjectByName('camera overlay')
+    om.removeFromObjectModel(q)
+
+    imageView = cameraview.views['CAMERA_LEFT']
+    imageView.imageActor.SetOpacity(.2)
+
+    drawFrameInCamera(drillDemo.drill.frame.transform, 'drill frame',visible=False)
+
+    tf = transformUtils.copyFrame( drillDemo.drill.frame.transform )
+    tf.PreMultiply()
+    tf.Concatenate( drillDemo.drill.drillToButtonTransform )
+    drawFrameInCamera(tf, 'drill button')
+
+
+    tf2 = transformUtils.copyFrame( tf )
+    tf2.PreMultiply()
+    tf2.Concatenate( transformUtils.frameFromPositionAndRPY( [0,0,0] , [180,0,0] ) )
+    drawFrameInCamera(tf2, 'drill button flip')
+
+    drawObjectInCamera('drill',visible=False)
+
+    drawObjectInCamera('sensed pointer tip')
+    obj = om.findObjectByName('sensed pointer tip frame')
+    if (obj is not None):
+        drawFrameInCamera(obj.transform, 'sensed pointer tip frame',visible=False)
+
+    #drawObjectInCamera('left robotiq',visible=False)
+    #drawObjectInCamera('right pointer',visible=False)
+
+    v = imageView.view
+    v.render()

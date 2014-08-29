@@ -54,10 +54,6 @@ class Drill(object):
 
         # params:
         self.model="dewalt_button"
-        self.faceToDrillRotation = 90
-        self.faceToDrillOffset = 0
-        self.faceToDrillDepthOffset = 0
-        self.faceToDrillFlip = False
 
         # initial drill position (requires walking)
         self.initXYZ = [1.5, 0.6, 0.9] # height requires crouching
@@ -146,8 +142,7 @@ class DrillPlannerDemo(object):
         self.cutLength = 0.05 # length to cut each time
         self.retractBitDepthNominal = -0.055 # depth to move drill away from wall
         self.goalThreshold = 0.05 # how close we need to get to the cut goal (the triangle corners
-
-        self.retractPointerDepthNominal = -0.05 # depth to approach the drill button without touching it
+        self.usePointerPerceptionOffset = True
 
         #extraModels = [self.robotModel, self.playbackRobotModel, self.teleopRobotModel]
         #self.affordanceUpdater  = affordancegraspupdater.AffordanceGraspUpdater(self.playbackRobotModel, extraModels)
@@ -162,15 +157,15 @@ class DrillPlannerDemo(object):
             self.wall.relativeStanceRPY = [0, 0, -90]
             self.wall.relativeStanceFarXYZ = [-0.3, 1.25, 0]
             self.wall.relativeStanceFarRPY = [0, 0, -90]
-            if ( self.graspingHand == 'right' ):
-                self.drill.faceToDrillRotation = -90
+            #if ( self.graspingHand == 'right' ):
+            #    self.drill.faceToDrillRotation = -90
 
         if ( self.graspingHand == 'right' ):
             print "Planning with drill in the right hand"
             self.drill.relativeStanceXYZ[1] = -self.drill.relativeStanceXYZ[1]
             self.drill.graspFrameRPY = [0,-90,-90]
             self.drill.initXYZ[1] = -self.drill.initXYZ[1]
-            self.drill.faceToDrillFlip = True
+            #self.drill.faceToDrillFlip = True
 
             self.wall.rightAngleLocation = "bottom right"
             self.wall.initXYZ[1] = -self.wall.initXYZ[1]
@@ -365,10 +360,8 @@ class DrillPlannerDemo(object):
         # what will be its position, relative to the l_hand_face (or other)
         # Updated to read the settings from the gui panel.
         # TODO: should I avoid calling to faceToDrillTransform and only use computeFaceToDrillTransform to avoid inconsistance?
-
-        self.drill.faceToDrillRotation, self.drill.faceToDrillOffset, self.drill.faceToDrillDepthOffset , self.drill.faceToDrillFlip = self.segmentationpanel._segmentationPanel.getDrillInHandParams()
-
-        self.drill.faceToDrillTransform = segmentation.getDrillInHandOffset(self.drill.faceToDrillRotation, self.drill.faceToDrillOffset, self.drill.faceToDrillDepthOffset, self.drill.faceToDrillFlip)
+        rotation, offset, depthOffset, lateralOffset, flip = self.segmentationpanel._segmentationPanel.getDrillInHandParams()
+        self.drill.faceToDrillTransform = segmentation.getDrillInHandOffset(rotation, offset, depthOffset, lateralOffset, flip)
 
 
     def spawnDrillAffordance(self):
@@ -582,36 +575,41 @@ class DrillPlannerDemo(object):
         graspPlan = constraintSet.runIkTraj()
         self.addPlan(graspPlan)
 
+    def planBothRaisePowerOn(self):
+        startPose = self.getPlanningStartPose()
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'both raise power on', side=self.graspingHand)
+        newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
+        self.addPlan(newPlan)
 
     def planDrillRaisePowerOn(self):
         startPose = self.getPlanningStartPose()
-        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'drill in camera - 2014', side=self.graspingHand)
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'drill raise power on', side=self.graspingHand)
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)
 
     def planPointerRaisePowerOn(self):
         startPose = self.getPlanningStartPose()
-        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'drill in camera - 2014 pointer', side=self.pointerHand )
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'pointer raise power on', side=self.pointerHand )
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)
 
     def planPointerLowerPowerOn(self):
         startPose = self.getPlanningStartPose()
-        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'one hand down - 2014', side=self.pointerHand )
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'pointer down', side=self.pointerHand )
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)
 
 
     def planDrillLowerSafe(self):
         startPose = self.getPlanningStartPose()
-        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'one hand down with drill - 2014', side=self.graspingHand )
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'drill down', side=self.graspingHand )
         newPlan = self.ikPlanner.computePostureGoal(startPose, endPose)
         self.addPlan(newPlan)
 
 
     def planDrillRaiseForCutting(self):
         startPose = self.getPlanningStartPose()
-        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'drill near target - 2014', side=self.graspingHand )
+        endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'drill', 'drill raise for cutting', side=self.graspingHand )
 
         if (self.drill.model == 'dewalt_barrel'):
            endPose = self.ikPlanner.getMergedPostureFromDatabase(startPose, 'General', 'arm up pregrasp', side=self.graspingHand)
@@ -669,19 +667,38 @@ class DrillPlannerDemo(object):
         #pointerToHandLinkFrame = self.ikPlanner.newGraspToHandFrame(gazeHand)
 
         # NB: uses the end of the pointer:
+        startPose = self.getPlanningStartPose()
         pointerFrameName = '%s_pointer_end' % self.pointerHand
         handFrameName = '%s_hand' % self.pointerHand[0]
+        handTransform= self.ikPlanner.getLinkFrameAtPose( handFrameName, startPose)
 
-        startPose = self.getPlanningStartPose()
+        if (self.usePointerPerceptionOffset is False): # actually attempt to move the FK poker to the mark
+            pointerTransform= self.ikPlanner.getLinkFrameAtPose( pointerFrameName, startPose)
+            #vis.updateFrame(handTransform, "handTransform", visible=True)
+            #vis.updateFrame(pointerTransform, "pointerTransform", visible=True)
+        else: # move a point near to but facing in the same axis as the FK poker to the mark
+            pointerTransform= self.ikPlanner.getLinkFrameAtPose( pointerFrameName, startPose)
+            pointerSensedTransformTemp = transformUtils.copyFrame(om.findObjectByName("sensed pointer tip").actor.GetUserTransform())
+            pointerSensedTransform = transformUtils.frameFromPositionAndRPY(pointerSensedTransformTemp.GetPosition() ,  np.array(transformUtils.rollPitchYawFromTransform(pointerTransform))*180/np.pi )
+
+            vis.updateFrame(handTransform, "handTransform", visible=False)
+            vis.updateFrame(pointerTransform, "pointerTransform", visible=False)
+            vis.updateFrame(pointerSensedTransform, "pointerSensedTransform", visible=False)
+            pointerTransform = transformUtils.copyFrame(pointerSensedTransform)
+
         pointerToHandLinkFrame = vtk.vtkTransform()
         pointerToHandLinkFrame.PostMultiply()
-        pointerToHandLinkFrame.Concatenate( self.ikPlanner.getLinkFrameAtPose( pointerFrameName, startPose) )
-        pointerToHandLinkFrame.Concatenate( self.ikPlanner.getLinkFrameAtPose( handFrameName , startPose).GetLinearInverse() )
+        pointerToHandLinkFrame.Concatenate( pointerTransform )
+        pointerToHandLinkFrame.Concatenate( handTransform.GetLinearInverse() )
+
 
         return pointerToHandLinkFrame
 
 
-    def planPointerPressGaze(self, pressButton=True):
+    def planPointerPressGaze(self, pointerDepth=0.00):
+        # move to a point along the button axis
+        # pointerDepth is negative is away from the drill and positive is inside drill
+
         self.moveDrillToHand()
 
         # change the nominal pose to the start pose ... q_nom was unreliable when used repeated
@@ -689,19 +706,16 @@ class DrillPlannerDemo(object):
 
         # 1. determine the goal position
         worldToButton = self.getWorldToButton( self.getPlanningStartPose() )
-        # move to just back from the button or go stright for the press
-        if (pressButton is False):
-            worldToPress = transformUtils.copyFrame(worldToButton)
-            worldToPress.PreMultiply()
-            t3 = transformUtils.frameFromPositionAndRPY( [0,0.0, self.retractPointerDepthNominal] , [0,0,0] )
-            worldToPress.Concatenate(t3)
-        else:
-            worldToPress = transformUtils.copyFrame(worldToButton)
+        worldToPress = transformUtils.copyFrame(worldToButton)
+        worldToPress.PreMultiply()
+        t3 = transformUtils.frameFromPositionAndRPY( [0,0.0, pointerDepth] , [0,0,0] )
+        worldToPress.Concatenate(t3)
 
         worldToPressFrame = vis.updateFrame(worldToPress, 'button press goal', visible=False, scale=0.2, parent=om.getOrCreateContainer('affordances'))
 
         # 2. add gaze constraint along the pointer tip hand
         pointerToHandLinkFrame = self.getPointerToHandFrame()
+
         # this mirrors the y-axis pointer for left and right:
         bodyAxisTip = self.ikPlanner.getPalmToHandLink(self.pointerHand).TransformVector([0,1,0])
         #was: bodyAxisTip =[0.0, -1.0, 0.0]
@@ -794,6 +808,27 @@ class DrillPlannerDemo(object):
         self.worldToNextCut = transformUtils.copyFrame( self.goalToNextCut )
         self.worldToNextCut.Concatenate( self.nextCutGoalFrame.transform )
         self.nextCutFrame = vis.updateFrame(self.worldToNextCut, 'next cut', visible=True, scale=0.2)
+
+
+    def moveDrillToSensedButton(self):
+        ''' Take the position of the sensed button and the current orientation of the drill aff
+            Move the drill the the position inferred by the sensed button
+        '''
+        buttonSensedTransform = transformUtils.copyFrame(om.findObjectByName("sensed drill button").actor.GetUserTransform())
+        drillTransformOriginal = self.drill.affordance.actor.GetUserTransform()
+        buttonTransformOriginal = transformUtils.copyFrame( drillTransformOriginal )
+        buttonTransformOriginal.PreMultiply()
+        buttonTransformOriginal.Concatenate(self.drill.drillToButtonTransform)
+
+        buttonTransformNew = transformUtils.frameFromPositionAndRPY(buttonSensedTransform.GetPosition() ,  np.array(transformUtils.rollPitchYawFromTransform( buttonTransformOriginal ))*180/np.pi )
+        drillTransformNew = transformUtils.copyFrame(buttonTransformNew)
+        drillTransformNew.PreMultiply()
+        t3 = transformUtils.copyFrame ( self.drill.drillToButtonTransform.GetLinearInverse() )
+        drillTransformNew.Concatenate(t3)
+
+        self.drill.affordance.actor.SetUserTransform(drillTransformNew)
+        self.drill.frame = vis.updateFrame(drillTransformNew, 'drill frame', parent=self.drill.affordance, visible=False, scale=0.2)
+
 
 
     def computeNextCutDesired(self):
@@ -1070,12 +1105,12 @@ class DrillPlannerDemo(object):
         self.planDrillRaisePowerOn()
         self.planPointerRaisePowerOn()
 
-        self.planPointerPressGaze()
-        self.planPointerPressGaze(False)
-        self.planPointerPressGaze()
-        self.planPointerPressGaze(False)
-        self.planPointerPressGaze()
-        self.planPointerPressGaze(False)
+        self.planPointerPressGaze(0)
+        self.planPointerPressGaze(-0.02)
+        self.planPointerPressGaze(0)
+        self.planPointerPressGaze(-0.02)
+        self.planPointerPressGaze(0)
+        self.planPointerPressGaze(-0.02)
         self.planPointerRaisePowerOn()
 
         self.planPointerLowerPowerOn()

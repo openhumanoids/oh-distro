@@ -155,6 +155,7 @@ class DisparityPointCloudItem(vis.PolyDataItem):
 
         self.addProperty('Decimation', 2, attributes=om.PropertyAttributes(enumNames=['1', '2', '4', '8', '16']))
         self.addProperty('Remove outliers', False)
+        self.addProperty('Target FPS', 1.0, attributes=om.PropertyAttributes(decimals=1, minimum=0.1, maximum=10.0, singleStep=0.1))
 
         self.timer = TimerCallback()
         self.timer.callback = self.update
@@ -184,6 +185,11 @@ class DisparityPointCloudItem(vis.PolyDataItem):
 
         utime = self.imageManager.queue.getCurrentImageTime(self.cameraName)
         if utime == self.lastUtime:
+            return
+
+        if (utime < self.lastUtime ):
+            temp=0 # dummy
+        elif (utime - self.lastUtime < 1E6/self.getProperty('Target FPS')):
             return
 
         decimation = int(self.properties.getPropertyEnumValue('Decimation'))
@@ -500,7 +506,9 @@ def getDisparityPointCloud(decimation=4, removeOutliers=True):
       return None
 
     if removeOutliers:
-        p = labelOutliers(p)
+        # attempt to scale outlier filtering, best tuned for decimation of 2 or 4
+        scaling = (10*16)/(decimation*decimation)
+        p = labelOutliers(p, searchRadius=0.06, neighborsInSearchRadius=scaling)
         p = thresholdPoints(p, 'is_outlier', [0.0, 0.0])
 
     return p
@@ -2318,6 +2326,35 @@ def segmentDrillAuto(point1):
     aff.addToView(app.getDRCView())
 
 
+
+def segmentDrillButton(point1):
+    d = DebugData()
+    d.addSphere([0,0,0], radius=0.005)
+    obj = updatePolyData(d.getPolyData(), 'sensed drill button', color=[0,0.5,0.5], visible=True)
+
+    # there is no orientation, but this allows the XYZ point to be queried
+    pointerTipFrame = transformUtils.frameFromPositionAndRPY(point1, [0,0,0])
+    obj.actor.SetUserTransform(pointerTipFrame)
+    obj.addToView(app.getDRCView())
+
+    frameObj = updateFrame(obj.actor.GetUserTransform(), 'sensed drill button frame', parent=obj, scale=0.2, visible=False)
+    frameObj.addToView(app.getDRCView())
+
+
+def segmentPointerTip(point1):
+    d = DebugData()
+    d.addSphere([0,0,0], radius=0.005)
+    obj = updatePolyData(d.getPolyData(), 'sensed pointer tip', color=[0.5,0.5,0.0], visible=True)
+
+    # there is no orientation, but this allows the XYZ point to be queried
+    pointerTipFrame = transformUtils.frameFromPositionAndRPY(point1, [0,0,0])
+    obj.actor.SetUserTransform(pointerTipFrame)
+    obj.addToView(app.getDRCView())
+
+    frameObj = updateFrame(obj.actor.GetUserTransform(), 'sensed pointer tip frame', parent=obj, scale=0.2, visible=False)
+    frameObj.addToView(app.getDRCView())
+
+
 def fitGroundObject(polyData=None, expectedDimensionsMin=[0.2, 0.02], expectedDimensionsMax=[1.3, 0.1]):
 
     removeGroundFunc = removeGroundSimple
@@ -2600,7 +2637,7 @@ def segmentDrillAlignedWithTable(point):
     #print dp
 
     if np.dot(axes[1], viewDirection) < 0:
-        print "flip the x-direction"
+        #print "flip the x-direction"
         axes[1] = -axes[1]
 
 
@@ -2719,7 +2756,7 @@ def addDrillAffordance():
 
 
 def getLinkFrame(linkName):
-    robotStateModel = om.findObjectByName('model publisher')
+    robotStateModel = om.findObjectByName('robot state model')
     robotStateModel = robotStateModel or getVisibleRobotModel()
     assert robotStateModel
     t = vtk.vtkTransform()
@@ -2727,7 +2764,7 @@ def getLinkFrame(linkName):
     return t
 
 
-def getDrillInHandOffset(zRotation=0.0, zTranslation=0.0, xTranslation=0.0, flip=False):
+def getDrillInHandOffset(zRotation=0.0, zTranslation=0.0, xTranslation=0.0, yTranslation=0.0,flip=False):
 
     drillOffset = vtk.vtkTransform()
     drillOffset.PostMultiply()
@@ -2737,7 +2774,7 @@ def getDrillInHandOffset(zRotation=0.0, zTranslation=0.0, xTranslation=0.0, flip
     drillOffset.RotateY(-90)
     #drillOffset.Translate(0, 0.09, zTranslation - 0.015)
     #drillOffset.Translate(zTranslation - 0.015, 0.035 + xTranslation, 0.0)
-    drillOffset.Translate(zTranslation - 0.015, 0.045 + xTranslation, 0.0)
+    drillOffset.Translate(zTranslation, xTranslation, 0.0 + yTranslation)
     return drillOffset
 
 
@@ -2833,6 +2870,11 @@ class PointPicker(TimerCallback):
     def tick(self):
 
         if not self.enabled:
+            return
+
+        if not om.findObjectByName('pointcloud snapshot'):
+            self.annotationFunc = None
+            self.finish()
             return
 
         self.hoverPos = pickPoint(self.lastMovePos, getSegmentationView(), obj='pointcloud snapshot')
@@ -3715,6 +3757,26 @@ def startDrillAutoSegmentation():
     picker.drawLines = False
     picker.start()
     picker.annotationFunc = functools.partial(segmentDrillAuto)
+
+
+def startDrillButtonSegmentation():
+
+    picker = PointPicker(numberOfPoints=1)
+    addViewPicker(picker)
+    picker.enabled = True
+    picker.drawLines = False
+    picker.start()
+    picker.annotationFunc = functools.partial(segmentDrillButton)
+
+
+def startPointerTipSegmentation():
+
+    picker = PointPicker(numberOfPoints=1)
+    addViewPicker(picker)
+    picker.enabled = True
+    picker.drawLines = False
+    picker.start()
+    picker.annotationFunc = functools.partial(segmentPointerTip)
 
 
 def startDrillAutoSegmentationAlignedWithTable():
