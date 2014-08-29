@@ -66,7 +66,7 @@ def getCurrentView():
 
 def cropToLineSegment(polyData, point1, point2):
 
-    line = point2 - point1
+    line = np.array(point2) - np.array(point1)
     length = np.linalg.norm(line)
     axis = line / length
 
@@ -2917,8 +2917,8 @@ def distanceToLine(x0, x1, x2):
 def labelDistanceToLine(polyData, linePoint1, linePoint2, resultArrayName='distance_to_line'):
 
     x0 = vtkNumpy.getNumpyFromVtk(polyData, 'Points')
-    x1 = linePoint1
-    x2 = linePoint2
+    x1 = np.array(linePoint1)
+    x2 = np.array(linePoint2)
 
     numerator = np.sqrt(np.sum(np.cross((x0 - x1), (x0-x2))**2, axis=1))
     denom = np.linalg.norm(x2-x1)
@@ -3510,6 +3510,83 @@ def segmentBlockByPlanes(blockDimensions):
     params = dict(origin=origin, xwidth=xwidth, ywidth=ywidth, zwidth=zwidth, xaxis=xaxis, yaxis=yaxis, zaxis=zaxis)
     obj.setAffordanceParams(params)
     obj.updateParamsFromActorTransform()
+
+
+def estimatePointerTip(robotModel, polyData):
+    '''
+    Given a robot model, uses forward kinematics to determine a pointer tip
+    search region, then does a ransac line fit in the search region to find
+    points on the pointer, and selects the maximum point along the line fit
+    as the pointer tip.  Returns the pointer tip xyz on success and returns
+    None on failure.
+    '''
+    palmFrame = robotModel.getLinkFrame('r_hand_force_torque')
+    p1 = [0.0, 0.01, 0.0]
+    p2 = [0.0, 0.19, 0.0]
+
+    palmFrame.TransformPoint(p1, p1)
+    palmFrame.TransformPoint(p2, p2)
+
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+
+    d = DebugData()
+    d.addSphere(p1, radius=0.005)
+    d.addSphere(p2, radius=0.005)
+    d.addLine(p1, p2)
+    vis.updatePolyData(d.getPolyData(), 'pointer line', color=[1,0,0], parent=getDebugFolder(), visible=False)
+
+    polyData = cropToLineSegment(polyData, p1, p2)
+    if not polyData.GetNumberOfPoints():
+        #print 'pointer search region is empty'
+        return None
+
+    vis.updatePolyData(polyData, 'cropped to pointer line', parent=getDebugFolder(), visible=False)
+
+    polyData = labelDistanceToLine(polyData, p1, p2)
+
+    polyData = thresholdPoints(polyData, 'distance_to_line', [0.0, 0.07])
+
+    if polyData.GetNumberOfPoints() < 2:
+        #print 'pointer search region is empty'
+        return None
+
+    updatePolyData(polyData, 'distance to pointer line', colorByName='distance_to_line', parent=getDebugFolder(), visible=False)
+
+    ransacDistanceThreshold = 0.0075
+    lineOrigin, lineDirection, polyData = applyLineFit(polyData, distanceThreshold=ransacDistanceThreshold)
+    updatePolyData(polyData, 'line fit ransac', colorByName='ransac_labels', parent=getDebugFolder(), visible=False)
+
+
+    lineDirection = np.array(lineDirection)
+    lineDirection /= np.linalg.norm(lineDirection)
+
+    if np.dot(lineDirection, (p2 - p1)) < 0:
+        lineDirection *= -1
+
+    polyData = thresholdPoints(polyData, 'ransac_labels', [1.0, 1.0])
+
+    if polyData.GetNumberOfPoints() < 2:
+        #print 'pointer ransac line fit failed to find inliers'
+        return None
+
+    obj = updatePolyData(polyData, 'line fit points', colorByName='dist_along_line', parent=getDebugFolder(), visible=True)
+    obj.setProperty('Point Size', 5)
+
+    pts = vtkNumpy.getNumpyFromVtk(polyData, 'Points')
+
+    dists = np.dot(pts-lineOrigin, lineDirection)
+
+    p1 = lineOrigin + lineDirection*np.min(dists)
+    p2 = lineOrigin + lineDirection*np.max(dists)
+
+    d = DebugData()
+    #d.addSphere(p1, radius=0.005)
+    d.addSphere(p2, radius=0.005)
+    d.addLine(p1, p2)
+    vis.updatePolyData(d.getPolyData(), 'fit pointer line', color=[0,1,0], parent=getDebugFolder(), visible=True)
+
+    return p2
 
 
 def startBoundedPlaneSegmentation():
