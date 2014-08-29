@@ -115,7 +115,7 @@
       }, 
       "name": "handsdown both", 
       "nominal_handedness": "none"
-    },
+    }, 
     {
       "allow_mirror": true, 
       "description": "bdi nominal", 
@@ -1210,7 +1210,7 @@
       }, 
       "name": "drill near target - 2014", 
       "nominal_handedness": "left"
-    },
+    }, 
     {
       "allow_mirror": true, 
       "description": "one hand down - 2014", 
@@ -1224,7 +1224,7 @@
       }, 
       "name": "one hand down - 2014", 
       "nominal_handedness": "right"
-    },
+    }, 
     {
       "allow_mirror": true, 
       "description": "one hand down with drill - 2014", 
@@ -1241,6 +1241,62 @@
       }, 
       "name": "one hand down with drill - 2014", 
       "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - LEFT 2014", 
+      "joints": {
+        "l_arm_elx": 1.955984115600586, 
+        "l_arm_ely": 1.7383400201797485, 
+        "l_arm_mwx": 0.22407197952270508, 
+        "l_arm_shx": 0.009102821350097656, 
+        "l_arm_usy": -0.26963281631469727, 
+        "l_arm_uwy": 0.024385511875152588
+      }, 
+      "name": "drill in camera - LEFT 2014", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - 2014 LEFT", 
+      "joints": {
+        "l_arm_elx": 1.9557924270629883, 
+        "l_arm_ely": 1.7382441759109497, 
+        "l_arm_mwx": 0.22407197952270508, 
+        "l_arm_shx": 0.009102821350097656, 
+        "l_arm_usy": -0.26963281631469727, 
+        "l_arm_uwy": 0.024385511875152588
+      }, 
+      "name": "drill in camera - 2014 LEFT", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - 2014 RIGHT", 
+      "joints": {
+        "l_arm_elx": 1.955888271331787, 
+        "l_arm_ely": 1.7383400201797485, 
+        "l_arm_mwx": 0.22407197952270508, 
+        "l_arm_shx": 0.009199142456054688, 
+        "l_arm_usy": -0.2697286605834961, 
+        "l_arm_uwy": 0.024385511875152588
+      }, 
+      "name": "drill in camera - 2014 RIGHT", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "drill in camera - 2014 RIGHT 2", 
+      "joints": {
+        "r_arm_elx": -1.979742169380188, 
+        "r_arm_ely": 1.8336384296417236, 
+        "r_arm_mwx": -0.5188412666320801, 
+        "r_arm_shx": 1.2585715055465698, 
+        "r_arm_usy": -0.5391398668289185, 
+        "r_arm_uwy": 2.5829949378967285
+      }, 
+      "name": "drill in camera - 2014 RIGHT 2", 
+      "nominal_handedness": "right"
     }
   ], 
   "hose": [
