@@ -2,20 +2,6 @@
   "General": [
     {
       "allow_mirror": true, 
-      "description": "handdown", 
-      "joints": {
-        "r_arm_elx": -0.4582, 
-        "r_arm_ely": 1.8040870559, 
-        "r_arm_mwx": 0.051782415, 
-        "r_arm_shx": 1.297657576, 
-        "r_arm_usy": 0.239791974, 
-        "r_arm_uwy": 0.009811
-      }, 
-      "name": "handdown", 
-      "nominal_handedness": "right"
-    },
-    {
-      "allow_mirror": true, 
       "description": "crane", 
       "joints": {
         "l_arm_elx": 1.6182986497879028, 
@@ -27,27 +13,7 @@
       }, 
       "name": "crane", 
       "nominal_handedness": "left"
-    },
-    {
-      "allow_mirror": true, 
-      "description": "handsdown both", 
-      "joints": {
-        "l_arm_elx": 0.45820000767707825, 
-        "l_arm_ely": 1.8040870428085327, 
-        "l_arm_mwx": -0.05178241431713104, 
-        "l_arm_shx": -1.2976576089859009, 
-        "l_arm_usy": 0.23979197442531586, 
-        "l_arm_uwy": 0.00981099996715784, 
-        "r_arm_elx": -0.45820000767707825, 
-        "r_arm_ely": 1.8040870428085327, 
-        "r_arm_mwx": 0.05178241431713104, 
-        "r_arm_shx": 1.2976576089859009, 
-        "r_arm_usy": 0.23979197442531586, 
-        "r_arm_uwy": 0.00981099996715784
-      }, 
-      "name": "handsdown both", 
-      "nominal_handedness": "none"
-    },
+    }, 
     {
       "allow_mirror": true, 
       "description": "arm down thumb in", 
@@ -75,38 +41,42 @@
       }, 
       "name": "arm up pregrasp", 
       "nominal_handedness": "left"
-    }
-  ], 
-  "table clearing": [
-    {
-      "allow_mirror": true, 
-      "description": "pre drop 1", 
-      "joints": {
-        "l_arm_elx": 0.7594979405403137, 
-        "l_arm_ely": 2.635584831237793, 
-        "l_arm_mwx": 1.1780999898910522, 
-        "l_arm_shx": -0.22554022073745728, 
-        "l_arm_usy": -1.5707999467849731, 
-        "l_arm_uwy": 0.35651132464408875
-      }, 
-      "name": "pre drop 1", 
-      "nominal_handedness": "left"
     }, 
     {
       "allow_mirror": true, 
-      "description": "pre drop 2", 
+      "description": "handsdown both", 
       "joints": {
-        "l_arm_elx": 1.047195553779602, 
-        "l_arm_ely": 2.348259210586548, 
-        "l_arm_mwx": 1.1780999898910522, 
-        "l_arm_shx": -0.6505333185195923, 
-        "l_arm_usy": -1.4518001079559326, 
-        "l_arm_uwy": 1.5549284219741821
+        "l_arm_elx": 0.5006033182144165, 
+        "l_arm_ely": 2.100071907043457, 
+        "l_arm_mwx": 0.006528913974761963, 
+        "l_arm_shx": -1.3302499055862427, 
+        "l_arm_usy": 0.2700333595275879, 
+        "l_arm_uwy": 0.024209260940551758, 
+        "r_arm_elx": -0.5008605718612671, 
+        "r_arm_ely": 2.0998172760009766, 
+        "r_arm_mwx": 0.0005802512168884277, 
+        "r_arm_shx": 1.3302150964736938, 
+        "r_arm_usy": 0.27055978775024414, 
+        "r_arm_uwy": 0.02374020218849182
       }, 
-      "name": "pre drop 2", 
+      "name": "handsdown both", 
+      "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "handdown", 
+      "joints": {
+        "l_arm_elx": 0.5006033182144165, 
+        "l_arm_ely": 2.100167989730835, 
+        "l_arm_mwx": 0.006528913974761963, 
+        "l_arm_shx": -1.3301540613174438, 
+        "l_arm_usy": 0.2700333595275879, 
+        "l_arm_uwy": 0.024209260940551758
+      }, 
+      "name": "handdown", 
       "nominal_handedness": "left"
     }
-  ],
+  ], 
   "drill": [
     {
       "allow_mirror": true, 
@@ -203,6 +173,36 @@
       }, 
       "name": "both raise power on", 
       "nominal_handedness": "none"
+    }
+  ], 
+  "table clearing": [
+    {
+      "allow_mirror": true, 
+      "description": "pre drop 1", 
+      "joints": {
+        "l_arm_elx": 0.7594979405403137, 
+        "l_arm_ely": 2.635584831237793, 
+        "l_arm_mwx": 1.1780999898910522, 
+        "l_arm_shx": -0.22554022073745728, 
+        "l_arm_usy": -1.5707999467849731, 
+        "l_arm_uwy": 0.35651132464408875
+      }, 
+      "name": "pre drop 1", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "pre drop 2", 
+      "joints": {
+        "l_arm_elx": 1.047195553779602, 
+        "l_arm_ely": 2.348259210586548, 
+        "l_arm_mwx": 1.1780999898910522, 
+        "l_arm_shx": -0.6505333185195923, 
+        "l_arm_usy": -1.4518001079559326, 
+        "l_arm_uwy": 1.5549284219741821
+      }, 
+      "name": "pre drop 2", 
+      "nominal_handedness": "left"
     }
   ]
 }
