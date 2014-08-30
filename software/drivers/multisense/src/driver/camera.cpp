@@ -208,7 +208,7 @@ struct Camera::ColorData {
       // destImageP->imageData   = reinterpret_cast<char*>(&(msg.data[0]));
       msg_.size = isize;
       msg_.pixelformat = destImageP_->nChannels==1 ?
-        bot_core::image_t::PIXEL_FORMAT_RGB : bot_core::image_t::PIXEL_FORMAT_GRAY;
+        bot_core::image_t::PIXEL_FORMAT_GRAY : bot_core::image_t::PIXEL_FORMAT_RGB;
     }
     
     msg_.utime = data_utime;
