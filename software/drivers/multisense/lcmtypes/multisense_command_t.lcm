@@ -5,6 +5,7 @@ struct command_t
    int64_t utime;
    float fps;
    float gain;
+   int32_t exposure_us;
    
    float rpm;
    int8_t agc;   // -1 for ignore, 0 for off, 1 for on
