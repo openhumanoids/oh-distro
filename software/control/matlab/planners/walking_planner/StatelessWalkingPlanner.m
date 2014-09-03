@@ -1,6 +1,11 @@
 classdef StatelessWalkingPlanner
   methods
     function obj = StatelessWalkingPlanner()
+      % warm up the LQR function. The first call to lqr() in matlab 2014a is 
+      % ludicrously slow (by a factor of 100, generally), but subsequent calls 
+      % are all fast. We can save time by solving a trivial LQR problem first,
+      % so that our later calls to lqr() will be faster. 
+      lqr(1,1,1,1,0);
     end
   end
 
