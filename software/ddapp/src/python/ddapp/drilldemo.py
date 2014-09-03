@@ -113,6 +113,7 @@ class DrillPlannerDemo(object):
         self.showPoseFunction = showPoseFunction
         self.cameraView = cameraView
         self.segmentationpanel = segmentationpanel
+        self.pointerTracker = None
         self.segmentationpanel.init() # TODO: check with Pat. I added dependency on segmentationpanel, but am sure its appropriate
 
         defaultGraspingHand = "left"
@@ -122,7 +123,7 @@ class DrillPlannerDemo(object):
         self.useFootstepPlanner = True
         self.visOnly = False # True for development, False for operation
         self.planFromCurrentRobotState = True # False for development, True for operation
-        useDevelopment = True
+        useDevelopment = False
         if (useDevelopment):
             self.visOnly = True # True for development, False for operation
             self.planFromCurrentRobotState = False # False for development, True for operation
@@ -190,12 +191,51 @@ class DrillPlannerDemo(object):
 
         pickedPoint = msg.cxy
         self.tagImageUtime = msg.utime
-        self.tagPosition, self.tagRay = self.cameraView.views['CAMERA_LEFT'].getPositionAndRay(pickedPoint, self.tagImageUtime)
+        self.tagPosition, self.tagRay = self.cameraView.views['CAMERA_LEFT'].getWorldPositionAndRay(pickedPoint, self.tagImageUtime)
 
         # don't want to automatically update - in case of a misdetection:
         updateAutomatically = True
         if (updateAutomatically):
             self.refitDrillWallFromTag()
+
+
+    def onImageViewDoubleClick(self, displayPoint, modifiers, imageView):
+
+        if modifiers != QtCore.Qt.ControlModifier:
+            return
+
+        imagePixel = imageView.getImagePixel(displayPoint)
+        cameraPos, ray = imageView.getWorldPositionAndRay(imagePixel)
+
+
+        polyData = segmentation.getDisparityPointCloud(decimation=1, removeOutliers=False)
+        pickPoint = segmentation.extractPointsAlongClickRay(cameraPos, ray, polyData)
+
+        buttonT = vtk.vtkTransform()
+        buttonT.Translate(pickPoint)
+
+        d = DebugData()
+        d.addSphere((0,0,0), radius=0.005)
+        obj = vis.updatePolyData(d.getPolyData(), 'sensed drill button', parent='segmentation', color=[1,0,0])
+        obj.actor.SetUserTransform(buttonT)
+
+        om.removeFromObjectModel(om.findObjectByName('drill'))
+
+        om.findObjectByName('intersecting ray').setProperty('Visible', False)
+        om.findObjectByName('ray points').setProperty('Visible', False)
+
+        self.spawnDrillAffordance()
+        self.moveDrillToHand()
+        self.moveDrillToSensedButton()
+
+        if self.pointerTracker:
+            self.pointerTracker.updateFit(polyData)
+            pointerTip = self.pointerTracker.getPointerTip()
+            t = vtk.vtkTransform()
+            t.Translate(pointerTip)
+            d.addSphere((0,0,0), radius=0.005)
+            obj = vis.updatePolyData(d.getPolyData(), 'sensed pointer tip', parent='segmentation', color=[1,0,0])
+            obj.actor.SetUserTransform(t)
 
 
     def refitDrillWallFromTag(self):
@@ -329,7 +369,7 @@ class DrillPlannerDemo(object):
         objectTransform = transformUtils.copyFrame( self.drill.graspFrame.transform )
         self.drill.relativeStanceTransform = transformUtils.copyFrame( transformUtils.frameFromPositionAndRPY( self.drill.relativeStanceXYZ , self.drill.relativeStanceRPY ) )
         robotStance = self.computeRobotStanceFrame( objectTransform, self.drill.relativeStanceTransform )
-        self.drill.stanceFrame = vis.updateFrame(robotStance, 'drill stance', parent=self.drill.affordance, visible=True, scale=0.2)
+        self.drill.stanceFrame = vis.updateFrame(robotStance, 'drill stance', parent=self.drill.affordance, visible=False, scale=0.2)
         self.drill.stanceFrame.addToView(app.getDRCView())
 
 
@@ -351,7 +391,7 @@ class DrillPlannerDemo(object):
 
         self.drill.drillToBitTransform = transformUtils.copyFrame(t)
         t.Concatenate(transformUtils.copyFrame( self.drill.frame.transform))
-        self.drill.bitFrame = vis.updateFrame(t, 'drill bit', parent=self.drill.affordance, visible=True, scale=0.05)
+        self.drill.bitFrame = vis.updateFrame(t, 'drill bit', parent=self.drill.affordance, visible=False, scale=0.05)
         self.drill.bitFrame.addToView(app.getDRCView())
 
 
@@ -699,14 +739,13 @@ class DrillPlannerDemo(object):
         # move to a point along the button axis
         # pointerDepth is negative is away from the drill and positive is inside drill
 
-        self.moveDrillToHand()
-
         # change the nominal pose to the start pose ... q_nom was unreliable when used repeated
         ikplanner.getIkOptions().setProperty('Nominal pose', 'q_start')
 
         # 1. determine the goal position
-        worldToButton = self.getWorldToButton( self.getPlanningStartPose() )
-        worldToPress = transformUtils.copyFrame(worldToButton)
+        #worldToButton = self.getWorldToButton( self.getPlanningStartPose() )
+        #worldToPress = transformUtils.copyFrame(worldToButton)
+        worldToPress = transformUtils.copyFrame(self.drill.buttonFrame.transform)
         worldToPress.PreMultiply()
         t3 = transformUtils.frameFromPositionAndRPY( [0,0.0, pointerDepth] , [0,0,0] )
         worldToPress.Concatenate(t3)
@@ -718,7 +757,6 @@ class DrillPlannerDemo(object):
 
         # this mirrors the y-axis pointer for left and right:
         bodyAxisTip = self.ikPlanner.getPalmToHandLink(self.pointerHand).TransformVector([0,1,0])
-        #was: bodyAxisTip =[0.0, -1.0, 0.0]
 
         self.initGazeConstraintSet(worldToPressFrame, self.pointerHand, pointerToHandLinkFrame, targetAxis=[0.0, 0.0, 1.0], bodyAxis=bodyAxisTip, lockBase=True, lockBack=True)
         # self.initGazeConstraintSet(worldToPressFrame, self.pointerHand, pointerToHandLinkFrame, gazeAxis=[-1.0, 0.0, 0.0], lockBase=True, lockBack=True)
