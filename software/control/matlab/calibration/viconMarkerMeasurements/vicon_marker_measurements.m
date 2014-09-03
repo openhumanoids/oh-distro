@@ -14,5 +14,10 @@ r_marker = r_base + r_base_to_marker;
 l_reference = [0.066335; 0.06481; -0.020503]; % obtained from meshlab
 l_reference_to_base = [-0.017; 0.013; 0]; % measured offset of base w.r.t. reference
 l_base = l_reference + l_reference_to_base;
-l_base_to_marker = [0; 0; -(standoff_offset + standoff_length + ball_diameter / 2)];
+l_base_to_marker = [0; 0; -(standoff_offset + 3 * standoff_length + ball_diameter / 2)];
 l_marker = l_base + l_base_to_marker;
+
+% Torso:
+torso_reference = [0.215498; -0.076292; 0.295373]; % obtained from meshlab
+torso_reference_to_marker = [10e-3; 30e-3; 0];
+torso_marker = torso_reference + torso_reference_to_marker;
