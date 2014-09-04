@@ -1,7 +1,10 @@
 function [x, dx] = subsetOfMarkersMeasuredMarkerFunction(params, marker_positions_measured)
 x = marker_positions_measured;
-measured_markers = ~any(isnan(marker_positions_measured), 1);
-x(:, ~measured_markers) = reshape(params, 3, sum(~measured_markers));
+variable_indices = find(isnan(marker_positions_measured));
+x(variable_indices) = params;
 dx = zeros(numel(x), numel(params));
-dx = setSubMatrixGradient(dx, eye(numel(params)), 1:3, find(~measured_markers), size(x));
+for i = 1 : length(variable_indices)
+  [row, col] = ind2sub(size(x), variable_indices(i));
+  dx = setSubMatrixGradient(dx, 1, row, col, size(x), i);
+end
 end
