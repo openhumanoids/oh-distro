@@ -10,8 +10,6 @@ classdef AtlasBalancingWrapper < DrakeSystem
     velocity_int_block;
     qtraj_eval_block;
     pelvis_control_block;
-    lfoot_control_block;
-    rfoot_control_block;
   end
 
   methods
@@ -57,9 +55,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
 
       % construct QP controller and related control blocks
-      [qp,lfoot_block,rfoot_block,pelvis_block,pd,options] = constructQPBalancingController(r,controller_data,options);
-      obj.lfoot_control_block = lfoot_block;
-      obj.rfoot_control_block = rfoot_block;
+      [qp,~,~,pelvis_block,pd,options] = constructQPBalancingController(r,controller_data,options);
       obj.pelvis_control_block = pelvis_block;
 
       % velocity integrator
@@ -78,10 +74,6 @@ classdef AtlasBalancingWrapper < DrakeSystem
       ins(4).input = 3;
       ins(5).system = 2;
       ins(5).input = 4;
-      ins(6).system = 2;
-      ins(6).input = 5;
-      ins(7).system = 2;
-      ins(7).input = 6;
       outs(1).system = 2;
       outs(1).output = 1;
       outs(2).system = 2;
@@ -93,6 +85,7 @@ classdef AtlasBalancingWrapper < DrakeSystem
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
 
       options.use_lcm = true;
+      options.use_contact_logic_OR = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
 
       obj.robot = r;
@@ -109,10 +102,8 @@ classdef AtlasBalancingWrapper < DrakeSystem
       q_des = q_des_and_x(1:obj.nq);
 
       % IK/QP
-      lfoot_ddot = output(obj.lfoot_control_block,t,[],x);
-      rfoot_ddot = output(obj.rfoot_control_block,t,[],x);
       pelvis_ddot = output(obj.pelvis_control_block,t,[],x);
-      u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; x; fc; lfoot_ddot; rfoot_ddot; pelvis_ddot]);
+      u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; x; fc; pelvis_ddot]);
       u=u_and_qdd(1:obj.nu);
       qdd=u_and_qdd(obj.nu+(1:obj.nq));
 

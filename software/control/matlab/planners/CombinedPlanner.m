@@ -141,14 +141,6 @@ classdef CombinedPlanner
       link_constraints(1).traj = PPTrajectory(pchip(ts,pelvis_pose));
       link_constraints(1).dtraj = fnder(link_constraints.traj);
 %       link_constraints.ddtraj = fnder(link_constraints.dtraj);
-      kinsol = doKinematics(obj.biped,ppval(qtraj_pp,ts(1)));
-      link_constraints(2).link_ndx = lfoot_ind;
-      link_constraints(2).pt = [0;0;0];
-      link_constraints(2).traj = ConstantTrajectory(forwardKin(obj.biped,kinsol,lfoot_ind,[0;0;0],1));
-      link_constraints(3).link_ndx = rfoot_ind;
-      link_constraints(3).pt = [0;0;0];
-      link_constraints(3).traj = ConstantTrajectory(forwardKin(obj.biped,kinsol,rfoot_ind,[0;0;0],1));
-
       plan = ConfigurationTraj(qtraj_pp,link_constraints);
     end
 end
