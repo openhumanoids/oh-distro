@@ -32,7 +32,7 @@ classdef AtlasBalancingController < DRCController
       arm_ind = findJointIndices(r,'arm');
       back_ind = findJointIndices(r,'back');
       back_y_ind = findJointIndices(r,'back_bky');
-      integral_gains(arm_ind) = 1.0; % TODO: generalize this
+      integral_gains(arm_ind) = 1.5; % TODO: generalize this
       integral_gains(back_ind) = 0.2;
       integral_clamps(arm_ind) = 0.3;
       integral_clamps(back_ind) = 0.2;

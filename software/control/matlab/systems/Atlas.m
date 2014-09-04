@@ -149,7 +149,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'w_grf',0.0);
       options = ifNotIsFieldThenVal(options,'w_slack',0.05);
       options = ifNotIsFieldThenVal(options,'Kp_accel',1.0);
-      options = ifNotIsFieldThenVal(options,'debug',true);
+      options = ifNotIsFieldThenVal(options,'debug',false);
       options = ifNotIsFieldThenVal(options,'use_mex',true);
       options = ifNotIsFieldThenVal(options,'contact_threshold',0.001);
       options = ifNotIsFieldThenVal(options,'output_qdd',true);
