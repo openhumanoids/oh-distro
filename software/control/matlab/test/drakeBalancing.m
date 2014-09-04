@@ -85,20 +85,20 @@ if use_angular_momentum
   options.W_kdot = 1e-5*eye(3); % angular momentum weight
 end
 
-options.Kp_foot = [100; 100; 100; 150; 150; 150];
-options.foot_damping_ratio = 0.5;
 options.Kp_pelvis = [0; 0; 150; 200; 200; 200];
 options.pelvis_damping_ratio = 0.6;
+options.Kp_q = 50.0*ones(r.getNumPositions(),1);
+options.q_damping_ratio = 0.6;
 
 % construct QP controller and related control blocks
-[qp,lfoot_controller,rfoot_controller,pelvis_controller,pd,options] = constructQPBalancingController(r,ctrl_data);
+[qp,~,~,pelvis_controller,pd,options] = constructQPBalancingController(r,ctrl_data,options);
 
 options.use_lcm=false;
 options.contact_threshold = 0.002;
 fc = FootContactBlock(r,ctrl_data,options);
 qt = QTrajEvalBlock(r,ctrl_data);
 
-sys = constructQPFeedbackCombination(r,qp,fc,pd,qt,lfoot_controller,rfoot_controller,pelvis_controller);
+sys = constructQPFeedbackCombination(r,qp,fc,pd,qt,[],[],pelvis_controller);
 
 if visualize
   v = r.constructVisualizer;
