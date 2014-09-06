@@ -236,6 +236,12 @@ getBool(const std::string& iKey) const {
   return get(iKey,val) ? val : false;
 }
 
+std::vector<double> BotWrapper::
+getDoubles(const std::string& iKey) const {
+  std::vector<double> vals;
+  return get(iKey, vals) ? vals : std::vector<double>();
+}
+
 bool BotWrapper::
 get(const std::string& iKey, std::string& oValue) const {
   char* val = NULL;
@@ -267,6 +273,18 @@ get(const std::string& iKey, bool& oValue) const {
   oValue = (val!=0);
   return true;
 }
+
+bool BotWrapper::
+get(const std::string& iKey, std::vector<double>& oValues) const {
+  if (mBotParam == NULL) return false;
+  double vals[1024];
+  int num = bot_param_get_double_array(mBotParam, iKey.c_str(), vals, -1);
+  if (num < 0) return false;
+  oValues.resize(num);
+  for (int i = 0; i < num; ++i) oValues[i] = vals[i];
+  return true;
+}
+
 
 std::vector<std::string> BotWrapper::
 getKeys(const std::string& iKey) const {

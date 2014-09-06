@@ -56,10 +56,12 @@ public:
   int getInt(const std::string& iKey) const;
   double getDouble(const std::string& iKey) const;
   bool getBool(const std::string& iKey) const;
+  std::vector<double> getDoubles(const std::string& iKey) const;
   bool get(const std::string& iKey, std::string& oValue) const;
   bool get(const std::string& iKey, int& oValue) const;
   bool get(const std::string& iKey, double& oValue) const;
   bool get(const std::string& iKey, bool& oValue) const;
+  bool get(const std::string& iKey, std::vector<double>& oValues) const;
   std::vector<std::string> getKeys(const std::string& iKey) const;
 
 protected:
