@@ -85,9 +85,9 @@ if use_angular_momentum
   options.W_kdot = 1e-5*eye(3); % angular momentum weight
 end
 
-options.Kp_pelvis = [0; 0; 150; 200; 200; 200];
+options.Kp_pelvis = [150; 150; 150; 200; 200; 200];
 options.pelvis_damping_ratio = 0.6;
-options.Kp_q = 50.0*ones(r.getNumPositions(),1);
+options.Kp_q = 150.0*ones(r.getNumPositions(),1);
 options.q_damping_ratio = 0.6;
 
 % construct QP controller and related control blocks
