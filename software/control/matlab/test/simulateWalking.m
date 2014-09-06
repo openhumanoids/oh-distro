@@ -1,0 +1,356 @@
+function simulateWalking(r, walking_ctrl_data, walking_plan, x0)
+addpath(fullfile(getDrakePath,'examples','ZMP'));
+
+plot_comtraj = true;
+
+use_mex = 1;
+use_ik = false;
+use_bullet = false;
+use_angular_momentum = false;
+random_navgoal = false;
+
+% silence some warnings
+warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
+warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
+warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
+
+
+% set initial state to fixed point
+r = r.setInitialState(x0);
+
+v = r.constructVisualizer;
+v.display_dt = 0.05;
+
+x0(3) = x0(3) + 0.01;
+nq = getNumPositions(r);
+
+% No-op: just make sure we can cleanly encode and decode the plan as LCM
+tic;
+walking_ctrl_data = WalkingControllerData.from_walking_plan_t(walking_ctrl_data.toLCM());
+fprintf(1, 'control data lcm code/decode time: %f\n', toc);
+
+ts = walking_plan.ts;
+T = ts(end);
+
+if plot_comtraj
+  % plot walking traj in drake viewer
+  lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'walking-plan');
+
+  for i=1:length(ts)
+    lcmgl.glColor3f(0, 0, 1);
+    lcmgl.sphere([walking_ctrl_data.comtraj.eval(ts(i));0], 0.01, 20, 20);
+    lcmgl.glColor3f(0, 1, 0);
+    lcmgl.sphere([walking_ctrl_data.zmptraj.eval(ts(i));0], 0.01, 20, 20);
+  end
+  lcmgl.switchBuffers();
+end
+
+% xtraj = PPTrajectory(foh(walking_plan.ts, walking_plan.xtraj));
+% xtraj = xtraj.setOutputFrame(v.getInputFrame());
+% v.playback(xtraj, struct('slider', true))
+ctrl_data = QPControllerData(true,struct(...
+  'acceleration_input_frame',AtlasCoordinates(r),...
+  'D',-getAtlasNominalCOMHeight()/9.81*eye(2),... % assumed COM height
+  'Qy',eye(2),...
+  'S',walking_ctrl_data.S,... % always a constant
+  's1',walking_ctrl_data.s1,...
+  's2',walking_ctrl_data.s2,...
+  's1dot',walking_ctrl_data.s1dot,...
+  's2dot',walking_ctrl_data.s2dot,...
+  'x0',ConstantTrajectory([walking_ctrl_data.zmptraj.eval(T);0;0]),...
+  'u0',ConstantTrajectory(zeros(2,1)),...
+	'qtraj',x0(1:nq),...
+	'comtraj',walking_ctrl_data.comtraj,...
+  'link_constraints',walking_ctrl_data.link_constraints, ...
+  'support_times',walking_ctrl_data.support_times,...
+  'supports',walking_ctrl_data.supports,...
+  'mu',walking_ctrl_data.mu,...
+  'ignore_terrain',walking_ctrl_data.ignore_terrain,...
+  'y0',walking_ctrl_data.zmptraj,...
+  'plan_shift',zeros(3,1),...
+  'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
+
+options.dt = 0.003;
+options.use_bullet = use_bullet;
+options.debug = true;
+options.use_mex = use_mex;
+
+if use_angular_momentum
+  options.Kp_ang = 1.0; % angular momentum proportunal feedback gain
+  options.W_kdot = 1e-5*eye(3); % angular momentum weight
+end
+
+if (use_ik)
+  options.w_qdd = 0.001*ones(nq,1);
+  % instantiate QP controller
+	qp = QPController(r,{},ctrl_data,options);
+
+	% feedback QP controller with atlas
+  ins(1).system = 1;
+  ins(1).input = 2;
+  ins(2).system = 1;
+  ins(2).input = 3;
+  outs(1).system = 2;
+  outs(1).output = 1;
+	sys = mimoFeedback(qp,r,[],[],ins,outs);
+	clear ins;
+
+  % feedback foot contact detector with QP/atlas
+  options.use_lcm=false;
+  fc = FootContactBlock(r,ctrl_data,options);
+  ins(1).system = 2;
+  ins(1).input = 1;
+  sys = mimoFeedback(fc,sys,[],[],ins,outs);
+  clear ins;  
+  
+	% feedback PD block
+	pd = IKPDBlock(r,ctrl_data,options);
+	ins(1).system = 1;
+	ins(1).input = 1;
+	sys = mimoFeedback(pd,sys,[],[],ins,outs);
+	clear ins;
+
+else
+  
+  options.Kp_foot = [100; 100; 100; 150; 150; 150];
+  options.foot_damping_ratio = 0.5;
+  options.Kp_pelvis = [0; 0; 150; 200; 200; 200];
+  options.pelvis_damping_ratio = 0.6;
+
+  % construct QP controller and related control blocks
+  [qp,lfoot_controller,rfoot_controller,pelvis_controller,pd,options] = constructQPWalkingController(r,ctrl_data,options);
+
+	% feedback QP controller with atlas
+	ins(1).system = 1;
+	ins(1).input = 2;
+	ins(2).system = 1;
+	ins(2).input = 3;
+	ins(3).system = 1;
+	ins(3).input = 4;
+	ins(4).system = 1;
+	ins(4).input = 5;
+	ins(5).system = 1;
+	ins(5).input = 6;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(qp,r,[],[],ins,outs);
+	clear ins outs;
+  
+  % feedback foot contact detector with QP/atlas
+  options.use_lcm=false;
+  fc = FootContactBlock(r,ctrl_data,options);
+  ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	ins(4).system = 2;
+	ins(4).input = 5;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(fc,sys,[],[],ins,outs);
+  clear ins outs;  
+  
+	% feedback PD block
+	ins(1).system = 1;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 2;
+	ins(3).system = 2;
+	ins(3).input = 3;
+	ins(4).system = 2;
+	ins(4).input = 4;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(pd,sys,[],[],ins,outs);
+	clear ins outs;
+
+	% feedback body motion control blocks
+	ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	ins(3).system = 2;
+	ins(3).input = 4;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(lfoot_controller,sys,[],[],ins,outs);
+	clear ins outs;
+
+	ins(1).system = 2;
+	ins(1).input = 1;
+	ins(2).system = 2;
+	ins(2).input = 3;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(rfoot_controller,sys,[],[],ins,outs);
+	clear ins outs;
+
+	ins(1).system = 2;
+	ins(1).input = 1;
+	outs(1).system = 2;
+	outs(1).output = 1;
+	sys = mimoFeedback(pelvis_controller,sys,[],[],ins,outs);
+	clear ins outs;
+end
+
+qt = QTrajEvalBlock(r,ctrl_data);
+outs(1).system = 2;
+outs(1).output = 1;
+sys = mimoFeedback(qt,sys,[],[],[],outs);
+
+S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
+output_select(1).system=1;
+output_select(1).output=1;
+sys = mimoCascade(sys,v,[],[],output_select);
+warning(S);
+traj = simulate(sys,[0 T],x0);
+playback(v,traj,struct('slider',true));
+
+if plot_comtraj
+  dt = 0.001;
+  tts = 0:dt:T;
+  xtraj_smooth=smoothts(traj.eval(tts),'e',150);
+  dtraj = fnder(PPTrajectory(spline(tts,xtraj_smooth)));
+  qddtraj = dtraj(nq+(1:nq));
+
+  lfoot = findLinkInd(r,'l_foot');
+  rfoot = findLinkInd(r,'r_foot');
+
+  lstep_counter = 0;
+  rstep_counter = 0;
+
+  rms_zmp = 0;
+  rms_com = 0;
+  rms_foot = 0;
+
+  for i=1:length(ts)
+    xt=traj.eval(ts(i));
+    q=xt(1:nq);
+    qd=xt(nq+(1:nq));
+    qdd=qddtraj.eval(ts(i));
+
+    kinsol = doKinematics(r,q);
+
+    [com(:,i),J]=getCOM(r,kinsol);
+    Jdot = forwardJacDot(r,kinsol,0);
+    comdes(:,i)=walking_ctrl_data.comtraj.eval(ts(i));
+    zmpdes(:,i)=walking_ctrl_data.zmptraj.eval(ts(i));
+    zmpact(:,i)=com(1:2,i) - com(3,i)/9.81 * (J(1:2,:)*qdd + Jdot(1:2,:)*qd);
+
+    lfoot_cpos = terrainContactPositions(r,kinsol,lfoot);
+    rfoot_cpos = terrainContactPositions(r,kinsol,rfoot);
+
+    lfoot_p = forwardKin(r,kinsol,lfoot,[0;0;0],1);
+    rfoot_p = forwardKin(r,kinsol,rfoot,[0;0;0],1);
+
+		lfoot_pos(:,i) = lfoot_p;
+		rfoot_pos(:,i) = lfoot_p;
+
+		if any(lfoot_cpos(3,:) < 1e-4)
+      lstep_counter=lstep_counter+1;
+      lfoot_steps(:,lstep_counter) = lfoot_p;
+		end
+    if any(rfoot_cpos(3,:) < 1e-4)
+      rstep_counter=rstep_counter+1;
+      rfoot_steps(:,rstep_counter) = rfoot_p;
+    end
+
+    rfoottraj = walking_ctrl_data.link_constraints(1).traj;
+    lfoottraj = walking_ctrl_data.link_constraints(2).traj;
+
+    lfoot_des = eval(lfoottraj,ts(i));
+    lfoot_des(3) = max(lfoot_des(3), 0.0811);     % hack to fix footstep planner bug
+    rms_foot = rms_foot+norm(lfoot_des([1:3])-lfoot_p([1:3]))^2;
+
+    rfoot_des = eval(rfoottraj,ts(i));
+    rfoot_des(3) = max(rfoot_des(3), 0.0811);     % hack to fix footstep planner bug
+    rms_foot = rms_foot+norm(rfoot_des([1:3])-rfoot_p([1:3]))^2;
+
+    rms_zmp = rms_zmp+norm(zmpdes(:,i)-zmpact(:,i))^2;
+    rms_com = rms_com+norm(comdes(:,i)-com(1:2,i))^2;
+  end
+
+  rms_zmp = sqrt(rms_zmp/length(ts))
+  rms_com = sqrt(rms_com/length(ts))
+  rms_foot = sqrt(rms_foot/(lstep_counter+rstep_counter))
+
+  figure(2);
+  clf;
+  subplot(2,1,1);
+  plot(ts,zmpdes(1,:),'b');
+  hold on;
+  plot(ts,zmpact(1,:),'r.-');
+  plot(ts,comdes(1,:),'g');
+  plot(ts,com(1,:),'m.-');
+  hold off;
+
+  subplot(2,1,2);
+  plot(ts,zmpdes(2,:),'b');
+  hold on;
+  plot(ts,zmpact(2,:),'r.-');
+  plot(ts,comdes(2,:),'g');
+  plot(ts,com(2,:),'m.-');
+  hold off;
+
+  figure(3)
+  clf;
+  plot(zmpdes(1,:),zmpdes(2,:),'b','LineWidth',3);
+  hold on;
+  plot(zmpact(1,:),zmpact(2,:),'r.-','LineWidth',1);
+  %plot(comdes(1,:),comdes(2,:),'g','LineWidth',3);
+  %plot(com(1,:),com(2,:),'m.-','LineWidth',1);
+
+  left_foot_steps = eval(lfoottraj,lfoottraj.getBreaks);
+  tc_lfoot = getTerrainContactPoints(r,lfoot);
+  tc_rfoot = getTerrainContactPoints(r,rfoot);
+  for i=1:size(left_foot_steps,2);
+    cpos = rpy2rotmat(left_foot_steps(4:6,i)) * tc_lfoot.pts + repmat(left_foot_steps(1:3,i),1,4);
+    if all(cpos(3,:)<=0.001)
+      plot(cpos(1,[1,2]),cpos(2,[1,2]),'k-','LineWidth',2);
+      plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',2);
+      plot(cpos(1,[1,3]),cpos(2,[1,3]),'k-','LineWidth',2);
+      plot(cpos(1,[2,4]),cpos(2,[2,4]),'k-','LineWidth',2);
+      plot(cpos(1,[3,4]),cpos(2,[3,4]),'k-','LineWidth',2);
+    end
+  end
+
+  right_foot_steps = eval(rfoottraj,rfoottraj.getBreaks);
+  for i=1:size(right_foot_steps,2);
+    cpos = rpy2rotmat(right_foot_steps(4:6,i)) * tc_rfoot.pts + repmat(right_foot_steps(1:3,i),1,4);
+    if all(cpos(3,:)<=0.001)
+      plot(cpos(1,[1,2]),cpos(2,[1,2]),'k-','LineWidth',2);
+      plot(cpos(1,[1,3]),cpos(2,[1,3]),'k-','LineWidth',2);
+      plot(cpos(1,[2,4]),cpos(2,[2,4]),'k-','LineWidth',2);
+      plot(cpos(1,[3,4]),cpos(2,[3,4]),'k-','LineWidth',2);
+    end
+  end
+
+  for i=1:lstep_counter
+    cpos = rpy2rotmat(lfoot_steps(4:6,i)) * tc_lfoot.pts + repmat(lfoot_steps(1:3,i),1,4);
+    plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
+    plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',1.65);
+    plot(cpos(1,[2,4]),cpos(2,[2,4]),'g-','LineWidth',1.65);
+    plot(cpos(1,[3,4]),cpos(2,[3,4]),'g-','LineWidth',1.65);
+  end
+
+  for i=1:rstep_counter
+    cpos = rpy2rotmat(rfoot_steps(4:6,i)) * tc_rfoot.pts + repmat(rfoot_steps(1:3,i),1,4);
+    plot(cpos(1,[1,2]),cpos(2,[1,2]),'g-','LineWidth',1.65);
+    plot(cpos(1,[1,3]),cpos(2,[1,3]),'g-','LineWidth',1.65);
+    plot(cpos(1,[2,4]),cpos(2,[2,4]),'g-','LineWidth',1.65);
+    plot(cpos(1,[3,4]),cpos(2,[3,4]),'g-','LineWidth',1.65);
+  end
+
+  plot(zmpdes(1,:),zmpdes(2,:),'b','LineWidth',3);
+  plot(zmpact(1,:),zmpact(2,:),'r.-','LineWidth',1);
+
+  axis equal;
+
+if rms_com > length(footstep_plan.footsteps)*0.5
+  error('drakeWalking unit test failed: error is too large');
+  navgoal
+end
+
+end
