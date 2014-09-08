@@ -25,19 +25,14 @@ marker_data.r_hand.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFun
 
 % Left hand:
 % TODO: need to update these after urdf and mesh files have been fixed
-l_reference = [-0.068628; -0.093738; -0.020245]; % obtained from meshlab
-l_reference_to_base = [0.017; 0.015; 0.0]; % measured offset of base w.r.t. reference
+l_reference = [0.0686277; 0.0937385; -0.0201257]; % obtained from meshlab
+l_reference_to_base = [-0.017; -0.015; 0.0]; % measured offset of base w.r.t. reference
 l_base = l_reference + l_reference_to_base;
 l_base_to_marker = [0; 0; -(standoff_offset + standoff_length + ball_diameter / 2)];
 l_marker = l_base + l_base_to_marker;
-% marker was measured in visual frame. The visual is rotated by pi about the
-% z-axis w.r.t. the body frame in the urdf, so need to rotate back to body
-% frame
-R_visual_to_body = rpy2rotmat([0; 0; pi]);
-l_marker = R_visual_to_body * l_marker;
 marker_data.l_hand.num_markers = 5;
 l_markers = nan(3, marker_data.l_hand.num_markers);
-l_markers(:, 4) = l_marker;
+l_markers(:, 3) = l_marker;
 marker_data.l_hand.num_params = sum(sum(isnan(l_markers)));
 marker_data.l_hand.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, l_markers);
 

@@ -1,9 +1,9 @@
-function dq = runArmOffsetEstimation(side, logfile, v_norm_limit, num_poses, torso_marker_function, torso_num_params, hand_marker_function, hand_num_params)
+function dq = runArmOffsetEstimation(side, logfile, v_norm_limit, num_poses, torso_marker_function, torso_num_params, hand_marker_function, hand_num_params, options)
 %NOTEST
 
-show_pose_indices = false;
-show_data_synchronization = false;
-visualize_result = true;
+show_pose_indices = getOption(options, 'show_pose_indices', false);
+show_data_synchronization = getOption(options, 'show_data_synchronization', false);
+visualize_result = getOption(options, 'visualize_result', false);
 
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 r = Atlas();
@@ -91,7 +91,7 @@ if visualize_result
     lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'arm_offset_estimation');
     q = q_data(:, pose_num);
     q(1:6) = floating_states(:,pose_num);
-%     q(q_indices) = q(q_indices) + dq;
+    q(q_indices) = q(q_indices) + dq;
     v.draw(0, q);
     
     kinsol = r.doKinematics(q);
@@ -144,4 +144,12 @@ function vicon_object_data = getViconObjectData(vicon_data_struct, vicon_object_
 vicon_object_index = cellfun(@(x) strcmp(x.name, vicon_object_name), vicon_data_struct);
 vicon_object_data = vicon_data_struct{vicon_object_index}.data;
 vicon_object_data(1:3,:,:) = vicon_object_data(1:3,:,:)/1e3;
+end
+
+function ret = getOption(options, fieldname, default)
+if isfield(options, fieldname)
+  ret = options.(fieldname);
+else
+  ret = default;
+end
 end
