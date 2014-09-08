@@ -1,0 +1,135 @@
+classdef LCMBroadcastBlock < MIMODrakeSystem
+
+	properties
+    lc; % LCM
+    spindle_channel;
+    hokuyo_data_channel;
+    robot_state_est_channel;
+    hokuyo_yaw_width;
+    hokuyo_num_pts;   
+    hokuyo_max_range;
+    hokuyo_spin_rate;
+      
+  end
+  
+  methods
+    function obj = LCMBroadcastBlock(r,options)
+      typecheck(r,'Biped');
+       
+      if nargin<2
+        options = struct();
+      end
+    
+      input_frame = getOutputFrame(r);
+      output_frame = getOutputFrame(r);
+      
+      obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,true);
+      obj = setInputFrame(obj,input_frame);
+      obj = setOutputFrame(obj,output_frame);
+      
+      obj.hokuyo_yaw_width = r.hokuyo_yaw_width;
+      obj.hokuyo_num_pts = r.hokuyo_num_pts;   
+      obj.hokuyo_max_range = r.hokuyo_max_range;
+      obj.hokuyo_spin_rate = r.hokuyo_spin_rate;
+      
+      if isfield(options,'dt')
+        typecheck(options.dt,'double');
+        sizecheck(options.dt,[1 1]);
+        dt = options.dt;
+      else
+        dt = 0.001;
+      end
+      obj = setSampleTime(obj,[dt;0]); % sets controller update rate
+      
+      % Get LCM set up for broadcast on approp channels
+      obj.lc = lcm.lcm.LCM.getSingleton();
+    end
+   
+    function varargout=mimoOutput(obj,t,~,varargin)
+      % What needs to go out:
+      num_dofs = length(varargin{1}) / 2;
+      % Robot state on EST_ROBOT_STATE.
+      state_msg = drc.robot_state_t();
+      state_msg.utime = t;
+      
+      state_msg.pose = drc.position_3d_t();
+      state_msg.pose.translation = drc.vector_3d_t();
+      state_msg.pose.rotation = drc.quaternion_t();
+      state_msg.pose.translation.x = varargin{1}(1);
+      state_msg.pose.translation.y = varargin{1}(2);
+      state_msg.pose.translation.z = varargin{1}(3);
+      
+      q = rpy2quat([varargin{1}(4) varargin{1}(5) varargin{1}(6)]);
+      state_msg.pose.rotation.w = q(1);
+      state_msg.pose.rotation.x = q(2);
+      state_msg.pose.rotation.y = q(3);
+      state_msg.pose.rotation.z = q(4);
+      
+      state_msg.twist = drc.twist_t();
+      state_msg.twist.linear_velocity = drc.vector_3d_t();
+      state_msg.twist.angular_velocity = drc.vector_3d_t();
+      state_msg.twist.linear_velocity.x = 0;
+      state_msg.twist.linear_velocity.y = 0;
+      state_msg.twist.linear_velocity.z = 0;
+      state_msg.twist.angular_velocity.x = 0;
+      state_msg.twist.angular_velocity.y = 0;
+      state_msg.twist.angular_velocity.z = 0;
+      
+      state_msg.num_joints = num_dofs;
+      state_msg.joint_name=javaArray('java.lang.String', state_msg.num_joints);
+      state_msg.joint_position=zeros(1,state_msg.num_joints);
+      state_msg.joint_velocity=zeros(1,state_msg.num_joints);
+      state_msg.joint_effort=zeros(1,state_msg.num_joints);
+      names = obj.getInputFrame.getFrameByName('AtlasState');
+      for j=1:num_dofs,
+        state_msg.joint_name(j) = java.lang.String(getCoordinateName(names, j));
+        state_msg.joint_position(j) = varargin{1}(j);
+        state_msg.joint_velocity(j) = varargin{1}(j+num_dofs);
+      end
+      state_msg.force_torque = drc.force_torque_t();
+      obj.lc.publish('EST_ROBOT_STATE', state_msg);
+      
+      % For a set of subscans (for now we'll do just do one horizontal
+      % scan), send over
+      % -- "MULTISENSE_STATE" -- lcm_state msg for joint hokuyo_joint,
+      %     labeled with tiem of scan
+      % -- also "PRE_SPINDLE_TO_POST_SPINDLE" with the approp transform
+      % -- 
+      % -- To channel "SCAN", publish populated lcm_laser_msg
+      
+      if length(varargin) > 1
+        laser_spindle_angle = varargin{2}(1);
+        laser_ranges = varargin{2}(2:end);
+        % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
+        multisense_state = multisense.state_t();
+        multisense_state.joint_name = 'hokuyo_joint';
+        multisense_state.joint_position = laser_spindle_angle;
+        multisense_state.joint_velocity = 0.0;
+        multisense_state.joint_effort = 0.0;
+        obj.lc.publish('MULTISENSE_STATE', multisense_state);
+        pre_to_post_frame = bot_core.rigid_transform_t();
+        pre_to_post_frame.utime = t;
+        pre_to_post_frame.trans = [0, 0, 0]; % no offset
+        q = rpy2quat([0 laser_spindle_angle 0]);
+        pre_to_post_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
+        obj.lc.publish('PRE_SPINDLE_TO_POST_SPINDLE', pre_to_post_frame);
+
+        % And the data
+        lcm_laser_msg = bot_core.planar_lidar_t();
+        lcm_laser_msg.utime = t;
+        lcm_laser_msg.ranges = laser_ranges;
+        lcm_laser_msg.intensities = 5000*ones(size(laser_ranges));
+        lcm_laser_msg.nranges = length(laser_ranges);
+        lcm_laser_msg.nintensities = length(laser_ranges); 
+        lcm_laser_msg.rad0 = -obj.hokuyo_yaw_width/2.0; 
+        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges) - 1);
+        obj.lc.publish('SCAN', lcm_laser_msg);
+        laser_ranges
+        
+      end
+      varargout = varargin;
+        
+    end
+  end
+  
+end

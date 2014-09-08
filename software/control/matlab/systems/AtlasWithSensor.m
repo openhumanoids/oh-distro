@@ -1,7 +1,7 @@
-classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
+classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
   methods
 
-    function obj=Atlas(urdf,options)
+    function obj=AtlasWithSensor(urdf,options)
 
       if nargin < 1 || isempty(urdf)
         urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf');
@@ -40,6 +40,22 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
       obj.BDIToStateInd = 6*obj.floating+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
 
+      % Add full state feedback sensor
+      feedback = FullStateFeedbackSensor();
+      obj = addSensor(obj, feedback);
+      
+      % Add lidar
+%        obj.hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
+%        obj.hokuyo_num_pts = 10;   
+%        obj.hokuyo_max_range = 10; % meters?
+%        obj.hokuyo_spin_rate = 10; % rad/sec
+      obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],zeros(3,1),'hokuyo_frame'));
+      hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
+         -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
+      hokuyo = enableLCMGL(hokuyo);
+      obj = addSensor(obj,hokuyo);
+      obj = compile(obj);
+      
       if options.floating
         % could also do fixed point search here
         obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
@@ -57,10 +73,47 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
       warning(S);
 
-      state_frame = AtlasState(obj);
+      atlas_state_frame = AtlasState(obj);
+      
+      tsmanip_state_frame = obj.getStateFrame();
+      if tsmanip_state_frame.dim>atlas_state_frame.dim
+        id = findSubFrameEquivalentModuloTransforms(tsmanip_state_frame,atlas_state_frame);
+        tsmanip_state_frame.frame{id} = atlas_state_frame;
+        state_frame = tsmanip_state_frame;
+      else
+        state_frame = atlas_state_frame;
+      end
+      
+      obj.manip = obj.manip.setStateFrame(atlas_state_frame);
       obj = obj.setStateFrame(state_frame);
-      obj = obj.setOutputFrame(state_frame);
-
+      
+      %atlas_output_frame{1} = atlas_state_frame;
+      atlas_output_frame = cell(0);
+      if (length(obj.manip.sensor) ~= 0)
+        for i=1:length(obj.manip.sensor)
+          atlas_output_frame{i} = obj.manip.sensor{i}.constructFrame(obj.manip);
+        end
+      end
+      output_frame = atlas_output_frame;
+      % Continuing frame from above...
+      if (length(obj.sensor) ~= 0)
+        for i=1:length(obj.sensor)
+          output_frame{length(atlas_output_frame)+i} = obj.sensor{i}.constructFrame(obj);
+        end
+      end
+      atlas_output_frame = MultiCoordinateFrame.constructFrame(atlas_output_frame);
+      output_frame = MultiCoordinateFrame.constructFrame(output_frame);
+      
+      if ~isequal_modulo_transforms(atlas_output_frame,getOutputFrame(obj.manip))
+        obj.manip = obj.manip.setNumOutputs(atlas_output_frame.dim);
+        obj.manip = obj.manip.setOutputFrame(atlas_output_frame);
+      end
+      
+      if ~isequal_modulo_transforms(output_frame,getOutputFrame(obj))
+        obj = obj.setNumOutputs(output_frame.dim);
+        obj = obj.setOutputFrame(output_frame);
+      end
+      
       input_frame = AtlasInput(obj);
       obj = obj.setInputFrame(input_frame);
     end
@@ -160,7 +213,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'use_ik',false);
       options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.0);
-
+      
       options.Kp = options.Kp_pelvis;
       options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);
       if isfield(options,'use_walking_pelvis_block') && options.use_walking_pelvis_block
@@ -219,6 +272,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
                                     'drake_instep_shift', 0.0275,... % Distance to shift ZMP trajectory inward toward the instep from the center of the foot (m)
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
-
+    hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
+    hokuyo_num_pts = 10;   
+    hokuyo_max_range = 10; % meters?
+    hokuyo_spin_rate = 10; % rad/sec
   end
 end
