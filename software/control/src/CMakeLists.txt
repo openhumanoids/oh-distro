@@ -6,7 +6,10 @@ pods_use_pkg_config_packages(RobotStateMonitor eigen3 lcm)
 add_mex(AtlasCommandPublisher AtlasCommandPublisher.cpp)
 pods_use_pkg_config_packages(AtlasCommandPublisher eigen3 lcm)
 
-install(TARGETS RobotStateMonitor AtlasCommandPublisher DESTINATION matlab)
+add_mex(footstepPlanShiftmex footstepPlanShiftmex.cpp)
+pods_use_pkg_config_packages(footstepPlanShiftmex eigen3 drake-control-util drake-rbm)
+
+install(TARGETS RobotStateMonitor AtlasCommandPublisher footstepPlanShiftmex DESTINATION matlab)
 
 add_mex(mxSerialize mxSerialize.cpp)
 add_mex(mxDeserialize mxDeserialize.cpp)
@@ -93,5 +96,3 @@ endif()
 add_jar(drc_control ${java_src_files})
 
 install_jar(drc_control share/java)
-
-
