@@ -40,6 +40,18 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
       obj.BDIToStateInd = 6*obj.floating+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
 
+      if isfield(options,'obstacles')
+        for i=1:options.obstacles
+          xy = randn(2,1);
+          while(norm(xy)<1), xy = randn(2,1); end
+          height = .05;
+          shape = RigidBodyBox([.2+.8*rand(1,2) height],[xy;height/2],[0;0;randn]);
+          shape.c = rand(3,1);
+          obj = addShapeToBody(obj,'world',shape);
+          obj = addContactShapeToBody(obj,'world',shape);
+        end
+      end
+      
       % Add full state feedback sensor
       feedback = FullStateFeedbackSensor();
       obj = addSensor(obj, feedback);
@@ -73,18 +85,9 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
       warning(S);
 
-      atlas_state_frame = AtlasState(obj);
+      state_frame = AtlasState(obj);
       
-      tsmanip_state_frame = obj.getStateFrame();
-      if tsmanip_state_frame.dim>atlas_state_frame.dim
-        id = findSubFrameEquivalentModuloTransforms(tsmanip_state_frame,atlas_state_frame);
-        tsmanip_state_frame.frame{id} = atlas_state_frame;
-        state_frame = tsmanip_state_frame;
-      else
-        state_frame = atlas_state_frame;
-      end
-      
-      obj.manip = obj.manip.setStateFrame(atlas_state_frame);
+      obj.manip = obj.manip.setStateFrame(state_frame);
       obj = obj.setStateFrame(state_frame);
       
       %atlas_output_frame{1} = atlas_state_frame;
@@ -273,8 +276,8 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
     hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 10;   
-    hokuyo_max_range = 10; % meters?
-    hokuyo_spin_rate = 10; % rad/sec
+    hokuyo_num_pts = 5;   
+    hokuyo_max_range = 5; % meters?
+    hokuyo_spin_rate = 30; % rad/sec
   end
 end
