@@ -60,13 +60,13 @@ q_calib = x_calib(1:nq);
 
 % "correct" encoder readings at joint limits
 calib_val = Point(state_frame);
-calib_val.r_arm_usy =  0.79804;
-calib_val.r_arm_shx =  1.57022;
-calib_val.r_arm_ely = -0.01648;
-calib_val.r_arm_elx = -0.00297;
-calib_val.r_arm_uwy =  0.02374;
-calib_val.r_arm_mwx = -1.22977;
-calib_val.l_arm_usy =  0.79858;
+calib_val.r_arm_usy =  0.799;
+calib_val.r_arm_shx =  1.572;
+calib_val.r_arm_ely =  0.008;
+calib_val.r_arm_elx = -0.124;
+calib_val.r_arm_uwy =  0.143;
+calib_val.r_arm_mwx = -1.267;
+calib_val.l_arm_usy =  0.79858; % did not update left arm yet
 calib_val.l_arm_shx = -1.58616;
 calib_val.l_arm_ely = -0.04079;
 calib_val.l_arm_elx =  0.00481;
