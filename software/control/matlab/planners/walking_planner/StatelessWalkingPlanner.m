@@ -10,7 +10,13 @@ classdef StatelessWalkingPlanner
   end
 
   methods(Static=true)
-    function walking_plan = plan_walking(r, request, compute_xtraj)
+    function walking_plan = plan_walking(r, request, compute_xtraj, simulate)
+      if nargin < 4
+        simulate = false;
+      end
+      if simulate
+        compute_xtraj = true;
+      end
       debug = false;
 
       x0 = r.getStateFrame().lcmcoder.decode(request.initial_state);
@@ -68,13 +74,15 @@ classdef StatelessWalkingPlanner
       end
       lcmgl.switchBuffers();
 
-      
       if compute_xtraj
         [xtraj, ~, ts] = planWalkingStateTraj(r, walking_plan_data, xstar);
         joint_names = r.getStateFrame.coordinates(1:getNumPositions(r));
         joint_names = regexprep(joint_names, 'pelvis', 'base', 'preservecase'); % change 'pelvis' to 'base'
-
         walking_plan = WalkingPlan(ts, xtraj, joint_names);
+
+        if simulate
+          simulateWalking(r, walking_ctrl_data, walking_plan, x0);
+        end
       else
         walking_plan = WalkingControllerData.from_drake_walking_data(walking_plan_data, qstar);
       end
