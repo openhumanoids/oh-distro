@@ -4,8 +4,10 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
     controller_data; % pointer to shared data handle containing foot trajectories
     robot;
     nq;
-    rfoot_idx;
-    lfoot_idx;
+    lfoot_ind;
+    rfoot_ind;
+    use_mex;
+    mex_ptr;
   end
   
   methods
@@ -36,9 +38,24 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
       end
 %       obj = setSampleTime(obj,[obj.dt;0]); % sets controller update rate
 
-      obj.rfoot_idx = findLinkInd(r,'r_foot');
-      obj.lfoot_idx = findLinkInd(r,'l_foot');
+      if isfield(options,'use_mex')
+        sizecheck(options.use_mex,1);
+        obj.use_mex = uint32(options.use_mex);
+        rangecheck(obj.use_mex,0,2);
+        if (obj.use_mex && exist('footstepPlanShiftmex','file')~=3)
+          error('can''t find footstepPlanShiftmex.  did you build it?');
+        end
+      else
+        obj.use_mex = 1;
+      end
+
       obj.robot = r;
+      if (obj.use_mex>0)
+        obj.mex_ptr = SharedDataHandle(footstepPlanShiftmex(0,obj.robot.getMexModelPtr.ptr,1.0/obj.dt));
+      end
+
+      obj.rfoot_ind = findLinkInd(r,'r_foot');
+      obj.lfoot_ind = findLinkInd(r,'l_foot');
     end
     
     function y=mimoOutput(obj,t,~,varargin)
@@ -54,41 +71,39 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
         supp = ctrl_data.supports(supp_idx);      
       end
       if length(supp.bodies)==2
-        loading_foot = obj.rfoot_idx; % arbitrarily pick the right foot
+        loading_foot = obj.rfoot_ind; % arbitrarily pick the right foot
       else
         loading_foot = supp.bodies;
       end 
-      
-      persistent last_t;
-      if (isempty(last_t) || last_t > t)
-        last_t = 0;
-      end
-      if (t - last_t >= obj.dt)
-        last_t = t;
-        cdata = obj.controller_data;
-        if fc(1) > 0.5 && loading_foot==obj.lfoot_idx % left foot in contact
-          q = x(1:obj.nq); 
-          kinsol = doKinematics(obj.robot,q,false,true);
 
-          constraint_ndx = [cdata.link_constraints.link_ndx] == obj.lfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
-          lfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
-          lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],0);
-          plan_shift = lfoot_des(1:3) - lfoot_act(1:3);
-          % fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',plan_shift);
-          obj.controller_data.plan_shift = plan_shift;
-
-        elseif fc(2) > 0.5 && loading_foot==obj.rfoot_idx % right foot in contact
-          q = x(1:obj.nq); 
-          kinsol = doKinematics(obj.robot,q,false,true);
-
-          constraint_ndx = [cdata.link_constraints.link_ndx] == obj.rfoot_idx & all(bsxfun(@eq, [cdata.link_constraints.pt], [0;0;0]));
-          rfoot_des = fasteval(cdata.link_constraints(constraint_ndx).traj,t);
-          rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],0);
-          plan_shift = rfoot_des(1:3) - rfoot_act(1:3);
-
-          % fprintf('RF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',plan_shift);
-          obj.controller_data.plan_shift = plan_shift;
+      lfoot_link_con_ind = [ctrl_data.link_constraints.link_ndx]==obj.lfoot_ind;
+      rfoot_link_con_ind = [ctrl_data.link_constraints.link_ndx]==obj.rfoot_ind;
+      lfoot_des = fasteval(ctrl_data.link_constraints(lfoot_link_con_ind).traj,t);
+      rfoot_des = fasteval(ctrl_data.link_constraints(rfoot_link_con_ind).traj,t);
+      if (obj.use_mex == 0)
+        persistent last_t;
+        if (isempty(last_t) || last_t > t)
+          last_t = 0;
         end
+        if (t - last_t >= obj.dt)
+          last_t = t;
+          cdata = obj.controller_data;
+          if fc(1) > 0.5 && loading_foot==obj.lfoot_ind % left foot in contact
+            kinsol = doKinematics(obj.robot,x(1:obj.nq),false,true);
+            lfoot_act = forwardKin(obj.robot,kinsol,obj.lfoot_ind,[0;0;0],0);
+            plan_shift = lfoot_des(1:3) - lfoot_act(1:3);
+            % fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',plan_shift);
+            obj.controller_data.plan_shift = plan_shift;
+          elseif fc(2) > 0.5 && loading_foot==obj.rfoot_ind % right foot in contact
+            kinsol = doKinematics(obj.robot,x(1:obj.nq),false,true);
+            rfoot_act = forwardKin(obj.robot,kinsol,obj.rfoot_ind,[0;0;0],0);
+            plan_shift = rfoot_des(1:3) - rfoot_act(1:3);
+            % fprintf('RF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',plan_shift);
+            obj.controller_data.plan_shift = plan_shift;
+          end
+        end
+      else
+        obj.controller_data.plan_shift = footstepPlanShiftmex(obj.mex_ptr.data,t,x,fc(1),fc(2),lfoot_des(1:3),rfoot_des(1:3),ctrl_data.plan_shift);  
       end
       y=x;
     end

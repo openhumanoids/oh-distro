@@ -169,6 +169,8 @@ else
   options.foot_damping_ratio = 0.5;
   options.Kp_pelvis = [0; 0; 150; 200; 200; 200];
   options.pelvis_damping_ratio = 0.6;
+  options.Kp_q = 150.0*ones(r.getNumPositions(),1);
+  options.q_damping_ratio = 0.6;
 
   % construct QP controller and related control blocks
   [qp,lfoot_controller,rfoot_controller,pelvis_controller,pd,options] = constructQPWalkingController(r,ctrl_data);
