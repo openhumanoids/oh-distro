@@ -112,7 +112,7 @@ int main(int    argc, char** argv){
   if (d) {
 
     if (Status_Ok != d->setMtu(sensor_mtu))
-        printf("failed to set sensor MTU to %d", sensor_mtu);
+        printf("failed to set sensor MTU to %d\n", sensor_mtu);
     
     
     l = new multisense_ros::Laser(d, robot_desc_string);
