@@ -24,8 +24,6 @@ else
   navgoal = [1;0;0;0;0;0]; % straight forward 1m
 end
 
-navgoal = [0;0;0;0;0;0];
-
 % silence some warnings
 warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
 warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
@@ -35,7 +33,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.001;
-options.obstacles = 10;
+options.obstacles = 0;
 r = AtlasWithSensor(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
@@ -152,13 +150,13 @@ if (use_ik)
   ins(2).input = 3;
   outs(1).system = 2;
   outs(1).output = 1;
-  outs(2).system = 2;
-  outs(2).output = 2;
+  %outs(2).system = 2;
+  %outs(2).output = 2;
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
 	clear ins;
   
-  lcmBroadcastBlock = LCMBroadcastBlock(r);
-  sys = mimoCascade(sys, lcmBroadcastBlock);
+  %lcmBroadcastBlock = LCMBroadcastBlock(r);
+  %sys = mimoCascade(sys, lcmBroadcastBlock);
 
   % feedback foot contact detector with QP/atlas
   options.use_lcm=false;
@@ -181,7 +179,9 @@ else
   options.foot_damping_ratio = 0.5;
   options.Kp_pelvis = [0; 0; 150; 200; 200; 200];
   options.pelvis_damping_ratio = 0.6;
-
+  options.Kp_q = 150.0*ones(r.getNumPositions(),1);
+  options.q_damping_ratio = 0.6;
+  
   % construct QP controller and related control blocks
   [qp,lfoot_controller,rfoot_controller,pelvis_controller,pd,options] = constructQPWalkingController(r,ctrl_data);
 
@@ -198,13 +198,13 @@ else
 	ins(5).input = 6;
 	outs(1).system = 2;
 	outs(1).output = 1;
-  outs(2).system = 2;
-  outs(2).output = 2;
+  %outs(2).system = 2;
+  %outs(2).output = 2;
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
 	clear ins outs;
   
-  lcmBroadcastBlock = LCMBroadcastBlock(r);
-  sys = mimoCascade(sys, lcmBroadcastBlock);
+  %lcmBroadcastBlock = LCMBroadcastBlock(r);
+  %sys = mimoCascade(sys, lcmBroadcastBlock);
   
   % feedback foot contact detector with QP/atlas
   options.use_lcm=false;

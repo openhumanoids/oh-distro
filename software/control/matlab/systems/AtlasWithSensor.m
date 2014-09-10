@@ -28,18 +28,10 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
 
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
-
+      
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped('r_foot_sole', 'l_foot_sole');
-
-      obj.control_rate = options.control_rate;
-      obj.getStateFrame().setMaxRate(obj.control_rate);
-
-      obj.floating = options.floating;
-
-      obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
-      obj.BDIToStateInd = 6*obj.floating+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
-
+      
       if isfield(options,'obstacles')
         for i=1:options.obstacles
           xy = randn(2,1);
@@ -57,16 +49,20 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
       obj = addSensor(obj, feedback);
       
       % Add lidar
-%        obj.hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
-%        obj.hokuyo_num_pts = 10;   
-%        obj.hokuyo_max_range = 10; % meters?
-%        obj.hokuyo_spin_rate = 10; % rad/sec
       obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],zeros(3,1),'hokuyo_frame'));
       hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
-         -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
+        -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
       hokuyo = enableLCMGL(hokuyo);
       obj = addSensor(obj,hokuyo);
-      obj = compile(obj);
+       obj = compile(obj);
+      
+      obj.control_rate = options.control_rate;
+      obj.getStateFrame().setMaxRate(obj.control_rate);
+
+      obj.floating = options.floating;
+
+      obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
+      obj.BDIToStateInd = 6*obj.floating+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
       
       if options.floating
         % could also do fixed point search here
@@ -92,14 +88,14 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
       
       %atlas_output_frame{1} = atlas_state_frame;
       atlas_output_frame = cell(0);
-      if (length(obj.manip.sensor) ~= 0)
+      if (~isempty(obj.manip.sensor))
         for i=1:length(obj.manip.sensor)
           atlas_output_frame{i} = obj.manip.sensor{i}.constructFrame(obj.manip);
         end
       end
       output_frame = atlas_output_frame;
       % Continuing frame from above...
-      if (length(obj.sensor) ~= 0)
+      if (~isempty(obj.sensor))
         for i=1:length(obj.sensor)
           output_frame{length(atlas_output_frame)+i} = obj.sensor{i}.constructFrame(obj);
         end
@@ -267,7 +263,7 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
                                       'nom_downward_step', 0.2,...% m
                                       'max_num_steps', 10,...
                                       'min_num_steps', 1,...
-                                      'leading_foot', 1); % 0: left, 1: right
+                                      'leading_foot', 0); % 0: left, 1: right
     default_walking_params = struct('step_speed', 0.5,... % speed of the swing foot (m/s)
                                     'step_height', 0.05,... % approximate clearance over terrain (m)
                                     'hold_frac', 0.4,... % fraction of the swing time spent in double support
@@ -276,7 +272,7 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
     hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 5;   
+    hokuyo_num_pts = 10;   
     hokuyo_max_range = 5; % meters?
     hokuyo_spin_rate = 30; % rad/sec
   end
