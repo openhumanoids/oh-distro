@@ -203,7 +203,7 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'Kp_accel',1.0);
       options = ifNotIsFieldThenVal(options,'debug',false);
       options = ifNotIsFieldThenVal(options,'use_mex',true);
-      options = ifNotIsFieldThenVal(options,'contact_threshold',0.001);
+      options = ifNotIsFieldThenVal(options,'contact_threshold',0.01);
       options = ifNotIsFieldThenVal(options,'output_qdd',true);
       options = ifNotIsFieldThenVal(options,'solver',0);  % 0 fastqp, 1 gurobi
       options = ifNotIsFieldThenVal(options,'Kp_pelvis',20*[1; 1; 1; 0.6; 0.6; 0.6]);
@@ -273,7 +273,7 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
     hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
     hokuyo_num_pts = 10;   
-    hokuyo_max_range = 5; % meters?
+    hokuyo_max_range = 3; % meters?
     hokuyo_spin_rate = 30; % rad/sec
   end
 end

@@ -12,7 +12,7 @@ if (nargin<1); use_mex = true; end
 if (nargin<2); use_ik = false; end
 if (nargin<3); use_bullet = false; end
 if (nargin<4); use_angular_momentum = false; end
-if (nargin<5); random_navgoal = true; end
+if (nargin<5); random_navgoal = false; end
 
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 if random_navgoal
@@ -33,7 +33,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.001;
-options.obstacles = 0;
+options.obstacles = 5;
 r = AtlasWithSensor(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
@@ -105,7 +105,6 @@ if plot_comtraj
   lcmgl.switchBuffers();
 end
 
-
 ctrl_data = QPControllerData(true,struct(...
   'acceleration_input_frame',AtlasCoordinates(r),...
   'D',-getAtlasNominalCOMHeight()/9.81*eye(2),... % assumed COM height
@@ -127,7 +126,7 @@ ctrl_data = QPControllerData(true,struct(...
   'y0',walking_ctrl_data.zmptraj,...
   'plan_shift',zeros(3,1),...
   'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
-
+  
 options.dt = 0.003;
 options.use_bullet = use_bullet;
 options.debug = false;
