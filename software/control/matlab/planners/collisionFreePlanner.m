@@ -112,7 +112,9 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   prog = prog.setSolverOptions('snopt','IterationsLimit',5e5);
   prog = prog.setSolverOptions('snopt','LinesearchTolerance',0.1);
   plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,r.getStateFrame.coordinates);
-  prog = prog.addDisplayFunction(@(x)displayCallback(plan_publisher,nt,x),[prog.h_inds(:);prog.q_inds(:)]);
+  if options.visualize
+    prog = prog.addDisplayFunction(@(x)displayCallback(plan_publisher,nt,x),[prog.h_inds(:);prog.q_inds(:)]);
+  end
   nlp_time = tic;
   [xtraj,z,F,info] = prog.solveTraj(t,q_seed_traj);
   fprintf('NLP time: %f\n',toc(nlp_time))
