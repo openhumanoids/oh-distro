@@ -1,4 +1,4 @@
-function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin)
+function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin)
   % [xtraj, info] = % collisionFreePlanner(r,tspan,q_seed_traj,q_nom_traj,options,constr1,constr2,...,ikoptions)
   % 
   % @param options - [OPTIONAL] Structure that may contain the following fields
@@ -26,10 +26,9 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
   assert(numel(varargin)>=2);
   typecheck(varargin{end},'IKoptions');
 
-  tspan = t([1,end]);
+  nt = numel(t);
 
-  % uncomment to overwrite user supplied time.
-  %t = linspace(tspan(1),tspan(2),4);
+  q0 = q_seed_traj.eval(t(1));
 
   if isstruct(varargin{1})
     options = varargin{1};
@@ -41,12 +40,8 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
   if ~isfield(options,'frozen_groups'),options.frozen_groups = {}; end;
   if ~isfield(options,'visualize'),options.visualize = false; end;
   if ~isfield(options,'quiet'),options.quiet = true; end;
-  if ~isfield(options,'allow_ikoptions_modification'),options.allow_ikoptions_modification = false; end;
-  if ~isfield(options,'additional_t_samples'),options.additional_t_samples = []; end;
-  if ~isfield(options,'acceleration_cost'),options.acceleration_cost = 1e-3; end;
-  if ~isfield(options,'position_cost'),options.position_cost = 1e0; end;
-  if ~isfield(options,'collision_constraint_type'), options.collision_constraint_type = 'single'; end
   if ~isfield(options,'min_distance'), options.min_distance = 0.05; end;
+  if ~isfield(options,'major_iterations_limit'), options.major_iterations_limit = 50; end;
 
   constraints = varargin(1:end-1);
   ikoptions = varargin{end};
@@ -96,7 +91,6 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
   end
 
   r = compile(r);
-  nq = r.getNumPositions();
 
   for i = 1:numel(constraints)
     if ~isa(constraints{i},'PostureConstraint')
@@ -105,66 +99,34 @@ function [xtraj,info,infeasible_constraint,xtraj_feasible,info_feasible] = colli
   end
   ikoptions = updateRobot(ikoptions,r);
 
-  if options.visualize
-    checkDependency('lcmgl');
-    v = r.constructVisualizer(struct('use_contact_shapes',false));
-    lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(), ...
-      'collisionFreeIKTraj');
-  end
+  planning_time = tic;
+  problem = LeggedRobotPlanningProblem(r,options);
+  problem.Q = ikoptions.Q;
+  problem.v_max = 30.000000*pi/180;
+  problem = problem.addRigidBodyConstraint(constraints);
+  prog = problem.generateQuasiStaticPlanner(nt,[0,20],q_nom_traj,q0);
+  prog = prog.setSolverOptions('snopt','MajorIterationsLimit',options.major_iterations_limit);
+  prog = prog.setSolverOptions('snopt','SuperBasicsLimit',2e3);
+  prog = prog.setSolverOptions('snopt','MajorOptimalityTolerance',1e-2);
+  prog = prog.setSolverOptions('snopt','MajorFeasibilityTolerance',5e-5);
+  prog = prog.setSolverOptions('snopt','IterationsLimit',5e5);
+  prog = prog.setSolverOptions('snopt','LinesearchTolerance',0.1);
+  plan_publisher = RobotPlanPublisherWKeyFrames('CANDIDATE_MANIP_PLAN',true,r.getStateFrame.coordinates);
+  prog = prog.addDisplayFunction(@(x)displayCallback(plan_publisher,nt,x),[prog.h_inds(:);prog.q_inds(:)]);
+  nlp_time = tic;
+  [xtraj,z,F,info] = prog.solveTraj(t,q_seed_traj);
+  fprintf('NLP time: %f\n',toc(nlp_time))
+  fprintf('Total time: %f\n',toc(planning_time))
+  t_fine = linspace(xtraj.tspan(1),xtraj.tspan(2));
+  xtraj = PPTrajectory(foh(t_fine,xtraj.eval(t_fine)));
+end
 
-  % Adust ikoptions
-  if options.allow_ikoptions_modification
-    ikoptions = ikoptions.setDebug(true);
-    ikoptions = ikoptions.setMajorIterationsLimit(500);
-    ikoptions = ikoptions.setIterationsLimit(1e5);
-    ikoptions = ikoptions.setQ(options.position_cost*ikoptions.Q);
-    ikoptions = ikoptions.setQa(options.acceleration_cost*ikoptions.Qa);
-    ikoptions = ikoptions.setQv(0*ikoptions.Q);
-    ikoptions = ikoptions.setqdf(zeros(nq,1),zeros(nq,1));
-  end
-
-  q0 = q_seed_traj.eval(tspan(1));
-  q0_constraint = PostureConstraint(r,[t(1),t(1)]);
-  q0_constraint = q0_constraint.setJointLimits((1:nq)',q0,q0);
-  switch options.collision_constraint_type
-    case {'integrated','integrated_mex'}
-      iktraj_collision_constraint = IntegratedClosestDistanceConstraint(r, t, options.min_distance, 20);
-      ikoptions = ikoptions.setFixInitialState(false);
-      constraints{end+1} = q0_constraint;
-      ikoptions = ikoptions.setqd0(zeros(nq,1),zeros(nq,1));
-      if ~strcmp(options.collision_constraint_type,'integrated_mex')
-        ikoptions = ikoptions.setMex(false);
-      end
-    case {'interpolated','interpolated_mex'}
-      iktraj_collision_constraint = InterpolatedClosestDistanceConstraint(r, t, options.min_distance, 20);
-      ikoptions = ikoptions.setFixInitialState(false);
-      constraints{end+1} = q0_constraint;
-      ikoptions = ikoptions.setqd0(zeros(nq,1),zeros(nq,1));
-      if ~strcmp(options.collision_constraint_type,'interpolated_mex')
-        ikoptions = ikoptions.setMex(false);
-      end
-    case 'single'
-      iktraj_collision_constraint = MinDistanceConstraint(r, options.min_distance);      
-      ikoptions = ikoptions.setAdditionaltSamples(linspace(tspan(1),tspan(2),50));
-    case 'abcdc'
-      iktraj_collision_constraint = AllBodiesClosestDistanceConstraint(r, options.min_distance, 1e3);    
-    otherwise
-      error('test_collision_reach:badCollisionConstraintType', ...
-        'Options are ''integrated'', ''interpolated'', ''single'', and ''abcdc''.');
-  end
-
-  if ~options.quiet, time = tic; end
-  [xtraj_spline,info,infeasible_constraint] = inverseKinTraj(r,t,q_seed_traj,q_nom_traj,constraints{:},iktraj_collision_constraint,ikoptions);
-  if ~options.quiet, fprintf('IKTraj took %f seconds\n',toc(time)); end
-
-  % Constraints are actually checking the linear interpolation.
-  switch options.collision_constraint_type
-    case {'integrated','integrated_mex','interpolated','interpolated_mex'}
-      xtraj = PPTrajectory(foh(xtraj_spline.getBreaks(),xtraj_spline.eval(xtraj_spline.getBreaks())));
-    otherwise
-      xtraj = xtraj_spline;
-  end
-
-  % Only checking for feasibility now.
-  xtraj_feasible = xtraj;
-  info_feasible = info;
+function displayCallback(publisher,N,x)
+  h = x(1:N-1);
+  ts = [0;cumsum(h)];
+  q = reshape(x(N:end),[],N);
+  x_data = [zeros(2,numel(ts));q;0*q];
+  utime = now() * 24 * 60 * 60;
+  snopt_info_vector = ones(1, size(x_data,2));
+  publisher.publish(x_data, ts, utime, snopt_info_vector);
+end
