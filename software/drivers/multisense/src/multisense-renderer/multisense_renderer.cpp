@@ -303,7 +303,17 @@ static void _free(BotRenderer *renderer){
 }
 
 inline void fillDefaultConfig(MultisenseRenderer *self){
-  if (1==1){ /////// serial number 2 unit
+  if (1==1){ /////// serial number 2 unit - post upgrade
+    fprintf(stderr, "Using 1024x1024 Dense Depth Config\n");
+    self->width = 1024;
+    self->height = 1024;
+    self->left_cx =  512.0;
+    self->right_cx = 512.0;
+    self->right_cy = 512.0;
+    self->right_fx = 591.909423828125;//557.1886596679688;
+    self->right_fy = 591.909423828125;//557.1886596679688;
+    self->baseline = 0.0700931567882511;
+  }else if (1==0){ /////// serial number 2 unit - pre upgrade (incl trials)
     fprintf(stderr, "Using 1024x544 Dense Depth Config\n");
     self->width = 1024;
     self->height = 544;
@@ -344,6 +354,7 @@ multisense_add_renderer_to_viewer(BotViewer* viewer, int priority, lcm_t* lcm,
   self->need_to_recompute_frame_data = 0;
 
   std::string root_str = "cameras." + std::string(camera_channel); 
+  std::cout << "Multisense Renderer: " << std::string(camera_channel) << "\n";
   if ( bot_param_has_key (param, root_str.c_str()) ){
     std::cout << "Using config for: " << camera_channel << "\n";
     std::string left_str = "cameras." + std::string(camera_channel) + "_LEFT"; 

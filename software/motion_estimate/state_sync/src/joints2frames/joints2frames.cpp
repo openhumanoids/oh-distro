@@ -55,30 +55,11 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     std::cout << "Output signals will not limited in rate\n";  
   #else
     std::cout << "Output signals will be limited to these rates:\n";
-    // Removed and will now be published by state sync
-    //pub_frequency_["POSE_BODY"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "body" ) );
     pub_frequency_["BODY_TO_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
-    //pub_frequency_["POSE_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
-
     // Is this only used for simulation:
     pub_frequency_["HEAD_TO_HOKUYO_LINK"] = FrequencyLimit(0, 1E6/getMaxFrequency( "hokuyo_link") ); 
-
-    pub_frequency_["BODY_TO_UTORSO"] = FrequencyLimit(0, 1E6/getMaxFrequency( "utorso") ); 
-        
-    // Robotiq:
-    pub_frequency_["BODY_TO_RHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "RHAND_FORCE_TORQUE") );
-    pub_frequency_["BODY_TO_LHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "LHAND_FORCE_TORQUE") );
-    
-    
-    pub_frequency_["BODY_TO_CAMERALHAND"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERALHAND") );
-    pub_frequency_["BODY_TO_CAMERARHAND"] = FrequencyLimit(0, 1E6/getMaxFrequency( "CAMERARHAND") ); 
-    
-    pub_frequency_["BODY_TO_LHAND_FACE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "LHAND_FACE") ); 
-    pub_frequency_["BODY_TO_RHAND_FACE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "RHAND_FACE") );
-
     pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
-    pub_frequency_["POSE_LEFT_FOOT"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "left_foot") );
-    pub_frequency_["POSE_RIGHT_FOOT"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "right_foot") );    
+
   #endif  
 }
 
