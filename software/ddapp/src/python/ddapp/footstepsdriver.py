@@ -19,6 +19,7 @@ import numpy as np
 from ddapp import botpy
 import drc as lcmdrc
 from bot_core.pose_t import pose_t
+from drc.robot_state_t import robot_state_t
 import functools
 
 
@@ -136,6 +137,8 @@ class FootstepsDriver(object):
         self.showBDIPlan = False # hide the BDI plans when created
         self.bdiChannel = "POSE_BDI"
         self.bdiSubcribe = None
+        #enable this to used the bdi model to render a different state
+        #self.bdiJointController.addLCMUpdater("EST_ROBOT_STATE_ALT")
 
         self._setupSubscriptions()
         self._setupProperties()
@@ -182,6 +185,7 @@ class FootstepsDriver(object):
                                lcmUtils.HistoricalLCMLoader("drc", "software/drc_lcmtypes/lcmtypes",
                                                             os.getenv("DRC_BASE")))
         lcmUtils.addSubscriber('WALKING_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
+        lcmUtils.addSubscriber('WALKING_SIMULATION_TRAJ_RESPONSE', lcmdrc.robot_plan_t, self.onWalkingPlan)
 
         ### Related to BDI-frame adjustment:
         self.bdiSubcribe = lcmUtils.addSubscriber( self.bdiChannel , pose_t, self.onPoseBDI)
@@ -576,9 +580,12 @@ class FootstepsDriver(object):
             requestChannel = 'WALKING_CONTROLLER_PLAN_REQUEST'
             responseChannel = 'WALKING_CONTROLLER_PLAN_RESPONSE'
             response_type = lcmdrc.walking_plan_t
+        elif req_type == 'simulate_drake':
+            requestChannel = 'WALKING_SIMULATION_DRAKE_REQUEST'
+            responseChannel = 'WALKING_SIMULATION_TRAJ_RESPONSE'
+            response_type = lcmdrc.robot_plan_t
         else:
             raise ValueError("Invalid request type: {:s}".format(req_type))
-
 
         if waitForResponse:
             if waitTimeout == 0:
@@ -610,6 +617,11 @@ class FootstepsDriver(object):
     def _commitFootstepPlanBDI(self, footstepPlan):
         footstepPlan.utime = getUtime()
         lcmUtils.publish('COMMITTED_FOOTSTEP_PLAN', footstepPlan)
+
+    def sendHaltSimulationDrakeRequest(self):
+        msg = lcmdrc.utime_t()
+        msg.utime = getUtime()
+        lcmUtils.publish('HALT_DRAKE_SIMULATION', msg)
 
 
     ####################### BDI Adjustment Logic and Visualization ##################
