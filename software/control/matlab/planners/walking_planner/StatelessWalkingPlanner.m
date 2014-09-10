@@ -20,6 +20,7 @@ classdef StatelessWalkingPlanner
       debug = false;
 
       x0 = r.getStateFrame().lcmcoder.decode(request.initial_state);
+      r = r.setInitialState(x0);
       q0 = x0(1:end/2);
       nq = getNumPositions(r);
 
@@ -81,7 +82,11 @@ classdef StatelessWalkingPlanner
         walking_plan = WalkingPlan(ts, xtraj, joint_names);
 
         if simulate
-          simulateWalking(r, walking_ctrl_data, walking_plan, x0);
+          walking_ctrl_data = WalkingControllerData.from_drake_walking_data(walking_plan_data, qstar);
+          x0_resolved = r.resolveConstraints(r.getInitialState());
+          r = r.setInitialState(x0_resolved);
+          traj = simulateWalking(r, walking_ctrl_data, walking_plan.ts, 1, false, false, false, false);
+          walking_plan = WalkingPlan(traj.getBreaks(), traj, joint_names);
         end
       else
         walking_plan = WalkingControllerData.from_drake_walking_data(walking_plan_data, qstar);

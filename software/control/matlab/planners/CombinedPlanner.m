@@ -17,7 +17,6 @@ classdef CombinedPlanner
       options.dt = 0.001;
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints')
       warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
-      options.visual = false; % loads faster
       r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
       r = removeCollisionGroupsExcept(r,{'heel','toe'});
       r = setTerrain(r,DRCTerrainMap(false,struct('name','Foot Plan','status_code',6,'listen_for_foot_pose',false)));
@@ -80,6 +79,11 @@ classdef CombinedPlanner
       obj.handlers{end+1} = @obj.plan_walking_controller;
       obj.response_channels{end+1} = 'WALKING_CONTROLLER_PLAN_RESPONSE';
 
+      obj.monitors{end+1} = drake.util.MessageMonitor(drc.walking_plan_request_t, 'utime');
+      obj.request_channels{end+1} = 'WALKING_SIMULATION_DRAKE_REQUEST';
+      obj.handlers{end+1} = @obj.simulate_walking_drake;
+      obj.response_channels{end+1} = 'WALKING_SIMULATION_TRAJ_RESPONSE';
+
       obj.monitors{end+1} = drake.util.MessageMonitor(drc.robot_plan_t, 'utime');
       obj.request_channels{end+1} = 'COMMITTED_ROBOT_PLAN';
       obj.handlers{end+1} = @obj.configuration_traj;
@@ -119,6 +123,11 @@ classdef CombinedPlanner
     function plan = plan_walking_controller(obj, msg)
       msg = drc.walking_plan_request_t(msg);
       plan = obj.walking_planner.plan_walking(obj.biped, msg, false);
+    end
+
+    function plan = simulate_walking_drake(obj, msg)
+      msg = drc.walking_plan_request_t(msg);
+      plan = obj.walking_planner.plan_walking(obj.biped, msg, true, true);
     end
     
     function plan = configuration_traj(obj, msg)
