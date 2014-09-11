@@ -153,8 +153,10 @@ if plot_comtraj
       rfoot_steps(:,rstep_counter) = rfoot_p;
     end
 
-    rfoottraj = walking_ctrl_data.link_constraints(1).traj;
-    lfoottraj = walking_ctrl_data.link_constraints(2).traj;
+    rfoottraj = PPTrajectory(pchip(walking_ctrl_data.link_constraints(1).ts,...
+                                   walking_ctrl_data.link_constraints(1).poses));
+    lfoottraj = PPTrajectory(pchip(walking_ctrl_data.link_constraints(2).ts,...
+                                   walking_ctrl_data.link_constraints(2).poses));
 
     lfoot_des = eval(lfoottraj,ts(i));
     lfoot_des(3) = max(lfoot_des(3), 0.0811);     % hack to fix footstep planner bug
