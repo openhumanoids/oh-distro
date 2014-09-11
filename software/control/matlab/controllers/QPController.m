@@ -330,7 +330,7 @@ classdef QPController < MIMODrakeSystem
     supp.contact_groups = contact_groups;
     supp.num_contact_pts = n_contact_pts;
     supp.contact_surfaces = 0*support_bodies;
-    contact_groups
+    % contact_groups
     if (obj.use_mex==0 || obj.use_mex==2)
       kinsol = doKinematics(r,q,false,true,qd);
 
