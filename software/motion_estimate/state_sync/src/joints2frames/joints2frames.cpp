@@ -198,18 +198,18 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
       body_to_hokuyo_link = KDLToEigen( (*ii).second );
       body_to_hokuyo_link_found=true;
-    }else if(  (*ii).first.compare( "r_hand_force_torque" ) == 0 ){ // ft sensor
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
-    }else if(  (*ii).first.compare( "l_hand_force_torque" ) == 0 ){ // ft sensor
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND_FORCE_TORQUE" );     
-    }else if(  (*ii).first.compare( "r_hand_camera_optical_frame" ) == 0 ){ // robotiq r
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND" );
-    }else if(  (*ii).first.compare( "l_hand_camera_optical_frame" ) == 0 ){ // robotiq l
-      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND" );
-    }else if(  (*ii).first.compare( "l_hand_face" ) == 0 ){
-      publishRigidTransform( KDLToEigen( (*ii).second ), msg->utime, "BODY_TO_LHAND_FACE" );
-    }else if(  (*ii).first.compare( "r_hand_face" ) == 0 ){
-      publishRigidTransform( KDLToEigen( (*ii).second ), msg->utime, "BODY_TO_RHAND_FACE" );
+    //}else if(  (*ii).first.compare( "r_hand_force_torque" ) == 0 ){ // ft sensor
+    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
+    //}else if(  (*ii).first.compare( "l_hand_force_torque" ) == 0 ){ // ft sensor
+    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND_FORCE_TORQUE" );     
+    //}else if(  (*ii).first.compare( "r_hand_camera_optical_frame" ) == 0 ){ // robotiq r
+    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND" );
+    //}else if(  (*ii).first.compare( "l_hand_camera_optical_frame" ) == 0 ){ // robotiq l
+    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERALHAND" );
+    //}else if(  (*ii).first.compare( "l_hand_face" ) == 0 ){
+    //  publishRigidTransform( KDLToEigen( (*ii).second ), msg->utime, "BODY_TO_LHAND_FACE" );
+    //}else if(  (*ii).first.compare( "r_hand_face" ) == 0 ){
+    //  publishRigidTransform( KDLToEigen( (*ii).second ), msg->utime, "BODY_TO_RHAND_FACE" );
     }
     
   }
@@ -250,8 +250,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     Eigen::Isometry3d world_to_l_sole = world_to_body * body_to_l_foot * foot_to_sole;
     Eigen::Isometry3d world_to_r_sole = world_to_body * body_to_r_foot * foot_to_sole;
 
-    publishPose(world_to_l_sole, msg->utime,"POSE_LEFT_FOOT");
-    publishPose(world_to_r_sole, msg->utime,"POSE_RIGHT_FOOT");
+    //publishPose(world_to_l_sole, msg->utime,"POSE_LEFT_FOOT");
+    //publishPose(world_to_r_sole, msg->utime,"POSE_RIGHT_FOOT");
     
     // Publish lower of the soles at the ground occasionally
     if ( world_to_l_sole.translation().z() < world_to_r_sole.translation().z() ){
@@ -261,8 +261,8 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }
   }
   
-  Eigen::Isometry3d body_to_utorso = KDLToEigen(cartpos_out.find("utorso")->second);
-  publishRigidTransform(body_to_utorso, msg->utime, "BODY_TO_UTORSO");
+  //Eigen::Isometry3d body_to_utorso = KDLToEigen(cartpos_out.find("utorso")->second);
+  //publishRigidTransform(body_to_utorso, msg->utime, "BODY_TO_UTORSO");
   
 
   // 4. Loop through joints and extract world positions:
