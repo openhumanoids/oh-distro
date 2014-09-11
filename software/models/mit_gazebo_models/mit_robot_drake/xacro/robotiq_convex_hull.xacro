@@ -1,25 +1,35 @@
 <robot name="robotiq" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="robotiq_convex_hull" params="is_left">
+  <xacro:macro name="robotiq_convex_hull" params="is_left is_open">
     <xacro:if value="${is_left}">
-      <xacro:robotiq_convex_hull_local prefix="l" yaw="0" y_offset_sign="1"/>
+      <xacro:robotiq_convex_hull_local prefix="l" yaw="0" y_offset_sign="1" is_open="${is_open}"/>
     </xacro:if>
     <xacro:unless value="${is_left}">
-      <xacro:robotiq_convex_hull_local prefix="r" yaw="3.142" y_offset_sign="-1"/>
+      <xacro:robotiq_convex_hull_local prefix="r" yaw="3.142" y_offset_sign="-1" is_open="${is_open}"/>
     </xacro:unless>
   </xacro:macro>
 
-  <xacro:macro name="robotiq_convex_hull_local" params="prefix yaw y_offset_sign">
+  <xacro:macro name="robotiq_convex_hull_local" params="prefix yaw y_offset_sign is_open">
     <link name="${prefix}_robotiq_convex_hull">
       <visual>
         <origin rpy="-1.57079 -1.57079 ${yaw}" xyz="0 ${y_offset_sign*0.29016} ${y_offset_sign*0.0112}"/>
         <geometry>
-          <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/GRIPPER_OPEN_chull.wrl" scale="1 1 1"/>
+          <xacro:if value="${is_open}">
+            <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/GRIPPER_OPEN_chull.wrl" scale="1 1 1"/>
+          </xacro:if>
+          <xacro:unless value="${is_open}">
+            <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/GRIPPER_CLOSED_chull.wrl" scale="1 1 1"/>
+          </xacro:unless>
         </geometry>
       </visual>
       <collision group="${prefix}_hand_robotiq">
         <origin rpy="-1.57079 -1.57079 ${yaw}" xyz="0 ${y_offset_sign*0.29016} ${y_offset_sign*0.0112}"/>
         <geometry>
-          <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/GRIPPER_OPEN_chull.wrl" scale="1 1 1"/>
+          <xacro:if value="${is_open}">
+            <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/GRIPPER_OPEN_chull.wrl" scale="1 1 1"/>
+          </xacro:if>
+          <xacro:unless value="${is_open}">
+            <mesh filename="package://mit_drcsim_scripts/models/mit_robot/meshes/GRIPPER_CLOSED_chull.wrl" scale="1 1 1"/>
+          </xacro:unless>
         </geometry>
       </collision>
     </link>

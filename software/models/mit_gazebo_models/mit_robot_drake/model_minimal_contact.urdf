@@ -1127,7 +1127,6 @@
     <member link="r_farm"/>
     <member link="r_hand"/>
     <ignored_collision_filter_group collision_filter_group="r_arm"/>
-    <ignored_collision_filter_group collision_filter_group="core"/>
   </collision_filter_group>
   <collision_filter_group name="l_arm">
     <member link="l_clav"/>
@@ -1137,7 +1136,6 @@
     <member link="l_farm"/>
     <member link="l_hand"/>
     <ignored_collision_filter_group collision_filter_group="l_arm"/>
-    <ignored_collision_filter_group collision_filter_group="core"/>
   </collision_filter_group>
   <transmission name="back_bkz_trans" type="pr2_mechanism_model/SimpleTransmission">
     <joint name="back_bkz"/>
