@@ -83,6 +83,17 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         %obj = obj.setInitialState(zeros(obj.getNumStates(),1));
       end
       warning(S);
+      
+      l_foot = obj.findLinkInd('l_foot');
+      r_foot = obj.findLinkInd('r_foot');
+
+      obj.left_full_support = RigidBodySupportState(obj,l_foot);
+      obj.left_toe_support = RigidBodySupportState(obj,l_foot,{{'toe'}});
+      obj.right_full_support = RigidBodySupportState(obj,r_foot);
+      obj.right_toe_support = RigidBodySupportState(obj,r_foot,{{'toe'}});
+      obj.left_full_right_full_support = RigidBodySupportState(obj,[l_foot,r_foot]);
+      obj.left_toe_right_full_support = RigidBodySupportState(obj,[l_foot,r_foot],{{'toe'},{'heel','toe'}});
+      obj.left_full_right_toe_support = RigidBodySupportState(obj,[l_foot,r_foot],{{'heel','toe'},{'toe'}});
     end
 
     function obj = compile(obj)
@@ -280,9 +291,20 @@ state_frame = AtlasState(obj);
                                     'drake_instep_shift', 0.0275,... % Distance to shift ZMP trajectory inward toward the instep from the center of the foot (m)
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
+
     hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
     hokuyo_num_pts = 30;   
     hokuyo_max_range = 6; % meters?
     hokuyo_spin_rate = 10; % rad/sec
+
+    % preconstructing these for efficiency
+    left_full_support
+    left_toe_support
+    right_full_support
+    right_toe_support
+    left_full_right_full_support
+    left_toe_right_full_support
+    left_full_right_toe_support
+
   end
 end

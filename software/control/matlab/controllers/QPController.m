@@ -297,6 +297,8 @@ classdef QPController < MIMODrakeSystem
     n_contact_pts = [];
     ind = 1;
     
+    min_knee_angle = 0.75;
+    
     supp_idx = find(ctrl_data.support_times<=t,1,'last');
     plan_supp = ctrl_data.supports(supp_idx);
 
@@ -304,33 +306,25 @@ classdef QPController < MIMODrakeSystem
     rfoot_plan_supp_ind = plan_supp.bodies==obj.rfoot_idx;
     if fc(1)>0
       support_bodies(ind) = obj.lfoot_idx;
-      
-      if q(r.findJointIndices('l_leg_kny')) < 0.75
-        contact_groups{ind} = {'toe'};
-        body = r.getBody(obj.lfoot_idx);
-        contact_pts{ind} = body.contact_shape_group{strcmp(body.collision_group_name,contact_groups{ind})};
-        n_contact_pts(ind) = length(contact_pts{ind});
-      else
-        contact_groups{ind} = plan_supp.contact_groups{lfoot_plan_supp_ind};
-        contact_pts{ind} = plan_supp.contact_pts{lfoot_plan_supp_ind};
-        n_contact_pts(ind) = plan_supp.num_contact_pts(lfoot_plan_supp_ind);
+      if q(r.findJointIndices('l_leg_kny')) < min_knee_angle
+        plan_supp = r.left_toe_right_full_support;
       end
+      contact_groups{ind} = plan_supp.contact_groups{lfoot_plan_supp_ind};
+      contact_pts{ind} = plan_supp.contact_pts{lfoot_plan_supp_ind};
+      n_contact_pts(ind) = plan_supp.num_contact_pts(lfoot_plan_supp_ind);
       ind=ind+1;
     end
     if fc(2)>0
       support_bodies(ind) = obj.rfoot_idx;
-      if q(r.findJointIndices('r_leg_kny')) < 0.75
-        contact_groups{ind} = {'toe'};
-        body = r.getBody(obj.rfoot_idx);
-        contact_pts{ind} = body.contact_shape_group{strcmp(body.collision_group_name,contact_groups{ind})};
-        n_contact_pts(ind) = length(contact_pts{ind});
-      else
-        contact_groups{ind} = plan_supp.contact_groups{rfoot_plan_supp_ind};
-        contact_pts{ind} = plan_supp.contact_pts{rfoot_plan_supp_ind};
-        n_contact_pts(ind) = plan_supp.num_contact_pts(rfoot_plan_supp_ind);
+      if q(r.findJointIndices('r_leg_kny')) < min_knee_angle
+        plan_supp = r.left_full_right_toe_support;
       end
+      contact_groups{ind} = plan_supp.contact_groups{rfoot_plan_supp_ind};
+      contact_pts{ind} = plan_supp.contact_pts{rfoot_plan_supp_ind};
+      n_contact_pts(ind) = plan_supp.num_contact_pts(rfoot_plan_supp_ind);
     end
-    
+    obj.controller_data.supports(supp_idx) = plan_supp;
+
     supp.bodies = support_bodies;
     supp.contact_pts = contact_pts;
     supp.contact_groups = contact_groups;
@@ -424,10 +418,10 @@ classdef QPController < MIMODrakeSystem
       lb = [-1e3*ones(1,nq) zeros(1,nf)   -obj.slack_limit*ones(1,neps)]'; % qddot/contact forces/slack vars
       ub = [ 1e3*ones(1,nq) 1e3*ones(1,nf) obj.slack_limit*ones(1,neps)]';
 
-      if q(r.findJointIndices('l_leg_kny')) < 0.75
+      if q(r.findJointIndices('l_leg_kny')) < min_knee_angle
         lb(r.findJointIndices('l_leg_kny')) = 0;
       end
-      if q(r.findJointIndices('r_leg_kny')) < 0.75
+      if q(r.findJointIndices('r_leg_kny')) < min_knee_angle
         lb(r.findJointIndices('r_leg_kny')) = 0;
       end
       
