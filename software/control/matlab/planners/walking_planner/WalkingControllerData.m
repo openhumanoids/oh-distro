@@ -46,6 +46,9 @@ classdef WalkingControllerData
         link_constraints(i).traj = new_traj;
         link_constraints(i).dtraj = fnder(new_traj);
         link_constraints(i).ddtraj = fnder(new_traj,2);
+        link_constraints(i).ddtraj = fnder(new_traj,2);
+        link_constraints(i).contact_break_ind = find(diff(zpoints)>0.03);
+        link_constraints(i).contact_break_times = breaks(link_constraints(i).contact_break_ind);
       end
       
       obj.link_constraints = link_constraints;

@@ -11,6 +11,8 @@ classdef FootContactBlock < MIMODrakeSystem
     contact_threshold; % min height above terrain to be considered in contact
     use_lcm;
     use_contact_logic_OR;
+    robot;
+    nq;
   end
   
   methods
@@ -116,6 +118,8 @@ classdef FootContactBlock < MIMODrakeSystem
       else
         obj.using_flat_terrain = false;
       end
+      obj.robot = r;
+      obj.nq = getNumPositions(r);
 
     end
    
@@ -161,8 +165,44 @@ classdef FootContactBlock < MIMODrakeSystem
       end
       
       active_supports = supportDetectmex(obj.mex_ptr.data,x,supp,contact_sensor,contact_thresh,height,contact_logic_AND);
-
       y = [1.0*any(active_supports==obj.lfoot_idx); 1.0*any(active_supports==obj.rfoot_idx)];
+
+      if ~y(1) 
+        % left foot not in contact
+        ind =  [ctrl_data.link_constraints.link_ndx]==obj.lfoot_idx;
+        if t >= ctrl_data.link_constraints(ind).contact_break_times(1)
+          q = x(1:obj.nq);
+          kinsol = doKinematics(obj.robot,q);
+          p = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],1); 
+          ts = ctrl_data.link_constraints(ind).traj.getBreaks;
+          pts = ctrl_data.link_constraints(ind).traj.eval(ts);
+          ts(ctrl_data.link_constraints(ind).contact_break_ind(1)) = t;
+          pts(:,ctrl_data.link_constraints(ind).contact_break_ind(1)) = p;
+          new_traj = PPTrajectory(pchip(ts, pts));
+          ctrl_data.link_constraints(ind).traj = new_traj;
+          ctrl_data.link_constraints(ind).dtraj = fnder(new_traj);
+          ctrl_data.link_constraints(ind).contact_break_ind(1) = [];
+          ctrl_data.link_constraints(ind).contact_break_times(1) = [];
+        end
+      elseif ~y(2)
+        % right foot not in contact
+        ind =  [ctrl_data.link_constraints.link_ndx]==obj.rfoot_idx;
+        if t >= ctrl_data.link_constraints(ind).contact_break_times(1)
+          q = x(1:obj.nq);
+          kinsol = doKinematics(obj.robot,q);
+          p = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],1); 
+          ts = ctrl_data.link_constraints(ind).traj.getBreaks;
+          pts = ctrl_data.link_constraints(ind).traj.eval(ts);
+          ts(ctrl_data.link_constraints(ind).contact_break_ind(1)) = t;
+          pts(:,ctrl_data.link_constraints(ind).contact_break_ind(1)) = p;
+          new_traj = PPTrajectory(pchip(ts, pts));
+          ctrl_data.link_constraints(ind).traj = new_traj;
+          ctrl_data.link_constraints(ind).dtraj = fnder(new_traj);
+          ctrl_data.link_constraints(ind).contact_break_ind(1) = [];
+          ctrl_data.link_constraints(ind).contact_break_times(1) = [];
+        end
+      end
+      
       if obj.num_outputs > 1
         varargout = cell(1,obj.num_outputs);
         for i=1:obj.num_outputs

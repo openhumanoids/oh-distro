@@ -8,7 +8,7 @@ if (nargin<1); use_mex = true; end
 if (nargin<2); use_ik = false; end
 if (nargin<3); use_bullet = false; end
 if (nargin<4); use_angular_momentum = false; end
-if (nargin<5); random_navgoal = true; end
+if (nargin<5); random_navgoal = false; end
 
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 if random_navgoal
@@ -37,7 +37,7 @@ r = compile(r);
 r = r.setInitialState(xstar);
 
 v = r.constructVisualizer;
-v.display_dt = 0.05;
+v.display_dt = 0.01;
 
 nq = getNumPositions(r);
 
@@ -57,8 +57,8 @@ request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.24;
 request.params.max_step_width = 0.3;
-request.params.nom_forward_step = 0.17;
-request.params.max_forward_step = 0.2;
+request.params.nom_forward_step = 0.5;
+request.params.max_forward_step = 0.5;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_mode = drc.footstep_plan_params_t.HORIZONTAL_PLANE;
