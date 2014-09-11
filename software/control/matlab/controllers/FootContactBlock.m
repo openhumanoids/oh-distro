@@ -170,37 +170,80 @@ classdef FootContactBlock < MIMODrakeSystem
       if ~y(1) 
         % left foot not in contact
         ind =  [ctrl_data.link_constraints.link_ndx]==obj.lfoot_idx;
-        if t >= ctrl_data.link_constraints(ind).contact_break_times(1)
+        if ~isempty(ctrl_data.link_constraints(ind).contact_break_indices) && t>= ctrl_data.link_constraints(ind).ts(ctrl_data.link_constraints(ind).contact_break_indices(1))
+          break_ind = ctrl_data.link_constraints(ind).contact_break_indices(1);
           q = x(1:obj.nq);
-          kinsol = doKinematics(obj.robot,q);
-          p = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],1); 
-          ts = ctrl_data.link_constraints(ind).traj.getBreaks;
-          pts = ctrl_data.link_constraints(ind).traj.eval(ts);
-          ts(ctrl_data.link_constraints(ind).contact_break_ind(1)) = t;
-          pts(:,ctrl_data.link_constraints(ind).contact_break_ind(1)) = p;
-          new_traj = PPTrajectory(pchip(ts, pts));
-          ctrl_data.link_constraints(ind).traj = new_traj;
-          ctrl_data.link_constraints(ind).dtraj = fnder(new_traj);
-          ctrl_data.link_constraints(ind).contact_break_ind(1) = [];
-          ctrl_data.link_constraints(ind).contact_break_times(1) = [];
+          qd = x(obj.nq+1:end);
+          kinsol = doKinematics(obj.robot,q,false,true,qd);
+          [p,J] = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],1); 
+          pdot = J*qd;
+          
+          ctrl_data.link_constraints(ind).ts(break_ind) = t;
+          tf = ctrl_data.link_constraints(ind).ts(break_ind+1);
+          pf = ctrl_data.link_constraints(ind).poses(:,break_ind+1);
+          pfdot = ctrl_data.link_constraints(ind).dposes(:,break_ind+1);
+          [a0, a1, a2, a3] = cubicSplineCoefficients(t, tf, p, pf, pdot, pfdot);
+          ctrl_data.link_constraints(ind).poses(:,break_ind) = p;
+          ctrl_data.link_constraints(ind).dposes(:,break_ind) = pdot;
+          ctrl_data.link_constraints(ind).a0(:,break_ind) = a0;
+          ctrl_data.link_constraints(ind).a1(:,break_ind) = a1;
+          ctrl_data.link_constraints(ind).a2(:,break_ind) = a2;
+          ctrl_data.link_constraints(ind).a3(:,break_ind) = a3;
+          ctrl_data.link_constraints(ind).contact_break_indices(1) = [];
+
         end
+%         if ~isempty(ctrl_data.link_constraints(ind).contact_break_times) && t >= ctrl_data.link_constraints(ind).contact_break_times(1)
+%           q = x(1:obj.nq);
+%           kinsol = doKinematics(obj.robot,q);
+%           p = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],1); 
+%           ts = ctrl_data.link_constraints(ind).traj.getBreaks;
+%           pts = ctrl_data.link_constraints(ind).traj.eval(ts);
+%           ts(ctrl_data.link_constraints(ind).contact_break_ind(1)) = t;
+%           pts(:,ctrl_data.link_constraints(ind).contact_break_ind(1)) = p;
+%           new_traj = PPTrajectory(pchip(ts, pts));
+%           ctrl_data.link_constraints(ind).traj = new_traj;
+%           ctrl_data.link_constraints(ind).dtraj = fnder(new_traj);
+%           ctrl_data.link_constraints(ind).contact_break_ind(1) = [];
+%           ctrl_data.link_constraints(ind).contact_break_times(1) = [];
+%         end
       elseif ~y(2)
         % right foot not in contact
         ind =  [ctrl_data.link_constraints.link_ndx]==obj.rfoot_idx;
-        if t >= ctrl_data.link_constraints(ind).contact_break_times(1)
+        if ~isempty(ctrl_data.link_constraints(ind).contact_break_indices) && t>= ctrl_data.link_constraints(ind).ts(ctrl_data.link_constraints(ind).contact_break_indices(1))
+          break_ind = ctrl_data.link_constraints(ind).contact_break_indices(1);
           q = x(1:obj.nq);
-          kinsol = doKinematics(obj.robot,q);
-          p = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],1); 
-          ts = ctrl_data.link_constraints(ind).traj.getBreaks;
-          pts = ctrl_data.link_constraints(ind).traj.eval(ts);
-          ts(ctrl_data.link_constraints(ind).contact_break_ind(1)) = t;
-          pts(:,ctrl_data.link_constraints(ind).contact_break_ind(1)) = p;
-          new_traj = PPTrajectory(pchip(ts, pts));
-          ctrl_data.link_constraints(ind).traj = new_traj;
-          ctrl_data.link_constraints(ind).dtraj = fnder(new_traj);
-          ctrl_data.link_constraints(ind).contact_break_ind(1) = [];
-          ctrl_data.link_constraints(ind).contact_break_times(1) = [];
+          qd = x(obj.nq+1:end);
+          kinsol = doKinematics(obj.robot,q,false,true,qd);
+          [p,J] = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],1); 
+          pdot = J*qd;
+          
+          ctrl_data.link_constraints(ind).ts(break_ind) = t;
+          tf = ctrl_data.link_constraints(ind).ts(break_ind+1);
+          pf = ctrl_data.link_constraints(ind).poses(:,break_ind+1);
+          pfdot = ctrl_data.link_constraints(ind).dposes(:,break_ind+1);
+          [a0, a1, a2, a3] = cubicSplineCoefficients(t, tf, p, pf, pdot, pfdot);
+          ctrl_data.link_constraints(ind).poses(:,break_ind) = p;
+          ctrl_data.link_constraints(ind).dposes(:,break_ind) = pdot;
+          ctrl_data.link_constraints(ind).a0(:,break_ind) = a0;
+          ctrl_data.link_constraints(ind).a1(:,break_ind) = a1;
+          ctrl_data.link_constraints(ind).a2(:,break_ind) = a2;
+          ctrl_data.link_constraints(ind).a3(:,break_ind) = a3;
+          ctrl_data.link_constraints(ind).contact_break_indices(1) = [];
         end
+%         if ~isempty(ctrl_data.link_constraints(ind).contact_break_times) && t >= ctrl_data.link_constraints(ind).contact_break_times(1)
+%           q = x(1:obj.nq);
+%           kinsol = doKinematics(obj.robot,q);
+%           p = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],1); 
+%           ts = ctrl_data.link_constraints(ind).traj.getBreaks;
+%           pts = ctrl_data.link_constraints(ind).traj.eval(ts);
+%           ts(ctrl_data.link_constraints(ind).contact_break_ind(1)) = t;
+%           pts(:,ctrl_data.link_constraints(ind).contact_break_ind(1)) = p;
+%           new_traj = PPTrajectory(pchip(ts, pts));
+%           ctrl_data.link_constraints(ind).traj = new_traj;
+%           ctrl_data.link_constraints(ind).dtraj = fnder(new_traj);
+%           ctrl_data.link_constraints(ind).contact_break_ind(1) = [];
+%           ctrl_data.link_constraints(ind).contact_break_times(1) = [];
+%         end
       end
       
       if obj.num_outputs > 1

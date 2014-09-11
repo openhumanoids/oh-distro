@@ -297,7 +297,7 @@ classdef QPController < MIMODrakeSystem
     n_contact_pts = [];
     ind = 1;
     
-    min_knee_angle = 0.75;
+    min_knee_angle = 0.6;
     
     supp_idx = find(ctrl_data.support_times<=t,1,'last');
     plan_supp = ctrl_data.supports(supp_idx);

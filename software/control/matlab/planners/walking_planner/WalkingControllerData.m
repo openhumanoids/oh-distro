@@ -32,24 +32,24 @@ classdef WalkingControllerData
       obj.mu = mu;
       obj.t_offset = t_offset;
       
-      % compute smooth polynomial footstep trajectories
-      for i=1:length(link_constraints)
-        traj = link_constraints(i).traj;
-        breaks = unique(traj.getBreaks());
-        points = traj.eval(breaks);
-        points(4,:) = unwrap(points(4,:));
-        points(5,:) = unwrap(points(5,:));
-        points(6,:) = unwrap(points(6,:));
-        zpoints = points(3, :);
-        change_indices = [true diff(diff(zpoints)) ~= 0 true];
-        new_traj = PPTrajectory(pchip(breaks(change_indices), points(:, change_indices)));
-        link_constraints(i).traj = new_traj;
-        link_constraints(i).dtraj = fnder(new_traj);
-        link_constraints(i).ddtraj = fnder(new_traj,2);
-        link_constraints(i).ddtraj = fnder(new_traj,2);
-        link_constraints(i).contact_break_ind = find(diff(zpoints)>0.03);
-        link_constraints(i).contact_break_times = breaks(link_constraints(i).contact_break_ind);
-      end
+%       % compute smooth polynomial footstep trajectories
+%       for i=1:length(link_constraints)
+%         traj = link_constraints(i).traj;
+%         breaks = unique(traj.getBreaks());
+%         points = traj.eval(breaks);
+%         points(4,:) = unwrap(points(4,:));
+%         points(5,:) = unwrap(points(5,:));
+%         points(6,:) = unwrap(points(6,:));
+%         zpoints = points(3, :);
+%         change_indices = [true diff(diff(zpoints)) ~= 0 true];
+%         new_traj = PPTrajectory(pchip(breaks(change_indices), points(:, change_indices)));
+%         link_constraints(i).traj = new_traj;
+%         link_constraints(i).dtraj = fnder(new_traj);
+%         link_constraints(i).ddtraj = fnder(new_traj,2);
+%         link_constraints(i).ddtraj = fnder(new_traj,2);
+%         link_constraints(i).contact_break_ind = find(diff(zpoints)>0.03);
+%         link_constraints(i).contact_break_times = breaks(link_constraints(i).contact_break_ind);
+%       end
       
       obj.link_constraints = link_constraints;
       obj.zmptraj = zmptraj;
