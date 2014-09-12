@@ -42,6 +42,17 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   if ~isfield(options,'quiet'),options.quiet = true; end;
   if ~isfield(options,'min_distance'), options.min_distance = 0.05; end;
   if ~isfield(options,'major_iterations_limit'), options.major_iterations_limit = 50; end;
+  if ~isfield(options,'t_max'), options.t_max = 30; end;
+  if ~isfield(options,'joint_v_max'), options.joint_v_max = 30*pi/180; end;
+  if ~isfield(options,'xyz_v_max'), options.xyz_v_max = 0.1; end;
+  if isscalar(options.joint_v_max)
+    options.joint_v_max = repmat(options.joint_v_max,r.getNumVelocities()-3,1);
+  end
+  if isscalar(options.xyz_v_max)
+    options.xyz_v_max = repmat(options.xyz_v_max,3,1);
+  end
+  options.v_max = [options.xyz_v_max; options.joint_v_max];
+
 
   constraints = varargin(1:end-1);
   ikoptions = varargin{end};
@@ -102,12 +113,33 @@ function [xtraj,info] = collisionFreePlanner(r,t,q_seed_traj,q_nom_traj,varargin
   planning_time = tic;
   problem = LeggedRobotPlanningProblem(r,options);
   problem.Q = ikoptions.Q;
-  problem.v_max = 30.000000*pi/180;
   problem = problem.addRigidBodyConstraint(constraints);
-  prog = problem.generateQuasiStaticPlanner(nt,[0,20],q_nom_traj,q0);
+  prog = problem.generateQuasiStaticPlanner(nt,[0,options.t_max],q_nom_traj,q0);
+
+  k_pts = 1e2;
+  q_frame = r.getPositionFrame();
+  q_interp_all = drakeFunction.interpolation.Linear(q_frame,problem.n_interp_points,prog.N);
+  R1 = drakeFunction.frames.realCoordinateSpace(1);
+  R3 = drakeFunction.frames.realCoordinateSpace(3);
+  delta_r_all = drakeFunction.Difference(R3,(prog.N-1)*problem.n_interp_points);
+  smooth_norm = drakeFunction.euclidean.SmoothNorm(R3,1e-2);
+  smooth_norm_all = compose(drakeFunction.Sum(R1,(prog.N-1)*problem.n_interp_points-1),duplicate(smooth_norm,(prog.N-1)*problem.n_interp_points-1));
+  l_hand_fcn = drakeFunction.kinematic.WorldPosition(r,'l_hand');
+  l_hand_fcn_all = duplicate(l_hand_fcn,(prog.N-1)*problem.n_interp_points);
+  l_hand_step_lengths = smooth_norm_all(delta_r_all(l_hand_fcn_all(q_interp_all)));
+  l_hand_arc_length_cost = DrakeFunctionConstraint(-Inf,Inf, ...
+    k_pts*l_hand_step_lengths);
+  prog = prog.addCost(l_hand_arc_length_cost,prog.q_inds);
+  r_hand_fcn = drakeFunction.kinematic.WorldPosition(r,'r_hand');
+  r_hand_fcn_all = duplicate(r_hand_fcn,(prog.N-1)*problem.n_interp_points);
+  r_hand_step_lengths = smooth_norm_all(delta_r_all(r_hand_fcn_all(q_interp_all)));
+  r_hand_arc_length_cost = DrakeFunctionConstraint(-Inf,Inf, ...
+    k_pts*r_hand_step_lengths);
+  prog = prog.addCost(r_hand_arc_length_cost,prog.q_inds);
+
   prog = prog.setSolverOptions('snopt','MajorIterationsLimit',options.major_iterations_limit);
   prog = prog.setSolverOptions('snopt','SuperBasicsLimit',2e3);
-  prog = prog.setSolverOptions('snopt','MajorOptimalityTolerance',1e-2);
+  prog = prog.setSolverOptions('snopt','MajorOptimalityTolerance',1e-3);
   prog = prog.setSolverOptions('snopt','MajorFeasibilityTolerance',5e-5);
   prog = prog.setSolverOptions('snopt','IterationsLimit',5e5);
   prog = prog.setSolverOptions('snopt','LinesearchTolerance',0.1);
