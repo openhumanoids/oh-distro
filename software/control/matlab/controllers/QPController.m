@@ -314,7 +314,10 @@ classdef QPController < MIMODrakeSystem
     if fc(1)>0
       support_bodies(ind) = obj.lfoot_idx;
       if q(obj.l_knee_idx) < obj.min_knee_angle
-        plan_supp = r.left_toe_right_full_support;
+        j = find([ctrl_data.link_constraints(2).ts] > t, 1, 'first');
+        if ctrl_data.link_constraints(2).toe_off_allowed(j)
+          plan_supp = r.left_toe_right_full_support;
+        end
       end
       contact_groups{ind} = plan_supp.contact_groups{lfoot_plan_supp_ind};
       contact_pts{ind} = plan_supp.contact_pts{lfoot_plan_supp_ind};
@@ -324,7 +327,10 @@ classdef QPController < MIMODrakeSystem
     if fc(2)>0
       support_bodies(ind) = obj.rfoot_idx;
       if q(obj.r_knee_idx) < obj.min_knee_angle
-        plan_supp = r.left_full_right_toe_support;
+        j = find([ctrl_data.link_constraints(1).ts] > t, 1, 'first');
+        if ctrl_data.link_constraints(1).toe_off_allowed(j)
+          plan_supp = r.left_full_right_toe_support;
+        end
       end
       contact_groups{ind} = plan_supp.contact_groups{rfoot_plan_supp_ind};
       contact_pts{ind} = plan_supp.contact_pts{rfoot_plan_supp_ind};
