@@ -138,6 +138,15 @@ classdef QPController < MIMODrakeSystem
       obj.body_accel_input_weights = -1*ones(obj.n_body_accel_inputs,1);
     end
 
+    % struct array of body acceleration bounds with fields: body_idx,
+    % min_acceleration, max_acceleration
+    if isfield(options,'body_accel_bounds')
+      typecheck(options.body_accel_bounds,'struct');
+      obj.body_accel_bounds = options.body_accel_bounds;
+    else
+      obj.body_accel_bounds = [];
+    end
+
     if isfield(options,'debug')
       typecheck(options.debug,'logical');
       sizecheck(options.debug,1);
@@ -394,9 +403,6 @@ classdef QPController < MIMODrakeSystem
         c_pre = 0;
         Dbar = [];
         for j=1:length(active_supports)
-          if (num_active_contacts==2)
-            a=1;
-          end
           [~,~,JB] = contactConstraintsBV(r,kinsol,false,struct('terrain_only',~obj.use_bullet,...
             'body_idx',[1,active_supports(j)],'collision_groups',active_contact_groups(j)));
           Dbar = [Dbar, vertcat(JB{active_contact_pts{j}})']; % because contact constraints seems to ignore the collision_groups option
@@ -442,8 +448,8 @@ classdef QPController < MIMODrakeSystem
 
       Aeq_ = cell(1,length(varargin)+1);
       beq_ = cell(1,5);
-      Ain_ = cell(1,2);
-      bin_ = cell(1,2);
+      Ain_ = cell(1,2+length(obj.body_accel_bounds)*2);
+      bin_ = cell(1,2+length(obj.body_accel_bounds)*2);
 
       % constrained dynamics
       if nc>0
@@ -464,6 +470,16 @@ classdef QPController < MIMODrakeSystem
       bin_{1} = -B_act'*C_act + r.umax;
       Ain_{2} = -Ain_{1};
       bin_{2} = B_act'*C_act - r.umin;
+
+      for ii=1:length(obj.body_accel_bounds)
+        body_idx = obj.body_accel_bounds(ii).body_idx;
+        [~,Jb] = forwardKin(r,kinsol,body_idx,[0;0;0],1);
+        Jbdot = forwardJacDot(r,kinsol,body_idx,[0;0;0],1);
+        Ain_{2+ii} = Jb*Iqdd;
+        bin_{2+ii} = -Jbdot*qd + obj.body_accel_bounds(ii).max_acceleration;
+        Ain_{3+ii} = -Ain_{2+ii};
+        bin_{3+ii} = Jbdot(5,:)*qd - obj.body_accel_bounds(ii).min_acceleration;
+      end
 
       if nc > 0
         % relative acceleration constraint
@@ -827,6 +843,7 @@ classdef QPController < MIMODrakeSystem
     l_knee_idx;
     output_qdd = false;
     body_accel_input_weights; % array of doubles, negative values signal constraints
+    body_accel_bounds;
     n_body_accel_inputs; % scalar
   end
 end
