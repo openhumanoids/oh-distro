@@ -170,8 +170,7 @@ classdef FootContactBlock < MIMODrakeSystem
       if ~y(1) 
         % left foot not in contact
         ind =  [ctrl_data.link_constraints.link_ndx]==obj.lfoot_idx;
-        if ~isempty(ctrl_data.link_constraints(ind).contact_break_indices) && t>= ctrl_data.link_constraints(ind).ts(ctrl_data.link_constraints(ind).contact_break_indices(1))
-          tic;
+        if isfield(ctrl_data.link_constraints(ind),'contact_break_indices') && ~isempty(ctrl_data.link_constraints(ind).contact_break_indices) && t>= ctrl_data.link_constraints(ind).ts(ctrl_data.link_constraints(ind).contact_break_indices(1))
           break_ind = ctrl_data.link_constraints(ind).contact_break_indices(1);
           q = x(1:obj.nq);
           qd = x(obj.nq+1:end);
@@ -179,25 +178,23 @@ classdef FootContactBlock < MIMODrakeSystem
           [p,J] = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],1); 
           pdot = J*qd;
           
-          ctrl_data.link_constraints(ind).ts(break_ind) = t;
+          obj.controller_data.link_constraints(ind).ts(break_ind) = t;
           tf = ctrl_data.link_constraints(ind).ts(break_ind+1);
           pf = ctrl_data.link_constraints(ind).poses(:,break_ind+1);
           pfdot = ctrl_data.link_constraints(ind).dposes(:,break_ind+1);
           [a0, a1, a2, a3] = cubicSplineCoefficients(tf-t, p, pf, pdot, pfdot);
-          ctrl_data.link_constraints(ind).poses(:,break_ind) = p;
-          ctrl_data.link_constraints(ind).dposes(:,break_ind) = pdot;
-          ctrl_data.link_constraints(ind).a0(:,break_ind) = a0;
-          ctrl_data.link_constraints(ind).a1(:,break_ind) = a1;
-          ctrl_data.link_constraints(ind).a2(:,break_ind) = a2;
-          ctrl_data.link_constraints(ind).a3(:,break_ind) = a3;
-          ctrl_data.link_constraints(ind).contact_break_indices(1) = [];
-          toc;
+          obj.controller_data.link_constraints(ind).poses(:,break_ind) = p;
+          obj.controller_data.link_constraints(ind).dposes(:,break_ind) = pdot;
+          obj.controller_data.link_constraints(ind).a0(:,break_ind) = a0;
+          obj.controller_data.link_constraints(ind).a1(:,break_ind) = a1;
+          obj.controller_data.link_constraints(ind).a2(:,break_ind) = a2;
+          obj.controller_data.link_constraints(ind).a3(:,break_ind) = a3;
+          obj.controller_data.link_constraints(ind).contact_break_indices(1) = [];
         end
       elseif ~y(2)
         % right foot not in contact
         ind =  [ctrl_data.link_constraints.link_ndx]==obj.rfoot_idx;
-        if ~isempty(ctrl_data.link_constraints(ind).contact_break_indices) && t>= ctrl_data.link_constraints(ind).ts(ctrl_data.link_constraints(ind).contact_break_indices(1))
-          tic;
+        if isfield(ctrl_data.link_constraints(ind),'contact_break_indices') && ~isempty(ctrl_data.link_constraints(ind).contact_break_indices) && t>= ctrl_data.link_constraints(ind).ts(ctrl_data.link_constraints(ind).contact_break_indices(1))
           break_ind = ctrl_data.link_constraints(ind).contact_break_indices(1);
           q = x(1:obj.nq);
           qd = x(obj.nq+1:end);
@@ -205,19 +202,18 @@ classdef FootContactBlock < MIMODrakeSystem
           [p,J] = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],1); 
           pdot = J*qd;
           
-          ctrl_data.link_constraints(ind).ts(break_ind) = t;
+          obj.controller_data.link_constraints(ind).ts(break_ind) = t;
           tf = ctrl_data.link_constraints(ind).ts(break_ind+1);
           pf = ctrl_data.link_constraints(ind).poses(:,break_ind+1);
           pfdot = ctrl_data.link_constraints(ind).dposes(:,break_ind+1);
           [a0, a1, a2, a3] = cubicSplineCoefficients(tf-t, p, pf, pdot, pfdot);
-          ctrl_data.link_constraints(ind).poses(:,break_ind) = p;
-          ctrl_data.link_constraints(ind).dposes(:,break_ind) = pdot;
-          ctrl_data.link_constraints(ind).a0(:,break_ind) = a0;
-          ctrl_data.link_constraints(ind).a1(:,break_ind) = a1;
-          ctrl_data.link_constraints(ind).a2(:,break_ind) = a2;
-          ctrl_data.link_constraints(ind).a3(:,break_ind) = a3;
-          ctrl_data.link_constraints(ind).contact_break_indices(1) = [];
-          toc;
+          obj.controller_data.link_constraints(ind).poses(:,break_ind) = p;
+          obj.controller_data.link_constraints(ind).dposes(:,break_ind) = pdot;
+          obj.controller_data.link_constraints(ind).a0(:,break_ind) = a0;
+          obj.controller_data.link_constraints(ind).a1(:,break_ind) = a1;
+          obj.controller_data.link_constraints(ind).a2(:,break_ind) = a2;
+          obj.controller_data.link_constraints(ind).a3(:,break_ind) = a3;
+          obj.controller_data.link_constraints(ind).contact_break_indices(1) = [];
         end
       end
       
