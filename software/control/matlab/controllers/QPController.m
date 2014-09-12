@@ -344,7 +344,7 @@ classdef QPController < MIMODrakeSystem
       qdd_lb(obj.l_knee_idx) = 0;
     end
     if q(obj.r_knee_idx) < obj.min_knee_angle
-      qdd_ub(obj.r_knee_idx) = 0;
+      qdd_lb(obj.r_knee_idx) = 0;
     end
 
     if (obj.use_mex==0 || obj.use_mex==2)

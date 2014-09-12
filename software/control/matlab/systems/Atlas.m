@@ -207,6 +207,7 @@ state_frame = AtlasState(obj);
       options = ifNotIsFieldThenVal(options,'Kp_accel',2.0);
       options = ifNotIsFieldThenVal(options,'Kp_foot',[20; 20; 20; 20; 20; 20]);
       options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.7);
+      options = ifNotIsFieldThenVal(options,'min_knee_angle',0.6);
       [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,pd,options] = ...
         constructQPBalancingController(obj,controller_data,options);
     end
