@@ -176,8 +176,9 @@ classdef FootContactBlock < MIMODrakeSystem
           qd = x(obj.nq+1:end);
           kinsol = doKinematics(obj.robot,q,false,true,qd);
           [p,J] = forwardKin(obj.robot,kinsol,obj.lfoot_idx,[0;0;0],1); 
+          p = p + [ctrl_data.plan_shift;0;0;0]; % "unshift" footstep
           pdot = J*qd;
-          
+
           obj.controller_data.link_constraints(ind).ts(break_ind) = t;
           tf = ctrl_data.link_constraints(ind).ts(break_ind+1);
           pf = ctrl_data.link_constraints(ind).poses(:,break_ind+1);
@@ -200,6 +201,7 @@ classdef FootContactBlock < MIMODrakeSystem
           qd = x(obj.nq+1:end);
           kinsol = doKinematics(obj.robot,q,false,true,qd);
           [p,J] = forwardKin(obj.robot,kinsol,obj.rfoot_idx,[0;0;0],1); 
+          p = p + [ctrl_data.plan_shift;0;0;0]; % "unshift" footstep
           pdot = J*qd;
           
           obj.controller_data.link_constraints(ind).ts(break_ind) = t;

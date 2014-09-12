@@ -84,6 +84,7 @@ classdef FootMotionControlBlock < DrakeSystem
       a2 = ctrl_data.link_constraints(link_con_ind).a2(:,foot_traj_ind);
       a3 = ctrl_data.link_constraints(link_con_ind).a3(:,foot_traj_ind);
       [foot_des,foot_v_des] = evalSplineSegment(tt,a0,a1,a2,a3);
+      foot_des = foot_des - [ctrl_data.plan_shift;0;0;0];
       foot_vdot_des = [0;0;0;0;0;0];
       if (obj.use_mex == 0)
         q = x(1:obj.nq);
