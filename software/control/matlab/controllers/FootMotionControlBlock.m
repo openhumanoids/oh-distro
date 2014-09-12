@@ -77,7 +77,6 @@ classdef FootMotionControlBlock < DrakeSystem
     function y=output(obj,t,~,x)
       ctrl_data = obj.controller_data;
       link_con_ind = [ctrl_data.link_constraints.link_ndx]==obj.foot_ind;
-%       foot_des = fasteval(ctrl_data.link_constraints(link_con_ind).traj,t)-[ctrl_data.plan_shift;0;0;0];
       foot_traj_ind = find(ctrl_data.link_constraints(link_con_ind).ts<=t,1,'last');
       tt = t-ctrl_data.link_constraints(link_con_ind).ts(foot_traj_ind);
       a0 = ctrl_data.link_constraints(link_con_ind).a0(:,foot_traj_ind);
@@ -85,17 +84,6 @@ classdef FootMotionControlBlock < DrakeSystem
       a2 = ctrl_data.link_constraints(link_con_ind).a2(:,foot_traj_ind);
       a3 = ctrl_data.link_constraints(link_con_ind).a3(:,foot_traj_ind);
       [foot_des,foot_v_des] = evalSplineSegment(tt,a0,a1,a2,a3);
-      
-%       if isfield(ctrl_data.link_constraints(link_con_ind),'dtraj')
-%         foot_v_des = fasteval(ctrl_data.link_constraints(link_con_ind).dtraj,t);
-%       else
-%         foot_v_des = [0;0;0;0;0;0];
-%       end
-%       if isfield(ctrl_data.link_constraints(link_con_ind),'ddtraj')
-%         foot_vdot_des = fasteval(ctrl_data.link_constraints(link_con_ind).ddtraj,t);
-%       else
-%         foot_vdot_des = [0;0;0;0;0;0];
-%       end 
       foot_vdot_des = [0;0;0;0;0;0];
       if (obj.use_mex == 0)
         q = x(1:obj.nq);
