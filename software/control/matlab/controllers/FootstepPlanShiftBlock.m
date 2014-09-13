@@ -79,6 +79,7 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
       ctrl_data = obj.controller_data;
       lfoot_link_con_ind = [ctrl_data.link_constraints.link_ndx]==obj.lfoot_ind;
       rfoot_link_con_ind = [ctrl_data.link_constraints.link_ndx]==obj.rfoot_ind;
+      % ts should be identical for left/right foot
       foot_traj_ind = find(ctrl_data.link_constraints(lfoot_link_con_ind).ts<=t,1,'last');
       tt = t-ctrl_data.link_constraints(lfoot_link_con_ind).ts(foot_traj_ind);
       

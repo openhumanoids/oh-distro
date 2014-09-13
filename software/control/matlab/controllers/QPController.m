@@ -143,8 +143,10 @@ classdef QPController < MIMODrakeSystem
     if isfield(options,'body_accel_bounds')
       typecheck(options.body_accel_bounds,'struct');
       obj.body_accel_bounds = options.body_accel_bounds;
+      obj.n_body_accel_bounds = length(obj.body_accel_bounds);
     else
       obj.body_accel_bounds = [];
+      obj.n_body_accel_bounds = 0;
     end
 
     if isfield(options,'debug')
@@ -471,14 +473,17 @@ classdef QPController < MIMODrakeSystem
       Ain_{2} = -Ain_{1};
       bin_{2} = B_act'*C_act - r.umin;
 
-      for ii=1:length(obj.body_accel_bounds)
+      constraint_index = 3;
+      for ii=1:obj.n_body_accel_bounds
         body_idx = obj.body_accel_bounds(ii).body_idx;
         [~,Jb] = forwardKin(r,kinsol,body_idx,[0;0;0],1);
         Jbdot = forwardJacDot(r,kinsol,body_idx,[0;0;0],1);
-        Ain_{2+ii} = Jb*Iqdd;
-        bin_{2+ii} = -Jbdot*qd + obj.body_accel_bounds(ii).max_acceleration;
-        Ain_{3+ii} = -Ain_{2+ii};
-        bin_{3+ii} = Jbdot(5,:)*qd - obj.body_accel_bounds(ii).min_acceleration;
+        Ain_{constraint_index} = Jb*Iqdd;
+        bin_{constraint_index} = -Jbdot*qd + obj.body_accel_bounds(ii).max_acceleration;
+        constraint_index = constraint_index + 1;
+        Ain_{3+ii} = -Jb*Iqdd;
+        bin_{3+ii} = Jbdot*qd - obj.body_accel_bounds(ii).min_acceleration;
+        constraint_index = constraint_index + 1;
       end
 
       if nc > 0
@@ -843,7 +848,8 @@ classdef QPController < MIMODrakeSystem
     l_knee_idx;
     output_qdd = false;
     body_accel_input_weights; % array of doubles, negative values signal constraints
+    n_body_accel_inputs;
     body_accel_bounds;
-    n_body_accel_inputs; % scalar
+    n_body_accel_bounds;
   end
 end
