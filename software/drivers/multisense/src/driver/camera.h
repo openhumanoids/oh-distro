@@ -73,6 +73,7 @@ struct CameraConfig{
   int output_mode_;
   
   float gain_;
+  int32_t exposure_us_;
   int agc_;
   
   CameraConfig () {
@@ -85,6 +86,7 @@ struct CameraConfig{
         leds_duty_cycle_ = 0;
         output_mode_ = 0;
         gain_ = 3.0;
+        exposure_us_ = 10000;
         agc_ = 1;
         desired_width_ = 1024;
   }

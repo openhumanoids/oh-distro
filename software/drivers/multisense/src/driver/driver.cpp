@@ -70,6 +70,7 @@ void Pass::commandHandler(const lcm::ReceiveBuffer* rbuf,
    config.spindle_rpm_ = (float) msg->rpm;
    config.fps_ = (float) msg->fps;
    config.gain_ = (float) msg->gain;
+   config.exposure_us_ = msg->exposure_us;
    config.agc_ = msg->agc;
    config.leds_flash_ = msg->leds_flash;
    config.leds_duty_cycle_ = msg->leds_duty_cycle;
@@ -111,7 +112,7 @@ int main(int    argc, char** argv){
   if (d) {
 
     if (Status_Ok != d->setMtu(sensor_mtu))
-        printf("failed to set sensor MTU to %d", sensor_mtu);
+        printf("failed to set sensor MTU to %d\n", sensor_mtu);
     
     
     l = new multisense_ros::Laser(d, robot_desc_string);
