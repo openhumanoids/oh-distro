@@ -22,7 +22,7 @@ public:
 
   DataType get() {
     for (size_t i = 0; i < mObjects.size(); ++i) {
-      if (mObjects[i].use_count() == 1) {
+      if (mObjects[i].unique()) {
         return mObjects[i];
       }
     }
@@ -32,7 +32,7 @@ public:
   int getNumFree() {
     int total = 0;
     for (size_t i = 0; i < mObjects.size(); ++i) {
-      if (mObjects[i].use_count() == 1) ++total;
+      if (mObjects[i].unique()) ++total;
     }
     return total;
   }
