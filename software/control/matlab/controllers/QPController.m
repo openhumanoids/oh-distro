@@ -481,8 +481,8 @@ classdef QPController < MIMODrakeSystem
         Ain_{constraint_index} = Jb*Iqdd;
         bin_{constraint_index} = -Jbdot*qd + obj.body_accel_bounds(ii).max_acceleration;
         constraint_index = constraint_index + 1;
-        Ain_{3+ii} = -Jb*Iqdd;
-        bin_{3+ii} = Jbdot*qd - obj.body_accel_bounds(ii).min_acceleration;
+        Ain_{constraint_index} = -Jb*Iqdd;
+        bin_{constraint_index} = Jbdot*qd - obj.body_accel_bounds(ii).min_acceleration;
         constraint_index = constraint_index + 1;
       end
 

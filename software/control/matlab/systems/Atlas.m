@@ -209,7 +209,7 @@ state_frame = AtlasState(obj);
       options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.7);
       options = ifNotIsFieldThenVal(options,'min_knee_angle',0.65);
       
-      acc_limit = [inf;inf;inf;10;10;10];
+      acc_limit = [100;100;100;10;10;10];
       body_accel_bounds(1).body_idx = findLinkInd(obj,'r_foot');
       body_accel_bounds(1).min_acceleration = -acc_limit;
       body_accel_bounds(1).max_acceleration = acc_limit;
