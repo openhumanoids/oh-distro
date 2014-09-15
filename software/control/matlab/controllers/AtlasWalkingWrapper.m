@@ -104,7 +104,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
       end
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
-      options.zero_ankles_on_contact = false;
+      options.zero_ankles_on_contact = true;
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
       obj.footstep_plan_shift_block = FootstepPlanShiftBlock(r,controller_data);
 
