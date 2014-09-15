@@ -99,7 +99,7 @@ else
   options.q_damping_ratio = 0.6;
 
   % construct QP controller and related control blocks
-  [qp,lfoot_controller,rfoot_controller,pelvis_controller,pd,options] = constructQPWalkingController(r,ctrl_data);
+  [qp,lfoot_controller,rfoot_controller,pelvis_controller,pd,options] = constructQPWalkingController(r,ctrl_data,options);
 
   % feedback QP controller with atlas
   ins(1).system = 1;
