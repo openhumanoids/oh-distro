@@ -1,4 +1,4 @@
-function sys = constructQPFeedbackCombination(r,qp,fc,pd,qt,lfoot_controller,rfoot_controller,pelvis_controller)
+function sys = constructQPFeedbackCombination(r,qp,fc,pd,qt, lfoot_controller,rfoot_controller,pelvis_controller)
 
 	if ~isempty(lfoot_controller) && ~isempty(rfoot_controller)
 		% feedback QP controller with atlas
@@ -14,6 +14,7 @@ function sys = constructQPFeedbackCombination(r,qp,fc,pd,qt,lfoot_controller,rfo
 		ins(5).input = 6;
 		outs(1).system = 2;
 		outs(1).output = 1;
+    
 		sys = mimoFeedback(qp,r,[],[],ins,outs);
 		clear ins;
 	  
@@ -65,10 +66,11 @@ function sys = constructQPFeedbackCombination(r,qp,fc,pd,qt,lfoot_controller,rfo
 		ins(2).input = 3;
 		ins(3).system = 1;
 		ins(3).input = 4;
-		outs(1).system = 2;
-		outs(1).output = 1;
-		sys = mimoFeedback(qp,r,[],[],ins,outs);
-		clear ins;
+    outs(1).system = 2;
+    outs(1).output = 1;
+    
+    sys = mimoFeedback(qp,r,[],[],ins,outs);
+    clear ins;
 	  
 	 	% feedback foot contact detector with QP/atlas
 	  ins(1).system = 2;

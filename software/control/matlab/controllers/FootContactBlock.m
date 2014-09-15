@@ -172,7 +172,6 @@ classdef FootContactBlock < MIMODrakeSystem
       else
         varargout = {y};
       end
-      t
 		end
   end
   

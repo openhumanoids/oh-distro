@@ -272,8 +272,8 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
     hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 10;   
+    hokuyo_num_pts = 50;   
     hokuyo_max_range = 3; % meters?
-    hokuyo_spin_rate = 30; % rad/sec
+    hokuyo_spin_rate = 5; % rad/sec
   end
 end

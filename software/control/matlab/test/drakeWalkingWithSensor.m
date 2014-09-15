@@ -149,13 +149,13 @@ if (use_ik)
   ins(2).input = 3;
   outs(1).system = 2;
   outs(1).output = 1;
-  %outs(2).system = 2;
-  %outs(2).output = 2;
+  outs(2).system = 2;
+  outs(2).output = 2;
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
 	clear ins;
   
-  %lcmBroadcastBlock = LCMBroadcastBlock(r);
-  %sys = mimoCascade(sys, lcmBroadcastBlock);
+  lcmBroadcastBlock = LCMBroadcastBlock(r);
+  sys = mimoCascade(sys, lcmBroadcastBlock);
 
   % feedback foot contact detector with QP/atlas
   options.use_lcm=false;
@@ -197,13 +197,13 @@ else
 	ins(5).input = 6;
 	outs(1).system = 2;
 	outs(1).output = 1;
-  %outs(2).system = 2;
-  %outs(2).output = 2;
+  outs(2).system = 2;
+  outs(2).output = 2;
 	sys = mimoFeedback(qp,r,[],[],ins,outs);
 	clear ins outs;
   
-  %lcmBroadcastBlock = LCMBroadcastBlock(r);
-  %sys = mimoCascade(sys, lcmBroadcastBlock);
+  lcmBroadcastBlock = LCMBroadcastBlock(r);
+  sys = mimoCascade(sys, lcmBroadcastBlock);
   
   % feedback foot contact detector with QP/atlas
   options.use_lcm=false;
@@ -245,7 +245,8 @@ else
 	outs(1).system = 2;
 	outs(1).output = 1;
 	sys = mimoFeedback(lfoot_controller,sys,[],[],ins,outs);
-	clear ins outs;
+	clear ins outs;v = r.constructVisualizer;
+v.display_dt = 0.05;
 
 	ins(1).system = 2;
 	ins(1).input = 1;
