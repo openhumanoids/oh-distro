@@ -47,4 +47,29 @@ torso_markers(1, :) = torso_marker(1); % same x
 marker_data.utorso.num_params = sum(sum(isnan(torso_markers)));
 marker_data.utorso.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, torso_markers);
 
+% Right foot
+r_foot_A_reference = [0.117552; -0.063927; -0.034346];
+r_foot_BCD_reference = [0.128065; 0.06617; -0.034346];
+marker_data.r_foot.num_markers = 4;
+r_foot_markers = nan(3, marker_data.r_foot.num_markers);
+r_foot_markers(:, 1) = r_foot_A_reference + [-78.5e-3; 12e-3; 12e-3]; %A
+r_foot_markers(:, 2) = r_foot_BCD_reference + [-50e-3; -80e-3; 16e-3]; %B
+r_foot_markers(:, 3) = r_foot_BCD_reference + [-10e-3; -66e-3; 12e-3]; %C
+% r_foot_markers(:, 4) = r_foot_BCD_reference + [-50e-3; -50e-3; 16e-3]; %D I don't trust
+marker_data.r_foot.num_params = sum(sum(isnan(r_foot_markers)));
+marker_data.r_foot.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, r_foot_markers);
+
+% Left foot
+l_foot_A_reference = [0.12734; -0.065372; -0.033965];
+l_foot_BC_reference = [0.12734; 0.064725; -0.033965];
+l_foot_D_reference = [0.116827; 0.064725; -0.033965];
+marker_data.l_foot.num_markers = 4;
+l_foot_markers = nan(3, marker_data.l_foot.num_markers);
+l_foot_markers(:, 1) = l_foot_A_reference + [-58e-3; 25e-3; 16e-3]; %A
+l_foot_markers(:, 2) = l_foot_BC_reference + [-42e-3; -70e-3; 16e-3]; %B
+l_foot_markers(:, 3) = l_foot_BC_reference + [-50e-3; -30e-3; 16e-3]; %C
+l_foot_markers(:, 4) = l_foot_D_reference + [-80e-3; -11e-3; 12e-3]; %D
+marker_data.l_foot.num_params = sum(sum(isnan(l_foot_markers)));
+marker_data.l_foot.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, l_foot_markers);
+
 end
