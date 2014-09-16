@@ -13,7 +13,7 @@ end_effector_index = robot.findLinkInd(end_effector_name);
 [~, joint_path, ~] = robot.findKinematicPath(base_index, end_effector_index);
 joint_names = robot.getJointNames();
 
-joint_indices = cell2mat({robot.getBody(joint_path).dofnum})';
+joint_indices = cell2mat({robot.getBody(joint_path).position_num})';
 nq_path = length(joint_indices);
 
 disp([joint_names(joint_path) num2cell(joint_indices)])
