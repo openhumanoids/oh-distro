@@ -1,0 +1,23 @@
+
+CFLAGS = -Wall -Wno-deprecated -O3 -fopenmp `pkg-config opencv --cflags`
+CPP = g++
+CC = gcc
+LIB = -lopencv_core -lopencv_highgui -lm `pkg-config opencv --libs`
+BIN = test
+
+all: $(BIN)
+
+test:  fiducial_stereo.o fiducial_detector.o test.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LIB) 
+
+test.o: test.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+fiducial_detector.o: fiducial_detector.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+fiducial_stereo.o: fiducial_stereo.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+clean: 
+	rm -f $(BIN) *.o *.*~ *~
