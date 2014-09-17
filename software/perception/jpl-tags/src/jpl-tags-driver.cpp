@@ -85,6 +85,16 @@ struct State {
     oK(0,1) = bot_camtrans_get_skew(iCam);
   }
 
+  Eigen::Matrix3d rpyToMatrix(const double iR, const double iP,
+                              const double iY) {
+    Eigen::Matrix3d rotation;
+    rotation =
+      Eigen::AngleAxisd(iY*M_PI/180, Eigen::Vector3d::UnitZ()) *
+      Eigen::AngleAxisd(iP*M_PI/180, Eigen::Vector3d::UnitY()) *
+      Eigen::AngleAxisd(iR*M_PI/180, Eigen::Vector3d::UnitX());
+    return rotation;
+  }
+
   void copyTransform(const Eigen::Isometry3d& iTransform,
                      double oTransform[4][4]) {
     for (int i = 0; i < 4; ++i) {
@@ -141,13 +151,22 @@ struct State {
     mStereoBaseline = rightToLeft.translation().norm();
 
     // populate tag data from config
-    // TODO: this is temporary
     mTags.clear();
-    for (int i = 0; i < 1; ++i) {
+    std::string keyBase = "perception.fiducial_tags";
+    auto tagNames = mBotWrapper->getKeys(keyBase);
+    for (int i = 0; i < (int)tagNames.size(); ++i) {
+      std::string key = keyBase + "." + tagNames[i];
       TagInfo tag;
-      tag.mId = 99;
+      tag.mId = mBotWrapper->getInt(key + ".id");
+      tag.mLink = mBotWrapper->get(key + ".link");
+      auto xyzrpy = mBotWrapper->getDoubles(key + ".xyzrpy");
+      tag.mLinkPose.translation() << xyzrpy[0], xyzrpy[1], xyzrpy[2];
+      tag.mLinkPose.linear() = rpyToMatrix(xyzrpy[3], xyzrpy[4], xyzrpy[5]);
       mTags.push_back(tag);
     }
+
+    // TODO: this is temporary
+    mTags.resize(1);
   }
 
   void start() {
