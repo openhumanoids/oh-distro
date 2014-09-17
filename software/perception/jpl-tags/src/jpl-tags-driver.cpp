@@ -122,16 +122,8 @@ struct State {
     mLcmWrapper->startHandleThread(true);
   }
 
-
-  void onCamera(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
-                const multisense::images_t* iMessage) {
-    std::cout << "GOT IMAGE " << std::endl;
-
-    // grab camera pose
-    Eigen::Isometry3d cameraToLocal, localToCamera;
-    mBotWrapper->getTransform(mCameraChannel + "_LEFT", "local", cameraToLocal,
-                              iMessage->utime);
-    localToCamera = cameraToLocal.inverse();
+  bool decodeImages(const multisense::images_t* iMessage,
+                    cv::Mat& oLeft, cv::Mat& oRight, cv::Mat& oDisp) {
 
     bot_core::image_t* leftImage = NULL;
     bot_core::image_t* rightImage = NULL;
@@ -154,46 +146,65 @@ struct State {
       }
     }
 
-    cv::Mat left, right, disp;
-
     // decode left image
-    left = leftImage->pixelformat == leftImage->PIXEL_FORMAT_MJPEG ?
+    if (leftImage == NULL) {
+      std::cout << "error: no left image available!" << std::endl;
+      return false;
+    }
+    oLeft = leftImage->pixelformat == leftImage->PIXEL_FORMAT_MJPEG ?
       cv::imdecode(cv::Mat(leftImage->data), -1) :
       cv::Mat(leftImage->height, leftImage->width, CV_8UC1,
               leftImage->data.data());
-    if (left.channels() < 3) cv::cvtColor(left, left, CV_GRAY2RGB);
+    if (oLeft.channels() < 3) cv::cvtColor(oLeft, oLeft, CV_GRAY2RGB);
 
     // decode right image if necessary for stereo algorithm
     if (mRunStereoAlgorithm) {
-      if (rightImage != NULL) {
-        right = rightImage->pixelformat == rightImage->PIXEL_FORMAT_MJPEG ?
-          cv::imdecode(cv::Mat(rightImage->data), -1) :
-          cv::Mat(rightImage->height, rightImage->width, CV_8UC1,
-                  rightImage->data.data());
-        if (right.channels() < 3) cv::cvtColor(right, right, CV_GRAY2RGB);
-      }
-      else {
+      if (rightImage == NULL) {
         std::cout << "error: no right image available!" << std::endl;
-        return;
+        return false;
       }
+      oRight = rightImage->pixelformat == rightImage->PIXEL_FORMAT_MJPEG ?
+        cv::imdecode(cv::Mat(rightImage->data), -1) :
+        cv::Mat(rightImage->height, rightImage->width, CV_8UC1,
+                rightImage->data.data());
+      if (oRight.channels() < 3) cv::cvtColor(oRight, oRight, CV_GRAY2RGB);
     }
 
     // otherwise decode disparity; we will compute depth from left image only
     else {
+      if (dispImage == NULL) {
+        std::cout << "error: no disparity image available!" << std::endl;
+        return false;
+      }
       int numPix = dispImage->width*dispImage->height;
       if ((int)dispImage->data.size() != numPix*2) {
         std::vector<uint8_t> buf(numPix*2);
         unsigned long len = buf.size();
         uncompress(buf.data(), &len, dispImage->data.data(),
                    dispImage->data.size());
-        disp = cv::Mat(dispImage->height, dispImage->width,
-                       CV_16UC1, buf.data());
+        oDisp = cv::Mat(dispImage->height, dispImage->width,
+                        CV_16UC1, buf.data());
       }
       else {
-        disp = cv::Mat(dispImage->height, dispImage->width, CV_16UC1,
-                       dispImage->data.data());
+        oDisp = cv::Mat(dispImage->height, dispImage->width, CV_16UC1,
+                        dispImage->data.data());
       }
     }
+    return true;
+  }
+
+  void onCamera(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
+                const multisense::images_t* iMessage) {
+    std::cout << "GOT IMAGE " << std::endl;
+
+    // grab camera pose
+    Eigen::Isometry3d cameraToLocal, localToCamera;
+    mBotWrapper->getTransform(mCameraChannel + "_LEFT", "local", cameraToLocal,
+                              iMessage->utime);
+    localToCamera = cameraToLocal.inverse();
+
+    cv::Mat left, right, disp;
+    if (!decodeImages(iMessage, left, right, disp)) return;
 
     // set up tag detections message
     drc::tag_detection_list_t msg;
@@ -266,7 +277,6 @@ struct State {
         detection.id = tagId;
 
         // put tag into local frame
-        // TODO: keep in camera frame?
         Eigen::Vector3d pos(poseFinal.pos.x, poseFinal.pos.y, poseFinal.pos.z);
         pos = cameraToLocal*pos;
         for (int k = 0; k < 3; ++k) detection.pos[k] = pos[k];
@@ -285,7 +295,7 @@ struct State {
         detection.cxy[0] = pix[0];
         detection.cxy[1] = pix[1];
 
-        // four corners are irrelevant, set them all to tag center
+        // four corners are irrelevant; set them all to tag center
         for (int k = 0; k < 4; ++k) {
           for (int m = 0; m < 2; ++m) detection.p[k][m] = pix[m];
         }
