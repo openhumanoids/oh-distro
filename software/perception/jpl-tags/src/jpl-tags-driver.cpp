@@ -15,6 +15,25 @@
 
 #include <zlib.h>
 
+#include <chrono>
+
+#include <ConciseArgs>
+
+
+struct TagInfo {
+  int64_t mId;                  // unique id
+  std::string mLink;            // link coordinate frame name
+  Eigen::Isometry3d mLinkPose;  // with respect to link
+  Eigen::Isometry3d mCurPose;   // tracked pose in local frame
+  bool mTracked;
+  TagInfo() {
+    mId = 0;
+    mLinkPose = Eigen::Isometry3d::Identity();
+    mCurPose = Eigen::Isometry3d::Identity();
+    mTracked = false;
+  }
+};
+
 struct State {
   drc::BotWrapper::Ptr mBotWrapper;
   drc::LcmWrapper::Ptr mLcmWrapper;
@@ -25,10 +44,12 @@ struct State {
   double mStereoBaseline;
   Eigen::Matrix3d mCalibLeft;
   Eigen::Matrix3d mCalibLeftInv;
+  std::vector<TagInfo> mTags;
 
   std::string mCameraChannel;
   std::string mTagChannel;
   bool mRunStereoAlgorithm;
+  bool mDoTracking;
 
   State() {
     mDetector = NULL;
@@ -38,6 +59,7 @@ struct State {
     mCameraChannel = "CAMERA";
     mTagChannel = "JPL_TAGS";
     mRunStereoAlgorithm = true;
+    mDoTracking = true;
   }
 
   ~State() {
@@ -55,6 +77,7 @@ struct State {
   }
 
   void populate(BotCamTrans* iCam, Eigen::Matrix3d& oK) {
+    oK = Eigen::Matrix3d::Identity();
     oK(0,0) = bot_camtrans_get_focal_length_x(iCam);
     oK(1,1) = bot_camtrans_get_focal_length_y(iCam);
     oK(0,2) = bot_camtrans_get_principal_x(iCam);
@@ -116,6 +139,15 @@ struct State {
     populate(mCamTransLeft, mCalibLeft);
     mCalibLeftInv = mCalibLeft.inverse();
     mStereoBaseline = rightToLeft.translation().norm();
+
+    // populate tag data from config
+    // TODO: this is temporary
+    mTags.clear();
+    for (int i = 0; i < 1; ++i) {
+      TagInfo tag;
+      tag.mId = 99;
+      mTags.push_back(tag);
+    }
   }
 
   void start() {
@@ -183,11 +215,11 @@ struct State {
         uncompress(buf.data(), &len, dispImage->data.data(),
                    dispImage->data.size());
         oDisp = cv::Mat(dispImage->height, dispImage->width,
-                        CV_16UC1, buf.data());
+                        CV_16UC1, buf.data()).clone();
       }
       else {
         oDisp = cv::Mat(dispImage->height, dispImage->width, CV_16UC1,
-                        dispImage->data.data());
+                        dispImage->data.data()).clone();
       }
     }
     return true;
@@ -195,7 +227,8 @@ struct State {
 
   void onCamera(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
                 const multisense::images_t* iMessage) {
-    std::cout << "GOT IMAGE " << std::endl;
+
+    auto t1 = std::chrono::high_resolution_clock::now();
 
     // grab camera pose
     Eigen::Isometry3d cameraToLocal, localToCamera;
@@ -203,6 +236,7 @@ struct State {
                               iMessage->utime);
     localToCamera = cameraToLocal.inverse();
 
+    // decode images
     cv::Mat left, right, disp;
     if (!decodeImages(iMessage, left, right, disp)) return;
 
@@ -211,21 +245,38 @@ struct State {
     msg.utime = iMessage->utime;
     msg.num_detections = 0;
 
-    // TODO: initialize with number of tags from config
-    int numTags = 1;
-    for (int i = 0; i < numTags; ++i) {
+    for (int i = 0; i < (int)mTags.size(); ++i) {
 
-      // TODO: populate from config id
-      int tagId = i;
-
+      // initialize pose
       fiducial_pose_t poseInit, poseFinal;
-      // TODO: populate initial pose wrt left cam using fk and config location
-      // can also initialize with previous pose (tracking)
       poseInit = fiducial_pose_ident();
-      poseInit.pos.z = 1;
-      poseInit.rot = fiducial_rot_from_rpy(0,2*M_PI/2,0);
 
+      // use previous tracked position if available
+      if (mDoTracking && mTags[i].mTracked) {
+        Eigen::Isometry3d pose = localToCamera*mTags[i].mCurPose;
+        poseInit.pos.x = pose.translation()[0];
+        poseInit.pos.y = pose.translation()[1];
+        poseInit.pos.z = pose.translation()[2];
+        Eigen::Quaterniond q(pose.rotation());
+        poseInit.rot.u = q.w();
+        poseInit.rot.x = q.x();
+        poseInit.rot.y = q.y();
+        poseInit.rot.z = q.z();
+      }
+
+      // TODO: use fk wrt left cam
+      else {
+        // TOOD: this is temp
+        poseInit.pos.x = 0.028;
+        poseInit.pos.y = 0.002;
+        poseInit.pos.z = 0.56;
+        poseInit.rot = fiducial_rot_from_rpy(0,2*M_PI/2,0);
+      }
+
+      mTags[i].mTracked = false;
       fiducial_detector_error_t status;
+
+      // run stereo detector
       if (mRunStereoAlgorithm) {
         float leftScore(0), rightScore(0);
         status = fiducial_stereo_process(mStereoDetector,
@@ -235,6 +286,8 @@ struct State {
                                          &leftScore, &rightScore,
                                          false);
       }
+
+      // run mono detector and use disparity to infer 3d
       else {
         float score = 0;
         status =
@@ -252,20 +305,21 @@ struct State {
           else {
             // interpolate disparity
             float xFrac(x-xInt), yFrac(y-yInt);
-            int d00 = disp.at<uint16_t>(xInt, yInt);
-            int d10 = disp.at<uint16_t>(xInt+1, yInt);
-            int d01 = disp.at<uint16_t>(xInt, yInt+1);
-            int d11 = disp.at<uint16_t>(xInt+1, yInt+1);
+            int d00 = disp.at<uint16_t>(yInt, xInt);
+            int d10 = disp.at<uint16_t>(yInt, xInt+1);
+            int d01 = disp.at<uint16_t>(yInt+1, xInt);
+            int d11 = disp.at<uint16_t>(yInt+1, xInt+1);
             float d = (1-xFrac)*(1-yFrac)*d00 + xFrac*(1-yFrac)*d10 +
               (1-xFrac)*yFrac*d01 + xFrac*yFrac*d11;
 
             // compute depth and 3d point
-            float z = mStereoBaseline*mCalibLeft(0,0) / d;
+            float z = 16*mStereoBaseline*mCalibLeft(0,0) / d;
             Eigen::Vector3d pos = z*mCalibLeftInv*Eigen::Vector3d(x,y,1);
             poseFinal.pos.x = pos[0];
             poseFinal.pos.y = pos[1];
             poseFinal.pos.z = pos[2];
-            // TODO: what about orientation?
+            poseFinal.rot = poseInit.rot;
+            // TODO: fill in correct orientation
           }
         }
       }
@@ -274,7 +328,7 @@ struct State {
         // populate this tag detection message
         drc::tag_detection_t detection;
         detection.utime = msg.utime;
-        detection.id = tagId;
+        detection.id = mTags[i].mId;
 
         // put tag into local frame
         Eigen::Vector3d pos(poseFinal.pos.x, poseFinal.pos.y, poseFinal.pos.z);
@@ -304,17 +358,21 @@ struct State {
         msg.detections.push_back(detection);
         msg.num_detections = msg.detections.size();
 
-
-        std::cout << "PROCESSED " << status << std::endl;
-        std::cout << "POSE: " << poseFinal.pos.x << " " << poseFinal.pos.y <<
-          " " << poseFinal.pos.z << std::endl;
-        
+        // tracked successfully
+        mTags[i].mCurPose.linear() = q.matrix();
+        mTags[i].mCurPose.translation() = pos;
+        mTags[i].mTracked = true;
       }
       else {
-        std::cout << "warning: could not detect tag " << tagId << std::endl;
+        std::cout << "warning: could not detect tag " << mTags[i].mId <<
+          std::endl;
       }
     }
     mLcmWrapper->get()->publish(mTagChannel, &msg);
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1);
+    std::cout << "PROCESSED IN " << dt.count()/1e6 << " SEC" << std::endl;
   }
 
 };
@@ -322,6 +380,18 @@ struct State {
 
 int main(const int iArgc, const char** iArgv) {
   State state;
+
+  ConciseArgs opt(iArgc, (char**)iArgv);
+  opt.add(state.mCameraChannel, "c", "camera_channel",
+          "channel containing stereo image data");
+  opt.add(state.mTagChannel, "d", "detection_channel",
+          "channel on which to publish tag detections");
+  opt.add(state.mRunStereoAlgorithm, "s", "stereo",
+          "whether to run stereo-based detector");
+  opt.add(state.mDoTracking, "t", "tracking",
+          "whether to use previous detection to initialize current detection");
+  opt.parse();
+
 
   state.setup();
   state.start();
