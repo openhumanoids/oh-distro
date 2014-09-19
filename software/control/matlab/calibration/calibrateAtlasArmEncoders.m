@@ -42,7 +42,6 @@ x0 = double(x0);
 q0 = x0(1:nq);
 
 
-
 % calibration configuration: drive arm joints to limits
 x_calib = Point(state_frame);
 x_calib.r_arm_usy = jlmax(joint_index_map.r_arm_usy) + delta;
