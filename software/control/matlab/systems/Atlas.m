@@ -204,12 +204,11 @@ state_frame = AtlasState(obj);
       options = ifNotIsFieldThenVal(options,'body_accel_input_weights',[0.15 0.15 0.1]);
       options = ifNotIsFieldThenVal(options,'use_walking_pelvis_block',true);
       options = ifNotIsFieldThenVal(options,'use_foot_motion_block',true);
-      options = ifNotIsFieldThenVal(options,'Kp_accel',2.0);
       options = ifNotIsFieldThenVal(options,'Kp_foot',[20; 20; 20; 20; 20; 20]);
       options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.7);
-      options = ifNotIsFieldThenVal(options,'min_knee_angle',0.75);
+      options = ifNotIsFieldThenVal(options,'min_knee_angle',0.85);
       
-      acc_limit = [100;100;100;10;10;10];
+      acc_limit = [100;100;100;8;8;8];
       body_accel_bounds(1).body_idx = findLinkInd(obj,'r_foot');
       body_accel_bounds(1).min_acceleration = -acc_limit;
       body_accel_bounds(1).max_acceleration = acc_limit;
