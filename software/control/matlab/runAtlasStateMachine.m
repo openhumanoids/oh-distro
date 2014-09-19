@@ -22,7 +22,7 @@ r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_
 r = r.removeCollisionGroupsExcept({'heel','toe'});
 r = compile(r);
 
-
+options.controller_type = controller_type;
 init_controller = SilentInitController('init',r);
 manip_controller = AtlasManipController('manip',r,options);
 standing_controller = AtlasBalancingController('stand',r,options);
