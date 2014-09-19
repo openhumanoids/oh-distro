@@ -170,11 +170,11 @@ classdef StatelessFootstepPlanner
     function plan = applySwingTerrain(biped, plan)
       nsteps = length(plan.footsteps);
       for j = 3:nsteps
-        [contact_width, ~, ~] = contactVolume(biped, ...
+
+        [~, contact_width] = contactVolume(biped, ...
                                               plan.footsteps(j-2), ...
-                                              plan.footsteps(j), ...
-                                              struct('nom_z_clearance', plan.footsteps(j).walking_params.step_height));
-        plan.footsteps(j).terrain_pts = sampleSwingTerrain(biped, plan.footsteps(j-2), plan.footsteps(j), contact_width);
+                                              plan.footsteps(j));
+        plan.footsteps(j).terrain_pts = sampleSwingTerrain(biped, plan.footsteps(j-2), plan.footsteps(j), contact_width/2, struct());
       end
     end
 

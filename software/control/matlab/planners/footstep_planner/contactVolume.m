@@ -1,37 +1,30 @@
-function [contact_length, contact_width, contact_height] = contactVolume(biped, step1, step2, options)
+function [contact_length, contact_width] = contactVolume(biped, swing1, swing2)
 
-if nargin < 4; options = struct(); end
-if ~isfield(options, 'planar_clearance'); options.planar_clearance = 0.05; end
-if ~isfield(options, 'nom_z_clearance'); options.nom_z_clearance = 0.05; end
+xhat = swing2.pos(1:2) - swing1.pos(1:2);
+xhat = xhat / norm(xhat);
+yhat = rotmat(pi/2) * xhat;
+xhat = [xhat; 0];
+yhat = [yhat; 0];
+% zhat = [0;0;1];
 
-step2.pos(6) = step1.pos(6) + angleDiff(step1.pos(6), step2.pos(6));
+foot_body = biped.getBody(biped.getFrame(swing1.frame_id).body_ind);
 
-swing_angle = atan2(step2.pos(2) - step1.pos(2), step2.pos(1) - step1.pos(1));
-phi.last = step1.pos(6) - swing_angle;
-phi.next = step2.pos(6) - swing_angle;
+T_sole_to_foot = biped.getFrame(swing1.frame_id).T;
+contact_points_in_foot = foot_body.getTerrainContactPoints();
+T_swing1_sole_to_world = [rpy2rotmat(swing1.pos(4:6)),swing1.pos(1:3); zeros(1, 3), 1];
+T_swing1_foot_to_world = T_swing1_sole_to_world/T_sole_to_foot;
+swing1_contact_points_in_world = T_swing1_foot_to_world(1:3,:) * ...
+  [contact_points_in_foot; ones(1,size(contact_points_in_foot,2))];
 
-foot_bodies = struct('right', biped.getBody(biped.getFrame(biped.foot_frame_id.right).body_ind),...
-                       'left', biped.getBody(biped.getFrame(biped.foot_frame_id.left).body_ind));
-contact_pts.last = quat2rotmat(axis2quat([0;0;1;phi.last])) * foot_bodies.right.getTerrainContactPoints();
-contact_pts.next = quat2rotmat(axis2quat([0;0;1;phi.next])) * foot_bodies.right.getTerrainContactPoints();
-effective_width = max([max(contact_pts.last(2,:)) - min(contact_pts.last(2,:)),...
-                       max(contact_pts.next(2,:)) - min(contact_pts.next(2,:))]);
-effective_length = max([max(contact_pts.last(1,:)) - min(contact_pts.last(1,:)),...
-                        max(contact_pts.next(1,:)) - min(contact_pts.next(1,:))]);
+T_swing2_sole_to_world = [rpy2rotmat(swing2.pos(4:6)),swing2.pos(1:3); zeros(1, 3), 1];
+T_swing2_foot_to_world = T_swing2_sole_to_world/T_sole_to_foot;
+swing2_contact_points_in_world = T_swing2_foot_to_world(1:3,:) * ...
+  [contact_points_in_foot; ones(1,size(contact_points_in_foot,2))];
 
+contact_width = max([max(yhat' * swing1_contact_points_in_world) - min(yhat' * swing1_contact_points_in_world),...
+                      max(yhat' * swing2_contact_points_in_world) - min(yhat' * swing2_contact_points_in_world)]);
 
-% NOTE: this is a bit dangerous, and introduces some possibility of the
-% robot's toe colliding with an obstacle as we try to step over it, but it
-% seems to be performing well in practice. A more permanent solution is on
-% my to-do list, but I haven't gotten around to it yet. For now, this line
-% should fix the problem of ridiculously high footsteps. -rdeits
-effective_height = 0; 
-% effective_height = (max([effective_length, effective_width])/2) / sqrt(2); % assumes the foot never rotates past 45 degrees in the world frame
-
-
-% % We'll expand all of our obstacles in the plane by this distance, which is the maximum allowed distance from the center of the foot to the edge of an obstacle
-contact_length = effective_length / 2 + options.planar_clearance;
-contact_width = effective_width / 2 + options.planar_clearance;
-contact_height = effective_height + options.nom_z_clearance;
+contact_length = max([max(xhat' * swing1_contact_points_in_world) - min(xhat' * swing1_contact_points_in_world),...
+                      max(xhat' * swing2_contact_points_in_world) - min(xhat' * swing2_contact_points_in_world)]);
 
 end
