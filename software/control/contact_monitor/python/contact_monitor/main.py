@@ -14,7 +14,7 @@ class ContactMonitor:
     self.r_foot_contact = False
     self.last_left_change_t = 0;
     self.last_right_change_t = 0;
-    self.debounce_time = 0.1 # seconds
+    self.debounce_time = 0.05 # seconds
       # note: could also require force be greater than X for at least t secs
     self.channel = channel
 
@@ -41,7 +41,7 @@ def main():
   if len(sys.argv) > 1:
     thresold = float(sys.argv[1]) # newtons
   else:
-    thresold = 100 # newtons
+    thresold = 150 # newtons
   
   if len(sys.argv) > 2:
     channel = sys.argv[2]
