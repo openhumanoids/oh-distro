@@ -118,7 +118,7 @@ set(gurobi_environment_args GUROBI_DISTRO=${CMAKE_CURRENT_SOURCE_DIR}/cmake/guro
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
-set(iris_revision 30d630695e1c232bfd96df94f2bcac5d0dd567ff)
+set(iris_revision 8799cdea888fe3cf17aad0fadc4ad013f9a81834)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
