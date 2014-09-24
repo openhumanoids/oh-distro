@@ -1,7 +1,6 @@
 function q_correction_params = runJointCalibration(logfile, body_names, vicon_object_names, marker_info_struct, options)
 
 show_pose_indices = getOption(options, 'show_pose_indices', false);
-show_data_synchronization = getOption(options, 'show_data_synchronization', false);
 visualize_result = getOption(options, 'visualize_result', false);
 vicon_lag = getOption(options, 'vicon_lag', 0);
 calibration_type = getOption(options, 'calibration_type');
@@ -10,7 +9,7 @@ num_poses = getOption(options, 'num_poses');
 
 % r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'));
 r = Atlas();
-[t_x,x_data,t_u,u_data_full,t_vicon,vicon_data,~,~,~,~,vicon_data_struct] = parseAtlasViconLog(r,logfile);
+[t_x,x_data,t_u,u_data_full,t_vicon,vicon_data_full,~,~,~,~,vicon_data_struct] = parseAtlasViconLog(r,logfile);
 u_data_full = u_data_full(end - r.getNumInputs + 1 : end, :); % the last num_u rows of u_data are the actual torques
 
 % time synchronization
@@ -35,13 +34,11 @@ end
 
 q_data_full = x_data(1:nq, :);
 v_data_full = x_data(nq + (1 : nv), :);
-pose_indices = findCalibrationPoseIndices(v_data_full, num_poses, v_norm_limit, show_pose_indices);
-num_poses = length(pose_indices);
-
-if show_data_synchronization
-  vicon_dot_norm_limit = 20;
-  showViconTimeSynchronization(t_x, t_vicon, vicon_data, vicon_dot_norm_limit, pose_indices);
+pose_indices = findCalibrationPoseIndices(v_data_full, num_poses, v_norm_limit);
+if show_pose_indices
+  showPoseIndices(t_x, t_u, t_vicon, v_data_full, u_data_full, vicon_data_full, pose_indices);
 end
+num_poses = length(pose_indices);
 
 bodies = cell(nb, 1);
 for i = 1 : nb
@@ -51,13 +48,13 @@ end
 joint_indices = [];
 for i = 2 : nb
   [~, additional_joint_indices] = r.findKinematicPath(bodies{1}, bodies{i});
-  joint_indices = [joint_indices additional_joint_indices];
+  joint_indices = [joint_indices; additional_joint_indices]; %#ok<AGROW>
 end
 q_indices = [r.getBody(joint_indices).position_num];
 
 [q_data, motion_capture_data, u_data] = selectPoseData(t_x, t_vicon, t_u, q_data_full, vicon_data_struct, vicon_object_names, u_data_full, pose_indices);
 
-options.search_floating = true;
+options.search_floating = 'xyz_yaw';
 
 if strcmp(calibration_type, 'offset')
   [dq, marker_params, floating_states, objective_value, marker_residuals, info] = jointOffsetCalibration(r, q_data, q_indices,...
@@ -67,31 +64,37 @@ if strcmp(calibration_type, 'offset')
   q_correction_params = dq;
   
   q_data(1:6, :) = floating_states;
-  q_data(q_indices, :) = q_data(q_indices, :) + repmat(dq, [1 num_poses]);
+  q_data_after = q_data;
+  q_data_after(q_indices, :) = q_data(q_indices, :) + repmat(dq, [1 num_poses]);
 end
 
 if strcmp(calibration_type, 'stiffness')
   k_initial = getOption(options, 'k_initial');
   [k, marker_params, floating_states, objective_value, marker_residuals, info] = jointStiffnessCalibration(r, q_data, u_data, q_indices,...
     bodies, marker_functions, marker_function_num_params, motion_capture_data, scales, k_initial, options);
-  
+
   q_correction_params = k;
   
   q_data(1:6, :) = floating_states;
-%   B = r.getB();
-%   B_calibrated_joints = B(q_indices, :);
-%   [rows, u_indices] = find(B_calibrated_joints ~= 0);
-%   [~, sort_indices] = sort(rows);
-%   u_indices = u_indices(sort_indices);
-%   tau_data = B(q_indices, u_indices) * u_data(u_indices, :);
-%   K = diag(k);
-%   q_data(q_indices, :) = q_data(q_indices, :) + K \ tau_data;
+  q_data_after = q_data;
+  B = r.getB();
+  B_calibrated_joints = B(q_indices, :);
+  [rows, u_indices] = find(B_calibrated_joints ~= 0);
+  [~, sort_indices] = sort(rows);
+  u_indices = u_indices(sort_indices);
+  tau_data = B(q_indices, u_indices) * u_data(u_indices, :);
+  K = diag(k);
+  q_data_after(q_indices, :) = q_data(q_indices, :) + K \ tau_data;
   
 end
 
+fprintf([calibration_type ' calibration results:\n']);
+for i = 1 : length(joint_indices)
+  fprintf([r.getBody(joint_indices(i)).jointname ': %0.4g\n'], q_correction_params(i));
+end
 
 if visualize_result
-  visualizeCalibrationResult(r, bodies, q_data, marker_functions, marker_params, motion_capture_data);
+  visualizeCalibrationResult(r, bodies, q_data, q_data_after, marker_functions, marker_params, motion_capture_data);
 end
 end
 
@@ -111,24 +114,6 @@ else
     ret = default;
   end
 end
-end
-
-function showViconTimeSynchronization(t_x, t_vicon, vicon_data, vicon_dot_norm_limit, pose_indices)
-vicon_dt = mean(diff(t_vicon));
-vicon_frequency = 1 / vicon_dt;
-filter = designfilt('lowpassiir', 'FilterOrder', 1, 'PassbandFrequency', 1, 'PassbandRipple', 1, 'SampleRate', vicon_frequency);
-
-vicon_diff = diff(vicon_data, 1, 2);
-vicon_dot = zeros(size(vicon_diff));
-for i = 1 : size(vicon_diff, 1)
-  vicon_dot(i, :) = filtfilt(filter, vicon_diff(i, :));
-end
-num_poses = length(pose_indices);
-pose_indices_vicon = findCalibrationPoseIndices(vicon_dot, num_poses, vicon_dot_norm_limit, true);
-
-figure();
-plot(t_vicon(pose_indices_vicon), zeros(size(pose_indices_vicon)), 'rx', t_x(pose_indices), zeros(size(pose_indices)), 'bo');
-title('time synchronization helper plot')
 end
 
 function [q_data, motion_capture_data, u_data] = selectPoseData(t_x, t_vicon, t_u, q_data_full, vicon_data_struct, vicon_object_names, u_data_full, pose_indices)
@@ -158,12 +143,77 @@ for i = 1 : num_poses
 end
 end
 
-function visualizeCalibrationResult(r, bodies, q_data, marker_functions, marker_params, motion_capture_data)
-num_poses = size(q_data, 2);
+function showPoseIndices(t_x, t_u, t_vicon, v_data_full, u_data_full, vicon_data_full, pose_indices)
+figure();
+v_norm = sum(sqrt(v_data_full .* v_data_full), 1);
+hold on;
+plot(t_x, v_norm / max(v_norm), 'b');
+
+u_dt = mean(diff(t_u));
+filter = designfilt('lowpassiir', 'FilterOrder', 1, 'PassbandFrequency', 1, 'PassbandRipple', 1, 'SampleRate', 1 / u_dt);
+u_data_dot = bsxfun(@rdivide, diff(u_data_full, 1, 2), diff(t_u)');
+for i = 1 : size(u_data_dot, 1)
+  u_data_dot(i, :) = filtfilt(filter, u_data_dot(i, :));
+end
+u_data_dot_norm = sqrt(sum(u_data_dot .* u_data_dot, 1));
+plot(t_u(1:end -1), u_data_dot_norm / max(u_data_dot_norm), 'g')
+
+vicon_dt = mean(diff(t_vicon));
+filter = designfilt('lowpassiir', 'FilterOrder', 1, 'PassbandFrequency', 1, 'PassbandRipple', 1, 'SampleRate', 1 / vicon_dt);
+vicon_data_dot = bsxfun(@rdivide, diff(vicon_data_full, 1, 2), diff(t_vicon)');
+for i = 1 : size(vicon_data_dot, 1)
+  vicon_data_dot(i, :) = filtfilt(filter, vicon_data_dot(i, :));
+end
+vicon_data_dot_norm = sqrt(sum(vicon_data_dot .* vicon_data_dot, 1));
+
+%   plot(t_vicon(1:end - 10001), vicon_data_dot_norm(1 : end - 10000) / max(vicon_data_dot_norm(1 : end - 10000)), 'c')
+plot(t_vicon(1:end - 1), vicon_data_dot_norm / max(vicon_data_dot_norm), 'c')
+
+plot(t_x(pose_indices), zeros(size(pose_indices)), 'r*');
+
+legend({'vdot norm (normalized)', 'udot norm (normalized)', 'vicondot norm (normalized)', 'selected pose indices'});
+hold off;
+end
+
+function visualizeCalibrationResult(r, bodies, q_data_before, q_data_after, marker_functions, marker_params, motion_capture_data)
+num_poses = size(q_data_before, 2);
 nb = length(bodies);
-for pose_num = 1 : num_poses
+show_before = false;
+pose_num = 1;
+first_iteration = true;
+while true
+  if ~first_iteration
+    if show_before
+      other_view = 'after';
+    else
+      other_view = 'before';
+    end
+    reply = input(['Visualize next pose: y/n [y] or switch to view ' other_view ' calibration: s?'],'s');
+    if isempty(reply)
+      reply = 'y';
+    end
+    if strcmp(reply, 'y')
+      pose_num = pose_num + 1;
+    end
+    if strcmp(reply, 'n')
+      break;
+    end
+    if strcmp(reply, 's')
+      show_before = ~show_before;
+    end
+  end
+  first_iteration = false;
+  if pose_num > num_poses
+    break;
+  end
+  
   v = r.constructVisualizer;
   lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton(),'calibration_result_visualization');
+  if show_before
+    q_data = q_data_before;
+  else
+    q_data = q_data_after;
+  end
   q = q_data(:, pose_num);
   v.draw(0, q);
   
@@ -202,15 +252,5 @@ for pose_num = 1 : num_poses
   end
   
   lcmgl.switchBuffers();
-  
-  if pose_num < num_poses
-    reply = input('Visualize next pose? y/n [y]:','s');
-    if isempty(reply)
-      reply = 'y';
-    end
-    if strcmp(reply, 'n')
-      break;
-    end
-  end
 end
 end

@@ -1,4 +1,4 @@
-function pose_indices = findCalibrationPoseIndices(v_data, num_poses, v_norm_limit, show_pose_indices)
+function pose_indices = findCalibrationPoseIndices(v_data, num_poses, v_norm_limit)
 % FINDPOSEINDICES Tries to find a given number of poses that can be used for
 % calibration purposes.
 %
@@ -12,7 +12,6 @@ function pose_indices = findCalibrationPoseIndices(v_data, num_poses, v_norm_lim
 v_norm = sum(sqrt(v_data .* v_data), 1);
 
 indices = v_norm < v_norm_limit;
-% plot(t_x, v_norm, 'b', t_x, indices, 'r');
 
 previous_beneath_limit = false;
 starting_indices = [];
@@ -22,8 +21,8 @@ for i = 1 : length(indices)
     if previous_beneath_limit
       counts(end) = counts(end) + 1;
     else
-      starting_indices(end + 1) = i;
-      counts(end + 1) = 1;
+      starting_indices(end + 1) = i; %#ok<AGROW>
+      counts(end + 1) = 1; %#ok<AGROW>
     end
     previous_beneath_limit = true;
   else
@@ -42,16 +41,5 @@ max_count_indices = sorting_indices(1 : num_poses);
 max_count_starting_indices = starting_indices(max_count_indices);
 pose_indices = max_count_starting_indices + floor(max_counts / 2); % center
 pose_indices = sort(pose_indices);
-
-if show_pose_indices
-  v_norm = sum(sqrt(v_data .* v_data), 1);
-  figure();
-  hold on;
-  plot(v_norm, 'b');
-  plot(pose_indices, zeros(size(pose_indices)), 'r*');
-  hold off;
-  legend({'norm of velocity vector', 'selected pose indices'});
-end
-
 end
 
