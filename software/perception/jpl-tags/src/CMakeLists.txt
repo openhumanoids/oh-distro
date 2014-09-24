@@ -6,7 +6,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall")
 add_executable(${APP_NAME} jpl-tags-driver.cpp)
 
 # The test program uses the shared library, use the pkg-config file
-pods_use_pkg_config_packages(${APP_NAME} jpl-tags drc-utils zlib)
+pods_use_pkg_config_packages(${APP_NAME}
+  jpl-tags
+  drc-utils
+  zlib
+  model-client
+  kdl-parser
+  forward-kinematics
+)
 
 # make executable public
 pods_install_executables(${APP_NAME})
