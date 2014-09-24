@@ -5,7 +5,13 @@
 #include <drc_utils/BotWrapper.hpp>
 #include <lcm/lcm-cpp.hpp>
 
+#include <kdl/tree.hpp>
+#include <kdl_parser/kdl_parser.hpp>
+#include <forward_kinematics/treefksolverposfull_recursive.hpp>
+#include <model-client/model-client.hpp>
+
 #include <lcmtypes/multisense/images_t.hpp>
+#include <lcmtypes/drc/robot_state_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/tag_detection_t.hpp>
 #include <lcmtypes/drc/tag_detection_list_t.hpp>
@@ -16,13 +22,14 @@
 #include <zlib.h>
 
 #include <chrono>
+#include <mutex>
 
 #include <ConciseArgs>
 
 
 struct TagInfo {
   int64_t mId;                  // unique id
-  std::string mLink;            // link coordinate frame name
+  std::string mLinkName;        // link coordinate frame name
   Eigen::Isometry3d mLinkPose;  // with respect to link
   Eigen::Isometry3d mCurPose;   // tracked pose in local frame
   bool mTracked;
@@ -46,6 +53,13 @@ struct State {
   Eigen::Matrix3d mCalibLeftInv;
   std::vector<TagInfo> mTags;
 
+  int64_t mLastStateUpdateTime;
+  typedef std::map<std::string, KDL::Frame> FrameMap;
+  typedef std::shared_ptr<FrameMap> FrameMapPtr;
+  std::map<int64_t, FrameMapPtr> mLinkFrames;
+  std::shared_ptr<KDL::TreeFkSolverPosFull_recursive> mFkSolver;
+  std::mutex mFramesMutex;
+
   std::string mCameraChannel;
   std::string mTagChannel;
   bool mRunStereoAlgorithm;
@@ -60,6 +74,7 @@ struct State {
     mTagChannel = "JPL_TAGS";
     mRunStereoAlgorithm = true;
     mDoTracking = true;
+    mLastStateUpdateTime = 0;
   }
 
   ~State() {
@@ -85,6 +100,29 @@ struct State {
     oK(0,1) = bot_camtrans_get_skew(iCam);
   }
 
+  Eigen::Isometry3d toEigen(const KDL::Frame& iFrame) {
+    Eigen::Isometry3d xform = Eigen::Isometry3d::Identity();
+    xform.translation() << iFrame.p[0], iFrame.p[1], iFrame.p[2];
+    Eigen::Quaterniond q;
+    iFrame.M.GetQuaternion(q.x(), q.y(), q.z(), q.w());
+    xform.linear() = q.matrix();
+    return xform;
+  }
+
+  fiducial_pose_t getFiducialPose(const Eigen::Isometry3d& iPose) {
+    fiducial_pose_t pose = fiducial_pose_ident();
+    pose.pos.x = iPose.translation()[0];
+    pose.pos.y = iPose.translation()[1];
+    pose.pos.z = iPose.translation()[2];
+    Eigen::Quaterniond q(iPose.rotation());
+    pose.rot.u = q.w();
+    pose.rot.x = q.x();
+    pose.rot.y = q.y();
+    pose.rot.z = q.z();
+    return pose;
+  }
+
+
   Eigen::Matrix3d rpyToMatrix(const double iR, const double iP,
                               const double iY) {
     Eigen::Matrix3d rotation;
@@ -107,8 +145,6 @@ struct State {
   void setup() {
     mBotWrapper.reset(new drc::BotWrapper());
     mLcmWrapper.reset(new drc::LcmWrapper(mBotWrapper->getLcm()));
-
-    mLcmWrapper->get()->subscribe(mCameraChannel, &State::onCamera, this);
 
     mDetector = fiducial_detector_alloc();
     fiducial_detector_init(mDetector);
@@ -158,20 +194,75 @@ struct State {
       std::string key = keyBase + "." + tagNames[i];
       TagInfo tag;
       tag.mId = mBotWrapper->getInt(key + ".id");
-      tag.mLink = mBotWrapper->get(key + ".link");
+      tag.mLinkName = mBotWrapper->get(key + ".link");
       auto xyzrpy = mBotWrapper->getDoubles(key + ".xyzrpy");
       tag.mLinkPose.translation() << xyzrpy[0], xyzrpy[1], xyzrpy[2];
       tag.mLinkPose.linear() = rpyToMatrix(xyzrpy[3], xyzrpy[4], xyzrpy[5]);
       mTags.push_back(tag);
     }
 
+    // grab robot model
+    ModelClient modelClient(mBotWrapper->getLcm()->getUnderlyingLCM(), 0);
+    KDL::Tree tree;
+    if (!kdl_parser::treeFromString(modelClient.getURDFString(), tree)) {
+      std::cout << "error: cannot parse urdf" << std::endl;
+    }
+    mFkSolver.reset(new KDL::TreeFkSolverPosFull_recursive(tree));
+
     // TODO: this is temporary
     mTags.resize(1);
+
+    // subscriptions
+    mLcmWrapper->get()->subscribe(mCameraChannel, &State::onCamera, this);
+    mLcmWrapper->get()->subscribe("EST_ROBOT_STATE", &State::onState, this);
   }
 
   void start() {
     mLcmWrapper->startHandleThread(true);
   }
+
+  void onState(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
+               const drc::robot_state_t* iMessage) {
+    const double kMaxRate = 1.0/60;
+    const double kMaxSeconds = 1;
+
+    // limit update rate
+    if ((iMessage->utime - mLastStateUpdateTime) < 1e6/kMaxRate) return;
+
+    // get pelvis pose
+    KDL::Frame bodyToLocal = KDL::Frame::Identity();
+    bodyToLocal.p = KDL::Vector(iMessage->pose.translation.x,
+                                iMessage->pose.translation.y,
+                                iMessage->pose.translation.z);
+    const auto& q = iMessage->pose.rotation;
+    bodyToLocal.M = KDL::Rotation::Quaternion(q.x, q.y, q.z, q.w);
+
+    // do fk
+    std::map<std::string, double> joints;
+    for (int i = 0; i < (int)iMessage->num_joints; ++i) {
+      joints.insert(std::make_pair(iMessage->joint_name[i],
+                                   iMessage->joint_position[i]));
+    }
+    FrameMapPtr frameMap(new FrameMap());
+    if (!mFkSolver->JntToCart(joints, *frameMap, true)) {
+      std::cout << "error: cannot perform fk" << std::endl;
+      return;
+    }
+
+    // transform to local frame
+    for (auto& frame : *frameMap) frame.second = bodyToLocal*frame.second;
+
+    // update internal frames handle
+    {
+      std::unique_lock<std::mutex> lock(mFramesMutex);
+      mLinkFrames[iMessage->utime] = frameMap;
+      if ((int)mLinkFrames.size() > (int)(kMaxSeconds/kMaxRate)) {
+        mLinkFrames.erase(mLinkFrames.begin());
+      }
+      mLastStateUpdateTime = iMessage->utime;
+    }
+  }
+
 
   bool decodeImages(const multisense::images_t* iMessage,
                     cv::Mat& oLeft, cv::Mat& oRight, cv::Mat& oDisp) {
@@ -273,18 +364,29 @@ struct State {
       // use previous tracked position if available
       if (mDoTracking && mTags[i].mTracked) {
         Eigen::Isometry3d pose = localToCamera*mTags[i].mCurPose;
-        poseInit.pos.x = pose.translation()[0];
-        poseInit.pos.y = pose.translation()[1];
-        poseInit.pos.z = pose.translation()[2];
-        Eigen::Quaterniond q(pose.rotation());
-        poseInit.rot.u = q.w();
-        poseInit.rot.x = q.x();
-        poseInit.rot.y = q.y();
-        poseInit.rot.z = q.z();
+        poseInit = getFiducialPose(pose);
       }
 
-      // TODO: use fk wrt left cam
+      // use fk wrt left cam
       else {
+        std::unique_lock<std::mutex> lock(mFramesMutex);
+        auto item = mLinkFrames.lower_bound(iMessage->utime);
+        if (item == mLinkFrames.end()) {
+          std::cout << "error: cannot find robot state at  " <<
+            iMessage->utime << std::endl;
+          return;
+        }
+        const auto& frameMap = *item->second;
+        auto link = frameMap.find(mTags[i].mLinkName);
+        if (link == frameMap.end()) {
+          std::cout << "error: cannot find link " << mTags[i].mLinkName <<
+            std::endl;
+        }
+        Eigen::Isometry3d linkToLocal = toEigen(link->second);
+        Eigen::Isometry3d linkToCamera = localToCamera*linkToLocal;
+        Eigen::Isometry3d tagToCamera = linkToCamera*mTags[i].mLinkPose;
+        poseInit = getFiducialPose(tagToCamera);
+
         // TOOD: this is temp
         poseInit.pos.x = 0.028;
         poseInit.pos.y = 0.002;
