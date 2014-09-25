@@ -54,7 +54,7 @@ q_indices = [r.getBody(joint_indices).position_num];
 
 [q_data, motion_capture_data, u_data] = selectPoseData(t_x, t_vicon, t_u, q_data_full, vicon_data_struct, vicon_object_names, u_data_full, pose_indices);
 
-options.search_floating = 'xyz_yaw';
+options.search_floating = 'full';
 
 if strcmp(calibration_type, 'offset')
   [dq, marker_params, floating_states, objective_value, marker_residuals, info] = jointOffsetCalibration(r, q_data, q_indices,...
@@ -62,21 +62,24 @@ if strcmp(calibration_type, 'offset')
   dq = unwrap([0;dq]);
   dq = dq(2:end);
   q_correction_params = dq;
-  
-  q_data(1:6, :) = floating_states;
-  q_data_after = q_data;
-  q_data_after(q_indices, :) = q_data(q_indices, :) + repmat(dq, [1 num_poses]);
 end
 
 if strcmp(calibration_type, 'stiffness')
   k_initial = getOption(options, 'k_initial');
   [k, marker_params, floating_states, objective_value, marker_residuals, info] = jointStiffnessCalibration(r, q_data, u_data, q_indices,...
     bodies, marker_functions, marker_function_num_params, motion_capture_data, scales, k_initial, options);
-
   q_correction_params = k;
-  
-  q_data(1:6, :) = floating_states;
-  q_data_after = q_data;
+end
+
+q_data([1:3 6], :) = floating_states([1:3 6], :); % take xyz and yaw from calibration routine
+q_data_after = q_data;
+q_data_after(1:6, :) = floating_states;
+
+if strcmp(calibration_type, 'offset')
+  q_data_after(q_indices, :) = q_data(q_indices, :) + repmat(dq, [1 num_poses]);
+end
+
+if strcmp(calibration_type, 'stiffness')
   B = r.getB();
   B_calibrated_joints = B(q_indices, :);
   [rows, u_indices] = find(B_calibrated_joints ~= 0);
@@ -84,8 +87,7 @@ if strcmp(calibration_type, 'stiffness')
   u_indices = u_indices(sort_indices);
   tau_data = B(q_indices, u_indices) * u_data(u_indices, :);
   K = diag(k);
-  q_data_after(q_indices, :) = q_data(q_indices, :) + K \ tau_data;
-  
+  q_data_after(q_indices, :) = q_data(q_indices, :) - K \ tau_data;
 end
 
 fprintf([calibration_type ' calibration results:\n']);
