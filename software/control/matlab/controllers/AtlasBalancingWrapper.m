@@ -25,21 +25,19 @@ classdef AtlasBalancingWrapper < DrakeSystem
         options.run_in_simul_mode = false;
       end
       
-      if (~options.run_in_simul_mode)
-        force_controlled_joints = controller_data.force_controlled_joints;
-        position_controlled_joints = controller_data.position_controlled_joints;
-        
-        gains = getAtlasGains();
-        gains.k_q_p(force_controlled_joints) = 0;
-        gains.k_q_i(force_controlled_joints) = 0;
-        gains.k_qd_p(force_controlled_joints) = 0;
-        gains.k_f_p(position_controlled_joints) = 0;
-        gains.ff_f_d(position_controlled_joints) = 0;
-        gains.ff_qd(position_controlled_joints) = 0;
-        gains.ff_qd_d(position_controlled_joints) = 0;
-        
-        output_frame.updateGains(gains);
-      end
+      force_controlled_joints = controller_data.force_controlled_joints;
+      position_controlled_joints = controller_data.position_controlled_joints;
+      
+      gains = getAtlasGains();
+      gains.k_q_p(force_controlled_joints) = 0;
+      gains.k_q_i(force_controlled_joints) = 0;
+      gains.k_qd_p(force_controlled_joints) = 0;
+      gains.k_f_p(position_controlled_joints) = 0;
+      gains.ff_f_d(position_controlled_joints) = 0;
+      gains.ff_qd(position_controlled_joints) = 0;
+      gains.ff_qd_d(position_controlled_joints) = 0;
+      
+      output_frame.updateGains(gains);
 
       obj = obj@DrakeSystem(0,0,input_frame.dim,output_frame.dim,true,true);
       obj = setInputFrame(obj,input_frame);
@@ -134,12 +132,9 @@ classdef AtlasBalancingWrapper < DrakeSystem
       force_ctrl_joints = obj.controller_data.force_controlled_joints;
       qddes = 0*qd_err;
       qddes(force_ctrl_joints) = qd_err(force_ctrl_joints);
-      if (~obj.run_in_simul_mode)
-        udes = 0*u;
-        udes(force_ctrl_joints) = u(force_ctrl_joints);
-      else
-        udes = u;
-      end
+
+      udes = 0*u;
+      udes(force_ctrl_joints) = u(force_ctrl_joints);
       
       y = [q_des(obj.input_map); qddes; udes];
     end

@@ -20,14 +20,20 @@ classdef AtlasBalancingController < DRCController
       if (isfield(options, 'run_in_simul_mode') && ...
           ~options.run_in_simul_mode)
         force_control_joint_str = {'leg'};% <---- cell array of (sub)strings
-        
-        force_controlled_joints = [];
-        for i=1:length(force_control_joint_str)
-          force_controlled_joints = union(force_controlled_joints,find(~cellfun(@isempty,strfind(r.getInputFrame.coordinates,force_control_joint_str{i}))));
-        end
-        
-        act_ind = (1:r.getNumInputs)';
-        position_controlled_joints = setdiff(act_ind,force_controlled_joints);
+      else
+        force_control_joint_str = {'leg', 'arm', 'back', 'neck'};
+      end
+      
+      force_controlled_joints = [];
+      for i=1:length(force_control_joint_str)
+        force_controlled_joints = union(force_controlled_joints,find(~cellfun(@isempty,strfind(r.getInputFrame.coordinates,force_control_joint_str{i}))));
+      end
+      
+      act_ind = (1:r.getNumInputs)';
+      position_controlled_joints = setdiff(act_ind,force_controlled_joints);
+      
+     % if (isfield(options, 'run_in_simul_mode') && ...
+     %     ~options.run_in_simul_mode)
         
         % integral gains for position controlled joints
         integral_gains = zeros(getNumPositions(r),1);
@@ -41,7 +47,7 @@ classdef AtlasBalancingController < DRCController
         integral_clamps(arm_ind) = 0.3;
         integral_clamps(back_ind) = 0.2;
         integral_clamps(back_y_ind) = 0.1;
-      end
+      %end
       
       % use saved nominal pose
       d = load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
@@ -113,6 +119,9 @@ classdef AtlasBalancingController < DRCController
           'mu',1.0,...
           'ignore_terrain',false,...
           'plan_shift',zeros(3,1),...
+          'firstplan',true,...
+          'force_controlled_joints',force_controlled_joints,...
+          'position_controlled_joints',position_controlled_joints,...
           'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
       end
       
