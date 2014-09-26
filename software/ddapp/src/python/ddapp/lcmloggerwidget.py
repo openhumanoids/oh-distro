@@ -17,7 +17,6 @@ class LCMLoggerWidget(object):
         self.userTag = ''
 
         self.button = QtGui.QPushButton('')
-        self.button.checkable = True
         self.button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.button.connect('customContextMenuRequested(const QPoint&)', self.showContextMenu)
         self.button.connect('clicked()', self.onClick)
@@ -129,3 +128,4 @@ class LCMLoggerWidget(object):
             devnull = open(os.devnull, 'w')
             subprocess.Popen('drake-designer', stdout=devnull, stderr=devnull, env=newEnv)
             subprocess.Popen(['lcm-logplayer-gui', self.lastActiveLogFile], stdout=devnull, stderr=devnull, env=newEnv)
+            subprocess.Popen(['bot-procman-sheriff', '-o', stdout=devnull, stderr=devnull, env=newEnv)
