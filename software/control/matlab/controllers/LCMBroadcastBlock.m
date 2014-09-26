@@ -9,7 +9,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     hokuyo_num_pts;   
     hokuyo_max_range;
     hokuyo_spin_rate;
-      
+    joint_names_cache;
   end
   
   methods
@@ -39,10 +39,16 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       else
         dt = 0.001;
       end
-      obj = setSampleTime(obj,[dt;0]); % sets controller update rate
+      obj = setSampleTime(obj,[0.01;0]); % sets controller update rate
       
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
+      
+      names = obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+      obj.joint_names_cache = cell(length(names), 1);
+      for i=1:length(names)
+        obj.joint_names_cache(i) = java.lang.String(names(i));
+      end
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
@@ -80,12 +86,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       state_msg.joint_position=zeros(1,state_msg.num_joints);
       state_msg.joint_velocity=zeros(1,state_msg.num_joints);
       state_msg.joint_effort=zeros(1,state_msg.num_joints);
-      names = obj.getInputFrame.getFrameByName('AtlasState');
-      for j=1:num_dofs,
-        state_msg.joint_name(j) = java.lang.String(getCoordinateName(names, j));
-        state_msg.joint_position(j) = varargin{1}(j);
-        state_msg.joint_velocity(j) = varargin{1}(j+num_dofs);
-      end
+      state_msg.joint_name = obj.joint_names_cache;
+      state_msg.joint_position = varargin{1}(1:num_dofs);
+      state_msg.joint_velocity = varargin{1}(num_dofs+1:2*num_dofs);
       state_msg.force_torque = drc.force_torque_t();
       obj.lc.publish('EST_ROBOT_STATE', state_msg);
       
