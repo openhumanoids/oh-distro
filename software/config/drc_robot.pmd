@@ -59,7 +59,7 @@ group "2.plan_and_control" {
     }
 
     cmd "BaseBDIStepTranslator" {
-        exec = "drc-bdi-step-translator -b";
+        exec = "drc-bdi-step-translator";
         host = "base";
     }
 }
