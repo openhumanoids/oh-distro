@@ -68,12 +68,12 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       state_msg.twist = drc.twist_t();
       state_msg.twist.linear_velocity = drc.vector_3d_t();
       state_msg.twist.angular_velocity = drc.vector_3d_t();
-      state_msg.twist.linear_velocity.x = 0;
-      state_msg.twist.linear_velocity.y = 0;
-      state_msg.twist.linear_velocity.z = 0;
-      state_msg.twist.angular_velocity.x = 0;
-      state_msg.twist.angular_velocity.y = 0;
-      state_msg.twist.angular_velocity.z = 0;
+      state_msg.twist.linear_velocity.x = varargin{1}(num_dofs+1);
+      state_msg.twist.linear_velocity.y = varargin{1}(num_dofs+2);
+      state_msg.twist.linear_velocity.z = varargin{1}(num_dofs+3);
+      state_msg.twist.angular_velocity.x = varargin{1}(num_dofs+4);
+      state_msg.twist.angular_velocity.y = varargin{1}(num_dofs+5);
+      state_msg.twist.angular_velocity.z = varargin{1}(num_dofs+6);
       
       state_msg.num_joints = num_dofs;
       state_msg.joint_name=javaArray('java.lang.String', state_msg.num_joints);
