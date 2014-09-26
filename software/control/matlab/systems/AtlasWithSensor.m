@@ -52,7 +52,9 @@ classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
       obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],zeros(3,1),'hokuyo_frame'));
       hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
         -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
-      hokuyo = enableLCMGL(hokuyo);
+      if (~isfield(options, 'visualize') || options.visualize)
+        hokuyo = enableLCMGL(hokuyo);
+      end
       obj = addSensor(obj,hokuyo);
        obj = compile(obj);
       
