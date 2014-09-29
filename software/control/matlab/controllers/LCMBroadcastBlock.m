@@ -98,19 +98,19 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       pose_body_frame = bot_core.pose_t();
       pose_body_frame.utime = t*1000*1000;
       pose_body_frame.pos = [varargin{1}(1), varargin{1}(2), varargin{1}(3)];
-      pose_body_frame.vel = [0 0 0];
+      pose_body_frame.vel = [varargin{1}(1+num_dofs), varargin{1}(2+num_dofs), varargin{1}(3+num_dofs)];
       q = rpy2quat([varargin{1}(4) varargin{1}(5) varargin{1}(6)]);
       pose_body_frame.orientation = [q(1) q(2) q(3) q(4)]; % Rotation
-      pose_body_frame.rotation_rate = [0 0 0];
+      pose_body_frame.rotation_rate = [varargin{1}(4++num_dofs) varargin{1}(5++num_dofs) varargin{1}(6++num_dofs)];
       pose_body_frame.accel = [0 0 0];
       obj.lc.publish('POSE_BODY', pose_body_frame);
       
-      % For a set of subscans (for now we'll do just do one horizontal
-      % scan), send over
+      % Send over
       % -- "MULTISENSE_STATE" -- lcm_state msg for joint hokuyo_joint,
       %     labeled with tiem of scan
       % -- also "PRE_SPINDLE_TO_POST_SPINDLE" with the approp transform
-      % -- 
+      % -- also "POST_SPINDLE_TO_SCAN" to adjust for our different spindle
+      % setup
       % -- To channel "SCAN", publish populated lcm_laser_msg
       
       if length(varargin) > 1
@@ -141,7 +141,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         multisense_state.num_joints = length(multisense_state.joint_name);
         multisense_state.utime = t*1000*1000;
         obj.lc.publish('MULTISENSE_STATE', multisense_state);
-        
+
         pre_to_post_frame = bot_core.rigid_transform_t();
         pre_to_post_frame.utime = t*1000*1000;
         pre_to_post_frame.trans = [0, 0, 0]; % no offset
@@ -149,10 +149,21 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         pre_to_post_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
         obj.lc.publish('PRE_SPINDLE_TO_POST_SPINDLE', pre_to_post_frame);
 
+        % Our spindle setup has the laser perfectly centered on the
+        % spindle
+        % (so publish a post_spindle_to_scan frame with vals from
+        % multisense_05.cfg, but with the translation removed)
+        post_to_scan_frame = pre_to_post_frame;
+        post_to_scan_frame.trans = [ 0,0,0 ];
+        post_to_scan_frame.quat = [ 0.496637130899519, -0.492381687666844, -0.503247117659410, -0.507596466132044 ];
+        obj.lc.publish('POST_SPINDLE_TO_SCAN', post_to_scan_frame);
+        
         % And the data
         lcm_laser_msg = bot_core.planar_lidar_t();
         lcm_laser_msg.utime = t*1000*1000;
         lcm_laser_msg.ranges = laser_ranges;
+        % just setting intensities high enough that the points aren't
+        % discarded for now...
         lcm_laser_msg.intensities = 5000*ones(size(laser_ranges));
         lcm_laser_msg.nranges = length(laser_ranges);
         lcm_laser_msg.nintensities = length(laser_ranges); 
