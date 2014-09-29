@@ -100,12 +100,12 @@ group "5.maps" {
 group "6.hands_robotiq" {
 
     cmd "robotiq-left" {
-        exec = "robotiq_tcp_node LEFT 192.168.40.100";
+        exec = "robotiq_tcp_node LEFT 192.168.40.102";
         host = "robot";
     }
 
     cmd "robotiq-right" {
-        exec = "robotiq_tcp_node RIGHT 192.168.40.101";
+        exec = "robotiq_tcp_node RIGHT 192.168.40.100";
         host = "robot";
     }
 

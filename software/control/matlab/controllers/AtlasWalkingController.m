@@ -137,7 +137,7 @@ classdef AtlasWalkingController < DRCController
       controller_state(3) = 0; % reset time
       controller_state(4) = 0; % reset eta
       obj.controller_data.qd_int_state = controller_state;
-
+      obj.controller_data.integral = 0*obj.controller_data.integral;
     end
   end
 end
