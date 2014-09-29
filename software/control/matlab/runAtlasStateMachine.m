@@ -12,6 +12,10 @@ options.visual = false; % loads faster
 options.floating = true;
 options.ignore_friction = true;
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+r = setTerrain(r,DRCTerrainMap(true,struct('name','Controller','listen_for_foot_pose',false)));
+r = r.removeCollisionGroupsExcept({'heel','toe'});
+r = compile(r);
+
 
 options.controller_type = controller_type;
 init_controller = SilentInitController('init',r);
