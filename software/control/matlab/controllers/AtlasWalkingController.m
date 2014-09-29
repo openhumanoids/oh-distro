@@ -14,8 +14,7 @@ classdef AtlasWalkingController < DRCController
       end
       
       
-      if (isfield(options, 'run_in_simul_mode') && ...
-          ~options.run_in_simul_mode)
+      if (~options.run_in_simul_mode)
         force_control_joint_str = {'leg'};% <---- cell array of (sub)strings
       else
         force_control_joint_str = {'leg', 'arm', 'back', 'neck'};
@@ -28,8 +27,7 @@ classdef AtlasWalkingController < DRCController
       act_ind = (1:r.getNumInputs)';
       position_controlled_joints = setdiff(act_ind,force_controlled_joints);
       
-      if (isfield(options, 'run_in_simul_mode') && ...
-          ~options.run_in_simul_mode)
+      if (~options.run_in_simul_mode)
         % integral gains for position controlled joints
         integral_gains = zeros(getNumPositions(r),1);
         integral_clamps = zeros(getNumPositions(r),1);

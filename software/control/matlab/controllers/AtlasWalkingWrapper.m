@@ -20,10 +20,6 @@ classdef AtlasWalkingWrapper < DrakeSystem
       typecheck(r,'Atlas');
       typecheck(controller_data,'AtlasQPControllerData');
       
-      if (~isfield(options, 'run_in_simul_mode'))
-        options.run_in_simul_mode = false;
-      end
-      
       input_frame = getStateFrame(r);
       output_frame = AtlasPosVelTorqueRef(r);
       
