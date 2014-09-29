@@ -21,16 +21,48 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       if ~isfield(options,'terrain')
         options.terrain = RigidBodyFlatTerrain;
       end
-
+      
       if ~isfield(options,'control_rate')
         options.control_rate = 250;
       end
-
-      S = warning('off','Drake:RigidBodyManipulator:SingularH');
-      warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
-
+      
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped('r_foot_sole', 'l_foot_sole');
+      
+      if (~isfield(options, 'hokuyo'))
+        options.hokuyo = false;
+      else
+        % set up sensor system
+        % Add full state feedback sensor
+        feedback = FullStateFeedbackSensor();
+        obj = addSensor(obj, feedback);
+        
+        % Add lidar -- hokuyo / spindle frames are pulled from
+        % config/config_components/multisense_sim.cfg
+        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],[0;0;0],'hokuyo_frame'));
+        hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
+          -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
+        if (~isfield(options, 'visualize') || options.visualize)
+          hokuyo = enableLCMGL(hokuyo);
+        end
+        obj = addSensor(obj,hokuyo);
+        obj = compile(obj);
+      end
+      
+      if isfield(options,'obstacles')
+        for i=1:options.obstacles
+          xy = randn(2,1);
+          while(norm(xy)<1), xy = randn(2,1); end
+          height = .05;
+          shape = RigidBodyBox([.2+.8*rand(1,2) height],[xy;height/2],[0;0;randn]);
+          shape.c = rand(3,1);
+          obj = addShapeToBody(obj,'world',shape);
+          obj = addContactShapeToBody(obj,'world',shape);
+        end
+      end
+      
+      S = warning('off','Drake:RigidBodyManipulator:SingularH');
+      warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 
       obj.control_rate = options.control_rate;
       obj.getStateFrame().setMaxRate(obj.control_rate);
@@ -57,10 +89,38 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
       warning(S);
 
-      state_frame = AtlasState(obj);
+state_frame = AtlasState(obj);
+      
+      obj.manip = obj.manip.setStateFrame(state_frame);
       obj = obj.setStateFrame(state_frame);
-      obj = obj.setOutputFrame(state_frame);
-
+      
+      %atlas_output_frame{1} = atlas_state_frame;
+      atlas_output_frame = cell(0);
+      if (~isempty(obj.manip.sensor))
+        for i=1:length(obj.manip.sensor)
+          atlas_output_frame{i} = obj.manip.sensor{i}.constructFrame(obj.manip);
+        end
+      end
+      output_frame = atlas_output_frame;
+      % Continuing frame from above...
+      if (~isempty(obj.sensor))
+        for i=1:length(obj.sensor)
+          output_frame{length(atlas_output_frame)+i} = obj.sensor{i}.constructFrame(obj);
+        end
+      end
+      atlas_output_frame = MultiCoordinateFrame.constructFrame(atlas_output_frame);
+      output_frame = MultiCoordinateFrame.constructFrame(output_frame);
+      
+      if ~isequal_modulo_transforms(atlas_output_frame,getOutputFrame(obj.manip))
+        obj.manip = obj.manip.setNumOutputs(atlas_output_frame.dim);
+        obj.manip = obj.manip.setOutputFrame(atlas_output_frame);
+      end
+      
+      if ~isequal_modulo_transforms(output_frame,getOutputFrame(obj))
+        obj = obj.setNumOutputs(output_frame.dim);
+        obj = obj.setOutputFrame(output_frame);
+      end
+      
       input_frame = AtlasInput(obj);
       obj = obj.setInputFrame(input_frame);
     end
@@ -219,6 +279,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
                                     'drake_instep_shift', 0.0275,... % Distance to shift ZMP trajectory inward toward the instep from the center of the foot (m)
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
-
+    hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
+    hokuyo_num_pts = 30;   
+    hokuyo_max_range = 6; % meters?
+    hokuyo_spin_rate = 10; % rad/sec
   end
 end
