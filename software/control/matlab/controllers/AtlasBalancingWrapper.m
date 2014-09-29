@@ -21,10 +21,6 @@ classdef AtlasBalancingWrapper < DrakeSystem
       input_frame = getStateFrame(r);
       output_frame = AtlasPosVelTorqueRef(r);
       
-      if (~isfield(options, 'run_in_simul_mode'))
-        options.run_in_simul_mode = false;
-      end
-      
       force_controlled_joints = controller_data.force_controlled_joints;
       position_controlled_joints = controller_data.position_controlled_joints;
       

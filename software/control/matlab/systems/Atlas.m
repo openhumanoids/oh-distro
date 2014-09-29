@@ -29,14 +29,14 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped('r_foot_sole', 'l_foot_sole');
       
+      % set up sensor system
+      % Add full state feedback sensor
+      feedback = FullStateFeedbackSensor();
+      obj = addSensor(obj, feedback);
+      
       if (~isfield(options, 'hokuyo'))
         options.hokuyo = false;
       else
-        % set up sensor system
-        % Add full state feedback sensor
-        feedback = FullStateFeedbackSensor();
-        obj = addSensor(obj, feedback);
-        
         % Add lidar -- hokuyo / spindle frames are pulled from
         % config/config_components/multisense_sim.cfg
         obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],[0;0;0],'hokuyo_frame'));
@@ -46,9 +46,10 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
           hokuyo = enableLCMGL(hokuyo);
         end
         obj = addSensor(obj,hokuyo);
-        obj = compile(obj);
       end
+      obj = compile(obj);
       
+      % Add obstacles if we want 
       if isfield(options,'obstacles')
         for i=1:options.obstacles
           xy = randn(2,1);
