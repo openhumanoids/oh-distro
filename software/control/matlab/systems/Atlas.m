@@ -50,16 +50,14 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = compile(obj);
       
       % Add obstacles if we want 
+      % (here is just a box in front of the robot to look at)
       if isfield(options,'obstacles')
-        for i=1:options.obstacles
-          xy = randn(2,1);
-          while(norm(xy)<1), xy = randn(2,1); end
-          height = .05;
-          shape = RigidBodyBox([.2+.8*rand(1,2) height],[xy;height/2],[0;0;randn]);
-          shape.c = rand(3,1);
-          obj = addShapeToBody(obj,'world',shape);
-          obj = addContactShapeToBody(obj,'world',shape);
-        end
+        height = 0.1;
+        shape = RigidBodyBox([1.0 1.0 height], [2; 0; height/2], [0; 0; 0;]);
+        shape.c = rand(3, 1);
+        obj = addShapeToBody(obj, 'world', shape);
+        obj = addContactShapeToBody(obj, 'world', shape);
+        obj = compile(obj);
       end
       
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
@@ -281,8 +279,8 @@ state_frame = AtlasState(obj);
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
     hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 30;   
+    hokuyo_num_pts = 50;   
     hokuyo_max_range = 6; % meters?
-    hokuyo_spin_rate = 10; % rad/sec
+    hokuyo_spin_rate = 5; % rad/sec
   end
 end

@@ -151,11 +151,10 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 
         % Our spindle setup has the laser perfectly centered on the
         % spindle
-        % (so publish a post_spindle_to_scan frame with vals from
-        % multisense_05.cfg, but with the translation removed)
         post_to_scan_frame = pre_to_post_frame;
         post_to_scan_frame.trans = [ 0,0,0 ];
-        post_to_scan_frame.quat = [ 0.496637130899519, -0.492381687666844, -0.503247117659410, -0.507596466132044 ];
+        q = rpy2quat([0 -90 -90]*3.1415/180);
+        post_to_scan_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
         obj.lc.publish('POST_SPINDLE_TO_SCAN', post_to_scan_frame);
         
         % And the data
