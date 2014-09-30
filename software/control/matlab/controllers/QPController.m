@@ -355,14 +355,10 @@ classdef QPController < MIMODrakeSystem
     supp.num_contact_pts = n_contact_pts;
     supp.contact_surfaces = 0*support_bodies;
     
-    qdd_lb =-1e3*ones(1,nq);
-    qdd_ub = 1e3*ones(1,nq);
-    if q(obj.l_knee_idx) < obj.min_knee_angle
-      qdd_lb(obj.l_knee_idx) = 0;
-    end
-    if q(obj.r_knee_idx) < obj.min_knee_angle
-      qdd_lb(obj.r_knee_idx) = 0;
-    end
+    qdd_lb =-500*ones(1,nq);
+    qdd_ub = 500*ones(1,nq);
+    qdd_lb(obj.l_knee_idx) = -400./ (1+exp(-8*(q(obj.l_knee_idx)-obj.min_knee_angle))) + 5.0;
+    qdd_lb(obj.r_knee_idx) = -400./ (1+exp(-8*(q(obj.r_knee_idx)-obj.min_knee_angle))) + 5.0;
 
     if (obj.use_mex==0 || obj.use_mex==2)
       kinsol = doKinematics(r,q,false,true,qd);
