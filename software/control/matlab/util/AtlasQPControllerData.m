@@ -1,10 +1,10 @@
 classdef AtlasQPControllerData < QPControllerData
   % contains QP control properties, plus integral gains etc. needed for
   % running on Atlas
-
+  
   % optional: for properties that change infrequently or never
   properties (SetAccess=private,GetAccess=public)
-    force_controlled_joints 
+    force_controlled_joints
     position_controlled_joints
   end
   
@@ -14,25 +14,29 @@ classdef AtlasQPControllerData < QPControllerData
     integral_gains
     integral_clamps
     qd_int_state % state of the velocity integrator block
-    enable_bdi_manip = false % determines whether BDI manip commands are computed 
+    enable_bdi_manip = false % determines whether BDI manip commands are computed
     % from the plan and streamed to the robot
     firstplan = true
   end
   
-  methods 
+  methods
     function obj = AtlasQPControllerData(lqr_is_time_varying,data)
       typecheck(lqr_is_time_varying,'logical');
       typecheck(data,'struct');
-   
+      
       obj@QPControllerData(lqr_is_time_varying,data);
       
       data=verifyAtlasControllerData(obj,data);
       updateAtlasControllerData(obj,data);
     end
- 
+    
     function data=verifyAtlasControllerData(~,data)
-      assert(isnumeric(data.force_controlled_joints));
-      assert(isnumeric(data.position_controlled_joints));
+      if isfield(data, 'force_controlled_joints')
+        assert(isnumeric(data.force_controlled_joints));
+      end
+      if isfield(data, 'force_controlled_joints')
+        assert(isnumeric(data.force_controlled_joints));
+      end
       if isfield(data,'integral')
         assert(isnumeric(data.integral));
       end
@@ -43,14 +47,14 @@ classdef AtlasQPControllerData < QPControllerData
         assert(isnumeric(data.integral_clamps));
       end
       if isfield(data,'qd_int_state')
-        assert(isnumeric(data.qd_int_state));      
+        assert(isnumeric(data.qd_int_state));
       end
       if isfield(data,'enable_bdi_manip')
-        assert(islogical(data.enable_bdi_manip));      
+        assert(islogical(data.enable_bdi_manip));
       end
       if isfield(data,'firstplan')
-        assert(islogical(data.firstplan));      
-      end      
+        assert(islogical(data.firstplan));
+      end
     end
     
     function updateAtlasControllerData(obj,data)
@@ -77,7 +81,7 @@ classdef AtlasQPControllerData < QPControllerData
       end
       if isfield(data,'firstplan')
         obj.firstplan = data.firstplan;
-      end       
+      end
     end
   end
 end

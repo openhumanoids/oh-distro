@@ -1,7 +1,7 @@
-classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
+classdef AtlasWithSensor < TimeSteppingRigidBodyManipulator & Biped
   methods
 
-    function obj=Atlas(urdf,options)
+    function obj=AtlasWithSensor(urdf,options)
 
       if nargin < 1 || isempty(urdf)
         urdf = strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf');
@@ -21,35 +21,17 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       if ~isfield(options,'terrain')
         options.terrain = RigidBodyFlatTerrain;
       end
-      
+
       if ~isfield(options,'control_rate')
         options.control_rate = 250;
       end
+
+      S = warning('off','Drake:RigidBodyManipulator:SingularH');
+      warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
       
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
       obj = obj@Biped('r_foot_sole', 'l_foot_sole');
       
-      % set up sensor system
-      % Add full state feedback sensor
-      feedback = FullStateFeedbackSensor();
-      obj = addSensor(obj, feedback);
-      
-      if (~isfield(options, 'hokuyo'))
-        options.hokuyo = false;
-      else
-        % Add lidar -- hokuyo / spindle frames are pulled from
-        % config/config_components/multisense_sim.cfg
-        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],[0;0;0],'hokuyo_frame'));
-        hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
-          -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
-        if (~isfield(options, 'visualize') || options.visualize)
-          hokuyo = enableLCMGL(hokuyo);
-        end
-        obj = addSensor(obj,hokuyo);
-      end
-      obj = compile(obj);
-      
-      % Add obstacles if we want 
       if isfield(options,'obstacles')
         for i=1:options.obstacles
           xy = randn(2,1);
@@ -62,9 +44,20 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         end
       end
       
-      S = warning('off','Drake:RigidBodyManipulator:SingularH');
-      warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
-
+      % Add full state feedback sensor
+      feedback = FullStateFeedbackSensor();
+      obj = addSensor(obj, feedback);
+      
+      % Add lidar
+      obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],zeros(3,1),'hokuyo_frame'));
+      hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
+        -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
+      if (~isfield(options, 'visualize') || options.visualize)
+        hokuyo = enableLCMGL(hokuyo);
+      end
+      obj = addSensor(obj,hokuyo);
+       obj = compile(obj);
+      
       obj.control_rate = options.control_rate;
       obj.getStateFrame().setMaxRate(obj.control_rate);
 
@@ -72,7 +65,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
 
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
       obj.BDIToStateInd = 6*obj.floating+[1 2 3 17 18 19 20 21 5 6 7 8 9 10 22 23 24 25 26 27 11 12 13 14 15 16 28 4]';
-
+      
       if options.floating
         % could also do fixed point search here
         obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
@@ -90,7 +83,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
       warning(S);
 
-state_frame = AtlasState(obj);
+      state_frame = AtlasState(obj);
       
       obj.manip = obj.manip.setStateFrame(state_frame);
       obj = obj.setStateFrame(state_frame);
@@ -212,7 +205,7 @@ state_frame = AtlasState(obj);
       options = ifNotIsFieldThenVal(options,'Kp_accel',1.0);
       options = ifNotIsFieldThenVal(options,'debug',false);
       options = ifNotIsFieldThenVal(options,'use_mex',true);
-      options = ifNotIsFieldThenVal(options,'contact_threshold',0.001);
+      options = ifNotIsFieldThenVal(options,'contact_threshold',0.01);
       options = ifNotIsFieldThenVal(options,'output_qdd',true);
       options = ifNotIsFieldThenVal(options,'solver',0);  % 0 fastqp, 1 gurobi
       options = ifNotIsFieldThenVal(options,'Kp_pelvis',20*[1; 1; 1; 0.6; 0.6; 0.6]);
@@ -221,7 +214,7 @@ state_frame = AtlasState(obj);
       options = ifNotIsFieldThenVal(options,'use_ik',false);
       options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.0);
-
+      
       options.Kp = options.Kp_pelvis;
       options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);
       if isfield(options,'use_walking_pelvis_block') && options.use_walking_pelvis_block
@@ -272,7 +265,7 @@ state_frame = AtlasState(obj);
                                       'nom_downward_step', 0.2,...% m
                                       'max_num_steps', 10,...
                                       'min_num_steps', 1,...
-                                      'leading_foot', 1); % 0: left, 1: right
+                                      'leading_foot', 0); % 0: left, 1: right
     default_walking_params = struct('step_speed', 0.5,... % speed of the swing foot (m/s)
                                     'step_height', 0.05,... % approximate clearance over terrain (m)
                                     'hold_frac', 0.4,... % fraction of the swing time spent in double support

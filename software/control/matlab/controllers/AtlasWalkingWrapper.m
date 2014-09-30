@@ -58,6 +58,14 @@ classdef AtlasWalkingWrapper < DrakeSystem
       obj = setSampleTime(obj,[dt;0]); % sets controller update rate
       
       % construct QP controller and related control blocks
+      if (options.run_in_simul_mode)
+        options.Kp_foot = [100; 100; 100; 150; 150; 150];
+        options.foot_damping_ratio = 0.5;
+        options.Kp_pelvis = [0; 0; 150; 200; 200; 200];
+        options.pelvis_damping_ratio = 0.6;
+        options.Kp_q = 150.0*ones(r.getNumPositions(),1);
+        options.q_damping_ratio = 0.6;
+      end
       [qp,lfoot_block,rfoot_block,pelvis_block,pd,options] = constructQPWalkingController(r,controller_data,options);
       obj.lfoot_control_block = lfoot_block;
       obj.rfoot_control_block = rfoot_block;
@@ -86,10 +94,15 @@ classdef AtlasWalkingWrapper < DrakeSystem
       obj.pd_plus_qp_block = mimoCascade(pd,qp,[],ins,outs);
       clear ins;
     
-      options.use_error_integrator = true; % while we're still using position control in upper body
+      if (~options.run_in_simul_mode)
+        options.use_error_integrator = true; % while we're still using position control in upper body
+        options.use_lcm = true;
+        options.use_contact_logic_OR = true;      
+      else
+        options.use_lcm = false;
+        options.contact_threshold = 0.002;
+      end
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
-      options.use_lcm = true;
-      options.use_contact_logic_OR = true;
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);
       options.zero_ankles_on_contact = false;
       obj.velocity_int_block = VelocityOutputIntegratorBlock(r,options);
