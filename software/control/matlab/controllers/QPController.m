@@ -232,6 +232,8 @@ classdef QPController < MIMODrakeSystem
     end
 
     obj.output_qdd = options.output_qdd;
+    obj.controller_data.left_toe_off = false;
+    obj.controller_data.right_toe_off = false;
   end
 
   function varargout=mimoOutput(obj,t,~,varargin)
@@ -328,12 +330,15 @@ classdef QPController < MIMODrakeSystem
         j = find([ctrl_data.link_constraints(2).ts] > t, 1, 'first');
         if ctrl_data.link_constraints(2).toe_off_allowed(j)
           plan_supp = r.left_toe_right_full_support;
+          obj.controller_data.left_toe_off = true;
         end
       end
       contact_groups{ind} = plan_supp.contact_groups{lfoot_plan_supp_ind};
       contact_pts{ind} = plan_supp.contact_pts{lfoot_plan_supp_ind};
       n_contact_pts(ind) = plan_supp.num_contact_pts(lfoot_plan_supp_ind);
       ind=ind+1;
+    else
+      obj.controller_data.left_toe_off = false;
     end
     if fc(2)>0
       support_bodies(ind) = obj.rfoot_idx;
@@ -341,11 +346,14 @@ classdef QPController < MIMODrakeSystem
         j = find([ctrl_data.link_constraints(1).ts] > t, 1, 'first');
         if ctrl_data.link_constraints(1).toe_off_allowed(j)
           plan_supp = r.left_full_right_toe_support;
+          obj.controller_data.right_toe_off = true;
         end
       end
       contact_groups{ind} = plan_supp.contact_groups{rfoot_plan_supp_ind};
       contact_pts{ind} = plan_supp.contact_pts{rfoot_plan_supp_ind};
       n_contact_pts(ind) = plan_supp.num_contact_pts(rfoot_plan_supp_ind);
+    else
+      obj.controller_data.right_toe_off = false;
     end
     obj.controller_data.supports(supp_idx) = plan_supp;
 
@@ -357,8 +365,24 @@ classdef QPController < MIMODrakeSystem
     
     qdd_lb =-500*ones(1,nq);
     qdd_ub = 500*ones(1,nq);
-    qdd_lb(obj.l_knee_idx) = -400./ (1+exp(-8*(q(obj.l_knee_idx)-obj.min_knee_angle))) + 5.0;
-    qdd_lb(obj.r_knee_idx) = -400./ (1+exp(-8*(q(obj.r_knee_idx)-obj.min_knee_angle))) + 5.0;
+    
+    kp = 40;
+    kd = 8;
+    if obj.controller_data.right_toe_off
+      r_kny_qdd_des = kp*(obj.min_knee_angle-q(obj.r_knee_idx)) - kd*qd(obj.r_knee_idx);
+      qdd_lb(obj.r_knee_idx) = r_kny_qdd_des;
+      qdd_ub(obj.r_knee_idx) = r_kny_qdd_des;
+    end
+    if obj.controller_data.left_toe_off
+      l_kny_qdd_des = kp*(obj.min_knee_angle-q(obj.l_knee_idx)) - kd*qd(obj.l_knee_idx);
+      qdd_lb(obj.l_knee_idx) = l_kny_qdd_des;
+      qdd_ub(obj.l_knee_idx) = l_kny_qdd_des;
+    end
+
+    % qdd_lb(obj.l_knee_idx) = -500./ (1+exp(-20*(q(obj.l_knee_idx)-obj.min_knee_angle))) + l_kny_qdd_des;
+    % qdd_ub(obj.l_knee_idx) = 500./ (1+exp(-20*(q(obj.l_knee_idx)-obj.min_knee_angle))) + l_kny_qdd_des;
+    % qdd_lb(obj.r_knee_idx) = -500./ (1+exp(-20*(q(obj.r_knee_idx)-obj.min_knee_angle))) + r_kny_qdd_des;
+    % qdd_ub(obj.r_knee_idx) = 500./ (1+exp(-20*(q(obj.r_knee_idx)-obj.min_knee_angle))) + r_kny_qdd_des;
 
     if (obj.use_mex==0 || obj.use_mex==2)
       kinsol = doKinematics(r,q,false,true,qd);
