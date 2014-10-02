@@ -136,8 +136,29 @@ classdef FootContactBlock < MIMODrakeSystem
           breaking_contact = length(supp_prev.bodies)>length(supp.bodies);
           contact_logic_AND = breaking_contact;
         end  
+        if supp_idx < length(ctrl_data.support_times) 
+          supp_next = ctrl_data.supports(supp_idx+1);
+          t0 = ctrl_data.support_times(supp_idx);
+          t1 = ctrl_data.support_times(supp_idx+1);
+          if any(supp.bodies==obj.lfoot_idx) && any(supp.bodies==obj.rfoot_idx)
+            % double support
+            if any(supp_next.bodies==obj.rfoot_idx) && ~any(supp_next.bodies==obj.lfoot_idx)
+              obj.controller_data.pelvis_height_foot_reference = 1-(t1-t)/(t1-t0); % going into right contact
+            end
+            if any(supp_next.bodies==obj.lfoot_idx) && ~any(supp_next.bodies==obj.rfoot_idx)
+              obj.controller_data.pelvis_height_foot_reference = (t1-t)/(t1-t0); % going into left contact
+            end
+          elseif any(supp.bodies==obj.lfoot_idx)
+            % left support
+            obj.controller_data.pelvis_height_foot_reference = 0; % left
+          elseif any(supp.bodies==obj.rfoot_idx)
+            % right support
+            obj.controller_data.pelvis_height_foot_reference = 1; % right
+          end
+        end
       else      
         supp = ctrl_data.supports;
+        obj.controller_data.pelvis_height_foot_reference = 0; % left
       end
       
       % contact_sensor = -1 (no info), 0 (info, no contact), 1 (info, yes contact)
