@@ -365,18 +365,22 @@ classdef QPController < MIMODrakeSystem
     
     qdd_lb =-500*ones(1,nq);
     qdd_ub = 500*ones(1,nq);
-    
+    w_qdd = obj.w_qdd;
     kp = 40;
     kd = 8;
     if obj.controller_data.right_toe_off
       r_kny_qdd_des = kp*(obj.min_knee_angle-q(obj.r_knee_idx)) - kd*qd(obj.r_knee_idx);
-      qdd_lb(obj.r_knee_idx) = r_kny_qdd_des;
-      qdd_ub(obj.r_knee_idx) = r_kny_qdd_des;
+      qddot_des(obj.r_knee_idx) = r_kny_qdd_des;
+      w_qdd(obj.r_knee_idx) = 1;
+%       qdd_lb(obj.r_knee_idx) = r_kny_qdd_des;
+%       qdd_ub(obj.r_knee_idx) = r_kny_qdd_des;
     end
     if obj.controller_data.left_toe_off
       l_kny_qdd_des = kp*(obj.min_knee_angle-q(obj.l_knee_idx)) - kd*qd(obj.l_knee_idx);
-      qdd_lb(obj.l_knee_idx) = l_kny_qdd_des;
-      qdd_ub(obj.l_knee_idx) = l_kny_qdd_des;
+      qddot_des(obj.l_knee_idx) = l_kny_qdd_des;
+      w_qdd(obj.l_knee_idx) = 1;
+%       qdd_lb(obj.l_knee_idx) = l_kny_qdd_des;
+%       qdd_ub(obj.l_knee_idx) = l_kny_qdd_des;
     end
 
     % qdd_lb(obj.l_knee_idx) = -500./ (1+exp(-20*(q(obj.l_knee_idx)-obj.min_knee_angle))) + l_kny_qdd_des;
@@ -563,7 +567,7 @@ classdef QPController < MIMODrakeSystem
       % w_grf*quad(beta) + quad(kdot_des - (A*qdd + Adot*qd))
       if nc > 0
         Hqp = Iqdd'*Jcom'*R_DQyD_ls*Jcom*Iqdd;
-        Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + diag(obj.w_qdd);
+        Hqp(1:nq,1:nq) = Hqp(1:nq,1:nq) + diag(w_qdd);
         if include_angular_momentum
           Hqp = Hqp + Iqdd'*Ak'*obj.W_kdot*Ak*Iqdd;
         end
@@ -573,7 +577,7 @@ classdef QPController < MIMODrakeSystem
         fqp = fqp + (x_bar'*S + 0.5*s1')*B_ls*Jcom*Iqdd;
         fqp = fqp - u0'*R_ls*Jcom*Iqdd;
         fqp = fqp - y0'*Qy*D_ls*Jcom*Iqdd;
-        fqp = fqp - (obj.w_qdd.*qddot_des)'*Iqdd;
+        fqp = fqp - (w_qdd.*qddot_des)'*Iqdd;
         if include_angular_momentum
           fqp = fqp + qd'*Akdot'*obj.W_kdot*Ak*Iqdd;
           fqp = fqp - kdot_des'*obj.W_kdot*Ak*Iqdd;
@@ -687,7 +691,7 @@ classdef QPController < MIMODrakeSystem
       if (obj.use_mex==1)
         [y,qdd,info_fqp,active_supports,alpha] = QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
             varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,...
-            S,s1,s1dot,s2dot,x0,u0,y0,qdd_lb,qdd_ub,mu,height);
+            S,s1,s1dot,s2dot,x0,u0,y0,qdd_lb,qdd_ub,w_qdd,mu,height);
 
         if info_fqp < 0
           ctrl_data.infocount = ctrl_data.infocount+1;
@@ -708,7 +712,7 @@ classdef QPController < MIMODrakeSystem
           Aeq_mex,beq_mex,Ain_mex,bin_mex,Qf,Qeps] = ...
           QPControllermex(obj.mex_ptr.data,obj.solver==0,qddot_des,x,...
           varargin{4:end},condof,supp,A_ls,B_ls,Qy,R_ls,C_ls,D_ls,S,s1,...
-          s1dot,s2dot,x0,u0,y0,qdd_lb,qdd_ub,mu,height);
+          s1dot,s2dot,x0,u0,y0,qdd_lb,qdd_ub,w_qdd,mu,height);
 
         if (nc>0)
           valuecheck(active_supports_mex,active_supports);
