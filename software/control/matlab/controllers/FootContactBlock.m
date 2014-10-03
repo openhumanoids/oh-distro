@@ -158,10 +158,12 @@ classdef FootContactBlock < MIMODrakeSystem
             end
           elseif any(supp.bodies==obj.robot.foot_body_id.left)
             % left support
-            obj.controller_data.pelvis_height_foot_reference = 0; % left
+%            obj.controller_data.pelvis_height_foot_reference = 0; % left
+            obj.controller_data.pelvis_height_foot_reference = -1; % take min
           elseif any(supp.bodies==obj.robot.foot_body_id.right)
             % right support
-            obj.controller_data.pelvis_height_foot_reference = 1; % right
+ %           obj.controller_data.pelvis_height_foot_reference = 1; % right
+            obj.controller_data.pelvis_height_foot_reference = -1; % take min
           end
         end
       else      
