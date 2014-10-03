@@ -65,6 +65,7 @@ calib_val = Point(state_frame);
 calib_val.r_arm_usy = 0.79804;
 calib_val.r_arm_shx = 1.57022;
 calib_val.r_arm_ely = -0.01648;
+calib_val.r_arm_elx = -0.00297;
 calib_val.r_arm_uwy = 0.02374;
 calib_val.r_arm_mwx = -1.22977;
 calib_val.l_arm_usy = 0.79858;
