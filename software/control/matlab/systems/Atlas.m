@@ -138,7 +138,19 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       pelvis = forwardKin(obj,kinsol,findLinkInd(obj,'pelvis'),[0;0;0]);
       z = pelvis(3) - foot_z;
     end
+    
+    function bool = isDoubleSupport(obj,rigid_body_support_state)
+      bool = any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
+    end
 
+    function bool = isLeftSupport(obj,rigid_body_support_state)
+      bool = any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && ~any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
+    end
+
+    function bool = isRightSupport(obj,rigid_body_support_state)
+      bool = ~any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
+    end
+    
     function foot_z = getFootHeight(obj,q)
       kinsol = doKinematics(obj,q);
       rfoot_cpos = terrainContactPositions(obj,kinsol,obj.foot_body_id.right);
