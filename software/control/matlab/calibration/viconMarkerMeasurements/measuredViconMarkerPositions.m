@@ -88,6 +88,7 @@ pelvis_markers(:, 2) = pelvis_marker_reference + [pelvis_x; -48e-3; 51e-3];
 pelvis_markers(:, 3) = pelvis_marker_reference + [pelvis_x; 9.5e-3; 32e-3];
 pelvis_markers(:, 4) = pelvis_marker_reference + [pelvis_x; 47e-3; 70e-3];
 pelvis_markers(:, 5) = pelvis_marker_reference + [pelvis_x; -9.5e-3; 127e-3];
+pelvis_markers(1, :) = nan; % because I'm not sure that the plate was actually vertical
 marker_data.pelvis.num_params = sum(sum(isnan(pelvis_markers)));
 marker_data.pelvis.marker_positions = @(params) subsetOfMarkersMeasuredMarkerFunction(params, pelvis_markers);
 

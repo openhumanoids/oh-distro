@@ -71,7 +71,7 @@ if strcmp(calibration_type, 'stiffness')
   q_correction_params = k;
 end
 
-q_data([1:3 6], :) = floating_states([1:3 6], :); % take xyz and yaw from calibration routine
+q_data([1:2 6], :) = floating_states([1:2 6], :); % take xy and yaw from calibration routine
 q_data_after = q_data;
 q_data_after(1:6, :) = floating_states;
 
