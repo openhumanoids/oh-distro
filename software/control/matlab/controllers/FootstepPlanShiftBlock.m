@@ -87,13 +87,13 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
       a1 = ctrl_data.link_constraints(lfoot_link_con_ind).a1(:,foot_traj_ind);
       a2 = ctrl_data.link_constraints(lfoot_link_con_ind).a2(:,foot_traj_ind);
       a3 = ctrl_data.link_constraints(lfoot_link_con_ind).a3(:,foot_traj_ind);
-      lfoot_des = evalSplineSegment(tt,a0, a1,a2,a3);
+      lfoot_des = evalCubicSplineSegment(tt,a0, a1,a2,a3);
 
       a0 = ctrl_data.link_constraints(rfoot_link_con_ind).a0(:,foot_traj_ind);
       a1 = ctrl_data.link_constraints(rfoot_link_con_ind).a1(:,foot_traj_ind);
       a2 = ctrl_data.link_constraints(rfoot_link_con_ind).a2(:,foot_traj_ind);
       a3 = ctrl_data.link_constraints(rfoot_link_con_ind).a3(:,foot_traj_ind);
-      rfoot_des = evalSplineSegment(tt,a0,a1,a2,a3);
+      rfoot_des = evalCubicSplineSegment(tt,a0,a1,a2,a3);
       if (obj.use_mex == 0)
         persistent last_t;
         if (isempty(last_t) || last_t > t)
