@@ -75,6 +75,29 @@
       }, 
       "name": "handdown", 
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true, 
+      "description": "handsdown incl back", 
+      "joints": {
+        "back_bkx": 0.0002659455349203199, 
+        "back_bky": 0.0007907520630396903, 
+        "back_bkz": 0.0039426530711352825, 
+        "l_arm_elx": 0.4996761083602905, 
+        "l_arm_ely": 2.1026859283447266, 
+        "l_arm_mwx": 0.014013349078595638, 
+        "l_arm_shx": -1.3297230005264282, 
+        "l_arm_usy": 0.2692919969558716, 
+        "l_arm_uwy": 0.01859891414642334, 
+        "r_arm_elx": -0.494953453540802, 
+        "r_arm_ely": 2.1011929512023926, 
+        "r_arm_mwx": -0.00019657611846923828, 
+        "r_arm_shx": 1.3310223817825317, 
+        "r_arm_usy": 0.2759742736816406, 
+        "r_arm_uwy": 0.01871834695339203
+      }, 
+      "name": "handsdown incl back", 
+      "nominal_handedness": "none"
     }
   ], 
   "drill": [
