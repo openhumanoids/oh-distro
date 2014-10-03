@@ -27,7 +27,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       end
       
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
-      obj = obj@Biped('r_foot_sole', 'l_foot_sole');
+      obj = obj@Biped('r_foot', 'l_foot','r_foot_sole', 'l_foot_sole');
       
       % set up sensor system
       % Add full state feedback sensor
@@ -84,24 +84,19 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       end
       warning(S);
       
-      l_foot = obj.findLinkInd('l_foot');
-      r_foot = obj.findLinkInd('r_foot');
-
-      obj.left_full_support = RigidBodySupportState(obj,l_foot);
-      obj.left_toe_support = RigidBodySupportState(obj,l_foot,{{'toe'}});
-      obj.right_full_support = RigidBodySupportState(obj,r_foot);
-      obj.right_toe_support = RigidBodySupportState(obj,r_foot,{{'toe'}});
-      obj.left_full_right_full_support = RigidBodySupportState(obj,[l_foot,r_foot]);
-      obj.left_toe_right_full_support = RigidBodySupportState(obj,[l_foot,r_foot],{{'toe'},{'heel','toe'}});
-      obj.left_full_right_toe_support = RigidBodySupportState(obj,[l_foot,r_foot],{{'heel','toe'},{'toe'}});
+      obj.left_full_support = RigidBodySupportState(obj,obj.foot_body_id.left);
+      obj.left_toe_support = RigidBodySupportState(obj,obj.foot_body_id.left,{{'toe'}});
+      obj.right_full_support = RigidBodySupportState(obj,obj.foot_body_id.right);
+      obj.right_toe_support = RigidBodySupportState(obj,obj.foot_body_id.right,{{'toe'}});
+      obj.left_full_right_full_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right]);
+      obj.left_toe_right_full_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right],{{'toe'},{'heel','toe'}});
+      obj.left_full_right_toe_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right],{{'heel','toe'},{'toe'}});
     end
 
     function obj = compile(obj)
-      S = warning('off','Drake:RigidBodyManipulator:SingularH');
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
-      warning(S);
 
-state_frame = AtlasState(obj);
+      state_frame = AtlasState(obj);
       
       obj.manip = obj.manip.setStateFrame(state_frame);
       obj = obj.setStateFrame(state_frame);
@@ -146,8 +141,8 @@ state_frame = AtlasState(obj);
 
     function foot_z = getFootHeight(obj,q)
       kinsol = doKinematics(obj,q);
-      rfoot_cpos = terrainContactPositions(obj,kinsol,findLinkInd(obj,'r_foot'));
-      lfoot_cpos = terrainContactPositions(obj,kinsol,findLinkInd(obj,'l_foot'));
+      rfoot_cpos = terrainContactPositions(obj,kinsol,obj.foot_body_id.right);
+      lfoot_cpos = terrainContactPositions(obj,kinsol,obj.foot_body_id.left);
       foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
     end
 
@@ -209,10 +204,10 @@ state_frame = AtlasState(obj);
       options = ifNotIsFieldThenVal(options,'min_knee_angle',0.7);
       
       acc_limit = [100;100;100;8;8;8];
-      body_accel_bounds(1).body_idx = findLinkInd(obj,'r_foot');
+      body_accel_bounds(1).body_idx = obj.foot_body_id.right;
       body_accel_bounds(1).min_acceleration = -acc_limit;
       body_accel_bounds(1).max_acceleration = acc_limit;
-      body_accel_bounds(2).body_idx = findLinkInd(obj,'l_foot');
+      body_accel_bounds(2).body_idx = obj.foot_body_id.left;
       body_accel_bounds(2).min_acceleration = -acc_limit;
       body_accel_bounds(2).max_acceleration = acc_limit;
       options = ifNotIsFieldThenVal(options,'body_accel_bounds',body_accel_bounds);
@@ -269,6 +264,7 @@ state_frame = AtlasState(obj);
       options.Kd = getDampingGain(options.Kp,options.q_damping_ratio);
       pd = IKPDBlock(obj,controller_data,options);
     end
+    
   end
   properties
     fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat');
@@ -306,7 +302,6 @@ state_frame = AtlasState(obj);
     hokuyo_num_pts = 30;   
     hokuyo_max_range = 6; % meters?
     hokuyo_spin_rate = 10; % rad/sec
-
     % preconstructing these for efficiency
     left_full_support
     left_toe_support
