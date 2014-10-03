@@ -41,7 +41,7 @@ def main():
   if len(sys.argv) > 1:
     thresold = float(sys.argv[1]) # newtons
   else:
-    thresold = 150 # newtons
+    thresold = 100 # newtons
   
   if len(sys.argv) > 2:
     channel = sys.argv[2]
