@@ -7,10 +7,10 @@ drc_lcmtypes
 retired_lcmtypes
 
 
-robot_model
+#robot_model
+#kinematics
 
 object_template_model
-kinematics
 
 drivers
 
