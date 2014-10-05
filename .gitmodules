@@ -2,3 +2,6 @@
 	path = software/drake
 	url = git@github.com:mitdrc/drake.git
 
+[submodule "software/pronto"]
+	path = software/pronto
+	url = git@github.com:mitdrc/pronto.git
