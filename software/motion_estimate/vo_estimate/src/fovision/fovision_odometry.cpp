@@ -346,6 +346,17 @@ void StereoOdom::multisenseLDHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 
+Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
+  Eigen::Isometry3d tf_out;
+  tf_out.setIdentity();
+  tf_out.translation()  << tf.p[0], tf.p[1], tf.p[2];
+  Eigen::Quaterniond q;
+  tf.M.GetQuaternion( q.x() , q.y(), q.z(), q.w());
+  tf_out.rotate(q);
+  return tf_out;
+}
+
+
 // Given the incoming message, determing the world-to-head frame
 bool StereoOdom::getWorldToHead(const drc::robot_state_t* msg, Eigen::Isometry3d &local_to_head){
   bool head_found =false;
@@ -359,7 +370,8 @@ bool StereoOdom::getWorldToHead(const drc::robot_state_t* msg, Eigen::Isometry3d
                                             msg->pose.rotation.y, msg->pose.rotation.z) );
   
   map<string, double> jointpos_in;
-  map<string, drc::transform_t > cartpos_out;
+  // map<string, drc::transform_t > cartpos_out;
+  map<string, KDL::Frame > cartpos_out;
   for (uint i=0; i< (uint) msg->num_joints; i++) //cast to uint to suppress compiler warning
     jointpos_in.insert(make_pair(msg->joint_name[i], msg->joint_position[i]));
 
@@ -375,14 +387,14 @@ bool StereoOdom::getWorldToHead(const drc::robot_state_t* msg, Eigen::Isometry3d
   }
   
   // 2. Determine the head position:
-  for( map<string, drc::transform_t>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
+  for( map<string, KDL::Frame>::iterator ii=cartpos_out.begin(); ii!=cartpos_out.end(); ++ii){
     std::string joint = (*ii).first;
     if (   (*ii).first.compare( "head" ) == 0 ){
-      Eigen::Isometry3d body_to_head;
-      body_to_head.setIdentity();
-      body_to_head.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
-      Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
-      body_to_head.rotate(quat);    
+      Eigen::Isometry3d body_to_head = KDLToEigen((*ii).second);
+      //body_to_head.setIdentity();
+      //body_to_head.translation()  << (*ii).second.translation.x, (*ii).second.translation.y, (*ii).second.translation.z;
+      //Eigen::Quaterniond quat = Eigen::Quaterniond((*ii).second.rotation.w, (*ii).second.rotation.x, (*ii).second.rotation.y, (*ii).second.rotation.z);
+      //body_to_head.rotate(quat);
       head_found =true;
       // Determine the head position in world frame:
       local_to_head = local_to_body * body_to_head; 
