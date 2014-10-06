@@ -35,7 +35,7 @@
 #include "kdl/tree.hpp"
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+// #include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
 
 #include <image-passthrough/image-passthrough-app.hpp>
 
