@@ -18,7 +18,7 @@
 #include <lcmtypes/bot_core.hpp>
 #include "lcmtypes/drc/robot_state_t.hpp"
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 
 class VoEstimator
@@ -59,7 +59,7 @@ public:
   
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
-  pointcloud_vis* pc_vis_;
+  pronto_vis* pc_vis_;
   
   // have we received the first pose estimate:?
   bool pose_initialized_;

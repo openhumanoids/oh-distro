@@ -40,7 +40,7 @@
 #include "kdl_parser/kdl_parser.hpp"
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <model-client/model-client.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 
 #include <ConciseArgs>
@@ -72,7 +72,7 @@ class App{
     GMainLoop * mainloop;
     
   private:
-    pointcloud_vis* pc_vis_;  
+    pronto_vis* pc_vis_;  
     void robotStateHandler(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, const  drc::robot_state_t* msg);    
     void manipPlanHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -137,7 +137,7 @@ App::App(boost::shared_ptr<lcm::LCM> &lcm_):
   rpy_ =  {0,0,0};
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(800124,"Palm Plan Positions",5,1) );
   

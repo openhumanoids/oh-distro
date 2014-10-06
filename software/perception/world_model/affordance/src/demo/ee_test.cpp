@@ -30,8 +30,8 @@
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 
 
-#include <pointcloud_tools/pointcloud_vis.hpp>
-#include <pointcloud_tools/pointcloud_math.hpp>
+#include <pronto_utils/pronto_vis.hpp>
+#include <pronto_utils/pronto_math.hpp>
 
 #include <affordance/AffordanceUtils.hpp>
 
@@ -52,7 +52,7 @@ class Pass{
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    pointcloud_vis* pc_vis_;        
+    pronto_vis* pc_vis_;        
     std::string mode_;
     bool aff_ready_;
     bool cartpos_ready_;
@@ -109,7 +109,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_):
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robot_state_handler,this);  
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60011,"Grasp Seed",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60001,"Grasp Frames",5,1) );

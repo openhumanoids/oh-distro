@@ -11,7 +11,7 @@ ColorTracker::ColorTracker(boost::shared_ptr<lcm::LCM> &lcm_,
                                width_(width_),height_(height_),
                                fx_(fx_), fy_(fy_), cx_(cx_), cy_(cy_){
 
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(4451002,"Tracker | NPose",5,1) );

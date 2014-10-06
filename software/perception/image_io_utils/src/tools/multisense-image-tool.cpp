@@ -27,7 +27,7 @@
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 
 #include <multisense_utils/multisense_utils.hpp> // create point clouds
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <image_io_utils/image_io_utils.hpp>   // to simplify jpeg/zlib compression and decompression
 #include <camera_params/camera_params.hpp>     // (Stereo) Camera Parameters
 
@@ -68,7 +68,7 @@ class image_tool{
     cv::Mat_<double> Q_;
     int decimate_;
     
-    pointcloud_vis* pc_vis_;  
+    pronto_vis* pc_vis_;  
     multisense_utils* ms_utils_;     
     image_io_utils*  imgutils_;
 
@@ -107,7 +107,7 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
   
   imgutils_ = new image_io_utils( lcm_->getUnderlyingLCM(), stereo_params_.left.width, stereo_params_.left.height);
 
-  pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis(lcm_->getUnderlyingLCM());
   float colors_r[] ={1.0,0.0,0.0};
   vector <float> colors_v_r;
   colors_v_r.assign(colors_r,colors_r+4*sizeof(float));

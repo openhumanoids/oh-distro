@@ -10,7 +10,7 @@ target_link_libraries(particle ${LCMTYPES_LIBS} gsl)
 #    boost_program_options)
 #sandymfallon: math_utils
 
-pods_use_pkg_config_packages(particle pointcloud_math lcmtypes_bot2-core)
+pods_use_pkg_config_packages(particle pronto_math lcmtypes_bot2-core)
 
 set_target_properties(particle PROPERTIES SOVERSION 1)
 pods_install_libraries(particle)
@@ -29,5 +29,5 @@ add_executable (particle-filter-example particle_filter_example.cpp )
 target_link_libraries(particle-filter-example particle)
 pods_use_pkg_config_packages(particle-filter-example   particle
   gsl  bot2-core lcmtypes_visualization  lcmtypes_bot2-core
-  pointcloud_vis pointcloud_math)
+  pronto_vis pronto_math)
 pods_install_executables(particle-filter-example)

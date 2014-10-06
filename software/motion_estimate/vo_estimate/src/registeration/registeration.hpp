@@ -10,8 +10,8 @@
 #include <bot_lcmgl_client/lcmgl.h>
 #include <estimate-pose/pose_estimator.hpp>
 
-#include <pointcloud_tools/pointcloud_lcm.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_lcm.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 
 
 struct ImageFeature{
@@ -75,7 +75,7 @@ class Reg
     boost::shared_ptr<lcm::LCM> lcm_;
     bot_lcmgl_t* lcmgl_;
 
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     bool verbose_;
     
 };

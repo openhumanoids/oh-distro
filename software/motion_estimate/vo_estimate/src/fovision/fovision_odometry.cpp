@@ -16,7 +16,7 @@
 #include "drcvision/voestimator.hpp"
 #include "fovision.hpp"
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
 
 /// For Forward Kinematics from body to head:

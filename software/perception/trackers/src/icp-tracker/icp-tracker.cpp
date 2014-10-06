@@ -15,7 +15,7 @@ ICPTracker::ICPTracker(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_):
                                lcm_(lcm_), verbose_lcm_(verbose_lcm_),
                                null_poseT_(0, Eigen::Isometry3d::Identity()){
 
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
 
   pc_vis_->obj_cfg_list.push_back( obj_cfg(771000,"[ICP] Pose - Null",5,0) );
 

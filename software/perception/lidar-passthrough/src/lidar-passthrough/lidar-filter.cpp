@@ -6,8 +6,8 @@
 #include <bot_param/param_client.h>
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-#include <pointcloud_tools/pointcloud_lcm.hpp> // unpack lidar to xyz
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_lcm.hpp> // unpack lidar to xyz
 
 
 #include <lcm/lcm-cpp.hpp>

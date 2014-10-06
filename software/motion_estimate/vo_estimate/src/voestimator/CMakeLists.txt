@@ -4,7 +4,7 @@ project(voestimator)
 
 add_library(voestimator SHARED voestimator.cpp)
 
-pods_use_pkg_config_packages(voestimator eigen3 pointcloud_vis bot2-frames)
+pods_use_pkg_config_packages(voestimator eigen3 pronto_vis bot2-frames)
 
 # set the library API version.  Increment this every time the public API changes.
 set_target_properties(voestimator PROPERTIES SOVERSION 1)

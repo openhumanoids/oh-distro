@@ -9,7 +9,7 @@ include(${VTK_USE_FILE})
 ################ LIBRARIES ###############################
 add_library(major-plane-detect  SHARED major-plane-detect.cpp)
 pods_use_pkg_config_packages(major-plane-detect ${PCL_LIBRARIES} bot2-lcmgl-client maps eigen3
-     pointcloud_filters)
+     pronto_filters)
 target_link_libraries (major-plane-detect boost_system 
            ${REQUIRED_LIBS})
 set_target_properties(major-plane-detect PROPERTIES SOVERSION 1)
@@ -28,7 +28,7 @@ pods_use_pkg_config_packages(drc-major-plane-tracker
    bot2-core lcmtypes_visualization  lcmtypes_bot2-core
   bot2-param-client
   bot2-frames  bot2-frames_cpp
-  pointcloud_vis pointcloud_math 
+  pronto_vis pronto_math 
   major-plane-detect 
   affordance-utils
   ${PCL_LIBRARIES})

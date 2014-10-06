@@ -22,8 +22,8 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/common/transforms.h>
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-#include <pointcloud_tools/pointcloud_lcm.hpp> // decode perception lcm messages
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_lcm.hpp> // decode perception lcm messages
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include "lcmtypes/bot_core.hpp"
@@ -86,7 +86,7 @@ class Pass{
                             pcl::PointCloud<pcl::PointXYZRGB>::Ptr &scan_laser,
                            int cam_id);
     
-    pointcloud_vis* pc_vis_ ;
+    pronto_vis* pc_vis_ ;
     BotParam* botparam_;
     BotFrames* botframes_;
     bot::frames* botframes_cpp_;   
@@ -121,7 +121,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
   
   
   bool reset =0;
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose - Laser",5,reset) );

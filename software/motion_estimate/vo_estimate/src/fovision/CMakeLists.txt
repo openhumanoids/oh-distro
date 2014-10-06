@@ -32,7 +32,7 @@ pods_use_pkg_config_packages(drc-fovision-odometry eigen3
   lcm bot2-core bot2-frames   bot2-frames_cpp
   lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain_comm
   voconfig   vofeatures   voestimator   fovision
-  pointcloud_vis  
+  pronto_vis  
   opencv image_io_utils
   ${FK_PACKAGES})
 pods_install_executables(drc-fovision-odometry)
@@ -45,7 +45,7 @@ pods_use_pkg_config_packages(se-simple-vo eigen3
   lcm bot2-core bot2-frames   bot2-frames_cpp
   lcmtypes_bot2-core  lcmtypes_fovis-bot2 lcmtypes_microstrain_comm
   voconfig   vofeatures   voestimator   fovision
-  pointcloud_vis  
+  pronto_vis  
   opencv image_io_utils
   ${FK_PACKAGES})
 pods_install_executables(se-simple-vo)
