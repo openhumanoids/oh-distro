@@ -72,8 +72,8 @@ struct State {
     mCamTransRight = NULL;
     mCameraChannel = "CAMERA";
     mTagChannel = "JPL_TAGS";
-    mRunStereoAlgorithm = true;
-    mDoTracking = true;
+    mRunStereoAlgorithm = false;
+    mDoTracking = false;
     mLastStateUpdateTime = 0;
   }
 
@@ -228,19 +228,21 @@ struct State {
 
     // get pelvis pose
     KDL::Frame bodyToLocal = KDL::Frame::Identity();
-    const auto& t = iMessage->pose.translation;
-    bodyToLocal.p = KDL::Vector(t.x, t.y, t.z);
-    const auto& q = iMessage->pose.rotation;
-    bodyToLocal.M = KDL::Rotation::Quaternion(q.x, q.y, q.z, q.w);
-
-    std::cout << "XFORM " << t.x << " " << t.y << " " << t.z << " " <<
-      q.x << " " << q.y << " " << q.z << " " << q.w << std::endl;
-    std::cout << "BODY TO LOCAL" << std::endl;
-    std::cout << toEigen(bodyToLocal).matrix() << std::endl;
-    std::cout << "BODY TO LOCAL2" << std::endl;
-    Eigen::Isometry3d foo;
-    mBotWrapper->getTransform("body","local",foo,iMessage->utime);
-    std::cout << foo.matrix() << std::endl;
+    if (false) {  // TODO TEMP
+      const auto& t = iMessage->pose.translation;
+      bodyToLocal.p = KDL::Vector(t.x, t.y, t.z);
+      const auto& q = iMessage->pose.rotation;
+      bodyToLocal.M = KDL::Rotation::Quaternion(q.x, q.y, q.z, q.w);
+    }
+    else {
+      Eigen::Isometry3d bodyToLocalBotFrames;
+      mBotWrapper->getTransform("body", "local", bodyToLocalBotFrames,
+                                iMessage->utime);
+      const auto& t = bodyToLocalBotFrames.translation();
+      bodyToLocal.p = KDL::Vector(t[0], t[1], t[2]);
+      Eigen::Quaterniond q(bodyToLocalBotFrames.rotation());
+      bodyToLocal.M = KDL::Rotation::Quaternion(q.x(), q.y(), q.z(), q.w());
+    }
 
     // do fk
     std::map<std::string, double> joints;
@@ -379,7 +381,6 @@ struct State {
         if (item == mLinkFrames.end()) {
           std::cout << "error: cannot find robot state at " <<
             iMessage->utime << std::endl;
-          std::cout << "SIZE " << mLinkFrames.size() << std::endl;
           return;
         }
         const auto& frameMap = *item->second;
@@ -392,23 +393,6 @@ struct State {
         Eigen::Isometry3d linkToCamera = localToCamera*linkToLocal;
         Eigen::Isometry3d tagToCamera = linkToCamera*mTags[i].mLinkPose;
         poseInit = getFiducialPose(tagToCamera);
-
-        std::cout << "LINK TO LOCAL" << std::endl << linkToLocal.matrix() << std::endl;
-        std::cout << "CAMERA TO LOCAL" << std::endl << cameraToLocal.matrix() << std::endl;
-        std::cout << "POS " << tagToCamera.translation().transpose() << std::endl;
-        double pix[3];
-        Eigen::Vector3d foo = tagToCamera.translation();
-        double p[] = { foo[0], foo[1], foo[2] };
-        bot_camtrans_project_point(mCamTransLeft, p, pix);
-        std::cout << "PIX " << pix[0] << " " << pix[1] << " " << pix[2] << std::endl;
-
-        // TODO: this is temp
-        /*
-        poseInit.pos.x = 0.028;
-        poseInit.pos.y = 0.002;
-        poseInit.pos.z = 0.56;
-        poseInit.rot = fiducial_rot_from_rpy(0,2*M_PI/2,0);
-        */
       }
 
       mTags[i].mTracked = false;
