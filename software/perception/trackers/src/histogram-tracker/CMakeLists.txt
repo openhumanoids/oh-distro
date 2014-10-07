@@ -23,7 +23,7 @@ pods_use_pkg_config_packages(drc-histogram-tracker lcm
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp
   opencv  image_io_utils histogram-tracker
-  pointcloud_filters  pointcloud_vis pointcloud_lcm)
+  pronto_filters  pronto_vis pronto_lcm)
 target_link_libraries (drc-histogram-tracker boost_system 
            ${REQUIRED_LIBS} ${LCMTYPES_LIBS})
 pods_install_executables(drc-histogram-tracker)
@@ -48,7 +48,7 @@ add_executable(drc-object-segmentation
 pods_use_pkg_config_packages(drc-object-segmentation lcm 
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp
-  opencv image_io_utils pointcloud_filters  pointcloud_vis pointcloud_lcm histogram-tracker object-segmenter lcmtypes_drc_lcmtypes)
+  opencv image_io_utils pronto_filters  pronto_vis pronto_lcm histogram-tracker object-segmenter lcmtypes_drc_lcmtypes)
 target_link_libraries (drc-object-segmentation boost_system 
            ${REQUIRED_LIBS} ${LCMTYPES_LIBS})
 pods_install_executables(drc-object-segmentation)
@@ -59,7 +59,7 @@ add_executable(drc-object-annotater
 pods_use_pkg_config_packages(drc-object-annotater lcm 
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp
-  opencv  image_io_utils pointcloud_filters  pointcloud_vis pointcloud_lcm histogram-tracker object-segmenter lcmtypes_drc_lcmtypes)
+  opencv  image_io_utils pronto_filters  pronto_vis pronto_lcm histogram-tracker object-segmenter lcmtypes_drc_lcmtypes)
 target_link_libraries (drc-object-annotater boost_system 
            ${REQUIRED_LIBS} ${LCMTYPES_LIBS})
 pods_install_executables(drc-object-annotater)

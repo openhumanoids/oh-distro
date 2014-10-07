@@ -29,9 +29,9 @@
 
 
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 
-#include <pointcloud_tools/filter_planes.hpp>
+#include <pronto_utils/filter_planes.hpp>
 
 using namespace Eigen;
 using namespace std;
@@ -60,7 +60,7 @@ public:
 private:
     pcl::PolygonMesh::Ptr prim_mesh_ ;
     rgbd_primitives*  prim_;
-      pointcloud_vis* pc_vis_;
+      pronto_vis* pc_vis_;
 
   
   bool readURDFString(std::string filenameB_, std::string &urdf_string);
@@ -93,7 +93,7 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string filenameA_, st
     lcm_(lcm_), filenameA_(filenameA_), pts_per_m_squared_(pts_per_m_squared_),null_poseT_(0, Eigen::Isometry3d::Identity()){
   prim_ = new rgbd_primitives();
   
-  pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis(lcm_->getUnderlyingLCM());
   prim_ = new rgbd_primitives();
 
   // obj: id name type reset

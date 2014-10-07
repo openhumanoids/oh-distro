@@ -9,6 +9,6 @@ pods_use_pkg_config_packages(drc-vehicle-tracker collision_object_gfe collision_
   model-client
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp rgbd_primitives
-  pointcloud_filters  pointcloud_vis pointcloud_lcm ${PCL_LIBRARIES})
+  pronto_filters  pronto_vis pronto_lcm ${PCL_LIBRARIES})
 target_link_libraries (drc-vehicle-tracker boost_system boost_thread)
 pods_install_executables(drc-vehicle-tracker)

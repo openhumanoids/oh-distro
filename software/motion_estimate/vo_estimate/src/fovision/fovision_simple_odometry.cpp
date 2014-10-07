@@ -12,7 +12,7 @@
 #include "drcvision/vofeatures.hpp"
 #include "fovision.hpp"
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
 
 /// For Forward Kinematics from body to head:
@@ -280,7 +280,7 @@ void StereoOdom::unpack_multisense(const multisense::images_t *msg){
     pixel_convert_8u_rgb_to_8u_gray(  left_buf_, msg->images[0].width, msg->images[0].width, msg->images[0].height, 
                                       rgb_buf_,  msg->images[0].width*3);
   }else{
-    std::cout << "pointcloud_lcm::unpack_multisense | image type not understood\n";
+    std::cout << "StereoOdom::unpack_multisense | image type not understood\n";
     exit(-1);
   }
   
@@ -289,7 +289,7 @@ void StereoOdom::unpack_multisense(const multisense::images_t *msg){
     unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
     uncompress(decompress_disparity_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
   } else{
-    std::cout << "pointcloud_lcm::unpack_multisense | depth type not understood\n";
+    std::cout << "StereoOdom::unpack_multisense | depth type not understood\n";
     exit(-1);
   }
 }

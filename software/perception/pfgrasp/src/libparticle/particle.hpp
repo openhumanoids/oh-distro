@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 #include "rng.hpp"
-#include <pointcloud_tools/pointcloud_math.hpp>
+#include <pronto_utils/pronto_math.hpp>
 
 //NaN is the only value, for which is expression value == value always false.
 template<typename T>

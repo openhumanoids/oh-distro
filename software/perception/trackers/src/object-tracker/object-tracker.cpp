@@ -43,7 +43,7 @@
 #include <ConciseArgs>
 
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include <multisense_utils/multisense_utils.hpp> // create point clouds
 #include <stereo-bm/stereo-bm.hpp>
@@ -97,7 +97,7 @@ class Pass{
     BotParam* botparam_;
     BotFrames* botframes_;
     bot::frames* frames_cpp_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     multisense_utils* ms_utils_;      
     image_io_utils*  imgutils_;
 
@@ -187,7 +187,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_,
   lcm_->subscribe("TRACKER_COMMAND",&Pass::trackerCommandHandler,this);   
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Tracker | Pose - Null",5,1) );

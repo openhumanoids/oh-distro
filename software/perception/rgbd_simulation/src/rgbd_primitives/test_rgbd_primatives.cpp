@@ -8,7 +8,7 @@
 
 
 #include <lcm/lcm-cpp.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include <ConciseArgs>
 
@@ -30,7 +30,7 @@ class Pass{
     std::string camera_channel_;
 
     
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     bool verbose_;
     
     boost::shared_ptr<rgbd_primitives>  prim_;
@@ -40,7 +40,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_):
     lcm_(lcm_){
 
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   float colors_b[] ={1.0,0.0,1.0};

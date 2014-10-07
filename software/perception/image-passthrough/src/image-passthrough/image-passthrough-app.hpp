@@ -10,7 +10,7 @@
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/GlKinematicBody.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <camera_params/camera_params.hpp>     // Camera Parameters
@@ -101,7 +101,7 @@ class Pass{
     
     // External Objects:
     BotParam* botparam_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     boost::shared_ptr<visualization_utils::GlKinematicBody> gl_robot_;
     image_io_utils*  imgutils_; 
     SimExample::Ptr simexample;

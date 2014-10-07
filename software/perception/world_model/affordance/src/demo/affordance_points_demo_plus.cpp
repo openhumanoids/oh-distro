@@ -18,7 +18,7 @@
 #include <pcl/common/transforms.h>
 
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds and write mesh
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds and write mesh
 
 
 using namespace pcl;

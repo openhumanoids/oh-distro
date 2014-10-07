@@ -15,7 +15,7 @@ set(opencv-drc_revision 8298)
 set(opencv-drc_depends Eigen_pod)
 
 set(pcl_dep_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_dep)
-set(pcl_dep_revision 8298)
+set(pcl_dep_revision 8330)
 set(pcl_dep_depends)
 
 set(pcl_drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_drc)
@@ -133,6 +133,10 @@ set(pypolyhedron_url ssh://git@github.com/rdeits/pypolyhedron.git)
 set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
 set(pypolyhedron_depends)
 
+set(kinematics-utils_url ssh://git@github.com/mitdrc/kinematics-utils.git)
+set(kinematics-utils_revision 062e36b056eaa0b5ddc38ed7c738999b9bb5831b)
+set(kinematics-utils_depends Eigen_pod)
+
 set(externals
   Eigen_pod
   libbot-drc
@@ -165,6 +169,7 @@ set(externals
   iris
   mosek
   pypolyhedron
+  kinematics-utils
   )
 
 

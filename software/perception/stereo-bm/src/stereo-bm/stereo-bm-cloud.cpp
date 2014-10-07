@@ -12,7 +12,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <multisense_utils/multisense_utils.hpp> // create point clouds
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include "stereo-bm.hpp"
 #include <ConciseArgs>
@@ -35,7 +35,7 @@ class Pass{
 
     multisense_utils* ms_utils_;      
     image_io_utils*  imgutils_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
 
     cv::Mat_<double> Q_;
     
@@ -115,7 +115,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, float 
   
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(91000 + offset_,"Null Pose",5,1) );

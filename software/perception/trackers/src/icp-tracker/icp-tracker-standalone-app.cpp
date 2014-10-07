@@ -30,7 +30,7 @@ capture a sweep
 #include <pcl/features/normal_3d.h> //for computePointNormal
 
 #include <pcl/filters/passthrough.h>
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 
 #include <trackers/icp-tracker.hpp>
 
@@ -50,7 +50,7 @@ public:
   boost::shared_ptr<lcm::LCM> lcm_;
   
 private:
-  pointcloud_vis* pc_vis_;
+  pronto_vis* pc_vis_;
   
   bool readPCD(string filename, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
 
@@ -76,7 +76,7 @@ private:
 StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string new_cloud_filename, std::string previous_cloud_filename):
     lcm_(lcm_),null_poseT_(0, Eigen::Isometry3d::Identity()){
   
-  pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis(lcm_->getUnderlyingLCM());
 
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb

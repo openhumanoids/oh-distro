@@ -18,7 +18,7 @@
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 #include <ConciseArgs>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include <trackers/major-plane-detect.hpp>
 #include <affordance/AffordanceUtils.hpp>
@@ -52,7 +52,7 @@ class Pass{
     int tracker_instance_id_;
 
     int counter_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     
     Eigen::Isometry3d head_to_local_;
     
@@ -84,7 +84,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int tr
   lcm_->subscribe("TRACKER_COMMAND",&Pass::trackerCommandHandler,this);  
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
 
   counter_=0;
   got_initial_affordance_ = false;

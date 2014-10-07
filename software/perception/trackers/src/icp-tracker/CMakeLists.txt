@@ -29,7 +29,7 @@ pods_install_executables(drc-icp-tutorial)
 ################ LIBRARIES ###############################
 add_library(icp-tracker  SHARED icp-tracker.cpp)
 pods_use_pkg_config_packages(icp-tracker ${PCL_LIBRARIES} bot2-lcmgl-client maps eigen3
-     pointcloud_filters)
+     pronto_filters)
 target_link_libraries (icp-tracker boost_system 
            ${REQUIRED_LIBS})
 set_target_properties(icp-tracker PROPERTIES SOVERSION 1)
@@ -49,7 +49,7 @@ pods_use_pkg_config_packages(drc-icp-tracker-standalone-app
   icp-tracker
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp 
-  pointcloud_filters  pointcloud_vis pointcloud_lcm ${PCL_LIBRARIES})
+  pronto_filters  pronto_vis pronto_lcm ${PCL_LIBRARIES})
 pods_install_executables(drc-icp-tracker-standalone-app)
 
 
@@ -61,7 +61,7 @@ pods_use_pkg_config_packages(drc-icp-tracker-app
    bot2-core lcmtypes_visualization  lcmtypes_bot2-core
   bot2-param-client
   bot2-frames  bot2-frames_cpp
-  pointcloud_vis pointcloud_math 
+  pronto_vis pronto_math 
   icp-tracker major-plane-detect affordance-utils
   ${PCL_LIBRARIES})
 pods_install_executables(drc-icp-tracker-app)

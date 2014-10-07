@@ -32,12 +32,12 @@
 #include "registeration.hpp"
 
 
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 
 using namespace std;
 
 //lcm_t* _bot_param_lcm;
-//pointcloud_vis* pc_vis_;
+//pronto_vis* pc_vis_;
 
 
 
@@ -50,7 +50,7 @@ Reg::Reg(boost::shared_ptr<lcm::LCM> &lcm_):
 
   int reset =0;
   // Vis Config:
-  pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis(lcm_->getUnderlyingLCM());
   float colors_0f[] ={1.0,0.0,0.0};
   vector <float> colors_0;
   colors_0.assign(colors_0f,colors_0f+4*sizeof(float));

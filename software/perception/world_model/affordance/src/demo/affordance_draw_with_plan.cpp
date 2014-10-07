@@ -29,8 +29,8 @@
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <model-client/model-client.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp>
-#include <pointcloud_tools/pointcloud_math.hpp>
+#include <pronto_utils/pronto_vis.hpp>
+#include <pronto_utils/pronto_math.hpp>
 
 #include <affordance/AffordanceUtils.hpp>
 
@@ -64,7 +64,7 @@ class Pass{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     Config config_;
-    pointcloud_vis* pc_vis_;  
+    pronto_vis* pc_vis_;  
     boost::shared_ptr<rgbd_primitives>  prim_; // this should be moved into the library
     bool cartpos_ready_;
     
@@ -127,7 +127,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
   lcm_->subscribe( "AFFORDANCE_PLUS_COLLECTION" ,&Pass::affHandler,this);
 
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM());
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9994,"Pose - Null",5,1) );
   pc_vis_->ptcld_cfg_list.push_back( ptcld_cfg(9993,"Mesh - Object"     ,7,1, 9994,0, { 0.0, 1.0, 0.0} ));
 }

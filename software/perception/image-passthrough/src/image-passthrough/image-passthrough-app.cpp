@@ -56,7 +56,7 @@
 #include <visualization_utils/GlKinematicBody.hpp>
 #include <visualization_utils/GlKinematicBody.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
@@ -114,7 +114,7 @@ Pass::Pass(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_,
   float colors_b[] ={0.0,0.0,0.0};
   std::vector<float> colors_v;
   colors_v.assign(colors_b,colors_b+4*sizeof(float));
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(9999,"iPass - Pose - Left",5,1) );
@@ -417,6 +417,17 @@ void Pass::robotStateHandler(const lcm::ReceiveBuffer* rbuf, const std::string& 
   init_rstate_=true; // first robot state handled... ready to handle data
 }
 
+
+Eigen::Isometry3d KDLToEigen(KDL::Frame tf){
+  Eigen::Isometry3d tf_out;
+  tf_out.setIdentity();
+  tf_out.translation()  << tf.p[0], tf.p[1], tf.p[2];
+  Eigen::Quaterniond q;
+  tf.M.GetQuaternion( q.x() , q.y(), q.z(), q.w());
+  tf_out.rotate(q);
+  return tf_out;
+}
+
 bool Pass::createMask(int64_t msg_time){
   if (!init_rstate_){
     std::cout << "Either ROBOT_MODEL or EST_ROBOT_STATE has not been received, ignoring image\n";
@@ -432,7 +443,8 @@ bool Pass::createMask(int64_t msg_time){
   // 1. Determine the Camera in World Frame:
   // 1a. Solve for Forward Kinematics
   // TODO: use gl_robot routine instead of replicating this here:
-  map<string, drc::transform_t > cartpos_out;
+  // map<string, drc::transform_t > cartpos_out;
+  map<string, KDL::Frame > cartpos_out;
   bool flatten_tree=true;
   bool kinematics_status = fksolver_->JntToCart(jointpos_,cartpos_out,flatten_tree);
   if(kinematics_status>=0){
@@ -444,15 +456,15 @@ bool Pass::createMask(int64_t msg_time){
 
   // 1b. Determine World to Camera Pose:
   Eigen::Isometry3d world_to_camera;
-  map<string, drc::transform_t>::const_iterator transform_it;
+  map<string, KDL::Frame>::const_iterator transform_it;
   transform_it=cartpos_out.find(camera_frame_);// usually "left_camera_optical_frame"
   if(transform_it!=cartpos_out.end()){// fk cart pos exists
-    Eigen::Isometry3d body_to_camera;
-    body_to_camera.setIdentity();
-    body_to_camera.translation()  << transform_it->second.translation.x, transform_it->second.translation.y, transform_it->second.translation.z;
-    Eigen::Quaterniond quat = Eigen::Quaterniond( transform_it->second.rotation.w, transform_it->second.rotation.x,
-                              transform_it->second.rotation.y, transform_it->second.rotation.z );
-    body_to_camera.rotate(quat);
+    Eigen::Isometry3d body_to_camera = KDLToEigen(transform_it->second);
+    //body_to_camera.setIdentity();
+    //body_to_camera.translation()  << transform_it->second.translation.x, transform_it->second.translation.y, transform_it->second.translation.z;
+    //Eigen::Quaterniond quat = Eigen::Quaterniond( transform_it->second.rotation.w, transform_it->second.rotation.x,
+    //                          transform_it->second.rotation.y, transform_it->second.rotation.z );
+    //body_to_camera.rotate(quat);
     world_to_camera = world_to_body_*body_to_camera;
   }
 

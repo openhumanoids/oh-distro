@@ -17,7 +17,7 @@ VoEstimator::VoEstimator(boost::shared_ptr<lcm::LCM> &lcm_, BotFrames* botframes
   }
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose Head",5,1) );
 }
 

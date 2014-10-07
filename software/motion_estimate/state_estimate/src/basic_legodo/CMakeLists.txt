@@ -11,7 +11,7 @@ add_library(basiclegodo  SHARED leg_odometry.cpp LegOdoWrapper.cpp)
 pods_use_pkg_config_packages(basiclegodo ${PCL_LIBRARIES}
   ${PKG_CONFIG_DEPS}  opencv
   lcmtypes_bot2-core lcmtypes_fovis-bot2 
-  pointcloud_math  pointcloud_vis
+  pronto_math  pronto_vis
   leg-odometry inertial-odometry 
   eigen3)
 set_target_properties(basiclegodo PROPERTIES SOVERSION 1)
@@ -26,10 +26,10 @@ pods_install_pkg_config_file(basiclegodo
 ################
 #add_executable(se-leg-odometry main.cpp )
 #pods_use_pkg_config_packages(se-leg-odometry estimate path-util
-#   bot2-param-client model-client pointcloud_math bot2-frames_cpp)
+#   bot2-param-client model-client pronto_math bot2-frames_cpp)
 #target_link_libraries (se-leg-odometry lcm )
 #     
-#        pointcloud_lcm                pointcloud_math
+#        pronto_lcm                pronto_math
 #	lcmtypes_drc_lcmtypes  lcmtypes_visualization
 #       ${PCL_LIBRARIES} ${REQUIRED_PACKAGES}
 #       leg-odometry)
@@ -41,6 +41,6 @@ pods_install_pkg_config_file(basiclegodo
 ################
 #add_executable(se-convert-bdi-into-vicon-frame convert_bdi_into_vicon_frame.cpp )
 #pods_use_pkg_config_packages(se-convert-bdi-into-vicon-frame  bot2-frames_cpp
-#    pointcloud_vis  )
-#target_link_libraries (se-convert-bdi-into-vicon-frame lcm pointcloud_math  )
+#    pronto_vis  )
+#target_link_libraries (se-convert-bdi-into-vicon-frame lcm pronto_math  )
 #pods_install_executables(se-convert-bdi-into-vicon-frame )

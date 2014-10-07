@@ -4,7 +4,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations"
 #pods_use_pkg_config_packages(drc-tags lcm 
 #  bot2-param-client bot2-lcmgl-client
 #  bot2-frames  bot2-frames_cpp
-#  pointcloud_vis pointcloud_lcm
+#  pronto_vis pronto_lcm
 #  apriltags opencv image_io_utils affordance)
 #pods_install_executables(drc-tags)
 
@@ -16,7 +16,7 @@ target_link_libraries(drc-tags boost_system)
 pods_use_pkg_config_packages(drc-tags lcm 
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp
-  pointcloud_vis pointcloud_lcm
+  pronto_vis pronto_lcm
   apriltags opencv image_io_utils affordance)
 pods_install_executables(drc-tags)
 
@@ -28,6 +28,6 @@ target_link_libraries(drc-hand-camera-tag boost_system)
 pods_use_pkg_config_packages(drc-hand-camera-tag lcm 
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp
-  pointcloud_vis pointcloud_lcm
+  pronto_vis pronto_lcm
   apriltags opencv image_io_utils affordance)
 pods_install_executables(drc-hand-camera-tag)

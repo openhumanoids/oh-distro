@@ -4,7 +4,7 @@
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 class ICPTracker
 {
@@ -43,7 +43,7 @@ class ICPTracker
     int verbose_lcm_; // 0 say nothing, 1 say important, 2 say lots
 
     boost::shared_ptr<lcm::LCM> lcm_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
 
     Isometry3dTime null_poseT_;    
 

@@ -19,8 +19,8 @@
 #include <pcl/common/transforms.h>
 
 
-#include <pointcloud_tools/pointcloud_math.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds and write mesh
+#include <pronto_utils/pronto_math.hpp>
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds and write mesh
 #include <ConciseArgs>
 
 #include <affordance/AffordanceUtils.hpp>
@@ -60,7 +60,7 @@ class Pass{
     void doDemo(int which_publish, bool add_filename, int which_publish_single);
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     
     drc::affordance_plus_t getPlaneAffordancePlus(std::string filename, std::vector<double> &xyzrpy, int uid);
 
@@ -97,7 +97,7 @@ class Pass{
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(98001,"Debris",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(98011,"Stand",5,1) );

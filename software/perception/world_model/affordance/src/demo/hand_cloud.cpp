@@ -23,7 +23,7 @@
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <model-client/model-client.hpp>
 
-#include <pointcloud_tools/pointcloud_math.hpp>
+#include <pronto_utils/pronto_math.hpp>
 
 #include <affordance/AffordanceUtils.hpp>
 

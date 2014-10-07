@@ -37,7 +37,7 @@
 #include <drc_utils/Clock.hpp>
 #include <drc_utils/PointerUtils.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <camera_params/camera_params.hpp>     // Camera Parameters
 #include <ConciseArgs>
 
@@ -99,7 +99,7 @@ class Pass{
     void getSweepDepthImage(LocalMap::SpaceTimeBounds bounds);
     void sendSweepDepthImage();
 
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     image_io_utils*  imgutils_;
     
     bot_core::image_t disparity_;
@@ -159,7 +159,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_),
   mask_init_=false;
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(91000,"Null Pose",5,1) );
@@ -290,7 +290,7 @@ void Pass::sendSweepDepthImage(){
     Isometry3dTime camera_pose_T = Isometry3dTime(current_utime_, camera_pose_);
     pc_vis_->pose_to_lcm_from_list(91004, camera_pose_T);  
     pc_vis_->ptcld_to_lcm_from_list(91005, *cloud4, current_utime_, current_utime_);  
-    pc_vis_->pointcloud2_to_lcm(*cloud4,"RANGE_IMAGE_POINTS",current_utime_);
+    // pc_vis_->pointcloud2_to_lcm(*cloud4,"RANGE_IMAGE_POINTS",current_utime_);
   }
   
 

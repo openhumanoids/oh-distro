@@ -2,7 +2,7 @@ add_definitions(-Wall )
 
 add_library(vofeatures SHARED vofeatures.cpp )
 pods_use_pkg_config_packages(vofeatures eigen3 
-      libfovis   pointcloud_vis
+      libfovis   pronto_vis
       opencv)
 
 set_target_properties(vofeatures PROPERTIES SOVERSION 1)
