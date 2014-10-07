@@ -134,8 +134,8 @@ set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
 set(pypolyhedron_depends)
 
 set(kinematics-utils_url ssh://git@github.com/mitdrc/kinematics-utils.git)
-set(kinematics-utils_revision 7ccebe6213046385ff594ccb6105c5805a2f2f4f)
-set(kinematics-utils_depends)
+set(kinematics-utils_revision 062e36b056eaa0b5ddc38ed7c738999b9bb5831b)
+set(kinematics-utils_depends Eigen_pod)
 
 set(externals
   Eigen_pod
