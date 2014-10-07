@@ -209,9 +209,6 @@ struct State {
     }
     mFkSolver.reset(new KDL::TreeFkSolverPosFull_recursive(tree));
 
-    // TODO: this is temporary
-    mTags.resize(1);
-
     // subscriptions
     mLcmWrapper->get()->subscribe(mCameraChannel, &State::onCamera, this);
     mLcmWrapper->get()->subscribe("EST_ROBOT_STATE", &State::onState, this);
@@ -223,7 +220,7 @@ struct State {
 
   void onState(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
                const drc::robot_state_t* iMessage) {
-    const double kMaxRate = 1.0/60;
+    const double kMaxRate = 60;  // Hz
     const double kMaxSeconds = 1;
 
     // limit update rate
@@ -231,11 +228,19 @@ struct State {
 
     // get pelvis pose
     KDL::Frame bodyToLocal = KDL::Frame::Identity();
-    bodyToLocal.p = KDL::Vector(iMessage->pose.translation.x,
-                                iMessage->pose.translation.y,
-                                iMessage->pose.translation.z);
+    const auto& t = iMessage->pose.translation;
+    bodyToLocal.p = KDL::Vector(t.x, t.y, t.z);
     const auto& q = iMessage->pose.rotation;
     bodyToLocal.M = KDL::Rotation::Quaternion(q.x, q.y, q.z, q.w);
+
+    std::cout << "XFORM " << t.x << " " << t.y << " " << t.z << " " <<
+      q.x << " " << q.y << " " << q.z << " " << q.w << std::endl;
+    std::cout << "BODY TO LOCAL" << std::endl;
+    std::cout << toEigen(bodyToLocal).matrix() << std::endl;
+    std::cout << "BODY TO LOCAL2" << std::endl;
+    Eigen::Isometry3d foo;
+    mBotWrapper->getTransform("body","local",foo,iMessage->utime);
+    std::cout << foo.matrix() << std::endl;
 
     // do fk
     std::map<std::string, double> joints;
@@ -244,7 +249,7 @@ struct State {
                                    iMessage->joint_position[i]));
     }
     FrameMapPtr frameMap(new FrameMap());
-    if (!mFkSolver->JntToCart(joints, *frameMap, true)) {
+    if (0 != mFkSolver->JntToCart(joints, *frameMap, true)) {
       std::cout << "error: cannot perform fk" << std::endl;
       return;
     }
@@ -256,7 +261,7 @@ struct State {
     {
       std::unique_lock<std::mutex> lock(mFramesMutex);
       mLinkFrames[iMessage->utime] = frameMap;
-      if ((int)mLinkFrames.size() > (int)(kMaxSeconds/kMaxRate)) {
+      while ((int)mLinkFrames.size() > (int)(kMaxSeconds*kMaxRate)) {
         mLinkFrames.erase(mLinkFrames.begin());
       }
       mLastStateUpdateTime = iMessage->utime;
@@ -372,8 +377,9 @@ struct State {
         std::unique_lock<std::mutex> lock(mFramesMutex);
         auto item = mLinkFrames.lower_bound(iMessage->utime);
         if (item == mLinkFrames.end()) {
-          std::cout << "error: cannot find robot state at  " <<
+          std::cout << "error: cannot find robot state at " <<
             iMessage->utime << std::endl;
+          std::cout << "SIZE " << mLinkFrames.size() << std::endl;
           return;
         }
         const auto& frameMap = *item->second;
@@ -387,11 +393,22 @@ struct State {
         Eigen::Isometry3d tagToCamera = linkToCamera*mTags[i].mLinkPose;
         poseInit = getFiducialPose(tagToCamera);
 
-        // TOOD: this is temp
+        std::cout << "LINK TO LOCAL" << std::endl << linkToLocal.matrix() << std::endl;
+        std::cout << "CAMERA TO LOCAL" << std::endl << cameraToLocal.matrix() << std::endl;
+        std::cout << "POS " << tagToCamera.translation().transpose() << std::endl;
+        double pix[3];
+        Eigen::Vector3d foo = tagToCamera.translation();
+        double p[] = { foo[0], foo[1], foo[2] };
+        bot_camtrans_project_point(mCamTransLeft, p, pix);
+        std::cout << "PIX " << pix[0] << " " << pix[1] << " " << pix[2] << std::endl;
+
+        // TODO: this is temp
+        /*
         poseInit.pos.x = 0.028;
         poseInit.pos.y = 0.002;
         poseInit.pos.z = 0.56;
         poseInit.rot = fiducial_rot_from_rpy(0,2*M_PI/2,0);
+        */
       }
 
       mTags[i].mTracked = false;
