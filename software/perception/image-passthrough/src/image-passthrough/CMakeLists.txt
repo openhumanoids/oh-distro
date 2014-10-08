@@ -32,7 +32,7 @@ add_library(image-passthrough-app  SHARED image-passthrough-app.cpp)
 pods_use_pkg_config_packages(image-passthrough-app ${PCL_LIBRARIES}
   ${PKG_CONFIG_DEPS}  opencv collision_object_gfe visualization-utils
   lcmtypes_bot2-core pronto_vis image-passthrough bot2-param-client model-client
-  image_io_utils   rgbd_primitives  affordance-utils camera_params 
+  image_io_utils   rgbd_primitives  affordance-utils camera_params  gtk+-2.0
   eigen3)
 target_link_libraries (image-passthrough-app boost_system 
            ${REQUIRED_LIBS})

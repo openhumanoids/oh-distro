@@ -22,7 +22,7 @@
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include <lcmtypes/motion_estimate.hpp>
-
+#include <lcmtypes/bot_core_image_t.h>
 
 class VoFeatures
 {
