@@ -34,7 +34,7 @@
 #include <pronto_utils/pronto_math.hpp>
 
 #include <affordance/AffordanceUtils.hpp>
-
+#include <bot_core/bot_core.h>
 #include <ConciseArgs>
 using namespace Eigen;
 

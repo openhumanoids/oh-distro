@@ -21,7 +21,8 @@
 
 
 #include <pcl/filters/passthrough.h>
-
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
 
 #include <pcl/registration/icp.h>
 #include <pcl/features/normal_3d.h> //for computePointNormal
@@ -82,7 +83,7 @@ private:
 
   string filenameA_;
   
-  pcl::PointCloud<PointXYZRGB>::Ptr cloudA_;    
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudA_;    
   Isometry3dTime null_poseT_;  
   
   int pts_per_m_squared_;
@@ -156,14 +157,14 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string filenameA_, st
   
   
   
-  IterativeClosestPoint<PointXYZRGB, PointXYZRGB> icp;
+  pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
   icp.setInputTarget( previous_cloud );
   icp.setInputCloud( new_cloud );
   //params
   icp.setMaxCorrespondenceDistance(0.2);
   icp.setMaximumIterations (200);
 
-  PointCloud<PointXYZRGB>::Ptr downsampled_output (new PointCloud<PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled_output (new pcl::PointCloud<pcl::PointXYZRGB>);
   icp.align(*downsampled_output);
   
   

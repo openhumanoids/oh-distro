@@ -4,7 +4,7 @@
 
 #include <pcl/registration/icp.h>
 #include <pcl/features/normal_3d.h> //for computePointNormal
-
+#include <pcl/registration/icp.h>
 
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
 
@@ -87,7 +87,7 @@ void ICPTracker::removePoseOffset(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previo
 
 bool ICPTracker::doICP( pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &new_cloud, 
                         Eigen::Matrix4f & tf_previous_to_new, double *score){
-  IterativeClosestPoint<PointXYZRGB, PointXYZRGB> icp;
+  pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
   icp.setInputTarget( previous_cloud );
   icp.setInputCloud( new_cloud );
   //params:
@@ -100,7 +100,7 @@ bool ICPTracker::doICP( pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, 
   // Set the euclidean distance difference epsilon (criterion 3)
   //icp.setEuclideanFitnessEpsilon (1);
 
-  PointCloud<PointXYZRGB>::Ptr downsampled_output (new PointCloud<PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled_output (new pcl::PointCloud<pcl::PointXYZRGB>);
   icp.align(*downsampled_output);
 
   std::cout << "has converged:" << icp.hasConverged() << " score: " <<

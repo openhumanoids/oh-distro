@@ -226,14 +226,14 @@ void StatePub::removePoseOffset(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous
 
 bool StatePub::doICP( pcl::PointCloud<pcl::PointXYZRGB>::Ptr &previous_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &new_cloud, Eigen::Matrix4f & tf_previous_to_new){
     //iterative closest point : setup inputs
-    IterativeClosestPoint<PointXYZRGB, PointXYZRGB> icp;
+    pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
     icp.setInputTarget( previous_cloud );
     icp.setInputCloud( new_cloud );
 
     //outputs
     //icp.setMaxCorrespondenceDistance(0.05);
 
-    PointCloud<PointXYZRGB>::Ptr downsampled_output (new PointCloud<PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled_output (new pcl::PointCloud<pcl::PointXYZRGB>);
     icp.align(*downsampled_output);
 
     //icp.align(*_object_to_track); //*newest_cloud_pcl); //*_object_to_track;
