@@ -37,7 +37,7 @@ set(octomap-drc_revision 8327)
 set(octomap-drc_depends)
 
 set(occ-map_url https://svn.csail.mit.edu/rrg_pods/Isam_Slam/occ-map)
-set(occ-map_revision 831)
+set(occ-map_revision 958)
 set(occ-map_depends libbot-drc opencv-drc)
 
 set(common_utils_url https://svn.csail.mit.edu/common_utils)
