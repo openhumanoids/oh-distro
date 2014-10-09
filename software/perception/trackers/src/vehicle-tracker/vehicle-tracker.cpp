@@ -21,7 +21,8 @@
 
 
 #include <pcl/filters/passthrough.h>
-
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
 
 #include <pcl/registration/icp.h>
 #include <pcl/features/normal_3d.h> //for computePointNormal
@@ -29,9 +30,9 @@
 
 
 #include <rgbd_simulation/rgbd_primitives.hpp> // to create basic meshes
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 
-#include <pointcloud_tools/filter_planes.hpp>
+#include <pronto_utils/filter_planes.hpp>
 
 using namespace Eigen;
 using namespace std;
@@ -60,7 +61,7 @@ public:
 private:
     pcl::PolygonMesh::Ptr prim_mesh_ ;
     rgbd_primitives*  prim_;
-      pointcloud_vis* pc_vis_;
+      pronto_vis* pc_vis_;
 
   
   bool readURDFString(std::string filenameB_, std::string &urdf_string);
@@ -82,7 +83,7 @@ private:
 
   string filenameA_;
   
-  pcl::PointCloud<PointXYZRGB>::Ptr cloudA_;    
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudA_;    
   Isometry3dTime null_poseT_;  
   
   int pts_per_m_squared_;
@@ -93,7 +94,7 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string filenameA_, st
     lcm_(lcm_), filenameA_(filenameA_), pts_per_m_squared_(pts_per_m_squared_),null_poseT_(0, Eigen::Isometry3d::Identity()){
   prim_ = new rgbd_primitives();
   
-  pc_vis_ = new pointcloud_vis(lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis(lcm_->getUnderlyingLCM());
   prim_ = new rgbd_primitives();
 
   // obj: id name type reset
@@ -156,14 +157,14 @@ StatePub::StatePub(boost::shared_ptr<lcm::LCM> &lcm_, std::string filenameA_, st
   
   
   
-  IterativeClosestPoint<PointXYZRGB, PointXYZRGB> icp;
+  pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
   icp.setInputTarget( previous_cloud );
   icp.setInputCloud( new_cloud );
   //params
   icp.setMaxCorrespondenceDistance(0.2);
   icp.setMaximumIterations (200);
 
-  PointCloud<PointXYZRGB>::Ptr downsampled_output (new PointCloud<PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled_output (new pcl::PointCloud<pcl::PointXYZRGB>);
   icp.align(*downsampled_output);
   
   

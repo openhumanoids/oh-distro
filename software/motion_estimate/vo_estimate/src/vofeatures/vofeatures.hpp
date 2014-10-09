@@ -19,10 +19,10 @@
 #include <opencv2/features2d/features2d.hpp>
 
 #include "imagefeatures.hpp"
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include <lcmtypes/motion_estimate.hpp>
-
+#include <lcmtypes/bot_core_image_t.h>
 
 class VoFeatures
 {
@@ -61,7 +61,7 @@ public:
   void sendImage(std::string channel, int which_image );
 private:
   boost::shared_ptr<lcm::LCM> lcm_;
-  pointcloud_vis* pc_vis_;
+  pronto_vis* pc_vis_;
   int image_width_;
   int image_height_;
   int output_counter_;

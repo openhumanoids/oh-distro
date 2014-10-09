@@ -2,7 +2,7 @@
 # and lines starting with '#' are ignored
 
 # core utils widely used by mfallon:
-pointcloud-utils
+#pointcloud-utils
 image_io_utils
 # sudeep:
 opencv-utils

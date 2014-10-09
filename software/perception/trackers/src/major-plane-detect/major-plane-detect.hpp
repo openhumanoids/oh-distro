@@ -17,7 +17,7 @@
 
 #include <drc_utils/Clock.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 class MajorPlane
 {
@@ -38,7 +38,7 @@ class MajorPlane
     int mActiveMapId;
     bot_lcmgl_t* mLcmGl;
 
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
 
     // Get a sweep of lidar
     // True if we have a new sweep, different from before

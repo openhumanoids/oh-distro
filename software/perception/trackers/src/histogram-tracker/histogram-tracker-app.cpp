@@ -16,7 +16,7 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 // #include <particle/particle_filter.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
 
 // OpenCV, and Histogram tracker includes

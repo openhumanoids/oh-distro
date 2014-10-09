@@ -7,7 +7,7 @@ group "0.params_and_model_pub" {
 
 
     cmd "model_LR_RR" {
-        exec = "robot_model_publisher -u $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
+        exec = "robot_model_publisher $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
         host = "base";
     }
     cmd "base_deputy" {
@@ -56,6 +56,7 @@ group "2.plan_and_control" {
     cmd "CombinedPlanner" {
        exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
        host = "base";
+       stop_signal = 15;
     }
 
     cmd "BaseBDIStepTranslator" {

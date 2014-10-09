@@ -25,7 +25,7 @@ add_subdirectory(src/object-tracker)
 add_subdirectory(src/vehicle-tracker)
 add_subdirectory(src/feature-tracker)
 
-add_subdirectory(src/tools)
+#add_subdirectory(src/tools)
 
 add_subdirectory(src/affordance-gaze)
 add_subdirectory(src/tracker-renderer)

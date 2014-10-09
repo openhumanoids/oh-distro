@@ -8,7 +8,7 @@ set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 add_executable (affordance_to_grasp_plan affordance_to_grasp_plan.cpp )
 target_link_libraries(affordance_to_grasp_plan boost_system)
 pods_use_pkg_config_packages(affordance_to_grasp_plan 
-model-client ${REQUIRED_PACKAGES} pointcloud_vis
+model-client ${REQUIRED_PACKAGES} pronto_vis
    affordance-utils lcm)
 pods_install_executables(affordance_to_grasp_plan)
 
@@ -17,7 +17,7 @@ pods_install_executables(affordance_to_grasp_plan)
 add_executable (affordance_init_relative affordance_init_relative.cpp )
 target_link_libraries(affordance_init_relative boost_system)
 pods_use_pkg_config_packages(affordance_init_relative 
-model-client ${REQUIRED_PACKAGES} pointcloud_vis
+model-client ${REQUIRED_PACKAGES} pronto_vis
   bot2-param-client 
   bot2-frames  bot2-frames_cpp
    affordance-utils lcm)
@@ -28,7 +28,7 @@ pods_install_executables(affordance_init_relative)
 add_executable (hand_cloud hand_cloud.cpp )
 target_link_libraries(hand_cloud boost_system)
 pods_use_pkg_config_packages(hand_cloud 
-model-client ${REQUIRED_PACKAGES} pointcloud_vis
+model-client ${REQUIRED_PACKAGES} pronto_vis
   bot2-param-client 
   bot2-frames  bot2-frames_cpp
    affordance-utils lcm)
@@ -38,7 +38,7 @@ pods_install_executables(hand_cloud)
 add_executable (ee-test ee_test.cpp )
 target_link_libraries(ee-test boost_system)
 pods_use_pkg_config_packages(ee-test
-model-client ${REQUIRED_PACKAGES} pointcloud_vis
+model-client ${REQUIRED_PACKAGES} pronto_vis
   bot2-param-client 
   bot2-frames  bot2-frames_cpp
    affordance-utils lcm)
@@ -51,7 +51,7 @@ add_executable (ee-driver ee_driver.cpp)
 target_link_libraries (ee-driver curses boost_system   lcm)
 pods_use_pkg_config_packages(ee-driver lcm model-client
    lcmtypes_drc_lcmtypes  bot2-core glib-2.0
-   pointcloud_math pointcloud_vis
+   pronto_math pronto_vis
    eigen3 ${REQUIRED_PACKAGES})
 pods_install_executables(ee-driver)
 
@@ -60,7 +60,7 @@ add_executable (debris_positions_tool debris_positions_tool.cpp)
 target_link_libraries (debris_positions_tool curses boost_system   lcm)
 pods_use_pkg_config_packages(debris_positions_tool lcm model-client
    lcmtypes_drc_lcmtypes  bot2-core glib-2.0
-   pointcloud_math pointcloud_vis affordance-utils
+   pronto_math pronto_vis affordance-utils
    eigen3 ${REQUIRED_PACKAGES})
 pods_install_executables(debris_positions_tool)
 
@@ -71,7 +71,7 @@ add_executable (affordance_debris_util affordance_debris_util.cpp)
 target_link_libraries (affordance_debris_util curses boost_system   lcm)
 pods_use_pkg_config_packages(affordance_debris_util lcm model-client
    lcmtypes_drc_lcmtypes  bot2-core glib-2.0
-   pointcloud_math
+   pronto_math
    eigen3 ${REQUIRED_PACKAGES})
 pods_install_executables(affordance_debris_util)
 
@@ -81,7 +81,7 @@ add_executable (affordance_fix_in_hand affordance_fix_in_hand.cpp)
 target_link_libraries (affordance_fix_in_hand curses boost_system   lcm)
 pods_use_pkg_config_packages(affordance_fix_in_hand lcm model-client
    lcmtypes_drc_lcmtypes  bot2-core glib-2.0 affordance-utils
-   pointcloud_math pointcloud_vis
+   pronto_math pronto_vis
    eigen3 ${REQUIRED_PACKAGES})
 pods_install_executables(affordance_fix_in_hand)
 
@@ -90,7 +90,7 @@ add_executable (affordance_draw_with_plan  affordance_draw_with_plan.cpp)
 target_link_libraries (affordance_draw_with_plan curses boost_system   lcm)
 pods_use_pkg_config_packages(affordance_draw_with_plan lcm model-client
    lcmtypes_drc_lcmtypes  bot2-core glib-2.0 affordance-utils
-   pointcloud_math pointcloud_vis rgbd_primitives
+   pronto_math pronto_vis rgbd_primitives
    eigen3 ${REQUIRED_PACKAGES})
 pods_install_executables(affordance_draw_with_plan)
 
@@ -109,7 +109,7 @@ include(${VTK_USE_FILE})
 add_executable (affordance_points_demo_plus affordance_points_demo_plus.cpp )
 target_link_libraries(affordance_points_demo_plus boost_system)
 pods_use_pkg_config_packages(affordance_points_demo_plus  lcm 
-  pointcloud_vis
+  pronto_vis
   ${PCL_LIBRARIES})
 pods_install_executables(affordance_points_demo_plus)
 
@@ -117,7 +117,7 @@ pods_install_executables(affordance_points_demo_plus)
 add_executable (affordance_points_demo_plus_receive affordance_points_demo_plus_receive.cpp )
 target_link_libraries(affordance_points_demo_plus_receive boost_system)
 pods_use_pkg_config_packages(affordance_points_demo_plus_receive  lcm 
-  pointcloud_vis affordance-utils
+  pronto_vis affordance-utils
   ${PCL_LIBRARIES})
 pods_install_executables(affordance_points_demo_plus_receive)
 
@@ -126,7 +126,7 @@ pods_install_executables(affordance_points_demo_plus_receive)
 add_executable (affordance_init affordance_init.cpp )
 target_link_libraries(affordance_init boost_system)
 pods_use_pkg_config_packages(affordance_init  lcm  affordance-utils
-  pointcloud_vis
+  pronto_vis
   ${PCL_LIBRARIES})
 pods_install_executables(affordance_init)
 
@@ -135,7 +135,7 @@ pods_install_executables(affordance_init)
 add_executable (ply2pcd ply2pcd.cpp )
 target_link_libraries(ply2pcd boost_system)
 pods_use_pkg_config_packages(ply2pcd  lcm  affordance-utils
-  pointcloud_vis
+  pronto_vis
   ${PCL_LIBRARIES})
 pods_install_executables(ply2pcd)
 
@@ -147,6 +147,6 @@ pods_install_executables(ply2pcd)
 add_executable (affordance_mini_rx affordance_mini_rx.cpp )
 target_link_libraries(affordance_mini_rx boost_system)
 pods_use_pkg_config_packages(affordance_mini_rx  lcm  affordance-utils
-  pointcloud_vis
+  pronto_vis
   ${PCL_LIBRARIES})
 pods_install_executables(affordance_mini_rx)

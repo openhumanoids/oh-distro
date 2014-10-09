@@ -11,7 +11,7 @@ VoFeatures::VoFeatures(boost::shared_ptr<lcm::LCM> &lcm_, int image_width_, int 
 
   // Vis Config:
   // mfallon:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   float colors_g[] ={0.0,1.0,0.0};
   vector <float> colors_v_g;
   colors_v_g.assign(colors_g,colors_g+4*sizeof(float));

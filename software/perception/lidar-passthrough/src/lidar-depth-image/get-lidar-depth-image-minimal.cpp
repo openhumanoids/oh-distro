@@ -29,7 +29,7 @@
 #include <drc_utils/Clock.hpp>
 #include <drc_utils/PointerUtils.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <ConciseArgs>
 
 using namespace std;
@@ -81,7 +81,7 @@ class Pass{
 
     void sendSweepCloud(LocalMap::SpaceTimeBounds bounds);
 
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     
     int64_t last_sweep_time_;
     // Point Cloud of most recent sweep:
@@ -106,7 +106,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_,  State* iState): lcm_(lcm_),
 
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(91000,"Null Pose",5,1) );

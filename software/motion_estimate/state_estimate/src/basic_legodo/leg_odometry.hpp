@@ -22,9 +22,9 @@
 #include <bot_param/param_client.h>
 #include <bot_param/param_util.h>
 
-#include <pointcloud_tools/pointcloud_math.hpp>
-#include <pointcloud_tools/pointcloud_lcm.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_math.hpp>
+#include <pronto_utils/pronto_lcm.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 
 //#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.hpp>
@@ -74,7 +74,7 @@ class leg_odometry{
     BotParam* botparam_;
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     
     // params:
     std::string leg_odometry_mode_;

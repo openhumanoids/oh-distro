@@ -35,8 +35,8 @@
 #include <collision/collision_object_gfe.h>
 #include <collision/collision_object_point_cloud.h>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-#include <pointcloud_tools/pointcloud_lcm.hpp> // unpack lidar to xyz
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_lcm.hpp> // unpack lidar to xyz
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/drc/robot_urdf_t.hpp"
 #include <ConciseArgs>
@@ -109,8 +109,8 @@ class Pass{
     bot::frames* frames_cpp_;
     bot_lcmgl_t* lcmgl_;
     
-    pointcloud_vis* pc_vis_;
-    pointcloud_lcm* pc_lcm_;
+    pronto_vis* pc_vis_;
+    pronto_lcm* pc_lcm_;
     int vis_counter_; // used for visualization
     int printf_counter_; // used for terminal feedback
     
@@ -151,7 +151,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_,
   lcm_->subscribe("EST_ROBOT_STATE",&Pass::robotStateHandler,this);
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Pose - Laser",5,0) );

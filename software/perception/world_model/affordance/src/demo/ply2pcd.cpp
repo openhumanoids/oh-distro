@@ -17,7 +17,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds and write mesh
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds and write mesh
 #include <ConciseArgs>
 
 #include <affordance/AffordanceUtils.hpp>

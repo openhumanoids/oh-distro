@@ -24,8 +24,8 @@
 #include <opencv2/opencv.hpp>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
-#include <pointcloud_tools/pointcloud_lcm.hpp> // unpack lidar to xyz
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_lcm.hpp> // unpack lidar to xyz
 #include <lcmtypes/bot_core.hpp>
 #include <lcmtypes/multisense.hpp>
 #include <lcmtypes/drc/tag_detection_t.hpp>
@@ -80,8 +80,8 @@ class Tags{
     BotParam* botparam_;
     bot::frames* botframes_cpp_;
 
-    pointcloud_vis* pc_vis_;
-    pointcloud_lcm* pc_lcm_;
+    pronto_vis* pc_vis_;
+    pronto_lcm* pc_lcm_;
     image_io_utils*  imgutils_;
     uint8_t* img_buf_;
 
@@ -114,7 +114,7 @@ Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, bool verbose_, int64_t detection_p
   cy_ = vals[4];
 
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60000,"Tag Detection",5,1) );
