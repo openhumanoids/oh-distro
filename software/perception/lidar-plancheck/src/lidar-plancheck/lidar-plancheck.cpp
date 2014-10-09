@@ -210,7 +210,7 @@ class PlanCheck{
     // Robot plan to be checked for collisions
     drc::robot_plan_t rplan_;
     // Scan as pointcloud in local frame: this is used as the collision points
-    pcl::PointCloud<PointXYZRGB>::Ptr scan_cloud_s2l_;    
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud_s2l_;    
 
     // Output filter lidar:
     bot_core::planar_lidar_t last_lidar_msg_;

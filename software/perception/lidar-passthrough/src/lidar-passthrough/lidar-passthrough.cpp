@@ -101,7 +101,7 @@ class Pass{
     Collision_Detector* collision_detector_;
     int n_collision_points_;
     
-  void DoCollisionCheck(const pcl::PointCloud<PointXYZRGB>::Ptr& scan_cloud_s2l,
+  void DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_cloud_s2l,
                         std::shared_ptr<bot_core::planar_lidar_t>& msg);
     
     BotParam* botparam_;
@@ -175,7 +175,7 @@ int64_t _timestamp_now(){
 }
 
 
-void Pass::DoCollisionCheck(const pcl::PointCloud<PointXYZRGB>::Ptr& scan_cloud_s2l,
+void Pass::DoCollisionCheck(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan_cloud_s2l,
                             std::shared_ptr<bot_core::planar_lidar_t>& msg){
   
   #if DO_TIMING_PROFILE
@@ -384,7 +384,7 @@ void Pass::operator()() {
       frames_cpp_->get_trans_with_utime( botframes_ ,  lidar_channel_.c_str() , "local", msg->utime, scan_to_local);
       Eigen::Isometry3f pose_f = scan_to_local.cast<float>();
       Eigen::Quaternionf pose_quat(pose_f.rotation());
-      pcl::PointCloud<PointXYZRGB>::Ptr scan_cloud_s2l(new pcl::PointCloud<pcl::PointXYZRGB> ());
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr scan_cloud_s2l(new pcl::PointCloud<pcl::PointXYZRGB> ());
       pcl::transformPointCloud (*scan_cloud, *scan_cloud_s2l,
                                 pose_f.translation(), pose_quat);  
 
