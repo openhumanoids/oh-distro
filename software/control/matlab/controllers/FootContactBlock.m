@@ -11,6 +11,7 @@ classdef FootContactBlock < MIMODrakeSystem
     contact_threshold; % min height above terrain to be considered in contact
     use_lcm;
     use_contact_logic_OR;
+    r;
   end
   
   methods
@@ -117,6 +118,7 @@ classdef FootContactBlock < MIMODrakeSystem
         obj.using_flat_terrain = false;
       end
 
+      obj.r = r;
     end
    
     function varargout=mimoOutput(obj,t,~,x)      
@@ -154,8 +156,8 @@ classdef FootContactBlock < MIMODrakeSystem
       else
         contact_thresh = obj.contact_threshold;
       end
-      if obj.using_flat_terrain
-        height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
+      if ~obj.using_flat_terrain
+        height = getTerrainHeight(obj.r,[0;0]); % get height from DRCFlatTerrainMap
       else
         height = 0;
       end

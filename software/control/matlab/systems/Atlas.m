@@ -51,7 +51,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       
       % Add obstacles if we want 
       % (here is just a box in front of the robot to look at)
-      if isfield(options,'obstacles')
+      if (isfield(options,'obstacles') && options.obstacles)
         height = 0.1;
         shape = RigidBodyBox([1.0 1.0 height], [2; 0; height/2], [0; 0; 0;]);
         shape.c = rand(3, 1);
@@ -278,9 +278,9 @@ state_frame = AtlasState(obj);
                                     'drake_instep_shift', 0.0275,... % Distance to shift ZMP trajectory inward toward the instep from the center of the foot (m)
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
-    hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 50;   
+    hokuyo_yaw_width = 2.4; % total -- i.e., whole FoV, not from center of vision
+    hokuyo_num_pts = 200;   
     hokuyo_max_range = 6; % meters?
-    hokuyo_spin_rate = 5; % rad/sec
+    hokuyo_spin_rate = 1; % rad/sec
   end
 end
