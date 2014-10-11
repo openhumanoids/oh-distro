@@ -21,7 +21,7 @@ set(REQUIRED_PACKAGES urdf orocos-kdl kdl-parser forward-kinematics)
 add_executable(drc-renderer-sandia-palm renderer_sandia_palm.cpp  )
 pods_use_pkg_config_packages(drc-renderer-sandia-palm
     path-util model-client   bot2-param-client
-        pointcloud_lcm        pointcloud_vis        pointcloud_math
+        pronto_lcm        pronto_vis        pronto_math
 	lcmtypes_drc_lcmtypes  lcmtypes_visualization
        ${PCL_LIBRARIES} ${REQUIRED_PACKAGES})
 target_link_libraries (drc-renderer-sandia-palm boost_system 

@@ -6,6 +6,6 @@ project(estimate)
 ################
 add_executable(se-comp main.cpp )
 pods_use_pkg_config_packages(se-comp bot2-frames_cpp
-    pointcloud_vis  )
-target_link_libraries (se-comp lcm pointcloud_math  )
+    pronto_vis  )
+target_link_libraries (se-comp lcm pronto_math  )
 pods_install_executables(se-comp )
