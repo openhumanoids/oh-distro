@@ -28,10 +28,10 @@ simple_classify::simple_classify(lcm_t* publish_lcm):
   counter_ =0;
 
   // Unpack Config:
-  pc_lcm_ = new pointcloud_lcm(publish_lcm_);
+  pc_lcm_ = new pronto_lcm(publish_lcm_);
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis(publish_lcm_);
+  pc_vis_ = new pronto_vis(publish_lcm_);
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(600,"Pose - Laser",5,1) );
