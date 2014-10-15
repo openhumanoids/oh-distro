@@ -14,7 +14,7 @@ set(PCL_LIBRARIES  pcl_io-1.7 )
 
 add_executable(mf-fisheye-meshproject fisheye-meshproject.cpp)
 pods_use_pkg_config_packages(mf-fisheye-meshproject lcm image_io_utils
-   pointcloud_vis ${PCL_LIBRARIES} opencv rgbd_primitives
+   pronto_vis ${PCL_LIBRARIES} opencv rgbd_primitives
               bot2-frames bot2-lcmgl-client eigen3)
               
 target_link_libraries (mf-fisheye-meshproject boost_system 

@@ -91,7 +91,7 @@ class RegApp{
 
     deque< bot_core::image_t  > * image_queue_;
     deque< bot_core::planar_lidar_t  > * laser_queue_;
-    pcl::PointCloud<PointXYZRGB>::Ptr accum_cloud;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr accum_cloud;
 };
 
 

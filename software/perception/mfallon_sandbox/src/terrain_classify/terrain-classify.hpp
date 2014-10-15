@@ -13,9 +13,9 @@
 
 #include <bot_lcmgl_client/lcmgl.h>
 
-#include <pointcloud_tools/pointcloud_math.hpp>
-#include <pointcloud_tools/pointcloud_lcm.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_math.hpp>
+#include <pronto_utils/pronto_lcm.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 
 //#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.hpp>
@@ -35,7 +35,7 @@ class terrain_classify{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     bot_lcmgl_t* lcmgl_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
 
     std::vector <std::string> l2f_list_;
     

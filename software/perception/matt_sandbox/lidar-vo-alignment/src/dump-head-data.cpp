@@ -40,25 +40,52 @@ struct State {
     mSpindlePoseFile << std::setprecision(15);
     mCamPoseFile.open(mRootDir + "/cam_poses.txt");
     mCamPoseFile << std::setprecision(15);
-    lcm->subscribe("CAMERA", &State::onCamera, this);
+    lcm->subscribe("CAMERA", &State::onCameras, this);
+    lcm->subscribe("CAMERA_LEFT", &State::onCamera, this);
     lcm->subscribe("SCAN", &State::onScan, this);
   }
 
+
   void onCamera(const lcm::ReceiveBuffer* iBuf,
                 const std::string& iChannel,
-                const multisense::images_t* iMessage) {
-    if ((mEndTime > 0) && (iMessage->utime > mEndTime)) {
-      mLcmWrapper->stopHandleThread();
-      return;
+                const bot_core::image_t* iMessage) {
+    const auto& img = *iMessage;
+    const int w = img.width;
+    const int h = img.height;
+    char outFileName[256];
+    cv::Mat cvImg;
+    switch (img.pixelformat) {
+    case bot_core::image_t::PIXEL_FORMAT_MJPEG:
+      cvImg = cv::imdecode(cv::Mat(img.data), -1); break;
+    case bot_core::image_t::PIXEL_FORMAT_GRAY:
+      cvImg = cv::Mat(h, w, CV_8UC1, (void*)img.data.data()); break;
+    case bot_core::image_t::PIXEL_FORMAT_RGB:
+      cvImg = cv::Mat(h, w, CV_8UC3, (void*)img.data.data()); break;
+    default:
+      std::cout << "error: unknown pixel format" << std::endl; break;
     }
+    if (cvImg.channels() == 3) cv::cvtColor(cvImg, cvImg, CV_BGR2RGB);
+    sprintf(outFileName, "%s/color_%ld.png", mRootDir.c_str(), img.utime);
+    cv::imwrite(outFileName, cvImg);
+
     Eigen::Isometry3d camToLocal;
-    mBotWrapper->getTransform(iChannel+"_LEFT","local",camToLocal,
+    mBotWrapper->getTransform(iChannel,"local",camToLocal,
                               iMessage->utime);
     auto& m = camToLocal;
     mCamPoseFile << iMessage->utime << " " <<
       m(0,0) << " " << m(0,1) << " " << m(0,2) << " " << m(0,3) << " " <<
       m(1,0) << " " << m(1,1) << " " << m(1,2) << " " << m(1,3) << " " << 
       m(2,0) << " " << m(2,1) << " " << m(2,2) << " " << m(2,3) << std::endl;
+  }
+
+
+  void onCameras(const lcm::ReceiveBuffer* iBuf,
+                 const std::string& iChannel,
+                 const multisense::images_t* iMessage) {
+    if ((mEndTime > 0) && (iMessage->utime > mEndTime)) {
+      mLcmWrapper->stopHandleThread();
+      return;
+    }
 
     for (int i = 0; i < iMessage->n_images; ++i) {
       const bot_core::image_t& img = iMessage->images[i];
@@ -68,24 +95,11 @@ struct State {
       cv::Mat cvImg;
       auto imgType = iMessage->image_types[i];
       if (imgType == multisense::images_t::LEFT) {
-        switch (img.pixelformat) {
-        case bot_core::image_t::PIXEL_FORMAT_MJPEG:
-          cvImg = cv::imdecode(cv::Mat(img.data), -1); break;
-        case bot_core::image_t::PIXEL_FORMAT_GRAY:
-          cvImg = cv::Mat(h, w, CV_8UC1, (void*)img.data.data()); break;
-        case bot_core::image_t::PIXEL_FORMAT_RGB:
-          cvImg = cv::Mat(h, w, CV_8UC3, (void*)img.data.data()); break;
-        default:
-          std::cout << "error: unknown pixel format" << std::endl; break;
-        }
-        if (cvImg.channels() == 3) cv::cvtColor(cvImg, cvImg, CV_BGR2RGB);
-        sprintf(outFileName, "%s/color_%ld.png", mRootDir.c_str(), img.utime);
-        cv::imwrite(outFileName, cvImg);
+        onCamera(iBuf, iChannel + "_LEFT", &img);
       }
 
-
-      if ((imgType == multisense::images_t::DISPARITY) ||
-          (imgType == multisense::images_t::DISPARITY_ZIPPED)) {
+      else if ((imgType == multisense::images_t::DISPARITY) ||
+               (imgType == multisense::images_t::DISPARITY_ZIPPED)) {
         /*
         if (imgType == multisense::images_t::DISPARITY) {
           //cv::Mat(h,w,CV_16UC1,(void*)img.data.data()).
