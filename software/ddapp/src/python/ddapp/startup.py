@@ -21,6 +21,7 @@ from ddapp import debrisdemo
 from ddapp import drilldemo
 from ddapp import tabledemo
 from ddapp import valvedemo
+from ddapp import continuouswalkingdemo
 from ddapp import ik
 from ddapp import ikplanner
 from ddapp import objectmodel as om
@@ -119,6 +120,7 @@ useImageViewDemo = True
 useControllerRate = True
 useSkybox = False
 useDataFiles = True
+useContinuousWalking = False
 
 
 poseCollection = PythonQt.dd.ddSignalMap()
@@ -356,6 +358,9 @@ if usePlanning:
                                       segmentation.segmentValveWallAuto, robotStateJointController,
                                       playPlans, showPose)
 
+    if (useContinuousWalking):
+        continuouswalkingDemo = continuouswalkingdemo.ContinousWalkingDemo(robotStateModel, footstepsPanel, robotStateJointController)
+
 
     splinewidget.init(view, handFactory, robotStateModel)
 
@@ -458,6 +463,7 @@ if useDataFiles:
 
 if useImageWidget:
     imageWidget = cameraview.ImageWidget(cameraview.imageManager, 'CAMERA_LEFT', view)
+    #imageWidget = cameraview.ImageWidget(cameraview.imageManager, 'CAMERA_TSDF', view)
 
 
 if useImageViewDemo:
