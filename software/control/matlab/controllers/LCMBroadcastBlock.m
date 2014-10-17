@@ -11,6 +11,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     hokuyo_spin_rate;
     joint_names_cache;
     
+    % FC publish period
+    fc_publish_period = 0.1;
+    
     % Atlas, for usefulness
     r;
   end
@@ -57,20 +60,24 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
-      % Get foot contact state
-      x = varargin{1};
-      [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
-      within_thresh = phiC < 0.002;
-      contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-      fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
-            any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
-      % Publish it!
-      foot_contact_est = drc.foot_contact_estimate_t();
-      foot_contact_est.utime = t*1000*1000;
-      foot_contact_est.left_contact = fc(1);
-      foot_contact_est.right_contact = fc(2);
-      foot_contact_est.detection_method = 0;
-      obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
+      % See if we just passed our publish-timestep for 
+      % the foot contact state message, publish if so.
+      if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
+        % Get foot contact state
+        x = varargin{1};
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
+        within_thresh = phiC < 0.002;
+        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
+        fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
+              any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
+        % Publish it!
+        foot_contact_est = drc.foot_contact_estimate_t();
+        foot_contact_est.utime = t*1000*1000;
+        foot_contact_est.left_contact = fc(1);
+        foot_contact_est.right_contact = fc(2);
+        foot_contact_est.detection_method = 0;
+        obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
+      end
       
       % What needs to go out:
       num_dofs = length(varargin{1}) / 2;
@@ -165,7 +172,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         pre_to_post_frame = bot_core.rigid_transform_t();
         pre_to_post_frame.utime = t*1000*1000;
         pre_to_post_frame.trans = [0, 0, 0]; % no offset
-        q = rpy2quat([0 0 laser_spindle_angle+3.1415]);
+        q = rpy2quat([0, 0, laser_spindle_angle+pi]);
         pre_to_post_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
         obj.lc.publish('PRE_SPINDLE_TO_POST_SPINDLE', pre_to_post_frame);
         
@@ -173,7 +180,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % spindle
         post_to_scan_frame = pre_to_post_frame;
         post_to_scan_frame.trans = [ 0,0,0 ];
-        q = rpy2quat([0 -90 -90]*3.1415/180);
+        q = rpy2quat([0, -90, -90]*pi/180);
         post_to_scan_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
         obj.lc.publish('POST_SPINDLE_TO_SCAN', post_to_scan_frame);
         
@@ -187,7 +194,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         lcm_laser_msg.nranges = length(laser_ranges);
         lcm_laser_msg.nintensities = length(laser_ranges);
         lcm_laser_msg.rad0 = -obj.hokuyo_yaw_width/2.0;
-        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges) - 1);
+        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges)-1);
         obj.lc.publish('SCAN', lcm_laser_msg);
         
       end

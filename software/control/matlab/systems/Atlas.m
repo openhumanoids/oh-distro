@@ -39,7 +39,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       else
         % Add lidar -- hokuyo / spindle frames are pulled from
         % config/config_components/multisense_sim.cfg
-        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],[0;0;0],'hokuyo_frame'));
+        % was [-0.0446; 0.0; 0.0880], [0;0;0] in sim.
+        % trying new value that lines up more accurately with
+        % head_to_left_eye, left_eye_to_spindle transforms
+        % from multisense_05.cfg
+        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0055, -0.0087, 0.0914].',[0, 0, 0].','hokuyo_frame'));
         hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
           -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
         if (~isfield(options, 'visualize') || options.visualize)

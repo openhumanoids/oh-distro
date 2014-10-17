@@ -233,7 +233,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
           efforts(obj.drake_to_atlas_joint_map(i)) = u(i);
         end
       else
-        cmd = obj.coder.decode(data);
+         cmd = obj.coder.decode(data);
         efforts = cmd.val(obj.nu*2+1:end);
       end
       
