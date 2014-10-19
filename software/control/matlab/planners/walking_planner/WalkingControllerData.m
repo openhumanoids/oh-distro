@@ -69,14 +69,14 @@ classdef WalkingControllerData
           pelvis_reference_height(i+1) = rfoot_des_next(3);
         elseif isLeftSupport && nextIsDoubleSupport 
           % check to see if foot is going down
-          if rfoot_des_next(3) < lfoot_des(3)
+          if rfoot_des_next(3)+0.025 < lfoot_des(3)
             pelvis_reference_height(i+1) = rfoot_des_next(3);
           else
             pelvis_reference_height(i+1) = lfoot_des(3);
           end
         elseif isRightSupport && nextIsDoubleSupport 
           % check to see if foot is going down
-          if lfoot_des_next(3) < rfoot_des(3)
+          if lfoot_des_next(3)+0.025 < rfoot_des(3)
             pelvis_reference_height(i+1) = lfoot_des_next(3);
           else
             pelvis_reference_height(i+1) = rfoot_des(3);
@@ -84,6 +84,8 @@ classdef WalkingControllerData
         end
       end
       link_constraints(1).pelvis_reference_height = pelvis_reference_height;
+      
+      save('link_constraints.mat','link_constraints');
       
       obj.link_constraints = link_constraints;
       obj.zmptraj = zmptraj;
