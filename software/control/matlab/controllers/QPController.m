@@ -364,16 +364,20 @@ classdef QPController < MIMODrakeSystem
     qdd_ub = 500*ones(1,nq);
     w_qdd = obj.w_qdd;
     kp = 40;
-    kd = 6;
+    kd = 4;
     if obj.controller_data.right_toe_off
       r_kny_qdd_des = kp*(obj.min_knee_angle-q(obj.r_knee_idx)) - kd*qd(obj.r_knee_idx);
       qddot_des(obj.r_knee_idx) = r_kny_qdd_des;
       w_qdd(obj.r_knee_idx) = 1;
+    elseif q(obj.r_knee_idx) < obj.min_knee_angle
+      w_qdd(obj.r_knee_idx) = 1e-4;
     end
     if obj.controller_data.left_toe_off
       l_kny_qdd_des = kp*(obj.min_knee_angle-q(obj.l_knee_idx)) - kd*qd(obj.l_knee_idx);
       qddot_des(obj.l_knee_idx) = l_kny_qdd_des;
       w_qdd(obj.l_knee_idx) = 1;
+    elseif q(obj.l_knee_idx) < obj.min_knee_angle
+      w_qdd(obj.l_knee_idx) = 1e-4;
     end
 
     if (obj.use_mex==0 || obj.use_mex==2)
