@@ -89,6 +89,10 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
       a2 = ctrl_data.link_constraints(rfoot_link_con_ind).a2(:,foot_traj_ind);
       a3 = ctrl_data.link_constraints(rfoot_link_con_ind).a3(:,foot_traj_ind);
       rfoot_des = evalCubicSplineSegment(tt,a0,a1,a2,a3);
+
+      left_foot_in_contact = fc(1) > 0.5 && loading_foot==obj.robot.foot_body_id.left;
+      right_foot_in_contact = fc(2) > 0.5 && loading_foot==obj.robot.foot_body_id.right;
+
       if (obj.use_mex == 0)
         persistent last_t;
         if (isempty(last_t) || last_t > t)
@@ -97,13 +101,13 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
         if (t - last_t >= obj.dt)
           last_t = t;
           cdata = obj.controller_data;
-          if fc(1) > 0.5 && loading_foot==obj.robot.foot_body_id.left % left foot in contact
+          if left_foot_in_contact % left foot in contact
             kinsol = doKinematics(obj.robot,x(1:obj.nq),false,true);
             lfoot_act = forwardKin(obj.robot,kinsol,obj.robot.foot_body_id.left,[0;0;0],0);
             plan_shift = lfoot_des(1:3) - lfoot_act(1:3);
             % fprintf('LF:Footstep desired minus actual: x:%2.4f y:%2.4f z:%2.4f m \n',plan_shift);
             obj.controller_data.plan_shift = plan_shift;
-          elseif fc(2) > 0.5 && loading_foot==obj.robot.foot_body_id.right % right foot in contact
+          elseif right_foot_in_contact % right foot in contact
             kinsol = doKinematics(obj.robot,x(1:obj.nq),false,true);
             rfoot_act = forwardKin(obj.robot,kinsol,obj.robot.foot_body_id.right,[0;0;0],0);
             plan_shift = rfoot_des(1:3) - rfoot_act(1:3);
@@ -112,7 +116,7 @@ classdef FootstepPlanShiftBlock < MIMODrakeSystem
           end
         end
       else
-        obj.controller_data.plan_shift = footstepPlanShiftmex(obj.mex_ptr.data,t,x,fc(1),fc(2),lfoot_des(1:3),rfoot_des(1:3),ctrl_data.plan_shift);  
+        obj.controller_data.plan_shift = footstepPlanShiftmex(obj.mex_ptr.data,t,x,1*left_foot_in_contact,1*right_foot_in_contact,lfoot_des(1:3),rfoot_des(1:3),ctrl_data.plan_shift);  
       end
       y=x;
     end

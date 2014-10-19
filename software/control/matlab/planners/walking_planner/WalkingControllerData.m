@@ -85,8 +85,6 @@ classdef WalkingControllerData
       end
       link_constraints(1).pelvis_reference_height = pelvis_reference_height;
       
-      save('link_constraints.mat','link_constraints');
-      
       obj.link_constraints = link_constraints;
       obj.zmptraj = zmptraj;
       obj.qtraj = qtraj;
