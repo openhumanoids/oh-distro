@@ -214,8 +214,15 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'Kp_foot',[20; 20; 20; 20; 20; 20]);
       options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.5);
       options = ifNotIsFieldThenVal(options,'min_knee_angle',0.7);
+
       
-      acc_limit = [100;100;100;8;8;8];
+      options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
+      options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.5);
+
+      options.w_qdd(findJointIndices(obj,'back_bkx')) = 0.01;
+      options.Kp_q(findJointIndices(obj,'back_bkx')) = 50;
+
+      acc_limit = [100;100;100;10;10;10];
       body_accel_bounds(1).body_idx = obj.foot_body_id.right;
       body_accel_bounds(1).min_acceleration = -acc_limit;
       body_accel_bounds(1).max_acceleration = acc_limit;

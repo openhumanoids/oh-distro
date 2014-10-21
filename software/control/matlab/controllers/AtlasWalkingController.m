@@ -15,7 +15,7 @@ classdef AtlasWalkingController < DRCController
       
       
       if (~options.run_in_simul_mode)
-        force_control_joint_str = {'leg'};% <---- cell array of (sub)strings
+        force_control_joint_str = {'leg','back_bkx'};% <---- cell array of (sub)strings
       else
         force_control_joint_str = {'leg', 'arm', 'back', 'neck'};
       end
@@ -64,7 +64,7 @@ classdef AtlasWalkingController < DRCController
           'integral',zeros(getNumPositions(r),1),...
           'integral_gains',integral_gains,...
           'integral_clamps',integral_clamps,...
-          'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
+          'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back_bkz');findJointIndices(r,'back_bky')]));
       else
         ctrl_data = AtlasQPControllerData(true,struct(...
           'acceleration_input_frame',AtlasCoordinates(r),...
@@ -83,7 +83,7 @@ classdef AtlasWalkingController < DRCController
           'ignore_terrain',false,...
           'force_controlled_joints',force_controlled_joints,...
           'position_controlled_joints',position_controlled_joints,...
-          'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back')]));
+          'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'neck');findJointIndices(r,'back_bkz');findJointIndices(r,'back_bky')]));
       end
       
       if ~isfield(options,'use_mex') options.use_mex = true; end
