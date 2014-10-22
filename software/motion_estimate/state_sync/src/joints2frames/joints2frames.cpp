@@ -204,7 +204,6 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LEFT_PALM" );
     }else if(  (*ii).first.compare( "right_palm" ) == 0){
       publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RIGHT_PALM" );
-    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
 
     //}else if(  (*ii).first.compare( "r_hand_force_torque" ) == 0 ){ // ft sensor
     //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
