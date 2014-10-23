@@ -41,9 +41,9 @@ struct Joints {
 
 
 /////////////////////////////////////
-class StateSyncConfig{
+class CommandLineConfig{
   public:
-    StateSyncConfig(){
+    CommandLineConfig(){
       // Read from command line:
       standalone_head = false;
       standalone_hand = false;
@@ -59,7 +59,7 @@ class StateSyncConfig{
       use_rotation_rate_alpha_filter = false;
       use_torque_adjustment = false;
     }
-    ~StateSyncConfig(){};
+    ~CommandLineConfig(){};
 
     bool standalone_head, standalone_hand;
     bool bdi_motion_estimate;
@@ -77,7 +77,7 @@ class StateSyncConfig{
 ///////////////////////////////////////////////////////////////
 class state_sync{
   public:
-    state_sync(boost::shared_ptr<lcm::LCM> &lcm_, boost::shared_ptr<StateSyncConfig> &cl_cfg_);
+    state_sync(boost::shared_ptr<lcm::LCM> &lcm_, boost::shared_ptr<CommandLineConfig> &cl_cfg_);
     
     ~state_sync(){
     }
@@ -89,7 +89,7 @@ class state_sync{
     void setEncodersFromParam();
     
   private:
-    boost::shared_ptr<StateSyncConfig> cl_cfg_;
+    boost::shared_ptr<CommandLineConfig> cl_cfg_;
     boost::shared_ptr<lcm::LCM> lcm_;
     boost::shared_ptr<ModelClient> model_;
     BotParam* botparam_;
@@ -113,13 +113,10 @@ class state_sync{
     Joints left_hand_joints_;
     Joints right_hand_joints_;
     Joints atlas_joints_out_;
-    
+
     PoseT pose_BDI_;
     PoseT pose_MIT_;
     void setPoseToZero(PoseT &pose);
-    
-    void applyEncoderJointSensors(int64_t msg_utime_, std::vector<float> joint_position,
-         std::vector<float> joint_velocity, std::vector<float> joint_effort);
     
     // Kalman/Backlash Filters for joint angles:
     void filterJoints(int64_t utime, std::vector<float> &joint_position, std::vector<float> &joint_velocity);
