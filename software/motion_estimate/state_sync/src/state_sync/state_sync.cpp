@@ -235,10 +235,7 @@ void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string&
   publishRobotState(msg->utime,  msg->force_torque);    
 }
 
-void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg){
-  atlas_joints_out_.position = msg->joint_position_out;
-  atlas_joints_out_.velocity = msg->joint_velocity_out;
-}
+
 
 
 
@@ -491,6 +488,10 @@ void state_sync::applyEncoderJointSensors(int64_t msg_utime_, std::vector<float>
   }
 }
 
+void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg){
+  atlas_joints_out_.position = msg->joint_position_out;
+  atlas_joints_out_.velocity = msg->joint_velocity_out;
+}
 
 bot_core::rigid_transform_t getIsometry3dAsBotRigidTransform(Eigen::Isometry3d pose, int64_t utime){
   bot_core::rigid_transform_t tf;
@@ -504,6 +505,7 @@ bot_core::rigid_transform_t getIsometry3dAsBotRigidTransform(Eigen::Isometry3d p
   tf.quat[2] = quat.y();
   tf.quat[3] = quat.z();
   return tf;
+
 }
 
 Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
@@ -515,6 +517,7 @@ Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
   pose_iso.rotate(quat);
   return pose_iso;
 }
+
 
 void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
   pose_BDI_.utime = msg->utime;
