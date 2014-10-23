@@ -240,16 +240,6 @@ void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::st
   atlas_joints_out_.velocity = msg->joint_velocity_out;
 }
 
-void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
-  pose_BDI_.utime = msg->utime;
-  pose_BDI_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
-  pose_BDI_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
-  pose_BDI_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
-  pose_BDI_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
-  pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
-}
-////////////////// End Data Derived entirely from BDI and drc-atlas //////////////////
-//////////////////////////////////////////////////////////////////////////////////////
 
 
 void state_sync::setEncodersFromParam() {
@@ -524,6 +514,15 @@ Eigen::Isometry3d getPoseAsIsometry3d(PoseT pose){
                                                pose.orientation[2], pose.orientation[3]);
   pose_iso.rotate(quat);
   return pose_iso;
+}
+
+void state_sync::poseBDIHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
+  pose_BDI_.utime = msg->utime;
+  pose_BDI_.pos = Eigen::Vector3d( msg->pos[0],  msg->pos[1],  msg->pos[2] );
+  pose_BDI_.vel = Eigen::Vector3d( msg->vel[0],  msg->vel[1],  msg->vel[2] );
+  pose_BDI_.orientation = Eigen::Vector4d( msg->orientation[0],  msg->orientation[1],  msg->orientation[2],  msg->orientation[3] );
+  pose_BDI_.rotation_rate = Eigen::Vector3d( msg->rotation_rate[0],  msg->rotation_rate[1],  msg->rotation_rate[2] );
+  pose_BDI_.accel = Eigen::Vector3d( msg->accel[0],  msg->accel[1],  msg->accel[2] );  
 }
 
 void state_sync::poseMITHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::pose_t* msg){
