@@ -23,6 +23,7 @@
 #include "lcmtypes/drc/six_axis_force_torque_t.hpp"
 #include "lcmtypes/drc/controller_debug_t.hpp"
 #include "lcmtypes/mav/filter_state_t.hpp"
+#include "lcmtypes/drc/double_array_t.hpp"
 
 #include <cassert>
 
@@ -468,6 +469,9 @@ define_field_handler(FootContactRight, drc::foot_contact_estimate_t, right_conta
 // mav_filter_state_t
 define_array_handler(MavStateHandler, mav::filter_state_t, state, createIndexList(21));
 
+// double array
+define_array_handler(DoubleArrayHandler, drc::double_array_t, values, createIndexList(6));
+
 // robotiq_hand_status_t
 define_field_handler(RobotiqStatusCurrentA, robotiqhand::status_t, currentA);
 define_field_handler(RobotiqStatusCurrentB, robotiqhand::status_t, currentB);
@@ -651,6 +655,7 @@ SignalHandlerFactory& SignalHandlerFactory::instance()
     factory.registerClass<FootContactLeft>();
     factory.registerClass<FootContactRight>();
     factory.registerClass<MavStateHandler>();
+    factory.registerClass<DoubleArrayHandler>();
     factory.registerClass<RobotiqStatusCurrentA>();
     factory.registerClass<RobotiqStatusCurrentB>();
     factory.registerClass<RobotiqStatusCurrentC>();

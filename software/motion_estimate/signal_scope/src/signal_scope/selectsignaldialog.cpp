@@ -37,6 +37,7 @@ SelectSignalDialog::SelectSignalDialog(QWidget* parent) : QDialog(parent)
            << "POSE_BODY_FOVIS_VELOCITY" 
            << "POSE_BODY_LEGODO_VELOCITY" << "POSE_BODY_LEGODO_VELOCITY_FAIL"  
            << "POSE_VICON"
+           << "LOCK_ERROR"
            << "SCALED_ROBOT_STATE" 
            << "SE_INS_POSE_STATE" << "SE_MATLAB_DATAFUSION_REQ"
            << "STATE_ESTIMATOR_POSE"
