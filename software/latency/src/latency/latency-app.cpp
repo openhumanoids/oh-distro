@@ -136,7 +136,7 @@ void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string&
               << lat_msgs_[0] << " | " << lat_msgs_[1] << " | "  << lat_msgs_[2] << " | "  << lat_msgs_[3] << "\n";
       */
 
-    drc::double_vector_t msgout;
+    drc::double_array_t msgout;
     msgout.utime = utime_now;
     msgout.num_values = 7;
     msgout.values = { lat_time_[0],  lat_time_[1], lat_time_[2], lat_time_[3], lat_time_[4], lat_time_[5], lat_time_[6]};

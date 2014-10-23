@@ -16,7 +16,6 @@
 #include "lcmtypes/drc/atlas_state_extra_t.hpp"
 #include "lcmtypes/drc/atlas_status_t.hpp"
 #include "lcmtypes/drc/drill_control_t.hpp"
-#include "lcmtypes/drc/vector_double_t.hpp"
 #include "lcmtypes/drc/foot_contact_estimate_t.hpp"
 #include "lcmtypes/drc/ins_update_request_t.hpp"
 #include "lcmtypes/drc/ins_update_packet_t.hpp"
