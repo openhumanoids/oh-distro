@@ -223,17 +223,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 
 //////////////////////////////////////////////////////////////////////////////////////
 ////////////////// Data Derived entirely from BDI and drc-atlas //////////////////////
-void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
-  checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
-  if (cl_cfg_->use_encoder_joint_sensors ){
-    applyEncoderJointSensors(msg->utime,  msg->joint_position,
-       msg->joint_velocity,  msg->joint_effort);
-  }
-  if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
-    filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
-  }
-  publishRobotState(msg->utime,  msg->force_torque);    
-}
+
 
 
 
@@ -415,25 +405,24 @@ void state_sync::filterJoints(int64_t utime, std::vector<float> &joint_position,
   //std::cout << dtime << " end\n";   
 }
 
-<<<<<<< HEAD
 
 void state_sync::atlasHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
   checkJointLengths( atlas_joints_.position.size(),  msg->joint_position.size(), channel);
-=======
+  if (cl_cfg_->use_encoder_joint_sensors ){
+    applyEncoderJointSensors(msg->utime,  msg->joint_position,
+       msg->joint_velocity,  msg->joint_effort);
+  }
+  if (cl_cfg_->use_joint_kalman_filter || cl_cfg_->use_joint_backlash_filter ){//  atlas_joints_ filtering here
+    filterJoints(msg->utime, atlas_joints_.position, atlas_joints_.velocity);
+  }
+  publishRobotState(msg->utime,  msg->force_torque);    
+}
+
+
 void state_sync::applyEncoderJointSensors(int64_t msg_utime_, std::vector<float> joint_position,
      std::vector<float> joint_velocity, std::vector<float> joint_effort){  
->>>>>>> adding app seperate from sync library
   
   std::vector <float> mod_positions;
-<<<<<<< HEAD
-  //mod_positions.assign(28,0.0);
-  mod_positions = msg->joint_position;
-
-  atlas_joints_.position = mod_positions;
-  atlas_joints_.velocity = msg->joint_velocity;
-  atlas_joints_.effort = msg->joint_effort;
-  
-=======
   mod_positions.assign(28,0.0);
   for (size_t i=0; i < pot_joint_offsets_.size(); i++){
     mod_positions[i] = joint_position[i] + pot_joint_offsets_[i]; 
@@ -442,7 +431,6 @@ void state_sync::applyEncoderJointSensors(int64_t msg_utime_, std::vector<float>
   atlas_joints_.position = mod_positions;
   atlas_joints_.velocity = joint_velocity;
   atlas_joints_.effort = joint_effort;  
->>>>>>> adding app seperate from sync library
   
   // Overwrite the actuator joint positions and velocities with the after-transmission 
   // sensor values for the ARMS ONLY (first exposed in v2.7.0 of BDI's API)
@@ -489,9 +477,12 @@ void state_sync::applyEncoderJointSensors(int64_t msg_utime_, std::vector<float>
 }
 
 void state_sync::atlasExtraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_extra_t* msg){
+  //std::cout << "got atlasExtraHandler\n";
   atlas_joints_out_.position = msg->joint_position_out;
   atlas_joints_out_.velocity = msg->joint_velocity_out;
 }
+
+
 
 bot_core::rigid_transform_t getIsometry3dAsBotRigidTransform(Eigen::Isometry3d pose, int64_t utime){
   bot_core::rigid_transform_t tf;
