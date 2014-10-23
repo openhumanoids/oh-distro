@@ -116,6 +116,7 @@ class state_sync{
     
     PoseT pose_BDI_;
     PoseT pose_MIT_;
+    void setPoseToZero(PoseT &pose);
     
     void applyEncoderJointSensors(int64_t msg_utime_, std::vector<float> joint_position,
          std::vector<float> joint_velocity, std::vector<float> joint_effort);

@@ -21,14 +21,7 @@ void assignJointsStruct( Joints &joints ){
   joints.effort.assign( joints.name.size(), 0);  
 }
 
-void setPoseToZero(PoseT &pose){
-  pose.utime = 0; // use this to signify un-initalised
-  pose.pos << 0,0, 0.95;// for ease of use//Eigen::Vector3d::Identity();
-  pose.vel << 0,0,0;
-  pose.orientation << 1.,0.,0.,0.;
-  pose.rotation_rate << 0,0,0;
-  pose.accel << 0,0,0;
-}
+
 
 // Quick check that the incoming and previous joint sets are the same size
 // TODO: perhaps make this more careful with more checks?
@@ -120,6 +113,7 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
   ///////////////////////////////////////////////////////////////
   lcm::Subscription* sub1 = lcm_->subscribe("ATLAS_STATE_EXTRA",&state_sync::atlasExtraHandler,this);
   lcm::Subscription* sub4 = lcm_->subscribe("ENABLE_ENCODERS",&state_sync::enableEncoderHandler,this);  
+  lcm::Subscription* sub5 = lcm_->subscribe("POSE_BDI",&state_sync::poseBDIHandler,this); // Always provided by the Atlas Driver:
   lcm::Subscription* sub6 = lcm_->subscribe("POSE_BODY",&state_sync::poseMITHandler,this);  // Always provided the state estimator:
   lcm::Subscription* sub7 = lcm_->subscribe("MULTISENSE_STATE",&state_sync::multisenseHandler,this);
   
@@ -221,13 +215,14 @@ state_sync::state_sync(boost::shared_ptr<lcm::LCM> &lcm_,
 }
 
 
-//////////////////////////////////////////////////////////////////////////////////////
-////////////////// Data Derived entirely from BDI and drc-atlas //////////////////////
-
-
-
-
-
+void state_sync::setPoseToZero(PoseT &pose){
+  pose.utime = 0; // use this to signify un-initalised
+  pose.pos << 0,0, 0.95;// for ease of use//Eigen::Vector3d::Identity();
+  pose.vel << 0,0,0;
+  pose.orientation << 1.,0.,0.,0.;
+  pose.rotation_rate << 0,0,0;
+  pose.accel << 0,0,0;
+}
 
 void state_sync::setEncodersFromParam() {
   
@@ -305,7 +300,6 @@ void state_sync::enableEncoders(bool enable) {
 }
 
 
-<<<<<<< HEAD
 // Quick check that the incoming and previous joint sets are the same size
 // TODO: perhaps make this more careful with more checks?
 void checkJointLengths(size_t previous_size , size_t incoming_size, std::string channel){
@@ -317,18 +311,6 @@ void checkJointLengths(size_t previous_size , size_t incoming_size, std::string 
 }
 
 
-=======
-void state_sync::potOffsetHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::atlas_state_t* msg){
-  std::cout << "got potOffsetHandler\n";
-  pot_joint_offsets_ = msg->joint_position;
-  
-  for (size_t i=0; i < pot_joint_offsets_.size(); i++){
-    std::cout << pot_joint_offsets_[i] << ", ";
-  }
-  std::cout << "\n";
-}
-
->>>>>>> adding app seperate from sync library
 void state_sync::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::state_t* msg){
   checkJointLengths( head_joints_.position.size(),  msg->joint_position.size(), channel);
   
