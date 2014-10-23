@@ -11,7 +11,7 @@
 #include "lcmtypes/drc/robot_state_t.hpp"
 #include "lcmtypes/drc/utime_two_t.hpp"
 #include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
-#include "lcmtypes/drc/vector_double_t.hpp"
+#include "lcmtypes/drc/double_array_t.hpp"
 #include "lcmtypes/bot_core/pose_t.hpp"
 
 #include "lcmtypes/mav_estimator.hpp"
@@ -136,10 +136,10 @@ void App::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf, const std::string&
               << lat_msgs_[0] << " | " << lat_msgs_[1] << " | "  << lat_msgs_[2] << " | "  << lat_msgs_[3] << "\n";
       */
 
-    drc::vector_double_t msgout;
+    drc::double_vector_t msgout;
     msgout.utime = utime_now;
-    msgout.n = 7;
-    msgout.data = { lat_time_[0],  lat_time_[1], lat_time_[2], lat_time_[3], lat_time_[4], lat_time_[5], lat_time_[6]};
+    msgout.num_values = 7;
+    msgout.values = { lat_time_[0],  lat_time_[1], lat_time_[2], lat_time_[3], lat_time_[4], lat_time_[5], lat_time_[6]};
     _lcm->publish( ("LATENCY") , &msgout);
 
     counter_++;
