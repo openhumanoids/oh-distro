@@ -2674,7 +2674,7 @@ def segmentDrillBarrel(point1):
 
 
 
-def segmentDrillAlignedWithTable(point):
+def segmentDrillAlignedWithTable(point, polyData = None):
     '''
     Yet Another Drill Fitting Algorithm [tm]
     This one fits the button drill assuming its on the table
@@ -2682,7 +2682,7 @@ def segmentDrillAlignedWithTable(point):
     Table must have long side facing robot
     '''
     inputObj = om.findObjectByName('pointcloud snapshot')
-    polyData = inputObj.polyData
+    polyData = polyData or inputObj.polyData
 
     # segment the table and recover the precise up direction normal:
     polyDataOut, tablePoints, origin, normal = segmentTable(polyData,point)
