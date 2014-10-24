@@ -9,11 +9,9 @@ project(local_map_velodyne)
 add_executable(drc-est-robot-state-fake est-robot-state-fake.cpp  )
 #target_link_libraries (drc-est-robot-state-fake ${EXAMPLE_LIBRARIES})
 pods_use_pkg_config_packages(drc-est-robot-state-fake  
-    lcmtypes_velodyne
     path-util
     bot2-param-client
-    bot2-frames
-        lcmtypes_kinect lcmtypes_visualization
+    bot2-frames  lcmtypes_visualization
 lcmtypes_drc_lcmtypes
        ${PCL_LIBRARIES})
 

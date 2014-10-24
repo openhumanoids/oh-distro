@@ -36,7 +36,7 @@ terrain_classify::terrain_classify(boost::shared_ptr<lcm::LCM> &publish_lcm):
 
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   //pc_vis_->obj_cfg_list.push_back( obj_cfg(6000,"Frames [Zero]",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1000,"Null",5,1) );

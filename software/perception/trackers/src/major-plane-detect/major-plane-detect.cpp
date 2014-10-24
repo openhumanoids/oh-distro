@@ -1,7 +1,7 @@
 #include "major-plane-detect.hpp"
 #include <iostream>
 
-#include <pointcloud_tools/filter_planes.hpp>
+#include <pronto_utils/filter_planes.hpp>
 #include <drc_utils/PointerUtils.hpp>
 
 
@@ -32,7 +32,7 @@ MajorPlane::MajorPlane(boost::shared_ptr<lcm::LCM> &lcm_, int verbose_lcm_): lcm
   mCollector->start();  
 
 
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(4451002,"Plane Detect | Null Pose",5,1) );

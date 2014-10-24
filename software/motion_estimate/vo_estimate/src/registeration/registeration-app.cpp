@@ -31,7 +31,7 @@ If at any time an alignment to utimeA is not possible, we do VO until it is.
 
 #include "registeration.hpp"
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include <lcm/lcm-cpp.hpp>
 #include <bot_frames/bot_frames.h>
@@ -72,7 +72,7 @@ class RegApp{
     std::vector<ImageFeature> getFeaturesFromLCM(const  reg::features_t* msg, Eigen::Isometry3d &pose);
     std::string camera_;
 
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     
     Reg::Ptr reg;
     std::vector<ImageFeature> cur_features_;
@@ -91,7 +91,7 @@ class RegApp{
 
     deque< bot_core::image_t  > * image_queue_;
     deque< bot_core::planar_lidar_t  > * laser_queue_;
-    pcl::PointCloud<PointXYZRGB>::Ptr accum_cloud;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr accum_cloud;
 };
 
 
@@ -118,7 +118,7 @@ RegApp::RegApp(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_):
   laser_queue_ = new deque< bot_core::planar_lidar_t > ();
 
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb
   pc_vis_->obj_cfg_list.push_back( obj_cfg(70000,"Reg Pose",4,1) );

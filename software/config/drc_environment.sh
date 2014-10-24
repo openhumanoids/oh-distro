@@ -64,7 +64,7 @@ setup_drc()
   export CFLAGS="$CFLAGS -Wreturn-type -Wuninitialized"
 
   # required by Atlas API v2.11.0
-  export ATLAS_ROBOT_INTERFACE=$DRC_BASE/software/drivers/atlas/AtlasRobotInterface_2.12.0
+  export ATLAS_ROBOT_INTERFACE=$DRC_BASE/software/drivers/atlas/AtlasRobotInterface_2.13.1
 }
 
 setup_robot_computers()

@@ -1,3 +1,4 @@
+
 #include "manip-plan-codecs.h"
 #include "dccl/arithmetic/field_codec_arithmetic.h"
 
@@ -31,7 +32,7 @@ ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
     
         for(int j = 0; j < 28; ++j)
         {
-            dccl::protobuf::ArithmeticModel model;
+            dccl::arith::protobuf::ArithmeticModel model;
 
             glog.is(VERBOSE) && glog << "Making joint_pos_" << j << " model" << std::endl;
 
@@ -66,7 +67,7 @@ ManipPlanCodec::ManipPlanCodec(const std::string loopback_channel)
         
             model.set_name("joint_pos_" + goby::util::as<std::string>(j));
             glog.is(VERBOSE) && glog << "Setting joint_pos_" << j << " model" << std::endl;
-            dccl::ModelManager::set_model(model);        
+            dccl::arith::ModelManager::set_model(model);        
 //        std::cout << pb_to_short_string(model) << std::endl;
     
         }

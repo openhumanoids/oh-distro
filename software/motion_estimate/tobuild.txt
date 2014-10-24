@@ -2,7 +2,7 @@
 # and lines starting with '#' are ignored
 
 # filters used in motion est and state sync
-estimate_tools
+#estimate_tools
 
 
 state_sync
@@ -12,8 +12,8 @@ hand_estimate
 # Maurice's estimator
 # dependent on imu filter in estimate_tools
 vo_estimate
-mav
-motion_estimate
+#mav
+#motion_estimate
 
 
 # Dehann's estimator:

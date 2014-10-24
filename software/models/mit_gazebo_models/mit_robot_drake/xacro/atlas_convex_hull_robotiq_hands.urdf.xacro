@@ -5,8 +5,8 @@
 
   <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot_drake/xacro/robotiq_convex_hull.xacro" />
 
-  <xacro:robotiq_convex_hull is_left="true"/>
-  <xacro:robotiq_convex_hull is_left="false"/>
+  <xacro:robotiq_convex_hull is_left="true" is_open="true"/>
+  <xacro:robotiq_convex_hull is_left="false" is_open="true"/>
 
   <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot_drake/xacro/point_mass_robotiq_hands.urdf" /> 
   <xacro:include filename="$(find mit_drcsim_scripts)/models/mit_robot_drake/xacro/atlas.transmission" />

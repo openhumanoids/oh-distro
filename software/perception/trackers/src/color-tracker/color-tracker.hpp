@@ -6,7 +6,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 class ColorTracker
@@ -30,7 +30,7 @@ class ColorTracker
     
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     int mode_;
 
     int width_;

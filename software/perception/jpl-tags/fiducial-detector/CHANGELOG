@@ -1,0 +1,60 @@
+* version 2.0 - 12/13/2012
+
+  * Release of version 2.0
+
+  * Current release of this library has 3 options. First option is a 
+    speeded up version 1.0 providing only an updated fiducial position. 
+    The second option provides subpixel matching for a more refined
+    position of the fiducial with a slight speed decrease. The third
+    option consists of gradient descent to provide a full 6DOF correction.
+    Gradient descent is implemented after a coarse match is found using
+    the first option matching routine. 
+
+  * Nominal testing using the example below on a Quad-core Intel Xeon 
+    2.40GHz processor does fiducial matching of one fiducial:
+    - at the pixel level in 5ms (200Hz).
+    - at the subpixel level 5.8ms (170Hz).
+    - using gradient descent in 6.2ms (160Hz). This may drop 
+      significantly with increased iterations (occurs if the initial seed 
+      is far off).
+
+  * Full source code is provided in this version, with OpenCV dependence still
+    required for the test program. 
+
+  * The matching routine utilizes openmp, if available. 
+
+* version 1.0 - 08/29/2012
+
+  * Release of version 1.0
+
+  * Current release of this library only outputs a fiducial position
+    and the orientation is kept identical to the kinematic value. This
+    will be updated in a future release.
+
+  * Nominal testing on an Intel Xeon 2.40GHz processor does fiducial
+    matching of one fiducial in ~50ms (20Hz).
+
+  * The parameters to be changed are "search_size",
+    "min_viewing_angle", "dist_thresh". "search_size" defines the
+    template half-window search size in pixels (i.e. a "search_size"
+    of 40 would be an 80x80 window). The larger this number, the
+    longer the fiducial detector will take to converge.
+    "min_viewing_angle" is the minimum angle (in degrees) for which to
+    ignore markers that are pitched below this angle of
+    incidence. "dist_thresh" is the allowable maximum distance
+    (magnitude) between the initial and estimated fiducial location to
+    be considered valid.
+
+  * Currently, OpenCV is needed to compile the test program, which is
+    mainly only used to load and save the test images.
+
+  * The fiducial detector provided does not do any form of tracking or
+    data association of markers. That is, if two fiducial markers are
+    placed relatively close to one another, it is possible for the
+    detector to converge to either marker. Thus it is important to
+    space out the fiducials to avoid this mis-assocation. 
+
+  * Scores in the left image and right image fiducial match are output
+    as part of the "fiducial_detector_match_fiducial()"
+    function. These can be used to threshold against good/bad matches.
+

@@ -17,9 +17,9 @@
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <model-client/model-client.hpp>
 
-#include <pointcloud_tools/pointcloud_math.hpp>
-#include <pointcloud_tools/pointcloud_lcm.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_math.hpp>
+#include <pronto_utils/pronto_lcm.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 
 //#include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.hpp>
@@ -47,7 +47,7 @@ class joints2frames{
     boost::shared_ptr<ModelClient> model_;
     boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive> fksolver_;
 
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
 
     void urdf_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_urdf_t* msg);
     void robot_state_handler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::robot_state_t* msg);

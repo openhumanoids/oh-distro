@@ -25,7 +25,7 @@
 #include <pcl/point_types.h>
 #include <pcl/PolygonMesh.h>
 #include <pcl/io/vtk_lib_io.h>
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 #include <rgbd_simulation/rgbd_primitives.hpp>
@@ -95,7 +95,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
 }
 
 
-// from pointcloud_lcm
+// from pronto_lcm
 void convertLidar(std::vector< float > ranges, int numPoints, double thetaStart,
         double thetaStep,
         std::vector<Eigen::Vector3d> &cloud,

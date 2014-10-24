@@ -208,7 +208,8 @@ struct Camera::ColorData {
       // destImageP->imageData   = reinterpret_cast<char*>(&(msg.data[0]));
       msg_.size = isize;
       msg_.pixelformat = destImageP_->nChannels==1 ?
-        bot_core::image_t::PIXEL_FORMAT_GRAY : bot_core::image_t::PIXEL_FORMAT_RGB;
+        (int)bot_core::image_t::PIXEL_FORMAT_GRAY :
+        (int)bot_core::image_t::PIXEL_FORMAT_RGB;
     }
     
     msg_.utime = data_utime;
@@ -464,6 +465,8 @@ void Camera::applyConfig(CameraConfig& config){
   std::cout << "do_jpeg_compress_ " << config.do_jpeg_compress_ << "\n"; 
   std::cout << "do_zlib_compress_ " << config.do_zlib_compress_ << "\n";
   std::cout << "agc_ " << config.agc_ << "\n";
+  std::cout << "gain_ " << config.gain_ << "\n";
+  std::cout << "expsosure_ " << config.exposure_us_ << "us\n";
   std::cout << "leds_flash_ " << config.leds_flash_ << "\n";
   std::cout << "leds_duty_cycle_ " << config.leds_duty_cycle_ << "\n";
   
@@ -481,6 +484,9 @@ void Camera::applyConfig(CameraConfig& config){
   }
   if (config.fps_ >= 0) cfg.setFps(config.fps_);
   if (config.gain_ >= 0) cfg.setGain(config.gain_);
+  if ((config.exposure_us_ >= 0) && (config.agc_ <= 0)) {
+    cfg.setExposure(config.exposure_us_);
+  }
   if (config.agc_ >= 0) {
     bool automatic = config.agc_ > 0;
     cfg.setAutoExposure(automatic);

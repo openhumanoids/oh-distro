@@ -15,7 +15,7 @@ FootStepPlanCodec::FootStepPlanCodec(const std::string loopback_channel)
 //    const float RP_MIN = -MAX;    
     const int RP_PRECISION = drc::RotationRPYDiff::descriptor()->FindFieldByName("droll")->options().GetExtension(dccl::field).precision();
     
-    dccl::protobuf::ArithmeticModel rp_model;
+    dccl::arith::protobuf::ArithmeticModel rp_model;
     
     glog.is(VERBOSE) && glog << "Making rollpitch model" << std::endl;
         
@@ -66,7 +66,7 @@ FootStepPlanCodec::FootStepPlanCodec(const std::string loopback_channel)
     
     rp_model.set_name("rollpitch");
     glog.is(VERBOSE) && glog << "Setting rollpitch model" << std::endl;
-    dccl::ModelManager::set_model(rp_model);        
+    dccl::arith::ModelManager::set_model(rp_model);        
 //        std::cout << pb_to_short_string(rp_model) << std::endl;
 
     dccl_->validate<drc::MinimalFootStepPlan>();

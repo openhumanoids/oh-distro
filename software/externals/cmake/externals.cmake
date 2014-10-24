@@ -15,7 +15,7 @@ set(opencv-drc_revision 8298)
 set(opencv-drc_depends Eigen_pod)
 
 set(pcl_dep_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_dep)
-set(pcl_dep_revision 8298)
+set(pcl_dep_revision 8330)
 set(pcl_dep_depends)
 
 set(pcl_drc_url https://svn.csail.mit.edu/drc/trunk/software/externals/pcl_drc)
@@ -37,7 +37,7 @@ set(octomap-drc_revision 8327)
 set(octomap-drc_depends)
 
 set(occ-map_url https://svn.csail.mit.edu/rrg_pods/Isam_Slam/occ-map)
-set(occ-map_revision 831)
+set(occ-map_revision 958)
 set(occ-map_depends libbot-drc opencv-drc)
 
 set(common_utils_url https://svn.csail.mit.edu/common_utils)
@@ -118,7 +118,7 @@ set(gurobi_environment_args GUROBI_DISTRO=${CMAKE_CURRENT_SOURCE_DIR}/cmake/guro
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
-set(iris_revision 30d630695e1c232bfd96df94f2bcac5d0dd567ff)
+set(iris_revision 43a51bfe56d8815e69ae9f03bdca8037fbc13d04)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
@@ -132,6 +132,10 @@ set(flycapture_depends)
 set(pypolyhedron_url ssh://git@github.com/rdeits/pypolyhedron.git)
 set(pypolyhedron_revision 1f110addf89398f62644830bf69a69930db8c4d0)
 set(pypolyhedron_depends)
+
+set(kinematics-utils_url ssh://git@github.com/mitdrc/kinematics-utils.git)
+set(kinematics-utils_revision 062e36b056eaa0b5ddc38ed7c738999b9bb5831b)
+set(kinematics-utils_depends Eigen_pod)
 
 set(externals
   Eigen_pod
@@ -165,6 +169,7 @@ set(externals
   iris
   mosek
   pypolyhedron
+  kinematics-utils
   )
 
 

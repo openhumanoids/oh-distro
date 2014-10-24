@@ -29,9 +29,13 @@ FootContactAlt::FootContactAlt(bool _log_data_files,const float atlasWeight){
   // To reduce tic-tocing you can reduce the first number
   // originally 275/375 was ok, but some upward drift (3/4 of a block height) and backward drift (1/3 of a block length)
   // later 475/525 was better, upward drift (1/2 of block) and backward drift (about the same)
-  left_contact_state_strong_  = new SchmittTrigger(525.0, 575.0, 7000, 7000);
-  right_contact_state_strong_ = new SchmittTrigger(525.0, 575.0, 7000, 7000); 
-  
+  // From April 2014 to Sept 2014 I used 525.0, 575.0, 7000, 7000
+  //left_contact_state_strong_  = new SchmittTrigger(525.0, 575.0, 7000, 7000);
+  //right_contact_state_strong_ = new SchmittTrigger(525.0, 575.0, 7000, 7000); 
+
+  left_contact_state_strong_  = new SchmittTrigger(475.0, 525.0, 7000, 7000);
+  right_contact_state_strong_ = new SchmittTrigger(475.0, 525.0, 7000, 7000); 
+
   left_contact_state_strong_->forceHigh();
   right_contact_state_strong_->forceHigh();
   

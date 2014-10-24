@@ -37,7 +37,7 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
   fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(6001,"Frames",5,1) );
   lcm_->subscribe("EST_ROBOT_STATE",&joints2frames::robot_state_handler,this);  
@@ -56,6 +56,8 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
   #else
     std::cout << "Output signals will be limited to these rates:\n";
     pub_frequency_["BODY_TO_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
+    pub_frequency_["BODY_TO_RHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "r_hand_force_torque" ) );
+    pub_frequency_["BODY_TO_LHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "l_hand_force_torque" ) );
     // Is this only used for simulation:
     pub_frequency_["HEAD_TO_HOKUYO_LINK"] = FrequencyLimit(0, 1E6/getMaxFrequency( "hokuyo_link") ); 
     pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
@@ -198,10 +200,10 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     }else if(  (*ii).first.compare( "hokuyo_link" ) == 0 ){
       body_to_hokuyo_link = KDLToEigen( (*ii).second );
       body_to_hokuyo_link_found=true;
-    //}else if(  (*ii).first.compare( "r_hand_force_torque" ) == 0 ){ // ft sensor
-    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
-    //}else if(  (*ii).first.compare( "l_hand_force_torque" ) == 0 ){ // ft sensor
-    //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND_FORCE_TORQUE" );     
+    }else if(  (*ii).first.compare( "r_hand_force_torque" ) == 0 ){ // ft sensor
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_RHAND_FORCE_TORQUE" );     
+    }else if(  (*ii).first.compare( "l_hand_force_torque" ) == 0 ){ // ft sensor
+      publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_LHAND_FORCE_TORQUE" );
     //}else if(  (*ii).first.compare( "r_hand_camera_optical_frame" ) == 0 ){ // robotiq r
     //  publishRigidTransform( KDLToEigen( (*ii).second ) , msg->utime, "BODY_TO_CAMERARHAND" );
     //}else if(  (*ii).first.compare( "l_hand_camera_optical_frame" ) == 0 ){ // robotiq l

@@ -28,7 +28,7 @@ leg_odometry::leg_odometry( boost::shared_ptr<lcm::LCM> &lcm_publish_,
   fksolver_ = boost::shared_ptr<KDL::TreeFkSolverPosFull_recursive>(new KDL::TreeFkSolverPosFull_recursive(tree));
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_publish_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_publish_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1001,"Body Pose",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(1002,"Primary Foot",5,1) );

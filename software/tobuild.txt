@@ -1,16 +1,17 @@
 # list of subdirectories to build, one one each line.  Empty lines
 # and lines starting with '#' are ignored
 #externals
+pronto
 
 drc_lcmtypes
 # retired types from drc_lcmtypes
 retired_lcmtypes
 
 
-robot_model
+#robot_model
+#kinematics
 
 object_template_model
-kinematics
 
 drivers
 

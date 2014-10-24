@@ -30,11 +30,11 @@
 #include "forward_kinematics/treefksolverposfull_recursive.hpp"
 #include <model-client/model-client.hpp>
 
-#include <pointcloud_tools/pointcloud_vis.hpp>
-#include <pointcloud_tools/pointcloud_math.hpp>
+#include <pronto_utils/pronto_vis.hpp>
+#include <pronto_utils/pronto_math.hpp>
 
 #include <affordance/AffordanceUtils.hpp>
-
+#include <bot_core/bot_core.h>
 #include <ConciseArgs>
 using namespace Eigen;
 
@@ -68,7 +68,7 @@ class Pass{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     Config config_;
-    pointcloud_vis* pc_vis_;  
+    pronto_vis* pc_vis_;  
     bool cartpos_ready_;
     
     void affHandler(const lcm::ReceiveBuffer* rbuf, 
@@ -141,7 +141,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, Config& config_):
 
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60011,"Grasp Seed",5,1) );
   pc_vis_->obj_cfg_list.push_back( obj_cfg(60001,"Grasp Frame",5,1) );

@@ -29,8 +29,8 @@
 #include <lcmtypes/bot_core.hpp>
 
 
-#include <pointcloud_tools/pointcloud_vis.hpp>
-#include <pointcloud_tools/pointcloud_math.hpp>
+#include <pronto_utils/pronto_vis.hpp>
+#include <pronto_utils/pronto_math.hpp>
 
 #include <affordance/AffordanceUtils.hpp>
 
@@ -48,7 +48,7 @@ class Pass{
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    pointcloud_vis* pc_vis_;        
+    pronto_vis* pc_vis_;        
     std::string mode_;
     bool aff_ready_;
     bool cartpos_ready_;
@@ -113,7 +113,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string mode_, int which_affor
   lcm_->subscribe( "POSE_GROUND" ,&Pass::poseGroundHandler,this);
   
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM());
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM());
   // obj: id name type reset
       
   ground_height_ = -1;

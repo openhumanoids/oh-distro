@@ -14,7 +14,7 @@
 #include <pcl/io/vtk_lib_io.h>
 #include "pcl/PolygonMesh.h"
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <affordance/AffordanceUtils.hpp>
 
 using namespace Eigen;
@@ -32,14 +32,14 @@ class Pass{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     void affordanceHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     
     AffordanceUtils affutils;
 };
 
 Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_): lcm_(lcm_){
   lcm_->subscribe("AFFORDANCE_PLUS_COLLECTION",&Pass::affordanceHandler,this);  
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
   cout << "Finished setting up\n";
 }
 

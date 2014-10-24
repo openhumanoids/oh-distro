@@ -26,7 +26,7 @@ capture a sweep
 #include <bot_frames_cpp/bot_frames_cpp.hpp>
 #include <ConciseArgs>
 
-#include <pointcloud_tools/pointcloud_vis.hpp> // visualize pt clds
+#include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 
 #include <trackers/major-plane-detect.hpp>
 #include <trackers/icp-tracker.hpp>
@@ -58,7 +58,7 @@ class Pass{
     bool got_affs_;    
     
     int counter_;
-    pointcloud_vis* pc_vis_;
+    pronto_vis* pc_vis_;
     
     Eigen::Isometry3d head_to_local_;
     
@@ -99,7 +99,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string lidar_channel_, int af
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Vis Config:
-  pc_vis_ = new pointcloud_vis( lcm_->getUnderlyingLCM() );
+  pc_vis_ = new pronto_vis( lcm_->getUnderlyingLCM() );
 
   // obj: id name type reset
   // pts: id name type reset objcoll usergb rgb

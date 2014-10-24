@@ -3,8 +3,8 @@
 
 #include <lcm/lcm.h>
 
-#include <pointcloud_tools/pointcloud_lcm.hpp>
-#include <pointcloud_tools/pointcloud_vis.hpp>
+#include <pronto_utils/pronto_lcm.hpp>
+#include <pronto_utils/pronto_vis.hpp>
 #include <lcmtypes/drc_lcmtypes.h>
 #include <lcmtypes/bot_core.h>
 
@@ -27,8 +27,8 @@ class simple_classify{
     BotFrames* botframes_;
     bot::frames* frames_cpp;
     
-    pointcloud_lcm* pc_lcm_;
-    pointcloud_vis* pc_vis_;
+    pronto_lcm* pc_lcm_;
+    pronto_vis* pc_vis_;
 
     Isometry3dTime current_pose_headT;
     Isometry3dTime current_pose_bodyT;

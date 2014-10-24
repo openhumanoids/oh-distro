@@ -1,0 +1,9 @@
+package drc;
+
+struct tag_detection_list_t
+{
+  int64_t utime;
+
+  int32_t num_detections;
+  tag_detection_t detections[num_detections];
+}

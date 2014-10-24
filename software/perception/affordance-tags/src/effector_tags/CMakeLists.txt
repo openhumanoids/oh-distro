@@ -5,6 +5,6 @@ target_link_libraries(drc-effector-tags boost_system)
 pods_use_pkg_config_packages(drc-effector-tags lcm 
   bot2-param-client bot2-lcmgl-client
   bot2-frames  bot2-frames_cpp
-  pointcloud_vis pointcloud_lcm
+  pronto_vis pronto_lcm
   apriltags opencv image_io_utils affordance)
 pods_install_executables(drc-effector-tags)

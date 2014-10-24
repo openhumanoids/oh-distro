@@ -29,7 +29,7 @@ pods_install_executables(drc-stereo-bm-app )
 add_executable (drc-stereo-bm-cloud stereo-bm-cloud.cpp )
 pods_use_pkg_config_packages(drc-stereo-bm-cloud  stereo-bm  bot2-param-client
   bot2-core  lcmtypes_bot2-core ${PCL_LIBRARIES} multisense_utils
-  image_io_utils  pointcloud_vis  bot2-frames bot2-frames_cpp
+  image_io_utils  pronto_vis  bot2-frames bot2-frames_cpp
   opencv)
 target_link_libraries(drc-stereo-bm-cloud boost_system)
 pods_install_executables(drc-stereo-bm-cloud )
@@ -37,7 +37,7 @@ pods_install_executables(drc-stereo-bm-cloud )
 # Depreciated process to do pixel time averaging, explored during vrc
 #add_executable (drc-stereo-bm-hd stereo-bm-hd.cpp )
 #pods_use_pkg_config_packages(drc-stereo-bm-hd  stereo-bm
-#  bot2-core  lcmtypes_bot2-core ${PCL_LIBRARIES} pointcloud_lcm
+#  bot2-core  lcmtypes_bot2-core ${PCL_LIBRARIES} pronto_lcm
 #  image_io_utils
 #  opencv)
 #pods_install_executables(drc-stereo-bm-hd )
