@@ -175,6 +175,7 @@ script "0.prep" {
     start group "2.plan_and_control";
     start group "4.perception_drivers";
     start group "6.hands_robotiq";
+    start group "5.maps";
 
     start cmd "atlas-off";
 }
