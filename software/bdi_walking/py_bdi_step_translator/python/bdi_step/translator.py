@@ -48,6 +48,7 @@ class BDIStepTranslator(object):
         self.T_local_to_localbdi.trans = np.zeros(3)
         self.T_local_to_localbdi.quat = ut.rpy2quat([0,0,0])
         self.last_params = None
+        self.executing = False
 
     def handle_bdi_transform(self, channel, msg):
         if isinstance(msg, str):
@@ -55,7 +56,6 @@ class BDIStepTranslator(object):
         self.T_local_to_localbdi = msg
 
     def handle_footstep_plan(self, channel, msg):
-        print "Starting new footstep plan"
         if isinstance(msg, str):
             try:
                 msg = drc.deprecated_footstep_plan_t.decode(msg)
@@ -68,6 +68,7 @@ class BDIStepTranslator(object):
             self.last_params = msg.params
         else:
             raise ValueError("Can't decode footsteps: not a drc.footstep_plan_t or drc.deprecated_footstep_plan_t")
+
 
         behavior = opts['behavior']
         if behavior == Behavior.BDI_WALKING:
@@ -85,11 +86,22 @@ class BDIStepTranslator(object):
 
         self.behavior = behavior
 
+
         if self.mode == Mode.plotting:
             self.draw(footsteps)
         else:
-            self.bdi_step_queue_in = footsteps
+            if not self.executing:
+                print "Starting new footstep plan"
+                self.bdi_step_queue_in = footsteps
 
+            else:
+                print "Got updated footstep plan"
+                if self.bdi_step_queue_in[self.delivered_index-1].is_right_foot == footsteps[0].is_right_foot:
+                    print "Re-aligning new footsteps to current plan"
+                    self.bdi_step_queue_in = self.bdi_step_queue_in[:self.delivered_index-1] + footsteps
+                else:
+                    print "Can't align the updated plan to the current plan"
+                    return
             self.send_params(1)
 
             if not self.safe:
@@ -140,12 +152,16 @@ class BDIStepTranslator(object):
             if index_needed <= len(self.bdi_step_queue_in) - 4:
                 #print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed-1)
+            else:
+                self.executing = False
         else:
             index_needed = msg.step_feedback.next_step_index_needed
             # if self.delivered_index < index_needed <= len(self.bdi_step_queue_in) - 2:
             if index_needed <= len(self.bdi_step_queue_in) - 2:
                 #print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed)
+            else:
+                self.executing = False
 
             # Report progress through the footstep plan execution (only when stepping)
             progress_msg = drc.footstep_plan_progress_t()
@@ -160,6 +176,7 @@ class BDIStepTranslator(object):
         Publish the next steppping footstep or up to the next 4 walking footsteps as needed.
         """
         assert self.mode == Mode.translating, "Translator in Mode.plotting mode is not allowed to send step/walk params"
+        self.executing = True
         if self.behavior == Behavior.BDI_WALKING:
             walk_param_msg = drc.atlas_behavior_walk_params_t()
             walk_param_msg.num_required_walk_steps = NUM_REQUIRED_WALK_STEPS
@@ -242,6 +259,7 @@ class BDIStepTranslator(object):
         else:
             print "BDIStepTranslator running in base-side plotter mode"
             self.lc.subscribe('CANDIDATE_BDI_FOOTSTEP_PLAN', self.handle_footstep_plan)
+            self.lc.subscribe('BDI_ADJUSTED_FOOTSTEP_PLAN', self.handle_footstep_plan)
         self.lc.subscribe('ATLAS_STATUS', self.handle_atlas_status)
         self.lc.subscribe('LOCAL_TO_LOCAL_BDI', self.handle_bdi_transform)
         while True:
