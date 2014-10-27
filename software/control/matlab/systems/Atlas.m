@@ -214,8 +214,6 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'Kp_foot',[20; 20; 20; 20; 20; 20]);
       options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.5);
       options = ifNotIsFieldThenVal(options,'min_knee_angle',0.7);
-
-      
       options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.5);
 
@@ -256,6 +254,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'use_ik',false);
       options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.0);
+
+      options.w_qdd(findJointIndices(obj,'back_bkx')) = 0.1;
+      options.Kp_q(findJointIndices(obj,'back_bkx')) = 50;
 
       options.Kp = options.Kp_pelvis;
       options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);
