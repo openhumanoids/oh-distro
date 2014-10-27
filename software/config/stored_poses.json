@@ -75,7 +75,7 @@
       }, 
       "name": "handdown", 
       "nominal_handedness": "left"
-    },
+    }, 
     {
       "allow_mirror": true, 
       "description": "handsdown incl back", 
@@ -145,6 +145,20 @@
         "l_arm_uwy": 0.025208234786987305
       }, 
       "name": "debris - drop pose", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "handdown thumb in", 
+      "joints": {
+        "l_arm_elx": 0.31513822078704834, 
+        "l_arm_ely": 3.1058847904205322, 
+        "l_arm_mwx": -0.012162923812866211, 
+        "l_arm_shx": -1.2109779119491577, 
+        "l_arm_usy": -0.12205731868743896, 
+        "l_arm_uwy": 0.0289762020111084
+      }, 
+      "name": "handdown thumb in", 
       "nominal_handedness": "left"
     }
   ], 
