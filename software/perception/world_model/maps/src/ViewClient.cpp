@@ -35,12 +35,11 @@ struct ViewClient::Worker {
 
   ViewClient* mClient;
   BotWrapper::Ptr mBotWrapper;
-  State mState;
+  bool mRunning;
   std::vector<lcm::Subscription*> mViewSubscriptions;
   lcm::Subscription* mCatalogSubscription;
   ThreadSafeQueue<Message::Ptr> mMessageQueue;
   std::mutex mMutex;
-  std::condition_variable mCondition;
   std::thread mThread;
 
   ObjectPool<OctreeView,20> mOctreeViewPool;
@@ -49,39 +48,25 @@ struct ViewClient::Worker {
 
   Worker(ViewClient* iClient) {
     mClient = iClient;
+    mBotWrapper = iClient->mBotWrapper;
     mCatalogSubscription = NULL;
-    mState = StateIdle;
-    mThread = std::thread(std::ref(*this));
+    mRunning = false;
   }
 
   ~Worker() {
-    std::unique_lock<std::mutex> lock(mMutex);
-    if (mBotWrapper != NULL) {
-      if (mBotWrapper->getLcm() != NULL) {
-        for (int i = 0; i < mViewSubscriptions.size(); ++i) {
-          mBotWrapper->getLcm()->unsubscribe(mViewSubscriptions[i]);
-        }
-        mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription);
-      }
-    }
-    mState = StateShutdown;
-    lock.unlock();
-    mCondition.notify_one();
-    mMessageQueue.unblock();
-    if (mThread.joinable()) mThread.join();
+    stop();
   }
 
   bool start() {
-    std::unique_lock<std::mutex> lock(mMutex);
-    if (mState == StateRunning) {
+    if (mRunning) {
       return false;
     }
     if ((mBotWrapper == NULL) || (mBotWrapper->getLcm() == NULL)) {
       return false;
     }
-    mState = StateRunning;
-    lock.unlock();
-    mCondition.notify_one();
+
+    mRunning = true;
+    mThread = std::thread(std::ref(*this));
     for (int i = 0; i < mClient->mViewChannels.size(); ++i) {
       lcm::Subscription* sub = mBotWrapper->getLcm()->
         subscribe(mClient->mViewChannels[i], &Worker::onView, this);
@@ -93,10 +78,10 @@ struct ViewClient::Worker {
   }
 
   bool stop() {
-    std::unique_lock<std::mutex> lock(mMutex);
-    if (mState != StateRunning) {
-      return false;
-    }
+    mRunning = false;
+    mMessageQueue.clear();
+    if (mThread.joinable()) mThread.join();
+
     if (mBotWrapper != NULL) {
       if (mBotWrapper->getLcm() != NULL) {
         for (int i = 0; i < mViewSubscriptions.size(); ++i) {
@@ -105,10 +90,6 @@ struct ViewClient::Worker {
         mBotWrapper->getLcm()->unsubscribe(mCatalogSubscription);
       }
     }
-    mState = StateIdle;
-    lock.unlock();
-    mCondition.notify_one();
-    mMessageQueue.clear();
     return true;
   }
 
@@ -120,18 +101,7 @@ struct ViewClient::Worker {
   }
 
   void operator()() {
-    while (mState != StateShutdown) {
-
-      {
-        std::unique_lock<std::mutex> lock(mMutex);
-        while (mState == StateIdle) {
-          mCondition.wait(lock);
-        }
-      }
-
-      if (mState != StateRunning) {
-        continue;
-      }
+    while (mRunning) {
 
       // wait for new message
       Message::Ptr msg;
@@ -256,7 +226,6 @@ ViewClient() {
   addViewChannel("MAP_OCTREE");
   addViewChannel("MAP_CLOUD");
   addViewChannel("MAP_DEPTH");
-  mWorker.reset(new Worker(this));
 }
 
 ViewClient::
@@ -267,7 +236,7 @@ ViewClient::
 void ViewClient::
 setBotWrapper(const std::shared_ptr<BotWrapper>& iWrapper) {
   mBotWrapper = iWrapper;
-  mWorker->mBotWrapper = iWrapper;
+  if (mWorker != NULL) mWorker->mBotWrapper = iWrapper;
 }
 
 void ViewClient::
@@ -381,12 +350,18 @@ removeAllListeners() {
 
 bool ViewClient::
 start() {
+  if (mWorker != NULL) return false;
+  mWorker.reset(new Worker(this));
   return mWorker->start();
 }
 
 bool ViewClient::
 stop() {
-  return mWorker->stop();
+  if (mWorker != NULL) {
+    mWorker.reset();
+    return true;
+  }
+  return false;
 }
 
 void ViewClient::
