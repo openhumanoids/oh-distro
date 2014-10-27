@@ -98,6 +98,54 @@
       }, 
       "name": "handsdown incl back", 
       "nominal_handedness": "none"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris - prereach", 
+      "joints": {
+        "l_arm_elx": 1.572343349456787, 
+        "l_arm_ely": 1.7639384269714355, 
+        "l_arm_mwx": 0.8167610764503479, 
+        "l_arm_shx": -1.001606822013855, 
+        "l_arm_usy": 0.7853426933288574, 
+        "l_arm_uwy": 0.7702436447143555
+      }, 
+      "name": "debris - prereach", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris - extract", 
+      "joints": {
+        "back_bkx": 0.007136213593184948, 
+        "back_bky": 0.007643775083124638, 
+        "back_bkz": 0.035616662353277206, 
+        "l_arm_elx": 1.5721516609191895, 
+        "l_arm_ely": 1.7639384269714355, 
+        "l_arm_mwx": 0.8167610764503479, 
+        "l_arm_shx": -1.0015109777450562, 
+        "l_arm_usy": 0.7853426933288574, 
+        "l_arm_uwy": 0.7702436447143555
+      }, 
+      "name": "debris - extract", 
+      "nominal_handedness": "left"
+    }, 
+    {
+      "allow_mirror": true, 
+      "description": "debris - drop pose", 
+      "joints": {
+        "back_bkx": 0.007176973856985569, 
+        "back_bky": 0.006824231240898371, 
+        "back_bkz": 0.2622271776199341, 
+        "l_arm_elx": 0.37440019845962524, 
+        "l_arm_ely": 1.2284832000732422, 
+        "l_arm_mwx": 0.14343935251235962, 
+        "l_arm_shx": -0.1664501428604126, 
+        "l_arm_usy": 0.7568683624267578, 
+        "l_arm_uwy": 0.025208234786987305
+      }, 
+      "name": "debris - drop pose", 
+      "nominal_handedness": "left"
     }
   ], 
   "drill": [
