@@ -1,9 +1,0 @@
-package dubins;
-
-struct primitive_list_t
-{
-	int64_t utime;
-	
-	int32_t num_primitives;
-	dubins.primitive_t path_list[num_primitives];   
-}
