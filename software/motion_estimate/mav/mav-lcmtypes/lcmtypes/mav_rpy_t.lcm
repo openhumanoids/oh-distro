@@ -1,8 +1,0 @@
-package mav;
-
-struct rpy_t
-{
-    int64_t utime;              // utime that the actual measurement took place
-
-    double rpy[3];            //roll, pitch, yaw euler angles
-}
