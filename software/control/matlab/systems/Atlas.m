@@ -27,7 +27,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       end
       
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
-      obj = obj@Biped('r_foot_sole', 'l_foot_sole');
+      obj = obj@Biped('r_foot', 'l_foot','r_foot_sole', 'l_foot_sole');
       
       % set up sensor system
       % Add full state feedback sensor
@@ -83,14 +83,20 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         %obj = obj.setInitialState(zeros(obj.getNumStates(),1));
       end
       warning(S);
+      
+      obj.left_full_support = RigidBodySupportState(obj,obj.foot_body_id.left);
+      obj.left_toe_support = RigidBodySupportState(obj,obj.foot_body_id.left,{{'toe'}});
+      obj.right_full_support = RigidBodySupportState(obj,obj.foot_body_id.right);
+      obj.right_toe_support = RigidBodySupportState(obj,obj.foot_body_id.right,{{'toe'}});
+      obj.left_full_right_full_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right]);
+      obj.left_toe_right_full_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right],{{'toe'},{'heel','toe'}});
+      obj.left_full_right_toe_support = RigidBodySupportState(obj,[obj.foot_body_id.left,obj.foot_body_id.right],{{'heel','toe'},{'toe'}});
     end
 
     function obj = compile(obj)
-      S = warning('off','Drake:RigidBodyManipulator:SingularH');
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
-      warning(S);
 
-state_frame = AtlasState(obj);
+      state_frame = AtlasState(obj);
       
       obj.manip = obj.manip.setStateFrame(state_frame);
       obj = obj.setStateFrame(state_frame);
@@ -132,11 +138,23 @@ state_frame = AtlasState(obj);
       pelvis = forwardKin(obj,kinsol,findLinkInd(obj,'pelvis'),[0;0;0]);
       z = pelvis(3) - foot_z;
     end
+    
+    function bool = isDoubleSupport(obj,rigid_body_support_state)
+      bool = any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
+    end
 
+    function bool = isLeftSupport(obj,rigid_body_support_state)
+      bool = any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && ~any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
+    end
+
+    function bool = isRightSupport(obj,rigid_body_support_state)
+      bool = ~any(rigid_body_support_state.bodies==obj.robot.foot_body_id.left) && any(rigid_body_support_state.bodies==obj.robot.foot_body_id.right);
+    end
+    
     function foot_z = getFootHeight(obj,q)
       kinsol = doKinematics(obj,q);
-      rfoot_cpos = terrainContactPositions(obj,kinsol,findLinkInd(obj,'r_foot'));
-      lfoot_cpos = terrainContactPositions(obj,kinsol,findLinkInd(obj,'l_foot'));
+      rfoot_cpos = terrainContactPositions(obj,kinsol,obj.foot_body_id.right);
+      lfoot_cpos = terrainContactPositions(obj,kinsol,obj.foot_body_id.left);
       foot_z = min(mean(rfoot_cpos(3,:)),mean(lfoot_cpos(3,:)));
     end
 
@@ -172,7 +190,7 @@ state_frame = AtlasState(obj);
       % [x, y, z, roll, pitch, yaw]
 
       weights = struct('relative', [1;1;1;0;0;0.5],...
-                       'relative_final', [10;10;10;0;0;1],...
+                       'relative_final', [10;10;10;0;0;2],...
                        'goal', [100;100;0;0;0;10]);
     end
 
@@ -188,14 +206,31 @@ state_frame = AtlasState(obj);
       options = ifNotIsFieldThenVal(options,'input_foot_contacts',true);
       options = ifNotIsFieldThenVal(options,'Kp_pelvis',[0; 0; 20; 20; 20; 20]);
       options = ifNotIsFieldThenVal(options,'use_walking_pelvis_block',true);
-      options = ifNotIsFieldThenVal(options,'pelvis_damping_ratio',0.6);
-      options = ifNotIsFieldThenVal(options,'Kp_accel',2.0);
-      options = ifNotIsFieldThenVal(options,'body_accel_input_weights',[0.3 0.3 0.1]);
+      options = ifNotIsFieldThenVal(options,'pelvis_damping_ratio',0.5);
+      options = ifNotIsFieldThenVal(options,'Kp_accel',0.0);
+      options = ifNotIsFieldThenVal(options,'body_accel_input_weights',[0.15 0.15 0.075]);
       options = ifNotIsFieldThenVal(options,'use_walking_pelvis_block',true);
       options = ifNotIsFieldThenVal(options,'use_foot_motion_block',true);
-      options = ifNotIsFieldThenVal(options,'Kp_accel',2.0);
       options = ifNotIsFieldThenVal(options,'Kp_foot',[20; 20; 20; 20; 20; 20]);
-      options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.7);
+      options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.5);
+      options = ifNotIsFieldThenVal(options,'min_knee_angle',0.7);
+
+      
+      options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
+      options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.5);
+
+      options.w_qdd(findJointIndices(obj,'back_bkx')) = 0.01;
+      options.Kp_q(findJointIndices(obj,'back_bkx')) = 50;
+
+      acc_limit = [100;100;100;10;10;10];
+      body_accel_bounds(1).body_idx = obj.foot_body_id.right;
+      body_accel_bounds(1).min_acceleration = -acc_limit;
+      body_accel_bounds(1).max_acceleration = acc_limit;
+      body_accel_bounds(2).body_idx = obj.foot_body_id.left;
+      body_accel_bounds(2).min_acceleration = -acc_limit;
+      body_accel_bounds(2).max_acceleration = acc_limit;
+      options = ifNotIsFieldThenVal(options,'body_accel_bounds',body_accel_bounds);
+      
       [qp,lfoot_control_block,rfoot_control_block,pelvis_control_block,pd,options] = ...
         constructQPBalancingController(obj,controller_data,options);
     end
@@ -248,6 +283,7 @@ state_frame = AtlasState(obj);
       options.Kd = getDampingGain(options.Kp,options.q_damping_ratio);
       pd = IKPDBlock(obj,controller_data,options);
     end
+    
   end
   properties
     fixed_point_file = fullfile(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat');
@@ -280,9 +316,19 @@ state_frame = AtlasState(obj);
                                     'drake_instep_shift', 0.0275,... % Distance to shift ZMP trajectory inward toward the instep from the center of the foot (m)
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
+
     hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
     hokuyo_num_pts = 30;   
     hokuyo_max_range = 6; % meters?
     hokuyo_spin_rate = 10; % rad/sec
+    % preconstructing these for efficiency
+    left_full_support
+    left_toe_support
+    right_full_support
+    right_toe_support
+    left_full_right_full_support
+    left_toe_right_full_support
+    left_full_right_toe_support
+
   end
 end

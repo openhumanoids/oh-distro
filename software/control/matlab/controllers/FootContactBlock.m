@@ -5,16 +5,28 @@ classdef FootContactBlock < MIMODrakeSystem
     num_outputs;
     mex_ptr;
     controller_data;
-    lfoot_idx;
-    rfoot_idx;
     using_flat_terrain; % true if using DRCFlatTerrain
     contact_threshold; % min height above terrain to be considered in contact
     use_lcm;
     use_contact_logic_OR;
+    robot;
+    nq;
   end
   
   methods
     function obj = FootContactBlock(r,controller_data,options)
+      % @param r rigid body manipulator instance
+      % @param controller_data QPControllerData object 
+      % @param options struct
+      % @option num_outputs - specifies the number of output copies (>1)
+      % @option contact_threshold - minimum height above terrain for points to be in contact
+      % @option use_lcm - whether or not to listen for foot contact signals over LCM
+      % @option use_contact_logic_OR - only applies for time-varying case
+      %         if false: always do a logical AND with planned support 
+      %           and sensed support
+      %         if true: do logical OR with planned support and sensed 
+      %           support except when breaking contact
+
       typecheck(r,'Biped');
       typecheck(controller_data,'QPControllerData');
        
@@ -63,6 +75,7 @@ classdef FootContactBlock < MIMODrakeSystem
       end
 
       if isfield(options,'use_contact_logic_OR')
+        % only applies for time-varying case
         % false: always do a logical AND with planned support and sensed support
         % true: do logical OR with planned support and sensed support
         % except when breaking contact
@@ -108,14 +121,13 @@ classdef FootContactBlock < MIMODrakeSystem
       end      
       obj.mex_ptr = SharedDataHandle(supportDetectmex(0,r.getMexModelPtr.ptr,terrain_map_ptr));
   
-      obj.rfoot_idx = findLinkInd(r,'r_foot');
-      obj.lfoot_idx = findLinkInd(r,'l_foot');
-          
       if isa(getTerrain(r),'DRCFlatTerrainMap')
         obj.using_flat_terrain = true;      
       else
         obj.using_flat_terrain = false;
       end
+      obj.robot = r;
+      obj.nq = getNumPositions(r);
 
     end
    
@@ -132,6 +144,14 @@ classdef FootContactBlock < MIMODrakeSystem
           breaking_contact = length(supp_prev.bodies)>length(supp.bodies);
           contact_logic_AND = breaking_contact;
         end  
+        if supp_idx < length(ctrl_data.support_times) 
+          t0 = ctrl_data.support_times(supp_idx);
+          t1 = ctrl_data.support_times(supp_idx+1);
+          pelvis_ref = ctrl_data.link_constraints(1).pelvis_reference_height(supp_idx);
+          pelvis_ref_next = ctrl_data.link_constraints(1).pelvis_reference_height(supp_idx+1);
+          eta = (t1-t)/(t1-t0);
+          obj.controller_data.pelvis_foot_height_reference = eta * pelvis_ref + (1-eta)*pelvis_ref_next - ctrl_data.plan_shift(3); 
+        end
       else      
         supp = ctrl_data.supports;
       end
@@ -144,8 +164,8 @@ classdef FootContactBlock < MIMODrakeSystem
         contact_data = obj.contact_est_monitor.getMessage(); % slow
         if ~isempty(contact_data)
           msg = drc.foot_contact_estimate_t(contact_data);
-          contact_sensor(supp.bodies==obj.lfoot_idx) = msg.left_contact > 0.5;
-          contact_sensor(supp.bodies==obj.rfoot_idx) = msg.right_contact > 0.5;
+          contact_sensor(supp.bodies==obj.robot.foot_body_id.left) = msg.left_contact > 0.5;
+          contact_sensor(supp.bodies==obj.robot.foot_body_id.right) = msg.right_contact > 0.5;
         end
       end      
       
@@ -161,8 +181,62 @@ classdef FootContactBlock < MIMODrakeSystem
       end
       
       active_supports = supportDetectmex(obj.mex_ptr.data,x,supp,contact_sensor,contact_thresh,height,contact_logic_AND);
+      y = [1.0*any(active_supports==obj.robot.foot_body_id.left); 1.0*any(active_supports==obj.robot.foot_body_id.right)];
 
-      y = [1.0*any(active_supports==obj.lfoot_idx); 1.0*any(active_supports==obj.rfoot_idx)];
+      if ~y(1) 
+        % left foot not in contact
+        ind =  [ctrl_data.link_constraints.link_ndx]==obj.robot.foot_body_id.left;
+        if isfield(ctrl_data.link_constraints(ind),'contact_break_indices') && ~isempty(ctrl_data.link_constraints(ind).contact_break_indices) && t>= ctrl_data.link_constraints(ind).ts(ctrl_data.link_constraints(ind).contact_break_indices(1))
+          break_ind = ctrl_data.link_constraints(ind).contact_break_indices(1);
+          q = x(1:obj.nq);
+          qd = x(obj.nq+1:end);
+          kinsol = doKinematics(obj.robot,q,false,true,qd);
+          [p,J] = forwardKin(obj.robot,kinsol,obj.robot.foot_body_id.left,[0;0;0],1); 
+          %p = p + [ctrl_data.plan_shift;0;0;0]; % "unshift" footstep
+          p(3) = p(3) + ctrl_data.plan_shift(3);
+          pdot = J*qd;
+
+          obj.controller_data.link_constraints(ind).ts(break_ind) = t;
+          tf = ctrl_data.link_constraints(ind).ts(break_ind+1);
+          pf = ctrl_data.link_constraints(ind).poses(:,break_ind+1);
+          pfdot = ctrl_data.link_constraints(ind).dposes(:,break_ind+1);
+          [a0, a1, a2, a3] = cubicSplineCoefficients(tf-t, p, pf, pdot, pfdot);
+          obj.controller_data.link_constraints(ind).poses(:,break_ind) = p;
+          obj.controller_data.link_constraints(ind).dposes(:,break_ind) = pdot;
+          obj.controller_data.link_constraints(ind).a0(:,break_ind) = a0;
+          obj.controller_data.link_constraints(ind).a1(:,break_ind) = a1;
+          obj.controller_data.link_constraints(ind).a2(:,break_ind) = a2;
+          obj.controller_data.link_constraints(ind).a3(:,break_ind) = a3;
+          obj.controller_data.link_constraints(ind).contact_break_indices(1) = [];
+        end
+      elseif ~y(2)
+        % right foot not in contact
+        ind =  [ctrl_data.link_constraints.link_ndx]==obj.robot.foot_body_id.right;
+        if isfield(ctrl_data.link_constraints(ind),'contact_break_indices') && ~isempty(ctrl_data.link_constraints(ind).contact_break_indices) && t>= ctrl_data.link_constraints(ind).ts(ctrl_data.link_constraints(ind).contact_break_indices(1))
+          break_ind = ctrl_data.link_constraints(ind).contact_break_indices(1);
+          q = x(1:obj.nq);
+          qd = x(obj.nq+1:end);
+          kinsol = doKinematics(obj.robot,q,false,true,qd);
+          [p,J] = forwardKin(obj.robot,kinsol,obj.robot.foot_body_id.right,[0;0;0],1); 
+          %p = p + [ctrl_data.plan_shift;0;0;0]; % "unshift" footstep
+          p(3) = p(3) + ctrl_data.plan_shift(3);
+          pdot = J*qd;
+          
+          obj.controller_data.link_constraints(ind).ts(break_ind) = t;
+          tf = ctrl_data.link_constraints(ind).ts(break_ind+1);
+          pf = ctrl_data.link_constraints(ind).poses(:,break_ind+1);
+          pfdot = ctrl_data.link_constraints(ind).dposes(:,break_ind+1);
+          [a0, a1, a2, a3] = cubicSplineCoefficients(tf-t, p, pf, pdot, pfdot);
+          obj.controller_data.link_constraints(ind).poses(:,break_ind) = p;
+          obj.controller_data.link_constraints(ind).dposes(:,break_ind) = pdot;
+          obj.controller_data.link_constraints(ind).a0(:,break_ind) = a0;
+          obj.controller_data.link_constraints(ind).a1(:,break_ind) = a1;
+          obj.controller_data.link_constraints(ind).a2(:,break_ind) = a2;
+          obj.controller_data.link_constraints(ind).a3(:,break_ind) = a3;
+          obj.controller_data.link_constraints(ind).contact_break_indices(1) = [];
+        end
+      end
+      
       if obj.num_outputs > 1
         varargout = cell(1,obj.num_outputs);
         for i=1:obj.num_outputs

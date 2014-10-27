@@ -61,11 +61,10 @@ classdef AtlasBalancingController < DRCController
       
       foot_support = RigidBodySupportState(r,fidx);
       
-      pelvis_idx = findLinkInd(r,'pelvis');
-      
-      link_constraints(1).link_ndx = pelvis_idx;
+      pelvis_index = findLinkInd(r,'pelvis');
+      link_constraints(1).link_ndx = pelvis_index;
       link_constraints(1).pt = [0;0;0];
-      link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,pelvis_idx,[0;0;0],1));
+      link_constraints(1).traj = ConstantTrajectory(forwardKin(r,kinsol,pelvis_index,[0;0;0],1));
       link_constraints(2).link_ndx = fidx(1);
       link_constraints(2).pt = [0;0;0];
       link_constraints(2).traj = ConstantTrajectory(forwardKin(r,kinsol,fidx(1),[0;0;0],1));
@@ -129,7 +128,7 @@ classdef AtlasBalancingController < DRCController
       obj.robot = r;
       obj.controller_data = ctrl_data;
       obj.foot_idx = fidx;
-      obj.pelvis_idx = pelvis_idx;
+      obj.pelvis_idx = pelvis_index;
       obj.nq = getNumPositions(r);
       
       obj = addLCMTransition(obj,'START_MIT_STAND',drc.utime_t(),'stand');
@@ -140,13 +139,13 @@ classdef AtlasBalancingController < DRCController
       
     end
     
-    function msg = status_message(obj,t_sim,t_ctrl)
-      msg = drc.controller_status_t();
-      msg.utime = t_sim * 1000000;
-      msg.state = msg.STANDING;
-      msg.controller_utime = t_ctrl * 1000000;
-      msg.V = 0;
-      msg.Vdot = 0;
+    function msg = status_message(~,t_sim,t_ctrl)
+        msg = drc.controller_status_t();
+        msg.utime = t_sim * 1000000;
+        msg.state = msg.STANDING;
+        msg.controller_utime = t_ctrl * 1000000;
+        msg.V = 0;
+        msg.Vdot = 0;
     end
     
     function obj = initialize(obj,data)

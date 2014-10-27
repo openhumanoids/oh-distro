@@ -1,4 +1,6 @@
 function drakeAtlasSimulation
+%NOTEST
+
 visualize = false; % should be a function arg
 
 % load in Atlas initial state

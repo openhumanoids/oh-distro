@@ -8,7 +8,7 @@ if (nargin<1); use_mex = true; end
 if (nargin<2); use_ik = false; end
 if (nargin<3); use_bullet = false; end
 if (nargin<4); use_angular_momentum = false; end
-if (nargin<5); random_navgoal = true; end
+if (nargin<5); random_navgoal = false; end
 
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 if random_navgoal
@@ -37,7 +37,7 @@ r = compile(r);
 r = r.setInitialState(xstar);
 
 v = r.constructVisualizer;
-v.display_dt = 0.05;
+v.display_dt = 0.01;
 
 nq = getNumPositions(r);
 
@@ -57,15 +57,15 @@ request.params.min_num_steps = 2;
 request.params.min_step_width = 0.2;
 request.params.nom_step_width = 0.24;
 request.params.max_step_width = 0.3;
-request.params.nom_forward_step = 0.17;
-request.params.max_forward_step = 0.2;
+request.params.nom_forward_step = 0.5;
+request.params.max_forward_step = 0.5;
 request.params.planning_mode = request.params.MODE_AUTO;
 request.params.behavior = request.params.BEHAVIOR_WALKING;
 request.params.map_mode = drc.footstep_plan_params_t.HORIZONTAL_PLANE;
 request.params.leading_foot = request.params.LEAD_AUTO;
 request.default_step_params = drc.footstep_params_t();
-request.default_step_params.step_speed = 0.2;
-request.default_step_params.drake_min_hold_time = 1.5;
+request.default_step_params.step_speed = 0.4;
+request.default_step_params.drake_min_hold_time = 0.75;
 request.default_step_params.step_height = 0.05;
 request.default_step_params.mu = 1.0;
 request.default_step_params.constrain_full_foot_pose = true;
@@ -153,8 +153,10 @@ if plot_comtraj
       rfoot_steps(:,rstep_counter) = rfoot_p;
     end
 
-    rfoottraj = walking_ctrl_data.link_constraints(1).traj;
-    lfoottraj = walking_ctrl_data.link_constraints(2).traj;
+    rfoottraj = PPTrajectory(pchip(walking_ctrl_data.link_constraints(1).ts,...
+                                   walking_ctrl_data.link_constraints(1).poses));
+    lfoottraj = PPTrajectory(pchip(walking_ctrl_data.link_constraints(2).ts,...
+                                   walking_ctrl_data.link_constraints(2).poses));
 
     lfoot_des = eval(lfoottraj,ts(i));
     lfoot_des(3) = max(lfoot_des(3), 0.0811);     % hack to fix footstep planner bug
