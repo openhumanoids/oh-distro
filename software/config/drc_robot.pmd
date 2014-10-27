@@ -118,7 +118,17 @@ group "7.other_drivers" {
         host = "robot";
     }
 
-    cmd "camera-lhand" {
+    cmd "pi-camera-lhand" {
+        exec = "bot-lcm-tunnel 192.168.40.180 -r \"CAMERALHAND\" -s \"\"";
+        host = "robot";
+    }
+
+    cmd "pi-camera-rhand" {
+        exec = "bot-lcm-tunnel 192.168.40.181 -r \"CAMERARHAND\" -s \"\"";
+        host = "robot";
+    }
+
+    cmd "pg-camera-lhand" {
         exec = "ptgrey-gige -t -f 10 -q 50 -c CAMERALHAND -s 123";
         host = "robot";
     }
