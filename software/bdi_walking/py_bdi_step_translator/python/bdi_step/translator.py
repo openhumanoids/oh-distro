@@ -93,6 +93,17 @@ class BDIStepTranslator(object):
             if not self.executing:
                 print "Starting new footstep plan"
                 self.bdi_step_queue_in = footsteps
+                self.send_params(1)
+                if not self.safe:
+                    m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
+                    print m
+                    ut.send_status(6,0,0,m)
+                    time.sleep(1)
+                    self.send_behavior()
+                else:
+                    m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
+                    print m
+                    ut.send_status(6,0,0,m)
 
             else:
                 print "Got updated footstep plan"
@@ -102,18 +113,7 @@ class BDIStepTranslator(object):
                 else:
                     print "Can't align the updated plan to the current plan"
                     return
-            self.send_params(1)
 
-            if not self.safe:
-                m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
-                print m
-                ut.send_status(6,0,0,m)
-                time.sleep(1)
-                self.send_behavior()
-            else:
-                m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
-                print m
-                ut.send_status(6,0,0,m)
 
     @property
     def bdi_step_queue_out(self):
@@ -158,7 +158,7 @@ class BDIStepTranslator(object):
             index_needed = msg.step_feedback.next_step_index_needed
             # if self.delivered_index < index_needed <= len(self.bdi_step_queue_in) - 2:
             if index_needed <= len(self.bdi_step_queue_in) - 2:
-                #print "Handling request for next step: {:d}".format(index_needed)
+                # print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed)
             else:
                 self.executing = False
