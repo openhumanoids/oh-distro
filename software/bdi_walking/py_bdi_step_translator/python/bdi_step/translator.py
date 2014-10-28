@@ -11,6 +11,8 @@ from bdi_step.utils import Behavior, gl, now_utime
 
 NUM_REQUIRED_WALK_STEPS = 4
 
+PLAN_UPDATE_TIMEOUT = 20 # maximum time allowed between a footstep plan and an 'update' which appends more steps to that plan
+
 # Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot.
 ATLAS_FRAME_OFFSET = np.array([0.0400, 0.000, -0.0850])
 
@@ -49,6 +51,7 @@ class BDIStepTranslator(object):
         self.T_local_to_localbdi.quat = ut.rpy2quat([0,0,0])
         self.last_params = None
         self.executing = False
+        self.last_footstep_plan_time = -np.inf
 
     def handle_bdi_transform(self, channel, msg):
         if isinstance(msg, str):
@@ -86,6 +89,10 @@ class BDIStepTranslator(object):
 
         self.behavior = behavior
 
+        now = time.time()
+        if now - self.last_footstep_plan_time > PLAN_UPDATE_TIMEOUT:
+            self.executing = False
+        self.last_footstep_plan_time = now
 
         if self.mode == Mode.plotting:
             self.draw(footsteps)
@@ -99,6 +106,7 @@ class BDIStepTranslator(object):
                     print m
                     ut.send_status(6,0,0,m)
                     time.sleep(1)
+                    self.executing = True
                     self.send_behavior()
                 else:
                     m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
@@ -142,7 +150,7 @@ class BDIStepTranslator(object):
         return [s.to_bdi_spec(self.behavior, j+1) for j, s in enumerate(bdi_step_queue_out[2:])]
 
     def handle_atlas_status(self, channel, msg):
-        if self.delivered_index is None or self.mode != Mode.translating:
+        if (not self.executing) or self.mode != Mode.translating:
             return
         if isinstance(msg, str):
             msg = drc.atlas_status_t.decode(msg)
@@ -161,6 +169,7 @@ class BDIStepTranslator(object):
                 # print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed)
             else:
+                print "done executing"
                 self.executing = False
 
             # Report progress through the footstep plan execution (only when stepping)
@@ -176,7 +185,6 @@ class BDIStepTranslator(object):
         Publish the next steppping footstep or up to the next 4 walking footsteps as needed.
         """
         assert self.mode == Mode.translating, "Translator in Mode.plotting mode is not allowed to send step/walk params"
-        self.executing = True
         if self.behavior == Behavior.BDI_WALKING:
             walk_param_msg = drc.atlas_behavior_walk_params_t()
             walk_param_msg.num_required_walk_steps = NUM_REQUIRED_WALK_STEPS
@@ -250,6 +258,7 @@ class BDIStepTranslator(object):
 
         self.bdi_step_queue_in = []  # to prevent infinite spewing of -1 step indices
         self.delivered_index = None
+        self.executing = False
 
     def run(self):
         if self.mode == Mode.translating:

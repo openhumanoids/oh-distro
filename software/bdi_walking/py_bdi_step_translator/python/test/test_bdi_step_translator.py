@@ -13,7 +13,6 @@ class TestStepTranslation(unittest.TestCase):
         plan.num_steps = 10
         plan.is_new_plan = True
         plan.footstep_opts = drc.footstep_opts_t()
-        plan.footstep_opts.ignore_terrain = True
         plan.footstep_opts.mu = True
         plan.footstep_opts.behavior = behavior
 
@@ -68,7 +67,6 @@ class TestStepTranslation(unittest.TestCase):
         plan = drc.footstep_plan_t()
         plan.utime = 0
         plan.params = drc.footstep_plan_params_t()
-        plan.params.ignore_terrain = True
         plan.params.behavior = behavior
         plan.footsteps = []
         plan.num_steps = 10
@@ -216,7 +214,9 @@ class TestStepTranslation(unittest.TestCase):
         status = drc.atlas_status_t()
         status.step_feedback = drc.atlas_step_feedback_t()
         status.step_feedback.next_step_index_needed = 2
+        translator.executing = True
         translator.handle_atlas_status('ATLAS_STATUS', status)
+        translator.executing = False
         self.assertEqual(translator.delivered_index, 2)
 
     def test_terrain_clearance(self):
