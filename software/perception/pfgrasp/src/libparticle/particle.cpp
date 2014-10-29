@@ -48,44 +48,44 @@ double deg2rad(const double deg){
 
 double Particle::GetLogLikelihood(rng *pRng, const void* userdata){
   const double obs_error = deg2rad(5);
-
-  std::cout << "dbg-GetLogLikelihood1" << std::endl;
   const PFGrasp* pfg = (const PFGrasp*)userdata;
-  std::cout << "dbg-GetLogLikelihood1"<< pfg<< std::endl;
+
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood1"<< pfg<< std::endl;
   double bound = pfg->bound;
-  std::cout << "dbg-GetLogLikelihood1"<< pfg->bound<< std::endl;
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood1"<< pfg->bound<< std::endl;
   double hbound = bound/2;
   // projection matrix
-  std::cout << "dbg-GetLogLikelihood2" << std::endl;
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood2" << std::endl;
   BotCamTrans* HandCamTrans = pfg->warpedCamTrans;
-  std::cout << "dbg-GetLogLikelihood3" << std::endl;
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood3" << std::endl;
 
   float a = pfg->bearing_a_, b = pfg->bearing_b_;
   //int64_t utime = pfg->img_utime_;
 
 
-  std::cout << "dbg-GetLogLikelihood3 a:"<< a << std::endl;
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood3 a:"<< a << std::endl;
   if(a==0 && b==0) return 1; // no observation
 
   BotTrans bt = pfg->localToCam_;
 
-  std::cout << "dbg-GetLogLikelihood4" << std::endl;
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood4" << std::endl;
   double *x_world = this->state.position.data();
   double x_cam[3];
   bot_trans_apply_vec(&bt, x_world, x_cam);
 
-  std::cout << "dbg-GetLogLikelihood5" << std::endl;
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood5" << std::endl;
   double pix[3];
   bot_camtrans_project_point(HandCamTrans, x_cam, pix);
   double du = (pix[0]-bot_camtrans_get_principal_x(HandCamTrans)) / bot_camtrans_get_focal_length_x(HandCamTrans);
   double dv = (pix[1]-bot_camtrans_get_principal_y(HandCamTrans)) / bot_camtrans_get_focal_length_y(HandCamTrans);
-
-  std::cout << "dbg-GetLogLikelihood6" << std::endl;
+  
+  if(pfg->options_.debug) std::cout << "dbg-du" <<du<<" dv" << dv <<  std::endl;
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood6" << std::endl;
   double p = 0;
   if(x_cam[2] >= 0 && x_cam[2] < bound && fabs(x_cam[0]) < hbound && fabs(x_cam[1]) < hbound) {
     p = pRng->NormalPdf(atan(a)-atan(du), 0, obs_error) * pRng->NormalPdf(atan(b)-atan(dv), 0, obs_error);
   }
 
-  std::cout << "dbg-GetLogLikelihood7" << std::endl;
+  if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood7" << std::endl;
   return log(p);
 }

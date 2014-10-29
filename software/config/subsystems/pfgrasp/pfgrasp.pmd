@@ -31,7 +31,7 @@ cmd "tld-segmenter" {
     host = "localhost";
 }
 cmd "pfgrasp" {
-    exec = "drc-pfgrasp -c CAMERALHAND -s 0.25";
+    exec = "drc-pfgrasp -c CAMERALHAND -s 0.25 -g CAMERALHAND ";
     host = "localhost";
 }
 cmd "botparam" {

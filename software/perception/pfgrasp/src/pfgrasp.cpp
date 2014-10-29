@@ -86,7 +86,10 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
       bearing_a_ = bearing_b_ = 0;
     else
       bearing_a_ = u*1.f/cameraParams_.fx, bearing_b_ = v*1.f/cameraParams_.fy;
-
+    if (options_.debug)
+    {
+      printf("u=%lf v=%lf a=%lf b=%lf", u, v, bearing_a_,bearing_b_);
+    }
     perception::image_roi_t trackmsg;
 
     float sw = cameraParams_.width, sh = cameraParams_.height;
@@ -257,11 +260,12 @@ PFGrasp::runOneIter(){
   V hpos = hpose.block(0,3,3,1);  // location of hand
   V delta = xh - hpos;
   V ux = hpose.block(0,0,3,1);
-  //V uy = hpose.block(0,1,3,1);
+  V uy = hpose.block(0,1,3,1);
   V uz = hpose.block(0,2,3,1);
   V dz = uz.dot(delta) * uz;   // from the hand, z is horizontal, y points forward, x points downward
+  V dy = uy.dot(delta) * uy;   // from the hand, z is horizontal, y points forward, x points downward
   V dx = ux.dot(delta) * ux;   // so we want z, and x adjustment
-  V newhpos = hpos + dx + dz;
+  V newhpos = hpos + dx + dy;
 
   cout << "dbg-newhpos:" << newhpos << endl;
   bot_lcmgl_color3f(lcmgl_, 1,1,0);
