@@ -211,18 +211,16 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'body_accel_input_weights',[0.15 0.15 0.075]);
       options = ifNotIsFieldThenVal(options,'use_walking_pelvis_block',true);
       options = ifNotIsFieldThenVal(options,'use_foot_motion_block',true);
-      options = ifNotIsFieldThenVal(options,'Kp_foot',[20; 20; 20; 20; 20; 20]);
-      options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.5);
+      options = ifNotIsFieldThenVal(options,'Kp_foot',[12; 12; 12; 12; 12; 12]);
+      options = ifNotIsFieldThenVal(options,'foot_damping_ratio',0.7);
       options = ifNotIsFieldThenVal(options,'min_knee_angle',0.7);
-
-      
       options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.5);
 
       options.w_qdd(findJointIndices(obj,'back_bkx')) = 0.01;
       options.Kp_q(findJointIndices(obj,'back_bkx')) = 50;
 
-      acc_limit = [100;100;100;10;10;10];
+      acc_limit = [100;100;100;50;50;50];
       body_accel_bounds(1).body_idx = obj.foot_body_id.right;
       body_accel_bounds(1).min_acceleration = -acc_limit;
       body_accel_bounds(1).max_acceleration = acc_limit;
@@ -256,6 +254,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       options = ifNotIsFieldThenVal(options,'use_ik',false);
       options = ifNotIsFieldThenVal(options,'Kp_q',0.0*ones(obj.getNumPositions(),1));
       options = ifNotIsFieldThenVal(options,'q_damping_ratio',0.0);
+
+      options.w_qdd(findJointIndices(obj,'back_bkx')) = 0.1;
+      options.Kp_q(findJointIndices(obj,'back_bkx')) = 50;
 
       options.Kp = options.Kp_pelvis;
       options.Kd = getDampingGain(options.Kp,options.pelvis_damping_ratio);
