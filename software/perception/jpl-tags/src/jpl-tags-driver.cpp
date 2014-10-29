@@ -563,14 +563,11 @@ struct State {
 
     // debug draw
     if (mDebug) {
-      bot_lcmgl_point_size(mBotLcmgl, 10);
-      bot_lcmgl_color3f(mBotLcmgl, 1, 0, 1);
-      bot_lcmgl_begin(mBotLcmgl, LCMGL_POINTS);
       for (const auto& detection : msg.detections) {
-        bot_lcmgl_vertex3f(mBotLcmgl, detection.pos[0], detection.pos[1],
-                           detection.pos[2]);
+        debugDrawPoint(Eigen::Vector3f(detection.pos[0], detection.pos[1],
+                                       detection.pos[2]),
+                       Eigen::Vector3f(1, 0, 1), 10);
       }
-      bot_lcmgl_end(mBotLcmgl);
       bot_lcmgl_switch_buffer(mBotLcmgl);
     }
 
