@@ -36,7 +36,7 @@ struct PFGraspOptions
 
   PFGraspOptions() :
       debug(false), scale(1.f),  cameraChannelName("CAMERALHAND"), segmenterChannelName(
-          "TLD_OBJECT_ROI"), commandChannelName("PFGRASP_CMD"), reachGoalFrameName("LHAND_FACE"),
+          "TLD_OBJECT_ROI"), commandChannelName("PFGRASP_CMD"), reachGoalFrameName("LHAND_FORCE_TORQUE"),
           reachGoalChannelName("REACH_TARGET_POSE")
   {
   }

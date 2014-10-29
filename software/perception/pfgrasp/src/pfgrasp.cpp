@@ -334,7 +334,7 @@ main(int argc, char** argv)
   ConciseArgs opt(argc, (char**) argv);
   opt.add(options.cameraChannelName, "c", "camera-channel",  "Camera Channel [CAMERALHAND]");
   opt.add(options.scale, "s", "scale", "TLD tracker scale Factor");
-  opt.add(options.reachGoalFrameName, "g", "plan-frame", "Planning on what frame [LHAND_FACE]");
+  opt.add(options.reachGoalFrameName, "g", "plan-frame", "Planning on what frame [LHAND_FORCE_TORQUE]");
   opt.add(options.commandChannelName, "m", "command", "Listen command from which channel [PFGRASP_CMD]");
 
   opt.add(options.debug, "d", "debug", "Debug");
