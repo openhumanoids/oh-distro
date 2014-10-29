@@ -42,6 +42,13 @@ struct TagInfo {
   }
 };
 
+typedef std::map<std::string, KDL::Frame> FrameMap;
+typedef std::shared_ptr<FrameMap> FrameMapPtr;
+struct FrameMapInfo {
+  int64_t mTimestamp;
+  FrameMapPtr mFrameMap;
+};
+
 struct State {
   drc::BotWrapper::Ptr mBotWrapper;
   drc::LcmWrapper::Ptr mLcmWrapper;
@@ -56,9 +63,7 @@ struct State {
   std::vector<TagInfo> mTags;
 
   int64_t mLastStateUpdateTime;
-  typedef std::map<std::string, KDL::Frame> FrameMap;
-  typedef std::shared_ptr<FrameMap> FrameMapPtr;
-  std::map<int64_t, FrameMapPtr> mLinkFrames;
+  std::list<FrameMapInfo> mLinkFrames;
   std::shared_ptr<KDL::TreeFkSolverPosFull_recursive> mFkSolver;
   std::mutex mFramesMutex;
 
@@ -67,6 +72,10 @@ struct State {
   bool mRunStereoAlgorithm;
   bool mDoTracking;
   bool mDebug;
+
+  static constexpr double kMaxStateUpdateRate = 60;  // Hz
+  static constexpr double kMaxStateCacheSeconds = 1;
+
 
   State() {
     mDetector = NULL;
@@ -251,11 +260,10 @@ struct State {
 
   void onState(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
                const drc::robot_state_t* iMessage) {
-    const double kMaxRate = 60;  // Hz
-    const double kMaxSeconds = 1;
 
     // limit update rate
-    if ((iMessage->utime - mLastStateUpdateTime) < 1e6/kMaxRate) return;
+    int64_t timeDelta = std::abs(iMessage->utime-mLastStateUpdateTime);
+    if (timeDelta < 1e6/kMaxStateUpdateRate) return;
 
     // get pelvis pose
     KDL::Frame bodyToLocal = KDL::Frame::Identity();
@@ -292,10 +300,15 @@ struct State {
 
     // update internal frames handle
     {
+      FrameMapInfo info;
+      info.mTimestamp = iMessage->utime;
+      info.mFrameMap = frameMap;
+
       std::unique_lock<std::mutex> lock(mFramesMutex);
-      mLinkFrames[iMessage->utime] = frameMap;
-      while ((int)mLinkFrames.size() > (int)(kMaxSeconds*kMaxRate)) {
-        mLinkFrames.erase(mLinkFrames.begin());
+      mLinkFrames.push_back(info);
+      while ((int)mLinkFrames.size() >
+             (int)(kMaxStateCacheSeconds*kMaxStateUpdateRate)) {
+        mLinkFrames.pop_front();
       }
       mLastStateUpdateTime = iMessage->utime;
     }
@@ -408,18 +421,32 @@ struct State {
       // use fk wrt left cam
       else {
         std::unique_lock<std::mutex> lock(mFramesMutex);
-        auto item = mLinkFrames.lower_bound(iMessage->utime);
-        if (item == mLinkFrames.end()) {
+
+        // search for best link map
+        int64_t bestDelta = 1000000000;
+        FrameMapInfo bestInfo;
+        for (const auto& info : mLinkFrames) {
+          int64_t timeDelta = std::abs(info.mTimestamp - iMessage->utime);
+          if (timeDelta < bestDelta) {
+            bestDelta = timeDelta;
+            bestInfo = info;
+          }
+        }
+        if (bestDelta > 2*1e6/kMaxStateUpdateRate) {
           std::cout << "error: cannot find robot state at " <<
             iMessage->utime << std::endl;
           return;
         }
-        const auto& frameMap = *item->second;
+
+        // find link
+        const auto& frameMap = *bestInfo.mFrameMap;
         auto link = frameMap.find(mTags[i].mLinkName);
         if (link == frameMap.end()) {
           std::cout << "error: cannot find link " << mTags[i].mLinkName <<
             std::endl;
         }
+
+        // compute transforms
         Eigen::Isometry3d linkToLocal = toEigen(link->second);
         Eigen::Isometry3d linkToCamera = localToCamera*linkToLocal;
         Eigen::Isometry3d tagToCamera = linkToCamera*mTags[i].mLinkPose;
