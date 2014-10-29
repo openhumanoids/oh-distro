@@ -19,8 +19,8 @@
 #include <lcmtypes/perception_image_roi_t.h>
 #include <ConciseArgs>
 
-const int WINDOW_WIDTH = 1280/2; 
-const int WINDOW_HEIGHT = 1024/2; 
+const int WINDOW_WIDTH = 640/2; 
+const int WINDOW_HEIGHT = 480/2; 
 
 int MAX_IMAGE_WIDTH = 0;
 int MAX_IMAGE_HEIGHT = 0;
@@ -217,13 +217,13 @@ decode_image(const bot_core_image_t * msg, cv::Mat& img)
         break;
     case BOT_CORE_IMAGE_T_PIXEL_FORMAT_MJPEG:
         // for some reason msg->row_stride is 0, so we use msg->width instead.
-        if (ch == 3) { 
+        if (ch == 3 || ch ==0) { 
             jpeg_decompress_8u_rgb(msg->data,
                                    msg->size,
                                    img.data,
                                    msg->width,
                                    msg->height,
-                                   msg->width * ch);
+                                   msg->width * 3);
             cv::cvtColor(img, img, CV_RGB2BGR);
         } else {  
             jpeg_decompress_8u_gray(msg->data,

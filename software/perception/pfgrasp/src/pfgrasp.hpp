@@ -2,7 +2,7 @@
  * pfgrasp.hpp
  *
  *  Created on: Apr 22, 2014
- *      Author: drc
+ *      Author: peterkty
  */
 
 
@@ -35,7 +35,7 @@ struct PFGraspOptions
   std::string reachGoalChannelName;
 
   PFGraspOptions() :
-      cameraChannelName("CAMERALHAND"), scale(1.f), debug(false), segmenterChannelName(
+      debug(false), scale(1.f),  cameraChannelName("CAMERALHAND"), segmenterChannelName(
           "TLD_OBJECT_ROI"), commandChannelName("PFGRASP_CMD"), reachGoalFrameName("LHAND_FACE"),
           reachGoalChannelName("REACH_TARGET_POSE")
   {
