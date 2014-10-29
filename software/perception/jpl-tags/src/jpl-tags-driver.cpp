@@ -18,6 +18,7 @@
 
 #include <bot_core/camtrans.h>
 #include <bot_param/param_util.h>
+#include <bot_lcmgl_client/lcmgl.h>
 
 #include <zlib.h>
 
@@ -44,6 +45,7 @@ struct TagInfo {
 struct State {
   drc::BotWrapper::Ptr mBotWrapper;
   drc::LcmWrapper::Ptr mLcmWrapper;
+  bot_lcmgl_t* mBotLcmgl;
   BotCamTrans* mCamTransLeft;
   BotCamTrans* mCamTransRight;
   fiducial_detector_t* mDetector;
@@ -64,6 +66,7 @@ struct State {
   std::string mTagChannel;
   bool mRunStereoAlgorithm;
   bool mDoTracking;
+  bool mDebug;
 
   State() {
     mDetector = NULL;
@@ -74,12 +77,15 @@ struct State {
     mTagChannel = "JPL_TAGS";
     mRunStereoAlgorithm = false;
     mDoTracking = false;
+    mDebug = false;
     mLastStateUpdateTime = 0;
+    mBotLcmgl = NULL;
   }
 
   ~State() {
     if (mDetector != NULL) fiducial_detector_free(mDetector);
     if (mStereoDetector != NULL) fiducial_stereo_free(mStereoDetector);
+    if (mBotLcmgl != NULL) bot_lcmgl_destroy(mBotLcmgl);
   }
 
   void populate(BotCamTrans* iCam, fiducial_stereo_cam_model_t& oCam) {
@@ -142,9 +148,34 @@ struct State {
     }
   }
 
+  void debugDrawPoint(const Eigen::Vector3f& iPoint,
+                      const Eigen::Vector3f& iColor,
+                      const float iPointSize) {
+    bot_lcmgl_point_size(mBotLcmgl, iPointSize);
+    bot_lcmgl_color3f(mBotLcmgl, iColor[0], iColor[1], iColor[2]);
+    bot_lcmgl_begin(mBotLcmgl, LCMGL_POINTS);
+    bot_lcmgl_vertex3f(mBotLcmgl, iPoint[0], iPoint[1], iPoint[2]);
+    bot_lcmgl_end(mBotLcmgl);
+  }
+
+  void debugDrawLine(const Eigen::Vector3f& iPoint1,
+                     const Eigen::Vector3f& iPoint2,
+                     const Eigen::Vector3f& iColor,
+                     const float iLineWidth) {
+    bot_lcmgl_line_width(mBotLcmgl, iLineWidth);
+    bot_lcmgl_color3f(mBotLcmgl, iColor[0], iColor[1], iColor[2]);
+    bot_lcmgl_begin(mBotLcmgl, LCMGL_LINES);
+    bot_lcmgl_vertex3f(mBotLcmgl, iPoint1[0], iPoint1[1], iPoint1[2]);
+    bot_lcmgl_vertex3f(mBotLcmgl, iPoint2[0], iPoint2[1], iPoint2[2]);
+    bot_lcmgl_end(mBotLcmgl);
+  }
+
   void setup() {
     mBotWrapper.reset(new drc::BotWrapper());
     mLcmWrapper.reset(new drc::LcmWrapper(mBotWrapper->getLcm()));
+    if (mBotLcmgl != NULL) bot_lcmgl_destroy(mBotLcmgl);
+    mBotLcmgl = bot_lcmgl_init(mBotWrapper->getLcm()->getUnderlyingLCM(),
+                               "jpl-tag-debug");
 
     mDetector = fiducial_detector_alloc();
     fiducial_detector_init(mDetector);
@@ -393,6 +424,17 @@ struct State {
         Eigen::Isometry3d linkToCamera = localToCamera*linkToLocal;
         Eigen::Isometry3d tagToCamera = linkToCamera*mTags[i].mLinkPose;
         poseInit = getFiducialPose(tagToCamera);
+
+        // TODO TEMP
+        if (mDebug) {
+          Eigen::Isometry3d tagToLocal = linkToLocal*mTags[i].mLinkPose;
+          Eigen::Vector3d p0 = tagToLocal.translation();
+          debugDrawPoint(p0.cast<float>(), Eigen::Vector3f(0, 0, 1), 10);
+          Eigen::Vector3d v = tagToLocal.rotation().col(2);
+          Eigen::Vector3d p1 = p0 + 0.05*v;
+          debugDrawLine(p0.cast<float>(), p1.cast<float>(),
+                        Eigen::Vector3f(0, 0, 1), 3);
+        }
       }
 
       mTags[i].mTracked = false;
@@ -492,6 +534,19 @@ struct State {
     }
     mLcmWrapper->get()->publish(mTagChannel, &msg);
 
+    // debug draw
+    if (mDebug) {
+      bot_lcmgl_point_size(mBotLcmgl, 10);
+      bot_lcmgl_color3f(mBotLcmgl, 1, 0, 1);
+      bot_lcmgl_begin(mBotLcmgl, LCMGL_POINTS);
+      for (const auto& detection : msg.detections) {
+        bot_lcmgl_vertex3f(mBotLcmgl, detection.pos[0], detection.pos[1],
+                           detection.pos[2]);
+      }
+      bot_lcmgl_end(mBotLcmgl);
+      bot_lcmgl_switch_buffer(mBotLcmgl);
+    }
+
     auto t2 = std::chrono::high_resolution_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1);
     std::cout << "PROCESSED IN " << dt.count()/1e6 << " SEC" << std::endl;
@@ -512,8 +567,9 @@ int main(const int iArgc, const char** iArgv) {
           "whether to run stereo-based detector");
   opt.add(state.mDoTracking, "t", "tracking",
           "whether to use previous detection to initialize current detection");
+  opt.add(state.mDebug, "v", "verbose",
+          "whether to publish lcmgl messages and other diagnostics");
   opt.parse();
-
 
   state.setup();
   state.start();
