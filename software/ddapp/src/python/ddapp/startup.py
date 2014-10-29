@@ -712,4 +712,7 @@ if useDrillDemo:
     app.addToolbarMacro('pointer press deep', sendPointerPressDeep)
 
 
+showImageOverlay()
+hideImageOverlay()
+
 showImageOverlay(viewName='CAMERALHAND')
