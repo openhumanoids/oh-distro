@@ -128,7 +128,6 @@ classdef FootContactBlock < MIMODrakeSystem
       end
       obj.robot = r;
       obj.nq = getNumPositions(r);
-
     end
    
     function varargout=mimoOutput(obj,t,~,x)      
@@ -174,8 +173,8 @@ classdef FootContactBlock < MIMODrakeSystem
       else
         contact_thresh = obj.contact_threshold;
       end
-      if obj.using_flat_terrain
-        height = getTerrainHeight(r,[0;0]); % get height from DRCFlatTerrainMap
+      if ~obj.using_flat_terrain
+        height = getTerrainHeight(obj.robot,[0;0]); % get height from DRCFlatTerrainMap
       else
         height = 0;
       end

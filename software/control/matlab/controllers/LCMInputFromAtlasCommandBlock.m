@@ -10,7 +10,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     timestamp_name;
     dim;
     % Atlas and various controllers:
-    robot;
+    r;
     pelvis_controller;
     fc;
     qt;
@@ -96,6 +96,9 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
         in_joint_name_i = obj.joint_names(i, :);
         obj.drake_to_atlas_joint_map(i) = obj.getOutputFrame.findCoordinateIndex(strtrim(in_joint_name_i));
       end
+      
+      % save robot
+      obj.r = r;
 
     end
     
@@ -213,7 +216,12 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       % If we haven't received a command make our own
       if (isempty(data))
         % foot contact
-        fc = output(obj.fc,t,[],x);
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
+        within_thresh = phiC < 0.002;
+        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
+        fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
+              any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
+            
         % qtraj eval
         q_des_and_x = output(obj.qt,t,[],x);
         q_des = q_des_and_x(1:obj.nq);
@@ -225,7 +233,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
           efforts(obj.drake_to_atlas_joint_map(i)) = u(i);
         end
       else
-        cmd = obj.coder.decode(data);
+         cmd = obj.coder.decode(data);
         efforts = cmd.val(obj.nu*2+1:end);
       end
       

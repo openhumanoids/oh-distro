@@ -39,7 +39,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       else
         % Add lidar -- hokuyo / spindle frames are pulled from
         % config/config_components/multisense_sim.cfg
-        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],[0;0;0],'hokuyo_frame'));
+        % was [-0.0446; 0.0; 0.0880], [0;0;0] in sim.
+        % trying new value that lines up more accurately with
+        % head_to_left_eye, left_eye_to_spindle transforms
+        % from multisense_05.cfg
+        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0055, -0.0087, 0.0914].',[0, 0, 0].','hokuyo_frame'));
         hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
           -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
         if (~isfield(options, 'visualize') || options.visualize)
@@ -50,16 +54,14 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = compile(obj);
       
       % Add obstacles if we want 
-      if isfield(options,'obstacles')
-        for i=1:options.obstacles
-          xy = randn(2,1);
-          while(norm(xy)<1), xy = randn(2,1); end
-          height = .05;
-          shape = RigidBodyBox([.2+.8*rand(1,2) height],[xy;height/2],[0;0;randn]);
-          shape.c = rand(3,1);
-          obj = addShapeToBody(obj,'world',shape);
-          obj = addContactShapeToBody(obj,'world',shape);
-        end
+      % (here is just a box in front of the robot to look at)
+      if (isfield(options,'obstacles') && options.obstacles)
+        height = 0.1;
+        shape = RigidBodyBox([1.0 1.0 height], [2; 0; height/2], [0; 0; 0;]);
+        shape.c = rand(3, 1);
+        obj = addShapeToBody(obj, 'world', shape);
+        obj = addContactShapeToBody(obj, 'world', shape);
+        obj = compile(obj);
       end
       
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
@@ -318,10 +320,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
 
-    hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 30;   
+    hokuyo_yaw_width = 2.4; % total -- i.e., whole FoV, not from center of vision
+    hokuyo_num_pts = 200;   
     hokuyo_max_range = 6; % meters?
-    hokuyo_spin_rate = 10; % rad/sec
+    hokuyo_spin_rate = 1; % rad/sec
+    
     % preconstructing these for efficiency
     left_full_support
     left_toe_support
@@ -330,6 +333,5 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     left_full_right_full_support
     left_toe_right_full_support
     left_full_right_toe_support
-
   end
 end

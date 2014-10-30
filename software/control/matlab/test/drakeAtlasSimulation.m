@@ -15,8 +15,10 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 options.floating = true;
 options.ignore_friction = true;
 options.dt = 0.005;
-options.visualize = false;
+options.visualize = visualize;
 options.hokuyo = true;
+options.obstacles = false; % Replaced by step terrain
+options.terrain = RigidBodyStepTerrain();
 % TODO: get from LCM
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});
@@ -26,6 +28,7 @@ r = compile(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 0;
 xstar(2) = 0;
+xstar(3) = xstar(3) + 0.12;
 xstar(6) = 0;
 r = r.setInitialState(xstar);
 x0 = xstar;
