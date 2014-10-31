@@ -39,4 +39,5 @@ struct data_request_t {
   const int8_t TERRAIN_COST            = 90;
   const int8_t FUSED_DEPTH             = 100;
   const int8_t FUSED_HEIGHT            = 101;
+  const int8_t STEREO_HEIGHT           = 102;
 }

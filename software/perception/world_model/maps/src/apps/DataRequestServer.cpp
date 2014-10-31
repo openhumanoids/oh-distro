@@ -108,6 +108,8 @@ struct Worker {
         sendFusedDepthRequest(); break;
       case drc::data_request_t::FUSED_HEIGHT:
         sendFusedHeightRequest(); break;
+      case drc::data_request_t::STEREO_HEIGHT:
+        sendStereoHeightRequest(); break;
       default:
         cout << "Unknown request type" << endl; break;
       }
@@ -408,6 +410,14 @@ struct Worker {
     plane /= plane.head<3>().norm();
     for (int k = 0; k < 4; ++k) msg.clip_planes[5][k] = plane[k];
     msg.view_id = drc::data_request_t::FUSED_HEIGHT;
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
+  void sendStereoHeightRequest() {
+    const Eigen::Vector3f minPt(-1, -2, -3);
+    const Eigen::Vector3f maxPt(5, 2, 0.3);
+    auto msg = prepareHeightRequestMessage(minPt, maxPt, 0.03, 0.03);
+    msg.view_id = drc::data_request_t::STEREO_HEIGHT;
     mLcm->publish("MAP_REQUEST", &msg);
   }
 

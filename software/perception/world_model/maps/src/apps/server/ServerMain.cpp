@@ -1,5 +1,4 @@
 #include <unordered_map>
-
 #include <thread>
 #include <chrono>
 
@@ -12,7 +11,6 @@
 #include <lcmtypes/drc/map_params_t.hpp>
 #include <lcmtypes/drc/map_catalog_t.hpp>
 #include <lcmtypes/drc/data_request_t.hpp>
-#include <lcmtypes/multisense/images_t.hpp>
 
 #include <maps/MapManager.hpp>
 #include <maps/PointCloudView.hpp>
@@ -30,17 +28,13 @@
 
 #include <drc_utils/PointerUtils.hpp>
 #include <drc_utils/Clock.hpp>
-#include <pcl/common/transforms.h>
 #include <ConciseArgs>
-#include <octomap/octomap.h>
 
-#include <stereo-bm/stereo-bm.hpp>
-#include <bot_param/param_util.h>
-
-#include <zlib.h>
+#include <bot_core/timestamp.h>
 
 #include "LidarFilters.hpp"
 #include "FusedDepthHandler.hpp"
+#include "StereoHandler.hpp"
 
 using namespace std;
 using namespace maps;
@@ -140,217 +134,6 @@ protected:
 
 class State;
 
-struct StereoHandler {
-  BotWrapper::Ptr mBotWrapper;
-  bot_core::image_t mLatestImage;
-  multisense::images_t mLatestImages;
-  std::shared_ptr<StereoB> mStereoMatcher;
-  BotCamTrans* mCamTrans;
-  Eigen::Matrix3f mCalibMatrix;
-  std::string mCameraFrame;
-  float mDisparityFactor;
-
-  StereoHandler(const BotWrapper::Ptr& iBotWrapper,
-                const std::string& iCameraBaseName) {
-    mBotWrapper = iBotWrapper;
-    auto lcm = mBotWrapper->getLcm();
-    mLatestImage.size = 0;
-    mLatestImages.n_images = 0;
-
-    std::string cameraName = iCameraBaseName + "_LEFT";
-    mCamTrans = bot_param_get_new_camtrans
-      (mBotWrapper->getBotParam(), cameraName.c_str());
-    if (mCamTrans != NULL) {
-      double k00 = bot_camtrans_get_focal_length_x(mCamTrans);
-      double k11 = bot_camtrans_get_focal_length_y(mCamTrans);
-      double k01 = bot_camtrans_get_skew(mCamTrans);
-      double k02 = bot_camtrans_get_principal_x(mCamTrans);
-      double k12 = bot_camtrans_get_principal_y(mCamTrans);
-      mCalibMatrix << k00,k01,k02, 0,k11,k12, 0,0,1;
-      std::string key("cameras.");
-      key += (cameraName + ".coord_frame");
-      char* val = NULL;
-      if (bot_param_get_str(mBotWrapper->getBotParam(),key.c_str(),&val) == 0) {
-        mCameraFrame = val;
-        free(val);
-      }
-
-      // baseline
-      Eigen::Isometry3f rightToLeft;
-      double baseline = 0.04;
-      if (mBotWrapper->getTransform(iCameraBaseName+"_RIGHT",
-                                    iCameraBaseName+"_LEFT", rightToLeft)) {
-        baseline = rightToLeft.translation().norm();
-      }
-      mDisparityFactor = 1/k00/baseline;
-
-      lcm->subscribe(iCameraBaseName, &StereoHandler::onImages, this);
-
-      auto boostLcm = drc::PointerUtils::boostPtr(lcm);
-      mStereoMatcher.reset(new StereoB(boostLcm));
-      mStereoMatcher->setScale(1.0);
-
-      std::cout << "successfully set up stereo camera " <<
-        iCameraBaseName << std::endl;
-    }
-    if (mCamTrans == NULL) {
-      std::cout << "error: could not set up stereo camera " <<
-        iCameraBaseName << std::endl;
-    }
-  }
-
-  ~StereoHandler() {
-    bot_camtrans_destroy(mCamTrans);
-  }
-
-  void onImage(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
-               const bot_core::image_t* iMessage) {
-    mLatestImage = *iMessage;
-  }
-
-  void onImages(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
-                const multisense::images_t* iMessage) {
-    mLatestImages = *iMessage;
-  }
-
-  bool cropPoint(const Eigen::Vector3f& iPoint,
-                 const std::vector<Eigen::Vector4f>& iBoundPlanes) {
-    for (size_t k = 0; k < iBoundPlanes.size(); ++k) {
-      const Eigen::Vector4f& plane = iBoundPlanes[k];
-      float dist = plane[0]*iPoint[0] + plane[1]*iPoint[1] + plane[2]*iPoint[2];
-      if (dist < -plane[3]) return false;
-    }
-    return true;
-  }
-
-  DepthImageView::Ptr
-  getDepthImageView(const std::vector<Eigen::Vector4f>& iBoundPlanes) {
-    DepthImageView::Ptr view;
-    if ((mLatestImage.size == 0) && (mLatestImages.n_images == 0)) {
-      return view;
-    }
-
-    bool usingWrapper = mLatestImages.n_images>0;
-    bot_core::image_t dispMsg;
-    int dispIndex = -1;
-    for (int i = 0; i < mLatestImages.n_images; ++i) {
-      if ((mLatestImages.image_types[i] == multisense::images_t::DISPARITY) ||
-          (mLatestImages.image_types[i] ==
-           multisense::images_t::DISPARITY_ZIPPED)) {
-        dispMsg = mLatestImages.images[i];
-        dispIndex = i;
-      }
-    }
-
-    // project bound polyhedron onto camera
-    int w = usingWrapper ? dispMsg.width : mLatestImage.width;
-    int h = usingWrapper ? dispMsg.height : mLatestImage.height;
-    int64_t t = usingWrapper ? dispMsg.utime : mLatestImage.utime;
-    std::vector<Eigen::Vector3f> vertices;
-    std::vector<std::vector<int> > faces;
-    Utils::polyhedronFromPlanes(iBoundPlanes, vertices, faces);
-    Eigen::Isometry3f localToCamera;
-    mBotWrapper->getTransform("local", mCameraFrame, localToCamera, t);
-    Eigen::Vector2i minPt(1000000,1000000), maxPt(-1000000,-1000000);
-    for (size_t i = 0; i < vertices.size(); ++i) {
-      Eigen::Vector3f pt = localToCamera*vertices[i];
-      double inPt[] = { pt[0], pt[1], pt[2] };
-      double proj[3];
-      bot_camtrans_project_point(mCamTrans, inPt, proj);
-      minPt[0] = std::min(minPt[0], (int)floor(proj[0]));
-      minPt[1] = std::min(minPt[1], (int)floor(proj[1]));
-      maxPt[0] = std::max(maxPt[0], (int)ceil(proj[0]));
-      maxPt[1] = std::max(maxPt[1], (int)ceil(proj[1]));
-    }
-    minPt[0] = std::max(0, minPt[0]);
-    minPt[1] = std::max(0, minPt[1]);
-    maxPt[0] = std::min(w-1, maxPt[0]);
-    maxPt[1] = std::min(h-1, maxPt[1]);
-    if ((minPt[0] >= maxPt[0]) || (minPt[1] >= maxPt[1])) {
-      std::cout << "Warning: requested volume is outside image" << std::endl;
-      return view;
-    }
-
-    view.reset(new DepthImageView());
-
-    cv::Mat disparityMat;
-    if (usingWrapper) {
-      if (mLatestImages.image_types[dispIndex] ==
-          multisense::images_t::DISPARITY_ZIPPED) {
-        std::vector<uint8_t> buf(w*h*2);
-        unsigned long len = buf.size();
-        uncompress(buf.data(), &len, dispMsg.data.data(), dispMsg.data.size());
-        cv::Mat(h, w, CV_16UC1, buf.data()).
-          convertTo(disparityMat, CV_32F, 1.0/16);
-      }
-      else {
-        cv::Mat(h, w, CV_16UC1, dispMsg.data.data()).
-          convertTo(disparityMat, CV_32F, 1.0f/16);
-      }
-    }
-    else {
-      // uncompress image if necessary
-      cv::Mat img;
-      if (mLatestImage.pixelformat = bot_core::image_t::PIXEL_FORMAT_MJPEG) {
-        img = cv::imdecode(cv::Mat(mLatestImage.data), -1);
-      }
-      else {
-        img = cv::Mat(2*h, w, CV_8UC1, mLatestImage.data.data());
-      }
-
-      // split images
-      cv::Mat leftImage = img.rowRange(0, h).clone();
-      cv::Mat rightImage = img.rowRange(h, 2*h).clone();
-
-      // compute disparity
-      mStereoMatcher->doStereoB(leftImage, rightImage);
-      cv::Mat(h,w,CV_16UC1,mStereoMatcher->getDisparity()).
-        convertTo(disparityMat, CV_32F, 1.0f/16);
-    }
-
-    // form output depth image
-    DepthImage depthImage;
-    Eigen::Vector2i newSize = maxPt - minPt + Eigen::Vector2i(1,1);
-    depthImage.setSize(newSize[0], newSize[1]);
-    depthImage.setOrthographic(false);
-    depthImage.setPose(localToCamera.inverse());
-    Eigen::Matrix3f calib = mCalibMatrix;
-    calib(0,2) -= minPt[0];
-    calib(1,2) -= minPt[1];
-    depthImage.setCalib(calib);
-
-    // scale down if necessary
-    // TODO
-
-    // crop and copy disparity data
-    cv::Rect bounds(minPt[0], minPt[1], newSize[0], newSize[1]);
-    cv::Mat disparitySub = disparityMat(bounds);
-    std::vector<float> dispData(newSize[0]*newSize[1]);
-    float* outPtr = &dispData[0];
-    for (int i = 0; i < newSize[1]; ++i) {
-      float* inPtr = disparitySub.ptr<float>(i);
-      for (int j = 0; j < newSize[0]; ++j, ++inPtr, ++outPtr) {
-        float dispVal = *inPtr;
-        if (dispVal > 4000) {
-          *outPtr = 0;
-        }
-        else {
-          Eigen::Vector3f pt(j,i,dispVal*mDisparityFactor);
-          Eigen::Vector3f ptLocal =
-            depthImage.unproject(pt, DepthImage::TypeDisparity);
-          if (!cropPoint(ptLocal, iBoundPlanes)) *outPtr = 0;
-          else *outPtr = pt[2];
-        }
-      }
-    }
-    depthImage.setData(dispData, DepthImage::TypeDisparity);
-
-    // wrap in view and return
-    view->set(depthImage);
-    return view;
-  }
-};
-
 struct ViewWorker {
   typedef std::shared_ptr<ViewWorker> Ptr;
 
@@ -359,8 +142,6 @@ struct ViewWorker {
   drc::map_request_t mRequest;
   std::shared_ptr<Collector> mCollector;
   std::shared_ptr<StereoHandler> mStereoHandlerHead;
-  std::shared_ptr<StereoHandler> mStereoHandlerLeft;
-  std::shared_ptr<StereoHandler> mStereoHandlerRight;
   std::shared_ptr<FusedDepthHandler> mFusedDepthHandler;
   std::thread mThread;
   Eigen::Isometry3f mInitialPose;
@@ -410,24 +191,12 @@ struct ViewWorker {
       LcmTranslator::fromLcm(mRequest, spec);
 
       // TODO: HACK for stereo data; need to think about cleaner approach
-      if ((mRequest.view_id == drc::data_request_t::STEREO_MAP_HEAD) ||
-          (mRequest.view_id == drc::data_request_t::STEREO_MAP_LHAND) ||
-          (mRequest.view_id == drc::data_request_t::STEREO_MAP_RHAND)) {
+      if (mRequest.view_id == drc::data_request_t::STEREO_MAP_HEAD) {
         DepthImageView::Ptr view;
         switch (mRequest.view_id) {
         case drc::data_request_t::STEREO_MAP_HEAD:
           if (mStereoHandlerHead != NULL) {
             view = mStereoHandlerHead->getDepthImageView(spec.mClipPlanes);
-          }
-          break;
-        case drc::data_request_t::STEREO_MAP_LHAND:
-          if (mStereoHandlerLeft != NULL) {
-            view = mStereoHandlerLeft->getDepthImageView(spec.mClipPlanes);
-          }
-          break;
-        case drc::data_request_t::STEREO_MAP_RHAND:
-          if (mStereoHandlerRight != NULL) {
-            view = mStereoHandlerRight->getDepthImageView(spec.mClipPlanes);
           }
           break;
         default: break;
@@ -640,8 +409,6 @@ public:
   std::shared_ptr<Collector> mCollector;
   ViewWorkerMap mViewWorkers;
   std::shared_ptr<StereoHandler> mStereoHandlerHead;
-  std::shared_ptr<StereoHandler> mStereoHandlerLeft;
-  std::shared_ptr<StereoHandler> mStereoHandlerRight;
   std::shared_ptr<FusedDepthHandler> mFusedDepthHandler;
 
   lcm::Subscription* mRequestSubscription;
@@ -663,13 +430,7 @@ public:
     mCollector.reset(new Collector());
     mCollector->setBotWrapper(mBotWrapper);
     mStereoHandlerHead.reset(new StereoHandler(mBotWrapper, "CAMERA"));
-    if (mStereoHandlerHead->mCamTrans == NULL) mStereoHandlerHead.reset();
-    /* TODO: disabled until/unless we actually use the hand stereo cams
-    mStereoHandlerLeft.reset(new StereoHandler(mBotWrapper, "CAMERALHAND"));
-    if (mStereoHandlerLeft->mCamTrans == NULL) mStereoHandlerLeft.reset();
-    mStereoHandlerRight.reset(new StereoHandler(mBotWrapper, "CAMERARHAND"));
-    if (mStereoHandlerRight->mCamTrans == NULL) mStereoHandlerRight.reset();
-    */
+    if (!mStereoHandlerHead->isGood()) mStereoHandlerHead.reset();
     mFusedDepthHandler.reset(new FusedDepthHandler(mBotWrapper));
     // TODO: can we avoid hard-coding these?
     mFusedDepthHandler->setCameraChannel("CAMERA_LEFT");
@@ -763,8 +524,6 @@ public:
       worker->mActive = false;
       worker->mCollector = mCollector;
       worker->mStereoHandlerHead = mStereoHandlerHead;
-      worker->mStereoHandlerLeft = mStereoHandlerLeft;
-      worker->mStereoHandlerRight = mStereoHandlerRight;
       worker->mFusedDepthHandler = mFusedDepthHandler;
       worker->mRequest = iRequest;
       worker->mInitialPose = Eigen::Isometry3f::Identity();
