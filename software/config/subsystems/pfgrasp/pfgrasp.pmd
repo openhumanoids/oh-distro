@@ -3,15 +3,15 @@ cmd "play_a_log" {
     host = "localhost";
 }
 cmd "play_a_log2" {
-    exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*' /home/drc/drcdata/2014-10-27_drill-hand-camera/lcmlog-2014-10-27T12%3A49%3A51.374703-drill-task-hand-camera";
+    exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*|CANDIDATE_MANIP_PLAN' /home/drc/drcdata/2014-10-27_drill-hand-camera/lcmlog-2014-10-27T12%3A49%3A51.374703-drill-task-hand-camera";
     host = "localhost";
 }
 cmd "play_a_log3" {
-    exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*' /home/drc/drcdata/2014-10-27_drill-hand-camera/lcmlog-2014-10-27T14%3A24%3A47.634816";
+    exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*|CANDIDATE_MANIP_PLAN' /home/drc/drcdata/2014-10-27_drill-hand-camera/lcmlog-2014-10-27T14%3A24%3A47.634816";
     host = "localhost";
 }
 cmd "play_a_log4" {
-    exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*' /home/drc/drcdata/2014-10-27_drill-hand-camera/lcmlog-2014-10-27T14%3A33%3A43.264780";
+    exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*|CANDIDATE_MANIP_PLAN' /home/drc/drcdata/2014-10-27_drill-hand-camera/lcmlog-2014-10-27T14%3A33%3A43.264780";
     host = "localhost";
 }
 cmd "ddapp" {
@@ -31,7 +31,7 @@ cmd "tld-segmenter" {
     host = "localhost";
 }
 cmd "pfgrasp" {
-    exec = "drc-pfgrasp -c CAMERALHAND -s 0.25 -g CAMERALHAND ";
+    exec = "drc-pfgrasp -c CAMERALHAND -s 0.25 -g LHAND_FORCE_TORQUE ";
     host = "localhost";
 }
 cmd "botparam" {
