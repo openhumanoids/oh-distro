@@ -1,0 +1,9 @@
+package tracker;
+
+struct pointing_vector_t
+{
+    int64_t utime;
+    int64_t object_id;
+    double pos[3];
+    double vec[3];
+}

@@ -16,7 +16,7 @@
 #include <bot_lcmgl_client/lcmgl.h>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/pfgrasp_command_t.hpp>
-#include <lcmtypes/perception/image_roi_t.hpp>
+#include <lcmtypes/drc/image_roi_t.hpp>
 #include <lcmtypes/bot_frames/update_t.hpp>
 
 #include "ImageWarper.hpp"
@@ -105,7 +105,7 @@ private:
   // get segment from track segmenter
   void
   segmentHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-      const perception::image_roi_t* msg);
+      const drc::image_roi_t* msg);
 
   void
   initParticleFilter();

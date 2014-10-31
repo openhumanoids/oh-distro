@@ -90,7 +90,7 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
     {
       printf("u=%lf v=%lf a=%lf b=%lf", u, v, bearing_a_,bearing_b_);
     }
-    perception::image_roi_t trackmsg;
+    drc::image_roi_t trackmsg;
 
     float sw = cameraParams_.width, sh = cameraParams_.height;
     trackmsg.roi.x = currBB.x / sw;
@@ -100,7 +100,7 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
     lcm_->publish("TLD_OBJECT_ROI_RESULT", &trackmsg);
   }
   else {
-    perception::image_roi_t trackmsg;
+    drc::image_roi_t trackmsg;
     trackmsg.roi.x = 0;
     trackmsg.roi.y = 0;
     trackmsg.roi.width = 0;
@@ -109,25 +109,28 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
   }
 
   // Viz
-  cv::Mat dispimg = wimg_.clone();
+  if (this->options_.debug) {
+    cv::Mat dispimg = wimg_.clone();
 
-  if (tracker_->detection_valid) {
-      const cv::Rect& currBB = tracker_->currBB;
-      std::cerr << "TLD currBB: " << currBB.tl() << " " << currBB.br() << std::endl;
+    if (tracker_->detection_valid) {
+        const cv::Rect& currBB = tracker_->currBB;
+        std::cerr << "TLD currBB: " << currBB.tl() << " " << currBB.br() << std::endl;
 
-      rectangle(dispimg, currBB, Scalar(0,0,255), 3, 8, 0);
+        rectangle(dispimg, currBB, Scalar(0,0,255), 3, 8, 0);
+    }
+  
+    Mat scaleddispimg;
+    cv::resize(dispimg, scaleddispimg, Size(dispimg.cols/2,dispimg.rows/2), 0,0,INTER_LINEAR);
+    cv::imshow( "Display window", scaleddispimg );
+    cv::waitKey(1);
   }
-  Mat scaleddispimg;
-  cv::resize(dispimg, scaleddispimg, Size(dispimg.cols/2,dispimg.rows/2), 0,0,INTER_LINEAR);
-  cv::imshow( "Display window", scaleddispimg );
-  cv::waitKey(1);
 
   return;
 }
 
 void
 PFGrasp::segmentHandler(const lcm::ReceiveBuffer* rbuf,
-    const std::string &channel, const perception::image_roi_t* msg)
+    const std::string &channel, const drc::image_roi_t* msg)
 {
   std::cerr << "SEGMENTATION msg: " << msg->utime << " " << msg->roi.x << " "
       << msg->roi.y << " " << msg->roi.width << " " << msg->roi.height
@@ -176,6 +179,9 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
     initParticleFilter();
   break;  // also run one iteration
   case drc::pfgrasp_command_t::RUN_ONE_ITER:
+    if (pf == NULL)
+      initParticleFilter();
+      
     runOneIter();
   break;
   }
@@ -198,13 +204,14 @@ PFGrasp::initParticleFilter(){
 
 
   bot_lcmgl_color3f(lcmgl_, 1,0,1);
-  for (int i=0; i<N_p; i+=3 ){
-    Eigen::Vector3d xs = pf->GetParticleState(i).position;
-    double xss[3] = {xs[0], xs[1], xs[2]};
-
-    bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
+  if (this->options_.debug){
+    for (int i=0; i<N_p; i+=3 ){
+      Eigen::Vector3d xs = pf->GetParticleState(i).position;
+      double xss[3] = {xs[0], xs[1], xs[2]};
+      bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
+    }
+    bot_lcmgl_switch_buffer(lcmgl_);
   }
-  bot_lcmgl_switch_buffer(lcmgl_);
 }
 
 void
@@ -230,11 +237,14 @@ PFGrasp::runOneIter(){
   bot_lcmgl_sphere(lcmgl_, x_world, 0.01, 100, 100);
 
   bot_lcmgl_color3f(lcmgl_, 1,0,1);
-  for (int i=0; i<N_p; i+=3 ){
-    Eigen::Vector3d xs = pf->GetParticleState(i).position;
-    double xss[3] = {xs[0], xs[1], xs[2]};
+  
+  if (this->options_.debug){
+    for (int i=0; i<N_p; i+=3 ){
+      Eigen::Vector3d xs = pf->GetParticleState(i).position;
+      double xss[3] = {xs[0], xs[1], xs[2]};
 
-    bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
+      bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
+    }
   }
 
 
@@ -249,15 +259,27 @@ PFGrasp::runOneIter(){
   // We've got xh
   // get handface pose
   Eigen::Matrix4d hpose;
+  Eigen::Matrix4d palmToFT;
+  palmToFT << 1, 0, 0, 0, 
+              0, 1, 0, 0.12, 
+              0, 0, 1, 0, 
+              0, 0, 0, 1;
+  //palmToFT << 1, 0, 0, 0, 
+              //0, 1, 0, 0, 
+              //0, 0, 1, 0, 
+              //0, 0, 0, 1;
+  
   //Eigen::Matrix<double, 4, 4, RowMajor> hpose;
   bot_frames_get_trans_mat_4x4(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", hpose.data());
-  hpose.transposeInPlace();  // eigen store matrix in column major by default
+  hpose.transposeInPlace();  // Eigen store matrix in column major by default, but botframe in row based
+  hpose = hpose * palmToFT;
   BotTrans bt;
   bot_frames_get_trans(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", &bt);
   cout << "dbg-mat:" << hpose << endl;
 
   typedef Eigen::Vector3d V;
   V hpos = hpose.block(0,3,3,1);  // location of hand
+
   V delta = xh - hpos;
   V ux = hpose.block(0,0,3,1);
   V uy = hpose.block(0,1,3,1);
@@ -265,7 +287,7 @@ PFGrasp::runOneIter(){
   V dz = uz.dot(delta) * uz;   // from the hand, z is horizontal, y points forward, x points downward
   V dy = uy.dot(delta) * uy;   // from the hand, z is horizontal, y points forward, x points downward
   V dx = ux.dot(delta) * ux;   // so we want z, and x adjustment
-  V newhpos = hpos + dx + dy;
+  V newhpos = hpos + dx + dz;
 
   cout << "dbg-newhpos:" << newhpos << endl;
   bot_lcmgl_color3f(lcmgl_, 1,1,0);
