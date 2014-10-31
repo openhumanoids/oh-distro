@@ -36,7 +36,8 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       
       if (~isfield(options, 'hokuyo'))
         options.hokuyo = false;
-      else
+      end
+      if (options.hokuyo)
         % Add lidar -- hokuyo / spindle frames are pulled from
         % config/config_components/multisense_sim.cfg
         % was [-0.0446; 0.0; 0.0880], [0;0;0] in sim.
@@ -51,6 +52,23 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         end
         obj = addSensor(obj,hokuyo);
       end
+      
+      % And foot force sensors?
+      if (~isfield(options, 'foot_force_sensors'))
+        options.foot_force_sensors = false;
+      end
+      obj.foot_force_sensors = options.foot_force_sensors;
+      if (options.foot_force_sensors)
+        l_foot_body = findLinkInd(obj,'l_foot');
+        l_foot_frame = RigidBodyFrame(l_foot_body,zeros(3,1),zeros(3,1),'l_foot');
+        l_foot_force_sensor = ContactForceTorqueSensor(obj, l_foot_frame);
+        obj = addSensor(obj, l_foot_force_sensor);
+        r_foot_body = findLinkInd(obj,'r_foot');
+        r_foot_frame = RigidBodyFrame(r_foot_body,zeros(3,1),zeros(3,1),'r_foot');
+        r_foot_force_sensor = ContactForceTorqueSensor(obj, r_foot_frame);
+        obj = addSensor(obj, r_foot_force_sensor);
+      end
+      
       obj = compile(obj);
       
       % Add obstacles if we want 
@@ -68,8 +86,12 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 
       obj.control_rate = options.control_rate;
-      obj.getStateFrame().setMaxRate(obj.control_rate);
-
+      if (isa(obj.getStateFrame(), 'MultiCoordinateFrame'))
+        obj.getStateFrame().getFrameByName('AtlasState').setMaxRate(obj.control_rate);
+      else
+        obj.getStateFrame().setMaxRate(obj.control_rate);
+      end
+      
       obj.floating = options.floating;
 
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
@@ -77,7 +99,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
 
       if options.floating
         % could also do fixed point search here
-        obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
+        ts_init = zeros(obj.getNumStates(), 1);
+        manip_init = double(obj.manip.resolveConstraints(ts_init));
+        % Pad back up
+        ts_init(1:length(manip_init)) = manip_init;
+        obj = obj.setInitialState(ts_init);
       else
         % TEMP HACK to get by resolveConstraints
         %for i=1:length(obj.manip.body), obj.manip.body(i).contact_pts=[]; end
@@ -99,8 +125,12 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
 
       state_frame = AtlasState(obj);
-      
+
       obj.manip = obj.manip.setStateFrame(state_frame);
+      if (obj.foot_force_sensors)
+        state_frame = {state_frame; ForceTorque(); ForceTorque()};
+        state_frame = MultiCoordinateFrame.constructFrame(state_frame);
+      end
       obj = obj.setStateFrame(state_frame);
       
       %atlas_output_frame{1} = atlas_state_frame;
@@ -323,7 +353,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     hokuyo_yaw_width = 2.4; % total -- i.e., whole FoV, not from center of vision
     hokuyo_num_pts = 200;   
     hokuyo_max_range = 6; % meters?
-    hokuyo_spin_rate = 1; % rad/sec
+    hokuyo_spin_rate = 2; % rad/sec
+
+    foot_force_sensors = false;
     
     % preconstructing these for efficiency
     left_full_support

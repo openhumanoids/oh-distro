@@ -33,7 +33,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       output_frame = getInputFrame(r);
       
       % We'll need atlas state as input
-      input_frame = getStateFrame(r);
+      input_frame = AtlasState(r);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
@@ -72,7 +72,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       
       % And the initial standing controller, until the planner comes
       % online
-      obj = setup_init_planner(obj, r, options);
+      obj = setup_init_planner(obj, options);
       
       % And the lcm coder
       obj.joint_names = obj.pd_plus_qp_block.getOutputFrame.getCoordinateNames;
@@ -102,7 +102,13 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
 
     end
     
-    function obj=setup_init_planner(obj, r, options)
+    function obj=setup_init_planner(obj, options)
+      % Generate a new robot, without foot force sensors or a hokuyo
+      options.foot_force_sensors = false;
+      options.hokuyo = false;
+      r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+      r = r.removeCollisionGroupsExcept({'heel','toe'});
+      r = compile(r);
       % set initial state to fixed point
       load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       r = r.setInitialState(xstar);

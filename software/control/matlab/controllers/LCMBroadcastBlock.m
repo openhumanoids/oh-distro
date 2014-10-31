@@ -12,7 +12,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     joint_names_cache;
     
     % FC publish period
-    fc_publish_period = 0.1;
+    fc_publish_period = 0.01;
     
     % Atlas, for usefulness
     r;
@@ -63,13 +63,18 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % See if we just passed our publish-timestep for 
       % the foot contact state message, publish if so.
       if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
-        % Get foot contact state
+        % Get foot force state
+%         lfoot_force = varargin{3}; % Can we infer these magic numbers
+%         rfoot_force = varargin{4}; % from the input frame?
+%         fc = [norm(lfoot_force); norm(rfoot_force)];
+        % Get binary foot contact, call it force:
         x = varargin{1};
         [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
         fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
               any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
+       
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
         foot_contact_est.utime = t*1000*1000;
