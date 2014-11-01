@@ -102,7 +102,93 @@ struct StereoHandler::Imp {
     return true;
   }
 
-  DepthImageView::Ptr getLatestDepthImage() {
+  bool removeSmall(cv::Mat& ioImage, const uint16_t iValueThresh,
+                   const int iSizeThresh) {
+
+    const int w = ioImage.cols;
+    const int h = ioImage.rows;
+
+    // allocate output labels image
+    std::vector<int> labelImage(w*h);
+
+    // allocate equivalences table
+    std::vector<int> equivalences(w*h);
+    std::fill(equivalences.begin(), equivalences.end(), 0);
+
+    // utility function
+    auto collapse = [&](const int iIndex) {
+      int out = iIndex;
+      while (equivalences[out] != out) out = equivalences[out];
+      return out;
+    };
+
+    int curLabel = 0;
+
+    // loop over image pixels
+    for (int i = 0; i < h; ++i) {
+      int* labels = labelImage.data() + i*w;
+      const uint16_t* im = ioImage.ptr<uint16_t>(i);
+      for (int j = 0; j < w; ++j, ++im, ++labels) {
+
+        // ignore pixels below thresh
+        if (*im < iValueThresh) continue;
+
+        // look at neighbors (for 4-connectedness)
+        int labelAbove = (i>0) ? collapse(labels[-w]) : 0;
+        int labelLeft = (j>0) ? collapse(labels[-1]) : 0;
+
+        if (labelAbove>0) {
+          *labels = labelAbove;
+          if ((labelLeft>0) && (labelAbove!=labelLeft)) {
+            equivalences[labelLeft] = labelAbove;
+          }
+        }
+        else {
+          if (labelLeft>0) {
+            *labels = labelLeft;
+          }
+          else {
+            ++curLabel;
+            *labels = curLabel;
+            equivalences[curLabel] = curLabel;
+          }
+        }
+      }
+    }
+
+    // collapse label equivalences
+    ++curLabel;
+    for (int i = 0; i < curLabel; ++i) {
+      equivalences[i] = collapse(i);
+    }
+
+    // remap labels image and count connected components
+    std::vector<int> counts(curLabel);
+    std::fill(counts.begin(), counts.end(), 0);
+    for (int i = 0; i < w*h; ++i) {
+      int& label = labelImage[i];
+      label = equivalences[label];
+      ++counts[label];
+    }
+
+    // remap once more
+    std::vector<uint8_t> valid(counts.size());
+    for (int i = 0; i < curLabel; ++i) {
+      valid[i] = (counts[i] < iSizeThresh) ? 0 : 1;
+    }
+    const int* labels = labelImage.data();
+    for (int i = 0; i < h; ++i) {
+      uint16_t* im = ioImage.ptr<uint16_t>(i);
+      for (int j = 0; j < w; ++j, ++im, ++labels) {
+        if (valid[*labels] == 0) *im = 0;
+      }
+    }
+
+    return true;
+  }
+
+
+  DepthImageView::Ptr getLatestDepthImage(bool iDoFilter) {
     bot_core::image_t img;
     Eigen::Isometry3d pose;
     {
@@ -116,17 +202,23 @@ struct StereoHandler::Imp {
     cv::Mat disparityMat;
     int w = img.width;
     int h = img.height;
+    cv::Mat orig;
+    std::vector<uint8_t> buf;
     if (img.data.size() != w*h*2) {
-      std::vector<uint8_t> buf(w*h*2);
+      buf.resize(w*h*2);
       unsigned long len = buf.size();
       uncompress(buf.data(), &len, img.data.data(), img.data.size());
-      cv::Mat(h, w, CV_16UC1, buf.data()).
-        convertTo(disparityMat, CV_32F, mDisparityFactor/16);
+      orig = cv::Mat(h, w, CV_16UC1, buf.data());
     }
     else {
-      cv::Mat(h, w, CV_16UC1, (void*)img.data.data()).
-        convertTo(disparityMat, CV_32F, mDisparityFactor/16);
+      orig = cv::Mat(h, w, CV_16UC1, (void*)img.data.data());
     }
+    if (iDoFilter) {
+      float depthThresh = 10.0f;
+      int sizeThresh = 100;
+      removeSmall(orig, 16/mDisparityFactor/depthThresh, sizeThresh);
+    }
+    orig.convertTo(disparityMat, CV_32F, mDisparityFactor/16);
 
     // copy disparity data
     DepthImage depthImage;
@@ -148,7 +240,7 @@ struct StereoHandler::Imp {
 
   DepthImageView::Ptr
   getDepthImageView(const std::vector<Eigen::Vector4f>& iBoundPlanes) {
-    DepthImageView::Ptr view = getLatestDepthImage();
+    DepthImageView::Ptr view = getLatestDepthImage(true);
     if (view == NULL) return view;
 
     // project bound polyhedron onto camera
@@ -224,7 +316,7 @@ struct StereoHandler::Imp {
 
   DepthImageView::Ptr getDepthImageView(const drc::map_request_t& iRequest) {
     // get latest depth map as view
-    DepthImageView::Ptr depthView = getLatestDepthImage();
+    DepthImageView::Ptr depthView = getLatestDepthImage(true);
     if (depthView == NULL) return depthView;
 
     // convert to point cloud in local frame
