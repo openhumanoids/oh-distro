@@ -416,7 +416,7 @@ struct Worker {
   void sendStereoHeightRequest() {
     const Eigen::Vector3f minPt(-1, -2, -3);
     const Eigen::Vector3f maxPt(5, 2, 0.3);
-    auto msg = prepareHeightRequestMessage(minPt, maxPt, 0.03, 0.03);
+    auto msg = prepareHeightRequestMessage(minPt, maxPt, 0.02, 0.02);
     msg.view_id = drc::data_request_t::STEREO_HEIGHT;
     mLcm->publish("MAP_REQUEST", &msg);
   }
