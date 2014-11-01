@@ -222,7 +222,8 @@ struct ViewWorker {
 
       // fused depth
       else if ((mRequest.view_id == drc::data_request_t::FUSED_DEPTH) ||
-               (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT)) {
+               (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) ||
+               (mRequest.view_id == drc::data_request_t::STEREO_HEIGHT)) {
         DepthImageView::Ptr view;
         if (mRequest.view_id == drc::data_request_t::FUSED_DEPTH) {
           view = mFusedDepthHandler->getLatest();
@@ -230,12 +231,16 @@ struct ViewWorker {
         else if (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) {
           view = mFusedDepthHandler->getLatest(mRequest);
         }
+        else if (mRequest.view_id == drc::data_request_t::STEREO_HEIGHT) {
+          view = mStereoHandlerHead->getDepthImageView(mRequest);
+        }
         if (view == NULL) {
-          std::cout << "No fused depth view available" << std::endl;
+          std::cout << "No view available" << std::endl;
         }
         else {
           view->setId(mRequest.view_id);
-          if (mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) {
+          if ((mRequest.view_id == drc::data_request_t::FUSED_HEIGHT) ||
+              (mRequest.view_id == drc::data_request_t::STEREO_HEIGHT)) {
             view->setId(drc::data_request_t::HEIGHT_MAP_SCENE);
           }
           drc::map_image_t msg;
@@ -246,7 +251,7 @@ struct ViewWorker {
           std::string chan =
             mRequest.channel.size()>0 ? mRequest.channel : "MAP_DEPTH";
           lcm->publish(chan, &msg);
-          std::cout << "Sent fused depth image on " << chan << " at " <<
+          std::cout << "Sent stereo depth image on " << chan << " at " <<
             msg.blob.num_bytes << " bytes (view " << view->getId() <<
             ")" << std::endl;
         }

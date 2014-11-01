@@ -121,11 +121,11 @@ struct StereoHandler::Imp {
       unsigned long len = buf.size();
       uncompress(buf.data(), &len, img.data.data(), img.data.size());
       cv::Mat(h, w, CV_16UC1, buf.data()).
-        convertTo(disparityMat, CV_32F, 1.0/16);
+        convertTo(disparityMat, CV_32F, mDisparityFactor/16);
     }
     else {
       cv::Mat(h, w, CV_16UC1, (void*)img.data.data()).
-        convertTo(disparityMat, CV_32F, 1.0f/16);
+        convertTo(disparityMat, CV_32F, mDisparityFactor/16);
     }
 
     // copy disparity data
@@ -140,7 +140,7 @@ struct StereoHandler::Imp {
     depthImage.setData(dispData, DepthImage::TypeDisparity);
 
     // wrap in view and return
-    DepthImageView::Ptr view;
+    DepthImageView::Ptr view(new DepthImageView());
     view->set(depthImage);
     view->setUpdateTime(img.utime);
     return view;
@@ -280,3 +280,7 @@ getDepthImageView(const std::vector<Eigen::Vector4f>& iBoundPlanes) {
   return mImp->getDepthImageView(iBoundPlanes);
 }
 
+DepthImageView::Ptr StereoHandler::
+getDepthImageView(const drc::map_request_t& iRequest) {
+  return mImp->getDepthImageView(iRequest);
+}
