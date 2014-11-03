@@ -153,7 +153,7 @@ pf_state ParticleFilter::Integrate(){
       cin >> pause;
     }*/
     // need to resolve nan problem 
-    cout << "("<<t[0]<<"," << t[1] <<","<< t[2]<<") w" << w<< endl;
+    //cout << "("<<t[0]<<"," << t[1] <<","<< t[2]<<") w" << w<< endl;
       pos[0] += w*t[0];
       pos[1] += w*t[1];
       pos[2] += w*t[2];
