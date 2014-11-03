@@ -13,6 +13,7 @@ pods_use_pkg_config_packages(${APP_NAME}
   model-client
   kdl-parser
   forward-kinematics
+  bot2-lcmgl-client
 )
 
 # make executable public

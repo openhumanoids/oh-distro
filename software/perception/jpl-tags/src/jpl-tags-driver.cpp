@@ -18,6 +18,7 @@
 
 #include <bot_core/camtrans.h>
 #include <bot_param/param_util.h>
+#include <bot_lcmgl_client/lcmgl.h>
 
 #include <zlib.h>
 
@@ -41,9 +42,17 @@ struct TagInfo {
   }
 };
 
+typedef std::map<std::string, KDL::Frame> FrameMap;
+typedef std::shared_ptr<FrameMap> FrameMapPtr;
+struct FrameMapInfo {
+  int64_t mTimestamp;
+  FrameMapPtr mFrameMap;
+};
+
 struct State {
   drc::BotWrapper::Ptr mBotWrapper;
   drc::LcmWrapper::Ptr mLcmWrapper;
+  bot_lcmgl_t* mBotLcmgl;
   BotCamTrans* mCamTransLeft;
   BotCamTrans* mCamTransRight;
   fiducial_detector_t* mDetector;
@@ -54,9 +63,7 @@ struct State {
   std::vector<TagInfo> mTags;
 
   int64_t mLastStateUpdateTime;
-  typedef std::map<std::string, KDL::Frame> FrameMap;
-  typedef std::shared_ptr<FrameMap> FrameMapPtr;
-  std::map<int64_t, FrameMapPtr> mLinkFrames;
+  std::list<FrameMapInfo> mLinkFrames;
   std::shared_ptr<KDL::TreeFkSolverPosFull_recursive> mFkSolver;
   std::mutex mFramesMutex;
 
@@ -64,6 +71,11 @@ struct State {
   std::string mTagChannel;
   bool mRunStereoAlgorithm;
   bool mDoTracking;
+  bool mDebug;
+
+  static constexpr double kMaxStateUpdateRate = 60;  // Hz
+  static constexpr double kMaxStateCacheSeconds = 1;
+
 
   State() {
     mDetector = NULL;
@@ -74,12 +86,15 @@ struct State {
     mTagChannel = "JPL_TAGS";
     mRunStereoAlgorithm = false;
     mDoTracking = false;
+    mDebug = false;
     mLastStateUpdateTime = 0;
+    mBotLcmgl = NULL;
   }
 
   ~State() {
     if (mDetector != NULL) fiducial_detector_free(mDetector);
     if (mStereoDetector != NULL) fiducial_stereo_free(mStereoDetector);
+    if (mBotLcmgl != NULL) bot_lcmgl_destroy(mBotLcmgl);
   }
 
   void populate(BotCamTrans* iCam, fiducial_stereo_cam_model_t& oCam) {
@@ -142,9 +157,34 @@ struct State {
     }
   }
 
+  void debugDrawPoint(const Eigen::Vector3f& iPoint,
+                      const Eigen::Vector3f& iColor,
+                      const float iPointSize) {
+    bot_lcmgl_point_size(mBotLcmgl, iPointSize);
+    bot_lcmgl_color3f(mBotLcmgl, iColor[0], iColor[1], iColor[2]);
+    bot_lcmgl_begin(mBotLcmgl, LCMGL_POINTS);
+    bot_lcmgl_vertex3f(mBotLcmgl, iPoint[0], iPoint[1], iPoint[2]);
+    bot_lcmgl_end(mBotLcmgl);
+  }
+
+  void debugDrawLine(const Eigen::Vector3f& iPoint1,
+                     const Eigen::Vector3f& iPoint2,
+                     const Eigen::Vector3f& iColor,
+                     const float iLineWidth) {
+    bot_lcmgl_line_width(mBotLcmgl, iLineWidth);
+    bot_lcmgl_color3f(mBotLcmgl, iColor[0], iColor[1], iColor[2]);
+    bot_lcmgl_begin(mBotLcmgl, LCMGL_LINES);
+    bot_lcmgl_vertex3f(mBotLcmgl, iPoint1[0], iPoint1[1], iPoint1[2]);
+    bot_lcmgl_vertex3f(mBotLcmgl, iPoint2[0], iPoint2[1], iPoint2[2]);
+    bot_lcmgl_end(mBotLcmgl);
+  }
+
   void setup() {
     mBotWrapper.reset(new drc::BotWrapper());
     mLcmWrapper.reset(new drc::LcmWrapper(mBotWrapper->getLcm()));
+    if (mBotLcmgl != NULL) bot_lcmgl_destroy(mBotLcmgl);
+    mBotLcmgl = bot_lcmgl_init(mBotWrapper->getLcm()->getUnderlyingLCM(),
+                               "jpl-tag-debug");
 
     mDetector = fiducial_detector_alloc();
     fiducial_detector_init(mDetector);
@@ -220,11 +260,10 @@ struct State {
 
   void onState(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
                const drc::robot_state_t* iMessage) {
-    const double kMaxRate = 60;  // Hz
-    const double kMaxSeconds = 1;
 
     // limit update rate
-    if ((iMessage->utime - mLastStateUpdateTime) < 1e6/kMaxRate) return;
+    int64_t timeDelta = std::abs(iMessage->utime-mLastStateUpdateTime);
+    if (timeDelta < 1e6/kMaxStateUpdateRate) return;
 
     // get pelvis pose
     KDL::Frame bodyToLocal = KDL::Frame::Identity();
@@ -261,10 +300,15 @@ struct State {
 
     // update internal frames handle
     {
+      FrameMapInfo info;
+      info.mTimestamp = iMessage->utime;
+      info.mFrameMap = frameMap;
+
       std::unique_lock<std::mutex> lock(mFramesMutex);
-      mLinkFrames[iMessage->utime] = frameMap;
-      while ((int)mLinkFrames.size() > (int)(kMaxSeconds*kMaxRate)) {
-        mLinkFrames.erase(mLinkFrames.begin());
+      mLinkFrames.push_back(info);
+      while ((int)mLinkFrames.size() >
+             (int)(kMaxStateCacheSeconds*kMaxStateUpdateRate)) {
+        mLinkFrames.pop_front();
       }
       mLastStateUpdateTime = iMessage->utime;
     }
@@ -377,22 +421,47 @@ struct State {
       // use fk wrt left cam
       else {
         std::unique_lock<std::mutex> lock(mFramesMutex);
-        auto item = mLinkFrames.lower_bound(iMessage->utime);
-        if (item == mLinkFrames.end()) {
+
+        // search for best link map
+        int64_t bestDelta = 1000000000;
+        FrameMapInfo bestInfo;
+        for (const auto& info : mLinkFrames) {
+          int64_t timeDelta = std::abs(info.mTimestamp - iMessage->utime);
+          if (timeDelta < bestDelta) {
+            bestDelta = timeDelta;
+            bestInfo = info;
+          }
+        }
+        if (bestDelta > 2*1e6/kMaxStateUpdateRate) {
           std::cout << "error: cannot find robot state at " <<
             iMessage->utime << std::endl;
           return;
         }
-        const auto& frameMap = *item->second;
+
+        // find link
+        const auto& frameMap = *bestInfo.mFrameMap;
         auto link = frameMap.find(mTags[i].mLinkName);
         if (link == frameMap.end()) {
           std::cout << "error: cannot find link " << mTags[i].mLinkName <<
             std::endl;
         }
+
+        // compute transforms
         Eigen::Isometry3d linkToLocal = toEigen(link->second);
         Eigen::Isometry3d linkToCamera = localToCamera*linkToLocal;
         Eigen::Isometry3d tagToCamera = linkToCamera*mTags[i].mLinkPose;
         poseInit = getFiducialPose(tagToCamera);
+
+        // TODO TEMP
+        if (mDebug) {
+          Eigen::Isometry3d tagToLocal = linkToLocal*mTags[i].mLinkPose;
+          Eigen::Vector3d p0 = tagToLocal.translation();
+          debugDrawPoint(p0.cast<float>(), Eigen::Vector3f(0, 0, 1), 10);
+          Eigen::Vector3d v = tagToLocal.rotation().col(2);
+          Eigen::Vector3d p1 = p0 + 0.05*v;
+          debugDrawLine(p0.cast<float>(), p1.cast<float>(),
+                        Eigen::Vector3f(0, 0, 1), 3);
+        }
       }
 
       mTags[i].mTracked = false;
@@ -492,6 +561,16 @@ struct State {
     }
     mLcmWrapper->get()->publish(mTagChannel, &msg);
 
+    // debug draw
+    if (mDebug) {
+      for (const auto& detection : msg.detections) {
+        debugDrawPoint(Eigen::Vector3f(detection.pos[0], detection.pos[1],
+                                       detection.pos[2]),
+                       Eigen::Vector3f(1, 0, 1), 10);
+      }
+      bot_lcmgl_switch_buffer(mBotLcmgl);
+    }
+
     auto t2 = std::chrono::high_resolution_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1);
     std::cout << "PROCESSED IN " << dt.count()/1e6 << " SEC" << std::endl;
@@ -512,8 +591,9 @@ int main(const int iArgc, const char** iArgv) {
           "whether to run stereo-based detector");
   opt.add(state.mDoTracking, "t", "tracking",
           "whether to use previous detection to initialize current detection");
+  opt.add(state.mDebug, "v", "verbose",
+          "whether to publish lcmgl messages and other diagnostics");
   opt.parse();
-
 
   state.setup();
   state.start();
