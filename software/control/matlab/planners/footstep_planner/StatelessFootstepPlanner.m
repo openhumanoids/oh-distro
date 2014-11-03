@@ -155,7 +155,7 @@ classdef StatelessFootstepPlanner
 
     function plan = snapToTerrain(biped, plan, request)
       nsteps = length(plan.footsteps);
-      for j = 1:nsteps
+      for j = 3:nsteps
         if ~plan.footsteps(j).pos_fixed(3)
           plan.footsteps(j) = fitStepToTerrain(biped, plan.footsteps(j));
         end
