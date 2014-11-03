@@ -230,7 +230,7 @@ struct Worker {
     }
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
     msg.time_min = 0;
-    msg.time_max = 185;
+    msg.time_max = 190;
     msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
     mLcm->publish("MAP_REQUEST", &msg);
   }
@@ -471,7 +471,7 @@ struct Worker {
     msg.resolution = 0.5*(iResX + iResY);
     msg.width = int((iMaxPt[0] - iMinPt[0]) / iResX);
     msg.height = int((iMaxPt[1] - iMinPt[1]) / iResY);
-    msg.accum_type = drc::map_request_t::MEAN;
+    msg.accum_type = drc::map_request_t::CLOSEST_PERCENTILE;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.clip_planes[0][3] = -iMinPt[0];
     msg.clip_planes[1][3] = iMaxPt[0];
