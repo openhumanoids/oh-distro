@@ -24,7 +24,8 @@ public:
     AccumulationMethodClosest,
     AccumulationMethodFurthest,
     AccumulationMethodMean,
-    AccumulationMethodMedian
+    AccumulationMethodMedian,
+    AccumulationMethodClosestPercentile,
   };
 
   typedef std::shared_ptr<DepthImage> Ptr;

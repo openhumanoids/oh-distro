@@ -108,6 +108,8 @@ struct Worker {
         sendFusedDepthRequest(); break;
       case drc::data_request_t::FUSED_HEIGHT:
         sendFusedHeightRequest(); break;
+      case drc::data_request_t::STEREO_HEIGHT:
+        sendStereoHeightRequest(); break;
       default:
         cout << "Unknown request type" << endl; break;
       }
@@ -227,7 +229,7 @@ struct Worker {
       for (int k = 0; k < 4; ++k) msg.clip_planes[5][k] = plane[k];
     }
     msg.view_id = drc::data_request_t::HEIGHT_MAP_SCENE;
-    msg.time_min = 0;
+    msg.time_min = -5;
     msg.time_max = 185;
     msg.time_mode = drc::map_request_t::ROLL_ANGLE_ABSOLUTE;
     mLcm->publish("MAP_REQUEST", &msg);
@@ -411,6 +413,14 @@ struct Worker {
     mLcm->publish("MAP_REQUEST", &msg);
   }
 
+  void sendStereoHeightRequest() {
+    const Eigen::Vector3f minPt(-1, -2, -3);
+    const Eigen::Vector3f maxPt(5, 2, 0.3);
+    auto msg = prepareHeightRequestMessage(minPt, maxPt, 0.02, 0.02);
+    msg.view_id = drc::data_request_t::STEREO_HEIGHT;
+    mLcm->publish("MAP_REQUEST", &msg);
+  }
+
   Eigen::Projective3f createProjector(const float iHorzFovDegrees,
                                       const float iVertFovDegrees,
                                       const int iWidth, const int iHeight) {
@@ -461,6 +471,7 @@ struct Worker {
     msg.resolution = 0.5*(iResX + iResY);
     msg.width = int((iMaxPt[0] - iMinPt[0]) / iResX);
     msg.height = int((iMaxPt[1] - iMinPt[1]) / iResY);
+    msg.accum_type = drc::map_request_t::CLOSEST_PERCENTILE;
     msg.type = drc::map_request_t::DEPTH_IMAGE;
     msg.clip_planes[0][3] = -iMinPt[0];
     msg.clip_planes[1][3] = iMaxPt[0];
@@ -494,6 +505,7 @@ struct Worker {
     msg.time_max = 0;
     msg.time_mode = drc::map_request_t::RELATIVE;
     msg.relative_location = true;
+    msg.accum_type = drc::map_request_t::CLOSEST;
     msg.clip_planes.push_back(std::vector<float>({ 1, 0, 0, 5}));
     msg.clip_planes.push_back(std::vector<float>({-1, 0, 0, 5}));
     msg.clip_planes.push_back(std::vector<float>({ 0, 1, 0, 5}));

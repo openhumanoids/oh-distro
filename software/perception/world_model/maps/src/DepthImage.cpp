@@ -263,7 +263,8 @@ create(const maps::PointCloud::Ptr& iCloud) {
   std::vector<float> sums;
   std::vector<int> counts;
   AccumulationMethod method = mHelper->mAccumulationMethod;
-  if (method == AccumulationMethodMedian) {
+  if ((method == AccumulationMethodMedian) ||
+      (method == AccumulationMethodClosestPercentile)) {
     lists.resize(mHelper->mWidth * mHelper->mHeight);
   }
   else if (method == AccumulationMethodMean) {
@@ -298,6 +299,7 @@ create(const maps::PointCloud::Ptr& iCloud) {
       }
       break;
     case AccumulationMethodMedian:
+    case AccumulationMethodClosestPercentile:
       lists[idx].push_back(z);
       break;
     case AccumulationMethodMean:
@@ -309,12 +311,18 @@ create(const maps::PointCloud::Ptr& iCloud) {
     }
   }
 
-  if (method == AccumulationMethodMedian) {
+  if ((method == AccumulationMethodMedian) ||
+      (method == AccumulationMethodClosestPercentile)) {
+    float percentile = 0.5f;
+    if (method == AccumulationMethodClosestPercentile) {
+      if (mHelper->mIsOrthographic) percentile = 0.1f;
+      else percentile = 0.9f;
+    }
     for (int i = 0; i < lists.size(); ++i) {
       int n = lists[i].size();
       if (n == 0) continue;
       std::sort(lists[i].begin(), lists[i].end());
-      mHelper->mData[i] = lists[i][n/2];
+      mHelper->mData[i] = lists[i][(int)(percentile*n)];
     }
   }
   else if (method == AccumulationMethodMean) {
