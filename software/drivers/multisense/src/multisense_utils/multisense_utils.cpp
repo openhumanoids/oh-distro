@@ -34,16 +34,15 @@ void multisense_utils::unpack_multisense(const uint8_t* depth_data, const uint8_
     //  const uint8_t* raw_data= stereob_->getDisparity();//= 3;//msg->images[1].data.data();
     disparity_orig_temp.data = (uchar*) depth_data;   // ... is a simple assignment possible?
 
+    // Remove disconnect components. TODO: if needed this can also be used for the depth data
     if (size_threshold_ > 0){
       // Distance threshold conversion:
-      float k00 = 591.909423828125; // focal length x;
-      float baseline = 0.0700931567882511;
+      float k00 = 1/repro_matrix(2,3);
+      float baseline = 1/repro_matrix(3,2);
       float mDisparityFactor = 1/k00/baseline;
       float thresh = 16.0/mDisparityFactor/depth_threshold_;
       miu_.removeSmall(disparity_orig_temp, thresh, size_threshold_);
     }
-
-
 
     //std::copy(msg->images[1].data.data()             , msg->images[1].data.data() + (msg->images[1].size) ,
     //          disparity_orig_temp.data);
