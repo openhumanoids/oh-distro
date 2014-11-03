@@ -99,7 +99,7 @@ classdef AtlasWalkingWrapper < DrakeSystem
         options.use_lcm = true;
         options.use_contact_logic_OR = true;      
       else
-        options.use_lcm = false;
+        options.use_lcm = true;
         options.contact_threshold = 0.002;
       end
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);

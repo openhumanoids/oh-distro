@@ -36,10 +36,15 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       
       if (~isfield(options, 'hokuyo'))
         options.hokuyo = false;
-      else
+      end
+      if (options.hokuyo)
         % Add lidar -- hokuyo / spindle frames are pulled from
         % config/config_components/multisense_sim.cfg
-        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446; 0.0; 0.0880],[0;0;0],'hokuyo_frame'));
+        % was [-0.0446; 0.0; 0.0880], [0;0;0] in sim.
+        % trying new value that lines up more accurately with
+        % head_to_left_eye, left_eye_to_spindle transforms
+        % from multisense_05.cfg
+        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0055, -0.0087, 0.0914].',[0, 0, 0].','hokuyo_frame'));
         hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
           -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
         if (~isfield(options, 'visualize') || options.visualize)
@@ -47,27 +52,46 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         end
         obj = addSensor(obj,hokuyo);
       end
+      
+      % And foot force sensors?
+      if (~isfield(options, 'foot_force_sensors'))
+        options.foot_force_sensors = false;
+      end
+      obj.foot_force_sensors = options.foot_force_sensors;
+      if (options.foot_force_sensors)
+        l_foot_body = findLinkInd(obj,'l_foot');
+        l_foot_frame = RigidBodyFrame(l_foot_body,zeros(3,1),zeros(3,1),'l_foot');
+        l_foot_force_sensor = ContactForceTorqueSensor(obj, l_foot_frame);
+        obj = addSensor(obj, l_foot_force_sensor);
+        r_foot_body = findLinkInd(obj,'r_foot');
+        r_foot_frame = RigidBodyFrame(r_foot_body,zeros(3,1),zeros(3,1),'r_foot');
+        r_foot_force_sensor = ContactForceTorqueSensor(obj, r_foot_frame);
+        obj = addSensor(obj, r_foot_force_sensor);
+      end
+      
       obj = compile(obj);
       
       % Add obstacles if we want 
-      if isfield(options,'obstacles')
-        for i=1:options.obstacles
-          xy = randn(2,1);
-          while(norm(xy)<1), xy = randn(2,1); end
-          height = .05;
-          shape = RigidBodyBox([.2+.8*rand(1,2) height],[xy;height/2],[0;0;randn]);
-          shape.c = rand(3,1);
-          obj = addShapeToBody(obj,'world',shape);
-          obj = addContactShapeToBody(obj,'world',shape);
-        end
+      % (here is just a box in front of the robot to look at)
+      if (isfield(options,'obstacles') && options.obstacles)
+        height = 0.1;
+        shape = RigidBodyBox([1.0 1.0 height], [2; 0; height/2], [0; 0; 0;]);
+        shape.c = rand(3, 1);
+        obj = addShapeToBody(obj, 'world', shape);
+        obj = addContactShapeToBody(obj, 'world', shape);
+        obj = compile(obj);
       end
       
       S = warning('off','Drake:RigidBodyManipulator:SingularH');
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
 
       obj.control_rate = options.control_rate;
-      obj.getStateFrame().setMaxRate(obj.control_rate);
-
+      if (isa(obj.getStateFrame(), 'MultiCoordinateFrame'))
+        obj.getStateFrame().getFrameByName('AtlasState').setMaxRate(obj.control_rate);
+      else
+        obj.getStateFrame().setMaxRate(obj.control_rate);
+      end
+      
       obj.floating = options.floating;
 
       obj.stateToBDIInd = 6*obj.floating+[1 2 3 28 9 10 11 12 13 14 21 22 23 24 25 26 4 5 6 7 8 15 16 17 18 19 20 27]';
@@ -75,7 +99,11 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
 
       if options.floating
         % could also do fixed point search here
-        obj = obj.setInitialState(double(obj.manip.resolveConstraints(zeros(obj.getNumStates(),1))));
+        ts_init = zeros(obj.getNumStates(), 1);
+        manip_init = double(obj.manip.resolveConstraints(ts_init));
+        % Pad back up
+        ts_init(1:length(manip_init)) = manip_init;
+        obj = obj.setInitialState(ts_init);
       else
         % TEMP HACK to get by resolveConstraints
         %for i=1:length(obj.manip.body), obj.manip.body(i).contact_pts=[]; end
@@ -97,8 +125,12 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       obj = compile@TimeSteppingRigidBodyManipulator(obj);
 
       state_frame = AtlasState(obj);
-      
+
       obj.manip = obj.manip.setStateFrame(state_frame);
+      if (obj.foot_force_sensors)
+        state_frame = {state_frame; ForceTorque(); ForceTorque()};
+        state_frame = MultiCoordinateFrame.constructFrame(state_frame);
+      end
       obj = obj.setStateFrame(state_frame);
       
       %atlas_output_frame{1} = atlas_state_frame;
@@ -318,10 +350,13 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
 
-    hokuyo_yaw_width = 1.6; % total -- i.e., whole FoV, not from center of vision
-    hokuyo_num_pts = 30;   
+    hokuyo_yaw_width = 2.4; % total -- i.e., whole FoV, not from center of vision
+    hokuyo_num_pts = 200;   
     hokuyo_max_range = 6; % meters?
-    hokuyo_spin_rate = 10; % rad/sec
+    hokuyo_spin_rate = 2; % rad/sec
+
+    foot_force_sensors = false;
+    
     % preconstructing these for efficiency
     left_full_support
     left_toe_support
@@ -330,6 +365,5 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     left_full_right_full_support
     left_toe_right_full_support
     left_full_right_toe_support
-
   end
 end

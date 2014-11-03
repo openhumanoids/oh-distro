@@ -1,0 +1,104 @@
+group "0.params_and_model_pub" {
+    cmd "pserver" {
+        exec = "bot-param-server $DRC_BASE/software/config/drc_robot_02_mit.cfg";
+        host = "base";
+    }
+    cmd "model_LR_RR" {
+        exec = "robot_model_publisher $DRC_BASE/software/models/mit_gazebo_models/mit_robot/model_LR_RR.urdf";
+        host = "base";
+    }
+}
+
+group "1.state_mit" {
+
+    cmd "joints2frames" {
+        exec = "drc-joints2frames -g -b";
+        host = "base";
+    }
+
+    cmd "state-sync" {
+        exec = "drc-state-sync";
+        host = "base";
+    }
+    cmd "fusion" {
+        exec = "se-fusion";
+        host = "base";
+    }
+
+}
+
+group "2.plan_and_control" {
+
+
+    cmd "AtlasController" {
+        exec = "matlab -nosplash -nodesktop -r \"try; addpath_control; runAtlasStateMachine(2, 1); catch e; disp(getReport(e, 'extended')); quit(1); end; quit();\"";
+        host = "base";
+        stop_signal = 15;
+    }
+
+    cmd "CombinedPlanner" {
+       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
+       host = "base";
+       stop_signal = 15;
+    }
+
+    cmd "BaseBDIStepTranslator" {
+        exec = "drc-bdi-step-translator";
+        host = "base";
+    }
+}
+
+group "5.maps" {
+
+    cmd "data-request-server" {
+        exec = "data-request-server";
+        host = "base";
+    }
+
+    cmd "maps-server" {
+        exec = "maps-server";
+        host = "base";
+    }
+
+    cmd "lidar-passthrough" {
+        exec = "drc-lidar-passthrough -c 0.06";
+        host = "base";
+    }
+}
+
+cmd "pose-util" {
+    exec = "drc-robot-pose-util";
+    host = "base";
+}
+
+cmd "viewer" {
+    exec = "drc-viewer -c drc_robot_02.cfg";
+    host = "base";
+}
+
+cmd "base_deputy" {
+    exec = "bot-procman-deputy -n base";
+    host = "localhost";
+}
+
+cmd "drakeAtlasSimulation" {
+    exec = "matlab -nosplash -nodesktop -r \"try; addpath_control; drakeAtlasSimulation; catch e; disp(getReport(e, 'extended')); quit(1); end; quit();\"";
+    host = "localhost";
+}
+
+script "0.run_simul" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start group "1.state_mit";
+    start group "2.plan_and_control";
+    start group "5.maps";
+    start cmd "drakeAtlasSimulation";
+}
+
+script "1.reset_simul" {
+    restart cmd "drakeAtlasSimulation";
+    wait ms 1000;
+    restart cmd "AtlasController";
+}
