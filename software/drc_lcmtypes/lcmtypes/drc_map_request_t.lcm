@@ -50,6 +50,9 @@ struct map_request_t
   int16_t width;
   int16_t height;
 
+  // accumulation method (for image types)
+  int8_t accum_type;
+
   // enum for request types
   const int8_t NONE = 0;
   const int8_t POINT_CLOUD = 1;
@@ -61,4 +64,10 @@ struct map_request_t
   const int8_t RELATIVE = 1;
   const int8_t ROLL_ANGLE_ABSOLUTE = 2;
   const int8_t ROLL_ANGLE_RELATIVE = 3;
+
+  // enum for accumulation types
+  const int8_t CLOSEST = 0;
+  const int8_t FURTHEST = 1;
+  const int8_t MEAN = 2;
+  const int8_t MEDIAN = 3;
 }

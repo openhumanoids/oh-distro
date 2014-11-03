@@ -9,6 +9,7 @@ Spec() {
   mActive = false;
   mTimeMode = TimeModeAbsolute;
   mRelativeLocation = false;
+  mAccumulationMethod = AccumulationMethodClosest;
   mType = TypePointCloud;
   mResolution = 0;
   mFrequency = 0;
@@ -25,6 +26,7 @@ operator==(const Spec& iSpec) const {
     (mActive == iSpec.mActive) &&
     (mTimeMode == iSpec.mTimeMode) &&
     (mRelativeLocation == iSpec.mRelativeLocation) &&
+    (mAccumulationMethod == iSpec.mAccumulationMethod) &&
     (mType == iSpec.mType) &&
     (mResolution == iSpec.mResolution) &&
     (mFrequency == iSpec.mFrequency) &&

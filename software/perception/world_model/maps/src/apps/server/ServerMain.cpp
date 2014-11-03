@@ -361,14 +361,8 @@ struct ViewWorker {
             if (spec.mRelativeLocation) {
               projector = projector*headToLocal.inverse();
             }
-            DepthImage::AccumulationMethod accumMethod;
-            // TODO: hack to differentiate between accumulation variants
-            if (Utils::isOrthographic(projector.matrix())) {
-              accumMethod = DepthImage::AccumulationMethodMean;
-            }
-            else {
-              accumMethod = DepthImage::AccumulationMethodClosest;
-            }
+            DepthImage::AccumulationMethod accumMethod =
+              (DepthImage::AccumulationMethod)spec.mAccumulationMethod;
             DepthImageView::Ptr image =
               localMap->getAsDepthImage(mRequest.width, mRequest.height,
                                         projector, accumMethod, bounds);
