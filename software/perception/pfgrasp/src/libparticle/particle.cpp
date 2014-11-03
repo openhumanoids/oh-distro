@@ -59,12 +59,14 @@ double Particle::GetLogLikelihood(rng *pRng, const void* userdata){
   BotCamTrans* HandCamTrans = pfg->warpedCamTrans;
   //if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood3" << std::endl;
 
+  
   float a = pfg->bearing_a_, b = pfg->bearing_b_;
+  //printf("%d a=%lf b=%lf", , bearing_a_,bearing_b_);
   //int64_t utime = pfg->img_utime_;
 
 
-  //if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood3 a:"<< a << std::endl;
-  if(pfg->tracker_->detection_valid || a==0 || b==0) return 1; // no observation
+  //if(pfg->options_.debug) std::cout << "dbg-GetLogLikelihood3 a:"<< pfg->tracker_->detection_valid << " " << a << " " << b<< std::endl;
+  if(!pfg->tracker_->detection_valid || a==0 || b==0) return 1; // no observation
 
   BotTrans bt = pfg->localToCam_;
 
