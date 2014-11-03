@@ -54,6 +54,8 @@ public:
   float bearing_a_,bearing_b_;
   int64_t img_utime_;
   double bound;
+  // TLD Tracker
+  TLDTracker* tracker_;
 
   PFGrasp(PFGraspOptions options);
   ~PFGrasp()
@@ -76,9 +78,6 @@ private:
 
   // Img, and warped image
   cv::Mat img_, wimg_;
-
-  // TLD Tracker
-  TLDTracker* tracker_;
 
   // Image warper
   ImageWarper* warper_;

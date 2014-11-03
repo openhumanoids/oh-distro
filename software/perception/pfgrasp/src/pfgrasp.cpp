@@ -216,7 +216,7 @@ PFGrasp::initParticleFilter(){
 
 void
 PFGrasp::runOneIter(){
-  if(this->bearing_a_ == 0 || this->bearing_b_ == 0)
+  if(! tracker_->detection_valid )
     return;
 
   std::cout << "dbg-runOneIter1" << std::endl;
