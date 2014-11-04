@@ -26,6 +26,7 @@ public:
 
   void setDepthChannel(const std::string& iChannel);
   void setCameraChannel(const std::string& iChannel);
+  void setMedianFilter(const int iKernelRadius);
 
   void start();
   void stop();
