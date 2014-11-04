@@ -434,6 +434,7 @@ public:
     // TODO: can we avoid hard-coding these?
     mFusedDepthHandler->setCameraChannel("CAMERA_LEFT");
     mFusedDepthHandler->setDepthChannel("CAMERA_FUSED");
+    mFusedDepthHandler->setMedianFilter(1);
     mFusedDepthHandler->start();
     mRequestSubscription = NULL;
     mMapParamsSubscription = NULL;

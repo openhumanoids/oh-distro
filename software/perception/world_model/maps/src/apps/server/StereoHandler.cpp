@@ -343,7 +343,7 @@ struct StereoHandler::Imp {
     DepthImageView::Ptr view(new DepthImageView());
     view->setSize(iRequest.width, iRequest.height);
     view->getDepthImage()->setAccumulationMethod
-      (DepthImage::AccumulationMethodMean);
+      ((DepthImage::AccumulationMethod)iRequest.accum_type);
     view->setTransform(projector);
     view->set(cloud);
 
