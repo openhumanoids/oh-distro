@@ -6,6 +6,8 @@
 #include "multisense_utils.hpp"
 #define PCL_VERBOSITY_LEVEL L_ERROR
 
+
+
 using namespace std;
 using namespace cv;
 
@@ -17,16 +19,30 @@ multisense_utils::multisense_utils (){
   depth_buf_ = (uint8_t*) malloc( 4*1024*1024*sizeof(uint8_t));  // arbitary size chosen..
 
   decimate_ =32.0;
+
+  size_threshold_ = 1000; // in pixels
+  depth_threshold_ = 1000.0; // in m
 }
 
 void multisense_utils::unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int h, int w, cv::Mat_<double> repro_matrix,
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb, bool is_disparity){
 
   if (is_disparity){
+
     // Convert Carnegie disparity format into floating point disparity. Store in local buffer
     Mat disparity_orig_temp = Mat::zeros(h,w,CV_16UC1); // h,w
     //  const uint8_t* raw_data= stereob_->getDisparity();//= 3;//msg->images[1].data.data();
     disparity_orig_temp.data = (uchar*) depth_data;   // ... is a simple assignment possible?
+
+    // Remove disconnect components. TODO: if needed this can also be used for the depth data
+    if (size_threshold_ > 0){
+      // Distance threshold conversion:
+      float k00 = 1/repro_matrix(2,3);
+      float baseline = 1/repro_matrix(3,2);
+      float mDisparityFactor = 1/k00/baseline;
+      float thresh = 16.0/mDisparityFactor/depth_threshold_;
+      miu_.removeSmall(disparity_orig_temp, thresh, size_threshold_);
+    }
 
     //std::copy(msg->images[1].data.data()             , msg->images[1].data.data() + (msg->images[1].size) ,
     //          disparity_orig_temp.data);
@@ -184,9 +200,13 @@ void multisense_utils::unpack_multisense(const multisense::images_t *msg, cv::Ma
   if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
     unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
     uncompress(depth_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
+
+
+
+
     is_disparity=true;
   }else if (msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM_ZIPPED ) {
-        unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
+    unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
     uncompress(depth_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
     is_disparity=false;
   } else{

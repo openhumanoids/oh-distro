@@ -15,6 +15,9 @@
 #include <lcmtypes/multisense.h>
 #include <lcmtypes/multisense.hpp>
 
+#include <multisense_image_utils/multisense_image_utils.hpp>
+
+
 using namespace pcl;
 using namespace pcl::io;
 
@@ -35,15 +38,22 @@ class multisense_utils {
     
     // an integer decimation factor:
     void set_decimate(int decimate_in){ decimate_ = decimate_in; };
+    // Set to
+    void set_remove_size(int size_threshold_in){ size_threshold_ = size_threshold_in; };
 
   private:
 
     int decimate_;
+
+    // Disconnected/Small components filtering:
+    int size_threshold_; // in pixels
+    float depth_threshold_; // in m, not exposed yet
     
     // Multisense Compress:
     mutable std::vector<float> disparity_buf_;
     mutable std::vector<cv::Vec3f> points_buf_;  
 
+    multisense_image_utils miu_;
 
     uint8_t* rgb_buf_ ;
     uint8_t* depth_buf_;
