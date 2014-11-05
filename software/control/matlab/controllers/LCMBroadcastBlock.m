@@ -16,13 +16,19 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     
     % Atlas, for usefulness
     r;
+    r_control;
   end
   
   methods
-    function obj = LCMBroadcastBlock(r,options)
-      typecheck(r,'Biped');
+    function obj = LCMBroadcastBlock(r,r_control,options)
+      typecheck(r,'Atlas');
+      if (nargin >= 2 && ~isempty(r_control))
+        typecheck(r_control, 'Atlas');
+      else
+        r_control = r;
+      end
       
-      if nargin<2
+      if nargin<3
         options = struct();
       end
       
@@ -57,6 +63,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       
       obj.r = r;
+      obj.r_control = r_control;
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
@@ -69,11 +76,11 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
 %         fc = [norm(lfoot_force); norm(rfoot_force)];
         % Get binary foot contact, call it force:
         x = varargin{1};
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
-              any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
+        fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
+              any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
        
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
