@@ -22,8 +22,8 @@ classdef StatelessFootstepPlanner
       else
         goal_pos = StatelessFootstepPlanner.computeGoalPos(biped, request);
         if request.num_goal_steps > 2
-          request.params.max_num_steps = max([1, request.params.max_num_steps - (request.num_goal_steps - 2)]);
-          request.params.min_num_steps = max([1, request.params.min_num_steps - (request.num_goal_steps - 2)]);
+          params.max_num_steps = max([1, params.max_num_steps - (request.num_goal_steps-2)]);
+          params.min_num_steps = max([1, params.min_num_steps - (request.num_goal_steps-2)]);
         end
 
         safe_regions = StatelessFootstepPlanner.decodeSafeRegions(biped, request, feet_centers, goal_pos);
@@ -120,7 +120,7 @@ classdef StatelessFootstepPlanner
     end
 
     function plan = addGoalSteps(biped, plan, request)
-      nsteps = length(plan.footsteps);
+      n_unmodified_steps = max(2, length(plan.footsteps)-2);
       if request.num_goal_steps == 0
         return;
       elseif request.num_goal_steps == 1
@@ -137,14 +137,9 @@ classdef StatelessFootstepPlanner
           if j == 1 && (goal_step.frame_id ~= plan.footsteps(end-1).frame_id)
             plan.footsteps(end+1) = plan.footsteps(end-1);
             plan.footsteps(end).id = plan.footsteps(end-1).id + 1;
-            nsteps = length(plan.footsteps);
+            n_unmodified_steps = max(2, length(plan.footsteps)-2);
           end
-          k = nsteps - 2 + j;
-          if j ~= 2
-            assert(goal_step.frame_id == plan.footsteps(end-1).frame_id);
-          else
-            assert(goal_step.frame_id == plan.footsteps(end).frame_id);
-          end
+          k = n_unmodified_steps + j;
           plan.footsteps(k) = goal_step;
         end
       end
