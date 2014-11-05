@@ -275,8 +275,8 @@ class BDIStepTranslator(object):
         else:
             print "BDIStepTranslator running in base-side plotter mode"
             self.lc.subscribe('FOOTSTEP_PLAN_RESPONSE', self.handle_footstep_plan)
-            self.lc.subscribe('CANDIDATE_BDI_FOOTSTEP_PLAN', self.handle_footstep_plan)
-            self.lc.subscribe('BDI_ADJUSTED_FOOTSTEP_PLAN', self.handle_footstep_plan)
+            #self.lc.subscribe('CANDIDATE_BDI_FOOTSTEP_PLAN', self.handle_footstep_plan)
+            #self.lc.subscribe('BDI_ADJUSTED_FOOTSTEP_PLAN', self.handle_footstep_plan)
         self.lc.subscribe('ATLAS_STATUS', self.handle_atlas_status)
         self.lc.subscribe('LOCAL_TO_LOCAL_BDI', self.handle_bdi_transform)
         while True:
