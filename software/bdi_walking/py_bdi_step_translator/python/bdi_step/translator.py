@@ -75,23 +75,17 @@ class BDIStepTranslator(object):
         if len(footsteps) <= 2:
             # the first two footsteps are always just the positions of the robot's feet, so a plan of two or fewer footsteps is a no-op
             self.executing = False
-            m = 'BDI step translator: Empty plan recieved. Not executing.'
-            print m
-            ut.send_status(6,0,0,msg)
+            print 'BDI step translator: Empty plan recieved. Not executing.'
             return
 
         behavior = opts['behavior']
         if behavior == Behavior.BDI_WALKING:
             # duration = 0.6
             if len(footsteps) < NUM_REQUIRED_WALK_STEPS+2:
-                msg = 'ERROR: Footstep plan must be at least 4 steps for BDI walking translation'
-                print msg
-                ut.send_status(6,0,0,msg)
+                print 'ERROR: Footstep plan must be at least 4 steps for BDI walking translation'
                 return
         elif behavior != Behavior.BDI_STEPPING:
-            m = "BDI step translator: Ignoring footstep plan without BDI_WALKING or BDI_STEPPING behavior"
-            print m
-            ut.send_status(6,0,0,m)
+            print "BDI step translator: Ignoring footstep plan without BDI_WALKING or BDI_STEPPING behavior"
             return
 
         self.behavior = behavior
