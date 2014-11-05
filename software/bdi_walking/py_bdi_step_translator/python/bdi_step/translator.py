@@ -72,6 +72,13 @@ class BDIStepTranslator(object):
         else:
             raise ValueError("Can't decode footsteps: not a drc.footstep_plan_t or drc.deprecated_footstep_plan_t")
 
+        if len(footsteps) <= 2:
+            # the first two footsteps are always just the positions of the robot's feet, so a plan of two or fewer footsteps is a no-op
+            self.executing = False
+            m = 'BDI step translator: Empty plan recieved. Not executing.'
+            print m
+            ut.send_status(6,0,0,msg)
+            return
 
         behavior = opts['behavior']
         if behavior == Behavior.BDI_WALKING:
