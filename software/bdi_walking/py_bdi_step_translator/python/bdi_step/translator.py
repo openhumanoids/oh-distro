@@ -74,7 +74,6 @@ class BDIStepTranslator(object):
 
         if len(footsteps) <= 2:
             # the first two footsteps are always just the positions of the robot's feet, so a plan of two or fewer footsteps is a no-op
-            self.executing = False
             print 'BDI step translator: Empty plan recieved. Not executing.'
             return
 
