@@ -48,7 +48,9 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
   if (!msg->width || !msg->height) return;
 
   BotTrans tmpBT;
-  bot_frames_get_trans_with_utime(botFrames_, "local", options_.cameraChannelName.c_str(),  msg->utime, &tmpBT);
+  //camera time is not sync with robot time, so don't use the utime to get transform
+  //bot_frames_get_trans_with_utime(botFrames_, "local", options_.cameraChannelName.c_str(),  msg->utime+14152234346666670-1410081597826142, &tmpBT);
+  bot_frames_get_trans(botFrames_, "local", options_.cameraChannelName.c_str(),  &tmpBT);
 
   //double tic = bot_timestamp_now();
   decode_image(msg, img_);
@@ -201,7 +203,7 @@ PFGrasp::initParticleFilter(){
 
   bot_lcmgl_color3f(lcmgl_, 1,0,1);
   if (this->options_.debug){
-    for (int i=0; i<N_p; i+=3 ){
+    for (int i=0; i<N_p; i+=20 ){
       Eigen::Vector3d xs = pf->GetParticleState(i).position;
       double xss[3] = {xs[0], xs[1], xs[2]};
       bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
