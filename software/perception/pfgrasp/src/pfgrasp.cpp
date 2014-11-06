@@ -14,7 +14,7 @@ decode_image(const bot_core::image_t* msg, cv::Mat& img)
   if (img.empty() || img.rows != msg->height || img.cols != msg->width)
     img.create(msg->height, msg->width, CV_8UC3);
 
-  int stride = msg->row_stride ? msg->row_stride != 0 : msg->width*3;
+  int stride = msg->row_stride!=0 ? msg->row_stride  : msg->width*3;
   switch (msg->pixelformat) {
     case bot_core::image_t::PIXEL_FORMAT_RGB:
         memcpy(img.data, msg->data.data(), sizeof(uint8_t) * msg->width * msg->height * 3);
@@ -147,14 +147,14 @@ PFGrasp::segmentHandler(const lcm::ReceiveBuffer* rbuf,
 
   // Ensure tracker is initialized
   //if (!tracker_->initialized)
-  //  {
-  //    std::cerr << "Tracker Not Initialized!" << std::endl;
-  //    assert(0);
-  //  }
+    //{
+      //std::cerr << "Tracker Not Initialized!" << std::endl;
+      //assert(0);
+    //}
 
   // Initialize with image and mask
   tracker_->initialize(wimg_, selection);
-
+  
   if (options_.debug)
     {
       //cv::Mat imgd = wimg_.clone();
