@@ -244,7 +244,7 @@ PFGrasp::runOneIter(){
     
     for (int i=0; i<N_p; i+=20 ){
       Eigen::Vector3d xs = pf->GetParticleState(i).position;
-      double weight = expl(pf->GetParticleLogWeight(i))*128;
+      double weight = expl(pf->GetParticleLogWeight(i));
       double xss[3] = {xs[0], xs[1], xs[2]};
 
       bot_lcmgl_color3f(lcmgl_, 1*weight,0,1*weight);
