@@ -310,7 +310,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         rfoot_control_block = [];
         motion_frames = {pelvis_control_block.getOutputFrame};
       end
-      qp = QPController(obj,motion_frames,controller_data,options);
+      qp = AtlasQPController(obj,motion_frames,controller_data,options);
 
       options.Kp = options.Kp_q;
       options.Kd = getDampingGain(options.Kp,options.q_damping_ratio);
