@@ -34,9 +34,6 @@ class Particle{
         logweight = logweight_in;
       }
 
-//      void InitializeState(rng *pRng, double init_weight,
-//          Eigen::Isometry3d init_pose, std::vector<double> initial_var);
-
       void InitializeState(rng *pRng, double init_weight, const void* userdata);
 
       void SetState(const pf_state & sValue){ state = sValue;  }

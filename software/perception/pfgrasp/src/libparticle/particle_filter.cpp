@@ -26,11 +26,9 @@ void ParticleFilter::MoveParticles(){
 
 void ParticleFilter::UpdateWithLogLikelihoodParticles(){
   std::vector<float> loglikelihoods(N_p);
-  std::cout << "dbg-UpdateWithLogLikelihoodParticles1" << std::endl;
   for(int i = 0; i < N_p; ++i) {
     loglikelihoods[i] = particleset[i].GetLogLikelihood(pRng, userdata_);
   }
-  std::cout << "dbg-UpdateWithLogLikelihoodParticles2" << std::endl;
   LogLikelihoodParticles(loglikelihoods);
 }
 
@@ -146,13 +144,6 @@ pf_state ParticleFilter::Integrate(){
     
     Eigen::Vector3d t(state.position);
 
-    /*if(isnan_particle(t[0])){
-      cout << t[0] << " is t[0] "<< i <<"\n";
-      cout << "paused\n";
-      int pause;
-      cin >> pause;
-    }*/
-    // need to resolve nan problem 
     //cout << "("<<t[0]<<"," << t[1] <<","<< t[2]<<") w" << w<< endl;
       pos[0] += w*t[0];
       pos[1] += w*t[1];
@@ -166,8 +157,8 @@ pf_state ParticleFilter::Integrate(){
   pos[2] /= wSum;
   
   Eigen::Vector3d ipos;
-  ipos.setIdentity();
-    ipos << pos[0],pos[1],pos[2];
+  //ipos.setIdentity();
+  ipos << pos[0],pos[1],pos[2];
   istate.position = ipos;
   
   return istate;

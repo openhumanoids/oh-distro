@@ -11,10 +11,10 @@
 void
 decode_image(const bot_core::image_t* msg, cv::Mat& img)
 {
-  if (img.empty() || img.rows != msg->height
-      || img.cols != msg->width)
+  if (img.empty() || img.rows != msg->height || img.cols != msg->width)
     img.create(msg->height, msg->width, CV_8UC3);
 
+  int stride = msg->row_stride ? msg->row_stride != 0 : msg->width*3;
   switch (msg->pixelformat) {
     case bot_core::image_t::PIXEL_FORMAT_RGB:
         memcpy(img.data, msg->data.data(), sizeof(uint8_t) * msg->width * msg->height * 3);
@@ -27,11 +27,10 @@ decode_image(const bot_core::image_t* msg, cv::Mat& img)
                               img.data,
                               msg->width,
                               msg->height,
-                              msg->width*3);
+                              stride);
       cv::cvtColor(img, img, CV_RGB2BGR);
       break;
     case bot_core::image_t::PIXEL_FORMAT_GRAY:
-      //memcpy(img.data, msg->data.data(), sizeof(uint8_t) * msg->width * msg->height);
       fprintf(stderr, "Gray image not supported\n");
       break;
     default:
@@ -51,7 +50,7 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
   BotTrans tmpBT;
   bot_frames_get_trans_with_utime(botFrames_, "local", options_.cameraChannelName.c_str(),  msg->utime, &tmpBT);
 
-  double tic = bot_timestamp_now();
+  //double tic = bot_timestamp_now();
   decode_image(msg, img_);
 
   if(wimg_.empty() || wimg_.cols != img_.cols || wimg_.rows != img_.rows || wimg_.channels() != img_.channels() || wimg_.type() != img_.type()){
@@ -67,7 +66,7 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
       tracker_->update(wimg_, pts, local_to_camera);    // ?????? can add real local to camera value here
 
   if (++counter_ == 10) {
-      printf("===> TLD TRACKER: %4.2f ms\n", (bot_timestamp_now() - tic) * 1.f * 1e-3);
+      //printf("===> TLD TRACKER: %4.2f ms\n", (bot_timestamp_now() - tic) * 1.f * 1e-3);
       counter_ = 0;
   }
 
@@ -88,7 +87,7 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
       bearing_a_ = u*1.f/cameraParams_.fx, bearing_b_ = v*1.f/cameraParams_.fy;
     if (options_.debug)
     {
-      printf("u=%lf v=%lf a=%lf b=%lf", u, v, bearing_a_,bearing_b_);
+      //printf("u=%lf v=%lf a=%lf b=%lf", u, v, bearing_a_,bearing_b_);
     }
     drc::image_roi_t trackmsg;
 
@@ -114,7 +113,7 @@ PFGrasp::imageHandler(const lcm::ReceiveBuffer* rbuf,
 
     if (tracker_->detection_valid) {
         const cv::Rect& currBB = tracker_->currBB;
-        std::cerr << "TLD currBB: " << currBB.tl() << " " << currBB.br() << std::endl;
+        //std::cerr << "TLD currBB: " << currBB.tl() << " " << currBB.br() << std::endl;
 
         rectangle(dispimg, currBB, Scalar(0,0,255), 3, 8, 0);
     }
@@ -147,20 +146,20 @@ PFGrasp::segmentHandler(const lcm::ReceiveBuffer* rbuf,
     }
 
   // Ensure tracker is initialized
-  if (!tracker_->initialized)
-    {
-      std::cerr << "Tracker Not Initialized!" << std::endl;
-      assert(0);
-    }
+  //if (!tracker_->initialized)
+  //  {
+  //    std::cerr << "Tracker Not Initialized!" << std::endl;
+  //    assert(0);
+  //  }
 
   // Initialize with image and mask
   tracker_->initialize(wimg_, selection);
 
   if (options_.debug)
     {
-      cv::Mat imgd = wimg_.clone();
-      rectangle(imgd, selection.tl(), selection.br(), CV_RGB(255, 0, 0), 2);
-      cv::imshow("Captured Image ROI", imgd);
+      //cv::Mat imgd = wimg_.clone();
+      //rectangle(imgd, selection.tl(), selection.br(), CV_RGB(255, 0, 0), 2);
+      //cv::imshow("Captured Image ROI", imgd);
     }
 }
 
@@ -198,10 +197,7 @@ PFGrasp::releaseParticleFilter(){
 
 void
 PFGrasp::initParticleFilter(){
-  std::cout << "dbg-initParticleFilter1" << std::endl;
   pf = new ParticleFilter(N_p, rng_seed, resample_threshold, (void*)this);
-  std::cout << "dbg-initParticleFilter2" << std::endl;
-
 
   bot_lcmgl_color3f(lcmgl_, 1,0,1);
   if (this->options_.debug){
@@ -219,15 +215,14 @@ PFGrasp::runOneIter(){
   if(! tracker_->detection_valid || (bearing_a_==0) || (bearing_b_==0))
     return;
 
-  std::cout << "dbg-runOneIter1" << std::endl;
   pf->MoveParticles();
-  std::cout << "dbg-runOneIter2" << std::endl;
   pf->UpdateWithLogLikelihoodParticles();
-  std::cout << "dbg-runOneIter3" << std::endl;
-  //double ESS = pf->ConsiderResample();
-  std::cout << "dbg-runOneIter3-1" << std::endl;
+  double ESS = pf->ConsiderResample();
+  std::cout << "dbg-runOneIter ESS:" << ESS << std::endl;
+  
   // use lcmgl to draw particles, and mean estimation
 
+  // draw camera center
   double x_cam[3] = {0,0,0};
   double x_world[3];
   BotFrames* bf = this->botWrapper_->getBotFrames();
@@ -236,25 +231,31 @@ PFGrasp::runOneIter(){
   bot_lcmgl_color3f(lcmgl_, 1,1,1);
   bot_lcmgl_sphere(lcmgl_, x_world, 0.01, 100, 100);
 
-  bot_lcmgl_color3f(lcmgl_, 1,0,1);
   
   if (this->options_.debug){
-    for (int i=0; i<N_p; i+=3 ){
+    // find the Maximum likelihood estimation
+    //pf_state MaxWeightParticle = pf->MaxWeight();
+    //Eigen::Vector3d xML = MaxWeightParticle.position;
+    //double xMLd[3] = {xML[0], xML[1], xML[2]};
+    //bot_lcmgl_color3f(lcmgl_, 0,0,1);
+    //bot_lcmgl_sphere(lcmgl_, xMLd, 0.03, 100, 100);
+    
+    for (int i=0; i<N_p; i+=20 ){
       Eigen::Vector3d xs = pf->GetParticleState(i).position;
+      double weight = expl(pf->GetParticleLogWeight(i))*128;
       double xss[3] = {xs[0], xs[1], xs[2]};
 
+      bot_lcmgl_color3f(lcmgl_, 1*weight,0,1*weight);
       bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
     }
   }
 
 
   Eigen::Vector3d xh = pf->Integrate().position;
-  std::cout << "dbg-runOneIter3-2 xh" << xh[0] << " " << xh[1] << " " << xh[2] << std::endl;
+  std::cout << "dbg-runOneIter xh: " << xh[0] << " " << xh[1] << " " << xh[2] << std::endl;
   double xhh[3] = {xh[0], xh[1], xh[2]};
   bot_lcmgl_color3f(lcmgl_, 1,0,0);
-  bot_lcmgl_sphere(lcmgl_, xhh, 0.05, 100, 100);
-
-  std::cout << "dbg-runOneIter4" << std::endl;
+  bot_lcmgl_sphere(lcmgl_, xhh, 0.03, 100, 100);
 
   // We've got xh
   // get handface pose
@@ -264,18 +265,13 @@ PFGrasp::runOneIter(){
               0, 1, 0, 0.12, 
               0, 0, 1, 0, 
               0, 0, 0, 1;
-  //palmToFT << 1, 0, 0, 0, 
-              //0, 1, 0, 0, 
-              //0, 0, 1, 0, 
-              //0, 0, 0, 1;
   
-  //Eigen::Matrix<double, 4, 4, RowMajor> hpose;
   bot_frames_get_trans_mat_4x4(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", hpose.data());
   hpose.transposeInPlace();  // Eigen store matrix in column major by default, but botframe in row based
   hpose = hpose * palmToFT;
   BotTrans bt;
   bot_frames_get_trans(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", &bt);
-  cout << "dbg-mat:" << hpose << endl;
+  cout << "dbg-mat: \n" << hpose << endl;
 
   typedef Eigen::Vector3d V;
   V hpos = hpose.block(0,3,3,1);  // location of hand
@@ -289,7 +285,7 @@ PFGrasp::runOneIter(){
   V dx = ux.dot(delta) * ux;   // so we want z, and x adjustment
   V newhpos = hpos + dx + dz;
 
-  cout << "dbg-newhpos:" << newhpos << endl;
+  cout << "dbg-newhpos: " << newhpos.transpose() << endl;
   bot_lcmgl_color3f(lcmgl_, 1,1,0);
   bot_lcmgl_sphere(lcmgl_, newhpos.data(), 0.03, 100, 100);
 
@@ -337,11 +333,12 @@ PFGrasp::PFGrasp(PFGraspOptions options) :
   // subscribing to image, segmenter, commands
   lcm::Subscription* sub1 = lcm_->subscribe(options_.cameraChannelName.c_str(), &PFGrasp::imageHandler,
       this);
-  /*lcm::Subscription* sub2 = */lcm_->subscribe(options_.segmenterChannelName.c_str(), &PFGrasp::segmentHandler,
+  sub1->setQueueCapacity(1);  // important to get the latest image
+  lcm_->subscribe(options_.segmenterChannelName.c_str(), &PFGrasp::segmentHandler,
       this);
-  /*lcm::Subscription* sub3 = */lcm_->subscribe(options_.commandChannelName.c_str(), &PFGrasp::commandHandler,
+  lcm_->subscribe(options_.commandChannelName.c_str(), &PFGrasp::commandHandler,
       this);
-  sub1->setQueueCapacity(1);
+  
   // Initialize TLD tracker
   tracker_ = new TLDTracker(cameraParams_.width, cameraParams_.height,
       options_.scale);

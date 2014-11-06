@@ -14,6 +14,14 @@ cmd "play_a_log4" {
     exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*|CANDIDATE_MANIP_PLAN' /home/drc/drcdata/2014-10-27_drill-hand-camera/lcmlog-2014-10-27T14%3A33%3A43.264780";
     host = "localhost";
 }
+cmd "play_a_log5" {
+    exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*|CANDIDATE_MANIP_PLAN' /home/drc/drcdata/2014-11-05_drill-hand-camera/lcmlog-2014-11-05T16:16:31.159377-pfgrasp2";
+    host = "localhost";
+}
+cmd "play_a_log6" {
+    exec = "lcm-logplayer-gui -f 'PMD_.*|PARAM.*|CANDIDATE_MANIP_PLAN' /home/drc/drcdata/2014-11-05_drill-hand-camera/lcmlog-2014-11-05T16:36:20.921587-pfgrasp4";
+    host = "localhost";
+}
 cmd "ddapp" {
     exec = "/home/drc/drc/software/ddapp/pod-build/bin/drake-designer";
     host = "localhost";
