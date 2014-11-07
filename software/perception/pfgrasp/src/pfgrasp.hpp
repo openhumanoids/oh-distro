@@ -52,6 +52,7 @@ public:
   // needed for particle filter measurement update
   BotTrans localToCam_;
   float bearing_a_,bearing_b_;
+  double pos_measure[3];
   int64_t img_utime_;
   double bound;
   // TLD Tracker
@@ -92,31 +93,25 @@ private:
 
   int64_t cmd_utime_;
   // handle reset, run-one-iteration
-  void
-  commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+  void commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
       const drc::pfgrasp_command_t* msg);
 
   // get image from hand camera
-  void
-  imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+  void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
       const bot_core::image_t* msg);
 
   // get segment from track segmenter
-  void
-  segmentHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+  void segmentHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
       const drc::image_roi_t* msg);
 
-  void
-  initParticleFilter();
+  void initParticleFilter();
 
-  void
-  runOneIter();
+  void runOneIter();
+  void runOneIterW3DMeasure();
 
-  void
-  releaseParticleFilter();
+  void releaseParticleFilter();
 
-  void
-  publishHandReachGoal(const BotTrans& bt);
+  void publishHandReachGoal(const BotTrans& bt);
 };
 
 

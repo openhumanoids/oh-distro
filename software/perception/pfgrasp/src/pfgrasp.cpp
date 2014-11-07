@@ -178,12 +178,21 @@ PFGrasp::commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &chann
   break;
   case drc::pfgrasp_command_t::START:  // start tracking, subscribe image, initialize particles
     initParticleFilter();
-  break;  // also run one iteration
+  break;  
   case drc::pfgrasp_command_t::RUN_ONE_ITER:
     if (pf == NULL)
       initParticleFilter();
       
     runOneIter();
+  break;
+  case drc::pfgrasp_command_t::RUN_ONE_ITER_W_3D_PRIOR:
+    if (pf == NULL)
+      initParticleFilter();
+    
+    pos_measure[0] = msg->pos[0];
+    pos_measure[1] = msg->pos[1];
+    pos_measure[2] = msg->pos[2];
+    runOneIterW3DMeasure();
   break;
   }
 }
@@ -219,6 +228,90 @@ PFGrasp::runOneIter(){
 
   pf->MoveParticles();
   pf->UpdateWithLogLikelihoodParticles();
+  double ESS = pf->ConsiderResample();
+  std::cout << "dbg-runOneIter ESS:" << ESS << std::endl;
+  
+  // use lcmgl to draw particles, and mean estimation
+
+  // draw camera center
+  double x_cam[3] = {0,0,0};
+  double x_world[3];
+  BotFrames* bf = this->botWrapper_->getBotFrames();
+  bot_frames_transform_vec(bf, this->options_.cameraChannelName.c_str(), "local", x_cam, x_world);
+  
+  bot_lcmgl_color3f(lcmgl_, 1,1,1);
+  bot_lcmgl_sphere(lcmgl_, x_world, 0.01, 100, 100);
+
+  
+  if (this->options_.debug){
+    // find the Maximum likelihood estimation
+    //pf_state MaxWeightParticle = pf->MaxWeight();
+    //Eigen::Vector3d xML = MaxWeightParticle.position;
+    //double xMLd[3] = {xML[0], xML[1], xML[2]};
+    //bot_lcmgl_color3f(lcmgl_, 0,0,1);
+    //bot_lcmgl_sphere(lcmgl_, xMLd, 0.03, 100, 100);
+    
+    for (int i=0; i<N_p; i+=20 ){
+      Eigen::Vector3d xs = pf->GetParticleState(i).position;
+      double weight = expl(pf->GetParticleLogWeight(i));
+      double xss[3] = {xs[0], xs[1], xs[2]};
+
+      bot_lcmgl_color3f(lcmgl_, 1*weight,0,1*weight);
+      bot_lcmgl_sphere(lcmgl_, xss, 0.01, 100, 100);
+    }
+  }
+
+
+  Eigen::Vector3d xh = pf->Integrate().position;
+  std::cout << "dbg-runOneIter xh: " << xh[0] << " " << xh[1] << " " << xh[2] << std::endl;
+  double xhh[3] = {xh[0], xh[1], xh[2]};
+  bot_lcmgl_color3f(lcmgl_, 1,0,0);
+  bot_lcmgl_sphere(lcmgl_, xhh, 0.03, 100, 100);
+
+  // We've got xh
+  // get handface pose
+  Eigen::Matrix4d hpose;
+  Eigen::Matrix4d palmToFT;
+  palmToFT << 1, 0, 0, 0, 
+              0, 1, 0, 0.12, 
+              0, 0, 1, 0, 
+              0, 0, 0, 1;
+  
+  bot_frames_get_trans_mat_4x4(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", hpose.data());
+  hpose.transposeInPlace();  // Eigen store matrix in column major by default, but botframe in row based
+  hpose = hpose * palmToFT;
+  BotTrans bt;
+  bot_frames_get_trans(this->botFrames_, options_.reachGoalFrameName.c_str(), "local", &bt);
+  cout << "dbg-mat: \n" << hpose << endl;
+
+  typedef Eigen::Vector3d V;
+  V hpos = hpose.block(0,3,3,1);  // location of hand
+
+  V delta = xh - hpos;
+  V ux = hpose.block(0,0,3,1);
+  V uy = hpose.block(0,1,3,1);
+  V uz = hpose.block(0,2,3,1);
+  V dz = uz.dot(delta) * uz;   // from the hand, z is horizontal, y points forward, x points downward
+  V dy = uy.dot(delta) * uy;   // from the hand, z is horizontal, y points forward, x points downward
+  V dx = ux.dot(delta) * ux;   // so we want z, and x adjustment
+  V newhpos = hpos + dx + dz;
+
+  cout << "dbg-newhpos: " << newhpos.transpose() << endl;
+  bot_lcmgl_color3f(lcmgl_, 1,1,0);
+  bot_lcmgl_sphere(lcmgl_, newhpos.data(), 0.03, 100, 100);
+
+  bt.trans_vec[0] = newhpos[0];
+  bt.trans_vec[1] = newhpos[1];
+  bt.trans_vec[2] = newhpos[2];
+
+  bot_lcmgl_switch_buffer(lcmgl_);
+  publishHandReachGoal(bt);
+}
+
+void
+PFGrasp::runOneIterW3DMeasure(){
+  pf->MoveParticles();  
+  pf->UpdateWithLogLikelihoodParticles3D();
   double ESS = pf->ConsiderResample();
   std::cout << "dbg-runOneIter ESS:" << ESS << std::endl;
   

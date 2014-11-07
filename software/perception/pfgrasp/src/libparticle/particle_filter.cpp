@@ -32,6 +32,14 @@ void ParticleFilter::UpdateWithLogLikelihoodParticles(){
   LogLikelihoodParticles(loglikelihoods);
 }
 
+void ParticleFilter::UpdateWithLogLikelihoodParticles3D(){
+  std::vector<float> loglikelihoods(N_p);
+  for(int i = 0; i < N_p; ++i) {
+    loglikelihoods[i] = particleset[i].GetLogLikelihood3D(pRng, userdata_);
+  }
+  LogLikelihoodParticles(loglikelihoods);
+}
+
 void ParticleFilter::LogLikelihoodParticles(std::vector<float> loglikelihoods){
   for(int i = 0; i < N_p; ++i) {
     particleset[i].AddToLogWeight(loglikelihoods[i]);
@@ -87,9 +95,9 @@ void ParticleFilter::Resample(){
     if (uRSCount[i]>0) {
       uRSIndices[i] = i;
       while (uRSCount[i]>1) {
-	while (uRSCount[j]>0) ++j; // find next free spot
-	uRSIndices[j++] = i; // assign index
-	--uRSCount[i]; // decrement number of remaining offsprings
+        while (uRSCount[j]>0) ++j; // find next free spot
+          uRSIndices[j++] = i; // assign index
+          --uRSCount[i]; // decrement number of remaining offsprings
       }
     }
   }

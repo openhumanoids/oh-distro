@@ -48,6 +48,7 @@ class Particle{
       void MoveParticle(rng *pRng);
 
       double GetLogLikelihood(rng *pRng, const void* userdata);
+      double GetLogLikelihood3D(rng *pRng, const void* userdata);
 
       void AddToLogWeight(double dIncrement) { logweight += dIncrement;}
       void SetLogWeight(const double & dLogWeight) {logweight = dLogWeight;}

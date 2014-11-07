@@ -46,6 +46,25 @@ double deg2rad(const double deg){
   return ((deg)*((PI)/(180.0)));
 }
 
+double distsq(const double a[3], const double b[3]){
+  return (a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])+(a[2]-b[2])*(a[2]-b[2]);
+}
+
+double Particle::GetLogLikelihood3D(rng *pRng, const void* userdata){
+  const double obs_error = 0.02*0.02;   // 2 cm
+  const double logobs_error = -7.82404601086; // log(0.02*0.02);  
+  const double log2pi = 1.83787706641; //log(2*pi);  
+  const PFGrasp* pfg = (const PFGrasp*)userdata;
+ 
+  const double *a = pfg->pos_measure;
+  
+  double *x_world = this->state.position.data();
+  double d = distsq(x_world, a);
+  printf("x_world: (%.2lf %.2lf %.2lf)  measure(%.2lf %.2lf %.2lf)  d: %lf log:%lf\n", x_world[0], x_world[1],x_world[2], a[0], a[1], a[2], d, -0.5*d/obs_error - (-1.5)*log2pi - (-1.5)*logobs_error);
+  return -0.5*d/obs_error - (-1.5)*log2pi - (-1.5)*logobs_error;
+}
+
+
 double Particle::GetLogLikelihood(rng *pRng, const void* userdata){
   const double obs_error = deg2rad(5);
   const PFGrasp* pfg = (const PFGrasp*)userdata;

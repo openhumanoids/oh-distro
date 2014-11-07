@@ -52,7 +52,11 @@ class ParticleFilter{
     //       1: use velocity to propogate pose (when vo fails)
     void MoveParticles();
 
+    // using bearing
     void UpdateWithLogLikelihoodParticles();
+    // using 3d fit
+    void UpdateWithLogLikelihoodParticles3D();
+    
     void LogLikelihoodParticles(std::vector<float> loglikelihoods);
     
     double ConsiderResample();
