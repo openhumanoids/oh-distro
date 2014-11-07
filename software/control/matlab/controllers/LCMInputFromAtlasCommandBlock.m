@@ -255,7 +255,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       error =  30*pi/180 - atlas_state(neck_in_i);
       vel = atlas_state(length(atlas_state)/2 + neck_in_i);
       efforts(neck_out_i) = 50*error - vel;
-      efforts(29:end) = efforts(29:end)+0.1;
+      efforts(29:31) = cos(6*t)*[1 1 1];
       varargout = {efforts(1:28), efforts(29:end)};
       fprintf('\b\b\b\b\b\b\b%7.3f', t);
       
