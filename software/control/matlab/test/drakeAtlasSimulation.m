@@ -33,7 +33,7 @@ r = compile(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 0;
 xstar(2) = 0;
-xstar(3) = xstar(3) + 0.12;
+xstar(3) = xstar(3) + 0.08;
 xstar(6) = 0;
 x0 = zeros(r.getNumStates, 1);
 x0(1:length(xstar)) = xstar;
@@ -44,11 +44,7 @@ outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
 outs(2).output = 2;
-% outs(3).system = 2;
-% outs(3).output = 3;
-% outs(4).system = 2;
-% outs(4).output = 4;
-lcmInputBlock = LCMInputFromAtlasCommandBlock(r,options);
+lcmInputBlock = LCMInputFromAtlasCommandBlock(r,[],options);
 sys = mimoFeedback(lcmInputBlock, r, [], [], [], outs);
 
 % LCM broadcast out

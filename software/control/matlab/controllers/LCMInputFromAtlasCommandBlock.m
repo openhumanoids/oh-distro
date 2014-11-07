@@ -38,10 +38,10 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       end
 
       % Generate AtlasInput as out (we'll do translation manually)
-      output_frame = getInputFrame(r);
+      output_frame = AtlasInput(r);
       
       % We'll need atlas state as input
-      input_frame = getOutputFrame(r_control);
+      input_frame = AtlasState(r_control);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
@@ -255,8 +255,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       error =  30*pi/180 - atlas_state(neck_in_i);
       vel = atlas_state(length(atlas_state)/2 + neck_in_i);
       efforts(neck_out_i) = 50*error - vel;
-      efforts(29:31) = cos(6*t)*[1 1 1];
-      varargout = {efforts(1:28), efforts(29:end)};
+      varargout = {efforts(1:28)};
       fprintf('\b\b\b\b\b\b\b%7.3f', t);
       
     end

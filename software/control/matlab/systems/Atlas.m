@@ -439,7 +439,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
     hokuyo_yaw_width = 2.4; % total -- i.e., whole FoV, not from center of vision
     hokuyo_num_pts = 200;   
     hokuyo_max_range = 6; % meters?
-    hokuyo_spin_rate = 2; % rad/sec
+    hokuyo_spin_rate = 8; % rad/sec
 
     foot_force_sensors = false;
     hands = 0; % 0, none; 1, Robotiq

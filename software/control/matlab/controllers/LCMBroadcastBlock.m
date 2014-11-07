@@ -56,15 +56,18 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
       
-      names = [obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
-              obj.getInputFrame.getFrameByName('HandState').getCoordinateNames];
-      names = [names(1:34); names(69:98)];
-      % as a temp fix, amend the hand names to have a right_ prefix
-      obj.joint_names_cache = cell(length(names), 1);
-      for i=1:length(names)
-        if (i >= 35)
+      if (r.hands>0)
+        names = [obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+                obj.getInputFrame.getFrameByName('HandState').getCoordinateNames];
+        names = [names(1:34); names(69:98)];
+        for i=35:length(names)
           names{i} = ['right_', names{i}];
         end
+      else
+        names = [obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;];
+      end
+      obj.joint_names_cache = cell(length(names), 1);
+      for i=1:length(names)
         obj.joint_names_cache(i) = java.lang.String(names(i));
       end
       
@@ -73,15 +76,45 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
+      inp = obj.getInputFrame();
+      num = inp.getFrameNumByName('AtlasState');
+      if length(num)~=1
+        error(['No atlas state found as input for LCMBroadcastBlock!']);
+      end
+      atlas_state = varargin{num};
+      
+      num = inp.getFrameNumByName('HandState');
+      hand_state = [];
+      if (length(num)>1)
+        error(['Ambiguous hand state. No support for two hands yet...']);
+      elseif (length(num)==1)
+        hand_state = varargin{num};
+      end
+      
+      num = inp.getFrameNumByName('hokuyo');
+      laser_state = [];
+      if (length(num)>1)
+        error(['Ambiguous hand state. No support for two hands yet...']);
+      elseif (length(num)==1)
+        laser_state = varargin{num};
+      end
+      
       % See if we just passed our publish-timestep for 
       % the foot contact state message, publish if so.
       if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
         % Get foot force state
-%         lfoot_force = varargin{3}; % Can we infer these magic numbers
-%         rfoot_force = varargin{4}; % from the input frame?
+%         num = inp.getFrameNumByName('ForceTorque');
+%         hand_state = [];
+%         if (length(num)~=2)
+%           lfoot_force = [];
+%           rfoot_force = [];
+%         else
+%           lfoot_force = varargin{num(1)};
+%           rfoot_force = varargin{num(2)};
+%         end;
 %         fc = [norm(lfoot_force); norm(rfoot_force)];
         % Get binary foot contact, call it force:
-        x = varargin{1};
+        x = atlas_state;
         [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
@@ -97,8 +130,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
       end
       
-      atlas_state = varargin{1};
-      hand_state = varargin{2};
+
       
       % What needs to go out:
       num_dofs = length([atlas_state; hand_state]) / 2;
@@ -163,9 +195,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % setup
       % -- To channel "SCAN", publish populated lcm_laser_msg
       
-      if length(varargin) > 2
-        laser_spindle_angle = varargin{3}(1);
-        laser_ranges = varargin{3}(2:end);
+      if (~isempty(laser_state))
+        laser_spindle_angle = laser_state(1);
+        laser_ranges = laser_state(2:end);
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
         multisense_state = multisense.state_t();
         multisense_state.joint_name = {'hokuyo_joint',
