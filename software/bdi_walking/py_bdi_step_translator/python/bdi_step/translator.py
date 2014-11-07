@@ -164,6 +164,10 @@ class BDIStepTranslator(object):
                 self.executing = False
         else:
             index_needed = msg.step_feedback.next_step_index_needed
+
+            if index_needed > 1 and index_needed > self.delivered_index:
+                # we're starting a new step, so publish the expected double support configuration
+                self.send_expected_double_support()
             # if self.delivered_index < index_needed <= len(self.bdi_step_queue_in) - 2:
             if index_needed <= len(self.bdi_step_queue_in) - 2:
                 # print "Handling request for next step: {:d}".format(index_needed)
@@ -215,6 +219,12 @@ class BDIStepTranslator(object):
             #print "Sent step params for step index {:d}".format(step_param_msg.desired_step_spec.step_index)
         else:
             raise ValueError("Bad behavior value: {:s}".format(self.behavior))
+
+    def send_expected_double_support(self):
+        """
+        Publish the next expected double support configuration as a two-element footstep plan to support continuous replanning mode.
+        """
+        self.lc.publish('NEXT_EXPECTED_DOUBLE_SUPPORT', encode_footstep_plan(self.bdi_step_queue_in[self.delivered_index:self.delivered_index+2], self.last_params).encode())
 
     def send_behavior(self):
         command_msg = drc.atlas_behavior_command_t()
