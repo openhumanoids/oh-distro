@@ -12,8 +12,10 @@ class multisense_image_utils {
   public:
     multisense_image_utils (){};
 
+    bool removeSpeckles(cv::Mat& ioImage, const double iMaxDisparityDiff,
+                        const int iMaxBlobSize);
     bool removeSmall(cv::Mat& ioImage, const uint16_t iValueThresh,
-                const int iSizeThresh);
+                     const int iSizeThresh);
 
   private:
 

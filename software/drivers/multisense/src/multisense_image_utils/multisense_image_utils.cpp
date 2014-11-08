@@ -1,8 +1,16 @@
 #include "multisense_image_utils.hpp"
 
-bool multisense_image_utils::removeSmall(cv::Mat& ioImage, const uint16_t iValueThresh,
-                const int iSizeThresh) {
+bool multisense_image_utils::
+removeSpeckles(cv::Mat& ioImage, const double iMaxDisparityDiff,
+               const int iMaxBlobSize) {
+  cv::Mat img(ioImage.rows, ioImage.cols, CV_16SC1, ioImage.data);
+  cv::filterSpeckles(img, 0, iMaxBlobSize, iMaxDisparityDiff);
+  return true;
+}
 
+bool multisense_image_utils::
+removeSmall(cv::Mat& ioImage, const uint16_t iValueThresh,
+            const int iSizeThresh) {
   const int w = ioImage.cols;
   const int h = ioImage.rows;
 
