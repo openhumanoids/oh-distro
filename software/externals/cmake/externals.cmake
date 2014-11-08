@@ -109,7 +109,7 @@ set(spotless_revision 464be854a1296d4726cb37d86f24d39742293ab6)
 set(spotless_depends)
 
 set(snopt_url ssh://git@github.com/RobotLocomotion/snopt.git)
-set(snopt_revision 26eb6145bfae4671cc86bd5c723b381fb8bd5ab6)
+set(snopt_revision d8a5443e7a30a569f961f381f8bdafec27810b7c)
 set(snopt_depends)
 
 set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)

@@ -1,4 +1,13 @@
 
+# IMPORTANT NOTE!!
+# matlab has it's own boost libraries.  DO NOT let any mex file depend
+# on the system boost (directly nor indirectly), or you're asking for trouble.
+find_package( Boost COMPONENTS )
+
+if (Boost_FOUND)
+  include_directories ( ${Boost_INCLUDE_DIR} )
+  link_directories( ${Boost_LIBRARY_DIRS} )
+endif()
 
 add_mex(RobotStateMonitor RobotStateMonitor.cpp)
 pods_use_pkg_config_packages(RobotStateMonitor eigen3 lcm)
