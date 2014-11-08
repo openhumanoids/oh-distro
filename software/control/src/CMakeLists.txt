@@ -61,6 +61,7 @@ endif()
 
 find_package(Java)
 include(UseJava)
+set(CMAKE_JAVA_COMPILE_FLAGS ${CMAKE_JAVA_COMPILE_FLAGS} -source 6 -target 6)
 
 execute_process(COMMAND pkg-config --variable=classpath lcm-java OUTPUT_VARIABLE LCM_JAR_FILE)
 string(STRIP ${LCM_JAR_FILE} LCM_JAR_FILE)
