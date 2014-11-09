@@ -31,13 +31,13 @@ group "2.plan_and_control" {
 
 
     cmd "AtlasController" {
-        exec = "matlab -nosplash -nodesktop -r \"try; addpath_control; runAtlasStateMachine(2, 1); catch e; disp(getReport(e, 'extended')); quit(1); end; quit();\"";
+        exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; runAtlasStateMachine(2, 1); \"";
         host = "base";
         stop_signal = 15;
     }
 
     cmd "CombinedPlanner" {
-       exec = "matlab -nosplash -nodesktop -r \"addpath_control; p = CombinedPlanner(); p.run();\"";
+       exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; p = CombinedPlanner(); p.run();\"";
        host = "base";
        stop_signal = 15;
     }
@@ -82,8 +82,8 @@ cmd "base_deputy" {
 }
 
 cmd "drakeAtlasSimulation" {
-    exec = "matlab -nosplash -nodesktop -r \"try; addpath_control; drakeAtlasSimulation; catch e; disp(getReport(e, 'extended')); quit(1); end; quit();\"";
-    host = "localhost";
+    exec = "matlab -nosplash -nodesktop -r \"addpath(fullfile(getenv('DRC_BASE'),'software','build','matlab')); addpath_control; drakeAtlasSimulation;\"";
+    host = "base";
 }
 
 script "0.run_simul" {
