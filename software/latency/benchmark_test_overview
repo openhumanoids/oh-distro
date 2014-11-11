@@ -1,0 +1,83 @@
+3 July 2014, mfallon
+branch: mfallon-latency-testing
+8554febe3c6ab24141017b8e1c549e288b4218ae
+
+lcm logged on other machine
+writing each tic to file inside of driver
+
+test 00:
+X enabled, processors on demand, 
+drc-atlas -p off -s
+drc-state-sync -b
+matlab   (typical with gui)
+sudo -E chrt --rr 99 ./drc-latency -p 1
+
+driver tic elapsed time: 1262mean. 1226median
+discretely in two modes (maybe 3)
+
+test 01:
+X enabled, processors on demand, 
+sudo -E chrt --rr  99 ./drc-atlas -p off -s
+sudo -E chrt --rr 99  ./drc-state-sync -b
+matlab   (typical with gui)
+sudo -E chrt --rr 99 ./drc-latency -p 1
+
+driver tic elapsed time: 1507 mean 1199 median. 
+discretely in two modes: 1150 and 2150
+
+NOTE: both via lcm and in the driver are worse!
+
+test 02:
+X enabled, processors on demand, 
+sudo -E chrt --rr  99 ./drc-atlas -p off -s
+sudo -E chrt --rr 99  ./drc-state-sync -b
+sudo -E chrt --rr 50 /usr/local/bin/matlab -nodesktop -nosplash
+sudo -E chrt --rr 99 ./drc-latency -p 1
+
+driver tic elapsed time: 1239 mean 1140 median. 
+discretely in two modes: 1110 and 2140
+
+NOTES: clearly better than 01 but only just as good as 00 (on average)
+NOTES: one sharp outlier of 6msec
+
+
+test 03
+X enabled, processors set to "performance" using cpufrequtils, (rebooted)
+sudo -E chrt --rr  99 ./drc-atlas -p off -s
+sudo -E chrt --rr 99  ./drc-state-sync -b
+sudo -E chrt --rr 50 /usr/local/bin/matlab -nodesktop -nosplash
+sudo -E chrt --rr 99 ./drc-latency -p 1
+
+driver tic elapsed time: 1217 mean 1174 median. 
+discretely in two modes: 1110 and 2140 (2nd much smaller)
+
+NOTES: driver tics are better: nearly none miss the 1st call back now
+NOTES: no benefit seen in lcm, infact lcm seems to show sightly higher latency.
+NOTES: i do see some effect of even just launching and stopping model pubs and configs
+
+NOTES: I dont think this actually set the processors to performance though...
+
+Instead I used:
+for c in $(seq 0 11); do sudo sh -c "echo 'performance'  > /sys/devices/system/cpu/cpu${c}/cpufreq/scaling_governor" ; done
+
+test 05
+testing with X enabled but the cpus definetly at 3.3GHz ("cat /proc/cpuinfo | grep MHz")
+---> mean 1060, median 1051
+only 1st peak visible - with 1 outlier per 20 seconds
+
+lcm shows round trip of 0.3msec
+
+NOTES: cpu performance might be the primary factor in comms latency
+
+
+In summary:
+- figures from toby's experiments were replicated
+- occasional missed tics still occur
+- with the kalman filters turned off, the round trip can be as low as .24msec (3 hops)
+- with the kalman filters turned on , the round trip can be as low as .35msec (3 hops)
+
+
+- i spotted two minor effects in driver:
+-- every 5 seconds a tic is delayed by 400usec
+-- sometime a "saw tooth pattern" occurs in the latency at 4-5 second intervals
+
