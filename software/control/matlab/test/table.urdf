@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+
+<robot name="table" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+   <link name="table">
+    <inertial>
+      <mass value="50"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
+      <inertia ixx="1" ixy="0.0" ixz="0.0" iyy="1" iyz="0.0" izz="1"/>
+    </inertial>
+    <collision>
+      <geometry>
+        <box size="1 1 1"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
+    </collision>
+    <visual>
+      <geometry>
+        <box size="1 1 1"/>
+      </geometry>
+      <material name="gray">
+        <color rgba="0.5 0.5 .5 1"/>
+      </material>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
+    </visual>
+  </link>
+
+</robot>
