@@ -111,8 +111,13 @@ following commands.
     make
     sudo make install
 
+LCM v1.1.1 is known to be bad. Do not try to use it.
+
+
 Install Matlab
 --------------
+
+NOTE: The team has decided to revert to MATLAB r2013b.  These instructions need to be updated accordingly.  r2014a and beyond is considerably slower, especially in startup and megaclear.
 
 Download Matlab r2014a from Mathworks.com. Unzip the file you just downloaded (e.g., unzip ./R2014a-linux64.zip)
 cd into the resulting directory
