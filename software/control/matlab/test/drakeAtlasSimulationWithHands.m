@@ -14,7 +14,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 % construct robot model
 options.floating = true;
 %options.ignore_friction = true;
-options.dt = 0.005;
+options.dt = 0.01;
 options.visualize = visualize;
 % boxes = [1.0, 0.0, 1.2, 1, 0.15;
 %          1.2, 0.0, 0.8, 1, 0.30;];
@@ -26,6 +26,7 @@ options.hands = 'robotiq_weight_only';
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 % This is the one that has all of the neat important simul attributes:
 options.hokuyo = true;
+options.hokuyo_spin_rate = 8;
 options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.

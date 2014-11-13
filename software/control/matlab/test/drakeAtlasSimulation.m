@@ -17,6 +17,7 @@ options.ignore_friction = true;
 options.dt = 0.005;
 options.visualize = visualize;
 options.hokuyo = true;
+options.hokuyo_spin_rate = 2;
 options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.

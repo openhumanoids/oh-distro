@@ -102,3 +102,13 @@ script "1.reset_simul" {
     wait ms 1000;
     restart cmd "AtlasController";
 }
+
+script "2.run_all_but_simul" {
+    start cmd "base_deputy";
+    wait ms 1000;
+    start group "0.params_and_model_pub";
+    wait ms 1000;
+    start group "1.state_mit";
+    start cmd "CombinedPlanner";
+    start group "5.maps";
+}

@@ -55,6 +55,9 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         options.hokuyo = false;
       end
       if (options.hokuyo)
+        if (isfield(options, 'hokuyo_spin_rate'))
+          obj.hokuyo_spin_rate = options.hokuyo_spin_rate;
+        end
         % Add lidar -- hokuyo / spindle frames are pulled from
         % config/config_components/multisense_sim.cfg
         % was [-0.0446; 0.0; 0.0880], [0;0;0] in sim.
