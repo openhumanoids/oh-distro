@@ -1,7 +1,7 @@
 #include "Imu.hpp"
 
 #include <iostream>
-#include <multisense-lib/MultiSenseChannel.hh>
+#include <multisense_lib/MultiSenseChannel.hh>
 #include <lcmtypes/multisense/imu_t.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <cmath>

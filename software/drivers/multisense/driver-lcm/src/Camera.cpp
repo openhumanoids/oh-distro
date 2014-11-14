@@ -5,7 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <multisense-lib/MultiSenseChannel.hh>
+#include <multisense_lib/MultiSenseChannel.hh>
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/multisense/image_t.hpp>
