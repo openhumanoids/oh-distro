@@ -27,6 +27,7 @@ all: pod-build/Makefile
 	$(MAKE) -C pod-build all install
 
 pod-build/Makefile:
+	$(MAKE) -C pkg
 	$(MAKE) configure
 
 .PHONY: configure
@@ -43,6 +44,7 @@ configure:
 clean:
 	-if [ -e pod-build/install_manifest.txt ]; then rm -f `cat pod-build/install_manifest.txt`; fi
 	-if [ -d pod-build ]; then $(MAKE) -C pod-build clean; rm -rf pod-build; fi
+	-if [ -d pkg ]; then $(MAKE) -C pkg clean; fi
 
 # other (custom) targets are passed through to the cmake-generated Makefile 
 %::
