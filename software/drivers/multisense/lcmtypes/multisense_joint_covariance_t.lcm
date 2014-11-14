@@ -1,7 +1,0 @@
-package multisense;
-
-struct joint_covariance_t
-{
-   double variance;
-}
-

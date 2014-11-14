@@ -1,0 +1,13 @@
+package multisense;
+// this was copied from libbot, bot_core lcmtypes package
+
+struct rigid_transform_t
+{
+    int64_t utime;              // utime that the actual measurement took place
+
+    double trans[3];            // translation vector component (x,y,z)
+
+    double quat[4];      		// rotation quaternion component (w,x,y,z)
+
+                               
+}
