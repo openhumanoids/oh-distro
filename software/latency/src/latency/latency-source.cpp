@@ -14,7 +14,6 @@
 #include "lcmtypes/drc/atlas_raw_imu_batch_t.hpp"
 #include "lcmtypes/drc/double_array_t.hpp"
 #include "lcmtypes/bot_core/pose_t.hpp"
-#include <drc_utils/joint_utils.hpp>
 
 #include <chrono>
 #include <thread>

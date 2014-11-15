@@ -39,5 +39,4 @@ ddapp
 #action_authoring
 #segmentation
 #authoring
-latency
 
