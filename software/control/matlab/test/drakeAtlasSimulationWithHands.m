@@ -14,7 +14,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 % construct robot model
 options.floating = true;
 %options.ignore_friction = true;
-options.dt = 0.01;
+options.dt = 0.005;
 options.visualize = visualize;
 % boxes = [1.0, 0.0, 1.2, 1, 0.15;
 %          1.2, 0.0, 0.8, 1, 0.30;];
@@ -26,7 +26,7 @@ options.hands = 'robotiq_weight_only';
 r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
 % This is the one that has all of the neat important simul attributes:
 options.hokuyo = true;
-options.hokuyo_spin_rate = 8;
+options.hokuyo_spin_rate = 4;
 options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.
@@ -39,6 +39,8 @@ r_hands = compile(r_hands);
 
 % Add something to grab to r_hands
 options_cyl.floating = true;
+%won't work until floating joints supported in addRobotFromURDF
+%r_hands = r_hands.addRobotFromURDF('manip_world_ex.urdf', [0; 0; 0]);
 r_hands = r_hands.addRobotFromURDF('table.urdf', [1.225; 0.0; 0.5]);
 r_hands = r_hands.addRobotFromURDF('cylinder.urdf', [0.775; -0.2; 1.07], [], options_cyl);
 r_hands = compile(r_hands);
@@ -91,7 +93,7 @@ sys = mimoCascade(sys, lcmBroadcastBlock);
 % Visualize if desired
 if visualize
   v = r_hands.constructVisualizer;
-  v.display_dt = 0.05;
+  v.display_dt = 0.1;
   S=warning('off','Drake:DrakeSystem:UnsupportedSampleTime');
   output_select(1).system=1;
   output_select(1).output=1;

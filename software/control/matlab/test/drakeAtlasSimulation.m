@@ -14,7 +14,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 % construct robot model
 options.floating = true;
 options.ignore_friction = true;
-options.dt = 0.005;
+options.dt = 0.002;
 options.visualize = visualize;
 options.hokuyo = true;
 options.hokuyo_spin_rate = 2;
