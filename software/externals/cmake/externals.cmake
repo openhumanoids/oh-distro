@@ -147,9 +147,9 @@ set(libmultisense_external_args
     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
   )
 
-set(multisense_lcm_url http://github.com/mitdrc/multisense-lcm.git)
-set(multisense_lcm_revision ff0e70deb)
-set(multisense_lcm_depends libmultisense)
+set(multisense-lcm_url http://github.com/mitdrc/multisense-lcm.git)
+set(multisense-lcm_revision ff0e70deb)
+set(multisense-lcm_depends libmultisense)
 
 
 set(externals
@@ -161,7 +161,7 @@ set(externals
   pcl
   octomap-drc
   libmultisense
-  multisense_lcm
+  multisense-lcm
   occ-map
   common_utils
   #scanmatch
