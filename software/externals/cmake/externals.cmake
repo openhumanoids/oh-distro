@@ -137,6 +137,21 @@ set(kinematics-utils_url ssh://git@github.com/mitdrc/kinematics-utils.git)
 set(kinematics-utils_revision 062e36b056eaa0b5ddc38ed7c738999b9bb5831b)
 set(kinematics-utils_depends Eigen_pod)
 
+set(libmultisense_url https://bitbucket.org/crl/libmultisense)
+set(libmultisense_hg_tag efb8099)
+set(libmultisense_depends opencv-drc)
+set(libmultisense_external_args
+  CMAKE_CACHE_ARGS
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+  )
+
+set(multisense_lcm_url http://github.com/mitdrc/multisense-lcm.git)
+set(multisense_lcm_revision d06446e6b4)
+set(multisense_lcm_depends libmultisense)
+
+
 set(externals
   Eigen_pod
   libbot-drc
@@ -145,6 +160,8 @@ set(externals
   #pcl_drc
   pcl
   octomap-drc
+  libmultisense
+  multisense_lcm
   occ-map
   common_utils
   #scanmatch
@@ -179,7 +196,9 @@ if(DRC_SVN_PASSWORD)
 endif()
 
 macro(add_external proj)
-  if (${${proj}_url} MATCHES "\\.git$")
+  if (DEFINED ${proj}_hg_tag)
+    add_mercurial_external(${proj})
+  elseif (${${proj}_url} MATCHES "\\.git$")
     add_git_external(${proj})
   else()
     add_svn_external(${proj})
@@ -225,6 +244,17 @@ macro(add_git_external proj)
 endmacro()
 
 
+macro(add_mercurial_external proj)
+    ExternalProject_Add(${proj}
+      HG_REPOSITORY ${${proj}_url}
+      HG_TAG ${${proj}_revision}
+      DEPENDS ${${proj}_depends}
+      SOURCE_DIR ${DRCExternals_SOURCE_DIR}/${proj}
+      ${${proj}_external_args}
+      )
+endmacro()
+
+
 foreach(external ${externals})
   add_external(${external})
 endforeach()
@@ -235,3 +265,9 @@ endforeach()
 ExternalProject_Add_Step(Eigen_pod make_pkgconfig_dir
   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
   DEPENDERS configure)
+
+
+# This can be removed after CRL updates their install rule for libmultisense
+ExternalProject_Add_Step(libmultisense copy_include_dir
+  COMMAND cp -r ${DRCExternals_SOURCE_DIR}/libmultisense/source/LibMultiSense/details ${CMAKE_INSTALL_PREFIX}/include/MultiSense/
+  DEPENDEES install)
