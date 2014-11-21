@@ -133,6 +133,11 @@ group "7.other_drivers" {
         host = "robot";
     }
 
+    cmd "pfgrasp" {
+        exec = "drc-pfgrasp -c CAMERALHAND -s 0.25 -g LHAND_FORCE_TORQUE";
+        host = "base";
+    }
+    
     cmd "pg-camera-lhand" {
         exec = "ptgrey-gige -t -f 10 -q 50 -c CAMERALHAND -s 123";
         host = "robot";

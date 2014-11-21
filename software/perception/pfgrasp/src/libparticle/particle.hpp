@@ -34,9 +34,6 @@ class Particle{
         logweight = logweight_in;
       }
 
-//      void InitializeState(rng *pRng, double init_weight,
-//          Eigen::Isometry3d init_pose, std::vector<double> initial_var);
-
       void InitializeState(rng *pRng, double init_weight, const void* userdata);
 
       void SetState(const pf_state & sValue){ state = sValue;  }
@@ -51,6 +48,7 @@ class Particle{
       void MoveParticle(rng *pRng);
 
       double GetLogLikelihood(rng *pRng, const void* userdata);
+      double GetLogLikelihood3D(rng *pRng, const void* userdata);
 
       void AddToLogWeight(double dIncrement) { logweight += dIncrement;}
       void SetLogWeight(const double & dLogWeight) {logweight = dLogWeight;}

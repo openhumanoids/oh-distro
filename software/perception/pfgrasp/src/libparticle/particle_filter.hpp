@@ -16,7 +16,7 @@ class ParticleFilter{
   public:
     ParticleFilter(long N_p,  int rng_seed,
           double resample_threshold_, const void* userdata):
-		      publish_lcm(publish_lcm),N_p(N_p),resample_threshold_(resample_threshold_), userdata_(userdata){
+		      N_p(N_p),resample_threshold_(resample_threshold_), userdata_(userdata){
       pRng = new rng(gsl_rng_default,rng_seed); // type, seed
 
       for (int i=0;i<N_p;i++){
@@ -52,7 +52,11 @@ class ParticleFilter{
     //       1: use velocity to propogate pose (when vo fails)
     void MoveParticles();
 
+    // using bearing
     void UpdateWithLogLikelihoodParticles();
+    // using 3d fit
+    void UpdateWithLogLikelihoodParticles3D();
+    
     void LogLikelihoodParticles(std::vector<float> loglikelihoods);
     
     double ConsiderResample();

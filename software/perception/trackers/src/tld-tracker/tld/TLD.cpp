@@ -131,21 +131,21 @@ bool TLD::processImage(Mat img) {
 	if(trackerEnabled) {
 		medianFlowTracker->track(prevImg, currImg, prevBB);
 	}
-        printf("MEDIANFLOW (%s): %f ms\n", (medianFlowTracker->trackerBB != NULL) ? "GOOD":"NULL", 
-            (bot_timestamp_now() - tic) * 1e-3);
+        //printf("MEDIANFLOW (%s): %f ms\n", (medianFlowTracker->trackerBB != NULL) ? "GOOD":"NULL", 
+        //    (bot_timestamp_now() - tic) * 1e-3);
 
         tic = bot_timestamp_now(); 
 	if(detectorEnabled && (!alternating || medianFlowTracker->trackerBB == NULL)) {
 		detectorCascade->detect(grey_frame);
 	}
-        printf("DETECT: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
+        //printf("DETECT: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
         tic = bot_timestamp_now(); 
 	fuseHypotheses();
-        printf("FUSE: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
+        //printf("FUSE: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
 
         tic = bot_timestamp_now(); 
 	learn();
-        printf("LEARN: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
+        //printf("LEARN: %f ms\n", (bot_timestamp_now() - tic) * 1e-3);
         
         // drawTemplates();
         return (currBB != NULL);

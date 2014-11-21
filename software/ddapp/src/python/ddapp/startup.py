@@ -49,6 +49,8 @@ from ddapp import multisensepanel
 from ddapp import navigationpanel
 from ddapp import handcontrolpanel
 from ddapp import sensordatarequestpanel
+from ddapp import pfgrasp
+from ddapp import pfgrasppanel
 
 from ddapp import robotplanlistener
 from ddapp import handdriver
@@ -125,6 +127,7 @@ useControllerRate = True
 useSkybox = False
 useDataFiles = True
 useContinuousWalking = False
+usePFGrasp = True
 
 
 poseCollection = PythonQt.dd.ddSignalMap()
@@ -517,7 +520,6 @@ if useImageViewDemo:
 
     #showImageOverlay()
 
-
 screengrabberpanel.init(view)
 framevisualization.init(view)
 
@@ -704,3 +706,13 @@ if useDrillDemo:
     app.addToolbarMacro('pointer prep', sendPointerPrep)
     app.addToolbarMacro('pointer press', sendPointerPress)
     app.addToolbarMacro('pointer press deep', sendPointerPressDeep)
+
+if usePFGrasp:
+    pfgrasper = pfgrasp.PFGrasp(drillDemo, robotStateModel, playbackRobotModel, teleopRobotModel, footstepsDriver, manipPlanner, ikPlanner,
+                lHandDriver, rHandDriver, atlasdriver.driver, perception.multisenseDriver,
+                fitDrillMultisense, robotStateJointController,
+                playPlans, showPose, cameraview, segmentationpanel)
+
+    showImageOverlay()
+    hideImageOverlay()
+    pfgrasppanel.init(pfgrasper, _prevParent, imageView, imagePicker, cameraview)
