@@ -1,1 +1,0 @@
-This is the MultiSense API version 3.0

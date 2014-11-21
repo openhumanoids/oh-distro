@@ -1,8 +1,0 @@
-package multisense;
-// this was copied from libbot, bot_core lcmtypes package
-
-struct image_metadata_t {
-    string key;
-    int32_t n;
-    byte value[n];
-}
