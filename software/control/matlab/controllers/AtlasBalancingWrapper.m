@@ -93,8 +93,9 @@ classdef AtlasBalancingWrapper < DrakeSystem
         options.use_lcm = true;
         options.use_contact_logic_OR = true;      
       else
-        options.use_lcm = false;
+        options.use_lcm = true;
         options.contact_threshold = 0.002;
+        options.use_contact_logic_OR = true;
       end
       obj.qtraj_eval_block = QTrajEvalBlock(r,controller_data,options);
       obj.foot_contact_block = FootContactBlock(r,controller_data,options);

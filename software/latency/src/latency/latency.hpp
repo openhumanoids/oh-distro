@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,21 @@ class Latency {
     
     bool verbose_;
     bool verbose_useful_;
+
+    std::string tic_filename_;
+    std::ofstream tic_file_;
+    bool write_tics_;
+    void setTicOutputFile( std::string tic_filename_in ){
+      write_tics_ = true;
+      tic_filename_ = tic_filename_in;
+
+      tic_file_.open (tic_filename_in);
+    }
+
+    void closeTicOutputFile(){
+      tic_file_.close();
+    }
+
 };
 
 

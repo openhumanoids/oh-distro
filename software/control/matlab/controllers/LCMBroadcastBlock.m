@@ -1,25 +1,31 @@
 classdef LCMBroadcastBlock < MIMODrakeSystem
-
-	properties
+  
+  properties
     lc; % LCM
     spindle_channel;
     hokuyo_data_channel;
     robot_state_est_channel;
     hokuyo_yaw_width;
-    hokuyo_num_pts;   
+    hokuyo_num_pts;
     hokuyo_max_range;
     hokuyo_spin_rate;
     joint_names_cache;
+    
+    % FC publish period
+    fc_publish_period = 0.01;
+    
+    % Atlas, for usefulness
+    r;
   end
   
   methods
     function obj = LCMBroadcastBlock(r,options)
       typecheck(r,'Biped');
-       
+      
       if nargin<2
         options = struct();
       end
-    
+      
       input_frame = getOutputFrame(r);
       output_frame = getOutputFrame(r);
       
@@ -28,7 +34,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       obj = setOutputFrame(obj,output_frame);
       
       obj.hokuyo_yaw_width = r.hokuyo_yaw_width;
-      obj.hokuyo_num_pts = r.hokuyo_num_pts;   
+      obj.hokuyo_num_pts = r.hokuyo_num_pts;
       obj.hokuyo_max_range = r.hokuyo_max_range;
       obj.hokuyo_spin_rate = r.hokuyo_spin_rate;
       
@@ -49,9 +55,35 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       for i=1:length(names)
         obj.joint_names_cache(i) = java.lang.String(names(i));
       end
+      
+      obj.r = r;
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
+      % See if we just passed our publish-timestep for 
+      % the foot contact state message, publish if so.
+      if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
+        % Get foot force state
+%         lfoot_force = varargin{3}; % Can we infer these magic numbers
+%         rfoot_force = varargin{4}; % from the input frame?
+%         fc = [norm(lfoot_force); norm(rfoot_force)];
+        % Get binary foot contact, call it force:
+        x = varargin{1};
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
+        within_thresh = phiC < 0.002;
+        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
+        fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
+              any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
+       
+        % Publish it!
+        foot_contact_est = drc.foot_contact_estimate_t();
+        foot_contact_est.utime = t*1000*1000;
+        foot_contact_est.left_contact = fc(1);
+        foot_contact_est.right_contact = fc(2);
+        foot_contact_est.detection_method = 0;
+        obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
+      end
+      
       % What needs to go out:
       num_dofs = length(varargin{1}) / 2;
       % Robot state on EST_ROBOT_STATE.
@@ -141,21 +173,20 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         multisense_state.num_joints = length(multisense_state.joint_name);
         multisense_state.utime = t*1000*1000;
         obj.lc.publish('MULTISENSE_STATE', multisense_state);
-
+        
         pre_to_post_frame = bot_core.rigid_transform_t();
         pre_to_post_frame.utime = t*1000*1000;
         pre_to_post_frame.trans = [0, 0, 0]; % no offset
-        q = rpy2quat([0 0 laser_spindle_angle+3.1415]);
+        q = rpy2quat([0, 0, laser_spindle_angle+pi]);
         pre_to_post_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
         obj.lc.publish('PRE_SPINDLE_TO_POST_SPINDLE', pre_to_post_frame);
-
+        
         % Our spindle setup has the laser perfectly centered on the
         % spindle
-        % (so publish a post_spindle_to_scan frame with vals from
-        % multisense_05.cfg, but with the translation removed)
         post_to_scan_frame = pre_to_post_frame;
         post_to_scan_frame.trans = [ 0,0,0 ];
-        post_to_scan_frame.quat = [ 0.496637130899519, -0.492381687666844, -0.503247117659410, -0.507596466132044 ];
+        q = rpy2quat([0, -90, -90]*pi/180);
+        post_to_scan_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
         obj.lc.publish('POST_SPINDLE_TO_SCAN', post_to_scan_frame);
         
         % And the data
@@ -166,14 +197,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         % discarded for now...
         lcm_laser_msg.intensities = 5000*ones(size(laser_ranges));
         lcm_laser_msg.nranges = length(laser_ranges);
-        lcm_laser_msg.nintensities = length(laser_ranges); 
-        lcm_laser_msg.rad0 = -obj.hokuyo_yaw_width/2.0; 
-        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges) - 1);
+        lcm_laser_msg.nintensities = length(laser_ranges);
+        lcm_laser_msg.rad0 = -obj.hokuyo_yaw_width/2.0;
+        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges)-1);
         obj.lc.publish('SCAN', lcm_laser_msg);
         
       end
       varargout = varargin;
-        
+      
     end
   end
   

@@ -27,7 +27,7 @@ classdef RigidBodyLidarSpinningStateless < RigidBodyDepthSensor
       %  will equal the pixel width of yaw scan, prepending with the
       % current spindle angle.
       
-       amount_spun = t*obj.spin_rate;
+      amount_spun = t*obj.spin_rate;
       % spin bodypoints by that amount around the +z axis
       rot_matrix = [1, 0, 0;
                     0, cos(amount_spun), -sin(amount_spun);
@@ -43,13 +43,11 @@ classdef RigidBodyLidarSpinningStateless < RigidBodyDepthSensor
       origin = repmat(pts(:,1),1,obj.num_pixel_rows*obj.num_pixel_cols);
       point_on_ray = pts(:,2:end);
       
-      distance = collisionRaycast(manip, kinsol, origin, point_on_ray);
+      distance = collisionRaycast(manip, kinsol, origin, point_on_ray, false);
       distance( distance<0 ) = obj.range;
       
-      % return the points in the sensor frame
-      points = (repmat(distance',3,1)/obj.range).*rot_body_points;
-      
       if (~isempty(obj.lcmgl))
+        points = (repmat(distance',3,1)/obj.range).*rot_body_points;
         points_in_world_frame = forwardKin(manip,kinsol,obj.frame_id,points);
         if (size(points_in_world_frame, 2) > 0)
           obj.lcmgl.glColor3f(1, 0, 0);
@@ -62,8 +60,9 @@ classdef RigidBodyLidarSpinningStateless < RigidBodyDepthSensor
         end
       end
       
-      points = diag(sqrt(points'*points)); % Take norm of each column to get distance
+      points = distance; % Take norm of each column to get distance
       points = [mod(amount_spun, 2*3.1415); points]; % Tack on spindle position
+      
     end
     
     function fr = constructFrame(obj,manip)

@@ -61,6 +61,7 @@ toLcm(const ViewBase::Spec& iSpec, drc::map_request_t& oMessage) {
   oMessage.active = iSpec.mActive;
   oMessage.time_mode = iSpec.mTimeMode;
   oMessage.relative_location = iSpec.mRelativeLocation;
+  oMessage.accum_type = iSpec.mAccumulationMethod;
   switch (iSpec.mType) {
   case ViewBase::TypeOctree:
     oMessage.type = drc::map_request_t::OCTREE; break;
@@ -103,6 +104,7 @@ fromLcm(const drc::map_request_t& iMessage, ViewBase::Spec& oSpec) {
   oSpec.mActive = iMessage.active;
   oSpec.mTimeMode = (ViewBase::TimeMode)iMessage.time_mode;
   oSpec.mRelativeLocation = iMessage.relative_location;
+  oSpec.mAccumulationMethod = (ViewBase::AccumulationMethod)iMessage.accum_type;
   switch (iMessage.type) {
   case drc::map_request_t::OCTREE:
     oSpec.mType = ViewBase::TypeOctree; break;

@@ -10,7 +10,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     timestamp_name;
     dim;
     % Atlas and various controllers:
-    robot;
+    r;
     pelvis_controller;
     fc;
     qt;
@@ -33,7 +33,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       output_frame = getInputFrame(r);
       
       % We'll need atlas state as input
-      input_frame = getStateFrame(r);
+      input_frame = AtlasState(r);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
@@ -72,7 +72,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       
       % And the initial standing controller, until the planner comes
       % online
-      obj = setup_init_planner(obj, r, options);
+      obj = setup_init_planner(obj, options);
       
       % And the lcm coder
       obj.joint_names = obj.pd_plus_qp_block.getOutputFrame.getCoordinateNames;
@@ -96,10 +96,19 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
         in_joint_name_i = obj.joint_names(i, :);
         obj.drake_to_atlas_joint_map(i) = obj.getOutputFrame.findCoordinateIndex(strtrim(in_joint_name_i));
       end
+      
+      % save robot
+      obj.r = r;
 
     end
     
-    function obj=setup_init_planner(obj, r, options)
+    function obj=setup_init_planner(obj, options)
+      % Generate a new robot, without foot force sensors or a hokuyo
+      options.foot_force_sensors = false;
+      options.hokuyo = false;
+      r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
+      r = r.removeCollisionGroupsExcept({'heel','toe'});
+      r = compile(r);
       % set initial state to fixed point
       load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
       r = r.setInitialState(xstar);
@@ -213,7 +222,12 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       % If we haven't received a command make our own
       if (isempty(data))
         % foot contact
-        fc = output(obj.fc,t,[],x);
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
+        within_thresh = phiC < 0.002;
+        contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
+        fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
+              any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
+            
         % qtraj eval
         q_des_and_x = output(obj.qt,t,[],x);
         q_des = q_des_and_x(1:obj.nq);
@@ -225,7 +239,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
           efforts(obj.drake_to_atlas_joint_map(i)) = u(i);
         end
       else
-        cmd = obj.coder.decode(data);
+         cmd = obj.coder.decode(data);
         efforts = cmd.val(obj.nu*2+1:end);
       end
       

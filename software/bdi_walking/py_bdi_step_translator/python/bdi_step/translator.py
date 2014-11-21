@@ -11,6 +11,8 @@ from bdi_step.utils import Behavior, gl, now_utime
 
 NUM_REQUIRED_WALK_STEPS = 4
 
+PLAN_UPDATE_TIMEOUT = 20 # maximum time allowed between a footstep plan and an 'update' which appends more steps to that plan
+
 # Experimentally determined vector relating BDI's frame for foot position to ours. This is the xyz vector from the position of the foot origin (from drake forwardKin) to the BDI Atlas foot pos estimate, expressed in the frame of the foot.
 ATLAS_FRAME_OFFSET = np.array([0.0400, 0.000, -0.0850])
 
@@ -48,6 +50,8 @@ class BDIStepTranslator(object):
         self.T_local_to_localbdi.trans = np.zeros(3)
         self.T_local_to_localbdi.quat = ut.rpy2quat([0,0,0])
         self.last_params = None
+        self.executing = False
+        self.last_footstep_plan_time = -np.inf
 
     def handle_bdi_transform(self, channel, msg):
         if isinstance(msg, str):
@@ -55,7 +59,6 @@ class BDIStepTranslator(object):
         self.T_local_to_localbdi = msg
 
     def handle_footstep_plan(self, channel, msg):
-        print "Starting new footstep plan"
         if isinstance(msg, str):
             try:
                 msg = drc.deprecated_footstep_plan_t.decode(msg)
@@ -68,6 +71,7 @@ class BDIStepTranslator(object):
             self.last_params = msg.params
         else:
             raise ValueError("Can't decode footsteps: not a drc.footstep_plan_t or drc.deprecated_footstep_plan_t")
+
 
         behavior = opts['behavior']
         if behavior == Behavior.BDI_WALKING:
@@ -85,23 +89,39 @@ class BDIStepTranslator(object):
 
         self.behavior = behavior
 
+        now = time.time()
+        if now - self.last_footstep_plan_time > PLAN_UPDATE_TIMEOUT:
+            self.executing = False
+        self.last_footstep_plan_time = now
+
         if self.mode == Mode.plotting:
             self.draw(footsteps)
         else:
-            self.bdi_step_queue_in = footsteps
+            if not self.executing:
+                print "Starting new footstep plan"
+                self.bdi_step_queue_in = footsteps
+                self.send_params(1)
+                if not self.safe:
+                    m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
+                    print m
+                    ut.send_status(6,0,0,m)
+                    time.sleep(1)
+                    self.executing = True
+                    self.send_behavior()
+                else:
+                    m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
+                    print m
+                    ut.send_status(6,0,0,m)
 
-            self.send_params(1)
-
-            if not self.safe:
-                m = "BDI step translator: Steps received; transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
-                print m
-                ut.send_status(6,0,0,m)
-                time.sleep(1)
-                self.send_behavior()
             else:
-                m = "BDI step translator: Steps received; in SAFE mode; not transitioning to {:s}".format("BDI_STEP" if self.behavior == Behavior.BDI_STEPPING else "BDI_WALK")
-                print m
-                ut.send_status(6,0,0,m)
+                print "Got updated footstep plan"
+                if self.bdi_step_queue_in[self.delivered_index-1].is_right_foot == footsteps[0].is_right_foot:
+                    print "Re-aligning new footsteps to current plan"
+                    self.bdi_step_queue_in = self.bdi_step_queue_in[:self.delivered_index-1] + footsteps
+                else:
+                    print "Can't align the updated plan to the current plan"
+                    return
+
 
     @property
     def bdi_step_queue_out(self):
@@ -130,7 +150,7 @@ class BDIStepTranslator(object):
         return [s.to_bdi_spec(self.behavior, j+1) for j, s in enumerate(bdi_step_queue_out[2:])]
 
     def handle_atlas_status(self, channel, msg):
-        if self.delivered_index is None or self.mode != Mode.translating:
+        if (not self.executing) or self.mode != Mode.translating:
             return
         if isinstance(msg, str):
             msg = drc.atlas_status_t.decode(msg)
@@ -140,12 +160,17 @@ class BDIStepTranslator(object):
             if index_needed <= len(self.bdi_step_queue_in) - 4:
                 #print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed-1)
+            else:
+                self.executing = False
         else:
             index_needed = msg.step_feedback.next_step_index_needed
             # if self.delivered_index < index_needed <= len(self.bdi_step_queue_in) - 2:
             if index_needed <= len(self.bdi_step_queue_in) - 2:
-                #print "Handling request for next step: {:d}".format(index_needed)
+                # print "Handling request for next step: {:d}".format(index_needed)
                 self.send_params(index_needed)
+            else:
+                print "done executing"
+                self.executing = False
 
             # Report progress through the footstep plan execution (only when stepping)
             progress_msg = drc.footstep_plan_progress_t()
@@ -233,6 +258,7 @@ class BDIStepTranslator(object):
 
         self.bdi_step_queue_in = []  # to prevent infinite spewing of -1 step indices
         self.delivered_index = None
+        self.executing = False
 
     def run(self):
         if self.mode == Mode.translating:
@@ -241,7 +267,9 @@ class BDIStepTranslator(object):
             self.lc.subscribe('STOP_WALKING', self.handle_stop_walking)
         else:
             print "BDIStepTranslator running in base-side plotter mode"
+            self.lc.subscribe('FOOTSTEP_PLAN_RESPONSE', self.handle_footstep_plan)
             self.lc.subscribe('CANDIDATE_BDI_FOOTSTEP_PLAN', self.handle_footstep_plan)
+            self.lc.subscribe('BDI_ADJUSTED_FOOTSTEP_PLAN', self.handle_footstep_plan)
         self.lc.subscribe('ATLAS_STATUS', self.handle_atlas_status)
         self.lc.subscribe('LOCAL_TO_LOCAL_BDI', self.handle_bdi_transform)
         while True:

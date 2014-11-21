@@ -41,3 +41,13 @@ add_subdirectory(src/project-lidar)
 
 
 pods_install_python_script(spin-lidar-command scripts/spin-lidar-command.py)
+
+
+# opencv dep:
+add_subdirectory(src/multisense_image_utils)
+
+# PCL and opencv deps:  ---- Also image-utils remove me ----
+add_subdirectory(src/multisense_utils)
+
+
+add_subdirectory(src/test)

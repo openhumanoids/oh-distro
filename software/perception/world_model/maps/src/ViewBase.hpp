@@ -23,11 +23,20 @@ public:
     TimeModeRollAngleRelative,
   };
 
+  enum AccumulationMethod {
+    AccumulationMethodClosest,
+    AccumulationMethodFurthest,
+    AccumulationMethodMean,
+    AccumulationMethodMedian,
+    AccumulationMethodClosestPercentile,
+  };
+
   struct Spec {
     int64_t mMapId;
     int64_t mViewId;
     bool mActive;
     TimeMode mTimeMode;
+    AccumulationMethod mAccumulationMethod;
     bool mRelativeLocation;
     Type mType;
     float mResolution;

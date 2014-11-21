@@ -13,6 +13,7 @@
 #include <mutex>
 
 #include <zlib.h>
+#include <opencv2/opencv.hpp>
 
 using namespace maps;
 
@@ -20,6 +21,7 @@ struct FusedDepthHandler::Imp {
   std::shared_ptr<BotWrapper> mBotWrapper;
   std::string mDepthChannel;
   std::string mCameraChannel;
+  int mMedianFilterSize;
   lcm::Subscription* mDepthSubscription;
   BotCamTrans* mCamTrans;
   bot_core::image_t mCurrentImage;
@@ -160,9 +162,20 @@ struct FusedDepthHandler::Imp {
     DepthImageView::Ptr view(new DepthImageView());
     view->setSize(iRequest.width, iRequest.height);
     view->getDepthImage()->setAccumulationMethod
-      (DepthImage::AccumulationMethodMean);
+      ((DepthImage::AccumulationMethod)iRequest.accum_type);
     view->setTransform(projector);
     view->set(cloud);
+
+    // filter out bogus returns
+    if (mMedianFilterSize > 0) {
+      const auto& depthImage = view->getDepthImage();
+      DepthImage::Type dataType = DepthImage::TypeDisparity;
+      std::vector<float> data = depthImage->getData(dataType);
+      cv::Mat depthMat(depthImage->getHeight(), depthImage->getWidth(),
+                       CV_32FC1, data.data());
+      cv::medianBlur(depthMat, depthMat, mMedianFilterSize);
+      depthImage->setData(data, dataType);
+    }
 
     return view;
   }
@@ -173,6 +186,7 @@ FusedDepthHandler::
 FusedDepthHandler(const std::shared_ptr<BotWrapper>& iBotWrapper) {
   mImp.reset(new Imp());
   mImp->mBotWrapper = iBotWrapper;
+  setMedianFilter(0);
 }
 
 FusedDepthHandler::
@@ -188,6 +202,11 @@ setDepthChannel(const std::string& iChannel) {
 void FusedDepthHandler::
 setCameraChannel(const std::string& iChannel) {
   mImp->mCameraChannel = iChannel;
+}
+
+void FusedDepthHandler::
+setMedianFilter(const int iKernelRadius) {
+  mImp->mMedianFilterSize = iKernelRadius*2+1;
 }
 
 void FusedDepthHandler::

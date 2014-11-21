@@ -6,7 +6,7 @@ set(PCL_LIBRARIES  pcl_io-1.7)
 
 add_library(multisense_utils SHARED multisense_utils.cpp)
 
-pods_use_pkg_config_packages(multisense_utils ${PCL_LIBRARIES} lcm image-utils
+pods_use_pkg_config_packages(multisense_utils ${PCL_LIBRARIES} lcm image-utils multisense_image_utils
    opencv)
 
 # set the library API version.  Increment this every time the public API changes.
@@ -18,6 +18,6 @@ target_link_libraries(multisense_utils
     z)
 pods_install_pkg_config_file(multisense_utils
     LIBS -lmultisense_utils -lz
-    REQUIRES image-utils pcl_io-1.7 opencv
+    REQUIRES image-utils pcl_io-1.7 opencv multisense_image_utils
     VERSION 0.0.1)
 

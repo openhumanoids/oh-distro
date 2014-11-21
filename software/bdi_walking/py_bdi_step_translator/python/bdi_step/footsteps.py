@@ -48,6 +48,12 @@ class FootGoal:
         self.bdi_step_end_dist = bdi_step_end_dist
         self.terrain_pts = terrain_pts
 
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __repr__(self):
+        return str(self)
+
     def to_bdi_spec(self, behavior, step_index):
         if behavior == Behavior.BDI_STEPPING:
             return self.to_step_spec(step_index)

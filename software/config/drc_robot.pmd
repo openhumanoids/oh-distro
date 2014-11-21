@@ -53,8 +53,13 @@ group "2.plan_and_control" {
        stop_signal = 15;
     }
 
-    cmd "BaseBDIStepTranslator" {
+    cmd "RobotBDIStepTranslator" {
         exec = "drc-bdi-step-translator";
+        host = "base";
+    }
+
+    cmd "BDIStepPlotter" {
+        exec = "drc-bdi-step-translator -b";
         host = "base";
     }
 }

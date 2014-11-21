@@ -16,4 +16,16 @@ pods_use_pkg_config_packages(drc-latency latency
 pods_install_executables(drc-latency )
 
 
+# need to work on this modules dependencies:
+#add_executable(drc-latency-echo latency-echo.cpp  )
+#pods_use_pkg_config_packages(drc-latency-echo
+##   lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
+#pods_install_executables(drc-latency-echo )
 
+
+
+
+add_executable(drc-latency-source latency-source.cpp  )
+pods_use_pkg_config_packages(drc-latency-source
+   lcmtypes_drc_lcmtypes lcmtypes_bot2-core lcm)
+pods_install_executables(drc-latency-source )
