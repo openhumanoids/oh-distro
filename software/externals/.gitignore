@@ -16,6 +16,8 @@ lcm_pod
 libbot-drc
 microstrain_comm
 mosek
+multisense-lcm
+libmultisense
 occ-map
 octomap-drc
 opencv-drc

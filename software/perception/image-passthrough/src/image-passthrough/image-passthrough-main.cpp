@@ -1,7 +1,6 @@
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core.hpp"
-#include "lcmtypes/multisense.hpp"
 
 #include <image-passthrough/image-passthrough-app.hpp>
 
@@ -22,7 +21,7 @@ class Main{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-                           const  multisense::images_t* msg);    
+                           const  bot_core::images_t* msg);    
     void cameraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                              const  bot_core::image_t* msg);
     Pass::Ptr pass;
@@ -63,7 +62,7 @@ Main::Main(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_,
 }
 
 void Main::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-                             const  multisense::images_t* msg){
+                             const  bot_core::images_t* msg){
   int64_t msg_time = msg->utime;
   if (pass->createMask(msg_time) ){
     pass->sendOutput(msg_time);  

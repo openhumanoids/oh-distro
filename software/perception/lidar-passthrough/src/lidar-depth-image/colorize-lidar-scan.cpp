@@ -27,7 +27,6 @@
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include "lcmtypes/bot_core.hpp"
-#include "lcmtypes/multisense.hpp"
 #include "lcmtypes/visualization.hpp"
 
 #include <camera_params/camera_params.hpp>     // Camera Parameters
@@ -78,7 +77,7 @@ class Pass{
     void lidarHandler(const lcm::ReceiveBuffer* rbuf, 
                       const std::string& channel, const  bot_core::planar_lidar_t* msg);   
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, 
-                           const std::string& channel, const  multisense::images_t* msg);   
+                           const std::string& channel, const  bot_core::images_t* msg);   
     void imageHandler(const lcm::ReceiveBuffer* rbuf, 
                       const std::string& channel, const  bot_core::image_t* msg);   
     
@@ -162,7 +161,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
   
 }
 void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  multisense::images_t* msg){
+                        const std::string& channel, const bot_core::images_t* msg){
   imgutils_->decodeImageToRGB(&(msg->images[0]),  cams_[2]->img_buf_ );
   cams_[2]->img_received_ = true;
 }

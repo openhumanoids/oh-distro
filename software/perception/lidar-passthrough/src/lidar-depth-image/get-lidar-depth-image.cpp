@@ -30,8 +30,6 @@
 #include <maps/Utils.hpp>
 #include <maps/DepthImage.hpp>
 
-#include <lcmtypes/multisense.hpp>
-
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <drc_utils/Clock.hpp>
@@ -76,7 +74,7 @@ class Pass{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     
 
@@ -313,7 +311,7 @@ void Pass::sendSweepDepthImage(){
     }
     memcpy(&disparity_.data[0], disparity_data_, isize);
     
-    multisense::images_t images;
+    bot_core::images_t images;
     images.utime = img_.utime;
     images.n_images =2;
     images.image_types.push_back( 0 ); // multisense::images_t::LEFT ); for some reason enums won't work
@@ -377,7 +375,7 @@ void Pass::imageHandler(const lcm::ReceiveBuffer* rbuf,
 }
 
 void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  multisense::images_t* msg){
+                        const std::string& channel, const bot_core::images_t* msg){
   counter_++;
   if (counter_%30 ==0){ cout << counter_ << " | " << msg->utime << "\n";   }  
   if (camera_params_.width != msg->images[0].width){

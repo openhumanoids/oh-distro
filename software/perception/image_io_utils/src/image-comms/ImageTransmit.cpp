@@ -7,12 +7,12 @@
 #include <lcm/lcm-cpp.hpp>
 #include <drc_utils/LcmWrapper.hpp>
 
+#include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/camera_settings_t.hpp>
 #include <lcmtypes/drc/data_request_t.hpp>
 #include <lcmtypes/drc/subimage_request_t.hpp>
 #include <lcmtypes/drc/subimage_response_t.hpp>
-#include <lcmtypes/multisense/images_t.hpp>
 
 #include <opencv2/opencv.hpp>
 
@@ -66,7 +66,7 @@ struct ChannelData {
   }
 
   void onImages(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
-                const multisense::images_t* iMessage) {
+                const bot_core::images_t* iMessage) {
     for (int i = 0; i < iMessage->n_images; ++i) {
       if (iMessage->image_types[i] == mMultisenseType) {
         std::lock_guard<std::mutex> lock(mDataMutex);
@@ -218,8 +218,8 @@ struct ImageTransmit {
     data->mRequestType = iRequestType;
     std::string suffix;
     switch (iMultisenseType) {
-    case multisense::images_t::LEFT: suffix = "_LEFT"; break;
-    case multisense::images_t::RIGHT: suffix = "_RIGHT"; break;
+    case bot_core::images_t::LEFT: suffix = "_LEFT"; break;
+    case bot_core::images_t::RIGHT: suffix = "_RIGHT"; break;
     default: break;
     }
     data->mChannelTransmit = data->mChannelBase + suffix + "_TX";
@@ -266,8 +266,8 @@ int main(const int iArgc, const char** iArgv) {
   opt.parse();
 
   ImageTransmit obj;
-  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT, "CAMERA", multisense::images_t::LEFT);
-  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT, "CAMERA", multisense::images_t::RIGHT);
+  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_LEFT, "CAMERA", bot_core::images_t::LEFT);
+  obj.addMultiChannel(drc::data_request_t::CAMERA_IMAGE_HEAD_RIGHT, "CAMERA", bot_core::images_t::RIGHT);
   obj.addChannel(drc::data_request_t::CAMERA_IMAGE_LCHEST, "CAMERACHEST_LEFT");
   obj.addChannel(drc::data_request_t::CAMERA_IMAGE_RCHEST, "CAMERACHEST_RIGHT");
   obj.start();

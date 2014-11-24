@@ -83,7 +83,7 @@ class Pass{
     int verbose_;
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    void imageStereoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    void imageStereoHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void affordancePlusHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::affordance_plus_collection_t* msg);
     void trackerCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  drc::tracker_command_t* msg);    
@@ -413,7 +413,7 @@ void Pass::updatePF(){
 // TODO: combine masking and unpacking into one function, should make processing neglibible
 int ish_counter=0;
 void Pass::imageStereoHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  multisense::images_t* msg){
+                        const std::string& channel, const bot_core::images_t* msg){
   if (!tracker_initiated_){ // haven't been initated, quit ...
     return;
   }  

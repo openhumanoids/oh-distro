@@ -8,7 +8,7 @@
 #include <ConciseArgs>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include "lcmtypes/multisense.hpp"
+#include "lcmtypes/bot_core.hpp"
 #include <multisense_utils/multisense_utils.hpp> // create point clouds
 
 using namespace cv;
@@ -22,7 +22,7 @@ class image_tool{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     
-    void disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg); 
+    void disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg); 
     mutable pcl::PCLPointCloud2 cloud_out;
     
     cv::Mat_<double> Q_;
@@ -49,7 +49,7 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_,
   ms_utils_->set_decimate( decimate_ );
 }
 
-void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg){
+void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg){
   cout << msg->utime << " | "<< msg->images[0].width <<" x "<< msg->images[0].height <<"\n";
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   ms_utils_->unpack_multisense(msg,Q_,cloud);  

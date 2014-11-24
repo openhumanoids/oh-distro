@@ -6,7 +6,6 @@
 #include <boost/shared_ptr.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/multisense.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -26,7 +25,7 @@ class Pass{
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);   
 
     std::string image_channel_;
     StereoB*  stereob_;
@@ -49,7 +48,7 @@ Pass::Pass(boost::shared_ptr<lcm::LCM> &lcm_, std::string image_channel_, float 
 }
 
 void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  multisense::images_t* msg){
+                        const std::string& channel, const  bot_core::images_t* msg){
   cv::Mat left_img, right_img;
 
   int w = msg->images[0].width;

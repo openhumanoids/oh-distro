@@ -14,7 +14,6 @@
 
 #include <opencv2/opencv.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/multisense.hpp>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <ConciseArgs>
@@ -48,7 +47,7 @@ class Tags{
     const CommandLineConfig& cl_cfg_;
     int codec_val_;
     
-    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);   
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     void doEncode();
     
@@ -88,7 +87,7 @@ Tags::Tags(boost::shared_ptr<lcm::LCM> &lcm_, const CommandLineConfig& cl_cfg_):
 
 int counter =0;
 
-void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg){
+void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg){
   img_= msg->images[0];    
   doEncode();
 }

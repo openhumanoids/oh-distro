@@ -1,7 +1,7 @@
 #include "stereo-bm.hpp"
 #include <iostream>
 
-#include <lcmtypes/multisense.h>
+#include <lcmtypes/bot_core.h>
 
 using namespace cv;
 using namespace std;
@@ -311,18 +311,18 @@ void StereoB::sendRangeImage(int64_t utime) {
   left_msg_out.metadata = NULL;
 
   //////// BOTH IMAGES /////////////////////////////////////////////
-  multisense_images_t images;
+  bot_core_images_t images;
   images.utime = utime;
   images.n_images=2;
   int16_t im_types[ 2 ];
-  im_types[0] = MULTISENSE_IMAGES_T_LEFT;
-  im_types[1] = MULTISENSE_IMAGES_T_DISPARITY;
+  im_types[0] = BOT_CORE_IMAGES_T_LEFT;
+  im_types[1] = BOT_CORE_IMAGES_T_DISPARITY;
   bot_core_image_t im_list[ 2 ];
   im_list[0] = left_msg_out;
   im_list[1] = disp_msg_out;
   images.image_types = im_types;
   images.images = im_list;
-  multisense_images_t_publish( lcm_->getUnderlyingLCM(), "MULTISENSE_LD", &images);        
+  bot_core_images_t_publish( lcm_->getUnderlyingLCM(), "MULTISENSE_LD", &images);        
   return;
 }
 

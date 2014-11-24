@@ -11,7 +11,6 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/multisense.hpp>
 #include <image_io_utils/image_io_utils.hpp> // to simplify jpeg/zlib compression and decompression
 
 #include <ConciseArgs>
@@ -29,7 +28,7 @@ class Pass{
     }    
   private:
     boost::shared_ptr<lcm::LCM> lcm_;
-    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);   
     
     void doGradient(cv::Mat &src, cv::Mat &dst);
 
@@ -80,7 +79,7 @@ void filterSpeckles(cv::Mat &src) {
 
 
 void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf, 
-                        const std::string& channel, const  multisense::images_t* msg){
+                        const std::string& channel, const bot_core::images_t* msg){
   int h = msg->images[1].height;
   int w = msg->images[1].width;
   cv::Mat disparity_orig_temp = cv::Mat::zeros(h,w,CV_16UC1); // h,w
@@ -116,7 +115,7 @@ void Pass::multisenseHandler(const lcm::ReceiveBuffer* rbuf,
   memcpy(&disp_msg.data[ 0 ], disparity_orig_temp.data,  h*w*sizeof(short)  );
   disp_msg.size = disp_msg.data.size() ;
   
-  multisense::images_t msg_out = *msg;
+  bot_core::images_t msg_out = *msg;
   msg_out.images[1] = disp_msg;
   msg_out.image_types[1] =  msg->DISPARITY;
   lcm_->publish("CAMERA_FILTERED", &msg_out);

@@ -27,7 +27,6 @@
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <pronto_utils/pronto_lcm.hpp> // unpack lidar to xyz
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/multisense.hpp>
 
 #include <AprilTags/TagDetector.h>
 #include <AprilTags/Tag16h5.h>
@@ -56,7 +55,7 @@ class Tags{
     
     bool use_head_cam_;
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
-    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);   
     
     void processTag(int64_t utime_in);
 
@@ -160,7 +159,7 @@ void Tags::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   processTag(msg->utime);
 }
 
-void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg){
+void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg){
   // TODO: check that this is the left image
   imgutils_->decodeImageToRGB(&(msg->images[0]),  img_buf_ );  
   processTag(msg->utime);//&(msg->images[0]));

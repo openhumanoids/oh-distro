@@ -28,7 +28,6 @@
 #include <lcm/lcm-cpp.hpp>
 
 #include "lcmtypes/drc/robot_state_t.hpp"
-#include "lcmtypes/multisense.hpp"
 #include <bot_core/bot_core.h>
 
 #include "urdf/model.h"
@@ -131,7 +130,7 @@ class App{
     
     ///
     void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-                           const  multisense::images_t* msg);    
+                           const  bot_core::images_t* msg);    
     void cameraHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
                              const  bot_core::image_t* msg);    
     
@@ -196,7 +195,7 @@ App::App(int argc, char** argv, boost::shared_ptr<lcm::LCM> &lcm_, CommandlineCo
 }
 
 void App::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
-                             const  multisense::images_t* msg){
+                             const  bot_core::images_t* msg){
   imgutils_->decodeImageToRGB(&(msg->images[0]),  img_buf_ );
   
   int64_t msg_time = msg->utime;
