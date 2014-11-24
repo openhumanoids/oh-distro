@@ -27,7 +27,6 @@
 #include <pronto_utils/pronto_vis.hpp> // visualize pt clds
 #include <pronto_utils/pronto_lcm.hpp> // unpack lidar to xyz
 #include <lcmtypes/bot_core.hpp>
-#include <lcmtypes/multisense.hpp>
 #include <lcmtypes/drc/tag_detection_t.hpp>
 
 #include <AprilTags/TagDetector.h>
@@ -72,7 +71,7 @@ class Tags{
     double fx_, fy_, cx_, cy_;
 
     void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);
-    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);
+    void multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);
 
     void getTagList();
     void processTag(int64_t utime);//const  bot_core::image_t* msg);
@@ -187,7 +186,7 @@ void Tags::imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string& chann
   imgutils_->decodeImageToRGB((msg),  img_buf_ );
   processTag(msg->utime);
 }
-void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg){
+void Tags::multisenseHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg){
   imgutils_->decodeImageToRGB(&(msg->images[0]),  img_buf_ );
   processTag(msg->utime);
 }

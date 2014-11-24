@@ -15,7 +15,7 @@
 #include <drcvision/fovision.hpp>
 #include <drcvision/voconfig.hpp>
 
-#include <lcmtypes/multisense/images_t.hpp>
+#include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/bot_core/planar_lidar_t.hpp>
 
@@ -53,7 +53,7 @@ private:
     typedef std::shared_ptr<Scan> Ptr;
   };
 
-  typedef std::shared_ptr<multisense::images_t> ImagesPtr;
+  typedef std::shared_ptr<bot_core::images_t> ImagesPtr;
 
   static constexpr double kPi = acos(-1);
   static constexpr int kMaxVoPoses = 1000;
@@ -305,9 +305,9 @@ public:
   }
 
   void onCamera(const lcm::ReceiveBuffer* iBuf, const std::string& iChannel,
-                const multisense::images_t* iMessage) {
+                const bot_core::images_t* iMessage) {
     if (!mIsRunning) return;
-    ImagesPtr images(new multisense::images_t(*iMessage));
+    ImagesPtr images(new bot_core::images_t(*iMessage));
     mCameraWorkQueue.push(images);
     if (mCameraWorkQueue.getSize() > kMaxCameraQueue) {
       std::cout << "**warning: camera work queue is full" << std::endl;
@@ -351,7 +351,7 @@ public:
     }
   }
 
-  void processCamera(const multisense::images_t& iMessage) {
+  void processCamera(const bot_core::images_t& iMessage) {
     auto t1 = std::chrono::high_resolution_clock::now();
     // decode images
     cv::Mat leftImage;
@@ -363,7 +363,7 @@ public:
       auto imgType = iMessage.image_types[i];
 
       // left image
-      if (imgType == multisense::images_t::LEFT) {
+      if (imgType == bot_core::images_t::LEFT) {
         switch (img.pixelformat) {
         case bot_core::image_t::PIXEL_FORMAT_MJPEG:
           leftImage = cv::imdecode(cv::Mat(img.data), -1); break;
@@ -380,8 +380,8 @@ public:
       }
 
       // disparity image
-      if ((imgType == multisense::images_t::DISPARITY) ||
-          (imgType == multisense::images_t::DISPARITY_ZIPPED)) {
+      if ((imgType == bot_core::images_t::DISPARITY) ||
+          (imgType == bot_core::images_t::DISPARITY_ZIPPED)) {
         if (img.data.size() != 2*w*h) {
           std::vector<uint8_t> buf(w*h*2);
           unsigned long len = buf.size();

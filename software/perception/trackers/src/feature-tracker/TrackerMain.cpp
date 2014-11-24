@@ -16,7 +16,7 @@
 #include <bot_core/trans.h>
 
 #include <lcmtypes/bot_core/image_t.hpp>
-#include <lcmtypes/multisense/images_t.hpp>
+#include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/drc/tracker_command_t.hpp>
 #include <lcmtypes/drc/affordance_plus_collection_t.hpp>
 
@@ -132,11 +132,11 @@ struct State {
   }
 
   void onMultisense(const lcm::ReceiveBuffer* iBuf, const std::string& iChan,
-                    const multisense::images_t* iMessage) {
+                    const bot_core::images_t* iMessage) {
     //std::cout << "received multisense " << iMessage->utime << std::endl;
     std::lock_guard<std::mutex> lock(mBufferMutex);
     for (int i = 0; i < iMessage->n_images; ++i) {
-      if (iMessage->image_types[i] != multisense::images_t::DISPARITY) {
+      if (iMessage->image_types[i] != bot_core::images_t::DISPARITY) {
         continue;
       }
       mDisparityBuffer.push_back(iMessage->images[i]);

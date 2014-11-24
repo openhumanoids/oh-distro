@@ -141,7 +141,7 @@ void multisense_utils::unpack_multisense(const uint8_t* depth_data, const uint8_
 //    0, 0, 0, 606.034;
 //    0, 0, 14.2914745276283, 0]
 // cloud - output pcl cloud
-void multisense_utils::unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix, 
+void multisense_utils::unpack_multisense(const bot_core_images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   bool is_rgb=false;
   if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB ){
@@ -162,7 +162,7 @@ void multisense_utils::unpack_multisense(const multisense_images_t *msg, cv::Mat
   }
   
   // TODO: support other modes (as in the renderer)
-  if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
+  if (msg->image_types[1] == BOT_CORE_IMAGES_T_DISPARITY_ZIPPED ) {
     unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
     uncompress(depth_buf_ , &dlen, msg->images[1].data, msg->images[1].size);
   } else{
@@ -175,7 +175,7 @@ void multisense_utils::unpack_multisense(const multisense_images_t *msg, cv::Mat
 }
 
 
-void multisense_utils::unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
+void multisense_utils::unpack_multisense(const bot_core::images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud){
   bool is_rgb=true;
   if (msg->images[0].pixelformat == BOT_CORE_IMAGE_T_PIXEL_FORMAT_RGB ){
@@ -197,7 +197,7 @@ void multisense_utils::unpack_multisense(const multisense::images_t *msg, cv::Ma
   
   // TODO: support non-zipped modes (as in the renderer)
   bool is_disparity=true;
-  if (msg->image_types[1] == MULTISENSE_IMAGES_T_DISPARITY_ZIPPED ) {
+  if (msg->image_types[1] == BOT_CORE_IMAGES_T_DISPARITY_ZIPPED ) {
     unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
     uncompress(depth_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
 
@@ -205,7 +205,7 @@ void multisense_utils::unpack_multisense(const multisense::images_t *msg, cv::Ma
 
 
     is_disparity=true;
-  }else if (msg->image_types[1] == MULTISENSE_IMAGES_T_DEPTH_MM_ZIPPED ) {
+  }else if (msg->image_types[1] == BOT_CORE_IMAGES_T_DEPTH_MM_ZIPPED ) {
     unsigned long dlen = msg->images[0].width*msg->images[0].height*2 ;//msg->depth.uncompressed_size;
     uncompress(depth_buf_ , &dlen, msg->images[1].data.data(), msg->images[1].size);
     is_disparity=false;

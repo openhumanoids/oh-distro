@@ -20,7 +20,6 @@
 #include <pcl/point_types.h>
 
 #include <lcmtypes/bot_core.hpp>
-#include "lcmtypes/multisense.hpp"
 
 #include <bot_param/param_client.h>
 #include <bot_frames/bot_frames.h>
@@ -51,7 +50,7 @@ class image_tool{
     bool output_pointcloud_, output_images_;
     bool write_pointcloud_, write_images_;
     
-    void disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg);   
+    void disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::images_t* msg);   
     void maskHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  bot_core::image_t* msg);   
     
     int counter_;
@@ -122,7 +121,7 @@ image_tool::image_tool(boost::shared_ptr<lcm::LCM> &lcm_, std::string camera_in_
   counter_=0;  
 }
 
-void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const  multisense::images_t* msg){
+void image_tool::disparityHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const bot_core::images_t* msg){
   int w = msg->images[0].width;
   int h = msg->images[0].height; 
 

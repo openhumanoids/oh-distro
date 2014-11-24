@@ -12,7 +12,7 @@
 #include <bot_param/param_util.h>
 #include <image_utils/jpeg.h>
 #include <lcmtypes/bot_core/image_t.hpp>
-#include <lcmtypes/multisense/images_t.hpp>
+#include <lcmtypes/bot_core/images_t.hpp>
 
 #include <maps/BotWrapper.hpp>
 
@@ -133,9 +133,9 @@ struct MeshRenderer::InternalState {
 
   void onCameraImages(const lcm::ReceiveBuffer* iBuf,
                       const std::string& iChannel,
-                      const multisense::images_t* iMessage) {
+                      const bot_core::images_t* iMessage) {
     for (int i = 0; i < iMessage->n_images; ++i) {
-      if (iMessage->image_types[i] == multisense::images_t::LEFT) {
+      if (iMessage->image_types[i] == bot_core::images_t::LEFT) {
         return onCameraImage(iBuf, iChannel, &(iMessage->images[i]));
       }
     }

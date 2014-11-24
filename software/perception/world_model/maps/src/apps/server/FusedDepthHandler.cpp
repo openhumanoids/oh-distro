@@ -7,7 +7,7 @@
 #include <bot_core/camtrans.h>
 #include <bot_param/param_util.h>
 #include <lcm/lcm-cpp.hpp>
-#include <lcmtypes/multisense/images_t.hpp>
+#include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/drc/map_request_t.hpp>
 
 #include <mutex>
@@ -69,10 +69,10 @@ struct FusedDepthHandler::Imp {
 
   void onDepth(const lcm::ReceiveBuffer* iBuf,
                const std::string& iChannel,
-               const multisense::images_t* iMessage) {
+               const bot_core::images_t* iMessage) {
     for (int i = 0; i < iMessage->n_images; ++i) {
-      if ((iMessage->image_types[i] == multisense::images_t::DEPTH_MM) ||
-          (iMessage->image_types[i] == multisense::images_t::DEPTH_MM_ZIPPED)) {
+      if ((iMessage->image_types[i] == bot_core::images_t::DEPTH_MM) ||
+          (iMessage->image_types[i] == bot_core::images_t::DEPTH_MM_ZIPPED)) {
         std::unique_lock<std::mutex> lock(mDataMutex);
         mCurrentFormat = iMessage->image_types[i];
         mCurrentImage = iMessage->images[i];
@@ -100,7 +100,7 @@ struct FusedDepthHandler::Imp {
 
     // get data bytes
     std::vector<uint8_t> bytes;
-    if (format == multisense::images_t::DEPTH_MM_ZIPPED) {
+    if (format == bot_core::images_t::DEPTH_MM_ZIPPED) {
       unsigned long uncompressedSize = img.width*img.height*2;
       bytes.resize(uncompressedSize);
       uncompress(bytes.data(), &uncompressedSize,

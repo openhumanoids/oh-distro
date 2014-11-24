@@ -12,8 +12,8 @@
 // Multisense Requires:
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <lcmtypes/multisense.h>
-#include <lcmtypes/multisense.hpp>
+#include <lcmtypes/bot_core.h>
+#include <lcmtypes/bot_core.hpp>
 
 #include <multisense_image_utils/multisense_image_utils.hpp>
 
@@ -29,11 +29,11 @@ class multisense_utils {
     void unpack_multisense(const uint8_t* depth_data, const uint8_t* color_data, int height, int width, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, bool is_rgb = true, bool is_disparity = true);
     
-    void unpack_multisense(const multisense_images_t *msg, cv::Mat_<double> repro_matrix,
+    void unpack_multisense(const bot_core_images_t *msg, cv::Mat_<double> repro_matrix,
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
     // CPP:
-    void unpack_multisense(const multisense::images_t *msg, cv::Mat_<double> repro_matrix, 
+    void unpack_multisense(const bot_core::images_t *msg, cv::Mat_<double> repro_matrix, 
                                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     
     // an integer decimation factor:

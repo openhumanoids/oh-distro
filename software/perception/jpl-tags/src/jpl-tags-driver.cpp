@@ -10,8 +10,8 @@
 #include <forward_kinematics/treefksolverposfull_recursive.hpp>
 #include <model-client/model-client.hpp>
 
-#include <lcmtypes/multisense/images_t.hpp>
 #include <lcmtypes/drc/robot_state_t.hpp>
+#include <lcmtypes/bot_core/images_t.hpp>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/tag_detection_t.hpp>
 #include <lcmtypes/drc/tag_detection_list_t.hpp>
@@ -315,7 +315,7 @@ struct State {
   }
 
 
-  bool decodeImages(const multisense::images_t* iMessage,
+  bool decodeImages(const bot_core::images_t* iMessage,
                     cv::Mat& oLeft, cv::Mat& oRight, cv::Mat& oDisp) {
 
     bot_core::image_t* leftImage = NULL;
@@ -325,14 +325,14 @@ struct State {
     // grab image pointers
     for (int i = 0; i < iMessage->n_images; ++i) {
       switch (iMessage->image_types[i]) {
-      case multisense::images_t::LEFT:
+      case bot_core::images_t::LEFT:
         leftImage = (bot_core::image_t*)(&iMessage->images[i]);
         break;
-      case multisense::images_t::RIGHT:
+      case bot_core::images_t::RIGHT:
         rightImage = (bot_core::image_t*)(&iMessage->images[i]);
         break;
-      case multisense::images_t::DISPARITY_ZIPPED:
-      case multisense::images_t::DISPARITY:
+      case bot_core::images_t::DISPARITY_ZIPPED:
+      case bot_core::images_t::DISPARITY:
         dispImage = (bot_core::image_t*)(&iMessage->images[i]);
         break;
       default: break;
@@ -387,7 +387,7 @@ struct State {
   }
 
   void onCamera(const lcm::ReceiveBuffer* iBuffer, const std::string& iChannel,
-                const multisense::images_t* iMessage) {
+                const bot_core::images_t* iMessage) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
