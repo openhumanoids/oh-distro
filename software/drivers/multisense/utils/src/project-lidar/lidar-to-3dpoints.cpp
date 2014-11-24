@@ -13,7 +13,6 @@
 
 #include "lcmtypes/bot_core.hpp"
 #include "lcmtypes/multisense.hpp"
-#include "lcmtypes/multisense_extra.hpp"
 
 using namespace std;
 using namespace Eigen;

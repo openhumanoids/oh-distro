@@ -16,8 +16,7 @@ add_library(multisense-renderer SHARED
 
 target_link_libraries(multisense-renderer
     ${OPENGL_LIBRARIES}
-    ${GTK2_LDFLAGS}
-    ${LCMTYPES_LIBS})
+    ${GTK2_LDFLAGS})
 
 pods_use_pkg_config_packages(multisense-renderer
     bot2-vis opencv
@@ -30,7 +29,7 @@ pods_install_headers(multisense_renderer.h
 pods_install_libraries(multisense-renderer)
 
 pods_install_pkg_config_file(multisense-renderer
-    LIBS -lmultisense-renderer  -l${LCMTYPES_LIBS}
+    LIBS -lmultisense-renderer
     REQUIRES bot2-vis bot2-frames 
     VERSION 0.0.1)
 
