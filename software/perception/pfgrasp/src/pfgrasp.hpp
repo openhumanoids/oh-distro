@@ -2,7 +2,7 @@
  * pfgrasp.hpp
  *
  *  Created on: Apr 22, 2014
- *      Author: drc
+ *      Author: peterkty
  */
 
 
@@ -16,7 +16,7 @@
 #include <bot_lcmgl_client/lcmgl.h>
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/drc/pfgrasp_command_t.hpp>
-#include <lcmtypes/perception/image_roi_t.hpp>
+#include <lcmtypes/drc/image_roi_t.hpp>
 #include <lcmtypes/bot_frames/update_t.hpp>
 
 #include "ImageWarper.hpp"
@@ -35,8 +35,8 @@ struct PFGraspOptions
   std::string reachGoalChannelName;
 
   PFGraspOptions() :
-      cameraChannelName("CAMERALHAND"), scale(1.f), debug(false), segmenterChannelName(
-          "TLD_OBJECT_ROI"), commandChannelName("PFGRASP_CMD"), reachGoalFrameName("LHAND_FACE"),
+      debug(false), scale(1.f),  cameraChannelName("CAMERALHAND"), segmenterChannelName(
+          "TLD_OBJECT_ROI"), commandChannelName("PFGRASP_CMD"), reachGoalFrameName("LHAND_FORCE_TORQUE"),
           reachGoalChannelName("REACH_TARGET_POSE")
   {
   }
@@ -52,8 +52,11 @@ public:
   // needed for particle filter measurement update
   BotTrans localToCam_;
   float bearing_a_,bearing_b_;
+  double pos_measure[3];
   int64_t img_utime_;
   double bound;
+  // TLD Tracker
+  TLDTracker* tracker_;
 
   PFGrasp(PFGraspOptions options);
   ~PFGrasp()
@@ -77,9 +80,6 @@ private:
   // Img, and warped image
   cv::Mat img_, wimg_;
 
-  // TLD Tracker
-  TLDTracker* tracker_;
-
   // Image warper
   ImageWarper* warper_;
 
@@ -93,31 +93,25 @@ private:
 
   int64_t cmd_utime_;
   // handle reset, run-one-iteration
-  void
-  commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+  void commandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
       const drc::pfgrasp_command_t* msg);
 
   // get image from hand camera
-  void
-  imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+  void imageHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
       const bot_core::image_t* msg);
 
   // get segment from track segmenter
-  void
-  segmentHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-      const perception::image_roi_t* msg);
+  void segmentHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+      const drc::image_roi_t* msg);
 
-  void
-  initParticleFilter();
+  void initParticleFilter();
 
-  void
-  runOneIter();
+  void runOneIter();
+  void runOneIterW3DMeasure();
 
-  void
-  releaseParticleFilter();
+  void releaseParticleFilter();
 
-  void
-  publishHandReachGoal(const BotTrans& bt);
+  void publishHandReachGoal(const BotTrans& bt);
 };
 
 

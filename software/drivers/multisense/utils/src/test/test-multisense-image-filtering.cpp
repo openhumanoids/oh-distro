@@ -7,6 +7,8 @@
 
 #include <multisense_image_utils/multisense_image_utils.hpp>
 
+#include <chrono>
+
 using namespace std;
 
 struct CommandLineConfig
@@ -53,8 +55,15 @@ void App::msHandler(const lcm::ReceiveBuffer* rbuf, const std::string& channel, 
   float k00 = 591.909423828125; // focal length x;
   float baseline = 0.0700931567882511;
   float mDisparityFactor = 1/k00/baseline;
-  uint16_t thresh = 16/mDisparityFactor/cl_cfg_.depthThresh;
-  miu_.removeSmall(disparityMat, thresh, cl_cfg_.sizeThresh);
+  auto t1 = std::chrono::high_resolution_clock::now();
+  //uint16_t thresh = 16/mDisparityFactor/cl_cfg_.depthThresh;
+  //miu_.removeSmall(disparityMat, thresh, cl_cfg_.sizeThresh);
+  double thresh =
+    std::abs(16*k00*baseline*(1.0/2 - 1.0/(2+cl_cfg_.depthThresh)));
+  miu_.removeSpeckles(disparityMat, thresh, cl_cfg_.sizeThresh);
+  auto t2 = std::chrono::high_resolution_clock::now();
+  auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1);
+  std::cout << "processed frame in " << dt.count() << " ms" << std::endl;
 
   // 3. Recompress:
   int uncompressed_size = width*height*n_bytes;

@@ -1,0 +1,8 @@
+package drc; 
+
+struct rect_t 
+{
+    float x, y;
+    float width; 
+    float height;
+}

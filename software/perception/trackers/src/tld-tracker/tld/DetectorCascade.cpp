@@ -291,8 +291,8 @@ void DetectorCascade::detect(Mat img) {
 
 
 	}
-        int64_t end = cv::getTickCount() - st;
-        std::cerr << "DETECTcascade: " << end * 1e-6 << " " << numWindows << std::endl;; 
+        //int64_t end = cv::getTickCount() - st;
+        //std::cerr << "DETECTcascade: " << end * 1e-6 << " " << numWindows << std::endl;; 
 	//Cluster
 	clustering->clusterConfidentIndices();
 

@@ -8,13 +8,13 @@ A simple foot contact classifier for Atlas.
 lc = lcm.LCM()
 
 class ContactMonitor:
-  def __init__(self,fz_threshold,channel):
+  def __init__(self,fz_threshold,channel, debounce_time):
     self.fz_threshold = fz_threshold # newtons
     self.l_foot_contact = False
     self.r_foot_contact = False
     self.last_left_change_t = 0;
     self.last_right_change_t = 0;
-    self.debounce_time = 0.05 # seconds
+    self.debounce_time = debounce_time
       # note: could also require force be greater than X for at least t secs
     self.channel = channel
 
@@ -48,7 +48,12 @@ def main():
   else:
     channel  = "FOOT_CONTACT_ESTIMATE"
 
-  c = ContactMonitor(thresold,channel)
+  if len(sys.argv) > 3:
+    debounce_time = float(sys.argv[3])
+  else:
+    debounce_time  = float(0.05) # seconds
+
+  c = ContactMonitor(thresold,channel, debounce_time)
   lc.subscribe("EST_ROBOT_STATE", c.state_handle)
   print 'running contact monitor...'
   while True:

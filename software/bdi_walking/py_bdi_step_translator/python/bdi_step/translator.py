@@ -72,19 +72,19 @@ class BDIStepTranslator(object):
         else:
             raise ValueError("Can't decode footsteps: not a drc.footstep_plan_t or drc.deprecated_footstep_plan_t")
 
+        if len(footsteps) <= 2:
+            # the first two footsteps are always just the positions of the robot's feet, so a plan of two or fewer footsteps is a no-op
+            print 'BDI step translator: Empty plan recieved. Not executing.'
+            return
 
         behavior = opts['behavior']
         if behavior == Behavior.BDI_WALKING:
             # duration = 0.6
             if len(footsteps) < NUM_REQUIRED_WALK_STEPS+2:
-                msg = 'ERROR: Footstep plan must be at least 4 steps for BDI walking translation'
-                print msg
-                ut.send_status(6,0,0,msg)
+                print 'ERROR: Footstep plan must be at least 4 steps for BDI walking translation'
                 return
         elif behavior != Behavior.BDI_STEPPING:
-            m = "BDI step translator: Ignoring footstep plan without BDI_WALKING or BDI_STEPPING behavior"
-            print m
-            ut.send_status(6,0,0,m)
+            print "BDI step translator: Ignoring footstep plan without BDI_WALKING or BDI_STEPPING behavior"
             return
 
         self.behavior = behavior
@@ -164,6 +164,10 @@ class BDIStepTranslator(object):
                 self.executing = False
         else:
             index_needed = msg.step_feedback.next_step_index_needed
+
+            if index_needed > 1 and index_needed > self.delivered_index:
+                # we're starting a new step, so publish the expected double support configuration
+                self.send_expected_double_support()
             # if self.delivered_index < index_needed <= len(self.bdi_step_queue_in) - 2:
             if index_needed <= len(self.bdi_step_queue_in) - 2:
                 # print "Handling request for next step: {:d}".format(index_needed)
@@ -215,6 +219,12 @@ class BDIStepTranslator(object):
             #print "Sent step params for step index {:d}".format(step_param_msg.desired_step_spec.step_index)
         else:
             raise ValueError("Bad behavior value: {:s}".format(self.behavior))
+
+    def send_expected_double_support(self):
+        """
+        Publish the next expected double support configuration as a two-element footstep plan to support continuous replanning mode.
+        """
+        self.lc.publish('NEXT_EXPECTED_DOUBLE_SUPPORT', encode_footstep_plan(self.bdi_step_queue_in[self.delivered_index:self.delivered_index+2], self.last_params).encode())
 
     def send_behavior(self):
         command_msg = drc.atlas_behavior_command_t()
@@ -268,8 +278,8 @@ class BDIStepTranslator(object):
         else:
             print "BDIStepTranslator running in base-side plotter mode"
             self.lc.subscribe('FOOTSTEP_PLAN_RESPONSE', self.handle_footstep_plan)
-            self.lc.subscribe('CANDIDATE_BDI_FOOTSTEP_PLAN', self.handle_footstep_plan)
-            self.lc.subscribe('BDI_ADJUSTED_FOOTSTEP_PLAN', self.handle_footstep_plan)
+            #self.lc.subscribe('CANDIDATE_BDI_FOOTSTEP_PLAN', self.handle_footstep_plan)
+            #self.lc.subscribe('BDI_ADJUSTED_FOOTSTEP_PLAN', self.handle_footstep_plan)
         self.lc.subscribe('ATLAS_STATUS', self.handle_atlas_status)
         self.lc.subscribe('LOCAL_TO_LOCAL_BDI', self.handle_bdi_transform)
         while True:

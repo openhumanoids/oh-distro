@@ -111,8 +111,13 @@ following commands.
     make
     sudo make install
 
+LCM v1.1.1 is known to be bad. Do not try to use it.
+
+
 Install Matlab
 --------------
+
+NOTE: The team has decided to revert to MATLAB r2013b.  These instructions need to be updated accordingly.  r2014a and beyond is considerably slower, especially in startup and megaclear.
 
 Download Matlab r2014a from Mathworks.com. Unzip the file you just downloaded (e.g., unzip ./R2014a-linux64.zip)
 cd into the resulting directory
@@ -257,3 +262,36 @@ After you have installed ros packages you should run these commands:::
 
     sudo rosdep init
     rosdep update
+
+
+
+Data Storage Policy
+===================
+
+All logs should be uploaded to virgo.csail.mit.edu
+This a virtual machine managed by TIG with two NFS drives of two 2TB:
+
+
+::
+
+    /var/www/projects/drc
+    2013-05-00-spring
+    2013-06-18-vrc
+    2013-09-00-autumn
+    2013-10-00-drc-quals
+    2014-01-00-spring
+
+::
+
+    /var/www/projects/drc-logs
+    2013-12-00-trials
+    2014-05-00-summer
+    2014-09-00-autumn
+    2014-09-00-autumn-raw-logs
+
+This rysnc command can easily transfer logs to Virgo: 
+
+::
+
+    rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress /home/drc/logs/<logname>  <username>@virgo.csail.mit.edu:/var/www/projects/drc-logs
+

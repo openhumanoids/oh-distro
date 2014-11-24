@@ -10,10 +10,14 @@ Latency::Latency(int period_):period_(period_) {
   latency_cumsum_ =0;
   latency_count_ =0;
   latency_step_cumsum_=0; 
-      
+
   verbose_=false;
-  
+
   verbose_useful_ = false; // to print out useful verbosity 
+
+  write_tics_ = false;
+  tic_filename_ = "/tmp/latency_tics.txt";
+
 }
 
 void Latency::add_from(int64_t js_time, int64_t js_walltime){
@@ -36,6 +40,13 @@ bool Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message,
   int step_latency = js_utime_.size() - 1 - idx;
   int64_t  elapsed_walltime = jc_walltime - js_walltime_[idx]  ;
 
+  if (write_tics_){
+    tic_file_ << jc_utime
+              << ", " << jc_walltime
+              << ", " << elapsed_walltime << std::endl;
+  }
+
+
   if (verbose_){
     for (size_t i =0; i <js_utime_.size() ; i++){
       std::cout << i << ": "<< js_utime_[i] << "\n";
@@ -52,8 +63,15 @@ bool Latency::add_to(int64_t jc_utime, int64_t jc_walltime, std::string message,
     std::cout << elapsed_walltime << " elapsed_walltime " << step_latency << " step_latency\n\n";
   }
   
-  js_walltime_.clear();
-  js_utime_.clear();
+  if ( idx+1 < js_walltime_.size()){ // remove all history before this tic
+    std::vector<int64_t>   sub(& js_walltime_[ idx+1 ],&js_walltime_[ js_walltime_.size()]);
+    js_walltime_= sub;
+    std::vector<int64_t>   sub2(& js_utime_[ idx+1 ],&js_utime_[ js_utime_.size()]);
+    js_utime_ = sub2;
+  }else{
+    js_walltime_.clear();
+    js_utime_.clear();
+  }
   
   latency_cumsum_ += elapsed_walltime;
   latency_count_++;

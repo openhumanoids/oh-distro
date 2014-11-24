@@ -4,9 +4,11 @@ add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations
   -std=c++0x)
 
 #####################################################################
+
 add_library(gtkmm-renderer SHARED 
   RendererBase.cpp
 )
+target_link_libraries(gtkmm-renderer drc-utils)
   
 pods_use_pkg_config_packages(gtkmm-renderer
   bot2-vis gtkmm-2.4)

@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.6.0)
 project(pfgrasp)
 set(POD_NAME pfgrasp)
 set(PACKAGE_NAME pfgrasp)
+SET(CMAKE_BUILD_TYPE  CMAKE_CXX_FLAGS_RELEASE)
 include(cmake/pods.cmake)
 
 add_definitions(-Wall -Wno-unknown-pragmas -Wno-deprecated-declarations

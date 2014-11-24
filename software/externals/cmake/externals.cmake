@@ -109,7 +109,7 @@ set(spotless_revision 464be854a1296d4726cb37d86f24d39742293ab6)
 set(spotless_depends)
 
 set(snopt_url ssh://git@github.com/RobotLocomotion/snopt.git)
-set(snopt_revision 26eb6145bfae4671cc86bd5c723b381fb8bd5ab6)
+set(snopt_revision d8a5443e7a30a569f961f381f8bdafec27810b7c)
 set(snopt_depends)
 
 set(gurobi_url ssh://git@github.com/RobotLocomotion/gurobi.git)
@@ -118,7 +118,7 @@ set(gurobi_environment_args GUROBI_DISTRO=${CMAKE_CURRENT_SOURCE_DIR}/cmake/guro
 set(gurobi_depends)
 
 set(iris_url ssh://git@github.com/rdeits/iris-distro.git)
-set(iris_revision 9dc24d998a9ccc59acc632a3e143c6bf0f4ba87c)
+set(iris_revision 0b34b9e4beac1cf0d319cb72c809b087b02bef53)
 set(iris_depends)
 
 set(mosek_url ssh://git@github.com/RobotLocomotion/mosek.git)
