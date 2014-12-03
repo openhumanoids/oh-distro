@@ -20,6 +20,7 @@ namespace mexmaps {
 
 const std::string kHeightMapChannel = "MAP_CONTROL_HEIGHT";
 const int kHeightMapViewId = 1000;
+const int kHeightMapDebugViewId = 9999;
 
 struct MapCollection {
   typedef std::unordered_map<int,std::shared_ptr<TerrainMap> > MapGroup;
@@ -389,6 +390,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       double normalRadius;
       std::istringstream(value) >> normalRadius;
       terrainMap->setNormalRadius(normalRadius);
+    }
+    else if (key == "publishdebug") {
+      if (value.length() == 0) terrainMap->shouldPublishMap(false);
+      else terrainMap->shouldPublishMap(true, value, kHeightMapDebugViewId);
     }
 
     else {
