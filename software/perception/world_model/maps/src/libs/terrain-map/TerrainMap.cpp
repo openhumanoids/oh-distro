@@ -4,6 +4,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <lcmtypes/bot_core/pose_t.hpp>
+#include <lcmtypes/drc/map_image_t.hpp>
 
 #include <drc_utils/BotWrapper.hpp>
 
@@ -11,6 +12,7 @@
 #include <maps/ViewClient.hpp>
 #include <maps/DepthImage.hpp>
 #include <maps/DepthImageView.hpp>
+#include <maps/LcmTranslator.hpp>
 
 #include "FillMethods.hpp"
 
@@ -42,6 +44,9 @@ struct TerrainMap::Helper {
   bool mUseFootPose;
   bool mOverrideHeights;
   bool mShouldFillMissing;
+  bool mShouldPublishMap;
+  std::string mMapPublishChannel;
+  int64_t mMapPublishViewId;
   NormalMethod mNormalMethod;
   double mNormalRadius;
   std::shared_ptr<drc::BotWrapper> mBotWrapper;
@@ -59,6 +64,9 @@ struct TerrainMap::Helper {
     mOverrideHeights = false;
     mNormalMethod = NormalMethodTriangle;
     mShouldFillMissing = true;
+    mShouldPublishMap = false;
+    mMapPublishChannel = "MAP_DEBUG";
+    mMapPublishViewId = 9999;
     mNormalRadius = 0;
     mListening = false;
     mFillPlane << 0,0,1,0;
@@ -122,6 +130,12 @@ struct TerrainMap::Helper {
         FillMethods::fillMissing(view, plane);
       }
     }
+    if (mShouldPublishMap) {
+      drc::map_image_t msg;
+      maps::LcmTranslator::toLcm(*view, msg);
+      msg.view_id = mMapPublishViewId;
+      mBotWrapper->getLcm()->publish(mMapPublishChannel, &msg);
+    }
   }
  
 };
@@ -182,6 +196,16 @@ setNormalRadius(const double iRadius) {
 void TerrainMap::
 shouldFillMissing(const bool iVal) {
   mHelper->mShouldFillMissing = iVal;
+}
+
+void TerrainMap::
+shouldPublishMap(const bool iVal, const std::string& iChannel,
+                 const int64_t iViewId) {
+  mHelper->mShouldPublishMap = iVal;
+  if (iVal) {
+    mHelper->mMapPublishChannel = iChannel;
+    mHelper->mMapPublishViewId = iViewId;
+  }
 }
 
 double TerrainMap::

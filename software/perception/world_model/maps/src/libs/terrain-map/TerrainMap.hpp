@@ -53,6 +53,10 @@ public:
   // whether to fill in missing values in the height map
   void shouldFillMissing(const bool iVal);
 
+  // whether to re-publish processed terrain map
+  void shouldPublishMap(const bool iVal, const std::string& iChannel="",
+                        const int64_t iViewId=9999);
+
   // how to compute normals where there is data
   void setNormalRadius(const double iRadius);
   double getNormalRadius() const;

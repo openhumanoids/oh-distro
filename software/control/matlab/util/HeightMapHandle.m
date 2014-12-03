@@ -25,6 +25,7 @@ classdef HeightMapHandle < handle
             end
             this.mMexFunc = mexFunc;
             this.mHandle = mexFunc('create','privatechannel',privateChannel);
+            this.setPublishDebug(true);
         end
 
         % destructor
@@ -42,6 +43,15 @@ classdef HeightMapHandle < handle
         
         function setFillPlane(this,plane)
             this.mMexFunc('fillplane',this.mHandle,plane);
+        end
+        
+        function setPublishDebug(this,val)
+            if (val)
+                chan = 'MAP_DEBUG';
+            else
+                chan = '';
+            end
+            this.mMexFunc('property',this.mHandle,'publishdebug',chan);
         end
         
         function setUseFootPose(this,val)
