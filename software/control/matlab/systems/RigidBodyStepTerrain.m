@@ -16,7 +16,7 @@ classdef RigidBodyStepTerrain < RigidBodyTerrain
       obj.boxs_y = boxes(:, 4);
       obj.boxs_z = boxes(:, 5);
       obj.num_boxes = size(boxes, 1);
-      obj.geom = constructRigidBodyGeometry(obj);
+      obj.geom = constructGeometry(obj);
     end
     
     function [z,normal] = getHeight(obj,xy)
@@ -42,15 +42,15 @@ classdef RigidBodyStepTerrain < RigidBodyTerrain
       normal = repmat([0;0;1],1,n);
     end
 
-    function geom = getRigidBodyContactGeometry(obj)
+    function geom = getCollisionGeometry(obj)
       geom = obj.geom;
     end
 
-    function geom = getRigidBodyShapeGeometry(obj)
+    function geom = getVisualGeometry(obj)
       geom = obj.geom;
     end
     
-    function geom = constructRigidBodyGeometry(obj)
+    function geom = constructGeometry(obj)
       ground_width = 1000;
       ground_depth = 10;
       geom_ground = RigidBodyBox([ground_width;ground_width;ground_depth]);

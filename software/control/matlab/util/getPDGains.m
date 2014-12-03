@@ -6,6 +6,9 @@ if nargin<2
 end
 
 fr = getInputFrame(r);
+if (isa(fr, 'MultiCoordinateFrame'))
+  fr = fr.getFrameByName('AtlasInput');
+end
 Kp = Point(fr);
 Kd = Point(fr);
 

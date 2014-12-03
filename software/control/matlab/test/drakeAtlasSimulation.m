@@ -14,9 +14,10 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 % construct robot model
 options.floating = true;
 options.ignore_friction = true;
-options.dt = 0.005;
+options.dt = 0.002;
 options.visualize = visualize;
 options.hokuyo = true;
+options.hokuyo_spin_rate = 2;
 options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.
@@ -33,7 +34,7 @@ r = compile(r);
 load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
 xstar(1) = 0;
 xstar(2) = 0;
-xstar(3) = xstar(3) + 0.12;
+xstar(3) = xstar(3) + 0.08;
 xstar(6) = 0;
 x0 = zeros(r.getNumStates, 1);
 x0(1:length(xstar)) = xstar;
@@ -44,11 +45,7 @@ outs(1).system = 2;
 outs(1).output = 1;
 outs(2).system = 2;
 outs(2).output = 2;
-% outs(3).system = 2;
-% outs(3).output = 3;
-% outs(4).system = 2;
-% outs(4).output = 4;
-lcmInputBlock = LCMInputFromAtlasCommandBlock(r,options);
+lcmInputBlock = LCMInputFromAtlasCommandBlock(r,[],options);
 sys = mimoFeedback(lcmInputBlock, r, [], [], [], outs);
 
 % LCM broadcast out

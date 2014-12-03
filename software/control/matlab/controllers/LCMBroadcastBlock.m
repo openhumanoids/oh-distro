@@ -16,13 +16,19 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     
     % Atlas, for usefulness
     r;
+    r_control;
   end
   
   methods
-    function obj = LCMBroadcastBlock(r,options)
-      typecheck(r,'Biped');
+    function obj = LCMBroadcastBlock(r,r_control,options)
+      typecheck(r,'Atlas');
+      if (nargin >= 2 && ~isempty(r_control))
+        typecheck(r_control, 'Atlas');
+      else
+        r_control = r;
+      end
       
-      if nargin<2
+      if nargin<3
         options = struct();
       end
       
@@ -50,30 +56,70 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
       
-      names = obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+      if (r.hands>0)
+        names = [obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+                obj.getInputFrame.getFrameByName('HandState').getCoordinateNames];
+        names = [names(1:34); names(69:98)];
+        for i=35:length(names)
+          names{i} = ['right_', names{i}];
+        end
+      else
+        names = [obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;];
+      end
       obj.joint_names_cache = cell(length(names), 1);
       for i=1:length(names)
         obj.joint_names_cache(i) = java.lang.String(names(i));
       end
       
       obj.r = r;
+      obj.r_control = r_control;
     end
     
     function varargout=mimoOutput(obj,t,~,varargin)
+      inp = obj.getInputFrame();
+      num = inp.getFrameNumByName('AtlasState');
+      if length(num)~=1
+        error(['No atlas state found as input for LCMBroadcastBlock!']);
+      end
+      atlas_state = varargin{num};
+      
+      num = inp.getFrameNumByName('HandState');
+      hand_state = [];
+      if (length(num)>1)
+        error(['Ambiguous hand state. No support for two hands yet...']);
+      elseif (length(num)==1)
+        hand_state = varargin{num};
+      end
+      
+      num = inp.getFrameNumByName('hokuyo');
+      laser_state = [];
+      if (length(num)>1)
+        error(['Ambiguous hand state. No support for two hands yet...']);
+      elseif (length(num)==1)
+        laser_state = varargin{num};
+      end
+      
       % See if we just passed our publish-timestep for 
       % the foot contact state message, publish if so.
       if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
         % Get foot force state
-%         lfoot_force = varargin{3}; % Can we infer these magic numbers
-%         rfoot_force = varargin{4}; % from the input frame?
+%         num = inp.getFrameNumByName('ForceTorque');
+%         hand_state = [];
+%         if (length(num)~=2)
+%           lfoot_force = [];
+%           rfoot_force = [];
+%         else
+%           lfoot_force = varargin{num(1)};
+%           rfoot_force = varargin{num(2)};
+%         end;
 %         fc = [norm(lfoot_force); norm(rfoot_force)];
         % Get binary foot contact, call it force:
-        x = varargin{1};
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
+        x = atlas_state;
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
-              any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
+        fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
+              any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
        
         % Publish it!
         foot_contact_est = drc.foot_contact_estimate_t();
@@ -84,8 +130,12 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         obj.lc.publish('FOOT_CONTACT_ESTIMATE', foot_contact_est);
       end
       
+
+      
       % What needs to go out:
-      num_dofs = length(varargin{1}) / 2;
+      num_dofs = length([atlas_state; hand_state]) / 2;
+      atlas_dofs = length(atlas_state)/2;
+      hand_dofs = length(hand_state)/2;
       % Robot state on EST_ROBOT_STATE.
       state_msg = drc.robot_state_t();
       state_msg.utime = t*1000*1000;
@@ -93,11 +143,11 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       state_msg.pose = drc.position_3d_t();
       state_msg.pose.translation = drc.vector_3d_t();
       state_msg.pose.rotation = drc.quaternion_t();
-      state_msg.pose.translation.x = varargin{1}(1);
-      state_msg.pose.translation.y = varargin{1}(2);
-      state_msg.pose.translation.z = varargin{1}(3);
+      state_msg.pose.translation.x = atlas_state(1);
+      state_msg.pose.translation.y = atlas_state(2);
+      state_msg.pose.translation.z = atlas_state(3);
       
-      q = rpy2quat([varargin{1}(4) varargin{1}(5) varargin{1}(6)]);
+      q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
       state_msg.pose.rotation.w = q(1);
       state_msg.pose.rotation.x = q(2);
       state_msg.pose.rotation.y = q(3);
@@ -106,12 +156,12 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       state_msg.twist = drc.twist_t();
       state_msg.twist.linear_velocity = drc.vector_3d_t();
       state_msg.twist.angular_velocity = drc.vector_3d_t();
-      state_msg.twist.linear_velocity.x = varargin{1}(num_dofs+1);
-      state_msg.twist.linear_velocity.y = varargin{1}(num_dofs+2);
-      state_msg.twist.linear_velocity.z = varargin{1}(num_dofs+3);
-      state_msg.twist.angular_velocity.x = varargin{1}(num_dofs+4);
-      state_msg.twist.angular_velocity.y = varargin{1}(num_dofs+5);
-      state_msg.twist.angular_velocity.z = varargin{1}(num_dofs+6);
+      state_msg.twist.linear_velocity.x = atlas_state(atlas_dofs+1);
+      state_msg.twist.linear_velocity.y = atlas_state(atlas_dofs+2);
+      state_msg.twist.linear_velocity.z = atlas_state(atlas_dofs+3);
+      state_msg.twist.angular_velocity.x = atlas_state(atlas_dofs+4);
+      state_msg.twist.angular_velocity.y = atlas_state(atlas_dofs+5);
+      state_msg.twist.angular_velocity.z = atlas_state(atlas_dofs+6);
       
       state_msg.num_joints = num_dofs;
       state_msg.joint_name=javaArray('java.lang.String', state_msg.num_joints);
@@ -119,8 +169,8 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       state_msg.joint_velocity=zeros(1,state_msg.num_joints);
       state_msg.joint_effort=zeros(1,state_msg.num_joints);
       state_msg.joint_name = obj.joint_names_cache;
-      state_msg.joint_position = varargin{1}(1:num_dofs);
-      state_msg.joint_velocity = varargin{1}(num_dofs+1:2*num_dofs);
+      state_msg.joint_position = [atlas_state(1:atlas_dofs); hand_state(1:hand_dofs)];
+      state_msg.joint_velocity = [atlas_state(atlas_dofs+1:end); hand_state(hand_dofs+1:end)];
       state_msg.force_torque = drc.force_torque_t();
       obj.lc.publish('EST_ROBOT_STATE', state_msg);
       
@@ -129,11 +179,11 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       
       pose_body_frame = bot_core.pose_t();
       pose_body_frame.utime = t*1000*1000;
-      pose_body_frame.pos = [varargin{1}(1), varargin{1}(2), varargin{1}(3)];
-      pose_body_frame.vel = [varargin{1}(1+num_dofs), varargin{1}(2+num_dofs), varargin{1}(3+num_dofs)];
-      q = rpy2quat([varargin{1}(4) varargin{1}(5) varargin{1}(6)]);
+      pose_body_frame.pos = [atlas_state(1), atlas_state(2), atlas_state(3)];
+      pose_body_frame.vel = [atlas_state(1+atlas_dofs), atlas_state(2+atlas_dofs), atlas_state(3+atlas_dofs)];
+      q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
       pose_body_frame.orientation = [q(1) q(2) q(3) q(4)]; % Rotation
-      pose_body_frame.rotation_rate = [varargin{1}(4++num_dofs) varargin{1}(5++num_dofs) varargin{1}(6++num_dofs)];
+      pose_body_frame.rotation_rate = [atlas_state(4+atlas_dofs) atlas_state(5+atlas_dofs) atlas_state(6+atlas_dofs)];
       pose_body_frame.accel = [0 0 0];
       obj.lc.publish('POSE_BODY', pose_body_frame);
       
@@ -145,9 +195,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % setup
       % -- To channel "SCAN", publish populated lcm_laser_msg
       
-      if length(varargin) > 1
-        laser_spindle_angle = varargin{2}(1);
-        laser_ranges = varargin{2}(2:end);
+      if (~isempty(laser_state))
+        laser_spindle_angle = laser_state(1);
+        laser_ranges = laser_state(2:end);
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
         multisense_state = multisense.state_t();
         multisense_state.joint_name = {'hokuyo_joint',

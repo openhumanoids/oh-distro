@@ -11,6 +11,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
     dim;
     % Atlas and various controllers:
     r;
+    r_control;
     pelvis_controller;
     fc;
     qt;
@@ -22,22 +23,32 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
   end
   
   methods
-    function obj = LCMInputFromAtlasCommandBlock(r,options)
-      typecheck(r,'Biped');
+    function obj = LCMInputFromAtlasCommandBlock(r, r_control, options)
+      typecheck(r,'Atlas');
+      % r_control is an atlas model with a state of just
+      % atlas_state.
+      if ~isempty(r_control)
+        typecheck(r_control, 'Atlas');
+      else
+        r_control = r;
+      end
       
       if nargin<2
         options = struct();
       end
 
       % Generate AtlasInput as out (we'll do translation manually)
-      output_frame = getInputFrame(r);
+      output_frame = AtlasInput(r);
       
       % We'll need atlas state as input
-      input_frame = AtlasState(r);
+      input_frame = AtlasState(r_control);
       
       obj = obj@MIMODrakeSystem(0,0,input_frame,output_frame,true,false);
       obj = setInputFrame(obj,input_frame);
       obj = setOutputFrame(obj,output_frame);
+      
+      obj.r = r;
+      obj.r_control = r_control;
       
       obj.lc = lcm.lcm.LCM.getSingleton();
       obj.lcmonitor = drake.util.MessageMonitor(drc.atlas_command_t,'utime');
@@ -92,26 +103,16 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       
       % And compute for ourselves the drake_to_atlas_joint_map
       obj.drake_to_atlas_joint_map = zeros(length(obj.joint_names), 1);
+      dummyInput = AtlasInput(obj.r);
       for i=1:length(obj.joint_names)
         in_joint_name_i = obj.joint_names(i, :);
-        obj.drake_to_atlas_joint_map(i) = obj.getOutputFrame.findCoordinateIndex(strtrim(in_joint_name_i));
+        obj.drake_to_atlas_joint_map(i) = dummyInput.findCoordinateIndex(strtrim(in_joint_name_i));
       end
-      
-      % save robot
-      obj.r = r;
-
     end
     
     function obj=setup_init_planner(obj, options)
-      % Generate a new robot, without foot force sensors or a hokuyo
-      options.foot_force_sensors = false;
-      options.hokuyo = false;
-      r = Atlas(strcat(getenv('DRC_PATH'),'/models/mit_gazebo_models/mit_robot_drake/model_minimal_contact_point_hands.urdf'),options);
-      r = r.removeCollisionGroupsExcept({'heel','toe'});
-      r = compile(r);
-      % set initial state to fixed point
-      load(strcat(getenv('DRC_PATH'),'/control/matlab/data/atlas_fp.mat'));
-      r = r.setInitialState(xstar);
+      r = obj.r_control;
+      xstar = getInitialState(r);
       
       x0 = xstar;
       obj.nq = getNumPositions(r);
@@ -142,7 +143,6 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       link_constraints(3).pt = [0;0;0];
       link_constraints(3).traj = ConstantTrajectory(forwardKin(r,kinsol,footidx(2),[0;0;0],1));
       
-      
       ctrl_data = QPControllerData(false,struct(...
         'acceleration_input_frame',AtlasCoordinates(r),...
         'D',-com(3)/9.81*eye(2),...
@@ -163,10 +163,16 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
         'constrained_dofs',[findJointIndices(r,'arm');findJointIndices(r,'back');findJointIndices(r,'neck')]));
       
       % instantiate QP controller
+      options.slack_limit = 30.0;
+      nq = getNumPositions(r);
+      options.w_qdd = 0.001*ones(nq,1);
+      options.w_grf = 0;
+      options.w_slack = 0.001;
       options.Kp_pelvis = [150; 150; 150; 200; 200; 200];
       options.pelvis_damping_ratio = 0.6;
       options.Kp_q = 150.0*ones(r.getNumPositions(),1);
       options.q_damping_ratio = 0.6;
+      options.W_kdot = zeros(3);
       
       % construct QP controller and related control blocks
       [qp,~,~,pelvis_controller,pd,options] = constructQPBalancingController(r,ctrl_data,options);
@@ -208,9 +214,7 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       eval(['t = msg.', obj.timestamp_name, '/1000;']);
     end
     
-    function varargout=mimoOutput(obj,t,~,x)
-      atlas_state = x;
-      %old_output = varargin{2};
+    function varargout=mimoOutput(obj,t,~,atlas_state)
       
       % What needs to go out:
       %atlas_state_names = obj.getInputFrame.getCoordinateNames();
@@ -222,18 +226,18 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       % If we haven't received a command make our own
       if (isempty(data))
         % foot contact
-        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r.getManipulator().contactConstraints(x(1:length(x)/2),false);
+        [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(atlas_state(1:length(atlas_state)/2),false);
         within_thresh = phiC < 0.002;
         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
-        fc = [any(any(contact_pairs == obj.r.findLinkInd('l_foot')));
-              any(any(contact_pairs == obj.r.findLinkInd('r_foot')))];
+        fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
+              any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
             
         % qtraj eval
-        q_des_and_x = output(obj.qt,t,[],x);
+        q_des_and_x = output(obj.qt,t,[],atlas_state);
         q_des = q_des_and_x(1:obj.nq);
         % IK/QP
-        pelvis_ddot = output(obj.pelvis_controller,t,[],x);
-        u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; x; x; fc; pelvis_ddot]);
+        pelvis_ddot = output(obj.pelvis_controller,t,[],atlas_state);
+        u_and_qdd = output(obj.pd_plus_qp_block,t,[],[q_des; atlas_state; atlas_state; fc; pelvis_ddot]);
         u=u_and_qdd(1:obj.nu);
         for i=1:obj.nu
           efforts(obj.drake_to_atlas_joint_map(i)) = u(i);
@@ -244,14 +248,14 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
       end
       
       % And set neck pitch via simple PD controller
-      neck_in_i = obj.getInputFrame.findCoordinateIndex('neck_ay');
+      dummyInput = AtlasInput(obj.r_control);
+      neck_in_i = dummyInput.findCoordinateIndex('neck_ay');
       neck_in_i = neck_in_i(1);
-      neck_out_i = obj.getOutputFrame.findCoordinateIndex('neck_ay');
+      neck_out_i = dummyInput.findCoordinateIndex('neck_ay');
       error =  30*pi/180 - atlas_state(neck_in_i);
       vel = atlas_state(length(atlas_state)/2 + neck_in_i);
       efforts(neck_out_i) = 50*error - vel;
-      
-      varargout = {efforts};
+      varargout = {efforts(1:28)};
       fprintf('\b\b\b\b\b\b\b%7.3f', t);
       
     end
