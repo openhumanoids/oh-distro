@@ -27,7 +27,7 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
       end
 
       obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
-      obj = obj@Biped('r_foot', 'l_foot','r_foot_sole', 'l_foot_sole');
+      obj = obj@Biped('r_foot_sole', 'l_foot_sole');
       
       % add hands
       if ~isfield(options,'hands')
