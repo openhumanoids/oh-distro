@@ -17,6 +17,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
     % Atlas, for usefulness
     r;
     r_control;
+    
+    % Whether we should publish a ground truth EST_ROBOT_STATE
+    % (or if not, publish approp messages to feed state_sync state est.)
+    publish_truth = 1;
+    
+    % reordering to generate atlas_state_t messages for state est
+    reordering;
+    
   end
   
   methods
@@ -53,28 +61,68 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       obj = setSampleTime(obj,[0.01;0]); % sets controller update rate
       
+      if isfield(options,'publish_truth')
+        obj.publish_truth = options.publish_truth;
+      end
+      
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
       
-      % Cache names, which have to be converted to java strings (slow!)
+      atlascoordnames = obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+      atlascoordnames = atlascoordnames(7:end); % cut off the floating base
       if (r.hands>0)
-        atlas_names= obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
         hand_names = obj.getInputFrame.getFrameByName('HandState').getCoordinateNames;
-        names = [atlas_names(1:34);
+        names = [atlascoordnames;
                 hand_names(1:30);
                 'hokuyo_joint'];
-        for i=35:64
+        % all of the hand names should be prepended as being right hand
+        for i=29:length(names)-1
           names{i} = ['right_', names{i}];
         end
       else
-        atlas_names= obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
-        names = [atlas_names(1:34);
+        names = [atlascoordnames;
                 'hokuyo_joint'];
       end
       obj.joint_names_cache = cell(length(names), 1);
       % (this is the part that we really don't want to run repeatedly...)
       for i=1:length(names)
         obj.joint_names_cache(i) = java.lang.String(names(i));
+      end
+      
+      % figure out joint reordering -- atlas_state_t assumes joints
+      % in a particular order :P
+      desired_joint_name_order = {'back_bkz',
+                                  'back_bky',
+                                  'back_bkx',
+                                  'neck_ay',
+                                  'l_leg_hpz',
+                                  'l_leg_hpx',
+                                  'l_leg_hpy',
+                                  'l_leg_kny',
+                                  'l_leg_aky',
+                                  'l_leg_akx',
+                                  'r_leg_hpz',
+                                  'r_leg_hpx',
+                                  'r_leg_hpy',
+                                  'r_leg_kny',
+                                  'r_leg_aky',
+                                  'r_leg_akx',
+                                  'l_arm_usy',
+                                  'l_arm_shx',
+                                  'l_arm_ely',
+                                  'l_arm_elx',
+                                  'l_arm_uwy',
+                                  'l_arm_mwx',
+                                  'r_arm_usy',
+                                  'r_arm_shx',
+                                  'r_arm_ely',
+                                  'r_arm_elx',
+                                  'r_arm_uwy',
+                                  'r_arm_mwx'
+                                  };
+      obj.reordering = zeros(length(desired_joint_name_order), 1);
+      for i=1:length(desired_joint_name_order)
+        obj.reordering(i) = find(strcmp(desired_joint_name_order{i}, atlascoordnames));
       end
       
       obj.r = r;
@@ -114,8 +162,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       end
       
       % See if we just passed our publish-timestep for 
-      % the foot contact state message, publish if so.
-      if (mod(t, obj.fc_publish_period)  < obj.r.timestep)
+      % the foot contact state message, publish if so (and if
+      % we're publishing ground truth anyway)
+      if (obj.publish_truth && mod(t, obj.fc_publish_period)  < obj.r.timestep)
         % Get foot force state
 %         num = inp.getFrameNumByName('ForceTorque');
 %         hand_state = [];
@@ -150,45 +199,81 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       num_dofs = length([atlas_state; hand_state]) / 2;
       atlas_dofs = length(atlas_state)/2;
       hand_dofs = length(hand_state)/2;
-      % Robot state on EST_ROBOT_STATE.
-      state_msg = drc.robot_state_t();
+      % Robot state publishing (channel depends on whether we're publishing
+      % truth (on EST_ROBOT_STATE) or not (ATLAS_STATE)
+      if (~obj.publish_truth)
+        state_msg = drc.atlas_state_t();
+      else
+        state_msg = drc.robot_state_t();
+      end
+      
       state_msg.utime = t*1000*1000;
       
-      state_msg.pose = drc.position_3d_t();
-      state_msg.pose.translation = drc.vector_3d_t();
-      state_msg.pose.rotation = drc.quaternion_t();
-      state_msg.pose.translation.x = atlas_state(1);
-      state_msg.pose.translation.y = atlas_state(2);
-      state_msg.pose.translation.z = atlas_state(3);
+      if (obj.publish_truth)
+        % ATLAS_STATE has no global pose, but EST_ROBOT_STATE does
+        state_msg.pose = drc.position_3d_t();
+        state_msg.pose.translation = drc.vector_3d_t();
+        state_msg.pose.rotation = drc.quaternion_t();
+        state_msg.pose.translation.x = atlas_state(1);
+        state_msg.pose.translation.y = atlas_state(2);
+        state_msg.pose.translation.z = atlas_state(3);
+
+        q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
+        state_msg.pose.rotation.w = q(1);
+        state_msg.pose.rotation.x = q(2);
+        state_msg.pose.rotation.y = q(3);
+        state_msg.pose.rotation.z = q(4);
+
+        state_msg.twist = drc.twist_t();
+        state_msg.twist.linear_velocity = drc.vector_3d_t();
+        state_msg.twist.angular_velocity = drc.vector_3d_t();
+        state_msg.twist.linear_velocity.x = atlas_state(atlas_dofs+1);
+        state_msg.twist.linear_velocity.y = atlas_state(atlas_dofs+2);
+        state_msg.twist.linear_velocity.z = atlas_state(atlas_dofs+3);
+        state_msg.twist.angular_velocity.x = atlas_state(atlas_dofs+4);
+        state_msg.twist.angular_velocity.y = atlas_state(atlas_dofs+5);
+        state_msg.twist.angular_velocity.z = atlas_state(atlas_dofs+6);
+      end
       
-      q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
-      state_msg.pose.rotation.w = q(1);
-      state_msg.pose.rotation.x = q(2);
-      state_msg.pose.rotation.y = q(3);
-      state_msg.pose.rotation.z = q(4);
-      
-      state_msg.twist = drc.twist_t();
-      state_msg.twist.linear_velocity = drc.vector_3d_t();
-      state_msg.twist.angular_velocity = drc.vector_3d_t();
-      state_msg.twist.linear_velocity.x = atlas_state(atlas_dofs+1);
-      state_msg.twist.linear_velocity.y = atlas_state(atlas_dofs+2);
-      state_msg.twist.linear_velocity.z = atlas_state(atlas_dofs+3);
-      state_msg.twist.angular_velocity.x = atlas_state(atlas_dofs+4);
-      state_msg.twist.angular_velocity.y = atlas_state(atlas_dofs+5);
-      state_msg.twist.angular_velocity.z = atlas_state(atlas_dofs+6);
-      
+<<<<<<< HEAD
       state_msg.num_joints = num_dofs+1;
-      state_msg.joint_name=javaArray('java.lang.String', state_msg.num_joints+1);
+      if (obj.publish_truth)
+        state_msg.joint_name = obj.joint_names_cache;
+      end
       state_msg.joint_position=zeros(1,state_msg.num_joints+1);
       state_msg.joint_velocity=zeros(1,state_msg.num_joints+1);
       state_msg.joint_effort=zeros(1,state_msg.num_joints+1);
-      state_msg.joint_name = obj.joint_names_cache;
+      
+      atlas_pos = atlas_state(7:atlas_dofs);
+      atlas_vel = atlas_state(atlas_dofs+7:end);
+      if (~obj.publish_truth)
+        atlas_pos = atlas_pos(obj.reordering);
+        atlas_vel = atlas_vel(obj.reordering);
+      end
       % need another factor of pi/2 to get drawn multisense to agree with
       % the "true" (functionally true, anyway) mirror position
-      state_msg.joint_position = [atlas_state(1:atlas_dofs); hand_state(1:hand_dofs); laser_spindle_angle+pi/2];
-      state_msg.joint_velocity = [atlas_state(atlas_dofs+1:end); hand_state(hand_dofs+1:end); 0];
+      state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs); laser_spindle_angle+pi/2];
+      state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end); 0];
       state_msg.force_torque = drc.force_torque_t();
-      obj.lc.publish('EST_ROBOT_STATE', state_msg);
+      % if we're publishing to satisfy state est we need force sensing from feet
+%       if (~obj.publish_truth)
+%         % Get binary foot contact, call it force:
+%         x = atlas_state;
+%         [phiC,~,~,~,~,idxA,idxB,~,~,~] = obj.r_control.getManipulator().contactConstraints(x(1:length(x)/2),false);
+%         within_thresh = phiC < 0.002;
+%         contact_pairs = [idxA(within_thresh) idxB(within_thresh)];
+%         fc = [any(any(contact_pairs == obj.r_control.findLinkInd('l_foot')));
+%           any(any(contact_pairs == obj.r_control.findLinkInd('r_foot')))];
+%         % pack it up
+%         state_msg.force_torque.l_foot_force_z = fc(1)*1000;
+%         state_msg.force_torque.r_foot_force_z = fc(1)*1000;
+%       end
+      
+      if (~obj.publish_truth)
+        obj.lc.publish('ATLAS_STATE', state_msg);
+      else
+        obj.lc.publish('EST_ROBOT_STATE', state_msg);
+      end
       
       % force an update of the body pose too
       % (shouldn't this be being inferred from EST_ROBOT_STATE?)
@@ -197,17 +282,22 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       pose_body_frame.pos = [atlas_state(1), atlas_state(2), atlas_state(3)];
       pose_body_frame.vel = [atlas_state(1+atlas_dofs), atlas_state(2+atlas_dofs), atlas_state(3+atlas_dofs)];
       q = rpy2quat([atlas_state(4) atlas_state(5) atlas_state(6)]);
+      pose_body_frame.vel = quatRotateVec(q, pose_body_frame.vel);
       pose_body_frame.orientation = [q(1) q(2) q(3) q(4)]; % Rotation
       pose_body_frame.rotation_rate = [atlas_state(4+atlas_dofs) atlas_state(5+atlas_dofs) atlas_state(6+atlas_dofs)];
       pose_body_frame.accel = [0 0 0];
-      obj.lc.publish('POSE_BODY', pose_body_frame);
-      obj.lc.publish('POSE_BDI', pose_body_frame); %will be smarter about this when I get state_sync supported
+      if (obj.publish_truth)
+        obj.lc.publish('POSE_BODY', pose_body_frame);
+      else
+        obj.lc.publish('POSE_BDI', pose_body_frame);
+      end
+      
+      
       % Send over
       % -- "MULTISENSE_STATE" -- lcm_state msg for joint hokuyo_joint,
       %     labeled with tiem of scan
       % -- also "PRE_SPINDLE_TO_POST_SPINDLE" with the approp transform
       % -- To channel "SCAN", publish populated lcm_laser_msg
-      
       if (~isempty(laser_state))
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
         multisense_state = multisense.state_t();

@@ -50,7 +50,8 @@ lcmInputBlock = LCMInputFromAtlasCommandBlock(r,[],options);
 sys = mimoFeedback(lcmInputBlock, r, [], [], [], outs);
 
 % LCM broadcast out
-lcmBroadcastBlock = LCMBroadcastBlock(r);
+broadcast_opts.publish_truth = 0;
+lcmBroadcastBlock = LCMBroadcastBlock(r, r, broadcast_opts);
 sys = mimoCascade(sys, lcmBroadcastBlock);
 
 
