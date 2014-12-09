@@ -56,17 +56,23 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       % Get LCM set up for broadcast on approp channels
       obj.lc = lcm.lcm.LCM.getSingleton();
       
+      % Cache names, which have to be converted to java strings (slow!)
       if (r.hands>0)
-        names = [obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
-                obj.getInputFrame.getFrameByName('HandState').getCoordinateNames];
-        names = [names(1:34); names(69:98)];
-        for i=35:length(names)
+        atlas_names= obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+        hand_names = obj.getInputFrame.getFrameByName('HandState').getCoordinateNames;
+        names = [atlas_names(1:34);
+                hand_names(1:30);
+                'hokuyo_joint'];
+        for i=35:64
           names{i} = ['right_', names{i}];
         end
       else
-        names = [obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;];
+        atlas_names= obj.getInputFrame.getFrameByName('AtlasState').getCoordinateNames;
+        names = [atlas_names(1:34);
+                'hokuyo_joint'];
       end
       obj.joint_names_cache = cell(length(names), 1);
+      % (this is the part that we really don't want to run repeatedly...)
       for i=1:length(names)
         obj.joint_names_cache(i) = java.lang.String(names(i));
       end
@@ -97,6 +103,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         error(['Ambiguous hand state. No support for two hands yet...']);
       elseif (length(num)==1)
         laser_state = varargin{num};
+      end
+      
+      if (~isempty(laser_state))
+        laser_spindle_angle = laser_state(1)+pi/2;
+        laser_ranges = laser_state(2:end);
+      else
+        laser_spindle_angle = 0;
+        laser_ranges = [];
       end
       
       % See if we just passed our publish-timestep for 
@@ -163,20 +177,21 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       state_msg.twist.angular_velocity.y = atlas_state(atlas_dofs+5);
       state_msg.twist.angular_velocity.z = atlas_state(atlas_dofs+6);
       
-      state_msg.num_joints = num_dofs;
-      state_msg.joint_name=javaArray('java.lang.String', state_msg.num_joints);
-      state_msg.joint_position=zeros(1,state_msg.num_joints);
-      state_msg.joint_velocity=zeros(1,state_msg.num_joints);
-      state_msg.joint_effort=zeros(1,state_msg.num_joints);
+      state_msg.num_joints = num_dofs+1;
+      state_msg.joint_name=javaArray('java.lang.String', state_msg.num_joints+1);
+      state_msg.joint_position=zeros(1,state_msg.num_joints+1);
+      state_msg.joint_velocity=zeros(1,state_msg.num_joints+1);
+      state_msg.joint_effort=zeros(1,state_msg.num_joints+1);
       state_msg.joint_name = obj.joint_names_cache;
-      state_msg.joint_position = [atlas_state(1:atlas_dofs); hand_state(1:hand_dofs)];
-      state_msg.joint_velocity = [atlas_state(atlas_dofs+1:end); hand_state(hand_dofs+1:end)];
+      % need another factor of pi/2 to get drawn multisense to agree with
+      % the "true" (functionally true, anyway) mirror position
+      state_msg.joint_position = [atlas_state(1:atlas_dofs); hand_state(1:hand_dofs); laser_spindle_angle+pi/2];
+      state_msg.joint_velocity = [atlas_state(atlas_dofs+1:end); hand_state(hand_dofs+1:end); 0];
       state_msg.force_torque = drc.force_torque_t();
       obj.lc.publish('EST_ROBOT_STATE', state_msg);
       
       % force an update of the body pose too
       % (shouldn't this be being inferred from EST_ROBOT_STATE?)
-      
       pose_body_frame = bot_core.pose_t();
       pose_body_frame.utime = t*1000*1000;
       pose_body_frame.pos = [atlas_state(1), atlas_state(2), atlas_state(3)];
@@ -186,18 +201,14 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       pose_body_frame.rotation_rate = [atlas_state(4+atlas_dofs) atlas_state(5+atlas_dofs) atlas_state(6+atlas_dofs)];
       pose_body_frame.accel = [0 0 0];
       obj.lc.publish('POSE_BODY', pose_body_frame);
-      
+      obj.lc.publish('POSE_BDI', pose_body_frame); %will be smarter about this when I get state_sync supported
       % Send over
       % -- "MULTISENSE_STATE" -- lcm_state msg for joint hokuyo_joint,
       %     labeled with tiem of scan
       % -- also "PRE_SPINDLE_TO_POST_SPINDLE" with the approp transform
-      % -- also "POST_SPINDLE_TO_SCAN" to adjust for our different spindle
-      % setup
       % -- To channel "SCAN", publish populated lcm_laser_msg
       
       if (~isempty(laser_state))
-        laser_spindle_angle = laser_state(1);
-        laser_ranges = laser_state(2:end);
         % MULTISENSE_STATE and PRE_SPINDLE_TO_POST_SPINDLE, beginning of scan
         multisense_state = multisense.state_t();
         multisense_state.joint_name = {'hokuyo_joint',
@@ -214,7 +225,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
           'post_spindle_cal_pitch_joint',
           'post_spindle_cal_yaw_joint'};
         
-        multisense_state.joint_position = [laser_spindle_angle, ...
+        multisense_state.joint_position = [laser_spindle_angle+pi/2, ...
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         multisense_state.joint_velocity = [0.0, ...
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -227,17 +238,9 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         pre_to_post_frame = bot_core.rigid_transform_t();
         pre_to_post_frame.utime = t*1000*1000;
         pre_to_post_frame.trans = [0, 0, 0]; % no offset
-        q = rpy2quat([0, 0, laser_spindle_angle+pi]);
+        q = rpy2quat([0, 0, laser_spindle_angle]);
         pre_to_post_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
         obj.lc.publish('PRE_SPINDLE_TO_POST_SPINDLE', pre_to_post_frame);
-        
-        % Our spindle setup has the laser perfectly centered on the
-        % spindle
-        post_to_scan_frame = pre_to_post_frame;
-        post_to_scan_frame.trans = [ 0,0,0 ];
-        q = rpy2quat([0, -90, -90]*pi/180);
-        post_to_scan_frame.quat = [q(1) q(2) q(3) q(4)]; % Rotation
-        obj.lc.publish('POST_SPINDLE_TO_SCAN', post_to_scan_frame);
         
         % And the data
         lcm_laser_msg = bot_core.planar_lidar_t();
@@ -249,7 +252,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         lcm_laser_msg.nranges = length(laser_ranges);
         lcm_laser_msg.nintensities = length(laser_ranges);
         lcm_laser_msg.rad0 = -obj.hokuyo_yaw_width/2.0;
-        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges)-1);
+        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges));
         obj.lc.publish('SCAN', lcm_laser_msg);
         
       end

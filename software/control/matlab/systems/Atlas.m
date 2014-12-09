@@ -60,13 +60,13 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
         end
         % Add lidar -- hokuyo / spindle frames are pulled from
         % config/config_components/multisense_sim.cfg
-        % was [-0.0446; 0.0; 0.0880], [0;0;0] in sim.
         % trying new value that lines up more accurately with
         % head_to_left_eye, left_eye_to_spindle transforms
-        % from multisense_05.cfg
-        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0055, -0.0087, 0.0914].',[0, 0, 0].','hokuyo_frame'));
+        % from multisense_sim.cfg
+        obj = addFrame(obj,RigidBodyFrame(findLinkInd(obj,'head'),[-0.0446, -0.0087, 0.0880].',[0, 0, 0].','hokuyo_frame'));
         hokuyo = RigidBodyLidarSpinningStateless('hokuyo',findFrameId(obj,'hokuyo_frame'), ...
-          -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate);
+          -obj.hokuyo_yaw_width/2.0, obj.hokuyo_yaw_width/2.0, obj.hokuyo_num_pts, obj.hokuyo_max_range, obj.hokuyo_spin_rate, ...
+          obj.hokuyo_mirror_offset);
         if (~isfield(options, 'visualize') || options.visualize)
           hokuyo = enableLCMGL(hokuyo);
         end
@@ -439,10 +439,14 @@ classdef Atlas < TimeSteppingRigidBodyManipulator & Biped
                                     'mu', 1.0,... % friction coefficient
                                     'constrain_full_foot_pose', true); % whether to constrain the swing foot roll and pitch
 
-    hokuyo_yaw_width = 2.4; % total -- i.e., whole FoV, not from center of vision
+    hokuyo_yaw_width = 2.0; % total -- i.e., whole FoV, not from center of vision
     hokuyo_num_pts = 200;   
     hokuyo_max_range = 6; % meters?
-    hokuyo_spin_rate = 8; % rad/sec
+    hokuyo_spin_rate = 16; % rad/sec
+    hokuyo_mirror_offset = [0.015; 0.0; -0.03]; % from multisense_sim.urdf
+                                               % with a rotation
+                                               % (due to rotation of 
+                                               % frame)
 
     foot_force_sensors = false;
     hands = 0; % 0, none; 1, Robotiq
