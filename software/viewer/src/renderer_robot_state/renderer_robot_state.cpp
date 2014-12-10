@@ -12,12 +12,8 @@
 #include <gdk/gdkkeysyms.h>
 #include <path_util/path_util.h>
 
-
 #include "RobotStateListener.hpp"
-#include "pose_approval_gui_utils.hpp"
-#include "popup_gui_utils.hpp"
 #include "renderer_robot_state.hpp"
-#include "pose_store_gui_utils.hpp"
 
 
 #define RENDERER_NAME "State"
@@ -29,7 +25,7 @@ using namespace Eigen;
 using namespace visualization_utils;
 using namespace collision;
 using namespace renderer_robot_state;
-using namespace renderer_robot_state_gui_utils;
+//using namespace renderer_robot_state_gui_utils;
 
 
 
@@ -79,7 +75,7 @@ static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const do
   self->ray_hit_drag = to;
   self->ray_hit = to;   
 
-  double shortest_distance = get_shortest_distance_between_robot_links_and_jointdof_markers(self,from,to);
+  double shortest_distance = 0;
   return shortest_distance;
 }
 
@@ -123,6 +119,7 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
   if (self->dragging) {
     self->dragging = 0;
     
+    /*
     Eigen::Vector3f diff=self->ray_hit_drag-self->ray_hit;
     double movement = diff.norm();
     if(((*self->marker_selection)  != " ")&&(movement>=1e-3)){
@@ -137,9 +134,7 @@ mouse_release (BotViewer *viewer, BotEventHandler *ehandler, const double ray_st
         string joint_name =marker_name.substr(found+token.size());
         bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
       }
-      //string channel = "POSTURE_GOAL";
-      //publish_posture_goal(self,channel);
-    }
+    } */
   }  
   
   if (ehandler->picking==1)
@@ -160,63 +155,9 @@ static int mouse_motion (BotViewer *viewer, BotEventHandler *ehandler,  const do
     Eigen::Vector3f start,dir;
     dir<< ray_dir[0], ray_dir[1], ray_dir[2];
     start<< ray_start[0], ray_start[1], ray_start[2];
-    set_desired_robot_posture_on_marker_motion(self,start,dir);
-    //cout << (*self->marker_selection) << ": mouse drag\n";
   }
   bot_viewer_request_redraw(self->viewer);
   return 1;
-}
-
-
-//=================================
-
-static void draw_ee_force(void *user,std::string ee_name)
-{
-    RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
-    std::map<std::string, Eigen::Vector3f >::iterator it;
-    it=self->robotStateListener->ee_forces_map.find(ee_name);
-    KDL::Frame ee_frame;
-    self->robotStateListener->_gl_robot->get_link_frame(ee_name, ee_frame);
-    if(it!=self->robotStateListener->ee_forces_map.end()) 
-    {
-      //draw arrow
-      Eigen::Vector3f F = it->second;
-      
-      //cout << "F:" <<F.transpose() << " " << F.norm() << endl;
-      double length = 0.05*(F.norm()/9.81);//(F_meas/g)x0.1
-      
-      std::stringstream oss;
-      oss << F.norm();
-      std::string text = oss.str() + " N";
-     double pos[3];
-      pos[0] = ee_frame.p[0]; 
-      pos[1] = ee_frame.p[1]; 
-      pos[2] = ee_frame.p[2]+0.0;
-      double head_width = 0.03; double head_length = 0.03;double body_width = 0.01;
-      glColor4f(1,0,0,1);
-      bot_gl_draw_text(pos, GLUT_BITMAP_HELVETICA_18, text.c_str(),0);
-      glPushMatrix();
-      glTranslatef(ee_frame.p[0], ee_frame.p[1],ee_frame.p[2]);
-      Eigen::Vector3f F_worldframe;
-      rotate_eigen_vector_given_kdl_frame(F,ee_frame,F_worldframe); 
-     // cout << "F_worldframe:" <<F_worldframe.transpose() << " " << F_worldframe.norm() << endl;
-      //--get rotation in angle/axis form
-      double theta;
-      Eigen::Vector3f direction=F_worldframe;
-      direction.normalize(); 
-      //--get rotation in angle/axis form
-      Eigen::Vector3f axis;
-      Eigen::Vector3f uz,ux;   uz << 0 , 0 , 1;ux << 1 , 0 , 0;
-      axis = ux.cross(direction);axis.normalize();
-      theta = acos(ux.dot(direction));
-      glRotatef(theta * 180/3.141592654, axis[0], axis[1], axis[2]); 
-      glTranslatef(length/2, 0,0);
-      bot_gl_draw_arrow_3d(length,head_width, head_length,body_width);
-      glTranslatef(length/2, 0,0);
-
-      glPopMatrix();
-    }
-  
 }
 
 static void 
@@ -259,33 +200,10 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
     self->robotStateListener->_gl_robot->enable_link_selection(self->selection_enabled);
     self->robotStateListener->_gl_robot->highlight_link((*self->selection));
     self->robotStateListener->_gl_robot->highlight_marker((*self->marker_selection));
-    //self->robotStateListener->_gl_robot->enable_whole_body_selection(self->selection_enabled);
     self->robotStateListener->_gl_robot->draw_body (c,alpha);
 
-
-    /*
-    // only update this widget on marker mouse release,otherwise a lot of posture goals will be sent (sisir).
-    std::map<std::string, double> jointpos_in;
-    jointpos_in = self->robotStateListener->_gl_robot->_future_jointpos;
-    string link_name = (*self->selection); 
-    string marker_name = (*self->marker_selection); 
-    string token  = "markers::";
-    size_t found = marker_name.find(token);  
-    if (!(found == std::string::npos)) {
-      string joint_name =marker_name.substr(found+token.size());
-      bot_gtk_param_widget_set_double(self->pw, PARAM_CURRENT_JOINTPOS, jointpos_in.find(joint_name)->second);
-    }*/
-    
-    if(self->visualize_forces){
-      draw_ee_force(self,"l_hand");   draw_ee_force(self,"r_hand");
-      draw_ee_force(self,"l_foot");   draw_ee_force(self,"r_foot");
-    }
   }
   
-  if(self->robotStateListener->_end_pose_received){
-     self->robotStateListener->_end_pose_received = false;
-     spawn_pose_approval_dock(self);
-   }
    
   if((self->teleop_popup !=NULL))
   {
@@ -313,16 +231,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RobotStateRendererStruc *self = (RobotStateRendererStruc*) user;
-  if (! strcmp(name, PARAM_SELECTION)) {
-    if (bot_gtk_param_widget_get_bool(pw, PARAM_SELECTION)) {
-      //bot_viewer_request_pick (self->viewer, &(self->ehandler));
-      self->selection_enabled = 1;
-    }
-    else{
-      self->selection_enabled = 0;
-    }
-  }
-  else if(! strcmp(name, PARAM_WIRE)) {
+  if(! strcmp(name, PARAM_WIRE)) {
     if (bot_gtk_param_widget_get_bool(pw, PARAM_WIRE)){
       self->visualize_bbox= true;  
     }
@@ -330,65 +239,9 @@ static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, voi
       self->visualize_bbox = false;
     }
   }
-  else if(! strcmp(name, PARAM_SHOW_FORCES)) {
-    if (bot_gtk_param_widget_get_bool(pw, PARAM_SHOW_FORCES)){
-      self->visualize_forces= true;  
-    }
-    else{
-      self->visualize_forces = false;
-    }
-  }
   else if(! strcmp(name, PARAM_COLOR_ALPHA)) {
     self->alpha = (float) bot_gtk_param_widget_get_double(pw, PARAM_COLOR_ALPHA);
     bot_viewer_request_redraw(self->viewer);
-  }
-  else if(! strcmp(name, PARAM_SEND_POSTURE_GOAL_BACK_ZEROED)) {
-    cout << "publishing posture goal with zeroed back joints\n";
-    publish_posture_goal_back_zeroed(self);
-  }
-  else if(! strcmp(name, PARAM_RESET_POSTURE)) {
-   if(self->robotStateListener->_gl_robot->is_future_state_changing())
-   self->robotStateListener->_gl_robot->set_future_state_changing(false);
-   self->robotStateListener->_gl_robot->set_future_state( self->robotStateListener->_gl_robot->_T_world_body, self->robotStateListener->_gl_robot->_current_jointpos);   
-   self->robotStateListener->_gl_robot->disable_future_display();      
-   bot_viewer_request_redraw(self->viewer);
-  }
-  else if (! strcmp(name, PARAM_ENABLE_POSTURE_ADJUSTMENT)) 
-  {
-      bool val = bot_gtk_param_widget_get_bool(pw, PARAM_ENABLE_POSTURE_ADJUSTMENT);
-      if(!(self->robotStateListener->_urdf_subscription_on))
-      {
-        bot_gtk_param_widget_set_bool(pw, PARAM_SELECTION,val);
-        self->selection_enabled = val; // enable selection
-        if(val)
-           std::cout << "enabling jointdof adjustment for robot " << std::endl;
-        else
-           std::cout << "disabling jointdof adjustment for robot "<< std::endl;
-        self->robotStateListener->_gl_robot->enable_jointdof_adjustment(val); 
-      }    
-      else
-        std::cerr << "Robot urdf not received, can't adjust robot posture as no robot object is created. "<< std::endl;
-  }
-  else if (! strcmp(name,PARAM_ENABLE_EE_TELEOP))
-  {
-     spawn_teleop_ee_popup(self);
-
-  } 
-  else if (! strcmp(name,PARAM_CURRENT_JOINTPOS)) 
-  {
-      set_desired_robot_posture_from_pw(user, bot_gtk_param_widget_get_double(self->pw, PARAM_CURRENT_JOINTPOS));
-  }
-  else if (!strcmp(name, PARAM_BACK_ROLL)) {
-    self->zero_back_options.roll = bot_gtk_param_widget_get_bool(self->pw, name);
-  }
-  else if (!strcmp(name, PARAM_BACK_PITCH)) {
-    self->zero_back_options.pitch = bot_gtk_param_widget_get_bool(self->pw, name);
-  }
-  else if (!strcmp(name, PARAM_BACK_YAW)) {
-    self->zero_back_options.yaw = bot_gtk_param_widget_get_bool(self->pw, name);
-  }
-  else if (!strcmp(name, PARAM_BACK_FIX_HANDS)) {
-    self->zero_back_options.fix_hands = bot_gtk_param_widget_get_bool(self->pw, name);
   }
 }
 
@@ -401,12 +254,7 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
 
     self->robotStateListener = boost::shared_ptr<RobotStateListener>(new RobotStateListener(self->lcm, 
               viewer, operation_mode));
-    self->keyboardSignalHndlr = boost::shared_ptr<KeyboardSignalHandler>(new KeyboardSignalHandler(signalRef,boost::bind(&RobotStateRendererStruc::keyboardSignalCallback,self,_1,_2)));
-    self->affTriggerSignalsHndlr = boost::shared_ptr<AffTriggerSignalsHandler>(new AffTriggerSignalsHandler(affTriggerSignalsRef,boost::bind(&RobotStateRendererStruc::affTriggerSignalsCallback,self,_1,_2,_3,_4)));
     self->_rendererFoviationSignalRef = rendererFoviationSignalRef;      
-    self->lcm->subscribe("POSTURE_GOAL_CANNED",&RobotStateRendererStruc::handleCannedPostureGoalMsg, self); 
-    self->lcm->subscribe("COMMITTED_ROBOT_PLAN",&RobotStateRendererStruc::handleCommittedOrRejectedRobotPlanMsg, self);     
-    self->lcm->subscribe("REJECTED_ROBOT_PLAN",&RobotStateRendererStruc::handleCommittedOrRejectedRobotPlanMsg, self); 
     
     BotRenderer *renderer = &self->renderer;
 
@@ -422,50 +270,27 @@ setup_renderer_robot_state(BotViewer *viewer, int render_priority, lcm_t *lcm, i
     renderer->user = self;
     renderer->enabled = 1;
 
-    self->zero_back_options.roll = true;
-    self->zero_back_options.pitch = true;
-    self->zero_back_options.yaw = true;
-    self->zero_back_options.fix_hands = false;
     self->viewer = viewer;
 
     self->pw = BOT_GTK_PARAM_WIDGET(renderer->widget);
 
-    bot_gtk_param_widget_add_separator(self->pw, "Display");
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
-    // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SHOW_FORCES, 0, NULL);
     bot_gtk_param_widget_add_double (self->pw, PARAM_COLOR_ALPHA, BOT_GTK_PARAM_WIDGET_SLIDER, 0, 1, 0.001, 1);
     
-    bot_gtk_param_widget_add_separator(self->pw, "Joint Teleop");
     bool val=false;
     if(!(self->robotStateListener->_urdf_subscription_on))
       val = self->robotStateListener->_gl_robot->is_jointdof_adjustment_enabled();
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_TOGGLE_BUTTON, PARAM_ENABLE_POSTURE_ADJUSTMENT, val, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw,PARAM_RESET_POSTURE, NULL);
-    bot_gtk_param_widget_add_double (self->pw, PARAM_CURRENT_JOINTPOS, BOT_GTK_PARAM_WIDGET_SPINBOX, -6.29, 6.29, 0.01, 0);
 
-    bot_gtk_param_widget_add_separator(self->pw, "Back Control");
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_BACK_ROLL, self->zero_back_options.roll, PARAM_BACK_PITCH, self->zero_back_options.pitch, PARAM_BACK_YAW, self->zero_back_options.yaw, NULL);
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_BACK_FIX_HANDS, self->zero_back_options.fix_hands, NULL);
-    bot_gtk_param_widget_add_buttons(self->pw,PARAM_SEND_POSTURE_GOAL_BACK_ZEROED, NULL);
-    bot_gtk_param_widget_add_separator(self->pw, "");
     
-    // disabled_for_cleanup bot_gtk_param_widget_add_buttons(self->pw,PARAM_ENABLE_EE_TELEOP,NULL);
-      
     g_signal_connect(G_OBJECT(self->pw), "changed", G_CALLBACK(on_param_widget_changed), self);
     self->alpha = 1.0;
     self->selection_enabled = 0;
-    bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
     self->clicked = 0;	
     self->selection = new std::string(" ");
     self->dragging = 0;  
   	self->marker_selection = new std::string(" ");
-  	self->pose_approval_dock= NULL; 
   	self->teleop_popup = NULL;
   	self->teleop_error_entry =NULL;
-  	self->afftriggered_popup = NULL;
     self->visualize_bbox = false;
-    self->visualize_forces = false;
     self->_renderer_foviate = false;
     self->trigger_source_otdf_id = new std::string(" "); 
     bot_viewer_add_renderer(viewer, &self->renderer, render_priority);

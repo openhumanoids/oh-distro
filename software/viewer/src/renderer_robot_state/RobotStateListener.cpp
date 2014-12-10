@@ -20,7 +20,6 @@ namespace renderer_robot_state
   {
    _last_state_msg_system_timestamp = 0;
    _last_state_msg_sim_timestamp = 0;
-   _end_pose_received = false;
    _collision_detector = shared_ptr<Collision_Detector>(new Collision_Detector());
     //lcm ok?
     if(!lcm->good())
@@ -50,7 +49,6 @@ namespace renderer_robot_state
       _robot_color[1] = 0.15;
       _robot_color[2] = 0.4;
     }
-    lcm->subscribe("CANDIDATE_ROBOT_ENDPOSE", &RobotStateListener::handleCandidateRobotEndPoseMsg, this);   
     
     _jointdof_filter_list.clear();
     _jointdof_filter_list.push_back("l_arm_usy");
@@ -133,7 +131,6 @@ namespace renderer_robot_state
     // cout << now - _last_state_msg_system_timestamp << endl;
     _gl_robot->set_state(*msg);
     
-    updateForceAndTorqueCache(msg->force_torque);
     bot_viewer_request_redraw(_viewer);
      _last_state_msg_system_timestamp = now;//msg->utime;
      _last_state_msg_sim_timestamp = msg->utime;
@@ -144,27 +141,6 @@ namespace renderer_robot_state
     
   } // end handleMessage
   
-  void RobotStateListener::handleCandidateRobotEndPoseMsg(const lcm::ReceiveBuffer* rbuf,
-						 const string& chan, 
-						 const drc::robot_state_t* msg)						 
-  { 
-  
-   cout << "\n in handleCandidateRobotEndPoseMsg:" << endl;
-    if (!_urdf_parsed)    
-      return;   
-    if(_urdf_subscription_on)
-    {			
-      cout << "\n handleCandidateRobotEndPoseMsg: unsubscribing from _urdf_subscription" << endl;
-      _lcm->unsubscribe(_urdf_subscription);     //unsubscribe from urdf messages
-      _urdf_subscription_on =  false; 	
-    }
-
-     _gl_robot->set_future_state(*msg);
-     _received_endpose = *msg;
-     _end_pose_received =true;
-     // spawn_pose_approval_dock();
-     bot_viewer_request_redraw(_viewer);     
-  } // end handleMessage
 
 //-------------------------------------------------------------------------------------        
   void RobotStateListener::handleRobotUrdfMsg(const lcm::ReceiveBuffer* rbuf, const string& channel, 
@@ -193,61 +169,6 @@ namespace renderer_robot_state
     }
  
   } // end urdf handler
-
-  // Heavily changed when switching to new LCM types. 
-  // NB: note that feet forces and torques are 3-axis sensors
-  void RobotStateListener::updateForceAndTorqueCache(const drc::force_torque_t &msg) 
-  {
-     std::map<std::string, Eigen::Vector3f >::iterator it;
-     ////////////// Hands ///////////////////////////
-     it=ee_forces_map.find("l_hand");
-     if(it!=ee_forces_map.end())
-     {
-       it->second << msg.l_hand_force[0],msg.l_hand_force[1], msg.l_hand_force[2];
-     }
-     it=ee_torques_map.find("l_hand");
-     if(it!=ee_torques_map.end())
-     {
-       it->second << msg.l_hand_torque[0],msg.l_hand_torque[1], msg.l_hand_torque[2];
-     }
-
-     it=ee_forces_map.find("r_hand");
-     if(it!=ee_forces_map.end())
-     {
-       it->second << msg.r_hand_force[0],msg.r_hand_force[1], msg.r_hand_force[2];
-     }
-     it=ee_torques_map.find("r_hand");
-     if(it!=ee_torques_map.end())
-     {
-       it->second << msg.r_hand_torque[0],msg.r_hand_torque[1], msg.r_hand_torque[2];
-     }
-     
-     ////////////// Feet ////////////////////////////
-     it=ee_forces_map.find("l_foot");
-     if(it!=ee_forces_map.end())
-     {
-       it->second << 0,0, msg.l_foot_force_z; 
-     }
-     it=ee_torques_map.find("l_foot");
-     if(it!=ee_torques_map.end())
-     {
-       it->second << msg.l_foot_torque_x,msg.l_foot_torque_y, 0;
-     }
-
-     it=ee_forces_map.find("r_foot");
-     if(it!=ee_forces_map.end())
-     {
-       it->second << 0,0, msg.r_foot_force_z;
-     }
-     it=ee_torques_map.find("r_foot");
-     if(it!=ee_torques_map.end())
-     {
-       it->second << msg.r_foot_torque_x,msg.r_foot_torque_y, 0;
-     }
-  } // end updateForceAndTorqueCache
-  
-  
-
 
 } //namespace renderer_robot_state
 
