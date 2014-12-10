@@ -20,7 +20,6 @@
 #define PARAM_KD_INC 1
 
 #define RENDERER_NAME "Planning"
-#define PARAM_SELECTION "Enable Selection"
 #define PARAM_WIRE "Show BBoxs For Meshes"  
 #define PARAM_HIDE "Hide Plan"  
 //#define PARAM_USE_COLORMAP "Use Colormap"
@@ -112,10 +111,6 @@ static void
 _renderer_draw (BotViewer *viewer, BotRenderer *super)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) super->user;
-  // if hide is enabled - then dont draw the plan:
-  if (bot_gtk_param_widget_get_bool(self->pw, PARAM_HIDE)) {
-     return;
-  }
   
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
@@ -198,56 +193,7 @@ _renderer_draw (BotViewer *viewer, BotRenderer *super)
 static double pick_query (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3])
 {
   RendererRobotPlan *self = (RendererRobotPlan*) ehandler->user;
-  if((self->selection_enabled==0)||(bot_gtk_param_widget_get_bool(self->pw, PARAM_HIDE))){
     return -1.0;
-  }
-  //fprintf(stderr, "RobotStateRenderer Pick Query Active\n");
-  Eigen::Vector3f from,to;
-  from << ray_start[0], ray_start[1], ray_start[2];
-
-  Eigen::Vector3f plane_normal,plane_pt;
-  plane_normal << 0,0,1;
-  if(ray_start[2]<0)
-      plane_pt << 0,0,10;
-  else
-      plane_pt << 0,0,-10;
-  double lambda1 = ray_dir[0] * plane_normal[0]+
-                   ray_dir[1] * plane_normal[1] +
-                   ray_dir[2] * plane_normal[2];
-   // check for degenerate case where ray is (more or less) parallel to plane
-    if (fabs (lambda1) < 1e-9) return -1.0;
-
-   double lambda2 = (plane_pt[0] - ray_start[0]) * plane_normal[0] +
-       (plane_pt[1] - ray_start[1]) * plane_normal[1] +
-       (plane_pt[2] - ray_start[2]) * plane_normal[2];
-   double t = lambda2 / lambda1;// =1;
-  
-  to << ray_start[0]+t*ray_dir[0], ray_start[1]+t*ray_dir[1], ray_start[2]+t*ray_dir[2];
- 
-  self->ray_start = from;
-  self->ray_end = to;
-  self->ray_hit_t = t;
-  self->ray_hit_drag = to;
-  self->ray_hit = to; 
-  
-  //
-
-  Eigen::Vector3f hit_pt;
-  collision::Collision_Object * intersected_object = NULL;
-  double shortest_distance = -1;
-  self->selected_plan_index= 0;
-
-  if(self->robotPlanListener->_is_manip_plan)  
-  {
-    shortest_distance = get_shortest_distance_between_keyframes_and_markers(self,from,to);
-  }
-  else   
-  {
-    shortest_distance = get_shortest_distance_from_a_plan_frame(self,from,to);
-  }
-
-  //std::cout  << "RobotStateRenderer distance " << -1.0 << std::endl;
-  return shortest_distance;
 }
 
 static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const double ray_start[3], const double ray_dir[3], const GdkEventButton *event)
@@ -434,19 +380,6 @@ static void onPlanRejectEvent (const lcm_recv_buf_t * buf, const char *channel,
                                const drc_robot_plan_t *msg, void *user)
 {
     RendererRobotPlan *self = (RendererRobotPlan*) user;
-    if((self->plan_execution_dock!=NULL)||(self->multiapprove_plan_execution_dock!=NULL))
-    {
-      self->robotPlanListener->purge_current_plan();
-      self->plan_execute_button = NULL;
-      if(self->robotPlanListener->is_multi_approval_plan()){
-        gtk_widget_destroy(self->multiapprove_plan_execution_dock);
-        self->multiapprove_plan_execution_dock= NULL;    
-      }
-      else {
-        gtk_widget_destroy(self->plan_execution_dock);
-        self->plan_execution_dock= NULL;
-      }
-    }
 }
 
 static void
@@ -498,12 +431,8 @@ static void update_planar_params( void *user)
 static void on_param_widget_changed(BotGtkParamWidget *pw, const char *name, void *user)
 {
   RendererRobotPlan *self = (RendererRobotPlan*) user;
-  if (! strcmp(name, PARAM_SELECTION)) {
-    self->selection_enabled = bot_gtk_param_widget_get_bool(pw, PARAM_SELECTION);
-  }  else if(! strcmp(name, PARAM_WIRE)) {
+  if(! strcmp(name, PARAM_WIRE)) {
     self->visualize_bbox = bot_gtk_param_widget_get_bool(pw, PARAM_WIRE);
-  //}  else if(! strcmp(name,PARAM_USE_COLORMAP)) {
-  //  self->use_colormap	= bot_gtk_param_widget_get_bool(pw, PARAM_USE_COLORMAP);
   }  else if(! strcmp(name,PARAM_ADJUST_ENDSTATE)) {
     self->adjust_endstate = bot_gtk_param_widget_get_bool(pw, PARAM_ADJUST_ENDSTATE);
   }  else if(! strcmp(name,PARAM_SHOW_FULLPLAN)) {
@@ -611,8 +540,6 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     drc_utime_t_subscribe(self->lcm->getUnderlyingLCM(),"ROBOT_PLAN_EXECUTE_EVENT",onPlanExecuteEvent,self);
     drc_robot_plan_t_subscribe(self->lcm->getUnderlyingLCM(),"REJECTED_ROBOT_PLAN",onPlanRejectEvent,self);
 
-    
-    bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_SELECTION, 0, NULL);
     // disabled_for_cleanup bot_gtk_param_widget_add_booleans(self->pw, BOT_GTK_PARAM_WIDGET_CHECKBOX, PARAM_WIRE, 0, NULL);
 
     // commented out unused buttons:
@@ -673,7 +600,6 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
 
     // off by default. only ever turned on for drilling (dec 2013, mfallon):
     bot_gtk_param_widget_set_bool(self->pw, PARAM_PLAN_USING_BDI_HEIGHT_MODE,false); 
-    bot_gtk_param_widget_set_bool(self->pw, PARAM_SELECTION,self->selection_enabled);
     self->use_colormap = 1; // default - never changed now
     //bot_gtk_param_widget_set_bool(self->pw, PARAM_USE_COLORMAP,self->use_colormap);
     self->clicked = 0;	
@@ -726,12 +652,4 @@ setup_renderer_robot_plan(BotViewer *viewer, int render_priority, lcm_t *lcm, in
     
     bot_viewer_add_event_handler(viewer, &self->ehandler, render_priority);
    
-}
-
-void RendererRobotPlan::setPlanVisibility(const bool vis) {
-    bot_gtk_param_widget_set_bool(this->pw, PARAM_HIDE, vis ? FALSE : TRUE);
-}
-
-bool RendererRobotPlan::getPlanVisibility() const {
-    return (bot_gtk_param_widget_get_bool(this->pw, PARAM_HIDE) == 0);
 }

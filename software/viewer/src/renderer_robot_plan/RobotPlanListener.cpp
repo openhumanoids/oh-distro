@@ -57,10 +57,7 @@ namespace renderer_robot_plan
     lcm->subscribe("CANDIDATE_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
     lcm->subscribe("COMMITTED_MANIP_MAP", &renderer_robot_plan::RobotPlanListener::handleAffIndexedRobotPlanMsg, this);  
     
-    lcm->subscribe("CANDIDATE_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleCanFootStepPlanMsg, this);  
-    lcm->subscribe("APPROVED_FOOTSTEP_PLAN", &renderer_robot_plan::RobotPlanListener::handleAprvFootStepPlanMsg, this);  
 
-    lcm->subscribe("CONTROLLER_STATUS", &renderer_robot_plan::RobotPlanListener::handleControllerStatusMsg, this);  
     lcm->subscribe("EST_ROBOT_STATE", &renderer_robot_plan::RobotPlanListener::handleRobotStateMsg, this); 
 
     //load foot pelvis and com marker URDFS
@@ -350,32 +347,6 @@ void RobotPlanListener::handleRobotPlanMsg(const lcm::ReceiveBuffer* rbuf,
 
   //-------------------------------------------------------------------
 
-  void RobotPlanListener::handleAprvFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
-						 const string& chan, 
-						 const drc::deprecated_footstep_plan_t* msg)						 
-  {
-		_received_footstep_plan = *msg;
-    _aprvd_footstep_plan_in_cache = true;
-     purge_current_plan();
-  }
-  
-   void RobotPlanListener::handleCanFootStepPlanMsg(const lcm::ReceiveBuffer* rbuf,
-						 const string& chan, 
-						 const drc::deprecated_footstep_plan_t* msg)						 
-  {
-    if(_aprvd_footstep_plan_in_cache)
-      _aprvd_footstep_plan_in_cache = false;
-     purge_current_plan();
-  }
-  
-  void RobotPlanListener::handleControllerStatusMsg(const lcm::ReceiveBuffer* rbuf,
-                                                 const string& chan, 
-                                                 const drc::controller_status_t* msg)                                                
-  {
-     _controller_utime = msg->controller_utime;
-     _controller_status = msg->state;
-  }  
-  
  void RobotPlanListener::handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 						 const string& chan, 
 						 const drc::robot_state_t* msg)						 

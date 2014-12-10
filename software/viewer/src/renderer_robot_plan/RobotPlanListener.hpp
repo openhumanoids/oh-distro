@@ -142,15 +142,7 @@ namespace renderer_robot_plan
 		  return _plan_paused;
 		};
 		
-		void purge_current_plan(){
-		    _gl_robot_list.clear();
-        if(_is_manip_plan){
-        _gl_robot_keyframe_list.clear();
-        _is_manip_plan = false;
-        }
-        _is_manip_map = false;
-        _current_plan_committed = false;
-		};	
+
 		
 		void activate_walking_plan()
     {
@@ -219,9 +211,6 @@ namespace renderer_robot_plan
    void handleRobotStateMsg(const lcm::ReceiveBuffer* rbuf,
 			      const std::string& chan, 
 			      const drc::robot_state_t* msg);	
-   void handleControllerStatusMsg(const lcm::ReceiveBuffer* rbuf,
-                                                 const string& chan, 
-                                                 const drc::controller_status_t* msg);
 						 
 			      
   bool load_hand_urdfs(int left_hand_type, int right_hand_type, std::string &_left_hand_urdf_xml_string,std::string &_right_hand_urdf_xml_string);
