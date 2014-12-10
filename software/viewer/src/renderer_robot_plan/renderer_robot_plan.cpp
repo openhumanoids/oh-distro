@@ -268,9 +268,6 @@ static int mouse_press (BotViewer *viewer, BotEventHandler *ehandler, const doub
       bool markeractive = false;
 
       bool toggle=true;
-      if (self->robotPlanListener->is_in_motion(self->selected_keyframe_index)){
-         toggle = !markeractive;
-      }
 
       
       if(!toggle){

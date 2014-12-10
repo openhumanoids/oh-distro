@@ -92,48 +92,6 @@ namespace renderer_robot_plan
     
     void keyboardSignalCallback(int keyval, bool is_pressed)
     {
-    
-      int last_marker_choice = FEET; 
-      if((!is_pressed)&&(keyval ==  BKSPACE ))
-      {
-        cout << "RendererRobotPlan:: back-space pressed. If cache available, will undo replan or plan adjustment." << endl;
-        this->robotPlanListener-> setManipPlanFromBackUp();
-      }
-      if(this->robotPlanListener->is_manip_plan())
-      {
-        if((!is_pressed)&&(keyval ==  LFTARRW))
-        {
-          if(this->marker_choice_state>0)
-            this->marker_choice_state--;
-          else
-            this->marker_choice_state = last_marker_choice;
-          //cout << "Left Arrow " << this->marker_choice_state << endl;
-        }
-        else if((!is_pressed)&&(keyval ==  RGTARRW))
-        {
-          if(this->marker_choice_state<last_marker_choice)
-            this->marker_choice_state++;
-          else
-            this->marker_choice_state = 0;
-          //cout << "Right Arrow " << this->marker_choice_state << endl;
-        }
-        else if((!is_pressed)&&(keyval ==  UPARRW))
-        {
-          if(this->marker_choice_state<last_marker_choice)
-            this->marker_choice_state++;
-          else
-            this->marker_choice_state = 0;
-          //cout << "Up Arrow " << this->marker_choice_state << endl;
-        }
-        else if((!is_pressed)&&(keyval ==  DWNARRW))
-        {
-          if(this->marker_choice_state>0)
-            this->marker_choice_state--;
-          else
-            this->marker_choice_state = last_marker_choice;
-         //cout << "Down Arrow " << this->marker_choice_state << endl;
-        }
-      }    
     }
 
   
