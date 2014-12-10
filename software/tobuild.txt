@@ -2,41 +2,18 @@
 # and lines starting with '#' are ignored
 #externals
 pronto
-
 drc_lcmtypes
-# retired types from drc_lcmtypes
-retired_lcmtypes
-
-
-#robot_model
-#kinematics
-
 object_template_model
-
 latency
-
 drivers
-
 utils
-gfe
 perception
 motion_estimate
-viewer
 network
-gazebo_plugins
-
-# various scripts and tools e.g. BW plotting
 tools
-
 drake
 control
 bdi_walking
 ddapp
 
-# disabled for now:
-#teleop
-#driving
-#action_authoring
-#segmentation
-#authoring
-
+viewer-trials

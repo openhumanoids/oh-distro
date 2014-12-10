@@ -1,7 +1,0 @@
-//lcm kinect ros
-package lkr;
-
-struct header_t
-{
-        string frame_id;
-}

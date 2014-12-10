@@ -1,0 +1,21 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         kdl_parser
+Maintainers:  Sisir K and Maurice F
+Summary:     Routines to create a KDL::tree data object given a urdf strng/object/file. This object can be used with forward and inverse kinematics routines provided in the KDL library.
+
+Description:
+  FILL-ME-IN
+
+Requirements: 
+ orocos-kdl
+
+License:      FILL-ME-IN

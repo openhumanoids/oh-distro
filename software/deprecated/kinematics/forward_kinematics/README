@@ -1,0 +1,66 @@
+This is a default README file, please replace its contents with information
+relevant to your project.
+
+This software is constructed according to the Pods software policies and
+templates.  The policies and templates can be found at:
+
+  http://sourceforge.net/projects/pods
+
+====
+
+Name:         forward_kinematics
+Maintainers:  Sisir K and Maurice F
+Summary:      Provides i) a ROS style tf publisher ii) a library for performing full forward kinematics using the KDL library. This gene
+Description:
+  FILL-ME-IN
+
+Requirements: 
+ urdf orocos-kdl kdl-parser 
+
+Description:
+
+The main component of this pod is the forward-kinematics library
+1) forward-kinematics library:
+This library extende the KDL library and it contains a solver class defined in treefksolverposfull_recursive.cpp. 
+This class thats provides a JntToCart routine to solve forward kinematics for the whole kinematic structure. 
+KDL library functions only provide an interface to query global position between a specified root and a tip segment.
+
+In addition, three sample programs are provided that illustrate the functionality of above library. 
+
+1) robot_tf_publisher:
+Subscribes to MEAS_JOINT_ANGLES lcm channel to get joint angles and then 
+publishes them as ROS style tf_t messages on JOINT_TRANSFORMS and FIXEDJOINT_TRANSFORMS lcm channels.
+The publisher requires access to the urdf robot model. 
+At startup, the process creates a subcription to ROBOT_MODEL lcm channel,
+waits until it receives the urdf string and then unsubcribes from this
+channel.
+
+2) robot_tf_listener:
+This is a example program that subscribes to tf_t messages published on the 
+JOINT_TRANSFORMS channels.
+For an example usage, try the following commands in a set of terminals in the specified order:
+
+Term1: ./robot_tf_listener
+Term2: ./robot_tf_publisher
+Term3: ./meas_joint_angles_publisher (requires the sensing/meas_joint_angles_publisher pod)
+Term4: ./broadcast_robot_model atlas_robot.urdf (requires the robot_model/robot_model_publisher pod)
+
+3) test_forward_kinematics_solver
+This is a example program that subscribes to JOINT_STATES lcm channel to get joint angles
+and then shows example usage of the JntToCart routine provided in the forward-kinematics 
+SHARED library. At startup, the process creates a subcription to ROBOT_MODEL lcm channel,
+waits until it receives the urdf string and then unsubcribes from this
+channel.
+
+For an example usage, try the following commands in a set of terminals in the specified order:
+
+Term1: ./test_forward_kinematics_solver
+Term2: ./meas_joint_angles_publisher (requires the sensing/meas_joint_angles_publisher pod)
+Term3: ./broadcast_robot_model atlas_robot.urdf (requires the robot_model_publisher pod)
+
+
+
+Requirements: 
+ urdf orocos-kdl kdl-parser 
+
+License:      N/A
