@@ -17,7 +17,7 @@ options.ignore_friction = true;
 options.dt = 0.002;
 options.visualize = visualize;
 options.hokuyo = true;
-options.hokuyo_spin_rate = 2;
+options.hokuyo_spin_rate = 3;
 options.foot_force_sensors = false; % This works (you'll have to change
                                     % LCMBroadcastBlock to broadcast them)
                                     % but is slow right now.
@@ -39,6 +39,7 @@ xstar(6) = 0;
 x0 = zeros(r.getNumStates, 1);
 x0(1:length(xstar)) = xstar;
 r = r.setInitialState(x0);
+
 
 % LCM interpret in
 outs(1).system = 2;

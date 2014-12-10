@@ -20,10 +20,10 @@ using namespace boost::assign;
 
 
 joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels_, bool show_triads_,
-  bool standalone_head_, bool ground_height_, bool bdi_motion_estimate_):
+  bool standalone_head_, bool ground_height_, bool bdi_motion_estimate_, bool multisense_sim_):
           lcm_(lcm_), show_labels_(show_labels_), show_triads_(show_triads_),
           standalone_head_(standalone_head_), ground_height_(ground_height_),
-          bdi_motion_estimate_(bdi_motion_estimate_){
+          bdi_motion_estimate_(bdi_motion_estimate_), multisense_sim_(multisense_sim_){
             
   botparam_ = bot_param_new_from_server(lcm_->getUnderlyingLCM(), 0);
             
@@ -58,8 +58,8 @@ joints2frames::joints2frames(boost::shared_ptr<lcm::LCM> &lcm_, bool show_labels
     pub_frequency_["BODY_TO_HEAD"] = FrequencyLimit(0, 1E6/getMaxFrequency( "head") );
     pub_frequency_["BODY_TO_RHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "r_hand_force_torque" ) );
     pub_frequency_["BODY_TO_LHAND_FORCE_TORQUE"] = FrequencyLimit(0, 1E6/getMaxFrequency( "l_hand_force_torque" ) );
-    // Is this only used for simulation:
-    pub_frequency_["HEAD_TO_HOKUYO_LINK"] = FrequencyLimit(0, 1E6/getMaxFrequency( "hokuyo_link") ); 
+    // Is was used for gazebo-based simulation:
+    //pub_frequency_["HEAD_TO_HOKUYO_LINK"] = FrequencyLimit(0, 1E6/getMaxFrequency( "hokuyo_link") );
     pub_frequency_["POSE_GROUND"] = FrequencyLimit(0, 1E6/ getMaxFrequency( "ground") );
 
   #endif  
@@ -185,6 +185,31 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
     return;
   }
   
+  if (multisense_sim_){
+    vector<string>::iterator it;
+    vector<string> vec;
+    vec = msg->joint_name;
+    it=find(vec.begin(),vec.end(),"hokuyo_joint");
+
+    if(it != vec.end()){
+      int hokuyo_idx = (it-vec.begin());
+
+      double angle = msg->joint_position[hokuyo_idx];
+      // publish message for bot_frames
+      bot_core::rigid_transform_t preToPostFrame;
+      preToPostFrame.utime = msg->utime;
+      preToPostFrame.trans[0] = 0;
+      preToPostFrame.trans[1] = 0;
+      preToPostFrame.trans[2] = 0;
+      preToPostFrame.quat[0] = std::cos(angle/2);
+      preToPostFrame.quat[1] = 0;
+      preToPostFrame.quat[2] = 0;
+      preToPostFrame.quat[3] = std::sin(angle/2);
+      lcm_->publish("PRE_SPINDLE_TO_POST_SPINDLE",
+                                 &preToPostFrame);
+    }
+  }
+
 
   // 2a. Determine the required BOT_FRAMES transforms:
   Eigen::Isometry3d body_to_head, body_to_hokuyo_link;
@@ -228,10 +253,6 @@ void joints2frames::robot_state_handler(const lcm::ReceiveBuffer* rbuf, const st
       publishRigidTransform(body_to_head, msg->utime, "BODY_TO_HEAD");
     }
     
-    if (body_to_hokuyo_link_found){
-      Eigen::Isometry3d head_to_hokuyo_link = body_to_head.inverse() * body_to_hokuyo_link ;
-      publishRigidTransform(head_to_hokuyo_link, msg->utime, "HEAD_TO_HOKUYO_LINK");
-    }
   }
   
   if (standalone_head_){
@@ -321,12 +342,14 @@ main(int argc, char ** argv){
   bool standalone_head = false;
   bool ground_height = false;
   bool bdi_motion_estimate = false;
+  bool multisense_sim = false;
   ConciseArgs opt(argc, (char**)argv);
   opt.add(triads, "t", "triads","Frame Triads - show no not");
   opt.add(labels, "l", "labels","Frame Labels - show no not");
   opt.add(ground_height, "g", "ground", "Publish the grounded foot pose");
   opt.add(standalone_head, "s", "standalone_head","Standalone Sensor Head");
   opt.add(bdi_motion_estimate, "b", "bdi","Use POSE_BDI to make frames [Temporary!]");
+  opt.add(multisense_sim, "m", "multisense_sim","In sim, publish PRE_SPINDLE_TO_POST_SPINDLE");
   opt.parse();
   if (labels){ // require triads if labels is to be published
     triads=true;
@@ -340,7 +363,7 @@ main(int argc, char ** argv){
   if(!lcm->good())
     return 1;  
   
-  joints2frames app(lcm,labels,triads, standalone_head, ground_height, bdi_motion_estimate);
+  joints2frames app(lcm,labels,triads, standalone_head, ground_height, bdi_motion_estimate, multisense_sim);
   while(0 == lcm->handle());
   return 0;
 }
