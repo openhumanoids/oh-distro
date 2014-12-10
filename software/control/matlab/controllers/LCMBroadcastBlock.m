@@ -73,14 +73,18 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       if (r.hands>0)
         hand_names = obj.getInputFrame.getFrameByName('HandState').getCoordinateNames;
         names = [atlascoordnames;
-                hand_names(1:30);
-                'hokuyo_joint'];
+                hand_names(1:30)];
         % all of the hand names should be prepended as being right hand
-        for i=29:length(names)-1
+        for i=29:length(names)
           names{i} = ['right_', names{i}];
         end
       else
-        names = [atlascoordnames;
+        names = [atlascoordnames];
+      end
+      % Append hokuyo_joint if we're not going to have state_sync help with
+      % this
+      if (obj.publish_truth)
+        names = [names; ;
                 'hokuyo_joint'];
       end
       obj.joint_names_cache = cell(length(names), 1);
@@ -235,25 +239,33 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         state_msg.twist.angular_velocity.z = atlas_state(atlas_dofs+6);
       end
       
-<<<<<<< HEAD
-      state_msg.num_joints = num_dofs+1;
       if (obj.publish_truth)
+        % will publish the multisense angle as part of total
+        % est_robot_state
+        state_msg.num_joints = num_dofs-6+1;
+        % only est_robot_state atlas_state message has joint names
         state_msg.joint_name = obj.joint_names_cache;
+      else
+        state_msg.num_joints = num_dofs-6;
       end
-      state_msg.joint_position=zeros(1,state_msg.num_joints+1);
-      state_msg.joint_velocity=zeros(1,state_msg.num_joints+1);
-      state_msg.joint_effort=zeros(1,state_msg.num_joints+1);
       
+      state_msg.joint_position=zeros(1,state_msg.num_joints);
+      state_msg.joint_velocity=zeros(1,state_msg.num_joints);
+      state_msg.joint_effort=zeros(1,state_msg.num_joints);
+        
       atlas_pos = atlas_state(7:atlas_dofs);
       atlas_vel = atlas_state(atlas_dofs+7:end);
       if (~obj.publish_truth)
         atlas_pos = atlas_pos(obj.reordering);
         atlas_vel = atlas_vel(obj.reordering);
+         state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs)];
+        state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end)];
+      else
+        % need another factor of pi/2though I wouldn't mind it being earlier rather than later to get drawn multisense to agree with
+        % the "true" (functionally true, anyway) mirror position
+        state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs); laser_spindle_angle+pi/2];
+        state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end); 0];
       end
-      % need another factor of pi/2 to get drawn multisense to agree with
-      % the "true" (functionally true, anyway) mirror position
-      state_msg.joint_position = [atlas_pos; hand_state(1:hand_dofs); laser_spindle_angle+pi/2];
-      state_msg.joint_velocity = [atlas_vel; hand_state(hand_dofs+1:end); 0];
       state_msg.force_torque = drc.force_torque_t();
       % if we're publishing to satisfy state est we need force sensing from feet
 %       if (~obj.publish_truth)
@@ -315,7 +327,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
           'post_spindle_cal_pitch_joint',
           'post_spindle_cal_yaw_joint'};
         
-        multisense_state.joint_position = [laser_spindle_angle+pi/2, ...
+        multisense_state.joint_position = [mod(laser_spindle_angle+pi/2, 2*pi), ...
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         multisense_state.joint_velocity = [0.0, ...
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -342,7 +354,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
         lcm_laser_msg.nranges = length(laser_ranges);
         lcm_laser_msg.nintensities = length(laser_ranges);
         lcm_laser_msg.rad0 = -obj.hokuyo_yaw_width/2.0;
-        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges));
+        lcm_laser_msg.radstep = obj.hokuyo_yaw_width / (length(laser_ranges) - 1);
         obj.lc.publish('SCAN', lcm_laser_msg);
         
       end

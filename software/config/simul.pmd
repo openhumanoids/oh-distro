@@ -12,12 +12,12 @@ group "0.params_and_model_pub" {
 group "1.state_mit" {
 
     cmd "joints2frames" {
-        exec = "drc-joints2frames -m -b";
+        exec = "drc-joints2frames -b";
         host = "base";
     }
 
     cmd "state-sync" {
-        exec = "drc-state-sync";
+        exec = "drc-state-sync -b";
         host = "base";
     }
     cmd "fusion" {
