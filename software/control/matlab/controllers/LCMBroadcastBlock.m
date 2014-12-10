@@ -59,7 +59,7 @@ classdef LCMBroadcastBlock < MIMODrakeSystem
       else
         dt = 0.001;
       end
-      obj = setSampleTime(obj,[0.01;0]); % sets controller update rate
+      obj = setSampleTime(obj,[dt;0]); % sets controller update rate
       
       if isfield(options,'publish_truth')
         obj.publish_truth = options.publish_truth;

@@ -243,18 +243,18 @@ classdef LCMInputFromAtlasCommandBlock < MIMODrakeSystem
           efforts(obj.drake_to_atlas_joint_map(i)) = u(i);
         end
       else
-         cmd = obj.coder.decode(data);
+        cmd = obj.coder.decode(data);
         efforts = cmd.val(obj.nu*2+1:end);
       end
       
       % And set neck pitch via simple PD controller
-      dummyInput = AtlasInput(obj.r_control);
-      neck_in_i = dummyInput.findCoordinateIndex('neck_ay');
-      neck_in_i = neck_in_i(1);
-      neck_out_i = dummyInput.findCoordinateIndex('neck_ay');
-      error =  30*pi/180 - atlas_state(neck_in_i);
-      vel = atlas_state(length(atlas_state)/2 + neck_in_i);
-      efforts(neck_out_i) = 50*error - vel;
+%       dummyInput = AtlasInput(obj.r_control);
+%       neck_in_i = dummyInput.findCoordinateIndex('neck_ay');
+%       neck_in_i = neck_in_i(1);
+%       neck_out_i = dummyInput.findCoordinateIndex('neck_ay');
+%       error =  30*pi/180 - atlas_state(neck_in_i);
+%       vel = atlas_state(length(atlas_state)/2 + neck_in_i);
+%       efforts(neck_out_i) = 50*error - vel;
       varargout = {efforts(1:28)};
       fprintf('\b\b\b\b\b\b\b%7.3f', t);
       
